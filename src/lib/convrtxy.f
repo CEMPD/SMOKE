@@ -90,7 +90,7 @@ C   begin body of subroutine CONVRTXY
                 XLOC = XVALS( S )
                 YLOC = YVALS( S )
 
-                IF( XLOC .LT. AMISS3 .AND. YLOC .LT. AMISS3 ) CYCLE
+                IF( XLOC .LT. AMISS3 .OR. YLOC .LT. AMISS3 ) CYCLE
 
                 CALL LL2UTM( XLOC, YLOC, UZONE, XX, YY )
                 XVALS( S ) = XX
@@ -110,7 +110,7 @@ C   begin body of subroutine CONVRTXY
                 XLOC4 = XVALS( S )
                 YLOC4 = YVALS( S )
 
-                IF( XLOC4 .LT. AMISS3 .AND. YLOC4 .LT. AMISS3 ) CYCLE
+                IF( XLOC4 .LT. AMISS3 .OR. YLOC4 .LT. AMISS3 ) CYCLE
 
                 IF ( .NOT. LL2LAM( XLOC4, YLOC4, XX4, YY4 ) ) THEN
                     EFLAG = .TRUE.

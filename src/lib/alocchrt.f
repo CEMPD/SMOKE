@@ -39,7 +39,15 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: 
+     &      CHRT02, CHRT03, CHRT04, CHRT05, CHRT06,
+     &      CHRT07, CHRT08, CHRT09, CHRT10, CHRT11,
+     &      CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
+     &      CHRT02A, CHRT02B, CHRT02C,
+     &      CHRT05A, CHRT05B, CHRT05C,
+     &      CHRT08A, CHRT08B, CHRT08C,
+     &      CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
+     &      CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37
 
         IMPLICIT NONE
 
@@ -65,6 +73,8 @@ C.........  First deallocate if these have previously been allocated
             DEALLOCATE( CHRT02A, CHRT02B, CHRT02C )
             DEALLOCATE( CHRT05A, CHRT05B, CHRT05C )
             DEALLOCATE( CHRT08A, CHRT08B, CHRT08C )
+            DEALLOCATE( CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31 )
+            DEALLOCATE( CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37 )
 
         END IF
 
@@ -164,6 +174,55 @@ C.........  NOTE- Added later
         J = MAX( 1, ICSIZE( 25 ) )                     ! SCC=level 3, FIP=all
         ALLOCATE( CHRT08C( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT08C', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 26 ) )                     ! SIC=2-digit, FIP=0
+        ALLOCATE( CHRT26( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT26', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 27 ) )                     ! SIC=all, FIP=0
+        ALLOCATE( CHRT27( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT27', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 28 ) )                     ! SIC=2-digit, FIP=state
+        ALLOCATE( CHRT28( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT28', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 29 ) )                     ! SIC=all, FIP=state
+        ALLOCATE( CHRT29( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT29', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 30 ) )                     ! SIC=2-digit, FIP=all
+        ALLOCATE( CHRT30( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT30', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 31 ) )                     ! SIC=all, FIP=all
+        ALLOCATE( CHRT31( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT31', PROGNAME )
+
+C.........  Added most recently
+        J = MAX( 1, ICSIZE( 32 ) )                     ! MACT=all, FIP=0, SCC=0
+        ALLOCATE( CHRT32( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT32', PROGNAME )
+        
+        J = MAX( 1, ICSIZE( 33 ) )                     ! MACT=all, FIP=0, SCC=all
+        ALLOCATE( CHRT33( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT33', PROGNAME )
+        
+        J = MAX( 1, ICSIZE( 34 ) )                     ! MACT=all, FIP=state, SCC=0
+        ALLOCATE( CHRT34( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT34', PROGNAME )
+        
+        J = MAX( 1, ICSIZE( 35 ) )                     ! MACT=all, FIP=state, SCC=all
+        ALLOCATE( CHRT35( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT35', PROGNAME )
+        
+        J = MAX( 1, ICSIZE( 36 ) )                     ! MACT=all, FIP=all, SCC=0
+        ALLOCATE( CHRT36( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT36', PROGNAME )
+        
+        J = MAX( 1, ICSIZE( 37 ) )                     ! MACT=all, FIP=all, SCC=all
+        ALLOCATE( CHRT37( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT37', PROGNAME )
 
         RETURN
 

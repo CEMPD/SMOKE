@@ -36,7 +36,7 @@ C
 C smoke@emc.mcnc.org
 C
 C Pathname: $Source$ 
-C Last updated: %G 
+C Last updated: $Date$  
 C
 C***************************************************************************
 

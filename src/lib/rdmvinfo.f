@@ -269,8 +269,8 @@ C.........  Allocate memory for sorted arrays
         ALLOCATE( SCCTBL( NSCCTBL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCCTBL', PROGNAME )
 
-C.........  Sort vehicle types by name for IDA input checking
-        CALL SORTIC( NVTYPE, VIDXA, CVTYPA )
+C.........  Sort vehicle types by ID for IDA input checking
+        CALL SORTI1( NVTYPE, VIDXA, IVTIDA )
 
 C.........  Sort road classes by number for EPS input checking
         CALL SORTI1( NRCLAS, RIDXA, RDCLSA )

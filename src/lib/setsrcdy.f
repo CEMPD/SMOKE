@@ -37,6 +37,10 @@ C Last updated: $Date$
 C
 C****************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: CATEGORY
+        
         IMPLICIT NONE
 
 C...........   EXTERNAL FUNCTIONS 
@@ -46,12 +50,12 @@ C...........   EXTERNAL FUNCTIONS
         EXTERNAL   ENVINT, ISDSTIME
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: NSRC             ! no. sources
-        INTEGER, INTENT (IN) :: SDATE            ! start julian date in GMT
-        INTEGER, INTENT (IN) :: TZONES  ( NSRC ) ! time zones per source
-        LOGICAL, INTENT (IN) :: LDAYSAV ( NSRC ) ! true: use daylight time
-        INTEGER, INTENT(OUT) :: DAYBEGT( NSRC )  ! start time of SDATE
-        INTEGER, INTENT(OUT) :: DAYENDT( NSRC )  ! end time of SDATE
+        INTEGER,      INTENT (IN) :: NSRC             ! no. sources
+        INTEGER,      INTENT (IN) :: SDATE            ! start julian date in GMT
+        INTEGER,      INTENT (IN) :: TZONES  ( NSRC ) ! time zones per source
+        LOGICAL,      INTENT (IN) :: LDAYSAV ( NSRC ) ! true: use daylight time
+        INTEGER,      INTENT(OUT) :: DAYBEGT( NSRC )  ! start time of SDATE
+        INTEGER,      INTENT(OUT) :: DAYENDT( NSRC )  ! end time of SDATE
 
 C...........   Other local variables
 
@@ -81,7 +85,7 @@ C           all of the sources use the same start and end of the day
             MESG = 'Start time for using uniform start time'
             STIME_SET = ENVINT ( 'UNIFORM_STIME', MESG, -1, IOS )
 
-            UFLAG = ( STIME_SET .GT. 0 )
+            UFLAG = ( STIME_SET > 0 )
 
             IF( UFLAG ) THEN
 
@@ -120,14 +124,19 @@ C           savings, is the same as the start hour of the day in GMT.0
         DO S = 1, NSRC
 
             STIME = TZONES( S ) * 10000
+            JDATE = SDATE
 
 C.............  If this date is during daylight savings, and if this
 C               source is affected by daylight savings
             IF( DAYLIT .AND. LDAYSAV( S ) ) THEN
 
-                JDATE = SDATE
                 CALL NEXTIME( JDATE, STIME, -10000 )
                 
+            END IF
+
+C.............  Set start time to  6 A.M. local time for MOBILE6 processing
+            IF( CATEGORY == 'MOBILE' ) THEN
+                CALL NEXTIME( JDATE, STIME, 60000 )
             END IF
 
 C.............  Store start time

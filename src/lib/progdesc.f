@@ -79,12 +79,12 @@ C.........  SMOKE programs - listed in alphabetical order
         CASE( 'EMISFAC' )
             WRITE( *,92000 )
      &      ' ',
-     &  'Program EMISFAC drives the MOBILE5a/b program by supplying',
-     &  'a range of ambient temperatures and a scenario-specific',
-     &  'MOBILE5 parameter file MPREF. Using multiple calls to',
-     &  'MOBILE5, EMISFAC creates a diurnal and non-diurnal emission',
-     &  'factors table for the specified temperatures and input',
-     &  'parameter combinations.',
+     &  'Program EMISFAC drives the MOBILE6 model using custom',
+     &  'input files created from county-based hourly temperature',
+     &  'profiles and MOBILE6 input scenarios. Separate runs of',
+     &  'EMISFAC are needed for each temperature averaging type.',
+     &  'After running MOBILE6, EMISFAC stores the source-based',
+     &  'emission factors.',
      &      ' '
  
         CASE( 'GETRECS' )
@@ -130,6 +130,17 @@ C.........  SMOKE programs - listed in alphabetical order
      &  'adapted for multiple layers. ',
      &      ' '
 
+        CASE( 'MBSETUP' )
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program MBSETUP prepares intermediate files needed to run',
+     &  'PREMOBL and EMISFAC using the county cross-reference and',
+     &  'settings files. It checks that each county in the inventory',
+     &  'and within the grid has been assigned a reference county',
+     &  'and creates the speed summary file grouping sources by county',
+     &  'and speed.',
+     &      ' '
+
         CASE( 'METSCAN' )
             WRITE( LDEV,92000 ) 
      &      ' ',
@@ -167,11 +178,9 @@ C.........  SMOKE programs - listed in alphabetical order
         CASE( 'PREMOBL' )
             WRITE( LDEV,92000 ) 
      &      ' ',
-     &  'Program PREMOBL to input gridded, time-dependent temperature',
-     &  'data, an emission factors cross-reference, and an ungridding',
-     &  'matrix. Program determines the minimum and maximum ',
-     &  'temperatures per day for each source and for each emission',
-     &  'factor.',
+     &  'Program PREMOBL uses gridded, time-dependent temperature',
+     &  'data and an ungridding matrix to create county-based',
+     &  '24-hour temperature profiles.',
      &      ' '
 
         CASE( 'RAWBIO' ) 

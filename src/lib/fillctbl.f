@@ -40,7 +40,15 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: ADDPS, INDXTA, ISPTA, MPRNA,
+     &          ICTL01, ICTL02, ICTL03, ICTL04, ICTL05,
+     &          ICTL06, ICTL07, ICTL08, ICTL09, ICTL10,
+     &          ICTL11, ICTL12, ICTL13, ICTL14, ICTL15, ICTL16,
+     &          ICTL02A, ICTL02B, ICTL02C,
+     &          ICTL05A, ICTL05B, ICTL05C,
+     &          ICTL08A, ICTL08B, ICTL08C,
+     &          ICTL26, ICTL27, ICTL28, ICTL29, ICTL30, ICTL31,
+     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37  
 
         IMPLICIT NONE
 
@@ -164,6 +172,42 @@ C               digits) so that the pol-specific can be identified later
                                         
             CASE( 25 )
                 CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL08C )
+                                        
+            CASE( 26 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL26 )
+                                        
+            CASE( 27 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL27 )
+                                        
+            CASE( 28 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL28 )
+                                        
+            CASE( 29 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL29 )
+                                        
+            CASE( 30 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL30 )
+                                        
+            CASE( 31 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL31 )
+                
+            CASE( 32 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL32 )
+                
+            CASE( 33 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL33 )
+                
+            CASE( 34 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL34 )
+                
+            CASE( 35 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL35 )
+                
+            CASE( 36 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL36 )
+                
+            CASE( 37 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL37 )
                                         
             CASE DEFAULT
 

@@ -43,13 +43,14 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is for cross reference tables
-        USE MODXREF
-
+        USE MODXREF, ONLY: CSRCTA, ISPTA, CSCCTA, INDXTA,
+     &                     MPRNA, WPRNA, DPRNA
+        
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM
 
         IMPLICIT NONE
 
@@ -126,6 +127,7 @@ C...........   Other local variables
         CHARACTER*300          MESG     !  message buffer
 
         CHARACTER(LEN=SICLEN3) :: CDUM = '0' !  dummy character field for SIC
+        CHARACTER(LEN=MACLEN3) :: CDUM2= '0' !  dummy charecter field for MACT
         CHARACTER(LEN=LNKLEN3) CLNK     !  temporary link code
         CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
         CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
@@ -133,10 +135,6 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO  !  buffer for zero SCC
         CHARACTER(LEN=PLTLEN3) PLT      !  tmp plant ID
-        CHARACTER(LEN=SCCLEN3) PSCCL    !  left digits of TSCC of prev iteration
-        CHARACTER(LEN=SCCLEN3) SCCL     !  left digits of TSCC
-        CHARACTER(LEN=SCCLEN3) SCCR     !  right 5 digits of TSCC
-        CHARACTER(LEN=SCCLEN3) SCRZERO  !  buffer for zero SCCR
         CHARACTER(LEN=IOVLEN3) CPOA     !  temporary pollutant/emission type
         CHARACTER(LEN=RWTLEN3) CRWT     !  roadway type no.
         CHARACTER(LEN=VIDLEN3) CVID     !  vehicle type ID no.
@@ -161,7 +159,6 @@ C.........  Ensure that the CATEGORY is valid
 C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         FIPZERO = REPEAT( '0', FIPLEN3 )
         SCCZERO = REPEAT( '0', SCCLEN3 )
-        SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
 
 C.........  Sort the actual list of pollutant/emission type names and store it
         DO I = 1, NIPPA
@@ -266,8 +263,8 @@ C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pol/act name 
 C                   with master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, 
-     &                         IDUM, JSPC, PFLAG, SKIPREC  )
+                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, CDUM2, 
+     &                         IDUM, IDUM, JSPC, PFLAG, SKIPREC )
 
 C.................  Skip lines that are not valid for this inven and src cat
                 IF( SKIPREC ) CYCLE
@@ -400,8 +397,8 @@ C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pol/act name 
 C                   with master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, 
-     &                         IDUM, JSPC, PFLAG, SKIPREC    )
+                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, CDUM2, 
+     &                         IDUM, IDUM, JSPC, PFLAG, SKIPREC )
 
 C.................  Skip lines that are not valid for this inven and src cat
                 IF( SKIPREC ) CYCLE

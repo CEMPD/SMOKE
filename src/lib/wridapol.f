@@ -77,7 +77,7 @@ C.........  First time routine is called...
 
 C.............  Get directory for temporary files
             MESG = 'Path for temporary files will be written'
-            CALL ENVSTR( 'SMK_TMPPATH', MESG, '.', PATHNM, IOS )
+            CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
             LP = LEN_TRIM( PATHNM )
 
             FIRSTIME = .FALSE.

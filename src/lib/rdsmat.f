@@ -38,13 +38,15 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
@@ -70,7 +72,7 @@ C***********************************************************************
 C   begin body of subroutine RDSMAT
 
 C.........  Retrieve file header
-        IF ( .NOT. DESC3( FNAME ) ) THEN
+        IF ( .NOT. DESCSET( FNAME, ALLFILES ) ) THEN
             MESG = 'Could not get description of file ' // FNAME
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
@@ -83,7 +85,7 @@ C           file header
         DBUF = DBUF( 1:IOVLEN3 ) // SPJOIN // VDESC( L1+1:L2 )
 
 C.........  Find variable description in list of descriptions
-        J = INDEX1( DBUF, NVARS3D, VDESC3D )
+        J = INDEX1( DBUF, NVARSET, VDESCSET )
 
         IF( J .LE. 0 ) THEN
             MESG = 'INTERNAL ERROR: Speciation variable description "'//
@@ -93,8 +95,9 @@ C.........  Find variable description in list of descriptions
         END IF
 
 C.........  Read variable and print nice error message if cannot
-        VBUF = VNAME3D( J )
-        IF ( .NOT. READ3( FNAME, VBUF, 1, 0, 0, SMAT ) ) THEN
+        VBUF = VNAMESET( J )
+        IF ( .NOT. READSET( FNAME, VBUF, 1, ALLFILES, 
+     &                      0, 0, SMAT ) ) THEN
 
             L  = LEN_TRIM( FNAME )
             L1 = LEN_TRIM( VBUF )
@@ -104,7 +107,7 @@ C.........  Read variable and print nice error message if cannot
      &             '" with description "' // VDESC( 1:L2 ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-        END IF    !  if read3() failed for speciation matrix
+        END IF    !  if readset() failed for speciation matrix
 
         RETURN
 

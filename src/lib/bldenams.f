@@ -49,8 +49,8 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-C.........  This module contains the information about the source CATEGORY
-        USE MODINFO
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS, ONLY: INVDNAM, INVDDSC, MXIDAT
 
         IMPLICIT NONE
 
@@ -61,7 +61,9 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
-        EXTERNAL        CRLF
+        INTEGER         INDEX1
+        
+        EXTERNAL        CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY_L               ! source CATEGORY
@@ -78,7 +80,7 @@ C.........  Data arrays for variable names...
 
 C.........  Area source variable name parameters
         CHARACTER(LEN=CPRTLEN3) ARPREFIX( 2:NARPPOL3 )
-        DATA ARPREFIX / OZNSEART, EMISFCRT, CTLEFFRT, 
+        DATA ARPREFIX / AVEDAYRT, EMISFCRT, CTLEFFRT, 
      &                  RULEFFRT, RULPENRT /
 
         CHARACTER(LEN=IOULEN3) ARUNITS( NARPPOL3 )
@@ -90,16 +92,16 @@ C.........  Area source variable name parameters
 
         CHARACTER(LEN=IODLEN3) ARDESCS( NARPPOL3 )
         DATA ARDESCS / 'Annual Emissions'
-     &               , 'Ozone Season Emissions'
+     &               , 'Average Day Emissions'
      &               , 'Emission Factors'
-     &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule penetration (in [0,100], or "MISSING": < -9.0E36)'
+     &      , 'Control efficiency (in [0,1], or "MISSING": < -9.0E36)'
+     &      , 'Rule effectiveness (in [0,1], or "MISSING": < -9.0E36)'
+     &      , 'Rule penetration (in [0,1], or "MISSING": < -9.0E36)'
      &               /
 
 C.........  Mobile source variable name parameters
         CHARACTER(LEN=CPRTLEN3) MBPREFIX( 2:NMBPPOL3 )
-        DATA MBPREFIX / OZNSEART /
+        DATA MBPREFIX / AVEDAYRT /
 
         CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
         DATA MBUNITS / 'tons/yr', 'tons/day' /
@@ -108,11 +110,11 @@ C.........  Mobile source variable name parameters
         DATA MBTYPES / M3REAL, M3REAL /
 
         CHARACTER(LEN=IODLEN3) MBDESCS( NMBPPOL3 )
-        DATA MBDESCS / 'Annual Data', 'Ozone Season Data' /
+        DATA MBDESCS / 'Annual Data', 'Average Day Data' /
 
 C.........  Point source variable name parameters
         CHARACTER(LEN=CPRTLEN3) PTPREFIX( 2:NPTPPOL3 )
-        DATA PTPREFIX / OZNSEART, CTLEFFRT, RULEFFRT, 
+        DATA PTPREFIX / AVEDAYRT, CTLEFFRT, RULEFFRT, 
      &                  EMISFCRT, CECOD1RT, CECOD2RT /
 
         CHARACTER(LEN=IOULEN3) PTUNITS( NPTPPOL3 )
@@ -125,9 +127,9 @@ C.........  Point source variable name parameters
 
         CHARACTER(LEN=IODLEN3) PTDESCS( NPTPPOL3 )
         DATA PTDESCS / 'Annual Emissions'
-     &               , 'Ozone Season Emissions'
-     &      , 'Control efficiency (in [0,100], or "MISSING": < -9.0E36)'
-     &      , 'Rule effectiveness (in [0,100], or "MISSING": < -9.0E36)'
+     &               , 'Average Day Emissions'
+     &      , 'Control efficiency (in [0,1], or "MISSING": < -9.0E36)'
+     &      , 'Rule effectiveness (in [0,1], or "MISSING": < -9.0E36)'
      &               , 'Emission Factors'
      &               , 'Primary Control Equipment Code'
      &               , 'Secondary Control Equipment Code'
@@ -143,6 +145,7 @@ C...........   Other local variables
         INTEGER         IDIF      !  abridged name length
         INTEGER         L, L2, LU !  length indices
         INTEGER         LCNT      !  same-abrigded-name counter
+        INTEGER         POLLNUM   !  position of current pollutant in INVDNAM
 
         CHARACTER(LEN=IOVLEN3)  LNAM  !  previous pollutant/activity name
         CHARACTER(LEN=IOVLEN3)  NAM   !  current pollutant/activity name
@@ -193,6 +196,15 @@ C.........  Search for duplicates and rename them
 C.........  Build output names
         DO I = 1, NIPPA_L
 
+C.............  If pol/act name is in inventory table, append its description 
+C               to the annual data description
+            NAM = EANAM_L( I )
+            IF( ALLOCATED( INVDNAM ) ) THEN
+                POLLNUM = INDEX1( NAM, MXIDAT, INVDNAM )
+            ELSE
+                POLLNUM = 0
+            END IF
+
             OUTNAMES( I,1 ) = EANAM_L( I )  ! Annual emis name is same as pol/act
 
             L  = LEN_TRIM( ABRNAMA( I ) )
@@ -201,8 +213,14 @@ C.........  Build output names
             SELECT CASE( CATEGORY_L )
             CASE( 'AREA' )
                 OUTUNITS( I,1 ) = ARUNITS( 1 )          
-                OUTTYPES( I,1 ) = ARTYPES( 1 )           
-                OUTDESCS( I,1 ) = ARDESCS( 1 )
+                OUTTYPES( I,1 ) = ARTYPES( 1 )
+                
+                IF( POLLNUM > 0 ) THEN           
+                    OUTDESCS( I,1 ) = TRIM( ARDESCS( 1 ) ) // ' for ' // 
+     &                                INVDDSC( POLLNUM )
+                ELSE
+                    OUTDESCS( I,1 ) = ARDESCS( 1 )
+                END IF
          
                 DO J = 2, NPPOA
                     OUTNAMES( I,J ) = ARPREFIX( J )//ABRNAMA( I )( 1:L )
@@ -215,7 +233,14 @@ C.........  Build output names
 
                 OUTUNITS( I,1 ) = MBUNITS ( 1 )          
                 OUTTYPES( I,1 ) = MBTYPES ( 1 )           
-                OUTDESCS( I,1 ) = MBDESCS ( 1 )
+                
+                IF( POLLNUM > 0 ) THEN
+                    OUTDESCS( I,1 ) = TRIM( MBDESCS( 1 ) ) // ' for ' // 
+     &                                INVDDSC( POLLNUM )
+                ELSE
+                    OUTDESCS( I,1 ) = MBDESCS ( 1 )
+                END IF
+                
                 DO J = 2, NPPOA
                     OUTNAMES( I,2 ) = MBPREFIX( 2 )//ABRNAMA( I )( 1:L )
                     OUTUNITS( I,2 ) = MBUNITS ( 2 )          
@@ -226,8 +251,14 @@ C.........  Build output names
             CASE( 'POINT' )
 
                 OUTUNITS( I,1 ) = PTUNITS( 1 )          
-                OUTTYPES( I,1 ) = PTTYPES( 1 )           
-                OUTDESCS( I,1 ) = PTDESCS( 1 )
+                OUTTYPES( I,1 ) = PTTYPES( 1 )  
+                
+                IF( POLLNUM > 0 ) THEN         
+                    OUTDESCS( I,1 ) = TRIM( PTDESCS( 1 ) ) // ' for ' // 
+     &                                INVDDSC( POLLNUM )
+                ELSE
+                    OUTDESCS( I,1 ) = PTDESCS( 1 )
+                END IF
          
                 DO J = 2, NPPOA
                     OUTNAMES( I,J ) = PTPREFIX( J )//ABRNAMA( I )( 1:L )

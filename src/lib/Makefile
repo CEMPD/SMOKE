@@ -7,32 +7,38 @@
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<
 
+all: lib
+
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
+#  alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o   blkorcmt.o 
 FILES_A = \
   applumat.o   evalcrit.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
   alocchrt.o   chkisiz.o    fmtcsrc.o    getsinfo.o   progdesc.o   rdtprof.o  \
   alocctbl.o   chkmetem.o   gettzone.o   rdtref.o     setsrcdy.o   blkorcmt.o \
-  alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o  \
-  alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o  \
+  alocetbl.o   chkptdef.o   grd2cnty.o   rdascc.o     rdtzone.o    rdar2pt.o \
+  alocgtbl.o   genuslst.o   initem.o     rdchrscc.o   readwr3.o    rdxclude.o \
   alocmtbl.o   filletbl.o   getbasyr.o   rdsrg.o      rdsrghdr.o
 
 FILES_B = \
   alocstbl.o   chksrcno.o   rdstcy.o     rdgmat.o     rdinvchr.o \
   alocttbl.o   convrtxy.o   getctgry.o   mbsccadj.o   rdmvinfo.o     \
-  applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o    rdsccdsc.o \
-  asgnpsi.o    dscsprof.o   getformt.o   rdlines.o    verchar.o  \
-  efsetup.o    getidasz.o   normtpro.o   rdpelv.o     tmprinfo.o \
-  getdysav.o   ingrid.o     rdrmat.o    
+  alocatbl.o   applreac.o   rdeproc.o    rdinvpol.o   rdhdays.o    rdsccdsc.o \
+  dscsprof.o   fillatbl.o   getformt.o   rdlines.o    verchar.o  \
+  efsetup.o    getidasz.o   normtpro.o   rdpelv.o     rdmapmask.o \
+  getdysav.o   ingrid.o     rdrmat.o     rdinvmap.o   rdmappol.o
 
 FILES_C = \
   bldcsrc.o    fillchrt.o   getiname.o   parscsrc.o   rdsconv.o    wrchrscc.o \
   bldenams.o   fillctbl.o   getinvyr.o   rdcodnam.o   wrdaymsg.o   wridaout.o \
-  fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
+  fillgtbl.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
   fillmtbl.o   rdsprof.o    prclinrc.o   rmcommnt.o   rdorsdsc.o \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
-  fillttbl.o   rdefxref.o   rdsref.o     genptcel.o   chkemepi.o
+  fillttbl.o   rdsref.o     genptcel.o   chkemepi.o   getntisz.o \
+  setsrcdy.o   getdysav.o   find1first.o cvtrdtype.o  cvtvehtype.o \
+  rdspdref.o   rdspdprof.o  alocptbl.o   fillptbl.o   setscctype.o
 
 FILES_TMP = 
 
@@ -60,6 +66,8 @@ debug: $(MODALL) $(MODGRID) $(FILES_A) $(FILES_B) $(FILES_C) $(FILES_TMP) Makefi
 # Module dependencies
 #
 
+alocatbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ alocatbl.f
 alocchrt.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocchrt.f
 alocctbl.o: $(MODXREF)
@@ -76,16 +84,18 @@ alocttbl.o: $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ alocttbl.f
 applumat.o: $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ applumat.f
-asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ asgnpsi.f
 bldenams.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ bldenams.f
 chkptdef.o: $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ chkptdef.f
+cvtrdtype.o: $(MODMBSET)
+	$(FC) $(FFLAGS) -c -o $@ cvtrdtype.f
 dscsprof.o: $(MODSPRO) 
 	$(FC) $(FFLAGS) -c -o $@ dscsprof.f
-efsetup.o : $(MODEMFAC) $(INC)/M5CNST3.EXT
+efsetup.o : $(MODEMFAC) $(INC)/M6CNST3.EXT
 	$(FC) $(FFLAGS) -c -o $@ efsetup.f
+fillatbl.o: $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ fillatbl.f
 fillchrt.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ fillchrt.f
 fillctbl.o: $(MODXREF) 
@@ -112,7 +122,7 @@ getctgry.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getctgry.f
 getformt.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ getformt.f
-getsinfo.o: $(MODINFO)
+getsinfo.o: $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ getsinfo.f
 gettzone.o: $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ gettzone.f
@@ -130,18 +140,24 @@ prclinrc.o: $(MODREPRT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ prclinrc.f
 procspro.o: $(MODSPRO)
 	$(FC) $(FFLAGS) -c -o $@ procspro.f
+rdar2pt.o: $(MODLISTS) $(MODAR2PT)
+	$(FC) $(FFLAGS) -c -o $@ rdar2pt.f
 rdcodnam.o: $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdcodnam.f
-rdefxref.o: $(MODMOBIL) $(MODXREF) $(MODEMFAC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdefxref.f
 rdeproc.o: $(MODEMFAC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdeproc.f
+	$(FC) $(FFLAGS) -c -o $@ rdeproc.F
 rdgref.o : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdgref.f
 rdinvchr.o: $(MODSOURC) 
 	$(FC) $(FFLAGS) -c -o $@ rdinvchr.f
+rdinvpol.o: $(MODFILESET) 
+	$(FC) $(FFLAGS) -c -o $@ rdinvpol.f
 rdmvinfo.o: $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdmvinfo.f
+rdinvmap.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rdinvmap.F
+rdmappol.o: $(MODINFO) $(MODFILESET)
+	$(FC) $(FFLAGS) -c -o $@ rdmappol.f
 rdorsdsc.o : $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdorsdsc.f
 rdpelv.o : $(MODINFO) $(MODELEV)
@@ -150,6 +166,14 @@ rdsccdsc.o : $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ rdsccdsc.f
 rdsconv.o : $(MODLISTS) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsconv.f
+rdsmat.o : $(MODFILESET)
+	$(FC) $(FFLAGS) -c -o $@ rdsmat.f
+rdsprof.o  : $(MODSPRO)
+	$(FC) $(FFLAGS) -c -o $@ rdsprof.f
+rdspdref.o : $(MODXREF)
+	$(FC) $(FFLAGS) -c -o $@ rdspdref.f
+rdspdprof.o : $(MODMOBIL)
+	$(FC) $(FFLAGS) -c -o $@ rdspdprof.f
 rdsref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsref.f
 rdsrg.o   : $(MODSURG) $(MODGRID)
@@ -164,8 +188,9 @@ rdtref.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdtref.f
 rdvmix.o  : $(MODMOBIL) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdvmix.f
-tmprinfo.o  : $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ tmprinfo.f
+rdxclude.o  : $(MODXREF) $(MODLISTS) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rdxclude.f
+setscctype.o : $(MODINFO)
 wrchrscc.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrchrscc.f
 wridaout.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
@@ -174,4 +199,12 @@ xreftbl.o: $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ xreftbl.f
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o 
+	/bin/rm -f $(MODALL)
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

@@ -206,7 +206,7 @@ C.....................  Store vehicle type names
 C.....................  Get position numbers for list of valid vehicle types
                     DO V = 1, NV
 
-                        K = FINDC( VTNAMES( V ), NVTYPE, CVTYPLST )
+                        K = INDEX1( VTNAMES( V ), NVTYPE, CVTYPLST )
                         IF( K .LE. 0 ) THEN
                             L = LEN_TRIM( VTNAMES( V ) )
                             MESG = 'WARNING: Vehicle type "' // 

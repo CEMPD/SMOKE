@@ -1,5 +1,5 @@
 
-        SUBROUTINE FLTRXREF( CFIP, CSIC, TSCC, CPOA, IXSIC, IXSCC,
+        SUBROUTINE FLTRXREF( CFIP, CSIC, TSCC, CPOA, CMCT, IXSIC, IXSCC,
      &                       IXPOA, SKIPPOA, SKIPREC )
 
 C**************************************************************************
@@ -44,35 +44,36 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module contains the source arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: ISIC, CMACT
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: INVSCC, INVSCL, INVSIC, INVSIC2, INVMACT,
+     &                      NINVSCC, NINVSCL, NINVSIC, NINVSIC2, 
+     &                      NINVMACT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, LSCCEND, RSCCBEG, NIPPA, EANAM
 
         IMPLICIT NONE
 
 C...........   INCLUDES
-         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-C        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-C        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-C        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
         INTEGER       FIND1
         INTEGER       FINDC
         INTEGER       INDEX1
         INTEGER       STR2INT
+        LOGICAL       SETSCCTYPE
 
-        EXTERNAL      FIND1, FINDC, INDEX1, STR2INT
+        EXTERNAL      FIND1, FINDC, INDEX1, STR2INT, SETSCCTYPE
 
 C...........   SUBROUTINE ARGUMENTS:
         CHARACTER(*), INTENT(IN OUT) :: CFIP   ! cntry/state/county code
         CHARACTER(*), INTENT(IN OUT) :: CSIC   ! standard indust. code
         CHARACTER(*), INTENT(IN OUT) :: TSCC   ! source category code
         CHARACTER(*), INTENT(IN OUT) :: CPOA   ! pollutant/activity name
+        CHARACTER(*), INTENT(IN OUT) :: CMCT   ! MACT code
         INTEGER     , INTENT   (OUT) :: IXSIC  ! index of SIC in SIC list
         INTEGER     , INTENT   (OUT) :: IXSCC  ! index of SCC in SCC list
         INTEGER     , INTENT   (OUT) :: IXPOA  ! index of pol/act in master list
@@ -85,16 +86,19 @@ C...........   Other local variables
         INTEGER          IXACT   ! index to master activity names array
         INTEGER          L       ! tmp string length
         INTEGER          SIC     ! tmp standard industrial code
+        INTEGER          SIC2    ! tmp standard industrial code
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: 1st time subroutine called 
-        LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point sources
+        LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point or area sources
+        LOGICAL, SAVE :: MFLAG    = .FALSE.  ! true: have MACT codes
+        LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
         CHARACTER*300          MESG         ! message buffer
         CHARACTER(LEN=SCCLEN3) SCCL         ! left part of SCC
         CHARACTER(LEN=SCCLEN3) SCCR         ! right part of SCC
         CHARACTER(LEN=SCCLEN3), SAVE :: SCRZERO  ! zero right digits of TSCC
         CHARACTER(LEN=SCCLEN3), SAVE :: SCCZERO  ! zero SCC
- 
+
         CHARACTER*16 :: PROGNAME = 'FLTRXREF' ! program name
 
 C***********************************************************************
@@ -113,7 +117,8 @@ C               was already generated.
             END IF
 
 C.............  Set flags indicating which source category is being processed
-            PFLAG = ALLOCATED( ISIC )
+            PFLAG = ASSOCIATED( ISIC )
+            MFLAG = ASSOCIATED( CMACT )
 
 C.............  Check length of SCC string
             L = LEN( TSCC )
@@ -156,7 +161,17 @@ C.........  Smart interpretation of SCC
         CALL FLTRNEG( TSCC )     ! Filter 0 and -9 to blank
         CALL PADZERO( TSCC )     ! Pad with zeros
 
-C......... Set left and right portions of SCC
+C.........  Set type of SCC                
+        SCCFLAG = SETSCCTYPE( TSCC )
+        
+C.........  If SCC type has changed, reset zero string for right SCC
+        IF( SCCFLAG ) SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
+
+C.........  Smart interpretation of MACT code
+        CALL FLTRNEG( CMCT )     ! Filter 0 and -9 to blank
+        CALL PADZERO( CMCT )     ! Pad with zeros
+
+C.........  Set left and right portions of SCC
         SCCL = TSCC(       1:LSCCEND )
         SCCR = TSCC( RSCCBEG:SCCLEN3 )
 
@@ -192,13 +207,26 @@ C                   case.
 
 C.........  Check SIC with inventory SIC list.  The record might not match
 C           based on SCC, but maybe by SIC.
-        IF( SKIPREC .AND. PFLAG ) THEN
+        SIC2 = SIC/100
+        IF( ( TSCC == SCCZERO .OR. SKIPREC ) .AND. 
+     &        PFLAG .AND. SIC .NE. 0               ) THEN
 
-            IXSIC = FIND1( SIC, NINVSIC, INVSIC )
+            IF( MOD( SIC,100 ) .EQ. 0 ) THEN
+                IXSIC = FIND1( SIC2, NINVSIC2, INVSIC2 )
+
+            ELSE
+                IXSIC = FIND1( SIC, NINVSIC, INVSIC )
+
+            END IF
 
             SKIPREC = ( IXSIC .LE. 0 )
 
         END IF
+
+C.........  Check MACT with inventory MACT list
+        IF( MFLAG .AND. CMCT /= '000000' ) THEN
+            SKIPREC = ( FINDC( CMCT, NINVMACT, INVMACT ) <= 0 )
+        END IF 
 
 C.........  Filter the case where the pollutant/activity code is not present
         IF( CPOA .EQ. ' ' ) THEN

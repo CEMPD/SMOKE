@@ -84,7 +84,7 @@ C   begin body of program INITEM
         LINE3 = 'See file COPYRIGHT for conditions of use.'
 
         LINE4 = 'Online documentation available at:' 
-        LINE5 = '    http://www.emc.mcnc.org/products/smoke'
+        LINE5 = '    http://www.cep.unc.edu/empd/products/smoke'
 
 C.........  Set up program version information
         VERCHAR = ADJUSTL( NAMEVERS )

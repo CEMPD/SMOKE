@@ -40,15 +40,29 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY:
+     &          CHRT02, CHRT03, CHRT04, CHRT05,
+     &          CHRT06, CHRT07, CHRT08, CHRT09, CHRT10,
+     &          CHRT11, CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
+     &          CHRT02A, CHRT02B, CHRT02C,
+     &          CHRT05A, CHRT05B, CHRT05C,
+     &          CHRT08A, CHRT08B, CHRT08C,
+     &          CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
+     &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37,
+     &          INDXTA, CSRCTA, CSCCTA, CMACTA 
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, LSCCEND, SCCLEV1, SCCLEV2, SCCLEV3
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+        LOGICAL         SETSCCTYPE
+        
+        EXTERNAL        SETSCCTYPE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NXREF           ! no. ungrpd x-ref entries
@@ -59,11 +73,12 @@ C...........   Local field position array
         INTEGER, ALLOCATABLE :: ENDLEN( : ) 
 
 C...........   Other local variables
-        INTEGER       I, J, K, T       ! counter and indices
+        INTEGER       I, J, K, L, T    ! counter and indices
 
         INTEGER       IOS              ! i/o status
 
         LOGICAL    :: EFLAG = .FALSE.  ! true: error was detected
+        LOGICAL       SCCFLAG          ! true: SCC type is different from previous
 
         CHARACTER*300          MESG    ! message buffer
 
@@ -72,11 +87,18 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP    ! temporary (character) FIPS code
         CHARACTER(LEN=SRCLEN3) CSRC    ! temporary source char string
         CHARACTER(LEN=SCCLEN3) TSCC    ! temporary SCC
+        CHARACTER(LEN=SCCLEN3) SCCZERO ! buffer for zero SCC
+        CHARACTER(LEN=SICLEN3) CSIC    ! buffer for SIC
+        CHARACTER(LEN=SICLEN3) CSICL   ! buffer for left 2-digit SIC
+        CHARACTER(LEN=MACLEN3) CMCT    ! buffer for MACT code
 
         CHARACTER*16 :: PROGNAME = 'FILLCHRT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine FILLCHRT
+
+C.........  Set up zero string for SCC code of zero
+        SCCZERO = REPEAT( '0', SCCLEN3 )
 
 C.........  Set the local field position array based on the source category
         SELECT CASE ( CATEGORY )
@@ -107,11 +129,34 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
             J      = INDXTA( I )
             CSRC   = CSRCTA( J )
             TSCC   = CSCCTA( J )
+            
+            IF( ALLOCATED( CMACTA ) ) THEN
+                CMCT = CMACTA( J )
+            ELSE
+                CMCT = ' '
+            END IF
 
-C.............  Set up partial strings for saving
-            SCCL   = TSCC( 1:LSCCEND )
+C.............  Set up partial strings for country/state/county
             CFIP   = CSRC( 1:FIPLEN3 ) 
             CSTA   = CSRC( 1:STALEN3 )
+
+C.............  Determine whether SIC is imbedded in SCC field
+            K = INDEX( TSCC, SICNOTE )
+
+C.............  If SIC imbedded, setup SIC fields
+            CSIC = ' '
+            IF( K .GT. 0 ) THEN
+                L = K + LEN( SICNOTE )
+                CSIC  = TSCC( L : L + SICLEN3 - 1 )
+                TSCC  = SCCZERO
+                CSICL = CSIC( 1:2 )
+            END IF
+
+C.............  Set up partial SCC strings for saving
+
+C.............  Set type of SCC                
+            SCCFLAG = SETSCCTYPE( TSCC )
+            SCCL   = TSCC( 1:LSCCEND )
 
             T      = XTYPE ( I )  ! extract what group this entry is in
             K      = XTCNT ( I )  ! extract position in that group
@@ -141,14 +186,19 @@ C.............  Set up partial strings for saving
             CASE( 11 )
                 CHRT11( K ) = CSRC( 1:ENDLEN( 2 ) ) // TSCC
             CASE( 12 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT12( K ) = CSRC( 1:ENDLEN( 3 ) ) // TSCC
             CASE( 13 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT13( K ) = CSRC( 1:ENDLEN( 4 ) ) // TSCC
             CASE( 14 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT14( K ) = CSRC( 1:ENDLEN( 5 ) ) // TSCC
             CASE( 15 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT15( K ) = CSRC( 1:ENDLEN( 6 ) ) // TSCC
             CASE( 16 )
+                IF( TSCC .EQ. SCCZERO ) TSCC = ' '
                 CHRT16( K ) = CSRC( 1:ENDLEN( 7 ) ) // TSCC
 
 C.............  NOTE- Cases added in version 1.4 (initially) for cntl/proj only
@@ -170,6 +220,33 @@ C.............  NOTE- Cases added in version 1.4 (initially) for cntl/proj only
                 CHRT08B( K ) = CFIP // TSCC( 1:SCCLEV2 )
             CASE( 25 )
                 CHRT08C( K ) = CFIP // TSCC( 1:SCCLEV3 )
+            CASE( 26 )
+                CHRT26( K ) = CSIC( 1:2 ) 
+            CASE( 27 )
+                CHRT27( K ) = CSIC 
+            CASE( 28 )
+                CHRT28( K ) = CSTA // CSIC( 1:2 ) 
+            CASE( 29 )
+                CHRT29( K ) = CSTA // CSIC 
+            CASE( 30 )
+                CHRT30( K ) = CFIP // CSIC( 1:2 ) 
+            CASE( 31 )
+                CHRT31( K ) = CFIP // CSIC 
+                
+C.............  MACT based cases
+            CASE( 32 )
+                CHRT32( K ) = CMCT
+            CASE( 33 )
+                CHRT33( K ) = TSCC // CMCT
+            CASE( 34 )
+                CHRT34( K ) = CSTA // CMCT
+            CASE( 35 )
+                CHRT35( K ) = CSTA // TSCC // CMCT
+            CASE( 36 )
+                CHRT36( K ) = CFIP // CMCT
+            CASE( 37 )
+                CHRT37( K ) = CFIP // TSCC // CMCT
+                
             CASE DEFAULT
 
                 EFLAG = .TRUE.

@@ -1,11 +1,11 @@
 
-        SUBROUTINE GETIDASZ( FDEV, CATEGORY, NLINES, NLINEBP )
+        SUBROUTINE GETIDASZ( FDEV, CATEGORY, NLINEBP )
 
 C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This subroutine returns an exact number of records or records times
+C      This subroutine returns an exact number of records times
 C      pollutants (depending on the value of OUTTYPE) for a raw inventory input
 C      file opened on unit FDEV.  The file must use the #POLID or #DATA header
 C      to indicate how many data variables are contained on each line of the
@@ -57,8 +57,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN ) :: FDEV     !  unit number of input file
         CHARACTER(*), INTENT (IN ) :: CATEGORY !  description of source category
-        INTEGER     , INTENT (OUT) :: NLINES   !  no. input recs
-        INTEGER     , INTENT (OUT) :: NLINEBP  !  no. recs times data vars
+        INTEGER     , INTENT (OUT) :: NLINEBP   !  no. input recs (srcs x poll)
 
 C...........   Other local variables
         INTEGER         I1, I2, L   !  counters and indices
@@ -80,8 +79,7 @@ C***********************************************************************
 C   begin body of subroutine GETIDASZ
 
 C.........  Initialize counters
-        NLINES  = 0
-        NLINEBP = 0
+        NLINEBP  = 0
 
         DO   ! Head of file read loop
 
@@ -149,7 +147,6 @@ C                   default value is 1.
 
                 END IF
 
-                NLINES  = NLINES  + 1
                 NLINEBP = NLINEBP + NVAR
 
             END IF
@@ -158,7 +155,7 @@ C                   default value is 1.
 
 111     CONTINUE  ! Exit from read loop
 
-        IF( NLINES .EQ. 0 ) THEN
+        IF( NLINEBP .EQ. 0 ) THEN
             MESG = 'Inventory file has no valid ' //
      &             'lines of inventory data.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
