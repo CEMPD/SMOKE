@@ -126,7 +126,11 @@ C.........  Ensure that input file is a list-formatted file
 
         IF( INVFMT .NE. LSTFMT ) THEN
             MESG = TYPNAM// '-specific input file is not provided by '//
-     &             'a list of files.'
+     &             'a list of files OR ' // CRLF() // BLANK10 // 
+     &             'files in list provided could not be found.'
+            CALL M3MSG2( MESG )
+
+            MESG = 'Problem reading inventory file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
          
