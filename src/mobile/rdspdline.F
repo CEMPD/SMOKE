@@ -42,7 +42,7 @@ C***********************************************************************
 C.........  MODULES for public variables
 
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: SCENLIST
         
         IMPLICIT NONE
 
@@ -53,9 +53,10 @@ C...........   INCLUDES:
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER           STR2INT
+        REAL              STR2REAL
         CHARACTER(LEN=2)  CRLF    
         
-        EXTERNAL  STR2INT, CRLF
+        EXTERNAL  STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,                INTENT (IN)   :: SDEV        ! SPDSUM file unit number
@@ -80,7 +81,7 @@ C...........   Other local variables
         LOGICAL   :: EFLAG     = .FALSE. !  true: error found
                 
         CHARACTER   CONTCHAR              ! continuation character from SPDSUM file
-        
+        CHARACTER(LEN=6)       SPDSTR     ! string for reading speed info
         CHARACTER(LEN=300)     MESG       !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'RDSPDLINE'   ! program name
@@ -101,7 +102,7 @@ C.............  Make sure we don't try to read past the end of the file
 
 C.............  Read line from SPDSUM file
             READ( SDEV, 93010, IOSTAT=IOS ) COUNTY, ROADTYPE, 
-     &            SPEED, SOURCES( 1:7 ), CONTCHAR
+     &            SPDSTR, SOURCES( 1:7 ), CONTCHAR
        
             IF( IOS /= 0 ) THEN
                 EFLAG = .TRUE.
@@ -130,20 +131,31 @@ C.............  Check that county from SPDSUM is still current county
 C.............  Increment line count
             CURRLINE = CURRLINE + 1
             
+C.............  Convert speed depending on format (if decimal point is present, 
+C               store as actual speed, otherwise it references a profile and 
+C               is stored as a negative number)
+            IF( INDEX( SPDSTR, '.' ) == 0 ) THEN
+                SPEED = -STR2REAL( ADJUSTL( SPDSTR ) )
+            ELSE
+                SPEED = STR2REAL( ADJUSTL( SPDSTR ) )
+            END IF
+            
 C.............  Store scenario numbers with sources
             DO J = 1, 7
-                IF( SOURCES( J ) /= 0 ) THEN
-                    SRCCT = SRCCT + 1
+            
+C.................  Exit if done with sources for this line
+                IF( SOURCES( J ) == 0 ) EXIT
+                
+                SRCCT = SRCCT + 1
 
-C.....................  Stick local sources in with previous scenario                    
-                    IF( ROADTYPE == M6LOCAL ) THEN
-                        SCENLIST( SOURCES( J ),1 ) = SCENNUM - 1
-                    ELSE
-                        SCENLIST( SOURCES( J ),1 ) = SCENNUM
-                    END IF
-                    
-                    SCENLIST( SOURCES( J ),2 ) = LASAFLAG
+C.................  Stick local sources in with previous scenario                    
+                IF( ROADTYPE == M6LOCAL ) THEN
+                    SCENLIST( SOURCES( J ),1 ) = SCENNUM - 1
+                ELSE
+                    SCENLIST( SOURCES( J ),1 ) = SCENNUM
                 END IF
+                
+                SCENLIST( SOURCES( J ),2 ) = LASAFLAG
             END DO
 
 C.............  Check if there are more lines to read for this speed and road type
@@ -169,12 +181,11 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
-93010   FORMAT( I6, 1X, I1, 1X, F6.2, 7( 1X, I6 ), 1X, 1A )  
+93010   FORMAT( I6, 1X, I1, 1X, A6, 7( 1X, I6 ), 1X, 1A )  
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
-94020   FORMAT( 10( A, :, F6.2, :, 1X ) )
         
         END SUBROUTINE RDSPDLINE
         
