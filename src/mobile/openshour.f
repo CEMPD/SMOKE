@@ -138,20 +138,23 @@ C.........  Set header values that cannot be default
         VTYPE3D( J ) = M3REAL
 
 C.........  Create full file name
-        J = 0       
-        DO
-            J = J + 1
+C       J = 0       
+C       DO
+C           J = J + 1
+C
+C           WRITE( FULLNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) // 
+C    &                              '/' // DESC // '.', SDATE, '.',
+C    &                              J, '.ncf'
+C           INQUIRE( FILE=FULLNAME, EXIST=FEXIST )
+C       
+C           IF( .NOT. FEXIST ) EXIT                
+C       END DO    
 
-            WRITE( FULLNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) // 
-     &                              '/' // DESC // '.', SDATE, '.',
-     &                              J, '.ncf'
-            INQUIRE( FILE=FULLNAME, EXIST=FEXIST )
-        
-            IF( .NOT. FEXIST ) EXIT                
-        END DO    
+        WRITE( FULLNAME,94010 ) TEMPDIR( 1:LEN_TRIM( TEMPDIR ) ) //
+     &                          '/' // DESC // '.', SDATE, '.ncf'
 
 C.........  Open new file
-        IF( .NOT. OPNFULL3( FNAME, FSUNKN3, FULLNAME, PROGNAME ) ) THEN
+        IF( .NOT. OPNFULL3( FNAME, FSNEW3, FULLNAME, PROGNAME ) ) THEN
             MESG = 'Could not create new output file ' // FULLNAME
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
@@ -162,7 +165,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( A, I7, A, I1, A )
+94010   FORMAT( A, I7, A )
 
 94030   FORMAT( A, F15.9, 1X, A )
 
