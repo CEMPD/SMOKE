@@ -122,6 +122,39 @@ C.........  Control and projection matrix codes (in order of precedence)
         INTEGER, PARAMETER :: CTYPADD  = 3   ! for additive control matrix
         INTEGER, PARAMETER :: CTYPMULT = 4   ! for multiplicative control matrix
 
+C.........  Indices when storing stack parameters for evaluation
+        INTEGER, PARAMETER :: HT_IDX = 1     ! index for stack height
+        INTEGER, PARAMETER :: DM_IDX = 2     ! index for stack diameter
+        INTEGER, PARAMETER :: TK_IDX = 3     ! index for stack exit tmpr
+        INTEGER, PARAMETER :: VE_IDX = 4     ! index for stack exit velocity 
+        INTEGER, PARAMETER :: FL_IDX = 5     ! index for stack exit flow
+        INTEGER, PARAMETER :: RISE_IDX = 6   ! index for analytical plume rise
+
+C.........  Special data input names and associated parameters
+        INTEGER, PARAMETER :: CODFLAG3 = 9000 ! to ID special data types
+        INTEGER, PARAMETER :: MXSPDAT  = 6    ! max number of special data
+        CHARACTER(LEN=IOVLEN3), PARAMETER :: SPDATNAM( MXSPDAT ) =
+     &                                    ( / 'LAY1F           ',
+     &                                        'PBOT            ',
+     &                                        'PTOP            ',
+     &                                        'STKTK           ',
+     &                                        'STKVE           ',
+     &                                        'STKFL           '  / )
+        CHARACTER(LEN=IOULEN3), PARAMETER :: SPDATUNT( MXSPDAT ) =
+     &                                    ( / 'n/a             ',
+     &                                        'm               ',
+     &                                        'm               ',
+     &                                        'deg K           ',
+     &                                        'm/s             ',
+     &                                        'm^3/s           '  / )
+        CHARACTER*25, PARAMETER :: SPDATDSC( MXSPDAT ) =
+     &                          ( / 'Plume fraction in layer 1',
+     &                              'Plume bottom height      ',
+     &                              'Plume top height         ',
+     &                              'Stack exit temperature   ',
+     &                              'Stack exit velocity      ',
+     &                              'Stack exit flow          '  / )
+
 C.........  Variable dimensioning components, independent
 
         INTEGER       CPRTLEN3       ! length of ctl eff, rul eff, rul pen roots
