@@ -45,7 +45,8 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISPTA, CMACTA,
+     &                     TXCNT, NXTYPES
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NIPPA, SCCLEV1, SCCLEV2,
@@ -62,8 +63,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         STR2INT
+        LOGICAL         SETSCCTYPE
 
-        EXTERNAL   CRLF, STR2INT 
+        EXTERNAL   CRLF, STR2INT, SETSCCTYPE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: OPTYPE ! operation type (tmprl,spec,ctg...)
@@ -106,7 +108,6 @@ C...........   Other local variables
         INTEGER       IOS              ! i/o status
         INTEGER       ISP              ! temporary pollutant position in EANAM
         INTEGER       LOPT             ! length of OPTYPE
-        INTEGER       L1R, L2R, L3R    ! SCC level 1, 2, and 3 right positions
         INTEGER       NCHKCHR          ! position of last non-SCC src char
         INTEGER       NT               ! code for specificity of x-ref entry
         INTEGER    :: PISP = IMISS3    ! previous iteration ISP
@@ -125,6 +126,7 @@ C...........   Other local variables
         LOGICAL    :: POADFLT          ! true: okay to have pol/act-spec dfaults
         LOGICAL    :: RFLAG = .FALSE.  ! true: operation type is reactivty cntls
         LOGICAL    :: SAMEFLAG = .FALSE. ! true: same x-ref chars as previous iter
+        LOGICAL       SCCFLAG          ! true: SCC type is different from previous
         LOGICAL    :: SFLAG = .FALSE.  ! true: operation type is speciation
         LOGICAL    :: TFLAG = .FALSE.  ! true: operation type is temporal
         LOGICAL    :: XFLAG = .FALSE.  ! true: operation type is nonhapVOC exclusion
@@ -144,7 +146,9 @@ C...........   Other local variables
         CHARACTER(LEN=SNFLEN3) CNFIP         ! characterstics without FIPS code
         CHARACTER(LEN=SRCLEN3) CSRC          ! temporary source char string
         CHARACTER(LEN=FIPLEN3) CFIP          ! temporary (character) FIPS code
+        CHARACTER(LEN=MACLEN3) CMCT          ! temporary MACT code
         CHARACTER(LEN=FIPLEN3) FIPZERO       ! buffer for zero FIPS code
+        CHARACTER(LEN=MACLEN3) MCTZERO       ! buffer for zero MACT code
         CHARACTER(LEN=SCCLEN3) PSCC          ! previous SCC
         CHARACTER(LEN=SCCLEN3) TSCC          ! temporary SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO       ! buffer for zero SCC
@@ -203,6 +207,9 @@ C.........  Check for valid operation type
             POADFLT = .FALSE.
             IFLAG   = .TRUE.
             NFLAG   = .FALSE.
+        CASE( 'MACT' )
+            POADFLT = .TRUE.
+            OFLAG   = .TRUE.
         CASE( 'NONHAP' )
             POADFLT = .FALSE.
             XFLAG   = .TRUE.
@@ -242,17 +249,15 @@ C.........  Check for valid operation type
         END SELECT
         
 C.........  Set up zero strings for FIPS code of zero and SCC code of zero
-        L1R = SCCLEV1 + 1
-        L2R = SCCLEV2 + 1
-        L3R = SCCLEV3 + 1
-        FIPZERO = REPEAT( '0', FIPLEN3 )
-        SCCZERO = REPEAT( '0', SCCLEN3 )
-        SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
-        SCCZ_A = REPEAT( '0', SCCLEN3 - SCCLEV1 )
-        SCCZ_B = REPEAT( '0', SCCLEN3 - SCCLEV2 )
-        SCCZ_C = REPEAT( '0', SCCLEN3 - SCCLEV3 )
-        SICZERO = REPEAT ( '0', SICLEN3 )
-        SICRZERO = REPEAT ( '0', SICLEN3 - 2 )
+        FIPZERO  = REPEAT( '0', FIPLEN3 )
+        SCCZERO  = REPEAT( '0', SCCLEN3 )
+        SCRZERO  = REPEAT( '0', SCCLEN3 - LSCCEND )
+        SCCZ_A   = REPEAT( '0', SCCLEN3 - SCCLEV1 )
+        SCCZ_B   = REPEAT( '0', SCCLEN3 - SCCLEV2 )
+        SCCZ_C   = REPEAT( '0', SCCLEN3 - SCCLEV3 )
+        SICZERO  = REPEAT( '0', SICLEN3 )
+        SICRZERO = REPEAT( '0', SICLEN3 - 2 )
+        MCTZERO  = REPEAT( '0', MACLEN3 )
 
 C.........  Initialize default array
         DEFAULT = .FALSE.   ! array
@@ -282,6 +287,7 @@ C.........  For CSRC, don't include pollutant for grouping.
             CSRC    = CSRCTA( J )( 1:SC_ENDP( NCHARS ) )
             TSCC    = CSCCTA( J )
             IF( NFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
+            CMCT    = CMACTA( J )
 
             DO J = 1, NCHARS
                 CHARS( J ) = CSRC( SC_BEGP( J ):SC_ENDP( J ) )
@@ -326,14 +332,25 @@ C.............  If SIC *not* imbedded, setup SCC fields
                 CSIC  = SICZERO
                 CSICR = SICRZERO
 
-C...............  Standard strings for SCC 7/10 level matching
+C.................  Set type of SCC                
+                SCCFLAG = SETSCCTYPE( TSCC )
+                
+C.................  If SCC type has changed, reset zero strings
+                IF( SCCFLAG ) THEN
+                    SCRZERO  = REPEAT( '0', SCCLEN3 - LSCCEND )
+                    SCCZ_A   = REPEAT( '0', SCCLEN3 - SCCLEV1 )
+                    SCCZ_B   = REPEAT( '0', SCCLEN3 - SCCLEV2 )
+                    SCCZ_C   = REPEAT( '0', SCCLEN3 - SCCLEV3 )
+                END IF
+                
+C.................  Standard strings for SCC left and right matching
                 SCCL    = TSCC(       1:LSCCEND )
                 SCCR    = TSCC( RSCCBEG:SCCLEN3 )
 
-C...............  More partial strings for special SCC levels matching
-                SCCR_A = TSCC( L1R:SCCLEN3 )
-                SCCR_B = TSCC( L2R:SCCLEN3 )
-                SCCR_C = TSCC( L3R:SCCLEN3 )
+C.................  More partial strings for special SCC levels matching
+                SCCR_A = TSCC( SCCLEV1 + 1:SCCLEN3 )
+                SCCR_B = TSCC( SCCLEV2 + 1:SCCLEN3 )
+                SCCR_C = TSCC( SCCLEV3 + 1:SCCLEN3 )
 
             END IF
 
@@ -347,7 +364,40 @@ C               code, SCC, pollutant index, etc., that the entries with zero for
 C               these characteristics will appear earlier in the sorted list
             IF( IFIP .EQ. 0 ) THEN                       ! FIPS code is default
 
-                IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+                IF( CMCT .NE. MCTZERO ) THEN                   ! have valid MACT code
+                
+                    IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
+                    
+                        NT = 32
+                        IF( IFIP .NE. PIFIP( NT ) ) THEN
+                            N( NT ) = N( NT ) + 1
+                            PIFIP( NT ) = IFIP
+                            
+                        ELSEIF( ISP .EQ. PISP ) THEN
+                            CALL REPORT_DUP_XREF
+                            NT = 0
+                        END IF
+                        
+                    ELSE                                         ! Complete SCC
+                    
+                        NT = 33
+                        IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
+                            N( NT ) = N( NT ) + 1
+                            PIFIP( NT ) = IFIP
+                            PTSCC( NT ) = TSCC
+                            
+                        ELSEIF( ISP .EQ. PISP ) THEN
+                            CALL REPORT_DUP_XREF
+                            NT = 0
+                            
+                        ELSE
+                            SAMEFLAG = .TRUE.
+                        END IF
+                    
+                    END IF
+
+                ELSE IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
 
                     NT = 27
                     IF( CSIC .NE. PCSIC( NT ) ) THEN
@@ -496,7 +546,40 @@ C                   as the old Right-left method is still needed.
 
             ELSEIF( ICYID .EQ. 0 ) THEN            ! County code is default
 
-                IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+                IF( CMCT .NE. MCTZERO ) THEN                   ! have valid MACT code
+                
+                    IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
+                    
+                        NT = 34
+                        IF( IFIP .NE. PIFIP( NT ) ) THEN
+                            N( NT ) = N( NT ) + 1
+                            PIFIP( NT ) = IFIP
+                            
+                        ELSEIF( ISP .EQ. PISP ) THEN
+                            CALL REPORT_DUP_XREF
+                            NT = 0
+                        END IF
+                        
+                    ELSE                                         ! Complete SCC
+                    
+                        NT = 35
+                        IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
+                            N( NT ) = N( NT ) + 1
+                            PIFIP( NT ) = IFIP
+                            PTSCC( NT ) = TSCC
+                            
+                        ELSEIF( ISP .EQ. PISP ) THEN
+                            CALL REPORT_DUP_XREF
+                            NT = 0
+                            
+                        ELSE
+                            SAMEFLAG = .TRUE.
+                        END IF
+                    
+                    END IF
+                    
+                ELSE IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
 
                     NT = 29
                     IF( IFIP .NE. PIFIP( NT ) .OR.
@@ -632,7 +715,40 @@ C                   as the old Right-left method is still needed.
             ELSEIF( CNFIP .EQ. ' ' .OR.
      &              CNFIP .EQ. TSCC     ) THEN  ! Country/St/Co code is complete
 
-                IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+                IF( CMCT .NE. MCTZERO ) THEN                   ! have valid MACT code
+                
+                    IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
+                    
+                        NT = 36
+                        IF( IFIP .NE. PIFIP( NT ) ) THEN
+                            N( NT ) = N( NT ) + 1
+                            PIFIP( NT ) = IFIP
+                            
+                        ELSEIF( ISP .EQ. PISP ) THEN
+                            CALL REPORT_DUP_XREF
+                            NT = 0
+                        END IF
+                        
+                    ELSE                                         ! Complete SCC
+                    
+                        NT = 37
+                        IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                      TSCC .NE. PTSCC( NT )      ) THEN
+                            N( NT ) = N( NT ) + 1
+                            PIFIP( NT ) = IFIP
+                            PTSCC( NT ) = TSCC
+                            
+                        ELSEIF( ISP .EQ. PISP ) THEN
+                            CALL REPORT_DUP_XREF
+                            NT = 0
+                            
+                        ELSE
+                            SAMEFLAG = .TRUE.
+                        END IF
+                    
+                    END IF
+
+                ELSEIF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
 
                     NT = 31
                     IF( IFIP .NE. PIFIP( NT ) .OR.
@@ -859,7 +975,7 @@ C.....................  Process NT 16 through 11
             XTYPE( I ) = NT
             XTCNT( I ) = N( NT )         ! Dimensioned from 0 so NT can = 0
 
-        ENDDO                            ! End Loop on sorted x-ref entries
+        END DO                           ! End Loop on sorted x-ref entries
 
 C.........  Allocate the memory for the source-characteristics portion of the
 C           grouped cross-reference tables
