@@ -153,6 +153,10 @@ C.............  If we haven't already passed the headers, skip all header
 C               lines
             IF( IREC .LE. LASTHDR ) CYCLE
 
+C.............  Skip blank and comment lines
+            IF( LINE .EQ. ' ' ) CYCLE
+            IF( LINE(1:1) .EQ. CINVHDR ) CYCLE
+
 C.............  Separate the line of data into each part
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
