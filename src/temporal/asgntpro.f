@@ -636,6 +636,9 @@ C.................  Check for and apply ultimate defaults
                     WRNCNT = WRNCNT + 1
                     MREF = MPRT01( V )
                     WREF = WPRT01( V )
+                    IF( DPRT01( V ) .GE. ADDPS ) DPRT01( V ) = 
+     &                  DPRT01( V ) - ADDPS
+
                     DREF = DPRT01( V )
                     
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
@@ -652,6 +655,9 @@ C.................  Check for and apply ultimate defaults
                 ELSEIF( MPRT01( V ) .NE. IMISS3 ) THEN
                     MREF = MPRT01( V )
                     WREF = WPRT01( V )
+                    IF( DPRT01( V ) .GE. ADDPS ) DPRT01( V ) = 
+     &                  DPRT01( V ) - ADDPS
+
                     DREF = DPRT01( V )
                     CALL SETSOURCE_TPROFS
 
