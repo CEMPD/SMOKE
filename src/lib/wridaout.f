@@ -387,7 +387,6 @@ C.............  Set values of variables that SMOKE does not (yet) support
 
 C.............  Compute conversion constants
             M2FT  = 1./FT2M
-            CTOF  = 1./FTOC
 
 C.............  Create output format
             WRITE( EMISFMT, 93340 ) NIPOL
