@@ -236,6 +236,16 @@ C              name and store it's file.
         END DO
 111     CONTINUE ! exit from read loop at the end
 
+C........  If map inventory file empty then abort
+        IF( EFLAG ) THEN
+            MESG = 'ERROR: Map-formatted inventory file is empty.' //
+     &             CRLF()// BLANK10// 'Please manually delete it '//
+     &             'and the *.ncf and *_dat/*.ncf files that'//
+     &             CRLF()// BLANK10// 'should be listed in it.'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+        END IF
+
 C........  If error reading file, then abort
         IF( EFLAG ) THEN
             MESG = 'Corrupted map-formatted inventory file.'
