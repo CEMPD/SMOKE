@@ -102,6 +102,10 @@ C.........  Point sources work and output arrays
 C.........  Temporal allocation Matrix.  
         REAL, ALLOCATABLE :: TMAT( :, :, : ) ! temporal allocation factors
 
+C.........  Emission factors array
+        REAL,    ALLOCATABLE :: EMISFACS( :,:,: ) ! emission factors from file
+        INTEGER, ALLOCATABLE :: SRCIDX( : )       ! source numbers corresponding to EF array
+
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
@@ -117,12 +121,6 @@ C           pollutant per time step.
         INTEGER                 NPELV        ! optional elevated source-count
         INTEGER, ALLOCATABLE :: INDXE( : )   ! SMOKE source IDs
         REAL   , ALLOCATABLE :: EMISE( : )   ! elevated source emissions
-
-C...........   Gridded meteorology data
-        REAL   , ALLOCATABLE :: TA( : )     ! one layer of temperature
-
-C...........   Ungridding Matrix
-        INTEGER, ALLOCATABLE :: UMAT( : )   ! contiguous ungridding matrix
 
 C.........  Names of pollutants and activities associated with output variables
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: ALLIN( : ) 
@@ -148,14 +146,9 @@ C...........   Logical names and unit numbers
         CHARACTER*16 :: ANAME = ' '    !  logical name for ASCII inven input 
         CHARACTER*16 :: DNAME = 'NONE' !  day-specific  input file, or "NONE"
         CHARACTER*16 :: ENAME = ' '    !  logical name for I/O API inven input
-        CHARACTER*16 :: FNAME = ' '    !  non-diurnal EF file
-        CHARACTER*16 :: GNAME = ' '    !  ungridding matrix
+        CHARACTER*16 :: FNAME = ' '    !  emission factors file
         CHARACTER*16 :: HNAME = 'NONE' !  hour-specific input file, or "NONE"
-        CHARACTER*16 :: MNAME = ' '    !  surface temperature file
-        CHARACTER*16 :: NNAME = ' '    !  diurnal EF file
-c        CHARACTER*16 :: SNAME = ' '    !  PSIs per source file
         CHARACTER*16 :: TNAME = ' '    !  timestepped (low-level) output file
-        CHARACTER*16 :: WNAME = ' '    !  ungridded min/max temperatures
 
 C...........   Other local variables
 
@@ -182,11 +175,10 @@ C...........   Other local variables
         INTEGER         TNLEN               ! length of TNAME string
         INTEGER         TSTEP               ! output time step
         INTEGER         TZONE               ! output-file time zone
-        INTEGER      :: WDATE               ! source min/max tmpr current date
-        INTEGER      :: WEDATE = 0          ! source min/max tmpr end date
-        INTEGER      :: WSDATE = 0          ! source min/max tmpr start date
-        INTEGER      :: WSTIME = 0          ! source min/max tmpr start time
-        INTEGER      :: WTIME               ! source min/max tmpr current time
+        INTEGER         SEFDATE             ! start date of emission factors
+        INTEGER         SEFTIME             ! start time of EFs
+        INTEGER         NEFSTEP             ! no. of time steps of EFs
+        INTEGER         NEFSRC              ! no. of sources with EFs
 
         REAL            RTMP                ! tmp float
 
@@ -226,18 +218,13 @@ C.........  Get environment variable that overrides temporal profiles and
 C               uses only uniform profiles.
         NFLAG = ENVYN( 'UNIFORM_TPROF_YN', MESG, .FALSE., IOS )
 
-C.........  Get environment variable that indicates if the MINMAXT file is
-C           time independent (true) or not
-        MESG   = 'MINMAXT is time-independent file? '  
-        WTINDP = ENVYN( 'MINMAX_TINDP_YN', MESG, .FALSE., IOS )
-
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
 C.........  Get the name of the emission factor model to use for one run
         IF ( CATEGORY .EQ. 'MOBILE' ) THEN
             MESG = 'Emission factor model'
-            CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE5', MODELNAM, IOS)
+            CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE6', MODELNAM, IOS)
         ELSE
             MODELNAM = ' '
         END IF
@@ -248,13 +235,9 @@ C.........  Get inventory file names given source category
 C.........  Prompt for and open input files
 C.........  Also, store source-category specific information in the MODINFO 
 C           module.
-C.........  Also, determine name of temperature variable in the temperature
-C           files (if any)
-C.........  Also, compare min/max temperature settings from any files that have
-C           them and populate the valid temperature arrays
         CALL OPENTMPIN( MODELNAM, NFLAG, ENAME, ANAME, DNAME, HNAME, 
-     &                  FNAME, NNAME, MNAME, GNAME, WNAME, TVARNAME, 
-     &                  SDEV, XDEV, RDEV, FDEV, CDEV, HDEV, TDEV, 
+     &                  FNAME, 
+     &                  SDEV, XDEV, RDEV, CDEV, HDEV, TDEV, 
      &                  MDEV, PYEAR )
 
 C.........  Determine status of some files for program control purposes
@@ -295,14 +278,6 @@ C.........  Calculate the ending date and time
         EDATE = SDATE
         ETIME = STIME
         CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
-
-C.........  Set up gridded and min/max temperature files dates and times and
-C           retrieve the number of grid cells
-        IF( MNAME .NE. ' ' ) THEN
-            CALL PRETMPR( MNAME, WNAME, TZONE, TSTEP, SDATE, STIME, 
-     &                    NSTEPS, MSDATE, MSTIME, WSDATE, WSTIME, 
-     &                    WEDATE, NGRID)
-        END IF
 
 C.........  For day-specific data input...
         IF( DFLAG ) THEN
@@ -417,68 +392,47 @@ C.........  When mobile codes file is being used read mobile codes file
         IF( MFLAG ) CALL RDMVINFO( MDEV )
 
 C.........  Perform steps needed for using activities and emission factors
-C.........  NOTE - the CHRT* variables that are part of the MODXREF module 
-C           will be used by RDEFXREF and ASGNPSI and done with before these
-C           variables are again needed by RDTREF and ASGNTPRO.
 
         IF( NIACT .GT. 0 ) THEN
 
-C.............  Read header of ungridding matrix...
-            IF( .NOT. DESC3( GNAME ) ) THEN
-        	MESG = 'Could not get description for file ' // GNAME
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+C............. Get header description of emission factors file
+            IF( .NOT. DESC3( FNAME ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, 
+     &                       'Could not get description of file "' 
+     &                       // FNAME( 1:LEN_TRIM( FNAME ) ) // '"', 2 )
+            ENDIF
 
-C.............  Store number of ungridding factors
-            NMATX = NCOLS3D
+C.............  Store starting time and number of time steps
+            SEFDATE = SDATE3D
+            SEFTIME = STIME3D
+            NEFSTEP = MXREC3D
+            NEFSRC  = NROWS3D
 
-C.............  Allocate memory for ungridding matrix, gridded temperature, 
-C               and PSI index matching
-            ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
-            ALLOCATE( TA( NGRID ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TA', PROGNAME )
-            ALLOCATE( TASRC( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TASRC', PROGNAME )
-	    ALLOCATE( TKMIN( NSRC ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'TKMIN', PROGNAME )
-	    ALLOCATE( TKMAX( NSRC ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'TKMAX', PROGNAME )
-	    ALLOCATE( METIDX( NSRC,4 ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'METIDX', PROGNAME )
- 	    ALLOCATE( EFSIDX( NSRC,NIACT ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'EFSIDX', PROGNAME )
+C.............  Allocate memory to store EFs
+            ALLOCATE( EMISFACS( NEFSRC, NVARS3D-1, NEFSTEP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMISFACS', PROGNAME )
+            ALLOCATE( SRCIDX( NEFSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRCIDX', PROGNAME )
 
-C.............  Read ungridding matrix
-            CALL RDUMAT( GNAME, NSRC, NMATX, NMATX, UMAT( 1 ),
-     &                   UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 )  )
-
-C.............  Read the cross-reference for assigning the PSIs
-C               to the sources. This will populate parts of the MODXREF module.
-C.............  Also create the list of unique parameter scheme indices.
-            CALL RDEFXREF( FDEV, .TRUE. )
+            EMISFACS = 0.
+            SRCIDX   = 0
 
 C.............  Read emission processes file.  Populate array in MODEMFAC.
             CALL RDEPROC( TDEV )
 
-C.............   Map parameter scheme indexes (PSIs) onto sources for all actvty
-            CALL ASGNPSI( NIACT, ACTVTY, NETYPE )
-
 C.............  Loop through activities and...
-C.............  NOTE - this is not fully implemented for multiple activities. 
-C               To do this, the data structures and RDEFACS will need to be 
-C               updated. Also, the variable names in the emission factor file
-C               are not truly supporting 16-character pollutant and 
-C               emission process names, because it is only set up for MOBILE5
             DO I = 1, NIACT
 
 C.................  Skip activities that do not have emissions types
                 IF( NETYPE( I ) .LE. 0 ) CYCLE            
 
-C.................  Read emission factor tables for each activity and get the 
-C                   emission factor variable names.
-        	CALL RDEFACS( MODELNAM, FNAME, NNAME, ACTVTY( I ), 
-     &                        UMAT(1) )
+C................  Get emission factor names, units, and descriptions for the
+C                  emission factors and the model of interest.
+C................  NOTE - although the arguments to this routine are the I/O API
+C                  arrays for variables, etc., the subroutine sets the public arrays
+C                  for names, units, and descriptions.
+                CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS,
+     &                        VNAME3D, UNITS3D, VDESC3D )
 
             END DO
 
@@ -544,6 +498,47 @@ C.............  If any emissions types associated with this activity, store them
 C.........  Reset number of pollutants and emission types based on those used
         NIPPA = N
 
+C.........  Read emission factors from file using variable names in EANAM
+        IF( NIACT .GT. 0 ) THEN
+
+            MESG = 'Reading emission factors...'
+            CALL M3MSG2( MESG )
+
+            IF( .NOT. READ3( FNAME, 'SOURCES', ALLAYS3, SEFDATE,
+     &                       SEFTIME, SRCIDX ) ) THEN  
+     	        EFLAG = .TRUE.
+                MESG = 'Error reading source information from ' //
+     &                 'file "' // FNAME( 1:LEN_TRIM( FNAME ) ) // 
+     &                 '."'
+                CALL M3MSG2( MESG )   
+            END IF
+            
+            DO I = 1, NEFSTEP
+                DO J = 1, NIPPA
+               
+                    IF( .NOT. READ3( FNAME, EANAM(J), ALLAYS3, SEFDATE,
+     &                               SEFTIME, EMISFACS( 1,J,I ) ) ) THEN
+    	                EFLAG = .TRUE.
+    	                MESG = 'Error reading emission factors from ' //
+     &	                       'file "' // FNAME( 1:LEN_TRIM(FNAME) ) //
+     & 	                       '."'
+    	                CALL M3MSG2( MESG )
+    	            END IF
+               
+                END DO
+                    
+                CALL NEXTIME( SEFDATE, SEFTIME, 10000 )
+
+            END DO
+            
+C.............  Abort if error found
+            IF( EFLAG ) THEN
+                MESG = 'Problem reading emission factors.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        END IF
+                         
 C.........  Read temporal-profile cross-reference file and put into tables
 C.........  Only read entries for pollutants that are in the inventory.
 C.........  Only read if not using uniform temporal profiles
@@ -741,83 +736,18 @@ C               file (if any), and write layer-1 emissions file (or all data).
             MDATE = MSDATE
             MTIME = MSTIME
 
-            IF ( WTINDP ) THEN
-
-               IF( .NOT. READ3( WNAME, 'TKMIN', 1,
-     &                          0, 0, TKMIN ) ) THEN
-                 MESG = 'Could not read TKMIN from ' // WNAME
-                 CALL M3EXIT( PROGNAME,0,0,MESG,2 )
-               END IF
-
-              IF( .NOT. READ3( WNAME, 'TKMAX', 1,
-     &                         0, 0, TKMAX ) ) THEN
-                MESG = 'Could not read TKMAX from ' // WNAME
-                CALL M3EXIT( PROGNAME,0,0,MESG,2 )
-              END IF
-
-              IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3,
-     &                         0, 0, METIDX ) ) THEN
-                MESG = 'Could not read TMMI from ' // WNAME
-                CALL M3EXIT( PROGNAME,0 ,0, MESG,2 )
-              END IF
-
-            ELSE
-
-              WDATE = WSDATE
-              WTIME = WSTIME
-
-            ENDIF
-
             DO T = 1, NSTEPS
 
 C.................  When there are activity data, assume that there is a 
 C                   temperature dependence, as with Models-3
                 IF( NIACT .GT. 0 ) THEN
 
-C.....................  Read gridded temperature data and convert to
-C                       source-based temperatures using the ungridding matrix
-                    IF ( .NOT. READ3( MNAME, TVARNAME, 1, 
-     &                                MDATE, MTIME, TA    ) ) THEN
-
-                	L = LEN_TRIM( TVARNAME )
-                	MESG = 'Could not read ' // TVARNAME( 1:L ) //
-     &                         'from ' // TNAME 
-                        CALL M3EXIT( PROGNAME, MDATE, MTIME, MESG, 2 )
-
-                    END IF
-
-                    CALL APPLUMAT( NSRC, NMATX, TA, UMAT(1), 
-     &                             UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ),
-     &                             TASRC )
-
-C.....................  Read source-based min/max temperatures for the current
-C                       day when there is a new day in GMT (met ) time zone
-                    IF( MDATE .NE. MLDATE .AND. .NOT. WTINDP ) THEN
-
-                	IF( .NOT. READ3( WNAME, 'TKMIN', 1, 
-     &                                   WDATE, WTIME, TKMIN ) ) THEN
-                	    MESG = 'Could not read TKMIN from ' // WNAME
-                            CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
-                	END IF
-
-                	IF( .NOT. READ3( WNAME, 'TKMAX', 1, 
-     &                                   WDATE, WTIME, TKMAX ) ) THEN
-                	    MESG = 'Could not read TKMAX from ' // WNAME
-                            CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
-                	END IF
-
-                	IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3, 
-     &                                   WDATE, WTIME, METIDX ) ) THEN
-                	    MESG = 'Could not read TMMI from ' // WNAME
-                            CALL M3EXIT( PROGNAME,WDATE,WTIME,MESG,2 )
-                	END IF
-
-                    END IF
 
                 END IF
 
 C.................  Generate hourly emissions for current hour
-                CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
+                CALL GENHEMIS( NGSZ, NEFSRC, NEFSTEP, JDATE, JTIME, 
+     &                         TZONE, DNAME, HNAME, EMISFACS, SRCIDX,
      &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), 
      &                         EMAC, EMACV, TMAT, EMIST )
 
@@ -841,23 +771,6 @@ C.....................  Write hourly emissions to I/O API NetCDF file
 
 C.................  Advance the output date/time by one time step
                 CALL NEXTIME( JDATE, JTIME, TSTEP )
-
-C.................  Advance the met date/time by one time step, saving the
-C                   old date
-                MLDATE = MDATE
-                CALL NEXTIME( MDATE, MTIME, TSTEP )
-
-C.................  Advance the min/max date/time by one day when the GMT date
-C                   of the meterology has changed
-C.................  Only advance time if the min/max file date is less than
-C                   the ending date. Pretmpr has already given a warning about
-C                   the mismatch.
-                IF( MDATE .NE. MLDATE .AND. 
-     &              WDATE .LT. WEDATE      ) THEN
-
-                    CALL NEXTIME( WDATE, WTIME, 240000 )
-
-                END IF
 
 C.................  Call QA report routine
 c               WFLAG = ( T .EQ. NSTEPS )

@@ -1,5 +1,6 @@
 
-        SUBROUTINE GENHEMIS( NPLE, JDATE, JTIME, TZONE, DNAME, HNAME,
+        SUBROUTINE GENHEMIS( NPLE, NEFSRC, NEFSTEP, JDATE, JTIME, 
+     &                       TZONE, DNAME, HNAME, EFARRAY, SRCIDX,
      &                       NAMIN, NAMOUT, EMAC, EMACV, TMAT, EMIST )  
 
 C***********************************************************************
@@ -73,7 +74,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
-        INCLUDE 'M5CNST3.EXT'   !  MOBILE5a/b constants
+        INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
@@ -88,18 +89,22 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  ISDSTIME, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN)    :: NPLE      ! Number of pols+emis types
-        INTEGER     , INTENT (IN)    :: JDATE  ! Julian date (YYYYDDD) in TZONE
-        INTEGER     , INTENT (IN)    :: JTIME     ! Time (HHMMSS) in TZONE
-        INTEGER     , INTENT (IN)    :: TZONE     ! Output time zone (typcly 0)
-        CHARACTER(*), INTENT (IN)    :: DNAME     ! day-spec file name or NONE
-        CHARACTER(*), INTENT (IN)    :: HNAME     ! hour-spec file name or NONE
-        CHARACTER(*), INTENT (IN)    :: NAMIN ( NPLE )      ! inv pol names
-        CHARACTER(*), INTENT (IN)    :: NAMOUT( NPLE )      ! inv pol names
-        REAL        , INTENT (IN)    :: EMAC ( NSRC, NPLE ) ! inv emis or actvty
-        REAL        , INTENT (OUT)   :: EMACV( NSRC, NPLE ) ! work emis/actvy
-        REAL        , INTENT (OUT)   :: TMAT ( NSRC, NPLE, 24 ) ! tmprl matrix
-        REAL        , INTENT (OUT)   :: EMIST( NSRC, NPLE )     ! hourly emis
+        INTEGER     , INTENT (IN)  :: NPLE      ! Number of pols+emis types
+        INTEGER     , INTENT (IN)  :: NEFSRC    ! Number of sources with EFs
+        INTEGER     , INTENT (IN)  :: NEFSTEP   ! Number of time steps of EFs
+        INTEGER     , INTENT (IN)  :: JDATE  ! Julian date (YYYYDDD) in TZONE
+        INTEGER     , INTENT (IN)  :: JTIME     ! Time (HHMMSS) in TZONE
+        INTEGER     , INTENT (IN)  :: TZONE     ! Output time zone (typcly 0)
+        CHARACTER(*), INTENT (IN)  :: DNAME     ! day-spec file name or NONE
+        CHARACTER(*), INTENT (IN)  :: HNAME     ! hour-spec file name or NONE
+        REAL        , INTENT (IN)  :: EFARRAY( NEFSRC, NPLE, NEFSTEP )   ! array of EFs
+        INTEGER     , INTENT (IN)  :: SRCIDX( NEFSRC )    ! index of sources in EFARRAY
+        CHARACTER(*), INTENT (IN)  :: NAMIN ( NPLE )      ! inv pol names
+        CHARACTER(*), INTENT (IN)  :: NAMOUT( NPLE )      ! inv pol names
+        REAL        , INTENT (IN)  :: EMAC ( NSRC, NPLE ) ! inv emis or actvty
+        REAL        , INTENT (OUT) :: EMACV( NSRC, NPLE ) ! work emis/actvy
+        REAL        , INTENT (OUT) :: TMAT ( NSRC, NPLE, 24 ) ! tmprl matrix
+        REAL        , INTENT (OUT) :: EMIST( NSRC, NPLE )     ! hourly emis
 
 C...........   TMAT update variables
 
@@ -210,35 +215,6 @@ C.............  Determine hours of output day in GMT for updating TMAT
 C.............  Set flags for daily and hourly data
             DFLAG = ( DNAME .NE. 'NONE' )
             HFLAG = ( HNAME .NE. 'NONE' )
-
-C.............  Compute the inverse temperature increment
-            IF( NTMPR .GT. 0 ) TINCINV = 1./ TMMINVL
-
-C.............  For mobile sources, define the vehicle type index for all 
-C               sources so it doesn't need to be looked up each time
-            IF( CATEGORY .EQ. 'MOBILE' ) THEN
-        	ALLOCATE( VIDX( NSRC ), STAT=IOS )
-        	CALL CHECKMEM( IOS, 'VIDX', PROGNAME )
-
-C.................  Convert mobile vehicle type values to their index values
-        	DO S = 1, NSRC
-                    I = INDEX1( CVTYPE( S ), MXM5VTYP, M5VTYPES )
-
-                    IF( I .LE. 0 ) THEN
-                	L = LEN_TRIM( CVTYPE( S ) )
-                	MESG = 'WARNING: Inventory vehicle type '// 
-     &                     CVTYPE( S )( 1:L ) //
-     &                     ' not used in MOBILE model.' // CRLF()//
-     &                     BLANK10 // 'No emission factors available '//
-     &                     'so emissions will not be computed.'
-                	CALL M3MSG2( MESG )                   
-                    END IF
-
-                    VIDX( S ) = I
-
-        	END DO
-
-            END IF  ! End of mobile only section
 
             FIRSTIME = .FALSE.
 
@@ -505,153 +481,34 @@ C.................  Set position of activity in activity list
 C.................  Set position of emission type in emission type list
                 NETP = INDEX1( NAMOUT( V ), NETYPE, EMTNAM )
 
-C.................  Set emission factor type and units conversion
-                EFTYPE = EMTEFT( NETP, NACT )
+C.................  Set position in emission factor list
+                NIDX = INDEX1( NAMOUT( V ), NEFS, EFSNAM )
 
-C.................  If non-diurnal emission type...
-                IF( EFTYPE .EQ. 'N' ) THEN
+C.................  Loop through sources and apply emission factors to
+C                   hourly activity     
+                DO S = 1, NSRC
 
-C.....................  Set position in non-diurnal emission factor list
-                    NIDX = INDEX1( NAMOUT( V ), NNDI, NDINAM )
+C.....................  Find current source in SRCIDX array
+                    L = FIND1( S, NEFSRC, SRCIDX )
 
-C.....................  Loop through sources and apply emission factors to
-C                       hourly activity for non-diurnal emissions    
-                    DO S = 1, NSRC
+                    IF( L < 0 ) THEN
+C                        WRITE( MESG,94010 ) 'WARNING: No emission ' //
+C     &               	  'factors found for source ', S, '.'
+C                        CALL M3MESG( MESG )
+                        EMIST( S,V ) = 0.
+                        CYCLE
+                    END IF
 
-C.........................  Get factors for interpolating non-diurnal emis 
-C                           factors and get temperature indices
-C.........................  Trap temperatures against min and max available 
-C                           temperatures and output messages to that affect
-                        CALL TMPINTRP( S, TASRC( S ), OSRC, 
-     &                                 T1, T2, PP, QQ       )
+C.....................  Adjust hour index to local time zone for setting 
+C                       index for this sources emission factor for this hour
+C                       Subtract 6 to account for index of 0 = 6 a.m.
+                    K   = 1 + MOD( HOUR + HCORR - TZONES(S) - 6, 24 )
 
-C.........................  Adjust hour index to local time zone for setting 
-C                           index for this sources emission factor for this hour
-                        K   = 1 + MOD( HOUR + HCORR - TZONES(S), 24 )
+C.....................  Apply emission factors to hourly activity data
+C.....................  Convert to tons (assuming EFs are in grams)
+                    EMIST( S,V ) = EMIST( S,V ) * EFARRAY( L,V,K )
 
-C.........................  Get PSI from unsorted emission factor table
-                        M   = EFSIDX( S,NACT )
-                        PSI = IPSIA ( M,K )
-
-C.........................  Find index of PSI in emission factor tables using
-C                           sorted list of PSIs
-                        M = FIND1( PSI, NPSI( NACT ), PSILIST( 1,NACT ))
-
-C.........................  Set vehicle type code
-                        C = VIDX( S )
-
-C.........................  Skip computation if no emission factors available 
-C                           for inventory type
-                        IF( C .LE. 0 ) CYCLE
-
-C.........................  Apply emission factors tp hourly activity data
-C.........................  Convert to tons (assuming EFs are in grams)
-                        EMIST( S,V ) = EMIST( S,V ) * 
-     &                               ( PP * EFNDIALL( T1,C,M,NIDX ) +
-     &                                 QQ * EFNDIALL( T2,C,M,NIDX )   )
-
-                    END DO  ! End loop on sources
- 
-C.................  If diurnal emisison type...
-                ELSE IF ( EFTYPE .EQ. 'D' ) THEN
-
-C.....................  Set position in non-diurnal emission factor list
-                    NIDX = INDEX1( NAMOUT( V ), NDIU, DIUNAM )
-
-C.....................  Loop through sources and apply emission factors and
-C                       to hourly activity for diurnal emissions    
-                    DO S = 1, NSRC
-
-C.........................  Adjust hour index to local time zone for setting 
-C                           index for this sources emission factor for this hour
-                        K   = 1 + MOD( HOUR + HCORR - TZONES(S), 24 )
-
-C.........................  Get PSI from unsorted emission factor table
-                        M   = EFSIDX( S,NACT )
-                        PSI = IPSIA ( M,K )
-
-C.........................  Find index of PSI in emission factor tables using
-C                           sorted list of PSIs
-                        M = FIND1( PSI, NPSI( NACT ), PSILIST( 1,NACT ))
-
-C.........................  Set vehicle type code
-                        C = VIDX( S )
-
-C.........................  Skip computation if no emission factors available 
-C                           for inventory type
-                        IF( C .LE. 0 ) CYCLE
-
-C.........................  Get min/max temperatures indices for diurnal  
-C                           emission factors
-                	J1 = METIDX( S,1 )
-                	J2 = METIDX( S,2 )
-                	J3 = METIDX( S,3 )
-                	J4 = METIDX( S,4 )
-
-C.........................  Initialize interpolation factor to make emis zero
-                	R1 = 0.
-                	R2 = 0.
-                	S1 = 0.
-                	S2 = 0.
-
-C.........................  When the min/max index is non-zero, then diurnal
-C                           emission factors will be expected.
-                	IF( J1 .NE. 0 ) THEN
-
-                            FAC(1) = EFDIUALL( J1, C, M, NIDX )
-                            FAC(2) = EFDIUALL( J2, C, M, NIDX )
-                            FAC(3) = EFDIUALL( J3, C, M, NIDX )
-                            FAC(4) = EFDIUALL( J4, C, M, NIDX )
-
-C.............................  Check if diurnal emission factors have been 
-C                               calculated for this temperature. If one  
-C                               emission type has been, they all have been.
-                            IF( FAC(1) .LT. 0. .OR.
-     &                          FAC(2) .LT. 0. .OR.
-     &                          FAC(3) .LT. 0. .OR.
-     &                          FAC(4) .LT. 0.   ) THEN
-
-                                CSRC = CSOURC( S ) 
-                                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L ) 
-                                
-                        	WRITE( MESG,94010 ) 'WARNING: '// 
-     &                             'Diurnal EFs are not available ' //
-     &                             'for PSI', PSI, CRLF() // BLANK10 //
-     &                             'Setting emissions to zero for' //
-     &                             CRLF()// BLANK10 // BUFFER( 1:L )
-                        	CALL M3MESG( MESG )
-
-C.............................  Get factors for interpolating diurnal em facs
-                            ELSE
-                		TMIN0 = VLDTMIN( J1 )
-                		TMAX0 = VLDTMAX( J1 )
-
-                                R1 = TINCINV*( TKMIN(S)-TMIN0 )
-                		R1 = AMOD( R1, 1.0 )
-                		R2 = 1.0 - R1
-                		S1 = TINCINV*( TKMAX(S)-TMAX0 )
-                		S1 = AMOD( S1, 1.0 )
-                		S2 = 1.0 - S1
-
-                            END IF
-
-C.........................  Otherwise, there are no diurnal emissions because
-C                           the minimum/maximum temperatures were too close
-C                           together.
-                	ELSE
-                            
-                	    FAC = 0.  ! array
-
-                	END IF  ! End check that diurnal emissions are zero
-
-                	EMIST( S,V ) = EMIST( S,V ) *
-     &                                 ( S2 * ( R2*FAC( 1 ) +
-     &                                          R1*FAC( 2 )  ) +
-     &                                   S1 * ( R2*FAC( 3 ) +
-     &                                          R1*FAC( 4 )  )   )
-
-                    END DO      ! End of loop on sources
-                END IF          ! End non-diurnal or diurnal check
+                END DO  ! End loop on sources
             END IF              ! End namin != namout
 
         END DO                  ! End pollutant loop
