@@ -145,7 +145,7 @@ C.......   Get cross-point grid parameters file and its description
      &          'Enter name for MET_CRO_3D input file',
      &          FSREAD3, 'MET_CRO_3D', 'TMPBIO' )
 
-        IF ( .NOT. DESC3( NNAME ) ) THEN
+        IF ( .NOT. DESC3( MNAME ) ) THEN
             MESG = 'Could not get description of file "' //
      &             MNAME( 1:TRIMLEN( MNAME ) ) // '"'
             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
