@@ -86,7 +86,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '$Revision$' ! CVS revision number
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -149,7 +149,7 @@ C   begin body of program SMKMERGE
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Retrieve control environment variables and set logical control
 C           flags. Use a local module to pass the control flags.

@@ -66,7 +66,7 @@ C...........   EXTERNAL FUNCTIONS
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '$Revision$' ! CVS revision number
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -160,7 +160,7 @@ C   begin body of program MRGGRID
  
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Retrieve values of environment variables
         LFLAG   = ENVYN( 'MRG_LAYERS_YN', 
