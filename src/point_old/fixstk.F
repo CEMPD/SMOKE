@@ -21,7 +21,7 @@ C * Last updated: $Date$
 C *
 C ****************************************************************************/
 
-        SUBROUTINE  FIXSTK( FDEV, IFIP, ISCC, 
+        SUBROUTINE  FIXSTK( FDEV, NSRC, IFIP, ISCC, 
      &                      STKHT, STKDM, STKTK, STKVE )
 
 C***********************************************************************
@@ -52,12 +52,13 @@ C...........   INCLUDES:
 C...........   ARGUMENTS and their descriptions:
 
         INTEGER FDEV	        !  unit number for stack parameter file PSTK
-        INTEGER IFIP ( NPSRC )	!  FIP codes
-        INTEGER ISCC ( NPSRC )	!  SCC codes
-        REAL	STKHT( NPSRC )	!  stack height (m)
-        REAL	STKDM( NPSRC )	!  stack diameter (m)
-        REAL	STKTK( NPSRC )	!  stack exhaust temperature (K)
-        REAL	STKVE( NPSRC )	!  stack exhaust velocity (m/s)
+        INTEGER NSRC            !  actual number of sources
+        INTEGER IFIP ( NSRC )	!  FIP codes
+        INTEGER ISCC ( NSRC )	!  SCC codes
+        REAL	STKHT( NSRC )	!  stack height (m)
+        REAL	STKDM( NSRC )	!  stack diameter (m)
+        REAL	STKTK( NSRC )	!  stack exhaust temperature (K)
+        REAL	STKVE( NSRC )	!  stack exhaust velocity (m/s)
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -214,7 +215,7 @@ C.......   Now read the rest of the file:
 C...........   Now do replacements of missing stack parameters:
 C...........   4 passes -- ht, dm, tk, ve
 
-        DO  33  S = 1, NPSRC
+        DO  33  S = 1, NSRC
 
             IF ( STKHT( S ) .LT. 0.0 ) THEN
                 FIP = IFIP( S )
