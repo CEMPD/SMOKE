@@ -65,7 +65,6 @@ C...........   EXTERNAL BLOCK DATA for mobile:
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Simulation-specific MOBILE5a parmeter list variables
-        INTEGER IPSIDX( MXPSI )      ! Sorting index for IPSIRA
         INTEGER IPSIR ( MXPSI )      ! Sorted   scenario-specific PSI list
         INTEGER MPNUM                ! Actual count of scenario-specific PSIs
         INTEGER P1, P2, P3, P4( 24 ) ! Dummies
@@ -173,6 +172,7 @@ C...........   Other local variables
 
         LOGICAL DFLAG                     ! Calculate diurnal factors when true
         LOGICAL EFLAG                     ! Error exists when true
+        LOGICAL FIRSTMPR                  ! First tmptr of current PSI when true
         LOGICAL RFLAG                     ! Diurnal facs _were_ calc'd when true
         LOGICAL SFLAG( MXPSI )            ! Update diurnal combos when true
         LOGICAL TFLAG                     ! Non-diu facs _were_ calc'd when true
@@ -552,7 +552,8 @@ C...................................................................
 
                         UPDATE( J ) = JJ
 
-                        IF( UPDATE( J ) .LE. UPDATE( J-1 ) ) THEN
+                        IF( J           .GT. 1             .AND.
+     &                      UPDATE( J ) .LE. UPDATE( J-1 )       ) THEN
 
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 )
@@ -931,6 +932,13 @@ C.........  indices for the combo PSIs that use them
 C.............  Find PSI for temperature index in main PSI list
             K = FIND1 ( MMTREF( I ), MRNUM, IPSI )
 
+            IF( K .LE. 0 ) THEN
+                WRITE( MESG, 94010 ) 
+     &            'Parameter scheme index', MMTREF( I ),
+     &            'from MEFTEMP not found in MPREF'
+                CALL M3EXIT('EMISFAC', 0, 0, MESG, 2 )
+            ENDIF
+
             DEPCNT  = ISTYPE( INDEXA( K ),1 )
             DEPOINT = ISTYPE( INDEXA( K ),2 )
 
@@ -1003,7 +1011,7 @@ C.........  Create new pure EFs where needed
         DO 201 IPM = 1, MPNUM
 
 C.............  Get indice from MPLIST
-            IPARM = IPSIR( IPSIDX( IPM ) )
+            IPARM = IPSIR( IPM )
             IPTIM = SEC2TIME( IPARM )
 
             IF( IPARM .GT. 24*3600 ) THEN
@@ -1114,8 +1122,10 @@ C.................  Also check if an update has been specifically requested
                 IF( .NOT. CHECK3 ( ENAME, ALLVAR3, SDATE3D, IPTIM ) .OR.
      &              UFLAG ) THEN
 
+                    ITEMP    = 1      ! Specify that more has changed than just temp
+                    FIRSTMPR = .TRUE. ! Specify first temperature for MOINBLD
+
 C.....................  Loop over temperature range for non-diurnal factors
-                    ITEMP = 1 ! Specify that more has changed than just temp
                     DO 101 T = 1, NTEMP
 
                         TMMI   = TIDXPSI( MMTC( K ),K )
@@ -1174,7 +1184,10 @@ C.........................  Create input file for MOBILE5a
                         REWIND( MODEV )                  
                         CALL MOINBLD( MODEV, IPARM , DEPOINT, NIDX,
      &                                CIDX , VOLORG, JYEAR, 
-     &                                TF   , TF_MIN, TF_MAX        )
+     &                                TF   , TF_MIN, TF_MAX, FIRSTMPR )
+
+C.........................  Turn off first temperature after first call
+                        FIRSTMPR = .FALSE.
 
 C.........................  Initialize error count
                         IERR = 0 
@@ -1236,6 +1249,7 @@ C.....................  Add non-diurnal EFs to master list
 
                 VFLAG( K ) = .TRUE.  ! Initialize - default: update non-diu EFs
                 SFLAG( K ) = .TRUE.  ! Initialize - default: update diurnal EFs
+                FIRSTMPR   = .TRUE.  ! Specific first temperature for MOINBLD
 
 C.................  Create remaining diurnal factors for IPARM by
 C.................  looping through remaining temperatures
@@ -1271,7 +1285,10 @@ C.............................  Create input file for MOBILE5a
                             REWIND( MODEV )                  
                             CALL MOINBLD( MODEV, IPARM , DEPOINT, NIDX,
      &                                    CIDX , VOLORG, JYEAR, 
-     &                                    TF   , TF_MIN, TF_MAX        )
+     &                                    TF, TF_MIN, TF_MAX, FIRSTMPR )
+
+C.............................  Turn off first temperature after first call
+                            FIRSTMPR = .FALSE.
 
 C.............................  Initialize error count
                             IERR = 0 
@@ -1337,7 +1354,7 @@ C.........  Create new mixed EFs where needed
         DO 401 IPM = 1, MPNUM
 
 C.............  Get indice from MPLIST
-            IPARM = IPSIR( IPSIDX( IPM ) )
+            IPARM = IPSIR( IPM )
             IPTIM = SEC2TIME( IPARM )
 
 C.............  Search for MPLIST indice in MPREF index
