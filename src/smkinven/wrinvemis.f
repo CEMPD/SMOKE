@@ -368,9 +368,19 @@ C           and hour-specific data
 
 C.........  Output for activities...
 
-C.........  Since NPACT < NPPOL for all cases, do not bother reallocating
-C           memory for EO* and V*SET arrays.  Just reuse the ones that we have.
+C.........  Deallocate arrays for variable names
+        DEALLOCATE( EONAMES, EOUNITS, EOTYPES, EODESCS )
 
+C.........  Allocate memory for temporary variable names etc.
+        ALLOCATE( EONAMES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EONAMES', PROGNAME )
+        ALLOCATE( EOUNITS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EOUNITS', PROGNAME )
+        ALLOCATE( EOTYPES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EOTYPES', PROGNAME )
+        ALLOCATE( EODESCS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EODESCS', PROGNAME )
+        
 C.........  Get names, units, etc. of output activity-specific records
         CALL BLDENAMS( CATEGORY, NIACT, NPACT, ACTVTY, 
      &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
