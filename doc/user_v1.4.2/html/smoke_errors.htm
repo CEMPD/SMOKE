@@ -1,0 +1,1134 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Chapter 13</title>
+</head>
+
+<body>
+
+<div class="Section1">
+  <h1><a name="_Toc5782166">Chapter 13 – Errors, Warnings and Notes</a></h1>
+  <h2><a name="_Toc5782167">SMKINVEN</a></h2>
+  <p class="MsoNormal">The information available so far provides errors and
+  warnings for SMKINVEN.</p>
+  <h3><a name="_Toc5782168">Errors</a></h3>
+  <p class="MsoNormal">The <b>user errors</b> are listed first, followed by the <b>internal
+  errors</b>. Within each group, the errors of each type are listed in
+  alphabetical order.</p>
+  <p class="MsoNormal">Internal errors should not be encountered by users under
+  normal circumstances. They are extra internal SMOKE checks to ensure
+  consistency among 2 or more subroutines in the program. Users who modify the
+  Smkinven code are more likely to encounter internal errors, since they may
+  have made a change in one place that caused an inconsistency in another.</p>
+  <table border="0" cellspacing="0" cellpadding="0" style="margin-left:.35pt;
+ border-collapse:collapse;mso-table-layout-alt:fixed;mso-padding-alt:0in .35pt 0in .35pt">
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">1.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Bad format of MOBILE INFORMATION file at line,
+        &lt;Line number&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>The MCODES file is badly formatted
+        at the line indicated.<br>
+        <b>Solution: </b>Check the format at the specified line number of the 'MCODES'
+        file. The format is provided in Chapter 9.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">2.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Cannot determine year from invalid start date,
+        &lt;DATE in YYYYDDD&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>The start date indicated (in Julian
+        days) from the gridded input inventory file does not contain a valid
+        year.<br>
+        <b>Solution: </b>Check the value of SDATE3D in the header of the gridded
+        input inventory file, AG. Create a new AG file with a valid year or use
+        the m3edhdr I/O API Tool to insert a valid date into the header. The
+        date can be the first day of the year (e.g., 1996001 is the January 1<sup>st</sup>,
+        1996)</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">3.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Cannot import gridded mobile or point source data.</p>
+        <p class="MsoNormal"><b>Problem: </b>Gridded mobile or point source data
+        are not permitted in the Smkinven program.<br>
+        <b>Solution: </b>If mobile are point source data are available as a
+        gridded annual inventory file, these must be treated as an area source
+        in Smkinven to be able to import the data. The logical input file name
+        for the file that should be provided is AG.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">4.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Could not get description of file &lt;Logical file
+        name&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>Smkinven could not access header of
+        the logical file name shown.<br>
+        <b>Solution: </b>Ensure that the logical file name (environment
+        variable) is defined in the run script used to run Smkinven before
+        Smkinven is run. If not, change the script to define the logical file
+        name. If so, the file is probably corrupted. Also, make sure that you
+        have read permission on the file.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">5.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Could not interpret formula for extra pollutant
+        from environment variable, SMKINVEN_FORMULA: &lt;Extra information&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>The formula provided with the
+        SMKINVEN_FORMULA appears to Smkinven as having extra information past
+        the capabilities of Smkinven to interpret the formula. The extra
+        information is shown as part of the error message.<br>
+        <b>Solution: </b>Check the formula and make corrections. Only 2
+        inventory pollutants are permitted as part of the formula. The only
+        recognized mathematical operations are addition and subtraction.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">6.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Could not read &lt;Variable Name&gt; from file AG</p>
+        <p class="MsoNormal"><b>Problem: </b>The data for the pollutant or
+        activity listed is not available in the file listed. This message may
+        appear only when trying to read from a pre-gridded inventory file (AG
+        file). The variable is in the header, but the data are corrupted some
+        how.<br>
+        <b>Solution: </b>Regenerate the AG file and make sure that the process
+        that creates it (Smkmerge or a custom program) completes successfully.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">7.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Country packet found again at line, &lt;Line
+        Number&gt;, but also at line, &lt;Line Number&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>There should only be one country
+        packet in the country, state and county names/codes file, but another
+        one was found.<br>
+        <b>Solution: </b>Remove one of the country packets in the country, state
+        and county names/codes file, COSTCY.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">8.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Country, state, and county sections must be present
+        in file</p>
+        <p class="MsoNormal"><b>Problem: </b>The country, state and county
+        names/codes file is missing one or more of the following sections:
+        /COUNTRY/, /STATE/, or /COUNTY/.<br>
+        <b>Solution: </b>Find out which section is missing from the COSTCY file
+        and add it. Also make sure that the sections are formatted properly,
+        based on the documentation in Chapter 9.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">9.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: County packet found again at line &lt;Line
+        Number&gt;, but also at line, &lt;Line Number&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>There should only be one county
+        packet in the country, state and county names/codes file, but another
+        one was found.<br>
+        <b>Solution: </b>Remove one of the county packets in the country, state
+        and county names/codes file, COSTCY.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">10.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Do not recognize SMK_SOURCE environment variable
+        setting</p>
+        <p class="MsoNormal"><b>Problem: </b>The SMK_SOURCE environment variable
+        setting is not set to a valid letter representing a source category.<br>
+        <b>Solution: </b>Check the run script to make sure that the SMK_SOURCE
+        environment variable is either A, M , or P. The letter B is not a valid
+        value for running Smkinven.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">11.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Duplicate records found for<br>
+        &lt;Source Information&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>Duplicate inventory records were
+        found for source(s) listed, and the RAW_DUP_CHECK environment variable
+        is set to Y so that duplicate records will cause an error instead of
+        being summed.<br>
+        <b>Solution: </b>Either remove the duplicate records from the inventory
+        file (if indeed they are duplicated emissions) or set the RAW_DUP_CHECK
+        option to &quot;N&quot; (if it is okay to sum the emissions from these
+        records. One of these options is required, since SMOKE relies on <i>unique</i>
+        source entries, and duplicates indicate that the entries are not unique.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">12.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: End of file reached unexpectedly. Check format of
+        ASCII inventory file.</p>
+        <p class="MsoNormal"><b>Problem: </b>The end of the ASCII inventory file
+        was reached unexpectedly. This error can occur only when you are reading
+        in an inventory file that you created previously, which requires the
+        option IMPORT_AVEINV_YN to be set to &quot;N&quot;. This option is only
+        valid for point sources.<br>
+        <b>Solution: </b>The ASCII inventory file (PSRC) must have been
+        corrupted and no longer has the same number of sources as the
+        corresponding I/O API inventory file (PNTS). The inventory must be
+        regenerated using Smkinven and the IMPORT_AVEINV_YN option set to
+        &quot;N&quot;.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">13.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: End of file reached unexpectedly. Check format of
+        mobile information file.</p>
+        <p class="MsoNormal"><b>Problem: </b>The end of the Mobile Information
+        file was reached prematurely.<br>
+        <b>Solution: </b>Check the format of the mobile information file, MCODES.
+        Smkinven first determines the number of lines in the file and then reads
+        the file. Nearly the only way that this error can appear is if someone
+        modifies the file while the Smkinven program is running.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">14.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Environment settings indicate no files are to be
+        read</p>
+        <p class="MsoNormal"><b>Problem: </b>Some environmental variables are
+        set incorrectly.<br>
+        <b>Solution: </b>Check to make sure that at least one of the following
+        environmental variables is set to Y: IMPORT_AVEINV_YN, DAY_SPECIFIC_YN,
+        HOUR_SPECIFIC_YN, or IMPORT_GRDIOAPI_YN.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">15.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Error in raw inventory file(s)</p>
+        <p class="MsoNormal"><b>Problem: </b>There was an error processing the
+        raw inventory file(s). The files were read fine, but Smkinven could not
+        complete process the data into SMOKE inventory formats for some reason.<br>
+        <b>Solution: </b>There should be one or more other error messages with
+        more information pertaining to problems in the raw inventory file. For
+        example, see Error 11.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">16.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Error reading raw inventory file &lt;Logical File
+        Name&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>There was an error reading the raw
+        inventory file listed in the message..<br>
+        <b>Solution: </b>There should be one or more other error messages with
+        more information pertaining to problems in the raw inventory file. For
+        example, see Error 11.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">17.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Error reading variable &lt;Variable Name&gt;, from
+        INVENTORY file</p>
+        <p class="MsoNormal"><b>Problem: </b>An error occurred while reading
+        variable the variable name shown from the PNTS inventory file. This
+        error can occur only when you are reading in an inventory file that you
+        created previously, which requires the option IMPORT_AVEINV_YN to be set
+        to &quot;N&quot;. This option is only valid for point sources.<br>
+        <b>Solution: </b>The PNTS file has somehow been corrupted. Smkinven can
+        read the header but the data cannot be read. The most likely cause of
+        this problem is that Smkinven crashed while the file was being created.
+        Regenerate the PNTS file from scratch and make sure Smkinven completes
+        normally. It is recommended that you remove the existing PNTS file
+        before overwriting it.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">18.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: File format is not recognized for file, INFILE.</p>
+        <p class="MsoNormal"><b>Problem: </b>The format of the inventory input
+        file is not recognized. This error occurs only when reading from a
+        list-formatted file. SMOKE cannot determine the format of one or more of
+        the files in the list.<br>
+        <b>Solution: </b>SMOKE usually can figure out a file format, but
+        sometimes has problems. The easiest and quickest way to ensure that
+        SMOKE knows the format of the file you are providing is to insert a
+        #IDA, #EMS-95, or #EPS2 header into the first line of the first file
+        listed in the list-formatted input file. Chapter 9 documents these
+        header entries in the section on the inventory input files.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">19.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Input data contains country/state code &lt;State
+        Name&gt; but it is not found in state/county codes file.</p>
+        <p class="MsoNormal"><b>Problem: </b>The country, state and county code
+        from an inventory input file is not found in the country, state and
+        county names/codes file.<br>
+        <b>Solution: </b>Check the code listed to make sure that it is correct
+        in the inventory. If correct, add the state name to the COSTCY file. If
+        not correct, replace entries in the inventory file with the correct
+        state code.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">20.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: In SMOKE list-formatted inventory file, &lt;File
+        Name&gt;, could not determine format of file listed at line', J</p>
+        <p class="MsoNormal"><b>Problem: </b>The format of the inventory input
+        file is not recognized. This error occurs only when reading from a
+        list-formatted file. SMOKE cannot determine the format of one or more of
+        the files in the list.<br>
+        <b>Solution: </b>SMOKE usually can figure out a file format, but
+        sometimes has problems. The easiest and quickest way to ensure that
+        SMOKE knows the format of the file you are providing is to insert a
+        #IDA, #EMS-95, or #EPS2 header into the first line of the first file
+        listed in the list-formatted input file. Chapter 9 documents these
+        header entries in the section on the inventory input files.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">21.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: In SMOKE list-formatted inventory file, &lt;File
+        Name&gt;, previous file was &lt;Format 1&gt; format, but file at line
+        &lt;Line Number&gt; is &lt;Format 2&gt; format.'</p>
+        <p class="MsoNormal"><b>Problem: </b>The files listed in the SMOKE
+        list-formatted inventory input file (ARINV, MBINV, or PTINV) have
+        different inventory formats. While SMOKE does support several formats
+        (IDA, EMS-95, and EPS2), users may not combine different formats in the
+        same Smkinven run.<br>
+        <b>Solution: </b>(1) Change the format of one or more of the files that
+        are inconsistent. The Models-3 SMOKE Tool has some capabilities to
+        reformat inventory files (and this capability requires SAS).<br>
+        (2) Process each format as a separate inventory through SMOKE. This
+        might require having 2 &quot;area&quot; inventories, if two different
+        formats are used for importing area source emissions. Combine the
+        model-ready files at the end of SMOKE processing using the Mrggrid
+        program.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">22.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: I/O Error, &lt;Error Number&gt; reading stack
+        replacements file at line, &lt;Line Number&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>There was an error reading the
+        stack replacements file at the listed line.<br>
+        <b>Solution: </b>Make sure that the stack replacements file is properly
+        formatted as described in Chapter 9. The Error Number provided depends
+        on the platform and it is the &quot;READ&quot; error from the Fortran
+        compiler on the platform of interest. Please consult the compiler
+        documentation for the platform on which you are running.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">23.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Missing data for &lt;Pollutant&gt; for source:<br>
+        &lt;Source Information&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>There are missing emissions for the
+        pollutant shown for the listed source. This is only an error when the
+        RAW_SRC_CHECK environment variable is set to &quot;Y&quot; in the script
+        that runs Smkinven. Please not that the length of this list of sources
+        is controlled by the SMK_MAXERROR option.<br>
+        <b>Solution: </b>(1) Check the inventory input file (ARINV, MBINV, PTINV,
+        or the components of a list file) for missing emissions for the source(s)
+        listed. Put in 0. if the emissions should not be missing.<br>
+        (2) Change the RAW_SRC_CHECK environment variable to &quot;N&quot; in
+        the script that runs Smkinven. This is only appropriate if it is okay to
+        have missing emissions values in the inventory (for example, a source
+        has information for VOC but no other pollutants. With this setting,
+        SMOKE will set all missing emissions to zero.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">24.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Missing data for some sources is not allowed
+        because the environment variable RAW_SRC_CHECK was set to N.</p>
+        <p class="MsoNormal"><b>Problem: </b>Since the environment variable
+        RAW_SRC_CHECK is set to &quot;N&quot;, missing data for sources is not
+        allowed. This message will be accompanied by a list of sources (see
+        error 23).<br>
+        <b>Solution: </b>Either fix the missing data or change the environment
+        variable to Y.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">25.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: No variables found in gridded input file.</p>
+        <p class="MsoNormal"><b>Problem: </b>The gridded input inventory file,
+        AG, does not contain any variables.<br>
+        <b>Solution: </b>Check gridded file and fix. The file may have been
+        corrupted. It can be regenerated by the Smkmerge program or by a
+        user-prepared program to generate this file.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">26.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Number of pollutant records &lt;Number&gt;, Memory
+        allocated : &lt;Limit&gt;<br>
+        Insufficient memory allocated for codes/names file</p>
+        <p class="MsoNormal"><b>Problem: </b>Smkinven allocated a certain amount
+        of memory for the pollutants and activities input files (SIPOLS and
+        ACTVNAMS) and the files had more information when Smkinven tried to read
+        the files.<br>
+        <b>Solution: </b>This error can happen when the file is being edited
+        while the program is running. Rerun Smkinven and make sure no on is
+        editing the SIPOLS or ACTVNAMS files. This problem may indicate the
+        program is having a problem internally with memory integrity, which
+        should only happen if there has been an improper change or if there is a
+        program bug.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">27.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem at line &lt;Line Number&gt; of &lt;Logical
+        File Name&gt; . Could not open file:<br>
+        &lt;Physical File Name&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>The raw inventory input file shown
+        in the error cannot be found by the program.<br>
+        <b>Solution: </b>Check the list-formatted file shown (with the logical
+        file name) to make sure the correct file name is listed for at the line
+        number given. <b>Make sure that the path for this file is absolutely
+        correct. Problems with the path can include:<br>
+        </b>a. Backslashes instead of slashes (or vice versa)<br>
+        b. Incorrect directory structure listed (using a file from another
+        persons computer will most likely not work, unless you have the same
+        directory structure)<br>
+        c. Type-o in path or file name</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">28.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem at line &lt;Line Number&gt; of &lt;Logical
+        File Name&gt;. EMS-95 files must be in groups of five.</p>
+        <p class="MsoNormal"><b>Problem: </b>The EMS-95 input files listed in
+        the SMOKE list-formatted input file (given by the logical file name in
+        the error) are not correctly grouped.<br>
+        <b>Solution: </b>This error should happen for point sources only, for
+        which EMS-95 format includes 5 separate files for the annual inventory.
+        The files must be in the alphabetical order by state: device, emissions,
+        facility, point, and stack. Check the input file (listed by logical file
+        name in the error) and change it so that the inputs are in groups of
+        five in the proper order. EMS-95 inputs are usually separated by state,
+        and this approach will run faster in Smkinven.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">29.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem at line &lt;Line Number&gt; of &lt;Logical
+        File Name&gt;. INVYEAR packet can be used only once for each group of
+        five EMS-95 files.</p>
+        <p class="MsoNormal"><b>Problem: </b>There are too many INVYEAR packets
+        for the EMS-95 input files, listed in the SMOKE list-formatted input
+        file (shown by logical file name in the error) at the line number
+        indicated.<br>
+        <b>Solution: </b>Remove any extra INVYEAR packets from the input file,
+        FNAME. Make sure that the inputs are in groups of five, as described
+        with error 28.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">30.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem found in country, state, county file</p>
+        <p class="MsoNormal"><b>Problem: </b>A problem occurred while reading
+        the country, state and county file.<br>
+        <b>Solution: </b>Check the format of the country, state and county file,
+        COSTCY. This error message should be preceded by another error message
+        with more detail.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">31.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem processing formulas</p>
+        <p class="MsoNormal"><b>Problem: </b>An error occurred while processing
+        the formula set by the SMKINVEN_FORMULA..<br>
+        <b>Solution: </b>Check the variable formulas. This error message should
+        be preceded by another error message with more detail. Please refer to
+        the documentation on the allowed content of the SMKINVEN_FORMULA
+        setting.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">32.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem reading gridded inventory file</p>
+        <p class="MsoNormal"><b>Problem: </b>An error occurred while reading the
+        gridded inventory input file.<br>
+        <b>Solution: </b>Check the status and location of the gridded inventory
+        input file. This error message should be preceded by another error
+        message with more detail.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">33.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem reading mobile information file</p>
+        <p class="MsoNormal"><b>Problem: </b>There was an either a formatting
+        error or read error the MOBILE INFORMATION file, MCODES.<br>
+        <b>Solution: </b>Check the status and location of the mobile information
+        file, MCODES. This error message should be preceded by another error
+        message with more detail. Make sure that you have read permission on the
+        file specified.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">34.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Problem writing SCC file</p>
+        <p class="MsoNormal"><b>Problem: </b>An error occurred while writing the
+        SCC file.<br>
+        <b>Solution: </b>Check the Assigns file and/or run script to make sure
+        it is giving a valid name and location for the SCC file, either ASCC,
+        MSCC or PSCC. The most common problem is that the directory path does
+        not exist. If this is the problem, you must create the directory needed
+        (the mkdir command in UNIX). Make sure that you have write permission on
+        the path and/or file specified.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">35.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: SMOKE ASCII inventory file has been corrupted at
+        source ID &lt;Source ID number&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>The SMOKE ASCII inventory file,
+        PSRC, is causing an error at the listed source. This error can only
+        happen for point sources when the IMPORT_AVEINV_YN option is set to
+        &quot;Y&quot;.<br>
+        <b>Solution: </b>The ASCII inventory file (PSRC) must have been
+        corrupted. You can attempt to manual correct the file if the formatting
+        error is obvious. Otherwise, the inventory must be regenerated using
+        Smkinven and the IMPORT_AVEINV_YN option set to &quot;N&quot;.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">36.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Some requested counties not found in county names
+        file:</p>
+        <p class="MsoNormal"><b>Problem: </b>The counties read are less than the
+        number requested by the calling program.<br>
+        <b>Solution: </b>Check the country, state and counties file, COSTCY, for
+        any missing states. This error is only likely to occur when the COSTCY
+        has been modified while it is being read. This problem may indicate the
+        program is having a problem internally with memory integrity, which
+        should only happen if there has been an improper change or if there is a
+        program bug.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">37.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: State packet found again at line &lt;Line
+        Number&gt; but also at line &lt;Line Number 2&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>There should only be one state
+        packet in the country, state and county names/codes file, but another
+        one was found.<br>
+        <b>Solution: </b>Remove one of the state packets in the country, state
+        and county names/codes file, COSTCY.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">38.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Time step needs to be 87600000 or 240000 HHMMSS to
+        determine temporal approach</p>
+        <p class="MsoNormal"><b>Problem: </b>Time step in the gridded input
+        inventory file is not one of the recognized values.<br>
+        <b>Solution: </b>Check the gridded input inventory file and correct it
+        if needed. This file can be generated by the Smkmerge program. The time
+        step in the header can be changed using the m3edhdr I/O API utility.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">39.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Variable &lt;Variable Name&gt; from formula was not
+        found in emissions inputs</p>
+        <p class="MsoNormal"><b>Problem: </b>The variable shown in the error
+        message from a formula specified by the SMKINVEN_FORMULA option was not
+        found in the emissions inventory data.<br>
+        <b>Solution: </b>Change the script used to run Smkinven to contain the
+        correct variable names or to not use any formula.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">40.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: Error writing output file &lt;Logical File Name&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>An error occured while writing the
+        output I/O API inventory file (logical file name given in the error,
+        defaults are AREA, MOBL, and PNTS)<br>
+        <b>Solution: </b>(1)<b> </b>If Smkinven is being run to overwrite an
+        existing file, manually delete that file before running Smkinven and try
+        again.<br>
+        (2) Check the Assigns file and/or script used to run Smkinven to ensure
+        that the logical file name had been set to a valid path. Make sure that
+        the full path of the file exists.<br>
+        (3) Make sure that you have permission to write to the specified path.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">41.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR writing temporal x-ref file</p>
+        <p class="MsoNormal"><b>Problem: </b>An error occured while writing the
+        temporal cross-reference file, PTREF_ALT. This error can only happen
+        when importing EMS-95 point sources.<br>
+        <b>Solution: </b>(1) Check the assigns file to make sure it is giving a
+        valid name and path for the temporal cross-reference file, PTREF_ALT.<br>
+        (2) Make sure that you have permission to write to the specified path.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">42.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: I/O error, IOS, reading country, state, &amp;
+        county names file at line, IREC'</p>
+        <p class="MsoNormal"><b>Problem: </b>An error was encountered when
+        reading the country, state and county names/codes file.<br>
+        <b>Solution: </b>Check the location of the country, state and county
+        names/codes file, COSTCY, to make sure it is where the script is looking
+        for it.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">43.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">ERROR: I/O error, IOS, reading MOBILE INFORMATION file at
+        line, I'</p>
+        <p class="MsoNormal"><b>Problem: </b>There was an error reading the
+        MOBILE INFORMATION file at the specified line number.<br>
+        <b>Solution: </b>Check the location of the mobile information file,
+        MCODES, to make sure it is where the script is looking for it</p>
+      </td>
+    </tr>
+  </table>
+  <p class="MsoNormal">&nbsp;<o:p>
+  </o:p>
+  </p>
+  <table border="0" cellspacing="0" cellpadding="0" style="margin-left:.35pt;
+ border-collapse:collapse;mso-table-layout-alt:fixed;mso-padding-alt:0in .35pt 0in .35pt">
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">44.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">INTERNAL ERROR: Actual count of state codes in error</p>
+        <p class="MsoNormal"><b>Problem: </b>State code(s) from the input file
+        were not found in the country, state, and county names/codes file.<b>Solution:
+        </b>See Error 19.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">45.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">INTERNAL ERROR: Actual number of hour sources, NPDSRC=
+        &lt;Number&gt; Dimensioned number, MXPDSRC = &lt;Number&gt; . Fix by
+        ensuring ALL period-specific sources in the file for any day or hour
+        have entries for at the same day or hour.</p>
+        <p class="MsoNormal"><b>Problem:</b> While reading day- or hour-specific
+        data, Smkinven could not allocate enough memory.<br>
+        <b>Solution:</b> Smkinven allocates memory for these data by finding the
+        maximum number of sources <b><i>for any one day or hour</i></b>. To fix
+        the problem, create a list of <b>ALL</b> day- or hour-specific sources
+        and add this list to the input file for a single day or hour, and put in
+        zero emissions for sources that do not actually have emissions on that
+        day or hour. Only one pollutant need be list this way for the fix to
+        work.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">46.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">INTERNAL ERROR: Do not know about sorting type &lt;Sorting
+        type&gt; in program SRCMEM</p>
+        <p class="MsoNormal"><b>Problem: </b>The sorting type is invalid in the
+        subroutine SRCMEM.<b><br>
+        Solution: </b>One of the programs is calling SRCMEM with the incorrect
+        sorting type. Sorting type should be either SORTED or UNSORTED.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">47.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">INTERNAL ERROR: Do not know about source category
+        &lt;Source Category Name&gt; in program SRCMEM.</p>
+        <p class="MsoNormal"><b>Problem: </b>The source category is incorrect in
+        the call to the SRCMEM subroutine.<br>
+        <b>Solution: </b>One of the programs is calling SRCMEM with the
+        incorrect source category. Source category should one of the following:
+        AREA, MOBILE, or POINT.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">48.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">INTERNAL ERROR: Do not know type &lt;Type Name&gt; in
+        &lt;Program&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>The type is not known by either the
+        GENPDOUT or GENPDINFO subroutines.<br>
+        <b>Solution: </b>Check the calls to the subroutines GENPDOUT and
+        GENPDINFO in Smkinven and make sure that the TYPNAM argument is set to
+        either day or hour.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">49.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">INTERNAL ERROR: Program RDINVCHR, does not know about
+        variable &lt;Variable Name&gt;</p>
+        <p class="MsoNormal"><b>Problem: </b>There is an unknown variable (as
+        listed) in the I/O API or ASCII inventory input files (ASCII: ASRC, MSRC,
+        or PSRC; I/O API: AREA, MOBL, or PNTS), detected in the program RDINVCHR.<br>
+        <b>Solution: </b>Make sure the call to the RDINVCHR subroutine lists
+        only valid variables as defined by the MODSOURCE module.</p>
+      </td>
+    </tr>
+    <tr>
+      <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+        <p class="MsoNormal" align="right" style="text-align:right">50.</p>
+      </td>
+      <td width="599" valign="top" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+        <p class="H4">INTERNAL ERROR: Program RDINVCHR found unread variable
+        &lt;Variable Name&gt; NOTE: ASCII inventory file is not opened.</p>
+        <p class="MsoNormal"><b>Problem: </b>The program RDINVCHR was requested
+        by the calling subroutine a variable to read from the inventory file
+        that is not in the I/O API inventory file, but the ASCII inventory file
+        has not been previouly (before RDINVCHR) opened by the program.<b><br>
+        Solution: </b>Modify calling program or subroutine to open the ASCII
+        inventory file before calling RDINVCHR and make sure that the list of
+        request source characteristics passed to RDINVCHR are valid as defined
+        in the MODSOURC module.</p>
+      </td>
+    </tr>
+  </table>
+  <p class="H3">&nbsp;<o:p>
+  </o:p>
+  </p>
+  <p class="H3">&nbsp;<o:p>
+  </o:p>
+  </p>
+</div>
+<b style="mso-bidi-font-weight:normal"><span style="font-size:14.0pt;
+mso-bidi-font-size:10.0pt;font-family:&quot;Times New Roman&quot;;mso-fareast-font-family:
+&quot;Times New Roman&quot;;mso-ansi-language:EN-US;mso-fareast-language:EN-US;
+mso-bidi-language:AR-SA;layout-grid-mode:line"><br clear="all" style="page-break-before:
+always;mso-break-type:section-break">
+</span></b>
+<h3><a name="_Toc5782169">Warnings</a></h3>
+<table border="0" cellspacing="0" cellpadding="0" style="margin-left:.35pt;
+ border-collapse:collapse;mso-table-layout-alt:fixed;mso-padding-alt:0in .35pt 0in .35pt">
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">1.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Applying default time zone, &lt;Time zone&gt;, to
+      country/state/county code: &lt;Country, State, and County code&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>A time zone was not specified for the
+      country, state and county code listed in the message.<br>
+      <b>Solution: </b>If the region code is in your inventory, check to make
+      sure the country, state and county code is correct and check the COSTCY
+      file to make sure it has a time zone specified for the above code. If you
+      do not know the time zone, you can probably find it on the internet
+      somewhere. If the code is not in your inventory, this warning will not
+      affect your results in any way.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">2.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Blank, alphabetic, or 0 data code at line &lt;Line
+      Number&gt; in code/names file. Skipping record.</p>
+      <p class="MsoNormal"><b>Problem: </b>Invalid values in the pollutant or
+      activity names/codes file, the record will be skipped.<br>
+      <b>Solution: </b>Check the pollutant or activity code/name at the line
+      number indicated in both the SIPOLS or ACTVNAMS. Change the file to remove
+      the warning. This warning will ultimately result in an error if the
+      pollutant at the line number mentioned is in your inventory.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">3.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Boiler requested, but is not present in ASCII
+      inventory file</p>
+      <p class="MsoNormal"><b>Problem: </b>A request is being made to process
+      the Boiler ID from the ASCII inventory file, but it is not present in the
+      file.<b><br>
+      Solution: </b>If the boiler ID is not necessary, then nothing should be
+      done. The boiler ID is used only when importing CEM data. It is used as
+      the first way to try to match the inventory data with the CEM data. If the
+      match fails then the stack ID is tried, so the boiler information is not
+      essential. The boiler ID is only going to be written to the ASCII
+      inventory file from IDA format (the only one that supports a separate
+      field for boiler ID).</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">4.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Duplicate code &lt;Code Number&gt; at line &lt;Line
+      Number&gt; in codes/names file. Skipping record.</p>
+      <p class="MsoNormal"><b>Problem: </b>There is more than one pollutant with
+      the same code in the SIPOLS and/or ACTVNAMS files, so the second one will
+      be skipped.<br>
+      <b>Solution: </b>Change the code numbers in the SIPOLS and/or ACTVNAMS
+      files to be unique across all pollutants and activities.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">5.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Duplicate name &lt;Pollutant or activity variable
+      name&gt; at line &lt;Line Number&gt; in codes/names file. Skipping record.</p>
+      <p class="MsoNormal"><b>Problem: </b>There is more than one pollutant with
+      a certain name, so the second one will be skipped.<br>
+      <b>Solution: </b>Change the pollutan names in the SIPOLS and/or ACTVNAMS
+      files to be unique across all pollutants and activities. This is
+      especially important if the pollutant mentioned is actually in the
+      inventory and you are using EPS2 input files.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">6.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Duplicate records found for:<br>
+      &lt;Source Inventory&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>Duplicate records were found for the
+      listed sources. Note that the number of times this warning will be written
+      is limited by the SMK_MAXWARNING setting.<b><br>
+      Solution: </b>If duplicate records in the invnetory are acceptable to the
+      user, then SMOKE will add the emissions from these records. If not, then
+      the duplicates should be corrected by changing the SCCs and/or
+      country/state/county codes so that the records are unique. To turn this
+      warning to an error, set the RAW_SRC_CHECK option to &quot;Y&quot;.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">7.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Ignoring HOURLY_TO_PROFILE Y value because
+      HOURLY_TO_DAILY is set to Y</p>
+      <p class="MsoNormal"><b>Problem: </b>The HOURLY_TO_DAILY environment
+      variable overrides the HOURLY_TO_PROFILE variable.<br>
+      <b>Solution: </b>If you wish to use HOURLY_TO_PROFILE, you must set
+      HOURLY_TO_DAILY to N. For more information on these settings, please refer
+      to Chapter 7 Smkinven documentation.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">8.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Maximum number of pollutants or activities that can
+      be be written to the I/O API file is NDATMAX. This limitation is caused by
+      the I/O API variable limit of 120. WARNING: Resetting total number of
+      output pollutants and activities to &lt;New number&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>There are too many output variables.
+      There is a limit on the number of variables in an I/O API file. The total
+      number of output pollutants and activities will be reset to the maximum.<br>
+      <b>Solution: </b>SMOKE will reset the number of variables to the maximum
+      for you. If you want all of the data to be imported, then you must run
+      SMOKE with separate inventory files that each have fewer than the minimum
+      number allowed for each source category. These limits are 19 for area, 54
+      for mobile, and 15 for point sources.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">9.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Name too long for I/O API variable names at line
+      &lt;Line Number&gt;, in pollutant file. Truncating to &lt;New name&gt;.</p>
+      <p class="MsoNormal"><b>Problem: </b>The variable name in the pollutant
+      file is longer than the I/O API variable length (16 characters) and will
+      be truncated.<br>
+      <b>Solution: </b>Either shorten the variable name in the input file or
+      leave it to SMOKE to truncate the name.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">10.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: &lt;Number&gt; input data records dropped. This has
+      resulted in the following amounts of lost data (emissions are in
+      tons/year): &lt;list of pollutants and how much emissions affected&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>Lets the user know how many records
+      were dropped and the amount of emissions lost. Messages about why the
+      records were dropped should be included with previous messages.<br>
+      <b>Solution: </b>This just lets the user know how many records were
+      dropped. If the amount of emissions is not acceptable, then fix the
+      problems with the inventory mentioned earlier in the program run log..</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">11.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Negative annual data reset to zero for:<br>
+      &lt;Source Information&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>Negative annual data was found for
+      the source listed and was reset to zero. Negative inventory data can be
+      used to indicate missing data.<br>
+      <b>Solution: </b>Either check data for listed source in raw input file, or
+      let SMOKE reset it to zero.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">12.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Negative seasonal data reset to zero for:<br>
+      &lt;Source Information&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>Negative seasonal data was found at
+      listed site and was reset to zero. Negative inventory data can be used to
+      indicate missing data.<br>
+      <b>Solution: </b>Either check data for listed source in raw input file, or
+      let SMOKE reset it to zero.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">13.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Only the first layer out of &lt;Number of
+      layers&gt;, will be imported</p>
+      <p class="MsoNormal"><b>Problem: </b>There is more than one layer in the
+      gridded input inventory file, AG, so only first layer will be imported
+      since Smkinven cannot import multiple layers.<br>
+      <b>Solution: </b>SMOKE only allows one layer to be read in from a gridded
+      input inventory file. Either redo the file or let SMOKE only import the
+      first layer.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">14.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Only the first time step out of &lt;Number of time
+      steps&gt;, will be imported</p>
+      <p class="MsoNormal"><b>Problem: </b>There is more than one time step in
+      the gridded input inventory file, AG, so only first time step will be
+      imported since Smkinve cannot import multiple time steps for pre-gridded
+      data.<br>
+      <b>Solution: </b>SMOKE only allows one time step to be read in from a
+      gridded input inventory file. Either redo the file or let SMOKE only
+      import the first time step.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">15.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: ORIS ID requested, but is not present in ASCII
+      inventory file</p>
+      <p class="MsoNormal"><b>Problem: </b>A request is being make to process
+      the DOE plant ID from the ASCII inventory file, but it is not present in
+      the file.<br>
+      <b>Solution: </b>The ORIS ID is used only when importing CEM data. It is
+      used to try to match the inventory data with the CEM data. The ORIS ID is
+      only going to be written to the ASCII inventory file from IDA format (the
+      only one that supports a separate field for boiler ID). CEM data can be
+      used only with IDA inventory format.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">16.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Resetting negative value of &lt;Variable Name&gt;
+      from &lt;Formula Result&gt; to 0. for source:<br>
+      &lt;Source information&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>The variable being computed with
+      SMKINVE_FORMULA has a negative value of as shown, and will be reset to
+      zero for the listed source.<br>
+      <b>Solution: </b>If the negative value has a large magnitude, there might
+      be a problem with the inventory. Check the values of the pollutant being
+      used to compute the new variable. If the negative value has a small
+      magnitude, then most likely the warning can be ignored. For example, if
+      the formala is PMC = PM10 - PM2_5 results in a small negative number, then
+      it is likely because the PM10 value is composed entirely of PM2_5, but
+      there was roundoff error encountered when preparing the PM10 data.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">17.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Time zone not set in header or variable list.
+      Assuming time zone 0 (GMT) for data.</p>
+      <p class="MsoNormal"><b>Problem: </b>Time zone is not set in the header of
+      the gridded input inventory file and it is not in the variable list. It
+      will be set to 0 (GMT).<br>
+      <b>Solution: </b>Either recreate the gridded input inventory file so that
+      it includes the time zone, or SMOKE will use GMT.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="25" valign="top" style="width:18.7pt;padding:0in .35pt 0in .35pt">
+      <p class="MsoNormal" align="right" style="text-align:right">18.</p>
+    </td>
+    <td width="599" style="width:449.25pt;padding:0in .35pt 0in .35pt">
+      <p class="H4">WARNING: Units too long for I/O API units at line &lt;Line
+      Number&gt; in pollutant file. Truncating to &lt;New units&gt;</p>
+      <p class="MsoNormal"><b>Problem: </b>The units in the pollutant file is
+      longer than the I/O API units length and Smkinven will truncate it to 16
+      characters.<br>
+      <b>Solution: </b>Either shorten the units in the input file or leave it to
+      SMOKE to truncate the name</p>
+    </td>
+  </tr>
+</table>
+<p class="MsoNormal">&nbsp;<o:p>
+</o:p>
+</p>
+<p class="H1">&nbsp;<o:p>
+</o:p>
+</p>
+
+</body>
+
+</html>
