@@ -55,12 +55,13 @@ elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
 #
 
 include $(MD_SRC)/modmake.inc
+include $(FSDIR)/modmake.inc
 
 asgngrps.o: $(MODSOURC) $(MODELEV) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgngrps.f
 laypoint.o: $(MODSOURC) $(MODELEV) $(MODGRID) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ laypoint.f
-mxgrpemis.o: $(MODSOURC) $(MODELEV) $(MODINFO)
+mxgrpemis.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ mxgrpemis.f
 elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ elevpoint.f

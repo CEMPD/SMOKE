@@ -55,9 +55,10 @@ C.........  This module contains the global variables for the 3-d grid
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -336,7 +337,7 @@ C.........  Make sure only run for point sources
 C.......   Get file name; open input point sources, temporal cross-reference,
 C.......   and temporal profiles files
 
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for POINT I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
 
@@ -345,7 +346,7 @@ C.......   and temporal profiles files
      &           .TRUE., .TRUE., ANAME, PROGNAME )
 
 C.........  Get header description of inventory file 
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -1248,7 +1249,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESC3( FILNAM ) ) THEN
+            IF ( .NOT. DESCSET( FILNAM,-1 ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'

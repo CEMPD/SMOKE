@@ -61,9 +61,10 @@ C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -76,11 +77,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         REAL            PLUMRIS
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
 
         EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, 
-     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE, 
-     &                  PROMPTMFILE
+     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -305,7 +304,7 @@ C.......   Get file name; open input point source and output
 C.......   elevated points files
 
 C.........   Get file names and open inventory files
-        ENAME = PROMPTMFILE( 
+        ENAME = PROMPTSET( 
      &          'Enter logical name for the I/O API INVENTORY file',
      &          FSREAD3, ENAME, PROGNAME )
         ENLEN = LEN_TRIM( ENAME )
@@ -331,7 +330,7 @@ C.........  Open ASCII report file
      &        .FALSE., .TRUE., 'REP' // CRL // 'ELV', PROGNAME )
 
 C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:ENLEN ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

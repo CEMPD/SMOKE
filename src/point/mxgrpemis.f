@@ -48,13 +48,15 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    ! I/O API constants
-        INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
-        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
+        INCLUDE 'EMCNST3.EXT'   ! emissions constant parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'SETDECL.EXT'   ! FileSetAPI variables and functions
         INCLUDE 'CONST3.EXT'    ! physical and mathematical constants
 
 C...........   ARGUMENTS and their descriptions:
@@ -245,7 +247,7 @@ C.........  Loop through met files and check time period
 
 C.............  Close previous file if needed
             IF( FILEOPEN ) THEN
-                IF( .NOT. CLOSE3( TNAME ) ) THEN
+                IF( .NOT. CLOSESET( TNAME, ALLFILES ) ) THEN
                     L = LEN_TRIM( PTMPFILE )
                     MESG = 'Could not close hourly emissions file ' //
      &                     PTMPFILE( 1:L )
@@ -272,7 +274,7 @@ C.............  Set logical file name
             END IF    
                            
 C.............  Try to open file
-            IF( .NOT. OPEN3( TNAME, FSREAD3, PROGNAME ) ) THEN
+            IF( .NOT. OPENSET( TNAME, FSREAD3, PROGNAME ) ) THEN
                 EFLAG = .TRUE.
                 L = LEN_TRIM( PTMPFILE )
                 MESG = 'ERROR: Could not open hourly emissions file ' //
@@ -284,7 +286,7 @@ C.............  Try to open file
             END IF
 
 C.............  Read description of file
-            IF( .NOT. DESC3( TNAME ) ) THEN
+            IF( .NOT. DESCSET( TNAME,ALLFILES ) ) THEN
                 EFLAG = .TRUE.
                 L = LEN_TRIM( PTMPFILE )
                 MESG = 'ERROR: Could not get description of file ' //
@@ -305,10 +307,10 @@ C.............  Check the number of sources
             CALL CHKSRCNO( CATEGORY, TNAME, NROWS3D, NSRC, EFLAG )
 
 C.............  Check the variable number and names
-            IF( NVARS3D .NE. NIPOL ) THEN
+            IF( NVARSET .NE. NIPOL ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: The number of ' //
-     &                'pollutants in the PTMP file (', NVARS3D, 
+     &                'pollutants in the PTMP file (', NVARSET, 
      &                CRLF() // BLANK10 // 'is inconsitent with '//
      &                'the number in the PNTS file.'
                 CALL M3MSG2( MESG )
@@ -317,11 +319,10 @@ C.............  If number is okay, check names
             ELSE
 
                 DO V = 1, NIPOL
-                    IF( EINAM( V ) .NE. VNAME3D( V ) ) THEN
+                    IF( EINAM( V ) .NE. VNAMESET( V ) ) THEN
 
                         EFLAG = .TRUE.
                         L  = LEN_TRIM( EINAM( V ) )
-                        L2 = LEN_TRIM( VNAME3D( V ) )
                         WRITE( MESG,94010 ) 'ERROR: Pollutant "'//
      &                        EINAM( V )(1:L)// '" is in a different '//
      &                        'order in PNTS than in PTMP.'
@@ -497,7 +498,7 @@ C.............  Get physical file name for current iteration
 C.............  Close previous file if needed
             IF( PTMPFILE .NE. PREVFILE ) THEN
                 IF( FILEOPEN ) THEN
-                    IF( .NOT. CLOSE3( TNAME ) ) THEN
+                    IF( .NOT. CLOSESET( TNAME ) ) THEN
                         L = LEN_TRIM( PREVFILE )
                         MESG = 'Could not close hourly emissions ' //
      &                         'file ' // PREVFILE( 1:L )
@@ -522,7 +523,7 @@ C.............  Set logical file name
             END IF   
 
 C.............  Try to open file
-            IF( .NOT. OPEN3( TNAME, FSREAD3, PROGNAME ) ) THEN
+            IF( .NOT. OPENSET( TNAME, FSREAD3, PROGNAME ) ) THEN
                 EFLAG = .TRUE.
                 L = LEN_TRIM( PTMPFILE )
                 MESG = 'ERROR: Could not open hourly emissions file ' //
@@ -541,7 +542,7 @@ C.................  Set global emissions variable index
                 CBUF = EINAM( V )
 
 C.................  Read emissions value
-                IF ( .NOT. READ3( TNAME, CBUF, 1, 
+                IF ( .NOT. READSET( TNAME, CBUF, 1, ALLFILES,
      &                            JDATE, JTIME, EMIS ) ) THEN
                     L = LEN_TRIM( CBUF )
                     MESG = 'Could not read ' // CBUF( 1:L ) //
