@@ -39,7 +39,24 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: MPRT01, WPRT01, DPRT01,
+     &                     MPRT02, WPRT02, DPRT02,
+     &                     MPRT03, WPRT03, DPRT03,
+     &                     MPRT04, WPRT04, DPRT04,
+     &                     MPRT05, WPRT05, DPRT05,
+     &                     MPRT06, WPRT06, DPRT06,
+     &                     MPRT07, WPRT07, DPRT07,
+     &                     MPRT08, WPRT08, DPRT08,
+     &                     MPRT09, WPRT09, DPRT09,
+     &                     MPRT10, WPRT10, DPRT10,
+     &                     MPRT11, WPRT11, DPRT11,
+     &                     MPRT12, WPRT12, DPRT12,
+     &                     MPRT13, WPRT13, DPRT13,
+     &                     MPRT14, WPRT14, DPRT14,
+     &                     MPRT15, WPRT15, DPRT15,
+     &                     MPRT16, WPRT16, DPRT16, 
+     &                     MPRNA, WPRNA, DPRNA, 
+     &                     ADDPS, INDXTA, ISPTA
 
         IMPLICIT NONE
 

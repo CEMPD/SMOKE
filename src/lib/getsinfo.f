@@ -46,7 +46,13 @@ C.........  This module is required by the FileSetAPI
         USE MODFILESET
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NCHARS, JSCC, JSTACK, CATEGORY,
+     &                     LSCCEND, RSCCBEG, NPPOL, PLTIDX, MXCHRS,
+     &                     SCCLEV1, SCCLEV2, SCCLEV3, SCCLEV4,
+     &                     NIPOL, NIACT, NPACT, NIPPA, BYEAR,
+     &                     ATTRUNIT, EANAM, EAREAD, EAUNIT, EADESC,
+     &                     NMAP, ACTVTY, SC_BEGP, SC_ENDP, EINAM,
+     &                     INVPIDX, MAPFIL, MAPNAM
 
         IMPLICIT NONE
 

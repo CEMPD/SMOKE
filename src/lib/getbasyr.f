@@ -40,7 +40,7 @@ C****************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: INVYR
 
         IMPLICIT NONE
 

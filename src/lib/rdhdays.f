@@ -42,7 +42,7 @@ C**************************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the temporal allocation information
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: NHOLIDAY, HOLREGN, HOLJDATE, HOLALTDY
 
         IMPLICIT NONE
 

@@ -48,13 +48,14 @@ C***************************************************************************
 C.........  MODULES for public variables
 
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: INDXTA, IFIPTA, CSCCTA, CSRCTA, IARPTA
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVSCC, INVSCC, SCCDESC  ! Note - needed for reporting only
 
 C.........  This module contains the arrays for the area-to-point x-form
-        USE MODAR2PT
+        USE MODAR2PT, ONLY: MXROWA2P, NTABLA2P, NAR2PT, AR2PTABL,
+     &                      NA2PSCC, A2PSCC, AR2PT
 
         IMPLICIT NONE
 

@@ -39,7 +39,9 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: ISPD01, ISPD02, ISPD03, ISPD04, ISPD05,
+     &                     ISPD06, ISPD07, ISPD08, ISPD09,
+     &                     INDXTA, ISPDCDA
 
         IMPLICIT NONE
 

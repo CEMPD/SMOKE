@@ -42,7 +42,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISPDCDA
         
         IMPLICIT NONE
 

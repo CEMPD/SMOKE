@@ -39,10 +39,14 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: CHRT02, CHRT04, CHRT05, CHRT07, CHRT08,
+     &                     CHRT10, CHRT11,
+     &                     IMVS01, IMVS02, IMVS04, IMVS05, IMVS07,
+     &                     IMVS08, IMVS10, IMVS11,
+     &                     TXCNT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: LSCCEND, NCHARS
 
         IMPLICIT NONE
 

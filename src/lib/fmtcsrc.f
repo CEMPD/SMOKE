@@ -44,7 +44,7 @@ C***************************************************************************
 
 C...........   Modules for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_BEGP, SC_ENDP
 
         IMPLICIT NONE
 

@@ -40,16 +40,21 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: XLOCA, YLOCA, STKDM, STKHT, STKTK, STKVE,
+     &                      CSOURC, IFIP
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NHRSRC, HRSTKTK, HRSTKVE, HRSTKFL, LMAJOR,
+     &                     LAY1F, PLMBOT, PLMTOP
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, CATLEN, SC_BEGP, SC_ENDP,
+     &                     NSRC, NCHARS
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID, NROWS, NCOLS, NLAYS, VGTYP, VGTOP,
+     &                     XORIG, YORIG, COORD, GDTYP, P_ALP, P_BET,
+     &                     P_GAM, XCENT, YCENT, XCELL, YCELL
 
         IMPLICIT NONE
 

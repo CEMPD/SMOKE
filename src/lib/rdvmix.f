@@ -41,13 +41,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for mobile-specific data
-        USE MODMOBIL
+        USE MODMOBIL, ONLY: NVTYPE, CVTYPLST, VMTMIXA
 
 C...........   This module is for cross reference tables
-        USE MODXREF
-
-C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA
 
         IMPLICIT NONE
 

@@ -47,7 +47,15 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVTBL, ITIDXA, ITIDXA2, ITLINNO, ITCODA,
+     &                      ITNTIA, ITREAA, ITSTATA, ITKEEPA, ITMSPC,
+     &                      ITEXPL, ITFACA, ITVTSA, ITNAMA, ITUNTA,
+     &                      ITCASA, ITDSCA, ITCASDSCA, ITCASDNMA,
+     &                      NINVKEEP, NINVDROP, NUNIQCAS, SCASIDX,
+     &                      SORTCAS, UCASIDX, UCASNPOL, UCASNKEP,
+     &                      UNIQCAS, EMISBYPOL, EMISBYCAS, RECSBYCAS,
+     &                      MXIDAT, INVDCOD, INVSTAT, INVDCNV, INVDVTS,
+     &                      INVDNAM, INVDUNT, INVDDSC, IDXCOD, SORTCOD
 
         IMPLICIT NONE
 

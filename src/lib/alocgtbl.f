@@ -42,7 +42,8 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: ISRG01, ISRG02, ISRG03, ISRG04, ISRG05,
+     &                     ISRG06, ISRG07, ISRG08, ISRG09
 
         IMPLICIT NONE
 

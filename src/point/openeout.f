@@ -38,11 +38,8 @@ C
 C***********************************************************************
 
 C...........   MODULES for public variables
-C...........   This module is the source inventory arrays
-        USE MODSOURC
-
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CRL, CATDESC
 
         IMPLICIT NONE
 

@@ -40,13 +40,14 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, TZONES
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: LELVRNK, LPNGRNK, GROUPID, NEVPEMV, MXEMIS,
+     &                     MXEIDX, MXRANK, EVPEMIDX, GINDEX
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NIPOL, NSRC, EINAM
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET

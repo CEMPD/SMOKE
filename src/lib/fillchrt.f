@@ -40,8 +40,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY:
-     &          CHRT02, CHRT03, CHRT04, CHRT05,
+        USE MODXREF, ONLY: CHRT02, CHRT03, CHRT04, CHRT05,
      &          CHRT06, CHRT07, CHRT08, CHRT09, CHRT10,
      &          CHRT11, CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
      &          CHRT02A, CHRT02B, CHRT02C,

@@ -44,8 +44,7 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF, ONLY:
-     &          ICTL01, ICTL02, ICTL03, ICTL04, ICTL05,
+        USE MODXREF, ONLY: ICTL01, ICTL02, ICTL03, ICTL04, ICTL05,
      &          ICTL06, ICTL07, ICTL08, ICTL09, ICTL10,
      &          ICTL11, ICTL12, ICTL13, ICTL14, ICTL15, ICTL16,
      &          ICTL02A, ICTL02B, ICTL02C,

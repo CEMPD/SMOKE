@@ -40,7 +40,7 @@ C**************************************************************************
 
 C...........   Modules for public variables
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: ORISFIP, ORISLST, ORISDSC, NORIS
 
         IMPLICIT NONE
 

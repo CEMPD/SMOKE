@@ -44,24 +44,26 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, CSCC, CPDESC, CORIS
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVSCC, NINVORIS, INVORIS, INVSCC,
+     &                      IORSMTCH, SCCDESC, INVODSC, INVORFP
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPPA, NCHARS, SC_BEGP, SC_ENDP, NSRC
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR
+        USE MODDAYHR, ONLY: MXPDPT, NPDPT, CODEA, IDXSRC,
+     &                      SPDIDA, EMISVA, DYTOTA, LPDSRC,
+     &                      PDEMOUT, PDTOTL, NUNFDORS, UNFDORS
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NORIS, ORISLST, ORISFIP, ORISDSC
 
         IMPLICIT NONE
 
 C...........   INCLUDES
-
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations

@@ -40,7 +40,7 @@ C***************************************************************************
 
 C...........   Modules for public variables
 C...........  This module is for mobile-specific data
-        USE MODMOBIL
+        USE MODMOBIL, ONLY: SPDPROFS, SPDNUMS, NSPDPROF
         
         IMPLICIT NONE
         

@@ -39,7 +39,7 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: ARPT08, ARPT09, IARPTA, INDXTA 
 
         IMPLICIT NONE
 

@@ -36,10 +36,6 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-C...........   MODULES for public variables
-C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
-
         IMPLICIT NONE
 
 C...........   INCLUDES:

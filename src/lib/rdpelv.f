@@ -40,7 +40,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: LMAJOR, LPING, GROUPID
 
         IMPLICIT NONE
 

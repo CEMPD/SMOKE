@@ -40,10 +40,12 @@ C***************************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGREC, IDXSRGA, SFIPSA, SCELLA, SSRGIDA,
+     &                     IDXSRGB, NSRGFIPS, NSRGS, SRGFIPS, SRGLIST,
+     &                     FIPCELL, SRGFRAC, SRGCSUM, NCELLS, SFRACA
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: XOFF, YOFF, NCOLS, NROWS
 
         IMPLICIT NONE
 

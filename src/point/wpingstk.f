@@ -39,7 +39,9 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NGROUP, GRPIDX, GRPGIDA, GRPCNT, GRPCOL,
+     &                     GRPROW, GRPDM, GRPFL, GRPHT, GRPLAT, GRPLON,
+     &                     GRPTK, GRPVE, GRPXL, GRPYL
 
         IMPLICIT NONE
 

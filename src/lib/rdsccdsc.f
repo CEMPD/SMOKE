@@ -39,7 +39,7 @@ C**************************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: SCCDESC, NINVSCC, INVSCC
 
         IMPLICIT NONE
 

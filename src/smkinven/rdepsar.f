@@ -46,13 +46,13 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIPA, TPFLGA, INVYRA, CSCCA, POLVLA, CSOURCA
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: MXIDAT, INVDCOD, INVDNAM
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NEM, NDY, NCE, NRE, NRP
 
         IMPLICIT NONE
 

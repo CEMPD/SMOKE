@@ -45,13 +45,15 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, IFIP, STKHT, STKDM, STKTK, STKVE,
+     &                      XLOCA, YLOCA
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: GINDEX, GROUPID, GRPGID, GRPLAT, GRPLON,
+     &                     GRPDM, GRPHT, GRPTK, GRPVE, GRPFL, GRPCNT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, NCHARS, SC_BEGP, SC_ENDP
 
         IMPLICIT NONE
 

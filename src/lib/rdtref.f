@@ -46,9 +46,6 @@ C...........   This module is for cross reference tables
         USE MODXREF, ONLY: CSRCTA, ISPTA, CSCCTA, INDXTA,
      &                     MPRNA, WPRNA, DPRNA
         
-C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY:
-
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM
 

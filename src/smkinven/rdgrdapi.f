@@ -40,10 +40,12 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC 
+        USE MODSOURC, ONLY: POLVAL, TZONES, IFIP, CELLID, TPFLAG, INVYR,
+     &                      NPCNT, CSCC, IPOSCOD, CSOURC
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPOL, NIPPA, NPPOL, CATEGORY, NEM, NDY,
+     &                     EIIDX, EINAM, EANAM, EAUNIT, EADESC, NSRC
 
         IMPLICIT NONE
 

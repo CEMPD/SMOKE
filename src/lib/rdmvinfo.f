@@ -38,7 +38,9 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for mobile-specific data
-        USE MODMOBIL
+        USE MODMOBIL, ONLY: NVTYPE, NRCLAS, NSCCTBL, CVTYPLST,
+     &                      IVTIDLST, AMSRDCLS, RDWAYTYP, SCCRVC,
+     &                      SCCTBL
 
         IMPLICIT NONE
 

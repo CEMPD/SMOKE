@@ -40,7 +40,12 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: LSTCYPOP, STCYPOPYR, USEDAYLT,
+     &                     NCOUNTRY, NSTATE,   NCOUNTY,
+     &                     CTRYCOD,  STATCOD,  CNTYCOD,
+     &                     CTRYNAM,  STATNAM,  CNTYNAM,
+     &                     CTRYPOPL, STATPOPL, CNTYPOPL,
+     &                     CNTYTZON
 
         IMPLICIT NONE
 

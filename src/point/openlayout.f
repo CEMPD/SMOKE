@@ -42,13 +42,13 @@ C***********************************************************************
  
 C...........  MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NHRSRC
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: VGTYP, VGTOP
 
 C...........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC
 
         IMPLICIT NONE
  

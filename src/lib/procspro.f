@@ -41,7 +41,8 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the speciation profile tables
-        USE MODSPRO
+        USE MODSPRO, ONLY: NSPFUL, NSPROF, NSPECIES, SPROFN,
+     &                     IDXSPRO, IDXSSPEC, INPRF, SPECID
 
         IMPLICIT NONE
 

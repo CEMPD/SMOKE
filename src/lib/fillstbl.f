@@ -39,8 +39,7 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF, ONLY:
-     &          CSPT01, CSPT02, CSPT03, CSPT04, CSPT05,
+        USE MODXREF, ONLY: CSPT01, CSPT02, CSPT03, CSPT04, CSPT05,
      &          CSPT06, CSPT07, CSPT08, CSPT09, CSPT10,
      &          CSPT11, CSPT12, CSPT13, CSPT14, CSPT15, CSPT16,
      &          CSPT26, CSPT27, CSPT28, CSPT29, CSPT30, CSPT31,

@@ -41,7 +41,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY: MXSPFUL, HDRSTART, NSPLST, NSPFUL,
+     &                     SPCDEFPOL, SPCDEFLST, NPOLSPRO, SPECID,
+     &                     NSPDEF, MXSPLST, HDREND, INPRF,
+     &                     MOLEFACT, MASSFACT 
 
         IMPLICIT NONE
         

@@ -42,7 +42,8 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  For temporal profiles
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: HRLFAC, WEKFAC, MONFAC,
+     &                      HRLREF, WEKREF, MONREF
 
         IMPLICIT NONE
 

@@ -41,7 +41,17 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC 
+        USE MODSOURC, ONLY: INDEXA, IFIPA, TPFLGA, INVYRA, CSCCA, SRCIDA,
+     &                      IPOSCOD, CSOURCA, POLVLA, IRCLASA, IVTYPEA,
+     &                      CVTYPEA, CLINKA, XLOC1A, YLOC1A, XLOC2A,
+     &                      YLOC2A, ISICA, IDIUA, IWEKA, XLOCAA, YLOCAA,
+     &                      STKHTA, STKDMA, STKTKA, STKVEA, CORISA,
+     &                      CBLRIDA, CPDESCA, IFIP, TPFLAG, INVYR,
+     &                      TZONES, NPCNT, CSCC, CSOURC, POLVAL, XLOCA,
+     &                      YLOCA, CELLID, IRCLAS, IVTYPE, CVTYPE, CLINK,
+     &                      XLOC1, YLOC1, XLOC2, YLOC2, ISIC, IDIU, IWEK,
+     &                      STKHT, STKDM, STKTK, STKVE, CORIS, CBLRID,
+     &                      CPDESC 
 
         IMPLICIT NONE
 

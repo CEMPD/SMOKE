@@ -43,13 +43,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF
-
-C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISRGCDA
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_ENDP
 
         IMPLICIT NONE
 

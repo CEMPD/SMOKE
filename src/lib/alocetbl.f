@@ -42,7 +42,9 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: IEFS01, IEFS02, IEFS03, IEFS04, IEFS05, 
+     &                     IEFS06, IEFS07, IEFS08, IEFS09, IEFS10,
+     &                     IEFS11, IEFS12, IEFS13, IEFS14, IEFS15, IEFS16
 
         IMPLICIT NONE
 

@@ -41,10 +41,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVSCC, INVSCC 
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CRL, NSRC
 
         IMPLICIT NONE
 

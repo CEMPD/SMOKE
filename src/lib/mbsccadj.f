@@ -42,10 +42,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for mobile-specific data
-        USE MODMOBIL
-
-C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODMOBIL, ONLY: NRCLAS, AMSRDCLS, RDWAYTYP
 
         IMPLICIT NONE
 

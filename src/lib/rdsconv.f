@@ -45,13 +45,15 @@ C************************************************************************
 
 C...........   MODULES for public variables   
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSCL, INVSCL
 
 C...........   This module contains the speciation profile tables
-        USE MODSPRO
+        USE MODSPRO, ONLY: CNVFC00, CNVFC01, CNVFC02, CNVFC03,
+     &                     CNVRT01, CNVRT02, CNVRT03,
+     &                     NCNV1, NCNV2, NCNV3
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, LSCCEND
 
         IMPLICIT NONE
 

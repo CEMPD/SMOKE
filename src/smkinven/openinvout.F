@@ -44,9 +44,6 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY:
-
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, BYEAR,
      &                     NIPOL, NPPOL, NIACT, NPACT, NCHARS,

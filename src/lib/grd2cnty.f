@@ -41,13 +41,14 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTY, CNTYCOD
 
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGS, SRGLIST, NSRGFIPS, SRGFIPS, 
+     &                     SRGFRAC, FIPCELL, NCELLS
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID
 
         IMPLICIT NONE
 

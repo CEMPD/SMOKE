@@ -38,7 +38,9 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: IMVS01, IMVS02, IMVS03, IMVS04, IMVS05,
+     &                     IMVS06, IMVS07, IMVS08, IMVS09, IMVS10,
+     &                     IMVS11, IMVS12, INDXTA
 
         IMPLICIT NONE
 

@@ -43,17 +43,18 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
-C.........  This module is the inventory arrays
-        USE MODSOURC
-
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: ORISFLAG, NINVORIS, INVORIS, NORISPNT,
+     &                      ORISPNT, NORISBLR, ORISBLR, IORSMTCH,
+     &                      INVORFP, OBSRCNT, OPSRCNT, OBSRCBG,
+     &                      OPSRCBG
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPPA, EANAM, CATEGORY, BYEAR, NSRC
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR
+        USE MODDAYHR, ONLY: NUNFDORS, UNFDORS, MXPDPT, NPDPT, LPDSRC,
+     &                      IDXSRC, SPDIDA, CODEA, EMISVA
 
         IMPLICIT NONE
 
