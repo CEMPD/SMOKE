@@ -2,7 +2,7 @@
         SUBROUTINE OPENINVOUT( ENAME, ANAME, SDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 101
+C  subroutine body starts at line 100
 C
 C  DESCRIPTION:
 C      This subroutine sets up the header and variables for the I/O API 
@@ -67,9 +67,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         EXTERNAL CRLF, PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT(IN OUT) :: ENAME ! emis i/o api inven logical name
-        CHARACTER(*), INTENT(IN OUT) :: ANAME ! emis ASCII inven logical name
-        INTEGER     , INTENT(OUT)    :: SDEV  ! ascii output inven file unit no.
+        CHARACTER(*), INTENT(OUT) :: ENAME ! emis i/o api inven logical name
+        CHARACTER(*), INTENT(OUT) :: ANAME ! emis ASCII inven logical name
+        INTEGER     , INTENT(OUT) :: SDEV  ! ascii output inven file unit no.
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
@@ -95,6 +95,9 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine OPENINVOUT
+
+C.........  Get output inventory file names given source category
+        CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Depending on source category, set number of non-pollutant 
 C           inventory variables
