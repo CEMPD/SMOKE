@@ -507,7 +507,7 @@ C.................  Check that source characteristics are correct
 C.................  Check source specific characteristics
                 IF( CATEGORY == 'MOBILE' ) THEN
 
-                    IF( CURFMT == IDAFMT ) THEN
+                    IF( CURFMT == IDAFMT .OR. CURFMT == NTIFMT ) THEN
 
 C.........................  Check if SCC has proper length
                         IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
