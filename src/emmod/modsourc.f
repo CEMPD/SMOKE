@@ -116,4 +116,10 @@
         CHARACTER(LEN=ALLCAS3), POINTER,     PUBLIC:: CSOURCA( : ) ! concat src
         CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) ! vehicle type
 
+!.........  Unsorted list of file numbers and records by source
+        INTEGER, PUBLIC :: NSTRECS                      ! size of SRCSBYREC
+        INTEGER, ALLOCATABLE, PUBLIC:: SRCSBYREC( :,: ) ! file number, record number, and
+                                                        ! src number for each inventory record
+        INTEGER, ALLOCATABLE, PUBLIC:: RECIDX( : )      ! index for SRCSBYREC
+
         END MODULE MODSOURC
