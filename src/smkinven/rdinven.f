@@ -1,15 +1,15 @@
 
-        SUBROUTINE RDPTINV( FDEV, MXIPOL, INVPCOD, INVPNAM, INVFMT, 
-     &                      NPSRC, TFLAG, EFLAG, INVSTAT )
+        SUBROUTINE RDINVEN( FDEV, FNAME, MXIPOL, INVPCOD, INVPNAM, 
+     &                      FILFMT, NRAWBP, PRATIO, TFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line 154
+C  subroutine body starts at line 157
 C
 C  DESCRIPTION:
-C      This subroutine controls reading a point source inventory file from
-C      one of many formats.  It dertermines the format and call the appropriate
-C      reader subroutines. It sorts the raw data and store it in sorted 
-C      format.
+C      This subroutine controls reading an inventory file for any source 
+C      category from one of many formats.  It determines the format and 
+C      call the appropriate reader subroutines. It controls the looping 
+C      through multiple files when a list-formatted file is used as input.
 C
 C  PRECONDITIONS REQUIRED:
 C      Input file unit FDEV opened
@@ -51,6 +51,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC 
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -71,90 +74,60 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETINVYR
         INTEGER         GETISIZE
         INTEGER         JUNIT
-        INTEGER         STR2INT
-        INTEGER         TRIMLEN
 
         EXTERNAL        CRLF, ENVYN, GETFLINE, GETFMTPT, GETIDASZ, 
-     &                  GETINVYR, GETISIZE, JUNIT, STR2INT, TRIMLEN
+     &                  GETINVYR, GETISIZE, JUNIT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER       FDEV              ! unit number of inv input file (in)
-        INTEGER       MXIPOL            ! max no of inv pollutants (in)
-        INTEGER       INVPCOD( MXIPOL ) ! 5-digit pollutant codes (in)
-        CHARACTER*(*) INVPNAM( MXIPOL ) ! name of pollutants (in)
-        INTEGER       INVFMT            ! inventory format code (out)
-        INTEGER       NPSRC             ! actual source count (out)
-        LOGICAL       TFLAG             ! output, true iff PTREF output (out)
-        LOGICAL       EFLAG             ! output, error flag (out)
-        INTEGER       INVSTAT( MXIPOL ) ! status (0=not in inventory) (out)
+        INTEGER     , INTENT (IN) :: FDEV              ! unit no. of inv file
+        CHARACTER(*), INTENT (IN) :: FNAME             ! logical name of file
+        INTEGER     , INTENT (IN) :: MXIPOL            ! max no. inv pols
+        INTEGER     , INTENT (IN) :: INVPCOD( MXIPOL ) ! 5-dig pol codes
+        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) ! name of pols
+        INTEGER     , INTENT(OUT) :: FILFMT            ! file format code
+        INTEGER     , INTENT(OUT) :: NRAWBP            ! no.raw records x pol
+        REAL        , INTENT(OUT) :: PRATIO            ! position ratio
+        LOGICAL     , INTENT(OUT) :: TFLAG             ! true: PTREF output
 
 C...........   Contents of PTFILE 
-        CHARACTER*300,ALLOCATABLE:: PNLSTSTR( : )! Char strings in PTINV file
+        CHARACTER*300,ALLOCATABLE:: NLSTSTR( : )! Char strings in list-fmt file
 
 C...........   Dropped emissions
         INTEGER         NDROP             !  number of records dropped
         REAL            EDROP  ( MXIPOL ) !  total emis dropped for each pol
 
-C...........   Variables for reading dummy names of emission output
-        INTEGER :: NC1 = 0 !  pos in 2nd dim of POLVLA of primary control code
-        INTEGER :: NC2 = 0 !  pos in 2nd dim of POLVLA of secondary control code
-        INTEGER :: NCE = 0 !  pos in 2nd dim of POLVLA of control efficiency
-        INTEGER :: NEF = 0 !  pos in 2nd dim of POLVLA of emission factors
-        INTEGER :: NEM = 0 !  pos in 2nd dim of POLVLA of annual emissions
-        INTEGER :: NOZ = 0 !  pos in 2nd dim of POLVLA of ozone season emis
-        INTEGER :: NRE = 0 !  pos in 2nd dim of POLVLA of rule effectivenss
-
-        INTEGER                IDUMARR( 1,NPTPPOL3 ) !  integer dummy array
-        CHARACTER(LEN=IOVLEN3) ENAMES ( 1,NPTPPOL3 ) !  dummy names
-        CHARACTER(LEN=IODLEN3) CDUMARR( 1,NPTPPOL3 ) !  character dummy array
-    
 C...........   File units and logical/physical names
-        INTEGER         EDEV( 5 )   !  5 EMS-95 emissions files
+        INTEGER         EDEV( 5 )   !  up to 5 EMS-95 emissions files
         INTEGER         TDEV        !  emissions file in list format file
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, L1, L2, LK, LS, S  !  counters and indices
+        INTEGER         I, J, L, L1, L2 !  counters and indices
 
         INTEGER         ERRIOS      !  error i/o stat from sub call(s)
         INTEGER         ERRREC      !  record number for error msgs
         INTEGER         INY         !  tmp inventory year
         INTEGER         IOS         !  i/o status
-        INTEGER         FILFMT      !  file format code
+        INTEGER         INVFMT      !  inventory format code
+        INTEGER         FLEN        !  length of FNAME string
         INTEGER         NEDIM1      !  1st dimension for sparse emis arrays
-        INTEGER         NEDIM2      !  2nd dimension for sparse emis arrays
         INTEGER         NLINE       !  number of lines
         INTEGER         NRAWBP      !  actual total raw records by pollutants
         INTEGER         NRAWIN      !  total raw record-count (estimate)
         INTEGER         NRAWOUT     !  no. of valid entries in emis file(s)
-        INTEGER         PIPCOD      !  IPOSCOD of previous iteration of loop
-        INTEGER         PREVFMT     !  file format code of previous iteration
 
-        REAL            EMISI       !  inverse emissions value
-        REAL            EMISN       !  new emissions value
-        REAL            EMISO       !  old emissions value
+        LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
 
-        LOGICAL         DFLAG       !  input verification:  TRUE iff ERROR
-        LOGICAL         FIRSTITER   !  true when on first iteration of a loop
-
-        CHARACTER(LEN=ALLLEN3)  LSRCCHR     !  previous CSOURC
-        CHARACTER(LEN=ALLLEN3)  TSRCCHR     !  tmporary CSOURC
-
-        CHARACTER*5     TPOLPOS     !  Temporary pollutant position
         CHARACTER*16    ERFILDSC    !  desc of file creating an error from sub
-        CHARACTER*300   BUFFER      !  input file line buffer
         CHARACTER*300   INFILE      !  input file line buffer
         CHARACTER*300   LINE        !  input file line buffer
         CHARACTER*300   MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME =  'RDPTINV' ! program name
+        CHARACTER*16 :: PROGNAME =  'RDINVEN' ! program name
 
 C***********************************************************************
-C   begin body of subroutine RDPTINV
+C   begin body of subroutine RDINVEN
 
-C.........  Get settings from the environment
-        DFLAG = ENVYN( 'RAW_DUP_CHECK',
-     &                 'Check for duplicate species-records',
-     &                 .FALSE., IOS )
+        FLEN   = LEN_TRIM( FNAME )
 
 C.........  Determine file format of PTINV file
         INVFMT = GETFMTPT( FDEV )
@@ -167,72 +140,23 @@ C.........  If SMOKE list format, read file and check file for formats.
 C           NOTE: LSTFMT defined in EMCNST3.EXT
         IF( INVFMT .EQ. LSTFMT ) THEN
 
+C.............  Generate message for GETFLINE and RDLINES calls
+            MESG = CATEGORY( 1:CATLEN ) // ' inventory file, ' //
+     &             FNAME( 1:FLEN ) // ', in list format'
+
 C.............  Get number of lines of PTINV file in list format
-            NLINE = GETFLINE( FDEV, 'PTINV file in list format' )
+            NLINE = GETFLINE( FDEV, MESG )
 
 C.............  Allocate memory for storing contents of list-format'd PTINV file
-            ALLOCATE( PNLSTSTR( NLINE ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'PNLSTSTR', PROGNAME )
+            ALLOCATE( NLSTSTR( NLINE ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NLSTSTR', PROGNAME )
 
 C.............  Store lines of PTINV file
-            MESG = 'POINT inventory file in list format'
-            CALL RDLINES( FDEV, MESG, NLINE, PNLSTSTR )
+            CALL RDLINES( FDEV, MESG, NLINE, NLSTSTR )
 
-C.............  Loop through lines of PTINV file to check the formats
-            FIRSTITER = .TRUE.
-            INY = IMISS3
-            DO J = 1, NLINE
-
-                LINE = PNLSTSTR( J )
-
-C.................  Skip INVYEAR packet 
-                I = GETINVYR( LINE )
-                IF( I .GT. 0 ) THEN
-                    INY = I
-                    CYCLE
-                ENDIF
-
-                IF( INY .LT. 0 ) THEN  ! Final check to ensure it's set !
-                    MESG = 'Must set inventory year using ' //
-     &                     'INVYEAR packet for list-style input.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ENDIF
-     
-                INFILE = LINE
-
-C.................  Open INFILE
-                TDEV = JUNIT()
-                OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD' )
-
-C.................  Determine format of INFILE
-                FILFMT = GETFMTPT( TDEV )
-
-C.................  If first iteration, save format, if not, make sure 
-C                   that different formats are not used in same PTINV list
-                IF( FIRSTITER ) THEN
-                    FIRSTITER = .FALSE.
-                    PREVFMT = FILFMT
-
-                ELSEIF( FILFMT .NE. PREVFMT ) THEN
-                
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 
-     &                     'ERROR: In SMOKE list input, previous ' //
-     &                     'file was format', PREVFMT, 
-     &                     'but file at line', J, 'was format', FILFMT
-                    CALL M3MESG( MESG )
-
-                ENDIF
-
-                CLOSE( TDEV )
-
-            ENDDO     ! End of loop through list-formatted PTINV file
-
-C.............  Exit if files in list-formatted file were of inconsistent type
-            IF( EFLAG ) THEN
-                MESG = 'Problem reading SMOKE list format'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            ENDIF
+C.............  Check the format of the list-formatted inventory file and
+C               return the code for the type of files it contains
+            CALL CHKLSTFL( NLINE, FNAME, NLSTSTR, FILFMT )
 
 C.........  If not list format, then set FILFMT to the type of file (IDA,EPS)
         ELSE
@@ -241,76 +165,44 @@ C.........  If not list format, then set FILFMT to the type of file (IDA,EPS)
  
         ENDIF
 
+C.........  Set default inventory characteristics (declared in MODINFO) used
+C           by the IDA and EPS formats, including NPPOL
+        CALL INITINFO( FILFMT )
+
 C.........  Get the total number of records (Srcs x Non-missing pollutants)
 C.........  Also, make sure file format is known
 
-        NEDIM2 = NPTPPOL3 ! for all posible pollutant-specific fields
-
         IF( FILFMT .EQ. IDAFMT ) THEN
 
-            NRAWIN = GETIDASZ( FDEV, 'POINT', 1 ) ! No. actual records
-            NEDIM1 = GETIDASZ( FDEV, 'POINT', 2 ) ! No. actual records x pols
+            NRAWIN = GETIDASZ( FDEV, CATEGORY, 1 ) ! No. actual records
+            NEDIM1 = GETIDASZ( FDEV, CATEGORY, 2 ) ! No. actual records x pols
 
         ELSEIF( FILFMT .EQ. EPSFMT .OR. 
      &          FILFMT .EQ. EMSFMT      ) THEN
 
-            NRAWIN = GETISIZE( FDEV, 'POINT', INVFMT ) ! Estimate
+            NRAWIN = GETISIZE( FDEV, CATEGORY, INVFMT ) ! Estimate
             NEDIM1 = NRAWIN
 
         ELSE
-            WRITE( MESG,94010 ) 'File format ', FILFMT, 
+            WRITE( MESG,94010 ) 'INTERNAL ERROR: File format ', FILFMT, 
      &             'not known by program "' // PROGNAME // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
         ENDIF 
 
-C.........  Allocate memory for (unsorted) input arrays using dimensions set
-C           based on type of inventory being input
-        ALLOCATE( IFIPA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIPA', PROGNAME )
-        ALLOCATE( ISICA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISICA', PROGNAME )
-        ALLOCATE( IORISA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IORISA', PROGNAME )
-        ALLOCATE( TPFLGA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TPFLGA', PROGNAME )
-        ALLOCATE( INVYRA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVYRA', PROGNAME )
-        ALLOCATE( IDIUA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IDIUA', PROGNAME )
-        ALLOCATE( IWEKA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IWEKA', PROGNAME )
-        ALLOCATE( NPCNTA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'NPCNTA', PROGNAME )
-        ALLOCATE( SRCIDA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCIDA', PROGNAME )
-        ALLOCATE( XLOCAA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'XLOCAA', PROGNAME )
-        ALLOCATE( YLOCAA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'YLOCAA', PROGNAME )
-        ALLOCATE( STKHTA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKHTA', PROGNAME )
-        ALLOCATE( STKDMA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKDMA', PROGNAME )
-        ALLOCATE( STKTKA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKTKA', PROGNAME )
-        ALLOCATE( STKVEA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKVEA', PROGNAME )
-        ALLOCATE( CSCCA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSCCA', PROGNAME )
-        ALLOCATE( CBLRIDA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CBLRIDA', PROGNAME )
-        ALLOCATE( CPDESCA( NRAWIN ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CPDESCA', PROGNAME )
+C.........  Set ratio of NRAWIN and NEDIM1 to use in saving file source arrays
+C           which are in different data structures for EMS-95 ibput than IDA
+C           input.
+        PRATIO = REAL( NRAWIN ) / ( NEDIM1 )
 
-        ALLOCATE( INDEXA( NEDIM1 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
-        ALLOCATE( IPOSCOD( NEDIM1 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
-        ALLOCATE( CSOURCA( NEDIM1 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSOURCA', PROGNAME )
-        ALLOCATE( POLVLA( NEDIM1, NEDIM2 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'POLVLA', PROGNAME )
+C.........  Allocate memory for (unsorted) input arrays using dimensions set
+C           based on the source category and type of inventory being input
+        CALL SRCMEM( CATEGORY, 'UNSORTED', .TRUE., .FALSE., NRAWIN, 
+     &               NEDIM1, NPPOL )
+
+        CALL SRCMEM( CATEGORY, 'UNSORTED', .TRUE., .TRUE., NRAWIN, 
+     &               NEDIM1, NPPOL )
 
 C.........   Initialize sorting index
         DO I = 1, NEDIM1
@@ -320,57 +212,48 @@ C.........   Initialize sorting index
 C.........  Initialize pollutant-specific values as missing
         POLVLA = AMISS3  ! array
 
-C.........  Get dummy output pollutant variable names
-        CALL BLDENAMS( 'POINT', 1, NPTPPOL3, 'DUM', ENAMES, CDUMARR,
-     &                 IDUMARR, CDUMARR )
-
-C.........  Based on the order of the oiutput names, find the positions in the
-C           second dimension of POLVLA and POLVAL for the pollutant-specific
-C           data.
-        DO I = 1, NPTPPOL3
-            IF( ENAMES( 1,I )(1:IOVLEN3)  .EQ. 'DUM' ) NEM = I
-            IF( ENAMES( 1,I )(1:CPRTLEN3) .EQ. OZNSEART ) NOZ = I
-            IF( ENAMES( 1,I )(1:CPRTLEN3) .EQ. CTLEFFRT ) NCE = I
-            IF( ENAMES( 1,I )(1:CPRTLEN3) .EQ. RULEFFRT ) NRE = I
-            IF( ENAMES( 1,I )(1:CPRTLEN3) .EQ. EMISFCRT ) NEF = I
-            IF( ENAMES( 1,I )(1:CPRTLEN3) .EQ. CECOD1RT ) NC1 = I
-            IF( ENAMES( 1,I )(1:CPRTLEN3) .EQ. CECOD2RT ) NC2 = I
-        ENDDO
-
-        IF( NEM .EQ. 0 .OR. NOZ .EQ. 0 .OR. NCE .EQ. 0 .OR.
-     &      NRE .EQ. 0 .OR. NEF .EQ. 0 .OR. NC1 .EQ. 0 .OR.
-     &      NC2 .EQ. 0 ) THEN
-            MESG = 'INTERNAL ERROR: Could not find position of ' //
-     &             'one or more of the pollutant-specific data.'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-        ENDIF
-
 C.........  Read emissions from raw file(s) depending on input format...
 
 C.........  IDA format (single file)
         IF( INVFMT .EQ. IDAFMT ) THEN
 
-C            CALL RDIDAPT( FDEV, INY, NRAWIN, NEDIM1, NEM, NOZ, NCE, 
-C     &                    NRE, NEF, NC1, NC2, MXIPOL, INVPCOD, INVPNAM,
-C     &                    EFLAG, NDROP, EDROP )
+            SELECT CASE( CATEGORY )
+            CASE( 'AREA' )
+c                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
+c     &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
-            NRAWBP = NEDIM1  ! it was exact to start with b/c from RDIDASIZ
+            CASE( 'MOBILE' )
+c                CALL RDIDAMV( ?? )
+
+            CASE( 'POINT' )
+                CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
+     &                        NRAWOUT, EFLAG, NDROP, EDROP )
+
+            END SELECT
+
+            NRAWBP = NRAWOUT 
 
 C.........  EPS format (single file)
         ELSEIF( INVFMT .EQ. EPSFMT ) THEN
 
-C            CALL RDEPSPT(  )
-            CBLRIDA = BLRBLNK3
-            IORISA  = IMISS3
+            SELECT CASE( CATEGORY )
+            CASE( 'AREA' )
+C                CALL RDEPSAR(  )
+
+            CASE( 'MOBILE' )
+c                CALL RDEPSMV(  )
+
+            CASE( 'POINT' )
+C                CALL RDEPSPT(  )
+
+c                CBLRIDA = BLRBLNK3! Internal to rdepspt!
+c                IORISA  = IMISS3
+
+            END SELECT
 
 C.........  SMOKE list format requires a loop for multiple files
 C.........  Includes EMS-95 format
         ELSEIF( INVFMT .EQ. LSTFMT ) THEN  
-
-C............. Set variables that will not be set By RDEMSPT call
-            CBLRIDA = BLRBLNK3
-            IORISA  = IMISS3
 
             INY = IMISS3
             J   = 0
@@ -379,7 +262,7 @@ C............. Set variables that will not be set By RDEMSPT call
                 J = J + 1  ! Can't use standard loop because J used also below
                 IF( J .GT. NLINE ) EXIT
 
-                LINE = PNLSTSTR( J )
+                LINE = NLSTSTR( J )
 
                 I = GETINVYR( LINE )
 
@@ -388,9 +271,10 @@ C............. Set variables that will not be set By RDEMSPT call
                     CYCLE
                 ENDIF
 
-                IF( INY .LT. 0 ) THEN  ! Final check to ensure it's set !
+C.................  Final check to ensure the inventory year is set when needed
+                IF( INY .LT. 0 .AND. FILFMT .EQ. EMSFMT ) THEN  
                     MESG = 'Must set inventory year using ' //
-     &                     'INVYEAR packet for list-style input.'
+     &                     'INVYEAR packet for EMS-95 input.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ENDIF
      
@@ -403,17 +287,44 @@ C.................  Open INFILE
 
                 WRITE( MESG,94010 ) 'Successful OPEN for ' //
      &                 'inventory file(s):' // CRLF() // BLANK5 //
-     &                 INFILE( 1:TRIMLEN( INFILE ) )
+     &                 INFILE( 1:LEN_TRIM( INFILE ) )
                 CALL M3MSG2( MESG ) 
 
 C.................  Read file based on format set above
                 IF( FILFMT .EQ. IDAFMT ) THEN
 
-C                   CALL RDIDAPT  ! Will add later
+                    SELECT CASE( CATEGORY )
+                    CASE( 'AREA' )
+c                        CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, 
+c     &                                INVPNAM, NRAWOUT, EFLAG, 
+c     &                                NDROP, EDROP )
+
+                    CASE( 'MOBILE' )
+c                        CALL RDIDAMV( ?? )
+
+                    CASE( 'POINT' )
+                        CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIPOL, 
+     &                                INVPNAM, NRAWOUT, EFLAG, 
+     &                                NDROP, EDROP )
+
+                    END SELECT
 
                 ELSEIF( FILFMT .EQ. EPSFMT ) THEN
 
-C                   CALL RDEPSPT  ! Will add later
+                    SELECT CASE( CATEGORY )
+                    CASE( 'AREA' )
+C                        CALL RDEPSAR(  )
+
+                    CASE( 'MOBILE' )
+c                        CALL RDEPSMV(  )
+
+                    CASE( 'POINT' )
+C                        CALL RDEPSPT(  )
+
+C                        CBLRIDA = BLRBLNK3  ! Internal to rdepspt!
+C                        IORISA  = IMISS3
+
+                    END SELECT
 
                 ELSEIF( FILFMT .EQ. EMSFMT ) THEN
 
@@ -423,32 +334,42 @@ C                   CALL RDEPSPT  ! Will add later
 C.....................  Make sure that next 4 files in list are also EMSFMT
 C.....................  Increment line, scan for INVYEAR, open file, check file,
 C                       write message, and store unit number.
-                    DO I = 1, 4
+                    DO I = 2, NEMSFILE
 
                         J = J + 1
-                        LINE = PNLSTSTR( J )
-                        INFILE = LINE( 1:TRIMLEN( LINE ) )
-                        IF( INDEX( INFILE,'INVYEAR' ) .GT. 0 ) GOTO 1007 ! Error
+                        LINE = NLSTSTR( J )
+                        INFILE = LINE( 1:LEN_TRIM( LINE ) )
+                        IF( INDEX( INFILE,'INVYEAR' ) .GT. 0 ) GOTO 1007 !Error
                         TDEV = JUNIT()
                         OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD')
                         FILFMT = GETFMTPT( TDEV )
                         IF( FILFMT .NE. EMSFMT ) GO TO 1008  ! Error
-                        CALL M3MSG2( INFILE( 1:TRIMLEN( INFILE ) ) )
-                        EDEV( I+1 ) = TDEV
+                        CALL M3MSG2( INFILE( 1:LEN_TRIM( INFILE ) ) )
+                        EDEV( I ) = TDEV
 
-                    ENDDO
+                    END DO
 
 C.....................  Call EMS-95 reader for current 5 files
 C.....................  These calls populate the unsorted inventory 
-C                       variables in the Module MDL_PTINV
-                    CALL RDEMSPT( EDEV, INY, NRAWIN, NEM, NCE, NRE, 
-     &                            MXIPOL, INVPCOD, INVPNAM, NRAWOUT, 
-     &                            ERRIOS, ERRREC, ERFILDSC, EFLAG, 
-     &                            NDROP, EDROP )
+C                       variables in the module MODSOURC
+                    SELECT CASE( CATEGORY )
+                    CASE( 'AREA' )
+C                        CALL RDEMSAR(  )
+
+                    CASE( 'MOBILE' )
+c                        CALL RDEMSMV(  )
+
+                    CASE( 'POINT' )
+                        CALL RDEMSPT( EDEV, INY, NRAWIN, MXIPOL, 
+     &                                INVPCOD, INVPNAM, NRAWOUT, 
+     &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
+     &                                NDROP, EDROP )
+ 
+                    END SELECT
 
                     IF( ERRIOS .GT. 0 ) THEN
 
-                        L2 = TRIMLEN( ERFILDSC )
+                        L2 = LEN_TRIM( ERFILDSC )
                         WRITE( MESG, 94010 ) 
      &                         'Error ', ERRIOS,  'reading ' // 
      &                         ERFILDSC( 1:L2 ) // ' file at line', 
@@ -465,7 +386,7 @@ C                       variables in the Module MDL_PTINV
 
                     MESG = 'File format is not recognized for file. ' //
      &                     CRLF() // BLANK10 // 
-     &                     INFILE( 1:TRIMLEN( INFILE ) )
+     &                     INFILE( 1:LEN_TRIM( INFILE ) )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 ENDIF
@@ -475,7 +396,7 @@ C                       variables in the Module MDL_PTINV
 C.............  Set exact pollutant times records
             NRAWBP = NRAWOUT
 
-        ENDIF
+        END IF
 
 C.........  Report how many records were dropped and the emissions involved
         IF( NDROP .GT. 0 ) THEN
@@ -499,257 +420,36 @@ C.........  Report how many records were dropped and the emissions involved
 
         END IF          !  if ndrop > 0
 
-        CALL M3MSG2( 'Sorting raw inventory data...' )
-
-C.........  Sort inventory and pollutants (sources x pollutants). Note that
-C           sources are sorted based on character string definition of the 
-C           source so that source definition can be consistent with that of
-C           the input format.
-        CALL SORTIC( NRAWBP, INDEXA, CSOURCA )
-
-C.........  Loop through sources X pollutants to determine source IDs and check
-C           for duplicates. Also keep a count of the total unique key
-C           combinations (CSOURCA without the pollutant position)
-C.........  NOTE: The last part of the CSOURCA string is the integer position 
-C           of the pollutant for that record in the INVPNAM pollutant array 
-        LSRCCHR = EMCMISS3
-        LK = IMISS3
-        S = 0
-        DO I = 1, NRAWBP
-            
-            J  = INDEXA( I )
-
-            TSRCCHR = CSOURCA( J )(       1:SRCLEN3 ) ! Source characteristics
-            TPOLPOS = CSOURCA( J )( POLPOS3:ALLLEN3 ) ! Pos of pollutant (ASCII)
-
-C.............  Update pointer for list of actual pollutants
-            K = STR2INT( TPOLPOS )  ! Convert pollutant code to integer
-            INVSTAT( K ) = 1
-            IPOSCOD( I ) = K
-           
-C.............  Increment source count by comparing this iteration to previous
-            IF( TSRCCHR .NE. LSRCCHR ) THEN
-                S = S + 1
-                LSRCCHR = TSRCCHR
-
-C.............  Give message of duplicates are not permitted in inventory
-C.............  This IF also implies TSRCCHR = LSRCCHR
-            ELSEIF( K .EQ. LK ) THEN
-
-                CALL FMTCSRC( TSRCCHR, 8, BUFFER, L2 )
-
-                IF ( DFLAG ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Duplicate emissions found for' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                ELSE
-                    MESG = 'WARNING: Duplicate emissions found for' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                ENDIF
-
-                CALL M3MESG( MESG )
-
-            ENDIF
-
-            LK = K  ! Store pollutant index for comparison in next iteration
-
-C.............  Assign source ID (to use as an index) for all inv X pol
-            SRCIDA( I ) = S
-
-        ENDDO  ! On sources x pollutants
-
-        NPSRC = S
-
+C.........  Abort if there was a reading error
         IF( EFLAG ) THEN
-           MESG = 'Error in raw inventory file(s)'         
+           MESG = 'Error reading raw inventory file ' // FNAME( 1:FLEN )
            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
+        END IF
 
-C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
-        ALLOCATE( IFIP( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
-        ALLOCATE( ISIC( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
-        ALLOCATE( IORIS( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IORIS', PROGNAME )
-        ALLOCATE( TPFLAG( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
-        ALLOCATE( INVYR( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
-        ALLOCATE( IDIU( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
-        ALLOCATE( IWEK( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
-        ALLOCATE( NPCNT( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
-        ALLOCATE( XLOCA( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
-        ALLOCATE( YLOCA( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
-        ALLOCATE( STKHT( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
-        ALLOCATE( STKDM( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
-        ALLOCATE( STKTK( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
-        ALLOCATE( STKVE( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
-        ALLOCATE( CSCC( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSCC', PROGNAME )  
-        ALLOCATE( CBLRID( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CBLRID', PROGNAME )  
-        ALLOCATE( CPDESC( NPSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )  
-
-        ALLOCATE( CSOURC( NRAWBP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
-
-C.........  Loop through sources x pollutants to store sorted arrays for output
-C           to I/O API file.
-        LS = IMISS3
-        DO I = 1, NRAWBP
-
-            J = INDEXA( I )
-            S = SRCIDA( I )
-
-            IF( S .NE. LS ) THEN
-                LS  = S
-                IFIP  ( S )  = IFIPA  ( J )
-                ISIC  ( S )  = ISICA  ( J )
-                IORIS ( S )  = IORISA ( J )
-                IDIU  ( S )  = IDIUA  ( J )
-                IWEK  ( S )  = IWEKA  ( J )
-                TPFLAG( S )  = TPFLGA ( J )
-                INVYR ( S )  = INVYRA ( J )
-                XLOCA ( S )  = XLOCAA ( J )
-                YLOCA ( S )  = YLOCAA ( J )
-                STKHT ( S )  = STKHTA ( J )
-                STKDM ( S )  = STKDMA ( J )
-                STKTK ( S )  = STKTKA ( J )
-                STKVE ( S )  = STKVEA ( J )
-                CSCC  ( S )  = CSCCA  ( J )
-                CBLRID( S )  = CBLRIDA( J )
-                CPDESC( S )  = CPDESCA( J )
-                CSOURC( S )  = CSOURCA( J )( 1:SRCLEN3 )
-            ENDIF
-
-        ENDDO
-
-C.........  Deallocate local memory for per-source temporal x-ref      
-
-        DEALLOCATE( IFIPA, ISICA, IORISA, IDIUA, IWEKA, NPCNTA, 
-     &              TPFLGA, INVYRA, XLOCAA, YLOCAA, STKHTA, STKDMA, 
-     &              STKTKA, STKVEA, CSCCA, CBLRIDA, CPDESCA, 
-     &              CSOURCA, PNLSTSTR )
-
-C.........  Allocate memory for aggregating any duplicate pol-specific data
-C.........  Note that the POLVAL array that contains the pollutant-specific
-C           data is dimensioned to output only one pollutant at a time. This is 
-C           because we may need to be able to handle many pollutants in the 
-C           future, and the memory requirements would be prohibitive if all of
-C           the memory were allocated at the same time.           
-        ALLOCATE( POLVAL( NRAWBP, NEDIM2 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
-
-        POLVAL = AMISS3
-
-C.........  Initialize pollutant count for EPS and EMS-95 data structure
-        IF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. EMSFMT ) THEN
-            NPCNT = 0  ! array
-        ENDIF
-
-C.........  Store pollutant-specific data in sorted order.  For EPS and EMS-95
-C           formats, ensure that any duplicates are aggregated.
-C.........  Aggregate duplicate pollutant-specific data (not possible 
-C           for IDA format)
-C.........  NOTE: We have already checked to ensure that if there are duplicate
-C           emissions, they are allowed
-C.........  NOTE: Pollutants are stored in output order because they've been
-C           previously sorted in part based on their position in the master
-C           array of output pollutants
-        IF( FILFMT .EQ. IDAFMT ) THEN
-            DO I = 1, NRAWBP
-
-                J = INDEXA( I )
-
-                DO K = 1, NEDIM2
-                    POLVAL( I, K ) = POLVLA( J, K )
-                ENDDO
-            ENDDO
-
-        ELSEIF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. EMSFMT ) THEN
-        
-            K = 0
-            PIPCOD = IMISS3  ! Previous iteration IPOSCOD 
-            LS = IMISS3      ! Previous iteration S
-            DO I = 1, NRAWBP
-
-                J = INDEXA( I )
-                S = SRCIDA( I )
-
-                IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
-
-C.....................  Sum up the number of pollutants by source, but do this
-C                       here only, because this part of the IF statement is for
-C                       new pollutants
-                    NPCNT( S ) = NPCNT( S ) + 1
-
-                    K = K + 1
-
-                    POLVAL( K, NEM ) = POLVLA( J, NEM )
-                    POLVAL( K, NCE ) = POLVLA( J, NCE )
-                    POLVAL( K, NRE ) = POLVLA( J, NRE )
-
-                    PIPCOD = IPOSCOD( I ) 
-
-C.................  If the existing value is defined, sum with new emissions
-C                   and use weighted average for control factors
-C.................  No need to change NPCNT because it is already 1 for all
-                ELSE
-
-                    EMISN = POLVLA( J, NEM )
-                    EMISO = POLVAL( K, NEM )
-                    POLVAL( K, NEM ) = EMISO + EMISN
-
-                    EMISI = 1. / POLVAL( K, NEM ) ! Compute inverse only once
-                    POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
-     &                                  POLVLA( J,NCE )*EMISN  ) * EMISI
-                    POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
-     &                                  POLVLA( J,NRE )*EMISN  ) * EMISI
-
-                ENDIF
-
-                LS = S
-
-            ENDDO
-
-        ENDIF
-
-        DEALLOCATE( INDEXA, SRCIDA, POLVLA )
-                
         RETURN
 
 C******************  ERROR MESSAGES WITH EXIT **************************
  
 C.........  Error because improper grouping of raw input files
-1005    MESG = 'EMS95 input file list ended without complete set'
+1005    MESG = 'EMS-95 input file list ended without complete set'
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.........  Error opening raw input file
-1006    WRITE( MESG,94010 ) 'ERROR at line ', J, 'of PTINV. ' // 
-     &         'Could not open file:' //
-     &         CRLF() // BLANK5 // INFILE( 1:TRIMLEN( INFILE ) )
+1006    WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' //
+     &         FNAME( 1:FLEN ) // '.' // 'Could not open file:' //
+     &         CRLF() // BLANK5 // INFILE( 1:LEN_TRIM( INFILE ) )
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.........  Error with INVYEAR packet read
-1007    WRITE( MESG,94010 ) 'ERROR at line ', J, 'of PTINV.' // 
-     &         CRLF() // BLANK5 // 'INVYEAR packet can be ' //
-     &         'used only once for each group of five EMS-95 files.'
+1007    WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' // 
+     &         FNAME( 1:FLEN ) // '.' // CRLF() // BLANK10 // 
+     &         'INVYEAR packet can be used only once for each ' //
+     &         'group of five EMS-95 files.'
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.........  Error with number of EMS-95 files
-1008    WRITE( MESG,94010 ) 'ERROR at line ', J, 'of PTINV.' //
-     &         CRLF() // BLANK5 // 
+1008    WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' //
+     &         FNAME( 1:FLEN ) // '.' // CRLF() // BLANK10 // 
      &        'EMS-95 files must be in groups of five.'
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
@@ -761,4 +461,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94060   FORMAT( 10( A, :, E10.3, :, 1X ) )
 
-        END SUBROUTINE RDPTINV
+        END SUBROUTINE RDINVEN
