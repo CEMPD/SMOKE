@@ -1,0 +1,2415 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program TEMPORAL, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program TEMPORAL to take a SMOKE area, mobile, or point
+     source inventory file, a temporal profiles file, a temporal
+     cross-reference file, an optional SMOKE day-specific file, 
+     and an optional SMOKE hour-specific point source file, and
+     produce hourly low-level and optionally hourly elevated point
+     source emissions for the requested episode.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for OUTZONE:  0
+     Value for UNIFORM_TPROF_YN:  N returning FALSE
+     Value for SMK_SOURCE:  'A'
+     Value for SMK_O3SEASON_YN:  N returning FALSE
+     Value for PROMPTFLAG:  N returning FALSE
+     Error opening file at path-name:
+     netCDF error number  -51  processing file "AREA"
+     Not a netCDF file
+     Not a netCDF file
+     /stella/data/smkrel2/data/inventory/nctox/nroad.map.nctox.txt
+     Could not open file "AREA".
+
+     File AREA opened for input on unit:  98
+     /stella/data/smkrel2/data/inventory/nctox/nroad.map.nctox.txt
+
+     Value for AREA:  '/stella/data/smkrel2/data/inventory/nctox/nroad.map.nctox.txt'
+
+ WARNING: output file already exists: ASRC
+ /stella/data/smkrel2/data/inventory/nctox/nrsrc.txt
+
+
+     File "ASRC" opened for output on unit:  97
+     /stella/data/smkrel2/data/inventory/nctox/nrsrc.txt
+
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "AREA" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 17592 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         6:
+     Time-independent data.
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File ATREF opened for input on unit:  96
+     /stella/data/smkrel2/data/ge_dat/amptref.m3.032502.us+can.txt
+
+
+     File ATPRO opened for input on unit:  95
+     /stella/data/smkrel2/data/ge_dat/amptpro.m3.062801.us+can.txt
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+
+     File COSTCY opened for input on unit:  94
+     /stella/data/smkrel2/data/ge_dat/costcy.txt
+
+
+     File HOLIDAYS opened for input on unit:  93
+     /stella/data/smkrel2/data/ge_dat/holidays.txt
+
+     Value for G_STDATE:  1996191
+     Value for G_STTIME:  0
+     Value for G_TSTEP:  10000
+     Value for G_RUNLEN:  250000
+     Value for PROMPTFLAG:  N returning FALSE
+     Output Time Zone: 00
+           Start Date: July 9, 1996
+           Start Time: 000000 HHMMSS
+            Time Step: 001 hour
+             Duration: 025 hours
+     WARNING: Inventory base year     1999 is inconsistent with year 
+          of episode start date    1996
+     Reading source data from inventory file...
+     Generating unique lists from inventory data...
+     Value for SMK_DEFAULT_TZONE:  5
+     Reading state and county names and time zones...
+     NOTE: Population data read from country/state/county file for year     2000
+     Value for PROMPTFLAG:  N returning FALSE
+     Number of variables per file array is not allocated for file set ATMP;
+     using default of 120 variables per file
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "ATMP" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/run_nctox/19960709/ntmp.19960709.1.nctox.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 17592 rows, 1 cols, 1 lays, 37 vbles
+     NetCDF ID:        11:
+     Starting date and time  1996191:000000 (0:00:00   July 9, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number       0
+
+     File "ATSUP" opened for output on unit:  92
+     /stella/data/smkrel2/data/run_nctox/19960709/ntsup.19960709.nctox.txt
+
+     Reading temporal cross-reference file...
+     NOTE: File read in as STANDARD format.
+     Processing temporal cross-reference file...
+     Reading temporal profiles file...
+     NOTE: Storing WEEKDAY temporal profiles
+     NOTE: Storing WEEKEND temporal profiles
+     Value for RENORM_TPROF:  Y returning TRUE
+     Processing data for: "CO", "NOX", "VOC", "NH3", "SO2", "PM10", "PM2_5",
+                         "ACETALD", "ACROLEIN", "BENZENE", "BUTADIENE",
+                         "ETHYLBENZN", "FORMALDEHYD", "HEXANE", "HG",
+                         "HGIIGAS", "PH
+      
+      
+     Assigning temporal profiles to sources...
+     Value for REPORT_DEFAULTS:  N returning FALSE
+     Value for SMK_MAXERROR:  100
+     Value for SMK_MAXWARNING:  100
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+      
+     "IOAPI_DAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+
+     Closing file "IOAPI_DAT"                                                        
+
+     Value for ZONE4WM:  Y returning TRUE
+     Processing Tuesday July 9, 1996
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     CO written to ATMP for   1996191:000000
+     NOX written to ATMP for   1996191:000000
+     VOC written to ATMP for   1996191:000000
+     NH3 written to ATMP for   1996191:000000
+     SO2 written to ATMP for   1996191:000000
+     PM10 written to ATMP for   1996191:000000
+     PM2_5 written to ATMP for   1996191:000000
+     ACETALD written to ATMP for   1996191:000000
+     ACROLEIN written to ATMP for   1996191:000000
+     BENZENE written to ATMP for   1996191:000000
+     BUTADIENE written to ATMP for   1996191:000000
+     ETHYLBENZN written to ATMP for   1996191:000000
+     FORMALDEHYD written to ATMP for   1996191:000000
+     HEXANE written to ATMP for   1996191:000000
+     HG written to ATMP for   1996191:000000
+     HGIIGAS written to ATMP for   1996191:000000
+     PHGI written to ATMP for   1996191:000000
+     ANTHRACENE written to ATMP for   1996191:000000
+     BENZOGHIPER written to ATMP for   1996191:000000
+     IND123CD written to ATMP for   1996191:000000
+     BENZOBFLUOR written to ATMP for   1996191:000000
+     BENZOKFLUOR written to ATMP for   1996191:000000
+     CHRYSENE written to ATMP for   1996191:000000
+     DIBENAHANT written to ATMP for   1996191:000000
+     BENZAANTHRA written to ATMP for   1996191:000000
+     ACENAPHTHEN written to ATMP for   1996191:000000
+     ACNPTHYLENE written to ATMP for   1996191:000000
+     PHNANTHRENE written to ATMP for   1996191:000000
+     NAPHTHALENE written to ATMP for   1996191:000000
+     FLUORENE written to ATMP for   1996191:000000
+     PROPIONALD written to ATMP for   1996191:000000
+     STYRENE written to ATMP for   1996191:000000
+     TOLUENE written to ATMP for   1996191:000000
+     TRIMTHPN224 written to ATMP for   1996191:000000
+     XYLENES written to ATMP for   1996191:000000
+     NONHAPVOC written to ATMP for   1996191:000000
+     PMC written to ATMP for   1996191:000000
+     CO written to ATMP for   1996191:010000
+     NOX written to ATMP for   1996191:010000
+     VOC written to ATMP for   1996191:010000
+     NH3 written to ATMP for   1996191:010000
+     SO2 written to ATMP for   1996191:010000
+     PM10 written to ATMP for   1996191:010000
+     PM2_5 written to ATMP for   1996191:010000
+     ACETALD written to ATMP for   1996191:010000
+     ACROLEIN written to ATMP for   1996191:010000
+     BENZENE written to ATMP for   1996191:010000
+     BUTADIENE written to ATMP for   1996191:010000
+     ETHYLBENZN written to ATMP for   1996191:010000
+     FORMALDEHYD written to ATMP for   1996191:010000
+     HEXANE written to ATMP for   1996191:010000
+     HG written to ATMP for   1996191:010000
+     HGIIGAS written to ATMP for   1996191:010000
+     PHGI written to ATMP for   1996191:010000
+     ANTHRACENE written to ATMP for   1996191:010000
+     BENZOGHIPER written to ATMP for   1996191:010000
+     IND123CD written to ATMP for   1996191:010000
+     BENZOBFLUOR written to ATMP for   1996191:010000
+     BENZOKFLUOR written to ATMP for   1996191:010000
+     CHRYSENE written to ATMP for   1996191:010000
+     DIBENAHANT written to ATMP for   1996191:010000
+     BENZAANTHRA written to ATMP for   1996191:010000
+     ACENAPHTHEN written to ATMP for   1996191:010000
+     ACNPTHYLENE written to ATMP for   1996191:010000
+     PHNANTHRENE written to ATMP for   1996191:010000
+     NAPHTHALENE written to ATMP for   1996191:010000
+     FLUORENE written to ATMP for   1996191:010000
+     PROPIONALD written to ATMP for   1996191:010000
+     STYRENE written to ATMP for   1996191:010000
+     TOLUENE written to ATMP for   1996191:010000
+     TRIMTHPN224 written to ATMP for   1996191:010000
+     XYLENES written to ATMP for   1996191:010000
+     NONHAPVOC written to ATMP for   1996191:010000
+     PMC written to ATMP for   1996191:010000
+     CO written to ATMP for   1996191:020000
+     NOX written to ATMP for   1996191:020000
+     VOC written to ATMP for   1996191:020000
+     NH3 written to ATMP for   1996191:020000
+     SO2 written to ATMP for   1996191:020000
+     PM10 written to ATMP for   1996191:020000
+     PM2_5 written to ATMP for   1996191:020000
+     ACETALD written to ATMP for   1996191:020000
+     ACROLEIN written to ATMP for   1996191:020000
+     BENZENE written to ATMP for   1996191:020000
+     BUTADIENE written to ATMP for   1996191:020000
+     ETHYLBENZN written to ATMP for   1996191:020000
+     FORMALDEHYD written to ATMP for   1996191:020000
+     HEXANE written to ATMP for   1996191:020000
+     HG written to ATMP for   1996191:020000
+     HGIIGAS written to ATMP for   1996191:020000
+     PHGI written to ATMP for   1996191:020000
+     ANTHRACENE written to ATMP for   1996191:020000
+     BENZOGHIPER written to ATMP for   1996191:020000
+     IND123CD written to ATMP for   1996191:020000
+     BENZOBFLUOR written to ATMP for   1996191:020000
+     BENZOKFLUOR written to ATMP for   1996191:020000
+     CHRYSENE written to ATMP for   1996191:020000
+     DIBENAHANT written to ATMP for   1996191:020000
+     BENZAANTHRA written to ATMP for   1996191:020000
+     ACENAPHTHEN written to ATMP for   1996191:020000
+     ACNPTHYLENE written to ATMP for   1996191:020000
+     PHNANTHRENE written to ATMP for   1996191:020000
+     NAPHTHALENE written to ATMP for   1996191:020000
+     FLUORENE written to ATMP for   1996191:020000
+     PROPIONALD written to ATMP for   1996191:020000
+     STYRENE written to ATMP for   1996191:020000
+     TOLUENE written to ATMP for   1996191:020000
+     TRIMTHPN224 written to ATMP for   1996191:020000
+     XYLENES written to ATMP for   1996191:020000
+     NONHAPVOC written to ATMP for   1996191:020000
+     PMC written to ATMP for   1996191:020000
+     CO written to ATMP for   1996191:030000
+     NOX written to ATMP for   1996191:030000
+     VOC written to ATMP for   1996191:030000
+     NH3 written to ATMP for   1996191:030000
+     SO2 written to ATMP for   1996191:030000
+     PM10 written to ATMP for   1996191:030000
+     PM2_5 written to ATMP for   1996191:030000
+     ACETALD written to ATMP for   1996191:030000
+     ACROLEIN written to ATMP for   1996191:030000
+     BENZENE written to ATMP for   1996191:030000
+     BUTADIENE written to ATMP for   1996191:030000
+     ETHYLBENZN written to ATMP for   1996191:030000
+     FORMALDEHYD written to ATMP for   1996191:030000
+     HEXANE written to ATMP for   1996191:030000
+     HG written to ATMP for   1996191:030000
+     HGIIGAS written to ATMP for   1996191:030000
+     PHGI written to ATMP for   1996191:030000
+     ANTHRACENE written to ATMP for   1996191:030000
+     BENZOGHIPER written to ATMP for   1996191:030000
+     IND123CD written to ATMP for   1996191:030000
+     BENZOBFLUOR written to ATMP for   1996191:030000
+     BENZOKFLUOR written to ATMP for   1996191:030000
+     CHRYSENE written to ATMP for   1996191:030000
+     DIBENAHANT written to ATMP for   1996191:030000
+     BENZAANTHRA written to ATMP for   1996191:030000
+     ACENAPHTHEN written to ATMP for   1996191:030000
+     ACNPTHYLENE written to ATMP for   1996191:030000
+     PHNANTHRENE written to ATMP for   1996191:030000
+     NAPHTHALENE written to ATMP for   1996191:030000
+     FLUORENE written to ATMP for   1996191:030000
+     PROPIONALD written to ATMP for   1996191:030000
+     STYRENE written to ATMP for   1996191:030000
+     TOLUENE written to ATMP for   1996191:030000
+     TRIMTHPN224 written to ATMP for   1996191:030000
+     XYLENES written to ATMP for   1996191:030000
+     NONHAPVOC written to ATMP for   1996191:030000
+     PMC written to ATMP for   1996191:030000
+     CO written to ATMP for   1996191:040000
+     NOX written to ATMP for   1996191:040000
+     VOC written to ATMP for   1996191:040000
+     NH3 written to ATMP for   1996191:040000
+     SO2 written to ATMP for   1996191:040000
+     PM10 written to ATMP for   1996191:040000
+     PM2_5 written to ATMP for   1996191:040000
+     ACETALD written to ATMP for   1996191:040000
+     ACROLEIN written to ATMP for   1996191:040000
+     BENZENE written to ATMP for   1996191:040000
+     BUTADIENE written to ATMP for   1996191:040000
+     ETHYLBENZN written to ATMP for   1996191:040000
+     FORMALDEHYD written to ATMP for   1996191:040000
+     HEXANE written to ATMP for   1996191:040000
+     HG written to ATMP for   1996191:040000
+     HGIIGAS written to ATMP for   1996191:040000
+     PHGI written to ATMP for   1996191:040000
+     ANTHRACENE written to ATMP for   1996191:040000
+     BENZOGHIPER written to ATMP for   1996191:040000
+     IND123CD written to ATMP for   1996191:040000
+     BENZOBFLUOR written to ATMP for   1996191:040000
+     BENZOKFLUOR written to ATMP for   1996191:040000
+     CHRYSENE written to ATMP for   1996191:040000
+     DIBENAHANT written to ATMP for   1996191:040000
+     BENZAANTHRA written to ATMP for   1996191:040000
+     ACENAPHTHEN written to ATMP for   1996191:040000
+     ACNPTHYLENE written to ATMP for   1996191:040000
+     PHNANTHRENE written to ATMP for   1996191:040000
+     NAPHTHALENE written to ATMP for   1996191:040000
+     FLUORENE written to ATMP for   1996191:040000
+     PROPIONALD written to ATMP for   1996191:040000
+     STYRENE written to ATMP for   1996191:040000
+     TOLUENE written to ATMP for   1996191:040000
+     TRIMTHPN224 written to ATMP for   1996191:040000
+     XYLENES written to ATMP for   1996191:040000
+     NONHAPVOC written to ATMP for   1996191:040000
+     PMC written to ATMP for   1996191:040000
+     CO written to ATMP for   1996191:050000
+     NOX written to ATMP for   1996191:050000
+     VOC written to ATMP for   1996191:050000
+     NH3 written to ATMP for   1996191:050000
+     SO2 written to ATMP for   1996191:050000
+     PM10 written to ATMP for   1996191:050000
+     PM2_5 written to ATMP for   1996191:050000
+     ACETALD written to ATMP for   1996191:050000
+     ACROLEIN written to ATMP for   1996191:050000
+     BENZENE written to ATMP for   1996191:050000
+     BUTADIENE written to ATMP for   1996191:050000
+     ETHYLBENZN written to ATMP for   1996191:050000
+     FORMALDEHYD written to ATMP for   1996191:050000
+     HEXANE written to ATMP for   1996191:050000
+     HG written to ATMP for   1996191:050000
+     HGIIGAS written to ATMP for   1996191:050000
+     PHGI written to ATMP for   1996191:050000
+     ANTHRACENE written to ATMP for   1996191:050000
+     BENZOGHIPER written to ATMP for   1996191:050000
+     IND123CD written to ATMP for   1996191:050000
+     BENZOBFLUOR written to ATMP for   1996191:050000
+     BENZOKFLUOR written to ATMP for   1996191:050000
+     CHRYSENE written to ATMP for   1996191:050000
+     DIBENAHANT written to ATMP for   1996191:050000
+     BENZAANTHRA written to ATMP for   1996191:050000
+     ACENAPHTHEN written to ATMP for   1996191:050000
+     ACNPTHYLENE written to ATMP for   1996191:050000
+     PHNANTHRENE written to ATMP for   1996191:050000
+     NAPHTHALENE written to ATMP for   1996191:050000
+     FLUORENE written to ATMP for   1996191:050000
+     PROPIONALD written to ATMP for   1996191:050000
+     STYRENE written to ATMP for   1996191:050000
+     TOLUENE written to ATMP for   1996191:050000
+     TRIMTHPN224 written to ATMP for   1996191:050000
+     XYLENES written to ATMP for   1996191:050000
+     NONHAPVOC written to ATMP for   1996191:050000
+     PMC written to ATMP for   1996191:050000
+     CO written to ATMP for   1996191:060000
+     NOX written to ATMP for   1996191:060000
+     VOC written to ATMP for   1996191:060000
+     NH3 written to ATMP for   1996191:060000
+     SO2 written to ATMP for   1996191:060000
+     PM10 written to ATMP for   1996191:060000
+     PM2_5 written to ATMP for   1996191:060000
+     ACETALD written to ATMP for   1996191:060000
+     ACROLEIN written to ATMP for   1996191:060000
+     BENZENE written to ATMP for   1996191:060000
+     BUTADIENE written to ATMP for   1996191:060000
+     ETHYLBENZN written to ATMP for   1996191:060000
+     FORMALDEHYD written to ATMP for   1996191:060000
+     HEXANE written to ATMP for   1996191:060000
+     HG written to ATMP for   1996191:060000
+     HGIIGAS written to ATMP for   1996191:060000
+     PHGI written to ATMP for   1996191:060000
+     ANTHRACENE written to ATMP for   1996191:060000
+     BENZOGHIPER written to ATMP for   1996191:060000
+     IND123CD written to ATMP for   1996191:060000
+     BENZOBFLUOR written to ATMP for   1996191:060000
+     BENZOKFLUOR written to ATMP for   1996191:060000
+     CHRYSENE written to ATMP for   1996191:060000
+     DIBENAHANT written to ATMP for   1996191:060000
+     BENZAANTHRA written to ATMP for   1996191:060000
+     ACENAPHTHEN written to ATMP for   1996191:060000
+     ACNPTHYLENE written to ATMP for   1996191:060000
+     PHNANTHRENE written to ATMP for   1996191:060000
+     NAPHTHALENE written to ATMP for   1996191:060000
+     FLUORENE written to ATMP for   1996191:060000
+     PROPIONALD written to ATMP for   1996191:060000
+     STYRENE written to ATMP for   1996191:060000
+     TOLUENE written to ATMP for   1996191:060000
+     TRIMTHPN224 written to ATMP for   1996191:060000
+     XYLENES written to ATMP for   1996191:060000
+     NONHAPVOC written to ATMP for   1996191:060000
+     PMC written to ATMP for   1996191:060000
+     CO written to ATMP for   1996191:070000
+     NOX written to ATMP for   1996191:070000
+     VOC written to ATMP for   1996191:070000
+     NH3 written to ATMP for   1996191:070000
+     SO2 written to ATMP for   1996191:070000
+     PM10 written to ATMP for   1996191:070000
+     PM2_5 written to ATMP for   1996191:070000
+     ACETALD written to ATMP for   1996191:070000
+     ACROLEIN written to ATMP for   1996191:070000
+     BENZENE written to ATMP for   1996191:070000
+     BUTADIENE written to ATMP for   1996191:070000
+     ETHYLBENZN written to ATMP for   1996191:070000
+     FORMALDEHYD written to ATMP for   1996191:070000
+     HEXANE written to ATMP for   1996191:070000
+     HG written to ATMP for   1996191:070000
+     HGIIGAS written to ATMP for   1996191:070000
+     PHGI written to ATMP for   1996191:070000
+     ANTHRACENE written to ATMP for   1996191:070000
+     BENZOGHIPER written to ATMP for   1996191:070000
+     IND123CD written to ATMP for   1996191:070000
+     BENZOBFLUOR written to ATMP for   1996191:070000
+     BENZOKFLUOR written to ATMP for   1996191:070000
+     CHRYSENE written to ATMP for   1996191:070000
+     DIBENAHANT written to ATMP for   1996191:070000
+     BENZAANTHRA written to ATMP for   1996191:070000
+     ACENAPHTHEN written to ATMP for   1996191:070000
+     ACNPTHYLENE written to ATMP for   1996191:070000
+     PHNANTHRENE written to ATMP for   1996191:070000
+     NAPHTHALENE written to ATMP for   1996191:070000
+     FLUORENE written to ATMP for   1996191:070000
+     PROPIONALD written to ATMP for   1996191:070000
+     STYRENE written to ATMP for   1996191:070000
+     TOLUENE written to ATMP for   1996191:070000
+     TRIMTHPN224 written to ATMP for   1996191:070000
+     XYLENES written to ATMP for   1996191:070000
+     NONHAPVOC written to ATMP for   1996191:070000
+     PMC written to ATMP for   1996191:070000
+     CO written to ATMP for   1996191:080000
+     NOX written to ATMP for   1996191:080000
+     VOC written to ATMP for   1996191:080000
+     NH3 written to ATMP for   1996191:080000
+     SO2 written to ATMP for   1996191:080000
+     PM10 written to ATMP for   1996191:080000
+     PM2_5 written to ATMP for   1996191:080000
+     ACETALD written to ATMP for   1996191:080000
+     ACROLEIN written to ATMP for   1996191:080000
+     BENZENE written to ATMP for   1996191:080000
+     BUTADIENE written to ATMP for   1996191:080000
+     ETHYLBENZN written to ATMP for   1996191:080000
+     FORMALDEHYD written to ATMP for   1996191:080000
+     HEXANE written to ATMP for   1996191:080000
+     HG written to ATMP for   1996191:080000
+     HGIIGAS written to ATMP for   1996191:080000
+     PHGI written to ATMP for   1996191:080000
+     ANTHRACENE written to ATMP for   1996191:080000
+     BENZOGHIPER written to ATMP for   1996191:080000
+     IND123CD written to ATMP for   1996191:080000
+     BENZOBFLUOR written to ATMP for   1996191:080000
+     BENZOKFLUOR written to ATMP for   1996191:080000
+     CHRYSENE written to ATMP for   1996191:080000
+     DIBENAHANT written to ATMP for   1996191:080000
+     BENZAANTHRA written to ATMP for   1996191:080000
+     ACENAPHTHEN written to ATMP for   1996191:080000
+     ACNPTHYLENE written to ATMP for   1996191:080000
+     PHNANTHRENE written to ATMP for   1996191:080000
+     NAPHTHALENE written to ATMP for   1996191:080000
+     FLUORENE written to ATMP for   1996191:080000
+     PROPIONALD written to ATMP for   1996191:080000
+     STYRENE written to ATMP for   1996191:080000
+     TOLUENE written to ATMP for   1996191:080000
+     TRIMTHPN224 written to ATMP for   1996191:080000
+     XYLENES written to ATMP for   1996191:080000
+     NONHAPVOC written to ATMP for   1996191:080000
+     PMC written to ATMP for   1996191:080000
+     CO written to ATMP for   1996191:090000
+     NOX written to ATMP for   1996191:090000
+     VOC written to ATMP for   1996191:090000
+     NH3 written to ATMP for   1996191:090000
+     SO2 written to ATMP for   1996191:090000
+     PM10 written to ATMP for   1996191:090000
+     PM2_5 written to ATMP for   1996191:090000
+     ACETALD written to ATMP for   1996191:090000
+     ACROLEIN written to ATMP for   1996191:090000
+     BENZENE written to ATMP for   1996191:090000
+     BUTADIENE written to ATMP for   1996191:090000
+     ETHYLBENZN written to ATMP for   1996191:090000
+     FORMALDEHYD written to ATMP for   1996191:090000
+     HEXANE written to ATMP for   1996191:090000
+     HG written to ATMP for   1996191:090000
+     HGIIGAS written to ATMP for   1996191:090000
+     PHGI written to ATMP for   1996191:090000
+     ANTHRACENE written to ATMP for   1996191:090000
+     BENZOGHIPER written to ATMP for   1996191:090000
+     IND123CD written to ATMP for   1996191:090000
+     BENZOBFLUOR written to ATMP for   1996191:090000
+     BENZOKFLUOR written to ATMP for   1996191:090000
+     CHRYSENE written to ATMP for   1996191:090000
+     DIBENAHANT written to ATMP for   1996191:090000
+     BENZAANTHRA written to ATMP for   1996191:090000
+     ACENAPHTHEN written to ATMP for   1996191:090000
+     ACNPTHYLENE written to ATMP for   1996191:090000
+     PHNANTHRENE written to ATMP for   1996191:090000
+     NAPHTHALENE written to ATMP for   1996191:090000
+     FLUORENE written to ATMP for   1996191:090000
+     PROPIONALD written to ATMP for   1996191:090000
+     STYRENE written to ATMP for   1996191:090000
+     TOLUENE written to ATMP for   1996191:090000
+     TRIMTHPN224 written to ATMP for   1996191:090000
+     XYLENES written to ATMP for   1996191:090000
+     NONHAPVOC written to ATMP for   1996191:090000
+     PMC written to ATMP for   1996191:090000
+     CO written to ATMP for   1996191:100000
+     NOX written to ATMP for   1996191:100000
+     VOC written to ATMP for   1996191:100000
+     NH3 written to ATMP for   1996191:100000
+     SO2 written to ATMP for   1996191:100000
+     PM10 written to ATMP for   1996191:100000
+     PM2_5 written to ATMP for   1996191:100000
+     ACETALD written to ATMP for   1996191:100000
+     ACROLEIN written to ATMP for   1996191:100000
+     BENZENE written to ATMP for   1996191:100000
+     BUTADIENE written to ATMP for   1996191:100000
+     ETHYLBENZN written to ATMP for   1996191:100000
+     FORMALDEHYD written to ATMP for   1996191:100000
+     HEXANE written to ATMP for   1996191:100000
+     HG written to ATMP for   1996191:100000
+     HGIIGAS written to ATMP for   1996191:100000
+     PHGI written to ATMP for   1996191:100000
+     ANTHRACENE written to ATMP for   1996191:100000
+     BENZOGHIPER written to ATMP for   1996191:100000
+     IND123CD written to ATMP for   1996191:100000
+     BENZOBFLUOR written to ATMP for   1996191:100000
+     BENZOKFLUOR written to ATMP for   1996191:100000
+     CHRYSENE written to ATMP for   1996191:100000
+     DIBENAHANT written to ATMP for   1996191:100000
+     BENZAANTHRA written to ATMP for   1996191:100000
+     ACENAPHTHEN written to ATMP for   1996191:100000
+     ACNPTHYLENE written to ATMP for   1996191:100000
+     PHNANTHRENE written to ATMP for   1996191:100000
+     NAPHTHALENE written to ATMP for   1996191:100000
+     FLUORENE written to ATMP for   1996191:100000
+     PROPIONALD written to ATMP for   1996191:100000
+     STYRENE written to ATMP for   1996191:100000
+     TOLUENE written to ATMP for   1996191:100000
+     TRIMTHPN224 written to ATMP for   1996191:100000
+     XYLENES written to ATMP for   1996191:100000
+     NONHAPVOC written to ATMP for   1996191:100000
+     PMC written to ATMP for   1996191:100000
+     CO written to ATMP for   1996191:110000
+     NOX written to ATMP for   1996191:110000
+     VOC written to ATMP for   1996191:110000
+     NH3 written to ATMP for   1996191:110000
+     SO2 written to ATMP for   1996191:110000
+     PM10 written to ATMP for   1996191:110000
+     PM2_5 written to ATMP for   1996191:110000
+     ACETALD written to ATMP for   1996191:110000
+     ACROLEIN written to ATMP for   1996191:110000
+     BENZENE written to ATMP for   1996191:110000
+     BUTADIENE written to ATMP for   1996191:110000
+     ETHYLBENZN written to ATMP for   1996191:110000
+     FORMALDEHYD written to ATMP for   1996191:110000
+     HEXANE written to ATMP for   1996191:110000
+     HG written to ATMP for   1996191:110000
+     HGIIGAS written to ATMP for   1996191:110000
+     PHGI written to ATMP for   1996191:110000
+     ANTHRACENE written to ATMP for   1996191:110000
+     BENZOGHIPER written to ATMP for   1996191:110000
+     IND123CD written to ATMP for   1996191:110000
+     BENZOBFLUOR written to ATMP for   1996191:110000
+     BENZOKFLUOR written to ATMP for   1996191:110000
+     CHRYSENE written to ATMP for   1996191:110000
+     DIBENAHANT written to ATMP for   1996191:110000
+     BENZAANTHRA written to ATMP for   1996191:110000
+     ACENAPHTHEN written to ATMP for   1996191:110000
+     ACNPTHYLENE written to ATMP for   1996191:110000
+     PHNANTHRENE written to ATMP for   1996191:110000
+     NAPHTHALENE written to ATMP for   1996191:110000
+     FLUORENE written to ATMP for   1996191:110000
+     PROPIONALD written to ATMP for   1996191:110000
+     STYRENE written to ATMP for   1996191:110000
+     TOLUENE written to ATMP for   1996191:110000
+     TRIMTHPN224 written to ATMP for   1996191:110000
+     XYLENES written to ATMP for   1996191:110000
+     NONHAPVOC written to ATMP for   1996191:110000
+     PMC written to ATMP for   1996191:110000
+     CO written to ATMP for   1996191:120000
+     NOX written to ATMP for   1996191:120000
+     VOC written to ATMP for   1996191:120000
+     NH3 written to ATMP for   1996191:120000
+     SO2 written to ATMP for   1996191:120000
+     PM10 written to ATMP for   1996191:120000
+     PM2_5 written to ATMP for   1996191:120000
+     ACETALD written to ATMP for   1996191:120000
+     ACROLEIN written to ATMP for   1996191:120000
+     BENZENE written to ATMP for   1996191:120000
+     BUTADIENE written to ATMP for   1996191:120000
+     ETHYLBENZN written to ATMP for   1996191:120000
+     FORMALDEHYD written to ATMP for   1996191:120000
+     HEXANE written to ATMP for   1996191:120000
+     HG written to ATMP for   1996191:120000
+     HGIIGAS written to ATMP for   1996191:120000
+     PHGI written to ATMP for   1996191:120000
+     ANTHRACENE written to ATMP for   1996191:120000
+     BENZOGHIPER written to ATMP for   1996191:120000
+     IND123CD written to ATMP for   1996191:120000
+     BENZOBFLUOR written to ATMP for   1996191:120000
+     BENZOKFLUOR written to ATMP for   1996191:120000
+     CHRYSENE written to ATMP for   1996191:120000
+     DIBENAHANT written to ATMP for   1996191:120000
+     BENZAANTHRA written to ATMP for   1996191:120000
+     ACENAPHTHEN written to ATMP for   1996191:120000
+     ACNPTHYLENE written to ATMP for   1996191:120000
+     PHNANTHRENE written to ATMP for   1996191:120000
+     NAPHTHALENE written to ATMP for   1996191:120000
+     FLUORENE written to ATMP for   1996191:120000
+     PROPIONALD written to ATMP for   1996191:120000
+     STYRENE written to ATMP for   1996191:120000
+     TOLUENE written to ATMP for   1996191:120000
+     TRIMTHPN224 written to ATMP for   1996191:120000
+     XYLENES written to ATMP for   1996191:120000
+     NONHAPVOC written to ATMP for   1996191:120000
+     PMC written to ATMP for   1996191:120000
+     CO written to ATMP for   1996191:130000
+     NOX written to ATMP for   1996191:130000
+     VOC written to ATMP for   1996191:130000
+     NH3 written to ATMP for   1996191:130000
+     SO2 written to ATMP for   1996191:130000
+     PM10 written to ATMP for   1996191:130000
+     PM2_5 written to ATMP for   1996191:130000
+     ACETALD written to ATMP for   1996191:130000
+     ACROLEIN written to ATMP for   1996191:130000
+     BENZENE written to ATMP for   1996191:130000
+     BUTADIENE written to ATMP for   1996191:130000
+     ETHYLBENZN written to ATMP for   1996191:130000
+     FORMALDEHYD written to ATMP for   1996191:130000
+     HEXANE written to ATMP for   1996191:130000
+     HG written to ATMP for   1996191:130000
+     HGIIGAS written to ATMP for   1996191:130000
+     PHGI written to ATMP for   1996191:130000
+     ANTHRACENE written to ATMP for   1996191:130000
+     BENZOGHIPER written to ATMP for   1996191:130000
+     IND123CD written to ATMP for   1996191:130000
+     BENZOBFLUOR written to ATMP for   1996191:130000
+     BENZOKFLUOR written to ATMP for   1996191:130000
+     CHRYSENE written to ATMP for   1996191:130000
+     DIBENAHANT written to ATMP for   1996191:130000
+     BENZAANTHRA written to ATMP for   1996191:130000
+     ACENAPHTHEN written to ATMP for   1996191:130000
+     ACNPTHYLENE written to ATMP for   1996191:130000
+     PHNANTHRENE written to ATMP for   1996191:130000
+     NAPHTHALENE written to ATMP for   1996191:130000
+     FLUORENE written to ATMP for   1996191:130000
+     PROPIONALD written to ATMP for   1996191:130000
+     STYRENE written to ATMP for   1996191:130000
+     TOLUENE written to ATMP for   1996191:130000
+     TRIMTHPN224 written to ATMP for   1996191:130000
+     XYLENES written to ATMP for   1996191:130000
+     NONHAPVOC written to ATMP for   1996191:130000
+     PMC written to ATMP for   1996191:130000
+     CO written to ATMP for   1996191:140000
+     NOX written to ATMP for   1996191:140000
+     VOC written to ATMP for   1996191:140000
+     NH3 written to ATMP for   1996191:140000
+     SO2 written to ATMP for   1996191:140000
+     PM10 written to ATMP for   1996191:140000
+     PM2_5 written to ATMP for   1996191:140000
+     ACETALD written to ATMP for   1996191:140000
+     ACROLEIN written to ATMP for   1996191:140000
+     BENZENE written to ATMP for   1996191:140000
+     BUTADIENE written to ATMP for   1996191:140000
+     ETHYLBENZN written to ATMP for   1996191:140000
+     FORMALDEHYD written to ATMP for   1996191:140000
+     HEXANE written to ATMP for   1996191:140000
+     HG written to ATMP for   1996191:140000
+     HGIIGAS written to ATMP for   1996191:140000
+     PHGI written to ATMP for   1996191:140000
+     ANTHRACENE written to ATMP for   1996191:140000
+     BENZOGHIPER written to ATMP for   1996191:140000
+     IND123CD written to ATMP for   1996191:140000
+     BENZOBFLUOR written to ATMP for   1996191:140000
+     BENZOKFLUOR written to ATMP for   1996191:140000
+     CHRYSENE written to ATMP for   1996191:140000
+     DIBENAHANT written to ATMP for   1996191:140000
+     BENZAANTHRA written to ATMP for   1996191:140000
+     ACENAPHTHEN written to ATMP for   1996191:140000
+     ACNPTHYLENE written to ATMP for   1996191:140000
+     PHNANTHRENE written to ATMP for   1996191:140000
+     NAPHTHALENE written to ATMP for   1996191:140000
+     FLUORENE written to ATMP for   1996191:140000
+     PROPIONALD written to ATMP for   1996191:140000
+     STYRENE written to ATMP for   1996191:140000
+     TOLUENE written to ATMP for   1996191:140000
+     TRIMTHPN224 written to ATMP for   1996191:140000
+     XYLENES written to ATMP for   1996191:140000
+     NONHAPVOC written to ATMP for   1996191:140000
+     PMC written to ATMP for   1996191:140000
+     CO written to ATMP for   1996191:150000
+     NOX written to ATMP for   1996191:150000
+     VOC written to ATMP for   1996191:150000
+     NH3 written to ATMP for   1996191:150000
+     SO2 written to ATMP for   1996191:150000
+     PM10 written to ATMP for   1996191:150000
+     PM2_5 written to ATMP for   1996191:150000
+     ACETALD written to ATMP for   1996191:150000
+     ACROLEIN written to ATMP for   1996191:150000
+     BENZENE written to ATMP for   1996191:150000
+     BUTADIENE written to ATMP for   1996191:150000
+     ETHYLBENZN written to ATMP for   1996191:150000
+     FORMALDEHYD written to ATMP for   1996191:150000
+     HEXANE written to ATMP for   1996191:150000
+     HG written to ATMP for   1996191:150000
+     HGIIGAS written to ATMP for   1996191:150000
+     PHGI written to ATMP for   1996191:150000
+     ANTHRACENE written to ATMP for   1996191:150000
+     BENZOGHIPER written to ATMP for   1996191:150000
+     IND123CD written to ATMP for   1996191:150000
+     BENZOBFLUOR written to ATMP for   1996191:150000
+     BENZOKFLUOR written to ATMP for   1996191:150000
+     CHRYSENE written to ATMP for   1996191:150000
+     DIBENAHANT written to ATMP for   1996191:150000
+     BENZAANTHRA written to ATMP for   1996191:150000
+     ACENAPHTHEN written to ATMP for   1996191:150000
+     ACNPTHYLENE written to ATMP for   1996191:150000
+     PHNANTHRENE written to ATMP for   1996191:150000
+     NAPHTHALENE written to ATMP for   1996191:150000
+     FLUORENE written to ATMP for   1996191:150000
+     PROPIONALD written to ATMP for   1996191:150000
+     STYRENE written to ATMP for   1996191:150000
+     TOLUENE written to ATMP for   1996191:150000
+     TRIMTHPN224 written to ATMP for   1996191:150000
+     XYLENES written to ATMP for   1996191:150000
+     NONHAPVOC written to ATMP for   1996191:150000
+     PMC written to ATMP for   1996191:150000
+     CO written to ATMP for   1996191:160000
+     NOX written to ATMP for   1996191:160000
+     VOC written to ATMP for   1996191:160000
+     NH3 written to ATMP for   1996191:160000
+     SO2 written to ATMP for   1996191:160000
+     PM10 written to ATMP for   1996191:160000
+     PM2_5 written to ATMP for   1996191:160000
+     ACETALD written to ATMP for   1996191:160000
+     ACROLEIN written to ATMP for   1996191:160000
+     BENZENE written to ATMP for   1996191:160000
+     BUTADIENE written to ATMP for   1996191:160000
+     ETHYLBENZN written to ATMP for   1996191:160000
+     FORMALDEHYD written to ATMP for   1996191:160000
+     HEXANE written to ATMP for   1996191:160000
+     HG written to ATMP for   1996191:160000
+     HGIIGAS written to ATMP for   1996191:160000
+     PHGI written to ATMP for   1996191:160000
+     ANTHRACENE written to ATMP for   1996191:160000
+     BENZOGHIPER written to ATMP for   1996191:160000
+     IND123CD written to ATMP for   1996191:160000
+     BENZOBFLUOR written to ATMP for   1996191:160000
+     BENZOKFLUOR written to ATMP for   1996191:160000
+     CHRYSENE written to ATMP for   1996191:160000
+     DIBENAHANT written to ATMP for   1996191:160000
+     BENZAANTHRA written to ATMP for   1996191:160000
+     ACENAPHTHEN written to ATMP for   1996191:160000
+     ACNPTHYLENE written to ATMP for   1996191:160000
+     PHNANTHRENE written to ATMP for   1996191:160000
+     NAPHTHALENE written to ATMP for   1996191:160000
+     FLUORENE written to ATMP for   1996191:160000
+     PROPIONALD written to ATMP for   1996191:160000
+     STYRENE written to ATMP for   1996191:160000
+     TOLUENE written to ATMP for   1996191:160000
+     TRIMTHPN224 written to ATMP for   1996191:160000
+     XYLENES written to ATMP for   1996191:160000
+     NONHAPVOC written to ATMP for   1996191:160000
+     PMC written to ATMP for   1996191:160000
+     CO written to ATMP for   1996191:170000
+     NOX written to ATMP for   1996191:170000
+     VOC written to ATMP for   1996191:170000
+     NH3 written to ATMP for   1996191:170000
+     SO2 written to ATMP for   1996191:170000
+     PM10 written to ATMP for   1996191:170000
+     PM2_5 written to ATMP for   1996191:170000
+     ACETALD written to ATMP for   1996191:170000
+     ACROLEIN written to ATMP for   1996191:170000
+     BENZENE written to ATMP for   1996191:170000
+     BUTADIENE written to ATMP for   1996191:170000
+     ETHYLBENZN written to ATMP for   1996191:170000
+     FORMALDEHYD written to ATMP for   1996191:170000
+     HEXANE written to ATMP for   1996191:170000
+     HG written to ATMP for   1996191:170000
+     HGIIGAS written to ATMP for   1996191:170000
+     PHGI written to ATMP for   1996191:170000
+     ANTHRACENE written to ATMP for   1996191:170000
+     BENZOGHIPER written to ATMP for   1996191:170000
+     IND123CD written to ATMP for   1996191:170000
+     BENZOBFLUOR written to ATMP for   1996191:170000
+     BENZOKFLUOR written to ATMP for   1996191:170000
+     CHRYSENE written to ATMP for   1996191:170000
+     DIBENAHANT written to ATMP for   1996191:170000
+     BENZAANTHRA written to ATMP for   1996191:170000
+     ACENAPHTHEN written to ATMP for   1996191:170000
+     ACNPTHYLENE written to ATMP for   1996191:170000
+     PHNANTHRENE written to ATMP for   1996191:170000
+     NAPHTHALENE written to ATMP for   1996191:170000
+     FLUORENE written to ATMP for   1996191:170000
+     PROPIONALD written to ATMP for   1996191:170000
+     STYRENE written to ATMP for   1996191:170000
+     TOLUENE written to ATMP for   1996191:170000
+     TRIMTHPN224 written to ATMP for   1996191:170000
+     XYLENES written to ATMP for   1996191:170000
+     NONHAPVOC written to ATMP for   1996191:170000
+     PMC written to ATMP for   1996191:170000
+     CO written to ATMP for   1996191:180000
+     NOX written to ATMP for   1996191:180000
+     VOC written to ATMP for   1996191:180000
+     NH3 written to ATMP for   1996191:180000
+     SO2 written to ATMP for   1996191:180000
+     PM10 written to ATMP for   1996191:180000
+     PM2_5 written to ATMP for   1996191:180000
+     ACETALD written to ATMP for   1996191:180000
+     ACROLEIN written to ATMP for   1996191:180000
+     BENZENE written to ATMP for   1996191:180000
+     BUTADIENE written to ATMP for   1996191:180000
+     ETHYLBENZN written to ATMP for   1996191:180000
+     FORMALDEHYD written to ATMP for   1996191:180000
+     HEXANE written to ATMP for   1996191:180000
+     HG written to ATMP for   1996191:180000
+     HGIIGAS written to ATMP for   1996191:180000
+     PHGI written to ATMP for   1996191:180000
+     ANTHRACENE written to ATMP for   1996191:180000
+     BENZOGHIPER written to ATMP for   1996191:180000
+     IND123CD written to ATMP for   1996191:180000
+     BENZOBFLUOR written to ATMP for   1996191:180000
+     BENZOKFLUOR written to ATMP for   1996191:180000
+     CHRYSENE written to ATMP for   1996191:180000
+     DIBENAHANT written to ATMP for   1996191:180000
+     BENZAANTHRA written to ATMP for   1996191:180000
+     ACENAPHTHEN written to ATMP for   1996191:180000
+     ACNPTHYLENE written to ATMP for   1996191:180000
+     PHNANTHRENE written to ATMP for   1996191:180000
+     NAPHTHALENE written to ATMP for   1996191:180000
+     FLUORENE written to ATMP for   1996191:180000
+     PROPIONALD written to ATMP for   1996191:180000
+     STYRENE written to ATMP for   1996191:180000
+     TOLUENE written to ATMP for   1996191:180000
+     TRIMTHPN224 written to ATMP for   1996191:180000
+     XYLENES written to ATMP for   1996191:180000
+     NONHAPVOC written to ATMP for   1996191:180000
+     PMC written to ATMP for   1996191:180000
+     CO written to ATMP for   1996191:190000
+     NOX written to ATMP for   1996191:190000
+     VOC written to ATMP for   1996191:190000
+     NH3 written to ATMP for   1996191:190000
+     SO2 written to ATMP for   1996191:190000
+     PM10 written to ATMP for   1996191:190000
+     PM2_5 written to ATMP for   1996191:190000
+     ACETALD written to ATMP for   1996191:190000
+     ACROLEIN written to ATMP for   1996191:190000
+     BENZENE written to ATMP for   1996191:190000
+     BUTADIENE written to ATMP for   1996191:190000
+     ETHYLBENZN written to ATMP for   1996191:190000
+     FORMALDEHYD written to ATMP for   1996191:190000
+     HEXANE written to ATMP for   1996191:190000
+     HG written to ATMP for   1996191:190000
+     HGIIGAS written to ATMP for   1996191:190000
+     PHGI written to ATMP for   1996191:190000
+     ANTHRACENE written to ATMP for   1996191:190000
+     BENZOGHIPER written to ATMP for   1996191:190000
+     IND123CD written to ATMP for   1996191:190000
+     BENZOBFLUOR written to ATMP for   1996191:190000
+     BENZOKFLUOR written to ATMP for   1996191:190000
+     CHRYSENE written to ATMP for   1996191:190000
+     DIBENAHANT written to ATMP for   1996191:190000
+     BENZAANTHRA written to ATMP for   1996191:190000
+     ACENAPHTHEN written to ATMP for   1996191:190000
+     ACNPTHYLENE written to ATMP for   1996191:190000
+     PHNANTHRENE written to ATMP for   1996191:190000
+     NAPHTHALENE written to ATMP for   1996191:190000
+     FLUORENE written to ATMP for   1996191:190000
+     PROPIONALD written to ATMP for   1996191:190000
+     STYRENE written to ATMP for   1996191:190000
+     TOLUENE written to ATMP for   1996191:190000
+     TRIMTHPN224 written to ATMP for   1996191:190000
+     XYLENES written to ATMP for   1996191:190000
+     NONHAPVOC written to ATMP for   1996191:190000
+     PMC written to ATMP for   1996191:190000
+     CO written to ATMP for   1996191:200000
+     NOX written to ATMP for   1996191:200000
+     VOC written to ATMP for   1996191:200000
+     NH3 written to ATMP for   1996191:200000
+     SO2 written to ATMP for   1996191:200000
+     PM10 written to ATMP for   1996191:200000
+     PM2_5 written to ATMP for   1996191:200000
+     ACETALD written to ATMP for   1996191:200000
+     ACROLEIN written to ATMP for   1996191:200000
+     BENZENE written to ATMP for   1996191:200000
+     BUTADIENE written to ATMP for   1996191:200000
+     ETHYLBENZN written to ATMP for   1996191:200000
+     FORMALDEHYD written to ATMP for   1996191:200000
+     HEXANE written to ATMP for   1996191:200000
+     HG written to ATMP for   1996191:200000
+     HGIIGAS written to ATMP for   1996191:200000
+     PHGI written to ATMP for   1996191:200000
+     ANTHRACENE written to ATMP for   1996191:200000
+     BENZOGHIPER written to ATMP for   1996191:200000
+     IND123CD written to ATMP for   1996191:200000
+     BENZOBFLUOR written to ATMP for   1996191:200000
+     BENZOKFLUOR written to ATMP for   1996191:200000
+     CHRYSENE written to ATMP for   1996191:200000
+     DIBENAHANT written to ATMP for   1996191:200000
+     BENZAANTHRA written to ATMP for   1996191:200000
+     ACENAPHTHEN written to ATMP for   1996191:200000
+     ACNPTHYLENE written to ATMP for   1996191:200000
+     PHNANTHRENE written to ATMP for   1996191:200000
+     NAPHTHALENE written to ATMP for   1996191:200000
+     FLUORENE written to ATMP for   1996191:200000
+     PROPIONALD written to ATMP for   1996191:200000
+     STYRENE written to ATMP for   1996191:200000
+     TOLUENE written to ATMP for   1996191:200000
+     TRIMTHPN224 written to ATMP for   1996191:200000
+     XYLENES written to ATMP for   1996191:200000
+     NONHAPVOC written to ATMP for   1996191:200000
+     PMC written to ATMP for   1996191:200000
+     CO written to ATMP for   1996191:210000
+     NOX written to ATMP for   1996191:210000
+     VOC written to ATMP for   1996191:210000
+     NH3 written to ATMP for   1996191:210000
+     SO2 written to ATMP for   1996191:210000
+     PM10 written to ATMP for   1996191:210000
+     PM2_5 written to ATMP for   1996191:210000
+     ACETALD written to ATMP for   1996191:210000
+     ACROLEIN written to ATMP for   1996191:210000
+     BENZENE written to ATMP for   1996191:210000
+     BUTADIENE written to ATMP for   1996191:210000
+     ETHYLBENZN written to ATMP for   1996191:210000
+     FORMALDEHYD written to ATMP for   1996191:210000
+     HEXANE written to ATMP for   1996191:210000
+     HG written to ATMP for   1996191:210000
+     HGIIGAS written to ATMP for   1996191:210000
+     PHGI written to ATMP for   1996191:210000
+     ANTHRACENE written to ATMP for   1996191:210000
+     BENZOGHIPER written to ATMP for   1996191:210000
+     IND123CD written to ATMP for   1996191:210000
+     BENZOBFLUOR written to ATMP for   1996191:210000
+     BENZOKFLUOR written to ATMP for   1996191:210000
+     CHRYSENE written to ATMP for   1996191:210000
+     DIBENAHANT written to ATMP for   1996191:210000
+     BENZAANTHRA written to ATMP for   1996191:210000
+     ACENAPHTHEN written to ATMP for   1996191:210000
+     ACNPTHYLENE written to ATMP for   1996191:210000
+     PHNANTHRENE written to ATMP for   1996191:210000
+     NAPHTHALENE written to ATMP for   1996191:210000
+     FLUORENE written to ATMP for   1996191:210000
+     PROPIONALD written to ATMP for   1996191:210000
+     STYRENE written to ATMP for   1996191:210000
+     TOLUENE written to ATMP for   1996191:210000
+     TRIMTHPN224 written to ATMP for   1996191:210000
+     XYLENES written to ATMP for   1996191:210000
+     NONHAPVOC written to ATMP for   1996191:210000
+     PMC written to ATMP for   1996191:210000
+     CO written to ATMP for   1996191:220000
+     NOX written to ATMP for   1996191:220000
+     VOC written to ATMP for   1996191:220000
+     NH3 written to ATMP for   1996191:220000
+     SO2 written to ATMP for   1996191:220000
+     PM10 written to ATMP for   1996191:220000
+     PM2_5 written to ATMP for   1996191:220000
+     ACETALD written to ATMP for   1996191:220000
+     ACROLEIN written to ATMP for   1996191:220000
+     BENZENE written to ATMP for   1996191:220000
+     BUTADIENE written to ATMP for   1996191:220000
+     ETHYLBENZN written to ATMP for   1996191:220000
+     FORMALDEHYD written to ATMP for   1996191:220000
+     HEXANE written to ATMP for   1996191:220000
+     HG written to ATMP for   1996191:220000
+     HGIIGAS written to ATMP for   1996191:220000
+     PHGI written to ATMP for   1996191:220000
+     ANTHRACENE written to ATMP for   1996191:220000
+     BENZOGHIPER written to ATMP for   1996191:220000
+     IND123CD written to ATMP for   1996191:220000
+     BENZOBFLUOR written to ATMP for   1996191:220000
+     BENZOKFLUOR written to ATMP for   1996191:220000
+     CHRYSENE written to ATMP for   1996191:220000
+     DIBENAHANT written to ATMP for   1996191:220000
+     BENZAANTHRA written to ATMP for   1996191:220000
+     ACENAPHTHEN written to ATMP for   1996191:220000
+     ACNPTHYLENE written to ATMP for   1996191:220000
+     PHNANTHRENE written to ATMP for   1996191:220000
+     NAPHTHALENE written to ATMP for   1996191:220000
+     FLUORENE written to ATMP for   1996191:220000
+     PROPIONALD written to ATMP for   1996191:220000
+     STYRENE written to ATMP for   1996191:220000
+     TOLUENE written to ATMP for   1996191:220000
+     TRIMTHPN224 written to ATMP for   1996191:220000
+     XYLENES written to ATMP for   1996191:220000
+     NONHAPVOC written to ATMP for   1996191:220000
+     PMC written to ATMP for   1996191:220000
+     CO written to ATMP for   1996191:230000
+     NOX written to ATMP for   1996191:230000
+     VOC written to ATMP for   1996191:230000
+     NH3 written to ATMP for   1996191:230000
+     SO2 written to ATMP for   1996191:230000
+     PM10 written to ATMP for   1996191:230000
+     PM2_5 written to ATMP for   1996191:230000
+     ACETALD written to ATMP for   1996191:230000
+     ACROLEIN written to ATMP for   1996191:230000
+     BENZENE written to ATMP for   1996191:230000
+     BUTADIENE written to ATMP for   1996191:230000
+     ETHYLBENZN written to ATMP for   1996191:230000
+     FORMALDEHYD written to ATMP for   1996191:230000
+     HEXANE written to ATMP for   1996191:230000
+     HG written to ATMP for   1996191:230000
+     HGIIGAS written to ATMP for   1996191:230000
+     PHGI written to ATMP for   1996191:230000
+     ANTHRACENE written to ATMP for   1996191:230000
+     BENZOGHIPER written to ATMP for   1996191:230000
+     IND123CD written to ATMP for   1996191:230000
+     BENZOBFLUOR written to ATMP for   1996191:230000
+     BENZOKFLUOR written to ATMP for   1996191:230000
+     CHRYSENE written to ATMP for   1996191:230000
+     DIBENAHANT written to ATMP for   1996191:230000
+     BENZAANTHRA written to ATMP for   1996191:230000
+     ACENAPHTHEN written to ATMP for   1996191:230000
+     ACNPTHYLENE written to ATMP for   1996191:230000
+     PHNANTHRENE written to ATMP for   1996191:230000
+     NAPHTHALENE written to ATMP for   1996191:230000
+     FLUORENE written to ATMP for   1996191:230000
+     PROPIONALD written to ATMP for   1996191:230000
+     STYRENE written to ATMP for   1996191:230000
+     TOLUENE written to ATMP for   1996191:230000
+     TRIMTHPN224 written to ATMP for   1996191:230000
+     XYLENES written to ATMP for   1996191:230000
+     NONHAPVOC written to ATMP for   1996191:230000
+     PMC written to ATMP for   1996191:230000
+     Processing Wednesday July 10, 1996
+     CO written to ATMP for   1996192:000000
+     NOX written to ATMP for   1996192:000000
+     VOC written to ATMP for   1996192:000000
+     NH3 written to ATMP for   1996192:000000
+     SO2 written to ATMP for   1996192:000000
+     PM10 written to ATMP for   1996192:000000
+     PM2_5 written to ATMP for   1996192:000000
+     ACETALD written to ATMP for   1996192:000000
+     ACROLEIN written to ATMP for   1996192:000000
+     BENZENE written to ATMP for   1996192:000000
+     BUTADIENE written to ATMP for   1996192:000000
+     ETHYLBENZN written to ATMP for   1996192:000000
+     FORMALDEHYD written to ATMP for   1996192:000000
+     HEXANE written to ATMP for   1996192:000000
+     HG written to ATMP for   1996192:000000
+     HGIIGAS written to ATMP for   1996192:000000
+     PHGI written to ATMP for   1996192:000000
+     ANTHRACENE written to ATMP for   1996192:000000
+     BENZOGHIPER written to ATMP for   1996192:000000
+     IND123CD written to ATMP for   1996192:000000
+     BENZOBFLUOR written to ATMP for   1996192:000000
+     BENZOKFLUOR written to ATMP for   1996192:000000
+     CHRYSENE written to ATMP for   1996192:000000
+     DIBENAHANT written to ATMP for   1996192:000000
+     BENZAANTHRA written to ATMP for   1996192:000000
+     ACENAPHTHEN written to ATMP for   1996192:000000
+     ACNPTHYLENE written to ATMP for   1996192:000000
+     PHNANTHRENE written to ATMP for   1996192:000000
+     NAPHTHALENE written to ATMP for   1996192:000000
+     FLUORENE written to ATMP for   1996192:000000
+     PROPIONALD written to ATMP for   1996192:000000
+     STYRENE written to ATMP for   1996192:000000
+     TOLUENE written to ATMP for   1996192:000000
+     TRIMTHPN224 written to ATMP for   1996192:000000
+     XYLENES written to ATMP for   1996192:000000
+     NONHAPVOC written to ATMP for   1996192:000000
+     PMC written to ATMP for   1996192:000000
+      
+     --->>  Normal Completion of program TEMPORAL
+      

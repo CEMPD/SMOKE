@@ -1,0 +1,113 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program RAWBIO, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program RAWBIO uses the biogenic emission factors, and
+     either:
+        1) county-level biogenic land use data and gridding
+           surrogate factors, or
+        2) gridded biogenic land use data
+     to produce gridded normalized biogenic emissions.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File BFAC opened for input on unit:  98
+     /stella/data/smkrel2/data/ge_dat/bfac.winter.txt
+
+     Value for GLUSE_YN:  Y returning TRUE
+
+     File BGUSE opened for input on unit:  97
+     /stella/data/smkrel2/data/inventory/beld2/beld.5.us36.txt
+
+     NOTE: Grid settings initialized using US36_132X90      in 
+          surrogates file.
+     Value for GRIDDESC:  '/stella/data/smk'
+
+     File GRIDDESC opened for input on unit:  96
+     /stella/data/smkrel2/data/ge_dat/GRIDDESC
+
+     Value for IOAPI_GRIDNAME_1:  'US36NC_23X12'
+
+     File GRIDDESC opened for input on unit:  96
+     /stella/data/smkrel2/data/ge_dat/GRIDDESC
+
+     NOTE: Output grid "US36NC_23X12" set; described as
+          No description available
+     NOTE: gridding surrogates extracted for output grid from grid "US36_132X90"
+     Value for PROMPTFLAG:  N returning FALSE
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "BGRD" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/inventory/nctox/bgrd.winter.us36-nc.beld.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "US36NC_23X12"
+     Dimensions: 12 rows, 23 cols, 1 lays, 23 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+     Reading EMISSIONS FACTOR file...
+     Reading GRIDDED LAND USE file
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     PINEISOP written to BGRD
+     DECDISOP written to BGRD
+     CONFISOP written to BGRD
+     AGRCISOP written to BGRD
+     LEAFISOP written to BGRD
+     OTHRISOP written to BGRD
+     PINETERP written to BGRD
+     DECDTERP written to BGRD
+     CONFTERP written to BGRD
+     AGRCTERP written to BGRD
+     LEAFTERP written to BGRD
+     OTHRTERP written to BGRD
+     PINEOVOC written to BGRD
+     DECDOVOC written to BGRD
+     CONFOVOC written to BGRD
+     AGRCOVOC written to BGRD
+     LEAFOVOC written to BGRD
+     OTHROVOC written to BGRD
+     AVLAI written to BGRD
+     GRASNO written to BGRD
+     FORENO written to BGRD
+     WETLNO written to BGRD
+     AGRINO written to BGRD
+      
+     --->>  Normal Completion of program RAWBIO
+      

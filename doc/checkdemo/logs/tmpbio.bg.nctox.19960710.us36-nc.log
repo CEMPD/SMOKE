@@ -1,0 +1,251 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program TMPBIO, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program TMPBIO takes postprocessed MM5 meteorology and 
+     normalized gridded emissions from RAWBIO or GRDBIO, and 
+     produces time stepped gridded speciated biogenic 
+     emissions. It optionally takes is a gridded winter-summer
+     designation to apply winter and summer emission factors by
+     grid cell.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for OUTZONE:  0
+     Value for BIOSW_YN:  Y returning TRUE
+     Value for BIOG_SPRO:  '0000'
+     Value for BIOMET_SAME:  N returning FALSE
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File GSPRO opened for input on unit:  98
+     /stella/data/smkrel2/data/ge_dat/gspro.cmaq.cb4p25.txt
+
+          Reading biogenic speciation profile...
+     Value for BG_CLOUD_TYPE:  1
+     PAR calculation will Use MM5 generated RGND or RSD                                                                                                                                                                                                                                                          
+     Value for G_STDATE:  1996192
+     Value for G_STTIME:  0
+     Value for G_TSTEP:  10000
+     Value for G_RUNLEN:  250000
+     Value for PROMPTFLAG:  N returning FALSE
+     Output Time Zone: 00
+           Start Date: July 10, 1996
+           Start Time: 000000 HHMMSS
+            Time Step: 001 hour
+             Duration: 025 hours
+     Value for TMPR_VAR:  'TEMP10'
+     Value for METLIST:  '/stella/data/smkrel2/data/inventory/nctox/biog/metlist.tmpbio.txt'
+
+     File METLIST opened for input on unit:  97
+     /stella/data/smkrel2/data/inventory/nctox/biog/metlist.tmpbio.txt
+
+     Checking temperature files...
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "MET_FILE1" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/met/run_a1a/METCRO2D_1996192"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "METCRO_1996_36KM"
+     Dimensions: 90 rows, 132 cols, 1 lays, 10 vbles
+     NetCDF ID:         5:
+     Starting date and time  1996192:000000 (0:00:00   July 10, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      25
+     NOTE: Grid settings initialized using MET_FILE1        in 
+          gridded file.
+     Checking for missing temperature data...
+     Value for RAD_VAR:  'RGRND'
+     Value for RADLIST:  '/stella/data/smkrel2/data/inventory/nctox/biog/radlist.tmpbio.txt'
+
+     File RADLIST opened for input on unit:  97
+     /stella/data/smkrel2/data/inventory/nctox/biog/radlist.tmpbio.txt
+
+     Checking radiation/cloud files...
+      
+     "MET_FILE2" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/met/run_a1a/METCRO2D_1996192"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "METCRO_1996_36KM"
+     Dimensions: 90 rows, 132 cols, 1 lays, 10 vbles
+     NetCDF ID:         6:
+     Starting date and time  1996192:000000 (0:00:00   July 10, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      25
+     Checking for missing radiation data...
+     Value for PROMPTFLAG:  N returning FALSE
+      
+     "BIOSEASON" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/ge_dat/bioseason.1996.us36.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "METCRO_nat_36_CR"
+     Dimensions: 90 rows, 132 cols, 1 lays, 1 vbles
+     NetCDF ID:         7:
+     Starting date and time  1996001:000000 (0:00:00   Jan. 1, 1996)
+     Timestep                        240000 (24:00:00 hh:mm:ss)
+     Maximum current record number     366
+      
+     "BGRD" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/bgrd.summer.us36-nc.beld.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "US36NC_23X12"
+     Dimensions: 12 rows, 23 cols, 1 lays, 23 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+      
+     "BGRDW" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/bgrd.winter.us36-nc.beld.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "US36NC_23X12"
+     Dimensions: 12 rows, 23 cols, 1 lays, 23 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "BGTS_L" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/run_beld/19960710/output/cmaq.cb4p25/bgts_l.19960710.1.us36-nc.a1a_beld.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "US36NC_23X12"
+     Dimensions: 12 rows, 23 cols, 1 lays, 7 vbles
+     NetCDF ID:        10:
+     Starting date and time  1996192:000000 (0:00:00   July 10, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      25
+      
+     "BGTS_S" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/run_beld/19960710/output/cmaq.cb4p25/bgts_s.19960710.1.us36-nc.a1a_beld.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "US36NC_23X12"
+     Dimensions: 12 rows, 23 cols, 1 lays, 7 vbles
+     NetCDF ID:        11:
+     Starting date and time  1996192:000000 (0:00:00   July 10, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      25
+     Processing Wednesday July 10, 1996
+     Reading gridded season switch data..
+     Applying gridded season switch data..
+
+     Closing file "MET_FILE1"                                                        
+
+      
+     "MET_FILE1" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/met/run_a1a/METCRO2D_1996192"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "METCRO_1996_36KM"
+     Dimensions: 90 rows, 132 cols, 1 lays, 10 vbles
+     NetCDF ID:         5:
+     Starting date and time  1996192:000000 (0:00:00   July 10, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      25
+
+     Closing file "MET_FILE2"                                                        
+
+      
+     "MET_FILE2" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/met/run_a1a/METCRO2D_1996192"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name "METCRO_1996_36KM"
+     Dimensions: 90 rows, 132 cols, 1 lays, 10 vbles
+     NetCDF ID:         6:
+     Starting date and time  1996192:000000 (0:00:00   July 10, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      25
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     Timestep written to BGTS_L for date and time   1996192:000000
+     Timestep written to BGTS_S for date and time   1996192:000000
+     Timestep written to BGTS_L for date and time   1996192:010000
+     Timestep written to BGTS_S for date and time   1996192:010000
+     Timestep written to BGTS_L for date and time   1996192:020000
+     Timestep written to BGTS_S for date and time   1996192:020000
+     Timestep written to BGTS_L for date and time   1996192:030000
+     Timestep written to BGTS_S for date and time   1996192:030000
+     Timestep written to BGTS_L for date and time   1996192:040000
+     Timestep written to BGTS_S for date and time   1996192:040000
+     Timestep written to BGTS_L for date and time   1996192:050000
+     Timestep written to BGTS_S for date and time   1996192:050000
+     Timestep written to BGTS_L for date and time   1996192:060000
+     Timestep written to BGTS_S for date and time   1996192:060000
+     Timestep written to BGTS_L for date and time   1996192:070000
+     Timestep written to BGTS_S for date and time   1996192:070000
+     Timestep written to BGTS_L for date and time   1996192:080000
+     Timestep written to BGTS_S for date and time   1996192:080000
+     Timestep written to BGTS_L for date and time   1996192:090000
+     Timestep written to BGTS_S for date and time   1996192:090000
+     Timestep written to BGTS_L for date and time   1996192:100000
+     Timestep written to BGTS_S for date and time   1996192:100000
+     Timestep written to BGTS_L for date and time   1996192:110000
+     Timestep written to BGTS_S for date and time   1996192:110000
+     Timestep written to BGTS_L for date and time   1996192:120000
+     Timestep written to BGTS_S for date and time   1996192:120000
+     Timestep written to BGTS_L for date and time   1996192:130000
+     Timestep written to BGTS_S for date and time   1996192:130000
+     Timestep written to BGTS_L for date and time   1996192:140000
+     Timestep written to BGTS_S for date and time   1996192:140000
+     Timestep written to BGTS_L for date and time   1996192:150000
+     Timestep written to BGTS_S for date and time   1996192:150000
+     Timestep written to BGTS_L for date and time   1996192:160000
+     Timestep written to BGTS_S for date and time   1996192:160000
+     Timestep written to BGTS_L for date and time   1996192:170000
+     Timestep written to BGTS_S for date and time   1996192:170000
+     Timestep written to BGTS_L for date and time   1996192:180000
+     Timestep written to BGTS_S for date and time   1996192:180000
+     Timestep written to BGTS_L for date and time   1996192:190000
+     Timestep written to BGTS_S for date and time   1996192:190000
+     Timestep written to BGTS_L for date and time   1996192:200000
+     Timestep written to BGTS_S for date and time   1996192:200000
+     Timestep written to BGTS_L for date and time   1996192:210000
+     Timestep written to BGTS_S for date and time   1996192:210000
+     Timestep written to BGTS_L for date and time   1996192:220000
+     Timestep written to BGTS_S for date and time   1996192:220000
+     Timestep written to BGTS_L for date and time   1996192:230000
+     Timestep written to BGTS_S for date and time   1996192:230000
+     Processing Thursday July 11, 1996
+     Reading gridded season switch data..
+     Applying gridded season switch data..
+     Timestep written to BGTS_L for date and time   1996193:000000
+     Timestep written to BGTS_S for date and time   1996193:000000
+      
+     --->>  Normal Completion of program TMPBIO
+      

@@ -1,0 +1,887 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program SPCMAT, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program SPCMAT to take a SMOKE area, mobile, or point source
+     inventory file, a speciation profiles file, a speciation
+     cross-reference file, an optional pollutant-to-pollutant,
+     conversion file, and produce mass-based and/or mole-based
+     SMOKE speciation matrices for all inventory pollutants
+     using run-time defined combinations of pollutants and model
+     species. The output species are defined at run time by the
+     speciation profiles file, permitting support of any chemical
+     mechanism.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for POLLUTANT_CONVERSION:  Y returning TRUE
+     Value for SMK_SOURCE:  'M'
+     Value for PROMPTFLAG:  N returning FALSE
+     Error opening file at path-name:
+     netCDF error number  -51  processing file "MOBL"
+     Not a netCDF file
+     Not a netCDF file
+     /stella/data/smkrel2/data/inventory/nctox/mobl.map.nctox.txt
+     Could not open file "MOBL".
+
+     File MOBL opened for input on unit:  98
+     /stella/data/smkrel2/data/inventory/nctox/mobl.map.nctox.txt
+
+     Value for MOBL:  '/stella/data/smkrel2/data/inventory/nctox/mobl.map.nctox.txt'
+
+ WARNING: output file already exists: MSRC
+ /stella/data/smkrel2/data/inventory/nctox/msrc.txt
+
+
+     File "MSRC" opened for output on unit:  97
+     /stella/data/smkrel2/data/inventory/nctox/msrc.txt
+
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "MOBL" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/mobl.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6960 rows, 1 cols, 1 lays, 10 vbles
+     NetCDF ID:         6:
+     Time-independent data.
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/mobl_dat/VMT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6583 rows, 1 cols, 1 lays, 2 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/mobl_dat/SPEED.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6960 rows, 1 cols, 1 lays, 2 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File GSREF opened for input on unit:  96
+     /stella/data/smkrel2/data/ge_dat/gsref.cmaq.cb4p25_wtox.txt
+
+
+     File GSPRO opened for input on unit:  95
+     /stella/data/smkrel2/data/ge_dat/gspro.cmaq.cb4p25_wtox.m.txt
+
+
+     File GSCNV opened for input on unit:  94
+     /stella/data/smkrel2/data/ge_dat/gscnv.txt
+
+
+     File INVTABLE opened for input on unit:  93
+     /stella/data/smkrel2/data/inventory/nctox/other/invtable_onroad.cb4.120202.txt
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/mobl_dat/VMT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6583 rows, 1 cols, 1 lays, 2 vbles
+     NetCDF ID:        11:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/mobl_dat/SPEED.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6960 rows, 1 cols, 1 lays, 2 vbles
+     NetCDF ID:        11:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+
+     File MEPROC opened for input on unit:  92
+     /stella/data/smkrel2/data/inventory/nctox/mobile/meproc.txt
+
+
+     File MCODES opened for input on unit:  91
+     /stella/data/smkrel2/data/inventory/nctox/mobile/mcodes.txt
+
+     Reading source data from inventory file...
+     Generating unique lists from inventory data...
+     WARNING: Keep status at line      81 different from previously set status of "Y" for CAS "120127".
+     WARNING: Keep status at line      85 different from previously set status of "Y" for CAS "191242".
+     WARNING: Keep status at line      87 different from previously set status of "Y" for CAS "193395".
+     WARNING: Keep status at line      88 different from previously set status of "Y" for CAS "193395".
+     WARNING: Different descriptions for the same CAS number at line      66 .
+     WARNING: Keep status at line      90 different from previously set status of "Y" for CAS "205992".
+     WARNING: Keep status at line      91 different from previously set status of "Y" for CAS "205992".
+     WARNING: Keep status at line      93 different from previously set status of "Y" for CAS "207089".
+     WARNING: Keep status at line      94 different from previously set status of "Y" for CAS "207089".
+     WARNING: Keep status at line     112 different from previously set status of "Y" for CAS "208968".
+     WARNING: Keep status at line      96 different from previously set status of "Y" for CAS "218019".
+     WARNING: Keep status at line      97 different from previously set status of "Y" for CAS "218019".
+     WARNING: Keep status at line     102 different from previously set status of "Y" for CAS "53703".
+     WARNING: Keep status at line     103 different from previously set status of "Y" for CAS "53703".
+     WARNING: Keep status at line     105 different from previously set status of "Y" for CAS "56553".
+     WARNING: Keep status at line     106 different from previously set status of "Y" for CAS "56553".
+     WARNING: Keep status at line     108 different from previously set status of "Y" for CAS "83329".
+     WARNING: Keep status at line     113 different from previously set status of "N" for CAS "85018".
+     WARNING: Keep status at line     118 different from previously set status of "Y" for CAS "86737".
+     WARNING: Keep status at line     116 different from previously set status of "Y" for CAS "91203".
+     WARNING: Different SAROAD code for the same data name at line      79 
+          Using code   80232 and ignoring code   80230
+     WARNING: Different descriptions for the same data name at line      79 .
+          Using description:
+                "16-PAH" and ignoring:
+                "16-PAH POM".
+     WARNING: Different descriptions for the same data name at line      17 .
+          Using description:
+                "7-PAH" and ignoring:
+                "7-PAH, fine PM".
+     Reading speciation cross-reference file...
+     >>--->> WARNING in subroutine RDSREF
+     Pollutant-specific entries in the speciation cross-reference file have 
+          been skipped.
+     Processing speciation cross-reference file...
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:EXR__NONHAPTOG
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:EXS__NONHAPTOG
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:HOT__NONHAPTOG
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:DNL__NONHAPTOG
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:RST__NONHAPTOG
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:EVR__NONHAPTOG
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:CRC__NONHAPTOG
+     WARNING: Duplicate entry in SPECIATION x-ref file:
+          Region: 000000 Road Type: 000 Link: 000000000000000 TSCC: 0000003007 POL:RFL__NONHAPTOG
+     Reading pollutant to pollutant conversion file...
+     >>--->> WARNING in subroutine RDSCONV
+     No pollutant conversion entries found for inventory pollutants, 
+          or could not find header line(s).  THIS WILL MOST LIKELY 
+          RESULT IN INCORRECT EMISSIONS!
+     >>--->> WARNING in subroutine RDSCONV
+     Records were skipped in pollutant-to-pollutant conversion file for 
+          pollutants not in the inventory.
+     Scanning speciation profiles file for species...
+     Value for PROMPTFLAG:  N returning FALSE
+     Number of variables per file array is not allocated for file set MSMAT_S;
+     using default of 120 variables per file
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "MSMAT_S1" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/run_nctox/static/msmat_s.cmaq.cb4p25_wtox.nctox.1.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6960 rows, 1 cols, 1 lays, 120 vbles
+     NetCDF ID:        13:
+     Time-independent data.
+      
+     "MSMAT_S2" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/run_nctox/static/msmat_s.cmaq.cb4p25_wtox.nctox.2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6960 rows, 1 cols, 1 lays, 11 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+      
+     "MSMAT_L1" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/run_nctox/static/msmat_l.cmaq.cb4p25_wtox.nctox.1.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6960 rows, 1 cols, 1 lays, 120 vbles
+     NetCDF ID:        15:
+     Time-independent data.
+      
+     "MSMAT_L2" opened as UNKNOWN(R-W)    
+     File name "/stella/data/smkrel2/data/run_nctox/static/msmat_l.cmaq.cb4p25_wtox.nctox.2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 6960 rows, 1 cols, 1 lays, 11 vbles
+     NetCDF ID:        16:
+     Time-independent data.
+
+ WARNING: output file already exists: MSSUP
+ /stella/data/smkrel2/data/run_nctox/static/mssup.cmaq.cb4p25_wtox.nctox.txt
+
+
+     File "MSSUP" opened for output on unit:  90
+     /stella/data/smkrel2/data/run_nctox/static/mssup.cmaq.cb4p25_wtox.nctox.txt
+
+     Processing emission type "EXR__CO" using pollutant "CO" for profiles
+          Reading speciation profiles file...
+          NOTE: "CO" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     Value for IOAPI_LOG_WRITE not defined;returning default:  TRUE
+     SVAR001 written to MSMAT_S1
+               EXR__CO-to-CO written to MSMAT_S as variable SVAR001
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR001 written to MSMAT_L1
+     Processing emission type "EXR__NOX" using pollutant "NOX" for profiles
+          Reading speciation profiles file...
+     Value for REPORT_DEFAULTS:  N returning FALSE
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR002 written to MSMAT_S1
+               EXR__NOX-to-NO written to MSMAT_S as variable SVAR002
+     SVAR003 written to MSMAT_S1
+               EXR__NOX-to-NO2 written to MSMAT_S as variable SVAR003
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR002 written to MSMAT_L1
+     SVAR003 written to MSMAT_L1
+     Processing emission type "EXR__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR004 written to MSMAT_S1
+               EXR__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR004
+     SVAR005 written to MSMAT_S1
+               EXR__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR005
+     SVAR006 written to MSMAT_S1
+               EXR__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR006
+     SVAR007 written to MSMAT_S1
+               EXR__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR007
+     SVAR008 written to MSMAT_S1
+               EXR__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR008
+     SVAR009 written to MSMAT_S1
+               EXR__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR009
+     SVAR010 written to MSMAT_S1
+               EXR__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR010
+     SVAR011 written to MSMAT_S1
+               EXR__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR011
+     SVAR012 written to MSMAT_S1
+               EXR__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR012
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR004 written to MSMAT_L1
+     SVAR005 written to MSMAT_L1
+     SVAR006 written to MSMAT_L1
+     SVAR007 written to MSMAT_L1
+     SVAR008 written to MSMAT_L1
+     SVAR009 written to MSMAT_L1
+     SVAR010 written to MSMAT_L1
+     SVAR011 written to MSMAT_L1
+     SVAR012 written to MSMAT_L1
+     Processing emission type "EXR__SO4" using pollutant "SO4" for profiles
+          Reading speciation profiles file...
+          NOTE: "SO4" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR013 written to MSMAT_S1
+               EXR__SO4-to-PSO4 written to MSMAT_S as variable SVAR013
+     SVAR014 written to MSMAT_S1
+               EXR__SO4-to-SULF written to MSMAT_S as variable SVAR014
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR013 written to MSMAT_L1
+     SVAR014 written to MSMAT_L1
+     Processing emission type "EXR__OCARB25" using pollutant "OCARB25" for profiles
+          Reading speciation profiles file...
+          NOTE: "OCARB25" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR015 written to MSMAT_S1
+               EXR__OCARB25-to-POA written to MSMAT_S as variable SVAR015
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR015 written to MSMAT_L1
+     Processing emission type "EXR__OCARBPMC" using pollutant "OCARBPMC" for profiles
+          Reading speciation profiles file...
+          NOTE: "OCARBPMC" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR016 written to MSMAT_S1
+               EXR__OCARBPMC-to-PMC written to MSMAT_S as variable SVAR016
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR016 written to MSMAT_L1
+     Processing emission type "EXR__ECARB25" using pollutant "ECARB25" for profiles
+          Reading speciation profiles file...
+          NOTE: "ECARB25" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR017 written to MSMAT_S1
+               EXR__ECARB25-to-PEC written to MSMAT_S as variable SVAR017
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR017 written to MSMAT_L1
+     Processing emission type "EXR__ECARBPMC" using pollutant "ECARBPMC" for profiles
+          Reading speciation profiles file...
+          NOTE: "ECARBPMC" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR018 written to MSMAT_S1
+               EXR__ECARBPMC-to-PMC written to MSMAT_S as variable SVAR018
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR018 written to MSMAT_L1
+     Processing emission type "EXR__GASPM25" using pollutant "GASPM25" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR019 written to MSMAT_S1
+               EXR__GASPM25-to-PEC written to MSMAT_S as variable SVAR019
+     SVAR020 written to MSMAT_S1
+               EXR__GASPM25-to-POA written to MSMAT_S as variable SVAR020
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR019 written to MSMAT_L1
+     SVAR020 written to MSMAT_L1
+     Processing emission type "EXR__GASPMC" using pollutant "GASPMC" for profiles
+          Reading speciation profiles file...
+          NOTE: "GASPMC" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR021 written to MSMAT_S1
+               EXR__GASPMC-to-PMC written to MSMAT_S as variable SVAR021
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR021 written to MSMAT_L1
+     Processing emission type "EXR__SO2" using pollutant "SO2" for profiles
+          Reading speciation profiles file...
+          NOTE: "SO2" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR022 written to MSMAT_S1
+               EXR__SO2-to-SO2 written to MSMAT_S as variable SVAR022
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR022 written to MSMAT_L1
+     Processing emission type "EXR__NH3" using pollutant "NH3" for profiles
+          Reading speciation profiles file...
+          NOTE: "NH3" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR023 written to MSMAT_S1
+               EXR__NH3-to-NH3 written to MSMAT_S as variable SVAR023
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR023 written to MSMAT_L1
+     Processing emission type "EXR__BENZENE" using pollutant "BENZENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BENZENE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR024 written to MSMAT_S1
+               EXR__BENZENE-to-NR written to MSMAT_S as variable SVAR024
+     SVAR025 written to MSMAT_S1
+               EXR__BENZENE-to-PAR written to MSMAT_S as variable SVAR025
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR024 written to MSMAT_L1
+     SVAR025 written to MSMAT_L1
+     Processing emission type "EXR__MTBE" using pollutant "MTBE" for profiles
+          Reading speciation profiles file...
+          NOTE: "MTBE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR026 written to MSMAT_S1
+               EXR__MTBE-to-NR written to MSMAT_S as variable SVAR026
+     SVAR027 written to MSMAT_S1
+               EXR__MTBE-to-PAR written to MSMAT_S as variable SVAR027
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR026 written to MSMAT_L1
+     SVAR027 written to MSMAT_L1
+     Processing emission type "EXR__BUTADIENE" using pollutant "BUTADIENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BUTADIENE" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR028 written to MSMAT_S1
+               EXR__BUTADIENE-to-OLE written to MSMAT_S as variable SVAR028
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR028 written to MSMAT_L1
+     Processing emission type "EXR__FORMALDEHYD" using pollutant "FORMALDEHYD" for profiles
+          Reading speciation profiles file...
+          NOTE: "FORMALDEHYD" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR029 written to MSMAT_S1
+               EXR__FORMALDEHYD-to-FORM written to MSMAT_S as variable SVAR029
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR029 written to MSMAT_L1
+     Processing emission type "EXR__ACETALD" using pollutant "ACETALD" for profiles
+          Reading speciation profiles file...
+          NOTE: "ACETALD" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR030 written to MSMAT_S1
+               EXR__ACETALD-to-ALD2 written to MSMAT_S as variable SVAR030
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR030 written to MSMAT_L1
+     Processing emission type "EXR__ACROLEIN" using pollutant "ACROLEIN" for profiles
+          Reading speciation profiles file...
+          NOTE: "ACROLEIN" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR031 written to MSMAT_S1
+               EXR__ACROLEIN-to-ALD2 written to MSMAT_S as variable SVAR031
+     SVAR032 written to MSMAT_S1
+               EXR__ACROLEIN-to-OLE written to MSMAT_S as variable SVAR032
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR031 written to MSMAT_L1
+     SVAR032 written to MSMAT_L1
+     Processing emission type "EXS__CO" using pollutant "CO" for profiles
+          Reading speciation profiles file...
+          NOTE: "CO" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR033 written to MSMAT_S1
+               EXS__CO-to-CO written to MSMAT_S as variable SVAR033
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR033 written to MSMAT_L1
+     Processing emission type "EXS__NOX" using pollutant "NOX" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR034 written to MSMAT_S1
+               EXS__NOX-to-NO written to MSMAT_S as variable SVAR034
+     SVAR035 written to MSMAT_S1
+               EXS__NOX-to-NO2 written to MSMAT_S as variable SVAR035
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR034 written to MSMAT_L1
+     SVAR035 written to MSMAT_L1
+     Processing emission type "EXS__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR036 written to MSMAT_S1
+               EXS__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR036
+     SVAR037 written to MSMAT_S1
+               EXS__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR037
+     SVAR038 written to MSMAT_S1
+               EXS__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR038
+     SVAR039 written to MSMAT_S1
+               EXS__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR039
+     SVAR040 written to MSMAT_S1
+               EXS__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR040
+     SVAR041 written to MSMAT_S1
+               EXS__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR041
+     SVAR042 written to MSMAT_S1
+               EXS__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR042
+     SVAR043 written to MSMAT_S1
+               EXS__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR043
+     SVAR044 written to MSMAT_S1
+               EXS__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR044
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR036 written to MSMAT_L1
+     SVAR037 written to MSMAT_L1
+     SVAR038 written to MSMAT_L1
+     SVAR039 written to MSMAT_L1
+     SVAR040 written to MSMAT_L1
+     SVAR041 written to MSMAT_L1
+     SVAR042 written to MSMAT_L1
+     SVAR043 written to MSMAT_L1
+     SVAR044 written to MSMAT_L1
+     Processing emission type "EXS__BENZENE" using pollutant "BENZENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BENZENE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR045 written to MSMAT_S1
+               EXS__BENZENE-to-NR written to MSMAT_S as variable SVAR045
+     SVAR046 written to MSMAT_S1
+               EXS__BENZENE-to-PAR written to MSMAT_S as variable SVAR046
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR045 written to MSMAT_L1
+     SVAR046 written to MSMAT_L1
+     Processing emission type "EXS__MTBE" using pollutant "MTBE" for profiles
+          Reading speciation profiles file...
+          NOTE: "MTBE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR047 written to MSMAT_S1
+               EXS__MTBE-to-NR written to MSMAT_S as variable SVAR047
+     SVAR048 written to MSMAT_S1
+               EXS__MTBE-to-PAR written to MSMAT_S as variable SVAR048
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR047 written to MSMAT_L1
+     SVAR048 written to MSMAT_L1
+     Processing emission type "EXS__BUTADIENE" using pollutant "BUTADIENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BUTADIENE" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR049 written to MSMAT_S1
+               EXS__BUTADIENE-to-OLE written to MSMAT_S as variable SVAR049
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR049 written to MSMAT_L1
+     Processing emission type "EXS__FORMALDEHYD" using pollutant "FORMALDEHYD" for profiles
+          Reading speciation profiles file...
+          NOTE: "FORMALDEHYD" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR050 written to MSMAT_S1
+               EXS__FORMALDEHYD-to-FORM written to MSMAT_S as variable SVAR050
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR050 written to MSMAT_L1
+     Processing emission type "EXS__ACETALD" using pollutant "ACETALD" for profiles
+          Reading speciation profiles file...
+          NOTE: "ACETALD" only has a unit conversion using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR051 written to MSMAT_S1
+               EXS__ACETALD-to-ALD2 written to MSMAT_S as variable SVAR051
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR051 written to MSMAT_L1
+     Processing emission type "EXS__ACROLEIN" using pollutant "ACROLEIN" for profiles
+          Reading speciation profiles file...
+          NOTE: "ACROLEIN" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR052 written to MSMAT_S1
+               EXS__ACROLEIN-to-ALD2 written to MSMAT_S as variable SVAR052
+     SVAR053 written to MSMAT_S1
+               EXS__ACROLEIN-to-OLE written to MSMAT_S as variable SVAR053
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR052 written to MSMAT_L1
+     SVAR053 written to MSMAT_L1
+     Processing emission type "HOT__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR054 written to MSMAT_S1
+               HOT__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR054
+     SVAR055 written to MSMAT_S1
+               HOT__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR055
+     SVAR056 written to MSMAT_S1
+               HOT__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR056
+     SVAR057 written to MSMAT_S1
+               HOT__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR057
+     SVAR058 written to MSMAT_S1
+               HOT__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR058
+     SVAR059 written to MSMAT_S1
+               HOT__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR059
+     SVAR060 written to MSMAT_S1
+               HOT__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR060
+     SVAR061 written to MSMAT_S1
+               HOT__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR061
+     SVAR062 written to MSMAT_S1
+               HOT__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR062
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR054 written to MSMAT_L1
+     SVAR055 written to MSMAT_L1
+     SVAR056 written to MSMAT_L1
+     SVAR057 written to MSMAT_L1
+     SVAR058 written to MSMAT_L1
+     SVAR059 written to MSMAT_L1
+     SVAR060 written to MSMAT_L1
+     SVAR061 written to MSMAT_L1
+     SVAR062 written to MSMAT_L1
+     Processing emission type "HOT__BENZENE" using pollutant "BENZENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BENZENE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR063 written to MSMAT_S1
+               HOT__BENZENE-to-NR written to MSMAT_S as variable SVAR063
+     SVAR064 written to MSMAT_S1
+               HOT__BENZENE-to-PAR written to MSMAT_S as variable SVAR064
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR063 written to MSMAT_L1
+     SVAR064 written to MSMAT_L1
+     Processing emission type "HOT__MTBE" using pollutant "MTBE" for profiles
+          Reading speciation profiles file...
+          NOTE: "MTBE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR065 written to MSMAT_S1
+               HOT__MTBE-to-NR written to MSMAT_S as variable SVAR065
+     SVAR066 written to MSMAT_S1
+               HOT__MTBE-to-PAR written to MSMAT_S as variable SVAR066
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR065 written to MSMAT_L1
+     SVAR066 written to MSMAT_L1
+     Processing emission type "DNL__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR067 written to MSMAT_S1
+               DNL__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR067
+     SVAR068 written to MSMAT_S1
+               DNL__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR068
+     SVAR069 written to MSMAT_S1
+               DNL__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR069
+     SVAR070 written to MSMAT_S1
+               DNL__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR070
+     SVAR071 written to MSMAT_S1
+               DNL__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR071
+     SVAR072 written to MSMAT_S1
+               DNL__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR072
+     SVAR073 written to MSMAT_S1
+               DNL__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR073
+     SVAR074 written to MSMAT_S1
+               DNL__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR074
+     SVAR075 written to MSMAT_S1
+               DNL__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR075
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR067 written to MSMAT_L1
+     SVAR068 written to MSMAT_L1
+     SVAR069 written to MSMAT_L1
+     SVAR070 written to MSMAT_L1
+     SVAR071 written to MSMAT_L1
+     SVAR072 written to MSMAT_L1
+     SVAR073 written to MSMAT_L1
+     SVAR074 written to MSMAT_L1
+     SVAR075 written to MSMAT_L1
+     Processing emission type "DNL__BENZENE" using pollutant "BENZENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BENZENE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR076 written to MSMAT_S1
+               DNL__BENZENE-to-NR written to MSMAT_S as variable SVAR076
+     SVAR077 written to MSMAT_S1
+               DNL__BENZENE-to-PAR written to MSMAT_S as variable SVAR077
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR076 written to MSMAT_L1
+     SVAR077 written to MSMAT_L1
+     Processing emission type "DNL__MTBE" using pollutant "MTBE" for profiles
+          Reading speciation profiles file...
+          NOTE: "MTBE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR078 written to MSMAT_S1
+               DNL__MTBE-to-NR written to MSMAT_S as variable SVAR078
+     SVAR079 written to MSMAT_S1
+               DNL__MTBE-to-PAR written to MSMAT_S as variable SVAR079
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR078 written to MSMAT_L1
+     SVAR079 written to MSMAT_L1
+     Processing emission type "RST__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR080 written to MSMAT_S1
+               RST__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR080
+     SVAR081 written to MSMAT_S1
+               RST__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR081
+     SVAR082 written to MSMAT_S1
+               RST__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR082
+     SVAR083 written to MSMAT_S1
+               RST__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR083
+     SVAR084 written to MSMAT_S1
+               RST__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR084
+     SVAR085 written to MSMAT_S1
+               RST__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR085
+     SVAR086 written to MSMAT_S1
+               RST__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR086
+     SVAR087 written to MSMAT_S1
+               RST__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR087
+     SVAR088 written to MSMAT_S1
+               RST__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR088
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR080 written to MSMAT_L1
+     SVAR081 written to MSMAT_L1
+     SVAR082 written to MSMAT_L1
+     SVAR083 written to MSMAT_L1
+     SVAR084 written to MSMAT_L1
+     SVAR085 written to MSMAT_L1
+     SVAR086 written to MSMAT_L1
+     SVAR087 written to MSMAT_L1
+     SVAR088 written to MSMAT_L1
+     Processing emission type "RST__BENZENE" using pollutant "BENZENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BENZENE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR089 written to MSMAT_S1
+               RST__BENZENE-to-NR written to MSMAT_S as variable SVAR089
+     SVAR090 written to MSMAT_S1
+               RST__BENZENE-to-PAR written to MSMAT_S as variable SVAR090
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR089 written to MSMAT_L1
+     SVAR090 written to MSMAT_L1
+     Processing emission type "RST__MTBE" using pollutant "MTBE" for profiles
+          Reading speciation profiles file...
+          NOTE: "MTBE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR091 written to MSMAT_S1
+               RST__MTBE-to-NR written to MSMAT_S as variable SVAR091
+     SVAR092 written to MSMAT_S1
+               RST__MTBE-to-PAR written to MSMAT_S as variable SVAR092
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR091 written to MSMAT_L1
+     SVAR092 written to MSMAT_L1
+     Processing emission type "EVR__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR093 written to MSMAT_S1
+               EVR__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR093
+     SVAR094 written to MSMAT_S1
+               EVR__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR094
+     SVAR095 written to MSMAT_S1
+               EVR__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR095
+     SVAR096 written to MSMAT_S1
+               EVR__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR096
+     SVAR097 written to MSMAT_S1
+               EVR__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR097
+     SVAR098 written to MSMAT_S1
+               EVR__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR098
+     SVAR099 written to MSMAT_S1
+               EVR__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR099
+     SVAR100 written to MSMAT_S1
+               EVR__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR100
+     SVAR101 written to MSMAT_S1
+               EVR__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR101
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR093 written to MSMAT_L1
+     SVAR094 written to MSMAT_L1
+     SVAR095 written to MSMAT_L1
+     SVAR096 written to MSMAT_L1
+     SVAR097 written to MSMAT_L1
+     SVAR098 written to MSMAT_L1
+     SVAR099 written to MSMAT_L1
+     SVAR100 written to MSMAT_L1
+     SVAR101 written to MSMAT_L1
+     Processing emission type "EVR__BENZENE" using pollutant "BENZENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BENZENE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR102 written to MSMAT_S1
+               EVR__BENZENE-to-NR written to MSMAT_S as variable SVAR102
+     SVAR103 written to MSMAT_S1
+               EVR__BENZENE-to-PAR written to MSMAT_S as variable SVAR103
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR102 written to MSMAT_L1
+     SVAR103 written to MSMAT_L1
+     Processing emission type "EVR__MTBE" using pollutant "MTBE" for profiles
+          Reading speciation profiles file...
+          NOTE: "MTBE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR104 written to MSMAT_S1
+               EVR__MTBE-to-NR written to MSMAT_S as variable SVAR104
+     SVAR105 written to MSMAT_S1
+               EVR__MTBE-to-PAR written to MSMAT_S as variable SVAR105
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR104 written to MSMAT_L1
+     SVAR105 written to MSMAT_L1
+     Processing emission type "CRC__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR106 written to MSMAT_S1
+               CRC__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR106
+     SVAR107 written to MSMAT_S1
+               CRC__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR107
+     SVAR108 written to MSMAT_S1
+               CRC__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR108
+     SVAR109 written to MSMAT_S1
+               CRC__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR109
+     SVAR110 written to MSMAT_S1
+               CRC__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR110
+     SVAR111 written to MSMAT_S1
+               CRC__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR111
+     SVAR112 written to MSMAT_S1
+               CRC__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR112
+     SVAR113 written to MSMAT_S1
+               CRC__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR113
+     SVAR114 written to MSMAT_S1
+               CRC__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR114
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR106 written to MSMAT_L1
+     SVAR107 written to MSMAT_L1
+     SVAR108 written to MSMAT_L1
+     SVAR109 written to MSMAT_L1
+     SVAR110 written to MSMAT_L1
+     SVAR111 written to MSMAT_L1
+     SVAR112 written to MSMAT_L1
+     SVAR113 written to MSMAT_L1
+     SVAR114 written to MSMAT_L1
+     Processing emission type "RFL__NONHAPTOG" using pollutant "NONHAPTOG" for profiles
+          Reading speciation profiles file...
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR115 written to MSMAT_S1
+               RFL__NONHAPTOG-to-ALD2 written to MSMAT_S as variable SVAR115
+     SVAR116 written to MSMAT_S1
+               RFL__NONHAPTOG-to-ETH written to MSMAT_S as variable SVAR116
+     SVAR117 written to MSMAT_S1
+               RFL__NONHAPTOG-to-FORM written to MSMAT_S as variable SVAR117
+     SVAR118 written to MSMAT_S1
+               RFL__NONHAPTOG-to-ISOP written to MSMAT_S as variable SVAR118
+     SVAR119 written to MSMAT_S1
+               RFL__NONHAPTOG-to-NR written to MSMAT_S as variable SVAR119
+     SVAR120 written to MSMAT_S1
+               RFL__NONHAPTOG-to-OLE written to MSMAT_S as variable SVAR120
+     SVAR121 written to MSMAT_S2
+               RFL__NONHAPTOG-to-PAR written to MSMAT_S as variable SVAR121
+     SVAR122 written to MSMAT_S2
+               RFL__NONHAPTOG-to-TOL written to MSMAT_S as variable SVAR122
+     SVAR123 written to MSMAT_S2
+               RFL__NONHAPTOG-to-XYL written to MSMAT_S as variable SVAR123
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR115 written to MSMAT_L1
+     SVAR116 written to MSMAT_L1
+     SVAR117 written to MSMAT_L1
+     SVAR118 written to MSMAT_L1
+     SVAR119 written to MSMAT_L1
+     SVAR120 written to MSMAT_L1
+     SVAR121 written to MSMAT_L2
+     SVAR122 written to MSMAT_L2
+     SVAR123 written to MSMAT_L2
+     Processing emission type "RFL__BENZENE" using pollutant "BENZENE" for profiles
+          Reading speciation profiles file...
+          NOTE: "BENZENE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR124 written to MSMAT_S2
+               RFL__BENZENE-to-NR written to MSMAT_S as variable SVAR124
+     SVAR125 written to MSMAT_S2
+               RFL__BENZENE-to-PAR written to MSMAT_S as variable SVAR125
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR124 written to MSMAT_L2
+     SVAR125 written to MSMAT_L2
+     Processing emission type "RFL__MTBE" using pollutant "MTBE" for profiles
+          Reading speciation profiles file...
+          NOTE: "MTBE" is split for all sources using profile " 0000"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR126 written to MSMAT_S2
+               RFL__MTBE-to-NR written to MSMAT_S as variable SVAR126
+     SVAR127 written to MSMAT_S2
+               RFL__MTBE-to-PAR written to MSMAT_S as variable SVAR127
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR126 written to MSMAT_L2
+     SVAR127 written to MSMAT_L2
+     Processing emission type "BRK__BRAKE25" using pollutant "BRAKE25" for profiles
+          Reading speciation profiles file...
+          NOTE: "BRAKE25" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR128 written to MSMAT_S2
+               BRK__BRAKE25-to-PMFINE written to MSMAT_S as variable SVAR128
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR128 written to MSMAT_L2
+     Processing emission type "BRK__BRAKEPMC" using pollutant "BRAKEPMC" for profiles
+          Reading speciation profiles file...
+          NOTE: "BRAKEPMC" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR129 written to MSMAT_S2
+               BRK__BRAKEPMC-to-PMC written to MSMAT_S as variable SVAR129
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR129 written to MSMAT_L2
+     Processing emission type "TIR__TIRE25" using pollutant "TIRE25" for profiles
+          Reading speciation profiles file...
+          NOTE: "TIRE25" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR130 written to MSMAT_S2
+               TIR__TIRE25-to-PMFINE written to MSMAT_S as variable SVAR130
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR130 written to MSMAT_L2
+     Processing emission type "TIR__TIREPMC" using pollutant "TIREPMC" for profiles
+          Reading speciation profiles file...
+          NOTE: "TIREPMC" only has a unit conversion using profile "M6PMa"
+          Writing MASS-BASED SPECIATION MATRIX...
+     SVAR131 written to MSMAT_S2
+               TIR__TIREPMC-to-PMC written to MSMAT_S as variable SVAR131
+          Writing MOLE-BASED SPECIATION MATRIX...
+     SVAR131 written to MSMAT_L2
+      
+     --->>  Normal Completion of program SPCMAT
+      

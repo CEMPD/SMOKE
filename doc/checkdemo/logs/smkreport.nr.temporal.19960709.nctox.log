@@ -1,0 +1,4670 @@
+      
+     This program uses the EPA-AREAL/MCNC-Environmental Programs
+     Models-3 I/O Applications Programming Interface, which is 
+     built on top of the netCDF I/O library (Copyright 1993, 1996
+     University Corporation for Atmospheric Research/Unidata 
+     Program).  Portions copyright (C) 1992-2001 MCNC.  See URL
+     "http://www.emc.mcnc.org/products/ioapi/NOTICE.html" for
+     conditions of use.
+      
+     $Id$
+      
+     Library release tag: $Name$
+      
+      
+     Library release tag: $Name$
+      
+      
+     SMOKE ---------------
+     Copyright (c)2002 MCNC--Environmental Modeling Center
+     All rights reserved
+
+     See file COPYRIGHT for conditions of use.
+
+     Program SMKREPORT, Version $
+     Online documentation 
+         http://www.emc.mcnc.org/products/smoke           
+      
+     Program SMKREPORT to take any combination of SMOKE intermed-
+     iate files (but at least an inventory file) and generate
+     one or more user-defined reports in any combination of output
+     files.
+      
+      
+     You will need to enter the logical names for the input and
+     output files (and to have set them prior to program start,
+     using "setenv <logicalname> <pathname>").
+      
+     You may use END_OF-FILE (control-D) to quit the program
+     during logical-name entry. Default responses are given in
+     brackets [LIKE THIS] and can be accepted by hitting the
+     <RETURN> key.
+      
+     Value for PROMPTFLAG:  N returning FALSE
+     Returning default value TRUE for query:
+     "Continue with program?"
+     Value for PROMPTFLAG:  N returning FALSE
+
+     File REPCONFIG opened for input on unit:  98
+     /stella/data/smkrel2/data/inventory/nctox/other/repconfig.nr.temporal.txt
+
+     Value for PROMPTFLAG:  N returning FALSE
+     Error opening file at path-name:
+     netCDF error number  -51  processing file "AREA"
+     Not a netCDF file
+     Not a netCDF file
+     /stella/data/smkrel2/data/inventory/nctox/nroad.map.nctox.txt
+     Could not open file "AREA".
+
+     File AREA opened for input on unit:  97
+     /stella/data/smkrel2/data/inventory/nctox/nroad.map.nctox.txt
+
+     Value for AREA:  '/stella/data/smkrel2/data/inventory/nctox/nroad.map.nctox.txt'
+
+ WARNING: output file already exists: ASRC
+ /stella/data/smkrel2/data/inventory/nctox/nrsrc.txt
+
+
+     File "ASRC" opened for output on unit:  96
+     /stella/data/smkrel2/data/inventory/nctox/nrsrc.txt
+
+     Value for IOAPI_CHECK_HEADERS not defined;returning default:  FALSE
+      
+     "AREA" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 17592 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         7:
+     Time-independent data.
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:         8:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     Value for PROMPTFLAG:  N returning FALSE
+      
+     "ATMP" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/run_nctox/19960709/ntmp.19960709.1.nctox.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 17592 rows, 1 cols, 1 lays, 37 vbles
+     NetCDF ID:         8:
+     Starting date and time  1996191:000000 (0:00:00   July 9, 1996)
+     Timestep                        010000 (1:00:00 hh:mm:ss)
+     Maximum current record number      25
+     NOTE: Time zone initialized using ATMP             hourly emissions file.
+     Value for PROMPTFLAG:  N returning FALSE
+      
+     "AGMAT" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/run_nctox/static/ngmat.us36-nc.nctox.ncf"
+     File type SMATRX3 
+     Execution ID "????????????????"
+     Grid name "US36NC_23X12"
+     Dimensions: 276 rows, 75721 cols, 1 lays, 1 vbles
+     NetCDF ID:         9:
+     Time-independent data.
+     NOTE: Grid settings initialized using Area   in 
+          gridding matrix.
+      
+     "ASMAT_S" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/run_nctox/static/nsmat_s.cmaq.cb4p25_wtox.nctox.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 17592 rows, 1 cols, 1 lays, 88 vbles
+     NetCDF ID:        10:
+     Time-independent data.
+
+     File COSTCY opened for input on unit:  95
+     /stella/data/smkrel2/data/ge_dat/costcy.txt
+
+
+     File SCCDESC opened for input on unit:  94
+     /stella/data/smkrel2/data/ge_dat/scc_desc.txt
+
+     For time-based reports, enter the starting date, starting time, and output
+          duration.  Defaults are set based on the input files.
+     Value for G_STDATE:  1996191
+     Value for G_STTIME:  0
+     Value for G_TSTEP:  10000
+     Value for G_RUNLEN:  250000
+     Value for PROMPTFLAG:  N returning FALSE
+     Output Time Zone: 00
+           Start Date: July 9, 1996
+           Start Time: 000000 HHMMSS
+            Time Step: 001 hour
+             Duration: 025 hours
+     Reading source data from inventory file...
+     Generating unique lists from inventory data...
+     Reading gridding matrix...
+     Reading speciation matrices...
+     Value for SMK_DEFAULT_TZONE:  5
+     Reading state and county names and time zones...
+     NOTE: Population data read from country/state/county file for year     2000
+     ***** CHECKING INPUTS FOR REPORT         1  *****
+          WARNING: Resetting number of time steps for report to         24 
+                to make output hour consistent with reporting time.
+     Value for REPORT1:  '/stella/data/smkrel2/data/reports/nctox/19960709/nt.state.nctox.rpt'
+
+     File "REPORT1" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/nt.state.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     ***** CHECKING INPUTS FOR REPORT         2  *****
+          WARNING: Resetting number of time steps for report to         24 
+                to make output hour consistent with reporting time.
+     Value for REPORT2:  '/stella/data/smkrel2/data/reports/nctox/19960709/nt.county.nctox.rpt'
+
+     File "REPORT2" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/nt.county.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     ***** CHECKING INPUTS FOR REPORT         3  *****
+          WARNING: Resetting number of time steps for report to         24 
+                to make output hour consistent with reporting time.
+     Value for REPORT3:  '/stella/data/smkrel2/data/reports/nctox/19960709/nt.scc.nctox.rpt'
+
+     File "REPORT3" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/nt.scc.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     ***** CHECKING INPUTS FOR REPORT         4  *****
+          WARNING: Resetting number of time steps for report to         24 
+                to make output hour consistent with reporting time.
+     Value for REPORT4:  '/stella/data/smkrel2/data/reports/nctox/19960709/nt.state_scc.nctox.rpt'
+
+     File "REPORT4" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/nt.state_scc.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     ***** CHECKING INPUTS FOR REPORT         5  *****
+     Value for REPORT5:  '/stella/data/smkrel2/data/reports/nctox/19960709/nt.hour_scc.nctox.rpt'
+
+     File "REPORT5" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/nt.hour_scc.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     ***** CHECKING INPUTS FOR REPORT         6  *****
+          WARNING: Resetting number of time steps for report to         24 
+                to make output hour consistent with reporting time.
+     Value for REPORT6:  '/stella/data/smkrel2/data/reports/nctox/19960709/ngt.state.us36-nc.nctox.rpt'
+
+     File "REPORT6" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/ngt.state.us36-nc.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     ***** CHECKING INPUTS FOR REPORT         7  *****
+          WARNING: Resetting number of time steps for report to         24 
+                to make output hour consistent with reporting time.
+     Value for REPORT7:  '/stella/data/smkrel2/data/reports/nctox/19960709/nts.scc.nctox.rpt'
+
+     File "REPORT7" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/nts.scc.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+     ***** CHECKING INPUTS FOR REPORT         8  *****
+          WARNING: Resetting number of time steps for report to         24 
+                to make output hour consistent with reporting time.
+     Value for REPORT8:  '/stella/data/smkrel2/data/reports/nctox/19960709/nts.state_scc.nctox.rpt'
+
+     File "REPORT8" opened for output on unit:  93
+     /stella/data/smkrel2/data/reports/nctox/19960709/nts.state_scc.nctox.rpt
+
+               Selecting records...
+               Aggregating output records...
+               Reading emissions data and writing report...
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CO.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3423 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NOX.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 3387 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/VOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2790 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NH3.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 1980 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/SO2.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2835 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM10.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PM2_5.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2911 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACETALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACROLEIN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BUTADIENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14045 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ETHYLBENZN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FORMALDEHYD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HEXANE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HG.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/HGIIGAS.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHGI.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14056 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ANTHRACENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOGHIPER.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/IND123CD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOBFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZOKFLUOR.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/CHRYSENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/DIBENAHANT.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 7880 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/BENZAANTHRA.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACENAPHTHEN.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/ACNPTHYLENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PHNANTHRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NAPHTHALENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/FLUORENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14105 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PROPIONALD.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/STYRENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TOLUENE.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/TRIMTHPN224.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/XYLENES.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 14109 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/NONHAPVOC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 264 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     "TMP_POL_FILE" opened as OLD:READ-ONLY   
+     File name "/stella/data/smkrel2/data/inventory/nctox/nroad_dat/PMC.ncf"
+     File type GRDDED3 
+     Execution ID "????????????????"
+     Grid name " "
+     Dimensions: 2195 rows, 1 cols, 1 lays, 7 vbles
+     NetCDF ID:        14:
+     Time-independent data.
+
+     Closing file "TMP_POL_FILE"                                                     
+
+      
+     --->>  Normal Completion of program SMKREPORT
+      
