@@ -239,6 +239,8 @@ C.........   Read lines from hourly emissions list file
         MESG = 'Checking hourly emissions files...'
         CALL M3MSG2( MESG )
 
+        K = 0
+
 C.........  Loop through met files and check time period
         DO N = 1, NPTLINES
 
