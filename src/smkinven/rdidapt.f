@@ -18,13 +18,13 @@ C
 C  REVISION  HISTORY:
 C      created by M. Houyoux (04/99) 
 C
-C****************************************************************************/
+C*************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -502,7 +502,8 @@ C.................  Store data in final arrays if there is enough memory
 
                 IF ( ES .LE. NRAWBP ) THEN
 
-                    INDEXA ( ES     ) = ES                    
+                    INDEXA ( ES     ) = ES
+                    INRECA ( ES     ) = SS                    
                     POLVLA ( ES,NEM ) = EANN
                     POLVLA ( ES,NOZ ) = EOZN
                     POLVLA ( ES,NCE ) = CEFF
