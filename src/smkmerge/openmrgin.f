@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -42,6 +42,9 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE
+
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV
 
         IMPLICIT NONE
 
@@ -244,7 +247,7 @@ C               and store control variable names.
             IF( AUFLAG ) THEN
                 MESG = 'Enter logical name for the AREA ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                AUNAME = PROMPTMFILE( MESG, FSREAD3, 'AXMAT', PROGNAME )
+                AUNAME = PROMPTMFILE( MESG, FSREAD3, 'ACMAT', PROGNAME )
 
                 CALL RETRIEVE_IOAPI_HEADER( AUNAME )
                 CALL CHKSRCNO( 'area', 'AXMAT', NROWS3D, NASRC, EFLAG )
@@ -485,8 +488,8 @@ C.................  Check the year and projection year of the matrix
 
         ELSE
 
-            ALLOCATE( MEINAM ( MNIPOL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'MEINAM', PROGNAME )
+            ALLOCATE( MEANAM ( MNIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
 
         ENDIF  ! End of section for mobile sources
 
@@ -508,6 +511,11 @@ C.............  Prompt for inventory files
 C.............  Get number of sources
             CALL RETRIEVE_IOAPI_HEADER( PENAME )
             NPSRC = NROWS3D
+
+C.............  If outputing ASCII elevated sources, retrieve the position
+C               of the stack in the source characteristics
+            IF( ELEVFLAG ) 
+     &        JSTACK   = GETIFDSC( FDESC3D, '/STACK POSITION/', .TRUE. )
 
 C.............  Determine the year and projection status of the inventory
             CALL CHECK_INVYEAR( PENAME, PPRJFLAG, FDESC3D )
@@ -596,7 +604,7 @@ C               and store control variable names.
             IF( PUFLAG ) THEN
                 MESG = 'Enter logical name for the POINT ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                PUNAME = PROMPTMFILE( MESG, FSREAD3, 'PXMAT', PROGNAME )
+                PUNAME = PROMPTMFILE( MESG, FSREAD3, 'PCMAT', PROGNAME )
 
                 CALL RETRIEVE_IOAPI_HEADER( PUNAME )
                 CALL CHKSRCNO( 'point', 'PXMAT', NROWS3D, NPSRC, EFLAG )
@@ -672,12 +680,34 @@ C                   to the potential for 0-based or 1-based VGLVS3D
 
             END IF  ! End of layer fractions open
 
-C.............  Open elevated/plume-in-grid file - for plume-in-grid outputs
-            IF( PINGFLAG ) THEN
+C.............  For plume-in-grid outputs or for UAM-style elevated point
+C               sources (PTSRCE input file)...
+            IF( ELEVFLAG .OR. PINGFLAG ) THEN
+
+C.................  If elevated ASCII and units are grams, print warning
+                IF( ELEVFLAG .AND. SPCTYPE .EQ. MASSSTR ) THEN
+                    MESG = 'WARNING: Processing with mass-based ' //
+     &                     'speciation for elevated ASCII outputs.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+C.................  Open elevated/plume-in-grid file 
                 MESG = 'Enter logical name for the ELEVATED/PING ' //
      &                 'file'
                 EDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
      &                              'PELV', PROGNAME      )
+
+C.................  Open stack groups file output from Elevpoint
+                MESG = 'Enter logical name for the ELEVATED STACK ' //
+     &                 'GROUPS file'
+                PVNAME = PROMPTMFILE( MESG, FSREAD3, 'STACK_GROUPS', 
+     &                   PROGNAME )
+                CALL RETRIEVE_IOAPI_HEADER( PVNAME )
+                NGROUP = NROWS3D
+                PVSDATE = SDATE3D
+                PVSTIME = STIME3D
+                CALL CHKGRID( 'point', 'GROUPS', EFLAG )
+
             END IF
 
         ELSE
