@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM SPCPMAT
 
 C***********************************************************************
-C  program body starts at line 243
+C  program body starts at line 246
 C
 C  DESCRIPTION:
 C       Construct point source chemical speciation matrix from data 
@@ -46,6 +24,27 @@ C       Version   11/95 by CJC sorts the chem-xref input file
 C	Version    8/96 by CJC supports EMS-95-input version's
 C	work toward generalized chemistry mechanisms
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C************************************************************************
 
       IMPLICIT NONE
 
@@ -60,6 +59,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         INTEGER         FIND1, FIND2, FIND3, FIND4
         LOGICAL         GETYN
         INTEGER         INDEX1
@@ -71,15 +71,18 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETYN, INDEX1,
+        EXTERNAL        CRLF, FIND1, FIND2, FIND3, FIND4, GETYN, INDEX1,
      &                  LBLANK, PROMPTFFILE, PROMPTMFILE, RDSPROF,
      &                  STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   PARAMETERS and their descriptions:
 
+        CHARACTER*5 BLANK5
         REAL        TON2GM
-        PARAMETER ( TON2GM = 907184.74 )
+
+        PARAMETER ( BLANK5 = ' ',
+     &              TON2GM = 907184.74 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -212,7 +215,6 @@ C...........   Area Sources Table
 C...........   Other local variables
 
         INTEGER         S, F, I, J, V       !  loop counters.
-        INTEGER         CHOICE              !  Choice from menu call
         INTEGER         CDEV                !  for actual-SCC file
         INTEGER         KDEV                !  volatile form conversion file
         INTEGER         SDEV                !  for surrogate coeff file
@@ -282,6 +284,17 @@ C.......   Get file name; open input point sources file
      &           'Enter logical name for SPECIATION PROFILES file',
      &           .TRUE., .TRUE., 'PSPRO', 'SPCPMAT' )
 
+C...........   Check for valid file size
+        IF ( .NOT. DESC3( PNAME ) ) THEN
+            CALL M3EXIT( 'SPCPMAT', 0, 0,
+     &      'Error reading HEADER from POINT SOURCES file', 2 )
+        ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  POINT SOURCES file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
+        END IF
+
 C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
 
         IF ( .NOT. READ3( PNAME, 'IFIP', ALLAYS3, 0, 0, IFIP ) ) THEN
@@ -307,7 +320,7 @@ C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
 
 C.......   Read the ACTUAL-SCC FILE
 
-        WRITE( *,92000 ) ' ', 'Reading ACTUAL SCC file...', ' '
+        CALL M3MSG2( 'Reading ACTUAL SCC file...' )
 
         IREC  =  0
         I     =  0
@@ -328,14 +341,6 @@ C.......   Read the ACTUAL-SCC FILE
      &              'reading ACTUAL SCC file at line', IREC
                 CALL M3MESG( MESG )
 
-            ELSE IF ( I .GE. NPSRC ) THEN 
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )                         
-     &              'Max SCC table size', NPSRC, 
-     &              'exceeded at line', IREC
-                CALL M3MESG( MESG )
-
             ELSE IF ( LID .GE. SCC ) THEN 
 
                 EFLAG = .TRUE.
@@ -343,9 +348,11 @@ C.......   Read the ACTUAL-SCC FILE
      &              'SCC table out of order at line', IREC
                 CALL M3MESG( MESG )
 
-            ELSE
+            ENDIF
 
-                I   = I + 1
+            I   = I + 1
+            IF ( I .LE. NPSRC ) THEN 
+
                 LID = SCC
                 ISCCA( I ) = SCC
 
@@ -355,19 +362,22 @@ C.......   Read the ACTUAL-SCC FILE
 
 33      CONTINUE        !  end of the CDEV-read loop
 
+        WRITE( MESG,94010 )
+     &      'Dimensioned ASC TABLE size', NPSRC,
+     &      'Actual size', I
+        CALL M3MSG2( MESG )
+
         IF( I .EQ. 0 ) THEN
             EFLAG = .TRUE.
-            CALL M3MESG( 'ACTUAL SCC file is empty' )
+            CALL M3MSG2( 'ACTUAL SCC file is empty' )
 
-        ELSE
-            WRITE( MESG,94010 ) 
-     &             'NOTE: ACTUAL SCC file has', I, 'entries'
-            CALL M3MESG( MESG )
-
+        ELSEIF( I .GT. NPSRC ) THEN
+            CALL M3EXIT( 'SPCPMAT', 0, 0,
+     &                   'ACTUAL SCC table overflow', 2 )
         ENDIF
 
         IF ( EFLAG ) THEN
-            MESG = 'Error reading ACTUAL SCC file'
+            MESG = 'Error reading ACTUAL SCC file.'
             CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
 
         END IF
@@ -378,8 +388,7 @@ C.......   Read the ACTUAL-SCC FILE
 C.......   Read the SPECIATION PROFILES FILE
 C...............   ASSUMPTION:  sorted by profile ID
 
-        WRITE( *,92000 ) 
-     &       ' ', 'Reading SPECIATION PROFILES file...', ' '
+        CALL M3MSG2( 'Reading SPECIATION PROFILES file...' )
 
         NPROFS = RDSPROF( SDEV , NMPOL, EMNAM, MXSPRO, 
      &                    SXREF, SCOEF, INVPRO )
@@ -442,8 +451,7 @@ C.......   If needed, read the volatile pollutant conversion file
 
 C.......   Read the speciation cross-reference file
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Reading SPECIATION XREF file...', ' '
+        CALL M3MSG2( 'Reading SPECIATION XREF file...' )
 
         IREC  = 0
         I     = 0
@@ -491,16 +499,11 @@ C............. Convert character SCC field to integer SCC number
 
             IF ( J .LE. 0 ) THEN  ! SCC code not found in SCC LIST file
                 GO TO  101
+            END IF
 
-            ELSE IF ( I .GE. NPSRC ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &                 'Max XREF table size', NPSRC,
-     &                 'exceeded at line', IREC
-                CALL M3MESG( MESG )
+            I = I + 1
+            IF ( I .LE. NPSRC ) THEN
 
-            ELSE
-                I = I + 1
                 INDEXA( I ) = I
                 FIPSFA( I ) = STR2INT ( LINE( 1:5 ) )
                 SCCSFA( I ) = SCC
@@ -518,9 +521,15 @@ C............. Convert character SCC field to integer SCC number
 
   111   CONTINUE        !  end of the SDEV-read loop
 
-        IF ( EFLAG ) THEN
-            MESG = 'Error reading SPECIATION XREF file'
+        IF ( I .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'XREF table overflow; actual', I,
+     &          'dimensioned NPSRC=', NPSRC
             CALL M3EXIT( 'SPCPMAT', 0, 0, MESG, 2 )
+
+        ELSE IF ( EFLAG ) THEN
+
+            CALL M3EXIT( 'SPCPMAT', 0, 0, 'Error reading XREF file', 2 )
         END IF
 
         NREFA = I
@@ -529,8 +538,7 @@ C.........  Sort and process the speciation cross-reference file
 
         CALL SORTI4( NREFA, INDEXA, FIPSFA, SCCSFA, PLANTA, STACKA )
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Processing SPECIATION XREF file...', ' '
+        CALL M3MSG2( 'Processing SPECIATION XREF file...' )
 
         I1    = 0
         I2    = 0
@@ -624,35 +632,35 @@ C.........  Sort and process the speciation cross-reference file
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I1
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
         END IF
         IF ( I2 .GT. NSREF ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I2
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
         END IF
         IF ( I3 .GT. NSREF ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I3
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
         END IF
         IF ( I4 .GT. NSREF ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I4
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
         END IF
         IF ( I5 .GT. NSREF ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 )  
      &          'Max XREF count ', NSREF, 
      &          'exceeded in XREF file:  count=', I5
-            CALL M3MESG( MESG )
+            CALL M3MSG2( MESG )
         END IF
 
         IF ( EFLAG ) THEN
@@ -789,12 +797,9 @@ C...........       else by SCC only.
                             ELSE        !  no scc match:  WARNING
 
                                 WRITE( MESG,94010 )
-     &                              'No XREF for FIP', FIP,
-     &                              'SCC', SCC, 'plant', PID,
-     &                              'stack', SID
-                                CALL M3MESG( MESG )
-
-                                WRITE( MESG,94010 ) 
+     &                              'No XREF for FIP:', FIP,
+     &                              'SCC:', SCC, 'PLT:', PID,
+     &                              'STK:', SID, CRLF() // BLANK5 //
      &                              '     Using default profile 0000'
                                 CALL M3MESG( MESG )
 
@@ -823,11 +828,9 @@ C...........   speciation profile:
 
                 WRITE( MESG,94010 ) 
      &              'Profile', XID, 
-     &              'not found for FIP', FIP,
-     &              'SCC', SCC, 'plant', PID, 'stack', SID
-                CALL M3MESG( MESG )
-
-                WRITE( MESG,94010 ) 
+     &              'not found for FIP:', FIP,
+     &              'SCC:', SCC, 'PLT:', PID, 'STK:', SID,
+     &              CRLF() // BLANK5 //
      &              '     Using default profile 0000'
                 CALL M3MESG( MESG )
 
@@ -907,7 +910,7 @@ C...........   by this volatile conversion factor
 
 C.......   Write out the speciation matrix:
 
-        WRITE( *,92000 ) ' ', 'Writing out SPECIATION MATRIX...', ' '
+        CALL M3MSG2( 'Writing out SPECIATION MATRIX...' )
 
         IF ( .NOT. WRITE3( MNAME, 'ALL', 0, 0, SPCFACS ) ) THEN
             MESG = 'Error writing SPECIATION MATRIX file'
