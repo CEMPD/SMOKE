@@ -22,12 +22,12 @@ GRW=grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o
 #
 grwinven: $(GRW) $(ALLI) $(LIBPATH)
 	echo GRWINVEN:
-	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(SMK_BIN)/$(@) $(GRW) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GRW) $(LIBS)
 #
 #
 grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	echo GRWINVEN \(debug\):
-	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(@) $(GRW) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
 
 RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o	\
 	gethdr.o getpdinfo.o initinfo.o \
@@ -42,17 +42,15 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o	\
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
 	echo SMKINVEN:
-	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(SMK_BIN)/$(@) $(RAW) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(RAW) $(LIBS)
 #
 #
 smkinven.debug: $(RAW) $(ALLI) $(LIBPATH_DEBUG)
 	echo SMKINVEN \(debug\):
-	$(FC) $(FFLAGS) -L$(FS_ROOT) -o $(@) $(RAW) $(LIBS_DEBUG)
+	$(FC) $(FFLAGS) -o $(@) $(RAW) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
 
-adjustinv.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODAR2PT)
-	$(FC) $(FFLAGS) -c -o $@ adjustinv.f
 asgnar2pt.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgnar2pt.f
 asgnnhapx.o: $(MODSOURC) $(MODXREF) $(MODINFO)
@@ -72,19 +70,29 @@ initinfo.o: $(MODINFO)
 opengrwout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opengrwout.f
 openinvout.o: $(MODLISTS) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -I$(FS_ROOT) -c -o $@ openinvout.f
+	$(FC) $(FFLAGS) -c -o $@ openinvout.f
 openpdout.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openpdout.f
 procar2pt.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODAR2PT)
 	$(FC) $(FFLAGS) -c -o $@ procar2pt.f
-procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
+procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ procinven.f
 rdcempd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ rdcempd.f
+rddataemsmb.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rddataemsmb.f
+rddataidaar.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rddataidaar.f
+rddataidamb.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rddataidamb.f
+rddataidapt.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rddataidapt.f
+rddatantiar.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rddatantiar.f
+rddatantimb.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rddatantimb.f
 rdemsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdemsar.f
-rdemsmb.o: $(MODSOURC) $(MODMOBIL) $(MODXREF) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdemsmb.f
 rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
 	$(FC) $(FFLAGS) -c -o $@ rdemspd.f
 rdemspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
@@ -97,31 +105,35 @@ rdepspt.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdepspt.f
 rdgrdapi.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdgrdapi.f
-rdidaar.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdidaar.f
-rdidamb.o: $(MODSOURC) $(MODMOBIL) $(MODLISTS) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdidamb.f
-rdidapt.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdidapt.f
-rdinven.o: $(MODSOURC) $(MODLISTS) $(MODMOBIL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdinven.f
-rdinvdata.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
+rdinvdata.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdinvdata.f
-rdinvsrcs.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
+rdinvsrcs.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdinvsrcs.f
 rdlooppd.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdlooppd.f
-rdntiar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdntiar.f
-rdntimb.o: $(MODSOURC) $(MODMOBIL) $(MODLISTS) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ rdntimb.f
+rdsrcemsmb.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rdsrcemsmb.f
+rdsrcidaar.o:
+	$(FC) $(FFLAGS) -c -o $@ rdsrcidaar.f
+rdsrcidamb.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rdsrcidamb.f
+rdsrcidapt.o:
+	$(FC) $(FFLAGS) -c -o $@ rdsrcidapt.f
+rdsrcntiar.o: $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ rdsrcntiar.f
+rdsrcntimb.o: $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ rdsrcntimb.f
+setnonhap.o: $(MODSOURC) $(MODLISTS) $(MODXREF) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ setnonhap.f
 smkinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ smkinven.f
 srcmem.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ srcmem.f
-wrinvchr.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
-	$(FC) $(FFLAGS) -I$(FS_ROOT) -c -o $@ wrinvchr.f
-wrinvemis.o: $(MODSOURC) $(MODINFO)
+wrepinven.o: $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODAR2PT)
+	$(FC) $(FFLAGS) -c -o $@ wrepinven.f
+wrinvchr.o: $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ wrinvchr.f
+wrinvemis.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ wrinvemis.f
 wrinvpol.o: $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ wrinvpol.f
@@ -129,8 +141,6 @@ wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ wrpdemis.f
 wrptref.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ wrptref.f
-wrepinven.o: $(MODINFO) $(MODLISTS) $(MODAR2PT)
-	$(FC) $(FFLAGS) -c -o $@ wrepinven.f
 
 clean:
 	/bin/rm -f *.o
