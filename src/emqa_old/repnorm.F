@@ -16,10 +16,12 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       CRLF, DSCGRID,
 C       PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
-C       TRIMLEN, ENVINT
+C       TRIMLEN, ENVINT, ENVYN
 C
 C  REVISION  HISTORY:
 C       Prototype  4/97 by JMV.
+C       County totals 8/98 by JMV.
+C       Correct LAI totals 8/98 by JMV.
 C
 C***********************************************************************
 C
@@ -61,14 +63,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         LOGICAL         DSCGRID
         INTEGER         ENVINT
+        LOGICAL         ENVYN
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        CRLF, ENVINT, DSCGRID, PROMPTFFILE, PROMPTMFILE,
-     &                  STR2INT, STR2REAL, TRIMLEN
+        EXTERNAL        CRLF, ENVINT, ENVYN, DSCGRID, PROMPTFFILE,
+     &                  PROMPTMFILE, STR2INT, STR2REAL, TRIMLEN
 C
 C...........   PARAMETERS:
 
@@ -105,6 +108,8 @@ C...........   Logical file names and unit numbers
         INTEGER         RDEV    !  output report file
         INTEGER         SDEV    !  for surrogate coeff file
         INTEGER         LDEV    !  log-device
+        INTEGER         FDEV    !  for state-county names
+
         CHARACTER*16    ANAME   !  logical name for emission source gridded file
 
 C.......   Name tables for file ANAME
@@ -119,6 +124,8 @@ C.......   Gridded normalized emissions description input from file BGRD
         REAL NORNO( NCOLS, NROWS, LUSES )       !  normalized NO emissions
         REAL CYVOC( NBFIP , BSPCS-1, BTYPES )   !  county VOC landuse totals
         REAL CYLAI( NBFIP )                     !  county LAI totals
+        REAL TLAI( NBFIP )                      !  normalization factor   
+        REAL NLAI( NBFIP )                      !  state normaliz. factor
         REAL CYNO( NBFIP, LUSES )               !  county NO totals
         REAL CTOT( NCOLS, NROWS )               !  normalized area fractions
         REAL STLAI( NASID )                     !  state LAI totals
@@ -144,6 +151,9 @@ C...........   Other local variables
         INTEGER         B
         INTEGER         NSTA 
         LOGICAL         EFLAG   !  input error flat
+        LOGICAL         ST_REPORT  ! Output state-based totals
+        LOGICAL         CY_REPORT  ! Output county-based totals
+
 
         CHARACTER*5     FFORMAT !  temporary indicator for input formats
         CHARACTER*16    SCRBUF
@@ -176,6 +186,11 @@ C
         SDEV = PROMPTFFILE(
      &  'Enter logical name for GRIDDING SURROGATE COEFF file',
      &           .TRUE., .TRUE., 'AGPRO', 'REPNORM' )
+
+        FDEV = PROMPTFFILE(
+     &          'Enter name for STATE/COUNTY FIPS CODE file',
+     &          .TRUE., .TRUE., 'STCYNAM', 'REPNORM' )
+
 C
 C   Open output file
 C
@@ -188,6 +203,12 @@ C.......   Get environment variable settings
         JSRG = ENVINT( 'JSRG', 
      &             'Record number for area surrogate',
      &             3 , IOS)
+
+        ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
+     &                      .TRUE., IOS )
+
+        CY_REPORT= ENVYN( 'CY_REPORT', 'Per-county report writing flag',
+     &                      .TRUE., IOS )
 
         IF ( IOS .GT. 0 ) THEN
            MESG = ' Bad integer for record number'
@@ -516,6 +537,7 @@ C.......   Loops reading the various categories of normalized emissions:
         DO I = 1, NBFIP
 
           CYLAI( I ) = 0.0
+          TLAI( I ) = 0.0
  
           DO J = 1, BSPCS-1
            DO K = 1, BTYPES
@@ -547,7 +569,8 @@ C.......   Loops reading the various categories of normalized emissions:
             KFIP( M ) = FIPSA( MREC )
           ENDIF
 
-          CYLAI( M ) = CYLAI( M ) + ( AVLAI ( I, J ) * SLAI )  
+          CYLAI( M ) = CYLAI( M ) + ( AVLAI ( I, J ) * SLAI )    
+          TLAI( M ) = TLAI( M ) + SLAI
 
           DO  104  K = 1, BTYPES
 
@@ -570,6 +593,7 @@ C.......   Loops reading the various categories of normalized emissions:
         DO I = 1, NASID
 
           STLAI( I ) = 0.0
+          NLAI( I ) = 0
 
           DO J = 1, BSPCS-1
 
@@ -589,7 +613,17 @@ C.......   Loops reading the various categories of normalized emissions:
         K = 0
         LSTA = -9
 
+C........ sum state totals
+
         DO 120 J= 1, MFIP
+
+C........normalize leaf area index 
+
+          IF ( TLAI( J ) .LE. 0.00 ) THEN
+            CYLAI( J ) = 0.0
+          ELSE 
+            CYLAI( J ) = CYLAI( J ) / TLAI( J ) 
+          ENDIF
 
           STA = KFIP( J ) / 1000
           
@@ -601,7 +635,8 @@ C.......   Loops reading the various categories of normalized emissions:
       
           ENDIF
  
-          STLAI( K ) = STLAI( K ) +CYLAI ( J )           
+          STLAI( K ) = STLAI( K ) + CYLAI ( J )           
+          NLAI( K ) = NLAI( K ) + 1
 
           DO  124  N = 1, BTYPES
 
@@ -622,27 +657,73 @@ C.......   Loops reading the various categories of normalized emissions:
 120     CONTINUE
 
         NSTA = K 
+
+C...... normalize state LAI to get an state average LAI
+
+        DO 134 N = 1, NSTA
+ 
+         IF ( NLAI( N ) .LE. 0 ) THEN
+           STLAI( N ) = 0.0
+         ELSE
+           STLAI( N ) = STLAI( N ) / NLAI( N ) 
+         ENDIF
+
+134     CONTINUE 
+
 C.............  Write report if report flag is switched on
 
         MESG = 'Biogenic normalized emissions ' //
      &         '(tons/ hour) within grid ' // GRDNM
 
+
         DO M = 1, BTYPES
+
+         IF ( ST_REPORT ) THEN
 
             CALL STATELST( RDEV  , MESG , NASID , NSTA , BSPCS-1,
      &              'F8.2', NORMV( 1, M ) , STATES, STVOC( 1, 1, M)) 
 
+         ENDIF
+
+         IF ( CY_REPORT ) THEN
+
+            CALL CYLST(  RDEV, FDEV , MESG , NBFIP , MFIP , BSPCS-1,
+     &              'F8.2', NORMV( 1, M ) , KFIP , CYVOC( 1, 1, M))
+
+         ENDIF
+
         ENDDO
 
 
-        CALL STATELST( RDEV  , MESG , NASID , NSTA , LUSES,
-     &                'F8.2', NORMN , STATES, STNO )
+        IF ( ST_REPORT ) THEN
 
-        MESG = 'Biogenic leaf area index within grid ' // GRDNM
+          CALL STATELST( RDEV  , MESG , NASID , NSTA , LUSES,
+     &                  'F8.2', NORMN , STATES, STNO )
 
-        CALL STATELST( RDEV  , MESG , NASID , NSTA , 1 ,
-     &                 'F8.2', CLAI , STATES, STLAI )
+        ENDIF
 
+        IF ( CY_REPORT ) THEN
+
+          CALL CYLST( RDEV , FDEV, MESG , NBFIP , MFIP , LUSES,
+     &                  'F8.2', NORMN , KFIP, CYNO )
+
+        ENDIF
+
+        MESG = 'Biogenic average leaf area index within grid ' // GRDNM
+
+        IF ( ST_REPORT ) THEN
+
+          CALL STATELST( RDEV  , MESG , NASID , NSTA , 1 ,
+     &                  'F8.2', CLAI , STATES, STLAI )
+
+        ENDIF
+
+        IF ( CY_REPORT ) THEN
+
+          CALL CYLST( RDEV , FDEV , MESG , NBFIP , MFIP , 1 ,
+     &                  'F8.2', CLAI , KFIP, CYLAI )
+
+        ENDIF
  
 C...........   Formatted file I/O formats............ 93xxx
 
