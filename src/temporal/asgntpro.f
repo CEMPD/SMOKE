@@ -1,6 +1,5 @@
 
-        SUBROUTINE ASGNTPRO( CATEGORY, NSRC, NPOL, NIPOL, PNAM, EINAM,
-     &                       TREFFMT )
+        SUBROUTINE ASGNTPRO( NPOL, PNAM, TREFFMT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -55,6 +54,9 @@ C...........   This module contains the cross-reference tables
 C...........   This module contains the temporal profile tables
         USE MODTPRO
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -71,12 +73,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL CRLF, ENVYN, FIND1, FINDC, INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: CATEGORY       ! source category
-        INTEGER     , INTENT (IN) :: NSRC           ! number of sources
         INTEGER     , INTENT (IN) :: NPOL           ! number of pols in group
-        INTEGER     , INTENT (IN) :: NIPOL          ! total number of pollutants
         CHARACTER(*), INTENT (IN) :: PNAM ( NPOL )  ! pollutant names in group
-        CHARACTER(*), INTENT (IN) :: EINAM( NIPOL ) ! all pollutant names
         CHARACTER(*), INTENT (IN) :: TREFFMT        ! temporal xref format
 
 C.........  Other local variables
@@ -98,8 +96,8 @@ C.........  Other local variables
         CHARACTER*300          MESG     ! message buffer
         CHARACTER(LEN=STALEN3) CSTA     ! tmp Country/state code
         CHARACTER(LEN=STSLEN3) CSTASCC  ! tmp Country/state code // SCC
-        CHARACTER(LEN=STSLEN3) CSTASL5  ! tmp Country/state code // left SCC
-        CHARACTER(LEN=SCLLEN3) TSCCL5   ! tmp left digits of TSCC
+        CHARACTER(LEN=STSLEN3) CSTASL   ! tmp Country/state code // left SCC
+        CHARACTER(LEN=SCCLEN3) TSCCL    ! tmp left digits of TSCC
         CHARACTER(LEN=SRCLEN3) CSRC     ! tmp source chars string
         CHARACTER(LEN=SS0LEN3) CSSC0    ! tmp FIPS // Plant // SCC
         CHARACTER(LEN=SS1LEN3) CSSC1    ! tmp source chars through char1 // SCC
@@ -110,7 +108,7 @@ C.........  Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP     ! tmp (character) FIPS code
         CHARACTER(LEN=FPLLEN3) CFIPPLT  ! tmp FIPS code // plant id
         CHARACTER(LEN=FPSLEN3) CFIPSCC  ! tmp FIPS code // SCC
-        CHARACTER(LEN=FPSLEN3) CFIPSL5  ! tmp FIPS code // left SCC
+        CHARACTER(LEN=FPSLEN3) CFIPSL   ! tmp FIPS code // left SCC
         CHARACTER(LEN=SCCLEN3) TSCC     ! tmp 10-digit SCC
 
         CHARACTER*16 :: PROGNAME = 'ASGNTPRO' ! program name
@@ -122,7 +120,7 @@ C.........  For list-formatted temporal cross-reference (one entry per source)
 C           from EMS-95 files, the profiles are not applied per pollutant.  So,
 C           we can set these for the first group of pollutants used when
 C           calling this subroutine and then use them for all pollutants.
-        IF( FIRSTIME .AND. TREFFMT .EQ. 'LIST' ) THEN
+        IF( FIRSTIME .AND. TREFFMT .EQ. 'SOURCE' ) THEN
 
 C.............  Set for first pollutant in group  
             J = 1
@@ -171,7 +169,7 @@ C.............  Set up format for creating character FIPS code for non-point
 C.........  Exit subroutine for list-formatted temporal x-ref because we
 C           do not have a heirarchial application of temporal profiles
 C           to worry about.
-        IF( TREFFMT .EQ. 'LIST' ) RETURN
+        IF( TREFFMT .EQ. 'SOURCE' ) RETURN
 
         DO J = 1, NPOL
 
@@ -195,11 +193,11 @@ C.................  Create selection
 
                     CSTA    = CFIP( 1:STALEN3 )
                     TSCC    = CSCC( S )
-                    TSCCL5  = TSCC( 1:SCLLEN3 )
+                    TSCCL   = TSCC( 1:LSCCEND )
                     CFIPSCC = CFIP // TSCC
-                    CFIPSL5 = CFIP // TSCCL5
+                    CFIPSL  = CFIP // TSCCL
                     CSTASCC = CSTA // TSCC
-                    CSTASL5 = CSTA // TSCCL5
+                    CSTASL  = CSTA // TSCCL
 
                 CASE ( 'MOBILE' )
 
@@ -216,11 +214,11 @@ C.................  Create selection
                     CFIPPLT = CSRC( 1:PTENDL3( 2 ) )
                     CFIP    = CSRC( 1:FIPLEN3 )
                     CSTA    = CSRC( 1:STALEN3 )
-                    TSCCL5  = TSCC( 1:SCLLEN3 )
+                    TSCCL   = TSCC( 1:LSCCEND )
                     CFIPSCC = CFIP // TSCC
-                    CFIPSL5 = CFIP // TSCCL5
+                    CFIPSL  = CFIP // TSCCL 
                     CSTASCC = CSTA // TSCC
-                    CSTASL5 = CSTA // TSCCL5
+                    CSTASL  = CSTA // TSCCL
                     
                 CASE DEFAULT
 
@@ -368,11 +366,11 @@ C                           pollutant-specific SCC match; then
 C                           pollutant-specific left SCC match
 
                 F5 = FINDC( CFIPSCC, TXCNT( 9 ), CHRT09 ) 
-                F4 = FINDC( CFIPSL5, TXCNT( 8 ), CHRT08 ) 
+                F4 = FINDC( CFIPSL , TXCNT( 8 ), CHRT08 ) 
                 F3 = FINDC( CSTASCC, TXCNT( 6 ), CHRT06 ) 
-                F2 = FINDC( CSTASL5, TXCNT( 5 ), CHRT05 ) 
+                F2 = FINDC( CSTASL , TXCNT( 5 ), CHRT05 ) 
                 F1 = FINDC( TSCC   , TXCNT( 3 ), CHRT03 ) 
-                F0 = FINDC( TSCCL5 , TXCNT( 2 ), CHRT02 ) 
+                F0 = FINDC( TSCCL  , TXCNT( 2 ), CHRT02 ) 
 
                 IF( F5 .GT. 0 .AND. DPRT09(F5,V) .GE. ADDPS ) THEN
                     MREF = MPRT09( F5,V )
@@ -621,6 +619,8 @@ C----------------------------------------------------------------------
                 CALL M3MESG( MESG )
 
             END IF
+
+            RETURN
 
 C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
 
