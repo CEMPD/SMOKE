@@ -87,6 +87,11 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine MRGUNITS
 
+        IF( ALLOCATED( GRDFAC  ) ) DEALLOCATE( GRDFAC  )
+        IF( ALLOCATED( TOTFAC  ) ) DEALLOCATE( TOTFAC  )
+        IF( ALLOCATED( GRDUNIT ) ) DEALLOCATE( GRDUNIT )
+        IF( ALLOCATED( TOTUNIT ) ) DEALLOCATE( TOTUNIT )
+
 C.........  Allocate memory for units conversion factors and units.  Assume
 C           that units and conversion factors are the same for all species of
 C           a single pollutant.
