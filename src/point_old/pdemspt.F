@@ -293,7 +293,7 @@ C.............  File type is process.pt
 C.............  File type is not process.pt but it is first file
             ELSEIF( IFIL .EQ. 1 ) THEN
                 CALL M3EXIT( 'PDEMSPT', 0, 0, 'First file in PHLST ' //
-     &                       'must be a process.pt file.', MESG, 2 )
+     &                       'must be a process.pt file.', 2 )
 
 C.............  File type is pdayspec.pt
             ELSE
@@ -568,8 +568,7 @@ C.........  Check for overflow of process records
      &          'Max dimensioned record-count (NPEMAX)=', NPEMAX
             CALL M3MSG2( MESG )
 
-            CALL M3MSG2( 'Max record-count exceeded ' //
-     &                   'in PROCESS files.', 2 )
+            CALL M3MSG2( 'Max record-count exceeded in PROCESS files.' )
 
         END IF	!  if input process parameter table overflow or not
 
@@ -636,7 +635,7 @@ C.................  it is better than having to store the dates the first
 C.................  time for _every_ hour in the input files.  Such an
 C.................  approach would eliminate the advantage of being able to
 C.................  reduce NPHR when only a limited part of the input file
-C.................  is actually used. MRH.
+C.................  is actually used. M Houyoux.
 
 C.................  Set Julian day from MMDDYY8 SAS format
                 MONTH = STR2INT( LINE( 62:63 ) )
@@ -958,17 +957,11 @@ C.............  Write emissions for this hour
         MESG = 'Successful completion of Program PDEMSPT'
         CALL M3EXIT( 'PDEMSPT', 0, 0, MESG, 0 )
 
-C.........  Error because improper grouping of raw input files
-
-        CALL M3EXIT( 'PDEMSPT', 0, 0, MESG, 2 )
 
 C.........  Error opening raw input file
 1006    MESG = 'Error opening file ' // NAMTMP( 1:TRIMLEN( NAMTMP ) )
         CALL M3EXIT( 'PDEMSPT', 0, 0, MESG, 2 )
 
-C.........  Error with INVYEAR packet read
-1007    CALL M3EXIT( 'PDEMSPT', 0, 0, 'ERROR: Can only use INVYEAR ' //
-     &               'packet in PNLST on increments of five files', 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
