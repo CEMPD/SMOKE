@@ -171,8 +171,8 @@ C..............  Round min value DOWN to nearest on interval
                 VMIN          = MNVMX
 
             ELSE 
-                VMIN = MNVMN + VINTV *
-     &                 INT( ( VAL - MNVMN ) / VINTV )
+                VMIN = REAL( MNVMN + VINTV *
+     &                       INT( ( VAL - MNVMN ) / VINTV ) )
 
             END IF
 
@@ -206,9 +206,11 @@ C               to allow for interpolation
                 MAXBYSRC( S ) = MAXV_MAX 
                 VMAX = MXVMX - VINTV
 
+C.............  Compute VMAX from basis of MXVMN to compute in same way as 
+C               the valid temperature lists are computed.
             ELSE  
-                VMAX = MXVMN + VINTV *
-     &                 INT( ( VAL - MXVMN ) / VINTV )
+                VMAX   = REAL( MNVMN + VINTV *
+     &                         INT( ( VAL - MNVMN ) / VINTV ) )
 
             END IF
 
