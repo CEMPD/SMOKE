@@ -111,7 +111,6 @@ C...........   Other local variables
         INTEGER         FLEN        !  length of FNAME string
         INTEGER         NEDIM1      !  1st dimension for sparse emis arrays
         INTEGER         NLINE       !  number of lines
-        INTEGER         NRAWBP      !  actual total raw records by pollutants
         INTEGER         NRAWIN      !  total raw record-count (estimate)
         INTEGER         NRAWOUT     !  no. of valid entries in emis file(s)
         INTEGER         WKSET       !  setting for wkly profile TPFLAG component
@@ -373,7 +372,6 @@ C                        IORISA  = IMISS3
 
                 ELSEIF( FILFMT .EQ. EMSFMT ) THEN
 
-                    TFLAG = .TRUE.
                     EDEV( 1 ) = TDEV  ! Store first file unit number
  
 C.....................  Make sure that next 4 files in list are also EMSFMT
@@ -399,12 +397,16 @@ C.....................  These calls populate the unsorted inventory
 C                       variables in the module MODSOURC
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-C                        CALL RDEMSAR(  )
+                        CALL RDEMSAR( EDEV, INY, NRAWIN, MXIDAT, WKSET,
+     &                                INVDCOD, INVDNAM, NRAWOUT, 
+     &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
+     &                                NDROP, EDROP )
 
                     CASE( 'MOBILE' )
 c                        CALL RDEMSMV(  )
 
                     CASE( 'POINT' )
+                        TFLAG = .TRUE.
                         CALL RDEMSPT( EDEV, INY, NRAWIN, MXIDAT, WKSET,
      &                                INVDCOD, INVDNAM, NRAWOUT, 
      &                                ERRIOS, ERRREC, ERFILDSC, EFLAG, 
