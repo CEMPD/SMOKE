@@ -103,7 +103,8 @@ C   begin body of subroutine SETVPTR
 
             ELSE
                 EFLAG = .TRUE.
-                MESG = 'Error: ' // NDINDESC // ' "' // VBUF( 1:L ) // 
+                MESG = 'Error: ' // NDINDESC( 1:L2 ) // ' "' // 
+     &                  VBUF( 1:L ) // 
      &                 '" not found in available list'
                 CALL M3MSG2( MESG )
 
@@ -112,7 +113,7 @@ C   begin body of subroutine SETVPTR
 11      CONTINUE
 
         IF( EFLAG ) THEN
-            MESG = 'Error checking ' // NDINDESC // 's.'
+            MESG = 'Error checking ' // NDINDESC( 1:L2 ) // 's.'
             CALL M3EXIT( 'SETVPTR', 0, 0, MESG, 2 )
         ENDIF
 
