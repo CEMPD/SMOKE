@@ -27,17 +27,15 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C
-C See file COPYRIGHT for conditions of use.
-C
-C Environmental Modeling Center
-C MCNC
-C P.O. Box 12889
-C Research Triangle Park, NC  27709-2889
-C
-C smoke@emc.mcnc.org
+C 
+C Carolina Environmental Program
+C University of North Carolina at Chapel Hill
+C 137 E. Franklin St., CB# 6116
+C Chapel Hill, NC 27599-6116
+C 
+C smoke@unc.edu
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -55,7 +53,7 @@ C.........  Parameters
         INTEGER       STDOUT
         INTEGER       YEAR
         PARAMETER   ( STDOUT = 6,
-     &                  YEAR = 2002 )
+     &                  YEAR = 2004 )
 
 C.........  External functions
         LOGICAL       GETYN
@@ -78,13 +76,12 @@ C   begin body of program INITEM
 
         LINE0 = 'SMOKE ---------------' 
         WRITE( LINE1,94020 ) 'Copyright (c)', YEAR, 
-     &                      'MCNC--Environmental Modeling Center'
+     &         'Environmental Modeling for Policy Development'
 
         LINE2 = 'All rights reserved'
-        LINE3 = 'See file COPYRIGHT for conditions of use.'
 
-        LINE4 = 'Online documentation available at:' 
-        LINE5 = '    http://www.cep.unc.edu/empd/products/smoke'
+        LINE3 = 'Online documentation available at:' 
+        LINE4 = '    http://www.cep.unc.edu/empd/products/smoke'
 
 C.........  Set up program version information
         VERCHAR = ADJUSTL( NAMEVERS )
@@ -118,8 +115,6 @@ C.............  Write copyright information
             WRITE( LDEV,92000 ) LINE1( 1:LEN_TRIM( LINE1 ) )
             WRITE( LDEV,92000 ) LINE2( 1:LEN_TRIM( LINE2 ) )
             WRITE( LDEV,92000 ) 
-            WRITE( LDEV,92000 ) LINE3( 1:LEN_TRIM( LINE3 ) )
-            WRITE( LDEV,92000 ) 
 
 C.............  Write program version information
 
@@ -128,8 +123,8 @@ C.............  Write program version information
      &                          VERCHAR( 1:L )
            
 C.............  Write web site information
-            WRITE( LDEV,92000 ) LINE4( 1:LEN_TRIM( LINE0 ) )
-            WRITE( LDEV,92000 ) LINE5( 1:LEN_TRIM( LINE1 ) )
+            WRITE( LDEV,92000 ) LINE3( 1:LEN_TRIM( LINE0 ) )
+            WRITE( LDEV,92000 ) LINE4( 1:LEN_TRIM( LINE1 ) )
            
 C.............  Write program-specific information
             CALL PROGDESC( LDEV, INPROGNM )

@@ -20,12 +20,15 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2004, US EPA
+C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C
-C See file COPYRIGHT for conditions of use.
-C
-C smoke@emc.mcnc.org
+C 
+C Carolina Environmental Program
+C University of North Carolina at Chapel Hill
+C 137 E. Franklin St., CB# 6116
+C Chapel Hill, NC 27599-6116
+C 
+C smoke@unc.edu
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
