@@ -1,9 +1,9 @@
 
-        PROGRAM GRWPMAT
+        PROGRAM GRWPOINT
 
 C***********************************************************************
 C  program body      starts at line  224
-C  subroutine NORMID starts at line  944
+C  subroutine NORMID starts at line  946
 C
 C  DESCRIPTION:
 C       Construct monthly point source PNTS file(s) from monthly
@@ -219,7 +219,7 @@ C.........  DATA STATEMENTS
 
 
 C***********************************************************************
-C   begin body of program GRWPMAT
+C   begin body of program GRWPOINT
 
         LDEV = INIT3()
 
@@ -227,7 +227,7 @@ C   begin body of program GRWPMAT
 
         WRITE( *,92000 ) 
      &' ',
-     &  'Program GRWPMAT takes a SMOKE POINT INVENTORY file, an ASCII',
+     &  'Program GRWPOINT takes a SMOKE POINT INVENTORY file, an ASCII',
      &  'POINT SOURCES LIST file, a monthly adjustment factors file,',
      &  'and a growth factors file, to produce MONTHLY INVENTORY files',
      &  'for each month requested and optional ASCII REPORTS.',
@@ -245,19 +245,19 @@ C   begin body of program GRWPMAT
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0, 'Ending program GRWPMAT', 2 )
+            CALL M3EXIT( 'GRWPOINT', 0, 0, 'Ending program GRWPOINT', 2)
         END IF
 
 C....... Get file name; open input pt src, src list, Xref and fuel use files 
 
         ENAME = PROMPTMFILE(
      &           'Enter logical name for POINT SOURCES input file',
-     &           FSREAD3, 'PNTS', 'GRWPMAT' )
+     &           FSREAD3, 'PNTS', 'GRWPOINT' )
 
 C.......   Read in description of point-source emissions file
 
         IF ( .NOT. DESC3( ENAME ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &          'Could not get description of file ' // ENAME, 3 )
         END IF
 
@@ -265,11 +265,11 @@ C.......  Get other input files
 
         SRDEV = PROMPTFFILE( 
      &           'Enter logical name of the FACILITY/STACK input file',
-     &           .TRUE., .TRUE., 'PSRC', 'GRWPMAT' )
+     &           .TRUE., .TRUE., 'PSRC', 'GRWPOINT' )
 
         XRDEV = PROMPTFFILE( 
      &          'Enter logical name of MONTHLY ADJUSTMENTS input file',
-     &          .TRUE., .TRUE., 'PASCFAC', 'GRWPMAT' )
+     &          .TRUE., .TRUE., 'PASCFAC', 'GRWPOINT' )
 
 C.........  Get date for projection and months for processing
 
@@ -292,19 +292,19 @@ C
             NAME = 'PNTS_' // MON( I )
             MESG = 'Enter logical name of ' // MON( I ) // 
      &             'POINT SOURCES output file' 
-            MNAME( I ) = PROMPTMFILE( MESG, FSUNKN3, NAME, 'GRWPMAT' )
+            MNAME( I ) = PROMPTMFILE( MESG, FSUNKN3, NAME, 'GRWPOINT' )
 
 44      CONTINUE
 C
         RDEV  = PROMPTFFILE( 
      &          'Enter logical name of SOURCE REPORT file, or "NONE"',
-     &          .FALSE., .TRUE., 'PAREPT', 'GRWPMAT' )
+     &          .FALSE., .TRUE., 'PAREPT', 'GRWPOINT' )
 
         RFLAG = ( RDEV .GT. 0 )
 
         FDEV = PROMPTFFILE( 
      &         'Enter logical name of FACILITY REPORT file, or "NONE"',
-     &         .FALSE., .TRUE., 'PAFCRPT', 'GRWPMAT' )
+     &         .FALSE., .TRUE., 'PAFCRPT', 'GRWPOINT' )
 
         FFLAG = ( FDEV .GT. 0 )
 
@@ -343,7 +343,7 @@ C.............
                 EFLAG = .TRUE.
                 ECNT  = ECNT + 1
                 IF ( ECNT .GT. 10 ) THEN
-                    CALL M3EXIT( 'GRWPMAT', 0, 0, 
+                    CALL M3EXIT( 'GRWPOINT', 0, 0, 
      &                           'Too many errors', 2 )
                 END IF
                 GO TO  77  
@@ -407,7 +407,7 @@ C.................  Assign factors to specific month
         END IF
 
         IF ( EFLAG ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading monthly adjustments file', 2 )
         END IF
 
@@ -472,23 +472,23 @@ C.........  Read in netCDF file with growth factors (not MONTHLY)
 
         GNAME = PROMPTMFILE(
      &           'Enter logical name for GROWTH FACTORS file',
-     &           FSREAD3, 'PNTGRW', 'GRWPMAT' )
+     &           FSREAD3, 'PNTGRW', 'GRWPOINT' )
 
             IF ( .NOT. READ3( GNAME, 'NOX', ALLAYS3, 0, 0,
      &                        NOXGR ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                       'Could not read NOX from ' // GNAME, 2 )
             END IF
 
             IF ( .NOT. READ3( GNAME, 'CO', ALLAYS3, 0, 0,
      &                        COGR ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                       'Could not read CO from ' // GNAME, 2 )
             END IF
 
             IF ( .NOT. READ3( GNAME, 'ROG', ALLAYS3, 0, 0,
      &                        ROGGR ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                       'Could not read ROG from ' // GNAME, 2 )
             END IF
 
@@ -533,7 +533,7 @@ C.........  Initialize count of sources per EMS-95 facility code
                 EFLAG = .TRUE.
                 ECNT  = ECNT + 1
                 IF ( ECNT .GT. 10 ) THEN
-                    CALL M3EXIT( 'GRWPMAT', 0, 0, 'Too many errors', 2 )
+                    CALL M3EXIT( 'GRWPOINT', 0, 0, 'Too many errors', 2)
                 END IF
                 GO TO  111
             END IF 
@@ -605,7 +605,7 @@ C.....................  matches the monthly adjustments table
         END IF
           
         IF ( EFLAG ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0, 
+            CALL M3EXIT( 'GRWPOINT', 0, 0, 
      &                   'Error reading PSRC file', 2 )
         ENDIF
 
@@ -629,7 +629,7 @@ C...........   Read in emissions values.
 
             IF ( .NOT. READ3( ENAME, EINAM( V ), ALLAYS3, 0, 0,
      &                        EMIS( 1,V ) ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                       'Error reading "' //
      &                       EINAM( V )( 1:TRIMLEN( EINAM( V ) ) )//
      &                       '" from file "' //
@@ -639,21 +639,21 @@ C...........   Read in emissions values.
             VNAME = 'CTLEFF_' // EINAM( V )
             IF ( .NOT. READ3( ENAME, VNAME, ALLAYS3,
      &                        0, 0, CTLEFF( 1,V ) ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &               'Error reading CTLEFF from file' // ENAME, 2 )
             END IF
 
             VNAME = 'RULEFF_' // EINAM( V )
             IF ( .NOT. READ3( ENAME, VNAME, ALLAYS3,
      &                        0, 0, RULEFF( 1,V ) ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &               'Error reading RULEFF from file' // ENAME, 2 )
             END IF
 
             VNAME = 'RULPEN_' // EINAM( V )
             IF ( .NOT. READ3( ENAME, VNAME, ALLAYS3,
      &                        0, 0, RULPEN( 1,V ) ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &               'Error reading RULPEN from file' // ENAME, 2 )
             END IF
 
@@ -662,67 +662,67 @@ C...........   Read in emissions values.
 C.........  Read inventory file characteristics
 
         IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3,0,0, IFIP ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading FIP from file' // ENAME, 2)
         END IF
 
         IF ( .NOT. READ3( ENAME, 'ISCC', ALLAYS3,0,0, ISCC ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading ISCC from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'IPLANT', ALLAYS3,0,0, IPLANT ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading IPLANT from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'ISTACK', ALLAYS3,0,0, ISTACK ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading ISTACK from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'TZONES', ALLAYS3,0,0, TZONES ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading TZONES from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'TPFLAG', ALLAYS3,0,0, TPFLAG ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading TPFLAG from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'INVYR', ALLAYS3,0,0, INVYR ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                  'Error reading INVYR from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'XLOCA', ALLAYS3,0,0, XLOCA ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading XLOCA from file' // ENAME, 2)
         END IF
 
         IF ( .NOT. READ3( ENAME, 'YLOCA', ALLAYS3,0,0, YLOCA ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading YLOCA from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKHT', ALLAYS3,0,0, STKHT ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading STKHT from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKDM', ALLAYS3,0,0, STKDM ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading STKDM from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKTK', ALLAYS3,0,0, STKTK ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading STKTK from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'STKVE', ALLAYS3,0,0, STKVE ) ) THEN
-            CALL M3EXIT( 'GRWPMAT', 0, 0,
+            CALL M3EXIT( 'GRWPOINT', 0, 0,
      &                   'Error reading STKVE from file' // ENAME, 2 )
         END IF
 
@@ -766,7 +766,7 @@ C.........  Must do this after IFIP has been read.
      &        'dimensioned MXSPPL=', MXSPPL
             CALL M3MSG2( MESG )
 
-            CALL M3EXIT( 'GRWPMAT', 0, 0, 
+            CALL M3EXIT( 'GRWPOINT', 0, 0, 
      &                   'Error reading PSRC file', 2 )
         ENDIF
 
@@ -850,7 +850,7 @@ C.............  If fflag, Sum emissions for all plants for this month and store
             ENDIF
 
             IF ( .NOT. WRITE3( MNAME( M ), ALLVAR3, 0, 0,  IFIP ) ) THEN
-                CALL M3EXIT( 'GRWPMAT', 0, 0,
+                CALL M3EXIT( 'GRWPOINT', 0, 0,
      &               'Error writing output file "' //
      &               MNAME( M )( 1:TRIMLEN( MNAME( M )) ) // '"',  2 )
             END IF
@@ -901,8 +901,8 @@ C.............  Write the report (no header)
 
         ENDIF
 
-        MESG = 'Successful completion of Program GRWPMAT'
-        CALL M3EXIT( 'GRWPMAT', 0, 0, MESG, 0 )
+        MESG = 'Successful completion of Program GRWPOINT'
+        CALL M3EXIT( 'GRWPOINT', 0, 0, MESG, 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
