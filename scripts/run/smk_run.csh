@@ -446,6 +446,8 @@ if ( $?RUN_PREMOBL ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
 
+      ls $METDAT/METCRO2D* > $METLIST
+
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
 
