@@ -31,7 +31,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -63,6 +63,9 @@ C...........   This module contains the information about the source category
 
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
         IMPLICIT NONE
  
@@ -140,13 +143,9 @@ C...........   Other local variables:
         INTEGER    JDATE   !  input date counter (YYYYDDD) in GMT
         INTEGER    JTIME   !  input time counter (HHMMSS)  in GMT
         INTEGER    LDATE   !  date from previous loop iteration
-        INTEGER    NCOLS   !  no. grid columns
-        INTEGER    NCOLSU  !  no. grid columns in ungridding matrix
-        INTEGER    NGRID   !  no. grid cells
+        INTEGER    METNGRID  ! met grid number of cells
         INTEGER    NINVARR !  no. inventory variables to read
         INTEGER    NMATX   !  size of ungridding matrix
-        INTEGER    NROWS   !  no. grid rows
-        INTEGER    NROWSU  !  no. grid rows in ungridding matrix
         INTEGER    NSTEPS  !  number of time steps to process temperature data
         INTEGER    ODATE   !  output date
         INTEGER    OTIME   !  time in GMT for determining when to output
@@ -280,9 +279,10 @@ C.........  Save header information that will be needed later
             STIME_MET = STIME3D
             TSTEP = TSTEP3D
             NSTEPS= MXREC3D
-            NROWS = NROWS3D
-            NCOLS = NCOLS3D
-            NGRID = NROWS * NCOLS
+
+C.............  Initialize reference grid with met file
+            CALL CHKGRID( TNAME, 'GRID', 0, EFLAG )
+            METNGRID = NGRID
 
         END IF
 
@@ -300,10 +300,8 @@ C.........  Check the number of sources
         CALL CHKSRCNO( CATDESC, UNAME, NROWS3D, NSRC, EFLAG )
 
 C.........  Compare the gridded file settings with the ungridded file settings
-        NCOLSU = GETIFDSC( FDESC3D, '/NCOLS3D/', .TRUE. )
-        NROWSU = GETIFDSC( FDESC3D, '/NROWS3D/', .TRUE. )
-        CALL CHECK_GRID_DIMS( 'NCOLS', 'columns', NCOLSU, NCOLS )
-        CALL CHECK_GRID_DIMS( 'NROWS', 'rows'   , NROWSU, NROWS )
+C.........  The subgrid parameters will be set here, if there is a subgrid
+        CALL CHKGRID( UNAME, 'GMAT', 1, EFLAG )
 
 C......... If the dimensions were in error, abort
         IF( EFLAG ) THEN
@@ -336,7 +334,7 @@ C.........  Populate table of valid min/max temperatures in MODMET
 C.........  Allocate memory for other arrays in the program
         ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
-        ALLOCATE( TA( NGRID ), STAT=IOS )
+        ALLOCATE( TA( METNGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TA', PROGNAME )
         ALLOCATE( DAYBEGT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYBEGT', PROGNAME )

@@ -73,7 +73,7 @@ mobil5b.o : $(MODEMFACS) $(MODINFO) $(MODMET) $(INC)/M5CNST3.EXT
 	$(FC) $(FFLAGS) -I$(M5_SRC) -c -o $@ mobil5b.f
 opensmet.o  : $(MODINFO) $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ opensmet.f
-premobl.o  : $(MODSOURC) $(MODXREF) $(MODEMFAC) $(MODINFO) $(MODMET)
+premobl.o  : $(MODSOURC) $(MODXREF) $(MODEMFAC) $(MODINFO) $(MODMET) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ premobl.f
 rdefdat.o : $(MODEMFAC) $(INC)/M5CNST3.EXT
 	$(FC) $(FFLAGS) -c -o $@ rdefdat.f
