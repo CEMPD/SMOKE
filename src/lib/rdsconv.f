@@ -58,8 +58,6 @@ C.........  This module contains the information about the source category
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'      ! emissions constant parameters
-c        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-c        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C.........  SUBROUTINE ARGUMENTS and their descriptions:
 
@@ -76,8 +74,10 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
+        LOGICAL       SETSCCTYPE
 
-        EXTERNAL      FINDC, GETFLINE, INDEX1, STR2INT, STR2REAL
+        EXTERNAL      FINDC, GETFLINE, INDEX1, STR2INT, STR2REAL, 
+     &                SETSCCTYPE
 
 C.........  LOCAL PARAMETERS:
         INTEGER, PARAMETER :: TBLLEN = FPSLEN3 + POLLEN3
@@ -113,6 +113,7 @@ C.........  Other local variables
         LOGICAL      :: EFLAG = .FALSE.  ! error flag
         LOGICAL      :: RFLAG = .FALSE.  ! true: Skip records in this section
         LOGICAL      :: SFLAG = .FALSE.  ! true: Records were skipped
+        LOGICAL         SCCFLAG          ! true: SCC type is different from previous
 
         CHARACTER*10           CPOL      ! tmp pollutant index in ENAM
         CHARACTER*16           LINE16    ! tmp 16-char line
@@ -220,6 +221,8 @@ C               in ENAM
                 TSCC = LINE( CS2:CE2 )
                 CALL PADZERO( TSCC )
 
+C.................  Set type of SCC                
+                SCCFLAG = SETSCCTYPE( TSCC )
                 TSCL = TSCC( 1:LSCCEND )
 
 C.................  Determine if SCC is in inventory list
