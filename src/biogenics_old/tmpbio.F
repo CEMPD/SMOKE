@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File Version: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM TMPBIO
 
 C***********************************************************************
-C  program body starts at line  135
+C  program body starts at line  153
 C
 C  DESCRIPTION:
 C       Computes time stepped gridded biogenic emissions in terms of 
@@ -48,6 +26,28 @@ C       Revised    1/97 by SL: integrated tmpbios.F's functionality into this
 C             program. added flexibility in calculating PAR by using
 C             1. observational cloud, 2. RGRND from MM5, 3, KUO cloud, 
 C             4. KF cloud
+C
+C***********************************************************************
+C 
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File Version: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
 C***********************************************************************
 
         IMPLICIT NONE
@@ -72,13 +72,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         GETNUM
         LOGICAL         GETYN
-        INTEGER         INDEX1
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
         INTEGER         GETMENU
         INTEGER         TRIMLEN
 
-        EXTERNAL        GETNUM, GETYN, INDEX1, PROMPTMFILE, 
+        EXTERNAL        GETNUM, GETYN, PROMPTMFILE, 
      &                  PROMPTFFILE, GETMENU, TRIMLEN
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -186,8 +185,8 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
      &          FSREAD3, 'BGRD', 'TMPBIO' )
 
         M2NAME = PROMPTMFILE( 
-     &          'Enter name for MET_CRO_2D input file',
-     &          FSREAD3, 'MET_CRO_2D', 'TMPBIO' )
+     &          'Enter name for 2D METEOROLOGY input file',
+     &          FSREAD3, 'SFCCRO', 'TMPBIO' )
 
         IF ( .NOT. DESC3( M2NAME ) ) THEN
             MESG = 'Could not get description of file "' //
@@ -198,11 +197,11 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
         IF ( PARTYPE .NE. 2 ) THEN 
 
            M3NAME = PROMPTMFILE( 
-     &             'Enter name for MET_CRO_3D input file',
-     &             FSREAD3, 'MET_CRO_3D', 'TMPBIO' )
+     &             'Enter name for 3D METEOROLOGY input file',
+     &             FSREAD3, 'LAYCRO', 'TMPBIO' )
            GNAME = PROMPTMFILE( 
-     &             'Enter name for GRID_CRO_2D input file',
-     &             FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
+     &             'Enter name for 2D GRID PARAMETERS input file',
+     &             FSREAD3, 'SFCGRD', 'TMPBIO' )
 
         END IF    ! Use cloud to calculate PAR
 
@@ -214,8 +213,9 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
 C...........   Get starting date, time, run duration
 
         CALL NEXTIME( JDATE, JTIME, 10000*MXREC3D )
-        SDATE = GETNUM( SDATE3D, JDATE, SDATE3D, 
-     &                  'Enter starting date (YYYYDDD)' )
+
+        SDATE = GETDATE( SDATE3D, 
+     &                  'Enter starting date (YYYYDDD|YYYYMMDD)' )
         STIME = GETNUM( 0, 235959, STIME3D, 
      &                  'Enter starting time  (HHMMSS)' )
         NHRS  = GETNUM( 1, MXREC3D-1, MXREC3D-1, 
