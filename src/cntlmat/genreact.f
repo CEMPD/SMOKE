@@ -113,6 +113,7 @@ C...........   Logical names and unit numbers
         INTEGER, SAVE :: PDEV         !  speciation profiles unit no.
         INTEGER       :: SDEV         !  supplement file unit no.
 
+        CHARACTER*16  :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
         CHARACTER*16     SNAME   ! logical name for mass-based react. cntrl mat
         CHARACTER*16     LNAME   ! logical name for mole-based react. cntrl mat
 
@@ -469,8 +470,7 @@ C           do this correctly.
             VNAM = RPOL
         END IF
 
-        CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                 1, 1, RPOL, VNAM, 1, EMIS )
+        CALL RDMAPPOL( NSRC, 1, 1, VNAM, EMIS )
 
 C.........  Loop through all sources and store reactivity information for
 C           those that have it

@@ -95,11 +95,8 @@ C...........   Local allocatable arrays
         REAL   , ALLOCATABLE :: BACKOUT ( : )   ! factor used to account for pol
                                                 ! specific control info that is
                                                 ! already in the inventory
-        REAL   , ALLOCATABLE :: CTLEFF  ( : )   ! control efficiency
-        REAL   , ALLOCATABLE :: EMIS    ( : )   ! base inventory emissions
+        REAL   , ALLOCATABLE :: DATVAL  ( :,: ) ! emissions and control settings
         REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
-        REAL   , ALLOCATABLE :: RULEFF  ( : )   ! rule effectiveness
-        REAL   , ALLOCATABLE :: RULPEN  ( : )   ! rule penetration
         REAL   , ALLOCATABLE :: GRPINEM ( :,: ) ! initial emissions
         REAL   , ALLOCATABLE :: GRPOUTEM( :,: ) ! controlled emissions
 
@@ -115,7 +112,7 @@ C.........   Local arrays
         CHARACTER(LEN=IODLEN3)  OUTDESCS( NVCMULT,6 ) ! var descriptions
 
 C...........   Other local variables
-        INTEGER          I, J, K, S  ! counters and indices
+        INTEGER          E, I, J, K, S  ! counters and indices
 
         INTEGER          IDX      ! group index
         INTEGER          IOS      ! input/output status
@@ -129,6 +126,7 @@ C...........   Other local variables
         REAL             CAP      ! emissions cap
         REAL             CTGFAC   ! control technology control factor
         REAL             CTGFAC2  ! MAXACF or RSNACF
+        REAL             CTLEFF   ! tmp control efficiency
         REAL             CUTOFF   ! CTG cutoff for application of control
         REAL             DENOM    ! denominator of control back-out factor
         REAL             E1, E2   ! tmp emissions values
@@ -136,13 +134,15 @@ C...........   Other local variables
         REAL             MACT     ! max. achievable cntrl tech. cntrl factor
         REAL             RACT     ! reasonably achiev. cntrl tech. cntrl factor
         REAL             REPLACE  ! replacement emissions
+        REAL             RULEFF   ! tmp rule effectiveness
+        REAL             RULPEN   ! tmp rule penetration
 
         LOGICAL          LO3SEAS  ! true: use ozone-season emissions
         LOGICAL, SAVE :: APPLFLAG = .FALSE. ! true: something has been applied
         LOGICAL, SAVE :: OPENFLAG = .FALSE. ! true: output file has been opened
 
         CHARACTER*100          OUTFMT     ! header format buffer
-        CHARACTER*300          MESG       ! message buffer
+        CHARACTER*256          MESG       ! message buffer
         CHARACTER(LEN=FPLLEN3) CPLT       ! tmp point src info through plant
         CHARACTER(LEN=FPLLEN3) PPLT       ! previous CPLT
         CHARACTER(LEN=STALEN3) CSTA       ! tmp char state
@@ -162,7 +162,6 @@ C   begin body of subroutine GENMULTC
 C.........  Get environment variables that control program behavior
         MESG = 'Use annual or ozone season emissions'
         LO3SEAS = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
-        IF( LO3SEAS ) INVPIDX = 1
 
 C.........  Open reports file
         RPTDEV( 1 ) = PROMPTFFILE( 
@@ -258,16 +257,10 @@ C...........  Allocate local memory
           CALL CHECKMEM( IOS, 'CTLINDX', PROGNAME )
           ALLOCATE( BACKOUT( NSRC ), STAT=IOS )
           CALL CHECKMEM( IOS, 'BACKOUT', PROGNAME )
-          ALLOCATE( CTLEFF( NSRC ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'CTLEFF', PROGNAME )
-          ALLOCATE( EMIS( NSRC ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'EMIS', PROGNAME )
+          ALLOCATE( DATVAL( NSRC,NPPOL ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'DATVAL', PROGNAME )
           ALLOCATE( FACTOR( NSRC ), STAT=IOS )
           CALL CHECKMEM( IOS, 'FACTOR', PROGNAME )
-          ALLOCATE( RULEFF( NSRC ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'RULEFF', PROGNAME )
-          ALLOCATE( RULPEN( NSRC ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'RULPEN', PROGNAME )
 
 C...........  For each pollutant that receives controls, obtain variable
 C             names for control efficiency, rule effectiveness, and, in the
@@ -276,6 +269,14 @@ C             will be used in reading the inventory file.
 
         CALL BLDENAMS( CATEGORY, NVCMULT, 6, PNAMMULT, OUTNAMES,
      &                 OUTUNITS, OUTTYPES, OUTDESCS )
+
+        DO I = 1, 6
+            IF( OUTNAMES( 1,I )(1:IOVLEN3)  .EQ. PNAMMULT(1) ) NEM = I
+            IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. OZNSEART ) NOZ = I
+            IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. CTLEFFRT ) NCE = I
+            IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. RULEFFRT ) NRE = I
+            IF( OUTNAMES( 1,I )(1:CPRTLEN3) .EQ. RULPENRT ) NRP = I
+        END DO
 
 C...........  Read in indices from temporary files. No error checking is
 C             performed because it is assumed that the program has already
@@ -324,117 +325,67 @@ C...........  Fractionalize control-packet information
             EMSRLPN = EMSRLPN*0.01  ! array
         END IF
 
-C...........  Loop through pollutants that receive controls
+C...........  Set emissions index depending on ozone-season or not
+        E = NEM
+        IF( LO3SEAS ) E = NOZ
 
+C...........  Loop through pollutants that receive controls
         DO I = 1, NVCMULT
 
 C............  Set tmp pollutant name 
             PNAM = PNAMMULT( I )
-            EBUF = OUTNAMES(I,1)
-            CBUF = OUTNAMES(I,1+INVPIDX)
+            EBUF = OUTNAMES(I,1)          ! set annual emis name
 
 C............  Initialize control factor array
             FACTOR = 1.0  ! array
 
 C...........  Read in emissions data from inventory file...
 C...........  From map-formatted inventory or old format
-            CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                     1, 1, EBUF, CBUF, 1, EMIS )
-
+            CALL RDMAPPOL( NSRC, 1, NPPOL, EBUF, DATVAL )
+            
 C...........  Adjust emissions values and compute group values
             FAC = YR2DAY( BYEAR )  ! year to day factor for later
             DO S = 1, NSRC
 
 C...............  Check for missing values and reset to zero
-                IF( EMIS( S ) .LT. AMISS3 ) EMIS( S ) = 0.0
+                IF( DATVAL( S,E ) .LT. AMISS3 ) DATVAL( S,E ) = 0.0
 
 C...............  Divide annual emissions to get average day
-                IF( .NOT. LO3SEAS ) EMIS( S ) = EMIS( S ) * FAC
+                IF( .NOT. LO3SEAS ) DATVAL( S,E ) = DATVAL( S,E ) * FAC
 
 C.................  Compute group emissions before controls
                 J = GRPINDX( S )
-                GRPINEM ( J,I ) = GRPINEM ( J,I ) + EMIS( S )
+                GRPINEM ( J,I ) = GRPINEM ( J,I ) + DATVAL( S,E )
 
             END DO ! end source loop
 
 C...........  If CONTROL packet is present: For the current pollutant, read
 C             in control efficiency, rule effectiveness, and, in the case of 
 C             AREA sources, rule penetration.
-           IF ( CFLAG ) THEN
+            IF ( CFLAG ) THEN
 
-              SELECT CASE( CATEGORY )
+C...........  Then calculate the factor which will be used to account 
+C             for control information already in the inventory
+                DO S = 1, NSRC
 
-C.............  Area sources...
-              CASE( 'AREA' )
+                    CTLEFF = 0.
+                    RULEFF = 1.
+                    RULPEN = 1.
+                    IF ( NCE .GT. 0 ) CTLEFF = DATVAL( S,NCE )
+                    IF ( NRE .GT. 0 ) RULEFF = DATVAL( S,NRE )
+                    IF ( NRP .GT. 0 ) RULPEN = DATVAL( S,NRP )
 
-              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                       1, 1, EBUF, OUTNAMES(I,4), 1, CTLEFF )
+C..................  Perform division by zero check.
+                 
+                    DENOM = ( 1.0 - CTLEFF*RULEFF*RULPEN )
 
-              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                       1, 1, EBUF, OUTNAMES(I,5), 1, RULEFF )
+                    IF ( FLTERR( DENOM, 0.0 ) ) THEN
+                        BACKOUT( S ) = 1.0/DENOM
+                    ELSE
+                        BACKOUT( S ) = 0.0
+                    END IF
 
-              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                       1, 1, EBUF, OUTNAMES(I,6), 1, RULPEN )
-
-C.............  Mobile sources...
-              CASE( 'MOBILE' ) 
-
-              CTLEFF = 0.   ! array
-              RULEFF = 0.   ! array
-              RULPEN = 0.   ! array
-
-C.............  Point sources...
-              CASE( 'POINT' )
-
-              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                       1, 1, EBUF, OUTNAMES(I,3), 1, CTLEFF )
-
-              CALL RDMAPPOL( ENAME, NMAP, MAPNAM, MAPFIL, NSRC,
-     &                       1, 1, EBUF, OUTNAMES(I,4), 1, RULEFF )
-
-              RULPEN = 100.0  ! array
-
-              CASE DEFAULT
-                  MESG = 'Case ' // CATEGORY // ' not supported.'
-                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-              END SELECT      ! end select on category
-
-C...........  Fractionalize all inventory control information and set
-C             missing values to one, then calculate the factor which will
-C             be used to account for control information already in the
-C             inventory
-
-              DO S = 1, NSRC
-
-                 IF ( CTLEFF( S ) .LT. AMISS3 ) THEN
-                    CTLEFF( S ) = 0.0
-                 ELSE
-                    CTLEFF( S ) = CTLEFF( S )*0.01
-                 END IF
-
-                 IF ( RULEFF( S ) .LT. AMISS3 ) THEN
-                    RULEFF( S ) = 1.0
-                 ELSE
-                    RULEFF( S ) = RULEFF( S )*0.01
-                 END IF
-
-                 IF ( RULPEN( S ) .LT. AMISS3 ) THEN
-                    RULPEN( S ) = 1.0
-                 ELSE
-                    RULPEN( S ) = RULPEN( S )*0.01
-                 END IF
-
-C..................  Perform division by zero check. 
-                 DENOM = ( 1.0 - CTLEFF(S)*RULEFF(S)*RULPEN(S) )
-
-                 IF ( FLTERR( DENOM, 0.0 ) ) THEN
-                    BACKOUT( S ) = 1.0/DENOM
-                 ELSE
-                    BACKOUT( S ) = 0.0
-                 END IF
-
-              END DO ! end source loop
+                END DO ! end source loop
 
 C...........  If EMS-95 CONTROL packet is present:
            ELSE IF ( SFLAG ) THEN
@@ -463,17 +414,17 @@ C.............................................................................
 C...............  Loop through sources
               DO S = 1, NSRC
 
-                 E1 = EMIS( S )
+                 E1 = DATVAL( S, E )
 
 C..................  Get index to /CONTROL/ packet from tmp file and compute
 C                    control factor
                  K = CTLINDX( S, I )
                  IF ( K .GT. 0 ) THEN
-                    CTLEFF( S ) = FACCEFF( K )
-                    RULEFF( S ) = FACREFF( K )
-                    RULPEN( S ) = FACRLPN( K )
+                    CTLEFF = FACCEFF( K )
+                    RULEFF = FACREFF( K )
+                    RULPEN = FACRLPN( K )
                     FACTOR( S ) = BACKOUT( S )*
-     &                          ( 1.0 - CTLEFF(S)*RULEFF(S)*RULPEN(S) )
+     &                          ( 1.0 - CTLEFF*RULEFF*RULPEN )
 
 C.....................  Overwrite temporary file line with new info
                     E2 = E1 * FACTOR( S )
@@ -500,7 +451,7 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
 
               DO S = 1, NSRC
 
-                 E1 = EMIS( S )
+                 E1 = DATVAL( S, E )
 
                  K = CTLINDX( S, I )
                  IF ( K .GT. 0 ) THEN
@@ -508,11 +459,11 @@ C...........  NOTE - SFLAG and CFLAG cannot both be true
                        FACTOR( S ) = EMSTOTL( K )
 
                     ELSE
-                       CTLEFF( S ) = EMSCEFF( K )
-                       RULEFF( S ) = EMSREFF( K )
-                       RULPEN( S ) = EMSRLPN( K )
+                       CTLEFF = EMSCEFF( K )
+                       RULEFF = EMSREFF( K )
+                       RULPEN = EMSRLPN( K )
                        FACTOR( S ) = BACKOUT( K ) * EMSPTCF( K ) * 
-     &                               (1.- CTLEFF(S)*RULEFF(S)*RULPEN(S))
+     &                               (1.- CTLEFF*RULEFF*RULPEN)
 
                     END IF
 
@@ -540,7 +491,7 @@ C.............................................................................
 C...............  Compute CTG factor
               DO S = 1, NSRC
 
-                 E1  = EMIS( S ) * FACTOR( S )
+                 E1  = DATVAL( S,E ) * FACTOR( S )
                  FAC = 1.
 
                  K = CTGINDX( S, I ) 
@@ -616,7 +567,7 @@ C.............................................................................
 C...........  Process ALW packet
               DO S = 1, NSRC
 
-                 E1 = EMIS( S )
+                 E1 = DATVAL( S,E )
 
                  K = ALWINDX( S, I ) 
                  IF ( K .GT. 0 ) THEN
@@ -627,24 +578,24 @@ C.....................  Both Cap value and Replace value are defined, then
 C                       compare emissions to Cap and set factor with Replace.
                     IF ( CAP .GE. 0. .AND. REPLACE .GE. 0. ) THEN
 
-                       IF ( EMIS( S ) .GT. CAP ) THEN
-                          FACTOR( S ) = REPLACE/EMIS( S )
+                       IF ( DATVAL( S,E ) .GT. CAP ) THEN
+                          FACTOR( S ) = REPLACE/DATVAL( S,E )
                        END IF
 
 C.....................  Only Cap value is defined, then compare emissions to Cap
 C                       set factor with Cap
                     ELSE IF ( CAP .GE. 0. .AND. REPLACE .LT. 0. ) THEN
 
-                       IF ( EMIS( S ) .GT. CAP ) THEN
-                          FACTOR( S ) = CAP/EMIS( S )
+                       IF ( DATVAL( S,E ) .GT. CAP ) THEN
+                          FACTOR( S ) = CAP/DATVAL( S,E )
                        END IF
 
 C.....................  Only Replace value is defined, then set factor with
 C                       Replace.
                     ELSE IF ( CAP .LT. 0. .AND. REPLACE .GE. 0. ) THEN
 
-                       IF ( EMIS( S ) .GT. REPLACE ) THEN
-                          FACTOR( S ) = REPLACE/EMIS( S )
+                       IF ( DATVAL( S,E ) .GT. REPLACE ) THEN
+                          FACTOR( S ) = REPLACE/DATVAL( S,E )
                        END IF
                        
                     END IF
@@ -669,7 +620,7 @@ C.............  This must be in a separate loop to account for all possible
 C               combinations of packets
             DO S = 1, NSRC
 
-                E1 = EMIS( S )
+                E1 = DATVAL( S,E )
                 E2 = E1 * FACTOR( S )
                 J  = GRPINDX( S )
                 GRPOUTEM( J,I ) = GRPOUTEM( J,I ) + E2
@@ -788,8 +739,8 @@ C.........  Write out controlled facilities report for point sources
         END IF
 
 C.........  Deallocate local memory
-        DEALLOCATE( ALWINDX, CTGINDX, CTLINDX, BACKOUT, CTLEFF,
-     &              EMIS, FACTOR, RULEFF, RULPEN )
+        DEALLOCATE( ALWINDX, CTGINDX, CTLINDX, BACKOUT, DATVAL,
+     &              FACTOR )
 
         DEALLOCATE( GRPINDX, GRPFLAG, GRPINEM, GRPOUTEM )
 

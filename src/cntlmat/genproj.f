@@ -56,6 +56,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE
@@ -206,7 +207,7 @@ C.........  Initialize message to use in case there is an error
 
 C.........  Write the I/O API variables for the non-speciation data
 
-        IF( .NOT. WRITE3( PNAME, 'pfac', 0, 0, PRJFAC ) ) THEN
+        IF( .NOT. WRITESET( PNAME,'pfac',ALLFILES,0,0,PRJFAC )) THEN
             MESG = MESG( 1:L ) // ' for variable "PRJFAC"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF

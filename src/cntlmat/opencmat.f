@@ -112,7 +112,8 @@ C.........  Set I/O API header parms that need values
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
 C.........  Deallocate, then allocate, output arrays
-        DEALLOCATE( VNAMESET, VTYPESET, VUNITSET, VDESCSET )
+        IF( ALLOCATED( VTYPESET ) )
+     &      DEALLOCATE( VNAMESET, VTYPESET, VUNITSET, VDESCSET )
         ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
         ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )

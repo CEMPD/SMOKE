@@ -55,10 +55,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                GETIFDSC   
-        CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL     CRLF, GETCFDSC, GETIFDSC, PROMPTMFILE, VERCHAR
+        EXTERNAL     CRLF, GETCFDSC, GETIFDSC, VERCHAR
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -72,6 +71,7 @@ C.........  SUBROUTINE ARGUMENTS
       
 C.........  Other local variables
         INTEGER          I, J           !  counters and indices
+        INTEGER          IOS            !  i/o status
 
         CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
         CHARACTER*300          MESG     ! message buffer
@@ -98,8 +98,8 @@ C.........  Initialize I/O API output file headers
         CALL HDRMISS3
 
 C.........  Set I/O API header parms that need values
+        NVARSET = 1
         NROWS3D = NSRC
-        NVARS3D = MIN( 1, MXVARS3 )
 
         FDESC3D( 1 ) = CATEGORY( 1:CATLEN ) // ' projection matrix'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
@@ -112,25 +112,27 @@ C.........  Set I/O API header parms that need values
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
+        IF( ALLOCATED( VTYPESET ) ) 
+     &      DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+C.........  Also deallocate the number of variables per file so
+C           that this will be set automatically by openset
+        DEALLOCATE( VARS_PER_FILE )
+
 C.........  Set up non-speciation variables
         J = 1
-        VNAME3D( J )= 'pfac'  ! Lowercase used to permit inv data named "PFAC"
-        VTYPE3D( J )= M3REAL
-        UNITS3D( J )= 'n/a'
-        VDESC3D( J )= 'Projection factor'
-
-C.........  Error if number of variables is passed maximum because we can't
-C           store the names of the variables.
-C.........  DO NOT end program here because it will be ended when the write
-C           attempt is made for these extra variables.
-        IF( J .GT. MXVARS3 ) THEN
-
-            WRITE( MESG, 94010 ) 
-     &             'Maximum I/O API variables exceeded:' //
-     &             CRLF() // BLANK10 // 'Max: ', MXVARS3, 'Actual:', J
-            CALL M3MSG2( MESG )
-
-        ENDIF
+        VNAMESET( J )= 'pfac'  ! Lowercase used to permit inv data named "PFAC"
+        VTYPESET( J )= M3REAL
+        VUNITSET( J )= 'n/a'
+        VDESCSET( J )= 'Projection factor'
 
         MESG = 'Enter logical name for projection matrix...'
         CALL M3MSG2( MESG )
@@ -140,8 +142,8 @@ C.........  Using NAMBUF is needed for HP to ensure string length consistencies
 
         MESG = 'I/O API PROJECTION MATRIX'
 
-        NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'PMAT', 
-     &                        PROGNAME )
+        NAMBUF = PROMPTSET( MESG, FSUNKN3, CRL // 'PMAT', 
+     &                      PROGNAME )
         PNAME = NAMBUF
 
         RETURN

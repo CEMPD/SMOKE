@@ -47,6 +47,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  Subroutine arguments and their descriptions:
         INTEGER     , INTENT (IN) :: NSRC           ! no. of source
@@ -107,22 +108,22 @@ C.........  Initialize message to use in case there is an error
 
 C.........  Write the I/O API variables for the non-speciation data
 
-        IF( .NOT. WRITE3( FILNAM, 'SRCID', 0, 0, INDX ) ) THEN
+        IF( .NOT. WRITESET( FILNAM,'SRCID',ALLFILES, 0,0,INDX ) ) THEN
             MESG = MESG( 1:L ) // ' for variable "SRCID"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF( .NOT. WRITE3( FILNAM, 'REPEMIS', 0, 0, REPEM ) ) THEN
+        IF( .NOT. WRITESET( FILNAM,'REPEMIS',ALLFILES,0,0,REPEM ) ) THEN
             MESG = MESG( 1:L ) // ' for variable "REPEMIS"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF( .NOT. WRITE3( FILNAM, 'PRJFAC', 0, 0, PRJFAC ) ) THEN
+        IF( .NOT. WRITESET( FILNAM,'PRJFAC',ALLFILES,0,0,PRJFAC ) ) THEN
             MESG = MESG( 1:L ) // ' for variable "PRJFAC"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF( .NOT. WRITE3( FILNAM, 'MKTPEN', 0, 0, MKTPEN ) ) THEN
+        IF( .NOT. WRITESET( FILNAM,'MKTPEN',ALLFILES,0,0,MKTPEN ) ) THEN
             MESG = MESG( 1:L ) // ' for variable "MKTPEN"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
@@ -134,7 +135,8 @@ C.........  Write the I/O API variables for the speciation factors
             VAR = VNAMES( I )
             L2  = LEN_TRIM( VAR )
 
-            IF( .NOT. WRITE3( FILNAM, VAR, 0, 0, RMTX( 1,I ) ) ) THEN
+            IF( .NOT. WRITESET( FILNAM, VAR, ALLFILES, 
+     &                          0, 0, RMTX( 1,I )     ) ) THEN
                 MESG = MESG( 1:L  ) // ' for variable "' //
      &                 VAR ( 1:L2 ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
