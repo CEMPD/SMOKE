@@ -158,18 +158,18 @@ C........  Allocate memory for fixed-size area source arrays
 
             END IF
 
-            ALLOCATE( AEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( AEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
             CALL CHECKMEM( IOS, 'AEBCNY', PROGNAME )
 
             IF( AUFLAG ) THEN
-                ALLOCATE( AEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+                ALLOCATE( AEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
                 ALLOCATE( AEUCNY( 0,0 ), STAT=IOS )
             END IF
             CALL CHECKMEM( IOS, 'AEUCNY', PROGNAME )
 
             IF( AAFLAG ) THEN
-                ALLOCATE( AEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+                ALLOCATE( AEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
                 ALLOCATE( AEACNY( 0,0 ), STAT=IOS )
             END IF
@@ -179,14 +179,14 @@ C.............  The reactivity controls sum is used when there is speciation,
 C               even if no reactivity controls are applied to prevent IF
 C               statements in the merge loops in MRGMULT.
             IF( SFLAG ) THEN 
-                ALLOCATE( AERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+                ALLOCATE( AERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
                 ALLOCATE( AERCNY( 0,0 ), STAT=IOS )
             END IF
             CALL CHECKMEM( IOS, 'AERCNY', PROGNAME )
 
             IF( AUFLAG .OR. AAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( AECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+                ALLOCATE( AECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
                 ALLOCATE( AECCNY( 0,0 ), STAT=IOS )
             END IF
@@ -218,7 +218,7 @@ C.........  Biogenic source fixed-size arrays
                 CALL CHECKMEM( IOS, 'BEBSTA', PROGNAME )
             ENDIF
 
-            ALLOCATE( BEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( BEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
             CALL CHECKMEM( IOS, 'BEBCNY', PROGNAME )
 
         END IF
@@ -266,32 +266,32 @@ C.........  Mobile source fixed-size arrays
 
             ENDIF
 
-            ALLOCATE( MEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( MEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
             CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
 
             IF( MUFLAG ) THEN
-                ALLOCATE( MEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+                ALLOCATE( MEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
                 ALLOCATE( MEUCNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'MEUCNY', PROGNAME )
 
             IF( MAFLAG ) THEN
-                ALLOCATE( MEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+                ALLOCATE( MEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
                 ALLOCATE( MEACNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'MEACNY', PROGNAME )
 
             IF( SFLAG ) THEN   ! See note on AERCNY definition
-                ALLOCATE( MERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+                ALLOCATE( MERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
                 ALLOCATE( MERCNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'MERCNY', PROGNAME )
 
             IF( MUFLAG .OR. MAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( MECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+                ALLOCATE( MECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
                 ALLOCATE( MECCNY( 0,0 ), STAT=IOS )
             ENDIF
@@ -356,32 +356,32 @@ C.........  Point source fixed-size arrays
 
             ENDIF
 
-            ALLOCATE( PEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( PEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
             CALL CHECKMEM( IOS, 'PEBCNY', PROGNAME )
 
             IF( PUFLAG ) THEN
-                ALLOCATE( PEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+                ALLOCATE( PEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
                 ALLOCATE( PEUCNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'PEUCNY', PROGNAME )
 
             IF( PAFLAG ) THEN
-                ALLOCATE( PEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+                ALLOCATE( PEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
                 ALLOCATE( PEACNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'PEACNY', PROGNAME )
 
             IF( SFLAG ) THEN   ! See note on AERCNY definition
-                ALLOCATE( PERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+                ALLOCATE( PERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
                 ALLOCATE( PERCNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'PERCNY', PROGNAME )
 
             IF( PUFLAG .OR. PAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( PECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+                ALLOCATE( PECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
                 ALLOCATE( PECCNY( 0,0 ), STAT=IOS )
             ENDIF
@@ -448,32 +448,32 @@ C.........  Total emissions, fixed-size arrays.
 
             ENDIF
 
-            ALLOCATE( TEBCNY( 0:NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( TEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
             CALL CHECKMEM( IOS, 'TEBCNY', PROGNAME )
 
             IF( TUFLAG ) THEN
-                ALLOCATE( TEUCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county mult tot 
+                ALLOCATE( TEUCNY( NCNY,NDIM ), STAT=IOS ) ! county mult tot 
             ELSE
                 ALLOCATE( TEUCNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'TEUCNY', PROGNAME )
 
             IF( TAFLAG ) THEN
-                ALLOCATE( TEACNY( 0:NCNY,NDIM ), STAT=IOS )  ! county add tot 
+                ALLOCATE( TEACNY( NCNY,NDIM ), STAT=IOS )  ! county add tot 
             ELSE
                 ALLOCATE( TEACNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'TEACNY', PROGNAME )
 
             IF( SFLAG ) THEN   ! See note on AERCNY definition
-                ALLOCATE( TERCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county reac tot 
+                ALLOCATE( TERCNY( NCNY,NDIM ), STAT=IOS ) ! county reac tot 
             ELSE
                 ALLOCATE( TERCNY( 0,0 ), STAT=IOS )
             ENDIF
             CALL CHECKMEM( IOS, 'TERCNY', PROGNAME )
 
             IF( TUFLAG .OR. TAFLAG .OR. SFLAG ) THEN
-                ALLOCATE( TECCNY( 0:NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
+                ALLOCATE( TECCNY( NCNY,NDIM ), STAT=IOS ) ! county ctrl tot 
             ELSE
                 ALLOCATE( TECCNY( 0,0 ), STAT=IOS )
             ENDIF
