@@ -56,6 +56,10 @@
 !.........  Controllers
         LOGICAL, PUBLIC :: ORISFLAG  ! true: create ORIS-based arrays
 
+!.........  Information about the inventory files
+        INTEGER,            ALLOCATABLE :: FILFMT( : )  ! format of inventory file(s)
+        CHARACTER(LEN=300), ALLOCATABLE :: LSTSTR( : )  ! contents of list-fmt inventory file
+
 !.........  Unique lists of source characteristics and associated arrays...
 
 !.........  SIC arrays dimensioned by NINVSIC
