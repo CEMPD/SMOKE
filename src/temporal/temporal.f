@@ -884,7 +884,7 @@ C.........  Reset number of pollutants and emission types based on those used
         NIPPA = N
 
 C.........  Set up and open I/O API output file(s) ...
-        CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, NPELV,
+        CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, NSTEPS, TZONE, NPELV,
      &                TNAME, PDEV )
 
         TNLEN = LEN_TRIM( TNAME )
