@@ -86,6 +86,7 @@ C...........   Speciation matrices
         INTEGER, ALLOCATABLE :: SSMAT( :,: ) ! mass-based
 
 C...........   File units and logical/physical names
+	INTEGER :: ADEV = 0   !  ASCII elevated file
         INTEGER :: CDEV = 0   !  reports configuration file
         INTEGER :: EDEV = 0   !  elevated source ID file
         INTEGER :: GDEV = 0   !  gridding supplemental file
@@ -154,7 +155,7 @@ C           values for use in memory allocation.
 C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, PRNAME, 
      &                  SLNAME, SSNAME, TNAME, RDEV, SDEV, GDEV, PDEV, 
-     &                  TDEV, EDEV, YDEV, NDEV)
+     &                  TDEV, EDEV, YDEV, NDEV, ADEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -185,8 +186,8 @@ C           so that arrays can be passed through subroutines).
 
 C.........  Read one-time input file data
         CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV, EDEV, 
-     &                YDEV, NDEV, ENAME, CUNAME, GNAME, LNAME, PRNAME, 
-     &                SLNAME, SSNAME, GMAT( 1 ), GMAT( NGRID+1 ),
+     &                YDEV, NDEV, ADEV, ENAME, CUNAME, GNAME, LNAME,
+     &                PRNAME, SLNAME, SSNAME, GMAT( 1 ), GMAT( NGRID+1 ),
      &                GMAT( NGRID+NMATX+1 ), SSMAT, SLMAT )
 
 C.........  Preprocess the country/state/county data
@@ -343,7 +344,7 @@ C.............  Update inventory input names and units, depending on status of
 C               average day emissions.
             INVPIDX = 0
             IF ( RPT_%AVEDAY ) INVPIDX = 1
-            CALL GETSINFO( ENAME )
+            IF( .NOT. AFLAG ) CALL GETSINFO( ENAME )
             IF( JSCC .GT. 0 ) NCHARS = NCHARS - 1  ! duplicate of rdrepin.f
 
 C.............  Determine input units and create conversion factors
@@ -373,12 +374,12 @@ C               for the appropriate time resolution...
 
 C.............  For mole-based speciation...
                 IF( RPT_%USESLMAT ) THEN
-                    CALL GENRPRT( ODEV( J ), N, HWID, ENAME,
+                    CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
      &                     TNAME, LNAME, OUTFMT, SLMAT, EFLAG )
 
 C.............  For mass-based and no speciation
                 ELSE
-                    CALL GENRPRT( ODEV( J ), N, HWID, ENAME,
+                    CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
      &                     TNAME, LNAME, OUTFMT, SSMAT, EFLAG )
                 END IF
 
