@@ -43,9 +43,9 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         GETEFILE, TRIMLEN
+        LOGICAL         ENVYN
         LOGICAL         GETYN
-        EXTERNAL        GETEFILE, GETYN, TRIMLEN
-
+        EXTERNAL        GETEFILE, ENVYN, GETYN, TRIMLEN
 
 C...........   PARAMETER
 
@@ -58,6 +58,7 @@ C...........   PARAMETER
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
+        CHARACTER*16    BUFFER       !  buffer
         CHARACTER*16    LNAME        !  logical file name
         INTEGER         I            !  position at which "!" found
         INTEGER         IOS          !  I/O error status
@@ -66,77 +67,131 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         CHARACTER*120   MESG         !  messages
         LOGICAL         AFLAG        !  "ALL"  is in the prompt
         LOGICAL         NFLAG        !  "NONE" is in the prompt
+        LOGICAL         PROMPTON     !  Actually prompt or open default
 
+        LOGICAL  FIRSTIME     !  true if first call this execution
+        DATA     FIRSTIME / .TRUE. /
+
+        SAVE     FIRSTIME, PROMPTON
 
 C***********************************************************************
 C   begin body of function  PROMPTFFILE
+
+        IF( FIRSTIME ) THEN
+
+            PROMPTON = ENVYN( 'PROMPTFLAG', 'Prompt for input flag',
+     &                      .TRUE., IOS )
+            FIRSTIME = .FALSE.
+
+        ENDIF
 
 C.......   Get file name; open input control definition file
 
         AFLAG = ( INDEX( PROMPT, '"ALL"'  ) .GT. 0 )
         NFLAG = ( INDEX( PROMPT, '"NONE"' ) .GT. 0 )
 
-        WRITE( PBUF,94000 ) 
-     &          PROMPT ( 1: TRIMLEN( PROMPT  ) ) , ' [',
-     &          DEFAULT( 1: TRIMLEN( DEFAULT ) ) , '] >> '
+        IF( PROMPTON ) THEN
 
-11      CONTINUE
+            WRITE( PBUF,94000 ) 
+     &              PROMPT ( 1: TRIMLEN( PROMPT  ) ) , ' [',
+     &              DEFAULT( 1: TRIMLEN( DEFAULT ) ) , '] >> '
+
+11          CONTINUE
         
-            WRITE( *,95000 ) PBUF( 1:TRIMLEN( PBUF) + 1 )
-            READ ( *,93010, IOSTAT=IOS ) LNAME
+                WRITE( *,95000 ) PBUF( 1:TRIMLEN( PBUF) + 1 )
+                READ ( *,93010, IOSTAT=IOS ) LNAME
             
-            IF ( IOS .GT. 0 ) THEN
+                IF ( IOS .GT. 0 ) THEN
 
-                MESG = 'Could not read your response'
-                WRITE( *,92000 ) MESG
-                IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
-                    GO TO  11
-                ELSE
-                    MESG = 'Could not read logical name for file'
+                    MESG = 'Could not read your response'
+                    WRITE( *,92000 ) MESG
+                    IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
+                        GO TO  11
+                    ELSE
+                        MESG = 'Could not read logical name for file'
+                        CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+                    END IF
+
+                ELSE IF ( IOS .LT. 0 ) THEN
+
+                    MESG = 'Ending program ' //
+     &                     CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
                     CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+
+                END IF      !  if could not read response
+
+                I = INDEX( LNAME, '!' )
+                IF ( I .GT. 0 ) LNAME( I : LEN( LNAME ) ) = ' '
+
+                IF ( LNAME .EQ. BLANK16 )  THEN
+                    LNAME = DEFAULT
                 END IF
 
-            ELSE IF ( IOS .LT. 0 ) THEN
+                IF ( AFLAG .AND. ( LNAME .EQ. ALL16 ) )  THEN
+                    PROMPTFFILE = -3
+                    RETURN
+                ELSE IF ( NFLAG .AND. LNAME .EQ. NONE16 )  THEN
+                    PROMPTFFILE = -2
+                    RETURN
+                END IF
+    
+                IDEV = GETEFILE( LNAME, RDONLY, FMTTED, CALLER )
+                IF ( IDEV .LT. 0 ) THEN     !  failure to open
 
-                MESG = 'Ending program ' //
-     &                 CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
-                CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+                    MESG = 'Could not open input file "' //
+     &                     LNAME( 1 : TRIMLEN( LNAME ) ) // '".'
+                    WRITE( *,92000 )  ' ', MESG
+                    IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
+                        GO TO  11
+                    ELSE
+                        MESG = 'Ending program "' //
+     &                          CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
+                        CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+                    END IF
 
-            END IF      !  if could not read response
+                END IF      !  if getefile() failed
 
-            I = INDEX( LNAME, '!' )
-            IF ( I .GT. 0 ) LNAME( I : LEN( LNAME ) ) = ' '
+        ELSE   ! Do not prompt for output
 
-            IF ( LNAME .EQ. BLANK16 )  THEN
-                LNAME = DEFAULT
-            END IF
+            LNAME = DEFAULT 
 
             IF ( AFLAG .AND. ( LNAME .EQ. ALL16 ) )  THEN
-                PROMPTFFILE = -3
-                RETURN
-            ELSE IF ( NFLAG .AND. ( LNAME .EQ. NONE16 ) )  THEN
-                PROMPTFFILE = -2
-                RETURN
+                 PROMPTFFILE = -3
+                 RETURN
+
+            ELSE IF ( NFLAG )  THEN
+
+C           ..  Check if logical name is set in order to permit
+C           ..  Study Planner to skip file without having to input "NONE"
+
+                CALL ENVSTR( LNAME, 'Input file name', ' ',
+     &                       BUFFER, IOS )
+
+                IF( IOS   .EQ. -1     .OR. 
+     &              IOS   .EQ. -2     .OR. 
+     &              LNAME .EQ. NONE16      ) THEN
+
+                    PROMPTFFILE = -2
+                    RETURN
+
+                ENDIF
+
             END IF
 
             IDEV = GETEFILE( LNAME, RDONLY, FMTTED, CALLER )
             IF ( IDEV .LT. 0 ) THEN     !  failure to open
-
                 MESG = 'Could not open input file "' //
-     &                 LNAME( 1 : TRIMLEN( LNAME ) ) // '".'
+     &                  LNAME( 1 : TRIMLEN( LNAME ) ) // '".'
                 WRITE( *,92000 )  ' ', MESG
-                IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
-                    GO TO  11
-                ELSE
-                    MESG = 'Ending program "' //
-     &                      CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
-                    CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
-                END IF
+                MESG = 'Ending program "' //
+     &                  CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
+                CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+            END IF
 
-            END IF      !  if getefile() failed
+        END IF
 
-      PROMPTFFILE = IDEV
-      RETURN
+        PROMPTFFILE = IDEV
+        RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 

@@ -57,94 +57,147 @@ C...........   PARAMETER
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         TRIMLEN
+        LOGICAL         ENVYN
         LOGICAL         GETYN
-        EXTERNAL        GETYN, TRIMLEN
+        EXTERNAL        ENVYN, GETYN, TRIMLEN
 
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         INTEGER         I            !  position at which "!" found
+        CHARACTER*16    BUFFER       !  buffer
         CHARACTER*16    LNAME        !  logical file name
         INTEGER         LUNIT        !  log-file unit number
         INTEGER         IOS          !  I/O status
         CHARACTER*120   MESG         !  messages
         CHARACTER*80    PBUF         !  prompt buffer
         LOGICAL         NFLAG        !  "NONE" is in the prompt
+        LOGICAL         PROMPTON     !  Actually prompt or open default
+ 
+        LOGICAL  FIRSTIME     !  true if first call this execution
+        DATA     FIRSTIME / .TRUE. /
 
-
+        SAVE     FIRSTIME, PROMPTON
+ 
 C***********************************************************************
-C   begin body of function  PROMPTFFILE
+C   begin body of function  PROMPTMFILE
+
+        IF( FIRSTIME ) THEN
+ 
+            PROMPTON = ENVYN( 'PROMPTFLAG', 'Prompt for input flag',
+     &                      .TRUE., IOS )
+            FIRSTIME = .FALSE.
+ 
+        ENDIF
 
 C.......   Decide whether 'NONE' is a valid response
 
         NFLAG = ( INDEX( PROMPT, '"NONE"' ) .GT. 0 )
 
+        IF( PROMPTON ) THEN
 C.......   Construct actual prompt; Loop:  get file name until file opens
         
-        WRITE( PBUF,94000 ) 
-     &          PROMPT ( 1: TRIMLEN( PROMPT  ) ) , ' [',
-     &          DEFAULT( 1: TRIMLEN( DEFAULT ) ) , '] >> '
+            WRITE( PBUF,94000 ) 
+     &              PROMPT ( 1: TRIMLEN( PROMPT  ) ) , ' [',
+     &              DEFAULT( 1: TRIMLEN( DEFAULT ) ) , '] >> '
 
-11      CONTINUE
+11          CONTINUE
         
-            LNAME = ' '
-            WRITE( *,95000 ) PBUF( 1:TRIMLEN( PBUF) + 1 )
-            READ ( *,93010, IOSTAT=IOS ) LNAME
+                LNAME = ' '
+                WRITE( *,95000 ) PBUF( 1:TRIMLEN( PBUF) + 1 )
+                READ ( *,93010, IOSTAT=IOS ) LNAME
             
-            IF ( IOS .GT. 0 ) THEN
+                IF ( IOS .GT. 0 ) THEN
 
-                MESG = 'Could not read your response'
-                WRITE( *,92000 ) MESG
-                IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
-                    GO TO  11
-                ELSE
-                    MESG = 'Could not read logical name for file'
-                    CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 2 )
+                    MESG = 'Could not read your response'
+                    WRITE( *,92000 ) MESG
+                    IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
+                        GO TO  11
+                    ELSE
+                        MESG = 'Could not read logical name for file'
+                        CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 2 )
+                    END IF
+
+                ELSE IF ( IOS .LT. 0 ) THEN
+
+                    MESG = 'Ending program ' //
+     &                     CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
+                    CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+
+                END IF      !  if could not read response
+
+                I = INDEX( LNAME, '!' )
+                IF ( I .GT. 0 ) LNAME( I : LEN( LNAME ) ) = ' '
+
+                IF ( LNAME .EQ. BLANK16 ) THEN
+
+                    LNAME = DEFAULT
+
                 END IF
 
-            ELSE IF ( IOS .LT. 0 ) THEN
+                IF ( NFLAG .AND. ( LNAME .EQ. NONE16 ) ) THEN
 
-                MESG = 'Ending program ' //
-     &                 CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
-                CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+                    PROMPTMFILE = NONE16
+                    RETURN
 
-            END IF      !  if could not read response
+                END IF
 
-            I = INDEX( LNAME, '!' )
-            IF ( I .GT. 0 ) LNAME( I : LEN( LNAME ) ) = ' '
+                LUNIT = INIT3()
+            
+                IF ( .NOT. OPEN3( LNAME, FMODE, CALLER ) ) THEN !  failure to open
 
-            IF ( LNAME .EQ. BLANK16 ) THEN
+                    MESG = 'Could not open file "' //
+     &                     LNAME( 1 : TRIMLEN( LNAME ) ) // '".'
+                    WRITE( *,92000 )  ' ', MESG
+                    IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
+                        GO TO  11
+                    ELSE
+                        MESG = 'Ending program "' //
+     &                          CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
+                        CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
+                    END IF
 
-                LNAME = DEFAULT
+                END IF      !  if open3() failed
 
-            END IF
+        ELSE  ! Do not prompt for output
 
-            IF ( NFLAG .AND. ( LNAME .EQ. NONE16 ) ) THEN
+            LNAME = DEFAULT
 
-                PROMPTMFILE = NONE16
-                RETURN
+            IF ( NFLAG )  THEN
+ 
+C           ..  Check if logical name is set in order to permit
+C           ..  Study Planner to skip file without having to input "NONE"
+ 
+                CALL ENVSTR( LNAME, 'Input file name', ' ',
+     &                       BUFFER, IOS )
+ 
+                IF( IOS   .EQ. -1     .OR.
+     &              IOS   .EQ. -2     .OR.
+     &              LNAME .EQ. NONE16      ) THEN
+ 
+                    PROMPTMFILE = NONE16
+                    RETURN
 
+                ENDIF
             END IF
 
             LUNIT = INIT3()
-            
+ 
             IF ( .NOT. OPEN3( LNAME, FMODE, CALLER ) ) THEN !  failure to open
-
+ 
                 MESG = 'Could not open file "' //
      &                 LNAME( 1 : TRIMLEN( LNAME ) ) // '".'
                 WRITE( *,92000 )  ' ', MESG
-                IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
-                    GO TO  11
-                ELSE
-                    MESG = 'Ending program "' //
-     &                      CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
-                    CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
-                END IF
+                MESG = 'Ending program "' //
+     &                  CALLER( 1 : TRIMLEN( CALLER ) ) // '".'
+                CALL M3EXIT( CALLER, 0, 0, MESG, 2 )
 
             END IF      !  if open3() failed
 
-      PROMPTMFILE = LNAME
-      RETURN
+        ENDIF
+
+        PROMPTMFILE = LNAME
+        RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 
