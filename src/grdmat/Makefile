@@ -34,6 +34,8 @@ include $(MD_SRC)/modmake.inc
 
 asgnsurg.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
+genagmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
 genmgmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO)
