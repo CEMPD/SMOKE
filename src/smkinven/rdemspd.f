@@ -481,8 +481,8 @@ C.............  If available, set total value from hourly file
                     TOTAL = STR2REAL( LINE( L2+1:L ) )
                     IF( TOTAL .LT. 0.0 ) THEN
                         EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: Bad line', IREC, 
-         &                ': total value "' // LINE( L2+1:L ) // '"'
+                        WRITE( MESG,94010 ) 'ERROR: Bad line', IREC,
+     &                    ': total value "' // LINE( L2+1:L ) // '"'
                         CALL M3MESG( MESG )
                         CYCLE  ! to head of read loop
                     END IF
