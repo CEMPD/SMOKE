@@ -46,7 +46,8 @@ C****************************************************************************
 C...........   INCLUDES:
         
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
-        INCLUDE 'MBDIMS3.EXT'   !  area-source dimensioning parameters
+        INCLUDE 'MBDIMS3.EXT'   !  mobil-source dimensioning parameters
+        INCLUDE 'TMDIMS3.EXT'   !  temporal dimensioning parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -56,11 +57,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         DSCGRID
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
-        
-        EXTERNAL        DSCGRID, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
+        INTEGER         WKDAY           !  day of week (1...7)
+
+        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTMFILE, TRIMLEN, WKDAY
 
 
 C...........   PARAMETER
@@ -83,12 +88,15 @@ C...........   Gridding Matrix, Control Matrix, Speciation Matrix
         COMMON  / GRIDMAT / NX, IX, CX
            
 C...........   Other local variables
-        
-        INTEGER         JDATE, JTIME, TSTEP
+
+        INTEGER         BEGBLK  !  beginning of array of blanks in output file desc
+        INTEGER         LDATE, JDATE, JTIME, TSTEP
         INTEGER         NSTEPS
         INTEGER         LDEV
-        INTEGER         L, T, V
+        INTEGER         I, L, T, V
 
+        CHARACTER*4     OUTDESC !  contains descriptor of output file type
+        CHARACTER*4     OUTNAM  !  contains default  logical output name
         CHARACTER*16    ANAME   !  logical name for area-source       input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
@@ -135,11 +143,13 @@ C.......   Get file names; open input gridding matrix, mobile source, and
 C.......   output files.
 
         GNAME = PROMPTMFILE( 
-     &          'Enter logical name for GRID MATRIX file',
+     &          'Enter logical name for GRIDDING MATRIX file',
      &          FSREAD3, 'MGMAT', 'GRDMOBIL' )
 
+C......... NOTE: Close to 80 character prompt + default display limit
         ANAME = PROMPTMFILE( 
-     &          'Enter logical name for TIME-STEPPED MOBILE EMIS file',
+     &          'Enter logical name for ANNUAL VMT / TIME-STEPPED ' // ! 49
+     &          'MOBILE EMIS file',                                    ! 16
      &          FSREAD3, 'MTMP', 'GRDMOBIL' )
 
 C.......   Build description of output file, and optionally open it:
@@ -147,6 +157,13 @@ C.......   Build description of output file, and optionally open it:
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3EXIT( 'GRDMOBIL', 0, 0, 
      &              'Could not get description of file ' // ANAME, 2 )
+
+        ELSEIF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MOBILE SOURCES file:', NROWS3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'GRDMOBIL', 0, 0, MESG, 2 )
+ 
         END IF
 
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
@@ -159,6 +176,7 @@ C.......   Build description of output file, and optionally open it:
 
         END IF
 
+C......... Store variable properties based on DESC3 call
         FTYPE3D = GRDDED3   !  shares most of file-description with input file.
         GDNAM3D = GRDNM
         VGTYP3D = IMISS3
@@ -166,23 +184,63 @@ C.......   Build description of output file, and optionally open it:
         JDATE   = SDATE3D
         JTIME   = STIME3D
         TSTEP   = TSTEP3D
+
+C.........  Set single output variable if input is inventory VMT file
         IF ( TSTEP .EQ. 0 ) THEN
             NSTEPS  = 1
-        ELSE
+            FDESC3D( 1 ) = 'Mobile source gridded VMT'
+            OUTNAM = 'MGRD'
+            OUTDESC= 'VMT'
+            BEGBLK= 2
+
+            L = INDEX1( 'VMT', NVARS3D, VNAME3D )
+
+            IF( L .LE. 0 ) THEN
+ 
+                MESG = 'ERROR: Variable "VMT"' //
+     &                 ' not found in input file!'
+                CALL M3EXIT( 'GRDMOBIL', 0, 0, MESG, 2 )
+
+            ELSE
+
+                NVARS3D      = 1
+                VNAME3D( 1 ) = VNAME3D( L )
+                UNITS3D( 1 ) = UNITS3D( L )
+                VTYPE3D( 1 ) = VTYPE3D( L )
+                VDESC3D( 1 ) = VDESC3D( L ) 
+
+            ENDIF
+           
+C.........  Otherwise, use same output variables as input variables 
+        ELSE  
             NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 'Mobile source gridded emission types'
+
+C.............  Copy vehicle type descriptions from MTMP file
+            DO 22 I = 1, NVTYPE
+                FDESC3D( 1 + I ) = FDESC3D( 3 + I )
+22          CONTINUE
+
+            BEGBLK = NVTYPE + 2
+
+            OUTNAM = 'MGRT'
+            OUTDESC= 'EMIS'
+
         END IF
 
-        FDESC3D( 1 ) = 'mobile source gridded VMT'
-                 
+        DO 33 I = BEGBLK, MXDESC3
+            FDESC3D( I ) = ' '
+33      CONTINUE 
         
         ENAME = PROMPTMFILE( 
-     &          'Enter logical name for OUTPUT EMIS file ',
-     &          FSUNKN3, 'MGTS', 'GRDMOBIL' )
+     &          'Enter logical name for OUTPUT ' // OUTDESC // ' file',
+     &          FSUNKN3, OUTNAM, 'GRDMOBIL' )
 
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
         CALL M3MSG2( 'Reading GRIDDING matrix...' )
+
         IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NX ) ) THEN
 
             CALL M3EXIT( 'GRDMOBIL', 0, 0,
@@ -195,17 +253,32 @@ C.......   Transform and write out area source emissions values:
 
         CALL M3MSG2( 'Calculating gridded categorized VMT...' )
 
+        LDATE = 0
         DO  199  T = 1, NSTEPS
+
+C...............   If this is a new month, or new day, write message
+            IF ( JDATE .GT. 0 .AND. LDATE. NE. JDATE ) THEN
+ 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
+                LDATE = JDATE
+
+            END IF
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            IF( JDATE .GT. 0 ) WRITE( *, 93020 ) HHMMSS( JTIME )
 
             DO  198  V = 1, NVARS3D
 
 C...................   Read in entire emissions field
 
                 IF( .NOT. READ3( ANAME, VNAME3D( V ), ALLAYS3, 
-     &                     JDATE, JTIME, EMISV ) ) THEN
+     &                           JDATE, JTIME, EMISV )         ) THEN
 
                     MESG = 'Could not read "' //
-     &                     VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) )//
+     &                     VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) ) //
      &                     '" from ' // ANAME
                     CALL M3EXIT( 'GRDMOBIL', JDATE, JTIME, MESG, 2 )
 
@@ -219,8 +292,7 @@ C...................   Read in entire emissions field
 197             CONTINUE
 
                 IF ( .NOT. WRITE3( ENAME, VNAME3D( V ),
-     &                             JDATE, JTIME, 
-     &                             EMISG ) ) THEN
+     &                             JDATE, JTIME, EMISG  ) ) THEN
 
                     MESG = 'Could not write "' //
      &                     VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) ) //
@@ -247,6 +319,14 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92000   FORMAT( 5X, A )
 
+C...........   Formatted file I/O formats............ 93xxx
+ 
+93020   FORMAT( 8X, 'at time ', A8 )
+ 
+
+C...........   Internal buffering formats............ 94xxx
+ 
+94010   FORMAT ( 10 ( A, :, I10, :, 2X ) )
 
         END
 
