@@ -113,9 +113,16 @@ C.............  Find start of current county in sorted source array
 
 C.............  For sources that match, store temporal averaging type            
             DO
+            	
+C.................  If county doesn't match, we're done
                 IF( SORTSRC( K,1 ) /= CURRCOUNTY ) EXIT
+                
                 SORTSRC( K,2 ) = AVETYPE
                 K = K + 1
+                
+C.................  Make sure we don't go outside the array
+                IF( K > NSRC ) EXIT
+                
             END DO
 
         END DO
