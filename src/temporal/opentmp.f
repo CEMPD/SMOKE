@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, 
+        SUBROUTINE OPENTMP( ENAME, SDATE, STIME, TSTEP, NSTEPS, TZONE, 
      &                      NPELV, TNAME, PDEV )
 
 C***********************************************************************
@@ -41,38 +41,43 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: EMTDSC, EMTNAM, NETYPE
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: ACTVTY, BYEAR, CATDESC, CRL, EANAM, EADESC, 
+     &                     EAREAD, EAUNIT, EINAM, INVPIDX, NIACT, 
+     &                     NIPPA, NIPOL
+
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         INTEGER                INDEX1
+        INTEGER                IOAPI_GRD_SIZE
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                GETIFDSC
         CHARACTER(LEN=IOULEN3) MULTUNIT
         INTEGER                PROMPTFFILE
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL        CRLF, INDEX1, GETCFDSC, GETIFDSC, MULTUNIT,
-     &                  PROMPTMFILE, VERCHAR
+        EXTERNAL        CRLF, INDEX1, IOAPI_GRD_SIZE, GETCFDSC, 
+     &                  GETIFDSC, MULTUNIT, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME  ! emissions inven logical name
         INTEGER     , INTENT (IN) :: SDATE  ! episode start date 
         INTEGER     , INTENT (IN) :: STIME  ! episode start time
         INTEGER     , INTENT (IN) :: TSTEP  ! episode time step
+        INTEGER     , INTENT (IN) :: NSTEPS ! number of time steps
         INTEGER     , INTENT (IN) :: TZONE  ! zone used for hours in output files
         INTEGER     , INTENT (IN) :: NPELV  ! number of elevated sources
         CHARACTER(*), INTENT(OUT) :: TNAME  ! lay-1 (or all) hourly logical name 
@@ -85,7 +90,10 @@ C...........   Other local variables
 
         INTEGER         I, J, K, V     ! counters and indices
 
+        INTEGER         IOS         ! i/o status
+        INTEGER         FILESIZE    ! approximate size of emission factors file
         INTEGER         NINVVAR     ! number of inventory variables
+        INTEGER         NVARFILE    ! number of variables per file
         INTEGER         PYEAR       ! projected year from inventory file (or -1)
 
         CHARACTER*5     CTZONE      ! string of time zone
@@ -106,8 +114,7 @@ C.........  Set up file header(s) for opening I/O API output(s). Base this on
 C           inventory header...
 
 C.........  Get header information from inventory file
-
-        IF( .NOT. DESC3( ENAME ) ) THEN
+        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
             MESG = 'Could not get description of file "' 
      &             // ENAME( 1:LEN_TRIM( ENAME ) ) // '".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -115,11 +122,11 @@ C.........  Get header information from inventory file
 
         IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
         IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-        NINVVAR = NVARS3D
+        NINVVAR = NVARSET
         BYEAR   = GETIFDSC( FDESC3D, '/BASE YEAR/', .TRUE. )
         PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
-        NVARS3D = NIPPA
+        NVARSET = NIPPA
         SDATE3D = SDATE
         STIME3D = STIME
         TSTEP3D = TSTEP
@@ -133,10 +140,48 @@ C.........  Get header information from inventory file
         WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR 
         IF( PYEAR .GT. 0 ) 
      &      WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
-	WRITE( FDESC3D( 7 ),94010 ) '/OZONE SEASON/', INVPIDX
+        WRITE( FDESC3D( 7 ),94010 ) '/AVERAGE DAY/', INVPIDX
 
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
+
+C.........  Allocate memory for output arrays
+        DEALLOCATE( VNAMESET, VUNITSET, VTYPESET, VDESCSET )
+        DEALLOCATE( VARS_PER_FILE )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+C.........  Check file size and adjust number of files to avoid 2 GB limit
+        NFILESET = 1
+        DO
+            NVARFILE = ( NVARSET + NFILESET - 1 ) / NFILESET
+            FILESIZE = IOAPI_GRD_SIZE( NCOLS3D, NROWS3D, NLAYS3D, 
+     &                                 NVARFILE, NSTEPS )
+            
+            IF( FILESIZE > 1500 ) THEN
+                NFILESET = NFILESET + 1
+            ELSE
+                EXIT
+            END IF
+        END DO
+
+        IF( NFILESET > 1 ) THEN
+            ALLOCATE( VARS_PER_FILE( NFILESET ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VARS_PER_FILE', PROGNAME )
+            
+            DO I = 1, NFILESET - 1
+                VARS_PER_FILE( I ) = NVARFILE
+            END DO
+
+            VARS_PER_FILE( NFILESET ) = 
+     &            NVARSET - ( NVARFILE*( NFILESET - 1 ) )
+        END IF
 
 C.........  Set variable names and characteristics from the emission types
         K = 0
@@ -154,11 +199,18 @@ C               expanded to contain the emission types
 
             DO V = 1, NETYPE( I-NIPOL )
 
-        	K = K + 1
-        	VNAME3D( K ) = EMTNAM( V,J )
-        	UNITS3D( K ) = EAUNIT( I )   
-        	VDESC3D( K ) = EMTDSC( V,J )
-        	VTYPE3D( K ) = M3REAL
+            K = K + 1
+                IF( K .GT. NVARSET ) THEN
+                    MESG = 'INTERNAL ERROR: Memory overflow building '//
+     &                     'I/O API output variables'
+                    CALL M3MSG2( MESG )
+                    CYCLE
+                END IF
+
+            VNAMESET( K ) = EMTNAM( V,J )
+            VUNITSET( K ) = EAUNIT( I )   
+            VDESCSET( K ) = EMTDSC( V,J )
+            VTYPESET( K ) = M3REAL
 
             END DO  ! End loop on emission types for output
         END DO      ! End loop on activities output
@@ -175,16 +227,23 @@ C.............  Double check that pollutant is in the inventory file
             END IF
 
             K = K + 1
-            VNAME3D( K ) = EINAM ( V )
-            UNITS3D( K ) = EAUNIT( I )
-            VDESC3D( K ) = EADESC( I )
-            VTYPE3D( K ) = M3REAL
+            IF( K .GT. NVARSET ) THEN
+                MESG = 'INTERNAL ERROR: Memory overflow building '//
+     &                 'I/O API output variables'
+                CALL M3MSG2( MESG )
+                CYCLE
+            END IF
+
+            VNAMESET( K ) = EINAM ( V )
+            VUNITSET( K ) = EAUNIT( I )
+            VDESCSET( K ) = EADESC( I )
+            VTYPESET( K ) = M3REAL
 
         END DO  ! End loop on pollutants for output
 
 C.........  Prompt for and open I/O API output file(s)...
         MESG = 'Enter name for output HOURLY EMISSIONS file'
-        NAMBUF = PROMPTMFILE( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
+        NAMBUF = PROMPTSET( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
         TNAME = NAMBUF
 
 C.........  Open supplemental speciation file

@@ -1,9 +1,8 @@
 # Version @(#)$Id$ 
 # Path    $Source$
-# Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) 
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
+LIBS          = $(LDIRS) $(LIBS_SYS)  $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)  $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 #
@@ -13,15 +12,13 @@ all: temporal
 debug: temporal.debug
 
 .f.o:
-	
 	$(FC) $(FFLAGS) -c -o $@ $< 
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
-     setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o wrtsup.o
-#qatmpr.o
+TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o \
+     setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o
 
 #
 temporal: $(TMP) $(ALLI) $(LIBPATH)
@@ -34,6 +31,8 @@ temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS_DEBUG)
 
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ asgntpro.f
@@ -42,27 +41,28 @@ genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ genhemis.f
 mktmat.o: $(MODTMPRL) 
 	$(FC) $(FFLAGS) -c -o $@ mktmat.f
-opentmp.o: $(MODEMFAC) $(MODINFO)
+opentmp.o: $(MODEMFAC) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ opentmp.f
 opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ opentmpin.f
-pretmpr.o: $(MODGRID)
-	$(FC) $(FFLAGS) -c -o $@ pretmpr.f
-rdefacs.o: $(MODMOBIL) $(MODEMFAC) $(MODINFO) $(MODMET) $(MODXREF)
-	$(FC) $(FFLAGS) -c -o $@ rdefacs.f
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ setdaylt.f
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
-            $(MODDAYHR) $(MODLISTS) $(MODGRID)
+            $(MODDAYHR) $(MODLISTS) $(MODGRID) $(MODMBSET)
 	$(FC) $(FFLAGS) -c -o $@ temporal.f
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ tmnamunt.f
-tmpintrp.o: $(MODSOURC) $(MODMET) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ tmpintrp.f
-qatmpr.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ qatmpr.f
 updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ updtmat.f
+wrtsup.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
+	$(FC) $(FFLAGS) -c -o $@ wrtsup.f
 #
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

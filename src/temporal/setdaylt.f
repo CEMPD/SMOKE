@@ -29,7 +29,7 @@ C
 C See file COPYRIGHT for conditions of use.
 C
 C Environmental Modeling Center
-C MCNC
+C MCNC  
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
@@ -42,13 +42,13 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: FLTRDAYL, IFIP
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, USEDAYLT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC
 
         IMPLICIT NONE
 

@@ -1,8 +1,7 @@
 
         SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, ENAME, ANAME, DNAME, 
-     &                        HNAME, FNAME, NNAME, MNAME, GNAME, WNAME,
-     &                        TVARNAME, SDEV, XDEV, RDEV, FDEV,
-     &                        CDEV, HDEV, TDEV, MDEV, PYEAR )
+     &                        HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, 
+     &                        HDEV, TDEV, MDEV, EDEV, PYEAR )
 
 C***********************************************************************
 C  subroutine body starts at line 123
@@ -32,7 +31,7 @@ C
 C See file COPYRIGHT for conditions of use.
 C
 C Environmental Modeling Center
-C MCNC
+C MCNC  
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
@@ -45,22 +44,23 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
+        USE MODMET, ONLY:
 
 C...........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY:
 
         IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   ! emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    ! I/O API parameters
-        INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    ! I/O API file description data structures.
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'FLTERR.EXT'    ! error filter statement function
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -82,40 +82,31 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN OUT) :: ANAME ! name for ASCII inven input 
         CHARACTER(*), INTENT   (OUT) :: DNAME ! day-spec file
         CHARACTER(*), INTENT   (OUT) :: HNAME ! hour-spec file
-        CHARACTER(*), INTENT   (OUT) :: FNAME ! non-diurnal EF file
-        CHARACTER(*), INTENT   (OUT) :: NNAME ! diurnal EF file
-        CHARACTER(*), INTENT   (OUT) :: MNAME ! surface temperature file
         CHARACTER(*), INTENT   (OUT) :: GNAME ! ungridding matrix
-        CHARACTER(*), INTENT   (OUT) :: WNAME ! ungridded min/max temperatures
-        CHARACTER(*), INTENT   (OUT) :: TVARNAME ! tmpr variable name
         INTEGER     , INTENT   (OUT) :: SDEV  ! unit no.: ASCII inven file
         INTEGER     , INTENT   (OUT) :: XDEV  ! unit no.: x-ref file
         INTEGER     , INTENT   (OUT) :: RDEV  ! unit no.: tmprl profile file
-        INTEGER     , INTENT   (OUT) :: FDEV  ! unit no.: EF x-ref file
         INTEGER     , INTENT   (OUT) :: CDEV  ! unit no.: region codes file
         INTEGER     , INTENT   (OUT) :: HDEV  ! unit no.: holidays file
         INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: emissions process file
         INTEGER     , INTENT   (OUT) :: MDEV  ! unit no.: mobile codes file
+        INTEGER     , INTENT   (OUT) :: EDEV  ! unit no.: emission factor file list
         INTEGER     , INTENT   (OUT) :: PYEAR ! projected year
 
 C...........   Other local variables
-
+        INTEGER         IDEV        ! tmp unit number if ENAME is map file
         INTEGER         IOS         ! status from environment variables
         INTEGER         J           ! index
         INTEGER         L           ! string length
 
-        REAL            MAX1, MAX2  ! tmp maximum temperature values
-        REAL            MIN1, MIN2  ! tmp minimum temperature values
-
         LOGICAL         DFLAG       ! true: day-specific  file available
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
         LOGICAL         HFLAG       ! true: hour-specific file available
-        LOGICAL         OFLAG       ! true: ozone-season emissios needed
+        LOGICAL         OFLAG       ! true: average day emissions needed
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
-        
 
-        CHARACTER*16    MNAME0      ! default gridded temperature file name
-        CHARACTER*300   MESG        ! message buffer 
+        CHARACTER*16    INAME       ! tmp name for inven file of unknown fmt
+        CHARACTER*256   MESG        ! message buffer 
 
         CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
 
@@ -133,18 +124,30 @@ C.........  Get environment variables that control program behavior
      &                     .FALSE., IOS )
         END IF
 
-        OFLAG = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
+        OFLAG = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
 
 C.........  Prompt for and open input I/O API and ASCII files
-C.........  Use NAMBUF for using on the HP
-        NAMBUF = PROMPTMFILE( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENAME = NAMBUF
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
+
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for the ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
         IF( DFLAG ) THEN
             NAMBUF = PROMPTMFILE( 
@@ -170,18 +173,13 @@ C.........  Use NAMBUF for using on the HP
      &           .TRUE., .TRUE., CRL // 'TPRO', PROGNAME )
         END IF
 
-C.........  Get source category information from the inventory files
-C.........  Get header description of inventory file
-C.........  Exit if getting the description fails
-        CALL RETRIEVE_IOAPI_HEADER ( ENAME )
-
 C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
-C.........  Set ozone-season emissions flag (INVPIDX)
+C.........  Set average day emissions flag (INVPIDX)
         IF( OFLAG ) INVPIDX = 1
-        CALL GETSINFO
+        CALL GETSINFO( ENAME )
 
         PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
@@ -210,146 +208,25 @@ C.........  Use NAMBUF for the HP
 
             L = LEN_TRIM( MODELNAM )
 
-            MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
-     &             ' NON-DIURNAL EMISSION FACTORS file'
-            NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSND', PROGNAME )
-            FNAME = NAMBUF
-    
-            MESG = 'Enter logical name for ' // MODELNAM( 1:L ) // 
-     &             ' DIURNAL EMISSION FACTORS file'
-            NAMBUF= PROMPTMFILE( MESG, FSREAD3, CRL//'EFSD', PROGNAME )
-            NNAME = NAMBUF
-
             NAMBUF= PROMPTMFILE( 
      &              'Enter logical name for UNGRIDDING MATRIX file',
      &              FSREAD3, CRL // 'UMAT', PROGNAME )
             GNAME = NAMBUF
  
-C.............  Get the header description from the min/max temperatures file
+C.............  Get the header description from the ungridding matrix file
             CALL RETRIEVE_IOAPI_HEADER( GNAME )
 
 C.............  Check the number of sources in the ungridding matrix
             CALL CHKSRCNO( 'mobile', 'MUMAT', NROWS3D, NSRC, EFLAG )
-
-            NAMBUF= PROMPTMFILE( 
-     &              'Enter logical name for UNGRIDDED MIN/MAX ' //
-     &              'TEMPERATURE file', FSREAD3, 'MINMAXT', PROGNAME )
-            WNAME = NAMBUF
-
-C.............  Get the header description from the min/max temperatures file
-            CALL RETRIEVE_IOAPI_HEADER( WNAME )
-
-C.............  Check the number of sources in the min/max temperature file
-            CALL CHKSRCNO( 'mobile', 'MINMAXT', NROWS3D, NSRC, EFLAG )
-
-C.............  Determine the temperature variable that was used to create the
-C               min/max temperature file.
-            TVARNAME = GETCFDSC( FDESC3D, '/T_VNAME/', .TRUE. )
-
-C.............  Based on the temperature variable name, set the default name 
-C               for the gridded temperature file
-            MNAME0 = 'MET_CRO_2D'
-            IF ( TVARNAME .EQ. 'TA' ) MNAME0 = 'MET_CRO_3D'
-
-            NAMBUF= PROMPTMFILE( 
-     &              'Enter logical name for SURFACE TEMPERATURE file',
-     &              FSREAD3, MNAME0, PROGNAME )
-            MNAME = NAMBUF
-
-C.............  Get the header of the gridded temperature file
-            CALL RETRIEVE_IOAPI_HEADER( MNAME )
-
-C.............  Initialize reference grid with met file
-            CALL CHKGRID( MNAME, 'GRID', 0, EFLAG )
-
-C.............  Check to make sure the temperature variable of interest is in
-C               the file.
-            J = INDEX1( TVARNAME, NVARS3D, VNAME3D )             
-
-C.............  If not, write a warning and get the temperature variable 
-C               name from the environment
-            IF( J .LE. 0 ) THEN
-
-                CALL TEMPERATURE_WARNING
-
-                MESG = 'NOTE: Getting temperature variable name from '//
-     &                 'the environment...'
-                CALL M3MSG2( MESG )
-
-        	MESG = 'Temperature variable name'
-        	CALL ENVSTR( 'TVARNAME', MESG, 'TEMP1P5', TVARNAME, IOS )
-
-C.................  Write message if TVARNAME environment variable is undefined
-                IF( IOS .LT. 0 ) THEN
-                    MESG = 'NOTE: Using default temperature '//
-     &                     'variable name from the environment.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-C.................  Ensure that the new temperature variable name of interest 
-C                   is in the gridded temperature file
-                J = INDEX1( TVARNAME, NVARS3D, VNAME3D )             
-
-                IF( J .LE. 0 ) THEN
-
-                    CALL TEMPERATURE_WARNING
-
-                    MESG = 'ERROR: Could not get a variable name '//
-     &                     'to use for gridded temperature file.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-            END IF
-
-C.............  Compare the min/max temperature information in the min/max 
-C               temperature file and in the emission factors files...
-C.............  Retrieve header of min/max temperature file
-            CALL RETRIEVE_IOAPI_HEADER( WNAME )
-
-C.............  Retrieve temperature ranges from min/max file header
-C.............  Populate table of valid min/max temperatures in MODMET
-            CALL TMPRINFO( .FALSE., 'BOTH' )
-
-C.............  Store min/max temperatures for comparison
-            MIN1 = MINT_MIN
-            MIN2 = MINT_MAX
-            MAX1 = MAXT_MIN
-            MAX2 = MAXT_MAX
-
-C.............  Retrieve header of non-diurnal emission factors file
-            CALL RETRIEVE_IOAPI_HEADER( FNAME )
-
-C.............  Retrieve temperature ranges from non-diurnal EFs file header
-            CALL TMPRINFO( .FALSE., 'NOMINMAX' )
-
-C.............  Compare mint_min and maxt_max
-            CALL COMPARE_TMPRS( 'NOMINMAX' )
-
-C.............  Retrieve header of diurnal emission factors file
-            CALL RETRIEVE_IOAPI_HEADER( NNAME )
-
-C.............  Retrieve temperature ranges from diurnal EFs file header
-            CALL TMPRINFO( .FALSE., 'BOTH' )
-
-C.............  Compare all min/max temperatures
-            CALL COMPARE_TMPRS( 'BOTH' )
-
-            FDEV = PROMPTFFILE( 
-     &             'Enter logical name for EMISSION FACTORS X-REF file',
-     &             .TRUE., .TRUE., CRL // 'PLIST', PROGNAME )
-
+            
             TDEV = PROMPTFFILE( 
      &             'Enter logical name for EMISSION PROCESSES file',
      &             .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
-
-C.............  Compare grid information from met file with grid information
-C               in the ungridding matrix.  If the grid is a subgrid of the
-C               met domain, then this will be reflected in the ungridding
-C               matrix, and the call the chkgrid will set the parameters
-C               of the subgrid.  These will be needed in Pretmpr.
-            CALL RETRIEVE_IOAPI_HEADER( GNAME )
-            CALL CHKGRID( GNAME, 'GMAT', 1, EFLAG )
-
+     
+            EDEV = PROMPTFFILE(
+     &             'Enter logical name for EMISSION FACTORS LIST file',
+     &             .TRUE., .TRUE., CRL // 'EFLIST', PROGNAME )
+     
         END IF
 
 C.........  Open files that are specific to mobile sources
@@ -358,16 +235,6 @@ C.........  Open files that are specific to mobile sources
             MDEV = PROMPTFFILE( 
      &             'Enter logical name for MOBILE CODES file',
      &             .TRUE., .TRUE., 'MCODES', PROGNAME )
-
-        END IF
-
-C.........  Report the name of the temperature variable
-        IF( TVARNAME .NE. ' ' ) THEN
-
-            L = LEN_TRIM( TVARNAME )
-            MESG = 'NOTE: Using temperature variable name "' //
-     &             TVARNAME( 1:L ) // '".'
-            CALL M3MSG2( MESG )
 
         END IF
 
@@ -392,62 +259,6 @@ C...........   Internal buffering formats............ 94xxx
 C******************  INTERNAL SUBPROGRAMS   ******************************
 
         CONTAINS
-
-C.............  This subroutine writes a warning message that the temperature
-C               variable name is not consistent with the file
-            SUBROUTINE TEMPERATURE_WARNING
-
-C.............  Local variables
-            INTEGER L, L2
-
-C..........................................................................
-            L  = LEN_TRIM( TVARNAME )
-            L2 = LEN_TRIM( MNAME )
-            MESG = 'WARNING: temperature variable "' // 
-     &             TVARNAME( 1:L ) // '" is not in gridded' // 
-     &             CRLF()// BLANK10// 'temperature file "' //
-     &             MNAME( 1:L2 )// '".'
-            CALL M3MSG2( MESG )
-
-            END SUBROUTINE TEMPERATURE_WARNING
-
-C----------------------------------------------------------------------------
-C----------------------------------------------------------------------------
-
-C.............  This subroutine compares the minimum/maximum temperatures
-C               and sets an error flag
-            SUBROUTINE COMPARE_TMPRS( CHECKTYP )
-
-            INCLUDE 'FLTERR.EXT'    ! error filter statement function
-
-            CHARACTER(*), INTENT( IN ) :: CHECKTYP
-
-C..........................................................................            
-
-            IF( FLTERR( MIN1, MINT_MIN ) ) THEN
-                EFLAG = .TRUE.
-            END IF
-
-            IF( FLTERR( MAX2, MAXT_MAX ) ) THEN
-                EFLAG = .TRUE.
-            END IF
-
-            IF( CHECKTYP .NE. 'NOMINMAX' ) THEN
-                
-        	IF( FLTERR( MIN2, MINT_MAX ) ) THEN
-                    EFLAG = .TRUE.
-        	END IF
-
-        	IF( FLTERR( MAX1, MAXT_MIN ) ) THEN
-                    EFLAG = .TRUE.
-        	END IF
-
-            END IF
-
-            END SUBROUTINE COMPARE_TMPRS
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
 
 C.............  This internal subprogram tries to retrieve the I/O API header
 C               and aborts if it was not successful

@@ -6,8 +6,7 @@ C  subroutine body starts at line 81
 C
 C  DESCRIPTION:
 C       This program creates the temporal emissions output file variable names
-C       and associated activities and a flag for diurnal or non-diurnal emission
-C       factors, where needed.   It also sets the units and conversion
+C       and associated activities.  It also sets the units and conversion
 C       factors for creating the output emission values.
 C
 C  PRECONDITIONS REQUIRED:
@@ -29,7 +28,7 @@ C
 C See file COPYRIGHT for conditions of use.
 C
 C Environmental Modeling Center
-C MCNC
+C MCNC  
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
@@ -42,15 +41,19 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: NEFS, EFSNAM, EFSDSC, EFSUNT, EMTNAM, 
+     &                      EMTUNT, EMTDSC, INPUTHC, OUTPUTHC, MXETYPE,
+     &                      NETYPE
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPPA, NIACT, NIPOL, EANAM, EACNV, EAUNIT,
+     &                     ACTVTY, EINAM
 
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER   INDEX1
@@ -66,8 +69,11 @@ C...........   Other local variables
 
         REAL            FAC1, FAC2        ! tmp conversion factors
 
+        LOGICAL      :: FIXDESC = .FALSE. ! true: append info to description
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
 
+        CHARACTER*16           CURRUNIT   !  current unit
+        CHARACTER*16           CURRVNAME  !  current variable name
         CHARACTER*300          MESG       !  message buffer
         CHARACTER(LEN=IOVLEN3) CBUF       !  tmp variable name
 
@@ -82,8 +88,6 @@ C           arrays for all activities in the inventory
         CALL CHECKMEM( IOS, 'EMTUNT', PROGNAME )
         ALLOCATE( EMTDSC( MXETYPE, NIACT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMTDSC', PROGNAME )
-        ALLOCATE( EMTEFT( MXETYPE, NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMTEFT', PROGNAME )
 
 C.........  Allocate memory for units conversions for inventory pollutants and
 C           activities (stored in MODINFO)
@@ -93,7 +97,6 @@ C           activities (stored in MODINFO)
 C.........  Initialize arrays
         EMTUNT = ' '  ! array
         EMTDSC = ' '  ! array
-        EMTEFT = ' '  ! array
         EACNV  = 1.   ! array
 
 C.........  Loop through the emission types for each activity and determine 
@@ -109,52 +112,58 @@ C           conversion to annual data here.
 
             DO K = 1, NETYPE( I )
 
-C.................  Search for emission type in non-diurnal emission factors
-                J = INDEX1( EMTNAM( K,I ), NNDI, NDINAM )
+                CURRVNAME = EMTNAM( K,I )
 
-C.................  Store info if this emissions type is non-diurnal
-C.................  For the units, multiply the emission factor units with the
-C                   activity units
-                IF( J .GT. 0 ) THEN
-
-C.....................  Ensure that emission factor units are consistent
-                    CALL UNITMATCH( NDIUNT( J ) )
-
-                    L  = INDEX( NDIDSC( J ), 'for' )
-                    L2 = LEN_TRIM( NDIDSC( J ) )
-
-C.....................  Store for emission types
-                    EMTUNT( K,I ) = MULTUNIT( NDIUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = NDIDSC( J )( L+3:L2 ) // 
-     &                              ' from ' // ACTVTY( I )
-                    EMTEFT( K,I ) = 'N'
-
+                FIXDESC = .FALSE.
+C.................  Check if pollutant is output hydrocarbon
+                IF( OUTPUTHC /= ' ' ) THEN
+                    J = INDEX( CURRVNAME, TRIM( OUTPUTHC ) )
+                    IF( J > 0 ) THEN
+                    	FIXDESC = .TRUE.
+                        CURRVNAME = CURRVNAME( 1:J-1 ) // INPUTHC
+                    END IF
                 END IF
 
-C.................  Search for emission type in diurnal emission factors
-                J = INDEX1( EMTNAM( K,I ), NDIU, DIUNAM )
+C.................  Search for emission type in emission factors
+                J = INDEX1( CURRVNAME, NEFS, EFSNAM )
 
-C.................  Store info if this emissions type is diurnal
+C.................  Store info if this emissions type is found
 C.................  For the units, multiply the emission factor units with the
 C                   activity units
                 IF( J .GT. 0 ) THEN
-C.....................  Ensure that emission factor units are consistent
-                    CALL UNITMATCH( DIUUNT( J ) )
 
-                    L = INDEX( DIUDSC( J ), 'for' )
-                    L2 = LEN_TRIM( NDIDSC( J ) )
+C.....................  Ensure that emission factor units are consistent
+                    CALL UNITMATCH( EFSUNT( J ) )
+
+                    L  = INDEX( EFSDSC( J ), 'for' )
+                    L2 = LEN_TRIM( EFSDSC( J ) )
 
 C.....................  Store for emission types
-                    EMTUNT( K,I ) = MULTUNIT( DIUUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = DIUDSC( J )( L+3:L2 )// 
+                    EMTUNT( K,I ) = MULTUNIT( EFSUNT( J ), EAUNIT( M ) )
+                    EMTDSC( K,I ) = EFSDSC( J )( L+3:L2 )
+                    IF( FIXDESC ) THEN
+                        EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) // 
+     &                                  ' (minus HAPS)'
+                    END IF
+                    EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) // 
      &                              ' from ' // ACTVTY( I )
-                    EMTEFT( K,I ) = 'D'
 
+                ELSE
+
+C.....................  Otherwise, build info for user-defined HAPS
+                    CURRUNIT = M6UNIT
+                    CALL UNITMATCH( CURRUNIT )
+                    
+                    EMTUNT( K,I ) = MULTUNIT( CURRUNIT, EAUNIT( M ) )
+                    
+                    EMTDSC( K,I ) = CURRVNAME
+                    EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) //
+     &                              ' from ' // ACTVTY( I )
                 END IF
 
 C.................  If emission type has not been associated with an emission
 C                   factor, then error
-                IF( EMTEFT( K,I ) .EQ. ' ' ) THEN
+                IF( EMTDSC( K,I ) .EQ. ' ' ) THEN
 
                     EFLAG = .TRUE.
                     L = LEN_TRIM( EMTNAM( K,I ) )

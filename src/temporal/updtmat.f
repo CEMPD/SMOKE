@@ -28,14 +28,14 @@ C File: @(#)$Id$
 C  
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C  
+C
 C See file COPYRIGHT for conditions of use.
-C  
+C
 C Environmental Modeling Center
-C MCNC
+C MCNC  
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
-C  
+C
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
@@ -45,16 +45,17 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: TPFLAG, TZONES
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: MDEX, WDEX, DDEX
 
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: MONFAC, WEKFAC, XWKFAC
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR
+        USE MODDAYHR, ONLY: INDXD, INDXH, NHRSRC, NDYSRC, EMACH,
+     &                      LDSPOA
 
         IMPLICIT NONE
 
