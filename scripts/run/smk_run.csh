@@ -899,12 +899,11 @@ if ( $?RUN_SMKMERGE ) then
    if ( $RUN_SMKMERGE == 'Y' && $RUN_PART4 == Y ) then
 
       # Set mole/mass-based speciation matrices.
+      set unit = tons
       if( $?MRG_GRDOUT_UNIT ) then 
-         echo $MRG_GRDOUT_UNIT | grep -q mole
-      else
-         set status = 0
+         set unit = `echo $MRG_GRDOUT_UNIT | cut -c1-4`
       endif
-      if ( $status == 0 ) then   # mole
+      if ( $unit == mole ) then   # mole
          if ( $?ASMAT_L ) then
             setenv ASMAT $ASMAT_L
          endif
@@ -1005,7 +1004,7 @@ if ( $?RUN_MRGGRID ) then
          if ( $mrg_cnt == 0 ) then
              echo "SCRIPT ERROR: MRGFILES defined, but no logical file names included."
              echo "              MRGFILES script variable = "${MRGFILES}.
-             echo "              Please reset and rerun script
+             echo "              Please reset and rerun script"
              set exitstat = 1
          echo
              echo "SCRIPT NOTE: File FILELIST created with logical files:"
