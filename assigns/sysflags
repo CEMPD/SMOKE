@@ -42,9 +42,15 @@ case HP_UX11f90:
 case AIX4n64f90:
 case AIX4f90:
     setenv FC  xlf
-    setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}"
-    setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}"
+    setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -lxlsmp"
+    breaksw
+case Linux2_alpha:
+    setenv FC  fort
+    setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
+    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
     breaksw
 default:
     echo "Do not know about executable format "$EDSS_EXE
