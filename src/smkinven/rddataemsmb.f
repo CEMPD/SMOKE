@@ -1,7 +1,8 @@
 
         SUBROUTINE RDDATAEMSMB( LINE, READDATA, READPOL, 
      &                          NVARPERLN, IYEAR, X1, Y1, X2, Y2,
-     &                          ZONE, LNKFLAG, HDRFLAG, EFLAG )
+     &                          ZONE, LNKFLAG, CFIP, CROAD, CLNK,
+     &                          HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -68,6 +69,9 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(LEN=25),      INTENT(OUT) :: Y2        ! y-dir link coord 2
         CHARACTER(LEN=2),       INTENT(OUT) :: ZONE      ! time zone
         LOGICAL,                INTENT(OUT) :: LNKFLAG   ! true: line contains link information
+        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(LEN=RWTLEN3), INTENT(OUT) :: CROAD     ! roadway type
+        CHARACTER(LEN=LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
         LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
         LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
 
@@ -184,24 +188,44 @@ C           the various data fields
         ZONE = ' '
         
         IF( FIXED ) THEN
+
+C.............  Store source information to match with VMTMIX file
+            WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS
+            CFIP ( 2:3 ) = LINE( 1:2 )  ! state
+            CFIP ( 4:6 ) = LINE( 3:5 )  ! county
+            CROAD( 1:1 ) = LINE( 6:6 )  ! area type
+            CROAD( 2:3 ) = ADJUSTL( LINE( 7:10 ) ) ! facility type  <-- PROBLEM!!!!
+            CLNK         = ' '          ! link
+
             DO I = 0,NVAR-1
                 READDATA( I,NEM ) = LINE( 11+(I*8):18+(I*8) )
             END DO
         ELSE
             CALL PARSLINE( LINE, NSEG, SEGMENT )
             
+            CFIP  = ADJUSTR( SEGMENT( 1 )( 1:FIPLEN3 ) )  ! fips code
+            CROAD = ADJUSTL( SEGMENT( 2 ) )               ! roadway type
+            
             IF( LFLAG ) THEN
+                CLNK = ADJUSTL( SEGMENT( 3 ) )   ! link ID
                 X1   = SEGMENT( 4 )
                 Y1   = SEGMENT( 5 )
                 X2   = SEGMENT( 6 )
                 Y2   = SEGMENT( 7 )
                 ZONE = SEGMENT( 8 )
+            ELSE
+                CLNK = ' '
             END IF
             
             DO I = 1, NVAR
                 READDATA( I,NEM ) = SEGMENT( NPRECOL + I )
             END DO
         END IF
+
+C.........  Replace blanks with zeros        
+        DO I = 1,FIPLEN3
+            IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
+        END DO
 
 C.........  Since there are 2 values per pollutant but only 1 per activity,
 C           need to fill in second spot to avoid errors later on
