@@ -1,0 +1,61 @@
+#!/bin/csh -f
+
+#  %W% %P% %G% %U%
+
+#  Determine operating system for compiling SMOKE
+source $EDSS_ROOT/scripts/platform
+
+if ( $status != 0 ) then
+    exit( $status )
+endif
+
+source $EDSS_SUBSYS/tools/setup/set_dirs.scr
+
+# Make directories for library, object files, and executables
+setenv    SMK_BIN "$SMKROOT/$EDSS_EXE"
+if( ! -e $SMK_BIN ) mkdir -p $SMK_BIN
+if( ! -e $MD_SRC/$EDSS_EXE ) mkdir -p $MD_SRC/$EDSS_EXE
+
+switch ( $EDSS_EXE )
+  case IRIXn32f90:
+  case IRIX6f90:
+  case IRIXn64f90:
+    setenv FC    f90
+    setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${IOMOD_SRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${IOMOD_SRC}/${EDSS_EXE}" 
+    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    breaksw
+  case SunOS5f90:
+#   NOTE: -Bstatic caused problems with ENVYN (perhaps because not
+#         using I/O API compiled with f90 ?)
+    setenv FC    f90
+    setenv FFLAGS   "$FFLAGS  -M${MD_SRC}/${EDSS_EXE} -M${IOMOD_SRC}/${EDSS_EXE} -I${IOINC} -I${INC}"
+    setenv DBGFLAGS "$DBGFLAGS -M${MD_SRC}/${EDSS_EXE} -M${IOMOD_SRC}/${EDSS_EXE} -I${IOINC} -I${INC}"
+    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
+    breaksw
+case HP_UX11f90:
+    setenv FC  f90
+    setenv FFLAGS   "$FFLAGS  -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${IOMOD_SRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${IOMOD_SRC}/${EDSS_EXE}"
+    setenv LDIRS    "+U77 -Wl,-L,${SMK_BIN},${TOOLS_BIN}"
+    breaksw
+case AIX4n64f90:
+case AIX4f90:
+    setenv FC  xlf
+    setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}"
+    setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}"
+    setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -lxlsmp"
+    breaksw
+default:
+    echo "Do not know about executable format "$EDSS_EXE
+    exit( 2 )
+endsw
+
+echo " "
+echo "Host name:             "`hostname`
+echo "Platform type:         $EDSS_EXE"
+echo "Executable directory:  $SMK_BIN"
+echo " "
+
+unalias mv
+

@@ -1,0 +1,48 @@
+#!/bin/csh -f
+
+   ### Set umask to be group writable, world read and execute
+   umask 2
+
+   ### Make input and output director(ies) #######
+   if ( -e $SMKDAT ) then
+       if( ! -e $INVDIR ) mkdir -p $INVDIR
+       if( ! -e $INVOPD ) mkdir -p $INVOPD
+       if( ! -e $OUTPUT ) mkdir -p $OUTPUT
+       if( ! -e $STATIC ) mkdir -p $STATIC
+       if( ! -e $BASDIR ) mkdir -p $BASDIR
+       if( ! -e $REPSCEN ) mkdir -p $REPSCEN
+       if( ! -e $REPSTAT ) mkdir -p $REPSTAT
+   else
+       echo "ERROR: Create the SMOKE data directory\!"
+       exit( 1 )
+   endif
+
+   ### Check permissions on output directories ####
+   set user = `whoami`
+   foreach dir ( $INVDIR $INVOPD $SCENARIO $STATIC $OUTPUT $BASDIR \
+                 $REPSCEN $REPSTAT )
+
+       set line   = ( `/bin/ls -ld $dir` )
+       set owner  = $line[3]
+       set check  = ( `echo $line | grep $user` )
+       if ( $status == 0 ) then
+
+           set permis = ( `echo $line | grep drwxrw` )
+           if( $status != 0 ) then
+               chmod ug+w $dir
+           endif
+
+       else
+
+           set permis = ( `echo $line | grep drwxrw` )
+           if ( $status != 0 ) then
+               echo "NOTE: Do not have write permission for directory"
+               echo "      $dir"
+               echo "      Check with user $owner for write permissions"
+           endif
+
+       endif
+
+   end
+
+   cd $ASSIGNS
