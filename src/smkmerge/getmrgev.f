@@ -65,6 +65,7 @@ C...........   Other local variables
         CHARACTER*5     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
         CHARACTER*5     CTLADD   ! value of MRG_CTLMAT_ADD  E.V.
         CHARACTER*5     CTLREAC  ! value of MRG_CTLMAT_REAC E.V.
+        CHARACTER*5     TMPBYDAY ! value of MRG_BYDAY E.V.
         CHARACTER*100   BUFFER   ! text buffer
         CHARACTER*300   MESG     ! message buffer
 
@@ -89,17 +90,21 @@ C           the environment variable(s), nothing will happen with the program
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        BUFFER = 'Control for which source categories get ' //
+        BUFFER = 'Setting for which source categories get ' //
      &           'multiplicative control matrix'
         CALL ENVSTR( 'MRG_CTLMAT_MULT', BUFFER, ' ', CTLMULT, IOS  )
 
-        BUFFER = 'Control for which source categories get ' //
+        BUFFER = 'Setting for which source categories get ' //
      &           'additive control matrix'
         CALL ENVSTR( 'MRG_CTLMAT_ADD', BUFFER, ' ', CTLADD, IOS  )
 
-        BUFFER = 'Control for which source categories get ' //
+        BUFFER = 'Setting for which source categories get ' //
      &           'reactivity control matrix'
         CALL ENVSTR( 'MRG_CTLMAT_REAC', BUFFER, ' ', CTLREAC, IOS  )
+
+        BUFFER = 'Setting for which source categories get ' //
+     &           'by-day processing'
+        CALL ENVSTR( 'MRG_BYDAY', BUFFER, ' ', TMPBYDAY, IOS  )
 
 C.........  Process the character strings to set the various control flags 
         AFLAG = ( INDEX( MRGSRC, 'A' ) .GT. 0 )
@@ -171,6 +176,14 @@ C.........  Retrieve the on/off environment variables
      &                   'emissions separately or not', .TRUE., IOS )
 
         LREPANY = ( LREPSTA .OR. LREPCNY )
+
+C.........  If temporal processing, set which source categories get by-day 
+C           processing
+        IF( TFLAG ) THEN
+            AFLAG_BD = ( INDEX( TMPBYDAY, 'A' ) .GT. 0 )
+            MFLAG_BD = ( INDEX( TMPBYDAY, 'M' ) .GT. 0 )
+            PFLAG_BD = ( INDEX( TMPBYDAY, 'P' ) .GT. 0 )
+        END IF
 
 C.........  Retrieve variable to indicate whether to use annual or ozone 
 C           season data

@@ -165,15 +165,32 @@ C.............  Determine the year and projection status of the inventory
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
-                MESG = 'Enter logical name for the AREA HOURLY ' //
-     &                 'EMISSIONS file'
-                ATNAME = PROMPTMFILE( MESG, FSREAD3, 'ATMP', PROGNAME )
+C.................  If temporal approach is by-day for area sources...
+                IF( AFLAG_BD ) THEN
 
-C.................  Set parameters and pollutants from hourly file
-                CALL RETRIEVE_IOAPI_HEADER( ATNAME )
-                CALL CHKSRCNO( 'area', ATNAME, NROWS3D, NASRC, EFLAG )
-                CALL UPDATE_TIME_INFO( ATNAME )
+C.....................  Open all files for each day of week and compare headers
+C                       to make sure they are the same.
+                    CALL OPEN_TMP_BYDAY( 'AREA', ATNAME, ASDATE )
 
+C.....................  Get header.
+                    CALL RETRIEVE_IOAPI_HEADER( ATNAME( 1 ) )
+
+C.................  If not a by-day approach, set all file names to same
+                ELSE
+
+                    MESG = 'Enter logical name for the AREA HOURLY ' //
+     &                     'EMISSIONS file'
+                    ATNAME = PROMPTMFILE( MESG,FSREAD3,'ATMP',PROGNAME )
+
+C.....................  Get header and compare source number and time range
+                    CALL RETRIEVE_IOAPI_HEADER( ATNAME( 1 ) )
+                    CALL CHKSRCNO( 'area', ATNAME( 1 ), NROWS3D, 
+     &                             NASRC, EFLAG )
+                    CALL UPDATE_TIME_INFO( ATNAME( 1 ) )
+
+                END IF
+
+C.................  Set pollutants from hourly file
                 ANIPOL = NVARS3D
                 ALLOCATE( AEINAM( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AEINAM', PROGNAME )
@@ -187,11 +204,11 @@ C.................  Set parameters and pollutants from hourly file
      &                              AONAMES, AOUNITS )
 
 C.................  Determine the year and projection status of the hourly
-                CALL CHECK_INVYEAR( ATNAME, APRJFLAG, FDESC3D )
+                CALL CHECK_INVYEAR( ATNAME( 1 ), APRJFLAG, FDESC3D )
 
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
-                ATNAME = AENAME
+                ATNAME = AENAME  ! array
         	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
         	ANIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
         	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
@@ -365,14 +382,30 @@ C.............  Determine the year and projection status of the inventory
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
-                MESG = 'Enter logical name for the MOBILE HOURLY ' //
-     &                 'EMISSIONS file'
-                MTNAME = PROMPTMFILE( MESG, FSREAD3, 'MTMP', PROGNAME )
+C.................  If temporal approach is by-day for mobile sources...
+                IF( MFLAG_BD ) THEN
 
-C.................  Set parameters and pollutants from hourly file
-                CALL RETRIEVE_IOAPI_HEADER( MTNAME )
-                CALL CHKSRCNO( 'mobile', MTNAME, NROWS3D, NMSRC, EFLAG )
-                CALL UPDATE_TIME_INFO( MTNAME )
+C.....................  Open all files for each day of week and compare headers
+C                       to make sure they are the same.
+                    CALL OPEN_TMP_BYDAY( 'MOBILE', MTNAME, MSDATE )
+
+C.....................  Get header.
+                    CALL RETRIEVE_IOAPI_HEADER( MTNAME( 1 ) )
+
+C.................  If not a by-day approach, set all file names to same
+                ELSE
+
+                    MESG = 'Enter logical name for the MOBILE HOURLY '//
+     &                     'EMISSIONS file'
+                    MTNAME = PROMPTMFILE( MESG,FSREAD3,'MTMP',PROGNAME )
+
+C.....................  Set parameters and pollutants from hourly file
+                    CALL RETRIEVE_IOAPI_HEADER( MTNAME( 1 ) )
+                    CALL CHKSRCNO( 'mobile', MTNAME( 1 ), NROWS3D, 
+     &                             NMSRC, EFLAG )
+                    CALL UPDATE_TIME_INFO( MTNAME( 1 ) )
+
+                END IF
 
                 MNIPPA = NVARS3D
                 ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
@@ -387,11 +420,11 @@ C.................  Set parameters and pollutants from hourly file
      &                              MONAMES, MOUNITS )
 
 C.................  Determine the year and projection status of the hourly
-                CALL CHECK_INVYEAR( MTNAME, MPRJFLAG, FDESC3D )
+                CALL CHECK_INVYEAR( MTNAME( 1 ), MPRJFLAG, FDESC3D )
 
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
-                MTNAME = MENAME
+                MTNAME = MENAME  ! array
 
         	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
         	MNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
@@ -523,14 +556,30 @@ C.............  Determine the year and projection status of the inventory
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
 
-                MESG = 'Enter logical name for the POINT HOURLY ' //
-     &                 'EMISSIONS file'
-                PTNAME = PROMPTMFILE( MESG, FSREAD3, 'PTMP', PROGNAME )
+C.................  If temporal approach is by-day for point sources...
+                IF( PFLAG_BD ) THEN
 
-C.................  Set parameters and pollutants from hourly file
-                CALL RETRIEVE_IOAPI_HEADER( PTNAME )
-                CALL CHKSRCNO( 'point', PTNAME, NROWS3D, NPSRC, EFLAG )
-                CALL UPDATE_TIME_INFO( PTNAME )
+C.....................  Open all files for each day of week and compare headers
+C                       to make sure they are the same.
+                    CALL OPEN_TMP_BYDAY( 'POINT', PTNAME, PSDATE )
+
+C.....................  Get header.
+                    CALL RETRIEVE_IOAPI_HEADER( PTNAME( 1 ) )
+
+C.................  If not a by-day approach, set all file names to same
+                ELSE
+
+                    MESG = 'Enter logical name for the POINT HOURLY ' //
+     &                     'EMISSIONS file'
+                    PTNAME = PROMPTMFILE( MESG,FSREAD3,'PTMP',PROGNAME )
+
+C.....................  Set parameters and pollutants from hourly file
+                    CALL RETRIEVE_IOAPI_HEADER( PTNAME( 1 ) )
+                    CALL CHKSRCNO( 'point', PTNAME( 1 ), NROWS3D, 
+     &                             NPSRC, EFLAG )
+                    CALL UPDATE_TIME_INFO( PTNAME( 1 ) )
+
+                END IF
 
                 PNIPOL = NVARS3D
                 ALLOCATE( PEINAM( PNIPOL ), STAT=IOS )
@@ -545,11 +594,11 @@ C.................  Set parameters and pollutants from hourly file
      &                              PONAMES, POUNITS )
 
 C.................  Determine the year and projection status of the hourly 
-                CALL CHECK_INVYEAR( PTNAME, PPRJFLAG, FDESC3D )
+                CALL CHECK_INVYEAR( PTNAME( 1 ), PPRJFLAG, FDESC3D )
 
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
-                PTNAME = PENAME
+                PTNAME = PENAME  ! array
         	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
         	PNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
         	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
@@ -907,6 +956,205 @@ C...........   Internal buffering formats.............94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE UPDATE_TIME_INFO
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram opens a different temporal file for each day
+C               of the week.  It compares the files to make sure that they
+C               are consistent with each other.  The number of sources
+C               are compared to the master number of sources.
+            SUBROUTINE OPEN_TMP_BYDAY( LOCCAT, FNAME, SDATE )
+
+C.............  Subprogram arguments
+            CHARACTER(*), INTENT (IN) :: LOCCAT
+            CHARACTER(*), INTENT(OUT) :: FNAME( 7 )
+            INTEGER     , INTENT(OUT) :: SDATE( 7 )
+
+C.............  Local parameters
+            CHARACTER*3, PARAMETER :: SUFFIX( 7 ) = 
+     &                                   ( / 'MON', 'TUE', 'WED', 'THU', 
+     &                                       'FRI', 'SAT', 'SUN' / )
+
+C.............  Local allocatable arrays
+            CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: LOCVNAM ( : )
+            CHARACTER(LEN=IOULEN3), ALLOCATABLE :: LOCVUNIT( : )
+
+C.............  Local variables
+            INTEGER        D, L, N      ! counters and indices
+
+            INTEGER        LOCZONE   ! tmp time zone
+            INTEGER        LOCNVAR   ! tmp local number of variables in file 
+
+            LOGICAL     :: NFLAG = .FALSE.  ! true: no. vars inconsistent
+            LOGICAL     :: VFLAG = .FALSE.  ! true: var names inconsistent
+            LOGICAL     :: UFLAG = .FALSE.  ! true: var units inconsistent
+
+            CHARACTER*1    CRL
+            CHARACTER*16   TMPNAM
+            CHARACTER*300  MESG
+
+C----------------------------------------------------------------------
+
+            IF( LOCCAT .EQ. 'AREA'   ) CRL = 'A'
+            IF( LOCCAT .EQ. 'MOBILE' ) CRL = 'M'
+            IF( LOCCAT .EQ. 'POINT'  ) CRL = 'P'
+
+C.............  Loop through the days of the week and open a different file
+C               for each.
+            DO D = 1, 7
+
+                MESG = 'Enter logical name for the ' // SUFFIX( D ) //
+     &                 ' ' // LOCCAT // ' HOURLY EMISSIONS file'
+                TMPNAM = CRL // 'TMP_' // SUFFIX( D )
+
+                FNAME( D ) = PROMPTMFILE( MESG,FSREAD3,TMPNAM,PROGNAME )
+
+            END DO
+
+C.............  Loop through each file and ensure they are consistent
+            DO D = 1, 7
+
+C.................  Get header and compare source number and time range
+                CALL RETRIEVE_IOAPI_HEADER( FNAME( D ) )
+
+C.................  Store the starting date
+                SDATE( D ) = SDATE3D
+
+C.................  Check the number of sources
+                SELECT CASE( LOCCAT )
+                CASE( 'AREA' )
+                    CALL CHKSRCNO( 'area', FNAME( D ), NROWS3D, 
+     &                             NASRC, EFLAG )
+                CASE( 'MOBILE' ) 
+                    CALL CHKSRCNO( 'mobile', FNAME( D ), NROWS3D, 
+     &                             NMSRC, EFLAG )
+
+                CASE( 'POINT' ) 
+                    CALL CHKSRCNO( 'point', FNAME( D ), NROWS3D, 
+     &                             NPSRC, EFLAG )
+
+                END SELECT
+
+C.................  Make sure that the file starts at hour 0
+                IF( STIME3D .NE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    L = LEN_TRIM( FNAME( D ) )
+                    WRITE( MESG,94010 ) 'ERROR: Start time of', STIME3D,
+     &                     'in file "'// FNAME( D )( 1:L ) // 
+     &                     '" is invalid.' // CRLF() // BLANK10 //
+     &                     'Only start time of 000000 is valid for' //
+     &                     'processing by day.'
+                    CALL M3MSG2( MESG )
+
+                END IF
+
+C.................  Make sure that the file has at least 24 hours 
+                IF( MXREC3D .LT. 24 ) THEN
+                    EFLAG = .TRUE.
+                    L = LEN_TRIM( FNAME( D ) )
+                    WRITE( MESG,94010 ) 'ERROR: Number of hours', 
+     &                     MXREC3D, 'in file "'// FNAME( D )( 1:L ) // 
+     &                     '" is invalid.' // CRLF() // BLANK10 //
+     &                     'Minimum number of 24 hours is needed for' //
+     &                     'processing by day.'
+                    CALL M3MSG2( MESG )
+
+                END IF
+
+                LOCZONE = GETIFDSC( FDESC3D, '/TZONE/', .TRUE. )
+
+                IF( ZFLAG .AND. LOCZONE .NE. TZONE ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                 'Time zone ', LOCZONE, 'in ' // FNAME( D ) // 
+     &                 ' hourly emissions file is not consistent ' //
+     &                 'with initialized value of', TZONE
+                    CALL M3MSG2( MESG )
+
+                ELSE IF( .NOT. ZFLAG ) THEN
+                    ZFLAG = .TRUE.
+                    TZONE = LOCZONE
+
+                    MESG = 'NOTE: Time zone initialized using ' // 
+     &                     FNAME( D ) // ' hourly emissions file.'
+
+                    CALL M3MSG2( MESG )
+                END IF
+
+C.................  For first file, store the pollutant names and units for
+C                   making comparisons with other files.
+                IF( D .EQ. 1 ) THEN
+
+                    LOCNVAR = NVARS3D
+                    ALLOCATE( LOCVNAM( LOCNVAR ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'LOCVNAM', PROGNAME )
+                    ALLOCATE( LOCVUNIT( LOCNVAR ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'LOCVUNIT', PROGNAME )
+
+                    LOCVNAM ( 1:LOCNVAR ) = VNAME3D( 1:LOCNVAR )
+                    LOCVUNIT( 1:LOCNVAR ) = UNITS3D( 1:LOCNVAR )
+
+C.................  Compare the pollutant names and units
+                ELSE
+
+C.....................  Check to make sure the number is consistent first
+                    IF( NVARS3D .NE. LOCNVAR ) NFLAG = .TRUE.
+
+C.....................  Make sure no overflows                    
+                    N = MIN( NVARS3D, LOCNVAR )
+
+C.....................  compare variable names and units among files
+                   DO V = 1, N
+                        IF( LOCVNAM( V ) .NE. VNAME3D( V ) ) THEN
+                            VFLAG = .TRUE.
+                        END IF
+
+                        IF( LOCVUNIT( V ) .NE. UNITS3D( V ) ) THEN
+                            UFLAG = .TRUE.
+                        END IF
+                    END DO
+
+                END IF
+
+            END DO
+
+C.............  Write message and set error if any inconsistencies
+            IF( NFLAG ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: ' // LOCCAT // ' source hourly ' //
+     &                 'by-day emission files have inconsistent ' //
+     &                 CRLF() // BLANK10 // 'number of variables.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF( VFLAG ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: ' // LOCCAT // ' source hourly ' //
+     &                 'by-day emission files have inconsistent ' //
+     &                 CRLF() // BLANK10 // 'variable names.'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF( UFLAG ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: ' // LOCCAT // ' source hourly ' //
+     &                 'by-day emission files have inconsistent ' //
+     &                 CRLF() // BLANK10 // 'variable units.'
+                CALL M3MSG2( MESG )
+            END IF
+
+C.............  Deallocate local memory
+            DEALLOCATE( LOCVNAM, LOCVUNIT )
+
+            RETURN
+
+C------------------  FORMAT  STATEMENTS   -----------------------------
+
+C...........   Internal buffering formats.............94xxx
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE OPEN_TMP_BYDAY
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------

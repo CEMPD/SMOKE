@@ -99,6 +99,8 @@ C...........   Other local variables
     
         INTEGER          J, K, L1, L2, M, N, V, S, T ! counters and indices
 
+        INTEGER          AJDATE        ! area-source Julian date for by-day
+        INTEGER          DAY           ! day-of-week index (monday=1)
         INTEGER       :: IDUM = 0      ! dummy integer value
         INTEGER          IDUM1, IDUM2
         INTEGER          IOS           ! tmp I/O status
@@ -111,6 +113,7 @@ C...........   Other local variables
         INTEGER       :: K5 = 0        ! tmp index for valid mb reactvty matrix
         INTEGER          KA, KB, KM, KP! tmp index to src-category species
         INTEGER          LDATE         ! Julian date from previous iteration
+        INTEGER          MJDATE        ! mobile-source Julian date for by-day
         INTEGER          MXGRP         ! max no. of variable groups
         INTEGER          MXVARPGP      ! max no. of variables per group
         INTEGER          NGRP          ! actual no. of pollutant groups
@@ -118,6 +121,7 @@ C...........   Other local variables
         INTEGER          NPING         ! no. plum-in-grid sources
         INTEGER          OCNT          ! tmp count output variable names
         INTEGER          PGID          ! previous iteration group ID no.
+        INTEGER          PJDATE        ! point-source Julian date for by-day
         INTEGER          NVPGP         ! tmp actual no. variables per group
 
         REAL          :: RDUM = 0      ! dummy real value
@@ -409,11 +413,14 @@ C.................  Set input variable names
 
 C.............  Write out message about data currently being processed
             CALL POLMESG( OCNT, OUTNAMES )
- 
+
+C.............  Initializations before main time loop 
+            JDATE  = SDATE
+            JTIME  = STIME
+            LDATE  = 0
+            DAY    = 1
+
 C.............  Loop through output time steps
-            JDATE = SDATE
-            JTIME = STIME
-            LDATE = 0
             DO T = 1, NSTEPS   ! at least once for time-independent
 
 C................. For time-dependent processing, write out a few messages...
@@ -431,7 +438,21 @@ C.....................  For new hour...
 C.....................  Write to screen because WRITE3 only writes to LDEV
                     WRITE( *, 93020 ) HHMMSS( JTIME )
 
+C.....................  Determine weekday index (Monday is 1)
+                    DAY = WKDAY( JDATE )
+
                 END IF
+
+C.................  Initialize source-category current dates
+                AJDATE = JDATE
+                MJDATE = JDATE
+                PJDATE = JDATE
+
+C.................  Reset the date for each source category when by-day 
+C                   processing is being done for that category
+                IF( AFLAG_BD ) AJDATE = ASDATE( DAY )
+                IF( MFLAG_BD ) MJDATE = MSDATE( DAY )
+                IF( PFLAG_BD ) PJDATE = PSDATE( DAY )
 
 C.................  If area sources, read inventory emissions for this time 
 C                   step for all area-source pollutants in current pol group
@@ -439,21 +460,24 @@ C.................  The *_EXIST are counters that point to the position in
 C                   the source category emissions of the variables names 
 C                   in INNAMES. Data are stored in *EMSRC in the global order.
                 IF( AFLAG )
-     &              CALL RD3MASK( ATNAME, JDATE, JTIME, NASRC, NVPGP,
-     &                      INNAMES( 1 ), A_EXIST( 1,N ), AEMSRC   )
+     &              CALL RD3MASK( ATNAME( DAY ), AJDATE, JTIME, NASRC, 
+     &                            NVPGP, INNAMES( 1 ), A_EXIST( 1,N ),
+     &                            AEMSRC )
 
 C.................  If mobile sources, read inventory emissions or activities
 C                   for this time step for all mobile-source pollutants in 
 C                   current pol group
                 IF( MFLAG ) 
-     &              CALL RD3MASK( MTNAME, JDATE, JTIME, NMSRC, NVPGP, 
-     &                      INNAMES( 1 ), M_EXIST( 1,N ), MEMSRC   )
+     &              CALL RD3MASK( MTNAME( DAY ), MJDATE, JTIME, NMSRC, 
+     &                            NVPGP, INNAMES( 1 ), M_EXIST( 1,N ), 
+     &                            MEMSRC )
 
 C.................  If point sources, read inventory emissions for this time 
 C                   step for all point-source pollutants in current pol group
                 IF( PFLAG )
-     &              CALL RD3MASK( PTNAME, JDATE, JTIME, NPSRC, NVPGP, 
-     &                      INNAMES( 1 ), P_EXIST( 1,N ), PEMSRC   )
+     &              CALL RD3MASK( PTNAME( DAY ), PJDATE, JTIME, NPSRC, 
+     &                            NVPGP, INNAMES( 1 ), P_EXIST( 1,N ), 
+     &                            PEMSRC )
 
 C.................  If layer fractions, read them for this time step
                 IF( LFLAG ) THEN
