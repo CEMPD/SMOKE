@@ -1,8 +1,8 @@
 
         SUBROUTINE GETCTGRY
 
-C***********************************************************************
-C  subroutine body starts at line
+C*********************************************************************** 
+C  subroutine body starts at line 85
 C
 C  DESCRIPTION: 
 C     This subroutine retrieves the SMK_SOURCE environment variable to
@@ -89,8 +89,11 @@ C.........  Retrieve environment variable that indicates the source of interest
 
         IF( J .LE. 0 .OR. IOS .NE. 0 ) THEN
 
-            MESG = 'Do not recognize SMK_SOURCE environment variable '//
-     &             'setting "' // CRL // '"'
+            MESG = 'ERROR: Do not recognize SMK_SOURCE environment '//
+     &             'variable setting "' // CRL // '"'
+            CALL M3MSG2( MESG )
+
+            MESG = 'Problem with environment variable settings'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         ELSE
