@@ -56,7 +56,7 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
         INTEGER, INTENT (IN)  :: FDEV    !  unit number for elev srcs file 
         INTEGER, INTENT (IN)  :: NLINES  !  no. veg types
 
-        CHARACTER*16, INTENT (OUT)   :: VGID( NLINES )       ! veg ids
+        CHARACTER(16), INTENT (OUT)  :: VGID( NLINES )       ! veg ids
         INTEGER, INTENT (OUT)        :: LINDX( NLINES )      ! leaf area index
         REAL, INTENT (OUT)           :: LFAC( NLINES )       ! leaf biomass
         REAL, INTENT (OUT)           :: WNTF( NLINES )       ! winter factor
@@ -69,11 +69,11 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
         INTEGER       I, J               !  counters
         INTEGER       ISTAT              !  iostat error
 
-        CHARACTER*20, ALLOCATABLE :: SEGMENT( : )   ! Segments of parsed lines
-        CHARACTER*300   MESG             !  message buffer
-        CHARACTER*200   LINE             !  buffer for variables
+        CHARACTER(20), ALLOCATABLE :: SEGMENT( : )   ! Segments of parsed lines
+        CHARACTER(300)  MESG             !  message buffer
+        CHARACTER(200)  LINE             !  buffer for variables
 
-        CHARACTER*16 :: PROGNAME = 'RDB3FAC' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDB3FAC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDB3FAC

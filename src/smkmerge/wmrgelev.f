@@ -68,7 +68,7 @@ C.........  INCLUDES:
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         REAL            ENVREAL
         INTEGER         FIND1
@@ -93,15 +93,15 @@ C.........  Variables allocated by module settings...
         INTEGER, ALLOCATABLE, SAVE :: EIDX2  ( : ) ! another index
         INTEGER, ALLOCATABLE, SAVE :: ELAYER ( : ) ! addt'l srcs for explicit
 
-        REAL   , ALLOCATABLE :: EOUTHT ( : ) ! output stack heights [m]
-        REAL   , ALLOCATABLE :: EOUTDM ( : ) ! output stack diameters [m]
-        REAL   , ALLOCATABLE :: EOUTTK ( : ) ! output exit tmprs [K]
-        REAL   , ALLOCATABLE :: EOUTVE ( : ) ! output exit velocities [m/hr]
-        REAL   , ALLOCATABLE :: EOUTXL ( : ) ! output x-loc [units of grid]
-        REAL   , ALLOCATABLE :: EOUTYL ( : ) ! output y-loc [units of grid]
+        REAL, ALLOCATABLE :: EOUTHT ( : ) ! output stack heights [m]
+        REAL, ALLOCATABLE :: EOUTDM ( : ) ! output stack diameters [m]
+        REAL, ALLOCATABLE :: EOUTTK ( : ) ! output exit tmprs [K]
+        REAL, ALLOCATABLE :: EOUTVE ( : ) ! output exit velocities [m/hr]
+        REAL, ALLOCATABLE :: EOUTXL ( : ) ! output x-loc [units of grid]
+        REAL, ALLOCATABLE :: EOUTYL ( : ) ! output y-loc [units of grid]
 
-        CHARACTER(LEN=STKLEN3), ALLOCATABLE, SAVE :: ECSRCA  (:)! FIPS//plt//stk
-        CHARACTER(LEN=STKLEN3), ALLOCATABLE       :: EOUTCSRC(:)! FIPS//plt//stk
+        CHARACTER(STKLEN3), ALLOCATABLE, SAVE :: ECSRCA  (:)! FIPS//plt//stk
+        CHARACTER(STKLEN3), ALLOCATABLE       :: EOUTCSRC(:)! FIPS//plt//stk
 
 C.........  Allocatable array for fake stack heights for explicit plums
         REAL, ALLOCATABLE :: LAYRMID( : )
@@ -132,11 +132,11 @@ C.........  UAM-format specific variables
         REAL            HTLOWR              ! min cell ht b/w sfc and diffbr [m]
         REAL            HTUPPR              ! min cell ht b/w diffbr and top [m]
 
-        CHARACTER*10        :: SPCNAM       ! UAM-format species name
-        CHARACTER*10 , SAVE :: VTYPE        ! User-spec vertical method type
-        CHARACTER*44           NOTEDEF      ! Default note
-        CHARACTER*44           UNOTE        ! UAM file note from env variable
-        CHARACTER*60        :: FNOTE        ! UAM file header note
+        CHARACTER(10)       :: SPCNAM       ! UAM-format species name
+        CHARACTER(10), SAVE :: VTYPE        ! User-spec vertical method type
+        CHARACTER(44)          NOTEDEF      ! Default note
+        CHARACTER(44)          UNOTE        ! UAM file note from env variable
+        CHARACTER(60)       :: FNOTE        ! UAM file header note
 
 C.........  Other local variables
         INTEGER          I, J, K, KK, L, LL, LM, LN, M, N, S 
@@ -167,19 +167,19 @@ C.........  Other local variables
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error occurred
         LOGICAL       :: FIRSTIME = .TRUE.   ! true: first time routine called
 
-        CHARACTER*16           OUTFMT       ! output format for elevated ASCII
-        CHARACTER*100          EFMT         ! output emissions foamat
-        CHARACTER*200          BUFFER       ! source chars buffer
-        CHARACTER*300          MESG         ! message buffer
+        CHARACTER(16)      OUTFMT       ! output format for elevated ASCII
+        CHARACTER(100)     EFMT         ! output emissions foamat
+        CHARACTER(200)     BUFFER       ! source chars buffer
+        CHARACTER(300)     MESG         ! message buffer
 
-        CHARACTER(LEN=FIPLEN3) CFIP         ! tmp country/state/county code
-        CHARACTER(LEN=PLTLEN3) FCID         ! tmp facility ID
-        CHARACTER(LEN=CHRLEN3) SKID         ! tmp stack ID
-        CHARACTER(LEN=STKLEN3) ECS          ! stack elevated source chars
-        CHARACTER(LEN=STKLEN3) PECS         ! tmp previous ECS
-	CHARACTER(LEN=IOULEN3) GRDENV       ! gridded output units from envrmt
+        CHARACTER(FIPLEN3) CFIP         ! tmp country/state/county code
+        CHARACTER(PLTLEN3) FCID         ! tmp facility ID
+        CHARACTER(CHRLEN3) SKID         ! tmp stack ID
+        CHARACTER(STKLEN3) ECS          ! stack elevated source chars
+        CHARACTER(STKLEN3) PECS         ! tmp previous ECS
+	CHARACTER(IOULEN3) GRDENV       ! gridded output units from envrmt
 
-        CHARACTER*16 :: PROGNAME = 'WMRGELEV' ! program name
+        CHARACTER(16) :: PROGNAME = 'WMRGELEV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WMRGELEV
@@ -949,9 +949,9 @@ C               emission values
             SUBROUTINE GET_ESUM_FORMAT( VBUF, VAL, FMT )
 
 C.............  Subroutine arguments
-            CHARACTER*(*), INTENT (IN) :: VBUF
-            REAL         , INTENT (IN) :: VAL
-            CHARACTER*(*), INTENT(OUT) :: FMT
+            CHARACTER(*), INTENT (IN) :: VBUF
+            REAL        , INTENT (IN) :: VAL
+            CHARACTER(*), INTENT(OUT) :: FMT
 
 C----------------------------------------------------------------------
 

@@ -64,13 +64,12 @@ C...........   Local variables
 
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
 
+        CHARACTER(256)  LINE                  ! Read buffer for a line
+        CHARACTER(300)  MESG                  ! Message buffer
 
-        CHARACTER*256   LINE                  ! Read buffer for a line
-        CHARACTER*300   MESG                  ! Message buffer
+        CHARACTER(SCCLEN3 ) TSCC          ! tmp SCC
 
-        CHARACTER(LEN=SCCLEN3 ) TSCC          ! tmp SCC
-
-        CHARACTER*16 :: PROGNAME = 'RDSCCDSC'    !  program name
+        CHARACTER(16) :: PROGNAME = 'RDSCCDSC'    !  program name
 
 C***********************************************************************
 C   Begin body of subroutine RDSCCDSC

@@ -70,8 +70,8 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: HDALTDYA( : )  ! unsorted holiday Julian date
 
 C...........   Local arrays
-        CHARACTER*9     CAPDAYS( 7 )          ! names of days of week in caps
-        CHARACTER*20    SEGMENT( 5 )          ! parsed input line
+        CHARACTER(9)    CAPDAYS( 7 )          ! names of days of week in caps
+        CHARACTER(20)   SEGMENT( 5 )          ! parsed input line
 
 C...........   Local variables
         INTEGER         I, J, N               ! indices and counters
@@ -88,10 +88,10 @@ C...........   Local variables
 
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
 
-        CHARACTER*80    LINE                  ! Read buffer for a line
-        CHARACTER*300   MESG                  ! Message buffer
+        CHARACTER(80)   LINE                  ! Read buffer for a line
+        CHARACTER(300)  MESG                  ! Message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDHDAYS'    !  program name
+        CHARACTER(16) :: PROGNAME = 'RDHDAYS'    !  program name
 
 C***********************************************************************
 C   Begin body of subroutine RDHDAYS

@@ -47,7 +47,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
         INTEGER         GETFLINE
         INTEGER         PROMPTFFILE
@@ -55,12 +55,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL   CRLF, FINDC, GETFLINE, PROMPTFFILE
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name' ! CVS release tag
 
 C............   Allocatable arrays
-        INTEGER                  , ALLOCATABLE :: INDEXA  ( : ) ! sorting index
-        CHARACTER(LEN=PTENDL3(2)), ALLOCATABLE :: CFPLISTA( : ) ! unsorted dups
-        CHARACTER(LEN=PTENDL3(2)), ALLOCATABLE :: CFPLIST ( : ) ! sorted no dups
+        INTEGER,               ALLOCATABLE :: INDEXA  ( : ) ! sorting index
+        CHARACTER(PTENDL3(2)), ALLOCATABLE :: CFPLISTA( : ) ! unsorted dups
+        CHARACTER(PTENDL3(2)), ALLOCATABLE :: CFPLIST ( : ) ! sorted no dups
 
 C...........   Logical file names and unit numbers
 
@@ -79,14 +79,14 @@ C...........   Other local variables
 
         LOGICAL       :: EFLAG = .FALSE.        !  true: error found
 
-        CHARACTER(LEN=FIPLEN3)    CFIP          !  just FIPS code
-        CHARACTER(LEN=PTENDL3(2)) CFIPPLANT     !  FIPS // PLANT
-        CHARACTER(LEN=PTENDL3(2)) PREVFP        !  previous iteration CFIPPLANT
-        CHARACTER(LEN=PLTLEN3)    PLANT         !  just plant ID
-        CHARACTER*256    MESG                   !  message buffer
-        CHARACTER*512    LINE                   !  tmp PTINV input line
+        CHARACTER(FIPLEN3)    CFIP          !  just FIPS code
+        CHARACTER(PTENDL3(2)) CFIPPLANT     !  FIPS // PLANT
+        CHARACTER(PTENDL3(2)) PREVFP        !  previous iteration CFIPPLANT
+        CHARACTER(PLTLEN3)    PLANT         !  just plant ID
+        CHARACTER(256)        MESG          !  message buffer
+        CHARACTER(512)        LINE          !  tmp PTINV input line
 
-        CHARACTER*16  :: PROGNAME = 'EXTRACTIDA'  !  program name
+        CHARACTER(16) :: PROGNAME = 'EXTRACTIDA'  !  program name
 
 C***********************************************************************
 C   begin body of program EXTRACTIDA

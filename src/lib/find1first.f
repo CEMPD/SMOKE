@@ -194,9 +194,9 @@ C...........   EXTERNAL FUNCTIONS
         EXTERNAL  FINDC   
 
 C.........  Function arguments
-        CHARACTER(LEN=*), INTENT (IN) :: KEY        ! key to search for
-        INTEGER,          INTENT (IN) :: N          ! number of entries in LIST
-        CHARACTER(LEN=*), INTENT (IN) :: LIST( N )  ! table to be searched
+        CHARACTER(*), INTENT (IN) :: KEY        ! key to search for
+        INTEGER,      INTENT (IN) :: N          ! number of entries in LIST
+        CHARACTER(*), INTENT (IN) :: LIST( N )  ! table to be searched
         
 C.........  Local function variables            
         INTEGER INDEX

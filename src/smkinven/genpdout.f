@@ -68,7 +68,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         LOGICAL      ENVYN
         INTEGER      FINDC
         INTEGER      INDEX1
@@ -96,15 +96,15 @@ C.........  SUBROUTINE ARGUMENTS
 
 C.........  Local allocatable arrays
         LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: ELECSCC( : )
+        CHARACTER(SCCLEN3), ALLOCATABLE :: ELECSCC( : )
 
 C.........  Local arrays
         LOGICAL         SPSTAT( MXSPDAT )     ! true: special data variable used
         LOGICAL         LFG( 9 )          ! true: source characteristic is valid
 
-        CHARACTER*15    CHRHDRS( NCHARS )     ! Source characteristics headers
-        CHARACTER*50    CHARS( 9 )
-        CHARACTER*40    LABEL( 2 )
+        CHARACTER(15)   CHRHDRS( NCHARS )     ! Source characteristics headers
+        CHARACTER(50)   CHARS( 9 )
+        CHARACTER(40)   LABEL( 2 )
 
 C...........   Other local variables
         INTEGER          I, J, K, L, N, S, T
@@ -128,18 +128,18 @@ C...........   Other local variables
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: create hourly profiles
         LOGICAL, SAVE :: SFLAG    = .FALSE.  ! true: create daily totals
 
-        CHARACTER*256 :: MESG = ' '          ! message buffer
-        CHARACTER*256 :: FMTBUF = ' '        ! format buffer
-        CHARACTER*256 :: FMTBUFB = ' '        ! format buffer B
+        CHARACTER(256) :: MESG = ' '         ! message buffer
+        CHARACTER(256) :: FMTBUF = ' '       ! format buffer
+        CHARACTER(256) :: FMTBUFB = ' '      ! format buffer B
 
-        CHARACTER(LEN=SDSLEN3) BUFFER        ! tmp SCC description
-        CHARACTER(LEN=NAMLEN3) ONAME         ! output file name
-        CHARACTER(LEN=SCCLEN3) TSCC          ! tmp SCC value
-        CHARACTER(LEN=ORSLEN3) CORS          ! tmp ORIS ID
-        CHARACTER(LEN=DSCLEN3) PDSC          ! tmp plant DSC
-        CHARACTER(LEN=DSCLEN3) ODSC          ! tmp ORIS plant DSC
+        CHARACTER(SDSLEN3) BUFFER        ! tmp SCC description
+        CHARACTER(NAMLEN3) ONAME         ! output file name
+        CHARACTER(SCCLEN3) TSCC          ! tmp SCC value
+        CHARACTER(ORSLEN3) CORS          ! tmp ORIS ID
+        CHARACTER(DSCLEN3) PDSC          ! tmp plant DSC
+        CHARACTER(DSCLEN3) ODSC          ! tmp ORIS plant DSC
 
-        CHARACTER*16 :: PROGNAME = 'GENPDOUT' !  program name
+        CHARACTER(16) :: PROGNAME = 'GENPDOUT' !  program name
 
 C***********************************************************************
 C   begin body of program GENPDOUT

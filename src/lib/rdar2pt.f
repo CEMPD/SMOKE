@@ -62,7 +62,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2    CRLF
+        CHARACTER(2)   CRLF
         LOGICAL        ENVYN
         EXTERNAL       CRLF, ENVYN
 
@@ -86,16 +86,16 @@ C...........   For processing:
         INTEGER      , ALLOCATABLE :: LOCFIP  ( : )     ! tmp FIPS codes
         INTEGER      , ALLOCATABLE :: NUMSCC  ( : )     ! no. SCCs per table
         TYPE( AR2PT ), ALLOCATABLE :: UNSRTA2P( :,: )   ! unsorted tables
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: AR2PTSCC( :,: ) ! SCCs per table
+        CHARACTER(SCCLEN3), ALLOCATABLE :: AR2PTSCC( :,: ) ! SCCs per table
 
 C...........   For reporting:
         INTEGER      , ALLOCATABLE :: SCCIDX  ( : )       ! sorting index
         INTEGER      , ALLOCATABLE :: SCCSECTN( : )       ! section no. for SCC
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: INVSCCA( : ) ! unsorted SCCs
+        CHARACTER(SCCLEN3), ALLOCATABLE :: INVSCCA( : ) ! unsorted SCCs
 
 
 C...........   Local arrays
-        CHARACTER*32 SEGMENT( NFIELDS )
+        CHARACTER(32) SEGMENT( NFIELDS )
 
 C...........   Other local variables
         INTEGER         I, J, K, L, N     ! counters and indices
@@ -113,13 +113,13 @@ C...........   Other local variables
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error found
         LOGICAL      :: WFLAG             ! true: convert lat-lons to Western hemisphere
 
-        CHARACTER*10              FIPFMT  !  format to write co/st/cy to string
-        CHARACTER*256             MESG    !  message buffer
-        CHARACTER*512          :: LINE    !  input line
-        CHARACTER(LEN=FIPLEN3) :: CFIP    !  tmp char co/st/cy code
-        CHARACTER(LEN=SCCLEN3) :: TSCC    !  tmp SCC code
+        CHARACTER(10)         FIPFMT  !  format to write co/st/cy to string
+        CHARACTER(256)        MESG    !  message buffer
+        CHARACTER(512)     :: LINE    !  input line
+        CHARACTER(FIPLEN3) :: CFIP    !  tmp char co/st/cy code
+        CHARACTER(SCCLEN3) :: TSCC    !  tmp SCC code
 
-        CHARACTER*16 :: PROGNAME = 'RDAR2PT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDAR2PT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDAR2PT
@@ -439,7 +439,7 @@ C               the contents of the area-to-point factors file
 C...............   EXTERNAL FUNCTIONS and their descriptions:
             LOGICAL         CHKINT
             LOGICAL         CHKREAL
-            CHARACTER*2     CRLF
+            CHARACTER(2)    CRLF
             INTEGER         GETFLINE
             INTEGER         GETNLIST
             INTEGER         STR2INT

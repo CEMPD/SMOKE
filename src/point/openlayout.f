@@ -57,14 +57,14 @@ C...........   INCLUDES:
         INCLUDE 'CONST3.EXT'    ! physical and mathematical constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   VERCHAR
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
 
         EXTERNAL        VERCHAR, PROMPTFFILE, PROMPTMFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: SDATE    ! Julian start date
@@ -85,9 +85,9 @@ C...........   Local variables
 
         INTEGER       J
 
-        CHARACTER*300    MESG      !  buffer for M3EXIT() messages
+        CHARACTER(300)   MESG      !  buffer for M3EXIT() messages
 
-        CHARACTER*16  :: PROGNAME = 'OPENLAYOUT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'OPENLAYOUT'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine OPENLAYOUT

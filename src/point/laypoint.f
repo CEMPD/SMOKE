@@ -67,18 +67,18 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         CHKMETEM
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
         LOGICAL         DSCM3LAY
         INTEGER         ENVINT
         LOGICAL         ENVYN
         INTEGER         FIND1
-        CHARACTER*50    GETCFDSC
-        CHARACTER*10    HHMMSS
+        CHARACTER(50)   GETCFDSC
+        CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
-        CHARACTER*14    MMDDYY
+        CHARACTER(14)   MMDDYY
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         WKDAY
 
         EXTERNAL   CHKMETEM, CRLF, DSCM3GRD, DSCM3LAY, ENVINT, ENVYN, 
@@ -87,13 +87,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        REAL        , PARAMETER :: USTARMIN  = 0.1  ! Min valid value for USTAR
+        REAL, PARAMETER :: USTARMIN  = 0.1  ! Min valid value for USTAR
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  Indicator for which public inventory arrays need to be read
-        INTEGER               , PARAMETER :: NINVARR = 8
-        CHARACTER(LEN=IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
+        INTEGER,            PARAMETER :: NINVARR = 8
+        CHARACTER(IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
      &                                 ( / 'IFIP           '
      &                                   , 'XLOCA          '
      &                                   , 'YLOCA          '
@@ -168,15 +168,15 @@ C...........   Logical names and unit numbers
         INTEGER      :: RDEV = 0!  optional report iff REP_LAYER_MAX is set
         INTEGER         SDEV    !  ASCII part of inventory file
 
-        CHARACTER*16    ANAME   !  ASCII point-source inventory file
-        CHARACTER*16    DNAME   !  dot-point layered met file name
-        CHARACTER*16    ENAME   !  point-source inventory input file
-        CHARACTER*16    GNAME   !  cross-point layered grid file name
-        CHARACTER*16    HNAME   !  hourly input file name
-        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
-        CHARACTER*16    LNAME   !  layer fractions matrix output file
-        CHARACTER*16    SNAME   !  cross-point surface met file name
-        CHARACTER*16    XNAME   !  cross-point layered met file name
+        CHARACTER(16)   ANAME   !  ASCII point-source inventory file
+        CHARACTER(16)   DNAME   !  dot-point layered met file name
+        CHARACTER(16)   ENAME   !  point-source inventory input file
+        CHARACTER(16)   GNAME   !  cross-point layered grid file name
+        CHARACTER(16)   HNAME   !  hourly input file name
+        CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER(16)   LNAME   !  layer fractions matrix output file
+        CHARACTER(16)   SNAME   !  cross-point surface met file name
+        CHARACTER(16)   XNAME   !  cross-point layered met file name
 
 C...........   Other local variables
 
@@ -220,12 +220,12 @@ C...........   Other local variables
         REAL             ZTOP      !  plume top    elevation (m)
         REAL             ZPLM      !  plume height above stack
 
-        REAL*8           METXORIG  ! cross grid X-coord origin of met grid 
-        REAL*8           METYORIG  ! cross grid Y-coord origin of met grid
-        REAL*8           XCELLDG   ! dot grid X-coordinate cell dimension
-        REAL*8           YCELLDG   ! dot grid Y-coordinate cell dimension
-        REAL*8           XORIGDG   ! dot grid X-coordinate origin of grid 
-        REAL*8           YORIGDG   ! dot grid Y-coordinate origin of grid
+        REAL(8)          METXORIG  ! cross grid X-coord origin of met grid 
+        REAL(8)          METYORIG  ! cross grid Y-coord origin of met grid
+        REAL(8)          XCELLDG   ! dot grid X-coordinate cell dimension
+        REAL(8)          YCELLDG   ! dot grid Y-coordinate cell dimension
+        REAL(8)          XORIGDG   ! dot grid X-coordinate origin of grid 
+        REAL(8)          YORIGDG   ! dot grid Y-coordinate origin of grid
 
         LOGICAL       :: BFLAG = .FALSE.  ! true: use plume bottom and top
         LOGICAL       :: CFLAG = .FALSE.  ! true: recalc vel w/ flow & diam
@@ -243,20 +243,20 @@ C...........   Other local variables
         LOGICAL       :: ZSTATIC = .TRUE. ! true: Get heights from GRID_CRO file
         LOGICAL          LFG( 9 )          ! true: source characteristic is valid
 
-        CHARACTER*50     CHARS( 9 )!  tmp source characeristics 
-        CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
-        CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
-        CHARACTER*80  :: GDESC     !  grid description
-        CHARACTER*256    OUTFMT    !  output format for RDEV report
-        CHARACTER*256    BUFFER    !  source characteristics buffer
-        CHARACTER*256    MESG      !  buffer for M3EXIT() messages
+        CHARACTER(50)    CHARS( 9 )!  tmp source characeristics 
+        CHARACTER(50) :: METSCEN   !  temporary string for met scenario name
+        CHARACTER(50) :: CLOUDSHM  !  temporary string for cloud scheme name
+        CHARACTER(80) :: GDESC     !  grid description
+        CHARACTER(256)   OUTFMT    !  output format for RDEV report
+        CHARACTER(256)   BUFFER    !  source characteristics buffer
+        CHARACTER(256)   MESG      !  buffer for M3EXIT() messages
 
-        CHARACTER(LEN=IOVLEN3) VNAME      ! variable name buffer 
-        CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name
-        CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
-        CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
+        CHARACTER(IOVLEN3) VNAME      ! variable name buffer 
+        CHARACTER(IOVLEN3) COORD3D    ! coordinate system name
+        CHARACTER(IOVLEN3) COORUN3D   ! coordinate system projection units
+        CHARACTER(IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
 
-        CHARACTER*16  :: PROGNAME = 'LAYPOINT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'LAYPOINT'   !  program name
 
 C***********************************************************************
 C   begin body of program LAYPOINT

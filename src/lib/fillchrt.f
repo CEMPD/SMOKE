@@ -77,19 +77,19 @@ C...........   Other local variables
         LOGICAL    :: EFLAG = .FALSE.  ! true: error was detected
         LOGICAL       SCCFLAG          ! true: SCC type is different from previous
 
-        CHARACTER*300          MESG    ! message buffer
+        CHARACTER(300)     MESG    ! message buffer
 
-        CHARACTER(LEN=STALEN3) CSTA    ! temporary (character) state code
-        CHARACTER(LEN=SCCLEN3) SCCL    ! left digits of TSCC
-        CHARACTER(LEN=FIPLEN3) CFIP    ! temporary (character) FIPS code
-        CHARACTER(LEN=SRCLEN3) CSRC    ! temporary source char string
-        CHARACTER(LEN=SCCLEN3) TSCC    ! temporary SCC
-        CHARACTER(LEN=SCCLEN3) SCCZERO ! buffer for zero SCC
-        CHARACTER(LEN=SICLEN3) CSIC    ! buffer for SIC
-        CHARACTER(LEN=SICLEN3) CSICL   ! buffer for left 2-digit SIC
-        CHARACTER(LEN=MACLEN3) CMCT    ! buffer for MACT code
+        CHARACTER(STALEN3) CSTA    ! temporary (character) state code
+        CHARACTER(SCCLEN3) SCCL    ! left digits of TSCC
+        CHARACTER(FIPLEN3) CFIP    ! temporary (character) FIPS code
+        CHARACTER(SRCLEN3) CSRC    ! temporary source char string
+        CHARACTER(SCCLEN3) TSCC    ! temporary SCC
+        CHARACTER(SCCLEN3) SCCZERO ! buffer for zero SCC
+        CHARACTER(SICLEN3) CSIC    ! buffer for SIC
+        CHARACTER(SICLEN3) CSICL   ! buffer for left 2-digit SIC
+        CHARACTER(MACLEN3) CMCT    ! buffer for MACT code
 
-        CHARACTER*16 :: PROGNAME = 'FILLCHRT' ! program name
+        CHARACTER(16) :: PROGNAME = 'FILLCHRT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine FILLCHRT

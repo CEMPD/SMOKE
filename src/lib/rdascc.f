@@ -63,9 +63,9 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER         ID7,  ID3
         INTEGER         LID7, LID3
         LOGICAL         EFLAG   !  input error flag
-        CHARACTER*300   MESG    !  message buffer for M3MESG() and M3EXIT()
+        CHARACTER(300)  MESG    !  message buffer for M3MESG() and M3EXIT()
 
-        CHARACTER*16 :: PROGNAME = 'RDASCC' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDASCC' ! program name
 
 
 C***********************************************************************

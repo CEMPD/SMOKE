@@ -57,7 +57,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN
 
@@ -103,10 +103,10 @@ C...........   Other local variables
         LOGICAL      :: RE_ZERO_FLAG = .FALSE. ! true: rule effective of 0 found
         LOGICAL      :: RP_ZERO_FLAG = .FALSE. ! true: rule penetration of 0 found
 
-        CHARACTER(LEN=256)     BUFFER      !  input file line buffer
-        CHARACTER(LEN=256)     MESG        !  message buffer 
+        CHARACTER(256)     BUFFER      !  input file line buffer
+        CHARACTER(256)     MESG        !  message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'PROCINVEN' ! program name
+        CHARACTER(16) :: PROGNAME = 'PROCINVEN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PROCINVEN

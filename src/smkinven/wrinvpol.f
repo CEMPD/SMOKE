@@ -54,7 +54,7 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         LOGICAL       SETENVVAR
 
         EXTERNAL      CRLF, SETENVVAR
@@ -79,11 +79,11 @@ C.............  Local variables
 
         LOGICAL       :: MSGFLAG  = .FALSE.  ! true: need to output error message
 
-        CHARACTER*16           :: FNAME = 'IOAPI_DAT' ! tmp logical name for outputs
-        CHARACTER*256          :: MESG                ! message buffer
-        CHARACTER(LEN=PHYLEN3) :: FPHYS = ' '         ! full physical file name
+        CHARACTER(16)      :: FNAME = 'IOAPI_DAT' ! tmp logical name for outputs
+        CHARACTER(256)     :: MESG                ! message buffer
+        CHARACTER(PHYLEN3) :: FPHYS = ' '         ! full physical file name
 
-        CHARACTER*16 :: PROGNAME = 'WRINVPOL' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRINVPOL' !  program name
 
 C***********************************************************************
 C   begin body of program WRINVPOL

@@ -49,33 +49,33 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         INTEGER                FINDC
         
         EXTERNAL   CRLF, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT  (IN) :: LINE                  ! input line
-        CHARACTER(LEN=*),       INTENT (OUT) :: READDATA( 1,NPTPPOL3 )! array of data values
-        CHARACTER(LEN=IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! array of pollutant names
-        INTEGER,                INTENT (OUT) :: IYEAR                 ! inventory year
-        CHARACTER(LEN=40),      INTENT (OUT) :: DESC                  ! plant description
-        CHARACTER(LEN=ERPLEN3), INTENT (OUT) :: ERPTYP                ! emissions release point type
-        CHARACTER(LEN=STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
-        CHARACTER(LEN=4),       INTENT (OUT) :: HT                    ! stack height
-        CHARACTER(LEN=6),       INTENT (OUT) :: DM                    ! stack diameter
-        CHARACTER(LEN=4),       INTENT (OUT) :: TK                    ! exit temperature
-        CHARACTER(LEN=10),      INTENT (OUT) :: FL                    ! flow rate
-        CHARACTER(LEN=9),       INTENT (OUT) :: VL                    ! exit velocity
-        CHARACTER(LEN=SICLEN3), INTENT (OUT) :: SIC                   ! SIC
-        CHARACTER(LEN=MACLEN3), INTENT (OUT) :: MACT                  ! MACT code
-        CHARACTER(LEN=NAILEN3), INTENT (OUT) :: NAICS                 ! NAICS code
-        CHARACTER(LEN=1),       INTENT (OUT) :: CTYPE                 ! coordinate type
-        CHARACTER(LEN=9),       INTENT (OUT) :: LAT                   ! stack latitude
-        CHARACTER(LEN=9),       INTENT (OUT) :: LON                   ! stack longitude
-        CHARACTER(LEN=2),       INTENT (OUT) :: UTMZ                  ! UTM zone
-        LOGICAL,                INTENT (OUT) :: HDRFLAG               ! true: line is a header line
-        LOGICAL,                INTENT (OUT) :: EFLAG                 ! error flag
+        CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
+        CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NPTPPOL3 )! array of data values
+        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! array of pollutant names
+        INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
+        CHARACTER(40),      INTENT (OUT) :: DESC                  ! plant description
+        CHARACTER(ERPLEN3), INTENT (OUT) :: ERPTYP                ! emissions release point type
+        CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
+        CHARACTER(4),       INTENT (OUT) :: HT                    ! stack height
+        CHARACTER(6),       INTENT (OUT) :: DM                    ! stack diameter
+        CHARACTER(4),       INTENT (OUT) :: TK                    ! exit temperature
+        CHARACTER(10),      INTENT (OUT) :: FL                    ! flow rate
+        CHARACTER(9),       INTENT (OUT) :: VL                    ! exit velocity
+        CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! SIC
+        CHARACTER(MACLEN3), INTENT (OUT) :: MACT                  ! MACT code
+        CHARACTER(NAILEN3), INTENT (OUT) :: NAICS                 ! NAICS code
+        CHARACTER,          INTENT (OUT) :: CTYPE                 ! coordinate type
+        CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
+        CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
+        CHARACTER(2),       INTENT (OUT) :: UTMZ                  ! UTM zone
+        LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
+        LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
@@ -91,11 +91,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=40)      SEGMENT( NSEG ) ! segments of line
-        CHARACTER(LEN=CASLEN3) TCAS            ! tmp cas number
-        CHARACTER(LEN=300)     MESG            ! message buffer
+        CHARACTER(40)      SEGMENT( NSEG ) ! segments of line
+        CHARACTER(CASLEN3) TCAS            ! tmp cas number
+        CHARACTER(300)     MESG            ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDDATANTIPT' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDDATANTIPT' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDDATANTIPT

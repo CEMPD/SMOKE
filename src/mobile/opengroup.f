@@ -55,11 +55,11 @@ C...........   LOCAL VARIABLES and their descriptions:
 
         LOGICAL :: FEXIST   = .FALSE.  !  true: file exists
 
-        CHARACTER(LEN=16)  :: LOGICNAM  !  logical file name of current file
-        CHARACTER(LEN=300) :: FILENAME  !  name of current group file
-        CHARACTER(LEN=300) :: MESG      !  message buffer 
+        CHARACTER(16)  :: LOGICNAM  !  logical file name of current file
+        CHARACTER(300) :: FILENAME  !  name of current group file
+        CHARACTER(300) :: MESG      !  message buffer 
 
-        CHARACTER*16  :: PROGNAME = 'OPENGROUP' ! program name
+        CHARACTER(16)  :: PROGNAME = 'OPENGROUP' ! program name
         
 C***********************************************************************
 C   begin body of program OPENGROUP

@@ -55,7 +55,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN  
 
@@ -68,14 +68,14 @@ C...........   Other local variables
         INTEGER         SPCIOS   ! i/o status for MEG_REPSPC_YN
         INTEGER         I, J     ! counter
 
-        CHARACTER*5     MRGSRC   ! value of MRG_SOURCE E.V.
-        CHARACTER*5     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
-        CHARACTER*5     CTLREAC  ! value of MRG_CTLMAT_REAC E.V.
-        CHARACTER*5     TMPBYDAY ! value of MRG_BYDAY E.V.
-        CHARACTER*100   BUFFER   ! text buffer
-        CHARACTER*300   MESG     ! message buffer
+        CHARACTER(5)    MRGSRC   ! value of MRG_SOURCE E.V.
+        CHARACTER(5)    CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
+        CHARACTER(5)    CTLREAC  ! value of MRG_CTLMAT_REAC E.V.
+        CHARACTER(5)    TMPBYDAY ! value of MRG_BYDAY E.V.
+        CHARACTER(100)  BUFFER   ! text buffer
+        CHARACTER(300)  MESG     ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETMRGEV' ! program name
+        CHARACTER(16) :: PROGNAME = 'GETMRGEV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GETMRGEV

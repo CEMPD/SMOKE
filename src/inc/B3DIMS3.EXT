@@ -60,13 +60,13 @@ C.......
 
 C.......   Names for beis species, emitted model species:
 
-      CHARACTER*4    BIOTYPES( BCATS )
+      CHARACTER(4)   BIOTYPES( BCATS )
       DATA           BIOTYPES / 'ISOP', 'MONO', 'OVOC', 'NO', 'LAI' /
 
-      CHARACTER*4    BIOSPC( BSPCS )
+      CHARACTER(4)   BIOSPC( BSPCS )
       DATA           BIOSPC /  'ISOP', 'MONO', 'OVOC', 'NO  ' /
 
-      CHARACTER*1    SEASON( NSEASONS )
+      CHARACTER      SEASON( NSEASONS )
       DATA           SEASON /  'S' , 'W' /
 
 

@@ -37,19 +37,19 @@ C.........  Facility type constants
         INTEGER, PARAMETER :: M6NONE     = 5    ! MOBILE6 non-facility
 
 C.........  Emission factor units
-        CHARACTER(LEN=4), PARAMETER :: M6UNIT = 'g/mi'
+        CHARACTER(4), PARAMETER :: M6UNIT = 'g/mi'
 
 C.........  Hydrocarbon type (all possible types)
-        CHARACTER(LEN=4), PARAMETER :: M6VPOLS( NM6VPOL ) =
+        CHARACTER(4), PARAMETER :: M6VPOLS( NM6VPOL ) =
      &      ( / 'THC ', 'NMHC', 'VOC ', 'TOG ', 'NMOG' / )
 
 C.........  Emissions processes (all possible types)
-        CHARACTER(LEN=3), PARAMETER :: M6PROCS( MXM6EPR ) =
+        CHARACTER(3), PARAMETER :: M6PROCS( MXM6EPR ) =
      &      ( / 'EXR', 'EXS', 'HOT', 'DNL', 'RST', 
      &          'EVR', 'CRC', 'RFL', 'BRK', 'TIR' / )
 
 C.........  Emission process descriptions
-        CHARACTER(LEN=21), PARAMETER :: M6PRCDSC( MXM6EPR ) =
+        CHARACTER(21), PARAMETER :: M6PRCDSC( MXM6EPR ) =
      &      ( / 'Exhaust running      ',
      &          'Exhaust engine start ',
      &          'Evaporative hot soak ',
@@ -62,12 +62,12 @@ C.........  Emission process descriptions
      &          'Tire wear            ' / )
 
 C.........  Mobile6 vehicle types
-        CHARACTER(LEN=5), PARAMETER :: M6VTYPES( MXM6VTYP ) = 
+        CHARACTER(5), PARAMETER :: M6VTYPES( MXM6VTYP ) = 
      &      ( / 'LDGV ', 'LDGT1', 'LDGT2', 'HDGV ', 
      &          'LDDV ', 'LDDT ', 'HDDV ', 'MC   ' / )
 
 C.........  Mobile6 intrinsic pollutant names
-        CHARACTER(LEN=11), PARAMETER :: M6POLS( MXM6POLS ) =
+        CHARACTER(11), PARAMETER :: M6POLS( MXM6POLS ) =
      &      ( / 'HC         ', 'CO         ', 'NOX        ',            
      &          'SO4        ', 'OCARB25    ', 'ECARB25    ',   
      &          'GASPM25    ', 'SO2        ', 'NH3        ',      
@@ -78,7 +78,7 @@ C.........  Mobile6 intrinsic pollutant names
      &          'TIREPMC    ' / )
 
 C.........  Pollutant descriptions
-        CHARACTER(LEN=12), PARAMETER :: M6POLDSC( MXM6POLS ) =
+        CHARACTER(12), PARAMETER :: M6POLDSC( MXM6POLS ) =
      &      ( / 'HC          ', 'CO          ', 'NOX         ', 
      &          'SO4         ', 'OCARBON 2.5 ', 'ECARBON 2.5 ', 
      &          'GASPM 2.5   ', 'SO2         ', 'NH3         ', 

@@ -68,7 +68,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
@@ -111,19 +111,19 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
         LOGICAL, SAVE :: OFLAG(NPACKET) = .FALSE.   ! true: tmp file has not been opened
 
-        CHARACTER*5     CPOS        ! tmp sorted position of pol
-        CHARACTER*256   LINE        ! read buffer for a line
-        CHARACTER*256   MESG        ! message buffer
+        CHARACTER(5)    CPOS        ! tmp sorted position of pol
+        CHARACTER(256)  LINE        ! read buffer for a line
+        CHARACTER(256)  MESG        ! message buffer
 
-        CHARACTER(LEN=IOVLEN3), SAVE :: RPOL ! pol name for reactivity controls
-        CHARACTER(LEN=FPLLEN3) CPLT       ! tmp point src info through plant
-        CHARACTER(LEN=FPLLEN3) PPLT       ! previous CPLT
-        CHARACTER(LEN=STALEN3) CSTA       ! tmp char state
-        CHARACTER(LEN=STALEN3) PSTA       ! previous char state
-        CHARACTER(LEN=SCCLEN3) TSCC       ! tmp SCC
-        CHARACTER(LEN=SCCLEN3) PSCC       ! previous SCC
+        CHARACTER(IOVLEN3), SAVE :: RPOL ! pol name for reactivity controls
+        CHARACTER(FPLLEN3) CPLT       ! tmp point src info through plant
+        CHARACTER(FPLLEN3) PPLT       ! previous CPLT
+        CHARACTER(STALEN3) CSTA       ! tmp char state
+        CHARACTER(STALEN3) PSTA       ! previous char state
+        CHARACTER(SCCLEN3) TSCC       ! tmp SCC
+        CHARACTER(SCCLEN3) PSCC       ! previous SCC
 
-        CHARACTER*16 :: PROGNAME = 'PROCPKTS' ! program name
+        CHARACTER(16) :: PROGNAME = 'PROCPKTS' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine PROCPKTS
@@ -479,7 +479,7 @@ C.............  Subprogram arguments
             INTEGER     , INTENT (IN) :: CFLG            ! control flag
             INTEGER , INTENT (IN OUT) :: VIDX(NIPPA)     ! pollutant flags
             INTEGER , INTENT (IN OUT) :: NPCNT           ! pollutant/act count
-            CHARACTER*(*), INTENT (IN OUT) :: PNAMES(NIPPA)   ! pollutant/act names
+            CHARACTER(*), INTENT (IN OUT) :: PNAMES(NIPPA)   ! pollutant/act names
 
 C.............  Local variables
             INTEGER   I, S   ! counters and indices

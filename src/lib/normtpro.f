@@ -66,9 +66,9 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         LOGICAL         RENORM   ! true temporal profiles are to be renormalized
 
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16  :: PROGNAME = 'NORMTPRO'  ! program name
+        CHARACTER(16) :: PROGNAME = 'NORMTPRO'  ! program name
 
 C***********************************************************************
 C   begin body of subroutine  NORMTPRO

@@ -52,7 +52,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         FINDC
         INTEGER         GETNLIST
@@ -74,13 +74,13 @@ C...........   Local parameters
         INTEGER, PARAMETER :: FIXVMTWD = 5  ! width of VMT mix columns
 
 C.........  Local allocatable arrays
-        INTEGER     , ALLOCATABLE :: VIDX ( : )    ! vmix index to master list
+        INTEGER, ALLOCATABLE :: VIDX ( : )    ! vmix index to master list
 
-        REAL        , ALLOCATABLE :: VMIX ( : )    ! temporary vehicle mix
+        REAL, ALLOCATABLE :: VMIX ( : )    ! temporary vehicle mix
 
-        CHARACTER*20, ALLOCATABLE :: SEGMENT( : )  ! Segments of parsed lines
+        CHARACTER(20), ALLOCATABLE :: SEGMENT( : )  ! Segments of parsed lines
 
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE :: VTNAMES( : ) ! veh type names
+        CHARACTER(VTPLEN3), ALLOCATABLE :: VTNAMES( : ) ! veh type names
 
 C...........   Other local variables
         INTEGER         I, J, K, L, L2, N, P1, P2, V    !  counters and indices
@@ -102,22 +102,22 @@ C...........   Other local variables
         LOGICAL      :: FFLAG = .FALSE.   !  true: fixed format
         LOGICAL      :: VFLAG = .FALSE.   !  true: header found
 
-        CHARACTER*1            ARTP     !  tmp area code
-        CHARACTER*4            FCTP     !  tmp facility code
-        CHARACTER*10           FIPFMT   !  format to write co/st/cy to string
-        CHARACTER*10           RWTFMT   !  format to write rdway type to string
-        CHARACTER*20           FFORMAT  !  format description
-        CHARACTER*300          LINE     !  line buffer
-        CHARACTER*300          MESG     !  message buffer
+        CHARACTER          ARTP     !  tmp area code
+        CHARACTER(4)       FCTP     !  tmp facility code
+        CHARACTER(10)      FIPFMT   !  format to write co/st/cy to string
+        CHARACTER(10)      RWTFMT   !  format to write rdway type to string
+        CHARACTER(20)      FFORMAT  !  format description
+        CHARACTER(300)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER(LEN=LNKLEN3) CLNK     !  temporary link code
-        CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
-        CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
-        CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
-        CHARACTER(LEN=RWTLEN3) CRWT     !  roadway type no.
-        CHARACTER(LEN=VIDLEN3) VIDZERO ! zero vehicle type
+        CHARACTER(LNKLEN3) CLNK     !  temporary link code
+        CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
+        CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(SCCLEN3) TSCC     !  temporary SCC
+        CHARACTER(RWTLEN3) CRWT     !  roadway type no.
+        CHARACTER(VIDLEN3) VIDZERO ! zero vehicle type
 
-        CHARACTER*16 :: PROGNAME = 'RDVMIX' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDVMIX' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDVMIX

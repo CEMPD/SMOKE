@@ -61,10 +61,10 @@ C...........   LOCAL VARIABLES their descriptions:
 
         REAL          RVAL         ! temporary real value
 
-        CHARACTER*300 BUFFER       ! Key buffer
-        CHARACTER*300 MESG         ! Message buffer
+        CHARACTER(300) BUFFER       ! Key buffer
+        CHARACTER(300) MESG         ! Message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETRFDSC'    ! Program name
+        CHARACTER(16) :: PROGNAME = 'GETRFDSC'    ! Program name
 
 C***********************************************************************
 C   begin body of function GETRFDSC

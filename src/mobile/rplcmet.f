@@ -45,16 +45,16 @@ C.........  This module is the derived meteorology data for emission factors
 C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(LEN=2)  CRLF    
+        CHARACTER(2)  CRLF    
         
         EXTERNAL  CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,            INTENT (IN)    :: CTYPOS             ! position of county in arrays
-        INTEGER,            INTENT (INOUT) :: NSCEN              ! no. actual lines in scenario
-        INTEGER,            INTENT (IN)    :: NLINES             ! no. lines in scenario array
-        CHARACTER(LEN=150), INTENT (INOUT) :: SCENARIO( NLINES ) ! scenario array
-        INTEGER,            INTENT (INOUT) :: STSCEN             ! start of scenario level commandsit
+        INTEGER,        INTENT (IN)    :: CTYPOS             ! position of county in arrays
+        INTEGER,        INTENT (INOUT) :: NSCEN              ! no. actual lines in scenario
+        INTEGER,        INTENT (IN)    :: NLINES             ! no. lines in scenario array
+        CHARACTER(150), INTENT (INOUT) :: SCENARIO( NLINES ) ! scenario array
+        INTEGER,        INTENT (INOUT) :: STSCEN             ! start of scenario level commandsit
 
 C...........   Local allocatable arrays
 
@@ -65,12 +65,12 @@ C...........   Other local variables
         
         INTEGER IOS                       ! I/O status
 
-        CHARACTER(LEN=150) CURRLINE           ! current line from scenario
-        CHARACTER(LEN=150) RPLCLINE           ! replacement line
-        CHARACTER(LEN=19)  COMMAND            ! Mobile 6 command        
-        CHARACTER(LEN=300) MESG               !  message buffer
+        CHARACTER(150) CURRLINE           ! current line from scenario
+        CHARACTER(150) RPLCLINE           ! replacement line
+        CHARACTER(19)  COMMAND            ! Mobile 6 command        
+        CHARACTER(300) MESG               !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RPLCMET'  ! program name
+        CHARACTER(16) :: PROGNAME = 'RPLCMET'  ! program name
         
 C***********************************************************************
 C   begin body of subroutine RPLCMET

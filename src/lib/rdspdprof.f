@@ -48,7 +48,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
         REAL            STR2REAL
@@ -63,7 +63,7 @@ C...........   Local parameters
         INTEGER    , PARAMETER :: MXCOL = 25
 
 C...........   Array of input fields
-        CHARACTER(LEN=6)  SEGMENT( MXCOL )
+        CHARACTER(6)  SEGMENT( MXCOL )
 
 C...........   Local, allocatable arrays
         REAL,    ALLOCATABLE :: SPDPROFA( :,: )   ! unsorted hourly speed profiles
@@ -79,9 +79,10 @@ C...........   Local variables
         
         LOGICAL      :: EFLAG = .FALSE.           ! true: error found
         
-        CHARACTER*150   LINE                      ! Read buffer for a line
-        CHARACTER*256   MESG                      ! message buffer
-        CHARACTER*16 :: PROGNAME = 'RDSPDPROF'    ! program name
+        CHARACTER(150)  LINE                      ! Read buffer for a line
+        CHARACTER(256)  MESG                      ! message buffer
+
+        CHARACTER(16) :: PROGNAME = 'RDSPDPROF'    ! program name
 
 C***********************************************************************
 C   Begin body of subroutine RDSPDPROF

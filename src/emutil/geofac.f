@@ -51,7 +51,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         GETFLINE
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         TRIMLEN
 
         EXTERNAL  GETFLINE, PROMPTFFILE, PROMPTMFILE,
@@ -59,7 +59,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
            
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........  LOCAL VARIABLES
 
@@ -81,13 +81,13 @@ C...........  LOCAL VARIABLES
         INTEGER  STIME                           ! start time
         INTEGER  NLAYS                           ! number of layers in emis file
 
-        CHARACTER*16, ALLOCATABLE :: SPCNAM ( : ) ! species names with facs
-        CHARACTER*16  ENAME                       ! logical name for gridded emis input file
-        CHARACTER*16  ONAME                       ! logical name for output file
-        CHARACTER*16  MNAME                       ! logical name for mask file
-        CHARACTER*300 MESG                        ! message buffer for M3EXIT()
+        CHARACTER(16), ALLOCATABLE :: SPCNAM ( : ) ! species names with facs
+        CHARACTER(16)  ENAME                       ! logical name for gridded emis input file
+        CHARACTER(16)  ONAME                       ! logical name for output file
+        CHARACTER(16)  MNAME                       ! logical name for mask file
+        CHARACTER(300) MESG                        ! message buffer for M3EXIT()
 
-        CHARACTER*16 :: PROGNAME = 'GEOFAC'   !  program name
+        CHARACTER(16) :: PROGNAME = 'GEOFAC'   !  program name
 
 C***********************************************************************
 C   begin body of program

@@ -98,12 +98,12 @@ C...........   Other local variables
         LOGICAL      :: LFLAG = .FALSE. ! true: location data available
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
-        CHARACTER*256   MESG        ! message buffer
+        CHARACTER(256) MESG        ! message buffer
 
-        CHARACTER(LEN=LNKLEN3) :: CLNK = ' '   ! tmp link ID
-        CHARACTER(LEN=LNKLEN3) :: LLNK = ' '   ! previous link ID
+        CHARACTER(LNKLEN3) :: CLNK = ' '   ! tmp link ID
+        CHARACTER(LNKLEN3) :: LLNK = ' '   ! previous link ID
 
-        CHARACTER*16 :: PROGNAME = 'SIZGMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'SIZGMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SIZGMAT

@@ -66,20 +66,20 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   LOCAL PARAMETERS
 
-        CHARACTER*50  CVSW          ! CVS release tag
+        CHARACTER(50) CVSW          ! CVS release tag
 
         PARAMETER ( MICR2G    = 1.0E-6 ,
      &              HA2MSQ    = 1.0E4  , 
      &              CVSW      = '$Name$' )
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
         LOGICAL         ENVYN
         INTEGER         GETFLINE
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   PROMPTMFILE
+        CHARACTER(16)   VERCHAR
 
         EXTERNAL        CRLF, DSCM3GRD, ENVYN, GETFLINE, PROMPTFFILE, 
      &                  PROMPTMFILE, VERCHAR
@@ -91,7 +91,7 @@ C...........   File names and unit numbers
         INTEGER         SDEV    !  unit number for surrogate factors
         INTEGER         UDEV    !  unit number for county land use file
 
-        CHARACTER*16    ENAME   !  logical name for emissions output
+        CHARACTER(16)   ENAME   !  logical name for emissions output
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -105,13 +105,13 @@ C...........   LOCAL VARIABLES and their descriptions:
         LOGICAL ::      GLUSE_YN = .TRUE.   ! gridded or county luse to be used
         LOGICAL ::      LGRID = .FALSE.     ! true: use gridded land use
 
-        CHARACTER*16     COORUNIT           ! coordinate system projection units
-        CHARACTER*16  :: DATGRDNM = ' '     ! input data grid name
-        CHARACTER*16     SRGFMT             ! surrogates format
-        CHARACTER*80     GDESC              ! grid description
-        CHARACTER*256    MESG               ! message buffer
+        CHARACTER(16)    COORUNIT           ! coordinate system projection units
+        CHARACTER(16) :: DATGRDNM = ' '     ! input data grid name
+        CHARACTER(16)    SRGFMT             ! surrogates format
+        CHARACTER(80)    GDESC              ! grid description
+        CHARACTER(256)   MESG               ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RAWBIO'   !  program name
+        CHARACTER(16) :: PROGNAME = 'RAWBIO'   !  program name
 
 C***********************************************************************
 C   begin body of program RAWBIO

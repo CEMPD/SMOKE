@@ -47,35 +47,35 @@ C...........   INCLUDES:
      
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         LOGICAL         STRLIST
 
         EXTERNAL        INDEX1, PROMPTMFILE, STRLIST
 
 C.........  LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
 
         INTEGER,      PARAMETER :: MAXVARS = 80        ! maximum number of variables
 
 C.........  LOCAL VARIABLES
 
 C.........  Allocatable arrays
-        INTEGER,      ALLOCATABLE :: VARFOUND( : ) ! stores which file each variable is in
-        CHARACTER*16, ALLOCATABLE :: VARUNIT( : )  ! stores the units for each variable
-        CHARACTER*80, ALLOCATABLE :: VARDESC( : )  ! stores the description for each variable
-        INTEGER,      ALLOCATABLE :: VARTYPE( : )  ! stores the type of each variable
-        REAL,         ALLOCATABLE :: VARDATA( : )  ! generic array to store variable data
+        INTEGER,       ALLOCATABLE :: VARFOUND( : ) ! stores which file each variable is in
+        CHARACTER(16), ALLOCATABLE :: VARUNIT( : )  ! stores the units for each variable
+        CHARACTER(80), ALLOCATABLE :: VARDESC( : )  ! stores the description for each variable
+        INTEGER,       ALLOCATABLE :: VARTYPE( : )  ! stores the type of each variable
+        REAL,          ALLOCATABLE :: VARDATA( : )  ! generic array to store variable data
 
 C.........  Static arrays
-        CHARACTER(LEN=16) VARLIST( MAXVARS )    ! list of variables to read
+        CHARACTER(16) VARLIST( MAXVARS )    ! list of variables to read
 
 C.........  File units and logical names
         INTEGER         LDEV                    ! unit number for log file
         
-        CHARACTER*16    M1NAME                  ! logical name for 1st met file
-        CHARACTER*16    M2NAME                  ! logical name for 2nd met file
-        CHARACTER*16    INAME                   ! tmp name for met file
-        CHARACTER*16    ONAME                   ! logical name for output file
+        CHARACTER(16)   M1NAME                  ! logical name for 1st met file
+        CHARACTER(16)   M2NAME                  ! logical name for 2nd met file
+        CHARACTER(16)   INAME                   ! tmp name for met file
+        CHARACTER(16)   ONAME                   ! logical name for output file
 
 C.........  Other local variables
         INTEGER         I, J, T                 ! counters
@@ -90,9 +90,9 @@ C.........  Other local variables
         
         LOGICAL      :: GRID_ERR = .FALSE.      ! true: error found in grid settings
 
-        CHARACTER*256   MESG                    ! message buffer
+        CHARACTER(256)  MESG                    ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'METCOMBINE' ! program name
+        CHARACTER(16) :: PROGNAME = 'METCOMBINE' ! program name
 
 C***********************************************************************
 C   begin body of program METCOMBINE

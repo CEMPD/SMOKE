@@ -66,20 +66,20 @@ c      INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures (in m
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2            CRLF
-        LOGICAL                DSCM3GRD
-        LOGICAL                ENVYN
-        CHARACTER(LEN=IODLEN3) GETCFDSC
-        INTEGER                INDEX1
-        LOGICAL                INGRID
-        INTEGER                PROMPTFFILE
-        CHARACTER*16           VERCHAR
+        CHARACTER(2)       CRLF
+        LOGICAL            DSCM3GRD
+        LOGICAL            ENVYN
+        CHARACTER(IODLEN3) GETCFDSC
+        INTEGER            INDEX1
+        LOGICAL            INGRID
+        INTEGER            PROMPTFFILE
+        CHARACTER(16)      VERCHAR
    
         EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, INGRID, 
      &            PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -93,7 +93,7 @@ C...........   Ungridding Matrix
 
 C.........  Array that contains the names of the inventory variables needed 
 C           for this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C...........   File units and logical/physical names
 c        INTEGER         ADEV    !  for adjustments file
@@ -106,11 +106,11 @@ c        INTEGER         ADEV    !  for adjustments file
         INTEGER      :: SDEV = 0!  ASCII part of inventory unit no.
         INTEGER         XDEV    !  for surrogate xref  file
 
-        CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
-        CHARACTER*16    ENAME   !  logical name for i/o api inventory input file
-        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
-        CHARACTER*16    GNAME   !  logical name for grid matrix output file
-        CHARACTER*16    UNAME   !  logical name for ungrid matrix output file
+        CHARACTER(16)   ANAME   !  logical name for ASCII inventory input file
+        CHARACTER(16)   ENAME   !  logical name for i/o api inventory input file
+        CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER(16)   GNAME   !  logical name for grid matrix output file
+        CHARACTER(16)   UNAME   !  logical name for ungrid matrix output file
 
 C...........   Other local variables
         
@@ -142,16 +142,16 @@ C...........   Other local variables
         LOGICAL      :: SRGFLAG = .FALSE.  ! true: surrogates are needed
         LOGICAL      :: UFLAG   = .FALSE.  ! true: create ungridding matrix
 
-        CHARACTER*16            COORUNIT !  coordinate system projection units
-        CHARACTER*16         :: INVGRDNM  = ' '  !  inventory grid name
-        CHARACTER*16         :: SRGGRDNM  = ' '  !  surrogates file grid name
-        CHARACTER*16            SRGFMT   !  surrogates format
-        CHARACTER*80            GDESC    !  grid description
-        CHARACTER*300           MESG     !  message buffer
+        CHARACTER(16)       COORUNIT !  coordinate system projection units
+        CHARACTER(16)    :: INVGRDNM  = ' '  !  inventory grid name
+        CHARACTER(16)    :: SRGGRDNM  = ' '  !  surrogates file grid name
+        CHARACTER(16)       SRGFMT   !  surrogates format
+        CHARACTER(80)       GDESC    !  grid description
+        CHARACTER(300)      MESG     !  message buffer
 
-        CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 !  fields 2 & 3 from PNTS FDESC
+        CHARACTER(IODLEN3)  IFDESC2, IFDESC3 !  fields 2 & 3 from PNTS FDESC
 
-        CHARACTER*16 :: PROGNAME = 'GRDMAT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'GRDMAT'   !  program name
 
 C***********************************************************************
 C   begin body of program GRDMAT

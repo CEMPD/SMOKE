@@ -52,16 +52,16 @@ C...........   INCLUDES:
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
                 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        REAL              CALCRELHUM
-        CHARACTER(LEN=2)  CRLF    
+        REAL          CALCRELHUM
+        CHARACTER(2)  CRLF    
         
         EXTERNAL  CALCRELHUM, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=16), INTENT (IN) :: TNAME    ! logical name for meteorology file
-        INTEGER,           INTENT (IN) :: NCOUNTY  ! no. counties in met file
-        INTEGER,           INTENT (IN) :: JDATE    ! starting date (YYYYDDD)
-        INTEGER,           INTENT (IN) :: JTIME    ! starting time (HHMMSS)
+        CHARACTER(16), INTENT (IN) :: TNAME    ! logical name for meteorology file
+        INTEGER,       INTENT (IN) :: NCOUNTY  ! no. counties in met file
+        INTEGER,       INTENT (IN) :: JDATE    ! starting date (YYYYDDD)
+        INTEGER,       INTENT (IN) :: JTIME    ! starting time (HHMMSS)
 
 C...........   Local allocatable arrays
 
@@ -72,9 +72,9 @@ C...........   Other local variables
 
         LOGICAL :: EFLAG      = .FALSE.   ! true: error found
         
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDHOURTEMP'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDHOURTEMP'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine RDHOURTEMP

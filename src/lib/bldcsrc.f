@@ -69,12 +69,12 @@ C...........   Other local variables
         INTEGER         L
         INTEGER         OUTLEN
 
-        CHARACTER*300   MESG 
-        CHARACTER*300   STRING
+        CHARACTER(300)  MESG 
+        CHARACTER(300)  STRING
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
 
-        CHARACTER*16 :: PROGNAME = 'BLDCSRC' ! program name
+        CHARACTER(16) :: PROGNAME = 'BLDCSRC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine BLDCSRC

@@ -109,44 +109,44 @@
         INTEGER     , PUBLIC :: TRDEV  ! total ASCII report output
 
 !.........  Logical file names
-        CHARACTER*16, PUBLIC :: AENAME ! area inventory input
-        CHARACTER*16, PUBLIC :: ATNAME( 7 ) ! area temporal input
-        CHARACTER*16, PUBLIC :: AGNAME ! area gridding matrix input
-        CHARACTER*16, PUBLIC :: ASNAME ! area speciation matrix input 
-        CHARACTER*16, PUBLIC :: ARNAME ! area reactivity control matrix input
-        CHARACTER*16, PUBLIC :: AUNAME ! area multiplicative cntl matrix input
-        CHARACTER*16, PUBLIC :: AONAME ! area output gridded file
-        CHARACTER*16, PUBLIC :: AREPNAME ! area report file name
+        CHARACTER(16), PUBLIC :: AENAME ! area inventory input
+        CHARACTER(16), PUBLIC :: ATNAME( 7 ) ! area temporal input
+        CHARACTER(16), PUBLIC :: AGNAME ! area gridding matrix input
+        CHARACTER(16), PUBLIC :: ASNAME ! area speciation matrix input 
+        CHARACTER(16), PUBLIC :: ARNAME ! area reactivity control matrix input
+        CHARACTER(16), PUBLIC :: AUNAME ! area multiplicative cntl matrix input
+        CHARACTER(16), PUBLIC :: AONAME ! area output gridded file
+        CHARACTER(16), PUBLIC :: AREPNAME ! area report file name
 
-        CHARACTER*16, PUBLIC :: BONAME ! biogenic output for units conversion
-        CHARACTER*16, PUBLIC :: BTNAME ! biogenic gridded, temporal input
-        CHARACTER*16, PUBLIC :: BREPNAME ! biogenic report file name
+        CHARACTER(16), PUBLIC :: BONAME ! biogenic output for units conversion
+        CHARACTER(16), PUBLIC :: BTNAME ! biogenic gridded, temporal input
+        CHARACTER(16), PUBLIC :: BREPNAME ! biogenic report file name
 
-        CHARACTER*16, PUBLIC :: MENAME ! mobile inventory input
-        CHARACTER*16, PUBLIC :: MTNAME( 7 ) ! mobile temporal input
-        CHARACTER*16, PUBLIC :: MGNAME ! mobile gridding matrix input
-        CHARACTER*16, PUBLIC :: MSNAME ! mobile speciation matrix input
-        CHARACTER*16, PUBLIC :: MRNAME ! mobile reactivity control matrix input
-        CHARACTER*16, PUBLIC :: MUNAME ! mobile multiplicative cntl matrix input
-        CHARACTER*16, PUBLIC :: MONAME ! mobile output gridded file
-        CHARACTER*16, PUBLIC :: MREPNAME ! mobile report file name
+        CHARACTER(16), PUBLIC :: MENAME ! mobile inventory input
+        CHARACTER(16), PUBLIC :: MTNAME( 7 ) ! mobile temporal input
+        CHARACTER(16), PUBLIC :: MGNAME ! mobile gridding matrix input
+        CHARACTER(16), PUBLIC :: MSNAME ! mobile speciation matrix input
+        CHARACTER(16), PUBLIC :: MRNAME ! mobile reactivity control matrix input
+        CHARACTER(16), PUBLIC :: MUNAME ! mobile multiplicative cntl matrix input
+        CHARACTER(16), PUBLIC :: MONAME ! mobile output gridded file
+        CHARACTER(16), PUBLIC :: MREPNAME ! mobile report file name
 
-        CHARACTER*16, PUBLIC :: PENAME ! point inventory input
-        CHARACTER*16, PUBLIC :: PTNAME( 7 ) ! point temporal input
-        CHARACTER*16, PUBLIC :: PGNAME ! point gridding matrix input
-        CHARACTER*16, PUBLIC :: PSNAME ! point speciation matrix input 
-        CHARACTER*16, PUBLIC :: PLNAME ! point layer fractions file 
-        CHARACTER*16, PUBLIC :: PRNAME ! point reactivity control matrix input
-        CHARACTER*16, PUBLIC :: PUNAME ! point multiplicative cntl matrix input
-        CHARACTER*16, PUBLIC :: PONAME ! point output gridded file
-        CHARACTER*16, PUBLIC :: PVNAME ! point elevated stack groups file
-        CHARACTER*16, PUBLIC :: PHNAME ! point hourly explicit plume info file
-        CHARACTER*16, PUBLIC :: PINGNAME ! plume-in-grid emissions file name
-        CHARACTER*16, PUBLIC :: PELVNAME ! elevated ASCII emissions file name
-        CHARACTER*16, PUBLIC :: PREPNAME ! point report file name
+        CHARACTER(16), PUBLIC :: PENAME ! point inventory input
+        CHARACTER(16), PUBLIC :: PTNAME( 7 ) ! point temporal input
+        CHARACTER(16), PUBLIC :: PGNAME ! point gridding matrix input
+        CHARACTER(16), PUBLIC :: PSNAME ! point speciation matrix input 
+        CHARACTER(16), PUBLIC :: PLNAME ! point layer fractions file 
+        CHARACTER(16), PUBLIC :: PRNAME ! point reactivity control matrix input
+        CHARACTER(16), PUBLIC :: PUNAME ! point multiplicative cntl matrix input
+        CHARACTER(16), PUBLIC :: PONAME ! point output gridded file
+        CHARACTER(16), PUBLIC :: PVNAME ! point elevated stack groups file
+        CHARACTER(16), PUBLIC :: PHNAME ! point hourly explicit plume info file
+        CHARACTER(16), PUBLIC :: PINGNAME ! plume-in-grid emissions file name
+        CHARACTER(16), PUBLIC :: PELVNAME ! elevated ASCII emissions file name
+        CHARACTER(16), PUBLIC :: PREPNAME ! point report file name
 
-        CHARACTER*16, PUBLIC :: TONAME ! total output gridded file
-        CHARACTER*16, PUBLIC :: TREPNAME ! total report file name
+        CHARACTER(16), PUBLIC :: TONAME ! total output gridded file
+        CHARACTER(16), PUBLIC :: TREPNAME ! total report file name
 
 !.........  DIMENSIONS AND SOURCE CATEGORY PROPERTIES...
 !.........  Number of sources
@@ -209,60 +209,60 @@
         INTEGER, PUBLIC :: PRNMSPC = 0   ! point , no. reac species
  
 !.........  Pollutant names from inventory/temporal file
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AEINAM( : ) ! area
-        CHARACTER(LEN=IOVLEN3)             , PUBLIC :: BEINAM( 2 ) ! biogenic
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MEINAM( : ) ! mobile
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PEINAM( : ) ! point
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM ( : ) ! all
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: AEINAM( : ) ! area
+        CHARACTER(IOVLEN3)             , PUBLIC :: BEINAM( 2 ) ! biogenic
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: MEINAM( : ) ! mobile
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: PEINAM( : ) ! point
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM ( : ) ! all
 
 !.........  Associated pollutant variable names from inventory file, O=other
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AONAMES( : ) ! area
-        CHARACTER(LEN=IOVLEN3),              PUBLIC :: BONAMES( 2 ) ! biogenic
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MONAMES( : ) ! mobile
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PONAMES( : ) ! point
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: TONAMES( : ) ! all
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: AONAMES( : ) ! area
+        CHARACTER(IOVLEN3),              PUBLIC :: BONAMES( 2 ) ! biogenic
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: MONAMES( : ) ! mobile
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: PONAMES( : ) ! point
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: TONAMES( : ) ! all
 
 !.........  Associated pollutant variable units from inventory file
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: AOUNITS( : ) ! area
-        CHARACTER(LEN=IOULEN3),              PUBLIC :: BOUNITS( 2 ) ! biogenic
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: MOUNITS( : ) ! mobile
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: POUNITS( : ) ! point
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: TOUNITS( : ) ! all
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: AOUNITS( : ) ! area
+        CHARACTER(IOULEN3),              PUBLIC :: BOUNITS( 2 ) ! biogenic
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: MOUNITS( : ) ! mobile
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: POUNITS( : ) ! point
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: TOUNITS( : ) ! all
 
 !.........  Pollutant and activity names from inventory/temporal file
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MEANAM( : ) ! mobile
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : ) ! all
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: MEANAM( : ) ! mobile
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : ) ! all
 
 !.........  Pollutant-to-species names from speciation file
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: ASVDESC( : ) ! area
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: BSVDESC( : ) ! biogenic
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC( : ) ! mobile
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: PSVDESC( : ) ! point
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: TSVDESC( : ) ! all
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: ASVDESC( : ) ! area
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: BSVDESC( : ) ! biogenic
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC( : ) ! mobile
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: PSVDESC( : ) ! point
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: TSVDESC( : ) ! all
 
 !.........  Pollutant-to-species units from speciation file
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: ASVUNIT( : ) ! area
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: BSVUNIT( : ) ! biogenic
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: MSVUNIT( : ) ! mobile
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: PSVUNIT( : ) ! point
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: TSVUNIT( : ) ! all
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: ASVUNIT( : ) ! area
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: BSVUNIT( : ) ! biogenic
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVUNIT( : ) ! mobile
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: PSVUNIT( : ) ! point
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: TSVUNIT( : ) ! all
 
 !.........  Pollutant-to-species names from reactivity file
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: ARVDESC( : ) ! area
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: MRVDESC( : ) ! mobile
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE, PUBLIC :: PRVDESC( : ) ! point
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: ARVDESC( : ) ! area
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MRVDESC( : ) ! mobile
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: PRVDESC( : ) ! point
 
 !.........  Pollutant names from multiplicative control matrix
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AUVNAMS( : ) ! area
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MUVNAMS( : ) ! mobile
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PUVNAMS( : ) ! point
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: AUVNAMS( : ) ! area
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: MUVNAMS( : ) ! mobile
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: PUVNAMS( : ) ! point
 
 !.........  Species names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AEMNAM  ( : ) ! area
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: BEMNAM  ( : ) ! mobile
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MEMNAM  ( : ) ! biogenic
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PEMNAM  ( : ) ! point
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC ::  EMNAM  ( : ) ! all
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: AEMNAM  ( : ) ! area
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: BEMNAM  ( : ) ! mobile
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: MEMNAM  ( : ) ! biogenic
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: PEMNAM  ( : ) ! point
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC ::  EMNAM  ( : ) ! all
 
 !.........  Index between all model species names and all inventory pollutants
         INTEGER, ALLOCATABLE, PUBLIC :: EMIDX( : )
@@ -272,22 +272,22 @@
         INTEGER, PUBLIC :: NUNITS = 0
 
 !.........  Map file pollutants list and physical file names
-        INTEGER                            , PUBLIC :: ANMAP = 0
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AMAPNAM( : )
-        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: AMAPFIL( : )
-        INTEGER                            , PUBLIC :: MNMAP = 0
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MMAPNAM( : )
-        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: MMAPFIL( : )
-        INTEGER                            , PUBLIC :: PNMAP = 0
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PMAPNAM( : )
-        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: PMAPFIL( : )
+        INTEGER,                         PUBLIC :: ANMAP = 0
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: AMAPNAM( : )
+        CHARACTER(PHYLEN3), ALLOCATABLE, PUBLIC :: AMAPFIL( : )
+        INTEGER,                         PUBLIC :: MNMAP = 0
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: MMAPNAM( : )
+        CHARACTER(PHYLEN3), ALLOCATABLE, PUBLIC :: MMAPFIL( : )
+        INTEGER,                         PUBLIC :: PNMAP = 0
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: PMAPNAM( : )
+        CHARACTER(PHYLEN3), ALLOCATABLE, PUBLIC :: PMAPFIL( : )
 
 !.........  NAMES AND INDICES FOR GROUP STRUCTURE
 
 !.........  Grouped variable arrays
         INTEGER, ALLOCATABLE, PUBLIC :: VGRPCNT( : )  ! count per group
         INTEGER, ALLOCATABLE, PUBLIC :: IDVGP( : )    ! group ID number
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: GVNAMES( :,: ) ! var name
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: GVNAMES( :,: ) ! var name
         INTEGER, ALLOCATABLE, PUBLIC :: SIINDEX( :,: ) ! index to EANAM
         INTEGER, ALLOCATABLE, PUBLIC :: SPINDEX( :,: ) ! index to EMNAM
         LOGICAL, ALLOCATABLE, PUBLIC :: GVLOUT ( :,: ) ! output points
@@ -341,10 +341,10 @@
         REAL, ALLOCATABLE, PUBLIC :: GRDFAC( : ) ! for spc/pol/act grid outputs
         REAL, ALLOCATABLE, PUBLIC :: TOTFAC( : ) ! for spc/pol/act st/co outputs
 
-        CHARACTER(LEN=IOULEN3), PUBLIC :: BIOUNIT = ' '  ! biogenic input units
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: GRDUNIT( : ) ! gridded output units
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT( : ) ! speciation units
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: TOTUNIT( : ) ! st/co total units
+        CHARACTER(IOULEN3), PUBLIC :: BIOUNIT = ' '  ! biogenic input units
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: GRDUNIT( : ) ! gridded output units
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT( : ) ! speciation units
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: TOTUNIT( : ) ! st/co total units
 
 !.........  INPUT ARRAYS ...
 !.........  Country/State/County codes

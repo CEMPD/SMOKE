@@ -46,7 +46,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         INTEGER      GETFORMT
         INTEGER      GETINVYR
         INTEGER      JUNIT
@@ -70,10 +70,10 @@ C...........   Other local variables
         LOGICAL   :: EMSFLAG   = .FALSE. !  true: at least one file is EMS format
         LOGICAL   :: IDAORNTI  = .FALSE. !  true: at least one file is IDA or NTI format
 
-        CHARACTER*300   INFILE      !  input file line buffer
-        CHARACTER*500   MESG        !  message buffer
+        CHARACTER(300)  INFILE      !  input file line buffer
+        CHARACTER(500)  MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME =  'CHKLSTFL' ! program name
+        CHARACTER(16) :: PROGNAME =  'CHKLSTFL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine CHKLSTFL

@@ -138,13 +138,13 @@ C.......   Surrogate indices
         REAL            AREA    !  land-use area
         REAL            ATYPE   !  area for this land use type
         INTEGER         NTYPE   !  number of land use types
-        CHARACTER*4     TYPE    !  land use type
-        CHARACTER*80    INBUF   !  input buffer
-        CHARACTER*256   MESG    !  message buffer for M3EXIT()
+        CHARACTER(4)    TYPE    !  land use type
+        CHARACTER(80)   INBUF   !  input buffer
+        CHARACTER(256)  MESG    !  message buffer for M3EXIT()
 
         LOGICAL         EFLAG   !  error flag
 
-        CHARACTER*16 :: PROGNAME = 'CYBIO'   !  program name
+        CHARACTER(16) :: PROGNAME = 'CYBIO'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine  CYBIO

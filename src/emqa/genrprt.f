@@ -76,11 +76,11 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER*2 CRLF
-        INTEGER     MULTUNIT
-        INTEGER     SECSDIFF
+        CHARACTER(2) CRLF
+        INTEGER      MULTUNIT
+        INTEGER      SECSDIFF
 
-        EXTERNAL    CRLF, MULTUNIT, SECSDIFF
+        EXTERNAL     CRLF, MULTUNIT, SECSDIFF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! output file unit number
@@ -90,7 +90,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT (IN) :: TNAME   ! hourly data file name
         CHARACTER(*), INTENT (IN) :: LNAME   ! layer fractions file name
-        CHARACTER(LEN=QAFMTL3),
+        CHARACTER(QAFMTL3),
      &                INTENT (IN) :: OUTFMT  ! output record format
         REAL        , INTENT (IN) :: SMAT( NSRC, NSVARS ) ! mole spc matrix
         LOGICAL     , INTENT (IN) :: ZEROFLAG! true: report zero values
@@ -121,13 +121,13 @@ C...........   Other local variables
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL      :: SFLAG    = .FALSE. ! true: speciation applies to rpt
 
-        CHARACTER*10              POL         ! species from ASCII elevated file
-        CHARACTER*16           :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
-        CHARACTER*256             MESG        !  message buffer
-        CHARACTER*300             LINE        !  tmp line buffer
-        CHARACTER(LEN=IOVLEN3) :: VBUF        !  tmp variable name
+        CHARACTER(10)         POL         ! species from ASCII elevated file
+        CHARACTER(16)      :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
+        CHARACTER(256)        MESG        !  message buffer
+        CHARACTER(300)        LINE        !  tmp line buffer
+        CHARACTER(IOVLEN3) :: VBUF        !  tmp variable name
 
-        CHARACTER*16 :: PROGNAME = 'GENRPRT' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENRPRT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENRPRT

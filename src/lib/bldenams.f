@@ -58,7 +58,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
         
         EXTERNAL        CRLF, INDEX1
@@ -77,18 +77,18 @@ C...........   SUBROUTINE ARGUMENTS
 C.........  Data arrays for variable names...
 
 C.........  Area source variable name parameters
-        CHARACTER(LEN=CPRTLEN3) ARPREFIX( 2:NARPPOL3 )
+        CHARACTER(CPRTLEN3) ARPREFIX( 2:NARPPOL3 )
         DATA ARPREFIX / AVEDAYRT, EMISFCRT, CTLEFFRT, 
      &                  RULEFFRT, RULPENRT /
 
-        CHARACTER(LEN=IOULEN3) ARUNITS( NARPPOL3 )
+        CHARACTER(IOULEN3) ARUNITS( NARPPOL3 )
         DATA ARUNITS / 'tons/yr', 'tons/day', 
      &                 'SCC units', '%', '%', '%' /
 
         INTEGER ARTYPES( NARPPOL3 )
         DATA ARTYPES / M3REAL, M3REAL, M3REAL, M3REAL, M3REAL, M3REAL /
 
-        CHARACTER(LEN=IODLEN3) ARDESCS( NARPPOL3 )
+        CHARACTER(IODLEN3) ARDESCS( NARPPOL3 )
         DATA ARDESCS / 'Annual Emissions'
      &               , 'Average Day Emissions'
      &               , 'Emission Factors'
@@ -98,24 +98,24 @@ C.........  Area source variable name parameters
      &               /
 
 C.........  Mobile source variable name parameters
-        CHARACTER(LEN=CPRTLEN3) MBPREFIX( 2:NMBPPOL3 )
+        CHARACTER(CPRTLEN3) MBPREFIX( 2:NMBPPOL3 )
         DATA MBPREFIX / AVEDAYRT /
 
-        CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
+        CHARACTER(IOULEN3) MBUNITS( NMBPPOL3 )
         DATA MBUNITS / 'tons/yr', 'tons/day' /
 
         INTEGER MBTYPES( NMBPPOL3 )
         DATA MBTYPES / M3REAL, M3REAL /
 
-        CHARACTER(LEN=IODLEN3) MBDESCS( NMBPPOL3 )
+        CHARACTER(IODLEN3) MBDESCS( NMBPPOL3 )
         DATA MBDESCS / 'Annual Data', 'Average Day Data' /
 
 C.........  Point source variable name parameters
-        CHARACTER(LEN=CPRTLEN3) PTPREFIX( 2:NPTPPOL3 )
+        CHARACTER(CPRTLEN3) PTPREFIX( 2:NPTPPOL3 )
         DATA PTPREFIX / AVEDAYRT, CTLEFFRT, RULEFFRT, 
      &                  EMISFCRT, CECOD1RT, CECOD2RT /
 
-        CHARACTER(LEN=IOULEN3) PTUNITS( NPTPPOL3 )
+        CHARACTER(IOULEN3) PTUNITS( NPTPPOL3 )
         DATA PTUNITS / 'tons/yr', 'tons/day', '%', '%',
      &                 'SCC units', 'n/a', 'n/a' /
 
@@ -123,7 +123,7 @@ C.........  Point source variable name parameters
         DATA PTTYPES / M3REAL, M3REAL, M3REAL, M3REAL, M3REAL, 
      &                 M3INT, M3INT /
 
-        CHARACTER(LEN=IODLEN3) PTDESCS( NPTPPOL3 )
+        CHARACTER(IODLEN3) PTDESCS( NPTPPOL3 )
         DATA PTDESCS / 'Annual Emissions'
      &               , 'Average Day Emissions'
      &      , 'Control efficiency (in [0,1], or "MISSING": < -9.0E36)'
@@ -135,7 +135,7 @@ C.........  Point source variable name parameters
 
 C...........   Unsorted pollutant/activity records
         INTEGER       INDEXA ( NIPPA_L )
-        CHARACTER(LEN=IOVLEN3) ABRNAMA( NIPPA_L )    !  pollutant/activity names
+        CHARACTER(IOVLEN3) ABRNAMA( NIPPA_L )    !  pollutant/activity names
 
 C...........   Other local variables
         INTEGER         COD       !  tmp for pollutant/activity code
@@ -145,12 +145,12 @@ C...........   Other local variables
         INTEGER         LCNT      !  same-abrigded-name counter
         INTEGER         POLLNUM   !  position of current pollutant in INVDNAM
 
-        CHARACTER(LEN=IOVLEN3)  LNAM  !  previous pollutant/activity name
-        CHARACTER(LEN=IOVLEN3)  NAM   !  current pollutant/activity name
-        CHARACTER*10    BUFFER        !  tmp string buffer
-        CHARACTER*300   MESG          !  message buffer
+        CHARACTER(IOVLEN3)  LNAM  !  previous pollutant/activity name
+        CHARACTER(IOVLEN3)  NAM   !  current pollutant/activity name
+        CHARACTER(10)   BUFFER    !  tmp string buffer
+        CHARACTER(300)  MESG      !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'BLDENAMS' ! program name
+        CHARACTER(16) :: PROGNAME = 'BLDENAMS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine BLDENAMS

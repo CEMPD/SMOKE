@@ -55,8 +55,7 @@ C...........   INCLUDES:
         INCLUDE 'CPKTDAT.EXT'   !  control packet contents
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
-        CHARACTER*2    CRLF
+        CHARACTER(2)   CRLF
         EXTERNAL       CRLF
 
 C...........   SUBROUTINE ARGUMENTS:
@@ -102,15 +101,15 @@ C...........   Other local variables
         LOGICAL      :: SKIPPOL= .FALSE.   ! true: pol-spec entries skipped
         LOGICAL      :: SKIPREC= .FALSE.   ! true: packet entries skipped
 
-        CHARACTER*5     CPOS               ! char pollutant position in EINAM
-        CHARACTER*256   MESG               ! message buffer
-        CHARACTER(LEN=MACLEN3) MACZERO     ! buffer for zero MACT code
-        CHARACTER(LEN=SCCLEN3) SCCZERO     ! buffer for zero SCC
-        CHARACTER(LEN=SICLEN3) SICZERO     ! buffer for zero SIC
-        CHARACTER(LEN=SICLEN3) CSIC        ! buffer for char SIC
-        CHARACTER(LEN=IOVLEN3) POLDUM      ! dummy pollutant variable
+        CHARACTER(5)       CPOS        ! char pollutant position in EINAM
+        CHARACTER(256)     MESG        ! message buffer
+        CHARACTER(MACLEN3) MACZERO     ! buffer for zero MACT code
+        CHARACTER(SCCLEN3) SCCZERO     ! buffer for zero SCC
+        CHARACTER(SICLEN3) SICZERO     ! buffer for zero SIC
+        CHARACTER(SICLEN3) CSIC        ! buffer for char SIC
+        CHARACTER(IOVLEN3) POLDUM      ! dummy pollutant variable
 
-        CHARACTER*16 :: PROGNAME = 'PKTLOOP' ! program name
+        CHARACTER(16) :: PROGNAME = 'PKTLOOP' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine PKTLOOP

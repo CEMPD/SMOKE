@@ -66,10 +66,10 @@ C...........   Other local variables
         LOGICAL :: OPENMONTH = .FALSE.    ! true: opened month group file
         LOGICAL :: OPENEPIS  = .FALSE.    ! true: opened episode length group file
 
-        CHARACTER(LEN=FIPLEN3) REFCOUNTY                 ! ref. county FIPS code
-        CHARACTER(LEN=FIPLEN3) INVCOUNTY                 ! inv. county FIPS code
+        CHARACTER(FIPLEN3) REFCOUNTY                 ! ref. county FIPS code
+        CHARACTER(FIPLEN3) INVCOUNTY                 ! inv. county FIPS code
                 
-        CHARACTER*16 :: PROGNAME = 'WRTIMEGR'   ! program name
+        CHARACTER(16) :: PROGNAME = 'WRTIMEGR'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRTIMEGR

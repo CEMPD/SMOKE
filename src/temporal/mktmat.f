@@ -89,7 +89,7 @@ C...........   Other Local variables:
         REAL            FAC             !  partial matrix factor
         REAL            YRFAC           !  year to day factor
 
-        CHARACTER*16  :: PROGNAME = 'MKTMAT'  ! program name
+        CHARACTER(16) :: PROGNAME = 'MKTMAT'  ! program name
 
 C***********************************************************************
 C   begin body of subroutine  MKTMAT

@@ -83,10 +83,10 @@ C.........  Local varables
         LOGICAL       WFLAG             ! true: weekly same for all pols
         LOGICAL       HFLAG             ! true: hourly same for all pols
 
-        CHARACTER*100 :: OUTFMT = ' '    ! output format
-        CHARACTER*512 :: BUFFER = ' '    ! output variables buffer
+        CHARACTER(100) :: OUTFMT = ' '    ! output format
+        CHARACTER(512) :: BUFFER = ' '    ! output variables buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRTSUP' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRTSUP' !  program name
 
 C***********************************************************************
 C   begin body of subroutine WRTSUP

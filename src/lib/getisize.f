@@ -53,7 +53,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         GETFORMT
         INTEGER         JUNIT
@@ -67,7 +67,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (OUT) :: NREC     !  no. input recs (src x poll)
 
 C...........   Contents of file 
-        CHARACTER*300,ALLOCATABLE:: LSTSTR( : )! Char strings in PTINV file
+        CHARACTER(300), ALLOCATABLE:: LSTSTR( : )! Char strings in PTINV file
 
 C...........   File units and logical/physical names
         INTEGER         TDEV        !  tmp emissions file for multiple input
@@ -80,11 +80,11 @@ C...........   Other local variables
         INTEGER         FILFMT      !  file format code
         INTEGER         NLINE       !  number of lines
 
-        CHARACTER*300   INFILE      !  input file line buffer
-        CHARACTER*300   LINE        !  input file line buffer
-        CHARACTER*300   MESG        !  message buffer
+        CHARACTER(300)  INFILE      !  input file line buffer
+        CHARACTER(300)  LINE        !  input file line buffer
+        CHARACTER(300)  MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETISIZE' ! program name
+        CHARACTER(16) :: PROGNAME = 'GETISIZE' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GETISIZE

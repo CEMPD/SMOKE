@@ -67,8 +67,8 @@
         REAL   , ALLOCATABLE, PUBLIC:: EMREPREA( : )  ! replacement emissions
         REAL   , ALLOCATABLE, PUBLIC:: PRJFCREA( : )  ! projection factor
         REAL   , ALLOCATABLE, PUBLIC:: MKTPNREA( : )  ! market pen rt [frac/yr]
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCREA( : ) ! New SCC
-        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: CSPFREA( : ) ! SPROF
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCREA( : ) ! New SCC
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: CSPFREA( : ) ! SPROF
 
 !.........  PROJECT PTS/AMS-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: IPRJSIC ( : )  ! SIC code
@@ -86,7 +86,7 @@
         REAL   , ALLOCATABLE, PUBLIC:: EMSTOTL ( : )  ! aggregated factor
 
 !.........  MACT-packet-specific data tables
-        CHARACTER(LEN=STPLEN3), ALLOCATABLE, PUBLIC:: CMACSRCTYP( : )  ! source code type
+        CHARACTER(STPLEN3), ALLOCATABLE, PUBLIC:: CMACSRCTYP( : )  ! source code type
         REAL   , ALLOCATABLE, PUBLIC:: MACEXEFF( : )  ! CE for existing sources (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: MACNWEFF( : )  ! CE for new sources (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: MACNWFRC( : )  ! fraction of new sources (0-100)
@@ -112,7 +112,7 @@
 
         LOGICAL, ALLOCATABLE :: GRPFLAG ( : )   ! true: group controlled
 
-        CHARACTER(LEN=STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
+        CHARACTER(STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
 
 
 !..............................................................................
@@ -125,8 +125,8 @@
         LOGICAL, PUBLIC :: POLSFLAG = .FALSE. ! true: proj data-spec assignment
         LOGICAL, ALLOCATABLE, PUBLIC :: PCTLFLAG( :,: ) ! control flags
 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMMULT( : ) ! mult
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMPROJ( : ) ! projectn
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMMULT( : ) ! mult
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: PNAMPROJ( : ) ! projectn
 
 !.........  Generic projection matrix (used in Smkreport, structure
 !           plans for future 2-d structure)
@@ -164,14 +164,14 @@
         REAL   , ALLOCATABLE, PUBLIC :: PCRMKTPN( : ) ! point
 
 !.........  Reactivity-based source category codes (SCCs) 
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: ACRCSCC( : ) ! area
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: MCRCSCC( : ) ! mobile
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: PCRCSCC( : ) ! point
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: ACRCSCC( : ) ! area
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: MCRCSCC( : ) ! mobile
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: PCRCSCC( : ) ! point
 
 !.........  Reactivity-based speciation profile codes 
-        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: ACRSPROF( : ) ! area
-        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: MCRSPROF( : ) ! mobile
-        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: PCRSPROF( : ) ! point
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: ACRSPROF( : ) ! area
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: MCRSPROF( : ) ! mobile
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: PCRSPROF( : ) ! point
 
 !.........  Reactivity-based speciation factors (mole-based or mass-based )
         REAL   , ALLOCATABLE, PUBLIC :: ACRFAC( :,: ) ! area: ansreac, ansmatv

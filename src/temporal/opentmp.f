@@ -58,14 +58,14 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
-        INTEGER                INDEX1
-        INTEGER                IOAPI_GRD_SIZE
-        CHARACTER(LEN=IODLEN3) GETCFDSC
-        INTEGER                GETIFDSC
-        CHARACTER(LEN=IOULEN3) MULTUNIT
-        INTEGER                PROMPTFFILE
-        CHARACTER*16           VERCHAR
+        CHARACTER(2)       CRLF
+        INTEGER            INDEX1
+        INTEGER            IOAPI_GRD_SIZE
+        CHARACTER(IODLEN3) GETCFDSC
+        INTEGER            GETIFDSC
+        CHARACTER(IOULEN3) MULTUNIT
+        INTEGER            PROMPTFFILE
+        CHARACTER(16)      VERCHAR
 
         EXTERNAL        CRLF, INDEX1, IOAPI_GRD_SIZE, GETCFDSC, 
      &                  GETIFDSC, MULTUNIT, VERCHAR
@@ -82,7 +82,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: PDEV   ! unit number of temporal supmtl file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C...........   Other local variables
 
@@ -94,13 +94,13 @@ C...........   Other local variables
         INTEGER         NVARFILE    ! number of variables per file
         INTEGER         PYEAR       ! projected year from inventory file (or -1)
 
-        CHARACTER*5     CTZONE      ! string of time zone
-        CHARACTER*300   MESG        ! message buffer 
+        CHARACTER(5)    CTZONE      ! string of time zone
+        CHARACTER(300)  MESG        ! message buffer 
 
-        CHARACTER(LEN=NAMLEN3)  NAMBUF           ! file name buffer
-        CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
+        CHARACTER(NAMLEN3)  NAMBUF           ! file name buffer
+        CHARACTER(IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
 
-        CHARACTER*16 :: PROGNAME = 'OPENTMP' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENTMP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENTMP

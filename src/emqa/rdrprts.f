@@ -56,7 +56,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         LOGICAL       BLKORCMT
         INTEGER       GETNLIST
         INTEGER       INDEX1
@@ -67,7 +67,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! File unit number
 
 C...........   Line parsing array
-        CHARACTER*300 SEGMENT( 100 )
+        CHARACTER(300) SEGMENT( 100 )
  
 C...........   Other local variables
         INTEGER          H, I, J, L, N    ! counters and indices
@@ -79,13 +79,13 @@ C...........   Other local variables
 
         LOGICAL       :: EFLAG   = .FALSE. !  true: error found
 
-        CHARACTER*300    BUFFER            !  line work buffer
-        CHARACTER*300    LINE              !  line input buffer
-        CHARACTER*300    MESG              !  message buffer
+        CHARACTER(300)   BUFFER            !  line work buffer
+        CHARACTER(300)   LINE              !  line input buffer
+        CHARACTER(300)   MESG              !  message buffer
 
-        CHARACTER(LEN=IOVLEN3) :: CBUF     !  tmp pollutant buffer
+        CHARACTER(IOVLEN3) :: CBUF     !  tmp pollutant buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDRPRTS' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDRPRTS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDRPRTS

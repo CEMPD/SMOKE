@@ -43,8 +43,8 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER           STR2INT
-        CHARACTER(LEN=2)  CRLF    
+        INTEGER       STR2INT
+        CHARACTER(2)  CRLF    
         
         EXTERNAL  STR2INT, CRLF
 
@@ -68,11 +68,11 @@ C...........   Other local variables
 
         LOGICAL   :: EFLAG     = .FALSE.  !  true: error found
                 
-        CHARACTER   CONTCHAR              ! continuation character from SPDSUM file
+        CHARACTER   CONTCHAR          ! continuation character from SPDSUM file
         
-        CHARACTER(LEN=300)     MESG       !  message buffer
+        CHARACTER(300)     MESG       !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSPDSRC'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSPDSRC'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSPDSRC

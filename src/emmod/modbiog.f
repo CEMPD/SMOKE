@@ -46,7 +46,7 @@ C...........   Emission factor, vegetation types tables:
         INTEGER, ALLOCATABLE, PUBLIC :: LAI  ( : )     !  Leaf area index
         REAL,    ALLOCATABLE, PUBLIC :: EMFAC( :,: )   !  Emission factors
 
-        CHARACTER(LEN=BVGLEN3), ALLOCATABLE, PUBLIC :: VEGID( : )     !  Veg types
+        CHARACTER(BVGLEN3), ALLOCATABLE, PUBLIC :: VEGID( : )     !  Veg types
 
 C.......   Gridded normalized emissions arrays
 

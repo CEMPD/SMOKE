@@ -54,7 +54,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         FINDC
 
@@ -75,20 +75,20 @@ C...........   Other local variables
         LOGICAL     :: FIRSTIME = .TRUE.  ! true: first time routine is called
         LOGICAL     :: REPDEFLT = .TRUE.  ! true: report default applied
 
-        CHARACTER*300            BUFFER   !  source characteristics
-        CHARACTER*300            MESG     !  message buffer
+        CHARACTER(300)           BUFFER   !  source characteristics
+        CHARACTER(300)           MESG     !  message buffer
 
-        CHARACTER(LEN=SRCLEN3)   CSRC     ! tmp source chars string
-        CHARACTER(LEN=STALEN3)   CSTA     ! tmp Country/state code
-        CHARACTER(LEN=SCCLEN3)   TSCC     ! tmp 10-digit SCC
-        CHARACTER(LEN=SCCLEN3)   TSCCL    ! tmp left digits of TSCC
-        CHARACTER(LEN=SS0LEN3):: CHK11=' '! tmp FIPS // Plant // SCC
-        CHARACTER(LEN=FPLLEN3):: CHK10=' '! tmp FIPS code // plant id
-        CHARACTER(LEN=FPSLEN3):: CHK08=' '! tmp FIPS code // left SCC
-        CHARACTER(LEN=STSLEN3):: CHK05=' '! tmp Country/state code // left SCC
-        CHARACTER(LEN=VIDLEN3), SAVE :: VIDZERO  ! zero vehicle type
+        CHARACTER(SRCLEN3)   CSRC     ! tmp source chars string
+        CHARACTER(STALEN3)   CSTA     ! tmp Country/state code
+        CHARACTER(SCCLEN3)   TSCC     ! tmp 10-digit SCC
+        CHARACTER(SCCLEN3)   TSCCL    ! tmp left digits of TSCC
+        CHARACTER(SS0LEN3):: CHK11=' '! tmp FIPS // Plant // SCC
+        CHARACTER(FPLLEN3):: CHK10=' '! tmp FIPS code // plant id
+        CHARACTER(FPSLEN3):: CHK08=' '! tmp FIPS code // left SCC
+        CHARACTER(STSLEN3):: CHK05=' '! tmp Country/state code // left SCC
+        CHARACTER(VIDLEN3), SAVE :: VIDZERO  ! zero vehicle type
 
-        CHARACTER*16 :: PROGNAME = 'GETVMIX' ! program name
+        CHARACTER(16) :: PROGNAME = 'GETVMIX' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GETVMIX

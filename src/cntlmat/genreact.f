@@ -65,7 +65,7 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         FINDC
         INTEGER         INDEX1
@@ -77,12 +77,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: PYEAR  ! projection year for reactivity
         CHARACTER(*), INTENT (IN) :: ENAME  ! emission inventory file name
-        CHARACTER(LEN=IOVLEN3), INTENT (IN) :: RPOL! pol for procssing reactvity
+        CHARACTER(IOVLEN3), INTENT (IN) :: RPOL! pol for procssing reactvity
         LOGICAL     , INTENT (IN) :: USEPOL( NIPOL ) ! true: pol valid for pkt
 
 C...........   Local parameters
         INTEGER, PARAMETER :: NHEADER  = 15
-        CHARACTER*15, PARAMETER :: HEADERS( NHEADER ) = 
+        CHARACTER(15), PARAMETER :: HEADERS( NHEADER ) = 
      &                          ( / 'Source         ',
      &                              'Region         ',
      &                              'Plant          ',
@@ -104,22 +104,22 @@ C...........   Local arrays allocated by subroutine arguments
         INTEGER          HINDX( NHEADER )     !  header label index
         INTEGER          HCWID( NHEADER )     !  header label widths
         LOGICAL          LF   ( MXCHRS )      !  true: column should be output
-        CHARACTER*20     CHARS( MXCHRS )      !  source fields for output
+        CHARACTER(20)    CHARS( MXCHRS )      !  source fields for output
 
 C.........  Allocatable arrays
         INTEGER, ALLOCATABLE :: ISREA( : )   ! reactivity control data table index
         REAL   , ALLOCATABLE :: EMIS ( : )   ! base inventory emissions
 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MASSONAM( : ) ! mass output species names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MOLEONAM( : ) ! mole output species names
+        CHARACTER(IOVLEN3), ALLOCATABLE :: MASSONAM( : ) ! mass output species names
+        CHARACTER(IOVLEN3), ALLOCATABLE :: MOLEONAM( : ) ! mole output species names
 
 C...........   Logical names and unit numbers
         INTEGER, SAVE :: PDEV         !  speciation profiles unit no.
         INTEGER       :: SDEV         !  supplement file unit no.
 
-        CHARACTER*16  :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
-        CHARACTER*16     SNAME   ! logical name for mass-based react. cntrl mat
-        CHARACTER*16     LNAME   ! logical name for mole-based react. cntrl mat
+        CHARACTER(16) :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
+        CHARACTER(16)    SNAME   ! logical name for mass-based react. cntrl mat
+        CHARACTER(16)    LNAME   ! logical name for mole-based react. cntrl mat
 
 C...........   Other local variables
 
@@ -140,7 +140,7 @@ C...........   Other local variables
         REAL             EMREP       ! tmp replacement emissions
         REAL             YFAC        ! tmp yr conversion factor
 
-        CHARACTER(LEN=SPNLEN3) SPCODE ! tmp speciation profile code
+        CHARACTER(SPNLEN3) SPCODE ! tmp speciation profile code
 
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
@@ -150,14 +150,14 @@ C...........   Other local variables
         LOGICAL, SAVE :: MOLEOUT  = .FALSE.  ! true: output mole-based spc facs
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point source processing
 
-        CHARACTER*4      OUTTYPE             ! speciation output type
-        CHARACTER(LEN=IOVLEN3) VNAM          ! tmp average day var name
-        CHARACTER*256    BUFFER              ! string buffer for building output fmt
-        CHARACTER*256    HDRSTR              ! string for part of header line
-        CHARACTER*256    MESG                ! message buffer
-        CHARACTER*256    OUTFMT              ! output format for report
+        CHARACTER(4)     OUTTYPE             ! speciation output type
+        CHARACTER(IOVLEN3) VNAM              ! tmp average day var name
+        CHARACTER(256)   BUFFER              ! string buffer for building output fmt
+        CHARACTER(256)   HDRSTR              ! string for part of header line
+        CHARACTER(256)   MESG                ! message buffer
+        CHARACTER(256)   OUTFMT              ! output format for report
 
-        CHARACTER*16  :: PROGNAME = 'GENREACT' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENREACT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENREACT
@@ -637,11 +637,11 @@ C               other sources.
 C.............  Local variables
             INTEGER                L2
 
-            CHARACTER*300          BUFFER   ! source information buffer
-            CHARACTER*300          MESG     ! message buffer
-            CHARACTER(LEN=FIPLEN3) CFIP     ! tmp (character) FIPS code
-            CHARACTER(LEN=SRCLEN3) CSRC     ! tmp source chars string
-            CHARACTER(LEN=SCCLEN3) TSCC     ! tmp 10-digit SCC
+            CHARACTER(300)     BUFFER   ! source information buffer
+            CHARACTER(300)     MESG     ! message buffer
+            CHARACTER(FIPLEN3) CFIP     ! tmp (character) FIPS code
+            CHARACTER(SRCLEN3) CSRC     ! tmp source chars string
+            CHARACTER(SCCLEN3) TSCC     ! tmp 10-digit SCC
 
 C----------------------------------------------------------------------
 

@@ -44,9 +44,9 @@ C...........   ARGUMENTS and their descriptions:
 
 C...........   LOCAL VARIABLES their descriptions:
 
-        CHARACTER*300   MESG                   ! Message buffer
+        CHARACTER(300)  MESG                   ! Message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETINAME'  ! Program name
+        CHARACTER(16) :: PROGNAME = 'GETINAME'  ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETINAME

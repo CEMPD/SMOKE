@@ -43,7 +43,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       GETEFILE
         INTEGER       JUNIT
 
@@ -62,10 +62,10 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subroutine called
 	
-        CHARACTER*200, SAVE :: PATHNM         ! path name for tmp file
-        CHARACTER*220          FILENM                ! file name
-        CHARACTER*256          MESG                  ! message buffer
-        CHARACTER*16        :: PROGNAME = 'OPENCTMP' ! program name
+        CHARACTER(200), SAVE :: PATHNM         ! path name for tmp file
+        CHARACTER(220)          FILENM                ! file name
+        CHARACTER(256)          MESG                  ! message buffer
+        CHARACTER(16)        :: PROGNAME = 'OPENCTMP' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine OPENCTMP

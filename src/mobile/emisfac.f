@@ -70,12 +70,12 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         LOGICAL         ENVYN
         INTEGER         GETFLINE
         INTEGER         CVTRDTYPE
         INTEGER         CVTVEHTYPE
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         SETENVVAR
         INTEGER         SECSDIFF
         INTEGER         STR2INT
@@ -88,19 +88,19 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: GRPLIST( :,: ) ! contents of GROUP file
         INTEGER, ALLOCATABLE :: TEMPCTY( : )   ! list of counties from temperature file
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: RAWSUBS( : )  ! list of pollutants to be
+        CHARACTER(IOVLEN3), ALLOCATABLE :: RAWSUBS( : )  ! list of pollutants to be
                                                              ! subtracted from HC
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
         
 C.........  Unit numbers and logical file names
         INTEGER         CDEV     ! unit number for county MOBILE6 scenarios file (M6LIST)
@@ -114,11 +114,11 @@ C.........  Unit numbers and logical file names
         INTEGER         VDEV     ! unit number for inventory data table
         INTEGER         ZDEV     ! unit number for speed profiles file
         
-        CHARACTER*16    ANAME   !  logical name for ASCII inventory file
-        CHARACTER*16    ENAME   !  logical name for I/O API inventory file   
-        CHARACTER*16    FNAME   !  logical name for I/O API emission factors file
-        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
-        CHARACTER*16    TNAME   !  logical name for I/O API temperature file
+        CHARACTER(16)   ANAME   !  logical name for ASCII inventory file
+        CHARACTER(16)   ENAME   !  logical name for I/O API inventory file   
+        CHARACTER(16)   FNAME   !  logical name for I/O API emission factors file
+        CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER(16)   TNAME   !  logical name for I/O API temperature file
 
 C.........   Other local variables
         INTEGER    I, J, K, L, L2! counters and indices
@@ -150,19 +150,19 @@ C.........   Other local variables
         LOGICAL :: FNDOUTPUT = .FALSE.   ! true: found output hydrocarbon
         LOGICAL :: SPDFLAG  = .TRUE.     ! true: use speed profiles
         
-        CHARACTER*20           MODELNAM  ! emission factor model name
-        CHARACTER*20           GRP_NAME  ! temperature aggregation group
-        CHARACTER(LEN=IOVLEN3) VOLNAM    ! volatile pollutant name
-        CHARACTER(LEN=280)     M6INPUT   ! Mobile6 input file name
-        CHARACTER(LEN=200)     TEMPDIR   ! location of hourly temperature files
-        CHARACTER(LEN=256)     TEMPNAME  ! full temperature file name
-        CHARACTER(LEN=200)     M6DIR     ! location of MOBILE6 files
-        CHARACTER(LEN=200)     EMISDIR   ! directory for output EF files
-        CHARACTER(LEN=20)      SEARCHSTR ! string used in search
-        CHARACTER(LEN=MXDLEN3) TEMPLINE  ! line from file description
-        CHARACTER*300          MESG      ! message buffer 
+        CHARACTER(20)      MODELNAM  ! emission factor model name
+        CHARACTER(20)      GRP_NAME  ! temperature aggregation group
+        CHARACTER(IOVLEN3) VOLNAM    ! volatile pollutant name
+        CHARACTER(280)     M6INPUT   ! Mobile6 input file name
+        CHARACTER(200)     TEMPDIR   ! location of hourly temperature files
+        CHARACTER(256)     TEMPNAME  ! full temperature file name
+        CHARACTER(200)     M6DIR     ! location of MOBILE6 files
+        CHARACTER(200)     EMISDIR   ! directory for output EF files
+        CHARACTER(20)      SEARCHSTR ! string used in search
+        CHARACTER(MXDLEN3) TEMPLINE  ! line from file description
+        CHARACTER(300)     MESG      ! message buffer 
 
-        CHARACTER*16  :: PROGNAME = 'EMISFAC' ! program name
+        CHARACTER(16) :: PROGNAME = 'EMISFAC' ! program name
         
 C***********************************************************************
 C   begin body of program EMISFAC

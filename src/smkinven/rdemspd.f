@@ -64,7 +64,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         LOGICAL      ENVYN
         INTEGER      FIND1
         INTEGER      FINDC
@@ -96,7 +96,7 @@ C.........  SUBROUTINE ARGUMENTS
 
 C...........   Local list of bad sources to prevent duplicate writing of error
 C              messages
-        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, SAVE :: BADSRC( : )
+        CHARACTER(ALLLEN3), ALLOCATABLE, SAVE :: BADSRC( : )
 
 C...........   Local list of FIPS start/end positions to facilitate
 C              faster lookups
@@ -148,21 +148,21 @@ C...........   Other local variables
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
 
-        CHARACTER*100 :: BUFFER = ' '     ! src description buffer 
-        CHARACTER*300 :: LINE   = ' '     ! line buffer 
-        CHARACTER*300 :: MESG   = ' '     ! message buffer
+        CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
+        CHARACTER(300) :: LINE   = ' '    ! line buffer 
+        CHARACTER(300) :: MESG   = ' '    ! message buffer
 
-        CHARACTER(LEN=FIPLEN3) CFIP      ! tmp co/st/cy code
-        CHARACTER(LEN=POLLEN3) CDAT      ! tmp data name
-        CHARACTER(LEN=CHRLEN3) CHAR4     ! tmp characteristic 4
-        CHARACTER(LEN=PLTLEN3) FCID      ! tmp facility ID
-        CHARACTER(LEN=CHRLEN3) SKID      ! tmp stack ID
-        CHARACTER(LEN=CHRLEN3) DVID      ! tmp device ID
-        CHARACTER(LEN=CHRLEN3) PRID      ! tmp process ID
-        CHARACTER(LEN=SCCLEN3) TSCC      ! tmp source category code
-        CHARACTER(LEN=ALLLEN3) CSRC      ! tmp source string
+        CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
+        CHARACTER(POLLEN3) CDAT      ! tmp data name
+        CHARACTER(CHRLEN3) CHAR4     ! tmp characteristic 4
+        CHARACTER(PLTLEN3) FCID      ! tmp facility ID
+        CHARACTER(CHRLEN3) SKID      ! tmp stack ID
+        CHARACTER(CHRLEN3) DVID      ! tmp device ID
+        CHARACTER(CHRLEN3) PRID      ! tmp process ID
+        CHARACTER(SCCLEN3) TSCC      ! tmp source category code
+        CHARACTER(ALLLEN3) CSRC      ! tmp source string
 
-        CHARACTER*16 :: PROGNAME = 'RDEMSPD' !  program name
+        CHARACTER(16) :: PROGNAME = 'RDEMSPD' !  program name
 
 C***********************************************************************
 C   begin body of program RDEMSPD

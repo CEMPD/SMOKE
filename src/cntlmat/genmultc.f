@@ -70,31 +70,31 @@ C...........   INCLUDES
         INCLUDE 'FLTERR.EXT'    !  functions for comparing two numbers
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2 CRLF
-        LOGICAL     ENVYN
-        INTEGER     GETEFILE
-        INTEGER     INDEX1
-        INTEGER     PROMPTFFILE
-        REAL        YR2DAY
+        CHARACTER(2) CRLF
+        LOGICAL      ENVYN
+        INTEGER      GETEFILE
+        INTEGER      INDEX1
+        INTEGER      PROMPTFFILE
+        REAL         YR2DAY
 
         EXTERNAL  CRLF, ENVYN, GETEFILE, INDEX1, PROMPTFFILE, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
 
-        INTEGER     , INTENT (IN OUT) :: CDEV   ! file unit no. for tmp CTL file 
-        INTEGER     , INTENT (IN OUT) :: GDEV   ! file unit no. for tmp CTG file
-        INTEGER     , INTENT (IN OUT) :: LDEV   ! file unit no. for tmp ALW file
-        INTEGER     , INTENT (IN OUT) :: MDEV   ! file unit no. for tmp MACT file
-        INTEGER     , INTENT (IN) :: NCPE   ! no. of control packet entries
-        INTEGER     , INTENT (IN) :: PYEAR  ! projected year, or missing
-        CHARACTER*16, INTENT (IN) :: ENAME  ! logical name for i/o api 
-                                            ! inventory input file
-        CHARACTER*16, INTENT (IN OUT) :: MNAME  ! logical name for mult. cntl. mat.
-        LOGICAL     , INTENT (IN) :: CFLAG  ! true = apply CTL controls
-        LOGICAL     , INTENT (IN) :: GFLAG  ! true = apply CTG controls
-        LOGICAL     , INTENT (IN) :: LFLAG  ! true = apply ALW controls
-        LOGICAL     , INTENT (IN) :: SFLAG  ! true = apply EMS_CTL controls
-        LOGICAL     , INTENT (IN) :: MFLAG  ! true = apply MACT controls
+        INTEGER,       INTENT (IN OUT) :: CDEV   ! file unit no. for tmp CTL file 
+        INTEGER,       INTENT (IN OUT) :: GDEV   ! file unit no. for tmp CTG file
+        INTEGER,       INTENT (IN OUT) :: LDEV   ! file unit no. for tmp ALW file
+        INTEGER,       INTENT (IN OUT) :: MDEV   ! file unit no. for tmp MACT file
+        INTEGER,       INTENT (IN) :: NCPE   ! no. of control packet entries
+        INTEGER,       INTENT (IN) :: PYEAR  ! projected year, or missing
+        CHARACTER(16), INTENT (IN) :: ENAME  ! logical name for i/o api 
+                                             ! inventory input file
+        CHARACTER(16), INTENT (IN OUT) :: MNAME  ! logical name for mult. cntl. mat.
+        LOGICAL,       INTENT (IN) :: CFLAG  ! true = apply CTL controls
+        LOGICAL,       INTENT (IN) :: GFLAG  ! true = apply CTG controls
+        LOGICAL,       INTENT (IN) :: LFLAG  ! true = apply ALW controls
+        LOGICAL,       INTENT (IN) :: SFLAG  ! true = apply EMS_CTL controls
+        LOGICAL,       INTENT (IN) :: MFLAG  ! true = apply MACT controls
 
 C...........   Local allocatable arrays
 c        INTEGER, ALLOCATABLE :: ALWINDX ( :,: ) ! indices to ALW controls table
@@ -108,7 +108,7 @@ c        REAL   , ALLOCATABLE :: GRPOUTEM( :,: ) ! controlled emissions
 
 c        LOGICAL, ALLOCATABLE :: GRPFLAG ( : )   ! true: group controlled
 
-c        CHARACTER(LEN=STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
+c        CHARACTER(STALEN3+SCCLEN3), ALLOCATABLE :: GRPCHAR( : ) ! group chars
 c        REAL   , ALLOCATABLE :: BACKOUT ( : )   ! factor used to account for pol
                                                 ! specific control info that is
                                                 ! already in the inventory
@@ -118,9 +118,9 @@ c        REAL   , ALLOCATABLE :: FACTOR  ( : )   ! multiplicative controls
 C.........   Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
         INTEGER                 ODEV( 4 )             ! tmp output files
-        CHARACTER(LEN=IOVLEN3)  OUTNAMES( NVCMULT,6 ) ! var names
-        CHARACTER(LEN=IOULEN3)  OUTUNITS( NVCMULT,6 ) ! var units
-        CHARACTER(LEN=IODLEN3)  OUTDESCS( NVCMULT,6 ) ! var descriptions
+        CHARACTER(IOVLEN3)      OUTNAMES( NVCMULT,6 ) ! var names
+        CHARACTER(IOULEN3)      OUTUNITS( NVCMULT,6 ) ! var units
+        CHARACTER(IODLEN3)      OUTDESCS( NVCMULT,6 ) ! var descriptions
 
 C...........   Other local variables
         INTEGER          E, I, J, K, L2, S  ! counters and indices
@@ -159,17 +159,17 @@ C...........   Other local variables
         LOGICAL, SAVE :: APPLFLAG = .FALSE. ! true: something has been applied
         LOGICAL, SAVE :: OPENFLAG = .FALSE. ! true: output file has been opened
 
-        CHARACTER*100          OUTFMT     ! header format buffer
-        CHARACTER*200          PATHNM     ! path name for tmp file
-        CHARACTER*220          FILENM     ! file name
-        CHARACTER*256          BUFFER     ! source fields buffer
-        CHARACTER*256          MESG       ! message buffer
-        CHARACTER(LEN=SRCLEN3) CSRC       ! tmp source chars
-        CHARACTER(LEN=IOVLEN3) PNAM       ! tmp pollutant name
-        CHARACTER(LEN=IOVLEN3) CBUF       ! pollutant name temporary buffer 
-        CHARACTER(LEN=IOVLEN3) EBUF       ! pollutant name temporary buffer 
+        CHARACTER(100)     OUTFMT     ! header format buffer
+        CHARACTER(200)     PATHNM     ! path name for tmp file
+        CHARACTER(220)     FILENM     ! file name
+        CHARACTER(256)     BUFFER     ! source fields buffer
+        CHARACTER(256)     MESG       ! message buffer
+        CHARACTER(SRCLEN3) CSRC       ! tmp source chars
+        CHARACTER(IOVLEN3) PNAM       ! tmp pollutant name
+        CHARACTER(IOVLEN3) CBUF       ! pollutant name temporary buffer 
+        CHARACTER(IOVLEN3) EBUF       ! pollutant name temporary buffer 
 
-        CHARACTER*16  :: PROGNAME = 'GENMULTC' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENMULTC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENMULTC
@@ -964,13 +964,13 @@ C               inventory file
             SUBROUTINE WRITE_MESG_EXIT( OUTNAME, PROGNAME )
 
 C.............  Subprogram arguments
-            CHARACTER*(*), INTENT (IN) :: OUTNAME   ! name of inventory
+            CHARACTER(*),  INTENT (IN) :: OUTNAME   ! name of inventory
                                                     ! variable that generated
                                                     ! the error
-            CHARACTER*16,  INTENT (IN) :: PROGNAME  ! name of calling subroutine
+            CHARACTER(16), INTENT (IN) :: PROGNAME  ! name of calling subroutine
 
 C.............  Local variables
-            CHARACTER* 300   MESG                   ! message buffer
+            CHARACTER(300)   MESG                   ! message buffer
 
 C----------------------------------------------------------------------
 

@@ -49,19 +49,19 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FIND1
         INTEGER         STR2INT
 
         EXTERNAL    CRLF, FIND1, STR2INT
 
 C.........   SUBROUTINE ARGUMENTS
-        INTEGER               , INTENT (IN) :: IREC     ! line number
-        CHARACTER(LEN=SCCLEN3), INTENT (IN) :: TSCC     ! external SCC
-        CHARACTER(LEN=RWTLEN3), INTENT(OUT) :: CRWT     ! roadway type no.
-        CHARACTER(LEN=VIDLEN3), INTENT(OUT) :: CVID     ! vehicle type ID no.
-        CHARACTER(LEN=SCCLEN3), INTENT(OUT) :: TSCCINTL ! internal SCC
-        LOGICAL               , INTENT(OUT) :: EFLAG    ! true: error found
+        INTEGER           , INTENT (IN) :: IREC     ! line number
+        CHARACTER(SCCLEN3), INTENT (IN) :: TSCC     ! external SCC
+        CHARACTER(RWTLEN3), INTENT(OUT) :: CRWT     ! roadway type no.
+        CHARACTER(VIDLEN3), INTENT(OUT) :: CVID     ! vehicle type ID no.
+        CHARACTER(SCCLEN3), INTENT(OUT) :: TSCCINTL ! internal SCC
+        LOGICAL           , INTENT(OUT) :: EFLAG    ! true: error found
 
 C.........  Local variables
         INTEGER         K               !  find1 index
@@ -69,10 +69,10 @@ C.........  Local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
 
-        CHARACTER*10 , SAVE :: RWTFMT   !  frmt to write roadway type to string
-        CHARACTER*300          MESG     !  message buffer
+        CHARACTER(10), SAVE :: RWTFMT   !  frmt to write roadway type to string
+        CHARACTER(300)         MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'MBSCCADJ' ! program name
+        CHARACTER(16) :: PROGNAME = 'MBSCCADJ' ! program name
 
 C***********************************************************************
 C   begin body of subroutine MBSCCADJ

@@ -52,7 +52,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2      CRLF
+        CHARACTER(2)     CRLF
         INTEGER          INDEX1
         LOGICAL          SETENVVAR
 
@@ -81,11 +81,11 @@ C...........   Other local variables
         LOGICAL       :: OFLAG = .FALSE.  ! true: old inventory format
         LOGICAL       :: SFLAG = .FALSE.  ! true: error found on read of inven data
 
-        CHARACTER*16        :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
-        CHARACTER*256          MESG   ! message buffer
-        CHARACTER(LEN=IOVLEN3) VBUF   ! tmp variable name buffer
+        CHARACTER(16)   :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
+        CHARACTER(256)     MESG   ! message buffer
+        CHARACTER(IOVLEN3) VBUF   ! tmp variable name buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDMAPPOL'   !  program name
+        CHARACTER(16) :: PROGNAME = 'RDMAPPOL'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine RDMAPPOL

@@ -51,12 +51,12 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
-        CHARACTER*50    GETCFDSC
+        CHARACTER(50)   GETCFDSC
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   PROMPTMFILE
+        CHARACTER(16)   VERCHAR
 
         EXTERNAL        CRLF, DSCM3GRD, GETCFDSC, PROMPTFFILE, 
      &                  PROMPTMFILE, VERCHAR
@@ -70,22 +70,22 @@ C..........    Subroutine arguments and their descriptions
         CHARACTER(*), INTENT (OUT):: MNAME   ! logical name of ping srcs groups
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
         INTEGER         J      ! indices and counters
          
         LOGICAL      :: EFLAG    = .FALSE.  !  true: error found
 
-        CHARACTER*80    GDESC               !  grid description
-        CHARACTER*300   MESG
+        CHARACTER(80)   GDESC               !  grid description
+        CHARACTER(300)  MESG
 
-        CHARACTER(LEN=NAMLEN3) NAMBUF           ! file name buffer
-        CHARACTER(LEN=IOVLEN3) COORD3D
-        CHARACTER(LEN=IOVLEN3) COORUN3D
-        CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
+        CHARACTER(NAMLEN3) NAMBUF           ! file name buffer
+        CHARACTER(IOVLEN3) COORD3D
+        CHARACTER(IOVLEN3) COORUN3D
+        CHARACTER(IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
 
-        CHARACTER*16 :: PROGNAME = 'OPENEOUT'   !  subroutine name
+        CHARACTER(16) :: PROGNAME = 'OPENEOUT'   !  subroutine name
 
 C***********************************************************************
 C   begin body of subroutine OPENEOUT

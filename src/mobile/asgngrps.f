@@ -67,10 +67,10 @@ C...........   Other local variables
 
         LOGICAL :: EFLAG      = .FALSE.   ! true: error found
         
-        CHARACTER(LEN=100)     LINE     !  line buffer
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(100)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'ASGNGRPS'   ! program name
+        CHARACTER(16) :: PROGNAME = 'ASGNGRPS'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine ASGNGRPS

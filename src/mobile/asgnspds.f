@@ -68,22 +68,22 @@ C.........  Other local variables
         
         LOGICAL       :: EFLAG    = .FALSE.
         
-        CHARACTER*10              RWTFMT   ! formt to write rdway type to string
-        CHARACTER*10              VIDFMT   ! format to write veh ID to string
-        CHARACTER(LEN=STALEN3)    CSTA     ! tmp Country/state code
-        CHARACTER(LEN=STSLEN3)    CSTASCC  ! tmp Country/state code // SCC
-        CHARACTER(LEN=STSLEN3)    CSTASL   ! tmp Country/state code // left SCC
-        CHARACTER(LEN=SCCLEN3)    TSCCL    ! tmp left digits of TSCC
-        CHARACTER(LEN=SRCLEN3)    CSRC     ! tmp source chars string
-        CHARACTER(LEN=RWTLEN3)    CRWT     !  buffer for roadway type
-        CHARACTER(LEN=FIPLEN3)    CFIP     ! tmp (character) FIPS code
-        CHARACTER(LEN=FPSLEN3)    CFIPSCC  ! tmp FIPS code // SCC
-        CHARACTER(LEN=FPSLEN3)    CFIPSL   ! tmp FIPS code // left SCC
-        CHARACTER(LEN=SCCLEN3)    TSCC     ! tmp 10-digit SCC
-        CHARACTER(LEN=VIDLEN3)    CVID     ! buffer for vehicle type ID
-        CHARACTER*300             MESG     ! message buffer
+        CHARACTER(10)         RWTFMT   ! formt to write rdway type to string
+        CHARACTER(10)         VIDFMT   ! format to write veh ID to string
+        CHARACTER(STALEN3)    CSTA     ! tmp Country/state code
+        CHARACTER(STSLEN3)    CSTASCC  ! tmp Country/state code // SCC
+        CHARACTER(STSLEN3)    CSTASL   ! tmp Country/state code // left SCC
+        CHARACTER(SCCLEN3)    TSCCL    ! tmp left digits of TSCC
+        CHARACTER(SRCLEN3)    CSRC     ! tmp source chars string
+        CHARACTER(RWTLEN3)    CRWT     !  buffer for roadway type
+        CHARACTER(FIPLEN3)    CFIP     ! tmp (character) FIPS code
+        CHARACTER(FPSLEN3)    CFIPSCC  ! tmp FIPS code // SCC
+        CHARACTER(FPSLEN3)    CFIPSL   ! tmp FIPS code // left SCC
+        CHARACTER(SCCLEN3)    TSCC     ! tmp 10-digit SCC
+        CHARACTER(VIDLEN3)    CVID     ! buffer for vehicle type ID
+        CHARACTER(300)        MESG     ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'ASGNSPDS' ! program name
+        CHARACTER(16) :: PROGNAME = 'ASGNSPDS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNSPDS

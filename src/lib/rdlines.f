@@ -41,14 +41,14 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         EXTERNAL      CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER       FDEV            !  file unit number
-        CHARACTER*(*) DESCRIPT        !  file description
-        INTEGER       NLINES          !  number of lines in file
-        CHARACTER*(*) LINES( NLINES ) !  ASCII lines in file
+        INTEGER      FDEV            !  file unit number
+        CHARACTER(*) DESCRIPT        !  file description
+        INTEGER      NLINES          !  number of lines in file
+        CHARACTER(*) LINES( NLINES ) !  ASCII lines in file
 
 C...........   Other local variables
         INTEGER         IOS     !  i/o status
@@ -56,10 +56,10 @@ C...........   Other local variables
         INTEGER         L, LSAV, L2   !  length indices
         INTEGER         N       !  record counter
 
-        CHARACTER*300   LINE    !  line buffer
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  LINE    !  line buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDLINES' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDLINES' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDLINES

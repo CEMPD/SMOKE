@@ -50,7 +50,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         EXTERNAL        CRLF
 
 C...........   SUBROUTINE ARGUMENTS
@@ -66,10 +66,10 @@ C...........   Other local variables
 
         LOGICAL    :: EFLAG = .FALSE.  ! true: error has occurred
 
-        CHARACTER*300          MESG    ! message buffer
-        CHARACTER(LEN=SPNLEN3) SPCODE  ! tmp for speciation profile code
+        CHARACTER(300)     MESG    ! message buffer
+        CHARACTER(SPNLEN3) SPCODE  ! tmp for speciation profile code
 
-        CHARACTER*16 :: PROGNAME = 'FILLSTBL' ! program name
+        CHARACTER(16) :: PROGNAME = 'FILLSTBL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine FILLSTBL

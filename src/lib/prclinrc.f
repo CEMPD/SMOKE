@@ -72,7 +72,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       INDEX1
         INTEGER       STR2INT
 
@@ -97,11 +97,11 @@ C...........   Other local variables
         LOGICAL, SAVE :: LCATSET   = .FALSE.  ! true: source category set
         LOGICAL, SAVE :: LDELIM    = .FALSE.  ! true: manual delimeter set
 
-        CHARACTER*1      DAYYN             !  Y or N for average day
-        CHARACTER*6      FILNUM            !  tmp file number string
-        CHARACTER*300    MESG              !  message buffer
+        CHARACTER        DAYYN             !  Y or N for average day
+        CHARACTER(6)     FILNUM            !  tmp file number string
+        CHARACTER(300)   MESG              !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'PRCLINRC' ! program name
+        CHARACTER(16) :: PROGNAME = 'PRCLINRC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PRCLINRC
@@ -1132,7 +1132,7 @@ C               report configuration file are being ignored
             SUBROUTINE WRITE_IGNORE_MESSAGE
 
 C.............  Local variables
-            CHARACTER*300  MESG
+            CHARACTER(300)  MESG
 
 C----------------------------------------------------------------------
 
@@ -1163,7 +1163,7 @@ C.............  Subroutine arguments
 C.............  Local variables
             INTEGER        L
 
-            CHARACTER*300  MESG
+            CHARACTER(300)  MESG
 
 C----------------------------------------------------------------------
 
@@ -1198,7 +1198,7 @@ C.............  Subroutine arguments
 
 C.............  Local variables
             INTEGER        L
-            CHARACTER*300  MESG
+            CHARACTER(300) MESG
 
 C----------------------------------------------------------------------
 
@@ -1236,7 +1236,7 @@ C.............  Local variables
             INTEGER        K        ! counters and indices
             INTEGER        LK, LL   ! string lengths
 
-            CHARACTER*300  MESG
+            CHARACTER(300) MESG
 
 C----------------------------------------------------------------------
 

@@ -5,10 +5,10 @@ C @(#)$Id$ $Source$ $Date$
 C.........   Output formatting parameters
         INTEGER     , PARAMETER :: EMOUTLN3 = 80
 
-        CHARACTER*2 , PARAMETER :: EMCMISS3 = '??'
-        CHARACTER*5 , PARAMETER :: BLANK5   = ' '
-        CHARACTER*10, PARAMETER :: BLANK10  = ' '
-        CHARACTER*16, PARAMETER :: BLANK16  = ' '
+        CHARACTER(2),  PARAMETER :: EMCMISS3 = '??'
+        CHARACTER(5),  PARAMETER :: BLANK5   = ' '
+        CHARACTER(10), PARAMETER :: BLANK10  = ' '
+        CHARACTER(16), PARAMETER :: BLANK16  = ' '
 
 C.........   Physical constants and conversion factors
         REAL, PARAMETER :: DAY2SEC = 24. * 3600.  ! Days to seconds 
@@ -24,20 +24,20 @@ C.........   Physical constants and conversion factors
         REAL, PARAMETER :: PA2INHG = 1. / 3386.39 ! Pascals to inches of Hg
 
 C.........  Source-category flags 
-        INTEGER    , PARAMETER :: NCAT = 3          ! number src categories
-        CHARACTER*6, PARAMETER :: CATLIST( NCAT ) = ! src categories
+        INTEGER,      PARAMETER :: NCAT = 3          ! number src categories
+        CHARACTER(6), PARAMETER :: CATLIST( NCAT ) = ! src categories
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
-        CHARACTER*2, PARAMETER :: GNAMLIST( NCAT ) = ! gridded inven input names
+        CHARACTER(2), PARAMETER :: GNAMLIST( NCAT ) = ! gridded inven input names
      &                         ( / 'AG', 'MG', 'PG' / )
 
-        CHARACTER*5, PARAMETER :: ANAMLIST( NCAT ) = ! ave data input names
+        CHARACTER(5), PARAMETER :: ANAMLIST( NCAT ) = ! ave data input names
      &                         ( / 'ARINV' , 'MBINV' , 'PTINV'  / )
 
-        CHARACTER*5, PARAMETER :: DNAMLIST( NCAT ) = ! daily data input names
+        CHARACTER(5), PARAMETER :: DNAMLIST( NCAT ) = ! daily data input names
      &                         ( / 'ARDAY' , 'MBDAY' , 'PTDAY'  / )
 
-        CHARACTER*6, PARAMETER :: HNAMLIST( NCAT ) = ! hourly data input names
+        CHARACTER(6), PARAMETER :: HNAMLIST( NCAT ) = ! hourly data input names
      &                         ( / 'ARHOUR' , 'MBHOUR' , 'PTHOUR'  / )
 
 C.......   Flag values for determining temporal-profile-category
@@ -53,7 +53,7 @@ C.......   (The *TPRFAC's should all be distinct primes)
         INTEGER, PARAMETER :: WTPRFAC = 2  ! use day-of-week tmp-prof w/ full 
                                            !    week normalizer
  
-        CHARACTER*9, PARAMETER :: DAYS( 7 ) = 
+        CHARACTER(9), PARAMETER :: DAYS( 7 ) = 
      &         ( / 'Monday   ', 'Tuesday  ', 'Wednesday', 'Thursday ',
      &             'Friday   ', 'Saturday ', 'Sunday   '             / )
 
@@ -69,7 +69,7 @@ C.........  Input file format constants
         INTEGER, PARAMETER  :: TOXFMT   = 7    ! SMOKE toxics format
         INTEGER, PARAMETER  :: TOXNPFMT = 8    ! SMOKE toxics nonpoint format
 
-        CHARACTER*21, PARAMETER :: FMTNAMES( 0:8 ) = 
+        CHARACTER(21), PARAMETER :: FMTNAMES( 0:8 ) = 
      &                        ( / 'list                 ', 
      &                            'EMS-95               ', 
      &                            'EPS                  ', 
@@ -81,29 +81,29 @@ C.........  Input file format constants
      &                            'SMOKE toxics nonpoint' / )
 
 C.........  Indicator for inventory header fields
-        CHARACTER*1, PARAMETER :: CINVHDR = '#'
+        CHARACTER, PARAMETER :: CINVHDR = '#'
 
 C.........  Separator for speciation "variables" (stored in description field)
-        CHARACTER*1, PARAMETER :: SPJOIN = '~'
+        CHARACTER, PARAMETER :: SPJOIN = '~'
 
 C.........  Separator for emission type names
-        CHARACTER*2, PARAMETER :: ETJOIN = '__'
+        CHARACTER(2), PARAMETER :: ETJOIN = '__'
 
 C.........  Separator for SIC imbedded in SCC field
-        CHARACTER*5, PARAMETER :: SICNOTE = '--SIC'
+        CHARACTER(5), PARAMETER :: SICNOTE = '--SIC'
 
 C.........  Units for speciation matrice
-        CHARACTER*16, PARAMETER :: SMASUNIT = 'g/ton'
-        CHARACTER*16, PARAMETER :: SMOLUNIT = 'moles/ton'
+        CHARACTER(16), PARAMETER :: SMASUNIT = 'g/ton'
+        CHARACTER(16), PARAMETER :: SMOLUNIT = 'moles/ton'
 
 C.........  Packet names and settings
-        CHARACTER*12, PARAMETER :: PDEFPCKT = '/POINT DEFN/'
-        CHARACTER*4 , PARAMETER :: MASSSTR  = 'Mass'
-        CHARACTER*4 , PARAMETER :: MOLESTR  = 'Mole'
+        CHARACTER(12), PARAMETER :: PDEFPCKT = '/POINT DEFN/'
+        CHARACTER(4),  PARAMETER :: MASSSTR  = 'Mass'
+        CHARACTER(4),  PARAMETER :: MOLESTR  = 'Mole'
 
 C.........  Environment variables
-        CHARACTER*16, PARAMETER :: WARNSET = 'SMK_MAXWARNING  '
-        CHARACTER*16, PARAMETER :: ERRSET  = 'SMK_MAXERROR    '
+        CHARACTER(16), PARAMETER :: WARNSET = 'SMK_MAXWARNING  '
+        CHARACTER(16), PARAMETER :: ERRSET  = 'SMK_MAXERROR    '
 
 C.........  Time zones
         INTEGER    , PARAMETER :: MXTZONE = 15
@@ -111,14 +111,14 @@ C.........  Time zones
      &                        ( / 0, 3, 4, 4, 5 , 5 , 6 , 
      &                            6, 7, 7, 8, 9, 10, 10, 11  / )
 
-        CHARACTER*3, PARAMETER :: TZONNAM( MXTZONE ) =
+        CHARACTER(3), PARAMETER :: TZONNAM( MXTZONE ) =
      &                        ( / 'GMT', 'ADT', 'AST', 'EDT', 'EST',
      &                            'CDT', 'CST', 'MDT', 'MST', 'PDT',
      &                            'PST', 'YST', 'HST', 'CAT', 'NT ' / )
 
 C.........  Packet information
-        INTEGER     , PARAMETER :: NPACKET = 8
-        CHARACTER*20, PARAMETER :: PKTLIST( NPACKET ) = 
+        INTEGER,       PARAMETER :: NPACKET = 8
+        CHARACTER(20), PARAMETER :: PKTLIST( NPACKET ) = 
      &                          (  / 'CTG                 ',
      &                               'CONTROL             ',
      &                               'ALLOWABLE           ',
@@ -153,21 +153,21 @@ C.........  Indices when storing source information for evaluation
 C.........  Special data input names and associated parameters
         INTEGER, PARAMETER :: CODFLAG3 = 9000 ! to ID special data types
         INTEGER, PARAMETER :: MXSPDAT  = 6    ! max number of special data
-        CHARACTER(LEN=IOVLEN3), PARAMETER :: SPDATNAM( MXSPDAT ) =
+        CHARACTER(IOVLEN3), PARAMETER :: SPDATNAM( MXSPDAT ) =
      &                                    ( / 'LAY1F           ',
      &                                        'PBOT            ',
      &                                        'PTOP            ',
      &                                        'STKTK           ',
      &                                        'STKVE           ',
      &                                        'STKFL           '  / )
-        CHARACTER(LEN=IOULEN3), PARAMETER :: SPDATUNT( MXSPDAT ) =
+        CHARACTER(IOULEN3), PARAMETER :: SPDATUNT( MXSPDAT ) =
      &                                    ( / 'n/a             ',
      &                                        'm               ',
      &                                        'm               ',
      &                                        'deg K           ',
      &                                        'm/s             ',
      &                                        'm^3/s           '  / )
-        CHARACTER*25, PARAMETER :: SPDATDSC( MXSPDAT ) =
+        CHARACTER(25), PARAMETER :: SPDATDSC( MXSPDAT ) =
      &                          ( / 'Plume fraction in layer 1',
      &                              'Plume bottom height      ',
      &                              'Plume top height         ',
@@ -199,23 +199,23 @@ C.........  Maximum settings...
         INTEGER, PARAMETER :: MXINVARR = 20   ! maximum inven vars ever needed
 
 C.........  Blanks definitions
-        CHARACTER(LEN=BLRLEN3), PARAMETER:: BLRBLNK3 = ' '
-        CHARACTER(LEN=CHRLEN3), PARAMETER:: CHRBLNK3 = ' '
-        CHARACTER(LEN=DSCLEN3), PARAMETER:: DSCBLNK3 = ' '
-        CHARACTER(LEN=FIPLEN3), PARAMETER:: FIPBLNK3 = ' '
-        CHARACTER(LEN=IOVLEN3), PARAMETER:: IOVBLNK3 = ' '
-        CHARACTER(LEN=ORSLEN3), PARAMETER:: ORSBLNK3 = ' '
-        CHARACTER(LEN=PLTLEN3), PARAMETER:: PLTBLNK3 = ' '
-        CHARACTER(LEN=POLLEN3), PARAMETER:: POLBLNK3 = ' '
-        CHARACTER(LEN=RWTLEN3), PARAMETER:: RWTBLNK3 = ' '
+        CHARACTER(BLRLEN3), PARAMETER:: BLRBLNK3 = ' '
+        CHARACTER(CHRLEN3), PARAMETER:: CHRBLNK3 = ' '
+        CHARACTER(DSCLEN3), PARAMETER:: DSCBLNK3 = ' '
+        CHARACTER(FIPLEN3), PARAMETER:: FIPBLNK3 = ' '
+        CHARACTER(IOVLEN3), PARAMETER:: IOVBLNK3 = ' '
+        CHARACTER(ORSLEN3), PARAMETER:: ORSBLNK3 = ' '
+        CHARACTER(PLTLEN3), PARAMETER:: PLTBLNK3 = ' '
+        CHARACTER(POLLEN3), PARAMETER:: POLBLNK3 = ' '
+        CHARACTER(RWTLEN3), PARAMETER:: RWTBLNK3 = ' '
 
 C.........  Multi-purpose inventory variable name parameters
-        CHARACTER(LEN=CPRTLEN3), PARAMETER:: CTLEFFRT = 'CE_'  
-        CHARACTER(LEN=CPRTLEN3), PARAMETER:: RULEFFRT = 'RE_' 
-        CHARACTER(LEN=CPRTLEN3), PARAMETER:: RULPENRT = 'RP_'
-        CHARACTER(LEN=CPRTLEN3), PARAMETER:: AVEDAYRT = 'DY_'
-        CHARACTER(LEN=CPRTLEN3), PARAMETER:: EMISFCRT = 'EF_'
-        CHARACTER(LEN=CPRTLEN3), PARAMETER:: CECOD1RT = 'C1_'
-        CHARACTER(LEN=CPRTLEN3), PARAMETER:: CECOD2RT = 'C2_'
+        CHARACTER(CPRTLEN3), PARAMETER:: CTLEFFRT = 'CE_'  
+        CHARACTER(CPRTLEN3), PARAMETER:: RULEFFRT = 'RE_' 
+        CHARACTER(CPRTLEN3), PARAMETER:: RULPENRT = 'RP_'
+        CHARACTER(CPRTLEN3), PARAMETER:: AVEDAYRT = 'DY_'
+        CHARACTER(CPRTLEN3), PARAMETER:: EMISFCRT = 'EF_'
+        CHARACTER(CPRTLEN3), PARAMETER:: CECOD1RT = 'C1_'
+        CHARACTER(CPRTLEN3), PARAMETER:: CECOD2RT = 'C2_'
 
 

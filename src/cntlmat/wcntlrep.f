@@ -69,11 +69,11 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: MDEV   ! file unit no. for tmp MACT file
 
 C.........  Local arrays
-        INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
+        INTEGER             OUTTYPES( NVCMULT,6 ) ! var type:int/real
 
-        CHARACTER(LEN=IOVLEN3)  OUTNAMES( NVCMULT,6 ) ! var names
-        CHARACTER(LEN=IOULEN3)  OUTUNITS( NVCMULT,6 ) ! var units
-        CHARACTER(LEN=IODLEN3)  OUTDESCS( NVCMULT,6 ) ! var descriptions
+        CHARACTER(IOVLEN3)  OUTNAMES( NVCMULT,6 ) ! var names
+        CHARACTER(IOULEN3)  OUTUNITS( NVCMULT,6 ) ! var units
+        CHARACTER(IODLEN3)  OUTDESCS( NVCMULT,6 ) ! var descriptions
 
 C...........   Other local variables
         INTEGER          S, V  ! counters and indices
@@ -85,10 +85,10 @@ C...........   Other local variables
         REAL             E_OUT  ! emissions after controls
         REAL             FAC    ! control factor
 
-        CHARACTER*256          MESG       ! message buffer
-        CHARACTER(LEN=IOVLEN3) PNAM       ! tmp pollutant name
+        CHARACTER(256)     MESG       ! message buffer
+        CHARACTER(IOVLEN3) PNAM       ! tmp pollutant name
 
-        CHARACTER*16  :: PROGNAME = 'WCNTLREP' ! program name
+        CHARACTER(16) :: PROGNAME = 'WCNTLREP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WCNTLREP
@@ -206,10 +206,10 @@ C.............  Local variables
 
             INTEGER, SAVE ::  PSMKID = 0   ! previous smoke ID
 
-            CHARACTER*300     BUFFER                 ! message buffer
-            CHARACTER*300     MESG                   ! message buffer
+            CHARACTER(300)    BUFFER                 ! message buffer
+            CHARACTER(300)    MESG                   ! message buffer
 
-            CHARACTER(LEN=IOVLEN3), SAVE :: LNAM  ! previous pollutant name
+            CHARACTER(IOVLEN3), SAVE :: LNAM  ! previous pollutant name
 
 C----------------------------------------------------------------------
 

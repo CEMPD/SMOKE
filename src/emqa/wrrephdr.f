@@ -87,9 +87,9 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         STR2INT
-        CHARACTER*14    MMDDYY
+        CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
 
         EXTERNAL   CRLF, STR2INT, MMDDYY, WKDAY
@@ -99,7 +99,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT       ! report count
 	INTEGER     , INTENT (IN) :: FILENUM    ! file number
         INTEGER     , INTENT(OUT) :: LH         ! header width
-        CHARACTER(LEN=QAFMTL3),
+        CHARACTER(QAFMTL3),
      &                INTENT(OUT) :: OUTFMT     ! output record format
 
 C...........   Local parameters
@@ -135,9 +135,9 @@ C...........   Local parameters
 	INTEGER, PARAMETER :: IHDRUNIT = 29
         INTEGER, PARAMETER :: NHEADER  = 29
 
-        CHARACTER*12, PARAMETER :: MISSNAME = 'Missing Name'
+        CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
-        CHARACTER*15, PARAMETER :: HEADERS( NHEADER ) = 
+        CHARACTER(15), PARAMETER :: HEADERS( NHEADER ) = 
      &                          ( / 'Date           ',
      &                              'Hour           ',
      &                              'Layer          ',
@@ -175,7 +175,7 @@ C...........   Local variables that depend on module variables
         LOGICAL    LSCCUSE ( NINVSCC )
         LOGICAL    LSICUSE ( NINVSIC )
 
-        CHARACTER*10  CHRHDRS( NCHARS )  ! Source characteristics headers
+        CHARACTER(10) CHRHDRS( NCHARS )  ! Source characteristics headers
 
 C...........   Other local arrays
         INTEGER       PWIDTH( 4 )
@@ -207,15 +207,15 @@ C...........   Other local variables
 
 	LOGICAL  :: FIRSTIME = .TRUE.     ! true: first time routine called
 
-        CHARACTER*50   :: BUFFER          ! write buffer
-        CHARACTER*50   :: LINFMT          ! header line of '-'
-        CHARACTER*300  :: MESG            ! message buffer
-        CHARACTER(LEN=IODLEN3)  :: TMPUNIT    ! tmp units buffer
-        CHARACTER(LEN=OLINELEN) :: HDRBUF     ! labels line buffer
-        CHARACTER(LEN=OLINELEN) :: UNTBUF     ! units line buffer
-        CHARACTER(LEN=QAFMTL3)  :: TMPFMT ! temporary format for Linux PG compiler
+        CHARACTER(50)  :: BUFFER      ! write buffer
+        CHARACTER(50)  :: LINFMT      ! header line of '-'
+        CHARACTER(300) :: MESG        ! message buffer
+        CHARACTER(IODLEN3)  :: TMPUNIT    ! tmp units buffer
+        CHARACTER(OLINELEN) :: HDRBUF     ! labels line buffer
+        CHARACTER(OLINELEN) :: UNTBUF     ! units line buffer
+        CHARACTER(QAFMTL3)  :: TMPFMT ! temporary format for Linux PG compiler
 
-        CHARACTER*16 :: PROGNAME = 'WRREPHDR' ! program name
+        CHARACTER(16) :: PROGNAME = 'WRREPHDR' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRREPHDR
@@ -1321,7 +1321,7 @@ C.............  Subprogram arguments
 C.............  Local subprogram variables
             INTEGER          M            ! tmp integer value
 
-            CHARACTER*16     NUMBUF       ! tmp number string
+            CHARACTER(16)    NUMBUF       ! tmp number string
 
 C----------------------------------------------------------------------
 

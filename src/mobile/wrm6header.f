@@ -46,7 +46,7 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER*2, EXTERNAL :: CRLF
+        CHARACTER(2), EXTERNAL :: CRLF
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV    ! M6 input file unit no.        
@@ -61,12 +61,12 @@ C...........   Local variables
         LOGICAL           WROTE_TIRE    ! true: wrote TIRE to pol array
         LOGICAL           ISUSERHAP     ! true: at least one user-defined HAP 
 
-        CHARACTER(LEN=50)  BASICPOL     ! basic pollutants to calculate
-        CHARACTER(LEN=50)  PMPOL        ! particulates to calculate
-        CHARACTER(LEN=50)  AIRPOL       ! air toxics to calculate
-        CHARACTER(LEN=300) MESG         ! message buffer 
+        CHARACTER(50)  BASICPOL     ! basic pollutants to calculate
+        CHARACTER(50)  PMPOL        ! particulates to calculate
+        CHARACTER(50)  AIRPOL       ! air toxics to calculate
+        CHARACTER(300) MESG         ! message buffer 
         
-        CHARACTER*16 :: PROGNAME = 'WRM6HEADER'   ! program name
+        CHARACTER(16) :: PROGNAME = 'WRM6HEADER'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRM6HEADER

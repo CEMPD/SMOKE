@@ -71,11 +71,11 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........  Local static arrays
         LOGICAL          LF   ( MXCHRS )      !  true: column should be output
-        CHARACTER*20     CHARS( MXCHRS )      !  source fields for output
+        CHARACTER(20)    CHARS( MXCHRS )      !  source fields for output
 
 C...........   Logical names and unit numbers
 c        INTEGER          ODEV       ! unit number of output tmp file
-        CHARACTER*16     PNAME      ! logical name for projection matrix
+        CHARACTER(16)    PNAME      ! logical name for projection matrix
 
 C...........   Other local variables
 
@@ -88,13 +88,13 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.   ! true: error has occurred
         LOGICAL, SAVE :: APPLFLAG = .FALSE.  ! true: something has been applied
 
-        CHARACTER(LEN=SICLEN3) :: CSIC    ! SIC code
-        CHARACTER*200          :: PATHNM  ! path name for tmp file
-        CHARACTER*220             FILENM  ! file name
-        CHARACTER*256             MESG    ! message buffer
-        CHARACTER(LEN=IOVLEN3) :: PNAM    ! tmp pol/act name
+        CHARACTER(SICLEN3) :: CSIC    ! SIC code
+        CHARACTER(200)     :: PATHNM  ! path name for tmp file
+        CHARACTER(220)        FILENM  ! file name
+        CHARACTER(256)        MESG    ! message buffer
+        CHARACTER(IOVLEN3) :: PNAM    ! tmp pol/act name
 
-        CHARACTER*16  :: PROGNAME = 'GENPROJ' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENPROJ' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENPROJ

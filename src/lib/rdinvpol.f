@@ -49,18 +49,18 @@ C...........   INCLUDE FILES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2 CRLF
-        EXTERNAL    CRLF
+        CHARACTER(2) CRLF
+        EXTERNAL     CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*), INTENT (IN) :: FILNAM           ! Logical file name	
-        INTEGER      , INTENT (IN) :: NCNT             ! Number of records
-        INTEGER      , INTENT (IN) :: VCNT             ! No. vars other than SRCID
-        CHARACTER*(*), INTENT (IN) :: VNAMES( VCNT )   ! Variable names
-        INTEGER      , INTENT (IN) :: VTYPES( VCNT )   ! Variable types
-        INTEGER      , INTENT(OUT) :: SRCID ( NCNT )   ! Data
-        REAL         , INTENT(OUT) :: POLDAT( NCNT,VCNT ) ! Data
-        LOGICAL      , INTENT(OUT) :: EFLAG            ! true: error found
+        CHARACTER(*), INTENT (IN) :: FILNAM           ! Logical file name	
+        INTEGER     , INTENT (IN) :: NCNT             ! Number of records
+        INTEGER     , INTENT (IN) :: VCNT             ! No. vars other than SRCID
+        CHARACTER(*), INTENT (IN) :: VNAMES( VCNT )   ! Variable names
+        INTEGER     , INTENT (IN) :: VTYPES( VCNT )   ! Variable types
+        INTEGER     , INTENT(OUT) :: SRCID ( NCNT )   ! Data
+        REAL        , INTENT(OUT) :: POLDAT( NCNT,VCNT ) ! Data
+        LOGICAL     , INTENT(OUT) :: EFLAG            ! true: error found
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: IREAD ( : )  ! integer read array
@@ -70,10 +70,10 @@ C...........   Other local variables
         INTEGER         K, LV, V  ! counters and indices
         INTEGER         IOS       ! i/o status
 
-        CHARACTER(LEN=IOVLEN3)   VARBUF
-        CHARACTER*256   MESG 
+        CHARACTER(IOVLEN3)   VARBUF
+        CHARACTER(256)       MESG 
 
-        CHARACTER*16 :: PROGNAME = 'RDINVPOL' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDINVPOL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDINVPOL

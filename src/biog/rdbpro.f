@@ -46,7 +46,7 @@ C...........   Include files
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         INDEX1
         REAL            STR2REAL
@@ -71,7 +71,7 @@ C              passed via module MODSPRO)
 
 C...........   Other arrays
 
-        CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
+        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
                 
 C...........   Local variables
 
@@ -85,13 +85,13 @@ C...........   Local variables
 
         REAL           SPLTFAC, SDIV, SMFAC ! tmp speciation profile factors
         LOGICAL      :: FOUND_FLAG = .FALSE.   ! flag for requested profile
-        CHARACTER*5    TMPPRF     ! tmp profile number
-        CHARACTER*16   POLNAM     ! pollutant name
-        CHARACTER*16   SPECNM     ! tmp species name
-        CHARACTER*200  LINE       ! buffer for profile data
-        CHARACTER*256  MESG       ! message buffer
+        CHARACTER(5)   TMPPRF     ! tmp profile number
+        CHARACTER(16)  POLNAM     ! pollutant name
+        CHARACTER(16)  SPECNM     ! tmp species name
+        CHARACTER(200) LINE       ! buffer for profile data
+        CHARACTER(256) MESG       ! message buffer
         
-        CHARACTER*16 :: PROGNAME = 'RDBPRO' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDBPRO' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine RDBPRO

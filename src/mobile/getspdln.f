@@ -44,10 +44,10 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   FUNCTION ARGUMENTS
-        INTEGER,                INTENT (IN)   :: SDEV     ! SPDSUM file unit no.
-        CHARACTER(LEN=FIPLEN3), INTENT (IN)   :: COUNTY   ! county to search for
-        INTEGER,                INTENT (IN)   :: NLINES   ! number of lines in SPDSUM file
-        INTEGER,                INTENT (INOUT):: CURRLINE ! current line number in SPDSUM file
+        INTEGER,            INTENT (IN)   :: SDEV     ! SPDSUM file unit no.
+        CHARACTER(FIPLEN3), INTENT (IN)   :: COUNTY   ! county to search for
+        INTEGER,            INTENT (IN)   :: NLINES   ! number of lines in SPDSUM file
+        INTEGER,            INTENT (INOUT):: CURRLINE ! current line number in SPDSUM file
 
 C...........   Other local variables
         INTEGER I                         ! counters and indices                     
@@ -56,11 +56,11 @@ C...........   Other local variables
         
         LOGICAL :: FNDLINE = .FALSE.      ! true: found starting line for county
         
-        CHARACTER(LEN=FIPLEN3) CURRCOUNTY  ! current county in SPDSUM file
-        CHARACTER(LEN=100)     LINE     !  line buffer
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(FIPLEN3) CURRCOUNTY  ! current county in SPDSUM file
+        CHARACTER(100)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETSPDLN'   ! program name
+        CHARACTER(16) :: PROGNAME = 'GETSPDLN'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine GETSPDLN

@@ -1,6 +1,6 @@
 
-        CHARACTER(LEN=280) FUNCTION WRSPDVMT( FREESPD, ARTSPD, SPDDIR, 
-     &                                        SPDFLAG, ADJINV, ADJHOUR )
+        CHARACTER(280) FUNCTION WRSPDVMT( FREESPD, ARTSPD, SPDDIR, 
+     &                                    SPDFLAG, ADJINV, ADJHOUR )
 
 C***********************************************************************
 C  function body starts at line 77
@@ -47,18 +47,18 @@ C...........   INCLUDES
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        JUNIT
-        CHARACTER*2    CRLF
+        CHARACTER(2)   CRLF
         INTEGER        FIND1
         
         EXTERNAL  JUNIT, CRLF, FIND1
 
 C...........   FUNCTION ARGUMENTS
-        REAL,             INTENT (IN) :: FREESPD ! freeway speed
-        REAL,             INTENT (IN) :: ARTSPD  ! arterial speed
-        CHARACTER(LEN=*), INTENT (IN) :: SPDDIR  ! directory for writing speed files
-        LOGICAL,          INTENT (IN) :: SPDFLAG ! true: speed profiles are available
-        LOGICAL,          INTENT (IN) :: ADJINV  ! true: adjust inventory speeds for ramps
-        LOGICAL,          INTENT (IN) :: ADJHOUR ! true: adjust hourly speeds for ramps
+        REAL,         INTENT (IN) :: FREESPD ! freeway speed
+        REAL,         INTENT (IN) :: ARTSPD  ! arterial speed
+        CHARACTER(*), INTENT (IN) :: SPDDIR  ! directory for writing speed files
+        LOGICAL,      INTENT (IN) :: SPDFLAG ! true: speed profiles are available
+        LOGICAL,      INTENT (IN) :: ADJINV  ! true: adjust inventory speeds for ramps
+        LOGICAL,      INTENT (IN) :: ADJHOUR ! true: adjust hourly speeds for ramps
 
 C...........   Local arrays
         REAL M6SPDPROF( 14 )                  ! M6 speed profile for a single hour
@@ -74,12 +74,12 @@ C...........   Other local variables
 
         LOGICAL :: FILEEXIST = .FALSE.        ! true: file already exists
 
-        CHARACTER(LEN=6)   FREESPDSTR         ! freeway speed as string
-        CHARACTER(LEN=6)   ARTSPDSTR          ! arterial speed as string
-        CHARACTER(LEN=80)  FILENAME           ! filename of speed file
-        CHARACTER(LEN=300) MESG               ! message buffer
+        CHARACTER(6)   FREESPDSTR         ! freeway speed as string
+        CHARACTER(6)   ARTSPDSTR          ! arterial speed as string
+        CHARACTER(80)  FILENAME           ! filename of speed file
+        CHARACTER(300) MESG               ! message buffer
 
-        CHARACTER(LEN=16) :: PROGNAME = 'WRSPDVMT'   ! program name
+        CHARACTER(16) :: PROGNAME = 'WRSPDVMT'   ! program name
         
 C***********************************************************************
 C   begin body of function WRSPDVMT

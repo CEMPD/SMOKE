@@ -54,11 +54,11 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
-        CHARACTER*2            CRLF
-        LOGICAL                DSCM3GRD
-        INTEGER                PROMPTFFILE 
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
-        CHARACTER*16           VERCHAR
+        CHARACTER(2)       CRLF
+        LOGICAL            DSCM3GRD
+        INTEGER            PROMPTFFILE 
+        CHARACTER(NAMLEN3) PROMPTMFILE
+        CHARACTER(16)      VERCHAR
 
         EXTERNAL CRLF, DSCM3GRD, PROMPTFFILE, PROMPTMFILE, VERCHAR
 
@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: FDEV    ! report file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -84,14 +84,14 @@ C...........   Other local variables
         INTEGER       NNPVAR    ! no. non-pollutant inventory variables
         INTEGER       NROWS     ! number of rows
 
-        CHARACTER*16  COORD3D   ! coordinate system name
-        CHARACTER*16  COORUN3D  ! coordinate system projection units
-        CHARACTER*80  GDESC     ! grid description
-        CHARACTER*256 MESG      ! message buffer 
+        CHARACTER(16)  COORD3D   ! coordinate system name
+        CHARACTER(16)  COORUN3D  ! coordinate system projection units
+        CHARACTER(80)  GDESC     ! grid description
+        CHARACTER(256) MESG      ! message buffer 
 
-        CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
+        CHARACTER(NAMLEN3) NAMBUF   ! file name buffer
 
-        CHARACTER*16 :: PROGNAME = 'OPENGMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENGMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENGMAT

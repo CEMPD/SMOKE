@@ -65,7 +65,7 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         LOGICAL       ENVYN
         INTEGER       INDEX1
         LOGICAL       SETENVVAR
@@ -74,11 +74,11 @@ C.........  EXTERNAL FUNCTIONS
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: IDEV           ! unit number for map file
-        CHARACTER(LEN=PHYLEN3), INTENT (IN) :: DATPATH ! path for pol/act files
+        CHARACTER(PHYLEN3), INTENT (IN) :: DATPATH ! path for pol/act files
         CHARACTER(*), INTENT (IN) :: VAR_FORMULA    ! formula string
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
+        CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
 
 C.........  Inventory temporay arrays
         INTEGER, ALLOCATABLE:: IPPTR ( : ) ! position in POLVAL sparse array
@@ -91,13 +91,13 @@ C...........   Names, Units, types, & descriptions for pollutant-specific
 C              output variables.  NOTE - second dimension will work so long
 C              as NPPOL > NPACT, which is expected to always be the case
 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: EONAMES( :,: ) ! Names 
-        INTEGER               , ALLOCATABLE :: EOTYPES( :,: ) ! Types (Real|Int)
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units  
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Dscriptions  
+        CHARACTER(IOVLEN3), ALLOCATABLE :: EONAMES( :,: ) ! Names 
+        INTEGER           , ALLOCATABLE :: EOTYPES( :,: ) ! Types (Real|Int)
+        CHARACTER(IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units  
+        CHARACTER(IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Dscriptions  
 
 C...........   Other local allocatable arrays
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SAVEANAM( : )  ! tmp variables
+        CHARACTER(IOVLEN3), ALLOCATABLE :: SAVEANAM( : )  ! tmp variables
 
 C...........   Other local variables
         INTEGER         I, S, L, L2, N, V1, V2, VA, VB     ! counters and indices
@@ -116,18 +116,18 @@ C...........   Other local variables
         LOGICAL      :: EFLAG    = .FALSE. ! true: error found
         LOGICAL      :: FFLAG    = .FALSE. ! true: formula in use
 
-        CHARACTER*16    NAME1            ! tmp file name component
-        CHARACTER*16    NAME2            ! tmp file name component
-        CHARACTER*128   BUFFER           ! message buffer
-        CHARACTER*256   MESG             ! message buffer
+        CHARACTER(16)   NAME1            ! tmp file name component
+        CHARACTER(16)   NAME2            ! tmp file name component
+        CHARACTER(128)  BUFFER           ! message buffer
+        CHARACTER(256)  MESG             ! message buffer
 
-        CHARACTER(LEN=IOVLEN3 ) VIN_A    ! first variable in equation
-        CHARACTER(LEN=IOVLEN3 ) VIN_B    ! second variable in equation
-        CHARACTER(LEN=IOVLEN3 ) VNAME    ! computed variable name
-        CHARACTER(LEN=PHYLEN3) :: BPATH  ! base path
-        CHARACTER(LEN=PHYLEN3) :: RPATH  ! relative path
+        CHARACTER(IOVLEN3 ) VIN_A    ! first variable in equation
+        CHARACTER(IOVLEN3 ) VIN_B    ! second variable in equation
+        CHARACTER(IOVLEN3 ) VNAME    ! computed variable name
+        CHARACTER(PHYLEN3) :: BPATH  ! base path
+        CHARACTER(PHYLEN3) :: RPATH  ! relative path
 
-        CHARACTER*16 :: PROGNAME = 'WRINVEMIS' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRINVEMIS' !  program name
 
 C***********************************************************************
 C   begin body of program WRINVEMIS
@@ -464,7 +464,7 @@ C.............  Subroutine arguments
 
 C.............  Local allocatable arrays...
 C.............  Array for storing temporary variable names for computed var
-            CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: VNAMFORM( : )
+            CHARACTER(IOVLEN3), ALLOCATABLE :: VNAMFORM( : )
 
 C.............  Array for output of pol/act and assoc data
             REAL , ALLOCATABLE :: OUTVAL( :,: )
@@ -480,7 +480,7 @@ C.............  Local variables
             LOGICAL     :: FFLAGA = .FALSE.  ! true: first part of formula processed
             LOGICAL     :: FFLAGB = .FALSE.  ! true: 2nd part of formula processed
 
-            CHARACTER(LEN=PHYLEN3) :: RFNAME ! relative physical file name
+            CHARACTER(PHYLEN3) :: RFNAME ! relative physical file name
 
 C----------------------------------------------------------------------
 

@@ -69,13 +69,13 @@ C...........   Local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
                                  
-        CHARACTER*16    COORD     !  coordinate system name
-        CHARACTER*16    COORUNIT  !  coordinate system projection units
-        CHARACTER*16    GRDNM     !  grid name
-        CHARACTER*80    GDESC     !  grid description
-        CHARACTER*300   MESG      !  message buffer 
+        CHARACTER(16)   COORD     !  coordinate system name
+        CHARACTER(16)   COORUNIT  !  coordinate system projection units
+        CHARACTER(16)   GRDNM     !  grid name
+        CHARACTER(80)   GDESC     !  grid description
+        CHARACTER(300)  MESG      !  message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'INGRID' ! program name
+        CHARACTER(16) :: PROGNAME = 'INGRID' ! program name
 
 C***********************************************************************
 C   begin body of function INGRID

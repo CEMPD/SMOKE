@@ -50,18 +50,18 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
 
         EXTERNAL    CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT  (IN) :: LINE                  ! input line
-        CHARACTER(LEN=*),       INTENT (OUT) :: READDATA( 1,NARPPOL3 )! array of data values
-        CHARACTER(LEN=IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! pollutant name
+        CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
+        CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NARPPOL3 )! array of data values
+        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! pollutant name
         INTEGER,                INTENT (OUT) :: NPOLPERLN             ! no. pollutants per line
         INTEGER,                INTENT (OUT) :: IYEAR                 ! inventory year
-        CHARACTER(LEN=*),       INTENT (OUT) :: TIMEPERIOD            ! time period type
+        CHARACTER(*),       INTENT (OUT) :: TIMEPERIOD            ! time period type
         LOGICAL,                INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,                INTENT (OUT) :: EFLAG                 ! error flag
         
@@ -78,9 +78,9 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=300)     MESG            !  message buffer
+        CHARACTER(300)     MESG            !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDDATAEMSAR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDDATAEMSAR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDDATAEMSAR

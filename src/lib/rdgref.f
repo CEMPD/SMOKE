@@ -54,7 +54,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         GETFLINE
@@ -67,15 +67,15 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
  
 C...........   Local parameters
-        INTEGER    , PARAMETER :: AREATYP  = 1
-        INTEGER    , PARAMETER :: BIOGTYP  = 2
-        INTEGER    , PARAMETER :: MOBILTYP = 3
+        INTEGER, PARAMETER :: AREATYP  = 1
+        INTEGER, PARAMETER :: BIOGTYP  = 2
+        INTEGER, PARAMETER :: MOBILTYP = 3
 
-        CHARACTER*6, PARAMETER :: LOCCATS( 3 ) = 
+        CHARACTER(6), PARAMETER :: LOCCATS( 3 ) = 
      &                         ( / 'AREA  ', 'BIOG  ', 'MOBILE' / )
 
 C...........   Array of input fields
-        CHARACTER(LEN=SCCLEN3)  FIELDARR( 3 )
+        CHARACTER(SCCLEN3)  FIELDARR( 3 )
   
 C...........   Other local variables
         INTEGER         I, J, J1, J2, L, N    !  counters and indices
@@ -98,20 +98,20 @@ C...........   Other local variables
         LOGICAL      :: LDUM  = .FALSE.   !  dummy
         LOGICAL      :: SKIPREC = .FALSE. !  true: record skipped in x-ref file
 
-        CHARACTER*2            SCC2     !  1st & 2nd character of SCC
-        CHARACTER*300          LINE     !  line buffer
-        CHARACTER*300          MESG     !  message buffer
-        CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol
-        CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
-        CHARACTER(LEN=RWTLEN3) CRWT     !  buffer for roadway type
-        CHARACTER(LEN=SICLEN3) CDUM     !  dummy buffer for SIC code
-        CHARACTER(LEN=MACLEN3) CDUM2    !  dummy buffer for MACT code
-        CHARACTER(LEN=SCCLEN3) CHKZERO  !  buffer to check for zero SCC
-        CHARACTER(LEN=SCCLEN3) SCCZERO  !  zero SCC
-        CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC or roadway type
-        CHARACTER(LEN=VIDLEN3) CVID     !  buffer for vehicle type ID
+        CHARACTER(2)       SCC2     !  1st & 2nd character of SCC
+        CHARACTER(300)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
+        CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol
+        CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(RWTLEN3) CRWT     !  buffer for roadway type
+        CHARACTER(SICLEN3) CDUM     !  dummy buffer for SIC code
+        CHARACTER(MACLEN3) CDUM2    !  dummy buffer for MACT code
+        CHARACTER(SCCLEN3) CHKZERO  !  buffer to check for zero SCC
+        CHARACTER(SCCLEN3) SCCZERO  !  zero SCC
+        CHARACTER(SCCLEN3) TSCC     !  temporary SCC or roadway type
+        CHARACTER(VIDLEN3) CVID     !  buffer for vehicle type ID
 
-        CHARACTER*16 :: PROGNAME = 'RDGREF' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDGREF' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDGREF

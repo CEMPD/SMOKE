@@ -70,8 +70,8 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER     , INTENT(OUT) :: NINVGRP ! no. of groups
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2 CRLF
-        LOGICAL     EVALCRIT
+        CHARACTER(2) CRLF
+        LOGICAL      EVALCRIT
 
         EXTERNAL    CRLF, EVALCRIT
 
@@ -91,8 +91,8 @@ C...........   Local allocatable arrays
         REAL   , ALLOCATABLE :: REFS   ( : ) ! tmp group stack parameter array
 
         LOGICAL, ALLOCATABLE :: GPSTAT( :,:,: ) ! not used except EVALCRIT call
-        CHARACTER(LEN=PLTLEN3), ALLOCATABLE :: CHRS( : )        ! dummy test character strings
-        CHARACTER(LEN=PLTLEN3), ALLOCATABLE :: COMCHRS( :,:,: ) ! dummy formula strings
+        CHARACTER(PLTLEN3), ALLOCATABLE :: CHRS( : )        ! dummy test character strings
+        CHARACTER(PLTLEN3), ALLOCATABLE :: COMCHRS( :,:,: ) ! dummy formula strings
 
 C...........   Local fixed arrays
         INTEGER     GSRC  ( MXLOCGRP, MXSPGRP ) ! source IDs for local groups
@@ -129,13 +129,13 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         LOGICAL :: LGRPALL = .FALSE.  ! true: group found for previous facility
         LOGICAL :: STATUS  = .FALSE.  ! true: tmp evaluation status
 
-        CHARACTER*300   BUFFER       ! src description buffers
-        CHARACTER*300   MESG         ! msg buffer
+        CHARACTER(300)  BUFFER       ! src description buffers
+        CHARACTER(300)  MESG         ! msg buffer
 
-        CHARACTER(LEN=CHRLEN3) PLT   ! tmp facility ID
-        CHARACTER(LEN=CHRLEN3) PPLT  ! tmp facility ID
+        CHARACTER(CHRLEN3) PLT   ! tmp facility ID
+        CHARACTER(CHRLEN3) PPLT  ! tmp facility ID
 
-        CHARACTER*16 :: PROGNAME = 'ASGNGRPS'   !  program name
+        CHARACTER(16) :: PROGNAME = 'ASGNGRPS'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNGRPS

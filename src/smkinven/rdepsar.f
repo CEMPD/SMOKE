@@ -65,7 +65,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL                CHKINT
         LOGICAL                CHKREAL
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         INTEGER                ENVINT
         INTEGER                FIND1
         INTEGER                FINDC   !  returns -1 for failure
@@ -133,17 +133,17 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
         LOGICAL, SAVE :: FIRSTP   = .TRUE.
 
-        CHARACTER*2            TMPAA !  tmp time period code
-        CHARACTER*300          LINE  !  Input line from area source file
-        CHARACTER*300          MESG  !  Text for M3EXIT()
-        CHARACTER(LEN=IOVLEN3) CPOL  !  Temporary pollutant code
-        CHARACTER(LEN=FIPLEN3) CFIP  !  Character FIP code
-        CHARACTER(LEN=POLLEN3) CCOD  !  Character pollutant index to INVDNAM
-        CHARACTER(LEN=SCCLEN3) TSCC  !  Temporary character SCC
+        CHARACTER(2)       TMPAA !  tmp time period code
+        CHARACTER(300)     LINE  !  Input line from area source file
+        CHARACTER(300)     MESG  !  Text for M3EXIT()
+        CHARACTER(IOVLEN3) CPOL  !  Temporary pollutant code
+        CHARACTER(FIPLEN3) CFIP  !  Character FIP code
+        CHARACTER(POLLEN3) CCOD  !  Character pollutant index to INVDNAM
+        CHARACTER(SCCLEN3) TSCC  !  Temporary character SCC
         
-        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
+        CHARACTER(300)     TENLINES( 10 ) ! first ten lines of inventory file
 
-        CHARACTER*16 :: PROGNAME = 'RDEPSAR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDEPSAR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDEPSAR

@@ -49,24 +49,24 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL        TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)   INFILE           ! Name of file being read	
-        CHARACTER*(*)   OUTFILE          ! Name of file being written	
-        CHARACTER*(*)   VNAME            ! Variable name being read/written
-        INTEGER         LAYSVAL          ! layer number or value of ALLAYS3
-        INTEGER         JDATE            ! Julian date being read/written
-        INTEGER         JTIME            ! Julian time being read/written
-        INTEGER         VTYPE            ! Integer code for variable type
-        INTEGER         NDIM             ! Dimension of var being read/written
-        INTEGER         STATUS           ! Exit status
+        CHARACTER(*)   INFILE           ! Name of file being read	
+        CHARACTER(*)   OUTFILE          ! Name of file being written	
+        CHARACTER(*)   VNAME            ! Variable name being read/written
+        INTEGER        LAYSVAL          ! layer number or value of ALLAYS3
+        INTEGER        JDATE            ! Julian date being read/written
+        INTEGER        JTIME            ! Julian time being read/written
+        INTEGER        VTYPE            ! Integer code for variable type
+        INTEGER        NDIM             ! Dimension of var being read/written
+        INTEGER        STATUS           ! Exit status
 
 C...........   Allocatable arrays
         INTEGER         INTVAL ( NDIM )  !  Integer value
         REAL            REALVAL( NDIM )  !  Real value
 
 C...........   Other local variables
-        CHARACTER*300   MESG 
+        CHARACTER(300)  MESG 
 
-        CHARACTER*16 :: PROGNAME = 'READWR3' ! program name
+        CHARACTER(16) :: PROGNAME = 'READWR3' ! program name
 
 C***********************************************************************
 C   begin body of subroutine READWR3

@@ -61,7 +61,7 @@ C.........  INCLUDES:
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
 
         EXTERNAL        CRLF , INDEX1
@@ -79,10 +79,10 @@ C.........  Other local variables
         LOGICAL      :: MOUTFLAG = .FALSE.  ! true: output mobile sources
         LOGICAL      :: POUTFLAG = .FALSE.  ! true: output point sources
 
-        CHARACTER(LEN=IOVLEN3) FILNAM       ! tmp logical file name
-        CHARACTER*300          MESG         ! message buffer
+        CHARACTER(IOVLEN3) FILNAM       ! tmp logical file name
+        CHARACTER(300)     MESG         ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WMRGEMIS' ! program name
+        CHARACTER(16) :: PROGNAME = 'WMRGEMIS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WMRGEMIS

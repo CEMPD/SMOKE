@@ -53,10 +53,10 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '%W%'
+        CHARACTER(50), PARAMETER :: SCCSW = '%W%'
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         FIND1
         INTEGER         GETFLINE
@@ -85,7 +85,7 @@ C.........  Logical file names and unit numbers
         INTEGER   SDEV         ! log file unit number
 
 C.........  Local arrays
-        CHARACTER*8 SEGMENT( 2 )
+        CHARACTER(8) SEGMENT( 2 )
 
 C.........  Local variables
 
@@ -100,13 +100,13 @@ C.........  Local variables
 
         LOGICAL :: EFLAG = .FALSE.   ! true: error found
 
-        CHARACTER*256  MESG    ! temporary message array
-        CHARACTER*2560 LINE    ! line buffer
+        CHARACTER(256)  MESG    ! temporary message array
+        CHARACTER(2560) LINE    ! line buffer
 
-        CHARACTER(LEN=IOVLEN3) INNAME   ! input file name
-        CHARACTER(LEN=IOVLEN3) OUTNAME  ! output file names
+        CHARACTER(IOVLEN3) INNAME   ! input file name
+        CHARACTER(IOVLEN3) OUTNAME  ! output file names
 
-        CHARACTER*16 :: PROGNAME = 'INVSPLIT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'INVSPLIT'   !  program name
 
 C***********************************************************************
 C   begin body of program INVSPLIT

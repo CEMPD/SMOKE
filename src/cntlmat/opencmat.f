@@ -53,16 +53,16 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
-        CHARACTER(LEN=IODLEN3) GETCFDSC
-        INTEGER                GETIFDSC   
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
-        CHARACTER*16           VERCHAR
+        CHARACTER(2)       CRLF
+        CHARACTER(IODLEN3) GETCFDSC
+        INTEGER            GETIFDSC   
+        CHARACTER(NAMLEN3) PROMPTMFILE
+        CHARACTER(16)      VERCHAR
 
         EXTERNAL     CRLF, GETCFDSC, GETIFDSC, PROMPTMFILE, VERCHAR
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
@@ -73,12 +73,12 @@ C.........  Other local variables
         INTEGER          J              !  counters and indices
         INTEGER          IOS            !  i/o status
 
-        CHARACTER(LEN=NAMLEN3) NAMBUF   ! file name buffer
-        CHARACTER*300          MESG     ! message buffer
+        CHARACTER(NAMLEN3) NAMBUF   ! file name buffer
+        CHARACTER(300)     MESG     ! message buffer
 
-        CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
+        CHARACTER(IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
 
-        CHARACTER*16 :: PROGNAME = 'OPENCMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENCMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENCMAT

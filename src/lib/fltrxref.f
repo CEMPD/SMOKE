@@ -91,13 +91,13 @@ C...........   Other local variables
         LOGICAL, SAVE :: MFLAG    = .FALSE.  ! true: have MACT codes
         LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
-        CHARACTER*300          MESG         ! message buffer
-        CHARACTER(LEN=SCCLEN3) SCCL         ! left part of SCC
-        CHARACTER(LEN=SCCLEN3) SCCR         ! right part of SCC
-        CHARACTER(LEN=SCCLEN3), SAVE :: SCRZERO  ! zero right digits of TSCC
-        CHARACTER(LEN=SCCLEN3), SAVE :: SCCZERO  ! zero SCC
+        CHARACTER(300)     MESG         ! message buffer
+        CHARACTER(SCCLEN3) SCCL         ! left part of SCC
+        CHARACTER(SCCLEN3) SCCR         ! right part of SCC
+        CHARACTER(SCCLEN3), SAVE :: SCRZERO  ! zero right digits of TSCC
+        CHARACTER(SCCLEN3), SAVE :: SCCZERO  ! zero SCC
 
-        CHARACTER*16 :: PROGNAME = 'FLTRXREF' ! program name
+        CHARACTER(16) :: PROGNAME = 'FLTRXREF' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine FLTRXREF

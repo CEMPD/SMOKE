@@ -51,7 +51,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2      CRLF
+        CHARACTER(2)     CRLF
         INTEGER          GETEFILE
         INTEGER          GETFLINE
         INTEGER          GETIFDSC
@@ -84,14 +84,14 @@ C...........   Other local variables
         LOGICAL       :: EFLAG = .FALSE.  ! true: error found
         LOGICAL       :: RPFLAG = .FALSE. ! true: time to read data lines
 
-        CHARACTER*256          MESG   ! message buffer
-        CHARACTER*1024         LINE   ! line buffer
-        CHARACTER(LEN=IOVLEN3) PNAME  ! logical file name for data files
-        CHARACTER(LEN=PHYLEN3) APHYS  ! ASCII physical file name
-        CHARACTER(LEN=PHYLEN3) EPHYS  ! I/O API physical file name
-        CHARACTER(LEN=PHYLEN3) PATH   ! path name
+        CHARACTER(256)     MESG   ! message buffer
+        CHARACTER(1024     LINE   ! line buffer
+        CHARACTER(IOVLEN3) PNAME  ! logical file name for data files
+        CHARACTER(PHYLEN3) APHYS  ! ASCII physical file name
+        CHARACTER(PHYLEN3) EPHYS  ! I/O API physical file name
+        CHARACTER(PHYLEN3) PATH   ! path name
 
-        CHARACTER*16 :: PROGNAME = 'RDINVMAP'   !  program name
+        CHARACTER(16) :: PROGNAME = 'RDINVMAP'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine RDINVMAP

@@ -52,7 +52,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2    CRLF
+        CHARACTER(2)   CRLF
         INTEGER        FIND1
         INTEGER        STR2INT
         REAL           STR2REAL
@@ -72,7 +72,7 @@ C...........   Local parameters
 
 C...........   Other arrays
 
-        CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
+        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
 
 C...........   Local variables
         INTEGER         I, J, K, L            ! indices and counters
@@ -101,12 +101,12 @@ C...........   Local variables
         LOGICAL      :: RFLAG = .FALSE.       ! true: renormalized surrogates
         LOGICAL         WFLAG                 ! true: per iteration warning flag
 
-        CHARACTER*20    COLRANGE              ! buffer w/ column range
-        CHARACTER*20    ROWRANGE              ! buffer w/ row range
-        CHARACTER*80    LINE                  ! Read buffer for a line
-        CHARACTER*600   MESG                  ! Message buffer
+        CHARACTER(20)   COLRANGE              ! buffer w/ column range
+        CHARACTER(20)   ROWRANGE              ! buffer w/ row range
+        CHARACTER(80)   LINE                  ! Read buffer for a line
+        CHARACTER(600)  MESG                  ! Message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRG'    !  program name
+        CHARACTER(16) :: PROGNAME = 'RDSRG'    !  program name
 
 C***********************************************************************
 C   Begin body of subroutine RDSRG

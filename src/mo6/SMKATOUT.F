@@ -52,8 +52,8 @@ C  database file.
       REAL              ::  ZGMMILE  ! used to calculate hourly gm/mile        
       REAL,DIMENSION(8) ::  ATAGGR   ! fully aggregated AT output              
 
-      CHARACTER(LEN=300) :: MESG                   ! message buffer
-      CHARACTER(LEN=16)  :: PROGNAME = 'SMKATOUT'  ! program name
+      CHARACTER(300) :: MESG                   ! message buffer
+      CHARACTER(16)  :: PROGNAME = 'SMKATOUT'  ! program name
 
 C  Begin body of subroutine SMKATOUT
 

@@ -47,7 +47,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         EXTERNAL        CRLF
 
 C.........  SUBROUTINE ARGUMENTS
@@ -61,16 +61,16 @@ C.........  SUBROUTINE ARGUMENTS
         REAL        , INTENT(OUT) :: RFAC ( NSREAC, SPECNUM ) ! spc coeffs
 
 C...........   Error message strings
-        CHARACTER*23 ,PARAMETER :: PART1 = 'Error reading variable '
-        CHARACTER*23 ,PARAMETER :: PART3 = ' from REACTIVITY MATRIX'
+        CHARACTER(23), PARAMETER :: PART1 = 'Error reading variable '
+        CHARACTER(23), PARAMETER :: PART3 = ' from REACTIVITY MATRIX'
 
 C.........  Other local variables
-        INTEGER                 N, V       !  counters and indices
+        INTEGER            N, V       !  counters and indices
 
-        CHARACTER*300           MESG    ! message buffer
-        CHARACTER(LEN=IOVLEN3) INVAR    ! tmp inventory pollutant name
+        CHARACTER(300)     MESG    ! message buffer
+        CHARACTER(IOVLEN3) INVAR    ! tmp inventory pollutant name
 
-        CHARACTER*16 :: PROGNAME = 'RDRMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDRMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDRMAT

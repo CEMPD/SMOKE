@@ -48,15 +48,15 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER          JUNIT
-        CHARACTER(LEN=2) CRLF 
+        INTEGER      JUNIT
+        CHARACTER(2) CRLF 
         
         EXTERNAL JUNIT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=FIPLEN3), INTENT (IN)  :: COUNTY   ! ref. county
-        INTEGER,                INTENT (OUT) :: FDEV     ! M6 scenario file unit no.
-        CHARACTER(LEN=300),     INTENT (OUT) :: FILENAME ! name of M6 scenario file
+        CHARACTER(FIPLEN3), INTENT (IN)  :: COUNTY   ! ref. county
+        INTEGER,            INTENT (OUT) :: FDEV     ! M6 scenario file unit no.
+        CHARACTER(300),     INTENT (OUT) :: FILENAME ! name of M6 scenario file
 
 C...........   Other local variables
         INTEGER I, J, K                   ! counters and indices                     
@@ -66,9 +66,9 @@ C...........   Other local variables
         LOGICAL :: EFLAG      = .FALSE.   ! true: error found
         LOGICAL :: FNDSCEN    = .FALSE.   ! true: found M6 scenario file
 
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'OPENSCEN'   ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENSCEN'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine OPENSCEN

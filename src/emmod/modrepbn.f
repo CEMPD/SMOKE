@@ -110,17 +110,17 @@
         REAL   , ALLOCATABLE, PUBLIC :: BINPOPDIV( : )   ! popltn normalize fac
         REAL   , ALLOCATABLE, PUBLIC :: BINDATA  ( :,: ) ! output data values
 
-        CHARACTER*1, ALLOCATABLE, PUBLIC :: BINELEV( : )! elevated flag
-        CHARACTER(LEN=PLTLEN3), ALLOCATABLE, PUBLIC :: BINPLANT( : ) ! Plant ID
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC  ( : ) ! SCC
-        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC :: BINSPCID( : ) ! spec prof
+        CHARACTER, ALLOCATABLE, PUBLIC :: BINELEV( : )! elevated flag
+        CHARACTER(PLTLEN3), ALLOCATABLE, PUBLIC :: BINPLANT( : ) ! Plant ID
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC  ( : ) ! SCC
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: BINSPCID( : ) ! spec prof
 
 !.........  Arrays for determining output from emission types to report columns
 !.........  Dimensioned ( NIPPA, NREPORT )
         TYPE( BYETYPE ), ALLOCATABLE, PUBLIC :: TODOUT( :,: )
 
-        CHARACTER(LEN=LV2), ALLOCATABLE, PUBLIC :: ETPNAM( : ) ! emis type names
-        CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: DATNAM( : ) ! pol/act names
+        CHARACTER(LV2), ALLOCATABLE, PUBLIC :: ETPNAM( : ) ! emis type names
+        CHARACTER(LV1), ALLOCATABLE, PUBLIC :: DATNAM( : ) ! pol/act names
 
 !.........  Arrays for determining output from species variables to report cols
 !.........  Dimensioned ( NSVARS, NREPORT )
@@ -128,14 +128,14 @@
 
         TYPE( BYSPVAR ), ALLOCATABLE, PUBLIC :: TOSOUT( :,: )          
 
-        CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: SPCNAM   ( : )  ! valid species names
-        CHARACTER(LEN=LV3), ALLOCATABLE, PUBLIC :: ETPSPCNAM( : )  ! valid emis type || species
-        CHARACTER(LEN=LV2), ALLOCATABLE, PUBLIC :: PRCSPCNAM( : )  ! valid process || species
-        CHARACTER(LEN=LV2), ALLOCATABLE, PUBLIC :: SUMETPNAM( : )  ! S- || emis type names
-        CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: SUMPOLNAM( : )  ! S- || pollutant names
+        CHARACTER(LV1), ALLOCATABLE, PUBLIC :: SPCNAM   ( : )  ! valid species names
+        CHARACTER(LV3), ALLOCATABLE, PUBLIC :: ETPSPCNAM( : )  ! valid emis type || species
+        CHARACTER(LV2), ALLOCATABLE, PUBLIC :: PRCSPCNAM( : )  ! valid process || species
+        CHARACTER(LV2), ALLOCATABLE, PUBLIC :: SUMETPNAM( : )  ! S- || emis type names
+        CHARACTER(LV1), ALLOCATABLE, PUBLIC :: SUMPOLNAM( : )  ! S- || pollutant names
 
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: SLUNIT( : ) ! spc var units
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: SSUNIT( : ) ! spc var units
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: SLUNIT( : ) ! spc var units
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: SSUNIT( : ) ! spc var units
 
 !.........  Arrays for referencing input data needed across whole program run
         INTEGER, PUBLIC :: NDATIN = 0 ! Actual number of data vars input
@@ -155,6 +155,6 @@
 
 !.........  Unique species list and count
         INTEGER, PUBLIC :: NMSPC = 0  ! no. species in whole run
-        CHARACTER(LEN=LV1), ALLOCATABLE, PUBLIC :: EMNAM( : ) ! species names
+        CHARACTER(LV1), ALLOCATABLE, PUBLIC :: EMNAM( : ) ! species names
 
         END MODULE MODREPBN

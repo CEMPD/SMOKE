@@ -41,7 +41,7 @@ C***************************************************************************
 
         IMPLICIT NONE
 
-        CHARACTER(LEN=2), EXTERNAL :: CRLF
+        CHARACTER(2), EXTERNAL :: CRLF
 
 C...........   INCLUDES
 
@@ -59,10 +59,10 @@ C...........   Other local variables
         INTEGER         IREC    ! current record number
         INTEGER         IOS     ! I/O status
 
-        CHARACTER(LEN=256)   MESG        ! message buffer
-        CHARACTER(LEN=100)   LINE        ! buffer to read line into
+        CHARACTER(256)   MESG        ! message buffer
+        CHARACTER(100)   LINE        ! buffer to read line into
 
-        CHARACTER(LEN=16) :: PROGNAME = 'GETFORMT'  ! program name
+        CHARACTER(16) :: PROGNAME = 'GETFORMT'  ! program name
 
 C***********************************************************************
 C   begin body of function GETFORMT

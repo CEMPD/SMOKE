@@ -67,7 +67,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER, INTENT (IN)  :: NY      ! no. rows
         REAL, INTENT (IN)  ::  LAT  ( NX, NY )  !  lat (deg) -90 <= LAT <= 90
         REAL, INTENT (IN)  ::  LON  ( NX, NY )  !  lon (deg) -180 <= LON <= 180
-        CHARACTER*16, INTENT(IN) :: CLOUDTYPE
+        CHARACTER(16), INTENT(IN) :: CLOUDTYPE
 
         REAL, INTENT (OUT)  ::  CLDATN( NX, NY ) !  cloud attenuation factor 
       
@@ -124,13 +124,13 @@ C
       DATA            FIRSTIME / .TRUE. /
       SAVE            FIRSTIME
 
-      CHARACTER*5     CLTYPE
-      CHARACTER*16    CLDTVAR   ! Name of input variable
-      CHARACTER*16    CLDBVAR   ! Name of input variable
-      CHARACTER*16    CFRACVAR  ! Name of input variable
+      CHARACTER(5)    CLTYPE
+      CHARACTER(16)   CLDTVAR   ! Name of input variable
+      CHARACTER(16)   CLDBVAR   ! Name of input variable
+      CHARACTER(16)   CFRACVAR  ! Name of input variable
       SAVE            CLTYPE, CLDTVAR, CLDBVAR, CFRACVAR
 
-      CHARACTER*16    PNAME
+      CHARACTER(16)   PNAME
       DATA            PNAME / 'CLDATEN_CALC' /
 C
 C***********************************************************************

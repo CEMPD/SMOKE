@@ -66,9 +66,9 @@ C...........   Other local variables
 
         INTEGER         FDEV             !  output file unit number
 
-        CHARACTER*300   MESG             !  message buffer
+        CHARACTER(300)  MESG             !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRPTREF' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRPTREF' !  program name
 
 C***********************************************************************
 C   begin body of program WRPTREF

@@ -53,15 +53,15 @@ C...........   INCLUDE FILES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF 
+        CHARACTER(2)    CRLF 
         INTEGER         TRIMLEN
 
         EXTERNAL        CRLF, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)   CPVNAM         ! Name of control/proj variable
-        INTEGER         NIPOL	       ! Number of inventory pollutant names
-        CHARACTER*(*)   EINAM( NIPOL ) ! List of inventory pollutant names	
+        CHARACTER(*)   CPVNAM         ! Name of control/proj variable
+        INTEGER        NIPOL	       ! Number of inventory pollutant names
+        CHARACTER(*)   EINAM( NIPOL ) ! List of inventory pollutant names	
 
 C...........   Other local variables
 
@@ -69,10 +69,10 @@ C...........   Other local variables
 
         LOGICAL         EFLAG 
 
-        CHARACTER(LEN=IOVLEN3)   CBUF 
-        CHARACTER*256            MESG 
+        CHARACTER(IOVLEN3)   CBUF 
+        CHARACTER(256)       MESG 
 
-        CHARACTER*16 :: PROGNAME = 'CHKCPVAR' ! program name
+        CHARACTER(16) :: PROGNAME = 'CHKCPVAR' ! program name
 
 C***********************************************************************
 C   begin body of function CHKCPVAR

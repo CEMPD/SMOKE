@@ -47,19 +47,19 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
 
         EXTERNAL    CRLF, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
-        INTEGER,                INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
-        
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
+        INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
+       
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
         INTEGER, PARAMETER :: NSEG = 12      ! number of segments in line
@@ -74,11 +74,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=50)      SEGMENT( NSEG ) ! segments of line
-        CHARACTER(LEN=CASLEN3) TCAS            ! tmp cas number
-        CHARACTER(LEN=300)     MESG            !  message buffer
+        CHARACTER(50)      SEGMENT( NSEG ) ! segments of line
+        CHARACTER(CASLEN3) TCAS            ! tmp cas number
+        CHARACTER(300)     MESG            !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCNTINP' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCNTINP' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCNTINP

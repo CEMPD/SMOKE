@@ -63,20 +63,20 @@ C...........   INCLUDES:
 C...........   PARAMETERS and their descriptions:
 C...........   LOCAL PARAMETERS
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         ENVINT 
         LOGICAL         ENVYN
-        CHARACTER*50    GETCFDSC
+        CHARACTER(50)   GETCFDSC
         INTEGER         GETFLINE
-        CHARACTER*10    HHMMSS
+        CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         PROMPTFFILE
         INTEGER         TRIMLEN
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   VERCHAR
 
         EXTERNAL        ENVINT, ENVYN, GETFLINE, HHMMSS, INDEX1, PROMPTMFILE,  
      &                  PROMPTFFILE, TRIMLEN, VERCHAR
@@ -113,21 +113,21 @@ C.......   BEIS3 internal, output species
         REAL, ALLOCATABLE :: EMISL( :, :, : )         ! emissions in moles/hour
         REAL, ALLOCATABLE :: EMISS( :, :, : )         ! emissions in tons/hour
 
-        CHARACTER*5      CTZONE     ! string of time zone
-        CHARACTER*4      BTMP       ! temporary variable string 
-        CHARACTER*16     RADNAM     ! string for shortwave radiation reaching ground
-        CHARACTER*16     TMPRNAM    ! string for temperature 
-        CHARACTER*16     PRESNAM    ! string for surface pressure
-        CHARACTER*16     VTMP       ! temporary variable string
-        CHARACTER*50  :: METSCEN    !  temporary string for met scenario name
-        CHARACTER*50  :: CLOUDSHM   !  temporary string for cloud scheme name
-        CHARACTER*50  :: LUSE       !  temporary string for land use description
+        CHARACTER(5)     CTZONE     ! string of time zone
+        CHARACTER(4)     BTMP       ! temporary variable string 
+        CHARACTER(16)    RADNAM     ! string for shortwave radiation reaching ground
+        CHARACTER(16)    TMPRNAM    ! string for temperature 
+        CHARACTER(16)    PRESNAM    ! string for surface pressure
+        CHARACTER(16)    VTMP       ! temporary variable string
+        CHARACTER(50) :: METSCEN    !  temporary string for met scenario name
+        CHARACTER(50) :: CLOUDSHM   !  temporary string for cloud scheme name
+        CHARACTER(50) :: LUSE       !  temporary string for land use description
 
 
-        CHARACTER*16,ALLOCATABLE ::  EMSPC( : )   ! names of emitting species 
-        CHARACTER(LEN=SPNLEN3)       SPPRO        ! speciation profile to use
+        CHARACTER(16), ALLOCATABLE ::  EMSPC( : )   ! names of emitting species 
+        CHARACTER(SPNLEN3)       SPPRO        ! speciation profile to use
 
-        CHARACTER*80    PARMENU( 2 )            ! Methods to calc. PAR
+        CHARACTER(80)   PARMENU( 2 )            ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use MM5 generated RGRND',  
      &             'Assume Clear Skies'     /
@@ -137,13 +137,13 @@ C...........   Logical names and unit numbers
         INTEGER         LDEV    !  unit number for log device
         INTEGER         RDEV    !  unit number for speciation profiles file
             
-        CHARACTER*16    ENAME   !  logical name for emissions output (moles)
-        CHARACTER*16    SNAME   !  logical name for emissions output (mass)
-        CHARACTER*16    NNAME   !  logical name for normalized-emissions input
-        CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
-        CHARACTER*16    BNAME   !  logical name for frost switch input
-        CHARACTER*16    M3NAME  !  logical name for MET_FILE1
-        CHARACTER*16    M2NAME  !  logical name for MET_FILE2
+        CHARACTER(16)   ENAME   !  logical name for emissions output (moles)
+        CHARACTER(16)   SNAME   !  logical name for emissions output (mass)
+        CHARACTER(16)   NNAME   !  logical name for normalized-emissions input
+        CHARACTER(16)   GNAME   !  logical name for GRID_CRO_2D
+        CHARACTER(16)   BNAME   !  logical name for frost switch input
+        CHARACTER(16)   M3NAME  !  logical name for MET_FILE1
+        CHARACTER(16)   M2NAME  !  logical name for MET_FILE2
 
 C...........   Other variables and their descriptions:
 
@@ -176,9 +176,9 @@ C...........   Other variables and their descriptions:
         LOGICAL ::      ASSUME_SUMMER = .TRUE. ! use summer normalized emissions
         LOGICAL ::      GETATN
 
-        CHARACTER*300   MESG    !  message buffer for M3EXIT()
+        CHARACTER(300)  MESG    !  message buffer for M3EXIT()
 
-        CHARACTER*16 :: PROGNAME = 'TMPBEIS3'   !  program name
+        CHARACTER(16) :: PROGNAME = 'TMPBEIS3'   !  program name
 
 C***********************************************************************
 C   begin body of program TMPBEIS3

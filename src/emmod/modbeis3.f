@@ -53,7 +53,7 @@ C...........   Emission factor, vegetation types tables:
         REAL,    ALLOCATABLE, PUBLIC :: AVGNO( :, :, : )     ! avg nitric oxide
         REAL,    ALLOCATABLE, PUBLIC :: AVGLAI( :, :, : )    ! avg leaf index
 
-        CHARACTER*16, ALLOCATABLE, PUBLIC :: VEGID( : )     !  Veg types
+        CHARACTER(16), ALLOCATABLE, PUBLIC :: VEGID( : )     !  Veg types
 
 
         END MODULE MODBEIS3

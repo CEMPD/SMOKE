@@ -77,11 +77,11 @@ C.........  INCLUDES:
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
-        CHARACTER*50    GETCFDSC  
+        CHARACTER(2)    CRLF
+        CHARACTER(50)   GETCFDSC  
         INTEGER         GETIFDSC  
         INTEGER         PROMPTFFILE  
-        CHARACTER*16    PROMPTMFILE  
+        CHARACTER(16)   PROMPTMFILE  
         INTEGER         SECSDIFF  
 
         EXTERNAL  CRLF, GETCFDSC, GETIFDSC, PROMPTFFILE, 
@@ -109,13 +109,13 @@ C...........   SUBROUTINE ARGUMENTS
 	INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
 
 C.........  Temporary array for speciation variable names
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: SLVNAMS( : )
+        CHARACTER(IODLEN3), ALLOCATABLE :: SLVNAMS( : )
 
 C.........  Local units and logical file names
         INTEGER         IDEV      ! tmp unit number if ENAME is map file
         INTEGER      :: MDEV = 0  ! unit no. emission processes file
 
-        CHARACTER*16    INAME     ! tmp name for inven file of unknown fmt
+        CHARACTER(16)   INAME     ! tmp name for inven file of unknown fmt
 
 C.........  Other local variables
 
@@ -129,14 +129,14 @@ C.........  Other local variables
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
         LOGICAL      :: TIMEFLAG = .FALSE.  ! true: time info already init
 
-        CHARACTER*16    NAMBUF       ! tmp file name buffer
-	CHARACTER*16    UNITS        ! units of ASCII elevated file
-        CHARACTER*256   MESG         ! message buffer
-	CHARACTER*300   LINE         ! tmp line buffer
+        CHARACTER(16)   NAMBUF       ! tmp file name buffer
+	CHARACTER(16)   UNITS        ! units of ASCII elevated file
+        CHARACTER(256)  MESG         ! message buffer
+	CHARACTER(300)  LINE         ! tmp line buffer
 
-        CHARACTER(LEN=IOULEN3) GRDENV      ! gridded output units from envrmt
+        CHARACTER(IOULEN3) GRDENV      ! gridded output units from envrmt
 
-        CHARACTER*16 :: PROGNAME = 'OPENREPIN' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENREPIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENREPIN
@@ -709,7 +709,7 @@ C.............  Local variables
             LOGICAL, SAVE :: IFLAG = .FALSE.  ! true: episode settings init
             LOGICAL, SAVE :: ZFLAG = .FALSE.  ! true: time zone init
 
-            CHARACTER*300    MESG             ! message buffer
+            CHARACTER(300)   MESG             ! message buffer
 
 C----------------------------------------------------------------------
 
@@ -827,8 +827,8 @@ C.............  Local variables
 
             LOGICAL           STRICT  ! flag for strict checks or not
 
-            CHARACTER*20      BUFFER  ! program name buffer
-            CHARACTER(LEN=IOVLEN3), SAVE :: SAVNAM  ! name of file used to init
+            CHARACTER(20)     BUFFER  ! program name buffer
+            CHARACTER(IOVLEN3), SAVE :: SAVNAM  ! name of file used to init
 
 C----------------------------------------------------------------------
 

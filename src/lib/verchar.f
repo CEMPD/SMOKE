@@ -1,5 +1,5 @@
 
-        CHARACTER*16 FUNCTION VERCHAR( BUFFER )
+        CHARACTER(16) FUNCTION VERCHAR( BUFFER )
 
 C***********************************************************************
 C  function body starts at line
@@ -43,12 +43,12 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL   TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*)    BUFFER         ! string FIPS code
+        CHARACTER(*)    BUFFER         ! string FIPS code
 
 C...........   Other local variables
         INTEGER         J, L2
 
-        CHARACTER*16 :: PROGNAME = 'VERCHAR' ! program name
+        CHARACTER(16) :: PROGNAME = 'VERCHAR' ! program name
 
 C***********************************************************************
 C   begin body of function VERCHAR

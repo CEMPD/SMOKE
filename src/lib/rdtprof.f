@@ -50,7 +50,7 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C..........  EXTERNAL FUNCTIONS
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         STR2INT         !  read (unjustified) int from str
 
         EXTERNAL        CRLF, STR2INT
@@ -63,7 +63,7 @@ C.........  SUBROUTINE ARGUMENTS
 C.........  Local parameters
         INTEGER, PARAMETER :: NDTYPE = 9      ! no. diurnal profile types
 
-        CHARACTER*9, PARAMETER :: DIURTYPE( NDTYPE ) = 
+        CHARACTER(9), PARAMETER :: DIURTYPE( NDTYPE ) = 
      &                   ( / 'WEEKDAY  ', 'WEEKEND  ', 'MONDAY   ',
      &                       'TUESDAY  ', 'WEDNESDAY', 'THURSDAY ', 
      &                       'FRIDAY   ', 'SATURDAY ', 'SUNDAY   '   / )
@@ -95,9 +95,9 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         LOGICAL      :: DFLAG  = .FALSE.   ! diurnal profiles initialized
         LOGICAL      :: EFLAG  = .FALSE.  !  input error flag
 
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDTPROF' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDTPROF' ! program name
 
 C***********************************************************************
 C   begin body of subroutine  RDTPROF
@@ -433,8 +433,8 @@ C.............  Local variables
 
             LOGICAL      :: FOUND           !  true: profile type has been found
 
-            CHARACTER*120   LINE    !  char-string buffer for profiles input
-            CHARACTER*300   MESG    !  message buffer
+            CHARACTER(120)  LINE    !  char-string buffer for profiles input
+            CHARACTER(300)  MESG    !  message buffer
 
 C----------------------------------------------------------------------
 
@@ -522,8 +522,8 @@ C.............  Local variables
 
             REAL            DIV             !  scratch divisor
 
-            CHARACTER*120   LINE    !  char-string buffer for profiles input
-            CHARACTER*300   MESG    !  message buffer
+            CHARACTER(120)  LINE    !  char-string buffer for profiles input
+            CHARACTER(300)  MESG    !  message buffer
 
 C----------------------------------------------------------------------
         
@@ -646,7 +646,7 @@ C.............  Subroutine arguments
 C.............  Local variables
             INTEGER  I
 
-            CHARACTER*300  MESG
+            CHARACTER(300) MESG
 
 C----------------------------------------------------------------------
 

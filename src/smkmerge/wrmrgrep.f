@@ -61,10 +61,10 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT  
         INTEGER         INDEX1  
-        CHARACTER*14    MMDDYY
+        CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
         REAL            YR2DAY
 
@@ -78,17 +78,17 @@ C...........   Subroutine arguments
 C...........   Local allocatable arrays
         LOGICAL, ALLOCATABLE :: LUPDATE( : ) ! true: units/names not yet updated
 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE ::  NAMES( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: ANAMES( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: BNAMES( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: MNAMES( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: PNAMES( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE ::  NAMES( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: ANAMES( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: BNAMES( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: MNAMES( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: PNAMES( : )
 
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE ::  UNITS( : )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: AUNITS( : )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: BUNITS( : )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: MUNITS( : )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: PUNITS( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, SAVE ::  UNITS( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: AUNITS( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: BUNITS( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: MUNITS( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, SAVE :: PUNITS( : )
 
 C...........   Local group counts
         INTEGER, SAVE :: ACNT = 0       ! area source output vars count
@@ -116,15 +116,15 @@ C...........   Other local variables
  
         LOGICAL, SAVE :: FIRSTIME= .TRUE. ! true: first time routine called
 
-        CHARACTER*300          DATFMT     ! format for data
-        CHARACTER*300          HDRFMT     ! format for header
-        CHARACTER*300          HEADER     ! header for output files
-        CHARACTER*300          LINFLD     ! line of dashes
-        CHARACTER*300          MESG       ! message buffer
-        CHARACTER(LEN=IOVLEN3) SBUF       ! tmp pol or species name
-        CHARACTER(LEN=IOULEN3) CBUF       ! tmp units field
+        CHARACTER(300)     DATFMT     ! format for data
+        CHARACTER(300)     HDRFMT     ! format for header
+        CHARACTER(300)     HEADER     ! header for output files
+        CHARACTER(300)     LINFLD     ! line of dashes
+        CHARACTER(300)     MESG       ! message buffer
+        CHARACTER(IOVLEN3) SBUF       ! tmp pol or species name
+        CHARACTER(IOULEN3) CBUF       ! tmp units field
 
-        CHARACTER*16  :: PROGNAME = 'WRMRGREP' ! program name
+        CHARACTER(16) :: PROGNAME = 'WRMRGREP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRMRGREP
@@ -561,8 +561,8 @@ C.............  Subprogram arguments
 C.............  Local variables
             INTEGER   K1, K2, L, LD1, LD2
 
-            CHARACTER*10 TYPENAM
-            CHARACTER*15 DATANAM
+            CHARACTER(10) TYPENAM
+            CHARACTER(15) DATANAM
 
 C..............................................................................
 
@@ -629,8 +629,8 @@ C.............  Local parameters
 
 C.............  Local variables
             INTEGER       I1, I2, J, L, L1, L2
-            CHARACTER*30  :: SPACE = ' '
-            CHARACTER*300 :: TMPFMT
+            CHARACTER(30)  :: SPACE = ' '
+            CHARACTER(300) :: TMPFMT
 
 C.............................................................................
 
@@ -706,17 +706,17 @@ C.............  Subprogram arguments
             REAL        , INTENT (IN) :: ST_EMIS( NS, NDIM )
 
 C.............  Arrays allocated by subprogram argument
-            INTEGER                MAXWID ( 0:NDIM )
-            CHARACTER(LEN=IOVLEN3) OUTNAMS( NDIM )
-            CHARACTER(LEN=IOULEN3) OUTUNIT( NDIM )
+            INTEGER            MAXWID ( 0:NDIM )
+            CHARACTER(IOVLEN3) OUTNAMS( NDIM )
+            CHARACTER(IOULEN3) OUTUNIT( NDIM )
 
 C.............  Local variables
             INTEGER       I, J, L, L2
 
             REAL          VAL
 
-            CHARACTER*20  :: STLABEL = 'State'
-            CHARACTER*30     BUFFER
+            CHARACTER(20) :: STLABEL = 'State'
+            CHARACTER(30)    BUFFER
 
 C..............................................................................
 
@@ -782,9 +782,9 @@ C.............  Subprogram arguments
             REAL        , INTENT (IN) :: CY_EMIS( NC, NDIM )
 
 C.............  Arrays allocated by subprogram argument
-            INTEGER                MAXWID ( 0:NDIM )
-            CHARACTER(LEN=IOVLEN3) OUTNAMS( NDIM )
-            CHARACTER(LEN=IOULEN3) OUTUNIT( NDIM )
+            INTEGER            MAXWID ( 0:NDIM )
+            CHARACTER(IOVLEN3) OUTNAMS( NDIM )
+            CHARACTER(IOULEN3) OUTUNIT( NDIM )
 
 C.............  Local variables
             INTEGER       I, J, L, L1, L2, N
@@ -792,8 +792,8 @@ C.............  Local variables
 
             REAL          VAL
 
-            CHARACTER*20  :: STLABEL = 'County'
-            CHARACTER*30     BUFFER
+            CHARACTER(20) :: STLABEL = 'County'
+            CHARACTER(30)    BUFFER
 
 C..............................................................................
 

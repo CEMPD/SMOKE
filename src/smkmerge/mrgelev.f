@@ -79,18 +79,18 @@ C.........  Other local variables
         INTEGER         IDX             ! index to list of counties in grid   
         INTEGER         IOS             ! i/o status
 
-        REAL*8          SUM1            ! sum for GOUT1   
-        REAL*8          SUM2            ! sum for GOUT2 
-        REAL*8          MULT            ! tmp value with multiplictv controls
-        REAL*8          REAC            ! tmp value with reactivity controls
-        REAL*8          VAL             ! tmp value  
-        REAL*8          VMP             ! tmp market penetration value  
+        REAL(8)         SUM1            ! sum for GOUT1   
+        REAL(8)         SUM2            ! sum for GOUT2 
+        REAL(8)         MULT            ! tmp value with multiplictv controls
+        REAL(8)         REAC            ! tmp value with reactivity controls
+        REAL(8)         VAL             ! tmp value  
+        REAL(8)         VMP             ! tmp market penetration value  
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine called
 
-        CHARACTER*300   MESG            ! message buffer
+        CHARACTER(300)  MESG            ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'MRGELEV' ! program name
+        CHARACTER(16) :: PROGNAME = 'MRGELEV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine MRGELEV

@@ -41,7 +41,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS 
-        CHARACTER*2  CRLF
+        CHARACTER(2)  CRLF
         LOGICAL      ENVYN
         INTEGER      FIND1
         INTEGER      GETFLINE
@@ -74,10 +74,10 @@ C...........   Other local variables
         LOGICAL    :: EFLAG = .TRUE. ! true: error found 
         LOGICAL    :: FFLAG = .TRUE. ! true: use daylight time exemption file 
 
-        CHARACTER*300 TRAILER       ! ending part of output log message
-        CHARACTER*300 MESG          ! message buffer
+        CHARACTER(300) TRAILER       ! ending part of output log message
+        CHARACTER(300) MESG          ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETDYSAV' ! program name
+        CHARACTER(16) :: PROGNAME = 'GETDYSAV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GETDYSAV

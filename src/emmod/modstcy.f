@@ -53,9 +53,9 @@
         INTEGER, ALLOCATABLE, PUBLIC :: STATCOD( : ) ! country/state codes
         INTEGER, ALLOCATABLE, PUBLIC :: CNTYCOD( : ) ! country/state/county code
 
-        CHARACTER*20, ALLOCATABLE, PUBLIC :: CTRYNAM( : ) ! Country names
-        CHARACTER*20, ALLOCATABLE, PUBLIC :: STATNAM( : ) ! State names
-        CHARACTER*20, ALLOCATABLE, PUBLIC :: CNTYNAM( : ) ! County names
+        CHARACTER(20), ALLOCATABLE, PUBLIC :: CTRYNAM( : ) ! Country names
+        CHARACTER(20), ALLOCATABLE, PUBLIC :: STATNAM( : ) ! State names
+        CHARACTER(20), ALLOCATABLE, PUBLIC :: CNTYNAM( : ) ! County names
 
 !.........  Other arrays by county 
         INTEGER, ALLOCATABLE, PUBLIC :: CNTYTZON( : )  ! time zone by county
@@ -72,8 +72,8 @@
         INTEGER, PUBLIC :: NORIS     ! Number of all ORIS codes
 
         INTEGER, ALLOCATABLE, PUBLIC :: ORISFIP( : ) ! country/state/county code
-        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC :: ORISLST( : ) ! ORIS codes
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC :: ORISDSC( : ) ! ORIS desc
+        CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: ORISLST( : ) ! ORIS codes
+        CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC :: ORISDSC( : ) ! ORIS desc
         
 !.........  Flags ans settings for optional file attributes
         INTEGER, PUBLIC :: STCYPOPYR = 0       ! year of population data

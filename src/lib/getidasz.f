@@ -67,11 +67,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
 
-        CHARACTER*300   BUFFER      !  temporary buffer
-        CHARACTER*300   LINE        !  input file line buffer
-        CHARACTER*300   MESG        !  message buffer
+        CHARACTER(300)  BUFFER      !  temporary buffer
+        CHARACTER(300)  LINE        !  input file line buffer
+        CHARACTER(300)  MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETIDASZ' ! program name
+        CHARACTER(16) :: PROGNAME = 'GETIDASZ' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GETIDASZ

@@ -66,16 +66,16 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
 
 C...........   Local allocatable arrays
-        INTEGER               , ALLOCATABLE :: INDX   ( : )  ! POLA sorting indx
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SEGMENT( : )  ! line segments
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: POLNAM ( : )  ! pol names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: POLA   ( : )  ! all unsorted pols
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: RAWSUBS( :,: ) ! raw subtract pollutant list
-        CHARACTER(LEN=IOULEN3), ALLOCATABlE :: SUBHCS ( :,: ) ! hydrocarbon names from packet
+        INTEGER           , ALLOCATABLE :: INDX   ( : )  ! POLA sorting indx
+        CHARACTER(IOVLEN3), ALLOCATABLE :: SEGMENT( : )  ! line segments
+        CHARACTER(IOVLEN3), ALLOCATABLE :: POLNAM ( : )  ! pol names
+        CHARACTER(IOVLEN3), ALLOCATABLE :: POLA   ( : )  ! all unsorted pols
+        CHARACTER(IOULEN3), ALLOCATABLE :: RAWSUBS( :,: ) ! raw subtract pollutant list
+        CHARACTER(IOULEN3), ALLOCATABlE :: SUBHCS ( :,: ) ! hydrocarbon names from packet
 
 C...........   Local parametes
 #ifdef DBLBSLASH
-        CHARACTER, PARAMETER :: CONTCHAR = '\\'  ! line continuation character
+        CHARACTER(2), PARAMETER :: CONTCHAR = '\\'  ! line continuation character
 #else
         CHARACTER, PARAMETER :: CONTCHAR = '\'  ! line continuation character
 #endif
@@ -105,15 +105,15 @@ C...........   Other local variables
         LOGICAL      :: NEWLINE  = .TRUE.    ! true: current line is new (not continued)
         LOGICAL      :: EFLAG    = .FALSE.   ! true: error found
 
-        CHARACTER*300          LINE     !  line buffer
-        CHARACTER*300          MESG     !  message buffer
-        CHARACTER(LEN=IOVLEN3) ACT      !  tmp activity name
-        CHARACTER(LEN=IOVLEN3) CPOL     !  tmp pollutant name
-        CHARACTER(LEN=IOVLEN3) LPOL     !  tmp pollutant name from previous iter
-        CHARACTER(LEN=IOVLEN3) PRC      !  tmp process name
-        CHARACTER(LEN=IOVLEN3) SUBLINE( 4 ) ! pieces of subtract packet
+        CHARACTER(300)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
+        CHARACTER(IOVLEN3) ACT      !  tmp activity name
+        CHARACTER(IOVLEN3) CPOL     !  tmp pollutant name
+        CHARACTER(IOVLEN3) LPOL     !  tmp pollutant name from previous iter
+        CHARACTER(IOVLEN3) PRC      !  tmp process name
+        CHARACTER(IOVLEN3) SUBLINE( 4 ) ! pieces of subtract packet
 
-        CHARACTER*16 :: PROGNAME = 'RDEPROC' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDEPROC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDEPROC

@@ -71,16 +71,16 @@ C.........  Arrays for column formatting
 
         LOGICAL       LF    ( MXCHRS+8 ) !  true if column should be output
 
-        CHARACTER*300 CHARS ( MXCHRS+8 ) !  source fields for output
+        CHARACTER(300) CHARS ( MXCHRS+8 ) !  source fields for output
 
 C.........  Source-specific header arrays
-        CHARACTER*20 :: ARHEADRS( MXARCHR3+1 ) = 
+        CHARACTER(20) :: ARHEADRS( MXARCHR3+1 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'SCC                 ',
      &                                        'Cell                ' / )
 
-        CHARACTER*20 :: MBHEADRS( MXMBCHR3+2 ) = 
+        CHARACTER(20) :: MBHEADRS( MXMBCHR3+2 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Roadway Type code   ',
@@ -89,7 +89,7 @@ C.........  Source-specific header arrays
      &                                        'SCC                 ', 
      &                                        'Vehicle Type Name   ' / ) 
 
-        CHARACTER*20 :: PTHEADRS( MXPTCHR3+9 ) = 
+        CHARACTER(20) :: PTHEADRS( MXPTCHR3+9 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Plant code          ', 
@@ -108,7 +108,7 @@ C.........  Source-specific header arrays
      &                                        'Facility description' / )
 
 C.........  Allocatable header arrays
-        CHARACTER*20, ALLOCATABLE :: HDRFLDS( : )
+        CHARACTER(20), ALLOCATABLE :: HDRFLDS( : )
 
 C.........  Other local variables
         INTEGER       COLWID0          !  width of SMOKE source ID column
@@ -121,11 +121,11 @@ C.........  Other local variables
         INTEGER       NASCII           !  number of posible output fields
         INTEGER       NC               !  number of output fields
 
-        CHARACTER*100 BUFFER              !  test buffer
-        CHARACTER*300 OUTFMT              !  output format
-        CHARACTER*300 MESG                !  message buffer
+        CHARACTER(100) BUFFER              !  test buffer
+        CHARACTER(300) OUTFMT              !  output format
+        CHARACTER(300) MESG                !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRINVCHR' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRINVCHR' !  program name
 
 C***********************************************************************
 C   begin body of subroutine WRINVCHR

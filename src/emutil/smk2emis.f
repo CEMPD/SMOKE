@@ -56,11 +56,11 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         REAL            ENVREAL
         LOGICAL         ENVYN
@@ -68,7 +68,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETNUM
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         SECSDIFF
         INTEGER         TRIMLEN
  
@@ -79,20 +79,20 @@ C.........  Allocatable arrays
         INTEGER, ALLOCATABLE ::  INTNAM ( :,: )  ! output species names
         REAL,    ALLOCATABLE ::  EMIS   ( :,: )  ! input and output variable
 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: OUTNAMS( : ) ! output spec names
+        CHARACTER(IOVLEN3), ALLOCATABLE :: OUTNAMS( : ) ! output spec names
 
 C.........  Static arrays
         INTEGER    IFTYPE( 10 )  ! UAM filename in integer format
         INTEGER    IFNOTE( 60 )  ! UAM note in integer format
 
-        CHARACTER(LEN=IOVLEN3) SEGMENT( 2 )
+        CHARACTER(IOVLEN3) SEGMENT( 2 )
 
 C.........  Unit numbers and logical file names
         INTEGER :: LDEV          ! unit number for log file
         INTEGER :: MDEV          ! unit number for mapping file
         INTEGER :: ODEV          ! UAM file desigator for output file
 
-        CHARACTER*16   ENAME     !  NetCDF logical input file name
+        CHARACTER(16)  ENAME     !  NetCDF logical input file name
 
 C.........  Other local variables
 
@@ -132,15 +132,15 @@ C.........  Other local variables
         REAL       XORIG, YORIG  ! Grid origin
         REAL       XCELL, YCELL  ! Grid resolution
 
-        CHARACTER*1    TEMPCH  !  For integer conversion
-        CHARACTER*10   HDRKEY  !  UAM file name label for output file
-        CHARACTER*44   NOTEDEF !  UAM file note default
-        CHARACTER*44   UNOTE   !  UAM file note from env variable
-        CHARACTER*60   FNOTE   !  UAM file description
-        CHARACTER*80   LINE    !  line buffer
-        CHARACTER*256  MESG    !  Temporary message array
+        CHARACTER      TEMPCH  !  For integer conversion
+        CHARACTER(10)  HDRKEY  !  UAM file name label for output file
+        CHARACTER(44)  NOTEDEF !  UAM file note default
+        CHARACTER(44)  UNOTE   !  UAM file note from env variable
+        CHARACTER(60)  FNOTE   !  UAM file description
+        CHARACTER(80)  LINE    !  line buffer
+        CHARACTER(256) MESG    !  Temporary message array
 
-        CHARACTER*16 :: PROGNAME = 'SMK2EMIS'   !  program name
+        CHARACTER(16) :: PROGNAME = 'SMK2EMIS'   !  program name
 
 C***********************************************************************
 C   begin body of program SMK2EMIS

@@ -71,13 +71,13 @@ C.........  INCLUDES:
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
         INTEGER         JUNIT
-        CHARACTER*16    MULTUNIT
+        CHARACTER(16)   MULTUNIT
         INTEGER         PROMPTFFILE  
         LOGICAL         SETENVVAR
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   VERCHAR
 
         EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
      &            SETENVVAR, VERHCAR
@@ -86,7 +86,7 @@ C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
 
 C...........  Local parameters
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  Base and future year per 
 
@@ -98,17 +98,17 @@ C.........  Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error is found
 
-        CHARACTER*50    RTYPNAM      ! name for type of state/county report file
-        CHARACTER*50    UNIT         ! tmp units buffer
+        CHARACTER(50)   RTYPNAM      ! name for type of state/county report file
+        CHARACTER(50)   UNIT         ! tmp units buffer
 
-        CHARACTER*128   OUTSCEN      ! output scenario name
-        CHARACTER*128   FILEDESC     ! output file description
-        CHARACTER*256   MESG         ! message buffer
-        CHARACTER*256   BUFFER       ! tmp buffer
-        CHARACTER*256   OUTDIR       ! output path
-        CHARACTER(LEN=IODLEN3) DESCBUF ! variable description buffer
+        CHARACTER(128)  OUTSCEN      ! output scenario name
+        CHARACTER(128)  FILEDESC     ! output file description
+        CHARACTER(256)  MESG         ! message buffer
+        CHARACTER(256)  BUFFER       ! tmp buffer
+        CHARACTER(256)  OUTDIR       ! output path
+        CHARACTER(IODLEN3) DESCBUF ! variable description buffer
 
-        CHARACTER*16 :: PROGNAME = 'OPENMRGOUT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENMRGOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENMRGOUT
@@ -370,7 +370,7 @@ C.............  Local subprogram varibles
 
             INTEGER     IOS    ! allocate status
 
-            CHARACTER(LEN=IOVLEN3) CBUF
+            CHARACTER(IOVLEN3) CBUF
 
 C------------------------------------------------------------------------
 
@@ -498,9 +498,9 @@ C.............  Local variables
             INTEGER         L, L2
             INTEGER         IOS
 
-            CHARACTER*128   DUMSTR       ! dummy string
-            CHARACTER*256   MESG         ! output string buffer
-            CHARACTER*512   PHYSNAME     ! output path & file buffer
+            CHARACTER(128)  DUMSTR       ! dummy string
+            CHARACTER(256)  MESG         ! output string buffer
+            CHARACTER(512)  PHYSNAME     ! output path & file buffer
             
             LOGICAL ::      ENVFLAG = .FALSE. ! true: could not set env variable
 

@@ -46,7 +46,7 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
 
 C...........  EXTERNAL FUNCTIONS
-        CHARACTER*2     CRLF   
+        CHARACTER(2)    CRLF   
         EXTERNAL        CRLF
 
 C...........  SUBROUTINE ARGUMENTS
@@ -63,9 +63,9 @@ C...........  SUBROUTINE ARGUMENTS
 C...........   Other local variables
         INTEGER         C, L    !  counters and indices
 
-        CHARACTER*300          :: MESG ! message buffer
+        CHARACTER(300)         :: MESG ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'MRGBIO' ! program name
+        CHARACTER(16) :: PROGNAME = 'MRGBIO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine MRGBIO

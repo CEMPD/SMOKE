@@ -52,11 +52,11 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
         LOGICAL      :: EFLAG = .FALSE.   !  error flag
 
-        CHARACTER*7     FMTSCC            !  read format for SCCs
-        CHARACTER*300   MESG              !  message buffer
-        CHARACTER(LEN=SCCLEN3) SBUFFA     !  read SCC buffer
+        CHARACTER(7)    FMTSCC        !  read format for SCCs
+        CHARACTER(300)  MESG          !  message buffer
+        CHARACTER(SCCLEN3) SBUFFA     !  read SCC buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDCHRSCC' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDCHRSCC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine  RDCHRSCC

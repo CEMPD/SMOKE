@@ -49,10 +49,10 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
-        LOGICAL                ENVYN
-        INTEGER                INDEX1
-        INTEGER                PROMPTFFILE
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
+        LOGICAL            ENVYN
+        INTEGER            INDEX1
+        INTEGER            PROMPTFFILE
+        CHARACTER(NAMLEN3) PROMPTMFILE
 
         EXTERNAL        ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE
 
@@ -91,12 +91,12 @@ C...........   Other local variables
         LOGICAL    :: SFLAG = .FALSE.  ! true: open speeds file
         LOGICAL    :: XFLAG = .FALSE.  ! true: open VMT mix file
 
-        CHARACTER(LEN=NAMLEN3) ANAME
-        CHARACTER(LEN=NAMLEN3) NAMBUF      ! file name buffer
-        CHARACTER(LEN=NAMLEN3) INAME       ! tmp name for inven file of unknown fmt
-        CHARACTER*256          MESG        ! message buffer 
+        CHARACTER(NAMLEN3) ANAME
+        CHARACTER(NAMLEN3) NAMBUF      ! file name buffer
+        CHARACTER(NAMLEN3) INAME       ! tmp name for inven file of unknown fmt
+        CHARACTER(256)     MESG        ! message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'OPENINVIN' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENINVIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENINVIN

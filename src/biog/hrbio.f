@@ -158,10 +158,10 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            BISOP, BMONO, BOVOC        !  biogenic VOC spcs emis.
         REAL            DRCT0, TOTAL, ATTEN
 
-        CHARACTER*16    CLDTYPE    !  KUO, KF, no deep cumulus param
-        CHARACTER*256   MESG
+        CHARACTER(16)   CLDTYPE    !  KUO, KF, no deep cumulus param
+        CHARACTER(256)  MESG
 
-        CHARACTER*16 :: PROGNAME = 'HRBIO'   !  program name
+        CHARACTER(16) :: PROGNAME = 'HRBIO'   !  program name
 
 C...........   SAVED LOCAL VARIABLES and their descriptions:
 

@@ -54,9 +54,9 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Other local variables
         INTEGER         I, J, L1, L2
 
-        CHARACTER*300   BUFFER 
+        CHARACTER(300)  BUFFER 
 
-        CHARACTER*16 :: PROGNAME = 'PARSCSRC' ! program name
+        CHARACTER(16) :: PROGNAME = 'PARSCSRC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PARSCSRC

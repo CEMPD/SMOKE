@@ -61,7 +61,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
         LOGICAL         SETSCCTYPE
 
@@ -79,31 +79,31 @@ C.........  Other local variables
         LOGICAL       :: EFLAG    = .FALSE.
         LOGICAL          SCCFLAG           ! true: SCC type is different from previous
 
-        CHARACTER*256             MESG     ! message buffer
-        CHARACTER(LEN=STALEN3) CSTA     ! tmp Country/state code
-        CHARACTER(LEN=STSLEN3) CSTAS_A  ! tmp Country/state code // level 1 SCC
-        CHARACTER(LEN=STSLEN3) CSTAS_B  ! tmp Country/state code // level 2 SCC
-        CHARACTER(LEN=STSLEN3) CSTAS_C  ! tmp Country/state code // level 3 SCC
-        CHARACTER(LEN=STSLEN3) CSTAS_D  ! tmp Country/state code // all SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_A   ! tmp level 1 of SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_B   ! tmp level 2 of SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_C   ! tmp level 3 of SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_D   ! tmp level 4 (all) of SCC
-        CHARACTER(LEN=SRCLEN3) CSRC     ! tmp source chars string
-        CHARACTER(LEN=SS0LEN3) CSSC0    ! tmp FIPS // Plant // SCC
-        CHARACTER(LEN=SS1LEN3) CSSC1    ! tmp source chars through char1 // SCC
-        CHARACTER(LEN=SS2LEN3) CSSC2    ! tmp source chars through char2 // SCC
-        CHARACTER(LEN=SS3LEN3) CSSC3    ! tmp source chars through char3 // SCC
-        CHARACTER(LEN=SS4LEN3) CSSC4    ! tmp source chars through char4 // SCC
-        CHARACTER(LEN=SS5LEN3) CSSC5    ! tmp source chars through char5 // SCC
-        CHARACTER(LEN=FIPLEN3) CFIP     ! tmp (character) FIPS code
-        CHARACTER(LEN=FPLLEN3) CFIPPLT  ! tmp FIPS code // plant id
-        CHARACTER(LEN=FPSLEN3) CFIPS_A  ! tmp FIPS code // level 1 of SCC
-        CHARACTER(LEN=FPSLEN3) CFIPS_B  ! tmp FIPS code // level 2 of SCC
-        CHARACTER(LEN=FPSLEN3) CFIPS_C  ! tmp FIPS code // level 3 of SCC
-        CHARACTER(LEN=FPSLEN3) CFIPS_D  ! tmp FIPS code // level 4 (all) of SCC
+        CHARACTER(256)     MESG     ! message buffer
+        CHARACTER(STALEN3) CSTA     ! tmp Country/state code
+        CHARACTER(STSLEN3) CSTAS_A  ! tmp Country/state code // level 1 SCC
+        CHARACTER(STSLEN3) CSTAS_B  ! tmp Country/state code // level 2 SCC
+        CHARACTER(STSLEN3) CSTAS_C  ! tmp Country/state code // level 3 SCC
+        CHARACTER(STSLEN3) CSTAS_D  ! tmp Country/state code // all SCC
+        CHARACTER(SCCLEN3) TSCC_A   ! tmp level 1 of SCC
+        CHARACTER(SCCLEN3) TSCC_B   ! tmp level 2 of SCC
+        CHARACTER(SCCLEN3) TSCC_C   ! tmp level 3 of SCC
+        CHARACTER(SCCLEN3) TSCC_D   ! tmp level 4 (all) of SCC
+        CHARACTER(SRCLEN3) CSRC     ! tmp source chars string
+        CHARACTER(SS0LEN3) CSSC0    ! tmp FIPS // Plant // SCC
+        CHARACTER(SS1LEN3) CSSC1    ! tmp source chars through char1 // SCC
+        CHARACTER(SS2LEN3) CSSC2    ! tmp source chars through char2 // SCC
+        CHARACTER(SS3LEN3) CSSC3    ! tmp source chars through char3 // SCC
+        CHARACTER(SS4LEN3) CSSC4    ! tmp source chars through char4 // SCC
+        CHARACTER(SS5LEN3) CSSC5    ! tmp source chars through char5 // SCC
+        CHARACTER(FIPLEN3) CFIP     ! tmp (character) FIPS code
+        CHARACTER(FPLLEN3) CFIPPLT  ! tmp FIPS code // plant id
+        CHARACTER(FPSLEN3) CFIPS_A  ! tmp FIPS code // level 1 of SCC
+        CHARACTER(FPSLEN3) CFIPS_B  ! tmp FIPS code // level 2 of SCC
+        CHARACTER(FPSLEN3) CFIPS_C  ! tmp FIPS code // level 3 of SCC
+        CHARACTER(FPSLEN3) CFIPS_D  ! tmp FIPS code // level 4 (all) of SCC
 
-        CHARACTER*16 :: PROGNAME = 'ASGNNHAPX' ! program name
+        CHARACTER(16) :: PROGNAME = 'ASGNNHAPX' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNNHAPX

@@ -62,9 +62,9 @@
         INTEGER, PARAMETER, PUBLIC :: LENTTL3  = 300! length of titles
         INTEGER, PARAMETER, PUBLIC :: QAFMTL3  = 2000 ! lngth of format statmnt
 
-        CHARACTER*4, PARAMETER, PUBLIC :: CHKPFX = 'chk_'
+        CHARACTER(4), PARAMETER, PUBLIC :: CHKPFX = 'chk_'
 
-        CHARACTER(LEN=RPKTLEN), PARAMETER, PUBLIC :: 
+        CHARACTER(RPKTLEN), PARAMETER, PUBLIC :: 
      &                          ALLPCKTS( NALLPCKT ) = 
      &                                  ( / '/CREATE REPORT/      ',
      &                                      '/REPORT TIME/        ',
@@ -77,7 +77,7 @@
      &                                      '/SPECIFY PING/       ',
      &                                      '/SPECIFY ELEV/       '  / )
         
-        CHARACTER*4, PARAMETER, PUBLIC :: CRTSYBL( NCRTSYBL ) = 
+        CHARACTER(4), PARAMETER, PUBLIC :: CRTSYBL( NCRTSYBL ) = 
      &                                  ( / '=   ',
      &                                      '==  ',
      &                                      '=>  ',
@@ -151,12 +151,12 @@
             LOGICAL       :: USESLMAT      ! true: use mole spec
             LOGICAL       :: USESSMAT      ! true: use mass spec
 
-            CHARACTER*1            :: DELIM         ! output delimeter
-            CHARACTER*20           :: DATAFMT       ! data format
-            CHARACTER(LEN=LENLAB3) :: REGNNAM       ! region names
-            CHARACTER(LEN=IOVLEN3) :: SPCPOL        ! pollutant for BYSPC
-            CHARACTER(LEN=LENLAB3) :: SUBGNAM       ! subgrid names
-            CHARACTER*300          :: OFILENAM      ! output names
+            CHARACTER          :: DELIM         ! output delimeter
+            CHARACTER(20)      :: DATAFMT       ! data format
+            CHARACTER(LENLAB3) :: REGNNAM       ! region names
+            CHARACTER(IOVLEN3) :: SPCPOL        ! pollutant for BYSPC
+            CHARACTER(LENLAB3) :: SUBGNAM       ! subgrid names
+            CHARACTER(300)     :: OFILENAM      ! output names
 
         END TYPE
 
@@ -229,16 +229,16 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER, ALLOCATABLE, PUBLIC :: EXCLDRGN( :,: )   ! excluded region numbers
 
 !.........  Group label arrays
-        CHARACTER(LEN=LENLAB3), ALLOCATABLE, PUBLIC :: REGNNAM( : ) ! region group names
-        CHARACTER(LEN=LENLAB3), ALLOCATABLE, PUBLIC :: SUBGNAM( : ) ! subgrid names
+        CHARACTER(LENLAB3), ALLOCATABLE, PUBLIC :: REGNNAM( : ) ! region group names
+        CHARACTER(LENLAB3), ALLOCATABLE, PUBLIC :: SUBGNAM( : ) ! subgrid names
 
 !.........  Allocatable arrays available across all reports
         INTEGER, ALLOCATABLE, PUBLIC :: LOC_BEGP( : )  ! actual src char string starts
         INTEGER, ALLOCATABLE, PUBLIC :: LOC_ENDP( : )  ! actual src char string ends
 
         LOGICAL, ALLOCATABLE, PUBLIC :: LSPCPOL ( : )  ! true: spc pol in *SSUP file
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: SPCPOL( : ) ! pols for BYSPC
-	CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ASCNAM( : ) ! pols from ASCII elevated file
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPCPOL( : ) ! pols for BYSPC
+	CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: ASCNAM( : ) ! pols from ASCII elevated file
 
 !.........  Report characteristics arrays, dimensioned by NREPORT
 
@@ -246,11 +246,11 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 
         LOGICAL        , ALLOCATABLE, PUBLIC :: ALLOUTHR( :,: ) ! true: write
 
-        CHARACTER(LEN=LENTTL3), ALLOCATABLE, PUBLIC :: TITLES ( :,: ) ! report titles
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INDNAM ( :,: ) ! var nams
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: OUTDNAM( :,: ) ! var nams
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: RDNAMES( :,: ) ! for reads
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: ALLUSET( :,: ) ! units
+        CHARACTER(LENTTL3), ALLOCATABLE, PUBLIC :: TITLES ( :,: ) ! report titles
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: INDNAM ( :,: ) ! var nams
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: OUTDNAM( :,: ) ! var nams
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: RDNAMES( :,: ) ! for reads
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: ALLUSET( :,: ) ! units
 
 !.........  Temporary output file-specific settings
 !.........  All widths include leading blanks and trailing commas
@@ -280,21 +280,21 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 	INTEGER      , PUBLIC :: VARWIDTH=0  ! width of variable column
         INTEGER      , PUBLIC :: WEKWIDTH =0 ! width of weekly profile label
 
-        CHARACTER*50 , PUBLIC :: CELLFMT     ! format string for cell columns
-        CHARACTER*50 , PUBLIC :: DATEFMT     ! format string for date column
-        CHARACTER*50 , PUBLIC :: DIUFMT      ! format string for diurnal profile
-        CHARACTER*50 , PUBLIC :: HOURFMT     ! format string for hour column
-        CHARACTER*50 , PUBLIC :: MONFMT      ! format string for monthly profile
-        CHARACTER*50 , PUBLIC :: LAYRFMT     ! format string for layer column
-        CHARACTER*50 , PUBLIC :: REGNFMT     ! format string for region column
-        CHARACTER*50 , PUBLIC :: SICFMT      ! format string for SIC
-        CHARACTER*50 , PUBLIC :: SRCFMT      ! format string for source IDs
-        CHARACTER*50 , PUBLIC :: SRG1FMT     ! format string for primary surg
-        CHARACTER*50 , PUBLIC :: SRG2FMT     ! format string for fallback surg
-        CHARACTER*50 , PUBLIC :: WEKFMT      ! format string for weekly profile
-        CHARACTER*100, PUBLIC :: STKPFMT     ! format string for stack params
-        CHARACTER*200, PUBLIC :: CHARFMT     ! format string for source chars
-        CHARACTER*300, PUBLIC :: FIL_ONAME   ! output file, physical or logical
+        CHARACTER(50),  PUBLIC :: CELLFMT     ! format string for cell columns
+        CHARACTER(50),  PUBLIC :: DATEFMT     ! format string for date column
+        CHARACTER(50),  PUBLIC :: DIUFMT      ! format string for diurnal profile
+        CHARACTER(50),  PUBLIC :: HOURFMT     ! format string for hour column
+        CHARACTER(50),  PUBLIC :: MONFMT      ! format string for monthly profile
+        CHARACTER(50),  PUBLIC :: LAYRFMT     ! format string for layer column
+        CHARACTER(50),  PUBLIC :: REGNFMT     ! format string for region column
+        CHARACTER(50),  PUBLIC :: SICFMT      ! format string for SIC
+        CHARACTER(50),  PUBLIC :: SRCFMT      ! format string for source IDs
+        CHARACTER(50),  PUBLIC :: SRG1FMT     ! format string for primary surg
+        CHARACTER(50),  PUBLIC :: SRG2FMT     ! format string for fallback surg
+        CHARACTER(50),  PUBLIC :: WEKFMT      ! format string for weekly profile
+        CHARACTER(100), PUBLIC :: STKPFMT     ! format string for stack params
+        CHARACTER(200), PUBLIC :: CHARFMT     ! format string for source chars
+        CHARACTER(300), PUBLIC :: FIL_ONAME   ! output file, physical or logical
 
 !.........  Temporary packet-specific settings
         INTEGER, PUBLIC :: PKT_IDX  = 0       ! index to ALLPCKTS for current
@@ -309,14 +309,14 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER, PUBLIC :: PKTCOUNT ( NALLPCKT ) ! no. of packets of given type
         LOGICAL, PUBLIC :: PKTSTATUS( NALLPCKT ) ! currently active packet
 
-        CHARACTER(LEN=RPKTLEN), PUBLIC :: PCKTNAM
+        CHARACTER(RPKTLEN), PUBLIC :: PCKTNAM
 
 !.........  Temporary group-specific settings
         INTEGER, PUBLIC :: GRPNRECS = 0          ! no. records in a group
 
         LOGICAL, PUBLIC :: GRP_INCLSTAT = .TRUE. ! true=include; false=exclude
 
-        CHARACTER(LEN=LENLAB3), PUBLIC :: GRP_LABEL = ' ' ! generic group label
+        CHARACTER(LENLAB3), PUBLIC :: GRP_LABEL = ' ' ! generic group label
 
 !.........  Temporary specify-specific settings
         INTEGER, PUBLIC :: SPCF_NAND = 0
@@ -334,11 +334,11 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         LOGICAL, PUBLIC :: LSUBGRID      ! true: select with a subgrid
         LOGICAL, PUBLIC :: LREGION       ! true: select with a region group
 
-        CHARACTER(LEN=IODLEN3), PUBLIC :: UNITSET  ! current line units
-        CHARACTER(LEN=LENTTL3), PUBLIC :: TITLE    ! current line title
+        CHARACTER(IODLEN3), PUBLIC :: UNITSET  ! current line units
+        CHARACTER(LENTTL3), PUBLIC :: TITLE    ! current line title
 
         ! Output units for each output data column
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: OUTUNIT( : ) 
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: OUTUNIT( : ) 
 
         ! Conversion factors for each output data column
         REAL, ALLOCATABLE, PUBLIC :: UCNVFAC( : )

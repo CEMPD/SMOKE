@@ -73,15 +73,15 @@ C.........  Local parameters
         INTEGER    :: NPFIP = 0
         INTEGER       PFIP         ! tmp fip from previous iteration
 
-        CHARACTER*33 ,PARAMETER :: PART1 = 
+        CHARACTER(33), PARAMETER :: PART1 = 
      &                             'Error reading variable IFIP from '
-        CHARACTER*15 ,PARAMETER :: PART3 = ' INVENTORY file'
+        CHARACTER(15), PARAMETER :: PART3 = ' INVENTORY file'
 
 C...........   Other local variables
 
-        CHARACTER*300    MESG     ! message buffer
+        CHARACTER(300)   MESG     ! message buffer
 
-        CHARACTER*16  :: PROGNAME = 'RDMRGINV' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDMRGINV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDMRGINV

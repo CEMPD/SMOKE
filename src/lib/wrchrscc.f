@@ -61,10 +61,10 @@ C...........   Other local variables
         INTEGER       J, S
         INTEGER       FDEV                !  output file unit number
 
-        CHARACTER*300 MESG                !  message buffer
-        CHARACTER(LEN=SCCLEN3) TSCC, LSCC !  current and previous 10-digit SCC
+        CHARACTER(300) MESG                !  message buffer
+        CHARACTER(SCCLEN3) TSCC, LSCC !  current and previous 10-digit SCC
 
-        CHARACTER*16 :: PROGNAME = 'WRCHRSCC' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRCHRSCC' !  program name
 
 C***********************************************************************
 C   begin body of subroutine WRCHRSCC

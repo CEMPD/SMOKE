@@ -55,7 +55,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         GETIFDSC
         INTEGER         INDEX1
@@ -88,15 +88,15 @@ C...........   Other local variables
         LOGICAL      :: DFLAG  = .FALSE. ! true: weekday (not full week) nrmlizr
         LOGICAL      :: TVFLAG = .FALSE. ! true: time zone is a variable
 
-        CHARACTER*300   MESG        !  message buffer
+        CHARACTER(300)  MESG        !  message buffer
 
-        CHARACTER(LEN=CELLEN3) CCELL    ! tmp cell ID
-        CHARACTER(LEN=POLLEN3) CCOD     ! character pollutant index
-        CHARACTER(LEN=FIPLEN3) CFIP     ! character FIP code
-        CHARACTER(LEN=IOVLEN3) VBUF     ! tmp variable name
-        CHARACTER(LEN=SCCLEN3) SCCZERO  ! default source category code
+        CHARACTER(CELLEN3) CCELL    ! tmp cell ID
+        CHARACTER(POLLEN3) CCOD     ! character pollutant index
+        CHARACTER(FIPLEN3) CFIP     ! character FIP code
+        CHARACTER(IOVLEN3) VBUF     ! tmp variable name
+        CHARACTER(SCCLEN3) SCCZERO  ! default source category code
 
-        CHARACTER*16 :: PROGNAME =  'RDGRDAPI' ! program name
+        CHARACTER(16) :: PROGNAME =  'RDGRDAPI' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDGRDAPI

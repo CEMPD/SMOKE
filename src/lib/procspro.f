@@ -59,13 +59,13 @@ C.........  Other local variables
         INTEGER          I, J, K, L1      !  counters and indices
         INTEGER          IOS              !  i/o status
 
-        CHARACTER*300          MESG       ! message buffer
+        CHARACTER(300)     MESG       ! message buffer
 
-        CHARACTER(LEN=IOVLEN3) SBUF       ! species name buffer
-        CHARACTER(LEN=SPNLEN3) PCODE      ! current speciation profile code
-        CHARACTER(LEN=SPNLEN3) PREVCODE   ! previous speciation profile code
+        CHARACTER(IOVLEN3) SBUF       ! species name buffer
+        CHARACTER(SPNLEN3) PCODE      ! current speciation profile code
+        CHARACTER(SPNLEN3) PREVCODE   ! previous speciation profile code
 
-        CHARACTER*16 :: PROGNAME = 'PROCSPRO' ! program name
+        CHARACTER(16) :: PROGNAME = 'PROCSPRO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PROCSPRO

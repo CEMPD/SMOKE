@@ -54,7 +54,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2             CRLF
+        CHARACTER(2)            CRLF
         INTEGER                 ENVINT
         INTEGER                 GETIFDSC
         INTEGER                 INDEX1
@@ -66,13 +66,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........  LOCAL VARIABLES and their descriptions:
 
 C.........  Array that contains the names of the inventory variables needed 
 C           for this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C...........  ALLOCATABLE VARIABLES and their decriptions...
 
@@ -90,9 +90,9 @@ C...........  Variables for each control/projection matrix
         INTEGER, ALLOCATABLE :: IDXALL ( : ) ! index of matrixes with "All"
         INTEGER, ALLOCATABLE :: NCPVARS( : ) ! sorted no. variables
 
-        CHARACTER(LEN=NAMLEN3), ALLOCATABLE :: CNAMEA ( : )  ! unsort mtx names
-        CHARACTER(LEN=NAMLEN3), ALLOCATABLE :: CNAME  ( : )  ! sorted mtx names
-        CHARACTER(LEN=NAMLEN3), ALLOCATABLE :: CPVNAMS( :,: )! mtx var names
+        CHARACTER(NAMLEN3), ALLOCATABLE :: CNAMEA ( : )  ! unsort mtx names
+        CHARACTER(NAMLEN3), ALLOCATABLE :: CNAME  ( : )  ! sorted mtx names
+        CHARACTER(NAMLEN3), ALLOCATABLE :: CPVNAMS( :,: )! mtx var names
 
 C...........  Control matrix factors
         REAL, ALLOCATABLE :: CFAC   ( : )  ! by-variable factors
@@ -104,7 +104,7 @@ C...........  Temporary IDA pollutant files unit nos.
 C...........  FIXED DIMENSION VARIABLES and their descriptions...
 
 C...........  Inventory file variable names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: IVNAMES( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE :: IVNAMES( : )
 
 C...........   File units and logical/physical names
 
@@ -116,12 +116,12 @@ C...........   File units and logical/physical names
         INTEGER  :: SDEV = 0 !  for ASCII input inventory file
         INTEGER  :: ZDEV = 0 !  for country/state/county file
 
-        CHARACTER(LEN=NAMLEN3) :: ANAME = ' '! inven ASCII input logical name
-        CHARACTER(LEN=NAMLEN3) :: ENAME = ' '! emis input inven logical name
-        CHARACTER(LEN=NAMLEN3) :: INAME      ! tmp name for inven file of unknown fmt
-        CHARACTER(LEN=NAMLEN3)    MNAME      ! tmp control/proj matrix name
-        CHARACTER(LEN=NAMLEN3) :: ONAME      ! output main i/o api
-        CHARACTER(LEN=NAMLEN3) :: TNAME = 'IOAPI_DAT'  ! input name for pol/act
+        CHARACTER(NAMLEN3) :: ANAME = ' '! inven ASCII input logical name
+        CHARACTER(NAMLEN3) :: ENAME = ' '! emis input inven logical name
+        CHARACTER(NAMLEN3) :: INAME      ! tmp name for inven file of unknown fmt
+        CHARACTER(NAMLEN3)    MNAME      ! tmp control/proj matrix name
+        CHARACTER(NAMLEN3) :: ONAME      ! output main i/o api
+        CHARACTER(NAMLEN3) :: TNAME = 'IOAPI_DAT'  ! input name for pol/act
 
 C...........   Other local variables
                                 
@@ -151,18 +151,18 @@ C...........   Other local variables
         LOGICAL      :: SFLAG   = .FALSE.  ! true: inventory read error
         LOGICAL      :: ADJVAL  = .FALSE.  ! true: adjust data value to 0-100 scale
 
-        CHARACTER*16    EVNAME  !  tmp environment variable name
-        CHARACTER*16    NAME1   ! tmp file name component
-        CHARACTER*16    NAME2   ! tmp file name component
-        CHARACTER*100   BUFFER  !  text buffer
-        CHARACTER*256   MESG    !  message buffer
-        CHARACTER(LEN=IOVLEN3) :: VARBUF   ! tmp variable name
-        CHARACTER(LEN=PHYLEN3) :: BPATH    ! base path
-        CHARACTER(LEN=PHYLEN3) :: DATPATH  ! path for pol/act output files
-        CHARACTER(LEN=PHYLEN3) :: RPATH    ! relative path
-        CHARACTER(LEN=PHYLEN3) :: RFNAME   ! relative physical file name
+        CHARACTER(16)   EVNAME  !  tmp environment variable name
+        CHARACTER(16)   NAME1   ! tmp file name component
+        CHARACTER(16)   NAME2   ! tmp file name component
+        CHARACTER(100)  BUFFER  !  text buffer
+        CHARACTER(256)  MESG    !  message buffer
+        CHARACTER(IOVLEN3) :: VARBUF   ! tmp variable name
+        CHARACTER(PHYLEN3) :: BPATH    ! base path
+        CHARACTER(PHYLEN3) :: DATPATH  ! path for pol/act output files
+        CHARACTER(PHYLEN3) :: RPATH    ! relative path
+        CHARACTER(PHYLEN3) :: RFNAME   ! relative physical file name
 
-        CHARACTER*16 :: PROGNAME= 'GRWINVEN' !  program name
+        CHARACTER(16) :: PROGNAME= 'GRWINVEN' !  program name
 
 C***********************************************************************
 C   begin body of program GRWINVEN

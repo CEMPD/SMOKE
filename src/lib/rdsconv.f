@@ -68,7 +68,7 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       FINDC
         INTEGER       GETFLINE
         INTEGER       INDEX1
@@ -84,14 +84,14 @@ C.........  LOCAL PARAMETERS:
 
 C.........  LOCAL VARIABLES and their descriptions:
 C.........  Unsorted pollutant conversion table
-        INTEGER                               NCONV     ! number of conv facs
-        INTEGER              , ALLOCATABLE :: INDX( : ) ! index for sorting
-        INTEGER              , ALLOCATABLE :: ISPA( : ) ! pollutant idx in ENAM
-        INTEGER              , ALLOCATABLE :: TYPA( : ) ! type of each line
+        INTEGER                           NCONV     ! number of conv facs
+        INTEGER          , ALLOCATABLE :: INDX( : ) ! index for sorting
+        INTEGER          , ALLOCATABLE :: ISPA( : ) ! pollutant idx in ENAM
+        INTEGER          , ALLOCATABLE :: TYPA( : ) ! type of each line
 
-        REAL                 , ALLOCATABLE :: FACA( : ) ! conversion factors
+        REAL             , ALLOCATABLE :: FACA( : ) ! conversion factors
 
-        CHARACTER(LEN=TBLLEN), ALLOCATABLE :: PCVA( : ) ! FIPS// SCC// pol index
+        CHARACTER(TBLLEN), ALLOCATABLE :: PCVA( : ) ! FIPS// SCC// pol index
 
 C.........  Counter for different types of records in the input file
         INTEGER :: N( 0:3 )
@@ -115,28 +115,28 @@ C.........  Other local variables
         LOGICAL      :: SFLAG = .FALSE.  ! true: Records were skipped
         LOGICAL         SCCFLAG          ! true: SCC type is different from previous
 
-        CHARACTER*10           CPOL      ! tmp pollutant index in ENAM
-        CHARACTER*16           LINE16    ! tmp 16-char line
-        CHARACTER*300          LINE      ! line buffer
-        CHARACTER*300          MESG      ! message buffer
+        CHARACTER(10)          CPOL      ! tmp pollutant index in ENAM
+        CHARACTER(16)          LINE16    ! tmp 16-char line
+        CHARACTER(300)         LINE      ! line buffer
+        CHARACTER(300)         MESG      ! message buffer
 
-        CHARACTER(LEN=TBLLEN)  PCV       ! tmp pollutant conversion chars
-        CHARACTER(LEN=TBLLEN)  PREVPCV   ! tmp previous pol conversion chars
-        CHARACTER(LEN=STALEN3) CSTA      ! tmp Cy/St code
-        CHARACTER(LEN=FIPLEN3) CFIP      ! tmp Cy/St/Co code
-        CHARACTER(LEN=FIPLEN3) FIPZERO   ! zero Cy/St/Co code
-        CHARACTER(LEN=FIPLEN3+SCCLEN3) CFIPSCC   ! Cy/St/Co code // SCC
-        CHARACTER(LEN=FIPLEN3+SCCLEN3) PFIPSCC   ! Cy/St/Co code // SCC
-        CHARACTER(LEN=SCCLEN3) TSCC      ! tmp SCC
-        CHARACTER(LEN=SCCLEN3) TSCL      ! tmp left SCC
-        CHARACTER(LEN=SCCLEN3) SCCZERO   ! zero SCC 
-        CHARACTER(LEN=FIPLEN3-STALEN3) CYIDZERO ! zero county code
-        CHARACTER(LEN=IOVLEN3) IBUF      ! tmp inventory pol name buffer
-        CHARACTER(LEN=IOVLEN3) SBUF      ! tmp output    pol name buffer
-        CHARACTER(LEN=RWTLEN3) CRWT      ! roadway type no.
-        CHARACTER(LEN=VIDLEN3) CVID      ! vehicle type ID no.
+        CHARACTER(TBLLEN)  PCV       ! tmp pollutant conversion chars
+        CHARACTER(TBLLEN)  PREVPCV   ! tmp previous pol conversion chars
+        CHARACTER(STALEN3) CSTA      ! tmp Cy/St code
+        CHARACTER(FIPLEN3) CFIP      ! tmp Cy/St/Co code
+        CHARACTER(FIPLEN3) FIPZERO   ! zero Cy/St/Co code
+        CHARACTER(FIPLEN3+SCCLEN3) CFIPSCC   ! Cy/St/Co code // SCC
+        CHARACTER(FIPLEN3+SCCLEN3) PFIPSCC   ! Cy/St/Co code // SCC
+        CHARACTER(SCCLEN3) TSCC      ! tmp SCC
+        CHARACTER(SCCLEN3) TSCL      ! tmp left SCC
+        CHARACTER(SCCLEN3) SCCZERO   ! zero SCC 
+        CHARACTER(FIPLEN3-STALEN3) CYIDZERO ! zero county code
+        CHARACTER(IOVLEN3) IBUF      ! tmp inventory pol name buffer
+        CHARACTER(IOVLEN3) SBUF      ! tmp output    pol name buffer
+        CHARACTER(RWTLEN3) CRWT      ! roadway type no.
+        CHARACTER(VIDLEN3) CVID      ! vehicle type ID no.
 
-        CHARACTER*16 :: PROGNAME = 'RDSCONV' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSCONV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSCONV

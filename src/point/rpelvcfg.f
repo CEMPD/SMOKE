@@ -62,7 +62,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       GETFLINE
 
         EXTERNAL   CRLF, GETFLINE
@@ -84,9 +84,9 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.      ! true: error found
 
-        CHARACTER*300   MESG                 ! message buffer
+        CHARACTER(300)  MESG                 ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RPELVCFG' ! program name
+        CHARACTER(16) :: PROGNAME = 'RPELVCFG' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RPELVCFG
@@ -209,7 +209,7 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C.............  External functions
             LOGICAL     BLKORCMT
             LOGICAL     CHKREAL
-            CHARACTER*2 CRLF
+            CHARACTER(2) CRLF
             INTEGER     INDEX1
             INTEGER     GETNLIST
             REAL        STR2REAL
@@ -223,7 +223,7 @@ C.............  Subprogram arguments
             LOGICAL  , INTENT(IN OUT) :: EFLAG      ! true: error found
 
 C.............  Subprogram local allocatable arrays
-            CHARACTER*32, ALLOCATABLE :: SEGMENT( : )
+            CHARACTER(32), ALLOCATABLE :: SEGMENT( : )
 
 C.............  Local variables
             INTEGER       I, I1, I2, I3, J, K, L, N, V  ! counters and indices
@@ -238,9 +238,9 @@ C.............  Local variables
 
             LOGICAL, SAVE :: FIRSTSET = .TRUE. ! true: 1st time group crit found
 
-            CHARACTER*300 BUFFER   ! tmp line buffer as uppercase
-            CHARACTER*300 LINE     ! tmp line buffer
-            CHARACTER*300 MESG     ! mesg buffer
+            CHARACTER(300) BUFFER   ! tmp line buffer as uppercase
+            CHARACTER(300) LINE     ! tmp line buffer
+            CHARACTER(300) MESG     ! mesg buffer
 
 C----------------------------------------------------------------------
 

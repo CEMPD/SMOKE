@@ -44,21 +44,21 @@
 
             SEQUENCE
 
-            INTEGER      FIP   ! country, state, and county code
-            REAL         LAT   ! latitude
-            REAL         LON   ! longitude
-            REAL         ALLOC ! allocation factor
-            CHARACTER*25 NAME  ! airport name
+            INTEGER       FIP   ! country, state, and county code
+            REAL          LAT   ! latitude
+            REAL          LON   ! longitude
+            REAL          ALLOC ! allocation factor
+            CHARACTER(25) NAME  ! airport name
 
         END TYPE
 
         TYPE :: A2PREPTYPE
-            INTEGER                STATE     ! state code
-            CHARACTER(LEN=SCCLEN3) SCC       ! SCC code
-            INTEGER                POLL      ! pollutant code
-            INTEGER                NFIPS     ! number of FIPS codes
-            REAL                   ORIGEMIS  ! emissions before processing
-            REAL                   SUMEMIS   ! summed emissions after
+            INTEGER            STATE     ! state code
+            CHARACTER(SCCLEN3) SCC       ! SCC code
+            INTEGER            POLL      ! pollutant code
+            INTEGER            NFIPS     ! number of FIPS codes
+            REAL               ORIGEMIS  ! emissions before processing
+            REAL               SUMEMIS   ! summed emissions after
         END TYPE
 
 !.........  Area-to-point table. Second dimension is the number of tables (and is
@@ -71,7 +71,7 @@
         
 !.........  Area-to-point table SCCs.
 	INTEGER			  , PUBLIC :: NA2PSCC         ! no. of area-to-point SCCs
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: A2PSCC( : )  ! area-to-point SCCs
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: A2PSCC( : )  ! area-to-point SCCs
 
 !.........  Reporting array (dimension is NCONDSRC)
         INTEGER                        , PUBLIC :: NCONDSRC        ! no. of condensed srcs

@@ -50,7 +50,7 @@ C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         LOGICAL       ENVYN
 
         EXTERNAL      CRLF, ENVYN
@@ -78,10 +78,10 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
 
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
 
-        CHARACTER*300   BUFFER           !  buffer for formatted source chars
-        CHARACTER*300   MESG             !  message buffer
+        CHARACTER(300)  BUFFER           !  buffer for formatted source chars
+        CHARACTER(300)  MESG             !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDPELV' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDPELV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDPELV

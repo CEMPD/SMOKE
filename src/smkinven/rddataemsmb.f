@@ -49,35 +49,35 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         LOGICAL                ENVYN
         
         EXTERNAL   CRLF, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=*),       INTENT (OUT) :: 
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(*),       INTENT (OUT) :: 
      &                                READDATA( NVARPERLN,NPPOL )     ! array of data values
-        CHARACTER(LEN=IOVLEN3), INTENT (OUT) :: READPOL( NVARPERLN )  ! array of pollutant names
-        INTEGER,                INTENT(INOUT):: NVARPERLN ! no. variables per line
-        INTEGER,                INTENT(OUT) :: IYEAR     ! inventory year
-        CHARACTER(LEN=25),      INTENT(OUT) :: X1        ! x-dir link coord 1
-        CHARACTER(LEN=25),      INTENT(OUT) :: Y1        ! y-dir link coord 1
-        CHARACTER(LEN=25),      INTENT(OUT) :: X2        ! x-dir link coord 2
-        CHARACTER(LEN=25),      INTENT(OUT) :: Y2        ! y-dir link coord 2
-        CHARACTER(LEN=2),       INTENT(OUT) :: ZONE      ! time zone
-        LOGICAL,                INTENT(OUT) :: LNKFLAG   ! true: line contains link information
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=RWTLEN3), INTENT(OUT) :: CROAD     ! roadway type
-        CHARACTER(LEN=LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( NVARPERLN )  ! array of pollutant names
+        INTEGER,            INTENT(INOUT):: NVARPERLN ! no. variables per line
+        INTEGER,            INTENT(OUT) :: IYEAR     ! inventory year
+        CHARACTER(25),      INTENT(OUT) :: X1        ! x-dir link coord 1
+        CHARACTER(25),      INTENT(OUT) :: Y1        ! y-dir link coord 1
+        CHARACTER(25),      INTENT(OUT) :: X2        ! x-dir link coord 2
+        CHARACTER(25),      INTENT(OUT) :: Y2        ! y-dir link coord 2
+        CHARACTER(2),       INTENT(OUT) :: ZONE      ! time zone
+        LOGICAL,            INTENT(OUT) :: LNKFLAG   ! true: line contains link information
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(RWTLEN3), INTENT(OUT) :: CROAD     ! roadway type
+        CHARACTER(LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXDATFIL = 60 ! arbitrary max data variables in file
 
 C...........   Local allocatable arrays
-        CHARACTER(LEN=25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
+        CHARACTER(25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
         
 C...........   Other local variables
         INTEGER         I       ! counters and indices
@@ -94,9 +94,9 @@ C...........   Other local variables
         LOGICAL, SAVE:: FIXED    = .FALSE. ! true: input file is fixed-format
         LOGICAL, SAVE:: LFLAG    = .FALSE. ! true: link file
  
-        CHARACTER(LEN=300)     MESG            ! message buffer
+        CHARACTER(300)     MESG            ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDDATAEMSMB' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDDATAEMSMB' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDDATAEMSMB

@@ -52,15 +52,15 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   LOCAL PARAMETERS
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
   
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         GETFLINE
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         TRIMLEN
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   VERCHAR
 
         EXTERNAL        GETFLINE, PROMPTFFILE, PROMPTMFILE,  
      &                  TRIMLEN, VERCHAR
@@ -73,17 +73,17 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         FDEV    !  unit number for emissions factor file
         INTEGER         LDEV    !  unit number for log file
 
-        CHARACTER*16    ENAME   !  logical name for normalized emissions output
-        CHARACTER*16    GNAME1  !  unit number for gridded land use file
-        CHARACTER*16    GNAME2  !  unit number for gridded land use file
-        CHARACTER*16    GRDNM   !  grid name
-        CHARACTER*16, ALLOCATABLE  :: LUNAMA( : )  ! land use type names
-        CHARACTER*16, ALLOCATABLE  :: LUNAMB( : )  ! land use type names
-        CHARACTER*16    LUNAM   ! temporary tag for land use names    
-        CHARACTER*16    GNAMET  !  unit number for gridded land use totals file
+        CHARACTER(16)   ENAME   !  logical name for normalized emissions output
+        CHARACTER(16)   GNAME1  !  unit number for gridded land use file
+        CHARACTER(16)   GNAME2  !  unit number for gridded land use file
+        CHARACTER(16)   GRDNM   !  grid name
+        CHARACTER(16), ALLOCATABLE  :: LUNAMA( : )  ! land use type names
+        CHARACTER(16), ALLOCATABLE  :: LUNAMB( : )  ! land use type names
+        CHARACTER(16)   LUNAM   ! temporary tag for land use names    
+        CHARACTER(16)   GNAMET  !  unit number for gridded land use totals file
 
-        CHARACTER*256   MESG    !  message buffer for M3EXIT()
-        CHARACTER*4     BTMP    ! temporary tag for naming output variables
+        CHARACTER(256)  MESG    !  message buffer for M3EXIT()
+        CHARACTER(4)    BTMP    ! temporary tag for naming output variables
 
         INTEGER, ALLOCATABLE      :: LUINDX( : )   ! index for land use types
         INTEGER         NCOLS   ! no. of grid columns
@@ -111,7 +111,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         DOUBLE PRECISION   PRCNT2KM2                         ! Prcnt to km**2
         LOGICAL         EFLAG                                ! Error flag
 
-        CHARACTER*16 :: PROGNAME = 'NORMBEIS3'   !  program name
+        CHARACTER(16) :: PROGNAME = 'NORMBEIS3'   !  program name
 
 C***********************************************************************
 C   begin body of program NORMBIO

@@ -50,7 +50,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER, INTENT(OUT) :: BASEYEAR    ! base inventory year
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         EXTERNAL        CRLF
 
 C...........   Argument dimensioned source arrrays
@@ -66,9 +66,9 @@ C...........   LOCAL VARIABLES their descriptions:
         INTEGER         PGRP       ! year group from previous loop iteration
         INTEGER         PYEAR      ! year from previous loop iteration
 
-        CHARACTER*300   MESG       ! Message buffer
+        CHARACTER(300)  MESG       ! Message buffer
   
-        CHARACTER*16 :: PROGNAME = 'GETBASYR'    ! Program name
+        CHARACTER(16) :: PROGNAME = 'GETBASYR'    ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETBASYR

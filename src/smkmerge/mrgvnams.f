@@ -63,22 +63,22 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         INDEX1
 
         EXTERNAL   CRLF, GETFLINE, INDEX1
 
 C...........   Temporary arrays for building sorted pol-to-species names list
-        INTEGER                                MXPTOSPC     ! max for dimension
-        INTEGER               , ALLOCATABLE :: INDXA  ( : ) ! sorting index
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE :: TVSORTA( : ) ! basis for sorting
-        CHARACTER(LEN=PLSLEN3), ALLOCATABLE :: TVDESCA( : ) ! pol-to-spec concat
+        INTEGER                            MXPTOSPC     ! max for dimension
+        INTEGER           , ALLOCATABLE :: INDXA  ( : ) ! sorting index
+        CHARACTER(PLSLEN3), ALLOCATABLE :: TVSORTA( : ) ! basis for sorting
+        CHARACTER(PLSLEN3), ALLOCATABLE :: TVDESCA( : ) ! pol-to-spec concat
 
 C...........   Temporary arrays for sorting biogenic species names
-        INTEGER               , ALLOCATABLE :: TMPBIDXA( : ) ! position in EMNAM
-        INTEGER               , ALLOCATABLE :: TMPBIDXB( : ) ! sorting index
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPBNAM ( : ) ! extra spc names
+        INTEGER           , ALLOCATABLE :: TMPBIDXA( : ) ! position in EMNAM
+        INTEGER           , ALLOCATABLE :: TMPBIDXB( : ) ! sorting index
+        CHARACTER(IOVLEN3), ALLOCATABLE :: TMPBNAM ( : ) ! extra spc names
 
 C...........   Other local variables
         INTEGER         I, J, J1, J2, L, K, L1, L2, M, N  ! counters and indices
@@ -90,11 +90,11 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE. ! error flag
 
-        CHARACTER(LEN=IOVLEN3)   CPOL     ! tmp pol/act buffer
-        CHARACTER(LEN=IOULEN3)   BNUM     ! tmp biogenic units numerator
-        CHARACTER*300            MESG     ! message buffer
+        CHARACTER(IOVLEN3)   CPOL     ! tmp pol/act buffer
+        CHARACTER(IOULEN3)   BNUM     ! tmp biogenic units numerator
+        CHARACTER(300)       MESG     ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'MRGVNAMS' ! program name
+        CHARACTER(16) :: PROGNAME = 'MRGVNAMS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine MRGVNAMS
@@ -420,7 +420,7 @@ C.............  Subprogram arguments
 C.............  Local subprogram variables
             INTEGER      I, J, L      ! counters and indices        
 
-            CHARACTER(LEN=IOVLEN3) VBUF
+            CHARACTER(IOVLEN3) VBUF
 
 C----------------------------------------------------------------------
 
@@ -470,7 +470,7 @@ C.............  Subprogram arguments
 
 C.............  Local subprogram variables
             INTEGER        K, L, V     ! counters and indices
-            CHARACTER*300  MESG        ! message buffer
+            CHARACTER(300) MESG        ! message buffer
 
 C----------------------------------------------------------------------
 
@@ -521,20 +521,20 @@ C.............  Subprogram arguments
             CHARACTER(*), INTENT    (IN) :: VDESCS( NVARS ) ! spec var descs
 
 C.............  Local subprogram arrays
-            INTEGER,                SAVE :: EMBIN ( MXVARS3 )
-            CHARACTER(LEN=IOVLEN3), SAVE :: EMLIST( MXVARS3 )
+            INTEGER,            SAVE :: EMBIN ( MXVARS3 )
+            CHARACTER(IOVLEN3), SAVE :: EMLIST( MXVARS3 )
 
 C.............  Local subprogram variables
             INTEGER, SAVE :: EMCNT                ! count of species
             INTEGER          I, K1, K2, K3, L, L2 ! counters and indices
             INTEGER          LJ, LS               ! string lengths of separators
 
-            CHARACTER*5                CBIN   ! tmp pollutant bin
-            CHARACTER*5                CPOL   ! tmp pollutant index
-            CHARACTER*5                IBUF   ! tmp variable position to INVDNAM
-            CHARACTER(LEN=IOVLEN3)     POLNAM ! tmp pollutant name
-            CHARACTER(LEN=IOVLEN3)     SPCNAM ! tmp species name
-            CHARACTER(LEN=IODLEN3)     TDESC  ! tmp combined pollutant & species
+            CHARACTER(5)           CBIN   ! tmp pollutant bin
+            CHARACTER(5)           CPOL   ! tmp pollutant index
+            CHARACTER(5)           IBUF   ! tmp variable position to INVDNAM
+            CHARACTER(IOVLEN3)     POLNAM ! tmp pollutant name
+            CHARACTER(IOVLEN3)     SPCNAM ! tmp species name
+            CHARACTER(IODLEN3)     TDESC  ! tmp combined pollutant & species
 
 C----------------------------------------------------------------------
 

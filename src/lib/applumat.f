@@ -60,7 +60,7 @@ C...........   Other local variables
 
         REAL        RDUM        ! tmp value for summing over cells
 
-        CHARACTER*16 :: PROGNAME = 'APPLUMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'APPLUMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine APPLUMAT

@@ -45,17 +45,17 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         
         EXTERNAL   CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
-        INTEGER,                INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
+        INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 63  ! maximum pollutants in file
@@ -70,9 +70,9 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCIDAAR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCIDAAR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCIDAAR

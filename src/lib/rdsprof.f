@@ -50,7 +50,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         REAL          STR2REAL
 
         EXTERNAL      CRLF, STR2REAL
@@ -70,11 +70,11 @@ C...........   Local unsorted arrays
         REAL           DIVISA( MXSPFUL )   ! unsorted divisors
         REAL           FACTRA( MXSPFUL )   ! unsorted split factors
         REAL           XMFA  ( MXSPFUL )   ! unsorted mass fraction
-        CHARACTER*21   INPSPA( MXSPFUL )   ! unsorted profile no. // species ID
-        CHARACTER*16   SPCIDA( MXSPFUL )   ! unsorted species IDs
+        CHARACTER(21)  INPSPA( MXSPFUL )   ! unsorted profile no. // species ID
+        CHARACTER(16)  SPCIDA( MXSPFUL )   ! unsorted species IDs
         
 C...........   Other arrays
-        CHARACTER*32 SEGMENT( MXSEG )          ! Segments of parsed lines
+        CHARACTER(32) SEGMENT( MXSEG )          ! Segments of parsed lines
 
 C...........   Other local variables
 
@@ -94,16 +94,16 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
         LOGICAL       :: ZFLAG    = .FALSE.   ! true: divisor of zero found
 
-        CHARACTER*256   LINE              ! read buffer for a line
-        CHARACTER*256   MESG              ! text for M3EXIT()
+        CHARACTER(256)  LINE              ! read buffer for a line
+        CHARACTER(256)  MESG              ! text for M3EXIT()
 
-        CHARACTER(LEN=SPNLEN3)  PPRF      ! previous profile code
-        CHARACTER(LEN=SPNLEN3)  TMPPRF    ! tmp profile code
-        CHARACTER(LEN=IOVLEN3)  POLID     ! tmp pollutant name
-        CHARACTER(LEN=IOVLEN3)  SPECNM    ! tmp species name
-        CHARACTER(LEN=IOVLEN3)  PSPCNM    ! previous species name
+        CHARACTER(SPNLEN3)  PPRF      ! previous profile code
+        CHARACTER(SPNLEN3)  TMPPRF    ! tmp profile code
+        CHARACTER(IOVLEN3)  POLID     ! tmp pollutant name
+        CHARACTER(IOVLEN3)  SPECNM    ! tmp species name
+        CHARACTER(IOVLEN3)  PSPCNM    ! previous species name
 
-        CHARACTER*16 :: PROGNAME = 'RDSPROF' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSPROF' ! program name
        
 C***********************************************************************
 C   Begin body of subroutine RDSPROF

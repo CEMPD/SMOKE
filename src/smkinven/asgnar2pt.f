@@ -56,7 +56,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
         LOGICAL         SETSCCTYPE
 
@@ -73,15 +73,15 @@ C.........  Other local variables
         LOGICAL       :: EFLAG    = .FALSE.
         LOGICAL          SCCFLAG           ! true: SCC type is different from previous
 
-        CHARACTER*256             MESG     ! message buffer
-        CHARACTER(LEN=SRCLEN3)    CSRC     ! tmp source chars string
-        CHARACTER(LEN=FIPLEN3)    CFIP     ! tmp (character) FIPS code
-        CHARACTER(LEN=FPSLEN3)    CFIPSCC  ! tmp FIPS code // SCC
-        CHARACTER(LEN=FPSLEN3)    CFIPSL   ! tmp FIPS code // left SCC
-        CHARACTER(LEN=SCCLEN3)    TSCC     ! tmp 10-digit SCC
-        CHARACTER(LEN=SCCLEN3)    TSCCL    ! tmp left digits of TSCC
+        CHARACTER(256)        MESG     ! message buffer
+        CHARACTER(SRCLEN3)    CSRC     ! tmp source chars string
+        CHARACTER(FIPLEN3)    CFIP     ! tmp (character) FIPS code
+        CHARACTER(FPSLEN3)    CFIPSCC  ! tmp FIPS code // SCC
+        CHARACTER(FPSLEN3)    CFIPSL   ! tmp FIPS code // left SCC
+        CHARACTER(SCCLEN3)    TSCC     ! tmp 10-digit SCC
+        CHARACTER(SCCLEN3)    TSCCL    ! tmp left digits of TSCC
 
-        CHARACTER*16 :: PROGNAME = 'ASGNAR2PT' ! program name
+        CHARACTER(16) :: PROGNAME = 'ASGNAR2PT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNAR2PT

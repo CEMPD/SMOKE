@@ -52,7 +52,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       INDEX1
         INTEGER       PROMPTFFILE
 
@@ -70,12 +70,12 @@ C...........   Other local variables
         INTEGER         I, J, K  ! counters and indices
         INTEGER         CNT
 
-        CHARACTER*256    MESG              ! message buffer
+        CHARACTER(256)   MESG              ! message buffer
 
-        CHARACTER(LEN=IOVLEN3)       :: PBUF      = ' '   ! tmp pollutant name
-        CHARACTER(LEN=IOVLEN3), SAVE :: PREV_PNAM = ' '   ! PNAM from last call
+        CHARACTER(IOVLEN3)       :: PBUF      = ' '   ! tmp pollutant name
+        CHARACTER(IOVLEN3), SAVE :: PREV_PNAM = ' '   ! PNAM from last call
 
-        CHARACTER*16 :: PROGNAME = 'CHKNONHAP' ! program name
+        CHARACTER(16) :: PROGNAME = 'CHKNONHAP' ! program name
        
 C***********************************************************************
 C   Begin body of subroutine CHKNONHAP

@@ -53,7 +53,7 @@ C  age and type.
       
       LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
 
-      CHARACTER(LEN=16) :: PROGNAME = 'SMKHAPS'   ! program name
+      CHARACTER(16) :: PROGNAME = 'SMKHAPS'   ! program name
 
 C  Begin body of subroutine SMKHAPS
 

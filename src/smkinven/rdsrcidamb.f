@@ -47,24 +47,24 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         
         EXTERNAL   CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
-        CHARACTER(LEN=SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
-        INTEGER,                INTENT(OUT) :: NVARPERLN ! no. variables per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
+        CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
+        INTEGER,            INTENT(OUT) :: NVARPERLN ! no. variables per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXVARFIL = 112 ! maximum data variables in file
 
 C...........   Local allocatable arrays
-        CHARACTER(LEN=25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
+        CHARACTER(25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
         
 C...........   Other local variables
         INTEGER         I, J, K, L, N, V  ! counters and indices
@@ -75,13 +75,12 @@ C...........   Other local variables
         INTEGER, SAVE:: NVAR    !  number of variables in file
         INTEGER         NSEG    ! number of input segments
 
-
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
         LOGICAL, SAVE:: FIXED    = .TRUE. ! true: input file is fixed-format
  
-        CHARACTER(LEN=300)     MESG            ! message buffer
+        CHARACTER(300)     MESG            ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCIDAMB' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCIDAMB' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCIDAMB

@@ -60,7 +60,7 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: IDX( : )       ! index to sort SRCARRAY
         
 C...........   Local arrays
-        CHARACTER(LEN=FIPLEN3) SEGMENT( 3 )          ! parsed input line
+        CHARACTER(FIPLEN3) SEGMENT( 3 )          ! parsed input line
         
 C...........   Other local variables
         INTEGER I, J, K                   ! counters and indices                     
@@ -73,10 +73,10 @@ C...........   Other local variables
         LOGICAL :: EFLAG      = .FALSE.   ! true: error found
         LOGICAL :: INITIAL    = .TRUE.    ! true: first time through routine
         
-        CHARACTER(LEN=100)     LINE     !  line buffer
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(100)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDGROUPS'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDGROUPS'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine RDGROUPS

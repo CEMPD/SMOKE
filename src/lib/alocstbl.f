@@ -60,7 +60,7 @@ C...........   Other local variables
 
         INTEGER       IOS              ! i/o status
 
-        CHARACTER*16 :: PROGNAME = 'ALOCSTBL' ! program name
+        CHARACTER(16) :: PROGNAME = 'ALOCSTBL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ALOCSTBL

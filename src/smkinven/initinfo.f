@@ -55,9 +55,9 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Variables for reading dummy names of emission output
 
-        INTEGER               , ALLOCATABLE :: IDUMARR( : ) !  int dummy array
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: ENAMES ( : ) !  dummy names
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: CDUMARR( : ) !  char dummy array
+        INTEGER,            ALLOCATABLE :: IDUMARR( : ) !  int dummy array
+        CHARACTER(IOVLEN3), ALLOCATABLE :: ENAMES ( : ) !  dummy names
+        CHARACTER(IODLEN3), ALLOCATABLE :: CDUMARR( : ) !  char dummy array
     
 C...........   Other local variables
         INTEGER         I, IOS               ! memory allocation status
@@ -65,9 +65,9 @@ C...........   Other local variables
         LOGICAL      :: EFLAG = .FALSE.   ! true: error detected
         LOGICAL,SAVE :: FIRST = .TRUE.    ! true: first time through subroutine
 
-        CHARACTER*300   MESG
+        CHARACTER(300)  MESG
 
-        CHARACTER*16 :: PROGNAME =  'INITINFO' ! program name
+        CHARACTER(16) :: PROGNAME =  'INITINFO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine INITINFO

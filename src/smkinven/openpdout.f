@@ -52,9 +52,9 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        INTEGER                PROMPTFFILE
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
-        CHARACTER*16           VERCHAR
+        INTEGER            PROMPTFFILE
+        CHARACTER(NAMLEN3) PROMPTMFILE
+        CHARACTER(16)      VERCHAR
 
         EXTERNAL        PROMPTFFILE, PROMPTMFILE, VERCHAR
 
@@ -74,18 +74,18 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(IN OUT) :: RDEV      ! report unit number
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
         INTEGER       J, K, L, L2, V      ! counter and indices
 
-        CHARACTER*5            CTZONE      ! string of time zone
-        CHARACTER(LEN=NAMLEN3) VARNAM      ! name for integer index
-        CHARACTER(LEN=IOVLEN3) VBUF        ! tmp buffer for variable names
-        CHARACTER*300          MESG        ! message buffer 
+        CHARACTER(5)       CTZONE      ! string of time zone
+        CHARACTER(NAMLEN3) VARNAM      ! name for integer index
+        CHARACTER(IOVLEN3) VBUF        ! tmp buffer for variable names
+        CHARACTER(300)     MESG        ! message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'OPENPDOUT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENPDOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENPDOUT

@@ -73,15 +73,15 @@ C...........   INCLUDES:
         INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:        
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETIFDSC
         INTEGER         GETFLINE
         INTEGER         ENVINT
         REAL            ENVREAL
         INTEGER         INDEX1
-        CHARACTER*14    MMDDYY
+        CHARACTER(14)   MMDDYY
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         SECSDIFF
         LOGICAL         SETENVVAR
         INTEGER         WKDAY
@@ -91,7 +91,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &               SECSDIFF, SETENVVAR, WKDAY
         
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -112,13 +112,13 @@ C...........  Allocatable per-source arrays
 C...........  Allocatable arrays for met data
         INTEGER, ALLOCATABLE :: METDAYS( : ) ! dimension: nsteps in episode, 
                                              ! value indicates which met data file covers that hour
-        CHARACTER(LEN=256), ALLOCATABLE :: METLIST( : ) ! listing of met file names
+        CHARACTER(256), ALLOCATABLE :: METLIST( : ) ! listing of met file names
 
         INTEGER, ALLOCATABLE :: NDAYSRC( :,: )  ! number of days to average by source
 
 C...........  Array that contains the names of the inventory variables needed 
 C             for this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C...........   File units and logical names:
         INTEGER      DDEV  ! unit number for daily group file
@@ -131,15 +131,15 @@ C...........   File units and logical names:
         INTEGER      TDEV  ! unit number for meteorology list file
         INTEGER      WDEV  ! unit number for weekly group file
 
-        CHARACTER*16 ANAME ! logical name for mobile ASCII inventory file
-        CHARACTER*16 ENAME ! logical name for mobile I/O API inventory file
-        CHARACTER*16 DNAME ! logical name for daily output ungridded hourly temps
-        CHARACTER*16 INAME ! tmp name for inven file of unknown fmt
-        CHARACTER*16 METNAME ! logical name for meteorology files
-        CHARACTER*16 MNAME ! logical name for monthly output hourly temps
-        CHARACTER*16 PNAME ! logical name for episode output hourly temps
-        CHARACTER*16 UNAME ! logical name for ungridding-matrix input file
-        CHARACTER*16 WNAME ! logical name for weekly output hourly temps
+        CHARACTER(16) ANAME ! logical name for mobile ASCII inventory file
+        CHARACTER(16) ENAME ! logical name for mobile I/O API inventory file
+        CHARACTER(16) DNAME ! logical name for daily output ungridded hourly temps
+        CHARACTER(16) INAME ! tmp name for inven file of unknown fmt
+        CHARACTER(16) METNAME ! logical name for meteorology files
+        CHARACTER(16) MNAME ! logical name for monthly output hourly temps
+        CHARACTER(16) PNAME ! logical name for episode output hourly temps
+        CHARACTER(16) UNAME ! logical name for ungridding-matrix input file
+        CHARACTER(16) WNAME ! logical name for weekly output hourly temps
                 
 C...........   Other local variables:
         INTEGER    I, J, K, L, N, S, T, T2, V  ! Counters and pointers
@@ -202,15 +202,15 @@ C...........   Other local variables:
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
         
-        CHARACTER(LEN=512)     METFILE     !  tmp physical file name
-        CHARACTER(LEN=512)     PREVFILE    !  previous physical file name
-        CHARACTER(LEN=IOVLEN3) TVARNAME    !  temperature variable name
-        CHARACTER(LEN=IOVLEN3) PRESNAME    !  pressure variable name
-        CHARACTER(LEN=IOVLEN3) MIXNAME     !  mixing ratio name
-        CHARACTER(LEN=200)     TEMPDIR     !  directory for output files
-        CHARACTER(LEN=300)     MESG        !  message buffer
+        CHARACTER(512)     METFILE     !  tmp physical file name
+        CHARACTER(512)     PREVFILE    !  previous physical file name
+        CHARACTER(IOVLEN3) TVARNAME    !  temperature variable name
+        CHARACTER(IOVLEN3) PRESNAME    !  pressure variable name
+        CHARACTER(IOVLEN3) MIXNAME     !  mixing ratio name
+        CHARACTER(200)     TEMPDIR     !  directory for output files
+        CHARACTER(300)     MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'PREMOBL'  !  program name
+        CHARACTER(16) :: PROGNAME = 'PREMOBL'  !  program name
 
 C***********************************************************************
 C   begin body of program PREMOBL

@@ -56,18 +56,18 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
         
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
         INTEGER         ENVINT
         
         EXTERNAL        CRLF, INDEX1, ENVINT
         
 C.........  Pollutant names
-        CHARACTER(LEN=IOVLEN3),PARAMETER :: VOCNAM = 'VOC'
-        CHARACTER(LEN=IOVLEN3),PARAMETER :: TOGNAM = 'TOG'
-        CHARACTER(LEN=IOVLEN3),PARAMETER :: NHVNAM = 'NONHAPVOC'
-        CHARACTER(LEN=IOVLEN3),PARAMETER :: NHTNAM = 'NONHAPTOG'
-        CHARACTER(LEN=4      ),PARAMETER :: NOIEND = '_NOI'
+        CHARACTER(IOVLEN3), PARAMETER :: VOCNAM = 'VOC'
+        CHARACTER(IOVLEN3), PARAMETER :: TOGNAM = 'TOG'
+        CHARACTER(IOVLEN3), PARAMETER :: NHVNAM = 'NONHAPVOC'
+        CHARACTER(IOVLEN3), PARAMETER :: NHTNAM = 'NONHAPTOG'
+        CHARACTER(4),       PARAMETER :: NOIEND = '_NOI'
 
 C.........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: TMPIDX( : )      ! sorting index
@@ -112,11 +112,11 @@ C.........   Other local variables
         LOGICAL::PROCVOC=.FALSE. ! true: process VOC pollutants
         LOGICAL::PROCTOG=.FALSE. ! true: process TOG pollutants
         
-        CHARACTER(LEN=IOVLEN3) POLNAM   ! temporary pollutant name
-        CHARACTER(LEN=300    ) BUFFER   ! message buffer
-        CHARACTER(LEN=256    ) MESG     ! message buffer 
+        CHARACTER(IOVLEN3) POLNAM   ! temporary pollutant name
+        CHARACTER(300)     BUFFER   ! message buffer
+        CHARACTER(256)     MESG     ! message buffer 
         
-        CHARACTER*16 :: PROGNAME = 'SETNONHAP' ! program name
+        CHARACTER(16) :: PROGNAME = 'SETNONHAP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SETNONHAP

@@ -17,8 +17,8 @@
        
        LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
        
-       CHARACTER(LEN=16) :: TEMPNAME                  ! temporary pollutant name
-       CHARACTER(LEN=16) :: PROGNAME = 'SMKHAPSETUP'  ! program name
+       CHARACTER(16) :: TEMPNAME                  ! temporary pollutant name
+       CHARACTER(16) :: PROGNAME = 'SMKHAPSETUP'  ! program name
        
 C  Begin body of subroutine SMKHAPSETUP
 

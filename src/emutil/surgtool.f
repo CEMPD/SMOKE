@@ -68,14 +68,14 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
         INTEGER         PROMPTFFILE
         
         EXTERNAL   CRLF, DSCM3GRD, PROMPTFFILE
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C............   Allocatable arrays for computing grid cell intersections
         INTEGER, ALLOCATABLE::   C2( :, : )     !  output grid cell
@@ -97,49 +97,49 @@ C...........   Logical file names and unit numbers
         INTEGER         XDEV    !  for output surrogate coeff  file
 
 C...........   Arguments for GTPZ0:
-        REAL*8            DSCR            !  scratch variables
+        REAL(8)           DSCR            !  scratch variables
         INTEGER           DEG, MNT        !  scratch variables
-        REAL*8            CRDIN( 2 )      !  input coordinates x,y
-        INTEGER*4         INSYS           !  input projection code
-        INTEGER*4         INZONE          !  input utm zone, etc.
-        REAL*8            TPAIN( 15 )     !  input projection parameters
-        INTEGER*4         INUNIT          !  input units code
-        INTEGER*4         INSPH           !  spheroid code
-        INTEGER*4         IPR             !  error print flag
-        INTEGER*4         JPR             !  projection parameter print flag
-        INTEGER*4         LEMSG           !  error message unit number
-        INTEGER*4         LPARM           !  projection parameter unit number
-        REAL*8            CRDIO( 2 )      !  output coordinates x,y
-        INTEGER*4         IOSYS           !  output projection code
-        INTEGER*4         IOZONE          !  output utm zone, etc.
-        REAL*8            TPOUT( 15 )     !  output projection parameters
-        INTEGER*4         IOUNIT          !  output units code
-        INTEGER*4         IOSPH           !  spheroid code
-        INTEGER*4         LN27            !  NAD1927 file unit number
-        INTEGER*4         LN83            !  NAD1983 file unit number
-        CHARACTER*128     FN27            !  NAD1927 file name
-        CHARACTER*128     FN83            !  NAD1983 file name
-        INTEGER*4         LENGTH          !  NAD* record-length
-        INTEGER*4         IFLG            !  error flag
+        REAL(8)           CRDIN( 2 )      !  input coordinates x,y
+        INTEGER(4)        INSYS           !  input projection code
+        INTEGER(4)        INZONE          !  input utm zone, etc.
+        REAL(8)           TPAIN( 15 )     !  input projection parameters
+        INTEGER(4)        INUNIT          !  input units code
+        INTEGER(4)        INSPH           !  spheroid code
+        INTEGER(4)        IPR             !  error print flag
+        INTEGER(4)        JPR             !  projection parameter print flag
+        INTEGER(4)        LEMSG           !  error message unit number
+        INTEGER(4)        LPARM           !  projection parameter unit number
+        REAL(8)           CRDIO( 2 )      !  output coordinates x,y
+        INTEGER(4)        IOSYS           !  output projection code
+        INTEGER(4)        IOZONE          !  output utm zone, etc.
+        REAL(8)           TPOUT( 15 )     !  output projection parameters
+        INTEGER(4)        IOUNIT          !  output units code
+        INTEGER(4)        IOSPH           !  spheroid code
+        INTEGER(4)        LN27            !  NAD1927 file unit number
+        INTEGER(4)        LN83            !  NAD1983 file unit number
+        CHARACTER(128)    FN27            !  NAD1927 file name
+        CHARACTER(128)    FN83            !  NAD1983 file name
+        INTEGER(4)        LENGTH          !  NAD* record-length
+        INTEGER(4)        IFLG            !  error flag
 
 C...........    Output grid variables
         INTEGER      NCOLS2      ! number of grid columns
         INTEGER      NROWS2      ! number of grid rows
         INTEGER      NTHIK2      ! BOUNDARY:  perim thickness (cells)
         INTEGER      GDTYP2      ! grid type:  1=LAT-LON, 2=UTM, ...
-        REAL*8       P_ALP2      ! first, second, third map
-        REAL*8       P_BET2      ! projection descriptive
-        REAL*8       P_GAM2      ! parameters.
-        REAL*8       XCENT2      ! lon for coord-system X=0
-        REAL*8       YCENT2      ! lat for coord-system Y=0
-        REAL*8       XORIG2      ! X-coordinate origin of grid (map units)
-        REAL*8       YORIG2      ! Y-coordinate origin of grid
-        REAL*8       XCELL2      ! X-coordinate cell dimension
-        REAL*8       YCELL2      ! Y-coordinate cell dimension
-        CHARACTER(LEN=IOVLEN3) :: GDNAM2 = ' '    ! output grid name
-        CHARACTER(LEN=IOVLEN3) :: COORUNIT2 = ' ' !  coord sys projection units
-        CHARACTER(LEN=IOVLEN3) :: COORD2 = ' '    ! coord system name
-        CHARACTER(LEN=IODLEN3) :: GDESC2 = ' '    ! output grid desc (if any)
+        REAL(8)      P_ALP2      ! first, second, third map
+        REAL(8)      P_BET2      ! projection descriptive
+        REAL(8)      P_GAM2      ! parameters.
+        REAL(8)      XCENT2      ! lon for coord-system X=0
+        REAL(8)      YCENT2      ! lat for coord-system Y=0
+        REAL(8)      XORIG2      ! X-coordinate origin of grid (map units)
+        REAL(8)      YORIG2      ! Y-coordinate origin of grid
+        REAL(8)      XCELL2      ! X-coordinate cell dimension
+        REAL(8)      YCELL2      ! Y-coordinate cell dimension
+        CHARACTER(IOVLEN3) :: GDNAM2 = ' '    ! output grid name
+        CHARACTER(IOVLEN3) :: COORUNIT2 = ' ' !  coord sys projection units
+        CHARACTER(IOVLEN3) :: COORD2 = ' '    ! coord system name
+        CHARACTER(IODLEN3) :: GDESC2 = ' '    ! output grid desc (if any)
 
 C...........   Other local variables
         INTEGER          C, S, F, J, K, L, M, N, R    !  counters, subscripts
@@ -158,12 +158,12 @@ C...........   Other local variables
 
         LOGICAL       :: EFLAG = .FALSE.        !  true: error found
 
-        CHARACTER*16     OUTTYPE
-        CHARACTER*16     OUTUNIT
-        CHARACTER*16     SRGFMT                 !  surrogates format
-        CHARACTER*256    MESG                   !  message buffer
+        CHARACTER(16)    OUTTYPE
+        CHARACTER(16)    OUTUNIT
+        CHARACTER(16)    SRGFMT                 !  surrogates format
+        CHARACTER(256)   MESG                   !  message buffer
 
-        CHARACTER*16  :: PROGNAME = 'SURGTOOL'  !  program name
+        CHARACTER(16) :: PROGNAME = 'SURGTOOL'  !  program name
 
 C***********************************************************************
 C   begin body of program SURGTOOL

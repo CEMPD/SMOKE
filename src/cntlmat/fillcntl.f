@@ -67,10 +67,10 @@ C...........   Other local variables
         INTEGER         N               !  counters and indices
         INTEGER         SIC             !  tmp SIC
 
-        CHARACTER(LEN=SCCLEN3) TMPSCC   !  tmp SCC
-        CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol
+        CHARACTER(SCCLEN3) TMPSCC   !  tmp SCC
+        CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol
 
-        CHARACTER*16 :: PROGNAME = 'FILLCNTL'   ! program name
+        CHARACTER(16) :: PROGNAME = 'FILLCNTL'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine FILLCNTL

@@ -51,7 +51,7 @@ C...........   INCLUDES:
         INCLUDE 'FDESC3.EXT'
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         REAL          POLY
 
         EXTERNAL      CRLF, POLY
@@ -79,7 +79,7 @@ C...........   Local variables
         REAL          PDIFF
         REAL          PRESF( 0:EMLAYS )
 
-        CHARACTER*300 MESG
+        CHARACTER(300) MESG
 
 C***********************************************************************
 C   begin body of subroutine POSTPLM

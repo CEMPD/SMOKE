@@ -52,8 +52,8 @@ C  file.
       
       LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time through subroutine
       
-      CHARACTER(LEN=300) :: MESG                    ! message buffer
-      CHARACTER(LEN=16)  :: PROGNAME = 'SMKEVPRUN'  ! program name
+      CHARACTER(300) :: MESG                    ! message buffer
+      CHARACTER(16)  :: PROGNAME = 'SMKEVPRUN'  ! program name
       
 C  First time, initialize emission factor array
       IF (INITIAL) THEN

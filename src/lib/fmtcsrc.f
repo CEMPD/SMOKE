@@ -51,7 +51,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
 
         EXTERNAL        CRLF
 
@@ -67,18 +67,18 @@ C...........   Local paramaters
         INTEGER, PARAMETER :: MXMBLBL = 6
 
 C.........  Output labels (note: these could be dynamic if in MODINFO)
-        CHARACTER*6  :: PTLABEL( MXPTLBL ) =  !  message buffer
+        CHARACTER(6) :: PTLABEL( MXPTLBL ) =  !  message buffer
      &                ( / 'Region', 'Plant ', 'Char1 ', 'Char2 ',
      &                    'Char3 ', 'Char4 ', 'Char5 ', 'Data  ' / )
  
-        CHARACTER*6  :: ARLABEL( MXARLBL ) =  !  message buffer
+        CHARACTER(6) :: ARLABEL( MXARLBL ) =  !  message buffer
      &                ( / 'Region', 'SCC   ', 'Data  ' / )
  
-        CHARACTER*9  :: MBLABEL( MXMBLBL ) =  !  message buffer
+        CHARACTER(9) :: MBLABEL( MXMBLBL ) =  !  message buffer
      &                ( / 'Region   ', 'Road Type', 'Link     ', 
      &                    'Vtype    ', 'SCC      ', 'Data     ' / )
 
-        CHARACTER*9, SAVE :: LABEL( MXPTLBL )
+        CHARACTER(9), SAVE :: LABEL( MXPTLBL )
  
 C...........   Other local variables
         INTEGER         I, L, K, L1, L2, L3, L4  ! counters and indices
@@ -88,9 +88,9 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
 
-        CHARACTER*300   BUFFER  !  string buffer
+        CHARACTER(300)  BUFFER  !  string buffer
 
-        CHARACTER*16 :: PROGNAME = 'FMTCSRC'  ! program name
+        CHARACTER(16) :: PROGNAME = 'FMTCSRC'  ! program name
 
 C***********************************************************************
 C   begin body of subroutine FMTCSRC

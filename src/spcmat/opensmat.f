@@ -52,12 +52,12 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
-        INTEGER                FINDC
-        CHARACTER(LEN=IODLEN3) GETCFDSC
-        INTEGER                PROMPTFFILE
-        CHARACTER*16           PROMPTMFILE
-        CHARACTER*16           VERCHAR
+        CHARACTER(2)       CRLF
+        INTEGER            FINDC
+        CHARACTER(IODLEN3) GETCFDSC
+        INTEGER            PROMPTFFILE
+        CHARACTER(16)      PROMPTMFILE
+        CHARACTER(16)      VERCHAR
 
         EXTERNAL        CRLF, FINDC, GETCFDSC, PROMPTFFILE, 
      &                  PROMPTMFILE, VERCHAR
@@ -79,7 +79,7 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: LVNAMES( MXSPEC, NIPPA )   ! mole out vars
       
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C.........  Count of species per inventory pollutant/emission type
         INTEGER    NSPEC( NIPPA )
@@ -91,14 +91,14 @@ C.........  Other local variables
         INTEGER          ICNT     ! cntr for the total number of output vars
         INTEGER          NCNT     ! cntr for number of species per inv pol
 
-        CHARACTER*300    MESG     ! message buffer
+        CHARACTER(300)   MESG     ! message buffer
 
-        CHARACTER(LEN=NAMLEN3) NAMBUF     ! file name buffer
-        CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
-        CHARACTER(LEN=SPNLEN3) PCODE      ! current speciation profile code
-        CHARACTER(LEN=SPNLEN3) PREVCODE   ! previous speciation profile code
+        CHARACTER(NAMLEN3) NAMBUF     ! file name buffer
+        CHARACTER(IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
+        CHARACTER(SPNLEN3) PCODE      ! current speciation profile code
+        CHARACTER(SPNLEN3) PREVCODE   ! previous speciation profile code
 
-        CHARACTER*16 :: PROGNAME = 'OPENSMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENSMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENSMAT

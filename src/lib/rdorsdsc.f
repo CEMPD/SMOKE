@@ -61,7 +61,7 @@ C...........   Local paramaters
         INTEGER, PARAMETER :: NFIELD = 11     ! no. fields in input file
 
 C...........   Local arrays
-        CHARACTER*60 SEGMENT( NFIELD )        ! line parsing array
+        CHARACTER(60) SEGMENT( NFIELD )        ! line parsing array
 
 C...........   Local variables
         INTEGER         I                     ! indices and counters
@@ -73,13 +73,13 @@ C...........   Local variables
 
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
 
-        CHARACTER*256   LINE                  ! Read buffer for a line
-        CHARACTER*256   MESG                  ! Message buffer
+        CHARACTER(256)  LINE                  ! Read buffer for a line
+        CHARACTER(256)  MESG                  ! Message buffer
 
-        CHARACTER(LEN=ORSLEN3 ) CORS          ! tmp ORIS ID
-        CHARACTER(LEN=DSCLEN3 ) PDSC          ! tmp plant description
+        CHARACTER(ORSLEN3 ) CORS          ! tmp ORIS ID
+        CHARACTER(DSCLEN3 ) PDSC          ! tmp plant description
 
-        CHARACTER*16 :: PROGNAME = 'RDORSDSC'    !  program name
+        CHARACTER(16) :: PROGNAME = 'RDORSDSC'    !  program name
 
 C***********************************************************************
 C   Begin body of subroutine RDORSDSC

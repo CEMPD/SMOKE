@@ -56,7 +56,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         INTEGER                INDEX1
 
         EXTERNAL               CRLF, INDEX1
@@ -74,8 +74,8 @@ C...........   Index for unread variables
         INTEGER        UNRIDX( NVARS )
 
 C...........   Error message strings
-        CHARACTER*23 ,PARAMETER :: PART1 = 'Error reading variable '
-        CHARACTER*24 ,PARAMETER :: PART3 = ' from INVENTORY file'
+        CHARACTER(23), PARAMETER :: PART1 = 'Error reading variable '
+        CHARACTER(24), PARAMETER :: PART3 = ' from INVENTORY file'
 
 C...........   Other local variables
         INTEGER          J, N, S    ! counters and indices
@@ -105,27 +105,27 @@ C...........   Other local variables
         LOGICAL       :: STPFLAG = .FALSE.  ! True: source type code requested
         LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
 
-        CHARACTER*20           HEADER( 20 ) ! header fields
-        CHARACTER*256          FILFMT ! ASCII file format after header
-        CHARACTER*256          MESG   ! message buffer
-        CHARACTER(LEN=BLRLEN3) CBLR   ! temporary boiler name
-        CHARACTER(LEN=FIPLEN3) CFIP   ! temporary character FIPs code
-        CHARACTER(LEN=CHRLEN3) CHARS( 5 ) ! temporary plant characteristics
-        CHARACTER(LEN=LNKLEN3) CLNK   ! temporary link ID
-        CHARACTER(LEN=ORSLEN3) CORS   ! temporary DOE plant ID
-        CHARACTER(LEN=DSCLEN3) CPDS   ! temporary plant description
-        CHARACTER(LEN=RWTLEN3) CRWT   ! temporary roadway type
-        CHARACTER(LEN=SCCLEN3) CS     ! temporary scc
-        CHARACTER(LEN=VIDLEN3) CVID   ! temporary vehicle type code
-        CHARACTER(LEN=VTPLEN3) CVTP   ! tmp vehicle type
-        CHARACTER(LEN=MACLEN3) CMT    ! tmp MACT code
-        CHARACTER(LEN=NAILEN3) CNAI   ! tmp NAICS code
-        CHARACTER(LEN=STPLEN3) CSTP   ! tmp source type code
-        CHARACTER(LEN=ERPLEN3) CERP   ! tmp emission release point code
-        CHARACTER(LEN=PLTLEN3) FCID   ! temporary facility code
-        CHARACTER(LEN=IOVLEN3) INVAR  ! tmp inventory pollutant name
+        CHARACTER(20)      HEADER( 20 ) ! header fields
+        CHARACTER(256)     FILFMT ! ASCII file format after header
+        CHARACTER(256)     MESG   ! message buffer
+        CHARACTER(BLRLEN3) CBLR   ! temporary boiler name
+        CHARACTER(FIPLEN3) CFIP   ! temporary character FIPs code
+        CHARACTER(CHRLEN3) CHARS( 5 ) ! temporary plant characteristics
+        CHARACTER(LNKLEN3) CLNK   ! temporary link ID
+        CHARACTER(ORSLEN3) CORS   ! temporary DOE plant ID
+        CHARACTER(DSCLEN3) CPDS   ! temporary plant description
+        CHARACTER(RWTLEN3) CRWT   ! temporary roadway type
+        CHARACTER(SCCLEN3) CS     ! temporary scc
+        CHARACTER(VIDLEN3) CVID   ! temporary vehicle type code
+        CHARACTER(VTPLEN3) CVTP   ! tmp vehicle type
+        CHARACTER(MACLEN3) CMT    ! tmp MACT code
+        CHARACTER(NAILEN3) CNAI   ! tmp NAICS code
+        CHARACTER(STPLEN3) CSTP   ! tmp source type code
+        CHARACTER(ERPLEN3) CERP   ! tmp emission release point code
+        CHARACTER(PLTLEN3) FCID   ! temporary facility code
+        CHARACTER(IOVLEN3) INVAR  ! tmp inventory pollutant name
 
-        CHARACTER*16 :: PROGNAME = 'RDINVCHR'   !  program name
+        CHARACTER(16) :: PROGNAME = 'RDINVCHR'   !  program name
 
 C***********************************************************************
 C   begin body of program RDINVCHR

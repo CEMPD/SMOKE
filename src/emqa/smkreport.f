@@ -67,7 +67,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2       CRLF
+        CHARACTER(2)      CRLF
         LOGICAL           ENVYN
         INTEGER           PROMPTFFILE
         INTEGER           SECSDIFF
@@ -75,7 +75,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CRLF, ENVYN, PROMPTFFILE, SECSDIFF
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Gridding Matrix
         INTEGER, ALLOCATABLE :: GMAT( : ) ! Contiguous gridding matrix
@@ -100,18 +100,18 @@ C...........   File units and logical/physical names
 
         INTEGER, ALLOCATABLE :: ODEV( : )   !  output file unit numbers
 
-        CHARACTER*16  :: ANAME  = ' '   !  logical name for ASCII inven input 
-        CHARACTER*16  :: ENAME  = ' '   !  logical name for I/O API inven input
-        CHARACTER*16  :: CUNAME = ' '   !  multiplicative control matrix input
-        CHARACTER*16  :: GNAME  = ' '   !  gridding matrix input
-        CHARACTER*16  :: LNAME  = ' '   !  layer fractions input file
-        CHARACTER*16  :: PRNAME = ' '   !  projection matrix input
-        CHARACTER*16  :: SLNAME = ' '   !  speciation matrix input
-        CHARACTER*16  :: SSNAME = ' '   !  speciation matrix input
-        CHARACTER*16  :: TNAME  = ' '   !  hourly emissions input file
+        CHARACTER(16)  :: ANAME  = ' '   !  logical name for ASCII inven input 
+        CHARACTER(16)  :: ENAME  = ' '   !  logical name for I/O API inven input
+        CHARACTER(16)  :: CUNAME = ' '   !  multiplicative control matrix input
+        CHARACTER(16)  :: GNAME  = ' '   !  gridding matrix input
+        CHARACTER(16)  :: LNAME  = ' '   !  layer fractions input file
+        CHARACTER(16)  :: PRNAME = ' '   !  projection matrix input
+        CHARACTER(16)  :: SLNAME = ' '   !  speciation matrix input
+        CHARACTER(16)  :: SSNAME = ' '   !  speciation matrix input
+        CHARACTER(16)  :: TNAME  = ' '   !  hourly emissions input file
 
-        CHARACTER*300 :: FNAME = ' '    !  output physical/logical file name
-        CHARACTER*300 :: PNAME = ' '    !  previous output file name
+        CHARACTER(300) :: FNAME = ' '    !  output physical/logical file name
+        CHARACTER(300) :: PNAME = ' '    !  previous output file name
 
 C...........   Other local variables
         INTEGER      I, J,  K, L, N       ! indices and counters
@@ -129,10 +129,10 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.     ! true: error found
         LOGICAL       :: ZEROFLAG = .FALSE.     ! true: report zero values
 
-        CHARACTER*300          MESG             !  message buffer
-        CHARACTER(LEN=QAFMTL3) OUTFMT           !  data output format string
+        CHARACTER(300)     MESG             !  message buffer
+        CHARACTER(QAFMTL3) OUTFMT           !  data output format string
 
-        CHARACTER*16 :: PROGNAME = 'SMKREPORT' ! program name
+        CHARACTER(16) :: PROGNAME = 'SMKREPORT' ! program name
 
 C***********************************************************************
 C   begin body of program SMKREPORT

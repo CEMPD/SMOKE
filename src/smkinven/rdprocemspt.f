@@ -50,7 +50,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDCFIRST
         INTEGER         FIND1
         INTEGER         STR2INT
@@ -72,18 +72,18 @@ C...........   Other local variables
         INTEGER              STIDX, ENDIDX          ! start and end idx into CSOURC
         INTEGER              KEYLEN                 ! length of source key
         
-        CHARACTER(LEN=FIPLEN3) CFIP      ! fip code
-        CHARACTER(LEN=PLTLEN3) FCID      ! facility ID
-        CHARACTER(LEN=CHRLEN3) SKID      ! stack ID
-        CHARACTER(LEN=CHRLEN3) DVID      ! device ID
-        CHARACTER(LEN=CHRLEN3) PRID      ! process ID
+        CHARACTER(FIPLEN3) CFIP      ! fip code
+        CHARACTER(PLTLEN3) FCID      ! facility ID
+        CHARACTER(CHRLEN3) SKID      ! stack ID
+        CHARACTER(CHRLEN3) DVID      ! device ID
+        CHARACTER(CHRLEN3) PRID      ! process ID
         
-        CHARACTER(LEN=SCCLEN3) TSCC                 ! SCC code
-        CHARACTER(LEN=ALLLEN3) SRCKEY               ! source key
-        CHARACTER(LEN=300)     LINE                 ! line from file
-        CHARACTER(LEN=300)     MESG                 ! message buffer
+        CHARACTER(SCCLEN3) TSCC                 ! SCC code
+        CHARACTER(ALLLEN3) SRCKEY               ! source key
+        CHARACTER(300)     LINE                 ! line from file
+        CHARACTER(300)     MESG                 ! message buffer
 
-        CHARACTER(LEN=16) :: PROGNAME = 'RDPROCEMSPT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDPROCEMSPT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDPROCEMSPT

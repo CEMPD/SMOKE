@@ -88,7 +88,7 @@ C...........   INCLUDES
 C...........  EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL     CHKINT
         LOGICAL     CHKREAL 
-        CHARACTER*2 CRLF
+        CHARACTER(2) CRLF
         INTEGER     FINDC
         INTEGER     GETFLINE
         INTEGER     GETNLIST
@@ -130,11 +130,11 @@ C.........  Local allocatable arrays
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C.........  For parsing lines
-        CHARACTER*64              SEGMENT( 10 )
-        CHARACTER(LEN=CHRLEN3) :: CHARS  ( 5 )   ! tmp plant characteristics
+        CHARACTER(64)             SEGMENT( 10 )
+        CHARACTER(CHRLEN3) :: CHARS  ( 5 )   ! tmp plant characteristics
 
 C...........   Local variables that depend on module variables
         INTEGER    SWIDTH( NCHARS )
@@ -168,22 +168,22 @@ C...........   Other local variables
         LOGICAL       :: MSGFLAG = .FALSE.  !  true: don't repeat message
         LOGICAL       :: LTMP    = .FALSE.  !  true: temporary logical
 
-        CHARACTER*1            TTYP         !  temporal profile entry type
-        CHARACTER*16  ::       BNAME = ' '  !  name buffer
-        CHARACTER*50           BUFFER       !  string buffer
-        CHARACTER*256          LINE         !  input line
-        CHARACTER*256          MESG         !  message buffer
-        CHARACTER(LEN=IOVLEN3) CBUF         !  tmp pollutant name
-        CHARACTER(LEN=IODLEN3) DBUF         !  tmp variable name
-        CHARACTER(LEN=FIPLEN3) CFIP         !  tmp ASCII FIPS code
-        CHARACTER(LEN=LNKLEN3) CLNK         !  tmp link code
-        CHARACTER(LEN=SRCLEN3) CSRC         !  tmp source chars
-	CHARACTER(LEN=PLTLEN3) FCID         !  tmp facility code
-        CHARACTER(LEN=PLTLEN3) PLT          !  tmp plant code
-        CHARACTER(LEN=SRCLEN3) SRCBUF       !  tmp source chars
-        CHARACTER(LEN=SCCLEN3) TSCC         !  tmp SCC code
+        CHARACTER          TTYP         !  temporal profile entry type
+        CHARACTER(16) ::   BNAME = ' '  !  name buffer
+        CHARACTER(50)      BUFFER       !  string buffer
+        CHARACTER(256)     LINE         !  input line
+        CHARACTER(256)     MESG         !  message buffer
+        CHARACTER(IOVLEN3) CBUF         !  tmp pollutant name
+        CHARACTER(IODLEN3) DBUF         !  tmp variable name
+        CHARACTER(FIPLEN3) CFIP         !  tmp ASCII FIPS code
+        CHARACTER(LNKLEN3) CLNK         !  tmp link code
+        CHARACTER(SRCLEN3) CSRC         !  tmp source chars
+	CHARACTER(PLTLEN3) FCID         !  tmp facility code
+        CHARACTER(PLTLEN3) PLT          !  tmp plant code
+        CHARACTER(SRCLEN3) SRCBUF       !  tmp source chars
+        CHARACTER(SCCLEN3) TSCC         !  tmp SCC code
 
-        CHARACTER*16 :: PROGNAME = 'RDREPIN' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDREPIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDREPIN

@@ -47,18 +47,18 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
 
         EXTERNAL    CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
-        INTEGER,                INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
+        INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
@@ -73,10 +73,10 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=IOVLEN3) CPOL            !  pollutant name
-        CHARACTER(LEN=300)     MESG            !  message buffer
+        CHARACTER(IOVLEN3) CPOL            !  pollutant name
+        CHARACTER(300)     MESG            !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCEMSAR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCEMSAR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCEMSAR

@@ -47,7 +47,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
 
@@ -68,9 +68,9 @@ C...........   Local arrays for reading mobile information file
         INTEGER, ALLOCATABLE :: VIDXA   ( : ) !  index for sorting vehicle types
         INTEGER, ALLOCATABLE :: SIDXA   ( : ) !  index for sorting SCC table
 
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE :: CVTYPA( : ) ! unsorted veh types
-        CHARACTER(LEN=CRVLEN3), ALLOCATABLE :: SCCRVCA( : ) ! unsort CRWT//VTYPE
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: SCCTBLA( : ) ! unsorted SCCs
+        CHARACTER(VTPLEN3), ALLOCATABLE :: CVTYPA( : ) ! unsorted veh types
+        CHARACTER(CRVLEN3), ALLOCATABLE :: SCCRVCA( : ) ! unsort CRWT//VTYPE
+        CHARACTER(SCCLEN3), ALLOCATABLE :: SCCTBLA( : ) ! unsorted SCCs
 
 C...........   Other local variables
         INTEGER         I, J, K1, K2, K3, N1, N2, N3    !  counters and indices
@@ -83,13 +83,13 @@ C...........   Other local variables
         LOGICAL      :: SFLAG = .FALSE.   !  true: in SCC section
         LOGICAL      :: VFLAG = .FALSE.   !  true: in vehicle type section
 
-        CHARACTER*300          LINE     !  line buffer
-        CHARACTER*300          MESG     !  message buffer
-        CHARACTER(LEN=RWTLEN3) CRWT     !  tmp roadway type no.
-        CHARACTER(LEN=VTPLEN3) VTYPE    !  tmp vehicle type
-        CHARACTER(LEN=SCCLEN3) FIELDS( 3 ) !  fields from vehicle type section
+        CHARACTER(300)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
+        CHARACTER(RWTLEN3) CRWT     !  tmp roadway type no.
+        CHARACTER(VTPLEN3) VTYPE    !  tmp vehicle type
+        CHARACTER(SCCLEN3) FIELDS( 3 ) !  fields from vehicle type section
 
-        CHARACTER*16 :: PROGNAME = 'RDMVINFO' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDMVINFO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDMVINFO

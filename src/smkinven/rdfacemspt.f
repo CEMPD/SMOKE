@@ -49,7 +49,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDCFIRST
         INTEGER         FIND1
         INTEGER         STR2INT
@@ -79,14 +79,14 @@ C...........   Other local variables
         REAL                 XX                     ! Longitude
         REAL                 YY                     ! Latitude
         
-        CHARACTER(LEN=FIPLEN3) CFIP      ! fip code
-        CHARACTER(LEN=PLTLEN3) FCID      ! facility ID
+        CHARACTER(FIPLEN3) CFIP      ! fip code
+        CHARACTER(PLTLEN3) FCID      ! facility ID
         
-        CHARACTER(LEN=ALLLEN3) SRCKEY                 ! source key
-        CHARACTER(LEN=300)     LINE                   ! line from file
-        CHARACTER(LEN=300)     MESG                   ! message buffer
+        CHARACTER(ALLLEN3) SRCKEY                 ! source key
+        CHARACTER(300)     LINE                   ! line from file
+        CHARACTER(300)     MESG                   ! message buffer
 
-        CHARACTER(LEN=16) :: PROGNAME = 'RDFACEMSPT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDFACEMSPT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDFACEMSPT

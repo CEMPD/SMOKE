@@ -59,38 +59,38 @@
         LOGICAL, PUBLIC :: ORISFLAG  ! true: create ORIS-based arrays
 
 !.........  Information about the inventory files
-        INTEGER,            ALLOCATABLE :: FILFMT( : )  ! format of inventory file(s)
-        CHARACTER(LEN=300), ALLOCATABLE :: LSTSTR( : )  ! contents of list-fmt inventory file
+        INTEGER,        ALLOCATABLE :: FILFMT( : )  ! format of inventory file(s)
+        CHARACTER(300), ALLOCATABLE :: LSTSTR( : )  ! contents of list-fmt inventory file
 
 !.........  Unique lists of source characteristics and associated arrays...
 
 !.........  SIC arrays dimensioned by NINVSIC
         INTEGER, ALLOCATABLE, PUBLIC :: INVSIC ( : ) ! SICs
         INTEGER, ALLOCATABLE, PUBLIC :: INVSIC2( : ) ! 2-digit SICs
-        CHARACTER(LEN=SDSLEN3), ALLOCATABLE, PUBLIC :: SICDESC( : ) ! descrptn
+        CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: SICDESC( : ) ! descrptn
 
 !.........  SCC arrays dimensioned by NINVSCC
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCC( : ) ! SCCs
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCL( : ) ! left SCCs
-        CHARACTER(LEN=SDSLEN3), ALLOCATABLE, PUBLIC :: SCCDESC( : ) ! descrptn
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCC( : ) ! SCCs
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCL( : ) ! left SCCs
+        CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: SCCDESC( : ) ! descrptn
 
 !.........  Country/state/county codes dimensioned by NINVIFIP
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
 
 !.........  MACT codes dimensioned by NINVMACT
-        CHARACTER(LEN=MACLEN3), ALLOCATABLE, PUBLIC :: INVMACT( : )
+        CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC :: INVMACT( : )
 
 !.........  ORIS arrays
-        INTEGER               , ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
-        INTEGER               , ALLOCATABLE, PUBLIC :: OBSRCBG( : ) ! 1st source per ORIS/boiler
-        INTEGER               , ALLOCATABLE, PUBLIC :: OBSRCNT( : ) ! source count per ORIS/boiler
-        INTEGER               , ALLOCATABLE, PUBLIC :: OPSRCBG( : ) ! 1st source per ORIS/point
-        INTEGER               , ALLOCATABLE, PUBLIC :: OPSRCNT( : ) ! source count per ORIS/point
-        LOGICAL               , ALLOCATABLE, PUBLIC :: IORSMTCH( : ) ! true: inventory ORIS matched to CEM
-        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC :: INVORIS( : ) ! unique ORIS
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC :: INVODSC( : ) ! plant description from inventory
-        CHARACTER(LEN=OBRLEN3), ALLOCATABLE, PUBLIC :: ORISBLR( : ) ! ORIS // boiler
-        CHARACTER(LEN=OPTLEN3), ALLOCATABLE, PUBLIC :: ORISPNT( : ) ! ORIS // point
+        INTEGER,            ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
+        INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCBG( : ) ! 1st source per ORIS/boiler
+        INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCNT( : ) ! source count per ORIS/boiler
+        INTEGER,            ALLOCATABLE, PUBLIC :: OPSRCBG( : ) ! 1st source per ORIS/point
+        INTEGER,            ALLOCATABLE, PUBLIC :: OPSRCNT( : ) ! source count per ORIS/point
+        LOGICAL,            ALLOCATABLE, PUBLIC :: IORSMTCH( : ) ! true: inventory ORIS matched to CEM
+        CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: INVORIS( : ) ! unique ORIS
+        CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC :: INVODSC( : ) ! plant description from inventory
+        CHARACTER(OBRLEN3), ALLOCATABLE, PUBLIC :: ORISBLR( : ) ! ORIS // boiler
+        CHARACTER(OPTLEN3), ALLOCATABLE, PUBLIC :: ORISPNT( : ) ! ORIS // point
 
 !.........  For valid pollutants and activities...
         INTEGER, PUBLIC :: MXIDAT = 0   ! Max no of inv pols & acvtys
@@ -106,10 +106,10 @@ C.........  Dimensioned by MXIDAT
 
         REAL   , ALLOCATABLE, PUBLIC :: INVDCNV( : ) ! local conversion factor
 
-        CHARACTER(LEN=1)      , ALLOCATABLE, PUBLIC :: INVDVTS( : ) ! V=VOC, T=TOG, N=not
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: INVDNAM( : ) ! data name 
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: INVDUNT( : ) ! units for SMOKE intmdt inventory
-        CHARACTER(LEN=DDSLEN3), ALLOCATABLE, PUBLIC :: INVDDSC( : ) ! inventory data description
+        CHARACTER,          ALLOCATABLE, PUBLIC :: INVDVTS( : ) ! V=VOC, T=TOG, N=not
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: INVDNAM( : ) ! data name 
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: INVDUNT( : ) ! units for SMOKE intmdt inventory
+        CHARACTER(DDSLEN3), ALLOCATABLE, PUBLIC :: INVDDSC( : ) ! inventory data description
 
 C.........  Inventory table arrays - unsorted raw data, dimensioned by NINVTBL
         INTEGER, ALLOCATABLE, PUBLIC :: ITIDXA ( : ) ! Sorting index 1
@@ -126,26 +126,26 @@ C.........  Inventory table arrays - unsorted raw data, dimensioned by NINVTBL
 
         REAL   , ALLOCATABLE, PUBLIC :: ITFACA ( : ) ! fraction of CAS emissions in pollutant
 
-        CHARACTER(LEN=1)      , ALLOCATABLE, PUBLIC :: ITVTSA ( : ) ! V=VOC, T=TOG, N=not
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ITNAMA ( : ) ! data name 
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: ITUNTA ( : ) ! units for SMOKE intmdt inventory
-        CHARACTER(LEN=CASLEN3), ALLOCATABLE, PUBLIC :: ITCASA ( : ) ! CAS code (left justified)
-        CHARACTER(LEN=DDSLEN3), ALLOCATABLE, PUBLIC :: ITDSCA ( : ) ! inventory data description
-        CHARACTER(LEN=DDSLEN3), ALLOCATABLE, PUBLIC :: ITCASDSCA( : ) ! CAS code description
-        CHARACTER(LEN=CDTLEN3), ALLOCATABLE, PUBLIC :: ITCASDNMA( : ) ! CAS code // data name
+        CHARACTER,          ALLOCATABLE, PUBLIC :: ITVTSA ( : ) ! V=VOC, T=TOG, N=not
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: ITNAMA ( : ) ! data name 
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: ITUNTA ( : ) ! units for SMOKE intmdt inventory
+        CHARACTER(CASLEN3), ALLOCATABLE, PUBLIC :: ITCASA ( : ) ! CAS code (left justified)
+        CHARACTER(DDSLEN3), ALLOCATABLE, PUBLIC :: ITDSCA ( : ) ! inventory data description
+        CHARACTER(DDSLEN3), ALLOCATABLE, PUBLIC :: ITCASDSCA( : ) ! CAS code description
+        CHARACTER(CDTLEN3), ALLOCATABLE, PUBLIC :: ITCASDNMA( : ) ! CAS code // data name
 
 C.........  CAS codes in sorted order WITH DUPLICATES and reference index back to 
 C           input order - dimensioned by NINVTBL
-        INTEGER               , ALLOCATABLE, PUBLIC :: SCASIDX( : ) ! index to ITNAMA
-        CHARACTER(LEN=CASLEN3), ALLOCATABLE, PUBLIC :: SORTCAS( : ) ! CAS code (left justified)
+        INTEGER,            ALLOCATABLE, PUBLIC :: SCASIDX( : ) ! index to ITNAMA
+        CHARACTER(CASLEN3), ALLOCATABLE, PUBLIC :: SORTCAS( : ) ! CAS code (left justified)
 	 
 C.........  CAS codes in sorted order WITHOUT DUPLICATES and count of pollutants
 C           for each CAS code (0 pollutants indicates that no pollutants for that
 C           CAS are kept) - dimensioned by NUNIQCAS
-        INTEGER               , ALLOCATABLE, PUBLIC :: UCASIDX ( : ) ! index to first entry in SORTCAS
-        INTEGER               , ALLOCATABLE, PUBLIC :: UCASNPOL( : ) ! pol count per CAS code
-        INTEGER               , ALLOCATABLE, PUBLIC :: UCASNKEP( : ) ! kept pol count per CAS code
-        CHARACTER(LEN=CASLEN3), ALLOCATABLE, PUBLIC :: UNIQCAS ( : ) ! CAS code (left justified)
+        INTEGER,            ALLOCATABLE, PUBLIC :: UCASIDX ( : ) ! index to first entry in SORTCAS
+        INTEGER,            ALLOCATABLE, PUBLIC :: UCASNPOL( : ) ! pol count per CAS code
+        INTEGER,            ALLOCATABLE, PUBLIC :: UCASNKEP( : ) ! kept pol count per CAS code
+        CHARACTER(CASLEN3), ALLOCATABLE, PUBLIC :: UNIQCAS ( : ) ! CAS code (left justified)
 
 C.........  SAROAD numbers in sorted order and reference index back to input order
 C           Dimensioned by MXIDAT

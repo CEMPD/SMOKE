@@ -45,16 +45,16 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER,          INTENT    (IN) :: NSRC          !  actual source count
-        INTEGER,          INTENT    (IN) :: CTYPE         !  coord sys type
-        CHARACTER(LEN=*), INTENT    (IN) :: GDNAM         !  grid name
-        REAL*8 ,          INTENT    (IN) :: P_ALP         !  first, second, third map
-        REAL*8 ,          INTENT    (IN) :: P_BET         !  projection descriptive
-        REAL*8 ,          INTENT    (IN) :: P_GAM         !  parameters
-        REAL*8 ,          INTENT    (IN) :: XCENT         !  lon for coord-system X=0
-        REAL*8 ,          INTENT    (IN) :: YCENT         !  lat for coord-system Y=0
-        REAL   ,          INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input lon)
-        REAL   ,          INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input lat)
+        INTEGER,      INTENT    (IN) :: NSRC          !  actual source count
+        INTEGER,      INTENT    (IN) :: CTYPE         !  coord sys type
+        CHARACTER(*), INTENT    (IN) :: GDNAM         !  grid name
+        REAL(8),      INTENT    (IN) :: P_ALP         !  first, second, third map
+        REAL(8),      INTENT    (IN) :: P_BET         !  projection descriptive
+        REAL(8),      INTENT    (IN) :: P_GAM         !  parameters
+        REAL(8),      INTENT    (IN) :: XCENT         !  lon for coord-system X=0
+        REAL(8),      INTENT    (IN) :: YCENT         !  lat for coord-system Y=0
+        REAL,         INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input lon)
+        REAL,         INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input lat)
 
 C...........   EXTERNAL FUNCTIONS
         LOGICAL       LAMBERT
@@ -69,13 +69,13 @@ C...........   Other local variables
         INTEGER       S
 
         REAL          XLOC, XX, YLOC, YY  ! tmp x and y coordinates
-        REAL*4        XLOC4, YLOC4, XX4, YY4
+        REAL(4)       XLOC4, YLOC4, XX4, YY4
 
         LOGICAL    :: EFLAG =.FALSE.   ! true: error detected
 
-        CHARACTER*256 MESG                !  message buffer
+        CHARACTER(256) MESG                !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'CONVRTXY' ! program name
+        CHARACTER(16) :: PROGNAME = 'CONVRTXY' ! program name
 
 C***********************************************************************
 C   begin body of subroutine CONVRTXY

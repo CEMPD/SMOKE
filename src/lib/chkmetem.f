@@ -50,8 +50,8 @@ C.........  INCLUDE FILES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER*2   CRLF
-        CHARACTER*50  GETCFDSC
+        CHARACTER(2)  CRLF
+        CHARACTER(50) GETCFDSC
 
         EXTERNAL      CRLF, GETCFDSC
 
@@ -77,7 +77,7 @@ C.........  Grid information
         REAL    :: YORIG = 0.D0   ! y-origin of grid
         REAL    :: XCELL = 0.D0   ! x-dim of cells
         REAL    :: YCELL = 0.D0   ! y-dim of cells
-        CHARACTER(LEN=IOVLEN3) :: GRDNM = ' '  ! grid name
+        CHARACTER(IOVLEN3) :: GRDNM = ' '  ! grid name
 
 C.........  Vertical structure information
         INTEGER :: VGTYP  = -1     ! type of vertical coordinates
@@ -85,8 +85,8 @@ C.........  Vertical structure information
         REAL    :: VGLVS( 0:MXLAYS3 ) ! vertical coordinate values
 
 C.........  Other met file information for comparison
-        CHARACTER*50 :: METSCEN  = ' '  ! Name of met scenario
-        CHARACTER*50 :: CLOUDSHM = ' '  ! Name of cloud scheme
+        CHARACTER(50) :: METSCEN  = ' '  ! Name of met scenario
+        CHARACTER(50) :: CLOUDSHM = ' '  ! Name of cloud scheme
 
 C.........  Other local variables
         INTEGER         I, J, J1, J2, K, L      ! indicies and counters
@@ -96,10 +96,10 @@ C.........  Other local variables
         LOGICAL      :: THREE_D   = .FALSE.  ! true: one of the inputs is 3d
         LOGICAL      :: VFLAG     = .FALSE.  ! true: error in vertical
 
-        CHARACTER(LEN=IOVLEN3) FILNAM 
-        CHARACTER*300          MESG 
+        CHARACTER(IOVLEN3) FILNAM 
+        CHARACTER(300)     MESG 
 
-        CHARACTER*16 :: PROGNAME = 'CHKMETEM' ! program name
+        CHARACTER(16) :: PROGNAME = 'CHKMETEM' ! program name
 
 C***********************************************************************
 C   begin body of function CHKMETEM
@@ -239,8 +239,8 @@ C.............  Subprogram arguments
 C.............  Local variables
             INTEGER       I, J1, J2, K, L, L2
 
-            CHARACTER*50  CVAL        ! Current file's METSCEN or CLOUDSHM
-            CHARACTER*300 MESG        ! Output message
+            CHARACTER(50)  CVAL        ! Current file's METSCEN or CLOUDSHM
+            CHARACTER(300) MESG        ! Output message
 
 C----------------------------------------------------------------------
 

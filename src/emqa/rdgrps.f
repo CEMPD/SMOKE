@@ -63,7 +63,7 @@ C...........   INCLUDES
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL        BLKORCMT
-        CHARACTER*2    CRLF
+        CHARACTER(2)   CRLF
 
         EXTERNAL   BLKORCMT, CRLF
 
@@ -79,10 +79,10 @@ C...........   Region group input allocatable arrays
         LOGICAL, ALLOCATABLE :: REGSTAT ( :,: )  ! raw status (true=include)
 
 C...........   Subgrid input allocatable arrays
-        INTEGER      , ALLOCATABLE :: SBGNREC ( : )   ! no. records per subgrid
+        INTEGER,        ALLOCATABLE :: SBGNREC ( : )   ! no. records per subgrid
 
-        CHARACTER*100, ALLOCATABLE :: SBGRAW  ( :,: ) ! raw info from input file
-        LOGICAL      , ALLOCATABLE :: SBGSTAT ( :,: ) ! raw status (true=incld)
+        CHARACTER(100), ALLOCATABLE :: SBGRAW  ( :,: ) ! raw info from input file
+        LOGICAL,        ALLOCATABLE :: SBGSTAT ( :,: ) ! raw status (true=incld)
 
 C...........   Per grid-cell local allocatable arrays
         LOGICAL, ALLOCATABLE :: LCELSTAT( : )
@@ -110,10 +110,10 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.     ! true: error found
 
-        CHARACTER*200   BUFFER   ! tmp label buffer
-        CHARACTER*300   MESG     ! tmp message buffer
+        CHARACTER(200)  BUFFER   ! tmp label buffer
+        CHARACTER(300)  MESG     ! tmp message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDGRPS' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDGRPS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDGRPS
@@ -376,13 +376,13 @@ C               argument.
             SUBROUTINE READ_GROUPS( FDEV, NGRID, READTYPE, LGRDSTAT )
 
 C.............  External functions
-            LOGICAL     CHKINT
-            CHARACTER*2 CRLF
-            INTEGER     GETNLIST
-            INTEGER     INDEX1
-            INTEGER     STR2INT
+            LOGICAL      CHKINT
+            CHARACTER(2) CRLF
+            INTEGER      GETNLIST
+            INTEGER      INDEX1
+            INTEGER      STR2INT
 
-            EXTERNAL    CHKINT, CRLF, GETNLIST, INDEX1, STR2INT
+            EXTERNAL     CHKINT, CRLF, GETNLIST, INDEX1, STR2INT
 
 C.............  Subprogram arguments
             INTEGER     , INTENT (IN) :: FDEV       ! input file unit
@@ -394,7 +394,7 @@ C.............   Local parameters
             INTEGER, PARAMETER :: MXSEG = 100
 
 C.............  Subprogram local arrays
-            CHARACTER*256 SEGMENT( MXSEG )
+            CHARACTER(256) SEGMENT( MXSEG )
 
 C.............  Local variables
             INTEGER       I, J, L, N       ! counters and indices
@@ -404,12 +404,12 @@ C.............  Local variables
             INTEGER    :: NS = 1   ! no. segments in line
             INTEGER       RCNT     ! record count
 
-            CHARACTER*300 BUFFER   ! tmp line buffer as uppercase
-            CHARACTER*300 LINE     ! tmp line buffer
-            CHARACTER*300 MESG     ! mesg buffer
+            CHARACTER(300) BUFFER   ! tmp line buffer as uppercase
+            CHARACTER(300) LINE     ! tmp line buffer
+            CHARACTER(300) MESG     ! mesg buffer
 
-            CHARACTER(LEN=LENLAB3) :: PREGNNAM   ! previous region name
-            CHARACTER(LEN=LENLAB3) :: PSUBGNAM   ! previous subgrid name
+            CHARACTER(LENLAB3) :: PREGNNAM   ! previous region name
+            CHARACTER(LENLAB3) :: PSUBGNAM   ! previous subgrid name
 
 C----------------------------------------------------------------------
 
@@ -810,7 +810,7 @@ C.............  Local variables
             INTEGER  FIP         ! tmp country/state/county code
             INTEGER  RCHK        ! region code for comparison
 
-            CHARACTER*300 MESG   ! mesg buffer
+            CHARACTER(300) MESG  ! mesg buffer
 C----------------------------------------------------------------------
 
 C.............  Initialize output variables
@@ -875,10 +875,10 @@ C.............  Local variables
             INTEGER  X1, Y1        ! starting coordinate
             INTEGER  X2, Y2        ! ending corrdinate
 
-            CHARACTER*100 BUFFER   ! input buffer
-            CHARACTER*100 XBUF     ! tmp x-cell buffer
-            CHARACTER*100 YBUF     ! tmp y-cell buffer
-            CHARACTER*300 MESG     ! mesg buffer
+            CHARACTER(100) BUFFER  ! input buffer
+            CHARACTER(100) XBUF    ! tmp x-cell buffer
+            CHARACTER(100) YBUF    ! tmp y-cell buffer
+            CHARACTER(300) MESG    ! mesg buffer
 
 C----------------------------------------------------------------------
 
@@ -1132,8 +1132,8 @@ C----------------------------------------------------------------------
 C.............  This subprogram renames internal region names
             SUBROUTINE RENAME_REGION( NAM, FIP )
 
-            CHARACTER*(*), INTENT (IN OUT) :: NAM
-            INTEGER      , INTENT (IN    ) :: FIP
+            CHARACTER(*), INTENT (IN OUT) :: NAM
+            INTEGER,      INTENT (IN    ) :: FIP
 
 C----------------------------------------------------------------------
 
@@ -1147,8 +1147,8 @@ C----------------------------------------------------------------------
 C.............  This subprogram renames internal subgrid names
             SUBROUTINE RENAME_SUBGRID( NAM )
 
-            CHARACTER*(*), INTENT (IN OUT) :: NAM
-            CHARACTER(LEN=LENLAB3) TMPNAM
+            CHARACTER(*), INTENT (IN OUT) :: NAM
+            CHARACTER(LENLAB3) TMPNAM
 
             INTEGER L
 

@@ -47,28 +47,28 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL        CHKINT
         INTEGER        STR2INT
-        CHARACTER*2    CRLF    
+        CHARACTER(2)   CRLF    
         
         EXTERNAL  CHKINT, STR2INT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*300, INTENT (IN)    :: FILENAME             ! scenario filename
-        CHARACTER*150, INTENT (INOUT) :: SCENARIO( NLINES )   ! M6 scenario
-        INTEGER,       INTENT (IN)    :: NLINES               ! no. lines in scenario (size of array)
-        INTEGER,       INTENT (IN)    :: EFYEAR               ! emission factor year
-        LOGICAL,       INTENT (IN)    :: FLATFLAG             ! true: use flat hourly VMT profile
+        CHARACTER(300), INTENT (IN)    :: FILENAME             ! scenario filename
+        CHARACTER(150), INTENT (INOUT) :: SCENARIO( NLINES )   ! M6 scenario
+        INTEGER,        INTENT (IN)    :: NLINES               ! no. lines in scenario (size of array)
+        INTEGER,        INTENT (IN)    :: EFYEAR               ! emission factor year
+        LOGICAL,        INTENT (IN)    :: FLATFLAG             ! true: use flat hourly VMT profile
 
 C...........   Other local variables
         INTEGER I, J, K                       ! counters and indices                     
         INTEGER YEAR                          ! calendar year
 
-        CHARACTER(LEN=150) CURRLINE           ! current line from scenario
-        CHARACTER(LEN=150) RPLCLINE           ! replacement line
-        CHARACTER(LEN=19)  COMMAND            ! Mobile 6 command
-        CHARACTER(LEN=130) YEARSTR            ! calendar year from scenario
-        CHARACTER(LEN=300) MESG               ! message buffer
+        CHARACTER(150) CURRLINE           ! current line from scenario
+        CHARACTER(150) RPLCLINE           ! replacement line
+        CHARACTER(19)  COMMAND            ! Mobile 6 command
+        CHARACTER(130) YEARSTR            ! calendar year from scenario
+        CHARACTER(300) MESG               ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'CHKM6SCN'   ! program name
+        CHARACTER(16) :: PROGNAME = 'CHKM6SCN'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine CHKM6SCN

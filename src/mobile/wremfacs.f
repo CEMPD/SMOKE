@@ -98,12 +98,12 @@ C.........   Other local variables
         LOGICAL       :: USEHAP  = .FALSE.  ! true: use user-defined toxic value
         LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
-        CHARACTER(LEN=3)       EFNAME    !  emission process name
-        CHARACTER(LEN=11)      POLLNAME  !  pollutant name
-        CHARACTER(LEN=16)      CURRVAR   !  current variable being written
-        CHARACTER*300          MESG      !  message buffer 
+        CHARACTER(3)       EFNAME    !  emission process name
+        CHARACTER(11)      POLLNAME  !  pollutant name
+        CHARACTER(16)      CURRVAR   !  current variable being written
+        CHARACTER(300)     MESG      !  message buffer 
         
-        CHARACTER*16  :: PROGNAME = 'WREMFACS' ! program name
+        CHARACTER(16) :: PROGNAME = 'WREMFACS' ! program name
         
 C***********************************************************************
 C   begin body of subroutine WREMFACS

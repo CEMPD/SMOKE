@@ -58,7 +58,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         EXTERNAL      CRLF
 
 C...........   SUBROUTINE ARGUMENTS:
@@ -92,11 +92,11 @@ C...........   Other local variables
         LOGICAL      :: VALID  = .FALSE.   ! true: current packet is valid
         LOGICAL      :: YRSPEC = .FALSE.   ! true: packet is year-specific
 
-        CHARACTER*7               ACTION      ! buffer for PKTLOOP action
-        CHARACTER*300             LINE        ! read buffer for a line
-        CHARACTER*300             MESG        ! message buffer
+        CHARACTER(7)              ACTION      ! buffer for PKTLOOP action
+        CHARACTER(300)            LINE        ! read buffer for a line
+        CHARACTER(300)            MESG        ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'ALOCPKTS' ! program name
+        CHARACTER(16) :: PROGNAME = 'ALOCPKTS' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine ALOCPKTS
@@ -436,8 +436,8 @@ C.............  Local variables
 
             LOGICAL, SAVE :: SFLAG     ! true: there is a saved output year
 
-            CHARACTER*40  :: BUFFER    ! packet buffer
-            CHARACTER*300 :: MESG      ! message buffer
+            CHARACTER(40)  :: BUFFER    ! packet buffer
+            CHARACTER(300) :: MESG      ! message buffer
 
 C----------------------------------------------------------------------
 

@@ -43,7 +43,7 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*14    MMDDYY
+        CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
 
         EXTERNAL        MMDDYY, WKDAY
@@ -56,7 +56,7 @@ C...........   Local variables
         INTEGER         DAY          !  day of week number
         INTEGER         L            !  length of day name
 
-        CHARACTER*16 :: PROGNAME = 'WRDAYMSG' ! program name
+        CHARACTER(16) :: PROGNAME = 'WRDAYMSG' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRDAYMSG

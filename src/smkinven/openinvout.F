@@ -58,13 +58,13 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         GETEFILE
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
         LOGICAL         SETENVVAR
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   VERCHAR
 
         EXTERNAL    CRLF, ENVINT, GETEFILE, INDEX1, PROMPTFFILE, 
      &              SETENVVAR, VERCHAR
@@ -77,12 +77,12 @@ C...........   SUBROUTINE ARGUMENTS
     	INTEGER     , INTENT(OUT) :: IDEV     ! map inventory file
         INTEGER     , INTENT(OUT) :: SDEV     ! ascii output inven file unit no.
     	INTEGER     , INTENT(OUT) :: ADEV     ! REPINVEN output file unit no.
-        CHARACTER(LEN=PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
+        CHARACTER(PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
         CHARACTER(*), INTENT(OUT) :: VAR_FORMULA  ! formula string
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -104,20 +104,20 @@ C...........   Other local variables
         LOGICAL    :: CHKMINUS = .FALSE. ! true: formula uses a - sign
         LOGICAL    :: EFLAG    = .FALSE. ! true: error found
 
-        CHARACTER*256 MESG      ! message buffer 
+        CHARACTER(256) MESG      ! message buffer 
 
-        CHARACTER*16            NAME1  ! tmp file name component
-        CHARACTER*16            NAME2  ! tmp file name component
-        CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
-        CHARACTER(LEN=IOVLEN3)  VIN_A
-        CHARACTER(LEN=IOVLEN3)  VIN_B
-        CHARACTER(LEN=IOVLEN3)  VNAME
-        CHARACTER(LEN=IOULEN3)  UNITS  ! tmp units name
-        CHARACTER(LEN=PHYLEN3)  APHYS  ! ASCII physical file name
-        CHARACTER(LEN=PHYLEN3)  EPHYS  ! I/O API physical file name
-        CHARACTER(LEN=PHYLEN3)  PATH   ! path name
+        CHARACTER(16)       NAME1  ! tmp file name component
+        CHARACTER(16)       NAME2  ! tmp file name component
+        CHARACTER(NAMLEN3)  NAMBUF ! file name buffer
+        CHARACTER(IOVLEN3)  VIN_A
+        CHARACTER(IOVLEN3)  VIN_B
+        CHARACTER(IOVLEN3)  VNAME
+        CHARACTER(IOULEN3)  UNITS  ! tmp units name
+        CHARACTER(PHYLEN3)  APHYS  ! ASCII physical file name
+        CHARACTER(PHYLEN3)  EPHYS  ! I/O API physical file name
+        CHARACTER(PHYLEN3)  PATH   ! path name
 
-        CHARACTER*16 :: PROGNAME = 'OPENINVOUT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENINVOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENINVOUT

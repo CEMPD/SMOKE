@@ -51,7 +51,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
 
@@ -64,7 +64,7 @@ C...........   Local parameters
         INTEGER    , PARAMETER :: MXCOL = 2
 
 C...........   Array of input fields
-        CHARACTER(LEN=SCCLEN3)  SEGMENT( MXCOL )
+        CHARACTER(SCCLEN3)  SEGMENT( MXCOL )
   
 C...........   Other local variables
         INTEGER         I, N    !  counters and indices
@@ -77,13 +77,13 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
 
-        CHARACTER*10           FIPFMT   ! formt to write co/st/cy to string
-        CHARACTER*128          LINE     !  line buffer
-        CHARACTER*256          MESG     !  message buffer
-        CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
-        CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
+        CHARACTER(10)      FIPFMT   ! formt to write co/st/cy to string
+        CHARACTER(128)     LINE     !  line buffer
+        CHARACTER(256)     MESG     !  message buffer
+        CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(SCCLEN3) TSCC     !  temporary SCC
 
-        CHARACTER*16 :: PROGNAME = 'RDXCLUDE' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDXCLUDE' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDXCLUDE

@@ -47,19 +47,19 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
         
         EXTERNAL   CRLF, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
-        CHARACTER(LEN=SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
-        INTEGER,                INTENT(OUT) :: NVARPERLN ! no. variables per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
+        CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
+        INTEGER,            INTENT(OUT) :: NVARPERLN ! no. variables per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max data variables in file
@@ -75,11 +75,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=SCCLEN3) SEGMENT( NSEG ) ! segments of line
-        CHARACTER(LEN=CASLEN3) TCAS            ! tmp cas number
-        CHARACTER(LEN=300)     MESG            ! message buffer
+        CHARACTER(SCCLEN3) SEGMENT( NSEG ) ! segments of line
+        CHARACTER(CASLEN3) TCAS            ! tmp cas number
+        CHARACTER(300)     MESG            ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCNTIMB' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCNTIMB' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCNTIMB

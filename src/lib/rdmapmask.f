@@ -47,7 +47,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2      CRLF
+        CHARACTER(2)     CRLF
         INTEGER          INDEX1
         LOGICAL          SETENVVAR
 
@@ -80,11 +80,11 @@ C...........   Other local variables
         LOGICAL       :: EFLAG = .FALSE.  ! true: error found
         LOGICAL       :: SFLAG = .FALSE.  ! true: error found on read of inven data
 
-        CHARACTER*256          MESG   ! message buffer
-        CHARACTER(LEN=IOVLEN3) PNAME  ! logical file name for data files
-        CHARACTER(LEN=IOVLEN3) VBUF   ! tmp variable name 
+        CHARACTER(256)     MESG   ! message buffer
+        CHARACTER(IOVLEN3) PNAME  ! logical file name for data files
+        CHARACTER(IOVLEN3) VBUF   ! tmp variable name 
 
-        CHARACTER*16 :: PROGNAME = 'RDMAPMASK'   !  program name
+        CHARACTER(16) :: PROGNAME = 'RDMAPMASK'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine RDMAPMASK

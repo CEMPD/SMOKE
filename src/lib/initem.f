@@ -45,9 +45,9 @@ C****************************************************************************
         IMPLICIT NONE
 
 C.........  Subroutine arguments
-        INTEGER     , INTENT (INOUT) :: LDEV      ! Log file unit number
-        CHARACTER*50, INTENT (IN) :: NAMEVERS  ! ASCII field e/ version number appended to end
-        CHARACTER*16, INTENT (IN) :: INPROGNM  ! Calling program name
+        INTEGER,       INTENT (INOUT) :: LDEV      ! Log file unit number
+        CHARACTER(50), INTENT (IN) :: NAMEVERS  ! ASCII field e/ version number appended to end
+        CHARACTER(16), INTENT (IN) :: INPROGNM  ! Calling program name
 
 C.........  Parameters
         INTEGER       STDOUT
@@ -66,10 +66,10 @@ C.........  Local variables
         INTEGER       I, J, L
         INTEGER       NLOOP      ! Number of times to loop through output
          
-        CHARACTER*50  VERCHAR
-        CHARACTER*300 LINE0, LINE1, LINE2, LINE3, LINE4, LINE5
+        CHARACTER(50)  VERCHAR
+        CHARACTER(300) LINE0, LINE1, LINE2, LINE3, LINE4, LINE5
 
-        CHARACTER*16 :: PROGNAME = 'INITEM'  ! program name
+        CHARACTER(16) :: PROGNAME = 'INITEM'  ! program name
 
 C***********************************************************************
 C   begin body of program INITEM

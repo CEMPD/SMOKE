@@ -50,7 +50,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS:
         LOGICAL       CHKREAL
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       INDEX1
 	INTEGER       STR2INT
         REAL          STR2REAL
@@ -71,7 +71,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: MXSEG = 17   ! number of potential line segments
 
 C...........   Other arrays
-        CHARACTER*20 SEGMENT( MXSEG )      ! Segments of parsed packet lines
+        CHARACTER(20) SEGMENT( MXSEG )      ! Segments of parsed packet lines
 
 C...........   Other local variables
         INTEGER         K          ! index
@@ -82,11 +82,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
 
-        CHARACTER*8, SAVE :: FMTFIP     ! format for writing FIPS codeSS
-        CHARACTER*300        LINE       ! line reading buffer
-        CHARACTER*300        MESG       ! message buffer
+        CHARACTER(8), SAVE :: FMTFIP     ! format for writing FIPS codeSS
+        CHARACTER(300)        LINE       ! line reading buffer
+        CHARACTER(300)        MESG       ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDPACKET' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDPACKET' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine RDPACKET

@@ -78,9 +78,9 @@
         INTEGER :: NRP = 0 !  pos in 2nd dim of POLVLA of rule penetration
         PUBLIC NC1, NC2, NCE, NEF, NEM, NDY, NRE, NRP
 
-        CHARACTER*1, PUBLIC :: CRL      = ' ' ! 'A', 'M', or 'P'
-        CHARACTER*6, PUBLIC :: CATEGORY = ' ' ! 'AREA', 'MOBILE', or 'POINT'
-        CHARACTER*6, PUBLIC :: CATDESC  = ' ' ! 'Area', 'Mobile', or 'Point'
+        CHARACTER,    PUBLIC :: CRL      = ' ' ! 'A', 'M', or 'P'
+        CHARACTER(6), PUBLIC :: CATEGORY = ' ' ! 'AREA', 'MOBILE', or 'POINT'
+        CHARACTER(6), PUBLIC :: CATDESC  = ' ' ! 'Area', 'Mobile', or 'Point'
 
 !.........  Arrays of positions for source characteristics in full string of
 !           source characteristics (dimension NCHARS)
@@ -88,35 +88,35 @@
         INTEGER    , ALLOCATABLE, PUBLIC :: SC_ENDP( : )
 
 !.........  Inventory pollutants and index to master list dimensioned by NIPOL
-        INTEGER               , ALLOCATABLE, PUBLIC :: EIIDX( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM( : )
+        INTEGER,            ALLOCATABLE, PUBLIC :: EIIDX( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM( : )
 
 !.........  Inventory activities and index to master list, dimensioned by NIACT
-        INTEGER               , ALLOCATABLE, PUBLIC :: AVIDX ( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: ACTVTY( : )
+        INTEGER,            ALLOCATABLE, PUBLIC :: AVIDX ( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: ACTVTY( : )
 
 !.........  Inventory pollutants and inventory activies, dimensioned by NIPPA
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EAREAD( : ) ! for read3
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: EANAM ( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: EAREAD( : ) ! for read3
 
 !.........  Inventory pollutants/activies units and descriptions
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EAUNIT( : )
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EADESC( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: EAUNIT( : )
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: EADESC( : )
 
 !.........  Map file pollutants list and physical file names
-        INTEGER                            , PUBLIC :: NMAP = 0
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MAPNAM( : )
-        CHARACTER(LEN=PHYLEN3), ALLOCATABLE, PUBLIC :: MAPFIL( : )
+        INTEGER,                         PUBLIC :: NMAP = 0
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: MAPNAM( : )
+        CHARACTER(PHYLEN3), ALLOCATABLE, PUBLIC :: MAPFIL( : )
 
 !.........  Units conversions information
-        INTEGER               , PUBLIC :: INVPIDX = 0    ! annual/average day idx
-        REAL, ALLOCATABLE, PUBLIC :: EACNV( : )          ! units conv factors
+        INTEGER,           PUBLIC :: INVPIDX = 0    ! annual/average day idx
+        REAL, ALLOCATABLE, PUBLIC :: EACNV( : )     ! units conv factors
 
 !.........  Arrays for reading inventory file headers
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: TMPNAM( : )! var names
-        INTEGER               , ALLOCATABLE, PUBLIC :: DATPOS( : )! var positn
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: TMPNAM( : )! var names
+        INTEGER,            ALLOCATABLE, PUBLIC :: DATPOS( : )! var positn
 
 !.........  Units for source attributes (such as stack parms)
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: ATTRUNIT( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: ATTRUNIT( : )
 
         END MODULE MODINFO

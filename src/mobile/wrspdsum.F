@@ -60,7 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        FIND1FIRST
         INTEGER        FINDR1FIRST
         INTEGER        CVTRDTYPE
-        CHARACTER*2    CRLF    
+        CHARACTER(2)   CRLF    
         
         EXTERNAL  FINDR1FIRST, FIND1FIRST, CVTRDTYPE, CRLF
 
@@ -101,9 +101,9 @@ C...........   Other local variables
         LOGICAL :: RLASAFLAG = .FALSE.    ! true: treat rural local roads as arterial
         LOGICAL :: ULASAFLAG = .FALSE.    ! true: treat urban local roads as arterial
         
-        CHARACTER*300          MESG      !  message buffer 
+        CHARACTER(300)         MESG      !  message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'WRSPDSUM'   ! program name
+        CHARACTER(16) :: PROGNAME = 'WRSPDSUM'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine WRSPDSUM
@@ -300,11 +300,11 @@ C.............  Subprogram arguments
             LOGICAL, INTENT (IN)  :: ULASAFLAG            ! true: treat urban local roads as arterial
             
 C.............  Local subprogram variables
-            INTEGER :: K, L2, N                ! counters and indices
+            INTEGER :: K, L2, N            ! counters and indices
 
-            LOGICAL              EFLAG         ! true: an error has occurred
+            LOGICAL          EFLAG         ! true: an error has occurred
 
-            CHARACTER(LEN=100)   BUFFER        ! message buffer
+            CHARACTER(100)   BUFFER        ! message buffer
 
 C.............................................................................
             

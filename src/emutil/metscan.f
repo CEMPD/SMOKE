@@ -50,16 +50,16 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
+        CHARACTER(50)  SCCSW          ! SCCS string with version number at end
  
         PARAMETER ( SCCSW   = '%W%'    )
      
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF   
+        CHARACTER(2)    CRLF   
         INTEGER         GETFLINE
         INTEGER         JULIAN
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         REAL            YR2DAY
 
         EXTERNAL        CRLF, GETFLINE, JULIAN, PROMPTMFILE, YR2DAY
@@ -82,8 +82,8 @@ C...........   Logical names and unit numbers
 
         INTEGER         LDEV    ! unit number for log device
 
-        CHARACTER*16    MNAME   ! logical name for meteorology file
-        CHARACTER*16    ONAME   ! output file logical name
+        CHARACTER(16)   MNAME   ! logical name for meteorology file
+        CHARACTER(16)   ONAME   ! output file logical name
 
 C...........   Other variables and their descriptions:
 
@@ -114,13 +114,13 @@ C...........   Other variables and their descriptions:
         LOGICAL      :: FFLAG = .FALSE.   !  true: all freezing found
         LOGICAL      :: NFLAG = .TRUE.    !  true: all non-freezing found
 
-        CHARACTER*5     HEMISW  ! hemisphere switch (NORTH or SOUTH)
-        CHARACTER*300   MESG    ! message buffer for M3EXIT()
+        CHARACTER(5)    HEMISW  ! hemisphere switch (NORTH or SOUTH)
+        CHARACTER(300)  MESG    ! message buffer for M3EXIT()
 
-        CHARACTER(LEN=IOVLEN3) VARNAM   ! temperature variable name
+        CHARACTER(IOVLEN3) VARNAM   ! temperature variable name
 
 C.......   Input met and grid variables:
-        CHARACTER*16 :: PROGNAME = 'METSCAN'   !  program name
+        CHARACTER(16) :: PROGNAME = 'METSCAN'   !  program name
 
 C***********************************************************************
 C   begin body of program METSCAN

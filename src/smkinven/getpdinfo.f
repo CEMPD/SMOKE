@@ -58,7 +58,7 @@ C.........  INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         GETFORMT
 
@@ -95,9 +95,9 @@ C.........  Other local variables
 
         LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific
 
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETPDINFO' !  program name
+        CHARACTER(16) :: PROGNAME = 'GETPDINFO' !  program name
 
 C***********************************************************************
 C   begin body of program GETPDINFO

@@ -50,7 +50,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         FIND1
 
@@ -78,14 +78,14 @@ C...........   Local allocatable arrays...
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
 
-        CHARACTER*300   BUFFER    !  source fields buffer
-        CHARACTER*300   MESG      !  message buffer 
+        CHARACTER(300)  BUFFER    !  source fields buffer
+        CHARACTER(300)  MESG      !  message buffer 
 
-        CHARACTER(LEN=SRCLEN3), SAVE :: CSRC2  = ' ' ! abridged CSRC
-        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC  = ' ' ! prev call src chars string
-        CHARACTER(LEN=SRCLEN3), SAVE :: LCSRC2 = ' ' ! prev call src chars string
+        CHARACTER(SRCLEN3), SAVE :: CSRC2  = ' ' ! abridged CSRC
+        CHARACTER(SRCLEN3), SAVE :: LCSRC  = ' ' ! prev call src chars string
+        CHARACTER(SRCLEN3), SAVE :: LCSRC2 = ' ' ! prev call src chars string
 
-        CHARACTER*16 :: PROGNAME = 'SETFRAC' ! program name
+        CHARACTER(16) :: PROGNAME = 'SETFRAC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SETFRAC

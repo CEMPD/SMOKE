@@ -56,13 +56,13 @@ C...........   INCLUDES
         INCLUDE 'FLTERR.EXT'    ! error filter statement function
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
-        LOGICAL                ENVYN
-        CHARACTER(LEN=IOVLEN3) GETCFDSC
-        INTEGER                GETIFDSC
-        INTEGER                INDEX1
-        INTEGER                PROMPTFFILE
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
+        CHARACTER(2)       CRLF
+        LOGICAL            ENVYN
+        CHARACTER(IOVLEN3) GETCFDSC
+        INTEGER            GETIFDSC
+        INTEGER            INDEX1
+        INTEGER            PROMPTFFILE
+        CHARACTER(NAMLEN3) PROMPTMFILE
 
         EXTERNAL        CRLF, ENVYN, GETIFDSC, GETCFDSC, INDEX1, 
      &                  PROMPTFFILE, PROMPTMFILE
@@ -97,12 +97,12 @@ C...........   Other local variables
         LOGICAL         OFLAG       ! true: average day emissions needed
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
 
-        CHARACTER*16    INAME       ! tmp name for inven file of unknown fmt
-        CHARACTER*256   MESG        ! message buffer 
+        CHARACTER(16)   INAME       ! tmp name for inven file of unknown fmt
+        CHARACTER(256)  MESG        ! message buffer 
 
-        CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
+        CHARACTER(NAMLEN3)  NAMBUF ! file name buffer
 
-        CHARACTER*16 :: PROGNAME = 'OPENTMPIN' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENTMPIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENTMPIN

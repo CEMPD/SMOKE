@@ -47,13 +47,13 @@ C...........   INCLUDES:
         INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER           GETFLINE
-        INTEGER           ENVINT
-        LOGICAL           ENVYN
-        INTEGER           FIND1
-        INTEGER           STR2INT
-        CHARACTER(LEN=280) WRSPDVMT
-        CHARACTER(LEN=2)  CRLF    
+        INTEGER       GETFLINE
+        INTEGER       ENVINT
+        LOGICAL       ENVYN
+        INTEGER       FIND1
+        INTEGER       STR2INT
+        CHARACTER(280) WRSPDVMT
+        CHARACTER(2)  CRLF    
         
         EXTERNAL  GETFLINE, ENVINT, ENVYN, FIND1, STR2INT, 
      &            WRSPDVMT, CRLF
@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL,      INTENT (IN)   :: SPDFLAG               ! true: read in speed profiles
 
 C...........   Local allocatable arrays
-        CHARACTER(LEN=150),     ALLOCATABLE :: M6SCEN( : )    ! M6 scenario file
+        CHARACTER(150),     ALLOCATABLE :: M6SCEN( : )    ! M6 scenario file
 
 C...........   Other local variables
         INTEGER I, J, K                   ! counters and indices                     
@@ -104,16 +104,16 @@ C...........   Other local variables
         LOGICAL      :: NEWSCEN = .FALSE. ! true: print current and create a new scenario
         LOGICAL,SAVE :: FLATFLAG = .TRUE. ! true: use flat hourly VMT profile in MOBILE6
         
-        CHARACTER(LEN=FIPLEN3) CURRCOUNTY            ! current county FIPS code
-        CHARACTER(LEN=FIPLEN3) REFCOUNTY             ! ref. county FIPS code for curr. county
-        CHARACTER(LEN=6)       SCENARIO              ! scenario number
+        CHARACTER(FIPLEN3) CURRCOUNTY            ! current county FIPS code
+        CHARACTER(FIPLEN3) REFCOUNTY             ! ref. county FIPS code for curr. county
+        CHARACTER(6)       SCENARIO              ! scenario number
         
-        CHARACTER(LEN=200),SAVE:: SPDDIR   ! directory for creating speed vmt files
-        CHARACTER(LEN=280)        SPDFILE  ! name of SPEED VMT file for M6 input file
-        CHARACTER(LEN=300)        SCENFILE !  M6 scenario file name
-        CHARACTER(LEN=300)        MESG     !  message buffer
+        CHARACTER(200),SAVE:: SPDDIR   ! directory for creating speed vmt files
+        CHARACTER(280)        SPDFILE  ! name of SPEED VMT file for M6 input file
+        CHARACTER(300)        SCENFILE !  M6 scenario file name
+        CHARACTER(300)        MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRM6INPUT'   ! program name
+        CHARACTER(16) :: PROGNAME = 'WRM6INPUT'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine WRM6INPUT

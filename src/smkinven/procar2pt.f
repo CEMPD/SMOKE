@@ -77,12 +77,12 @@ C...........   Local pointers
 
         REAL   , POINTER :: OLDPOLVAL( :,: )   ! emission values
 
-        CHARACTER(LEN=ALLLEN3), POINTER :: OLDCSOURC( : ) ! concat src
-        CHARACTER(LEN=SCCLEN3), POINTER :: OLDCSCC  ( : ) ! scc code
+        CHARACTER(ALLLEN3), POINTER :: OLDCSOURC( : ) ! concat src
+        CHARACTER(SCCLEN3), POINTER :: OLDCSCC  ( : ) ! scc code
         
-        CHARACTER(LEN=MACLEN3), POINTER :: OLDCMACT  ( : )  ! MACT code
-        CHARACTER(LEN=NAILEN3), POINTER :: OLDCNAICS ( : )  ! NAICS code
-        CHARACTER(LEN=STPLEN3), POINTER :: OLDCSRCTYP( : )  ! source type code
+        CHARACTER(MACLEN3), POINTER :: OLDCMACT  ( : )  ! MACT code
+        CHARACTER(NAILEN3), POINTER :: OLDCNAICS ( : )  ! NAICS code
+        CHARACTER(STPLEN3), POINTER :: OLDCSRCTYP( : )  ! source type code
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: REPIDX( : )      ! index for sorting
@@ -114,12 +114,12 @@ C...........   Other local variables
 
         REAL            FACTOR      ! factor for area-to-point conversion
 
-        CHARACTER(LEN=SRCLEN3)  CSRC        !  temporary source information
-        CHARACTER(LEN=SCCLEN3)  LSCC        !  last scc code
-        CHARACTER(LEN=SCCLEN3)  TSCC        !  temporary scc code
-        CHARACTER(LEN=256    )  MESG        !  message buffer 
+        CHARACTER(SRCLEN3)  CSRC        !  temporary source information
+        CHARACTER(SCCLEN3)  LSCC        !  last scc code
+        CHARACTER(SCCLEN3)  TSCC        !  temporary scc code
+        CHARACTER(256)      MESG        !  message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'PROCAR2PT' ! program name
+        CHARACTER(16) :: PROGNAME = 'PROCAR2PT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PROCAR2PT

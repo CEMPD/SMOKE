@@ -61,7 +61,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
         LOGICAL         SETSCCTYPE
         
@@ -80,10 +80,10 @@ C...........   Local allocateable arrays for ORIS lists
         INTEGER, ALLOCATABLE :: OPSRCBGA( : )  ! unsrtd 1st src per ORIS/point
         INTEGER, ALLOCATABLE :: OPSRCNTA( : )  ! unsrtd src count per ORIS/point
 
-        CHARACTER(LEN=ORSLEN3), ALLOCATABLE :: INVORISA( : )  ! ORIS
-        CHARACTER(LEN=OBRLEN3), ALLOCATABLE :: ORISBLRA( : )  ! ORIS // boiler
-        CHARACTER(LEN=OPTLEN3), ALLOCATABLE :: ORISPNTA( : )  ! ORIS // point
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE :: INVODSCA( : ) ! plant description from inventory
+        CHARACTER(ORSLEN3), ALLOCATABLE :: INVORISA( : )  ! ORIS
+        CHARACTER(OBRLEN3), ALLOCATABLE :: ORISBLRA( : )  ! ORIS // boiler
+        CHARACTER(OPTLEN3), ALLOCATABLE :: ORISPNTA( : )  ! ORIS // point
+        CHARACTER(DSCLEN3), ALLOCATABLE :: INVODSCA( : ) ! plant description from inventory
 
 C...........   Other local variables
         INTEGER          I, J, J1, J2, L1, L2, N, S
@@ -100,27 +100,27 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTORS = .TRUE.   ! true: first run of ORIS arrays
         LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
-        CHARACTER*8            FMTSIC        ! format buffer for SIC
-        CHARACTER*300          MESG          ! message buffer
-        CHARACTER(LEN=SCCLEN3) PSCC          ! previous iteration SCC
-        CHARACTER(LEN=SCCLEN3) PSCCL         ! previous iteration left SCC
-        CHARACTER(LEN=SCCLEN3) SCCL          ! tmp left SCC
-        CHARACTER(LEN=SCCLEN3) TSCC          ! tmp SCC
-        CHARACTER(LEN=SICLEN3) CSIC          ! tmp char SIC
-        CHARACTER(LEN=SICLEN3) PCSIC         ! previous char SIC
-        CHARACTER(LEN=MACLEN3) TMACT         ! tmp char MACT code
-        CHARACTER(LEN=MACLEN3) PMACT         ! previous char MACT code
-        CHARACTER(LEN=BLRLEN3) BLID          ! tmp boiler ID
-        CHARACTER(LEN=BLRLEN3) PBLID         ! previous boiler ID
-        CHARACTER(LEN=ORSLEN3) CORS          ! tmp DOE plant ID
-        CHARACTER(LEN=ORSLEN3) PCORS         ! previous DOE plant ID
-        CHARACTER(LEN=OBRLEN3) PCORSBLR      ! previous DOE plant ID // boiler
-        CHARACTER(LEN=OPTLEN3) PCORSPNT      ! previous DOE plant ID // point
-        CHARACTER(LEN=CHRLEN3) PNT           ! point (IDA char1)
-        CHARACTER(LEN=CHRLEN3) PPNT          ! previous point (IDA char1)
-        CHARACTER(LEN=DSCLEN3) PDSC          ! tmp plant description
+        CHARACTER(8)       FMTSIC        ! format buffer for SIC
+        CHARACTER(300)     MESG          ! message buffer
+        CHARACTER(SCCLEN3) PSCC          ! previous iteration SCC
+        CHARACTER(SCCLEN3) PSCCL         ! previous iteration left SCC
+        CHARACTER(SCCLEN3) SCCL          ! tmp left SCC
+        CHARACTER(SCCLEN3) TSCC          ! tmp SCC
+        CHARACTER(SICLEN3) CSIC          ! tmp char SIC
+        CHARACTER(SICLEN3) PCSIC         ! previous char SIC
+        CHARACTER(MACLEN3) TMACT         ! tmp char MACT code
+        CHARACTER(MACLEN3) PMACT         ! previous char MACT code
+        CHARACTER(BLRLEN3) BLID          ! tmp boiler ID
+        CHARACTER(BLRLEN3) PBLID         ! previous boiler ID
+        CHARACTER(ORSLEN3) CORS          ! tmp DOE plant ID
+        CHARACTER(ORSLEN3) PCORS         ! previous DOE plant ID
+        CHARACTER(OBRLEN3) PCORSBLR      ! previous DOE plant ID // boiler
+        CHARACTER(OPTLEN3) PCORSPNT      ! previous DOE plant ID // point
+        CHARACTER(CHRLEN3) PNT           ! point (IDA char1)
+        CHARACTER(CHRLEN3) PPNT          ! previous point (IDA char1)
+        CHARACTER(DSCLEN3) PDSC          ! tmp plant description
 
-        CHARACTER*16  :: PROGNAME = 'GENUSLST' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENUSLST' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENUSLST

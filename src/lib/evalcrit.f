@@ -64,9 +64,9 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         LOGICAL    ANDSTAT          ! true: all ands apply
         LOGICAL :: EFLAG = .FALSE.  ! true: error encountered
 
-        CHARACTER*300   MESG
+        CHARACTER(300)  MESG
 
-        CHARACTER*16 :: PROGNAME = 'EVALCRIT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'EVALCRIT'   !  program name
 
 C***********************************************************************
 C   begin body of function EVALCRIT

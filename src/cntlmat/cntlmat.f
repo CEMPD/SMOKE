@@ -49,7 +49,7 @@ C...........   INCLUDES:
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         GETIFDSC
         INTEGER         PROMPTFFILE
@@ -58,13 +58,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C...........   Arrays for each of the packets
         INTEGER      PKTCNT( NPACKET )  ! count of records per packet
@@ -87,12 +87,12 @@ C...........   Logical names and unit numbers
         INTEGER         SDEV         !  ASCII part of inventory unit no.
         INTEGER      :: WDEV = 0     !  warnings/error unit no.
 
-        CHARACTER*16    ANAME   ! logical name for ASCII inventory input file
-        CHARACTER*16    ENAME   ! logical name for i/o api inventory input file
-        CHARACTER*16    INAME   ! tmp logical name for inven file of unknown fmt
-        CHARACTER*16    MNAME   ! logical name for multiplicative control matrix
-        CHARACTER*16    PNAME   ! logical name for projection matrix
-        CHARACTER*16    SNAME   ! logical name for ascii inventory input file
+        CHARACTER(16)   ANAME   ! logical name for ASCII inventory input file
+        CHARACTER(16)   ENAME   ! logical name for i/o api inventory input file
+        CHARACTER(16)   INAME   ! tmp logical name for inven file of unknown fmt
+        CHARACTER(16)   MNAME   ! logical name for multiplicative control matrix
+        CHARACTER(16)   PNAME   ! logical name for projection matrix
+        CHARACTER(16)   SNAME   ! logical name for ascii inventory input file
 
 C...........   Other local variables
         INTEGER      :: CPYEAR = -1  !  control packet year to project to
@@ -115,10 +115,10 @@ C...........   Other local variables
         LOGICAL      :: OFLAG   = .FALSE.  ! true: create report
         LOGICAL      :: YFLAG   = .FALSE.  ! true: projection entries have years
 
-        CHARACTER*7     ACTION             ! buffer for PKTLOOP action
-        CHARACTER*300   MESG               ! message buffer
+        CHARACTER(7)    ACTION             ! buffer for PKTLOOP action
+        CHARACTER(300)  MESG               ! message buffer
         
-        CHARACTER*16  :: PROGNAME = 'CNTLMAT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'CNTLMAT'   !  program name
         
 C***********************************************************************
 C   begin body of program CNTLMAT

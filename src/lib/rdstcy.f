@@ -54,7 +54,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL      CHKINT
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         INTEGER      ENVINT
         INTEGER      FIND1
         INTEGER      INDEX1
@@ -71,16 +71,16 @@ C...........   Subroutine arguments
         INTEGER, INTENT (IN):: INCNTYS( NDIM ) ! input county codes or empty
 
 C...........   Local parameters
-        CHARACTER*16, PARAMETER :: CNTYPKT = '/COUNTY/'
-        CHARACTER*16, PARAMETER :: STATPKT = '/STATE/'
-        CHARACTER*16, PARAMETER :: CTRYPKT = '/COUNTRY/'
+        CHARACTER(16), PARAMETER :: CNTYPKT = '/COUNTY/'
+        CHARACTER(16), PARAMETER :: STATPKT = '/STATE/'
+        CHARACTER(16), PARAMETER :: CTRYPKT = '/COUNTRY/'
 
 C...........   Array for filtering state information
         INTEGER, ALLOCATABLE :: INSTATE( : )
 
 C...........   Arrays for determining sections of file
         INTEGER         ISKIP  ( 4 )  ! position of packets + total file length
-        CHARACTER*16    SECTION( 3 )  ! name of each section
+        CHARACTER(16)   SECTION( 3 )  ! name of each section
 
 C...........   Other local variables
 
@@ -117,12 +117,12 @@ C...........   Other local variables
         LOGICAL      :: FOUNDSTA = .FALSE. ! true: state packet found
         LOGICAL      :: FOUNDCNY = .FALSE. ! true: county packet found
 
-        CHARACTER*1     DLCHR    ! tmp daylight time exemptions flag
-        CHARACTER*3     TZN      ! tmp time zone
-        CHARACTER*300   LINE     ! line read buffer
-        CHARACTER*300   MESG     ! message buffer
+        CHARACTER       DLCHR    ! tmp daylight time exemptions flag
+        CHARACTER(3)    TZN      ! tmp time zone
+        CHARACTER(300)  LINE     ! line read buffer
+        CHARACTER(300)  MESG     ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSTCY' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSTCY' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSTCY

@@ -90,18 +90,18 @@ C...........   Other local variables
         REAL            AREA      !  land-use area
         REAL            ATYPE     !  area for this land use type
 
-        CHARACTER*4     LUTYPE    !  land use type
-        CHARACTER*20    COLRANGE  !  buffer w/ column range
-        CHARACTER*20    ROWRANGE  !  buffer w/ row range
-        CHARACTER*80    INBUF     !  input buffer
-        CHARACTER*300   MESG      !  message buffer 
+        CHARACTER(4)    LUTYPE    !  land use type
+        CHARACTER(20)   COLRANGE  !  buffer w/ column range
+        CHARACTER(20)   ROWRANGE  !  buffer w/ row range
+        CHARACTER(80)   INBUF     !  input buffer
+        CHARACTER(300)  MESG      !  message buffer 
 
         LOGICAL      :: EFLAG    = .FALSE.    ! true: error found
         LOGICAL      :: INHEADER = .TRUE.     ! true: in BEIS header section
         LOGICAL      :: OFLAG    = .FALSE.    ! true: at least 1 warning found
         LOGICAL      :: WFLAG    = .FALSE.    ! true: warning on current record
 
-        CHARACTER*16 :: PROGNAME = 'GRDBIO'   !  program name
+        CHARACTER(16) :: PROGNAME = 'GRDBIO'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine  GRDBIO

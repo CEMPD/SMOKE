@@ -32,31 +32,31 @@ C************************************************************************
         TYPE :: CPACKET
 
             SEQUENCE
-            INTEGER                :: CPRI    ! tmp primary control equipment
-            REAL                   :: FAC1    ! tmp factors from packets
-            REAL                   :: FAC2
-            REAL                   :: FAC3
-            REAL                   :: FAC4  
-            REAL                   :: FAC5
-            REAL                   :: FAC6
-            REAL                   :: FAC7  
-            REAL                   :: FAC8  
-            CHARACTER*5            :: CPOS    ! tmp sorted position of pol
-            CHARACTER(LEN=FIPLEN3) :: CFIP    ! tmp char country/state/co code
-            CHARACTER(LEN=CHRLEN3) :: CHAR1   ! tmp plant characteristic 1
-            CHARACTER(LEN=CHRLEN3) :: CHAR2   ! tmp plant characteristic 2
-            CHARACTER(LEN=CHRLEN3) :: CHAR3   ! tmp plant characteristic 3
-            CHARACTER(LEN=CHRLEN3) :: CHAR4   ! tmp plant characteristic 4
-            CHARACTER(LEN=CHRLEN3) :: CHAR5   ! tmp plant characteristic 5
-            CHARACTER(LEN=IOVLEN3) :: CPOL    ! tmp pollutant name
-            CHARACTER(LEN=SICLEN3) :: CSIC    ! tmp char SIC ID
-            CHARACTER(LEN=SCCLEN3) :: NSCC    ! tmp plant ID
-            CHARACTER(LEN=PLTLEN3) :: PLT     ! tmp plant ID
-            CHARACTER(LEN=SCCLEN3) :: TSCC    ! tmp 10-digit SCC
-            CHARACTER(LEN=SPNLEN3) :: TMPPRF  ! tmp speciation profile code
-            CHARACTER(LEN=MACLEN3) :: CMCT    ! tmp char MACT code
-            CHARACTER(LEN=1)       :: APPFLAG ! tmp char application flag
-            CHARACTER(LEN=1)       :: REPFLAG ! tmp char replacement flag
-            CHARACTER(LEN=STPLEN3) :: CSTYP   ! tmp source type code
+            INTEGER            :: CPRI    ! tmp primary control equipment
+            REAL               :: FAC1    ! tmp factors from packets
+            REAL               :: FAC2
+            REAL               :: FAC3
+            REAL               :: FAC4  
+            REAL               :: FAC5
+            REAL               :: FAC6
+            REAL               :: FAC7  
+            REAL               :: FAC8  
+            CHARACTER(5)       :: CPOS    ! tmp sorted position of pol
+            CHARACTER(FIPLEN3) :: CFIP    ! tmp char country/state/co code
+            CHARACTER(CHRLEN3) :: CHAR1   ! tmp plant characteristic 1
+            CHARACTER(CHRLEN3) :: CHAR2   ! tmp plant characteristic 2
+            CHARACTER(CHRLEN3) :: CHAR3   ! tmp plant characteristic 3
+            CHARACTER(CHRLEN3) :: CHAR4   ! tmp plant characteristic 4
+            CHARACTER(CHRLEN3) :: CHAR5   ! tmp plant characteristic 5
+            CHARACTER(IOVLEN3) :: CPOL    ! tmp pollutant name
+            CHARACTER(SICLEN3) :: CSIC    ! tmp char SIC ID
+            CHARACTER(SCCLEN3) :: NSCC    ! tmp plant ID
+            CHARACTER(PLTLEN3) :: PLT     ! tmp plant ID
+            CHARACTER(SCCLEN3) :: TSCC    ! tmp 10-digit SCC
+            CHARACTER(SPNLEN3) :: TMPPRF  ! tmp speciation profile code
+            CHARACTER(MACLEN3) :: CMCT    ! tmp char MACT code
+            CHARACTER          :: APPFLAG ! tmp char application flag
+            CHARACTER          :: REPFLAG ! tmp char replacement flag
+            CHARACTER(STPLEN3) :: CSTYP   ! tmp source type code
 
         END TYPE

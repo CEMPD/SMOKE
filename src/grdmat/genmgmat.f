@@ -67,7 +67,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         FIND1
         INTEGER         FINDC
@@ -131,7 +131,7 @@ C              is not worth going to extra trouble for.
         REAL   , ALLOCATABLE :: AFAC( : )    ! fraction of link in cell
 
         INTEGER, ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
-        CHARACTER(LEN=SRCLEN3), ALLOCATABLE :: LKOGRD( : ) ! link srcs outside
+        CHARACTER(SRCLEN3), ALLOCATABLE :: LKOGRD( : ) ! link srcs outside
                                                            !    the grid
 C...........   Temporary arrays for storing surrogate codes to use
         INTEGER, ALLOCATABLE :: SURGID1( : ) ! primary surrogate code
@@ -170,16 +170,16 @@ C...........   Other local variables
         LOGICAL      :: LFLAG = .FALSE.  ! true: location data available
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
-        CHARACTER*16    COORUNIT  !  coordinate system projection units
-        CHARACTER*80    GDESC     !  grid description
-        CHARACTER*256   BUFFER    !  source fields buffer
-        CHARACTER*256   MESG      !  message buffer 
+        CHARACTER(16)   COORUNIT  !  coordinate system projection units
+        CHARACTER(80)   GDESC     !  grid description
+        CHARACTER(256)  BUFFER    !  source fields buffer
+        CHARACTER(256)  MESG      !  message buffer 
 
-        CHARACTER(LEN=LNKLEN3)    CLNK   ! tmp link ID
-        CHARACTER(LEN=LNKLEN3)    LLNK   ! previous link ID
-        CHARACTER(LEN=SRCLEN3)    CSRC   ! tmp source chars string
+        CHARACTER(LNKLEN3)    CLNK   ! tmp link ID
+        CHARACTER(LNKLEN3)    LLNK   ! previous link ID
+        CHARACTER(SRCLEN3)    CSRC   ! tmp source chars string
 
-        CHARACTER*16 :: PROGNAME = 'GENMGMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENMGMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENMGMAT

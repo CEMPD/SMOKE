@@ -51,9 +51,9 @@ C.........  This module contains the major data structure and control flags
         INTEGER         I, J    ! indices and counters
 
         LOGICAL      :: MOLEFLAG = .FALSE.       ! true: outputting moles
-        CHARACTER*300   MESG    ! message buffer
+        CHARACTER(300)  MESG    ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'MRGONAMS' ! program name
+        CHARACTER(16) :: PROGNAME = 'MRGONAMS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine MRGONAMS

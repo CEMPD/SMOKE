@@ -79,12 +79,12 @@
         LOGICAL, ALLOCATABLE, PUBLIC :: LHPROF( : )  ! true: profile not data
 
 !.........  Day- and hour-specific pol/act names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: DYPNAM( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: HRPNAM( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: DYPNAM( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: HRPNAM( : )
 
 !.........  Day- and hour-specific pol/act descriptions
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: DYPDSC( : )
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: HRPDSC( : )
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: DYPDSC( : )
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: HRPDSC( : )
 
         INTEGER, ALLOCATABLE :: INDXD( : )   ! SMOKE source IDs
         REAL   , ALLOCATABLE :: EMACD( : )   ! day-specific emis or activities
@@ -96,6 +96,6 @@
 
 C...........   List of ORIS IDs in hour-specific data not in inventory
         INTEGER, PUBLIC :: NUNFDORS
-        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC :: UNFDORS( : )
+        CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: UNFDORS( : )
 
         END MODULE MODDAYHR

@@ -31,13 +31,13 @@ C****************************************************************************
         IMPLICIT NONE
 
 C.........  Subroutine arguments
-        INTEGER       LDEV      ! Log file unit number
-        CHARACTER*(*) INPROGNM  ! Name of program to write description for
+        INTEGER      LDEV      ! Log file unit number
+        CHARACTER(*) INPROGNM  ! Name of program to write description for
 
 C.........  Local variables
-        CHARACTER*16    NAME      ! Uppercase name of program to write descript
+        CHARACTER(16)   NAME      ! Uppercase name of program to write descript
 
-        CHARACTER*16 :: PROGNAME = 'PROGDESC' 
+        CHARACTER(16) :: PROGNAME = 'PROGDESC' 
 
 C***********************************************************************
 C   begin body of subroutine PROGDESC

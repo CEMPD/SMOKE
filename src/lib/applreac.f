@@ -73,7 +73,7 @@ C.........  Other local variables
         REAL            EM          !  tmp emission value
         REAL            PFAC        !  tmp projection factor
 
-        CHARACTER*16 :: PROGNAME = 'APPLREAC' ! program name
+        CHARACTER(16) :: PROGNAME = 'APPLREAC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine APPLREAC

@@ -54,7 +54,7 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: SCCSW = '%W%'
+        CHARACTER(50), PARAMETER :: SCCSW = '%W%'
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
@@ -76,19 +76,19 @@ C.........  Allocatable arrays
         LOGICAL,      ALLOCATABLE :: DEFAULT( : )
         LOGICAL,      ALLOCATABLE :: FIXED  ( : )
 
-        CHARACTER*66, ALLOCATABLE :: CFSCA  ( : )
-        CHARACTER*66, ALLOCATABLE :: CSSCA  ( : )
-        CHARACTER*66, ALLOCATABLE :: CRECA  ( : )
+        CHARACTER(66), ALLOCATABLE :: CFSCA  ( : )
+        CHARACTER(66), ALLOCATABLE :: CSSCA  ( : )
+        CHARACTER(66), ALLOCATABLE :: CRECA  ( : )
 
 C.........  Fixed-dimension arrays
 C.........  NOTE: The per-packet arrays should eventually be allocatable
         INTEGER        NRECS ( 5 )
         INTEGER        PSTLIN( 5 )
 
-        CHARACTER*20   PTYPE ( 5 )
-        CHARACTER*50   SEGMENT( 4 )
-        CHARACTER*256  PENBUF( 5 )
-        CHARACTER*256  PSTBUF( 5 )
+        CHARACTER(20)  PTYPE ( 5 )
+        CHARACTER(50)  SEGMENT( 4 )
+        CHARACTER(256) PENBUF( 5 )
+        CHARACTER(256) PSTBUF( 5 )
 
 C.........  Logical file names and unit numbers
         INTEGER   IDEV         ! input control packets file
@@ -115,19 +115,19 @@ C.........  Local variables
         LOGICAL     :: EFLAG    = .FALSE. ! true: error found
         LOGICAL     :: COUNTFLG = .FALSE. ! true: count packet records
 
-        CHARACTER*6             COL1DESC ! description of column 1
-        CHARACTER*12            CBUF    ! tmp factor
-        CHARACTER*10            FIPFMT  ! format for int->str FIPS code conversion
-        CHARACTER*66            LCFSC   ! previous CFSCA
-        CHARACTER*66            LCREC   ! previous CRECA
-        CHARACTER*66            LCSSC   ! previous CSSCA
-        CHARACTER*256           LINE    ! line buffer
-        CHARACTER*300           MESG    ! temporary message array
-        CHARACTER(LEN=FIPLEN3)  CFIP    ! char FIPS code
-        CHARACTER(LEN=FIPLEN3)  CSTA    ! char state code
-        CHARACTER(LEN=SCCLEN3)  TSCC    ! tmp source category code
+        CHARACTER(6)        COL1DESC ! description of column 1
+        CHARACTER(12)       CBUF    ! tmp factor
+        CHARACTER(10)       FIPFMT  ! format for int->str FIPS code conversion
+        CHARACTER(66)       LCFSC   ! previous CFSCA
+        CHARACTER(66)       LCREC   ! previous CRECA
+        CHARACTER(66)       LCSSC   ! previous CSSCA
+        CHARACTER(256)      LINE    ! line buffer
+        CHARACTER(300)      MESG    ! temporary message array
+        CHARACTER(FIPLEN3)  CFIP    ! char FIPS code
+        CHARACTER(FIPLEN3)  CSTA    ! char state code
+        CHARACTER(SCCLEN3)  TSCC    ! tmp source category code
 
-        CHARACTER*16 :: PROGNAME = 'PKTREDUC'   !  program name
+        CHARACTER(16) :: PROGNAME = 'PKTREDUC'   !  program name
 
 C***********************************************************************
 C   begin body of program PKTREDUC

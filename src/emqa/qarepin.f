@@ -57,10 +57,10 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2 CRLF
-        INTEGER     SECSDIFF
+        CHARACTER(2) CRLF
+        INTEGER      SECSDIFF
 
-        EXTERNAL    CRLF, SECSDIFF
+        EXTERNAL     CRLF, SECSDIFF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN)  :: RCNT       ! report number
@@ -73,9 +73,9 @@ C...........   Other local variables
 
         LOGICAL       :: EFLAG   = .FALSE.  !  true: error found
 
-        CHARACTER*300          MESG         !  message buffer
+        CHARACTER(300)         MESG         !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'QAREPIN' ! program name
+        CHARACTER(16) :: PROGNAME = 'QAREPIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine QAREPIN

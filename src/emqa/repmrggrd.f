@@ -90,9 +90,9 @@ C...........  Local variables
 
         LOGICAL      :: FIRSTFLAG = .TRUE.  ! True: no normalize by cell area yet found
 
-        CHARACTER*300   MESG       ! message buffer
+        CHARACTER(300)  MESG       ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'REPMRGGRD' ! program name
+        CHARACTER(16) :: PROGNAME = 'REPMRGGRD' ! program name
 
 C***********************************************************************
 C   begin body of subroutine REPMRGGRD

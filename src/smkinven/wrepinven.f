@@ -79,17 +79,17 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local variables
 
-        CHARACTER*1     KEEP               ! determines if CAS number is kept
-        CHARACTER*26    TSCCPOLL           ! temp. SCC/pollutant combination
-        CHARACTER(LEN=DDSLEN3)  DESC       ! temp. SCC description
-        CHARACTER(LEN=SCCLEN3)  SCC        ! temp. SCC code
-        CHARACTER(LEN=IOVLEN3)  DNAME      ! temp. data name
-        CHARACTER(LEN=SDSLEN3)  SCCDC      ! temp. SCC description
-        CHARACTER(LEN=SCCLEN3)  PSCC       ! previous SCC code
-        CHARACTER(LEN=SCCLEN3)  TSCC       ! temp. SCC code
-        CHARACTER(LEN=IOVLEN3)  TDNAME     ! temp. data name
+        CHARACTER       KEEP               ! determines if CAS number is kept
+        CHARACTER(26)   TSCCPOLL           ! temp. SCC/pollutant combination
+        CHARACTER(DDSLEN3)  DESC       ! temp. SCC description
+        CHARACTER(SCCLEN3)  SCC        ! temp. SCC code
+        CHARACTER(IOVLEN3)  DNAME      ! temp. data name
+        CHARACTER(SDSLEN3)  SCCDC      ! temp. SCC description
+        CHARACTER(SCCLEN3)  PSCC       ! previous SCC code
+        CHARACTER(SCCLEN3)  TSCC       ! temp. SCC code
+        CHARACTER(IOVLEN3)  TDNAME     ! temp. data name
 
-        CHARACTER*26, ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
+        CHARACTER(26), ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
         
         INTEGER         I, J, K, L, S, IOS ! counters and indicies
         INTEGER         STATE              ! temp. state code
@@ -108,10 +108,10 @@ C...........   Local variables
 
 C...........   Other local variables
 
-        CHARACTER*300   MESG               ! temp. message buffer
-        CHARACTER(LEN=SDSLEN3)  CBUF       ! temp. buffer
+        CHARACTER(300)  MESG               ! temp. message buffer
+        CHARACTER(SDSLEN3)  CBUF       ! temp. buffer
 
-        CHARACTER*16  :: PROGNAME = 'WREPINVEN' ! program name
+        CHARACTER(16) :: PROGNAME = 'WREPINVEN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WREPINVEN

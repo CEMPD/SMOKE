@@ -66,9 +66,9 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER  , INTENT(IN OUT) :: NSTEPS   ! number of time steps limit
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         INTEGER      GETFLINE
-        CHARACTER*14 MMDDYY
+        CHARACTER(14) MMDDYY
         LOGICAL      SETENVVAR
         INTEGER      PROMPTFFILE
         INTEGER      SECSDIFF
@@ -92,12 +92,12 @@ C...........   Local allocatable arrays
         REAL   , ALLOCATABLE :: SRCSUM ( :,: ) ! emissions summing by source
         REAL   , ALLOCATABLE :: MXGRPEM( :,: ) ! emissions max for groups
 
-        CHARACTER*512, ALLOCATABLE :: PTMPLIST( : ) ! list of PTMP files
+        CHARACTER(512), ALLOCATABLE :: PTMPLIST( : ) ! list of PTMP files
 
 C...........   Logical file names and unit numbers
         INTEGER         TDEV    !  list file unit number
 
-        CHARACTER*16    TNAME   !  logical name for hourly inventory input file
+        CHARACTER(16)   TNAME   !  logical name for hourly inventory input file
 
 C...........   Local fixed arrays
 C...........   OTHER LOCAL VARIABLES and their descriptions:
@@ -125,13 +125,13 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: FILEOPEN = .FALSE. ! true: an I/O API file is open
 
-        CHARACTER*16    INLGCNAM      ! input logical file name
-        CHARACTER*512   PTMPFILE      ! tmp physical file name
-        CHARACTER*512   PREVFILE      ! previous physical file name
-        CHARACTER*256   MESG
-        CHARACTER(LEN=IOVLEN3) CBUF   ! tmp pollutant name
+        CHARACTER(16)   INLGCNAM      ! input logical file name
+        CHARACTER(512)  PTMPFILE      ! tmp physical file name
+        CHARACTER(512)  PREVFILE      ! previous physical file name
+        CHARACTER(256)  MESG
+        CHARACTER(IOVLEN3) CBUF   ! tmp pollutant name
 
-        CHARACTER*16 :: PROGNAME = 'MXGRPEMIS'   !  program name
+        CHARACTER(16) :: PROGNAME = 'MXGRPEMIS'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine MXGRPEMIS

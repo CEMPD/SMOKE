@@ -69,9 +69,9 @@ C
         REAL FVB                ! fraction of visible that is direct beam
         REAL FVD                ! fraction of visible that is diffuse
 
-        CHARACTER*16 :: PROGNAME = 'GETPAR'   !  program name
+        CHARACTER(16) :: PROGNAME = 'GETPAR'   !  program name
 
-        CHARACTER*256   MESG
+        CHARACTER(256)  MESG
 
 C***************************************
 C   begin body of subroutine  

@@ -91,22 +91,22 @@ C.........  Parameters for output IDA formats
         INTEGER    , PARAMETER :: MBOADIF( 7 ) = ( /12,0,0,0,0,0,0/ )
         INTEGER    , PARAMETER :: PTODIF ( 7 ) = ( /8,8,4,3,7,3,3/ )
 
-        CHARACTER*6, PARAMETER :: AROFMT ( 7 )  = 
+        CHARACTER(6), PARAMETER :: AROFMT ( 7 )  = 
      &                        ( / ' F10.4',' F10.4',' F11.4','  F7.2',
      &                            '    I3','  F6.2','      ' / )
-        CHARACTER*6, PARAMETER :: MBOPFMT( 7 ) = 
+        CHARACTER(6), PARAMETER :: MBOPFMT( 7 ) = 
      &                        ( / ' F10.4',' F10.4','      ','      ',
      &                            '      ','      ','      ' / )
-        CHARACTER*6, PARAMETER :: MBOAFMT( 7 ) = 
+        CHARACTER(6), PARAMETER :: MBOAFMT( 7 ) = 
      &                        ( / ' F16.3','      ','      ','      ',
      &                            '      ','      ','      ' / )
-        CHARACTER*6, PARAMETER :: PTOFMT ( 7 ) = 
+        CHARACTER(6), PARAMETER :: PTOFMT ( 7 ) = 
      &                        ( / ' F13.4',' F13.4','  F7.2','    I3',
      &                            ' F10.2','    I3','    I3' / )
 
 C...........   Local allocatable arrays
-        REAL        , ALLOCATABLE :: DATARECS( : )  ! pol/act data
-        CHARACTER*52, ALLOCATABLE :: COUTRECS( : )    ! formatted pol/act data
+        REAL,          ALLOCATABLE :: DATARECS( : )  ! pol/act data
+        CHARACTER(52), ALLOCATABLE :: COUTRECS( : )  ! formatted pol/act data
 
 C...........   Local fixed arrays
         INTEGER         OUTTYPE( 7 )
@@ -121,16 +121,16 @@ C...........   IDA output variables (names same as IDA format description)
         REAL            THRUPUT, MAXRATE, HEATCON, SULFCON, ASHCON
         REAL            NETDC, LATC, LONC
 
-        CHARACTER(LEN=1)        CAPUNITS, OFFSHORE  
-        CHARACTER(LEN=LNKLEN3 ) CLNK  
-        CHARACTER(LEN=PLANTLEN) PLANTID  
-        CHARACTER(LEN=POINTLEN) POINTID
-        CHARACTER(LEN=STACKLEN) STACKID
-        CHARACTER(LEN=BOILRLEN) BLRID
-        CHARACTER(LEN=SEGMTLEN) SEGMENT
-        CHARACTER(LEN=ORSLEN3 ) ORISID
-        CHARACTER(LEN=PDESCLEN) PLNTDESC
-        CHARACTER(LEN=SCCLEN  ) SCC
+        CHARACTER           CAPUNITS, OFFSHORE  
+        CHARACTER(LNKLEN3)  CLNK  
+        CHARACTER(PLANTLEN) PLANTID  
+        CHARACTER(POINTLEN) POINTID
+        CHARACTER(STACKLEN) STACKID
+        CHARACTER(BOILRLEN) BLRID
+        CHARACTER(SEGMTLEN) SEGMENT
+        CHARACTER(ORSLEN3)  ORISID
+        CHARACTER(PDESCLEN) PLNTDESC
+        CHARACTER(SCCLEN)   SCC
 
 C...........   Other local variables
 
@@ -150,17 +150,17 @@ C...........   Other local variables
         LOGICAL IDACOLS( 7 )
         DATA    IDACOLS / 6*.TRUE., .FALSE. /
 
-        CHARACTER*4   CYEAR          !  character 4-digit year
-        CHARACTER*128 CHARS( 7 )     !  source fields for output
-        CHARACTER*128 INFORMAT       !  fotmat for reading time files
-        CHARACTER*256 ACTBUF         !  activity list buffer
-        CHARACTER*256 POLBUF         !  pollutant list buffer
-        CHARACTER*256 UNTBUF         !  activity units buffer
-        CHARACTER*512 ACTVFMT        !  output format buffer for activities
-        CHARACTER*512 EMISFMT        !  output format buffer for emissions
-        CHARACTER*256 MESG           !  message buffer
+        CHARACTER(4)   CYEAR          !  character 4-digit year
+        CHARACTER(128) CHARS( 7 )     !  source fields for output
+        CHARACTER(128) INFORMAT       !  fotmat for reading time files
+        CHARACTER(256) ACTBUF         !  activity list buffer
+        CHARACTER(256) POLBUF         !  pollutant list buffer
+        CHARACTER(256) UNTBUF         !  activity units buffer
+        CHARACTER(512) ACTVFMT        !  output format buffer for activities
+        CHARACTER(512) EMISFMT        !  output format buffer for emissions
+        CHARACTER(256) MESG           !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRIDAOUT' ! program name
+        CHARACTER(16) :: PROGNAME = 'WRIDAOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRIDAOUT
@@ -583,11 +583,11 @@ C.............  Subprogram arguments
             REAL        , INTENT (IN) :: DATAVALS( NPPOL ) ! data values
             INTEGER     , INTENT (IN) :: FMTLEN  ( NPPOL ) ! format lengths
             INTEGER     , INTENT (IN) :: FMTDIF  ( NPPOL ) ! non-decimal lengths
-            CHARACTER*6 , INTENT (IN) :: FMTBUF  ( NPPOL ) ! format info
+            CHARACTER(6), INTENT (IN) :: FMTBUF  ( NPPOL ) ! format info
             CHARACTER(*), INTENT(OUT) :: BUFFER            ! fmtted output
 
 C.............  Subprogram local arrays
-            CHARACTER*6  LOCBUF( 7 )
+            CHARACTER(6) LOCBUF( 7 )
 
 C.............  Subprogram local variables
             INTEGER       D, I, J, L
@@ -596,8 +596,8 @@ C.............  Subprogram local variables
 
             LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: only first time called
 
-            CHARACTER*10  FMT
-            CHARACTER*20  BUFLOC
+            CHARACTER(10) FMT
+            CHARACTER(20) BUFLOC
 
 C-------------------------------------------------------------------------
 

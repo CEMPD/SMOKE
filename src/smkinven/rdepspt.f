@@ -67,7 +67,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL                CHKINT
         LOGICAL                CHKREAL
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         INTEGER                ENVINT
         LOGICAL                ENVYN
         INTEGER                FIND1
@@ -105,10 +105,10 @@ C.........  Local allocatable arrays
 C.........  Temporary variables for storing source characteristics.  These
 C           variables must be the width of the fields for global source
 C           characteristics definition for use in BLDCSRC.
-        CHARACTER(LEN=PLTLEN3) FCID  ! tmp plant ID
-        CHARACTER(LEN=CHRLEN3) PTID  ! tmp point ID
-        CHARACTER(LEN=CHRLEN3) SKID  ! tmp stack ID
-        CHARACTER(LEN=CHRLEN3) SGID  ! tmp segment ID
+        CHARACTER(PLTLEN3) FCID  ! tmp plant ID
+        CHARACTER(CHRLEN3) PTID  ! tmp point ID
+        CHARACTER(CHRLEN3) SKID  ! tmp stack ID
+        CHARACTER(CHRLEN3) SGID  ! tmp segment ID
 
 C...........   Other local variables
 
@@ -160,19 +160,19 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTP   = .TRUE.
         LOGICAL, SAVE :: WFLAG    !  true: convert lat-lons to Western hemisphr
 
-        CHARACTER*2            TMPAA !  tmp time period code
-        CHARACTER*300          LINE  !  Input line from POINT file
-        CHARACTER*300          MESG  !  Text for M3EXIT()
-        CHARACTER(LEN=IOVLEN3) CPOL  !  Temporary pollutant code
-        CHARACTER(LEN=FIPLEN3) CFIP  !  Character FIP code
-        CHARACTER(LEN=POLLEN3) CCOD  !  Character pollutant index to INVDNAM
-        CHARACTER(LEN=DSCLEN3) DESC  !  plant description
-        CHARACTER(LEN=SCCLEN3) TSCC  !  Temporary character SCC
-        CHARACTER(LEN=CHRLEN3) CHAR4 !  tmp 4th plant characteristic
+        CHARACTER(2)       TMPAA !  tmp time period code
+        CHARACTER(300)     LINE  !  Input line from POINT file
+        CHARACTER(300)     MESG  !  Text for M3EXIT()
+        CHARACTER(IOVLEN3) CPOL  !  Temporary pollutant code
+        CHARACTER(FIPLEN3) CFIP  !  Character FIP code
+        CHARACTER(POLLEN3) CCOD  !  Character pollutant index to INVDNAM
+        CHARACTER(DSCLEN3) DESC  !  plant description
+        CHARACTER(SCCLEN3) TSCC  !  Temporary character SCC
+        CHARACTER(CHRLEN3) CHAR4 !  tmp 4th plant characteristic
         
-        CHARACTER(LEN=300)     TENLINES( 10 ) ! first ten lines of inventory file
+        CHARACTER(300)     TENLINES( 10 ) ! first ten lines of inventory file
 
-        CHARACTER*16 :: PROGNAME = 'RDEPSPT' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDEPSPT' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDEPSPT

@@ -102,7 +102,7 @@ C...........   LOCAL VARIABLES and their descriptions:
 
         LOGICAL :: FIRSTIME = .TRUE.     !  true: first time routine called
 
-        CHARACTER*16   :: PROGNAME = 'LNK2GRD'  ! progname name
+        CHARACTER(16) :: PROGNAME = 'LNK2GRD'  ! progname name
 
 C***********************************************************************
 C   begin body of subroutine  LNK2GRD
@@ -531,7 +531,7 @@ C ********************** INTERNAL SUBPROGRAMS ****************************
             SUBROUTINE REPORT_BAD_CELL
 
 C.............  Local variables
-            CHARACTER*300 MESG 
+            CHARACTER(300) MESG 
 
 C..........................................................................
 

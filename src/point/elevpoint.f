@@ -77,7 +77,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
         INTEGER         ENVINT
         REAL            ENVREAL
@@ -91,15 +91,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
         INTEGER, PARAMETER :: LAYPOINT_APPROACH   = 0
         INTEGER, PARAMETER :: NOPING_APPROACH     = 0
         INTEGER, PARAMETER :: PELVCONFIG_APPROACH = 1
 
 C...........   Indicator for which public inventory arrays need to be read
-        INTEGER               , PARAMETER :: NINVARR = 10
-        CHARACTER(LEN=IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
+        INTEGER,            PARAMETER :: NINVARR = 10
+        CHARACTER(IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
      &                                 ( / 'IFIP           '
      &                                   , 'TZONES         ' 
      &                                   , 'XLOCA          '
@@ -114,12 +114,12 @@ C...........   Indicator for which public inventory arrays need to be read
 C...........   Descriptions of plume-in-grid and elevated source approaches
         INTEGER, PARAMETER :: NELEVMTHD = 2
         INTEGER, PARAMETER :: NPINGMTHD = 2
-        CHARACTER*60, PARAMETER :: ELEVMTHD( 0:NELEVMTHD-1 ) = 
+        CHARACTER(60), PARAMETER :: ELEVMTHD( 0:NELEVMTHD-1 ) = 
      &(/ 'Allow Laypoint to determine elevated sources                ',
      &   'Use PELVCONFIG file to determine elevated sources           '
      &/)
 
-        CHARACTER*60, PARAMETER :: PINGMTHD( 0:NPINGMTHD-1 ) = 
+        CHARACTER(60), PARAMETER :: PINGMTHD( 0:NPINGMTHD-1 ) = 
      &(/ 'No PinG sources                                             ',
      &   'Use PELVCONFIG file to determine PinG sources               '
      &/)
@@ -144,7 +144,7 @@ C...........   Other allocatable arrays
         REAL   , ALLOCATABLE :: RANK( : )  ! tmp ranked value
         LOGICAL, ALLOCATABLE :: EVSTAT( :,:,: ) ! tmp status of elev checks
         LOGICAL, ALLOCATABLE :: PGSTAT( :,:,: ) ! tmp status of PiNG checks
-        CHARACTER(LEN=PLTLEN3), ALLOCATABLE :: CHRS( : ) ! tmp test character strings
+        CHARACTER(PLTLEN3), ALLOCATABLE :: CHRS( : ) ! tmp test character strings
 
 C...........   File units and logical/physical names
         INTEGER         CDEV    !  elevated source configuration file
@@ -154,10 +154,10 @@ C...........   File units and logical/physical names
         INTEGER         RDEV    !  ASCII output report
         INTEGER         SDEV    !  ASCII part of inventory unit no.
 
-        CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
-        CHARACTER*16    ENAME   !  logical name for i/o api inventory input file
-        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
-        CHARACTER*16    MNAME   !  plume-in-grid srcs stack groups output file
+        CHARACTER(16)   ANAME   !  logical name for ASCII inventory input file
+        CHARACTER(16)   ENAME   !  logical name for i/o api inventory input file
+        CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER(16)   MNAME   !  plume-in-grid srcs stack groups output file
 
 C...........   Other local variables
         INTEGER         G, I, J, K, S, L, L2, N, V    ! indices and counters
@@ -207,16 +207,16 @@ C...........   Other local variables
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
 
-        CHARACTER*80    GDESC     !  grid description
-        CHARACTER*256   BUFFER
-        CHARACTER*256   MESG
+        CHARACTER(80)   GDESC     !  grid description
+        CHARACTER(256)  BUFFER
+        CHARACTER(256)  MESG
 
-        CHARACTER(LEN=IOVLEN3) COORD3D  !  coordinate system name
-        CHARACTER(LEN=IOVLEN3) COORUN3D !  coordinate system units 
-        CHARACTER(LEN=ALLLEN3) CSRC     !  buffer for source char, incl pol/act
-        CHARACTER(LEN=PLTLEN3) PLT      !  tmp plant code
+        CHARACTER(IOVLEN3) COORD3D  !  coordinate system name
+        CHARACTER(IOVLEN3) COORUN3D !  coordinate system units 
+        CHARACTER(ALLLEN3) CSRC     !  buffer for source char, incl pol/act
+        CHARACTER(PLTLEN3) PLT      !  tmp plant code
 
-        CHARACTER*16 :: PROGNAME = 'ELEVPOINT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'ELEVPOINT'   !  program name
 
 C***********************************************************************
 C   begin body of program ELEVPOINT
@@ -1042,7 +1042,7 @@ C.............  Subprogram arguments
             LOGICAL     , INTENT(IN):: STATUS ( NORS, MXAND, NV ) ! true: condition met
 
             INTEGER, PARAMETER :: NHEADER  = 16
-            CHARACTER*15, PARAMETER :: HEADERS( NHEADER ) = 
+            CHARACTER(15), PARAMETER :: HEADERS( NHEADER ) = 
      &                              ( / 'Source ID      ',
      &                                  'Region         ',
      &                                  'Plant          ',
@@ -1062,10 +1062,10 @@ C.............  Subprogram arguments
 
 C.............  Subprogram local allocatable arrays
             LOGICAL, ALLOCATABLE, SAVE :: LF( : )  ! true: output source chars 
-            CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: VNAME( : )  ! var names
+            CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: VNAME( : )  ! var names
 
 C.............  Subprogram local static arrays
-            CHARACTER*32 CHARS ( MXCHRS ) !  source fields for output
+            CHARACTER(32) CHARS ( MXCHRS ) !  source fields for output
 
 C.............  Local subprogram variables
             INTEGER      K, L, L1, L2, M, N  ! indices and counters
@@ -1076,8 +1076,8 @@ C.............  Local subprogram variables
             LOGICAL      DFLAG              ! true: OR was true
             LOGICAL   :: FIRSTIME = .TRUE.  ! true: first time subprogram called
 
-            CHARACTER*512 BUFFER
-            CHARACTER*256 FMTBUF
+            CHARACTER(512) BUFFER
+            CHARACTER(256) FMTBUF
 
 C----------------------------------------------------------------------
 

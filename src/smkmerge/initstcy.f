@@ -67,7 +67,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         FIND1  
 
@@ -80,9 +80,9 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first time routine called
 
-        CHARACTER*300    MESG     ! message buffer
+        CHARACTER(300)   MESG     ! message buffer
 
-        CHARACTER*16  :: PROGNAME = 'INITSTCY' ! program name
+        CHARACTER(16) :: PROGNAME = 'INITSTCY' ! program name
 
 C***********************************************************************
 C   begin body of subroutine INITSTCY

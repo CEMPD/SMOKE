@@ -55,9 +55,9 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local variables
         INTEGER         I       ! index variable
 
-        CHARACTER*300   MESG    ! message buffer
+        CHARACTER(300)  MESG    ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRSHOUR' ! program name
+        CHARACTER(16) :: PROGNAME = 'WRSHOUR' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRSHOUR

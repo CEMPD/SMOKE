@@ -71,7 +71,7 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........  EXTERNAL FUNCTIONS
-        CHARACTER*2     CRLF   
+        CHARACTER(2)    CRLF   
         INTEGER         INDEX1
         EXTERNAL        CRLF, INDEX1
 
@@ -113,16 +113,16 @@ C...........   Other local variables
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
         LOGICAL         NEXTGRP  ! true: time to increment group number cntr
 
-        CHARACTER*300          :: MESG ! message buffer
-        CHARACTER(LEN=IODLEN3) :: CBUF ! tmp pol-to-species buffer
-        CHARACTER(LEN=IOVLEN3) :: CPOL ! tmp pollutant buffer 
-        CHARACTER(LEN=IOVLEN3) :: CSPC ! tmp species buffer 
-        CHARACTER(LEN=IOVLEN3) :: PSPC ! tmp previous species  
-        CHARACTER(LEN=IOVLEN3) :: PPOL ! tmp previous pollutant  
-        CHARACTER(LEN=IOVLEN3) :: VBUF ! tmp variable name buffer 
-        CHARACTER(LEN=PLSLEN3) :: SVBUF ! tmp speciation name buffer 
+        CHARACTER(300)     :: MESG ! message buffer
+        CHARACTER(IODLEN3) :: CBUF ! tmp pol-to-species buffer
+        CHARACTER(IOVLEN3) :: CPOL ! tmp pollutant buffer 
+        CHARACTER(IOVLEN3) :: CSPC ! tmp species buffer 
+        CHARACTER(IOVLEN3) :: PSPC ! tmp previous species  
+        CHARACTER(IOVLEN3) :: PPOL ! tmp previous pollutant  
+        CHARACTER(IOVLEN3) :: VBUF ! tmp variable name buffer 
+        CHARACTER(PLSLEN3) :: SVBUF ! tmp speciation name buffer 
 
-        CHARACTER*16 :: PROGNAME = 'BLDMRGIDX' ! program name
+        CHARACTER(16) :: PROGNAME = 'BLDMRGIDX' ! program name
 
 C***********************************************************************
 C   begin body of subroutine BLDMRGIDX

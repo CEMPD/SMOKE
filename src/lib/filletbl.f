@@ -59,9 +59,9 @@ C...........   Other local variables
         INTEGER       ISP            ! tmp pollutant position index
         INTEGER       TDIM           ! temporary table dimension
 
-        CHARACTER*300	MESG      ! message buffer
+        CHARACTER(300)     MESG      ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'FILLETBL' ! program name
+        CHARACTER(16) :: PROGNAME = 'FILLETBL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine FILLETBL

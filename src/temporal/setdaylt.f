@@ -68,9 +68,9 @@ C...........   Other local variables
         INTEGER         IOS         ! i/o status
         INTEGER         PFIP        ! region code from previous iteration
 
-        CHARACTER*300   MESG        ! message buffer 
+        CHARACTER(300)  MESG        ! message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'SETDAYLT' ! program name
+        CHARACTER(16) :: PROGNAME = 'SETDAYLT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SETDAYLT

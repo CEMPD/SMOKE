@@ -50,22 +50,22 @@ C...........   INCLUDES:
         INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER           STR2INT
-        REAL              STR2REAL
-        CHARACTER(LEN=2)  CRLF    
+        INTEGER       STR2INT
+        REAL          STR2REAL
+        CHARACTER(2)  CRLF    
         
         EXTERNAL  STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,                INTENT (IN)   :: SDEV        ! SPDSUM file unit number
-        INTEGER,                INTENT (IN)   :: SCENNUM     ! current scenario number
-        CHARACTER(LEN=FIPLEN3), INTENT (IN)   :: CURRCOUNTY  ! current county being processed
-        INTEGER,                INTENT (IN)   :: NLINES      ! number of lines in SPDSUM file
-        INTEGER,                INTENT (IN)   :: LASAFLAG    ! local-as-arterial setting for current county
-        INTEGER,                INTENT (OUT)  :: ROADTYPE    ! road type from SPDSUM file
-        REAL,                   INTENT (OUT)  :: SPEED       ! speed value from SPDSUM file
-        INTEGER,                INTENT(INOUT) :: CURRLINE    ! current line number in SPDSUM file
-        INTEGER,                INTENT(INOUT) :: SRCCT       ! total number of sources       
+        INTEGER,            INTENT (IN)   :: SDEV        ! SPDSUM file unit number
+        INTEGER,            INTENT (IN)   :: SCENNUM     ! current scenario number
+        CHARACTER(FIPLEN3), INTENT (IN)   :: CURRCOUNTY  ! current county being processed
+        INTEGER,            INTENT (IN)   :: NLINES      ! number of lines in SPDSUM file
+        INTEGER,            INTENT (IN)   :: LASAFLAG    ! local-as-arterial setting for current county
+        INTEGER,            INTENT (OUT)  :: ROADTYPE    ! road type from SPDSUM file
+        REAL,               INTENT (OUT)  :: SPEED       ! speed value from SPDSUM file
+        INTEGER,            INTENT(INOUT) :: CURRLINE    ! current line number in SPDSUM file
+        INTEGER,            INTENT(INOUT) :: SRCCT       ! total number of sources       
 
 C...........   Local arrays
         INTEGER       SOURCES( 7 )          ! line of sources from SPDSUM file
@@ -78,11 +78,11 @@ C...........   Other local variables
 
         LOGICAL   :: EFLAG     = .FALSE. !  true: error found
                 
-        CHARACTER   CONTCHAR              ! continuation character from SPDSUM file
-        CHARACTER(LEN=6)       SPDSTR     ! string for reading speed info
-        CHARACTER(LEN=300)     MESG       !  message buffer
+        CHARACTER   CONTCHAR          ! continuation character from SPDSUM file
+        CHARACTER(6)       SPDSTR     ! string for reading speed info
+        CHARACTER(300)     MESG       !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSPDLINE'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSPDLINE'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSPDLINE

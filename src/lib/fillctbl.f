@@ -64,7 +64,7 @@ C...........   Other local variables
         INTEGER       ISP            ! tmp pollutant/activity position index
         INTEGER       TDIM           ! temporary table dimension
 
-        CHARACTER*16 :: PROGNAME = 'FILLCTBL' ! program name
+        CHARACTER(16) :: PROGNAME = 'FILLCTBL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine FILLCTBL

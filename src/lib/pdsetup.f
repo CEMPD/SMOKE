@@ -46,11 +46,11 @@ C...........   INCLUDE FILES:
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETIFDSC
-        CHARACTER*10    HHMMSS
+        CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
-        CHARACTER*14    MMDDYY
+        CHARACTER(14)   MMDDYY
         INTEGER         SECSDIFF
 
         EXTERNAL        CRLF, GETIFDSC, HHMMSS, INDEX1, MMDDYY, SECSDIFF
@@ -82,14 +82,14 @@ C...........   Other local variables
         INTEGER         STIME            !  starting time
         INTEGER         ZONE             !  time zone
 
-        CHARACTER*4     DESCRIBE 
-        CHARACTER*10    CTIMESTR, ETIMESTR   ! inventory and comparison time
-        CHARACTER*14    CDATESTR, EDATESTR   ! inventory and comparison date
-        CHARACTER*300   MESG 
+        CHARACTER(4)    DESCRIBE 
+        CHARACTER(10)   CTIMESTR, ETIMESTR   ! inventory and comparison time
+        CHARACTER(14)   CDATESTR, EDATESTR   ! inventory and comparison date
+        CHARACTER(300)  MESG 
 
-        CHARACTER(LEN=IOVLEN3)   VBUF        ! tmp variable name
+        CHARACTER(IOVLEN3)   VBUF        ! tmp variable name
 
-        CHARACTER*16 :: PROGNAME = 'PDSETUP' ! program name
+        CHARACTER(16) :: PROGNAME = 'PDSETUP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PDSETUP

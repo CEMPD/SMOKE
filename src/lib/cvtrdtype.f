@@ -62,9 +62,9 @@ C........  Road type parameters
 C........  LOCAL VARIABLES and their descriptions:
        LOGICAL :: EFLAG      = .FALSE.   ! true: error found
 
-       CHARACTER*300          MESG      !  message buffer 
+       CHARACTER(300)          MESG      !  message buffer 
         
-       CHARACTER*16  :: PROGNAME = 'CVTRDTYPE' ! program name
+       CHARACTER(16) :: PROGNAME = 'CVTRDTYPE' ! program name
         
 C***********************************************************************
 C   begin body of function CVTRDTYPE

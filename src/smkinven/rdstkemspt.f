@@ -52,7 +52,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDCFIRST
         INTEGER         FIND1
         INTEGER         STR2INT
@@ -90,15 +90,15 @@ C...........   Other local variables
         REAL                 YVAL                   ! UTM Y coordinate
         REAL                 YY                     ! lat-lon Y coordinate
         
-        CHARACTER(LEN=FIPLEN3) CFIP      ! fip code
-        CHARACTER(LEN=PLTLEN3) FCID      ! facility ID
-        CHARACTER(LEN=CHRLEN3) SKID      ! stack ID
+        CHARACTER(FIPLEN3) CFIP      ! fip code
+        CHARACTER(PLTLEN3) FCID      ! facility ID
+        CHARACTER(CHRLEN3) SKID      ! stack ID
         
-        CHARACTER(LEN=ALLLEN3) SRCKEY               ! source key
-        CHARACTER(LEN=300)     LINE                 ! line from file
-        CHARACTER(LEN=300)     MESG                 ! message buffer
+        CHARACTER(ALLLEN3) SRCKEY               ! source key
+        CHARACTER(300)     LINE                 ! line from file
+        CHARACTER(300)     MESG                 ! message buffer
 
-        CHARACTER(LEN=16) :: PROGNAME = 'RDSTKEMSPT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSTKEMSPT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSTKEMSPT

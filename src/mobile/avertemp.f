@@ -49,7 +49,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS 
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         INTEGER      FIND1FIRST
 
         EXTERNAL     CRLF, FIND1FIRST
@@ -78,9 +78,9 @@ C...........   Other local variables
 
         LOGICAL :: INITIAL = .TRUE.       ! true: first time through routine
 
-        CHARACTER(LEN=300) MESG           ! message buffer
+        CHARACTER(300) MESG           ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'AVERTEMP' ! program name
+        CHARACTER(16) :: PROGNAME = 'AVERTEMP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine AVERTEMP

@@ -42,7 +42,7 @@ C.........  INCLUDE FILES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         EXTERNAL      CRLF
 
 C.........  SUBROUTINE ARGUMENTS
@@ -54,9 +54,9 @@ C.........  SUBROUTINE ARGUMENTS
 
 C.........  Other local variables
 
-        CHARACTER*300   MESG 
+        CHARACTER(300)  MESG 
 
-        CHARACTER*16 :: PROGNAME = 'CHKSRCNO' ! program name
+        CHARACTER(16) :: PROGNAME = 'CHKSRCNO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine CHKSRCNO

@@ -57,7 +57,7 @@ C...........   Local pointers
 
 C...........   Other local variables
 
-        CHARACTER*16 :: PROGNAME = 'ADJUSTINV' ! program name
+        CHARACTER(16) :: PROGNAME = 'ADJUSTINV' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ADJUSTINV

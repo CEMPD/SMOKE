@@ -67,9 +67,9 @@ C...........   Other local variables
 
         LOGICAL         UFLAG  ! true: allocate non-pollutant variables
 
-        CHARACTER*300   MESG
+        CHARACTER(300)  MESG
 
-        CHARACTER*16 :: PROGNAME =  'SRCMEM' ! program name
+        CHARACTER(16) :: PROGNAME =  'SRCMEM' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SRCMEM

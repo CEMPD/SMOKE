@@ -98,7 +98,7 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
 
 C...........   EXTERNAL FUCNTIONS:
 
-        CHARACTER*2    CRLF
+        CHARACTER(2)   CRLF
         EXTERNAL       CRLF
 
 C...........   Array of allocation statuses
@@ -116,9 +116,9 @@ C...........   Other local variables
 
         LOGICAL      :: RESET = .FALSE. ! true: mem alloc fail, try new config
 
-        CHARACTER*300   MESG     ! message buffer
+        CHARACTER(300)  MESG     ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'ALLOCMRG' ! program name
+        CHARACTER(16) :: PROGNAME = 'ALLOCMRG' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ALLOCMRG

@@ -65,14 +65,14 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2 CRLF
-        INTEGER     INDEX1
-        INTEGER     FIND1
+        CHARACTER(2) CRLF
+        INTEGER      INDEX1
+        INTEGER      FIND1
 
-        EXTERNAL   CRLF, INDEX1, FIND1
+        EXTERNAL    CRLF, INDEX1, FIND1
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: RCNT    ! current report number
+        INTEGER, INTENT (IN) :: RCNT    ! current report number
 
 C...........  Local variables
         INTEGER         J, L, S    ! counters and indices
@@ -84,9 +84,9 @@ C...........  Local variables
 
         LOGICAL      :: EFLAG = .FALSE.  ! True: error has been detected
 
-        CHARACTER*256   MESG                   ! message buffer
+        CHARACTER(256)  MESG                   ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'SELECTSRC' ! program name
+        CHARACTER(16) :: PROGNAME = 'SELECTSRC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SELECTSRC

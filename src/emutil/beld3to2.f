@@ -64,19 +64,19 @@ C...........   PARAMETERS and their descriptions:
 
 C...........   LOCAL PARAMETERS
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
-        REAL, PARAMETER         :: TOHECT = 0.0001  ! factor to convert to hectares
-        CHARACTER*1 , PARAMETER :: AQUT = "'"  
-        INTEGER, PARAMETER      :: IZERO = 0
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        REAL,          PARAMETER :: TOHECT = 0.0001  ! factor to convert to hectares
+        CHARACTER,     PARAMETER :: AQUT = "'"  
+        INTEGER,       PARAMETER :: IZERO = 0
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         ENVYN
         INTEGER         GETFLINE
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         TRIMLEN
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   VERCHAR
 
         EXTERNAL        ENVYN, GETFLINE, PROMPTFFILE, PROMPTMFILE,  
      &                  TRIMLEN, VERCHAR
@@ -90,22 +90,22 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         LDEV    !  unit number for log file:
         INTEGER         XDEV    !  BELD2 output file
 
-        CHARACTER*256   MESG    !  message buffer for M3EXIT()
-        CHARACTER*16, ALLOCATABLE  :: LUNAMA( : )   ! Landuse file A var. names
-        CHARACTER*16, ALLOCATABLE  :: LUNAMB( : )   ! Landuse file B var. names
-        CHARACTER*16, ALLOCATABLE  :: VEG3( : )     ! BELD3 landuse types
-        CHARACTER*16    LUNAM   !  temporary landuse name
-        CHARACTER*16    GRDNM   !  grid name
-        CHARACTER*16    GNAMEA  !  unit number for gridded land use file A
-        CHARACTER*16    GNAMEB  !  unit number for gridded land use file B
-        CHARACTER*16    GNAMET  !  unit number for gridded land use totals file
-        CHARACTER*16    COORD   !  coordinate system used
-        CHARACTER*8     CUNIT   !  units
+        CHARACTER(256)  MESG    !  message buffer for M3EXIT()
+        CHARACTER(16), ALLOCATABLE  :: LUNAMA( : )   ! Landuse file A var. names
+        CHARACTER(16), ALLOCATABLE  :: LUNAMB( : )   ! Landuse file B var. names
+        CHARACTER(16), ALLOCATABLE  :: VEG3( : )     ! BELD3 landuse types
+        CHARACTER(16)   LUNAM   !  temporary landuse name
+        CHARACTER(16)   GRDNM   !  grid name
+        CHARACTER(16)   GNAMEA  !  unit number for gridded land use file A
+        CHARACTER(16)   GNAMEB  !  unit number for gridded land use file B
+        CHARACTER(16)   GNAMET  !  unit number for gridded land use totals file
+        CHARACTER(16)   COORD   !  coordinate system used
+        CHARACTER(8)    CUNIT   !  units
 
-        CHARACTER*4 , ALLOCATABLE  :: VEG2( : )    ! BELD2 xref record
-        CHARACTER*4 , ALLOCATABLE  :: B2TYPES ( : )  ! unsorted BELD2 types
-        CHARACTER*4 , ALLOCATABLE  :: B2SORT( : )    ! sorted BELD2 types
-        CHARACTER*4   TMPVEG                         ! temporary veg type
+        CHARACTER(4), ALLOCATABLE :: VEG2( : )      ! BELD2 xref record
+        CHARACTER(4), ALLOCATABLE :: B2TYPES ( : )  ! unsorted BELD2 types
+        CHARACTER(4), ALLOCATABLE :: B2SORT( : )    ! sorted BELD2 types
+        CHARACTER(4)                 TMPVEG         ! temporary veg type
 
         INTEGER         NCOLS   ! no. of grid columns
         INTEGER         NGRID   ! no. of grid cells
@@ -135,7 +135,7 @@ C...........   LOCAL VARIABLES and their descriptions:
 
         LOGICAL         EFLAG                    ! error flag
 
-        CHARACTER*16 :: PROGNAME = 'BELD3TO2'    !  program name
+        CHARACTER(16) :: PROGNAME = 'BELD3TO2'    !  program name
 
 C***********************************************************************
 C   begin body of program NORMBIO

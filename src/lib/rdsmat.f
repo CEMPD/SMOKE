@@ -47,7 +47,7 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
 
         EXTERNAL        CRLF, INDEX1
@@ -60,11 +60,11 @@ C.........  SUBROUTINE ARGUMENTS
 C.........  Other local variables
         INTEGER         J, L, L1, L2, V       !  counters and indices
 
-        CHARACTER(LEN=IODLEN3 ) DBUF    !  variable description buffer
-        CHARACTER(LEN=IOVLEN3 ) VBUF    !  variable name buffer
-        CHARACTER*300           MESG    !  message buffer
+        CHARACTER(IODLEN3) DBUF    !  variable description buffer
+        CHARACTER(IOVLEN3) VBUF    !  variable name buffer
+        CHARACTER(300)     MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSMAT

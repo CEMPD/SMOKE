@@ -42,8 +42,8 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
 
 C.........  External functions
-        CHARACTER*2 CRLF
-        EXTERNAL    CRLF
+        CHARACTER(2) CRLF
+        EXTERNAL     CRLF
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME       ! gridding matrix name
@@ -58,9 +58,9 @@ C.........  Other local variables
         INTEGER         C       !  tmp cell number
         INTEGER         NSUM    !  count of gridding matrix size
 
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDGMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDGMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDGMAT

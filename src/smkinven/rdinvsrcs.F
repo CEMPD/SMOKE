@@ -68,7 +68,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         GETFLINE
         INTEGER         GETFORMT
@@ -86,24 +86,24 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  CHKINT, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,          INTENT (IN) :: FDEV         ! unit no. of inv file
-        INTEGER,          INTENT (IN) :: VDEV         ! unit no. of vmtmix file
-        INTEGER,          INTENT (IN) :: SDEV         ! unit no. of speeds file
-        CHARACTER(LEN=*), INTENT (IN) :: FNAME        ! logical name of file
-        INTEGER,          INTENT(OUT) :: NRAWBP       ! no. of sources with pols/acts
-        INTEGER,          INTENT(OUT) :: NRAWSRCs     ! no. of raw sources
-        LOGICAL,          INTENT(OUT) :: TFLAG        ! true: PTREF output
-        LOGICAL,          INTENT(OUT) :: TOXFLG       ! true: read toxics inventory
+        INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
+        INTEGER,      INTENT (IN) :: VDEV         ! unit no. of vmtmix file
+        INTEGER,      INTENT (IN) :: SDEV         ! unit no. of speeds file
+        CHARACTER(*), INTENT (IN) :: FNAME        ! logical name of file
+        INTEGER,      INTENT(OUT) :: NRAWBP       ! no. of sources with pols/acts
+        INTEGER,      INTENT(OUT) :: NRAWSRCs     ! no. of raw sources
+        LOGICAL,      INTENT(OUT) :: TFLAG        ! true: PTREF output
+        LOGICAL,      INTENT(OUT) :: TOXFLG       ! true: read toxics inventory
 
 C...........   Local parameters
         INTEGER      , PARAMETER :: MXRECS = 1000000  ! maximum records per iteration
         INTEGER      , PARAMETER :: NSCSEG = 8        ! num. segments in scratch file
         
 C...........   Local arrays
-        CHARACTER(LEN=SRCLEN3) TMPCSOURC( MXRECS )   ! source information from inventory file(s)
-        INTEGER                TCSRCIDX ( MXRECS )   ! index for sorting source info
-        INTEGER                FRSNUMS  ( MXRECS,3 ) ! triplets of file, record, and source number
-        CHARACTER(LEN=SRCLEN3) SCSEGMENT( NSCSEG )   ! segments from scratch file
+        CHARACTER(SRCLEN3) TMPCSOURC( MXRECS )   ! source information from inventory file(s)
+        INTEGER            TCSRCIDX ( MXRECS )   ! index for sorting source info
+        INTEGER            FRSNUMS  ( MXRECS,3 ) ! triplets of file, record, and source number
+        CHARACTER(SRCLEN3) SCSEGMENT( NSCSEG )   ! segments from scratch file
         INTEGER, ALLOCATABLE:: CSRCIDX  ( : )        ! index for sorting CSOURCA
 
 C...........   File units and logical/physical names
@@ -139,38 +139,38 @@ C...........   Other local variables
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
 
-        CHARACTER(LEN=FIPLEN3) CFIP    ! fips code
-        CHARACTER(LEN=LNKLEN3) CLNK    ! link ID
-        CHARACTER(LEN=VIDLEN3) CIVT    ! vehicle type ID
-        CHARACTER(LEN=RWTLEN3) CROAD   ! road class no.
-        CHARACTER(LEN=RWTLEN3) CRWT    ! roadway type
-        CHARACTER(LEN=VTPLEN3) VTYPE   ! tmp vehicle type        
-        CHARACTER(LEN=RWTLEN3+VTPLEN3) CRVC    ! tmp roadway // vehicle type
+        CHARACTER(FIPLEN3) CFIP    ! fips code
+        CHARACTER(LNKLEN3) CLNK    ! link ID
+        CHARACTER(VIDLEN3) CIVT    ! vehicle type ID
+        CHARACTER(RWTLEN3) CROAD   ! road class no.
+        CHARACTER(RWTLEN3) CRWT    ! roadway type
+        CHARACTER(VTPLEN3) VTYPE   ! tmp vehicle type        
+        CHARACTER(RWTLEN3+VTPLEN3) CRVC    ! tmp roadway // vehicle type
         
-        CHARACTER(LEN=PLTLEN3) FCID    ! facility/plant ID
-        CHARACTER(LEN=CHRLEN3) PTID    ! point ID
-        CHARACTER(LEN=CHRLEN3) SKID    ! stack ID
-        CHARACTER(LEN=CHRLEN3) SGID    ! segment ID
-        CHARACTER(LEN=CHRLEN3) DVID    ! device ID
-        CHARACTER(LEN=CHRLEN3) PRID    ! process ID
+        CHARACTER(PLTLEN3) FCID    ! facility/plant ID
+        CHARACTER(CHRLEN3) PTID    ! point ID
+        CHARACTER(CHRLEN3) SKID    ! stack ID
+        CHARACTER(CHRLEN3) SGID    ! segment ID
+        CHARACTER(CHRLEN3) DVID    ! device ID
+        CHARACTER(CHRLEN3) PRID    ! process ID
         
-        CHARACTER(LEN=SCCLEN3) TSCC    ! scc code
-        CHARACTER(LEN=ALLLEN3) TCSOURC ! concatenated src (minus pollutant)
+        CHARACTER(SCCLEN3) TSCC    ! scc code
+        CHARACTER(ALLLEN3) TCSOURC ! concatenated src (minus pollutant)
 
-        CHARACTER(LEN=10)      CREC    ! record number
-        CHARACTER(LEN=4)       CFIL    ! file number
-        CHARACTER(LEN=300)     BUFFER  ! tmp line buffer
-        CHARACTER(LEN=300)     OUTLINE ! line to write to scratch file
-        CHARACTER(LEN=300)     INFILE  !  input file line buffer
-        CHARACTER(LEN=300)     LINE    !  input file line buffer
-        CHARACTER(LEN=300)     MESG    !  message buffer
-        CHARACTER(LEN=20)      VIDFMT  ! vehicle type ID format
-        CHARACTER(LEN=20)      RWTFMT  ! roadway type number format
+        CHARACTER(10)      CREC    ! record number
+        CHARACTER(4)       CFIL    ! file number
+        CHARACTER(300)     BUFFER  ! tmp line buffer
+        CHARACTER(300)     OUTLINE ! line to write to scratch file
+        CHARACTER(300)     INFILE  !  input file line buffer
+        CHARACTER(300)     LINE    !  input file line buffer
+        CHARACTER(300)     MESG    !  message buffer
+        CHARACTER(20)      VIDFMT  ! vehicle type ID format
+        CHARACTER(20)      RWTFMT  ! roadway type number format
 
-        CHARACTER(LEN=200)     PATHNM           ! path name for tmp file
-        CHARACTER(LEN=300)     TENLINES( 10 )   ! first ten lines of inventory file
+        CHARACTER(200)     PATHNM           ! path name for tmp file
+        CHARACTER(300)     TENLINES( 10 )   ! first ten lines of inventory file
 
-        CHARACTER*16 :: PROGNAME =  'RDINVSRCS' ! program name
+        CHARACTER(16) :: PROGNAME =  'RDINVSRCS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDINVSRCS

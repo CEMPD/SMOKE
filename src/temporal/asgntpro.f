@@ -77,7 +77,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN
         INTEGER         FIND1
@@ -118,43 +118,43 @@ C.........  Other local variables
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report default x-ref applied
         LOGICAL          SCCFLAG           ! true: SCC type is different from previous
 
-        CHARACTER*10             RWTFMT   ! fmt to write roadway type to string
-        CHARACTER*10             VIDFMT   ! format to write veh ID to string
-        CHARACTER*300            BUFFER   ! source fields buffer
-        CHARACTER*300            MESG     ! message buffer
-        CHARACTER(LEN=SRCLEN3)   CSRC     ! tmp source chars string
-        CHARACTER(LEN=FIPLEN3)   CFIP     ! tmp (character) FIPS code
-        CHARACTER(LEN=STALEN3)   CSTA     ! tmp Country/state code
-        CHARACTER(LEN=SCCLEN3)   TSCC     ! tmp 10-digit SCC
-        CHARACTER(LEN=SCCLEN3)   TSCCL    ! tmp left digits of TSCC
-        CHARACTER(LEN=SCCLEN3)   TSCCSAV  ! TSCC saved for msg (mb: resets TSCC)
-        CHARACTER(LEN=SCCLEN3)   CHKRWT   ! tmp roadway type only SCC
-        CHARACTER(LEN=SCCLEN3)   CHKVID   ! tmp vehicle-type only SCC
-        CHARACTER(LEN=SS5LEN3):: CSRC5=' '! tmp source chars through char5
-        CHARACTER(LEN=SS4LEN3):: CSRC4=' '! tmp source chars through char4
-        CHARACTER(LEN=SS3LEN3):: CSRC3=' '! tmp source chars through char3
-        CHARACTER(LEN=SS2LEN3):: CSRC2=' '! tmp source chars through char2
-        CHARACTER(LEN=SS1LEN3):: CSRC1=' '! tmp source chars through char1
-        CHARACTER(LEN=SS5LEN3):: CHK16=' '! tmp source chars through char5// SCC
-        CHARACTER(LEN=SS4LEN3):: CHK15=' '! tmp source chars through char4// SCC
-        CHARACTER(LEN=SS3LEN3):: CHK14=' '! tmp source chars through char3// SCC
-        CHARACTER(LEN=SS2LEN3):: CHK13=' '! tmp source chars through char2// SCC
-        CHARACTER(LEN=SS1LEN3):: CHK12=' '! tmp source chars through char1// SCC
-        CHARACTER(LEN=SS0LEN3):: CHK11=' '! tmp FIPS // Plant // SCC
-        CHARACTER(LEN=FPLLEN3):: CHK10=' '! tmp FIPS code // plant id
-        CHARACTER(LEN=FPSLEN3):: CHK09=' '! tmp FIPS code // SCC
-        CHARACTER(LEN=FPSLEN3):: CHK08=' '! tmp FIPS code // left SCC
-        CHARACTER(LEN=FPSLEN3):: CHK08B=' '! tmp FIPS code // veh ID SCC
-        CHARACTER(LEN=STSLEN3):: CHK06=' '! tmp Country/state code // SCC
-        CHARACTER(LEN=STSLEN3):: CHK05=' '! tmp Country/state code // left SCC
-        CHARACTER(LEN=STSLEN3):: CHK05B=' '! tmp Country/state code// veh ID SCC
-        CHARACTER(LEN=SCCLEN3):: CHK02B=' '! tmp veh ID SCC
-        CHARACTER(LEN=RWTLEN3)   CRWT     ! tmp char roadway type
-        CHARACTER(LEN=RWTLEN3)   RWTZERO  ! zero roadway type
-        CHARACTER(LEN=VIDLEN3)   CVID     ! tmp vehicle type
-        CHARACTER(LEN=VIDLEN3)   VIDZERO  ! zero vehicle type
+        CHARACTER(10)        RWTFMT   ! fmt to write roadway type to string
+        CHARACTER(10)        VIDFMT   ! format to write veh ID to string
+        CHARACTER(300)       BUFFER   ! source fields buffer
+        CHARACTER(300)           MESG     ! message buffer
+        CHARACTER(SRCLEN3)   CSRC     ! tmp source chars string
+        CHARACTER(FIPLEN3)   CFIP     ! tmp (character) FIPS code
+        CHARACTER(STALEN3)   CSTA     ! tmp Country/state code
+        CHARACTER(SCCLEN3)   TSCC     ! tmp 10-digit SCC
+        CHARACTER(SCCLEN3)   TSCCL    ! tmp left digits of TSCC
+        CHARACTER(SCCLEN3)   TSCCSAV  ! TSCC saved for msg (mb: resets TSCC)
+        CHARACTER(SCCLEN3)   CHKRWT   ! tmp roadway type only SCC
+        CHARACTER(SCCLEN3)   CHKVID   ! tmp vehicle-type only SCC
+        CHARACTER(SS5LEN3):: CSRC5=' '! tmp source chars through char5
+        CHARACTER(SS4LEN3):: CSRC4=' '! tmp source chars through char4
+        CHARACTER(SS3LEN3):: CSRC3=' '! tmp source chars through char3
+        CHARACTER(SS2LEN3):: CSRC2=' '! tmp source chars through char2
+        CHARACTER(SS1LEN3):: CSRC1=' '! tmp source chars through char1
+        CHARACTER(SS5LEN3):: CHK16=' '! tmp source chars through char5// SCC
+        CHARACTER(SS4LEN3):: CHK15=' '! tmp source chars through char4// SCC
+        CHARACTER(SS3LEN3):: CHK14=' '! tmp source chars through char3// SCC
+        CHARACTER(SS2LEN3):: CHK13=' '! tmp source chars through char2// SCC
+        CHARACTER(SS1LEN3):: CHK12=' '! tmp source chars through char1// SCC
+        CHARACTER(SS0LEN3):: CHK11=' '! tmp FIPS // Plant // SCC
+        CHARACTER(FPLLEN3):: CHK10=' '! tmp FIPS code // plant id
+        CHARACTER(FPSLEN3):: CHK09=' '! tmp FIPS code // SCC
+        CHARACTER(FPSLEN3):: CHK08=' '! tmp FIPS code // left SCC
+        CHARACTER(FPSLEN3):: CHK08B=' '! tmp FIPS code // veh ID SCC
+        CHARACTER(STSLEN3):: CHK06=' '! tmp Country/state code // SCC
+        CHARACTER(STSLEN3):: CHK05=' '! tmp Country/state code // left SCC
+        CHARACTER(STSLEN3):: CHK05B=' '! tmp Country/state code// veh ID SCC
+        CHARACTER(SCCLEN3):: CHK02B=' '! tmp veh ID SCC
+        CHARACTER(RWTLEN3)   CRWT     ! tmp char roadway type
+        CHARACTER(RWTLEN3)   RWTZERO  ! zero roadway type
+        CHARACTER(VIDLEN3)   CVID     ! tmp vehicle type
+        CHARACTER(VIDLEN3)   VIDZERO  ! zero vehicle type
 
-        CHARACTER*16 :: PROGNAME = 'ASGNTPRO' ! program name
+        CHARACTER(16) :: PROGNAME = 'ASGNTPRO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNTPRO

@@ -53,17 +53,17 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETINVYR
         INTEGER         STR2INT
         
         EXTERNAL        CRLF, GETINVYR, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,          INTENT (IN) :: FDEV   ! unit no. of inv file
-        CHARACTER(LEN=*), INTENT (IN) :: FNAME  ! logical name of inv file
-        LOGICAL,          INTENT (IN) :: CFLAG  ! true: recalc vel w/ flow and diam
-        LOGICAL,          INTENT (IN) :: WFLAG  ! true: convert lat-lons to western hemisphere
+        INTEGER,      INTENT (IN) :: FDEV   ! unit no. of inv file
+        CHARACTER(*), INTENT (IN) :: FNAME  ! logical name of inv file
+        LOGICAL,      INTENT (IN) :: CFLAG  ! true: recalc vel w/ flow and diam
+        LOGICAL,      INTENT (IN) :: WFLAG  ! true: convert lat-lons to western hemisphere
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: UTMZONE( : )     ! UTM zone from facility file
@@ -78,12 +78,12 @@ C...........   Other local variables
 
         LOGICAL           :: EFLAG = .FALSE.        ! true: an error has occurred
 
-        CHARACTER(LEN=8)     PFILTYPE               ! previous file type
-        CHARACTER(LEN=300)   INFILE                 ! inventory file name
-        CHARACTER(LEN=100)   BUFFER                 ! message buffer
-        CHARACTER(LEN=300)   MESG                   ! message buffer
+        CHARACTER(8)     PFILTYPE               ! previous file type
+        CHARACTER(300)   INFILE                 ! inventory file name
+        CHARACTER(100)   BUFFER                 ! message buffer
+        CHARACTER(300)   MESG                   ! message buffer
 
-        CHARACTER(LEN=16) :: PROGNAME = 'PROCEMSPT' ! program name
+        CHARACTER(16) :: PROGNAME = 'PROCEMSPT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PROCEMSPT

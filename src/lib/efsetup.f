@@ -69,9 +69,9 @@ C...........   Local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
         LOGICAL       :: IFLAG    = .FALSE.  ! true: input file available
 
-        CHARACTER*300                   MESG         ! message buffer
+        CHARACTER(300)                  MESG         ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'EFSETUP' ! program name
+        CHARACTER(16) :: PROGNAME = 'EFSETUP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine EFSETUP

@@ -85,13 +85,13 @@ C.........  INCLUDES:
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         DSCM3GRD
         LOGICAL         ENVYN
-        CHARACTER*50    GETCFDSC  
+        CHARACTER(50)   GETCFDSC  
         INTEGER         GETIFDSC  
         INTEGER         PROMPTFFILE  
-        CHARACTER*16    PROMPTMFILE  
+        CHARACTER(16)   PROMPTMFILE  
         INTEGER         SECSDIFF  
         LOGICAL         SETENVVAR
 
@@ -124,19 +124,19 @@ C.........  Other local variables
         LOGICAL      :: YFLAG = .FALSE.  ! true: year/projection info been init
         LOGICAL      :: ZFLAG = .FALSE.  ! true: time zone has been init
 
-        CHARACTER*4     SPCTYPE      ! type of speciation matrix (mass|mole)
-        CHARACTER*16    DUMNAME      ! tmp file name
-        CHARACTER*16    INAME        ! tmp name for inven file of unknown fmt
-        CHARACTER*50    METSCENR     ! met scenario name
-        CHARACTER*50    METCLOUD     ! met cloud scheme name
-        CHARACTER*50    METTMP       ! temporary buffer for met info
-        CHARACTER*80    GDESC        ! grid description
-        CHARACTER*256   MESG         ! message buffer
-        CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name 
-        CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
-        CHARACTER(LEN=IOVLEN3) PROJTYPE   ! projection type
+        CHARACTER(4)    SPCTYPE      ! type of speciation matrix (mass|mole)
+        CHARACTER(16)   DUMNAME      ! tmp file name
+        CHARACTER(16)   INAME        ! tmp name for inven file of unknown fmt
+        CHARACTER(50)   METSCENR     ! met scenario name
+        CHARACTER(50)   METCLOUD     ! met cloud scheme name
+        CHARACTER(50)   METTMP       ! temporary buffer for met info
+        CHARACTER(80)   GDESC        ! grid description
+        CHARACTER(256)  MESG         ! message buffer
+        CHARACTER(IOVLEN3) COORD3D    ! coordinate system name 
+        CHARACTER(IOVLEN3) COORUN3D   ! coordinate system projection units
+        CHARACTER(IOVLEN3) PROJTYPE   ! projection type
 
-        CHARACTER*16 :: PROGNAME = 'OPENMRGIN' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENMRGIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENMRGIN
@@ -1048,13 +1048,13 @@ C.............  Subprogram arguments
             INTEGER     , INTENT(OUT) :: SDATE( 7 )
 
 C.............  Local parameters
-            CHARACTER*3, PARAMETER :: SUFFIX( 7 ) = 
+            CHARACTER(3), PARAMETER :: SUFFIX( 7 ) = 
      &                                ( / 'MON', 'TUE', 'WED', 'THU', 
      &                                    'FRI', 'SAT', 'SUN'        / )
 
 C.............  Local allocatable arrays
-            CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: LOCVNAM ( : )
-            CHARACTER(LEN=IOULEN3), ALLOCATABLE :: LOCVUNIT( : )
+            CHARACTER(IOVLEN3), ALLOCATABLE :: LOCVNAM ( : )
+            CHARACTER(IOULEN3), ALLOCATABLE :: LOCVUNIT( : )
 
 C.............  Local arrays
             INTEGER        IDX( 7 )     ! index for per-file arrays
@@ -1071,9 +1071,9 @@ C.............  Local variables
             LOGICAL     :: VFLAG = .FALSE.  ! true: var names inconsistent
             LOGICAL     :: UFLAG = .FALSE.  ! true: var units inconsistent
 
-            CHARACTER*1    CRL      ! 1-letter src category indicator
-            CHARACTER*16   TMPNAM   ! temporary logical file name
-            CHARACTER*300  MESG     ! message buffer
+            CHARACTER      CRL      ! 1-letter src category indicator
+            CHARACTER(16)  TMPNAM   ! temporary logical file name
+            CHARACTER(300) MESG     ! message buffer
 
 C----------------------------------------------------------------------
 
@@ -1285,9 +1285,9 @@ C.............  Local variables
             INTEGER           L
             INTEGER           YY      ! tmp year
             LOGICAL           STRICT  ! flag for strict checks or not
-            CHARACTER*20      BUFFER  ! program name buffer
-            INTEGER , SAVE :: FLEN    ! name length of savnam
-            CHARACTER(LEN=IOVLEN3), SAVE :: SAVNAM  ! name of file used to init
+            CHARACTER(20)     BUFFER  ! program name buffer
+            INTEGER,  SAVE :: FLEN    ! name length of savnam
+            CHARACTER(IOVLEN3), SAVE :: SAVNAM  ! name of file used to init
 
 C----------------------------------------------------------------------
 
@@ -1378,7 +1378,7 @@ C.............  Subprogram arguments
             CHARACTER(*) CATDESC  ! category descriptions
 
 C.............  Local variables
-            CHARACTER*4  LOCTYPE  ! tmp speciation type 
+            CHARACTER(4) LOCTYPE  ! tmp speciation type 
 
 C----------------------------------------------------------------------
 
@@ -1424,7 +1424,7 @@ C.............  Subprogram arguments
 
 C.............  Local variables
             INTEGER       L, L1, L2  ! length of strings
-            CHARACTER*30  FILDESC    ! description of input file
+            CHARACTER(30) FILDESC    ! description of input file
 
 C----------------------------------------------------------------------
 
@@ -1673,7 +1673,7 @@ C.............  Subprogram arguments
 C.............  Local variables
             INTEGER  I, J
 
-            CHARACTER*16    :: TMPNAME = ' '   ! tmp logical file name
+            CHARACTER(16)   :: TMPNAME = ' '   ! tmp logical file name
 
 C----------------------------------------------------------------------
 

@@ -54,7 +54,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (OUT) :: NLINES   !  total number of inventory records
 
 C...........   Local allocatable arrays
-        CHARACTER(LEN=50), ALLOCATABLE :: SEGMENT( : ) ! pieces of input line
+        CHARACTER(50), ALLOCATABLE :: SEGMENT( : ) ! pieces of input line
 
 C...........   Other local variables
         INTEGER         I            ! counter 
@@ -63,11 +63,11 @@ C...........   Other local variables
         INTEGER         CASPOS       ! position of CAS number in line
         INTEGER         NSEG         ! number of segments in line
 
-        CHARACTER(LEN=300)     LINE         ! input file line buffer
-        CHARACTER(LEN=CASLEN3) CASNUM       ! CAS number from input line  
-        CHARACTER(LEN=300)     MESG         ! message buffer
+        CHARACTER(300)     LINE         ! input file line buffer
+        CHARACTER(CASLEN3) CASNUM       ! CAS number from input line  
+        CHARACTER(300)     MESG         ! message buffer
 
-        CHARACTER(LEN=16) ::   PROGNAME = 'GETNTISZ' ! program name
+        CHARACTER(16) ::   PROGNAME = 'GETNTISZ' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GETNTISZ

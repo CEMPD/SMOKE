@@ -59,7 +59,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C.........  EXTERNAL FUNCTIONS
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         LOGICAL      ENVYN
 
 
@@ -96,10 +96,10 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
         LOGICAL, SAVE :: LFLAG    = .FALSE.  ! true: iteration on special var
 
-        CHARACTER*100    BUFFER           ! src description buffer
-        CHARACTER*300    MESG             ! message buffer
+        CHARACTER(100)   BUFFER           ! src description buffer
+        CHARACTER(300)   MESG             ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRPDEMIS' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRPDEMIS' !  program name
 
 C***********************************************************************
 C   begin body of program WRPDEMIS

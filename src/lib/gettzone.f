@@ -63,10 +63,10 @@ C...........   LOCAL VARIABLES their descriptions:
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
 
-        CHARACTER*1      BUFFER       ! ASCII LINE from X-ref file
-        CHARACTER*300    MESG         ! Message buffer
+        CHARACTER        BUFFER       ! ASCII LINE from X-ref file
+        CHARACTER(300)   MESG         ! Message buffer
 
-        CHARACTER*16  :: PROGNAME = 'GETTZONE' ! Program name
+        CHARACTER(16) :: PROGNAME = 'GETTZONE' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETTZONE

@@ -46,7 +46,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2    CRLF
+        CHARACTER(2)   CRLF
         LOGICAL        DSCM3GRD
         INTEGER        INDEX1
         INTEGER        STR2INT
@@ -82,7 +82,7 @@ C...........   Grid types and names arrays
      &                                           , UTMGRD3
      &                                           , UTMGRD3 / )
 
-        CHARACTER*15 :: GRDNAMES( MXGRDTYP ) = ( / 'LAT-LON        '
+        CHARACTER(15) :: GRDNAMES( MXGRDTYP ) = ( / 'LAT-LON        '
      &                                           , 'GEOGRAPHIC     '
      &                                           , 'LATGRD3        '
      &                                           , 'LAMBERT        '
@@ -98,7 +98,7 @@ C...........   Grid types and names arrays
 
 C...........   Other arrays
 
-        CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
+        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
 
 C...........   Local variables
 
@@ -109,15 +109,15 @@ C...........   Local variables
 
         LOGICAL    :: EFLAG = .FALSE.           ! Error flag
 
-        CHARACTER*7            PROJUNIT   ! Projection units
-        CHARACTER*80           MSGEND     ! tmp end of message
-        CHARACTER*200          LINE       ! Read buffer for a line
-        CHARACTER*300          MESG       ! Message buffer
-        CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name 
-        CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
-        CHARACTER(LEN=IOVLEN3) PROJTYPE   ! coordinate system projection name
+        CHARACTER(7)       PROJUNIT   ! Projection units
+        CHARACTER(80)      MSGEND     ! tmp end of message
+        CHARACTER(200)     LINE       ! Read buffer for a line
+        CHARACTER(300)     MESG       ! Message buffer
+        CHARACTER(IOVLEN3) COORD3D    ! coordinate system name 
+        CHARACTER(IOVLEN3) COORUN3D   ! coordinate system projection units
+        CHARACTER(IOVLEN3) PROJTYPE   ! coordinate system projection name
 
-        CHARACTER*16 :: PROGNAME = 'RDSRGHDR'     ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRGHDR'     ! Program name
 
 C***********************************************************************
 C   Begin body of subroutine RDSRGHDR

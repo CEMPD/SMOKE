@@ -79,7 +79,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN
         INTEGER         FINDC
@@ -95,10 +95,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,          INTENT (IN) :: FDEV         ! unit no. of inv file
-        CHARACTER(LEN=*), INTENT (IN) :: FNAME        ! logical name of file
-        INTEGER,          INTENT (IN) :: NRAWBP       ! no. sources with pollutants
-        LOGICAL,          INTENT(OUT) :: NONPOINT     ! true: proccessing nonpoint inventory
+        INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
+        CHARACTER(*), INTENT (IN) :: FNAME        ! logical name of file
+        INTEGER,      INTENT (IN) :: NRAWBP       ! no. sources with pollutants
+        LOGICAL,      INTENT(OUT) :: NONPOINT     ! true: proccessing nonpoint inventory
 
 C...........   Local parameters
         INTEGER, PARAMETER :: DATALEN3 = 25  ! length of data field
@@ -112,8 +112,8 @@ C...........   File units and logical/physical names
         INTEGER         TDEV        !  file listed in list formatted input file
 
 C...........   Output from individual reader routines
-        CHARACTER(LEN=DATALEN3), ALLOCATABLE :: READDATA( :,: )  ! data values
-        CHARACTER(LEN=IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
+        CHARACTER(DATALEN3), ALLOCATABLE :: READDATA( :,: )  ! data values
+        CHARACTER(IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
 
 C...........   Other local variables
         INTEGER         I, J, K, K1, SP !  counters and indices
@@ -173,40 +173,40 @@ C...........   Other local variables
         LOGICAL      :: NOPOLFLG= .FALSE. ! true: no pollutants stored for this line
         LOGICAL      :: WFLAG   = .FALSE. ! true: all lat-lons to western hemi
 
-        CHARACTER(LEN=2)        TIMEPERIOD! time period for EMS emissions
+        CHARACTER(2)        TIMEPERIOD! time period for EMS emissions
 
-        CHARACTER(LEN=25)       X1        ! x-dir link coord 1
-        CHARACTER(LEN=25)       Y1        ! y-dir link coord 1
-        CHARACTER(LEN=25)       X2        ! x-dir link coord 2
-        CHARACTER(LEN=25)       Y2        ! y-dir link coord 2
-        CHARACTER(LEN=2)        ZONE      ! UTM zone
-        CHARACTER(LEN=FIPLEN3)  CFIP      ! fips code
-        CHARACTER(LEN=RWTLEN3)  CROAD     ! road class no.
-        CHARACTER(LEN=LNKLEN3)  CLNK      ! link ID
+        CHARACTER(25)       X1        ! x-dir link coord 1
+        CHARACTER(25)       Y1        ! y-dir link coord 1
+        CHARACTER(25)       X2        ! x-dir link coord 2
+        CHARACTER(25)       Y2        ! y-dir link coord 2
+        CHARACTER(2)        ZONE      ! UTM zone
+        CHARACTER(FIPLEN3)  CFIP      ! fips code
+        CHARACTER(RWTLEN3)  CROAD     ! road class no.
+        CHARACTER(LNKLEN3)  CLNK      ! link ID
 
-        CHARACTER(LEN=ORSLEN3)  CORS      ! DOE plant ID
-        CHARACTER(LEN=6)        BLID      ! boiler ID
-        CHARACTER(LEN=40)       DESC      ! plant description
-        CHARACTER(LEN=ERPLEN3)  ERPTYP    ! emissions release point type
-        CHARACTER(LEN=4)        HT        ! stack height
-        CHARACTER(LEN=6)        DM        ! stack diameter
-        CHARACTER(LEN=4)        TK        ! exit temperature
-        CHARACTER(LEN=10)       FL        ! flow rate
-        CHARACTER(LEN=9)        VL        ! exit velocity
-        CHARACTER(LEN=SICLEN3)  SIC       ! SIC
-        CHARACTER(LEN=MACLEN3)  MACT      ! MACT code
-        CHARACTER(LEN=NAILEN3)  NAICS     ! NAICS code
-        CHARACTER(LEN=STPLEN3)  SRCTYP    ! source type code
-        CHARACTER(LEN=1)        CTYPE     ! coordinate type
-        CHARACTER(LEN=9)        LAT       ! stack latitude
-        CHARACTER(LEN=9)        LON       ! stack longitude
+        CHARACTER(ORSLEN3)  CORS      ! DOE plant ID
+        CHARACTER(6)        BLID      ! boiler ID
+        CHARACTER(40)       DESC      ! plant description
+        CHARACTER(ERPLEN3)  ERPTYP    ! emissions release point type
+        CHARACTER(4)        HT        ! stack height
+        CHARACTER(6)        DM        ! stack diameter
+        CHARACTER(4)        TK        ! exit temperature
+        CHARACTER(10)       FL        ! flow rate
+        CHARACTER(9)        VL        ! exit velocity
+        CHARACTER(SICLEN3)  SIC       ! SIC
+        CHARACTER(MACLEN3)  MACT      ! MACT code
+        CHARACTER(NAILEN3)  NAICS     ! NAICS code
+        CHARACTER(STPLEN3)  SRCTYP    ! source type code
+        CHARACTER           CTYPE     ! coordinate type
+        CHARACTER(9)        LAT       ! stack latitude
+        CHARACTER(9)        LON       ! stack longitude
 
-        CHARACTER(LEN=IOVLEN3) POLNAM     !  tmp pollutant name
-        CHARACTER(LEN=300)     INFILE     !  input file line buffer
-        CHARACTER(LEN=3000)    LINE       !  input file line buffer
-        CHARACTER(LEN=300)     MESG       !  message buffer
+        CHARACTER(IOVLEN3) POLNAM     !  tmp pollutant name
+        CHARACTER(300)     INFILE     !  input file line buffer
+        CHARACTER(3000)    LINE       !  input file line buffer
+        CHARACTER(300)     MESG       !  message buffer
 
-        CHARACTER*16 :: PROGNAME =  'RDINVDATA' ! program name
+        CHARACTER(16) :: PROGNAME =  'RDINVDATA' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDINVDATA

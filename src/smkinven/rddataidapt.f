@@ -49,30 +49,30 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         
         EXTERNAL   CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT  (IN) :: LINE                  ! input line
-        CHARACTER(LEN=*),       INTENT (OUT) :: 
-     &                                READDATA( NPOLPERLN,NPTPPOL3 )  ! array of data values
-        CHARACTER(LEN=IOVLEN3), INTENT (OUT) :: READPOL( NPOLPERLN )  ! array of pollutant names
-        INTEGER,                INTENT(INOUT):: NPOLPERLN             ! no. pollutants per line
-        INTEGER,                INTENT (OUT) :: IYEAR                 ! inventory year
-        CHARACTER(LEN=ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
-        CHARACTER(LEN=6),       INTENT (OUT) :: BLID                  ! boiler ID
-        CHARACTER(LEN=40),      INTENT (OUT) :: DESC                  ! plant description
-        CHARACTER(LEN=4),       INTENT (OUT) :: HT                    ! stack height
-        CHARACTER(LEN=6),       INTENT (OUT) :: DM                    ! stack diameter
-        CHARACTER(LEN=4),       INTENT (OUT) :: TK                    ! exit temperature
-        CHARACTER(LEN=10),      INTENT (OUT) :: FL                    ! flow rate
-        CHARACTER(LEN=9),       INTENT (OUT) :: VL                    ! exit velocity
-        CHARACTER(LEN=SICLEN3), INTENT (OUT) :: SIC                   ! SIC
-        CHARACTER(LEN=9),       INTENT (OUT) :: LAT                   ! stack latitude
-        CHARACTER(LEN=9),       INTENT (OUT) :: LON                   ! stack longitude
-        LOGICAL,                INTENT (OUT) :: HDRFLAG               ! true: line is a header line
-        LOGICAL,                INTENT (OUT) :: EFLAG                 ! error flag
+        CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
+        CHARACTER(*),       INTENT (OUT) :: 
+     &                            READDATA( NPOLPERLN,NPTPPOL3 )  ! array of data values
+        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( NPOLPERLN )  ! array of pollutant names
+        INTEGER,            INTENT(INOUT):: NPOLPERLN             ! no. pollutants per line
+        INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
+        CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
+        CHARACTER(6),       INTENT (OUT) :: BLID                  ! boiler ID
+        CHARACTER(40),      INTENT (OUT) :: DESC                  ! plant description
+        CHARACTER(4),       INTENT (OUT) :: HT                    ! stack height
+        CHARACTER(6),       INTENT (OUT) :: DM                    ! stack diameter
+        CHARACTER(4),       INTENT (OUT) :: TK                    ! exit temperature
+        CHARACTER(10),      INTENT (OUT) :: FL                    ! flow rate
+        CHARACTER(9),       INTENT (OUT) :: VL                    ! exit velocity
+        CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! SIC
+        CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
+        CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
+        LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
+        LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 53  ! maximum pollutants in file
@@ -101,9 +101,9 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDDATAIDAPT' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDDATAIDAPT' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDDATAIDAPT

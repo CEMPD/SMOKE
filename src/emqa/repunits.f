@@ -62,14 +62,14 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER*16 MULTUNIT
-        EXTERNAL     MULTUNIT
+        CHARACTER(16) MULTUNIT
+        EXTERNAL      MULTUNIT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: RCNT    ! report number
 
 C...........   Local allocatable variables
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: LOCUNIT( : )
+        CHARACTER(IOULEN3), ALLOCATABLE :: LOCUNIT( : )
 
 C...........   Other local variables
         INTEGER         E, J, V   ! counters and indices
@@ -81,10 +81,10 @@ C...........   Other local variables
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL      :: SFLAG    = .FALSE. ! true: speciation applies to rpt
 
-        CHARACTER(LEN=IOULEN3) TMPUNIT     !  tmp units buffer
-        CHARACTER*300          MESG        !  message buffer
+        CHARACTER(IOULEN3) TMPUNIT     !  tmp units buffer
+        CHARACTER(300)     MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'REPUNITS' ! program name
+        CHARACTER(16) :: PROGNAME = 'REPUNITS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine REPUNITS
@@ -225,12 +225,12 @@ C.............  Local subprogram variables
             REAL         FAC1    ! factor for converting units numerator
             REAL         FAC2    ! factor for converting units denominator
 
-            CHARACTER( LEN=IOULEN3 ) DEN_I     ! tmp input denominator 
-            CHARACTER( LEN=IOULEN3 ) DEN_O     ! tmp output denominator 
-            CHARACTER( LEN=IOULEN3 ) O_UNIT    ! tmp output unit 
-            CHARACTER( LEN=IOULEN3 ) NUM_I     ! tmp input numerator 
-            CHARACTER( LEN=IOULEN3 ) NUM_O     ! tmp output numerator 
-            CHARACTER( LEN=IOULEN3 ) T_UNIT    ! tmp unit 
+            CHARACTER(IOULEN3) DEN_I     ! tmp input denominator 
+            CHARACTER(IOULEN3) DEN_O     ! tmp output denominator 
+            CHARACTER(IOULEN3) O_UNIT    ! tmp output unit 
+            CHARACTER(IOULEN3) NUM_I     ! tmp input numerator 
+            CHARACTER(IOULEN3) NUM_O     ! tmp output numerator 
+            CHARACTER(IOULEN3) T_UNIT    ! tmp unit 
 
 C----------------------------------------------------------------------
 

@@ -50,8 +50,8 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
-        CHARACTER*16    MULTUNIT
+        CHARACTER(2)    CRLF
+        CHARACTER(16)   MULTUNIT
         REAL            UNITFAC
 
         EXTERNAL  CRLF, MULTUNIT, UNITFAC
@@ -63,27 +63,27 @@ C...........   Other local variables
 
         REAL            FAC1, FAC2
 
-        CHARACTER*300   BUFFER   ! text buffer
-        CHARACTER*300   MESG     ! message buffer
+        CHARACTER(300)  BUFFER   ! text buffer
+        CHARACTER(300)  MESG     ! message buffer
 
-        CHARACTER(LEN=IOULEN3) GRDUNIT_I   ! initialized gridded outputs units
-        CHARACTER(LEN=IOULEN3) GDEN_I      ! initialized gridded denominator
-        CHARACTER(LEN=IOULEN3) GNUM_I      ! initialized gridded numerator
-        CHARACTER(LEN=IOULEN3) GDEN        ! work gridded denominator
-        CHARACTER(LEN=IOULEN3) GNUM        ! work gridded numerator
-        CHARACTER(LEN=IOULEN3) GRDBUF      ! work gridded output units
-        CHARACTER(LEN=IOULEN3) GRDENV      ! gridded output units from envrmt
+        CHARACTER(IOULEN3) GRDUNIT_I   ! initialized gridded outputs units
+        CHARACTER(IOULEN3) GDEN_I      ! initialized gridded denominator
+        CHARACTER(IOULEN3) GNUM_I      ! initialized gridded numerator
+        CHARACTER(IOULEN3) GDEN        ! work gridded denominator
+        CHARACTER(IOULEN3) GNUM        ! work gridded numerator
+        CHARACTER(IOULEN3) GRDBUF      ! work gridded output units
+        CHARACTER(IOULEN3) GRDENV      ! gridded output units from envrmt
 
-        CHARACTER(LEN=IOULEN3) BIOUNIT_T   ! initialized biog totals units
-        CHARACTER(LEN=IOULEN3) TOTUNIT_I   ! initialized output totals units
-        CHARACTER(LEN=IOULEN3) TDEN_I      ! initialized totals denominator
-        CHARACTER(LEN=IOULEN3) TNUM_I      ! initialized totals numerator
-        CHARACTER(LEN=IOULEN3) TDEN        ! work totals denominator
-        CHARACTER(LEN=IOULEN3) TNUM        ! work totals numerator
-        CHARACTER(LEN=IOULEN3) TOTBUF      ! work output totals  units
-        CHARACTER(LEN=IOULEN3) TOTENV      ! output totals units from envrmt
+        CHARACTER(IOULEN3) BIOUNIT_T   ! initialized biog totals units
+        CHARACTER(IOULEN3) TOTUNIT_I   ! initialized output totals units
+        CHARACTER(IOULEN3) TDEN_I      ! initialized totals denominator
+        CHARACTER(IOULEN3) TNUM_I      ! initialized totals numerator
+        CHARACTER(IOULEN3) TDEN        ! work totals denominator
+        CHARACTER(IOULEN3) TNUM        ! work totals numerator
+        CHARACTER(IOULEN3) TOTBUF      ! work output totals  units
+        CHARACTER(IOULEN3) TOTENV      ! output totals units from envrmt
 
-        CHARACTER*16 :: PROGNAME = 'MRGUNITS' ! program name
+        CHARACTER(16) :: PROGNAME = 'MRGUNITS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine MRGUNITS
@@ -287,11 +287,11 @@ C.............  This internal subprogram corrects badly formatted units
             SUBROUTINE CORRECT_UNITS( NUM_I, DEN_I, NUM, DEN, OUTUNIT )
 
 C.............  Subprogram arguments
-            CHARACTER(LEN=IOULEN3) NUM_I
-            CHARACTER(LEN=IOULEN3) DEN_I
-            CHARACTER(LEN=IOULEN3) NUM
-            CHARACTER(LEN=IOULEN3) DEN
-            CHARACTER(LEN=IOULEN3) OUTUNIT
+            CHARACTER(IOULEN3) NUM_I
+            CHARACTER(IOULEN3) DEN_I
+            CHARACTER(IOULEN3) NUM
+            CHARACTER(IOULEN3) DEN
+            CHARACTER(IOULEN3) OUTUNIT
 
 C.............  Local variables
             INTEGER L1,L2

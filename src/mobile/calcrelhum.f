@@ -64,7 +64,7 @@ C.........  Local variables
         REAL    SMR         ! saturation mixing ratio
         REAL    RELHUM      ! relative humidity
         
-        CHARACTER(LEN=16) :: PROGNAME = 'CALCRELHUM' ! program name
+        CHARACTER(16) :: PROGNAME = 'CALCRELHUM' ! program name
         
 C***************************************************************
 C   begin body of function CALCRELHUM

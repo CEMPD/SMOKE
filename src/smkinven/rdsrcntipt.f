@@ -47,22 +47,22 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         INTEGER                FINDC
         
         EXTERNAL   CRLF, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=PLTLEN3), INTENT(OUT) :: FCID      ! facility/plant ID
-        CHARACTER(LEN=CHRLEN3), INTENT(OUT) :: PTID      ! point ID
-        CHARACTER(LEN=CHRLEN3), INTENT(OUT) :: SKID      ! stack ID
-        CHARACTER(LEN=CHRLEN3), INTENT(OUT) :: SGID      ! segment ID
-        CHARACTER(LEN=SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
-        INTEGER,                INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(PLTLEN3), INTENT(OUT) :: FCID      ! facility/plant ID
+        CHARACTER(CHRLEN3), INTENT(OUT) :: PTID      ! point ID
+        CHARACTER(CHRLEN3), INTENT(OUT) :: SKID      ! stack ID
+        CHARACTER(CHRLEN3), INTENT(OUT) :: SGID      ! segment ID
+        CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! scc code
+        INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
@@ -78,11 +78,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=CHRLEN3) SEGMENT( NSEG ) ! segments of line
-        CHARACTER(LEN=CASLEN3) TCAS            ! tmp cas number
-        CHARACTER*300          MESG            ! message buffer
+        CHARACTER(CHRLEN3) SEGMENT( NSEG ) ! segments of line
+        CHARACTER(CASLEN3) TCAS            ! tmp cas number
+        CHARACTER(300)     MESG            ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCNTIPT' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCNTIPT' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCNTIPT

@@ -47,18 +47,18 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
 
         EXTERNAL    CRLF, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT  (IN) :: LINE                  ! input line
-        CHARACTER(LEN=*),       INTENT (OUT) :: READDATA( 1,NARPPOL3 )! array of data values
-        CHARACTER(LEN=IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! pollutant name
-        INTEGER,                INTENT (OUT) :: IYEAR                 ! inventory year
-        LOGICAL,                INTENT (OUT) :: HDRFLAG               ! true: line is a header line
-        LOGICAL,                INTENT (OUT) :: EFLAG                 ! error flag
+        CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
+        CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NARPPOL3 )! array of data values
+        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! pollutant name
+        INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
+        LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
+        LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
@@ -74,11 +74,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=25)      SEGMENT( NSEG ) ! segments of line
-        CHARACTER(LEN=CASLEN3) TCAS            ! tmp cas number
-        CHARACTER(LEN=300)     MESG            !  message buffer
+        CHARACTER(25)      SEGMENT( NSEG ) ! segments of line
+        CHARACTER(CASLEN3) TCAS            ! tmp cas number
+        CHARACTER(300)     MESG            !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDDATANTIAR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDDATANTIAR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDDATANTIAR

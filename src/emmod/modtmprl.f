@@ -42,9 +42,9 @@
 
 !.........  Hourly-emissions file information
         INTEGER, PUBLIC :: NTPDAT   ! No. data values in hourly emissions file
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: TPNAME( : )  ! data names
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: TPUNIT( : )  ! data units
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: TPDESC( : )  ! data descs
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: TPNAME( : )  ! data names
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: TPUNIT( : )  ! data units
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: TPDESC( : )  ! data descs
 
 !.........  Holiday dates arrays
         INTEGER, PUBLIC :: NHOLIDAY  ! number of holidays

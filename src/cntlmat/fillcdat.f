@@ -63,7 +63,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: JT        ! index to control data tables
         TYPE(CPACKET),INTENT (IN) :: PKTINFO   ! packet information
 
-        CHARACTER*16 :: PROGNAME = 'FILLCDAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'FILLCDAT' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine FILLCDAT

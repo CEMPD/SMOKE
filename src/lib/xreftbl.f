@@ -59,7 +59,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         STR2INT
         LOGICAL         SETSCCTYPE
 
@@ -86,17 +86,17 @@ C             degree and comparing current record with previous record as part
 C             of the counting. Note that although all arrays below are 
 C             available for each degree of matching, only the array elements 
 C             that are appropriate for a given degree are actually populated. 
-        INTEGER                N     ( 0:NXTYPES ) ! cnt for degree of matching
-        INTEGER                PIFIP (   NXTYPES ) ! previous co/st/cy code
+        INTEGER            N     ( 0:NXTYPES ) ! cnt for degree of matching
+        INTEGER            PIFIP (   NXTYPES ) ! previous co/st/cy code
 
-        CHARACTER(LEN=SCCLEN3) PTSCC ( NXTYPES )  ! previous SCC
-        CHARACTER(LEN=SICLEN3) PCSIC ( NXTYPES )  ! previous SIC
-        CHARACTER(LEN=SRCLEN3) PCSRC ( NXTYPES )  ! previous CSRC
-        CHARACTER(LEN=SS5LEN3) PCSSC ( NXTYPES )  ! previous CSRC(part) // SCC
-        CHARACTER(LEN=MACLEN3) PCMCT ( NXTYPES )  ! previous MACT
+        CHARACTER(SCCLEN3) PTSCC ( NXTYPES )  ! previous SCC
+        CHARACTER(SICLEN3) PCSIC ( NXTYPES )  ! previous SIC
+        CHARACTER(SRCLEN3) PCSRC ( NXTYPES )  ! previous CSRC
+        CHARACTER(SS5LEN3) PCSSC ( NXTYPES )  ! previous CSRC(part) // SCC
+        CHARACTER(MACLEN3) PCMCT ( NXTYPES )  ! previous MACT
 
 C...........   Array of source characeristics
-        CHARACTER*300           CHARS( MXCHRS )
+        CHARACTER(300)          CHARS( MXCHRS )
 
 C...........   Other local variables
         INTEGER       I, J, J1, J2, K, L  ! counter and indices
@@ -131,37 +131,37 @@ C...........   Other local variables
         LOGICAL    :: XFLAG = .FALSE.  ! true: operation type is nonhapVOC exclusion
         LOGICAL    :: YFLAG = .FALSE.  ! true: operation type is area-to-point
 
-        CHARACTER*1            CDUM          ! dummy character string
-        CHARACTER*256          BUFFER        ! source definition buffer
-        CHARACTER*256          MESG          ! message buffer
+        CHARACTER          CDUM          ! dummy character string
+        CHARACTER(256)     BUFFER        ! source definition buffer
+        CHARACTER(256)     MESG          ! message buffer
 
-        CHARACTER(LEN=STALEN3) CSTA          ! temporary (character) state code
-        CHARACTER(LEN=SCCLEN3) SCCL          ! left digits of TSCC
-        CHARACTER(LEN=SCCLEN3) SCCR          ! RHS digits of TSCC (old method)
-        CHARACTER(LEN=SCCLEN3) SCCR_A        ! RHS for level 1 of SCC
-        CHARACTER(LEN=SCCLEN3) SCCR_B        ! RHS for level 2 of SCC
-        CHARACTER(LEN=SCCLEN3) SCCR_C        ! RHS for level 3 of SCC
-        CHARACTER(LEN=SCCLEN3) SCRZERO       ! buf for 0 right 5 digits of TSCC
-        CHARACTER(LEN=SNFLEN3) CNFIP         ! characterstics without FIPS code
-        CHARACTER(LEN=SRCLEN3) CSRC          ! temporary source char string
-        CHARACTER(LEN=FIPLEN3) CFIP          ! temporary (character) FIPS code
-        CHARACTER(LEN=MACLEN3) CMCT          ! temporary MACT code
-        CHARACTER(LEN=FIPLEN3) FIPZERO       ! buffer for zero FIPS code
-        CHARACTER(LEN=MACLEN3) MCTZERO       ! buffer for zero MACT code
-        CHARACTER(LEN=SCCLEN3) PSCC          ! previous SCC
-        CHARACTER(LEN=SCCLEN3) TSCC          ! temporary SCC
-        CHARACTER(LEN=SCCLEN3) SCCZERO       ! buffer for zero SCC
-        CHARACTER(LEN=SCCLEN3) SCCZ_A        ! buffer for level 1 zero string
-        CHARACTER(LEN=SCCLEN3) SCCZ_B        ! buffer for level 2 zero string
-        CHARACTER(LEN=SCCLEN3) SCCZ_C        ! buffer for level 3 zero string
-        CHARACTER(LEN=SS5LEN3) CSRCSCC       ! buffer for source // SCC
-        CHARACTER(LEN=SICLEN3) CSIC          ! buffer for SIC
-        CHARACTER(LEN=SICLEN3) CSICL         ! buffer for left 2-digit SIC
-        CHARACTER(LEN=SICLEN3) CSICR         ! buffer for right SIC
-        CHARACTER(LEN=SICLEN3) SICZERO       ! buffer for SIC zero
-        CHARACTER(LEN=SICLEN3) SICRZERO      ! buffer for right SIC zero
+        CHARACTER(STALEN3) CSTA          ! temporary (character) state code
+        CHARACTER(SCCLEN3) SCCL          ! left digits of TSCC
+        CHARACTER(SCCLEN3) SCCR          ! RHS digits of TSCC (old method)
+        CHARACTER(SCCLEN3) SCCR_A        ! RHS for level 1 of SCC
+        CHARACTER(SCCLEN3) SCCR_B        ! RHS for level 2 of SCC
+        CHARACTER(SCCLEN3) SCCR_C        ! RHS for level 3 of SCC
+        CHARACTER(SCCLEN3) SCRZERO       ! buf for 0 right 5 digits of TSCC
+        CHARACTER(SNFLEN3) CNFIP         ! characterstics without FIPS code
+        CHARACTER(SRCLEN3) CSRC          ! temporary source char string
+        CHARACTER(FIPLEN3) CFIP          ! temporary (character) FIPS code
+        CHARACTER(MACLEN3) CMCT          ! temporary MACT code
+        CHARACTER(FIPLEN3) FIPZERO       ! buffer for zero FIPS code
+        CHARACTER(MACLEN3) MCTZERO       ! buffer for zero MACT code
+        CHARACTER(SCCLEN3) PSCC          ! previous SCC
+        CHARACTER(SCCLEN3) TSCC          ! temporary SCC
+        CHARACTER(SCCLEN3) SCCZERO       ! buffer for zero SCC
+        CHARACTER(SCCLEN3) SCCZ_A        ! buffer for level 1 zero string
+        CHARACTER(SCCLEN3) SCCZ_B        ! buffer for level 2 zero string
+        CHARACTER(SCCLEN3) SCCZ_C        ! buffer for level 3 zero string
+        CHARACTER(SS5LEN3) CSRCSCC       ! buffer for source // SCC
+        CHARACTER(SICLEN3) CSIC          ! buffer for SIC
+        CHARACTER(SICLEN3) CSICL         ! buffer for left 2-digit SIC
+        CHARACTER(SICLEN3) CSICR         ! buffer for right SIC
+        CHARACTER(SICLEN3) SICZERO       ! buffer for SIC zero
+        CHARACTER(SICLEN3) SICRZERO      ! buffer for right SIC zero
 
-        CHARACTER*16 :: PROGNAME = 'XREFTBL' ! program name
+        CHARACTER(16) :: PROGNAME = 'XREFTBL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine XREFTBL
@@ -1075,10 +1075,10 @@ C               duplicate entries in the cross-reference file.
             SUBROUTINE REPORT_DUP_XREF
 
 C.............  Local variables
-            INTEGER       :: L1
-            INTEGER       :: L2
-            CHARACTER*300 :: BUFFER
-            CHARACTER*300 :: MESG
+            INTEGER        :: L1
+            INTEGER        :: L2
+            CHARACTER(300) :: BUFFER
+            CHARACTER(300) :: MESG
 
 C......................................................................
 
@@ -1122,14 +1122,14 @@ C.............  Subprogram arguments
             CHARACTER(*) INMESG       ! Input message to include on line 2
 
 C.............  Local parameters
-            CHARACTER*48, PARAMETER :: PART1 = 
+            CHARACTER(48), PARAMETER :: PART1 = 
      &         'WARNING: Skipping invalid cross-reference entry.'
 
 C.............  Local variables
-            INTEGER       :: L1
-            INTEGER       :: L2
-            CHARACTER*300 :: BUFFER
-            CHARACTER*300 :: MESG
+            INTEGER        :: L1
+            INTEGER        :: L2
+            CHARACTER(300) :: BUFFER
+            CHARACTER(300) :: MESG
 
 C......................................................................
 

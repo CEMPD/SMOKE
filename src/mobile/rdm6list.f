@@ -56,7 +56,7 @@ C...........   Other local variables
         INTEGER IOS                       ! I/O status        
         INTEGER NLINES                    ! number of lines
 
-        CHARACTER*16 :: PROGNAME = 'RDM6LIST'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDM6LIST'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine RDM6LIST

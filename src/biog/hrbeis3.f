@@ -96,9 +96,9 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            PARDB        !  par direct beam
         REAL            PARDIF       !  par diffuse
 
-        CHARACTER*16 :: PROGNAME = 'HRBEIS3'   !  program name
+        CHARACTER(16) :: PROGNAME = 'HRBEIS3'   !  program name
 
-        CHARACTER*256   MESG
+        CHARACTER(256)  MESG
 
 C***********************************************************************
 C   begin body of subroutine  HRBIOS

@@ -51,9 +51,9 @@ C.........  SUBROUTINE ARGUMENTS
         REAL                      :: CU( NMAT2 ) ! coefficients for cells
 
 C.........  Other local variables
-        CHARACTER*300   MESG    !  message buffer
+        CHARACTER(300)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDUMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDUMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDUMAT

@@ -72,7 +72,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         FINDC
@@ -107,53 +107,53 @@ C.........  Other local variables
         LOGICAL       :: SICXREF  = .FALSE. ! true: SIC assignments in x-ref
         LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
-        CHARACTER*8            FMTFIP   ! format for writing FIPS code
-        CHARACTER*8            FMTSIC   ! format for writing SIC code
-        CHARACTER*256          BUFFER   ! source fields buffer
-        CHARACTER*256          MESG     ! message buffer
-        CHARACTER(LEN=STALEN3) CSTA     ! tmp Country/state code
-        CHARACTER(LEN=STSLEN3) CSTAS_A  ! tmp Country/state code // level 1 SCC
-        CHARACTER(LEN=STSLEN3) CSTAS_B  ! tmp Country/state code // level 2 SCC
-        CHARACTER(LEN=STSLEN3) CSTAS_C  ! tmp Country/state code // level 3 SCC
-        CHARACTER(LEN=STSLEN3) CSTAS_D  ! tmp Country/state code // all SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_A   ! tmp level 1 of SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_B   ! tmp level 2 of SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_C   ! tmp level 3 of SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_D   ! tmp level 4 (all) of SCC
-        CHARACTER(LEN=SCCLEN3) TSCC_BUF ! tmp 10-digit SCC
-        CHARACTER(LEN=SRCLEN3) CSRC     ! tmp source chars string
-        CHARACTER(LEN=SS0LEN3) :: CSSC0 = ' ' ! tmp FIPS // Plant // SCC 
-        CHARACTER(LEN=SS1LEN3) :: CSSC1 = ' ' ! tmp source chars through char1  // SCC 
-        CHARACTER(LEN=SS2LEN3) :: CSSC2 = ' ' ! tmp source chars through char2  // SCC 
-        CHARACTER(LEN=SS3LEN3) :: CSSC3 = ' ' ! tmp source chars through char3  // SCC 
-        CHARACTER(LEN=SS4LEN3) :: CSSC4 = ' ' ! tmp source chars through char4  // SCC 
-        CHARACTER(LEN=SS5LEN3) :: CSSC5 = ' ' ! tmp source chars through char5  // SCC 
-        CHARACTER(LEN=SS0LEN3) :: CSRC0 = ' ' ! tmp FIPS // Plant
-        CHARACTER(LEN=SS1LEN3) :: CSRC1 = ' ' ! tmp source chars through char1
-        CHARACTER(LEN=SS2LEN3) :: CSRC2 = ' ' ! tmp source chars through char2
-        CHARACTER(LEN=SS3LEN3) :: CSRC3 = ' ' ! tmp source chars through char3
-        CHARACTER(LEN=SS4LEN3) :: CSRC4 = ' ' ! tmp source chars through char4
-        CHARACTER(LEN=SS5LEN3) :: CSRC5 = ' ' ! tmp source chars through char5
-        CHARACTER(LEN=FIPLEN3) CFIP     ! tmp (character) FIPS code
-        CHARACTER(LEN=FPSLEN3) CFIPS_A  ! tmp FIPS code // level 1 of SCC
-        CHARACTER(LEN=FPSLEN3) CFIPS_B  ! tmp FIPS code // level 2 of SCC
-        CHARACTER(LEN=FPSLEN3) CFIPS_C  ! tmp FIPS code // level 3 of SCC
-        CHARACTER(LEN=FPSLEN3) CFIPS_D  ! tmp FIPS code // level 4 (all) of SCC
-        CHARACTER(LEN=SICLEN3) :: CSIC = ' '     ! tmp char SIC
-        CHARACTER(LEN=SICLEN3) :: CSICL = ' '    ! tmp char left SIC
-        CHARACTER(LEN=STILEN3) :: CSTASIC = ' '  ! tmp Country/state // char SIC
-        CHARACTER(LEN=STILEN3) :: CSTASICL = ' ' ! tmp Country/state // char left SIC
-        CHARACTER(LEN=FPILEN3) :: CFIPSIC = ' '  ! tmp FIPS code // char SIC
-        CHARACTER(LEN=FPILEN3) :: CFIPSICL = ' ' ! tmp FIPS code // char left SIC
-        CHARACTER(LEN=MACLEN3) :: CMCT = ' '     ! tmp MACT code
-        CHARACTER(LEN=MSCLEN3) :: CMSCC = ' '    ! tmp SCC // MACT
-        CHARACTER(LEN=MSTLEN3) :: CMST = ' '     ! tmp Country/state code // MACT
-        CHARACTER(LEN=MSSLEN3) :: CMSTSC = ' '   ! tmp Country/state code // SCC // MACT
-        CHARACTER(LEN=MFPLEN3) :: CMFP = ' '     ! tmp FIPS code // MACT
-        CHARACTER(LEN=MFSLEN3) :: CMFPSC = ' '   ! tmp FIPS code // SCC // MACT
-        CHARACTER(LEN=STPLEN3) :: CSTYP = ' '    ! tmp source type code
+        CHARACTER(8)       FMTFIP   ! format for writing FIPS code
+        CHARACTER(8)       FMTSIC   ! format for writing SIC code
+        CHARACTER(256)     BUFFER   ! source fields buffer
+        CHARACTER(256)     MESG     ! message buffer
+        CHARACTER(STALEN3) CSTA     ! tmp Country/state code
+        CHARACTER(STSLEN3) CSTAS_A  ! tmp Country/state code // level 1 SCC
+        CHARACTER(STSLEN3) CSTAS_B  ! tmp Country/state code // level 2 SCC
+        CHARACTER(STSLEN3) CSTAS_C  ! tmp Country/state code // level 3 SCC
+        CHARACTER(STSLEN3) CSTAS_D  ! tmp Country/state code // all SCC
+        CHARACTER(SCCLEN3) TSCC_A   ! tmp level 1 of SCC
+        CHARACTER(SCCLEN3) TSCC_B   ! tmp level 2 of SCC
+        CHARACTER(SCCLEN3) TSCC_C   ! tmp level 3 of SCC
+        CHARACTER(SCCLEN3) TSCC_D   ! tmp level 4 (all) of SCC
+        CHARACTER(SCCLEN3) TSCC_BUF ! tmp 10-digit SCC
+        CHARACTER(SRCLEN3) CSRC     ! tmp source chars string
+        CHARACTER(SS0LEN3) :: CSSC0 = ' ' ! tmp FIPS // Plant // SCC 
+        CHARACTER(SS1LEN3) :: CSSC1 = ' ' ! tmp source chars through char1  // SCC 
+        CHARACTER(SS2LEN3) :: CSSC2 = ' ' ! tmp source chars through char2  // SCC 
+        CHARACTER(SS3LEN3) :: CSSC3 = ' ' ! tmp source chars through char3  // SCC 
+        CHARACTER(SS4LEN3) :: CSSC4 = ' ' ! tmp source chars through char4  // SCC 
+        CHARACTER(SS5LEN3) :: CSSC5 = ' ' ! tmp source chars through char5  // SCC 
+        CHARACTER(SS0LEN3) :: CSRC0 = ' ' ! tmp FIPS // Plant
+        CHARACTER(SS1LEN3) :: CSRC1 = ' ' ! tmp source chars through char1
+        CHARACTER(SS2LEN3) :: CSRC2 = ' ' ! tmp source chars through char2
+        CHARACTER(SS3LEN3) :: CSRC3 = ' ' ! tmp source chars through char3
+        CHARACTER(SS4LEN3) :: CSRC4 = ' ' ! tmp source chars through char4
+        CHARACTER(SS5LEN3) :: CSRC5 = ' ' ! tmp source chars through char5
+        CHARACTER(FIPLEN3) CFIP     ! tmp (character) FIPS code
+        CHARACTER(FPSLEN3) CFIPS_A  ! tmp FIPS code // level 1 of SCC
+        CHARACTER(FPSLEN3) CFIPS_B  ! tmp FIPS code // level 2 of SCC
+        CHARACTER(FPSLEN3) CFIPS_C  ! tmp FIPS code // level 3 of SCC
+        CHARACTER(FPSLEN3) CFIPS_D  ! tmp FIPS code // level 4 (all) of SCC
+        CHARACTER(SICLEN3) :: CSIC = ' '     ! tmp char SIC
+        CHARACTER(SICLEN3) :: CSICL = ' '    ! tmp char left SIC
+        CHARACTER(STILEN3) :: CSTASIC = ' '  ! tmp Country/state // char SIC
+        CHARACTER(STILEN3) :: CSTASICL = ' ' ! tmp Country/state // char left SIC
+        CHARACTER(FPILEN3) :: CFIPSIC = ' '  ! tmp FIPS code // char SIC
+        CHARACTER(FPILEN3) :: CFIPSICL = ' ' ! tmp FIPS code // char left SIC
+        CHARACTER(MACLEN3) :: CMCT = ' '     ! tmp MACT code
+        CHARACTER(MSCLEN3) :: CMSCC = ' '    ! tmp SCC // MACT
+        CHARACTER(MSTLEN3) :: CMST = ' '     ! tmp Country/state code // MACT
+        CHARACTER(MSSLEN3) :: CMSTSC = ' '   ! tmp Country/state code // SCC // MACT
+        CHARACTER(MFPLEN3) :: CMFP = ' '     ! tmp FIPS code // MACT
+        CHARACTER(MFSLEN3) :: CMFPSC = ' '   ! tmp FIPS code // SCC // MACT
+        CHARACTER(STPLEN3) :: CSTYP = ' '    ! tmp source type code
 
-        CHARACTER*16 :: PROGNAME = 'ASGNCNTL' ! program name
+        CHARACTER(16) :: PROGNAME = 'ASGNCNTL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNCNTL
@@ -647,12 +647,12 @@ C               used instead of SIC matches.
             SUBROUTINE REPORT_SCC_USE( CHARTNUM )
 
 C.............  Internal subprogram arguments.
-            CHARACTER*2, INTENT (IN) :: CHARTNUM
+            CHARACTER(2), INTENT (IN) :: CHARTNUM
 
 C.............  Local variables
             INTEGER   L1, L2, NZ
-            CHARACTER(LEN=FIPLEN3+SCCLEN3) :: BUFFER
-            CHARACTER*256 MESG
+            CHARACTER(FIPLEN3+SCCLEN3) :: BUFFER
+            CHARACTER(256) MESG
 
 C----------------------------------------------------------------------
 

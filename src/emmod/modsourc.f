@@ -72,19 +72,19 @@
 
         REAL   , POINTER,     PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
 
-        CHARACTER(LEN=SCCLEN3), POINTER,     PUBLIC:: CSCC   ( : ) ! SCC
-        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC:: CORIS  ( : ) ! DOE plant ID
-        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID ( : ) ! boiler ID
-        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK  ( : ) ! link
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC ( : ) ! plant desc
-        CHARACTER(LEN=ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE ( : ) ! vehicle type
-        CHARACTER(LEN=ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
-        CHARACTER(LEN=MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
-        CHARACTER(LEN=NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
-        CHARACTER(LEN=STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
+        CHARACTER(SCCLEN3), POINTER,     PUBLIC:: CSCC   ( : ) ! SCC
+        CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC:: CORIS  ( : ) ! DOE plant ID
+        CHARACTER(BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID ( : ) ! boiler ID
+        CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC:: CLINK  ( : ) ! link
+        CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC ( : ) ! plant desc
+        CHARACTER(ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
+        CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE ( : ) ! vehicle type
+        CHARACTER(ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
+        CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
+        CHARACTER(NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
+        CHARACTER(STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
         
-        CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
@@ -115,13 +115,13 @@
         REAL   , POINTER,     PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
         REAL   , ALLOCATABLE, PUBLIC:: VMTA  ( : ) !  vehicle miles traveled
 
-        CHARACTER(LEN=SCCLEN3), POINTER,     PUBLIC:: CSCCA  ( : ) ! SCC
-        CHARACTER(LEN=ORSLEN3), ALLOCATABLE, PUBLIC:: CORISA ( : ) ! DOE plant ID
-        CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) ! boiler ID
-        CHARACTER(LEN=LNKLEN3), ALLOCATABLE, PUBLIC:: CLINKA ( : ) ! link
-        CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) ! plant desc
-        CHARACTER(LEN=ALLCAS3), POINTER,     PUBLIC:: CSOURCA( : ) ! concat src
-        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) ! vehicle type
+        CHARACTER(SCCLEN3), POINTER,     PUBLIC:: CSCCA  ( : ) ! SCC
+        CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC:: CORISA ( : ) ! DOE plant ID
+        CHARACTER(BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) ! boiler ID
+        CHARACTER(LNKLEN3), ALLOCATABLE, PUBLIC:: CLINKA ( : ) ! link
+        CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) ! plant desc
+        CHARACTER(ALLCAS3), POINTER,     PUBLIC:: CSOURCA( : ) ! concat src
+        CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) ! vehicle type
 
 !.........  Unsorted list of file numbers and records by source
         INTEGER, PUBLIC :: NSTRECS                      ! size of SRCSBYREC

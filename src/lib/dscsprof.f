@@ -49,7 +49,7 @@ C...........   Include files
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         INDEX1
         REAL            STR2REAL
@@ -69,18 +69,18 @@ C.........  Local parameters
 C...........   Arrays for getting pollutant-specific information from file
         INTEGER       NENTRA ( NIPOL )   ! number of table entries per pollutant
         INTEGER       NSPECA ( NIPOL )   ! number of species per pollutant
-        CHARACTER*16  POLNAMA( NIPOL )   ! unsorted pollutant names
+        CHARACTER(16) POLNAMA( NIPOL )   ! unsorted pollutant names
 
 C...........   Arrays for getting species-specific information from file
-        INTEGER     , ALLOCATABLE :: INDX1A ( : ) ! sorting index for SPECNMA
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SPECNMA ( : )   ! unsort spcs names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPNAMES( :,: ) ! unsort names per pollutant
-        LOGICAL     , ALLOCATABLE :: LMOLAR ( : ) ! true: moles conversion is not mass
+        INTEGER,            ALLOCATABLE :: INDX1A ( : )    ! sorting index for SPECNMA
+        CHARACTER(IOVLEN3), ALLOCATABLE :: SPECNMA ( : )   ! unsort spcs names
+        CHARACTER(IOVLEN3), ALLOCATABLE :: TMPNAMES( :,: ) ! unsort names per pollutant
+        LOGICAL,            ALLOCATABLE :: LMOLAR ( : )    ! true: moles conversion is not mass
                 
         INTEGER        IPOS( 10 )       ! position in input pollutant list
 
 C...........   Other arrays
-        CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
+        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
 
 C...........   Local variables
 
@@ -101,14 +101,14 @@ C...........   Local variables
         LOGICAL     :: EFLAG    = .FALSE.   ! true: error found
         LOGICAL     :: INHEADER = .FALSE.   ! true: in file header
 
-        CHARACTER*256  LINE       ! read buffer for a line
-        CHARACTER*256  MESG       ! message buffer
+        CHARACTER(256) LINE       ! read buffer for a line
+        CHARACTER(256) MESG       ! message buffer
         
-        CHARACTER(LEN=SPNLEN3)  TMPPRF     ! tmp profile number
-        CHARACTER(LEN=IOVLEN3)  POLNAM     ! tmp pollutant name
-        CHARACTER(LEN=IOVLEN3)  SPECNM     ! tmp species name
+        CHARACTER(SPNLEN3)  TMPPRF     ! tmp profile number
+        CHARACTER(IOVLEN3)  POLNAM     ! tmp pollutant name
+        CHARACTER(IOVLEN3)  SPECNM     ! tmp species name
 
-        CHARACTER*16 :: PROGNAME = 'DSCSPROF' ! program name
+        CHARACTER(16) :: PROGNAME = 'DSCSPROF' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine DSCSPROF

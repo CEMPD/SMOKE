@@ -61,25 +61,25 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
      
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF   
+        CHARACTER(2)    CRLF   
         INTEGER         ENVINT 
         LOGICAL         ENVYN
-        CHARACTER*50    GETCFDSC
+        CHARACTER(50)   GETCFDSC
         INTEGER         GETDATE
         INTEGER         GETFLINE
         INTEGER         GETNUM
         LOGICAL         GETYN
-        CHARACTER*10    HHMMSS
+        CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
-        CHARACTER*14    MMDDYY
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(14)   MMDDYY
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         PROMPTFFILE
         INTEGER         SECSDIFF
-        CHARACTER*16    VERCHAR
+        CHARACTER(16)   VERCHAR
         LOGICAL         SETENVVAR
         
         EXTERNAL        CRLF, ENVINT, ENVYN, GETDATE, GETFLINE, GETNUM, 
@@ -89,9 +89,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C.........  Meteorology data settings
         INTEGER, ALLOCATABLE :: METCHECK ( : )  ! dimension: no. time steps
                                                 ! value indicates valid temperature file 
-        CHARACTER(LEN=256), ALLOCATABLE :: METLIST( : ) ! list of temperature file names        
+        CHARACTER(256), ALLOCATABLE :: METLIST( : ) ! list of temperature file names        
         INTEGER, ALLOCATABLE :: RADCHECK ( : )  ! valid radiation file for each time step
-        CHARACTER(LEN=256), ALLOCATABLE :: RADLIST( : ) ! list of radiation file names
+        CHARACTER(256), ALLOCATABLE :: RADLIST( : ) ! list of radiation file names
 
 C.........  Gridded meteorology data
                 
@@ -149,24 +149,24 @@ C.......   BEIS2 internal, output species
         REAL, ALLOCATABLE :: EMISS( :, :, : )         ! emissions in tons/hour
 
 
-        CHARACTER*5      CTZONE     ! string of time zone
-        CHARACTER*16     RADNAM     !  string for shortwave radiation reaching ground
-        CHARACTER*16     TMPRNAM    !  string for temperature 
-        CHARACTER*16     PRESNAM    !  string for surface pressure
-        CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
-        CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
-        CHARACTER*50  :: LUSE      !  temporary string for land use description
-        CHARACTER*50  :: LUSE2     !  temporary string for 2nd land use desc.
+        CHARACTER(5)     CTZONE     ! string of time zone
+        CHARACTER(16)    RADNAM     !  string for shortwave radiation reaching ground
+        CHARACTER(16)    TMPRNAM    !  string for temperature 
+        CHARACTER(16)    PRESNAM    !  string for surface pressure
+        CHARACTER(50) :: METSCEN    !  temporary string for met scenario name
+        CHARACTER(50) :: CLOUDSHM   !  temporary string for cloud scheme name
+        CHARACTER(50) :: LUSE       !  temporary string for land use description
+        CHARACTER(50) :: LUSE2      !  temporary string for 2nd land use desc.
 
 C.......   Name tables for file NNAME
 
-        CHARACTER*16,ALLOCATABLE ::  NORMV( : )   ! names for VOC vbles
-        CHARACTER*16,ALLOCATABLE ::  NORMN( : )   ! names for  NO-emission vbles
-        CHARACTER*16,ALLOCATABLE ::  EMSPC( : )   ! names of emitting species 
+        CHARACTER(16), ALLOCATABLE ::  NORMV( : )   ! names for VOC vbles
+        CHARACTER(16), ALLOCATABLE ::  NORMN( : )   ! names for  NO-emission vbles
+        CHARACTER(16), ALLOCATABLE ::  EMSPC( : )   ! names of emitting species 
 
-        CHARACTER(LEN=SPNLEN3)       SPPRO        ! speciation profile to use
+        CHARACTER(SPNLEN3)       SPPRO        ! speciation profile to use
 
-        CHARACTER*72    PARMENU( 5 )            ! Methods to calc. PAR
+        CHARACTER(72)    PARMENU( 5 )            ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use MM5 generated RGND or RSD',
      &             'Use KUO cloud attenuation',
@@ -181,14 +181,14 @@ C...........   Logical names and unit numbers
         INTEGER         MDEV    !  unit number for temperature list file
         INTEGER         DDEV    !  unit number for radiation list file
             
-        CHARACTER*16    ENAME   !  logical name for emissions output (moles)
-        CHARACTER*16    SNAME   !  logical name for emissions output (mass)
-        CHARACTER*16    NNAME   !  logical name for normalized-emissions input
-        CHARACTER*16    NNAME2  !  logical name for 2nd norm emissions input
-        CHARACTER*16    BNAME   !  logical name for frost switch input
-        CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
-        CHARACTER*16    MNAME   !  logical name for gridded temperature file
-        CHARACTER*16    RNAME   !  logical name for gridded radiation file
+        CHARACTER(16)   ENAME   !  logical name for emissions output (moles)
+        CHARACTER(16)   SNAME   !  logical name for emissions output (mass)
+        CHARACTER(16)   NNAME   !  logical name for normalized-emissions input
+        CHARACTER(16)   NNAME2  !  logical name for 2nd norm emissions input
+        CHARACTER(16)   BNAME   !  logical name for frost switch input
+        CHARACTER(16)   GNAME   !  logical name for GRID_CRO_2D
+        CHARACTER(16)   MNAME   !  logical name for gridded temperature file
+        CHARACTER(16)   RNAME   !  logical name for gridded radiation file
 
 C...........   Other variables and their descriptions:
 
@@ -230,16 +230,16 @@ C...........   Other variables and their descriptions:
         LOGICAL ::      METOPEN = .FALSE.  ! true: a met I/O API file is open
         LOGICAL ::      RADOPEN = .FALSE.  ! true: a rad I/O API file is open
 
-        CHARACTER*256   METFILE  !  full gridded temperature file name
-        CHARACTER*256   RADFILE  !  full gridded radiation/cloud file name
-        CHARACTER*256   DUPFILE  !  duplicate file name
-        CHARACTER*256   NEXTFILE !  next file name to be opened
+        CHARACTER(256)  METFILE  !  full gridded temperature file name
+        CHARACTER(256)  RADFILE  !  full gridded radiation/cloud file name
+        CHARACTER(256)  DUPFILE  !  duplicate file name
+        CHARACTER(256)  NEXTFILE !  next file name to be opened
         
-        CHARACTER*300   MESG    !  message buffer for M3EXIT()
+        CHARACTER(300)  MESG    !  message buffer for M3EXIT()
 
-        CHARACTER*14    DTBUF        ! date buffer
+        CHARACTER(14)   DTBUF        ! date buffer
         
-        CHARACTER*16 :: PROGNAME = 'TMPBIO'   !  program name
+        CHARACTER(16) :: PROGNAME = 'TMPBIO'   !  program name
 
 C***********************************************************************
 C   begin body of program TMPBIO

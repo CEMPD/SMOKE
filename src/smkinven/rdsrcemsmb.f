@@ -47,25 +47,25 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         LOGICAL                ENVYN
         
         EXTERNAL   CRLF, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=RWTLEN3), INTENT(OUT) :: CRWT      ! roadway type
-        CHARACTER(LEN=LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
-        INTEGER,                INTENT(OUT) :: NVARPERLN ! no. variables per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(RWTLEN3), INTENT(OUT) :: CRWT      ! roadway type
+        CHARACTER(LNKLEN3), INTENT(OUT) :: CLNK      ! link ID
+        INTEGER,            INTENT(OUT) :: NVARPERLN ! no. variables per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXDATFIL = 60 ! arbitrary max data variables in file
 
 C...........   Local allocatable arrays
-        CHARACTER(LEN=25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
+        CHARACTER(25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
         
 C...........   Other local variables
         INTEGER         I       ! counters and indices
@@ -82,9 +82,9 @@ C...........   Other local variables
         LOGICAL, SAVE:: FIXED    = .FALSE. ! true: input file is fixed-format
         LOGICAL, SAVE:: LFLAG    = .FALSE. ! true: link file
  
-        CHARACTER(LEN=300)     MESG            ! message buffer
+        CHARACTER(300)     MESG            ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCEMSMB' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCEMSMB' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCEMSMB

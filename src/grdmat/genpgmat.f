@@ -88,9 +88,9 @@ C...........   Other local variables
 
         LOGICAL         GFLAG     !  generate output gridding matrix if true
 
-        CHARACTER*300   MESG      !  message buffer 
+        CHARACTER(300)  MESG      !  message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'GENPGMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENPGMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENPGMAT

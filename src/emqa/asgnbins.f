@@ -88,9 +88,9 @@ C...........   Local parameters
         INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SICLEN3 + SPNLEN3
 
 C...........   Sorting arrays
-        INTEGER              , ALLOCATABLE :: SORTIDX( : )
+        INTEGER          , ALLOCATABLE :: SORTIDX( : )
 
-        CHARACTER(LEN=BUFLEN), ALLOCATABLE :: SORTBUF( : )
+        CHARACTER(BUFLEN), ALLOCATABLE :: SORTBUF( : )
 
 C...........   Local variables
         INTEGER         B, C, F, I, J, K, LB, S
@@ -111,18 +111,18 @@ C...........   Local variables
         INTEGER         SRGID2            ! tmp fallback surrogate ID
         INTEGER         WEKID             ! tmp weekly profile number
 
-        CHARACTER*1            ESTAT      ! tmp elevated status
-        CHARACTER*60           FMTBUF     ! format buffer
-        CHARACTER*300          MESG       ! message buffer
+        CHARACTER              ESTAT      ! tmp elevated status
+        CHARACTER(60)          FMTBUF     ! format buffer
+        CHARACTER(300)         MESG       ! message buffer
 
-        CHARACTER(LEN=BUFLEN)  BUFFER     ! sorting info buffer
-        CHARACTER(LEN=BUFLEN)  LBUF       ! previous sorting info buffer
-        CHARACTER(LEN=SCCLEN3) SCC        ! tmp SCC
-        CHARACTER(LEN=SPNLEN3) SPCID      ! tmp speciation profile
-        CHARACTER(LEN=PLTLEN3) PLANT      ! tmp plant ID
-        CHARACTER(LEN=PLTLEN3) PREVPLT    ! previous plant ID
+        CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
+        CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
+        CHARACTER(SCCLEN3) SCC        ! tmp SCC
+        CHARACTER(SPNLEN3) SPCID      ! tmp speciation profile
+        CHARACTER(PLTLEN3) PLANT      ! tmp plant ID
+        CHARACTER(PLTLEN3) PREVPLT    ! previous plant ID
 
-        CHARACTER*16 :: PROGNAME = 'ASGNBINS' ! program name
+        CHARACTER(16) :: PROGNAME = 'ASGNBINS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ASGNBINS

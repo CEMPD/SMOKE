@@ -66,7 +66,7 @@ C...........   INCLUDES
 
 C.........  EXTERNAL FUNCTIONS
         LOGICAL      CHKREAL
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         LOGICAL      ENVYN
         INTEGER      FINDC
         INTEGER      GETTZONE
@@ -101,7 +101,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: SO2IDX   = 2   ! index to CEMPOLS for SO2
         INTEGER, PARAMETER :: NOXIDX   = 3   ! index to CEMPOLS for NOX
 
-        CHARACTER(LEN=IOVLEN3), PARAMETER :: CEMPOLS( NCEMPOL ) = 
+        CHARACTER(IOVLEN3), PARAMETER :: CEMPOLS( NCEMPOL ) = 
      &                                      ( / 'CO2             '
      &                                        , 'SO2             '
      &                                        , 'NOX             ' / )
@@ -114,8 +114,8 @@ C...........   Temporary read arrays
         REAL             CEMEMIS( NCEMPOL )   ! CEM emissions for line
 
 C.........  File names and unit numbers
-        CHARACTER(LEN=IOVLEN3) :: ENAME  ! emis i/o api inven logical name
-        CHARACTER(LEN=IOVLEN3) :: ANAME  ! emis ASCII inven logical name
+        CHARACTER(IOVLEN3) :: ENAME  ! emis i/o api inven logical name
+        CHARACTER(IOVLEN3) :: ANAME  ! emis ASCII inven logical name
 
 C...........   Other local variables
         INTEGER          HS, I, J, L, L1, L2, S, S1, S2, T, V  ! counters and indices
@@ -167,20 +167,20 @@ C...........   Other local variables
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: YFLAG  = .FALSE. ! true: year mismatch found
 
-        CHARACTER*5      BBUF             ! tmp boiler ID from CEM data
-        CHARACTER*256 :: MESG   = ' '     ! message buffer
+        CHARACTER(5)      BBUF             ! tmp boiler ID from CEM data
+        CHARACTER(256) :: MESG   = ' '     ! message buffer
 
-        CHARACTER(LEN=BLRLEN3) BLID       ! tmp boiler ID with inventory length
-        CHARACTER(LEN=BLRLEN3) PBLID      ! previous boiler ID
-        CHARACTER(LEN=IOVLEN3) CBUF       ! tmp variable name
-        CHARACTER(LEN=FIPLEN3) CFIP       ! tmp co/st/cy code
-        CHARACTER(LEN=CHRLEN3) PNT        ! tmp characteristic 1
-        CHARACTER(LEN=ORSLEN3) CORS       ! tmp DOE plant ID
-        CHARACTER(LEN=ORSLEN3) PCORS      ! previous DOE plant ID
-        CHARACTER(LEN=SCCLEN3) TSCC       ! tmp source category code
-        CHARACTER(LEN=ALLLEN3) CSRC       ! tmp source string
+        CHARACTER(BLRLEN3) BLID       ! tmp boiler ID with inventory length
+        CHARACTER(BLRLEN3) PBLID      ! previous boiler ID
+        CHARACTER(IOVLEN3) CBUF       ! tmp variable name
+        CHARACTER(FIPLEN3) CFIP       ! tmp co/st/cy code
+        CHARACTER(CHRLEN3) PNT        ! tmp characteristic 1
+        CHARACTER(ORSLEN3) CORS       ! tmp DOE plant ID
+        CHARACTER(ORSLEN3) PCORS      ! previous DOE plant ID
+        CHARACTER(SCCLEN3) TSCC       ! tmp source category code
+        CHARACTER(ALLLEN3) CSRC       ! tmp source string
 
-        CHARACTER*16 :: PROGNAME = 'RDCEMPD' !  program name
+        CHARACTER(16) :: PROGNAME = 'RDCEMPD' !  program name
 
 C***********************************************************************
 C   begin body of program RDCEMPD

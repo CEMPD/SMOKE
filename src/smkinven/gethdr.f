@@ -56,7 +56,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2            CRLF
+        CHARACTER(2)           CRLF
         INTEGER                GETNLIST
         INTEGER                INDEX1
         INTEGER                STR2INT
@@ -77,7 +77,7 @@ C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT(OUT) :: EOS     ! error status
 
 C...........   Local allocatable arrays
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: UNITS( : )
+        CHARACTER(IOULEN3), ALLOCATABLE :: UNITS( : )
 
 C...........   Other local variables
         INTEGER         I, J, K, L, L2, V  ! counters and indices
@@ -93,17 +93,17 @@ C...........   Other local variables
         REAL            DFAC    !  denominator units conversion factor
         REAL            NFAC    !  numerator units conversion factor
 
-        CHARACTER*1     CBUF    !  single char buffer
-        CHARACTER*20    CNTRY   !  country name
-        CHARACTER*300   MESG    !  message buffer
-        CHARACTER*600   BUFFER  !  tmp line buffer, upper case
+        CHARACTER       CBUF    !  single char buffer
+        CHARACTER(20)   CNTRY   !  country name
+        CHARACTER(300)  MESG    !  message buffer
+        CHARACTER(600)  BUFFER  !  tmp line buffer, upper case
 
-        CHARACTER(LEN=IOVLEN3) CVAR      ! tmp variable name
-        CHARACTER(LEN=IOULEN3) DBUF      ! tmp units denominator
-        CHARACTER(LEN=IOULEN3) NBUF      ! tmp units numerator
-        CHARACTER(LEN=IOULEN3) UBUF      ! tmp units
+        CHARACTER(IOVLEN3) CVAR      ! tmp variable name
+        CHARACTER(IOULEN3) DBUF      ! tmp units denominator
+        CHARACTER(IOULEN3) NBUF      ! tmp units numerator
+        CHARACTER(IOULEN3) UBUF      ! tmp units
 
-        CHARACTER*16 :: PROGNAME = 'GETHDR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'GETHDR' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETHDR

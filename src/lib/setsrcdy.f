@@ -69,9 +69,9 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: UFLAG  = .FALSE. ! true: all srcs use same day start
 
-        CHARACTER*300 MESG          ! message buffer
+        CHARACTER(300) MESG          ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'SETSRCDY' ! program name
+        CHARACTER(16) :: PROGNAME = 'SETSRCDY' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SETSRCDY

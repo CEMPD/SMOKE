@@ -48,10 +48,10 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCM3GRD
-        CHARACTER*10    HHMMSS
-        CHARACTER*14    MMDDYY
+        CHARACTER(10)   HHMMSS
+        CHARACTER(14)   MMDDYY
         INTEGER         PROMPTFFILE 
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         INTEGER         TRIMLEN
         INTEGER         WKDAY
         
@@ -61,7 +61,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   PARAMETER
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.......  Input and output emissions
 
@@ -99,16 +99,16 @@ C...........   Other local variables
         INTEGER         IDEV           !  unit number for emission input file
         LOGICAL         WFLAG, EFLAG   !  error flag
 
-        CHARACTER*16    ENAME   !  logical name for emission output file
-        CHARACTER*16, ALLOCATABLE ::  KSPEC( : )  ! netCDF output species
-        CHARACTER*16            COORD    !  coordinate system name 
-        CHARACTER*16            COORUNIT !  coordinate system projection units
-        CHARACTER*16            GRDNM    !  grid name
-        CHARACTER*80            GDESC    !  grid description
+        CHARACTER(16)    ENAME   !  logical name for emission output file
+        CHARACTER(16), ALLOCATABLE ::  KSPEC( : )  ! netCDF output species
+        CHARACTER(16)            COORD    !  coordinate system name 
+        CHARACTER(16)            COORUNIT !  coordinate system projection units
+        CHARACTER(16)            GRDNM    !  grid name
+        CHARACTER(80)            GDESC    !  grid description
 
-        CHARACTER*256   MESG    !  message buffer
+        CHARACTER(256)  MESG    !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'UAM2NCF'   !  program name
+        CHARACTER(16) :: PROGNAME = 'UAM2NCF'   !  program name
 
 C***********************************************************************
 C   begin body of program  

@@ -69,7 +69,7 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       INDEX1
 
         EXTERNAL   CRLF, INDEX1
@@ -79,8 +79,8 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: SSNAME     ! mass-based spec matrix name
 
 C...........   Local paramaters
-        CHARACTER*7, PARAMETER :: RPRTPRE = 'ProjRep'   ! Check prjctn prefix
-        CHARACTER*8, PARAMETER :: DIFFPRE = 'ProjDiff'  ! Check prjctn diff
+        CHARACTER(7), PARAMETER :: RPRTPRE = 'ProjRep'   ! Check prjctn prefix
+        CHARACTER(8), PARAMETER :: DIFFPRE = 'ProjDiff'  ! Check prjctn diff
 
 C...........   Sorting index for creating unique species list
         INTEGER  :: SRTIDX( NSVARS )
@@ -100,15 +100,15 @@ C...........   Other local variables
         LOGICAL       :: EFLAG   = .FALSE. !  true: error found
         LOGICAL       :: SFLAG   = .FALSE. !  true: speciation
 
-        CHARACTER*300    MESG              !  message buffer
+        CHARACTER(300)   MESG              !  message buffer
 
-        CHARACTER(LEN=LV1)      ABUF       !  tmp activity
-        CHARACTER(LEN=LV2)      EBUF       !  tmp emission type
-        CHARACTER(LEN=LV1)      PBUF       !  previous species
-        CHARACTER(LEN=LV1)      SBUF       !  tmp species
-        CHARACTER(LEN=LV3)      VBUF       !  tmp speciation variable name
+        CHARACTER(LV1)      ABUF       !  tmp activity
+        CHARACTER(LV2)      EBUF       !  tmp emission type
+        CHARACTER(LV1)      PBUF       !  previous species
+        CHARACTER(LV1)      SBUF       !  tmp species
+        CHARACTER(LV3)      VBUF       !  tmp speciation variable name
 
-        CHARACTER*16 :: PROGNAME = 'BLDREPIDX' ! program name
+        CHARACTER(16) :: PROGNAME = 'BLDREPIDX' ! program name
 
 C***********************************************************************
 C   begin body of subroutine BLDREPIDX

@@ -57,24 +57,24 @@ C        PARAMETER( SOL2PAR = 2.089314 )   ! old BEIS2 before Alados 1996
 
 C.......   Names for beis species, emitted model species:
 
-        CHARACTER*4    BIOLUSE( LUSES )
+        CHARACTER(4)    BIOLUSE( LUSES )
         DATA            BIOLUSE / 'GRAS', 'FORE', 'WETL', 'AGRI' /
 
-        CHARACTER*4    BIOLTYPE( BTYPES )
+        CHARACTER(4)    BIOLTYPE( BTYPES )
         DATA            BIOLTYPE / 
      &            'PINE', 'DECD', 'CONF', 'AGRC', 'LEAF', 'OTHR' /
 
-        CHARACTER*16    BIOSPC( BSPCS )
+        CHARACTER(16)   BIOSPC( BSPCS )
         DATA            BIOSPC / 'ISOP', 'TERP', 'OVOC', 'NO' /
 
-        CHARACTER(LEN=IOVLEN3)  BPOL( BSPCS )
+        CHARACTER(IOVLEN3)  BPOL( BSPCS )
         DATA            BPOL / 'ISOP', 'OVOC', 'NO', 'TERP' /
 
-        CHARACTER*4  OTHERID( RMTREE )
+        CHARACTER(4)  OTHERID( RMTREE )
         DATA OTHERID / 'Mixf', 'Conf', 'Harf', 'Borf', 'Spin',
      &                 'Ufor', 'Oak', 'Odcd', 'Cnif' /
 
-        CHARACTER*4  SPFORID( SPTREE )
+        CHARACTER(4)  SPFORID( SPTREE )
         DATA  SPFORID / 'Borf', 'Wcnf', 'Wetf', 'Wmxf', 'Wwdl' /
 
 C................   end   BIODIMS3.EXT   ....................................

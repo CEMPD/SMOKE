@@ -52,7 +52,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        GETFLINE
         INTEGER        STR2INT
         INTEGER        FIND1
-        CHARACTER*2    CRLF    
+        CHARACTER(2)   CRLF    
         
         EXTERNAL  CHKINT, GETFLINE, STR2INT, FIND1, CRLF
 
@@ -69,7 +69,7 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: IDX2 ( : )    ! index into inv. county array
 
 C...........   Local arrays
-        CHARACTER*3   SEGMENT( 4 )          ! parsed input line
+        CHARACTER(3)  SEGMENT( 4 )          ! parsed input line
         
 C...........   Other local variables
         INTEGER I, J, N, K                ! counters and indices                     
@@ -87,10 +87,10 @@ C...........   Other local variables
         LOGICAL      :: DUPFLAG = .FALSE.   ! true: duplicate entries found
         LOGICAL      :: EFLAG   = .FALSE.   ! true: error found    
         
-        CHARACTER(LEN=100)     LINE     !  line buffer
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(100)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDMCREF'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDMCREF'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine RDMCREF

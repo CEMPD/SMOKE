@@ -49,7 +49,7 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
         INTEGER, INTENT (IN)  :: FDEV    !  unit number for elev srcs file 
         INTEGER, INTENT (IN)  :: NLINES  !  no. veg types
  
-        CHARACTER(LEN=BVGLEN3), INTENT (OUT)    :: VGID( NLINES )
+        CHARACTER(BVGLEN3), INTENT (OUT)    :: VGID( NLINES )
         INTEGER, INTENT (OUT)    :: LINDX( NLINES )
         REAL, INTENT (OUT)    :: EFACS( NLINES, NSEF ) 
  
@@ -57,9 +57,9 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
         INTEGER       I, J               !  counters
         INTEGER       ISTAT              !  iostat error
 
-        CHARACTER*300   MESG             !  message buffer
+        CHARACTER(300)  MESG             !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDBEFAC' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDBEFAC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDBEFAC

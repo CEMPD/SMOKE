@@ -43,23 +43,23 @@ C...........   INCLUDE FILES:
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF 
+        CHARACTER(2)    CRLF 
         INTEGER         TRIMLEN
 
         EXTERNAL        CRLF, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)   FILNAM         ! Name of file being checked	
-        CHARACTER*(*)   FILDESC	       ! Description of file being checked
-        CHARACTER*(*)   COMPDESC       ! Description of comparison value
-        INTEGER         NSRC           ! Number of sources comparing against
-        INTEGER         STATUS         ! Exit status
+        CHARACTER(*)   FILNAM         ! Name of file being checked	
+        CHARACTER(*)   FILDESC	       ! Description of file being checked
+        CHARACTER(*)   COMPDESC       ! Description of comparison value
+        INTEGER        NSRC           ! Number of sources comparing against
+        INTEGER        STATUS         ! Exit status
 
 C...........   Other local variables
 
-        CHARACTER*256   MESG 
+        CHARACTER(256)  MESG 
 
-        CHARACTER*16 :: PROGNAME = 'CHKISIZ' ! program name
+        CHARACTER(16) :: PROGNAME = 'CHKISIZ' ! program name
 
 C***********************************************************************
 C   begin body of subroutine CHKISIZ

@@ -49,21 +49,21 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
 
         EXTERNAL        CRLF, INDEX1
 
 C...........   LOCAL PARAMETER:
-        INTEGER    , PARAMETER :: NLIST   = 5
-        CHARACTER*1, PARAMETER :: LETLIST( NLIST ) = 
+        INTEGER  , PARAMETER :: NLIST   = 5
+        CHARACTER, PARAMETER :: LETLIST( NLIST ) = 
      &                            ( / 'A', 'B', 'M', 'P', 'E' / )
 
-        CHARACTER*6, PARAMETER :: CATTYPE( NLIST ) = 
+        CHARACTER(6), PARAMETER :: CATTYPE( NLIST ) = 
      &                            ( / 'AREA  ', 'BIOGEN', 'MOBILE',
      &                                'POINT ', 'EVERY ' / )
 
-        CHARACTER*6, PARAMETER :: CATLDSC( NLIST ) = 
+        CHARACTER(6), PARAMETER :: CATLDSC( NLIST ) = 
      &                            ( / 'Area  ', 'Biogen', 'Mobile',
      &                                'Point ', 'Every ' / )
 
@@ -72,11 +72,11 @@ C...........   LOCAL VARIABLES their descriptions:
         INTEGER      :: IOS = 0    ! i/o status 
         INTEGER         J          ! index
 
-        CHARACTER*16 :: STRBLK = ' '
-        CHARACTER*16    STRVAL         
-        CHARACTER*200   MESG       ! Message buffer
+        CHARACTER(16) :: STRBLK = ' '
+        CHARACTER(16)    STRVAL         
+        CHARACTER(200)   MESG       ! Message buffer
   
-        CHARACTER*16 :: PROGNAME = 'GETCTGRY'    ! Program name
+        CHARACTER(16) :: PROGNAME = 'GETCTGRY'    ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETCTGRY

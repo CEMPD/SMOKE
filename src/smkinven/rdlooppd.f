@@ -47,7 +47,7 @@ C.........  This module contains the information about the source category
         IMPLICIT NONE
 
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         INTEGER      GETFLINE
         INTEGER      JULIAN
         INTEGER      JUNIT
@@ -81,7 +81,7 @@ C...........   Local file formats
         INTEGER, ALLOCATABLE, SAVE :: FILFMT( : )  ! file format code
 
 C...........   Character strings of day- or hr-specific list file 
-        CHARACTER*300, ALLOCATABLE, SAVE :: NLSTSTR( : )
+        CHARACTER(300), ALLOCATABLE, SAVE :: NLSTSTR( : )
 
 C...........   Other local variables
         INTEGER   I, L                        ! counters and indices
@@ -107,11 +107,11 @@ C...........   Other local variables
         LOGICAL          NFLAG             ! true: retrieve no. sources
         LOGICAL          NEWLOOP           ! true: start of a new read loop
 
-        CHARACTER*4      PERIOD            ! tmp period name
-        CHARACTER*200    NAMTMP            ! file name buffer
-        CHARACTER*300    MESG              ! message buffer
+        CHARACTER(4)     PERIOD            ! tmp period name
+        CHARACTER(200)   NAMTMP            ! file name buffer
+        CHARACTER(300)   MESG              ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDLOOPPD' !  program name
+        CHARACTER(16) :: PROGNAME = 'RDLOOPPD' !  program name
 
 C***********************************************************************
 C   begin body of program RDLOOPPD

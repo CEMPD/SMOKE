@@ -123,8 +123,8 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2     CRLF
-        CHARACTER*10    HHMMSS
+        CHARACTER(2)    CRLF
+        CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
         INTEGER         WKDAY
 
@@ -132,13 +132,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Local temporary array for input and output variable names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: VARNAMES( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: INNAMES ( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE :: VARNAMES( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE :: INNAMES ( : )
 
 C...........   Local allocatable arrays for creating list of all explicit srcs
         INTEGER, ALLOCATABLE :: TMPSRC( : )
@@ -195,15 +195,15 @@ C...........   Other local variables
         REAL             RDUM1, RDUM2, RDUM3, RDUM4, RDUM5, RDUM6
         REAL             F1, F2, FB    ! tmp conversion factors
 
-        CHARACTER*16      SRGFMT           ! gridding surrogates format
-        CHARACTER*16   :: SRGGRDNM  = ' '  !  surrogates file grid name
-        CHARACTER*300          MESG    ! message buffer
-        CHARACTER(LEN=IOVLEN3) LBUF    ! previous species or pollutant name
-        CHARACTER(LEN=IOVLEN3) PBUF    ! tmp pollutant or emission type name
-        CHARACTER(LEN=IOVLEN3) SBUF    ! tmp species or pollutant name
-        CHARACTER(LEN=PLSLEN3) VBUF    ! pol to species or pol description buffer
+        CHARACTER(16)      SRGFMT           ! gridding surrogates format
+        CHARACTER(16)   :: SRGGRDNM  = ' '  !  surrogates file grid name
+        CHARACTER(300)     MESG    ! message buffer
+        CHARACTER(IOVLEN3) LBUF    ! previous species or pollutant name
+        CHARACTER(IOVLEN3) PBUF    ! tmp pollutant or emission type name
+        CHARACTER(IOVLEN3) SBUF    ! tmp species or pollutant name
+        CHARACTER(PLSLEN3) VBUF    ! pol to species or pol description buffer
 
-        CHARACTER*16  :: PROGNAME = 'SMKMERGE' ! program name
+        CHARACTER(16) :: PROGNAME = 'SMKMERGE' ! program name
 
 C***********************************************************************
 C   begin body of program SMKMERGE

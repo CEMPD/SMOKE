@@ -55,8 +55,8 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER   INDEX1
-        CHARACTER(LEN=IOULEN3) MULTUNIT
-        REAL                   UNITFAC 
+        CHARACTER(IOULEN3) MULTUNIT
+        REAL               UNITFAC 
 
         EXTERNAL     INDEX1, MULTUNIT, UNITFAC
 
@@ -70,12 +70,12 @@ C...........   Other local variables
         LOGICAL      :: FIXDESC = .FALSE. ! true: append info to description
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
 
-        CHARACTER*16           CURRUNIT   !  current unit
-        CHARACTER*16           CURRVNAME  !  current variable name
-        CHARACTER*300          MESG       !  message buffer
-        CHARACTER(LEN=IOVLEN3) CBUF       !  tmp variable name
+        CHARACTER(16)      CURRUNIT   !  current unit
+        CHARACTER(16)      CURRVNAME  !  current variable name
+        CHARACTER(300)     MESG       !  message buffer
+        CHARACTER(IOVLEN3) CBUF       !  tmp variable name
 
-        CHARACTER*16 :: PROGNAME = 'TMNAMUNT' ! program name
+        CHARACTER(16) :: PROGNAME = 'TMNAMUNT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine TMNAMUNT

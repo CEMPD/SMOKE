@@ -51,7 +51,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (OUT) :: GRPLIST( NLINES,3 ) ! contents of GROUP file
 
 C...........   Local arrays
-        CHARACTER(LEN=FIPLEN3) SEGMENT( 3 )          ! parsed input line
+        CHARACTER(FIPLEN3) SEGMENT( 3 )          ! parsed input line
         
 C...........   Other local variables
         INTEGER I, J, K                   ! counters and indices                     
@@ -61,10 +61,10 @@ C...........   Other local variables
 
         LOGICAL :: EFLAG      = .FALSE.   ! true: error found
         
-        CHARACTER(LEN=100)     LINE     !  line buffer
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(100)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDGRPLIST'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDGRPLIST'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine RDGRPLIST

@@ -46,11 +46,11 @@ C.........  This module contains the information about the source category
         IMPLICIT NONE
        
 C........  Function arguments
-        CHARACTER(LEN=*), INTENT (IN) :: TSCC   ! SCC code
+        CHARACTER(*), INTENT (IN) :: TSCC   ! SCC code
 
 C........  Local variables and their descriptions:
         
-        CHARACTER*16  :: PROGNAME = 'SETSCCTYPE' ! program name
+        CHARACTER(16) :: PROGNAME = 'SETSCCTYPE' ! program name
         
 C***********************************************************************
 C   begin body of function SETSCCTYPE

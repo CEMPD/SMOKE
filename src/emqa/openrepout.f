@@ -50,7 +50,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       GETEFILE
         INTEGER       JUNIT
 	LOGICAL	      SETENVVAR
@@ -65,14 +65,14 @@ C...........   Local variables
         INTEGER         I, L, L2        ! counters and indices
         INTEGER         IOS             ! i/o status
 
-	CHARACTER*3     FILENO          ! tmp file number buffer
-	CHARACTER*10	FMT             ! tmp format buffer
-        CHARACTER*16    VARBUF          ! logical file name buffer
-        CHARACTER*300   MESG            ! message buffer
-        CHARACTER*300   PNAME           ! physical file name on ENVSTR test
-	CHARACTER*300   NNAME           ! new physical file name buffer
+	CHARACTER(3)    FILENO          ! tmp file number buffer
+	CHARACTER(10)   FMT             ! tmp format buffer
+        CHARACTER(16)   VARBUF          ! logical file name buffer
+        CHARACTER(300)  MESG            ! message buffer
+        CHARACTER(300)  PNAME           ! physical file name on ENVSTR test
+	CHARACTER(300)  NNAME           ! new physical file name buffer
 
-        CHARACTER*16 :: PROGNAME = 'OPENREPOUT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENREPOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENREPOUT

@@ -43,9 +43,9 @@ C.........  Function arguments
 C...........   LOCAL VARIABLES and their descriptions:
        LOGICAL :: EFLAG      = .FALSE.   ! true: error found
 
-       CHARACTER*300          MESG      !  message buffer 
+       CHARACTER(300)          MESG      !  message buffer 
         
-       CHARACTER*16  :: PROGNAME = 'CVTVEHTYPE' ! program name
+       CHARACTER(16) :: PROGNAME = 'CVTVEHTYPE' ! program name
         
 C***********************************************************************
 C   begin body of function CVTVEHTYPE

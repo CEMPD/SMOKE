@@ -60,7 +60,7 @@ C...........   INCLUDES:
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         GETIFDSC
         LOGICAL         SETENVVAR
@@ -78,10 +78,10 @@ C...........   LOCAL VARIABLES their descriptions:
         LOGICAL    :: EFLAG = .FALSE.  ! true: error found
         LOGICAL       LAVEDAY     ! true: use average day emissions
 
-        CHARACTER*16  TMPNAME      ! tmp logical file name for map data files
-        CHARACTER*256 MESG         ! Message buffer
+        CHARACTER(16)  TMPNAME      ! tmp logical file name for map data files
+        CHARACTER(256) MESG         ! Message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETSINFO'    ! Program name
+        CHARACTER(16) :: PROGNAME = 'GETSINFO'    ! Program name
 
 C***********************************************************************
 C   begin body of subroutine GETSINFO

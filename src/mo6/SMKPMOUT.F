@@ -48,8 +48,8 @@ C  database file.
       REAL,DIMENSION(8) ::  PMAGGR  ! fully aggregated PM output
       REAL              ::  SUBVAL  ! 2.5 value to subtract from 10 value
 
-      CHARACTER(LEN=300) :: MESG                   ! message buffer
-      CHARACTER(LEN=16)  :: PROGNAME = 'SMKPMOUT'  ! program name
+      CHARACTER(300) :: MESG                   ! message buffer
+      CHARACTER(16)  :: PROGNAME = 'SMKPMOUT'  ! program name
 
 C  Begin body of subroutine SMKPMOUT
 

@@ -55,7 +55,7 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         FIND1  
 
@@ -84,9 +84,9 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first timwe routine called
 
-        CHARACTER*300    MESG              ! message buffer
+        CHARACTER(300)   MESG              ! message buffer
 
-        CHARACTER*16  :: PROGNAME = 'GRD2CNTY' ! program name
+        CHARACTER(16) :: PROGNAME = 'GRD2CNTY' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GRD2CNTY

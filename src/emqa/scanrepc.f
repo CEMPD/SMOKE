@@ -57,7 +57,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         LOGICAL       BLKORCMT
         INTEGER       GETFLINE
         INTEGER       GETNLIST
@@ -68,7 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! report configuration file unit no.
 
 C...........   Line parsing array
-        CHARACTER*300 SEGMENT( 100 )
+        CHARACTER(300) SEGMENT( 100 )
  
 C...........   Other local variables
         INTEGER         I, L    ! counters and indices
@@ -81,11 +81,11 @@ C...........   Other local variables
         LOGICAL       :: EFLAG   = .FALSE. !  true: error found
         LOGICAL       :: LCATSET = .FALSE. !  true: source category set
 
-        CHARACTER*300    BUFFER            !  line work buffer
-        CHARACTER*300    LINE              !  line input buffer
-        CHARACTER*300    MESG              !  message buffer
+        CHARACTER(300)   BUFFER            !  line work buffer
+        CHARACTER(300)   LINE              !  line input buffer
+        CHARACTER(300)   MESG              !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'SCANREPC' ! program name
+        CHARACTER(16) :: PROGNAME = 'SCANREPC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine SCANREPC

@@ -87,7 +87,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         EXTERNAL   CRLF
 
 C...........   SUBROUTINE ARGUMENTS
@@ -106,7 +106,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: STRLEN = 2000   ! Maximum info string length
 
 C...........   Arrays for source characteristics output formatting
-        CHARACTER*300 CHARS ( MXCHRS ) !  source fields for output
+        CHARACTER(300) CHARS ( MXCHRS ) !  source fields for output
 
         LOGICAL, ALLOCATABLE, SAVE :: LF ( : ) ! true if column should be output
 
@@ -132,13 +132,13 @@ C...........   Other local variables
 
         REAL        ECHECK                    ! tmp sum of emissions in a bin
 
-        CHARACTER*12            OUTDATE           !  output date string
-        CHARACTER*100        :: BADRGNM = 'Name unknown'
-        CHARACTER*100           BUFFER            !  string building buffer
-        CHARACTER*300           MESG              !  message buffer
-        CHARACTER(LEN=STRLEN)   STRING            !  output string
+        CHARACTER(12)       OUTDATE           !  output date string
+        CHARACTER(100)   :: BADRGNM = 'Name unknown'
+        CHARACTER(100)      BUFFER            !  string building buffer
+        CHARACTER(300)      MESG              !  message buffer
+        CHARACTER(STRLEN)   STRING            !  output string
 
-        CHARACTER*16 :: PROGNAME = 'WRREPOUT' ! program name
+        CHARACTER(16) :: PROGNAME = 'WRREPOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRREPOUT

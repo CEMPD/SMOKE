@@ -53,7 +53,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         EXTERNAL      CRLF
 
 C...........   SUBROUTINE ARGUMENTS:
@@ -77,9 +77,9 @@ C...........   Other local variables
         LOGICAL       :: LFLAG    = .FALSE. ! true: ALLOWABLE cntl packet exists
         LOGICAL       :: PFLAG    = .FALSE. ! true: PROJECTION packet exists
 
-        CHARACTER*300   MESG        ! message buffer
+        CHARACTER(300)  MESG        ! message buffer
 
-        CHARACTER*16 :: PROGNAME = 'ALOCCMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'ALOCCMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ALOCCMAT

@@ -55,7 +55,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FINDC
         INTEGER         GETNLIST
         INTEGER         GETFLINE
@@ -70,23 +70,23 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: FFORMAT           ! format of input file
  
 C...........   Local parameters
-        INTEGER    , PARAMETER :: AREATYP  = 1
-        INTEGER    , PARAMETER :: MOBILTYP = 2
-        INTEGER    , PARAMETER :: POINTTYP = 3
-        INTEGER    , PARAMETER :: MXTCOL   = 12
+        INTEGER, PARAMETER :: AREATYP  = 1
+        INTEGER, PARAMETER :: MOBILTYP = 2
+        INTEGER, PARAMETER :: POINTTYP = 3
+        INTEGER, PARAMETER :: MXTCOL   = 12
 
-        CHARACTER*6, PARAMETER :: LOCCATS( 3 ) = 
+        CHARACTER(6), PARAMETER :: LOCCATS( 3 ) = 
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
 C...........   Sorted pollutant/emission type names
-        INTEGER                   INDXP  ( NIPPA ) !  sorting index for pol/etyp
-        CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPPA ) !  sorted pol/act names
+        INTEGER               INDXP  ( NIPPA ) !  sorting index for pol/etyp
+        CHARACTER(IOVLEN3) :: SRTINAM( NIPPA ) !  sorted pol/act names
 
 C...........   Array of point source plant characeristics
-        CHARACTER(LEN=CHRLEN3) CHARS( 5 )
+        CHARACTER(CHRLEN3) CHARS( 5 )
 
 C...........   Array for reading temporal x-ref fields
-        CHARACTER*20            SEGMENT( MXTCOL )
+        CHARACTER(20)      SEGMENT( MXTCOL )
 
 C...........   Other local variables
         INTEGER         I, J, J1, J2, J3, K, L, N    !  counters and indices
@@ -116,25 +116,25 @@ C...........   Other local variables
         LOGICAL      :: PFLAG = .FALSE.   !  true: pol/act-spec entries skipped
         LOGICAL      :: SKIPREC = .FALSE. !  true: skip this x-ref entry
 
-        CHARACTER*1            SCC1     !  1st character of SCC
-        CHARACTER*5            CPOS     !  tmp sorted position of pol/act
-        CHARACTER*300          LINE     !  line buffer
-        CHARACTER*300          MESG     !  message buffer
+        CHARACTER          SCC1     !  1st character of SCC
+        CHARACTER(5)       CPOS     !  tmp sorted position of pol/act
+        CHARACTER(300)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER(LEN=SICLEN3) :: CDUM = '0' !  dummy character field for SIC
-        CHARACTER(LEN=MACLEN3) :: CDUM2= '0' !  dummy charecter field for MACT
-        CHARACTER(LEN=LNKLEN3) CLNK     !  temporary link code
-        CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
-        CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
-        CHARACTER(LEN=FIPLEN3) FIPZERO  !  buffer for zero FIPS code
-        CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
-        CHARACTER(LEN=SCCLEN3) SCCZERO  !  buffer for zero SCC
-        CHARACTER(LEN=PLTLEN3) PLT      !  tmp plant ID
-        CHARACTER(LEN=IOVLEN3) CPOA     !  temporary pollutant/emission type
-        CHARACTER(LEN=RWTLEN3) CRWT     !  roadway type no.
-        CHARACTER(LEN=VIDLEN3) CVID     !  vehicle type ID no.
+        CHARACTER(SICLEN3) :: CDUM = '0' !  dummy character field for SIC
+        CHARACTER(MACLEN3) :: CDUM2= '0' !  dummy charecter field for MACT
+        CHARACTER(LNKLEN3) CLNK     !  temporary link code
+        CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
+        CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(FIPLEN3) FIPZERO  !  buffer for zero FIPS code
+        CHARACTER(SCCLEN3) TSCC     !  temporary SCC
+        CHARACTER(SCCLEN3) SCCZERO  !  buffer for zero SCC
+        CHARACTER(PLTLEN3) PLT      !  tmp plant ID
+        CHARACTER(IOVLEN3) CPOA     !  temporary pollutant/emission type
+        CHARACTER(RWTLEN3) CRWT     !  roadway type no.
+        CHARACTER(VIDLEN3) CVID     !  vehicle type ID no.
 
-        CHARACTER*16 :: PROGNAME = 'RDTREF' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDTREF' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDTREF

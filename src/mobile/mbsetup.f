@@ -61,17 +61,17 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
+        CHARACTER(16)   PROMPTMFILE
         LOGICAL         ENVYN
 
         EXTERNAL        CRLF, INDEX1, PROMPTFFILE, PROMPTMFILE, ENVYN
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -84,7 +84,7 @@ C.........  Arrays to hold counties inside grid
         
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
         
 C.........  Unit numbers and logical file names
         INTEGER         IDEV     ! tmp unit number if ENAME is map file
@@ -95,10 +95,10 @@ C.........  Unit numbers and logical file names
         INTEGER         XDEV     ! unit number for county cross-reference file
         INTEGER         ZDEV     ! unit number for speed cross-reference file
         
-        CHARACTER*16    ANAME    ! logical name for ASCII inventory file
-        CHARACTER*16    INAME    ! tmp name for inven file of unknown fmt
-        CHARACTER*16    ENAME    ! logical name for I/O API inventory file
-        CHARACTER*16    UNAME    ! logical name for ungridding-matrix input file
+        CHARACTER(16)   ANAME    ! logical name for ASCII inventory file
+        CHARACTER(16)   INAME    ! tmp name for inven file of unknown fmt
+        CHARACTER(16)   ENAME    ! logical name for I/O API inventory file
+        CHARACTER(16)   UNAME    ! logical name for ungridding-matrix input file
 
 C.........   Other local variables
         INTEGER          I, K, L, M, S     ! counters and indices
@@ -113,9 +113,9 @@ C.........   Other local variables
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         LOGICAL       :: SPDFLAG = .FALSE. !  true: use speed profiles
         
-        CHARACTER*300          MESG      !  message buffer 
+        CHARACTER(300)   MESG      !  message buffer 
         
-        CHARACTER*16  :: PROGNAME = 'MBSETUP' ! program name
+        CHARACTER(16) :: PROGNAME = 'MBSETUP' ! program name
         
 C***********************************************************************
 C   begin body of program MBSETUP

@@ -91,39 +91,39 @@
 
 !...........   Allocatable arrays for grouping criteria, major source criteria,
 !              and PinG source criteria
-        REAL       , ALLOCATABLE, PUBLIC :: GRPVALS ( :,:,: ) ! comprisn value
-        CHARACTER*6, ALLOCATABLE, PUBLIC :: GRPTYPES( :,:,: ) ! comprisn type
+        REAL,         ALLOCATABLE, PUBLIC :: GRPVALS ( :,:,: ) ! comprisn value
+        CHARACTER(6), ALLOCATABLE, PUBLIC :: GRPTYPES( :,:,: ) ! comprisn type
 
-        REAL       , ALLOCATABLE, PUBLIC :: ELVVALS ( :,:,: ) ! comprisn value
-        CHARACTER*6, ALLOCATABLE, PUBLIC :: ELVTYPES( :,:,: ) ! comprisn type
-        CHARACTER(LEN=PLTLEN3), ALLOCATABLE, PUBLIC :: ELVCHRS( :,:,: ) ! cmpr string
-        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC :: ELVCSRC( : )
+        REAL,         ALLOCATABLE, PUBLIC :: ELVVALS ( :,:,: ) ! comprisn value
+        CHARACTER(6), ALLOCATABLE, PUBLIC :: ELVTYPES( :,:,: ) ! comprisn type
+        CHARACTER(PLTLEN3), ALLOCATABLE, PUBLIC :: ELVCHRS( :,:,: ) ! cmpr string
+        CHARACTER(ALLLEN3), ALLOCATABLE, PUBLIC :: ELVCSRC( : )
 
-        REAL       , ALLOCATABLE, PUBLIC :: PNGVALS ( :,:,: ) ! comprisn value
-        CHARACTER*6, ALLOCATABLE, PUBLIC :: PNGTYPES( :,:,: ) ! comprisn type
-        CHARACTER(LEN=PLTLEN3), ALLOCATABLE, PUBLIC :: PNGCHRS( :,:,: ) ! cmpr string
-        CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC :: PNGCSRC( : )
+        REAL,         ALLOCATABLE, PUBLIC :: PNGVALS ( :,:,: ) ! comprisn value
+        CHARACTER(6), ALLOCATABLE, PUBLIC :: PNGTYPES( :,:,: ) ! comprisn type
+        CHARACTER(PLTLEN3), ALLOCATABLE, PUBLIC :: PNGCHRS( :,:,: ) ! cmpr string
+        CHARACTER(ALLLEN3), ALLOCATABLE, PUBLIC :: PNGCSRC( : )
 
-        INTEGER    , ALLOCATABLE, PUBLIC :: EVPEMIDX( : )  ! indx to EINAM
-        LOGICAL    , ALLOCATABLE, PUBLIC :: EVPESTAT( : )  ! true: used for elv
-        LOGICAL    , ALLOCATABLE, PUBLIC :: EVPPSTAT( : )  ! true: used for PinG
+        INTEGER, ALLOCATABLE, PUBLIC :: EVPEMIDX( : )  ! indx to EINAM
+        LOGICAL, ALLOCATABLE, PUBLIC :: EVPESTAT( : )  ! true: used for elv
+        LOGICAL, ALLOCATABLE, PUBLIC :: EVPPSTAT( : )  ! true: used for PinG
 
 !...........   Allocatable arrays for computing data by source
-        INTEGER    , ALLOCATABLE, PUBLIC :: MXEIDX( :,: )  ! sorting index
-        INTEGER    , ALLOCATABLE, PUBLIC :: MXRANK( :,: )  ! sorted rank
-        REAL       , ALLOCATABLE, PUBLIC :: MXEMIS( :,: )  ! maximum daily emis
-        REAL       , ALLOCATABLE, PUBLIC :: RISE  ( : )    ! analytical plume rise
+        INTEGER, ALLOCATABLE, PUBLIC :: MXEIDX( :,: )  ! sorting index
+        INTEGER, ALLOCATABLE, PUBLIC :: MXRANK( :,: )  ! sorted rank
+        REAL,    ALLOCATABLE, PUBLIC :: MXEMIS( :,: )  ! maximum daily emis
+        REAL,    ALLOCATABLE, PUBLIC :: RISE  ( : )    ! analytical plume rise
 
 !...........   Allocatable arrays for major and PinG sources indexing
         INTEGER, ALLOCATABLE, PUBLIC:: ELEVSIDX( : ) ! Elev source -> all srcs
         INTEGER, ALLOCATABLE, PUBLIC:: PINGGIDX( : ) ! PinG source -> PinG group
 
 !.........  Elevated source and plume-in-grid emissions arrays
-        REAL   , ALLOCATABLE, PUBLIC :: PGRPEMIS( : ) ! PinG group emissions
-        REAL   , ALLOCATABLE, PUBLIC :: ELEVEMIS( : ) ! Major elev srcs emis
+        REAL,    ALLOCATABLE, PUBLIC :: PGRPEMIS( : ) ! PinG group emissions
+        REAL,    ALLOCATABLE, PUBLIC :: ELEVEMIS( : ) ! Major elev srcs emis
 
 !.........  Hourly plume rise file values and arrays
-        INTEGER             , PUBLIC :: NHRSRC       ! number of explicit srcs
+        INTEGER,              PUBLIC :: NHRSRC       ! number of explicit srcs
         INTEGER, ALLOCATABLE, PUBLIC :: INDXH  ( : ) ! source list (by hour)
         INTEGER, ALLOCATABLE, PUBLIC :: ELEVSRC( : ) ! static source list
         REAL   , ALLOCATABLE, PUBLIC :: LAY1F  ( : ) ! layer-1 fraction

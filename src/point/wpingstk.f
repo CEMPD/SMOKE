@@ -51,7 +51,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         EXTERNAL        CRLF
 
 C..........    Subroutine arguments and their descriptions
@@ -60,7 +60,7 @@ C..........    Subroutine arguments and their descriptions
         INTEGER     , INTENT (IN) :: STIME   ! start time
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Local variables allocatable arrays
 C...........   These are for sorting groups and outputting in sorted order
@@ -85,9 +85,9 @@ C...........   Other local variables
          
         LOGICAL      :: EFLAG    = .FALSE.  !  true: error found
 
-        CHARACTER*300   MESG
+        CHARACTER(300)  MESG
 
-        CHARACTER*16 :: PROGNAME = 'WPINGSTK'   !  subroutine name
+        CHARACTER(16) :: PROGNAME = 'WPINGSTK'   !  subroutine name
 
 C***********************************************************************
 C   begin body of subroutine WPINGSTK

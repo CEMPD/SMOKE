@@ -47,21 +47,21 @@ C...........   INCLUDES
          INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
 
         EXTERNAL    CRLF, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=*),       INTENT (IN) :: LINE      ! input line
-        CHARACTER(LEN=FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
-        CHARACTER(LEN=PLTLEN3), INTENT(OUT) :: FCID      ! facility ID
-        CHARACTER(LEN=CHRLEN3), INTENT(OUT) :: SKID      ! stack ID
-        CHARACTER(LEN=CHRLEN3), INTENT(OUT) :: DVID      ! device ID
-        CHARACTER(LEN=CHRLEN3), INTENT(OUT) :: PRID      ! process ID
-        INTEGER,                INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
-        LOGICAL,                INTENT(OUT) :: HDRFLAG   ! true: line is a header line
-        LOGICAL,                INTENT(OUT) :: EFLAG     ! error flag
+        CHARACTER(*),       INTENT (IN) :: LINE      ! input line
+        CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
+        CHARACTER(PLTLEN3), INTENT(OUT) :: FCID      ! facility ID
+        CHARACTER(CHRLEN3), INTENT(OUT) :: SKID      ! stack ID
+        CHARACTER(CHRLEN3), INTENT(OUT) :: DVID      ! device ID
+        CHARACTER(CHRLEN3), INTENT(OUT) :: PRID      ! process ID
+        INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
+        LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
+        LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
 
 C...........   Other local variables
         INTEGER         I       ! counters and indices
@@ -69,10 +69,10 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(LEN=IOVLEN3) CPOL            !  pollutant name
-        CHARACTER*300          MESG            !  message buffer
+        CHARACTER(IOVLEN3) CPOL            !  pollutant name
+        CHARACTER(300)     MESG            !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDSRCEMSPT' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCEMSPT' ! Program name
 
 C***********************************************************************
 C   begin body of subroutine RDSRCEMSPT

@@ -53,7 +53,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        GETFLINE
         INTEGER        STR2INT
         INTEGER        FIND1
-        CHARACTER*2    CRLF    
+        CHARACTER(2)   CRLF    
         
         EXTERNAL  CHKINT, GETFLINE, STR2INT, FIND1, CRLF
 
@@ -68,7 +68,7 @@ C...........   Local allocatable arrays
 C...........   Local arrays
         INTEGER       SETTINGS( NREFFLAGS )     ! converted settings flags
 
-        CHARACTER*3   SEGMENT( NREFFLAGS + 2 )  ! parsed input line
+        CHARACTER(3)  SEGMENT( NREFFLAGS + 2 )  ! parsed input line
         
 C...........   Other local variables
         INTEGER I, J, K, N                ! counters and indices                     
@@ -85,10 +85,10 @@ C...........   Other local variables
         LOGICAL      :: SETFLAG = .FALSE.   ! true: error in settings values 
         LOGICAL      :: RFLAG   = .FALSE.   ! true: no. lines < no. ref. counties
         
-        CHARACTER(LEN=100)     LINE     !  line buffer
-        CHARACTER(LEN=300)     MESG     !  message buffer
+        CHARACTER(100)     LINE     !  line buffer
+        CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDMVREF'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDMVREF'   ! program name
         
 C***********************************************************************
 C   begin body of subroutine RDMVREF

@@ -44,34 +44,34 @@
         INTEGER, PUBLIC :: NEFS      ! no. EFs
 
 !.........  Unique lists of source characteristics and associated arrays...
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC :: EFSDSC( : )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EFSNAM( : )
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: EFSUNT( : )
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: EFSDSC( : )
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: EFSNAM( : )
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: EFSUNT( : )
         
 !.........  Variables for EF subtraction
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: SUBPOLS( : )   ! final subtraction list
-        CHARACTER(LEN=IOULEN3), PUBLIC :: INPUTHC   ! input hydrocarbon name
-        CHARACTER(LEN=IOULEN3), PUBLIC :: OUTPUTHC  ! output hydrocarbon name
-        INTEGER               , PUBLIC :: NSUBPOL   ! no. pols to subtract
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SUBPOLS( : )   ! final subtraction list
+        CHARACTER(IOULEN3), PUBLIC :: INPUTHC   ! input hydrocarbon name
+        CHARACTER(IOULEN3), PUBLIC :: OUTPUTHC  ! output hydrocarbon name
+        INTEGER,            PUBLIC :: NSUBPOL   ! no. pols to subtract
 
 !.........  Emission processes and emission types (proccess//pol) and related
 !.........  Second dimension is number of activities in the inventory
-        INTEGER               , PUBLIC:: MXETYPE     ! Max NETYPE
-        INTEGER               , PUBLIC:: NEPOL       ! no. pols from emis types
+        INTEGER,            PUBLIC:: MXETYPE     ! Max NETYPE
+        INTEGER,            PUBLIC:: NEPOL       ! no. pols from emis types
 
         INTEGER, ALLOCATABLE, PUBLIC:: NETYPE( : )   ! no. e-types per actvt
         INTEGER, ALLOCATABLE, PUBLIC:: EMTIDX( :,: ) ! index to EMTPOL
 
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC:: EMTPOL( : )!pols of EMTNAM
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC:: EMTNAM( :,: )! em type
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC:: EMTUNT( :,: )! et units
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE, PUBLIC:: EMTDSC( :,: )! et descript
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC:: EMTPOL( : )!pols of EMTNAM
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC:: EMTNAM( :,: )! em type
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC:: EMTUNT( :,: )! et units
+        CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC:: EMTDSC( :,: )! et descript
 
 !.........  Variables for running MOBILE6
         INTEGER, ALLOCATABLE, PUBLIC :: SCENLIST ( :,: )  ! scenario number and local-as-arterial
                                                           ! flag for each source
                                                           
-        CHARACTER*300, ALLOCATABLE :: M6LIST( : )  ! contents of M6LIST file
+        CHARACTER(300), ALLOCATABLE :: M6LIST( : )  ! contents of M6LIST file
         
         INTEGER, PUBLIC :: NUMSCEN                  ! total no. of M6 scenarios
 
@@ -85,9 +85,9 @@
 
 !.........  Variables for dealing with user-defined toxic pollutants
         INTEGER, PUBLIC :: NTOTHAPS                             ! total number of HAPS
-        INTEGER,           ALLOCATABLE, PUBLIC :: PMHAPS( : )   ! indicates if HAP is PM based (size: NMAP)
-        CHARACTER(LEN=16), ALLOCATABLE, PUBLIC :: HAPNAMES( : ) ! pollutant names (size: NTOTHAPS)
-        REAL,              ALLOCATABLE, PUBLIC :: HAPEFS( :,:,:,:,:,: ) ! HAP emission factors
+        INTEGER,       ALLOCATABLE, PUBLIC :: PMHAPS( : )   ! indicates if HAP is PM based (size: NMAP)
+        CHARACTER(16), ALLOCATABLE, PUBLIC :: HAPNAMES( : ) ! pollutant names (size: NTOTHAPS)
+        REAL,          ALLOCATABLE, PUBLIC :: HAPEFS( :,:,:,:,:,: ) ! HAP emission factors
                                                                       ! size (SCEN,IV,IP,EF,IH,IFAC)     
 
         END MODULE MODEMFAC

@@ -123,9 +123,9 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            FCONF
         REAL            FCLAI
         REAL            BISOP, BMONO, BOVOC        !  biogenic VOC spcs emis.
-        CHARACTER*240   MESG
+        CHARACTER(240)  MESG
 
-        CHARACTER*16 :: PROGNAME = 'HRBIOS'   !  program name
+        CHARACTER(16) :: PROGNAME = 'HRBIOS'   !  program name
 
 C...........   SAVED LOCAL VARIABLES and their descriptions:
 

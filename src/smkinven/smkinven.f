@@ -77,7 +77,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
-        CHARACTER*2   CRLF
+        CHARACTER(2)  CRLF
         INTEGER       ENVINT
         LOGICAL       ENVYN
         INTEGER       GETFLINE
@@ -88,7 +88,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C.........  LOCAL VARIABLES and their descriptions:
 
@@ -100,7 +100,7 @@ C.........  Day-specific and hour-specific variable indices
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C.........  File units and logical/physical names
 
@@ -121,12 +121,12 @@ C.........  File units and logical/physical names
         INTEGER    :: YDEV = 0  !  unit no. for area-to-point factors file
         INTEGER    :: ZDEV = 0  !  unit no. for time zone file
 
-        CHARACTER(LEN=NAMLEN3) :: ANAME = ' '! inven ASCII output logical name
-        CHARACTER(LEN=NAMLEN3) :: DNAME = ' '! day-specific input logical name
-        CHARACTER(LEN=NAMLEN3) :: ENAME = ' '! inven I/O API output logical name
-        CHARACTER(LEN=NAMLEN3) :: GNAME = ' '! gridded I/O API input logical
-        CHARACTER(LEN=NAMLEN3) :: HNAME = ' '! hour-specific input logical name
-        CHARACTER(LEN=NAMLEN3) :: INAME = ' '! inven input logical name
+        CHARACTER(NAMLEN3) :: ANAME = ' '! inven ASCII output logical name
+        CHARACTER(NAMLEN3) :: DNAME = ' '! day-specific input logical name
+        CHARACTER(NAMLEN3) :: ENAME = ' '! inven I/O API output logical name
+        CHARACTER(NAMLEN3) :: GNAME = ' '! gridded I/O API input logical
+        CHARACTER(NAMLEN3) :: HNAME = ' '! hour-specific input logical name
+        CHARACTER(NAMLEN3) :: INAME = ' '! inven input logical name
 
 C...........   Other local variables
                                 
@@ -167,13 +167,13 @@ C...........   Other local variables
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
         LOGICAL         TOXFLG           ! true: toxics are being processed
 
-        CHARACTER*5               TYPNAM      !  'day' or 'hour' for import
-        CHARACTER*60              VAR_FORMULA !  formula string
-        CHARACTER*256             MESG        !  message buffer
-        CHARACTER(LEN=IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
-        CHARACTER(LEN=PHYLEN3) :: VARPATH = './' ! path for pol/act files
+        CHARACTER(5)          TYPNAM      !  'day' or 'hour' for import
+        CHARACTER(60)         VAR_FORMULA !  formula string
+        CHARACTER(256)        MESG        !  message buffer
+        CHARACTER(IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
+        CHARACTER(PHYLEN3) :: VARPATH = './' ! path for pol/act files
 
-        CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
+        CHARACTER(16) :: PROGNAME = 'SMKINVEN'   !  program name
 
 C***********************************************************************
 C   begin body of program SMKINVEN

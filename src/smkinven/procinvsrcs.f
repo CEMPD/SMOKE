@@ -63,9 +63,9 @@ C...........   Other local variables
         INTEGER         I, J, S            ! counter and indices
         INTEGER         IOS                ! I/O status
 
-        CHARACTER(LEN=ALLLEN3) TSRC        !  tmp source information
+        CHARACTER(ALLLEN3) TSRC        !  tmp source information
 
-        CHARACTER*16 :: PROGNAME = 'PROCINVSRCS' ! program name
+        CHARACTER(16) :: PROGNAME = 'PROCINVSRCS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PROCINVSRCS

@@ -56,11 +56,11 @@ C...........   INCLUDES:
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(LEN=IODLEN3) GETCFDSC
-        INTEGER                IOAPI_GRD_SIZE
-        INTEGER                INDEX1
-        CHARACTER*16           VERCHAR
-        LOGICAL                SETENVVAR
+        CHARACTER(IODLEN3) GETCFDSC
+        INTEGER            IOAPI_GRD_SIZE
+        INTEGER            INDEX1
+        CHARACTER(16)      VERCHAR
+        LOGICAL            SETENVVAR
 
         EXTERNAL  GETCFDSC, IOAPI_GRD_SIZE, INDEX1, VERCHAR, SETENVVAR
 
@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN OUT) :: FNAME    ! name output emission factors file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
         INTEGER         I, J, K, L, LJ     ! counters and indices
@@ -83,12 +83,12 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: INITIAL = .TRUE.   ! true: first time through subroutine
 
-        CHARACTER*300   MESG      ! message buffer
-        CHARACTER*256   FULLNAME  ! full file name
-        CHARACTER*16    CURRVNAME ! current variable name
-        CHARACTER*16    POLNAME   ! current pollutant name
+        CHARACTER(300)  MESG      ! message buffer
+        CHARACTER(256)  FULLNAME  ! full file name
+        CHARACTER(16)   CURRVNAME ! current variable name
+        CHARACTER(16)   POLNAME   ! current pollutant name
 
-        CHARACTER*16 :: PROGNAME = 'OPENSEF' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENSEF' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENSEF

@@ -50,14 +50,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        STR2INT, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*) LINE    !  description of source category
+        CHARACTER(*) LINE    !  description of source category
 
         INTEGER         INY
         INTEGER         L1, L2
 
-        CHARACTER*300   MESG        !  message buffer
+        CHARACTER(300)  MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'GETINVYR' ! program name
+        CHARACTER(16) :: PROGNAME = 'GETINVYR' ! program name
 
 C***********************************************************************
 C   begin body of function GETINVYR

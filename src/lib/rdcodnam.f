@@ -64,7 +64,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         INDEX1
         INTEGER         STR2INT
@@ -91,13 +91,13 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: INVDCODA( : ) ! 5-digit SAROAD code (if any)
         INTEGER, ALLOCATABLE :: INVSTATA( : ) ! Status (<0 activity; >0 pol)
 
-        CHARACTER(LEN=1)      , ALLOCATABLE :: INVDVTSA( : ) ! V=VOC, T=TOG, N=not
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: INVDUNTA( : ) ! units for SMOKE intmdt inventory
-        CHARACTER(LEN=DDSLEN3), ALLOCATABLE :: INVDDSCA( : ) ! inventory data description
+        CHARACTER         , ALLOCATABLE :: INVDVTSA( : ) ! V=VOC, T=TOG, N=not
+        CHARACTER(IOULEN3), ALLOCATABLE :: INVDUNTA( : ) ! units for SMOKE intmdt inventory
+        CHARACTER(DDSLEN3), ALLOCATABLE :: INVDDSCA( : ) ! inventory data description
 
 C...........   Local arrays
-        INTEGER      FLEN   ( NFIELDS )
-        CHARACTER*64 SEGMENT( NFIELDS )
+        INTEGER       FLEN   ( NFIELDS )
+        CHARACTER(64) SEGMENT( NFIELDS )
 
 C...........   Other local variables
         INTEGER         J, L, N     !  counters and indices
@@ -111,16 +111,16 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error found
         LOGICAL          KEEPVAL             ! initialized keep status
 
-        CHARACTER*1               BUF1    !  tmp 1-char buffer
-        CHARACTER*16           :: FNAME = 'INVTABLE' ! Logical name of input file
-        CHARACTER*256             MESG    !  message buffer
-        CHARACTER*512          :: LINE    !  Input line
-        CHARACTER(LEN=CASLEN3) :: PCAS    !  previous CAS code
-        CHARACTER(LEN=IOVLEN3) :: LNAM    !  previous pollutant name
-        CHARACTER(LEN=IOVLEN3) :: DNAM    !  tmp for pollutant or activity name
-        CHARACTER(LEN=DDSLEN3) :: DSCVAL  !  initialized CAS description value
+        CHARACTER             BUF1    !  tmp 1-char buffer
+        CHARACTER(16)      :: FNAME = 'INVTABLE' ! Logical name of input file
+        CHARACTER(256)        MESG    !  message buffer
+        CHARACTER(512)     :: LINE    !  Input line
+        CHARACTER(CASLEN3) :: PCAS    !  previous CAS code
+        CHARACTER(IOVLEN3) :: LNAM    !  previous pollutant name
+        CHARACTER(IOVLEN3) :: DNAM    !  tmp for pollutant or activity name
+        CHARACTER(DDSLEN3) :: DSCVAL  !  initialized CAS description value
 
-        CHARACTER*16 :: PROGNAME = 'RDCODNAM' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDCODNAM' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDCODNAM

@@ -64,7 +64,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         FIND1
         INTEGER         FINDC
         LOGICAL         INGRID
@@ -121,13 +121,13 @@ C...........   Other local variables
         LOGICAL      :: LFLAG = .FALSE.  !  true: location data available
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
-        CHARACTER*16    COORUNIT  !  coordinate system projection units
-        CHARACTER*80    GDESC     !  grid description
-        CHARACTER*256   MESG      !  message buffer 
+        CHARACTER(16)   COORUNIT  !  coordinate system projection units
+        CHARACTER(80)   GDESC     !  grid description
+        CHARACTER(256)  MESG      !  message buffer 
 
-        CHARACTER(LEN=SRCLEN3)    CSRC  ! tmp source chars string
+        CHARACTER(SRCLEN3)    CSRC  ! tmp source chars string
 
-        CHARACTER*16 :: PROGNAME = 'GENAGMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENAGMAT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENAGMAT

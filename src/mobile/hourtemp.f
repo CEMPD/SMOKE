@@ -59,7 +59,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS
-        CHARACTER*2  CRLF
+        CHARACTER(2) CRLF
         INTEGER      ENVINT
 
         EXTERNAL     CRLF, ENVINT
@@ -88,10 +88,11 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time
 
-        CHARACTER*300 BUFFER        ! formatted source info for messages
-        CHARACTER*300 MESG          ! message buffer
-        CHARACTER(LEN=SRCLEN3) CSRC ! tmp concat source characteristics
-        CHARACTER*16 :: PROGNAME = 'HOURTEMP' ! program name
+        CHARACTER(300)     BUFFER    ! formatted source info for messages
+        CHARACTER(300)     MESG      ! message buffer
+        CHARACTER(SRCLEN3) CSRC      ! tmp concat source characteristics
+ 
+       CHARACTER(16) :: PROGNAME = 'HOURTEMP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine HOURTEMP

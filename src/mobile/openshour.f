@@ -55,10 +55,10 @@ C...........   INCLUDES:
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(LEN=IODLEN3) GETCFDSC
-        CHARACTER*16           VERCHAR
-        LOGICAL                SETENVVAR
-        INTEGER                WKDAY
+        CHARACTER(IODLEN3) GETCFDSC
+        CHARACTER(16)      VERCHAR
+        LOGICAL            SETENVVAR
+        INTEGER            WKDAY
 
         EXTERNAL        GETCFDSC, VERCHAR, SETENVVAR, WKDAY
 
@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN OUT) :: FNAME    ! name output hourly tmpr file
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
         INTEGER     J
@@ -85,12 +85,12 @@ C...........   Other local variables
 
         LOGICAL         FEXIST   ! true: file exists
 
-        CHARACTER*300   MESG     ! message buffer
-        CHARACTER*256   FULLNAME ! full file name
+        CHARACTER(300)  MESG     ! message buffer
+        CHARACTER(256)  FULLNAME ! full file name
 
-        CHARACTER(LEN=IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from INVEN FDESC
+        CHARACTER(IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from INVEN FDESC
 
-        CHARACTER*16 :: PROGNAME = 'OPENSHOUR' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENSHOUR' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENSHOUR

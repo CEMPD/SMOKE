@@ -44,13 +44,13 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL        GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*), INTENT (IN) :: CATEGORY            ! src category
-        CHARACTER*(*), INTENT (IN) :: VNAM                ! variable name
-        INTEGER      , INTENT (IN) :: NSRC                ! no. of sources
-        INTEGER      , INTENT (IN) :: VCNT                ! no. vars to write
-        REAL         , INTENT (IN) :: POLALL( NSRC,VCNT ) ! var-specific data
-        INTEGER      , INTENT(OUT) :: FDEV                ! unit number
-        INTEGER      , INTENT(OUT) :: STATUS              ! exit status
+        CHARACTER(*), INTENT (IN) :: CATEGORY            ! src category
+        CHARACTER(*), INTENT (IN) :: VNAM                ! variable name
+        INTEGER     , INTENT (IN) :: NSRC                ! no. of sources
+        INTEGER     , INTENT (IN) :: VCNT                ! no. vars to write
+        REAL        , INTENT (IN) :: POLALL( NSRC,VCNT ) ! var-specific data
+        INTEGER     , INTENT(OUT) :: FDEV                ! unit number
+        INTEGER     , INTENT(OUT) :: STATUS              ! exit status
 
 C...........   Other local variables
 
@@ -61,11 +61,11 @@ C...........   Other local variables
 
         LOGICAL       :: FIRSTIME = .TRUE.  ! true: first time routine is called
 
-        CHARACTER*300          MESG           ! tmp message buffer
-        CHARACTER*300, SAVE :: PATHNM = ' '   ! tmp path name
-        CHARACTER*340          FILENM         ! tmp file name (with path)
+        CHARACTER(300)          MESG           ! tmp message buffer
+        CHARACTER(300), SAVE :: PATHNM = ' '   ! tmp path name
+        CHARACTER(340)          FILENM         ! tmp file name (with path)
 
-        CHARACTER*16 :: PROGNAME = 'WRIDAPOL' ! program name
+        CHARACTER(16) :: PROGNAME = 'WRIDAPOL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRIDAPOL

@@ -60,7 +60,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER		FINDC
         INTEGER		GETFLINE
 
@@ -85,34 +85,34 @@ C...........    LOCAL VARIABLES and their descriptions:
 
 C.........  Unsorted arrays from stack replacements file
 
-        INTEGER               , ALLOCATABLE :: INDXA( : ) ! sorting index
-        REAL                  , ALLOCATABLE :: SHTA ( : ) ! stack height 
-        REAL                  , ALLOCATABLE :: SDMA ( : ) ! stack diameter
-        REAL                  , ALLOCATABLE :: STKA ( : ) ! stack temperature 
-        REAL                  , ALLOCATABLE :: SVEA ( : ) ! stack velocity 
-        CHARACTER(LEN=FPSLEN3), ALLOCATABLE :: SFSCA( : ) ! FIPS code // SCC 
+        INTEGER           , ALLOCATABLE :: INDXA( : ) ! sorting index
+        REAL              , ALLOCATABLE :: SHTA ( : ) ! stack height 
+        REAL              , ALLOCATABLE :: SDMA ( : ) ! stack diameter
+        REAL              , ALLOCATABLE :: STKA ( : ) ! stack temperature 
+        REAL              , ALLOCATABLE :: SVEA ( : ) ! stack velocity 
+        CHARACTER(FPSLEN3), ALLOCATABLE :: SFSCA( : ) ! FIPS code // SCC 
 
 C.........  Tables of stack parameter updates
 C.........  Ultimate defaults
-        REAL                   HT0      !  ultimate fallback height
-        REAL                   DM0      !  ultimate fallback diameter
-        REAL                   TK0      !  ultimate fallback temperature
-        REAL                   VE0      !  ultimate fallback velocity
+        REAL               HT0      !  ultimate fallback height
+        REAL               DM0      !  ultimate fallback diameter
+        REAL               TK0      !  ultimate fallback temperature
+        REAL               VE0      !  ultimate fallback velocity
 
 C.........  SCC-only table
-        INTEGER                                NR1       ! number
-        INTEGER               , ALLOCATABLE :: ID1 ( : ) ! index to unsorted 
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: TBL1( : ) ! SCC
+        INTEGER                            NR1       ! number
+        INTEGER           , ALLOCATABLE :: ID1 ( : ) ! index to unsorted 
+        CHARACTER(SCCLEN3), ALLOCATABLE :: TBL1( : ) ! SCC
 
 C.........  SCC-country/state table
-        INTEGER                                NR2       ! number
-        INTEGER               , ALLOCATABLE :: ID2 ( : ) ! index to unsorted
-        CHARACTER(LEN=STSLEN3), ALLOCATABLE :: TBL2( : ) ! co/st // scc
+        INTEGER                            NR2       ! number
+        INTEGER           , ALLOCATABLE :: ID2 ( : ) ! index to unsorted
+        CHARACTER(STSLEN3), ALLOCATABLE :: TBL2( : ) ! co/st // scc
 
 C.........  SCC-FIPS code table
-        INTEGER                                NR3       ! number
-        INTEGER               , ALLOCATABLE :: ID3 ( : ) ! index to unsorted
-        CHARACTER(LEN=FPSLEN3), ALLOCATABLE :: TBL3( : ) ! FIPS code // scc
+        INTEGER                            NR3       ! number
+        INTEGER           , ALLOCATABLE :: ID3 ( : ) ! index to unsorted
+        CHARACTER(FPSLEN3), ALLOCATABLE :: TBL3( : ) ! FIPS code // scc
          
 C.........  Other local variables
         INTEGER		I, J, K, L1, L2, L3, S   !  counters and indices
@@ -133,22 +133,22 @@ C.........  Other local variables
         LOGICAL	     :: EFLAG = .FALSE.  !  error flag
         LOGICAL		DFLAG( NSRC )    ! true if source getting default parms
 
-        CHARACTER*8            FMTFIP    !  format for converting FIPs code
-        CHARACTER*8            FMTSTA    !  format for converting cntry/state
-        CHARACTER*300          BUFFER    !  temporary buffer
-        CHARACTER*300	       MESG      !  message buffer
-        CHARACTER(LEN=FIPLEN3) CFIP      !  tmp character-string FIP
-        CHARACTER(LEN=FIPLEN3) FIPZERO   !  zero buffer for FIPS code
-        CHARACTER(LEN=STALEN3) CSTA      !  tmp country/state
-        CHARACTER(LEN=CNYLEN3) CCNY      !  tmp county
-        CHARACTER(LEN=SCCLEN3) TSCC      !  tmp SCC
-        CHARACTER(LEN=SCCLEN3) SCCZERO   !  zero buffer for SCC
-        CHARACTER(LEN=STSLEN3) CSTASCC   !  tmp country/state // SCC
-        CHARACTER(LEN=STSLEN3) CSTASCCZ  !  zero buffer for cntry/state // SCC
-        CHARACTER(LEN=FPSLEN3) CFIPSCC   !  tmp FIPS code // SCC
-        CHARACTER(LEN=FPSLEN3) CFIPSCCZ  !  zero buffer for FIPS code // SCC
+        CHARACTER(8)       FMTFIP    !  format for converting FIPs code
+        CHARACTER(8)       FMTSTA    !  format for converting cntry/state
+        CHARACTER(300)     BUFFER    !  temporary buffer
+        CHARACTER(300)     MESG      !  message buffer
+        CHARACTER(FIPLEN3) CFIP      !  tmp character-string FIP
+        CHARACTER(FIPLEN3) FIPZERO   !  zero buffer for FIPS code
+        CHARACTER(STALEN3) CSTA      !  tmp country/state
+        CHARACTER(CNYLEN3) CCNY      !  tmp county
+        CHARACTER(SCCLEN3) TSCC      !  tmp SCC
+        CHARACTER(SCCLEN3) SCCZERO   !  zero buffer for SCC
+        CHARACTER(STSLEN3) CSTASCC   !  tmp country/state // SCC
+        CHARACTER(STSLEN3) CSTASCCZ  !  zero buffer for cntry/state // SCC
+        CHARACTER(FPSLEN3) CFIPSCC   !  tmp FIPS code // SCC
+        CHARACTER(FPSLEN3) CFIPSCCZ  !  zero buffer for FIPS code // SCC
 
-        CHARACTER*16 :: PROGNAME = 'FIXSTK'  ! program name
+        CHARACTER(16) :: PROGNAME = 'FIXSTK'  ! program name
      
 C***********************************************************************
 C   begin body of subroutine FIXSTK

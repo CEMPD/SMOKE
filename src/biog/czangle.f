@@ -91,7 +91,7 @@ C.......   SAVED local variables
 
         SAVE     FIRSTIME, SINLAT, COSLAT
 
-        CHARACTER*16 :: PROGNAME = 'CZANGLE'   !  program name
+        CHARACTER(16) :: PROGNAME = 'CZANGLE'   !  program name
 
 C***********************************************************************
 C................  Begin body of program  .........................

@@ -80,7 +80,7 @@ C.........  INCLUDES:
 C..........  EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         CHKINT
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN
         INTEGER         FINDC
@@ -89,7 +89,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETNUM
         INTEGER         INDEX1
         LOGICAL         ISDSTIME
-        CHARACTER*14    MMDDYY
+        CHARACTER(14)   MMDDYY
         INTEGER         PROMPTFFILE
         INTEGER         RDTPROF
         INTEGER         SECSDIFF
@@ -102,7 +102,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C.........  Emission arrays
         REAL   , ALLOCATABLE :: EMAC ( :,: ) !  inven emissions or activities
@@ -110,25 +110,25 @@ C.........  Emission arrays
         REAL   , ALLOCATABLE :: EMIST( :,: ) !  timestepped output emssions
 
 C.........  Emission factor arrays        
-        CHARACTER(LEN=256), ALLOCATABLE :: EFLIST( : )  ! listing of emission factor file names
-        CHARACTER(LEN=16) , ALLOCATABLE :: EFLOGS( : )  ! listing of ef logical file names
-        INTEGER           , ALLOCATABLE :: EFDAYS( :,: )! ef file by day for each time period
-        REAL              , ALLOCATABLE :: EMFAC ( :,: )! mobile emission factors by source
-        REAL              , ALLOCATABLE :: TEMPEF( : )  ! temporary holding array for efs
-        CHARACTER(LEN=1)  , ALLOCATABLE :: EFTYPE( : )  ! ef file type (day, week, etc.) for each src
-        INTEGER           , ALLOCATABLE :: EFIDX ( : )  ! location of ef in file for each source
-        INTEGER           , ALLOCATABLE :: SRCS  ( : )  ! temporary array for sources in each ef file
+        CHARACTER(256), ALLOCATABLE :: EFLIST( : )  ! listing of emission factor file names
+        CHARACTER(16) , ALLOCATABLE :: EFLOGS( : )  ! listing of ef logical file names
+        INTEGER       , ALLOCATABLE :: EFDAYS( :,: )! ef file by day for each time period
+        REAL          , ALLOCATABLE :: EMFAC ( :,: )! mobile emission factors by source
+        REAL          , ALLOCATABLE :: TEMPEF( : )  ! temporary holding array for efs
+        CHARACTER     , ALLOCATABLE :: EFTYPE( : )  ! ef file type (day, week, etc.) for each src
+        INTEGER       , ALLOCATABLE :: EFIDX ( : )  ! location of ef in file for each source
+        INTEGER       , ALLOCATABLE :: SRCS  ( : )  ! temporary array for sources in each ef file
 
 C.........  Temporal allocation Matrix.  
         REAL, ALLOCATABLE :: TMAT( :, :, : ) ! temporal allocation factors
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C.........  Actual-SCC  table
-        INTEGER                                NSCC
-        CHARACTER(LEN=SCCLEN3), ALLOCATABLE :: SCCLIST( : )
+        INTEGER                            NSCC
+        CHARACTER(SCCLEN3), ALLOCATABLE :: SCCLIST( : )
 
 C.........  Day-specific, hour-specific data, and elevated sources data. 
 C.........  These need only to allow enough dimensions for one read per 
@@ -142,13 +142,13 @@ C...........   Ungridding Matrix
         INTEGER, ALLOCATABLE :: UMAT( : )   ! contiguous ungridding matrix
 
 C.........  Names of pollutants and activities associated with output variables
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: ALLIN( : ) 
+        CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN( : ) 
 
 C.........  Reshaped input variables and output variables
         INTEGER         NGRP                ! no. of pol/emis-types groups 
         INTEGER         NGSZ                ! no. of pols/emis-types per group 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: ALLIN2D( :,: ) 
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE:: EANAM2D( :,: ) 
+        CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN2D( :,: ) 
+        CHARACTER(IOVLEN3), ALLOCATABLE:: EANAM2D( :,: ) 
 
 C...........   Logical names and unit numbers
 
@@ -164,14 +164,14 @@ C...........   Logical names and unit numbers
         INTEGER         XDEV    !  unit no. for cross-reference file
         INTEGER         VDEV    !  unit no. for inventory data table
 
-        CHARACTER*16 :: ANAME = ' '    !  logical name for ASCII inven input 
-        CHARACTER*16 :: GNAME = ' '    !  ungridding matrix
-        CHARACTER*16 :: DNAME = 'NONE' !  day-specific  input file, or "NONE"
-        CHARACTER*16 :: ENAME = ' '    !  logical name for I/O API inven input
-        CHARACTER*16 :: FNAME = ' '    !  emission factors file
-        CHARACTER*16 :: HNAME = 'NONE' !  hour-specific input file, or "NONE"
-        CHARACTER*16 :: TNAME = ' '    !  timestepped (low-level) output file
-        CHARACTER*16 :: TMPNAME = ' '  !  temporary inventory logical name
+        CHARACTER(16) :: ANAME = ' '    !  logical name for ASCII inven input 
+        CHARACTER(16) :: GNAME = ' '    !  ungridding matrix
+        CHARACTER(16) :: DNAME = 'NONE' !  day-specific  input file, or "NONE"
+        CHARACTER(16) :: ENAME = ' '    !  logical name for I/O API inven input
+        CHARACTER(16) :: FNAME = ' '    !  emission factors file
+        CHARACTER(16) :: HNAME = 'NONE' !  hour-specific input file, or "NONE"
+        CHARACTER(16) :: TNAME = ' '    !  timestepped (low-level) output file
+        CHARACTER(16) :: TMPNAME = ' '  !  temporary inventory logical name
 
 C...........   Other local variables
 
@@ -223,20 +223,20 @@ C...........   Other local variables
         LOGICAL         WFLAG   !  true: write QA on current time step
         LOGICAL      :: USETIME( 4 ) = .FALSE. ! true: time period is used
 
-        CHARACTER*8              TREFFMT   ! tmprl x-ref format (SOURCE|STANDARD)
-        CHARACTER*14             DTBUF     ! buffer for MMDDYY
-        CHARACTER*3              INTBUF    ! buffer for integer
-        CHARACTER*20             MODELNAM  ! emission factor model name
-        CHARACTER(LEN=256)       CURFNM    ! current emission factor file name
-        CHARACTER(LEN=16)        CURLNM    ! current ef logical file name
-        CHARACTER(LEN=IOVLEN3)   VOLNAM    ! volatile pollutant name
-        CHARACTER*300            MESG      ! buffer for M3EXIT() messages
-        CHARACTER(LEN=IOVLEN3)   CBUF      ! pollutant name temporary buffer 
-        CHARACTER(LEN=IOVLEN3)   EBUF      ! pollutant name temporary buffer 
-        CHARACTER(LEN=20)        SEARCHSTR ! string used in search
-        CHARACTER(LEN=MXDLEN3)   TEMPLINE  ! line from file description
+        CHARACTER(8)         TREFFMT   ! tmprl x-ref format (SOURCE|STANDARD)
+        CHARACTER(14)        DTBUF     ! buffer for MMDDYY
+        CHARACTER(3)         INTBUF    ! buffer for integer
+        CHARACTER(20)        MODELNAM  ! emission factor model name
+        CHARACTER(256)       CURFNM    ! current emission factor file name
+        CHARACTER(16)        CURLNM    ! current ef logical file name
+        CHARACTER(IOVLEN3)   VOLNAM    ! volatile pollutant name
+        CHARACTER(300)       MESG      ! buffer for M3EXIT() messages
+        CHARACTER(IOVLEN3)   CBUF      ! pollutant name temporary buffer 
+        CHARACTER(IOVLEN3)   EBUF      ! pollutant name temporary buffer 
+        CHARACTER(20)        SEARCHSTR ! string used in search
+        CHARACTER(MXDLEN3)   TEMPLINE  ! line from file description
 
-        CHARACTER*16 :: PROGNAME = 'TEMPORAL' ! program name
+        CHARACTER(16) :: PROGNAME = 'TEMPORAL' ! program name
 
 C***********************************************************************
 C   begin body of program TEMPORAL

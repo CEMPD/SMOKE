@@ -64,7 +64,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         LOGICAL         ENVYN   
         INTEGER         GETFLINE
         INTEGER         INDEX1
@@ -74,13 +74,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
-        CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C.........   Speciation matrices:
 
@@ -88,18 +88,18 @@ C.........   Speciation matrices:
         REAL, ALLOCATABLE :: MOLEMATX( :,: )    !  mole-speciation coefficients
 
 C.........  Inventory pollutants actually in the inventory
-        LOGICAL               , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
-        LOGICAL               , ALLOCATABLE :: IDXCHK( : ) ! true: EAIDX value accounted for
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: IINAM ( : ) ! initial pols
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! output pollutants
+        LOGICAL           , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
+        LOGICAL           , ALLOCATABLE :: IDXCHK( : ) ! true: EAIDX value accounted for
+        CHARACTER(IOVLEN3), ALLOCATABLE :: IINAM ( : ) ! initial pols
+        CHARACTER(IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! output pollutants
 
 C.........  Activities and pollutants
         INTEGER, ALLOCATABLE :: EAIDX( : )           ! Index from EANAM to IINAM
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SANAM ( : ) ! output pollutants
+        CHARACTER(IOVLEN3), ALLOCATABLE :: SANAM ( : ) ! output pollutants
 
 C.........  Names for output variables in mass-based and mole-based files
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MASSONAM( :,: )
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: MOLEONAM( :,: )
+        CHARACTER(IOVLEN3), ALLOCATABLE :: MASSONAM( :,: )
+        CHARACTER(IOVLEN3), ALLOCATABLE :: MOLEONAM( :,: )
 
 C.........  Unit numbers and logical file names
         INTEGER         IDEV    ! tmp unit number if ENAME is map file
@@ -113,11 +113,11 @@ C.........  Unit numbers and logical file names
         INTEGER         VDEV    !  unit no. for inventory data table
         INTEGER         XDEV    !  unit no. for cross-reference file
 
-        CHARACTER*16    ANAME   !  logical name for additive control matrix
-        CHARACTER*16    ENAME   !  logical name for point-source input file
-        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
-        CHARACTER*16    SNAME   !  logical name for mass spec matrix output file
-        CHARACTER*16    LNAME   !  logical name for mole spec matrix output file
+        CHARACTER(16)   ANAME   !  logical name for additive control matrix
+        CHARACTER(16)   ENAME   !  logical name for point-source input file
+        CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER(16)   SNAME   !  logical name for mass spec matrix output file
+        CHARACTER(16)   LNAME   !  logical name for mole spec matrix output file
 
 C.........   Other local variables
         INTEGER          I, J, K, L, L1, L2, L3, L4, LT, N, V !  counters and indices
@@ -139,14 +139,14 @@ C.........   Other local variables
         LOGICAL       :: MULTIPRO= .TRUE.  !  true: multiple profs for pollutant
         LOGICAL       :: FNDOUTPUT=.FALSE. !  true: found output hydrocarbon
 
-        CHARACTER*300          MESG      !  message buffer 
-        CHARACTER(LEN=IOVLEN3) CBUF      !  smat output name temporary buffer 
-        CHARACTER(LEN=IOVLEN3) ENAM      !  tmp emission types name
-        CHARACTER(LEN=IOVLEN3) PNAM      !  input pol name temporary buffer 
-        CHARACTER(LEN=IOVLEN3) SBUF      !  species name temporary buffer 
-        CHARACTER(LEN=IOVLEN3) SNAM      !  speciation pol name temporary buffer
+        CHARACTER(300)     MESG      !  message buffer 
+        CHARACTER(IOVLEN3) CBUF      !  smat output name temporary buffer 
+        CHARACTER(IOVLEN3) ENAM      !  tmp emission types name
+        CHARACTER(IOVLEN3) PNAM      !  input pol name temporary buffer 
+        CHARACTER(IOVLEN3) SBUF      !  species name temporary buffer 
+        CHARACTER(IOVLEN3) SNAM      !  speciation pol name temporary buffer
 
-        CHARACTER*16  :: PROGNAME = 'SPCMAT' ! program name
+        CHARACTER(16) :: PROGNAME = 'SPCMAT' ! program name
 
 C***********************************************************************
 C   begin body of program SPCMAT

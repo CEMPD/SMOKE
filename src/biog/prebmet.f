@@ -46,7 +46,7 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)    CRLF
         INTEGER         SECSDIFF
         INTEGER         TIME2SEC
 
@@ -93,9 +93,9 @@ C...........   Other local variables
         LOGICAL      :: MADJUST = .FALSE. ! true: date/time adjusted for MNAME
         LOGICAL      :: WADJUST = .FALSE. ! true: date/time adjusted for WNAME
 
-        CHARACTER*300   MESG     !  message buffer
+        CHARACTER(300)  MESG     !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'PREBMET' ! program name
+        CHARACTER(16) :: PROGNAME = 'PREBMET' ! program name
 
 C***********************************************************************
 C   begin body of subroutine PRETMPR

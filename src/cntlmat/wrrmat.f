@@ -66,12 +66,12 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subroutine called
 
-        CHARACTER(LEN=IOVLEN3) VAR     !  tmp variable names
+        CHARACTER(IOVLEN3) VAR     !  tmp variable names
 
-        CHARACTER*100 OUTFMT           !  format buffer
-        CHARACTER*300 MESG             !  message buffer
+        CHARACTER(100) OUTFMT           !  format buffer
+        CHARACTER(300) MESG             !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WRRMAT' !  program name
+        CHARACTER(16) :: PROGNAME = 'WRRMAT' !  program name
 
 C***********************************************************************
 C   begin body of program WRRMAT

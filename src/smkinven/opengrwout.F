@@ -51,31 +51,31 @@ C...........   INCLUDES
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
-        CHARACTER*2             CRLF
-        LOGICAL                 ENVYN
-        CHARACTER(LEN=IODLEN3)  GETCFDSC
-        INTEGER                 GETIFDSC
-        INTEGER                 GETEFILE
-        INTEGER                 INDEX1
-        INTEGER                 PROMPTFFILE
-        LOGICAL                 SETENVVAR
-        CHARACTER*16            VERCHAR
+        CHARACTER(2)        CRLF
+        LOGICAL             ENVYN
+        CHARACTER(IODLEN3)  GETCFDSC
+        INTEGER             GETIFDSC
+        INTEGER             GETEFILE
+        INTEGER             INDEX1
+        INTEGER             PROMPTFFILE
+        LOGICAL             SETENVVAR
+        CHARACTER(16)       VERCHAR
 
         EXTERNAL CRLF, ENVYN, GETCFDSC, GETEFILE, INDEX1, PROMPTFFILE, 
      &           SETENVVAR, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*16, INTENT (IN) :: ENAME ! emis input inven logical name
-        INTEGER     , INTENT (IN) :: FYEAR ! future year or 0 for no projection
-        CHARACTER*16, INTENT (IN) :: NAME1 ! physical name part for i/o api
-	INTEGER     , INTENT(OUT) :: ODEV  ! output map inventory file
-        INTEGER     , INTENT(OUT) :: DDEV  ! IDA output emissions file number
-        INTEGER     , INTENT(OUT) :: VDEV  ! IDA output activity file number
-        CHARACTER*16, INTENT(OUT) :: ONAME ! output logical main i/o api
-        CHARACTER(LEN=PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
+        CHARACTER(16), INTENT (IN) :: ENAME ! emis input inven logical name
+        INTEGER      , INTENT (IN) :: FYEAR ! future year or 0 for no projection
+        CHARACTER(16), INTENT (IN) :: NAME1 ! physical name part for i/o api
+	INTEGER      , INTENT(OUT) :: ODEV  ! output map inventory file
+        INTEGER      , INTENT(OUT) :: DDEV  ! IDA output emissions file number
+        INTEGER      , INTENT(OUT) :: VDEV  ! IDA output activity file number
+        CHARACTER(16), INTENT(OUT) :: ONAME ! output logical main i/o api
+        CHARACTER(PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
@@ -87,17 +87,17 @@ C...........   Other local variables
         LOGICAL      :: IFLAG = .TRUE.   ! true: output IDA file
         LOGICAL      :: SFLAG = .TRUE.   ! true: output SMOKE file
  
-        CHARACTER*16    ANAME     ! tmp dummy buffer
-        CHARACTER*16    INAME     ! tmp output IDA file name
-        CHARACTER*16    NNAME     ! tmp output map logical file name
-        CHARACTER*30    EVNAME    ! tmp environment variable name
-        CHARACTER*256   MESG      ! message buffer 
-        CHARACTER(LEN=PHYLEN3) APHYS   ! ASCII physical file name
-        CHARACTER(LEN=PHYLEN3) EPHYS   ! I/O API physical file name
-        CHARACTER(LEN=PHYLEN3) PATH    ! path name
-        CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
+        CHARACTER(16)   ANAME     ! tmp dummy buffer
+        CHARACTER(16)   INAME     ! tmp output IDA file name
+        CHARACTER(16)   NNAME     ! tmp output map logical file name
+        CHARACTER(30)   EVNAME    ! tmp environment variable name
+        CHARACTER(256)  MESG      ! message buffer 
+        CHARACTER(PHYLEN3) APHYS   ! ASCII physical file name
+        CHARACTER(PHYLEN3) EPHYS   ! I/O API physical file name
+        CHARACTER(PHYLEN3) PATH    ! path name
+        CHARACTER(IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
 
-        CHARACTER*16 :: PROGNAME = 'OPENGRWOUT' ! program name
+        CHARACTER(16) :: PROGNAME = 'OPENGRWOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENGRWOUT

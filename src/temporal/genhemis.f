@@ -70,10 +70,10 @@ C...........   INCLUDES
         INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER*2     CRLF
+        CHARACTER(2)   CRLF
         LOGICAL         ENVYN
         INTEGER         FIND1
-        CHARACTER*10    HHMMSS
+        CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
         INTEGER         WKDAY
 
@@ -137,12 +137,12 @@ C...........   Other local variables
         LOGICAL, SAVE :: WKEMSG = .FALSE.   ! true: wkend-profile msg written
         LOGICAL, SAVE :: ZONE4WM        !  True: src zone for week/mon temp prof
 
-        CHARACTER*300          BUFFER    ! source info buffer 
-        CHARACTER*300          MESG      ! message buffer 
-        CHARACTER(LEN=SRCLEN3) CSRC      ! tmp source chars string
-        CHARACTER(LEN=IOVLEN3) NAMBUF    ! variable name buffer
+        CHARACTER(300)     BUFFER    ! source info buffer 
+        CHARACTER(300)     MESG      ! message buffer 
+        CHARACTER(SRCLEN3) CSRC      ! tmp source chars string
+        CHARACTER(IOVLEN3) NAMBUF    ! variable name buffer
 
-        CHARACTER*16  :: PROGNAME = 'GENHEMIS' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENHEMIS' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENHEMIS
