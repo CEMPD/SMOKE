@@ -1,10 +1,30 @@
-
-C Version "@(#)rawbio.f	1.9 /home/sunnylo/smoke/beis2/bio/SCCS/s.rawbio.f 06/05/96 16:45:22
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File Version: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         PROGRAM RAWBIO
 
 C***********************************************************************
-C  program body starts at line  179
+C  program body starts at line  206
 C
 C  DESCRIPTION:
 C       Computes normalized gridded biogenic emissions in terms of gridded
@@ -16,6 +36,9 @@ C
 C
 C  REVISION  HISTORY:
 C       Prototype 12/95 by CJC adapted from UAM BEIS2 subroutine NORMALEM
+C
+C       Revised 8/96 by SL and CJC: algorithm change to match UAM BEIS2
+C       algorithm
 C
 C***********************************************************************
 
@@ -59,7 +82,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   LOCAL VARIABLES and their descriptions:
 
-        INTEGER         B, C, R, I, J, K, L, M, N  !  loop counters and subscripts
+        INTEGER         B, C, R, I, J, K, L, M, N ! loop counters and subscripts
         INTEGER         FIP     !  fip code
         INTEGER         CTY     !  subscript into FIPS table
         INTEGER         ISTAT   !  I/O status result
@@ -333,7 +356,7 @@ C.......   Loop:  read emission factor file
                 CALL M3MESG( MESG )
             END IF
 
-            IF ( I .LT. MXID ) GO TO  33 !  end loop reading emissions factor file
+            IF ( I .LT. MXID ) GO TO 33 ! end loop reading emissions factor file
 
         CALL M3EXIT( 'RAWBIO', 0, 0, 
      &               'EMISSIONS FACTOR table overflow', 2 )
@@ -361,7 +384,7 @@ C.......   Loop:  read FIPS list from FIPS CODE file
         I     = 0
         EFLAG = .FALSE.
 
-C sl    Skip the first line in FIPS CODE file
+C.......   Skip the first line in FIPS CODE file
         READ( CDEV,'(A20)', END = 45, IOSTAT= ISTAT ) CO_NAME
 
 44      CONTINUE                !  head of loop:  read FIPS CODE file
@@ -469,9 +492,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                 END IF
 
                 J     = LBLANK( INBUF )
-c sl                I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
-c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                I     =  INDEX( INBUF( J+1:80 ) , ',' )
+                I     = INDEX( INBUF( J+1:80 ) , ',' )
                 TYPE  = INBUF( J+1 : J+I-1 )
                 AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
                 K     = INDEX1( TYPE, NVEG, VEGID )
@@ -521,8 +542,6 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-c sl                  ALAI   = ALAI   + AREA
-c sl                  SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  64  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 64                  CONTINUE
@@ -557,7 +576,6 @@ c sl                  SUMLAI = SUMLAI + AREA * LAI( K )
                         DO  68  M = 1, BSPCS - 1
                             ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 68                      CONTINUE
-c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !  if lai is 3,5,7, or otherwise
 
@@ -595,9 +613,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
                 END IF
 
                 J     = LBLANK( INBUF )
-c sl                I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
-c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                I     =  INDEX( INBUF( J+1:80 ) , ',' )
+                I     = INDEX( INBUF( J+1:80 ) , ',' )
                 TYPE  = INBUF( J+1 : J+I-1 )
                 AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
 
@@ -649,8 +665,6 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
                     AOTH   = AAG    + 0.6*AREA
-c sl                  ALAI   = ALAI   + AREA
-c sl                  SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  74  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
 74                  CONTINUE
@@ -685,7 +699,6 @@ c sl                  SUMLAI = SUMLAI + AREA * LAI( K )
                         DO  78  M = 1, BSPCS - 1
                             ELAI( M ) = ELAI( M ) + AREA*EMFAC( K,M )
 78                      CONTINUE
-c sl                        ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
                     END IF      !!  if lai is 3,5,7, or otherwise
 
@@ -723,9 +736,7 @@ C...........   Land use type:  agriculture.  Process subtypes:
                 END IF
 
                 J     = LBLANK( INBUF )
-c sl                I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
-c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                I     =  INDEX( INBUF( J+1:80 ) , ',' )
+                I     = INDEX( INBUF( J+1:80 ) , ',' )
                 TYPE  = INBUF( J+1 : J+I-1 )
                 AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
 
@@ -776,9 +787,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                 END IF
 
                 J     = LBLANK( INBUF )
-c sl                I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
-c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                I     =  INDEX( INBUF( J+1:80 ) , ',' )
+                I     = INDEX( INBUF( J+1:80 ) , ',' )
                 TYPE  = INBUF( J+1 : J+I-1 )
                 AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
 
@@ -829,7 +838,6 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
                     SUMLAI = SUMLAI + AREA * LAI( K )
                     DO  94  M = 1, BSPCS - 1
                         EMIS = AREA * EMFAC( K , M )
-c sl                      EOTH( M ) = EOTH( M ) + EMIS
                         ELAI( M ) = ELAI( M ) + EMIS
 94                  CONTINUE
                     ENOWTF = ENOWTF + AREA * EMFAC( K, NO )
@@ -1021,7 +1029,6 @@ c sl     &                   'Bad EUTMN placement in SURROGATE file', 2 )
 211     CONTINUE                !  head of loop:  read SURROGATE FACTORS file
 
             READ( SDEV, 93030, IOSTAT = ISTAT, END = 299 )
-c sl     &          FIPS,
      &          FIP,
      &          XCOOR,
      &          YCOOR,
@@ -1047,7 +1054,6 @@ c sl            K = FIND1( FIP, NFIP, FIPS )
                 GO TO  211
             END IF
 
-c sl        parenthesis missing            
             C = NINT( ( XCOOR - SNGL(XORIG3D) ) * DWIDTH  ) + 1
             R = NINT( ( YCOOR - SNGL(YORIG3D) ) * DHEIGHT ) + 1
 
