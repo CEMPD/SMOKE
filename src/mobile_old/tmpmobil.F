@@ -1403,7 +1403,8 @@ C...........   For each time step, write out the area source emissions values:
 C...............   If this is a new month, or new day, calculate
 C...............   new TMAT
 
-            IF ( LDATE .NE. JDATE ) THEN
+C           IF ( LDATE .NE. JDATE ) THEN
+            IF ( MOD( T,24 ) .EQ. 1 ) THEN
 
                 LDATE = JDATE
 
@@ -1508,7 +1509,7 @@ C...............   Get factors for interpolating non-diurnal emission factors
                 ELSEIF ( TASRC .LT. TEMP0 ) THEN   !  trap TASRC against TEMP0
 
                     WRITE( MESG,94030 )
-     &                  'Temperature', TASRC, 'at source', S,
+     &                  'Temperature', TASRC, 'at source ', S,
      &                  'is below MEFS table min:', TEMP0
                     CALL M3WARN( 'TMPMOBIL', JDATE, JTIME, MESG )
                     PP = 1.0
