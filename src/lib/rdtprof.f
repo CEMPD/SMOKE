@@ -394,9 +394,6 @@ C............  Monthly profiles
         	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Sort requested profile type
-            CALL SORTI1( NPROF, INDXA, CODEA )
-
         END IF  ! End of uniform profiles or not
 
 
@@ -615,6 +612,10 @@ C.............  Local variables
 
 C----------------------------------------------------------------------
 
+C.............  Sort requested profile type
+            CALL SORTI1( N, INDXA, CODEA )
+
+C.............  Store in sorted order
             DO I = 1, N
 
                 K = INDXA( I )
