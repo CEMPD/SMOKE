@@ -120,6 +120,7 @@ C...........   Unsorted record-days characteristics
         INTEGER        CODEA ( NPHRIP, MXHR )
         INTEGER        IDXSRC( NPHRIP, MXHR )
         INTEGER        SRCIDA( NPHRIP, MXHR )
+        INTEGER        PRCIDA( NPHRIP, MXHR )
         REAL           EMISVA( NPHRIP, MXHR )
 
 C...........   Hour-specific point Sources Table input 
@@ -131,6 +132,11 @@ C...........   sorted final version (image EMISREC of data record)
  
         COMMON / EMISREC / NHRPT, INDXH, EMISH
 
+C............  Helper variables for hourly summing across multiple sources
+
+        INTEGER       NPRHR              ! number of processes encounter per hour
+        CHARACTER*62  PRHRLST( NPEMAX*NIPOL )! FIP//FCID//SKID//DVID//PRID//EINAM
+
 C...........   For flexible output of only species for which there are inputs
         INTEGER       INDXO ( MXIPOL ) ! For each inv pol, how map to OUTVAR
         LOGICAL       OVFLAG( MXIPOL ) ! For each inv pol, will OUTVAR exist?
@@ -138,12 +144,12 @@ C...........   For flexible output of only species for which there are inputs
 
 C...........   File units and logical/physical names
 
-        INTEGER         CDEV    !  Unit number for EMS95/SMOKE facility/stack ID
-        INTEGER         DDEV    !  Unit number for process.pt or pdayspec.pt files
-        INTEGER         IDEV    !  List of physical raw input file names
-        INTEGER         LDEV    !  log-device
+        INTEGER         CDEV    ! Unit number for EMS95/SMOKE facility/stack ID
+        INTEGER         DDEV    ! Unit number for process.pt or pdayspec.pt files
+        INTEGER         IDEV    ! List of physical raw input file names
+        INTEGER         LDEV    ! log-device
 
-        CHARACTER*16    ENAME   !  point source inventory file
+        CHARACTER*16    ENAME   ! point source inventory file
         CHARACTER*16    HNAME   !  hour-specific output emissions file
 
 
@@ -151,7 +157,7 @@ C...........   Other local variables
 
         REAL            EMIS( 24 )    !  Temporary emission value
                                 
-        INTEGER         I, H, J, K, P, S, T, V !  counters and indices
+        INTEGER         I, H, J, K, L, P, S, T, V !  counters and indices
         INTEGER         HS
         INTEGER         L1, L2           !  counters and indices
         INTEGER         FIP     ! Temporary fip
@@ -196,6 +202,7 @@ C...........   Other local variables
         CHARACTER*12    SKID    !  Temporary stack ID
         CHARACTER*15    FCID    !  Temporary facility ID
         CHARACTER*56    PKEY
+        CHARACTER*62    PVKEY
         CHARACTER*256   LINE    !  input line from POINT file
         CHARACTER*256   MESG    !  text for M3EXIT()
         CHARACTER*256   NAMTMP  !  Temporary buffer for input file names
@@ -786,6 +793,7 @@ C.................  Record needed data for this source and hour
                         IDXSRC( HS,T ) = HS
                         SRCIDA( HS,T ) = S
                         CODEA ( HS,T ) = COD
+                        PRCIDA( HS,T ) = P
                         EMISVA( HS,T ) = EMIS( H )
 
                     ELSEIF( HS .GT. MAXHS ) THEN
@@ -908,15 +916,18 @@ C........................................................................
 332         CONTINUE
 333         CONTINUE
 
+            NPRHR = 0  ! Initialize the number of process per hour
+
             CALL SORTI1( NPDPT( T ), IDXSRC( 1,T ), SRCIDA( 1,T ) )
 
 C.............  Store sorted records for this hour
-            LS = 0
+            LS = 0  ! previous source
             K  = 0
             DO 344 I = 1, NPDPT( T )
 
                 J = IDXSRC( I,T )
                 S = SRCIDA( J,T )
+                P = PRCIDA( J,T )
                 V = INDXO( CODEA ( J,T ) )
 
                 IF( V .LE. 0 ) THEN
@@ -933,8 +944,22 @@ C.............  Store sorted records for this hour
 
                 ENDIF
 
-                IF( EMISH( K,V ) .LT. AMISS3 ) THEN
+                L1 = TRIMLEN( PSLST( P ) )
+                PVKEY = PSLST( P )( 1:L1 ) // EINAM( V )
+                L = INDEX1( PVKEY, NPRHR, PRHRLST )
+
+                IF( EMISH( K,V ) .LT. AMISS3 ) THEN  ! EMISH is blank
+
                     EMISH( K,V ) = EMISVA( J,T )
+                    NPRHR = NPRHR + 1
+                    PRHRLST( NPRHR ) = PVKEY
+
+C.................  Check if this process/device has been used this hour
+                ELSEIF( L .LE. 0 ) THEN
+
+                    EMISH( K,V ) = EMISH( K,V ) + EMISVA( J,T )
+                    NPRHR = NPRHR + 1
+                    PRHRLST( NPRHR ) = PVKEY
 
                 ELSE
                     L2 = TRIMLEN( SRCLST( S ) )
@@ -947,7 +972,7 @@ C.............  Store sorted records for this hour
      &                  EINAM( V )
                     CALL M3MESG( MESG )
                 END IF
-                
+
 344         CONTINUE
 
             NHRPT = K
@@ -973,7 +998,7 @@ C.............  Store sorted records for this hour
 
                         VFLAG = .TRUE.
                         WRITE( MESG,94010 )
-     &                      'Duplicate emissions record:  FIP:' //
+     &                      'Missing emissions record:  FIP:' //
      &                      SRCLST( S )(  1:5  ) // ' SCC:' //
      &                      SRCLST( S )(  6:13 ) // ' Plant&Stack:' //
      &                      SRCLST( S )( 14:L2 ) // ' Species:',
