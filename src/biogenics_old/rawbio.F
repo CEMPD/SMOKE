@@ -1090,7 +1090,7 @@ c sl            K = FIND1( FIP, NFIP, FIPS )
                 AGRC( C,R,M ) = AGRC( C,R,M ) + 
      &                          CTYAGRI( M,K ) * FRAC( ASRG )
                 LEAF( C,R,M ) = LEAF( C,R,M ) + 
-     &                          CTYLEAF( M,K ) * FRAC(    1 )
+     &                          CTYLEAF( M,K ) * FRAC( FSRG )
                 OTHR( C,R,M ) = OTHR( C,R,M ) + 
      &                          CTYOTHR( M,K ) * FRAC( OSRG )
 222         CONTINUE
@@ -1099,7 +1099,7 @@ c sl            K = FIND1( FIP, NFIP, FIPS )
             WETLNO( C,R ) = WETLNO( C,R ) + CTYNOWTF( K ) * FRAC( WSRG )
             AGRINO( C,R ) = AGRINO( C,R ) + CTYNOAG ( K ) * FRAC( ASRG )
 
-            AVLAI ( C,R ) = AVLAI ( C,R ) + CTYAVLAI( K ) * FRAC(    1 )
+            AVLAI ( C,R ) = AVLAI ( C,R ) + CTYAVLAI( K ) * FRAC( FSRG )
                 
             GO TO 211           ! end of loop reading SURROGATE FACTORS file
 
