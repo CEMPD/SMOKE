@@ -5,16 +5,16 @@ C***********************************************************************
 C  subroutine body starts at line 153
 C
 C  DESCRIPTION:
-C       Reads information from SPDSUM and hourly temperature files to
+C       Reads information from SPDSUM and hourly meteorology files to
 C       creates MOBILE6 input files. Calls modified version of MOBILE6 
 C       to generate emission factors. Matches factors to sources and 
-C       writes to output files. Loops over all days for a given temperature
-C       averaging group, stopping when no more temperature files are available.
+C       writes to output files. Loops over all days for a given meteorology
+C       averaging group, stopping when no more meteorology files are available.
 C
 C  PRECONDITIONS REQUIRED:
 C       MBSETUP and PREMOBL must have been run.
 C
-C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C  SUBROUTINES AND FUNCTIONS CALLED: 
 C
 C  REVISION  HISTORY:
 C     10/01: Created by C. Seppanen
@@ -50,7 +50,7 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
         
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TKHOUR, RHHOUR, BPHOUR, BPDAY
+        USE MODMET, ONLY: TKHOUR, QVHOUR, BPHOUR, BPDAY, RHHOUR
 
 C...........   This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS,
@@ -515,12 +515,14 @@ C.................  Allocate space for meteorology info
                     CALL CHECKMEM( IOS, 'TEMPCTY', PROGNAME )
                     ALLOCATE( TKHOUR( NROWS, 24 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
-                    ALLOCATE( RHHOUR( NROWS, 24 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'RHHOUR', PROGNAME )
+                    ALLOCATE( QVHOUR( NROWS, 24 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'QVHOUR', PROGNAME )
                     ALLOCATE( BPHOUR( NROWS, 24 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'BPHOUR', PROGNAME )
                     ALLOCATE( BPDAY( NROWS ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'BPDAY', PROGNAME )
+                    ALLOCATE( RHHOUR( NROWS, 24 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'RHHOUR', PROGNAME )
                 END IF
                 
                 TEMPCTY = 0
