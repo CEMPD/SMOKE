@@ -81,7 +81,7 @@ C...........   PARAMETER:
         CHARACTER*5     BLANK5
         INTEGER         NSMAX
         PARAMETER     ( BLANK5 = ' ',
-     &                  NSMAX = NASRC * NIPOL )
+     &                  NSMAX = NASRC * NIPOL * 1.5 ) ! 1.5 to account for dups
 
 
 C...........   LOCAL VARIABLES and their descriptions:
