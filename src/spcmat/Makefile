@@ -36,7 +36,7 @@ asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 opensmat.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO)
+spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 
