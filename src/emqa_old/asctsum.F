@@ -12,7 +12,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O; 
 C       GETREAL, ENVREAL, PROMPTMFILE, PROMPTFFILE, TRIMLEN, LBLANK, 
-C       ENVINT, FIND2, SORT2
+C       ENVINT, FIND2
 C
 C  REVISION  HISTORY:
 C       Prototype  1/97 by Chad Barker
@@ -53,13 +53,17 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        REAL            GETREAL, ENVREAL
+        INTEGER         ENVINT
+        REAL            ENVREAL
+        INTEGER         FIND2
+        REAL            GETREAL
+        INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        INTEGER         LBLANK, TRIMLEN, PROMPTFFILE, ENVINT, FIND2
+        INTEGER         LBLANK
+        INTEGER         TRIMLEN
 
-        EXTERNAL        GETREAL, ENVREAL, PROMPTMFILE, TRIMLEN
-        EXTERNAL        LBLANK, PROMPTFFILE, ENVINT, FIND2, SORT2
-     
+        EXTERNAL        ENVINT, ENVREAL, FIND2, GETREAL, PROMPTFFILE, 
+     &                  PROMPTMFILE, LBLANK, TRIMLEN
                                             
 C...........   PARAMETERS and their descriptions
         INTEGER MAXASCT, NASCPOL
