@@ -564,9 +564,10 @@ C                   in INNAMES. Data are stored in *EMSRC in the global order.
 
 C.................  If using map-formatted inventory for time-independent    
                     IF( ANMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
-                        CALL RDMAPPOL( AENAME, ANMAP, AMAPNAM, AMAPFIL, 
+
+                        CALL RDMAPMASK( AENAME, ANMAP, AMAPNAM, AMAPFIL, 
      &                               NASRC, APOLSIZ, NVPGP, VARNAMES(1),
-     &                                 INNAMES(1), A_EXIST(1,N), AEMSRC)
+     &                               INNAMES(1), A_EXIST(1,N), AEMSRC  )
 
 C.................  If using old format of inventory or hourly data
                     ELSE
@@ -583,9 +584,9 @@ C                   current pol group
 
 C.................  If using map-formatted inventory for time-independent    
                     IF( MNMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
-                        CALL RDMAPPOL( MENAME, MNMAP, MMAPNAM, MMAPFIL, 
-     &                               NMSRC, MPOLSIZ, NVPGP, INNAMES(1), 
-     &                                 M_EXIST(1,N), MEMSRC )
+                        CALL RDMAPMASK( MENAME, MNMAP, MMAPNAM, MMAPFIL, 
+     &                                NMSRC, MPOLSIZ, NVPGP, INNAMES(1), 
+     &                                M_EXIST(1,N), MEMSRC             )
 
 C.................  If using old format of inventory or hourly data
                     ELSE
@@ -601,9 +602,9 @@ C                   step for all point-source pollutants in current pol group
 
 C.................  If using map-formatted inventory for time-independent    
                     IF( PNMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
-                        CALL RDMAPPOL( PENAME, PNMAP, PMAPNAM, PMAPFIL, 
-     &                               NPSRC, PPOLSIZ, NVPGP, INNAMES(1), 
-     &                                 P_EXIST(1,N), PEMSRC )
+                        CALL RDMAPMASK( PENAME, PNMAP, PMAPNAM, PMAPFIL, 
+     &                                NPSRC, PPOLSIZ, NVPGP, INNAMES(1), 
+     &                                P_EXIST(1,N), PEMSRC             )
 
 C.................  If using old format of inventory or hourly data
                     ELSE

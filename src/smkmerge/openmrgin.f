@@ -233,7 +233,7 @@ C.............  Otherwise, just set parameters and pollutants from inven file
 
 C...............  For map-formatted inventories
                 IF( ANMAP .GT. 0 ) THEN
-                    CALL STORE_INVEN_VARS( ANMAP, ANIPOL, NPPOL,INVPIDX,
+                    CALL STORE_INVEN_VARS( ANMAP,ANIPOL,NPPOL,1+INVPIDX,
      &                     AMAPNAM, AMAPFIL, AEINAM, AONAMES, AOUNITS ) 
 
 C...............  For old format of inventories
@@ -298,11 +298,11 @@ C               and store control variable names.
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( ARFLAG ) THEN
-                ARNAME = PROMPTMFILE( 
+                ARNAME = PROMPTSET( 
      &           'Enter logical name for the AREA REACTIVITY MATRIX',
      &           FSREAD3, 'ARMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( ARNAME )
+                CALL RETRIEVE_SET_HEADER( ARNAME )
                 CALL CHKSRCNO( 'area', 'ARMAT', NTHIK3D, NASRC, EFLAG )
                 ANRMATV = NVARS3D
                 ANSREAC = NROWS3D
@@ -461,11 +461,11 @@ C.............  Otherwise, just set parameters and pollutants from inven file
 C...............  For map-formatted inventories
                 IF( MNMAP .GT. 0 ) THEN
                     CALL STORE_INVEN_VARS( MNMAP-MNIACT, MNIPOL, NPPOL,
-     &                               INVPIDX, MMAPNAM, MMAPFIL, MEANAM,  
+     &                             1+INVPIDX, MMAPNAM, MMAPFIL, MEANAM,
      &                                               MONAMES, MOUNITS ) 
 
                     K = MNIPOL + 1
-                    CALL STORE_INVEN_VARS( MNMAP-MNIPOL, MNIACT,NPACT,1,
+                    CALL STORE_INVEN_VARS( MNMAP-MNIPOL, MNIACT,NPACT,2,
      &                     MMAPNAM( K ), MMAPFIL( K ), MEANAM( K ), 
      &                     MONAMES( K ), MOUNITS( K ) ) 
 
@@ -542,11 +542,11 @@ C               and store control variable names.
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( MRFLAG ) THEN
-                MRNAME = PROMPTMFILE( 
+                MRNAME = PROMPTSET( 
      &           'Enter logical name for the MOBILE REACTIVITY MATRIX',
      &           FSREAD3, 'MRMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( ARNAME )
+                CALL RETRIEVE_SET_HEADER( ARNAME )
                 CALL CHKSRCNO( 'mobile', 'MRMAT', NTHIK3D, NMSRC, EFLAG)
                 MNRMATV = NVARS3D
                 MNSREAC = NROWS3D
@@ -660,7 +660,7 @@ C.............  Otherwise, just set parameters and pollutants from inven file
 
 C...............  For map-formatted inventories
                 IF( PNMAP .GT. 0 ) THEN
-                    CALL STORE_INVEN_VARS( PNMAP, PNIPOL, NPPOL,INVPIDX,
+                    CALL STORE_INVEN_VARS( PNMAP,PNIPOL,NPPOL,1+INVPIDX,
      &                     PMAPNAM, PMAPFIL, PEINAM, PONAMES, POUNITS ) 
 
 C...............  For old format of inventories
@@ -725,11 +725,11 @@ C               and store control variable names.
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( PRFLAG ) THEN
-                PRNAME = PROMPTMFILE( 
+                PRNAME = PROMPTSET( 
      &           'Enter logical name for the POINT REACTIVITY MATRIX',
      &           FSREAD3, 'PRMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( PRNAME )
+                CALL RETRIEVE_SET_HEADER( PRNAME )
                 CALL CHKSRCNO( 'point', 'PRMAT', NTHIK3D, NPSRC, EFLAG )
                 PNRMATV = NVARS3D
                 PNSREAC = NROWS3D
@@ -1698,7 +1698,7 @@ C              variables listed in the input file are consistent
 C............  Loop through variables requested
             DO I = 1, NMAPVAR
 
-                TMPNAME = 'TMP_POL_FILE'
+                TMPNAME = 'IOAPI_DAT'
                 IF( .NOT. SETENVVAR( TMPNAME, MAPFILES( I ) ) ) THEN
                     MESG = 'ERROR: Could not set logical file name '
      &                          // CRLF() // BLANK10 // 'for file ' //
@@ -1724,19 +1724,27 @@ C............  Loop through variables requested
 
 C................  Ensure that map variable name and file variable 
 C                  name are the same
-                IF( MAPVARS( I ) .NE. VNAMESET( 1 ) ) THEN
+                IF( MAPVARS( I ) .NE. VNAMESET( 2 ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Variable name "'// TRIM(MAPVARS(I))//
      &                    '" in map-formatted inventory is mapped to '//
      &                     CRLF()// BLANK10// 'a file with variable "'//
-     &                     TRIM( VNAMESET( 1 ) )//'". Map-formatted '//
+     &                     TRIM( VNAMESET( 2 ) )//'". Map-formatted '//
      &                     'inventory has been corrupted.'
                     CALL M3MSG2( MESG )
+                    CYCLE
                 END IF
 
-                NAMES1( I ) = VNAMESET( 1 )
+                NAMES1( I ) = VNAMESET( 2 )
 	        NAMES2( I ) = VNAMESET( IDX2 )
                 UNITS ( I ) = VUNITSET( IDX2 )
+
+C...............  Close output file for this variable
+                IF( .NOT. CLOSESET( TMPNAME ) ) THEN
+                    MESG = 'Could not close file:'//CRLF()//BLANK10//
+     &                     TRIM( MAPFILES( I ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
             END DO
 

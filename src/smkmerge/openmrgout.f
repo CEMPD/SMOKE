@@ -48,14 +48,15 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
 
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
@@ -357,6 +358,8 @@ C.............  Internal subprogram arguments
 C.............  Local subprogram varibles
             INTEGER     I, J, K, LJ, M, V
 
+            INTEGER     IOS    ! allocate status
+
             CHARACTER(LEN=IOVLEN3) CBUF
 
 C------------------------------------------------------------------------
@@ -365,7 +368,20 @@ C.............  Set constants number and values for variables
 C.............  Do this regardless of whether we have outputs or not
 C.............  For speciation...
             IF( SFLAG ) THEN
-        	NVARS3D = NMSPC_L
+        	NVARSET = NMSPC_L
+
+                IF( ALLOCATED( VTYPESET ) )
+     &              DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
+                IF( ALLOCATED( VARS_PER_FILE ) ) 
+     &              DEALLOCATE( VARS_PER_FILE )
+                ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+                ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+                ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+                ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
 
         	K = 0
         	LJ = -1
@@ -387,10 +403,10 @@ C.........................  Make sure current species is in local array
                 	DESCBUF= DESCBUF(1:LD)//' Model species '// CBUF
 
                 	K = K + 1
-                	VNAME3D( K ) = CBUF
-                	UNITS3D( K ) = GRDUNIT( I )
-                	VDESC3D( K ) = ADJUSTL( DESCBUF )
-                	VTYPE3D( K ) = M3REAL
+                	VNAMESET( K ) = CBUF
+                	VUNITSET( K ) = GRDUNIT( I )
+                	VDESCSET( K ) = ADJUSTL( DESCBUF )
+                	VTYPESET( K ) = M3REAL
 
                 	LJ = J
 
@@ -400,7 +416,20 @@ C.........................  Make sure current species is in local array
 C.............  For no speciation...
             ELSE
 
-        	NVARS3D = NIPPA_L
+        	NVARSET = NIPPA_L
+
+                IF( ALLOCATED( VTYPESET ) )
+     &              DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
+                IF( ALLOCATED( VARS_PER_FILE ) ) 
+     &              DEALLOCATE( VARS_PER_FILE )
+                ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+                ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+                ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+                ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
 
         	K = 0
 C.................  Loop through global list
@@ -429,10 +458,10 @@ C.....................  Make sure current data variable is in local array
                     K = K + 1
 
 C.....................  Define variable information
-                    VNAME3D( K ) = EANAM  ( V )
-                    UNITS3D( K ) = GRDUNIT( V )
-                    VDESC3D( K ) = ADJUSTL( DESCBUF )
-                    VTYPE3D( K ) = M3REAL
+                    VNAMESET( K ) = EANAM  ( V )
+                    VUNITSET( K ) = GRDUNIT( V )
+                    VDESCSET( K ) = ADJUSTL( DESCBUF )
+                    VTYPESET( K ) = M3REAL
 
         	END DO
 
@@ -502,8 +531,8 @@ C              and set environment variable
 C.............  Logical name is defined, open file.
                 SELECT CASE( FTYPE )
                 CASE( 'NETCDF' )
-                    LNAME = PROMPTMFILE( 'Enter name for '// FILEDESC,
-     &                                    FSUNKN3, LNAME, PROGNAME )
+                    LNAME = PROMPTSET( 'Enter name for '// FILEDESC,
+     &                                  FSUNKN3, LNAME, PROGNAME    )
                 CASE( 'ASCII' )
                     FDEV  = PROMPTFFILE(
      &                      'Enter name for  '// FILEDESC,
