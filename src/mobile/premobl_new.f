@@ -1,89 +1,39 @@
- 
+
         PROGRAM PREMOBL
- 
-C***********************************************************************
-C  program body starts at line 178
-C
-C  DESCRIPTION:
-C     This program inputs gridded, time-dependent temperature data, a mobile 
-C     list file, and an ungridding matrix and
-C     determines the min/max temperature combinations for each mobile source 
-C     and for each emission factor set.
-C
-C     This version of the program assumes that MOBILE5 is the emission
-C     factor model of interest, and therefore is focused on temperature
-C     as the met data needing preprocessing, and sets the permitted min/max
-C     temperature ranges accordingly.  Ultimately, this program could become
-C     PREEMFAC, and do more general met pre-processing.  One input would then
-C     need to be the activity data names associated with a method, such as
-C     MOBILE5, for computing emissions.
-C
-C  PRECONDITIONS REQUIRED:
-C
-C  SUBROUTINES AND FUNCTIONS CALLED:
-C
-C  REVISION  HISTORY:
-C      Copied from prediur.F 3.4 by M. Houyoux
-C
-C***********************************************************************
-C
-C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C                System
-C File: @(#)$Id$
-C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
-C All Rights Reserved
-C
-C See file COPYRIGHT for conditions of use.
-C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
-C P.O. Box 12889
-C Research Triangle Park, NC  27709-2889
-C
-C env_progs@mcnc.org
-C
-C Pathname: $Source$
-C Last updated: $Date$ 
-C
-C****************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC
-
-C...........   This module contains the cross-reference tables
-        USE MODXREF
-
-C.........  This module contains emission factor tables and related
-        USE MODEMFAC
 
 C...........   This module contains the information about the source category
         USE MODINFO
 
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET
+        
+        USE MODMBSET
 
         IMPLICIT NONE
- 
+        
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
-C...........   EXTERNAL FUNCTIONS and their descriptions:
-
+C...........   EXTERNAL FUNCTIONS and their descriptions:        
         CHARACTER*2     CRLF
         INTEGER         GETIFDSC
+        REAL            ENVREAL
         CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         WKDAY
-
-        EXTERNAL     CRLF, GETIFDSC, MMDDYY, PROMPTFFILE, PROMPTMFILE,
-     &               WKDAY
-
+        
+        EXTERNAL     CRLF, GETIFDSC, ENVREAL, MMDDYY, PROMPTFFILE, 
+     &               PROMPTMFILE, WKDAY
+        
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
@@ -100,35 +50,24 @@ C...........  Allocatable per-source arrays
         INTEGER, ALLOCATABLE :: DAYENDT ( : ) ! daily end time HHMMSS
         LOGICAL, ALLOCATABLE :: LDAYSAV ( : ) ! true: src uses daylight time
 
-C...........  Alloctable array for flagging needed PSI/min-max-combos
-C...........  To conserve memory, this could be allocated and reallocated
-C             at each time step for only the used min-max-combos
-C...........  This is used only by the genefmet routine
-        INTEGER, ALLOCATABLE :: TIPSI( :, :, : )
-
 C...........  Array that contains the names of the inventory variables needed 
 C             for this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
 
 C...........   File units and logical names:
-
-        INTEGER      EDEV  ! unit number for output METIDX per PSI
-        INTEGER      IDEV  ! unit number for emissions factors xref file
         INTEGER      LDEV  ! unit number for log file
         INTEGER      RDEV  ! unit number for mobile codes conversions file
         INTEGER      SDEV  ! unit number for ASCII inventory file
         INTEGER      TDEV  ! unit number for emissions type by activity file
+        INTEGER      PDEV  ! unit number for speeds summary file (SPDSUM)
 
         CHARACTER*16 ANAME ! logical name for mobile ASCII inventory file
         CHARACTER*16 ENAME ! logical name for mobile I/O API inventory file
-        CHARACTER*16 FNAME ! logical name for output METIDX per PSI
-        CHARACTER*16 MNAME ! logical name for output ungridded min/max temp
         CHARACTER*16 HNAME ! logical name for output ungridded hourly temps
         CHARACTER*16 TNAME ! logical name for surface temp input file
         CHARACTER*16 UNAME ! logical name for ungridding-matrix input file
-
+                
 C...........   Other local variables:
-
         INTEGER    H, I, J, K, L, S, T, V  ! Counters and pointers
 
         INTEGER    DAY     !  tmp day of week number
@@ -143,6 +82,7 @@ C...........   Other local variables:
         INTEGER    LDATE   !  date from previous loop iteration
         INTEGER    NCOLS   !  no. grid columns
         INTEGER    NCOLSU  !  no. grid columns in ungridding matrix
+        INTEGER    NCOUNTY !  no. counties to process
         INTEGER    NGRID   !  no. grid cells
         INTEGER    NINVARR !  no. inventory variables to read
         INTEGER    NMATX   !  size of ungridding matrix
@@ -152,25 +92,19 @@ C...........   Other local variables:
         INTEGER    ODATE   !  output date
         INTEGER    OTIME   !  time in GMT for determining when to output
         INTEGER :: OSRC = 0!  number of sources outside grid
-        INTEGER    PSI     !  tmp parameter scheme index
         INTEGER    SDATE   !  output start date
         INTEGER    SDATE_MET ! met file start date
         INTEGER    STIME   !  output start time
         INTEGER    STIME_MET ! met file start time
         INTEGER    TSTEP   !  time step of input temperature data (HHMMSS)
         INTEGER    TZONE   !  zone to determine output days
-
-        REAL       TMAX   !  deg F temporary source max temperature on interval
-        REAL       TMIN   !  deg F temporary source min temperature on interval
-        REAL       MSAV   !  temporary saved minimum temperature
-
+        
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
         LOGICAL :: LASTTIME = .FALSE.  !  true: final time step
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
-
-        CHARACTER*20              EMISMOD     ! emission factor model name from E.V.
+                
         CHARACTER(LEN=IOVLEN3) :: TVARNAME    !  temperature variable name
-        CHARACTER*300             MESG        !  message buffer
+        CHARACTER(LEN=300) ::     MESG        !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'PREMOBL'   !  program name
 
@@ -196,9 +130,6 @@ C.........  End program if source category is not mobile sources
         END IF
 
 C.........  Obtain settings from the environment...
-C.........  Get the name of the emission factor model to use for one run
-        MESG = 'Emission factor model'
-        CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOBILE5', EMISMOD, IOS )
         
 C.........  Get the name of the activity to use for one run
         MESG = 'Temperature variable name'
@@ -231,10 +162,10 @@ C.......   Get file names and units; open input files
      &         'Enter logical name for SURFACE TEMPERATURE file',
      &          FSREAD3, TNAME, PROGNAME )
 
-        IDEV = PROMPTFFILE(
-     &         'Enter logical name for EMISSION FACTOR INDEX LIST file',
-     &         .TRUE., .TRUE., CRL // 'PLIST', PROGNAME )
-
+        PDEV = PROMPTFFILE(
+     &           'Enter logical name for SPDSUM speed summary file',
+     &           .TRUE., .TRUE., 'SPDSUM', PROGNAME )
+     
 C.........  Get header description of inventory file, error if problem
         IF( .NOT. DESC3( ENAME ) ) THEN
             MESG = 'Could not get description of file "' //
@@ -258,15 +189,6 @@ C               file, or else this program does not need to be run
             END IF
 
         END IF
-
-        TDEV = PROMPTFFILE( 
-     &         'Enter logical name for EMISSION PROCESSES file',
-     &         .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
-
-C.........  Get file name for converting road-class to road type &
-C           vehicle type name to vehicle type number.
-        MESG = 'Enter logical name for MOBILE CODES file'
-        RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES', PROGNAME )
 
 C.........  Create note about time zone expected in meteorology file
         WRITE( MESG, 94010 )
@@ -334,10 +256,29 @@ C.........  Allocate memory for and read in required inventory characteristics
 C.........  Build unique lists of SCCs and country/state/county codes
 C           from the inventory arrays
         CALL GENUSLST
+        
+C.........  Get sources and counties from SPDSUM file
+        ALLOCATE( COUNTYSRC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'COUNTYSRC', PROGNAME )
 
-C.........  Retrieve environment variable settings for temperature ranges
-C.........  Populate table of valid min/max temperatures in MODMET
-        CALL TMPRINFO( .TRUE., 'BOTH' )
+        COUNTYSRC = 0
+        CALL RDSPDSRC( PDEV, NSRC, COUNTYSRC )
+
+C.........  Count number of unique counties in COUNTYSRC array
+        CALL GETCTYNUM( NSRC, COUNTYSRC, NCOUNTY )
+
+C.........  Retrieve environment variable settings for temperature range
+        MESG = 'Minimum allowed daily temperature [deg F]'
+        MINTEMP = ENVREAL( 'SMK_MINTEMP', MESG, 0., IOS )
+
+        MESG = 'Maximum allowed daily temperature [deg F]'
+        MAXTEMP = ENVREAL( 'SMK_MAXTEMP', MESG, 120., IOS )
+
+C.........  Convert temperature parameters to proper units
+C.........  Kelvin for now - future can be dependant on met input units
+
+        MINTEMP = FTOC * ( MINTEMP - 32. ) + CTOK
+        MAXTEMP = FTOC * ( MAXTEMP - 32. ) + CTOK
 
 C.........  Allocate memory for other arrays in the program
         ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
@@ -352,26 +293,11 @@ C.........  Allocate memory for other arrays in the program
         CALL CHECKMEM( IOS, 'LDAYSAV', PROGNAME )
         ALLOCATE( TASRC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TASRC', PROGNAME )
-        ALLOCATE( TKMIN( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKMIN', PROGNAME )
-        ALLOCATE( TKMAX( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKMAX', PROGNAME )
-        ALLOCATE( TKMINOUT( NSRC,4 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKMINOUT', PROGNAME )
-        ALLOCATE( TKMAXOUT( NSRC,4 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKMAXOUT', PROGNAME )
-        ALLOCATE( METIDX( NSRC,4 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'METIDX', PROGNAME )
-        ALLOCATE( EFSIDX( NSRC,NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EFSIDX', PROGNAME )
-        ALLOCATE( TKHOUR( NSRC,24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
 
 C.........  Create array of which sources are affected by daylight savings
         CALL GETDYSAV( NSRC, IFIP, LDAYSAV )
 
 C.........  Read ungridding matrix 
-
         CALL RDUMAT( UNAME, NSRC, NMATX, NMATX, 
      &               UMAT( 1 ), UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ) )
 
@@ -386,57 +312,26 @@ C.........  Set end date and time for run
         ETIME = STIME
         CALL NEXTIME( EDATE, ETIME, NSTEPS*10000 )
 
+C.........  Allocate memory for storing temperature profiles
+        ALLOCATE( TKHOUR( NSRC, 0:NSTEPS-1 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
+        ALLOCATE( TKCOUNTY( NCOUNTY, 0:NSTEPS-1 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TKCOUNTY', PROGNAME )
+        
 C.........  Preprocess dates, times, and time zones.  Write report for
 C           time zones here for zones that do not have a complete day of
-C           data in beginning or end.  This is only an issue because of
-C           computing min/max data per day.
+C           data in beginning or end. 
         CALL CHKFULLDY( NSRC, SDATE, STIME, EDATE, ETIME, 
-     &                  TZONES, LDAYSAV, EMISMOD )
+     &                  TZONES, LDAYSAV )
 
-C.........  Fill tables for translating mobile road classes and vehicle types
-C.........  The tables are passed through MODINFO
-        CALL RDMVINFO( RDEV )
-
-C.........  Read list of activities and associated pollutants to create the
-C           list of activities to use in the processing
-        CALL RDEPROC( TDEV )
-
-C...........   Read list of parameter scheme indices and emission factor
-C...........   table names to use for each source
- 
-C.........  Read the cross-reference for assigning the parameter scheme indices
-C           to the sources. This will populate parts of the MODXREF module.
-C.........  Also create the list of unique parameter scheme indices.
-        CALL RDEFXREF( IDEV, .TRUE. )
-
-C...........   Map parameter scheme indexes (PSIs) onto sources for all hours
-C...........   Assign PSIs only for activities that are being used to create
-C              emissions. 
-        CALL ASGNPSI( NIACT, ACTVTY, NETYPE )
-
-C.........  Allocate memory for flag of which PSI/temp-combos are used. Have
-C           waited until now because need MXNPSI from RDEFXREF
-        ALLOCATE( TIPSI( MXXNPSI, NVLDTMM, NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TIPSI', PROGNAME )
-
-C.........  Open output files...
-
-C.........  Open file(s) for per-source min/max temperatures
-        MNAME = 'MINMAXT'
-        CALL OPENSMET( ENAME, SDATE, STIME, TVARNAME, MNAME )
-        
-C.........  Open file for per-source hourly temperature profiles       
+C.........  Open file for per-county hourly temperature profiles       
         HNAME = 'HOURLYT'
-        CALL OPENSHOUR( ENAME, SDATE, STIME, TVARNAME, HNAME )
+        CALL OPENSHOUR( ENAME, SDATE, STIME, TVARNAME, NCOUNTY, HNAME )
 
-C.........  Open file(s) for parameter scheme index outputs
-        FNAME = 'MEFTEMP'
-        CALL OPENPSIOUT( ENAME, FNAME, EDEV )
- 
 C.........  Process temperature information...
 
         L = LEN_TRIM( TVARNAME )
-        MESG = 'Processing temperature data for using variable "' //
+        MESG = 'Processing temperature data using variable "' //
      &         TVARNAME( 1:L ) // '" ...'
         CALL M3MSG2( MESG )
 
@@ -472,10 +367,8 @@ C.................  Write message for day of week and date
                 CALL M3MSG2( MESG )
 
 C.................  Set start and end hours of day for all sources
-C.................  The first time this routine is called, ODATE and OTIME
-C                   are set as well
                 CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, 
-     &                         DAYBEGT, DAYENDT, EMISMOD )
+     &                         DAYBEGT, DAYENDT )
 
             END IF
 
@@ -485,28 +378,27 @@ C.............  First iteration in loop, set the output date/time
      &                         ODATE, OTIME )
             END IF
 
-C.............  Update the min/max temperatures based on this hour's data
-            LASTTIME = ( T == NSTEPS )
-            CALL DYMINMAX( NSRC, JTIME, LASTTIME, DAYBEGT, DAYENDT, 
-     &                     TASRC, TKMIN, TKMAX, TKMINOUT, TKMAXOUT )
-
 C.............  Create hourly temperature array by source
-            CALL HOURTEMP( NSRC, JTIME, DAYBEGT, TASRC, TKHOUR )
-            
+            CALL HOURTEMP( NSRC, NSTEPS, T, JTIME, DAYBEGT, 
+     &                     TASRC, TKHOUR )
+
+            LASTTIME = ( T == NSTEPS )    
+
 C.............  Adjust and output min/max data
             IF( LASTTIME .OR.
      &        ( JDATE >= ODATE .AND.
      &          JTIME == OTIME       ) ) THEN
 
-C.................  Adjust the by-source meteorology data before output
-                CALL ADJSMET( NSRC, NTMPR, NVLDTMM, MINT_MIN, MINT_MAX, 
-     &                        MAXT_MIN, MAXT_MAX, TMMINVL, TMXINVL,
-     &                        'temperature', VLDTMPR, VLDTMIN, VLDTMAX, 
-     &                        TKMINOUT, TKMAXOUT, METIDX )
-
 C.................  Adjust hourly temperature data based on min and max
-                CALL ADJSHOUR( NSRC, MINT_MIN, MAXT_MAX, 'temperature',
-     &                     TKHOUR )
+                CALL ADJSHOUR( NSRC, NSTEPS, MINTEMP, MAXTEMP, 
+     &                         'temperature', TKHOUR )
+
+C.................  Create county based 24-hour temperature profiles
+                MESG = 'Averaging 24-hour temperature profiles...'
+                CALL M3MSG2( MESG )
+
+                CALL AVERTEMP( NSRC, NSTEPS, NCOUNTY, COUNTYSRC, 
+     &                         TKHOUR, TKCOUNTY )
 
 C.................  Count these sources (the first time)
                 IF( .NOT. OFLAG ) THEN
@@ -520,19 +412,15 @@ C.................  Count these sources (the first time)
                     END DO
                 END IF
 
-C.................  Write the by-source meteorology data
-                CALL WRSMET( NSRC, IDATE, ITIME, 'MINMAXT', 
-     &                       TKMINOUT, TKMAXOUT, METIDX    )
-
-C.................  Write hourly temperature data to file
-                CALL WRSHOUR( NSRC, IDATE, JTIME, 'HOURLYT', TKHOUR )
-
-C.................  Update meteorology information for each emission factor
-                CALL GENEFMET( NSRC, MXXNPSI, NVLDTMM, NIACT, 
-     &                         NETYPE, METIDX, TIPSI )
+C.................  Write hourly temperature data to file                
+                MESG = 'Writing temperature profiles to output file...'
+                CALL M3MSG2( MESG )
+                
+                CALL WRSHOUR( NCOUNTY, NSTEPS, IDATE, JTIME, 'HOURLYT',
+     &                        TKCOUNTY )
 
 C.................  Increment output time for per-day file
-                CALL NEXTIME( IDATE, ITIME, 240000 )
+C                CALL NEXTIME( IDATE, ITIME, 240000 )
 
             END IF   ! End of section to output and store for emission factors
 
@@ -541,37 +429,6 @@ C.................  Increment output time for per-day file
 
         END DO   !  End loop on hours of temperature files
  
-C......... Write temperature combinations for each PSI into an ASCII file
-
-        CALL M3MSG2( 'Writing out EF-REF/TEMPERATURE file...' )
-
-        K = 0
-        DO V = 1, NIACT
-
-C.............  Skip activity if not to be used
-            IF( NETYPE( V ) == 0 ) CYCLE
-
-            DO I = 1, NPSI( V )
-
-                DO J = 1, NVLDTMM
-
-                    K = TIPSI( I, J, V )
-
-                    IF( K /= 0 ) THEN
-
-                        PSI  = PSILIST( I,V )
-                        TMIN = VLDTMIN( J )
-                        TMAX = VLDTMAX( J )
-
-                        WRITE( EDEV,93010 ) 
-     &                         PSI, TMIN, TMAX, J, ACTVTY( V )
-
-                    END IF
-
-                END DO
-            END DO
-        END DO
-
 C.........  Write message when sources were excluded during ungridding
         IF( OFLAG ) THEN
 
@@ -582,8 +439,8 @@ C.........  Write message when sources were excluded during ungridding
 
             CALL M3MESG( MESG )
 
-        END IF
-
+         END IF
+                    
 C......... End program sucessfully
 
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -640,8 +497,5 @@ C...........   Internal buffering formats............ 94xxx
 94010       FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE CHECK_GRID_DIMS
-
+                
         END PROGRAM PREMOBL
-
-
-
