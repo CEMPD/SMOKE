@@ -78,5 +78,11 @@ C.............  Store unit number and set message for next time period
             
         END DO
 
+C.........  Make sure at least one file was opened
+        IF( DDEV > 0 .AND. WDEV > 0 .AND. MDEV > 0 .AND. EDEV > 0 ) THEN
+            MESG = 'No group files available.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
         END SUBROUTINE OPENGROUP
         
