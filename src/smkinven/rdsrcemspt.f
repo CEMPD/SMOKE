@@ -81,9 +81,9 @@ C   begin body of subroutine RDSRCEMSPT
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        CFIP( 1:1 ) = '0'                 ! country code of FIPS
-        CFIP( 2:3 ) = LINE( 1:2 )         ! state code
-        CFIP( 4:6 ) = LINE( 3:5 )         ! county code
+        CFIP( 1:1 ) = '0'                    ! country code of FIPS
+        CFIP( 2:3 ) = ADJUSTR( LINE( 1:2 ) ) ! state code
+        CFIP( 4:6 ) = ADJUSTR( LINE( 3:5 ) ) ! county code
 
 C.........  Replace blanks with zeros        
         DO I = 1,FIPLEN3

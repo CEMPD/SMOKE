@@ -127,8 +127,8 @@ C.............  Check for end of file
     
 C.............  Read FIPS code from file
             CFIP( 1:1 ) = '0'
-            CFIP( 2:3 ) = LINE( 1:2 )
-            CFIP( 4:6 ) = LINE( 3:5 )
+            CFIP( 2:3 ) = ADJUSTR( LINE( 1:2 ) )
+            CFIP( 4:6 ) = ADJUSTR( LINE( 3:5 ) )
                         
 C.............  Replace blanks with zeros        
             DO I = 1,FIPLEN3

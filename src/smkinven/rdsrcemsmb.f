@@ -167,8 +167,8 @@ C.........  Use the file format definition to parse the LINE into
 C           the various data fields        
         IF( FIXED ) THEN
             WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS
-            CFIP( 2:3 ) = LINE( 1:2 )  ! state
-            CFIP( 4:6 ) = LINE( 3:5 )  ! county
+            CFIP( 2:3 ) = ADJUSTR( LINE( 1:2 ) )  ! state
+            CFIP( 4:6 ) = ADJUSTR( LINE( 3:5 ) )  ! county
             CRWT( 1:1 ) = LINE( 6:6 )  ! area type
             CRWT( 2:3 ) = ADJUSTL( LINE( 7:10 ) ) ! facility type  <-- PROBLEM!!!!
             CLNK        = ' '          ! link

@@ -143,10 +143,10 @@ C           the various data fields
         WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS
         
         IF( FIXED ) THEN
-            CFIP( 2:3 ) = LINE(  1:2  )  ! state
-            CFIP( 4:6 ) = LINE(  3:5  )  ! county
-            CLNK        = LINE(  6:15 )  ! link
-            TSCC        = LINE( 16:25 )  ! scc
+            CFIP( 2:3 ) = ADJUSTR( LINE(  1:2  ) ) ! state
+            CFIP( 4:6 ) = ADJUSTR( LINE(  3:5  ) ) ! county
+            CLNK        =          LINE(  6:15 )   ! link
+            TSCC        =          LINE( 16:25 )   ! scc
         ELSE
             CALL PARSLINE( LINE, NSEG, SEGMENT )        
             CFIP( 2:3 ) = ADJUSTR( SEGMENT( 1 )( 1:2 ) )  ! state code
