@@ -95,6 +95,10 @@ C...........   Master Diurnal EFs list variables
 
         COMMON / EFS2 / WDL_VOC, DNL_VOC, HOT_VOC, CRC_VOC
 
+C...........   Variables for targeted update of EFs
+        INTEGER NUPDAT                      ! No. of PSIs targeted for update
+        INTEGER UPDATE ( MXPSI )            ! Targeted PSI list
+
 C...........   Variables to carry over from one MOBILE5 call to the next
 
         INTEGER      IREAD
@@ -126,10 +130,11 @@ C...........   Unit numbers and logical names
         INTEGER       MODEV
         INTEGER       NLDEV
         INTEGER       NRDEV
-        CHARACTER*16  DNAME               ! Input  diurnal master EF file
-        CHARACTER*16  ENAME               ! Input  non-diu master EF file
-        CHARACTER*16  NNAME               ! Output diurnal master EF file
-        CHARACTER*16  ONAME               ! Output non-diu master EF file
+        INTEGER       SDEV    ! Optional input for targeted update on EF files
+        CHARACTER*16  DNAME   ! Input  diurnal master EF file
+        CHARACTER*16  ENAME   ! Input  non-diu master EF file
+        CHARACTER*16  NNAME   ! Output diurnal master EF file
+        CHARACTER*16  ONAME   ! Output non-diu master EF file
 
 C...........   Other local variables
 
@@ -161,11 +166,14 @@ C...........   Other local variables
 
         LOGICAL DFLAG                     ! Calculate diurnal factors when true
         LOGICAL EFLAG                     ! Error exists when true
-        LOGICAL NFLAG                     ! Calculate non-dnl factors when true
         LOGICAL RFLAG                     ! Diurnal facs _were_ calc'd when true
         LOGICAL SFLAG( MXPSI )            ! Update diurnal combos when true
+        LOGICAL TFLAG                     ! Non-diu facs _were_ calc'd when true
+        LOGICAL VFLAG( MXPSI )            ! Update non-diu combos when true
+        LOGICAL UFLAG                     ! Update EFs when true
 
         CHARACTER*4   VOLNAM              !  name of Mobile5 hydrocarbon
+        CHARACTER*30  BUFFER              !  input buffer
         CHARACTER*256 MESG                !  message buffer
 
 C***********************************************************************
@@ -215,6 +223,15 @@ C.........  Prompt for diurnal master list EFs input file for modeling year
         DNAME = PROMPTMFILE(
      &          'Enter logical name for DIURNAL EF input ' //
      &          'file or "NONE"', FSRDWR3, 'MEFSD', 'EMISFAC' )
+
+        SDEV = -9
+        IF( DNAME .NE. 'NONE' .OR. ENAME .NE. 'NONE' ) THEN
+
+            SDEV = PROMPTFFILE(
+     &          'Enter logical name for TARGETED EF UPDATE ' //
+     &          'file or "NONE"', .TRUE., .TRUE., 'MEFUPD', 'EMISFAC' )
+
+        ENDIF
 
 C.........  Prompt for EF-based file of temp combination indices
         EDEV  = PROMPTFFILE(
@@ -465,13 +482,13 @@ C.............  Set up diurnal master List file description
             WRITE( FDESC3D( 6 ),94030 ) 'INCREMENT= ', TINTV, 'deg F'
 
             K = MXNDET
-            DO 35 J = 1, MXDET
+            DO 34 J = 1, MXDET
                 K = K + 1
                 VNAME3D( J ) = EMTLST ( EMTIDX( K ) )
                 UNITS3D( J ) = EMTUNIT( EMTIDX( K ) )
                 VDESC3D( J ) = EMTDESC( EMTIDX( K ) )
                 VTYPE3D( J ) = M3REAL
-   35       CONTINUE
+   34       CONTINUE
  
             NNAME = PROMPTMFILE(
      &         'Enter logical name for output DIURNAL MASTER EF ' //
@@ -479,11 +496,74 @@ C.............  Set up diurnal master List file description
 
         ENDIF
 
+C.........  Read targeted EF update file if it exists ............
+
+        NUPDAT = 0
+        IF( SDEV .GT. 0 ) THEN
+            I = 0
+            J = 0
+            EFLAG = .FALSE.
+
+   35       CONTINUE
+
+                READ( SDEV, 93100, END=38, IOSTAT=IOS ) BUFFER
+
+                I = I + 1
+                L = INDEX( BUFFER, '-' ) 
+ 
+                IF( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                  'Error ', IOS,
+     &                  'reading TARGETED EF UPDATE file at line', I
+                    CALL M3MESG( MESG )
+                    GO TO 35            ! To head of read loop
+
+                ELSEIF( L .EQ. 0 ) THEN
+                    K  = STR2INT( BUFFER( 1:TRIMLEN( BUFFER ) ) )
+                    KK = K 
+
+                ELSE
+                    K  = STR2INT( BUFFER( 1  :L-1 ) )
+                    KK = STR2INT( BUFFER( L+1:TRIMLEN( BUFFER ) ) )
+
+                ENDIF
+
+                DO 37 JJ = K, KK
+                    J = J + 1
+                    UPDATE( J ) = JJ
+
+                    IF( UPDATE( J ) .LE. UPDATE( J-1 ) ) THEN
+
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 )
+     &                      'Error: Entries in MEFUPD are not ' //
+     &                      'uniquely sorted in ascending order'
+                        CALL M3MESG( MESG )
+
+                    ENDIF
+
+   37           CONTINUE
+
+            GO TO 35  ! To head of read loop
+
+   38       CONTINUE
+            NUPDAT = J
+
+            IF( EFLAG ) THEN
+                CALL M3EXIT( 'EMISFAC', 0, 0,
+     &                       'Bad TARGETED EF UPDATE file', 2 )
+
+            ENDIF
+
+        ENDIF
+
 C.........  Read EF-based file of temp combo indices .............
 
         I = 0
         EFLAG = .FALSE.
-   37   CONTINUE   ! Start loop for reading MEFTEMP
+   39   CONTINUE   ! Start loop for reading MEFTEMP
 
             READ( EDEV, *, END=41, IOSTAT=IOS ) 
      &            P1, P2, ( P5( JJ ), JJ = 1, P2 )
@@ -508,7 +588,7 @@ C.........  Read EF-based file of temp combo indices .............
 
             ENDIF
 
-        GO TO 37
+        GO TO 39
 
    41   CONTINUE
         NTREF = I 
@@ -830,11 +910,17 @@ C.............  Write message to screen
 C.............  Initialize MIN/MAX temperature indice counter
             MMTC( K ) = 1
 
-C.............  Initialize flag to say diurnal factors not calculated
-            RFLAG = .FALSE.
+C.............  Initialize flags to say EFs were not calculated
+            TFLAG = .FALSE.  ! Non-diurnal
+            RFLAG = .FALSE.  ! Diurnal
 
 C.............  Recognize only indice representing pure EF calculations
             IF( ISTYPE( J,1 ) .EQ. 0 ) THEN
+
+C.................  Set update flag using search of MPLIST indice in update list
+                UFLAG = .FALSE.
+                IF ( FIND1( IPARM, NUPDAT, UPDATE ) .GT. 0 ) 
+     &               UFLAG = .TRUE.
 
 C.................  Check to see any diurnals for this profile indice exist
                 IF( .NOT. CHECK3
@@ -890,8 +976,9 @@ C.................  If exists, initialize by reading existing values
                 ENDIF
 
 C.................  Check for Non-diurnal EFs for profile indice
-                IF( .NOT. CHECK3
-     $              ( ENAME, ALLVAR3, SDATE3D, IPTIM ) ) THEN
+C.................  Also check if an update has been specifically requested
+                IF( .NOT. CHECK3 ( ENAME, ALLVAR3, SDATE3D, IPTIM ) .OR.
+     &              UFLAG .EQ. .TRUE. ) THEN
 
 C.....................  Loop over temperature range for non-diurnal factors
                     ITEMP = 1 ! Specify that more has changed than just temp
@@ -915,6 +1002,9 @@ C.............................  diurnal emissions are not zero
 
                         ENDIF
 
+C..........................  Initialize flag to _not_ calculate diurnal factors
+                        DFLAG = .FALSE.
+
 C.........................  Increase counter if using min/max, otherwise
 C.........................  reset min/max current temp is not between them
                         IF( TEMPIN( T ) .EQ. 
@@ -922,8 +1012,8 @@ C.........................  reset min/max current temp is not between them
 
                             MMTC( K ) = MMTC( K ) + 1  ! Set for next time
 
-C.............................  Diurnal emission factors were calculated 
-                            RFLAG = .TRUE. 
+C.............................  Diurnal emission factors to be calculated 
+                            DFLAG = .TRUE. 
 
                         ELSE
 
@@ -967,14 +1057,21 @@ C.............................  Put EFACT into non-diurnal arrays
                             RST_VOC( T   , I ) = EFACT( 6, I )
 
 C.............................  Put DFACT into diurnal arrays
-                            IF( RFLAG ) THEN
+                            IF( DFLAG ) THEN
                                 WDL_VOC( TMMI, I ) = DFACT( 1, I )
                                 DNL_VOC( TMMI, I ) = DFACT( 2, I )
                                 HOT_VOC( TMMI, I ) = DFACT( 3, I )
                                 CRC_VOC( TMMI, I ) = DFACT( 4, I )
+
+C.................................  Diurnal emission factors were calculated 
+                                RFLAG = .TRUE. 
+
                             ENDIF
 
    88                   CONTINUE
+
+C.........................  Non-diurnal emission factors were calculated 
+                        TFLAG = .TRUE. 
 
   101               CONTINUE  ! T, temperature for non-diurnal factors
 
@@ -999,6 +1096,8 @@ C.....................  Add non-diurnal EFs to master list
                 ENDIF      ! Non-Diurnal EFs have been created or not
 
                 ITEMP = 1            ! More has changed than just temperature
+
+                VFLAG( K ) = .TRUE.  ! Initialize - default: update non-diu EFs
                 SFLAG( K ) = .TRUE.  ! Initialize - default: update diurnal EFs
 
 C.................  Loop through remaining temperature indices for IPARM
@@ -1019,8 +1118,10 @@ C.........................  Specify min and max temperatures
                         TF_MAX = MAXT_MIN + TINTV *
      &                               ( TMMI - MAXTL*TMMIDV - 1)
 
-C.........................  Check if EFs for this TMMI is missing
-                        IF( WDL_VOC( TMMI,1 ) .LT. 0 ) DFLAG = .TRUE.
+C.........................  Check if EFs for this TMMI is missing or if
+C.........................  targeted EF update is required
+                        IF( WDL_VOC( TMMI,1 ) .LT. 0 .OR. UFLAG ) 
+     &                      DFLAG = .TRUE.
 
 C.........................  If diurnal EF has not yet been calculated for this
 C.........................  min/max temperature combination
@@ -1050,18 +1151,19 @@ C.............................  Put DFACT into diurnal arrays
                                 HOT_VOC( TMMI, I ) = DFACT( 3, I )
                                 CRC_VOC( TMMI, I ) = DFACT( 4, I )
 
-C.................................  Diurnal emission factors were calculated 
-                                RFLAG = .TRUE. 
-
   121                       CONTINUE
  
+C.............................  Diurnal emission factors were calculated 
+                            RFLAG = .TRUE. 
+
                         ENDIF  ! If need to call MOBILE or not
                     ENDIF      ! If valid min/max temp combo or not
  
   151           CONTINUE       ! Loop through temperature indices for IPARM
 
-C.................  If diurnal factors were not calculated, then don't output them
-                IF( .NOT. RFLAG ) SFLAG( K ) = .FALSE.
+C.................  If factors were not calculated, then don't output them
+                IF( .NOT. TFLAG ) VFLAG( K ) = .FALSE.  ! Non-diurnal
+                IF( .NOT. RFLAG ) SFLAG( K ) = .FALSE.  ! Diurnal
 
 C.................  Write out diurnal emission factors for IPARM
 C.....................  Add non-diurnal EFs to master list 
@@ -1088,6 +1190,7 @@ C.....................  Add non-diurnal EFs to master list
                     CALL M3EXIT('EMISFAC', 0, 0, MESG, 2 )
 
                 ENDIF      ! update of diurnal file is needed or not
+
             ENDIF          ! EFs are pure or combo
 
   201   CONTINUE           ! IPM
@@ -1108,38 +1211,42 @@ C.............  Search for MPLIST indice in MPREF index
 C.............  Recognize only indice representing combo EF calculations
             IF( ISTYPE( J,1 ) .GT. 0 ) THEN
 
+C.................  Set update flag using search of MPLIST indice in update list
+                UFLAG = .FALSE.
+                IF ( FIND1( IPARM, NUPDAT, UPDATE ) .GT. 0 ) 
+     &               UFLAG = .TRUE.
+
 C.................  Write message to screen
                 WRITE( *,92000 ) ' '
                 WRITE( *,92020 ) 'Processing PSI', IPARM, '...'
 
-C.................  Update diurnals for K if any related pure factors were updated
+C.................  Update diurnals or non-diurnal EFs if any related 
+C.................  pure EFs were updated
                 DO 381 I = 1, ISTYPE( J,1 )
 
                     II    = FIND1( IPLIST( I,KK ), NTREF, MMTREF )
-                    DFLAG = SFLAG( II )
+                    TFLAG = VFLAG( II )  ! Non-diurnal
+                    RFLAG = SFLAG( II )  ! Diurnal
 
-                    IF( DFLAG ) GOTO 383                
+C.....................  If either non-diurnal or diurnal are required,
+C.....................  update both in efcombo, because running it is fast
+                    IF( UFLAG .OR. TFLAG .OR. RFLAG ) THEN
+
+C.........................  Create combo profile through common blocks 
+C.........................  EFS1 and EFS2
+                        CALL EFCOMBO( ONAME, NNAME, NTEMP, 
+     &                                ISTYPE( J,1 ), PCNTPRO( 1, JJ ),
+     &                                IPLIST ( 1, JJ ), SDATE3D )
+
+                        GO TO 383  ! Exit out of loop
+
+                    ENDIF
 
   381           CONTINUE
-
   383           CONTINUE
 
-C.................  Check to see if already have EFs for non-diurnal profile 
-                NFLAG = .NOT. CHECK3( ENAME, ALLVAR3, SDATE3D, IPTIM )
-
-C.................  If either non-diurnal or diurnal are required,
-C.................  update both in efcombo, because running it is fast
-                IF( NFLAG .OR. DFLAG ) THEN
-
-C.....................  Create combo profile through common blocks EFS1 and EFS2
-                    CALL EFCOMBO( ONAME, NNAME, NTEMP, ISTYPE( J,1 ), 
-     &                            PCNTPRO( 1, JJ ), 
-     &                            IPLIST ( 1, JJ ), SDATE3D )
-
-                ENDIF
-
 C.................  Store emission factors in master lists
-                IF( NFLAG ) THEN
+                IF( TFLAG ) THEN
                     IF( .NOT. WRITE3( ONAME, ALLVAR3, SDATE3D,
      &                                IPTIM, EXH_CO )         ) THEN
 
@@ -1158,7 +1265,7 @@ C.................  Store emission factors in master lists
 
                 ENDIF      ! Missing non-diurnal for this IPARM or not
 
-                IF( DFLAG ) THEN
+                IF( RFLAG ) THEN
                     IF( .NOT. WRITE3( NNAME, ALLVAR3, SDATE3D,
      &                                IPTIM, WDL_VOC )        ) THEN
 
@@ -1196,6 +1303,7 @@ C...........   Informational (LOG) message formats... 92xxx
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( 12( 3( 9(F6.3, 1X)/ ) // ) )
+93100   FORMAT( A )
 93200   FORMAT( 3I6, 2X, 5E12.4 )
 93210   FORMAT( 18X, 2X, 5E12.4 )
 c temp
