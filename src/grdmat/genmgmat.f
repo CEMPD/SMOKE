@@ -684,9 +684,7 @@ C...............  County and/or link total VMT
             END DO       ! end loop to compute VMT totals
 
 C..........  Inverse of county and/or link total VMT
-            write(87,*) ' N   IFIP  County VMT in grid [miles/yr]'
             DO N = 1, NCOULNK
-                write (87,*) n, vmt_label(n), vmt_cl_inv( n ) 
                 IF( VMT_CL_INV( N ) .GT. 0. ) VMT_CL_INV( N ) = 
      &                                             1. / VMT_CL_INV( N )
             END DO
@@ -748,9 +746,7 @@ C           use temperatures that are based on all sources in the county).
 C           The link sources within a county have different factors than the
 C           non-link sources, and these use only the cells that the link intersects.
 
-        write(88,*) '  source     N Cnt  Col  Row UngridFactor'
         K  = 0
-        ln = -1
         DO S = 1, NSRC
             N = CLIDX( S )
 
@@ -771,19 +767,7 @@ C............  Store the cell numbers and VMT fractions into the ungridding matr
                 K = K + 1
                 IU( K ) = VMT_CELL( N,I )
                 CU( K ) = VMT_FRAC( N,I )
-                row = iu(k) / ncols + 1
-                col = iu(k) - (row-1) * ncols
-                if( cu(k) .ne. 0 ) 
-     &              write (88,'(I8,I6,I4,I5,I5,E12.5)' ) 
-     &                     s,n,i,col,row,cu(k)
-                sum = sum + cu(k)
             END DO
-            write( 88,'(40X, E12.5)' ) sum
-            if ( sum .NE. 0. .AND.
-     &           ( sum > 1.0001 .or. sum < 0.9999 ) ) then
-                print *,'warning: sum=', sum
-            endif
-            ln = 0
             
         END DO
         NCOEFU = K
