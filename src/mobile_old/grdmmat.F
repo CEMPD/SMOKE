@@ -64,7 +64,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         LOGICAL         UTM2LAM
         
-        EXTERNAL        ADJMV, CRLF, DSCGRID, FIND1, FIND2, FIND3, GETYN,
+        EXTERNAL       ADJMV, CRLF, DSCGRID, FIND1, FIND2, FIND3, GETYN,
      &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN,
      &                  SETLAM, UTM2LAM
 
