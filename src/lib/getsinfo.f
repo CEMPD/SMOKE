@@ -159,6 +159,9 @@ C.............  Allocate memory for pollutant names and/or activities
         NPACT = MAX( 0, NPACT )
         NIPPA = NIPOL + NIACT
 
+C............. Retrieve base year information
+        BYEAR = GETIFDSC( FDESC3D, '/BASE YEAR/', .FALSE. )
+
 C............. Allocate memory for the array that stors pollutant
 C............. names and activity names, units, and descriptions. Populate 
 C              this array in the loops below that fill EINAM and NIACT
