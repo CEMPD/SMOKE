@@ -1,12 +1,12 @@
 
-        SUBROUTINE  MKVMAT( NSRC, NETYPE, JDATE, MONTH, DAYOW, 
-     &                      TZONE, ZONES,
+        SUBROUTINE  MKVMAT( NSRC, NETYPE, JDATE, JTIME, MONTH, DAYOW,
+     &                      TZONE, ZONES, NMAT,
      &                      MFAC,  NMON, MDEX, 
      &                      WFAC,  NWEK, WDEX, 
      &                      DFAC,  NDAY, DDEX, VMAT, TMAT )
 
 C***********************************************************************
-C  subroutine body starts at line  116
+C  subroutine body starts at line  126
 C
 C  FUNCTION:
 C       Construct temporal-coefficient-transform matrices for 
@@ -56,14 +56,16 @@ C...........   ARGUMENTS and their descriptions:
 
         INTEGER    NSRC                    ! number of sources
         INTEGER    NETYPE                  ! number of emission types
-        INTEGER    NMON                    ! number of monthly profiles
-        INTEGER    NWEK                    ! number of weekly profiles
-        INTEGER    NDAY                    ! number of diurnal profiles
         INTEGER    JDATE                   ! date YYYYDDD
+        INTEGER    JTIME                   ! time HHMMSS
         INTEGER    MONTH( 24, 0:23 )       ! source time zone's 1 ... 12
         INTEGER    DAYOW( 24, 0:23 )       ! source time zone's 1 ... 7
         INTEGER    TZONE                   ! time zone (5 for Eastern)
         INTEGER    ZONES( NSRC )           ! source time zones
+        INTEGER    NMON                    ! number of monthly profiles
+        INTEGER    NWEK                    ! number of weekly profiles
+        INTEGER    NDAY                    ! number of diurnal profiles
+        INTEGER    NMAT                    ! dimension of TMAT
         REAL       MFAC( 12, NMON )        ! Monthly profile factors
         REAL       WFAC(  7, NWEK )        ! Weekly    "       "
         REAL       DFAC( 24, NDAY )        ! Diurnal   "       "
@@ -71,7 +73,7 @@ C...........   ARGUMENTS and their descriptions:
         INTEGER*2  WDEX( NSRC, NVTYPE, MXEMIS )    ! weekly  profile codes
         INTEGER*2  DDEX( NSRC, NVTYPE, MXEMIS )    ! diurnal profile codes
         REAL       VMAT( NSRC, NVTYPE )            ! VMT adjusted by VMTmix
-        REAL       TMAT( NSRC, NVTYPE, MXEMIS, 24 ) ! temporal-profile coeffs
+        REAL       TMAT( NSRC, NVTYPE, MXEMIS, NMAT ) ! temporal-profile coeffs
 
 C...........   EXTERNAL FUNCTIONS:
 
@@ -83,9 +85,13 @@ C...........   EXTERNAL FUNCTIONS:
 
 C...........   Scratch Local variables:
 
+        LOGICAL         EFLAG
+
         INTEGER         DAY             !  day for source and hour pointer 
         INTEGER         E               !  emissions mode counter
         INTEGER         H               !  hour-loop counter
+        INTEGER         HBEG            !  beginning hour for filling TMAT
+        INTEGER         HEND            !  ending    hour for filling TMAT
         INTEGER         HCORR           !  daylight savings time correction
         INTEGER         I               !  counter
         INTEGER         K               !  diurnal-profile index
@@ -96,21 +102,21 @@ C...........   Scratch Local variables:
         REAL            FAC             !  partial matrix factor
         REAL            YRFAC           !  year-to-day conversion factor
 
+        CHARACTER*256   MESG
 
 C.......   SAVED Local Variables
 
+        INTEGER         IDX( 24 )
+
+        LOGICAL         FIRSTIME
+        DATA            FIRSTIME / .TRUE. /
         REAL            MWFAC( 12 )
+
         DATA            MWFAC / 31.0, 28.0, 31.0, 30.0,
      &                          31.0, 30.0, 31.0, 31.0,
      &                          30.0, 31.0, 30.0, 31.0 /
 
-        LOGICAL         FIRSTIME
-        DATA            FIRSTIME / .TRUE. /
-        LOGICAL         EFLAG
-
-        SAVE            MWFAC, FIRSTIME
-
-        CHARACTER*256   MESG
+        SAVE            IDX, FIRSTIME, MWFAC
 
 C***********************************************************************
 C   begin body of subroutine  MKVMAT
@@ -160,9 +166,29 @@ C.......   Firstime:  renormalize MFAC, WFAC
 22          CONTINUE
 23          CONTINUE
 
+C.............  Create pointer for filling TMAT
+            IF( NMAT .EQ. 1 ) THEN
+                DO 33 H = 1, 24
+                    IDX( H ) = 1 
+33              CONTINUE
+          
+            ELSE
+                DO 34 H = 1, 24
+                    IDX( H ) = H 
+34              CONTINUE
+
+            ENDIF
 
         END IF  !  if firstime
 
+C.......   Set starting and ending hour for filling TMAT
+        IF( NMAT .EQ. 1 ) THEN
+            HBEG = 1 + MOD( JTIME / 10000 , 24 )
+            HEND = HBEG
+        ELSE
+            HBEG = 1
+            HEND = 24
+        ENDIF
 
 C.......   Compute index correction (offset by 1 because of
 C.......   1 + MOD(...) needed below
@@ -179,35 +205,35 @@ C.......   Compute TMAT:
 
             IF ( MDEX( S,V,E ) .GT. 0 ) THEN
 
-                DO 44 H = 1, 24
+                DO 44 H = HBEG, HEND
 
                     MON = MONTH( H, ZONES( S ) )
                     DAY = DAYOW( H, ZONES( S ) )
                     FAC = VMAT( S,V ) * MFAC( MON,MDEX( S,V,E ) ) 
      &                                * WFAC( DAY,WDEX( S,V,E ) )
                     K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
-                    TMAT( S,V,E,H ) = FAC * DFAC( K,L )
+                    TMAT( S,V,E,IDX(H) ) = FAC * DFAC( K,L )
 
 44              CONTINUE   
 
             ELSE IF ( WDEX( S,V,E ) .GT. 0 ) THEN
 
-                DO 55 H = 1, 24
+                DO 55 H = HBEG, HEND
 
                     DAY = DAYOW( H, ZONES( S ) )
                     FAC = VMAT( S,V ) * WFAC( DAY,WDEX( S,V,E ) )
                     K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
-                    TMAT( S,V,E,H ) = FAC * DFAC( K,L )
+                    TMAT( S,V,E,IDX(H) ) = FAC * DFAC( K,L )
 
 55              CONTINUE   
 
             ELSE
 
-                DO 66 H = 1, 24
+                DO 66 H = HBEG, HEND
 
                     FAC = VMAT( S,V )
                     K = 1 + MOD( H + HCORR - ZONES( S ), 24 )
-                    TMAT( S,V,E,H ) = FAC * DFAC( K,L )
+                    TMAT( S,V,E,IDX(H) ) = FAC * DFAC( K,L )
 
 66              CONTINUE   
 
