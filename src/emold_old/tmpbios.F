@@ -321,7 +321,7 @@ c400         END DO
                CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
             END IF
  
-            IF ( .NOT. READ3( INDEV, 'TEMP', ALLAYS3, JDATE,
+            IF ( .NOT. READ3( INDEV, 'TA', ALLAYS3, JDATE,
      &         JTIME, TSFC(1,1) ) ) THEN
                MESG = 'Could not read from file SOLAR'
                CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
