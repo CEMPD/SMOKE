@@ -167,6 +167,7 @@ C...........   Other local variables
         REAL            ZBOT    !  plume bottom elevation (m)
         REAL            ZTOP    !  plume top    elevation (m)
         REAL            PBOT    !  plume bottom sigma
+        REAL            PDIFF   !  PBOT - PTOP
         REAL            PTOP    !  plume top    sigma
         INTEGER         LBOT    !  plume bottom layer
         INTEGER         LTOP    !  plume top    layer
@@ -830,25 +831,35 @@ C...................   ZZF( LTOP-1 ) <= ZTOP < ZZF( LTOP )
                 LBOT = EMLAYS           !  fallback
 122             CONTINUE                !  loop exit:  bottom found at LBOT
 
-                IF ( ZTOP .LE. ZZF( LBOT ) ) THEN      !  plume in this layer
+                IF ( ZTOP .LE. ZZF( LBOT ) ) THEN  !  plume in this layer
 
                     LFRAC( S,LBOT ) = 1.0
                     LTOP = LBOT
 
-                    DO  123  L = LBOT + 1, EMLAYS	! fractions above plume
+                    DO  123  L = LBOT + 1, EMLAYS  ! fractions above plume
                         LFRAC( S,L ) = 0.0
 123                 CONTINUE
 
-                ELSE    !  plume crosses layers
+C.................  Note: this check not in original algorithm, but w/o it,
+C                         can end up with fractions > 1.0
+                ELSEIF( LBOT .EQ. EMLAYS ) THEN    ! plume above top layer
 
-                    DO  124  L = LBOT + 1, EMLAYS
+                    LFRAC( S,LBOT ) = 1.0
+
+                    DO  124  L = 1, EMLAYS-1       ! fractions below plume
+                        LFRAC( S,L ) = 0.0
+124                 CONTINUE
+
+                ELSE                               ! plume crosses layers
+
+                    DO  125  L = LBOT + 1, EMLAYS
                         IF ( ZTOP .LE. ZZF( L ) ) THEN
                             LTOP = L
-                            GO TO 125
+                            GO TO 126
                         END IF
-124                 CONTINUE
-                    LTOP = EMLAYS
 125                 CONTINUE
+                    LTOP = EMLAYS
+126                 CONTINUE
 
 C...................   Compute corresponding PBOT,PTOP so that
 C...................   PRESF( LBOT-1 ) <= PBOT < PRESF( LBOT ) and
@@ -863,12 +874,12 @@ C...................   (Use 3rd order polynomial via POLY() )
      &                                 ZH  ( 1,S ), 
      &                                 PRES( 1,S ), 3 )
 
-                    DO  126  L = 3, EMLAYS-2
+                    DO  127  L = 3, EMLAYS-2
                         M = L - 2
                         PRESF( L ) = POLY( ZZF ( L ), 
      &                                     ZH  ( M,S ), 
      &                                     PRES( M,S ), 3 )
-126                 CONTINUE
+127                 CONTINUE
 
                     PRESF( EMLAYS-1 ) = POLY( ZZF ( EMLAYS-1 ),
      &                                        ZH  ( EMLAYS-3,S ),
@@ -883,7 +894,16 @@ C...................   (Use 3rd order polynomial via POLY() )
                     M    = MIN( MAX( 0, LTOP-2 ), EMLAYS-3 )
                     PTOP = POLY( ZTOP, ZZF( M ), PRESF( M ), 3 )
 
-                    DDP  = 1.0 / ( PBOT - PTOP )  !  = d(plumefrac)/d(pres)
+                    PDIFF = PBOT - PTOP
+                    IF( PDIFF .GT. 0 ) THEN
+                        DDP  = 1.0 / ( PDIFF )  !  = d(plumefrac)/d(pres)
+
+                    ELSE
+                        WRITE( MESG,94010 ) 
+     &                   'Infinately small plume created for source ', S
+                        CALL M3EXIT( 'LAYPOINT', JDATE, JTIME, MESG, 2 )
+
+                    ENDIF
 
                     LFRAC( S,LBOT ) = DDP * ( PBOT - PRESF( LBOT ) )
                     LFRAC( S,LTOP ) = DDP * ( PRESF( LTOP-1 ) - PTOP )
