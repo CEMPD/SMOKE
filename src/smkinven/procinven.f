@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCINVEN( NRAWBP, FILFMT, UDEV, YDEV, CDEV, LDEV )
+        SUBROUTINE PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV )
 
 C**************************************************************************
 C  subroutine body starts at line 114
@@ -67,7 +67,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: NRAWBP  ! no.raw recs x pol/act
-        INTEGER , INTENT (IN) :: FILFMT  ! input file(s) fmt code
         INTEGER , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
         INTEGER , INTENT (IN) :: YDEV    ! unit no. for area-to-point
         INTEGER , INTENT (IN) :: CDEV    ! SCC descriptions unit no.
@@ -100,6 +99,7 @@ C...........   Other local variables
         REAL            EMIST       !  total old and new emissions
         REAL            RIMISS3     !  real typed integer missing value
 
+        LOGICAL         A2PFLAG           ! true: using area-to-point processing
         LOGICAL         DFLAG             ! true: if should error on duplicates
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
 
@@ -109,6 +109,8 @@ C...........   Other local variables
 
         CHARACTER(LEN=ALLLEN3)  LSRCCHR     !  previous CSOURC
         CHARACTER(LEN=ALLLEN3)  TSRCCHR     !  tmporary CSOURC
+        CHARACTER(LEN=CASLEN3)  LCAS        !  previous CAS number
+        CHARACTER(LEN=CASLEN3)  TCAS        !  tmporary CAS number
 
         CHARACTER*16 :: PROGNAME = 'PROCINVEN' ! program name
 
@@ -123,6 +125,8 @@ C.........  Get settings from the environment
         MXERR  = ENVINT( ERRSET  , ' ', 100, I )
         MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
+        IF( YDEV > 0 ) A2PFLAG = .TRUE.
+
 C.........  Initlialze temporary data status
         TMPSTAT = 0  ! array
 
@@ -133,6 +137,7 @@ C.........  NOTE the last part of the CSOURCA string is the integer position
 C           of the pollutant for that record in the INVPNAM pollutant array 
         LSRCCHR = EMCMISS3
         LK = IMISS3
+        LCAS = ' '
         S = 0
         SLEN  = SC_ENDP( MXCHRS )
         PS    = SC_BEGP( MXCHRS + 1 )
@@ -144,6 +149,7 @@ C           of the pollutant for that record in the INVPNAM pollutant array
 
             TSRCCHR = CSOURCA( J )(  1:SLEN ) ! Source characteristics
             TPOLPOS = CSOURCA( J )( PS:PE   ) ! Pos of pollutant (ASCII)
+            TCAS = CSOURCA( J )( ALLCAS3-CASLEN3+1:ALLCAS3 )  ! CAS number
 
 C.............  Update pointer for list of actual pollutants & activities
             K = STR2INT( TPOLPOS )  ! Convert pol/activity position to integer
@@ -158,7 +164,7 @@ C.............  Increment source count by comparing this iteration to previous
 
 C.............  Give message of duplicates are not permitted in inventory
 C.............  This IF also implies TSRCCHR = LSRCCHR
-            ELSE IF( K .EQ. LK ) THEN
+            ELSE IF( K .EQ. LK .AND. TCAS .EQ. LCAS ) THEN
 
                 CALL FMTCSRC( TSRCCHR, NCHARS, BUFFER, L2 )
 
@@ -181,6 +187,7 @@ C.............  This IF also implies TSRCCHR = LSRCCHR
             END IF
 
             LK = K  ! Store pol/activity index for comparison in next iteration
+            LCAS = TCAS
 
 C.............  Assign source ID (to use as an index) for all inv X pol/act
             SRCIDA( I ) = S
@@ -236,15 +243,19 @@ C.........  Keep case statement outside the loops to speed processing
 
                 J = INDEXA( I )
                 S = SRCIDA( I )
-                K = INRECA( J )
 
                 IF( S .NE. LS ) THEN
                     LS  = S
-                    IFIP  ( S ) = IFIPA  ( K )
-                    TPFLAG( S ) = TPFLGA ( K )
-                    INVYR ( S ) = INVYRA ( K )
-                    CSCC  ( S ) = CSCCA  ( K )
+                    IFIP  ( S ) = IFIPA  ( J )
+                    TPFLAG( S ) = TPFLGA ( J )
+                    INVYR ( S ) = INVYRA ( J )
+                    CSCC  ( S ) = CSCCA  ( J )
                     CELLID( S ) = 0
+                    
+                    IF( A2PFLAG ) THEN
+                        XLOCA ( S ) = XLOCAA ( J )
+                        YLOCA ( S ) = YLOCAA ( J )
+                    END IF
 
                     CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
                 END IF
@@ -257,22 +268,21 @@ C.........  Keep case statement outside the loops to speed processing
 
                 J = INDEXA( I )
                 S = SRCIDA( I )
-                K = INRECA( J )
 
                 IF( S .NE. LS ) THEN
                     LS  = S
-                    IFIP  ( S ) = IFIPA  ( K )
-                    IRCLAS( S ) = IRCLASA( K )
-                    IVTYPE( S ) = IVTYPEA( K ) 
-                    TPFLAG( S ) = TPFLGA ( K )
-                    INVYR ( S ) = INVYRA ( K )
-                    CSCC  ( S ) = CSCCA  ( K )
-                    CLINK ( S ) = CLINKA ( K )
-                    CVTYPE( S ) = CVTYPEA( K )
-                    XLOC1 ( S ) = XLOC1A ( K )
-                    YLOC1 ( S ) = YLOC1A ( K )
-                    XLOC2 ( S ) = XLOC2A ( K )
-                    YLOC2 ( S ) = YLOC2A ( K )
+                    IFIP  ( S ) = IFIPA  ( J )
+                    IRCLAS( S ) = IRCLASA( J )
+                    IVTYPE( S ) = IVTYPEA( J ) 
+                    TPFLAG( S ) = TPFLGA ( J )
+                    INVYR ( S ) = INVYRA ( J )
+                    CSCC  ( S ) = CSCCA  ( J )
+                    CLINK ( S ) = CLINKA ( J )
+                    CVTYPE( S ) = CVTYPEA( J )
+                    XLOC1 ( S ) = XLOC1A ( J )
+                    YLOC1 ( S ) = YLOC1A ( J )
+                    XLOC2 ( S ) = XLOC2A ( J )
+                    YLOC2 ( S ) = YLOC2A ( J )
 
                     CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
                 END IF
@@ -285,26 +295,25 @@ C.........  Keep case statement outside the loops to speed processing
 
                 J = INDEXA( I )
                 S = SRCIDA( I )
-                K = INRECA( J )
 
                 IF( S .NE. LS ) THEN
                     LS  = S
-                    IFIP  ( S )  = IFIPA  ( K )
-                    ISIC  ( S )  = ISICA  ( K )
-                    IDIU  ( S )  = IDIUA  ( K )
-                    IWEK  ( S )  = IWEKA  ( K )
-                    TPFLAG( S )  = TPFLGA ( K )
-                    INVYR ( S )  = INVYRA ( K )
-                    XLOCA ( S )  = XLOCAA ( K )
-                    YLOCA ( S )  = YLOCAA ( K )
-                    STKHT ( S )  = STKHTA ( K )
-                    STKDM ( S )  = STKDMA ( K )
-                    STKTK ( S )  = STKTKA ( K )
-                    STKVE ( S )  = STKVEA ( K )
-                    CSCC  ( S )  = CSCCA  ( K )
-                    CORIS ( S )  = ADJUSTR( CORISA ( K ) )
-                    CBLRID( S )  = CBLRIDA( K )
-                    CPDESC( S )  = CPDESCA( K )
+                    IFIP  ( S )  = IFIPA  ( J )
+                    ISIC  ( S )  = ISICA  ( J )
+                    IDIU  ( S )  = IDIUA  ( J )
+                    IWEK  ( S )  = IWEKA  ( J )
+                    TPFLAG( S )  = TPFLGA ( J )
+                    INVYR ( S )  = INVYRA ( J )
+                    XLOCA ( S )  = XLOCAA ( J )
+                    YLOCA ( S )  = YLOCAA ( J )
+                    STKHT ( S )  = STKHTA ( J )
+                    STKDM ( S )  = STKDMA ( J )
+                    STKTK ( S )  = STKTKA ( J )
+                    STKVE ( S )  = STKVEA ( J )
+                    CSCC  ( S )  = CSCCA  ( J )
+                    CORIS ( S )  = ADJUSTR( CORISA ( J ) )
+                    CBLRID( S )  = CBLRIDA( J )
+                    CPDESC( S )  = CPDESCA( J )
 
                     CSOURC( S )  = CSOURCA( J )( 1:SRCLEN3 )
                 END IF
