@@ -33,6 +33,7 @@ C************************************************************************
 
         TYPE :: CPACKET
 
+            SEQUENCE
             INTEGER                :: CPRI    ! tmp primary control equipment
             REAL                   :: FAC1    ! tmp factors from packets
             REAL                   :: FAC2
