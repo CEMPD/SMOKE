@@ -193,7 +193,7 @@ C.......   Dot and cross point grid description parameters:
         REAL*8       YCELLDG      ! dot grid Y-coordinate cell dimension
         INTEGER      VGTYPDG      ! vertical coordinate type (VGSIGP3, ...)
         REAL         VGTOPDG      ! model-top, for sigma coord types.
-        REAL         VGLVSDG( MXLAYS3 + 1 )  !  vertical coord values.
+        REAL         VGLVSDG( 0 : MXLAYS3 )  !  vertical coord values.
         CHARACTER*16 GRDNMDG      ! dot grid grid name
         CHARACTER*16 COONMDG      ! dot grid coordinate system name
         INTEGER      NCOLSXG      ! cross grid number of grid columns
@@ -212,8 +212,8 @@ C.......   Dot and cross point grid description parameters:
         CHARACTER*16 COONMXG      ! cross grid coordinate system name
         INTEGER      VGTYPXG      ! vertical coordinate type (VGSIGP3, ...)
         REAL         VGTOPXG      ! model-top, for sigma coord types.
-        REAL         VGLVSXG( MXLAYS3 + 1 )  !  vertical coord values.
-        REAL         SIGH   ( MXLAYS3 )      !  half-level sigma values
+        REAL         VGLVSXG( 0 : MXLAYS3 )  !  vertical coord values.
+        REAL         SIGH   ( 0 : MXLAYS3 - 1 )    !  half-level sigma values
         CHARACTER*80    SCEN_STR  !  temporary string for scenario name
         CHARACTER*80    SCHE_STR  !  temporary string for cloud scheme name
 
@@ -366,9 +366,9 @@ C.......   Get time period for output file, dot point grid desc parameters:
         GRDNMDG = GDNAM3D
         VGTYPDG = VGTYP3D
         VGTOPDG = VGTOP3D
-        VGLVSDG( 1 ) =       VGLVS3D( 1 )
-        SIGH   ( 1 ) = 0.5 * VGLVS3D( 1 )
-        DO  11  I = 2, NLAYS3D
+        VGLVSDG( 0 ) =       VGLVS3D( 0 )
+        SIGH   ( 0 ) = 0.5 * VGLVS3D( 0 )
+        DO  11  I = 1, NLAYS3D - 1
             VGLVSDG( I ) = VGLVS3D( I )
             SIGH   ( I ) = 0.5 * ( VGLVS3D( I ) + VGLVS3D( I-1 ) )
 11      CONTINUE
@@ -417,7 +417,7 @@ C.......   Get time period for output file, dot point grid desc parameters:
         GRDNMXG = GDNAM3D
         VGTYPXG = VGTYP3D
         VGTOPXG = VGTOP3D
-        DO  12  I = 1, NLAYS3D
+        DO  12  I = 0, NLAYS3D - 1
             VGLVSXG( I ) = VGLVS3D( I )
 12      CONTINUE
 
@@ -470,7 +470,7 @@ C.......   Get time period for output file, dot point grid desc parameters:
 
         ELSE
 
-            DO  13  I = 1, NLAYS3D
+            DO  13  I = 0, NLAYS3D - 1
                 IF ( FLTERR(  VGLVSXG( I ), VGLVSDG( I ) ) ) THEN
                     CALL M3EXIT( 'LAYPOINT', 0, 0,
      &                           'Dot and cross VGLVS mismatch', 2 )
@@ -505,7 +505,7 @@ C.......   for description of output file
         TSTEP3D = 10000         !  1 hour, no minutes, no seconds
         VGTYP3D = VGTYPXG
         VGTOP3D = VGTOPXG
-        DO  21  I = 1, EMLAYS + 1
+        DO  21  I = 0, EMLAYS 
             VGLVS3D( I ) = VGLVSXG( I )
 21      CONTINUE
 
@@ -726,9 +726,9 @@ C...........   Read and transform meteorology:
             CALL BMATVEC( NDOTS, NPSRC, EMLAYS, ND, CD, DBUF, VWIND )
 
 
-            P  =       1.0  / ( SIGH( 2 ) - SIGH( 1 ) )
-            PP =     - P * ( VGLVSXG( 1 ) - SIGH( 1 ) )
-            QQ = 2.0 - P * ( VGLVSXG( 2 ) - SIGH( 2 ) ) 
+            P  =       1.0  / ( SIGH( 1 ) - SIGH( 0 ) )
+            PP =     - P * ( VGLVSXG( 0 ) - SIGH( 0 ) )
+            QQ = 2.0 - P * ( VGLVSXG( 1 ) - SIGH( 1 ) ) 
 
             DO 133  S = 1, NPSRC
 
