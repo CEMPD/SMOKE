@@ -64,7 +64,7 @@ C...........   SUBROUTINE ARGUMENTS:
 C...........   Other local variables
         INTEGER         L        !  counters and indices
 
-        CHARACTER*300   MESG     ! message buffer
+        CHARACTER*256   MESG     ! message buffer
 
         CHARACTER*16 :: PROGNAME = 'ERRPKTS' ! program name
 
@@ -102,7 +102,8 @@ C.........  Otherwise, store final count
 C.........  Error for overflow of control table information
         IF( JT .EQ. 0 ) THEN
             EFLAG = .TRUE.
-            MESG = 'No usable ' // PKTTYP // 'control packet entries!'
+            MESG = 'No usable ' // TRIM( PKTTYP ) // 
+     &             ' control packet entries!'
             CALL M3MSG2( MESG )
 
         ELSE IF( JT .GT. JTMAX ) THEN
