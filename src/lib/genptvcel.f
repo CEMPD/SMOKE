@@ -92,7 +92,7 @@ C...........   Local variables
         CHARACTER(16)   GNAME     !  logical file name for GRID_DOT_2D file
         CHARACTER(300)  MESG      !  message buffer 
 
-        CHARACTER(16) :: PROGNAME = 'GENPTCEL' ! program name
+        CHARACTER(16) :: PROGNAME = 'GENPTVCEL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine GENPTVCEL
@@ -173,9 +173,9 @@ C.............  Find correct column for point
             COL = J
             
 C.............  Find correct row for point
-            DO J = 1, NRDOT
+            DO J = 1, NROWS
             
-                IF( YY >= YVALS( J,1 ) .AND. YY <= YVALS( J+1,1 ) ) EXIT
+                IF( YY >= YVALS( 1,J ) .AND. YY <= YVALS( 1,J+1 ) ) EXIT
                 
             END DO
             
