@@ -174,7 +174,8 @@ C.......   Get environment variable settings
      &                      .TRUE., IOS )
 
         RTIME = ENVINT( 'ST_REPTIME', 
-     &                  'Per-State summation reporting time', 0, IOS )
+     &                  'Per-State summation reporting time (HHMMSS)',
+     &                  230000, IOS )
 
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, point source file, 
