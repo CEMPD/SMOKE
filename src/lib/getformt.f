@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -138,9 +138,28 @@ C.............  Found INVYEAR packet, so list format
                 EXIT           ! To rewind and return
             END IF
  
-C.............  Determine if the file is IDA format
-            L1 = INDEX( LINE, '#' )
+C.............  Determine if the file contains header lines
+            L1 = INDEX( LINE, CINVHDR )
             IF( L1 .EQ. 1 ) THEN
+
+C................  Check if format is provided as a header entry
+                L = INDEX( LINE, 'IDA' )
+                IF( L .GT. 0 ) THEN
+                    GETFORMT = IDAFMT
+                    EXIT ! To end inner loop
+                END IF
+
+                L = INDEX( LINE, 'EMS-95' )
+                IF( L .GT. 0 ) THEN
+                    GETFORMT = EMSFMT
+                    EXIT ! To end inner loop
+                END IF
+
+                L = INDEX( LINE, 'EPS2' )
+                IF( L .GT. 0 ) THEN
+                    GETFORMT = EPSFMT
+                    EXIT ! To end inner loop
+                END IF
 
 C................  Make sure it is a point source file and not another type
 C                  of IDA file. Approach is to read additional lines until
@@ -155,7 +174,7 @@ C                  there is not a '#' and check positions 61-69.
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     ENDIF
 
-                    L1 = INDEX( LINE, '#' )
+                    L1 = INDEX( LINE, CINVHDR )
                     L  = LEN_TRIM( LINE )
 
 C.....................  Skip remaining header lines
