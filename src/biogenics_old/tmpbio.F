@@ -59,6 +59,7 @@ C...........   INCLUDES:
       INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
       INCLUDE 'GRDIMS3.EXT'     ! grid-related constants
       INCLUDE 'BIODIMS3.EXT'    ! biogenic-related constants
+      INCLUDE 'TMDIMS3.EXT'     ! temporal constants
 
 
 C...........   PARAMETERS and their descriptions:
@@ -74,11 +75,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETMENU
         INTEGER         GETNUM
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
+        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
         INTEGER         TRIMLEN
-        EXTERNAL        GETDATE, GETMENU,GETNUM, GETYN, PROMPTMFILE, 
-     &                  PROMPTFFILE, TRIMLEN
+        INTEGER         WKDAY           !  day of week (1...7)
+
+        EXTERNAL        GETDATE, GETMENU, GETNUM, GETYN, HHMMSS,
+     &                  MMDDYY, PROMPTMFILE, PROMPTFFILE, TRIMLEN,
+     &                  WKDAY
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -88,6 +94,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         NHRS    !  run duration (hours)
         INTEGER         JDATE   !  current simulation date (YYYYDDD)
         INTEGER         JTIME   !  current simulation time (HHMMSS)
+        INTEGER         LDATE   !  previous simulation date
         INTEGER         PARTYPE !  method number to calculate PAR
         INTEGER         HR      !  current simulation hour
         INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
@@ -213,7 +220,7 @@ C...........   Get starting date, time, run duration
      &                  'Enter starting date (YYYYDDD|YYYYMMDD)' )
         STIME = GETNUM( 0, 235959, STIME3D, 
      &                  'Enter starting time  (HHMMSS)' )
-        NHRS  = GETNUM( 1, MXREC3D-1, MXREC3D-1, 
+        NHRS  = GETNUM( 1, MXREC3D, MXREC3D, 
      &                  'Enter run duration    (hours)' )
 
 
@@ -324,8 +331,19 @@ C.......   Loop on time steps:
 
         JDATE = SDATE
         JTIME = STIME
-
+        LDATE = 0     
+ 
         DO  899  HR = 1, NHRS
+
+           IF( JDATE .NE. LDATE ) THEN
+
+               CALL M3MSG2( 'Processing ' //
+     &                      DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE ) )
+
+           ENDIF
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+           WRITE( *, 94030 ) HHMMSS( JTIME )
 
            IF ( .NOT. READ3( M2NAME, 'TGD', 1, 
      &          JDATE, JTIME, TASFC ) ) THEN
@@ -382,6 +400,7 @@ C.......   Loop on time steps:
      &                      'Error writing BIO OUTPUT file' , 2 )
            END IF                              !  if write3 failed
 
+           LDATE = JDATE
            CALL NEXTIME( JDATE, JTIME, 10000 )
 
 899     CONTINUE                !  end loop on hours HR
@@ -414,6 +433,9 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+
+94030   FORMAT( 8X, 'at time ', A8 )
+
 
 C...........   Miscellaneous formats................. 95xxx
 
