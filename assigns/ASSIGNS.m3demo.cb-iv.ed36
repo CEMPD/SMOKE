@@ -135,7 +135,7 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv APROJ  $PJDAT/aproj.$APROJ_ID.txt     # Projection factors
 
    setenv AGREF  $GE_DAT/agref.$AGREF_ID.txt    # Area gridding x-ref 
-   setenv AGPRO  $GE_DAT/agpro.$AGPRO_ID.txt    # Area gridding surrogts
+   setenv AGPRO  $GE_DAT/amgpro.$AGPRO_ID.txt    # Area gridding surrogts
 
    setenv ATREF  $GE_DAT/atref.$ATREF_ID.txt    # Area temporal x-ref
    setenv ATPRO  $GE_DAT/atpro.$ATPRO_ID.txt    # Temporal profiles
@@ -152,7 +152,7 @@ if ( $SMK_SOURCE == 'B' ) then
 endif
 
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
-   setenv BGPRO  $GE_DAT/bgpro.$BGPRO_ID.txt # Biogenic gridding surrogates
+   setenv BGPRO  $GE_DAT/amgpro.$BGPRO_ID.txt # Biogenic gridding surrogates
    unsetenv BGPRO_ID
 endif
 
@@ -166,7 +166,7 @@ if ( $SMK_SOURCE == 'M' ) then
 
    setenv MPROJ    $PJDAT/mproj.$MPROJ_ID.txt     # Projection factors
    setenv MGREF    $GE_DAT/mgref.$MGREF_ID.txt    # Mobile gridding x-ref
-   setenv MGPRO    $GE_DAT/mgpro.$MGPRO_ID.txt    # Mobile gridding surrogates
+   setenv MGPRO    $GE_DAT/amgpro.$MGPRO_ID.txt    # Mobile gridding surrogates
 
    setenv MTREF    $GE_DAT/mtref.$MTREF_ID.txt    # Mobile temporal x-ref
    setenv MTPRO    $GE_DAT/mtpro.$MTPRO_ID.txt    # Temporal   profiles
