@@ -436,7 +436,7 @@ C.................  Truncate character string variables
 C.................  Convert units of stack parameters
                 STKHGT  = STKHT( S ) * M2FT
                 STKDIAM = STKDM( S ) * M2FT
-                STKTEMP = ( STKTK( S ) - CTOK ) / CTOF + 32.
+                STKTEMP = ( STKTK( S ) - CTOK ) * CTOF + 32.
                 STKVEL  = STKVE( S ) * M2FT
                 STKFLOW = STKVEL * 0.25 * PI * STKDIAM * STKDIAM
 
