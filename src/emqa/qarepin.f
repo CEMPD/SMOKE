@@ -138,7 +138,7 @@ C.............  Compare population year to inventory year.
 
 C.........  Set ending date and time and number of time steps for report
 C.........  When using hourly inputs but reporting daily totals
-        IF( RPT_%USEHOUR ) THEN
+        IF( RPT_%USEHOUR .OR. AFLAG .AND. RPT_%BYHOUR ) THEN
             JDATE = SDATE
             JTIME = STIME
 

@@ -90,6 +90,7 @@ C***********************************************************************
 C   begin body of subroutine REPUNITS
 
 C.........  Report-specific local settings
+        IF( AFLAG ) ALLRPT( RCNT )%NUMDATA = ASCDATA
         NDATA = ALLRPT( RCNT )%NUMDATA
         RPT_  = ALLRPT( RCNT )
 
