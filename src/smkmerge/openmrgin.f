@@ -1,5 +1,6 @@
 
-        SUBROUTINE OPENMRGIN( SRGNROWS, SRGNCOLS, SRGGRDNM, SRGFMT )
+        SUBROUTINE OPENMRGIN( RLZN,
+     &                        SRGNROWS, SRGNCOLS, SRGGRDNM, SRGFMT )
 
 C***********************************************************************
 C  subroutine OPENMRGIN body starts at line
@@ -15,6 +16,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C       Created 2/99 by M. Houyoux
+C       Modified 6/02 by G. Cano
 C
 C***********************************************************************
 C
@@ -49,6 +51,9 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
 
+C.........  This module contains the global variables for uncertainty
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
@@ -68,12 +73,14 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
         INTEGER         SECSDIFF  
+        LOGICAL         SETENVVAR
 
         EXTERNAL  CRLF, ENVYN, GETCFDSC, GETIFDSC, PROMPTFFILE, 
-     &            PROMPTMFILE, SECSDIFF
+     &            PROMPTMFILE, SECSDIFF, SETENVVAR
 
 C...........   Subroutine arguments
 
+        INTEGER      , INTENT (IN)  :: RLZN      ! realization iteration
         INTEGER      , INTENT (OUT) :: SRGNROWS  ! no. rows in surrogates file
         INTEGER      , INTENT (OUT) :: SRGNCOLS  ! no. columns in surrogates file
         CHARACTER(*) , INTENT (OUT) :: SRGGRDNM  ! name of srgs grid
@@ -90,6 +97,7 @@ C.........  Other local variables
         INTEGER         NDIM          ! tmp dimensioning variable 
         INTEGER         NVAR          ! tmp no. variables 
 
+        LOGICAL      :: CUFLAG= .FALSE.  ! true: cost flag for uncertainty
         LOGICAL      :: CFLAG = .FALSE.  ! true: speciation type has been init
         LOGICAL      :: DFLAG = .FALSE.  ! true: use pollutants list
         LOGICAL      :: EFLAG = .FALSE.  ! true: error in routine
@@ -101,11 +109,13 @@ C.........  Other local variables
 
         CHARACTER*4     SPCTYPE      ! type of speciation matrix (mass|mole)
         CHARACTER*16    DUMNAME      ! tmp file name
+        CHARACTER*16    GUNAME       ! set grid file name
         CHARACTER*50    METSCENR     ! met scenario name
         CHARACTER*50    METCLOUD     ! met cloud scheme name
         CHARACTER*50    METTMP       ! temporary buffer for met info
         CHARACTER*80    GDESC        ! grid description
         CHARACTER*300   MESG         ! message buffer
+        CHARACTER*300   LGNAME       ! physical file name for input grid
         CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name 
         CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
         CHARACTER(LEN=IOVLEN3) PROJTYPE   ! projection type
@@ -125,18 +135,33 @@ C           activities
             KFLAG = .FALSE.
         END IF
 
-        IF( AFLAG .OR. PFLAG .OR. BFLAG .OR. ( MFLAG .AND. TFLAG )) THEN
+        IF( AFLAG .OR. PFLAG .OR. BFLAG .OR. 
+     &      ( MFLAG .AND. TFLAG        ) ) THEN
             DFLAG = .TRUE.
         ELSE
             DFLAG = .FALSE.
         END IF
 
-C.........  Get value of these controls from the environment
-        MESG = 'Indicator for using pollutants list'
-        DFLAG = ENVYN( 'SMK_USE_SIPOLS', MESG, DFLAG, IOS )
+        CALL DEALLOCALL
 
-        MESG = 'Indicator for using activities list'
-        KFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, KFLAG, IOS )
+        IF( RLZN .EQ. 0 ) THEN
+
+C.............  Get value of these controls from the environment
+            MESG = 'Indicator for using pollutants list'
+            DFLAG = ENVYN( 'SMK_USE_SIPOLS', MESG, DFLAG, IOS )
+          
+            MESG = 'Indicator for using activities list'
+            KFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, KFLAG, IOS )
+
+            CUFLAG = .TRUE.
+
+       ELSE
+
+            CUFLAG = .FALSE.
+            DFLAG = .FALSE.
+            KFLAG = .FALSE. 
+
+       END IF
 
 C.........  If reporting state and/or county emissions, and processing for
 C           biogenic sources, get gridding surrogates
@@ -165,28 +190,31 @@ C.........  Initialize gridded information with grid description file
         END IF
 
         CALL CHKGRID( 'general', 'GRIDDESC', 1, EFLAG )  ! May get initlzd here
-        
+
 C.........  For area sources... 
         IF( AFLAG ) THEN
 
-C.............  Get inventory file names given source category
-            CALL GETINAME( 'AREA', AENAME, DUMNAME )
+            IF( RLZN .EQ. 0 ) THEN
+C.................  Get inventory file names given source category
+                CALL GETINAME( 'AREA', AENAME, DUMNAME )
+              
+C.................  Prompt for inventory files
+                AENAME = PROMPTMFILE( 
+     &           'Enter logical name for the I/O API AREA ' //
+     &           'INVENTORY file', FSREAD3, AENAME, PROGNAME )
+              
+                ASDEV = PROMPTFFILE( 
+     &           'Enter logical name for the ASCII AREA INVENTORY file',
+     &           .TRUE., .TRUE., DUMNAME, PROGNAME )
+              
+C.................  Get number of sources
+                CALL RETRIEVE_IOAPI_HEADER( AENAME )
+                NASRC = NROWS3D
+              
+C.................  Determine the year and projection status of the inventory
+                CALL CHECK_INVYEAR( AENAME, APRJFLAG, FDESC3D )
 
-C.............  Prompt for inventory files
-            AENAME = PROMPTMFILE( 
-     &       'Enter logical name for the I/O API AREA INVENTORY file',
-     &       FSREAD3, AENAME, PROGNAME )
-
-            ASDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII AREA INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
-
-C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( AENAME )
-            NASRC = NROWS3D
-
-C.............  Determine the year and projection status of the inventory
-            CALL CHECK_INVYEAR( AENAME, APRJFLAG, FDESC3D )
+            END IF
 
 C.............  For temporal inputs, prompt for hourly file
             IF( TFLAG ) THEN
@@ -774,9 +802,11 @@ C.........  Get master activities list
 C.........  Get country, state, and county names no matter what, because it is
 C           needed to allocate memory for the state and county totals, even
 C           when they aren't going to be output
-        CDEV = PROMPTFFILE( 
+        IF( CUFLAG ) THEN
+            CDEV = PROMPTFFILE( 
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+        END IF
 
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort
@@ -833,7 +863,38 @@ C...........   Internal buffering formats.............94xxx
 C******************  INTERNAL SUBPROGRAMS  *****************************
  
         CONTAINS
- 
+
+            SUBROUTINE DEALLOCALL
+
+                IF( ALLOCATED( AEINAM  ) ) DEALLOCATE( AEINAM  )
+                IF( ALLOCATED( AONAMES ) ) DEALLOCATE( AONAMES )
+                IF( ALLOCATED( AOUNITS ) ) DEALLOCATE( AOUNITS )
+                IF( ALLOCATED( ASVDESC ) ) DEALLOCATE( ASVDESC )
+                IF( ALLOCATED( ASVUNIT ) ) DEALLOCATE( ASVUNIT )
+                IF( ALLOCATED( AUVNAMS ) ) DEALLOCATE( AUVNAMS )
+                IF( ALLOCATED( ARVDESC ) ) DEALLOCATE( ARVDESC )
+                IF( ALLOCATED( BSVDESC ) ) DEALLOCATE( BSVDESC )
+                IF( ALLOCATED( MEANAM  ) ) DEALLOCATE( MEANAM  )
+                IF( ALLOCATED( MONAMES ) ) DEALLOCATE( MONAMES )
+                IF( ALLOCATED( MOUNITS ) ) DEALLOCATE( MOUNITS )
+                IF( ALLOCATED( MSVDESC ) ) DEALLOCATE( MSVDESC )
+                IF( ALLOCATED( MSVUNIT ) ) DEALLOCATE( MSVUNIT )
+                IF( ALLOCATED( MRVDESC ) ) DEALLOCATE( MRVDESC )
+                IF( ALLOCATED( PEINAM  ) ) DEALLOCATE( PEINAM  )
+                IF( ALLOCATED( PONAMES ) ) DEALLOCATE( PONAMES )
+                IF( ALLOCATED( POUNITS ) ) DEALLOCATE( POUNITS )
+                IF( ALLOCATED( PSVDESC ) ) DEALLOCATE( PSVDESC )
+                IF( ALLOCATED( PSVUNIT ) ) DEALLOCATE( PSVUNIT )
+                IF( ALLOCATED( PUVNAMS ) ) DEALLOCATE( PUVNAMS )
+                IF( ALLOCATED( PRVDESC ) ) DEALLOCATE( PRVDESC )
+                IF( ALLOCATED( VGLVS   ) ) DEALLOCATE( VGLVS   )
+                                           
+            END SUBROUTINE DEALLOCALL
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+
 C.............  This internal subprogram tries to retrieve the I/O API header
 C               and aborts if it was not successful
             SUBROUTINE RETRIEVE_IOAPI_HEADER( FILNAM )
@@ -985,6 +1046,8 @@ C.............  Local arrays
 
 C.............  Local variables
             INTEGER        D, L, N      ! counters and indices
+            INTEGER,SAVE ::L1, L2 
+            INTEGER        L3        ! counters and indices
 
             INTEGER        INVPIDX   ! tmp index for ozone-season or not
             INTEGER        LOCZONE   ! tmp time zone
@@ -996,8 +1059,15 @@ C.............  Local variables
             LOGICAL     :: UFLAG = .FALSE.  ! true: var units inconsistent
 
             CHARACTER*1    CRL      ! 1-letter src category indicator
+
+            CHARACTER*16   LNAME    ! logical file name
             CHARACTER*16   TMPNAM   ! temporary logical file name
+            CHARACTER*16   TMPBUF   ! temporary logical file buffer name
+            CHARACTER*300  PHYSNAME ! buffer for physical name
             CHARACTER*300  MESG     ! message buffer
+
+            CHARACTER*16,SAVE     :: FNAM     ! file name
+            CHARACTER*300,SAVE    :: DIRBUF   ! directory buffer name
 
 C----------------------------------------------------------------------
 
@@ -1005,9 +1075,47 @@ C----------------------------------------------------------------------
             IF( LOCCAT .EQ. 'MOBILE' ) CRL = 'M'
             IF( LOCCAT .EQ. 'POINT'  ) CRL = 'P'
 
+            UCAT = CRL
+
+C.............  For uncertainty processing...
+            IF( RLZN .GT. 0 ) THEN
+                NFILE = 1
+
+                MESG = 'Enter logical name for the ' // LOCCAT // 
+     &                 ' HOURLY EMISSIONS uncertainty file'
+                TMPNAM = CRL // 'TMPU'
+
+                IF( RLZN .EQ. 1 ) THEN
+C.....................  Set name of temporal uncertainty file
+                    CALL NAMEVAL( UCAT( 1:1 ) // 'TMPU_ODIR', DIRBUF )
+                    L1 = LEN_TRIM( DIRBUF )
+
+                    CALL NAMEVAL( UCAT( 1:1 ) // 'TMPU_FNAM', FNAM )
+                    L2 = LEN_TRIM( FNAM )
+
+                END IF
+
+                WRITE( TMPBUF,94010 ) '', RLZN
+                TMPBUF = ADJUSTL( TMPBUF )
+                CALL PADNZERO( RMXLEN, TMPBUF )
+                L3 = LEN_TRIM( TMPBUF )
+
+                PHYSNAME = DIRBUF( 1:L1 )  // '/'    // 
+     &                     FNAM( 1: L2 )   // '_'    //
+     &                     TMPBUF( 1: L3 ) // '.ncf' 
+
+                IF( .NOT.( SETENVVAR( TMPNAM, PHYSNAME ) ) )
+     &               CALL M3EXIT( PROGNAME, 0, 0, 
+     &                        'Unable to assign setenv for' // 
+     &                         LNAME( 1:L ), 2 )
+
+                FNAME = PROMPTMFILE( MESG,FSREAD3,TMPNAM,PROGNAME ) ! array
+                IDX( NFILE ) = 1
+
 C.............  Set the number of files and open the files...
 C.............  For by-day processing...
-            IF( LBDSTAT ) THEN
+            ELSE IF( LBDSTAT ) THEN
+
                 NFILE = 7
 
                 DO D = 1, NFILE
@@ -1048,7 +1156,9 @@ C.................  Store the starting date
 C.................  Check the number of sources
                 SELECT CASE( LOCCAT )
                 CASE( 'AREA' )
-                    CALL CHKSRCNO( 'area', TMPNAM, NROWS3D, 
+
+                    IF( .NOT.( TUCFLAG ) )
+     &                  CALL CHKSRCNO( 'area', TMPNAM, NROWS3D, 
      &                             NASRC, EFLAG )
                 CASE( 'MOBILE' ) 
                     CALL CHKSRCNO( 'mobile', TMPNAM, NROWS3D, 
