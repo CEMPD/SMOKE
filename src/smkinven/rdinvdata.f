@@ -383,6 +383,10 @@ C.............  Check for errors while opening file
 
 C.............  Set default inventory characteristics that depend on file format
             CALL INITINFO( FILFMT( CURFIL ) )
+
+C.........  Otherwise, rewind individual file
+        ELSE
+            REWIND( FDEV )
         
         END IF
 
