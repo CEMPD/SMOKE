@@ -75,7 +75,7 @@ C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: NRAWIN ! total raw record-count 
         INTEGER     , INTENT (IN) :: NRAWBP ! total raw record times pols
         INTEGER     , INTENT (IN) :: MXIPOL ! max no of inventory pols
-        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) ! in pol names
+        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) ! inv pol names
         INTEGER     , INTENT(OUT) :: NRAWOUT! outgoing source * pollutants
         LOGICAL     , INTENT(OUT) :: EFLAG  ! outgoing error flag
         INTEGER     , INTENT(OUT) :: NDROP  !  number of records dropped
@@ -84,12 +84,8 @@ C...........   NOTE that NDROP and EDROP are not used at present
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: BLIDLEN  = 6   ! width of boiler field
         INTEGER, PARAMETER :: DESCLEN  = 40  ! width of plant description field
-        INTEGER, PARAMETER :: FCIDLEN  = 15  ! width of plant ID field
         INTEGER, PARAMETER :: MXPOLFIL = 58  ! maximum pollutants in file
-        INTEGER, PARAMETER :: PTIDLEN  = 15  ! width of point ID field
         INTEGER, PARAMETER :: PTOTWIDE = 52  ! total width of all pol fields
-        INTEGER, PARAMETER :: SGIDLEN  = 2   ! width of segment ID field
-        INTEGER, PARAMETER :: SKIDLEN  = 12  ! width of stack ID field
 
 C...........   Local parameters, dependent
         INTEGER, PARAMETER :: LINSIZ  = MXPOLFIL * PTOTWIDE
@@ -114,6 +110,14 @@ C...........   Local arrays
 C...........   Counters of total number of input records
         INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
         INTEGER, SAVE :: NSRCPOL = 0 ! cumulative source x pollutants count
+
+C.........  Temporary variables for storing source characteristics.  These
+C           variables must be the width of the fields for global source
+C           characteristics definition for use in BLDCSRC.
+        CHARACTER(LEN=PLTLEN3) FCID  ! tmp plant ID
+        CHARACTER(LEN=CHRLEN3) PTID  ! tmp point ID
+        CHARACTER(LEN=CHRLEN3) SKID  ! tmp stack ID
+        CHARACTER(LEN=CHRLEN3) SGID  ! tmp segment ID
 
 C...........   Other local variables
         INTEGER         I, J, K, L, V  ! counters and indices
@@ -154,11 +158,7 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
         CHARACTER(LEN=IOVLEN3) CPOL  ! tmp pollutant code
         CHARACTER(LEN=DESCLEN) DESC  ! tmp plant description
-        CHARACTER(LEN=FCIDLEN) FCID  ! tmp plant ID
         CHARACTER(LEN=LINSIZ)  LINE  ! input line from inventory file
-        CHARACTER(LEN=PTIDLEN) PTID  ! tmp point ID
-        CHARACTER(LEN=SKIDLEN) SKID  ! tmp stack ID
-        CHARACTER(LEN=SGIDLEN) SGID  ! tmp segment ID
         CHARACTER(LEN=SCCLEN3) TSCC  ! tmp scc
 
         CHARACTER*16 :: PROGNAME = 'RDIDAPT' ! Program name
@@ -593,7 +593,6 @@ C.................  Store data in final arrays if there is enough memory
                     
                     WRITE( CCOD,94125 ) POLPOS( V )
  
-                    IPOSCOD( ES ) = POLPOS( V )
                     CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
      &                            TSCC, CHRBLNK3, CCOD, CSOURCA( ES ) )
 

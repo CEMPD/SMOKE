@@ -165,6 +165,14 @@ C...........   Point sources table for device.pt files   (unsorted; sorted)
         CHARACTER(LEN=DVKYLEN)                DKEY       ! Tmp device key
         CHARACTER(LEN=DVIDLEN)                DVID       ! Tmp device ID
 
+C.........  Temporary variables for building string of source chars.  These
+C           variables must be the width of the fields for global source
+C           characteristics definition for use in BLDCSRC.
+        CHARACTER(LEN=PLTLEN3) FCIDOUT  ! tmp plant ID for output
+        CHARACTER(LEN=CHRLEN3) SKIDOUT  ! tmp stack ID for output
+        CHARACTER(LEN=CHRLEN3) DVIDOUT  ! tmp device ID for output
+        CHARACTER(LEN=CHRLEN3) PRIDOUT  ! tmp process ID for output
+
 C...........   File units and logical/physical names
         INTEGER         DDEV    !  Unit number for device file
         INTEGER         FDEV    !  Unit number for facility file
@@ -322,9 +330,9 @@ C.........  Set local variables with unit numbers
         PDEV = EDEV( 4 )
         SDEV = EDEV( 5 )
 
-C.........  Define day to year conversion factor
-        DAY2YR = 1. / YR2DAY( INY )
-
+C.........  Define day to year conversion factor and real type for integer 
+C           missing value
+        DAY2YR  = 1. / YR2DAY( INY )
 C........................................................................
 C.............  Head of the FDEV-read loop  .............................
 C........................................................................
@@ -962,6 +970,13 @@ C.............  from another file.
                 CEFF = CEFF * 100.0
             END IF
 
+C.............  Copy source characteristics from strings with local 
+C               length to strings with global lengths
+            FCIDOUT = FCID
+            SKIDOUT = SKID
+            DVIDOUT = DVID
+            PRIDOUT = PRID
+
 C.............  Time to store data in unsorted lists if we've made it this far
             ES = ES + 1
 
@@ -990,7 +1005,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
 
                 WRITE( CCOD,94125 ) COD
  
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+                CALL BLDCSRC( CFIP, FCIDOUT, SKIDOUT, DVIDOUT, PRIDOUT, 
      &                        CHRBLNK3, CHRBLNK3, CCOD, CSOURCA( ES ) )
 
             END IF          !  if S in range

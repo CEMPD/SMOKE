@@ -190,7 +190,8 @@ C.........  Write the ASCII file header
 C.........  Write the ASCII file data
         DO S = 1, NSRC
 
-            CALL PARSCSRC( CSOURC( S ), LF, CHARS, NC )
+            CALL PARSCSRC( CSOURC( S ), NCHARS, SC_BEGP, SC_ENDP, LF, 
+     &                     NC, CHARS )
 
             IF( LF( 8 ) ) THEN
                 NC = NC + 1

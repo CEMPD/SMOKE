@@ -129,8 +129,7 @@ C.........  File units and logical/physical names
 
 C...........   Other local variables
                                 
-        INTEGER         S, I, J, K, L, LK, LS, V !  counters and indices
-        INTEGER         L1, L2           !  counters and indices
+        INTEGER         S, I, J, K, L, L2, V !  counters and indices
 
         INTEGER         FILFMT  !  input file(s) format code
         INTEGER         FIP     !  Temporary FIPS code
@@ -190,12 +189,13 @@ C.........  Allocate memory for time zones tables
 C.........  Get no. lines in pollutant codes file for allocating memory
         MXIPOL = GETFLINE( PDEV, 'Pollutant codes and names file')
 
-C.........  Allocate memory for storing contents of pollutants file
-        ALLOCATE( INVPCOD( MXIPOL ), STAT=IOS )
+C.........  Allocate memory for storing contents of pollutants file.
+C.........  Increase MXIPOL by +1 to append 'VMT' to the list, if needed
+        ALLOCATE( INVPCOD( MXIPOL+1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVPCOD', PROGNAME )
-        ALLOCATE( INVPNAM( MXIPOL ), STAT=IOS )
+        ALLOCATE( INVPNAM( MXIPOL+1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVPNAM', PROGNAME )
-        ALLOCATE( INVSTAT( MXIPOL ), STAT=IOS )
+        ALLOCATE( INVSTAT( MXIPOL+1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVSTAT', PROGNAME )
 
 C.........  Read time zone file, separate into categories, and sort tables
@@ -204,6 +204,13 @@ C.........  Read time zone file, separate into categories, and sort tables
 
 C.........  Read and sort pollutant codes/names file
         CALL RDSIPOLS( PDEV, MXIPOL, INVPCOD, INVPNAM )
+
+C.........  Insert VMT as a pollutant name for use by mobile sources
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            MXIPOL = MXIPOL + 1
+            INVPNAM( MXIPOL ) = 'VMT'
+            INVPCOD( MXIPOL ) = 0
+        END IF
 
 C.........  Initialize pollutant status (present in inventory or not)
         INVSTAT = 0  ! array
@@ -278,7 +285,7 @@ C           is not perfectly accurate for all counties.
 C.........  Get unique-SCC output file
         ADEV = PROMPTFFILE( 
      &          'Enter the name of the ACTUAL SCC output file',
-     &          .FALSE., .TRUE., 'PSCC', PROGNAME )
+     &          .FALSE., .TRUE., CRL // 'SCC', PROGNAME )
 
 C.........  Write out SCCs list (this subroutine expect the data structure
 C           that is being provided.
@@ -293,7 +300,7 @@ C           point sources only)
 
            TDEV = PROMPTFFILE( 
      &            'Enter the name of the TEMPORAL X-REF output file',
-     &            .FALSE., .TRUE., 'PTREF', PROGNAME )
+     &            .FALSE., .TRUE., CRL // 'TREF', PROGNAME )
 
            CALL M3MSG2( 'Writing out TEMPORAL CROSS-REFERENCE file...' )
 
@@ -305,8 +312,8 @@ C.........  Get output inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Generate message to use just before writing out inventory files
-        MESG = 'Writine SMOKE ' // CATEGORY( 1:CATLEN ) // 
-     &         'SOURCE INVENTORY file...'
+        MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
+     &         ' SOURCE INVENTORY file...'
 
 C.........  Open output I/O API and ASCII files for the appropriate source, then
 C.........  write source characteristics to inventory files (I/O API and ASCII)
@@ -317,9 +324,9 @@ c            CALL M3MSG2( MESG )
 c            CALL WAREACHR( ENAME, SDEV, NSRC )
 
         CASE( 'MOBILE' ) 
-c            CALL OPENMOBL( ENAME, ANAME, SDEV )
-c            CALL M3MSG2( MESG )
-c            CALL WMOBLCHR( ENAME, SDEV, NSRC )
+            CALL OPENMOBL( ENAME, ANAME, SDEV )
+            CALL M3MSG2( MESG )
+            CALL WMOBLCHR( ENAME, SDEV )
 
         CASE( 'POINT' ) 
             CALL OPENPNTS( ENAME, ANAME, SDEV )
@@ -374,33 +381,35 @@ C                   pollutant of iteration I.
 
                     IPPTR( S ) = K + 1  ! increase pointer for this source by 1
 
-                    DO J = 1, NPTPPOL3    ! store pollutant-specific info
+                    DO J = 1, NPPOL     ! rearrange pollutant-specific info
                         SRCPOL( S,J ) = POLVAL( K,J )
-                    ENDDO
+                    END DO
 
-C.....................  If emissions data records are fatal, then set error flag
+C.....................  If missing emissions or VMT data records are fatal, 
+C                       then write message and set error flag
                     IF( SFLAG .AND. SRCPOL( S,1 ) .LT. 0 ) THEN
                         EFLAG = .TRUE.
+                        L = LEN_TRIM( EINAM( I ) )
                         CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
-                        MESG = 'ERROR: Missing emissions for source:' //
+                        MESG = 'ERROR: Missing data for "' // 
+     &                         EINAM( I )( 1:L ) // '" for source:' //
      &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
-C NOTE: Change message if reading VMT
                     END IF
 
                 END IF
 
-            END DO  ! end of loop through sources x pollutants
+            END DO  ! end of loop through sources
 
-C NOTE: Can this be updated to write pollutants and VMT for any category?
-            CALL WPNTSPOL( ENAME, NSRC, 1, NPPOL, EINAM( I ), SRCPOL )
+            CALL WRINVPOL( ENAME, CATEGORY, NSRC, 1, NPPOL, 
+     &                     EINAM( I ), SRCPOL )
 
         END DO  ! end loop through actual output pollutants
 
         IF( EFLAG ) THEN
-            MESG = 'Missing species for some sources but this is' //
+            MESG = 'Missing data for some sources is not allowed ' //
      &             CRLF() // BLANK5 //
-     &             'not allowed because the environment variable ' //
+     &             'because the environment variable ' //
      &             'RAW_SRC_CHECK was set to "N".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF

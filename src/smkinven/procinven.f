@@ -70,12 +70,15 @@ C...........   Other local variables
         INTEGER         I, J, K, LK, LS, L2, S    ! counter and indices
 
         INTEGER         IOS         !  i/o status
-        INTEGER         LCAT   ! length of CATEGORY string
+        INTEGER         LCAT        !  length of CATEGORY string
+        INTEGER         PE, PS      !  pollutant postn end and start in CSOURCA 
         INTEGER         PIPCOD      !  IPOSCOD of previous iteration of loop
- 
+        INTEGER         SLEN        !  length of source 
+
         REAL            EMISI       !  inverse emissions value
         REAL            EMISN       !  new emissions value
         REAL            EMISO       !  old emissions value
+        REAL            RIMISS3     !  real typed integer missing value
 
         LOGICAL         DFLAG             ! true: if should error on duplicates
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
@@ -105,15 +108,19 @@ C           of the pollutant for that record in the INVPNAM pollutant array
         LSRCCHR = EMCMISS3
         LK = IMISS3
         S = 0
+        SLEN  = SC_BEGP( MXCHRS )
+        PS    = SC_BEGP( MXCHRS + 1 )
+        PE    = SC_ENDP( MXCHRS + 1 )
         DO I = 1, NRAWBP
             
             J  = INDEXA( I )
 
-            TSRCCHR = CSOURCA( J )(       1:SRCLEN3 ) ! Source characteristics
-            TPOLPOS = CSOURCA( J )( POLPOS3:ALLLEN3 ) ! Pos of pollutant (ASCII)
+            TSRCCHR = CSOURCA( J )(  1:SLEN ) ! Source characteristics
+            TPOLPOS = CSOURCA( J )( PS:PE   ) ! Pos of pollutant (ASCII)
 
 C.............  Update pointer for list of actual pollutants
             K = STR2INT( TPOLPOS )  ! Convert pollutant code to integer
+            
             INVSTAT( K ) = 1
             IPOSCOD( I ) = K
            
@@ -164,36 +171,71 @@ C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
 C.........  Loop through sources x pollutants to store sorted arrays for output
 C           to I/O API file. Use PRATIO to determine the appropriate position 
 C           in source-based (non-pollutant) arrays.
+
         LS = IMISS3
-        DO I = 1, NRAWBP
+        SELECT CASE ( CATEGORY )
+        CASE( 'AREA' ) 
 
-            J = INDEXA( I )
-            S = SRCIDA( I )
-            K = INT( ( REAL( J ) - 0.5 ) * PRATIO ) + 1
+        CASE( 'MOBILE' )
 
-            IF( S .NE. LS ) THEN
-                LS  = S
-                IFIP  ( S )  = IFIPA  ( K )
-                ISIC  ( S )  = ISICA  ( K )
-                IORIS ( S )  = IORISA ( K )
-                IDIU  ( S )  = IDIUA  ( K )
-                IWEK  ( S )  = IWEKA  ( K )
-                TPFLAG( S )  = TPFLGA ( K )
-                INVYR ( S )  = INVYRA ( K )
-                XLOCA ( S )  = XLOCAA ( K )
-                YLOCA ( S )  = YLOCAA ( K )
-                STKHT ( S )  = STKHTA ( K )
-                STKDM ( S )  = STKDMA ( K )
-                STKTK ( S )  = STKTKA ( K )
-                STKVE ( S )  = STKVEA ( K )
-                CSCC  ( S )  = CSCCA  ( K )
-                CBLRID( S )  = CBLRIDA( K )
-                CPDESC( S )  = CPDESCA( K )
+            DO I = 1, NRAWBP
 
-                CSOURC( S )  = CSOURCA( J )( 1:SRCLEN3 )
-            ENDIF
+                J = INDEXA( I )
+                S = SRCIDA( I )
+                K = INT( ( REAL( J ) - 0.5 ) * PRATIO ) + 1
 
-        ENDDO
+                IF( S .NE. LS ) THEN
+                    LS  = S
+                    IFIP  ( S ) = IFIPA  ( K )
+                    TPFLAG( S ) = TPFLGA ( K )
+                    INVYR ( S ) = INVYRA ( K )
+                    CSCC  ( S ) = CSCCA  ( K )
+                    CLINK ( S ) = CLINKA ( K )
+                    CVTYPE( S ) = CVTYPEA( K )
+                    XLOC1 ( S ) = XLOC1A ( K )
+                    YLOC1 ( S ) = YLOC1A ( K )
+                    XLOC2 ( S ) = XLOC2A ( K )
+                    YLOC2 ( S ) = YLOC2A ( K )
+                    SPEED ( S ) = SPEEDA ( K )
+
+                    CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
+                END IF
+
+            END DO
+
+        CASE( 'POINT' )
+
+            DO I = 1, NRAWBP
+
+                J = INDEXA( I )
+                S = SRCIDA( I )
+                K = INT( ( REAL( J ) - 0.5 ) * PRATIO ) + 1
+
+                IF( S .NE. LS ) THEN
+                    LS  = S
+                    IFIP  ( S )  = IFIPA  ( K )
+                    ISIC  ( S )  = ISICA  ( K )
+                    IORIS ( S )  = IORISA ( K )
+                    IDIU  ( S )  = IDIUA  ( K )
+                    IWEK  ( S )  = IWEKA  ( K )
+                    TPFLAG( S )  = TPFLGA ( K )
+                    INVYR ( S )  = INVYRA ( K )
+                    XLOCA ( S )  = XLOCAA ( K )
+                    YLOCA ( S )  = YLOCAA ( K )
+                    STKHT ( S )  = STKHTA ( K )
+                    STKDM ( S )  = STKDMA ( K )
+                    STKTK ( S )  = STKTKA ( K )
+                    STKVE ( S )  = STKVEA ( K )
+                    CSCC  ( S )  = CSCCA  ( K )
+                    CBLRID( S )  = CBLRIDA( K )
+                    CPDESC( S )  = CPDESCA( K )
+
+                    CSOURC( S )  = CSOURCA( J )( 1:SRCLEN3 )
+                END IF
+
+            END DO
+
+        END SELECT
 
 C.........  Deallocate local memory for per-source unsorted arrays
         CALL SRCMEM( CATEGORY, 'UNSORTED', .FALSE., .FALSE., 
@@ -209,7 +251,13 @@ C           the memory were allocated at the same time.
         CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .TRUE., NSRC, 
      &               NRAWBP, NPPOL )
 
-        POLVAL = AMISS3
+C.........  Initialize pollutant-specific values.  Inititalize integer values
+C           with the real version of the missing integer flag, since these
+C           are stored as reals until output
+        POLVAL  = AMISS3          ! array
+        RIMISS3 = REAL( IMISS3 )
+        IF( NC1 .GT. 0 ) POLVAL( :,NC1 ) = RIMISS3 ! array
+        IF( NC1 .GT. 0 ) POLVAL( :,NC2 ) = RIMISS3 ! array
 
 C.........  Store pollutant-specific data in sorted order.  For EPS and EMS-95
 C           formats, ensure that any duplicates are aggregated.
@@ -233,6 +281,12 @@ C           array of output pollutants
 C.............  Set the number of pollutants per source to the constant value
             NPCNT = NRAWBP / NSRC   ! NPCNT is array
 
+C.........  For non-IDA formats for mobile sources...
+        ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
+
+c NOTE: insert here
+
+C.........  For non-IDA formats for area and point sources...
         ELSE IF( FILFMT .EQ. EPSFMT .OR. FILFMT .EQ. EMSFMT ) THEN
         
             NPCNT = 0  ! initialize pollutant count array

@@ -49,11 +49,11 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2  CRLF
-        INTEGER      GETFMTPT
+        INTEGER      GETFORMT
         INTEGER      GETINVYR
         INTEGER      JUNIT
 
-        EXTERNAL     CRLF, GETFMTPT, GETINVYR, JUNIT
+        EXTERNAL     CRLF, GETFORMT, GETINVYR, JUNIT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NLINE            ! number of lines in file
@@ -98,7 +98,7 @@ C.............  Open INFILE
             OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD' )
 
 C.............  Determine format of INFILE
-            FILFMT = GETFMTPT( TDEV )
+            FILFMT = GETFORMT( TDEV )
 
 C.............  If first iteration, save format, if not, make sure 
 C               that different formats are not used in same PTINV list

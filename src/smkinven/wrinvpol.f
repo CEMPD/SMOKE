@@ -1,17 +1,17 @@
 
-        SUBROUTINE WPNTSPOL( ENAME, NPSRC, IPCNT, NPPOL, 
+        SUBROUTINE WRINVPOL( ENAME, CATEGORY, NSRC, IPCNT, NPPOL, 
      &                       POLNAM, POLBUF )
 
 C***********************************************************************
 C  subroutine body starts at line 89
 C
 C  DESCRIPTION:
-C      This subroutine writes the point source pollutant-based variables
-C      to the I/O API files
+C      This subroutine writes the inventory pollutant-based variables
+C      and/or VMT to the I/O API files
 C
 C  PRECONDITIONS REQUIRED:
 C      Logical file name ENAME opened
-C      Number of sources NPSRC defined correctly
+C      Number of sources NSRC defined correctly
 C      Pollutant count IPCNT and output names POLNAM defined correctly
 C      Output array POLVAL populated
 C
@@ -56,11 +56,12 @@ C...........   INCLUDES
 
 C.........  Subroutine arguments and their descriptions:
         CHARACTER(*), INTENT (IN) :: ENAME            !  I/O API file name
-        INTEGER     , INTENT (IN) :: NPSRC            !  no. point sources
+        CHARACTER(*), INTENT (IN) :: CATEGORY         !  source category
+        INTEGER     , INTENT (IN) :: NSRC             !  no. sources
         INTEGER     , INTENT (IN) :: IPCNT            !  pollutant count
         INTEGER     , INTENT (IN) :: NPPOL            !  no. vars per pol
         CHARACTER(*), INTENT (IN) :: POLNAM( IPCNT )  !  names of output pols
-        REAL        , INTENT (IN) :: POLBUF( NPSRC,IPCNT*NPPOL )
+        REAL        , INTENT (IN) :: POLBUF( NSRC,IPCNT*NPPOL )
                                             !  pol-based emissions & other data
 C...........   Output variable information
         INTEGER                 EOUNITS( IPCNT,NPPOL ) ! units of output vars
@@ -68,7 +69,7 @@ C...........   Output variable information
         CHARACTER(LEN=IODLEN3)  CDUM   ( IPCNT,NPPOL ) ! char dummy
 
 C...........   Temporary integer array for output of integer variables
-        INTEGER                 INTBUF( NPSRC )
+        INTEGER                 INTBUF( NSRC )
 
 C...........   Other local variables
         INTEGER                 I, J, V
@@ -76,18 +77,18 @@ C...........   Other local variables
         CHARACTER*300           MESG    !  message buffer
         CHARACTER(LEN=IOVLEN3 ) VAR     !  tmp variable name
  
-        CHARACTER*16 :: PROGNAME = 'WPNTSPOL' !  program name
+        CHARACTER*16 :: PROGNAME = 'WRINVPOL' !  program name
 
 C***********************************************************************
-C   begin body of program WPNTSPOL
+C   begin body of program WRINVPOL
 
 C.........  Create message to use in case there is an error
         MESG = 'Error writing output file "' //
      &         ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
 
 C.........  Get the list of variable names per pollutant
-        CALL BLDENAMS( 'POINT', IPCNT, NPPOL, POLNAM, EONAMES,
-     &                  CDUM, EOUNITS, CDUM )
+        CALL BLDENAMS( CATEGORY, IPCNT, NPPOL, POLNAM, EONAMES,
+     &                 CDUM, EOUNITS, CDUM )
 
 C.........  Write the I/O API file, one variable at a time
         DO V = 1, IPCNT
@@ -115,9 +116,9 @@ C.................  Simply write out real values directly
 
                 END IF
 
-            ENDDO
+            END DO
 
-        ENDDO
+        END DO
 
         RETURN
 
@@ -135,4 +136,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94100   FORMAT( 9( A, I2 ) )
 
-        END
+        END SUBROUTINE WRINVPOL

@@ -78,7 +78,8 @@ C.........  For area sources ...
         CASE ( 'AREA' )
 
             NPPOL  = NARPPOL3
-            NCHARS = 2
+            MXCHRS = MXARCHR3
+            NCHARS = MXCHRS
             JSCC   = 2
 
             SELECT CASE( FILFMT )
@@ -90,13 +91,15 @@ C.........  For mobile sources ...
         CASE ( 'MOBILE' ) 
 
             NPPOL  = NMBPPOL3
-            NCHARS = 3  ! ??
-            JSCC   = 2  ! ??
+            MXCHRS = MXMBCHR3
+            NCHARS = MXCHRS  ! FIPS / SCC (veh type &/or road class) / veh type / lnk
+            JSCC   = 2 
 
 C.........  For point sources ...
         CASE ( 'POINT' )
 
-            NPPOL = NPTPPOL3
+            MXCHRS = MXPTCHR3
+            NPPOL  = NPTPPOL3
 
             SELECT CASE( FILFMT )
             CASE( IDAFMT )
@@ -111,6 +114,28 @@ C ??
             END SELECT
           
         END SELECT
+
+C.........  Allocate memory for source characteristic positions (+1 is for
+C           pollutant position)
+        ALLOCATE( SC_BEGP( MXCHRS + 1 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SC_BEGP', PROGNAME )
+        ALLOCATE( SC_ENDP( MXCHRS + 1 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SC_ENDP', PROGNAME )
+
+C.........  Store source characteristic positions
+        DO I = 1, MXCHRS + 1
+            SELECT CASE( CATEGORY )
+            CASE ( 'AREA' )
+c                SC_BEGP( I ) = ARBEGL3( I )
+c                SC_ENDP( I ) = ARENDL3( I )
+            CASE ( 'MOBILE' ) 
+                SC_BEGP( I ) = MBBEGL3( I )
+                SC_ENDP( I ) = MBENDL3( I )
+            CASE ( 'POINT' )
+                SC_BEGP( I ) = PTBEGL3( I )
+                SC_ENDP( I ) = PTENDL3( I )
+            END SELECT
+        END DO
 
 C.........  Allocate memory for dummy variables for determining positions
 C           of the fields in the pollutant-specific variables

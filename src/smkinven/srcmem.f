@@ -137,6 +137,46 @@ C.............  Allocate specifically based on source category
             CASE( 'AREA' )
             CASE( 'MOBILE' )
  
+                IF( UFLAG .AND. .NOT. ALLOCATED( CVTYPEA ) ) THEN
+                    ALLOCATE( CVTYPEA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CVTYPEA', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( CLINKA ) ) THEN
+                    ALLOCATE( CLINKA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CLINKA', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( SPEEDA ) ) THEN
+                    ALLOCATE( SPEEDA( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'SPEEDA', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( XLOC1A ) ) THEN
+                    ALLOCATE( XLOC1A( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'XLOC1A', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( YLOC1A ) ) THEN
+                    ALLOCATE( YLOC1A( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'YLOC1A', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( XLOC2A ) ) THEN
+                    ALLOCATE( XLOC2A( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'XLOC2A', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( YLOC2A ) ) THEN
+                    ALLOCATE( YLOC2A( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'YLOC2A', PROGNAME )
+                END IF
+ 
+                IF( .NOT. PFLAG .AND. 
+     &              .NOT. AFLAG .AND. ALLOCATED( CVTYPEA ) ) 
+     &              DEALLOCATE( CVTYPEA, CLINKA, SPEEDA, XLOC1A, 
+     &                          YLOC1A, XLOC2A, YLOC2A )
+
             CASE( 'POINT' )
  
                 IF( UFLAG .AND. .NOT. ALLOCATED( ISICA ) ) THEN
@@ -157,11 +197,6 @@ C.............  Allocate specifically based on source category
                 IF( UFLAG .AND. .NOT. ALLOCATED( IWEKA ) ) THEN
                     ALLOCATE( IWEKA( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'IWEKA', PROGNAME )
-                END IF
- 
-                IF( UFLAG .AND. .NOT. ALLOCATED( SRCIDA ) ) THEN
-                    ALLOCATE( SRCIDA( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'SRCIDA', PROGNAME )
                 END IF
  
                 IF( UFLAG .AND. .NOT. ALLOCATED( XLOCAA ) ) THEN
@@ -206,7 +241,7 @@ C.............  Allocate specifically based on source category
 
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( ISICA ) ) 
-     &              DEALLOCATE( ISICA, IORISA, IDIUA, IWEKA, SRCIDA, 
+     &              DEALLOCATE( ISICA, IORISA, IDIUA, IWEKA,  
      &                          XLOCAA, YLOCAA, STKHTA, STKDMA, STKTKA,  
      &                          STKVEA, CBLRIDA, CPDESCA )
 
@@ -230,6 +265,11 @@ C.........  Sorted ...
             IF( UFLAG .AND. .NOT. ALLOCATED( INVYR ) ) THEN
                 ALLOCATE( INVYR( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
+            END IF
+
+            IF( UFLAG .AND. .NOT. ALLOCATED( NPCNT ) ) THEN
+                ALLOCATE( NPCNT( NDIM1 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
             END IF
 
             IF( UFLAG .AND. .NOT. ALLOCATED( CSCC ) ) THEN
@@ -258,6 +298,7 @@ C.............  Deallocate for any source category
             ELSE IF( .NOT. AFLAG ) THEN
                 IF( ALLOCATED( IPOSCOD ) ) DEALLOCATE( IPOSCOD )
                 IF( ALLOCATED( POLVAL  ) ) DEALLOCATE( POLVAL )
+                IF( ALLOCATED( NPCNT   ) ) DEALLOCATE( NPCNT )
 
             END IF               
 
@@ -265,6 +306,46 @@ C.............  Deallocate for any source category
             CASE( 'AREA' )
             CASE( 'MOBILE' )
  
+                IF( UFLAG .AND. .NOT. ALLOCATED( CVTYPE ) ) THEN
+                    ALLOCATE( CVTYPE( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( CLINK ) ) THEN
+                    ALLOCATE( CLINK( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CLINK', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( SPEED ) ) THEN
+                    ALLOCATE( SPEED( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( XLOC1 ) ) THEN
+                    ALLOCATE( XLOC1( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( YLOC1 ) ) THEN
+                    ALLOCATE( YLOC1( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'YLOC1', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( XLOC2 ) ) THEN
+                    ALLOCATE( XLOC2( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
+                END IF
+ 
+                IF( UFLAG .AND. .NOT. ALLOCATED( YLOC2 ) ) THEN
+                    ALLOCATE( YLOC2( NDIM1 ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
+                END IF
+ 
+                IF( .NOT. PFLAG .AND. 
+     &              .NOT. AFLAG .AND. ALLOCATED( CVTYPE ) ) 
+     &              DEALLOCATE( CVTYPE, CLINK, SPEED, XLOC1, 
+     &                          YLOC1, XLOC2, YLOC2 )
+
             CASE( 'POINT' )
  
                 IF( UFLAG .AND. .NOT. ALLOCATED( ISIC ) ) THEN
@@ -285,11 +366,6 @@ C.............  Deallocate for any source category
                 IF( UFLAG .AND. .NOT. ALLOCATED( IWEK ) ) THEN
                     ALLOCATE( IWEK( NDIM1 ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
-                END IF
-
-                IF( UFLAG .AND. .NOT. ALLOCATED( NPCNT ) ) THEN
-                    ALLOCATE( NPCNT( NDIM1 ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
                 END IF
 
                 IF( UFLAG .AND. .NOT. ALLOCATED( XLOCA ) ) THEN
@@ -333,8 +409,8 @@ C.............  Deallocate for any source category
                 END IF
 
                 IF( .NOT. PFLAG .AND. 
-     &              .NOT. AFLAG .AND. ALLOCATED( ISICA ) ) 
-     &              DEALLOCATE( ISIC, IORIS, IDIU, IWEK, NPCNT,
+     &              .NOT. AFLAG .AND. ALLOCATED( ISIC ) ) 
+     &              DEALLOCATE( ISIC, IORIS, IDIU, IWEK, 
      &                          YLOCA, STKHT, STKDM, STKTK,  
      &                          STKVE, CBLRID, CPDESC )
 

@@ -18,7 +18,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C      Subroutines: I/O API subroutines, BLDENAMS, CHECKMEM, FMTCSRC, RDEMSPT, 
 C                   RDEPSPT, RDIDAPT, RDLINES
-C      Functions: I/O API functions, GETFLINE, GETFMTPT, GETIDASZ, GETINVYR,
+C      Functions: I/O API functions, GETFLINE, GETFORMT, GETIDASZ, GETINVYR,
 C         GETISIZE
 C
 C  REVISION  HISTORY:
@@ -69,13 +69,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         LOGICAL         ENVYN
         INTEGER         GETFLINE
-        INTEGER         GETFMTPT
+        INTEGER         GETFORMT
         INTEGER         GETIDASZ
         INTEGER         GETINVYR
         INTEGER         GETISIZE
         INTEGER         JUNIT
 
-        EXTERNAL        CRLF, ENVYN, GETFLINE, GETFMTPT, GETIDASZ, 
+        EXTERNAL        CRLF, ENVYN, GETFLINE, GETFORMT, GETIDASZ, 
      &                  GETINVYR, GETISIZE, JUNIT
 
 C...........   SUBROUTINE ARGUMENTS
@@ -130,7 +130,7 @@ C   begin body of subroutine RDINVEN
         FLEN   = LEN_TRIM( FNAME )
 
 C.........  Determine file format of PTINV file
-        INVFMT = GETFMTPT( FDEV )
+        INVFMT = GETFORMT( FDEV )
 
 C.........   Initialize variables for keeping track of dropped emissions
         NDROP = 0
@@ -194,7 +194,7 @@ C.........  Also, make sure file format is known
 C.........  Set ratio of NRAWIN and NEDIM1 to use in saving file source arrays
 C           which are in different data structures for EMS-95 ibput than IDA
 C           input.
-        PRATIO = REAL( NRAWIN ) / ( NEDIM1 )
+        PRATIO = REAL( NRAWIN ) / MAX( 1,NEDIM1 )
 
 C.........  Allocate memory for (unsorted) input arrays using dimensions set
 C           based on the source category and type of inventory being input
@@ -223,7 +223,9 @@ c                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
 c     &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'MOBILE' )
-c                CALL RDIDAMV( ?? )
+                
+                CALL RDIDAMB( FDEV, NRAWIN, MXIPOL, INVPNAM, NRAWOUT, 
+     &                        EFLAG, NDROP, EDROP )
 
             CASE( 'POINT' )
                 CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
@@ -290,6 +292,9 @@ C.................  Open INFILE
      &                 INFILE( 1:LEN_TRIM( INFILE ) )
                 CALL M3MSG2( MESG ) 
 
+c NOTE: If list-format contains IDA or EPS files, there is currently no way
+c       that the memory allocation is correct!
+
 C.................  Read file based on format set above
                 IF( FILFMT .EQ. IDAFMT ) THEN
 
@@ -300,7 +305,9 @@ c     &                                INVPNAM, NRAWOUT, EFLAG,
 c     &                                NDROP, EDROP )
 
                     CASE( 'MOBILE' )
-c                        CALL RDIDAMV( ?? )
+                        CALL RDIDAMB( FDEV, NRAWIN, MXIPOL, INVPNAM, 
+     &                                NRAWOUT, EFLAG, NDROP, EDROP  )
+
 
                     CASE( 'POINT' )
                         CALL RDIDAPT( FDEV, NRAWIN, NEDIM1, MXIPOL, 
@@ -342,7 +349,7 @@ C                       write message, and store unit number.
                         IF( INDEX( INFILE,'INVYEAR' ) .GT. 0 ) GOTO 1007 !Error
                         TDEV = JUNIT()
                         OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD')
-                        FILFMT = GETFMTPT( TDEV )
+                        FILFMT = GETFORMT( TDEV )
                         IF( FILFMT .NE. EMSFMT ) GO TO 1008  ! Error
                         CALL M3MSG2( INFILE( 1:LEN_TRIM( INFILE ) ) )
                         EDEV( I ) = TDEV
@@ -429,10 +436,6 @@ C.........  Abort if there was a reading error
         RETURN
 
 C******************  ERROR MESSAGES WITH EXIT **************************
- 
-C.........  Error because improper grouping of raw input files
-1005    MESG = 'EMS-95 input file list ended without complete set'
-        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.........  Error opening raw input file
 1006    WRITE( MESG,94010 ) 'Problem at line ', J, 'of ' //
