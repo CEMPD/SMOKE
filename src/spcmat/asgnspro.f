@@ -332,16 +332,16 @@ C                           pollutant-specific vehicle type match
                 IF( F5 .GT. 0 .AND. CNVFC03(F5,V) .NE. AMISS3 ) THEN
                     CNVFAC = CNVFC03( F5,V )
 
-                ELSE IF( F4 .GT. 0 .AND. CNVFC02(F4,V) .NE. AMISS3 ) THEN
+                ELSE IF( F4 .GT. 0 .AND. CNVFC02(F4,V) .NE. AMISS3 )THEN
                     CNVFAC = CNVFC02( F4,V )
 
-                ELSE IF( F3 .GT. 0 .AND. CNVFC01(F3,V) .NE. AMISS3 ) THEN
+                ELSE IF( F3 .GT. 0 .AND. CNVFC01(F3,V) .NE. AMISS3 )THEN
                     CNVFAC = CNVFC01( F3,V )
 
-                ELSE IF( F2 .GT. 0 .AND. CNVFC01(F2,V) .NE. AMISS3 ) THEN
+                ELSE IF( F2 .GT. 0 .AND. CNVFC01(F2,V) .NE. AMISS3 )THEN
                     CNVFAC = CNVFC01( F2,V )
 
-                ELSE IF( F1 .GT. 0 .AND. CNVFC01(F1,V) .NE. AMISS3 ) THEN
+                ELSE IF( F1 .GT. 0 .AND. CNVFC01(F1,V) .NE. AMISS3 )THEN
                     CNVFAC = CNVFC01( F1,V )
 
 C.................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
