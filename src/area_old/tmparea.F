@@ -1,25 +1,22 @@
-
+            
         PROGRAM TMPAREA
 
 C***********************************************************************
-C  program body starts at line 233
+C  program body starts at line 254
 C
 C  DESCRIPTION:
 C       Produces source-level inventory-speciated temporally allocated
-C       emissions, using the emissions-source vector produced by GRDAMAT
-C       and the temporal profiles and cross-reference tables for area
-C       sources (extracted as the areas-only portions of the AIRS tables
-C       with the "stack-ID field removed).
+C       emissions, using the emissions-source vector produced by EMSAREA
+C       and the EPS2-formatted temporal profiles and cross-reference 
+C       tables for area sources.
 C
 C  PRECONDITIONS REQUIRED:  
 C       M3IO source-level area source emissions in canonical order
-C       produced by GRDAMAT
-C       Sorted, cut-down, only-active-area-sources XREF file.
+C       produced by EMSAREA
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C       Models-3 I/O; 
-C       FIND1, FIND2, FIND3, GETEFILE, GETNUM, GETYN, DAYMON, 
-C       TIME2SEC, TRIMLEN, WKDAY
+C       RDTPROF(), RDASCC(), MKTMAT()
+C       Models-3 I/O.
 C
 C  REVISION  HISTORY:
 C       Prototype  3/95 by CJC.
@@ -33,12 +30,21 @@ C	mod( tflag( source ), [M|W]PRFAC ) is zero
 C
 C	Modified 8/96 by CJC:  style changes.  Now uses AIRS-format
 c  	ATREF, rather than filtered, cut-down ATREF.
+C
+C	Modified 12/96 by CJC for OTAG:  now assumes that temporal profiles
+C  	are independent of pollutant.  New lookup algorithm goes from XREF
+C       to profiles.  Uses RDASCC().
+C
+C       Modified  2/97 by MRH for additional checks related to having
+C       taken out pollutant-specific X-refs in the previous revision.
+C       Also modified output formatting in many places.
+C
 C***********************************************************************
 C
 C PROJECT TITLE: 
 C	Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling System
 C
-C File Version @(#)$Id$ $Source$ $Date$ 
+C File Version @(#)$Id$
 C
 C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
@@ -60,7 +66,7 @@ C***********************************************************************
       IMPLICIT NONE
 
 C...........   INCLUDES:
-        
+
         INCLUDE 'ARDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'TMDIMS3.EXT'   !  emis temporal modeling parms
@@ -70,14 +76,19 @@ C...........   INCLUDES:
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
+        INTEGER         CHKXLIN
+        CHARACTER*2     CRLF
         INTEGER         FIND1, FIND2, FIND3
+        INTEGER         GETDATE
         INTEGER         GETEFILE
         INTEGER         GETNUM
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         INTEGER         INDEX1
         LOGICAL         ISDSTIME
-        INTEGER         LBLANK
+        INTEGER         JULIAN
+        CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         RDTPROF
@@ -85,39 +96,38 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TIME2SEC
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
-        
-        EXTERNAL        FIND1, FIND2, FIND3, GETEFILE, GETNUM, GETYN, 
-     &                  INDEX1, ISDSTIME, LBLANK, PROMPTFFILE, 
-     &                  PROMPTMFILE, RDTPROF, STR2INT, TIME2SEC, 
-     &                  TRIMLEN, WKDAY
 
-                                            
+        EXTERNAL  CHKXLIN, CRLF, FIND1, FIND2, FIND3, GETDATE, GETEFILE, 
+     &            GETNUM, GETYN, HHMMSS, INDEX1, ISDSTIME, JULIAN,
+     &            MMDDYY, PROMPTFFILE, PROMPTMFILE, RDTPROF, STR2INT,
+     &            TIME2SEC, TRIMLEN, WKDAY
+
+
 C...........   PARAMETERS and their descriptions
 
+        CHARACTER*5     BLANK5 
         CHARACTER*16    BLANK16
-        INTEGER		MXREF
-        PARAMETER     ( BLANK16 = ' ' ,
-     &                  MXREF   = NTRFA * NIPOL )
-        
-                
+        PARAMETER     ( BLANK5  = ' ' ,
+     &                  BLANK16 = ' '  )
+
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Area Sources input and output arrays
-        
-        INTEGER         IFIP  ( NASRC )         ! FIP codes for sources
-        INTEGER         ASC7  ( NASRC )         ! 7 leading digits of ASC
-        INTEGER         ASC3  ( NASRC )         ! 3 trailing digits of ASC
-        INTEGER         ZONES ( NASRC )         ! time zones
-        INTEGER         TPFLAG( NASRC )         ! governs profile type usage
-        INTEGER         MDEX  ( NASRC, NIPOL )  ! monthly       profile subscript
-        INTEGER         WDEX  ( NASRC, NIPOL )  ! weeky         profile subscript
-        INTEGER         DDEX  ( NASRC, NIPOL )  ! wkday diurnal profile subscript
-        INTEGER         EDEX  ( NASRC, NIPOL )  ! wkend-diurnal profile subscript
-        REAL            EMIS  ( NASRC, NIPOL )  ! input inventory emissions.
-        REAL            TOUT  ( NASRC, NIPOL )  ! timestepped output emssions
-        
-        INTEGER         MREF  ( NIPOL )  ! monthly       profile subscript
-        INTEGER         WREF  ( NIPOL )  ! weeky         profile subscript
-        INTEGER         DREF  ( NIPOL )  ! wkday diurnal profile subscript
+
+        INTEGER         IFIP ( NASRC )         ! FIP codes for sources
+        INTEGER         ASC7 ( NASRC )         ! 7 leading digits of ASC
+        INTEGER         ASC3 ( NASRC )         ! 3 trailing digits of ASC
+        INTEGER         ZONES( NASRC )         ! time zones
+        INTEGER         TFLAG( NASRC )         ! governs profile type usage
+        INTEGER         MDEX ( NASRC )  ! monthly       profile subscript
+        INTEGER         WDEX ( NASRC )  ! weeky         profile subscript
+        INTEGER         DDEX ( NASRC )  ! wkday diurnal profile subscript
+        INTEGER         EDEX ( NASRC )  ! wkend-diurnal profile subscript
+        REAL            EMIS ( NASRC, NIPOL )  ! input inventory emissions.
+        REAL            TOUT ( NASRC, NIPOL )  ! timestepped output emssions
+
+        INTEGER         MREF 	  	! monthly       profile subscript
+        INTEGER         WREF 	  	! weeky         profile subscript
+        INTEGER         DREF 	  	! wkday diurnal profile subscript
 
 C.......   Actually-occurring ASC table
 
@@ -128,86 +138,85 @@ C.......   Actually-occurring ASC table
 
 C...........   Time-stepping Matrix.  
 C.......   TMAT( S,V,H ) is profile coeffs for source S, pollutant V, hour H
-        
-        REAL            TMAT( NASRC, NIPOL, 24 )    ! coeff profiles
-      
-        
+
+        REAL            TMAT( NASRC, 24 )    ! coeff profiles
+
 C...........   Temporal Profile XREF tables:  give monthly, weekly, hourly 
 C...........   profile-indexes for lookup into temporal profile tables.
 C.......   Before sorting:
 
         INTEGER         NPRFA
-        INTEGER         INDXA( MXREF )
-        INTEGER         FIPFA( MXREF )
-        INTEGER         ID7FA( MXREF )
-        INTEGER         ID3FA( MXREF )
-        INTEGER         MPRFA( MXREF )
-        INTEGER         WPRFA( MXREF )
-        INTEGER         DPRFA( MXREF )
-        INTEGER         CODEA( MXREF )
+        INTEGER         INDXA( NTRFA )
+        INTEGER         FIPFA( NTRFA )
+        INTEGER         ID7FA( NTRFA )
+        INTEGER         ID3FA( NTRFA )
+        INTEGER         MPRFA( NTRFA )
+        INTEGER         WPRFA( NTRFA )
+        INTEGER         DPRFA( NTRFA )
 
 C.......   After sorting:
 C.......   Default no-FIP, no-ACC profile
-        
-        INTEGER         MPR00( NIPOL )  !  month-in-year
-        INTEGER         WPR00( NIPOL )  !  day-in-week
-        INTEGER         DPR00( NIPOL )  !  hour-in-day (diurnal)
-        
+
+        INTEGER         MPR00   !  month-in-year
+        INTEGER         WPR00   !  day-in-week
+        INTEGER         DPR00   !  hour-in-day (diurnal)
+        INTEGER         EPR00   !  hour-in-day (diurnal)
+
 C.......   No-FIP, by-ASC profiles
-        
+
         INTEGER         NPRNF
         INTEGER         ID7NF( NASCC )
         INTEGER         ID3NF( NASCC )
-        INTEGER         MPRNF( NASCC, NIPOL )
-        INTEGER         WPRNF( NASCC, NIPOL )
-        INTEGER         DPRNF( NASCC, NIPOL )
-        
+        INTEGER         MPRNF( NASCC )
+        INTEGER         WPRNF( NASCC )
+        INTEGER         DPRNF( NASCC )
+        INTEGER         EPRNF( NASCC )
+
 C.......   No-county, (by-STATE FIP code-and-ASC) profiles
-        
+
         INTEGER         NPRNC
-        INTEGER         FIPNC( NASCC )
+        INTEGER         FIPNC( NASCC )		!  state code (FIP/1000)
         INTEGER         ID7NC( NASCC )
         INTEGER         ID3NC( NASCC )
-        INTEGER         MPRNC( NASCC, NIPOL )
-        INTEGER         WPRNC( NASCC, NIPOL )
-        INTEGER         DPRNC( NASCC, NIPOL )
-        
+        INTEGER         MPRNC( NASCC )
+        INTEGER         WPRNC( NASCC )
+        INTEGER         DPRNC( NASCC )
+        INTEGER         EPRNC( NASCC )
+
 C.......   FIP-ASC-specific profiles
 
         INTEGER         NPRFC
         INTEGER         FIPFC( NTRFA )
         INTEGER         ID7FC( NTRFA )
         INTEGER         ID3FC( NTRFA )
-        INTEGER         MPRFC( NTRFA, NIPOL )
-        INTEGER         WPRFC( NTRFA, NIPOL )
-        INTEGER         DPRFC( NTRFA, NIPOL )
+        INTEGER         MPRFC( NTRFA )
+        INTEGER         WPRFC( NTRFA )
+        INTEGER         DPRFC( NTRFA )
+        INTEGER         EPRFC( NTRFA )
 
-C...........   Temporal Profile arrays
+C...........   Temporal Profile and XREF-code arrays
 
-        INTEGER         MONREF( NMCOD )     ! Monthly         XREF table
-        INTEGER         WEKREF( NWCOD )     ! Weekly          XREF table
-        INTEGER         DIUREF( NDCOD )     ! Weekday-diurnal XREF table
-        INTEGER         ENDREF( NDCOD )     ! Weekend-diurnal XREF table
+        INTEGER         MONREF( NMCOD )     ! Month:Year   XREF-code table
+        INTEGER         WEKREF( NWCOD )     ! Day:Week     XREF-code table
+        INTEGER         DIUREF( NDCOD )     ! Hour:Weekday XREF-code table
+        INTEGER         ENDREF( NDCOD )     ! Hour:Weekend XREF-code table
 
-        REAL            MONFAC( 12, NMCOD ) ! Monthly         profile coeffs
-        REAL            WEKFAC(  7, NWCOD ) ! Weekly          profile coeffs
-        REAL            DIUFAC( 24, NDCOD ) ! Weekday-diurnal profile coeffs
-        REAL            ENDFAC( 24, NDCOD ) ! Weekend-diurnal profile coeffs
-
-C.......   Numbers of month, week, day, weekday, weekend profiles read
-
-        INTEGER         NMON, NWEK, NDIU, NEND
+        INTEGER         NMON		    ! number of month:year profiles
+        INTEGER         NWEK		    ! number of day:week   profiles
+        INTEGER         NDIU		    ! number of hr:weekday profiles
+        INTEGER         NEND  		    ! number of hr:weekend profiles
+        REAL            MONFAC( 12, NMCOD ) ! Month:Year   profile coeffs
+        REAL            WEKFAC(  7, NWCOD ) ! Day:Week     profile coeffs
+        REAL            DIUFAC( 24, NDCOD ) ! Hour:Weekday profile coeffs
+        REAL            ENDFAC( 24, NDCOD ) ! Hour:Weekend profile coeffs
 
 C...........   Other local variables
 
         LOGICAL         EFLAG   !  error-flag
-        LOGICAL         MFLAG   !  use monthly profiles
-        LOGICAL         WFLAG   !  use weekly profiles
-
-        LOGICAL   DAYLIT !  true when ZONES have been changed to daylight time
-        DATA      DAYLIT / .FALSE. /
-
+        LOGICAL         DAYLIT  !  iff ZONES changed to daylight time
+        LOGICAL         DSTNOW  !  iff currently daylight time now
         INTEGER         TZONE
+        INTEGER         DCNT    !  count of uses for default profiles
         INTEGER         JDATE
         INTEGER         JTIME
         INTEGER         TSTEP
@@ -215,31 +224,36 @@ C...........   Other local variables
         INTEGER         LDEV
         INTEGER         ADEV    ! unit number for actual-ASC file
         INTEGER         XDEV	! ...for cross-reference input file
-        INTEGER         YDEV	! ...cross-reference output file
         INTEGER         PDEV	! ...temporal profile input file
         INTEGER         IOS
         INTEGER         IREC
-        INTEGER         LS, EC
-        INTEGER         B, H, I, II, J, K, C0, C1, F, S, T, V
-        INTEGER         FIP, PLANT, ID7, ID3, COD, IMON, IWEK, IDIU
-        INTEGER         LID7, LID3
-        INTEGER         MONTH, DAY, LDATE
+        INTEGER         H, I, J, K, C0, C1, F, S, T, V
+        INTEGER         FIP, ID7, ID3, CODE
+        INTEGER         IMON, IWEK, IDIU, IEND
+        INTEGER         YEAR, MONTH, DAY, LDATE
+        INTEGER         LFIP, LID7, LID3, LCOD   ! From previous line of X-REF
+        INTEGER         LMON, LWEK, LDIU         ! From previous line of X-REF
+        CHARACTER*14    DTBUF   !  buffer for MMDDYY
+        CHARACTER*16    ANAME   !  logical name for area-source  input file
+        CHARACTER*16    TNAME   !  logical name for timestepped output file
+        CHARACTER*128   LINE    !  buffer for input of X-ref file
+        CHARACTER*256   MESG    !  message buffer
 
-        INTEGER         IBADC       !  Bad pollutant code counter
-        INTEGER         BPCODE(20)  !  Bad pollutant code list 
- 
-        CHARACTER*7     ID7C
-        CHARACTER*3     ID3C
-        CHARACTER*16    ANAME   !  logical name for area-source      input file
-        CHARACTER*16    TNAME   !  logical name for timestepped     output file
-        CHARACTER*80    LINE    !  buffer for XREF input lines
-        CHARACTER*256   MESG    !  buffer for M3EXIT()
+        LOGICAL         FIRSTCOD  !  iff haven't yet encounter CODE > 0
+        DATA            FIRSTCOD / .TRUE. /
+
+        CHARACTER*10    DAYS( 7 )
+        DATA            DAYS
+     &          /
+     &          'Monday', 'Tuesday', 'Wednesday', 'Thursday', 
+     &          'Friday', 'Saturday', 'Sunday'
+     &          /
 
 C***********************************************************************
 C   begin body of program TMPAREA
-        
+
         LDEV = INIT3()
-        
+
         WRITE( *,92000 ) 
      &  ' ',
      &  'Program TMPAREA to take a sorted source level area source ',
@@ -261,19 +275,19 @@ C   begin body of program TMPAREA
      &  'You will also be prompted for the TIME PERIOD to be covered',
      &  'by this run of the program, as specified by STARTING DATE',
      &  'in format YYYYDDD (= 1000*year + Julian day n0 (1...365,6) )',
-     &  'STARTING TIME in format HHMMSS (= 10000*hr + 100*min + sec) )',
-     &  'and DURATION in format HHMMSS.',
+     &  'or in format YYYYMMDD, STARTING TIME in format HHMMSS',
+     &  '(= 10000*hr + 100*min + sec) ) and DURATION in format HHMMSS.',
      &  ' '
         WRITE( *,92000 ) 
      &  'You may use END_OF-FILE (control-D) to quit the program',
      &  'during logical-name entry.  Default responses are indicated',
      &  'in brackets [LIKE THIS].',
      &  ' '
-        
+
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'TMPAREA', 0, 0, 'Ending program', 2 )
         END IF
-        
+
         DO  2  S = 1, NMCOD
         DO  1  I = 1, 12
             MONFAC( I,S ) = 1.0
@@ -293,24 +307,22 @@ C   begin body of program TMPAREA
 5       CONTINUE
 6       CONTINUE
 
-        DO  9  I = 1, NIPOL
-            MPR00( I ) = IMISS3
-            WPR00( I ) = IMISS3
-            DPR00( I ) = IMISS3
-            DO  7  S = 1, NASCC
-                MPRNF( S,I ) = IMISS3
-                WPRNF( S,I ) = IMISS3
-                DPRNF( S,I ) = IMISS3
-                MPRNC( S,I ) = IMISS3
-                WPRNC( S,I ) = IMISS3
-                DPRNC( S,I ) = IMISS3
-7           CONTINUE
-            DO  8  S = 1, NTRFA
-                MPRFC( S,I ) = IMISS3
-                WPRFC( S,I ) = IMISS3
-                DPRFC( S,I ) = IMISS3
-8           CONTINUE
-9       CONTINUE
+        MPR00 = IMISS3
+        WPR00 = IMISS3
+        DPR00 = IMISS3
+        DO  7  S = 1, NASCC
+            MPRNF( S ) = IMISS3
+            WPRNF( S ) = IMISS3
+            DPRNF( S ) = IMISS3
+            MPRNC( S ) = IMISS3
+            WPRNC( S ) = IMISS3
+            DPRNC( S ) = IMISS3
+7       CONTINUE
+        DO  8  S = 1, NTRFA
+            MPRFC( S ) = IMISS3
+            WPRFC( S ) = IMISS3
+            DPRFC( S ) = IMISS3
+8       CONTINUE
 
 
 C.......   Get file name; open input area sources, temporal cross-reference,
@@ -332,26 +344,26 @@ C.......   and temporal profiles files
      &           'Enter logical name for TEMPORAL PROFILES file',
      &           .TRUE., .TRUE., 'ATPRO', 'TMPAREA' )
 
-        YDEV = PROMPTFFILE( 
-     &  'Enter logical name for XREF OUTPUT file, or "NONE"',
-     &           .FALSE., .TRUE., 'NONE', 'TMPAREA' )
-
 
 C.......   Get list of output variables (shrink list in file description
 C.......   data structure to just those variables desired):
-        
+
         IF ( .NOT. DESC3( ANAME ) ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                  'Could not get description of file "' 
-     &                  // ANAME( 1:TRIMLEN( ANAME ) ) // '"',
-     &                  2 )
+            MESG = 'Could not get description of file "'  // 
+     &              ANAME( 1:TRIMLEN( ANAME ) ) // '"'
+            CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
+        ELSE IF ( NROWS3D .NE. NASRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  AREA SOURCES file:', NROWS3D,
+     &      'program:', NASRC
+            CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
         END IF
-        
-        
+
+
 C.......   Determine whether input represents peak-day emissions or
 C.......   annual total emissions:
 
-        C0 =   1 + INDEX( FDESC3D( 6 ),           '"' )
+        C0 =   1 + INDEX( FDESC3D( 6 ),        '"' )
         IF ( C0 .EQ. 0 ) THEN
             MESG = 'Bad field [' // FDESC3D( 6 )( 1:24 ) //
      &             '] in file description -- no leading quote'
@@ -372,17 +384,29 @@ C.......   Get time period for output file:
             TZONE = 5
         END IF
         TZONE  = GETNUM( -12, 12, TZONE, 
-     &                   'Enter time zone   (0 for GMT)' )
-        JDATE  = GETNUM( 0, 9999999, 1988200, 
-     &                   'Enter starting date (YYYYDDD)' )
+     &           'Enter time zone for output emissions (0 for GMT)' )
+        JDATE  = GETDATE( 1988200, 
+     &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
+
         JTIME  = GETNUM( 0, 999999, 0, 
-     &                   'Enter starting time  (HHMMSS)' )
+     &           'Enter simulation starting time  (HHMMSS)' )
         TSTEP  = 10000
         NSTEPS = GETNUM( 1, 999999, 24,
      &                   'Enter output duration (hours)' )
 
+        DTBUF = MMDDYY( JDATE )
+        WRITE( MESG,94050 ) 
+     &  'Output Time Zone :', TZONE,           CRLF() // BLANK5 //
+     &  '       Start Date:', DTBUF( 1:TRIMLEN( DTBUF ) ) // 
+     &                                         CRLF() // BLANK5 //
+     &  '       Start Time:', JTIME,'HHMMSS'// CRLF() // BLANK5 //
+     &  '       Time Step :', 1    ,'hour'  // CRLF() // BLANK5 //
+     &  '       Duration  :', NSTEPS, 'hours'
+
+        CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+
 C...........   Compute offset of pollutant codes within input VNAME3D:
-                
+
         DO  11  V = 1, NIPOL
 
             I = INDEX1( EINAM( V ), NVARS3D, VNAME3D )
@@ -407,8 +431,8 @@ C...........   Compute offset of pollutant codes within input VNAME3D:
         STIME3D = JTIME
         TSTEP3D = 10000
         WRITE( FDESC3D( 9 ),94010 ) 'Time zone ', TZONE
-        
-        
+
+
 C.......   Get file name; open output time-stepped area sources file
 
         TNAME = PROMPTMFILE( 
@@ -417,445 +441,381 @@ C.......   Get file name; open output time-stepped area sources file
 
 
 C.......   Read the ACTUAL ASC FILE
-        
-        WRITE( *,92000 ) 
-     &       ' ', 'Reading ACTUAL ASC file...', ' '
 
-        IREC  =  0
-        I     =  0
-        NASC  =  0
-        LID3  = -1
-        LID7  = -1
-        EFLAG = .FALSE.
-        
-13      CONTINUE        !  head of the SDEV-read loop
-        
-            READ( ADEV, 93015, END=14, IOSTAT=IOS ) ID7, ID3
+        CALL M3MSG2( 'Reading ACTUAL ASC file...' )
+        CALL RDASCC ( ADEV, NASCC, NASC, ASCA7, ASCA3 )
 
-            IREC = IREC + 1
-
-            IF ( IOS .NE. 0 ) THEN
-
-                EFLAG = .TRUE.
-                WRITE( *,92010 ) 
-     &              'Unit # ', ADEV, 
-     &              'IOSTAT ', IOS, 
-     &              'Line # ', IREC, ' '
-                CALL M3WARN( 'TMPAREA', 0, 0, 
-     &              'I/O error reading ACTUAL ASC file.' )
-
-            ELSE IF ( I .GE. NASCC ) THEN 
-
-                EFLAG = .TRUE.
-                WRITE( *,92010 ) 
-     &              'Record number  ', IREC,
-     &              'Dimensioned max', NASCC, ' '
-                CALL M3WARN( 'TMPAREA', 0, 0, 
-     &              'Max ASC TABLE size NASCC exceeded' )
-
-            ELSE IF ( ( LID7 .GT. ID7 ) .OR.
-     &                ( LID7 .EQ. ID7 .AND. LID3 .GE. ID3 ) ) THEN 
-
-                EFLAG = .TRUE.
-                WRITE( *,92010 ) 
-     &              'Record number  ', IREC
-                CALL M3WARN( 'TMPAREA', 0, 0, 
-     &              'ASC table out of order' )
-
-            ELSE
-
-                I          = I + 1
-                LID7       = ID7
-                LID3       = ID3
-                ASCA7( I ) = ID7
-                ASCA3( I ) = ID3
-
-            END IF
-
-            GO TO  13  !  to head of loop
-      
-14      CONTINUE        !  end of the SDEV-read loop
-
-        IF ( EFLAG ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                   'Error reading ACTUAL ASC file.', 2 )
-        END IF
-
-        NASC = I
-
-
-C.......   Read temporal-profile cross-reference file.
-
-        WRITE( *,92000 ) ' ', 'Reading temporal-profile XREF file.'
-
-        EFLAG = .FALSE.
-        IREC  = 0
-        K     = 0
-        IBADC = 0
-        
-21      CONTINUE
-            
-            IREC = IREC + 1
-            READ( XDEV, 93000, END=22, IOSTAT=IOS ) LINE
-            
-            IF ( IOS .NE. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( *,94010 ) 
-     &              'I/O error', IOS,
-     &              'reading TEMPORAL XREF file at line', IREC
-                CALL M3MESG( MESG )
-                GO TO 21
-            END IF
-
-C.............  Define pollutant for this record
-            COD = STR2INT( LINE( 32:36 ) )
-            IF ( COD .LE. 0 ) THEN
-                I = 0
-            ELSE
-                I = FIND1( COD, NIPOL, PCODE )
-                IF ( I .LT. 0 ) THEN
-
-                    II = -1
-                    DO B = 1,IBADC
-                        IF( COD .EQ. BPCODE( B ) ) II = B
-                    ENDDO
-
-                    IF( II .LE. 0 ) THEN
-                        IBADC = IBADC + 1
-                        BPCODE( IBADC ) = COD
-
-                        WRITE( MESG,94010 ) 
-     &                         'Pollutant code', COD, 'not used'
-                        CALL M3MESG( MESG )
-                    END IF
-
-                    GO TO  21
-
-                END IF
-            END IF
-
-            LS = LBLANK ( LINE( 21:30 ) )  ! Number of leading spaces
-            EC = TRIMLEN( LINE( 21:30 ) )  ! Size without ending blanks
-
-            IF( LS .NE. 0 .OR. EC .NE. 10 .OR. 
-     &          LINE( 21:21) .GT. '9'          ) THEN  ! Not Area x-ref entry
-                GO TO 21
-            ENDIF
-
-C............. Convert character SCC field to integer SCC number
-            ID7 = STR2INT( LINE( 21:27 ) )
-            ID3 = STR2INT( LINE( 28:30 ) )
-
-            IF( ID7 .GT. 0 .AND. ID3 .GE. 0 ) THEN
-                J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )  ! Specific
-            ELSE
-                J = 1                                      ! Default
-            END IF
-
-            IF( J .LE. 0 ) THEN   ! ASC code not found in ASCC LIST file
-                GO TO 21
-            ENDIF
-
-            FIP  = STR2INT( LINE(  1: 5 ) )
-            IMON = STR2INT( LINE( 38:40 ) )
-            IWEK = STR2INT( LINE( 42:44 ) )
-            IDIU = STR2INT( LINE( 45:48 ) )
-
-
-            IF ( IMON .LE. 0 ) THEN  ! Bad monthly profile code
- 
-                WRITE( MESG,94020 ) 
-     &              'Bad IMON=', IMON, 'at record', IREC,
-     &              'for FIP', FIP, 'and ASC', ID7, ID3
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  21
-            ENDIF
- 
-            IF ( IWEK .LE. 0 ) THEN  ! Bad weekly profile code
- 
-                WRITE( MESG,94020 ) 
-     &              'Bad IWEK=', IWEK, 'at record', IREC,
-     &              'for FIP', FIP, 'and ASC', ID7, ID3
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  21
-            ENDIF
- 
-            IF ( IDIU .LE. 0 ) THEN  ! Bad diurnal profile code
- 
-                WRITE( MESG,94020 ) 
-     &              'Bad IDIU=', IDIU, 'at record', IREC,
-     &              'for FIP', FIP, 'and ASC', ID7, ID3
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  21
-            ENDIF
-
-C.............  For correct x-ref records, store if fits
-            IF( K .GE. MXREF ) THEN  !  X-ref storage overflow
-
-                WRITE( MESG,94010 ) 
-     &                 'Max XREF table size', MXREF,
-     &                 'exceeded at line', IREC
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-
-            ELSE
-
-                K = K + 1
-                INDXA( K ) = K
-                FIPFA( K ) = FIP
-                ID7FA( K ) = ID7
-                ID3FA( K ) = ID3
-                MPRFA( K ) = IMON
-                WPRFA( K ) = IWEK
-                DPRFA( K ) = IDIU
-                CODEA( K ) = I
-
-            END IF    !  No overflow, ASC found in list, no errors
-
-        GO TO 21      !  To head of read-XREF loop
-                            
-22      CONTINUE
-                    
-        IF ( EFLAG ) THEN
-            MESG = 'Error reading TEMPORAL XREF file'
-            CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
-        END IF
-        
-        NPRFA = K
-
-
-C.......   Sort and process temporal-profile cross-reference file.
-
-        WRITE( *,92000 ) ' ', 'Processing temporal-profile XREF file.'
-
-        CALL SORTI3( NPRFA, INDXA, FIPFA, ID7FA, ID3FA )
-        
-        EFLAG = .FALSE.
-        IREC  = 0
-        I     = 0
-        NPRNF = 0
-        NPRNC = 0
-        NPRFC = 0
-        
-        DO  33  K = 1, NPRFA
-        
-            J    = INDXA( K )
-            FIP  = FIPFA( J )
-            ID7  = ID7FA( J )
-            ID3  = ID3FA( J )
-            IMON = MPRFA( J )
-            IWEK = WPRFA( J )
-            IDIU = DPRFA( J )
-            I    = CODEA( J )
-
-            IF ( FIP .EQ. 0 ) THEN !  FIP-independent fallback profiles
-                
-                IF ( ID7 .EQ. 0 ) THEN  !  ultimate fallback profiles
-                    
-                    IF ( I .EQ. 0 ) THEN
-                        DO 23  I = 1, NIPOL
-                            MPR00( I ) = IMON
-                            WPR00( I ) = IWEK
-                            DPR00( I ) = IDIU
-23                      CONTINUE
-                    ELSE
-                        MPR00( I ) = IMON
-                        WPR00( I ) = IWEK
-                        DPR00( I ) = IDIU
-                        DO 24  V = 1, NIPOL
-                            IF ( MPR00( V ) .EQ. IMISS3 ) 
-     &                           MPR00( V ) = IMON
-                            IF ( WPR00( V ) .EQ. IMISS3 ) 
-     &                           WPR00( V ) = IWEK
-                            IF ( DPR00( V ) .EQ. IMISS3 ) 
-     &                           DPR00( V ) = IDIU
-24                      CONTINUE
-                    END IF
-                    
-                ELSE                    !  ASC-dependent-only profiles
-                
-                    IF ( NPRNF .EQ. 0   .OR.
-     &                   ID7 .NE. ID7NF( NPRNF )  .OR.
-     &                   ID3 .NE. ID3NF( NPRNF ) ) THEN
-                        
-                        NPRNF = NPRNF + 1
-                        IF ( NPRNF .GT. NASCC ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( *,92010 )
-     &                              'Line number ', IREC,
-     &                              'FIP         ', FIP,
-     &                              'ID7         ', ID7,
-     &                              'ID3         ', ID3
-                            CALL M3MESG( 
-     &                           'Subscript NPRNF out of range' )
-                            GO TO 33
-                        END IF
-
-                        ID7NF( NPRNF ) = ID7
-                        ID3NF( NPRNF ) = ID3
-
-                    END IF
-                    
-                    IF ( I .EQ. 0 ) THEN
-                        DO  25  I = 1, NIPOL
-                            MPRNF( NPRNF,I ) = IMON
-                            WPRNF( NPRNF,I ) = IWEK
-                            DPRNF( NPRNF,I ) = IDIU
-25                      CONTINUE
-                    ELSE
-                        MPRNF( NPRNF,I ) = IMON
-                        WPRNF( NPRNF,I ) = IWEK
-                        DPRNF( NPRNF,I ) = IDIU
-                        DO  26  V = 1, NIPOL
-                            IF ( MPRNF( NPRNF,V ) .EQ. IMISS3 ) 
-     &                           MPRNF( NPRNF,V ) = IMON
-                            IF ( WPRNF( NPRNF,V ) .EQ. IMISS3 ) 
-     &                           WPRNF( NPRNF,V ) = IWEK
-                            IF ( DPRNF( NPRNF,V ) .EQ. IMISS3 )
-     &                           DPRNF( NPRNF,V ) = IDIU
-26                      CONTINUE
-                    END IF
-
-                END IF
-            
-            ELSE IF ( MOD( FIP,1000 ) .EQ. 0 ) THEN     !  state-ASC dependent
-            
-                IF ( NPRNC .EQ. 0            .OR.
-     &               FIP/1000 .NE. FIPNC( NPRNC ) .OR.
-     &               ID7 .NE. ID7NC( NPRNC ) .OR.
-     &               ID3 .NE. ID3NC( NPRNC ) ) THEN
-
-                    NPRNC = NPRNC + 1
-                    IF ( NPRNC .GT. NASCC ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( *,92010 )
-     &                          'Line number ', IREC,
-     &                          'FIP         ', FIP,
-     &                          'ID7         ', ID7,
-     &                          'ID3         ', ID3
-                        CALL M3MESG(
-     &                       'Subscript NPRNC out of range' )
-                        GO TO 33
-                    END IF
-
-                    FIPNC( NPRNC ) = FIP / 1000
-                    ID7NC( NPRNC ) = ID7
-                    ID3NC( NPRNC ) = ID3
-
-                END IF
-                    
-                IF ( I .EQ. 0 ) THEN
-                    DO 27  I = 1, NIPOL
-                        MPRNC( NPRNC,I ) = IMON
-                        WPRNC( NPRNC,I ) = IWEK
-                        DPRNC( NPRNC,I ) = IDIU
-27                  CONTINUE                    
-                ELSE
-                    MPRNC( NPRNC,I ) = IMON
-                    WPRNC( NPRNC,I ) = IWEK
-                    DPRNC( NPRNC,I ) = IDIU
-                    DO 28  V = 1, NIPOL
-                        IF ( MPRNC( NPRNC,V ) .EQ. IMISS3 ) 
-     &                       MPRNC( NPRNC,V ) = IMON
-                        IF ( WPRNC( NPRNC,V ) .EQ. IMISS3 ) 
-     &                       WPRNC( NPRNC,V ) = IWEK
-                        IF ( DPRNC( NPRNC,V ) .EQ. IMISS3 )
-     &                       DPRNC( NPRNC,V ) = IDIU
-28                  CONTINUE                    
-                END IF
-
-            ELSE                !  FIP-and-ASC dependent profiles
-            
-                IF ( NPRFC .EQ. 0             .OR.
-     &               FIP .NE. FIPFC( NPRFC )  .OR.
-     &               ID7 .NE. ID7FC( NPRFC )  .OR.
-     &               ID3 .NE. ID3FC( NPRFC ) ) THEN
-                                           
-                    NPRFC = NPRFC + 1
-                    IF ( NPRFC .GT. NASCC ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( *,92010 )
-     &                          'Line number ', IREC,
-     &                          'FIP         ', FIP,
-     &                          'ID7         ', ID7,
-     &                          'ID3         ', ID3
-                        CALL M3MESG(
-     &                      'Subscript NPRFC out of range' )
-                        GO TO 33
-                    END IF
-
-                    FIPFC( NPRFC ) = FIP
-                    ID7FC( NPRFC ) = ID7
-                    ID3FC( NPRFC ) = ID3
-
-                END IF
-                    
-                IF ( I .EQ. 0 ) THEN
-                    DO 29  I = 1, NIPOL
-                        MPRFC( NPRFC,I ) = IMON
-                        WPRFC( NPRFC,I ) = IWEK
-                        DPRFC( NPRFC,I ) = IDIU
-29                  CONTINUE
-                ELSE
-                    MPRFC( NPRFC,I ) = IMON
-                    WPRFC( NPRFC,I ) = IWEK
-                    DPRFC( NPRFC,I ) = IDIU
-                    DO 30  V = 1, NIPOL
-                        IF ( MPRFC( NPRFC,V ) .EQ. IMISS3 )
-     &                       MPRFC( NPRFC,V ) = IMON
-                        IF ( WPRFC( NPRFC,V ) .EQ. IMISS3 ) 
-     &                       WPRFC( NPRFC,V ) = IWEK
-                        IF ( DPRFC( NPRFC,V ) .EQ. IMISS3 )
-     &                       DPRFC( NPRFC,V ) = IDIU
-30                  CONTINUE
-                END IF
-
-            END IF      !  if i=0; else if fip=0; else...
-
-33      CONTINUE
-                    
-        IF ( EFLAG ) THEN
-            CALL M3EXIT( 'TMPAREA', 0, 0, 'Bad XREF file.', 2 )
-        END IF
-
-
-C...........   If fixed-up output file desired, write it:
-
-        IF ( YDEV .GT. 0 ) THEN
-
-            WRITE( YDEV,93030 )
-     &      ( 0, 0, 0, 
-     &        PCODE( V ), MPR00( V ), WPR00( V ), DPR00( V ), 
-     &        V = 1, NIPOL ),
-     &      ( ( 0, ID7NF( S ), ID3NF( S ), 
-     &          PCODE( V ), MPRNF( S,V ), WPRNF( S,V ),DPRNF( S,V ),
-     &          V = 1, NIPOL ), S = 1, NPRNF ),
-     &      ( ( 1000 * FIPNC( S ), ID7NC( S ), ID3NC( S ), 
-     &          PCODE( V ), MPRNC( S,V ), WPRNC( S,V ),DPRNC( S,V ),
-     &          V = 1, NIPOL ), S = 1, NPRNC ),
-     &      ( ( FIPFC( S ), ID7FC( S ), ID3FC( S ), 
-     &          PCODE( V ), MPRFC( S,V ), WPRFC( S,V ),DPRFC( S,V ),
-     &          V = 1, NIPOL ), S = 1, NPRFC )
-     
-        END IF	!  if ydev>0:  optional temporal xref file being produced
+        WRITE( MESG,94010 ) 
+     &      'Actual-ASC table max:', NASCC, 'used:', NASC
+        CALL M3MSG2( MESG )
 
 
 C...........   Read temporal-profiles file:  3 parts (monthly, weekly, diurnal)
 
-        WRITE( *,92000 ) ' ', 'Reading temporal-profile file.'
+        CALL M3MSG2( 'Reading temporal-profile file...' )
 
         NMON = RDTPROF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
         NWEK = RDTPROF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
         NDIU = RDTPROF( PDEV, 'WEEKDAY', 24, NDCOD, DIUREF, DIUFAC )
         NEND = RDTPROF( PDEV, 'WEEKEND', 24, NDCOD, ENDREF, ENDFAC )
 
-     
+
+C.......   Read temporal-profile cross-reference file.
+
+        CALL M3MSG2( 'Reading temporal-profile XREF file...' )
+
+        EFLAG = .FALSE.
+        IREC  =  0
+        K     =  0
+        LFIP  = IMISS3
+        LID7  = IMISS3
+        LID3  = IMISS3
+        LCOD  = IMISS3
+        LMON  = IMISS3
+        LWEK  = IMISS3
+        LDIU  = IMISS3
+
+21      CONTINUE
+
+            IREC = IREC + 1
+
+C.............  Read in X-REF using LINE variable, so that blank
+C.............  values will be converted to negative values by STR2INT
+C.............  Also enables the use of CHKXLIN function, and is 
+C.............  consistent with the other SMOKE programs which require
+C.............  this. MRH.
+            READ( XDEV, 93000, END=22, IOSTAT=IOS ) LINE
+
+C............. Check for bad IOS value and elimiate non-area records
+            IF( CHKXLIN( LINE, IOS, IREC, 'AREA' ) .NE. 0 ) THEN
+
+                GO TO 21 
+
+            ELSE
+
+                FIP  = STR2INT( LINE(  1: 5 ) )
+                ID7  = STR2INT( LINE( 21:27 ) )
+                ID3  = STR2INT( LINE( 28:30 ) ) 
+                CODE = STR2INT( LINE( 32:36 ) )
+                IMON = STR2INT( LINE( 38:40 ) )
+                IWEK = STR2INT( LINE( 42:44 ) )
+                IDIU = STR2INT( LINE( 45:48 ) )
+
+                IF( ID7 .GT. 0  .AND.  ID3 .GE. 0 ) THEN
+
+                    J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )
+                    IF( J .LE. 0 ) THEN   ! ASC code not found in ASCC LIST file
+                        GO TO 21
+                    END IF
+
+                ELSE IF( ID7 .LT. 0  .OR.  ID3 .LT. 0 ) THEN
+                    
+                    WRITE( MESG,94010 ) 
+     &                  'Bad ASC at record', IREC,
+     &                  'for FIP', FIP, 
+     &                  'and ASC ', ID7, ID3
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                ENDIF
+
+C.................  Check each possible fault with input record in
+C.................  an individual IF statement, because multiple problems
+C.................  can exist for each line.  Slower yes, but more helpful
+C.................  to the users. MRH.
+ 
+                IF ( IMON .LE. 0 ) THEN  ! Bad monthly profile code
+ 
+                    WRITE( MESG,94020 ) 
+     &                  'Bad IMON=', IMON, 
+     &                  'at record', IREC,
+     &                  'for FIP', FIP, 
+     &                  'and ASC', ID7, ID3
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+ 
+                IF ( IWEK .LE. 0 ) THEN  ! Bad weekly profile code
+ 
+                    WRITE( MESG,94020 ) 
+     &                  'Bad IWEK=', IWEK, 
+     &                  'at record', IREC,
+     &                  'for FIP', FIP, 
+     &                  'and ASC', ID7, ID3
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+ 
+                IF ( IDIU .LE. 0 ) THEN  ! Bad diurnal profile code
+ 
+                    WRITE( MESG,94020 ) 
+     &                  'Bad IDIU=', IDIU, 
+     &                  'at record', IREC,
+     &                  'for FIP', FIP, 
+     &                  'and ASC', ID7, ID3
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+
+C.................  If pollutant CODE value is positive, then report that
+C.................  it is being ignored. MRH.
+                IF ( FIRSTCOD .AND. CODE .GT. 0 ) THEN
+                    FIRSTCOD = .FALSE.
+                    CALL M3MSG2( 
+     &                   'Polluant code(s) in XREF file are ignored' )
+                END IF
+
+C.....................  For incorrect x-ref records, go on to next line
+                IF( EFLAG ) GO TO 21
+
+C.................  Since not using CODE, there could be multiple x-ref
+C.................  entries with same FIP, ID7, and ID3.  If this happens
+C.................  and there are difference IMON, IWEK, or IDIU: problem. MRH.
+                IF( FIP .EQ. LFIP  .AND.  
+     &              ID3 .EQ. LID3  .AND. 
+     &              ID7 .EQ. LID7        ) THEN
+
+                    IF( IMON .NE. LMON ) THEN
+                        WRITE( MESG,94020 ) 
+     &                      'Pollutant-specific monthly prof', IMON, 
+     &                      'at line', IREC,
+     &                      'not used. Profile', LMON,
+     &                      'used instead.'
+                        CALL M3MESG( MESG )
+                    ENDIF
+
+                    IF( IWEK .NE. LWEK ) THEN
+                        WRITE( MESG,94020 ) 
+     &                      'Pollutant-spe  weekly profile', IWEK, 
+     &                      'at record', IREC,
+     &                      'not used. Profile', LWEK,
+     &                      'used instead.'
+                        CALL M3MESG( MESG )
+                    ENDIF
+
+                    IF( IDIU .NE. LDIU ) THEN
+                        WRITE( MESG,94020 ) 
+     &                      'Pollutant-specific diurnal profile', IDIU, 
+     &                      'at record', IREC,
+     &                      'not used. Profile', LDIU,
+     &                      'used instead.'
+                        CALL M3MESG( MESG )
+                    ENDIF
+
+                    GO TO 21   ! Don't want to restorw for same FIP, ID7, ID3
+
+                ENDIF
+
+C.....................  For correct x-ref records, store if fits
+
+                K = K + 1
+                IF( K .LE. NTRFA ) THEN  !  X-ref storage bounds check
+
+                    INDXA( K ) = K
+                    FIPFA( K ) = FIP
+                    ID7FA( K ) = ID7
+                    ID3FA( K ) = ID3
+                    MPRFA( K ) = IMON
+                    WPRFA( K ) = IWEK
+                    DPRFA( K ) = IDIU
+
+                    LFIP       = FIP
+                    LID7       = ID7
+                    LID3       = ID3
+                    LCOD       = CODE
+                    LMON       = IMON
+                    LWEK       = IWEK
+                    LDIU       = IDIU
+
+                END IF 		!  bounds check OK
+
+            END IF     		!  Area records and pollutant code found
+
+            GO TO 21  		!  To head of read-XREF loop
+
+22      CONTINUE
+
+        NPRFA = K
+
+        WRITE( MESG,94010 ) 
+     &      'Number of XREF entries--dimensioned', NTRFA,
+     &      'actual', NPRFA
+        CALL M3MSG2( MESG )
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 'Bad XREF file', 2 )
+        ELSE IF ( K .GT. NTRFA ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 'XREF table overflow', 2 )
+        END IF
+
+
+C.......   Sort and process temporal-profile cross-reference file.
+
+        CALL M3MSG2( 'Processing TEMPORAL XREF file...' )
+        CALL SORTI3( NPRFA, INDXA, FIPFA, ID7FA, ID3FA )
+
+        IREC  =  0
+        NPRNF =  0
+        NPRNC =  0
+        NPRFC =  0
+
+        DO  33  K = 1, NPRFA
+
+            J    = INDXA( K )
+            FIP  = FIPFA( J )
+            ID7  = ID7FA( J )
+            ID3  = ID3FA( J )
+            MREF = MPRFA( J )
+            WREF = WPRFA( J )
+            DREF = DPRFA( J )
+
+C...........   Look up profiles for these XREFs:
+
+            IF ( NMON .GT. 0 ) THEN
+                IMON = FIND1( MREF, NMON, MONREF )
+                IF( IMON .LT. 0 ) THEN
+                    WRITE( MESG,94010 )
+     &              'Cross-reference index not found for MREF=', MREF
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+            ELSE
+                IMON = 0
+            END IF
+
+            IF ( NWEK .GT. 0  ) THEN
+                IWEK = FIND1( WREF, NWEK, WEKREF )
+                IF( IWEK .LT. 0 ) THEN
+                    WRITE( MESG,94010 )
+     &              'Cross-reference index not found for WREF=', WREF
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+            ELSE
+                IWEK = 0
+            END IF
+
+            IF( NDIU .GT. 0 ) THEN
+                IDIU = FIND1( DREF, NDIU, DIUREF )
+                IF( IDIU .LT. 0 .AND. NDIU .GT. 0 ) THEN
+                    WRITE( MESG,94010 )
+     &              'Cross-reference index not found for DREF=', DREF
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+            ELSE
+                IDIU = 0
+            END IF
+
+            IF( NEND .GT. 0 ) THEN
+                IEND = FIND1( DREF, NEND, ENDREF )
+                IF( IEND .LT. 0 ) THEN
+                    WRITE( MESG,94010 )
+     &              'Cross-reference index not found for EREF=', DREF
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+            ELSE
+                IEND = IDIU
+            END IF
+
+            IF ( FIP .EQ. 0 ) THEN !  FIP-independent fallback profiles
+
+                IF ( ID7 .EQ. 0 ) THEN  !  ultimate fallback profiles
+
+                    MPR00 = IMON
+                    WPR00 = IWEK
+                    DPR00 = IDIU
+                    EPR00 = IEND
+
+                ELSE                    !  ASC-dependent-only profiles
+
+                    NPRNF = NPRNF + 1
+                    IF ( NPRNF .LE. NASCC ) THEN
+                        ID7NF( NPRNF ) = ID7
+                        ID3NF( NPRNF ) = ID3
+                        MPRNF( NPRNF ) = IMON
+                        WPRNF( NPRNF ) = IWEK
+                        DPRNF( NPRNF ) = IDIU
+                        EPRNF( NPRNF ) = IEND
+                    END IF
+
+                END IF
+
+            ELSE IF ( MOD( FIP,1000 ) .EQ. 0 ) THEN     !  state-ASC dependent
+
+                NPRNC = NPRNC + 1
+                IF ( NPRNC .LE. NASCC ) THEN
+                    FIPNC( NPRNC ) = FIP / 1000
+                    ID7NC( NPRNC ) = ID7
+                    ID3NC( NPRNC ) = ID3
+                    MPRNC( NPRNC ) = IMON
+                    WPRNC( NPRNC ) = IWEK
+                    DPRNC( NPRNC ) = IDIU
+                    EPRNC( NPRNC ) = IEND
+                END IF
+
+            ELSE                !  FIP-and-ASC dependent profiles
+
+                NPRFC = NPRFC + 1
+                IF ( NPRFC .LE. NASCC ) THEN
+                    FIPFC( NPRFC ) = FIP
+                    ID7FC( NPRFC ) = ID7
+                    ID3FC( NPRFC ) = ID3
+                    MPRFC( NPRFC ) = IMON
+                    WPRFC( NPRFC ) = IWEK
+                    DPRFC( NPRFC ) = IDIU
+                    EPRFC( NPRFC ) = IEND
+                END IF
+
+            END IF      !  if i=0; else if fip=0; else...
+
+33      CONTINUE
+
+        WRITE( MESG,94010 ) 
+     &      'ASC-only XREF table max:', NASCC, 'used:', NPRNF
+        CALL M3MSG2( MESG )
+        WRITE( MESG,94010 ) 
+     &      'By-state XREF table max:', NASCC, 'used:', NPRNC
+        CALL M3MSG2( MESG )
+        WRITE( MESG,94010 ) 
+     &      'by-FIP   XREF table max:', NTRFA, 'used:', NPRFC
+        CALL M3MSG2( MESG )
+        IF ( NPRNF .GT. NASCC  .OR.
+     &       NPRNC .GT. NASCC  .OR.
+     &       NPRFC .GT. NTRFA ) THEN
+            CALL M3EXIT( 'TMPAREA', 0, 0, 'XREF table overflow', 2 )
+        END IF
+
+        IF ( MPR00 .LT. 0 ) THEN
+            CALL M3WARN( 'TMPAREA', 0, 0, 
+     &                   'XREF:  Missing fallback MONTHLY profile' )
+        ELSE
+            WRITE( MESG,94010 ) 
+     &      'Fallback (default)  MONTHLY  profile', MONREF( MPR00 )
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF ( WPR00 .LT. 0 ) THEN
+            CALL M3WARN( 'TMPAREA', 0, 0, 
+     &                   'XREF:  Missing fallback WEEKLY profile' )
+        ELSE
+            WRITE( MESG,94010 ) 
+     &      'Fallback (default)   WEEKLY  profile', WEKREF( WPR00 )
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF ( DPR00 .LT. 0 ) THEN
+            CALL M3WARN( 'TMPAREA', 0, 0, 
+     &                   'XREF:  Missing fallback DIURNAL profile' )
+        ELSE
+            WRITE( MESG,94010 ) 
+     &      'Fallback (default)  DIURNAL  profile', DIUREF( DPR00 )
+            CALL M3MSG2( MESG )
+        END IF
+
+
 C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
-        
-        WRITE( *,92000 ) ' ', 'Reading source list from AREA file.'
+
+        CALL M3MSG2( 'Reading source list from AREA file...' )
 
         IF ( .NOT. READ3( ANAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
             CALL M3EXIT( 'TMPAREA', 0, 0, 
@@ -877,200 +837,168 @@ C...........   Read in emissions indexing data IFIP, ASC7, ASC3.
      &                   'Error reading ZONES from file' // ANAME, 2 )
         END IF
 
-        IF ( .NOT. READ3( ANAME, 'TPFLAG', ALLAYS3,0,0, TPFLAG ) ) THEN
+        IF ( .NOT. READ3( ANAME, 'TPFLAG', ALLAYS3,0,0, TFLAG ) ) THEN
             CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                   'Error reading TPFLAG from file' // ANAME, 2 )
+     &                   'Error reading TFLAG from file' // ANAME, 2 )
         END IF
 
 
 C...........   Construct  -- mapping source number to effective
 C...........   composite profile number.
-              
-        WRITE( *,92000 ) ' ', 'Building source indexes.'
-        EFLAG = .FALSE.
+C...........   Search for FIP-ASC match; else for STATE-ASC match; 
+C...........   else for ASC-only match; else use defaults.
 
-        DO  79  S = 1, NASRC
-        
-            MFLAG = ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 )
-            WFLAG = ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 )
-            
+        CALL M3MSG2( 'Building source indexes...' )
+        EFLAG = .FALSE.
+        DCNT  = 0
+
+        DO  88  S = 1, NASRC
+
             FIP = IFIP( S )
             ID7 = ASC7( S )
             ID3 = ASC3( S )
 
-C...........   Search for FIP-ASC match; else for STATE-ASC match; 
-C...........   else for ASC-only match; else use defaults.
-            
             F = FIND3( FIP, ID7, ID3, NPRFC, FIPFC, ID7FC, ID3FC )  ! FIP-ASC
 
             IF ( F .GT. 0 ) THEN
 
-                DO  73  V = 1, NIPOL
-                    MREF( V ) = MPRFC( F,V )
-                    WREF( V ) = WPRFC( F,V )
-                    DREF( V ) = DPRFC( F,V )
-73              CONTINUE
+                MDEX( S ) = MPRFC( F )
+                WDEX( S ) = WPRFC( F )
+                DDEX( S ) = DPRFC( F )
+                EDEX( S ) = EPRFC( F )
 
-                GO TO  77       !  to end of sources-loop
+            ELSE	!  FIP-ASC failed
+
+                T = FIP / 1000
+                F = FIND3( T, ID7, ID3, NPRNC, FIPNC, ID7NC, ID3NC ) ! state-ASC
+
+                IF ( F .GT. 0 ) THEN
+
+                    MDEX( S ) = MPRNC( F )
+                    WDEX( S ) = WPRNC( F )
+                    DDEX( S ) = DPRNC( F )
+                    EDEX( S ) = EPRNC( F )
+
+                ELSE		!  state-ASC failed
+
+                    F = FIND2( ID7, ID3, NPRNF, ID7NF, ID3NF ) ! ASC only
+
+                    IF ( F .GT. 0 ) THEN
+
+                        MDEX( S ) = MPRNF( F )
+                        WDEX( S ) = WPRNF( F )
+                        DDEX( S ) = DPRNF( F )
+                        EDEX( S ) = EPRNF( F )
+
+                    ELSE          !  fallback to ASC-independent default
+
+                        MDEX( S ) = MPR00
+                        WDEX( S ) = WPR00
+                        DDEX( S ) = DPR00
+                        EDEX( S ) = EPR00
+
+                        DCNT      = DCNT + 1
+                        
+                        WRITE( MESG,94040 )
+     &                  'Fallback temporal profile used for', 
+     &                  FIP, ID7, ID3
+                        CALL M3MESG( MESG )
+
+                    END IF      !  if find2() ASC (only) succeeded, or not
+
+                END IF      !  if find3() STATE-and-ASC succeeded
 
             END IF      !  if find3() FIP-and-ASC succeeded
 
-            F = FIND3( FIP/1000, ID7, ID3, NPRNC, FIPNC, ID7NC, ID3NC )  ! STATE-ASC
-  
-            IF ( F .GT. 0 ) THEN
+88      CONTINUE        !  end loop on sources S, constructing TNDX
 
-                DO  74  V = 1, NIPOL
-                    MREF( V ) = MPRNC( F,V )
-                    WREF( V ) = WPRNC( F,V )
-                    DREF( V ) = DPRNC( F,V )
-74              CONTINUE
+        IF ( DCNT .GT. 0 ) THEN
+            WRITE( MESG, 94010 ) 
+     &      'Number of times default profiles used', DCNT
+            CALL M3MSG2( MESG )
 
-                GO TO  77       !  to end of sources-loop
+            IF ( MPR00 .LT. 0  .OR.	!  defaults are missing!
+     &           WPR00 .LT. 0  .OR.
+     &           DPR00 .LT. 0  ) THEN
+                CALL M3MESG( 'Default profiles MISSING !!' )
+                EFLAG = .TRUE.
+            END IF			!  if defaults missing
 
-            END IF      !  if find3() STATE-and-ASC succeeded
+        END IF				!  if default-count positive
 
-            F = FIND2( ID7, ID3, NPRNF, ID7NF, ID3NF )    ! ASC search
-  
-            IF ( F .GT. 0 ) THEN
-
-                DO  75  V = 1, NIPOL
-                    MREF( V ) = MPRNF(F,V)
-                    WREF( V ) = WPRNF(F,V)
-                    DREF( V ) = DPRNF( F,V )
-75              CONTINUE
-
-            ELSE                        !  fallback to ASC-independent default
-
-                DO  76  V = 1, NIPOL
-                    MREF( V ) = MPR00( V )
-                    WREF( V ) = WPR00( V )
-                    DREF( V ) = DPR00( V )
-76              CONTINUE
-
-            END IF      !  if find2() ASC (only) succeeded, or not
-
-77          CONTINUE    !  check index results:
-
-            DO  78  V = 1, NIPOL
-
-                IF ( MFLAG ) THEN
-                    MDEX( S,V ) = FIND1( MREF( V ), NMON, MONREF )
-                    IF( MDEX( S,V ) .LT. 0 ) THEN
-                        WRITE( MESG,94010 )
-     &                  'Cross-reference index not found for MREF=',
-     &                   MREF( V )
-                        CALL M3MESG( MESG )
-                        EFLAG = .TRUE.
-                    END IF
-                ELSE
-                    MDEX( S,V ) = 0
-                END IF
-
-                IF ( WFLAG ) THEN
-                    WDEX( S,V ) = FIND1( WREF( V ), NWEK, WEKREF )
-                    IF( WDEX( S,V ) .LT. 0 ) THEN
-                        WRITE( MESG,94010 )
-     &                  'Cross-reference index not found for WREF=',
-     &                   WREF( V )
-                        CALL M3MESG( MESG )
-                        EFLAG = .TRUE.
-                    END IF
-                ELSE
-                    WDEX( S,V ) = 0
-                END IF
-
-                DDEX( S,V ) = FIND1( DREF( V ), NDIU, DIUREF )
-                IF( DDEX( S,V ) .LT. 0 .AND. NDIU .GT. 0 ) THEN
-                    WRITE( MESG,94010 )
-     &              'Cross-reference index not found for DREF=',
-     &               DREF( V )
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                END IF
-
-                EDEX( S,V ) = FIND1( DREF( V ), NEND, ENDREF )
-                IF( EDEX( S,V ) .LT. 0 .AND. NEND .GT. 0 ) THEN
-                    WRITE( MESG,94010 )
-     &              'Cross-reference index not found for EREF=',
-     &               DREF( V )
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                END IF
-
-78          CONTINUE	!  end index lookup loop on species V
-
-79      CONTINUE        !  end loop on sources S, constructing TNDX
-        
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'TMPAREA', 0, 0, 'Bad XREF::PROF match.', 2 )
         END IF
 
 
-C...........   Construct TMAT -- array of effective composite 
-C...........   profile coefficients
-        
 C...........   Read in emissions values.
-        
-        WRITE( *,92000 ) ' ', 'Reading emissions from AREA file.'
+
+        CALL M3MSG2( 'Reading emissions from AREA file...' )
 
         DO  99  V = 1, NIPOL
-        
+
             IF ( .NOT. READ3( ANAME, EINAM( V ), ALLAYS3, 0, 0, 
      &                        EMIS( 1,V ) ) ) THEN
-                CALL M3EXIT( 'TMPAREA', 0, 0, 
-     &                       'Error reading "' // 
-     &                       EINAM( V )( 1:TRIMLEN( EINAM( V ) ) )//
-     &                       '" from file "' // 
-     &                       ANAME( 1:TRIMLEN( ANAME ) ) // '".', 2 )
+                MESG = 'Error reading "' // 
+     &                 EINAM( V )( 1:TRIMLEN( EINAM( V ) ) ) //
+     &                 '" from file "' //
+     &                 ANAME( 1:TRIMLEN( ANAME ) ) // '".'
+                CALL M3EXIT( 'TMPAREA', 0, 0, MESG, 2 )
             END IF
 
 99      CONTINUE
 
 
 C...........   For each time step, write out the area source emissions values:
-        
-        WRITE( *,92000 ) ' ', 'Writing out emissions values...'
-        
-        LDATE = -1   !  initialization forces TMAT calculation on first iter.
-        
+
+        CALL M3MSG2( 'Writing out hourly emissions values...' )
+
+        LDATE  = -1   !  initialization forces TMAT calculation on first iter.
+        DAYLIT = .FALSE.
+
         DO  199  T = 1, NSTEPS
 
-C...............   If this is a new month, or transitions between
-C...............   weekday and weekend, calculate a new TMAT
+C...........   Construct TMAT -- array of effective composite 
+C...........   profile coefficients as appropriate:
 
             IF ( LDATE .NE. JDATE ) THEN
 
-                LDATE = JDATE
-
+C...............   If this is a new month, or transitions between
+C...............   weekday and weekend, calculate a new TMAT
 C...............   Adjust sources' time zones to account for daylight time
 C..................   Subtract 1 if date is daylight and ZONES is not
 C..................   Add 1 if date is not daylight and ZONES is daylight
-                IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
+
+                DSTNOW = ISDSTIME( JDATE )
+                IF ( DSTNOW .AND. .NOT. DAYLIT ) THEN
  
                     DAYLIT = .TRUE.
+                    LDATE  = -1
 
                     DO 101 S = 1, NASRC
                         ZONES( S ) = ZONES( S ) - 1
   101               CONTINUE
  
-                ELSEIF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
+                ELSE IF( DAYLIT .AND. .NOT. DSTNOW ) THEN
  
                     DAYLIT = .FALSE.
+                    LDATE  = -1
  
                     DO 103 S = 1, NASRC
                         ZONES( S ) = ZONES( S ) + 1
   103               CONTINUE
  
-                ENDIF
+                END IF
 
                 CALL DAYMON( JDATE, MONTH, DAY )  !  get month
                 DAY = WKDAY( JDATE )              !  get day-of-week
 
-                IF ( NEND .EQ. 0 ) THEN  !  no weekend packet
+                IF ( NEND .EQ. 0 .AND. LDATE .LT. 0 ) THEN !  no weekend packet
 
-                    WRITE( *,92011 ) 'Processing day', DAY
+                    WRITE( *,92030 ) 
+     &                  'Processing ', DAYS( DAY ), MMDDYY( JDATE )
                     CALL MKTMAT( NASRC,  JDATE, MONTH,  DAY, 
-     &                           TZONE,  ZONES, TPFLAG,
+     &                           TZONE,  ZONES, TFLAG,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
      &                           DIUFAC, DDEX, 0,0, TMAT )
@@ -1079,50 +1007,59 @@ C..................   Add 1 if date is not daylight and ZONES is daylight
                                                 !  in SAI's brain-damaged
                                                 !  day-of-week conventions.
 
-                    WRITE( *,92011 ) 'Processing weekend day', DAY
+                    WRITE( *,92030 ) 
+     &                  'Processing weekend day ', 
+     &                  DAYS( DAY ), MMDDYY( JDATE )
                     CALL MKTMAT( NASRC,  JDATE, MONTH, DAY, 
-     &                           TZONE,  ZONES, TPFLAG,
+     &                           TZONE,  ZONES, TFLAG,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
      &                           ENDFAC, EDEX, 0,0, TMAT )
 
                 ELSE
 
-                    WRITE( *,92011 ) 'Processing midweek day', DAY
+                    WRITE( *,92030 ) 
+     &                  'Processing midweek day ', 
+     &                  DAYS( DAY ), MMDDYY( JDATE )
                     CALL MKTMAT( NASRC,  JDATE, MONTH, DAY, 
-     &                           TZONE,  ZONES, TPFLAG,
+     &                           TZONE,  ZONES, TFLAG,
      &                           MONFAC, MDEX,
      &                           WEKFAC, WDEX,
      &                           DIUFAC, DDEX, 0,0, TMAT )
 
                 END IF
 
+                LDATE = JDATE		!  reset LDATE
+
             END IF      ! if jdate not ldate
+
+            WRITE( *, 94030 ) HHMMSS( JTIME )
 
             H = 1 + MOD( JTIME / 10000 , 24 )
 
-            DO  198  V = 1, NIPOL
-            DO  197  S = 1, NASRC
+            DO  198  S = 1, NASRC
+            DO  197  V = 1, NIPOL
 
-                TOUT( S,V ) = EMIS( S,V ) * TMAT( S,V,H )
+                TOUT( S,V ) = EMIS( S,V ) * TMAT( S,H )
 
 197         CONTINUE
 198         CONTINUE
 
-            IF ( .NOT.WRITE3( TNAME, 'ALL', JDATE, JTIME, TOUT ) ) THEN
+            IF ( .NOT. WRITE3( TNAME, ALLVAR3, 
+     &                         JDATE, JTIME, TOUT ) ) THEN
 
-                CALL M3EXIT( 'TMPAREA', JDATE, JTIME,
-     &                       'Could not write timestep to "' // 
-     &                       TNAME( 1 : TRIMLEN( TNAME ) ) // '".', 2 )
+                MESG = 'Could not write time step to "' //
+     &                 TNAME( 1 : TRIMLEN( TNAME ) ) // '".'
+                CALL M3EXIT( 'TMPAREA', JDATE, JTIME, MESG, 2 )
 
-            END IF
+            END IF		! if write3() failed
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-199     CONTINUE
+199     CONTINUE	!  end loop on time steps T
 
 999   CONTINUE          !  exit program
-      
+
       CALL M3EXIT( 'TMPAREA', 0, 0, 'Normal completion of TMPAREA', 0 )
 
 
@@ -1134,9 +1071,16 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92010   FORMAT( 5X, A, I10 )
 
-92011   FORMAT( /5X, A, I10 )
+92011   FORMAT( /5X, A, I10, / )
 
 92020   FORMAT( 5X, A, I9 )
+
+92030   FORMAT( /5X, 3 A )
+
+92040   FORMAT( /5X, A, I9,
+     &          /5X, A, I9.7, ':', I6.6, ' (', A, ')',
+     &          /5X, A, I9  , 2X, A,
+     &          /5X, A, I9  , 2X, A, / )
 
 
 C...........   Formatted file I/O formats............ 93xxx
@@ -1147,13 +1091,22 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93015   FORMAT ( I7, I3 )
 
+93020   FORMAT( I5, 1X, I5, 9X, A7, A3, I6, 3 I4 )
+
 93030   FORMAT( I5.5, 15X, I7.7, I3.3, 1X, I5, 3 I4 )
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I10, :, 2X ) )
+94010   FORMAT( 10( A, :, I7, :, 1X ) )
 
 94020   FORMAT( A, I5, 1X, A, I7, 1X, A, I7, 1X, A, I9.7, I3.3 )
+
+94030   FORMAT( 8X, 'at time ', A8 )
+
+94040   FORMAT( A, ' FIP', I7.5, '  ASC', I9.7, I3.3 )
+
+94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
+     &          A, 1X, I2.2, 1X, A, 1X, I2.2, 1X, A   )
 
         END
 
