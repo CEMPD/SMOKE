@@ -13,6 +13,7 @@
 !
 !  REVISION HISTORY:
 !     Created 7/2000 by M. Houyoux
+!     Revised 7/2003 by A. Holland
 !
 !***************************************************************************
 !
@@ -99,8 +100,12 @@
             INTEGER       :: ELEVSTAT      ! elev/no-elev/all status
             INTEGER       :: OUTTIME       ! end hour for summing
             INTEGER       :: NUMDATA       ! number of data values
+	    INTEGER       :: NUMFILES      ! number of files per report
+	    INTEGER       :: NUMSECT       ! number of sections per report
             INTEGER       :: NUMTITLE      ! number of titles
             INTEGER       :: RENDLIN       ! rpt packet end line
+	    INTEGER       :: RPTMODE       ! rpt mode
+	    INTEGER       :: RPTNVAR       ! no. of variables per rpt or section
             INTEGER       :: RSTARTLIN     ! rpt packet start line
             INTEGER       :: SCCRES        ! SCC resolution
             INTEGER       :: SRGRES        ! surrogate resolution (1st or 2nd)
@@ -196,6 +201,7 @@
         INTEGER, PUBLIC :: NSBGRAW  = 0   ! no. raw file subgrids 
         INTEGER, PUBLIC :: NSPCPOL  = 0   ! no. pollutants specified for BYSPC
         INTEGER, PUBLIC :: MINC     = 0   ! minimum output source chars
+	INTEGER, PUBLIC :: MXRPTNVAR= 30  ! max. number of variables per report
 
         LOGICAL, PUBLIC :: RC_ERROR = .FALSE.  ! true: error found reading file
         LOGICAL, PUBLIC :: DATAMISS = .FALSE.  ! true: no SELECT DATA instrs
@@ -258,6 +264,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: SRG2WIDTH=0 ! width of fallback surg column
         INTEGER      , PUBLIC :: STWIDTH  =0 ! width of state name column
         INTEGER      , PUBLIC :: STKPWIDTH=0 ! width of stack parameters columns
+	INTEGER      , PUBLIC :: UNITWIDTH=0 ! width of unit column
+	INTEGER      , PUBLIC :: VARWIDTH=0  ! width of variable column
         INTEGER      , PUBLIC :: WEKWIDTH =0 ! width of weekly profile label
 
         CHARACTER*50 , PUBLIC :: CELLFMT     ! format string for cell columns
