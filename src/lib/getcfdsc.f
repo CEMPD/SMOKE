@@ -41,7 +41,7 @@ C****************************************************************************
         IMPLICIT NONE
 
 C...........   Include files
-        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'IOCNST3.EXT'   !  I/O API constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   ARGUMENTS and their descriptions:
