@@ -84,10 +84,10 @@ C.........  For Gregorian input date - convert to Julian
         ENDIF
 
 C.........  Check range
-        IF( JDATE .LT. 1970001 .OR. JDATE .GT. 2500365 ) THEN
+        IF( JDATE .LT. 1970001 .OR. JDATE .GT. 2100365 ) THEN
 
-            CALL M3ERR( 'GETDATE', 0, 0, 'ERROR: Date is out of ' //
-     &                  'acceptable modeling range', .FALSE. )
+            CALL M3WARN( 'GETDATE', 0, 0, 'Date is out of ' //
+     &                   'acceptable modeling range' )
 
             GO TO 11   ! Read in date again.
 
