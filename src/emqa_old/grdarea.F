@@ -2,7 +2,7 @@
         PROGRAM GRDAREA
 
 C***********************************************************************
-C  program body starts at line  95
+C  program body starts at line  113
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDAMAT to grid
@@ -50,6 +50,7 @@ C...........   INCLUDES:
         INCLUDE 'ARDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
+        INCLUDE 'TMDIMS3.EXT'   !  temporal parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -57,12 +58,17 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        LOGICAL         DSCGRID
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
+        INTEGER         WKDAY
 
-        EXTERNAL    GETYN, INDEX1, PROMPTMFILE, TRIMLEN
+        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTMFILE, TRIMLEN, WKDAY
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -81,14 +87,25 @@ C...........   Gridding Matrix
 
 C...........   Other local variables
 
-        INTEGER          JDATE, JTIME, TSTEP
-        INTEGER          NSTEPS
-        INTEGER          LDEV
-        INTEGER          I, J, T, V
+        INTEGER         L, T, V
+        INTEGER         LDATE, JDATE, JTIME, TSTEP
+        INTEGER         LDEV
+        INTEGER         NSTEPS
+        INTEGER         VTYPE( NIPOL )
 
+        LOGICAL         EFLAG   !  Error flag
+ 
+        CHARACTER*4     OUTNAM  !  contains default  logical output name
         CHARACTER*16    ANAME   !  logical name for area-source      input file
         CHARACTER*16    GNAME   !  logical name for grid matrix      input file
         CHARACTER*16    ENAME   !  logical name for emission source output file
+
+        CHARACTER*16    SCRBUF  !  scratch name buffer
+        CHARACTER*16    VNAME( NIPOL )
+        CHARACTER*16    UNITS( NIPOL )
+        CHARACTER*16    VDESC( NIPOL )
+        CHARACTER*256   MESG
+
 
 C***********************************************************************
 C   begin body of program GRDAREA
@@ -128,8 +145,9 @@ C   begin body of program GRDAREA
      &          FSREAD3, 'AGMAT', 'GRDAREA' )
 
         ANAME = PROMPTMFILE( 
-     &          'Enter logical name for input AREA SOURCE file',
-     &          FSREAD3, 'AREA', 'GRDAREA' )
+     &          'Enter logical name for ANNUAL or TIME-STEPPED ' //
+     &          'AREA SOURCE file',
+     &          FSREAD3, 'ATMP', 'GRDAREA' )
 
 
 C.......   Borrow much of file description from input area file.
@@ -140,37 +158,15 @@ C.......   data structure to just those variables desired):
             CALL M3ERR( 'GRDAREA', 0, 0, 
      &                  'Could not get description of file ' // ANAME,
      &                  .TRUE. )
+
+        ELSEIF( NROWS3D .NE. NASRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  AREA SOURCES file:', NROWS3D,
+     &      'program:', NASRC
+
         END IF
 
 
-        I = 0
-        J = 0
-
-        DO  33  I = 1, NVARS3D
-
-            IF( VTYPE3D( I ) .EQ. M3REAL ) THEN !  only grid REAL vbles 
-
-                IF ( GETYN( 'Grid variable "' // 
-     &                      VNAME3D( I )( 1:TRIMLEN( VNAME3D( I ) ) )
-     &                      // '" for output?',
-     &                      ( 0 .NE. INDEX1( VNAME3D( I ), 
-     &                                       NIPOL, EINAM ) ) ) ) THEN
-
-                    J = J + 1
-                    VNAME3D( J ) = VNAME3D( I )
-                    UNITS3D( J ) = UNITS3D( I )
-                    VDESC3D( J ) = VDESC3D( I )
-                    VTYPE3D( J ) = M3REAL
-
-                END IF		!  if getyn-prompt accepted
-
-                GO TO  33
-
-            END IF		!  if vtype real
-
-33      CONTINUE
-
-        FTYPE3D = GRDDED3   !  shares most of file-description with input file.
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
      &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D, 
      &                     XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
@@ -181,31 +177,75 @@ C.......   data structure to just those variables desired):
 
         END IF
 
-        NVARS3D = J
+C......... Store variable properties based on DESC3 call
+        EFLAG = .FALSE.
+        DO  22 V = 1, NIPOL
+            L = INDEX1( EINAM( V ), NVARS3D, VNAME3D )
+ 
+            IF( L .LE. 0 ) THEN
+ 
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Inventory pollutant ' // EINAM( V ) //
+     &                 ' not found in input file!'
+                CALL M3MSG2( MESG )
+ 
+            ELSE
+                VNAME( V ) = VNAME3D( L )
+                UNITS( V ) = UNITS3D( L )
+                VTYPE( V ) = VTYPE3D( L )
+                VDESC( V ) = VDESC3D( L )
+            ENDIF
+ 
+22      CONTINUE
+
+        IF( EFLAG ) THEN
+            CALL M3EXIT( 'GRDAREA', 0, 0, 'Bad input file', 2 )
+ 
+        ENDIF
+
+        NVARS3D = NIPOL
         FTYPE3D = GRDDED3   !  shares most of file-description with input file.
+        NLAYS3D = 1
         GDNAM3D = GRDNM
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
         JDATE   = SDATE3D
         JTIME   = STIME3D
         TSTEP   = TSTEP3D
+
+C.........  Annual inventory file as input
         IF ( TSTEP .EQ. 0 ) THEN
             NSTEPS  = 1
+            FDESC3D( 1 ) = 'Area gridded inventory pollutants'
+            OUTNAM = 'AGRD'
+ 
+C.........  Hourly inventory file as input
         ELSE
             NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 'Area gridded hourly inventory pollutants'
+            OUTNAM = 'AGRT'
+ 
         END IF
 
+C.......... Set up output variable characteristics
+        DO  33 V = 1, NIPOL
+            VNAME3D( V ) = VNAME( V )
+            UNITS3D( V ) = UNITS( V )
+            VTYPE3D( V ) = VTYPE( V )
+            VDESC3D( V ) = VDESC( V )
+33      CONTINUE
 
 C.......   Get file name; open output gridded area sources file
 
         ENAME = PROMPTMFILE( 
-     &          'Enter logical name for output GRIDDED EMIS file',
-     &          FSUNKN3, 'AGRD', 'GRDAREA' )
+     &          'Enter logical name for OUTPUT EMIS file',
+     &          FSUNKN3, OUTNAM, 'GRDAREA' )
 
 
 C.......   Read gridding-transform matrix:
 
-        CALL M3MSG2( 'Reading GRIDDING-TRANSFORM matrix...' )
+        CALL M3MSG2( 'Reading GRIDDING matrix...' )
+
         IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NS ) ) THEN
 
             CALL M3ERR( 'GRDAREA', 0, 0,
@@ -215,37 +255,51 @@ C.......   Read gridding-transform matrix:
 
         END IF
 
-
 C.......   Write out the area source emissions values:
 
-        CALL M3MSG2( 'Writing GRIDDED INVENTORY EMISSIONS values...' )
+        CALL M3MSG2( 'Calculating gridded area source emissions...' )
 
+        LDATE = 0
         DO  199  T = 1, NSTEPS
 
-            DO  198  V = 1, NVARS3D
+C...............   If this is a new month, or new day, write message
+            IF ( JDATE .GT. 0 .AND. LDATE .NE. JDATE  ) THEN
+ 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
+                LDATE = JDATE
 
-                IF( READ3( ANAME, VNAME3D( V ), ALLAYS3, 
+            END IF
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            IF( JDATE .GT. 0 ) WRITE( *, 93020 ) HHMMSS( JTIME )
+
+            DO  198  V = 1, NIPOL
+
+                IF( READ3( ANAME, EINAM( V ), ALLAYS3, 
      &                     JDATE, JTIME, EMISV ) ) THEN
 
                     CALL SMATVEC( NASRC, NGRID, NMATX, NS, IS, CS,
      &                            EMISV, EMISG )
 
-                    IF ( .NOT. WRITE3( ENAME, VNAME3D( V ), 
+                    IF ( .NOT. WRITE3( ENAME, EINAM( V ), 
      &                                 JDATE, JTIME, EMISG ) ) THEN
 
-                        CALL M3ERR( 'GRDAREA', JDATE, JTIME,
-     &                              'Could not write "' // 
-     &                              VNAME3D( V ) // '" to ' // ENAME,
-     &                              .FALSE. )
+                        CALL M3EXIT( 'GRDAREA', JDATE, JTIME,
+     &                       'Could not write "' // 
+     &                       EINAM( V )( 1: TRIMLEN( EINAM( V ))) //
+     &                      '" to ' // ENAME, 2 )
 
                     END IF
 
                 ELSE
 
-                    CALL M3ERR( 'GRDAREA', JDATE, JTIME, 
-     &                          'Could not read "' // 
-     &                          VNAME3D( V ) // '" from ' // ANAME,
-     &                          .FALSE. )
+                    CALL M3EXIT( 'GRDAREA', JDATE, JTIME, 
+     &                           'Could not read "' // 
+     &                           EINAM( V )( 1:TRIMLEN( EINAM( V ))) //
+     &                           '" from ' // ANAME, 2 )
 
                 END IF  !  if read3() succeeds or not
 
@@ -274,9 +328,11 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A16 )
 
+93020   FORMAT( 8X, 'at time ', A8 )
 
 C...........   Internal buffering formats............ 94xxx
 
+94010   FORMAT ( 10 ( A, :, I10, :, 2X ) )
 
 C...........   Miscellaneous formats................. 95xxx
 
