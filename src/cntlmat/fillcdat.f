@@ -84,7 +84,8 @@ C   Begin body of subroutine FILLCDAT
             FACCEFF ( JT ) = PKTINFO%FAC2
             FACREFF ( JT ) = PKTINFO%FAC3
             FACRLPN ( JT ) = PKTINFO%FAC4
-            IF( PKTINFO%REPFLAG == 'R' ) THEN
+            IF( PKTINFO%REPFLAG == 'R' .OR.
+     &          PKTINFO%REPFLAG == 'Y'      ) THEN
                 CTLRPLC = .TRUE.
             END IF
 
