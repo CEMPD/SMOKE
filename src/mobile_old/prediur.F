@@ -2,7 +2,7 @@
         PROGRAM PREDIUR
  
 C***********************************************************************
-C  program body starts at line 172
+C  program body starts at line 178
 C
 C  DESCRIPTION:
 C     This program inputs gridded, time-dependent temperature data, a mobile 
@@ -55,6 +55,8 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2  CRLF
+        INTEGER      ENVINT
+        LOGICAL      ENVYN 
         INTEGER      FIND1
         INTEGER      FIND3
         INTEGER      GETDATE
@@ -67,9 +69,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER      RDMPLIST
         INTEGER      TRIMLEN
 
-        EXTERNAL     CRLF, FIND1, FIND3, GETDATE, GETNUM, GETREAL, 
-     &               GETYN, LOCAT1, PROMPTFFILE, PROMPTMFILE, RDMPLIST,
-     &               TRIMLEN
+        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FIND3, GETDATE, 
+     &               GETNUM, GETREAL, GETYN, LOCAT1, PROMPTFFILE, 
+     &               PROMPTMFILE, RDMPLIST, TRIMLEN
 
 C...........   LOCAL PARAMETERS and their descriptions:
 
@@ -139,6 +141,7 @@ C...........   File units and logical names:
 C...........   Other local variables:
 
         INTEGER    F, H, I, J, JJ, K, L, S, T  ! Counters and pointers
+        INTEGER    IOS     !  temporary I/O status
         INTEGER    FIP     !  temporary FIP code
         INTEGER    JDATE   !  output date counter (YYYYDDD) in GMT
         INTEGER    JTIME   !  output time counter (HHMMSS)  in GMT
@@ -164,6 +167,7 @@ C...........   Other local variables:
 
         LOGICAL         EFLAG   !  Error flag 
         LOGICAL         OFLAG   !  sources outside grid
+        LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
 
         CHARACTER*256   MESG    !  message buffer
 
@@ -193,6 +197,10 @@ C   begin body of program PREDIUR
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'PREDIUR', 0, 0, 'Ending program', 2 )
         END IF
+
+C.......   Get environment variable logical variables
+        PROMPTF = ENVYN ( 'PROMPTFLAG', 'Prompt for inputs or not',
+     &                    .TRUE., IOS )
 
 C.........  Prompt for SMOKE mobile inventory file
         ANAME = PROMPTMFILE(
@@ -276,24 +284,64 @@ C.........  Read header of temperature file
 C.........  Save time step for processing temperatures
         TSTEP = TSTEP3D
 
-C.........  Prompt for time zone for output file (to get local time to use
-C.........     for beginning of the day)
+C.......   Get default time characteristic for output file:
+C.......   If we're going to prompt, then set the defaults based on met
+C.......      otherwise, use environment variables to set defaults
+        EFLAG = .FALSE.
+        IF( PROMPTF ) THEN
 
+            JDATE  = SDATE3D
+            JTIME  = STIME3D
+            NSTEPS = 24
+
+        ELSE
+
+            JDATE  = ENVINT( 'ESDATE', 'Start date', 1995182, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but ESDATE is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+ 
+            JTIME  = ENVINT( 'STIME' , 'Start time', 0 , IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but STIME is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+
+            NSTEPS = ENVINT( 'DURATION', 'Duration', 24, IOS )
+            IF( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'Env var PROMPTFLAG is N, but DURATION is bad'
+                CALL M3MSG2( MESG )
+            ENDIF
+
+            IF( EFLAG ) THEN
+                CALL M3EXIT( 'PREDIUR', 0, 0,
+     &                       'Bad environment variable setting(s)', 2 )
+            ENDIF
+ 
+        ENDIF
+  
+C.........  Set time zone for output file
         TZONE  = 0  ! Keep data in MINMAXT in GMT for increased portability
 
-        JDATE  = GETDATE( SDATE3D,
+        JDATE  = GETDATE( JDATE,
      &           'Enter starting date in GMT (YYYYDDD)|(YYYYMMDD)' )
 
-        JTIME  = GETNUM( 0, 999999, STIME3D,
+        JTIME  = GETNUM( 0, 235959, JTIME,
      &                   'Enter starting time in GMT (HHMMSS)' )
         IDATE = JDATE
         ITIME = JTIME
 
-75      NSTEPS = GETNUM( 1, 999999, 24,
+75      NSTEPS = GETNUM( 1, 999999, NSTEPS,
      &                   'Enter output duration (hours)' )
 
-        IF ( MOD( NSTEPS, 24 ) .NE. 0 ) THEN
+        I = MOD( NSTEPS, 24 ) 
+        IF ( I .NE. 0 .OR. NSTEPS .EQ. 0 ) THEN
            CALL M3MSG2( 'Output duration has to be a multiple of 24' )
+           NSTEPS = NSTEPS - I
            GO TO 75
         END IF 
  
