@@ -52,7 +52,8 @@ C...........   This module is the inventory arrays
      &                      NSTRECS, SRCSBYREC, RECIDX, IPOSCODA, 
      &                      SRCIDA, INVYR, ICASCODA, ISIC, STKHT, 
      &                      STKDM, STKTK, STKVE, XLOCA, YLOCA, CORIS,
-     &                      CBLRID, CPDESC, IDIU, IWEK
+     &                      CBLRID, CPDESC, IDIU, IWEK, XLOC1, YLOC1,
+     &                      XLOC2, YLOC2
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NOZ, NEF, NCE, NRE, NRP, 
@@ -63,6 +64,9 @@ C.........  This module contains the lists of unique inventory information
      &                      NUNIQCAS, UNIQCAS, UCASNKEP, ITNAMA, 
      &                      SCASIDX, UCASIDX, UCASNPOL, ITKEEPA, ITFACA,
      &                      EMISBYCAS, RECSBYCAS, EMISBYPOL, INVSTAT
+
+C.........  This module is for mobile-specific data
+        USE MODMOBIL, ONLY: NVTYPE
 
         IMPLICIT NONE
 
@@ -110,16 +114,18 @@ C...........   Output from individual reader routines
         CHARACTER(LEN=IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
 
 C...........   Other local variables
-        INTEGER         I, J, SP    !  counters and indices
+        INTEGER         I, J, K, SP !  counters and indices
 
         INTEGER         CURFIL      !  current file from list formatted inventory
         INTEGER         CURFMT      !  format of current inventory file
         INTEGER         CURSRC      !  current source number
         INTEGER      :: INY = 0     !  tmp inventory year
         INTEGER         IOS         !  i/o status
-        INTEGER         INVYEAR     !  inventory year
+        INTEGER         INVYEAR     !  inventory year from inventory file
         INTEGER         IREC        !  no. of records read
         INTEGER         ISTREC      !  no. of records stored
+        INTEGER         IZONE       !  UTM zone
+        INTEGER         LSTYR       !  inventory year from list file
         INTEGER         MXWARN      !  maximum number of warnings
         INTEGER         NPOLPERCAS  !  no. of pollutants per CAS number
         INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
@@ -144,6 +150,12 @@ C...........   Other local variables
         REAL            POLANN      !  annual emissions for current pollutant
         REAL            RBUF        !  tmp real value
         REAL            REALFL      !  tmp exit flow rate
+        REAL            XLOCA1      !  x-dir link coord 1
+        REAL            YLOCA1      !  y-dir link coord 1
+        REAL            XLOCA2      !  x-dir link coord 2
+        REAL            YLOCA2      !  y-dir link coord 2
+        REAL            XLOC        !  tmp x coord
+        REAL            YLOC        !  tmp y coord
 
         LOGICAL      :: ACTFLAG = .FALSE. ! true: current pollutant is activity
         LOGICAL      :: CFLAG             ! true: recalc vel w/ flow & diam
@@ -151,10 +163,17 @@ C...........   Other local variables
         LOGICAL      :: DFLAG   = .FALSE. ! true: weekday (not full week) nrmlizr 
         LOGICAL      :: FFLAG   = .FALSE. ! true: fill annual data with seasonal
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
+        LOGICAL      :: LNKFLAG = .FALSE. ! true: current line has link information
         LOGICAL      :: LSTFLG  = .FALSE. ! true: using list-fmt inventory file
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
         LOGICAL      :: NOPOLFLG= .FALSE. ! true: no pollutants stored for this line
         LOGICAL      :: WFLAG   = .FALSE. ! true: all lat-lons to western hemi
+
+        CHARACTER(LEN=25)       X1        ! x-dir link coord 1
+        CHARACTER(LEN=25)       Y1        ! y-dir link coord 1
+        CHARACTER(LEN=25)       X2        ! x-dir link coord 2
+        CHARACTER(LEN=25)       Y2        ! y-dir link coord 2
+        CHARACTER(LEN=2)        ZONE      ! UTM zone
 
         CHARACTER(LEN=ORSLEN3)  CORS      ! DOE plant ID
         CHARACTER(LEN=6)        BLID      ! boiler ID
@@ -249,7 +268,9 @@ C.........  Get point specific settings
         IF( CATEGORY == 'POINT' ) THEN
             MESG = 'Flag for recalculating velocity'
             CFLAG = ENVYN( 'VELOC_RECALC', MESG, .FALSE., IOS )
-            
+        END IF
+        
+        IF( CATEGORY == 'POINT' .OR. CATEGORY == 'MOBILE' ) THEN
             MESG = 'Western hemisphere flag'
             WFLAG = ENVYN( 'WEST_HSPHERE', MESG, .FALSE., IOS )
         END IF
@@ -277,6 +298,22 @@ C.........  Allocate memory for storing inventory data
         CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
         ALLOCATE( INVYR( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
+        
+        IF( CATEGORY == 'MOBILE' ) THEN
+            ALLOCATE( XLOC1( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
+            ALLOCATE( YLOC1( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOC1', PROGNAME )
+            ALLOCATE( XLOC2( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
+            ALLOCATE( YLOC2( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
+            
+            XLOC1 = BADVAL3  ! array
+            YLOC1 = BADVAL3  ! array
+            XLOC2 = BADVAL3  ! array
+            YLOC2 = BADVAL3  ! array
+        END IF
         
         IF( CATEGORY == 'POINT' ) THEN
             ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
@@ -316,9 +353,9 @@ C.........  If inventory is list format, open first file for reading
             LINE = LSTSTR( CURFIL )
 
 C.............  Check if line is year packet
-            INVYEAR = GETINVYR( LINE )
+            LSTYR = GETINVYR( LINE )
             
-            IF( INVYEAR > 0 ) THEN
+            IF( LSTYR > 0 ) THEN
                 CURFIL = CURFIL + 1
             END IF
 
@@ -471,11 +508,20 @@ C.............  Process line depending on file format and source category
                     CALL RDDATAIDAMB( LINE, READDATA, READPOL,
      &                                NPOLPERLN, INVYEAR, HDRFLAG,
      &                                EFLAG )
+                    LNKFLAG = .FALSE.
                 CASE( 'POINT' )
                     CALL RDDATAIDAPT( LINE, READDATA, READPOL, 
      &                                NPOLPERLN, INVYEAR, CORS, BLID, 
      &                                DESC, HT, DM, TK, FL, VL, SIC,
      &                                LAT, LON, HDRFLAG, EFLAG )
+                END SELECT
+            CASE( EMSFMT )
+                SELECT CASE( CATEGORY )
+                CASE( 'MOBILE' )
+                    CALL RDDATAEMSMB( LINE, READDATA, READPOL,
+     &                                NPOLPERLN, INVYEAR, X1, Y1,
+     &                                X2, Y2, ZONE, LNKFLAG, HDRFLAG, 
+     &                                EFLAG )
                 END SELECT
             CASE( NTIFMT )
                 SELECT CASE( CATEGORY )
@@ -487,15 +533,17 @@ C.............  Process line depending on file format and source category
                     CALL RDDATANTIMB( LINE, READDATA, READPOL,
      &                                INVYEAR, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
+                    LNKFLAG = .FALSE.
                 END SELECT
             END SELECT
             
 C.............  Check for header lines
             IF( HDRFLAG ) THEN 
 
-C.................  If IDA format, reallocate emissions memory with proper number
+C.................  If IDA or EMS format, reallocate emissions memory with proper number
 C                   of pollutants per line
-                IF( CURFMT == IDAFMT .AND. NPOLPERLN /= 0 ) THEN
+                IF( ( CURFMT == IDAFMT .OR. CURFMT == EMSFMT ) .AND. 
+     &                NPOLPERLN /= 0 ) THEN
                     DEALLOCATE( READDATA, READPOL )
                     ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
@@ -505,11 +553,49 @@ C                   of pollutants per line
 
 C.................  Calculate day to year conversion factor
                 IF( INVYEAR /= 0 ) THEN
+                    IF( LSTYR > 0 .AND. INVYEAR /= LSTYR ) THEN
+                        WRITE( MESG,94010 ) 'NOTE: Using year', LSTYR,
+     &                         'from list file, and not year', INVYEAR,
+     &                         'from inventory file.'
+                        CALL M3MSG2( MESG )
+                        
+                        INVYEAR = LSTYR
+                    END IF
+                    
                     YEAR2DAY = YR2DAY( INVYEAR )
                     DAY2YR = 1. / YEAR2DAY
                 END IF
                 
                 CYCLE
+            END IF
+
+C.............  Check that mobile link info is correct
+            IF( CATEGORY == 'MOBILE' .AND. LNKFLAG ) THEN
+                IF( X1 == ' ' .OR. Y1 == ' ' .OR.
+     &              X2 == ' ' .OR. Y2 == ' ' .OR. ZONE == ' ' ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Missing link ' //
+     &                     'coordinates or UTM zone at line', IREC
+                    CALL M3MSG2( MESG )
+                END IF
+            
+                IF( .NOT. CHKREAL( X1 ) .OR.
+     &              .NOT. CHKREAL( Y1 ) .OR.
+     &              .NOT. CHKREAL( X2 ) .OR.
+     &              .NOT. CHKREAL( Y2 )      ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Link coordinates ' //
+     &                     'are not numbers or have bad formatting' //
+     &                     CRLF() // BLANK10 // 'at line', IREC
+                    CALL M3MSG2( MESG )
+                END IF
+                
+                IF( .NOT. CHKINT( ZONE ) ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: UTM zone is not a ' //
+     &                     'number or is badly formatted at line', IREC
+                    CALL M3MSG2( MESG )
+                END IF
             END IF
 
 C.............  Check that point source information is correct
@@ -875,41 +961,67 @@ C.........................  Find code corresponding to current pollutant
                     ELSE  
                         POLANN = EANN
                     END IF
-
                 
 C.....................  Store data in unsorted order
                     SP = SP + 1
                 
                     IF( SP <= NRAWBP ) THEN
-                        INRECA  ( SP ) = CURSRC    ! map to sorted source number
-                        INDEXA  ( SP ) = SP        ! index for sorting POLVLA
-                        IPOSCODA( SP ) = POLCOD    ! pollutant code
-                        ICASCODA( SP ) = UCASPOS   ! CAS number (set to 0 for non-toxic sources)
-                    
-                        POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * POLANN
+
+C......................... If mobile EMS format, loop through vehicle types                         
+                        IF( CATEGORY == 'MOBILE' .AND.
+     &                      CURFMT   == EMSFMT       ) THEN
+     
+                            DO K = 1, NVTYPE
+                                
+                                IF( SP > NRAWBP ) EXIT
+                                
+                                INRECA( SP ) = CURSRC
+                                INDEXA( SP ) = SP
+                                IPOSCODA( SP ) = POLCOD
+                                ICASCODA( SP ) = UCASPOS
+                                POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
+     &                                             POLANN
+                                
+                                IF( K < NVTYPE ) THEN
+                                    SP = SP + 1
+                                    ISTREC = ISTREC + 1
+                                    CURSRC = SRCIDA( SRCSBYREC( 
+     &                                         RECIDX( ISTREC ),3 ) )
+                                END IF
+                            END DO
+                        ELSE
                         
-                        IF( .NOT. ACTFLAG ) THEN
-                            IF( EOZN > 0. ) THEN
-                                POLVLA( SP,NOZ ) = EOZN * POLFAC
-                            ELSE
-                                POLVLA( SP,NOZ ) = EOZN
+                            INRECA  ( SP ) = CURSRC    ! map to sorted source number
+                            INDEXA  ( SP ) = SP        ! index for sorting POLVLA
+                            IPOSCODA( SP ) = POLCOD    ! pollutant code
+                            ICASCODA( SP ) = UCASPOS   ! CAS number (set to 0 for non-toxic sources)
+                        
+                            POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
+     &                                         POLANN
+                            
+                            IF( .NOT. ACTFLAG ) THEN
+                                IF( EOZN > 0. ) THEN
+                                    POLVLA( SP,NOZ ) = EOZN * POLFAC
+                                ELSE
+                                    POLVLA( SP,NOZ ) = EOZN
+                                END IF
                             END IF
-                        END IF
-                    
-                        IF( CATEGORY == 'AREA' .OR. 
-     &                      CATEGORY == 'POINT'     ) THEN
-                            POLVLA( SP,NEF ) = EMFC
-                            POLVLA( SP,NCE ) = CEFF
-                            POLVLA( SP,NRE ) = REFF
-                        END IF    
                         
-                        IF( CATEGORY == 'AREA' ) THEN    
-                            POLVLA( SP,NRP ) = RPEN
-                        END IF
-                        
-                        IF( CATEGORY == 'POINT' ) THEN
-                            POLVLA( SP,NC1 ) = CPRI
-                            POLVLA( SP,NC2 ) = CSEC
+                            IF( CATEGORY == 'AREA' .OR. 
+     &                          CATEGORY == 'POINT'     ) THEN
+                                POLVLA( SP,NEF ) = EMFC
+                                POLVLA( SP,NCE ) = CEFF
+                                POLVLA( SP,NRE ) = REFF
+                            END IF    
+                            
+                            IF( CATEGORY == 'AREA' ) THEN    
+                                POLVLA( SP,NRP ) = RPEN
+                            END IF
+                            
+                            IF( CATEGORY == 'POINT' ) THEN
+                                POLVLA( SP,NC1 ) = CPRI
+                                POLVLA( SP,NC2 ) = CSEC
+                            END IF
                         END IF
                     END IF
 
@@ -917,7 +1029,54 @@ C.....................  Store data in unsorted order
 
             END DO  ! end loop through pols per line
             
-C.............  Store source specific values in sorted order            
+C.............  Store source specific values in sorted order
+            IF( CATEGORY == 'MOBILE' .AND. CURFMT == EMSFMT ) THEN
+            
+C.................  Convert link coordinates from UTM to lat-lon
+                IF( LNKFLAG ) THEN
+                    IZONE = STR2INT( ZONE )
+                    
+                    XLOCA1 = STR2REAL( X1 )
+                    YLOCA1 = STR2REAL( Y1 )
+                    XLOCA2 = STR2REAL( X2 )
+                    YLOCA2 = STR2REAL( Y2 )
+                    
+                    IF( IZONE > 0 ) THEN
+                        XLOC = XLOCA1
+                        YLOC = YLOCA1
+                        CALL UTM2LL( XLOC, YLOC, IZONE, XLOCA1, YLOCA1 )
+                    
+                        XLOC = XLOCA2
+                        YLOC = YLOCA2
+                        CALL UTM2LL( XLOC, YLOC, IZONE, XLOCA2, YLOCA2 )
+                    END IF
+
+C.....................  Convert lat-lon coords to western hemisphere                    
+                    IF( WFLAG ) THEN
+                        IF( XLOCA1 > 0 ) XLOCA1 = -XLOCA1
+                        IF( XLOCA2 > 0 ) XLOCA2 = -XLOCA2
+                    END IF
+                END IF                
+                    
+                DO I = NVTYPE,1,-1
+                    CURSRC = SRCIDA( SRCSBYREC( 
+     &                               RECIDX( ISTREC-I+1 ),3 ) )
+     
+                    INVYR ( CURSRC ) = INVYEAR
+                    TPFLAG( CURSRC ) = TPF
+            
+                    IF( LNKFLAG ) THEN
+                        XLOC1( CURSRC ) = XLOCA1
+                        YLOC1( CURSRC ) = YLOCA1
+                        XLOC2( CURSRC ) = XLOCA2
+                        YLOC2( CURSRC ) = YLOCA1
+                    END IF
+                END DO
+
+C.................  Skip rest of loop                
+                CYCLE
+            END IF
+                 
             INVYR ( CURSRC ) = INVYEAR
             TPFLAG( CURSRC ) = TPF
             

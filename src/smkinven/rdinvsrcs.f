@@ -58,7 +58,8 @@ C.........  This module contains the lists of unique inventory information
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, NRCLAS, IVTIDLST, CVTYPLST, 
-     &                      AMSRDCLS, RDWAYTYP
+     &                      AMSRDCLS, RDWAYTYP, NSCCTBL, SCCTBL,
+     &                      SCCRVC
 
         IMPLICIT NONE
 
@@ -73,15 +74,17 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         GETFORMT
         INTEGER         GETINVYR
+        INTEGER         GETVMIX
         INTEGER         JUNIT
         INTEGER         FIND1
         INTEGER         FIND1FIRST
+        INTEGER         FINDC
         LOGICAL         CHKINT
         INTEGER         STR2INT
 
-        EXTERNAL        CRLF, GETFLINE, GETFORMT,  
-     &                  GETINVYR, JUNIT, FIND1, FIND1FIRST, CHKINT, 
-     &                  STR2INT
+        EXTERNAL        CRLF, GETFLINE, GETFORMT, GETINVYR,  
+     &                  GETVMIX, JUNIT, FIND1, FIND1FIRST, FINDC,
+     &                  CHKINT, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,          INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -109,7 +112,7 @@ C...........   File units and logical/physical names
         INTEGER         CDEV        !  scratch file
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, S !  counters and indices
+        INTEGER         I, J, K, K1, K2, L, S !  counters and indices
 
         INTEGER         CSRC_LEN    !  length of source characteristics
         INTEGER         CURFMT      !  format of current inventory file
@@ -124,6 +127,7 @@ C...........   Other local variables
         INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
         INTEGER         NRECPERLN   !  no. of records per line
         INTEGER      :: NWRLINE = 0 !  no. of lines in file writting to log
+        INTEGER         ROAD        !  road class number
         INTEGER         RWT         !  roadway type
         INTEGER      :: TOTSRCS = 0 !  total number of sources
         INTEGER      :: TOTRECS = 0 !  total number of records
@@ -135,7 +139,10 @@ C...........   Other local variables
         CHARACTER(LEN=FIPLEN3) CFIP    ! fips code
         CHARACTER(LEN=LNKLEN3) CLNK    ! link ID
         CHARACTER(LEN=VIDLEN3) CIVT    ! vehicle type ID
+        CHARACTER(LEN=RWTLEN3) CROAD   ! road class no.
         CHARACTER(LEN=RWTLEN3) CRWT    ! roadway type
+        CHARACTER(LEN=VTPLEN3) VTYPE   ! tmp vehicle type        
+        CHARACTER(LEN=RWTLEN3+VTPLEN3) CRVC    ! tmp roadway // vehicle type
         
         CHARACTER(LEN=PLTLEN3) FCID    ! facility ID
         CHARACTER(LEN=CHRLEN3) PTID    ! point ID
@@ -221,6 +228,21 @@ C.........  Read vehicle mix, if it is available
 C.........  The tables are passed through MODMOBIL and MODXREF
         IF( VDEV .GT. 0 ) THEN
             CALL RDVMIX( VDEV )
+        ELSE
+
+C.............  Check if VMT mix is required
+            IF( CATEGORY == 'MOBILE' ) THEN
+                DO I = 1,NLINE
+                    IF( FILFMT( I ) == EMSFMT ) THEN
+                        MESG = 'Mobile VMT mix data are required ' //
+     &                         'for import of EMS-95 mobile format' //
+     &                         CRLF() // BLANK10 //
+     &                         'Set the IMPORT_VMTMIX_YN environment' //
+     &                         ' variable to Y and try again.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                END DO
+            END IF
         END IF
 
 C.........  Read speeds info, if it is available
@@ -235,9 +257,17 @@ c note: write this routine
 C.........  If file is list format, check for inventory year packet
         IF( INVFMT == LSTFMT ) THEN
             LINE = LSTSTR( CURFIL )
-
+            
             IF( GETINVYR( LINE ) > 0 ) THEN
                 CURFIL = CURFIL + 1  ! move to next file in list
+            ELSE
+                DO I = 1,NLINE
+                    IF( FILFMT( I ) == EMSFMT ) THEN
+                        MESG = 'Must set inventory year using ' //
+     &                         'INVYEAR packet for EMS-95 input.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                END DO
             END IF
             
 C.............  Store path of file name
@@ -388,8 +418,21 @@ C.................  Process line depending on file format and source category
      &                                   HDRFLAG, EFLAG )
                     END SELECT
                 CASE( EPSFMT )
-!                    CALL RDEPSAR
-!                    CALL RDEPSPT
+                    MESG = 'EPS 2.0 format is not currently supported'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                CASE( EMSFMT )
+                    MESG = 'EMS-95 format is not currently supported'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    
+                    SELECT CASE( CATEGORY )
+                    CASE( 'MOBILE' )
+                        CALL RDSRCEMSMB( LINE, CFIP, CROAD, CLNK,
+     &                                   NPOLPERLN, HDRFLAG, EFLAG )
+                    CASE DEFAULT
+                        MESG = 'EMS-95 format is not currently ' //
+     &                         'supported'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END SELECT
                 CASE( NTIFMT )
                     TOXFLG = .TRUE.
                     
@@ -438,46 +481,75 @@ C.................  Check that source characteristics are correct
             	    CALL M3MESG( MESG )
             	END IF
 	
-            	IF( .NOT. CHKINT( TSCC ) ) THEN
-            	    EFLAG = .TRUE.
-            	    WRITE( MESG,94010 ) 'ERROR: SCC code ' //
+	            IF( CURFMT /= EMSFMT .OR. CATEGORY /= 'MOBILE' ) THEN
+                    IF( .NOT. CHKINT( TSCC ) ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: SCC code ' //
      &      	           'is non-integer at line', IREC
-            	    CALL M3MESG( MESG )
+                        CALL M3MESG( MESG )
+                    END IF
             	END IF
 
 C.................  Check source specific characteristics
                 IF( CATEGORY == 'MOBILE' ) THEN
 
-C.....................  Check if SCC has proper length
-                    IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: SCC code not ',
+                    IF( CURFMT == IDAFMT ) THEN
+
+C.........................  Check if SCC has proper length
+                        IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: SCC code not ',
      &                         SCCLEN3, ' characters wide at line', IREC
-                        CALL M3MESG( MESG )
-                    END IF
-                    
-C.....................  Ensure that vehicle type is valid
-                    IVT = STR2INT( TSCC( 3:6 ) )
-                    DO J = 1, NVTYPE
-                        IF( IVT == IVTIDLST( J ) ) EXIT
-                    END DO
-                    
-                    IF( J > NVTYPE ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: Vehicle type "' //
+                            CALL M3MESG( MESG )
+                        END IF
+
+C.........................  Set vehicle type and road class
+                        IVT = STR2INT( TSCC( 3:6 ) )
+                        RWT = STR2INT( TSCC( 8:10 ) )
+                                                
+C.........................  Ensure that vehicle type is valid
+                        DO J = 1, NVTYPE
+                            IF( IVT == IVTIDLST( J ) ) EXIT
+                        END DO
+                        
+                        IF( J > NVTYPE ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 
+     &                         'ERROR: Vehicle type "' //
      &                         TSCC( 3:6 ) // '" at line ', IREC,
      &                         ' was not found in list of valid types'
-                        CALL M3MESG( MESG )
+                            CALL M3MESG( MESG )
+                        END IF
+                    END IF
+
+                    IF( CURFMT == EMSFMT ) THEN
+
+C.........................  Match FIP, road, and link with vehicle mix table
+C                           Error messages are written out in GETVMIX
+                        K1 = GETVMIX( CFIP, CROAD, CLNK )
+                        IF( K1 <= 0 ) THEN
+                            EFLAG = .TRUE.
+                            CYCLE
+                        END IF
+                        
+C.........................  Check that road class is an integer
+                        IF( .NOT. CHKINT( CROAD ) ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: Road class ' //
+     &                         'is not an integer at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
+                        
+                        ROAD = STR2INT( CROAD )
                     END IF
                     
-C.....................  Ensure tha road class is valid and convert from road class
-                    RWT = STR2INT( TSCC( 8:10 ) )
-                    J = FIND1( RWT, NRCLAS, AMSRDCLS )
+C.....................  Ensure that road class is valid and convert from road class
+                    J = FIND1( ROAD, NRCLAS, AMSRDCLS )
                     
                     IF( J <= 0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'ERROR: Road class "' //
-     &                         TSCC( 8:10 ) // '" at line', IREC,
+     &                         CROAD // '" at line', IREC,
      &                         ' was not found in list of valid classes'
                         CALL M3MESG( MESG )
                     ELSE
@@ -500,6 +572,15 @@ C.................  Make sure some emissions are kept for this source
                     CYCLE
                 END IF
 
+C.................  If file format is mobile, EMS-95, make sure adding
+C                   sources won't go over ISTREC limit
+                IF( CATEGORY == 'MOBILE' .AND. CURFMT == EMSFMT ) THEN
+                    IF( ISTREC + NVTYPE > MXRECS ) THEN
+                        BACKSPACE( FDEV )
+                        EXIT
+                    END IF
+                END IF
+
 C.................  Build concatenated source information
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
@@ -509,11 +590,68 @@ C.................  Build concatenated source information
                 CASE( 'MOBILE' )
                     CALL FLTRNEG( CLNK )
                     WRITE( CRWT,RWTFMT ) RWT
-                    WRITE( CIVT,VIDFMT ) IVT
                     
-                    CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, 
-     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
-     &                            TCSOURC )
+                    IF( CURFMT == EMSFMT ) THEN
+
+C.........................  Loop through vehicle types
+                        DO J = 1, NVTYPE
+                            IVT   = IVTIDLST( J )
+                            VTYPE = CVTYPLST( J )
+                            WRITE( CIVT,VIDFMT ) IVT
+
+C.............................  Search for and assign SCC                            
+                            CRVC = CROAD // VTYPE
+                            K2 = FINDC( CRVC, NSCCTBL, SCCRVC )
+                            
+                            IF( K2 <= 0 ) THEN
+                                EFLAG = .TRUE.
+                                MESG = 'ERROR: Could not find SCC ' //
+     &                              'for ' // CRLF() // BLANK10 //
+     &                              'Road Type: ' // CRWT // 
+     &                              'Vehicle Type: ' // VTYPE
+                                CALL M3MESG( MESG )
+                                CYCLE
+                            ELSE
+                                TSCC = SCCTBL( K2 )
+                            END IF
+                            
+                            CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT,
+     &                                    TSCC, CHRBLNK3, CHRBLNK3,
+     &                                    CHRBLNK3, TCSOURC )
+                            CSRC_LEN = LEN_TRIM( TCSOURC )
+
+C.............................  Store source info on first time through
+                            IF( S == 0 ) THEN
+                                S = S + 1
+                                TCSRCIDX ( S ) = S
+                                TMPCSOURC( S ) = TCSOURC
+                            END IF
+
+C.............................  On subsequent passes, only store source info 
+C                               if it does not match previous source
+                            IF( TCSOURC /= TMPCSOURC( S ) ) THEN
+                                S = S + 1
+                                TCSRCIDX ( S ) = S
+                                TMPCSOURC( S ) = TCSOURC
+                            END IF
+
+C.............................  Store current source number for this record
+                            ISTREC = ISTREC + 1
+                            FRSNUMS( ISTREC,1 ) = CURFIL
+                            FRSNUMS( ISTREC,2 ) = IREC
+                            FRSNUMS( ISTREC,3 ) = S
+
+C.............................  Update total number of sources with pollutants
+                            NRAWBP = NRAWBP + NPOLPERLN
+                        END DO
+                        CYCLE
+     
+                    ELSE
+                        WRITE( CIVT,VIDFMT ) IVT
+                        CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, 
+     &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                                TCSOURC )
+                    END IF
                 CASE( 'POINT' )
                     CALL PADZERO( TSCC )
                 
