@@ -429,7 +429,7 @@ C...........   and still call what they are doing "UTM":
 
                     IF ( ZONE .EQ. IMISS3 ) THEN	!  lat-lon input
 
-                        CALL LL2UTM( YLOC, XLOC, UZONE, XX, YY )
+                        CALL LL2UTM( XLOC, YLOC, UZONE, XX, YY )
                         XLOC = XX
                         YLOC = YY
 
@@ -438,7 +438,7 @@ C...........   and still call what they are doing "UTM":
                         XLOC = 1000.0 * XLOC    ! conversion to meters
                         YLOC = 1000.0 * YLOC    ! conversion to meters
                         CALL UTM2LL( XLOC, YLOC, ZONE, XX,   YY )
-                        CALL LL2UTM( YY,   XX,  UZONE, XLOC, YLOC )
+                        CALL LL2UTM( XX,   YY,  UZONE, XLOC, YLOC )
                         ZONE = UZONE
 
                     ELSE
@@ -452,7 +452,7 @@ C...........   and still call what they are doing "UTM":
 
                     IF ( ZONE .EQ. IMISS3 ) THEN        !  lat-lon input
 
-                        IF ( .NOT. LL2LAM( YLOC, XLOC, XX, YY ) ) THEN
+                        IF ( .NOT. LL2LAM( XLOC, YLOC, XX, YY ) ) THEN
                             VFLAG = .TRUE.
                             WRITE( MESG,94010 ) 
      &                          'Bad line', IREC, 
