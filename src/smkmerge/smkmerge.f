@@ -569,9 +569,9 @@ C.................  If using map-formatted inventory for time-independent
      &                               NASRC, APOLSIZ, NVPGP, VARNAMES(1),
      &                               INNAMES(1), A_EXIST(1,N), AEMSRC  )
 
-C.................  If using old format of inventory or hourly data
+C.................  If using hourly data
                     ELSE
-                        CALL RD3MASK( ATNAME( DAY ), AJDATE, JTIME, 
+                        CALL RDSETMASK( ATNAME( DAY ), AJDATE, JTIME, 
      &                                NASRC, APOLSIZ, NVPGP, INNAMES(1), 
      &                                A_EXIST( 1,N ), AEMSRC )
                     END IF
@@ -588,9 +588,9 @@ C.................  If using map-formatted inventory for time-independent
      &                                NMSRC, MPOLSIZ, NVPGP, INNAMES(1), 
      &                                M_EXIST(1,N), MEMSRC             )
 
-C.................  If using old format of inventory or hourly data
+C.................  If using hourly data
                     ELSE
-                        CALL RD3MASK( MTNAME( DAY ), MJDATE, JTIME, 
+                        CALL RDSETMASK( MTNAME( DAY ), MJDATE, JTIME, 
      &                                NMSRC, MPOLSIZ, NVPGP, INNAMES(1),
      &                                M_EXIST( 1,N ), MEMSRC )
                     END IF
@@ -606,9 +606,9 @@ C.................  If using map-formatted inventory for time-independent
      &                                NPSRC, PPOLSIZ, NVPGP, INNAMES(1), 
      &                                P_EXIST(1,N), PEMSRC             )
 
-C.................  If using old format of inventory or hourly data
+C.................  If using hourly data
                     ELSE
-                        CALL RD3MASK( PTNAME( DAY ), PJDATE, JTIME, 
+                        CALL RDSETMASK( PTNAME( DAY ), PJDATE, JTIME, 
      &                                NPSRC, PPOLSIZ, NVPGP, INNAMES(1), 
      &                                P_EXIST( 1,N ), PEMSRC )
                     END IF
