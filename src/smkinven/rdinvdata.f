@@ -134,6 +134,7 @@ C...........   Other local variables
         INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
         INTEGER      :: NWARN = 0   !  current number of warnings
         INTEGER         POLCOD      !  pollutant code
+        INTEGER         TMPSTREC    !  temporary stored record counter
         INTEGER         TPF         !  temporal adjustments setting
         INTEGER         SCASPOS     !  position of CAS number in sorted array
         INTEGER         UCASPOS     !  position of CAS number in unique array
@@ -1193,6 +1194,7 @@ C......................... If mobile EMS format, loop through vehicle types
 C.............................  Match FIP, road, and link with vehicle mix table
                             K1 = GETVMIX( CFIP, CROAD, CLNK )
      
+                            TMPSTREC = ISTREC
                             DO K = 1, NVTYPE
                                 
                                 IF( SP > NRAWBP ) EXIT
@@ -1207,11 +1209,17 @@ C.............................  Match FIP, road, and link with vehicle mix table
                                 
                                 IF( K < NVTYPE ) THEN
                                     SP = SP + 1
-                                    ISTREC = ISTREC + 1
+                                    TMPSTREC = TMPSTREC + 1
                                     CURSRC = SRCIDA( SRCSBYREC( 
-     &                                         RECIDX( ISTREC ),3 ) )
+     &                                         RECIDX( TMPSTREC ),3 ) )
                                 END IF
                             END DO
+
+C.............................  Update stored record counter once all 
+C                               pollutants are processed                            
+                            IF( I == NPOLPERLN ) ISTREC = TMPSTREC
+                            CURSRC = SRCIDA( SRCSBYREC( 
+     &                                 RECIDX( ISTREC ),3 ) )
                         ELSE
                         
                             INRECA  ( SP ) = CURSRC    ! map to sorted source number
