@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--Environmental Programs
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -90,7 +90,7 @@ C...........   Local variables
         INTEGER        SPOS       ! tmp position (from INDEX1) of pol in SPECNMA
 
         REAL           SPLTFAC, SDIV, SMFAC ! tmp speciation profile factors
-
+        LOGICAL      :: FOUND_FLAG = .FALSE.   ! flag for requested profile
         CHARACTER*5    TMPPRF     ! tmp profile number
         CHARACTER*16   POLNAM     ! pollutant name
         CHARACTER*16   SPECNM     ! tmp species name
@@ -147,6 +147,7 @@ C.............  Left-justify character strings and convert factors to reals
 
             IF ( TMPPRF .NE. SPPRO ) CYCLE
 
+            FOUND_FLAG = .TRUE.
 
             POLNAM = ADJUSTL ( SEGMENT( 2 ) )
             SPECNM = ADJUSTL ( SEGMENT( 3 ) )
@@ -177,6 +178,11 @@ C               of the loop if not found (skip entry)
        
 
         END DO
+
+        IF( .NOT. FOUND_FLAG ) THEN
+            MESG =  SPPRO // ' profile not found in GSPRO'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
         IF( EFLAG ) THEN
             MESG = 'At least one of the divisors was zero in GSPRO.'
