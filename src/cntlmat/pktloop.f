@@ -99,6 +99,7 @@ C...........   Other local variables
         INTEGER         JX        ! index to ungrouped control x-ref tables
         INTEGER         XCNT      ! tmp counter for pt srcs x-ref table(s)
 
+        LOGICAL      :: CFLAG  = .FALSE.   ! true: current line is comment
         LOGICAL      :: EFLAG  = .FALSE.   ! error flag
         LOGICAL      :: LTMP   = .FALSE.   ! tmp logical buffer
         LOGICAL      :: LPOLSPEC= .FALSE.  ! true: packet contains usable pol-specific entries
@@ -192,7 +193,10 @@ C.............  Loop through lines of current packet to read them
 
 C.................  Read packet information (populates CPKTDAT.EXT common)
                 CALL RDPACKET( FDEV, PKTLIST( K ), PKTFIXED( K ), 
-     &                         USEPOL, IREC, PKTINFO, EFLAG )
+     &                         USEPOL, IREC, PKTINFO, CFLAG, EFLAG )
+
+C.................  Skip comment lines
+                IF( CFLAG ) CYCLE
 
 C.................  Format SIC to turn blank and negative values to 0000 - ensure
 C                   SICs provided as 2-digits get left-justified.
@@ -230,8 +234,9 @@ C                       cause this record to be skipped
                     END IF
                 END IF
           
-C.................  For CONTROL packet entries, check application control flag
-                IF( PKTLIST( K ) == 'CONTROL' ) THEN
+C.................  For CONTROL or MACT packet entries, check application control flag
+                IF( PKTLIST( K ) == 'CONTROL' .OR.
+     &              PKTLIST( K ) == 'MACT'         ) THEN
                     IF( PKTINFO%APPFLAG /= 'Y' ) CYCLE
                 END IF                    
 
@@ -284,8 +289,8 @@ C.................  This routine increments JX and JT and stores the control
 C                   data tables and ungrouped control x-ref tables
                 IF( ACTION .EQ. 'PROCESS' ) THEN
 
-                    CALL FILLCNTL( PKTLIST( K ), PKTCNT( K ),
-     &                             XRFCNT( K ), PKTINFO, JPOL, JT, JX )
+                    CALL FILLCNTL( K, PKTCNT( K ), XRFCNT( K ), 
+     &                             PKTINFO, JPOL, JT, JX )
 
                 END IF
 
