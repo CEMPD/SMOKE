@@ -4,7 +4,7 @@ C origin: grdpoint.F 3.2
         PROGRAM GRDPOINT
 
 C***********************************************************************
-C  program body starts at line 119
+C  program body starts at line 148
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDPMAT to grid
@@ -60,20 +60,21 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
-        LOGICAL         GETYN
+        INTEGER         ENVINT
         LOGICAL         ENVYN
+        LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
-        INTEGER         PROMPTFFILE
         CHARACTER*14    MMDDYY
+        INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         INTEGER         WKDAY
         REAL            YR2DAY
 
-        EXTERNAL        DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY, 
-     &                  PROMPTMFILE, TRIMLEN, WKDAY, YR2DAY
-     &                  PROMPTFFILE, ENVYN
+        EXTERNAL        DSCGRID, ENVINT, ENVYN, GETYN, HHMMSS, INDEX1, 
+     &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN, 
+     &                  WKDAY, YR2DAY
 
 C...........   PARAMETER
 
@@ -87,6 +88,7 @@ C...........   Point Sources input and output arrays (one variable at a time)
 
         REAL            EMISV( NPSRC )  !  input emissions.
         REAL            EMISG( NGRID )  !  gridded output emissions
+
 C...........   Inventory arrays
         INTEGER         IFIP  ( NPSRC )   ! FIPs  code for each source
         INTEGER         INVYR ( NPSRC )   ! Inventory year code for each source
@@ -96,7 +98,6 @@ C...........   Inventory arrays
 C...........   Report arrays
 
         REAL            EMSUM( NPSID, NIPOL ) ! Summed emissions by state
-
 
 C...........   Gridding Matrix (all active coeffs are 1.0, since 
 C...........   any point source "lives in" just one cell)
@@ -108,19 +109,19 @@ C...........   any point source "lives in" just one cell)
 
 C...........   Other local variables
 
-        REAL            FAC     !  temporary conversion factor
-
         INTEGER         BTIME   !  beginning time of day in run
         INTEGER         IOS
         INTEGER         NSTA               ! actual number of states
 
         INTEGER         STA                ! temporay state code
 
-        INTEGER         I, J, L, K, F, S, T, V
+        INTEGER         I, L, K, S, T, V
         INTEGER         LDATE, LTIME, JDATE, JTIME, TSTEP
-        INTEGER         RDEV, LDEV
+        INTEGER         LDEV
         INTEGER         LSTA               ! previous state code
         INTEGER         NSTEPS
+        INTEGER         RDEV
+        INTEGER         RTIME              ! time for reporting state totals
         INTEGER         VTYPE( NIPOL )
 
         LOGICAL         EFLAG, OUTPUTFLAG, ST_REPORT   !  Error flag
@@ -172,6 +173,9 @@ C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
 
+        RTIME = ENVINT( 'ST_REPTIME', 
+     &                  'Per-State summation reporting time', 0, IOS )
+
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, point source file, 
 C.......   optional output file
@@ -212,7 +216,6 @@ C.........  Annual inventory file as input
             FDESC3D( 1 ) = 'Point gridded inventory pollutants'
             OUTNAM = 'PGRD'
             REPNAM = 'PGRIREP'
-            UNITS =  'tons/year'
 
 C.........  Hourly inventory file as input
         ELSE
@@ -220,7 +223,6 @@ C.........  Hourly inventory file as input
             FDESC3D( 1 ) = 'Point gridded hourly inventory pollutants'
             OUTNAM = 'PGRT'
             REPNAM = 'PGRTIREP'
-            UNITS  = 'tons/hour'
 
         END IF
 
@@ -256,6 +258,7 @@ C............  If we've read in temporal file, must get inventory file name
             RDEV  = PROMPTFFILE(
      &             'Enter logical name for TOTALS REPORT or "NONE"',
      &             .FALSE., .TRUE., REPNAM, 'GRDPOINT' )
+
 C............  Create state codes arrays
             LSTA = -9
             K    = 0
@@ -452,10 +455,11 @@ C.............................  For annual values, convert to day-specific
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-C.............  Write report if report flag is switched on
+C.............  Write report if report flag is switched on and previous
+C.............  time equals the report time
 
             IF( ST_REPORT .AND.
-     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+     &          ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) ) THEN
 
 
                 IF( TSTEP .NE. 0 .AND. RDEV .GT. 0)

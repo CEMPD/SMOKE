@@ -2,7 +2,7 @@
         PROGRAM GRDAREA
 
 C***********************************************************************
-C  program body starts at line  143
+C  program body starts at line  146
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDAMAT to grid
@@ -59,6 +59,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
+        INTEGER         ENVINT
         LOGICAL         ENVYN
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
@@ -70,8 +71,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY
         REAL            YR2DAY
 
-        EXTERNAL        DSCGRID, ENVYN, GETYN, HHMMSS, INDEX1, MMDDYY,
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY, YR2DAY
+        EXTERNAL        DSCGRID, ENVINT, ENVYN, GETYN, HHMMSS, 
+     &                  INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
+     &                  TRIMLEN, WKDAY, YR2DAY
 
 C...........   PARAMETER
 
@@ -112,10 +114,11 @@ C...........   Other local variables
         INTEGER         JDATE, JTIME, TSTEP
         INTEGER         LDATE, LTIME       ! previous date and time in loop
         INTEGER         LDEV
-        INTEGER         RDEV               ! output report unit number
         INTEGER         LSTA               ! previous state code
         INTEGER         NSTA               ! actual number of states
         INTEGER         NSTEPS
+        INTEGER         RDEV               ! output report unit number
+        INTEGER         RTIME              ! time for reporting state totals
         INTEGER         STA                ! temporay state code
         INTEGER         VTYPE( NIPOL )
 
@@ -173,6 +176,9 @@ C   begin body of program GRDAREA
 C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
+
+        RTIME = ENVINT( 'ST_REPTIME', 
+     &                  'Per-State summation reporting time', 0, IOS )
 
         GNAME = PROMPTMFILE( 
      &          'Enter logical name for input GRID MATRIX file',
@@ -441,10 +447,11 @@ C.....................  For annual values, convert to day-specific
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-C.............  Write report if report flag is switched on
+C.............  Write report if report flag is switched on and previous
+C.............  time equals the report time
  
             IF( ST_REPORT .AND.
-     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+     &          ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) ) THEN
  
                 IF( TSTEP .NE. 0 .AND. RDEV .GT. 0)
      &          WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //

@@ -2,7 +2,7 @@
         PROGRAM CSGAREA
 
 C***********************************************************************
-C  program body starts at line 156
+C  program body starts at line 159
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -56,6 +56,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         LOGICAL         DSCGRID
+        INTEGER         ENVINT
         LOGICAL         ENVYN
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
@@ -67,8 +68,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY
         REAL            YR2DAY
         
-        EXTERNAL        DSCGRID, ENVYN, GETYN, HHMMSS, INDEX1, MMDDYY,
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY, YR2DAY
+        EXTERNAL        DSCGRID, ENVINT, ENVYN, GETYN, HHMMSS, INDEX1,
+     &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN, 
+     &                  WKDAY, YR2DAY
 
 C...........   PARAMETER
 
@@ -130,6 +132,7 @@ C...........   Other local variables
         INTEGER         LDATE, LTIME       ! previous date and time in loop
         INTEGER         LDEV               ! logfile unit number
         INTEGER         RDEV               ! output report unit number
+        INTEGER         RTIME              ! time for reporting state totals
         INTEGER         LSTA               ! previous state code
         INTEGER         NSTA               ! actual number of states
         INTEGER         NSTEPS
@@ -187,6 +190,9 @@ C   begin body of program CSGAREA
 C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
+
+        RTIME = ENVINT( 'ST_REPTIME',
+     &                  'Per-State summation reporting time', 0, IOS )
 
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, area source file, 
@@ -593,10 +599,10 @@ C.............................  For annual values, convert to day-specific
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-C.............  Write report if report flag is switched on
-
+C.............  Write report if report flag is switched on and previous
+C.............  time equals the report time
             IF( ST_REPORT .AND.
-     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+     &          ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) ) THEN
 
 C.................  Convert summary emissions from moles/day to tons/day
 

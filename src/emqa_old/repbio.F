@@ -1,7 +1,8 @@
+
         PROGRAM REPBIO
 
 C***********************************************************************
-C  program body starts at line 45
+C  program body starts at line 174
 C
 C  DESCRIPTION:
 C       Produces state and county hourly totals for hourly biogenic  
@@ -59,21 +60,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2     CRLF
         LOGICAL         DSCGRID
-        LOGICAL         ENVYN
         INTEGER         ENVINT
+        LOGICAL         ENVYN
         INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
-        CHARACTER*14    MMDDYY
 
-        EXTERNAL        CRLF, DSCGRID, INDEX1,  
+        EXTERNAL        CRLF, DSCGRID, ENVINT, ENVYN, INDEX1, MMDDYY,
      &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
-     &                  TRIMLEN, ENVINT
-     &                  WKDAY, YR2DAY, MMDDYY
+     &                  TRIMLEN, WKDAY
 C
 C...........   PARAMETERS:
 
@@ -123,11 +123,6 @@ C.......   Name tables for file ANAME
 
 C...........   Other local variables
 
-        INTEGER         BTIME              ! beginning time of day in run
-        INTEGER         LDATE, LTIME       
-        INTEGER         JDATE, JTIME, TSTEP     !  time variables
-        INTEGER         NSTEPS
-
         REAL            DDX, DDY                !  inverse of cell widths
         REAL            SRGT( NASRG )           !  surrogate fractions
         REAL            X1, X2, Y1, Y2, XC, YC  !  surrogate file header
@@ -137,6 +132,10 @@ C...........   Other local variables
         REAL            RWT( MSPCS )            !  molcular wt of BEIS2 species 
         REAL            FAC     !  temporary conversion factor
 
+        INTEGER         BTIME              ! beginning time of day in run
+        INTEGER         LDATE, LTIME       
+        INTEGER         JDATE, JTIME, TSTEP     !  time variables
+        INTEGER         NSTEPS
         INTEGER         S, I, J, K, M, N, T, V ! counters, subscripts
         INTEGER         COL,  ROW                 
         INTEGER         FIP, SID, CID
@@ -148,6 +147,7 @@ C...........   Other local variables
         INTEGER         B, IJ
         INTEGER         NSTA
         INTEGER         KS
+        INTEGER         RTIME                ! time for reporting state totals
 
         LOGICAL         EFLAG      ! Input error flat
         LOGICAL         ST_REPORT  ! Output state-based emissions totals
@@ -205,6 +205,9 @@ C.......   Get environment variable settings
 
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-state report writing flag',
      &                      .TRUE., IOS )
+
+        RTIME = ENVINT( 'ST_REPTIME', 
+     &                  'Per-State summation reporting time', 0, IOS )
 
         JSRG = ENVINT( 'JSRG', 
      &             'Record number for area surrogate',
@@ -681,7 +684,9 @@ C.............  Write report if report flag is switched on
      &              MSPCS, 'F8.1', EMSPC , STATES, STEM )
 
 
-               IF ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) THEN
+C.............  Write totals report if previous time equals the report time
+
+               IF ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) THEN
 
                   IF( TDEV .GT. 0 )
      &            WRITE( TDEV, 94010 ) DAYS( WKDAY( LDATE ) ) //

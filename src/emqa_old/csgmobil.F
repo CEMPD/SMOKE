@@ -2,7 +2,7 @@
         PROGRAM CSGMOBIL
 
 C***********************************************************************
-C  program body starts at line 157
+C  program body starts at line 160
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -60,6 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         INTEGER         CSVNAME
         LOGICAL         DSCGRID
+        INTEGER         ENVINT
         LOGICAL         ENVYN
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
@@ -71,9 +72,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         WKDAY           !  day of week (1...7)
         REAL            YR2DAY
         
-        EXTERNAL        CSVNAME, DSCGRID, ENVYN, GETYN, HHMMSS, INDEX1,
-     &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN,
-     &                  WKDAY, YR2DAY
+        EXTERNAL        CSVNAME, DSCGRID, ENVINT, ENVYN, GETYN, HHMMSS,
+     &                  INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
+     &                  TRIMLEN, WKDAY, YR2DAY
 
 C...........   PARAMETER
 
@@ -135,6 +136,7 @@ C...........   Other local variables
         INTEGER         LSTA               ! previous state code
         INTEGER         NSTA               ! actual number of states
         INTEGER         RDEV               ! output report unit number
+        INTEGER         RTIME              ! time for reporting state totals
         INTEGER         SIDX               ! speciation matrix index no.
         INTEGER         STA                ! temporay state code
         INTEGER         TDEV               ! speciation list file unit
@@ -189,6 +191,9 @@ C   begin body of program CSGMOBIL
 C.......   Get environment variable settings
         ST_REPORT = ENVYN( 'ST_REPORT', 'Per-State report writing flag',
      &                      .TRUE., IOS )
+
+        RTIME = ENVINT( 'ST_REPTIME', 
+     &                  'Per-State summation reporting time', 0, IOS )
 
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, area source file, 
@@ -546,9 +551,10 @@ C.........................  EMSUM must be initialized
             LTIME = JTIME
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-C.............  Write report if report flag is switched on and day is done
+C.............  Write report if report flag is switched on and previous
+C.............  time equals the report time
             IF( ST_REPORT .AND. 
-     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+     &          ( LTIME .EQ. RTIME .OR. T .EQ. NSTEPS ) ) THEN
  
 C.................  Convert summary emissions from moles/day to tons/day
  
