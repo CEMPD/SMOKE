@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENMGMAT( GNAME, UNAME, MXSCEL, MXCSRC, NMSRC, 
+        SUBROUTINE GENMGMAT( GNAME, UNAME, FDEV, MXSCEL, MXCSRC, NMSRC, 
      &                       NGRID, NMATX, NX, IX, CX, NU, IU, CU,
      &                       NCOEF, CMAX, CMIN, NCOEFU, CMAXU, CMINU )
 
@@ -15,7 +15,7 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 5/99
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -75,6 +75,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name
         CHARACTER(*), INTENT (IN) :: UNAME         ! ungridding mtx logical name
+        INTEGER     , INTENT (IN) :: FDEV          ! surg codes report file
         INTEGER     , INTENT (IN) :: MXSCEL        ! max sources per cell
         INTEGER     , INTENT (IN) :: MXCSRC        ! max cells per source
         INTEGER     , INTENT (IN) :: NMSRC         ! no. mobile sources
@@ -423,7 +424,7 @@ C.............  Loop through all of the cells intersecting this co/st/cy code.
                 C = FIPCELL( K,F )   ! Retrieve cell number
 
 C.................  Set the surrogate fraction
-                CALL SETFRAC( ISIDX, K, F, 2, INDOMAIN( S ), 
+                CALL SETFRAC( FDEV, S, ISIDX, K, F, 2, INDOMAIN( S ), 
      &                        CSRC2, FRAC )
 
                 IF( FRAC .GT. 0 ) THEN

@@ -1,6 +1,6 @@
 
-        SUBROUTINE SETFRAC( SRGIDX, CELIDX, FIPIDX, NC, REPORT, 
-     &                      CSRC, FRAC )
+        SUBROUTINE SETFRAC( FDEV, SRCID, SRGIDX, CELIDX, FIPIDX, NC, 
+     &                      REPORT, CSRC, FRAC )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -18,13 +18,13 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 5/99
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -59,6 +59,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        CRLF, ENVINT, FIND1
 
 C...........   SUBROUTINE ARGUMENTS
+        INTEGER     , INTENT (IN) :: FDEV          ! unit no. for report file
+        INTEGER     , INTENT (IN) :: SRCID         ! source ID
         INTEGER     , INTENT (IN) :: SRGIDX        ! surrogate index
         INTEGER     , INTENT (IN) :: CELIDX        ! cell index
         INTEGER     , INTENT (IN) :: FIPIDX        ! FIPS code index
@@ -70,6 +72,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays...
 
         INTEGER          L2       !  indices and counters.
+        INTEGER, SAVE :: ID2      !  tmp saved surrogate ID fallback
         INTEGER          IOS      !  i/o status
 
         INTEGER, SAVE :: DEFSRGID !  default surrogate ID
@@ -95,7 +98,7 @@ C.........  Default of 50 is population
             ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
 
             IF( ISDEF .LE. 0 ) THEN
-        	WRITE( MESG,94010 ) 'WARNING: Default surrogate', 
+        	WRITE( MESG,94010 ) 'WARNING: Fallback surrogate', 
      &             DEFSRGID, 'not found in surrogate list, resetting '//
      &             'it to ', SRGLIST( 1 )
         	CALL M3MSG2( MESG )
@@ -119,42 +122,56 @@ C               source if it has not yet been written
                 CALL FMTCSRC( CSRC, NC, BUFFER, L2 )
 
                 WRITE( MESG,94010 ) 
-     &                 'NOTE: Using default surrogate', DEFSRGID,
+     &                 'WARNING: Using fallback surrogate', DEFSRGID,
      &                 CRLF()// BLANK10 // 'to prevent zeroing ' //
      &                 'by original surrogate for:'
-     &                 // CRLF()// BLANK10// BUFFER( 1:L2 ) 
+     &                 // CRLF()// BLANK10// BUFFER( 1:L2 ) //
+     &                 ' Surrogate ID: ', SRGLIST( SRGIDX )
                 CALL M3MESG( MESG )
 
 C.................  Write warning for default fraction of zero
                 IF( SRGCSUM( ISDEF,FIPIDX ) .EQ. 0. ) THEN
 
                     CALL FMTCSRC( CSRC, NC, BUFFER, L2 )
-                    MESG = 'WARNING: Default surrogate data '//
+                    MESG = 'WARNING: Fallback surrogate data '//
      &                     'will cause zero emissions' // CRLF() //
      &                     BLANK10 // 'inside the grid for:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
 
                 END IF
-                    
-                LCSRC = CSRC  ! Store source info for next iteration
 
             END IF
 
 C.............  Set surrogate fraction using default surrogate
             FRAC = SRGFRAC( ISDEF,CELIDX,FIPIDX )
+            ID2  = DEFSRGID
 
 C.........  Set surrogate fraction with cross-reference-selected
 C           surrogate
         ELSE
 
-            FRAC = SRGFRAC( SRGIDX,CELIDX,FIPIDX )
+            FRAC = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
+            ID2 = 0
+
+        END IF
+
+C.........  Write surrogate code used for each source
+        IF( FDEV .GT. 0 .AND. CSRC .NE. LCSRC ) THEN
+
+            WRITE( FDEV,93360 ) SRCID, SRGLIST( SRGIDX ), ID2
+
+            LCSRC = CSRC  ! Store source info for next iteration
 
         END IF
 
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93360   FORMAT( I8, 1X, I4, 1X, I4 )
 
 C...........   Internal buffering formats............ 94xxx
 

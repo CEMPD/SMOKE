@@ -16,13 +16,13 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 5/99
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -82,6 +82,7 @@ C...........   Other local variables
         INTEGER         C, F, J, K, I, N, S          ! counters and indices
 
         INTEGER         CCNT             ! counters for no. non-zero-surg cells
+        INTEGER         CELLSRC          ! cell number as source char
         INTEGER         ISIDX            ! tmp surrogate ID code index
         INTEGER         NCEL             ! tmp number of cells
 
@@ -106,13 +107,21 @@ C.........  Initialize the count of sources per cell
         NX = 0   ! array
 
 C.........  Loop through sources
-        MXCSRC = 0
+        MXCSRC  = 0
+        CELLSRC = 0
         DO S = 1, NSRC
 
+            IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
             IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
 
+C.............  If cell-specific source...
+            IF ( CELLSRC .GT. 0 ) THEN
+                NCEL = 1
+                ACEL( 1 ) = CELLID( S )
+                AFAC( 1 ) = 1.
+
 C............  If non-link source...
-            IF( CLNK .EQ. ' ' ) THEN
+            ELSE IF( CLNK .EQ. ' ' ) THEN
 
 C.................  Retrieve the index to the surrogates cy/st/co list
                 ISIDX = SRGIDPOS( S )
@@ -126,8 +135,8 @@ C                   surrogates tables from MODSURG
                     ACEL( 1:NCEL ) = FIPCELL( 1:NCEL, F )      ! arrays
 
                     DO K = 1, NCEL
-                        CALL SETFRAC( ISIDX, K, F, 1, .FALSE., ' ',
-     &                                AFAC( K ) )
+                        CALL SETFRAC( 0, S, ISIDX, K, F, 1, .FALSE., 
+     &                                ' ', AFAC( K ) )
                     END DO
 
 C.................  Otherwise, skip this source because it's outside the grid

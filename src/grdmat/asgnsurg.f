@@ -20,13 +20,13 @@ C
 C  REVISION  HISTORY:
 C     Created 4/99 by M. Houyoux
 C
-C****************************************************************************/
+C************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -238,8 +238,8 @@ C.............  Try for any country/state code match (not, pol-specific)
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                 WRITE( MESG,94010 )
-     &                 'NOTE: Using default gridding ' //
-     &                 'cross-reference for:' //
+     &                 'WARNING: Using default gridding ' //
+     &                 'cross-reference code of', ISRG, 'for:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 )
                 CALL M3MESG( MESG )
 

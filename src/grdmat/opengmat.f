@@ -1,5 +1,6 @@
 
-        SUBROUTINE OPENGMAT( NMATX, INVPROG, INVVERS, GNAME, UNAME ) 
+        SUBROUTINE OPENGMAT( NMATX, INVPROG, INVVERS, GNAME, UNAME,
+     &                       FDEV ) 
 
 C***********************************************************************
 C  subroutine body starts at line 95
@@ -57,10 +58,11 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER*2            CRLF
         LOGICAL                DSCM3GRD
+        INTEGER                PROMPTFFILE 
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL CRLF, PROMPTMFILE, VERCHAR
+        EXTERNAL CRLF, DSCM3GRD, PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NMATX   ! no. of source-cell intersections
@@ -68,6 +70,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: INVVERS ! inventory program version
         CHARACTER(*), INTENT(OUT) :: GNAME   ! gridding matrix logical name
         CHARACTER(*), INTENT(OUT) :: UNAME   ! ungridding matrix logical name
+        INTEGER     , INTENT(OUT) :: FDEV    ! report file
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
@@ -158,6 +161,17 @@ C           of header items
      &           'Enter logical name for UNGRIDDING MATRIX output file',
      &           FSUNKN3, CRL // 'UMAT', PROGNAME )
             UNAME = NAMBUF
+
+        END IF
+
+C.........  Open report file
+        IF( CATEGORY .EQ. 'AREA'   .OR. 
+     &      CATEGORY .EQ. 'MOBILE'      ) THEN
+
+            MESG = 'Enter logical name for the GRIDDING SUPPLEMENTAL '//
+     &             'file'
+            FDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
+     &                          CRL // 'GSUP', PROGNAME )
 
         END IF
 

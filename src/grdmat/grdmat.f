@@ -2,7 +2,7 @@
         PROGRAM GRDMAT
 
 C***********************************************************************
-C  program body starts at line 152
+C  program body starts at line 155
 C
 C  DESCRIPTION:
 C     Creates the gridding matrix for any source category and creates the
@@ -43,6 +43,9 @@ C...........   This module is the source inventory arrays
 
 C...........   This module contains the cross-reference tables
         USE MODXREF
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
 C.........  This module contains the information about the source category
         USE MODINFO
@@ -107,7 +110,7 @@ c        INTEGER         ADEV    !  for adjustments file
 
 C...........   Other local variables
         
-        INTEGER         L1, K, S !  indices and counters.
+        INTEGER         L1, L2, K, S !  indices and counters.
 
         INTEGER         COL     ! tmp column
         INTEGER         CMAX    ! max number srcs per cell
@@ -119,29 +122,21 @@ C...........   Other local variables
         INTEGER         NK      ! Number of gridding coefficients 
         INTEGER         NKU     ! Number of ungridding coefficients
         INTEGER         NINVARR ! no. of inventory characteristics
-        INTEGER         NCOLS   ! no. of grid columns
-        INTEGER         NGRID   ! no. of grid cells
         INTEGER         NMATX   ! no cell-source intersections
-        INTEGER         NROWS   ! no. of grid rows
         INTEGER         MXCSRC  ! max no cells per source
         INTEGER         MXSCEL  ! max no sources per cell
         INTEGER         ROW     ! tmp row
 
         REAL            CAVG   ! average number sources per cell
-        REAL            XCELL  ! Cell size, X direction
-        REAL            XCENT  ! Center of coordinate system
-        REAL            XORIG  ! X origin
-        REAL            YCELL  ! Cell size, Y direction
-        REAL            YCENT  ! Center of coordinate system
-        REAL            YORIG  ! Y origin
 
         LOGICAL      :: AFLAG   = .FALSE.  ! true: use grid adjustments file
         LOGICAL      :: DFLAG   = .FALSE.  ! true: use link defs file
+        LOGICAL      :: EFLAG   = .FALSE.  ! true: error found
+        LOGICAL      :: SRGFLAG = .FALSE.  ! true: surrogates are needed
         LOGICAL      :: UFLAG   = .FALSE.  ! true: create ungridding matrix
 
-        CHARACTER*16            COORD    !  coordinate system name
         CHARACTER*16            COORUNIT !  coordinate system projection units
-        CHARACTER*16            GRDNM    !  grid name
+        CHARACTER*16         :: INVGRDNM  = ' '  !  inventory grid name
         CHARACTER*16            SRGFMT   !  surrogates format
         CHARACTER*80            GDESC    !  grid description
         CHARACTER*300           MESG     !  message buffer
@@ -193,38 +188,19 @@ C.........   Get file names and open files
      &          FSREAD3, ENAME, PROGNAME )
         ENLEN = LEN_TRIM( ENAME )
 
-c        IF( AFLAG ) 
-c     &  ADEV = PROMPTFFILE( 
-c     &           'Enter logical name for ADJUSTMENT FACTORS file',
-c     &           .TRUE., .TRUE., CRLF // 'ADJUST', PROGNAME )
-
-C.........  Get additional files for non-point sources
+C.........  Get ASCII inventory file, if needed
         IF( CATEGORY .NE. 'POINT' ) THEN
 
             SDEV = PROMPTFFILE( 
      &           'Enter logical name for the ASCII INVENTORY file',
      &           .TRUE., .TRUE., ANAME, PROGNAME )
 
-            XDEV = PROMPTFFILE( 
-     &           'Enter logical name for GRIDDING SURROGATE XREF file',
-     &           .TRUE., .TRUE., CRL // 'GREF', PROGNAME )
+        END IF
 
-            GDEV = PROMPTFFILE( 
-     &           'Enter logical name for SURROGATE COEFFICIENTS file',
-     &           .TRUE., .TRUE., CRL // 'GPRO', PROGNAME )
-
-            IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                MESG = 'Enter logical name for MOBILE CODES file'
-                MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES',
-     &                              PROGNAME )
-
-                IF( DFLAG ) KDEV = PROMPTFFILE( 
-     &               'Enter logical name for LINK DEFINITIONS file',
-     &               .TRUE., .TRUE., CRL // 'GLNK', PROGNAME )
-
-            END IF  ! End of mobile file opening
-
-        END IF  ! End of non-point file opening
+c        IF( AFLAG ) 
+c     &  ADEV = PROMPTFFILE( 
+c     &           'Enter logical name for ADJUSTMENT FACTORS file',
+c     &           .TRUE., .TRUE., CRLF // 'ADJUST', PROGNAME )
 
 C.........  Get header description of inventory file, error if problem
         IF( .NOT. DESC3( ENAME ) ) THEN
@@ -241,8 +217,9 @@ C           results are stored in module MODINFO.
             CALL GETSINFO
 
 C.............  Store non-category-specific header information
-            IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
-            IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
+            IFDESC2  = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+            IFDESC3  = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
+            INVGRDNM = GETCFDSC( FDESC3D, '/GRIDNAME/', .FALSE. )
 
         END IF
 
@@ -252,9 +229,10 @@ C.........  Set inventory variables to read for all source categories
         SELECT CASE ( CATEGORY )
 
         CASE ( 'AREA' )
-            NINVARR = 3
+            NINVARR = 4
             IVARNAMS( 2 ) = 'CSCC'
-            IVARNAMS( 3 ) = 'CSOURC'
+            IVARNAMS( 3 ) = 'CELLID'
+            IVARNAMS( 4 ) = 'CSOURC'
 
         CASE ( 'MOBILE' )
             NINVARR = 10
@@ -278,10 +256,53 @@ C.........  Set inventory variables to read for all source categories
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
-C.........  For non-point sources, need to read in the surrogates (which will
+C.........  Define source-category-specific settings
+        SELECT CASE( CATEGORY )
+
+        CASE( 'AREA' )
+
+C.............  Determine if surrogates are needed by checking whether all cell
+C               values are defined or not
+            DO S = 1, NSRC
+                IF( CELLID( S ) .LE. 0 ) SRGFLAG = .TRUE.
+                IF( SRGFLAG ) EXIT
+            END DO
+
+        CASE( 'MOBILE' )
+            SRGFLAG = .TRUE.  ! Need surrogates
+
+        CASE( 'POINT' )
+
+        END SELECT
+
+C.........  Get gridding surrogates and x-ref file, if needed
+        IF( SRGFLAG ) THEN
+
+            XDEV = PROMPTFFILE( 
+     &           'Enter logical name for GRIDDING SURROGATE XREF file',
+     &           .TRUE., .TRUE., CRL // 'GREF', PROGNAME )
+
+            GDEV = PROMPTFFILE( 
+     &           'Enter logical name for SURROGATE COEFFICIENTS file',
+     &           .TRUE., .TRUE., CRL // 'GPRO', PROGNAME )
+        END IF
+
+C.........  Get mobile-specific files
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            MESG = 'Enter logical name for MOBILE CODES file'
+            MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES',
+     &                          PROGNAME )
+
+            IF( DFLAG ) KDEV = PROMPTFFILE( 
+     &               'Enter logical name for LINK DEFINITIONS file',
+     &               .TRUE., .TRUE., CRL // 'GLNK', PROGNAME )
+
+        END IF  ! End of mobile file opening
+
+C.........  If surrogates are in use, need to read in the surrogates (which will
 C           set the grid information), read in the gridding cross reference, and
 C           assign the cross-reference information to the sources.
-        IF( CATEGORY .NE. 'POINT' ) THEN
+        IF( SRGFLAG ) THEN
 
 C.............  Build unique lists of SCCs and country/state/county codes
 C               from the inventory arrays
@@ -300,6 +321,7 @@ C.............  Read the gridding cross-reference
 C.............  Read the surrogates header and check that it is consistent
 C               with the grid description from the DSCM3GRD call
 C.............  Also, obtain the format of the file.
+C.............  note: later change rdsrghdr and rdsrg to use MODGRID module
             CALL RDSRGHDR( GDEV, SRGFMT, GRDNM, GDESC, XCENT, YCENT, 
      &                     XORIG, YORIG, XCELL, YCELL, NCOLS, NROWS )
 
@@ -320,28 +342,48 @@ C.............  Assigns the index of the surrogate to each source (stored
 C               in SRGIDPOS passed through MODXREF)
             CALL ASGNSURG
 
-C.........  For point sources, must get the grid information from the 
+C.........  If surrogates not in use, must get the grid information from the 
 C           Models-3 grid information file
         ELSE
 
-C.........  Get grid name from the environment and read grid parameters
-            IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD, GDTYP3D, COORUNIT,
+C.............  Get grid name from the environment and read grid parameters
+            IF(.NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUNIT,
      &                          P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, 
      &                          YCENT3D, XORIG3D, YORIG3D, XCELL3D,
-     &                          YCELL3D, NCOLS, NROWS, NTHIK3D ) ) THEN
+     &                          YCELL3D, NCOLS3D, NROWS3D, NTHIK3D))THEN
 
                 MESG = 'Could not get Models-3 grid description.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
+C.............  Initialize the local grid settings
+            CALL CHKGRID( GDNAM3D, 'GRIDDESC', 0, EFLAG )
+
         END IF   ! If point sources or not
 
-C.........  Compute total number of grid cells
         NGRID = NCOLS * NROWS
+
+C.........  Ensure that the output grid is consistent with the input grid
+        IF ( INVGRDNM .NE. ' ' .AND.
+     &       INVGRDNM .NE. GRDNM     ) THEN
+
+            L1 = LEN_TRIM( GRDNM )
+            L2 = LEN_TRIM( INVGRDNM )
+            MESG = 'Output grid "' // GRDNM( 1:L1 ) // 
+     &             '" is inconsistent with inventory input grid "'//
+     &             INVGRDNM( 1:L2 ) // '".'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
+c note: Here is where I could add the automatic subgrid feature.  The output
+c    n: grid would always be set by the GRIDPATH file, and the settings would
+c    n: be compared to the settings in the surrogates reader.  The offsets
+c    n: would have to be used in computing the output cells.
 
 C.........  Write message stating grid name and description
         L1 = LEN_TRIM( GRDNM )
-        MESG = 'NOTE: Grid "' // GRDNM( 1:L1 ) // 
+        MESG = 'NOTE: Output grid "' // GRDNM( 1:L1 ) // 
      &         '" set; defined as' // CRLF() // BLANK10 // GDESC
         CALL M3MSG2( MESG )
 
@@ -399,8 +441,8 @@ C.............  Allocate memory for point source gridding matrix
         END SELECT
 
 C.........  Get file names; open output gridding matrix (and ungridding matrix
-C           for mobile) using grid characteristics from DSCM3GRD() above 
-C.........  Also open report file       
+C           for mobile) using grid characteristics from DSCM3GRD() above        
+C.........  Also open report file 
         CALL OPENGMAT( NMATX, IFDESC2, IFDESC3, GNAME, UNAME, RDEV )
         UFLAG = ( UNAME .NE. 'NONE' )
 
