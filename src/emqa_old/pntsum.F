@@ -2,7 +2,7 @@
         PROGRAM PNTSUM
 
 C***********************************************************************
-C  program body starts at line 113
+C  program body starts at line 137
 C
 C  DESCRIPTION:
 C       Report point source emissions summed by state and county.
@@ -11,11 +11,12 @@ C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O; 
-C       GETREAL, ENVREAL, PROMPTMFILE, PROMPTFFILE, TRIMLEN, LBLANK, 
-C       ENVINT, FIND1
+C       ENVYN, FIND1, GETYN, MMDDYY, PROMPTMFILE, PROMPTFFILE, TRIMLEN, 
+C       YR2DAY, WKDAY
 C
 C  REVISION  HISTORY:
 C       Prototype  2/97 by Chad Barker
+C       Major revisions 6/98 by M. Houyoux - can read in PTMP file
 C
 C***********************************************************************
 C
@@ -44,20 +45,25 @@ C...........   INCLUDES:
 
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'TMDIMS3.EXT'   !  Temporal params
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
-
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        REAL            GETREAL, ENVREAL
+        LOGICAL         ENVYN
+        INTEGER         FIND1
+        LOGICAL         GETYN
+        CHARACTER*16    MMDDYY
+        INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        INTEGER         LBLANK, TRIMLEN, PROMPTFFILE, ENVINT, FIND1
+        INTEGER         TRIMLEN
+        REAL            YR2DAY
+        INTEGER         WKDAY
 
-        EXTERNAL        GETREAL, ENVREAL, PROMPTMFILE, TRIMLEN
-        EXTERNAL        LBLANK, PROMPTFFILE, ENVINT, FIND1
-     
+        EXTERNAL        ENVYN, FIND1, GETYN, MMDDYY, PROMPTFFILE, 
+     &                  PROMPTMFILE, TRIMLEN, YR2DAY
                                             
 C...........   PARAMETERS and their descriptions
         INTEGER MAXST, MAXCO ! Max number of states and counties
@@ -69,39 +75,59 @@ C...........   PARAMETERS and their descriptions
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Point Sources input and output arrays
 
-        INTEGER      ISTFIP  ( MAXST )  !  All state FIPS IDs
-        CHARACTER*20 STATES  ( MAXST )  !  All state names
-        INTEGER      ICOFIP  ( MAXCO )  !  All county FIPS IDs
-        CHARACTER*20 COUNTIES( MAXCO )  !  All county names
-        INTEGER      ISTLIST ( NPSID )  !  List of states in PTMP file
-        INTEGER      ICOLIST ( NPFIP )  !  List of counties in PTMP file
-        REAL         STSUM   ( NPSID, NIPOL ) / NSTPOL * 0.0 /
         REAL         COSUM   ( NPFIP, NIPOL ) / NCOPOL * 0.0 /
+        REAL         SPECBUF ( NPSRC, NIPOL )
+        REAL         STSUM   ( NPSID, NIPOL ) / NSTPOL * 0.0 /
+        REAL         YRFAC   ( NPSRC )  !  year to day conversions, or 1
+
+        INTEGER      COIDX   ( NPSRC )  !  Index for summing src data to county
+        INTEGER      ICOFIP  ( MAXCO )  !  All county FIPS IDs
+        INTEGER      ICOLIST ( NPFIP )  !  List of counties in PTMP file
         INTEGER      IFIP    ( NPSRC )
         INTEGER      INVYR   ( NPSRC )
-        REAL         SPECBUF ( NPSRC, NIPOL )
+        INTEGER      ISTFIP  ( MAXST )  !  All state FIPS IDs
+        INTEGER      ISTLIST ( NPSID )  !  List of states in PTMP file
+        INTEGER      STIDX   ( NPSRC )  !  Index for summing src data to state
+
+        CHARACTER*20 STATES  ( MAXST )  !  All state names
+        CHARACTER*20 COUNTIES( MAXCO )  !  All county names
+
+C...........   Logical names and unit number
+
+        INTEGER         FDEV    !  unit number of state and county codes/names
+        INTEGER         LDEV    !  unit number for log file
+        INTEGER         ODEV    ! unit number of output file(s)
+ 
+        CHARACTER*16    ENAME   !  logical name for point-src inventory file
+        CHARACTER*16    PNAME   !  logical name for point-src hourly file
+        CHARACTER*16    INAME   !  logical name for file to read emissions
 
 C...........   Other local variables
 
-        INTEGER         NSRCS
+        REAL            EMIS
 
-        INTEGER         LDEV    !  unit number for log file
-        INTEGER         OUNIT, FUNIT
-
-        REAL            YR2DAY
-        INTEGER         I, J, K, INDEX
+        INTEGER         ACT_ST, ACT_CO  ! Actual number of states and counties
+                                        ! in the input point source file
+        INTEGER         I, IDX, J, J1, J2, S, T
+        INTEGER         IOS             !  I/O status
+        INTEGER         FIPNUM          !  Buffer for reading the FIPS code
+        INTEGER         JDATE, JTIME    ! current processing date and time
         INTEGER         LASTCO, LASTST  ! The last state and county FIPS numbers
-                                        ! encountered when summing the emmis.
+        INTEGER         LDATE, LTIME     ! The previous iteration's date/time
+                                        ! encountered when summing the emis.
+        INTEGER         NSRCS
+        INTEGER         NSTEPS          ! number of time steps for processing
+        INTEGER         SDATE, STIME    ! start date and time
         INTEGER         TOT_ST, TOT_CO  ! Total number of states and counties 
                                         ! in the FIPS file.
-        INTEGER         ACT_ST, ACT_CO  ! Actual number of states and counties
-                                        ! in the PNTS source file
+        INTEGER         TSTEP           ! Time step (HHMMSS) 
+ 
+        LOGICAL         EFLAG           ! Errors flag
+        LOGICAL         HRLYFLAG        ! true iff PTMP file provided
+        LOGICAL         HRLYTOT         ! true iff PSUMHRLY e.v. set to Y
 
-        CHARACTER*16    ENAME   !  logical name for point-source input file
-        CHARACTER*10    BUF1,BUF2
-        INTEGER         FIPNUM  !  Buffer for reading the FIPS code
-        CHARACTER*20    FIPNAME !  Buffer for reading the state/county name
-
+        CHARACTER*16    NAMBUF
+        CHARACTER*20    FIPNAME
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
 
 
@@ -112,11 +138,17 @@ C   begin body of program PNTSUM
 
         CALL INITEM( LDEV )
 
-C.......   Get file name; open input PNTS source
+        IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
+            CALL M3EXIT( 'PNTSUM', 0, 0, 'Ending Program', 2 )
+        END IF
+
+        EFLAG = .FALSE.
+
+C.......   Get file name; open input point source file
 
         ENAME = PROMPTMFILE( 
-     &          'Enter name for POINT SOURCE input file',
-     &          FSREAD3, 'PNTS', 'REPTPRO' )
+     &          'Enter name for POINT SOURCE INVENTORY file',
+     &          FSREAD3, 'PNTS', 'PNTSUM' )
 
         IF ( .NOT. DESC3( ENAME ) ) THEN
             CALL M3EXIT( 'PNTSUM', 0, 0, 
@@ -126,70 +158,107 @@ C.......   Get file name; open input PNTS source
 
         NSRCS = NROWS3D
         IF ( NSRCS .GT. NPSRC ) THEN
-            WRITE ( BUF1, 600 ) NSRCS
-            WRITE ( BUF2, 600 ) NPSRC
-            CALL M3EXIT( 'PNTSUM', 0, 0, 
-     &                   'Number of sources (NROWS3D='  // 
-     &                   BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
-     &                   ') exceeds program limits (NPSRC=' //
-     &                   BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
-     &                   ')', 2 )
+            WRITE ( MESG, 94010 )
+     &              'Number of sources (NROWS3D=', NSRCS,
+     &              ') exceeds program limits (NPSRC=' , NPSRC, ')'
+            CALL M3EXIT( 'PNTSUM', 0, 0, MESG, 2 )
         END IF
 
-        FUNIT = PROMPTFFILE( 
+        PNAME = PROMPTMFILE( 
+     &          'Enter name for POINT SOURCE HOURLY file or "NONE"',
+     &          FSREAD3, 'PTMP', 'PNTSUM' )
+
+        HRLYFLAG = ( PNAME .NE. 'NONE' )
+
+C.........  Set default name of file from which to read the emissions
+        INAME = ENAME
+
+C.........  Do hourly-data-specific setup
+        IF( HRLYFLAG ) THEN
+
+C..............  Reset default name of file from which to read the emissions
+            INAME = PNAME
+
+C..............  Prompt for hour- or day- totals
+            HRLYTOT = ENVYN( 'PSUMHRLY', 'Per-hour report writing flag',
+     &                       .FALSE., IOS )
+        ENDIF
+
+        IF ( .NOT. DESC3( INAME ) ) THEN
+            CALL M3EXIT( 'PNTSUM', 0, 0, 
+     &                  'Could not get description of file "' 
+     &                  // INAME( 1:TRIMLEN( INAME ) ) // '"', 2 )
+        END IF
+
+        NSTEPS = MAX( 1, MXREC3D )  ! min 1 in case input is time-independent
+        SDATE  = SDATE3D
+        STIME  = STIME3D
+        TSTEP  = TSTEP3D
+
+        FDEV = PROMPTFFILE( 
      &          'Enter name for STATE/COUNTY FIPS CODE file',
      &          .TRUE., .TRUE., 'STCYNAM', 'PNTSUM' )
 
-        OUNIT = PROMPTFFILE( 
-     &          'Enter name for EMISSIONS SUM REPORT file',
-     &          .FALSE., .TRUE., 'PSUMRPT', 'PNTSUM' )
+C.........  Open  output file
+        IF( HRLYTOT ) THEN          ! Hourly report from PTMP
+            NAMBUF = 'PSUMRPT_HR'
+        ELSEIF( HRLYFLAG ) THEN
+            NAMBUF = 'PSUMRPT_DAY'  ! Daily report from PTMP
+        ELSE
+            NAMBUF = 'PSUMRPT'      ! Ave day report from PNTS
+        ENDIF
 
+        ODEV = PROMPTFFILE( 
+     &              'Enter name for EMISSIONS SUM REPORT file',
+     &              .FALSE., .TRUE., NAMBUF, 'PNTSUM' )
 
+C.........  Read state and county names file and create tables
         TOT_ST = 0
         TOT_CO = 0
 30      CONTINUE ! Begin "infinite" loop; until EOF.
-            READ ( FUNIT, 700, END = 40 ) FIPNUM, FIPNAME
+            READ ( FDEV, 93010, END = 40 ) FIPNUM, FIPNAME
             IF ( FIPNUM .NE. 0 ) THEN  ! If FIPNUM=0, we just read a blank line
                 IF ( MOD ( FIPNUM, 1000 ) .EQ. 0 ) THEN
                     TOT_ST = TOT_ST + 1
-                    IF ( TOT_ST .GT. MAXST ) THEN
-                        WRITE ( BUF1, 600 ) TOT_ST
-                        WRITE ( BUF2, 600 ) MAXST
-                        CALL M3EXIT( 'PNTSUM', 0, 0, 
-     &                      'Number of states in STCYNAM (' // 
-     &                      BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
-     &                      ') exceeds program limits (MAXST=' //
-     &                      BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
-     &                      ')', 2 )
+                    IF ( TOT_ST .LE. MAXST ) THEN
+                        ISTFIP ( TOT_ST ) = FIPNUM / 1000
+                        STATES ( TOT_ST ) = FIPNAME
                     END IF
 
-                    ISTFIP ( TOT_ST ) = FIPNUM / 1000
-                    STATES ( TOT_ST ) = FIPNAME
-C                    PRINT '( A, I2, A, A, A, I2, A )', 
-C     &                'Got state #', TOT_ST, ': ',
-C     &                STATES ( TOT_ST ), ' (FIP=', ISTFIP ( TOT_ST ), ')'
                 ELSE
                     TOT_CO = TOT_CO + 1
-                    IF ( TOT_CO .GT. MAXCO ) THEN
-                        WRITE ( BUF1, 600 ) TOT_CO
-                        WRITE ( BUF2, 600 ) MAXCO
-                        CALL M3EXIT( 'PNTSUM', 0, 0, 
-     &                      'Number of counties in STCYNAM (' // 
-     &                      BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
-     &                      ') exceeds program limits (MAXCO=' //
-     &                      BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
-     &                      ')', 2 )
+                    IF ( TOT_CO .LE. MAXCO ) THEN
+                        ICOFIP ( TOT_CO ) = FIPNUM
+                        COUNTIES ( TOT_CO ) = FIPNAME
                     END IF
 
-                    ICOFIP ( TOT_CO ) = FIPNUM
-                    COUNTIES ( TOT_CO ) = FIPNAME
-C                    PRINT '( A, I4, A, A, A, I5, A )', 
-C     &                'Got county #', TOT_CO, ': ',
-C     &                COUNTIES ( TOT_CO ), ' (FIP=', ICOFIP ( TOT_CO ),')'
                 END IF
             END IF
         GO TO 30
 40      CONTINUE
+
+        IF( TOT_ST .GT. MAXST ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 
+     &           'Number of states in STCYNAM (', TOT_ST,
+     &           ') exceeds program limits (MAXST=', MAXST, ')'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( TOT_CO .GT. MAXCO ) THEN
+            EFLAG = .TRUE.
+            WRITE ( MESG, 94010 )
+     &            'Number of counties in STCYNAM (', TOT_CO,
+     &            ') exceeds program limits (MAXCO=', MAXCO, ')'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( EFLAG ) THEN
+            MESG = 'Must recompile program with larger dimensions'
+            CALL M3EXIT( 'PNTSUM', 0, 0, MESG, 2 )
+        ENDIF
+        
+C.........  Read point source inventory characteristics
 
         IF ( .NOT. READ3( ENAME, 'IFIP', ALLAYS3,0,0, IFIP ) ) THEN
             CALL M3EXIT( 'REPTPRO', 0, 0, 
@@ -201,156 +270,233 @@ C     &                COUNTIES ( TOT_CO ), ' (FIP=', ICOFIP ( TOT_CO ),')'
      &                   'Error reading INVYR from file' // ENAME, 2)
         END IF
 
-        DO 50 I = 1, NIPOL
-C           PRINT *, 'Reading ' // EINAM (I) // '...'
-            IF ( .NOT. READ3 ( ENAME, EINAM ( I ), ALLAYS3, 0, 0, 
-     &                         SPECBUF ( 1, I ) ) ) THEN
-                CALL M3EXIT( 'PNTSUM', 0, 0, 
-     &                       'Error reading ' // EINAM ( I ) //
-     &                       ' from file' // ENAME, 2 )
-            END IF
-50      CONTINUE
+C.........  Create index for grouping source emissions by state and county
 
         LASTCO = 0
         LASTST = 0
         ACT_ST = 0
         ACT_CO = 0
 
-        DO 60 J = 1, NSRCS
-            K = INVYR( J )
-            IF ( MOD( K,4 ) .NE. 0 ) THEN           !  nonleap years
-                YR2DAY = 1.0 / 365.0
-            ELSE IF ( MOD( K,100 ) .NE. 0 ) THEN    !  noncentury leap years
-                YR2DAY = 1.0 / 366.0
-            ELSE IF ( MOD( K,400 ) .NE. 0 ) THEN    !  century nonleap years
-                YR2DAY = 1.0 / 365.0
-            ELSE                                    !  leap centuries
-                YR2DAY = 1.0 / 366.0
-            END IF
+        DO 60 S = 1, NSRCS
 
-            IF ( IFIP ( J ) .NE. LASTCO ) THEN
-                ! We've moved to a new FIP code (i.e., we've switched counties),
-                ! so bump the number of counties and record the FIP code.
-                LASTCO = IFIP ( J )
+            IF( HRLYFLAG ) THEN
+                YRFAC( S ) = 1.
+            ELSE
+                YRFAC( S ) = YR2DAY( INVYR( S ) )
+            ENDIF
+
+C.............  We've moved to a new FIP code (i.e., we've switched counties),
+C.............    so bump the number of counties and record the FIP code.
+            IF( IFIP( S ) .NE. LASTCO ) THEN
+                LASTCO = IFIP ( S )
                 ACT_CO = ACT_CO + 1
-                IF ( ACT_CO .GT. NPFIP ) THEN
-                    WRITE ( BUF1, 600 ) ACT_CO
-                    WRITE ( BUF2, 600 ) NPFIP
-                    CALL M3EXIT( 'PNTSUM', 0, 0, 
-     &                  'Number of counties in PNTS (' // 
-     &                  BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
-     &                  ') exceeds program limits (NPFIP=' //
-     &                  BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
-     &                  ')', 2 )
-                END IF
 
-                ICOLIST ( ACT_CO ) = LASTCO
-                
-                ! If the current state code is not equal to the last state
-                ! code, then bump the number of states and record the code.
-                IF ( ( IFIP ( J ) / 1000 ) .NE. LASTST ) THEN
-                    LASTST = IFIP ( J ) / 1000
+                IF ( ACT_CO .LE. NPFIP ) THEN
+                    ICOLIST ( ACT_CO ) = LASTCO
+                ENDIF
+
+C................. If the current state code is not equal to the last state
+C.................   code, then bump the number of states and record the code.
+                IF ( ( IFIP( S ) / 1000 ) .NE. LASTST ) THEN
+                    LASTST = IFIP ( S ) / 1000
                     ACT_ST = ACT_ST + 1
-                    IF ( ACT_ST .GT. NPSID ) THEN
-                        WRITE ( BUF1, 600 ) ACT_ST
-                        WRITE ( BUF2, 600 ) NPSID
-                        CALL M3EXIT( 'PNTSUM', 0, 0, 
-     &                      'Number of states in PNTS (' // 
-     &                      BUF1 ( LBLANK(BUF1):TRIMLEN(BUF1) ) //
-     &                      ') exceeds program limits (NPSID=' //
-     &                      BUF2 ( LBLANK(BUF2):TRIMLEN(BUF2) ) // 
-     &                      ')', 2 )
-                    END IF
 
-                    ISTLIST ( ACT_ST ) = LASTST
+                    IF ( ACT_ST .LE. NPSID ) THEN
+                        ISTLIST( ACT_ST ) = LASTST
+                    ENDIF
+
                 END IF
             END IF
+
+            STIDX( S ) = ACT_ST
+            COIDX( S ) = ACT_CO
             
-            DO 70 I = 1, NIPOL
-                STSUM ( ACT_ST, I ) = STSUM ( ACT_ST, I ) + 
-     &                                ( SPECBUF ( J, I ) * YR2DAY )
-                COSUM ( ACT_CO, I ) = COSUM ( ACT_CO, I ) + 
-     &                                ( SPECBUF ( J, I ) * YR2DAY )
-70          CONTINUE
 60      CONTINUE
 
+        IF ( ACT_CO .GT. NPFIP ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 
+     &          'Number of counties in point source file (',
+     &          ACT_CO, ') exceeds program limits (NPFIP=', NPFIP, ')'
+            CALL M3MSG2( MESG )
+        END IF
 
-        WRITE ( OUNIT, 800 ) 'Point source emissions (tons/day)'
-        WRITE ( OUNIT, 800 ) 
-     &        '----------------------- By State -----------------------'
-        WRITE ( OUNIT, 810 ) 'STATE'
-        WRITE ( OUNIT, 840 ) 'CODE'
-        DO 80 I = 1, NIPOL
-            WRITE ( OUNIT, 820 ) EINAM ( I )( 1:TRIMLEN ( EINAM ( I ) ))
-80      CONTINUE
-        WRITE ( OUNIT, 810 ) '  STATE NAME'
+        IF ( ACT_ST .GT. NPSID ) THEN
+            EFLAG = .TRUE.
+            WRITE( MESG,94010 ) 
+     &          'Number of states in point source file (',
+     &          ACT_ST, ') exceeds program limits (NPSID=', NPSID, ')'
+            CALL M3MSG2( MESG )
+        ENDIF
 
-        DO 90 J = 1, ACT_ST
-            INDEX = FIND1 ( ISTLIST ( J ), TOT_ST, ISTFIP )
-            IF ( INDEX .GT. 0 ) THEN
-            	FIPNAME = STATES ( INDEX )
-            ELSE
-                FIPNAME = '*** no state name'
+        IF( EFLAG ) THEN
+            MESG = 'Must recompile program with larger dimensions'
+            CALL M3EXIT( 'PNTSUM', 0, 0, MESG, 2 )
+        ENDIF
+
+C.........  Loop through time steps (could be 1) and write output
+        JDATE = SDATE
+        JTIME = STIME
+        LDATE = -9
+        DO 222 T = 1, NSTEPS
+
+C.............  Read emissions from file.  Read indiv. so NSRCS need not = NPSRC
+            DO 50 I = 1, NIPOL
+                IF( .NOT. READ3( INAME, EINAM(I), ALLAYS3, JDATE, JTIME,
+     &                           SPECBUF ( 1, I ) ) ) THEN
+                    CALL M3EXIT( 'PNTSUM', 0, 0, 
+     &                           'Error reading ' // EINAM ( I ) //
+     &                           ' from file' // ENAME, 2 )
+                END IF
+50          CONTINUE
+
+C.............  Initialize summed emissions arrays
+            IF( HRLYTOT .OR. JDATE .NE. LDATE ) THEN
+                DO 67 I = 1, NIPOL
+                    DO 61 J = 1, NPSID
+                        STSUM( J,I ) = 0.
+61                  CONTINUE
+                    DO 65 J = 1, NPFIP
+                        COSUM( J,I ) = 0.
+65                  CONTINUE
+67              CONTINUE
             ENDIF
 
-            WRITE ( OUNIT, 830 ) 
-     &           ISTLIST ( J ), ( STSUM ( J, I ), I = 1, NIPOL ),
-     &           FIPNAME
-90      CONTINUE
-        
+C.............  Sum emissions for this hour and all species by state and county
+            DO 88 S = 1, NSRCS
+                DO 70 I = 1, NIPOL
 
-        WRITE ( OUNIT, 850 ) '----------------------- By County ',
-     &                       '-----------------------'
+                    J1 = STIDX( S )
+                    J2 = COIDX( S )
+                    EMIS = SPECBUF( S,I ) * YRFAC( S )
+                    STSUM( J1,I ) = STSUM( J1,I ) + EMIS
+                    COSUM( J2,I ) = COSUM( J2,I ) + EMIS
 
-        LASTST = 0
-        DO 100 J = 1, ACT_CO
-            IF ( ( ICOLIST ( J ) / 1000 ) .NE. LASTST ) THEN
-                LASTST = ICOLIST ( J ) / 1000
-                INDEX = FIND1 ( LASTST, TOT_ST, ISTFIP )
-                IF ( INDEX .GT. 0 ) THEN
-                	FIPNAME = STATES ( INDEX )
-                ELSE
-                    FIPNAME = '*** no state name'
+70              CONTINUE
+88          CONTINUE
+
+C.............  Increment date and time here so can check LDATE
+            LDATE = JDATE
+            LTIME = JTIME
+            CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+C.............  Write state summary emissions
+            IF( ( HRLYFLAG .AND. .NOT. HRLYTOT .AND.
+     &            ( JDATE .NE. LDATE .OR. T .EQ. NSTEPS ) ) .OR. ! daily PTMP tot
+     &          .NOT. HRLYFLAG .OR.                         ! daily PNTS average
+     &          HRLYTOT                              ) THEN ! hourly PTMP total
+
+C.................  Output headers for report
+                IF( HRLYTOT ) THEN        ! Hourly totals from PTMP
+                    WRITE( ODEV,93020 ) DAYS( WKDAY( LDATE ) ) //
+     &                  MMDDYY( LDATE ), LTIME,
+     &                  ( EINAM ( I ), I=1,NIPOL )
+
+                ELSEIF( HRLYFLAG ) THEN   ! Daily totals from PTMP
+                    WRITE( ODEV,93023 ) DAYS( WKDAY( LDATE ) ) //
+     &                  MMDDYY( LDATE ), ( EINAM ( I ), I=1,NIPOL )
+
+                ELSE                      ! Daily average from PNTS
+                    WRITE( ODEV,93025 ) ( EINAM ( I ), I=1,NIPOL )
+
                 ENDIF
+
+                DO 121 J = 1, ACT_ST
+ 
+                    IDX = FIND1( ISTLIST ( J ), TOT_ST, ISTFIP )
+                    IF( IDX .GT. 0 ) THEN
+            	        FIPNAME = STATES( IDX )
+                    ELSE
+                        FIPNAME = '*** no state name'
+                    ENDIF
+
+                    WRITE( ODEV, 93055 ) 
+     &                  ISTLIST( J ), ( STSUM( J,I ), I = 1, NIPOL ),
+     &                  FIPNAME
+
+121             CONTINUE
+
+C.................  Write county break header        
+                WRITE( ODEV,93030 ) 
+
+C.................  Write county summary emissions
+                LASTST = 0
+                DO 181 J = 1, ACT_CO
+
+                    IF ( ( ICOLIST ( J ) / 1000 ) .NE. LASTST ) THEN
+                        LASTST = ICOLIST ( J ) / 1000
+                        IDX = FIND1 ( LASTST, TOT_ST, ISTFIP )
+                        IF ( IDX .GT. 0 ) THEN
+                            FIPNAME = STATES ( IDX )
+                        ELSE
+                            FIPNAME = '*** no state name'
+                        ENDIF
+ 
+                        WRITE( ODEV,93045 )
+     &                      FIPNAME, ( EINAM ( I ), I=1,NIPOL )
+                    END IF
+
+                    IDX = FIND1 ( ICOLIST ( J ), TOT_CO, ICOFIP )
+                    IF ( IDX .GT. 0 ) THEN
+            	        FIPNAME = COUNTIES ( IDX )
+                    ELSE
+                        FIPNAME = '*** no county name'
+                    ENDIF
+
+                    WRITE( ODEV, 93075 ) 
+     &                  ICOLIST ( J ), ( COSUM ( J, I ), I = 1, NIPOL ),
+     &                  FIPNAME
+
+181             CONTINUE
+
+
+C.................  Write space between one hour and the next in output files
+                IF( HRLYFLAG ) THEN
+                    WRITE( ODEV, 94010 ) ' '
+                ENDIF
+
+            ENDIF  ! whether to output anything for this hour or not
+
+222     CONTINUE
         
-                WRITE ( OUNIT, 860 ) FIPNAME
-                WRITE ( OUNIT, 810 ) 'FIPs'
-                WRITE ( OUNIT, 840 ) 'CODE '
-                DO 110 I = 1, NIPOL
-                    WRITE ( OUNIT, 820 ) 
-     &                    EINAM ( I )( 1:TRIMLEN ( EINAM ( I ) ) )
-110             CONTINUE
-                WRITE ( OUNIT, 810 ) '  COUNTY NAME'
-            END IF
-
-            INDEX = FIND1 ( ICOLIST ( J ), TOT_CO, ICOFIP )
-            IF ( INDEX .GT. 0 ) THEN
-            	FIPNAME = COUNTIES ( INDEX )
-            ELSE
-                FIPNAME = '*** no county name'
-            ENDIF
-
-            WRITE ( OUNIT, 870 ) 
-     &           ICOLIST ( J ), ( COSUM ( J, I ), I = 1, NIPOL ),
-     &           FIPNAME
-100     CONTINUE
-        
-999     CONTINUE          !  exit program
-
         MESG = 'Normal completion of PNTSUM'
         CALL M3EXIT( 'PNTSUM', 0, 0, MESG, 0 )
 
 
 C******************  FORMAT  STATEMENTS   ******************************
 
-600     FORMAT ( I10 )
-700     FORMAT ( 2X, I5, 1X, A )
-800     FORMAT ( A, / )
-810     FORMAT ( A )
-820     FORMAT ( A10, $ )
-830     FORMAT ( I2.2, 2X, <NIPOL>F10.2, 2X, A )
-840     FORMAT ( A, $ )
-850     FORMAT ( //, A, A )
-860     FORMAT ( /, 19X, A )
-870     FORMAT ( I5.5, <NIPOL>F10.2, 2X, A )
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93010   FORMAT ( 2X, I5, 1X, A )
+
+93020   FORMAT( 'Point source emissions in inventory (tons/hour) for ' / 
+     &          A ' at ', I6.6, / 
+     &          23('-'), ' By State ', 23('-') /
+     &          'STATE' / 'CODE     ', <NIPOL>(A10), 'STATE NAME' )
+
+93023   FORMAT( 'Point source emissions in inventory (tons/day) for ' / 
+     &          A / 
+     &          23('-'), ' By State ', 23('-') /
+     &          'STATE' / 'CODE     ', <NIPOL>(A10), 'STATE NAME' )
+
+93025   FORMAT( 'Point source emissions in inventory (tons/day)' //
+     &          23('-'), ' By State ', 23('-') /
+     &          'STATE' / 'CODE     ', <NIPOL>(A10), 'STATE NAME' )
+
+93030   FORMAT( / 23('-'), ' By County', 23('-') )
+
+93045   FORMAT( /, 19X, A, /
+     &          'FIPs' / 'CODE      ', <NIPOL>(A10), 'COUNTY NAME' )
+
+93055   FORMAT ( I2.2, 2X, <NIPOL>(F10.2), 2X, A )
+
+93070   FORMAT ( I5.5, F10.2, 2X, A )
+
+93075   FORMAT ( I5.5, <NIPOL>(F10.2), 2X, A )
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT ( 10( A, :, I10, :, 2X ) )
+
         END
