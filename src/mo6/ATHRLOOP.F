@@ -26,6 +26,7 @@ C        SOAKCF
 C 
 C  Changes:  (Last change first) 
 C 
+C  09 MAR 02 @AIR-DK  initialize fuelcf 
 C  31 Dec 01 @EPA-BAG bug368 Remove I&M sawtooth 
 C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C  20 Sep 01 AIR Task 15: Comments 
@@ -326,6 +327,10 @@ C     Initialize the composite Air Toxic normal/high emitter weight array
 C 
       ATNHWT = 0.0 
 C 
+C     Initialize the fuel correction factor array to neutral 
+C 
+      FUELCF=1.0 
+C 
 C     Calculate and Store the Basic Emission Factors and High Emitter Fraction. 
 C 
       DO IFDS = 1,3 
@@ -446,8 +451,6 @@ C
                   ENDIF 
                 ENDIF 
 C 
-                BASEF(ISR) = BASEF(ISR) + TAMP 
-C 
 C     Compute VOC and TOG using Air Toxic version of METHANE routine. 
 C 
                 ATVOC(ISR) = BASEF(ISR) 
@@ -486,10 +489,10 @@ C     Begin Main Looping Structure of HRLOOP.
 C 
       DO IH = 1,MAXIH 
 C 
-C       Call BIGCFX to compute the Start and Running Temperature Corrections 
+C       Call ATBIGCFX to compute the Start and Running Temperature Corrections 
 C       and Offsets applicatable for this hour. 
 C 
-        CALL BIGCFX(IDX,MY,IV,IP,IH) 
+        CALL ATBIGCFX(IDX,MY,IV,IP,IH) 
 C 
         DO ISR = 1,2  ! 1=Run, 2=Start 
 C 

@@ -12,6 +12,7 @@ C  rule, etc.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Mar 02 AIR Task 384: Diesel evap output 
 C  03 Dec 01 AIR Task 27: Increased EFFTP and VFTP size from 3 to 4 to include CO2. 
 C  19 Feb 01 AIR Task 11: Added IEFPM, particulates. 
 C  09 May 01 @EPA-elg Deactivated POST96IM Flag by setting it to 1. 
@@ -295,6 +296,8 @@ C  VFTP     R    For each IP, FTP emission factor for each IV class weighted by
 C                corresponding normalized vmt mix fraction and summed together 
 C  VEXH     R    vmt mix weighted local (city) exhaust HC 
 C  VEVAP    R    vmt mix weighted local (city) evaporative HC 
+C  VDRNL    R    vmt mix weighted local (city) diurnal loss HC 
+C  VHTSK    R    vmt mix weighted local (city) hotsoak loss HC 
 C  VLOSS    R    vmt mix weighted local (city) refueling loss HC 
 C  VRUNLS   R    vmt mix weighted local (city) running loss HC 
 C  VRSTLS   R    vmt mix weighted local (city) resting loss HC 
@@ -392,7 +395,7 @@ C
       DATA EFFTP,EFEXH,EFEVAP,REFL_GM_MI,EFRUNL,G_MI_EVP/406*0.0/ 
       DATA IEFFTP,IEFEXH,IEFEVAP,IEFREFL,IEFRUNL /1,2,3,4,5/ 
       DATA IRLGGAL,IRSTGPH,IEFIDLE,IGMIEVP,IEFPM /6,7,8,9,10/ 
-      DATA VFTP,VEXH,VEVAP,VLOSS,VRUNLS,VRSTLS,VIDLE/13*0.0/ 
+      DATA VFTP,VEXH,VEVAP,VLOSS,VRUNLS,VRSTLS,VIDLE,VDRNL,VHTSK/15*0.0/ 
       DATA EVAP_GM_MI,EVAP_GM_HR,EVAP_GM_TRP,EVAP_GM_GA/14*0.0/ 
       DATA RUNEF, STARTEF, TOTEVAP / 203*0.0 / 
       DATA IRUNEF, ISTARTEF, ITEVAP /22,23,24 / 

@@ -5,6 +5,7 @@ C     to the database output file. The output units are g/mi.
 C 
 C     CHANGES  :  (LAST CHANGE FIRST) 
 C 
+C  09 Mar 02 AIR Task 28: Required USE ATHEAP due to expanded ADD HAPS changes. 
 C  15 Nov 01 AIR Task 27: Added INERR processing due to PMFLECON update. 
 C  20 Sep 01 AIR Task 15-22: Comments 
 C  04 Sep 01 AIR Task 15-22: Applied Bug Fix 331. 
@@ -30,11 +31,11 @@ C
       USE DATABASE, ONLY : DBUNIT,TABCHAR, 
      &                     DBSELTOX,DBSELVEH,DBSELEFT, 
      &                     DBNFILE,DBNRUN,DBNSCEN 
+      USE ATHEAP, ONLY: EFAT 
 C 
       IMPLICIT NONE 
 C 
       INCLUDE  'ATOX1.I'           ! MAXIAT 
-      INCLUDE  'ATOX4.I'           ! EFAT 
       INCLUDE  'CEVBMY.I'          ! BMYMPD 
       INCLUDE  'EVAHS1.I'          ! HSRED 
       INCLUDE  'FLAGS3.I'          ! RLFLAG 

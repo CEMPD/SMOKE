@@ -9,6 +9,10 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Mar 02 AIR Task Bug384: Print diesel evap output 
+C  08 Mar 02 AIR Task 15,18: Changed formats to ES to accomodate the 
+C            wide range of ADDITIONAL HAPS values. Added USE ATHEAP 
+C            due to ADD HAPS dynamic array expansion. 
 C  20 Sep 01 AIR task 15,18: Comments 
 C  11 Sep 01 AIR Task 18: Add HAPS output. 
 C  10 Jul 01 AIR Task 15: New routine 
@@ -34,14 +38,14 @@ C  16 December 1997 Dyntel@MMS  modified multispeed to a single speed.
 C                   SPD changed from an array to a single varibale. 
 C 
       USE DATABASE, ONLY: DBSELTOX 
+      USE ATHEAP, ONLY: EFAT, VAT, ATHIV, ATHSNAME 
 C 
       IMPLICIT NONE 
 C 
       INCLUDE 'ATOX1.I'  ! MAXIAT     
-      INCLUDE 'ATOX4.I'  ! EFAT,VAT 
       INCLUDE 'ATOX5.I'  ! ATHSNAME 
       INCLUDE 'IOUCOM.I' ! IOUAT 
-      INCLUDE 'IVTYPE.I' ! VTGASBUS,VTSCHOOL 
+      INCLUDE 'IVTYPE.I' ! VTGASBUS,VTSCHOOL,VVDSL 
       INCLUDE 'VMXCOM.I' ! VMTMIX 
 C 
       CHARACTER*10  CEF(3)      ! Character representation of EF 
@@ -220,7 +224,7 @@ C
        IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
         PRNT = .TRUE. 
         WRITE(CEF(IV-IVFIRST+1),20) EFAT(IXV,IAT,IV) 
-   20   FORMAT(F10.2) 
+   20   FORMAT(ES10.3) 
        END IF 
       END DO 
 C 
@@ -250,6 +254,10 @@ C
         PRNT = .FALSE. 
 C 
         CEF='        NA' 
+C 
+        DO IV=IVFIRST,IVLAST 
+        IF(VVDSL(IV).EQ.1) WRITE(CEF(IV-IVFIRST+1),20) EFAT(IXV,IAT,IV) 
+        END DO 
 C 
         DO IRB=1,4 
 C 

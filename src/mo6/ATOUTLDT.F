@@ -10,6 +10,10 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Mar 02 AIR Task Bug384 Output diesel evap 
+C  08 Mar 02 AIR Task 15,18: Changed formats to ES to accomodate the 
+C            wide range of ADDITIONAL HAPS values. Added USE ATHEAP 
+C            due to ADD HAPS dynamic array expansion. 
 C  11 Sep 01 AIR Task 18: Add HAPS output. 
 C  10 Jul 01 AIR Task 15: New Routine 
 C 
@@ -38,11 +42,11 @@ C  DASH8    C*8  8 character string of hyphens
 C 
 C 
       USE DATABASE, ONLY : DBSELTOX 
+      USE ATHEAP, ONLY : EFAT, VAT, ATHSNAME, ATHIV 
 C 
       IMPLICIT NONE 
 C 
       INCLUDE 'ATOX1.I' 
-      INCLUDE 'ATOX4.I' 
       INCLUDE 'ATOX5.I' 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'IVTYPE.I' 
@@ -228,7 +232,7 @@ C
       IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
       PRNT = .TRUE. 
       WRITE(CEF(IV-VTLDGT1+1),20) EFAT(IXV,IAT,IV) 
-   20 FORMAT(F10.2) 
+   20 FORMAT(ES10.3) 
       END IF 
       END DO 
 C 
@@ -278,17 +282,11 @@ C
       END IF 
       END DO 
 C 
-      IF(ATHIV(JXV,IRB,IMAP,VTLDDT12)) THEN 
-      PRNT = .TRUE. 
-      WRITE(CEF(5),20) EFAT(IXV,IAT,VTLDDT12) 
-      END IF 
-C 
-      IF(ATHIV(JXV,IRB,IMAP,VTLDDT34)) THEN 
-      PRNT = .TRUE. 
-      WRITE(CEF(6),20) EFAT(IXV,IAT,VTLDDT34) 
-      END IF 
-C 
       END DO !IRB 
+C 
+      WRITE(CEF(5),20) EFAT(IXV,IAT,VTLDDT12) 
+C 
+      WRITE(CEF(6),20) EFAT(IXV,IAT,VTLDDT34) 
 C 
       IF(PRNT) WRITE(IOUAT,232) TRIM(ATHSNAME(IMAP)),CETYPE(IXV),CEF 
 C 

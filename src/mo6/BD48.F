@@ -6,6 +6,8 @@ C  BLOCK DATA 43 initializes the Air Toxics commons.
 C 
 C  Changes: (Last change first) 
 C 
+C  08 Mar 02 AIR Task 18: Moved ADDITIONAL HAPS related arrays to ATWORK. 
+C            Updated assocated initializations and comments. 
 C 28 Sep 01: AIR TASK 25: Changed ATSSFLAG to SSFLAG to accomodate PM output. 
 C  24 Sep 01 AIR Task 24: Comments 
 C  13 Sep 01 AIR Task 18: Added HAPS, and removed initialization 
@@ -30,22 +32,6 @@ C  ATEMFAC(2,10,5,3,2)   - ATEMFAC(ISR,ISTD,IFDS,INH,IVT)
 C  ATHEF(24,5,2)         - ATHEF(IH,IROAD,IVT)  
 C  ATHEV(24,5,5)         - ATHEV(IH,IROAD,IEVAP)  
 C  ATNHWT(2)             - ATNHWT(INH) 
-C  DBAT(25,24,5,6,16,28) - DBAT(IDX,IH,IROAD,IXV,IAT,IV)   
-C  EFAT(6,16,28)         - EFAT(IXV,IAT+NMAP,IV) 
-C  VAT(6,16)             - VAT(IXV,IAT+NMAP) 
-C 
-C  ATHBEGMY(50) - ATHBEGMY (IATH) 
-C  ATHBER(50)   - ATHBER   (IATH) 
-C  ATHDET(50)   - ATHDET   (IATH) 
-C  ATHEKIND(50) - ATHEKIND (IATH) 
-C  ATHENDMY(50) - ATHENDMY (IATH) 
-C  ATHPMAP(50)  - ATHPMAP  (IATH) 
-C  ATHPNAME(50) - ATHPNAME (IATH) 
-C  ATHPOL(50)   - ATHPOL   (IATH) 
-C  ATHRATIO(50) - ATHRATIO (IATH) 
-C  ATHRATZML(50)- ATHRATZML(IATH) 
-C  ATHVTYPE(50) - ATHVTYPE (IATH) 
-C 
 C 
 C  Common block dictionary: 
 C 
@@ -91,25 +77,12 @@ C  ATEMFAC   R     The basic MOBILE6 exhaust VOC/TOG emission factors corrected 
 C  ATHEF     R     The final, corrected MOBILE6 exhaust VOC/TOG emission factors 
 C  ATHEV     R     The final, corrected MOBILE6 evap emission factors 
 C  ATNHWT    R     Air Toxic normal and high weighting factors 
-C  DBAT      R     The Air Toxic exhaust and evap emission factors, by hour, road type, vehicle class 
-C  EFAT      R     The Air Toxic exhaust and evap emission factors, by vehicle class 
-C  VAT       R     The Air Tosic exhaust and evap "All Vehicle" emission factors 
 C 
 C  /ATOX5/ 
-C  ATHAPS    R     Air Toxic HAPS toggle flag 
-C  ATHBEGMY  I     Air Toxic HAPS beginning model year 
-C  ATHBER    R     Air Toxic HAPS basic ratios/ZMLs and BERs 
-C  ATHDET    R     Air Toxic HAPS deterioration rates, mg/10k miles 
-C  ATHEKIND  C     Air Toxic HAPS emission kind 
-C  ATHENDMY  I     Air Toxic HAPS ending model year 
-C  ATHPMAP   I     Air Toxic HAPS pollutant name mapping index 
-C  ATHPNAME  C     Air Toxic HAPS pollutant name 
-C  ATHPOL    I     Air Toxic HAPS pollutant index 
-C  ATHRATIO  R     Air Toxic HAPS ratio to MOBILE6 VOC/TOG emission factors 
-C  ATHRATZML R     Air Toxic HAPS ratio or zero mile level 
-C  ATHVTYPE  I     Air Tosic HAPS vehicle type 
-C  NATH      I     Number of valid Air Toxic HAPS entries         
-C   
+C  ATHAPS    L     Air Toxic HAPS toggle flag 
+C  NATH      I     Number of valid Air Toxic Additional HAPS entries 
+C  NMAP      I     Mapping index for the pollutant number       
+C 
 C 
       IMPLICIT NONE 
 C 
@@ -148,25 +121,12 @@ C
       DATA ATHEF   /240*0./ 
       DATA ATHEV   /600*0./ 
       DATA ATNHWT  /2*0./ 
-C      DATA DBAT    /3024000*0./ 
-      DATA EFAT    /2688*0./ 
-      DATA VAT     /96*0./ 
 C 
 C  /ATOX5/ 
 C 
       DATA ATHAPS    /.FALSE./ 
-      DATA ATHBEGMY  /50*0/ 
-C      DATA ATHBER    /560000*0./ 
-      DATA ATHDET    /50*0./ 
-      DATA ATHEKIND  /50*' '/ 
-      DATA ATHENDMY  /50*0/ 
-      DATA ATHPMAP   /50*0/ 
-      DATA ATHPNAME  /50*' '/ 
-      DATA ATHPOL    /50*0/ 
-      DATA ATHRATIO  /50*' '/ 
-      DATA ATHRATZML /50*0./ 
-      DATA ATHVTYPE  /50*0/ 
-      DATA NATH      /0/         
+      DATA NATH      /0/ 
+      DATA NMAP      /0/ 
 C 
       END 
        

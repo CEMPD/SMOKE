@@ -9,6 +9,10 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Mar 02 AIR Task Bug383: Output diesel evap 
+C  08 Mar 02 AIR Task 15,18: Changed formats to ES to accomodate the 
+C            wide range of ADDITIONAL HAPS values. Added USE ATHEAP 
+C            due to ADD HAPS dynamic array expansion. 
 C  11 Sep 01 AIR Task 18: Add HAPS output. 
 C  10 Jul 01 AIR Task 15: New Routine 
 C 
@@ -46,13 +50,14 @@ C  NAMVEH   C*8  vehicle class names
 C 
 C 
       USE DATABASE, ONLY : DBSELTOX 
+      USE ATHEAP, ONLY : EFAT, VAT, ATHSNAME, ATHIV 
 C 
       IMPLICIT NONE 
 C 
       INCLUDE 'ATOX1.I' 
-      INCLUDE 'ATOX4.I' 
       INCLUDE 'ATOX5.I' 
       INCLUDE 'IOUCOM.I' 
+      INCLUDE 'IVTYPE.I' 
       INCLUDE 'VMXCOM.I' 
 C 
       CHARACTER*10 CEF(8) 
@@ -258,7 +263,7 @@ C
       IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
       PRNT = .TRUE. 
       WRITE(CEF(IV-IVFIRST+1),20) EFAT(IXV,IAT,IV) 
-   20 FORMAT(F10.2) 
+   20 FORMAT(ES10.3) 
       END IF 
       END DO 
 C 
@@ -288,6 +293,10 @@ C
       PRNT = .FALSE. 
 C 
       CEF='        NA' 
+C 
+      DO IV=IVFIRST,IVLAST 
+      IF(VVDSL(IV).EQ.1) WRITE(CEF(IV-IVFIRST+1),20) EFAT(IXV,IAT,IV) 
+      END DO 
 C 
       DO IRB=1,4 
 C 

@@ -8,6 +8,10 @@ C  Called by:  ATCALX
 C 
 C  Changes: (Last change first) 
 C 
+C  08 Mar 02 AIR Task 15,18: Changed formats to ES to accomodate the 
+C            wide range of ADDITIONAL HAPS values. Added USE ATHEAP 
+C            due to ADD HAPS dynamic array expansion. Updated printing 
+C            logic. 
 C  04 Dec 01 AIR Task 27-28: Include ALL VEH. 
 C  28 Sep 01 AIR Task 25: Changed ATSSFLAG to SSFLAG to accomodate PM output. 
 C            Added Particle Size to output. 
@@ -38,17 +42,17 @@ C
 C 
       USE DATABASE, ONLY : DBNFILE,DBNRUN,DBNSCEN,TABCHAR,DBVEHNAMES, 
      *                     DBSCTITLE 
+      USE ATHEAP, ONLY: EFAT, VAT, ATHSNAME, ATHIV, ATHPMAP 
 C 
       IMPLICIT NONE 
 C 
       INCLUDE 'ATOX1.I'  ! MAXIAT,SSFLAG,AROM,ATOXY,BENZ,E200,E300,OLEF      
-      INCLUDE 'ATOX4.I'  ! EFAT 
       INCLUDE 'ATOX5.I'  ! ATHAPS,NMAP 
       INCLUDE 'CITRV1.I' ! RVPBAS 
       INCLUDE 'EVAL.I'   ! MEVAL 
       INCLUDE 'FLAGS2.I' ! IMFLAG 
       INCLUDE 'IOUCOM.I' ! IOUSS 
-      INCLUDE 'IVTYPE.I' ! MAXVEH 
+      INCLUDE 'IVTYPE.I' ! MAXVEH,VVDSL 
       INCLUDE 'NGV.I'    ! NGVFLG1 
       INCLUDE 'PART1.I'  ! D_PPM,MAXIPPM,PSZCUT 
       INCLUDE 'REGION.I' ! IREJN 
@@ -74,6 +78,7 @@ C
       INTEGER IP 
       INTEGER IRB 
       INTEGER IV 
+      INTEGER IVC 
       INTEGER IXV 
       INTEGER JXV 
       INTEGER,DIMENSION(6)::ETYPE=(/1,3,4,6,5,8/) ! 1=Exh 3=Hot Soak 4=Diurnal 5=Resting 6=Running 8=Refueling 
@@ -216,19 +221,21 @@ C
       IAT=MAXIAT+IMAP 
 C 
       PRNT = .FALSE. 
-C 
+      IVC=0 
+      CEF='NA' 
+c 
       DO IV=1,MAXVEH  ! Convert data to characters so that "NA" can signify missing data 
-      CEF(IV)='NA' 
       DO IRB=1,4 
       IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
       WRITE(CEF(IV),10) EFAT(IXV,IAT,IV) 
-   10 FORMAT(F10.2) 
+   10 FORMAT(ES10.3) 
+      IVC=IVC+1 
       PRNT = .TRUE. 
       EXIT 
       END IF 
       END DO 
       END DO 
-      IF(PRNT) WRITE(CEF(29),10) VAT(IXV,IAT) ! ALL VEH 
+      IF(IVC.EQ.MAXVEH) WRITE(CEF(29),10) VAT(IXV,IAT) ! ALL VEH 
 C 
       IF(PRNT) 
      *WRITE(IOUSS,232) TRIM(SSHEADER),TABCHAR,ETYPE(IXV),TABCHAR,IP, 
@@ -273,18 +280,27 @@ C
       DO IXV=2,6 
 C 
       PRNT = .FALSE. 
+      IVC=0 
+      CEF='NA' 
 C 
       DO IV=1,MAXVEH  ! Convert data to characters so that "NA" can signify missing data 
-      CEF(IV)='NA' 
+C 
+      IF(VVDSL(IV).EQ.1) THEN   ! Diesel EVAP ADD HAPS are always zero. They alone do not trigger printing. 
+        WRITE(CEF(IV),10) EFAT(IXV,IAT,IV) 
+        IVC=IVC+1 
+        CYCLE 
+      END IF 
       DO IRB=1,4 
+C 
       IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
       WRITE(CEF(IV),10) EFAT(IXV,IAT,IV) 
+      IVC=IVC+1 
       PRNT = .TRUE. 
       EXIT 
       END IF 
       END DO 
       END DO 
-      IF(PRNT) WRITE(CEF(29),10) VAT(IXV,IAT) ! ALL VEH 
+      IF(IVC.EQ.MAXVEH) WRITE(CEF(29),10) VAT(IXV,IAT) ! ALL VEH 
 C 
       IF(PRNT) 
      *WRITE(IOUSS,232) TRIM(SSHEADER),TABCHAR,ETYPE(IXV),TABCHAR,IP, 

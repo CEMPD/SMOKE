@@ -106,7 +106,7 @@ C  VVLDGT12  I    Light-duty gasoline trucks <6000 lbs: LDGT1, LDGT2.
 C  VVLDGT34  I    Light-duty gasoline trucks >6000 lbs: LDGT3, LDGT4. 
 C  VVVEH     I    Non-trucks: LDGV, LDDV, MC. 
 C  VVSTARTS  I    Vehicles with seperated start and running emissions 
-C  VM6M5B    I    Maps the gasoline MOBILE6 vehicle classes into the  
+C  VM6M5B    I    Maps the gasoline MOBILE6 vehicle classes into the 
 C                 MOBILE5b/PART5 classes for TCF and gasoline particulate. 
 C  VDM6PRT   I    Maps the diesel MOBILE6 vehicle classes into the PART5 
 C                 classes for diesel particulate. 

@@ -9,6 +9,7 @@ C  Calls QUITER.
 C 
 C  Changes: (Last change first) 
 C 
+C  09 Mar 02: AIR Task 28: Added USE ATHEAP due to expanded ADD HAPS changes. 
 C  20 Sep 01: AIR Tasks 15-21: Comments 
 C  17 Aug 01: AIR Tasks 15-21: AT version of EFCVT 
 C 
@@ -17,9 +18,10 @@ C
 C  Notes. 
 C 
 C 
+      USE ATHEAP, ONLY: EFAT 
+C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'ATOX4.I'    ! EFAT 
       INCLUDE 'IVTYPE.I'   ! ILDGT12,ILDGT34,IHDGV,IHDDV,ILDGT (IVTYPE.I) 
       INCLUDE 'VMXCOM.I'   ! REGMIX,VMTMIX,VMTGT12,VMTGT34,VMTHDD,VMTHDG,VMLDGT 
 C 

@@ -4,21 +4,25 @@ C  This routine verifies the HAPS data and puts the values into
 C  the ATHBER array. 
 C 
 C  Changes: 
-C  AIR Task 28: Added ATHEAP for AT dynamic array support. 
+C  08Mar02: AIR Task 28: Updated comments and code due to expanded 
+C           Additional HAPS arrays and move to ATWORK. 
+C  29Nov01: AIR Task 28: Added ATHEAP for AT dynamic array support. 
 C 
 C  Called by: ATCALX 
 C 
 C  Calls: None 
 C 
 C 
-      USE ATHEAP 
+      USE ATHEAP, ONLY: ATHPMAP, ATHSNAME, ATHVTYPE, ATHEKIND, ATHBER, 
+     &                  ATHIV, ATHPNAME, ATHBEGMY, ATHENDMY, ATHRATIO, 
+     *                  ATHRATZML, ATHDET, ATHPOL 
 C 
       IMPLICIT NONE 
 C 
-      INCLUDE 'ATOX5.I'  ! NMAP,ATHPOL,ATHPMAP,ATHSNAME,ATHPNAME,ATHEKIND, 
-                         ! ATHRATIO,ATHBER,ATHRATZML,ATHDET,ATHIV 
+      INCLUDE 'ATOX5.I'  ! NMAP,NATH 
       INCLUDE 'IOUCOM.I' ! IOUERR 
       INCLUDE 'IVTYPE.I' ! MAXVEH 
+      INCLUDE 'MAXIMA.I' ! MAXYRS 
 C 
 C  Declare parameter list 
 C 
@@ -35,6 +39,9 @@ C
       INTEGER JXV   ! HAPS eXhaust/eVap index 
       INTEGER MY    ! Model year 
       INTEGER NJDX  ! Number of valid ages 
+C 
+      CHARACTER(LEN=4), DIMENSION(2) :: EXEV=(/ 
+     *   'EXH ','EVAP'/) 
 C 
 C  Initialize the holding array to the missing code 
 C 
@@ -99,9 +106,9 @@ C
          ATHBER(1,JDX,JXV,IRB,IV,IMAP)=ATHRATZML(IATH) 
          ATHBER(2,JDX,JXV,IRB,IV,IMAP)=ATHDET(IATH) 
         ELSE 
-         WRITE(IOUERR,2) MY,TRIM(ATHPNAME(IATH)) 
-    2    FORMAT(' Error: Conflicting HAPS data given for MY ',I4,/ 
-     *         ' and pollutant ',A) 
+         WRITE(IOUERR,2) IV,MY,TRIM(ATHPNAME(IATH)) 
+    2    FORMAT(' Error: Conflicting Additional HAPS data given for'/ 
+     *          ' Vehicle Class=',I2,', MY=',I4,', and Pollutant=',A) 
          GOTO 999 
         END IF 
 C 
@@ -120,16 +127,19 @@ C
          DO JXV=1,2 
           NJDX=0 
           ATHIV(JXV,IRB,IMAP,IV)=.FALSE. 
-          DO JDX=1,25 
+          DO JDX=1,MAXYRS 
            IF(ATHBER(1,JDX,JXV,IRB,IV,IMAP).NE.-999.) NJDX=NJDX+1 
           END DO 
          IF(NJDX.EQ.0) CYCLE 
-         IF(NJDX.EQ.25) THEN 
+         IF(NJDX.EQ.MAXYRS) THEN 
           ATHIV(JXV,IRB,IMAP,IV)=.TRUE. 
          ELSE 
-          WRITE(IOUERR,3) IMAP,IV,IRB,JXV 
-   3      FORMAT(' Error: All of the model year data for HAPS are not'/ 
-     &           ' filled in. IMAP=',I2,' IV=',I2,' IRB=',I1,' JXV=',I1) 
+          WRITE(IOUERR,3) ICY-25,ICY,TRIM(ATHSNAME(IMAP)), 
+     &                    TRIM(EXEV(JXV)),IV 
+   3      FORMAT(' Error: The required by-model-year data (',I4,'-',I4, 
+     &           ') for an Additional HAPS have not been entered.'/ 
+     &           ' Please correct the entries for Pollutant=',A, 
+     &           ', EKIND=',A,', and Vehicle Class=',I2) 
           GO TO 999 
           END IF 
          END DO 

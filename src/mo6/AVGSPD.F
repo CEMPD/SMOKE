@@ -12,6 +12,8 @@ C  Calls *NONE*
 C 
 C  Changes: (Last change first) 
 C 
+C  22 Jan 02 @EPA-djb  Bug379   Set limit on maximum freeway speed for 
+C                               Case #2 and added comments. 
 C  14 Jan 02 @EPA-bag  Bug375   Added call to QUITER to avoid VMT fractions 
 C                      which are inconsistent with freeway facility option 
 C  19 Jul 01 @EPA-djb Wish235, Add Average Speed command. 
@@ -37,6 +39,15 @@ C    4 : (15 mph) >12.5-17.5 mph  11 : (50 mph) >47.5-52.5 mph
 C    5 : (20 mph) >17.5-22.5 mph  12 : (55 mph) >52.5-57.5 mph 
 C    6 : (25 mph) >22.5-27.5 mph  13 : (60 mph) >57.5-62.5 mph 
 C    7 : (30 mph) >27.5-32.5 mph  14 : (65 mph) >62.5 mph 
+C 
+C  The six AVERAGE SPEED roadway scenarios (USRFAC) are: 
+C 
+C    1 : NON-RAMP 
+C    2 : FREEWAY 
+C    3 : ARTERIAL 
+C    4 : AREAWIDE 
+C    5 : LOCAL 
+C    6 : RAMP 
 C 
       IMPLICIT NONE  
 C 
@@ -65,13 +76,13 @@ C
 C  Initialize the speed VMT array to zero before calculations. 
 C 
       FWYSPD = 0.0 
-      IF(USRFAC.LE.4) THEN 
-        DO J=1,2 
-          IF(USRFAC.LE.2 .AND. J.EQ.2) CYCLE 
-          IF(USRFAC.EQ.3 .AND. J.EQ.1) CYCLE 
-          DO I=1,14 
-            DO IH=1,24 
-              SVMT(J,I,IH) = 0.0 
+      IF(USRFAC.LE.4) THEN                      ! If local or ramp, don't zero distributions. 
+        DO J=1,2                                ! Loop, 1:Freeway, 2:Arterial 
+          IF(USRFAC.LE.2 .AND. J.EQ.2) CYCLE    ! If freeay, don't zero arterial distributions. 
+          IF(USRFAC.EQ.3 .AND. J.EQ.1) CYCLE    ! If arterial, don't zero freeway distributions. 
+          DO I=1,14                             ! Loop over fourteen average speed bins. 
+            DO IH=1,24                          ! Loop over 24 hours. 
+              SVMT(J,I,IH) = 0.0                ! Initialize speed VMT to zero. 
             END DO 
           END DO 
         END DO 
@@ -100,7 +111,7 @@ C           General case for speeds >2.5 mph.
                 BIN1=((1.0/USRSPD)-(1.0/NSPD(I+1))) / 
      *               ((1.0/NSPD(I))-(1.0/NSPD(I+1))) 
                 BIN2=1.0-BIN1 
-C           Set speed bin fractions for arterial/collector roadways. 
+C           Set speed bin fractions for freeways. 
                 DO IH=1,24 
                   SVMT(1,I+1,IH) = BIN2 
                   SVMT(1,I,IH) = BIN1 
@@ -136,6 +147,7 @@ C           Determine the non-ramp freeway average speed.
 C           User supplied VMT fractions used in calculations. 
             FWYSPD=(1-USRVMT(4)/(USRVMT(1)+USRVMT(4))) / 
      *             ((1/USRSPD)-(USRVMT(4)/DEFAVG(4))) 
+            IF(FWYSPD.GT.65.0) FWYSPD=65.0 
 C           Calculate speed bin fractions which give the user 
 C           supplied average speed for non-ramp freeways. 
             DO I=1,13 
@@ -152,7 +164,7 @@ C           General case for speeds >2.5 mph.
                 BIN1=((1.0/FWYSPD)-(1.0/NSPD(I+1))) / 
      *               ((1.0/NSPD(I))-(1.0/NSPD(I+1))) 
                 BIN2=1.0-BIN1 
-C           Set speed bin fractions for arterial/collector roadways. 
+C           Set speed bin fractions for freeways. 
                 DO IH=1,24 
                   SVMT(1,I+1,IH) = BIN2 
                   SVMT(1,I,IH) = BIN1 
@@ -256,7 +268,7 @@ C           General case for speeds >2.5 mph.
                 BIN1=((1.0/FWYSPD)-(1.0/NSPD(I+1))) / 
      *               ((1.0/NSPD(I))-(1.0/NSPD(I+1))) 
                 BIN2=1.0-BIN1 
-C           Set speed bin fractions for arterial/collector roadways. 
+C           Set speed bin fractions for freeways. 
                 DO IH=1,24 
                   SVMT(1,I+1,IH) = BIN2 
                   SVMT(1,I,IH) = BIN1 

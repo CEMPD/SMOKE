@@ -5,6 +5,10 @@ C  HAPS data.
 C 
 C  Changes: (Last change first) 
 C 
+C  08 Mar 02 AIR Task 15,18: Changed formats to ES to accomodate the 
+C            wide range of ADDITIONAL HAPS values. Changed oxy vol% formatting. 
+C            Added USE ATHEAP due to ADD HAPS dynamic array expansion. 
+C            Updated output logic. Updated comments. 
 C  15 Jan 02 AIR Task 15: Removed Reformulated Gas Yes/No from the output 
 C                         since RFG cannot be used with Air Toxic runs. 
 C  12 Sep 01 AIR Task 11-22: Fixed HDGV output bug. 
@@ -37,13 +41,13 @@ C  NAMVEH   C*8  vehicle class names
 C 
 C 
       USE DATABASE, ONLY: DBSELTOX 
+      USE ATHEAP, ONLY: EFAT, VAT, ATHIV, ATHSNAME 
 C 
       IMPLICIT NONE 
 C 
       INCLUDE 'ATOX1.I'   ! MAXIAT,ATOXY,E200,E300,AROM,OLEF,BENZ 
       INCLUDE 'ATOX2.I'   ! ATWTOXY 
-      INCLUDE 'ATOX4.I'   ! EFAT,VAT 
-      INCLUDE 'ATOX5.I'   ! NMAP,ATHIV 
+      INCLUDE 'ATOX5.I'   ! NMAP 
       INCLUDE 'CITRV1.I'  ! RVPICY 
       INCLUDE 'EVAL.I'    ! MONTH, MEVAL 
       INCLUDE 'IOUCOM.I'  ! IOUAT 
@@ -78,6 +82,7 @@ C
       INTEGER IVC             ! Count for all vehicles 
       INTEGER IXV             ! Exhaust (1), Evap (2-6) AT index 
       INTEGER JXV             ! Exhuast (1), Evap (2) HAPS index 
+      INTEGER NDSL            ! Number of diesel vehicle classes 
       LOGICAL PRNT            ! Printing switch 
       REAL    SUM             ! Summation variable 
       REAL    TOTAL(10)       ! Total Evap 
@@ -150,13 +155,13 @@ C     *       T15,'   Diesel Fuel Sulfur Content: ',F5.0,' ppm'/
      *       T15,'                    Aromatics: ',F5.2,' vol%'/ 
      *       T15,'                      Olefins: ',F5.2,' vol%'/ 
      *       T15,'                      Benzene: ',F5.2,' vol%'/ 
-     *       T15,'                         MTBE: ',F5.3,' vol% ', 
+     *       T15,'                         MTBE: ',F5.2,' vol% ', 
      *                        '(market fraction: ',F5.3,')'/ 
-     *       T15,'                         ETBE: ',F5.3,' vol% ', 
+     *       T15,'                         ETBE: ',F5.2,' vol% ', 
      *                        '(market fraction: ',F5.3,')'/ 
-     *       T15,'                      Ethanol: ',F5.3,' vol% ', 
+     *       T15,'                      Ethanol: ',F5.2,' vol% ', 
      *                        '(market fraction: ',F5.3,')'/ 
-     *       T15,'                         TAME: ',F5.3,' vol% ', 
+     *       T15,'                         TAME: ',F5.2,' vol% ', 
      *                        '(market fraction: ',F5.3,')'/) 
 C 
       IF( IWEEK .EQ. 2 ) THEN 
@@ -326,7 +331,7 @@ C
 C 
       IF(ATHIV(JXV,IRB,IMAP,VTLDGV)) THEN 
        WRITE(CEF(1),20) EFAT(IXV,IAT,ILDGV) 
-   20  FORMAT(F10.2) 
+   20  FORMAT(ES10.3) 
        IVC=IVC+1 
        PRNT = .TRUE. 
       END IF 
@@ -365,7 +370,12 @@ C
        PRNT = .TRUE. 
       END IF 
       END DO 
-      IF(IC.EQ.8) WRITE(CEF(5),20) ATEFCVT(IHDGV,IXV,IAT) 
+      IF(ATHIV(JXV,IRB,IMAP,VTGASBUS)) THEN 
+       IC=IC+1 
+       IVC=IVC+1 
+       PRNT=.TRUE. 
+      END IF 
+      IF(IC.EQ.9) WRITE(CEF(5),20) ATEFCVT(IHDGV,IXV,IAT) 
 C 
       IF(ATHIV(JXV,IRB,IMAP,VTLDDV)) THEN 
       WRITE(CEF(6),20) EFAT(IXV,IAT,VTLDDV) 
@@ -394,7 +404,14 @@ C
        PRNT = .TRUE. 
       END IF 
       END DO 
-      IF(IC.EQ.8) WRITE(CEF(8),20) ATEFCVT(IHDDV,IXV,IAT) 
+      DO IV=VTURBAN,VTSCHOOL 
+      IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
+       IC=IC+1 
+       IVC=IVC+1 
+       PRNT=.TRUE. 
+      END IF 
+      END DO 
+      IF(IC.EQ.10) WRITE(CEF(8),20) ATEFCVT(IHDDV,IXV,IAT) 
 C 
       IF(ATHIV(JXV,IRB,IMAP,VTMC)) THEN 
       WRITE(CEF(9),20) EFAT(IXV,IAT,VTMC) 
@@ -402,8 +419,7 @@ C
       PRNT = .TRUE. 
       END IF 
 C 
-      IF(IVC.EQ.28) WRITE(CEF(10),25) VAT(IXV,IAT) 
-   25 FORMAT(F10.3) 
+      IF(IVC.EQ.MAXVEH) WRITE(CEF(10),20) VAT(IXV,IAT) 
 C 
       END DO !IRB 
 C 
@@ -422,6 +438,14 @@ C
 C 
       JXV = 2 ! Evap index for HAPS 
 C 
+C     Determine the number of diesel vehicle classes (EVAP ADD HAPS  
+C     cannot be calculated for diesels.) 
+C 
+      NDSL=0 
+      DO IV=1,MAXVEH 
+      NDSL=NDSL+VVDSL(IV) 
+      END DO 
+C 
       DO IMAP=1,NMAP 
 C 
       IAT=MAXIAT+IMAP 
@@ -431,7 +455,13 @@ C
       PRNT = .FALSE. 
 C 
       CEF='        NA' 
-      IVC=0 
+C 
+C  This processes all the diesel outputs 
+C 
+      IVC=NDSL 
+      WRITE(CEF(6),20) EFAT(IXV,IAT,VTLDDV) 
+      WRITE(CEF(7),20) ATEFCVT(ILDDT,IXV,IAT) 
+      WRITE(CEF(8),20) ATEFCVT(IHDDV,IXV,IAT) 
 C 
       DO IRB=1,4 
 C 
@@ -472,39 +502,15 @@ C
       IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
        IC=IC+1 
        IVC=IVC+1 
-       PRNT = .TRUE. 
+       PRNT=.TRUE. 
       END IF 
       END DO 
-      IF(IC.EQ.8) WRITE(CEF(5),20) ATEFCVT(IHDGV,IXV,IAT) 
-C 
-      IF(ATHIV(JXV,IRB,IMAP,VTLDDV)) THEN 
-      WRITE(CEF(6),20) EFAT(IXV,IAT,VTLDDV) 
-      IVC=IVC+1 
-      PRNT = .TRUE. 
-      END IF 
-C 
-      IC=0 
-      IF(ATHIV(JXV,IRB,IMAP,VTLDDT12)) THEN 
+      IF(ATHIV(JXV,IRB,IMAP,VTGASBUS)) THEN 
        IC=IC+1 
        IVC=IVC+1 
-       PRNT = .TRUE. 
+       PRNT=.TRUE. 
       END IF 
-      IF(ATHIV(JXV,IRB,IMAP,VTLDDT34)) THEN 
-       IC=IC+1 
-       IVC=IVC+1 
-       PRNT = .TRUE. 
-      END IF 
-      IF(IC.EQ.2) WRITE(CEF(7),20) ATEFCVT(ILDDT,IXV,IAT) 
-C 
-      IC=0 
-      DO IV=VTHDDV2B,VTHDDV8B 
-      IF(ATHIV(JXV,IRB,IMAP,IV)) THEN 
-       IC=IC+1 
-       IVC=IVC+1 
-       PRNT = .TRUE. 
-      END IF 
-      END DO 
-      IF(IC.EQ.8) WRITE(CEF(8),20) ATEFCVT(IHDDV,IXV,IAT) 
+      IF(IC.EQ.9) WRITE(CEF(5),20) ATEFCVT(IHDGV,IXV,IAT) 
 C 
       IF(ATHIV(JXV,IRB,IMAP,VTMC)) THEN 
       WRITE(CEF(9),20) EFAT(IXV,IAT,VTMC) 
@@ -512,7 +518,7 @@ C
       PRNT = .TRUE. 
       END IF 
 C 
-      IF(IVC.EQ.28) WRITE(CEF(10),25) VAT(IXV,IAT) 
+      IF(IVC.EQ.MAXVEH) WRITE(CEF(10),20) VAT(IXV,IAT) 
 C 
       END DO !IRB 
 C 
