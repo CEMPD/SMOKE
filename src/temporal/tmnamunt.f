@@ -2,7 +2,7 @@
         SUBROUTINE TMNAMUNT
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 81
 C
 C  DESCRIPTION:
 C       This program creates the temporal emissions output file variable names
@@ -17,13 +17,13 @@ C
 C  REVISION  HISTORY:
 C     Created 10/99 by M. Houyoux
 C
-C****************************************************************************/
+C*************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -60,7 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL     INDEX1, MULTUNIT, UNITFAC
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, M     !  counters and indices
+        INTEGER         I, J, K, L, L2, M     !  counters and indices
 
         INTEGER         IOS               !  i/o status
 
@@ -94,6 +94,7 @@ C.........  Initialize arrays
         EMTUNT = ' '  ! array
         EMTDSC = ' '  ! array
         EMTEFT = ' '  ! array
+        EACNV  = 1.   ! array
 
 C.........  Loop through the emission types for each activity and determine 
 C           their associated emission factors and units for emission factors
@@ -115,11 +116,17 @@ C.................  Store info if this emissions type is non-diurnal
 C.................  For the units, multiply the emission factor units with the
 C                   activity units
                 IF( J .GT. 0 ) THEN
-                    L = INDEX( NDIDSC( J ), 'for' )
+
+C.....................  Ensure that emission factor units are consistent
+                    CALL UNITMATCH( NDIUNT( J ) )
+
+                    L  = INDEX( NDIDSC( J ), 'for' )
+                    L2 = LEN_TRIM( NDIDSC( J ) )
 
 C.....................  Store for emission types
                     EMTUNT( K,I ) = MULTUNIT( NDIUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = NDIDSC( J )( L+3:DSCLEN3 )
+                    EMTDSC( K,I ) = NDIDSC( J )( L+3:L2 ) // 
+     &                              ' from ' // ACTVTY( I )
                     EMTEFT( K,I ) = 'N'
 
                 END IF
@@ -131,10 +138,16 @@ C.................  Store info if this emissions type is diurnal
 C.................  For the units, multiply the emission factor units with the
 C                   activity units
                 IF( J .GT. 0 ) THEN
-                    L = INDEX( DIUDSC( J ), 'for' )
+C.....................  Ensure that emission factor units are consistent
+                    CALL UNITMATCH( DIUUNT( J ) )
 
+                    L = INDEX( DIUDSC( J ), 'for' )
+                    L2 = LEN_TRIM( NDIDSC( J ) )
+
+C.....................  Store for emission types
                     EMTUNT( K,I ) = MULTUNIT( DIUUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = DIUDSC( J )( L+3:DSCLEN3 )
+                    EMTDSC( K,I ) = DIUDSC( J )( L+3:L2 )// 
+     &                              ' from ' // ACTVTY( I )
                     EMTEFT( K,I ) = 'D'
 
                 END IF
@@ -158,10 +171,10 @@ C.............  Store units and convversion factors for activities and output
 C.............  NOTE - this assumes that the units of all emission types
 C               from one activity are the same.
             CBUF = EMTUNT( 1,I )
-            FAC1 = UNITFAC( CBUF, 'ton', .TRUE. )
+            FAC1 = UNITFAC( CBUF, 'tons', .TRUE. )
             FAC2 = UNITFAC( EAUNIT( M ), '1/yr', .FALSE. )
 
-            EAUNIT( M ) = 'ton/hr'
+            EAUNIT( M ) = 'tons/hr'
             EACNV ( M ) = FAC1 / FAC2
 
         END DO         ! End of loop through activities
@@ -172,10 +185,10 @@ C.........  Now loop through pollutants and create units and conversion factors
             M = INDEX1( EINAM( I ), NIPPA, EANAM )
             
             CBUF = EAUNIT ( M )
-            FAC1 = UNITFAC( CBUF, 'ton', .TRUE. )
+            FAC1 = UNITFAC( CBUF, 'tons', .TRUE. )
             FAC2 = UNITFAC( EAUNIT( M ), '1/yr', .FALSE. )
 
-            EAUNIT( M ) = 'ton/hr'
+            EAUNIT( M ) = 'tons/hr'
             EACNV ( M ) = FAC1 / FAC2
 
         END DO
