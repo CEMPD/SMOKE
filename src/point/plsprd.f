@@ -1,6 +1,6 @@
 
        SUBROUTINE PLSPRD( DTHDZ, ZF, KZ, CEFSTK, HTMIX,
-     &                    PLTOP, PLBOT, DPTH)
+     &                    PLTOP, PLBOT )
      
 C***********************************************************************
 C  subroutine body starts at line 70
@@ -52,7 +52,6 @@ C...........   ARGUMENTS and their descriptions:
        REAL,    INTENT  (IN) :: HTMIX          ! mixing height
        REAL,    INTENT (OUT) :: PLTOP          ! plume top
        REAL,    INTENT (OUT) :: PLBOT          ! plume bottom
-       REAL,    INTENT (OUT) :: DPTH           ! plume depth
        
 C...........   PARAMETERS and their descriptions:
        REAL, PARAMETER :: SZ0FAC = 3.545    ! factor used to derive plume depth
@@ -64,6 +63,7 @@ C...........   Local variables
        
        REAL       SIGZ0
        REAL       DTDZ
+       REAL       DPTH
        
 C***********************************************************************
 C   begin body of subroutine  PLSPRD
