@@ -78,14 +78,17 @@ C...........   Point Sources Table input sorted by FIP,SCC,PLANT,STACK
 
 C...........   Other local variables
 
+        REAL            CUTOFF  !  plume rise cutoff for elev pts
+        REAL            RISE    !  calculated plume rise
+
         INTEGER         S       !  loop counter.
         INTEGER         N       !  elevated sources counter.
-        CHARACTER*16    ENAME   !  logical name for point-source input file
         INTEGER         FDEV    !  unit number for stack parameters file
         INTEGER         LDEV    !  unit number for log file
         INTEGER         PDEV    !  ... output elevated point source file
-        REAL            CUTOFF  !  plume rise cutoff for elev pts
-        REAL            RISE    !  calculated plume rise
+
+        LOGICAL         EFLAG   !  Error flag
+        CHARACTER*16    ENAME   !  logical name for point-source input file
         CHARACTER*60    MESG
 
 
@@ -198,11 +201,6 @@ C...........   IPLANT, ISTACK, TZONES
         END IF
 
 
-C...........   Fix up missing stack parameters:
-
-        CALL FIXSTK( FDEV, IFIP, ISCC, STKHT, STKDM, STKTK, STKVE )
-
-
 C...........   Process the stacks to determine elevated sources:
 
         WRITE( *,92000 ) 
@@ -210,14 +208,33 @@ C...........   Process the stacks to determine elevated sources:
      &  'Writing ELEVATED POINT SOURCE output file',
      &  ' '
 
+        EFLAG = .FALSE.
         N = 0
         DO  11  S = 1, NPSRC
 
-            RISE = PLUMRIS( STKHT( S ), 
-     &                      STKTK( S ), 
-     &                      STKVE( S ), 
-     &                      STKDM( S ) )
+C.............  Check stack parameters so PLUMRIS doesn't blow up
+C.............  If parameters are bad, skip plume rise calculation
+            IF( STKHT( S ) .LE. 0. .OR. 
+     &          STKTK( S ) .LE. 0. .OR.
+     &          STKVE( S ) .LE. 0. .OR.
+     &          STKDM( S ) .LE. 0.      ) THEN
 
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &                 'Bad stack parameter(s) at source', S
+                RISE = 0.
+
+C.............  Calculate estimated plume rise
+            ELSE
+
+                RISE = PLUMRIS( STKHT( S ), 
+     &                          STKTK( S ), 
+     &                          STKVE( S ), 
+     &                          STKDM( S ) )
+            ENDIF
+
+C.............  Write out source information when plume rise
+C.............  is greater than cutoff
             IF ( RISE .GT. CUTOFF ) THEN
 
                 N = N + 1
@@ -231,6 +248,13 @@ C...........   Process the stacks to determine elevated sources:
             END IF      !  if rise > cutoff
 
 11      CONTINUE        !  end loop on sources S
+
+        IF( EFLAG ) THEN
+
+            CALL M3EXIT( 'ELEVPOINT', 0, 0,
+     &                   'Error in RAW POINT SOURCE file PNTS', 2 )
+
+        ENDIF
 
         WRITE( MESG,94010 ) 'Number of elevated sources:', N
         CALL M3MESG( MESG )
