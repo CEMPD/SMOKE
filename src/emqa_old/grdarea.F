@@ -236,7 +236,7 @@ C............  If we've read in temporal file, must get inventory file name
  
                 INAME = PROMPTMFILE(
      &                  'Enter logical name for AREA INVENTORY file',
-     &                  FSREAD3, 'AREA', 'CSGAREA' )
+     &                  FSREAD3, 'AREA', 'GRDAREA' )
             ELSE
                 INAME = ANAME
  
@@ -244,7 +244,7 @@ C............  If we've read in temporal file, must get inventory file name
  
             IF( .NOT. READ3( INAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
  
-                CALL M3EXIT( 'SPCAMAT', 0, 0,
+                CALL M3EXIT( 'GRDAREA', 0, 0,
      &                       'Error reading FIP from file' // ANAME, 2 )
  
             END IF
@@ -252,14 +252,14 @@ C............  If we've read in temporal file, must get inventory file name
             IF( .NOT.
      &          READ3( INAME, 'INVYR', ALLAYS3, 0, 0, INVYR ) ) THEN
  
-                CALL M3EXIT( 'SPCAMAT', 0, 0,
+                CALL M3EXIT( 'GRDAREA', 0, 0,
      &               'Error reading INVYR from file' // ANAME, 2 )
  
             END IF
  
             RDEV  = PROMPTFFILE(
      &             'Enter logical name for TOTALS REPORT or "NONE"',
-     &             .FALSE., .TRUE., REPNAM, 'CSGAREA' )
+     &             .FALSE., .TRUE., REPNAM, 'GRDAREA' )
  
 C............  Create state codes arrays
             LSTA = -9
@@ -286,7 +286,7 @@ C............  Create state codes arrays
                 WRITE( MESG,94010 )
      &                'Number of states is ', NSTA,
      &                'but maximum (NASID) is', NASID
-                CALL M3EXIT( 'CSGAREA', JDATE, JTIME, MESG, 2 )
+                CALL M3EXIT( 'GRDAREA', JDATE, JTIME, MESG, 2 )
             ENDIF
  
 C............  Initialize emission summary array
@@ -303,7 +303,7 @@ C............  Initialize emission summary array
      &                     XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
      &                     NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
 
-            CALL M3EXIT( 'CSGAREA', 0, 0,
+            CALL M3EXIT( 'GRDAREA', 0, 0,
      &              'Could not get description of grid ' // GRDNM, 2 )
 
         END IF

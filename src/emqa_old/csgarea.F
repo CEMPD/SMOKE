@@ -288,7 +288,7 @@ C............  If we've read in temporal file, must get inventory file name
 
             IF( .NOT. READ3( INAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
 
-                CALL M3EXIT( 'SPCAMAT', 0, 0,
+                CALL M3EXIT( 'CSGAREA', 0, 0,
      &                       'Error reading FIP from file' // ANAME, 2 )
 
             END IF
@@ -296,7 +296,7 @@ C............  If we've read in temporal file, must get inventory file name
             IF( .NOT. 
      &          READ3( INAME, 'INVYR', ALLAYS3, 0, 0, INVYR ) ) THEN
 
-                CALL M3EXIT( 'SPCAMAT', 0, 0,
+                CALL M3EXIT( 'CSGAREA', 0, 0,
      &               'Error reading INVYR from file' // ANAME, 2 )
 
             END IF
