@@ -112,7 +112,7 @@ C.........  Get description of speciation matrix
 C.........  Read speciation matrix for each species
         DO 101 V = 1, NSPCS
              SNM( V ) =  VNAME3D( V )
-             IF( .NOT. READ3( FNAME, SNM( V ), 1, 0, 0, 
+             IF( .NOT. READ3( FNAME, SNM( V ), ALLAYS3, 0, 0, 
      &                        SPCFACS( 1,V )               ) ) THEN
 
                 MESG = 'Could not read ' //CATEGORY// ' SPEC MATRIX'//
