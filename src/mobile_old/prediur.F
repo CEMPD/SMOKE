@@ -265,11 +265,42 @@ C.........  Read FIP, road class, and Link IDs from inventory file
      &                   'Error reading ILINK from file' // ANAME, 2 )
         END IF
 
-C.........  Read Ungridding Matrix
+C.........  Read Ungridding Matrix, but check dimensions first
 
         CALL M3MSG2( 'Reading UNGRIDDING MATRIX ...' )
 
-        IF ( .NOT. READ3( UNAME, ALLVAR3, ALLAYS3, 0, 0, NU ) ) THEN
+        IF( .NOT. DESC3( UNAME ) ) THEN
+            MESG = 'Could not get description for file ' // UNAME
+            CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
+        ENDIF
+
+        EFLAG = .FALSE. 
+        IF ( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &       'Dimension mismatch.  MUMAT file:', NROWS3D,
+     &       'program (NMSRC)=', NMSRC
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+        ENDIF
+        IF( NCOLS3D .NE. NMATX ) THEN
+            WRITE( MESG, 94010 )
+     &       'Dimension mismatch.  MUMAT file:', NCOLS3D,
+     &       'program (NMATX)=', NMATX
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+        ENDIF
+        IF( NTHIK3D .NE. NGRID ) THEN
+            WRITE( MESG, 94010 )
+     &       'Dimension mismatch.  MUMAT file:', NTHIK3D,
+     &       'program (NROWS * NCOLS)=', NGRID
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+        ENDIF
+ 
+        IF( EFLAG ) THEN
+            CALL M3EXIT( 'PREDIUR', 0, 0, 'Bad MUMAT dimensions.', 2 )
+ 
+        ELSEIF ( .NOT. READ3( UNAME, ALLVAR3, ALLAYS3, 0, 0, NU ) ) THEN
             MESG = 'Could not read ungridding matrix from ' // UNAME
             CALL M3EXIT( 'PREDIUR', 0, 0, MESG, 2 )
         END IF
@@ -279,10 +310,22 @@ C.........  Read header of temperature file
             CALL M3EXIT( 'PREDIUR', 0, 0,
      &                  'Could not get description of file "'
      &                  // TNAME( 1:TRIMLEN( TNAME ) ) // '"', 2 )
-        END IF
 
+        ELSEIF( NROWS3D .NE. NROWS .OR.
+     &          NCOLS3D .NE. NCOLS      ) THEN
+ 
+            WRITE( MESG,94015 )
+     &       'Met grid dimensions inconsistent with program' //
+     &       CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D, ',',
+     &       NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'PREDIUR', 0, 0, 'Bad input file.', 2 )
+ 
 C.........  Save time step for processing temperatures
-        TSTEP = TSTEP3D
+        ELSE
+            TSTEP = TSTEP3D
+
+        END IF
 
 C.......   Get default time characteristic for output file:
 C.......   If we're going to prompt, then set the defaults based on met
@@ -907,7 +950,9 @@ C...........   Formatted file I/O formats............ 93xxx
  
 C...........   Internal buffering formats............ 94xxx
  
-94010   FORMAT( 10 ( A, :, 1X, I5, :, 1X ) )
+94010   FORMAT( 10 ( A, :, 1X, I7, :, 1X ) )
+
+94015   FORMAT( 10 ( A, :, 1X, I4, :, 1X ) )
 
 94020   FORMAT( 10 ( A, 1X, I5, 2( 1X, A, 1X, F8.2 ) ) )
 

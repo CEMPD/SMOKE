@@ -2,7 +2,7 @@
         PROGRAM TMPMOBIL
 
 C***********************************************************************
-C  program body starts at line 369
+C  program body starts at line 372
 C
 C  DESCRIPTION:
 C       Produces source-level temporally allocated VMT using the 
@@ -503,10 +503,22 @@ C.........  Get starting date and time from met data file
      &                  'Could not get description of file "' 
      &                  // MNAME( 1:TRIMLEN( MNAME ) ) // '"',
      &                  2 )
-        END IF
+        ELSEIF( NROWS3D .NE. NROWS .OR.
+     &          NCOLS3D .NE. NCOLS      ) THEN
 
-        SCEN_STR = FDESC3D( 2 )
-        SCHE_STR = FDESC3D( 3 )
+            WRITE( MESG,94020 ) 
+     &       'Met grid dimensions inconsistent with program' //
+     &       CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D, ',',
+     &       NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Bad input file.', 2 )
+     
+        ELSE
+
+            SCEN_STR = FDESC3D( 2 )
+            SCHE_STR = FDESC3D( 3 )
+
+        END IF
 
 C.......   Get default time characteristic for output file:
 C.......   If we're going to prompt, then set the defaults based on met file
@@ -1610,9 +1622,39 @@ C.......   Read emissions factor tables:
 
         ENDIF
 
-C.......   Read ungridding matrix:
+C.........  Check ungridding matrix dimensions
+        IF( .NOT. DESC3( UNAME ) ) THEN
+            MESG = 'Could not get description for file ' // UNAME
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
+        ENDIF
+      
+        IF ( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &       'Dimension mismatch.  MUMAT file:', NROWS3D,
+     &       'program (NMSRC)=', NMSRC
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+        ENDIF
+        IF( NCOLS3D .NE. NMATX ) THEN
+            WRITE( MESG, 94010 )
+     &       'Dimension mismatch.  MUMAT file:', NCOLS3D,
+     &       'program (NMATX)=', NMATX
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+        ENDIF
+        IF( NTHIK3D .NE. NGRID ) THEN
+            WRITE( MESG, 94010 )
+     &       'Dimension mismatch.  MUMAT file:', NTHIK3D,
+     &       'program (NROWS * NCOLS)=', NGRID
+            CALL M3MSG2( MESG )
+            EFLAG = .TRUE.
+        ENDIF
 
-        IF ( .NOT. READ3( UNAME, ALLVAR3, ALLAYS3, 0, 0, NU ) ) THEN
+        IF( EFLAG ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Bad MUMAT dimensions.', 2 )
+
+C.........   Read ungridding matrix:
+        ELSEIF ( .NOT. READ3( UNAME, ALLVAR3, ALLAYS3, 0, 0, NU ) ) THEN
             MESG = 'Could not read ungridding matrix from ' // UNAME
             CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
         END IF
@@ -2174,6 +2216,8 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I7, :, 2X ) )
+
+94020   FORMAT( 10 ( A, :, I4, :, 1X ) )
 
 94030   FORMAT( A, 1X, I5, :, 10( A, 1X, I7.7, 1X, I6.6, : ) )
 
