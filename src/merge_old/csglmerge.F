@@ -68,6 +68,11 @@ C...........   Emissions Sources input and output arrays (one variable at a time
         REAL            POINTV( NPSRC )  !  input point emissions.
         REAL            POINTC( NPSRC )  !  controlled speciated point emissions
 
+cmh temp
+        INTEGER NETYPE
+        PARAMETER (NETYPE=6)
+cmh temp done
+
         REAL            MOBILV( NMSRC, NVTYPE, NETYPE )  !  input mobile emissions.
         REAL            MOBILC( NMSRC )  !  controlled speciated mobile emissions
 
@@ -82,8 +87,8 @@ C...........   Gridding Matrices
         COMMON  / GAMAT / NA, IA, MA
 
         INTEGER         NM( NGRID )
-        INTEGER         IM( MXGCOF )
-        REAL            MM( MXGCOF )
+        INTEGER         IM( NMATX )
+        REAL            MM( NMATX )
 
         COMMON  / GMMAT / NM, IM, MM
 
@@ -105,6 +110,13 @@ C...........   Control and projection matrices (re-used for both purposes)
         REAL            CA( NASRC, NIPOL )
         REAL            CP( NPSRC, NIPOL )
 
+cmh temp
+        INTEGER  NEMODE
+        PARAMETER( NEMODE = 4 )
+        CHARACTER*16 MEMODE( NEMODE )  ! Emissions modes for given scenario
+        DATA MEMODE  / 'EXH', 'EVP', 'RNL', 'RST' /
+cmh temp done
+
         REAL            CM( NMSRC, NVTYPE, NIPOL + NEMODE - 1 )
         CHARACTER*16    MCNAMES( NIPOL + NEMODE - 1 )
 
@@ -118,10 +130,10 @@ C...........   form "<INV-SPC-NAME>to<MODEL-SPC-NAME>")
         REAL            SA( NASRC, NMPOL )
         REAL            SP( NPSRC, NMPOL )
 
-        REAL            SM( NPSRC, NVTYPE, NSMATX )
-        CHARACTER*16    MSNAMES( NSMATX )
-        INTEGER         MBLMODE( NSMATX )
-        INTEGER         MBLIPOL( NSMATX )
+        REAL            SM( NMSRC, NVTYPE, MXMPOL*MXEPRC )
+        CHARACTER*16    MSNAMES( MXMPOL*MXEPRC )
+        INTEGER         MBLMODE( MXMPOL*MXEPRC )
+        INTEGER         MBLIPOL( MXMPOL*MXEPRC )
         INTEGER         MBLSDEX( NMPOL )
         INTEGER         MBLSCNT( NMPOL )
 
@@ -709,7 +721,7 @@ C.......   Area source controls and projections:
 
             DO  43  S = 1, NIPOL
 
-                SCRBUF = 'CONTROL_' // EINAM( S )( 1:9 )
+                SCRBUF = 'CONTROL_' // EINAM( S )( 1:8 )
                 IF ( .NOT. READ3( ACNAME, SCRBUF, 1, 0, 0, 
      &                            CA( 1,S ) ) ) THEN
 
@@ -747,7 +759,7 @@ C...............   e.g., the "42101" in "42101toCO"
 
             DO  46  S = 1, NIPOL
 
-                SCRBUF = 'PROJECT_' // EINAM( S )( 1:9 )
+                SCRBUF = 'PROJECT_' // EINAM( S )( 1:8 )
                 IF ( .NOT. READ3( APNAME, SCRBUF, 1, 0, 0, 
      &                            CA( 1,S ) ) ) THEN
                        
@@ -777,7 +789,6 @@ C...............   e.g., the "42101" in "42101toCO"
 
         END IF          !  if acflag:  control area
 
-
 C.......   Mobile source controls and projections:
 
         IF( MCFLAG ) THEN
@@ -794,7 +805,7 @@ C.......   Mobile source controls and projections:
 C...............   Parse the variable-names from the speciation matrix and 
 C...............   map to inventory species and mobile emissions modes:
 
-            DO  53  I = 1, NSMATX
+            DO  53  I = 1, MXMPOL*MXEPRC
 
                 L = MBLIPOL( I )
                 M = MBLMODE( I )
@@ -836,7 +847,7 @@ C...............   map to inventory species and mobile emissions modes:
 C...............   Parse the variable-names from the speciation matrix and 
 C...............   map to inventory species and mobile emissions modes:
 
-            DO  57  I = 1, NSMATX
+            DO  57  I = 1, MXMPOL*MXEPRC
 
                 L = MBLIPOL( I )
                 M = MBLMODE( I )
@@ -874,7 +885,7 @@ C.......   Point source controls and projections:
 
             DO  63  S = 1, NIPOL
 
-                SCRBUF = 'CONTROL_' // EINAM( S )( 1:9 )
+                SCRBUF = 'CONTROL_' // EINAM( S )( 1:8 )
                 IF ( .NOT. READ3( PCNAME, SCRBUF, 1, 0, 0, 
      &                            CP( 1,S ) ) ) THEN
 
@@ -911,7 +922,7 @@ C...............   e.g., the "42101" in "42101toCO"
 
             DO  66 S = 1, NIPOL
 
-                SCRBUF = 'CONTROL_' // EINAM( S )( 1:9 )
+                SCRBUF = 'CONTROL_' // EINAM( S )( 1:8 )
                 IF ( .NOT. READ3( PPNAME, SCRBUF, 1, 0, 0, CP( 1,S ) ) 
      &             ) THEN
 
@@ -1029,7 +1040,7 @@ C...................   Initialization of emisg[]:  either read from bio file or
 C...................   set to zero:
 
                     IF ( BSPCFLAG( K ) ) THEN
-                        IF( .NOT. READ3( ANAME, EMNAM( K ), ALLAYS3,
+                        IF( .NOT. READ3( BNAME, EMNAM( K ), ALLAYS3,
      &                                   JDATE, JTIME, EMISG ) ) THEN
                         END IF          !  if read3() failed
                         DO  192  L = 2, EMLAYS
@@ -1061,7 +1072,7 @@ C...................   set to zero:
                         N = MBLSDEX( K )
                         CALL MSMATVEC( NMSRC, M, SM( 1,1,N ), 
      &                                 MOBILV, MOBILC )
-                        CALL AMRGVEC ( NMSRC, MOBILC, MXGCOF, 
+                        CALL AMRGVEC ( NMSRC, MOBILC, NMATX, 
      &                                 NM, IM, MM,
      &                                 NGRID, EMISG )
 
