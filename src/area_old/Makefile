@@ -4,7 +4,7 @@
 #
 all: opts
 #
-opts: ctlamat emsarea grdamat rawarea spcamat tmparea 
+opts: ctlamat emsarea grdamat pcarea rawarea spcamat tmparea 
 #
 LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
@@ -36,6 +36,16 @@ GRMI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
 grdamat: $(GRMS) $(GRMI)
 	echo GRDAMAT:
 	f77 $(FFLAGS) -o $(SCENDIR)/grdamat $(GRMS) $(LIBS)
+#
+#
+#
+PCAR=pcarea.F
+#
+PCAI=ARDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT
+#
+pcarea: $(PCAR) $(PCAI)
+	echo PCAREA:
+	f77 $(FFLAGS) -o $(SCENDIR)/pcarea $(PCAR) $(LIBS)
 #
 #
 #

@@ -38,6 +38,16 @@ grdamat.debug: $(GRMS) $(GRMI)
 #
 #
 #
+PCAR=pcarea.F
+#
+PCAI=ARDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT 
+#
+pcarea.debug: $(PCAR) $(PCAI)
+	echo PCAREA:
+	f77 $(DBGFLAGS) -o pcarea.debug $(PCAR) $(LIBS)
+#
+#
+#
 RAWS=rawarea.F
 #
 RAWI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT
