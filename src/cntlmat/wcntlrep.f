@@ -122,6 +122,9 @@ C             case of AREA sources, rule penetration. These variable names
 C             will be used in reading the inventory file.
 
 c note: updated for all pollutants that get controls
+        
+C.........  Check that NVCMULT does not equal 0, otherwise some systems will get confused
+        IF( NVCMULT == 0 ) RETURN
 
         CALL BLDENAMS( CATEGORY, NVCMULT, 6, PNAMMULT, OUTNAMES,
      &                 OUTUNITS, OUTTYPES, OUTDESCS )
