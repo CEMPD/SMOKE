@@ -1,6 +1,5 @@
 
-        SUBROUTINE RDTREF( FDEV, CATEGORY, NIPOL, NINVSCC, EINAM, 
-     &                     PCODES, INVSCC, FFORMAT )
+        SUBROUTINE RDTREF( FDEV, FFORMAT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -25,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -42,8 +41,15 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  MODULES for public variables
 C...........   This module is for cross reference tables
         USE MODXREF
+
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS
+
+C.........  This module contains the information about the source category
+        USE MODINFO
 
         IMPLICIT NONE
 
@@ -52,92 +58,83 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        LOGICAL         CHKINT
         CHARACTER*2     CRLF
-        INTEGER         FIND1
-        INTEGER         FINDC
+        INTEGER         GETNLIST
         INTEGER         GETFLINE
         INTEGER         INDEX1
         INTEGER         STR2INT
 
-        EXTERNAL  CRLF, FIND1, FINDC, GETFLINE, INDEX1, STR2INT
+        EXTERNAL  CHKINT, CRLF, GETNLIST, GETFLINE, INDEX1, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV              ! x-ref file unit no.
-        CHARACTER(*), INTENT (IN) :: CATEGORY          ! source category name
-        INTEGER     , INTENT (IN) :: NIPOL             ! no. of pols in inv
-        INTEGER     , INTENT (IN) :: NINVSCC           ! no. of actl SCCs in inv
-        CHARACTER(*), INTENT (IN) :: EINAM ( NIPOL )   ! pollutant names
-        INTEGER     , INTENT (IN) :: PCODES( NIPOL )   ! pollutant codes
-        CHARACTER(*), INTENT (IN) :: INVSCC( NINVSCC ) ! list of SCCs in inven
         CHARACTER(*), INTENT(OUT) :: FFORMAT           ! format of input file
  
 C...........   Local parameters
         INTEGER    , PARAMETER :: AREATYP  = 1
         INTEGER    , PARAMETER :: MOBILTYP = 2
         INTEGER    , PARAMETER :: POINTTYP = 3
-        INTEGER    , PARAMETER :: MXCHRS   = 7
+        INTEGER    , PARAMETER :: MXTCOL   = 12
 
         CHARACTER*6, PARAMETER :: LOCCATS( 3 ) = 
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
-C...........   Local arrays for reading temporal cross-referenc
-        INTEGER, ALLOCATABLE :: LTYPE   ( : ) !  source category code per line
-        INTEGER              :: PSTARTIN( 6 ) !  start column of pt src fields
-
-C...........   Left-portion of inventory SCCs
-        INTEGER                :: NINVSCL
-        CHARACTER(LEN=SCLLEN3) :: INVSCL( NINVSCC )
-
-C...........   Sorted pollutant codes
-        INTEGER         INDXP  ( NIPOL ) !  sorting index for pollutant codes
-        INTEGER         SRTPCOD( NIPOL ) !  sorted pollutant codes
+C...........   Sorted pollutant names
+        INTEGER                   INDXP  ( NIPOL ) !  sorting index for pols
+        CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPOL ) !  sorted pollutant names
 
 C...........   Array of source characeristics
-        CHARACTER*300           CHARS( MXCHRS )
-  
+        CHARACTER*300           CHARS( 7 )
+
+C...........   Array for reading temporal x-ref fields
+        CHARACTER*20            SEGMENT( MXTCOL )
+
 C...........   Other local variables
-        INTEGER         I, J, J1, J2, K, L, N    !  counters and indices
+        INTEGER         I, J, J1, J2, J3, K, L, N    !  counters and indices
 
         INTEGER         COD     !  temporary pollutant code
         INTEGER         FIP     !  temporary FIPS code
-        INTEGER         IDIU    !  temporary diurnal profile code     
-        INTEGER         IMON    !  temporary monthly profile code     
+        INTEGER         IDIU    !  temporary diurnal profile code
+        INTEGER         IDUM    !  tmp dummy integer
+        INTEGER         IMON    !  temporary monthly profile code
         INTEGER         IOS     !  i/o status
         INTEGER         IWEK    !  temporary weekly profile code
         INTEGER         IREC    !  record counter
-        INTEGER      :: JSCC = 0!  position of SCC in source characteristics
+        INTEGER      :: JS = 0  !  position of SCC in source chars in x-ref file
         INTEGER         JSPC    !  tmp index to master pollutant list
         INTEGER         LINTYPE !  temporary source category code
-        INTEGER         LSA     !  ending position of left side of SCC
-        INTEGER         LSB     !  starting position of right side of SCC
         INTEGER         LPCK    !  length of point definition packet
-        INTEGER         NCHARS  !  number of source characteristics
         INTEGER      :: NCP = 0 !  input point source header parm
+        INTEGER         NFIELD  !  tmp number of fields in LINE
         INTEGER         NLINES  !  number of lines
         INTEGER         NREF    !  number of x-ref entries before filtering
         INTEGER         NXREF   !  number of valid x-ref entries
         INTEGER         RDT     !  temporary road class code
         INTEGER         VTYPE   !  temporary vehicle type number
 
-        LOGICAL      :: EFLAG = .FALSE.   !  error flag
-        LOGICAL      :: HFLAG = .FALSE.   !  header flag
-        LOGICAL      :: PFLAG = .FALSE.   !  true when pol-spec entries skipped
+        LOGICAL      :: EFLAG = .FALSE.   !  true: error occurred
+        LOGICAL      :: HFLAG = .FALSE.   !  true: pt defn header encountered
+        LOGICAL      :: PFLAG = .FALSE.   !  true: pol-spec entries skipped
+        LOGICAL      :: SKIPREC = .FALSE. !  true: skip this x-ref entry
 
-        CHARACTER*1             SCC1        !  1st character of SCC
-        CHARACTER*5             CCOD        !  temporary pol code or position
-
+        CHARACTER*1            SCC1     !  1st character of SCC
+        CHARACTER*5            CPOS     !  tmp sorted position of pol
         CHARACTER*300          LINE     !  line buffer
         CHARACTER*300          MESG     !  message buffer
+
+        CHARACTER(LEN=SICLEN3) CDUM     !  dummy character field for SIC
         CHARACTER(LEN=LNKLEN3) CLNK     !  temporary link code
         CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol
         CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
         CHARACTER(LEN=FIPLEN3) FIPZERO  !  buffer for zero FIPS code
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO  !  buffer for zero SCC
-        CHARACTER(LEN=SCLLEN3) PSCCL    !  left digits of TSCC of prev iteration
-        CHARACTER(LEN=SCLLEN3) SCCL5    !  left digits of TSCC
-        CHARACTER(LEN=SCRLEN3) SCCR5    !  right 5 digits of TSCC
-        CHARACTER(LEN=SCRLEN3) SCRZERO  !  buffer for zero SCCR5
+        CHARACTER(LEN=SCCLEN3) PSCCL    !  left digits of TSCC of prev iteration
+        CHARACTER(LEN=SCCLEN3) SCCL     !  left digits of TSCC
+        CHARACTER(LEN=SCCLEN3) SCCR     !  right 5 digits of TSCC
+        CHARACTER(LEN=SCCLEN3) SCRZERO  !  buffer for zero SCCR
+        CHARACTER(LEN=IOVLEN3) CPOL     !  temporary pollutant
 
         CHARACTER*16 :: PROGNAME = 'RDTREF' ! program name
 
@@ -159,49 +156,34 @@ C.........  Ensure that the CATEGORY is valid
 C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         FIPZERO = REPEAT( '0', FIPLEN3 )
         SCCZERO = REPEAT( '0', SCCLEN3 )
-        SCRZERO = REPEAT( '0', SCRLEN3 )
+        SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
 
-C.........  Sort the actual list of pollutant codes and store it
+C.........  Sort the actual list of pollutant names and store it
         DO I = 1, NIPOL
             INDXP( I ) = I
         ENDDO
 
-        CALL SORTI1( NIPOL, INDXP, PCODES )
+        CALL SORTIC( NIPOL, INDXP, EINAM )
 
         DO I = 1, NIPOL
             J = INDXP( I )
-            SRTPCOD( I ) = PCODES( J )
+            SRTINAM( I ) = EINAM( J )
         ENDDO
 
-C.........  Starting position of right portion of SCC 
-        LSB = SCCLEN3 - SCRLEN3 + 1
-        LSA = LSB - 1
+        CALL M3MSG2( 'Reading temporal cross-reference file...' )
 
-C.........  Create the list of the left portions of the SCCs and count
-        J     = 0
-        PSCCL = '-9'
-        DO I = 1, NINVSCC
+C.........  Set up constants for loop...
 
-            SCCL5 = INVSCC( I )( 1:LSA )
-            IF( SCCL5 .NE. PSCCL ) THEN
-                J = J + 1
-                INVSCL( J ) = SCCL5
-                PSCCL = SCCL5
-            ENDIF
-
-        ENDDO
-        NINVSCL = J
+C.........  Length of point definition packet, plus one
+        LPCK = LEN_TRIM( PDEFPCKT ) + 1 
 
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'Temporal cross reference file' )
 
-C.........  Allocate memory for storing the type of each line
-        ALLOCATE( LTYPE( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LTYPE', PROGNAME )
-
 C.........   First pass through file.  Determine format and count the number
-C            of lines matching CATEGORY.  Do this so that we know how
-C            much memory to allocate for the unsorted, unprocessed arrays.
+C            of lines matching SCC list and pollutant list.  Do this so that 
+C            we know how much memory to allocate for the unsorted, unprocessed 
+C            arrays.
         IREC = 0
         NREF = 0
         DO I = 1, NLINES
@@ -218,30 +200,67 @@ C            much memory to allocate for the unsorted, unprocessed arrays.
                 CYCLE
             END IF
 
+            L = LEN_TRIM( LINE )
+            NFIELD = GETNLIST( L,LINE ) 
+
 C.............  Skip blank lines
             IF( LINE .EQ. ' ' ) THEN
                 CYCLE
 
-C.............  Auto check for LIST or EPS2.0 formated temporal XREF
+C.............  Auto check for LIST or EPS2.0 formated temporal x-ref...
+C.............  If header is found, read point source header information
             ELSEIF( INDEX( LINE, PDEFPCKT ) .GT. 0 ) THEN
                 HFLAG = .TRUE.
-                CYCLE
-                
-            ELSEIF( LEN_TRIM( LINE ) .LE. 36 ) THEN
 
-                FFORMAT = 'LIST' 
+
+                READ( LINE( LPCK:L ), * ) NCP, JS
+
+C.................  Adjust for FIPS code and Plant ID, which are always there
+                NCP = NCP + 2
+                IF( JS .GT. 0 ) JS = JS + 2
+
+C.................  Compare point source definition from header to inventory
+                IF ( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
+
+                CYCLE
+
+C.............  The source-formatted will have only 3 columns                
+            ELSEIF( NFIELD .LE. 3 ) THEN
+
+                FFORMAT = 'SOURCE' 
                 NREF = NLINES     ! equals the number of sources
                 EXIT              ! Exit from read loop
 
             ELSE
-                FFORMAT = 'FIXED'
+                FFORMAT = 'STANDARD'
 
-                L    = LEN_TRIM( LINE )
-                SCC1 = LINE( 21:21 )
+                CALL PARSLINE( LINE, MXTCOL, SEGMENT )
+
+C.................  Make sure SCC is set to SCCZERO if it is missing
+                TSCC = ADJUSTL( SEGMENT( 1 ) )
+                IF( INDEX( TSCC, '-9' ) .GT. 0 ) TSCC = ' '
+                CALL PADZERO( TSCC )
+
+C.................  Get SCC from source definition if it is defined already
+                IF( JS .GT. 0 .AND. TSCC .EQ. SCCZERO ) THEN
+                    TSCC = SEGMENT( 5 + JS )    ! from source definition
+                END IF
+
+                CPOL = SEGMENT( 5 )   ! pollutant name
+                CFIP = SEGMENT( 6 )   ! country/state/county code
+
+C.................  Post-process x-ref information to scan for '-9', pad
+C                   with zeros, compare SCC version master list, compare
+C                   SIC version to master list, and compare pollutant name 
+C                   with master list.
+                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOL, IDUM, 
+     &                         IDUM, JSPC, PFLAG, SKIPREC  )
+
+C.................  Skip lines that are not valid for this inven and src cat
+                IF( SKIPREC ) CYCLE
 
 C.................  Ensure that header is present for point sources and
-C.................  Determine source category for this line
-                IF( L .GT. 48 .AND. .NOT. HFLAG ) THEN
+                IF( CATEGORY .EQ. 'POINT' .AND. .NOT. HFLAG ) THEN
                     EFLAG = .TRUE.
                     HFLAG = .TRUE.  ! To turn off error message
                     MESG = 'ERROR: ' // PDEFPCKT( 1:LPCK ) // 
@@ -249,26 +268,14 @@ C.................  Determine source category for this line
      &                     'point source line.'
                     CALL M3MSG2( MESG )
 
-                ELSEIF( L .GT. 48 ) THEN      ! only point has long lines
-                    LINTYPE = POINTTYP
-
-                ELSEIF( SCC1 .GT. '9' ) THEN  ! only mobile uses 'MV' in SCC
-                    LINTYPE = MOBILTYP
-
-                ELSE                          ! only area is left
-                    LINTYPE = AREATYP
+                ELSE
+                    NREF = NREF + 1
 
                 ENDIF
 
-                LTYPE( I ) = LINTYPE
+            ENDIF     ! End format of temporal x-ref file
 
-                IF( LOCCATS( LINTYPE ) .NE. CATEGORY ) CYCLE   ! to end of loop
-
-                NREF = NREF + 1
-
-            ENDIF
-
-        ENDDO   ! End first pass through file
+        ENDDO         ! End first pass through file
 
         REWIND( FDEV )
 
@@ -283,7 +290,7 @@ C           input formats
 
 C.........  Special section for list-formatted cross-reference file (used only
 C           with EMS-95 inputs).
-        IF( FFORMAT .EQ. 'LIST' ) THEN
+        IF( FFORMAT .EQ. 'SOURCE' ) THEN
 
             DO I = 1, NLINES
 
@@ -319,43 +326,19 @@ C.........  Report format for XREF file
         END IF
 
 C.........  Leave routine for list-formatted file because no grouping needed
-        IF( FFORMAT .EQ. 'LIST' ) RETURN
+        IF( FFORMAT .EQ. 'SOURCE' ) RETURN
 
-C.........  FFORMAT = 'LIST' DOES NOT APPLY AFTER THIS POINT
+C.........  FFORMAT = 'SOURCE' DOES NOT APPLY AFTER THIS POINT
 
 C.........  Allocate memory for unsorted data used in all source categories
         ALLOCATE( ISPTA( NREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ISPTA', PROGNAME )
         ALLOCATE( INDXTA( NREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
-
-C.........   Allocate memory for unsorted data used for a specific category
-        SELECT CASE( CATEGORY )
-
-        CASE( 'AREA' ) 
-
-C NOTE: Insert these when the time comes
-
-        CASE( 'MOBILE' )
-
-C NOTE: Insert these when the time comes
-
-        CASE( 'POINT' )
-            ALLOCATE( CSCCTA( NREF ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
-            ALLOCATE( CSRCTA( NREF ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
-
-        END SELECT
-
-C.........  Set up constants for loop.
-C.........  Length of point definition packet, plus one
-        LPCK = LEN_TRIM( PDEFPCKT ) + 1 
-
-C.........  Format of point source fields - insert spaces
-        DO J = 1, 7
-            PSTARTIN( J ) = PTBEGL3( J ) +  J - 1	
-        ENDDO
+        ALLOCATE( CSCCTA( NREF ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
+        ALLOCATE( CSRCTA( NREF ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
 
 C.........  Initialize character strings
         CHARS = ' ' ! array
@@ -373,7 +356,7 @@ C           the source category of interest
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
      &              'I/O error', IOS, 
-     &              'reading TEMPORAL XREF file at line', IREC
+     &              'reading temporal cross-reference file at line',IREC
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -384,163 +367,113 @@ C.............  Skip blank lines
             J = INDEX( LINE, PDEFPCKT ) ! can be in middle of file
             L = LEN_TRIM( LINE )
 
-C.............  Read point source header information
-            IF( J .GT. 0 ) THEN
-                
-                READ( LINE( LPCK:L ), * ) NCP, JSCC
+C.............  Skip point source header information and filter the line again 
+C               for storing info
+            IF( J .LE. 0 ) THEN
 
-C.................  Adjust for FIPS code and Plant ID
-                NCHARS = NCP + 2
-                IF( JSCC .GT. 0 ) JSCC = JSCC + 2   
-                CYCLE
+C.................  Separate line from file into fields
+                CALL PARSLINE( LINE, MXTCOL, SEGMENT )
 
-            ELSEIF( LOCCATS( LTYPE( I ) ) .EQ. CATEGORY ) THEN
+C.................  Make sure SCC is set to SCCZERO if it is missing
+                TSCC = ADJUSTL( SEGMENT( 1 ) )
+                IF( INDEX( TSCC, '-9' ) .GT. 0 ) TSCC = ' '
+                CALL PADZERO( TSCC )
 
-C.................  Depending on source category, transfer line to temporary
-C                   fields.  In cases where blanks are allowed, do not use
-C                   STR2INT to prevent warning messages.
-                SELECT CASE( CATEGORY )
+C.................  Get SCC from source definition if it is defined already
+                IF( JS .GT. 0 .AND. TSCC .EQ. SCCZERO ) THEN
+                    TSCC = SEGMENT( 5 + JS )    ! from source definition
+                END IF
 
-                CASE( 'AREA' )    ! Same fields for area and mobile
-                CASE( 'MOBILE' )
+                CPOL = SEGMENT( 5 )   ! pollutant name
+                CFIP = SEGMENT( 6 )   ! country/state/county code
 
-                    FIP   = STR2INT( LINE(  1:6  ) )
-                    CLNK  = ADJUSTL( LINE(  7:11 ) )
-                    TSCC  =          LINE( 21:30 )
-                    CCOD  = ADJUSTL( LINE( 32:36 ) )
-                    IMON  = STR2INT( LINE( 38:40 ) )
-                    IWEK  = STR2INT( LINE( 42:44 ) )
-                    IDIU  = STR2INT( LINE( 46:48 ) )
+C.................  Post-process x-ref information to scan for '-9', pad
+C                   with zeros, compare SCC version master list, compare
+C                   SIC version to master list, and compare pollutant name 
+C                   with master list.
+                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOL, IDUM, 
+     &                         IDUM, JSPC, PFLAG, SKIPREC    )
 
-                CASE( 'POINT' )
+C.................  Skip lines that are not valid for this inven and src cat
+                IF( SKIPREC ) CYCLE
 
-C.....................  Store string source characteristics 
-                    DO J = 1, NCHARS
-                        J1 = PSTARTIN( J )
-                        J2 = PSTARTIN( J + 1 ) - 1
-                        CHARS( J ) = LINE( J1:J2 )
-                    ENDDO
-
-C.....................  Get SCC either as part of source def or from other field
-                    IF( JSCC .GT. 0 ) THEN
-                        TSCC = CHARS( JSCC )    ! from source definition
-                    ELSE
-                        TSCC = LINE( 104:113 )  ! from other field
-                    ENDIF
-
-C.....................  Right adjust SCC code and pad with zeros for blanks
-                    CALL PADZERO( TSCC )
-
-                    CCOD = ADJUSTL( LINE( 115:119 ) )
-                    IMON = STR2INT( LINE( 120:122 ) )
-                    IWEK = STR2INT( LINE( 123:125 ) )
-                    IDIU = STR2INT( LINE( 126:128 ) )
-
-C.....................  Check for -9 in FIPS field and convert to zeros
-                    J = INDEX( CHARS( 1 ), '-9' )
-                    IF( J .GT. 0 ) THEN
-                        CHARS( 1 ) = FIPZERO
-                    ELSE
-
-C.........................  Pad left hand side of FIPs code with zeros
-                        CFIP = CHARS( 1 )
-                        CALL PADZERO( CFIP )
-                        CHARS( 1 ) = CFIP
-
-                    ENDIF
-
-                END SELECT
-
-C................. Set left and right portions of SCC
-                SCCL5 = TSCC(   1:LSA     )
-                SCCR5 = TSCC( LSB:SCCLEN3 )
-
-C................. Convert character SCC field to integer SCC number while
-C                  allowing for case that SCC is blank.  If non-blank, compare
-C                  with master SCC list for area and point sources.
-                IF( TSCC .EQ. SCCZERO ) THEN
-                    RDT   = 0
-                    VTYPE = 0
-
-                ELSEIF( CATEGORY .EQ. 'AREA' .OR. 
-     &                  CATEGORY .EQ. 'POINT' ) THEN
-
-                    IF( SCCR5 .EQ. SCRZERO ) THEN
-                        J = FINDC( SCCL5, NINVSCL, INVSCL )
-                    ELSE
-                        J = FINDC( TSCC, NINVSCC, INVSCC )
-                    ENDIF
-
-                    IF( J .LE. 0 ) CYCLE  ! Skip entry if it doesn't apply
-
-                ENDIF
-
-C.................  Ensure that pollutant is in master list of pollutants or
-C                   skip the pollutant-specific entry 
-C.................  Filter the case where the pollutant code is not present
-                IF( CCOD        .EQ. ' '  .OR. 
-     &              CCOD( 1:2 ) .EQ. '-9' .OR.
-     &              CCOD( 1:1 ) .EQ. '0'       ) THEN
-                    COD  = 0
-                    JSPC = 0
-
-                ELSE
-                    COD  = STR2INT( CCOD )
-                    J = FIND1( COD, NIPOL, SRTPCOD )
-
-                    IF( J .LE. 0 ) THEN
-                        PFLAG = .TRUE.  ! indicates skipped pol-spec entries
-                        CYCLE
-                    ELSE
-                         JSPC = INDXP( J )
-                    ENDIF
-
-                ENDIF
-
-C.................  Write pollutant code to a character string
-                WRITE( CCOD, '(I5)' ) COD  
-
-C.................  Check for bad cross-reference code
-                IF( IMON .LE. 0 .OR. IWEK .LE. 0 .OR. IDIU .LE. 0 ) THEN
-                    WRITE( MESG, 94010 ) 
-     &                'WARNING: Skipping bad cross-reference code ' //
-     &                'at line. Values are:' // CRLF() //BLANK16 //
-     &                'Monthly=', IMON, 'Weekly=', IWEK, 'Diurnal=',IDIU
-                    CALL M3MESG( MESG )
+C.................  Check for integers for temporal profile numbers
+                IF( .NOT. CHKINT( SEGMENT( 2 ) ) .OR. 
+     &              .NOT. CHKINT( SEGMENT( 3 ) ) .OR.
+     &              .NOT. CHKINT( SEGMENT( 4 ) )      ) THEN
+                    EFLAG = .TRUE.
+C NOTE: Insert error message
                     CYCLE
 
-                ENDIF
+C.................  Convert temporal profile numbers
+                ELSE
+                    IMON = STR2INT( SEGMENT( 2 ) )
+                    IWEK = STR2INT( SEGMENT( 3 ) )
+                    IDIU = STR2INT( SEGMENT( 4 ) )
+
+C.....................  Check for bad cross-reference code
+                    IF( IMON .LE. 0 .OR. IWEK .LE. 0 .OR.
+     &                  IDIU .LE. 0 ) THEN
+                        WRITE( MESG, 94010 ) 
+     &                   'WARNING: Skipping bad cross-reference code '//
+     &                   'at line. Values are:' // CRLF() // BLANK16 //
+     &                   'Monthly=', IMON, 'Weekly=', IWEK, 'Diurnal=',
+     &                   IDIU
+                        CALL M3MESG( MESG )
+                        CYCLE
+
+                    END IF
+
+                END IF
+ 
+C.................  Write pollutant position to a character string
+                WRITE( CPOS, '(I5)' ) JSPC  
 
                 N = N + 1
                 IF( N .GT. NREF ) CYCLE  ! Ensure no overflow
 
-C.................  Store case-specific fields
+C.................  Store fields
+                CSCCTA( N ) = TSCC
+
+                CSRCALL = ' '
+C.................  Store sorting criteria as right-justified in fields
+C.................  For mobile sources, retrieve link from character field
+C.................  For point sources, retrieve plant + characteristics
                 SELECT CASE( CATEGORY )
 
                 CASE( 'AREA' )
-                    IFIPTA( N ) = FIP
-                    CSCCTA( N ) = TSCC
+
+                    CALL BLDCSRC( CFIP, CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                            POLBLNK3, CSRCALL )
 
                 CASE( 'MOBILE' )
-C NOTE: Insert when the time comes
+                    CLNK = SEGMENT( 7 )
+                    IF( INDEX( CLNK, '-9' ) .GT. 0 ) CLNK = ' '
+                    CHARS( 2 ) = CLNK 
+
+                    CALL BLDCSRC( CFIP, RWTBLNK3, CLNK, CHRBLNK3,
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
+     &                            POLBLNK3, CSRCALL )
 
                 CASE( 'POINT' )
- 
-                    CSCCTA( N ) = TSCC
 
-C.....................  Store sorting criteria as right-justified in fields
-                    CSRCALL = ' '
-                    CALL BLDCSRC( CHARS(1), CHARS(2), CHARS(3),
-     &                             CHARS(4), CHARS(5), CHARS(6),
-     &                             CHARS(7), POLBLNK3, CSRCALL )
+C.....................  Store string source characteristics 
+                    DO J = 2, NCHARS
+                        CHARS( J ) = SEGMENT( 5+J )
+                    ENDDO
 
-                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // CCOD
+                    CALL BLDCSRC( CFIP, CHARS(2), CHARS(3),
+     &                            CHARS(4), CHARS(5), CHARS(6),
+     &                            CHARS(7), POLBLNK3, CSRCALL )
 
                 END SELECT
 
+                CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // CPOS
+
 C.................  Store case-indpendent fields
                 INDXTA( N ) = N
-                ISPTA ( N ) = JSPC ! Save index to original PCODES or zero
+                ISPTA ( N ) = JSPC ! Save index to original EINAM or zero
                 MPRNA ( N ) = IMON
                 WPRNA ( N ) = IWEK
                 DPRNA ( N ) = IDIU
@@ -549,18 +482,10 @@ C.................  Store case-indpendent fields
 
         ENDDO      ! End of loop on I for reading in temporal x-ref file
 
-C.........  Reset number of cross-reference entries in case some were dropped
+C.........  Set actual number of cross-reference entries
         NXREF = N
 
-C.........  Write warning message for pollutants in cross-reference that are
-C           not in master list
-        IF( PFLAG ) THEN
-            MESG = 'Pollutant-specific entries in the temporal ' //
-     &             'cross-reference file have been skipped.'
-            CALL M3WARN( PROGNAME, 0, 0, MESG )
-        ENDIF
-
-C.......  Check for errors reading XREF file, and abort
+C.........  Check for errors reading cross-reference file, and abort
         IF( EFLAG ) THEN
             MESG = 'Problem reading temporal cross-reference file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -568,31 +493,18 @@ C.......  Check for errors reading XREF file, and abort
 
         CALL M3MSG2( 'Processing temporal cross-reference file...' )
 
-C.........  Sort temporal cross-reference entries. Since CCOD was used in 
-C           building CSRCTA, and CCOD will equal "0" when the x-ref entry is
+C.........  Sort temporal cross-reference entries. Since CPOS was used in 
+C           building CSRCTA, and CPOS will equal "0" when the x-ref entry is
 C           not pollutant-specific, the non-pollutant-specific entries will
 C           always appear first.  This is necessary for the table-generating
 C           subroutines.
-        SELECT CASE( CATEGORY )
 
-        CASE( 'AREA' ) 
+        CALL SORTIC( NXREF, INDXTA, CSRCTA )
 
-        CASE( 'MOBILE' ) 
+        CALL XREFTBL( 'TEMPORAL', NXREF )
 
-        CASE( 'POINT' ) 
-
-            CALL SORTIC( NXREF, INDXTA, CSRCTA )
-
-            CALL PXREFTBL( 'TEMPORAL', NXREF, MXCHRS, NCHARS, JSCC,
-     &                     NIPOL, EINAM )
-
-C.............  Deallocate source-specific temporary unsorted arrays
-            DEALLOCATE( CSCCTA, CSRCTA )
-
-        END SELECT
-
-C.........  Deallocate other temporary unsorted arrays
-        DEALLOCATE( LTYPE, MPRNA, WPRNA, DPRNA, INDXTA )
+C.........  Deallocate temporary unsorted arrays
+        DEALLOCATE( CSCCTA, CSRCTA, MPRNA, WPRNA, DPRNA, INDXTA )
 
 C.........  Rewind file
         REWIND( FDEV )
