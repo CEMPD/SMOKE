@@ -279,7 +279,7 @@ C.........  Get date for projection and months for processing
         AMON = GETMENU( 12, 5, 
      &         'Enter first month for factors in PASCFAC', MON )
 
-        ZMON = GETNUM( AMON, 12, 12 ,
+        ZMON = GETNUM( AMON, 12,  9 ,
      &         'Enter last month for factors in PASCFAC' )
 C
 C.........  Open output inventory files for each month.
