@@ -73,10 +73,13 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         C, R                   ! counters
         INTEGER         L2, LE, LF, LG, LI, LP
         INTEGER         LENLAB                 ! length of column label fmt
+        INTEGER         TOT1, TOT2             ! 1st and 2nd part of totals fmt
         INTEGER         WIDTH
 
+        CHARACTER*1     TOTR                   ! temporary totals format type
         CHARACTER*50    LABELFMT               ! output columns lamel format
         CHARACTER*50    OUTFMT                 ! output table format
+        CHARACTER*50    TOTFMT                 ! output totals format
 
         LOGICAL         INTFLAG                ! true if integer FMT on input
 
@@ -127,14 +130,23 @@ C.........  Perform input-format-dependent changes
         ELSEIF( LF .GT. 0 ) THEN
 
             LENLAB = STR2INT( FMT( LF+1:LP-1 ) )
-
+            TOTR   = FMT( LF:LF )
+            TOT1   = LENLAB
+            TOT2   = MAX( 0, STR2INT( FMT( LP+1:L2 ) ) - 1 )
+           
         ELSEIF( LE .GT. 0 ) THEN
 
             LENLAB = STR2INT( FMT( LE+1:LP-1 ) )
+            TOTR   = FMT( LE:LE )
+            TOT1   = LENLAB
+            TOT2   = STR2INT( FMT( LP+1:L2 ) )
 
         ELSEIF( LG .GT. 0 ) THEN
 
             LENLAB = STR2INT( FMT( LG+1:LP-1 ) )
+            TOTR   = FMT( LG:LG )
+            TOT1   = LENLAB
+            TOT2   = MAX( 0, STR2INT( FMT( LP+1:L2 ) ) - 1 )
 
         ENDIF
        
@@ -142,6 +154,8 @@ C.........  Perform input-format-dependent changes
             CALL M3MSG2( 'Bad format in STATELST, using F5.0' )
             LENLAB = 5
             FMT    = 'F5.0'
+            TOT1   = LENLAB
+            TOT2   = MAX( 0, STR2INT( FMT( LP+1:L2 ) ) - 1 )
         ENDIF
 
 C.........  Determine width
@@ -153,8 +167,13 @@ C.........  Create format statement for column labels
 
 C.........  Create format statement for output data rows
 
-        WRITE( OUTFMT, 94010 ) '( I2.2, 2X, ', NCOL, '(' // 
-     &                         FMT( 1:L2 ) // ', 1X ), 2X, A )'
+        WRITE( OUTFMT,94010 ) '( I2.2, 2X, ', NCOL, '(' // 
+     &                        FMT( 1:L2 ) // ', 1X ), 2X, A )'
+
+C.........  Create format statement for output totals
+
+        WRITE( TOTFMT,94010 ) '( I2.2, 2X, ', NCOL, '(' //
+     &                        TOTR, TOT1, '.', TOT2, ', 1X ), 2X, A )'
 
 C.........  Write header
 
@@ -169,6 +188,11 @@ C.........  Write column labels
 66      CONTINUE
 
         WRITE( UNIT, 93000 ) 'STATE NAME'
+
+C.........  Initialize totals
+        DO 88 C = 1, NCOL
+            TOTAL( C ) =  0.
+88      CONTINUE 
 
 C.........  Write data
         IF( INTFLAG ) THEN
@@ -206,14 +230,19 @@ C.........  Write data
 
         IF( INTFLAG ) THEN
 
-            WRITE( UNIT,OUTFMT ) 0, ( INT( TOTAL( C ) ), 
+            WRITE( UNIT,TOTFMT ) 0, ( INT( TOTAL( C ) ), 
      &                                     C = 1, NCOL   ), 'Total'
  
         ELSE 
 
-            WRITE( UNIT,OUTFMT ) 0, ( TOTAL( C ), C = 1, NCOL ), 'Total'
+            WRITE( UNIT,TOTFMT ) 0, ( TOTAL( C ), C = 1, NCOL ), 'Total'
 
         ENDIF
+
+        WRITE( UNIT,93000 ) ' '
+        WRITE( UNIT,93000 ) ' '
+
+        RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
  
