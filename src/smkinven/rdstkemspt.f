@@ -50,6 +50,7 @@ C...........   This module is the inventory arrays
 
 C...........   INCLUDES
         INCLUDE 'CONST3.EXT'    !  physical constants
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -212,12 +213,13 @@ C.............  Read and check coordinates
     
 C.............  If invalid values, pull previously stored (and already
 C               converted values from facility file
-            IF( XVAL <= 0.0 .OR. YVAL <= 0.0 ) THEN
+            IF( XVAL <= AMISS3 .OR. YVAL <= AMISS3 .OR.
+     &          XVAL .EQ. 0.  .AND. YVAL .EQ. 0          ) THEN
                 XVAL = XLOCA( K1 )
                 YVAL = YLOCA( K1 )
     
 C.................  Still no values, skip to next line
-                IF( XVAL <= 0.0 .OR. YVAL <= 0.0 ) CYCLE
+                IF( XVAL <= AMISS .OR. YVAL <= AMISS ) CYCLE
 
 C.............  If valid, convert coordinates from UTM to lat-lon
             ELSE

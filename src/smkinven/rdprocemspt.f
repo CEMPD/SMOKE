@@ -188,7 +188,7 @@ C.............  Loop through matching sources and set values
 C.................  Check for end of array or end of matching sources
                 IF( K1 > NSRC ) EXIT
                 IF( CSOURC( K1 )( 1:KEYLEN ) /= SRCKEY ) EXIT
-                
+                CALL PADZERO( TSCC )
                 CSCC( K1 ) = TSCC
                 
                 K1 = K1 + 1

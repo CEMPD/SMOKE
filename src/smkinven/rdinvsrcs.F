@@ -595,12 +595,12 @@ C.................  Check that source characteristics are correct
             	    CALL M3MESG( MESG )
             	END IF
 	
-                IF( .NOT. CHKINT( TSCC ) ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: SCC code is ' //
-     &      	       'non-integer at line', IREC
-                    CALL M3MESG( MESG )
-                END IF
+c                IF( .NOT. CHKINT( TSCC ) ) THEN
+c                    EFLAG = .TRUE.
+c                    WRITE( MESG,94010 ) 'ERROR: SCC code is ' //
+c     &      	       'non-integer at line', IREC
+c                    CALL M3MESG( MESG )
+c                END IF
 
 C.................  Check source specific characteristics
                 IF( CATEGORY == 'MOBILE' ) THEN
