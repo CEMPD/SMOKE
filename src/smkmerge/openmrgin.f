@@ -765,6 +765,25 @@ C           duration using environment variable settings, then prompt.
 
         END IF   !  if have temporalized inputs and outputs
 
+C.........  Compare base year with episode and warn if not consistent
+        IF( SDATE / 1000 .NE. BYEAR ) THEN
+
+            WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR, 
+     &             'is inconsistent with year ' // CRLF() // BLANK10 //
+     &             'of episode start date', SDATE/1000
+            CALL M3MSG2( MESG )
+
+        ENDIF
+
+C.........  Give a note if running for a projected year
+        IF( PYEAR .NE. BYEAR ) THEN
+
+            WRITE( MESG,94010 ) 'NOTE: Emissions based on projected '//
+     &             'year', PYEAR
+            CALL M3MSG2( MESG )
+
+        END IF
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
@@ -1203,7 +1222,7 @@ C.............  If year information needs to be initialized...
                 BYEAR = GETIFDSC( IODESC, '/BASE YEAR/', .FALSE. ) 
                 PYEAR = GETIFDSC( IODESC, '/PROJECTED YEAR/', .FALSE. )
 
-                IF( YY .GT. 0 ) THEN
+                IF( PYEAR .GT. 0 ) THEN
                     PRJFLAG = .TRUE.
                 ELSE
                     PYEAR = BYEAR
