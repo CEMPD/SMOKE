@@ -238,8 +238,9 @@ C.............  Try for any country/state code match (not, pol-specific)
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                 WRITE( MESG,94010 )
-     &                 'NOTE: Using default gridding surrogate '//
-     &                 'for:'// CRLF()// BLANK10// BUFFER( 1:L2 )
+     &                 'NOTE: Using default gridding ' //
+     &                 'cross-reference for:' //
+     &                 CRLF() // BLANK10 // BUFFER( 1:L2 )
                 CALL M3MESG( MESG )
 
                 CALL SETSOURCE_GSURG
