@@ -62,23 +62,23 @@ C..........    Subroutine arguments and their descriptions
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
 
-C...........   Local variables that are dimensioned by module variables
+C...........   Local variables allocatable arrays
 C...........   These are for sorting groups and outputting in sorted order
-        INTEGER         LOCIDX( NGROUP )
-        INTEGER         LOCGID( NGROUP )
-        INTEGER         LOCCNT( NGROUP )
-        INTEGER         LOCCOL( NGROUP )
-        INTEGER         LOCROW( NGROUP )
+        INTEGER, ALLOCATABLE :: LOCIDX( : )
+        INTEGER, ALLOCATABLE :: LOCGID( : )
+        INTEGER, ALLOCATABLE :: LOCCNT( : )
+        INTEGER, ALLOCATABLE :: LOCCOL( : )
+        INTEGER, ALLOCATABLE :: LOCROW( : )
 
-        REAL            LOCDM ( NGROUP )
-        REAL            LOCFL ( NGROUP )
-        REAL            LOCHT ( NGROUP )
-        REAL            LOCLAT( NGROUP )
-        REAL            LOCLON( NGROUP )
-        REAL            LOCTK ( NGROUP )
-        REAL            LOCVE ( NGROUP )
-        REAL            LOCXL ( NGROUP )
-        REAL            LOCYL ( NGROUP )
+        REAL   , ALLOCATABLE :: LOCDM ( : )
+        REAL   , ALLOCATABLE :: LOCFL ( : )
+        REAL   , ALLOCATABLE :: LOCHT ( : )
+        REAL   , ALLOCATABLE :: LOCLAT( : )
+        REAL   , ALLOCATABLE :: LOCLON( : )
+        REAL   , ALLOCATABLE :: LOCTK ( : )
+        REAL   , ALLOCATABLE :: LOCVE ( : )
+        REAL   , ALLOCATABLE :: LOCXL ( : )
+        REAL   , ALLOCATABLE :: LOCYL ( : )
 
 C...........   Other local variables
         INTEGER         I, J, L      ! indices and counters
@@ -91,6 +91,36 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine WPINGSTK
+
+C.........  Allocate memory for local arrays
+        ALLOCATE( LOCIDX( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCIDX', PROGNAME )
+        ALLOCATE( LOCGID( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCGID', PROGNAME )
+        ALLOCATE( LOCCNT( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCCNT', PROGNAME )
+        ALLOCATE( LOCCOL( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCCOL', PROGNAME )
+        ALLOCATE( LOCROW( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCROW', PROGNAME )
+        ALLOCATE( LOCDM( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCDM', PROGNAME )
+        ALLOCATE( LOCFL( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCFL', PROGNAME )
+        ALLOCATE( LOCHT( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCHT', PROGNAME )
+        ALLOCATE( LOCLAT( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCLAT', PROGNAME )
+        ALLOCATE( LOCLON( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCLON', PROGNAME )
+        ALLOCATE( LOCTK( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCTK', PROGNAME )
+        ALLOCATE( LOCVE( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCVE', PROGNAME )
+        ALLOCATE( LOCXL( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCXL', PROGNAME )
+        ALLOCATE( LOCYL( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCYL', PROGNAME )
 
 C.........  Store sorted information
         DO I = 1, NGROUP
@@ -165,6 +195,11 @@ C.........  Store sorted information
         IF ( .NOT. WRITE3( FNAME, 'YLOCA', SDATE, STIME, LOCYL ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+
+C.........  Deallocate local memory
+        DEALLOCATE( LOCIDX, LOCGID, LOCCNT, LOCCOL, LOCROW
+     &              LOCDM, LOCFL, LOCHT, LOCLAT, LOCLON, LOCTK,
+     &              LOCVE, LOCXL, LOCYL )
 
         RETURN
 
