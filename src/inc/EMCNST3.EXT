@@ -15,7 +15,8 @@ C.........   Physical constants and conversion factors
         REAL, PARAMETER :: FT2M    = 0.3048       ! Feet to meters 
         REAL, PARAMETER :: FT2M3   = FT2M ** 3    ! Cubic feet to cubic meters 
         REAL, PARAMETER :: FLWE2M  = FT2M3 / 60.0 ! ft^3/min to m^3/sec
-        REAL, PARAMETER :: FTOC    = 5./9.        ! Farhenheit to Celcius 
+        REAL, PARAMETER :: FTOC    = 5./9.        ! Fahrenheit to Celcius 
+        REAL, PARAMETER :: CTOF    = 9./5.        ! Celcius to Fahrenheit
         REAL, PARAMETER :: SEC2DAY = 1. / DAY2SEC ! Days to seconds 
         REAL, PARAMETER :: TON2GM  = 907184.74    ! Tons to grams 
         REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons 
