@@ -1,11 +1,55 @@
 
         SUBROUTINE WRM6HEADER( MDEV )
 
+C***********************************************************************
+C  subroutine body starts at line 71
+C
+C  DESCRIPTION:
+C       Writes MOBILE6 header commands to the input file
+C
+C  PRECONDITIONS REQUIRED:
+C       MDEV has been opened
+C       MEPROC pollutant names must match those in this file
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: EMTPOL, NEPOL
+        USE MODEMFAC, ONLY: EMTPOL, NEPOL, OUTPUTHC
         
         IMPLICIT NONE
+
+C...........   INCLUDES:
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         
+C...........   EXTERNAL FUNCTIONS
+        CHARACTER*2, EXTERNAL :: CRLF
+                
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV    ! M6 input file unit no.        
 
@@ -49,7 +93,7 @@ C.........  Loop through pollutants and generate MOBILE6 inputs
                 BASICPOL = TRIM( BASICPOL ) // ' CO'
             CASE( 'NOX' )
                 BASICPOL = TRIM( BASICPOL ) // ' NOX'
-            CASE( 'VOC', 'THC', 'NMH', 'TOG', 'NMO', 'ROG' )
+            CASE( 'VOC', 'THC', 'NMHC', 'TOG', 'NMOG' )
                 BASICPOL = TRIM( BASICPOL ) // ' HC'
             CASE( 'SO4' )
                 PMPOL = TRIM( PMPOL ) // ' SO4'
@@ -82,23 +126,31 @@ C.........  Loop through pollutants and generate MOBILE6 inputs
                     PMPOL = TRIM( PMPOL ) // ' TIRE'
                     WROTE_TIRE = .TRUE.
                 END IF
-            CASE( 'BEN' )
+            CASE( 'BENZENE' )
                 AIRPOL = TRIM( AIRPOL ) // ' BENZ'
-            CASE( 'MTB' )
+            CASE( 'MTBE' )
                 AIRPOL = TRIM( AIRPOL ) // ' MTBE'
-            CASE( 'BUT' )
+            CASE( 'BUTADIENE' )
                 AIRPOL = TRIM( AIRPOL ) // ' BUTA'
-            CASE( 'FOR' )
+            CASE( 'FORM' )
                 AIRPOL = TRIM( AIRPOL ) // ' FORM'
-            CASE( 'ACE' )
-                AIRPOL = TRIM( AIRPOL ) // ' ACETA'
-            CASE( 'ACR' )
-                AIRPOL = TRIM( AIRPOL ) // ' ACROL'
+            CASE( 'ACETALD' )
+                AIRPOL = TRIM( AIRPOL ) // ' ACET'
+            CASE( 'ACROLEIN' )
+                AIRPOL = TRIM( AIRPOL ) // ' ACRO'
             CASE DEFAULT
-                MESG = 'WARNING: Unknown pollutant ' // 
-     &                 TRIM( EMTPOL( I ) ) // ' in MEPROC file. ' //
-     &                 'Pollutant will be ignored.'
-                CALL M3MESG( MESG )
+C.................  Check if current pollutant is output hydrocarbon
+                IF( EMTPOL( I ) == OUTPUTHC ) THEN
+                    BASICPOL = TRIM( BASICPOL ) // ' HC'
+                ELSE
+                    MESG = 'WARNING: Pollutant ' // 
+     &                     TRIM( EMTPOL( I ) ) // ' in MEPROC ' //
+     &                     'file is not a MOBILE6 intrisic ' //
+     &                     'pollutant.' // CRLF() // BLANK10 // 
+     &                     'If this pollutant is not a user-defined ' //
+     &                     'HAP, it will be ignored.'
+                    CALL M3MESG( MESG )
+                END IF
             END SELECT
         END DO
 
