@@ -59,13 +59,14 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: IFIP, TZONES, CSCC, IDIU, IWEK
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FILFMT, LSTSTR
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX,
+     &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC   
 
         IMPLICIT NONE
 
@@ -104,7 +105,7 @@ C           this program
 
 C.........  File units and logical/physical names
 
-	INTEGER    :: ADEV = 0  !  unit no. for REPINVEN file
+        INTEGER    :: ADEV = 0  !  unit no. for REPINVEN file
         INTEGER    :: CDEV = 0  !  unit no. for SCCs description
         INTEGER    :: DDEV = 0  !  unit no. for day-specific input file 
         INTEGER    :: EDEV = 0  !  unit no. for speeds file
@@ -148,7 +149,8 @@ C...........   Other local variables
         INTEGER      :: NDAT = 0   ! tmp no. actual pols & activities
         INTEGER         NFIPLIN    ! number of lines in ZDEV
         INTEGER         NINVARR    ! no. inventory variables to read
-        INTEGER         NRAWBP     ! number of sources x pollutants
+        INTEGER         NRAWBP     ! number of sources with pollutants
+        INTEGER         NRAWSRCS   ! number of unique sources
         INTEGER      :: NVARDY = 0 ! no. day-specific variables
         INTEGER      :: NVSPDY = 0 ! no. day-specific special variables
         INTEGER      :: NVARHR = 0 ! no. hour-specific variables
@@ -223,28 +225,25 @@ C.............  The tables are passed through MODMOBIL
 C.........  Process for ASCII average day or annual inventory
         IF( IFLAG ) THEN
 
-C.............  Read the raw inventory data, and store in unsorted order
+C.............  Read the source information from the raw inventory files, 
+C               store in unsorted order, and determine source IDs
 C.............  The arrays that are populated by this subroutine call
 C               are contained in the module MODSOURC
-            CALL M3MSG2( 'Reading average raw inventory data...' )
+            CALL M3MSG2( 'Reading inventory sources...' )
 
-            CALL RDINVEN( IDEV, XDEV, EDEV, INAME,  
-     &                    NRAWBP, TFLAG, TOXFLG )
+            CALL RDINVSRCS( IDEV, XDEV, EDEV, INAME,
+     &                      NRAWBP, NRAWSRCS, TFLAG, TOXFLG )
 
-            CALL M3MSG2( 'Sorting raw inventory data...' )
+C.............  Read the data from the raw inventory files and store in 
+C               sorted order
+            CALL M3MSG2( 'Reading inventory data...' )
+            
+            CALL RDINVDATA( IDEV, INAME, NRAWBP, TFLAG )
 
-C.............  Sort inventory and pollutants (sources x pollutants). Note that
-C               sources are sorted based on character string definition of the 
-C                source so that source definition can be consistent with that of
-C                the input format.
-
-            CALL SORTIC( NRAWBP, INDEXA, CSOURCA )
-
+C.............  Process inventory records and store in sorted order
             CALL M3MSG2( 'Processing inventory data...' )
 
-C.............  Processing inventory records and store in sorted order
-
-            CALL PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV ) 
+            CALL PROCINVEN( NRAWBP, NRAWSRCS, UDEV, YDEV, CDEV, LDEV ) 
 
 C.............  Integrate criteria and toxic pollutants
             IF( TOXFLG ) THEN
@@ -309,8 +308,8 @@ C.............  Set time zones based on country/state/county code. Note that a
 C               few counties in the Western U.S. are divided by a time zone, so 
 C               this is not perfectly accurate for all counties.
             DO S = 1, NSRC
-        	FIP   = IFIP( S )
-        	TZONES( S ) = GETTZONE( FIP )
+        	    FIP   = IFIP( S )
+        	    TZONES( S ) = GETTZONE( FIP )
             END DO
 
 C.............  Write out primary inventory files. Do this before the day- or 
@@ -345,7 +344,7 @@ C.............  Open output I/O API and ASCII files
             CALL OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, MDEV, SDEV,
      &                       ADEV, VARPATH, VAR_FORMULA )
 
-            MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
+            MESG = 'Writing SMOKE ' // TRIM( CATEGORY ) // 
      &             ' SOURCE INVENTORY file...'
 
             CALL M3MSG2( MESG )
