@@ -461,8 +461,8 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                 J     = LBLANK( INBUF )
                 I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
      &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                TYPE  = INBUF( J+1 : I-1 )
-                AREA  = STR2REAL( INBUF( I+1 : 80 ) )
+                TYPE  = INBUF( J+1 : J+I-1 )
+                AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
                 K     = INDEX1( TYPE, NVEG, VEGID )
 
                 IF ( K .EQ. 0 ) THEN
@@ -585,8 +585,8 @@ C...........   Land use type:  urban forest.  Process subtypes:
                 J     = LBLANK( INBUF )
                 I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
      &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                TYPE  = INBUF( J+1 : I-1 )
-                AREA  = STR2REAL( INBUF( I+1 : 80 ) )
+                TYPE  = INBUF( J+1 : J+I-1 )
+                AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
 
                 K     = INDEX1( TYPE, NVEG, VEGID )
 
@@ -711,8 +711,8 @@ C...........   Land use type:  agriculture.  Process subtypes:
                 J     = LBLANK( INBUF )
                 I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
      &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                TYPE  = INBUF( J+1 : I-1 )
-                AREA  = STR2REAL( INBUF( I+1 : 80 ) )
+                TYPE  = INBUF( J+1 : J+I-1 )
+                AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
 
                 K     = INDEX1( TYPE, NVEG, VEGID )
 
@@ -763,8 +763,8 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                 J     = LBLANK( INBUF )
                 I     = MIN( INDEX( INBUF( J+1:80 ) , ',' ),
      &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
-                TYPE  = INBUF( J+1 : I-1 )
-                AREA  = STR2REAL( INBUF( I+1 : 80 ) )
+                TYPE  = INBUF( J+1 : J+I-1 )
+                AREA  = STR2REAL( INBUF( J+I+1 : 80 ) )
 
                 K     = INDEX1( TYPE, NVEG, VEGID )
 
