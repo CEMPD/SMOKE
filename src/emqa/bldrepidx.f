@@ -368,7 +368,11 @@ C.............  Count the number of unique species
 C.................  Find pollutant or emission type in list and store index
                 I1 = INDEX1( EBUF, NDATALL, DATNAM  ) ! Look in data
                 I2 = INDEX1( EBUF, NDATALL, ETPNAM )  ! Look in emission types
-                I3 = INDEX1( EBUF, NTPDAT, TPNAME )   ! Look in hourly file
+                IF( TFLAG ) THEN
+                    I3 = INDEX1( EBUF, NTPDAT, TPNAME )   ! Look in hourly file
+                ELSE
+                    I3 = 0
+                END IF
 
 C.................  For species based on inventory pollutant, set index
                 IF( I1 .GT. 0 ) THEN
@@ -471,7 +475,13 @@ C               then set it to blank
         END IF      ! End if speciation
 
 C.........  Determine if any reports did not have a DATA instruction
-        I = MINVAL( ALLRPT%NUMDATA )
+        DO V = 1, NREPORT
+            IF( ALLRPT( V )%NUMDATA < 0 ) THEN
+                I = ALLRPT( V )%NUMDATA
+                EXIT
+            END IF
+        END DO
+!        I = MINVAL( ALLRPT%NUMDATA )
 
 C.........  If a report did not have a DATA instruction, then maximum output
 C           variables depends on whether we have speciation or not
