@@ -198,6 +198,7 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 	 setenv REPAGT    $REPORTS/$ASCEN/$ESDATE/repagt.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
 	 setenv REPMGT    $REPORTS/$MSCEN/$ESDATE/repmgt.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
 	 setenv REPPGT    $REPORTS/$PSCEN/$ESDATE/reppgt.$ESDATE.$NDAYS.$GRID.$PSCEN.rpt
+	 setenv REPBGT    $REPORTS/$BSCEN/$ESDATE/repbgt.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
 	 setenv REPEGT    $REPSCEN/repegt.$ESDATE.$NDAYS.$GRID.$ESCEN.rpt
 	 setenv REPAGTC   $REPORTS/$ASCEN/$ESDATE/repagt.$ESDATE.$NDAYS.$GRID.$ASCEN.rpt
 	 setenv REPMGTC   $REPORTS/$MSCEN/$ESDATE/repmgt.$ESDATE.$NDAYS.$GRID.$MSCEN.rpt
@@ -221,13 +222,13 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' ) then
 #
 ## Elevated sources
 #
-   if ( $MRG_POINT == 'Y' && $SMK_PING_YN == 'Y' ) then
+   if ( $MRG_POINT == 'Y' && $SMK_PING_METHOD == 1 ) then
       setenv PINGT      $OUTPUT/pingt.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf    
       setenv PINGTS_L   $OUTPUT/pingts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf 
       setenv PINGTS_S   $OUTPUT/pingts_s.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf 
    endif
 
-   if ( $MRG_POINT == 'Y' && $SMK_ASCIIELEV_YN == 'Y' ) then
+   if ( $MRG_POINT == 'Y' && $SMK_ASCIIELEV_YN == 'Y' || $SMK_ELEV_METHOD == 2 ) then
       setenv ELEVTS_L   $OUTPUT/elevts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.txt 
       setenv ELEVTS_S   $OUTPUT/elevts_s.$ESDATE.$NDAYS.$GRID.$PSCEN.txt 
    endif

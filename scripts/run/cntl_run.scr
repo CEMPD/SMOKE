@@ -10,9 +10,9 @@
 # Time dependent programs need to be processed once
 # for each day needed for the air quality simulation.  
 #
-# Script created by : M. Houyoux and J. Vukovich, North Carolina 
-#                     Supercomputing Center
-# Last edited : December 2000
+# Script created by : M. Houyoux and J. Vukovich, MCNC 
+#                     Environmental Modeling Center 
+# Last edited : April 2002
 #
 #*********************************************************************
 

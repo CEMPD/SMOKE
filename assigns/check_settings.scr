@@ -223,12 +223,20 @@ else
    setenv SMK_ASCIIELEV_YN ' ' 
 endif
 
-if ( $?SMK_PING_YN ) then
-   if ( $SMK_PING_YN == 'y' ) then
-      setenv SMK_PING_YN Y
+if ( $?SMK_PING_METHOD ) then
+   if ( $SMK_PING_METHOD == '1' ) then
+      setenv SMK_PING_METHOD 1
    endif
 else
-   setenv SMK_PING_YN ' ' 
+   setenv SMK_PING_METHOD ' '
+endif
+
+if ( $?SMK_ELEV_METHOD ) then
+   if ( $SMK_ELEV_METHOD == '1' ) then
+      setenv SMK_ELEV_METHOD 1
+   endif
+else
+   setenv SMK_ELEV_METHOD ' '
 endif
 
 if ( $?MRG_GRDOUT_YN ) then
