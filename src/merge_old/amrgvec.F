@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         SUBROUTINE  AMRGVEC( NCOLA, A, NCOFF, NA, IA, MA, NROWS, V )
 
 C***********************************************************************
-C  subroutine body starts at line  44
+C  subroutine body starts at line  63
 C
 C  FUNCTION:  multiply vectors A and P by sparse matrices <NA,IA,CA> 
 C	and add the result to V, for CSGMERGE program.
@@ -17,6 +15,27 @@ C  REVISION  HISTORY:
 C       prototype 2/96 by CJC
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
@@ -39,7 +58,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
 
 
 C***********************************************************************
-C   begin body of subroutine  SMRGVEC
+C   begin body of subroutine  AMRGVEC
 
         KA = 0
 
