@@ -1,5 +1,5 @@
 
-        SUBROUTINE INITSTCY
+        SUBROUTINE INITSTCY( RLZN )
 
 C***********************************************************************
 C  subroutine INITSTCY body starts at line
@@ -60,10 +60,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL   CRLF, ENVYN, FIND1
 
+C...........  SUBROUTINE ARGUMENTS
+       INTEGER, INTENT (IN) :: RLZN     ! uncertainty realization
+
 C...........   Other local variables
 
         INTEGER          IOS      ! i/o status
         INTEGER          J        ! counter
+        INTEGER, SAVE :: LASTR = -1  ! last realization calling
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first time routine called
 
@@ -75,8 +79,10 @@ C***********************************************************************
 C   begin body of subroutine INITSTCY
 
 C.........  Read surrogates (if needed) and state/county names
-        IF( FIRSTIME ) THEN
-        
+        IF( FIRSTIME .OR. RLZN .NE. LASTR ) THEN
+
+            LASTR = RLZN 
+       
 C.............  Allocate memory for indices from Co/st/cy codes to counties
             ALLOCATE( AICNY( NASRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'AICNY', PROGNAME )
