@@ -50,6 +50,9 @@ C...........   This module is the derived meteorology data for emission factors
 C...........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -169,28 +172,21 @@ C.........  Use NAMBUF for using on the HP
 
 C.........  Get source category information from the inventory files
 C.........  Get header description of inventory file
-C.........  Exit if getting the description fails 
-        IF( .NOT. DESC3( ENAME ) ) THEN
-            L = LEN_TRIM( ENAME )
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:L ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.........  Exit if getting the description fails
+        CALL RETRIEVE_IOAPI_HEADER ( ENAME )
 
-C.........  Otherwise, store source-category-specific header information, 
+C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
 C.........  Set ozone-season emissions flag (INVPIDX)
-        ELSE
-            IF( OFLAG ) INVPIDX = 1
-            CALL GETSINFO
+        IF( OFLAG ) INVPIDX = 1
+        CALL GETSINFO
 
-            PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
+        PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
 C.............  Store non-category-specific header information
-            NSRC = NROWS3D
-
-        ENDIF
+        NSRC = NROWS3D
 
 C.........  Open region codes file for determining daylight savings time status
         CDEV = PROMPTFFILE(
@@ -230,12 +226,7 @@ C.........  Use NAMBUF for the HP
             GNAME = NAMBUF
  
 C.............  Get the header description from the min/max temperatures file
-            IF( .NOT. DESC3( GNAME ) ) THEN
-                L = LEN_TRIM( GNAME )
-        	MESG = 'Could not get description of file "' //
-     &                 GNAME( 1:L ) // '"'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RETRIEVE_IOAPI_HEADER( GNAME )
 
 C.............  Check the number of sources in the ungridding matrix
             CALL CHKSRCNO( 'mobile', 'MUMAT', NROWS3D, NSRC, EFLAG )
@@ -246,12 +237,7 @@ C.............  Check the number of sources in the ungridding matrix
             WNAME = NAMBUF
 
 C.............  Get the header description from the min/max temperatures file
-            IF( .NOT. DESC3( WNAME ) ) THEN
-                L = LEN_TRIM( WNAME )
-        	MESG = 'Could not get description of file "' //
-     &                 WNAME( 1:L ) // '"'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RETRIEVE_IOAPI_HEADER( WNAME )
 
 C.............  Check the number of sources in the min/max temperature file
             CALL CHKSRCNO( 'mobile', 'MINMAXT', NROWS3D, NSRC, EFLAG )
@@ -271,12 +257,10 @@ C               for the gridded temperature file
             MNAME = NAMBUF
 
 C.............  Get the header of the gridded temperature file
-            IF( .NOT. DESC3( MNAME ) ) THEN
-                L = LEN_TRIM( MNAME )
-        	MESG = 'Could not get description of file "' //
-     &                 MNAME( 1:L ) // '"'
-        	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RETRIEVE_IOAPI_HEADER( MNAME )
+
+C.............  Initialize reference grid with met file
+            CALL CHKGRID( MNAME, 'GRID', 0, EFLAG )
 
 C.............  Check to make sure the temperature variable of interest is in
 C               the file.
@@ -320,10 +304,7 @@ C                   is in the gridded temperature file
 C.............  Compare the min/max temperature information in the min/max 
 C               temperature file and in the emission factors files...
 C.............  Retrieve header of min/max temperature file
-            IF( .NOT. DESC3( WNAME ) ) THEN
-                MESG = 'Could not get description for file ' // WNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RETRIEVE_IOAPI_HEADER( WNAME )
 
 C.............  Retrieve temperature ranges from min/max file header
 C.............  Populate table of valid min/max temperatures in MODMET
@@ -336,10 +317,7 @@ C.............  Store min/max temperatures for comparison
             MAX2 = MAXT_MAX
 
 C.............  Retrieve header of non-diurnal emission factors file
-            IF( .NOT. DESC3( FNAME ) ) THEN
-                MESG = 'Could not get description for file ' // FNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RETRIEVE_IOAPI_HEADER( FNAME )
 
 C.............  Retrieve temperature ranges from non-diurnal EFs file header
             CALL TMPRINFO( .FALSE., 'NOMINMAX' )
@@ -348,10 +326,7 @@ C.............  Compare mint_min and maxt_max
             CALL COMPARE_TMPRS( 'NOMINMAX' )
 
 C.............  Retrieve header of diurnal emission factors file
-            IF( .NOT. DESC3( NNAME ) ) THEN
-                MESG = 'Could not get description for file ' // NNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RETRIEVE_IOAPI_HEADER( NNAME )
 
 C.............  Retrieve temperature ranges from diurnal EFs file header
             CALL TMPRINFO( .FALSE., 'BOTH' )
@@ -366,6 +341,14 @@ C.............  Compare all min/max temperatures
             TDEV = PROMPTFFILE( 
      &             'Enter logical name for EMISSION PROCESSES file',
      &             .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
+
+C.............  Compare grid information from met file with grid information
+C               in the ungridding matrix.  If the grid is a subgrid of the
+C               met domain, then this will be reflected in the ungridding
+C               matrix, and the call the chkgrid will set the parameters
+C               of the subgrid.  These will be needed in Pretmpr.
+            CALL RETRIEVE_IOAPI_HEADER( GNAME )
+            CALL CHKGRID( GNAME, 'GMAT', 1, EFLAG )
 
         END IF
 
@@ -462,6 +445,28 @@ C..........................................................................
             END IF
 
             END SUBROUTINE COMPARE_TMPRS
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram tries to retrieve the I/O API header
+C               and aborts if it was not successful
+            SUBROUTINE RETRIEVE_IOAPI_HEADER( FILNAM )
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. DESC3( FILNAM ) ) THEN
+
+                MESG = 'Could not get description of file "' //
+     &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+            END SUBROUTINE RETRIEVE_IOAPI_HEADER
 
         END SUBROUTINE OPENTMPIN
 

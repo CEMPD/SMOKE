@@ -2,7 +2,7 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 213
+C  program body starts at line 214
 C
 C  DESCRIPTION:
 C    This program computes the hourly emissions data from inventory emissions 
@@ -64,6 +64,9 @@ C.........  This module contains the lists of unique source characteristics
 
 C.........  This module contains the information about the source category
         USE MODINFO
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
         IMPLICIT NONE
  
@@ -170,7 +173,7 @@ C...........   Other local variables
         INTEGER      :: MLDATE = 0          ! gridded met previous date
         INTEGER      :: MSDATE = 0          ! gridded met start date
         INTEGER      :: MSTIME = 0          ! gridded met start time
-        INTEGER         NGRID               ! no. grid cells
+        INTEGER         NG                  ! no. met grid cells
         INTEGER         NINVARR             ! no. inventory variables to read
         INTEGER         NLINE               ! tmp number of lines in ASCII file 
         INTEGER         NMAJOR              ! no. major sources
@@ -301,7 +304,7 @@ C           retrieve the number of grid cells
         IF( MNAME .NE. ' ' ) THEN
             CALL PRETMPR( MNAME, WNAME, TZONE, TSTEP, SDATE, STIME, 
      &                    NSTEPS, MSDATE, MSTIME, WSDATE, WSTIME, 
-     &                    WEDATE, NGRID)
+     &                    WEDATE )
         END IF
 
 C.........  For day-specific data input...
@@ -432,11 +435,14 @@ C.............  Read header of ungridding matrix...
 C.............  Store number of ungridding factors
             NMATX = NCOLS3D
 
+C.............  Compute number of met data cells
+            NG = ( NCOLS + XOFF ) * ( NROWS + YOFF )
+
 C.............  Allocate memory for ungridding matrix, gridded temperature, 
 C               and PSI index matching
             ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
-            ALLOCATE( TA( NGRID ), STAT=IOS )
+            ALLOCATE( TA( NG ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TA', PROGNAME )
             ALLOCATE( TASRC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TASRC', PROGNAME )

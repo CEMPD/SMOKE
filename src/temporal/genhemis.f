@@ -154,6 +154,8 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTSTP = .TRUE.  ! true: first time step
         LOGICAL, SAVE :: HFLAG              ! true: hour-specific data
         LOGICAL, SAVE :: OUTMSG = .TRUE.    ! true: output message for new day
+        LOGICAL       :: RDFLAG = .TRUE.    ! true: read dy data for this iter
+        LOGICAL       :: RHFLAG = .TRUE.    ! true: read hr data for this iter
         LOGICAL, SAVE :: TMATCALC           ! true: need to calculate new TMAT
         LOGICAL, SAVE :: UFLAG  = .FALSE.   ! true: use src-spec hr profiles
         LOGICAL, SAVE :: WKEMSG = .FALSE.   ! true: wkend-profile msg written
@@ -325,13 +327,17 @@ C               zones may be used for different sources and this approach
 C               is much more workable.
         IF( DFLAG ) THEN
 
+            RDFLAG = .TRUE.
 C.................  Read source index for this day
             IF ( .NOT. READ3( DNAME, 'INDXD', ALLAYS3,
      &                        JDATE, JTIME, INDXD      ) ) THEN
 
-                MESG= 'Could not read "INDXD" from file "' // 
-     &                DNAME //'".'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                WRITE( MESG,94010 ) 'WARNING: Could not read "INDXD" '//
+     &               'from file "'// DNAME//'", at', JDATE, ':', JTIME
+                CALL M3MESG( MESG )
+
+                RDFLAG = .FALSE.
+                INDXD = 0   ! array
 
             END IF      !  if read3() failed on dname
 
@@ -381,13 +387,17 @@ C.........  Write to screen because WRITE3 only writes to LDEV
 C.........  If hour-specific emissions, profiles, or activity data...
         IF( HFLAG ) THEN
 
+            RHFLAG = .TRUE.
 C.............  Read source index for this hour
             IF( .NOT. READ3( HNAME, 'INDXH', ALLAYS3,
      &                       JDATE, JTIME, INDXH      ) ) THEN
 
-                MESG= 'Could not read "INDXH" from file "' // 
-     &                HNAME //'".'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                WRITE( MESG,94010 ) 'WARNING: Could not read "INDXH" '//
+     &               'from file "'// HNAME//'", at', JDATE, ':', JTIME
+                CALL M3MESG( MESG )
+
+                RHFLAG = .FALSE.
+                INDXH = 0   ! array
 
             END IF      !  if read3() failed on HNAME
 
@@ -417,7 +427,7 @@ C.............  Set units conversion factor for this pollutant/activity
 
 C.............  Read hourly emissions/profile/activity if current pollutant or 
 C               emission type has them
-            IF( LHSPOA( V ) ) THEN
+            IF( LHSPOA( V ) .AND. RHFLAG ) THEN
 
                 IF( .NOT. READ3( HNAME, NAMBUF, ALLAYS3,
      &                           JDATE, JTIME, EMACH     ) ) THEN
@@ -449,7 +459,7 @@ C               activity. Also apply units conversion.
             END DO
 
 C.............  If day-specific data are available for current pollutant
-            IF( LDSPOA( V ) ) THEN
+            IF( LDSPOA( V ) .AND. RDFLAG ) THEN
 
 C.................  Read day-specific data
                 NAMBUF = NAMIN( V )
@@ -485,7 +495,7 @@ C                       emissions and hourly profile adjustments
 C.............  If hourly data are available for current pollutant/activity and 
 C               the values are emissions (not profiles), then overwrite with
 C               this data 
-            IF( LHSPOA( V ) .AND. .NOT. LHPROF( V ) ) THEN
+            IF( RHFLAG .AND. LHSPOA( V ) .AND. .NOT. LHPROF( V ) ) THEN
                 DO I = 1, NHRSRC
                     S = INDXH( I )
                     IF( S .EQ. 0 ) CYCLE

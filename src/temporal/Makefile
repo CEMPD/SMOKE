@@ -44,14 +44,16 @@ mktmat.o: $(MODTMPRL)
 	$(FC) $(FFLAGS) -c -o $@ mktmat.f
 opentmp.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ opentmp.f
-opentmpin.o: $(MODMET) $(MODINFO)
+opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ opentmpin.f
+pretmpr.o: $(MODGRID)
+	$(FC) $(FFLAGS) -c -o $@ pretmpr.f
 rdefacs.o: $(MODMOBIL) $(MODEMFAC) $(MODINFO) $(MODMET) $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ rdefacs.f
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ setdaylt.f
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
-            $(MODDAYHR) $(MODLISTS)
+            $(MODDAYHR) $(MODLISTS) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ temporal.f
 tmnamunt.o: $(MODEMFAC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ tmnamunt.f
