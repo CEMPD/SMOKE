@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -88,6 +88,7 @@ C...........   Other local variables
         LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
         LOGICAL       :: ORSIN   = .FALSE.  ! Ture: DOE plant ID in input file
         LOGICAL       :: ORSFLAG = .FALSE.  ! True: DOE plant ID requested
+        LOGICAL       :: PDSIN   = .FALSE.  ! True: plant desc in input file
         LOGICAL       :: PDSFLAG = .FALSE.  ! True: plant description requested
         LOGICAL       :: SCCFLAG = .FALSE.  ! True: SCC requested
         LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
@@ -448,6 +449,10 @@ C.................  Determine if boiler is present
                 J = INDEX1( 'Boiler code', NCOL, HEADER )
                 BLRIN = ( J .GT. 0 )
 
+C.................  Determine if plant description is present
+                J = INDEX1( 'Facility description', NCOL, HEADER )
+                PDSIN = ( J .GT. 0 )
+
 C.................  If DOE plant ID not present but has been requested, then 
 C                   internal err
                 IF( .NOT. ORSIN .AND. ORSFLAG ) THEN
@@ -486,14 +491,21 @@ C.....................  Initialize temporary characteristics
 
 C.....................  Read in line of character data
 
-                    IF( BLRIN ) THEN
+                    IF( BLRIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CPDS
 
-                    ELSE
-
+                    ELSE IF( PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CPDS
+
+                    ELSE IF( BLRIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
+
+                    ELSE
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS
 
                     ENDIF
 
