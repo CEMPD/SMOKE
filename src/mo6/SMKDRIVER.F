@@ -6,6 +6,11 @@ C  Calls MOBILE.
 C 
 C  Changes: (Last change first) 
 C 
+C  16 Jan 02 AIR Task 11: Added INERR to PROCHDR parameter list to 
+C            improve error handling. Improved TOTERR error handling. 
+C            Fixed unassigned output on unit 2. 
+C  10 Jan 01 @EPA-bag bug371 change error message filename 
+C  13 Dec 01 AIR Task 29: Added INQUIRE to error message logic. 
 C  10 Apr 11 AIR Task 11: Redirected error messages to IOUERR file. 
 C  29 Sep 00 AIR Task 07: Corrected syntax error in 150 FORMAT. 
 C  02 Oct 00 @EPA-djb Bug230, Removed unused I/O devices. 
@@ -67,25 +72,24 @@ C
       IMPLICIT NONE 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'VDATA.I' 
-
-      INTEGER, EXTERNAL :: JUNIT
-
-      EXTERNAL BD01,     BD01P5,   BD02P5,   BD03,     BD04,     
-     &         BD04P5,   BD05,     BD06,     BD07,     BD08P5,   
-     &         BD10,     BD11,     BD12,     BD15,     BD16, 
-     &         BD17,     BD19,     BD20,     BD23,     BD24,   
-     &         BD25,     BD27,     BD28,     BD28P5,   BD29, 
-     &         BD30,     BD31,     BD33,     BD34,     BD35, 
-     &         BD36,     BD37,     BD38,     BD39,     BD40,
-     &         BD41,     BD42,     BD43,     BD44,     BD45, 
-     &         BD46,     BD47,     BD48,     BDEV01,   BDSPEED1, 
-     &         BDSPEED2, BDUNIT,   BD_AC,    BD_IM1,   BD_IM2,
-     &         BD_NGV,   BD_SFTP,  BD_TIER2, BD_T2PM  
-
+C     
+      INTEGER, EXTERNAL :: JUNIT 
+C 
+      EXTERNAL BD01,     BD01P5,   BD02P5,   BD03,     BD04,      
+     &         BD04P5,   BD05,     BD06,     BD07,     BD08P5,    
+     &         BD10,     BD11,     BD12,     BD15,     BD16,  
+     &         BD17,     BD19,     BD20,     BD23,     BD24,    
+     &         BD25,     BD27,     BD28,     BD29,     BD30,      
+     &         BD31,     BD33,     BD34,     BD35,     BD36,  
+     &         BD37,     BD38,     BD39,     BD40,     BD41,      
+     &         BD42,     BD43,     BD44,     BD45,     BD46,      
+     &         BD47,     BD48,     BDEV01,   BDSPEED1, BDSPEED2,  
+     &         BDUNIT,   BD_AC,    BD_IM1,   BD_IM2,   BD_NGV,    
+     &         BD_SFTP,  BD_TIER2, BD_T2PM   
+C 
       CHARACTER(LEN=80), INTENT (IN) :: INPFILE    ! Mobile6 input file name
       INTEGER          , INTENT (IN) :: MDEV       ! input file unit number
       INTEGER          , INTENT (IN) :: LDEV       ! SMOKE log file unit number
-
 C 
       LOGICAL,PARAMETER         ::  BACK=.TRUE. 
       LOGICAL                   ::  BATMODE 
@@ -153,11 +157,11 @@ C     Input Units:
       IOUXIM = 0       ! opened in GETXIM.F
       IOUIMD = 0       ! opened in GETM5IM.F and RDT12C.F
 ccs      IOUIN  =  5 
-      IOUALT = 0       ! opened in DBOPTS.F, GET94E.F, GET94P.F, GETATHAPS.F
-                       !   GETCONV.F, GETDSACT.F, GETFVMT.F, GETHSACT.F
-                       !   GETMAR.F, GETNGVEF.F, GETNGVFR.F, GETNH3BER.F
-                       !   GETNH3SDR.F, GETPMDR1.F, GETPMDR2.F, GETPMSCF.F
-                       !   GETPMZML.F, and GETREG.F 
+      IOUALT = 0       ! opened in DBOPTS.F, GET94E.F, GET94P.F, GETATHAPS.F, 
+                       !   GETCONV.F, GETDSACT.F, GETFVMT.F, GETHSACT.F, 
+                       !   GETMAR.F, GETMPG.F, GETNGVEF.F, GETNGVFR.F, GETNH3BER.F, 
+                       !   GETNH3SDR.F, GETPMDDR1.F, GETPMDDR2.F, GETPMDZML.F, 
+                       !   GETPMGDR1.F, GETPMGDR2.F, GETPMGZML.F, and GETREG.F  
 ccs      IOUBAT = 19 
 C 
 C     NOTE: Unit numbers 51-57 are reserved for the database output 
@@ -167,10 +171,15 @@ C     Output units:
       IOUERR = JUNIT()
       IOUOUT = LDEV 
       IOUNULL = -1 
+C
+      IOUPM = 0 
+      IOUAT = 0 
+      IOUSS = 0       
+C 
 C 
 C     Open the IOUERR file and initialize total errors 
 C 
-      OPEN(IOUERR,FILE='M61ERROR.TXT') 
+      OPEN(IOUERR,FILE='M6ERROR.TXT') 
 C 
       TOTERR = 0 
 C 
@@ -230,7 +239,6 @@ C        period, look FIRST for a file with the given name and an extension
 C        of '.IN' and THEN, if that file is not found, look for a file with 
 C        the given name and no added extension. 
 C 
-
 ccs         CALL UCCOMP(INPFILE,ROOT) 
 ccs         CALL LJCOMP(INPFILE,ROOT)
 
@@ -374,7 +382,7 @@ C
 C        Read the header of the input file. Set the output flags and 
 C        open the output files, using default names if necessary. 
 C 
-         CALL PROCHDR(INPFILE,CMDOUTPUT,CMDACTION,RC) 
+         CALL PROCHDR(INPFILE,CMDOUTPUT,CMDACTION,INERR,RC) 
          IF (RC /= 0) THEN 
             WRITE(BUFFER1,130) RC,INPFILE 
   130       FORMAT(' *** ERROR ',I9,' processing the header of', 
@@ -382,7 +390,7 @@ C
             CALL LJCOMP(BUFFER1,BUFFER2) 
             WRITE(IOUOUT,"(' ',A)") BUFFER2(1:LEN_TRIM(BUFFER2)) 
             WRITE(IOUERR,"(' ',A)") BUFFER2(1:LEN_TRIM(BUFFER2)) 
-            INERR=INERR+1 
+            TOTERR = TOTERR + INERR 
 ccs            EXIT MAINLOOP 
          ENDIF 
 ccs         NUMDID = NUMDID + 1 
@@ -463,6 +471,7 @@ C
       WRITE(IOUOUT,'(A150)') BUFFER2 
       WRITE(IOUERR,'(A150)') BUFFER2 
       INERR=INERR+1 
+      TOTERR=TOTERR+INERR
       GOTO 99 
 C 
    85 CONTINUE 
@@ -471,6 +480,7 @@ C
       CALL LJCOMP(BUFFER1, BUFFER2) 
       WRITE(IOUOUT,'(A150)') BUFFER2 
       WRITE(IOUERR,'(A150)') BUFFER2 
+      TOTERR=TOTERR+INERR
       INERR=INERR+1 
       GOTO 99 
 C 
@@ -490,15 +500,15 @@ C
         CLOSE (IOUERR,STATUS='DELETE') 
       ELSE 
         WRITE(IOUOUT,595) TOTERR 
-        WRITE(IOUREP,595) TOTERR 
+        INQUIRE(IOUREP,OPENED=FOPEN)
+        IF(FOPEN) WRITE(IOUREP,595) TOTERR 
   595 FORMAT(// 
      *       ' ATTENTION: At least ',I3,' error(s) occurred during'/ 
-     *       '            this MOBILE6.1 run. Please review the'/ 
-     *       '            messages in the file M61ERROR.TXT,'/ 
+     *       '            this MOBILE6 run. Please review the'/ 
+     *       '            messages in the file M6ERROR.TXT,'/ 
      *       '            correct the problems, and try again.') 
       ENDIF 
 C 
-ccs      PAUSE 
       RETURN 
 C 
 C # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
