@@ -1,7 +1,7 @@
 # Version "@(#)$Id$ $Source$ $Date$ 
 #
-all: faketemp.debug getrecs.debug mappoint.debug mkmplist.debug \
-     smk2emis.debug smk2pts.debug srggrid.debug
+all: faketemp.debug mappoint.debug mkmplist.debug \
+     multmat.debug smk2emis.debug smk2pts.debug srggrid.debug
 #
 # compile-link options for subroutines
 #
@@ -18,16 +18,6 @@ FTMPI=PARMS3.EXT FDESC3.EXT IODECL3.EXT GRDIMS3.EXT
 faketemp.debug: $(FTMP) $(FTMPI)
 	echo FAKETEMP:
 	f77 $(DBGFLAGS) -o faketemp.debug $(FTMP) $(LIBS)
-#
-#
-#
-OBJS = getrecs.F
-
-INCS = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT
- 
-getrecs.debug: $(OBJS) $(INCS)
-	echo GETRECS:
-	f77 $(DBGFLAGS) -o getrecs.debug $(OBJS) $(LIBS)
 #
 #
 #
@@ -51,22 +41,36 @@ mkmplist.debug: $(MKMP) $(MKMI)
 #
 #
 #
-EMIS = smk2emis.F trans.F chkgrd.F chktmp.F  chkvar.F
+MULTM = multmat.F
+
+MULTI = ARDIMS3.EXT PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT \
+        CHDIMS3.EXT TMDIMS3.EXT
+
+multmat.debug: $(MULTM) $(MULTI)
+	echo MULTMAT:
+	f77 $(DBGFLAGS) -o multmat.debug $(MULTM) $(LIBS)
+#
+#
+#
+EMIS = smk2emis.F trans.F chkgrd.F chktmp.F chkvar.F
+
+SHAREDINC = $(SMKROOT)/inc/Shared
 
 EINC = PARMS3.EXT FDESC3.EXT GRDIMS3.EXT IODECL3.EXT PTDIMS3.EXT \
-       uamcntl.inc uamregn.inc param.inc mrguam.inc
+       $(SHAREDINC)/uamcntl.inc $(SHAREDINC)/uamregn.inc \
+       $(SHAREDINC)/param.inc $(SHAREDINC)/mrguam.inc
 
 smk2emis.debug: $(EMIS) $(EINC)
 	echo SMK2EMIS:
-	f77 $(DBGFLAGS) -o smk2emis.debug $(EMIS) $(LIBS2)
+	f77 $(DBGFLAGS) -I$(SHAREDINC) -o smk2emis.debug $(EMIS) $(LIBS2)
 #
 #
 #
 PTS = smk2pts.F chktmp.F chkvar.F rdepsd.F
 #
-smk2pts.debug: $(OBJS) $(EINC)
+smk2pts.debug: $(PTS) $(EINC)
 	echo SMK2PTS:
-	f77 $(DBGFLAGS) -o smk2pts.debug $(PTS) $(LIBS2)
+	f77 $(DBGFLAGS) -I$(SHAREDINC) -o smk2pts.debug $(PTS) $(LIBS2)
 #
 #
 #
