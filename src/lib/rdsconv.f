@@ -118,6 +118,8 @@ C.........  Other local variables
         CHARACTER(LEN=STALEN3) CSTA      ! tmp Cy/St code
         CHARACTER(LEN=FIPLEN3) CFIP      ! tmp Cy/St/Co code
         CHARACTER(LEN=FIPLEN3) FIPZERO   ! zero Cy/St/Co code
+        CHARACTER(LEN=FIPLEN3+SCCLEN3) CFIPSCC   ! Cy/St/Co code // SCC
+        CHARACTER(LEN=FIPLEN3+SCCLEN3) PFIPSCC   ! Cy/St/Co code // SCC
         CHARACTER(LEN=SCCLEN3) TSCC      ! tmp SCC
         CHARACTER(LEN=SCCLEN3) SCCZERO   ! zero SCC 
         CHARACTER(LEN=FIPLEN3-STALEN3) CYIDZERO ! zero county code
@@ -295,6 +297,7 @@ C.........  Allocate memory for pollutant conversion and initialize to 1.0
         CALL CHECKMEM( IOS, 'CNVRT01', PROGNAME )
         IF( NCNV1 .GT. 0 ) THEN
             CNVFC01 = 1.0
+            CNVRT01 = ' '
         ENDIF
 
         NCNV2 = N( 2 )
@@ -304,6 +307,7 @@ C.........  Allocate memory for pollutant conversion and initialize to 1.0
         CALL CHECKMEM( IOS, 'CNVRT02', PROGNAME )
         IF( NCNV2 .GT. 0 ) THEN
             CNVFC02 = 1.0
+            CNVRT02 = ' '
         ENDIF
 
         NCNV3 = N( 3 )
@@ -313,10 +317,12 @@ C.........  Allocate memory for pollutant conversion and initialize to 1.0
         CALL CHECKMEM( IOS, 'CNVRT03', PROGNAME )
         IF( NCNV3 .GT. 0 ) THEN
             CNVFC03 = 1.0
+            CNVRT03 = ' '
         ENDIF
 
 C.........  Store pollutant conversion factors in sorted tables
-        N = 0  ! array
+        PFIPSCC = ' '
+        N = 0             ! array
         PREVPCV = EMCMISS3
         DO I = 1, NCONV
 
@@ -330,8 +336,13 @@ C.........  Store pollutant conversion factors in sorted tables
             CFIP = PCV(       1:FIPLEN3 )
             TSCC = PCV( PLTPOS3:FPSLEN3 )
 
-            N( T ) = N( T ) + 1
-            K = N( T )
+            CFIPSCC = CFIP // TSCC
+
+            IF( CFIPSCC .NE. PFIPSCC ) THEN
+                N( T ) = N( T ) + 1
+                K = N( T )
+                PFIPSCC = CFIPSCC
+            END IF
 
             IF( PCV .EQ. PREVPCV ) THEN
 
@@ -377,6 +388,10 @@ C.........  Store pollutant conversion factors in sorted tables
             PREVPCV = PCV
 
         END DO
+
+        NCNV1 = N( 1 )
+        NCNV2 = N( 2 )
+        NCNV3 = N( 3 )
 
 C.........  Deallocate temporary sorting arrays
         DEALLOCATE( INDX, PCVA, TYPA, FACA )
