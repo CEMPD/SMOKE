@@ -93,7 +93,6 @@ C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 C...........   Temporary array for flagging sources that are outside the
 C              domain and for flagging sources with all zero surrogate fractions
         LOGICAL, ALLOCATABLE :: INDOMAIN( : ) ! true: src is in the domain
-        LOGICAL, ALLOCATABLE :: SRCSTAT ( : ) ! true: src has non-zero surgs
 
         INTEGER, ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
 
@@ -118,7 +117,6 @@ C...........   Other local variables
         CHARACTER*16    COORUNIT  !  coordinate system projection units
         CHARACTER*16    GRDNM     !  grid name
         CHARACTER*80    GDESC     !  grid description
-        CHARACTER*300   BUFFER    !  source fields buffer
         CHARACTER*300   MESG      !  message buffer 
 
         CHARACTER(LEN=SRCLEN3)    CSRC  ! tmp source chars string
@@ -162,8 +160,6 @@ C.........  Allocate memory for temporary gridding matrix and other
         CALL CHECKMEM( IOS, 'CS', PROGNAME )
         ALLOCATE( INDOMAIN( NASRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDOMAIN', PROGNAME )
-        ALLOCATE( SRCSTAT( NASRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCSTAT', PROGNAME )
         ALLOCATE( FIPNOSRG( NINVIFIP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FIPNOSRG', PROGNAME )
 
@@ -213,24 +209,31 @@ C.............  Loop through all of the cells intersecting this FIPS code.
             DO K = 1, NCELLS( F )
             
                 C    = FIPCELL( K,F )  ! Retrieve cell number
-                FRAC = SRGFRAC( ISIDX,K,F )
-                J    = NX( C )
 
-C.................  Check that the maximum number of sources per cell is ok
-C.................  Note that this J comparison to MXSCEL is not the typical
-C                   .LE. on purpose.
-                IF ( J .LT. MXSCEL .AND. FRAC .NE. 0. ) THEN
-                    J = J + 1
-                    IS ( J,C ) = S
-                    CS ( J,C ) = FRAC
+C.................  Set the surrogate fraction
+                CALL SETFRAC( ISIDX, K, F, NCHARS, INDOMAIN( S ), 
+     &                        CSRC, FRAC )
 
-C.................  Keep track of the maximum sources per cell for error mesg
-                ELSE
-                    IF( J+1 .GT. JMAX ) JMAX = J+1
-                END IF
+                IF( FRAC .GT. 0 ) THEN
 
-C.................  Store the count of sources for current cell
-                NX( C )   = J
+                    J    = NX( C )
+C.....................  Check that the maximum number of sources per cell is ok
+C.....................  Note that this J comparison to MXSCEL is not the typical
+C                       .LE. on purpose.
+                    IF ( J .LT. MXSCEL .AND. FRAC .NE. 0. ) THEN
+                	J = J + 1
+                	IS ( J,C ) = S
+                	CS ( J,C ) = FRAC
+
+C.....................  Keep track of the maximum sources per cell for err mesg
+                    ELSE
+                	IF( J+1 .GT. JMAX ) JMAX = J+1
+                    END IF
+
+C.....................  Store the count of sources for current cell
+                    NX( C )   = J
+
+                END IF  ! if surrogate fraction > 0.
 
             END DO    !  end of loop on cells K for this FIP
 
@@ -251,9 +254,6 @@ C.........  Abort if overflow occurred
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
         END IF
-
-C.........  Initialize status of sources as getting zero gridding factors
-        SRCSTAT = .FALSE.  ! array
 
 C.........  Compress matrix into I/O representation from scratch 
 C.........  representation and compute statistics.
@@ -277,7 +277,6 @@ C.........  representation and compute statistics.
                     S       = IS( N,C )
                     IX( K ) = S
                     CX( K ) = CS( N,C )
-                    SRCSTAT( S ) = .TRUE.
                 END IF
             END DO
                    
@@ -294,28 +293,12 @@ C.........  Write gridding matrix
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Report sources that go to zero because of the gridding factors
-        DO S = 1, NASRC
-
-            IF( .NOT. SRCSTAT( S ) ) THEN
-
-                CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                WRITE( MESG,94010 ) 
-     &                 'WARNING: Surrogate data will cause zero ' //
-     &                 'emissions inside the grid for:'// CRLF()// 
-     &                 BLANK10// BUFFER( 1:L2 )
-                CALL M3MESG( MESG )
-
-            END IF
-
-        END DO
-
 C.........  Report FIPS that don't have surrogate data
 C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, 0, FIPNOSRG, ' ' )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( IS, CS, INDOMAIN, SRCSTAT, FIPNOSRG )
+        DEALLOCATE( IS, CS, INDOMAIN, FIPNOSRG )
 
         RETURN
 

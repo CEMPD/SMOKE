@@ -65,11 +65,12 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
+        INTEGER         ENVINT
         INTEGER         FIND1
         INTEGER         FINDC
         LOGICAL         DSCM3GRD
 
-        EXTERNAL        CRLF, FIND1, FINDC, DSCM3GRD
+        EXTERNAL        CRLF, ENVINT, FIND1, FINDC, DSCM3GRD
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name
@@ -124,17 +125,17 @@ C...........   Other local variables
 
         INTEGER         C, F, I, J, K, N, S !  indices and counters.
 
-        INTEGER         FIP     !  tmp country/state/county code
-        INTEGER         IOS   ! i/o status
-        INTEGER         ISIDX    !  tmp surrogate ID code index
-        INTEGER         JMAX    !  counter for storing correct max dimensions
-        INTEGER         L2    ! string length
-        INTEGER         LFIP  !  cy/st/co code from previous iteration
-        INTEGER         LNKEND  !  width of sourc info to end of link ID
-        INTEGER         NCEL  ! tmp number of cells 
-        INTEGER         NLKOGRD !  no. of link sources outside the grid
-        INTEGER         NNOSRG  !  no. of cy/st/co codes with no surrogates
-        INTEGER         RWT     !  tmp roadway type
+        INTEGER         FIP      !  tmp country/state/county code
+        INTEGER         IOS      !  i/o status
+        INTEGER         ISIDX    !  surrogate ID code index
+        INTEGER         JMAX     !  counter for storing correct max dimensions
+        INTEGER         L2       !  string length
+        INTEGER         LFIP     !  cy/st/co code from previous iteration
+        INTEGER         LNKEND   !  width of sourc info to end of link ID
+        INTEGER         NCEL     !  tmp number of cells 
+        INTEGER         NLKOGRD  !  no. of link sources outside the grid
+        INTEGER         NNOSRG   !  no. of cy/st/co codes with no surrogates
+        INTEGER         RWT      !  tmp roadway type
 
         REAL            ADJ, ADJC   ! tmp adjustment factors
         REAL            ALEN        ! link length
@@ -151,9 +152,9 @@ C...........   Other local variables
         CHARACTER*300   BUFFER    !  source fields buffer
         CHARACTER*300   MESG      !  message buffer 
 
-        CHARACTER(LEN=LNKLEN3)    CLNK  ! tmp link ID
-        CHARACTER(LEN=SRCLEN3)    CSRC  ! tmp source chars string
-        CHARACTER(LEN=SRCLEN3)    LCSRC ! prev iteration source chars string
+        CHARACTER(LEN=LNKLEN3)    CLNK   ! tmp link ID
+        CHARACTER(LEN=SRCLEN3)    CSRC   ! tmp source chars string
+        CHARACTER(LEN=SRCLEN3)    CSRC2  ! tmp truncated source chars string
 
         CHARACTER*16 :: PROGNAME = 'GENMGMAT' ! program name
 
@@ -180,9 +181,9 @@ C.........  Store grid parameters for later processing
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
-            ENDIF
+            END IF
 
-        ENDIF
+        END IF
 
 C.........  Initialize number of sources per cell counter
         NX = 0   ! Array
@@ -236,6 +237,7 @@ C.......       sixth case:   fallback default
             RWT  = IRCLAS( S )
             CLNK = CLINK ( S )
             CSRC = CSOURC( S )
+            CSRC2= CSRC( 1:VTPPOS3-1 )  ! abridged for these purposes
 
 C.............  Initialize sources as being in the domain
             INDOMAIN( S ) = .TRUE.
@@ -270,7 +272,7 @@ C.................  Make sure that there was enough storage
 
 C.................  If link is outside the grid, store its information and 
 C                   go to next loop iteration
-                ELSEIF( NCEL .EQ. 0 ) THEN
+                ELSE IF( NCEL .EQ. 0 ) THEN
 
                     NLKOGRD = NLKOGRD + 1
                     LKOGRD( NLKOGRD ) = CSRC( 1:LNKEND )
@@ -278,7 +280,7 @@ C                   go to next loop iteration
                     CYCLE
                     
 C.................  Write error if the link has no starting coordinates = ending
-                ELSEIF( NCEL .EQ. -1 ) THEN
+                ELSE IF( NCEL .EQ. -1 ) THEN
 
                     EFLAG = .TRUE.
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
@@ -287,7 +289,7 @@ C.................  Write error if the link has no starting coordinates = ending
                     CALL M3MESG( MESG )
                     CYCLE
 
-                ENDIF
+                END IF
 
 C.................  Loop through cells intersecting the current link
                 DO K = 1, NCEL
@@ -308,7 +310,7 @@ c     &                         // ' applied for ' // CRLF() // BLANK10//
 c     &                         BUFFER( 1:L2 )
 c                        CALL M3MSG2( MESG )
 
-c                    ENDIF
+c                    END IF
 
 C.....................  Make sure cell ID is in valid range.
                     IF( C .GT. NGRID .OR. C .LT. 0 ) THEN
@@ -324,7 +326,7 @@ C.....................  Otherwise, increase the count of sources for this cell
                     ELSE
                         J = NX( C ) + 1
 
-                    ENDIF
+                    END IF
 
 C.....................  Check that the maximum number of sources per cell is ok
                     IF ( J .LE. MXSCEL ) THEN
@@ -416,11 +418,14 @@ C.............  Keep track of sources that are outside the domain
 
             END IF
 
-C.............  Loop through all of the cells intersecting this FIPS code. 
+C.............  Loop through all of the cells intersecting this co/st/cy code. 
             DO K = 1, NCELLS( F )
             
                 C = FIPCELL( K,F )   ! Retrieve cell number
-                FRAC = SRGFRAC( ISIDX,K,F )
+
+C.................  Set the surrogate fraction
+                CALL SETFRAC( ISIDX, K, F, 2, INDOMAIN( S ), 
+     &                        CSRC2, FRAC )
 
                 IF( FRAC .GT. 0 ) THEN
 
@@ -563,40 +568,12 @@ C.........  Create renormalization factors for each source
             END DO
         END DO
 
-C.......   Pre-divide normalization factors
-        LCSRC = ' '
+C.........  Pre-divide normalization factors - make sure not zero
+C.........  Have already given notes and warnings about zero-surrogates
         DO S = 1, NMSRC
 
-            FIP  = IFIP  ( S )
-            RWT  = IRCLAS( S )
-            CLNK = CLINK ( S )
-            CSRC = CSOURC( S )( 1:VTPPOS3-1 )  ! abridged for these purposes
+            IF( DN( S ) .GT. 0. ) DN( S ) = 1. / DN( S )
 
-C.............  Check that we haven't already reported the source is outside the
-C               domain
-            IF( INDOMAIN( S ) ) THEN
-
-C.................  Check if gridding surrogates are zero for this source, and
-C                   report it if they are.
-                IF( DN( S ) .LE. 0. .AND. CSRC .NE. LCSRC ) THEN
-
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    WRITE( MESG,94010 ) 
-     &                     'WARNING: Surrogate data will cause zero ' //
-     &                     'emissions inside the grid for:'// CRLF()// 
-     &                     BLANK10// BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-
-C.................  If are NOT in list of no surrogates, then pre-divide.
-                ELSE 
-
-                    DN( S ) = 1. / DN( S )
-
-                END IF
-
-                LCSRC = CSRC  ! Store sourc info for next iteration
-
-            END IF
         END DO
 
 C.........  Renormalize and Transpose ((IS,CS) into scratch arrays (IT,CT):
