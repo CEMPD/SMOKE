@@ -239,67 +239,74 @@ C               to zero. Use logical expression to test for equality
             CHKDIFF = ( ABS( VMAX - VMIN - VINTV ) .LE. 1.0E-4 )
             IF( VMAX - VMIN .LT. VINTV .OR. CHKDIFF ) THEN
 
-                METIDX( S,1:4 ) = 0  ! array  
-
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                 WRITE( MESG, 94020 ) 'Max - min ' // DESC // ' is < ' //
      &                 'the processing interval', VINTRVL, 'for' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L ) // '.' //
-     &                 CRLF() // BLANK10 // 
-     &                 'Will be treated as Max = Min for current day.'
+     &                 CRLF() // BLANK10 // 'The minumum ' //
+     &                 'interval will be used for current day.'
                 CALL M3MESG( MESG )
-                CYCLE  ! To head of loop
 
-C.............  Find min/max in valid list and store to index array for source
-            ELSE
+                VMIN = MNVMN + VINTV *
+     &                 INT( ( VMAX - VINTV - 1. - MNVMN ) / VINTV )
 
-C.................  Find min/max value in valid list of temperatures in order
-C                   to be sure that the values will match with the min/max
-C                   combos list
-                
-                T1 = FINDR1( VMIN, NALL, VALIDALL )
-                T2 = FINDR1( VMAX, NALL, VALIDALL )
+                IF( VMIN .LE. MINV_MIN ) THEN
 
-                IF( T1 .LE. 0 .OR. T2 .LE. 0 ) THEN
-
-                    EFLAG = .TRUE.
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-
-                    WRITE( MESG,94010 )
-     &                     'INTERNAL ERROR: Min/Max temperature '//
-     &                     'processing invalid for:' //
-     &                     CRLF() // BLANK10 // BUFFER( 1:L )
-                    CALL M3MSG2( MESG )
-                    CYCLE
+                    VMIN = MINV_MIN
+                    VMAX = REAL( MNVMN + VINTV *
+     &                     INT(( MINV_MIN +VINTV +1. - MNVMN)/ VINTV ) )
 
                 END IF
-
-                VMIN2 = VALIDALL( T1 + 1 )
-                VMAX2 = VALIDALL( MIN( T2 + 1, NALL ) ) 
-
-                K(1)= FINDR2( VMIN , VMAX , NVALID, VALIDMIN, VALIDMAX ) 
-                K(2)= FINDR2( VMIN2, VMAX , NVALID, VALIDMIN, VALIDMAX )
-                K(3)= FINDR2( VMIN , VMAX2, NVALID, VALIDMIN, VALIDMAX )
-                K(4)= FINDR2( VMIN2, VMAX2, NVALID, VALIDMIN, VALIDMAX )
-
-                IF( K( 1 ) .LE. 0 .OR. K( 2 ) .LE. 0 .OR.
-     &              K( 3 ) .LE. 0 .OR. K( 4 ) .LE. 0      ) THEN
-
-                    EFLAG = .TRUE.
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-
-                    WRITE( MESG,94010 )
-     &                     'INTERNAL ERROR: Min/Max temperature '//
-     &                     'processing invalid for:' //
-     &                     CRLF() // BLANK10 // BUFFER( 1:L )
-                    CALL M3MSG2( MESG )
-                    CYCLE
-
-                END IF
-
-                METIDX( S,1:4 ) = K( 1:4 )   ! array
 
             END IF
+
+C.............  Find min/max in valid list and store to index array for source
+
+C.............  Find min/max value in valid list of temperatures in order
+C               to be sure that the values will match with the min/max
+C               combos list
+                
+            T1 = FINDR1( VMIN, NALL, VALIDALL )
+            T2 = FINDR1( VMAX, NALL, VALIDALL )
+
+            IF( T1 .LE. 0 .OR. T2 .LE. 0 ) THEN
+
+                EFLAG = .TRUE.
+                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
+
+                WRITE( MESG,94010 )
+     &                     'INTERNAL ERROR: Min/Max temperature '//
+     &                     'processing invalid for:' //
+     &                     CRLF() // BLANK10 // BUFFER( 1:L )
+                CALL M3MSG2( MESG )
+                CYCLE
+
+            END IF
+
+            VMIN2 = VALIDALL( T1 + 1 )
+            VMAX2 = VALIDALL( MIN( T2 + 1, NALL ) ) 
+
+            K(1)= FINDR2( VMIN , VMAX , NVALID, VALIDMIN, VALIDMAX ) 
+            K(2)= FINDR2( VMIN2, VMAX , NVALID, VALIDMIN, VALIDMAX )
+            K(3)= FINDR2( VMIN , VMAX2, NVALID, VALIDMIN, VALIDMAX )
+            K(4)= FINDR2( VMIN2, VMAX2, NVALID, VALIDMIN, VALIDMAX )
+
+            IF( K( 1 ) .LE. 0 .OR. K( 2 ) .LE. 0 .OR.
+     &          K( 3 ) .LE. 0 .OR. K( 4 ) .LE. 0      ) THEN
+
+                EFLAG = .TRUE.
+                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
+
+                WRITE( MESG,94010 )
+     &                     'INTERNAL ERROR: Min/Max temperature '//
+     &                     'processing invalid for:' //
+     &                     CRLF() // BLANK10 // BUFFER( 1:L )
+                CALL M3MSG2( MESG )
+                CYCLE
+
+            END IF
+
+            METIDX( S,1:4 ) = K( 1:4 )   ! array
 
         END DO
 
