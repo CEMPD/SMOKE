@@ -19,6 +19,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 1/99 by M. Houyoux
+C     Revised 9/01 by A. Holland
 C
 C*************************************************************************
 C
@@ -49,6 +50,9 @@ C.........  This module is for cross reference tables
 
 C.........  This module contains the information about the source category
         USE MODINFO
+        
+C.........  This module contains uncertainty-specific settings
+	USE MODUNCERT
 
         IMPLICIT NONE
 
@@ -118,6 +122,7 @@ C...........   Other local variables
         LOGICAL    :: RFLAG = .FALSE.  ! true: operation type is reactivty cntls
         LOGICAL    :: SFLAG = .FALSE.  ! true: operation type is speciation
         LOGICAL    :: TFLAG = .FALSE.  ! true: operation type is temporal
+        LOGICAL    :: UFLAG = .FALSE.  ! true: operation type is uncertainty
 
         CHARACTER*1            CDUM          ! dummy character string
         CHARACTER*300          BUFFER        ! source definition buffer
@@ -188,6 +193,9 @@ C.........  Check for valid operation type
             POADFLT = .FALSE.
             MFLAG   = .TRUE.
             NFLAG   = .FALSE.
+        CASE( 'UNCERT' )
+            POADFLT = .TRUE.
+            UFLAG   = .TRUE.
 
         CASE DEFAULT
 
@@ -225,8 +233,9 @@ C.........  For CSRC, don't include pollutant for grouping.
         DO I = 1, NXREF
 
             J = INDXTA( I )
-
+            
             CSRC    = CSRCTA( J )( 1:SC_ENDP( NCHARS ) )
+
             TSCC    = CSCCTA( J )
             IF( NFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
 
@@ -239,7 +248,7 @@ C               because we have now stored SCC separately.  It will be
 C               much easier to group the source characteristics this way.
 C               Still go back to using original definition when storing
 C               in tables (i.e., use CSRC)
-            IF( JSCC .GT. 0 ) THEN
+            IF( CATEGORY .EQ. 'POINT' .AND. JSCC .GT. 0 ) THEN
                 DO J = JSCC, NCHARS - 1
                     CHARS( J ) = CHARS( J + 1 )
                 END DO
@@ -255,7 +264,7 @@ C.............  Set up partial strings for checking
             SCCR    = TSCC( RSCCBEG:SCCLEN3 )
             CSRCSCC = CSRC // TSCC
             CNFIP   = CSRC( SC_BEGP( PLTIDX ):SC_ENDP( NCHARS ) )
-  
+
 C.............  Select cases
 C.............  Note that since these are sorted in order of increasing FIPS
 C               code, SCC, pollutant index, etc., that the entries with zero for
@@ -439,6 +448,7 @@ c                    END IF
 
 C.....................  Loop through plant-specific characteristics. Only the
 C                       plant is permitted to not have an SCC not specified
+
                     NT = 9 + MXCHRS - 1
                     DO J = MXCHRS, 2, -1
 
@@ -467,6 +477,7 @@ C                       plant is permitted to not have an SCC not specified
                             EXIT                      ! End loop with NT
 
                         ELSEIF( NT .EQ. 10 ) THEN
+
                             CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
 
                             MESG = 'INTERNAL ERROR: Check XREFTBL ' //
@@ -573,6 +584,11 @@ C.........  Speeds
         ELSE IF( PFLAG ) THEN
 c             CALL ALOCPTBL( N( 1 ) )
 c             CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
+
+C.........  Uncertainty x-ref tables
+        ELSE IF( UFLAG ) THEN
+              CALL ALOCUTBL( NUOVAR, N( 1 ) )
+              CALL FILLUTBL( NUOVAR, NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
 C.........  All control x-ref tables
         ELSE

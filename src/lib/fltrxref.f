@@ -18,6 +18,7 @@ C
 C
 C  REVISION  HISTORY:
 C      Started 3/99 by M. Houyoux
+C      Uncertainty changes by A. Holland (2/02)
 C
 C**************************************************************************
 C
@@ -51,6 +52,9 @@ C.........  This module contains the lists of unique source characteristics
 
 C.........  This module contains the information about the source category
         USE MODINFO
+        
+C.........  This module contains uncertainty-specific settings
+	USE MODUNCERT
 
         IMPLICIT NONE
 
@@ -209,7 +213,15 @@ C.........  Ensure that pol/act is in master list of pol/act or
 C           skip the pollutant/activity-specific entry
         ELSE
 
-            IXPOA = INDEX1( CPOA, NIPPA, EANAM )
+	    IF( .NOT. UCFLAG ) THEN
+            
+                IXPOA = INDEX1( CPOA, NIPPA, EANAM )
+                
+            ELSE
+            
+                IXPOA = INDEX1( CPOA, NUOVAR, UONAMES )
+                
+            END IF
 
             IF( IXPOA .LE. 0 ) THEN
             
