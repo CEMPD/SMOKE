@@ -70,9 +70,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         INTEGER         INDEX1
         CHARACTER*16    PROMPTMFILE
+        INTEGER         PROMPTFFILE
         INTEGER         TRIMLEN
 
         EXTERNAL        GETNUM, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
+
+C...........    Mods for reading in gridded solar radiation
+ 
+        REAL*4          TSFC(NCOLS, NROWS), TSOLAR(NCOLS, NROWS)
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -127,7 +132,13 @@ C.......   Name tables for file NNAME
 
         CHARACTER*16    NORMV( BTYPES * ( BSPCS - 1 ) )  !  names for VOC-emission vbles
         CHARACTER*16    NORMN( LUSES )                  !  names for  NO-emission vbles
-
+        CHARACTER*72    PARMENU( 4 )               ! Methods to calc. PAR
+        DATA     PARMENU
+     &           / 'Use observational clouds',
+                   'Use MM5 generated RGND',
+                   'Use KUO cloud attenuation',
+                   'Use KF  cloud attenuation'   /
+            
 
 C***********************************************************************
 C   begin body of program TMPBIO
@@ -153,27 +164,44 @@ C   begin body of program TMPBIO
             CALL M3EXIT( 'TMPBIO', 0, 0, 'Ending program TMPBIO', 0 )
         END IF
 
-C.......   Get cross-point grid parameters file and its description
+C.......   Get the method to calculate PAR
 
-        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
+         PARTYPE = GETMENU( 4, 2, 'How will PAR be calculated?')
+
+C.......   Get input files
+
+C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
 
         NNAME = PROMPTMFILE( 
      &          'Enter name for NORMALIZED EMISSIONS input file',
      &          FSREAD3, 'BNORM', 'TMPBIO' )
 
-        GNAME = PROMPTMFILE( 
-     &          'Enter name for GRID_CRO_2D input file',
-     &          FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
+        IF ( PARTYPE .EQ. 2 ) THEN
 
-        MNAME = PROMPTMFILE( 
-     &          'Enter name for MET_CRO_3D input file',
-     &          FSREAD3, 'MET_CRO_3D', 'TMPBIO' )
+           INDEV = PROMPTMFILE(
+     &             'Enter name for PAR and SFC. TEMP input file',
+     &             FSREAD3, 'SOLAR', 'TMPBIO' )
+           IF ( .NOT. DESC3( INDEV ) ) THEN
+               MESG = 'Could not get description of file "' //
+     &                INDEV( 1:TRIMLEN( INDEV ) ) // '"'
+               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+           END IF
 
-        IF ( .NOT. DESC3( MNAME ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             MNAME( 1:TRIMLEN( MNAME ) ) // '"'
-            CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
-        END IF
+        ELSE
+           GNAME = PROMPTMFILE( 
+     &             'Enter name for GRID_CRO_2D input file',
+     &             FSREAD3, 'GRID_CRO_2D', 'TMPBIO' )
+           MNAME = PROMPTMFILE( 
+     &             'Enter name for MET_CRO_3D input file',
+     &             FSREAD3, 'MET_CRO_3D', 'TMPBIO' )
+           IF ( .NOT. DESC3( MNAME ) ) THEN
+               MESG = 'Could not get description of file "' //
+     &                MNAME( 1:TRIMLEN( MNAME ) ) // '"'
+               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+           END IF
+
+        END IF    ! PARTYPE
+
 
         JDATE = SDATE3D
         JTIME = STIME3D
@@ -232,11 +260,12 @@ C.......   Build name table for variables in normalized emissions file"
 24      CONTINUE
 
 C...........   Read time-independent data:
-
-        IF ( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, LAT ) ) THEN
-             MESG = 'Could not read LAT from file "' //
-     &              GNAME( 1:TRIMLEN( GNAME ) ) // '"'
-            CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+        IF ( PARTYPE .NE. 2 ) THEN     ! Use cloud to calc. PAR
+           IF ( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, LAT ) ) THEN
+              MESG = 'Could not read LAT from file "' //
+     &                GNAME( 1:TRIMLEN( GNAME ) ) // '"'
+              CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+           END IF
         END IF
 
         IF ( .NOT. READ3( GNAME, 'LON', 1, 0, 0, LON ) ) THEN
@@ -292,32 +321,51 @@ C.......   Loop on time steps:
         JTIME = STIME
 
         DO  899  HR = 1, NHRS
+           IF ( PARTYPE .EQ. 2 ) THEN      ! Use RGRND
+              IF ( .NOT. READ3( INDEV, 'PAR', ALLAYS3, JDATE,
+     &             JTIME, TSOLAR(1,1) ) ) THEN
+                 MESG = 'Could not read from file SOLAR'
+                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+              END IF
+ 
+              IF ( .NOT. READ3( INDEV, 'TA', ALLAYS3, JDATE,
+     &             JTIME, TSFC(1,1) ) ) THEN
+                 MESG = 'Could not read from file SOLAR'
+                 CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+              END IF
+ 
+ 
+              CALL HRBIOS( JDATE, JTIME,
+     &                   PINE, DECD, CONF, AGRC, LEAF, OTHR, AVLAI,
+     &                   NORNO, TSFC, TSOLAR, EMIS )
+           ELSE
 
-            IF ( .NOT. READ3( MNAME, 'TA', 1, 
-     &                      JDATE, JTIME, TASFC ) ) THEN
-                MESG = 'Could not read TA from file "' //
-     &                 MNAME( 1:TRIMLEN( MNAME ) ) // '"'
-                CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
-            END IF
+              IF ( .NOT. READ3( MNAME, 'TA', 1, 
+     &             JDATE, JTIME, TASFC ) ) THEN
+                 MESG = 'Could not read TA from file "' //
+     &                   MNAME( 1:TRIMLEN( MNAME ) ) // '"'
+                 CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
+              END IF
 
-            IF ( .NOT. READ3( MNAME, 'PRES', 1, 
-     &                      JDATE, JTIME, PRSFC ) ) THEN
-                MESG = 'Could not read PRES from file "' //
-     &                 MNAME( 1:TRIMLEN( MNAME ) ) // '"'
-                CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
-            END IF
+              IF ( .NOT. READ3( MNAME, 'PRES', 1, 
+     &                        JDATE, JTIME, PRSFC ) ) THEN
+                  MESG = 'Could not read PRES from file "' //
+     &                   MNAME( 1:TRIMLEN( MNAME ) ) // '"'
+                  CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
+              END IF
 
-            CALL HRBIO( JDATE, JTIME, LAT, LON, PRSFC, TASFC,
-     &                  PINE, DECD, CONF, LEAF, OTHR, AVLAI, NORNO,
-     &                  EMIS )
+              CALL HRBIO( JDATE, JTIME, LAT, LON, PRSFC, TASFC,
+     &                    PINE, DECD, CONF, LEAF, OTHR, AVLAI, NORNO,
+     &                    EMIS )
+           END IF 
 
-            IF ( .NOT. WRITE3( ENAME, 'ALL', 
-     &                         JDATE, JTIME, EMIS ) ) THEN
-                CALL M3EXIT( 'TMPBIO', JDATE, JTIME, 
-     &                       'Error writing BIO OUTPUT file' , 2 )
-            END IF                              !  if write3 failed
+           IF ( .NOT. WRITE3( ENAME, 'ALL', 
+     &                        JDATE, JTIME, EMIS ) ) THEN
+               CALL M3EXIT( 'TMPBIO', JDATE, JTIME, 
+     &                      'Error writing BIO OUTPUT file' , 2 )
+           END IF                              !  if write3 failed
 
-            CALL NEXTIME( JDATE, JTIME, 10000 )
+           CALL NEXTIME( JDATE, JTIME, 10000 )
 
 899     CONTINUE                !  end loop on hours HR
 
