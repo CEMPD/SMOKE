@@ -987,14 +987,14 @@ C.......   Read file header for spatial allocation factor file:
         ELSE IF ( YY .LT. -1.0E-4 * YCELSZ ) THEN
             CALL M3EXIT( 'RAWBIO', 0, 0,
      &                   'Bad BUTMN placement in SURROGATE file', 2 )
-c       ELSE IF ( EUTME .LT. 
+c sl        ELSE IF ( EUTME .LT. 
 c    &            XORIG3D + ( NCOLS3D + 1.0E-4 ) * XCELSZ ) THEN
 c           CALL M3EXIT( 'RAWBIO', 0, 0,
 c    &                   'Bad EUTME placement in SURROGATE file', 2 )
 c       ELSE IF ( EUTMN .LT.
 c    &            YORIG3D + ( NROWS3D + 1.0E-4 ) * YCELSZ ) THEN
 c           CALL M3EXIT( 'RAWBIO', 0, 0,
-c    &                   'Bad EUTMN placement in SURROGATE file', 2 )
+c sl     &                   'Bad EUTMN placement in SURROGATE file', 2 )
         END IF
 
         DWIDTH  = 1.0 / XCELSZ
@@ -1005,7 +1005,8 @@ c    &                   'Bad EUTMN placement in SURROGATE file', 2 )
 211     CONTINUE                !  head of loop:  read SURROGATE FACTORS file
 
             READ( SDEV, 93020, IOSTAT = ISTAT, END = 299 )
-     &          FIPS,
+c sl     &          FIPS,
+     &          FIP,
      &          XCOOR,
      &          YCOOR,
      &          ZONE,
@@ -1019,7 +1020,7 @@ c    &                   'Bad EUTMN placement in SURROGATE file', 2 )
                 CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
             END IF
             
-            K = FIND1( FIPS, NFIP, FIPS )
+            K = FIND1( FIP, NFIP, FIPS )
             IF ( K .LE. 0 ) THEN
                 EFLAG = .FALSE.
                 WRITE( MESG, 94010 ) 
@@ -1139,7 +1140,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( 1X, A4, 3 F9.0, F6.0, I2 )
 
-93020   FORMAT( 4 F10.0, I10, 2F10.0 )
+c sl 93020   FORMAT( 4 F10.0, I10, 2F10.0 )
+93020   FORMAT( I5, 2F10.0, I10, 15F10.4 )
 
 
 C...........   Internal buffering formats............ 94xxx
