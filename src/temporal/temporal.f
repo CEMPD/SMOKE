@@ -91,6 +91,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         GETNUM
         INTEGER         INDEX1
+        LOGICAL         ISDSTIME
         CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         INTEGER         RDTPROF
@@ -99,7 +100,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         SETENVVAR
 
         EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, 
-     &              GETDATE, GETFLINE, GETNUM, INDEX1, MMDDYY,
+     &              GETDATE, GETFLINE, GETNUM, INDEX1, ISDSTIME, MMDDYY,
      &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT, SETENVVAR
                         
 C.........  LOCAL PARAMETERS and their descriptions:
@@ -213,6 +214,7 @@ C...........   Other local variables
 
         REAL            RTMP                ! tmp float
 
+        LOGICAL      :: DAYLIT    = .FALSE.  ! true: TZONES are in daylight time
         LOGICAL         DFLAG   !  true: day-specific  file available
         LOGICAL      :: EFLAG = .FALSE.  !  error-flag
         LOGICAL      :: EFLAG2= .FALSE.  !  error-flag (2)
@@ -1128,6 +1130,26 @@ C.............  Write supplemental temporal profiles file
 C.............  Loop through time steps for current pollutant group
             DO T = 1, NSTEPS
 
+C.................  Adjust sources' time zones to account for daylight time...
+C.................  Subtract 1 if date is daylight time and TZONES is not already
+C                   converted.  Add 1 if date is standard and TZONES has been
+C                   converted.
+C.................  FLTRDAYL is a source-array of 0s and 1s to permit sources
+C                   to not get daylight time conversion.
+                IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
+                    
+                    DAYLIT = .TRUE.
+                    
+                    TZONES = TZONES - 1 * FLTRDAYL   ! arrays
+                
+                ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
+                
+                    DAYLIT = .FALSE.
+                
+                    TZONES = TZONES + 1 * FLTRDAYL   ! arrays
+                
+                END IF
+                    
                 IF( NIACT .GT. 0 ) THEN
 
 C.....................  Create array of emission factors by source
