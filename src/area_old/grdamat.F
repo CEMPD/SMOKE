@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM GRDAMAT
 
 C***********************************************************************
-C  program body starts at line 171
+C  program body starts at line 208
 C
 C  DESCRIPTION:
 C       Construct area source gridding matrix from data contained in
@@ -14,6 +12,7 @@ C  PRECONDITIONS REQUIRED:
 C       Sorted, cut-down input data for surrogate coeffs.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
+C       RDASCC()
 C       Models-3 I/O
 C       FIND1, FIND2, FIND3, GETYN, PROMPTFFILE, PROMPTMFILE, TRIMLEN
 C
@@ -24,12 +23,34 @@ C       Version   11/95 by CJC sorts GREF on the fly; more sophisticated
 C       error trapping.
 C
 C       Version   1/96 by CJC reads FIP-X-Y surrogate coeff files
+C
+C       Version   9/96 by CJC reads EMS-95 formatted files
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
+C                Modeling System
+C File Version: @(#)$Id$
+C Pathname:     $Source$
+C Last updated: $Date$ 
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  29909-2889
+C
+C env_progs@mcnc.org
+C
+C***************************************************************************/
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
-        
+
         INCLUDE 'ARDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
@@ -39,147 +60,166 @@ C...........   INCLUDES:
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
+        CHARACTER*2     CRLF
+        LOGICAL         DSCGRID
         INTEGER         FIND1, FIND2, FIND3
         LOGICAL         GETYN
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        LOGICAL         DSCGRID
         INTEGER         STR2INT
+        REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        DSCGRID, FIND1, FIND2, FIND3, GETYN, 
-     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, TRIMLEN
+        EXTERNAL        CRLF, DSCGRID, FIND1, FIND2, FIND3, GETYN, 
+     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL, 
+     &                  TRIMLEN
 
+C...........   PARAMETERS:
 
-C...........   PARAMETER:
+        INTEGER         NRMAX                   !  max # of surrogate records
+        INTEGER         NSMAX                   !  max # of surrogate coeffs
+        INTEGER         NXMAX                   !  max # of XREF entries
+        CHARACTER*5     BLANK5
 
-        INTEGER         NAMAX
-        PARAMETER     ( NAMAX = NASCC + NASRC )
+        PARAMETER     ( NRMAX = 275 000 ,
+     &                  NSMAX =  45 000 ,
+     &                  NXMAX = 240 000 ,
+     &                  BLANK5= ' '      )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   NOTE that ASC (area-source-category) ID's are 10-digit
 C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
+C...........   Area Sources Table
 
-        INTEGER     FIP
-        INTEGER     SID
-        INTEGER     ID7
-        INTEGER     ID3
-        INTEGER     LFIP, LID7, LID3
-        INTEGER     COL
-        INTEGER     ROW
-        INTEGER     ZONE
-        INTEGER     CMAX, CMIN
-        REAL        XDUM, YDUM, SDUM, TDUM, UDUM, VDUM
-        REAL        DDX, DDY
-        REAL        FRAC( NASRG )         !  (scratch) surrogate fractions
+        INTEGER     IFIPS( NASRC )  	  !  source FIPS (county) ID
+        INTEGER     ISCC7( NASRC )  	  !  leading-7  digits of source ASC
+        INTEGER     ISCC3( NASRC )  	  !  trailing-3 digits of source ASC
+        INTEGER     SRGID( NASRC )  	  !  surrogate number (1...NASRG)
 
-        CHARACTER*7 ID7C
-        CHARACTER*3 ID3C
+C...........   Actual-FIPS table
+
+        INTEGER     NFIPLIST              !  # of actual FIPS
+        INTEGER     FIPLIST( NAFIP     )  !  Actually-occurring FIP-codes list
+        INTEGER     SRCLIST( NAFIP + 1 )  !  source index   for FIP, & sentinel
+
+C.......   Actually-occurring ASC table
  
-C.......   Actually-occurring ASC table (used for filtering out 
-C.......   irrelevant xrefs
-
         INTEGER     NASC
         INTEGER     ASCA7( NASCC )
         INTEGER     ASCA3( NASCC )
 
-C...........   XREF before sorting:                                 
+C...........   Area GRIDDING XREF before sorting
 
-        INTEGER     NUMSCA           !  current surrogates-table count
-        INTEGER     INDEXA( NAMAX )  !  FIP associated with this surrogate
-        INTEGER     SRFIPA( NAMAX )  !  FIP associated with this surrogate
-        INTEGER     SRGIDA( NAMAX )  !  surrogate munber (1...15)
-        INTEGER     ASCI7A( NAMAX )  !  leading-7  digits of ASC     
-        INTEGER     ASCI3A( NAMAX )  !  trailing-3 digits of ASC
+        INTEGER     NAREF		  !  number of XREF entries
+        INTEGER     INDEXA( NXMAX )       !  sorting index
+        INTEGER     AFIPSA( NXMAX )  	  !  FIPs codes in XREF
+        INTEGER     ASCX7A( NXMAX )  	  !  leading-7  digits of ASC in XREF
+        INTEGER     ASCX3A( NXMAX )  	  !  trailing-3 digits of ASC in XREF
+        INTEGER     SSCXDA( NXMAX )  	  !  surrogate number (1...NASRG)
 
-C...........   XREF after sorting and processing: Surrogates::ASC tables 
+C...........   Area GRIDDING XREF after sorting and processing
 C...........   (TWO tables, one for FIP==0; the other for FIP-specific data.
 
-        INTEGER     NUMSC0          !  current surrogates-table count
-        INTEGER     SRGID0( NASCC ) !  surrogate munber (1...15)
-        INTEGER     ASCI70( NASCC ) !  leading-7  digits of ASC     
-        INTEGER     ASCI30( NASCC ) !  trailing-3 digits of ASC
+        INTEGER     NPRNF                 !  no-FIP surrogates-table count
+        INTEGER     ASCX70( NASCC )       !  leading-7  digits of ASC
+        INTEGER     ASCX30( NASCC )       !  trailing-3 digits of ASC
+        INTEGER     SSCXD0( NASCC )       !  surrogate munber (1...NASRG)
 
-        INTEGER     NUMSCC          !  current surrogates-table count
-        INTEGER     SRFIP( NASRC )  !  FIP associated with this surrogate
-        INTEGER     SRGID( NASRC )  !  surrogate munber (1...15)
-        INTEGER     ASCI7( NASRC )  !  leading-7  digits of ASC     
-        INTEGER     ASCI3( NASRC )  !  trailing-3 digits of ASC
+        INTEGER     NPRFC                 !  FIP:ASCT surrogates-table count
+        INTEGER     AFIPS ( NXMAX )       !  leading-7  digits of ASC
+        INTEGER     ASCX7 ( NXMAX )       !  leading-7  digits of ASC
+        INTEGER     ASCX3 ( NXMAX )       !  trailing-3 digits of ASC
+        INTEGER     SSCXD ( NXMAX )       !  surrogate number (1...NASRG) by ASC
 
-C...........   Surrogate-cell::FIPS table
-        
-        INTEGER     NFIPLIST                        !  # of FIPS
-        INTEGER     NCELLS (               NAFIP )  !  # cells per FIP
-        INTEGER     FIPLIST(               NAFIP )  !  FIP-list
-        INTEGER     FIPCELL(        NCFIP, NAFIP )  !  cty codes::cell number
-        REAL        SRGFRAC( NASRG, NCFIP, NAFIP )  !  surrogate fractions
-                
-C...........   Area Sources Table
-        
-        INTEGER     IFIPS( NASRC )  !  source FIPS (county) ID
-        INTEGER     ISCC7( NASRC )  !  leading-7  digits of source ASC
-        INTEGER     ISCC3( NASRC )  !  trailing-3 digits of source ASC
-        
-C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
+C...........   Surrogate-cell::FIPS tables (unsorted; sorted and processed)
 
-        INTEGER     IS( NACEL , NGRID )
-        REAL        CS( NACEL , NGRID )
+        INTEGER     NSREC		  !  number of (unsorted) entries
+        INTEGER     INDXA( NRMAX )	  !  subscripts for sorti1()
+        INTEGER     CELLA( NRMAX )        !  cell number,        before sorting
+        INTEGER     FIPSA( NRMAX )        !  FIP code,           before sorting
+        INTEGER     SSCSA( NRMAX )        !  surrogate ID,       before sorting
+        REAL        FRACA( NRMAX )        !  surrogate fraction, before sorting
+
+        INTEGER     NFIP( NGRID )         !  number of fips per cell
+        INTEGER     CFIP( NSMAX )         !  cell number::index in FIPLIST
+        REAL        SFRC( NASRG, NSMAX )  !  surrogate fractions
 
 C...........   Gridding Matrix
 
-        INTEGER     NX( NGRID )
-        INTEGER     IX( NMATX )
-        REAL        CX( NMATX )
+        INTEGER     NX( NGRID )		  !  number of sources per cell
+        INTEGER     IX( NMATX )		  !  list of sources per cell
+        REAL        CX( NMATX )		  !  coefficients for sources
 
         COMMON  / GRIDMAT / NX, IX, CX
 
-C...........   Other local variables
-        
-        INTEGER         C, R, S, F, I, J, K  !  loop counters.
+C...........   Logical file names and unit numbers
 
-        CHARACTER*16    ENAME   !  logical name for emission source  input file
-        CHARACTER*16    GNAME   !  logical name for grid matrix     output file
-        INTEGER         ADEV    !  for actual-ASC file
+        INTEGER         ADEV    !  for actual ASCS file
+        INTEGER         LDEV    !  log-device
         INTEGER         SDEV    !  for surrogate coeff file
         INTEGER         XDEV    !  for surrogate xref  file
-        INTEGER         LDEV    !  log-device
-        
-        INTEGER         IOS     !  I/O status
-        INTEGER         IREC    !  input line (record) number
-        INTEGER         I0      !  for counting FIP-independent srcs
-        INTEGER         I1      !  for counting FIP-dependent   srcs
+        CHARACTER*16    ANAME   !  logical name for emission source  input file
+        CHARACTER*16    GNAME   !  logical name for grid matrix     output file
 
-        LOGICAL         GFLAG   !  generate output gridding matrix if true
-        LOGICAL         OFLAG   !  Did overflow occur
-        CHARACTER*16    SCRBUF
-        CHARACTER*256   MESG
+C...........   Other local variables
+
+        REAL            DDX, DDY                !  inverse of cell widths
+        REAL            SRG
+        REAL            SRGT( NASRG )
+        REAL            X1, X2, Y1, Y2, XC, YC  !  surrogate file header
+        REAL            XOFF, YOFF              !  surrogate offsets from grid
+        REAL            XLL, YLL                !  temp lower-left cell positn
+
+        INTEGER         C, S, F, I, J, K, L, M, N, T  !  counters, subscripts
+        INTEGER         CMAX, CMIN
+        INTEGER         COL,  ROW
+        INTEGER         FIP, SSC, SID, CID
+        INTEGER         HCOL, HROW              !  surrogate hdr cols and rows
+        INTEGER         ID7,  ID3
+        INTEGER         IOS                     !  I/O status
+        INTEGER         IREC                    !  input line (record) number
+        INTEGER         LFIP, LCEL, LAST
+        INTEGER         LO, HI
+        INTEGER         NSRG                    ! Count of srgts in EPS2 srgts
+        INTEGER         SSCT( NASRG )
 
         LOGICAL         EFLAG   !  input error flat
 
+        CHARACTER*5     FFORMAT !  temporary indicator for input formats
+        CHARACTER*16    SCRBUF
+        CHARACTER*256   LINE
+        CHARACTER*256   MESG
 
-C...........   STATEMENT FUNCTIONS:  
-C.......   floating point "unequal" -- true iff 
+C...........   STATEMENT FUNCTIONS:
+C.......   floating point "unequal" -- true iff
 C.......   | P - Q | > 1e-5 * sqrt( p*p + q*q + 1e-5 )
-
+ 
         REAL            P, Q
         LOGICAL         FLTERR
-        FLTERR( P, Q ) = 
+        FLTERR( P, Q ) =
      &  ( (P - Q)**2  .GT.  1.0E-10*( P*P + Q*Q + 1.0E-5 ) )
 
 C***********************************************************************
 C   begin body of program GRDAMAT
-        
+
         LDEV = INIT3()
-        
+
         WRITE( *,92000 ) 
      &  ' ',
-     &'Program GRDAMAT to take the sorted EPS surrogate coefficient',
-     &'file, the EPS surrogate cross reference file, the AREA SOURCE',
-     &'file produced by RAWAREA, and the ACTUAL-ASC file, and produce',
-     &'the AREA SOURCE GRIDDING MATRIX file.', 
+     &  'Program GRDAMAT to take the EPS2.0 or EMS-95 surrogate',
+     &  'coefficient file, the EPS2.0 or EMS95 surrogate cross-',
+     &  'reference file, the AREA file produced by EMSAREA, the',
+     &  'list of ASCs produced by EMSAREA, and produce the AREA',
+     &  'GRIDDING MATRIX file.', 
+     &  ' ',
+     &  'NOTE: If the EPS2.0 surrogate coefficient file is used, it',
+     &  '      must use the ZONE field of the header line (line 1,',
+     &  '      columns 41-50) to indicate the number of surrogates',
+     &  '      in the file, and each surrogates column must be',
+     &  '      compatible with an f10.8 format.',
      &  ' '
         WRITE( *,92000 ) 
      &  'You will need to enter the logical names for the input and',
@@ -192,17 +232,21 @@ C   begin body of program GRDAMAT
      &  'during logical-name entry. Default responses are indicated',
      &  'in brackets [LIKE THIS].',
      &  ' '
-        
+
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             CALL M3EXIT( 'GRDAMAT', 0, 0, 'Ending program GRDAMAT', 2 )
         END IF
 
 
 C.......   Get file name; open actual-scc file
-        
-        ADEV = PROMPTFFILE( 
-     &           'Enter logical name for ACTUAL ASC file',
-     &           .TRUE., .TRUE., 'ASCC', 'GRDAMAT' )
+
+        ANAME = PROMPTMFILE( 
+     &          'Enter logical name for AREA SOURCE input file',
+     &          FSREAD3, 'AREA', 'GRDAMAT' )
+
+        ADEV = PROMPTFFILE(
+     &           'Enter logical name for ACTUAL ASCs file',
+     &           .TRUE., .TRUE., 'ASCS', 'GRDAMAT' )
 
         XDEV = PROMPTFFILE( 
      &  'Enter logical name for GRIDDING SURROGATE XREF file',
@@ -212,85 +256,456 @@ C.......   Get file name; open actual-scc file
      &  'Enter logical name for GRIDDING SURROGATE COEFF file',
      &           .TRUE., .TRUE., 'AGPRO', 'GRDAMAT' )
 
-        ENAME = PROMPTMFILE( 
-     &          'Enter logical name for AREA SOURCE input file',
-     &          FSREAD3, 'AREA', 'GRDAMAT' )
+
+C.......   Read in the area source emissions FIP and ASC tables:
+
+        CALL M3MSG2( 'Reading in AREA SOURCES file...' )
+
+        IF ( .NOT. DESC3( ANAME ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &      'Error reading HEADER from AREA SOURCES file', 2 )
+        ELSE IF ( NROWS3D .NE. NASRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  AREA SOURCES file:', NROWS3D,
+     &      'program:', NASRC
+            CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'FIP', ALLAYS3, 0, 0,  IFIPS ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &      'Error reading variable "FIP" from AREA SOURCES file', 2 )
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'ASC7', ALLAYS3, 0, 0,  ISCC7 ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &      'Error reading variable "ASC7" from AREA SOURCES file', 2 )
+        END IF
+
+        IF ( .NOT. READ3( ANAME, 'ASC3', ALLAYS3, 0, 0,  ISCC3 ) ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &      'Error reading variable "ASC3" from AREA SOURCES file', 2 )
+        END IF                                                              
 
 
-C.......   Initializations:
-        
-        NUMSCC = 0      !  for Surrogates::ASC table
-
-        DO  11  C = 1, NGRID
-            NX( C ) = 0         !  for Gridding Matrix
-11      CONTINUE
-
-        DO  12  S = 1, NAFIP
-            NCELLS( S ) = 0     !  for Surrogate  cell::FIPS table
-12      CONTINUE
-
-cmh add: Get grid description for use in check
+C.......   Read the grid parameters from GRIDDESC for use in checking
+C.......   EPS2.0-formatted surrogate files
 
         IF ( .NOT. DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
-     &              P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
+     &              P_ALP3D, P_BET3D,P_GAM3D, XCENT3D, YCENT3D,
      &              XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
      &              NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
             SCRBUF = GRDNM
             MESG   = '"' // SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
      &               '" not found in GRIDDESC file'
             CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
 
-        END IF          ! if dscgrid() failed
+        END IF                  ! if dscgrid() failed
 
-C.......   Read the surrogate coefficient file
-C...............   ASSUMPTION:  sorted by FIP
-        
-        WRITE( *,92000 ) 
-     &  ' ', 'Reading GRIDDING SURROGATE COEFFICIENT file...', ' '
+C.......   Read the ACTUAL ASCs file
 
-        READ( SDEV, *, IOSTAT=IOS ) !  read file header
-     &          SDUM, TDUM, 
-     &          UDUM, VDUM, ZONE,
-     &          XDUM, YDUM
-        
-        IF ( IOS .NE. 0 ) THEN
-            WRITE( MESG,94010 ) 
-     &          'I/O error ', IOS, 
-     &          'reading SURG COEFF file header at line', IREC
-            CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 1 )
-        END IF
+        CALL M3MSG2( 'Reading ACTUAL ASCs file...' )
 
-C.......   Check grid compatibility:
+        CALL RDASCC( ADEV, NASCC, NASC, ASCA7, ASCA3 )
 
-        DDX  = 1.0 / XCELL3D
-        DDY  = 1.0 / YCELL3D
-        SDUM = DDX * ( SDUM - XORIG3D )
-        TDUM = DDY * ( TDUM - YORIG3D )
-        IF ( FLTERR( XDUM, XCELL3D ) ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Bad XCELL in SURROGATE file', 2 )
-        ELSE IF ( FLTERR( YDUM, YCELL3D ) ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Bad YCELL in SURROGATE file', 2 )
-        ELSE IF ( FLTERR( SDUM, FLOAT( NINT( SDUM ) ) ) ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Bad X alignment in SURROGATE file', 2 )
-        ELSE IF ( FLTERR( TDUM, FLOAT( NINT( TDUM ) ) ) ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Bad Y alignment in SURROGATE file', 2 )
-        END IF
-                           
-        IREC     =  1
-        NFIPLIST =  0
-        S        =  0
-        LFIP     = -1
-        EFLAG    = .FALSE.
-        
-22      CONTINUE        !  head of the SDEV-read loop
-        
+C.......   Read the GRIDDING XREF file
+
+        CALL M3MSG2( 'Reading GRIDDING XREF file...' )
+
+C........  Can read either EMS-95 _or_ EPS2.0 gridding cross-reference
+C........  files.  The distinguishing factor is that EMS95 files do not
+C........  have a blank space in column 6
+
+        IREC    =  0
+        I       =  0
+        EFLAG   = .FALSE.
+        FFORMAT = 'EPS2'   ! Default XREF input format
+
+11      CONTINUE                        !  head of the XDEV-read loop
+
+            READ( XDEV, 93000, END=22, IOSTAT=IOS ) LINE
             IREC = IREC + 1
-            READ( SDEV, *, END=24, IOSTAT=IOS ) 
-     &          FIP, XDUM, YDUM, ZONE, ( FRAC( C ), C = 1, NASRG )
+
+            IF ( IOS .NE. 0 ) THEN
+
+                WRITE( MESG,94010 ) 
+     &              'I/O error', IOS, 
+     &              'reading GRIDDING XREF file at line', IREC
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+                GO TO  11
+
+            END IF
+
+C.............  Determine input format of cross-reference file
+            IF( IREC .EQ. 1 .AND. LINE(6:6) .NE. ' ' ) FFORMAT = 'EMS95'
+
+            IF( FFORMAT .EQ. 'EMS95' ) THEN
+
+                SID = STR2INT( LINE(  1: 2 ) )
+                CID = STR2INT( LINE(  3: 5 ) )
+                ID7 = STR2INT( LINE(  6:12 ) )
+                ID3 = STR2INT( LINE( 13:15 ) )
+                SSC = STR2INT( LINE( 16:32 ) )
+                FIP = 1000 * SID + CID
+
+            ELSEIF( FFORMAT .EQ. 'EPS2' ) THEN
+
+C.................  Skip point and mbile source ASCTs
+                IF( LINE( 11:11 ) .GT. '9' .OR.
+     &              LINE( 11:11 ) .EQ. ' ' .OR.
+     &              LINE( 20:20 ) .EQ. ' '       ) GO TO 11  ! to head loop
+
+                FIP = STR2INT( LINE(  1:5  ) )
+                SSC = STR2INT( LINE(  7:9  ) )
+                ID7 = STR2INT( LINE( 11:17 ) )
+                ID3 = STR2INT( LINE( 18:20 ) )
+                SID = FIP/1000
+                CID = FIP - SID*1000
+
+            ENDIF
+
+C.............  Skip record if not in actual ASCS list.  This IF statement
+C.............  cannot be merged with the one below because of the counter I
+            IF ( ID7 .GT. 0 .AND. ID3 .GE. 0 .AND.
+     &           FIND2( ID7, ID3, NASC, ASCA7, ASCA3 ) .LE. 0 ) GO TO 11
+
+            I = I + 1
+
+C.............  If input record doesn't have any blank/bad values, or
+C.............  if there is not an overflow, then store record
+            IF ( SID .LT. 0  .OR.
+     &           CID .LT. 0  .OR.
+     &           ID7 .LT. 0  .OR.
+     &           ID3 .LT. 0  .OR.
+     &           SSC .LT. 0  .OR.
+     &           SSC .GT. NASRG   ) THEN
+
+                WRITE( MESG,94010 )
+     &              'Bad XREF record', IREC,
+     &              'state',  SID,
+     &              'county', CID,
+     &              'ASC7',   ID7,
+     &              'ASC3',   ID3,
+     &              'code',   SSC
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+
+            ELSE IF ( I .LE. NXMAX ) THEN 
+
+                    INDEXA( I ) = I
+                    AFIPSA( I ) = FIP
+                    ASCX7A( I ) = ID7
+                    ASCX3A( I ) = ID3
+                    SSCXDA( I ) = SSC
+
+            END IF
+
+            GO TO  11           !  to head of loop
+
+22      CONTINUE                !  end of the XDEV-read loop
+
+        CALL M3MSG2( 'NOTE: File was in ' // FFORMAT // ' format.' )
+
+        NAREF = I
+        WRITE( MESG,94010 ) 
+     &      'SURG XREF records - actual:', NAREF,
+     &      'dimensioned max:', NXMAX
+        CALL M3MESG( MESG )
+
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &                   'Error reading ACTUAL ASC file.', 2 )
+        ELSE IF ( NAREF .GT. NXMAX ) THEN
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &                   'Table overflow reading ACTUAL ASC file.', 2 )
+        END IF
+
+
+        CALL M3MSG2( 'Processing GRIDDING XREF file...' )
+
+C.......   Sort input XREF by FIPs codes and ASC codes
+
+        CALL SORTI3( NAREF, INDEXA, AFIPSA, ASCX7A, ASCX3A )
+
+C.......   Store unsorted XREF as sorted lists
+
+        NPRNF = 0
+        NPRFC = 0
+        DO 27 I = 1, NAREF
+
+            J   = INDEXA( I )
+            FIP = AFIPSA( J )
+            ID7 = ASCX7A( J )
+            ID3 = ASCX3A( J )
+            SSC = SSCXDA( J )
+
+            IF ( FIP .EQ. 0 ) THEN  !  FIP-independent
+
+                IF ( NPRNF .LT. NASCC ) THEN
+                    NPRNF = NPRNF + 1
+                    ASCX70( NPRNF ) = ID7
+                    ASCX30( NPRNF ) = ID3
+                    SSCXD0( NPRNF ) = SSC
+
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                  'Max FIP-ind XREF exceeded for ID7', ID7,
+     &                  'and ID3', ID3
+                    CALL M3MESG( MESG )
+
+                END IF
+
+            ELSE                    !  FIP-dependent case
+ 
+                IF ( NPRFC .LT. NXMAX ) THEN 
+                    NPRFC = NPRFC + 1
+                    AFIPS( NPRFC ) = FIP
+                    ASCX7( NPRFC ) = ID7
+                    ASCX3( NPRFC ) = ID3
+                    SSCXD( NPRFC ) = SSC
+
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                  'Max FIP-dep XREF exceeded for FIP', FIP,
+     &                  'ID7', ID7, 'and ID3', ID3
+                    CALL M3MESG( MESG )
+
+                END IF
+ 
+            END IF      !  if fip zero, or not
+
+27      CONTINUE
+
+C.......   Initializations:
+
+        DO 33  C = 1, NGRID
+            NFIP( C ) = 0
+33      CONTINUE
+
+        DO 44  K = 1, NSMAX
+        DO 43  J = 1, NASRG
+            SFRC( J,K ) = BADVAL3
+43      CONTINUE
+44      CONTINUE
+
+        LFIP  = -1
+        F     =  0
+        EFLAG = .FALSE.
+
+        DO  55  S = 1, NASRC    !  initializations for Surrogates::ASC table
+
+            FIP = IFIPS( S )
+
+            IF ( FIP .NE. LFIP ) THEN
+
+                LFIP = FIP
+                F    = F + 1
+
+                IF ( F .LE. NAFIP ) THEN
+
+                    FIPLIST( F ) = FIP
+                    SRCLIST( F ) = S
+
+                END IF          !  if F overflows, else stays in bounds
+
+
+            END IF              !  if encountered new fip
+
+            ID7 = ISCC7( S )
+            ID3 = ISCC3( S )
+
+C...........   Get surrogate ID for this source; flag bad xrefs
+
+            M = FIND3( FIP, ID7, ID3, NPRFC, AFIPS, ASCX7, ASCX3 )
+
+            IF ( M .LT. 0 )  THEN           !  <FIP,ID7,ID3> not found
+
+                M = FIND2( FIP, ID7, NPRFC, AFIPS, ASCX7 )
+
+                IF ( M .LT. 0 )  THEN       !  <FIP,ID7> not found
+
+                    M = FIND2( ID7, ID3, NPRNF, ASCX70, ASCX30 )
+
+                    IF( M .LT. 0 ) THEN     !  <ID7,ID3> not found
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94020 ) 
+     &                      'SRG XREF not found for FIP', FIP,
+     &                      'ASC', ID7, ID3
+                        CALL M3MESG( MESG )
+                        GO TO  55
+
+                    ELSE
+                        N = SSCXD0( M )
+                    END IF                  !  <FIP,ID7> not found
+
+                ELSE
+                    N = SSCXD( M )
+                END IF                      !  <FIP,ID7> not found
+
+            ELSE
+                N = SSCXD( M )
+            END IF                          !  <FIP,ID7,ID3> not found
+
+            IF ( N .LT. 0 )  THEN       !  xref never set.
+
+                EFLAG = .TRUE.
+                WRITE( MESG,94020 ) 
+     &              'Bad SURG XREF for FIP', FIP,
+     &              'ASC', ID7, ID3
+                CALL M3MESG( MESG )
+
+            ELSE
+
+                SRGID( S ) = N
+
+            END IF                      !  if <ID7,ID3> not found
+
+55      CONTINUE        !  end loop constructing FIP list from actual sources
+
+        IF ( F .GT. NAFIP ) THEN
+
+            WRITE( MESG,94010 ) 
+     &              'Overflow:  actual # of FIPS:', F,
+     &              'dimensioned max:', NAFIP
+            CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+
+        ELSE IF ( EFLAG ) THEN
+
+            CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &           'Error in XREF mapping sources to surrogates', 2 )
+
+        END IF                  !  if overflow
+
+        SRCLIST( F+1 ) = NASRC + 1
+        NFIPLIST       = F
+
+
+C...........   Read and process the surrogate coefficient file:
+C...............   Must be sorted by FIP (state ID, county ID), surrogate ID,
+C...............   col, and row.  
+C...............   All actually-occurring area source FIP codes must be present.
+
+        CALL M3MSG2( 'Reading GRIDDING SURROGATE COEFF file...' )
+
+        FFORMAT = 'EPS2'
+
+C........  Can read EMS-95 _or_ EPS2.0 formatted gridding surrogate
+C........  files.  The distinguishing factor is that EMS95 files do not
+C........  have a blank space in column 6
+
+C...........   Initialize parameters for reading surrogates data
+        IREC    =  0
+        N       =  0
+        EFLAG   = .FALSE.
+
+C........  Determine input format of gridding surrogates file
+C........  For EPS2 format, treat 1st line as header line, and QA file
+
+        READ( SDEV, 93000, END=77, IOSTAT=IOS ) LINE
+
+        IF( TRIMLEN( LINE ) .LT. 60 ) THEN  ! EMS-95 format
+
+            FFORMAT = 'EMS95'
+            NSRG    = 1
+            REWIND( SDEV )
+
+        ELSE                                ! EPS2   format
+
+            IREC = IREC + 1
+
+            X1  = STR2REAL( LINE(  1:10 ) )
+            Y1  = STR2REAL( LINE( 11:20 ) )
+            X2  = STR2REAL( LINE( 21:30 ) )
+            Y2  = STR2REAL( LINE( 31:40 ) )
+            NSRG= STR2INT ( LINE( 41:50 ) )
+            XC  = STR2REAL( LINE( 51:60 ) )
+            YC  = STR2REAL( LINE( 61:70 ) )
+            DDX = 1.0 / XC
+            DDY = 1.0 / YC
+            XOFF= DDX * ( X1 - XORIG3D )
+            YOFF= DDY * ( Y1 - YORIG3D )
+            HCOL= NINT( DDX * ( X2 - X1 ) )
+            HROW= NINT( DDY * ( Y2 - Y1 ) )
+
+            IF ( FLTERR( XC, SNGL( XCELL3D ) ) ) THEN
+                CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                       'Bad XCELL in SURROGATE file', 2 )
+            ELSE IF ( FLTERR( YC, SNGL( YCELL3D ) ) ) THEN
+                CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                       'Bad YCELL in SURROGATE file', 2 )
+            ELSE IF ( FLTERR( XOFF, FLOAT( NINT( XOFF ) ) ) ) THEN
+                CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                       'Bad X alignment in SURROGATE file', 2 )
+            ELSE IF ( FLTERR( YOFF, FLOAT( NINT( YOFF ) ) ) ) THEN
+                CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                       'Bad Y alignment in SURROGATE file', 2 )
+            ELSE IF ( FLTERR( REAL( HCOL ), REAL( NCOLS ) ) ) THEN
+                CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                       'Bad ending X-coord in SURROGATE file', 2 )
+            ELSE IF ( FLTERR( REAL( HROW ), REAL( NROWS ) ) ) THEN
+                CALL M3EXIT( 'GRDAMAT', 0, 0,
+     &                       'Bad ending Y-coord in SURROGATE file', 2 )
+            ELSE IF ( NSRG .LE. 0 ) THEN
+                WRITE( MESG, 94010 ) 
+     &           'NOTE: Use ZONE portion of EPS2.0 surrogates header'//
+     &           CRLF() // BLANK5 // 
+     &           '      to specify number of surrogates ' //
+     &           'in the file.'
+                CALL M3MSG2( MESG )
+
+                WRITE( MESG, 94010 ) 
+     &           'Number of surrogates in header was ', NSRG
+                CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+
+            END IF
+
+        ENDIF
+
+C...........   Start loop for actually reading surrogates data
+
+66      CONTINUE                !  head of the SDEV-read loop
+
+            IREC = IREC + 1
+
+C...............  Read EMS-95 formatted file
+            IF( FFORMAT .EQ. 'EMS95' ) THEN
+
+                READ( SDEV, *, END=77, IOSTAT=IOS ) 
+     &              SSCT( NSRG ),   !  surrogate ID
+     &              SID, CID,       !  state, county FIP codes
+     &              COL, ROW,       !  grid col and row
+     &              SRGT( NSRG )    !  surrogate fraction
+
+                FIP  = 1000 * SID + CID
+
+C...............  Read EPS2 file.  This read is made somewhat more complex
+C...............  because we're conforming to EMS95 file structure.  However,
+C...............  since the EPS2.0 format does not specify exact column
+C...............  numbers for each surrogate class (just must start on
+C...............  column 36 and continue to column 186), and the number of
+C...............  surrogates is not pre-defined, the EPS2.0 format is ill-
+C...............  defined anyway.  Here, we add the constraint that the
+C...............  zone field is used to define the number of surrogate
+C...............  entries. Also, all file columns are as described in the
+C...............  EPS2 documentation, AND the surrogates entries are 10 
+C...............  columns wide.  These constraints allow us to read in the
+C...............  file more assuredly.  MRH.
+            ELSEIF( FFORMAT .EQ. 'EPS2' ) THEN
+
+                READ( SDEV, 93010, END=77, IOSTAT=IOS ) 
+     &                FIP, XLL, YLL, ( SRGT( J ), J = 1, NSRG )
+
+                COL = NINT( DDX * ( XLL - XORIG3D ) )  +  1
+                ROW = NINT( DDY * ( YLL - YORIG3D ) )  +  1
+
+                DO 73 J = 1, NSRG
+                    SSCT( J ) = J
+   73           CONTINUE
+
+            END IF         ! end input format type
 
             IF ( IOS .NE. 0 ) THEN
 
@@ -299,20 +714,16 @@ C.......   Check grid compatibility:
      &              'reading SURG COEFF file at line', IREC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
-                GO TO  22
+                GO TO  66   ! to head of SDEV read loop
 
-            END IF
-
-            COL = NINT( DDX * ( XDUM - XORIG3D ) )  +  1
-            ROW = NINT( DDY * ( YDUM - YORIG3D ) )  +  1
-            IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
+            ELSE IF ( COL .LT. 1  .OR. COL .GT. NCOLS ) THEN
 
                 WRITE( MESG,94010 )
      &              'Column ', COL,
      &              'out of range in SURG COEFF file at line', IREC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
-                GO TO  22
+                GO TO  66   ! to head of SDEV read loop
 
             ELSE IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
 
@@ -321,542 +732,261 @@ C.......   Check grid compatibility:
      &              'out of range in SURG COEFF file at line', IREC
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
-                GO TO  22
+                GO TO  66   ! to head of SDEV read loop
 
-            END IF
-
-            C = COL  +  NCOLS * ( ROW - 1 )
-            
-
-C...........   Find this FIP and record this cell for it
-        
-            IF ( LFIP .GT. FIP ) THEN
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &              'SURG COEFF file out of order at line', IREC
-                CALL M3MESG( MESG )
-
-            ELSEIF( FIP .NE. LFIP ) THEN
-                
-                IF ( S .GE. NAFIP ) THEN
-                    WRITE( MESG,94010 ) 
-     &                  'FIP max', NAFIP, 
-     &                  'exceeded in SURG COEF file at line', IREC
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                    GO TO  22
-                END IF
-            
-                LFIP = FIP
-                S    = S + 1
-                FIPLIST( S ) = FIP
-
-            END IF      !  if fip not lfip
-            
-            K = NCELLS( S ) + 1
-       
-            IF ( K .GT. NCFIP ) THEN
-                WRITE( MESG,94010 )
-     &             'Cell:FIP max', NCFIP, 
-     &             'exceeded in SURG COEF file for FIP', FIP,
-     &             'Cell', C,
-     &             ' at line', IREC
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-                GO TO  22
-            
-            ELSE
-
-                NCELLS (   S ) = K
-                FIPCELL( K,S ) = C
-                DO  23  F = 1, NASRG
-                    SRGFRAC( F,K,S ) = FRAC( F )
-23              CONTINUE
-
-            END IF
-
-            GO TO  22  !  to head of loop
-      
-24      CONTINUE        !  end of the SDEV-read loop
-
-        IF ( EFLAG ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Error reading SURG COEF file.', 2 )
-        END IF
-
-        NFIPLIST = S
+            END IF              !  if IOS bad, or col, or row out of range
 
 
-C.......   Read the ACTUAL ASC FILE
-        
-        WRITE( *,92000 ) 
-     &       ' ', 'Reading ACTUAL ASC file...', ' '
+C...........   Record surrogate fraction for this cell.
+C...........   Loop through the number of surrogates in current record
+            DO 64 J = 1, NSRG
 
-        IREC  =  0
-        I     =  0
-        NASC  =  0
-        LID3  = -1
-        LID7  = -1
-        EFLAG = .FALSE.
-        
-33      CONTINUE        !  head of the SDEV-read loop
-        
-            READ( ADEV, 93020, END=34, IOSTAT=IOS ) ID7, ID3
+                N = N + 1
 
-            IREC = IREC + 1
+                IF( SSCT( J ) .LT. 1     .OR. 
+     &              SSCT( J ) .GT. NASRG      ) THEN
 
-            IF ( IOS .NE. 0 ) THEN
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
-     &              'I/O error', IOS, 
-     &              'reading ACTUAL ASC file at line', IREC
-                CALL M3MESG( MESG )
-
-            ELSE IF ( I .GE. NASCC ) THEN 
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &              'Max ASC TABLE size', NASCC, 
-     &              'exceeded at line', IREC
-                CALL M3MESG( MESG )
-
-            ELSE IF ( ( LID7 .GT. ID7 ) .OR.
-     &                ( LID7 .EQ. ID7 .AND. LID3 .GE. ID3 ) ) THEN 
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 )
-     &              'ASC table out of order at line', IREC
-                CALL M3MESG( MESG )
-
-            ELSE
-
-                I          = I + 1
-                LID7       = ID7
-                LID3       = ID3
-                ASCA7( I ) = ID7
-                ASCA3( I ) = ID3
-
-            END IF
-
-            GO TO  33  !  to head of loop
-      
-34      CONTINUE        !  end of the SDEV-read loop
-
-        IF ( EFLAG ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Error reading ACTUAL ASC file.', 2 )
-        END IF
-
-        NASC = I
-
-
-C.......   Read the surrogate cross-reference file
-
-        WRITE( *,92000 ) 
-     &      ' ', 'Reading GRIDDING SURROGATE XREF file...', ' '
-
-        IREC  = 0
-        I     = 0
-        EFLAG = .FALSE.
-
-44     CONTINUE        !  head of the XDEV-read loop
-
-            READ( XDEV, 93030, END=45, IOSTAT=IOS ) FIP, SID, ID7C, ID3C
-            IREC = IREC + 1
-
-            IF ( IOS .NE. 0 ) THEN
-
-                WRITE( MESG,94010 ) 
-     &              'I/O Status ', IOS, 
-     &              'reading SURG XREF file at line', IREC
-                CALL M3MESG( MESG )
-                EFLAG = .TRUE.
-
-            ELSE IF ( ID7C(1:1) .GT. '9' ) THEN  ! Motor vehicles x-ref entry
-
-                GO TO 44
-
-            ELSE
-
-                ID7 = STR2INT( ID7C )
-                ID3 = STR2INT( ID3C )
-
-                IF( ID7 .GT. 0 .AND. ID3 .GE. 0 ) THEN
-                    J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )
-                ELSE
-                    J = 1
-                ENDIF
-
-                IF ( J .LE. 0 ) THEN  ! ASC code not found in ASCC LIST file
-
-                    GO TO 44
-
-                ELSEIF ( I .GE. NAMAX ) THEN  !  Overflow
-
-                    WRITE( MESG,94010 ) 
-     &                     'XREF table overflow at record', IREC
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-
-                ELSE 
-
-                    I = I + 1
-                    INDEXA( I ) = I
-                    SRFIPA( I ) = FIP
-                    SRGIDA( I ) = SID
-                    ASCI7A( I ) = ID7
-                    ASCI3A( I ) = ID3
-
-                END IF  !  No overflow, ASC found in list
-
-            END IF      !  Not motor vehicles record
-
-        GO TO  44       !  to head of XDEV-read loop
-
-45      CONTINUE        !  end of the XDEV-read loop
-
-        IF ( EFLAG ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Error reading SURG XREF file.', 2 )
-        END IF
-
-        NUMSCA = I
-
-
-C.......   Sort and process the surrogate cross-reference file
-
-        WRITE( *,92000 ) 
-     &      ' ', 'Processing GRIDDING SURROGATE XREF file...', ' '
-        
-        CALL SORTI3( NUMSCA, INDEXA, SRFIPA, ASCI7A, ASCI3A )
-
-        IREC  = 0
-        I0    = 0
-        I1    = 0
-        EFLAG = .FALSE.
-
-        DO  55  I = 1, NUMSCA
-
-            J   = INDEXA( I )
-            FIP = SRFIPA( J )
-            SID = SRGIDA( J )
-            ID7 = ASCI7A( J )
-            ID3 = ASCI3A( J )
-
-            IF ( FIP .EQ. 0 ) THEN  !  FIP-independent
-
-                IF ( I0 .LT. NASCC ) THEN
-                    I0 = I0 + 1
-                    SRGID0( I0 ) = SID 
-                    ASCI70( I0 ) = ID7 
-                    ASCI30( I0 ) = ID3
-                ELSE
-                    EFLAG = .TRUE.
                     WRITE( MESG,94010 )
-     &                  'Max FIP-ind XREF exceeded for ID7', ID7,
-     &                  'and ID3', ID3
+     &                  'Surrogate code ', SSCT( J ),
+     &                  'out of range (NASRG) in ASPRO at line', IREC
                     CALL M3MESG( MESG )
-                END IF
-
-            ELSE        !  FIP > 0:  fip-dependent case
-
-                IF ( I1 .LT. NASRC ) THEN  !  FIP-specific
-                    I1 = I1 + 1
-                    SRFIP( I1 ) = FIP  
-                    SRGID( I1 ) = SID 
-                    ASCI7( I1 ) = ID7 
-                    ASCI3( I1 ) = ID3
-                ELSE
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 )
-     &                  'Max FIP-dep XREF exceeded for FIP', FIP,
-     &                  'ID7', ID7,
-     &                  'and ID3', ID3
-                    CALL M3MESG( MESG )
-                END IF
+                    GO TO  66   ! to head of SDEV read loop
 
-            END IF      !  if fip zero, or not
+                ELSEIF( N .LE. NRMAX ) THEN
 
-55      CONTINUE        !  end of the xref-processing loop
+                    INDXA( N ) = N
+                    CELLA( N ) = COL  +  NCOLS * ( ROW - 1 )
+                    SSCSA( N ) = SSCT( J )
+                    FIPSA( N ) = FIP
+                    FRACA( N ) = SRGT( J )
 
-        IF ( EFLAG ) THEN
+                END IF                      ! if n in bounds
+
+64          CONTINUE
+
+            GO TO  66  !  to head of SDEV read loop
+
+77      CONTINUE       !  end of the SDEV-read loop
+
+        CALL M3MSG2( 'NOTE: File was in ' // FFORMAT // ' format.' )
+
+        NSREC = N
+        WRITE( MESG,94010 ) 
+     &      'Max SURG COEF records - actual:', N,
+     &      'dimensioned:', NRMAX
+        CALL M3MESG( MESG )
+
+        IF ( N .GT. NRMAX ) THEN
             CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                   'Error processing SURG XREF file.', 2 )
+     &                   'Table overflow reading SURG COEFF file', 2 )
         END IF
 
-        NUMSC0 = I0
-        NUMSCC = I1
-
-
-C.......   Get the grid name and parameters
-C.......   to put into file header:
-
-        IF ( .NOT. DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
-     &              P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
-     &              XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
-     &              NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
-
-            SCRBUF = GRDNM
-            MESG   = '"' // SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
-     &               '" not found in GRIDDESC file'
+        IF ( EFLAG ) THEN
+            MESG = 'Error reading SURG COEF file.'
             CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
-
-        END IF          ! if dscgrid() failed
-
-
-C.......   Get file name; open output gridding matrix file
-
-        FTYPE3D = SMATRX3
-        SDATE3D = 0
-        STIME3D = 0
-        TSTEP3D = 0
-        NVARS3D = 1
-        NCOLS3D = NMATX
-        NROWS3D = NGRID
-        NLAYS3D = 1
-        NTHIK3D = NASRC
-        GDNAM3D = GRDNM
-        VGTYP3D = IMISS3
-        VGTOP3D = BADVAL3
-        FDESC3D( 1 ) = 'NC Area Source gridding-coefficient matrix'
-        DO  167  K = 2, MXDESC3
-            FDESC3D( K ) = ' '
-167     CONTINUE
-        VNAME3D( 1 ) = 'AGRDMAT'
-        UNITS3D( 1 ) = 'n/a'
-        VDESC3D( 1 ) = 'NC Area Source gridding-coefficient matrix'
-        VTYPE3D( 1 ) = M3REAL
-           
-        GNAME = PROMPTMFILE( 
-     &          'Enter logical name for GRIDDING MATRIX output file',
-     &          FSUNKN3, 'AGMAT', 'GRDAMAT' )
-
-        GFLAG = ( GNAME( 1:5 ) .NE. 'NONE ' )
-
-
-C.......   Read in the area source emissions FIP and ASC tables:
-        
-        WRITE( *,92000 ) ' ', 'Reading in AREA SOURCES file...', ' '
-
-        IF ( .NOT. READ3( ENAME, 'FIP', ALLAYS3, 0, 0,  IFIPS ) ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &      'Error reading variable "FIP" from AREA SOURCES file', 2 )
         END IF
 
-        IF ( .NOT. READ3( ENAME, 'ASC7', ALLAYS3, 0, 0,  ISCC7 ) ) THEN
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &      'Error reading variable "ASC7" from AREA SOURCES file', 2 )
-        END IF
+C...........   Sort and process the surrogates:
 
-        IF ( .NOT. READ3( ENAME, 'ASC3', ALLAYS3, 0, 0,  ISCC3 ) ) THEN
+        CALL M3MSG2 ( 'Processing GRIDDING SURROGATE COEFF file...' )
+
+        CALL SORTI3( NSREC, INDXA, CELLA, FIPSA, SSCSA )
+
+        F    = 0
+        S    = 0
+        T    = 0
+        LCEL = IMISS3
+        LFIP = IMISS3
+
+        DO  99  J = 1, NSREC
+
+            K   = INDXA( J )
+            C   = CELLA( K )
+            FIP = FIPSA( K )
+            SSC = SSCSA( K )
+
+            IF ( FIP .NE. LFIP  .OR.  C .NE. LCEL ) THEN
+
+                S = FIND1( FIP, NFIPLIST, FIPLIST )
+
+                IF ( S .GT. 0 ) THEN
+                    LFIP = FIP
+                    LCEL = C
+                    F    = F + 1
+                    NFIP( C ) = NFIP( C ) + 1
+                    IF ( F .LE. NSMAX ) THEN
+                        CFIP( F ) = S
+                    END IF
+                ELSE			!  else fip not found in inventory
+                    WRITE( MESG,94010 ) 
+     &                  'Surrogate FIP', FIP, 'not in inventory'
+                    CALL M3MESG( MESG )
+                    GO TO  99
+                END IF		!  if fip found, or not
+
+            END IF		!  if new FIP encountered
+
+            IF ( S .GT. 0 ) THEN
+                SFRC( SSC , F ) = FRACA( K )
+            END IF
+
+99      CONTINUE
+
+        WRITE( MESG,94010 ) 
+     &      'SURG COEF table - actual:', F,
+     &      'dimensioned:', NSMAX
+        CALL M3MESG( MESG )
+
+
+        IF ( F .GT. NSMAX ) THEN
             CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &      'Error reading variable "ASC3" from AREA SOURCES file', 2 )
+     &      'Table overflow processing SURG COEFF file', 2 )
         END IF
 
 
 C...........   Compute gridding matrix
-        
-        WRITE( *,92000 ) ' ', 'Computing gridding matrix...', ' '
 
-        OFLAG = .FALSE.         !  flag to detect overflow
+        CALL M3MSG2( 'Computing gridding matrix...' )
+
         EFLAG = .FALSE.         !  flag to detect other errors
+        LAST  = 0		!  coeff count for last cell
+        N     = 0		!  CFIP counter
+        T     = 0		!  coefficient counter
+        CMAX  = 0		!  cell max:  # of coeffs
+        CMIN  = NSREC		!  cell min:  # of coeffs
 
-        DO  266  I = 1, NASRC
+        DO  244  C = 1, NGRID
+
+            L = NFIP( C )	!  # of FIPS for this cell
+
+            DO  233  I = 1, L		!  process this fip-cell pair:
+
+                N  = N + 1
+                F  = CFIP( N )		!  index into FIPLIST, etc.
+                LO = SRCLIST( F   )
+                HI = SRCLIST( F+1 ) - 1
+
+                DO  222  S = LO, HI	!  loop on AREA source subscript
+
+                    SSC = SRGID( S )
+                    SRG = SFRC( SSC, N )
+
+                    IF ( SRG .GT. 0.0 ) THEN
+
+                        T = T + 1		!  increment coeff counter
+
+                        IF ( T .LT. NMATX ) THEN
+
+                            IX( T ) = S
+                            CX( T ) = SRG
+
+                        END IF		!  if T in bounds
+
+                    END IF		!  if SRG ok
+
+222             CONTINUE		!  end loop on S:  sources for this FIP
+                     
+233         CONTINUE            !  end loop on I:  FIPs for this cell
             
-            FIP = IFIPS( I )
-            ID7 = ISCC7( I )
-            ID3 = ISCC3( I )
-
-C...........   Get surrogate ID for this source: 2 cases.
-C...........   (Possibly empty) search:  FIP-specific-surrogate case
-            
-            S = FIND3( FIP, ID7, ID3, NUMSCC, SRFIP, ASCI7, ASCI3 )
-                
-            IF ( S .GT. 0 ) THEN
-                
-                SID = SRGID( S )
-                
-            ELSE        !  FIP-independent case
-
-                S = FIND2( ID7, ID3, NUMSC0, ASCI70, ASCI30 )
-
-                IF ( S .LT. 0 )  THEN !  keep searching
-
-                    WRITE( *,92010 ) 
-     &                  'FIP code ', FIP,
-     &                  'ID7 code ', ID7,
-     &                  'ID3 code ', ID3
-                    CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &                           'Surrogate not found.', 2 )
-
-                END IF  !  if <ID7,ID3> not found
-
-                SID = SRGID0( S )
-                
+            M       = T - LAST
+            NX( C ) = M
+            LAST    = T
+            IF ( CMAX .LT. M )  THEN
+                CMAX = M
+            ELSE IF ( CMIN .GT. M )  THEN
+                CMIN = M
             END IF
 
+244     CONTINUE                !  end loop on cells C
 
-C...........   Find all cells intersecting this FIPS and fill in 
-C...........   corresponding gridding-matrix coefficients.
-C...........   ASSUMPTION:  list is sorted by FIP (and then by col-row),
-C...........   with multiple entries per FIP.
-            
-            F = FIND1( FIP, NFIPLIST, FIPLIST )
-            
-            IF ( F .LT. 0 ) THEN
-                WRITE( MESG,94010 )
-     &          'FIP code ', FIP, 'not found in surrogate list'
-                CALL M3MESG( MESG )
-                GO TO  266
-            END IF
 
-            DO  255  K = 1, NCELLS( F )
-            
-                C = FIPCELL( K,F )
-                J = NX( C ) + 1
-
-                IF ( J .GT. NACEL ) THEN
-                    OFLAG = .TRUE.      !  overflow occurred.
-                    WRITE( *,92010 )  
-     &              'FIP  code ', FIP,
-     &              'ASC7 code ', ID7,
-     &              'ASC3 code ', ID3,
-     &              'cell code ', C, ' '
-                ELSE
-                    IS( J,C ) = I
-                    CS( J,C ) = SRGFRAC( SID,K,F )
-                END IF
-                NX( C )   = J
-
-255         CONTINUE    !  end of loop on cells K for this FIP
-
-266     CONTINUE        !  end loop on sources I, computing gridding matrix.
-        
-        CMAX = NX( 1 )
-        CMIN = CMAX
-        
-        IF ( OFLAG ) THEN   !  overflow occurred:  just compute statistics.
-            
-            K = 0
-                
-            DO  277  R = 2, NGRID
-            
-                J = NX( R )
-                K = K + J
-                   
-                IF      ( J .GT. CMAX ) THEN
-                    CMAX = J
-                ELSE IF ( J .LT. CMIN ) THEN
-                    CMIN = J
-                END IF
-
-277         CONTINUE    !  end of loop on cells K for this FIP
-
-            WRITE( *,92000 )
-     &          ' ',
-     &          'WARNING:  ' // GNAME( 1:TRIMLEN( GNAME ) ) // 
-     &          ' not written.',
-     &          'Internal arrays would have overflowed.'
-            WRITE( *,92010 ) 
-     &          'Sources per cell dimensioned', NACEL
-
-        ELSE IF ( EFLAG ) THEN          ! write gridding matrix to file
-
-            CALL M3EXIT( 'GRDAMAT', 0, 0, 'Missing FIP codes', 3 ) 
-
-        ELSE IF ( GFLAG ) THEN          ! write gridding matrix to file
-
-C.......   Compress matrix into I/O representation from scratch representation.
-C.......   Compute statistics.
-            
-            K = 0
-                
-            DO 288  C = 1, NX( 1 )
-                K       = K + 1
-                IX( K ) = IS( C,1 )
-                CX( K ) = CS( C,1 )
-288         CONTINUE
-                   
-            DO  299  R = 2, NGRID
-            
-                J = NX( R )
-                   
-                IF (      J .GT. CMAX ) THEN
-                    CMAX = J
-                ELSE IF ( J .LT. CMIN ) THEN
-                    CMIN = J
-                END IF
-                   
-                DO 298  C = 1, J
-                    K       = K + 1
-                    IF ( K .LE. NMATX ) THEN
-                        IX( K ) = IS( C,R )
-                        CX( K ) = CS( C,R )
-                    END IF
-298             CONTINUE
-                   
-299         CONTINUE    !  end of loop on cells K for this FIP
-            
-            IF ( K .GT. NMATX ) THEN
-                WRITE( MESG,94010 ) 
-     &                  'Number of coeffs', K, 
-     &                  'exceeds NMATX=', NMATX
-                CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 3 ) 
-            END IF
-                   
-C.......   Write out the gridding matrix:
-            
-            WRITE( *,92000 ) ' ', 'Writing out GRIDDING MATRIX file...'
-
-            IF ( .NOT. WRITE3( GNAME, 'ALL', 0, 0, NX ) ) THEN
-                CALL M3EXIT( 'GRDAMAT', 0, 0, 
-     &              'Error writing GRIDDING MATRIX file.', 2 )
-            END IF
-
-        ELSE    !  not GFLAG:  report matrix stats only
-        
-C.......   Just compute statistics.
-            
-            K = 0
-                
-            DO  303  R = 2, NGRID
-            
-                J = NX( R )
-                K = K + J
-                   
-                IF      ( J .GT. CMAX ) THEN
-                    CMAX = J
-                ELSE IF ( J .LT. CMIN ) THEN
-                    CMIN = J
-                END IF
-
-303         CONTINUE    !  end of loop on cells K for this FIP
-
-        END IF  !  if gflag, or not
-                        
 C.......   Report statistics:
 
-        XDUM = FLOAT( K ) / FLOAT( NGRID )
-        WRITE( *,92010 ) 
-     &      'Total number of coefficients   ', K   ,
-     &      'Max  number of sources per cell', CMAX,
-     &      'Min  number of sources per cell', CMIN
-        WRITE( *,92020 ) 
-     &      'Mean number of sources per cell', XDUM,
-     &      ' '
-           
+        WRITE( MESG,94010 ) 
+     &      'Total number of coefficients   :', T   , CRLF()// BLANK5//
+     &      'Max number of sources per cell :', CMAX, CRLF()// BLANK5//
+     &      'Min number of sources per cell :', CMIN
+
+        WRITE( MESG,94040 ) MESG( 1:TRIMLEN( MESG ) ) // 
+     &      CRLF() // BLANK5 // 'Mean number of sources per cell:',
+     &      FLOAT( T ) / FLOAT( NGRID )
+
+        CALL M3MSG2( MESG )
+
+C...........   Report errors, or if GFLAG, write out matrix to file:
+
+        IF ( T .GT. NMATX ) THEN  ! overflow occurred:  just compute statistics.
+
+            WRITE( MESG,94010 )
+     &       'WARNING:  ' // GNAME( 1:TRIMLEN( GNAME ) ) //
+     &       ' not written.' // CRLF() // BLANK5 //
+     &       'Arrays would have overflowed.'// CRLF() // BLANK5 //
+     &       'NMATX dimensioned:', NMATX, CRLF() // BLANK5 //
+     &       'NMATX    required:', T
+
+        ELSE IF ( EFLAG ) THEN          ! other errors:  missing codes?
+
+            CALL M3EXIT( 'GRDAMAT', 0,0, 'Missing surrogate codes', 3 )
+
+        ELSE 			! open and write gridding matrix to file
+
+C.......   Get the grid name and parameters to put into file header:
+C.......   This is called above, but repeat here for safety from future mods.
+
+            IF ( .NOT. DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
+     &                  P_ALP3D, P_BET3D,P_GAM3D, XCENT3D, YCENT3D,
+     &                  XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
+     &                  NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
+                SCRBUF = GRDNM
+                MESG   = '"' // SCRBUF( 1:TRIMLEN( SCRBUF ) ) //
+     &                   '" not found in GRIDDESC file'
+                CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+
+            END IF                  ! if dscgrid() failed
+
+            FTYPE3D = SMATRX3
+            SDATE3D = 0
+            STIME3D = 0
+            TSTEP3D = 0
+            NVARS3D = 1
+            NCOLS3D = NMATX
+            NROWS3D = NGRID
+            NLAYS3D = 1
+            NTHIK3D = NASRC
+            GDNAM3D = GRDNM
+            VGTYP3D = IMISS3
+            VGTOP3D = BADVAL3
+            FDESC3D( 1 ) = 'NC Area Source gridding-coefficient matrix'
+            DO  255  K = 2, MXDESC3
+                FDESC3D( K ) = ' '
+255         CONTINUE
+            VNAME3D( 1 ) = 'AGRDMAT'
+            UNITS3D( 1 ) = 'n/a'
+            VDESC3D( 1 ) = 'NC Area Source gridding-coefficient matrix'
+            VTYPE3D( 1 ) = M3REAL
+
+            GNAME = PROMPTMFILE( 
+     &        'Enter name for GRIDDING MATRIX output file, or "NONE"',
+     &        FSUNKN3, 'AGMAT', 'GRDAMAT' )
+     
+            IF ( GNAME( 1:5 ) .NE. 'NONE ' ) THEN
+                CALL M3MESG( 'Writing out GRIDDING MATRIX file...' )
+                IF ( .NOT. WRITE3( GNAME, 'ALL', 0, 0, NX ) ) THEN
+                    CALL M3EXIT( 'GRDAMAT', 0, 0, 
+     &                  'Error writing GRIDDING MATRIX file.', 2 )
+                END IF
+            END IF			!  if gname not "NONE"
+
+        END IF                          !  if overflow, or if eflag, or if gflag
 
 C...............   End of program
 
-999     CONTINUE
-      
         CALL M3EXIT( 'GRDAMAT', 0, 0, 
      &               'SUCCESSFUL COMPLETION of program GRDAMAT', 0 )
 
-
-C******************  FORMAT  STATEMENTS   ******************************
+C******************  FFORMAT  STATEMENTS   ******************************
 
 C...........   Informational (LOG) message formats... 92xxx
 
@@ -864,21 +994,24 @@ C...........   Informational (LOG) message formats... 92xxx
 
 92010   FORMAT( 5X, A, :, I12 )
 
-92020   FORMAT( 5X, A, :, F17.4 )
-
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93020   FORMAT( I7, I3 )
+93000   FORMAT( A )
 
-93030   FORMAT( I5, I4, 1X, A7, A3 )        !  for surrogate XREF file
+93010   FORMAT( I5, F10.0, F10.0, 10X, 100( F10.8 ) )
 
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I10, :, 2X ) )
 
+94020   FORMAT( 10( A, :, I6.5, :, 1X, A, :, I8.7, I3.3, :, 1X, A ) )
+
+94030   FORMAT( A, :, I4, :, 2X, 
+     &          A, I7, :, 2X, 
+     &          A, :, I9.7, I3.3, :, 2X, A )
+
+94040   FORMAT( A, :, F10.2 )
 
         END
-
-
