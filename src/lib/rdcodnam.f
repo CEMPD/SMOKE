@@ -81,8 +81,8 @@ C...........   Other local variables
         INTEGER         COD     !  tmp for pollutant code
         INTEGER         IOS     !  i/o status
         INTEGER         LCOD    !  previous pollutant code
-        INTEGER         MXADAT  !  maximum number of valid activities
-        INTEGER         MXPDAT  !  maximum number of valid pollutants
+        INTEGER      :: MXADAT = 0  !  maximum number of valid activities
+        INTEGER      :: MXPDAT = 0  !  maximum number of valid pollutants
         INTEGER         NDAT    !  number of data values
         INTEGER         STAT    !  tmp variable status (1=pol;-1=act)
 
