@@ -1203,7 +1203,8 @@ C.................................  Open current file
                                 END IF
 
 C.................................  Read file description
-                                IF( .NOT. DESCSET( CURLNM ) ) THEN
+                                IF( .NOT. DESCSET( CURLNM, 
+     &                                             ALLFILES ) ) THEN
                                     MESG = 'ERROR: Could not get ' //
      &                                     'description for file ' //
      &                                     CRLF() // BLANK10 // '"' // 
