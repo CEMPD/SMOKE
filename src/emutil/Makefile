@@ -8,9 +8,9 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 geofac mvcondns mvsetup smk2emis uam2ncf 
+all: beld3to2 geofac mvcondns mvsetup pktreduc smk2emis uam2ncf 
 
-debug: beld3to2.debug geofac.debug mvcondns.debug mvsetup.debug smk2emis.debug uam2ncf.debug 
+debug: beld3to2.debug geofac.debug mvcondns.debug mvsetup.debug pktreduc.debug smk2emis.debug uam2ncf.debug 
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -48,6 +48,16 @@ mvcondns: $(MVC) $(ALLI) $(LIBPATH)
 mvcondns.debug: $(MVC) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'MVCONDNS (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(MVC) $(LIBS_DEBUG)
+
+PKT=pktreduc.o
+
+pktreduc: $(PKT) $(ALLI) $(LIBPATH)
+	echo PKTREDUC:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(PKT) $(LIBS)
+
+pktreduc.debug: $(PKT) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'PKTREDUC (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(PKT) $(LIBS_DEBUG)
 
 SMKE=smk2emis.o
 
