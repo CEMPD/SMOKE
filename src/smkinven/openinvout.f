@@ -49,24 +49,24 @@ C.........  This module contains the lists of unique source characteristics
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required by the FileSetAPI
+        USE MODFILESET
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
-
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER*2     CRLF
         INTEGER         ENVINT
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
-        CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16    VERCHAR
 
-        EXTERNAL CRLF, ENVINT, INDEX1, PROMPTFFILE, PROMPTMFILE, VERCHAR
+        EXTERNAL CRLF, ENVINT, INDEX1, PROMPTFFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(IN)  :: GRDNM  ! grid name if any gridded data
@@ -154,42 +154,42 @@ C.........  Compute actual request output variables based on input data
 
 C.........  Compute conservative maximum number of pollutants and activities
 C           (conservative b/c NPPOL > NPACT )
-        NDATMAX = INT( ( MXVARS3 - NNPVAR ) / NPPOL )
+ccs        NDATMAX = INT( ( MXVARS3 - NNPVAR ) / NPPOL )
 
 C.........  If there are too many output variables, reset NIPOL
 
-        IF( NIOVARS .GT. MXVARS3 ) THEN
-
-            WRITE( MESG,94010 ) 
-     &             'WARNING: Maximum number of pollutants or ' //
-     &             'activities that can be be'// CRLF()// BLANK10//
-     &             'written to the I/O API file is', NDATMAX, 
-     &             '. This limitation is caused by'// CRLF()// BLANK10//
-     &             'the I/O API variable limit of', MXVARS3, '.'
-            CALL M3MSG2( MESG )
- 
-            WRITE( MESG,94010 ) 
-     &             'WARNING: Reseting total number of output '//
-     &             'pollutants and activities to', NDATMAX
-            CALL M3MSG2( MESG )
+ccs        IF( NIOVARS .GT. MXVARS3 ) THEN
+ccs
+ccs            WRITE( MESG,94010 ) 
+ccs     &             'WARNING: Maximum number of pollutants or ' //
+ccs     &             'activities that can be be'// CRLF()// BLANK10//
+ccs     &             'written to the I/O API file is', NDATMAX, 
+ccs     &             '. This limitation is caused by'// CRLF()// BLANK10//
+ccs     &             'the I/O API variable limit of', MXVARS3, '.'
+ccs            CALL M3MSG2( MESG )
+ccs 
+ccs            WRITE( MESG,94010 ) 
+ccs     &             'WARNING: Reseting total number of output '//
+ccs     &             'pollutants and activities to', NDATMAX
+ccs            CALL M3MSG2( MESG )
 
 C.............  If the number of pollutants alone are too much, then reset
 C               that number.
-            IF( NIPOL .GT. NDATMAX ) THEN
-                NIPOL   = NDATMAX
-                NIACT   = 0
-                NIOVARS = NNPVAR + NPPOL * NIPOL                
+ccs            IF( NIPOL .GT. NDATMAX ) THEN
+ccs                NIPOL   = NDATMAX
+ccs                NIACT   = 0
+ccs                NIOVARS = NNPVAR + NPPOL * NIPOL                
 
 C.............  Otherwise, reset the number of activities by subtracting the
 C               number of pollutants from the maximum allowed number of 
 C               variables
-            ELSE
-                NIACT = NDATMAX - NIPOL
-                NIOVARS = NNPVAR + NIPOL * NPPOL + NIACT * NPACT
-
-            END IF
-
-        ENDIF
+ccs            ELSE
+ccs                NIACT = NDATMAX - NIPOL
+ccs                NIOVARS = NNPVAR + NIPOL * NPPOL + NIACT * NPACT
+ccs
+ccs            END IF
+ccs
+ccs        ENDIF
 
 C.........  Determine the predominant year of the inventory
         CALL GETBASYR( NSRC, YEAR )
@@ -206,7 +206,23 @@ C.........  Set up for opening I/O API output file header
 
         CALL HDRMISS3  ! Initialize for emissions 
 
-        NVARS3D = NIOVARS
+C.........  Set number of variables and allocate file description arrays
+        NVARSET = NIOVARS + NPPOL  ! add extra space in case of formula based output
+        
+        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+        
+        VTYPESET = 0    ! array initialization
+        VNAMESET = ' '  ! array initialization
+        VUNITSET = ' '  ! array initialization
+        VDESCSET = ' '  ! array initialization        
+        
         NROWS3D = NSRC   !  number of rows = # of sources.
 
         FDESC3D( 1 ) = CATDESC // ' source inventory'
@@ -238,119 +254,119 @@ C.........  Set up for opening I/O API output file header
 C.........  Define source characteristic variables that are not strings
 
         J = 1
-        VNAME3D( J ) = 'IFIP'
-        VTYPE3D( J ) = M3INT
-        UNITS3D( J ) = 'n/a'
-        VDESC3D( J ) = 'State and county FIPS code'
+        VNAMESET( J ) = 'IFIP'
+        VTYPESET( J ) = M3INT
+        VUNITSET( J ) = 'n/a'
+        VDESCSET( J ) = 'State and county FIPS code'
         J = J + 1
 
-        VNAME3D( J ) = 'TZONES'
-        VTYPE3D( J ) = M3INT
-        UNITS3D( J ) = 'n/a'
-        VDESC3D( J ) = 'Time zone for site'
+        VNAMESET( J ) = 'TZONES'
+        VTYPESET( J ) = M3INT
+        VUNITSET( J ) = 'n/a'
+        VDESCSET( J ) = 'Time zone for site'
         J = J + 1
 
-        VNAME3D( J ) = 'TPFLAG'
-        VTYPE3D( J ) = M3INT
-        UNITS3D( J ) = 'T|2? T|3?'
-        VDESC3D( J ) = 'Use week(2), month(3) temporal profiles or not'
+        VNAMESET( J ) = 'TPFLAG'
+        VTYPESET( J ) = M3INT
+        VUNITSET( J ) = 'T|2? T|3?'
+        VDESCSET( J ) = 'Use week(2), month(3) temporal profiles or not'
         J = J + 1
 
-        VNAME3D( J ) = 'INVYR'
-        VTYPE3D( J ) = M3INT
-        UNITS3D( J ) = 'year AD'
-        VDESC3D( J ) = 'Year of inventory for this record'
+        VNAMESET( J ) = 'INVYR'
+        VTYPESET( J ) = M3INT
+        VUNITSET( J ) = 'year AD'
+        VDESCSET( J ) = 'Year of inventory for this record'
         J = J + 1
 
         SELECT CASE( CATEGORY )
 
         CASE( 'AREA' )
-            VNAME3D( J ) = 'CELLID'
-            VTYPE3D( J ) = M3INT
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Cell number'
+            VNAMESET( J ) = 'CELLID'
+            VTYPESET( J ) = M3INT
+            VUNITSET( J ) = 'n/a'
+            VDESCSET( J ) = 'Cell number'
             J = J + 1
 
         CASE( 'MOBILE' )
 
-            VNAME3D( J ) = 'IRCLAS'
-            VTYPE3D( J ) = M3INT
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Roadway type'
+            VNAMESET( J ) = 'IRCLAS'
+            VTYPESET( J ) = M3INT
+            VUNITSET( J ) = 'n/a'
+            VDESCSET( J ) = 'Roadway type'
             J = J + 1
 
-            VNAME3D( J ) = 'IVTYPE'
-            VTYPE3D( J ) = M3INT
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Vehicle type code'
+            VNAMESET( J ) = 'IVTYPE'
+            VTYPESET( J ) = M3INT
+            VUNITSET( J ) = 'n/a'
+            VDESCSET( J ) = 'Vehicle type code'
             J = J + 1
 
-            VNAME3D( J ) = 'XLOC1'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'Longitude at beginning of link'
+            VNAMESET( J ) = 'XLOC1'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'degrees'
+            VDESCSET( J ) = 'Longitude at beginning of link'
             J = J + 1
 
-            VNAME3D( J ) = 'YLOC1'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'Latitude at beginning of link'
+            VNAMESET( J ) = 'YLOC1'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'degrees'
+            VDESCSET( J ) = 'Latitude at beginning of link'
             J = J + 1
 
-            VNAME3D( J ) = 'XLOC2'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'Longitude at end of link'
+            VNAMESET( J ) = 'XLOC2'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'degrees'
+            VDESCSET( J ) = 'Longitude at end of link'
             J = J + 1
 
-            VNAME3D( J ) = 'YLOC2'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'Latitude at end of link'
+            VNAMESET( J ) = 'YLOC2'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'degrees'
+            VDESCSET( J ) = 'Latitude at end of link'
             J = J + 1
 
         CASE( 'POINT' )
 
-            VNAME3D( J ) = 'ISIC'
-            VTYPE3D( J ) = M3INT
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Source Industrial Code'
+            VNAMESET( J ) = 'ISIC'
+            VTYPESET( J ) = M3INT
+            VUNITSET( J ) = 'n/a'
+            VDESCSET( J ) = 'Source Industrial Code'
             J = J + 1
 
-            VNAME3D( J ) = 'XLOCA'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'longitude'
+            VNAMESET( J ) = 'XLOCA'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'degrees'
+            VDESCSET( J ) = 'longitude'
             J = J + 1
 
-            VNAME3D( J ) = 'YLOCA'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'latitude'
+            VNAMESET( J ) = 'YLOCA'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'degrees'
+            VDESCSET( J ) = 'latitude'
             J = J + 1
 
-            VNAME3D( J ) = 'STKHT'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'm'
-            VDESC3D( J ) = 'Stack height'
+            VNAMESET( J ) = 'STKHT'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Stack height'
             J = J + 1
 
-            VNAME3D( J ) = 'STKDM'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'm'
-            VDESC3D( J ) = 'Stack diameter'
+            VNAMESET( J ) = 'STKDM'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm'
+            VDESCSET( J ) = 'Stack diameter'
             J = J + 1
 
-            VNAME3D( J ) = 'STKTK'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'deg K'
-            VDESC3D( J ) = 'Stack exhaust temperature'
+            VNAMESET( J ) = 'STKTK'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'deg K'
+            VDESCSET( J ) = 'Stack exhaust temperature'
             J = J + 1
 
-            VNAME3D( J ) = 'STKVE'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'm/s'
-            VDESC3D( J ) = 'Stack exhaust velocity'
+            VNAMESET( J ) = 'STKVE'
+            VTYPESET( J ) = M3REAL
+            VUNITSET( J ) = 'm/s'
+            VDESCSET( J ) = 'Stack exhaust velocity'
             J = J + 1
 
         END SELECT
@@ -386,10 +402,10 @@ C.................  Set units for the other data values (per activity)
                 END IF
 
 C.................  Store variable names and information
-                VNAME3D( J ) = EONAMES( V, I )
-                VTYPE3D( J ) = EOTYPES( V, I )
-                UNITS3D( J ) = UNITS
-                VDESC3D( J ) = EODESCS( V, I )
+                VNAMESET( J ) = EONAMES( V, I )
+                VTYPESET( J ) = EOTYPES( V, I )
+                VUNITSET( J ) = UNITS
+                VDESCSET( J ) = EODESCS( V, I )
                 J = J + 1
 
             END DO    !  end loop on number of variables per pollutant
@@ -479,19 +495,18 @@ C.............  Find formula inputs in existing variable list
                 L = LEN_TRIM( VIN_A )
                 L = INDEX( EONAMES( V, I ), VIN_A(1:L) )
                 IF ( L .GT. 1 ) THEN
-        	    VNAME3D( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
+        	    VNAMESET( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
                 ELSE
-                    VNAME3D( J ) = VNAME
+                    VNAMESET( J ) = VNAME
                 END IF
-        	VTYPE3D( J ) = EOTYPES( V, I )
-        	UNITS3D( J ) = EOUNITS( V, I )
-        	VDESC3D( J ) = EODESCS( V, I )
+        	VTYPESET( J ) = EOTYPES( V, I )
+        	VUNITSET( J ) = EOUNITS( V, I )
+        	VDESCSET( J ) = EODESCS( V, I )
         	J = J + 1
 
             END DO    !  end loop on number of variables per pollutant
 
 C.............  Update header settings
-            NVARS3D = NVARS3D + NPPOL
             WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
 
 C.............  Update EANAM, in case needed for day- and hour-specific data
@@ -508,6 +523,11 @@ C.............  Update EANAM, in case needed for day- and hour-specific data
             EANAM( NIPOL+2:NIPPA+1 ) = SAVEANAM( NIPOL+1:NIPPA )
             NIPPA = NIPPA + 1
             DEALLOCATE( SAVEANAM )
+
+        ELSE
+
+C.............  Decrease total number of variables since there isn't a formula based pollutant
+            NVARSET = NVARSET - NPPOL
 
         END IF
 
@@ -542,10 +562,10 @@ C.................  Set units for the other data values (per activity)
                 END IF
 
 C.................  Store variable names and information
-                VNAME3D( J ) = AONAMES( V, I )
-                VTYPE3D( J ) = AOTYPES( V, I )
-                UNITS3D( J ) = UNITS
-                VDESC3D( J ) = AODESCS( V, I )
+                VNAMESET( J ) = AONAMES( V, I )
+                VTYPESET( J ) = AOTYPES( V, I )
+                VUNITSET( J ) = UNITS
+                VDESCSET( J ) = AODESCS( V, I )
                 J = J + 1
 
             END DO    !  end loop on number of variables per activity
@@ -553,7 +573,7 @@ C.................  Store variable names and information
         END DO        !  end loop on inventory activities V
 
 C.........  Prompt for and open I/O API output file
-        NAMBUF= PROMPTMFILE( 
+        NAMBUF= PROMPTSET( 
      &       'Enter logical name for the I/O API INVENTORY output file',
      &       FSUNKN3, ENAME, PROGNAME )
         ENAME = NAMBUF
