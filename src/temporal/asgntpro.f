@@ -187,8 +187,9 @@ C.............  Get error and warning limits from the environment
         ENDIF
 
 C.........  Set up roadway type format
-        WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
-        WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
+C REMOVED DUE TO IRIX BUG
+c        WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
+c        WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
 
 C.........  Set up roadway type and vehicle types with all zeros
         RWTZERO = REPEAT( '0', RWTLEN3 )
@@ -236,8 +237,11 @@ C.................  Set category-specific source characteristic combinations
                 CASE ( 'AREA' )   ! Already set above
 
                 CASE ( 'MOBILE' )
-         	    WRITE( CRWT, RWTFMT ) IRCLAS( S )
-                    WRITE( CVID, VIDFMT ) IVTYPE( S )
+C CHANGED DUE TO IRIX BUG
+c              	     WRITE( CRWT, RWTFMT ) IRCLAS( S )
+c                    WRITE( CVID, VIDFMT ) IVTYPE( S )
+                    WRITE( CRWT, '(I3.3)' ) IRCLAS( S )
+                    WRITE( CVID, '(I4.4)' ) IVTYPE( S )
 
                     TSCC = CRWT // CVID
                     CALL PADZERO( TSCC )
