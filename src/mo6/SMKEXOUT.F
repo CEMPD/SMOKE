@@ -9,7 +9,9 @@ C  file.
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, 
      &                     DBSCTITLE, TABCHAR, DBUNIT,
      &                     DBSELFAC
+#ifdef M6LIB
       USE MODMBSET, ONLY : EMISSIONS
+#endif
       
       IMPLICIT NONE
 
@@ -118,18 +120,18 @@ C  If vehicle type = 28 and age = 0, we're done with this pollutant, so output a
                EFTYPE = 1
                DO IFAC = 1,4
                   IF (DBSELFAC(IFAC) == 2) THEN
-C                     WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,TABCHAR,
-C     &               IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,TABCHAR,IH,
-C     &               TABCHAR,EXHAUST(IH,IFAC,IVEH),IH=1,24)
-     
+#ifdef M6LIB     
                      DO IH = 1,24
                         EMISPOS = EFPOSITION( STR2INT( DBSCTITLE ),
      &                                       IP, IVEH, EFTYPE, IFAC, 
      &                                       IH, .TRUE. )
                         EMISSIONS( EMISPOS ) = EXHAUST( IH,IFAC,IVEH )
                      END DO
-     
-     
+#else
+                     WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,TABCHAR,
+     &                  IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,TABCHAR,IH,
+     &                  TABCHAR,EXHAUST(IH,IFAC,IVEH),IH=1,24)
+#endif
                   END IF
                END DO
             END IF
@@ -138,19 +140,19 @@ C     &               TABCHAR,EXHAUST(IH,IFAC,IVEH),IH=1,24)
                EFTYPE = 2               
                IFAC = 5
                IF (DBSELFAC(IFAC) == 2) THEN
-C                  WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,TABCHAR,
-C     &            IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,TABCHAR,IH,
-C     &            TABCHAR,EXHAUST(IH,IFAC,IVEH),IH=1,24)
-C  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
-  
+#ifdef M6LIB  
                   DO IH = 1,24
                      EMISPOS = EFPOSITION( STR2INT( DBSCTITLE ), 
      &                                    IP, IVEH, EFTYPE, IFAC, 
      &                                    IH, .TRUE. )
                      EMISSIONS( EMISPOS ) = EXHAUST( IH,IFAC,IVEH )
                   END DO
-
-  
+#else
+                  WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,TABCHAR,
+     &               IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,TABCHAR,IH,
+     &               TABCHAR,EXHAUST(IH,IFAC,IVEH),IH=1,24)
+  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+#endif
                END IF
             END IF
          END IF

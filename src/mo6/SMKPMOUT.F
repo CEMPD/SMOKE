@@ -6,8 +6,10 @@ C  database file.
 
       USE DATABASE, ONLY : DBSELPART,DBSELEFT,DBSELFAC, 
      &                     DBUNIT,TABCHAR,DBSCTITLE 
+#ifdef M6LIB
       USE MODMBSET, ONLY : EMISSIONS
-           
+#endif
+
       IMPLICIT NONE
         
       INCLUDE 'CEVBMY.I' ! BMYMPD 
@@ -144,11 +146,7 @@ C.....  Check that this EF type, and road type should be output
                      
                   IF (DBSELFAC(IFAC) == 2 ) THEN
 
-C                     WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
-C     &               TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
-C     &               TABCHAR,IH,TABCHAR,PMAGGR(IVEH),IVEH=1,8)
-C  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
-
+#ifdef M6LIB
                      DO IVEH = 1,8
                         EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
      &                                       IP, IVEH, EFTYPE, IFAC, 
@@ -166,7 +164,12 @@ C  Subtract 2.5 values from 10 values if needed
                         END IF
                         
                      END DO  ! loop over 8 vehicle types
-
+#else
+                     WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
+     &                  TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
+     &                  TABCHAR,IH,TABCHAR,PMAGGR(IVEH),IVEH=1,8)
+  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
+#endif
                   END IF  ! road check
                END IF  ! emission factor check
                

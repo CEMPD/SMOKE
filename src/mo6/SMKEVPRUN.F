@@ -8,8 +8,10 @@ C  file.
      &                     ZGMMILE_EVPRUN
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, DBSCTITLE,
      &                     TABCHAR, DBUNIT, DBSELFAC                
+#ifdef M6LIB
       USE MODMBSET, ONLY : EMISSIONS
-      
+#endif
+
       IMPLICIT NONE
 
       INCLUDE 'CEVBMY.I' ! BMYMPD      
@@ -117,18 +119,19 @@ C  If vehicle = 25, age = 0, and road type = 4, we're done, so output array
                   EFTYPE = IEVAP
                   DO IFAC = 1,4
                      IF (DBSELFAC(IFAC) == 2) THEN
-C                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
-C     &                  TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
-C     &                  TABCHAR,IH,TABCHAR,EVPRUN(IH,IFAC,IVEH),IH=1,24)
-C  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
-
+#ifdef M6LIB
                         DO IH = 1,24
                            EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
      &                                          IP, IVEH, EFTYPE, IFAC, 
      &                                          IH, .TRUE. )
                            EMISSIONS(EMISPOS) = EVPRUN(IH,IFAC,IVEH)                           
                         END DO
-
+#else
+                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
+     &                  TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
+     &                  TABCHAR,IH,TABCHAR,EVPRUN(IH,IFAC,IVEH),IH=1,24)
+  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+#endif
                      END IF
                   END DO
                END IF

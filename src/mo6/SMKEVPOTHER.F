@@ -8,7 +8,9 @@ C  to the database file.
      &                     ZGMMILE_EVP
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, DBSCTITLE,
      &                     TABCHAR, DBUNIT, DBSELFAC                
+#ifdef M6LIB
       USE MODMBSET, ONLY : EMISSIONS
+#endif
       
       IMPLICIT NONE
 
@@ -158,19 +160,20 @@ C....          Convert vehicle index back to vehicle class
                IF (DBSELPOL(IP) == 2) THEN
                   IF (DBSELEFT(EFTYPE) == 2) THEN
                      IF (DBSELFAC(IFAC) == 2) THEN
-C                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
-C     &                  TABCHAR,VTYPE,TABCHAR,EFTYPE,TABCHAR,IFAC,
-C     &                  TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVX,EFX),
-C     &                  IH=1,24)
-C  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
-  
+#ifdef M6LIB  
                         DO IH = 1,24
                            EMISPOS = EFPOSITION(STR2INT(DBSCTITLE), 
      &                                          IP, VTYPE, EFTYPE, IFAC, 
      &                                          IH, .TRUE. )
                            EMISSIONS(EMISPOS) = EVPOTHER(IH,IVX,EFX)                                                       
                         END DO
-  
+#else
+                        WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
+     &                     TABCHAR,VTYPE,TABCHAR,EFTYPE,TABCHAR,IFAC,
+     &                     TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVX,EFX),
+     &                     IH=1,24)
+  110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,F9.4)
+#endif  
                      END IF
                   END IF
                END IF
