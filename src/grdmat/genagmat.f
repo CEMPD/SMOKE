@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENAGMAT( GNAME, MXSCEL, NASRC, NGRID, NMATX, 
+        SUBROUTINE GENAGMAT( GNAME, FDEV, MXSCEL, NASRC, NGRID, NMATX, 
      &                       NX, IX, CX, NCOEF, CMAX, CMIN )
 
 C***********************************************************************
@@ -14,13 +14,13 @@ C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 5/99
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -72,6 +72,7 @@ C...........   EXTERNAL FUNCTIONS
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name
+        INTEGER     , INTENT (IN) :: FDEV          ! surg codes report file
         INTEGER     , INTENT (IN) :: MXSCEL        ! max sources per cell
         INTEGER     , INTENT (IN) :: NASRC         ! no. mobile sources
         INTEGER     , INTENT (IN) :: NGRID         ! actual grid cell count
@@ -211,8 +212,8 @@ C.............  Loop through all of the cells intersecting this FIPS code.
                 C    = FIPCELL( K,F )  ! Retrieve cell number
 
 C.................  Set the surrogate fraction
-                CALL SETFRAC( ISIDX, K, F, NCHARS, INDOMAIN( S ), 
-     &                        CSRC, FRAC )
+                CALL SETFRAC( FDEV, S, ISIDX, K, F, NCHARS, 
+     &                        INDOMAIN( S ), CSRC, FRAC     )
 
                 IF( FRAC .GT. 0 ) THEN
 
