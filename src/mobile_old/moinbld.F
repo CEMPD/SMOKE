@@ -1,8 +1,8 @@
 
 C Version "@(#)$Id$ $Source$ $Date$ 
 
-        SUBROUTINE MOINBLD( MODEV, IPARM, VOLATIL, YEAR, 
-     &                      TMPRTR, TMIN, TMAX )
+        SUBROUTINE MOINBLD( MODEV, IPARM , IP  , NIDX, CIDX, VOLATIL,
+     &                      YEAR , TMPRTR, TMIN, TMAX                 )
 
 C***********************************************************************
 C  program body starts at line
@@ -38,25 +38,20 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Subroutine arguments
         INTEGER MODEV                    ! Unit number for MOBILE5a file
         INTEGER IPARM                    ! Scenario specific parameter index no.
+        INTEGER IP                       ! Supscript into NIDX and CIDX
+        INTEGER NIDX( MXPREF, NNFAC )    ! Normal x-ref entries
+        INTEGER CIDX( MXPREF, NCFAC )    ! Control x-ref entries
         INTEGER VOLATIL                  ! Volatile type
         INTEGER YEAR                     ! Year for calculating EFs
         REAL    TMPRTR                   ! Ambient temperature
         REAL    TMIN                     ! Minimum daily temperature
         REAL    TMAX                     ! Maximum daily temperature
 
-C...........   Normal MOBILE5a parameter x-ref variables
-        INTEGER MRNUM                    ! Actual no. of normal x-ref entries
-        INTEGER IPSI  ( MXPREF )         ! Normal x-ref scheme index
-        INTEGER ISTYPE( MXPREF, 2     )  ! Type-specifier (1), and pointer (2)
-        INTEGER NIDX  ( MXPREF, NNFAC )  ! Normal x-ref entries
-        INTEGER CIDX  ( MXPREF, NCFAC )  ! Control x-ref entries
-
-        COMMON / MPARMS / MRNUM, IPSI, ISTYPE, NIDX, CIDX 
-
 C...........   Main data table indices
         INTEGER IACCUM( MXFACS )
         INTEGER IATP  ( MXFACS )
         INTEGER IAVSPD( MXFACS )
+c       INTEGER IBSEXH( MXFACS )
         INTEGER ICTOFF( MXFACS )
         INTEGER IDIESL( MXFACS )
         INTEGER IEFIM ( MXFACS )
@@ -69,10 +64,10 @@ C...........   Main data table indices
         INTEGER ITAMRT( MXFACS )
         INTEGER ITPLEN( MXFACS )
 
-        SAVE    IACCUM, IATP, IAVSPD, ICTOFF, IDIESL, IEFIM , ILAPMO, 
-     &          IOMODE, IOXYGF, IPREST, IPURGT, IRDIST, ITAMRT, ITPLEN
+        SAVE    IACCUM, IATP  , IAVSPD, ICTOFF, IDIESL, IEFIM ,
+     &          ILAPMO, IOMODE, IOXYGF, IPREST, IPURGT, IRDIST, ITAMRT,
+     &          ITPLEN
 
-c       INTEGER IBSEXH( )
 c       INTEGER IEFLEV( )
 c       INTEGER IEFRFL( )
 
@@ -185,7 +180,7 @@ c       DATA    INPSI_LAST, ICPSI_LAST / -1, -1 /
 C...........   Other local variables
 
         INTEGER G7, G8, G9
-        INTEGER I, ICUT, IMP, IP, IPPREV, J, JDSL, JJ, JJ2, JK, K
+        INTEGER I, ICUT, IMP, IPPREV, J, JDSL, JJ, JJ2, JK, K
         CHARACTER*256 MESG, BUFFER
 
 C***********************************************************************
@@ -210,22 +205,6 @@ C.........  Set defaults to control variables
         IDLFLG = 1
         NMHFLG = VOLATIL
         HCFLAG = 3
-
-
-C.........  Find parameters from full x-ref index
-        IP = FIND1( IPARM, MRNUM, IPSI )
-
-        IF( IP .LT. 0 ) THEN
-            WRITE( MESG,94100 ) 'Parameter profile', IPARM, 
-     &                          'not found in MPREF'
-            CALL M3EXIT( 'MOINBLD', 0, 0, MESG, 2 )
-
-C.........  Update IP to reflect "normal" parameter index location
-        ELSE
-
-            IP = ISTYPE( IP,2 )
-
-        ENDIF
 
 C.........  Make sure parameter set in consistent
 
@@ -1242,7 +1221,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 93005   FORMAT( 2 (I1, 2X) )
 93010   FORMAT( 25(I1, 1X) )
 93020   FORMAT( 8F8.4 )
-93030   FORMAT( 7( 10F7.5 / 10F7.5 / 5F7.5 / ) 10F7.5 / 10F7.5 / 5F7.5 )
+93030   FORMAT( 7( 10F7.5 / 10F7.5 / 5F7.5 / ), 
+     &          10F7.5 / 10F7.5 / 5F7.5 )
 93040   FORMAT( 7( 10(1X,F4.3) / 10(1X,F4.3) / 5(1X,F4.3) / ),
      &             10(1X,F4.3) / 10(1X,F4.3) / 5(1X,F4.3)      )
 93090   FORMAT( 4(I2,1X),2(I2,1X),I3,1X,2(I1,1X),4I1,1X,4I1 )
