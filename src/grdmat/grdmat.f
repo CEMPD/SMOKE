@@ -62,11 +62,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL                DSCM3GRD
         LOGICAL                ENVYN
         CHARACTER(LEN=IODLEN3) GETCFDSC
+        LOGICAL                INGRID
         INTEGER                PROMPTFFILE
         CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
    
-        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, PROMPTFFILE, 
+        EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INGRID, PROMPTFFILE, 
      &            PROMPTMFILE, VERCHAR
 
 C...........   LOCAL PARAMETERS
@@ -105,8 +106,9 @@ c        INTEGER         ADEV    !  for adjustments file
 
 C...........   Other local variables
         
-        INTEGER         L1, K     !  indices and counters.
+        INTEGER         L1, K, S !  indices and counters.
 
+        INTEGER         COL     ! tmp column
         INTEGER         CMAX    ! max number srcs per cell
         INTEGER         CMIN    ! min number srcs per cell
         INTEGER         CMAXU   ! max number cells per source
@@ -122,6 +124,7 @@ C...........   Other local variables
         INTEGER         NROWS   ! no. of grid rows
         INTEGER         MXCSRC  ! max no cells per source
         INTEGER         MXSCEL  ! max no sources per cell
+        INTEGER         ROW     ! tmp row
 
         REAL            CAVG   ! average number sources per cell
         REAL            XCELL  ! Cell size, X direction
@@ -381,10 +384,15 @@ C.............  Convert point source coordinates from lat-lon to output grid
      &                     XCENT3D, YCENT3D, XLOCA, YLOCA )
 
 C.............  Set the number of source-cell intersections
-            NMATX = NSRC
+            DO S = 1, NSRC
+                IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
+                    NMATX = NMATX + 1
+                END IF
+            END DO
 
 C.............  Allocate memory for point source gridding matrix
-            ALLOCATE( GMAT( NGRID + NSRC ), STAT=IOS )
+            ALLOCATE( GMAT( NGRID + NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
 
         END SELECT
