@@ -39,14 +39,15 @@ C Last updated: $Date$
 C
 C*************************************************************************
 
+      USE MODFILESET
+
       IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     ! Emissions constants
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
