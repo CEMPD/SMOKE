@@ -54,8 +54,8 @@ C     &            NNO      = 1, NPAR = 2, NOLE = 3, NALD = 4, NISO = 5,
 C.......
 
         REAL          SOL2PAR    ! Radiation (w/m**2) to PAR conv factor
-
-        PARAMETER( SOL2PAR = 2.00 ) 
+C        PARAMETER( SOL2PAR = 2.089314 )   ! old BEIS2 before Alados 1996 
+        PARAMETER( SOL2PAR = 2.00 )       ! new BEIS2 from Alados 1996
 
 C.......   Names for beis species, emitted model species:
 
