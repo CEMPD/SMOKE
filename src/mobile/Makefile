@@ -48,10 +48,6 @@ emisfac.debug: $(EMS) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -I$(M5_SRC) -o $(@) $(EMS) $(LIBS2_DEBUG)
 #
 #
-# Modules
-#
-MODSOURC = $(MD_SRC)/modsourc.o
-#
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
