@@ -1,9 +1,14 @@
       SUBROUTINE ATCALX(ICY,INERR) 
 C 
 C  ATCALX is the main Air Toxic/HAPS driver. It computes the exhaust and  
-C  evap Air Toxic and HAPS emission factors. 
+C  evap Air Toxic and HAPS emission factors. For PM based Air Toxics, the 
+C  particle size is at that selected by the user. 
 C 
 C  Changes (Last change first): 
+C  08 Mar 02  AIR Task 28: Updated comments due to move of ADD HAPS arrays 
+C             to ATWORK. Moved PM RATIO calcs to here. 
+C  26 Feb 02: AIR Task 28: Added special calls to ATTAMPER, ATRVPEXH 
+C             to correct problem if HC is not calculated via POLLUTANTS. 
 C  28 Nov 01: AIR Task 28: Added ATHEAP for dynamic array support. 
 C  18 Sep 01: AIR Task 15-22: Comments 
 C  09 Sep 01: AIR Task 15-22: Added HAPS calculations 
@@ -13,26 +18,28 @@ C  Called by:  PRCSCN
 C 
 C  Calls: ATCALX2,ATCOMPLEX,ATEVP_HRLY,ATGROUP,ATHCHK,ATHRLOOP,ATOUTDB, 
 C         ATOUTDSC,ATOUTSS,DIRNL,EVAPCALC,P3WPOX,QUITER,,REFUEL,SCFTAB, 
-C         SOAKFCN 
+C         SOAKFCN,ATRVPEXY,ATTAMPER 
 C 
       USE DATABASE, ONLY : DBSELTOX 
-      USE ATHEAP 
+      USE ATHEAP, ONLY: DBAT, EFAT, VAT, ATHBER, ATHIV 
 C 
       IMPLICIT NONE 
 C 
       INCLUDE 'ATOX1.I'   ! MAXIAT,TOXCHK,AROM,ATOXY,BENZ,E200,E300,OLEF 
       INCLUDE 'ATOX2.I'   ! VOLTOWT 
-      INCLUDE 'ATOX4.I'   ! ATCONV,ATHEV,ATHEV,ATNHWT,DBAT,EFAT,VAT 
-      INCLUDE 'ATOX5.I'   ! NMAP,ATHBER 
+      INCLUDE 'ATOX4.I'   ! ATCONV,ATHEV,ATHEV,ATNHWT 
+      INCLUDE 'ATOX5.I'   ! NMAP 
       INCLUDE 'CITRV1.I'  ! RVPICY 
       INCLUDE 'CUMCOM.I'  ! CUMMIL 
       INCLUDE 'EVAPACT.I' ! SAWFLAG 
+      INCLUDE 'FLAGS1.I'  ! TAMFLG 
       INCLUDE 'FLAGS2.I'  ! EVIMFLAG 
       INCLUDE 'FLAGS3.I'  ! CAAFLG, CAAMY 
       INCLUDE 'FLAGS5.I'  ! SPD_FLG,SOAK_FLAG 
       INCLUDE 'IVTYPE.I'  ! MAXVEH,VTMC,VVLDGAS,VVGASMC 
       INCLUDE 'MAXIMA.I'  ! MAXIH, MAXYRS 
       INCLUDE 'MYRCAL.I'  ! TF 
+      INCLUDE 'PART3.I'   ! DBPM 
       INCLUDE 'SPEED9.I'  ! FVMT, HVMT 
       INCLUDE 'VMXCOM.I'  ! VMTMIX 
 C 
@@ -55,7 +62,10 @@ C
       INTEGER IMAP        ! HAPS index 
       INTEGER INH         ! Normal/High index 
       INTEGER IOXY        ! Oxygenate type index 
+      INTEGER IP          ! IP=1=HC for Air Toxics 
       INTEGER IROAD       ! Road index 
+      INTEGER ISR         ! start/running 
+      INTEGER ITTT        ! tampering switch 
       INTEGER IV          ! Vehicle class 
       INTEGER IVGAS       ! Gasoline vehicle index 
       INTEGER IVT         ! VOC/TOG toggle 
@@ -87,6 +97,34 @@ C
       END DO 
 C 
       IF(INERR.GT.0) RETURN 
+C 
+C ********************* Set Up Tampering for AT ************************ 
+C Must do this since HC may not be calculated via POLLUTANTS command 
+C See discussion in EFCALX for explannation of ITTT and double ATTAMPER call 
+C 
+      IP=1 ! HC for Air Toxics 
+C 
+      ITTT = 1                               !Regular Tampering routine call. 
+      IF(TAMFLG.GE.0) CALL ATTAMPER(ICY,ITTT) 
+C 
+      ITTT = 2                               !No I/M or ATP effects Tampering call. 
+      IF(TAMFLG.GE.0) CALL ATTAMPER(ICY,ITTT) 
+C 
+      DO IDX = 1,MAXYRS 
+        MY=ICY+IDX-MAXYRS 
+C 
+        IF(CAAFLG.EQ.1 .AND. ICY.GE.CAAMY) THEN 
+          MY = MIN(CAAMY,MY) 
+        ENDIF 
+C 
+        DO IV = 1,MAXVEH 
+            DO ISR = 1,2 
+                CALL TEX1(IP,IV,IDX,ISR,MY) 
+            END DO 
+        END DO 
+      END DO 
+C 
+      IF(TAMFLG.EQ.0) CALL QUITER(0.,0,119,INERR) 
 C 
 C ********************** Set Up Exhuast ******************************* 
 C 
@@ -175,6 +213,10 @@ C
      *            * (-0.02995 * ATWTOXY - 0.081507 * RVP + 1.3972) 
      *            * MTBEVOL / 100.                            !Refueling 
       END IF 
+C 
+C  Set up the fuel correction factors used by ATFUEL in ATHRLOOP 
+C 
+      CALL ATRVPEXH(ICY) 
 C 
 C  Compute the hourly refueling losses. 
 C 
@@ -387,7 +429,7 @@ C
           DO IROAD=1,5          ! 5 = Start Emissions, 1-4 are Road Types 
 C 
             XEF = ATHEF(IH,IROAD,IVT) 
-     *          * ATHBER(1,JDX,JXV,IVT,IV,IMAP)  
+     *          * ATHBER(1,JDX,JXV,IVT,IV,IMAP)  ! Ratios are in mg/mi per g/mi 
 C 
              IF(IROAD.LE.4) THEN  
                SUMIH = SUMIH + XEF * FVMT(IROAD,IH,IV) ! Road 
@@ -400,7 +442,7 @@ C
            END DO !IH 
 C 
            EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV)  
-     *                      + SUMJDX * TF(IDX,IV) ! Ratios are already in mg/mi 
+     *                      + SUMJDX * TF(IDX,IV) ! Ratios are already in mg/mi per g/mi 
       END IF ! VOC/TOG 
 C 
 C  BER 
@@ -408,16 +450,38 @@ C  BER
 C 
       XEF = ATHBER(1,JDX,JXV,3,IV,IMAP)  !ZML, mg/mi 
      *    + ATHBER(2,JDX,JXV,3,IV,IMAP)  !DET, mg/mi/10K mi 
-     *    * CUMMIL(JDX,IV)/10000.          !10K miles 
+     *    * CUMMIL(JDX,IV)/10000.        !10K miles 
 C 
       EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV) 
      *                 + XEF * TF(IDX,IV) 
 C 
       END IF  ! BER 
 C 
+C  PM RATIO 
+      IF(ATHIV(JXV,4,IMAP,IV)) THEN 
+C 
+       SUMJDX=0. 
+C 
+       DO IH=1,MAXIH 
+        SUMIH=0. 
+C 
+        DO IROAD=1,4          ! No Start PM, so only use Roads 1-4 
+         XEF = DBPM(10,IROAD,IH,JDX,IV) ! Total PM at user-specified particle size and in-use sulfur level 
+     *       * ATHBER(1,JDX,JXV,4,IV,IMAP) ! Ratios are in mg/mi per g/mi 
+C 
+         SUMIH = SUMIH + XEF * FVMT(IROAD,IH,IV) ! Road 
+        END DO !IROAD 
+C 
+        SUMJDX = SUMJDX + SUMIH * HVMT(IH)  
+        END DO !IH 
+C 
+       EFAT(IXV,IAT,IV) = EFAT(IXV,IAT,IV) 
+     *                  + SUMJDX * TF(IDX,IV) ! Ratios are already in mg/mi per g/mi 
+      END IF ! PM RATIO 
+C 
       END DO  ! IMAP 
 C 
-      END IF  ! HAPS       
+      END IF  ! HAPS 
 C 
 C ********************* Compute Evap Fractions ************************* 
 C 
