@@ -13,7 +13,7 @@
 !
 !  REVISION HISTORY:
 !     Created 1/99 by M. Houyoux
-!     Modified 11/01 by Gabe Cano - deterministic/stochastic mode
+!     Modified 2/02 by Gabe Cano - deterministic/stochastic mode
 !
 !***************************************************************************
 !
@@ -53,9 +53,10 @@
         INTEGER, ALLOCATABLE :: ADDIDX( :,: ) ! index for ADD data tables
 
 !.........  Per-source arrays for position in gridding surrogates table
-        INTEGER, ALLOCATABLE :: SRGCDPOS( : ) ! surrogate codes array position
         INTEGER, ALLOCATABLE :: SRGIDPOS( : ) ! surrogate list position
         INTEGER, ALLOCATABLE :: SGFIPPOS( : ) ! cy/st/co code position
+        INTEGER, ALLOCATABLE :: SRGTOUSE( : ) ! surrogate position in X-Ref used
+        INTEGER, ALLOCATABLE :: SGROWPOS( : ) ! surrogate row position in X-Ref
 
 !.........  Per-source arrays with index for assigning emission factors (by 
 !           pollutant). Index goes to IPSIA.
@@ -265,7 +266,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: WPRNA  ( : ) !  weekly profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: DPRNA  ( : ) !  diurnal profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: IPSIA( :,: ) !  24 hours code for EFs
-        INTEGER, ALLOCATABLE, PUBLIC:: INPAIRA( : ) !  SRC/probability pair count
+        INTEGER, ALLOCATABLE, PUBLIC:: INPAIRA( : ) !  number of SRC/PROB pairs
         INTEGER, ALLOCATABLE, PUBLIC:: ISRGCDA( :,: ) !  spatial surrogate codes
 
         REAL,    ALLOCATABLE, PUBLIC:: RSPROBA( :,: ) !  surrogate probability
