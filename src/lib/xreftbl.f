@@ -106,6 +106,7 @@ C...........   Other local variables
         LOGICAL    :: DEFAULT( NIPOL ) ! true: if default entry in x-ref
         LOGICAL    :: DFLAG = .FALSE.  ! true: operation type is additive cntls
         LOGICAL    :: EFLAG = .FALSE.  ! true: error has occurred
+        LOGICAL    :: FFLAG = .FALSE.  ! true: operation type is emis. factors
         LOGICAL    :: GFLAG = .FALSE.  ! true: operation type is ctg cntls
         LOGICAL    :: IFLAG = .FALSE.  ! true: operation type is gridding
         LOGICAL    :: JFLAG = .FALSE.  ! true: operation type is projection
@@ -154,6 +155,9 @@ C.........  Check for valid operation type
         CASE( 'CTG' )
             POLDFLT = .TRUE.
             GFLAG   = .TRUE.
+        CASE( 'EMISFACS' )
+            POLDFLT = .TRUE.
+            FFLAG   = .TRUE.
         CASE( 'GRIDDING' )
             POLDFLT = .FALSE.
             IFLAG   = .TRUE.
@@ -212,7 +216,7 @@ C.........  For CSRC, don't include pollutant for grouping.
 
             DO J = 1, NCHARS
                 CHARS( J ) = CSRC( SC_BEGP( J ):SC_ENDP( J ) )
-            ENDDO
+            END DO
 
 C.............  Rearrange CHARS if SCC is a part of the source definition
 C               because we have now stored SCC separately.  It will be
@@ -222,9 +226,9 @@ C               in tables (i.e., use CSRC)
             IF( JSCC .GT. 0 ) THEN
                 DO J = JSCC, NCHARS - 1
                     CHARS( J ) = CHARS( J + 1 )
-                ENDDO
+                END DO
                 CHARS( NCHARS ) = ' '
-            ENDIF
+            END IF
 
 C.............  Set up partial strings for checking
             CFIP    = CHARS( 1 )
@@ -248,6 +252,7 @@ C               these characteristics will appear earlier in the sorted list
 
                         IF( ISP .EQ. 0 ) THEN
                             NT = 1
+                            N( NT ) = N( NT ) + 1
 
                         ELSEIF( ISP .NE. 0 .AND. .NOT.    ! Pollutant specified
      &                          DEFAULT( ISP )         ) THEN
@@ -267,21 +272,22 @@ C               these characteristics will appear earlier in the sorted list
 
                             DEFAULT( 1 ) = .TRUE.
                             NT = 1
+                            N( NT ) = N( NT ) + 1
 
-                        ELSEIF( ISP .NE. 0 ) THEN             ! Report and skip
+                        ELSE IF( ISP .NE. 0 ) THEN            ! Report and skip
                             MESG = 'Cannot use pollutant-specific ' //
      &                             'ultimate-default'
                             CALL REPORT_INVALID_XREF( MESG )
                             NT = 0
 
-                        ELSEIF( DEFAULT( 1 ) ) THEN           ! Report and skip
+                        ELSE IF( DEFAULT( 1 ) ) THEN          ! Report and skip
                             CALL REPORT_DUP_XREF
                             NT = 0
-                        ENDIF
+                        END IF
 
-                    ENDIF
+                    END IF
 
-                ELSEIF( SCCR .EQ. SCRZERO ) THEN        ! Left SCC
+                ELSE IF( SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 
                     NT = 2
                     IF( TSCC .NE. PTSCC( NT ) ) THEN
@@ -291,7 +297,7 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
-                    ENDIF
+                    END IF
 
                 ELSE                                         ! Complete SCC
 
@@ -303,9 +309,9 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
-                    ENDIF
+                    END IF
 
-                ENDIF
+                END IF
 
             ELSEIF( ICYID .EQ. 0 ) THEN            ! County code is default
 
@@ -320,7 +326,7 @@ C               these characteristics will appear earlier in the sorted list
                         ELSE
                             CALL REPORT_DUP_XREF
                             NT = 0
-                        ENDIF
+                        END IF
 
                     ELSE                                  ! Report and skip
                         MESG = 'Cannot use pollutant-specific ' //
@@ -328,7 +334,7 @@ C               these characteristics will appear earlier in the sorted list
                         CALL REPORT_INVALID_XREF( MESG )
                         NT = 0
 
-                    ENDIF
+                    END IF
 
                 ELSEIF( SCCR .EQ. SCRZERO ) THEN         ! left SCC
 
@@ -342,7 +348,7 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
-                    ENDIF
+                    END IF
 
                 ELSE                                     ! Complete SCC
 
@@ -356,9 +362,9 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
-                    ENDIF
+                    END IF
 
-                ENDIF
+                END IF
 
             ELSEIF( CNFIP .EQ. ' ' ) THEN    ! Country/St/Co code is complete
 
@@ -373,7 +379,7 @@ C               these characteristics will appear earlier in the sorted list
                         ELSE
                             CALL REPORT_DUP_XREF
                             NT = 0
-                        ENDIF
+                        END IF
 
                     ELSE                                  ! Report and skip
                         MESG = 'Cannot use pollutant-specific ' //
@@ -381,7 +387,7 @@ C               these characteristics will appear earlier in the sorted list
                         CALL REPORT_INVALID_XREF( MESG )
                         NT = 0
 
-                   ENDIF
+                   END IF
 
                 ELSEIF( SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 
@@ -395,7 +401,7 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
-                    ENDIF
+                    END IF
 
                 ELSE                                         ! Complete SCC
 
@@ -409,9 +415,9 @@ C               these characteristics will appear earlier in the sorted list
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
                         NT = 0
-                    ENDIF
+                    END IF
 
-                ENDIF                                              ! End SCC 
+                END IF                                              ! End SCC 
 
             ELSE                                        ! Plant is specified
 
@@ -419,7 +425,7 @@ C               these characteristics will appear earlier in the sorted list
 
 C.....................  Loop through plant-specific characteristics. Only the
 C                       plant is permitted to not have an SCC not specified
-                    NT = 15
+                    NT = 9 + MXCHRS - 1
                     DO J = MXCHRS, 2, -1
 
                         IF( NT .EQ. 10 .AND. CHARS( J ) .NE. ' ' ) THEN
@@ -436,7 +442,7 @@ C                       plant is permitted to not have an SCC not specified
                                 CALL REPORT_DUP_XREF
                                 NT = 0
                                 EXIT                      ! End loop with NT
-                           ENDIF
+                           END IF
 
                         ELSEIF( NT         .GT. 10  .AND. 
      &                          CHARS( J ) .NE. ' '       ) THEN
@@ -455,7 +461,7 @@ C                       plant is permitted to not have an SCC not specified
      &                             ' POL:' // EINAM( ISP )
                             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                        ENDIF
+                        END IF
 
                         NT = NT - 1
 
@@ -474,7 +480,7 @@ C                       plant is permitted to not have an SCC not specified
 C.....................  Loop through plant-specific characteristics,
 C                       and store the most specific entries first.
 C.....................  Process NT 16 through 11
-                    NT = 16
+                    NT = 9 + MXCHRS
                     DO J = MXCHRS, 2, -1
 
                         IF( CHARS( J ) .NE. ' ' ) THEN
@@ -491,17 +497,17 @@ C.....................  Process NT 16 through 11
                                 CALL REPORT_DUP_XREF
                                 NT = 0
                                 EXIT                      ! End loop with NT
-                            ENDIF
+                            END IF
 
-                        ENDIF
+                        END IF
 
                         NT = NT - 1
 
                     ENDDO           ! End loop on plant characteristics
 
-                ENDIF ! End SCC
+                END IF ! End SCC
 
-            ENDIF ! End degree of Country/State/County code, or plant specified
+            END IF ! End degree of Country/State/County code, or plant specified
 
             PISP = ISP
 
@@ -538,6 +544,11 @@ C.........  Gridding x-ref tables
         ELSE IF( IFLAG ) THEN
             CALL ALOCGTBL( N )
             CALL FILLGTBL( NXREF, N( 1 ), XTYPE, XTCNT ) 
+
+C.........  Emission factor x-ref tables
+        ELSE IF( FFLAG ) THEN
+            CALL ALOCETBL( NIACT, N )
+            CALL FILLETBL( NIACT, NXREF, N( 1 ), XTYPE, XTCNT ) 
 
 C.........  All control x-ref tables
         ELSE
