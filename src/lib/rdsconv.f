@@ -217,7 +217,9 @@ C               in ENAM
             ELSEIF( RFLAG ) THEN
 
                 CFIP = ADJUSTR( LINE( CS1:CE1 ) )
-                TSCC = ADJUSTR( LINE( CS2:CE2 ) )
+                TSCC = LINE( CS2:CE2 )
+                CALL PADZERO( TSCC )
+
                 TSCL = TSCC( 1:LSCCEND )
 
 C.................  Determine if SCC is in inventory list
@@ -284,7 +286,9 @@ C               skipped in file.
 
             MESG = 'No pollutant conversion entries found for ' //
      &             'inventory pollutants, ' // CRLF() // BLANK10 //
-     &             'or could not find header line(s).'
+     &             'or could not find header line(s).  THIS WILL ' //
+     &             'MOST LIKELY ' // CRLF() // BLANK10 // 'RESULT '//
+     &             'IN INCORRECT EMISSIONS!'
             CALL M3WARN( PROGNAME, 0, 0, MESG )
 
         END IF
