@@ -179,9 +179,9 @@ C                       not apply to the inventory file
                     IF( K .LE. 0 .AND. YRSPEC ) THEN
                         WRITE( MESG,94010 )
      &                         'WARNING: Packet ' // LINE( L1:L2 ) //
-     &                         'does not apply to this inventory year',
-     &                         INYEAR, CRLF() // BLANK10 //
-     &                         '. It will be skipped.'
+     &                         'does not apply to current' //
+     &                         CRLF() // BLANK10 // 'inventory year (',
+     &                         INYEAR, '). It will be skipped.'
                         CALL M3MSG2( MESG )
                         INSIDE = .TRUE.
                         VALID = .FALSE.
@@ -385,6 +385,7 @@ C.............  Local variables
 
             LOGICAL, SAVE :: SFLAG     ! true: there is a saved output year
 
+            CHARACTER*40  :: BUFFER    ! packet buffer
             CHARACTER*300 :: MESG      ! message buffer
 
 C----------------------------------------------------------------------
@@ -393,14 +394,19 @@ C.............  Initialize outputs
             OUTYEAR = 0
             YFLAG   = .FALSE.
 
-C.............  Find packet in LINE in list of packets
+C.............  If spaces are between slashes, reset comparison accordingly
             S1 = L1 + 1
             S2 = L2 - 1
+            BUFFER = LINE( S1:S2 )
+            J = INDEX( BUFFER, ' ' )
+            IF( J .GT. 0 ) BUFFER = BUFFER( 1:J-1 )
+
+C.............  Find packet in LINE in list of packets
             PKTIDX = 0
             DO I = 1, NPACKET
 
                 L = LEN_TRIM( PKTLIST( I ) )
-                IF( LINE( S1:S2 ) .EQ. PKTLIST( I )( 1:L ) ) THEN
+                IF( BUFFER .EQ. PKTLIST( I )( 1:L ) ) THEN
                     PKTIDX = I
                     EXIT
                 END IF
