@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM GRDAREA
 
 C***********************************************************************
-C  program body starts at line  73
+C  program body starts at line  96
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDAMAT to grid
@@ -20,12 +18,34 @@ C
 C  REVISION  HISTORY:
 C       Prototype  2/95 by CJC.
 C
+C       Revised 9/96 by CJC:  match with char-string pollutant names,
+C	rather than numeric names, in loop 33
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
+C                Modeling System
+C File Version @(#)$Id$
+C Pathname:    $Source$
+C Last updated: $Date$ 
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C***************************************************************************/
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
-        
+
         INCLUDE 'ARDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
@@ -35,31 +55,31 @@ C...........   INCLUDES:
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        
+
         LOGICAL         GETYN
         INTEGER         INDEX1
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
-        
+
         EXTERNAL    GETYN, INDEX1, PROMPTMFILE, TRIMLEN
 
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Area Sources input and output arrays
-        
+
         REAL            EMISV( NASRC )  !  one variable of input emissions.
         REAL            EMISG( NGRID )  !  gridded output variable
-        
+
 C...........   Gridding Matrix
-      
+
         INTEGER     NS( NGRID )
         INTEGER     IS( NMATX )
         REAL        CS( NMATX )
-        
+
         COMMON  / GRIDMAT / NS, IS, CS
-           
+
 C...........   Other local variables
-        
+
         INTEGER          JDATE, JTIME, TSTEP
         INTEGER          NSTEPS
         INTEGER          LDEV
@@ -71,9 +91,9 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program GRDAREA
-        
+
         LDEV = INIT3()
-        
+
         WRITE( *,92000 ) 
      &  ' ',
      &  'Program GRDAREA to take a sorted source level area source ',
@@ -97,7 +117,7 @@ C   begin body of program GRDAREA
      &  'during logical-name entry.  Default responses are indicated',
      &  'in brackets [LIKE THIS].',
      &  ' '
-        
+
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
             WRITE( *,92000 ) ' ', 'Ending program GRDAREA', ' '
             CALL EXIT( 0 )
@@ -114,43 +134,41 @@ C   begin body of program GRDAREA
 
 C.......   Get list of output variables (shrink list in file description
 C.......   data structure to just those variables desired):
-        
+
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3ERR( 'GRDAREA', 0, 0, 
      &                  'Could not get description of file ' // ANAME,
      &                  .TRUE. )
         END IF
-        
-        
+
+
         I = 0
         J = 0
-        
-        
-33      CONTINUE
-            
-            I = I + 1
-            IF ( I .LE. NVARS3D ) THEN
 
-                IF( VTYPE3D( I ) .NE. M3REAL ) GO TO 33 !  only grid REAL vbles 
+        DO  33  I = 1, NVARS3D
+
+            IF( VTYPE3D( I ) .EQ. M3REAL ) THEN !  only grid REAL vbles 
 
                 IF ( GETYN( 'Grid variable "' // 
      &                      VNAME3D( I )( 1:TRIMLEN( VNAME3D( I ) ) )
      &                      // '" for output?',
      &                      ( 0 .NE. INDEX1( VNAME3D( I ), 
-     &                                       NIPOL, ACODE ) ) ) ) THEN
-                    
+     &                                       NIPOL, EINAM ) ) ) ) THEN
+
                     J = J + 1
                     VNAME3D( J ) = VNAME3D( I )
                     UNITS3D( J ) = UNITS3D( I )
                     VDESC3D( J ) = VDESC3D( I )
                     VTYPE3D( J ) = M3REAL
-                    
-                END IF
-            
+
+                END IF		!  if getyn-prompt accepted
+
                 GO TO  33
-           
-            END IF
-        
+
+            END IF		!  if vtype real
+
+33      CONTINUE
+
         NVARS3D = J
         FTYPE3D = GRDDED3   !  shares most of file-description with input file.
         SDATE3D = 0
@@ -182,8 +200,8 @@ C.......   data structure to just those variables desired):
         ELSE
             NSTEPS  = MXREC3D
         END IF
-                 
-        
+
+
 C.......   Get file name; open output gridded area sources file
 
         ENAME = PROMPTMFILE( 
@@ -200,24 +218,24 @@ C.......   Read gridding-transform matrix:
      &                  'Could not read gridding matrix from file "' //
      &                  GNAME( 1 : TRIMLEN( GNAME ) ) // '".',
      &                  .TRUE. )
-            
+
         END IF
-        
+
 
 C.......   Write out the area source emissions values:
-        
+
         WRITE( *,92000 ) ' ', 'Writing out emissions values...', ' '
-        
+
         DO  199  T = 1, NSTEPS
 
             DO  198  V = 1, NVARS3D
-                
+
                 IF( READ3( ANAME, VNAME3D( V ), ALLAYS3, 
      &                     JDATE, JTIME, EMISV ) ) THEN
-                    
+
                     CALL SMATVEC( NASRC, NGRID, NMATX, NS, IS, CS,
      &                            EMISV, EMISG )
-                    
+
                     IF ( .NOT. WRITE3( ENAME, VNAME3D( V ), 
      &                                 JDATE, JTIME, EMISG ) ) THEN
 
@@ -229,22 +247,22 @@ C.......   Write out the area source emissions values:
                     END IF
 
                 ELSE
-                    
+
                     CALL M3ERR( 'GRDAREA', JDATE, JTIME, 
      &                          'Could not read "' // 
      &                          VNAME3D( V ) // '" from ' // ANAME,
      &                          .FALSE. )
-                
+
                 END IF  !  if read3() succeeds or not
-                
+
 198         CONTINUE
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
-        
+
 199     CONTINUE
 
 999   CONTINUE          !  exit program
-      
+
       CALL M3EXIT( 'GRDAREA', 0, 0, 'Normal completion', 0 )
 
 
