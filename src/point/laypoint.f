@@ -159,6 +159,7 @@ C.........  Fixed-dimension arrays
 
 C...........   Logical names and unit numbers
 
+        INTEGER         IDEV    !  tmp unit number if ENAME is map file
         INTEGER         LDEV    !  log file
         INTEGER      :: PDEV = 0!  elevated/PinG source file
         INTEGER      :: RDEV = 0!  optional report iff REP_LAYER_MAX is set
@@ -169,6 +170,7 @@ C...........   Logical names and unit numbers
         CHARACTER*16    ENAME   !  point-source inventory input file
         CHARACTER*16    GNAME   !  cross-point layered grid file name
         CHARACTER*16    HNAME   !  hourly input file name
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
         CHARACTER*16    LNAME   !  layer fractions matrix output file
         CHARACTER*16    SNAME   !  cross-point surface met file name
         CHARACTER*16    XNAME   !  cross-point layered met file name
@@ -334,34 +336,37 @@ C.........  Make sure only run for point sources
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.......   Get file name; open input point sources, temporal cross-reference,
-C.......   and temporal profiles files
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        ENAME = PROMPTSET( 
-     &          'Enter logical name for POINT I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
 
-C.........  Get header description of inventory file 
-        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Otherwise, store source-category-specific header information, 
-C           including the inventory pollutants in the file (if any).  Note that 
-C           the I/O API head info is passed by include file and the
-C           results are stored in module MODINFO.
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
         ELSE
-
-            CALL GETSINFO
-            IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
-            IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
-
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
         END IF
+
+C.........  Store source-category-specific header information, 
+C           including the inventory pollutants in the file (if any).  Note that 
+C           the I/O API header info is passed by include file and the
+C           results are stored in module MODINFO.
+        CALL GETSINFO( ENAME )
+
+        IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+        IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
 
 C.........  Get file name and open daily input inventory file
         IF( HFLAG ) THEN

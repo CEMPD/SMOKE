@@ -139,6 +139,7 @@ C...........   Other allocatable arrays
 
 C...........   File units and logical/physical names
         INTEGER         CDEV    !  elevated source configuration file
+        INTEGER         IDEV    !  tmp unit number if ENAME is map file
         INTEGER         LDEV    !  log-device
         INTEGER         PDEV    !  for output major/mepse src ID file
         INTEGER         RDEV    !  ASCII output report
@@ -146,6 +147,7 @@ C...........   File units and logical/physical names
 
         CHARACTER*16    ANAME   !  logical name for ASCII inventory input file
         CHARACTER*16    ENAME   !  logical name for i/o api inventory input file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
         CHARACTER*16    MNAME   !  plume-in-grid srcs stack groups output file
 
 C...........   Other local variables
@@ -153,7 +155,6 @@ C...........   Other local variables
 
         INTEGER         COL           ! tmp column number
         INTEGER      :: ELEVTYPE = 0  ! code for elevated source approach
-        INTEGER         ENLEN         ! inventory file name length
         INTEGER         FIP           ! tmp country/st/county code
         INTEGER         IGRP          ! tmp group ID
         INTEGER         IOS           ! i/o status
@@ -199,8 +200,8 @@ C...........   Other local variables
         LOGICAL :: WFLAG    = .FALSE. ! true: convert lon to western
 
         CHARACTER*80    GDESC     !  grid description
-        CHARACTER*300   BUFFER
-        CHARACTER*300   MESG
+        CHARACTER*256   BUFFER
+        CHARACTER*256   MESG
 
         CHARACTER(LEN=IOVLEN3) COORD3D  !  coordinate system name
         CHARACTER(LEN=IOVLEN3) COORUN3D !  coordinate system units 
@@ -303,15 +304,28 @@ C.........  Write out notes about elevated and PinG approachs
 C.......   Get file name; open input point source and output
 C.......   elevated points files
 
-C.........   Get file names and open inventory files
-        ENAME = PROMPTSET( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENLEN = LEN_TRIM( ENAME )
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        SDEV = PROMPTFFILE( 
-     &         'Enter logical name for the ASCII INVENTORY file',
-     &         .TRUE., .TRUE., ANAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
+
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            ENAME = INAME
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
 
 C.........  Get elevated source configuration file, if needed
         IF( PINGTYPE .EQ. PELVCONFIG_APPROACH .OR. 
@@ -329,21 +343,11 @@ C.........  Open ASCII report file
      &        'Enter name for ELEVATED SELECTION REPORT file',
      &        .FALSE., .TRUE., 'REP' // CRL // 'ELV', PROGNAME )
 
-C.........  Get header description of inventory file, error if problem
-        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:ENLEN ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Otherwise, store source-category-specific header information, 
+C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API header info is passed by include file and the
 C           results are stored in module MODINFO.
-        ELSE
-
-            CALL GETSINFO
-
-        END IF
+        CALL GETSINFO( ENAME )
 
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )

@@ -101,18 +101,20 @@ C           this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
         
 C.........  Unit numbers and logical file names
-        INTEGER         LDEV     ! unit number for log file
-        INTEGER         SDEV     ! unit number for ASCII inventory file
-        INTEGER         PDEV     ! unit number for speeds summary file (SPDSUM)
+        INTEGER         CDEV     ! unit number for county MOBILE6 scenarios file (M6LIST)
         INTEGER         GDEV     ! unit number for time period group file (GROUP)
-        INTEGER         IDEV     ! unit number for county MOBILE6 scenarios file (M6LIST)
+        INTEGER         IDEV  ! tmp unit number if ENAME is map file
+        INTEGER         LDEV     ! unit number for log file
         INTEGER         MDEV     ! unit number for concatenated MOBILE6 input file (M6INPUT)
+        INTEGER         PDEV     ! unit number for speeds summary file (SPDSUM)
+        INTEGER         SDEV     ! unit number for ASCII inventory file
         INTEGER         TDEV     ! unit number for emission processes file
         
         CHARACTER*16    ANAME   !  logical name for ASCII inventory file
         CHARACTER*16    ENAME   !  logical name for I/O API inventory file   
-        CHARACTER*16    TNAME   !  logical name for I/O API temperature file
         CHARACTER*16    FNAME   !  logical name for I/O API emission factors file
+        CHARACTER*16    INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER*16    TNAME   !  logical name for I/O API temperature file
 
 C.........   Other local variables
         INTEGER    I, L          ! counters and indices
@@ -191,20 +193,33 @@ C.........  Get temperature aggregation length
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.......   Get file names and units; open input files
-        ENAME = PROMPTSET( 
-     &          'Enter logical name for I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
+C.........  Prompt for and open input I/O API and ASCII files
+        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
+        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                   PROGNAME, INAME, IDEV )
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for ASCII INVENTORY file',
-     &           .TRUE., .TRUE., ANAME, PROGNAME )
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+        IF( IDEV .GT. 0 ) THEN
+
+            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+        ELSE
+            SDEV = PROMPTFFILE( 
+     &             'Enter logical name for ASCII INVENTORY file',
+     &             .TRUE., .TRUE., ANAME, PROGNAME )
+        END IF
      
         PDEV = PROMPTFFILE(
      &           'Enter logical name for SPDSUM speed summary file',
      &           .TRUE., .TRUE., 'SPDSUM', PROGNAME )
         
-        IDEV = PROMPTFFILE(
+        CDEV = PROMPTFFILE(
      &           'Enter logical name for M6LIST scenarios file',
      &           .TRUE., .TRUE., 'M6LIST', PROGNAME )
         
@@ -257,28 +272,18 @@ C.........  Get MOBILE6 directory from the environment
             CALL M3MSG2( MESG )
         END IF        
 
-C.........  Get header description of inventory file 
-        IF( .NOT. DESCSET( ENAME,-1 ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Otherwise, store source-category-specific header information, 
+C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
-C           the I/O API head info is passed by include file and the
+C           the I/O API header info is passed by include file and the
 C           results are stored in module MODINFO.
-        ELSE
+        CALL GETSINFO( ENAME )
 
-            CALL GETSINFO
-
-C.............  Ensure that there is at least one activity in the inventory 
-C               file, or else this program does not need to be run
-            IF( NIACT == 0 ) THEN
-                MESG = 'ERROR: No activities are found in the ' //
-     &                 'inventory file!  Program cannot be used.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
+C.........  Ensure that there is at least one activity in the inventory 
+C           file, or else this program does not need to be run
+        IF( NIACT == 0 ) THEN
+            MESG = 'No activities are found in the ' //
+     &             'inventory file!  Program cannot be used.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Set inventory variables to read
@@ -332,7 +337,7 @@ C.........  Read the M6LIST file into an array
         MESG = 'Reading M6LIST file...'
         CALL M3MSG2( MESG )
 
-        CALL RDM6LIST( IDEV )
+        CALL RDM6LIST( CDEV )
 
 C.........  Allocate memory for the source/scenario number array
         ALLOCATE( SCENLIST( NSRC,2 ), STAT=IOS )
