@@ -84,8 +84,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       ENVYN
         INTEGER       GETFLINE
         INTEGER       GETTZONE
+        INTEGER       STR2INT
 
-        EXTERNAL      CRLF, ENVINT, ENVYN, GETFLINE, GETTZONE
+        EXTERNAL      CRLF, ENVINT, ENVYN, GETFLINE, GETTZONE, STR2INT
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -307,6 +308,9 @@ C                module MODSOURC
 C.............  Set time zones based on country/state/county code. Note that a
 C               few counties in the Western U.S. are divided by a time zone, so 
 C               this is not perfectly accurate for all counties.
+            ALLOCATE( TZONES( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
+
             DO S = 1, NSRC
         	    FIP   = IFIP( S )
         	    TZONES( S ) = GETTZONE( FIP )
