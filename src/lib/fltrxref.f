@@ -166,12 +166,7 @@ C......... Set left and right portions of SCC
 C......... Convert character SCC field to integer SCC number while
 C          allowing for case that SCC is blank.  If non-blank, compare
 C          with master SCC list for area and point sources.
-        IF( TSCC .EQ. SCCZERO ) THEN
-c   ???         RDT   = 0
-c   ???         VTYPE = 0
-c note: do I need to have this here?
-
-        ELSE IF( .NOT. MFLAG ) THEN
+        IF( TSCC .NE. SCCZERO .AND. .NOT. MFLAG ) THEN
 
             IF( SCCR .EQ. SCRZERO ) THEN
                 IXSCC = FINDC( SCCL, NINVSCL, INVSCL )

@@ -261,7 +261,6 @@ C.................  Check the value of the row number
 C.................  Special treatment for cell (0,0)
                 ELSE IF( ROW .EQ. 0 .AND. COL. EQ. 0 ) THEN
                     CYCLE
-c note: at a later date, add handling of these "county-outside-grid" fractions
 
                 END IF
 

@@ -88,8 +88,6 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of function GETISIZE
 
-c note: must be updated for all source categories.  note PTINV file name below
-
 C.........   Initialize CNTR of lines to read in
         CNTR = 0
 
