@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENRPRT( FDEV, RCNT, ENAME, TNAME, OUTFMT, 
+        SUBROUTINE GENRPRT( FDEV, RCNT, ENAME, TNAME, LNAME, OUTFMT, 
      &                      SMAT, EFLAG )
 
 C***********************************************************************
@@ -69,6 +69,9 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS
         CHARACTER*2 CRLF
@@ -82,18 +85,21 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT    ! report number
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT (IN) :: TNAME   ! hourly data file name
+        CHARACTER(*), INTENT (IN) :: LNAME   ! layer fractions file name
         CHARACTER(LEN=QAFMTL3),
      &                INTENT (IN) :: OUTFMT  ! output record format
         REAL        , INTENT (IN) :: SMAT( NSRC, NSVARS ) ! mole spc matrix
         LOGICAL     , INTENT(OUT) :: EFLAG   ! true: error occured
 
 C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE, SAVE :: SIDX( : )   ! spc/dat idx for incl pol/act
+        INTEGER, ALLOCATABLE, SAVE :: SIDX( : ) ! spc/dat idx for incl pol/act
 
-        REAL, ALLOCATABLE, SAVE :: BINARR( : ) ! helping sum to bins of data
+        REAL, ALLOCATABLE, SAVE :: BINARR( : )  ! helping sum to bins of data
+
+        REAL, ALLOCATABLE, SAVE :: LFRAC1L( : ) ! layer fractions
 
 C...........   Other local variables
-        INTEGER          E, H, I, J, K, N, S, T, V   ! counters and indices
+        INTEGER          E, H, I, J, K, L, N, S, T, V   ! counters and indices
 
         INTEGER         IOS               ! i/o status
         INTEGER         JDATE             ! Julian date
@@ -134,6 +140,8 @@ C.........  Allocate local memory for reading input data
 
         ALLOCATE( POLVAL( NSRC, N ), STAT=IOS )
         CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
+        ALLOCATE( LFRAC1L( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LFRAC1L', PROGNAME )
 
 C.........  Allocate local memory for bin helper summing array
         ALLOCATE( BINARR( NOUTBINS ), STAT=IOS )
@@ -171,39 +179,108 @@ C.............  Otherwise, read inventory emissions (for all data)
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Loop through input data (NV=NIPPA+NTPDAT or NSVARS) and sum to 
-C               bins within list of output records
-            DO V = 1, NV
+C.............  Loop over layers (EMLAYS will be 1 by default)
+            DO L = 1, EMLAYS
 
-C.................  Set index to data arrays based on speciation status
-                E = V
-                IF( RPT_%USEHOUR .AND. SFLAG ) THEN
-                    E = SPCTOTPR( V )
+C.................  If needed for this report, read layer fractions for current
+C                   layer, otherwise set to 1.
+                IF( RPT_%BYLAYER ) THEN
 
-                ELSE IF( SFLAG ) THEN
-                    E = SPCTOINV( V )
+                    IF( .NOT. READ3( LNAME, 'LFRAC', L,
+     &                         JDATE, JTIME, LFRAC1L ) ) THEN
+                        MESG = 'Could not read "LFRAC" from '// LNAME
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
 
+                ELSE
+                    LFRAC1L = 1.   ! array
+                    
                 END IF
 
-C.................  Set index from global to actually input pol/act/etype
-                J = INVIDX( E )
-                IF( RPT_%USEHOUR ) J = TPRIDX( E )
+C.................  Loop through input data (NV=NIPPA+NTPDAT or NSVARS) and 
+C                   sum to bins within list of output records
+                DO V = 1, NV
 
-C.................  Skip variable if it isn't used for this report
-                IF( J .EQ. 0 ) CYCLE
+C.....................  Set index to data arrays based on speciation status
+                    E = V
+                    IF( RPT_%USEHOUR .AND. SFLAG ) THEN
+                        E = SPCTOTPR( V )
 
-C.................  If speciation, apply speciation factors to appropriate
-C                   pollutant and emission types.
-                IF( TODOUT( E,RCNT )%SPCYN ) THEN
+                    ELSE IF( SFLAG ) THEN
+                        E = SPCTOINV( V )
 
-C.....................  If current speciation variable used for this report
-                    IF( TOSOUT( V,RCNT )%AGG .GT. 0 ) THEN
+                    END IF
+
+C.....................  Set index from global to actually input pol/act/etype
+                    J = INVIDX( E )
+                    IF( RPT_%USEHOUR ) J = TPRIDX( E )
+
+C.....................  Skip variable if it isn't used for this report
+                    IF( J .EQ. 0 ) CYCLE
+
+C.....................  If speciation, apply speciation factors to appropriate
+C                       pollutant and emission types.
+                    IF( TODOUT( E,RCNT )%SPCYN ) THEN
+
+C.........................  If current speciation variable used for this report
+                        IF( TOSOUT( V,RCNT )%AGG .GT. 0 ) THEN
+
+C.............................  Initialize temporary bin sum array
+                            BINARR = 0   ! array
+
+C.............................  Set index from global to actually input spc vars
+                            K = SPCIDX( V )
+
+C.............................  Sum gridded output records into temporary bins
+                            IF( RPT_%USEGMAT ) THEN
+                                DO I = 1, NOUTREC
+                                    S = OUTSRC( I )
+                                    N = OUTBIN( I )
+                                    BINARR( N ) = BINARR ( N ) + 
+     &                                            OUTGFAC( I )   *
+     &                                            POLVAL ( S,J ) * 
+     &                                            SMAT   ( S,K ) *
+     &                                            LFRAC1L( S )
+                                END DO
+
+C.............................  Sum non-gridded output records into tmp bins
+                            ELSE
+                                DO I = 1, NOUTREC
+                                    S = OUTSRC( I )
+                                    N = OUTBIN( I )
+                                    BINARR( N ) = BINARR ( N ) + 
+     &                                            POLVAL ( S,J ) * 
+     &                                            SMAT   ( S,K ) *
+     &                                            LFRAC1L( S )
+                                END DO
+
+                            END IF
+
+C.............................  Add temporary bins values to output columns
+                            CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%SPC )
+                            CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%ETPSPC )
+                            CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%PRCSPC )
+                            CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%SUMETP )
+                            CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%SUMPOL )
+
+                        END IF
+
+                    END IF
+
+C.....................  If used for this report, transfer emission values  
+C                       without speciation to temporary bin array
+C.....................  Make sure that this data record has not already been 
+C                       added to the output columns, as could have happened when
+C                       loop is over species (NV=NSVARS)
+                    IF( TODOUT( E,RCNT )%AGG .GT. 0 .AND.
+     &                ( SIDX( E ) .EQ. 0 .OR. SIDX( E ) .EQ. V ) )THEN
+
+C.........................  Flag data value as already having been added to
+C                           output
+                        SIDX( E ) = V
 
 C.........................  Initialize temporary bin sum array
                         BINARR = 0   ! array
-
-C.........................  Set index from global to actually input spc vars
-                        K = SPCIDX( V )
 
 C.........................  Sum gridded output records into temporary bins
                         IF( RPT_%USEGMAT ) THEN
@@ -212,8 +289,8 @@ C.........................  Sum gridded output records into temporary bins
                                 N = OUTBIN( I )
                                 BINARR( N ) = BINARR ( N ) + 
      &                                        OUTGFAC( I )   *
-     &                                        POLVAL ( S,J ) * 
-     &                                        SMAT   ( S,K )
+     &                                        POLVAL ( S,J ) *
+     &                                        LFRAC1L( S )
                             END DO
 
 C.........................  Sum non-gridded output records into temporary bins
@@ -222,82 +299,38 @@ C.........................  Sum non-gridded output records into temporary bins
                                 S = OUTSRC( I )
                                 N = OUTBIN( I )
                                 BINARR( N ) = BINARR ( N ) + 
-     &                                        POLVAL ( S,J ) * 
-     &                                        SMAT   ( S,K )
+     &                                        POLVAL ( S,J ) *
+     &                                        LFRAC1L( S )
                             END DO
 
                         END IF
 
 C.........................  Add temporary bins values to output columns
-                        CALL UPDATE_OUTCOL( TOSOUT( V,RCNT )%SPC )
-                        CALL UPDATE_OUTCOL( TOSOUT( V,RCNT )%ETPSPC )
-                        CALL UPDATE_OUTCOL( TOSOUT( V,RCNT )%PRCSPC )
-                        CALL UPDATE_OUTCOL( TOSOUT( V,RCNT )%SUMETP )
-                        CALL UPDATE_OUTCOL( TOSOUT( V,RCNT )%SUMPOL )
+                        CALL UPDATE_OUTCOL( TODOUT( E,RCNT )%ETP )
+                        CALL UPDATE_OUTCOL( TODOUT( E,RCNT )%DAT )
 
-                    END IF
+                    END IF  ! End if current pollutant
+
+                END DO      ! End loop on data or speciation variables
+
+C.................  If this is an output hour...
+                IF( ALLOUTHR( H,RCNT ) ) THEN
+
+C.....................  Convert units of output data
+                    DO J = 1, NDATA
+                        BINDATA( :,J ) = BINDATA( :,J ) * UCNVFAC( J )
+                    END DO
+
+C.....................  Write emission totals
+                    CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, L, 
+     &                             RPT_%DELIM, OUTFMT, EFLAG )
+
+C.....................  Reinitialize sum array
+                    BINDATA = 0  ! array
 
                 END IF
 
-C.................  If used for this report, transfer emission values without 
-C                   speciation to temporary bin array
-C.................  Make sure that this data record has not already been added
-C                   to the output columns, as could have happened when
-C                   loop is over species (NV=NSVARS)
-                IF( TODOUT( E,RCNT )%AGG .GT. 0 .AND.
-     &            ( SIDX( E ) .EQ. 0 .OR. SIDX( E ) .EQ. V ) )THEN
-
-C.....................  Flag data value as already having been added to output
-                    SIDX( E ) = V
-
-C.....................  Initialize temporary bin sum array
-                    BINARR = 0   ! array
-
-C.....................  Sum gridded output records into temporary bins
-                    IF( RPT_%USEGMAT ) THEN
-                        DO I = 1, NOUTREC
-                            S = OUTSRC( I )
-                            N = OUTBIN( I )
-                            BINARR( N ) = BINARR ( N ) + 
-     &                                    OUTGFAC( I ) *
-     &                                    POLVAL( S,J )
-                        END DO
-
-C.....................  Sum non-gridded output records into temporary bins
-                    ELSE
-                        DO I = 1, NOUTREC
-                            S = OUTSRC( I )
-                            N = OUTBIN( I )
-                            BINARR( N ) = BINARR ( N ) + 
-     &                                    POLVAL( S,J )
-                        END DO
- 
-                    END IF
-
-C.....................  Add temporary bins values to output columns
-                    CALL UPDATE_OUTCOL( TODOUT( E,RCNT )%ETP )
-                    CALL UPDATE_OUTCOL( TODOUT( E,RCNT )%DAT )
-
-                END IF  ! End if current pollutant
-
-            END DO      ! End loop on data or speciation variables
-
-C.............  If this is an output hour...
-            IF( ALLOUTHR( H,RCNT ) ) THEN
-
-C.................  Convert units of output data
-                DO J = 1, NDATA
-                    BINDATA( :,J ) = BINDATA( :,J ) * UCNVFAC( J )
-                END DO
-
-C.................  Write emission totals
-                CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, 
-     &                         RPT_%DELIM, OUTFMT, EFLAG )
-
-C.................  Reinitialize sum array
-                BINDATA = 0  ! array
-
-            END IF
+            END DO          ! End loop on layers
 
 C.............  If error occured, end writing of report
             IF( EFLAG ) THEN
@@ -313,7 +346,7 @@ C.............  Increment time step
         END DO    ! End loop over time steps
 
 C.........  Deallocate routine-specific memory
-        DEALLOCATE( POLVAL, BINARR )
+        DEALLOCATE( POLVAL, LFRAC1L, BINARR )
 
         RETURN
 
