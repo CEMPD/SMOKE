@@ -148,12 +148,13 @@ C.......  Other local variables because of SMOKE
       REAL          TMIN    ! Minimum daily temperature
       REAL          TMAX    ! Maximum daily temperature
 
-      LOGICAL       WFLAG
-      LOGICAL    :: FIRSTTEM = .TRUE.
-      LOGICAL    :: FIRSTIME = .TRUE.
+      LOGICAL          WFLAG
+      LOGICAL       :: FIRSTTEM = .TRUE.
+      LOGICAL       :: FIRSTIME = .TRUE.
 
-      CHARACTER*8   M5VRSION
-      CHARACTER*300 MESG
+      CHARACTER*8   :: M5VRSION
+      CHARACTER*16  :: TMPVAR = ' '
+      CHARACTER*300 :: MESG = ' '
 cmh
 cmh add commons
       COMMON /WARNING/ WFLAG
@@ -185,7 +186,7 @@ cmh add firstime check of EMS_LOC
 
           FIRSTIME = .FALSE.
           CALL ENVSTR( 'EMS_LOC', 'Path for I/M tables', ' ',
-     &                  MESG, IOS )
+     &                  TMPVAR, IOS )
           IF( IOS .NE. 0 ) THEN
 
               MESG = 'ERROR: Environment variable EMS_LOC not set!' //
