@@ -93,12 +93,12 @@ C...........   LOCAL PARAMETERS and their descriptions:
 
 C...........   LOCAL VARIABLES and their descriptions:
 
-C...........   Simulation-specific MOBILE5a parmeter list variables
+C...........   Simulation-specific MOBILE5 parmeter list variables
         INTEGER IPSIR ( MXPSI )      ! Sorted   scenario-specific PSI list
         INTEGER MPNUM                ! Actual count of scenario-specific PSIs
         INTEGER P1, P2, P3, P4( 24 ) ! Dummies
 
-C...........   MOBILE5a parameter x-ref variables
+C...........   MOBILE5 parameter x-ref variables
         INTEGER MRNUM                     ! Actual no. of normal x-ref entries
         INTEGER INDEXA( MXPREF )          ! Index for sorting x-ref scheme index
         INTEGER IPSI  ( MXPREF )          ! Sorted   x-ref scheme index
@@ -243,10 +243,10 @@ C   begin body of program EMISFAC
  
         WRITE( *,92000 )
      &  ' ',
-     &  'Program EMISFAC drives the MOBILE5a program by supplying',
+     &  'Program EMISFAC drives the MOBILE5 program by supplying',
      &  'a range of ambient temperatures and a scenario-specific',
      &  'MOBILE5 parameter file MPLIST. Using multiple calls',
-     &  'to MOBILE5a, EMISFAC creates a master emission factors',
+     &  'to MOBILE5, EMISFAC creates a master emission factors',
      &  'table for the specified temperatures and input parameter',
      &  'conbinations.',
      &  ' ',
@@ -274,7 +274,7 @@ C.........  Turn off verbose NetCDF to elimiate error messages when using
 C.........  CHECK3 to check for available time steps
         CALL NCPOPT( 0 )
 
-C.........  Get MOBILE5a input file (no prompt)
+C.........  Get MOBILE5 input file (no prompt)
         MODEV = GETEFILE( 'MO5AIN', .FALSE., .TRUE., 'EMISFAC' )
 
 C.........  Prompt for diurnal master list EFs input file for modeling year
@@ -306,7 +306,7 @@ C.........  Prompt for MPLIST (scenario specific parameter scheme list)
      &          'Enter logical name for PARAMETER LIST input file',
      &          .TRUE., .TRUE., 'MPLIST', 'EMISFAC' )
         
-C.........  Prompt for MPREF (general MOBILE5a parameter x-ref file)
+C.........  Prompt for MPREF (general MOBILE5 parameter x-ref file)
         NRDEV = PROMPTFFILE( 
      &          'Enter logical name for MPREF input file',
      &          .TRUE., .TRUE., 'MPREF', 'EMISFAC' )
