@@ -4,7 +4,7 @@
 C***********************************************************************
 C  subroutine body starts at line  82
 C
-C  FUNCTION:  Computes effective plume height using Briggs algorithm.  See:
+C  DESCRIPTION:  Computes effective plume height using Briggs algorithm.  See:
 C   1) Briggs, Gary A., 1971: Some Recent Analyses of Plume Rise Observation
 C      pp 1029 - 1032 in PROCEEDINGS OF THE SECOND INTERNATIONAL CLEAN AIR
 C      CONGRESS, edited by H. M. Englun and W. T. Beery. Academic Press, 
@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C *                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.

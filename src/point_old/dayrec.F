@@ -7,7 +7,7 @@
 C***********************************************************************
 C  subroutine body starts at line 130
 C
-C  FUNCTION:
+C  DESCRIPTION:
 C       Take records for JDATE,JTIME, sort them, construct subscript
 C       table for them, and write them out to DAY-POINT file DNAME
 C
@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.

@@ -2,7 +2,7 @@
          PROGRAM PDPOINT
 
 C***********************************************************************
-C  program body starts at line 135
+C  program body starts at line 132
 C
 C  DESCRIPTION:
 C       Construct Models3/EDSS day- or hour-specific point source file 
@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                  System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -130,6 +130,8 @@ C***********************************************************************
 C   begin body of program PDPOINT
         
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
         
         WRITE( *,92000 ) 
      &' ',
