@@ -19,7 +19,7 @@ debug: mbsetup.debug premobl.debug emisfac.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
-MBSET=mbsetup.o rdmcref.o rdmvref.o wrspdsum.o wrtimegr.o
+MBSET=mbsetup.o rdmcref.o rdmvref.o wrspdsum.o wrtimegr.o asgnspds.o
 
 mbsetup: $(MBSET) $(ALLI) $(LIBPATH)
 	echo MBSETUP:
@@ -67,6 +67,7 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgngrps.o    : $(MODMBSET) $(MODMET) $(MODINFO)
+asgnspds.o    : $(MODSOURC) $(MODXREF) $(MODINFO)
 chkm6scn.o    : $(MODINFO)
 emisfac.o     : $(MODSOURC) $(MODINFO) $(MODMET) $(MODEMFAC) $(MODFILESET)
 hourtemp.o    : $(MODMBSET) $(MODSOURC) $(MODINFO)
@@ -84,9 +85,9 @@ rdspdline.o   : $(MODMBSET)
 wremfacs.o    : $(MODSOURC) $(MODINFO) $(MODEMFAC)
 wrm6header.o  : $(MODEMFAC)
 wrm6input.o   : $(MODSOURC) $(MODINFO) $(MODEMFAC)
-wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
+wrspdsum.o    : $(MODSOURC) $(MODINFO) $(MODMBSET) $(MODXREF)
 	$(FC) $(FFLAGS) -c -o $@ wrspdsum.F
-wrspdvmt.o    : $(MODMBSET)
+wrspdvmt.o    : $(MODMOBIL) $(MODMBSET)
 wrtimegr.o    : $(MODSOURC) $(MODINFO) $(MODMBSET)
 
 clean:
