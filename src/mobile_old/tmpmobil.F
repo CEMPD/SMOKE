@@ -99,12 +99,12 @@ C...........   Vehicle Mix transform matrix
 C...........   MPLIST emissions factor cross reference tables:
 
         INTEGER   NMPLIST
-        INTEGER   MPFIP( MXPSI )
-        INTEGER   MPRDT( MXPSI )
-        INTEGER   MPLNK( MXPSI )
-        INTEGER   MPREF( 0:23, MXPSI )    !  hour&source-specific xrefs
+        INTEGER   MPFIP( MXPLST )
+        INTEGER   MPRDT( MXPLST )
+        INTEGER   MPLNK( MXPLST )
+        INTEGER   MPREF( 0:23, MXPLST )   !  hour&source-specific xrefs
         INTEGER   REFCNT                  !  count of unique list of PSIs
-        INTEGER   REFLIST( MXPSI )        !  unique list of PSIs
+        INTEGER   REFLIST( MXPLST )       !  unique list of PSIs
 
         INTEGER   EFDEX( 0:23, NMSRC )    ! subscript into emis fac tables
 
@@ -222,6 +222,7 @@ C...........   Other local variables
         DATA     DAYLIT / .FALSE. /
 
         LOGICAL         EFLAG   !  error-flag
+        LOGICAL         OFLAG   !  sources outside grid
         LOGICAL         MFLAG   !  perform monthly adjustments flag
         LOGICAL         WFLAG   !  perform weekly adjustments flag
 
@@ -246,6 +247,7 @@ C...........   Other local variables
         INTEGER         NIPOL   !  Number of scenario-specific inventory spcs
         INTEGER         NRDT    !  Index to road class in list
         INTEGER         NSTEPS
+        INTEGER         OSRC    !  Number of sources outside grid
         INTEGER         RDT     !  Temporary EPA road class number
         INTEGER         TSTEP
         INTEGER         TZONE
@@ -1285,6 +1287,8 @@ C.................  Read ungridded MIN/MAX temperature indices for the day
 
             H  = 1 + MOD( JTIME / 10000 , 24 )
             KU = 0
+            OFLAG = .FALSE.
+            OSRC = 0
 
             DO  888  S = 1, NMSRC
 
@@ -1298,7 +1302,16 @@ C...............   Ungrid temperature:
 
 C...............   Get factors for interpolating non-diurnal emission factors
 
-                IF ( TASRC .LT. TEMP0 ) THEN	    !  trap TASRC against TEMP0
+                IF( NU( S ) .EQ. 0 ) THEN          !  source outside grid
+ 
+                    OFLAG = .TRUE.
+                    OSRC = OSRC + 1
+ 
+                    PP = 0.0
+                    QQ = 0.0
+                    II = 1
+ 
+                ELSEIF ( TASRC .LT. TEMP0 ) THEN   !  trap TASRC against TEMP0
 
                     WRITE( MESG,94030 )
      &                  'Temperature', TASRC, 'at source', S,
@@ -1513,6 +1526,15 @@ C...............   Adjust which hourly EF to use based on time zone
             CALL NEXTIME( MDATE, MTIME, TSTEP )
 
 899     CONTINUE
+
+        IF( OFLAG ) THEN
+
+            WRITE( MESG, 94010 ) 
+     &         'During ungridding, ', OSRC,' sources excluded from grid'
+
+            CALL M3WARN( 'TMPMOBIL', 0, 0, MESG )
+
+        ENDIF
 
 999   CONTINUE          !  exit program
 
