@@ -211,13 +211,6 @@ C.............  Find index in complete list of pollutants
 
             DO S = 1, NSRC
 
-C.................  Set MFLAG to true for using monthly temporal adjustments
-                MFLAG = ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 )
-
-C.................  Set WFLAG to trur for using weekly temporal adjustments
-                WFLAG = ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 .OR.
-     &                    MOD( TPFLAG( S ), WDTPFAC ) .EQ. 0      )
-
 C.................  Retrieve local variables for source characteristics
                 CSRC    = CSOURC( S )
                 TSCC    = CSCC( S )
@@ -743,43 +736,35 @@ C.............  All variables are defined through host association.
 
 C----------------------------------------------------------------------
 
-            IF( MFLAG ) THEN
+            MDEX( S,J ) = MAX( FIND1( MREF, NMON, MONREF ), 0 )
 
-                MDEX( S,J ) = MAX( FIND1( MREF, NMON, MONREF ), 0 )
+            IF( MDEX( S,J ) .EQ. 0 ) THEN
 
-                IF( MDEX( S,J ) .EQ. 0 ) THEN
+                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
      &                     'ERROR: Monthly profile', MREF, 
      &                     'is not in profiles, but was assigned' //
      &                     CRLF() // BLANK5 // 'to source:' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
+                CALL M3MESG( MESG )
 
-                END IF
+            END IF
 
-            END IF  ! If monthly profiles are being used or not
+            WDEX( S,J ) = MAX( FIND1( WREF, NWEK, WEKREF ), 0 )
 
-            IF( WFLAG ) THEN
+            IF( WDEX( S,J ) .EQ. 0 ) THEN
 
-                WDEX( S,J ) = MAX( FIND1( WREF, NWEK, WEKREF ), 0 )
+                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
-                IF( WDEX( S,J ) .EQ. 0 ) THEN
-
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 
+               EFLAG = .TRUE.
+               WRITE( MESG,94010 ) 
      &                     'ERROR: Weekly profile', WREF, 
      &                     'is not in profiles, but was assigned' //
      &                     CRLF() // BLANK5 // 'to source:' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-                END IF
-
+               CALL M3MESG( MESG )
             END IF
 
             DDEX( S,J ) = MAX( FIND1( DREF, NHRL, HRLREF ), 0 )
