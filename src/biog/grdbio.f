@@ -76,8 +76,6 @@ C.......   Source-level variables
 
         INTEGER         NLINE   !  Line number counter for BGUSE
         INTEGER         FLINES  !  Number of lines in BGUSE
-        INTEGER         NCOLS   !  no. of cols in grid
-        INTEGER         NROWS   !  no. of rows in grid
 
         INTEGER         IOS     !  I/O status result
 
