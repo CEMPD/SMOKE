@@ -256,6 +256,9 @@ C.........  Don't output gridded if gridded biogenics is only input
 C.........  Cannot have BFLAG without TFLAG
         IF( BFLAG ) TFLAG = .TRUE.
 
+C.........  Cannot have LFLAG without PFLAG
+        IF( .NOT. PFLAG ) LFLAG = .FALSE.
+
 C.........  Report that flags for reporting inventory emissions, speciated
 C           emissions or not, and controlled emissions or not do not work yet
         IF( INVIOS .GE. 0 ) THEN   ! If it was set to something
