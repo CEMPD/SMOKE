@@ -8,6 +8,8 @@ C
 C  DESCRIPTION:
 C      Get the names of the emission factors given the emission factor
 C      model name and locally obtained environment variable settings
+C      NOTE - the NVAR argument is not used, but it is there for a future,
+C      more flexible, version of the routine.
 C
 C  PRECONDITIONS REQUIRED:
 C
