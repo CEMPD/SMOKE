@@ -224,7 +224,7 @@ C.................  Find current county in temperatures array
                 END IF
              
 C.................  Replace temperatures in M6 scenario
-                CALL RPLCTEMP( CURRCOUNTY, TEMPS, NCOUNTY, 
+                CALL RPLCTEMP( STR2INT( CURRCOUNTY ), TEMPS, NCOUNTY, 
      &                         M6SCEN, NLINESCEN, CTYPOS )
             END IF
 
