@@ -1,6 +1,6 @@
 
         SUBROUTINE CHKFULLDY( NSRC, SDATE, STIME, EDATE, ETIME, 
-     &                        TZONES, LDAYSAV )
+     &                        TZONES, LDAYSAV, MODELNAM )
    
 C***********************************************************************
 C  subroutine CHKFULLDY body starts at line < >
@@ -61,6 +61,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: ETIME           ! end time HHMMSS
         INTEGER, INTENT (IN) :: TZONES ( NSRC ) ! time zones per source
         LOGICAL, INTENT (IN) :: LDAYSAV( NSRC ) ! true: use daylight time
+        CHARACTER(*), INTENT (IN) :: MODELNAM   ! emission factor model name
 
 C...........  Variables dimensioned by subroutine arguments
         INTEGER       SRTDAYHR( NSRC )
@@ -106,7 +107,7 @@ C.........  Create arrays that contain the start hour and end hour of a day
 C           (in GMT) for each source (it changes by day because of daylight
 C           savings) for the first day.
         CALL SETSRCDY( NSRC, SDATE, TZONES, LDAYSAV, 
-     &                 SRTDAYHR, ENDDAYHR )
+     &                 SRTDAYHR, ENDDAYHR, MODELNAM )
      
 C.........  Count how many sources are missing part of the first day of
 C           meteorology data for each time zone that has sources.  This is done
@@ -116,7 +117,7 @@ C           assuming that the start time given is in GMT.
             Z = TZONES( S )
             
             HRDIFF = ( STIME - SRTDAYHR( S ) ) / 10000
-            IF( HRDIFF .GT. 0 ) THEN
+            IF( HRDIFF > 0 ) THEN
                 NMISSBEG( Z ) = NMISSBEG( Z ) + 1
                 AVHRBEG ( Z ) = AVHRBEG ( Z ) + REAL( HRDIFF ) ! tmp sum
             END IF    
@@ -125,7 +126,7 @@ C           assuming that the start time given is in GMT.
 
 C.........  Get the day start and end hour for the last day of processing
         CALL SETSRCDY( NSRC, EDATE, TZONES, LDAYSAV, 
-     &                 SRTDAYHR, ENDDAYHR )
+     &                 SRTDAYHR, ENDDAYHR, MODELNAM )
 
 C.........  Count how many sources are missing part of the last day of
 C           meteorology data for each time zone that has sources.  The end time
@@ -135,7 +136,7 @@ C           is assumed to be in GMT.
             Z = TZONES( S )
             
             HRDIFF = ( ETIME - ENDDAYHR( S ) ) / 10000
-            IF( HRDIFF .LT. 0 ) THEN
+            IF( HRDIFF < 0 ) THEN
                 NMISSEND( Z ) = NMISSEND( Z ) + 1
                 AVHREND ( Z ) = AVHREND ( Z ) - REAL( HRDIFF ) ! tmp sum
             END IF    
@@ -147,11 +148,11 @@ C           in case some sources in a given time zone use daylight savings
 C           and some do not.
         DO Z = 0, 23
 
-             IF( NMISSBEG( Z ) .GT. 0 ) THEN
+             IF( NMISSBEG( Z ) > 0 ) THEN
                  AVHRBEG( Z ) = AVHRBEG( Z ) / REAL( NMISSBEG( Z ) )
              END IF
 
-             IF( NMISSEND( Z ) .GT. 0 ) THEN
+             IF( NMISSEND( Z ) > 0 ) THEN
                  AVHREND( Z ) = AVHREND( Z ) / REAL( NMISSEND( Z ) )
              END IF
 
