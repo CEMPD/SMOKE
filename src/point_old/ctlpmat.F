@@ -1,10 +1,30 @@
-
-C Version "@(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
         PROGRAM CTLPMAT
 
 C***********************************************************************
-C  program body starts at line 143
+C  program body starts at line 171
 C
 C  DESCRIPTION:
 C       Construct point source control matrix from data 
@@ -83,6 +103,8 @@ C...........   follow this scheme with parallel arrays
         INTEGER     LSID        !  last state ID
         INTEGER     NFIP        !  subscript for JFIP
         INTEGER     NSID        !  subscript for JSID
+        INTEGER     DYR         !  desination year for projection factor
+        INTEGER     YEAR        !  inventory year for projection factor
                                  
 C.......   Control matrix:
         
@@ -98,6 +120,7 @@ C...........   Point Sources Table
         INTEGER     ISI2  ( NPSRC )  !  source SIC (leading 2 digits)
         INTEGER     IPLANT( NPSRC )  !  Plant ID
         INTEGER     ISTACK( NPSRC )  !  Stack ID
+        INTEGER     INVYR ( NPSRC )  !  Inventory year
         REAL        RULPEN( NPSRC, NIPOL )  !  rule penetration   fraction
         REAL        RULEFF( NPSRC, NIPOL )  !  rule effectiveness fraction
         REAL        CTLEFF( NPSRC, NIPOL )  !  rule effectiveness fraction
@@ -121,6 +144,7 @@ C...........   Other local variables
         INTEGER         LDEV         !  log-device
         INTEGER         RDEV         !  report-file device
         INTEGER         TDEV         !  device for report-these-sources file
+        LOGICAL         PFLAG        !  true if projection entries have years
         LOGICAL         RFLAG        !  flag:  make report-file
         LOGICAL         TFLAG( NPSRC )  !  flags:  track these sources
         
@@ -256,6 +280,11 @@ C...........   existing-control data CTLEFF, RULEFF, RULPEN:
      &                  'Error reading ISTACK from file' // ENAME, 2 )
         END IF
 
+        IF ( .NOT. READ3( ENAME, 'INVYR', ALLAYS3,0,0, INVYR ) ) THEN
+            CALL M3EXIT( 'CTLPMAT', 0, 0, 
+     &                  'Error reading INVYR from file' // ENAME, 2 )
+        END IF
+
         DO  33  I = 1, NIPOL
 
             VNAME = 'CTLEFF_' // EINAM( I )
@@ -341,7 +370,6 @@ C.......   percent to purely-numeric fraction
 
             FIP       = IFIP( S )
             SID       = FIP / 1000
-            SIDS( S ) = SID
             
             IF ( FIP .NE. LFIP ) THEN
                 NFIP = NFIP + 1
@@ -1578,13 +1606,18 @@ C.......   Process PROJECT PTS packet of control file:
      &                   2 )
         END IF
 
+C.........  Prompt for type of projection entries: default (EPS) or 
+C           modified EPS (with year)
+        PFLAG = GETYN(
+     &        'Are projection entries in year-specific format?', .TRUE.)
+
 141     CONTINUE        !  head of loop reading lines in the PROJECT PTS packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=900 ) LINE
             IREC = IREC + 1
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG,94920 ) 
-     &              'Error reading', CNAME( 1:TRIMLEN( CNAME ) ), 
+     &              'Error reading', CNAME( 1:TRIMLEN( CNAME ) ),
      &              IREC, IOS
                 CALL M3EXIT( 'CTLPMAT', 0, 0, MESG, 1 )
             END IF
@@ -1592,9 +1625,19 @@ C.......   Process PROJECT PTS packet of control file:
             CALL UPCASE( LINE )
             IF( 0 .NE. INDEX( LINE, 'END' ) ) GO TO 149
 
-            FIP  = STR2INT ( LINE(  1: 5 ) )
-            SIC  = STR2INT ( LINE( 16:25 ) )
-            PFAC = STR2REAL( LINE( 27:36 ) )
+            IF( PFLAG ) THEN
+                YEAR = STR2INT ( LINE(  1: 4 ) )
+                DYR  = STR2INT ( LINE(  6: 9 ) )
+                FIP  = STR2INT ( LINE( 11:15 ) )
+                SIC  = STR2INT ( LINE( 26:35 ) )
+                PFAC = STR2REAL( LINE( 37:46 ) )
+
+            ELSE
+                FIP  = STR2INT ( LINE(  1: 5 ) )
+                SIC  = STR2INT ( LINE( 16:25 ) )
+                PFAC = STR2REAL( LINE( 27:36 ) )
+
+            ENDIF
 
             IF ( FIP .LE. 0 ) THEN      !  all states.
 
@@ -1604,8 +1647,11 @@ C.......   Process PROJECT PTS packet of control file:
      &                  SIC .NE. ISI3( S ) .AND.
      &                  SIC .NE. ISI2( S ) ) GO TO 142
 
-                    IF ( TFLAG( S ) ) 
-     &                  WRITE( RDEV,93010 ) PNAME, PRJFAC( S ), PFAC
+                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) GO TO 142
+
+                    IF ( TFLAG( S ) ) WRITE( RDEV,93020 ) 
+     &                     PNAME, YEAR, DYR, FIP, SIC, PRJFAC( S ), PFAC
+
                     PRJFAC( S ) = PFAC
 
 142             CONTINUE       !  end loop on S
@@ -1623,13 +1669,16 @@ C.......   Process PROJECT PTS packet of control file:
      &                  SIC .NE. ISI3( S ) .AND.
      &                  SIC .NE. ISI2( S ) ) GO TO 143  ! n/a control
 
-                    IF ( TFLAG( S ) ) 
-     &                  WRITE( RDEV,93010 ) PNAME, PRJFAC( S ), PFAC
+                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) GO TO 143
+
+                    IF ( TFLAG( S ) ) WRITE( RDEV,93020 ) 
+     &                PNAME, YEAR, DYR, SID*1000, SIC, PRJFAC( S ), PFAC
+
                     PRJFAC( S ) = PFAC
 
 143             CONTINUE       !  end loop on S
 
-            ELSE        !  fip-ASC specific control
+            ELSE        !  fip-specific control
 
                 I = FIND1( FIP, NFIP, FFIP )
 
@@ -1639,8 +1688,11 @@ C.......   Process PROJECT PTS packet of control file:
      &                  SIC .NE. ISI3( S ) .AND.
      &                  SIC .NE. ISI2( S ) ) GO TO 144  ! n/a control
 
-                    IF ( TFLAG( S ) ) 
-     &                  WRITE( RDEV,93010 ) PNAME, PRJFAC( S ), PFAC
+                    IF( PFLAG .AND. INVYR( S ) .NE. YEAR ) GO TO 144
+
+                    IF ( TFLAG( S ) ) WRITE( RDEV,93020 )
+     &                     PNAME, YEAR, DYR, FIP, SIC, PRJFAC( S ), PFAC
+
                     PRJFAC( S ) = PFAC
 
 144             CONTINUE       !  end loop on S
@@ -2574,6 +2626,9 @@ C...........   Formatted file I/O formats............ 93xxx
 93000   FORMAT( A )
 
 93010   FORMAT( A, ':', I7, ',', I8, ',', I4.4, ',', I3.3, ' -- ', 
+     &          3( F8.5, '~>', F8.5, : '; ' )  )
+
+93020   FORMAT( A, ':', I4, ' to ', I4, 1X, I5.5, 1X, I4,
      &          3( F8.5, '~>', F8.5, : '; ' )  )
 
 
