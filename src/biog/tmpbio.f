@@ -1011,7 +1011,7 @@ C...............  Convert shortwave radiation to PAR
 C...............  Calculate non-speciated emissions
 C...............     must pass met date and time here
 
-              IF ( SWITCH _FILE ) THEN
+              IF ( SWITCH_FILE ) THEN
   
                  CALL HRBIOS( MDATE, MTIME, METNCOLS, METNROWS, 
      &                   PINES, DECDS, CONFS, AGRCS, LEAFS, OTHRS,
