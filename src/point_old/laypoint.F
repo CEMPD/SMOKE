@@ -2,7 +2,7 @@
         PROGRAM LAYPOINT
 
 C***********************************************************************
-C  program body starts at line 272
+C  program body starts at line 271
 C
 C  DESCRIPTION:
 C       Produces source-level layer fractions, using the emissions-source 
@@ -213,7 +213,6 @@ C...........   Logical names and unit numbers
         CHARACTER*16    ENAME   !  logical name for point-source input file
         CHARACTER*16    DNAME   !  dot-point   met file name
         CHARACTER*16    LNAME   !  " timestepped layer fractions output file
-        CHARACTER*16    SGRID   !  cross-point sfc grid file name
         CHARACTER*16    SNAME   !  cross-point sfc met file name
         CHARACTER*16    XGRID   !  cross-point lay grid file name
         CHARACTER*16    XNAME   !  cross-point lay met file name
@@ -345,24 +344,74 @@ C.......   and temporal profiles files
      &          'Enter name for CROSS-POINT LAYERED  MET file',
      &          FSREAD3, 'LAYCRO', 'LAYPOINT' )
 
-        SGRID = PROMPTMFILE( 
-     &          'Enter name for CROSS-POINT SURFACE GRID file',
-     &          FSREAD3, 'SFCGRD', 'LAYPOINT' )
-
         XGRID = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT LAYERED GRID file',
      &          FSREAD3, 'LAYGRD', 'LAYPOINT' )
 
-C.......   Get surface met files header for scenario and cloud scheme
+C.........  Check XGRID dimensions - layers don't matter unless too small
+        IF ( .NOT. DESC3( XGRID ) ) THEN
+            CALL M3EXIT( 'LAYPOINT', 0, 0,
+     &                  'Could not get description of file "'
+     &                  // XGRID( 1:TRIMLEN( XGRID ) ) // '"', 2 )
 
+        ELSEIF( NROWS3D .NE. NROWS .OR.
+     &          NCOLS3D .NE. NCOLS      ) THEN
+ 
+            WRITE( MESG,94020 )
+     &       'LAYGRD grid dimensions inconsistent with program' //
+     &       CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D, ',',
+     &       NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 'Bad input file.', 2 )
+
+        ELSEIF( NLAYS3D .LT. EMLAYS ) THEN
+            WRITE( MESG,94020 )
+     &       'LAYGRD layers less than number of emissions layers!' //
+     &       CRLF() // BLANK5 // 'File layers =', NLAYS3D,
+     &       ', but program (EMLAYS)=', EMLAYS
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 'Bad input file.', 2 )
+
+        END IF
+
+C.........  Get surface met files header for scenario and cloud scheme
+C.........  and check dimensions
         IF ( .NOT. DESC3( SNAME ) ) THEN
             CALL M3EXIT( 'LAYPOINT', 0, 0,
      &                  'Could not get description of file "'
      &                  // SNAME( 1:TRIMLEN( SNAME ) ) // '"', 2 )
+
+        ELSEIF( NROWS3D .NE. NROWS .OR.
+     &          NCOLS3D .NE. NCOLS      ) THEN
+ 
+            WRITE( MESG,94020 )
+     &       'SFCCRO grid dimensions inconsistent with program' //
+     &       CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D, ',',
+     &       NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 'Bad input file.', 2 )
+
         END IF
 
         SCEN_STR = FDESC3D( 2 )
         SCHE_STR = FDESC3D( 3 )
+
+C.......   Check file grid with program grid
+        IF( NCOLS3D * NROWS3D .NE. NGRID ) THEN
+
+            WRITE( MESG,94010 ) 
+     &       'Grid cell inconsistency. Met files: ', NCOLS3D * NROWS3D, 
+     &       ', but dimensioned (NGRID)=', NGRID
+            CALL M3EXIT( 'LAYPOINT', 0, 0, MESG, 2 )
+
+        ELSEIF( GDNAM3D .NE. GRDNM ) THEN
+
+            WRITE( MESG,94010 ) 
+     &       'Grid name inconsistency. Met files: "' // GDNAM3D //
+     &       '", but compiled is "' // GRDNM // '"'
+            CALL M3EXIT( 'LAYPOINT', 0, 0, MESG, 2 )
+
+        ENDIF
 
 C.......   Get time period for output file, dot point grid desc parameters:
 
@@ -371,6 +420,16 @@ C.......   Get time period for output file, dot point grid desc parameters:
             CALL M3EXIT( 'LAYPOINT', 0, 0, 
      &                  'Could not get description of file "' //
      &                  DNAME( 1:TRIMLEN( DNAME ) ) // '"', 2 )
+
+        ELSEIF( NROWS3D .NE. NROWS+1 .OR.
+     &          NCOLS3D .NE. NCOLS+1      ) THEN
+ 
+            WRITE( MESG,94020 )
+     &       'METDOT grid dimensions inconsistent with program' //
+     &       CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D, ',',
+     &       NROWS3D, ') program: (', NCOLS+1, ',', NROWS+1, ').'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 'Bad input file.', 2 )
 
         ELSE IF ( VGTYP3D .NE. VGSGPN3 ) THEN
 
@@ -491,6 +550,26 @@ C.......   Get time period for output file, dot point grid desc parameters:
             CALL M3EXIT( 'LAYPOINT', 0, 0, 
      &                  'Could not get description of file "' 
      &                  // XNAME( 1:TRIMLEN( XNAME ) ) // '"', 2 )
+
+        ELSEIF( NROWS3D .NE. NROWS .OR.
+     &          NCOLS3D .NE. NCOLS      ) THEN
+ 
+            WRITE( MESG,94020 )
+     &       'LAYCRO grid dimensions inconsistent with program' //
+     &       CRLF() // BLANK5 // '(NCOLS,NROWS) file: (', NCOLS3D, ',',
+     &       NROWS3D, ') program: (', NCOLS, ',', NROWS, ').'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 'Bad input file.', 2 )
+
+        ELSEIF( NLAYS3D .LT. EMLAYS ) THEN
+
+            WRITE( MESG,94020 )
+     &       'LAYCRO layers less than number of emissions layers!' //
+     &       CRLF() // BLANK5 // 'File layers =', NLAYS3D,
+     &       ', but program (EMLAYS)=', EMLAYS
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( 'LAYPOINT', 0, 0, 'Bad input file.', 2 )
+
         END IF
 
         NCOLSXG = NCOLS3D
@@ -1130,6 +1209,8 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 12( A, :, I8, :, 1X ) )
+
+94020   FORMAT( 10 ( A, :, I4, :, 1X ) )
 
 94050   FORMAT( A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
