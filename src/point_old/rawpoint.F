@@ -2,7 +2,7 @@
          PROGRAM RAWPOINT
 
 C***********************************************************************
-C  program body starts at line 213
+C  program body starts at line 214
 C
 C  DESCRIPTION:
 C       Sort data contained in EPS/AFS-style point source file and 
@@ -72,7 +72,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         DSCGRID
         LOGICAL         ENVYN
         INTEGER         FIND1   !  returns -1 for failure
-        INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         JULIAN
         INTEGER         JUNIT
@@ -85,10 +84,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
+        REAL            YR2DAY 
         
-        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JUNIT,
+        EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETYN, JUNIT,
      &           JULIAN, LAMBERT, LL2LAM, UTM2LAM, PROMPTFFILE, 
-     &           PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL, TRIMLEN
+     &           PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL, TRIMLEN, 
+     &           YR2DAY
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -341,16 +342,7 @@ C.............  Exit to line 123 if read is EOF
             ENDIF
 
 C.............   Calculate DAY2YR factor
-            I = INY / 1000        !  year-number
-            IF ( MOD( I,4 ) .NE. 0 ) THEN           !  nonleap years
-                DAY2YR = 365.0
-            ELSE IF ( MOD( I,100 ) .NE. 0 ) THEN    !  noncentury leap years
-                DAY2YR = 366.0
-            ELSE IF ( MOD( I,400 ) .NE. 0 ) THEN    !  century nonleap years
-                DAY2YR = 365.0
-            ELSE                                    !  leap centuries
-                DAY2YR = 366.0
-            END IF
+            DAY2YR = 1. / YR2DAY( INY )
 
 C.............  Open files, and report status. Use NAMTMP for ease of
 C.............  making changes
@@ -846,7 +838,7 @@ C.......   Process the time zone file
 C.......   Fix stack parameters
  
         CALL FIXSTK( RDEV, NPOINT, IFIP, ISCC, IPLANT, ISTACK,
-     &               STKHT, STKDM, STKTK, STKVE )
+     &               STKHT, STKDM, STKTK, STKVE, NIPOL, EMISV )
 
 C.......   Get file name; open output point sources file
 
