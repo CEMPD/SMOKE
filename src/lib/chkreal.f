@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -40,7 +40,7 @@ C***************************************************************************
         IMPLICIT NONE
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)   STRING   ! input character string
+        CHARACTER*(*), INTENT (IN OUT) :: STRING   ! input character string
 
 C...........   Other local variables
         INTEGER         K, L  ! counters and indices
@@ -82,13 +82,15 @@ C   begin body of function CHKREAL
                 CHKREAL = .FALSE.
                 RETURN
 
-            ENDIF
+            END IF
 
             IF( CBUF .EQ. ' ' ) SPACFLAG = .TRUE.
             IF( CBUF .EQ. '.' ) PERDFLAG = .TRUE.
             IF( CBUF .EQ. '-' ) NEGVFLAG = .TRUE.
 
-        ENDDO    
+        END DO    
+
+        IF( BUFFER .EQ. '.' ) STRING = '0'
 
         RETURN
 
