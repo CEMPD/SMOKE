@@ -310,14 +310,14 @@ C.........  Abort if start time is < than first time for temperatures
 
 C.........  Initialize source-based output file NetCDF parameters
         FTYPE3D = GRDDED3
-        P_ALP3D = DBLE( AMISS3 )
-        P_BET3D = DBLE( AMISS3 )
-        P_GAM3D = DBLE( AMISS3 )
-        P_GAM3D = DBLE( AMISS3 )
+        P_ALP3D = DBLE( BADVAL3 )
+        P_BET3D = DBLE( BADVAL3 )
+        P_GAM3D = DBLE( BADVAL3 )
+        P_GAM3D = DBLE( BADVAL3 )
         XCENT3D = 0.0D0
         YCENT3D = 0.0D0
-        XORIG3D = DBLE( AMISS3 )
-        YORIG3D = DBLE( AMISS3 )
+        XORIG3D = DBLE( BADVAL3 )
+        YORIG3D = DBLE( BADVAL3 )
         SDATE3D = JDATE
         STIME3D = JTIME
         TSTEP3D = 240000
@@ -328,7 +328,7 @@ C.........  Initialize source-based output file NetCDF parameters
         NTHIK3D = 1
         GDTYP3D = UTMGRD3
         VGTYP3D = IMISS3
-        VGTOP3D = AMISS3
+        VGTOP3D = BADVAL3
  
         J = 1
         VNAME3D( J ) = 'TMMI'
@@ -407,8 +407,8 @@ C............   FIP-RDT matches:
  
 C............   state--RDT matches:
  
-            FIP = 1000 * ( FIP / 1000 )
-            F = FIND3( FIP, RDT, 0, NMPLIST, MPFIP, MPRDT, MPLNK )
+            F = FIND3( 1000 * ( FIP / 1000 ), RDT, 0, 
+     &                 NMPLIST, MPFIP, MPRDT, MPLNK )
             IF ( F .GT. 0 ) GO TO 77
  
 C............   State-only matches:
