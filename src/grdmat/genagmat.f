@@ -214,11 +214,22 @@ C................  Otherwise, mark source as being outside domain
                 CYCLE           ! To head of loop over sources
 
 C.............  Special case for source already assigned a grid cell
-C               or assigned point source locations (via ARTOPNT)
             ELSE IF( C .GT. 0 ) THEN
-                NX( C ) = 1
-                IS( 1,C ) = S
-                CS( 1,C ) = 1.0
+            
+                J = NX( C )
+
+C.................  Check that the maximum number of sources per cell is ok                
+                IF( J .LT. MXSCEL ) THEN
+                    J = J + 1
+                    IS( 1,C ) = S
+                    CS( 1,C ) = 1.0
+                    
+                ELSE
+                    IF( J+1 .GT. JMAX ) JMAX = J+1
+                END IF
+                
+                NX( C ) = J
+                
                 CYCLE           ! To head of loop over sources
             END IF
 
