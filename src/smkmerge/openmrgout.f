@@ -49,7 +49,7 @@ C.........  This module contains the major data structure and control flags
      &          ELEVFLAG, EVDEV, PELVNAME, LREPSTA, LREPCNY, 
      &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
      &          ARDEV, BRDEV, MRDEV, PRDEV, TRDEV,
-     &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT
+     &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT, VARFLAG
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP
@@ -151,6 +151,9 @@ C.........  Set up header for I/O API output files
         WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR 
         IF( PYEAR .NE. BYEAR ) 
      &      WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
+        IF( VARFLAG ) THEN
+            FDESC3D( 7 ) = '/VARIABLE GRID/' // GRDNM
+        END IF
         
 C.........  Set average day description buffer
         DESCBUF = ' '
