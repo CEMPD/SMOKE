@@ -987,14 +987,14 @@ C.......   Read file header for spatial allocation factor file:
         ELSE IF ( YY .LT. -1.0E-4 * YCELSZ ) THEN
             CALL M3EXIT( 'RAWBIO', 0, 0,
      &                   'Bad BUTMN placement in SURROGATE file', 2 )
-        ELSE IF ( EUTME .LT. 
-     &            XORIG3D + ( NCOLS3D + 1.0E-4 ) * XCELSZ ) THEN
-            CALL M3EXIT( 'RAWBIO', 0, 0,
-     &                   'Bad EUTME placement in SURROGATE file', 2 )
-        ELSE IF ( EUTMN .LT.
-     &            YORIG3D + ( NROWS3D + 1.0E-4 ) * YCELSZ ) THEN
-            CALL M3EXIT( 'RAWBIO', 0, 0,
-     &                   'Bad EUTMN placement in SURROGATE file', 2 )
+c       ELSE IF ( EUTME .LT. 
+c    &            XORIG3D + ( NCOLS3D + 1.0E-4 ) * XCELSZ ) THEN
+c           CALL M3EXIT( 'RAWBIO', 0, 0,
+c    &                   'Bad EUTME placement in SURROGATE file', 2 )
+c       ELSE IF ( EUTMN .LT.
+c    &            YORIG3D + ( NROWS3D + 1.0E-4 ) * YCELSZ ) THEN
+c           CALL M3EXIT( 'RAWBIO', 0, 0,
+c    &                   'Bad EUTMN placement in SURROGATE file', 2 )
         END IF
 
         DWIDTH  = 1.0 / XCELSZ
