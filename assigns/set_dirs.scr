@@ -22,6 +22,11 @@
    setenv STATIC   $SMKDAT/run_$ESCEN/static   # Scen-spec static data
    setenv BASSCN   $SMKDAT/run_$INVEN/$ESDATE  # Episode-specific daily data
    setenv BASDIR   $SMKDAT/run_$INVEN/static   # Episode-specific static data
+#
+   setenv A_OUT    $SMKDAT/run_$ASCEN/$ESDATE/output/$SPC   # Area output
+   setenv B_OUT    $SMKDAT/run_$BSCEN/$ESDATE/output/$SPC   # Biogenics output
+   setenv M_OUT    $SMKDAT/run_$MSCEN/$ESDATE/output/$SPC   # Mobile output
+   setenv P_OUT    $SMKDAT/run_$PSCEN/$ESDATE/output/$SPC   # Point output
    setenv OUTPUT   $SCENARIO/output/$SPC       # Scen-spec output data
 #
    setenv SCRIPTS  $SMKROOT/scripts            # smoke scripts
