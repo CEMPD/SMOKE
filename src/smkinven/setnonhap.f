@@ -50,7 +50,7 @@ C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: LNONHAP
         
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, NCHARS, NEM
+        USE MODINFO, ONLY: NSRC, NCHARS, NEM, NOZ
 
         IMPLICIT NONE
 
@@ -173,6 +173,7 @@ C.....................  Skip rest of loop if pollutant is not part VOC or TOG
 C.....................  If pollutant is not a model species, set it to zero
                     IF( .NOT. ITMSPC( POL ) ) THEN
                         POLVAL( CURRPOS,NEM ) = 0.0
+                        POLVAL( CURRPOS,NOZ ) = 0.0
 
                     ELSE
 
