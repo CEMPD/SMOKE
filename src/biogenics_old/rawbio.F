@@ -156,45 +156,6 @@ C.......   Gridded normalized emissions description output to file BGRD
         REAL WETLNO( NCOLS, NROWS )
         REAL AGRINO( NCOLS, NROWS )
 
-C.sl....   Fix VNAME3D's Problem
-        REAL PINEISOP( NCOLS, NROWS )
-        REAL PINEMONO( NCOLS, NROWS )
-        REAL PINEOVOC( NCOLS, NROWS )
-        REAL DECDISOP( NCOLS, NROWS )
-        REAL DECDMONO( NCOLS, NROWS )
-        REAL DECDOVOC( NCOLS, NROWS )
-        REAL CONFISOP( NCOLS, NROWS )
-        REAL CONFMONO( NCOLS, NROWS )
-        REAL CONFOVOC( NCOLS, NROWS )
-        REAL AGRCISOP( NCOLS, NROWS )
-        REAL AGRCMONO( NCOLS, NROWS )
-        REAL AGRCOVOC( NCOLS, NROWS )
-        REAL LEAFISOP( NCOLS, NROWS )
-        REAL LEAFMONO( NCOLS, NROWS )
-        REAL LEAFOVOC( NCOLS, NROWS )
-        REAL OTHRISOP( NCOLS, NROWS )
-        REAL OTHRMONO( NCOLS, NROWS )
-        REAL OTHROVOC( NCOLS, NROWS )
-        EQUIVALENCE( PINEISOP, PINE( 1,1,1 ) )
-        EQUIVALENCE( PINEMONO, PINE( 1,1,2 ) ) 
-        EQUIVALENCE( PINEOVOC, PINE( 1,1,3 ) ) 
-        EQUIVALENCE( DECDISOP, DECD( 1,1,1 ) ) 
-        EQUIVALENCE( DECDMONO, DECD( 1,1,2 ) )
-        EQUIVALENCE( DECDOVOC, DECD( 1,1,3 ) )
-        EQUIVALENCE( CONFISOP, CONF( 1,1,1 ) )
-        EQUIVALENCE( CONFMONO, CONF( 1,1,2 ) )
-        EQUIVALENCE( CONFOVOC, CONF( 1,1,3 ) )
-        EQUIVALENCE( AGRCISOP, AGRC( 1,1,1 ) )
-        EQUIVALENCE( AGRCMONO, AGRC( 1,1,2 ) )
-        EQUIVALENCE( AGRCOVOC, AGRC( 1,1,3 ) )
-        EQUIVALENCE( LEAFISOP, LEAF( 1,1,1 ) )
-        EQUIVALENCE( LEAFMONO, LEAF( 1,1,2 ) )
-        EQUIVALENCE( LEAFOVOC, LEAF( 1,1,3 ) )
-        EQUIVALENCE( OTHRISOP, OTHR( 1,1,1 ) )
-        EQUIVALENCE( OTHRMONO, OTHR( 1,1,2 ) )
-        EQUIVALENCE( OTHROVOC, OTHR( 1,1,3 ) )
-
-
 C.......   County FIP CODE table
 
         INTEGER  NFIP                   !  number of actual counties
@@ -286,8 +247,6 @@ C.......   Set up file description and open emissions file:
         VGTOP3D = AMISS3
         FDESC3D( 1 ) = 'Biogenic Source normalized emissions values.'
         FDESC3D( 2 ) = 'Inventory  type COUNTY_BASED'
-
-c       NFIP = NBFIP    ! sl
 
         DO  11  I = 3, MXDESC3
             FDESC3D( I ) = ' '
@@ -1136,12 +1095,8 @@ C...............   Write output file:
         DO  311  M = 1, BSPCS - 1
 
             I = I + 1
-c           IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), ALLAYS3, 0, 0,
-c    &                         NORM( 1,1,M,B ) ) ) THEN
             IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
      &                         NORM( 1,1,M,B ) ) ) THEN
-c           IF ( .NOT. WRITE3( ENAME, VNAME3D( I ), 0, 0,
-c    &                         SNORM( 1,1,M,B ) ) ) THEN
                 MESG = 'Could not write "' //
      &                  VNAME3D( I )( 1: TRIMLEN( VNAME3D( I ) ) ) //
      &                  '" to ' // ENAME
@@ -1151,40 +1106,30 @@ c    &                         SNORM( 1,1,M,B ) ) ) THEN
 311     CONTINUE        !  end loop on VOC species M
 312     CONTINUE        !  end loop on VOC-emitting types B
 
-c       IF ( .NOT. WRITE3( ENAME, 'AVLAI', ALLAYS3, 0, 0,
-c    &                     AVLAI ) ) THEN
         IF ( .NOT. WRITE3( ENAME, 'AVLAI', 0, 0,
      &                     AVLAI ) ) THEN
             MESG = 'Could not write "AVLAI" to ' // ENAME
             CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
         END IF
 
-c       IF ( .NOT. WRITE3( ENAME, 'GRASNO', ALLAYS3, 0, 0,
-c    &                     GRASNO ) ) THEN
         IF ( .NOT. WRITE3( ENAME, 'GRASNO', 0, 0,
      &                     GRASNO ) ) THEN
             MESG = 'Could not write "GRASNO"to ' // ENAME
             CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
         END IF
 
-c       IF ( .NOT. WRITE3( ENAME, 'FORENO', ALLAYS3, 0, 0,
-c    &                     FORENO ) ) THEN
         IF ( .NOT. WRITE3( ENAME, 'FORENO', 0, 0,
      &                     FORENO ) ) THEN
             MESG = 'Could not write "FORENO"to ' // ENAME
             CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
         END IF
 
-c       IF ( .NOT. WRITE3( ENAME, 'WETLNO', ALLAYS3, 0, 0,
-c    &                     WETLNO ) ) THEN
         IF ( .NOT. WRITE3( ENAME, 'WETLNO', 0, 0,
      &                     WETLNO ) ) THEN
             MESG = 'Could not write "WETLNO"to ' // ENAME
             CALL M3EXIT( 'RAWBIO', 0, 0, MESG, 2 )
         END IF
 
-c       IF ( .NOT. WRITE3( ENAME, 'AGRINO', ALLAYS3, 0, 0,
-c    &                     AGRINO ) ) THEN
         IF ( .NOT. WRITE3( ENAME, 'AGRINO', 0, 0,
      &                     AGRINO ) ) THEN
             MESG = 'Could not write "AGRINO"to ' // ENAME
