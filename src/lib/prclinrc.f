@@ -1,5 +1,4 @@
 
-
         SUBROUTINE PRCLINRC( IREC, NSEGS, LINE, SEGMENT )
 
 C***********************************************************************
@@ -364,22 +363,23 @@ C.........................  Reset report settings to defaults
                         INREPORT      = .TRUE.
                         RPT_%BYCELL   = .FALSE.
                         RPT_%BYCNRY   = .FALSE.
+                        RPT_%BYCNTY   = .FALSE.
+                        RPT_%BYCONAM  = .FALSE.
+                        RPT_%BYCYNAM  = .FALSE.
                         RPT_%BYDATE   = .FALSE.
                         RPT_%BYDIU    = .FALSE.
-                        RPT_%BYSTAT   = .FALSE.
-                        RPT_%BYCNTY   = .FALSE.
                         RPT_%BYELEV   = .FALSE.
                         RPT_%BYHOUR   = .FALSE.
                         RPT_%BYLAYER  = .FALSE.
                         RPT_%BYMON    = .FALSE.
+                        RPT_%BYPLANT  = .FALSE.
+                        RPT_%BYRCL    = .FALSE.
                         RPT_%BYSCC    = .FALSE.
                         RPT_%BYSPC    = .FALSE.
                         RPT_%BYSRC    = .FALSE.
                         RPT_%BYSRG    = .FALSE.
-                        RPT_%BYCONAM  = .FALSE.
+                        RPT_%BYSTAT   = .FALSE.
                         RPT_%BYSTNAM  = .FALSE.
-                        RPT_%BYCYNAM  = .FALSE.
-                        RPT_%BYRCL    = .FALSE.
                         RPT_%BYWEK    = .FALSE.
                         RPT_%CHKPROJ  = .FALSE.
                         RPT_%CHKCNTL  = .FALSE.
@@ -392,10 +392,10 @@ C.........................  Reset report settings to defaults
                         RPT_%USECRMAT = .FALSE.
                         RPT_%USECUMAT = .FALSE.
                         RPT_%USEGMAT  = .FALSE.
-                        RPT_%USEPRMAT = .FALSE.
-                        RPT_%USESSMAT = .FALSE.
-                        RPT_%USESLMAT = .FALSE.
                         RPT_%USEHOUR  = .FALSE.
+                        RPT_%USEPRMAT = .FALSE.
+                        RPT_%USESLMAT = .FALSE.
+                        RPT_%USESSMAT = .FALSE.
                         LREGION       = .FALSE.
                         LSUBGRID      = .FALSE.
 
@@ -649,6 +649,12 @@ C.............  BY options affecting inputs needed
 
                     END IF
 
+                CASE( 'PLANT' )
+                    RPT_%BYPLANT = .TRUE.
+                    IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                        RPT_%SRCNAM = .TRUE.
+                    END IF
+
                 CASE( 'ROADCLASS' )
                     IF( CATEGORY .EQ. 'MOBILE' ) THEN
                 	RPT_%BYRCL = .TRUE.
@@ -669,10 +675,11 @@ C.............  BY options affecting inputs needed
                     END IF
 
                 CASE( 'SOURCE' )
-                    RPT_%BYSRC = .TRUE.
-                    RPT_%BYCNTY = .TRUE.
-                    RPT_%BYSCC  = .TRUE.
-                    RPT_%SCCRES = 10
+                    RPT_%BYSRC   = .TRUE.
+                    RPT_%BYPLANT = .FALSE.  ! would be a duplicate
+                    RPT_%BYCNTY  = .TRUE.
+                    RPT_%BYSCC   = .TRUE.
+                    RPT_%SCCRES  = 10
                     IF( SEGMENT( 3 ) .EQ. 'NAME' .OR.
      &                  SEGMENT( 4 ) .EQ. 'NAME' ) THEN
                         IF( CATEGORY .EQ. 'POINT' ) THEN
