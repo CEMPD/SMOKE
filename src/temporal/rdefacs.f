@@ -2,7 +2,7 @@
         SUBROUTINE RDEFACS( MODELNAM, NNAME, DNAME, ACTNAM, INGRID )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 103
 C
 C  DESCRIPTION:
 C     Subroutine Rdefacs reads the emission factors for the appropriate
@@ -138,12 +138,12 @@ C           diurnal emission factors and the model of interest.
 C.........  NOTE - although the arguments to this routine are the I/O API
 C           arrays for variables, etc., the subroutine sets the public arrays
 C           for non-diurnal (or diurnal) names, units, and descriptions.
-        CALL EFSETUP( MODELNAM, 'NONDIURNAL', MXVARS3, NNDI,
+        CALL EFSETUP( 'NONE', MODELNAM, 'NONDIURNAL', MXVARS3, NNDI,
      &                VNAME3D, UNITS3D, VDESC3D )
 
 C.........  Get emission factor names, units, and descriptions for the diurnal
 C           emission factors and the model of interest
-        CALL EFSETUP( MODELNAM, 'DIURNAL', MXVARS3, NDIU,
+        CALL EFSETUP( 'NONE', MODELNAM, 'DIURNAL', MXVARS3, NDIU,
      &                VNAME3D, UNITS3D, VDESC3D )
 
 C.........  Find index of the activity of interest
