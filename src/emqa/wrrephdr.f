@@ -506,9 +506,9 @@ C           characteristics, and NCHARS reset accordingly.
 C.................  Build source characteristics output format for WRREPOUT
                 L  = LEN_TRIM( CHARFMT )
                 J  = LEN_TRIM( CHRHDRS( K ) )
-                W1 = MAX( SC_ENDP( K ) - SC_BEGP( K ) + 1, J )
+                W1 = MAX( LOC_ENDP( K ) - LOC_BEGP( K ) + 1, J )
                 WRITE( CHARFMT, '(A,I2.2,A)' ) CHARFMT( 1:L )// 
-     &                 '1X,A', W1, '"'//RPT_%DELIM//'"'
+     &                 '1X,A', W1, ',"'//RPT_%DELIM//'"'
 
                 CALL ADD_TO_HEADER( W1, CHRHDRS( K ), LH, HDRBUF )
                 CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
@@ -530,25 +530,25 @@ C.........  Stack parameters.  +3 for decimal and 2 significant figures
             PWIDTH( 1 ) = MAX( PWIDTH( 1 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 1 ), HEADERS( IHDRHT ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 1 ), ' ', LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), ATTRUNIT( 8 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRDM ) )
             PWIDTH( 2 ) = MAX( PWIDTH( 2 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 2 ), HEADERS( IHDRDM ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 2 ), ' ', LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), ATTRUNIT( 9 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRTK ) )
             PWIDTH( 3 ) = MAX( PWIDTH( 3 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 3 ), HEADERS( IHDRTK ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 3 ), ' ', LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 3 ), ATTRUNIT(10), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRVE ) )
             PWIDTH( 4 ) = MAX( PWIDTH( 4 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 4 ), HEADERS( IHDRVE ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 4 ), ' ', LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 4 ), ATTRUNIT(11), LU, UNTBUF )
 
             WRITE( STKPFMT, 94640 ) PWIDTH( 1 ), RPT_%DELIM,
      &                              PWIDTH( 2 ), RPT_%DELIM,
@@ -802,9 +802,9 @@ C               messages and titles accordingly.
 
 C.........  Write ozone-season status
         IF( O3STAT ) THEN
-            WRITE( FDEV,93000 ) 'Ozone-season emissions basis in report'
+            WRITE( FDEV,93000 ) 'Ozone-season data basis in report'
         ELSE
-            WRITE( FDEV,93000 ) 'Annual total emissions basis in report'
+            WRITE( FDEV,93000 ) 'Annual total data basis in report'
         END IF
 
 C.........  The name of the group used to select the data
@@ -881,7 +881,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94630   FORMAT( '(1X,I', I1, '.', I1, ',"', A, '")' )
 
-94635   FORMAT( '2(1X,I', I1, ',"', A, '"))' )
+94635   FORMAT( '(1X,', 'I',I1, ',"',A,'", I',I1, ',"',A,'")' )
 
 94640   FORMAT( '(', 3('1X,F', I2.2, '.2,"', A, '",'), 
      &          '1X,F', I2.2, '.2,"', A, '")' )
