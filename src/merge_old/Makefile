@@ -33,7 +33,7 @@ csglmerge: $(CSGLS) $(CSGLI)
 #
 #
 #
-CSGLS2=csglmerge.2.F amrgvec.F plmvec.F msmatvec.F csvname.F
+CSGLS2=csgldaymrg.F amrgvec.F plmvec.F msmatvec.F csvname.F
 #
 csgldaymrg: $(CSGLS2) $(CSGLI)
 	f77 $(FFLAGS) -o $(SCENDIR)/csgldaymrg $(CSGLS2) $(LIBS)

@@ -34,7 +34,7 @@ csglmerge.debug: $(CSGLS) $(CSGLI)
 #
 #
 #
-CSGLS2=csglmerge.2.F amrgvec.F plmvec.F msmatvec.F csvname.F
+CSGLS2=csgldaymrg.F amrgvec.F plmvec.F msmatvec.F csvname.F
 #
 csglmerge2.debug: $(CSGLS2) $(CSGLI)
 	f77 $(FFLAGS) -o csglmerge2.debug $(CSGLS2) $(LIBS)
