@@ -20,13 +20,14 @@ C       TRIMLEN, ENVINT
 C
 C  REVISION  HISTORY:
 C       Prototype  4/97 by JMV.
+C
 C***************************************************************************
 C 
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C 
-C COPYRIGHT (C) 1997, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C 
 C See file COPYRIGHT for conditions of use.
@@ -171,6 +172,8 @@ C.......   | P - Q | > 1e-5 * sqrt( p*p + q*q + 1e-5 )
 C   begin body of program REPBIO
 
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
 C
 C  Read in hourly biogenic emission file
 C

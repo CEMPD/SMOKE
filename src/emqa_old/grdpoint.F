@@ -1,10 +1,8 @@
-C copied by: mhouyoux
-C origin: grdpoint.F 3.2
 
         PROGRAM GRDPOINT
 
 C***********************************************************************
-C  program body starts at line 148
+C  program body starts at line 144
 C
 C  DESCRIPTION:
 C       Use gridding-transform matrices from program GRDPMAT to grid
@@ -20,6 +18,8 @@ C
 C  REVISION  HISTORY:
 C       Prototype  7/95 by CJC.
 C       Report added 4/97 by JMV.
+C       copied by: mhouyoux
+C       origin: grdpoint.F 3.2
 C
 C***********************************************************************
 C
@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -142,6 +142,8 @@ C***********************************************************************
 C   begin body of program GRDPOINT
 
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
 
         WRITE( *,92000 ) 
      &  ' ',

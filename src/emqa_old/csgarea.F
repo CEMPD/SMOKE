@@ -2,7 +2,7 @@
         PROGRAM CSGAREA
 
 C***********************************************************************
-C  program body starts at line 159
+C  program body starts at line 160
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -19,6 +19,7 @@ C
 C  REVISION  HISTORY:
 C       Prototype  3/95 by CJC.
 C       Extra dimension checks 12/96 by CJC
+C
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
@@ -27,7 +28,7 @@ C File Version @(#)$Id$
 C Pathname:    $Source$
 C Last updated: $Date$ 
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -157,6 +158,8 @@ C***********************************************************************
 C   begin body of program CSGAREA
         
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
         
         WRITE( *,92000 ) 
      &  ' ',

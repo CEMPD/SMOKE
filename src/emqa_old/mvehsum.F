@@ -1,7 +1,8 @@
+
         PROGRAM MVEHSUM
 
 C***********************************************************************
-C  program body starts at line 145
+C  program body starts at line 146
 C
 C  DESCRIPTION:
 C       Report mobile-source emissions summed by state and county.
@@ -23,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C 
 C See file COPYRIGHT for conditions of use.
@@ -143,6 +144,8 @@ C***********************************************************************
 C   begin body of program MVEHSUM
 
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
 
 C.......   Get file name; open input area source
 

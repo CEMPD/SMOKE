@@ -1,3 +1,4 @@
+
         PROGRAM REPNORM
 
 C***********************************************************************
@@ -19,13 +20,14 @@ C       TRIMLEN, ENVINT
 C
 C  REVISION  HISTORY:
 C       Prototype  4/97 by JMV.
+C
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -160,10 +162,12 @@ C.......   | P - Q | > 1e-5 * sqrt( p*p + q*q + 1e-5 )
         FLTERR( P, Q ) =
      &  ( (P - Q)**2  .GT.  1.0E-10*( P*P + Q*Q + 1.0E-5 ) )
 
-***********************************************************************
+C***********************************************************************
 C   begin body of program REPNORM
 
         LDEV = INIT3()
+
+        CALL INITEM( LDEV )
 C
 C   Read in normalized emissions and surrogate factor(s)
 C
