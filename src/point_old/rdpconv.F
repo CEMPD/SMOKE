@@ -25,7 +25,7 @@ C ****************************************************************************/
      &                      SCC2, FAC2, N2 )
 
 C***********************************************************************
-C  function body starts at line  99
+C  function body starts at line  101
 C
 C  FUNCTION:
 C       Reads the indicated volatile organic conversion file,
@@ -41,7 +41,7 @@ C
 C
 C  REVISION  HISTORY:
 C       prototype 6/96 by MRH
-C
+C	Revised 8/96 by CJC:  calls to M3MESG()
 C***********************************************************************
 
       IMPLICIT NONE
@@ -65,6 +65,7 @@ C...........   ARGUMENTS and their descriptions:
         REAL        FAC2( MXSCNV ) ! sorted conversion factors in group 2
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+
         INTEGER     STR2INT
         REAL        STR2REAL
 
@@ -96,6 +97,7 @@ C***********************************************************************
 C   begin body of function  RDCONV
 
 C.........  Read volatile pollutants conversion factors file
+
         IREC  =  0
         I     =  0
         EFLAG = .FALSE.
@@ -114,12 +116,8 @@ C.........  Read volatile pollutants conversion factors file
 
             ELSE
 
-                IF( LINE( 1:2 ) .EQ. ' .' ) THEN
-                    SID = 0
-                ELSE
-                    SID = STR2INT( LINE( 1:2 ) )
-                    IF( SID .LT. 0 ) SID = 0
-                ENDIF
+                SID = STR2INT( LINE( 1:2 ) )
+                IF( SID .LT. 0 ) SID = 0
 
                 SCC = STR2INT( LINE( 3:17 ) )
                 IF( SCC .LT. 0 ) SCC = 0
@@ -131,6 +129,7 @@ C.........  Read volatile pollutants conversion factors file
      &                'Bad factor at line', IREC,
      &                'of VOLATILE CONVERSION FACTOR file =',
      &                FAC
+                    CALL M3MESG( MESG )
                     GO TO 77  ! to head of read loop
                 ENDIF
 
@@ -152,7 +151,7 @@ C.........  Read volatile pollutants conversion factors file
 
                 END IF
 
-            END IF
+            END IF	!  if ios nonzero (read error) or not
 
             GO TO  77   !  to head of loop
 
