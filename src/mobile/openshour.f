@@ -185,9 +185,9 @@ C.........  Set header values that cannot be default
         VTYPE3D( J ) = M3REAL
         
         J = 3
-        VNAME3D( J ) = 'RHCOUNTY'
-        UNITS3D( J ) = '%'
-        VDESC3D( J ) = 'Hourly relative humidity percentage by county'
+        VNAME3D( J ) = 'QVCOUNTY'
+        UNITS3D( J ) = 'kg/kg'
+        VDESC3D( J ) = 'Hourly water vapor mixing ratio by county'
         VTYPE3D( J ) = M3REAL
         
         J = 4
