@@ -55,6 +55,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         REAL            ENVREAL
+        LOGICAL         ENVYN
         INTEGER         FIND1
         REAL            GETREAL
         CHARACTER*10    HHMMSS
@@ -65,7 +66,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY
 
-        EXTERNAL        ENVREAL, FIND1, GETREAL, HHMMSS, LBLANK, 
+        EXTERNAL        ENVREAL, ENVYN, FIND1, GETREAL, HHMMSS, LBLANK, 
      &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN,
      &                  WKDAY
      
@@ -127,6 +128,7 @@ C...........   Point Sources input and output arrays
 C...........   Other local variables
 
         INTEGER         NSRCS
+        INTEGER         IOS     !  tmp i/o status
 
         INTEGER         LDEV    !  unit number for log file
         INTEGER         OUNIT ( MXEMIS )
@@ -141,6 +143,8 @@ C...........   Other local variables
         INTEGER         LASTCO, LASTST  ! The last state and county FIPS numbers
                                         ! encountered when summing the VMT.
         REAL            MINVMT
+
+        LOGICAL         HOUROUT  ! true: output hourly sums
 
         CHARACTER*16    ENAME   !  logical name for mobile-source input file
         CHARACTER*16    HNAME   !   " for mobile-source emissions input file
@@ -158,6 +162,10 @@ C   begin body of program MOBILSUM
         LDEV = INIT3()
 
         CALL INITEM( LDEV )
+
+C.......   Get environment variable for hourly summation output or not
+        MESG = 'Output hourly totals or not'
+        HOUROUT = ENVYN( 'MSUM_HOUROUT', MESG, .FALSE., IOS )
 
 C.......   Get file name; open input area source
 
@@ -398,7 +406,11 @@ C.............  Perform once-per-day steps
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
                 CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
-C.................  Initialize summation variables
+            END IF
+
+
+C.............  Initialize summation variables
+            IF( HOUROUT .OR. JDATE .NE. LDATE ) THEN
 
                 DO 160 I = 1, MXEMIS
 
@@ -455,7 +467,7 @@ C.............  Don't want spaces here, so no M3MSG2
             LTIME = JTIME
             CALL NEXTIME ( JDATE, JTIME, TSTEP ) ! Next time step.
 
-            IF( JDATE .NE. LDATE .OR. K .EQ. NSTEPS ) THEN
+            IF( HOUROUT .OR. JDATE .NE. LDATE .OR. K .EQ. NSTEPS ) THEN
 
             ! Now generate the reports, one for each inventory pollutant.
             DO 250 I = 1, NUMINV
@@ -546,7 +558,7 @@ C.............  Don't want spaces here, so no M3MSG2
 C.................  Set begining time for next day
                 BTIME = JTIME
 
-            ENDIF
+            ENDIF  ! If output or not
         
 300     CONTINUE
 
