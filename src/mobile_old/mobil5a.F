@@ -133,6 +133,7 @@ cmh add declarations
       INTEGER MCNT
       INTEGER NSAV    ! Number of PSIs to save during call to subroutine
       INTEGER TCNT
+      LOGICAL FIRSTTEM
       LOGICAL WFLAG
       CHARACTER*8   M5VRSION
       CHARACTER*80  VERSON
@@ -144,7 +145,7 @@ cmh add commons
       COMMON /MULTISC/ EFSAVE, M5VRSION
 c
 cmh add save
-      SAVE MCNT, TCNT
+      SAVE MCNT, TCNT, FIRSTTEM
 c
 
       COMMON /ALUHAC/ ACEQIP(8,3,2),ACCF(2,3,2,3,2)
@@ -375,8 +376,23 @@ C
       IF(IOUASK.EQ.0.OR.IOUASK.EQ.9) WRITE(IOUASK,110)
   110 FORMAT(' Reading information.')
 C
-      CALL CONSEC(*99,*999)
-      CALL ONESEC(INERR,*99)
+      CALL CONSEC(*901,*902)
+
+cmh add reset of TEMFLG for use with SMOKE.  Always want it to be set to assume
+c   mobile temperatures will be hour-based.  TEMFLG in FLAGS3.I.
+      IF( TEMFLG .NE. 2 ) THEN
+
+          IF( FIRSTTEM ) THEN
+              MESG = 'Resetting TEMFLG in MOBILE5 inputs to 2 for ' //
+     &               'use in SMOKE' // CRLF() // BLANK5
+              CALL M3WARN( 'MOBILE', 0, 0, MESG )
+              FIRSTTEM = .FALSE.
+          ENDIF
+
+          TEMFLG = 2
+      ENDIF
+
+      CALL ONESEC(INERR,*903)
 C
 C  ljn hc=3 3/5/93 Warning MSG in QUITER
 C
@@ -403,9 +419,9 @@ cmh20 CALL PARSEC(ICY,INERR,*98)
 cmh add if statement which prevents PARSEC from having to
 cmh use the end of file as the indicator to stop running
  
-   20 IF( MCNT .EQ. NSAV ) GO TO 98 
+   20 IF( MCNT .EQ. NSAV ) GO TO 88   ! to safe exit
 
-      CALL PARSEC(ICY,INERR,*98)
+      CALL PARSEC(ICY,INERR,*98)      ! *98 is error exit
 C
 C  50+ errors is (arbritrary) run limit => stop execution.  Otherwise,
 C  one or more input processing errors => abort current scenario & then do
@@ -549,19 +565,8 @@ cmh end add
 cmh 
       LEAST1=1
       GOTO 20
-C
+
    30 CALL QUITER(0.0,0,28,INERR)
-C
-C  If user is supplying replacement basic FTP ef parameter records, always
-C  print the records contents and disposition table, even when input errors
-C  have prevented the normal output routines from being called.  The only
-C  exception is when a READ error / end-of-file occurs in CONSEC or ONESEC.
-C
-C  This section can be expanded to print other optional input.
-C
-   98 IF(LEAST1.EQ.0.AND.
-     *  (NEWFLG.EQ.2.OR.NEWFLG.EQ.4.OR.NEWFLG.EQ.6)) CALL OUTNEW
-C
 c
 cmh add bounding exit errors
       IF( MCNT .GT. MXM5PSI ) THEN
@@ -589,16 +594,55 @@ cmh add bounding exit errors
  
       ENDIF
  
+   88 CONTINUE
+
+      RETURN
+
 cmh end add
 c
-   99 RETURN
+C
+C  If user is supplying replacement basic FTP ef parameter records, always
+C  print the records contents and disposition table, even when input errors
+C  have prevented the normal output routines from being called.  The only
+C  exception is when a READ error / end-of-file occurs in CONSEC or ONESEC.
+C
+C  This section can be expanded to print other optional input.
+C
+   98 IF(LEAST1.EQ.0.AND.
+     *  (NEWFLG.EQ.2.OR.NEWFLG.EQ.4.OR.NEWFLG.EQ.6)) CALL OUTNEW
+C
+cmh  99 RETURN
 C
 C  End-of-file on 1st read of call => input for call missing entirely.
 C  Calling program can branch to attach a new input file or terminate
 C  calls to MOBILE.
 C
 cmh  999 RETURN 1
-  999 RETURN
+cmh add
+      MESG = 'Problem reading scenario section of MOBILE5b inputs!'
+      CALL M3MSG2( MESG )
+      GOTO 999
+
+901   MESG = 'Error exit status 1 while reading control section ' //
+     &       'of MOBILE5b inputs!'
+      CALL M3MSG2( MESG )
+      GOTO 999
+
+902   MESG = 'Error exit status 2 while reading control section ' //
+     &       'of MOBILE5b inputs!'
+      CALL M3MSG2( MESG )
+      GOTO 999
+
+903   MESG = 'Problem reading one-time section of MOBILE5b inputs!'
+      CALL M3MSG2( MESG )
+      GOTO 999
+
+999   CONTINUE      ! error abort because of misformatted inputs
+
+      MESG = 'Error or misformatted inputs encountered ' //
+     &       'during MOBILE5b call.'
+      CALL M3EXIT( 'MOBILE', 0, 0, MESG, 2 )
+c
 
 C******************  FORMAT  STATEMENTS   ******************************
  
