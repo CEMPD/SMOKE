@@ -290,6 +290,11 @@ C.................  Check the year and projection year of the matrix
 
             END IF  ! end of reactivity control open
 
+        ELSE
+
+            ALLOCATE( AEINAM ( ANIPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'AEINAM', PROGNAME )
+
         END IF  ! End of section for area sources
 
 C.........  If we have biogenic sources 
@@ -314,10 +319,10 @@ C               speciation matrix variable descriptions
 
             DO I = 1, BNSMATV
                 IF( VNAME3D( I ) .NE. 'NO' ) THEN
-                    DUMNAME = 'VOC'
+                    DUMNAME = 'BIO' // ETJOIN // 'VOC'
                     BSVDESC( I ) = DUMNAME // SPJOIN // VNAME3D( I )
                 ELSE
-                    DUMNAME = 'NOX'
+                    DUMNAME = 'BIO' // ETJOIN // 'NOX'
                     BSVDESC( I ) = DUMNAME // SPJOIN // VNAME3D( I )
                 END IF
 
@@ -325,8 +330,8 @@ C               speciation matrix variable descriptions
 
 C.............  Store biogenic pollutant names and units
             BNIPOL  = 2
-            BEINAM ( 1 ) = 'NOX'
-            BEINAM ( 2 ) = 'VOC'
+            BEINAM ( 1 ) = 'BIO' // ETJOIN // 'NOX'
+            BEINAM ( 2 ) = 'BIO' // ETJOIN // 'VOC'
             BONAMES      = BEINAM
             BOUNITS      = UNITS3D( 1 )
 
@@ -478,6 +483,11 @@ C.................  Check the year and projection year of the matrix
 
             END IF  ! end of reactivity control open
 
+        ELSE
+
+            ALLOCATE( MEINAM ( MNIPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MEINAM', PROGNAME )
+
         ENDIF  ! End of section for mobile sources
 
 C.........  If we have point sources 
@@ -544,7 +554,7 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 CALL CHECKMEM( IOS, 'POUNITS', PROGNAME )
 
                 CALL STORE_VNAMES( NPTVAR3+1, NPTPPOL3, PNIPOL, PEINAM )
-                CALL STORE_INVINFO( NVAR+1, NPPOL, PNIPOL, 1, 1,
+                CALL STORE_INVINFO( NVAR+1, NPPOL, PNIPOL, 1, INVPIDX,
      &                              PONAMES, POUNITS )
 
             END IF
@@ -669,6 +679,11 @@ C.............  Open elevated/plume-in-grid file - for plume-in-grid outputs
                 EDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
      &                              'PELV', PROGNAME      )
             END IF
+
+        ELSE
+
+            ALLOCATE( PEINAM ( PNIPOL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PEINAM', PROGNAME )
 
         END IF      ! End of section for point sources
 
