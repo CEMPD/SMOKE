@@ -2,7 +2,7 @@
         PROGRAM SRGGRID
 
 C***********************************************************************
-C  program body starts at line 179
+C  program body starts at line 180
 C
 C  DESCRIPTION:
 C       Construct by-FIP and sum-total gridded files containing data from
@@ -42,7 +42,7 @@ C Last updated: $Date$
 C
 C***************************************************************************/
 
-      IMPLICIT NONE
+        IMPLICIT NONE
 
 C...........   INCLUDES:
 

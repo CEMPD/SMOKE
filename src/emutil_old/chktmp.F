@@ -1,37 +1,42 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
- 
-C.... SUBROUTINE CHKTMP compares input NetCDF file header time info with 
-C     output UAM info based on USERIN file
 
       SUBROUTINE CHKTMP( IERR, JDATE, EDDATE, JTIME, EDTIME, TSTEP )
       
+C***************************************************************************
+C  subroutine body starts at line 66
+C
+C  DESCRIPTION:
+C     SUBROUTINE CHKTMP compares input NetCDF file header time info with 
+C     output UAM info based on USERIN file
+C
+C***************************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***************************************************************************
+
       IMPLICIT NONE
 
-      include 'PARMS3.EXT'
-      include 'FDESC3.EXT'
-      include 'param.inc'
-      include 'uamcntl.inc'
+      INCLUDE 'PARMS3.EXT'
+      INCLUDE 'FDESC3.EXT'
+      INCLUDE 'param.inc'
+      INCLUDE 'uamcntl.inc'
 
 C.... Local variables
       INTEGER*4 EDATE3D  ! End date in NetCDF file (YYYYDDD)
@@ -54,6 +59,9 @@ C.... Functions and their descriptions
      &                  (INT(TIME)-INT(TIME/100.)*100)*1000
 
       S_TO_NOS(ITIME) = REAL(ITIME/100)
+
+C***********************************************************************
+C   begin body of subroutine CHKTMP
 
       IERR = 0
 

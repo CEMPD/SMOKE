@@ -1,31 +1,8 @@
 
         PROGRAM FAKETEMP
 
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
-
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 138
 C
 C  FUNCTION:
 C       Create an altered or fabricated gridded temperature data file using
@@ -40,7 +17,28 @@ C
 C  REVISION  HISTORY:
 C       Prototype 1/97 by MRH
 C
-C***********************************************************************
+C***************************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***************************************************************************
 
         IMPLICIT NONE
 
@@ -54,6 +52,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
+        INTEGER         GETDATE
         INTEGER         GETMENU
         INTEGER         GETNUM
         REAL*4          GETREAL
@@ -64,8 +63,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
 
-        EXTERNAL        DSCGRID, GETMENU, GETNUM, GETREAL, GETYN,
-     &                  INDEX1, LEN2, PROMPTFFILE, PROMPTMFILE, TRIMLEN
+        EXTERNAL        DSCGRID, GETDATE, GETMENU, GETNUM, GETREAL, 
+     &                  GETYN, INDEX1, LEN2, PROMPTFFILE, PROMPTMFILE, 
+     &                  TRIMLEN
 
 C...........   Temperature arrays
         REAL       TA( NGRID ) ! storage for temperatures
@@ -245,8 +245,8 @@ C.........  Set output file header information
      &                      'Enter the number of days to fake' )
 
             SDATE = 1993201
-            SDATE = GETNUM( 0, 9999356, SDATE,
-     &                       'Enter start date  (YYYYDDD)')
+            SDATE = GETDATE( SDATE,
+     &                       'Enter start date (YYYYDDD)|(YYYYMMDD)' )
             STIME = 0 
             STIME = GETNUM( 0, 235959, STIME, 
      &                       'Enter start time  (HHMMSS)')

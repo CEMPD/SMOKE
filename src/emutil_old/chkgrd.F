@@ -1,39 +1,51 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
- 
-C.... SUBROUTINE CHKGRD compares input NetCDF file header grid info with 
-C     output UAM info based on USERIN file
 
       SUBROUTINE CHKGRD( IERR )
 
-      include 'PARMS3.EXT'
-      include 'FDESC3.EXT'
-      include 'param.inc'
-      include 'uamcntl.inc'
-      include 'uamregn.inc'
+C***********************************************************************
+C  subroutine body starts at line 50
+C
+C  DESCRIPTION:
+C     SUBROUTINE CHKGRD compares input NetCDF file header grid info with 
+C     output UAM info based on USERIN file
+C
+C***************************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***************************************************************************
+
+      IMPLICIT NONE
+
+C...........   INCLUDES:
+ 
+      INCLUDE 'PARMS3.EXT'
+      INCLUDE 'FDESC3.EXT'
+      INCLUDE 'param.inc'
+      INCLUDE 'uamcntl.inc'
+      INCLUDE 'uamregn.inc'
 
 C.... Local variables
       INTEGER*4 IERR     ! Error flag
+
+C***********************************************************************
+C   begin body of subroutine CHKGRD
  
       IERR = 0
 

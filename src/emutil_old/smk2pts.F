@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 C
       PROGRAM SMK2PTS
 
 C***********************************************************************
-C  program body starts at line 129
+C  program body starts at line 149
 C
 C  DESCRIPTION:
 C       Uses smoke generated NetCDF ETSC file of elevated point sources
@@ -39,11 +17,32 @@ C       Models-3 I/O
 C       GETSTR, SORTI3, NEXTIME
 C       Specific      : RDEPSD, CHKTMP 
 C       EPS functions : RDREGN
-
+C
 C  REVISION  HISTORY:
 C       Prototype  9/95 by MRH
 C
 C***********************************************************************
+C 
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C 
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C 
+C See file COPYRIGHT for conditions of use.
+C 
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         IMPLICIT NONE
 
@@ -426,7 +425,8 @@ C.........  Insert correct number of sources into 1st line of ESTRING
             WRITE( ODEV, 93020, IOSTAT=IOS ) SPCNAM( I )
    33   CONTINUE
 
-        WRITE( ODEV, 93030, IOSTAT=IOS ) IBGDAT,BEGTIM,IENDAT,ENDTIM
+        WRITE( ODEV, 93030, IOSTAT=IOS ) INT( IBGDAT ), INT( BEGTIM ),
+     &                                   INT( IENDAT ), INT( ENDTIM )
         WRITE( ODEV, 93000 ) 'END' 
 
 C.........  Region packet:
@@ -434,7 +434,13 @@ C.........  Region packet:
         WRITE( ODEV, 93010 ) PNAME( 2 )
         WRITE( ODEV, 93040 ) UTMX, UTMY, IZONE
         WRITE( ODEV, 93040 ) XORIG, YORIG
-        WRITE( ODEV, 93040 ) DXCELL, DYCELL
+
+        IF( DXCELL .LT. 10. ) THEN    ! Print out for Lat-Lon
+            WRITE( ODEV, 93045 ) DXCELL, DYCELL
+        ELSE
+            WRITE( ODEV, 93040 ) DXCELL, DYCELL
+        ENDIF
+
         WRITE( ODEV, 93050 ) NXCELL, NYCELL, NZCELL
         WRITE( ODEV, 93060 ) NZLOWR, NZUPPR, HTSUR, 
      &                        HTLOWR, HTUPPR 
@@ -459,11 +465,21 @@ C.................  Adjust units
 
                 VH = STKVE( IDX ) * 3600.     ! m/s -> m/hr
 
-C.................  Write records
+C.................  Write records - format for 1st write depends on 
+C.................  Lat-Lon or not
 
-                WRITE( ODEV, 93070, IOSTAT=IOS )
+                IF( ABS( XLOCA( IDX ) ) .LT. 360. ) THEN
+
+                    WRITE( ODEV, 93065, IOSTAT=IOS )
      &               ICNT, 'STD       ', XLOCA( IDX ), YLOCA( IDX ),
      &               IPLANT( IDX ), ISTACK( IDX ), IFIP( IDX )
+
+                ELSE
+                    WRITE( ODEV, 93070, IOSTAT=IOS )
+     &               ICNT, 'STD       ', XLOCA( IDX ), YLOCA( IDX ),
+     &               IPLANT( IDX ), ISTACK( IDX ), IFIP( IDX )
+                ENDIF
+
                 WRITE( ODEV, 93080, IOSTAT=IOS )
      &               STKHT( IDX ), STKDM( IDX ), STKTK( IDX ), VH
 
@@ -594,8 +610,10 @@ C...........   Formatted file I/O formats............ 93xxx
 93020   FORMAT( A10 )
 93030   FORMAT( 4I10 )
 93040   FORMAT(	2F10.0, I10 )
+93045   FORMAT( 2F10.7 )
 93050   FORMAT( 4I10 )
 93060   FORMAT( 2I10, 3F10.0 )
+93065   FORMAT( I10, A10, F10.5, F10.5, I10.5, I10, I10.5 )
 93070   FORMAT( I10, A10, F10.0, F10.0, I10.5, I10, I10.5 )
 93080   FORMAT( F10.1, F10.2, F10.1, F10.0 )
 93090   FORMAT( I10, A10, F10.3 )
