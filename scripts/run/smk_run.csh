@@ -619,7 +619,7 @@ if ( $?RUN_TEMPORAL ) then
             if ( $extension[1] == 'ncf' ) then
                ls $SMK_EMISPATH/emisfacs*ncf > $SMK_EMISPATH/meflist.txt
             else 
-               ls $SMK_EMISPATH/emisfacs*ncf | cut -d. -f1,2,3,5 > $SMK_EMISPATH/meflist.txt
+               ls $SMK_EMISPATH/emisfacs*1.ncf | cut -d. -f1,2,3,5 > $SMK_EMISPATH/meflist.txt
             endif
          endif
       endif
