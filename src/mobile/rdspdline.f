@@ -1,6 +1,7 @@
 
-        SUBROUTINE RDSPDLINE( SDEV, SCENNUM, CURRCOUNTY, STLINE,
-     &                        NLINES, LASAFLAG, ROADTYPE, SPEED, SRCCT )
+        SUBROUTINE RDSPDLINE( SDEV, SCENNUM, CURRCOUNTY, NLINES,
+     &                        LASAFLAG, ROADTYPE, SPEED, CURRLINE, 
+     &                        SRCCT )
 
 C.........  MODULES for public variables
         USE MODMBSET
@@ -21,11 +22,11 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,                INTENT (IN)   :: SDEV        ! SPDSUM file unit number
         INTEGER,                INTENT (IN)   :: SCENNUM     ! current scenario number
         CHARACTER(LEN=FIPLEN3), INTENT (IN)   :: CURRCOUNTY  ! current county being processed
-        INTEGER,                INTENT (IN)   :: STLINE      ! starting line for current county
         INTEGER,                INTENT (IN)   :: NLINES      ! number of lines in SPDSUM file
         INTEGER,                INTENT (IN)   :: LASAFLAG    ! local-as-arterial setting for current county
         INTEGER,                INTENT (OUT)  :: ROADTYPE    ! road type from SPDSUM file
         REAL,                   INTENT (OUT)  :: SPEED       ! speed value from SPDSUM file
+        INTEGER,                INTENT(INOUT) :: CURRLINE    ! current line number in SPDSUM file
         INTEGER,                INTENT(INOUT) :: SRCCT       ! total number of sources       
 
 C...........   Local arrays
@@ -35,7 +36,6 @@ C...........   Other local variables
         INTEGER I, J                      ! counters and indices                     
         
         INTEGER IOS                       ! I/O status
-        INTEGER, SAVE :: IREC = 0         ! record counter
         INTEGER COUNTY                    ! county from SPDSUM file
 
         LOGICAL   :: EFLAG     = .FALSE. !  true: error found
@@ -49,18 +49,12 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDSPDLINE
 
-C.........  Initialize IREC on first time through for this Mobile6 run
-        IF( SCENNUM == 1 ) THEN
-            IREC = 0
-        END IF
-
         SOURCES = 0
-        IREC = IREC + STLINE - 1
         
         DO
-        	
+
 C.............  Make sure we don't try to read past the end of the file
-            IF( IREC + 1 > NLINES ) THEN
+            IF( CURRLINE > NLINES ) THEN
             	ROADTYPE = M6LOCAL
             	SPEED = 0.
             	EXIT
@@ -69,9 +63,7 @@ C.............  Make sure we don't try to read past the end of the file
 C.............  Read line from SPDSUM file
             READ( SDEV, 93010, IOSTAT=IOS ) COUNTY, ROADTYPE, 
      &            SPEED, SOURCES( 1:7 ), CONTCHAR
-            
-            IREC = IREC + 1
-            
+       
             IF( IOS /= 0 ) THEN
                 EFLAG = .TRUE.
                 
@@ -83,23 +75,22 @@ C.............  Read line from SPDSUM file
                 
                 WRITE( MESG, 94010 )
      &                 'I/O error', IOS,
-     &                 'reading speed summary file at line', IREC
+     &                 'reading speed summary file at line', CURRLINE
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
-            
-C.............  Make sure that we've reached the current county's starting line
-            IF( IREC < STLINE ) CYCLE
 
 C.............  Check that county from SPDSUM is still current county                
             IF( STR2INT( CURRCOUNTY ) /= COUNTY ) THEN
                 BACKSPACE( SDEV )
-                IREC = IREC - 1
             	ROADTYPE = M6LOCAL
             	SPEED = 0.
                 EXIT
             END IF
 
+C.............  Increment line count
+            CURRLINE = CURRLINE + 1
+            
 C.............  Store scenario numbers with sources
             DO J = 1, 7
                 IF( SOURCES( J ) /= 0 ) THEN
