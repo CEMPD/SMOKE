@@ -200,7 +200,8 @@ C.......   Get environment variable settings
      &                      .TRUE., IOS )
 
         RTIME = ENVINT( 'ST_REPTIME', 
-     &                  'Per-State summation reporting time', 0, IOS )
+     &                  'Per-State summation reporting time (HHMMSS)',
+     &                   230000, IOS )
 
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, point source file, 
@@ -523,6 +524,7 @@ C.......   Transform and write out point source emissions values:
             CALL M3MSG2( 'Calculating speciated gridded emissions...' )
         END IF
 
+        BTIME = JTIME
         LDATE = 0
 
         DO  199  T = 1, NSTEPS
