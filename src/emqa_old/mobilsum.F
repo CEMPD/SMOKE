@@ -1,7 +1,7 @@
         PROGRAM MOBILSUM
 
 C***********************************************************************
-C  program body starts at line ?
+C  program body starts at line 152
 C
 C  DESCRIPTION:
 C       Report mobile-source emissions summed by state and county.
@@ -147,7 +147,7 @@ C...........   Other local variables
 
 
 C***********************************************************************
-C   begin body of program REPPLHT
+C   begin body of program MOBILSUM
 
         LDEV = INIT3()
 
@@ -202,12 +202,6 @@ C.......   Get file name; open input area source
      &                   ')', 2 )
         END IF
 
-C        PRINT '(A,I)', "Start Date = ", JDATE
-C        PRINT '(A,I)', "Start Time = ", JTIME
-C        PRINT '(A,I)', "Time Step  = ", TSTEP
-C        PRINT '(A,I)', "Num Steps  = ", NSTEPS
-C        PRINT *, "Var Names:"
-
         ! Find the unique inventory pollutant names
         DO 500 I = 1, NUMVARS
             ! Look for the underscore in the name
@@ -222,7 +216,7 @@ C        PRINT *, "Var Names:"
                 ! If this is a new inventory name, then record it.
                 IF ( ( NUMINV .EQ. 0 ) .OR. 
      &               ( VARBUF .NE. INVNAMES ( NUMINV ) ) ) THEN
-C                    PRINT *, "Got new INVNAME: " // VARBUF
+
                     NUMINV = NUMINV + 1
                     INVNAMES ( NUMINV ) = VARBUF
                 END IF
@@ -231,13 +225,9 @@ C                    PRINT *, "Got new INVNAME: " // VARBUF
                 ! array to the appropriate columns in ST(CO)LINK(NLINK) arrays.
                 INVMAP ( I ) = NUMINV
             END IF
-C           PRINT *, VNAME3D ( I )
+
 500     CONTINUE
 
-C        PRINT *, "INVMAP:"
-C        DO 501 I = 1, NUMVARS
-C            PRINT '(I1,A,I1)', I, " -> ", INVMAP ( I )
-C501     CONTINUE
 
         FUNIT = PROMPTFFILE( 
      &          'Enter name for STATE/COUNTY FIPS CODE file',
@@ -279,9 +269,7 @@ C501     CONTINUE
 
                     ISTFIP ( TOT_ST ) = FIPNUM / 1000
                     STATES ( TOT_ST ) = FIPNAME
-C                    PRINT '( A, I2, A, A, A, I2, A )', 
-C     &                'Got state #', TOT_ST, ': ',
-C     &                STATES ( TOT_ST ), ' (FIP=', ISTFIP ( TOT_ST ), ')'
+
                 ELSE
                     TOT_CO = TOT_CO + 1
                     IF ( TOT_CO .GT. MAXCO ) THEN
@@ -297,9 +285,7 @@ C     &                STATES ( TOT_ST ), ' (FIP=', ISTFIP ( TOT_ST ), ')'
 
                     ICOFIP ( TOT_CO ) = FIPNUM
                     COUNTIES ( TOT_CO ) = FIPNAME
-C                    PRINT '( A, I4, A, A, A, I5, A )', 
-C     &                'Got county #', TOT_CO, ': ',
-C     &                COUNTIES ( TOT_CO ), ' (FIP=', ICOFIP ( TOT_CO ),')'
+
                 END IF
             END IF
         GO TO 30
@@ -389,10 +375,11 @@ C     &                COUNTIES ( TOT_CO ), ' (FIP=', ICOFIP ( TOT_CO ),')'
      &                        'Error reading ALLVARS from file ' // 
      &                        HNAME, 2 )
             END IF
-            
+ 
+            WRITE( MESG,94010 ) 'Processing time step', K
+            CALL M3MESG( MESG )
+ 
             DO 520 I = 1, NUMVARS
-                Print '(A,I2,A,I2)',
-     &               'Summing... Time step #', K, '  Var #', I
 
                 DO 530 L = 1, NUMLAYS
                     DO 540 J = 1, NSRCS
@@ -530,4 +517,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 870     FORMAT ( I5.5, 2X, 3F14.2, 4X, A )
 880     FORMAT ( F14.2, 2X, F14.2, 2X, F14.2 )
 890     FORMAT ( A, F12.2, A )
+
+94010   FORMAT( 10 (A, :, 1X, I5, :, 1X ) )
+
         END
