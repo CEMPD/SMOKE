@@ -11,19 +11,20 @@ C  Calls EF_HI_FRCN
 C 
 C  Changes: (Last change first) 
 C 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C  15 Sep 00 AIR Task 08: Replaced MIL with WMIL for easier variable tracking. 
 C            Removed improper initialization of OBDIM. OBDIM is now properly 
 C            intialized in BD_IM1 and REINIT. 
 C  15 Aug 00 @EPA-djb Bug 224, Changed logic for calculating high emitter cap. 
 C            removed NORML_FRCN. 
 C  26 Jul 00 @EPA-jk  Bug154 for default age (JDX) case replaced NORML_FRCN with 
-C                     1.0-HIGH3(JDX-1,IP,IV) to determine GROWTH fraction 
+C                     1.0-OBDHINIM(JDX-1,IP,IV) to determine GROWTH fraction 
 C  14 Jun 00 @EPA-EG  Bug146 Revised assignments to OBD and 
 C                            OBDIM 
 C  08 Jun 00 @EPA-djb Bug113 Added ISTD to EF_HI_FRCN call. 
 C  23 May 00 @EPA-EG     Changed CASE(1) determination of FRCN; 
 C                        removed division by NORML_FRCN 
-C   7 Jan 00 @DynTel-ddj 1-024, Capped HIGH3 and HIGH4 at 1.0. 
+C   7 Jan 00 @DynTel-ddj 1-024, Capped OBDHINIM and OBDHI_IM at 1.0. 
 C            Selection of OBD moved prior to the JDX loop. 
 C   8 Sep 99 @DynTel-BAG 2-660 Renamed HIEMIT to EF_HI_FRCN 
 C  30 Apr 99 @DynTel-ddj 2-694, Removed dead code. 
@@ -34,14 +35,13 @@ C
 C    argument list: ICY 
 C    common blocks: 
 C    /CUMCOM/ CUMMIL 
-C    /LDGIMC/ VMTIM 
 C    /LDGOBD/ WMIL,OBDF,OBDIM 
 C    /MAXIMA/ MAXYRS 
 C 
 C  Output on return: 
 C 
 C    common blocks: 
-C    /LDGOBD/ HIGH3,HIGH4 
+C    /LDGOBD/ OBDHINIM,OBDHI_IM 
 C 
 C  Local variable / array dictionary: 
 C 
@@ -103,8 +103,8 @@ C
       DO IV = VTLDGV, VTLDGT4 
          DO IP = 1, 3 
            DO JDX = 1, MAXYRS 
-              HIGH3(JDX,IP,IV) = 0.0 
-              HIGH4(JDX,IP,IV) = 0.0 
+              OBDHINIM(JDX,IP,IV) = 0.0 
+              OBDHI_IM(JDX,IP,IV) = 0.0 
            END DO 
 C 
 C Calculate the fraction of high emitters that have been identified 
@@ -132,8 +132,8 @@ C
                FRCN = EF_HI_FRCN(MY,IP,IV,VMT2,1,2,INERR) 
                IF(FRCN .GT. 1.0) FRCN = 1.0 
 C 
-              HIGH3(JDX,IP,IV) = (1.0 - OBD*WMIL) *FRCN  !OBD without I&M program(see eq.15-18 pgs.14&15 M6.EXH.007) 
-              HIGH4(JDX,IP,IV) = (1.0 - OBDIM*WMIL) *FRCN!OBD with I&M program(see eq.15-18 pgs.14&15 M6.EXH.007) 
+              OBDHINIM(JDX,IP,IV) = (1.0 - OBD*WMIL) *FRCN  !OBD without I&M program(see eq.15-18 pgs.14&15 M6.EXH.007) 
+              OBDHI_IM(JDX,IP,IV) = (1.0 - OBDIM*WMIL) *FRCN!OBD with I&M program(see eq.15-18 pgs.14&15 M6.EXH.007) 
 C 
              CASE DEFAULT ! all vehicle ages except JDX=1 
 C 
@@ -146,19 +146,21 @@ C              high emitter growth rate (see eqs.15-18 pgs.14&15 M6.EXH.007)
                IF(YEAR2 .GT. 1.0) YEAR2 = 1.0 
                HI_YEAR_DIFF = YEAR1 - YEAR2 
                GROWTH = 0.0 
-               IF(HIGH3(JDX-1,IP,IV) .LT. 1.0) THEN 
-                 GROWTH = HI_YEAR_DIFF / (1.0-HIGH3(JDX-1,IP,IV)) 
+               IF(OBDHINIM(JDX-1,IP,IV) .LT. 1.0) THEN 
+                 GROWTH = HI_YEAR_DIFF / (1.0-OBDHINIM(JDX-1,IP,IV)) 
                ENDIF 
 C 
-              HIGH3(JDX,IP,IV) = HIGH3(JDX-1,IP,IV) + (1.0 - OBD*WMIL)   !OBD without I&M program(see eq.11a p.15 M6.EXH.007) 
-     &                             *(GROWTH*(1.0 - HIGH3(JDX-1,IP,IV))) 
+              OBDHINIM(JDX,IP,IV)=OBDHINIM(JDX-1,IP,IV)     !OBD without I&M program(see eq.11a p.15 M6.EXH.007) 
+     &                           +(1.0 - OBD*WMIL) 
+     &                           *(GROWTH*(1.0 - OBDHINIM(JDX-1,IP,IV))) 
 C 
-              HIGH4(JDX,IP,IV) = HIGH4(JDX-1,IP,IV) + (1.0 - OBDIM*WMIL) !OBD with I&M program(see eq.11b p.15 M6.EXH.007) 
-     &                             *(GROWTH*(1.0 - HIGH4(JDX-1,IP,IV))) 
+              OBDHI_IM(JDX,IP,IV) = OBDHI_IM(JDX-1,IP,IV)   !OBD with I&M program(see eq.11b p.15 M6.EXH.007) 
+     &                           + (1.0 - OBDIM*WMIL) 
+     &                           *(GROWTH*(1.0 - OBDHI_IM(JDX-1,IP,IV))) 
 C 
              END SELECT 
-               HIGH3(JDX,IP,IV) = MIN(1.0, HIGH3(JDX,IP,IV) ) 
-               HIGH4(JDX,IP,IV) = MIN(1.0, HIGH4(JDX,IP,IV) ) 
+               OBDHINIM(JDX,IP,IV) = MIN(1.0, OBDHINIM(JDX,IP,IV) ) 
+               OBDHI_IM(JDX,IP,IV) = MIN(1.0, OBDHI_IM(JDX,IP,IV) ) 
            END DO    !JDX 
         END DO       !IP 
       END DO         !IV 

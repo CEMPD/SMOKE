@@ -1,5 +1,5 @@
       REAL FUNCTION 
-     *     IDRATE(MY,JDX,VAGE_LSTIM,IP,IV,ISR,IFDS,ISTD,IMPGM,INERR) 
+     *     IDRATE(MY,JDX,IP,IV,ISR,IFDS,ISTD,IMPGM,VMTAGE,INERR) 
 C 
 C  IDRATE returns the high emitter identification rate for different I/M 
 C  test types. (The procedures in this code are in EPA report M6.IM.001 pages 
@@ -13,6 +13,7 @@ C  Calls EF_HI_FRCN
 C 
 C  Changes: 
 C 
+C  17 Oct 01 @EPA-BAG bug331 Biennial/ annual I&M program discrepancy 
 C  02 Nov 00 @EPA-djb Bug299, initialized IDRATE. 
 C  06 Sep 00 @EPA-elg Eliminate potential divide by zero condition in HI_FRCN. 
 C  07 Jul 00 @EPA-elg Changed ASM IM Credit logic. 
@@ -41,7 +42,7 @@ C
 C    common blocks: 
 C    /IMPAR2/ ITEST 
 C    /IMPAR4/ CUTNO,IVCUTIDX 
-C    /LDGIMC/ ASMCP1,ASMCP2,IDR240,IDRASM,IMPEFF,VMTIM 
+C    /LDGIMC/ ASMCP1,ASMCP2,IDR240,IDRASM,IMPEFF 
 C    /LDGOBD/ HIGH3 
 C    /LDGSIM/ HCLOSS,COLOSS,NOXLOSS 
 C    /MYRSAV/ AMAR 
@@ -102,15 +103,12 @@ C
       INTEGER, INTENT(IN) :: ISTD 
       INTEGER, INTENT(IN) :: IMPGM 
       INTEGER, INTENT(INOUT) :: INERR 
-      REAL, INTENT(IN) :: VAGE_LSTIM 
+      REAL, INTENT(IN) :: VMTAGE 
 C 
 C Declare local variables 
 C 
       REAL    HI_FRCN 
       REAL    HI4 
-      REAL    RAIM 
-      REAL    VMTAIM 
-      INTEGER IAIM 
       INTEGER IMTT 
       INTEGER ICT 
       INTEGER IMSL 
@@ -171,18 +169,11 @@ C     ASM tests ( see pages 57-60 of M6.IM.001 )
 C 
 C     OBD test 
       CASE (OBD_TST) IMTEST_TYPE 
-        IAIM = INT(VAGE_LSTIM) 
-        RAIM = VAGE_LSTIM-IAIM 
-        IF (IAIM.EQ.0) THEN 
-          VMTAIM=10.0*RAIM*AMAR(IAIM+1,IV) 
-        ELSE 
-          VMTAIM = VMTIM(IAIM,IV)+10.0*RAIM*AMAR(IAIM+1,IV) 
-        END IF 
-        HI4 = HIGH3(JDX,IP,IV) !fraction of high emitting vehicles with OBD and without I&M programs 
-                               !this fraction includes owner response and indicator light percentages 
-                               !see OBD_HI_FRCN.FOR 
+        HI4 = OBDHINIM(JDX,IP,IV) !fraction of high emitting vehicles with OBD and without I&M 
+                                  !programs this fraction includes owner response and indicator 
+                                  !light percentages see OBD_HI_FRCN.FOR 
         HI_FRCN = 
-     &      EF_HI_FRCN(IDRATE_MY,IP,IV,VMTAIM,IDRATE_IFDS,ISTD,INERR) 
+     &      EF_HI_FRCN(IDRATE_MY,IP,IV,VMTAGE,IDRATE_IFDS,ISTD,INERR) 
 C 
         IF (HI_FRCN.EQ.0) THEN 
           IDRATE = 0.0 
@@ -199,7 +190,6 @@ C Correct the high emitter identification rate for the effect of an RSD
 C clean screening program. 
 C 
       IF (RSDCLEAN(IMPGM).NE.0) THEN 
-        IAIM= INT(VAGE_LSTIM) 
 C 
 C       map the RSDNOX cutpoints to an integer index for the remote sensing 
 C       clean screening effectiveness fractions RSDCSE. (See M6.IM.001 table 
@@ -215,7 +205,7 @@ C       and RSD NOx cutpoints
      *         IMSL = LENIENT  !RSDCSE from table 6a page 48 
            IF (IMSL.EQ.0.AND.CUTNO(JDX,IVCUTIDX(IV),IMPGM).LT.3.0) 
      *         IMSL = STRICT   !RSDCSE from table 6b page 49 
-           IDRATE = IDRATE-RSDCVR1(IAIM+1,IV,IMPGM)*RSDCSE(ICT,IP,IMSL) 
+           IDRATE = IDRATE-RSDCVR1(JDX,IV,IMPGM)*RSDCSE(ICT,IP,IMSL) 
 C 
 C       RSD coverage option 2(see p.40 of M6.IM.001, user supplied) 
 C       and RSD NOx cutpoints 

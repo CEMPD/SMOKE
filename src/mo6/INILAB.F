@@ -12,19 +12,23 @@ C  Output on return:
 C 
 C  Changes : (Last change first) 
 C 
-C  31 Aug 01 EPA Task 18: Added ADDITONAL HAPS. 
-C  30 Aug 01 EPA Task 22: Added TOXICS SPREADSHEET  
-C  16 Aug 01 EPA Task 15-21: Changed RVP WAIVER to RVP OXY WAIVER. 
-C  19 Jul 01 @EPA-djb Wish235, Add Average Speed command (173). 
+C  27 Nov 01 AIR Task 27: Changed SPREADSHEET to SPREADSHEET OUTPUT. 
+C  06 Nov 01 AIR Task 27: Add MPG ESTIMATES for CO2. 
+C  28 Sep 01 AIR Task 25: Changed TOXICS SPREADSHEET to SPREADSHEET to 
+C            accomodate both AT and PM outputs. 
+C  31 Aug 01 AIR Task 18: Added ADDITONAL HAPS (removed PM SPEED CORRECTION). 
+C  30 Aug 01 AIR Task 22: Added TOXICS SPREADSHEET  
+C  16 Aug 01 AIR Task 15-21: Changed RVP WAIVER to RVP OXY WAIVER. 
 C  02 Jul 01 AIR Task 15: Added Air Toxic OXYGENATE and RVP WAIVER commands. 
 C  23 May 01 AIR Task 17: Added PM SPEED CORRECTION and PARTICULATE EF labels. 
 C  10 May 01 AIR Task 11/5: Added PM Idle. 
 C  30 Apr 01 AIR Task 12: Added T2 PM PHASE-IN. 
 C  17 Apr 01 AIR Task 11: Changed most particulate related input commands to 
 C            Scenario Level Only status. 
-C  16 Apr 01 @EPA-elg Added POST96IM Flag to control diagnostic I/M command. 
 C  30 Jan 00 AIR Task 11: Added all PARTICULATE and AIR TOXIC header, run 
 C            and scenario level labels. 
+C  19 Jul 01 @EPA-djb Wish235, Add Average Speed command (173). 
+C  16 Apr 01 @EPA-elg Added POST96IM Flag to control diagnostic I/M command. 
 C  19 Jan 01 @EPA-bag Added NO 2007 HDDV RULE 
 C  20 Nov 00 @EPA-elg Added NO CLEAN AIR ACT label 
 C  29 Nov 00 @EPA-BG  renamed database age to database ages 
@@ -590,8 +594,8 @@ C
      &           'IDLE PM EMISSIONS',.TRUE.,0,1), 
      &  LABELDEF('1996+ EXHAUST IM', 
      &           '1996+ EXHAUST IM',.TRUE.,0,1), 
-     &  LABELDEF('PM SPEED CORRECTION', 
-     &           'PM SPEED CORR',.TRUE.,0,3), 
+     &  LABELDEF('ADDITIONAL HAPS', 
+     &           'ADDITIONAL HAPS',.TRUE.,0,3), 
      &  LABELDEF('PARTICULATE EF', 
      &           'PARTICULATE EF',.TRUE.,0,3), 
      &  LABELDEF('OXYGENATE', 
@@ -600,10 +604,12 @@ C
      &           'RVP OXY WAIVER',.TRUE.,0,3), 
      &  LABELDEF('AVERAGE SPEED', 
      &           'AVERAGE SPEED',.TRUE.,0,3), 
-     &  LABELDEF('TOXICS SPREADSHEET', 
-     &           'TOXICS SPREADSHEET',.TRUE.,0,0)/) 
+     &  LABELDEF('SPREADSHEET', 
+     &           'SPREADSHEET',.TRUE.,0,0)/) 
 C 
-      LABLIST(190:191) = ( / 
+      LABLIST(190:192) = ( / 
+     &  LABELDEF('MPG ESTIMATES', 
+     &           'MPG ESTIMATES',.TRUE.,0,3), 
      &  LABELDEF('END OF RUN', 
      &           'END OF RUN',.TRUE.,0,3), 
      &  LABELDEF('0000000000', 

@@ -9,6 +9,7 @@ C  Calls none.
 C 
 C  Changes: (Last change first) 
 C 
+C  03 Dec 01 AIR Task 28: Added CO2 and MPG output 
 C  17 Aug 01 EPA bag  Expand the number of significant digits 
 C  11 Oct 00 AIR Task 02: Bug Fix 197: Expand VMTMIX precision 
 C  27 Jun 00 AIR Task 04: Added EXPANDED EVAP output. Commented out the 
@@ -81,6 +82,7 @@ C
       USE DATABASE, ONLY: DBSELPOL 
       IMPLICIT NONE 
       INCLUDE 'CITRV1.I' 
+      INCLUDE 'CO2COM.I' 
       INCLUDE 'EVAPGR.I' 
       INCLUDE 'FLAGS4.I' 
       INCLUDE 'IOUCOM.I' 
@@ -105,8 +107,8 @@ CCC      INTEGER       IUNT
       CHARACTER(LEN=5) :: EMISS 
 CCC      CHARACTER(LEN=80) :: HEADER 
       CHARACTER(LEN=8) :: DASH8 = '  ------' 
-      CHARACTER(LEN=4), DIMENSION(3) :: NAMPOL=(/ 
-     *      ' HC  ',' CO  ',' NOX '/) 
+      CHARACTER(LEN=4), DIMENSION(4) :: NAMPOL=(/ 
+     *      ' HC  ',' CO  ',' NOX ',' CO2 '/) 
 C 
       CHARACTER(LEN=5), DIMENSION(5) :: NAMNMH=(/ 
      * ' THC ',' NMHC',' VOC ', ' TOG ',' NMOG'/) 
@@ -124,12 +126,18 @@ C
      *      /T21,3(2X,A8), 
      *      /T13,'VMT Mix:',3(2X,F8.4)) 
 C 
+C  If CO2 Is selected, print the harmonic mean MPG values. 
+C 
+      IF(DBSELPOL(4).EQ.2) WRITE(IOUREP,235)  
+     *   (MPG(IV),IV=IVFIRST,IVLAST) 
+  235 FORMAT(T2,'Fuel Economy (mpg):',10F10.1) 
+C 
 C     Print the composite emission factor group. 
 C 
       WRITE(IOUREP,240) 
   240 FORMAT(118('-'),/T2,'Composite Emission Factors (g/mi):') 
 C 
-      DO 30 IP=1,MAXPOL 
+      DO 30 IP=1,MAXPOL+1 ! include CO2 
        IF(DBSELPOL(IP).EQ.1) CYCLE 
 C 
         IF (IP.EQ.1) THEN 
@@ -143,10 +151,21 @@ C
           ASSIGN 251 TO FMT0 
           IF(IP==2) ASSIGN 252 TO FMT0 
         ENDIF 
+C 
+        IF(IP.EQ.4) THEN ! CO2 
+        IF(ICY<2000) THEN 
+        ASSIGN 253 TO FMT0  
+        ELSE 
+        ASSIGN 254 TO FMT0 
+        END IF 
+        END IF 
+C 
         WRITE(IOUREP,FMT0) EMISS,(EFFTP(IP,IV),IV=IVFIRST,IVLAST) 
   250   FORMAT(T6,'Composite',A5,':',3F10.2) 
   251   FORMAT(T6,'Composite',A5,':',3F10.3) 
   252   FORMAT(T6,'Composite',A5,':',F9.2,1X,2F10.3) 
+  253   FORMAT(T6,'Composite',A5,':',F9.1,2F10.1) 
+  254   FORMAT(T6,'Composite',A5,':',F8.1,2F10.1) 
 C 
    30 CONTINUE 
 C 
@@ -156,8 +175,8 @@ CC     *       ' refueling emissions.)')
 CC      CALL LJCOMP(BUFFER1,BUFFER2) 
 CC      WRITE(IOUREP,253) BUFFER2 
 CC  253 FORMAT(T2,A80,/118('-')) 
-      WRITE(IOUREP,253) 
-  253 FORMAT(118('-')) 
+      WRITE(IOUREP,255) 
+  255 FORMAT(118('-')) 
 C 
 C  Print EXPANDED EXHAUST, if necessary 
 C  NOTE: AS OF THIS VERSION, START AND RUNNING EMISSIONS 

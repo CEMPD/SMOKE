@@ -11,9 +11,10 @@ C  Calls LJCOMP.
 C 
 C  Changes: (Last change first) 
 C 
+C  06 Nov 01 AIR Task 27: Added initialization of MPGFLAG. 
 C  30 Aug 01 AIR Task 15-23: Added initialization of PM and Air Toxic checks. 
-C  19 Jul 01 @EPA-djb Wish235, Initialize AVGFLG to zero and remove dead code. 
 C  21 Feb 01 AIR Task 11: Included code to display scenario in PM runs. 
+C  19 Jul 01 @EPA-djb Wish235, Initialize AVGFLG to zero and remove dead code. 
 C  21 Nov 00 @EPA-bag bug300 add soak dist. scenario level initialization 
 C  06 Oct 00 @EPA-bag BUG155&137 Remove FTP_FLAG and RN_FLAG 
 C  06 Oct 00 @EPA-BG  Bug 155, Removed INDUSTRY AVERAGE FUEL 
@@ -181,6 +182,7 @@ C
       INCLUDE 'REGISF.I' 
       INCLUDE 'RFORM1.I' 
       INCLUDE 'RFORM2.I' 
+      INCLUDE 'RLCOM1.I'      ! MPGFLAG 
       INCLUDE 'RUNLS1.I' 
       INCLUDE 'SAVE08.I' 
       INCLUDE 'SKDIST.I' 
@@ -373,6 +375,10 @@ C     Initialize the PM and Air Toxic checklists
 C 
       PRTCHK = 1 
       TOXCHK = 1 
+C 
+C     Set flag to use MOBILE6 fuel economies. /RLCOM1/ 
+C 
+      MPGFLAG=.FALSE. 
 C 
       RETURN 
       END 

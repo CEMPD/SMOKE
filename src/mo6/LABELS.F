@@ -6,18 +6,19 @@ C     input records in a Mobile6 input file.
 C 
 C  Changes : (Last change first) 
 C 
-C  31 Aug 01 EPA Task 18: Added ADDITONAL HAPS. 
-C  30 Aug 01 EPA Task 22: Added TOXICS SPREADSHEET (174) 
+C  06 Nov 01 AIR Task 27: Added MPG ESTIMATES (192) 
+C  31 Aug 01 AIR Task 18: Added ADDITONAL HAPS. 
+C  30 Aug 01 AIR Task 22: Added TOXICS SPREADSHEET (174) 
 C  03 Aug 01 AIR Tasks 15-21 Removed XXX command for END OF RUN (190) 
-C  19 Jul 01 @EPA-djb Wish235, Added Average Speed command (191). 
 C  02 Jul 01 AIR Task 15: Added Air Toxic OXYGENATE and RVP WAIVER commands 
 C            increased count to 190. 
 C  23 May 01 AIR Task 17: Added PM Speed Correction and Particulate EF, 
 C           increased count to 188. 
 C  10 May 01 AIR Task 11/5: Added PM Idle, increased count to 186. 
 C  30 Apr 01 AIR Task 12: Added Tier2 PM label, increased count to 185. 
-C  16 Apr 01 @EPA-EG increased NLABS to 184 for post 1996 I&M label 
 C  30 Jan 01 AIR Task 11: New labels for particulates and air toxics. 
+C  19 Jul 01 @EPA-djb Wish235, Add Average Speed command (173). 
+C  16 Apr 01 @EPA-EG increased NLABS to 172 for post 1996 I&M label 
 C  19 Jan 01 @EPA-bag increased NLABS to 171 for 2007 rule for heavy duty vehicles 
 C  20 Nov 00 @EPA-EG  New labels for clean air act 
 C  24 Oct 00 @EPA-BG  New labels for database age, model year and hour selection; NLABS 
@@ -109,7 +110,7 @@ C
          INTEGER           :: SECTION 
       END TYPE LABELDEF 
 C 
-      INTEGER, PARAMETER  :: NLABS = 191 
+      INTEGER, PARAMETER  :: NLABS = 192 
 C 
       TYPE(LABELDEF), DIMENSION(NLABS) :: LABLIST 
 C 

@@ -8,6 +8,7 @@ C  Calls EFCVT, OUTBUS, OUTDTG, OUTHD3, OUTHDR, OUTHDV, and OUTLDT.
 C 
 C  Changes: (Last change first) 
 C 
+C  27 Nov 01 AIR Task 27: Added CO2 and MPG output 
 C  17 Aug 01 EPA bag  Expand the number of significant digits 
 C  23 Oct 00 @EPA-djb Bug288 Added decimal to temperture output. 
 C  06 Oct 00 @EPA-bag BUG155 Remove FTP_FLAG 
@@ -203,6 +204,7 @@ C
       INCLUDE 'CITPAR.I' 
       INCLUDE 'CITRV1.I' 
       INCLUDE 'EVAL.I' 
+      INCLUDE 'CO2COM.I' 
       INCLUDE 'EVAPGR.I' 
       INCLUDE 'FLAGS1.I' 
       INCLUDE 'FLAGS2.I' 
@@ -211,10 +213,10 @@ C
       INCLUDE 'FLAGS5.I' 
       INCLUDE 'IOUCOM.I' 
       INCLUDE 'IVTYPE.I' 
+      INCLUDE 'MAXIMA.I' 
       INCLUDE 'OPCNTL.I' 
       INCLUDE 'OXY1.I' 
       INCLUDE 'OXY2.I' 
-      INCLUDE 'MAXIMA.I' 
       INCLUDE 'P94INF.I' 
       INCLUDE 'REGION.I' 
       INCLUDE 'RESUL1.I' 
@@ -239,6 +241,7 @@ C
 C     External functions: 
 C 
       REAL EFCVT  
+      REAL MPGCVT 
 C 
 C     Local variables:                          
 C 
@@ -265,7 +268,8 @@ C
       CHARACTER(LEN=5), DIMENSION(5) :: NAMNMH=(/ 
      *                   ' THC ',' NMHC',' VOC ',' TOG ',' NMOG'/) 
 C 
-      CHARACTER(LEN=5),DIMENSION(3)::NAMPOL=(/' HC  ',' CO  ',' NOX '/) 
+      CHARACTER(LEN=5),DIMENSION(4)::NAMPOL=(/' HC  ',' CO  ',' NOX ', 
+     *                                        ' CO2 '/) 
       CHARACTER(LEN=4), DIMENSION(3) :: NAMREG=(/'Low ','High','Mid '/) 
       CHARACTER(LEN=9) :: DASH8='  ------' 
       CHARACTER(LEN=5) :: EMISS 
@@ -362,13 +366,20 @@ C
      *       T21,10(2X,A8)/ 
      *       T4,'VMT Distribution:',3F10.4,10X,6F10.4) 
 C 
+C  If CO2 Is selected, print the harmonic mean MPG values. 
+C 
+      IF(DBSELPOL(4).EQ.2) WRITE(IOUREP,235) MPG(1),MPGCVT(ILDGT12), 
+     *    MPGCVT(ILDGT34),MPGCVT(ILDGT),MPGCVT(IHDGV),MPG(14), 
+     *    MPGCVT(ILDDT),MPGCVT(IHDDV),MPG(24),FMPG 
+  235 FORMAT(T2,'Fuel Economy (mpg):',10F10.1) 
+C 
 C     Print the composite emission factor group. 
 C 
       WRITE(IOUREP,240) 
   240 FORMAT(2X,118('-'),/T2, 
      *   'Composite Emission Factors (g/mi):') 
 C 
-      DO IP=1,MAXPOL 
+      DO IP=1,MAXPOL+1   ! +1 to include CO2. 
        IF(DBSELPOL(IP).EQ.1) CYCLE 
 C 
         IF (IP.EQ.1) THEN 
@@ -382,14 +393,26 @@ C
           ASSIGN 251 TO FMT0 
           IF(IP==2) ASSIGN 252 TO FMT0 
         ENDIF 
+C 
+        IF(IP.EQ.4) THEN ! CO2 
+        IF(ICY<2000) THEN 
+        ASSIGN 253 TO FMT0  
+        ELSE 
+        ASSIGN 254 TO FMT0 
+        END IF 
+        END IF 
+C 
         WRITE(IOUREP,FMT0) EMISS,EFFTP(IP,1), 
      *    EFCVT(ILDGT12,IEFFTP,IP),EFCVT(ILDGT34,IEFFTP,IP), 
-     *    EFFTP(IP,ILDGT),EFCVT(IHDGV,IEFFTP,IP),EFFTP(IP,14), 
+     *    EFCVT(ILDGT,IEFFTP,IP),EFCVT(IHDGV,IEFFTP,IP),EFFTP(IP,14), 
      *    EFCVT(ILDDT,IEFFTP,IP),EFCVT(IHDDV,IEFFTP,IP),EFFTP(IP,24), 
      *    VFTP(IP) 
   250   FORMAT(T6,'Composite',A5,':',9F10.2,F10.3) 
   251   FORMAT(T6,'Composite',A5,': ',5F10.3,F9.3,2F10.3,F10.2,F10.3) 
   252   FORMAT(T6,'Composite',A5,':',5F10.2,3F10.3,F10.2,F10.3) 
+  253   FORMAT(T6,'Composite',A5,':',9(F9.1,1X),F9.2) 
+  254   FORMAT(T6,'Composite',A5,':',5(F9.1,1X),F8.1,1X,2(F9.1,1X), 
+     *                                F10.1,F10.2) 
 C 
       END DO 
 C 
@@ -399,8 +422,8 @@ CC     *       ' refueling emissions.)')
 CC      CALL LJCOMP(BUFFER1,BUFFER2) 
 CC      WRITE(IOUREP,253) BUFFER2 
 CC  253 FORMAT(T2,A80,/2X,118('-')) 
-      WRITE(IOUREP,253) 
-  253 FORMAT(2X,118('-')) 
+      WRITE(IOUREP,255) 
+  255 FORMAT(2X,118('-')) 
 C 
 C    Print Expanded Exhaust, if requested 
 C 
