@@ -69,8 +69,9 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine INITINFO
 
-C.........  Set default position of SCC in source description
-        JSCC = 0
+C.........  Set category-independent variables
+        JSCC  = 0   ! default position of SCC in source description
+        NPACT = 1   ! no. variables per activity
 
 C.........  Choose the source category for which to set the source information
         SELECT CASE( CATEGORY )
