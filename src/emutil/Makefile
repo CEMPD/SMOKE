@@ -2,18 +2,17 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 extractida invsplit metscan mvcondns mvsetup pktreduc smk2emis \
+all: beld3to2 extractida invsplit metscan pktreduc smk2emis \
      surgtool uam2ncf 
 
-debug: beld3to2.debug extractida.debug invsplit.debug metscan.debug 
-       mvcondns.debug mvsetup.debug  pktreduc.debug smk2emis.debug 
-       surgtool.debug uam2ncf.debug  
+debug: beld3to2.debug extractida.debug invsplit.debug metscan.debug \
+       pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug  
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -41,6 +40,16 @@ extractida.debug: $(EXTI) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'EXTRACTIDA (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
 
+GEOF=geofac.o
+
+geofac: $(GEOF) $(ALLI) $(LIBPATH)
+	echo GEOFAC:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GEOF) $(LIBS)
+
+geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'GEOFAC (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(GEOF) $(LIBS_DEBUG)
+
 INVS=invsplit.o
 
 invsplit: $(INVS) $(ALLI) $(LIBPATH)
@@ -59,16 +68,6 @@ metscan: $(MSCN) $(ALLI) $(LIBPATH)
 #
 metscan.debug: $(MSCN) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(DBGFLAGS) -o $(@) $(MSCN) $(LIBS_DEBUG)
-
-MVC=mvcondns.o
-
-mvcondns: $(MVC) $(ALLI) $(LIBPATH)
-	echo MVCONDNS:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MVC) $(LIBS)
-
-mvcondns.debug: $(MVC) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'MVCONDNS (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(MVC) $(LIBS_DEBUG)
 
 PKT=pktreduc.o
 
@@ -110,20 +109,12 @@ uam2ncf.debug: $(UAMC) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'UAM2NCF (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(UAMC) $(LIBS_DEBUG)
 
-MVS = mvsetup.o
-
-mvsetup: $(MVS) $(ALLI) $(LIBPATH)
-	echo MVSETUP:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MVS) $(LIBS)
-
-mvsetup.debug: $(MVS) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'MVSETUP (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(MVS) $(LIBS_DEBUG)
-
 #
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 invsplit.o : $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ invsplit.f
@@ -131,11 +122,15 @@ invsplit.o : $(MODINFO)
 surgtool.o : $(MODGRID) $(MODSURG)
 	$(FC) $(FFLAGS) -c -o $@ surgtool.f
 
-mvcondns.o  : $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ mvcondns.f
-
 smk2emis.o  : $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ smk2emis.f
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o
+
+ifcclean:
+	/bin/rm -f *.o
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(MODGRID)

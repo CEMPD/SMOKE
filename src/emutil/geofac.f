@@ -1,3 +1,4 @@
+
       PROGRAM GEOFAC
 
 C***********************************************************************
@@ -38,14 +39,15 @@ C Last updated: $Date$
 C
 C*************************************************************************
 
+      USE MODFILESET
+
       IMPLICIT NONE
 
 C...........   INCLUDES:
 
-        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     ! Emissions constants
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -101,11 +103,11 @@ C           to continue running the program.
 
 C.........  Prompt for name of NetCDF input file
 
-        ENAME = PROMPTMFILE(
+        ENAME = PROMPTSET(
      &       'Enter logical name for SMOKE gridded input (NetCDF) file',
-     &        FSREAD3, 'AGTS', PROGNAME )
+     &        FSREAD3, 'INFILE', PROGNAME )
 
-        IF ( .NOT. DESC3( ENAME ) ) THEN
+        IF ( .NOT. DESCSET( ENAME,-1 ) ) THEN
 
             MESG = 'Could not get description of file "' //
      &             ENAME( 1:TRIMLEN( ENAME ) ) // '"'
@@ -172,9 +174,9 @@ C........   Read in factors for species
 
 C.........  Open output file
 
-        ONAME = PROMPTMFILE(
+        ONAME = PROMPTSET(
      &          'Enter logical name for OUTPUT gridded netCDF file '
-     &          , FSUNKN3, 'AGTSFAC',  PROGNAME      )
+     &          , FSUNKN3, 'OUTFILE',  PROGNAME      )
 
 C.........  Allocate memory for emissions
 
@@ -193,10 +195,10 @@ C.............  Write to screen because WRITE3 only writes to LDEV
 
 C.....................  Read input file for time and species of interest
 
-            IF ( .NOT. READ3( ENAME, VNAME3D( L ), ALLAYS3,
-     &                            SDATE, STIME, EMIS   ) ) THEN
+            IF ( .NOT. READSET( ENAME, VNAMESET( L ), ALLAYS3,
+     &                          ALLFILES, SDATE, STIME, EMIS   ) ) THEN
               CALL M3ERR( PROGNAME , 0, 0,
-     &                       'Error reading ' // VNAME3D( L ) //
+     &                       'Error reading ' // VNAMESET( L ) //
      &                       ' from file ' // ENAME , .TRUE. )
             ENDIF
 
@@ -204,7 +206,7 @@ C.....................  Read input file for time and species of interest
 
 C...........   Find out if factor for this species exists
  
-              IF ( VNAME3D ( L ) .EQ. SPCNAM ( M )  ) THEN                   
+              IF ( VNAMESET ( L ) .EQ. SPCNAM ( M )  ) THEN                   
 
 C...........  Loop through cells and apply factor to cells in mask
 
@@ -238,15 +240,15 @@ C.............  Finished for this species
 
 C............  Write out new emissions
               
-            IF ( .NOT. WRITE3( ONAME, VNAME3D( L ), SDATE, STIME,
-     &                         EMIS ) ) THEN
+            IF ( .NOT. WRITESET( ONAME, VNAMESET( L ), -1, SDATE,
+     &                           STIME, EMIS ) ) THEN
 
               CALL M3EXIT( PROGNAME , SDATE, STIME,
      &                          'Could not write "' //
-     &                           VNAME3D( L ) //
+     &                           VNAMESET( L ) //
      &                          '" to ' // ONAME, 2 )
 
-            END IF         !  if write3() failed
+            END IF         !  if writeset() failed
 
            ENDDO
 

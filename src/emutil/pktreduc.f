@@ -26,7 +26,7 @@ C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
-C File: %W%
+C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
@@ -40,8 +40,8 @@ C Research Triangle Park, NC  27709-2889
 C
 C smoke@emc.mcnc.org
 C
-C Pathname: %P%
-C Last updated: %G% %U%
+C Pathname: $Source$
+C Last updated: $Date$ 
 C
 C*************************************************************************
 
@@ -111,7 +111,6 @@ C.........  Local variables
         INTEGER   NPKT         ! number of packets in file
         INTEGER   NSEG         ! number of segments in auto-detect format
         INTEGER   SCCCOL       ! column for the SCC data
-        INTEGER   STA          ! tmp state ID
 
         REAL      RBUF         ! real values tmp buffer
 

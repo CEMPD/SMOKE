@@ -146,7 +146,7 @@ C.........  Prompt for name of input splits definitions file
         SDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SPLITS', PROGNAME )
 
 C.........   Get format of input file
-        IFMT = GETFORMT( IDEV )
+        IFMT = GETFORMT( IDEV, -1 )
 
 C.........   Get size for splits file
         NLIST = GETFLINE( SDEV, 'Splits definitions' )
@@ -267,7 +267,7 @@ C.............  Convert state code to integer
             CASE ( IDAFMT )
                 STA = STR2INT( LINE( 1:2 ) )
 
-            CASE ( NTIFMT )
+            CASE ( TOXFMT, TOXNPFMT )
                 READ( LINE, * ) STA
 
             CASE ( EMSFMT )

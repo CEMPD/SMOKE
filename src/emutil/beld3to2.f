@@ -234,7 +234,7 @@ C.......   Open gridded landuse files
 
         GNAMET = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE totals file',
-     &           FSREAD3, 'BGPRO_TOT', PROGNAME )
+     &           FSREAD3, 'BELD3_TOT', PROGNAME )
 
         IF ( .NOT. DESC3( GNAMET ) ) THEN
 
@@ -250,7 +250,7 @@ C.......   Initialize grid definition
 
         GNAMEA = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE A file',
-     &           FSREAD3, 'BGPRO_A', PROGNAME )
+     &           FSREAD3, 'BELD3_A', PROGNAME )
 
         IF ( .NOT. DESC3( GNAMEA ) ) THEN
 
@@ -293,7 +293,7 @@ C.......   Resolution variables assumed to be in meters
  
         GNAMEB = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE B file',
-     &           FSREAD3, 'BGPRO_B', PROGNAME )
+     &           FSREAD3, 'BELD3_B', PROGNAME )
 
         IF ( .NOT. DESC3( GNAMEB ) ) THEN
 
