@@ -111,6 +111,7 @@ C
 C
 cmh add includes
       INCLUDE 'MBDIMS3.EXT'
+      INCLUDE 'IODECL3.EXT'
 cmh
 cmh add declarations
       REAL    EFACT( MXNDET, NVTYPE )
@@ -294,9 +295,9 @@ C
 cmh add 14 lines
       IOUGEN = MODEV
       IOUGET = 5
-      IOUREP = 7
-      IOUASK = 6
-      IOUERR = 6
+      IOUREP = INIT3()
+      IOUASK = INIT3()
+      IOUERR = INIT3()
       IOBAT = 19
 
       WFLAG = .FALSE.     ! Initialize warning message write to off
