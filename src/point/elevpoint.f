@@ -30,7 +30,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -71,7 +71,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2     CRLF
         LOGICAL         DSCM3GRD
-        INTEGER         ENVINT
+        REAL            ENVREAL
         LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         FINDC
@@ -80,7 +80,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
 
-        EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVYN, FIND1, FINDC, 
+        EXTERNAL        CRLF, DSCM3GRD, ENVREAL, ENVYN, FIND1, FINDC, 
      &                  GETFLINE, PLUMRIS, PROMPTFFILE, PROMPTMFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
@@ -215,7 +215,7 @@ C           to continue running the program.
 
 C.........  Get environment variables that control this program
         MESG = 'Plume height elevated source cutoff [m]'
-        CUTOFF = ENVINT( 'SMK_CUTOFF_HT', MESG, 75., IOSCUT )
+        CUTOFF = ENVREAL( 'SMK_CUTOFF_HT', MESG, 75., IOSCUT )
 
         MESG = 'Indicator for create plume-in-grid outputs'
         PINGFLAG = ENVYN( 'SMK_PING_YN', MESG, .FALSE., IOS )
@@ -228,9 +228,6 @@ C.........  Get environment variables that control this program
 
         MESG = 'Indicator for English to metric units conversion'
         CFLAG = ENVYN( 'SMK_ENG2METRIC_YN', MESG, .FALSE., IOS )
-
-C.........  Resolve e.v. setting dependencies
-        IF( PINGFLAG ) MAJRFLAG = .TRUE.
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
@@ -245,6 +242,33 @@ C.........  Make sure only run for point sources
      &             ' sources'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+
+C.........  Write note if using specific elevated sources from the stack splits
+C           file, or if using the cutoff method
+        IF( MAJRFLAG ) THEN
+            MESG = 'NOTE: Major sources will be identified based on ' //
+     &             'the stack splits file.'
+
+        ELSE IF ( CUTOFF .GT. 0. ) THEN
+            MESG = 'NOTE: Major sources will be defined using'
+            L = LEN_TRIM( MESG )
+            IF( IOSCUT .LT. 0 ) THEN
+                WRITE( MESG,94020 ) MESG( 1:L ) // 
+     &                 ' the default cutoff ' // CRLF() // BLANK10//
+     &                 'height of', CUTOFF, '[m]'
+            ELSE
+                WRITE( MESG,94020 ) MESG( 1:L ) // 
+     &                 ' a user-defined cutoff ' // CRLF() // BLANK10//
+     &                 'height of', CUTOFF, '[m]'
+            END IF
+
+        ELSE
+            WRITE( MESG,94020 ) 'WARNING: Major sources will be ' //
+     &             'defined using a cutoff height of 0.'
+
+        END IF
+
+        CALL M3MSG2( MESG )
 
 C.........  Create format for country/state/county code
         WRITE( FMTFIP, 94300 ) '(I', FIPLEN3, '.', FIPLEN3, ')'
@@ -263,18 +287,20 @@ C.........   Get file names and open inventory files
      &         'Enter logical name for the ASCII INVENTORY file',
      &         .TRUE., .TRUE., ANAME, PROGNAME )
 
-C.........  For plume-in-grid inputs, get input file
+C.............  For plume-in-grid inputs using any method of major source
+C               identification
         IF( PINGFLAG ) THEN
+
+C.............  Get stack split groups file
             GDEV = PROMPTFFILE( 
      &         'Enter logical name for the STACK SPLIT GROUPS file',
      &         .TRUE., .TRUE., CRL // 'GROUP', PROGNAME )
-        END IF
 
-C.........  For plume-in-grid or major/minor inputs, get input file
-        IF( MAJRFLAG ) THEN
+C.............  Get stack split definitions file
             TDEV = PROMPTFFILE( 
      &         'Enter logical name for the STACK SPLIT DEFINITION file',
      &         .TRUE., .TRUE., CRL // 'SPLIT', PROGNAME )
+
         END IF
 
 C.........  Get header description of inventory file, error if problem
@@ -316,11 +342,9 @@ C.........  Initialize source status and group number arrays
         LPING   = .FALSE.   ! array
         GROUPID = 0         ! array
 
-C.........  If using plume-and-grid inputs, allocate memory and read in 
-C           stack groups file
-        IF( PINGFLAG ) THEN
-
-C.............  Get grid description for converting the stack group coordinates
+C.........  Get grid description for converting the stack group coordinates
+C           if using PinG or cutoff method
+        IF( .NOT. MAJRFLAG .OR. PINGFLAG ) THEN
             IF( .NOT. DSCM3GRD( 
      &                GDNAM3D, GDESC, COORD3D, GDTYP3D, COORUN3D,
      &                P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
@@ -334,8 +358,18 @@ C.............  Get grid description for converting the stack group coordinates
                 NCOLS = NCOLS3D
                 NROWS = NROWS3D
                 NGRID = NCOLS * NROWS
-
             END IF            
+
+C.............  Allocate memory so that we can use the GENPTCEL
+            ALLOCATE( NX( NGRID ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NX', PROGNAME )
+
+        END IF
+
+C.............  If processing for models-3...
+C.........  If using plume-and-grid inputs, allocate memory and read in 
+C           stack groups file
+        IF( PINGFLAG ) THEN
 
 C.............  Get the number of lines in the stack groups file
             NGLINES = GETFLINE( GDEV, 'Stack groups' )
@@ -362,68 +396,9 @@ C.................  Check read error status
 
             REWIND( GDEV )
 
-C.............  Allocate memory for stack groups and splits files based on the
-C               number of lines
-            ALLOCATE( GRPIDX( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPIDX', PROGNAME )
-            ALLOCATE( GRPGIDA( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPGIDA', PROGNAME )
-            ALLOCATE( GRPGID( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
-            ALLOCATE( GRPLAT( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPLAT', PROGNAME )
-            ALLOCATE( GRPLON( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPLON', PROGNAME )
-            ALLOCATE( GRPDM( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPDM', PROGNAME )
-            ALLOCATE( GRPHT( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPHT', PROGNAME )
-            ALLOCATE( GRPTK ( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPTK', PROGNAME )
-            ALLOCATE( GRPVE( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPVE', PROGNAME )
-            ALLOCATE( GRPFL( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPFL', PROGNAME )
-            ALLOCATE( GRPCNT( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
-            ALLOCATE( GRPCOL( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPCOL', PROGNAME )
-            ALLOCATE( GRPROW( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPROW', PROGNAME )
-            ALLOCATE( GRPXL( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPXL', PROGNAME )
-            ALLOCATE( GRPYL( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GRPYL', PROGNAME )
-            ALLOCATE( INDX( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INDX', PROGNAME )
-            ALLOCATE( GN( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GN', PROGNAME )
-            ALLOCATE( SN( NGROUP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SN', PROGNAME )
-
-C.............  Initialize stack group variables
-            GRPIDX  = 0
-            GRPGIDA = 0
-            GRPGID  = 0
-            GRPLAT  = BADVAL3
-            GRPLON  = BADVAL3
-            GRPDM   = BADVAL3
-            GRPHT   = BADVAL3
-            GRPTK   = BADVAL3
-            GRPVE   = BADVAL3
-            GRPFL   = BADVAL3
-            GRPCNT  = 0
-            GRPROW  = 0
-            GRPCOL  = 0
-            GRPXL   = BADVAL3
-            GRPYL   = BADVAL3
-            INDX    = 0
-            GN      = 0
-            SN      = 0
-
-C.............  Allocate memory so that we can use the GENPTCEL
-            ALLOCATE( NX( NGRID ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'NX', PROGNAME )
+C.............  Allocate memory for stack groups based on the number of lines
+            NGROUP = MAX( NGROUP, 1 )
+            CALL ALLOCATE_GROUP_VARIABLES
 
             MESG = 'Reading stack split groups file...'
             CALL M3MSG2( MESG )
@@ -514,7 +489,9 @@ C               file
         END IF   ! End if plume-in-grid
 
 C.........  If major/minor definitions are to be used...
-        IF( MAJRFLAG ) THEN
+C.........  If doing cutoff method, but still want to identify PinG sources,
+C           then the splits file is still needed (PINGFLAG = T)
+        IF( MAJRFLAG .OR. PINGFLAG ) THEN
 
 C.............  Allocate memory for reading stack splits file
             NSLINES = GETFLINE( TDEV, 'Stack splits' )
@@ -638,7 +615,7 @@ C.....................  Skip source if stack group is not in stack group file
                     IF( K .LE. 0 ) CYCLE
 
 C.....................  Store per-source major and PinG source info
-                    LMAJOR ( S ) = SPTMMSA( J )
+                    LMAJOR ( S ) = ( MAJRFLAG .AND. SPTMMSA( J ) )
                     LPING  ( S ) = ( PINGFLAG .AND. SPTMPSA( J ) )
 
                     IF( LPING( S ) ) THEN
@@ -701,7 +678,8 @@ C               inventory
 
                 IF( .NOT. FOUND( I ) ) THEN
 
-                    CSRC = SPTCSRCA( I )
+                    J    = SPTINDX ( I )
+                    CSRC = SPTCSRCA( J )
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                     MESG = 'WARNING: Entry from PSPLIT not found ' //
@@ -722,38 +700,49 @@ C.........  Abort if error found while reading stack group or stack splits file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  If there are no stack groups or stack splits files...
+C.........  If using cutoff method...
         IF( .NOT. MAJRFLAG ) THEN
 
-C.............  Write note indicating what cutoff is being used and whether
-C               this is a default value
+C.............  Write note 
             MESG = 'Computing plume rise and comparing to cutoff...'
-            CALL M3MSG2( MESG )
-
-            IF( IOSCUT .LT. 0 ) THEN
-                WRITE( MESG,94020 ) 'Using default cutoff of', 
-     &                              CUTOFF, '[m]'
-            ELSE
-                WRITE( MESG,94020 ) 'Using user-defined cutoff of', 
-     &                              CUTOFF, '[m]'
-            END IF
             CALL M3MSG2( MESG )
 
 C.............  Process the stacks to determine elevated sources
             DO S = 1, NSRC
 
+C.................  Get stack parameters from stack groups file, if they
+C                   are available. This will only be true for PinG source
+C                   identification.
+                GID = GROUPID( S )
+                K = FIND1( GID, NGROUP, GRPGID )
+                IF( K .GT. 0 ) THEN
+
+                    K = GRPIDX( K )
+                    HT = GRPHT( K )
+                    TK = GRPTK( K )
+                    DM = GRPDM( K )
+                    VE = GRPVE( K )
+
+                ELSE
+                    HT = STKHT( S )
+                    TK = STKTK( S )
+                    DM = STKDM( S )
+                    VE = STKVE( S )
+
+                END IF
+
 C.................  Check stack parameters so PLUMRIS doesn't blow up
 C.................  If parameters are bad, skip plume rise calculation
-                IF( STKHT( S ) .LT. 0. .OR. 
-     &              STKTK( S ) .LE. 0. .OR.
-     &              STKVE( S ) .LE. 0. .OR.
-     &              STKDM( S ) .LE. 0.      ) THEN
+                IF( HT .LT. 0. .OR. 
+     &              TK .LE. 0. .OR.
+     &              VE .LE. 0. .OR.
+     &              DM .LE. 0.      ) THEN
 
                     EFLAG = .TRUE.
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
-                    WRITE( MESG,94030 ) STKHT( S ), STKDM( S ),
-     &                                  STKTK( S ), STKVE( S )
+                    WRITE( MESG,94030 ) HT, DM, TK, VE
+
                     L = LEN_TRIM( MESG )
                     MESG = 'ERROR: Invalid stack parameters for:' //
      &                     CRLF() // BLANK10 // 
@@ -765,8 +754,7 @@ C.................  When stack parameters are okay...
                 ELSE
 
 C.....................  Calculate estimated plume rise
-                    RISE = PLUMRIS( STKHT( S ), STKTK( S ), 
-     &                              STKVE( S ), STKDM( S ) )
+                    RISE = PLUMRIS( HT, TK, VE, DM )
 
 C.....................  Identify sources as major when the plume rise is
 C                       greater than the cutoff
@@ -779,7 +767,69 @@ C                       greater than the cutoff
 
                 END IF        ! end bad stack parms or not
             END DO            ! end loop on sources S
+
+C.............  Abort if no sources are elevated
+            IF( NMAJOR .EQ. 0 ) THEN
+
+                MESG = 'WARNING: No sources found that meet the ' //
+     &                 'elevated source cutoff height'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
+
+            END IF
+
         END IF                ! end groups/splits file or not
+
+
+
+C.........  If using cutoff method but not PinG, create the data for the stack
+C           groups file.
+        IF( .NOT. MAJRFLAG .AND. .NOT. PINGFLAG ) THEN
+
+            NGROUP = NMAJOR
+            CALL ALLOCATE_GROUP_VARIABLES
+
+            J = 0            
+            DO S = 1, NSRC
+
+                IF( .NOT. LMAJOR( S ) ) CYCLE
+
+                J = J + 1
+
+                IF( J .LE. NGROUP ) THEN
+
+                    GROUPID( S ) = J
+                    GRPGID ( J ) = J
+                    GRPGIDA( J ) = J
+                    GRPIDX ( J ) = J
+                    GRPXL  ( J ) = XLOCA( S )
+                    GRPLON ( J ) = XLOCA( S )
+                    GRPYL  ( J ) = YLOCA( S )
+                    GRPLAT ( J ) = YLOCA( S )
+                    GRPDM  ( J ) = STKDM( S ) 
+                    GRPHT  ( J ) = STKHT( S )
+                    GRPTK  ( J ) = STKTK( S )
+                    GRPVE  ( J ) = STKVE( S )
+                    GRPCNT ( J ) = 1
+
+                    DM = GRPDM( J )
+                    GRPFL( J ) = GRPVE( J ) * PI * ( 0.25*DM*DM )
+
+                END IF
+
+            END DO
+
+C.............  Write internal error if dimensions exceeded
+            IF( J .GT. NGROUP ) THEN
+
+                WRITE( MESG,94010 ) 'INTERNAL ERROR: Stack group ' //
+     &                 'arrays dimensioned to', NGROUP, 'but needed', J
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+        END IF
 
 C.........  Abort if an error occurred
         IF( EFLAG ) THEN
@@ -822,8 +872,8 @@ C.........  Write ASCII file
                 IF( LPING ( S ) ) THEN
                     MS = 0
                     PS = S
-                    GID = GROUPID( S )
                 END IF
+                GID = GROUPID( S )
 
                 WRITE( PDEV, 93620 ) MS, PS, GID
 
@@ -831,8 +881,9 @@ C.........  Write ASCII file
 
         END DO  
 
-C.........  If needed, sort and write plume-in-grid output file
-        IF( PINGFLAG ) THEN
+C.........  Sort and write plume-in-grid output file for Models-3 processing
+C           or for elevated source identidied by cutoff method
+        IF( .NOT. MAJRFLAG .OR. PINGFLAG ) THEN
 
 C.............  Process the stack group coordinates for the current grid
 
@@ -884,11 +935,11 @@ C               grid
             IF( NEXCLD .GT. 0 ) THEN
                 WRITE( MESG,94010 ) 'WARNING: ', NEXCLD, 'stack ' //
      &                 'groups are outside of grid "' // 
-     &                 GDNAM3D( 1:LEN_TRIM( GDNAM3D ) )
+     &                 GDNAM3D( 1:LEN_TRIM( GDNAM3D ) ) // '"'
                 CALL M3MSG2( MESG )
             END IF
 
-            MESG='Writing PLUME-IN-GRID STACK PARAMETERS output file...'
+            MESG='Writing ELEVATED/PING STACK PARAMETERS output file...'
             CALL M3MSG2( MESG )
 
             CALL WPINGSTK( MNAME, SDATE, STIME )
@@ -1000,6 +1051,74 @@ C...........   Internal buffering formats............ 94xxx
 94010       FORMAT( 10 ( A, :, I8, :, 2X  ) )
 
             END SUBROUTINE VALID_GRP_INFO 
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram allocates memory for and initializes
+C               the stack group arrays
+            SUBROUTINE ALLOCATE_GROUP_VARIABLES
+
+C----------------------------------------------------------------------
+
+            ALLOCATE( GRPIDX( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPIDX', PROGNAME )
+            ALLOCATE( GRPGIDA( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPGIDA', PROGNAME )
+            ALLOCATE( GRPGID( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
+            ALLOCATE( GRPLAT( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPLAT', PROGNAME )
+            ALLOCATE( GRPLON( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPLON', PROGNAME )
+            ALLOCATE( GRPDM( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPDM', PROGNAME )
+            ALLOCATE( GRPHT( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPHT', PROGNAME )
+            ALLOCATE( GRPTK ( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPTK', PROGNAME )
+            ALLOCATE( GRPVE( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPVE', PROGNAME )
+            ALLOCATE( GRPFL( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPFL', PROGNAME )
+            ALLOCATE( GRPCNT( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
+            ALLOCATE( GRPCOL( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPCOL', PROGNAME )
+            ALLOCATE( GRPROW( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPROW', PROGNAME )
+            ALLOCATE( GRPXL( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPXL', PROGNAME )
+            ALLOCATE( GRPYL( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GRPYL', PROGNAME )
+            ALLOCATE( INDX( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INDX', PROGNAME )
+            ALLOCATE( GN( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GN', PROGNAME )
+            ALLOCATE( SN( NGROUP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SN', PROGNAME )
+
+C.............  Initialize stack group variables
+            GRPIDX  = 0
+            GRPGIDA = 0
+            GRPGID  = 0
+            GRPLAT  = BADVAL3
+            GRPLON  = BADVAL3
+            GRPDM   = BADVAL3
+            GRPHT   = BADVAL3
+            GRPTK   = BADVAL3
+            GRPVE   = BADVAL3
+            GRPFL   = BADVAL3
+            GRPCNT  = 0
+            GRPROW  = 0
+            GRPCOL  = 0
+            GRPXL   = BADVAL3
+            GRPYL   = BADVAL3
+            INDX    = 0
+            GN      = 0
+            SN      = 0
+
+            END SUBROUTINE ALLOCATE_GROUP_VARIABLES
 
         END PROGRAM ELEVPOINT
 
