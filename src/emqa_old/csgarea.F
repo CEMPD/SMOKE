@@ -2,7 +2,7 @@
         PROGRAM CSGAREA
 
 C***********************************************************************
-C  program body starts at line 128
+C  program body starts at line 130
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -106,10 +106,10 @@ C...........   form "<INV-SPC-NAME>to<MODEL-SPC-NAME>")
 
 C...........   Other local variables
         
-        INTEGER         JDATE, JTIME, TSTEP
-        INTEGER         NSTEPS
-        INTEGER         LDEV
         INTEGER         I, J, K, F, S, T, V
+        INTEGER         LDATE, JDATE, JTIME, TSTEP
+        INTEGER         LDEV
+        INTEGER         NSTEPS
         
         LOGICAL         CONTROLFLAG, OUTPUTFLAG
 
@@ -119,7 +119,9 @@ C...........   Other local variables
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
             
+        CHARACTER*5     OUTNAM  !  contains default logical output name
         CHARACTER*16    SCRBUF  !  scratch area
+        CHARACTER*16    UNITS   !  temporary units buffer
         CHARACTER*256   MESG    !  message buffer
 
 C***********************************************************************
@@ -210,24 +212,50 @@ C.......   Build description of output file, and optionally open it:
         JDATE   = SDATE3D
         JTIME   = STIME3D
         TSTEP   = TSTEP3D
-        IF ( TSTEP .EQ. 0 ) THEN
+
+C.........  Annual inventory file as input with controls
+        IF ( TSTEP .EQ. 0 .AND. CONTROLFLAG ) THEN
             NSTEPS  = 1
+            FDESC3D( 1 ) = 'Area gridded, controlled model species'
+            OUTNAM = 'AGSC'
+            UNITS  = 'mole/year'
+
+C.........  Annual inventory file as input with NO controls
+        ELSEIF( TSTEP .EQ. 0 ) THEN
+            NSTEPS  = 1
+            FDESC3D( 1 ) = 'Area gridded model species'
+            OUTNAM = 'AGS'
+            UNITS  = 'mole/year'
+ 
+C.........  Hourly inventory file as input with controls
+        ELSEIF ( TSTEP .GT. 0 .AND. CONTROLFLAG ) THEN
+            NSTEPS  = MXREC3D
+            FDESC3D( 1 ) =
+     &        'Area gridded, hourly, controlled model species'
+            OUTNAM = 'AGTSC'
+            UNITS  = 'mole/hour'
+ 
+C.........  Hourly inventory file as input with NO controls
         ELSE
             NSTEPS  = MXREC3D
+            FDESC3D( 1 ) = 'Area gridded, hourly model species'
+            OUTNAM = 'AGTS'
+            UNITS  = 'mole/hour'
+ 
         END IF
+
 
         DO  33 V = 1, NMPOL
             VNAME3D( V ) = EMNAM( V )
-            UNITS3D( V ) = 'moles/hour'
+            UNITS3D( V ) = UNITS
             VDESC3D( V ) = 'gridded speciated emissions'
-            VTYPE3D( V ) = m3REAL
+            VTYPE3D( V ) = M3REAL
 33      CONTINUE
         FDESC3D( 1 ) = 'area source speciated gridded emissions.'
         
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for OUTPUT EMIS file ' //
-     &          'or "NONE"',
-     &          FSUNKN3, 'AGTS', 'CSGAREA' )
+     &          'or "NONE"', FSUNKN3, OUTNAM, 'CSGAREA'      )
 
         OUTPUTFLAG = ( ENAME .NE. NONE )
 
@@ -371,14 +399,17 @@ C.......   Transform and write out area source emissions values:
             CALL M3MSG2( 'Calculating speciated gridded emissions...' )
         END IF
 
+        LDATE = 0
         DO  199  T = 1, NSTEPS
 
 C...............   If this is a new month, or new day, write message
-            IF ( MOD( T,24 ) .EQ. 1 ) THEN
+            IF ( LDATE .NE. JDATE ) THEN
  
                 MESG = 'Processing ' //
      &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
                 CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+
+                LDATE = JDATE
  
             END IF
 
