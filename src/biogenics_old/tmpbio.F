@@ -206,13 +206,8 @@ C        WRITE( LDEV,92000 ) ' ', 'Reading GRID and LAND USE data', ' '
         END IF    ! Use cloud to calculate PAR
 
 
-        JDATE = SDATE3D
-        JTIME = STIME3D
-
-
 C...........   Get starting date, time, run duration
 
-        CALL NEXTIME( JDATE, JTIME, 10000*MXREC3D )
 
         SDATE = GETDATE( SDATE3D, 
      &                  'Enter starting date (YYYYDDD|YYYYMMDD)' )
@@ -225,8 +220,12 @@ C...........   Get starting date, time, run duration
 C.......   Build description for, and create/open output file
 C.......   (all but variables-table in description is borrowed from M2NAME)
 
+        SDATE3D = SDATE
+        STIME3D = STIME
+        MXREC3D = NHRS
         NVARS3D = MSPCS
         NLAYS3D = 1
+
 
         DO  11  M = 1, MSPCS
             VNAME3D( M ) = EMSPC( M )
