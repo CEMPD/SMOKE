@@ -69,19 +69,31 @@ C
       INCLUDE 'VDATA.I' 
 
       INTEGER, EXTERNAL :: JUNIT
-      
+
+      EXTERNAL BD01,     BD01P5,   BD02P5,   BD03,     BD04,     
+     &         BD04P5,   BD05,     BD06,     BD07,     BD08P5,   
+     &         BD10,     BD11,     BD12,     BD15,     BD16, 
+     &         BD17,     BD19,     BD20,     BD23,     BD24,   
+     &         BD25,     BD27,     BD28,     BD28P5,   BD29, 
+     &         BD30,     BD31,     BD33,     BD34,     BD35, 
+     &         BD36,     BD37,     BD38,     BD39,     BD40,
+     &         BD41,     BD42,     BD43,     BD44,     BD45, 
+     &         BD46,     BD47,     BD48,     BDEV01,   BDSPEED1, 
+     &         BDSPEED2, BDUNIT,   BD_AC,    BD_IM1,   BD_IM2,
+     &         BD_NGV,   BD_SFTP,  BD_TIER2, BD_T2PM  
+
       CHARACTER(LEN=80), INTENT (IN) :: INPFILE    ! Mobile6 input file name
       INTEGER          , INTENT (IN) :: MDEV       ! input file unit number
       INTEGER          , INTENT (IN) :: LDEV       ! SMOKE log file unit number
-      
+
 C 
       LOGICAL,PARAMETER         ::  BACK=.TRUE. 
       LOGICAL                   ::  BATMODE 
       CHARACTER*150             ::  BATREC 
       CHARACTER*150             ::  BUFFER1 
       CHARACTER*150             ::  BUFFER2 
-      CHARACTER*80              ::  CMDOUTPUT
-      CHARACTER*10              ::  CMDACTION
+      CHARACTER*80              ::  CMDOUTPUT 
+      CHARACTER*10              ::  CMDACTION 
       LOGICAL                   ::  FEXIST 
       LOGICAL                   ::  FOPEN 
       INTEGER                   ::  IDX 
@@ -137,19 +149,23 @@ C
 C See IOUCOM and Block Data 16 for initializations. 
 C 
 C     Input Units: 
-      IOUGEN =  MDEV 
-      IOUXIM =  JUNIT() 
-      IOUIMD =  JUNIT()
+      IOUGEN = MDEV 
+      IOUXIM = 0       ! opened in GETXIM.F
+      IOUIMD = 0       ! opened in GETM5IM.F and RDT12C.F
 ccs      IOUIN  =  5 
-      IOUALT =  JUNIT()
+      IOUALT = 0       ! opened in DBOPTS.F, GET94E.F, GET94P.F, GETATHAPS.F
+                       !   GETCONV.F, GETDSACT.F, GETFVMT.F, GETHSACT.F
+                       !   GETMAR.F, GETNGVEF.F, GETNGVFR.F, GETNH3BER.F
+                       !   GETNH3SDR.F, GETPMDR1.F, GETPMDR2.F, GETPMSCF.F
+                       !   GETPMZML.F, and GETREG.F 
 ccs      IOUBAT = 19 
 C 
 C     NOTE: Unit numbers 51-57 are reserved for the database output 
 C           tables and are initialized in MODULE DATABASE. 
 C     Output units: 
-      IOUREP =  JUNIT()
-      IOUERR =  JUNIT()
-      IOUOUT =  LDEV 
+      IOUREP = 0       ! opened in PROCHDR.F
+      IOUERR = JUNIT()
+      IOUOUT = LDEV 
       IOUNULL = -1 
 C 
 C     Open the IOUERR file and initialize total errors 
