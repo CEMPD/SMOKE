@@ -495,9 +495,9 @@ C.......   First, get list of packet names in the control file
  
             ELSE IF ( J .GT. 22 ) THEN
  
-                WRITE( MESG,94910 )
+                WRITE( MESG,94010 )
      &              'Packet name too long in ',
-     &              CNAME( 1:TRIMLEN( CNAME ) ) // 'at line',
+     &              CNAME( 1:TRIMLEN( CNAME ) ) // ' at line',
      &              IREC, CRLF() // BLANK5 // 
      &              'Please change name or remove extra spaces.'
                 CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
@@ -1869,6 +1869,8 @@ C...........   Formatted file I/O formats............ 93xxx
      &          3( F8.5, '~>', F8.5, : '; ' )  )
 
 C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94910   FORMAT( A, ' "', A, :,  '" at line', I7, :, '; IOSTAT=', I7 )
 
