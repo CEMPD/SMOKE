@@ -141,7 +141,9 @@ C           are not permitted.
 
             END IF
 
-            IF( LINE .EQ. ' ' ) CYCLE  ! Skip blank lines
+C.............  Skip blank lines and comment lines
+            IF( LINE .EQ. ' ' ) CYCLE
+            IF( LINE( 1:1 ) == CINVHDR ) CYCLE
 
 C.............  If inside packet...
             IF( INSIDE ) THEN
