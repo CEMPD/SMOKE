@@ -469,7 +469,7 @@ C.............  If the first time the internal subprogram is called
             IF( FIRSTIME ) THEN
 
 C................  Determine the number of lines in the input file
-                NLINES = GETFLINE( FDEV )
+                NLINES = GETFLINE( FDEV, "ARTOPNT file" )
 
                 FIRSTIME = .FALSE.
 
