@@ -518,11 +518,10 @@ C.........  Set up output file:
         GRDNMDG = GDNAM3D
         VGTYPDG = VGTYP3D
         VGTOPDG = VGTOP3D
-        VGLVSDG( 0 ) =       VGLVS3D( 0 )
-        SIGH   ( 0 ) = 0.5 * VGLVS3D( 0 )
+        VGLVSDG( 0 ) = VGLVS3D( 0 )
         DO  11  I = 1, NLAYS3D - 1
             VGLVSDG( I ) = VGLVS3D( I )
-            SIGH   ( I ) = 0.5 * ( VGLVS3D( I ) + VGLVS3D( I-1 ) )
+            SIGH   ( I-1 ) = 0.5 * ( VGLVS3D( I ) + VGLVS3D( I-1 ) )
 11      CONTINUE
 
         IF ( .NOT. DSCGRID( GRDNMDG, COONMDG, GDTYP3D, 
@@ -934,9 +933,9 @@ C...........   Read and transform meteorology:
             CALL BMATVEC( NDOTS, NPSRC, EMLAYS, ND, CD, DBUF, VWIND )
 
 
-            P  =       1.0  / ( SIGH( 1 ) - SIGH( 0 ) )
-            PP =     - P * ( VGLVSXG( 0 ) - SIGH( 0 ) )
-            QQ = 2.0 - P * ( VGLVSXG( 1 ) - SIGH( 1 ) ) 
+            P  = ( SIGH(0) - VGLVSXG(0) ) / ( SIGH( 1 ) - SIGH( 0 ) )
+            PP = 1.0 + P 
+            QQ =     - P 
 
             DO 133  S = 1, NPSRC
 
@@ -967,7 +966,7 @@ C...........   Compute other derived meteorology variables:
                 X     = PRES( 1,S )
                 Y     = PRES( 2,S )
 
-                PSFC  = PP * Y + QQ * X
+                PSFC  = PP * X + QQ * Y
                 ES    = 6.1078 * EXP( 5384.21 / CTOK - 
      &                                5384.21 / TSFC( S ) )
                 QSFC  = 0.622 * ES / ( PSFC - ES )
@@ -975,6 +974,7 @@ C...........   Compute other derived meteorology variables:
                 THETG = TVSFC * ( 1000.0 / PSFC )**0.286
                 THV1  = TV( 1,S )*( 1000.0 / PRES( 1,S ) )**0.286
                 DTHDZ( 1 ) = ( THV1 - THETG ) / ZH( 1,S )
+
                 IF ( HMIX ( S ) .LE. ZF( 1,S ) ) THEN
                     LPBL = 1
                 END IF
