@@ -128,7 +128,7 @@ C.................  Simply write out real values directly
 
         END DO
 
-        DEALLOCATE( INTBUF )
+        IF( ALLOCATED( INTBUF ) ) DEALLOCATE( INTBUF )
 
         RETURN
 
