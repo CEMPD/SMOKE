@@ -1,6 +1,6 @@
 
-        SUBROUTINE OPENINVOUT( GRDNM, ENAME, ANAME, SDEV, A2PFLAG,
-     &                          ADEV )
+        SUBROUTINE OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, IDEV, SDEV, 
+     &                         ADEV, VARPATH, VAR_FORMULA )
 
 C*************************************************************************
 C  subroutine body starts at line 119
@@ -63,44 +63,33 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER*2     CRLF
         INTEGER         ENVINT
+        INTEGER         GETEFILE
         INTEGER         INDEX1
         INTEGER         PROMPTFFILE
+        LOGICAL         SETENVVAR
         CHARACTER*16    VERCHAR
 
-        EXTERNAL CRLF, ENVINT, INDEX1, PROMPTFFILE, VERCHAR
+        EXTERNAL    CRLF, ENVINT, GETEFILE, INDEX1, PROMPTFFILE, 
+     &              SETENVVAR, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
+        LOGICAL     , INTENT(IN)  :: A2PFLAG ! true: using area-to-point processing
         CHARACTER(*), INTENT(IN)  :: GRDNM   ! grid name if any gridded data
         CHARACTER(*), INTENT(OUT) :: ENAME   ! emis i/o api inven logical name
         CHARACTER(*), INTENT(OUT) :: ANAME   ! emis ASCII inven logical name
+	INTEGER     , INTENT(OUT) :: IDEV    ! map inventory file
         INTEGER     , INTENT(OUT) :: SDEV    ! ascii output inven file unit no.
-        LOGICAL     , INTENT(IN)  :: A2PFLAG ! true: using area-to-point processing
 	INTEGER     , INTENT(OUT) :: ADEV    ! REPINVEN output file unit no.
+        CHARACTER(LEN=PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
+        CHARACTER(*), INTENT(OUT) :: VAR_FORMULA  ! formula string
 
 C...........   LOCAL PARAMETERS
         CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
-C...........   Names, Units, types, & descriptions for pollutant-specific 
-C              output variables.  NOTE - second dimension will work so long
-C              as NPPOL > NPACT, which is expected to always be the case
-
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: EONAMES( :,: ) ! Names 
-        INTEGER               , ALLOCATABLE :: EOTYPES( :,: ) ! Types (Real|Int)
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units  
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Dscriptions  
-
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: AONAMES( :,: ) ! Names 
-        INTEGER               , ALLOCATABLE :: AOTYPES( :,: ) ! Types (Real|Int)
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: AOUNITS( :,: ) ! Units  
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: AODESCS( :,: ) ! Dscriptions  
-
-C...........   Other local allocatable arrays
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SAVEANAM( : )  ! tmp variables
-
 C...........   Other local variables
 
-        INTEGER       I, J, K, L, L2, V, V1, V2     ! counter and indices
+        INTEGER       I, J, K, L, L2, N, V, V1, V2   ! counter and indices
 
         INTEGER    :: BASYR_OVR = 0     ! base year override
         INTEGER    :: FYEAR = 0         ! future year
@@ -118,14 +107,18 @@ C...........   Other local variables
         LOGICAL    :: CHKMINUS = .FALSE. ! true: formula uses a - sign
         LOGICAL    :: EFLAG    = .FALSE. ! true: error found
 
-        CHARACTER*60  VAR_FORMULA
-        CHARACTER*300 MESG      ! message buffer 
+        CHARACTER*256 MESG      ! message buffer 
 
+        CHARACTER*16            NAME1  ! tmp file name component
+        CHARACTER*16            NAME2  ! tmp file name component
         CHARACTER(LEN=NAMLEN3)  NAMBUF ! file name buffer
         CHARACTER(LEN=IOVLEN3)  VIN_A
         CHARACTER(LEN=IOVLEN3)  VIN_B
         CHARACTER(LEN=IOVLEN3)  VNAME
         CHARACTER(LEN=IOULEN3)  UNITS  ! tmp units name
+        CHARACTER(LEN=PHYLEN3)  APHYS  ! ASCII physical file name
+        CHARACTER(LEN=PHYLEN3)  EPHYS  ! I/O API physical file name
+        CHARACTER(LEN=PHYLEN3)  PATH   ! path name
 
         CHARACTER*16 :: PROGNAME = 'OPENINVOUT' ! program name
 
@@ -140,6 +133,57 @@ C.........  Get environment variable settings
 
 C.........  Get output inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
+
+C.........  Set strings needed for building file names (note-
+C           duplicated in WRINVEMIS)
+        SELECT CASE( CATEGORY )
+        CASE( 'AREA' )
+            NAME1 = 'area'
+            NAME2 = 'asrc'
+        CASE( 'MOBILE' )
+            NAME1 = 'mobl'
+            NAME2 = 'msrc'
+        CASE( 'POINT' ) 
+            NAME1 = 'pnts'
+            NAME2 = 'psrc'
+        END SELECT
+
+C.........  Prompt for map-formatted inventory file
+        IDEV = GETEFILE( ENAME, .FALSE., .TRUE., PROGNAME )
+        IF ( IDEV .LT. 0 ) THEN     !  failure to open
+
+            MESG = 'Could not open INVENTORY MAP file:' // CRLF() // 
+     &              BLANK10 // TRIM( ENAME ) // '.'
+            CALL M3MSG2( MESG )
+
+            MESG = 'Ending program.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF      !  if getefile() failed
+
+C.........  Evaluate physical file name of inventory map
+        MESG = 'Inventory map file name'
+        CALL ENVSTR( ENAME, MESG, BLANK16, APHYS, IOS )
+
+C.........  Determine path of inventory map
+        MESG = 'Inventory map file'
+        IF( IOS .NE. 0 ) THEN
+            MESG = 'Unable to evaluate environment variable "' //
+     &             TRIM( ENAME ) // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Determine path of inventory map
+        L = LEN_TRIM( APHYS )
+        DO N = L, 1, -1
+
+            IF( APHYS( N:N ) .EQ. '/' .OR.
+     &          APHYS( N:N ) .EQ. '\'      ) THEN
+                PATH = APHYS( 1:N )
+                EXIT
+            END IF
+
+        END DO
 
 C.........  Depending on source category, set number of non-pollutant 
 C           inventory variables
@@ -156,48 +200,6 @@ C           inventory variables
             NNPVAR = NPTVAR3
         END SELECT
 
-C.........  Compute actual request output variables based on input data
-        NIOVARS = NNPVAR + NIPOL * NPPOL + NIACT * NPACT
-
-C.........  Compute conservative maximum number of pollutants and activities
-C           (conservative b/c NPPOL > NPACT )
-ccs        NDATMAX = INT( ( MXVARS3 - NNPVAR ) / NPPOL )
-
-C.........  If there are too many output variables, reset NIPOL
-
-ccs        IF( NIOVARS .GT. MXVARS3 ) THEN
-ccs
-ccs            WRITE( MESG,94010 ) 
-ccs     &             'WARNING: Maximum number of pollutants or ' //
-ccs     &             'activities that can be be'// CRLF()// BLANK10//
-ccs     &             'written to the I/O API file is', NDATMAX, 
-ccs     &             '. This limitation is caused by'// CRLF()// BLANK10//
-ccs     &             'the I/O API variable limit of', MXVARS3, '.'
-ccs            CALL M3MSG2( MESG )
-ccs 
-ccs            WRITE( MESG,94010 ) 
-ccs     &             'WARNING: Reseting total number of output '//
-ccs     &             'pollutants and activities to', NDATMAX
-ccs            CALL M3MSG2( MESG )
-
-C.............  If the number of pollutants alone are too much, then reset
-C               that number.
-ccs            IF( NIPOL .GT. NDATMAX ) THEN
-ccs                NIPOL   = NDATMAX
-ccs                NIACT   = 0
-ccs                NIOVARS = NNPVAR + NPPOL * NIPOL                
-
-C.............  Otherwise, reset the number of activities by subtracting the
-C               number of pollutants from the maximum allowed number of 
-C               variables
-ccs            ELSE
-ccs                NIACT = NDATMAX - NIPOL
-ccs                NIOVARS = NNPVAR + NIPOL * NPPOL + NIACT * NPACT
-ccs
-ccs            END IF
-ccs
-ccs        ENDIF
-
 C.........  Determine the predominant year of the inventory
         CALL GETBASYR( NSRC, YEAR )
 
@@ -209,12 +211,11 @@ C.........  Set the base year and past/future year, if needed
             BYEAR = YEAR
         END IF
 
-C.........  Set up for opening I/O API output file header
-
+C.........  Set up for opening I/O API part of inventory output
         CALL HDRMISS3  ! Initialize for emissions 
 
 C.........  Set number of variables and allocate file description arrays
-        NVARSET = NIOVARS + NPPOL  ! add extra space in case of formula based output
+        NVARSET = NNPVAR
         
         ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
@@ -257,6 +258,11 @@ C.........  Set number of variables and allocate file description arrays
         IF( FYEAR .GT. 0 ) THEN
              WRITE( FDESC3D( 14 ),94010 ) '/PROJECTED YEAR/ ', FYEAR
         END IF
+
+C........  Get setup up for later processing of a formula for adding a variable
+        IF( VAR_FORMULA .NE. ' ' ) THEN
+            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
+        END IF  
 
 C.........  Define source characteristic variables that are not strings
 
@@ -393,226 +399,65 @@ C.........  Define source characteristic variables that are not strings
 
         END SELECT
 
-C.........  Allocate memory for temporary variable names etc.
-        ALLOCATE( EONAMES( NIPOL,NPPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EONAMES', PROGNAME )
-        ALLOCATE( EOUNITS( NIPOL,NPPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EOUNITS', PROGNAME )
-        ALLOCATE( EOTYPES( NIPOL,NPPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EOTYPES', PROGNAME )
-        ALLOCATE( EODESCS( NIPOL,NPPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EODESCS', PROGNAME )
+C.........  Build output file physical name
+        ENAME = 'IOAPI_INV'
+        EPHYS = TRIM( PATH ) // TRIM( NAME1 ) // '.ncf'
 
-C.........  Get names, units, etc. of output pollutant-specific records
-        CALL BLDENAMS( CATEGORY, NIPOL, NPPOL, EINAM, 
-     &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
+C.........  Set output logical file name
+        IF( .NOT. SETENVVAR( ENAME, EPHYS ) ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: Could not set logical file name for file:' //
+     &              CRLF() // BLANK10 // TRIM( EPHYS )
+            CALL M3MSG2( MESG )
 
-C.........  Create output variables for pollutants
-        DO V = 1 , NIPOL
-            
-            DO I = 1, NPPOL ! Loop through number of variables per pollutant
-
-C.................  Set units for the primary data value
-                IF( I .EQ. 1 ) THEN
-                    K = INDEX1( EONAMES( V, 1 ), MXIDAT, INVDNAM )
-                    UNITS = INVDUNT( K )
-
-C.................  Set units for the other data values (per activity)
-                ELSE
-                    UNITS = EOUNITS( V, I )
-
-                END IF
-
-C.................  Store variable names and information
-                VNAMESET( J ) = EONAMES( V, I )
-                VTYPESET( J ) = EOTYPES( V, I )
-                VUNITSET( J ) = UNITS
-                VDESCSET( J ) = EODESCS( V, I )
-                J = J + 1
-
-            END DO    !  end loop on number of variables per pollutant
-
-        END DO        !  end loop on inventory pollutants V
-
-C.........  If there is a computed output variable, add it to the variable list.
-C           Base the other variable settings (besides the name) on the first 
-C           of the two variables in the formula.
-        IF( VAR_FORMULA .NE. ' ' ) THEN
-
-C.............  Make sure formula makes sense
-            L2   = LEN_TRIM( VAR_FORMULA ) 
-            LEQU = INDEX( VAR_FORMULA, '=' )
-            LPLS = INDEX( VAR_FORMULA, '+' )
-            LMNS = INDEX( VAR_FORMULA, '-' )
-
-            CHKPLUS  = ( LPLS .GT. 0 )
-            CHKMINUS = ( LMNS .GT. 0 )
-
-            LDIV = LPLS
-            IF( CHKMINUS ) LDIV = LMNS
-
-            IF( LEQU .LE. 0 .OR. 
-     &        ( .NOT. CHKPLUS .AND. .NOT. CHKMINUS ) ) THEN
-
-                L = LEN_TRIM( FORMEVNM )
-                MESG = 'Could not interpret formula for extra ' //
-     &                 'pollutant from environment variable ' //
-     &                 CRLF() // BLANK10 // '"' // FORMEVNM( 1:L ) //
-     &                 '": ' // VAR_FORMULA
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Extract formula variable names
-            VNAME = ADJUSTL ( VAR_FORMULA(      1:LEQU-1 ) )
-            VIN_A = ADJUSTL ( VAR_FORMULA( LEQU+1:LDIV-1 ) )
-            VIN_B = ADJUSTL ( VAR_FORMULA( LDIV+1:L2     ) )
-
-C.............  Find formula inputs in existing variable list
-            V1 = INDEX1( VIN_A, NIPOL, EINAM )
-            V2 = INDEX1( VIN_B, NIPOL, EINAM )
-
-            IF( V1 .LE. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_A )
-                MESG = 'ERROR: Variable "'// VIN_A( 1:L ) // '" from '//
-     &                 'formula was not found in emissions inputs.'
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF( V2 .LE. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_B )
-                MESG = 'ERROR: Variable "'// VIN_B( 1:L ) // '" from '//
-     &                 'formula was not found in emissions inputs.'
-                CALL M3MSG2( MESG )
-            END IF
-
-            V1 = INDEX1( VIN_A, NIACT, ACTVTY )
-            V2 = INDEX1( VIN_B, NIACT, ACTVTY )
-
-            IF( V1 .GT. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_A )
-                MESG = 'ERROR: Variable "'// VIN_A( 1:L )// '" is an'//
-     &                 'activity, which is not allowed in a formula.'
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF( V2 .GT. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_B )
-                MESG = 'ERROR: Variable "'// VIN_B( 1:L )// '" is an'//
-     &                 'activity, which is not allowed in a formula.'
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF ( EFLAG ) THEN
-                MESG = 'ERROR: Problem processing formulas.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            V = INDEX1( VIN_A, NIPPA, EANAM )
-            DO I = 1, NPPOL ! Loop through number of variables per pollutant
-
-                L = LEN_TRIM( VIN_A )
-                L = INDEX( EONAMES( V, I ), VIN_A(1:L) )
-                IF ( L .GT. 1 ) THEN
-        	    VNAMESET( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
-                ELSE
-                    VNAMESET( J ) = VNAME
-                END IF
-        	VTYPESET( J ) = EOTYPES( V, I )
-        	VUNITSET( J ) = EOUNITS( V, I )
-        	VDESCSET( J ) = EODESCS( V, I )
-        	J = J + 1
-
-            END DO    !  end loop on number of variables per pollutant
-
-C.............  Update header settings
-            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
-
-C.............  Update EANAM, in case needed for day- and hour-specific data
-            ALLOCATE( SAVEANAM( NIPPA ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SAVEANAM', PROGNAME )
-            SAVEANAM = EANAM       ! array
-
-            DEALLOCATE( EANAM )
-            ALLOCATE( EANAM( NIPPA+1 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
-
-            EANAM( 1:NIPOL ) = SAVEANAM( 1:NIPOL )
-            EANAM( NIPOL+1 ) = VNAME
-            EANAM( NIPOL+2:NIPPA+1 ) = SAVEANAM( NIPOL+1:NIPPA )
-            NIPPA = NIPPA + 1
-            DEALLOCATE( SAVEANAM )
-
-        ELSE
-
-C.............  Decrease total number of variables since there isn't a formula based pollutant
-            NVARSET = NVARSET - NPPOL
+C........  Open I/O API file
+        ELSE IF( .NOT. OPENSET( ENAME, FSUNKN3, PROGNAME ) ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: Could not open I/O API inventory file ' //
+     &             'for file name:' // CRLF() // BLANK10 // 
+     &             TRIM( EPHYS )
+            CALL M3MSG2( MESG )
 
         END IF
 
-C.........  Allocate names for activities
-        ALLOCATE( AONAMES( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AONAMES', PROGNAME )
-        ALLOCATE( AOUNITS( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
-        ALLOCATE( AOTYPES( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AOTYPES', PROGNAME )
-        ALLOCATE( AODESCS( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AODESCS', PROGNAME )
-
-C.........  Get names, units, etc. of output activity-specific records
-        CALL BLDENAMS( CATEGORY, NIACT, NPACT, ACTVTY, 
-     &                 AONAMES, AOUNITS, AOTYPES, AODESCS )
-
-C.........  Create output variables for activities
-        DO V = 1 , NIACT
-            
-            DO I = 1, NPACT ! Loop through number of variables per activity
-
-C.................  Set units for the primary data value
-                IF( I .EQ. 1 ) THEN
-                    K = INDEX1( AONAMES( V, 1 ), MXIDAT, INVDNAM )
-                    UNITS = INVDUNT( K )
-
-C.................  Set units for the other data values (per activity)
-                ELSE
-                    UNITS = AOUNITS( V, I )
-
-                END IF
-
-C.................  Store variable names and information
-                VNAMESET( J ) = AONAMES( V, I )
-                VTYPESET( J ) = AOTYPES( V, I )
-                VUNITSET( J ) = UNITS
-                VDESCSET( J ) = AODESCS( V, I )
-                J = J + 1
-
-            END DO    !  end loop on number of variables per activity
-
-        END DO        !  end loop on inventory activities V
-
-C.........  Prompt for and open I/O API output file
-        NAMBUF= PROMPTSET( 
-     &       'Enter logical name for the I/O API INVENTORY output file',
-     &       FSUNKN3, ENAME, PROGNAME )
-        ENAME = NAMBUF
+C.........  Build ASCII file physical name
+        APHYS = TRIM( PATH ) // TRIM( NAME2 ) // '.txt'
         
-C.........  Prompt for and open ASCII output file
-        SDEV= PROMPTFFILE( 
-     &      'Enter logical name for the ASCII INVENTORY output file',
-     &      .FALSE., .TRUE., ANAME, PROGNAME )
+C.........  Set output logical file name for ASCII inventory
+        IF( .NOT. SETENVVAR( ANAME, APHYS ) ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: Could not set logical file name for file:' //
+     &              CRLF() // BLANK10 // TRIM( APHYS )
+            CALL M3MSG2( MESG )
+        END IF
+
+C.........  Open ASCII output file
+        SDEV = GETEFILE( ANAME, .FALSE., .TRUE., PROGNAME )
+        IF ( SDEV .LT. 0 ) THEN     !  failure to open
+
+            MESG = 'Could not open output file:' // CRLF() // 
+     &              BLANK10 // TRIM( ANAME ) // '.'
+            CALL M3MSG2( MESG )
+
+            MESG = 'Ending program.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF      !  if getefile() failed
 
 C.........  Prompt for and open REPINVEN file
 	ADEV = PROMPTFFILE(
      &      'Enter logical name for the REPINVEN file',
      &      .FALSE., .TRUE., 'REPINVEN', PROGNAME )
 
-C.........  Deallocate local memory
-        DEALLOCATE( EONAMES, EOTYPES, EOUNITS, EODESCS )
-        DEALLOCATE( AONAMES, AOTYPES, AOUNITS, AODESCS )
+C.........  Abort if error
+        IF( EFLAG ) THEN
+            MESG = 'Problem opening inventory output files. ' //
+     &             'See listed error(s) above.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+        END IF
+
+C.........  Provide variable path
+        VARPATH = TRIM( PATH ) // TRIM( NAME1 ) // '_dat'
 
         RETURN
 
@@ -621,6 +466,6 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
- 
+
         END SUBROUTINE OPENINVOUT
 
