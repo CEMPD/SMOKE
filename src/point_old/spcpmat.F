@@ -691,7 +691,7 @@ C.......   Open speciation matrix file:  reuse much of point file description
 
             I = INDEX( SFNAM( V ), '_to_' )
             VNAME3D( V ) = SFNAM( V )
-            UNITS3D( V ) = 'moles/gm'
+            UNITS3D( V ) = 'moles/ton'
             VDESC3D( V ) = 'Conversion factor, ' // 
      &              SFNAM( V )( 1:I-1 ) // ' to ' // 
      &              SFNAM( V )( I+4:16 )
