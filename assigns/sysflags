@@ -24,8 +24,8 @@ switch ( $EDSS_EXE )
     setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}" 
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
-    setenv LIBS     "-lsmoke -ledsstools -lioapi_new -lnetcdf -lmp"
-    setenv LIBS_DEBUG "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug -lmp"
+    setenv LIBS_SYS    "-lsmoke -ledsstools -lioapi_new -lnetcdf -lmp"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug -lmp"
     breaksw
   case SunOS5f90:
 #   NOTE: -Bstatic caused problems with ENVYN (perhaps because not
@@ -34,16 +34,16 @@ switch ( $EDSS_EXE )
     setenv FFLAGS   "$FFLAGS  -M${MD_SRC}/${EDSS_EXE} -M${ETDSRC}/${EDSS_EXE} -I${IOINC} -I${INC}"
     setenv DBGFLAGS "$DBGFLAGS -M${MD_SRC}/${EDSS_EXE} -M${ETDSRC}/${EDSS_EXE} -I${IOINC} -I${INC}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
-    setenv LIBS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
-    setenv LIBS_DEBUG "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
     breaksw
 case HP_UX11f90:
     setenv FC  f90
     setenv FFLAGS   "$FFLAGS  -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "+U77 -Wl,-L,${SMK_BIN},${TOOLS_BIN}"
-    setenv LIBS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
-    setenv LIBS_DEBUG "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
     breaksw
 case AIX4n64f90:
 case AIX4f90:
@@ -51,24 +51,24 @@ case AIX4f90:
     setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE}" -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -lxlsmp"
-    setenv LIBS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
-    setenv LIBS_DEBUG "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
     breaksw
 case Linux2_alpha:
     setenv FC  fort
     setenv FFLAGS   "$FFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
-    setenv LIBS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
-    setenv LIBS_DEBUG "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
     breaksw
 case Linux2_x86ifc:
     setenv FC  ifc
     setenv FFLAGS   "$FFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv DBGFLAGS "$DBGFLAGS -cl,${MD_SRC}/${EDSS_EXE}/smoke.pcl -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${EDSS_EXE} -I${ETDSRC}/${EDSS_EXE}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN}"
-    setenv LIBS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
-    setenv LIBS_DEBUG "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
+    setenv LIBS_SYS     "-lsmoke -ledsstools -lioapi_new -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -ledsstools.debug -lioapi_new.debug -lnetcdf.debug"
     breaksw
 default:
     echo "The sysflags file in the ASSIGNS directory does not have compiler"
