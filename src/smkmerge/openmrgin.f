@@ -55,6 +55,7 @@ C.........  INCLUDES:
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
+        LOGICAL         DSCM3GRD
         LOGICAL         ENVYN
         CHARACTER*50    GETCFDSC  
         INTEGER         GETIFDSC  
@@ -90,7 +91,11 @@ C.........  Other local variables
         CHARACTER*50    METSCENR     ! met scenario name
         CHARACTER*50    METCLOUD     ! met cloud scheme name
         CHARACTER*50    METTMP       ! temporary buffer for met info
+        CHARACTER*80    GDESC        ! grid description
         CHARACTER*300   MESG         ! message buffer
+        CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name 
+        CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
+        CHARACTER(LEN=IOVLEN3) PROJTYPE   ! projection type
 
         CHARACTER*16 :: PROGNAME = 'OPENMRGIN' ! program name
 
@@ -107,7 +112,7 @@ C           activities
             KFLAG = .FALSE.
         END IF
 
-        IF( AFLAG .OR. PFLAG .OR. ( MFLAG .AND. TFLAG ) ) THEN
+        IF( AFLAG .OR. PFLAG .OR. BFLAG .OR. ( MFLAG .AND. TFLAG )) THEN
             DFLAG = .TRUE.
         ELSE
             DFLAG = .FALSE.
@@ -120,6 +125,18 @@ C.........  Get value of these controls from the environment
         MESG = 'Indicator for using activities list'
         KFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, KFLAG, IOS )
 
+C.........  Initialize gridded information with grid description file
+        IF( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD3D, GDTYP3D, COORUN3D,
+     &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
+     &                      XORIG3D, YORIG3D, XCELL3D, YCELL3D,
+     &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
+            MESG = 'Could not get Models-3 grid description.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        CALL CHKGRID( 'general', 'GRIDDESC', EFLAG )   ! Initialization call
+        
 C.........  For area sources... 
         IF( AFLAG ) THEN
 
@@ -305,6 +322,13 @@ C               speciation matrix variable descriptions
                 END IF
 
             END DO
+
+C.............  Store biogenic pollutant names and units
+            BNIPOL  = 2
+            BEINAM ( 1 ) = 'NOX'
+            BEINAM ( 2 ) = 'VOC'
+            BONAMES      = BEINAM
+            BOUNITS      = UNITS3D( 1 )
 
         END IF  ! End of section for biogenic sources
 

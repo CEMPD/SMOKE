@@ -214,11 +214,11 @@ C.........  Biogenic source fixed-size arrays
             CALL CHECKMEM( IOS, 'BEMGRD', PROGNAME )
 
             IF( LREPSTA ) THEN
-                ALLOCATE( BEBSTA( NSTA,NDIM ), STAT=IOS )         ! state total
+                ALLOCATE( BEBSTA( NSTA,BNMSPC ), STAT=IOS )    ! state total
                 CALL CHECKMEM( IOS, 'BEBSTA', PROGNAME )
             ENDIF
 
-            ALLOCATE( BEBCNY( NCNY,NDIM ), STAT=IOS )        ! county total 
+            ALLOCATE( BEBCNY( NCNY,BNMSPC ), STAT=IOS )        ! county total 
             CALL CHECKMEM( IOS, 'BEBCNY', PROGNAME )
 
         END IF
@@ -413,6 +413,7 @@ C           we won't have to check if it is allocated or not.
 
         ALLOCATE( TEMGRD( NGRID,EMLAYS ), STAT=IOS ) ! gridded out emis
         CALL CHECKMEM( IOS, 'TEMGRD', PROGNAME )
+        TEMGRD = 0.
 
 C.........  Total emissions, fixed-size arrays. 
         IF( XFLAG ) THEN

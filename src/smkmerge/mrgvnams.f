@@ -132,9 +132,10 @@ C.........  Read, sort, and store activity codes/names file
 
 C.........  Loop through pollutants and/or activities in each source category
 C           and update status of pollutants and activities in master list.
-        CALL SET_MASTER_POL_STAT( 'area',   ANIPOL, AEINAM, EFLAG )
-        CALL SET_MASTER_POL_STAT( 'mobile', MNIPPA, MEANAM, EFLAG )
-        CALL SET_MASTER_POL_STAT( 'point',  PNIPOL, PEINAM, EFLAG )
+        CALL SET_MASTER_POL_STAT( 'area'    , ANIPOL, AEINAM, EFLAG )
+        CALL SET_MASTER_POL_STAT( 'biogenic', BNIPOL, BEINAM, EFLAG )
+        CALL SET_MASTER_POL_STAT( 'mobile'  , MNIPPA, MEANAM, EFLAG )
+        CALL SET_MASTER_POL_STAT( 'point'   , PNIPOL, PEINAM, EFLAG )
 
 C.........  If any pollutants/activities from matrices not found in master
 C           list, exit
@@ -210,6 +211,8 @@ C.........  Also determine number of pollutants and store pollutants-only array
 C.........  Create array of input variable names and units that combines
 C           this information from anthropogenic source categories.
         CALL BUILD_NAMES_UNITS( ANIPOL, AEINAM, AONAMES, AOUNITS, 
+     &                          TONAMES, TOUNITS )
+        CALL BUILD_NAMES_UNITS( BNIPOL, BEINAM, BONAMES, BOUNITS, 
      &                          TONAMES, TOUNITS )
         CALL BUILD_NAMES_UNITS( MNIPPA, MEANAM, MONAMES, MOUNITS, 
      &                          TONAMES, TOUNITS )

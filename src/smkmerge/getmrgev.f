@@ -197,7 +197,7 @@ C.........  Check output flags to ensure at least some output
 
 C.........  Make biogenics flag consitent with speciation flag (must have
 C           speciation to be able to include biogenic emissions)
-        IF( BFLAG .AND. .NOT. SFLAG ) THEN
+        IF( BFLAG .AND. XFLAG .AND. .NOT. SFLAG ) THEN
 
             MESG = 'Speciation control environment variable ' //
      &             '"MRG_SPCMAT_YN" indicates no'//
@@ -207,8 +207,24 @@ C           speciation to be able to include biogenic emissions)
             CALL M3WARN( PROGNAME, 0, 0, MESG )
 
             BFLAG = .FALSE.
+
+        ELSE IF ( BFLAG ) THEN
+            SFLAG = .TRUE.
                
         ENDIF
+
+C.........  Don't output gridded if gridded biogenics is only input
+        IF( BFLAG .AND. .NOT. XFLAG .AND. LGRDOUT ) THEN
+
+            MESG = 'NOTE: Turning off gridded outputs because no ' //
+     &             'merging is taking place'
+            CALL M3MSG2( MESG )
+            LGRDOUT = .FALSE.
+
+        END IF
+
+C.........  Cannot have BFLAG without TFLAG
+        IF( BFLAG ) TFLAG = .TRUE.
 
 C.........  Make VMT usage flag consistent with speciation and source merging
 C           such that if the merge VMT flag is set to true, speciation and other
