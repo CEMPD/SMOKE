@@ -105,7 +105,7 @@ C...........   Logical names and unit numbers
         CHARACTER*16    SNAME   ! logical name for ascii inventory input file
 
 C...........   Other local variables
-        INTEGER         CPYEAR       !  control packet year to project to
+        INTEGER      :: CPYEAR = -1  !  control packet year to project to
         INTEGER         IOS          !  I/O status
         INTEGER         ENLEN        !  length of the emissions inven name
         INTEGER         NCPE         !  no control packet entries
@@ -254,6 +254,13 @@ C.........  Cannot have CONTROL and EMS_CONTROL packet in same inputs
            MESG = 'CONTROL and EMS_CONTROL packets cannot be ' //
      &            'in the same input file'
            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Cannot have projection packet and invalid projection year
+        IF( JFLAG .AND. CPYEAR .LT. 1900 ) THEN
+            MESG = 'Misformatted projection packet header is returning '
+     &             // 'year < 1900'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Process packets: this means read packet, sort it, group it into 
