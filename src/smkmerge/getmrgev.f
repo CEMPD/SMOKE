@@ -62,10 +62,10 @@ C...........   Other local variables
         INTEGER         CTLIOS   ! i/o status for MEG_REPCTL_YN
         INTEGER         J        ! counter
 
-        CHARACTER*4     MRGSRC   ! value of MRG_SOURCE E.V.
-        CHARACTER*4     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
-        CHARACTER*4     CTLADD   ! value of MRG_CTLMAT_ADD  E.V.
-        CHARACTER*4     CTLREAC  ! value of MRG_CTLMAT_REAC E.V.
+        CHARACTER*5     MRGSRC   ! value of MRG_SOURCE E.V.
+        CHARACTER*5     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
+        CHARACTER*5     CTLADD   ! value of MRG_CTLMAT_ADD  E.V.
+        CHARACTER*5     CTLREAC  ! value of MRG_CTLMAT_REAC E.V.
         CHARACTER*100   BUFFER   ! text buffer
         CHARACTER*300   MESG     ! message buffer
 
