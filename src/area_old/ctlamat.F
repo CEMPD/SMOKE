@@ -1,6 +1,4 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM CTLAMAT
 
 C***********************************************************************
@@ -22,6 +20,26 @@ C  REVISION  HISTORY:
 C       Prototype  6/95 by CJC.
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
+C                Modeling System
+C File Version @(#)$Id$
+C Pathname:    $Source$
+C Last updated: $Date$ 
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C***************************************************************************
 
       IMPLICIT NONE
 
@@ -77,8 +95,10 @@ C...........   follow this scheme with parallel arrays
         REAL        TVOC        !  VOC control threshold
         INTEGER     LFIP        !  last FIP (state+county) code
         INTEGER     LSID        !  last state ID
-        INTEGER     NFIP        !  subscript for IFIP
-        INTEGER     NSID        !  subscript for ISID
+        INTEGER     NFIP        !  subscript and count for CFIP
+        INTEGER     NSID        !  subscript and count for ISID
+        INTEGER     DYR         !  desination year for projection factor
+        INTEGER     YEAR        !  inventory year for projection factor
                                  
 C.......   Control matrix:
         
@@ -87,9 +107,10 @@ C.......   Control matrix:
 
 C...........   Area Sources Table
         
-        INTEGER     FIPS  ( NASRC )  !  source FIPS (state+county) ID
+        INTEGER     IFIP  ( NASRC )  !  source FIPS (state+county) ID
         INTEGER     ASC7  ( NASRC )  !  leading-7  digits of source ASC
         INTEGER     ASC3  ( NASRC )  !  trailing-3 digits of source ASC
+        INTEGER     INVYR ( NASRC )  !  Inventory year
         REAL        CTLEFF( NASRC,NIPOL )  !  control-factor (efficiency)
         REAL        RULEFF( NASRC,NIPOL )  !  control-rule effectiveness
         REAL        RULPEN( NASRC,NIPOL )  !  control-rule pentration
@@ -102,9 +123,9 @@ C.......   Auxilliary tables:
 
         INTEGER     ASC4  ( NASRC )  !  leading-4  digits of source ASC
         INTEGER     SIDS  ( NASID )  !  source FIPS (state-only) ID
-        INTEGER     ISID  ( NASID )  !  Subscript at which state ID occurs
+        INTEGER     ISID  ( NASID+1) !  Subscript at which state ID occurs
         INTEGER     FFIP  ( NAFIP )  !  source FIPS list
-        INTEGER     IFIP  ( NAFIP )  !  Subscript at which FIP occurs
+        INTEGER     CFIP  ( NAFIP+1) !  Subscript at which FIP occurs
 
 
 C...........   Other local variables
@@ -114,6 +135,7 @@ C...........   Other local variables
         INTEGER         LDEV         !  log-device
         INTEGER         RDEV         !  report-file device
         INTEGER         TDEV         !  device for report-these-sources file
+        LOGICAL         PFLAG        !  true if projection entries have years
         LOGICAL         RFLAG        !  flag:  make report-file
         LOGICAL         TFLAG( NASRC )  !  flags:  track these sources
         
@@ -220,25 +242,27 @@ C.......   Open control matrix file:  reuse much of AREA file description
      &          FSUNKN3, 'ACMAT', 'CTLAMAT' )
 
 
-C...........   Read in emissions indexing data IFIP, ASC7, ASC3;
+C...........   Read in emissions indexing data IFIP, ASC7, ASC3, INVYR;
 C...........   existing-control data CTLEFF, RULEFF, RULPEN:
         
-        IF ( .NOT. READ3( ENAME, 'FIP', ALLAYS3, 0, 0, FIPS ) ) THEN
-            CALL M3ERR( 'CTLAMAT', 0, 0, 
-     &                  'Error reading FIP from file' // ENAME,
-     &                  .TRUE. )
+        IF ( .NOT. READ3( ENAME, 'FIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+            CALL M3EXIT( 'CTLAMAT', 0, 0, 
+     &                   'Error reading FIP from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'ASC7', ALLAYS3, 0, 0, ASC7 ) ) THEN
-            CALL M3ERR( 'CTLAMAT', 0, 0, 
-     &                  'Error reading ASC7 from file' // ENAME,
-     &                  .TRUE. )
+            CALL M3EXIT( 'CTLAMAT', 0, 0, 
+     &                   'Error reading ASC7 from file' // ENAME, 2 )
         END IF
 
         IF ( .NOT. READ3( ENAME, 'ASC3', ALLAYS3, 0, 0, ASC3 ) ) THEN
-            CALL M3ERR( 'CTLAMAT', 0, 0, 
-     &                  'Error reading ASC3 from file' // ENAME,
-     &                  .TRUE. )
+            CALL M3EXIT( 'CTLAMAT', 0, 0, 
+     &                    'Error reading ASC3 from file' // ENAME, 2 )
+        END IF
+
+        IF ( .NOT. READ3( ENAME, 'INVYR', ALLAYS3, 0, 0, INVYR ) ) THEN
+            CALL M3EXIT( 'CTLAMAT', 0, 0, 
+     &                   'Error reading INVYR from file' // ENAME, 2 )
         END IF
 
         DO  33  I = 1, NIPOL
@@ -327,9 +351,8 @@ C...........   Initialization; precompute states, ASC4's for each source
 
             PRJFAC( S ) = 1.0
 
-            FIP        = FIPS( S )
+            FIP        = IFIP( S )
             SID        = FIP / 1000
-            SIDS( S ) = SID
             
             IF ( FIP .NE. LFIP ) THEN
                 NFIP = NFIP + 1
@@ -337,7 +360,7 @@ C...........   Initialization; precompute states, ASC4's for each source
                     CALL M3EXIT( 'CTLAMAT', 0, 0, 
      &                           'FIP-table maximum size exceeded', 2 )
                 ELSE
-                    IFIP( NFIP ) = S
+                    CFIP( NFIP ) = S
                     FFIP( NFIP ) = FIP
                     LFIP         = FIP
                 END IF
@@ -360,8 +383,8 @@ C...........   Initialization; precompute states, ASC4's for each source
 55      CONTINUE	!  end loop on sources S
 
 
+        CFIP( NFIP+1 ) = NASRC + 1  	!  sentinel
         ISID( NSID+1 ) = NASRC + 1  	!  sentinel
-        IFIP( NSID+1 ) = NASRC + 1  	!  sentinel
 
 C............................................................................
 C.......   Process list of FIP-SCC pairs to be tracked in the 
@@ -389,7 +412,7 @@ C.......   REPORT file (if any).
                         CALL M3EXIT( 'CTLAMAT', 0, 0, MESG, 1 )
                     END IF
                     
-                    I = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                    I = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
  
                     IF ( I .GT. 0 )   TFLAG( I ) = .TRUE.
  
@@ -583,7 +606,7 @@ C.......   Process SOURCE CATEGORY packet of control file:
 
             ELSE	!  fip-ASC specific control
 
-                S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                 IF ( S .LE. 0 ) GO TO 101
 
@@ -685,7 +708,7 @@ C.......   Process FIPS CODE packet of control file:
 
                 IF ( I .EQ. 0 ) GO TO 111
 
-                DO  114 S = IFIP( I ), IFIP( I+1 ) - 1
+                DO  114 S = CFIP( I ), CFIP( I+1 ) - 1
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93030 ) 
@@ -719,6 +742,11 @@ C.......   Process PROJECT AMS packet of control file:
      &                   2 )
         END IF
 
+C.........  Prompt for type of projection entries: default (EPS) or
+C           modified EPS (with year)
+        PFLAG = GETYN(
+     &        'Are projection entries in year-specific format?', .TRUE.)
+
 121     CONTINUE        !  head of loop reading lines in the PROJECT AMS packet
 
             READ( CDEV,93000,IOSTAT=IOS,END=129 ) LINE
@@ -734,18 +762,42 @@ C.......   Process PROJECT AMS packet of control file:
             CALL UPCASE( LINE )
             IF( 0 .NE. INDEX( LINE, 'END' ) )  GO TO 129
 
-            FIP  = STR2INT ( LINE(  1: 5 ) )
-            PFAC = STR2REAL( LINE( 27:36 ) )
-            L    = TRIMLEN ( LINE( 16:25 ) ) - LBLANK( LINE( 16:25 ) )
-            IF ( L .EQ. 4 ) THEN
-                ID4  = STR2INT ( LINE( 16:25 ) )
-                ID7  = ID4 * 1000
-                ID3  = 0
+            IF( PFLAG ) THEN
+                YEAR = STR2INT ( LINE(  1: 4 ) )
+                DYR  = STR2INT ( LINE(  6: 9 ) )
+                FIP  = STR2INT ( LINE( 11:15 ) )
+                PFAC = STR2REAL( LINE( 37:46 ) )
+
+                L    = TRIMLEN( LINE( 23:32 ) ) - 
+     &                 LBLANK ( LINE( 23:32 ) )
+
+                IF ( L .EQ. 4 ) THEN
+                    ID4  = STR2INT ( LINE( 23:32 ) )
+                    ID7  = ID4 * 1000
+                    ID3  = 0
+                ELSE
+                    ID7  = STR2INT ( LINE( 23:29 ) )
+                    ID3  = STR2INT ( LINE( 30:32 ) )
+                    ID4  = ID7 / 1000
+                END IF
+
             ELSE
-                ID7  = STR2INT ( LINE( 16:22 ) )
-                ID3  = STR2INT ( LINE( 23:25 ) )
-                ID4  = ID7 / 1000
-            END IF
+                FIP  = STR2INT ( LINE(  1: 5 ) )
+                PFAC = STR2REAL( LINE( 27:36 ) )
+
+                L    = TRIMLEN( LINE( 16:25 ) ) - 
+     &                 LBLANK ( LINE( 16:25 ) )
+
+                IF ( L .EQ. 4 ) THEN
+                    ID4  = STR2INT ( LINE( 16:25 ) )
+                    ID7  = ID4 * 1000
+                    ID3  = 0
+                ELSE
+                    ID7  = STR2INT ( LINE( 16:22 ) )
+                    ID3  = STR2INT ( LINE( 23:25 ) )
+                    ID4  = ID7 / 1000
+                END IF
+            ENDIF
 
             IF ( L .EQ. 4 ) THEN	!  using ID4
             
@@ -753,12 +805,22 @@ C.......   Process PROJECT AMS packet of control file:
 
                     DO  122 S = 1, NASRC
 
-                        IF( ID4 .NE. ASC4( S ) ) GO TO 122  ! n/a control
+                        IF( ID4 .NE. ASC4( S ) ) THEN
+                            GO TO 122  ! n/a control
+
+                        ELSEIF( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                            GO TO 122
+ 
+                        ELSEIF( PFLAG .AND. TFLAG( S ) ) THEN
+                            WRITE( RDEV,93040 )
+     &                          PNAME, YEAR, DYR, IFIP( S ), ASC7( S ),
+     &                          ASC3( S ), PRJFAC( S ), PFAC
                          
-                        IF ( TFLAG( S ) ) 
-     &                      WRITE( RDEV,93030 ) 
+                        ELSEIF ( TFLAG( S ) ) THEN
+                            WRITE( RDEV,93030 ) 
      &                          PNAME, IFIP( S ), ASC7( S ), ASC3( S ),
      &                          PRJFAC( S ), PFAC
+                        ENDIF
 
                         PRJFAC( S ) = PFAC
 
@@ -772,12 +834,22 @@ C.......   Process PROJECT AMS packet of control file:
 
                     DO  123 S = ISID( I ), ISID( I+1 ) -1
 
-                        IF( ID4 .NE. ASC4( S ) ) GO TO 123  ! n/a control
-                         
-                        IF ( TFLAG( S ) ) 
-     &                      WRITE( RDEV,93030 ) 
+                        IF( ID4 .NE. ASC4( S ) ) THEN
+                            GO TO 123  ! n/a control
+ 
+                        ELSEIF ( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                            GO TO 123
+
+                        ELSEIF ( PFLAG .AND. TFLAG( S ) ) THEN
+                            WRITE( RDEV,93040 ) 
+     &                          PNAME, YEAR, DYR, IFIP( S ), ASC7( S ),
+     &                          ASC3( S ), PRJFAC( S ), PFAC
+
+                        ELSEIF ( TFLAG( S ) ) THEN
+                            WRITE( RDEV,93030 ) 
      &                          PNAME, IFIP( S ), ASC7( S ), ASC3( S ),
      &                          PRJFAC( S ), PFAC
+                        ENDIF
 
                         PRJFAC( S ) = PFAC
 
@@ -789,14 +861,24 @@ C.......   Process PROJECT AMS packet of control file:
 
                     IF ( I .EQ. 0 ) GO TO 121
 
-                    DO 124 S = IFIP( I ), IFIP( I+1 ) - 1
+                    DO 124 S = CFIP( I ), CFIP( I+1 ) - 1
 
-                        IF( ID4 .NE. ASC4( S ) ) GO TO 124
+                        IF( ID4 .NE. ASC4( S ) ) THEN
+                            GO TO 124 ! n/a control
                          
-                        IF ( TFLAG( S ) ) 
-     &                      WRITE( RDEV,93030 ) 
+                        ELSEIF ( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                            GO TO 124
+
+                        ELSEIF ( PFLAG .AND. TFLAG( S ) ) THEN
+                            WRITE( RDEV,93040 ) 
+     &                          PNAME, YEAR, DYR, IFIP( S ), ASC7( S ),
+     &                          ASC3( S ), PRJFAC( S ), PFAC
+
+                        ELSEIF ( TFLAG( S ) ) THEN
+                            WRITE( RDEV,93030 ) 
      &                          PNAME, IFIP( S ), ASC7( S ), ASC3( S ),
      &                          PRJFAC( S ), PFAC
+                        ENDIF
 
                         PRJFAC( S ) = PFAC
 
@@ -810,13 +892,23 @@ C.......   Process PROJECT AMS packet of control file:
 
                     DO  125 S = 1, NASRC
 
-                        IF( ID7 .NE. ASC7( S ) ) GO TO 125  ! n/a control
-                        IF( ID3 .NE. ASC3( S ) ) GO TO 125  ! n/a control
-                         
-                        IF ( TFLAG( S ) ) 
-     &                      WRITE( RDEV,93030 ) 
+                        IF( ID7 .NE. ASC7( S ) .OR. 
+     &                      ID3 .NE. ASC3( S )      ) THEN
+                            GO TO 125  ! n/a control
+
+                        ELSEIF ( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                            GO TO 125
+
+                        ELSEIF ( PFLAG .AND. TFLAG( S ) ) THEN
+                            WRITE( RDEV,93040 ) 
+     &                          PNAME, YEAR, DYR, IFIP( S ), ASC7( S ),
+     &                          ASC3( S ), PRJFAC( S ), PFAC
+
+                        ELSEIF ( TFLAG( S ) ) THEN
+                            WRITE( RDEV,93030 ) 
      &                          PNAME, IFIP( S ), ASC7( S ), ASC3( S ),
      &                          PRJFAC( S ), PFAC
+                        ENDIF
 
                         PRJFAC( S ) = PFAC
 
@@ -831,13 +923,23 @@ C.......   Process PROJECT AMS packet of control file:
 
                     DO  126 S = ISID( I ), ISID( I+1 ) -1
 
-                        IF( ID7 .NE. ASC7( S ) ) GO TO 126  ! n/a control
-                        IF( ID3 .NE. ASC3( S ) ) GO TO 126  ! n/a control
+                        IF( ID7 .NE. ASC7( S ) .OR. 
+     &                      ID3 .NE. ASC3( S )      ) THEN
+                            GO TO 126  ! n/a control
 
-                        IF ( TFLAG( S ) ) 
-     &                      WRITE( RDEV,93030 ) 
+                        ELSEIF ( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                            GO TO 126
+
+                        ELSEIF ( PFLAG .AND. TFLAG( S ) ) THEN
+                            WRITE( RDEV,93040 ) 
+     &                          PNAME, YEAR, DYR, IFIP( S ), ASC7( S ),
+     &                          ASC3( S ), PRJFAC( S ), PFAC
+
+                        ELSEIF ( TFLAG( S ) ) THEN
+                            WRITE( RDEV,93030 ) 
      &                          PNAME, IFIP( S ), ASC7( S ), ASC3( S ),
      &                          PRJFAC( S ), PFAC
+                        ENDIF
 
                         PRJFAC( S ) = PFAC
 
@@ -845,14 +947,23 @@ C.......   Process PROJECT AMS packet of control file:
 
                 ELSE	!  fip-ASC specific control
 
-                    S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                    S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                     IF ( S .GT. 0 ) THEN
                          
-                        IF ( TFLAG( S ) ) 
-     &                      WRITE( RDEV,93030 ) 
+                        IF ( PFLAG .AND. INVYR( S ) .NE. YEAR ) THEN
+                            GO TO 121
+
+                        ELSEIF ( PFLAG .AND. TFLAG( S ) ) THEN
+                            WRITE( RDEV,93040 ) 
+     &                          PNAME, YEAR, DYR, IFIP( S ), ASC7( S ),
+     &                          ASC3( S ), PRJFAC( S ), PFAC
+
+                        ELSEIF ( TFLAG( S ) ) THEN
+                            WRITE( RDEV,93030 ) 
      &                          PNAME, IFIP( S ), ASC7( S ), ASC3( S ),
      &                          PRJFAC( S ), PFAC
+                        ENDIF
 
                         PRJFAC( S ) = PFAC
 
@@ -862,7 +973,7 @@ C.......   Process PROJECT AMS packet of control file:
 
             END IF	!  if using ID4 or ID7
                    
-            GO TO  121  !  end loop reading lines in PROJECT AMS packet
+        GO TO  121      !  end loop reading lines in PROJECT AMS packet
 
 129     CONTINUE        !  exit from / skip around loop 121
 
@@ -961,7 +1072,7 @@ C.......   Process the RULE PENETRATION packet of control file
 
                 IF ( I .EQ. 0 ) GO TO 131
 
-                DO  134 S = IFIP( I ), IFIP( I+1 ) - 1
+                DO  134 S = CFIP( I ), CFIP( I+1 ) - 1
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93030 ) 
@@ -978,7 +1089,7 @@ C.......   Process the RULE PENETRATION packet of control file
 
             ELSE	!  fip-ASC specific control
 
-                S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                 IF ( S .GT. 0 ) THEN
 
@@ -1095,7 +1206,7 @@ C.......   Process the RULE EFFECTIVENESS packet of control file
 
                 IF ( I .EQ. 0 ) GO TO 141
 
-                DO  144 S = IFIP( I ), IFIP( I+1 ) - 1
+                DO  144 S = CFIP( I ), CFIP( I+1 ) - 1
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93030 ) 
@@ -1112,7 +1223,7 @@ C.......   Process the RULE EFFECTIVENESS packet of control file
 
             ELSE	!  fip-ASC specific control
 
-                S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                 IF ( S .GT. 0 ) THEN
 
@@ -1229,7 +1340,7 @@ C.......   Process the CONTROL EFFICIENCY packet of control file
 
                 IF ( I .EQ. 0 ) GO TO 151
 
-                DO  154 S = IFIP( I ), IFIP( I+1 ) - 1
+                DO  154 S = CFIP( I ), CFIP( I+1 ) - 1
 
                     IF ( TFLAG( S ) ) 
      &                  WRITE( RDEV,93030 ) 
@@ -1246,7 +1357,7 @@ C.......   Process the CONTROL EFFICIENCY packet of control file
 
             ELSE	!  fip-ASC specific control
 
-                S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                 IF ( S .GT. 0 ) THEN
 
@@ -1354,7 +1465,7 @@ C.......   Process RACT packet of control file:
 
             ELSE	!  fip-ASC specific control
             
-                S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                 IF ( S .GT. 0 ) THEN
 
@@ -1455,7 +1566,7 @@ C.......   Process MACT packet of control file:
 
             ELSE	!  fip-ASC specific control
 
-                S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                 IF ( S .GT. 0 ) THEN
 
@@ -1616,7 +1727,7 @@ C.......   Process CTG packet of control file:
 
             ELSE	!  fip-ASC specific control
             
-                S = FIND3( FIP, ID7, ID3, NASRC, FIPS, ASC7, ASC3 )
+                S = FIND3( FIP, ID7, ID3, NASRC, IFIP, ASC7, ASC3 )
 
                 IF ( S .GT. 0 ) THEN
                 
@@ -1710,9 +1821,11 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( I5, 1X, I7, I3 )
 
-93030   FORMAT( A, ':', I5, '-', I7.7, I3.3, ' -- ', 
+93030   FORMAT( A, ':', 1X, I5.5, 1X, I7.7, I3.3,
      &          3( F8.5, '~>', F8.5, : '; ' )  )
 
+93040   FORMAT( A, ':', I4, ' to ', I4, 1X, I5.5, 1X, I7.7, I3.3,
+     &          3( F8.5, '~>', F8.5, : '; ' )  )
 
 C...........   Internal buffering formats............ 94xxx
 
