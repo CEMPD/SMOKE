@@ -6,7 +6,8 @@ C  database file.
 
       USE DATABASE, ONLY : DBSELPART,DBSELEFT,DBSELFAC, 
      &                     DBUNIT,TABCHAR,DBSCTITLE 
-     
+      USE MODMBSET, ONLY : EMISSIONS
+           
       IMPLICIT NONE
         
       INCLUDE 'CEVBMY.I' ! BMYMPD 
@@ -18,6 +19,11 @@ C  database file.
       INCLUDE 'SPEED9.I' ! HVMT
       INCLUDE 'VMXCOM.I' ! VMTMIX,VMTGT12,VMTGT34,VMTHDG,VMTLDDT,VMTHDD
 
+      INTEGER STR2INT
+      INTEGER EFPOSITION
+      
+      EXTERNAL STR2INT, EFPOSITION
+
       INTEGER  ::  EFTYPE   ! emission factor type 
       INTEGER  ::  IFAC     ! facility type
       INTEGER  ::  IROAD    ! road type (only used for output)
@@ -27,6 +33,7 @@ C  database file.
       INTEGER  ::  JDX      ! age
       INTEGER  ::  IV       ! vehicle type (1 - 28)
       INTEGER  ::  IVEH     ! vehicle class (1 - 8)
+      INTEGER  ::  EMISPOS  ! position in master emission factor array
       
       REAL              ::  SUMVMT  ! vmt fraction for one of 8 vehicle types
       REAL              ::  MILES   ! hourly miles
@@ -41,7 +48,7 @@ C  Begin body of subroutine SMKPMOUT
 
 C  Check that we need this pollutant
          IF (DBSELPART(IPPM) == 1) CYCLE
-         IP = IPPM+6 
+         IP = IPPM+6  ! PM pollutants start after classic pollutants
 
 C  Set emission factor type based on pollutant 
 C  (always exhaust running except for brake and tire pollutants)
@@ -61,6 +68,15 @@ C  Reinitialize output array
                PMAGGR = 0.
             
                DO IV = 1,MAXVEH
+
+C  Skip unused vehicle and emission factor combinations
+
+C.....            Gas vehicles do not have OCARBON or ECARBON output
+                  IF ((IPPM == 2 .OR. IPPM == 3) .AND. 
+     &                              VVGASMC(IV) == 1) CYCLE
+
+C.....            No GASPM output for diesel vehicles
+                  IF (IPPM == 4 .AND. VVDSL(IV) == 1) CYCLE
                
 C  Select appropriate vehicle class (8 types) for vehicle type (28)               
                   SELECT CASE (IV)
@@ -92,11 +108,6 @@ C  Select appropriate vehicle class (8 types) for vehicle type (28)
 ccs  Print some error message
                   END SELECT
       
-C  Skip rest of loop if vehicle types don't apply
-                  IF ((IPPM == 2 .OR. IPPM == 3) .AND. 
-     &                              VVGASMC(IV) == 1) CYCLE
-                  IF (IPPM == 4 .AND. VVDSL(IV) == 1) CYCLE
-      
                   ZMILES  = 0.
                   ZGMHOUR = 0.
                   ZGMMILE = 0.
@@ -116,7 +127,7 @@ C  Skip rest of loop if vehicle types don't apply
                   PMAGGR(IVEH) = PMAGGR(IVEH) + 
      &                           (ZGMMILE*VMTMIX(IV))/SUMVMT
  
-               END DO  ! loop over vehicle types
+               END DO  ! loop over 28 vehicle types
 
 C.....  Check that this EF type, and road type should be output
                IF (DBSELEFT(EFTYPE) == 2 ) THEN
@@ -130,10 +141,16 @@ C.....  Set road type for output
                      
                   IF (DBSELFAC(IROAD) == 2 ) THEN
 
-                     WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
-     &               TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IROAD,
-     &               TABCHAR,IH,TABCHAR,PMAGGR(IVEH),IVEH=1,8)
-  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
+C                     WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
+C     &               TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IROAD,
+C     &               TABCHAR,IH,TABCHAR,PMAGGR(IVEH),IVEH=1,8)
+C  110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,F9.4)
+
+                     DO IVEH = 1,8
+                        EMISPOS = EFPOSITION(STR2INT(DBSCTITLE),
+     &                               IP, IVEH, EFTYPE, IROAD, IH)
+                        EMISSIONS(EMISPOS) = PMAGGR(IVEH)
+                     END DO  ! loop over 8 vehicle types
 
                   END IF  ! road check
                END IF  ! emission factor check
