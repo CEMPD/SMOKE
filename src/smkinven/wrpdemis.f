@@ -95,7 +95,6 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: error on duplicates
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
-        LOGICAL, SAVE :: SFLAG    = .FALSE.  ! true: error on missing species
         LOGICAL, SAVE :: LFLAG    = .FALSE.  ! true: iteration on special var
 
         CHARACTER*100    BUFFER           ! src description buffer
@@ -112,10 +111,6 @@ C.........  For the first time the routine is called...
 C.............  Get settings from the environment.
             DFLAG = ENVYN( 'RAW_DUP_CHECK',
      &                     'Error if duplicate inventory records',
-     &                     .FALSE., IOS )
-
-            SFLAG = ENVYN( 'RAW_SRC_CHECK',
-     &                     'Error if missing species-records',
      &                     .FALSE., IOS )
 
 C.............  Allocate memory for flag for writing missing-data messages
@@ -244,43 +239,22 @@ C.................  Format source information
 
 C.................  Check for missing values
                 IF ( PDDATA( I,V ) .LT. AMISS3 ) THEN
-                    IF( SFLAG ) THEN
-                	EFLAG = .TRUE.
-                        IF( NOMISS( S,V ) ) THEN
-                            IF ( V .LE. NVAR ) THEN
-                	        MESG = 'ERROR: Data missing for:' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                ' VAR: '// EANAM( EAIDX( V ) )
-                            ELSE
-                                K = V - NVAR
-                	        MESG = 'ERROR: Data missing for:' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                 ' VAR: '//SPDATNAM( SPIDX2( K ) )
-                            END IF
-
-                            CALL M3MESG( MESG )
-                            NOMISS( S,V ) = .FALSE.
-                        END IF
-                        CYCLE
-
-                    ELSE
-                        IF( NOMISS( S,V ) ) THEN
-                            IF ( V .LE. NVAR ) THEN
-               	                MESG = 'WARNING: Data missing for: ' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                 ' VAR: '// EANAM( EAIDX( V ) )
-                            ELSE
-                                K = V - NVAR
-               	                MESG = 'WARNING: Data missing for: ' //
-     &                                 CRLF()//BLANK10//BUFFER( 1:L2 )//
-     &                                 ' VAR: '//SPDATNAM( SPIDX2( K ) )
-                            END IF
-
-                            CALL M3MESG( MESG )
-                            NOMISS( S,V ) = .FALSE.
+                    IF( NOMISS( S,V ) ) THEN
+                        IF ( V .LE. NVAR ) THEN
+               	            MESG = 'WARNING: Data missing for: ' //
+     &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
+     &                             ' VAR: '// EANAM( EAIDX( V ) )
+                        ELSE
+                            K = V - NVAR
+               	            MESG = 'WARNING: Data missing for: ' //
+     &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
+     &                             ' VAR: '//SPDATNAM( SPIDX2( K ) )
                         END IF
 
+                        CALL M3MESG( MESG )
+                        NOMISS( S,V ) = .FALSE.
                     END IF
+
                 END IF
 
 C.................  Skip next section if special data variable
