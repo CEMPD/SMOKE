@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
 
         PROGRAM LAYPOINT
 
 C***********************************************************************
-C  program body starts at line 238
+C  program body starts at line 247
 C
 C  DESCRIPTION:
 C       Produces source-level layer fractions, using the emissions-source 
@@ -46,44 +24,72 @@ C       Version 6/96 by CJC allocates plume fraction uniformly in PRES
 C       instead of in Z (as RADM does), in order to conserve mixing ratio.
 C
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C  
+C env_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C***********************************************************************
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
 
         INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
-        INCLUDE 'LADIMS3.EXT'   !  emis temporal modeling parms
         INCLUDE 'TMDIMS3.EXT'   !  emis temporal modeling parms
-        INCLUDE 'GRDIMS3.EXT'   !  emis temporal modeling parms
+        INCLUDE 'GRDIMS3.EXT'   !  gridding parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
         INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
+        INCLUDE 'VGRD3.EXT'     !  vertical allocation parameters
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
+        CHARACTER*2     CRLF
         LOGICAL         DSCGRID
+        INTEGER         GETDATE
         INTEGER         GETNUM
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         LOGICAL         LAMBERT
         LOGICAL         LL2LAM
+        CHARACTER*14    MMDDYY
         REAL            POLY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
+        INTEGER         WKDAY
 
-      EXTERNAL       DSCGRID, GETNUM, GETYN, LAMBERT, LL2LAM, 
-     &               POLY, PROMPTFFILE, PROMPTMFILE, TRIMLEN
-
+        EXTERNAL        CRLF, DSCGRID, GETDATE, GETNUM, GETYN, HHMMSS, 
+     &                  LAMBERT, LL2LAM, MMDDYY, POLY, PROMPTFFILE, 
+     &                  PROMPTMFILE, TRIMLEN, WKDAY 
 
 C...........   PARAMETERS and their descriptions
 
+        CHARACTER*5 BLANK5
         INTEGER     NDOTS
         REAL        GAMA
         REAL        USTARMIN              ! Minimum realistic value for USTAR
 
-        PARAMETER (  NDOTS    = ( NCOLS + 1 ) * ( NROWS + 1 )
+        PARAMETER (  BLANK5 = ' '
+     &             , NDOTS    = ( NCOLS + 1 ) * ( NROWS + 1 )
      &             , GAMA     = -0.0098 
      &             , USTARMIN = 0.01
      &            )
@@ -174,7 +180,6 @@ C...........   Other local variables
         CHARACTER*16    LNAME   !  " timestepped layer fractions output file
 
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
-        INTEGER         FDEV    !  unit number for stack parameters file
         INTEGER         LDEV    !  unit number for log file
 
 C.......   Dot and cross point grid description parameters:
@@ -208,6 +213,7 @@ C.......   Dot and cross point grid description parameters:
         REAL*8       YORIGXG      ! cross grid Y-coordinate origin of grid
         REAL*8       XCELLXG      ! cross grid X-coordinate cell dimension
         REAL*8       YCELLXG      ! cross grid Y-coordinate cell dimension
+        CHARACTER*14 DTBUF        ! Date buffer
         CHARACTER*16 GRDNMXG      ! cross grid grid name
         CHARACTER*16 COONMXG      ! cross grid coordinate system name
         INTEGER      VGTYPXG      ! vertical coordinate type (VGSIGP3, ...)
@@ -283,32 +289,25 @@ C.......   and temporal profiles files
      &          'Enter name for POINT SOURCE input file',
      &          FSREAD3, 'PNTS', 'LAYPOINT' )
 
-        FDEV = PROMPTFFILE( 'Enter name for STACK PARAMETER input file',
-     &                      .TRUE., .TRUE., 'PSTK', 'LAYPOINT' )
-        IF ( FDEV .LE. 0 ) THEN
-            CALL M3EXIT( 'LAYPOINT', 0, 0, 
-     &           'Could not open input STACK PARAMETER FILE', 2 )
-        END IF
-
         DNAME = PROMPTMFILE( 
      &          'Enter name for DOT-POINT   LAYERED  MET file',
      &          FSREAD3, 'METDOT', 'LAYPOINT' )
 
         SNAME = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT SURFACE  MET file',
-     &          FSREAD3, 'SFCCROSS', 'LAYPOINT' )
+     &          FSREAD3, 'SFCCRO', 'LAYPOINT' )
 
         XNAME = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT LAYERED  MET file',
-     &          FSREAD3, 'LAYCROSS', 'LAYPOINT' )
+     &          FSREAD3, 'LAYCRO', 'LAYPOINT' )
 
         SGRID = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT SURFACE GRID file',
-     &          FSREAD3, 'SFCGRID', 'LAYPOINT' )
+     &          FSREAD3, 'SFCGRD', 'LAYPOINT' )
 
         XGRID = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT LAYERED GRID file',
-     &          FSREAD3, 'LAYGRID', 'LAYPOINT' )
+     &          FSREAD3, 'LAYGRD', 'LAYPOINT' )
 
 C.......   Get surface met files header for scenario and cloud scheme
 
@@ -343,14 +342,26 @@ C.......   Get time period for output file, dot point grid desc parameters:
         JTIME  = STIME3D
         NSTEPS = MXREC3D - 1
 
-        JDATE  = GETNUM( 0, 9999999, JDATE, 
-     &                  'Enter starting date (YYYYDDD)' )
+        JDATE  = GETDATE( JDATE, 
+     &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
+
         JTIME  = GETNUM( 0, 999999, JTIME, 
      &                  'Enter starting time  (HHMMSS)' )
         TSTEP  = 10000
         NSTEPS = GETNUM( 1, 999999, NSTEPS,
      &                   'Enter output duration (hours)' )
 
+        DTBUF = MMDDYY( JDATE )
+        WRITE( MESG,94050 )
+     &  'Output Start Date:', DTBUF( 1:TRIMLEN( DTBUF ) ) //
+     &                                         CRLF() // BLANK5 //
+     &  '       Start Time:', JTIME,'HHMMSS'// CRLF() // BLANK5 //
+     &  '       Time Step :', 1    ,'hour'  // CRLF() // BLANK5 //
+     &  '       Duration  :', NSTEPS, 'hours'
+
+        CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+
+C.........  Set up output file:
         NCOLSDG = NCOLS3D
         NROWSDG = NROWS3D
         NLAYSDG = NLAYS3D
@@ -488,7 +499,11 @@ C.......   for description of output file
             MESG = 'Could not get description of file "' // 
      &             ENAME( 1:TRIMLEN( ENAME ) ) // '"'
             CALL M3EXIT( 'LAYPOINT', 0, 0, MESG, 2 )
-
+        ELSE IF ( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  EMISSIONS file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'LAYPOINT', 0, 0, MESG, 2 )
         END IF
 
         IF ( GDNAM3D .NE. COONMDG ) THEN
@@ -530,13 +545,6 @@ C.......   for description of output file
      &          'Enter name for LAYER FRACTIONS output file',
      &          FSUNKN3, 'PLAY', 'LAYPOINT' )
 
-
-        WRITE( *,92000 ) ' ',
-     &                   'LAYPOINT run control parameters:', ' '
-        WRITE( *,92030 ) 'Starting date', JDATE,  '(YYYYDDD)'
-        WRITE( *,92030 ) 'Starting time', JTIME,  '(HHMMSS)'
-        WRITE( *,92030 ) 'Run Length   ', NSTEPS, '(hours)'
-        WRITE( *,92000 ) ' '
 
 C...........   Read in emissions stack parameters IFIP, ISCC, XLOCA, YLOCA,
 C...........   STKHT, STKDM, STKTK, STKVE
@@ -580,11 +588,6 @@ C...........   STKHT, STKDM, STKTK, STKVE
             CALL M3EXIT( 'LAYPOINT', 0, 0, 
      &                   'Error reading STKVE from file' // ENAME, 2 )
         END IF
-
-C...........   Fix up missing stack parameters:
-
-        CALL FIXSTK( FDEV, NPSRC, IFIP , ISCC , STKHT, 
-     &                            STKDM, STKTK, STKVE  )
 
 
 C...........   Compute un-gridding matrices for dot and cross point
@@ -646,10 +649,20 @@ C.......   Read time-independent ZF, ZH:
 C...........   For each time step, compute the layer fractions:
 
 
-        WRITE( *,92000 ) 
-     &      ' ', 'Calculating hourly layer fractions...', ' '
+        CALL M3MSG2( 'Calculating hourly layer fractions...' )
 
         DO  144  I = 1, NSTEPS
+
+            IF ( MOD( I,24 ) .EQ. 1 ) THEN
+ 
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+ 
+            END IF
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 93020 ) HHMMSS( JTIME )
 
 C...........   Read and transform meteorology:
 
@@ -924,12 +937,16 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A16 )
 
-93020   FORMAT( I5.5, 1X, I4, 1X, I3, 1X, I10, 1X, I5, 3 I4 )
+93020   FORMAT( 8X, 'at time ', A8 )
 
 
 C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 12( A, :, I8, :, 1X ) )
+
+94050   FORMAT( A, 1X, A, 1X, I6.6, 1X,
+     &          A, 1X, I2.2, 1X, A, 1X, I2.2, 1X, A   )
+
 
         END
 
