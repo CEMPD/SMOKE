@@ -75,6 +75,11 @@ if ( $?SPC_OVERRIDE ) then
    endif
 endif
 
+## Override year setting, if override variable is set
+if ( $?YEAR_OVERRIDE ) then
+   setenv YEAR $YEAR_OVERRIDE
+endif
+
 ## Set dependent directory names
 #
 source $ASSIGNS/set_dirs.scr
@@ -98,7 +103,7 @@ if ( $SMK_SOURCE == 'A' ) then
 endif
 #
 ## Biogenic input files
-if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
+if ( $SMK_SOURCE == 'B' ) then
    setenv BGUSE   $SMKDAT/inventory/beld2/beld.5.us36.txt  # Gridded landuse
    setenv METLIST $INVDIR/biog/metlist.tmpbio.txt   # Meteorology file list for temperatures
    setenv RADLIST $INVDIR/biog/radlist.tmpbio.txt   # Meteorology file list for solar radiation
@@ -106,13 +111,17 @@ if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
    setenv S_BFAC  $GE_DAT/bfac.summer.txt     # Summer biogenic emission factors
    setenv W_BFAC  $GE_DAT/bfac.winter.txt     # Winter biogenic emission factors
    setenv BCUSE   $GE_DAT/landuse.dat         # County landuse
-   setenv BGPRO   $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Biogenic gridding surrogates
    setenv B3FAC   $GE_DAT/b3fac.march2002.beisv3.09.txt
    setenv B3XRF   $GE_DAT/b3tob2B.xrf         # Beld3 to Beld2 cross-reference
    setenv BELD3_TOT $SMKDAT/inventory/beld3/LANDA_c_cmaq_nat.dat
    setenv BELD3_A   $SMKDAT/inventory/beld3/LANDB_c_cmaq_nat.dat
    setenv BELD3_B   $SMKDAT/inventory/beld3/LAND_TOTALS_c_cmaq_nat.dat
 endif
+
+if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
+   setenv BGPRO   $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Biogenic gridding surrogates
+endif
+
 #
 ## Mobile source input files
 if ( $SMK_SOURCE == 'M' ) then
@@ -122,7 +131,6 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MCODES    $INVDIR/mobile/mcodes.txt              # mobile codes
    setenv MCREF     $INVDIR/mobile/mcref.$MSCEN.txt        # County cross-reference file
    setenv MVREF     $INVDIR/mobile/mvref.$MSCEN.txt        # County settings file
-   setenv M6LIST    $INVDIR/mobile/m6list.$MSCEN.txt       # MOBILE6 scenario list
    setenv METLIST   $INVDIR/mobile/metlist.premobl.txt     # Episode meteorology files list
    setenv REPCONFIG $INVDIR/mobile/REPCONFIG.mobile.txt    # Default report configurations
    setenv MGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt # Mobile gridding surrogates
@@ -237,7 +245,7 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv NRINV_O  $ARDAT/nrinv.$FYINV.ida.txt
 endif
 
-if ( $SMK_SOURCE == 'A' || $MRG_AREA == 'Y' ) then
+if ( $SMK_SOURCE == A || $RUN_SMKMERGE == Y && $MRG_AREA == Y ) then
    setenv AREA     $INVOPD/area.map.$FYIOP.txt   # Area inventory map
    setenv ATMP     $SMKDAT/run_$ASCEN/scenario/atmp.$ESDATE.$NDAYS.$ASCEN.ncf
    setenv ASMAT_S  $SMKDAT/run_$ABASE/static/asmat_s.$SPC.$ABASE.ncf
@@ -263,15 +271,18 @@ endif
 
 ## Biogenic source intermediate and output files
 #
-if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
-   setenv BGRD      $INVOPD/bgrd.summer.$GRID.$BSCEN.ncf       # Summer/default normalized bio emis
-   setenv BGRDW     $INVOPD/bgrd.winter.$GRID.$BSCEN.ncf       # Winter grd normalized bio emis
-   setenv BGTS_L    $B_OUT/bgts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BGTS_S    $B_OUT/bgts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BGTS_L_O  $OUTPUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BGTS_S_O  $OUTPUT/bgts_s_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+if ( $SMK_SOURCE == 'B' ) then
+   setenv BGRD      $INVOPD/bgrd.summer.$GRID.$BSCEN.ncf  # Summer/default normalized bio emis
+   setenv BGRDW     $INVOPD/bgrd.winter.$GRID.$BSCEN.ncf  # Winter grd normalized bio emis
    setenv BIOSEASON $GE_DAT/bioseason.$YEAR.us36.ncf
    setenv B3GRD     $INVOPD/b3grd.$GRID.$BSCEN.ncf
+endif
+
+if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
+   setenv BGTS_L    $B_OUT/bgts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+   setenv BGTS_S    $B_OUT/bgts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+   setenv BGTS_L_O  $B_OUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+   setenv BGTS_S_O  $B_OUT/bgts_s_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
 endif
 
 # Mobile source intermediate and output files 
@@ -298,7 +309,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MBINV_AO $MBDAT/mbinv.$FYINV.actv.txt
 endif
 
-if ( $SMK_SOURCE == 'M' || $MRG_MOBILE == 'Y' ) then
+if ( $SMK_SOURCE == M || $RUN_SMKMERGE == Y && $MRG_MOBILE == Y ) then
    setenv MOBL     $INVOPD/mobl.map.$FYIOP.txt   # Mobile inventory map
    setenv MTMP     $SMKDAT/run_$MSCEN/scenario/mtmp.$ESDATE.$NDAYS.$GRID.$MSM.ncf
    setenv MSMAT_L  $SMKDAT/run_$MBASE/static/msmat_l.$SPC.$MBASE.ncf
@@ -335,7 +346,7 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv REPPELV   $REPSTAT/reppelv.$PSCEN.rpt
 endif
 
-if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
+if ( $SMK_SOURCE == P || $RUN_SMKMERGE == Y && $MRG_POINT == Y ) then
    setenv PNTS     $INVOPD/pnts.map.$FYIOP.txt   # Point inventory map
    setenv PSCC     $INVOPD/PSCC.$FYIOP.txt       # Point unique SCC list
    setenv PTMP     $SMKDAT/run_$PSCEN/scenario/ptmp.$ESDATE.$NDAYS.$PSCEN.ncf
@@ -347,7 +358,7 @@ if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
    setenv PCMAT    $SMKDAT/run_$PSCEN/static/pcmat.$PSCEN.ncf
    setenv PGMAT    $SMKDAT/run_$PBASE/static/pgmat.$GRID.$PBASE.ncf
    setenv PPMAT    $SMKDAT/run_$PSCEN/static/ppmat.$PSCEN.ncf
-   setenv STACK_GROUPS $SMKDAT/run_$PSCEN/static/stack_groups.$GRID.$PBASE.ncf
+   setenv STACK_GROUPS $OUTPUT/stack_groups.$GRID.$PBASE.ncf
    setenv PLAY     $SMKDAT/run_$PBASE/scenario/play.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
    setenv PLAY_EX  $SMKDAT/run_$PBASE/scenario/play_ex.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
 endif
