@@ -1139,7 +1139,7 @@ C.................  Check pollutant code and set index I
                 CSS  = LBLANK( LINE( 57:61 ) )
                 CPOL = LINE( MIN(CSS+57,61):61 )
                 COD  = INDEX1( CPOL( 1:TRIMLEN( CPOL ) ), NIPOL, EINAM )
-                IF ( I  .LE. 0 ) THEN
+                IF ( COD .LE. 0 ) THEN
                     WRITE( MESG,94010 ) 
      &                  'Bad line', IREC, 
      &                  'Pollutant code "' // LINE(57:61) // 
