@@ -33,7 +33,7 @@ FILES_B = \
 FILES_C = \
   bldcsrc.o    fillchrt.o   getiname.o   parscsrc.o   rdsconv.o    wrchrscc.o \
   bldenams.o   fillctbl.o   getinvyr.o   rdcodnam.o   wrdaymsg.o   wridaout.o \
-  fillgtbl.o   getisize.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
+  fillgtbl.o   pdsetup.o    rdsmat.o     rdumat.o     wridapol.o \
   fillmtbl.o   rdsprof.o    prclinrc.o   rmcommnt.o   rdorsdsc.o \
   chkcpvar.o   fillstbl.o   getvmix.o    rdgref.o     rdvmix.o     xreftbl.o  \
   fillttbl.o   rdsref.o     genptcel.o   chkemepi.o   getntisz.o \
