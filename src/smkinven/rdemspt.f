@@ -1,7 +1,6 @@
 
-        SUBROUTINE RDEMSPT( EDEV, INY, NRAWIN, MXIPOL, WKSET, INVPCOD, 
-     &                      INVPNAM, NRAWOUT, IOS, IREC, ERFILDSC,
-     &                      EFLAG, NDROP, EDROP )
+        SUBROUTINE RDEMSPT( EDEV, INY, NRAWIN, WKSET, NRAWOUT, IOS, 
+     &                      IREC, ERFILDSC, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
 C  subroutine body starts at line 232
@@ -49,6 +48,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -80,17 +82,14 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: EDEV( 5 ) !  unit no.: dv, em, fc, sk, pr
         INTEGER     , INTENT (IN) :: INY       !  inv year for this set of files
         INTEGER     , INTENT (IN) :: NRAWIN    !  total raw record-count
-        INTEGER     , INTENT (IN) :: MXIPOL    !  max no of inventory pol
         INTEGER     , INTENT (IN) :: WKSET     !  weekly profile interpretation
-        INTEGER     , INTENT (IN) :: INVPCOD( MXIPOL ) !  inv pol 5-digit codes
-        CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) !  in pol names
         INTEGER     , INTENT(OUT) :: NRAWOUT   ! valid raw record-count
         INTEGER     , INTENT(OUT) :: IOS       ! I/O status
         INTEGER     , INTENT(OUT) :: IREC      ! line number
         CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
         LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
         INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
-        REAL        , INTENT(OUT) :: EDROP( MXIPOL ) ! emis dropped per pol
+        REAL        , INTENT(OUT) :: EDROP( MXIDAT ) ! emis dropped per pol
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: DVIDLEN = 12
@@ -215,6 +214,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: WFLAG    !  true: convert lat-lons to Western hemisphr
 
         CHARACTER*2            TMPAA !  tmp time period code
+        CHARACTER*10, SAVE  :: FIPFMT! formt to write co/st/cy to string
         CHARACTER*10, SAVE  :: FMTSCC!  format for writing integer SCC to char
         CHARACTER*300          LINE  !  Input line from POINT file
         CHARACTER*300          MESG  !  Text for M3EXIT()
@@ -242,6 +242,7 @@ C.............  Get settings from the environment
 
 C.............  Create format for writing SCC to character
             WRITE( FMTSCC, 94300 ) '(I', SCCLEN3, '.', SCCLEN3, ')'
+            WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) FIPLEN3, FIPLEN3
 
         ENDIF
 
@@ -367,7 +368,7 @@ C.............  Check zone conversion to integer
 
             IF ( FS .LE. FLINE ) THEN
 
-                WRITE ( CFIP,94120 ) 
+                WRITE ( CFIP,FIPFMT ) 
      &                   1000 * STR2INT( LINE( 1:2 ) ) +
      &                          STR2INT( LINE( 3:5 ) )
 
@@ -427,7 +428,7 @@ C.............  Read a line of stack.pt file and check input status
             IF ( IOS .GT. 0 ) GO TO 999  ! to end of subroutine
 
 C.............  Get lookup into facilities table
-            WRITE( CFIP,94120 ) 1000*STR2INT( LINE( 1:2 ) ) +
+            WRITE( CFIP,FIPFMT ) 1000*STR2INT( LINE( 1:2 ) ) +
      &                               STR2INT( LINE( 3:5 ) )
 
 C.............  Find source match in facilities table
@@ -613,7 +614,7 @@ C.............  Convert and check SCC value
 
             IF ( PS .LE. PLINE ) THEN
 
-                WRITE ( CFIP,94120 ) 
+                WRITE ( CFIP,FIPFMT ) 
      &               1000 * STR2INT( LINE( 1:2 ) ) +
      &                      STR2INT( LINE( 3:5 ) )
 
@@ -740,7 +741,7 @@ C temp      TMON = STR2INT( LINE( ) )
 
             IF ( DS .LE. DLINE ) THEN
 
-                WRITE ( CFIP,94120 ) 
+                WRITE ( CFIP,FIPFMT ) 
      &                   1000 * STR2INT( LINE( 1:2 ) ) + 
      &                          STR2INT( LINE( 3:5 ) )
 
@@ -821,7 +822,7 @@ C.............  NOTE- Pollutant names here and in INVPNAM converted to uppercase
             CSS  = LBLANK ( LINE( 57:61 ) )
             CPOL = LINE   ( MIN(CSS+57,61):61 )
             CALL UPCASE( CPOL )
-            COD  = INDEX1( CPOL, MXIPOL, INVPNAM )
+            COD  = INDEX1( CPOL, MXIDAT, INVDNAM )
 
             IF( COD .LE. 0 ) THEN
                 L2 = LEN_TRIM( CPOL )
@@ -851,7 +852,7 @@ C.............  and give warning later if this is not the case.
 
             FIP  = 1000 * STR2INT( LINE( 1:2 ) ) +
      &                    STR2INT( LINE( 3:5 ) )
-            WRITE( CFIP,94120 ) FIP
+            WRITE( CFIP,FIPFMT ) FIP
             CSS  = LBLANK( LINE( 6:20 ) )
 
             FCID = LINE( MIN(CSS+6,20):20 )
@@ -1091,8 +1092,6 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
-
-94120   FORMAT( I6.6 )
 
 94125   FORMAT( I5 )
 
