@@ -1406,7 +1406,7 @@ C***********************************************************************
 C...........   INCLUDES:
 
       INCLUDE 'PARMS3.EXT'      ! I/O API constants
-      INCLUDE 'FDESC30.EXT'      ! I/O API file description data structure
+      INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
       INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 
 
@@ -1522,7 +1522,7 @@ C...........   INCLUDES:
         INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC30.EXT'    !  I/O API file description data structures.
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 
 C...........   ARGUMENTS and their descriptions:
