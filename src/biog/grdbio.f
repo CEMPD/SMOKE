@@ -1,8 +1,8 @@
 
-        SUBROUTINE  GRDBIO ( GDEV, NCOLS, NROWS) 
+        SUBROUTINE GRDBIO( GDEV, LUNROWS, LUNCOLS ) 
 
 C***********************************************************************
-C  subroutine body starts at line 102
+C  subroutine body starts at line 111
 C
 C  DESCRIPTION:
 C       Computes normalized gridded biogenic emissions in terms of
@@ -38,8 +38,10 @@ C*************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the biogenic variables
-
         USE MODBIOG
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
         IMPLICIT NONE
 
@@ -48,19 +50,17 @@ C...........   This module contains the biogenic variables
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER         FIND1
         INTEGER         GETFLINE
         INTEGER         INDEX1
-        INTEGER         STR2INT
         REAL            STR2REAL
 
-        EXTERNAL        FIND1, GETFLINE, INDEX1, STR2INT, STR2REAL
+        EXTERNAL        GETFLINE, INDEX1, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
 
-        INTEGER, INTENT (IN)  ::  GDEV    !  unit number for county landuse file
-        INTEGER, INTENT (IN)  ::  NCOLS   !  no. cols
-        INTEGER, INTENT (IN)  ::  NROWS   !  no. rows
+        INTEGER, INTENT (IN)  ::  GDEV    ! unit no. for county landuse file
+        INTEGER, INTENT (IN)  ::  LUNROWS ! no. rows in land use header
+        INTEGER, INTENT (IN)  ::  LUNCOLS ! no. columns in land use header
 
 C...........   Allocatable, source-level variables
 
@@ -73,34 +73,40 @@ C...........   Allocatable, source-level variables
 
 C...........   Other local variables
 
-        INTEGER         B, C, R, I, J, K, L, M, N ! loop counters and subscripts
+        INTEGER         B, I, J, K, L, M, N ! loop counters and subscripts
 
-        INTEGER         CELL    !  cell no. in grid
-        INTEGER         FLINES  !  Number of lines in BGUSE
-        INTEGER         IOS     !  i/o status
-        INTEGER         NLINE   !  Line number counter for BGUSE
-        INTEGER         NTYPE   !  number of land use types
+        INTEGER         CELL      !  tmp cell no. in grid
+        INTEGER         COL       !  tmp column no.
+        INTEGER         FLINES    !  number of lines in BGUSE
+        INTEGER         IOS       !  i/o status
+        INTEGER         LC, LR    !  length of COLRANGE & ROWRANGE
+        INTEGER         NLINE     !  line number counter for BGUSE
+        INTEGER         NTYPE     !  number of land use types
+        INTEGER         ROW       !  tmp row no.
 
         REAL            AOTH, AGRS, AWTF, ALAI, SUMLAI, AVGLAI
         REAL            EMIS, AFOR, ENOFOR
         REAL            AAG, ENOAG, ENOGRS, ENOWTF
-        REAL            AREA    !  land-use area
-        REAL            ATYPE   !  area for this land use type
+        REAL            AREA      !  land-use area
+        REAL            ATYPE     !  area for this land use type
 
-        CHARACTER*4     TYPE    !  land use type
-        CHARACTER*80    INBUF   !  input buffer
-        CHARACTER*300   MESG    !  message buffer 
+        CHARACTER*4     LUTYPE    !  land use type
+        CHARACTER*20    COLRANGE  !  buffer w/ column range
+        CHARACTER*20    ROWRANGE  !  buffer w/ row range
+        CHARACTER*80    INBUF     !  input buffer
+        CHARACTER*300   MESG      !  message buffer 
 
-        LOGICAL      :: EFLAG    = .FALSE.    !  true: error found
-        LOGICAL      :: INHEADER = .TRUE.     !  true: in BEIS header section
+        LOGICAL      :: EFLAG    = .FALSE.    ! true: error found
+        LOGICAL      :: INHEADER = .TRUE.     ! true: in BEIS header section
+        LOGICAL      :: OFLAG    = .FALSE.    ! true: at least 1 warning found
+        LOGICAL      :: WFLAG    = .FALSE.    ! true: warning on current record
 
         CHARACTER*16 :: PROGNAME = 'GRDBIO'   !  program name
 
 C***********************************************************************
 C   begin body of subroutine  GRDBIO
 
-C.......   Allocate memory for reading and storing county land use
-
+C.........  Allocate memory for reading and storing county land use
         ALLOCATE( EPINE ( BSPCS-1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EPINE', PROGNAME )
         ALLOCATE( EDECD ( BSPCS-1 ), STAT=IOS )
@@ -114,23 +120,29 @@ C.......   Allocate memory for reading and storing county land use
         ALLOCATE( EAG ( BSPCS-1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EAG', PROGNAME )
 
-C.......   Read and process gridded land use file:
+C.........  Create message fields for errors
+        WRITE( COLRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, LUNCOLS
+        WRITE( ROWRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, LUNROWS
+
+        LC = LEN_TRIM( COLRANGE )
+        LR = LEN_TRIM( ROWRANGE )
+
+C.........  Read and process gridded land use file:
 
         MESG = 'Reading GRIDDED LAND USE file'
         CALL M3MSG2( MESG )
 
-C.......  Get length of BGUSE file
+C.........  Get length of BGUSE file
 
         FLINES = GETFLINE( GDEV, ' Gridded land use file' )  
 
+C.........  Read until end of the BGUSE file
         NLINE = 0
-
-C....... Read until end of the BGUSE file
-
         DO WHILE ( NLINE .LT. FLINES )  
 
             READ( GDEV, 93000, IOSTAT=IOS ) INBUF
             NLINE =  NLINE + 1
+
             IF ( IOS .NE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'I/O error', IOS,
@@ -141,27 +153,27 @@ C....... Read until end of the BGUSE file
 
             INBUF = ADJUSTL( INBUF )
 
-C........  Skip all lines in file until ENDHEADER found
-
+C.............  Skip all lines in file until ENDHEADER found
             IF( INHEADER ) THEN
         	J = INDEX( INBUF, 'ENDHEADER' )
         	IF( J .GT. 0 ) INHEADER = .FALSE.
             END IF
 
-C........  If SMOKE header line found cycle
-
+C.............  If SMOKE header line found cycle
             IF ( INBUF(1:1) .EQ. CINVHDR ) THEN
                 INHEADER = .FALSE.
                 CYCLE 
             END IF
 
-C........  Skip blank lines
-
+C.............  Skip blank lines
             IF( INBUF .EQ. ' ' ) CYCLE
 
-C........  Read column, row and total area in cell
+C.............  Initialize warning flag
+            WFLAG = .FALSE.
 
-            READ ( INBUF, * , IOSTAT=IOS ) C, R, AREA
+C.............  Read column, row and total area in cell
+
+            READ ( INBUF, * , IOSTAT=IOS ) COL, ROW, AREA
 
             IF ( IOS .NE. 0 ) THEN
                 EFLAG = .TRUE.
@@ -171,23 +183,46 @@ C........  Read column, row and total area in cell
                 CYCLE
             END IF
 
-            
-C...........   If landuse file provides more grid cells than the test domain
-C              skip them.
+C.................  Check the value of the column number
+            IF( COL .LE. 0 .OR. COL .GT. LUNCOLS ) THEN
+                WFLAG = .TRUE.
+                OFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'WARNING: Column value ', COL,
+     &                     'is outside range ' // COLRANGE( 1:LC ) // 
+     &                     ' at line', NLINE
+                CALL M3MESG( MESG )
+            END IF
 
-            IF ( (C .GT. NCOLS) .OR. (R .GT. NROWS) ) THEN
-               WRITE( MESG,92020 )
-     &               'Grid ( ', C, ', ', R, ' ) ' //
-     &               'of land use file is outside the domain'
-               CALL M3WARN( PROGNAME, 0, 0, MESG )
+C.................  Check the value of the row number
+            IF( ROW .LE. 0 .OR. ROW .GT. LUNROWS ) THEN
+                WFLAG = .TRUE.
+                OFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'WARNING: Row value ', ROW,
+     &                 'is outside range ' // ROWRANGE( 1:LR ) // 
+     &                 ' at line', NLINE
+                CALL M3MESG( MESG )                    
+            END IF
+
+C.............  Adjust column and row for subgrid
+            COL = COL - XOFF
+            ROW = ROW - YOFF
+
+C.............  Skip entry after subgrid adjustment
+            IF( COL .LE. 0 .OR. COL .GT. NCOLS .OR.
+     &          ROW .LE. 0 .OR. ROW .GT. NROWS       ) WFLAG = .TRUE.
+
+C.............   If landuse file has grid cells outside the valid ranges
+C                given in the header, skip them
+            IF( WFLAG ) THEN
 
                DO B = 1, 4    ! Skip all four blocks in landuse file
                   READ( GDEV, *, IOSTAT=IOS ) ATYPE, NTYPE
                   NLINE =  NLINE + 1
+
                   IF ( IOS .NE. 0 ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'I/O error', IOS,
-     &                     'reading gridded land use file at line',NLINE
+                    WRITE( MESG,94010 ) 'I/O error', IOS, 'while '//
+     &                'skipping line', NLINE, 'of gridded land use'
                     CALL M3MESG( MESG )
                     CYCLE
                   END IF
@@ -197,8 +232,8 @@ C              skip them.
                      NLINE = NLINE + 1
                      IF ( IOS .NE. 0 ) THEN
                        EFLAG = .TRUE.
-                       WRITE( MESG,94010 ) 'I/O error', IOS,
-     &                     'reading gridded land use file at line',NLINE
+                       WRITE( MESG,94010 ) 'I/O error', IOS, 'while '//
+     &                   'skipping line', NLINE, 'of gridded land use'
                        CALL M3MESG( MESG )
                        CYCLE
                     END IF
@@ -206,10 +241,10 @@ C              skip them.
                   END DO
                END DO
 
+C.............  If no warning, continue with read...
             ELSE
 
-C...........   Land use type:  (rural) forest.  Process subtypes:
-
+C................  Land use type: (rural) forest.  Process subtypes:
                READ( GDEV, *, IOSTAT=IOS ) ATYPE, NTYPE
                NLINE =  NLINE + 1
                IF ( IOS .NE. 0 ) THEN
@@ -254,20 +289,20 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                  END IF
 
                  INBUF = ADJUSTL( INBUF )  
-                 TYPE  = INBUF( 2 : 5 )
+                 LUTYPE  = INBUF( 2 : 5 )
                  AREA  = STR2REAL( INBUF( 7 : 80 ) )
-                 K     = INDEX1( TYPE, NVEG, VEGID )
+                 K     = INDEX1( LUTYPE, NVEG, VEGID )
 
                  IF ( K .EQ. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 )
-     &                'Could not find "' // TYPE //
+     &                'Could not find "' // LUTYPE //
      &                '" from LU FILE in VEGID at line', NLINE
                     CALL M3MESG( MESG )
                     CYCLE
                  END IF
 
-                 L = INDEX1( TYPE, SPTREE, SPFORID )
+                 L = INDEX1( LUTYPE, SPTREE, SPFORID )
 
                  IF ( L .GT. 0 ) THEN
                     AFOR   = AFOR   + AREA
@@ -278,7 +313,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     END DO
                     ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Wdcp' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Wdcp' ) THEN
 
                     AFOR   = AFOR   + 0.5*AREA
                     AAG    = AAG    + 0.5*AREA
@@ -289,7 +324,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     END DO
                     ENOAG  = ENOAG + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Scwd' ) THEN
 
                     AFOR   = AFOR   + 0.5*AREA
                     AGRS   = AAG    + 0.5*AREA
@@ -300,7 +335,7 @@ C...........   Land use type:  (rural) forest.  Process subtypes:
                     END DO
                     ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Urba' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Urba' ) THEN
 
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
@@ -386,21 +421,21 @@ C...........   Land use type:  urban forest.  Process subtypes:
                  END IF
 
                  INBUF = ADJUSTL( INBUF )
-                 TYPE  = INBUF( 2 : 5 )
+                 LUTYPE  = INBUF( 2 : 5 )
                  AREA  = STR2REAL( INBUF( 7 : 80 ) )
 
-                 K     = INDEX1( TYPE, NVEG, VEGID )
+                 K     = INDEX1( LUTYPE, NVEG, VEGID )
 
                  IF ( K .EQ. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              'Could not find "' // TYPE // 
+     &              'Could not find "' // LUTYPE // 
      &              '" from LU FILE in VEGID at line', NLINE
                     CALL M3MESG( MESG )
                     CYCLE
                  END IF
 
-                 L = INDEX1( TYPE, SPTREE, SPFORID )
+                 L = INDEX1( LUTYPE, SPTREE, SPFORID )
 
                  IF ( L .GT. 0 ) THEN
 
@@ -412,7 +447,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     END DO
                     ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Wdcp' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Wdcp' ) THEN
 
                     AFOR   = AFOR   + 0.5*AREA
                     AAG    = AAG    + 0.5*AREA
@@ -423,7 +458,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     END DO
                     ENOAG  = ENOAG + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Scwd' ) THEN
 
                     AFOR   = AFOR   + 0.5*AREA
                     AGRS   = AAG    + 0.5*AREA
@@ -434,7 +469,7 @@ C...........   Land use type:  urban forest.  Process subtypes:
                     END DO
                     ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Urba' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Urba' ) THEN
 
                     AFOR   = AFOR   + 0.2*AREA
                     AGRS   = AAG    + 0.2*AREA
@@ -520,15 +555,15 @@ C...........   Land use type:  agriculture.  Process subtypes:
                  END IF
 
                  INBUF = ADJUSTL( INBUF )
-                 TYPE  = INBUF( 2 : 5 )
+                 LUTYPE  = INBUF( 2 : 5 )
                  AREA  = STR2REAL( INBUF( 7 : 80 ) )
 
-                 K     = INDEX1( TYPE, NVEG, VEGID )
+                 K     = INDEX1( LUTYPE, NVEG, VEGID )
 
                  IF ( K .EQ. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &              'Could not find "' // TYPE // 
+     &              'Could not find "' // LUTYPE // 
      &              '" from LU FILE in VEGID at line', NLINE
                     CALL M3MESG( MESG )
                  END IF
@@ -581,21 +616,21 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                  END IF
 
                  INBUF = ADJUSTL( INBUF )
-                 TYPE  = INBUF( 2 : 5 )
+                 LUTYPE  = INBUF( 2 : 5 )
                  AREA  = STR2REAL( INBUF( 7 : 80 ) )
 
-                 K     = INDEX1( TYPE, NVEG, VEGID )
+                 K     = INDEX1( LUTYPE, NVEG, VEGID )
 
                  IF ( K .EQ. 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 
-     &                  'Could not find "' // TYPE // 
+     &                  'Could not find "' // LUTYPE // 
      &                  '" from LU FILE in VEGID at line', NLINE 
                     CALL M3MESG( MESG )
                     EFLAG = .TRUE.
                  END IF
 
-                 L = INDEX1( TYPE, RMTREE, OTHERID )
+                 L = INDEX1( LUTYPE, RMTREE, OTHERID )
 
                  IF ( L .GT. 0 ) THEN
 
@@ -607,7 +642,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     END DO
                     ENOFOR = ENOFOR + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Pacp' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Pacp' ) THEN
 
                     AAG = AAG + AREA
                     DO  M = 1, BSPCS - 1
@@ -615,18 +650,18 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     END DO
                     ENOAG = ENOAG + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Gras' .OR.
+                 ELSE IF ( LUTYPE .EQ. 'Gras' .OR.
 
-     &                    TYPE .EQ. 'Scru' .OR.
-     &                    TYPE .EQ. 'Ugra' .OR.
-     &                    TYPE .EQ. 'Othe' ) THEN
+     &                    LUTYPE .EQ. 'Scru' .OR.
+     &                    LUTYPE .EQ. 'Ugra' .OR.
+     &                    LUTYPE .EQ. 'Othe' ) THEN
                     AGRS = AGRS + AREA
                     DO  M = 1, BSPCS - 1
                         EOTH( M ) = EOTH( M ) + AREA * EMFAC( K , M )
                     END DO
                     ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Wetf' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Wetf' ) THEN
 
                     AWTF = AWTF + AREA
                     ALAI = ALAI + AREA
@@ -637,13 +672,13 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     END DO
                     ENOWTF = ENOWTF + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Wate' .OR.
-     &                    TYPE .EQ. 'Barr' .OR.
-     &                    TYPE .EQ. 'Uoth' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Wate' .OR.
+     &                    LUTYPE .EQ. 'Barr' .OR.
+     &                    LUTYPE .EQ. 'Uoth' ) THEN
 
                         AOTH = AOTH + AREA
 
-                 ELSE IF ( TYPE .EQ. 'Wdcp' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Wdcp' ) THEN
 
                     ALAI   = ALAI   + AREA
                     AFOR   = AFOR   + 0.5 * AREA
@@ -653,7 +688,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                         ELAI( M ) = ELAI( M ) + AREA * EMFAC( K , M )
                     END DO
                     ENOAG = ENOAG + AREA * EMFAC( K, NO )
-                 ELSE IF ( TYPE .EQ. 'Scwd' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Scwd' ) THEN
                     ALAI   = ALAI   + AREA
                     AFOR   = AFOR   + 0.5 * AREA
                     AGRS   = AGRS   + 0.5 * AREA
@@ -663,7 +698,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     END DO
                     ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Urba' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Urba' ) THEN
 
                     AFOR   = AFOR   + 0.2 * AREA
                     AGRS   = AGRS   + 0.2 * AREA
@@ -673,7 +708,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
                     END DO
                     ENOGRS = ENOGRS + AREA * EMFAC( K, NO )
 
-                 ELSE IF ( TYPE .EQ. 'Desh' ) THEN
+                 ELSE IF ( LUTYPE .EQ. 'Desh' ) THEN
 
                     AGRS   = AGRS   + 0.5 * AREA
                     AOTH   = AOTH   + 0.5 * AREA
@@ -717,7 +752,7 @@ C...........   Land use type:  remaining/other.  Process subtypes:
 C..............  Assign normalized emissions to appropriate
 C..............  grid cell
 
-               CELL = ( ( R - 1 ) * NCOLS )  + C
+               CELL = ( ( ROW - 1 ) * NCOLS )  + COL
                DO M = 1, BSPCS - 1
                   PINE( CELL, M ) = EPINE( M )
                   DECD( CELL, M ) = EDECD( M ) 
@@ -733,7 +768,7 @@ C..............  grid cell
                AGRINO( CELL ) = ENOAG
                AVLAI ( CELL ) = AVGLAI
 
-          ENDIF
+          END IF
 
         END DO    ! End read loop for gridded land use
 
