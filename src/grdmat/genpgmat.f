@@ -61,22 +61,22 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL DSCM3GRD, TRIMLEN
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(LEN=NAMLEN3) FNAME ! matrix output inventory logical name
-        INTEGER       NPSRC          ! Actual source count
-        INTEGER       NGRID          ! Actual grid cell count
-        REAL          XLOCA( NPSRC ) ! X-coordinate in proper coordinate system
-        REAL          YLOCA( NPSRC ) ! Y-coordinate in proper coordinate system
-        INTEGER       NX( NGRID )    ! Number of sources per cell
-        INTEGER       IX( NPSRC )    ! Source number, w/ order based on NX
-        INTEGER       NCOEF          ! Number of coefficients
-        INTEGER       CMAX           ! Maximum number of sources per cell
-        INTEGER       CMIN           ! Minimum number of sources per cell
+        CHARACTER(*), INTENT (IN) :: FNAME ! matrix output inventory logical name
+        INTEGER     , INTENT (IN) :: NPSRC          ! Actual source count
+        INTEGER     , INTENT (IN) :: NGRID          ! Actual grid cell count
+        REAL        , INTENT (IN) :: XLOCA( NPSRC ) ! X-coordinate in proper coordinate system
+        REAL        , INTENT (IN) :: YLOCA( NPSRC ) ! Y-coordinate in proper coordinate system
+        INTEGER     , INTENT(OUT) :: NX( NGRID )    ! Number of sources per cell
+        INTEGER     , INTENT(OUT) :: IX( NPSRC )    ! Source number, w/ order based on NX
+        INTEGER     , INTENT(OUT) :: NCOEF          ! Number of coefficients
+        INTEGER     , INTENT(OUT) :: CMAX           ! Max no. of srcs per cell
+        INTEGER     , INTENT(OUT) :: CMIN           ! Min no. of srcs per cell
 
 C...........   Scratch Gridding Matrix
 
-        INTEGER      INDX( NPSRC )
-        INTEGER      GN  ( NPSRC )
-        INTEGER      SN  ( NPSRC )
+        INTEGER, ALLOCATABLE :: INDX( : )
+        INTEGER, ALLOCATABLE :: GN  ( : )
+        INTEGER, ALLOCATABLE :: SN  ( : )
 
 C...........   Other local variables
 
@@ -96,6 +96,14 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine GENPGMAT
+
+C.........  Allocate local memory
+        ALLOCATE( INDX( NPSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDX', PROGNAME )
+        ALLOCATE( GN( NPSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GN', PROGNAME )
+        ALLOCATE( SN( NPSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SN', PROGNAME )
 
 C.........  Initialize temporary storage table. NOTE - uses I/O API
 C           definitions of grid from include file
@@ -205,6 +213,9 @@ C.............  Stop program if memory exceedance errors were written
      &      'NOTE: Number of sources excluded from grid was', NEXCLD
 
         CALL M3MSG2( MESG )
+
+C.........  Dellallocate locally allocated memory
+        DEALLOCATE( INDX, GN, SN )
 
         RETURN
 

@@ -83,19 +83,18 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: CMAX          ! max no. of sources per cell
         INTEGER     , INTENT(OUT) :: CMIN          ! min no. of sources per cell
 
-C...........   Local arrays dimensioned by subroutine arguments...
+C...........   Local allocatable arrays...
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 
-        INTEGER     IS ( MXSCEL, NGRID ) ! source IDs for each cell
-        REAL        CS ( MXSCEL, NGRID ) ! factors 
+        INTEGER, ALLOCATABLE :: IS ( :,: ) ! source IDs for each cell
+        REAL   , ALLOCATABLE :: CS ( :,: ) ! factors 
 
 C...........   Temporary array for flagging sources that are outside the
-C              domain and for flagging sources with all zero surrogates
-        LOGICAL     INDOMAIN( NASRC )    ! true: source is in the domain
-        LOGICAL     SRCSTAT ( NASRC )    ! true: source has non-zero surrogates
+C              domain and for flagging sources with all zero surrogate fractions
+        LOGICAL, ALLOCATABLE :: INDOMAIN( : ) ! true: src is in the domain
+        LOGICAL, ALLOCATABLE :: SRCSTAT ( : ) ! true: src has non-zero surgs
 
-C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
 
 C...........   Other local variables
@@ -156,10 +155,17 @@ C.........  Store grid parameters for later processing
 C.........  Initialize number of sources per cell counter
         NX = 0   ! Array
 
+C.........  Allocate memory for temporary gridding matrix and other
+        ALLOCATE( IS( MXSCEL, NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IS', PROGNAME )
+        ALLOCATE( CS( MXSCEL, NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CS', PROGNAME )
+        ALLOCATE( INDOMAIN( NASRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDOMAIN', PROGNAME )
+        ALLOCATE( SRCSTAT( NASRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCSTAT', PROGNAME )
         ALLOCATE( FIPNOSRG( NINVIFIP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FIPNOSRG', PROGNAME )
-
-C.........  Allocate memory for temporary
 
 C.......   Compute gridding matrix:
 C.......       First case:   explicit link (ILINK > 0
@@ -309,7 +315,7 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, 0, FIPNOSRG, ' ' )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( FIPNOSRG )
+        DEALLOCATE( IS, CS, INDOMAIN, SRCSTAT, FIPNOSRG )
 
         RETURN
 

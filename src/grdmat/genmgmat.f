@@ -92,32 +92,31 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: CMAXU         ! max no. of cells per source
         INTEGER     , INTENT(OUT) :: CMINU         ! min no. of cells per source
 
-C...........   Local arrays dimensioned by subroutine arguments...
+C...........   Local allocatable arrays...
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 
-        INTEGER     IS ( MXSCEL, NGRID ) ! source IDs for each cell
-        REAL        CS ( MXSCEL, NGRID ) ! factors (no adjustments), for ungrid
-        REAL        CSJ( MXSCEL, NGRID ) ! factors (with adjustments)
+        INTEGER, ALLOCATABLE :: IS ( :,: )! source IDs for each cell
+        REAL   , ALLOCATABLE :: CS ( :,: )! factors (no adjustments), for ungrid
+        REAL   , ALLOCATABLE :: CSJ( :,: )! factors (with adjustments)
 
 C...........   Scratch Ungridding Matrix (subscripted by cell, source)
   
-        INTEGER     IT( MXCSRC, NMSRC )  ! cell IDs for each source
-        REAL        CT( MXCSRC, NMSRC )  ! ungridding coefficients
-        REAL        DN( NMSRC )          ! source normalization coefficient
+        INTEGER, ALLOCATABLE :: IT( :,: ) ! cell IDs for each source
+        REAL   , ALLOCATABLE :: CT( :,: ) ! ungridding coefficients
+        REAL   , ALLOCATABLE :: DN( : )   ! source normalization coefficient
 
 C...........   Temporary array for flagging sources that are outside the
 C              domain
-        LOGICAL     INDOMAIN( NMSRC )    ! true: source is in the domain
+        LOGICAL, ALLOCATABLE :: INDOMAIN( : ) ! true: src is in the domain
 
 C...........   Arrays for links intersecting with cells
 C...........   Note that the NGRID dimension could conceivably be too small if
 C              a link winds through the whole domain, but this is a case that
 C              is not worth going to extra trouble for.
-        INTEGER         ACEL( NGRID )    ! number of cell intersections per src
-        REAL            AFAC( NGRID )    ! fraction of link in cell
+        INTEGER, ALLOCATABLE :: ACEL( : )    ! number of cell intersections per src
+        REAL   , ALLOCATABLE :: AFAC( : )    ! fraction of link in cell
 
-C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
         CHARACTER(LEN=SRCLEN3), ALLOCATABLE :: LKOGRD( : ) ! link srcs outside
                                                            !    the grid
@@ -188,12 +187,29 @@ C.........  Store grid parameters for later processing
 C.........  Initialize number of sources per cell counter
         NX = 0   ! Array
 
+C.........  Allocate memory for temporary gridding matrix and other
+        ALLOCATE( IS( MXSCEL, NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IS', PROGNAME )
+        ALLOCATE( CS( MXSCEL, NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CS', PROGNAME )
+        ALLOCATE( CSJ( MXSCEL, NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSJ', PROGNAME )
+        ALLOCATE( IT( MXCSRC, NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IT', PROGNAME )
+        ALLOCATE( CT( MXCSRC, NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CT', PROGNAME )
+        ALLOCATE( DN( NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'DN', PROGNAME )
+        ALLOCATE( INDOMAIN( NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDOMAIN', PROGNAME )
+        ALLOCATE( ACEL( NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ACEL', PROGNAME )
+        ALLOCATE( AFAC( NGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AFAC', PROGNAME )
         ALLOCATE( FIPNOSRG( NINVIFIP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FIPNOSRG', PROGNAME )
         ALLOCATE( LKOGRD( NMSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LKOGRD', PROGNAME )
-
-C.........  Allocate memory for temporary
 
 C.......   Compute gridding matrix:
 C.......       First case:   explicit link (ILINK > 0
@@ -683,7 +699,8 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, NLKOGRD, FIPNOSRG, LKOGRD )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( FIPNOSRG, LKOGRD )
+        DEALLOCATE( IS, CS, CSJ, IT, CT, DN, INDOMAIN )
+        DEALLOCATE( ACEL, AFAC, FIPNOSRG, LKOGRD )
 
         RETURN
 
