@@ -413,7 +413,7 @@ C.............  Don't want spaces here, so no M3MSG2
 C.........  Write report of emissions totals 
 
         WRITE( ODEV, 93020 ) ( EMTNAM( J ), J = 1, NETYPE )
-        WRITE( FMTBUF, '( "(20X,",I2.2,"(1X,A9))" )' ) NETYPE
+        WRITE( FMTBUF, '( "(26X,",I2.2,"(1X,A9))" )' ) NETYPE
         WRITE( ODEV, FMTBUF ) ( '[ton/day]', J = 1, NETYPE )
 
         DO 550 I = 1, NOFIP
@@ -424,9 +424,8 @@ C.........  Write report of emissions totals
 
             DO 540 D = 1, NDAYS
 
-                WRITE( ODEV, 93025 ) D
                 DO 530 V = 1, NVTYPE
-                    WRITE( ODEV, 93030 ) VTYPE3( V ),  
+                    WRITE( ODEV, 93030 ) D, OFIP( I ), VTYPE3( V ),  
      &                   ( EMSUM( I, J, V, D ), J = 1,NETYPE )
 
 530             CONTINUE
@@ -456,14 +455,13 @@ C******************  FORMAT  STATEMENTS   ******************************
 880     FORMAT ( F14.2, 2X, F14.2, 2X, F14.2 )
 890     FORMAT ( A, F12.2, A )
 
-93010   FORMAT ( I5, 1X, I6.5, ' FIPS', /, 6X, I6, ' Src1',/,  
+93010   FORMAT ( I5, 7X, I6.5, ' FIPS', /, 6X, I6, ' Src1',/,  
      &           6X, I6, ' Src2', /, 6X, I6, ' Nsrc' )
 
-93020   FORMAT ( 20X, 20( 1X, A9 ) )
+93020   FORMAT ( 26X, 20( 1X, A9 ) )
 
-93025   FORMAT ( 6X, 'Day=', I2  )
 
-93030   FORMAT ( 13X, A5, 2X, 20( 1X, E9.3 ) )
+93030   FORMAT ( 6X, 'Day=', I2, 1X, I5.5, 1X, A5, 2X, 20( 1X, E9.3 ) )
 
 94010   FORMAT( 10 (A, :, 1X, I6, :, 1X ) )
 
