@@ -1,5 +1,5 @@
 
-        SUBROUTINE FILLUTBL( UNVAR, NXREF, ICSIZE, XTYPE, XTCNT )
+        SUBROUTINE FILLUTBL( NXREF, ICSIZE, XTYPE, XTCNT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -41,10 +41,12 @@ C.........  MODULES for public variables
 C.........  This module is for cross reference tables
         USE MODXREF
 
+C.........  This module contains uncertainty-specific settings
+	USE MODUNCERT
+
         IMPLICIT NONE
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: UNVAR         ! no. pollutants + activities
         INTEGER, INTENT (IN) :: NXREF           ! no. ungrpd x-ref entries
         INTEGER, INTENT (IN) :: ICSIZE( * )     ! size of x-ref groups
         INTEGER, INTENT (IN) :: XTYPE ( NXREF ) ! group no. of x-ref entry
@@ -78,7 +80,7 @@ C.............  Skip invalid or duplicate records
 
             TDIM   = ICSIZE( T )
 
-            IDX    = J
+	    IDX    = FAINDX( I )
             IDXPS  = IDX + ADDPS
 
 C.............  Populate tables depending on type. Note that the pollutant/
