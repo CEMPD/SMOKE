@@ -153,6 +153,7 @@
 
 !.........  Number of inventory pollutants
         INTEGER, PUBLIC :: ANIPOL = 0  ! area
+        INTEGER, PUBLIC :: BNIPOL = 0  ! biogenic
         INTEGER, PUBLIC :: MNIPOL = 0  ! mobile
         INTEGER, PUBLIC :: PNIPOL = 0  ! point
         INTEGER, PUBLIC :: NIPOL  = 0  ! global
@@ -207,18 +208,21 @@
  
 !.........  Pollutant names from inventory/temporal file
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AEINAM( : ) ! area
+        CHARACTER(LEN=IOVLEN3)             , PUBLIC :: BEINAM( 2 ) ! biogenic
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MEINAM( : ) ! mobile
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PEINAM( : ) ! point
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: EINAM ( : ) ! all
 
 !.........  Associated pollutant variable names from inventory file, O=other
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AONAMES( : ) ! area
+        CHARACTER(LEN=IOVLEN3),              PUBLIC :: BONAMES( 2 ) ! biogenic
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MONAMES( : ) ! mobile
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PONAMES( : ) ! point
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: TONAMES( : ) ! all
 
 !.........  Associated pollutant variable units from inventory file
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: AOUNITS( : ) ! area
+        CHARACTER(LEN=IOULEN3),              PUBLIC :: BOUNITS( 2 ) ! biogenic
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: MOUNITS( : ) ! mobile
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: POUNITS( : ) ! point
         CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: TOUNITS( : ) ! all
