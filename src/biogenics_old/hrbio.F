@@ -26,7 +26,7 @@ C ****************************************************************************/
      &                     EMIS )
 
 C***********************************************************************
-C  subroutine body starts at line  201
+C  subroutine body starts at line  202
 C
 C  FUNCTION:
 C
@@ -57,6 +57,7 @@ C  PRECONDITIONS REQUIRED:
 C     surface pressure PRES
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
+C       m3io
 C	CZANGLE, DAYMON, CLDATEN
 C
 C  REVISION  HISTORY:
