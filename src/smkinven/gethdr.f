@@ -1,6 +1,6 @@
 
-        SUBROUTINE GETHDR( MXDATA, MXIPPA, CFLAG, YFLAG, DFLAG, 
-     &                     INVDNAM, LINE, ICC, INY, NPOA, EOS )
+        SUBROUTINE GETHDR( MXDATA, CFLAG, YFLAG, DFLAG, 
+     &                     LINE, ICC, INY, NPOA, EOS )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -42,6 +42,9 @@ C
 C***************************************************************************
 
 C...........   MODULES for public variables
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
+
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY
 
@@ -52,24 +55,23 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
 
-         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         INTEGER                GETNLIST
         INTEGER                INDEX1
         INTEGER                STR2INT
+        REAL                   UNITFAC 
 
-        EXTERNAL    CRLF, GETNLIST, INDEX1, STR2INT
+        EXTERNAL    CRLF, GETNLIST, INDEX1, STR2INT, UNITFAC
 
 C...........   SUBROUTINE ARGUMENTS
 C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: MXDATA  ! max no data variables allowed
-        INTEGER     , INTENT (IN) :: MXIPPA  ! max no recognized data variables
-        LOGICAL     , INTENT (IN) :: CFLAG   ! true: country header okay
-        LOGICAL     , INTENT (IN) :: YFLAG   ! true: year header okay
-        LOGICAL     , INTENT (IN) :: DFLAG   ! true: data names header okay
-        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIPPA ) ! valid data var names
+        LOGICAL     , INTENT (IN) :: CFLAG   ! true: country header expected
+        LOGICAL     , INTENT (IN) :: YFLAG   ! true: year header expected
+        LOGICAL     , INTENT (IN) :: DFLAG   ! true: data names header expected
         CHARACTER(*), INTENT(IN OUT):: LINE  ! full record in string
         INTEGER     , INTENT(OUT) :: ICC     ! country code
         INTEGER     , INTENT(OUT) :: INY     ! inventory year
@@ -86,14 +88,21 @@ C...........   Other local variables
         INTEGER         IOS       !  i/o status
         INTEGER      :: NUNIT = 0 !  i/o status
 
-        LOGICAL, SAVE:: FIRSTIME  = .TRUE.  !  first time subroutine is called
-        LOGICAL, SAVE:: UNITFLAG  = .FALSE. !  true: units have already been set
+        LOGICAL, SAVE:: ACT_FLAG  = .FALSE. ! true: activities in data file
+        LOGICAL, SAVE:: FIRSTIME  = .TRUE.  ! first time subroutine is called
+        LOGICAL, SAVE:: UNITFLAG  = .FALSE. ! true: units have already been set
+
+        REAL            DFAC    !  denominator units conversion factor
+        REAL            NFAC    !  numerator units conversion factor
 
         CHARACTER*1     CBUF    !  single char buffer
         CHARACTER*20    CNTRY   !  country name
         CHARACTER*300   MESG    !  message buffer
+        CHARACTER*600   BUFFER  !  tmp line buffer, upper case
 
         CHARACTER(LEN=IOVLEN3) CVAR      ! tmp variable name
+        CHARACTER(LEN=IOULEN3) DBUF      ! tmp units denominator
+        CHARACTER(LEN=IOULEN3) NBUF      ! tmp units numerator
         CHARACTER(LEN=IOULEN3) UBUF      ! tmp units
 
         CHARACTER*16 :: PROGNAME = 'GETHDR' ! Program name
@@ -119,8 +128,22 @@ C.............  Scan for header lines
 
             L2 = LEN_TRIM( LINE )
 
+C.............  Convert to upper case
+            BUFFER = LINE
+            CALL UPCASE( BUFFER )
+
+C.............  Check for inventory type
+            IF ( BUFFER(2:5) .EQ. 'TYPE' ) THEN
+
+C.................  Try to find activity in name of data, otherwise, assume
+C                   emissions
+                I = INDEX( BUFFER, 'ACTIVITY' ) 
+                IF( I .GT. 0 ) THEN
+                    ACT_FLAG = .TRUE.
+                END IF
+
 C.............  Check for country name
-            IF ( LINE(2:8) .EQ. 'COUNTRY' ) THEN 
+            ELSE IF ( BUFFER(2:8) .EQ. 'COUNTRY' ) THEN 
                 CNTRY = ADJUSTL( LINE( 9:L2 ) )
                 I   = INDEX1( CNTRY, NCOUNTRY, CTRYNAM )             
 
@@ -143,9 +166,9 @@ C.............  Check for country name
                 ICC   = CTRYCOD( I )
 
 C.............  Check for inventory year
-            ELSE IF ( LINE(2:5) .EQ. 'YEAR' ) THEN 
+            ELSE IF ( BUFFER(2:5) .EQ. 'YEAR' ) THEN 
 
-                INY = STR2INT( LINE( 6:L2 ) )
+                INY = STR2INT( BUFFER( 6:L2 ) )
 
                 IF ( INY .LT. 1971 .OR. INY .GT. MXIYEAR ) THEN
                     WRITE( MESG, 94010 ) 'WARNING: Inventory year', INY,
@@ -153,47 +176,49 @@ C.............  Check for inventory year
                     CALL M3MSG2( MESG )                    
                 END IF
 
-            ELSE IF ( LINE(2:6) .EQ. 'UNITS' ) THEN ! read in units                
+C.............  Check for units field to be used and compare to valid units
+C               from master input list
+C.............  Compute conversion factors for adjusting emissions in reader
+C               routines
+            ELSE IF ( BUFFER(2:6) .EQ. 'UNITS' ) THEN ! read in units                
+
+C.................  Get the number of units fields and allocate memory
+                BUFFER = BUFFER( 7:L2 )
+                L = LEN_TRIM( BUFFER )
+                NUNIT = GETNLIST( L, BUFFER )
 
                 IF( UNITFLAG ) THEN
-                    MESG = 'ERROR: UNITS field encountered again in ' //
+                    MESG = 'ERROR: UNITS header encountered again in '//
      &                     'input. This is not allowed.'
                     CALL M3MSG2( MESG )
                     EOS = 5
                     RETURN
 
-                ELSE IF( .NOT. ALLOCATED( POLPOS ) ) THEN
-                    MESG = 'ERROR: UNITS field must be after DATA ' //
+                ELSE IF( .NOT. ALLOCATED( DATPOS ) ) THEN
+                    MESG = 'ERROR: UNITS header must be after DATA ' //
      &                     'or POLID field.'
                     CALL M3MSG2( MESG )
                     EOS = 5
                     RETURN
 
-                END IF
-
-C.................  Allocate memory based on the number of allowed data vars
-                ALLOCATE( INVDUNT( MXIPPA,NPPOL ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'INVDUNT', PROGNAME )
-                ALLOCATE( INVDCNV( MXIPPA,NPPOL ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'INVDCNV', PROGNAME )
-                INVDUNT = ' '
-                INVDCNV = 1.
-                  
-C.................  Get the number of units fields and allocate memory
-                LINE = LINE( 7:L2 )
-                L = LEN_TRIM( LINE )
-                NUNIT = GETNLIST( L, LINE )
-
-C.................  Error if units list is inconsistent with data fields
-        	J = NUNIT/NPPOL
-        	IF( NPOA  .GT. 0    .AND.
-     &              NUNIT .GT. 0    .AND. 
-     &              J     .NE. NPOA       ) THEN
-                    WRITE( MESG,94010 ) 'ERROR:', J, 'group of units' //
-     &                     'fields found, but', NPOA, 'variable ' //
-     &                     'fields found in input file.'
+                ELSE IF( .NOT. ACT_FLAG ) THEN
+                    MESG = 'ERROR: UNITS header only valid for ' //
+     &                     'activity data.'
                     CALL M3MSG2( MESG )
-                    EOS = 6
+                    EOS = 5
+                    RETURN
+
+                ELSE IF( NUNIT .NE. NPOA ) THEN
+
+                    WRITE( MESG,94010 ) 'ERROR: number of UNITS ' //
+     &                     'header entries (', NUNIT, ') is not ' //
+     &                     CRLF() // BLANK10 // 'consistent with ' //
+     &                     'number of DATA or POLID entries (', NPOA,
+     &                     ')'
+                    CALL M3MSG2( MESG )
+                    EOS = 5
+                    RETURN
+
                 END IF
 
 C.................  Allocate memory for local units field
@@ -201,78 +226,73 @@ C.................  Allocate memory for local units field
                 CALL CHECKMEM( IOS, 'UNITS', PROGNAME )
   
 C.................  Parse the header line into the unit names
-                CALL PARSLINE( LINE, NUNIT, UNITS )
+                CALL PARSLINE( LINE( 7:L2 ), NUNIT, UNITS )
 
 C.................  Post-process units and store in final arrays
                 K = 0
                 DO V = 1, NPOA
 
-                    I = POLPOS( V )
-                    DO J = 1, NPPOL
+C.....................  Get position in master pollutants/activities list
+                    J  = DATPOS( V )
 
-                        K    = K + 1
-                        UBUF = UNITS( K )
+C.....................  Convert input units to valid SMOKE output units
+                    CALL UNITMATCH( UNITS( V ) )
 
-C.........................  Remove plural               
-                	L  = INDEX( UBUF, '/' )
-                	CBUF = UBUF( L-1:L-1 )
-                	CALL UPCASE( CBUF )
-                	IF( CBUF .EQ. 'S' ) THEN
-                            L2 = LEN_TRIM( UBUF )
-                            UBUF = UBUF(1:L-2) // UBUF(L:L2)
-                	END IF
+C.....................  Set conversion factors for numerator and denominator,
+C                       if any
+                    NFAC = UNITFAC( UNITS( V ), INVDUNT( J ), .TRUE.  )
+                    DFAC = UNITFAC( UNITS( V ), INVDUNT( J ), .FALSE. )
 
-C.........................  Special case for units in 10E6
-                	L = INDEX( UBUF, '10E6' )
-                	IF( L .GT. 0 ) THEN
-                            L2 = LEN_TRIM( UBUF )
-                            INVDCNV( I,J ) = 1000000
-                            UBUF = ADJUSTL( UBUF(L+4:L2) )
-                	END IF
+C.....................  Error if units are not the same and the conversion
+C                       factor is equal to one
+                    IF( UNITS( V ) .NE. INVDUNT( J ) .AND.
+     &                  NFAC .EQ. 1 .AND. DFAC .EQ. 1      ) THEN
 
-C.........................  Convert mile to mi
-                	L  = INDEX( UBUF, 'mile' )
-                	IF( L .GT. 0 ) THEN
-                            L2 = LEN_TRIM( UBUF )
-                            UBUF = UBUF(1:L+1) // UBUF(L+4:L2)
-                	END IF
+                        MESG = 'ERROR: Units conversion could not be '//
+     &                         'made - use different input units.'
+                        CALL M3MSG2( MESG )
+                        EOS = 5
 
-                        IF( I .GT. 0 ) INVDUNT( I,J ) = UBUF
+                        RETURN
 
-                    END DO   ! No. variables per data variable
-                END DO       ! No. variables
+                    END IF
+
+C.....................  Store current values of conversion factor
+                    INVDCNV( J ) = NFAC * DFAC
+
+                END DO           ! No. variables
 
                 DEALLOCATE( UNITS )
 
                 UNITFLAG = .TRUE.
 
-            ELSE IF ( LINE(2:6) .EQ. 'POLID' .OR.
-     &                LINE(2:5) .EQ. 'DATA'       ) THEN ! read in data names
+            ELSE IF ( BUFFER(2:6) .EQ. 'POLID' .OR.
+     &                BUFFER(2:5) .EQ. 'DATA'       ) THEN ! read in data names
 
 C..................... Deallocate names for pollutant, if must
-                IF( ALLOCATED( TMPNAM ) ) DEALLOCATE( TMPNAM,POLPOS )
+                IF( ALLOCATED( TMPNAM ) ) DEALLOCATE( TMPNAM,DATPOS )
 
 C.................  Allocate memory for current file for reading pol names
 C                   and storing positions in master list
-                LINE = LINE( 7:L2 )
-                L = LEN_TRIM( LINE )
-                NPOA = GETNLIST( L, LINE )
+                BUFFER = BUFFER( 7:L2 )
+                L = LEN_TRIM( BUFFER )
+                NPOA = GETNLIST( L, BUFFER )
 
                 ALLOCATE( TMPNAM( NPOA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'TMPNAM', PROGNAME )
-                ALLOCATE( POLPOS( NPOA ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'POLPOS', PROGNAME )
+                ALLOCATE( DATPOS( NPOA ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'DATPOS', PROGNAME )
                 TMPNAM = ' '
-                POLPOS = 0
+                DATPOS = 0
 
 C.................  Set special value of error status when the number of
 C                   data variables attempted is greater than max allowed
                 IF( NPOA .GT. MXDATA ) THEN
-                    EOS = 4                  
+                    EOS = 4
                 END IF
 
 C.................  Parse the header line into the pollutant names
-                CALL PARSLINE( LINE, NPOA, TMPNAM )
+                CALL PARSLINE( BUFFER, NPOA, TMPNAM )
 
 C.................  Store the position in master list of each pollutant
 C.................  Write error if pollutant is not found.
@@ -280,14 +300,14 @@ C.................  Write error if pollutant is not found.
 
                     CVAR = TMPNAM( V )
                     L = LEN_TRIM( CVAR )
-                    COD = INDEX1( CVAR, MXIPPA, INVDNAM )
+                    COD = INDEX1( CVAR, MXIDAT, INVDNAM )
                     IF( COD .LE. 0 ) THEN
                         EOS = 1
                         MESG = 'ERROR: Data variable "' // CVAR( 1:L )//
      &                         '" not in master data variable list!'
                         CALL M3MSG2( MESG )
                     ELSE
-                        POLPOS( V ) = COD
+                        DATPOS( V ) = COD
                     END IF
 
                 END DO
