@@ -332,7 +332,6 @@ C.................  Truncate name to IOVLEN3 characters
      &                 'in pollutant file. Truncating to "' //
      &                 PNAM( 1:IOVLEN3 ) // '"'
                     CALL M3MESG( MESG )
-                    CYCLE
 
                 END IF
 
@@ -348,22 +347,19 @@ C.................  Truncate units to IOULEN3 characters
      &                 'in pollutant file. Truncating to "' //
      &                 UNIT( 1:IOULEN3 ) // '"'
                     CALL M3MESG( MESG )
-                    CYCLE
+
+                END IF
 
 C.................  Store unsorted variables
-                ELSE
-
-                    CNT = CNT + 1
-                    IF( CNT .LE. MXIDAT ) THEN
-                        INDX1A( CNT ) = CNT
-                        INDX2A( CNT ) = CNT
-                        CODESA( CNT ) = COD
-                        ISTATA( CNT ) = STATVAL
-                        NAMESA( CNT ) = PNAM( 1:IOVLEN3 )
-                        UNITSA( CNT ) = UNIT( 1:IOULEN3 )
-                    END IF
-
-                END IF      !  if fip zero, or nn000, or not.
+                CNT = CNT + 1
+                IF( CNT .LE. MXIDAT ) THEN
+                    INDX1A( CNT ) = CNT
+                    INDX2A( CNT ) = CNT
+                    CODESA( CNT ) = COD
+                    ISTATA( CNT ) = STATVAL
+                    NAMESA( CNT ) = PNAM( 1:IOVLEN3 )
+                    UNITSA( CNT ) = UNIT( 1:IOULEN3 )
+                END IF
 
             END DO          !  end read loop
 
