@@ -38,16 +38,16 @@ C**********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY:
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY:
 
 C.........  This module contains the speciation profiles
-        USE MODSPRO
+        USE MODSPRO, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, BYEAR
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET
@@ -93,6 +93,7 @@ C...........   Logical names and unit numbers
         INTEGER         IDEV         !  tmp unit number if inven is map-formatted
         INTEGER         LDEV         !  log file unit no.
         INTEGER         LTMPDEV      !  file unit no. for tmp ALW file
+        INTEGER         MTMPDEV      !  file unit no. for tmp MACT file
         INTEGER         PTMPDEV      !  file unit no. for tmp PROJ file
         INTEGER         SDEV         !  ASCII part of inventory unit no.
         INTEGER      :: WDEV = 0     !  warnings/error unit no.
@@ -119,6 +120,7 @@ C...........   Other local variables
         LOGICAL      :: JFLAG   = .FALSE.  ! true: projections in use
         LOGICAL      :: KFLAG   = .FALSE.  ! true: tracking file in use
         LOGICAL      :: LFLAG   = .FALSE.  ! true: allowable cntls in use
+        LOGICAL      :: MFLAG   = .FALSE.  ! true: mact cntls is use
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
         LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
         LOGICAL      :: OFLAG   = .FALSE.  ! true: create report
@@ -214,15 +216,20 @@ C.........  Set inventory variables to read for all source categories
 
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 3
+            NINVARR = 6
+            IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 5 ) = 'CMACT'
+            IVARNAMS( 6 ) = 'CSRCTYP'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
             NINVARR = 4
             IVARNAMS( 4 ) = 'CVTYPE'
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-            NINVARR = 4
+            NINVARR = 6
             IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 5 ) = 'CMACT'
+            IVARNAMS( 6 ) = 'CSRCTYP'
 
         END IF
 
@@ -248,6 +255,7 @@ C.........  Set the flags that indicate which packets are valid
         RFLAG = ( PKTCNT( 5 ) .GT. 0 )
         JFLAG = ( PKTCNT( 6 ) .GT. 0 )
         SFLAG = ( PKTCNT( 7 ) .GT. 0 )
+        MFLAG = ( PKTCNT( 8 ) .GT. 0 )
 
 C.........  Cannot have CONTROL and EMS_CONTROL packet in same inputs
         IF( CFLAG .AND. SFLAG ) THEN
@@ -273,8 +281,9 @@ C           each packet type while determining the pollutants to use in opening
 C           the final output files.
 
         ACTION = 'PROCESS'
-        CALL PKTLOOP( CDEV, PTMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, WDEV,
-     &                CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
+        CALL PKTLOOP( CDEV, PTMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV, 
+     &                WDEV, CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, 
+     &                XRFCNT )
 
 C.........  Process projection matrix that depends on pol/acts...
         IF( JFLAG ) THEN
@@ -286,17 +295,17 @@ C.........  Process projection matrix that depends on pol/acts...
 C.........  Process control matrices that depend on pollutants...
 
 C.........  Multiplicative matrix
-        IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG ) THEN
+        IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG .OR. MFLAG ) THEN
 
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
-            CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV,
+            CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV,
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
-     &                     LFLAG, SFLAG )
+     &                     LFLAG, SFLAG, MFLAG )
         END IF
 
 C.........  Post-process temporary files to create final report file
-        CALL WCNTLREP( CTMPDEV, GTMPDEV, LTMPDEV )
+        CALL WCNTLREP( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV )
 
 C.........  Successful completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
