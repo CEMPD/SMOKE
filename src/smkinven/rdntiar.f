@@ -399,6 +399,9 @@ C.................  Store source information
                     CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                            CCOD, CSOURCA( SS ) )
+     
+                    CSOURCA( SS )( ALLLEN3+1:ALLCAS3 ) = ADJUSTR( TCAS )
+                    
                  END IF
 
             END DO
