@@ -2,13 +2,13 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) -lsmoke -liotools -lioapi -lnetcdf
-LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -liotools.debug-lioapi.debug -lnetcdf.debug
-LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -liotools -lioapi_new -lnetcdf -lpvm3 -mp
-LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -liotools.debug -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS          = $(LDIRS) -lsmoke -ledsstools -lioapi -lnetcdf
+LIBS_DEBUG    = $(LDIRS) -lsmoke.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug
+LIBS_PVM      = $(LDIRS) -liocpl -lsmoke -ledsstools -lioapi_new -lnetcdf -lpvm3 -mp
+LIBS_PVMDB    = $(LDIRS) -liocpl -lsmoke.debug -ledsstools.debug -lioapi_new -lnetcdf -lpvm3 -mp
 
-LIBPATH       = $(SMK_BIN)/libsmoke.a   $(TOOLS_BIN)/libiotools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libiotools.debug.a
+LIBPATH       = $(SMK_BIN)/libsmoke.a   $(TOOLS_BIN)/libedsstools.a
+LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 
 #
 all: rawbio tmpbio 
