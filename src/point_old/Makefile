@@ -2,10 +2,10 @@
 #
 all: opts
 #
-opts: adjpmat cselev csgpoint ctlpmat elevpoint emspoint grdpmat \
-      grdpoint laypoint pdemspt pdpoint rawpoint spcpmat tmppoint
+opts: adjpmat cselev ctlpmat elevpoint emspoint grdpmat \
+      laypoint pdemspt pdpoint rawpoint spcpmat tmppoint
 #
-LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
+LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
 #
 ADJS=adjpmat.F
@@ -25,16 +25,6 @@ CSGJ=PTDIMS3.EXT CHDIMS3.EXT
 cselev: $(CSE) $(CSGJ)
 	echo CSELEV:
 	f77 $(FFLAGS)   -o $(SCENDIR)/cselev $(CSE) $(LIBS)
-#
-#
-#
-CSG=csgpoint.F
-#
-CSGI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
-#
-csgpoint: $(CSG) $(CSGI)
-	echo CSGPOINT:
-	f77 $(FFLAGS)   -o $(SCENDIR)/csgpoint $(CSG) $(LIBS)
 #
 #
 #
@@ -75,16 +65,6 @@ GRDI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
 grdpmat: $(GRD) $(GRDI)
 	echo GRDPMAT:
 	f77 $(FFLAGS)   -o $(SCENDIR)/grdpmat $(GRD) $(LIBS)
-#
-#
-#
-GRP=grdpoint.F
-#
-GRPI=PTDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT
-#
-grdpoint: $(GRP) $(GRPI)
-	echo GRDPOINT:
-	f77 $(FFLAGS)   -o $(SCENDIR)/grdpoint $(GRP) $(LIBS)
 #
 #
 #

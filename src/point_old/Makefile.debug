@@ -2,12 +2,12 @@
 #
 all: debug 
 #
-debug: adjpmat.debug   cselev.debug   csgpoint.debug ctlpmat.debug  \
-       elevpoint.debug emspoint.debug grdpmat.debug  grdpoint.debug \
+debug: adjpmat.debug   cselev.debug   ctlpmat.debug  \
+       elevpoint.debug emspoint.debug grdpmat.debug  \
        laypoint.debug  pdemspt.debug  pdpoint.debug  rawpoint.debug \
        spcpmat.debug   tmppoint.debug
 #
-LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+LIBS=$(LDIRS) -lemlib.debug -lioapi.debug -lnetcdf.debug
 #
 #
 ADJS=adjpmat.F
