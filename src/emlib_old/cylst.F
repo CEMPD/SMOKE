@@ -75,7 +75,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
 C...........   LOCAL VARIABLES and their descriptions:
         
-        REAL            TOTAL( NCOL )           ! columns totals
+        REAL            TOTAL( 1000 )           ! columns totals
 
         INTEGER         I, M, C, R                   ! counters
         INTEGER         KTMP, KST, IOLD, ICHECK      ! check vars 
