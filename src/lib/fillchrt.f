@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -150,6 +150,26 @@ C.............  Set up partial strings for saving
                 CHRT15( K ) = CSRC( 1:ENDLEN( 6 ) ) // TSCC
             CASE( 16 )
                 CHRT16( K ) = CSRC( 1:ENDLEN( 7 ) ) // TSCC
+
+C.............  NOTE- Cases added in version 1.4 (initially) for cntl/proj only
+            CASE( 17 )
+                CHRT02A( K ) = TSCC( 1:SCCLEV1 )
+            CASE( 18 )
+                CHRT02B( K ) = TSCC( 1:SCCLEV2 )
+            CASE( 19 )
+                CHRT02C( K ) = TSCC( 1:SCCLEV3 )
+            CASE( 20 )
+                CHRT05A( K ) = CSTA // TSCC( 1:SCCLEV1 )
+            CASE( 21 )
+                CHRT05B( K ) = CSTA // TSCC( 1:SCCLEV2 )
+            CASE( 22 )
+                CHRT05C( K ) = CSTA // TSCC( 1:SCCLEV3 )
+            CASE( 23 )
+                CHRT08A( K ) = CFIP // TSCC( 1:SCCLEV1 )
+            CASE( 24 )
+                CHRT08B( K ) = CFIP // TSCC( 1:SCCLEV2 )
+            CASE( 25 )
+                CHRT08C( K ) = CFIP // TSCC( 1:SCCLEV3 )
             CASE DEFAULT
 
                 EFLAG = .TRUE.

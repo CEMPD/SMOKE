@@ -15,13 +15,13 @@ C
 C  REVISION  HISTORY:
 C     Created 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -137,6 +137,33 @@ C               digits) so that the pol-specific can be identified later
                                         
             CASE( 16 )
                 CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL16 )
+                                        
+            CASE( 17 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL02A )
+                                        
+            CASE( 18 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL02B )
+                                        
+            CASE( 19 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL02C )
+                                        
+            CASE( 20 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL05A )
+                                        
+            CASE( 21 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL05B )
+                                        
+            CASE( 22 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL05C )
+                                        
+            CASE( 23 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL08A )
+                                        
+            CASE( 24 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL08B )
+                                        
+            CASE( 25 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL08C )
                                         
             CASE DEFAULT
 
