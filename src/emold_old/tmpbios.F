@@ -44,6 +44,10 @@ C
 C       Version 8/96 by SL and CJC to use Dyntel-style ASCII solar radiation
 C       and surface temperature files instead of MCIP meteorology.
 C       Name change HRBIO ~~> HRBIOS to accompany arglist change.
+C   
+C       Version 8/96 by SL to use PAR converted from RGRND in MCIP, and 
+C       surface temperature (at 1.5 m) calculated by METCDF using Daewon 
+C       Byun's Similarity theory
 C
 C***********************************************************************
 
@@ -79,7 +83,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........    Hardwired mod for read in gridded solar radiation .. sl
 
-        INTEGER*4       METHR, METREC, MCOL, MROW, INDEV, JMETHR
+c       INTEGER*4       METHR, METREC, MCOL, MROW, INDEV, JMETHR
+c       INTEGER*4       INDEV
         REAL*4          TSFC(NCOLS, NROWS), TSOLAR(NCOLS, NROWS)
 
 
@@ -96,6 +101,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER         B, M    !  counters for biogenic, model species
         CHARACTER*16    ENAME   !  logical name for emissions output
         CHARACTER*16    NNAME   !  logical name for normalized-emissions input
+        CHARACTER*16    INDEV   !  logical name for PAR-TEMP input
         CHARACTER*256   MESG    !  message buffer for M3EXIT()
 
 C.......   Gridded normalized emissions description input from file BGRD
@@ -157,9 +163,13 @@ C   begin body of program TMPBIO_SOLRAD
 
 C.......   Get input files
 
-        INDEV = PROMPTFFILE(
-     &          'Enter logical name for SOLAR RADIATION file',
-     &          .TRUE., .TRUE., 'SOLAR', 'TMPBIO' )
+c       INDEV = PROMPTFFILE(
+c    &          'Enter logical name for SOLAR RADIATION file',
+c    &          .TRUE., .TRUE., 'SOLAR', 'TMPBIO' )
+
+        INDEV = PROMPTMFILE( 
+     &          'Enter name for PAR and SFC. TEMP input file',
+     &          FSREAD3, 'SOLAR', 'TMPBIO' )
 
         WRITE( LDEV,92000 ) ' ', 'Reading Normalized Emission data', ' '
 
@@ -167,7 +177,7 @@ C.......   Get input files
      &          'Enter name for NORMALIZED EMISSIONS input file',
      &          FSREAD3, 'BNORM', 'TMPBIO' )
 
-        IF ( .NOT. DESC3( NNAME ) ) THEN
+        IF ( .NOT. DESC3( INDEV ) ) THEN
             MESG = 'Could not get description of file "' //
      &             NNAME( 1:TRIMLEN( NNAME ) ) // '"'
             CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
@@ -184,10 +194,10 @@ C...........   Get starting date, time, run duration
      &                  'Enter starting date (YYYYDDD)' )
         STIME = GETNUM( 0, 235959, STIME3D, 
      &                  'Enter starting time  (HHMMSS)' )
-        NHRS  = GETNUM( 1, 999999, MXREC3D, 
-     &                  'Enter run duration    (hours)' )
-c       NHRS  = GETNUM( 1, MXREC3D, MXREC3D, 
+c       NHRS  = GETNUM( 1, 999999, MXREC3D, 
 c    &                  'Enter run duration    (hours)' )
+        NHRS  = GETNUM( 1, MXREC3D, MXREC3D, 
+     &                  'Enter run duration    (hours)' )
 
 
 C.......   Build description for, and create/open output file
@@ -275,27 +285,48 @@ C.......   Loop on time steps:
 
         JDATE  = SDATE
         JTIME  = STIME
-        METREC = 1
+c       METREC = 1
 
         DO  899  HR = 1, NHRS
 
-            DO 200 K = 1, NGRID
+c          DO 200 K = 1, NGRID
 
-               READ (INDEV, *) METHR, MCOL, MROW, 
-     &                TSFC(MCOL, MROW), TSOLAR(MCOL, MROW)
+c             READ (INDEV, *) METHR, MCOL, MROW, 
+c    &               TSFC(MCOL, MROW), TSOLAR(MCOL, MROW)
 
-               JMETHR = MOD ( (METHR+5), 24 )  ! EST Convert to GMT
+c             JMETHR = MOD ( (METHR+5), 24 )  ! EST Convert to GMT
 
-               IF ( JMETHR .NE. (JTIME/10000) ) THEN 
-                  WRITE (6, 150) METHR, JTIME/10000
-150               FORMAT (1X, 'METHR =', I4, 'JTIME =', I4)
-                  CALL M3EXIT( 'TMPBIO', 0, 0,
-     &                         'METHR and JTIME are not the same', 0 )
-               END IF
+c             IF ( JMETHR .NE. (JTIME/10000) ) THEN 
+c                WRITE (6, 150) METHR, JTIME/10000
+c150              FORMAT (1X, 'METHR =', I4, 'JTIME =', I4)
+c                CALL M3EXIT( 'TMPBIO', 0, 0,
+c    &                         'METHR and JTIME are not the same', 0 )
+c             END IF
  
-               METREC = METREC + 1
+c             METREC = METREC + 1
  
-200         END DO              !  end loop on this hour's met input.
+c200        END DO              !  end loop on this hour's met input.
+
+C.......... Convert from degree C to degree K
+
+c           DO 400 I = 1, NCOLS
+c              DO 350 J = 1, NROWS
+c                 TSFC(I, J) = TSFC(I, J) + 273.15 
+c350            END DO
+c400         END DO
+
+            IF ( .NOT. READ3( INDEV, 'PAR', ALLAYS3, JDATE,
+     &         JTIME, TSOLAR(1,1) ) ) THEN
+               MESG = 'Could not read from file SOLAR'
+               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+            END IF
+ 
+            IF ( .NOT. READ3( INDEV, 'TEMP', ALLAYS3, JDATE,
+     &         JTIME, TSFC(1,1) ) ) THEN
+               MESG = 'Could not read from file SOLAR'
+               CALL M3EXIT( 'TMPBIO', 0, 0, MESG, 2 )
+            END IF
+          
 
             CALL HRBIOS( JDATE, JTIME,
      &                   PINE, DECD, CONF, AGRC, LEAF, OTHR, AVLAI, 
