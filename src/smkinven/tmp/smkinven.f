@@ -312,28 +312,16 @@ C.........  Get output inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Generate message to use just before writing out inventory files
+C.........  Open output I/O API and ASCII files, then write source 
+C           characteristics to inventory files (I/O API and ASCII)
+        CALL OPENINVOUT( ENAME, ANAME, SDEV )
+
         MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
      &         ' SOURCE INVENTORY file...'
 
-C.........  Open output I/O API and ASCII files for the appropriate source, then
-C.........  write source characteristics to inventory files (I/O API and ASCII)
-        SELECT CASE( CATEGORY )
-        CASE ( 'AREA' )
-c            CALL OPENAREA( ENAME, ANAME, SDEV )
-c            CALL M3MSG2( MESG )
-c            CALL WAREACHR( ENAME, SDEV, NSRC )
+        CALL M3MSG2( MESG )
 
-        CASE( 'MOBILE' ) 
-            CALL OPENMOBL( ENAME, ANAME, SDEV )
-            CALL M3MSG2( MESG )
-            CALL WMOBLCHR( ENAME, SDEV )
-
-        CASE( 'POINT' ) 
-            CALL OPENPNTS( ENAME, ANAME, SDEV )
-            CALL M3MSG2( MESG )
-            CALL WPNTSCHR( ENAME, SDEV )
-
-        END SELECT
+        CALL WRINVCHR( ENAME, SDEV )
 
 C.........  Deallocate sorted inventory info arrays
         CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )

@@ -246,6 +246,11 @@ C.............  Allocate specifically based on source category
      &                          STKVEA, CBLRIDA, CPDESCA )
 
             CASE DEFAULT
+                MESG = 'INTERNAL ERROR: Do not know about source ' //
+     &                 'category ' // CATEGORY // ' in program ' //
+     &                 PROGNAME
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
             END SELECT  ! select category
 
@@ -413,8 +418,6 @@ C.............  Deallocate for any source category
      &              DEALLOCATE( ISIC, IORIS, IDIU, IWEK, 
      &                          YLOCA, STKHT, STKDM, STKTK,  
      &                          STKVE, CBLRID, CPDESC )
-
-            CASE DEFAULT
 
             END SELECT
 

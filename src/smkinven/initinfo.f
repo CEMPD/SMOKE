@@ -126,8 +126,8 @@ C.........  Store source characteristic positions
         DO I = 1, MXCHRS + 1
             SELECT CASE( CATEGORY )
             CASE ( 'AREA' )
-c                SC_BEGP( I ) = ARBEGL3( I )
-c                SC_ENDP( I ) = ARENDL3( I )
+                SC_BEGP( I ) = ARBEGL3( I )
+                SC_ENDP( I ) = ARENDL3( I )
             CASE ( 'MOBILE' ) 
                 SC_BEGP( I ) = MBBEGL3( I )
                 SC_ENDP( I ) = MBENDL3( I )

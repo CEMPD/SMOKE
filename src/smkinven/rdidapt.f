@@ -84,11 +84,12 @@ C...........   NOTE that NDROP and EDROP are not used at present
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: BLIDLEN  = 6   ! width of boiler field
         INTEGER, PARAMETER :: DESCLEN  = 40  ! width of plant description field
-        INTEGER, PARAMETER :: MXPOLFIL = 58  ! maximum pollutants in file
+        INTEGER, PARAMETER :: MXPOLFIL = 53  ! maximum pollutants in file
         INTEGER, PARAMETER :: PTOTWIDE = 52  ! total width of all pol fields
+        INTEGER, PARAMETER :: PTNONPWD = 249 ! width of non-pol fields
 
 C...........   Local parameters, dependent
-        INTEGER, PARAMETER :: LINSIZ  = MXPOLFIL * PTOTWIDE
+        INTEGER, PARAMETER :: LINSIZ  = PTNONPWD + MXPOLFIL * PTOTWIDE
 
 C...........   Local parameter arrays...
 C...........   Start and end positions in the file format of the first set
@@ -361,15 +362,15 @@ C.............  Check ORIS code, missing okay
             END IF
 
 C.............  Initialize start and end positions
-            IS = ISINIT - 52 ! array
-            IE = IEINIT - 52  ! array
+            IS = ISINIT - PTOTWIDE  ! array
+            IE = IEINIT - PTOTWIDE  ! array
 
 C.............  Check primary and secondary control equipment codes
             DO V = 1, NPOL
 
                 DO K = 6,7
-                    IS( K ) = IS( K ) + 52
-                    IE( K ) = IE( K ) + 52
+                    IS( K ) = IS( K ) + PTOTWIDE
+                    IE( K ) = IE( K ) + PTOTWIDE
                 END DO
 
 C.................  Check for bad values, missing is okay
@@ -429,8 +430,8 @@ C.............  Emissions and associated data
 
 C.................  Update start and end positions
                 DO K = 1, NPTPPOL3
-                    IS( K ) = IS( K ) + 52
-                    IE( K ) = IE( K ) + 52
+                    IS( K ) = IS( K ) + PTOTWIDE
+                    IE( K ) = IE( K ) + PTOTWIDE
                 END DO
 
                 IF( .NOT. CHKREAL( LINE( IS(1):IE(1) ) ) .OR.
@@ -526,8 +527,8 @@ C.............  Store source characteristics if dimension is okay
             END IF 
 
 C.............  Initialize start and end positions
-            IS = ISINIT - 52  ! array
-            IE = IEINIT - 52  ! array
+            IS = ISINIT - PTOTWIDE  ! array
+            IE = IEINIT - PTOTWIDE  ! array
 
 C.............  Loop through pollutants and store data so that there is one
 C               record for each pollutant.  This will be consistent with
@@ -537,8 +538,8 @@ C               the other reader routines.
 
 C.................  Update start and end positions
                 DO K = 1, NPTPPOL3
-                    IS( K ) = IS( K ) + 52
-                    IE( K ) = IE( K ) + 52
+                    IS( K ) = IS( K ) + PTOTWIDE
+                    IE( K ) = IE( K ) + PTOTWIDE
                 END DO
 
                 EANN = STR2REAL( LINE( IS(1):IE(1) ) )
@@ -667,4 +668,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94125   FORMAT( I5 )
 
-        END
+        END SUBROUTINE RDIDAPT

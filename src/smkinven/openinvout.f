@@ -1,13 +1,13 @@
 
-        SUBROUTINE OPENPNTS( ENAME, ANAME, SDEV )
+        SUBROUTINE OPENINVOUT( ENAME, ANAME, SDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 101
 C
 C  DESCRIPTION:
 C      This subroutine sets up the header and variables for the I/O API 
 C      inventory file, and opens the I/O API and ASCII files for the SMOKE
-C      point source inventory.
+C      area, mobile, or point source inventory.
 C
 C  PRECONDITIONS REQUIRED:
 C      Correct number of pollutants and names EINAM are set
@@ -17,7 +17,7 @@ C      Subroutines: I/O API subroutines, BLDENAMS
 C      Functions: I/O API functions, VERCHAR
 C
 C  REVISION  HISTORY:
-C      Created 10/98 by M. Houyoux
+C      Created 4/99 by M. Houyoux
 C
 C****************************************************************************/
 C
@@ -77,28 +77,40 @@ C...........   LOCAL PARAMETERS
 C...........   Names, Units, types, & descriptions for pollutant-specific 
 C              output variables
 
-        CHARACTER(LEN=IOVLEN3) EONAMES( NIPOL,NPTPPOL3 ) ! Names 
-        INTEGER                EOTYPES( NIPOL,NPTPPOL3 ) ! Types (Real or Int) 
-        CHARACTER(LEN=IOULEN3) EOUNITS( NIPOL,NPTPPOL3 ) ! Units  
-        CHARACTER(LEN=IODLEN3) EODESCS( NIPOL,NPTPPOL3 ) ! Dscriptions  
+        CHARACTER(LEN=IOVLEN3) EONAMES( NIPOL,NPPOL ) ! Names 
+        INTEGER                EOTYPES( NIPOL,NPPOL ) ! Types (Real or Int) 
+        CHARACTER(LEN=IOULEN3) EOUNITS( NIPOL,NPPOL ) ! Units  
+        CHARACTER(LEN=IODLEN3) EODESCS( NIPOL,NPPOL ) ! Dscriptions  
 
 C...........   Other local variables
 
         INTEGER       I, J, L1, L2, V     ! counter and indices
         INTEGER       NIOVARS   ! Number of I/O API file non-emis variables
         INTEGER       NPOLMAX   ! Max no of pollutants, based on I/O API
+        INTEGER       NNPVAR    ! No. non-pollutant inventory variables
 
         CHARACTER*300 MESG      ! message buffer 
 
-        CHARACTER*16 :: PROGNAME = 'OPENPNTS' ! program name
+        CHARACTER*16 :: PROGNAME = 'OPENINVOUT' ! program name
 
 C***********************************************************************
-C   begin body of subroutine OPENPNTS
+C   begin body of subroutine OPENINVOUT
+
+C.........  Depending on source category, set number of non-pollutant 
+C           inventory variables
+        SELECT CASE( CATEGORY )
+        CASE( 'AREA' )
+            NNPVAR = NARVAR3
+        CASE( 'MOBILE' )
+            NNPVAR = NMBVAR3
+        CASE( 'POINT' )
+            NNPVAR = NPTVAR3
+        END SELECT
 
 C.........  Check number of output variables against I/O API maximum
 
-        NIOVARS = NPTVAR3 + NPTPPOL3 * NIPOL
-        NPOLMAX = INT( ( MXVARS3 - NPTVAR3 ) / NPTPPOL3 )
+        NIOVARS = NNPVAR + NPPOL * NIPOL
+        NPOLMAX = INT( ( MXVARS3 - NNPVAR ) / NPPOL )
 
 C.........  If there are too many output variables, reset NIPOL
 
@@ -118,7 +130,7 @@ C.........  If there are too many output variables, reset NIPOL
             CALL M3MSG2( MESG )
 
             NIPOL   = NPOLMAX
-            NIOVARS = NPTVAR3 + NPTPPOL3 * NIPOL
+            NIOVARS = NNPVAR + NPPOL * NIPOL
 
         ENDIF
 
@@ -130,23 +142,19 @@ C.........  Set up for opening I/O API output file header
         CALL HDRMISS3  ! Initialize for emissions 
 
         NVARS3D = NIOVARS
-        NROWS3D = NSRC   !  number of rows = # of point sources.
+        NROWS3D = NSRC   !  number of rows = # of sources.
 
-        FDESC3D( 1 ) = 'Point source inventory'
+        FDESC3D( 1 ) = CATDESC // ' source inventory'
         FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
-        WRITE( FDESC3D( 4 ),94010 ) '/NON POLLUTANT/ ', NPTVAR3
-        WRITE( FDESC3D( 5 ),94010 ) '/PER POLLUTANT/ ', NPTPPOL3 
+        WRITE( FDESC3D( 4 ),94010 ) '/NON POLLUTANT/ ', NNPVAR
+        WRITE( FDESC3D( 5 ),94010 ) '/PER POLLUTANT/ ', NPPOL 
         WRITE( FDESC3D( 6 ),94010 ) '/NUMBER CHARS/ ' , NCHARS 
         WRITE( FDESC3D( 7 ),94010 ) '/SCC POSITION/ ' , JSCC 
         WRITE( FDESC3D( 8 ),94010 ) '/BASE YEAR/ '    , BYEAR 
 
-C NOTE: Add /BASE YEAR/ packet to FDESC3D.  If more than one base year is used,
-C       use the most common one.  In either case, write a message about 
-C       which is being used.
 C NOTE: Need to add packet to FDESC that has the "base year" from the
 C environment variable G_SDATE
-
 
 C.........  Define source characteristic variables that are not strings
 
@@ -155,18 +163,6 @@ C.........  Define source characteristic variables that are not strings
         VTYPE3D( J ) = M3INT
         UNITS3D( J ) = 'n/a'
         VDESC3D( J ) = 'State and county FIPS code'
-        J = J + 1
-
-        VNAME3D( J ) = 'ISIC'
-        VTYPE3D( J ) = M3INT
-        UNITS3D( J ) = 'n/a'
-        VDESC3D( J ) = 'Source Industrial Code'
-        J = J + 1
-
-        VNAME3D( J )= 'IORIS'
-        VTYPE3D( J )= M3INT
-        UNITS3D( J )= 'n/a'
-        VDESC3D( J )= 'Office of the Regulatory Information System code'
         J = J + 1
 
         VNAME3D( J ) = 'TZONES'
@@ -187,49 +183,98 @@ C.........  Define source characteristic variables that are not strings
         VDESC3D( J ) = 'Year of inventory for this record'
         J = J + 1
 
-        VNAME3D( J ) = 'XLOCA'
-        VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'degrees'
-        VDESC3D( J ) = 'longitude'
-        J = J + 1
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
 
-        VNAME3D( J ) = 'YLOCA'
-        VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'degrees'
-        VDESC3D( J ) = 'latitude'
-        J = J + 1
+            VNAME3D( J ) = 'XLOC1'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Longitude at beginning of link'
+            J = J + 1
 
-        VNAME3D( J ) = 'STKHT'
-        VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'm'
-        VDESC3D( J ) = 'Stack height'
-        J = J + 1
+            VNAME3D( J ) = 'YLOC1'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Latitude at beginning of link'
+            J = J + 1
 
-        VNAME3D( J ) = 'STKDM'
-        VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'm'
-        VDESC3D( J ) = 'Stack diameter'
-        J = J + 1
+            VNAME3D( J ) = 'XLOC2'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Longitude at end of link'
+            J = J + 1
 
-        VNAME3D( J ) = 'STKTK'
-        VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'deg K'
-        VDESC3D( J ) = 'Stack exhaust temperature'
-        J = J + 1
+            VNAME3D( J ) = 'YLOC2'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Latitude at end of link'
+            J = J + 1
 
-        VNAME3D( J ) = 'STKVE'
-        VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'm/s'
-        VDESC3D( J ) = 'Stack exhaust velocity'
-        J = J + 1
+            VNAME3D( J ) = 'SPEED'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'miles/hr'
+            VDESC3D( J ) = 'Average speed of vehicles'
+            J = J + 1
+
+        ELSE IF ( CATEGORY .EQ. 'POINT' ) THEN
+
+            VNAME3D( J ) = 'ISIC'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Source Industrial Code'
+            J = J + 1
+
+            VNAME3D( J )= 'IORIS'
+            VTYPE3D( J )= M3INT
+            UNITS3D( J )= 'n/a'
+            VDESC3D( J )= 'Office of the Regulatory Information ' //
+     &                    'System code'
+            J = J + 1
+
+            VNAME3D( J ) = 'XLOCA'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'longitude'
+            J = J + 1
+
+            VNAME3D( J ) = 'YLOCA'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'latitude'
+            J = J + 1
+
+            VNAME3D( J ) = 'STKHT'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm'
+            VDESC3D( J ) = 'Stack height'
+            J = J + 1
+
+            VNAME3D( J ) = 'STKDM'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm'
+            VDESC3D( J ) = 'Stack diameter'
+            J = J + 1
+
+            VNAME3D( J ) = 'STKTK'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'deg K'
+            VDESC3D( J ) = 'Stack exhaust temperature'
+            J = J + 1
+
+            VNAME3D( J ) = 'STKVE'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm/s'
+            VDESC3D( J ) = 'Stack exhaust velocity'
+            J = J + 1
+
+        END IF
 
 C.........  Get names, units, etc. of output pollutant-specific records
-        CALL BLDENAMS( 'POINT', NIPOL, NPTPPOL3, EINAM, 
+        CALL BLDENAMS( CATEGORY, NIPOL, NPPOL, EINAM, 
      &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
 
         DO V = 1 , NIPOL
             
-            DO I = 1, NPTPPOL3 ! Loop through number of variables per pollutant
+            DO I = 1, NPPOL ! Loop through number of variables per pollutant
 
                 VNAME3D( J ) = EONAMES( V, I )
                 VTYPE3D( J ) = EOTYPES( V, I )
@@ -237,9 +282,9 @@ C.........  Get names, units, etc. of output pollutant-specific records
                 VDESC3D( J ) = EODESCS( V, I )
                 J = J + 1
 
-            ENDDO    !  end loop on number of variables per pollutant
+            END DO    !  end loop on number of variables per pollutant
 
-        ENDDO        !  end loop on inventory pollutants V
+        END DO        !  end loop on inventory pollutants V
 
 C.........  Prompt for and open I/O API output file
         ENAME= PROMPTMFILE( 
@@ -259,5 +304,5 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
  
-        END
+        END SUBROUTINE OPENINVOUT
 

@@ -219,8 +219,8 @@ C.........  IDA format (single file)
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-c                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
-c     &                        NRAWOUT, EFLAG, NDROP, EDROP )
+                CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, INVPNAM,
+     &                        NRAWOUT, EFLAG, NDROP, EDROP )
 
             CASE( 'MOBILE' )
                 
@@ -300,9 +300,9 @@ C.................  Read file based on format set above
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-c                        CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, 
-c     &                                INVPNAM, NRAWOUT, EFLAG, 
-c     &                                NDROP, EDROP )
+                        CALL RDIDAAR( FDEV, NRAWIN, NEDIM1, MXIPOL, 
+     &                                INVPNAM, NRAWOUT, EFLAG, 
+     &                                NDROP, EDROP )
 
                     CASE( 'MOBILE' )
                         CALL RDIDAMB( FDEV, NRAWIN, MXIPOL, INVPNAM, 

@@ -1,25 +1,19 @@
 
-        SUBROUTINE WPNTSCHR( ENAME, SDEV )
+        SUBROUTINE WRINVCHR( ENAME, SDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 123
+C  subroutine body starts at line
 C
 C  DESCRIPTION:
-C      This subroutine writes the point source characteristics to the
-C      I/O API and ASCII point source inventory files
+C      This subroutine writes the source characteristics to the
+C      I/O API and ASCII area, mobile, or point source inventory files
 C
 C  PRECONDITIONS REQUIRED:
-C      Logical file ENAME opened
-C      File unit number SDEV opened
-C      Correct number of sources NSRC
-C      Output arrays populated
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C      Subroutines: I/O API subroutines, PARSCSRC
-C      Functions: I/O API functions
 C
 C  REVISION  HISTORY:
-C      Created by M. Houyoux 11/98
+C      Created by M. Houyoux 4/99
 C
 C****************************************************************************/
 C
@@ -63,92 +57,141 @@ C.........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     LBLANK
         EXTERNAL    LBLANK
 
-C.........   LOCAL PARAMETERS and their descriptions:
-        INTEGER, PARAMETER :: NASCII = 10 !  no. of columns in the ASCII file
-
-C.........  SUBROIUTINE ARGUMENTS and their descriptions:
+C.........  SUBROUTINE ARGUMENTS and their descriptions:
         CHARACTER(*), INTENT (IN) :: ENAME  !  I/O API file name
         INTEGER     , INTENT (IN) :: SDEV   !  ASCII file unit
 
 C.........  Arrays for column formatting
-        INTEGER       COLWID( NASCII ) ! width of source info columns
+        INTEGER       COLWID( MXCHRS+3 ) !  width of source info columns
 
-        LOGICAL       LF    ( NASCII ) !  true if column should be output
+        LOGICAL       LF    ( MXCHRS+3 ) !  true if column should be output
 
-        CHARACTER*300 CHARS ( NASCII ) !  source fields for output
+        CHARACTER*300 CHARS ( MXCHRS+3 ) !  source fields for output
 
-        CHARACTER*20 :: HDRFLDS( NASCII+1 ) = ( 
-     &                                      / 'SMOKE Source ID     ',  
-     &                                      'Cntry/St/Co FIPS    ',
-     &                                      'Plant code          ', 
-     &                                      'Source char 1       ', 
-     &                                      'Source char 2       ',
-     &                                      'Source char 3       ',  
-     &                                      'Source char 4       ', 
-     &                                      'Source char 5       ',
-     &                                      'SCC                 ',  
-     &                                      'Boiler code         ',  
-     &                                      'Facility description' / )
+C.........  Source-specific header arrays
+        CHARACTER*20 :: ARHEADRS( MXARCHR3+1 ) = 
+     &                                    ( / 'SMOKE Source ID     ',  
+     &                                        'Cntry/St/Co FIPS    ',
+     &                                        'SCC                 ' / )
+
+        CHARACTER*20 :: MBHEADRS( MXMBCHR3+1 ) = 
+     &                                    ( / 'SMOKE Source ID     ',  
+     &                                        'Cntry/St/Co FIPS    ',
+     &                                        'SCC                 ', 
+     &                                        'Vehicle Type        ', 
+     &                                        'Link ID             ' / )
+
+        CHARACTER*20 :: PTHEADRS( MXPTCHR3+4 ) = 
+     &                                    ( / 'SMOKE Source ID     ',  
+     &                                        'Cntry/St/Co FIPS    ',
+     &                                        'Plant code          ', 
+     &                                        'Source char 1       ', 
+     &                                        'Source char 2       ',
+     &                                        'Source char 3       ',  
+     &                                        'Source char 4       ', 
+     &                                        'Source char 5       ',
+     &                                        'SCC                 ',  
+     &                                        'Boiler code         ',  
+     &                                        'Facility description' / )
+
+C.........  Allocatable header arrays
+        CHARACTER*20, ALLOCATABLE :: HDRFLDS( : )
 
 C.........  Other local variables
         INTEGER       COLWID0          !  width of SMOKE source ID column
         INTEGER       COLMAX           !  no. of the most specific plant char 
         INTEGER       I, J, K, S       !  counters and indices
+        INTEGER       IOS              !  memory allocation status
         INTEGER       L1, L2, NL       !  counters and indices
+        INTEGER       M1, M2, M3       !  positions after src characteristics
+        INTEGER       NASCII           !  number of posible output fields
         INTEGER       NC               !  number of output fields
 
         CHARACTER*100 BUFFER              !  test buffer
         CHARACTER*300 OUTFMT              !  output format
         CHARACTER*300 MESG                !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'WPNTSCHR' !  program name
+        CHARACTER*16 :: PROGNAME = 'WRINVCHR' !  program name
 
 C***********************************************************************
-C   begin body of subroutine WPNTSCHR
+C   begin body of subroutine WRINVCHR
+
+C.........  Set the number of potential ASCII columns in SDEV output file
+        SELECT CASE( CATEGORY )
+        CASE( 'AREA' )
+            NASCII = MXARCHR3
+        CASE( 'MOBILE' )
+            NASCII = MXMBCHR3
+        CASE( 'POINT' )
+            NASCII = MXPTCHR3+3
+        END SELECT
+
+C.........  Allocate memory for and populate the output header fields from
+C           the source-specific fields
+        ALLOCATE( HDRFLDS( NASCII+1 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'HDRFLDS', PROGNAME )
+        SELECT CASE( CATEGORY )
+        CASE( 'AREA' )
+            HDRFLDS = ARHEADRS  ! array
+        CASE( 'MOBILE' )
+            HDRFLDS = MBHEADRS  ! array
+        CASE( 'POINT' )
+            HDRFLDS = PTHEADRS  ! array
+        END SELECT
+ 
+C.........  Set positions for outputs to ASCII file that are after the source
+C           characteristics fields
+        M1 = MXCHRS + 1
+        M2 = MXCHRS + 2
+        M3 = MXCHRS + 3
 
 C.........  Get the maximum column width for each of the columns in ASCII file
         COLWID = 0    ! array
         DO S = 1, NSRC
 
-            DO K = 1, 7   ! Loop through source characteristics
-                L1 = PTBEGL3( K )
-                L2 = PTENDL3( K )
+            DO K = 1, NCHARS   ! Loop through source characteristics
+                L1 = SC_BEGP( K )
+                L2 = SC_ENDP( K )
                 BUFFER = ADJUSTL( CSOURC( S )( L1:L2 ) )
                 J = LEN_TRIM( BUFFER )                      ! could be blank
                 IF( BUFFER .NE. ' '    .AND.
      &              J .GT. COLWID( K )      ) COLWID( K ) = J 
-            ENDDO
+            END DO
 
-            J = LEN_TRIM( CSCC( S ) )                       ! could be blank
-            IF( CSCC( S ) .NE. ' ' .AND.
-     &          J .GT. COLWID( 8 ) ) COLWID( 8 ) = J
+            IF( CATEGORY .EQ. 'POINT' ) THEN
 
-            J = LEN_TRIM( CBLRID( S ) )                     ! could be blank
-            IF( CBLRID( S ) .NE. ' ' .AND.
-     &          J .GT. COLWID( 9 ) ) COLWID( 9 ) = J
+                J = LEN_TRIM( CSCC( S ) )                   ! could be blank
+                IF( CSCC( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
 
-            J = LEN_TRIM( CPDESC( S ) )                     ! could be blank
-            IF( CPDESC( S ) .NE. ' ' .AND.
-     &          J .GT. COLWID( 10 ) ) COLWID( 10 ) = J
+                J = LEN_TRIM( CBLRID( S ) )                 ! could be blank
+                IF( CBLRID( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M2 ) ) COLWID( M2 ) = J
 
-        ENDDO   ! End loop on sources to get maximum column widths
+                J = LEN_TRIM( CPDESC( S ) )                 ! could be blank
+                IF( CPDESC( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M3 ) ) COLWID( M3 ) = J
+
+            END IF
+
+        END DO   ! End loop on sources to get maximum column widths
 
         WRITE( MESG, * ) NSRC   ! Column width for source IDs
         L1 = LBLANK( MESG ) + 1
         L2 = LEN_TRIM( MESG )
         COLWID0 = L2 - L1 + 1
 
-C.........  It is possible that a source characteristic (such as segment) may
-C           never be used, while SCC is defined and also considered a plant 
-C           characteristic.  So, make sure that if there are no gaps in the
-C           list of source characteristics, even though this means outputting
-C           blank fields.
-C.........  Find the most specific defined plant characteristic
-        DO COLMAX = 7, 3, -1
+C.........  It is possible that a source characteristic (such as segment or
+C           VTYPE) may never be used, while SCC or link is defined and also
+C           considered a source characteristic.  So, make sure that if there 
+C           are no gaps in the list of source characteristics, even though 
+C           this means outputting blank fields.
+C.........  Find the most specific defined source characteristic
+        DO COLMAX = NCHARS, 2, -1
             IF( COLWID( COLMAX ) .GT. 0 ) EXIT
         END DO
 
-        DO I = 3, COLMAX
+        DO I = 2, COLMAX
             COLWID( I ) = MAX( COLWID( I ), 1 )
         END DO
 
@@ -157,10 +200,10 @@ C.........  If a column is defined for _any_ source, then it must be
 C           written for all sources.  Set flags for which are defined.
         DO K = 1, NASCII
             LF( K ) = ( COLWID( K ) .GT. 0 )  
-        ENDDO
+        END DO
 
-C.........  Set number of columns for ASCII file (initialize +1 b/c NASCII does
-C           not include the SMOKE source ID column)
+C.........  Set number of columns for ASCII file (initialize +1 b/c MXARCHR3 
+C           does not include the SMOKE source ID column)
         NL = NASCII + 1
         DO K = 1, NASCII
             IF( .NOT. LF( K ) ) NL = NL - 1
@@ -190,23 +233,25 @@ C.........  Write the ASCII file header
 C.........  Write the ASCII file data
         DO S = 1, NSRC
 
-            CALL PARSCSRC( CSOURC( S ), NCHARS, SC_BEGP, SC_ENDP, LF, 
-     &                     NC, CHARS )
+            CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, LF, 
+     &                     NC, CHARS ) 
+                      
+            IF( CATEGORY .EQ. 'POINT' ) THEN
+                IF( LF( M1 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CSCC( S )
+                END IF
 
-            IF( LF( 8 ) ) THEN
-                NC = NC + 1
-                CHARS( NC ) = CSCC( S )
-            ENDIF
+                IF( LF( M2 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CBLRID( S )
+                END IF
 
-            IF( LF( 9 ) ) THEN
-                NC = NC + 1
-                CHARS( NC ) = CBLRID( S )
-            ENDIF
-
-            IF( LF( 10 ) ) THEN
-                NC = NC + 1
-                CHARS( NC ) = CPDESC( S )
-            ENDIF
+                IF( LF( M3 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CPDESC( S )
+                END IF
+            END IF
                       
             WRITE( SDEV, OUTFMT ) S, ( CHARS( I ), I = 1, NC )
  
@@ -214,17 +259,10 @@ C.........  Write the ASCII file data
 
 C.........  Write the I/O API file, one variable at a time
 
-        MESG = 'Error writing output file "' // ENAME // '"'
+        L1 = LEN_TRIM( ENAME )
+        MESG = 'Error writing output file "' // ENAME(1:L1) // '"'
 
         IF ( .NOT. WRITE3( ENAME, 'IFIP', 0, 0, IFIP ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'ISIC', 0, 0, ISIC ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'IORIS', 0, 0, IORIS ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
@@ -240,29 +278,66 @@ C.........  Write the I/O API file, one variable at a time
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'XLOCA', 0, 0, XLOCA ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+
+            IF ( .NOT. WRITE3( ENAME, 'XLOC1', 0, 0, XLOC1 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'YLOC1', 0, 0, YLOC1 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'XLOC2', 0, 0, XLOC2 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'YLOC2', 0, 0, YLOC2 ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'SPEED', 0, 0, SPEED ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
+
+            IF ( .NOT. WRITE3( ENAME, 'ISIC', 0, 0, ISIC ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'IORIS', 0, 0, IORIS ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'XLOCA', 0, 0, XLOCA ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'YLOCA', 0, 0, YLOCA ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKHT', 0, 0, STKHT ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKDM', 0, 0, STKDM ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKTK', 0, 0, STKTK ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF ( .NOT. WRITE3( ENAME, 'STKVE', 0, 0, STKVE ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
         END IF
 
-        IF ( .NOT. WRITE3( ENAME, 'YLOCA', 0, 0, YLOCA ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'STKHT', 0, 0, STKHT ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'STKDM', 0, 0, STKDM ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'STKTK', 0, 0, STKTK ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-        IF ( .NOT. WRITE3( ENAME, 'STKVE', 0, 0, STKVE ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
+C.........  Deallocate locally allocated memory
+        DEALLOCATE( HDRFLDS )
 
         RETURN
 
@@ -280,4 +355,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94100   FORMAT( 9( A, I2.2 ) )
 
-        END SUBROUTINE WPNTSCHR
+        END SUBROUTINE WRINVCHR

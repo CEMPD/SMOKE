@@ -108,7 +108,7 @@ C           of the pollutant for that record in the INVPNAM pollutant array
         LSRCCHR = EMCMISS3
         LK = IMISS3
         S = 0
-        SLEN  = SC_BEGP( MXCHRS )
+        SLEN  = SC_ENDP( MXCHRS )
         PS    = SC_BEGP( MXCHRS + 1 )
         PE    = SC_ENDP( MXCHRS + 1 )
         DO I = 1, NRAWBP
@@ -171,12 +171,30 @@ C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
 C.........  Loop through sources x pollutants to store sorted arrays for output
 C           to I/O API file. Use PRATIO to determine the appropriate position 
 C           in source-based (non-pollutant) arrays.
-
+C.........  Keep case statement outside the loops to speed processing
         LS = IMISS3
         SELECT CASE ( CATEGORY )
         CASE( 'AREA' ) 
 
-        CASE( 'MOBILE' )
+             DO I = 1, NRAWBP
+
+                J = INDEXA( I )
+                S = SRCIDA( I )
+                K = INT( ( REAL( J ) - 0.5 ) * PRATIO ) + 1
+
+                IF( S .NE. LS ) THEN
+                    LS  = S
+                    IFIP  ( S ) = IFIPA  ( K )
+                    TPFLAG( S ) = TPFLGA ( K )
+                    INVYR ( S ) = INVYRA ( K )
+                    CSCC  ( S ) = CSCCA  ( K )
+
+                    CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
+                END IF
+
+            END DO
+
+       CASE( 'MOBILE' )
 
             DO I = 1, NRAWBP
 
@@ -254,7 +272,7 @@ C           the memory were allocated at the same time.
 C.........  Initialize pollutant-specific values.  Inititalize integer values
 C           with the real version of the missing integer flag, since these
 C           are stored as reals until output
-        POLVAL  = AMISS3          ! array
+        POLVAL  = BADVAL3          ! array
         RIMISS3 = REAL( IMISS3 )
         IF( NC1 .GT. 0 ) POLVAL( :,NC1 ) = RIMISS3 ! array
         IF( NC1 .GT. 0 ) POLVAL( :,NC2 ) = RIMISS3 ! array
@@ -277,6 +295,9 @@ C           array of output pollutants
                     POLVAL( I, K ) = POLVLA( J, K )
                 END DO
             END DO
+
+c note: is the case where an IDA input file has duplicate source definitions
+C       (same source in 2 or more lines of the file) handled properly?
 
 C.............  Set the number of pollutants per source to the constant value
             NPCNT = NRAWBP / NSRC   ! NPCNT is array

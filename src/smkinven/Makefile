@@ -20,9 +20,11 @@ LIBPATH= $(EL_SRC)/$(EDSS_OS)/libsmoke.debug.a
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-RAW=smkinven.o rdinven.o rdidapt.o rdemspt.o fixstk.o procinven.o openpnts.o \
-     srcmem.o initinfo.o chklstfl.o wpntschr.o wpntspol.o wrptref.o \
-     openinvin.o 
+RAW=smkinven.o rdinven.o rdidaar.o rdidamb.o rdidapt.o rdemspt.o fixstk.o \
+    procinven.o openinvout.o srcmem.o initinfo.o chklstfl.o wrinvchr.o \
+    wrinvpol.o wrptref.o openinvin.o
+    
+
 #
 smkinven.debug: $(RAW) $(ALLI) $(LIBPATH)
 	echo SMKINVEN:
@@ -34,12 +36,16 @@ fixstk.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-openpnts.o: $(MODLISTS) $(MODINFO)
+openinvout.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 procinven.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdemspt.o: $(MODSOURC) 
 	$(FC) $(FFLAGS) -c -o $@ $< 
+rdidaar.o: $(MODSOURC)
+	$(FC) $(FFLAGS) -c -o $@ $<
+rdidamb.o: $(MODSOURC)
+	$(FC) $(FFLAGS) -c -o $@ $<
 rdidapt.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdinven.o: $(MODSOURC) $(MODINFO)
@@ -48,7 +54,7 @@ smkinven.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 srcmem.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ $<
-wpntschr.o: $(MODSOURC)
+wrinvchr.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 #
 clean:
