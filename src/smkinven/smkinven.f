@@ -104,21 +104,23 @@ C           this program
 
 C.........  File units and logical/physical names
 
-        INTEGER         DDEV    !  day-specific input file 
-        INTEGER         HDEV    !  hour-specific input file 
-        INTEGER         IDEV    !  inventory file (various formats)
-        INTEGER         LDEV    !  log-device
-        INTEGER         PDEV    !  unit number for pollutants codes/names file
-        INTEGER         RDEV    !  unit no. for def stack pars or mobile codes
-        INTEGER         SDEV    !  unit no. for ASCII output inventory file
-        INTEGER         VDEV    !  unit no. for activity codes/names file
-        INTEGER         ZDEV    !  unit no. for time zone file
+        INTEGER    :: DDEV = 0  !  unit no. for day-specific input file 
+        INTEGER    :: EDEV = 0  !  unit no. for speeds file
+        INTEGER    :: HDEV = 0  !  unit no. for hour-specific input file 
+        INTEGER    :: IDEV = 0  !  unit no. for inventory file (various formats)
+        INTEGER    :: LDEV = 0  !  unit no. for log file
+        INTEGER    :: PDEV = 0  !  unit number for pollutants codes/names file
+        INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
+        INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
+        INTEGER    :: VDEV = 0  !  unit no. for activity codes/names file
+        INTEGER    :: XDEV = 0  !  unit no. for VMT mix file
+        INTEGER    :: ZDEV = 0  !  unit no. for time zone file
 
-        CHARACTER(LEN=NAMLEN3) ANAME !  inventory ASCII output logical name
-        CHARACTER(LEN=NAMLEN3) DNAME !  day-specific input logical name
-        CHARACTER(LEN=NAMLEN3) ENAME !  inventory I/O API output logical name
-        CHARACTER(LEN=NAMLEN3) HNAME !  hour-specific input logical name
-        CHARACTER(LEN=NAMLEN3) INAME !  inventory input logical name
+        CHARACTER(LEN=NAMLEN3) :: ANAME = ' '! inven ASCII output logical name
+        CHARACTER(LEN=NAMLEN3) :: DNAME = ' '! day-specific input logical name
+        CHARACTER(LEN=NAMLEN3) :: ENAME = ' '! inven I/O API output logical name
+        CHARACTER(LEN=NAMLEN3) :: HNAME = ' '! hour-specific input logical name
+        CHARACTER(LEN=NAMLEN3) :: INAME = ' '! inven input logical name
 
 C...........   Other local variables
                                 
@@ -153,6 +155,7 @@ C...........   Other local variables
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
 
+        CHARACTER*5     TYPNAM  !  'day' or 'hour' for import
         CHARACTER*300   MESG    !  message buffer
 
         CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
@@ -174,8 +177,9 @@ C.........  Output time zone
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
 C.........  Get names of input files
-        CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, PDEV, 
-     &                  VDEV, ZDEV, ENAME, INAME, DNAME, HNAME )
+        CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
+     &                  EDEV, PDEV, VDEV, ZDEV, ENAME, INAME, 
+     &                  DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
         DFLAG = ( DDEV .NE. 0 )
@@ -228,10 +232,11 @@ C.........  Read, sort, and store activity codes/names file
 
         MXIDAT = NDAT
 
-C.........  Fill tables for translating mobile road classes and vehicle types
-C.........  The tables are passed through MODINFO
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+C.........  Read mobile-source files
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN          
 
+C.............  Fill tables for translating mobile road classes & vehicle types
+C.............  The tables are passed through MODMOBIL
             CALL RDMVINFO( RDEV )
 
         END IF
@@ -244,8 +249,8 @@ C.............  The arrays that are populated by this subroutine call
 C               are contained in the module MODSOURC
             CALL M3MSG2( 'Reading average raw inventory data...' )
 
-            CALL RDINVEN( IDEV, INAME, MXIDAT, INVDCOD, INVDNAM, FILFMT,
-     &                    NRAWBP, PRATIO, TFLAG )
+            CALL RDINVEN( IDEV, XDEV, EDEV, INAME, MXIDAT, INVDCOD, 
+     &                    INVDNAM, FILFMT, NRAWBP, PRATIO, TFLAG )
 
             CALL M3MSG2( 'Sorting raw inventory data...' )
 
@@ -393,16 +398,17 @@ C               the results are stored in module MODINFO.
 C.........  Read in daily emission values and output to a SMOKE file
         IF( DFLAG ) THEN
 
-            TSTEP = 240000
+            TSTEP  = 240000
+            TYPNAM = 'day'
 
 C.............  Preprocess day-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
-            CALL GETPDINFO( DDEV, TZONE, TSTEP, 'day', DSDATE, DSTIME, 
+            CALL GETPDINFO( DDEV, TZONE, TSTEP, TYPNAM, DSDATE, DSTIME, 
      &                      DNSTEP, NVARDY, MXSRCDY, DEAIDX )
 
 C.............  Read and output day-specific data
             CALL GENPDOUT( DDEV, TZONE, DSDATE, DSTIME, DNSTEP, TSTEP, 
-     &                     NVARDY, MXSRCDY, 'day', DEAIDX )
+     &                     NVARDY, MXSRCDY, TYPNAM, DEAIDX )
 
         END IF
 
@@ -410,15 +416,16 @@ C.........  Read in hourly emission values and output to a SMOKE file
         IF( HFLAG ) THEN
 
             TSTEP = 10000
+            TYPNAM = 'hour'
 
 C.............  Preprocess hour-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
-            CALL GETPDINFO( HDEV, TZONE, TSTEP, 'hour', HSDATE, HSTIME, 
+            CALL GETPDINFO( HDEV, TZONE, TSTEP, TYPNAM, HSDATE, HSTIME, 
      &                      HNSTEP, NVARHR, MXSRCHR, HEAIDX )
 
 C.............  Read and output hour-specific data
             CALL GENPDOUT( HDEV, TZONE, HSDATE, HSTIME, HNSTEP, TSTEP, 
-     &                     NVARHR, MXSRCHR, 'hour', HEAIDX )
+     &                     NVARHR, MXSRCHR, TYPNAM, HEAIDX )
 
         END IF
 
