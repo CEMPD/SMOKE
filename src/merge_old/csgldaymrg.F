@@ -519,8 +519,8 @@ C.......   Mobile source matrix files:
             END IF          !  if DESC3() failed
             IF ( NROWS3D .NE. NMSRC ) THEN
                 WRITE( MESG, 94010 )
-     &              'Dimension mismatch in file "',
-     &              MTNAME( 1:TRIMLEN( MTNAME ) ), '" -- file:', 
+     &              'Dimension mismatch in file "'//
+     &              MTNAME( 1:TRIMLEN( MTNAME ) )// '" -- file:', 
      &              NROWS3D, 'caller:', NMSRC
                 CALL M3EXIT( 'CSGLDAYMRG', JDATE, JTIME, MESG, 2 )
             END IF          !  if dimension mismatch
