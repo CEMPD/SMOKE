@@ -25,20 +25,30 @@
 
    setenv EBASE     nctox        # Output merged base case name
 
-   setenv METSCEN   a1a          # Met scenario name
-   setenv GRID      us36-nc      # Gridding root
-   setenv SPC       cmaq.cb4pm25 # Speciation type
-   setenv ESDATE    19960709     # Start date of emis time-based files
-   setenv MSDATE    19960709     # Start date of met  time-based files
-   setenv NDAYS     1            # Duration in days of emis time-based files
-   setenv MDAYS     1            # Duration in days of met  time-based files
-   setenv YEAR      1996         # Year for year-specific files
+   setenv METSCEN   a1a              # Met scenario name
+   setenv GRID      us36-nc          # Gridding root
+   setenv SPC       cmaq.cb4p25_wtox # Speciation type
+   setenv ESDATE    19960709         # Start date of emis time-based files
+   setenv MSDATE    19960709         # Start date of met  time-based files
+   setenv NDAYS     1                # Duration in days of emis time-based files
+   setenv MDAYS     1                # Duration in days of met  time-based files
+   setenv YEAR      1996             # Year for year-specific files
+
+## Intialize date controls
+   set setdate = y
+   if ( $?DAY_COUNT ) then
+       if ( $DAY_COUNT > 1 ) then
+          set setdate = n
+       endif
+   endif
 
 ## Per-period environment variables (Models-3 settings)
-   setenv G_STDATE  1996191      # Julian start date
-   setenv G_STTIME   000000      # start time (HHMMSS)
-   setenv G_TSTEP     10000      # time step  (HHMMSS)
-   setenv G_RUNLEN   250000      # run length (HHMMSS)
+   if ( $setdate == y ) then
+       setenv G_STDATE  1996191      # Julian start date
+       setenv G_STTIME   000000      # start time (HHMMSS)
+       setenv G_TSTEP     10000      # time step  (HHMMSS)
+       setenv G_RUNLEN   250000      # run length (HHMMSS)
+   endif
 
 ## Mobile episode variables
    setenv EPI_STDATE 1996191     # Julian start date
@@ -69,11 +79,13 @@ source $ASSIGNS/check_settings.scr
 #
 ## Area-source input files
 if ( $SMK_SOURCE == 'A' ) then
-   setenv ARINV     $INVDIR/area/arinv.us+can.$INVID.ida.txt    # IDA stational area emissions
-   setenv ARINV_NR  $INVDIR/nonroad/arinv.us+can.$INVID.ida.txt # IDA nonroad mobile emissions
+   setenv ARINV     $INVDIR/area/arinv.stationary.lst           # Stationary area emission inventory
    setenv REPCONFIG $INVDIR/area/REPCONFIG.area.txt             # Default report configurations
+   setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls 
+   setenv ARINV_NR  $INVDIR/nonroad/arinv.nonroad.lst           # Nonroad mobile emission inventory
+   setenv GCNTL_NR  $INVDIR/nonroad/gcntl.control.txt           # Nonroad scenario-specific controls
    setenv ARTOPNT   $INVDIR/other/artopnt.txt                   # area-to-point assignments
-   setenv GCNTL     $INVDIR/other/gcntl.control.txt             # Scenario-specific controls
+   setenv GCNTL     $INVDIR/area/gcntl.control.txt              # Scenario-specific controls
    setenv APROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt         # Projection factors
    setenv AGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Area gridding surrogates
    setenv AGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt   # Area gridding x-ref 
@@ -100,9 +112,8 @@ endif
 #
 ## Mobile source input files
 if ( $SMK_SOURCE == 'M' ) then
-   setenv MBINV     $INVDIR/mobile/mbinv.$INVID.lst        # mobile emissions
-   setenv MBINV_A   $INVDIR/mobile/mbinv.$INVID.lst        # mobile vmt
-   setenv VMTMIX    $INVDIR/mobile/mvmtm.$INVID.txt        # VMT mix (for EMS input)
+   setenv MBINV     $INVDIR/mobile/mbinv.lst               # mobile emissions
+   setenv VMTMIX    $INVDIR/mobile/vmtmix.txt              # VMT mix (for EMS input)
    setenv MEPROC    $INVDIR/mobile/meproc.txt              # Mobile emission processes
    setenv MCODES    $INVDIR/mobile/mcodes.txt              # mobile codes
    setenv MCREF     $INVDIR/mobile/mcref.$MSCEN.txt        # County cross-reference file
@@ -120,11 +131,11 @@ endif
 #
 ## Point source input files
 if ( $SMK_SOURCE == 'P' ) then
-   setenv PTINV      $INVDIR/point/ptinv.$INVID.lst          # EMS-95 point emissions
-   setenv PTDAY      $INVDIR/point/ptday.$INVID.list.txt     # daily point emis
-   setenv PTHOUR     $INVDIR/point/pthour.cem.lst            # hourly point emis
+   setenv PTINV      $INVDIR/point/ptinv.lst                 # EMS-95 point emissions
+   setenv PTDAY      $INVDIR/point/ptday.lst                 # daily point emis
+   setenv PTHOUR     $INVDIR/point/pthour.lst                # hourly point emis
    setenv PELVCONFIG $INVDIR/point/pelvconfig.top100.txt     # elevated source selection
-   setenv REPCONFIG  $INVDIR/point/REPCONFIG.point.txt       # Default report configurations
+   setenv REPCONFIG  $INVDIR/point/repconfig.point.txt       # Default report configurations
    setenv PTMPLIST   $INVDIR/point/ptmplist.txt              # List of PTMP files for Elevpoint
    setenv GCNTL      $INVDIR/other/gcntl.control.txt         # Scenario-specific controls
    setenv PPROJ      $INVDIR/other/gcntl.proj.$BYFYR.txt     # Projection factors
@@ -175,6 +186,7 @@ endif
 ## Conditional settings
    if ( $SMK_SOURCE == A && $NONROAD == Y ) then
       setenv ARINV  $ARINV_NR
+      setenv GCNTL  $GCNTL_NR
    endif
 
 ## Meteorology IO/API input files (MCIP output files)
