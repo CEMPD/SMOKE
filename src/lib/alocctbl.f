@@ -44,7 +44,15 @@ C
 C***************************************************************************
 
 C...........   This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY:
+     &          ICTL01, ICTL02, ICTL03, ICTL04, ICTL05,
+     &          ICTL06, ICTL07, ICTL08, ICTL09, ICTL10,
+     &          ICTL11, ICTL12, ICTL13, ICTL14, ICTL15, ICTL16,
+     &          ICTL02A, ICTL02B, ICTL02C,
+     &          ICTL05A, ICTL05B, ICTL05C,
+     &          ICTL08A, ICTL08B, ICTL08C,
+     &          ICTL26, ICTL27, ICTL28, ICTL29, ICTL30, ICTL31,
+     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37
 
         IMPLICIT NONE
 
@@ -232,6 +240,37 @@ C.........  NOTE- Added later
         ALLOCATE( ICTL31( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL31', PROGNAME )
         ICTL31 = IMISS3
+
+!.........  MACT code matches
+        J = MAX( 1, ICSIZE( 32 ) )                     ! FIP=0, SCC=0, MACT=all
+        ALLOCATE( ICTL32( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL32', PROGNAME )
+        ICTL32 = IMISS3
+
+        J = MAX( 1, ICSIZE( 33 ) )                     ! FIP=0, SCC=all, MACT=all
+        ALLOCATE( ICTL33( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL33', PROGNAME )
+        ICTL33 = IMISS3
+
+        J = MAX( 1, ICSIZE( 34 ) )                     ! FIP=state, SCC=0, MACT=all
+        ALLOCATE( ICTL34( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL34', PROGNAME )
+        ICTL34 = IMISS3
+
+        J = MAX( 1, ICSIZE( 35 ) )                     ! FIP=state, SCC=all, MACT=all
+        ALLOCATE( ICTL35( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL35', PROGNAME )
+        ICTL35 = IMISS3
+
+        J = MAX( 1, ICSIZE( 36 ) )                     ! FIP=all, SCC=0, MACT=all
+        ALLOCATE( ICTL36( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL36', PROGNAME )
+        ICTL36 = IMISS3
+
+        J = MAX( 1, ICSIZE( 37 ) )                     ! FIP=all, SCC=all, MACT=all
+        ALLOCATE( ICTL37( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL37', PROGNAME )
+        ICTL37 = IMISS3
 
         RETURN
 
