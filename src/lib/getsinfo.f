@@ -371,6 +371,12 @@ C                  name are the same
                 EAUNIT( K ) = VUNITSET( 2 + INVPIDX )
                 EADESC( K ) = VDESCSET( 2 + INVPIDX )
 
+                IF( .NOT. CLOSESET( TMPNAME ) ) THEN
+                    MESG = 'Could not close file:'//CRLF()//BLANK10//
+     &                     TRIM( MAPFIL( K ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
 C............  For old style inventory
             ELSE
                 ACTVTY( I ) = VNAMESET( J )
