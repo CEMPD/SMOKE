@@ -248,8 +248,7 @@ C.......   Set up file description and open emissions file:
         FDESC3D( 1 ) = 'Biogenic Source normalized emissions values.'
         FDESC3D( 2 ) = 'Inventory  type COUNTY_BASED'
 
-        NFIP = NBFIP    ! sl
-        print *, NFIP
+c       NFIP = NBFIP    ! sl
 
         DO  11  I = 3, MXDESC3
             FDESC3D( I ) = ' '
@@ -385,6 +384,7 @@ C sl    Skip the first line in FIPS CODE file
             END IF
 
 45      CONTINUE                !  exit from loop:  read FIPS CODE file
+        NFIP = I                ! sl NFIP was not assigned anywhere    
 
         IF ( EFLAG ) THEN
             CALL M3EXIT( 'RAWBIO', 0, 0, 
@@ -1042,9 +1042,10 @@ c sl            K = FIND1( FIP, NFIP, FIPS )
                 CALL M3MESG( MESG )
                 GO TO  211
             END IF
-            
-            C = NINT( XCOOR - SNGL( XORIG3D ) * DWIDTH  ) + 1
-            R = NINT( YCOOR - SNGL( YORIG3D ) * DHEIGHT ) + 1
+
+c sl        parenthesis missing            
+            C = NINT( ( XCOOR - SNGL(XORIG3D) ) * DWIDTH  ) + 1
+            R = NINT( ( YCOOR - SNGL(YORIG3D) ) * DHEIGHT ) + 1
 
             IF ( C .LT. 1  .OR.  C .GT. NCOLS  .OR.
      &           R .LT. 1  .OR.  R .GT. NROWS ) THEN
