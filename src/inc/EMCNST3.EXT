@@ -77,6 +77,16 @@ C.........  Time zones
      &                            'CDT', 'CST', 'MDT', 'MST', 'PDT',
      &                            'PST' / )
 
+C.........  Packet information
+        INTEGER     , PARAMETER :: NPACKET = 6
+        CHARACTER*20, PARAMETER :: PKTLIST( NPACKET ) = 
+     &                          (  / 'CTG                 ',
+     &                               'CONTROL             ',
+     &                               'ALLOWABLE           ',
+     &                               'ADD                 ',
+     &                               'REACTIVITY          ',
+     &                               'PROJECTION          '  / )
+
 C.........  Variable dimensioning components, independent
 
         INTEGER       CPRTLEN3       ! length of ctl eff, rul eff, rul pen roots
