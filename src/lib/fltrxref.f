@@ -1,6 +1,6 @@
 
-        SUBROUTINE FLTRXREF( CFIP, CSIC, TSCC, CPOL, IXSIC, IXSCC,
-     &                       IXPOL, SKIPPOL, SKIPREC )
+        SUBROUTINE FLTRXREF( CFIP, CSIC, TSCC, CPOA, IXSIC, IXSCC,
+     &                       IXPOA, SKIPPOA, SKIPREC )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -8,7 +8,8 @@ C
 C  DESCRIPTION:
 C      The purpose of subroutine FLTRXREF is be to post-process x-ref 
 C      information to scan for '-9', pad with zeros, compare SCC to master list,
-C      compare SIC to master list, and compare pollutant name with master list.
+C      compare SIC to master list, and compare pollutant/activity name with
+C      master list.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -71,11 +72,12 @@ C...........   SUBROUTINE ARGUMENTS:
         CHARACTER(*), INTENT(IN OUT) :: CFIP   ! cntry/state/county code
         CHARACTER(*), INTENT(IN OUT) :: CSIC   ! standard indust. code
         CHARACTER(*), INTENT(IN OUT) :: TSCC   ! source category code
-        CHARACTER(*), INTENT(IN OUT) :: CPOL   ! pollutant name
+        CHARACTER(*), INTENT(IN OUT) :: CPOA   ! pollutant/activity name
         INTEGER     , INTENT   (OUT) :: IXSIC  ! index of SIC in SIC list
         INTEGER     , INTENT   (OUT) :: IXSCC  ! index of SCC in SCC list
-        INTEGER     , INTENT   (OUT) :: IXPOL  ! index of pollutant in pol list
-        LOGICAL     , INTENT   (OUT) :: SKIPPOL! true: skipped rec is pol-spcfic
+        INTEGER     , INTENT   (OUT) :: IXPOA  ! index of pol/act in master list
+        LOGICAL     , INTENT   (OUT) :: SKIPPOA! true: skipped rec is pollutant
+                                               ! or activity specific
         LOGICAL     , INTENT   (OUT) :: SKIPREC! true: skip record in caller
 
 C...........   Other local variables
@@ -137,16 +139,16 @@ C.............  Set up zero strings for FIPS code of zero and SCC code of zero
 C.........  Initialize call subroutine outputs
         IXSIC = 0
         IXSCC = 0
-        IXPOL = 0
+        IXPOA = 0
         SKIPREC = .FALSE.
-        SKIPPOL = .FALSE.
+        SKIPPOA = .FALSE.
 
 C.........  Smart interpretation of country/state/county code
         CALL FLTRNEG( CFIP )     ! Filter 0 and -9 to blank
         CALL PADZERO( CFIP )     ! Pad with zeros
 
-C.........  Smart interpretation of pollutant name
-        CALL FLTRNEG( CPOL )     ! Filter 0 and -9 to blank
+C.........  Smart interpretation of pollutant/activity name
+        CALL FLTRNEG( CPOA )     ! Filter 0 and -9 to blank
 
 C.........  Smart interpretation of SIC
         CALL FLTRNEG( CSIC )     ! Filter 0 and -9 to blank
@@ -193,31 +195,22 @@ C           based on SCC, but maybe by SIC.
 
         END IF
 
-C.........  Filter the case where the pollutant code is not present
-        IF( CPOL .EQ. ' ' ) THEN
+C.........  Filter the case where the pollutant/activity code is not present
+        IF( CPOA .EQ. ' ' ) THEN
 
-            IXPOL = 0
+            IXPOA = 0
 
-C.........  Ensure that pollutant is in master list of pollutants or
-C           skip the pollutant-specific entry
-C.........  If pollutant is not there, check the master list of activities
+C.........  Ensure that pol/act is in master list of pol/act or
+C           skip the pollutant/activity-specific entry
         ELSE
 
-            IXPOL = INDEX1( CPOL, NIPOL, EINAM )
+            IXPOA = INDEX1( CPOA, NIPPA, EANAM )
 
-            IF( IXPOL .LE. 0 ) THEN
-
-                IXACT = INDEX1( CPOL, NIACT, ACTVTY )
-
-                IF( IXACT .LE. 0 ) THEN
+            IF( IXPOA .LE. 0 ) THEN
             
-                    SKIPPOL = .TRUE.   ! indicates skipped pol-spec entries
+                    SKIPPOA = .TRUE.   ! indicates skipped pol/act-spec entries
                     SKIPREC = .TRUE.   ! indicates skip this rec in calling prgm
-
-                ELSE
-                    IXPOL = IXACT
-
-                END IF
+		    
             END IF
 
         END IF

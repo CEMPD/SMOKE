@@ -51,9 +51,10 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2   CRLF
+	INTEGER       STR2INT
         REAL          STR2REAL
 
-        EXTERNAL      CRLF, STR2REAL
+        EXTERNAL      CRLF, STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS:
         INTEGER        , INTENT (IN) :: FDEV      ! in file unit number
@@ -113,13 +114,19 @@ C.........  Process the line of data, depending on packet type
             PKTINFO%FAC4 = STR2REAL( SEGMENT( 7 ) )
 
         CASE( 'CONTROL' )
-            PKTINFO%CSIC =           SEGMENT( 2 )
-            PKTINFO%TSCC =           SEGMENT( 3 )
-            PKTINFO%CPOL =           SEGMENT( 4 )
+            PKTINFO%TSCC =           SEGMENT( 2 )
+            PKTINFO%CPOL =           SEGMENT( 3 )
+            PKTINFO%CPRI = STR2INT ( SEGMENT( 4 ))
             PKTINFO%FAC1 = STR2REAL( SEGMENT( 5 ) )
             PKTINFO%FAC2 = STR2REAL( SEGMENT( 6 ) )
             PKTINFO%FAC3 = STR2REAL( SEGMENT( 7 ) )
-            PKTINFO%FAC4 = STR2REAL( SEGMENT( 8 ) )
+            PKTINFO%CSIC =           SEGMENT( 8 )
+            PKTINFO%PLT  =           SEGMENT( 9 )
+            PKTINFO%CHAR1=           SEGMENT( 10 )
+            PKTINFO%CHAR2=           SEGMENT( 11 )
+            PKTINFO%CHAR3=           SEGMENT( 12 )
+            PKTINFO%CHAR4=           SEGMENT( 13 )
+            PKTINFO%CHAR5=           SEGMENT( 14 )
 
         CASE( 'ALLOWABLE' )
             PKTINFO%TSCC =           SEGMENT( 2 )
@@ -129,11 +136,11 @@ C.........  Process the line of data, depending on packet type
             PKTINFO%FAC3 = STR2REAL( SEGMENT( 6 ) )
             PKTINFO%CSIC =           SEGMENT( 7 )
             PKTINFO%PLT  =           SEGMENT( 8 )
-            PKTINFO%CHAR1=           SEGMENT( 8 )
-            PKTINFO%CHAR2=           SEGMENT( 9 )
-            PKTINFO%CHAR3=           SEGMENT( 10 )
-            PKTINFO%CHAR4=           SEGMENT( 11 )
-            PKTINFO%CHAR5=           SEGMENT( 12 )
+            PKTINFO%CHAR1=           SEGMENT( 9 )
+            PKTINFO%CHAR2=           SEGMENT( 10 )
+            PKTINFO%CHAR3=           SEGMENT( 11 )
+            PKTINFO%CHAR4=           SEGMENT( 12 )
+            PKTINFO%CHAR5=           SEGMENT( 13 )
 
         CASE( 'ADD' )
             PKTINFO%TSCC =           SEGMENT( 2 )
@@ -166,10 +173,10 @@ C.........  Process the line of data, depending on packet type
             CALL PADZERO( PKTINFO%NSCC )
 
         CASE( 'PROJECTION' )
-            PKTINFO%CSIC  =           SEGMENT( 2 ) 
+            PKTINFO%TSCC  =           SEGMENT( 2 )
             PKTINFO%CPOL  =           ' '
-            PKTINFO%TSCC  =           SEGMENT( 3 )
-            PKTINFO%FAC1  = STR2REAL( SEGMENT( 4 ) )
+            PKTINFO%FAC1  = STR2REAL( SEGMENT( 3 ) ) 
+            PKTINFO%CSIC  =           SEGMENT( 4 ) 
             PKTINFO%PLT   = ' '
             PKTINFO%CHAR1 = ' '
             PKTINFO%CHAR2 = ' '

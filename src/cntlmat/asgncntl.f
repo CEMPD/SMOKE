@@ -127,14 +127,28 @@ C.............  Set up format for creating character FIPS code for non-point
 
         ENDIF
 
+C.........  Initialize SINDX
+
+        SINDX = 0      ! Array
+
 C.........  For each pollutant of interest
         DO J = 1, NPOL
 
 C.............  Find index in complete list of pollutants
 
-            V = INDEX1( PNAM( J ), NIPOL, EINAM )
+            V = INDEX1( PNAM( J ), NIPPA, EANAM )
 
             DO S = 1, NSRCIN
+	    
+                CSRC    = CSOURC( S )
+                CFIP    = CSRC( 1:FIPLEN3 )
+                CSTA    = CFIP( 1:STALEN3 )
+                TSCC    = CSCC( S )
+                TSCCL   = TSCC( 1:LSCCEND )
+                CFIPSCC = CFIP // TSCC
+                CFIPSL  = CFIP // TSCCL
+                CSTASCC = CSTA // TSCC
+                CSTASL  = CSTA // TSCCL
 
 C: NOTE: Since I do this in several places, this should be a subroutine
 
@@ -142,22 +156,11 @@ C.................  Create selection
                 SELECT CASE ( CATEGORY )
 
                 CASE ( 'AREA' ) 
-                    CSRC    = CSOURC( S )
-                    CFIP    = CSRC( 1:FIPLEN3 )
-                    CSTA    = CFIP( 1:STALEN3 )
-                    TSCC    = CSCC( S )
-                    TSCCL   = TSCC( 1:LSCCEND )
-                    CFIPSCC = CFIP // TSCC
-                    CFIPSL  = CFIP // TSCCL
-                    CSTASCC = CSTA // TSCC
-                    CSTASL  = CSTA // TSCCL
 
                 CASE ( 'MOBILE' )
 
                 CASE ( 'POINT' )
 
-                    CSRC    = CSOURC( S )
-                    TSCC    = CSCC( S )
                     CSSC5   = CSRC( 1:PTENDL3( 7 ) ) // TSCC
                     CSSC4   = CSRC( 1:PTENDL3( 6 ) ) // TSCC
                     CSSC3   = CSRC( 1:PTENDL3( 5 ) ) // TSCC
@@ -165,13 +168,6 @@ C.................  Create selection
                     CSSC1   = CSRC( 1:PTENDL3( 3 ) ) // TSCC
                     CSSC0   = CSRC( 1:PTENDL3( 2 ) ) // TSCC
                     CFIPPLT = CSRC( 1:PTENDL3( 2 ) )
-                    CFIP    = CSRC( 1:FIPLEN3 )
-                    CSTA    = CSRC( 1:STALEN3 )
-                    TSCCL   = TSCC( 1:LSCCEND )
-                    CFIPSCC = CFIP // TSCC
-                    CFIPSL  = CFIP // TSCCL 
-                    CSTASCC = CSTA // TSCC
-                    CSTASL  = CSTA // TSCCL
                     
                 CASE DEFAULT
 
@@ -409,7 +405,7 @@ C.................  Try for any country/state code match
      &                     ' control packet entry for:'//
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 ) //
      &                     CRLF() // BLANK10 // 
-     &                     ' SCC: ' // TSCC // ' POL: ' // EINAM( V )
+     &                     ' SCC: ' // TSCC // ' POL: ' // EANAM( V )
                     CALL M3MESG( MESG )
 
                     CALL SETSOURCE_CONTROL_INDEX

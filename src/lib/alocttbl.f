@@ -1,5 +1,5 @@
 
-        SUBROUTINE ALOCTTBL( NIPOL, ICSIZE )
+        SUBROUTINE ALOCTTBL( NIPPA, ICSIZE )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -8,8 +8,8 @@ C  DESCRIPTION:
 C      This subroutine allocates memory for the portion of the temporal 
 C      cross-reference tables that contain the temporal profile numbers, and it
 C      initializes these to missing.  The subroutine arguments are the number
-C      of inventory pollutants and an array that contains the dimensions for 
-C      each of the different groups of the cross-reference.
+C      of inventory pollutants + activities and an array that contains the 
+C      dimensions for each of the different groups of the cross-reference.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -51,8 +51,8 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT(IN) :: NIPOL        ! number of inventory pols
-        INTEGER     , INTENT(IN) :: ICSIZE( * )  ! size of x-ref groups
+        INTEGER, INTENT(IN) :: NIPPA        ! number of pollutants + activities
+        INTEGER, INTENT(IN) :: ICSIZE( * )  ! size of x-ref groups
 
 C...........   Other local variables
         INTEGER       J     ! counter and indices
@@ -64,22 +64,22 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine ALOCTTBL
 
-        ALLOCATE( MPRT01( NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT01( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT01', PROGNAME )
-        ALLOCATE( WPRT01( NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT01( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT01', PROGNAME )
-        ALLOCATE( DPRT01( NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT01( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT01', PROGNAME )
         MPRT01 = IMISS3 ! arrays
         WPRT01 = IMISS3
         DPRT01 = IMISS3
 
         J = ICSIZE( 2 )                                       ! SCC=left, FIP=0
-        ALLOCATE( MPRT02( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT02( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT02', PROGNAME )
-        ALLOCATE( WPRT02( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT02( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT02', PROGNAME )
-        ALLOCATE( DPRT02( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT02( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT02', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT02 = IMISS3 ! arrays
@@ -88,11 +88,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
 
         J = ICSIZE( 3 )                                   ! SCC=all, FIP=0
-        ALLOCATE( MPRT03( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT03( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT03', PROGNAME )
-        ALLOCATE( WPRT03( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT03( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT03', PROGNAME )
-        ALLOCATE( DPRT03( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT03( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT03', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT03 = IMISS3 ! arrays
@@ -114,11 +114,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 5 )                                 ! SCC=left, FIP=state
-        ALLOCATE( MPRT05( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT05( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT05', PROGNAME )
-        ALLOCATE( WPRT05( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT05( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT05', PROGNAME )
-        ALLOCATE( DPRT05( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT05( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT05', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT05 = IMISS3 ! arrays
@@ -127,11 +127,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 6 )                          ! SCC=all, FIP=state
-        ALLOCATE( MPRT06( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT06( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT06', PROGNAME )
-        ALLOCATE( WPRT06( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT06( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT06', PROGNAME )
-        ALLOCATE( DPRT06( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT06( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT06', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT06 = IMISS3 ! arrays
@@ -153,11 +153,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 8 )                         ! SCC=left, FIP=all
-        ALLOCATE( MPRT08( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT08( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT08', PROGNAME )
-        ALLOCATE( WPRT08( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT08( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT08', PROGNAME )
-        ALLOCATE( DPRT08( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT08( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT08', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT08 = IMISS3 ! arrays
@@ -166,11 +166,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
                         
         J = ICSIZE( 9 )                         ! SCC=all, FIP=all
-        ALLOCATE( MPRT09( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT09( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT09', PROGNAME )
-        ALLOCATE( WPRT09( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT09( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT09', PROGNAME )
-        ALLOCATE( DPRT09( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT09( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT09', PROGNAME )
         IF( J .GT. 0 ) THEN 
             MPRT09 = IMISS3 ! arrays
@@ -179,11 +179,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 10 )                       ! PLANT=non-blank, SCC=0
-        ALLOCATE( MPRT10( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT10( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT10', PROGNAME )
-        ALLOCATE( WPRT10( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT10( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT10', PROGNAME )
-        ALLOCATE( DPRT10( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT10( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT10', PROGNAME )
 
         IF( J .GT. 0 ) THEN
@@ -193,11 +193,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 11 )                          ! PLANT=non-blank, SCC=all    
-        ALLOCATE( MPRT11( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT11( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT11', PROGNAME )
-        ALLOCATE( WPRT11( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT11( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT11', PROGNAME )
-        ALLOCATE( DPRT11( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT11( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT11', PROGNAME )
         IF( J .GT. 0 ) THEN 
             MPRT11 = IMISS3 ! arrays
@@ -206,11 +206,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 12 )                         ! CHAR1=non-blank, SCC=all     
-        ALLOCATE( MPRT12( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT12( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT12', PROGNAME )
-        ALLOCATE( WPRT12( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT12( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT12', PROGNAME )
-        ALLOCATE( DPRT12( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT12( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT12', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT12 = IMISS3 ! arrays
@@ -219,11 +219,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 13 )                        ! CHAR2=non-blank, SCC=all
-        ALLOCATE( MPRT13( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT13( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT13', PROGNAME )
-        ALLOCATE( WPRT13( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT13( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT13', PROGNAME )
-        ALLOCATE( DPRT13( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT13( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT13', PROGNAME )
         IF( J .GT. 0 ) THEN
             MPRT13 = IMISS3 ! arrays
@@ -232,11 +232,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 14 )                     ! CHAR3=non-blank, SCC=all
-        ALLOCATE( MPRT14( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT14( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT14', PROGNAME )
-        ALLOCATE( WPRT14( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT14( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT14', PROGNAME )
-        ALLOCATE( DPRT14( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT14( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT14', PROGNAME )
         IF( J .GT. 0 ) THEN 
             MPRT14 = IMISS3 ! arrays
@@ -245,11 +245,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 15 )                     ! CHAR4=non-blank, SCC=all
-        ALLOCATE( MPRT15( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT15( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT15', PROGNAME )
-        ALLOCATE( WPRT15( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT15( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT15', PROGNAME )
-        ALLOCATE( DPRT15( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT15( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT15', PROGNAME )
         IF( J .GT. 0 ) THEN 
             MPRT15 = IMISS3 ! arrays
@@ -258,11 +258,11 @@ C   begin body of subroutine ALOCTTBL
         ENDIF
             
         J = ICSIZE( 16 )                     ! CHAR5=non-blank, SCC=all
-        ALLOCATE( MPRT16( J,NIPOL ), STAT=IOS )
+        ALLOCATE( MPRT16( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MPRT16', PROGNAME )
-        ALLOCATE( WPRT16( J,NIPOL ), STAT=IOS )
+        ALLOCATE( WPRT16( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'WPRT16', PROGNAME )
-        ALLOCATE( DPRT16( J,NIPOL ), STAT=IOS )
+        ALLOCATE( DPRT16( J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DPRT16', PROGNAME )
         IF( J .GT. 0 ) THEN 
             MPRT16 = IMISS3 ! arrays

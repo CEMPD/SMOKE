@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -97,13 +97,13 @@ C...........   Other local variables
         INTEGER       IDUM             ! dummy integer
         INTEGER       IFIP             ! temporary FIPS code
         INTEGER       IOS              ! i/o status
-        INTEGER       ISP              ! temporary pollutant position in EINAM
+        INTEGER       ISP              ! temporary pollutant position in EANAM
         INTEGER       LOPT             ! length of OPTYPE
         INTEGER       NT               ! code for specificity of x-ref entry
         INTEGER    :: PISP = IMISS3    ! previous iteration ISP
 
         LOGICAL    :: CFLAG = .FALSE.  ! true: operation type is control cntls
-        LOGICAL    :: DEFAULT( NIPOL ) ! true: if default entry in x-ref
+        LOGICAL    :: DEFAULT( NIPPA ) ! true: if default entry in x-ref
         LOGICAL    :: DFLAG = .FALSE.  ! true: operation type is additive cntls
         LOGICAL    :: EFLAG = .FALSE.  ! true: error has occurred
         LOGICAL    :: FFLAG = .FALSE.  ! true: operation type is emis. factors
@@ -111,7 +111,7 @@ C...........   Other local variables
         LOGICAL    :: IFLAG = .FALSE.  ! true: operation type is gridding
         LOGICAL    :: JFLAG = .FALSE.  ! true: operation type is projection
         LOGICAL    :: LFLAG = .FALSE.  ! true: operation type is allowable cntls
-        LOGICAL    :: POLDFLT          ! true: okay to have pol-spec defaults
+        LOGICAL    :: POADFLT          ! true: okay to have pol/act-spec dfaults
         LOGICAL    :: RFLAG = .FALSE.  ! true: operation type is reactivty cntls
         LOGICAL    :: SFLAG = .FALSE.  ! true: operation type is speciation
         LOGICAL    :: TFLAG = .FALSE.  ! true: operation type is temporal
@@ -144,34 +144,34 @@ C.........  Check for valid operation type
         SELECT CASE( OPTYPE )
 
         CASE( 'ADD' )
-            POLDFLT = .TRUE.
+            POADFLT = .TRUE.
             DFLAG   = .TRUE.
         CASE( 'ALLOWABLE' )
-            POLDFLT = .TRUE.
+            POADFLT = .TRUE.
             LFLAG   = .TRUE.
         CASE( 'CONTROL' )
-            POLDFLT = .TRUE.
+            POADFLT = .TRUE.
             CFLAG   = .TRUE.
         CASE( 'CTG' )
-            POLDFLT = .TRUE.
+            POADFLT = .TRUE.
             GFLAG   = .TRUE.
         CASE( 'EMISFACS' )
-            POLDFLT = .TRUE.
+            POADFLT = .TRUE.
             FFLAG   = .TRUE.
         CASE( 'GRIDDING' )
-            POLDFLT = .FALSE.
+            POADFLT = .FALSE.
             IFLAG   = .TRUE.
         CASE( 'PROJECTION' )
-            POLDFLT = .FALSE.
+            POADFLT = .FALSE.
             JFLAG   = .TRUE.
         CASE( 'REACTIVITY' )
-            POLDFLT = .FALSE.
+            POADFLT = .FALSE.
             RFLAG   = .TRUE.
         CASE( 'SPECIATION' )
-            POLDFLT = .TRUE.
+            POADFLT = .TRUE.
             SFLAG   = .TRUE.
         CASE( 'TEMPORAL' ) 
-            POLDFLT = .FALSE.
+            POADFLT = .FALSE.
             TFLAG   = .TRUE.
 
         CASE DEFAULT
@@ -248,7 +248,7 @@ C               these characteristics will appear earlier in the sorted list
 
                 IF( TSCC .EQ. SCCZERO ) THEN                   ! SCC is default
 
-                    IF( POLDFLT ) THEN           ! Pollutant-specific permitted
+                    IF( POADFLT ) THEN           ! Pollutant-specific permitted
 
                         IF( ISP .EQ. 0 ) THEN
                             NT = 1
@@ -458,7 +458,7 @@ C                       plant is permitted to not have an SCC not specified
                             MESG = 'INTERNAL ERROR: Check XREFTBL ' //
      &                             'for processing record: ' //
      &                             CRLF() // BLANK10 // BUFFER( 1:L ) //
-     &                             ' POL:' // EINAM( ISP )
+     &                             ' POA:' // EANAM( ISP )
                             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                         END IF
@@ -531,8 +531,8 @@ C           cross-reference tables
 C.........  Temporal x-ref tables
         IF( TFLAG ) THEN
 
-            CALL ALOCTTBL( NIPOL, N( 1 ) )
-            CALL FILLTTBL( NIPOL, NXREF, N( 1 ), XTYPE, XTCNT ) 
+            CALL ALOCTTBL( NIPPA, N( 1 ) )
+            CALL FILLTTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT ) 
 
 C.........  Speciation x-ref tables
         ELSE IF( SFLAG ) THEN 
@@ -553,8 +553,8 @@ C.........  Emission factor x-ref tables
 C.........  All control x-ref tables
         ELSE
 
-            CALL ALOCCTBL( NIPOL, N )
-            CALL FILLCTBL( NIPOL, NXREF, N( 1 ), XTYPE, XTCNT )
+            CALL ALOCCTBL( NIPPA, N )
+            CALL FILLCTBL( NIPPA, NXREF, N( 1 ), XTYPE, XTCNT )
 
         END IF
 
@@ -595,7 +595,7 @@ C......................................................................
 
             IF( ISP .GT. 0 ) THEN
                 L1 = LEN_TRIM( MESG )
-                MESG = MESG( 1:L1 ) // ' POL:' // EINAM( ISP )
+                MESG = MESG( 1:L1 ) // ' POA:' // EANAM( ISP )
             END IF
 
             CALL M3MSG2( MESG )
@@ -634,7 +634,7 @@ C......................................................................
      &                
             IF( ISP .GT. 0 ) THEN
                 L1 = LEN_TRIM( MESG )
-                MESG = MESG( 1:L1 ) // ' POL:' // EINAM( ISP )
+                MESG = MESG( 1:L1 ) // ' POA:' // EANAM( ISP )
             END IF
 
             CALL M3MESG( MESG )

@@ -1,20 +1,20 @@
 
-        SUBROUTINE BLDENAMS( CATEGORY, NIPOL, NPPOL, EINAM, 
+        SUBROUTINE BLDENAMS( CATEGORY, NIPPA, NPPOA, EANAM, 
      &                       OUTNAMES, OUTUNITS, OUTTYPES, OUTDESCS )
 
 C***********************************************************************
 C  subroutine body starts at line 151
 C
 C  DESCRIPTION:
-C      This subroutine builds names for pollutant-specific inventory variables
+C      This subroutine builds names for pol/act-specific inventory variables
 C      such as rule effectiveness and control efficiency, while ensuring that 
-C      no names are duplicated.  Since inventory pollutant names are allowed
+C      no names are duplicated.  Since inventory pol/act names are allowed
 C      to be 16 characters, there needs to be a truncation and check for
 C      duplicates, and then an insertion of the prefixes.
 C
 C  PRECONDITIONS REQUIRED:
 C      Source category specified correctly
-C      Pollutant list and number provided
+C      Pollutant/activity list and number provided
 C      Memory allocated for output arrays
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -30,7 +30,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -60,13 +60,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY                ! source category
-        INTEGER     , INTENT (IN) :: NIPOL                   ! no. of pols
-        INTEGER     , INTENT (IN) :: NPPOL                   ! no. vars per pol
-        CHARACTER(*), INTENT (IN) :: EINAM   ( NIPOL )       ! pollutant names
-        CHARACTER(*), INTENT(OUT) :: OUTNAMES( NIPOL,NPPOL ) ! var names
-        CHARACTER(*), INTENT(OUT) :: OUTUNITS( NIPOL,NPPOL ) ! var units
-        INTEGER     , INTENT(OUT) :: OUTTYPES( NIPOL,NPPOL ) ! var type:int/real
-        CHARACTER(*), INTENT(OUT) :: OUTDESCS( NIPOL,NPPOL ) ! var descriptions
+        INTEGER     , INTENT (IN) :: NIPPA                   ! no. of pol/act
+        INTEGER     , INTENT (IN) :: NPPOA                   ! no. vars per
+                                                             ! pol or activity
+        CHARACTER(*), INTENT (IN) :: EANAM   ( NIPPA )       ! pol/act names
+        CHARACTER(*), INTENT(OUT) :: OUTNAMES( NIPPA,NPPOA ) ! var names
+        CHARACTER(*), INTENT(OUT) :: OUTUNITS( NIPPA,NPPOA ) ! var units
+        INTEGER     , INTENT(OUT) :: OUTTYPES( NIPPA,NPPOA ) ! var type:int/real
+        CHARACTER(*), INTENT(OUT) :: OUTDESCS( NIPPA,NPPOA ) ! var descriptions
 
 C.........  Data arrays for variable names...
 
@@ -124,19 +125,19 @@ C.........  Point source variable name parameters
      &               , 'Secondary Control Equipment Code'
      &               /
 
-C...........   Unsorted pollutant records
-        INTEGER       INDEXA ( NIPOL )
-        CHARACTER(LEN=IOVLEN3) ABRNAMA( NIPOL )    !  pollutant names
+C...........   Unsorted pollutant/activity records
+        INTEGER       INDEXA ( NIPPA )
+        CHARACTER(LEN=IOVLEN3) ABRNAMA( NIPPA )    !  pollutant/activity names
 
 C...........   Other local variables
-        INTEGER         COD     !  tmp for pollutant code
+        INTEGER         COD     !  tmp for pollutant/activity code
         INTEGER         I, J    !  counters and indices
         INTEGER         IDIF    !  abridged name length
         INTEGER         L, L2   !  length indices
         INTEGER         LCNT    !  same-abrigded-name counter
 
-        CHARACTER(LEN=IOVLEN3)  LNAM  !  previous pollutant name
-        CHARACTER(LEN=IOVLEN3)  NAM   !  current pollutant name
+        CHARACTER(LEN=IOVLEN3)  LNAM  !  previous pollutant/activity name
+        CHARACTER(LEN=IOVLEN3)  NAM   !  current pollutant/activity name
         CHARACTER*10    BUFFER        !  tmp string buffer
         CHARACTER*300   MESG          !  message buffer
 
@@ -149,18 +150,18 @@ C.........  Truncate variable names based on original length and length of
 C.........  fields to be inserted
 
         IDIF = IOVLEN3 - CPRTLEN3
-        DO I = 1, NIPOL
+        DO I = 1, NIPPA
            INDEXA ( I ) = I        
-           ABRNAMA( I ) = EINAM( I )( 1:IDIF )
+           ABRNAMA( I ) = EANAM( I )( 1:IDIF )
         ENDDO
 
 C.........  Sort to set up for duplicates search
-        CALL SORTIC( NIPOL, INDEXA, ABRNAMA )
+        CALL SORTIC( NIPPA, INDEXA, ABRNAMA )
 
 C.........  Search for duplicates and rename them
         LNAM = EMCMISS3
         LCNT = 0
-        DO I = 1, NIPOL
+        DO I = 1, NIPPA
 
             J = INDEXA( I )
             NAM = ABRNAMA( J )
@@ -181,9 +182,9 @@ C.........  Search for duplicates and rename them
         ENDDO
 
 C.........  Build output names
-        DO I = 1, NIPOL
+        DO I = 1, NIPPA
 
-            OUTNAMES( I,1 ) = EINAM( I )  ! Annual emis name is same as pol
+            OUTNAMES( I,1 ) = EANAM( I )  ! Annual emis name is same as pol/act
 
             L  = LEN_TRIM( ABRNAMA( I ) )
             L2 = LEN_TRIM( CATEGORY )

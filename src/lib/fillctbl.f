@@ -1,5 +1,5 @@
 
-        SUBROUTINE FILLCTBL( NIPOL, NXREF, ICSIZE, XTYPE, XTCNT )
+        SUBROUTINE FILLCTBL( NIPPA, NXREF, ICSIZE, XTYPE, XTCNT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,7 +45,7 @@ C.........  This module is for cross reference tables
         IMPLICIT NONE
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: NIPOL           ! no. pollutants
+        INTEGER, INTENT (IN) :: NIPPA           ! no. pollutants + activities
         INTEGER, INTENT (IN) :: NXREF           ! no. ungrpd x-ref entries
         INTEGER, INTENT (IN) :: ICSIZE( * )     ! size of x-ref groups
         INTEGER, INTENT (IN) :: XTYPE ( NXREF ) ! group no. of x-ref entry
@@ -55,7 +55,7 @@ C...........   Other local variables
         INTEGER       I, J, K, T     ! counter and indices
         INTEGER       IDX            ! tmp index to control data table
         INTEGER       IDXPS          ! IDX with ADDPS added for pol-specific
-        INTEGER       ISP            ! tmp pollutant position index
+        INTEGER       ISP            ! tmp pollutant/activity position index
         INTEGER       TDIM           ! temporary table dimension
 
         CHARACTER*16 :: PROGNAME = 'FILLCTBL' ! program name
@@ -79,8 +79,8 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
             IDX    = MPRNA( J )
             IDXPS  = IDX + ADDPS
 
-C.............  Populate tables depending on type. Note that the pollutant-
-C               specific entries are assumed to always come after the
+C.............  Populate tables depending on type. Note that the pollutant/
+C               activity-specific entries are assumed to always come after the
 C               non-specific ones (based on the previous sorting).
 C.............  The pol-specific entries are stored by adding 90000
 C               to the monthly profile number (which has a maximum of 3 
@@ -90,52 +90,52 @@ C               digits) so that the pol-specific can be identified later
             CASE( 0 )  ! Skip this x-ref because it is invalid or duplicate
 
             CASE( 1 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL01 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL01 )
 
             CASE( 2 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL02 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL02 )
 
             CASE( 3 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL03 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL03 )
 
             CASE( 4 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL04 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL04 )
 
             CASE( 5 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL05 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL05 )
 
             CASE( 6 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL06 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL06 )
 
             CASE( 7 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL07 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL07 )
 
             CASE( 8 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL08 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL08 )
 
             CASE( 9 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL09 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL09 )
                     
             CASE( 10 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL10 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL10 )
                     
             CASE( 11 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL11 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL11 )
                     
             CASE( 12 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL12 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL12 )
                     
             CASE( 13 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL13 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL13 )
              
             CASE( 14 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL14 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL14 )
                    
             CASE( 15 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL15 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL15 )
                                         
             CASE( 16 )
-                CALL SET_CNTRL_INDEX( TDIM, NIPOL, ICTL16 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL16 )
                                         
             CASE DEFAULT
 

@@ -21,8 +21,8 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
 CTL=cntlmat.o aloccmat.o alocpkts.o asgncntl.o errpkts.o \
-    fillcdat.o fillcntl.o genreact.o openrmat.o pktloop.o \
-    procpkts.o rdpacket.o wrrmat.o
+    fillcdat.o fillcntl.o  genproj.o genreact.o openpmat.o \
+    openrmat.o pktloop.o procpkts.o rdpacket.o wrrmat.o
 #
 cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH)
 	echo CNTLMAT:
@@ -44,7 +44,13 @@ fillcdat.o: $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 fillcntl.o: $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
+genproj.o:  $(MODSOURC) $(MODCNTRL)
+	$(FC) $(FFLAGS) -c -o $@ $< 
 genreact.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+openpmat.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+openrmat.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
 pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 

@@ -146,11 +146,9 @@ C.............  Generate reactivity matrices
 
         CASE( 'PROJECTION' )
 
-C NOTE: STOPPED HERE.  Must write GENPROJ and include the code below in it.
+C.............  Generate projection matrix
 
-C            ALLOCATE( PRJIDX( NSRC ), STAT=IOS )
-C            CALL CHECKMEM( IOS, 'PRJIDX', PROGNAME )
-C            CALL ASGNCNTL( NSRC, 1, PKTTYP, 'ALL', IDUM, PRJIDX )
+            CALL GENPROJ( NSRC, NIPPA, BYEAR, CPYEAR, ENAME, EANAM )
 
             SFLAG = .TRUE.
 

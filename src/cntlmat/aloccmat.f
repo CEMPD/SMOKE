@@ -5,7 +5,7 @@ C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This subroutine allocates memory for the pollutant-specific indices
+C      This subroutine allocates memory for the pol/act-specific indices
 C      for each source to the control data tables, and the arrays for the
 C      output control matrices.
 C      
@@ -97,7 +97,7 @@ C               tables
             LFLAG = ALLOCATED( FACALW )
             AFLAG = ALLOCATED( EMADD )
 
-            NGSZ = NIPOL   ! Number of pollutant in each group
+            NGSZ = NIPPA   ! Number of pollutant/activity in each group
             NGRP = 1       ! Number of groups
             DO
 
@@ -121,12 +121,12 @@ C               tables
                         WRITE( MESG,94010 ) 
      &                    'Insufficient memory to run program.' //
      &                    CRLF() // BLANK5 // 'Could not allocate ' // 
-     &                    'pollutant-dependent block of', MEM, 'bytes.'
+     &                    'pol/act-dependent block of', MEM, 'bytes.'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
 
                     NGRP = NGRP + 1
-                    NGSZ = NGSZ / NGRP + ( NIPOL - NGSZ * NGRP )
+                    NGSZ = NGSZ / NGRP + ( NIPPA - NGSZ * NGRP )
 
                     DEALLOCATE( CTGIDX, CTLIDX, ALWIDX, PCUMATX, ADDIDX,
      &                          PCAMATX )

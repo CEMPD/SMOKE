@@ -80,9 +80,9 @@ C...........   Local parameters
         CHARACTER*6, PARAMETER :: LOCCATS( 3 ) = 
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
-C...........   Sorted pollutant names
-        INTEGER                   INDXP  ( NIPOL ) !  sorting index for pols
-        CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPOL ) !  sorted pollutant names
+C...........   Sorted pollutant/activity names
+        INTEGER                   INDXP  ( NIPPA ) !  sorting index for pol/act
+        CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPPA ) !  sorted pol/act names
 
 C...........   Array of source characeristics
         CHARACTER*300           CHARS( 7 )
@@ -93,7 +93,7 @@ C...........   Array for reading temporal x-ref fields
 C...........   Other local variables
         INTEGER         I, J, J1, J2, J3, K, L, N    !  counters and indices
 
-        INTEGER         COD     !  temporary pollutant code
+        INTEGER         COD     !  temporary pollutant/activity code
         INTEGER         FIP     !  temporary FIPS code
         INTEGER         IDIU    !  temporary diurnal profile code
         INTEGER         IDUM    !  tmp dummy integer
@@ -102,7 +102,7 @@ C...........   Other local variables
         INTEGER         IWEK    !  temporary weekly profile code
         INTEGER         IREC    !  record counter
         INTEGER      :: JS = 0  !  position of SCC in source chars in x-ref file
-        INTEGER         JSPC    !  tmp index to master pollutant list
+        INTEGER         JSPC    !  tmp index to master pollutant/activity list
         INTEGER         LINTYPE !  temporary source category code
         INTEGER         LPCK    !  length of point definition packet
         INTEGER      :: NCP = 0 !  input point source header parm
@@ -115,17 +115,17 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error occurred
         LOGICAL      :: HFLAG = .FALSE.   !  true: pt defn header encountered
-        LOGICAL      :: PFLAG = .FALSE.   !  true: pol-spec entries skipped
+        LOGICAL      :: PFLAG = .FALSE.   !  true: pol/act-spec entries skipped
         LOGICAL      :: SKIPREC = .FALSE. !  true: skip this x-ref entry
 
         CHARACTER*1            SCC1     !  1st character of SCC
-        CHARACTER*5            CPOS     !  tmp sorted position of pol
+        CHARACTER*5            CPOS     !  tmp sorted position of pol/act
         CHARACTER*300          LINE     !  line buffer
         CHARACTER*300          MESG     !  message buffer
 
         CHARACTER(LEN=SICLEN3) CDUM     !  dummy character field for SIC
         CHARACTER(LEN=LNKLEN3) CLNK     !  temporary link code
-        CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol
+        CHARACTER(LEN=ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
         CHARACTER(LEN=FIPLEN3) CFIP     !  buffer for CFIPS code
         CHARACTER(LEN=FIPLEN3) FIPZERO  !  buffer for zero FIPS code
         CHARACTER(LEN=SCCLEN3) TSCC     !  temporary SCC
@@ -134,7 +134,7 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) SCCL     !  left digits of TSCC
         CHARACTER(LEN=SCCLEN3) SCCR     !  right 5 digits of TSCC
         CHARACTER(LEN=SCCLEN3) SCRZERO  !  buffer for zero SCCR
-        CHARACTER(LEN=IOVLEN3) CPOL     !  temporary pollutant
+        CHARACTER(LEN=IOVLEN3) CPOA     !  temporary pollutant/activity
 
         CHARACTER*16 :: PROGNAME = 'RDTREF' ! program name
 
@@ -158,16 +158,16 @@ C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         SCCZERO = REPEAT( '0', SCCLEN3 )
         SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
 
-C.........  Sort the actual list of pollutant names and store it
-        DO I = 1, NIPOL
+C.........  Sort the actual list of pollutant/activity names and store it
+        DO I = 1, NIPPA
             INDXP( I ) = I
         ENDDO
 
-        CALL SORTIC( NIPOL, INDXP, EINAM )
+        CALL SORTIC( NIPPA, INDXP, EANAM )
 
-        DO I = 1, NIPOL
+        DO I = 1, NIPPA
             J = INDXP( I )
-            SRTINAM( I ) = EINAM( J )
+            SRTINAM( I ) = EANAM( J )
         ENDDO
 
         CALL M3MSG2( 'Reading temporal cross-reference file...' )
@@ -181,7 +181,7 @@ C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'Temporal cross reference file' )
 
 C.........   First pass through file.  Determine format and count the number
-C            of lines matching SCC list and pollutant list.  Do this so that 
+C            of lines matching SCC list and pol/act list.  Do this so that 
 C            we know how much memory to allocate for the unsorted, unprocessed 
 C            arrays.
         IREC = 0
@@ -246,14 +246,14 @@ C.................  Get SCC from source definition if it is defined already
                     TSCC = SEGMENT( 5 + JS )    ! from source definition
                 END IF
 
-                CPOL = SEGMENT( 5 )   ! pollutant name
+                CPOA = SEGMENT( 5 )   ! pollutant/activity name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
-C                   SIC version to master list, and compare pollutant name 
+C                   SIC version to master list, and compare pol/act name 
 C                   with master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOL, IDUM, 
+                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, 
      &                         IDUM, JSPC, PFLAG, SKIPREC  )
 
 C.................  Skip lines that are not valid for this inven and src cat
@@ -384,14 +384,14 @@ C.................  Get SCC from source definition if it is defined already
                     TSCC = SEGMENT( 5 + JS )    ! from source definition
                 END IF
 
-                CPOL = SEGMENT( 5 )   ! pollutant name
+                CPOA = SEGMENT( 5 )   ! pollutant/activity name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
-C                   SIC version to master list, and compare pollutant name 
+C                   SIC version to master list, and compare pol/act name 
 C                   with master list.
-                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOL, IDUM, 
+                CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, 
      &                         IDUM, JSPC, PFLAG, SKIPREC    )
 
 C.................  Skip lines that are not valid for this inven and src cat
@@ -426,7 +426,7 @@ C.....................  Check for bad cross-reference code
 
                 END IF
  
-C.................  Write pollutant position to a character string
+C.................  Write pol/act position to a character string
                 WRITE( CPOS, '(I5)' ) JSPC  
 
                 N = N + 1
@@ -473,7 +473,7 @@ C.....................  Store string source characteristics
 
 C.................  Store case-indpendent fields
                 INDXTA( N ) = N
-                ISPTA ( N ) = JSPC ! Save index to original EINAM or zero
+                ISPTA ( N ) = JSPC ! Save index to original EANAM or zero
                 MPRNA ( N ) = IMON
                 WPRNA ( N ) = IWEK
                 DPRNA ( N ) = IDIU
@@ -495,7 +495,7 @@ C.........  Check for errors reading cross-reference file, and abort
 
 C.........  Sort temporal cross-reference entries. Since CPOS was used in 
 C           building CSRCTA, and CPOS will equal "0" when the x-ref entry is
-C           not pollutant-specific, the non-pollutant-specific entries will
+C           not pol/act-specific, the non-pol/act-specific entries will
 C           always appear first.  This is necessary for the table-generating
 C           subroutines.
 
