@@ -60,7 +60,7 @@ C.........  This module contains the major data structure and control flags
      &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG, EDEV,
      &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
-     &          BSVDESC, BFLAG
+     &          BSVDESC, BFLAG, VARFLAG
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
@@ -143,6 +143,12 @@ C   begin body of subroutine OPENMRGIN
 C.........  If reporting state and/or county emissions, and processing for
 C           biogenic sources, get gridding surrogates
         IF( LREPANY .AND. BFLAG ) THEN
+        
+            IF( VARFLAG ) THEN
+                MESG = 'Cannot report biogenic emissions when ' //
+     &                 'using a variable grid.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
             GDEV = PROMPTFFILE( 
      &             'Enter logical name for SURROGATE COEFFICIENTS file',
@@ -166,7 +172,13 @@ C.........  Initialize gridded information with grid description file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        CALL CHKGRID( 'general', 'GRIDDESC', 1, EFLAG )  ! May get initlzd here
+C.........  Check or initialize the grid; do not allow subgrids 
+C           when using a variable grid
+        IF( VARFLAG ) THEN
+            CALL CHKGRID( 'general', 'GRIDDESC', 0, EFLAG )
+        ELSE
+            CALL CHKGRID( 'general', 'GRIDDESC', 1, EFLAG )
+        END IF
         
 C.........  For area sources... 
         IF( AFLAG ) THEN
@@ -260,8 +272,21 @@ C               compare or initialize grid information.
      &         FSREAD3, 'AGMAT', PROGNAME )
 
             CALL RETRIEVE_IOAPI_HEADER( AGNAME )
+            
+            IF( VARFLAG ) THEN
+                DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', .TRUE. )
+            END IF
+                
             CALL CHKSRCNO( 'area', 'AGMAT', NTHIK3D, NASRC, EFLAG )
-            CALL CHKGRID( 'area', 'GMAT', 1, EFLAG )
+
+C.............  Check the grid definition; do not allow subgrids if using
+C               a variable grid
+            IF( VARFLAG ) THEN
+                CALL CHKGRID( 'area', 'GMAT', 0, EFLAG )
+            ELSE
+                CALL CHKGRID( 'area', 'GMAT', 1, EFLAG )
+            END IF
+            
             ANGMAT = NCOLS3D
 
 C.............  Open speciation matrix, compare number of sources, store
@@ -343,8 +368,20 @@ C.........  If we have biogenic sources
             BTNAME = PROMPTMFILE( MESG, FSREAD3, 'BGTS', PROGNAME )
 
             CALL RETRIEVE_IOAPI_HEADER( BTNAME )
+
+            IF( VARFLAG ) THEN
+                DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', .TRUE. )
+            END IF
+            
             CALL UPDATE_TIME_INFO( BTNAME )
-            CALL CHKGRID( 'biogenics', 'GRID', 1, EFLAG )
+            
+C.............  Check the grid definition; do not allow subgrids if using
+C               a variable grid
+            IF( VARFLAG ) THEN
+                CALL CHKGRID( 'biogenics', 'GRID', 0, EFLAG )
+            ELSE
+                CALL CHKGRID( 'biogenics', 'GRID', 1, EFLAG )
+            END IF
 
             IF( LMETCHK ) CALL CHECK_MET_INFO( 'biogenics' ) 
 
@@ -492,8 +529,21 @@ C               compare or initialize grid information.
      &       FSREAD3, 'MGMAT', PROGNAME )
 
             CALL RETRIEVE_IOAPI_HEADER( MGNAME )
+            
+            IF( VARFLAG ) THEN
+                DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', .TRUE. )
+            END IF
+            
             CALL CHKSRCNO( 'mobile', 'MGMAT', NTHIK3D, NMSRC, EFLAG )
-            CALL CHKGRID( 'mobile', 'GMAT', 1, EFLAG )
+
+C.............  Check the grid definition; do not allow subgrids if using
+C               a variable grid
+            IF( VARFLAG ) THEN
+                CALL CHKGRID( 'mobile', 'GMAT', 0, EFLAG )
+            ELSE
+                CALL CHKGRID( 'mobile', 'GMAT', 1, EFLAG )
+            END IF
+            
             MNGMAT = NCOLS3D
 
 C.............  Open speciation matrix, compare number of sources, store
@@ -664,8 +714,20 @@ C               compare or initialize grid information.
      &       FSREAD3, 'PGMAT', PROGNAME )
 
             CALL RETRIEVE_IOAPI_HEADER( PGNAME )
+            
+            IF( VARFLAG ) THEN
+                DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', .TRUE. )
+            END IF
+            
             CALL CHKSRCNO( 'point', 'PGMAT', NTHIK3D, NPSRC, EFLAG )
-            CALL CHKGRID( 'point', 'GMAT', 1, EFLAG )
+
+C.............  Check the grid definition; do not allow subgrids if using
+C               a variable grid
+            IF( VARFLAG ) THEN
+                CALL CHKGRID( 'point', 'GMAT', 0, EFLAG )
+            ELSE
+                CALL CHKGRID( 'point', 'GMAT', 1, EFLAG )
+            END IF
 
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable names, and store mass or moles.
@@ -739,6 +801,11 @@ C               met information, and store the vertical coordinates info
                 PLNAME = PROMPTMFILE( MESG, FSREAD3, 'PLAY', PROGNAME )
 
                 CALL RETRIEVE_IOAPI_HEADER( PLNAME )
+                
+                IF( VARFLAG ) THEN
+                    DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', .TRUE. )
+                END IF
+                
                 CALL CHKSRCNO( 'point', PLNAME, NROWS3D, NPSRC, EFLAG )
                 CALL UPDATE_TIME_INFO( PLNAME )
 
@@ -753,6 +820,11 @@ C.............  Get file name and open daily input inventory file
 
 C.................  Check to see if appropriate variable list exists
                 CALL RETRIEVE_IOAPI_HEADER( PHNAME )
+                
+                IF( VARFLAG ) THEN
+                    DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', .TRUE. )
+                END IF
+                
                 CALL CHKSRCNO( 'point', PHNAME, NTHIK3D, NPSRC, EFLAG )
                 CALL UPDATE_TIME_INFO( PHNAME )
 
@@ -783,6 +855,14 @@ C                   to the potential for 0-based or 1-based VGLVS3D
 C.............  For plume-in-grid outputs or for UAM-style elevated point
 C               sources (PTSRCE input file)...
             IF( ELEVFLAG .OR. PINGFLAG ) THEN
+
+C.................  Check if using a variable grid            
+                IF( VARFLAG ) THEN
+                    MESG = 'Cannot process plume-in-grid or ' //
+     &                     'UAM-style sources when using a ' //
+     &                     'variable grid.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
 C.................  If elevated ASCII and units are grams, print warning
                 IF( ELEVFLAG .AND. SPCTYPE .EQ. MASSSTR ) THEN
