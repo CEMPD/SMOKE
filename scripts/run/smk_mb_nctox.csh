@@ -48,7 +48,7 @@ setenv FILL_ANN_WSEAS       N  # Y fills annual value when only seasonal is prov
 setenv IMPORT_VMTMIX_YN     N  # Y imports VMT mix - needed for EMS-95 inputs
 setenv RAW_DUP_CHECK        N  # Y errors on duplicate records
 setenv SMK_BASEYR_OVERRIDE  0  # Enter year of the base year when future-year inven provided
-setenv SMK_NHAPEXLCUDE_YN   Y  # Y uses NonHAP exclusions file
+setenv SMK_NHAPEXCLUDE_YN   Y  # Y uses NonHAP exclusions file
 setenv SMKINVEN_FORMULA    " " # Internal PMC calculation
 setenv SMK_VMTMIX_FIXFMT    N  # Y uses fixed-format VMT Mix file (EMS-95 input format only)
 setenv WEST_HSPHERE         Y  # Y converts ALL stack coords to western hemisphere
