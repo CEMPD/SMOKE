@@ -42,16 +42,23 @@ C***********************************************************************
 C...........   MODULES for public variables
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: PKT_IDX, ELG_IDX, PNG_IDX, ELV_IDX,
-     &                      SPCF_NAND
+     &                      SPCF_NAND, INSPCIFY, LIN_SPCIFY,
+     &                      SPCF_NOR, NCRTSYBL, CRTSYBL
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: GRPVALS, GRPTYPES, 
      &                     ELVVALS, ELVTYPES, ELVCHRS,
      &                     PNGVALS, PNGTYPES, PNGCHRS,
-     &                     EVPEMIDX, EVPESTAT, EVPPSTAT
+     &                     EVPEMIDX, EVPESTAT, EVPPSTAT,
+     &                     NGRPVAR, NEVPVAR, NEVPEMV, 
+     &                     NGRPCRIT, NELVCRIT, NPNGCRIT,
+     &                     MXGRPCHK, MXELVCHK, MXPNGCHK,
+     &                     LCUTOFF, LPNGRNK, LELVRNK
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: EINAM
+        USE MODINFO, ONLY: EINAM, NIPOL
+
+        IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
