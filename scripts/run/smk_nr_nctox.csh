@@ -81,7 +81,6 @@ setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
 setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
-#     SMK_EMLAYS                  # see multiple-program controls
 #     SMK_O3SEASON_YN             # see multiple-program controls
 
 # Multiple-program controls
@@ -104,6 +103,7 @@ setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 
 # Override settings
 # setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
+# setenv YEAR_OVERRIDE              # Overrides YEAR (base) in Assigns file
 # setenv INVTABLE_OVERRIDE          # Inventory table override
 
 ##############################################################################
