@@ -110,6 +110,14 @@ C...........   Allocatable arrays for reading in stack splits def'n file
         INTEGER, ALLOCATABLE :: SPTINDX ( : )  ! sorting index
         INTEGER, ALLOCATABLE :: SPTGIDA( : )  ! unsorted stack group ID
 
+        REAL   , ALLOCATABLE :: SPTLAT ( : )  ! unsorted splits file latitude
+        REAL   , ALLOCATABLE :: SPTLON ( : )  ! unsorted splits file longitude
+        REAL   , ALLOCATABLE :: SPTDM  ( : )  ! unsorted splits file diameter 
+        REAL   , ALLOCATABLE :: SPTHT  ( : )  ! unsorted splits file height   
+        REAL   , ALLOCATABLE :: SPTTK  ( : )  ! unsorted splits file tmpr     
+        REAL   , ALLOCATABLE :: SPTVE  ( : )  ! unsorted splits file velocity
+        REAL   , ALLOCATABLE :: SPTFL  ( : )  ! unsorted splits file flow
+
         LOGICAL, ALLOCATABLE :: SPTMMSA( : )  ! true: Major stack (unsorted)
         LOGICAL, ALLOCATABLE :: SPTMPSA( : )  ! true: PinG stack (unsorted)
         LOGICAL, ALLOCATABLE :: FOUND  ( : )  ! true: entry found in inven
@@ -129,7 +137,7 @@ C...........   File units and logical/physical names
         CHARACTER*16    MNAME   !  plume-in-grid srcs stack groups output file
 
 C...........   Other local variables
-        INTEGER         I, J, K, S, L, L2      ! indices and counters
+        INTEGER         I, J, K, S, L, L2, N      ! indices and counters
 
         INTEGER         COID          ! tmp country ID
         INTEGER         COL           ! tmp column number
@@ -141,7 +149,7 @@ C...........   Other local variables
         INTEGER         IOSCUT        ! i/o status for cutoff E.V.
         INTEGER         IREC          ! record counter
         INTEGER         NCOLS         ! no. grid column
-        INTEGER         NEXCLD        ! no. stack groups exlcuded from the grid
+        INTEGER      :: NEXCLD = 0    ! no. stack groups exlcuded from the grid
         INTEGER         NGRID         ! no. grid cells
         INTEGER         NROWS         ! no. grid rows
         INTEGER         NGLINES       ! no. lines in stack group file
@@ -164,6 +172,11 @@ C...........   Other local variables
         REAL            HT            ! tmp inside stack diameter [m]
         REAL            LAT           ! tmp latitude [degrees]
         REAL            LON           ! tmp longitude [degrees]
+        REAL            MINDM         ! min stack group diam
+        REAL            MINFL         ! min stack group flow
+        REAL            MINHT         ! min stack group height
+        REAL            MINTK         ! min stack group temperature
+        REAL            MINVE         ! min stack group velocity
         REAL            RISE          ! calculated plume rise
         REAL            TK            ! tmp stack exit temperature [K]
         REAL            VE            ! tmp stack exit velocity diameter [m/s]
@@ -388,6 +401,26 @@ C               number of lines
             ALLOCATE( SN( NGROUP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SN', PROGNAME )
 
+C.............  Initialize stack group variables
+            GRPIDX  = 0
+            GRPGIDA = 0
+            GRPGID  = 0
+            GRPLAT  = BADVAL3
+            GRPLON  = BADVAL3
+            GRPDM   = BADVAL3
+            GRPHT   = BADVAL3
+            GRPTK   = BADVAL3
+            GRPVE   = BADVAL3
+            GRPFL   = BADVAL3
+            GRPCNT  = 0
+            GRPROW  = 0
+            GRPCOL  = 0
+            GRPXL   = BADVAL3
+            GRPYL   = BADVAL3
+            INDX    = 0
+            GN      = 0
+            SN      = 0
+
 C.............  Allocate memory so that we can use the GENPTCEL
             ALLOCATE( NX( NGRID ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NX', PROGNAME )
@@ -445,15 +478,15 @@ C.................  Store data
                     GRPIDX ( J ) = J
                     GRPGIDA( J ) = GID
                     GRPCNT ( J ) = NPG 
-                    GRPLON ( J ) = LON
-                    GRPXL  ( J ) = LON
-                    GRPLAT ( J ) = LAT
-                    GRPYL  ( J ) = LAT
-                    GRPDM  ( J ) = DM
-                    GRPHT  ( J ) = HT
-                    GRPTK  ( J ) = TK
-                    GRPVE  ( J ) = VE
-                    GRPFL  ( J ) = FL
+                    IF( LON .NE. 0. ) GRPLON ( J ) = LON
+                    IF( LON .NE. 0. ) GRPXL  ( J ) = LON
+                    IF( LAT .NE. 0. ) GRPLAT ( J ) = LAT
+                    IF( LAT .NE. 0. ) GRPYL  ( J ) = LAT
+                    IF( DM  .GT. 0. ) GRPDM  ( J ) = DM
+                    IF( HT  .GT. 0. ) GRPHT  ( J ) = HT
+                    IF( TK  .GT. 0. ) GRPTK  ( J ) = TK
+                    IF( VE  .GT. 0. ) GRPVE  ( J ) = VE
+                    IF( FL  .GT. 0. ) GRPFL  ( J ) = FL
                 END IF
 
             END DO    ! End loop on input file lines
@@ -467,43 +500,6 @@ C.............  Abort if overflow
      &                  'exceeds dimension NGROUP=', NGROUP
                 CALL M3MSG2( MESG ) 
 
-C.............  Otherwise, process the stack group coordinates for the
-C               current grid
-            ELSE
-
-C.................  Convert x,y location to coordinates of the projected grid
-                CALL CONVRTXY( NGROUP, GDTYP3D, P_ALP3D, P_BET3D, 
-     &                         P_GAM3D, XCENT3D, YCENT3D, GRPXL, GRPYL )
-
-C.................  Determine grid cells for these coordinate locations
-                CALL GENPTCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX, 
-     &                         INDX, GN, SN )
-
-C.................  Convert grid cells to row and columns numbers
-                DO I = 1, NGROUP
-
-                   ROW = 0
-                   COL = 0
-
-                   IF( GN( I ) .GT. 0 ) THEN
-                       ROW = ( GN( I ) / NCOLS ) + 1      ! note: integer math
-                       COL = GN( I ) - ( ROW-1 ) * NCOLS
-                   END IF
-
-                   GRPROW( I ) = ROW
-                   GRPCOL( I ) = COL
-
-                END DO
-
-            END IF
-
-C.............  Give warning if any plume-in-grid stack groups are outside the
-C               grid
-            IF( NEXCLD .GT. 0 ) THEN
-                WRITE( MESG,94010 ) 'WARNING: ', NEXCLD, 'stack ' //
-     &                 'groups are outside of grid "' // 
-     &                 GDNAM3D( 1:LEN_TRIM( GDNAM3D ) )
-                CALL M3MSG2( MESG )
             END IF
 
 C.............  Sort stack group information
@@ -531,12 +527,29 @@ C.............  Allocate memory for reading stack splits file
             CALL CHECKMEM( IOS, 'SPTMMSA', PROGNAME )
             ALLOCATE( SPTMPSA( NSLINES ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPTMPSA', PROGNAME )
+            ALLOCATE( SPTLON( NSLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPTLON', PROGNAME )
+            ALLOCATE( SPTLAT( NSLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPTLAT', PROGNAME )
+            ALLOCATE( SPTDM( NSLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPTDM', PROGNAME )
+            ALLOCATE( SPTHT( NSLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPTHT', PROGNAME )
+            ALLOCATE( SPTTK( NSLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPTTK', PROGNAME )
+            ALLOCATE( SPTVE( NSLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPTVE', PROGNAME )
+            ALLOCATE( SPTFL( NSLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPTFL', PROGNAME )
             ALLOCATE( SPTCSRCA( NSLINES ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPTCSRCA', PROGNAME )
             ALLOCATE( SPTCSRC( NSLINES ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPTCSRC', PROGNAME )
             ALLOCATE( FOUND  ( NSLINES ), STAT=IOS )
             CALL CHECKMEM( IOS, 'FOUND', PROGNAME )
+
+C.............  Initialize
+            SPTINDX = 1
 
 C.............  Initialize status of PSPLIT entries found in inventory
             FOUND = .FALSE.    ! array 
@@ -550,7 +563,7 @@ C.............  Read stack splits file
 
                 READ( TDEV, 93550, IOSTAT=IOS, END=999 ) 
      &                GID, CSWITCH1, CSWITCH2, COID, STID, CYID, PLT,
-     &                CHAR1, CHAR2
+     &                CHAR1, CHAR2, LON, LAT, DM, HT, TK, VE, FL
                 IREC = IREC + 1
 
 C.................  Check read error status
@@ -563,9 +576,17 @@ C.................  Check read error status
         	END IF
 
 C.................  Store contents of splits file entry
+                SPTINDX( I ) = I
                 SPTGIDA( I ) = GID
                 SPTMMSA( I ) = ( CSWITCH1 .NE. ' ' )
                 SPTMPSA( I ) = ( CSWITCH2 .NE. ' ' )
+                SPTLON ( I ) = LON
+                SPTLAT ( I ) = LAT
+                SPTDM  ( I ) = DM
+                SPTHT  ( I ) = HT
+                SPTTK  ( I ) = TK
+                SPTVE  ( I ) = VE
+                SPTFL  ( I ) = FL
 
                 FIP = COID * 100000 + STID * 1000 + CYID
                 WRITE( CFIP, FMTFIP ) FIP
@@ -575,7 +596,6 @@ C.................  Store contents of splits file entry
      &                        CHRBLNK3, CHRBLNK3, POLBLNK3, CSRC )
 
                 SPTCSRCA( I ) = CSRC
-                SPTINDX  ( I ) = I
 
             END DO    ! End loop on input file lines
 
@@ -627,6 +647,50 @@ C.....................  Store per-source major and PinG source info
                         NMAJOR = NMAJOR + 1
                     END IF
 
+C.....................  Check the stack groups file for stack parameters and
+C                       coordinates. If the group is missing any information,
+C                       update it with the data from the stack splits file.
+C                       If the stack splits file is missing data, update with
+C                       data from the inventory...
+
+C.....................  Reassign index from position in sorted list to unsorted
+                    K = GRPIDX( K )
+
+                    CALL VALID_GRP_INFO( 'longitude', CSRC, GID, 
+     &                         SPTLON( J ), XLOCA( S ), GRPLON( K ) )
+                    CALL VALID_GRP_INFO( 'x-location', CSRC, GID, 
+     &                         SPTLON( J ), XLOCA( S ), GRPXL ( K ) )
+                    CALL VALID_GRP_INFO( 'latitude', CSRC, GID, 
+     &                         SPTLAT( J ), YLOCA( S ), GRPLAT( K ) )
+                    CALL VALID_GRP_INFO( 'y-location', CSRC, GID, 
+     &                         SPTLAT( J ), YLOCA( S ), GRPYL( K ) )
+                    CALL VALID_GRP_INFO( 'diameter', CSRC, GID, 
+     &                         SPTDM( J ), STKDM( S ), GRPDM( K ) )
+                    CALL VALID_GRP_INFO( 'height', CSRC, GID,
+     &                         SPTHT( J ), STKHT( S ), GRPHT( K ) )
+                    CALL VALID_GRP_INFO( 'exit temperature', CSRC, GID, 
+     &                         SPTTK( J ), STKTK( S ), GRPTK( K ) )
+                    CALL VALID_GRP_INFO( 'exit velocity', CSRC, GID, 
+     &                         SPTVE( J ), STKVE( S ), GRPVE( K ) )
+                    CALL VALID_GRP_INFO( 'exit flow', CSRC, GID, 
+     &                         SPTFL( J ), -9., GRPFL( K ) )
+
+                    IF( GRPFL( K ) .LT. 0. .AND. 
+     &                  GRPVE( K ) .GT. 0.       ) THEN
+                       DM = GRPDM( K )
+                       GRPFL( K ) = GRPVE( K ) * PI * ( 0.25*DM*DM )
+
+                    ELSE IF( GRPVE( K ) .LE. 0. ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'INTERNAL ERROR: ' //
+     &                         'Bad velocity set for stack group',
+     &                         GID, 'and could not compute flow.'
+                        CALL M3MESG( MESG )
+
+                    END IF
+
+                             
+
                 END IF
 
             END DO
@@ -651,6 +715,13 @@ C               inventory
 
         END IF  ! End of section for major/minor split file input
 
+C.........  Abort if error found while reading stack group or stack splits file
+        IF( EFLAG ) THEN
+            MESG = 'Problem reading stack groups and/or stack ' //
+     &             'splits file.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  If there are no stack groups or stack splits files...
         IF( .NOT. MAJRFLAG ) THEN
 
@@ -669,7 +740,6 @@ C               this is a default value
             CALL M3MSG2( MESG )
 
 C.............  Process the stacks to determine elevated sources
-            EFLAG = .FALSE.
             DO S = 1, NSRC
 
 C.................  Check stack parameters so PLUMRIS doesn't blow up
@@ -764,6 +834,60 @@ C.........  Write ASCII file
 C.........  If needed, sort and write plume-in-grid output file
         IF( PINGFLAG ) THEN
 
+C.............  Process the stack group coordinates for the current grid
+
+C.............  Convert x,y location to coordinates of the projected grid
+            CALL CONVRTXY( NGROUP, GDTYP3D, P_ALP3D, P_BET3D, 
+     &                     P_GAM3D, XCENT3D, YCENT3D, GRPXL, GRPYL )
+
+C.............  Determine grid cells for these coordinate locations
+            CALL GENPTCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX, 
+     &                     INDX, GN, SN )
+
+C.............  Convert grid cells to row and columns numbers
+            DO I = 1, NGROUP
+
+               ROW = 0
+               COL = 0
+               N   = GN( I )
+
+               IF( N .GT. 0 ) THEN
+                   ROW = N / NCOLS          ! note: integer math
+                   IF( MOD( N, NCOLS ) .GT. 0. ) ROW = ROW + 1
+                   COL = N - ( ROW-1 ) * NCOLS
+               END IF
+
+               GRPROW( I ) = ROW
+               GRPCOL( I ) = COL
+
+            END DO
+
+C.............  Make sure that stack parameters are set for all groups
+C.............  This is a simplistic way of doing this for now, later
+C               add call to FIXSTK routine
+            MINDM = MINVAL( GRPDM )
+            MINHT = MINVAL( GRPHT )
+            MINTK = MINVAL( GRPTK )
+            MINVE = MINVAL( GRPVE )
+            MINFL = MINVAL( GRPFL )
+
+            IF( MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LE. 0. ) THEN
+                MESG = 'Bad stack group or stack split file. ' //
+     &                 'Unable to assign stack ' // CRLF()//BLANK10//
+     &                 'parameters to all stack groups. Could be '//
+     &                 'a source matching problem.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Give warning if any plume-in-grid stack groups are outside the
+C               grid
+            IF( NEXCLD .GT. 0 ) THEN
+                WRITE( MESG,94010 ) 'WARNING: ', NEXCLD, 'stack ' //
+     &                 'groups are outside of grid "' // 
+     &                 GDNAM3D( 1:LEN_TRIM( GDNAM3D ) )
+                CALL M3MSG2( MESG )
+            END IF
+
             MESG='Writing PLUME-IN-GRID STACK PARAMETERS output file...'
             CALL M3MSG2( MESG )
 
@@ -784,7 +908,8 @@ C...........   Formatted file I/O formats............ 93xxx
 93500   FORMAT( I6, A1, 21X, I5, F9.0, F9.0, 3X, F8.0, F7.0, F7.0, 
      &          F7.0, F10.0 )
 
-93550   FORMAT( 6X, I6, A1, A1, I1, I2, I3, A15, A15, A11 )
+93550   FORMAT( 6X, I6, A1, A1, I1, I2, I3, A15, A15, A11, 7X,
+     &          F9.0, F9.0, F8.0, F7.0, F7.0, F7.0, F10.0 )
 
 93620   FORMAT( 3(I8,1X) )
 
@@ -798,6 +923,83 @@ C...........   Internal buffering formats............ 94xxx
      &          'T[K]:', 1X, F7.1, 1X, 'V[m/s]:', 1X, F10.1 )
 
 94300   FORMAT( A, I2.2, A, I2.2, A )
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+        CONTAINS
+
+C.............  This internal subprogram is for verifying that the group stack
+C               parameters are valid and resetting them with the inventory
+C               stack parameters if they are not.
+            SUBROUTINE VALID_GRP_INFO( DESC, CSRC, GID, SPLVAL, 
+     &                                 SRCVAL, GRPVAL )
+
+C.............  Subroutine arguments 
+            CHARACTER(*), INTENT (IN) :: DESC    ! description of data
+            CHARACTER(*), INTENT (IN) :: CSRC    ! description of source chars
+            INTEGER     , INTENT (IN) :: GID     ! group ID
+            REAL        , INTENT (IN) :: SPLVAL  ! stack split data value
+            REAL        , INTENT (IN) :: SRCVAL  ! source data value
+            REAL        , INTENT(OUT) :: GRPVAL  ! stack group data value
+
+C.............  Local variables
+            INTEGER        L, L2
+            CHARACTER*300  MESG
+
+C----------------------------------------------------------------------
+
+            L = LEN_TRIM( DESC )
+            IF( GRPVAL .LT. AMISS3 ) THEN
+
+                CALL FMTCSRC( CSRC, 4, BUFFER, L2 )
+
+                IF( SPLVAL .GT. 0 ) THEN
+
+                   GRPVAL = SPLVAL
+                   WRITE( MESG,94010 ) 'WARNING: Stack group', GID, 
+     &                    DESC( 1:L ) // ' set using stack splits'//
+     &                    CRLF() // BLANK10 // 'file data for:'//
+     &                    CRLF() // BLANK10 // BUFFER( 1:L2 )
+                   CALL M3MESG( MESG )
+
+                ELSE IF( SRCVAL .GE. 0 ) THEN
+
+                   GRPVAL = SRCVAL
+                   WRITE( MESG,94010 ) 'WARNING: Stack group', GID, 
+     &                    DESC( 1:L ) // ' set using SMOKE'//
+     &                    CRLF() // BLANK10 // 'inventory data for:'//
+     &                    CRLF() // BLANK10 // BUFFER( 1:L2 )
+                   CALL M3MESG( MESG )
+
+                ELSE IF( DESC .EQ. 'exit flow' ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: Stack group', GID,
+     &                    DESC( 1:L ) // ' set by computing'// CRLF()//
+     &                    BLANK10// 'from velocity and diameter for:'//
+     &                    CRLF()// BLANK10// BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+
+                ELSE
+
+                   EFLAG = .TRUE.
+                   WRITE( MESG,94010 ) 'INTERNAL ERROR: ' //
+     &                    DESC( 1:L ) // ' data in inventory less '// 
+     &                    'than zero for:'//
+     &                    CRLF() // BLANK10 // BUFFER( 1:L2 )
+                   CALL M3MSG2( MESG )
+
+                END IF
+
+            END IF
+
+            RETURN
+
+C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
+
+C...........   Internal buffering formats............ 94xxx
+
+94010       FORMAT( 10 ( A, :, I8, :, 2X  ) )
+
+            END SUBROUTINE VALID_GRP_INFO 
 
         END PROGRAM ELEVPOINT
 
