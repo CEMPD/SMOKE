@@ -8,7 +8,7 @@
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 include $(MD_SRC)/modmake.inc
-include $(IOMOD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
 
 FILES_A = \
   applumat.o   fltrxref.o   getrfdsc.o   procspro.o   rdsrghdr.o \
