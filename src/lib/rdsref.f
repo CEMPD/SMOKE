@@ -116,7 +116,6 @@ C...........   Other local variables
         INTEGER         VTYPE   !  temporary vehicle type number
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
-        LOGICAL      :: FFLAG = .FALSE.   !  true: fixed format is expected
         LOGICAL      :: HFLAG = .FALSE.   !  true: header found
         LOGICAL      :: PFLAG = .FALSE.   !  true: tmp pol-spec rec skipped
         LOGICAL      :: SKIPPOL = .FALSE. !  true: pol-spec rec skipped in x-ref
@@ -149,10 +148,6 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine RDSREF
-
-C.........  Get format of file from the environment
-        MESG = 'Indicator of fixed format for speciation x-ref file'
-        FFLAG = ENVYN( 'SMK_GSREF_FIXED', MESG, .FALSE., IOS )
 
 C.........  Ensure that the CATEGORY is valid
         I = INDEX1( CATEGORY, 3, LOCCATS )
@@ -281,37 +276,15 @@ C               that don't apply to this source category or to the current
 C               inventory will be filtered out by FLTRXREF
             ELSE 
 
-C.................  For fixed format, transfer line to temporary fields for 
-C                   all source categories (NCIN set above)
-                IF( FFLAG ) THEN
-                    DO J = 1, NCIN
-                	J1 = PCS( J )
-                	J2 = PCE( J )
-                	SEGMENT( J ) = LINE( J1:J2 )
-                    END DO
+                CALL PARSLINE( LINE, MXCOL, SEGMENT )
 
-                    TSCC   = LINE( 1:10 )
-                    SPCODE = LINE( 12:16 )  !  profile number
-                    CPOA   = LINE( 18:33 )  !  pollutant/emis type name
-                    CFIP   = SEGMENT( 1 )
-                    PLT    = SEGMENT( 2 )
-                    PROC   = SEGMENT( 2 )
-                    CHARS( 1:5 ) = SEGMENT( 3:NCIN )
-
-C.................  Otherwise, read in list format
-                ELSE
-
-                    CALL PARSLINE( LINE, MXCOL, SEGMENT )
-
-                    TSCC   = SEGMENT( 1 )
-                    SPCODE = SEGMENT( 2 )                    
-                    CPOA   = SEGMENT( 3 )
-                    CFIP   = SEGMENT( 4 )
-                    PLT    = SEGMENT( 5 )
-                    PROC   = SEGMENT( 5 )
-                    CHARS( 1:5 ) = SEGMENT( 6:MXCOL )
-
-                END IF
+                TSCC   = SEGMENT( 1 )
+                SPCODE = SEGMENT( 2 )                    
+                CPOA   = SEGMENT( 3 )
+                CFIP   = SEGMENT( 4 )
+                PLT    = SEGMENT( 5 )
+                PROC   = SEGMENT( 5 )
+                CHARS( 1:5 ) = SEGMENT( 6:MXCOL )
 
 C.................  Adjust these for proper sorting and matching with profiles
 C                   file.
