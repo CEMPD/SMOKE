@@ -11,14 +11,15 @@ C.........  This module contains the information about the source category
 C...........   This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, EFSNAM, EFSDSC
         
-        USE MODMBSET, ONLY: SCENLIST, EMISSIONS, EMISPOS, NONE
+        USE MODMBSET, ONLY: SCENLIST, EMISSIONS, M6NONE
         
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-
+        INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
+        
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CVTRDTYPE
         INTEGER         CVTVEHTYPE
@@ -50,6 +51,7 @@ C.........   Other local variables
         INTEGER    JDATE            ! output date
         INTEGER    JTIME            ! output time
         INTEGER    EFPOS            ! current position in emission factor arrays
+        INTEGER    EMISPOS          ! position in master emission factor array
         INTEGER    POLEF            ! ef/pollutant combo position in SRCEFS
         INTEGER    VARPOL           ! pollutant specified by current variable
         INTEGER    VAREMIS          ! emission process specified by current variable
@@ -76,8 +78,8 @@ C.........  Allocate arrays for per-source efs
             
             INITIAL = .FALSE.
         END IF
-        
-        DO IHR = 1,24
+
+        DO IHR = 1, 24
             EFPOS = 1
             
             SRCEFS    = 0.
@@ -98,32 +100,29 @@ C.................  Check local-as-arterial setting for this source
                 FTYPE = CVTRDTYPE( IRCLAS( ISRC ), LASAFLAG )
                 VTYPE = CVTVEHTYPE( IVTYPE( ISRC ) )
                 
-                DO IEFTYPE = 1,8
+                DO IEFTYPE = 1,MXM6EPR
  
 C.....................  Set facility type to NONE for all ef types
 C                       except exhaust running and evp running                
                     IF( IEFTYPE == 1 .OR. IEFTYPE == 6 ) THEN
                         CURRFTYPE = FTYPE
                     ELSE
-                    	CURRFTYPE = NONE
+                    	CURRFTYPE = M6NONE
                     END IF 
                     
-                    DO IPOL = 1,3
-
-C.........................  Skip non-exhaust EFs for non-HC pollutants
-                        IF( IPOL /= 1 .AND. IEFTYPE > 2 ) CYCLE
-
-C.........................  Find position in emissions array
-                        EMISPOS = EFPOSITION( SCENNUM, IPOL, VTYPE, 
-     &                                        IEFTYPE, CURRFTYPE, IHR )
-
+                    DO IPOL = 1,MXM6POLS
+                    
 C.........................  Determine position of EF/pollutant combo                    
-                        IF( IEFTYPE == 1 .OR. IEFTYPE == 2 ) THEN
-                            POLEF = ( IEFTYPE - 1 )*3 + IPOL
-                        ELSE
-                            POLEF = IEFTYPE + 4
-                        END IF
-                        
+                        POLEF = M6POL2EF( IEFTYPE, IPOL )
+
+C.........................  Make sure this is a valid combination
+                        IF( POLEF == -1 ) CYCLE
+
+C.........................  Find position in master emissions array
+                        EMISPOS = EFPOSITION( SCENNUM, IPOL, VTYPE, 
+     &                                        IEFTYPE, CURRFTYPE, 
+     &                                        IHR, .FALSE. )
+                      
                         SRCEFS( EFPOS, POLEF ) = EMISSIONS( EMISPOS )
                         
                     END DO    ! end pollutant loop              
@@ -154,7 +153,45 @@ C.................  Match pollutant in variable name to number
                     VARPOL = 2
                 CASE( 'NOX' )
                     VARPOL = 3
-                CASE DEFAULT
+                CASE( 'SO4' )
+                    VARPOL = 4
+                CASE( 'O25' )
+                    VARPOL = 5
+                CASE( 'E25' )
+                    VARPOL = 6
+                CASE( 'G25' )
+                    VARPOL = 7
+                CASE( 'SO2' )
+                    VARPOL = 8
+                CASE( 'NH3' )
+                    VARPOL = 9
+                CASE( 'B25' )
+                    VARPOL = 10
+                CASE( 'T25' )
+                    VARPOL = 11
+                CASE( 'BEN' )
+                    VARPOL = 12
+                CASE( 'MTB' )
+                    VARPOL = 13
+                CASE( 'BUT' )
+                    VARPOL = 14
+                CASE( 'FOR' )
+                    VARPOL = 15
+                CASE( 'ACE' )
+                    VARPOL = 16
+                CASE( 'ACR' )
+                    VARPOL = 17
+                CASE( 'O10' )
+                    VARPOL = 18
+                CASE( 'E10' )
+                    VARPOL = 19
+                CASE( 'G10' )
+                    VARPOL = 20
+                CASE( 'B10' )
+                    VARPOL = 21
+                CASE( 'T10' )
+                    VARPOL = 22
+                CASE DEFAULT   ! any variety of hydrocarbon
                     VARPOL = 1
                 END SELECT
 
@@ -176,6 +213,10 @@ C.................  Match emission process to number
                     VAREMIS = 7
                 CASE( 'RFL' )
                     VAREMIS = 8
+                CASE( 'BRK' )
+                    VAREMIS = 9
+                CASE( 'TIR' )
+                    VAREMIS = 10
                 CASE DEFAULT
                     MESG = 'Unrecognized emission process ' //
      &                     EFSNAM( I )( 1:L-1 )
@@ -183,11 +224,7 @@ C.................  Match emission process to number
                 END SELECT
                 
 C.................  Determine position of EF/pollutant combo                    
-                IF( VAREMIS == 1 .OR. VAREMIS == 2 ) THEN
-                    POLEF = ( VAREMIS - 1 )*3 + VARPOL
-                ELSE
-                    POLEF = VAREMIS + 4
-                END IF                
+                POLEF = M6POL2EF( VAREMIS, VARPOL )     
                 
                 IF( .NOT. WRITE3( FNAME, EFSNAM( I )( 1:L2 ), JDATE, 
      &                            JTIME, SRCEFS( :,POLEF ) ) ) THEN
