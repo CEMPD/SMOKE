@@ -116,7 +116,7 @@ C.........  Time zones
      &                            'PST', 'YST', 'HST', 'CAT', 'NT ' / )
 
 C.........  Packet information
-        INTEGER     , PARAMETER :: NPACKET = 7
+        INTEGER     , PARAMETER :: NPACKET = 8
         CHARACTER*20, PARAMETER :: PKTLIST( NPACKET ) = 
      &                          (  / 'CTG                 ',
      &                               'CONTROL             ',
@@ -124,12 +124,13 @@ C.........  Packet information
      &                               'ADD                 ',
      &                               'REACTIVITY          ',
      &                               'PROJECTION          ',
-     &                               'EMS_CONTROL         '  / )
+     &                               'EMS_CONTROL         ',
+     &                               'MACT                '  / )
 
         LOGICAL, PARAMETER :: PKTFIXED( NPACKET ) =
      &                     (  / .FALSE., .FALSE., .FALSE., 
      &                          .FALSE., .FALSE., .FALSE.,
-     &                          .TRUE. / )
+     &                          .TRUE.,  .FALSE. / )
 
 C.........  Control and projection matrix codes (in order of precedence)
         INTEGER, PARAMETER :: CTYPPROJ = 1   ! for projection matrix
