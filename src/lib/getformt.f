@@ -56,11 +56,12 @@ C...........   EXTERNAL FUNCTIONS:
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
         INTEGER         INDEX1
+        INTEGER         JUNIT
         INTEGER         LBLANK
         INTEGER         STR2INT
         REAL            STR2REAL
 
-        EXTERNAL        CHKINT, CHKREAL, INDEX1, LBLANK, STR2INT, 
+        EXTERNAL        CHKINT, CHKREAL, INDEX1, JUNIT, LBLANK, STR2INT, 
      &                  STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
@@ -72,9 +73,10 @@ C...........   Other local variables
         INTEGER         AT     ! tmp mobile area type
         INTEGER         CYID   ! tmp county ID
         INTEGER         DAY    ! tmp day number
-        INTEGER         IWEK   ! tmp weekly temporal prof code
+        INTEGER         IDEV   ! tmp unit number
         INTEGER         IDIU   ! tmp diurnal temporal prof code
         INTEGER         IOS    ! tmp i/o status
+        INTEGER         IWEK   ! tmp weekly temporal prof code
         INTEGER         IREC   ! line counter
         INTEGER         FIP    ! tmp FIPS code
         INTEGER         FT     ! tmp mobile facility type
@@ -98,8 +100,9 @@ C...........   Other local variables
         LOGICAL         CFLAG  ! for flagging alphabetic characters
 
         CHARACTER*5     CPOL 
-        CHARACTER*600   LINE
         CHARACTER*300   MESG 
+        CHARACTER*300   NAMTMP 
+        CHARACTER*600   LINE
 
         CHARACTER*2  :: EPSTYPES( 9 ) = 
      &                ( / 'AC', 'AA', 'AB', 'AE', 'AF', 'GB',
@@ -450,6 +453,22 @@ C.....................  Try day-specific emissions file
                 ENDIF
 
             END IF
+
+C.............  Attempt to open LINE as file name
+            NAMTMP = LINE( 1:INDEX( LINE,' ' ) )
+            IDEV = JUNIT()
+            OPEN( IDEV, ERR=99, FILE=NAMTMP, STATUS='OLD' )
+
+C.............  If get here, then file has been opened, so this must be a
+C               list file
+            GETFORMT = LSTFMT
+            CLOSE( IDEV )
+
+            EXIT              ! To rewind and return
+
+C.............  Unsuccessful opening of LINE as file name
+99          CONTINUE
+            CLOSE( IDEV )
 
         END DO     ! To head of read loop
 
