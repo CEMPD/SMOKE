@@ -16,6 +16,7 @@
 setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
 
 # set source category
+setenv SMK_SOURCE E
 setenv MRG_SOURCE ABMP        # source category to merge
 setenv MRG_CTLMAT_MULT ' '    # [A|P|AP] for merging with multiplier controls
 setenv MRG_CTLMAT_ADD  ' '    # [A|P|AP] for merging with additive controls
@@ -53,6 +54,9 @@ setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
 #     SMK_AVEDAY_YN               # see multiple-program controls
 #     SMK_PING_METHOD             # see multiple-program controls, below
 
+# For Smk2emis
+setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
+
 # Multiple-program controls
 setenv DAY_SPECIFIC_YN      N     # Y imports and uses day-specific inventory
 setenv EXPLICIT_PLUME_YN    N     # Y for special wildfire processing for UAM/REMSAD/CAMx
@@ -78,11 +82,6 @@ setenv DEBUG_EXE          dbx     # Sets the debugger to use when DEBUGMODE = Y
 # Override settings
 # setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
 # setenv INVTABLE_OVERRIDE          # Inventory table override
-setenv A_SPC_OVERRIDE cmaq.cb4p25
-setenv N_SPC_OVERRIDE cmaq.cb4p25_wtox
-setenv B_SPC_OVERRIDE cmaq.cb4p25
-setenv M_SPC_OVERRIDE cmaq.cb4p25_wtox.m
-setenv P_SPC_OVERRIDE cmaq.cb4p25
 
 ##############################################################################
 
