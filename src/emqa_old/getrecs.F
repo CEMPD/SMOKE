@@ -1136,7 +1136,7 @@ C.................  Format will put blanks where there are zeroes
                 DO 79 T = 1, NSTEPS
 
                     WRITE( ODEV, 93070 ) 
-     &                     SDATE-JDATE+1, JTIME/10000
+     &                     JDATE-SDATE+1, JTIME/10000
 
                     DO 78 L = 1, EMLAYS - 1
 
@@ -1162,7 +1162,7 @@ C.................  Format will put blanks where there are zeroes
 
             ENDIF
 
-            WRITE( ODEV, '(1X/)' ) 
+            WRITE( ODEV, '(A)' ) ' '
 
    88   CONTINUE 
 
