@@ -78,19 +78,21 @@ C...........   Arrays for getting species-specific information from file
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SPECNMA ( : )   ! unsort spcs names
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: TMPNAMES( :,: ) ! unsort names per pollutant
                 
+        INTEGER        IPOS( 10 )       ! position in input pollutant list
+
 C...........   Other arrays
         CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
 
 C...........   Local variables
 
-        INTEGER        I, J, K, L, N ! counters and indices
+        INTEGER        I, J, K, L, M, N ! counters and indices
         INTEGER        ICOUNT     ! tmp counter while populating SPCNAMES
         INTEGER        INPRFTP    ! tmp. profile number
         INTEGER        IOS        ! i/o status
         INTEGER        IPOL       ! pollutant counter
-        INTEGER        IPOS       ! position in input pollutant list
         INTEGER        IREC       ! record counter
         INTEGER        ISP        ! species names counter
+        INTEGER        NIPOS      ! number of pollutant matches
         INTEGER        NLINES     ! number of lines in data file
         INTEGER        PPOS       ! tmp position (from INDEX1) of pol in POLNAMA
         INTEGER        SPOS       ! tmp position (from INDEX1) of pol in SPECNMA
@@ -231,10 +233,26 @@ C.............  Check width of character fields of fixed width
             END IF
 
 C.............  Search for pollutant in list of valid names, and go to the end
-C               of the loop if not found (skip entry)
-            IPOS = INDEX1( POLNAM, NIPOL, EINAM )
+C               of the loop if none found (skip entry).  Record number
+C               and position of all matches.
+            M    = 0
+            IPOS = 0   ! local array
+            DO N = 1, NIPOL
+                IF( POLNAM .EQ. EINAM( N ) ) THEN
+                   M = M + 1
+                   IF( M .LE. 10 ) THEN 
+                       IPOS( M ) = N
+                   ELSE
+                       MESG = 'INTERNAL ERROR: IPOS array overflow '//
+     &                        'prevented in ' // PROGNAME
+                       CALL M3MSG2( MESG )
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                   END IF 
+                END IF
+            END DO
+            NIPOS = M
     
-            IF ( IPOS .EQ. 0 ) CYCLE
+            IF ( MAXVAL( IPOS ) .EQ. 0 ) CYCLE
             
 C.............  Search for pollutant unique list of all pollutants
             PPOS = INDEX1( POLNAM, IPOL, POLNAMA )
@@ -246,7 +264,7 @@ C.............  Search for pollutant unique list of all pollutants
                 NENTRA ( IPOL ) = 1         ! init for first entry per pol
 
 C.................  If mole-based = mass based, then use molar transform
-                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS ) = .TRUE.
+                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS( 1 ) ) = .TRUE.
 
                 PPOS = IPOL   ! Set for storing species count, below
                
@@ -257,7 +275,7 @@ C                   for this pollutant
                 NENTRA( PPOS ) = NENTRA( PPOS ) + 1
 
 C.................  If mole-based = mass based, then use molar transform
-                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS ) = .TRUE.
+                IF( FAC1/FAC2 .NE. FAC3 ) LMOLAR( IPOS( 1 ) ) = .TRUE.
         
             END IF
             
@@ -274,21 +292,23 @@ C.................  If mole-based = mass based, then use molar transform
 C.............  Check if species is already stored for current pollutant, and
 C               if not, increment species-per-pollutant counter and 
 C               add species to list.
-            K = NSPECA( IPOS ) 
-            J = INDEX1( SPECNM, K, TMPNAMES( 1,IPOS ) )
+            DO M = 1, NIPOS
 
+                K = NSPECA( IPOS( M ) )
+                J = INDEX1( SPECNM, K, TMPNAMES( 1,IPOS( M ) ) )
 
-            IF( J .LE. 0 ) THEN
-            
-                K = K + 1
+                IF( J .LE. 0 ) THEN
 
-                IF( K .LE. MXVARS3 ) THEN
-                    TMPNAMES( K, IPOS ) = SPECNM
+                    K = K + 1
+
+                    IF( K .LE. MXVARS3 ) THEN
+                        TMPNAMES( K, IPOS( M ) ) = SPECNM
+                    END IF
+
+                    NSPECA( IPOS( M ) ) = K
+
                 END IF
-
-                NSPECA( IPOS ) = K
-
-            END IF
+            END DO
 
         END DO              ! End loop over speciation profile input lines
 
