@@ -40,12 +40,18 @@ C.........  Program arguments
         CHARACTER*(*) NAME, DEFAULT
 
 C.........  Local variables
-        INTEGER IDEV, IREC, J1
+        INTEGER IDEV, IOS, IREC, J1 
+        LOGICAL EFLAG
+        DATA    EFLAG  / .FALSE. /
+
         CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
 C   begin body of program GETFACR
+
+C......... Set buffer for writing messages
+        BUFFER = NAME
 
 C.........  Prompt for input file
 
@@ -60,8 +66,7 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
-                BUFFER = NAME
-                WRITE( MESG, 94000 ) 
+                WRITE( MESG, 94010 ) 
      &               'Maximum dimension =', NMAX,
      &               'was exceeded while reading '// 
      &               BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
@@ -69,18 +74,35 @@ C.........  Prompt for input file
 
             ELSE
 
-                READ( IDEV, *, END = 33 ) 
+                READ( IDEV, *, END = 33, IOSTAT=IOS ) 
      &                INDEX( IREC ), ( RTAB1( J1, IREC ), J1=1,NCOL )
+
+                IF( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                 'I/O Error:', IOS, ', while reading ' //
+     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) // 
+     &                 ' file record ', IREC
+                    CALL M3MESG( MESG )
+
+                ENDIF
 
             ENDIF
 
         GO TO 11
 
-   33   N = IREC - 1
+   33   IF( EFLAG ) THEN
+
+            CALL M3EXIT( 'GETFACR', 0, 0, 'Error in file format', 2 )
+
+        ENDIF
+
+        N = IREC - 1
 
         RETURN
 
-94000   FORMAT( A, 1X, I8, 1X, A)
+94010   FORMAT( 10 (A, :, 1X, I5, :, 1X ) )
 
         END
 
@@ -124,12 +146,18 @@ C.........  Program arguments
         CHARACTER*(*) NAME, DEFAULT
 
 C.........  Local variables
-        INTEGER IDEV, IREC, J1, J2
+        INTEGER IDEV, IOS, IREC, J1, J2
+        LOGICAL EFLAG
+        DATA    EFLAG  / .FALSE. /
+
         CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
 C   begin body of program GETFACRR
+
+C......... Set buffer for writing messages
+        BUFFER = NAME
 
 C.........  Prompt for input file
 
@@ -144,8 +172,7 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
-                BUFFER = NAME
-                WRITE( MESG, 94000 ) 
+                WRITE( MESG, 94010 ) 
      &               'Maximum dimension =', NMAX,
      &               'was exceeded while reading '// 
      &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
@@ -153,19 +180,36 @@ C.........  Prompt for input file
 
             ELSE
 
-                READ( IDEV, *, END = 33 ) INDEX( IREC ), 
+                READ( IDEV, *, END = 33, IOSTAT=IOS ) INDEX( IREC ),
      &                ( RTAB1( J1, IREC ), J1=1,NCOL1 ),
      &                ( RTAB2( J2, IREC ), J2=1,NCOL2 ) 
+
+                IF( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                 'I/O Error:', IOS, ', while reading ' //
+     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
+     &                 ' file record ', IREC
+                    CALL M3MESG( MESG )
+
+                ENDIF
 
             ENDIF
 
         GO TO 11
 
-   33   N = IREC - 1
+   33   IF( EFLAG ) THEN
+
+            CALL M3EXIT( 'GETFACRR', 0, 0, 'Error in file format', 2 )
+
+        ENDIF
+
+        N = IREC - 1
 
         RETURN
 
-94000   FORMAT( A, 1X, I8, 1X, A)
+94010   FORMAT( 10 (A, :, 1X, I5, :, 1X ) )
 
         END
 
@@ -209,12 +253,18 @@ C.........  Program arguments
         CHARACTER*(*) NAME, DEFAULT
 
 C.........  Local variables
-        INTEGER IDEV, IREC, J1
+        INTEGER IDEV, IOS, IREC, J1
+        LOGICAL EFLAG
+        DATA    EFLAG  / .FALSE. /
+
         CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
 C   begin body of program GETFACI
+
+C......... Set buffer for writing messages
+        BUFFER = NAME
 
 C.........  Prompt for input file
 
@@ -229,8 +279,7 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
-                BUFFER = NAME
-                WRITE( MESG, 94000 ) 
+                WRITE( MESG, 94010 ) 
      &               'Maximum dimension =', NMAX,
      &               'was exceeded while reading '// 
      &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
@@ -238,18 +287,36 @@ C.........  Prompt for input file
 
             ELSE
 
-                READ( IDEV, *, END = 33 ) 
+                READ( IDEV, *, END = 33, IOSTAT=IOS ) 
      &              INDEX( IREC ),
      &              ( ITAB1( J1, IREC ), J1=1,NCOL1 )
+
+                IF( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                 'I/O Error:', IOS, ', while reading ' //
+     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
+     &                 ' file record ', IREC
+                    CALL M3MESG( MESG )
+
+                ENDIF
+
             ENDIF
 
         GO TO 11
 
-   33   N = IREC - 1
+   33   IF( EFLAG ) THEN
+
+            CALL M3EXIT( 'GETFACI', 0, 0, 'Error in file format', 2 )
+
+        ENDIF
+
+        N = IREC - 1
 
         RETURN
 
-94000   FORMAT( A, 1X, I8, 1X, A )
+94010   FORMAT( 10 (A, :, 1X, I5, :, 1X ) )
 
         END
 
@@ -297,12 +364,18 @@ C.........  Program arguments
         CHARACTER*(*) NAME, DEFAULT
 
 C.........  Local variables
-        INTEGER IDEV, IREC, J1, J2, J3
+        INTEGER IDEV, IOS, IREC, J1, J2, J3
+        LOGICAL EFLAG
+        DATA    EFLAG  / .FALSE. /
+
         CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
 C   begin body of program GETFACICR
+
+C......... Set buffer for writing messages
+        BUFFER = NAME
 
 C.........  Prompt for input file
 
@@ -317,8 +390,7 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
-                BUFFER = NAME
-                WRITE( MESG, 94000 ) 
+                WRITE( MESG, 94010 ) 
      &               'Maximum dimension =', NMAX,
      &               'was exceeded while reading '//
      &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
@@ -326,20 +398,38 @@ C.........  Prompt for input file
 
             ELSE
 
-                READ( IDEV, *, END = 33 ) 
+                READ( IDEV, *, END = 33, IOSTAT=IOS ) 
      &              INDEX( IREC ),
      &              ( ITAB1( J1, IREC ), J1=1,NCOL1 ),
      &              ( CTAB2( J2, IREC ), J2=1,NCOL2 ),
      &              ( RTAB3( J3, IREC ), J3=1,NCOL3 )
+
+                IF( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                 'I/O Error:', IOS, ', while reading ' //
+     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
+     &                 ' file record ', IREC
+                    CALL M3MESG( MESG )
+
+                ENDIF
+
             ENDIF
 
         GO TO 11
 
-   33   N = IREC - 1
+   33   IF( EFLAG ) THEN
+
+            CALL M3EXIT( 'GETFACICR', 0, 0, 'Error in file format', 2 )
+
+        ENDIF
+
+        N = IREC - 1
 
         RETURN
 
-94000   FORMAT( A, 1X, I8, 1X, A )
+94010   FORMAT( 10 (A, :, 1X, I5, :, 1X ) )
 
         END
 
@@ -383,12 +473,18 @@ C.........  Program arguments
         CHARACTER*(*) NAME, DEFAULT
 
 C.........  Local variables
-        INTEGER IDEV, IREC, J1, J2
+        INTEGER IDEV, IOS, IREC, J1, J2
+        LOGICAL EFLAG
+        DATA    EFLAG  / .FALSE. /
+
         CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
 C   begin body of program GETFACIR
+
+C......... Set buffer for writing messages
+        BUFFER = NAME
 
 C.........  Prompt for input file
 
@@ -403,8 +499,7 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
-                BUFFER = NAME
-                WRITE( MESG, 94000 ) 
+                WRITE( MESG, 94010 ) 
      &               'Maximum dimension =', NMAX,
      &               'was exceeded while reading '//
      &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
@@ -412,18 +507,35 @@ C.........  Prompt for input file
 
             ELSE
 
-                READ( IDEV, *, END = 33 ) INDEX( IREC ), 
+                READ( IDEV, *, END = 33, IOSTAT=IOS ) INDEX( IREC ),
      &                ( ITAB1( J1, IREC ), J1=1,NCOL1 ),
      &                ( RTAB2( J2, IREC ), J2=1,NCOL2 ) 
+
+                IF( IOS .NE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                 'I/O Error:', IOS, ', while reading ' //
+     &                 BUFFER( 1:TRIMLEN( BUFFER ) ) //
+     &                 ' file record ', IREC
+                    CALL M3MESG( MESG )
+
+                ENDIF
 
             ENDIF
 
         GO TO 11
 
-   33   N = IREC - 1
+   33   IF( EFLAG ) THEN
+
+            CALL M3EXIT( 'GETFACR', 0, 0, 'Error in file format', 2 )
+
+        ENDIF
+
+        N = IREC - 1
 
         RETURN
 
-94000   FORMAT( A, 1X, I8, 1X, A)
+94010   FORMAT( 10 (A, :, 1X, I5, :, 1X ) )
 
         END
