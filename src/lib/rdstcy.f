@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -104,6 +104,7 @@ C...........   Other local variables
         LOGICAL      :: FOUNDSTA = .FALSE. ! true: state packet found
         LOGICAL      :: FOUNDCNY = .FALSE. ! true: county packet found
 
+        CHARACTER*1     DLCHR    ! tmp daylight time exemptions flag
         CHARACTER*3     TZN      ! tmp time zone
         CHARACTER*300   LINE     ! line read buffer
         CHARACTER*300   MESG     ! message buffer
@@ -271,6 +272,8 @@ C.........  Allocate memory for data arrays from MODSTCY module
         CALL CHECKMEM( IOS, 'CNTYNAM', PROGNAME )
         ALLOCATE( CNTYTZON( NDIMCY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNTYTZON', PROGNAME )
+        ALLOCATE( USEDAYLT( NDIMCY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'USEDAYLT', PROGNAME )
 
 C.........  Initialize county time zone to missing
         CNTYTZON = -9    ! array
@@ -376,6 +379,7 @@ C.........  Loop through and read county data
             STA = MAX( STR2INT( LINE( 27:28 ) ), 0 )
             CNY = MAX( STR2INT( LINE( 29:31 ) ), 0 )
             TZN = LINE( 40:42 )
+            DLCHR = LINE( 43:43 )            
 
             FIP = COU * 100000 + STA * 1000 + CNY
 
@@ -392,16 +396,22 @@ C               list, or skip to next iteration
 C.............  Find the time zone in the list and retrieve the integer value
             J = INDEX1( TZN, MXTZONE, TZONNAM )
 
-C.............  Store the county code and name.  If the time zone is not
-C               defined, apply default.
+C.............  Store the county-specific information
             K = K + 1
 
             IF( K .LE. NDIMCY ) THEN 
+
+C.................  Store region code and name
                 CNTYCOD( K ) = FIP
                 CNTYNAM( K ) = ADJUSTL( LINE( 5:24 ) )
 
+C.................  Store the status of the daylight time exemptions
+                USEDAYLT( K ) = ( DLCHR .EQ. ' ' )
+
+C.................  If the time zone is not defined, apply default.
                 IF( J .GT. 0 ) THEN
                     CNTYTZON( K ) = TZONNUM( J )
+
                 ELSE
                     IF( FIP .NE. LFIP ) THEN
                         WRITE( MESG,94010 ) 
@@ -409,13 +419,15 @@ C               defined, apply default.
      &                    'to country/state/county code:', FIP
                         CALL M3MESG( MESG )
                     END IF
+
                     CNTYTZON( K ) = TZONE0
+
                 END IF
             END IF
 
             LFIP = FIP
 
-        END DO
+        END DO           !  end of loop through counties
 
 C.........  Error if the counties read are less than the expected number
         IF( NDIM .LE. 0 .AND. K .NE. NDIMCY ) THEN
