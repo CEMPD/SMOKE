@@ -176,7 +176,6 @@ C.......   data structure to just those variables desired):
         TSTEP3D = 0
         NCOLS3D = NCOLS
         NROWS3D = NROWS
-        NVARS3D = 1
         NLAYS3D = 1
         NTHIK3D = NASRC
         GDNAM3D = 'NC_UAM'
