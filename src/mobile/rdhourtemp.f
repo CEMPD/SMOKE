@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDHOURTEMP( TNAME, NCOUNTY, NSTEPS, JDATE, JTIME, 
+        SUBROUTINE RDHOURTEMP( TNAME, NCOUNTY, JDATE, JTIME, 
      &                         COUNTYTEMP )
         
         IMPLICIT NONE
@@ -17,10 +17,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(LEN=16), INTENT (IN) :: TNAME    ! logical name for temperature file
         INTEGER,           INTENT (IN) :: NCOUNTY  ! no. counties in temp file
-        INTEGER,           INTENT (IN) :: NSTEPS   ! no. time steps in temp file
         INTEGER,           INTENT (IN) :: JDATE    ! starting date (YYYYDDD)
         INTEGER,           INTENT (IN) :: JTIME    ! starting time (HHMMSS)
-        REAL, INTENT(INOUT) :: COUNTYTEMP( NCOUNTY, 0:NSTEPS-1 ) ! array of hourly temperatures by county
+        REAL, INTENT(INOUT) :: COUNTYTEMP( NCOUNTY, 24 ) ! array of hourly temperatures by county
 
 C...........   Local allocatable arrays
 
@@ -42,7 +41,7 @@ C.........  Initialize array
         COUNTYTEMP = 0.
 
 C.........  Loop through the time steps        
-        DO I = 0, NSTEPS-1
+        DO I = 1, 24
         
             IF( .NOT. READ3( TNAME, 'TKCOUNTY', 1, JDATE, JTIME, 
      &                       COUNTYTEMP( :,I ) ) ) THEN
@@ -61,8 +60,6 @@ C.............  Convert temps from Kelvin to Fahrenheit
             CALL NEXTIME( JDATE, JTIME, 10000 )
         
         END DO
-
-
 
         END SUBROUTINE RDHOURTEMP
         
