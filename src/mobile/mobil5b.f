@@ -156,7 +156,7 @@ C.......  Other local variables because of SMOKE
       LOGICAL       :: FIRSTIME = .TRUE.
 
       CHARACTER*8   :: M5VRSION
-      CHARACTER*16  :: TMPVAR = ' '
+      CHARACTER*200 :: TMPVAR = ' '
       CHARACTER*300 :: MESG = ' '
 cmh
 cmh add commons
