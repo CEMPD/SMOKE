@@ -641,8 +641,8 @@ C               codes are consistent
 C.............  Subroutine arguments
             CHARACTER(*), INTENT (IN) :: PTYPE         ! profile type
             INTEGER     , INTENT (IN) :: N             ! number of profiles
-            INTEGER     , INTENT(OUT) :: REFCODES( N ) ! reference profile codes
-            INTEGER     , INTENT(OUT) :: CODES   ( N ) ! profile codes to check
+            INTEGER     , INTENT (IN) :: REFCODES( N ) ! reference profile codes
+            INTEGER     , INTENT (IN) :: CODES   ( N ) ! profile codes to check
 
 C.............  Local variables
             INTEGER  I
