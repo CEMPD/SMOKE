@@ -31,7 +31,7 @@ C...........   ARGUMENTS and their descriptions:
         REAL            P ( NPSRC )     ! point source input vector
         INTEGER         NP( NGRID )     ! # of entries per row in point matrix
         INTEGER         IP( NPSRC )     ! columns list         in point matrix
-        INTEGER         FL( EMLAYS, NPSRC )     ! pt-srce layering fractions
+        REAL            FL( EMLAYS, NPSRC )     ! pt-srce layering fractions
         REAL            V ( NGRID, EMLAYS )     ! output vector
 
 
