@@ -1,30 +1,8 @@
-C ****************************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File Version: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
-C ****************************************************************************/
  
         PROGRAM GRDBIO
 
 C***********************************************************************
-C  program body starts at line  149
+C  program body starts at line  143
 C
 C  DESCRIPTION:
 C       Computes normalized gridded biogenic emissions in terms of
@@ -41,6 +19,27 @@ C       Revised 8/96 by SL and CJC: algorithm change to match OTAG BEIS2
 C       algorithm
 C
 C***********************************************************************
+C  
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                  System
+C File Version: @(#)$Id$
+C  
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C  
+C See file COPYRIGHT for conditions of use.
+C  
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C *
+C  nv_progs@mcnc.org
+C  
+C Pathname: $Source$
+C Last updated: $Date$ 
+C  
+C**********************************************************************
 
         IMPLICIT NONE
 
@@ -63,24 +62,19 @@ C...........   PARAMETERS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL         DSCGRID
-        INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         INDEX1
-        INTEGER         LBLANK
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
-        INTEGER         STR2INT
-        REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        DSCGRID, GETNUM, GETYN, INDEX1, LBLANK, 
-     &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
-     &                  TRIMLEN
+        EXTERNAL        DSCGRID, GETYN, INDEX1, PROMPTFFILE,
+     &                  PROMPTMFILE, TRIMLEN
 
 
 C...........   LOCAL VARIABLES and their descriptions:
 
-        INTEGER         B, C, R, I, J, K, L, M, N  !  loop counters and subscripts
+        INTEGER         B, C, R, I, J, K, L, M, N ! loop counters and subscripts
         INTEGER         ISTAT   !  I/O status result
         INTEGER         LINE    !  input line number
         LOGICAL         EFLAG   !  error flag
@@ -249,7 +243,7 @@ C.......   Set up file description and open emissions file:
 
 C.......   Loop:  read emission factor file
 
-        WRITE( LDEV,92000 ) ' ', 'Reading EMISSIONS FACTOR file', ' '
+        CALL M3MSG2( 'Reading EMISSIONS FACTOR file' )
         I     = 0
         EFLAG = .FALSE.
 
@@ -317,7 +311,7 @@ C.......   Initialize normalized-emissions arrays:
 
 C.......   Loops:  read and process gridded LANDUSE file:
 
-        WRITE( LDEV,92000 ) ' ', 'Reading LANDUSE file', ' '
+        CALL M3MSG2( 'Reading LANDUSE file' )
         LINE  = 0
         EFLAG = .FALSE.
 
