@@ -448,8 +448,9 @@ C.......      otherwise, use environment variables to set defaults
         JDATE  = SDATE3D
         JTIME  = STIME3D
         NSTEPS = MXREC3D
+        TSTEP  = 10000
 
-        CALL GETM3EPI( TZONE, JDATE, JTIME, 10000, NSTEPS )
+        CALL GETM3EPI( TZONE, JDATE, JTIME, TSTEP, NSTEPS )
 
 C.......   Build description for, and create/open output file
 C.......   (all but variables-table in description is borrowed from M3NAME)
