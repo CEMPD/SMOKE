@@ -45,6 +45,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Other local variables
         INTEGER         K, L  ! counters and indices
 
+        LOGICAL         EXPOFLAG  ! true if exponential
         LOGICAL         SPACFLAG  ! true if already encountered a space in string
         LOGICAL         PERDFLAG  ! true if already encountered a period in string
         LOGICAL         NEGVFLAG  ! true if already encountered a '-' in string
@@ -62,6 +63,9 @@ C   begin body of function CHKREAL
         BUFFER = ADJUSTL( STRING )
         L = LEN_TRIM( BUFFER )
 
+        CALL UPCASE( BUFFER )
+
+        EXPOFLAG = .FALSE.
         SPACFLAG = .FALSE.
         PERDFLAG = .FALSE.
         NEGVFLAG = .FALSE.
@@ -69,15 +73,19 @@ C   begin body of function CHKREAL
 
             CBUF = BUFFER( K:K )
 
-            IF( CBUF .GT. '9' .OR.
+            IF( 
+     &        ( CBUF .GT. '9' .AND. 
+     &          CBUF .NE. 'E'       ) .OR.
      &        ( CBUF .LT. '0' .AND. 
      &          CBUF .NE. ' ' .AND. 
      &          CBUF .NE. '.' .AND.
-     &          CBUF .NE. '-'       ) .OR.  
+     &          CBUF .NE. '-' .AND.
+     &          CBUF .NE. '+'       ) .OR.  
      &        ( ( SPACFLAG .OR. PERDFLAG .OR. NEGVFLAG ) .AND.
      &            CBUF .EQ. ' '                                ) .OR.
      &        ( NEGVFLAG .AND. CBUF .EQ. '-' ) .OR.
-     &        ( PERDFLAG .AND. CBUF .EQ. '.' )      ) THEN
+     &        ( PERDFLAG .AND. CBUF .EQ. '.' ) .OR.
+     &        ( EXPOFLAG .AND. CBUF .EQ. 'E' )      ) THEN
 
                 CHKREAL = .FALSE.
                 RETURN
@@ -87,6 +95,7 @@ C   begin body of function CHKREAL
             IF( CBUF .EQ. ' ' ) SPACFLAG = .TRUE.
             IF( CBUF .EQ. '.' ) PERDFLAG = .TRUE.
             IF( CBUF .EQ. '-' ) NEGVFLAG = .TRUE.
+            IF( CBUF .EQ. 'E' ) EXPOFLAG = .TRUE.
 
         END DO    
 
