@@ -364,7 +364,9 @@ C.........  Initialize pollutant-specific values as missing
         POLVLA  = BADVAL3  ! array
 
 C.........  Read and process EMS-95 point source characteristics
-        CALL PROCEMSPT( FDEV, CFLAG, WFLAG )
+        IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
+            CALL PROCEMSPT( FDEV, CFLAG, WFLAG )
+        END IF
 
 C.........  If inventory is list format, open first file for reading
         CURFIL = 1
