@@ -2,7 +2,7 @@
         PROGRAM REPTPRO
 
 C***********************************************************************
-C  program body starts at line 111
+C  program body starts at line 109
 C
 C  DESCRIPTION:
 C       Report temporal profiles of utilities with excessive NOX emissions.
@@ -346,8 +346,7 @@ C.......... Write the report headers.
         DO I = 1, NIPOL
             WRITE ( OUNIT, 720 ) '  ---------'
         END DO
-        WRITE ( OUNIT, 730 ) ''
-
+        WRITE ( OUNIT, 730 ) ' '
 
 C.......... For each large source, write the identifying info as well as
 C.......... the NOx emissions for each time step.

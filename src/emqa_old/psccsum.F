@@ -2,7 +2,7 @@
         PROGRAM PSCCSUM
 
 C***********************************************************************
-C  program body starts at line 122
+C  program body starts at line 119
 C
 C  DESCRIPTION:
 C       Report point source emissions summed by SCC code.
@@ -94,7 +94,6 @@ C...........   Other local variables
         INTEGER         LDEV    !  unit number for log file
         INTEGER         OUNIT, SUNIT, FUNIT, RUNIT
 
-        REAL            YR2DAY
         INTEGER         I, J, K, POSN, LOC, L2
         INTEGER         LASTSCC   ! The last SCC number
                                   ! encountered when summing the emmis.
