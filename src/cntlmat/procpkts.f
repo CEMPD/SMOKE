@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCPKTS( PDEV, CDEV, GDEV, LDEV, WDEV, CPYEAR,
+        SUBROUTINE PROCPKTS( PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, CPYEAR,
      &                       PKTTYP, ENAME, LPSASGN, USEPOL, SFLAG )
 
 C***********************************************************************
@@ -49,19 +49,23 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: ASGNINDX
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: PNAMMULT, PNAMPROJ, FACTOR, 
+     &                      BACKOUT, DATVAL, GRPINDX, GRPFLAG, GRPSTIDX,
+     &                      GRPCHAR, GRPINEM, GRPOUTEM, POLSFLAG, 
+     &                      NVPROJ, NVCMULT, PCTLFLAG
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NSRC, NIPPA, NIPOL, NIACT, NPPOL,
+     &                     EINAM, EANAM, ACTVTY
 
         IMPLICIT NONE
         
@@ -82,6 +86,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: CDEV      ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV      ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV      ! file unit no. for tmp ALW file
+        INTEGER     , INTENT (IN) :: MDEV      ! file unit no. for tmp MACT file
         INTEGER     , INTENT (IN) :: WDEV      ! file unit no. for warnings/error file
         INTEGER     , INTENT (IN) :: CPYEAR    ! year to project to 
         CHARACTER(*), INTENT (IN) :: PKTTYP    ! packet type
@@ -422,6 +427,23 @@ C                     do not have the base-year control effectiveness
 
                     SFLAG = .TRUE.
 
+                CASE( 'MACT' )
+                
+                    VIDXMULT = 0 ! array
+                    CALL ASGNCNTL( NSRC, WDEV, PKTTYP, EANAM( V ),
+     &                             DSFLAG, ASGNINDX )
+                                   
+                    CALL UPDATE_POLLIST( V, ASGNINDX, 4, VIDXMULT,
+     &                                   NVCMULT, PNAMMULT )
+     
+                    IF ( .NOT. OFLAG(5) ) THEN
+                        CALL OPENCTMP( PKTTYP, MDEV )
+                        OFLAG(5) = .TRUE.
+                    END IF
+                    CALL WRCTMP( MDEV, V, ASGNINDX, VIDXMULT )
+                    
+                    SFLAG = .TRUE.
+
                 END SELECT
 
             END DO   ! End loop on pollutants and activities
@@ -433,6 +455,7 @@ C...........   Rewind tmp files
         IF( CDEV .GT. 0 ) REWIND( CDEV )
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
+        IF( MDEV .GT. 0 ) REWIND( MDEV )
 
         RETURN
        

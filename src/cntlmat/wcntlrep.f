@@ -1,5 +1,5 @@
 
-        SUBROUTINE WCNTLREP( CDEV, GDEV, LDEV )
+        SUBROUTINE WCNTLREP( CDEV, GDEV, LDEV, MDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -39,13 +39,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: NVCMULT, PNAMMULT, RPTDEV, PCTLFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NCHARS
 
         IMPLICIT NONE
 
@@ -68,6 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
         INTEGER     , INTENT (IN) :: LDEV   ! file unit no. for tmp ALW file
+        INTEGER     , INTENT (IN) :: MDEV   ! file unit no. for tmp MACT file
 
 C.........  Local arrays
         INTEGER                 OUTTYPES( NVCMULT,6 ) ! var type:int/real
@@ -98,9 +99,10 @@ C.........  Rewind temporary files
         IF( CDEV .GT. 0 ) REWIND( CDEV )
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
+        IF( MDEV .GT. 0 ) REWIND( MDEV )
 
 C.........  Open reports file
-        IF( MAX( CDEV, GDEV, LDEV ) .GT. 0 ) THEN
+        IF( MAX( CDEV, GDEV, LDEV, MDEV ) .GT. 0 ) THEN
             RPTDEV( 2 ) = PROMPTFFILE( 
      &                'Enter logical name for SUMMARY ' //
      &                'CONTROLS REPORT',
@@ -128,6 +130,16 @@ C.........  Loop through pollutants
 
 C.............  Loop through sources and output 
             DO S = 1, NSRC
+
+C.................  If MACT packet applies for this pollutant
+                IF( PCTLFLAG( V, 4 ) ) THEN
+                
+                    READ( MDEV,* ) CIDX, PNAM, E_IN, E_OUT, FAC
+                    
+                    CALL CONTROL_MESG( ODEV, 'MACT', S, CIDX, PNAM,
+     &                                 E_IN, E_OUT, FAC )
+     
+                END IF
 
 C.................  If CONTROL or EMS CONTROL packet applies for this pollutant
                 IF( PCTLFLAG( V, 1 ) ) THEN
