@@ -1,5 +1,5 @@
 
-        SUBROUTINE PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR,
+        SUBROUTINE PKTLOOP( FDEV, ADEV, CDEV, GDEV, LDEV, CPYEAR,
      &                      ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
 C***********************************************************************
@@ -69,7 +69,6 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(IN) :: CDEV      ! file unit no. for tmp CTL file 
         INTEGER     , INTENT(IN) :: GDEV      ! file unit no. for tmp CTG file
         INTEGER     , INTENT(IN) :: LDEV      ! file unit no. for tmp ALW file
-        INTEGER     , INTENT(IN) :: RDEV      ! file unit no. for report
         INTEGER     , INTENT(IN) :: CPYEAR    ! year to project to
         CHARACTER(*), INTENT(IN) :: ACTION    ! action to take for packets 
         CHARACTER(*), INTENT(IN) :: ENAME     ! inventory file name 
@@ -264,7 +263,7 @@ C.................  Group cross-reference information for current packet
 
 C.................  Match controls to sources and pollutants, as needed for 
 C                   each packet type
-                CALL PROCPKTS( ADEV, CDEV, GDEV, LDEV, RDEV, CPYEAR, 
+                CALL PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR, 
      &                         PKTLIST( K ), ENAME, USEPOL, OFLAG )
 
             END IF  ! End process section
