@@ -1,0 +1,47 @@
+C# Version @(#)$Id$
+C# Path    $Source$
+C# Date    $Date$
+C....................................................................
+C  INCLUDE FILE  B3V1DIMS3.EXT
+C
+C  CONTAINS:  
+C       dimensioning parameters for BEIS v3.12 
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY: 4/00 by JMV
+C
+C....................................................................
+
+      INTEGER   NSEF            !  # of em class in Summer emission factor table
+      INTEGER   NSEASONS        !  number of seasons modeled (2 for now)
+      INTEGER   NLAI            !  no. of different LAIs (ISOP and MBO)
+      INTEGER   NSUMMER         !  summer flag
+      INTEGER   NWINTER         !  winter flag
+      INTEGER   NNO             !  # of em class for NO
+
+      PARAMETER ( NSEF = 34, NLAI = 3, NSEASONS = 2, NSUMMER  = 1, 
+     &            NWINTER = 2 , NNO = 3)  
+
+C.......   Names for BEIS species, emitted model species
+C.......   DO NOT CHANGE THE ORDER OF THESE ARRAYS
+
+      CHARACTER*5    BIOTYPES( NSEF )
+      DATA           BIOTYPES /'ISOP', 'MBO', 'METH', 
+     &                         'APIN', 'BPIN', 'D3CAR',
+     &                         'DLIM', 'CAMPH', 'MYRC', 'ATERP', 'BPHE', 
+     &                         'SABI', 'PCYM' , 'OCIM', 'ATHU', 'TRPO',
+     &                         'GTERP', 'ETHE', 'PROPE', 'ETHO',
+     &                         'ACET', 'HEXA', 'HEXE', 'HEXY', 'FORM',
+     &                         'ACTAL', 'BUTE', 'ETHA', 'FORAC', 
+     &                         'ACTAC', 'BUTO', 'CO', 'ORVOC', 'NO'/
+
+      CHARACTER*5    LAITYPES( NLAI ) 
+      DATA           LAITYPES /'ISOP', 'MBO','METH' /
+
+      CHARACTER*1    SEASON( NSEASONS )
+      DATA           SEASON /  'S' , 'W' /
+
+
+C................   end   B3V1DIMS3.EXT   ....................................
+
