@@ -62,6 +62,8 @@ C   begin body of function  PROMPTGRID
                 NROWS3D = IMISS3
                 NTHIK3D = IMISS3
 
+                PROMPTGRID = .TRUE.
+
             ELSE	!  dscoord() failed; retry with dscgrid()
 
                 IF ( .NOT. DSCGRID( GDNAM3D, ANAME, GDTYP3D, 	!  retry with dscgrid()
@@ -77,9 +79,13 @@ C   begin body of function  PROMPTGRID
                     IF ( GETYN( 'Try again?', .TRUE. ) ) THEN
                         GO TO  11
                     ELSE
-                        CALL M3EXIT( 'RAWAREA', 0, 0, 
+                        CALL M3EXIT( 'PROMPTGRID', 0, 0, 
      &                               'Bad coordinate system', 2 )
                     END IF	!  if retry getstr() or not
+
+                ELSE
+
+                    PROMPTGRID = .TRUE.
 
                 END IF		!  if dscgrid succeeded, or failed
 
