@@ -70,8 +70,8 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: EANAM ( NIPPA )  ! all pollutant names        
 
 C...........   Local arrays allocated by subroutine arguments
-        INTEGER          ISPRJ ( NSRC ) ! projection control data table index
-        REAL             PRJFAC( NSRC ) ! projection factor
+        INTEGER, ALLOCATABLE :: ISPRJ ( : ) ! projection control data table index
+        REAL   , ALLOCATABLE :: PRJFAC( : ) ! projection factor
 
 C...........   Logical names
 
@@ -93,6 +93,14 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine GENPROJ
 
+C.........  Allocate memory for the projection matrix.  Use data
+C           structures for point sources, but this routine can be used for area
+C           sources or mobile sources as well. 
+
+        ALLOCATE( ISPRJ( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ISPRJ', PROGNAME )
+        ALLOCATE( PRJFAC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PRJFAC', PROGNAME )
 
 C.........  Determine which projection packet goes to each source.
 C           Since the projection packet is not pollutant specific,
@@ -101,13 +109,6 @@ C           to ASGNCNTL in order to avoid looping through all pollutants.
 
          CALL ASGNCNTL( NSRC, 1, 'PROJECTION', USEPOL, EANAM(1), 
      &                  IDUM, ISPRJ )
-
-C.........  Allocate memory for the projection matrix.  Use data
-C           structures for point sources, but this routine can be used for area
-C           sources or mobile sources as well. 
-
-C        ALLOCATE( PRJFAC( NSRC ), STAT=IOS )
-C        CALL CHECKMEM( IOS, 'PRJFAC', PROGNAME )
 
 C.........  Loop through all sources and store projection information for
 C           those that have it. Otherwise, set projection factor=1.
@@ -148,18 +149,12 @@ C.........  Initialize message to use in case there is an error
 
 C.........  Write the I/O API variables for the non-speciation data
 
-        IF( .NOT. WRITE3( PNAME, 'PFAC', 0, 0, PRJFAC ) ) THEN
+        IF( .NOT. WRITE3( PNAME, 'pfac', 0, 0, PRJFAC ) ) THEN
             MESG = MESG( 1:L ) // ' for variable "PRJFAC"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-
-c note: these deallocations cause an unexplained error on SGI.  There is
-c    n: a memory problem somewhere that is probably causing this, but
-c    n: I was not able to find it.
-
-c        DEALLOCATE( PRJFC )
-
+        DEALLOCATE( PRJFAC )
 
         RETURN
 
