@@ -87,6 +87,7 @@ C.........   Speciation matrices:
 
 C.........  Inventory pollutants actually in the inventory
         LOGICAL               , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
+        LOGICAL               , ALLOCATABLE :: IDXCHK( : ) ! true: EAIDX value accounted for
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: IINAM ( : ) ! initial pols
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! output pollutants
 
@@ -290,7 +291,9 @@ C           pollutants
         CALL CHECKMEM( IOS, 'SINAM', PROGNAME )
         ALLOCATE( SPCOUT( NOPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCOUT', PROGNAME )
-     
+        ALLOCATE( IDXCHK( NOPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IDXCHK', PROGNAME )
+
 C.........  Initialize arrays
         EANAM  = ' '      ! array
         EAIDX  = 1        ! array
@@ -298,6 +301,7 @@ C.........  Initialize arrays
         IINAM  = ' '      ! array
         SINAM  = ' '      ! array
         SPCOUT = .TRUE.   ! array
+        IDXCHK = .FALSE.  ! array
 
 C.........  Create array of pollutant names from emission types and pollutants
 C.........  Put the pollutants from the emission types first so that the
@@ -393,13 +397,12 @@ C.........  resulting tables are passed via MODSPRO
 C.........  Create input and output pollutant names based on output 
 C           emission types/pollutants names for input and output.
         K = 0
-        PIDX = 0
         LT = LEN_TRIM( ETJOIN )
         DO I = 1, NIPPA
 
             IDX = EAIDX( I )
 
-            IF( IDX .NE. PIDX ) THEN
+            IF( .NOT. IDXCHK( IDX ) ) THEN
                 K = K + 1                    
 
                 L1 = INDEX( SANAM( I ), ETJOIN )
@@ -409,7 +412,7 @@ C           emission types/pollutants names for input and output.
                 L2 = LEN_TRIM( SANAM( I ) )
                 SINAM( K ) = SANAM( I )( L1:L2 )
 
-                PIDX = IDX
+                IDXCHK( IDX ) = .TRUE.
             END IF
 
         END DO
