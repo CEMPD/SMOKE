@@ -180,7 +180,7 @@ C.............  Override gridded file settings
             NROWS3D = NGROUP
             NLAYS3D = 1
             GDTYP3D = GDTYP
-            VGTYP3D = BADVAL3
+            VGTYP3D = IMISS3
             VGTOP3D = BADVAL3
 
             FDESC3D = ' '   ! array
