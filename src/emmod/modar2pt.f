@@ -52,6 +52,15 @@
 
         END TYPE
 
+        TYPE :: A2PREPTYPE
+            INTEGER                STATE     ! state code
+            CHARACTER(LEN=SCCLEN3) SCC       ! SCC code
+            INTEGER                POLL      ! pollutant code
+            INTEGER                NFIPS     ! number of FIPS codes
+            REAL                   ORIGEMIS  ! emissions before processing
+            REAL                   SUMEMIS   ! summed emissions after
+        END TYPE
+
 !.........  Area-to-point table. Second dimension is the number of tables (and is
 !           used to dimention the NAR2PT array). First dimension is the
 !           maximum number of rows in any table.
@@ -59,5 +68,9 @@
         INTEGER                   , PUBLIC :: MXROWA2P        ! max. number of rows
         INTEGER      , ALLOCATABLE, PUBLIC :: NAR2PT  ( : )   ! no. entries in each table
         TYPE( AR2PT ), ALLOCATABLE, PUBLIC :: AR2PTABL( :,: ) ! area-to-point table
+
+!.........  Reporting array (dimension is NCONDSRC)
+        INTEGER                        , PUBLIC :: NCONDSRC        ! no. of condensed srcs
+        TYPE( A2PREPTYPE ), ALLOCATABLE, PUBLIC :: REPAR2PT( : )   ! area-to-point report
 
         END MODULE MODAR2PT
