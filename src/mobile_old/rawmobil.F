@@ -27,6 +27,7 @@ C***********************************************************************
 C...........   INCLUDES:
        
         INCLUDE 'CHDIMS3.EXT' 
+        INCLUDE 'TMDIMS3.EXT'
         INCLUDE 'MBDIMS3.EXT'
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
@@ -54,8 +55,8 @@ C.........  Source variables
 
         INTEGER     IFIP   ( NMSRC )  ! Source FIP
         INTEGER     IRCLAS ( NMSRC )  ! Source Road Class
-c       INTEGER     IVTYPE ( NMSRC )  ! Source Vehicle type
         INTEGER     TZONES ( NMSRC )  ! Source time zone number
+        INTEGER     TPFLAG ( NMSRC )  ! Temporal profile type flag
         INTEGER     INVYR  ( NMSRC )  ! Source inventory year
         INTEGER     ILINK  ( NMSRC )  ! Source Link number
         REAL        XLOC1  ( NMSRC )  ! UTM X coord of link start [m]   
@@ -64,10 +65,8 @@ c       INTEGER     IVTYPE ( NMSRC )  ! Source Vehicle type
         REAL        YLOC2  ( NMSRC )  ! UTM Y coord of link end [m]
         REAL        VMT    ( NMSRC )  ! Source VMT [mi/typical day]
 
-c       COMMON  / EMISREC / IFIP, IRCLAS, IVTYPE, TZONES, INVYR, ILINK, 
-c    &                      XLOC1, XLOC2, YLOC1, YLOC2, VMT
-        COMMON  / EMISREC / IFIP, IRCLAS, TZONES, INVYR, ILINK, 
-     &                      XLOC1, XLOC2, YLOC1, YLOC2, VMT
+        COMMON  / EMISREC / IFIP, IRCLAS, TZONES, TPFLAG, INVYR, ILINK,
+     &                      XLOC1, YLOC1, XLOC2, YLOC2, VMT
 
 C.........  Sorted link sources variables
 
@@ -85,7 +84,7 @@ C.........  Unsorted link sources variables
 
         INTEGER     LFIPA  ( MXLSRC )         ! Unsorted LFIP
         INTEGER     LRCLA  ( MXLSRC )         ! Unsorted LRCL
-        INTEGER     LLNKA  ( MXLSRC )         ! Unsirted LLNK
+        INTEGER     LLNKA  ( MXLSRC )         ! Unsorted LLNK
         REAL        LX1A   ( MXLSRC )         ! Unsorted LX1
         REAL        LX2A   ( MXLSRC )         ! Unsorted LX2
         REAL        LY1A   ( MXLSRC )         ! Unsorted LY1
@@ -301,6 +300,7 @@ C.................  Ensure source hasn't appearred before
                     YLOC1 ( SRC ) = AMISS3
                     YLOC2 ( SRC ) = AMISS3
                     INVYR ( SRC ) = INYEAR
+                    TPFLAG( SRC ) = MTPRFAC*WTPRFAC
                     VMT   ( SRC ) = TVMT
                 ENDIF
 
@@ -342,6 +342,7 @@ C.................  Move non-link data to make room for link data
                     XLOC2 ( K+LCNTM1 ) = XLOC2 ( K ) 
                     YLOC1 ( K+LCNTM1 ) = YLOC1 ( K ) 
                     YLOC2 ( K+LCNTM1 ) = YLOC2 ( K ) 
+                    TPFLAG( K+LCNTM1 ) = TPFLAG( K )
                     INVYR ( K+LCNTM1 ) = INVYR ( K )
                     VMT   ( K+LCNTM1 ) = VMT   ( K )
   125           CONTINUE
@@ -355,6 +356,7 @@ C.................  Insert link data
                     XLOC2 ( IS+K ) = LX2   ( LL+K ) 
                     YLOC1 ( IS+K ) = LY1   ( LL+K )
                     YLOC2 ( IS+K ) = LY2   ( LL+K )
+                    TPFLAG( IS+K ) = MTPRFAC*WTPRFAC
                     INVYR ( IS+K ) = INVYR ( IS   )
                     VMT   ( IS+K ) = LVMT  ( LL+K )
   133           CONTINUE
@@ -446,8 +448,7 @@ C.........  Get file name; open output mobile sources file
         SDATE3D = 0 !  n/a
         STIME3D = 0 !  n/a
         TSTEP3D = 0             !  time independent
-c       NVARS3D = 11
-        NVARS3D = 10
+        NVARS3D = 11
         NCOLS3D = 1
         NROWS3D = NMSRC     !  number of rows = # of mobile sources.
         NLAYS3D = 1
@@ -481,6 +482,12 @@ c       J = J + 1
         VNAME3D( J ) = 'TZONES'
         UNITS3D( J ) = 'n/a'
         VDESC3D( J ) = 'Time zone of inventory data'
+        VTYPE3D( J ) = M3INT
+        J = J + 1
+
+        VNAME3D( J ) = 'TPFLAG'
+        UNITS3D( J ) = 'n/a'
+        VDESC3D( J ) = 'Temporal profile category flag'
         VTYPE3D( J ) = M3INT
         J = J + 1
 
