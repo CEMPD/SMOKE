@@ -21,17 +21,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -590,6 +590,7 @@ C.............  Subprogram arguments
 C.............  Local variables
             INTEGER       I1, I2, J, L, L1, L2
             CHARACTER*30  :: SPACE = ' '
+            CHARACTER*300 :: TMPFMT
 
 C.............................................................................
 
@@ -625,22 +626,26 @@ C.............  Create format statement for output of header
             WIDTHS( 0 ) = MAXCOL1
             WRITE( HDRFMT, '( "(A",I2.2)' ) WIDTHS( 0 )
             DO J = 1, NDIM
-                L = LEN_TRIM( HDRFMT ) 
+                TMPFMT = HDRFMT
+                L = LEN_TRIM( TMPFMT ) 
                 WRITE( HDRFMT, '(A, ",1X,A",I2.2)' ) 
-     &                 HDRFMT(1:L), WIDTHS( J )
+     &                 TMPFMT(1:L), WIDTHS( J )
             END DO
-            L = LEN_TRIM( HDRFMT )
-            WRITE( HDRFMT, '(A, ")")' ) HDRFMT( 1:L )
+            TMPFMT = HDRFMT
+            L = LEN_TRIM( TMPFMT )
+            WRITE( HDRFMT, '(A)' ) TMPFMT( 1:L ) // ')'
 
 C.............  Create format statement for output of emissions
             WRITE( DATFMT, '( "(A",I2.2)' ) WIDTHS( 0 )
             DO J = 1, NDIM
-                L = LEN_TRIM( DATFMT ) 
+                TMPFMT = DATFMT
+                L = LEN_TRIM( TMPFMT ) 
                 WRITE( DATFMT, '(A, ",1X,F",I2.2,".1")' ) 
-     &                 DATFMT(1:L), WIDTHS( J )
+     &                 TMPFMT(1:L), WIDTHS( J )
             END DO
-            L = LEN_TRIM( DATFMT )
-            WRITE( DATFMT, '(A, ")")' ) DATFMT( 1:L )
+            TMPFMT = DATFMT
+            L = LEN_TRIM( TMPFMT )
+            WRITE( DATFMT, '(A)' ) TMPFMT( 1:L ) // ')'
 
             RETURN
 
