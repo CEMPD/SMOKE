@@ -52,7 +52,7 @@ C...........   INCLUDES:
         INCLUDE 'MBDIMS3.EXT'   !  motor vehicles parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'FDESC30.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER       INDEX1
