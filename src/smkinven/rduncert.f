@@ -507,6 +507,8 @@ C               with master list.
         CALL CHECKMEM ( IOS, 'CSCCTA', PROGNAME )
         ALLOCATE ( CSRCTA ( NREF ), STAT=IOS )          ! source chars
         CALL CHECKMEM ( IOS, 'CSRCTA', PROGNAME )
+	ALLOCATE ( FAINDX( NREF ), STAT=IOS )           ! fac. assig. ent. index
+	CALL CHECKMEM ( IOS, 'FAINDX', PROGNAME )
         
 C.........  Second pass through cross reference entries.  Store unsorted
 C           data for the source category of interest.        
@@ -583,6 +585,7 @@ C.............  Store fields
 C.............  Store case-indepentdent fields            
             INDXTA( N ) = N
             ISPTA ( N ) = JSPC
+	    FAINDX( N ) = I
 
         END DO
 
