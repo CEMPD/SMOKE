@@ -15,7 +15,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,            INTENT (IN)    :: COUNTY             ! current county being processed
         REAL,               INTENT (IN)    :: TEMPS( NCOUNTY, 24 ) ! hourly temps per county
         INTEGER,            INTENT (IN)    :: NCOUNTY  ! no. counties in temps array
-        CHARACTER(LEN=150), INTENT (INOUT) :: SCENARIO( NLINES ) ! scenario array
+        CHARACTER(LEN=150), INTENT (INOUT) :: SCENARIO( NLINES+1 ) ! scenario array
         INTEGER,            INTENT (IN)    :: NLINES             ! no. lines in scenario
         INTEGER,            INTENT (IN)    :: CTYPOS   ! position of county in TEMPS array
 
@@ -47,8 +47,19 @@ C.............  Skip comment lines
 C.............  Get Mobile6 command                   
             COMMAND = CURRLINE( 1:19 )            
 
-C.............  Search command for temperature commands
-            IF( INDEX( COMMAND, 'HOURLY TEMPERATURES' ) > 0 ) THEN
+C.............  Search command for min/max command
+            IF( INDEX( COMMAND, 'MIN/MAX TEMPERATURE' ) > 0 ) THEN
+            	
+C.................  Move rest of scenario down one line to make room
+C                   for second line of temperatures
+                DO J = NLINES, I + 1, -1
+                    SCENARIO( J + 1 ) = SCENARIO( J )
+                END DO
+
+            END IF
+
+C.............  Replace either temperature command with hourly temperatures                	     
+            IF( INDEX( COMMAND, 'TEMPERATURE' ) > 0 ) THEN
 
                 WRITE( RPLCLINE,94020 ) 
      &               'HOURLY TEMPERATURES: ', TEMPS( CTYPOS,1:12 )
@@ -56,9 +67,10 @@ C.............  Search command for temperature commands
                 
                 WRITE( RPLCLINE,94030 ) TEMPS( CTYPOS,13:24 )
                 SCENARIO( I + 1 ) = RPLCLINE
-             END IF
+                
+                EXIT
 
-C NEED TO HANDLE MIN/MAX REPLACEMENT ALSO
+            END IF
 
         END DO
 
