@@ -149,10 +149,10 @@ C.........   Other local variables
         CHARACTER*20           MODELNAM  ! emission factor model name
         CHARACTER*20           GRP_NAME  ! temperature aggregation group
         CHARACTER(LEN=IOVLEN3) VOLNAM    ! volatile pollutant name
-        CHARACTER(LEN=80)      M6INPUT   ! Mobile6 input file name
+        CHARACTER(LEN=280)     M6INPUT   ! Mobile6 input file name
         CHARACTER(LEN=200)     TEMPDIR   ! location of hourly temperature files
         CHARACTER(LEN=256)     TEMPNAME  ! full temperature file name
-        CHARACTER(LEN=50)      M6DIR     ! location of MOBILE6 files
+        CHARACTER(LEN=200)     M6DIR     ! location of MOBILE6 files
         CHARACTER(LEN=200)     EMISDIR   ! directory for output EF files
         CHARACTER(LEN=20)      SEARCHSTR ! string used in search
         CHARACTER(LEN=MXDLEN3) TEMPLINE  ! line from file description
@@ -370,17 +370,11 @@ C.........  Check that the input hydrocarbon was found
         END IF
 
 C.........  If output was not found, set name to blank and set no. polls to zero        
-        IF( .NOT. FNDOUTPUT ) THEN
+        IF( .NOT. FNDOUTPUT .OR. K == 0 ) THEN
             OUTPUTHC = ' '
             NSUBPOL = 0
         ELSE
             NSUBPOL = K
-            IF( NSUBPOL == 0 ) THEN
-                MESG = 'WARNING: No pollutants in the inventory ' //
-     &                 'data table are labeled as part of VOC ' //
-     &                 'or TOG for calculation of NONHAP values.'
-                CALL M3MESG( MESG )
-            END IF                
         END IF
 
         IF( NSUBPOL > 0 ) THEN
