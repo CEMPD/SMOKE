@@ -1,6 +1,45 @@
 
         PROGRAM PREMOBL
 
+C***********************************************************************
+C  program body starts at line 205
+C
+C  DESCRIPTION:
+C       Creates county-based 24-hour temperature profiles based on gridded
+C       meteorology data. Temperatures can be averaged across counties and
+C       different time periods. Tries to account for missing meteorology
+C       data as much as possible.
+C
+C  PRECONDITIONS REQUIRED: none
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC
@@ -13,8 +52,9 @@ C...........   This module is the derived meteorology data for emission factors
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID
-        
-        USE MODMBSET, ONLY: COUNTYSRC, DAILY, WEEKLY, MONTHLY, EPISLEN
+
+C.........  This module is used for MOBILE6 setup information        
+        USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN
 
         IMPLICIT NONE
         
@@ -59,12 +99,12 @@ C...........  Allocatable per-source arrays
         INTEGER, ALLOCATABLE :: DAYBEGT ( : ) ! daily start time HHMMSS
         INTEGER, ALLOCATABLE :: DAYENDT ( : ) ! daily end time HHMMSS
         LOGICAL, ALLOCATABLE :: LDAYSAV ( : ) ! true: src uses daylight time
+        INTEGER, ALLOCATABLE :: COUNTYSRC ( :,: ) ! FIPS code and averaging values
 
 C...........  Allocatable arrays for met data
-        INTEGER, ALLOCATABLE :: METCHECK( : ) ! dimension: nsteps in episode, 
-                                              ! value indicates which met data file covers that hour
+        INTEGER, ALLOCATABLE :: METDAYS( : ) ! dimension: nsteps in episode, 
+                                             ! value indicates which met data file covers that hour
         CHARACTER(LEN=256), ALLOCATABLE :: METLIST( : ) ! listing of met file names
-        CHARACTER(LEN=16) , ALLOCATABLE :: METLOGS( : ) ! listing of met logical names
 
         INTEGER, ALLOCATABLE :: NDAYSRC( :,: )  ! number of days to average by source
 
@@ -89,9 +129,10 @@ C...........   File units and logical names:
         CHARACTER*16 MNAME ! logical name for monthly output hourly temps
         CHARACTER*16 PNAME ! logical name for episode output hourly temps
         CHARACTER*16 UNAME ! logical name for ungridding-matrix input file
+        CHARACTER*16 METNAME ! logical name for meteorology files
                 
 C...........   Other local variables:
-        INTEGER    J, K, L, N, S, T, T2, V  ! Counters and pointers
+        INTEGER    I, J, K, L, N, S, T, T2, V  ! Counters and pointers
 
         INTEGER    EPI_SDATE      ! episode start date from E.V. (YYYYDDD)
         INTEGER    EPI_STIME      ! episode start time from E.V. (HHMMSS)
@@ -101,26 +142,20 @@ C...........   Other local variables:
         INTEGER    EPI_ETIME      ! episode ending time based on ERUNLEN
         
         INTEGER    ARRAYPOS    ! position in 24-hour arrays
-        INTEGER    CURRMNTH    ! current month
-        INTEGER    CURRDAY     ! current day
         INTEGER    DAY         ! tmp day of week number
         INTEGER    DDATE       ! output date for daily counties
-        INTEGER    DTIME       ! output time in local time
+        INTEGER    DUMMYTIME   ! dummy time variable to use in calls to NEXTIME
         INTEGER    EDATE       ! ending input date counter (YYYYDDD) in GMT
-        INTEGER    EDATE_NEW   ! ending date based on met data
         INTEGER    ENLEN       ! length of the emissions inven name
         INTEGER    ETIME       ! ending input time counter (HHMMSS)  in GMT
-        INTEGER    ETIME_NEW   ! ending time based on met data
-        INTEGER    HRPOS       ! starting position in METCHECK array
+        INTEGER    FILENUM     ! file number of current meteorology file
         INTEGER    IOS         ! temporary I/O status
         INTEGER    JDATE       ! input date counter (YYYYDDD) in GMT
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
         INTEGER    LDATE       ! date from previous loop iteration
         INTEGER    MDATE       ! output date for monthly counties
+        INTEGER    MONTH       ! current month
         INTEGER    METNGRID    ! no. grid cells in met data
-        INTEGER    METSTART    ! starting point for good met data
-        INTEGER    MISSTEPS    ! no. contiguous missing hours of met data
-        INTEGER    MAX_MISS    ! maximum number of missed steps
         INTEGER :: NDYCNTY = 0 ! no. counties using day averaging
         INTEGER :: NWKCNTY = 0 ! no. counties using week averaging
         INTEGER :: NMNCNTY = 0 ! no. counties using month averaging
@@ -129,18 +164,14 @@ C...........   Other local variables:
         INTEGER    NLINES      ! no. lines in met list file
         INTEGER    NMATX       ! size of ungridding matrix
         INTEGER    NSTEPS      ! number of time steps to process temperature data
-        INTEGER    NEWSTEPS    ! no. time steps in episode based on met data
-        INTEGER    NSTEP_MET   ! no. time steps in met file
         INTEGER :: OSRC = 0    ! number of sources outside grid
+        INTEGER    OTIME       ! output time in local time
         INTEGER    POS         ! position in time step loop
         INTEGER    RDATE       ! date to read met file
         INTEGER    SDATE       ! output start date
-        INTEGER    SDATE_NEW   ! output start date based on met data
-        INTEGER    SDATE_MET   ! met file start date
         INTEGER    STIME       ! output start time
-        INTEGER    STIME_NEW   ! output start time based on met data
-        INTEGER    STIME_MET   ! met file start time
-        INTEGER    TMPDAY      ! temporary day
+        INTEGER    TDATE       ! temporary julian date
+        INTEGER    TTIME       ! temporary time
         INTEGER    TMPMNTH     ! temporary month
         INTEGER    TSPREAD     ! time spread: difference between TZMAX and TZMIN
         INTEGER    TZONE       ! zone to determine output days
@@ -149,26 +180,24 @@ C...........   Other local variables:
         INTEGER    WDATE       ! output date for weekly counties
         
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
-        LOGICAL :: FIRSTMET = .TRUE.   !  true: processing first met file
-        LOGICAL :: DUPWARN  = .TRUE.   !  true: print warning about overlapping met data
+        LOGICAL :: GRID_ERR = .FALSE.  !  true: error found in grid settings
         LOGICAL :: DAYAVER  = .FALSE.  !  true: daily averaging
         LOGICAL :: WEEKAVER = .FALSE.  !  true: weekly averaging 
         LOGICAL :: MONAVER  = .FALSE.  !  true: monthly averaging
         LOGICAL :: EPIAVER  = .FALSE.  !  true: episode averaging
-        LOGICAL :: LASTTIME = .FALSE.  !  true: final time step
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
         LOGICAL :: DAYOPEN  = .FALSE.  !  true: daily temp file is open
         LOGICAL :: WEEKOPEN = .FALSE.  !  true: weekly temp file is open
         LOGICAL :: MONOPEN  = .FALSE.  !  true: monthly temp file is open
-                
-        CHARACTER(LEN=IOVLEN3) :: TVARNAME    !  temperature variable name
-        CHARACTER(LEN=256)     :: CURFNM      !  current met file name
-        CHARACTER(LEN=16)      :: CURLNM      !  current met logical file name
-        CHARACTER(LEN=256)     :: DUPNAME     !  name of overlapping met file
-        CHARACTER(LEN=200)     :: TEMPDIR     !  directory for output files
-        CHARACTER(LEN=14)      :: DTBUF       !  date buffer
-        CHARACTER(LEN=5)       :: INTBUF      !  integer buffer
-        CHARACTER(LEN=300)     :: MESG        !  message buffer
+        LOGICAL :: FILEOPEN = .FALSE.  !  true: met file is open
+        LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
+        LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
+        
+        CHARACTER(LEN=512)     METFILE     ! tmp physical file name
+        CHARACTER(LEN=512)     PREVFILE    ! previous physical file name
+        CHARACTER(LEN=IOVLEN3) TVARNAME    !  temperature variable name
+        CHARACTER(LEN=200)     TEMPDIR     !  directory for output files
+        CHARACTER(LEN=300)     MESG        !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'PREMOBL'  !  program name
 
@@ -374,138 +403,114 @@ C.........  Convert start and end dates and times back to GMT
 C.........  Find the total number of time steps
         NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
 
-C.........  Allocate met checking array
-        ALLOCATE( METCHECK( NSTEPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'METCHECK', PROGNAME )
-        
-        METCHECK = 0    ! array
-
 C.........  Get number of lines in met list file
         NLINES = GETFLINE( TDEV, 'METLIST file' )
         
-C.........  Allocate memory for storing the file
+C.........  Allocate memory for storing the met file information
         ALLOCATE( METLIST( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'METLIST', PROGNAME )
-        ALLOCATE( METLOGS( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'METLOGS', PROGNAME )
+        ALLOCATE( METDAYS( NSTEPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'METDAYS', PROGNAME )
         
-        METLIST = ' '   ! array
-        METLOGS = ' '
+        METLIST = ' '    ! array
+        METDAYS = 0
         
 C.........  Store lines of METLIST file
         CALL RDLINES( TDEV, 'METLIST file', NLINES, METLIST )
+        CLOSE( TDEV )
 
         MESG = 'Checking meteorology files...'
         CALL M3MSG2( MESG )
 
-        FIRSTMET = .TRUE.
+        METNAME = 'METFILE'
 
 C.........  Loop through all meteorology files
         DO N = 1, NLINES
-            CURFNM = METLIST( N )
 
-C.............  Reset duplicate warning - prints error once per met file
-            DUPWARN = .TRUE.    
+C.............  Close previous file if needed
+            IF( FILEOPEN ) THEN
+                IF( .NOT. CLOSE3( METNAME ) ) THEN
+                    MESG = 'Could not close meteorology file ' //
+     &                     TRIM( METFILE )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    FILEOPEN = .FALSE.
+                END IF
+            END IF
+
+C.............  Get physical file name for current iteration        
+            METFILE = METLIST( N )  
 
 C.............  Skip any blank lines
-            IF( CURFNM == ' ' ) CYCLE
-
-C.............  Assign and store logical file name
-            WRITE( INTBUF,* ) N
-            CURLNM = 'MET_FILE_' // ADJUSTL( INTBUF )
-            METLOGS( N ) = CURLNM
+            IF( METFILE == ' ' ) CYCLE
 
 C.............  Set logical file name
-            IF( .NOT. SETENVVAR( CURLNM, CURFNM ) ) THEN
+            IF( .NOT. SETENVVAR( METNAME, METFILE ) ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Could not set logical file name ' //
-     &                 'for file ' // TRIM( CURFNM )
+     &                 'for file ' // TRIM( METFILE )
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
             
 C.............  Try to open file   
-            IF( .NOT. OPEN3( CURLNM, FSREAD3, PROGNAME ) ) THEN
+            IF( .NOT. OPEN3( METNAME, FSREAD3, PROGNAME ) ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Could not open meteorology file ' //
-     &                 CURFNM( 1:LEN_TRIM( CURFNM ) )
+     &                 TRIM( METFILE )
                 CALL M3MESG( MESG )
                 CYCLE
+            ELSE
+            	FILEOPEN = .TRUE.
             END IF
 
 C.............  Try to get description from file            
-            IF( .NOT. DESC3( CURLNM ) ) THEN
+            IF( .NOT. DESC3( METNAME ) ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Could not get description of ' //
-     &                 'meteorology file ' // 
-     &                 CURFNM( 1:LEN_TRIM( CURFNM ) )
+     &                 'meteorology file ' // TRIM( METFILE )
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
-
-C.............  Save description parameters
-            SDATE_MET = SDATE3D
-            STIME_MET = STIME3D
-            NSTEP_MET = MXREC3D
             
 C.............  Check that requested temperature variable is in file
             J = INDEX1( TVARNAME, NVARS3D, VNAME3D )
             IF( J <= 0 ) THEN
             	EFLAG = .TRUE.
                 MESG = 'ERROR: Could not find ' // TVARNAME // 
-     &                 'in file ' //
-     &                 CURFNM( 1:LEN_TRIM( CURFNM ) )
+     &                 'in file ' // TRIM( METFILE )
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
 
 C.............  Compare the met grid with previous settings
 C.............  The subgrid parameters will be set here, if there is a subgrid
-            CALL CHKGRID( CURLNM, 'GRID', 1, EFLAG )
+            CALL CHKGRID( METNAME, 'GRID', 1, GRID_ERR )
             METNGRID = NGRID
 
-C............. If the dimensions were in error, abort
-            IF( EFLAG ) THEN
-                MESG = 'Grids in ungridding matrix and meteorology ' //
-     &                 'data are inconsistent.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C............. If the dimensions were in error, print message and cycle
+            IF( GRID_ERR ) THEN
+            	EFLAG = .TRUE.
+                MESG = 'ERROR: Grids in ungridding matrix and ' //
+     &                 'meteorology data are inconsistent.'
+                CALL M3MESG( MESG )
+                CYCLE
             END IF
 
-C.............  Use start date, start time, and no. time steps to fill in METCHECK array
-            HRPOS = SECSDIFF( SDATE, STIME, SDATE_MET, STIME_MET )
-            HRPOS = HRPOS / 3600
+C.............  Build METDAYS array linking met files to a specific date and time
 
-C.............  If met data starts before episode, skip ahead to start of episode
-            IF( HRPOS <= 0 ) THEN
-                NSTEP_MET = NSTEP_MET + HRPOS
-                HRPOS = 1
-            ELSE
-                HRPOS = HRPOS + 1
-            END IF
+C............. Find starting position in METDAYS array
+            POS = 1 + SECSDIFF( SDATE, STIME, SDATE3D, STIME3D ) / 3600
+            
+C.............  Make sure the met data is within the episode            
+            IF( POS + MXREC3D <= 0 .OR. POS > NSTEPS ) CYCLE
 
-C.............  Loop through time steps in met data and fill in METCHECK array            
-            DO J = HRPOS, HRPOS + NSTEP_MET
-                IF( J > NSTEPS ) EXIT
-
-C.................  Check if met data overlaps previous file and print warning                
-                IF( METCHECK( J ) /= 0 .AND. DUPWARN ) THEN
-                    DUPNAME = METLIST( METCHECK( J ) )
-                    MESG = 'WARNING: Time period of meteorology file '//
-     &                     CRLF() // BLANK10 // '"' // 
-     &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) //
-     &                     '" overlaps that of file ' //
-     &                     CRLF() // BLANK10 // '"' //
-     &                     DUPNAME( 1:LEN_TRIM( DUPNAME ) ) // '".'
-                    CALL M3MESG( MESG )
-                    MESG = BLANK5 // 'Data from "' // 
-     &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) //
-     &                     '" will be used.' 
-                    CALL M3MESG( MESG )
-                    DUPWARN = .FALSE.
-                END IF
-                
-                METCHECK( J ) = N
-            END DO 
+C.............  Fill in array for number of steps in current met file            
+            DO L = POS, POS + MXREC3D
+                IF( L <= 0 ) CYCLE
+                IF( L > NSTEPS ) EXIT
+                METDAYS( L ) = N
+            END DO
 
         END DO
 
@@ -518,132 +523,303 @@ C.........  Exit if there was a problem with the meteorology files
 C.........  Open group files
         CALL OPENGROUP( DDEV, WDEV, MDEV, EDEV )
 
-C.........  Check for missing met data
+C.........  Check group file unit numbers to see which types of averaging are needed
+        IF( DDEV > 0 ) DAYAVER  = .TRUE.
+        IF( WDEV > 0 ) WEEKAVER = .TRUE.
+        IF( MDEV > 0 ) MONAVER  = .TRUE.
+        IF( EDEV > 0 ) EPIAVER  = .TRUE.
+
+C.........  Check for missing meteorology data
         MESG = 'Checking for missing meteorology data...'
         CALL M3MSG2( MESG )
-        
-C.........  Check returned unit number to find out which temporal 
-C           averaging is required; set maximum number of missing
-C           time steps and error/warning message
-        IF( DDEV > 0 ) THEN
-            DAYAVER  = .TRUE.
-            MAX_MISS = 24
-            MESG = 'WARNING: Missing more than a full day of ' //
-     &             'meteorology data.' // CRLF() // BLANK5 // 
-     &             'Episode ending date and time will be adjusted.'
-        END IF
-        
-        IF( WDEV > 0 ) THEN
-            WEEKAVER = .TRUE.
-            MAX_MISS = 24*7
-            MESG = 'WARNING: Missing more than 7 days of ' //
-     &             'meteorology data.' // CRLF() // BLANK5 //
-     &             'Episode ending date and time will be adjusted.'
-        END IF
-        
-        IF( MDEV > 0 ) THEN
-            MONAVER  = .TRUE.
-            MAX_MISS = 24*30
-            MESG = 'WARNING: Missing more than 30 days of ' //
-     &             'meteorology data.' // CRLF() // BLANK5 //
-     &             'Episode ending date and time will be adjusted.'
-        END IF
-        
-        IF( EDEV > 0 ) THEN
-            MAX_MISS = NSTEPS
-            EPIAVER  = .TRUE.
-        END IF
 
-        NEWSTEPS = 0
-        METSTART = 0
-        MISSTEPS = 0
-        
-        DO T = 1, NSTEPS
-        
-            IF( METCHECK( T ) /= 0 ) THEN
-                NEWSTEPS = NEWSTEPS + MISSTEPS
-                MISSTEPS = 0
-                IF( METSTART == 0 ) THEN
-                    NEWSTEPS = 1
-                    CALL NEXTIME( SDATE, STIME, (T-1)*10000 )
-                    METSTART = T
-                ELSE
-                    NEWSTEPS = NEWSTEPS + 1
-                END IF
-            ELSE
-                IF( METSTART /= 0 ) THEN
-                    MISSTEPS = MISSTEPS + 1
-                    IF( MISSTEPS == MAX_MISS ) THEN
-                        CALL M3MSG2( MESG )
-                        EXIT
+C.........  Check that all days are covered
+        IF( DAYAVER ) THEN
+            T = 1
+            
+C.............  Loop over all days in episode
+            DO
+            	
+C.................  Make sure we're within episode bounds
+                IF( T > NSTEPS ) EXIT
+
+C.................  Check all hours in current day, accounting for time zone spread            
+                DO I = 0, 23 + TSPREAD
+                    K = T + I
+
+C.....................  Double check episode bounds
+                    IF( K > NSTEPS ) EXIT
+
+C.....................  If no met data for current step, try to find data
+                    IF( METDAYS( K ) == 0 ) THEN
+ 
+C.........................  Try 24 hours back                    	
+                        IF( K - 24 > 0 ) THEN
+                            IF( METDAYS( K - 24 ) > 0 ) THEN
+                                METDAYS( K ) = - METDAYS( K - 24 )
+                                CYCLE
+                            END IF
+
+C.........................  Try 24 hours forward
+                        ELSE IF( K + 24 < NSTEPS ) THEN
+                            IF( METDAYS( K + 24 ) > 0 ) THEN
+                                METDAYS( K ) = - METDAYS( K + 24 )
+                                CYCLE
+                            END IF
+                        END IF
+
+C.........................  No data available, exit with error                    
+                        MESG = 'Meteorology data does not cover ' //
+     &                         'requested episode.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
-                END IF
-            END IF
-            
-        END DO
-
-        IF( NEWSTEPS == 0 ) THEN
-            MESG = 'Meteorology data does not cover ' //
-     &             'requested time period'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-C.........  Reset number of steps and print messages
-        IF( NEWSTEPS /= NSTEPS ) THEN
-            MESG = 'WARNING: Resetting output start date, start ' //
-     &             'time, or duration to match available meteorology' //
-     &             ' data.'
-            CALL M3MSG2( MESG )
-
-C.............  Calculate new end date and time
-            EDATE = SDATE
-            ETIME = STIME
-            CALL NEXTIME( EDATE, ETIME, NEWSTEPS*10000 )
-
-C.............  Reset start and end times to deal with 6 am - 5 am restrictions
-            SDATE_NEW = SDATE
-            STIME_NEW = 6 + TZMIN          ! starting time in GMT
-            STIME_NEW = STIME_NEW*10000
-
-            IF( STIME > STIME_NEW ) THEN
-                CALL NEXTIME( SDATE_NEW, STIME_NEW, 24*10000 )
-            END IF
-            
-C.............  Adjust metstart for difference between old and new start
-            METSTART = METSTART + 
-     &            SECSDIFF( SDATE, STIME, SDATE_NEW, STIME_NEW ) / 3600
-            
-            SDATE = SDATE_NEW
-            STIME = STIME_NEW
-            
-            EDATE_NEW = EDATE
-            ETIME_NEW = 5 + TZMAX          ! ending time in GMT
-            ETIME_NEW = ETIME_NEW*10000
-            
-            IF( ETIME < ETIME_NEW ) THEN
-                CALL NEXTIME( EDATE_NEW, ETIME_NEW, -24*10000 )
-            END IF
-            
-            EDATE = EDATE_NEW
-            ETIME = ETIME_NEW
-            
-C.............  Calculate number of time steps
-            NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
-                        
-C.............  Get date buffer field
-            DTBUF = MMDDYY( SDATE )
-            L = LEN_TRIM( DTBUF )
                 
-            WRITE( MESG,94050 )
-     &        'Output Time Zone:', TZONE,           CRLF() // BLANK5 //
-     &        '  Met Start Date:', DTBUF( 1:L ) //  CRLF() // BLANK5 //
-     &        '  Met Start Time:', STIME + TZONE*10000,'HHMMSS'// 
-     &                                              CRLF() // BLANK5 //
-     &        '       Time Step:', 1,    'hour'  // CRLF() // BLANK5 //
-     &        '    Met Duration:', NSTEPS, 'hours'   
-     
-            CALL M3MSG2( MESG )
-        END IF
+                END DO   ! end loop over hours in day
+
+C.................  Skip to start of next day
+                T = T + 24
+            END DO   ! end loop over days in episode
+        END IF   ! end day averaging check
+
+C.........  Check that all weeks are covered
+        IF( WEEKAVER ) THEN
+            T = 1
+            JDATE = SDATE
+            JTIME = STIME
+            
+C.............  Loop over all weeks in episode
+            DO
+            	
+C.................  Check episode bounds
+                IF( T > NSTEPS ) EXIT
+
+C.................  Check hours in day                
+                DO I = 0, 23 + TSPREAD
+                    K = T + I
+                    
+C.....................  Double check episode bounds
+                    IF( K > NSTEPS ) EXIT
+
+C.....................  If no met data for current step, try to find data           
+                    IF( METDAYS( K ) <= 0 ) THEN
+                        FND_DATA = .FALSE.
+
+C.........................  Loop through previous days in week
+                        DO J = 1, 6
+                            TDATE = JDATE
+                            TTIME = JTIME
+
+C.............................  Check episode bounds
+                            IF( K - J*24 > 0 ) THEN
+
+C.................................  Make sure it's still the same week
+                                CALL NEXTIME( TDATE, TTIME, -J*240000 )
+                                IF( WKDAY( TDATE ) /= 6 ) THEN
+                                    IF( METDAYS( K - J*24 ) > 0 ) THEN
+                                        FND_DATA = .TRUE.
+                                        EXIT
+                                    END IF
+
+C.................................  Otherwise, it's the previous week, so exit
+                                ELSE
+                                    EXIT
+                                END IF
+
+C.............................  Otherwise, it's too far back, exit
+                            ELSE
+                                EXIT
+                            END IF
+                        END DO   ! end loop over previous days
+
+C.........................  Skip rest of loop if we've found data                    
+                        IF( FND_DATA ) CYCLE
+
+C.........................  Loop through remaining days in week                    
+                        DO J = 1, 6
+                            TDATE = JDATE
+                            TTIME = JTIME
+          
+C.............................  Check episode bounds              
+                            IF( K + J*24 < NSTEPS ) THEN
+                            	
+C.................................  Make sure it's still the same week
+                                CALL NEXTIME( TDATE, TTIME, J*240000 )
+                                IF( WKDAY( TDATE ) /= 7 ) THEN
+                                    IF( METDAYS( K + J*24 ) > 0 ) THEN
+                                        FND_DATA = .TRUE.
+                                        EXIT
+                                    END IF
+                                ELSE
+                                	
+C.................................  Otherwise, it's the next week, so exit
+                                    EXIT
+                                END IF  
+                                
+C.............................  Otherwise, it's too far forward, exit
+                            ELSE
+                                EXIT      
+                            END IF
+                        END DO   ! end loop over remaining days
+                    
+                        IF( FND_DATA ) CYCLE
+
+C.....................  Still no data, exit with error                         
+                        MESG = 'Meteorology data does not cover ' //
+     &                         'requested episode.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                
+                END DO   ! end loop over hours in day
+            
+C.................  Advance to next Sunday at midnight            
+                DO
+                    T = T + 1
+                    CALL NEXTIME( JDATE, JTIME, 10000 )
+                    IF( WKDAY( JDATE ) == 7 .AND. JTIME == 0 ) EXIT
+                END DO
+            END DO   ! end loop over weeks in episode
+        END IF   ! end week averaging check
+
+C.........  Check that all months are covered
+        IF( MONAVER ) THEN
+            T = 1
+            JDATE = SDATE
+            JTIME = STIME
+            CALL DAYMON( JDATE, MONTH, DAY )
+
+C.............  Loop over all months in episode     
+            DO
+
+C.................  Check episode bounds
+                IF( T > NSTEPS ) EXIT
+
+C.................  Check hours in day            
+                DO I = 0, 23 + TSPREAD
+                    K = T + I
+                    
+C.....................  Check episode bounds
+                    IF( K > NSTEPS ) EXIT
+
+C.....................  Check for met data at this step                
+                    IF( METDAYS( K ) <= 0 ) THEN
+                        FND_DATA = .FALSE.
+
+C.........................  Loop through previous days in month
+                        DO J = 1, 30
+                            TDATE = JDATE
+                            TTIME = JTIME
+
+C.............................  Check episode bounds                        
+                            IF( K - J*24 > 0 ) THEN
+                            	
+C.................................  Make sure it's still the same month
+                                CALL NEXTIME( TDATE, TTIME, -J*240000 )
+                                CALL DAYMON( TDATE, TMPMNTH, DAY )
+                                IF( TMPMNTH == MONTH ) THEN
+                                    IF( METDAYS( K - J*24 ) > 0 ) THEN
+                                        FND_DATA = .TRUE.
+                                        EXIT
+                                    END IF
+                                    
+C.................................  Otherwise, it's the previous month, so exit
+                                ELSE
+                                    EXIT
+                                END IF
+                                
+C.............................  Otherwise, it's too far back, exit
+                            ELSE
+                                EXIT
+                            END IF
+                        END DO   ! end loop over previous days
+ 
+C.........................  Skip rest of loop if we've found data                        
+                        IF( FND_DATA ) CYCLE
+
+C.........................  Loop through remaining days in month                    
+                        DO J = 1, 30
+                            TDATE = JDATE
+                            TTIME = JTIME
+                        
+C.............................  Check episode bounds   
+                            IF( K + J*24 < NSTEPS ) THEN
+                            	
+C.................................  Make sure it's still the same month
+                                CALL NEXTIME( TDATE, TTIME, J*240000 )
+                                CALL DAYMON( TDATE, TMPMNTH, DAY )
+                                IF( TMPMNTH == MONTH ) THEN
+                                    IF( METDAYS( K + J*24 ) > 0 ) THEN
+                                        FND_DATA = .TRUE.
+                                        EXIT
+                                    END IF
+                                    
+C.................................  Otherwise, it's the next month, so exit
+                                ELSE
+                                    EXIT
+                                END IF    
+                                
+C.............................  Otherwise, it's too far forward, exit
+                            ELSE
+                                EXIT        
+                            END IF
+                        END DO   ! end loop over remaining days
+                    
+                        IF( FND_DATA ) CYCLE
+
+C.....................  Still no data, exit with error                         
+                        MESG = 'Meteorology data does not cover ' //
+     &                         'requested episode.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                
+                END DO   ! end loop over hours in day
+            
+C.................  Advance T to next first day of next month at midnight            
+                DO
+                    T = T + 1
+                    CALL NEXTIME( JDATE, JTIME, 10000 )
+                    CALL DAYMON( JDATE, MONTH, DAY )
+                    IF( DAY == 1 .AND. JTIME == 0 ) EXIT
+                END DO
+            END DO   ! end loop over months in episode
+        END IF   ! end month averaging check
+        
+C.........  Check that the episode is covered
+        IF( EPIAVER ) THEN
+
+C.............  Loop over hours in day accounting for time zones
+            DO T = 1, 24 + TSPREAD
+                K = T
+
+C.................  Check episode bounds
+                IF( K > NSTEPS ) EXIT
+                
+C.................  Check for met data at this step
+                IF( METDAYS( K ) <= 0 ) THEN
+                    FND_DATA = .FALSE.
+
+C.....................  Loop through additional days in episode
+                    DO
+                        K = K + 24
+
+C.........................  Double check episode bounds
+                        IF( K > NSTEPS ) EXIT
+
+C.........................  If found data, go on to next hour                        
+                        IF( METDAYS( K ) > 0 ) THEN
+                            FND_DATA = .TRUE.
+                            EXIT
+                        END IF
+                    END DO   ! end loop over days in episode
+                
+                    IF( FND_DATA ) CYCLE
+
+C.....................  Still no data, exit with error                
+                    MESG = 'Meteorology data does not cover ' //
+     &                     'requested episode.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+            END DO   ! end loop over hours in day
+        END IF   ! end episode averaging check
 
 C.........  Get sources and counties from SPDSUM file
         ALLOCATE( COUNTYSRC( NSRC, 2 ), STAT=IOS )
@@ -734,13 +910,13 @@ C.........  Read ungridding matrix
 C.........  Allocate memory for storing temperature profiles
         ALLOCATE( TKHOUR( NSRC, 24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
-        ALLOCATE( TDYCNTY( NDYCNTY, 24 ), STAT=IOS )
+        ALLOCATE( TDYCNTY( NDYCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TDYCNTY', PROGNAME )
-        ALLOCATE( TWKCNTY( NWKCNTY, 24 ), STAT=IOS )
+        ALLOCATE( TWKCNTY( NWKCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TWKCNTY', PROGNAME )
-        ALLOCATE( TMNCNTY( NMNCNTY, 24 ), STAT=IOS )
+        ALLOCATE( TMNCNTY( NMNCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TMNCNTY', PROGNAME )
-        ALLOCATE( TEPCNTY( NEPCNTY, 24 ), STAT=IOS )
+        ALLOCATE( TEPCNTY( NEPCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TEPCNTY', PROGNAME )
 
 C.........  Get output directory information from the environment
@@ -789,7 +965,7 @@ C.........  Process temperature information...
 
 C.........  Loop through days/hours of temperature files
         DDATE = SDATE
-        DTIME = 0
+        OTIME = 0
         WDATE = SDATE
         MDATE = SDATE
         
@@ -797,64 +973,7 @@ C.........  Loop through days/hours of temperature files
         JTIME = STIME
         LDATE = -9
         
-        DO T = METSTART, METSTART + NSTEPS - 1
-
-            POS = T - METSTART + 1
-            RDATE = JDATE
-
-C.............  Set correct met file for this time step
-
-C.............  If no met file for this time step, use previous or next day
-            IF( METCHECK( T ) == 0 ) THEN
-                IF( T - 24 > 0 ) THEN
-                    T2 = T - 24
-                    RDATE = RDATE - 1
-                ELSE
-                    T2 = T + 24
-                    RDATE = RDATE + 1
-                END IF
-            ELSE
-                T2 = T
-            END IF
-
-C.............  If we still don't have met data for current day, quit
-            IF( METCHECK( T2 ) == 0 ) THEN
-                WRITE( MESG,94010 ) 'Could not get met file for ', 
-     &                              JDATE, ' and ', JTIME
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-            ELSE
-                CURFNM = METLIST( METCHECK( T2 ) )
-            END IF
-
-C.............  Get logical file name 
-            CURLNM = METLOGS( METCHECK( T2 ) )
-
-C.............  Set logical file name
-            IF( .NOT. SETENVVAR( CURLNM, CURFNM ) ) THEN
-            	MESG = 'Could not set logical file name for file ' //
-     &       	       TRIM( CURFNM )
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-            END IF
-
-C.............  Open the meteorology data file
-            IF ( .NOT. OPEN3( CURLNM, FSREAD3, PROGNAME ) ) THEN
-                MESG = 'Could not open meteorology file ' // CURFNM
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-            END IF
-
-C.............  Read current temperature file
-            IF ( .NOT. READ3( CURLNM, TVARNAME, 1, 
-     &                        RDATE, JTIME, TA ) ) THEN
-                L = LEN_TRIM( TVARNAME )
-                MESG = 'Could not read ' // TVARNAME( 1:L ) //
-     &                 ' from ' // CURFNM 
-                CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
-
-            END IF
-
-C.............  Apply ungridding matrix 
-            CALL APPLUMAT( NSRC, NMATX, TA, UMAT(1), UMAT( NSRC+1 ),
-     &                     UMAT( NSRC+NMATX+1 ), TASRC )
+        DO T = 1, NSTEPS
 
 C.............  When new day...
             IF ( JDATE /= LDATE ) THEN
@@ -871,9 +990,91 @@ C.................  Set start and end hours of day for all sources
 
             END IF
 
-C.............  Create hourly temperature array by source
-            CALL HOURTEMP( NSRC, JTIME, DAYBEGT, TASRC, COUNTYSRC, 
-     &                     MINTEMP, MAXTEMP, NDAYSRC, TKHOUR )
+C.............  Determine input file for this hour
+            POS = T
+            
+C.............  Get file number for current iteration
+            FILENUM = METDAYS( POS )
+            IF( FILENUM <= 0 ) THEN
+                ALT_DATA = .TRUE.
+            ELSE
+                ALT_DATA = .FALSE.
+            END IF
+
+C.............  Skip file opening when not doing day averaging and using alternate data
+            IF( .NOT. ALT_DATA .OR. DAYAVER ) THEN
+            
+C.................  Get file name
+                METFILE = METLIST( ABS( FILENUM ) )
+
+C.................  Close previous file if needed
+                IF( METFILE .NE. PREVFILE ) THEN
+                    IF( FILEOPEN ) THEN
+                        IF( .NOT. CLOSE3( METNAME ) ) THEN
+                            MESG = 'Could not close hourly ' //
+     &                             'emissions file ' // TRIM( PREVFILE )
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        ELSE
+                        	FILEOPEN = .FALSE.
+                        END IF
+                    END IF
+
+                    PREVFILE = METFILE
+
+                END IF
+
+C.................  Set logical file name
+                IF( .NOT. SETENVVAR( METNAME, METFILE ) ) THEN
+            	    MESG = 'Could not set logical file name for ' //
+     &       	           'file ' // TRIM( METFILE )
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+C.................  Open the meteorology data file
+                IF ( .NOT. OPEN3( METNAME, FSREAD3, PROGNAME ) ) THEN
+                    MESG = 'Could not open meteorology file ' // 
+     &                     TRIM( METFILE )
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                ELSE
+            	    FILEOPEN = .TRUE.
+                END IF
+
+C.................  Reset read date when using alternate data
+                IF( ALT_DATA ) THEN
+                    IF( .NOT. DESC3( METNAME ) ) THEN
+                        MESG = 'Could not get description of ' //
+     &                         'meteorology file ' // TRIM( METFILE )
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    ELSE
+                        IF( SDATE3D < JDATE ) THEN
+                            RDATE = JDATE - 1
+                        ELSE
+                            RDATE = JDATE + 1
+                        END IF
+                    END IF
+                ELSE
+                    RDATE = JDATE
+                END IF
+            
+C.................  Read current temperature file
+                IF ( .NOT. READ3( METNAME, TVARNAME, 1, 
+     &                            RDATE, JTIME, TA ) ) THEN
+                    L = LEN_TRIM( TVARNAME )
+                    MESG = 'Could not read ' // TVARNAME( 1:L ) //
+     &                     ' from ' // TRIM( METFILE ) 
+                    CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
+
+                END IF
+
+C.................  Apply ungridding matrix 
+                CALL APPLUMAT( NSRC, NMATX, TA, UMAT(1), UMAT( NSRC+1 ),
+     &                         UMAT( NSRC+NMATX+1 ), TASRC )
+
+C.................  Create hourly temperature array by source
+                CALL HOURTEMP( NSRC, JTIME, DAYBEGT, TASRC, COUNTYSRC, 
+     &                         MINTEMP, MAXTEMP, ALT_DATA, NDAYSRC,
+     &                         TKHOUR )
+            END IF  ! check for using alternate data or day averaging
 
 C.............  Make sure we've waited long enough to catch all time zones
             IF( POS > TSPREAD ) THEN
@@ -899,10 +1100,10 @@ C.....................  Open new file if necessary (1 day per output file)
                     END IF  
 
 C.....................  Write time step to file
-                    CALL WRSHOUR( DNAME, DDATE, DTIME, NDYCNTY, 
-     &                            ARRAYPOS, DYCODES, TDYCNTY )
+                    CALL WRSHOUR( DNAME, DDATE, OTIME, NDYCNTY, 
+     &                            DYCODES, TDYCNTY )
      
-                    IF( DTIME == 230000 ) THEN
+                    IF( OTIME == 230000 ) THEN
 
 C.........................  Close current output file                        
                         IF( .NOT. CLOSE3( DNAME ) ) THEN
@@ -932,14 +1133,15 @@ C.....................  Open new file if necessary (one week per output file)
                     END IF       
 
 C.....................  Write time step to file
-                    CALL WRSHOUR( WNAME, WDATE, DTIME, NWKCNTY, 
-     &                            ARRAYPOS, WKCODES, TWKCNTY )
+                    CALL WRSHOUR( WNAME, WDATE, OTIME, NWKCNTY, 
+     &                            WKCODES, TWKCNTY )
                     
-                    IF( DTIME == 230000 ) THEN
+                    IF( OTIME == 230000 ) THEN
                     	
 C.........................  Store current date to use for next week
                         WDATE = DDATE + 1
-C                        CALL NEXTIME( WDATE, 0, 10000 )
+                        DUMMYTIME = 0
+                        CALL NEXTIME( WDATE, DUMMYTIME, 0 )
 
 C.........................  Close current output file                        
                         IF( .NOT. CLOSE3( WNAME ) ) THEN
@@ -953,10 +1155,10 @@ C.........................  Close current output file
                 END IF
                 
 C.................  If last day of month, process monthly averages
-                CALL DAYMON( DDATE, CURRMNTH, CURRDAY )
-                CALL DAYMON( DDATE + 1, TMPMNTH, TMPDAY )
+                CALL DAYMON( DDATE, MONTH, DAY )
+                CALL DAYMON( DDATE + 1, TMPMNTH, DAY )
             
-                IF( MONAVER .AND. TMPMNTH /= CURRMNTH ) THEN
+                IF( MONAVER .AND. TMPMNTH /= MONTH ) THEN
 
 C.....................  Average temperatures across county group 
                     CALL AVERTEMP( NSRC, NMNCNTY, MNCODES, 
@@ -972,14 +1174,15 @@ C.....................  Open new file if necessary (one month per output file)
                     END IF       
 
 C.....................  Write time step to file                     
-                    CALL WRSHOUR( MNAME, MDATE, DTIME, NMNCNTY, 
-     &                            ARRAYPOS, MNCODES, TMNCNTY )               
+                    CALL WRSHOUR( MNAME, MDATE, OTIME, NMNCNTY, 
+     &                            MNCODES, TMNCNTY )               
                     
-                    IF( DTIME == 230000 ) THEN
+                    IF( OTIME == 230000 ) THEN
                     	
 C.........................  Store current date to use for next month
                         MDATE = DDATE + 1
-C                        CALL NEXTIME( MDATE, 0, 10000 )
+                        DUMMYTIME = 0
+                        CALL NEXTIME( MDATE, DUMMYTIME, 0 )
 
 C.........................  Close current output file   
                         IF( .NOT. CLOSE3( MNAME ) ) THEN
@@ -994,10 +1197,8 @@ C.........................  Close current output file
 
             END IF    ! time zone check
 
-            LASTTIME = ( POS == NSTEPS )
-
 C.............  Final steps on last time through
-            IF( LASTTIME ) THEN
+            IF( T == NSTEPS ) THEN
 
 C.................  Process remaining week temperatures only if current date is 
 C                   not Saturday; otherwise, this has already been handled above
@@ -1015,13 +1216,13 @@ C                   not Saturday; otherwise, this has already been handled above
      &                                 TWKCNTY, NDAYSRC )
                        
                         CALL WRSHOUR( WNAME, WDATE, ( K-1 )*10000, 
-     &                                NWKCNTY, K, WKCODES, TWKCNTY )
+     &                                NWKCNTY, WKCODES, TWKCNTY )
                     END DO
                 END IF
 
 C.................  Process remaining month temperatures only if current date is
 C                   not the last day of the month
-                IF( MONAVER .AND. TMPMNTH == CURRMNTH ) THEN
+                IF( MONAVER .AND. TMPMNTH == MONTH ) THEN
                     IF( .NOT. MONOPEN ) THEN
                         CALL OPENSHOUR( ENAME, 'monthly', MDATE, EDATE,
      &                                  TVARNAME, NMNCNTY, TEMPDIR, 
@@ -1035,7 +1236,7 @@ C                   not the last day of the month
      &                                 TMNCNTY, NDAYSRC )
                         
                         CALL WRSHOUR( MNAME, MDATE, ( K-1 )*10000, 
-     &                                NMNCNTY, K, MNCODES, TMNCNTY )  
+     &                                NMNCNTY, MNCODES, TMNCNTY )  
                     END DO
                 END IF
 
@@ -1047,7 +1248,7 @@ C.................  Output episode averaged temperatures
      &                                 TEPCNTY, NDAYSRC )
      
                         CALL WRSHOUR( PNAME, SDATE, ( K-1 )*10000, 
-     &                                NEPCNTY, K, EPCODES, TEPCNTY )
+     &                                NEPCNTY, EPCODES, TEPCNTY )
                     END DO    
                 END IF
 
@@ -1067,7 +1268,7 @@ C.................  Count sources outside the grid
 
 C.............  Increment output time
             IF( POS > TSPREAD ) THEN
-                CALL NEXTIME( DDATE, DTIME, 10000 )
+                CALL NEXTIME( DDATE, OTIME, 10000 )
             END IF
 
 C.............  Increment loop time
