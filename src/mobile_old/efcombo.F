@@ -1,7 +1,7 @@
 
 C Version "@(#)$Id$ $Source$ $Date$ 
 
-        SUBROUTINE EFCOMBO( FNAME, NTEMP, MPTYPE, 
+        SUBROUTINE EFCOMBO( FNAME1, FNAME2, NTEMP, MPTYPE, 
      &                      PERCENT, LIST, JDATE )
 
 C***********************************************************************
@@ -31,106 +31,135 @@ C***********************************************************************
         INCLUDE 'IODECL3.EXT'    !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'     !  I/O API file description data structures.
 
-        INTEGER JDATE, MPTYPE, NTEMP
-        REAL    PERCENT( MPTYPE )
-        INTEGER LIST   ( MPTYPE )
-        CHARACTER*(*) FNAME
+C.........  Subroutine call variables
+
+        REAL          PERCENT( MPTYPE )  ! percentage of each PSI in combo
+
+        INTEGER       JDATE              ! date ID for reading EF files
+        INTEGER       LIST   ( MPTYPE )  ! list of PSIs in combo
+        INTEGER       MPTYPE             ! number of factors in combination
+        INTEGER       NTEMP              ! non-diurnal number of temperatures
+
+        CHARACTER*16  FNAME1             ! File name for non-diurnal EF file
+        CHARACTER*16  FNAME2             ! File name for diurnal EF file
 
 C.........  Read-in emission factors storage
    
-        REAL    EF( MAXTMP, NVTYPE, 11 )  ! Emis factor storage
+        REAL    NDEF( MAXTMP , NVTYPE, MXNDET )  ! Non-diurnal Emis fac storage
+        REAL    DEF ( NMINMAX, NVTYPE, MXDET  )  ! Diurnal     Emis fac storage
 
-C.........  Output emission factors
-        REAL    EXH_CO ( MAXTMP, NVTYPE )  ! Emis factor: CO exhaust
-        REAL    EXH_NOX( MAXTMP, NVTYPE )  ! Emis factor: NOX exhaust
-        REAL    EXH_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC exhaust
-        REAL    EVP_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC evaporative
-        REAL    RNL_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC running
-        REAL    RST_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC resting
-        REAL    RF1_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC refuel /mile
-        REAL    RF2_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC refuel /gallon
-        REAL    HOT_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC hot soak
-        REAL    CRC_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC crank case
-        REAL    RHR_VOC( MAXTMP, NVTYPE )  ! Emis factor: VOC resting /hour
+C...........   Master Non-Diurnal EFs list variables
 
-        COMMON / EFS / EXH_CO , EXH_NOX, EXH_VOC, EVP_VOC, RNL_VOC,
-     &                 RST_VOC, RF1_VOC, RF2_VOC, HOT_VOC, CRC_VOC,
-     &                 RHR_VOC
+        REAL    EXH_CO ( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: CO exhaust
+        REAL    EXH_NOX( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: NOX exhaust
+        REAL    EXH_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC exhaust
+        REAL    EVP_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC evaporative
+        REAL    RNL_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC running
+        REAL    RST_VOC( MAXTMP, NVTYPE )  ! Non-Diurn Emis fac: VOC resting
+ 
+        COMMON / EFS1 / EXH_CO , EXH_NOX, EXH_VOC, EVP_VOC, RNL_VOC,
+     &                  RST_VOC
+ 
+C...........   Master Diurnal EFs list variables
+ 
+        REAL    WDL_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC weighted
+        REAL    DNL_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC diurnal
+        REAL    HOT_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC hot soak
+        REAL    CRC_VOC( MXTMMI, NVTYPE )  ! Diurnal Emis fac: VOC crank case
 
-        INTEGER I, V, T
+        COMMON / EFS2 / WDL_VOC, DNL_VOC, HOT_VOC, CRC_VOC
+
+        INTEGER I, V, T      ! Counters and pointers
         CHARACTER*256 MESG
 
 C.........  Initialize EF sum variables
         DO 22 V = 1, NVTYPE
             DO 11 T= 1, NTEMP
 
-                    EXH_CO ( T,V ) = 0.
-                    EXH_NOX( T,V ) = 0.
-                    EXH_VOC( T,V ) = 0.
-                    EVP_VOC( T,V ) = 0.
-                    RNL_VOC( T,V ) = 0.
-                    RST_VOC( T,V ) = 0.
-                    RF1_VOC( T,V ) = 0.
-                    RF2_VOC( T,V ) = 0.
-                    HOT_VOC( T,V ) = 0.
-                    CRC_VOC( T,V ) = 0.
-                    RHR_VOC( T,V ) = 0.
+                EXH_CO ( T,V ) = 0.
+                EXH_NOX( T,V ) = 0.
+                EXH_VOC( T,V ) = 0.
+                EVP_VOC( T,V ) = 0.
+                RNL_VOC( T,V ) = 0.
+                RST_VOC( T,V ) = 0.
 
    11       CONTINUE 
+
+            DO 13 T= 1, NMINMAX
+
+                WDL_VOC( T,V ) = 0.
+                DNL_VOC( T,V ) = 0.
+                HOT_VOC( T,V ) = 0.
+                CRC_VOC( T,V ) = 0.
+
+   13       CONTINUE 
+
    22   CONTINUE 
 
 C.........  Loop over components of combo EFs
         DO 55 I = 1, MPTYPE
 
-C.............  Read in each required existing EF set
+C.............  Read in each required existing Non-diurnal EF set
             IF( .NOT. READ3
-     &          ( FNAME, 'ALL', 1, JDATE, LIST( I ), EF ) ) THEN
+     &          ( FNAME1, 'ALL', 1, JDATE, LIST( I ), NDEF ) ) THEN
 
-                MESG = 'Could not read EFs from ' // FNAME
-                CALL M3EXIT( 'EFCOMBO', 0, 0, MESG, 2 )
+                MESG = 'Could not read non-diurnal EFs from ' // FNAME1
+                CALL M3EXIT( 'EFCOMBO', JDATE, LIST( I ), MESG, 2 )
+
+            ENDIF 
+
+C.............  Read in each required existing Diurnal EF set
+            IF( .NOT. READ3
+     &          ( FNAME2, 'ALL', 1, JDATE, LIST( I ), DEF ) ) THEN
+
+                MESG = 'Could not read diurnal EFs from ' // FNAME2
+                CALL M3EXIT( 'EFCOMBO', JDATE, LIST( I ), MESG, 2 )
 
             ENDIF 
 
 C.............  Loop over vehicle classes
             DO 44 V = 1, NVTYPE
  
-C.................  Loop over temperature range
+C.................  Loop over non-diurnal temperature range
                 DO 33 T = 1, NTEMP
                     
                     EXH_CO ( T,V ) = EXH_CO ( T,V ) + 
-     &                               EF( T,V,1 ) * PERCENT( I )
+     &                               NDEF( T,V,1 ) * PERCENT( I )
                    
                     EXH_NOX( T,V ) = EXH_NOX( T,V ) + 
-     &                               EF( T,V,2 ) * PERCENT( I )
+     &                               NDEF( T,V,2 ) * PERCENT( I )
                   
                     EXH_VOC( T,V ) = EXH_VOC( T,V ) + 
-     &                               EF( T,V,3 ) * PERCENT( I )
+     &                               NDEF( T,V,3 ) * PERCENT( I )
                  
                     EVP_VOC( T,V ) = EVP_VOC( T,V ) + 
-     &                               EF( T,V,4 ) * PERCENT( I )
+     &                               NDEF( T,V,4 ) * PERCENT( I )
 
                     RNL_VOC( T,V ) = RNL_VOC( T,V ) +
-     &                               EF( T,V,5 ) * PERCENT( I )
+     &                               NDEF( T,V,5 ) * PERCENT( I )
 
                     RST_VOC( T,V ) = RST_VOC( T,V ) + 
-     &                               EF( T,V,6 ) * PERCENT( I )
+     &                               NDEF( T,V,6 ) * PERCENT( I )
               
-                    RF1_VOC( T,V ) = RF1_VOC( T,V ) + 
-     &                               EF( T,V,7 ) * PERCENT( I )
-             
-                    RF2_VOC( T,V ) = RF2_VOC( T,V ) + 
-     &                               EF( T,V,8 ) * PERCENT( I )
-            
+   33           CONTINUE  ! Non-diurnal Temperatures
+
+C.................  Loop over diurnal temperature range
+
+                DO 35 T = 1, NMINMAX
+
+                    WDL_VOC( T,V ) = WDL_VOC( T,V ) + 
+     &                               DEF( T,V,1 ) * PERCENT( I )
+           
+                    DNL_VOC( T,V ) = DNL_VOC( T,V ) + 
+     &                               DEF( T,V,2 ) * PERCENT( I )
+           
                     HOT_VOC( T,V ) = HOT_VOC( T,V ) + 
-     &                               EF( T,V,9 ) * PERCENT( I )
+     &                               DEF( T,V,3 ) * PERCENT( I )
            
                     CRC_VOC( T,V ) = CRC_VOC( T,V ) + 
-     &                               EF( T,V,10 ) * PERCENT( I )
+     &                               DEF( T,V,4 ) * PERCENT( I )
           
-                    RHR_VOC( T,V ) = RHR_VOC( T,V ) + 
-     &                               EF( T,V,11 ) * PERCENT( I )
- 
-   33           CONTINUE  ! Temperature
+   35           CONTINUE  ! Diurnal Temperatures
  
    44       CONTINUE      ! Vehicle type
  
