@@ -24,14 +24,14 @@ C File: @(#)$Id$
 C  
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C  
+C
 C See file COPYRIGHT for conditions of use.
-C  
+C
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
-C  
+C
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
@@ -138,7 +138,7 @@ C.............  Compare population year to inventory year.
 
 C.........  Set ending date and time and number of time steps for report
 C.........  When using hourly inputs but reporting daily totals
-        IF( RPT_%USEHOUR ) THEN
+        IF( RPT_%USEHOUR .OR. AFLAG .AND. RPT_%BYHOUR ) THEN
             JDATE = SDATE
             JTIME = STIME
 

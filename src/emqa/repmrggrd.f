@@ -29,9 +29,9 @@ C File: @(#)$Id$
 C  
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C  
+C
 C See file COPYRIGHT for conditions of use.
-C  
+C
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
@@ -225,7 +225,8 @@ C               by uncessary counting and conditionals.
 C.............  Special case of no subgrid and partial sources
             ELSE IF ( .NOT. LSUBGRID ) THEN
 
-                K = 0 
+                K = 0
+                N = 0 
                 DO C = 1, NGRID
 
                     DO J = 1, NX( C )

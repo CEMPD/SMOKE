@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
+LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 
@@ -16,19 +16,6 @@ debug: smkreport.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
-
-#
-#GTR=getrecs.o
-#
-#getrecs: $(GTR) $(ALLI) $(LIBPATH)
-#	echo GETRECS:
-#	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GTR) $(LIBS)
-#
-#getrecs.debug: $(GTR) $(ALLI) $(LIBPATH_DEBUG)
-#	echo GETRECS \(debug\):
-#	$(FC) $(FFLAGS) -o $(@) $(GTR) $(LIBS_DEBUG)
-#
-#
 SMR=smkreport.o asgnbins.o bldrepidx.o genrprt.o openrepin.o   \
     openrepout.o qarepin.o rdgrps.o rdrepin.o rdrprts.o repmrggrd.o repunits.o\
     scanrepc.o selectsrc.o wrrephdr.o wrrepout.o
@@ -43,25 +30,24 @@ smkreport.debug: $(SMR) $(ALLI) $(LIBPATH_DEBUG)
 #
 #
 include $(MD_SRC)/modmake.inc
+include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 asgnbins.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODELEV) \
             $(MODSTCY) $(MODINFO) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ asgnbins.f
-bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODCNTRL) $(MODINFO)
+bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODFILESET) $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ bldrepidx.f
 genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODINFO) $(MODSTCY) 
 	$(FC) $(FFLAGS) -c -o $@ genrprt.f
-getrecs.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ getrecs.f
-openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID) \
-             $(MODCNTRL)
+openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID) $(MODFILESET) $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ openrepin.f
 qarepin.o: $(MODREPRT) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ qarepin.f
 rdgrps.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODLISTS) $(MODGRID)
 	$(FC) $(FFLAGS) -c -o $@ rdgrps.f
 rdrepin.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODELEV) $(MODLISTS) \
-           $(MODINFO) $(MODGRID) $(MODCNTRL)
+           $(MODINFO) $(MODGRID) $(MODFILESET) $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ rdrepin.f
 rdrprts.o: $(MODREPRT) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdrprts.f
@@ -84,4 +70,11 @@ wrrepout.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) \
 #
 #
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

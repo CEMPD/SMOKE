@@ -18,6 +18,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
 C  
@@ -27,14 +28,14 @@ C File: @(#)$Id$
 C  
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C  
+C
 C See file COPYRIGHT for conditions of use.
-C  
+C
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
-C  
+C
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
@@ -64,6 +65,7 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -84,17 +86,19 @@ C...........   Speciation matrices
         INTEGER, ALLOCATABLE :: SSMAT( :,: ) ! mass-based
 
 C...........   File units and logical/physical names
+	INTEGER :: ADEV = 0   !  ASCII elevated file
         INTEGER :: CDEV = 0   !  reports configuration file
         INTEGER :: EDEV = 0   !  elevated source ID file
         INTEGER :: GDEV = 0   !  gridding supplemental file
         INTEGER :: LDEV = 0   !  log-device
         INTEGER :: NDEV = 0   !  SCC descriptions
-        INTEGER :: ODEV = 0   !  output file unit number
         INTEGER :: PDEV = 0   !  speciation supplemental file
         INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
         INTEGER :: SDEV = 0   !  ASCII inven input file
         INTEGER :: TDEV = 0   !  temporal supplemental files
         INTEGER :: YDEV = 0   !  country/state/county names file
+
+        INTEGER, ALLOCATABLE :: ODEV( : )   !  output file unit numbers
 
         CHARACTER*16  :: ANAME  = ' '   !  logical name for ASCII inven input 
         CHARACTER*16  :: ENAME  = ' '   !  logical name for I/O API inven input
@@ -110,13 +114,17 @@ C...........   File units and logical/physical names
         CHARACTER*300 :: PNAME = ' '    !  previous output file name
 
 C...........   Other local variables
-        INTEGER      I, K, L, N           ! indices and counters
+        INTEGER      I, J,  K, L, N       ! indices and counters
 
         INTEGER      HWID                 ! header width
         INTEGER      IOS                  ! i/o status
+	INTEGER      EDIDX                ! ending index of loop
         INTEGER   :: GDIM    = 0          ! dimension of contiguous gridding mat
         INTEGER   :: NSLIN   = 1          ! no. mole input speciation variables
         INTEGER   :: NSSIN   = 1          ! no. mass input speciation variables
+
+	REAL         RNFILES              ! real number of files per report
+	REAL         RNSECT               ! real number of sections per report
 
         LOGICAL       :: EFLAG = .FALSE.        ! true: error found
 
@@ -147,7 +155,7 @@ C           values for use in memory allocation.
 C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, PRNAME, 
      &                  SLNAME, SSNAME, TNAME, RDEV, SDEV, GDEV, PDEV, 
-     &                  TDEV, EDEV, YDEV, NDEV)
+     &                  TDEV, EDEV, YDEV, NDEV, ADEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -178,9 +186,10 @@ C           so that arrays can be passed through subroutines).
 
 C.........  Read one-time input file data
         CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV, EDEV, 
-     &                YDEV, NDEV, ENAME, CUNAME, GNAME, LNAME, PRNAME, 
-     &                SLNAME, SSNAME, GMAT( 1 ), GMAT( NGRID+1 ),
-     &                GMAT( NGRID+NMATX+1 ), SSMAT, SLMAT )
+     &                YDEV, NDEV, ADEV, ENAME, CUNAME, GNAME, LNAME,
+     &                PRNAME, SLNAME, SSNAME, GMAT( 1 ),
+     &                GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ),
+     &                SSMAT, SLMAT )
 
 C.........  Preprocess the country/state/county data
 c note: Could add routine to reduce list of co/st/cy data to just records 
@@ -198,6 +207,69 @@ C.........  Loop through reports
         DO N = 1, NREPORT
 
             RPT_ = ALLRPT( N )
+
+C............  Determine number of output files/sections per report
+
+	    IF( RPT_%RPTNVAR .GT. RPT_%NUMDATA ) THEN
+		RPT_%RPTNVAR = RPT_%NUMDATA
+	    END IF
+
+	    IF( RPT_%RPTMODE .EQ. 1 ) THEN
+
+	        RPT_%NUMSECT = 1
+
+                RNFILES = REAL( RPT_%NUMDATA ) / REAL( RPT_%RPTNVAR )
+	            
+                IF( RNFILES .LT. 1.0 ) THEN
+
+                    RPT_%NUMFILES = 1
+
+                ELSE
+
+                    RPT_%NUMFILES = INT( RNFILES )
+	
+                    IF( RNFILES .GT. RPT_%NUMFILES ) THEN
+                        RPT_%NUMFILES = RPT_%NUMFILES + 1
+                    END IF
+
+                END IF
+
+            ELSE IF( RPT_%RPTMODE .EQ. 2 ) THEN
+
+		RPT_%NUMFILES = 1
+
+		RNSECT = REAL( RPT_%NUMDATA ) / REAL( RPT_%RPTNVAR )
+
+		IF( RNSECT .LT. 1.0 ) THEN
+
+		    RPT_%NUMSECT = 1
+
+		ELSE
+
+		    RPT_%NUMSECT = INT( RNSECT )
+
+		    IF( RNSECT .GT. RPT_%NUMSECT ) THEN
+			RPT_%NUMSECT = RPT_%NUMSECT + 1
+		    END IF
+
+		END IF
+
+	    ELSE
+
+                RPT_%NUMFILES = 1
+		RPT_%NUMSECT = 1
+
+            END IF
+
+	    ALLRPT( N )%NUMFILES = RPT_%NUMFILES
+	    ALLRPT( N )%NUMSECT  = RPT_%NUMSECT
+	    ALLRPT( N )%RPTNVAR  = RPT_%RPTNVAR
+	
+C............  Allocate output file number array
+	    ALLOCATE( ODEV( RPT_%NUMFILES ), STAT=IOS )
+	    CALL CHECKMEM( IOS, 'ODEV', PROGNAME )
+	    ODEV = 0
+
 
             WRITE( MESG,94010 ) 
      &             '***** CHECKING INPUTS FOR REPORT', N, ' *****'
@@ -231,8 +303,10 @@ C                       different from previous file number
 c                    CALL WRMETADAT( FDEV )
 c                    note: Need to write this
 
-C.....................  Close output file
-                    CLOSE( ODEV )
+C.....................  Close output file(s)
+		    DO I = 1, RPT_%NUMFILES
+                        CLOSE( ODEV( I ) )
+		    END DO
 
                 END IF
 
@@ -242,6 +316,7 @@ C                   previous file number.
 
             END IF
 
+	
             MESG = BLANK10 // 'Selecting records...'
             CALL M3MSG2( MESG )
 C.............  Select inventory records
@@ -267,44 +342,54 @@ C.............  Assign bin numbers to selected records
             CALL M3MSG2( MESG )
 
 C.............  Update inventory input names and units, depending on status of 
-C               ozone-season emissions.
-            IF( .NOT. DESC3( ENAME ) ) THEN
-
-                L = LEN_TRIM( ENAME )
-                MESG = 'Could not get description of file "' //
-     &                 ENAME( 1:L ) // '"'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            ELSE
-                INVPIDX = 0
-                IF ( RPT_%O3SEASON ) INVPIDX = 1
-                CALL GETSINFO
-                IF( JSCC .GT. 0 ) NCHARS = NCHARS - 1  ! duplicate of rdrepin.f
-
-            END IF
+C               average day emissions.
+            INVPIDX = 0
+            IF ( RPT_%AVEDAY ) INVPIDX = 1
+            IF( .NOT. AFLAG ) CALL GETSINFO( ENAME )
+            IF( JSCC .GT. 0 ) NCHARS = NCHARS - 1  ! duplicate of rdrepin.f
 
 C.............  Determine input units and create conversion factors
             CALL REPUNITS( N )
+		
+C.............  If report is multifile or database
+	    IF( RPT_%RPTMODE .EQ. 1 .OR. RPT_%RPTMODE .EQ. 3
+     &		.OR. RPT_%RPTMODE .EQ. 0 ) THEN
+		EDIDX = RPT_%NUMFILES
+
+C.............  If report is multisection 
+	    ELSE
+		EDIDX = RPT_%NUMSECT
+
+	    END IF
+
+	    DO I = 1, EDIDX
+
+	        J = I
+	        IF( RPT_%RPTMODE .EQ. 2 ) J = 1
 
 C.............  Write report header
-            CALL WRREPHDR( ODEV, N, HWID, OUTFMT )
+                CALL WRREPHDR( ODEV( J ), N, I,  HWID, OUTFMT )
 
 C.............  Loop through time steps (if any) and sum emissions into bins
 C               for the appropriate time resolution...
 
 C.............  For mole-based speciation...
-            IF( RPT_%USESLMAT ) THEN
-                CALL GENRPRT( ODEV, N, HWID, ENAME, TNAME, LNAME, 
-     &                        OUTFMT, SLMAT, EFLAG )
+                IF( RPT_%USESLMAT ) THEN
+                    CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
+     &                     TNAME, LNAME, OUTFMT, SLMAT, EFLAG )
 
 C.............  For mass-based and no speciation
-            ELSE
-                CALL GENRPRT( ODEV, N, HWID, ENAME, TNAME, LNAME, 
-     &                        OUTFMT, SSMAT, EFLAG )
-            END IF
+                ELSE
+                    CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
+     &                     TNAME, LNAME, OUTFMT, SSMAT, EFLAG )
+                END IF
 
 C.............  Save file number to use in next iteration
-            PNAME  = FNAME
+                PNAME  = FNAME
+
+            END DO    ! end loop over files/sections
+
+            DEALLOCATE( ODEV )
 
         END DO   ! end loop over reports
 

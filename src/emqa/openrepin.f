@@ -1,7 +1,8 @@
 
         SUBROUTINE OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, 
      &                        PRNAME, SLNAME, SSNAME, TNAME, RDEV, 
-     &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV )
+     &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
+     &                        ADEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -60,14 +61,16 @@ C.........  This module contains the global variables for the 3-d grid
 C...........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
@@ -99,100 +102,131 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: EDEV   ! unit no.: elevated ID file (PELV)
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
+	INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
 
 C.........  Temporary array for speciation variable names
-        CHARACTER(LEN=IODLEN3) SLVNAMS( MXVARS3 )
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: SLVNAMS( : )
 
 C.........  Local units and logical file names
-        INTEGER      :: MDEV = 0     ! unit no. emission processes file
+        INTEGER         IDEV      ! tmp unit number if ENAME is map file
+        INTEGER      :: MDEV = 0  ! unit no. emission processes file
+
+        CHARACTER*16    INAME     ! tmp name for inven file of unknown fmt
 
 C.........  Other local variables
 
         INTEGER         I, J, L, L1, L2, N, V       ! counters and indices
 
         INTEGER         IOS           ! tmp I/O status
+	INTEGER		ISD           ! start time of ASCII elevated file
+	INTEGER		IED	      ! end time of ASCII elevated file
+        INTEGER         TSTEP_T       ! unused time step from environment
 
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
+        LOGICAL      :: TIMEFLAG = .FALSE.  ! true: time info already init
 
         CHARACTER*16    NAMBUF       ! tmp file name buffer
-        CHARACTER*300   MESG         ! message buffer
+	CHARACTER*16    UNITS        ! units of ASCII elevated file
+        CHARACTER*256   MESG         ! message buffer
+	CHARACTER*300   LINE         ! tmp line buffer
+
+        CHARACTER(LEN=IOULEN3) GRDENV      ! gridded output units from envrmt
 
         CHARACTER*16 :: PROGNAME = 'OPENREPIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENREPIN
 
+	IF( .NOT. AFLAG ) THEN
 C.........  Get inventory file names given source category
-        CALL GETINAME( CATEGORY, ENAME, ANAME )
+            CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Prompt for and open input I/O API and ASCII files
-C.........  Use NAMBUF for using on the HP
-        NAMBUF = PROMPTMFILE( 
-     &          'Enter logical name for the I/O API INVENTORY file',
-     &          FSREAD3, ENAME, PROGNAME )
-        ENAME = NAMBUF
+            MESG= 'Enter logical name for the I/O API or '//
+     &            'MAP INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-        SDEV = PROMPTFFILE( 
-     &           'Enter logical name for the ASCII INVENTORY file',
+C.........  If input file is ASCII format, then open and read map 
+C           file to check files, sets environment for ENAME, opens 
+C           files, stores the list of physical file names for the 
+C           pollutant files in the MODINFO module, and stores the map
+C           file switch in MODINFO as well.
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+
+C.........  Otherwise, open separate I/O API and ASCII files that
+C           do not store the pollutants as separate 
+            ELSE
+                ENAME = INAME
+                SDEV = PROMPTFFILE( 
+     &           'Enter logical name for ASCII INVENTORY file',
      &           .TRUE., .TRUE., ANAME, PROGNAME )
+            END IF
 
-C.........  Get source category information from the inventory files
-C.........  Get header description of inventory file
-C.........  Exit if getting the description fails
-        IF( .NOT. DESC3( ENAME ) ) THEN
-
-            L = LEN_TRIM( ENAME )
-            MESG = 'Could not get description of file "' //
-     &             ENAME( 1:L ) // '"'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Otherwise, store source-category-specific header information, 
+C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
-C           the I/O API head info is passed by include file and the
+C           the I/O API header info is passed by include file and the
 C           results are stored in module MODINFO.
-        ELSE
+            CALL GETSINFO( ENAME )
 
-            CALL GETSINFO
-
-C.............  Store non-category-specific header information
-            NSRC   = NROWS3D
+C.........  Store non-category-specific header information
             TSTEP  = 000000
             NSTEPS = 1
 
-        END IF        
-
 C.........  Reset the maximum input data if any reports did not select
 C           specific data values.  MXINDAT might get larger than needed.
-        IF( DATAMISS ) THEN
-            MXINDAT = MAX( NIPPA, MXINDAT )
-        END IF
+            IF( DATAMISS ) THEN
+                MXINDAT = MAX( NIPPA, MXINDAT )
+            END IF
 
 C.........  Determine the year and projection status of the inventory
-c       CALL CHECK_INVYEAR( ENAME, APRJFLAG, FDESC3D )
+c           CALL CHECK_INVYEAR( ENAME, APRJFLAG, FDESC3D )
+
+	ELSE
+	    NCHARS = 3
+	    JSCC = 0
+	    JSTACK = 3
+
+	    ALLOCATE( SC_BEGP( NCHARS ), STAT=IOS )
+	    CALL CHECKMEM( IOS, 'SC_BEGP', PROGNAME )
+	    ALLOCATE( SC_ENDP( NCHARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SC_ENDP', PROGNAME )
+
+	    PLTIDX = 2
+	    MXCHRS = MXPTCHR3
+
+	    DO I = 1, NCHARS
+		SC_BEGP( I ) = PTBEGL3( I )
+		SC_ENDP( I ) = PTENDL3( I )
+	    END DO
+
+	END IF
 
 C.........  For temporal inputs, prompt for hourly file
         IF( TFLAG ) THEN
 
             MESG = 'Enter logical name for the HOURLY ' //
      &             'EMISSIONS file'
-            TNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'TMP', PROGNAME )
+            TNAME = PROMPTSET( MESG, FSREAD3, CRL//'TMP', PROGNAME )
 
 C.............  Set parameters and pollutants from hourly file
-            CALL RETRIEVE_IOAPI_HEADER( TNAME )
+            CALL RETRIEVE_SET_HEADER( TNAME )
             CALL CHKSRCNO( CATDESC, TNAME, NROWS3D, NSRC, EFLAG )
             CALL UPDATE_TIME_INFO( TNAME )
 
-C.............  Determine ozone-season emissions status from hourly file
-            INVPIDX = GETIFDSC( FDESC3D, '/OZONE SEASON/', .FALSE. )
+C.............  Determine average day emissions status from hourly file
+            INVPIDX = GETIFDSC( FDESC3D, '/AVERAGE DAY/', .FALSE. )
             IF( INVPIDX .EQ. 1 ) THEN
-                MESG = 'NOTE: Ozone-season emissions in hourly ' //
+                MESG = 'NOTE: Average day emissions in hourly ' //
      &                 'emissions file'
                 CALL M3MSG2( MESG )
             END IF
 
 C.............  Store variable number, names, and units from the hourly 
 C               emissions file
-            NTPDAT = NVARS3D
+            NTPDAT = NVARSET
             ALLOCATE( TPNAME( NTPDAT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TPNAME', PROGNAME )
             ALLOCATE( TPUNIT( NTPDAT ), STAT=IOS )
@@ -200,9 +234,9 @@ C               emissions file
             ALLOCATE( TPDESC( NTPDAT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TPDESC', PROGNAME )
 
-            TPNAME = VNAME3D( 1:NTPDAT )  ! array
-            TPUNIT = UNITS3D( 1:NTPDAT )  ! array
-            TPDESC = VDESC3D( 1:NTPDAT )  ! array
+            TPNAME = VNAMESET( 1:NTPDAT )  ! array
+            TPUNIT = VUNITSET( 1:NTPDAT )  ! array
+            TPDESC = VDESCSET( 1:NTPDAT )  ! array
 
 C.............  Determine the year and projection status of the hourly
 c           CALL CHECK_INVYEAR( TNAME, PRJFLAG, FDESC3D )
@@ -249,15 +283,19 @@ C.........  Open mole speciation matrix, compare number of sources, store
 C           speciation variable descriptions, and store mass or moles.
         IF( SLFLAG ) THEN
 
-            SLNAME = PROMPTMFILE( 
+            SLNAME = PROMPTSET( 
      &           'Enter logical name for the MOLE SPECIATION MATRIX',
      &           FSREAD3, CRL//'SMAT_L', PROGNAME )
 
-            CALL RETRIEVE_IOAPI_HEADER( SLNAME )
+            CALL RETRIEVE_SET_HEADER( SLNAME )
             CALL CHKSRCNO( CATDESC, SLNAME, NROWS3D, NSRC, EFLAG )
 
-            NSVARS  = NVARS3D
-            SLVNAMS = VDESC3D  ! array
+            NSVARS = NVARSET
+            
+            ALLOCATE( SLVNAMS( NSVARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SLVNAMS', PROGNAME )
+            
+            SLVNAMS = VDESCSET  ! array
 
         END IF  ! end of mole speciation open
 
@@ -274,23 +312,23 @@ C.........  Open mass speciation matrix, compare number of sources, store
 C           speciation variable descriptions, and store mass or moles.
         IF( SSFLAG ) THEN
 
-            SSNAME = PROMPTMFILE( 
+            SSNAME = PROMPTSET( 
      &           'Enter logical name for the MASS SPECIATION MATRIX',
      &           FSREAD3, CRL//'SMAT_S', PROGNAME )
 
-            CALL RETRIEVE_IOAPI_HEADER( SSNAME )
+            CALL RETRIEVE_SET_HEADER( SSNAME )
             CALL CHKSRCNO( CATDESC, SSNAME, NROWS3D, NSRC, EFLAG )
 
 C.............  Compare matrix header with mole-based, if available
             IF( SLFLAG ) THEN
 
 C.................  Check the number of variables
-                IF( NSVARS .NE. NVARS3D ) THEN
+                IF( NSVARS .NE. NVARSET ) THEN
 
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Inconsistent number '//
      &                'of speciation variables.'// CRLF()// BLANK10// 
-     &                'Mole file:', NSVARS,'; Mass file:', NVARS3D
+     &                'Mole file:', NSVARS,'; Mass file:', NVARSET
                     CALL M3MSG2( MESG )
 
                 END IF
@@ -298,14 +336,14 @@ C.................  Check the number of variables
 C.................  Check the dscriptions of variables
                 DO V = 1, NSVARS
 
-                    IF( SLVNAMS( V ) .NE. VDESC3D( V ) ) THEN
+                    IF( SLVNAMS( V ) .NE. VDESCSET( V ) ) THEN
 
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'ERROR: Inconsistent '//
      &                    'variable descriptions in speciation '//
      &                    'matrices for variable', V, CRLF() // 
      &                    BLANK10 //'Mole file: ', SLVNAMS( V ) //
-     &                    CRLF() // BLANK10 //'Mass file: ', VDESC3D(V)
+     &                    CRLF() // BLANK10 //'Mass file: ', VDESCSET(V)
                         CALL M3MSG2( MESG )
 
                     END IF
@@ -315,7 +353,7 @@ C.................  Check the dscriptions of variables
 C.............  Otherwise, set number of speciation variables
             ELSE
 
-        	NSVARS  = NVARS3D
+        	NSVARS  = NVARSET
 
             END IF 
 
@@ -327,9 +365,9 @@ C               and store projection variable names.
 
             MESG = 'Enter logical name for the ' //
      &             'PROJECTION MATRIX'
-            PRNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'PMAT', PROGNAME )
+            PRNAME = PROMPTSET( MESG, FSREAD3, CRL//'PMAT', PROGNAME )
 
-            CALL RETRIEVE_IOAPI_HEADER( PRNAME )
+            CALL RETRIEVE_SET_HEADER( PRNAME )
             CALL CHKSRCNO( CATDESC, PRNAME, NROWS3D, NSRC, EFLAG )
             NVPROJ = NVARS3D
 
@@ -412,9 +450,9 @@ C               and store control variable names.
 
             MESG = 'Enter logical name for the ' //
      &             'MULTIPLICATIVE CONTROL MATRIX'
-            CUNAME = PROMPTMFILE( MESG, FSREAD3, CRL//'CMAT', PROGNAME )
+            CUNAME = PROMPTSET( MESG, FSREAD3, CRL//'CMAT', PROGNAME )
 
-            CALL RETRIEVE_IOAPI_HEADER( CUNAME )
+            CALL RETRIEVE_SET_HEADER( CUNAME )
             CALL CHKSRCNO( CATDESC, CUNAME, NROWS3D, NSRC, EFLAG )
             NVCMULT = NVARS3D
             ALLOCATE( PNAMMULT( NVCMULT ), STAT=IOS )
@@ -497,6 +535,79 @@ C.........  Get SCC descriptions, if needed
 
         END IF
 
+C.........  Open ASCII elevation file output by SMKMERGE, if needed
+	IF( AFLAG ) THEN
+
+	    CALL ENVSTR( 'MRG_GRDOUT_UNIT', ' ', ' ', GRDENV, IOS)
+
+	    IF( GRDENV( 1:1 ) .EQ. 'm' ) THEN
+
+	        ADEV = PROMPTFFILE(
+     &              'Enter name for ASCII ELEVATED SOURCES file', 
+     &              .TRUE., .TRUE., 'ELEVTS_L', PROGNAME )
+
+	    ELSE
+
+		ADEV = PROMPTFFILE(
+     &              'Enter name for ASCII ELEVATED SOURCES file',
+     &              .TRUE., .TRUE., 'ELEVTS_S', PROGNAME )
+
+	    END IF
+
+C.........  Read ASCII elevated file
+            MESG = 'Reading ASCII elevated file...'
+            CALL M3MSG2( MESG )
+
+	    ASCREC = 0 
+
+C............  Read in units
+	    ASCREC = ASCREC + 1
+	    READ( ADEV, '(10X,A)') UNITS
+
+C............  Skip header lines
+            DO I = 1, 2
+		ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
+            END DO
+
+C.............  Get number of species and point stacks from file
+	    ASCREC = ASCREC + 1
+            READ( ADEV, '(I10,10X,I10)' ) ASCDATA, NSRC
+
+            NIPPA = ASCDATA
+            NSVARS = NIPPA
+	    MXINDAT = MAX( NIPPA, MXINDAT )
+
+            ALLOCATE( EANAM( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
+            ALLOCATE( EAUNIT( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EAUNIT', PROGNAME )
+            EANAM = ''
+            EAUNIT = TRIM( UNITS )
+
+            DO I = 1, 4
+		ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
+            END DO
+
+C..............  Read in list of species
+            DO I = 1, ASCDATA
+		ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
+                EANAM( I ) = TRIM( LINE )
+            END DO
+
+C..............  Read in start and end dates and times
+	    ASCREC = ASCREC + 1
+	    READ( ADEV, '(4I10)' ) ISD, STIME, IED, ETIME
+	    SDATE = ISD + 1900000
+	    EDATE = IED + 1900000
+	    BYEAR = INT( SDATE/1000 )
+	    TSTEP = 10000
+	    NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME )/3600
+
+	END IF
+
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort
         IF( EFLAG ) THEN
@@ -518,7 +629,7 @@ C.............  Write explanation
             CALL M3MSG2( MESG )
 
 C.............  Subselect dates and times
-            CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
+            CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP_T, NSTEPS )
             EDATE = SDATE
             ETIME = STIME
             CALL NEXTIME( EDATE, ETIME, ( NSTEPS-1 ) * TSTEP )
@@ -542,8 +653,8 @@ C               and aborts if it was not successful
             SUBROUTINE RETRIEVE_IOAPI_HEADER( FILNAM )
 
 C.............  Subprogram arguments
-            CHARACTER(*) FILNAM
-
+            CHARACTER(*), INTENT (IN) :: FILNAM
+            
 C----------------------------------------------------------------------
 
             IF ( .NOT. DESC3( FILNAM ) ) THEN
@@ -555,6 +666,29 @@ C----------------------------------------------------------------------
             ENDIF
  
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram tries to retrieve the description for a file
+C               set and aborts if it was not successful
+            SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. DESCSET( FILNAM, ALLFILES ) ) THEN
+
+                MESG = 'Could not get description of file set "' //
+     &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ENDIF
+ 
+            END SUBROUTINE RETRIEVE_SET_HEADER
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
@@ -714,7 +848,7 @@ C               projected.
             END IF
 
 C.............  If time information has already been initialized...
-            IF( YFLAG ) THEN
+            IF( TIMEFLAG ) THEN
 
                 YY = GETIFDSC( IODESC, '/PROJECTED YEAR/', .FALSE. )
                 IF( YY .LE. 0 ) THEN
@@ -756,7 +890,7 @@ C.............  If year information needs to be initialized...
 
                 SAVNAM = FNAME
                 FLEN   = LEN_TRIM( SAVNAM )
-                YFLAG  = .TRUE.
+                TIMEFLAG  = .TRUE.
 
             END IF
 
@@ -788,7 +922,7 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NNAM
 
-                NAMES( I ) = VNAME3D( J )
+                NAMES( I ) = VNAMESET( J )
                 J = J + INCRMT
 
             END DO
@@ -817,8 +951,8 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NDESC
 
-                L = LEN_TRIM( VDESC3D( J ) )
-                DESCS( I ) = VDESC3D( J )( 1:L )
+                L = LEN_TRIM( VDESCSET( J ) )
+                DESCS( I ) = VDESCSET( J )( 1:L )
                 J = J + INCRMT
 
             END DO

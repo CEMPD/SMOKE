@@ -22,6 +22,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
+C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
 C  
@@ -31,7 +32,7 @@ C File: @(#)$Id$
 C  
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C  
+C
 C See file COPYRIGHT for conditions of use.
 C  
 C Environmental Modeling Center
@@ -94,7 +95,7 @@ C...........   Arrays for source characteristics output formatting
         LOGICAL, ALLOCATABLE, SAVE :: LF ( : ) ! true if column should be output
 
 C...........   Other local variables
-        INTEGER     I, J, K, L, L1, S              ! counters and indices
+        INTEGER     I, J, K, L, L1, S, V           ! counters and indices
 
         INTEGER     DAY                       ! day of month
         INTEGER     IOS                       ! i/o status
@@ -106,6 +107,8 @@ C...........   Other local variables
         INTEGER     NC                        ! no. source char fields
         INTEGER     OUTHOUR                   ! output hour
         INTEGER     YEAR                      ! 4-digit year
+	INTEGER	    STIDX                     ! starting index of loop
+	INTEGER     EDIDX                     ! ending index of loop
 
         INTEGER, SAVE :: PRCNT = 0
 
@@ -156,321 +159,413 @@ C               example
 
         END IF
 
+C.........  Loop through variables for the database format
+	DO V = 1, NDATA
+
 C.........  Loop through entries for all bins for current date and hour
-        DO I = 1, NOUTBINS
+            DO I = 1, NOUTBINS
 
 C.............  Check if emissions are zero and skip record if they are.
-            ECHECK = SUM( BINDATA( I,1:NDATA ) )
-            IF ( ECHECK .EQ. 0. ) CYCLE
+                ECHECK = SUM( BINDATA( I,1:NDATA ) )
+                IF ( ECHECK .EQ. 0. ) CYCLE
 
 C.............  Build tmp string based on date, hour, and other columns that
 c               are included in the output file.  Whether these are included
 c               is determined by the report settings.
-            MXLE   = 1
-            STRING = ' '
-            LE     = 1
-            LX     = 1
+                MXLE   = 1
+                STRING = ' '
+                LE     = 1
+                LX     = 1
+
+C.............  Include variable in string
+		IF( RPT_%RPTMODE .EQ. 3 ) THEN
+
+		    L = VARWIDTH
+		    L1 = L - LV
+		    STRING = STRING( 1:LE ) //
+     &                       OUTDNAM( V, RCNT )( 1:L1 ) // DELIM
+		    MXLE = MXLE + L
+		    LE = MIN( MXLE, STRLEN )
+
+		END IF
 
 C.............  Include date in string
-            IF( RPT_%BYDATE ) THEN
+                IF( RPT_%BYDATE ) THEN
 
 C.................  Get month and day from Julian date
-                CALL DAYMON( JDATE, MONTH, DAY )
+                    CALL DAYMON( JDATE, MONTH, DAY )
 
 C.................  Compute year
-                YEAR = JDATE / 1000
+                    YEAR = JDATE / 1000
 
 C.................  Add date field to header
-                OUTDATE = ' '
-                WRITE( OUTDATE, DATEFMT ) MONTH, DAY, YEAR
+                    OUTDATE = ' '
+                    WRITE( OUTDATE, DATEFMT ) MONTH, DAY, YEAR
 
-                STRING = STRING( 1:LE ) // OUTDATE
-                MXLE = MXLE + DATEWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
+                    STRING = STRING( 1:LE ) // OUTDATE
+                    MXLE = MXLE + DATEWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
 
-            END IF
+                END IF
 
 C.............  Include hour in string
-            IF( RPT_%BYHOUR ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, HOURFMT ) OUTHOUR  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + HOURWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYHOUR ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, HOURFMT ) OUTHOUR  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + HOURWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include layer in string
-            IF( RPT_%BYLAYER ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, LAYRFMT ) LAYER    ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + LAYRWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYLAYER ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, LAYRFMT ) LAYER    ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + LAYRWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include cell numbers in string
-            IF( RPT_%BYCELL ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, CELLFMT ) BINX( I ), BINY( I )  ! Integers
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + CELLWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYCELL ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, CELLFMT ) BINX( I ), BINY( I )  ! Integers
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + CELLWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include source number in string
-            IF( RPT_%BYSRC ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, SRCFMT ) BINSMKID( I )  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + SRCWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYSRC ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, SRCFMT ) BINSMKID( I )  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + SRCWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include country/state/county code in string
-            IF( LREGION ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, REGNFMT ) BINREGN( I )  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + REGNWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( LREGION ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, REGNFMT ) BINREGN( I )  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + REGNWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 
 C.............  Include country name in string
-            IF( RPT_%BYCONAM ) THEN
-                J = BINCOIDX( I )
-                L = COWIDTH
-                L1 = L - LV - 1                        ! 1 for space
-                IF( J .LE. 0 ) THEN
-                    STRING = STRING( 1:LE ) // 
-     &                       BADRGNM( 1:L1 ) // DELIM
-                ELSE
-                    STRING = STRING( 1:LE ) // 
-     &                       CTRYNAM( J )( 1:L1 ) // DELIM
-                END IF
+                IF( RPT_%BYCONAM ) THEN
+                    J = BINCOIDX( I )
+                    L = COWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    IF( J .LE. 0 ) THEN
+                        STRING = STRING( 1:LE ) // 
+     &                           BADRGNM( 1:L1 ) // DELIM
+                    ELSE
+                        STRING = STRING( 1:LE ) // 
+     &                           CTRYNAM( J )( 1:L1 ) // DELIM
+                    END IF
 
-                MXLE = MXLE + L
-                LE = MIN( MXLE, STRLEN )
-            END IF
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
+                END IF
 
 C.............  Include state name in string
-            IF( RPT_%BYSTNAM ) THEN
-                J = BINSTIDX( I )
-                L = STWIDTH
-                L1 = L - LV - 1                        ! 1 for space
-                IF( J .LE. 0 ) THEN
-                    STRING = STRING( 1:LE ) // 
-     &                       BADRGNM( 1:L1 ) // DELIM
-                ELSE
-                    STRING = STRING( 1:LE ) // 
-     &                       STATNAM( J )( 1:L1 ) // DELIM
+                IF( RPT_%BYSTNAM ) THEN
+                    J = BINSTIDX( I )
+                    L = STWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    IF( J .LE. 0 ) THEN
+                        STRING = STRING( 1:LE ) // 
+     &                           BADRGNM( 1:L1 ) // DELIM
+                    ELSE
+                        STRING = STRING( 1:LE ) // 
+     &                           STATNAM( J )( 1:L1 ) // DELIM
+                    END IF
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
                 END IF
-                MXLE = MXLE + L
-                LE = MIN( MXLE, STRLEN )
-            END IF
 
 C.............  Include county name in string
-            IF( RPT_%BYCYNAM ) THEN
-                J = BINCYIDX( I )
-                L = CYWIDTH
-                L1 = L - LV - 1                        ! 1 for space
-                IF( J .LE. 0 ) THEN
-                    STRING = STRING( 1:LE ) // 
-     &                       BADRGNM( 1:L1 ) // DELIM
-                ELSE
-                    STRING = STRING( 1:LE ) // 
-     &                       CNTYNAM( J )( 1:L1 ) // DELIM
+                IF( RPT_%BYCYNAM ) THEN
+                    J = BINCYIDX( I )
+                    L = CYWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    IF( J .LE. 0 ) THEN
+                        STRING = STRING( 1:LE ) // 
+     &                           BADRGNM( 1:L1 ) // DELIM
+                    ELSE
+                        STRING = STRING( 1:LE ) // 
+     &                           CNTYNAM( J )( 1:L1 ) // DELIM
+                    END IF
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
                 END IF
-                MXLE = MXLE + L
-                LE = MIN( MXLE, STRLEN )
-            END IF
 
 C.............  Include SCC code in string
-            IF( RPT_%BYSCC ) THEN
-                L = SCCWIDTH
-                L1 = L - LV - 1                        ! 1 for space
-                STRING = STRING( 1:LE ) // 
-     &                   BINSCC( I )( 1:L1 ) // DELIM
-                MXLE = MXLE + L + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYSCC ) THEN
+                    L = SCCWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       BINSCC( I )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include primary surrogate code
-            IF( RPT_%SRGRES .EQ. 1 ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, SRG1FMT ) BINSRGID1( I )  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + SRG1WIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%SRGRES .EQ. 1 ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, SRG1FMT ) BINSRGID1( I )  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + SRG1WIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include fallback surrogate code
-            IF( RPT_%SRGRES .GE. 1 ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, SRG2FMT ) BINSRGID2( I )  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + SRG2WIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%SRGRES .GE. 1 ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, SRG2FMT ) BINSRGID2( I )  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + SRG2WIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include monthly temporal profile
-            IF( RPT_%BYMON ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, MONFMT ) BINMONID( I )  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + MONWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYMON ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, MONFMT ) BINMONID( I )  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + MONWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include weekly temporal profile
-            IF( RPT_%BYWEK ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, WEKFMT ) BINWEKID( I )  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + WEKWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYWEK ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, WEKFMT ) BINWEKID( I )  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + WEKWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include diurnal temporal profile
-            IF( RPT_%BYDIU ) THEN
-                BUFFER = ' '
-                WRITE( BUFFER, DIUFMT ) BINDIUID( I )  ! Integer
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + DIUWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYDIU ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, DIUFMT ) BINDIUID( I )  ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + DIUWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include speciation profile
-            IF( RPT_%BYSPC ) THEN
-                L = SPCWIDTH
-                L1 = L - LV - 1 - SPNLEN3                  ! 1 for space                
-                STRING = STRING( 1:LE ) // ' ' //
-     &                   BINSPCID( I )// BLANK16( 1:L1 )// DELIM
-                MXLE = MXLE + L + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYSPC ) THEN
+                    L = SPCWIDTH
+                    L1 = L - LV - 1 - SPNLEN3                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINSPCID( I )// BLANK16( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include plant ID
-            IF( RPT_%BYPLANT ) THEN
-                L = CHARWIDTH
-                L1 = L - LV - 1                        ! 1 for space
-                STRING = STRING( 1:LE ) //
-     &                   BINPLANT( I )( 1:L1 ) // DELIM
-                MXLE = MXLE + L + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYPLANT ) THEN
+                    L = CHARWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) //
+     &                       BINPLANT( I )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include road class code
-            IF( RPT_%BYRCL ) THEN
+                IF( RPT_%BYRCL ) THEN
 
 C.................  Write characteristics
-                BUFFER = ' '
-                WRITE( BUFFER, CHARFMT ) BINRCL( I )
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + CHARWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                    BUFFER = ' '
+                    WRITE( BUFFER, CHARFMT ) BINRCL( I )
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + CHARWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include source characteristics
-            IF( RPT_%BYSRC ) THEN
-                S = BINSMKID( I ) 
+                IF( RPT_%BYSRC ) THEN
+                    S = BINSMKID( I ) 
 
 C.................  Disaggregate source characteristics
-                CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP, LOC_ENDP, 
-     &                         LF, NC, CHARS )
+                    CALL PARSCSRC( CSOURC( S ), MXCHRS, LOC_BEGP,
+     &                             LOC_ENDP, LF, NC, CHARS )
 
 C.................  Write characteristics
-                BUFFER = ' '
-                WRITE( BUFFER, CHARFMT ) ( CHARS( K ), K = MINC, NC )
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + CHARWIDTH + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                    BUFFER = ' '
+                    WRITE( BUFFER, CHARFMT )( CHARS( K ), K = MINC, NC )
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + CHARWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include stack parameters
-            IF( RPT_%STKPARM ) THEN
-                S = BINSMKID( I ) 
-                BUFFER = ' '
-                WRITE( BUFFER, STKPFMT ) STKHT( S ), STKDM( S ),
-     &                                   STKTK( S ), STKVE( S )
-                STRING = STRING( 1:LE ) // BUFFER
-                MXLE = MXLE + STKPWIDTH
-                LE = MIN( MXLE, STRLEN )
-            END IF
+                IF( RPT_%STKPARM ) THEN
+                    S = BINSMKID( I ) 
+                    BUFFER = ' '
+                    WRITE( BUFFER, STKPFMT ) STKHT( S ), STKDM( S ),
+     &                                       STKTK( S ), STKVE( S )
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + STKPWIDTH
+                    LE = MIN( MXLE, STRLEN )
+                END IF
 
 C.............  Include elevated sources flag
-            IF( RPT_%BYELEV ) THEN
-                L = ELEVWIDTH
-                L1 = L - LV  - 2      ! 1 for space, minus 1 for how used
-                STRING = STRING( 1:LE ) // 
-     &                   BLANK16( 1:L1 ) // BINELEV( I ) // DELIM
-                MXLE = MXLE + L + LX
-                LE = MIN( MXLE, STRLEN )
-                LX = 0
-            END IF
+                IF( RPT_%BYELEV ) THEN
+                    L = ELEVWIDTH
+                    L1 = L - LV  - 2      ! 1 for space, minus 1 for how used
+                    STRING = STRING( 1:LE ) // 
+     &                       BLANK16( 1:L1 ) // BINELEV( I ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
 
 C.............  Include plant description (for point sources)
-            IF( RPT_%SRCNAM ) THEN
-                S = BINSMKID( I )
-                L = PDSCWIDTH
-                L1 = L - LV - 1                        ! 1 for space
-                STRING = STRING( 1:LE ) // 
-     &                   CPDESC( S )( 1:L1 ) // DELIM
-                MXLE = MXLE + L
-                LE = MIN( MXLE, STRLEN )
-            END IF
+                IF( RPT_%SRCNAM ) THEN
+                    S = BINSMKID( I )
+                    L = PDSCWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       CPDESC( S )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
+                END IF
 
 C.............  Include SCC description
 C.............  This is knowingly including extra blanks before final quote
-            IF( RPT_%SCCNAM ) THEN
-                J = BINSNMIDX( I ) 
-                L = SDSCWIDTH
-                L1 = L - LV - 1                        ! 1 for space
-                STRING = STRING( 1:LE ) // 
-     &                   '"'// SCCDESC( J )( 1:L1 )// '"' // DELIM
-                MXLE = MXLE + L + 2
-                LE = MIN( MXLE, STRLEN )
-            END IF
+                IF( RPT_%SCCNAM ) THEN
+                    J = BINSNMIDX( I ) 
+                    L = SDSCWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       '"'// SCCDESC( J )( 1:L1 )// '"' // DELIM
+                    MXLE = MXLE + L + 2
+                    LE = MIN( MXLE, STRLEN )
+                END IF
 
 C.............  Remove leading spaces and get new length
-            STRING = STRING( 2:LE )
-            LE = LE - 1
+                STRING = STRING( 2:LE )
+                LE = LE - 1
 
 C.............  Output error message of string is getting shortened
-            IF( MXLE .GT. STRLEN ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'INTERNAL ERROR: Output string ' //
-     &                 'getting truncated in report', RCNT
-                CALL M3MSG2( MESG )
-            END IF
+                IF( MXLE .GT. STRLEN ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Output ' //
+     &                     'string getting truncated in report', RCNT
+                    CALL M3MSG2( MESG )
+                END IF
 
 C.............  If current bin has bad values, update those now.
-            IF( BINBAD( I ) .GT. 0 ) BINDATA( I,1:NDATA ) = -9.
+                IF( BINBAD( I ) .GT. 0 ) BINDATA( I,1:NDATA ) = -9.
 
 C.............  Write out this record
-            WRITE( FDEV, OUTFMT ) STRING( 1:LE ), 
-     &                          ( BINDATA( I,J ), J=1, NDATA )
+	        IF( RPT_%NUMFILES .EQ. 1 ) THEN
 
-        END DO  ! End loop through bins
+		    IF( RPT_%RPTMODE .EQ. 2 ) THEN
+
+		        IF( FIRSTIME ) THEN
+                            STIDX = 1
+                            EDIDX = RPT_%RPTNVAR
+                            FIRSTIME = .FALSE.
+
+                        ELSE
+                            IF( EDIDX + RPT_%RPTNVAR .GT.
+     &                                     NDATA ) THEN
+
+                                STIDX = EDIDX + 1
+                                EDIDX = NDATA
+
+                            ELSE
+                                STIDX = EDIDX + 1
+                                EDIDX = EDIDX + RPT_%RPTNVAR
+
+                            END IF
+
+                        END IF
+
+		    ELSE IF( RPT_%RPTMODE .EQ. 1 ) THEN
+
+		        STIDX = 1
+		        EDIDX = NDATA
+
+		    ELSE IF( RPT_%RPTMODE .EQ. 3 ) THEN
+
+		        STIDX = 1
+		        EDIDX = 1
+
+		    ELSE
+
+		        STIDX = 1
+                        EDIDX = NDATA
+
+		    END IF
+
+	        ELSE
+		    IF( FIRSTIME ) THEN
+		        STIDX = 1
+		        EDIDX = RPT_%RPTNVAR
+		        FIRSTIME = .FALSE.
+
+		    ELSE
+		        IF( EDIDX + RPT_%RPTNVAR .GT.
+     &                                     NDATA ) THEN
+
+		 	    STIDX = EDIDX + 1
+			    EDIDX = NDATA
+
+		        ELSE
+			    STIDX = EDIDX + 1
+			    EDIDX = EDIDX + RPT_%RPTNVAR
+
+		        END IF
+
+		    END IF
+
+	        END IF
+
+		IF( RPT_%RPTMODE .NE. 3 ) THEN
+
+                    WRITE( FDEV, OUTFMT ) STRING( 1:LE ), 
+     &                              ( BINDATA( I,J ), J=STIDX, EDIDX )
+
+		ELSE
+
+		    WRITE( FDEV, OUTFMT ) STRING( 1:LE ), BINDATA( I,V ),
+     &                                DELIM, OUTUNIT( V )
+
+		END IF
+
+            END DO  ! End loop through bins
+
+	    IF( RPT_%RPTMODE .NE. 3 ) GOTO 777
+
+	END DO   ! End loop through variables
 
 C.........  Save report number for next time routine is called
-        PRCNT = RCNT
+777     PRCNT = RCNT
 
         RETURN
 

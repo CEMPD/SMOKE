@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
+C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
 C  
@@ -24,14 +25,14 @@ C File: @(#)$Id$
 C  
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C  
+C
 C See file COPYRIGHT for conditions of use.
-C  
+C
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
-C  
+C
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
@@ -101,57 +102,63 @@ C.........  Allocate and initialize report arrays
         ALLOCATE( TITLES( MXTITLE, NREPORT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TITLES', PROGNAME )
 
-        ALLRPT%BYCELL   = .FALSE.
-        ALLRPT%BYCNRY   = .FALSE.
-        ALLRPT%BYCNTY   = .FALSE.
-        ALLRPT%BYCONAM  = .FALSE.
-        ALLRPT%BYCYNAM  = .FALSE.
-        ALLRPT%BYDATE   = .FALSE.
-        ALLRPT%BYDIU    = .FALSE.
-        ALLRPT%BYELEV   = .FALSE.
-        ALLRPT%BYHOUR   = .FALSE.
-        ALLRPT%BYLAYER  = .FALSE.
-        ALLRPT%BYMON    = .FALSE.
-        ALLRPT%BYPLANT  = .FALSE.
-        ALLRPT%BYRCL    = .FALSE.
-        ALLRPT%BYSCC    = .FALSE.
-        ALLRPT%BYSPC    = .FALSE.
-        ALLRPT%BYSRC    = .FALSE.
-        ALLRPT%BYSRG    = .FALSE.
-        ALLRPT%BYSTAT   = .FALSE.
-        ALLRPT%BYSTNAM  = .FALSE.
-        ALLRPT%BYWEK    = .FALSE.
-        ALLRPT%CHKPROJ  = .FALSE.
-        ALLRPT%CHKCNTL  = .FALSE.
-        ALLRPT%LAYFRAC  = .FALSE.
-        ALLRPT%NORMCELL = .FALSE.
-        ALLRPT%NORMPOP  = .FALSE.
-        ALLRPT%O3SEASON = .FALSE.
-        ALLRPT%SCCNAM   = .FALSE.
-        ALLRPT%SRCNAM   = .FALSE.
-        ALLRPT%STKPARM  = .FALSE.
-        ALLRPT%USECRMAT = .FALSE.
-        ALLRPT%USECUMAT = .FALSE.
-        ALLRPT%USEGMAT  = .FALSE.
-        ALLRPT%USEHOUR  = .FALSE.
-        ALLRPT%USEPRMAT = .FALSE.
-        ALLRPT%USESLMAT = .FALSE.
-        ALLRPT%USESSMAT = .FALSE.
-        ALLRPT%DELIM    = ' '
-        ALLRPT%DATAFMT  = ' '
-        ALLRPT%OFILENAM = ' '
-        ALLRPT%REGNNAM  = ' '
-        ALLRPT%SUBGNAM  = ' '
+        ALLRPT%BYCELL     = .FALSE.
+        ALLRPT%BYCNRY     = .FALSE.
+        ALLRPT%BYCNTY     = .FALSE.
+        ALLRPT%BYCONAM    = .FALSE.
+        ALLRPT%BYCYNAM    = .FALSE.
+        ALLRPT%BYDATE     = .FALSE.
+        ALLRPT%BYDIU      = .FALSE.
+        ALLRPT%BYELEV     = .FALSE.
+        ALLRPT%BYHOUR     = .FALSE.
+        ALLRPT%BYLAYER    = .FALSE.
+        ALLRPT%BYMON      = .FALSE.
+        ALLRPT%BYPLANT    = .FALSE.
+        ALLRPT%BYRCL      = .FALSE.
+        ALLRPT%BYSCC      = .FALSE.
+        ALLRPT%BYSPC      = .FALSE.
+        ALLRPT%BYSRC      = .FALSE.
+        ALLRPT%BYSRG      = .FALSE.
+	ALLRPT%BYSTACK    = .FALSE.
+        ALLRPT%BYSTAT     = .FALSE.
+        ALLRPT%BYSTNAM    = .FALSE.
+        ALLRPT%BYWEK      = .FALSE.
+        ALLRPT%CHKPROJ    = .FALSE.
+        ALLRPT%CHKCNTL    = .FALSE.
+        ALLRPT%LAYFRAC    = .FALSE.
+        ALLRPT%NORMCELL   = .FALSE.
+        ALLRPT%NORMPOP    = .FALSE.
+        ALLRPT%AVEDAY     = .FALSE.
+        ALLRPT%SCCNAM     = .FALSE.
+        ALLRPT%SRCNAM     = .FALSE.
+        ALLRPT%STKPARM    = .FALSE.
+	ALLRPT%USEASCELEV = .FALSE.
+        ALLRPT%USECRMAT   = .FALSE.
+        ALLRPT%USECUMAT   = .FALSE.
+        ALLRPT%USEGMAT    = .FALSE.
+        ALLRPT%USEHOUR    = .FALSE.
+        ALLRPT%USEPRMAT   = .FALSE.
+        ALLRPT%USESLMAT   = .FALSE.
+        ALLRPT%USESSMAT   = .FALSE.
+        ALLRPT%DELIM      = ' '
+        ALLRPT%DATAFMT    = ' '
+        ALLRPT%OFILENAM   = ' '
+        ALLRPT%REGNNAM    = ' '
+        ALLRPT%SUBGNAM    = ' '
 
-        ALLRPT%BEGSUMHR = 0
-        ALLRPT%ELEVSTAT = 0
-        ALLRPT%NUMDATA  = -9      ! zero is legitimate
-        ALLRPT%NUMTITLE = 0
-        ALLRPT%OUTTIME  = 0
-        ALLRPT%RENDLIN  = 0
-        ALLRPT%RSTARTLIN= 0
-        ALLRPT%SCCRES   = 10
-        ALLRPT%SRGRES   = 0
+        ALLRPT%BEGSUMHR   = 0
+        ALLRPT%ELEVSTAT   = 0
+        ALLRPT%NUMDATA    = -9      ! zero is legitimate
+        ALLRPT%NUMTITLE   = 0
+	ALLRPT%NUMFILES   = 0
+	ALLRPT%NUMSECT    = 0
+        ALLRPT%OUTTIME    = 0
+        ALLRPT%RENDLIN    = 0
+	ALLRPT%RPTMODE    = 0
+	ALLRPT%RPTNVAR    = 0
+        ALLRPT%RSTARTLIN  = 0
+        ALLRPT%SCCRES     = 10
+        ALLRPT%SRGRES     = 0
 
         ALLOUTHR = .FALSE.
         ALLUSET  = ' '

@@ -23,14 +23,14 @@ C File: @(#)$Id$
 C  
 C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
-C  
+C
 C See file COPYRIGHT for conditions of use.
-C  
+C
 C Environmental Modeling Center
 C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
-C  
+C
 C smoke@emc.mcnc.org
 C  
 C Pathname: $Source$
@@ -54,13 +54,14 @@ C.........  This module contains the control packet data and control matrices
 C.........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
+
         IMPLICIT NONE
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI function declarations
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2   CRLF
@@ -310,7 +311,7 @@ C.............  Initialize sorting index for species names
 C.............  Get header of mole speciation matrix
             IF( SLFLAG ) THEN
 
-                IF ( .NOT. DESC3( SLNAME ) ) THEN
+                IF ( .NOT. DESCSET( SLNAME, ALLFILES ) ) THEN
 
         	    MESG = 'Could not get description of file "' //
      &                     SLNAME( 1:LEN_TRIM( SLNAME ) ) // '"'
@@ -319,14 +320,14 @@ C.............  Get header of mole speciation matrix
                 ENDIF
 
 C.................  Store units
-                CALL STORE_VUNITS( 1, 1, NVARS3D, SLUNIT )
+                CALL STORE_VUNITSET( 1, 1, NVARSET, SLUNIT )
 
             END IF
 
 C.............  Get header of mass speciation matrix
             IF( SSFLAG ) THEN
 
-                IF ( .NOT. DESC3( SSNAME ) ) THEN
+                IF ( .NOT. DESCSET( SSNAME, ALLFILES ) ) THEN
 
         	    MESG = 'Could not get description of file "' //
      &                     SSNAME( 1:LEN_TRIM( SSNAME ) ) // '"'
@@ -335,7 +336,7 @@ C.............  Get header of mass speciation matrix
                 ENDIF
 
 C.................  Store units
-                CALL STORE_VUNITS( 1, 1, NVARS3D, SSUNIT )
+                CALL STORE_VUNITSET( 1, 1, NVARSET, SSUNIT )
 
             END IF
 
@@ -345,7 +346,7 @@ C.............  Count the number of unique species
             NMSPC = 0
             DO V = 1, NSVARS
 
-        	VBUF = VDESC3D( V )
+        	VBUF = VDESCSET( V )
 
         	J  = INDEX( VBUF, ETJOIN )   ! Look for emission type joiner
         	K  = INDEX( VBUF, SPJOIN )   ! Look for speciation joiner
@@ -367,7 +368,11 @@ C.............  Count the number of unique species
 C.................  Find pollutant or emission type in list and store index
                 I1 = INDEX1( EBUF, NDATALL, DATNAM  ) ! Look in data
                 I2 = INDEX1( EBUF, NDATALL, ETPNAM )  ! Look in emission types
-                I3 = INDEX1( EBUF, NTPDAT, TPNAME )   ! Look in hourly file
+                IF( TFLAG ) THEN
+                    I3 = INDEX1( EBUF, NTPDAT, TPNAME )   ! Look in hourly file
+                ELSE
+                    I3 = 0
+                END IF
 
 C.................  For species based on inventory pollutant, set index
                 IF( I1 .GT. 0 ) THEN
@@ -445,6 +450,10 @@ C.............  Create sorted list of unique species names
             K = 0
             DO V = 1, NSVARS
         	J = SRTIDX( V )
+        	
+C.................  Skip any zeroes in the sorted index due to unused species
+                IF( J == 0 ) CYCLE
+        	
         	SBUF = SPCNAM( J )
 
         	IF( SBUF .NE. PBUF ) THEN
@@ -466,7 +475,13 @@ C               then set it to blank
         END IF      ! End if speciation
 
 C.........  Determine if any reports did not have a DATA instruction
-        I = MINVAL( ALLRPT%NUMDATA )
+        DO V = 1, NREPORT
+            IF( ALLRPT( V )%NUMDATA < 0 ) THEN
+                I = ALLRPT( V )%NUMDATA
+                EXIT
+            END IF
+        END DO
+!        I = MINVAL( ALLRPT%NUMDATA )
 
 C.........  If a report did not have a DATA instruction, then maximum output
 C           variables depends on whether we have speciation or not
@@ -712,13 +727,13 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
  
         CONTAINS
  
-C.............  This subprogram stores I/O API NetCDF variable units into
-C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VUNITS( ISTART, INCRMT, NUNIT, UNITS )
+C.............  This subprogram stores I/O API NetCDF variable units from
+C               a file set into a local array based on indices in subprogram call.
+            SUBROUTINE STORE_VUNITSET( ISTART, INCRMT, NUNIT, UNITS )
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in UNITS3D of names
-            INTEGER      INCRMT        ! increment of UNITS3D for names
+            INTEGER      ISTART        ! starting position in VUNITSET of names
+            INTEGER      INCRMT        ! increment of VUNITSET for names
             INTEGER      NUNIT         ! number of units
             CHARACTER(*) UNITS( NUNIT )! stored variable units
 
@@ -732,13 +747,13 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NUNIT
 
-                L = LEN_TRIM( UNITS3D( J ) )
-                UNITS( I ) = UNITS3D( J )( 1:L )
+                L = LEN_TRIM( VUNITSET( J ) )
+                UNITS( I ) = VUNITSET( J )( 1:L )
                 J = J + INCRMT
 
             END DO
  
-            END SUBROUTINE STORE_VUNITS
+            END SUBROUTINE STORE_VUNITSET
 
         END SUBROUTINE BLDREPIDX
 
