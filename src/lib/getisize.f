@@ -222,7 +222,7 @@ C.........  For an IDA format file
             CALL GETIDASZ( FDEV, CATEGORY, NREC, NRECDAT )
 
 C.........  For the 1996 NTI format
-        ELSE IF( INVFMT .EQ. NTIFMTA ) THEN
+        ELSE IF( INVFMT .EQ. NTIFMT ) THEN
             NREC = 1
             NRECDAT = 1
 c note: temporary
