@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -63,11 +63,26 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Sorting index
         INTEGER, ALLOCATABLE :: INDX( : )
 
+C...........   Local allocateable arrays for ORIS lists
+        INTEGER, ALLOCATABLE :: FOIDXA  ( : )  ! sorting index for oris
+        INTEGER, ALLOCATABLE :: OBIDXA  ( : )  ! sorting index for oris//blr
+        INTEGER, ALLOCATABLE :: OPIDXA  ( : )  ! sorting index for oris//point
+        INTEGER, ALLOCATABLE :: INVORFPA( : )  ! FIPS code for ORIS IDs
+        INTEGER, ALLOCATABLE :: OBSRCBGA( : )  ! unsrtd 1st src per ORIS/boiler
+        INTEGER, ALLOCATABLE :: OBSRCNTA( : )  ! unsrtd src count per ORIS/boiler
+        INTEGER, ALLOCATABLE :: OPSRCBGA( : )  ! unsrtd 1st src per ORIS/point
+        INTEGER, ALLOCATABLE :: OPSRCNTA( : )  ! unsrtd src count per ORIS/point
+
+        CHARACTER(LEN=ORSLEN3), ALLOCATABLE :: INVORISA( : )  ! ORIS
+        CHARACTER(LEN=OBRLEN3), ALLOCATABLE :: ORISBLRA( : )  ! ORIS // boiler
+        CHARACTER(LEN=OPTLEN3), ALLOCATABLE :: ORISPNTA( : )  ! ORIS // point
+        CHARACTER(LEN=DSCLEN3), ALLOCATABLE :: INVODSCA( : ) ! plant description from inventory
+
 C...........   Concatonated SIC and SCC for all sources
         CHARACTER(LEN=SICLEN3+SCCLEN3), ALLOCATABLE :: CSICSCC( : )
 
 C...........   Other local variables
-        INTEGER          J, J1, J2, L1, L2, S
+        INTEGER          I, J, J1, J2, L1, L2, N, S
         INTEGER          IOS                 ! allocate i/o status
         INTEGER          FIP                 ! current cntry/st/co code
         INTEGER          PFIP                ! previous iteration cntry/st/co 
@@ -76,6 +91,7 @@ C...........   Other local variables
 
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
+        LOGICAL, SAVE :: FIRSTORS = .TRUE.   ! true: first run of ORIS arrays
 
         CHARACTER*8            FMTSIC        ! format buffer for SIC
         CHARACTER*300          MESG          ! message buffer
@@ -85,6 +101,15 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) TSCC          ! tmp SCC
         CHARACTER(LEN=SICLEN3) CSIC          ! tmp char SIC
         CHARACTER(LEN=SICLEN3) PCSIC         ! previous char SIC
+        CHARACTER(LEN=BLRLEN3) BLID          ! tmp boiler ID
+        CHARACTER(LEN=BLRLEN3) PBLID         ! previous boiler ID
+        CHARACTER(LEN=ORSLEN3) CORS          ! tmp DOE plant ID
+        CHARACTER(LEN=ORSLEN3) PCORS         ! previous DOE plant ID
+        CHARACTER(LEN=OBRLEN3) PCORSBLR      ! previous DOE plant ID // boiler
+        CHARACTER(LEN=OPTLEN3) PCORSPNT      ! previous DOE plant ID // point
+        CHARACTER(LEN=CHRLEN3) PNT           ! point (IDA char1)
+        CHARACTER(LEN=CHRLEN3) PPNT          ! previous point (IDA char1)
+        CHARACTER(LEN=DSCLEN3) PDSC          ! tmp plant description
 
         CHARACTER*16  :: PROGNAME = 'GENUSLST' ! program name
 
@@ -96,6 +121,9 @@ C           only needs to be created once per program run, and all of the
 C           outputs are stored in MODLISTS
 
         IF( FIRSTIME ) THEN
+
+            MESG = 'Generating unique lists from inventory data...'
+            CALL M3MSG2( MESG )
 
             WRITE( FMTSIC, 94300 ) '(I', SICLEN3, '.', SICLEN3, ')'
 
@@ -358,14 +386,278 @@ C...,,,,..........  Confirm that SIC count is same as J2 in above loop
 
             END IF   ! End SIC processing
 
-            FIRSTIME = .FALSE.
-
 C.............  Deallocate local allocatable arrays
             IF( ALLOCATED( CSICSCC ) ) DEALLOCATE( CSICSCC )
 
             DEALLOCATE( INDX )
 
+            FIRSTIME = .FALSE.
+
         END IF  ! End of firstime
+
+C.........  Create list of FIPs, ORIS IDs and boiler IDs from the inventory
+C           and how many sources for each...
+        IF ( ORISFLAG             .AND.
+     &       FIRSTORS             .AND.
+     &       ALLOCATED ( CORIS  ) .AND.
+     &       ALLOCATED ( CBLRID )       ) THEN
+
+            MESG = 'Generating ORIS lists...'
+            CALL M3MSG2( MESG )
+
+C.............  First, count the number of unique records
+            NINVORIS = 0
+            NORISBLR = 0
+            NORISPNT = 0
+            PFIP     = -9
+            PCORS    = ' '
+            PBLID    = ' '
+            PPNT     = ' '
+            DO S = 1, NSRC
+
+                FIP  = IFIP  ( S )
+                CORS = CORIS ( S )
+                BLID = CBLRID( S )
+                PNT  = CSOURC( S )( PTBEGL3(3):PTENDL3(3) )
+ 
+C.................  Skip missing ORIS IDs
+                IF ( CORS .EQ. ' ' ) CYCLE
+
+C.................  Count unique ORIS IDs
+                IF ( FIP  .NE. PFIP  .OR.
+     &               CORS .NE. PCORS      ) THEN
+                    NINVORIS = NINVORIS + 1
+                END IF
+
+C.................  Count unique ORIS // boiler combos
+                IF ( FIP  .NE. PFIP  .OR.
+     &               CORS .NE. PCORS .OR.  
+     &               BLID .NE. PBLID      ) THEN
+                    NORISBLR = NORISBLR + 1
+
+                END IF
+
+C.................  Count unique ORIS // point combos
+                IF ( FIP  .NE. PFIP  .OR.
+     &               CORS .NE. PCORS .OR.  
+     &               PNT  .NE. PPNT       ) THEN
+                    NORISPNT = NORISPNT + 1
+
+                END IF
+
+                PFIP  = FIP
+                PCORS = CORS
+                PBLID = BLID
+                PPNT  = PNT
+
+            END DO
+
+C.............  Allocate memory for sorted and unsorted FIPS/ORIS list
+            ALLOCATE( FOIDXA( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FOIDXA', PROGNAME )
+            ALLOCATE( INVORISA( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVORISA', PROGNAME )
+            ALLOCATE( INVORIS( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVORIS', PROGNAME )
+            ALLOCATE( INVORFPA( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVORFPA', PROGNAME )
+            ALLOCATE( INVORFP( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVORFP', PROGNAME )
+            ALLOCATE( IORSMTCH( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IORSMTCH', PROGNAME )
+            ALLOCATE( INVODSCA( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVODSCA', PROGNAME )
+            ALLOCATE( INVODSC( NINVORIS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'INVODSC', PROGNAME )
+            INVORIS = ' '
+            INVORFP = 0
+            IORSMTCH = .FALSE.
+            INVODSCA = ' '
+
+C.............  Allocate memory for sorted and unsorted ORIS/boiler
+            ALLOCATE( OBIDXA( NORISBLR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OBIDXA', PROGNAME )
+            ALLOCATE( ORISBLRA( NORISBLR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ORISBLRA', PROGNAME )
+            ALLOCATE( ORISBLR( NORISBLR ), STAT=IOS )   ! ORIS/boiler combo
+            CALL CHECKMEM( IOS, 'ORISBLR', PROGNAME )
+            ALLOCATE( OBSRCBGA( NORISBLR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OBSRCBGA', PROGNAME )
+            ALLOCATE( OBSRCBG( NORISBLR ), STAT=IOS )   ! starting src no.
+            CALL CHECKMEM( IOS, 'OBSRCBG', PROGNAME )
+            ALLOCATE( OBSRCNTA( NORISBLR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OBSRCNTA', PROGNAME )
+            ALLOCATE( OBSRCNT( NORISBLR ), STAT=IOS )   ! count of sources
+            CALL CHECKMEM( IOS, 'OBSRCNT', PROGNAME )
+            ORISBLR = ' '
+            OBSRCBG = 0
+            OBSRCNT = 0
+
+C.............  Allocate memory for sorted and unsorted ORIS/point
+            ALLOCATE( OPIDXA( NORISPNT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OPIDXA', PROGNAME )
+            ALLOCATE( ORISPNTA( NORISPNT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ORISPNTA', PROGNAME )
+            ALLOCATE( ORISPNT( NORISPNT ), STAT=IOS )   ! ORIS/point combo
+            CALL CHECKMEM( IOS, 'ORISPNT', PROGNAME )
+            ALLOCATE( OPSRCBGA( NORISPNT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OPSRCBGA', PROGNAME )
+            ALLOCATE( OPSRCBG( NORISPNT ), STAT=IOS )   ! starting src no.
+            CALL CHECKMEM( IOS, 'OPSRCBG', PROGNAME )
+            ALLOCATE( OPSRCNTA( NORISPNT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'OPSRCNTA', PROGNAME )
+            ALLOCATE( OPSRCNT( NORISPNT ), STAT=IOS )   ! count of sources
+            CALL CHECKMEM( IOS, 'OPSRCNT', PROGNAME )
+            ORISPNT = ' '
+            OPSRCBG = 0
+            OPSRCNT = 0
+
+C.............  Store arrays
+            NINVORIS    = 0
+            NORISBLR = 0
+            NORISPNT = 0
+            PFIP     = -9
+            PCORS    = ' '
+            PBLID    = ' '
+            PPNT     = ' '
+            DO S = 1, NSRC
+
+                FIP  = IFIP  ( S )
+                CORS = CORIS ( S )
+                BLID = CBLRID( S )
+                PNT  = CSOURC( S )( PTBEGL3(3):PTENDL3(3) )
+                PDSC = CPDESC( S )
+
+C.................  Skip missing ORIS IDs
+                IF ( CORS .EQ. ' ' ) CYCLE
+
+C.................  Unsorted oris/FIPS array
+                IF ( FIP  .NE. PFIP  .OR.
+     &               CORS .NE. PCORS      ) THEN
+                    NINVORIS = NINVORIS + 1
+                    INVORISA( NINVORIS ) = CORS
+                    INVORFPA( NINVORIS ) = FIP
+                    INVODSCA( NINVORIS ) = PDSC
+                    FOIDXA  ( NINVORIS ) = NINVORIS
+                END IF
+
+C.................  Unsorted oris/boiler array
+                IF ( FIP  .NE. PFIP  .OR.
+     &               CORS .NE. PCORS .OR.  
+     &               BLID .NE. PBLID      ) THEN
+                    
+                    NORISBLR = NORISBLR + 1
+                    OBIDXA  ( NORISBLR ) = NORISBLR
+                    ORISBLRA( NORISBLR ) = CORS // BLID
+                    OBSRCBGA( NORISBLR ) = S
+                    OBSRCNTA( NORISBLR ) = 1
+
+                ELSE IF ( FIP  .EQ. PFIP  .AND.
+     &                    CORS .EQ. PCORS .AND.
+     &                    BLID .EQ. PBLID       ) THEN
+
+                    OBSRCNTA( NORISBLR ) = OBSRCNTA( NORISBLR ) + 1
+
+                END IF
+
+C.................  Unsorted oris/point array
+                IF ( FIP  .NE. PFIP  .OR.
+     &               CORS .NE. PCORS .OR.  
+     &               PNT  .NE. PPNT       ) THEN
+                    
+                    NORISPNT = NORISPNT + 1
+                    OPIDXA  ( NORISPNT ) = NORISPNT
+                    ORISPNTA( NORISPNT ) = CORS // PNT
+                    OPSRCBGA( NORISPNT ) = S
+                    OPSRCNTA( NORISPNT ) = 1
+
+                ELSE IF ( FIP  .EQ. PFIP  .AND.
+     &                    CORS .EQ. PCORS .AND.
+     &                    PNT  .EQ. PPNT       ) THEN
+
+                    OPSRCNTA( NORISPNT ) = OPSRCNTA( NORISPNT ) + 1
+
+                END IF
+
+                PFIP  = FIP
+                PCORS = CORS
+                PBLID = BLID
+                PPNT  = PNT
+
+            END DO
+
+C.............  Sort arrays
+            CALL SORTIC( NINVORIS, FOIDXA, INVORISA )
+            CALL SORTIC( NORISBLR, OBIDXA, ORISBLRA )
+            CALL SORTIC( NORISPNT, OPIDXA, ORISPNTA )
+
+C.............  Store sorted arrays
+c note: add check to ensure that their is a 1-1 ORIS/FIP assignment (the same
+c N: ORIS doesn't appear in two FIPS)
+            N = 0
+            PCORS = ' '
+            DO I = 1, NINVORIS
+                J = FOIDXA( I )
+
+                IF ( INVORISA( J ) .NE. PCORS ) THEN
+                    N = N + 1
+                    INVORIS( N ) = INVORISA( J )
+                    INVORFP( N ) = INVORFPA( J )
+                    INVODSC( N ) = INVODSCA( J )
+                END IF
+
+                PCORS = INVORISA( J )
+
+            END DO
+            NINVORIS = N
+
+c note: with this code, if there is a oris/boiler reduction because of
+c    n: duplicates that are out of order in the inventory, (multiple plants
+c    n: have the same ORISID//boiler that aren't together in the inventory),
+c    n: then the count of sources per oris/boiler is wrong.
+            N = 0
+            PCORSBLR = ' '
+            DO I = 1, NORISBLR
+                J = OBIDXA( I )
+
+                IF ( ORISBLRA( J ) .NE. PCORSBLR ) THEN
+                    N = N + 1
+                    ORISBLR( N ) = ORISBLRA( J )
+                    OBSRCBG( N ) = OBSRCBGA( J )
+                    OBSRCNT( N ) = OBSRCNTA( J )
+                END IF
+
+                PCORSBLR = ORISBLRA( J )
+
+            END DO
+            NORISBLR = N
+
+            N = 0
+            PCORSPNT = ' '
+            DO I = 1, NORISPNT
+                J = OPIDXA( I )
+
+                IF ( ORISPNTA( J ) .NE. PCORSPNT ) THEN
+                    N = N + 1
+                    ORISPNT( N ) = ORISPNTA( J )
+                    OPSRCBG( N ) = OPSRCBGA( J )
+                    OPSRCNT( N ) = OPSRCNTA( J )
+                END IF
+
+                PCORSPNT = ORISPNTA( J )
+
+            END DO
+            NORISPNT = N
+
+C.............  Deallocate unneeded unsorted arrays
+            DEALLOCATE( FOIDXA, INVORISA, INVORFPA, OBIDXA, ORISBLRA, 
+     &                  OBSRCBGA, OBSRCNTA )
+                
+            FIRSTORS = .FALSE.
+        
+        END IF   ! End boiler processing
+
+
 
         RETURN
 

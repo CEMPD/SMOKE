@@ -203,6 +203,9 @@ C           to worry about.
         WRNCNT = 0
         DO J = 1, NGSZ
 
+C.............  Skip blanks that can occur when NGRP > 1
+            IF ( ANAM ( J ) .EQ. ' ' ) CYCLE
+
 C.............  Find index in complete list of pollutants
             V = INDEX1( ANAM( J ), NIPPA, EANAM )
 
@@ -710,20 +713,20 @@ C.................  Try for any FIPS code match
                 F0 = FINDC( CFIP, TXCNT( 7 ), CHRT07 ) 
 
                 IF( F0 .GT. 0 ) THEN
-                    MREF = MPRT07( F0 ) 
-                    WREF = WPRT07( F0 )
-                    DREF = DPRT07( F0 )
+                    MREF = MPRT07( F0,V ) 
+                    WREF = WPRT07( F0,V )
+                    DREF = DPRT07( F0,V )
                     CALL SETSOURCE_TPROFS
                     RETURN                       !  to end of sources-loop
                 END IF
 
-C.................  Try for any country/state code match (not, pol-specific)
+C.................  Try for any country/state code match
                 F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 ) 
 
                 IF( F0 .GT. 0 ) THEN
-                    MREF = MPRT04( F0 ) 
-                    WREF = WPRT04( F0 )
-                    DREF = DPRT04( F0 )
+                    MREF = MPRT04( F0,V ) 
+                    WREF = WPRT04( F0,V )
+                    DREF = DPRT04( F0,V )
                     CALL SETSOURCE_TPROFS
                     RETURN                       !  to end of sources-loop
                 END IF

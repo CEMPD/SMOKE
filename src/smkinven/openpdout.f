@@ -1,6 +1,7 @@
 
         SUBROUTINE OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, TSTEP, 
-     &                        TYPNAM, PFLAG, EAIDX, FNAME )
+     &                        FILFMT, TYPNAM, PFLAG, EAIDX,  SPSTAT, 
+     &                        FNAME, RDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 96
@@ -16,13 +17,13 @@ C
 C  REVISION  HISTORY:
 C      Created 12/99 by M. Houyoux
 C
-C****************************************************************************/
+C****************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -51,11 +52,12 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
-C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
+C...........   EXTERNAL FUNCTIONS and their descriptions
+        INTEGER                PROMPTFFILE
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL        PROMPTMFILE, VERCHAR
+        EXTERNAL        PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NPDSRC    ! no. period-specific sources
@@ -64,17 +66,20 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: SDATE     ! Julian start date
         INTEGER     , INTENT (IN) :: STIME     ! start time HHMMSS
         INTEGER     , INTENT (IN) :: TSTEP     ! time step HHMMSS
+        INTEGER     , INTENT (IN) :: FILFMT    ! format of period-specific data
         CHARACTER(*), INTENT (IN) :: TYPNAM    ! 'day' or 'hour'
         LOGICAL     , INTENT (IN) :: PFLAG     ! true: creating profiles
         INTEGER     , INTENT (IN) :: EAIDX( NVAR ) ! pol/act index
+        LOGICAL     , INTENT (IN) :: SPSTAT( MXSPDAT ) ! true: special val exists
         CHARACTER(*), INTENT(OUT) :: FNAME     ! logical file name
+        INTEGER     , INTENT(OUT) :: RDEV      ! report unit number
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
-        INTEGER       L, L2, V      ! counter and indices
+        INTEGER       J, K, L, L2, V      ! counter and indices
 
         CHARACTER*5            CTZONE      ! string of time zone
         CHARACTER(LEN=NAMLEN3) VARNAM      ! name for integer index
@@ -107,35 +112,57 @@ C.........  Set of header with actual settings
         SDATE3D = SDATE
         STIME3D = STIME
         TSTEP3D = TSTEP
-        NVARS3D = NVAR + 1
         NROWS3D = NPDSRC     !  number of rows = # of period sources
 
+C.........  Define variable for source index
         VNAME3D( 1 ) = VARNAM
         VTYPE3D( 1 ) = M3INT
         UNITS3D( 1 ) = 'n/a'
         VDESC3D( 1 ) = 'source IDs'
 
+C.........  Define hour-specific emissions, if any
+        J = 1
         DO V = 1, NVAR 
             VBUF = EANAM( EAIDX( V ) )
             L = LEN_TRIM( VBUF )
 
-            VNAME3D( V + 1 ) = VBUF
-            VTYPE3D( V + 1 ) = M3REAL
+            J = J + 1
+            VNAME3D( J ) = VBUF
+            VTYPE3D( J ) = M3REAL
 
 C............. If outputs are profiles instead of data values
             IF( PFLAG ) THEN
-        	UNITS3D( V + 1 ) = 'n/a'
-        	VDESC3D( V + 1 ) = TYPNAM // '-specific ' // 
+        	UNITS3D( J ) = 'n/a'
+        	VDESC3D( J ) = TYPNAM // '-specific ' // 
      &                             VBUF( 1:L ) // ' diurnal profile'
 
 C............. If outputs are data values...
             ELSE
-        	UNITS3D( V + 1 ) = 'ton/' // TYPNAM
-        	VDESC3D( V + 1 ) = TYPNAM // '-specific ' //
+        	UNITS3D( J ) = 'ton/' // TYPNAM
+        	VDESC3D( J ) = TYPNAM // '-specific ' //
      &                             VBUF( 1:L ) // ' data'
             END IF
 
-   	END DO     
+   	END DO
+
+C.........  Define hour-specific special data values, if any
+        K = 0
+        DO V = 1, MXSPDAT
+            IF( SPSTAT( V ) ) THEN
+                K = K + 1
+                J = J + 1
+                VNAME3D( J ) = SPDATNAM( V )
+                VTYPE3D( J ) = M3REAL
+        	UNITS3D( J ) = SPDATUNT( V )
+
+                L = LEN_TRIM( SPDATDSC( V ) )
+        	VDESC3D( J ) = TYPNAM // '-specific ' //
+     &                         SPDATDSC( V )( 1:L ) // ' data'
+
+            END IF
+        END DO
+
+        NVARS3D = J
 
         L2 = LEN_TRIM( TYPNAM )
         FDESC3D( 1 ) = CATDESC // TYPNAM( 1:L2 ) //
@@ -151,8 +178,12 @@ C............. If outputs are data values...
             WRITE( FDESC3D( 5 ),94010 ) '/ACTIVITIES/', NIACT
         END IF
 
-        WRITE( FDESC3D( 6 ),94010 ) '/BASE YEAR/ '    , BYEAR 
-        FDESC3D( 7 ) = '/TZONE/ ' // CTZONE
+        IF( K .GT. 0 ) THEN
+            WRITE( FDESC3D( 6 ),94010 ) '/SPECIAL DATA/', K
+        END IF
+
+        WRITE( FDESC3D( 7 ),94010 ) '/BASE YEAR/ '    , BYEAR 
+        FDESC3D( 8 ) = '/TZONE/ ' // CTZONE
 
 C.........  Set up default file name and prompting message
         CALL UPCASE( TYPNAM )
@@ -168,8 +199,17 @@ C.........  Set up default file name and prompting message
 
         END IF
 
+
 C.........  Prompt for output file
         FNAME = PROMPTMFILE( MESG, FSUNKN3, FNAME, PROGNAME )
+
+C.........  If format is CEM format, prompt for report output file name
+        IF ( FILFMT .EQ. CEMFMT ) THEN
+            MESG = 'Enter logical name for the CEM MATCHING REPORT'
+            RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
+     &                          'REPINVEN', PROGNAME )
+
+        END IF
 
         RETURN
 

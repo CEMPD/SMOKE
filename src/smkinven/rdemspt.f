@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -621,24 +621,26 @@ C.............  Convert and check SCC value
                 CSS  = LBLANK( LINE( 6:20 ) )
                 FCID = LINE( MIN(CSS+6,20):20 )
                 IF( FCID .EQ. ' ' ) FCID = EMCMISS3
+                LFC  = LEN_TRIM( FCID )
 
                 CSS  = LBLANK( LINE( 21:32 ) )
                 SKID = LINE( MIN(CSS+21,32):32 )
                 IF( SKID .EQ. ' ' ) SKID = EMCMISS3
+                LSC  = LEN_TRIM( SKID )
 
                 CSS  = LBLANK( LINE( 33:44 ) )
                 DVID = LINE( MIN(CSS+33,44):44 )
                 IF( DVID .EQ. ' ' ) DVID = EMCMISS3
+                LDC  = LEN_TRIM( DVID )
 
                 CSS  = LBLANK( LINE( 45:56 ) )
                 PRID = LINE( MIN(CSS+45,56):56 )
                 IF( PRID .EQ. ' ' ) PRID = EMCMISS3
+                LPC  = LEN_TRIM( PRID )
 
                 PSKEYA( PS ) = CFIP // 
-     &                         FCID( 1:LEN_TRIM( FCID ) ) //
-     &                         SKID( 1:LEN_TRIM( SKID ) ) //
-     &                         DVID( 1:LEN_TRIM( DVID ) ) //
-     &                         PRID( 1:LEN_TRIM( PRID ) )
+     &                         FCID( 1:LFC ) // SKID( 1:LSC ) //
+     &                         DVID( 1:LDC ) // PRID( 1:LPC )
 
                 INDXPA( PS ) = PS
                 PSSCCA( PS ) = SCC
@@ -748,20 +750,21 @@ C temp      TMON = STR2INT( LINE( ) )
                 CSS  = LBLANK( LINE( 6:20 ) )
                 FCID = LINE( MIN(CSS+6,20):20 )
                 IF( FCID .EQ. ' ' ) FCID = EMCMISS3
+                LFC  = LEN_TRIM( FCID )
 
                 CSS  = LBLANK( LINE( 21:32 ) )
                 SKID = LINE( MIN(CSS+21,32):32 )
                 IF( SKID .EQ. ' ' ) SKID = EMCMISS3
+                LSC  = LEN_TRIM( SKID )
 
                 CSS  = LBLANK( LINE( 33:44 ) )
                 DVID = LINE( MIN(CSS+33,44):44 )
                 IF( DVID .EQ. ' ' ) DVID = EMCMISS3
+                LDC  = LEN_TRIM( DVID )
 
                 INDXDVA( DS ) = DS
-                DVKEYA ( DS ) = CFIP // 
-     &                          FCID( 1:LEN_TRIM( FCID ) ) //
-     &                          SKID( 1:LEN_TRIM( SKID ) ) //
-     &                          DVID( 1:LEN_TRIM( DVID ) )
+                DVKEYA ( DS ) = CFIP          // FCID( 1:LFC ) //
+     &                          SKID( 1:LSC ) // DVID( 1:LDC )
 
                 DVSICA ( DS ) = SIC
 C temp          DVIMONA( DS ) = TMON
@@ -936,7 +939,7 @@ C.............  Check and set time period type (Year/day/hourly)
             CALL UPCASE( TMPAA )
             IF ( TMPAA .EQ. 'AA' ) THEN 
 
-                TPF = MTPRFAC * WKSET       !  use month, week profiles
+                TPF = MTPRFAC * WTPRFAC       !  use month, week profiles
 
             ELSE IF ( TMPAA .EQ. 'AD' ) THEN 
 
@@ -964,11 +967,7 @@ C.............  Set source control parameters (will get rule effectiveness
 C.............  from another file.
 
             CEFF  = STR2REAL( LINE( 126:132 ) )
-            IF ( CEFF .LT. 0.0 )  THEN 
-                CEFF = 0.0
-            ELSE
-                CEFF = CEFF * 100.0
-            END IF
+            CEFF = CEFF * 100.0
 
 C.............  Copy source characteristics from strings with local 
 C               length to strings with global lengths

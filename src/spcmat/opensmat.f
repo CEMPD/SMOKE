@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENSMAT( ENAME, SFLAG, LFLAG, NOPOL, MXSPEC, 
      &                       EALLOUT, EAIDX, SPCNAMES, MOLUNITS, 
-     &                       SNAME, LNAME, SVNAMES, LVNAMES )
+     &                       SDEV, SNAME, LNAME, SVNAMES, LVNAMES )
 
 C***********************************************************************
 C  subroutine body starts at line 106
@@ -16,7 +16,7 @@ C
 C  REVISION  HISTORY:
 C     Created 2/99 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -55,10 +55,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         INTEGER                FINDC
         CHARACTER(LEN=IODLEN3) GETCFDSC
+        INTEGER                PROMPTFFILE
         CHARACTER*16           PROMPTMFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL        CRLF, FINDC, GETCFDSC, PROMPTMFILE, VERCHAR
+        EXTERNAL        CRLF, FINDC, GETCFDSC, PROMPTFFILE, 
+     &                  PROMPTMFILE, VERCHAR
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
@@ -70,6 +72,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: EAIDX   ( NIPPA ) ! index to SPCNAMES
         CHARACTER(*), INTENT (IN) :: SPCNAMES( MXSPEC, NOPOL ) ! model spec nams
         CHARACTER(*), INTENT (IN) :: MOLUNITS( MXSPEC, NOPOL ) ! mole-based unts
+        INTEGER     , INTENT(OUT) :: SDEV            ! suplmt file unit no.
         CHARACTER(*), INTENT(OUT) :: SNAME           ! mass-based spec file name 
         CHARACTER(*), INTENT(OUT) :: LNAME           ! mole-based spec file name
         CHARACTER(*), INTENT(OUT) :: SVNAMES( MXSPEC, NIPPA )   ! mass out vars
@@ -244,6 +247,13 @@ C.............  Open with NAMBUF for HP
             LNAME = NAMBUF
 
         END IF
+
+C.........  Open supplemental speciation file
+        MESG = 'Enter logical name for the SPECIATION SUPPLEMENTAL '//
+     &         'file'
+        SDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
+     &                      CRL // 'SSUP', PROGNAME )
+
 
         RETURN
 

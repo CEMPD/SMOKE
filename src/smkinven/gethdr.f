@@ -243,10 +243,13 @@ C                       if any
                     NFAC = UNITFAC( UNITS( V ), INVDUNT( J ), .TRUE.  )
                     DFAC = UNITFAC( UNITS( V ), INVDUNT( J ), .FALSE. )
 
+                    IF( NFAC .LT. 0. ) NFAC = 1.
+                    IF( DFAC .LT. 0. ) DFAC = 1.
+
 C.....................  Error if units are not the same and the conversion
 C                       factor is equal to one
                     IF( UNITS( V ) .NE. INVDUNT( J ) .AND.
-     &                  NFAC .EQ. 1 .AND. DFAC .EQ. 1      ) THEN
+     &                  NFAC .EQ. 1. .AND. DFAC .EQ. 1.      ) THEN
 
                         MESG = 'ERROR: Units conversion could not be '//
      &                         'made - use different input units.'

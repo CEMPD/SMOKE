@@ -57,17 +57,17 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL        CRLF, INDEX1
 
 C...........   LOCAL PARAMETER:
-        INTEGER    , PARAMETER :: NLIST   = 4
+        INTEGER    , PARAMETER :: NLIST   = 5
         CHARACTER*1, PARAMETER :: LETLIST( NLIST ) = 
-     &                                    ( / 'A', 'B', 'M', 'P' / )
+     &                            ( / 'A', 'B', 'M', 'P', 'E' / )
 
         CHARACTER*6, PARAMETER :: CATTYPE( NLIST ) = 
-     &                                    ( / 'AREA  ', 'BIOGEN',
-     &                                        'MOBILE', 'POINT ' / )
+     &                            ( / 'AREA  ', 'BIOGEN', 'MOBILE',
+     &                                'POINT ', 'EVERY ' / )
 
         CHARACTER*6, PARAMETER :: CATLDSC( NLIST ) = 
-     &                                    ( / 'Area  ', 'Biogen',
-     &                                        'Mobile', 'Point ' / )
+     &                            ( / 'Area  ', 'Biogen', 'Mobile',
+     &                                'Point ', 'Every ' / )
 
 C...........   LOCAL VARIABLES their descriptions:
 

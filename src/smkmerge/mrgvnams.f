@@ -323,8 +323,10 @@ C.........  Also create the speciation units per pollutant
 
 C.............  Create temporary name for numerator of biogenic units
 C.............  Assumes that the units will be the same for the biogenic input
-            L2 = INDEX( BOUNITS( 1 ), '/' )
-            BNUM = BOUNITS( 1 )( 1:L2-1 )
+            IF ( BFLAG ) THEN
+                L2 = INDEX( BOUNITS( 1 ), '/' )
+                BNUM = BOUNITS( 1 )( 1:L2-1 )
+            END IF 
 
             DO I = 1, NSMATV
 

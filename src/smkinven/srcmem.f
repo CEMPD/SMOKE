@@ -317,13 +317,11 @@ C.........  Sorted ...
             END IF
 
 C.............  Deallocate for any source category
-C.............  NOTE - do not deallocate CSOURC, because it may be needed
-C               for reading day- and hour-specific data
+C.............  NOTE - do not deallocate CSOURC, CSCC, or IFIP, because they 
+C               may be needed for reading day- and hour-specific data
             IF( .NOT. AFLAG .AND. .NOT. PFLAG ) THEN
-                IF( ALLOCATED( IFIP )   ) DEALLOCATE( IFIP )
                 IF( ALLOCATED( TPFLAG ) ) DEALLOCATE( TPFLAG )
                 IF( ALLOCATED( INVYR )  ) DEALLOCATE( INVYR )
-                IF( ALLOCATED( CSCC )   ) DEALLOCATE( CSCC )
 
             ELSE IF( .NOT. AFLAG ) THEN
                 IF( ALLOCATED( IPOSCOD ) ) DEALLOCATE( IPOSCOD )
@@ -448,11 +446,12 @@ C               for reading day- and hour-specific data
                     CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )  
                 END IF
 
+C.................  Do not deallocate plant description in case needed for
+C                   point sources report.
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( ISIC ) ) 
      &              DEALLOCATE( ISIC, IDIU, IWEK, XLOCA, YLOCA, 
-     &                          STKHT, STKDM, STKTK, STKVE,  
-     &                          CORIS, CBLRID, CPDESC )
+     &                          STKHT, STKDM, STKTK, STKVE )
 
             END SELECT
 

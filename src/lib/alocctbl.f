@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -71,6 +71,9 @@ C.........  First deallocate if these have previously been allocated
             DEALLOCATE( ICTL02, ICTL03, ICTL04, ICTL05, ICTL06 )
             DEALLOCATE( ICTL07, ICTL08, ICTL09, ICTL10, ICTL11 )
             DEALLOCATE( ICTL12, ICTL13, ICTL14, ICTL15, ICTL16 )
+            DEALLOCATE( ICTL02A, ICTL02B, ICTL02C )
+            DEALLOCATE( ICTL05A, ICTL05B, ICTL05C )
+            DEALLOCATE( ICTL08A, ICTL08B, ICTL08C )
 
         END IF
 
@@ -153,6 +156,43 @@ C.........  First deallocate if these have previously been allocated
         CALL CHECKMEM( IOS, 'ICTL16', PROGNAME )
         ICTL16 = IMISS3
             
+C.........  NOTE- Added later            
+        J = MAX( 1, ICSIZE( 17 ) )                     ! SCC=level 1, FIP=0
+        ALLOCATE( ICTL02A( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL02A', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 18 ) )                     ! SCC=level 2, FIP=0
+        ALLOCATE( ICTL02B( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL02B', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 19 ) )                     ! SCC=level 3, FIP=0
+        ALLOCATE( ICTL02C( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL02C', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 20 ) )                     ! SCC=level 1, FIP=state
+        ALLOCATE( ICTL05A( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL05A', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 21 ) )                     ! SCC=level 2, FIP=state
+        ALLOCATE( ICTL05B( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL05B', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 22 ) )                     ! SCC=level 3, FIP=state
+        ALLOCATE( ICTL05C( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL05C', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 23 ) )                     ! SCC=level 1, FIP=all
+        ALLOCATE( ICTL08A( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL08A', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 24 ) )                     ! SCC=level 2, FIP=all
+        ALLOCATE( ICTL08B( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL08B', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 25 ) )                     ! SCC=level 3, FIP=all
+        ALLOCATE( ICTL08C( J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL08C', PROGNAME )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************

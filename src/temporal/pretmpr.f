@@ -1,7 +1,7 @@
 
         SUBROUTINE PRETMPR( MNAME, WNAME, TZONE, TSTEP, SDATE, STIME, 
      &                      NSTEPS, MDATE, MTIME, WDATE, WTIME, 
-     &                      WEDATEZ, NGRID )
+     &                      WEDATEZ )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -29,7 +29,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -45,6 +45,9 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
 
         IMPLICIT NONE
 
@@ -76,7 +79,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: WDATE  ! 1st valid date - WNAME file
         INTEGER     , INTENT   (OUT) :: WTIME  ! 1st valid time - WNAME file
         INTEGER     , INTENT   (OUT) :: WEDATEZ! last valid date- WNAME file
-        INTEGER     , INTENT   (OUT) :: NGRID  ! number of grid cells in MNAME
 
 C...........   Other local variables
         INTEGER         EDATEZ       ! Sim end date in zone IZONE
@@ -133,9 +135,6 @@ C.........  Get header information from gridded temperature file
      &             MNAME( 1:ML ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-
-C.........  Store number of grid cells
-        NGRID = NROWS3D * NCOLS3D 
 
 C.........  Store start gridded meterology date/time (in GMT)
         MSDATEZ = SDATE3D

@@ -94,6 +94,10 @@ C.............  Skip INVYEAR packet
             I = GETINVYR( INFILE )
             IF( I .GT. 0 ) CYCLE
 
+C.............  Skip the date range packet
+            I = INDEX( INFILE, 'DATERANGE' )
+            IF( I .GT. 0 ) CYCLE
+
 C.............  Open INFILE
             TDEV = JUNIT()
             OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD' )

@@ -142,12 +142,11 @@ C.........  Compare day-specific dates/times to epsiode dates/times
         J = SECSDIFF( EEDATE, EETIME, EDATE, ETIME )
 
         IF( I .GT. 0 ) THEN
-            EFLAG = .TRUE.
             EDATESTR = MMDDYY( ESDATE )
             ETIMESTR = HHMMSS( ESTIME )
             CDATESTR = MMDDYY( SDATE )
             CTIMESTR = HHMMSS( STIME )
-            MESG = 'ERROR: ' // DESCRIBE( 1:LD ) // '-specific ' //
+            MESG = 'WARNING: ' // DESCRIBE( 1:LD ) // '-specific ' //
      &             'starting date/time of '// CDATESTR// '@ ' //
      &             CTIMESTR // CRLF() // BLANK10 // 
      &             'is later than episode starting date/time of ' //
@@ -157,12 +156,11 @@ C.........  Compare day-specific dates/times to epsiode dates/times
         END IF
 
         IF( J .LT. 0 ) THEN
-            EFLAG = .TRUE.
             EDATESTR = MMDDYY( EEDATE )
             ETIMESTR = HHMMSS( EETIME )
             CDATESTR = MMDDYY( EDATE )
             CTIMESTR = HHMMSS( ETIME )
-            MESG = 'ERROR: ' // DESCRIBE( 1:LD ) // '-specific ' //
+            MESG = 'WARNING: ' // DESCRIBE( 1:LD ) // '-specific ' //
      &             'ending date/time of '// CDATESTR// '@ ' //
      &             CTIMESTR // CRLF() // BLANK10 // 
      &             'is earlier than episode ending date/time of ' //

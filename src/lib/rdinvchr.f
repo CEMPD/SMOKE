@@ -4,7 +4,7 @@
 
 C***********************************************************************
 C  program body starts at line 
-CC
+C
 C  DESCRIPTION:
 C     Reads in SMOKE inventory characteristics for any source category
 C
@@ -519,9 +519,9 @@ C.....................  Read in line of character data
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
-                    IF( ORSFLAG ) CORIS ( S ) = CORS
+                    IF( ORSFLAG ) CORIS ( S ) = ADJUSTR( CORS )
 
-                    IF( BLRFLAG ) CBLRID( S ) = CBLR
+                    IF( BLRFLAG ) CBLRID( S ) = ADJUSTR( CBLR )
 
                     IF( PDSFLAG ) CPDESC( S ) = CPDS
 

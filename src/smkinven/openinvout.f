@@ -91,6 +91,9 @@ C              as NPPOL > NPACT, which is expected to always be the case
         CHARACTER(LEN=IOULEN3), ALLOCATABLE :: AOUNITS( :,: ) ! Units  
         CHARACTER(LEN=IODLEN3), ALLOCATABLE :: AODESCS( :,: ) ! Dscriptions  
 
+C...........   Other local allocatable arrays
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: SAVEANAM( : )  ! tmp variables
+
 C...........   Other local variables
 
         INTEGER       I, J, K, L, L2, V, V1, V2     ! counter and indices
@@ -377,47 +380,6 @@ C.................  Store variable names and information
 
         END DO        !  end loop on inventory pollutants V
 
-C.........  Allocate names for activities
-        ALLOCATE( AONAMES( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AONAMES', PROGNAME )
-        ALLOCATE( AOUNITS( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
-        ALLOCATE( AOTYPES( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AOTYPES', PROGNAME )
-        ALLOCATE( AODESCS( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AODESCS', PROGNAME )
-
-C.........  Get names, units, etc. of output activity-specific records
-        CALL BLDENAMS( CATEGORY, NIACT, NPACT, ACTVTY, 
-     &                 AONAMES, AOUNITS, AOTYPES, AODESCS )
-
-C.........  Create output variables for activities
-        DO V = 1 , NIACT
-            
-            DO I = 1, NPACT ! Loop through number of variables per activity
-
-C.................  Set units for the primary data value
-                IF( I .EQ. 1 ) THEN
-                    K = INDEX1( AONAMES( V, 1 ), MXIDAT, INVDNAM )
-                    UNITS = INVDUNT( K )
-
-C.................  Set units for the other data values (per activity)
-                ELSE
-                    UNITS = AOUNITS( V, I )
-
-                END IF
-
-C.................  Store variable names and information
-                VNAME3D( J ) = AONAMES( V, I )
-                VTYPE3D( J ) = AOTYPES( V, I )
-                UNITS3D( J ) = UNITS
-                VDESC3D( J ) = AODESCS( V, I )
-                J = J + 1
-
-            END DO    !  end loop on number of variables per activity
-
-        END DO        !  end loop on inventory activities V
-
 C.........  If there is a computed output variable, add it to the variable list.
 C           Base the other variable settings (besides the name) on the first 
 C           of the two variables in the formula.
@@ -500,7 +462,11 @@ C.............  Find formula inputs in existing variable list
 
                 L = LEN_TRIM( VIN_A )
                 L = INDEX( EONAMES( V, I ), VIN_A(1:L) )
-        	VNAME3D( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
+                IF ( L .GT. 1 ) THEN
+        	    VNAME3D( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
+                ELSE
+                    VNAME3D( J ) = VNAME
+                END IF
         	VTYPE3D( J ) = EOTYPES( V, I )
         	UNITS3D( J ) = EOUNITS( V, I )
         	VDESC3D( J ) = EODESCS( V, I )
@@ -512,7 +478,63 @@ C.............  Update header settings
             NVARS3D = NVARS3D + NPPOL
             WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
 
+C.............  Update EANAM, in case needed for day- and hour-specific data
+            ALLOCATE( SAVEANAM( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SAVEANAM', PROGNAME )
+            SAVEANAM = EANAM       ! array
+
+            DEALLOCATE( EANAM )
+            ALLOCATE( EANAM( NIPPA+1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
+
+            EANAM( 1:NIPOL ) = SAVEANAM( 1:NIPOL )
+            EANAM( NIPOL+1 ) = VNAME
+            EANAM( NIPOL+2:NIPPA+1 ) = SAVEANAM( NIPOL+1:NIPPA )
+            NIPPA = NIPPA + 1
+            DEALLOCATE( SAVEANAM )
+
         END IF
+
+C.........  Allocate names for activities
+        ALLOCATE( AONAMES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AONAMES', PROGNAME )
+        ALLOCATE( AOUNITS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
+        ALLOCATE( AOTYPES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AOTYPES', PROGNAME )
+        ALLOCATE( AODESCS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AODESCS', PROGNAME )
+
+C.........  Get names, units, etc. of output activity-specific records
+        CALL BLDENAMS( CATEGORY, NIACT, NPACT, ACTVTY, 
+     &                 AONAMES, AOUNITS, AOTYPES, AODESCS )
+
+C.........  Create output variables for activities
+        DO V = 1 , NIACT
+            
+            DO I = 1, NPACT ! Loop through number of variables per activity
+
+C.................  Set units for the primary data value
+                IF( I .EQ. 1 ) THEN
+                    K = INDEX1( AONAMES( V, 1 ), MXIDAT, INVDNAM )
+                    UNITS = INVDUNT( K )
+
+C.................  Set units for the other data values (per activity)
+                ELSE
+                    UNITS = AOUNITS( V, I )
+
+                END IF
+
+C.................  Store variable names and information
+                VNAME3D( J ) = AONAMES( V, I )
+                VTYPE3D( J ) = AOTYPES( V, I )
+                UNITS3D( J ) = UNITS
+                VDESC3D( J ) = AODESCS( V, I )
+                J = J + 1
+
+            END DO    !  end loop on number of variables per activity
+
+        END DO        !  end loop on inventory activities V
 
 C.........  Prompt for and open I/O API output file
         NAMBUF= PROMPTMFILE( 

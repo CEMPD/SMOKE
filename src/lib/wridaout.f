@@ -82,8 +82,12 @@ C...........   Local parameters, indpendent
 C.........  Parameters for output IDA formats
         INTEGER    , PARAMETER :: AROLEN ( 7 ) = ( /10,10,11,7,3,6,0/ )
         INTEGER    , PARAMETER :: MBOPLEN( 7 ) = ( /10,10,0,0,0,0,0/ )
-        INTEGER    , PARAMETER :: MBOALEN( 7 ) = ( /14,0,0,0,0,0,0/ )
+        INTEGER    , PARAMETER :: MBOALEN( 7 ) = ( /16,0,0,0,0,0,0/ )
         INTEGER    , PARAMETER :: PTOLEN ( 7 ) = ( /13,13,7,3,10,3,3/ )
+        INTEGER    , PARAMETER :: ARODIF ( 7 ) = ( /5,5,6,4,3,3,0/ )
+        INTEGER    , PARAMETER :: MBOPDIF( 7 ) = ( /5,5,0,0,0,0,0/ )
+        INTEGER    , PARAMETER :: MBOADIF( 7 ) = ( /12,0,0,0,0,0,0/ )
+        INTEGER    , PARAMETER :: PTODIF ( 7 ) = ( /8,8,4,3,4,3,3/ )
 
         CHARACTER*6, PARAMETER :: AROFMT ( 7 )  = 
      &                        ( / ' F10.4',' F10.4',' F11.4','  F7.2',
@@ -96,7 +100,7 @@ C.........  Parameters for output IDA formats
      &                            '      ','      ','      ' / )
         CHARACTER*6, PARAMETER :: PTOFMT ( 7 ) = 
      &                        ( / ' F13.4',' F13.4','  F7.2','    I3',
-     &                            ' F10.5','    I3','    I3' / )
+     &                            ' F10.4','    I3','    I3' / )
 
 C...........   Local allocatable arrays
         REAL        , ALLOCATABLE :: DATARECS( : )  ! pol/act data
@@ -146,13 +150,14 @@ C...........   Other local variables
         DATA    IDACOLS / 6*.TRUE., .FALSE. /
 
         CHARACTER*4   CYEAR          !  character 4-digit year
-        CHARACTER*100 CHARS( 7 )     !  source fields for output
-        CHARACTER*200 ACTBUF         !  activity list buffer
-        CHARACTER*200 POLBUF         !  pollutant list buffer
-        CHARACTER*200 UNTBUF         !  activity units buffer
-        CHARACTER*300 ACTVFMT        !  output format buffer for activities
-        CHARACTER*300 EMISFMT        !  output format buffer for emissions
-        CHARACTER*300 MESG           !  message buffer
+        CHARACTER*128 CHARS( 7 )     !  source fields for output
+        CHARACTER*128 INFORMAT       !  fotmat for reading time files
+        CHARACTER*256 ACTBUF         !  activity list buffer
+        CHARACTER*256 POLBUF         !  pollutant list buffer
+        CHARACTER*256 UNTBUF         !  activity units buffer
+        CHARACTER*512 ACTVFMT        !  output format buffer for activities
+        CHARACTER*512 EMISFMT        !  output format buffer for emissions
+        CHARACTER*256 MESG           !  message buffer
 
         CHARACTER*16 :: PROGNAME = 'WRIDAOUT' ! program name
 
@@ -251,9 +256,9 @@ C.................  Write out header
 C.................  Read data from temporary files
                 DO J = 1, NIPOL
                     FDEV = TDEV( J )
-                    READ( FDEV, * ) ( DATARECS( I ), I = 1, NPPOL )
+                    READ( FDEV, 93200 ) ( DATARECS( I ), I = 1, NPPOL )
 
-                    CALL FORMAT_OUTREC( NPPOL, DATARECS, AROLEN, 
+                    CALL FORMAT_OUTREC( NPPOL, DATARECS, AROLEN, ARODIF,
      &                                  AROFMT, COUTRECS( J ) )
                 END DO
 
@@ -315,10 +320,10 @@ C.................  Read emissions from temporary files
                 DO J = 1, NIPOL
                     K = K + 1
                     FDEV = TDEV( K )
-                    READ( FDEV, * ) ( DATARECS( I ), I = 1, NPPOL )
+                    READ( FDEV, 93210 ) ( DATARECS( I ), I = 1, NPPOL )
 
-                    CALL FORMAT_OUTREC( NPPOL, DATARECS, MBOPLEN,
-     &                                  MBOPFMT, COUTRECS( J ) )
+                    CALL FORMAT_OUTREC( NPPOL, DATARECS, MBOPLEN, 
+     &                                  MBOPDIF, MBOPFMT, COUTRECS( J ))
                 END DO
 
 C.................  Write out emissions (fixed formatted)
@@ -340,7 +345,7 @@ C.................  Read activities from temporary files
                     READ( FDEV, * ) ( DATARECS( I ), I = 1, NPACT )
 
                     CALL FORMAT_OUTREC( NPACT, DATARECS, MBOALEN, 
-     &                                  MBOAFMT, COUTRECS( J ) )
+     &                                  MBOADIF, MBOAFMT, COUTRECS( J ))
                 END DO
 
 C.................  Write out activities (list formatted)
@@ -449,16 +454,17 @@ C.................  Write out header
 C.................  Read data from temporary files
                 DO J = 1, NIPOL
                     FDEV = TDEV( J )
-                    READ( FDEV, * ) ( DATARECS( I ), I = 1, NPPOL )
+                    READ( FDEV, 93220 ) ( DATARECS( I ), I = 1, NPPOL )
 
-                    CALL FORMAT_OUTREC( NPPOL, DATARECS, PTOLEN, 
+                    CALL FORMAT_OUTREC( NPPOL, DATARECS, PTOLEN, PTODIF,
      &                                  PTOFMT, COUTRECS( J ) )
                 END DO
 
 C.................  Write out main entries
                 WRITE( DDEV, EMISFMT ) STID, CYID, PLANTID, POINTID,
      &                 STACKID, ORISID, BLRID, SEGMENT, PLNTDESC, SCC,
-     &                 BEGYR, ENDYR, STKHGT, STKDIAM, STKTEMP, STKFLOW, 
+     &                 BEGYR, ENDYR, NINT( STKHGT ), STKDIAM, 
+     &                 NINT( STKTEMP ), STKFLOW, 
      &                 STKVEL, BOILCAP, CAPUNITS, WINTHRU, SPRTHRU, 
      &                 SUMTHRU, FALTHRU, HOURS, START, NDAY, WEEKS, 
      &                 THRUPUT, MAXRATE, HEATCON, SULFCON, ASHCON, 
@@ -480,15 +486,23 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
+93200   FORMAT( 1X, E13.6, 1X, E13.6, 1X, E13.6, 1X, E13.6,          ! area
+     &          1X, F4.0, 1X, F4.0 )
+
+93210   FORMAT( 1X, E20.13, 1X, E20.13 )                             ! mobile
+
+93220   FORMAT( 1X, E13.6, 1X, E13.6, 1X, E13.6, 1X, F4.0, 1X, E13.6, ! point
+     &          1X, E10.3, 1X, E10.3 )
+
 93320   FORMAT( '(I2, I3, A10, ', I3.3, '(A47) )' )
 
 93330   FORMAT( '(I2, I3, A10, A10, ', I3.3, '(A20) )' )           ! mb emis
 
 93335   FORMAT( '(I2, 1X, I3, 1X, A10, A10, 1X,', I3.3, '(A17) )' ) ! mb activity
 
-93340   FORMAT( '(I2, I3, A15, A15, A12, A6, A5, A2, A40, A10, I4, I4,', ! point
-     &          'F4.0, F6.2, F4.0, F10.2, F9.2, F8.2, A1, 4F2.0, 2I2, ',
-     &          'I1, I2, F11.1, F12.3, F8.2, F5.2, F5.2, F9.3, I4,',
+93340   FORMAT( '(I2, I3, A15, A15, A12, A6, A6, A2, A40, A10, I4, I4,', ! point
+     &          'I4, F6.2, I4, F10.2, F9.2, F8.2, A1, 4F2.0, 2I2, ',
+     &          'I1, I2, F11.1, F12.3, F8.2, F5.2, F5.2, F9.3, I4.4,',
      &          '2F9.4, A1, ', I3.3,'(A52) )' )
 
 C...........   Internal buffering formats............ 94xxx
@@ -556,31 +570,56 @@ C-------------------------------------------------------------------------
 C.............  This internal subprogram is for formatting the pollutant- and
 C               activity-specific data for output to IDA format.  It screens
 C               for missing values.
-            SUBROUTINE FORMAT_OUTREC( NPPOL, DATAVALS, FMTLEN, 
+            SUBROUTINE FORMAT_OUTREC( NPPOL, DATAVALS, FMTLEN, FMTDIF,
      &                                FMTBUF, BUFFER )
 
 C.............  Subprogram arguments
             INTEGER     , INTENT (IN) :: NPPOL             ! number of data vals
             REAL        , INTENT (IN) :: DATAVALS( NPPOL ) ! data values
             INTEGER     , INTENT (IN) :: FMTLEN  ( NPPOL ) ! format lengths
-            CHARACTER(*), INTENT (IN) :: FMTBUF  ( NPPOL ) ! format info
+            INTEGER     , INTENT (IN) :: FMTDIF  ( NPPOL ) ! non-decimal lengths
+            CHARACTER*6 , INTENT (IN) :: FMTBUF  ( NPPOL ) ! format info
             CHARACTER(*), INTENT(OUT) :: BUFFER            ! fmtted output
 
+C.............  Subprogram local arrays
+            CHARACTER*6  LOCBUF( 7 )
+
 C.............  Subprogram local variables
-            INTEGER       I, L
+            INTEGER       D, I, J, L
+
+            REAL          F
+
+            LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: only first time called
 
             CHARACTER*10  FMT
             CHARACTER*20  BUFLOC
 
 C-------------------------------------------------------------------------
 
+            LOCBUF( 1:NPPOL ) = FMTBUF( 1:NPPOL )   ! Array
             BUFFER = ' '
 
+C.............  Modify the formats if needed for the data values for the
+C               annual and (if needed) the seasonal emissions. This is only
+C               needed if the format for the non-decimal part of the number 
+C               is too small.
+            DO I = 1, MIN( NPPOL, 2 )
+
+                F = 10. ** REAL( FMTDIF( I ) - 1 ) - 1.
+                IF ( DATAVALS( I ) .GT. F ) THEN
+                    J = INT( LOG( DATAVALS( I ) ) ) + 1
+                    D = MAX( FMTLEN( I ) - FMTDIF( I ) - 1 - J, 0 )
+                    WRITE( LOCBUF( I ), '(A1,I2.2,A1,I1)' ) 
+     &                     'F', FMTLEN( I ), '.', D
+                END IF
+
+            END DO
+
 C.............  Build format for first field
-            FMT = '(' // FMTBUF( 1 ) // ')'
+            FMT = '(' // LOCBUF( 1 ) // ')'
 
 C.............  Initialize output buffer with first value if it is not missing
-            IF( DATAVALS( 1 ) .GT. BADVAL3 ) 
+            IF( DATAVALS( 1 ) .GT. AMISS3 ) 
      &          WRITE( BUFFER, FMT ) DATAVALS( 1 )
             L = FMTLEN( 1 )
 
@@ -588,16 +627,19 @@ C.............  For remaining fields, build formats and add value to buffer
 C               for non-missing values
             DO I = 2, NPPOL
 
-                FMT = '(' // FMTBUF( I ) // ')'
+                FMT = '(' // LOCBUF( I ) // ')'
 
+C.................  Note - a blank will be written if a missing value occurs
+C.................  Integer value and not missing
                 IF( OUTTYPE ( I ) .EQ. 0      .AND.
      &              DATAVALS( I ) .GT. IMISS3       ) THEN
 
                     WRITE( BUFLOC, FMT ) INT( DATAVALS( I ) )
                     BUFFER = BUFFER( 1:L ) // BUFLOC
 
+C.................  Real value and not missing
                 ELSE IF ( OUTTYPE ( I ) .NE. 0       .AND.
-     &                    DATAVALS( I ) .GT. BADVAL3       ) THEN
+     &                    DATAVALS( I ) .GE. 0.            ) THEN
                     WRITE( BUFLOC, FMT ) DATAVALS( I )
                     BUFFER = BUFFER( 1:L ) // BUFLOC
 

@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -50,16 +50,17 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
+        INTEGER         ENVINT
         LOGICAL         ENVYN  
 
-        EXTERNAL CRLF, ENVYN
+        EXTERNAL CRLF, ENVINT, ENVYN
 
 C...........   Other local variables
 
         INTEGER         IOS      ! tmp I/O status
         INTEGER         INVIOS   ! i/o status for MEG_REPINV_YN
         INTEGER         SPCIOS   ! i/o status for MEG_REPSPC_YN
-        INTEGER         J        ! counter
+        INTEGER         I, J     ! counter
 
         CHARACTER*5     MRGSRC   ! value of MRG_SOURCE E.V.
         CHARACTER*5     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
@@ -140,15 +141,6 @@ C.........  Retrieve the on/off environment variables
         SFLAG   = ENVYN( 'MRG_SPCMAT_YN', 
      &                   'Use speciation matrices or not', .FALSE., IOS)
 
-        LFLAG   = ENVYN( 'MRG_LAYERS_YN', 
-     &                   'Use layer fractions or not', .FALSE., IOS )
-
-        PINGFLAG = ENVYN( 'SMK_PING_YN', 'Create plume-in-grid ' //
-     &                    'outputs or not', .FALSE., IOS )
-
-        ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', 'Create ASCII elevated '//
-     &                    'sources file or not', .FALSE., IOS )
-
         LMETCHK = ENVYN( 'MRG_METCHK_YN', 'Check consistency ' //
      &                   'of met headers or not', .TRUE., IOS )
 
@@ -176,6 +168,36 @@ C.........  Retrieve the on/off environment variables
      &                   'emissions separately or not', .TRUE., IOS )
 
         LREPANY = ( LREPSTA .OR. LREPCNY )
+
+C.........  Point-source specific environment variables
+        IF ( PFLAG ) THEN
+
+            MESG = 'Use layer fractions or not'
+            LFLAG   = ENVYN( 'MRG_LAYERS_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Create CMAQ plume-in-grid outputs or not'
+            I = ENVINT( 'SMK_PING_METHOD', MESG, .FALSE., IOS )
+            PINGFLAG = ( I .EQ. 1 )
+
+            MESG = 'Create ASCII elevated sources file or not'
+            ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', MESG, .FALSE., IOS )
+
+            IF ( ELEVFLAG ) PINGFLAG = .FALSE.
+
+            MESG = 'Indicator for including explicit plume ' //
+     &             'rise sources'
+            EXPLFLAG = ENVYN( 'EXPLICIT_PLUMES_YN', MESG, .FALSE., IOS )
+
+C.............  Must be running for UAM-style processing to use explicit...
+            IF( EXPLFLAG .AND. .NOT. ELEVFLAG ) THEN
+                ELEVFLAG = .TRUE.
+                MESG = 'NOTE: ASCII elevated output switched on to be'//
+     &                 'consitent with ' // CRLF() // BLANK10//
+     &                 'EXPLICIT_PLUMES_YN = Y setting.'
+                CALL M3MSG2( MESG )
+            END IF
+
+        END IF
 
 C.........  If temporal processing, set which source categories get by-day 
 C           processing
@@ -243,16 +265,20 @@ C.........  Strange to have elevated ASCII and layer merge at the same time
 
         END IF
 
+C.........  Cannot have layer merge at the same time as explicit plume rise
+        IF( LFLAG .AND. EXPLFLAG ) THEN
+
+            LFLAG = .FALSE.
+            MESG = 'WARNING: Turning off layered merge (MRG_LAYERS_YN'//
+     &             ' = Y) because' // CRLF() // BLANK10 //
+     &             'explicit plume rise being used ' //
+     &             '(EXPLICIT_PLUMES_YN = Y).'
+            CALL M3MSG2( MESG )
+
+        END IF
+
 C.........  Cannot have BFLAG without TFLAG
         IF( BFLAG ) TFLAG = .TRUE.
-
-C.........  Cannot have LFLAG without PFLAG
-C.........  Cannot have elevated or PinG either
-        IF( .NOT. PFLAG ) THEN
-            LFLAG = .FALSE.
-            ELEVFLAG = .FALSE.
-            PINGFLAG = .FALSE.
-        END IF
 
 C.........  Report that flags for reporting inventory emissions, speciated
 C           emissions or not, and controlled emissions or not do not work yet

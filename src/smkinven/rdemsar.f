@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -106,6 +106,7 @@ C...........   Other local variables
         INTEGER       :: NPOA    = 0 !  number of input data variables
         INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
         INTEGER          TPF         !  temporary temporal ID
+        INTEGER          YR4         !  tmp year from current file
 
         CHARACTER*2            TMPAA !  tmp time period code
         CHARACTER*10 , SAVE :: FIPFMT! formt to write co/st/cy to string
@@ -159,17 +160,43 @@ C.............  Check read i/o status
 C.............  Scan for header lines and check to ensure all are set 
 C               properly (no header fields are required)
             CALL GETHDR( MXDATFIL, .FALSE., .FALSE., .FALSE., 
-     &                   LINE, ICC, INY, NPOA, IOS )
+     &                   LINE, ICC, YR4, NPOA, IOS )
 
 C.............  Set error flag for error from header reading routine
-            IF( IOS .GT. 0 ) EFLAG = .TRUE.
+            IF( IOS .EQ. 4 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'Maximum allowed data variables ' //
+     &                 '(MXDATFIL=', MXDATFIL, CRLF() // BLANK10 //
+     &                 ') exceeded in input file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ELSE IF( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+
+            END IF
+
+C.............  Resolve any differences between year from calling program
+C               and year in file header
+            IF ( IOS .EQ. 0   .AND.
+     &           INY .GT. 0   .AND.
+     &           YR4 .GT. 0   .AND.
+     &           INY .NE. YR4       ) THEN
+                WRITE( MESG,94010 ) 'NOTE: Using year', INY,
+     &                 'from list file, and not year', YR4,
+     &                 'from inventory file.'
+                CALL M3MSG2( MESG )
+                YR4 = INY
+            ELSE IF ( INY .GT. 0 .AND.
+     &                YR4 .LE. 1       ) THEN
+                YR4 = INY
+            END IF
 
 C.............  If a header line was encountered, go to next line
             IF( IOS .GE. 0 ) CYCLE
 
 C.............  Define day to year conversion factor and real type for integer 
 C               missing value
-            DAY2YR  = 1. / YR2DAY( INY )
+            DAY2YR  = 1. / YR2DAY( YR4 )
 
 C.............  Find pollutant name in master list to set index COD
 C.............  NOTE- Pollutant names here and in INVDNAM are uppercase
@@ -210,14 +237,13 @@ C.............  Set source category code
 
 C.............  Set control efficiency
             CEFF = STR2REAL( LINE( 88 : 94 ) )
-            IF ( CEFF .LT. 0 ) CEFF = 0.0
 
 C.............  Check and set time period type (Year/day/hourly)
             TMPAA = LINE( 95:96 )
             CALL UPCASE( TMPAA )
             IF ( TMPAA .EQ. 'AA' ) THEN 
 
-                TPF = MTPRFAC * WKSET       !  use month, week profiles
+                TPF = MTPRFAC * WTPRFAC       !  use month, week profiles
 
             ELSE IF ( TMPAA .EQ. 'AD' ) THEN 
 
@@ -248,7 +274,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
 
                 IFIPA  ( ES ) = FIP
                 TPFLGA ( ES ) = TPF
-                INVYRA ( ES ) = INY
+                INVYRA ( ES ) = YR4
                 CSCCA  ( ES ) = TSCC
                 POLVLA ( ES,NEM ) = EMIS
                 POLVLA ( ES,NCE ) = CEFF

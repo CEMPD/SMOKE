@@ -1,6 +1,6 @@
 
         SUBROUTINE MRGELEV( NSRC, NMAJOR, NPING, 
-     &                      KEY1, KEY2, KEY3, KEY4 )
+     &                      KEY1, KEY2, KEY3, KEY4, CNV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -70,6 +70,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: KEY2        ! mult controls index
         INTEGER     , INTENT (IN) :: KEY3        ! additive controls index
         INTEGER     , INTENT (IN) :: KEY4        ! speciation index
+        REAL        , INTENT (IN) :: CNV         ! units conversion factor
 
 C.........  Other local variables
         INTEGER         I, J, K, L, S   ! counters and indicies
@@ -190,7 +191,7 @@ C............. If multiplicative controls, additive controls, and speciation
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV                   
 
                 END DO
 
@@ -209,7 +210,7 @@ C............. If multiplicative controls & additive controls
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV                    
 
                 END DO
 
@@ -220,7 +221,7 @@ C............. If multiplicative controls & speciation
 
                     S   = ELEVSIDX( K )   ! index to source arrays
 
-                    VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) 
+                    VAL  = PEMSRC ( S,KEY1 ) * PSMATX( S,KEY4 ) * CNV
                     MULT = VAL * PCUMATX( S,KEY2 )
 
                     VMP  = PRINFO( S,2 )
@@ -230,7 +231,7 @@ C............. If multiplicative controls & speciation
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
 
                 END DO
 
@@ -252,7 +253,7 @@ C............. If additive controls & speciation
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
 
                 END DO
 
@@ -269,7 +270,7 @@ C............. If multiplicative controls only
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
 
                 END DO
 
@@ -286,8 +287,7 @@ C............. If additive controls only
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
-
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
                 END DO
 
 C.............  If speciation only
@@ -305,7 +305,7 @@ C.............  If speciation only
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
 
                 END DO
 
@@ -322,7 +322,7 @@ C.............  If inventory pollutant only
                     IF( IDX .GT. 0 ) 
      &                  PGRPEMIS( IDX ) = PGRPEMIS( IDX ) + VAL
 
-                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL                    
+                    ELEVEMIS( K ) = ELEVEMIS( K ) + VAL * CNV
 
                 END DO
 

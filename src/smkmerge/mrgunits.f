@@ -135,7 +135,7 @@ C.............  Initialize the output units for speciation
 
 C.............  For non-speciation, inventory pollutants or activities could
 C           have a variety of units depending on temporalized emissions or
-C           inventory emisisons and activities.  Make sure that if the temporal
+C           inventory emissions and activities.  Make sure that if the temporal
 C           resolution is per hour, that the TOTUNIT is still set as per day.
             ELSE
                 CALL UNITMATCH( TOUNITS( V ) )
@@ -162,7 +162,7 @@ C.............  Set the numerators and denominators
             GDEN_I = ADJUSTL( GRDUNIT_I( L+1:IOULEN3 ) )
 
             L = INDEX( TOTUNIT_I, '/' ) 
-            TNUM_I= ADJUSTL( TOTUNIT_I(   1:L-1     ) )
+            TNUM_I = ADJUSTL( TOTUNIT_I(   1:L-1     ) )
             TDEN_I = ADJUSTL( TOTUNIT_I( L+1:IOULEN3 ) )
 
             L = INDEX( GRDBUF, '/' ) 
@@ -183,12 +183,13 @@ C.............  Get factor for the numerators for the gridded outputs...
 C.............  Get factor for the denominators for the gridded outputs
             FAC2 = UNITFAC( TOUNITS( V ), GRDBUF, .FALSE. )
 
-C.............  Set factors for gridded outputs
-            GRDFAC( V ) = FAC1 / FAC2
-
 C.............  In case E.V. setting was bogus rebuild output units based
 C               on which factors were valid
+C.............  Also set negative factors (from unknown conversions) to 1.
             CALL CORRECT_UNITS( GNUM_I, GDEN_I, GNUM, GDEN, GRDBUF )
+
+C.............  Set factors for gridded outputs
+            GRDFAC( V ) = FAC1 / FAC2
 
 C.............  Get conversion factor for the numerators for totals
             IF( SFLAG ) THEN 
@@ -201,12 +202,13 @@ C.............  Get factors for the denominators for the totals.  Note that
 C               the hourly data are output as daily totals.
             FAC2 = UNITFAC( TOTUNIT_I, TOTBUF, .FALSE. )
 
-C.............  Set factors for gridded outputs
-            TOTFAC( V ) = FAC1 / FAC2
-
 C.............  In case E.V. setting was bogus rebuild output units based
 C               on which factors were valid
+C.............  Also set negative factors (from unknown conversions) to 1.
             CALL CORRECT_UNITS( TNUM_I, TDEN_I, TNUM, TDEN, TOTBUF )
+
+C.............  Set factors for totaled outputs
+            TOTFAC( V ) = FAC1 / FAC2
 
 C.............  Set the output units per pollutant/activity
             GRDUNIT( V ) = GRDBUF
@@ -215,7 +217,7 @@ C.............  Set the output units per pollutant/activity
         END DO
 
 C.........  If biogenics, then get the factor needed for converting gridded
-C           outputs and totals outputs. Note that 
+C           outputs and totals outputs. 
         IF( BFLAG ) THEN
 
 C.............  Set the trial units. NOTE - this could be too simplistic.
@@ -241,6 +243,9 @@ C.............  Get factor for the numerators for the output totals...
 C.............  Get factors for the denominators for the totals.  Note that
 C               the hourly data are output as daily totals.
             FAC2 = UNITFAC( BIOUNIT_T, TOTBUF, .FALSE. )
+
+            IF ( FAC1 .LT. 0. ) FAC1 = 1.
+            IF ( FAC2 .LT. 0. ) FAC2 = 1.
 
 C.............  Set factors for gridded outputs
             BIOTFAC = FAC1 / FAC2
@@ -274,8 +279,14 @@ C.............  Local variables
 
 C----------------------------------------------------------------------
 
-            IF( FAC1 .EQ. 1. ) NUM = NUM_I
-            IF( FAC2 .EQ. 1. ) DEN = DEN_I
+            IF( FAC1 .LT. 0. ) THEN
+                NUM = NUM_I
+                FAC1 = 1.
+            END IF
+            IF( FAC2 .LT. 0. ) THEN
+                DEN = DEN_I
+                FAC2 = 1.
+            END IF
 
             L1  = LEN_TRIM( NUM )
             L2  = LEN_TRIM( DEN )

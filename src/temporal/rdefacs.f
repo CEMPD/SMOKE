@@ -190,7 +190,7 @@ C.........  Allocate memory for emission factors and initialize to zero
 
 C.........  Read emissions factors for all parameter scheme indices (PSIs) 
 C           that were in the emission factor cross reference file AND that
-C           are used by at least one source.
+C           are used by at least one source that is in the domain.
 C.........  NOTE - if the PSI is not used by a source, the 
         DO  T = 1, NPSI( IDX )
 

@@ -93,7 +93,8 @@ C.........  Set up program version information
             VERCHAR = 'Dev'
         ELSE
             J = INDEX( VERCHAR, ' ' )
-            VERCHAR = ADJUSTL( VERCHAR( J+1:LEN_TRIM( VERCHAR ) ) )
+            L = MAX( J+1,LEN_TRIM( VERCHAR ) )
+            VERCHAR = ADJUSTL( VERCHAR( J+1:L ) )
             J = INDEX( VERCHAR, '$' )
             IF( J .GT. 1 ) VERCHAR = VERCHAR( 1:J-1 )
         ENDIF
@@ -122,7 +123,7 @@ C.............  Write copyright information
 
 C.............  Write program version information
 
-            L = LEN_TRIM( VERCHAR )
+            L = MAX( LEN_TRIM( VERCHAR ), 1 )
             WRITE( LDEV,92010 ) INPROGNM( 1:LEN_TRIM( INPROGNM ) ), 
      &                          VERCHAR( 1:L )
            

@@ -3,7 +3,7 @@
      &                      FILFMT, NRAWBP, TFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line 134
+C  subroutine body starts at line 133
 C
 C  DESCRIPTION:
 C      This subroutine controls reading an ASCII inventory file for any source 
@@ -30,7 +30,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -119,6 +119,7 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG  = .FALSE. ! true: error occured
         LOGICAL      :: DFLAG  = .FALSE. ! true: weekday (not full week) nrmlizr 
+        LOGICAL      :: KFLAG  = .FALSE. ! true: kill routine b/c of error 
 
         CHARACTER*16    ERFILDSC    !  desc of file creating an error from sub
         CHARACTER*300   INFILE      !  input file line buffer
@@ -265,7 +266,7 @@ C            contain multiple data records on each line, in any order.
         END DO
 
 C.........  Initialize pollutant-specific values as missing
-        POLVLA = AMISS3  ! array
+        POLVLA = BADVAL3  ! array
 
 C.........  Read emissions from raw file(s) depending on input format...
 
@@ -288,6 +289,8 @@ C.........  IDA format (single file)
 
             END SELECT
 
+            KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
+
             NRAWBP = NRAWOUT 
 
 C.........  EPS format (single file)
@@ -308,6 +311,8 @@ c                CALL RDEPSMV(  )
      &                        ERFILDSC, EFLAG, NDROP, EDROP )
 
             END SELECT
+
+            KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
 
             NRAWBP = NRAWOUT 
 
@@ -369,6 +374,7 @@ C.................  Read file based on format set above
 
                     END SELECT
 
+                    KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
                     CLOSE( TDEV )
 
                 ELSEIF( FILFMT .EQ. EPSFMT ) THEN
@@ -389,6 +395,7 @@ c                        CALL RDEPSMV(  )
 
                     END SELECT
 
+                    KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
                     CLOSE( TDEV )
 
                 ELSEIF( FILFMT .EQ. EMSFMT ) THEN
@@ -441,6 +448,8 @@ C    n: vehicle mix will take place.
      &                                NDROP, EDROP )
  
                     END SELECT
+
+                    KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
 
                     IF( ERRIOS .GT. 0 ) THEN
 
@@ -501,7 +510,7 @@ C.........  Report how many records were dropped and the numbers involved
         END IF          !  if ndrop > 0
 
 C.........  Abort if there was a reading error
-        IF( EFLAG ) THEN
+        IF( KFLAG ) THEN
            MESG = 'Error reading raw inventory file ' // FNAME( 1:FLEN )
            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF

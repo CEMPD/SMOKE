@@ -180,7 +180,7 @@ C.................  EPA 10/8/97 why this is done and haven't gotten a response.
                 DHN = NEUTRL( STKHT, BFLX, WSTK, USTAR )
                 DH  = STABLE( BFLX, WSTK, S )
 
-C.............  NOTE: The Models-3 version of plumer rise recalculates the
+C.............  NOTE- The Models-3 version of plume rise recalculates the
 C.............        momentum plume rise here with the new WSTK.  We have
 C.............        asked EPA on 10/8/97 if this is a bug but have not heard.
 C.............        DHM = 3.0 * STKDM * STKVE / WSTK
@@ -275,7 +275,7 @@ C.......   End calculations if the momentum rise was used in the calculation
 
         IF( IQ .EQ. 4 ) GO TO 199  ! to point past iterative bouyancy loop
 
-C.......   NOTE: LPLM has been initialized at line 145, and may have been
+C.......   NOTE- LPLM has been initialized at line 145, and may have been
 C                reset at line 169
         DO       !  loop computing further plume rise
 
@@ -292,7 +292,7 @@ C                reset at line 169
 
             END IF
 
-C...........   Re-set met data. NOTE: the original RADM code submitted the 
+C...........   Re-set met data. NOTE- the original RADM code submitted the 
 C...........   WSPD and TA to a interpolator, but then requested the a height of
 C...........   interpolation identical to ZH( LPLM ).
 

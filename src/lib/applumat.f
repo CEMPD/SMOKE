@@ -2,7 +2,7 @@
         SUBROUTINE APPLUMAT( NSRC, NMATX, VAL, NU, IU, CU, VALBYSRC )
 
 C***********************************************************************
-C  subroutine APPLUMAT body starts at line < >
+C  subroutine APPLUMAT body starts at line 72
 C
 C  DESCRIPTION:
 C      Applies the "ungridding" matrix to gridded data to compute a per-source
@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C 
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C 
 C See file COPYRIGHT for conditions of use.
@@ -38,6 +38,9 @@ C Last updated: $Date$
 C
 C****************************************************************************
 
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -53,7 +56,9 @@ C...........   SUBROUTINE ARGUMENTS
         REAL        , INTENT(OUT) :: VALBYSRC( NSRC ) ! ungridded data
 
 C...........   Other local variables
-        INTEGER     J, K, S     ! counters and indices
+        INTEGER     C, J, K, S     ! counters and indices
+        INTEGER     COL            ! subgrid column number
+        INTEGER     ROW            ! subgrid row number
 
         REAL        RDUM        ! tmp value for summing over cells
 
@@ -62,7 +67,8 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine APPLUMAT
 
-C.........  Apply ungridding matrix 
+C.........  Apply ungridding matrix from a (possible) subgrid to data on base 
+C           grid.  If no subgrid, then XOFF and YOFF will be 1 and no problem.
         K = 0
         DO S = 1, NSRC
 
@@ -74,7 +80,17 @@ C.........  Apply ungridding matrix
 
             DO J = 1, NU( S )
                 K = K + 1
-                RDUM = RDUM + VAL( IU( K ) ) * CU( K )
+
+C.................  Get column and row from subgrid
+                C = IU( K )
+                ROW = C / NCOLS          ! note: integer math
+                IF( MOD( C, NCOLS ) .GT. 0. ) ROW = ROW + 1
+                COL = C - ( ROW-1 ) * NCOLS
+
+C.................  Compute cell number of base grid
+                C = ( ROW + YOFF - 1 ) * ( NCOLS + XDIFF ) + COL + XOFF
+
+                RDUM = RDUM + VAL( C ) * CU( K )
             END DO
 
             VALBYSRC( S ) = RDUM

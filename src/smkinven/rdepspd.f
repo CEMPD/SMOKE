@@ -161,6 +161,7 @@ C...........   Other local variables
         INTEGER          ZONE             ! tmp source time zone
 
         LOGICAL       :: DAYLIT   = .FALSE.  ! true: date in daylight time
+        LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: dates set by data
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
         LOGICAL       :: LXMPT    = .FALSE.  ! true: record exempt from dl time
@@ -218,9 +219,8 @@ C.............  Set time step divisor
             TDIVIDE = 3600 * OUTSTEP / 10000
             TFAC    = REAL( OUTSTEP ) / REAL( INSTEP * TDIVIDE )
 
-C.............  If SDATE and STIME are now non-zero, save the number of time 
-C               steps
-            IF( SDATE .NE. 0 ) THEN
+C.............  If dates have been set by the data, set number of steps
+            IF( DFLAG ) THEN
                 NSTEPS = 1+ SECSDIFF( SDATE,STIME,EDATE,ETIME )/ TDIVIDE
                 SDATESAV = SDATE
                 STIMESAV = STIME
@@ -616,6 +616,7 @@ C.........  Abort if error found while reading file
         END IF
 
 C.........  Update output starting date/time and ending date/time
+        DFLAG = .TRUE.
         SDATE = RDATE
         STIME = RTIME
         DO I = 1, MINPTR - 1

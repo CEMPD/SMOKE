@@ -28,7 +28,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -97,6 +97,7 @@ C.........  Initialize for start of file
             INPACKET  = .FALSE.
             INGROUP   = .FALSE.
             INREPORT  = .FALSE.
+            INSPCIFY  = .FALSE.
 
             PKTCOUNT  = 0         ! array
             PKTSTATUS = .FALSE.   ! array
@@ -338,6 +339,7 @@ C                       elevated sources
                         INSPCIFY    = .TRUE.
                         LIN_SPCIFY  = .TRUE.
                         SPCF_NOR    = 0
+                        SPCF_NAND   = 0
 
 C.....................  A report packet
                     CASE( RPT_IDX )
@@ -358,16 +360,21 @@ C.........................  Reset report settings to defaults
                         RPT_%BYCELL   = .FALSE.
                         RPT_%BYCNRY   = .FALSE.
                         RPT_%BYDATE   = .FALSE.
+                        RPT_%BYDIU    = .FALSE.
                         RPT_%BYSTAT   = .FALSE.
                         RPT_%BYCNTY   = .FALSE.
                         RPT_%BYELEV   = .FALSE.
                         RPT_%BYHOUR   = .FALSE.
+                        RPT_%BYMON    = .FALSE.
                         RPT_%BYSCC    = .FALSE.
+                        RPT_%BYSPC    = .FALSE.
                         RPT_%BYSRC    = .FALSE.
+                        RPT_%BYSRG    = .FALSE.
                         RPT_%BYCONAM  = .FALSE.
                         RPT_%BYSTNAM  = .FALSE.
                         RPT_%BYCYNAM  = .FALSE.
                         RPT_%BYRCL    = .FALSE.
+                        RPT_%BYWEK    = .FALSE.
                         RPT_%LAYFRAC  = .FALSE.
                         RPT_%NORMCELL = .FALSE.
                         RPT_%SCCNAM   = .FALSE.
@@ -391,6 +398,7 @@ C.........................  Reset report settings to defaults
                         RPT_%OFILENAM = ' '    ! init for consistency
                         RPT_%REGNNAM  = ' '
                         RPT_%SUBGNAM  = ' '
+                        RPT_%SPCPOL   = ' '
                         TITLE         = ' '
 
                     END SELECT
@@ -434,6 +442,7 @@ C.............  Reset all packet-specific settings
             INPACKET   = .FALSE.
             INGROUP    = .FALSE.
             INREPORT   = .FALSE.
+            INSPCIFY   = .FALSE.
 
             GRP_LABEL  = ' '
 
@@ -484,6 +493,7 @@ C.............  Specification processing
 
 C.............  Determine how many conditions appear for this line
             J = NSEGS
+            I = 0
             DO
                 I = I + 1
                 J = J - 4              ! three fields plus AND
@@ -625,6 +635,11 @@ C.............  BY options affecting inputs needed
      &                  SEGMENT( 4 ) .EQ. 'STACKPARM'     ) )
      &                  RPT_%STKPARM = .TRUE.
 
+                CASE( 'SPCCODE' )
+                    PSFLAG = .TRUE.
+                    RPT_%BYSPC = .TRUE.
+                    RPT_%SPCPOL = SEGMENT( 3 )
+
                 CASE( 'SRGCODE' )
                     IF( CATEGORY .NE. 'POINT' ) THEN
                         GSFLAG = .TRUE.
@@ -637,6 +652,18 @@ C.............  BY options affecting inputs needed
                         CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
 
                     END IF
+
+                CASE( 'MONCODE' )
+                    TSFLAG = .TRUE.
+                    RPT_%BYMON = .TRUE.
+
+                CASE( 'WEKCODE' )
+                    TSFLAG = .TRUE.
+                    RPT_%BYWEK = .TRUE.
+
+                CASE( 'DIUCODE' )
+                    TSFLAG = .TRUE.
+                    RPT_%BYDIU = .TRUE.
 
                 CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE

@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -293,7 +293,7 @@ C.........  Keep case statement outside the loops to speed processing
                     STKTK ( S )  = STKTKA ( K )
                     STKVE ( S )  = STKVEA ( K )
                     CSCC  ( S )  = CSCCA  ( K )
-                    CORIS ( S )  = CORISA ( K )
+                    CORIS ( S )  = ADJUSTR( CORISA ( K ) )
                     CBLRID( S )  = CBLRIDA( K )
                     CPDESC( S )  = CPDESCA( K )
 
@@ -351,6 +351,51 @@ C           position in the master array of output pollutants/activities
             J = INDEXA( I )
             S = SRCIDA( I )
 
+C.............  Reset emissions values to zero, if it's negative
+            IF ( POLVLA( J, NEM ) .LT. 0 .AND.
+     &           POLVLA( J, NEM ) .GT. AMISS3 ) THEN
+                POLVLA( J, NEM ) = 0.
+
+                IF ( NWARN .LE. MXWARN .AND.
+     &               IPOSCOD( I ) .NE. PIPCOD ) THEN
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                    MESG = 'WARNING: Negative annual data reset' //
+     &                     'to zero for:' //
+     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
+                END IF
+            END IF
+                
+            IF ( POLVLA( J, NOZ ) .LT. 0 .AND.
+     &           POLVLA( J, NOZ ) .GT. AMISS3 ) THEN
+                POLVLA( J, NOZ ) = 0.
+
+                IF ( NWARN .LE. MXWARN .AND.
+     &               IPOSCOD( I ) .NE. PIPCOD ) THEN
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                    MESG = 'WARNING: Negative seasonal data ' //
+     &                     'reset to zero for:' //
+     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
+                END IF
+            END IF
+
+C.............  Check control efficiency, rule effectiveness, and rule 
+C               penetration and if missing, set to default value
+            IF ( NCE .GT. 0 ) THEN
+                IF( POLVLA( J, NCE ) .LT. 0. ) POLVLA( J, NCE ) = 0.
+            END IF
+
+            IF ( NRE .GT. 0 ) THEN
+                IF( POLVLA( J, NRE ) .LT. 0. ) POLVLA( J, NRE ) = 100
+            END IF
+
+            IF ( NRP .GT. 0 ) THEN
+                IF( POLVLA( J, NRP ) .LT. 0. ) POLVLA( J, NRP ) = 100
+            END IF
+
 C.............  For a new source or a new pollutant code...
             IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
 
@@ -358,13 +403,12 @@ C.................  Sum up the number of pollutants/activities by source,
 C                   but do this here only, because this part of the IF
 C                   statement is for new pollutants
                 NPCNT( S ) = NPCNT( S ) + 1
-
                 K = K + 1
 
                 POLVAL( K, NEM ) = POLVLA( J, NEM )
                 POLVAL( K, NOZ ) = POLVLA( J, NOZ )
-                POLVAL( K, NCE ) = POLVLA( J, NCE )
-                POLVAL( K, NRE ) = POLVLA( J, NRE )
+                IF( NCE .GT. 0 ) POLVAL( K, NCE ) = POLVLA( J, NCE )
+                IF( NRE .GT. 0 ) POLVAL( K, NRE ) = POLVLA( J, NRE )
                 IF( NEF .GT. 0 ) POLVAL( K, NEF ) = POLVLA( J, NEF )
                 IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
 
@@ -414,16 +458,21 @@ C.................  Continue in loop if zero emissions
 
 C.................  Weight the control efficiency, rule effectiveness, and 
 C                   rule penetration based on the emission values
-                POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
+                IF ( NCE .GT. 0 ) 
+     &          POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
      &                              POLVLA( J,NCE )*EMISN  ) * EMISI
-                POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
+                IF ( NRE .GT. 0 ) 
+     &          POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
      &                              POLVLA( J,NRE )*EMISN  ) * EMISI
                 IF( NRP .GT. 0 ) 
      &          POLVAL( K,NRP ) = ( POLVAL( K,NRP )*EMISO + 
      &                              POLVLA( J,NRP )*EMISN  ) * EMISI
-                IF( NEF .GT. 0 ) 
-     &          POLVAL( K,NEF ) = ( POLVAL( K,NEF )*EMISO + 
+                IF( NEF .GT. 0 ) THEN
+                    IF ( POLVAL( K,NEF ) .GT. 0 ) 
+     &              POLVAL( K,NEF ) = ( POLVAL( K,NEF )*EMISO + 
      &                                  POLVLA( J,NEF )*EMISN  ) * EMISI
+                END IF
+
             END IF
 
             LS = S

@@ -2,7 +2,7 @@
          PROGRAM SMKINVEN
 
 C***********************************************************************
-C  program body starts at line 167
+C  program body starts at line 171
 C
 C  DESCRIPTION:
 C    The smkinven program reads the any source inventory in one of four
@@ -93,7 +93,9 @@ C.........  LOCAL VARIABLES and their descriptions:
 
 C.........  Day-specific and hour-specific variable indices
         INTEGER         DEAIDX( MXVARS3 )
+        INTEGER         DSPIDX( MXSPDAT )
         INTEGER         HEAIDX( MXVARS3 )
+        INTEGER         HSPIDX( MXSPDAT )
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
@@ -101,11 +103,13 @@ C           this program
 
 C.........  File units and logical/physical names
 
+        INTEGER    :: CDEV = 0  !  unit no. for SCCs description
         INTEGER    :: DDEV = 0  !  unit no. for day-specific input file 
         INTEGER    :: EDEV = 0  !  unit no. for speeds file
         INTEGER    :: HDEV = 0  !  unit no. for hour-specific input file 
         INTEGER    :: IDEV = 0  !  unit no. for inventory file (various formats)
         INTEGER    :: LDEV = 0  !  unit no. for log file
+        INTEGER    :: ODEV = 0  !  unit number for ORIS description
         INTEGER    :: PDEV = 0  !  unit number for pollutants codes/names file
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
@@ -143,7 +147,9 @@ C...........   Other local variables
         INTEGER         NINVARR    ! no. inventory variables to read
         INTEGER         NRAWBP     ! number of sources x pollutants
         INTEGER      :: NVARDY = 0 ! no. day-specific variables
-        INTEGER      :: NVARHR = 0 ! no. day-specific variables
+        INTEGER      :: NVSPDY = 0 ! no. day-specific special variables
+        INTEGER      :: NVARHR = 0 ! no. hour-specific variables
+        INTEGER      :: NVSPHR = 0 ! no. hour-specific special variables
         INTEGER         OUTSTEP    ! output time step HHMMSS for day/hour data
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
@@ -159,7 +165,6 @@ C...........   Other local variables
 
         CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
 
-        integer bdev
 C***********************************************************************
 C   begin body of program SMKINVEN
 
@@ -177,8 +182,8 @@ C.........  Output time zone
 
 C.........  Get names of input files
         CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
-     &                  EDEV, PDEV, VDEV, ZDEV, ENAME, INAME, 
-     &                  DNAME, HNAME )
+     &                  EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
+     &                  ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
         DFLAG = ( DDEV .NE. 0 )
@@ -363,8 +368,13 @@ C               the results are stored in module MODINFO.
             ELSE
 
                 NSRC    = NROWS3D
-                NINVARR = 1
-                IVARNAMS( 1 ) = 'CSOURC'
+                NINVARR = 6
+                IVARNAMS( 1 ) = 'IFIP'    ! In case CEM input
+                IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
+                IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
+                IVARNAMS( 4 ) = 'CORIS'   ! In case CEM input
+                IVARNAMS( 5 ) = 'CBLRID'  ! In case CEM input
+                IVARNAMS( 6 ) = 'CPDESC'  ! In case CEM input
 
                 CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 
      &                         NINVARR, IVARNAMS )
@@ -385,13 +395,13 @@ C.........  Read in daily emission values and output to a SMOKE file
 C.............  Preprocess day-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
             CALL GETPDINFO( DDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, DNAME, 
-     &                      DSDATE, DSTIME, DNSTEP, NVARDY, MXSRCDY, 
-     &                      DEAIDX )
+     &                      DSDATE, DSTIME, DNSTEP, NVARDY, NVSPDY, 
+     &                      MXSRCDY, DEAIDX, DSPIDX )
 
 C.............  Read and output day-specific data
-            CALL GENPDOUT( DDEV, TZONE, DSDATE, DSTIME, DNSTEP, 
-     &                     INSTEP, OUTSTEP, NVARDY, MXSRCDY, TYPNAM, 
-     &                     DNAME, DEAIDX )
+            CALL GENPDOUT( DDEV, CDEV, ODEV, TZONE, DSDATE, DSTIME, 
+     &                     DNSTEP, INSTEP, OUTSTEP, NVARDY, NVSPDY, 
+     &                     MXSRCDY, TYPNAM, DNAME, DEAIDX, DSPIDX )
 
         END IF
 
@@ -405,13 +415,13 @@ C.........  Read in hourly emission values and output to a SMOKE file
 C.............  Preprocess hour-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
             CALL GETPDINFO( HDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, HNAME, 
-     &                      HSDATE, HSTIME, HNSTEP, NVARHR, MXSRCHR,  
-     &                      HEAIDX )
+     &                      HSDATE, HSTIME, HNSTEP, NVARHR, NVSPHR, 
+     &                      MXSRCHR, HEAIDX, HSPIDX )
 
 C.............  Read and output hour-specific data
-            CALL GENPDOUT( HDEV, TZONE, HSDATE, HSTIME, HNSTEP, 
-     &                     INSTEP, OUTSTEP, NVARHR, MXSRCHR, TYPNAM,  
-     &                     HNAME, HEAIDX )
+            CALL GENPDOUT( HDEV, CDEV, ODEV, TZONE, HSDATE, HSTIME, 
+     &                     HNSTEP, INSTEP, OUTSTEP, NVARHR, NVSPHR,  
+     &                     MXSRCHR, TYPNAM, HNAME, HEAIDX, HSPIDX )
 
         END IF
 

@@ -2,7 +2,7 @@
         SUBROUTINE ALOCCHRT( ICSIZE )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 60
 C
 C  DESCRIPTION:
 C      This subroutine allocates memory for the portion of the grouped 
@@ -15,13 +15,13 @@ C
 C  REVISION  HISTORY:
 C     Created 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -62,6 +62,9 @@ C.........  First deallocate if these have previously been allocated
             DEALLOCATE( CHRT02, CHRT03, CHRT04, CHRT05, CHRT06 )
             DEALLOCATE( CHRT07, CHRT08, CHRT09, CHRT10, CHRT11 )
             DEALLOCATE( CHRT12, CHRT13, CHRT14, CHRT15, CHRT16 )
+            DEALLOCATE( CHRT02A, CHRT02B, CHRT02C )
+            DEALLOCATE( CHRT05A, CHRT05B, CHRT05C )
+            DEALLOCATE( CHRT08A, CHRT08B, CHRT08C )
 
         END IF
 
@@ -124,7 +127,44 @@ C.........  First deallocate if these have previously been allocated
         J = MAX( 1, ICSIZE( 16 ) )                    ! CHAR5=non-blank, SCC=all
         ALLOCATE( CHRT16( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT16', PROGNAME )
-            
+
+C.........  NOTE- Added later            
+        J = MAX( 1, ICSIZE( 17 ) )                     ! SCC=level 1, FIP=0
+        ALLOCATE( CHRT02A( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT02A', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 18 ) )                     ! SCC=level 2, FIP=0
+        ALLOCATE( CHRT02B( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT02B', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 19 ) )                     ! SCC=level 3, FIP=0
+        ALLOCATE( CHRT02C( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT02C', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 20 ) )                     ! SCC=level 1, FIP=state
+        ALLOCATE( CHRT05A( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT05A', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 21 ) )                     ! SCC=level 2, FIP=state
+        ALLOCATE( CHRT05B( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT05B', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 22 ) )                     ! SCC=level 3, FIP=state
+        ALLOCATE( CHRT05C( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT05C', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 23 ) )                     ! SCC=level 1, FIP=all
+        ALLOCATE( CHRT08A( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT08A', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 24 ) )                     ! SCC=level 2, FIP=all
+        ALLOCATE( CHRT08B( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT08B', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 25 ) )                     ! SCC=level 3, FIP=all
+        ALLOCATE( CHRT08C( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT08C', PROGNAME )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************

@@ -349,8 +349,8 @@ C                  example).
 C.................  Try for activity-specific FIPS code match
                 F0 = FINDC( CFIP, TXCNT( 7 ), CHRT07 ) 
 
-                IF( F0 .GT. 0 .AND. IEFS10(F0,V) .GE. ADDPS ) THEN
-                    EREF = IEFS07( F0,V )
+                IF( F0 .GT. 0 .AND. IEFS07(F0,V) .GE. ADDPS ) THEN
+                    EREF = IEFS07( F0,V ) - ADDPS
                     CALL SETSOURCE_EFS
                     CYCLE                       !  to end of sources-loop
                 END IF
@@ -359,7 +359,7 @@ C.................  Try for activity-specific country/state code match
                 F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 ) 
 
                 IF( F0 .GT. 0 .AND. IEFS04(F0,V) .GE. ADDPS ) THEN
-                    EREF = IEFS04( F0,V )
+                    EREF = IEFS04( F0,V ) - ADDPS
                     CALL SETSOURCE_EFS
                     CYCLE                       !  to end of sources-loop
                 END IF
