@@ -221,10 +221,6 @@ C.......   Get file name; open output gridding matrix file
         NROWS3D = NGRID
         NLAYS3D = 1
         NTHIK3D = NPSRC
-        NLAYS3D = 1
-        NTHIK3D = NPSRC
-        VGTYP3D = IMISS3
-        VGTOP3D = BADVAL3
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
         GDNAM3D = GRDNM         !  grid characteristics from DSCGRID() above
