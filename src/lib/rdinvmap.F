@@ -85,7 +85,7 @@ C...........   Other local variables
         LOGICAL       :: RPFLAG = .FALSE. ! true: time to read data lines
 
         CHARACTER(256)     MESG   ! message buffer
-        CHARACTER(1024     LINE   ! line buffer
+        CHARACTER(1024)    LINE   ! line buffer
         CHARACTER(IOVLEN3) PNAME  ! logical file name for data files
         CHARACTER(PHYLEN3) APHYS  ! ASCII physical file name
         CHARACTER(PHYLEN3) EPHYS  ! I/O API physical file name
@@ -109,13 +109,8 @@ C          for files listed in map
         L = LEN_TRIM( APHYS )
         DO N = L, 1, -1
 
-#ifdef DBLBSLASH
-            IF( APHYS( N:N ) .EQ. '/' .OR.
-     &          APHYS( N:N ) .EQ. '\\'      ) THEN
-#else
             IF( APHYS( N:N ) .EQ. '/' .OR.
      &          APHYS( N:N ) .EQ. '\'      ) THEN
-#endif
                 PATH = APHYS( 1:N )
                 EXIT
             END IF

@@ -563,27 +563,15 @@ C.................  If writing a profile ID, use different format (to avoid deci
 C                   and convert to positive number
                 IF( IDFLAG ) THEN
 
-#ifdef DBLBSLASH                
-                    WRITE( MDEV,93020 ) COUNTY, 
-     &                 INT( SPDARRAY( 1,3 ) ), -INT( SPDARRAY( 1,2 ) ), 
-     &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\\'
-#else                
                     WRITE( MDEV,93020 ) COUNTY, 
      &                 INT( SPDARRAY( 1,3 ) ), -INT( SPDARRAY( 1,2 ) ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
-#endif
 
                 ELSE                
 
-#ifdef DBLBSLASH
-                    WRITE( MDEV,93010 ) COUNTY, 
-     &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
-     &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\\'
-#else
                     WRITE( MDEV,93010 ) COUNTY, 
      &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
-#endif
 
                 END IF
                     
@@ -604,7 +592,7 @@ C.............  Write last line (may be only line) for this speed
                     WRITE( MDEV,93020 ) COUNTY,
      &                 INT( SPDARRAY( 1,3 ) ), -INT( SPDARRAY( 1,2 ) ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
-                ELSE          	
+                ELSE
                     WRITE( MDEV,93010 ) COUNTY,
      &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
