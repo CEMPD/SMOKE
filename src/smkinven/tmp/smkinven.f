@@ -2,7 +2,7 @@
          PROGRAM SMKINVEN
 
 C***********************************************************************
-C  program body starts at line 164
+C  program body starts at line 167
 C
 C  DESCRIPTION:
 C    The smkinven program reads the any source inventory in one of four
@@ -40,7 +40,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -346,7 +346,7 @@ C.............  NOTE - Monthly not currently supported
 
 C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
-            CALL OPENINVOUT( ENAME, ANAME, SDEV )
+            CALL OPENINVOUT( MXIDAT, INVDNAM, ENAME, ANAME, SDEV )
 
             MESG = 'Writing SMOKE ' // CATEGORY( 1:CATLEN ) // 
      &             ' SOURCE INVENTORY file...'
@@ -360,7 +360,8 @@ C               ASCII)
 C.............  Deallocate sorted inventory info arrays, except CSOURC
             CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .FALSE., 1, 1, 1 )
 
-C.............  Write out average inventory emission values
+C.............  Write out average inventory data values
+C.............  Compute inventory data values, if needed
             CALL WRINVEMIS( ENAME )
 
 C.............  Deallocate sorted inventory info arrays
@@ -403,12 +404,14 @@ C.........  Read in daily emission values and output to a SMOKE file
 
 C.............  Preprocess day-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
-            CALL GETPDINFO( DDEV, TZONE, TSTEP, TYPNAM, DSDATE, DSTIME, 
-     &                      DNSTEP, NVARDY, MXSRCDY, DEAIDX )
+            CALL GETPDINFO( DDEV, MXIDAT, TZONE, TSTEP, TYPNAM, DNAME, 
+     &                      DSDATE, DSTIME, DNSTEP, NVARDY, MXSRCDY, 
+     &                      DEAIDX, INVDCOD, INVDNAM )
 
 C.............  Read and output day-specific data
-            CALL GENPDOUT( DDEV, TZONE, DSDATE, DSTIME, DNSTEP, TSTEP, 
-     &                     NVARDY, MXSRCDY, TYPNAM, DEAIDX )
+            CALL GENPDOUT( DDEV, MXIDAT, TZONE, DSDATE, DSTIME, DNSTEP, 
+     &                     TSTEP, NVARDY, MXSRCDY, TYPNAM, DNAME, 
+     &                     DEAIDX, INVDCOD, INVDNAM )
 
         END IF
 
@@ -420,12 +423,14 @@ C.........  Read in hourly emission values and output to a SMOKE file
 
 C.............  Preprocess hour-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
-            CALL GETPDINFO( HDEV, TZONE, TSTEP, TYPNAM, HSDATE, HSTIME, 
-     &                      HNSTEP, NVARHR, MXSRCHR, HEAIDX )
+            CALL GETPDINFO( HDEV, MXIDAT, TZONE, TSTEP, TYPNAM, HNAME, 
+     &                      HSDATE, HSTIME, HNSTEP, NVARHR, MXSRCHR,  
+     &                      HEAIDX, INVDCOD, INVDNAM )
 
 C.............  Read and output hour-specific data
-            CALL GENPDOUT( HDEV, TZONE, HSDATE, HSTIME, HNSTEP, TSTEP, 
-     &                     NVARHR, MXSRCHR, TYPNAM, HEAIDX )
+            CALL GENPDOUT( HDEV, MXIDAT, TZONE, HSDATE, HSTIME, HNSTEP, 
+     &                     TSTEP, NVARHR, MXSRCHR, TYPNAM, HNAME,  
+     &                     HEAIDX, INVDCOD, INVDNAM )
 
         END IF
 
