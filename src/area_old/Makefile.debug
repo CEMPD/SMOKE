@@ -2,33 +2,19 @@
 #
 all: opts
 #
-opts: grdamat.debug spcamat.debug ctlamat.debug rawarea.debug \
-      tmparea.debug csgarea.debug
-#
-LDIRS=-L$(em) \
-      -L$(io) \
-      -L$(ncf)
+opts: csgarea.debug ctlamat.debug emsarea.debug grdamat.debug \
+      rawarea.debug spcamat.debug tmparea.debug
 #
 LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
 #
 #
-GRMS=grdamat.F
+CSGS=csgarea.F
 #
-GRMI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
+CSGI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
 #
-grdamat.debug: $(GRMS) $(GRMI)
-	echo GRDAMAT:
-	f77 $(DBGFLAGS) -o grdamat.debug $(GRMS) $(LIBS)
-#
-#
-#
-SPCS=spcamat.F
-#
-SPCI=ARDIMS3.EXT CHDIMS3.EXT
-#
-spcamat.debug:  $(SPCS) $(SPCI)
-	echo SPCAMAT:
-	f77 $(DBGFLAGS) -o spcamat.debug $(SPCS) $(LIBS)
+csgarea.debug : $(CSGS) $(CSGI)
+	echo CSGAREA:
+	f77 $(DBGFLAGS) -o csgarea.debug $(CSGS) $(LIBS)
 #
 #
 #
@@ -42,9 +28,29 @@ ctlamat.debug:  $(CTLS) $(CTLI)
 #
 #
 #
+EMS=emsarea.F
+#
+EMSI=ARDIMS3.EXT CHDIMS3.EXT GRDIMS3.EXT TMDIMS3.EXT
+#
+emsarea.debug:  $(CTLS) $(CTLI)
+	echo EMSAREA:
+	f77 $(DBGFLAGS) -o emsarea.debug $(CTLS) $(LIBS)
+#
+#
+#
+GRMS=grdamat.F
+#
+GRMI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
+#
+grdamat.debug: $(GRMS) $(GRMI)
+	echo GRDAMAT:
+	f77 $(DBGFLAGS) -o grdamat.debug $(GRMS) $(LIBS)
+#
+#
+#
 RAWS=rawarea.F
 #
-RAWI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
+RAWI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT
 #
 rawarea.debug: $(RAWS) $(RAWI)
 	echo RAWAREA:
@@ -52,23 +58,24 @@ rawarea.debug: $(RAWS) $(RAWI)
 #
 #
 #
-TMPS=tmparea.F mktmat.F
+SPCS=spcamat.F
 #
-TMPI=ARDIMS3.EXT CHDIMS3.EXT  TMDIMS3.EXT
+SPCI=ARDIMS3.EXT CHDIMS3.EXT
+#
+spcamat.debug:  $(SPCS) $(SPCI)
+	echo SPCAMAT:
+	f77 $(DBGFLAGS) -o spcamat.debug $(SPCS) $(LIBS)
+#
+#
+#
+TMPS=tmparea.F mktmatsi.F rdascc.F
+#
+TMPI=ARDIMS3.EXT CHDIMS3.EXT TMDIMS3.EXT
 #
 tmparea.debug: $(TMPS) $(TMPI)
 	echo TMPAREA:
 	f77 $(DBGFLAGS) -o tmparea.debug $(TMPS) $(LIBS) 
 #
-#
-#
-CSGS=csgarea.F
-#
-CSGI=ARDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT
-#
-csgarea.debug : $(CSGS) $(CSGI)
-	echo CSGAREA:
-	f77 $(DBGFLAGS) -o csgarea.debug $(CSGS) $(LIBS)
 #
 #
 clean:
