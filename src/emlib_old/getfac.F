@@ -41,6 +41,7 @@ C.........  Program arguments
 
 C.........  Local variables
         INTEGER IDEV, IREC, J1
+        CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -59,9 +60,11 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
+                BUFFER = NAME
                 WRITE( MESG, 94000 ) 
      &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// NAME // ' file.'
+     &               'was exceeded while reading '// 
+     &               BUFFER( 1:TRIMLEN( BUFFER ) )  // ' file.'
                 CALL  M3EXIT( 'GETFACR', 0, 0, MESG, 2 )
 
             ELSE
@@ -122,6 +125,7 @@ C.........  Program arguments
 
 C.........  Local variables
         INTEGER IDEV, IREC, J1, J2
+        CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -140,9 +144,11 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
+                BUFFER = NAME
                 WRITE( MESG, 94000 ) 
      &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// NAME // ' file.'
+     &               'was exceeded while reading '// 
+     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
                 CALL  M3EXIT( 'GETFACRR', 0, 0, MESG, 2 )
 
             ELSE
@@ -204,8 +210,8 @@ C.........  Program arguments
 
 C.........  Local variables
         INTEGER IDEV, IREC, J1
+        CHARACTER*256 BUFFER
         CHARACTER*256 MESG
-
 
 C***********************************************************************
 C   begin body of program GETFACI
@@ -223,9 +229,11 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
+                BUFFER = NAME
                 WRITE( MESG, 94000 ) 
      &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// NAME // ' file.'
+     &               'was exceeded while reading '// 
+     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
                 CALL M3EXIT( 'GETFACI', 0, 0, MESG, 2 )
 
             ELSE
@@ -290,8 +298,8 @@ C.........  Program arguments
 
 C.........  Local variables
         INTEGER IDEV, IREC, J1, J2, J3
+        CHARACTER*256 BUFFER
         CHARACTER*256 MESG
-
 
 C***********************************************************************
 C   begin body of program GETFACICR
@@ -309,9 +317,11 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
+                BUFFER = NAME
                 WRITE( MESG, 94000 ) 
      &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// NAME // ' file.'
+     &               'was exceeded while reading '//
+     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
                 CALL M3EXIT( 'GETFACICR', 0, 0, MESG, 2 )
 
             ELSE
@@ -374,6 +384,7 @@ C.........  Program arguments
 
 C.........  Local variables
         INTEGER IDEV, IREC, J1, J2
+        CHARACTER*256 BUFFER
         CHARACTER*256 MESG
 
 C***********************************************************************
@@ -392,9 +403,11 @@ C.........  Prompt for input file
 
             IF( IREC .GT. NMAX ) THEN
 
+                BUFFER = NAME
                 WRITE( MESG, 94000 ) 
      &               'Maximum dimension =', NMAX,
-     &               'was exceeded while reading '// NAME // ' file.'
+     &               'was exceeded while reading '//
+     &               BUFFER( 1:TRIMLEN( BUFFER ) ) // ' file.'
                 CALL  M3EXIT( 'GETFACIR', 0, 0, MESG, 2 )
 
             ELSE
