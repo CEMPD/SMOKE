@@ -69,6 +69,9 @@
 !           NONHAPVOC or NONHAPTOG calculation
         LOGICAL, ALLOCATABLE :: LNONHAP( : )   ! true: NONHAP is computed
 
+!.........  Per-source array with speed profile ID (-1 indicates use inventory speed)
+        INTEGER, ALLOCATABLE :: SPDPROFID( : )  ! speed profile code number
+
 !.........  Number to add to monthly profile to indicate pollutant-specific
 
         INTEGER, PARAMETER :: ADDPS = 900000 ! multiple of 9
@@ -318,6 +321,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: DPRNA  ( : ) !  diurnal profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: IPSIA( :,: ) !  24 hours code for EFs
         INTEGER, ALLOCATABLE, PUBLIC:: IARPTA( :,: )!  tbl num, row, & count
+        INTEGER, ALLOCATABLE, PUBLIC:: ISPDCDA( : ) !  speed profile codes
 
         CHARACTER(LEN=SPNLEN3), ALLOCATABLE, PUBLIC:: CSPRNA( : ) ! spec prof #
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCTA( : ) ! SCC
