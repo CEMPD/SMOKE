@@ -691,16 +691,17 @@ C.........  Get master activities list
 
         END IF
 
-
-
-C.........  If reporting state and/or county emissions, get gridding surrogates
-C           file.
-        IF( LREPANY ) THEN
-            CDEV = PROMPTFFILE( 
+C.........  Get country, state, and county names no matter what, because it is
+C           needed to allocate memory for the state and county totals, even
+C           when they aren't going to be output
+        CDEV = PROMPTFFILE( 
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
 
-C.............  If processing for biogenic sources
+C.........  If reporting state and/or county emissions, and processing for
+C           biogenic sources, get gridding surrogates
+        IF( LREPANY ) THEN
+
             IF( BFLAG ) THEN
                 GDEV = PROMPTFFILE( 
      &             'Enter logical name for SURROGATE COEFFICIENTS file',
