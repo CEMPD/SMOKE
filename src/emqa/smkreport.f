@@ -5,8 +5,13 @@ C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C    The SMKREPORT routine will 
-c note: insert here
+C    The SMKREPORT routine create emissions and activity reports for one 
+C    major source category at a time (area, mobile, or point). It permits
+C    the user to control the columns and rows in the report through a series
+C    of instructions.  These reports allow users to quality assure emissions
+C    inventories by comparison and analysis of reports from different stages
+C    of SMOKE processing. The outputs can be read into the Java Analysis and
+C    Report Tool (JART).
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -81,6 +86,7 @@ C...........   Speciation matrices
 C...........   File units and logical/physical names
         INTEGER         CDEV    !  reports configuration file
         INTEGER         EDEV    !  elevated source ID file
+        INTEGER         GDEV    !  gridding supplemental file
         INTEGER         LDEV    !  log-device
         INTEGER         NDEV    !  SCC descriptions
         INTEGER         ODEV    !  output file unit number
@@ -136,7 +142,7 @@ C           values for use in memory allocation.
 
 C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, GNAME, LNAME, SLNAME, SSNAME, 
-     &                  TNAME, SDEV, EDEV, YDEV, NDEV )
+     &                  TNAME, GDEV, SDEV, EDEV, YDEV, NDEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -166,7 +172,7 @@ C           so that arrays can be passed through subroutines).
         CALL CHECKMEM( IOS, 'SSMAT', PROGNAME )
 
 C.........  Read one-time input file data
-        CALL RDREPIN( GDIM, NSLIN, NSSIN, SDEV, EDEV, YDEV, NDEV, 
+        CALL RDREPIN( GDIM, NSLIN, NSSIN, GDEV, SDEV, EDEV, YDEV, NDEV, 
      &                ENAME, GNAME, LNAME, SLNAME, SSNAME, 
      &                GMAT( 1 ), GMAT( NGRID+1 ),
      &                GMAT( NGRID+NMATX+1 ), SSMAT, SLMAT )
@@ -276,8 +282,10 @@ C                   of time steps so that the reporting ends on the previous day
 
 C.................  If reporting time is before data ending time, reset the 
 C                   number of time steps so that the reporting ends on the 
-C.                  reporting hour
-                ELSE IF( I .LT. 0 ) THEN
+C                   reporting hour
+C.................  Also set reporting time steps for reporting time matches
+C                   ending time.
+                ELSE IF( I .LE. 0 ) THEN
                     RPTNSTEP = NSTEPS + I / 3600
 
                 END IF

@@ -1,6 +1,6 @@
 
-        SUBROUTINE RDREPIN( GDIM, NSLIN, NSSIN, SDEV, EDEV, YDEV, NDEV, 
-     &                      ENAME, GNAME, LNAME, SLNAME, SSNAME, 
+        SUBROUTINE RDREPIN( GDIM, NSLIN, NSSIN, GDEV, SDEV, EDEV, YDEV, 
+     &                      NDEV, ENAME, GNAME, LNAME, SLNAME, SSNAME, 
      &                      NX, IX, CX, SSMAT, SLMAT )
 
 C***********************************************************************
@@ -68,10 +68,15 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
+C...........  EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER    GETFLINE
+        EXTERNAL   GETFLINE
+
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: GDIM   ! no. mass spec input vars
         INTEGER     , INTENT (IN) :: NSLIN  ! no. mass spec input vars
         INTEGER     , INTENT (IN) :: NSSIN  ! no. mass spec input vars
+        INTEGER     , INTENT (IN) :: GDEV   ! unit no.: gridding supplemental
         INTEGER     , INTENT (IN) :: SDEV   ! unit no.: ASCII inven file
         INTEGER     , INTENT (IN) :: EDEV   ! unit no.: elevated ID file (PELV)
         INTEGER     , INTENT (IN) :: YDEV   ! unit no.: cy/st/co file
@@ -87,6 +92,9 @@ C...........   SUBROUTINE ARGUMENTS
         REAL        , INTENT(OUT) :: SLMAT( NSRC, NSLIN ) ! mole spec coefs
         REAL        , INTENT(OUT) :: SSMAT( NSRC, NSSIN ) ! mass spec coefs
  
+C.........  Local allocatable arrays
+        REAL, ALLOCATABLE :: LFRAC1L( : )  ! 1st-layer fraction
+
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
         CHARACTER(LEN=IOVLEN3) IVARNAMS( MXINVARR )
@@ -95,11 +103,15 @@ C...........   Local variables that depend on module variables
         INTEGER    SWIDTH( NCHARS )
 
 C...........   Other local variables
-        INTEGER          I, J, K, L, L1, L2, V, S, T ! counters and indices
+        INTEGER          I, J, K, L, L1, L2, N, V, S, T ! counters and indices
 
+        INTEGER          IOS                ! i/o status
+        INTEGER          IREC               ! tmp record number
         INTEGER       :: JDATE = 0          ! Julian date
         INTEGER       :: JTIME = 0          ! time (HHMMSS)
-        INTEGER       :: NINVARR = 0        !  no. actual inventory inputs
+        INTEGER       :: NINVARR = 0        ! no. actual inventory inputs
+        INTEGER       :: SRGID1             ! tmp primary surrogate IDs
+        INTEGER       :: SRGID2             ! tmp fallback surrogate IDs
 
         LOGICAL       :: LRDREGN = .FALSE.  !  true: read region code
         LOGICAL       :: EFLAG   = .FALSE.  !  true: error found
@@ -183,6 +195,38 @@ C.........  Initialize all to 1 for point sources
 
         END IF
 
+C.........  If needed, read in gridding supplementation matrix
+        IF( GSFLAG ) THEN
+
+            ALLOCATE( SRGID( NSRC,2 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRGID', PROGNAME )
+            SRGID = -9
+
+            MESG = 'Supplemental gridding file'
+            N = GETFLINE( GDEV, MESG )
+
+            IREC = 0
+            DO I = 1, N
+
+                READ( GDEV, *, END=999, IOSTAT=IOS ) S, SRGID1, SRGID2
+                IREC = IREC + 1
+
+                IF ( IOS .NE. 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 
+     &                'I/O error', IOS, 
+     &                'reading supplemental gridding file at line', IREC
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
+
+                SRGID( S,1 ) = SRGID1
+                SRGID( S,2 ) = SRGID2
+                
+            END DO            
+
+        END IF
+
 C.........  If needed, read in speciation matrices
 C.........  NOTE that only the variables that are needed are read in 
         IF( SLFLAG .OR. SSFLAG ) THEN
@@ -240,12 +284,30 @@ C.........  If needed, read in layer fractions file to identify elevated
 C           sources
         IF( LFLAG ) THEN
 
+            ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
+            ALLOCATE( LFRAC1L( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LFRAC1L', PROGNAME )
+
+            LMAJOR = .FALSE.   ! array
+
             JDATE = SDATE
             JTIME = STIME
             DO T = 1, NSTEPS
 
-c note: add this later. May need a new array in the MODELEV module?  Maybe can
-C    n: use LMAJOR
+                IF( READ3( LNAME, 'LFRAC', 1,
+     &                     JDATE, JTIME, LFRAC1L ) ) THEN
+                    DO S = 1, NSRC
+                        IF( LFRAC1L( S ) .LT. 1. ) LMAJOR( S ) = .TRUE.
+                    END DO
+
+                ELSE  !  Read failed
+                    MESG = 'Could not read "LFRAC" from '// LNAME
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                END IF
+
+                CALL NEXTIME( JDATE, JTIME, TSTEP )
 
             END DO
 
@@ -310,13 +372,16 @@ C.............  Reset start and end fields based on new widths
 
         END IF
 
+C.........  Deallocate local memory
+        IF( ALLOCATED( LFRAC1L ) ) DEALLOCATE( LFRAC1L )
+
         RETURN
 
+999     MESG = 'Unexpected end of file reached while reading ' //
+     &         'supplementary gridding file.'
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+
 C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Formatted file I/O formats............ 93xxx
-
-93000   FORMAT( A )
 
 C...........   Internal buffering formats............ 94xxx
 

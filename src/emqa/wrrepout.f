@@ -270,6 +270,26 @@ C.............  Include SCC code in string
                 LX = 0
             END IF
 
+C.............  Include primary surrogate code
+            IF( RPT_%SRGRES .EQ. 1 ) THEN
+                BUFFER = ' '
+                WRITE( BUFFER, SRG1FMT ) BINSRGID1( I )  ! Integer
+                STRING = STRING( 1:LE ) // BUFFER
+                MXLE = MXLE + SRG1WIDTH + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
+C.............  Include fallback surrogate code
+            IF( RPT_%SRGRES .GE. 1 ) THEN
+                BUFFER = ' '
+                WRITE( BUFFER, SRG2FMT ) BINSRGID2( I )  ! Integer
+                STRING = STRING( 1:LE ) // BUFFER
+                MXLE = MXLE + SRG2WIDTH + LX
+                LE = MIN( MXLE, STRLEN )
+                LX = 0
+            END IF
+
 C.............  Include road class code
             IF( RPT_%BYRCL ) THEN
 

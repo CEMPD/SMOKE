@@ -91,14 +91,16 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRSTAT = 8
         INTEGER, PARAMETER :: IHDRCNTY = 9
         INTEGER, PARAMETER :: IHDRSCC  = 10
-        INTEGER, PARAMETER :: IHDRHT   = 11
-        INTEGER, PARAMETER :: IHDRDM   = 12
-        INTEGER, PARAMETER :: IHDRTK   = 13
-        INTEGER, PARAMETER :: IHDRVE   = 14
-        INTEGER, PARAMETER :: IHDRELEV = 15
-        INTEGER, PARAMETER :: IHDRPNAM = 16
-        INTEGER, PARAMETER :: IHDRSNAM = 17
-        INTEGER, PARAMETER :: NHEADER  = 17
+        INTEGER, PARAMETER :: IHDRSRG1 = 11
+        INTEGER, PARAMETER :: IHDRSRG2 = 12
+        INTEGER, PARAMETER :: IHDRHT   = 13
+        INTEGER, PARAMETER :: IHDRDM   = 14
+        INTEGER, PARAMETER :: IHDRTK   = 15
+        INTEGER, PARAMETER :: IHDRVE   = 16
+        INTEGER, PARAMETER :: IHDRELEV = 17
+        INTEGER, PARAMETER :: IHDRPNAM = 18
+        INTEGER, PARAMETER :: IHDRSNAM = 19
+        INTEGER, PARAMETER :: NHEADER  = 19
 
         CHARACTER*12, PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -113,6 +115,8 @@ C...........   Local parameters
      &                              'State          ',
      &                              'County         ',
      &                              'SCC            ',
+     &                              'Primary Srg    ',
+     &                              'Fallbk Srg     ',
      &                              'Stk Ht         ',
      &                              'Stk Dm         ',
      &                              'Stk Tmp        ',
@@ -152,6 +156,7 @@ C...........   Other local variables
         LOGICAL  :: DATFLOAT              ! true: use float output format
         LOGICAL  :: STATMISS              ! true: >=1 missing state name
         LOGICAL  :: SCCMISS               ! true: >=1 missing SCC name
+        LOGICAL  :: O3STAT                ! true: write O3-season header
 
         CHARACTER*50   :: BUFFER          ! write buffer
         CHARACTER*50   :: LINFMT          ! header line of '-'
@@ -449,6 +454,30 @@ C.........  SCC column
             SCCWIDTH = J + LV
         END IF
 
+C.........  Primary surrogates column
+        IF( RPT_%SRGRES .EQ. 1 ) THEN
+            J = LEN_TRIM( HEADERS( IHDRSRG1 ) )
+            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSRGID1 )
+            W1  = MAX( W1, J )
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRSRG1), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( SRG1FMT, 94650 ) W1, RPT_%DELIM 
+            SRG1WIDTH = W1 + LV
+        END IF
+
+C.........  Fallback surrogates column
+        IF( RPT_%SRGRES .GE. 1 ) THEN
+            J = LEN_TRIM( HEADERS( IHDRSRG2 ) )
+            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSRGID2 )
+            W1  = MAX( W1, J )
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRSRG2), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( SRG2FMT, 94650 ) W1, RPT_%DELIM 
+            SRG2WIDTH = W1 + LV
+        END IF
+
 C.........  Road class.  By roadclass can only be true if by source is not
 C           being used.
         IF( RPT_%BYRCL ) THEN
@@ -692,12 +721,21 @@ C............................................................................
 
 C.........  User Titles  ....................................................
 
+C.........  Loop through user-defined titles for current report, and write
+C           to the report verbatim.
+        DO I = 1, RPT_%NUMTITLE
+
+            L2 = LEN_TRIM( TITLES( I,RCNT ) )
+            WRITE( FDEV,93000 ) TITLES( I,RCNT )( 1:L2 )
+
+        END DO
+
 C.........  Automatic Titles  ...............................................
 
 C.........  Source category processed
         L = LEN_TRIM( CATDESC )
         WRITE( FDEV,93000 ) 'Processed as ' // CATDESC( 1:L ) // 
-    &                       ' sources'
+     &                      ' sources'
 
 C.........  The year of the inventory
         WRITE( MESG,94010 ) 'Base inventory year', BYEAR
@@ -748,9 +786,25 @@ C.........  For hourly data, the time period processed
      &             DAYS( K2 )( 1:L2 ) // ' '// MMDDYY( EDATE ) //
      &             ' at', ETIME
 
+C.............  Compare ozone-season setting in configuration file with what
+C               is actually available in the hourly emissions file.  Give
+C               messages and titles accordingly.
+            O3STAT = .FALSE.
+            IF( INVPIDX .EQ. 1 ) O3STAT = .TRUE.
+
         ELSE
             WRITE( FDEV,93000 ) 'No temporal factors applied'
 
+            O3STAT = .FALSE.
+            IF( RPT_%O3SEASON ) O3STAT = .TRUE.
+
+        END IF
+
+C.........  Write ozone-season status
+        IF( O3STAT ) THEN
+            WRITE( FDEV,93000 ) 'Ozone-season emissions basis in report'
+        ELSE
+            WRITE( FDEV,93000 ) 'Annual total emissions basis in report'
         END IF
 
 C.........  The name of the group used to select the data
@@ -833,6 +887,8 @@ C...........   Internal buffering formats............ 94xxx
      &          '1X,F', I2.2, '.2,"', A, '")' )
 
 94645   FORMAT( '(I', I1, ',"', A, '")' )
+
+94650   FORMAT( '(I', I3.3, ',"', A, '")' )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
  

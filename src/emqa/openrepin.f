@@ -1,6 +1,7 @@
 
         SUBROUTINE OPENREPIN( ENAME, ANAME, GNAME, LNAME, SLNAME, 
-     &                        SSNAME, TNAME, SDEV, EDEV, YDEV, NDEV )
+     &                        SSNAME, TNAME, GDEV, SDEV, EDEV, 
+     &                        YDEV, NDEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -44,6 +45,9 @@ C.........  MODULES for public variables
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT
 
+C.........  This module contains the temporal profile tables
+        USE MODTMPRL
+
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
@@ -79,6 +83,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: SLNAME ! speciation matrix name
         CHARACTER(*), INTENT(OUT) :: SSNAME ! speciation matrix name
         CHARACTER(*), INTENT(OUT) :: TNAME  ! hourly emissions file
+        INTEGER     , INTENT(OUT) :: GDEV   ! gridding supplemental file
         INTEGER     , INTENT(OUT) :: SDEV   ! unit no.: ASCII inven file
         INTEGER     , INTENT(OUT) :: EDEV   ! unit no.: elevated ID file (PELV)
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
@@ -87,9 +92,12 @@ C...........   SUBROUTINE ARGUMENTS
 C.........  Temporary array for speciation variable names
         CHARACTER(LEN=IODLEN3) SLVNAMS( MXVARS3 )
 
+C.........  Local units and logical file names
+        INTEGER      :: TDEV = 0     ! unit no. emission processes file
+
 C.........  Other local variables
 
-        INTEGER         I, J, L, N, V       ! counters and indices
+        INTEGER         I, J, L, L1, L2, N, V       ! counters and indices
 
         INTEGER         IOS           ! tmp I/O status
 
@@ -163,19 +171,27 @@ C.............  Set parameters and pollutants from hourly file
             CALL CHKSRCNO( CATDESC, TNAME, NROWS3D, NSRC, EFLAG )
             CALL UPDATE_TIME_INFO( TNAME )
 
-C.............  Reset list of data values based on hourly data header
-            DEALLOCATE( EANAM, EAUNIT, EADESC ) 
-            NIPPA = NVARS3D
-            ALLOCATE( EANAM( NIPPA ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
-            ALLOCATE( EAUNIT( NIPPA ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EAUNIT', PROGNAME )
-            ALLOCATE( EADESC( NIPPA ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EADESC', PROGNAME )
+C.............  Determine ozone-season emissions status from hourly file
+            INVPIDX = GETIFDSC( FDESC3D, '/OZONE SEASON/', .FALSE. )
+            IF( INVPIDX .EQ. 1 ) THEN
+                MESG = 'NOTE: Ozone-season emissions in hourly ' //
+     &                 'emissions file'
+                CALL M3MSG2( MESG )
+            END IF
 
-            EANAM  = VNAME3D( 1:NIPPA )  ! array
-            EAUNIT = UNITS3D( 1:NIPPA )  ! array
-            EADESC = VDESC3D( 1:NIPPA )  ! array
+C.............  Store variable number, names, and units from the hourly 
+C               emissions file
+            NTPDAT = NVARS3D
+            ALLOCATE( TPNAME( NTPDAT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TPNAME', PROGNAME )
+            ALLOCATE( TPUNIT( NTPDAT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TPUNIT', PROGNAME )
+            ALLOCATE( TPDESC( NTPDAT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TPDESC', PROGNAME )
+
+            TPNAME = VNAME3D( 1:NTPDAT )  ! array
+            TPUNIT = UNITS3D( 1:NTPDAT )  ! array
+            TPDESC = VDESC3D( 1:NTPDAT )  ! array
 
 C.............  Determine the year and projection status of the hourly
 c           CALL CHECK_INVYEAR( TNAME, PRJFLAG, FDESC3D )
@@ -195,6 +211,15 @@ C.........  Open gridding matrix and compare number of sources
             NROWS = GETIFDSC( FDESC3D, '/NROWS3D/', .TRUE. )
             NGRID = NCOLS * NROWS
             NMATX = NCOLS3D
+
+        END IF
+
+        IF( GSFLAG ) THEN
+    
+            MESG = 'Enter logical name for the GRIDDING SUPPLEMENTAL '//
+     &             'file'
+            GDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
+     &                          CRL//'GSUP', PROGNAME )
 
         END IF
 

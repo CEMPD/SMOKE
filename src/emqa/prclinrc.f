@@ -260,12 +260,30 @@ C.....................  A ozone season data usage packet
                     CASE( O3S_IDX )
 
 C.........................  Ensure ozone season setting made
-                        IF( J+1 .LE. L2 ) THEN
+                        IF( L2. LE. J+1 ) THEN
                             CALL NO_SETTING_FOUND( IREC, PKT_IDX )
+
                         ELSE                            
                             O3SYN = ADJUSTL( LINE( J+1:L2 ) )
                             CALL UPCASE( O3SYN )
-                            IF( O3SYN .EQ. 'Y' ) RPT_%O3SEASON = .TRUE.
+                            IF( O3SYN .EQ. 'Y' ) THEN
+                                RPT_%O3SEASON = .TRUE.
+
+                            ELSE IF( O3SYN .EQ. 'N' ) THEN
+                                RPT_%O3SEASON = .FALSE.
+
+                            ELSE
+                                L = LEN_TRIM( O3SYN )
+                                WRITE( MESG,94010 ) 
+     &                            'WARNING: Unrecognized /O3SEASON/ ' //
+     &                            'settting "' // O3SYN( 1:L ) // 
+     &                            '" at line', IREC, '. Setting to ' //
+     &                            'default of FALSE.'  
+                                CALL M3MSG2( MESG )
+                                RPT_%O3SEASON = .FALSE.
+
+                            END IF
+
                         END IF
 
                         PKTEND   = IREC
@@ -331,6 +349,7 @@ C.........................  Reset report settings to defaults
                         INREPORT      = .TRUE.
                         RPT_%BYCELL   = .FALSE.
                         RPT_%BYCNRY   = .FALSE.
+                        RPT_%BYDATE   = .FALSE.
                         RPT_%BYSTAT   = .FALSE.
                         RPT_%BYCNTY   = .FALSE.
                         RPT_%BYELEV   = .FALSE.
@@ -547,6 +566,19 @@ C.............  BY options affecting inputs needed
      &                ( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
      &                  SEGMENT( 4 ) .EQ. 'STACKPARM'     ) )
      &                  RPT_%STKPARM = .TRUE.
+
+                CASE( 'SRGCODE' )
+                    IF( CATEGORY .NE. 'POINT' ) THEN
+                        GSFLAG = .TRUE.
+                        RPT_%BYSRG = .TRUE.
+                        RPT_%SRGRES = 1
+
+                        IF( SEGMENT(3) .EQ. 'FALLBACK' ) RPT_%SRGRES = 2
+
+                    ELSE
+                        CALL WRONG_SOURCE_CATEGORY( SEGMENT( 2 ) )
+
+                    END IF
 
                 CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE

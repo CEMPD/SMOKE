@@ -77,7 +77,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT    ! current report number
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: BUFLEN = 45 + SCCLEN3
+        INTEGER, PARAMETER :: BUFLEN = 61 + SCCLEN3
 
 C...........   Sorting arrays
         INTEGER              , ALLOCATABLE :: SORTIDX( : )
@@ -94,6 +94,8 @@ C...........   Local variables
         INTEGER         RCL               ! tmp road class code
         INTEGER         ROW               ! tmp row number
         INTEGER         SRCID             ! tmp source ID
+        INTEGER         SRGID1            ! tmp primary surrogate ID
+        INTEGER         SRGID2            ! tmp fallback surrogate ID
 
         CHARACTER*1            ESTAT      ! tmp elevated status
         CHARACTER*60           FMTBUF     ! format buffer
@@ -109,20 +111,9 @@ C***********************************************************************
 C   begin body of subroutine ASGNBINS
 
 C.........  Set report-specific local settings
-        NDATA        = ALLRPT( RCNT )%NUMDATA
-        RPT_%BYCELL  = ALLRPT( RCNT )%BYCELL
-        RPT_%BYSRC   = ALLRPT( RCNT )%BYSRC
-        RPT_%BYCNTY  = ALLRPT( RCNT )%BYCNTY
-        RPT_%BYSTAT  = ALLRPT( RCNT )%BYSTAT
-        RPT_%BYCNRY  = ALLRPT( RCNT )%BYCNRY
-        RPT_%BYSCC   = ALLRPT( RCNT )%BYSCC
-        RPT_%BYRCL   = ALLRPT( RCNT )%BYRCL
-        RPT_%BYCYNAM = ALLRPT( RCNT )%BYCYNAM
-        RPT_%BYSTNAM = ALLRPT( RCNT )%BYSTNAM
-        RPT_%BYCONAM = ALLRPT( RCNT )%BYCONAM
-        RPT_%BYELEV  = ALLRPT( RCNT )%BYELEV
-        RPT_%SCCNAM  = ALLRPT( RCNT )%SCCNAM
-        LREGION      = ( RPT_%BYCNTY .OR. RPT_%BYSTAT .OR. RPT_%BYCNRY )
+        NDATA   = ALLRPT( RCNT )%NUMDATA
+        RPT_    = ALLRPT( RCNT )
+        LREGION = ( RPT_%BYCNTY .OR. RPT_%BYSTAT .OR. RPT_%BYCNRY )
 
 C.........  Allocate (and deallocate) memory for sorting arrays
         IF( ALLOCATED( SORTIDX ) ) DEALLOCATE( SORTIDX, SORTBUF )
@@ -134,17 +125,19 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF, '(A,I2.2,A)' ) '(4I8, A', SCCLEN3, ',I8,A)'
+        WRITE( FMTBUF, '(A,I2.2,A)' ) '(4I8, A', SCCLEN3, ',3I8,A)'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
-        COL   = 0
-        ROW   = 0
-        SRCID = 0
-        FIP   = 0
-        RCL   = 0
-        SCC   = ' '
-        ESTAT = ' '
+        COL    = 0
+        ROW    = 0
+        SRCID  = 0
+        FIP    = 0
+        RCL    = 0
+        SRGID1 = 0
+        SRGID2 = 0
+        SCC    = ' '
+        ESTAT  = ' '
 
 C.........  Create a sorting array for all output records
         DO I = 1, NOUTREC
@@ -198,6 +191,16 @@ C.................  If BY ROADCLASS, insert roadclass code
 
                 END IF  ! End by source or by roadclass
 
+C.................  If by surrogates IDs, insert them depending on resolution
+                IF( RPT_%BYSRG ) THEN
+
+                    SRGID2 = SRGID( OUTSRC( I ), 2 )
+                    IF( RPT_%SRGRES .EQ. 1 ) THEN
+                        SRGID1 = SRGID( OUTSRC( I ), 1 )
+                    END IF
+
+                END IF  ! End by surrogate IDs
+
 C.................  If BY ELEVSTAT, insert elevated status code
                 IF( RPT_%BYELEV ) THEN
 
@@ -214,7 +217,8 @@ C.................  If BY ELEVSTAT, insert elevated status code
             END IF      ! End by source or not
 
 C.............  Store sorting information for current record
-            WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, RCL, ESTAT
+            WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, 
+     &                             SRGID1, SRGID2, RCL, ESTAT
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
@@ -248,6 +252,8 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINREGN   ) ) DEALLOCATE( BINREGN )
         IF( ALLOCATED( BINSMKID  ) ) DEALLOCATE( BINSMKID )
         IF( ALLOCATED( BINSCC    ) ) DEALLOCATE( BINSCC )
+        IF( ALLOCATED( BINSRGID1 ) ) DEALLOCATE( BINSRGID1 )
+        IF( ALLOCATED( BINSRGID2 ) ) DEALLOCATE( BINSRGID2 )
         IF( ALLOCATED( BINSNMIDX ) ) DEALLOCATE( BINSNMIDX )
         IF( ALLOCATED( BINRCL    ) ) DEALLOCATE( BINRCL )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
@@ -263,6 +269,10 @@ C.........  Allocate memory for bins
         IF( RPT_%BYSRC   ) ALLOCATE( BINSMKID ( NOUTBINS ), STAT=IOS )
         IF( RPT_%BYSCC   ) ALLOCATE( BINSCC   ( NOUTBINS ), STAT=IOS )
         IF( RPT_%SCCNAM  ) ALLOCATE( BINSNMIDX( NOUTBINS ), STAT=IOS )
+        IF( RPT_%SRGRES .EQ. 1 ) 
+     &                     ALLOCATE( BINSRGID1( NOUTBINS ), STAT=IOS )
+        IF( RPT_%SRGRES .GE. 1 ) 
+     &                     ALLOCATE( BINSRGID2( NOUTBINS ), STAT=IOS )
         IF( RPT_%BYRCL   ) ALLOCATE( BINRCL   ( NOUTBINS ), STAT=IOS )
         IF( RPT_%BYCELL  ) ALLOCATE( BINX     ( NOUTBINS ), STAT=IOS )
         IF( RPT_%BYCELL  ) ALLOCATE( BINY     ( NOUTBINS ), STAT=IOS )
@@ -284,7 +294,8 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( B .NE. LB ) THEN
 
                 READ( BUFFER,FMTBUF ) 
-     &                COL, ROW, SRCID, FIP, SCC, RCL, ESTAT
+     &                COL, ROW, SRCID, FIP, SCC, SRGID1, SRGID2, 
+     &                RCL, ESTAT
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -323,6 +334,10 @@ C.................  Store SCC name index
                     K = FINDC( SCC, NINVSCC, INVSCC )
                     BINSNMIDX( B ) = K
                 END IF
+
+C.................  Store surrogate codes
+                IF( RPT_%SRGRES .EQ. 1 ) BINSRGID1( B ) = SRGID1
+                IF( RPT_%SRGRES .GE. 1 ) BINSRGID2( B ) = SRGID2
 
 C.................  Store x-cell and y-cell
                 IF( RPT_%BYCELL ) BINX( B ) = COL

@@ -48,6 +48,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN
 
+C.........  This module contains the temporal profile tables
+        USE MODTMPRL
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -63,12 +66,15 @@ C...........   EXTERNAL FUNCTIONS
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: RCNT    ! report number
 
+C...........   Local allocatable variables
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: LOCUNIT( : )
+
 C...........   Other local variables
         INTEGER         E, J, V   ! counters and indices
 
         INTEGER         IOS               ! i/o status
         INTEGER         NDATA             ! number of data columns
-        INTEGER         NV                ! number data or spc variables
+        INTEGER         NV                ! tmp no. variables
 
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL      :: SFLAG    = .FALSE. ! true: speciation applies to rpt
@@ -76,21 +82,29 @@ C...........   Other local variables
         CHARACTER(LEN=IOULEN3) TMPUNIT     !  tmp units buffer
         CHARACTER*300          MESG        !  message buffer
 
-        CHARACTER*16 :: PROGNAME = 'RDREPIN' ! program name
+        CHARACTER*16 :: PROGNAME = 'REPUNITS' ! program name
 
 C***********************************************************************
-C   begin body of subroutine RDREPIN
+C   begin body of subroutine REPUNITS
 
 C.........  Report-specific local settings
         NDATA = ALLRPT( RCNT )%NUMDATA
+        RPT_  = ALLRPT( RCNT )
 
         SFLAG = ( ALLRPT( RCNT )%USESLMAT .OR. 
      &            ALLRPT( RCNT )%USESSMAT      )
 
-C.........  Set variable loop maxmimum based on speciation status
-        NV = NIPPA
-        IF( SFLAG ) NV = NSVARS
+C.........  Set starting units for current report
+        NV = NIPPA + NTPDAT
+        ALLOCATE( LOCUNIT( NV ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCUNIT', PROGNAME )
+        LOCUNIT = ' '   ! array
+        LOCUNIT( 1:NIPPA ) = EAUNIT( 1:NIPPA )   ! array
 
+        IF( RPT_%USEHOUR ) THEN
+            LOCUNIT( NIPPA+1:NV ) = TPUNIT( 1:NTPDAT )  ! array
+        END IF
+        
 C.........  Set up input units and unit conversion factors...
 
 C.........  Allocate memory for needed arrays
@@ -116,11 +130,13 @@ C               this report
 
 C.................  If using mole-speciation matrix
                 IF( ALLRPT( RCNT )%USESLMAT ) THEN
-                    TMPUNIT = MULTUNIT( SLUNIT( V ), EAUNIT( E ) )
+                    CALL UNITMATCH( SLUNIT( V ) )
+                    TMPUNIT = MULTUNIT( SLUNIT( V ), LOCUNIT( E ) )
 
 C.................  If using mass-speciation matrix
                 ELSE IF( ALLRPT( RCNT )%USESSMAT ) THEN
-                    TMPUNIT = MULTUNIT( SSUNIT( V ), EAUNIT( E ) )
+                    CALL UNITMATCH( SSUNIT( V ) )
+                    TMPUNIT = MULTUNIT( SSUNIT( V ), LOCUNIT( E ) )
 
                 END IF
 
@@ -141,13 +157,13 @@ C.................  Set units and conversion factors for appropriate columns
         END DO
 
 C.........  Now loop through pol/act/e-type and update units arrays
-        DO E = 1, NIPPA
+        DO E = 1, NV
 
 C.............  If current variable is a pol/act/e-type and is used for this
 C               report
             IF( TODOUT( E,RCNT )%AGG .GT. 0 ) THEN
 
-                TMPUNIT = EAUNIT( E )
+                TMPUNIT = LOCUNIT( E )
 
 C.................  Set units and conversion factors for appropriate columns
                 CALL UPDATE_OUTUNIT( NDATA, TODOUT( E,RCNT )%ETP,
@@ -157,7 +173,10 @@ C.................  Set units and conversion factors for appropriate columns
 
             END IF
 
-        END DO      ! Done loop for setting input units 
+        END DO      ! Done loop for setting input units
+
+C.........  Deallocate local memory
+        DEALLOCATE( LOCUNIT ) 
                     
         RETURN
 
