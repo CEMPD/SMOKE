@@ -193,6 +193,7 @@ C...........   Other local variables
         LOGICAL         MFLAG   !  true: mobile codes file available
         LOGICAL         NFLAG   !  true: use all uniform temporal profiles
         LOGICAL         WFLAG   !  true: write QA on current time step
+        LOGICAL         WTINDP  !  true: MINMAXT file is time-independent
 
         CHARACTER*8              TREFFMT ! tmprl x-ref format (SOURCE|STANDARD)
         CHARACTER*14             DTBUF   ! buffer for MMDDYY
@@ -220,6 +221,11 @@ C.........  Get the time zone for output of the emissions
 C.........  Get environment variable that overrides temporal profiles and 
 C               uses only uniform profiles.
         NFLAG = ENVYN( 'UNIFORM_TPROF_YN', MESG, .FALSE., IOS )
+
+C.........  Get environment variable that indicates if the MINMAXT file is
+C           time independent (true) or not
+        MESG   = 'MINMAXT is time-independent file? '  
+        WTINDP = ENVYN( 'MINMAX_TINDP_YN', MESG, .FALSE., IOS )
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
@@ -427,8 +433,11 @@ C               to the sources. This will populate parts of the MODXREF module.
 C.............  Also create the list of unique parameter scheme indices.
             CALL RDEFXREF( FDEV, .TRUE. )
 
+C.............  Read emission processes file.  Populate array in MODEMFAC.
+            CALL RDEPROC( TDEV )
+
 C.............   Map parameter scheme indexes (PSIs) onto sources for all actvty
-            CALL ASGNPSI( NIACT, ACTVTY )
+            CALL ASGNPSI( NIACT, ACTVTY, NETYPE )
 
 C.............  Loop through activities and...
 C.............  NOTE - this is not fully implemented for multiple activities. 
@@ -444,9 +453,6 @@ C                   emission factor variable names.
      &                        UMAT(1) )
 
             END DO
-
-C.............  Read emission processes file.  Populate array in MODEMFAC.
-            CALL RDEPROC( TDEV )
 
         END IF
 
@@ -594,14 +600,14 @@ C.............  Also set flag for which hour-specific pollutants/activities
 C               are actually diurnal profiles instead of emissions
             LDSPOA = .FALSE.   ! array
             DO I = 1, NDYPOA
-                J = INDEX1( DYPNAM( I ), NGSZ, ALLIN2D( 1,N ) )
+                J = INDEX1( DYPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
                 LDSPOA( J ) = .TRUE.
             END DO
 
             LHSPOA = .FALSE.   ! array
             LHPROF = .FALSE.   ! array
             DO I = 1, NHRPOA
-                J = INDEX1( HRPNAM( I ), NGSZ, ALLIN2D( 1,N ) )
+                J = INDEX1( HRPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
                 LHSPOA( J ) = .TRUE.
 
                 CALL UPCASE( HRPDSC( I ) )
@@ -669,8 +675,34 @@ C               file (if any), and write layer-1 emissions file (or all data).
             JTIME = STIME
             MDATE = MSDATE
             MTIME = MSTIME
-            WDATE = WSDATE
-            WTIME = WSTIME
+
+            IF ( WTINDP ) THEN
+
+               IF( .NOT. READ3( WNAME, 'TKMIN', 1,
+     &                          0, 0, TKMIN ) ) THEN
+                 MESG = 'Could not read TKMIN from' // WNAME
+                 CALL M3EXIT( PROGNAME,0,0,MESG,2 )
+               END IF
+
+              IF( .NOT. READ3( WNAME, 'TKMAX', 1,
+     &                         0, 0, TKMAX ) ) THEN
+                MESG = 'Could not read TKMAX from' // WNAME
+                CALL M3EXIT( PROGNAME,0,0,MESG,2 )
+              END IF
+
+              IF( .NOT. READ3( WNAME, 'TMMI', ALLAYS3,
+     &                         0, 0, METIDX ) ) THEN
+                MESG = 'Could not read TMMI from' // WNAME
+                CALL M3EXIT( PROGNAME,0 ,0, MESG,2 )
+              END IF
+
+            ELSE
+
+              WDATE = WSDATE
+              WTIME = WSTIME
+
+            ENDIF
+
             DO T = 1, NSTEPS
 
 C.................  When there are activity data, assume that there is a 
@@ -695,7 +727,7 @@ C                       source-based temperatures using the ungridding matrix
 
 C.....................  Read source-based min/max temperatures for the current
 C                       day when there is a new day in GMT (met ) time zone
-                    IF( MDATE .NE. MLDATE ) THEN
+                    IF( MDATE .NE. MLDATE .AND. .NOT. WTINDP ) THEN
 
                 	IF( .NOT. READ3( WNAME, 'TKMIN', 1, 
      &                                   WDATE, WTIME, TKMIN ) ) THEN
