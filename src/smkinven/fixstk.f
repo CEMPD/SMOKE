@@ -1,24 +1,28 @@
-C copied by: mhouyoux
-C origin: fixstk.F 4.3
 
-        SUBROUTINE  FIXSTK( FDEV, NSRC, IFIP, ISCC, IPLT, ISTK,
-     &                      STKHT, STKDM, STKTK, STKVE, NPOL, EMISV )
+        SUBROUTINE  FIXSTK( FDEV, NSRC, IFIP, ISCC, CSOURC,
+     &                      STKHT, STKDM, STKTK, STKVE )
 
 C***********************************************************************
-C  subroutine body starts at line 159
+C  subroutine body starts at line 157
 C
 C  DESCRIPTION:
-C	Use replacement stack parameters from file PSTK to fill inn
-C	stack parameters which are "missing" (i.e., negative).
+C	Read and use replacement stack parameters from file PSTK to fill in
+C	stack parameters which are "missing" (i.e., negative). Also use
+C       ultimate defaults (set as local parameters) when no other stack 
+C       parameters are available.
 C
 C  PRECONDITIONS REQUIRED:
-C	Correctly set logical name for the PSTK file
+C	Opened file with unit FDEV
+C       Memory of arrays already allocated and with NSRC
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C	PROMPTFFILE
+C	Subroutines: I/O API subroutines, CHECKMEM, FMTCSRC
+C       Function: I/O API functions, GETFLINE
 C
 C  REVISION  HISTORY:
 C	prototype 12/95 by CJC
+C       copied by: mhouyoux
+C       origin: fixstk.F 4.3
 C
 C***********************************************************************
 C
@@ -47,27 +51,30 @@ C***************************************************************************
 
 C...........   INCLUDES:
 
-        INCLUDE 'PTDIMS3.EXT'      ! point source dimensioning constants
-        INCLUDE 'PARMS3.EXT'       ! 
-        INCLUDE 'FDESC3.EXT'       ! 
-        INCLUDE 'IODECL3.EXT'      ! 
+        INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+
+        CHARACTER*2     CRLF
+        INTEGER		FIND1, FIND2
+        INTEGER		GETFLINE
+
+        EXTERNAL	CRLF, FIND1, FIND2, GETFLINE
 
 C...........   ARGUMENTS and their descriptions:
 
-        INTEGER FDEV	        !  unit number for stack parameter file PSTK
-        INTEGER NSRC            !  actual number of sources
-        INTEGER IFIP ( NSRC )	!  FIP codes
-        INTEGER ISCC ( NSRC )	!  SCC codes
-        INTEGER IPLT ( NSRC )	!  Plant ID codes (for writing message only)
-        INTEGER ISTK ( NSRC )	!  Stack ID codes (for writing message only)
-        INTEGER NPOL            !  actual number of pollutants
-        REAL	STKHT( NSRC )	!  stack height (m)
-        REAL	STKDM( NSRC )	!  stack diameter (m)
-        REAL	STKTK( NSRC )	!  stack exhaust temperature (K)
-        REAL	STKVE( NSRC )	!  stack exhaust velocity (m/s)
-        REAL    EMISV( NSRC, NPOL )  ! emissions
-
+        INTEGER       FDEV             ! unit number for stack parameter file PSTK
+        INTEGER       NSRC             ! actual number of sources
+        INTEGER       IFIP  ( NSRC )   ! FIP codes
+        INTEGER       ISCC  ( NSRC )   ! SCC codes
+        CHARACTER*(*) CSOURC( NSRC )   ! concat source chars
+        REAL	      STKHT ( NSRC )   ! stack height (m)
+        REAL	      STKDM ( NSRC )   ! stack diameter (m)
+        REAL	      STKTK ( NSRC )   ! stack exhaust temperature (K)
+        REAL	      STKVE ( NSRC )   ! stack exhaust velocity (m/s)
 
 C...........   PARAMETERS and their descriptions:
 
@@ -89,191 +96,179 @@ C...........   PARAMETERS and their descriptions:
      &             MAXTK = 2000.,
      &             MAXVE = 500.    )
 
-C...........   EXTERNAL FUNCTIONS and their descriptions:
+C...........    LOCAL VARIABLES and their descriptions:
 
-        CHARACTER*2     CRLF
-        INTEGER		FIND1, FIND2
-        EXTERNAL	CRLF, FIND1, FIND2
+        INTEGER, ALLOCATABLE:: INDXA( : ) !  Sorting index
+        INTEGER, ALLOCATABLE:: SFIPA( : ) !  Unsorted FIP state code from PSTK
+        INTEGER, ALLOCATABLE:: SSCCA( : ) !  Unsorted SCC code from PSTK
+        REAL   , ALLOCATABLE:: SHTA ( : ) !  Unsorted height from PSTK
+        REAL   , ALLOCATABLE:: SDMA ( : ) !  Unsorted diameter from PSTK
+        REAL   , ALLOCATABLE:: STKA ( : ) !  Unsorted temperature from PSTK
+        REAL   , ALLOCATABLE:: SVEA ( : ) !  Unsorted velocity from PSTK
 
+        REAL                   HT0      !  ultimate fallback height
+        REAL                   DM0      !  ultimate fallback diameter
+        REAL                   TK0      !  ultimate fallback temperature
+        REAL                   VE0      !  ultimate fallback velocity
 
-C...........   LOCAL PARAMETERS and their descriptions:
-        CHARACTER*5     BLANK5
-        INTEGER         MXFPSC
-        INTEGER         MXSTSC
+        INTEGER                NR1      !  size of SCC-only table
+        INTEGER, ALLOCATABLE:: SC1( : ) !  SCC code
+        INTEGER, ALLOCATABLE:: ID1( : ) !  Index to unsorted arrays from PSTK
 
-        PARAMETER(      BLANK5 = ' ',
-     &                  MXFPSC = NPFIP * NPSCC,
-     &                  MXSTSC = NPSID * NPSCC  ) 
+        INTEGER                NR2      !  size of SCC-state table
+        INTEGER, ALLOCATABLE:: FP2( : ) !  FIP state code
+        INTEGER, ALLOCATABLE:: SC2( : ) !  SCC code
+        INTEGER, ALLOCATABLE:: ID2( : ) !  Index to unsorted arrays from PSTK
 
-C...........   SCRATCH LOCAL VARIABLES and their descriptions:
-
-        REAL		HT0	!  ultimate fallback height
-        REAL		DM0	!  ultimate fallback diameter
-        REAL		TK0	!  ultimate fallback temperature
-        REAL		VE0	!  ultimate fallback velocity
-
-        INTEGER		NR1		!  size of SCC-only table
-        INTEGER		SC1( NPSCC )	!  SCC code
-        REAL		HT1( NPSCC )	!  SCC-only height
-        REAL		DM1( NPSCC )	!  SCC-only diameter
-        REAL		TK1( NPSCC )	!  SCC-only temperature
-        REAL		VE1( NPSCC )	!  SCC-only velocity
-
-        INTEGER		NR2	        !  size of SCC-state table
-        INTEGER		FP2( MXSTSC )   !  FIP state code
-        INTEGER		SC2( MXSTSC )   !  SCC code
-        REAL		HT2( MXSTSC )   !  SCC-state height
-        REAL		DM2( MXSTSC )   !  SCC-state diameter
-        REAL		TK2( MXSTSC )   !  SCC-state temperature
-        REAL		VE2( MXSTSC )   !  SCC-state velocity
-
-        INTEGER		NR3		!  size of FIP-SCC table
-        INTEGER		FP3( MXFPSC )	!  FIP code
-        INTEGER		SC3( MXFPSC )	!  SCC code
-        REAL		HT3( MXFPSC )	!  FIP-SCC height
-        REAL		DM3( MXFPSC )	!  FIP-SCC diameter
-        REAL		TK3( MXFPSC )	!  FIP-SCC temperature
-        REAL		VE3( MXFPSC )	!  FIP-SCC velocity
-        
-        INTEGER		I, S, K	!  source subscript
-        INTEGER		IOS	!  I/O error status
-        INTEGER		LINE	!  current line number
+        INTEGER                NR3      !  size of FIP-SCC table
+        INTEGER, ALLOCATABLE:: FP3( : ) !  FIP code
+        INTEGER, ALLOCATABLE:: SC3( : ) !  SCC code
+        INTEGER, ALLOCATABLE:: ID3( : ) !  Index to unsorted arrays from PSTK
         
         REAL		HT	!  temporary height
         REAL		DM	!  temporary diameter
         REAL		TK	!  temporary exit temperature
         REAL		VE	!  temporary velocity
 
-        INTEGER		LDEV	!  log file unit number
-        INTEGER		LFIP	!  previous FIPs code
-        INTEGER		LSCC	!  previous SCC code
         INTEGER		FIP	!  temporary FIPs code
+        INTEGER		I, J, S, K	!  source subscript
+        INTEGER		IOS	!  I/O error status
+        INTEGER		IREC	!  current record number
+        INTEGER		L2	!  buffer length
+        INTEGER		LDEV	!  log file unit number
+        INTEGER		NLINE	!  Number of lines
+        INTEGER		NPSTK	!  Number of PSTK entries
         INTEGER		SCC	!  temporary SCC code
         INTEGER		SID	!  temporary state ID
 
         LOGICAL		EFLAG   !  error flag
-        LOGICAL		DFLAG( NPSRC ) ! true if source getting default parms 
-        CHARACTER*256	MESG	!  error-message buffer
+        LOGICAL		DFLAG( NSRC ) ! true if source getting default parms 
+        DATA            EFLAG / .FALSE. /
 
+        CHARACTER*300	BUFFER  !  temporary buffer
+        CHARACTER*300	MESG    !  message buffer
+        CHARACTER*16 :: PROGNAME = 'FIXSTK'  ! program name
+     
 C***********************************************************************
-C   begin body of subroutine  FIXSTK
+C   begin body of subroutine FIXSTK
 
-        LDEV = INIT3()  ! Need for message writing
+C.........   Get LOG file unit, so can write to directly (using M3MESG would
+C            add too many spaces for some messages)
+        LDEV = INIT3()
 
         CALL M3MSG2( 'Reading default stack parameters...' )
 
-C.......   First, read the (first and therefore) ultimate fallback record:
+C.........  Get dimensions of input file
+        NLINE = GETFLINE( FDEV, 'Stack replacement file')
 
-        READ( FDEV,*, IOSTAT=IOS )  FIP, SCC, HT0, DM0, TK0, VE0
+C.........  Allocate memory for arrays.  Since this file is not likely to be
+C           large, allocate all arrays based on number of lines in the file.
+        ALLOCATE( INDXA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDXA', PROGNAME )
+        ALLOCATE( SFIPA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SFIPA', PROGNAME )
+        ALLOCATE( SSCCA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SSCCA', PROGNAME )
+        ALLOCATE( SHTA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SHTA', PROGNAME )
+        ALLOCATE( SDMA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SDMA', PROGNAME )
+        ALLOCATE( STKA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'STKA', PROGNAME )
+        ALLOCATE( SVEA( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SVEA', PROGNAME )
+        ALLOCATE( SC1( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SC1', PROGNAME )
+        ALLOCATE( ID1( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ID1', PROGNAME )
+        ALLOCATE( FP2( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'FP2', PROGNAME )
+        ALLOCATE( SC2( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SC2', PROGNAME )
+        ALLOCATE( ID2( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ID2', PROGNAME )
+        ALLOCATE( FP3( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'FP3', PROGNAME )
+        ALLOCATE( SC3( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SC3', PROGNAME )
+        ALLOCATE( ID3( NLINE ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ID3', PROGNAME )
 
-        IF ( IOS .NE. 0 ) THEN
-             CALL M3EXIT( 'FIXSTK', 0, 0,
-     &              'Error reading PSTK at line 1', 1 )
-        ELSE IF ( FIP .NE. 0  .OR.  SCC .NE. 0 ) THEN
-             CALL M3EXIT( 'FIXSTK', 0, 0,
-     &              'No fallback record in PSTK', 2 )
-        END IF
+C.........  Read the PSTK file until hit the end of the file
 
-C.......   Now read the rest of the file:
+        IREC  = 0
+        I = 0
+        DO        !  head of input loop
 
-        EFLAG = .FALSE.
-        LINE  = 1
-        NR1   = 0
-        NR2   = 0
-        NR3   = 0
+            READ( FDEV, *, END=22, IOSTAT=IOS ) FIP, SCC, HT, DM, TK, VE
 
-11      CONTINUE        !  head of input loop
+            IREC = IREC + 1
 
-            LFIP = FIP
-            LSCC = SCC
-            LINE = LINE + 1
+            IF ( IOS .GT. 0 ) THEN	!  I/O error
 
-            READ( FDEV,*, END=22, IOSTAT=IOS )  FIP, SCC, HT, DM, TK, VE
+                WRITE( MESG,94010 ) 'Error', IOS, 
+     &                              'reading PSTK at line', IREC
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-            IF ( IOS .NE. 0 ) THEN	!  I/O error
+            ELSE
 
-                WRITE( MESG,94010 ) 'Error reading PSTK at line', LINE
-                CALL M3EXIT( 'FIXSTK', 0, 0, MESG, 1 )
+                I = I + 1
+                INDXA( I ) = I
+                SFIPA( I ) = FIP
+                SSCCA( I ) = SCC
+                SHTA ( I ) = HT
+                SDMA ( I ) = DM
+                STKA ( I ) = TK
+                SVEA ( I ) = VE
 
-            ELSE IF ( LFIP .GT. FIP  .OR.
-     &                ( LFIP .EQ. FIP  .AND.  
-     &                  LSCC .GT. SCC ) ) THEN	!  out of order
+            ENDIF
 
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'PSTK out of order at line', LINE
-                CALL M3MESG( MESG )
-
-            ELSE IF ( FIP .EQ. 0 ) THEN		!  SCC only
-
-                NR1 = NR1 + 1
-                IF ( NR1 .LE. NPSCC ) THEN
-                    SC1( NR1 ) = FIP
-                    HT1( NR1 ) = HT
-                    DM1( NR1 ) = DM
-                    TK1( NR1 ) = TK
-                    VE1( NR1 ) = VE
-                END IF
-
-            ELSE IF ( MOD( FIP, 1000 ) .EQ. 0 ) THEN	!  state and SCC
-
-                NR2 = NR2 + 1
-                IF ( NR2 .LE. MXSTSC ) THEN
-                    FP2( NR2 ) = FIP / 1000
-                    SC2( NR2 ) = SCC
-                    HT2( NR2 ) = HT
-                    DM2( NR2 ) = DM
-                    TK2( NR2 ) = TK
-                    VE2( NR2 ) = VE
-                END IF
-
-            ELSE					!  FIP and SCC
-
-                NR3 = NR3 + 1
-                IF ( NR3 .LE. MXFPSC ) THEN
-                    FP3( NR3 ) = FIP
-                    SC3( NR3 ) = SCC
-                    HT3( NR3 ) = HT
-                    DM3( NR3 ) = DM
-                    TK3( NR3 ) = TK
-                    VE3( NR3 ) = VE
-                END IF
-
-            END IF	!  if I/O error, or out of order or ...
-
-            GO TO  11
+        ENDDO
 
 22      CONTINUE        !  end of input loop
 
-C...........   Report dimensions of segmented stack parms
+        NPSTK = I
 
-        WRITE( MESG,94010 )
-     &      'Number of STACK FIX PARMS by SCC entries--' //
-     &      CRLF() // BLANK5 // '   dimensioned (NPSCC):', NPSCC,
-     &      'actual:', NR1
-        CALL M3MSG2( MESG )
- 
-        WRITE( MESG,94010 )
-     &      'Number of STACK FIX PARMS by STATE/SCC entries--' //
-     &      CRLF() // BLANK5 // '   dimensioned (MXSTSC):', MXSTSC,
-     &      'actual:', NR2
-        CALL M3MSG2( MESG )
- 
-        WRITE( MESG,94010 )
-     &      'Number of STACK FIX PARMS by FIP/SCC entries--' //
-     &      CRLF() // BLANK5 // '   dimensioned (MXFPSC):', MXFPSC,
-     &      'actual:', NR3
-        CALL M3MSG2( MESG )
- 
-C...........   If there is an overflow, abort
-        IF( NR1 .GT. NPSCC  .OR.
-     &      NR2 .GT. MXSTSC .OR.
-     &      NR3 .GT. MXFPSC      ) THEN
- 
-            CALL M3EXIT( 'FIXSTK', 0, 0,
-     &                   'STACK FIX PARAMETERS table overflow', 2 )
- 
-        END IF
+C.........  Sort PSTK data 
+        CALL SORTI2( NPSTK, INDXA, SFIPA, SSCCA )
 
+C.........  Disaggregate PSTK data into 4 categories
+        NR1   = 0
+        NR2   = 0
+        NR3   = 0
+        DO I = 1, NPSTK
+
+            J   = INDXA( I )
+            FIP = SFIPA( J )
+            SCC = SSCCA( J ) 
+
+            IF( FIP .EQ. 0 .AND. SCC .EQ. 0 ) THEN  ! fallback default
+                HT0 = SHTA ( J )
+                DM0 = SDMA ( J )
+                TK0 = STKA ( J )
+                VE0 = SVEA ( J )
+
+            ELSEIF( FIP .EQ. 0 ) THEN               !  SCC only
+                NR1 = NR1 + 1
+                SC1( NR1 ) = SCC
+                ID1( NR1 ) = J
+
+            ELSE IF( MOD( FIP, 1000 ) .EQ. 0 ) THEN !  state and SCC
+                NR2 = NR2 + 1
+                FP2( NR2 ) = FIP / 1000
+                SC2( NR2 ) = SCC
+                ID2( NR2 ) = J
+
+            ELSE                                    !  FIP and SCC
+                NR3 = NR3 + 1
+                FP3( NR3 ) = FIP
+                SC3( NR3 ) = SCC
+                ID3( NR3 ) = J
+
+            END IF
+
+        ENDDO ! End loop on NPSTK
+ 
 C.........  Bound stack parameters to minima and maxima values
 C.........  This is in a separate loop to permit better reporting
 C.........  Watch out for negative numbers or zeroes, because these are 
@@ -281,7 +276,7 @@ C.........  the missing stack parameters, which should get defaults.
 
         CALL M3MSG2( 'Bounding MIN and MAX stack parameters...' )
 
-        DO 29 S = 1, NSRC
+        DO S = 1, NSRC
 
             HT = STKHT( S )
             DM = STKDM( S )
@@ -296,11 +291,9 @@ C.........  the missing stack parameters, which should get defaults.
      &         ( TK .LT. MINTK .AND. TK .GT. 0 ) .OR.
      &           VE .GT. MAXVE .OR.
      &         ( VE .LT. MINVE .AND. VE .GT. 0 ) ) THEN
-                WRITE( MESG,94050 ) 
-     &                 'FIPS code:', IFIP( S ), 'SCC:', ISCC( S ),
-     &                 'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                 'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) )
 
+                CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
+                WRITE( MESG,94010 ) BUFFER( 1:L2 ) // ' SCC: ', ISCC(S)
                 CALL M3MESG( MESG )
 
             ENDIF
@@ -350,20 +343,15 @@ C.........  the missing stack parameters, which should get defaults.
             STKTK( S ) = TK
             STKVE( S ) = VE
 
-29      CONTINUE
-
+        ENDDO ! Loop on sources
 
         CALL M3MSG2( 'Fixing MISSING stack parameters...' )
-
-C...........   Get LOG file unit, so can write to directly (using M3MESG would
-C..........    add too many spaces
-        LDEV = INIT3()
 
 C...........   Now do replacements of MISSING stack parameters:
 C...........   4 passes -- ht, dm, tk, ve
 C...........   Treat parameters equal to 0 as missing
 
-        DO  33  S = 1, NSRC
+        DO S = 1, NSRC
 
             K = 0                ! Initialize K to test if replacements made
             DFLAG( S ) = .FALSE. ! Initialize DFLAG to test if defaults used
@@ -376,10 +364,11 @@ C...........   Treat parameters equal to 0 as missing
                 IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
 
                 IF ( K .GT. 0 ) THEN
-                    HT = HT3( K )
-                    DM = DM3( K )
-                    TK = TK3( K )
-                    VE = VE3( K )
+                    J  = ID3 ( K )
+                    HT = SHTA( J )
+                    DM = SDMA( J )
+                    TK = STKA( J )
+                    VE = SVEA( J )
                 ELSE
                     SID = FIP/1000
                     K   = FIND2( SID, SCC, NR2, FP2, SC2 )
@@ -387,18 +376,20 @@ C...........   Treat parameters equal to 0 as missing
                     IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
 
                     IF ( K .GT. 0 ) THEN
-                        HT = HT2( K )
-                        DM = DM2( K )
-                        TK = TK2( K )
-                        VE = VE2( K )
+                        J  = ID2 ( K )
+                        HT = SHTA( J )
+                        DM = SDMA( J )
+                        TK = STKA( J )
+                        VE = SVEA( J )
                     ELSE
 
                         K = FIND1( SCC, NR1, SC1 )
                         IF ( K .GT. 0 ) THEN
-                            HT = HT1( K )
-                            DM = DM1( K )
-                            TK = TK1( K )
-                            VE = VE1( K )
+                            J  = ID1 ( K )
+                            HT = SHTA( J )
+                            DM = SDMA( J )
+                            TK = STKA( J )
+                            VE = SVEA( J )
                         ELSE
                             DFLAG( S ) = .TRUE.
 
@@ -408,11 +399,11 @@ C...........   Treat parameters equal to 0 as missing
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
-                    WRITE( MESG,94050 ) 
-     &                'FIPS code:', FIP, 'SCC:', SCC,
-     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
-     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
+                    WRITE( MESG,94010 ) 
+     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     CRLF() // BLANK5 // 
+     &                     '             Old        New'
                     CALL M3MESG( MESG )
 
                     WRITE( LDEV,94020 )     'Height', STKHT( S ), HT
@@ -444,9 +435,10 @@ C...........   Treat parameters equal to 0 as missing
                 IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
 
                 IF ( K .GT. 0 ) THEN
-                    DM = DM3( K )
-                    TK = TK3( K )
-                    VE = VE3( K )
+                    J  = ID3 ( K )
+                    DM = SDMA( J )
+                    TK = STKA( J )
+                    VE = SVEA( J )
                 ELSE
                     SID = FIP/1000
                     K   = FIND2( SID, SCC, NR2, FP2, SC2 )
@@ -454,15 +446,17 @@ C...........   Treat parameters equal to 0 as missing
                     IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
 
                     IF ( K .GT. 0 ) THEN
-                        DM = DM2( K )
-                        TK = TK2( K )
-                        VE = VE2( K )
+                        J  = ID2 ( K )
+                        DM = SDMA( J )
+                        TK = STKA( J )
+                        VE = SVEA( J )
                     ELSE
                         K = FIND1( SCC, NR1, SC1 )
                         IF ( K .GT. 0 ) THEN
-                            DM = DM1( K )
-                            TK = TK1( K )
-                            VE = VE1( K )
+                            J  = ID1 ( K )
+                            DM = SDMA( J )
+                            TK = STKA( J )
+                            VE = SVEA( J )
                         ELSE
                             DFLAG( S ) = .TRUE.
 
@@ -472,11 +466,11 @@ C...........   Treat parameters equal to 0 as missing
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
-                    WRITE( MESG,94050 ) 
-     &                'FIPS code:', FIP, 'SCC:', SCC,
-     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
-     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
+                    WRITE( MESG,94010 ) 
+     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     CRLF() // BLANK5 // 
+     &                     '             Old        New'
                     CALL M3MESG( MESG )
 
                     WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
@@ -503,8 +497,9 @@ C...........   Treat parameters equal to 0 as missing
                 IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
 
                 IF ( K .GT. 0 ) THEN
-                    TK = TK3( K )
-                    VE = VE3( K )
+                    J  = ID3 ( K )
+                    TK = STKA( J )
+                    VE = SVEA( J )
                 ELSE
                     SID = FIP/1000
                     K   = FIND2( SID, SCC, NR2, FP2, SC2 )
@@ -512,13 +507,15 @@ C...........   Treat parameters equal to 0 as missing
                     IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
 
                     IF ( K .GT. 0 ) THEN
-                        TK = TK2( K )
-                        VE = VE2( K )
+                        J  = ID2 ( K )
+                        TK = STKA( J )
+                        VE = SVEA( J )
                     ELSE
                         K = FIND1( SCC, NR1, SC1 )
                         IF ( K .GT. 0 ) THEN
-                            TK = TK1( K )
-                            VE = VE1( K )
+                            J  = ID1 ( K )
+                            TK = STKA( J )
+                            VE = SVEA( J )
                         ELSE
                             DFLAG( S ) = .TRUE.
 
@@ -528,11 +525,11 @@ C...........   Treat parameters equal to 0 as missing
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
-                    WRITE( MESG,94050 ) 
-     &                'FIPS code:', FIP, 'SCC:', SCC,
-     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
-     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
+                    WRITE( MESG,94010 ) 
+     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     CRLF() // BLANK5 // 
+     &                     '             Old        New'
                     CALL M3MESG( MESG )
 
                     WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
@@ -554,7 +551,8 @@ C...........   Treat parameters equal to 0 as missing
                 IF( K .LE. 0 ) K = FIND2( FIP, 0, NR3, FP3, SC3 )
 
                 IF ( K .GT. 0 ) THEN
-                    VE = VE3( K )
+                    J  = ID3 ( K )
+                    VE = SVEA( J )
                 ELSE
                     SID = FIP/1000
                     K   = FIND2( FIP/1000, SCC, NR2, FP2, SC2 )
@@ -562,11 +560,13 @@ C...........   Treat parameters equal to 0 as missing
                     IF( K .LE. 0 ) K = FIND2( SID, 0, NR2, FP2, SC2 )
 
                     IF ( K .GT. 0 ) THEN
-                        VE = VE2( K )
+                        J  = ID2 ( K )
+                        VE = SVEA( J )
                     ELSE
                         K = FIND1( SCC, NR1, SC1 )
                         IF ( K .GT. 0 ) THEN
-                            VE = VE1( K )
+                            J  = ID1 ( K )
+                            VE = SVEA( J )
                         ELSE
                             DFLAG( S ) = .TRUE.
 
@@ -576,11 +576,11 @@ C...........   Treat parameters equal to 0 as missing
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
-                    WRITE( MESG,94050 ) 
-     &                'FIPS code:', FIP, 'SCC:', SCC,
-     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
-     &                CRLF() // BLANK5 //  '             Old        New'
+                    CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
+                    WRITE( MESG,94010 ) 
+     &                     BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                     CRLF() // BLANK5 // 
+     &                     '             Old        New'
                     CALL M3MESG( MESG )
 
                     WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
@@ -589,50 +589,63 @@ C...........   Treat parameters equal to 0 as missing
 
             END IF	!  if stack exhaust velocity bad
 
-33      CONTINUE        !  end loop fixing missing stack parameters
+        ENDDO  !  end loop on sources for fixing missing stack parameters
 
-C.........  Apply ultimate default parameters, and write report
+C.........  Apply ultimate fallback parameters, and write report
 C.........  This is in a separate loop to permit better reporting
      
         CALL M3MESG( 'Ultimate fallback stack parameters report:' )
-        DO 44 S = 1, NSRC
 
-            FIP = IFIP( S )
-            SCC = ISCC( S )
+        DO S = 1, NSRC
 
             IF( DFLAG( S ) ) THEN
 
-                WRITE( MESG,94050 ) 
-     &                'FIPS code:', FIP, 'SCC:', SCC,
-     &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
-     &                CRLF() // BLANK5 //  '             Old        New'
-                    CALL M3MESG( MESG )
+                CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
+                WRITE( MESG,94010 ) 
+     &                 BUFFER( 1:L2 ) // ' SCC: ', ISCC( S ),
+     &                 CRLF() // BLANK5 // 
+     &                 '             Old        New'
+                CALL M3MESG( MESG )
 
-                    IF ( STKHT( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT0
-                        STKHT( S ) = HT0
-                    ENDIF
+                IF ( STKHT( S ) .LE. 0 ) THEN
+                    WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT0
+                    STKHT( S ) = HT0
+                ENDIF
 
-                    IF ( STKDM( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM0
-                        STKDM( S ) = DM0
-                    ENDIF
+                IF ( STKDM( S ) .LE. 0 ) THEN
+                    WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM0
+                    STKDM( S ) = DM0
+                ENDIF
 
-                    IF ( STKTK( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK0
-                        STKTK( S ) = TK0
-                    ENDIF 
+                IF ( STKTK( S ) .LE. 0 ) THEN
+                    WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK0
+                    STKTK( S ) = TK0
+                ENDIF 
 
-                    IF ( STKVE( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE0
-                        STKVE( S ) = VE0
-                    ENDIF
+                IF ( STKVE( S ) .LE. 0 ) THEN
+                    WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE0
+                    STKVE( S ) = VE0
+                ENDIF
 
             ENDIF
 
-44      CONTINUE
+        ENDDO  ! Loop through sources for applying ultimate fallbacks
 
+        DEALLOCATE( INDXA )
+        DEALLOCATE( SFIPA )
+        DEALLOCATE( SSCCA )
+        DEALLOCATE( SHTA )
+        DEALLOCATE( SDMA )
+        DEALLOCATE( STKA )
+        DEALLOCATE( SVEA )
+        DEALLOCATE( SC1 )
+        DEALLOCATE( ID1 )
+        DEALLOCATE( FP2 )
+        DEALLOCATE( SC2 )
+        DEALLOCATE( ID2 )
+        DEALLOCATE( FP3 )
+        DEALLOCATE( SC3 )
+        DEALLOCATE( ID3 )
 
         RETURN
 
@@ -649,9 +662,6 @@ C...........   Internal buffering formats............ 94xxx
 
 94040   FORMAT( 7X, A6, 1X, '< min.  Change from ', 
      &          E10.3, ' to ', E10.3 )
-
-94050   FORMAT( A, I5.5, 1X, A, I8.8, 1X, A, I5, 1X, A, I5, : , 1X,
-     &          A, <NPOL>( F9.2, 1X ), :, A )
 
         END
 
