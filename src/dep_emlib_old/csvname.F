@@ -298,6 +298,7 @@ C.............  Create array of actual inventory species and index to table
 
 C.........  Initialize function return status
         CSVNAME = 0
+        EFLAG   = .FALSE.
 
 C.........  Names have inventory species...
         IF ( LMODEL ) THEN
@@ -362,9 +363,10 @@ C.............  Names have MV process and inventory species
      &                     ACTINV( I )
 
 C.........................  Check to make sure valid
-                        K = INDEX1( VNAMES( COUNT ), MXEMIS, EMTLST )
+                        K = INDEX1( VNAMES( COUNT ), MXEALL, EMTLST )
 
                         IF( K .EQ. 0 ) THEN
+                            EFLAG = .TRUE.
                             LEN = TRIMLEN( VNAMES( COUNT ) )
                             NAME = VNAMES( COUNT )( 1:LEN )
                             WRITE( MESG, 94010 ) 
@@ -396,7 +398,11 @@ C.............  Names have just inventory species
 
         ENDIF  ! Use model species name or not
 
-        CSVNAME = COUNT
+        IF( EFLAG ) THEN
+            CSVNAME = -1    
+        ELSE
+            CSVNAME = COUNT
+        ENDIF
 
         RETURN
 
