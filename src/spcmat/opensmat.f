@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -199,7 +199,7 @@ C           inventory pollutant and model species names
 C.........  Set up variables specifically for mass-based file, and open it
         IF( SFLAG ) THEN
 
-            FDESC3D( 4 ) = '/SMATTYPE/ ' // ' Mass'
+            FDESC3D( 4 ) = '/SMATTYPE/ ' // MASSSTR
 
             I = 0
             DO K = 1, NIPPA
@@ -221,7 +221,7 @@ C.........  Set up variables specifically for mass-based file, and open it
 C.........  Set up variables specifically for mole-based file, and open it
         IF( LFLAG ) THEN
 
-            FDESC3D( 4 ) = '/SMATTYPE/ ' // ' Mole'
+            FDESC3D( 4 ) = '/SMATTYPE/ ' // MOLESTR
 
             I = 0
             DO K = 1, NIPPA
