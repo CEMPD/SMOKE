@@ -5,7 +5,7 @@ all: debug
 opts: ctlamat.debug emsarea.debug grdamat.debug \
       rawarea.debug spcamat.debug tmparea.debug
 #
-LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
+LIBS=$(LDIRS) -lemlib.debug -lioapi.debug -lnetcdf.debug
 #
 #
 CTLS=ctlamat.F

@@ -6,7 +6,7 @@ all: opts
 #
 opts: ctlamat emsarea grdamat rawarea spcamat tmparea 
 #
-LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
+LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
 #
 CTLS=ctlamat.F
