@@ -689,6 +689,9 @@ if ( $?RUN_TMPBIO ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
 
+      ls $MET_FILE1 > $METLIST
+      ls $MET_FILE2 > $RADLIST
+
       if ( $exitstat == 0 ) then         # Run program
         setenv LOGFILE $TMPLOG
         if ( $debugmode == Y ) then

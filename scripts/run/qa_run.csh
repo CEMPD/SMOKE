@@ -174,6 +174,12 @@ switch ( $QA_TYPE )
 
 endsw
 
+# Make sure NONROAD is always set
+if ( $?NONROAD ) then
+else
+   setenv NONROAD N
+endif
+
 # Set up input file for Smkreport depending on settings
 
 switch ( $qa_type ) 
@@ -182,13 +188,24 @@ case inventory:
 
    switch ( $SMK_SOURCE )
    case A:
-      setenv REPCONFIG $INVDIR/other/repconfig.ar.inv.txt
-      setenv REPORT1 $REPSTAT/a.state.$ilabl.rpt
-      setenv REPORT2 $REPSTAT/a.county.$ilabl.rpt
-      setenv REPORT3 $REPSTAT/a.scc.$ilabl.rpt
-      setenv REPORT4 $REPSTAT/a.state_scc.$ilabl.rpt
-      setenv REPORT5 $REPSTAT/ag.state.$GRID.$ilabl.rpt
-      setenv REPORT6 $REPSTAT/ag.scc.$GRID.$ilabl.rpt
+
+      if ( $NONROAD == Y ) then
+         setenv REPCONFIG $INVDIR/other/repconfig.nr.inv.txt
+         setenv REPORT1 $REPSTAT/n.state.$ilabl.rpt
+         setenv REPORT2 $REPSTAT/n.county.$ilabl.rpt
+         setenv REPORT3 $REPSTAT/n.scc.$ilabl.rpt
+         setenv REPORT4 $REPSTAT/n.state_scc.$ilabl.rpt
+         setenv REPORT5 $REPSTAT/ng.state.$GRID.$ilabl.rpt
+         setenv REPORT6 $REPSTAT/ng.scc.$GRID.$ilabl.rpt
+      else
+         setenv REPCONFIG $INVDIR/other/repconfig.ar.inv.txt
+         setenv REPORT1 $REPSTAT/a.state.$ilabl.rpt
+         setenv REPORT2 $REPSTAT/a.county.$ilabl.rpt
+         setenv REPORT3 $REPSTAT/a.scc.$ilabl.rpt
+         setenv REPORT4 $REPSTAT/a.state_scc.$ilabl.rpt
+         setenv REPORT5 $REPSTAT/ag.state.$GRID.$ilabl.rpt
+         setenv REPORT6 $REPSTAT/ag.scc.$GRID.$ilabl.rpt
+      endif
       breaksw
       
    case M:
@@ -223,15 +240,27 @@ case temporal:
 
    switch ( $SMK_SOURCE )
    case A:
-      setenv REPCONFIG $INVDIR/other/repconfig.ar.temporal.txt
-      setenv REPORT1  $REPSCEN/at.state.$slabl.rpt
-      setenv REPORT2  $REPSCEN/at.county.$slabl.rpt
-      setenv REPORT3  $REPSCEN/at.scc.$slabl.rpt
-      setenv REPORT4  $REPSCEN/at.state_scc.$slabl.rpt
-      setenv REPORT5  $REPSCEN/at.hour_scc.$slabl.rpt
-      setenv REPORT6  $REPSCEN/agt.state.$GRID.$slabl.rpt
-      setenv REPORT7  $REPSCEN/ats.scc.$slabl.rpt
-      setenv REPORT8  $REPSCEN/ats.state_scc.$slabl.rpt
+      if ( $NONROAD == Y ) then
+         setenv REPCONFIG $INVDIR/other/repconfig.nr.temporal.txt
+         setenv REPORT1  $REPSCEN/nt.state.$slabl.rpt
+         setenv REPORT2  $REPSCEN/nt.county.$slabl.rpt
+         setenv REPORT3  $REPSCEN/nt.scc.$slabl.rpt
+         setenv REPORT4  $REPSCEN/nt.state_scc.$slabl.rpt
+         setenv REPORT5  $REPSCEN/nt.hour_scc.$slabl.rpt
+         setenv REPORT6  $REPSCEN/ngt.state.$GRID.$slabl.rpt
+         setenv REPORT7  $REPSCEN/nts.scc.$slabl.rpt
+         setenv REPORT8  $REPSCEN/nts.state_scc.$slabl.rpt
+      else
+         setenv REPCONFIG $INVDIR/other/repconfig.ar.temporal.txt
+         setenv REPORT1  $REPSCEN/at.state.$slabl.rpt
+         setenv REPORT2  $REPSCEN/at.county.$slabl.rpt
+         setenv REPORT3  $REPSCEN/at.scc.$slabl.rpt
+         setenv REPORT4  $REPSCEN/at.state_scc.$slabl.rpt
+         setenv REPORT5  $REPSCEN/at.hour_scc.$slabl.rpt
+         setenv REPORT6  $REPSCEN/agt.state.$GRID.$slabl.rpt
+         setenv REPORT7  $REPSCEN/ats.scc.$slabl.rpt
+         setenv REPORT8  $REPSCEN/ats.state_scc.$slabl.rpt
+      endif
       breaksw
       
    case M:
