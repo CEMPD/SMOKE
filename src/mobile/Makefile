@@ -31,9 +31,9 @@ mbsetup.debug: $(MBSET) $(ALLI) $(LIBPATH_DEBUG)
 
 #
 #
-PRE=premobl.o rdspdsrc.o getctynum.o chkfulldy.o \
-     openshour.o setoutdt.o hourtemp.o avertemp.o \
-     wrshour.o opengroup.o rdgroups.o asgngrps.o
+PRE=premobl.o rdspdsrc.o openshour.o asgngrps.o \
+      hourtemp.o avertemp.o wrshour.o opengroup.o \
+      rdgroups.o 
 
 premobl: $(PRE) $(ALLI) $(LIBPATH)
 	echo 'PREMOBL:'
