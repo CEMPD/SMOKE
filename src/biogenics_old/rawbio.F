@@ -1004,7 +1004,7 @@ c sl     &                   'Bad EUTMN placement in SURROGATE file', 2 )
 
 211     CONTINUE                !  head of loop:  read SURROGATE FACTORS file
 
-            READ( SDEV, 93020, IOSTAT = ISTAT, END = 299 )
+            READ( SDEV, 93030, IOSTAT = ISTAT, END = 299 )
 c sl     &          FIPS,
      &          FIP,
      &          XCOOR,
@@ -1140,8 +1140,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( 1X, A4, 3 F9.0, F6.0, I2 )
 
-c sl 93020   FORMAT( 4 F10.0, I10, 2F10.0 )
-93020   FORMAT( I5, 2F10.0, I10, 15F10.4 )
+93020   FORMAT( 4 F10.0, I10, 2F10.0 )
+
+93030   FORMAT( I5, 2F10.0, I10, 15F10.4 )    ! sl For surrogate data
 
 
 C...........   Internal buffering formats............ 94xxx
