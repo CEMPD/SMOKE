@@ -4,6 +4,7 @@ C  Directs to calculation of EMFAC-PM, RCP, SOF, SO4, NH3, SO2.
 C 
 C  Changes : 
 C 
+C  08 Mar 02 AIR Task 28: Moved all air toxic calcs to ATCALX. Comments. 
 C  04 Jan 02 AIR Task 25: Added INERR to PMBERADJ, removed unused varaibles 
 C  20 Dec 01 AIR Task 25: Added INERR to PMDRCPSOF and added INERR traps 
 C  16 Oct 01 AIR Task 25: Changed Gas PM calculations back to PART5 method. 
@@ -177,7 +178,8 @@ C  for in-use fuel sulfur content.
 C 
       CALL PMSO4SO2(ICY) 
 C 
-C  Compute the final Total PM values, and Air Toxics. 
+C  Compute the final Total PM values, adjusted for particle 
+C  size and in-use fuel sulfur content. 
 C 
       CALL PMTEMFAC 
 C 
