@@ -225,8 +225,10 @@ C.............  Set up Master List file description
             P_GAM3D = DBLE( AMISS3 )
             XCENT3D = 0.0D0
             YCENT3D = 0.0D0
-            XORIG3D = DBLE( AMISS3 )
+            XORIG3D = DBLE( BTEMP )     ! Starting temperature
             YORIG3D = DBLE( AMISS3 )
+            XCELL3D = DBLE( TINTV )     ! Temperature increment
+            YCELL3D = DBLE( AMISS3 )
             SDATE3D = JYEAR * 1000 + 1
             STIME3D = 1
             TSTEP3D = 1
@@ -244,8 +246,15 @@ C.............  Set up Master List file description
             WRITE  ( MESG, 94070 ) 'temperatures from', BTEMP, 
      &                             'to', ETEMP
             FDESC3D( 2 ) = MESG
+
             WRITE  ( MESG, 94070 ) 'on increments of', TINTV
             FDESC3D( 3 ) = MESG
+
+            WRITE  ( MESG, 94070 ) 'Total number of temperatures='
+            FDESC3D( 4 ) = MESG
+
+            WRITE  ( MESG, 94080 ) NTEMP
+            FDESC3D( 5 ) = MESG
 
             DO 33 J = 1, MXEMIS
                 VNAME3D( J ) = EMTLST ( J )
@@ -570,6 +579,7 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
 94060   FORMAT( 8( F6.2, ', ' ) )
 94070   FORMAT( 5( A, 1X, F6.1, 1X, A, 1X, F6.1, 1X ) )
+94080   FORMAT( I8 )
 
         END
 
