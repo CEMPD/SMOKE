@@ -49,11 +49,16 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDSPDLINE
 
+C.........  Initialize IREC on first time through for this Mobile6 run
+        IF( SCENNUM == 1 ) THEN
+            IREC = 0
+        END IF
+
         SOURCES = 0
         IREC = IREC + STLINE - 1
-
+        
         DO
-
+        	
 C.............  Make sure we don't try to read past the end of the file
             IF( IREC + 1 > NLINES ) THEN
             	ROADTYPE = LOCAL
