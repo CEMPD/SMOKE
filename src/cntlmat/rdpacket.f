@@ -41,9 +41,6 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL, ONLY:
-
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, EANAM
 

@@ -60,9 +60,6 @@ C.........  This module contains the control packet data and control matrices
      &                      GRPCHAR, GRPINEM, GRPOUTEM, POLSFLAG, 
      &                      NVPROJ, NVCMULT, PCTLFLAG
 
-C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY:
-
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NIPPA, NIPOL, NIACT, NPPOL,
      &                     EINAM, EANAM, ACTVTY

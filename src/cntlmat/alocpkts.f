@@ -51,12 +51,6 @@ C.........  This module contains the control packet data and control matrices
      &                      CTLRPLC, MACEXEFF, MACNWEFF, MACNWFRC,
      &                      CMACSRCTYP
 
-C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY:
-
-C.........  This module contains the information about the source category
-        USE MODINFO, ONLY:
-
         IMPLICIT NONE
         
 C...........   INCLUDES

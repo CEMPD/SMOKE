@@ -37,15 +37,6 @@ C
 C**********************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY:
-
-C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL, ONLY:
-
-C.........  This module contains the speciation profiles
-        USE MODSPRO, ONLY:
-
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, BYEAR
 
