@@ -1,6 +1,5 @@
 
-        SUBROUTINE EFSETUP( FNAME, MODELNAM, MXVAR, NVAR, 
-     &                      VNAMES, VUNITS, VDESCS, VOLNAM )
+        SUBROUTINE EFSETUP( FNAME, MODELNAM, NVAR, VOLNAM )
    
 C***********************************************************************
 C  subroutine EFSETUP body starts at line < >
@@ -8,9 +7,6 @@ C
 C  DESCRIPTION:
 C      Get the names of the emission factors given the emission factor
 C      model name and locally obtained environment variable settings
-C      NOTE - the NVAR argument is not used, but it is there for a future,
-C      more flexible, version of the routine.
-C
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -42,7 +38,7 @@ C****************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: NEFS, EFSNAM, EFSUNT, EFSDSC
 
         IMPLICIT NONE
 
@@ -60,11 +56,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME           ! logical file or 'NONE'
         CHARACTER(*), INTENT (IN) :: MODELNAM        ! name of EF model
-        INTEGER     , INTENT (IN) :: MXVAR           ! max no of variables
         INTEGER     , INTENT(OUT) :: NVAR            ! actual no of variables
-        CHARACTER(*), INTENT(OUT) :: VNAMES( MXVAR ) ! variable names
-        CHARACTER(*), INTENT(OUT) :: VUNITS( MXVAR ) ! variable units
-        CHARACTER(*), INTENT(OUT) :: VDESCS( MXVAR ) ! variable descriptions
         CHARACTER(*), INTENT(OUT) :: VOLNAM          ! volatile pollutant name
 
 C...........   Local variables
@@ -173,6 +165,20 @@ C           model being used.
 C.................  Set variable names, units, and descriptions from
 C                   arrays defined in the MOBILE6 include file
   
+                NEFS = MXM6EFS
+  
+C.................  Allocate memory for and set the public variables for the 
+C                   EF names, units, and descriptions...
+                ALLOCATE( EFSNAM( NEFS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EFSNAM', PROGNAME )
+                ALLOCATE( EFSUNT( NEFS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EFSUNT', PROGNAME )
+                ALLOCATE( EFSDSC( NEFS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EFSDSC', PROGNAME )
+                EFSNAM = ' '  ! array
+                EFSUNT = ' '
+                EFSDSC = ' '
+
                 K = 0
 
 C.................  Loop over all emission processes
@@ -187,61 +193,33 @@ C.........................  Check if this is a valid pollutant/process combo
                         K = K + 1
     
 C.........................  Pull process name and description from include file                        
-                        VNAMES( K ) = M6PROCS( I ) // ETJOIN
-                        VDESCS( K ) = 'EFs for ' // M6PRCDSC( I )
+                        EFSNAM( K ) = M6PROCS( I ) // ETJOIN
+                        EFSDSC( K ) = 'EFs for ' // M6PRCDSC( I )
     
 C.........................  If pollutant is HC, append specified volatile pollutant
 C                           name; otherwise, use name and desc from include file
                         IF( TRIM( M6POLS( J ) ) == 'HC' ) THEN
-                            VNAMES( K ) = TRIM( VNAMES( K ) ) // VOLNAM
-                            VDESCS( K ) = TRIM( VDESCS( K ) ) // ' ' // 
-     &                                    VOLNAM
+                            EFSNAM( K ) = TRIM( EFSNAM( K ) ) // VOLNAM
+                            EFSDSC( K ) = TRIM( EFSDSC( K ) ) //
+     &                                    ' ' // VOLNAM
                         ELSE
-                            VNAMES( K ) = TRIM( VNAMES( K ) ) //
+                            EFSNAM( K ) = TRIM( EFSNAM( K ) ) //
      &                                    M6POLS( J )
-                            VDESCS( K ) = TRIM( VDESCS( K ) ) // ' ' //
-     &                                    M6POLDSC( J )
+                            EFSDSC( K ) = TRIM( EFSDSC( K ) ) // 
+     &                                    ' ' // M6POLDSC( J )
                         END IF
     
 C.........................  Store units from include file                        
-                        VUNITS( K ) = M6UNIT
+                        EFSUNT( K ) = M6UNIT
                         
                     END DO  ! pollutant loop
                 END DO  ! emission process loop
 
-C.................  Store maximum number of emission factor types
-                NEFS = MXM6EFS
-
 C.............  If file available
             ELSE 
-
-                IF( .NOT. DESC3( FNAME ) ) THEN
-                    MESG = 'Could not get description of ' //
-     &                     'emission factors input file.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
-                END IF
-
-                VNAMES( 1:NVARS3D ) = VNAME3D( 1:NVARS3D )
-                VUNITS( 1:NVARS3D ) = VNAME3D( 1:NVARS3D )
-                VDESCS( 1:NVARS3D ) = VNAME3D( 1:NVARS3D )
-
-                NEFS = NVARS3D
+c note: add here
 
             END IF
-
-C.............  Allocate memory for and set the public variables for the 
-C               EF names, units, and descriptions...
-
-            ALLOCATE( EFSNAM( NEFS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFSNAM', PROGNAME )
-            ALLOCATE( EFSUNT( NEFS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFSUNT', PROGNAME )
-            ALLOCATE( EFSDSC( NEFS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFSDSC', PROGNAME )
-
-            EFSNAM( 1:NEFS ) = VNAMES( 1:NEFS )
-            EFSUNT( 1:NEFS ) = VUNITS( 1:NEFS )
-            EFSDSC( 1:NEFS ) = VDESCS( 1:NEFS )
 
         END SELECT
 
