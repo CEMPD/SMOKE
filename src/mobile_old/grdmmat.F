@@ -65,7 +65,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         INTEGER     LFIP, LRDT
         INTEGER     COL
         INTEGER     ROW
-        INTEGER     ZONE, GZONE
+        INTEGER     ZONE, GZONE, UZONE
         INTEGER     CMAX, CMIN
         REAL        XDUM, YDUM
         REAL        XBEG, YBEG, XEND, YEND
@@ -174,20 +174,23 @@ C...........   Other local variables
         INTEGER         XDEV    !  for surrogate xref  file
         INTEGER         LDEV    !  for link defs file
         INTEGER         ILOG    !  for log-device
+
+        INTEGER         NOSURG( NMSRC ) ! FIPs codes w/o surrogates
         
         INTEGER         IOS     !  I/O status
         INTEGER         IREC    !  input line (record) number
         INTEGER         I0      !  for counting FIP-independent srcs
         INTEGER         I1      !  for counting state-dependent   srcs
         INTEGER         I2      !  for counting FIP-dependent   srcs
+        INTEGER         NOS     !  number of FIPs w/o surrogates
 
+        LOGICAL         EFLAG   !  input error flat
         LOGICAL         EPSFLG  !  if true, the surrogates are in EPS format
         LOGICAL         GFLAG   !  generate output   gridding matrix if true
         LOGICAL         UFLAG   !  generate output UNgridding matrix if true
         LOGICAL         OFLAG   !  Did overflow occur
         CHARACTER*160   MESG
 
-        LOGICAL         EFLAG   !  input error flat
 
 
 C...........   STATEMENT FUNCTION
@@ -247,9 +250,25 @@ C.......   Get file name; open actual-scc file
      &          'Enter logical name for MOBILE SOURCE input file',
      &          FSREAD3, 'MOBL', 'GRDMMAT' )
 
+        IF( .NOT. DESC3( ENAME ) ) THEN
+            CALL M3EXIT( 'GRDMMAT', 0, 0,
+     &              'Could not get description of file ' // ENAME, 2 )
+        END IF
+
+        UZONE = NINT( P_ALP3D )
+
+        IF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( *, 92000 ) ' '
+            WRITE( *, 92010 )
+     &             'Existing MOBL file has record count      ', NROWS3D,
+     &             'But, GRDMMAT compiled using count (NMSRC)', NMSRC
+            CALL M3EXIT( 'GRDMMAT', 0, 0,
+     &        'Max record-count exceeded in MOBILE SOURCE file.', 2 )
+
+        ENDIF
 
 C...........   Get grid description from GRIDDESC file (Sets values
-C...........   in FDESC3 commons for opening MGMAT, MUGMAT files):
+C...........   in FDESC3 commons for opening MGMAT, MUMAT files):
         
         IF ( .NOT. DSCGRID( GRDNM, CNAME, GDTYP3D, 
      &             P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
@@ -266,8 +285,9 @@ C...........   in FDESC3 commons for opening MGMAT, MUGMAT files):
 
         IF ( GDTYP3D .EQ. LAMGRD3 ) THEN
 
-            IF ( .NOT. SETLAM( P_ALP3D, P_BET3D, P_GAM3D, 
-     &                         XCENT3D, YCENT3D ) ) THEN
+            IF ( .NOT. SETLAM( SNGL( P_ALP3D) , SNGL( P_BET3D ), 
+     &                         SNGL( P_GAM3D), 
+     &                         SNGL( XCENT3D), SNGL( YCENT3D ) ) ) THEN
                 MESG  = 'Failure in SETLAM for grid "' //
      &                  GNAME( 1:TRIMLEN( GNAME ) ) // '"'
                 CALL M3EXIT( 'GRDMMAT', 0, 0, MESG, 2 )
@@ -341,7 +361,7 @@ C.......   Get file name; open output UNgridding matrix file
 
         UNAME = PROMPTMFILE( 
      &          'Enter logical name for UNGRIDDING MATRIX output file',
-     &          FSUNKN3, 'MUGMAT', 'GRDMMAT' )
+     &          FSUNKN3, 'MUMAT', 'GRDMMAT' )
 
         UFLAG = ( UNAME( 1:5 ) .NE. 'NONE ' )
 
@@ -572,10 +592,12 @@ C.........  Read EPS format file header
             ELSE IF ( FLTERR( YCELL, SNGL( YCELL3D ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                       'Bad YCELL in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( XX, FLOAT( NINT( XX ) ) ) ) THEN
+            ELSE IF ( GDTYP3D .EQ. UTMGRD3  .AND.
+     &                FLTERR( XX, FLOAT( NINT( XX ) ) ) ) THEN
                 CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                   'Bad X-origin alignment in SURROGATE file', 2 )
-            ELSE IF ( FLTERR( YY, FLOAT( NINT( YY ) ) ) ) THEN
+            ELSE IF ( GDTYP3D .EQ. UTMGRD3  .AND.
+     &                FLTERR( YY, FLOAT( NINT( YY ) ) ) ) THEN
             CALL M3EXIT( 'GRDMMAT', 0, 0,
      &                   'Bad Y-origin alignment in SURROGATE file', 2 )
             ELSE IF ( XX .LT. -1.0E-4 * XCELL ) THEN
@@ -613,7 +635,7 @@ C.........  Read EPS format file header
 C.............  Read EPS format 
             IF( EPSFLG ) THEN  
 
-                READ( SDEV, * , END=79, IOSTAT=IOS ) 
+                READ( SDEV, 93020 , END=79, IOSTAT=IOS ) 
      &                FIP, XX, YY, ZONE, ( FRAC( C ), C = 1, NMSRG )
 
                 IREC = IREC + 1
@@ -914,6 +936,7 @@ C.......       sixth case:   fallback default
         OFLAG = .FALSE.         !  flag to detect overflow
         EFLAG = .FALSE.         !  flag to detect other errors
         LFIP  = 0
+        NOS   = 0
 
         DO  155  I = 1, NMSRC
             
@@ -922,9 +945,52 @@ C.......       sixth case:   fallback default
             LNK = ILINK ( I )
             
             IF ( LNK .GT. 0 ) THEN	!  explicit calculation for this link
-            
-                CALL LNK2GRD( XLOC1( I ), YLOC1( I ), 
-     &                        XLOC2( I ), YLOC2( I ),
+
+C.................  Convert coordinate system from UTM to required system
+
+                XBEG = XLOC1 ( I )
+                YBEG = YLOC1 ( I )
+                XEND = XLOC2 ( I )
+                YEND = YLOC2 ( I )
+
+                IF ( GDTYP3D .EQ. LATGRD3 ) THEN
+                    CALL UTM2LL( XBEG, YBEG, UZONE,  XDUM, YDUM )
+                    XBEG = XDUM
+                    YBEG = YDUM
+
+                    CALL UTM2LL( XEND, YEND, UZONE,  XDUM, YDUM )
+                    XEND = XDUM
+                    YEND = YDUM
+
+                ELSEIF ( GDTYP3D .EQ. LAMGRD3 ) THEN
+
+                    IF ( .NOT.  UTM2LAM( XBEG, YBEG, UZONE, 
+     &                                   XDUM, YDUM ) ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 
+     &                  'Error converting <XBEG,YBEG> to Lambert ' //
+     &                  'at line', IREC
+                        CALL M3MESG( MESG )
+                        GO TO  11     !  to head of loop:  read next line
+                    END IF
+                    XBEG = XDUM
+                    YBEG = YDUM
+
+                    IF ( .NOT.  UTM2LAM( XEND, YEND, UZONE, 
+     &                                   XDUM, YDUM ) ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 
+     &                  'Error converting <XEND,YEND> to Lambert ' //
+     &                  'at line', IREC
+                        CALL M3MESG( MESG )
+                        GO TO  11     !  to head of loop:  read next line
+                    END IF
+                    XEND = XDUM
+                    YEND = YDUM
+
+                END IF
+
+                CALL LNK2GRD( XBEG, YBEG, XEND, YEND,
      &                        NCEL, ACEL, AFAC, ALEN )
 
                 IF ( NCEL .GT. MXCFIP ) THEN
@@ -935,7 +1001,18 @@ C.......       sixth case:   fallback default
                     GO TO  155
                 END IF
 
-                DD = 1.0 / ALEN
+                IF( ALEN .NE. 0 ) THEN
+                    DD = 1.0 / ALEN
+
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                  'Bad coordinates for source', I
+                    CALL M3MESG( MESG )
+                    GO TO  155
+                    
+                ENDIF
+
                 DO  111  K = 1, NCEL
                     C = ACEL( K )
                     J = NX( C ) + 1
@@ -946,7 +1023,7 @@ C.......       sixth case:   fallback default
                         CALL M3MESG( MESG )
                     ELSE  
                         IS( J,C ) = I 
-                        CS( J,C ) = DD * AFAC( J )
+                        CS( J,C ) = DD * AFAC( K )
                     END IF
                     NX( C )   = J
 111             CONTINUE
@@ -968,7 +1045,7 @@ C.......       sixth case:   fallback default
                         CALL M3MESG( MESG )
                     ELSE  
                         IS( J,C ) = I 
-                        CS( J,C ) = LNKFAC( J,S )
+                        CS( J,C ) = LNKFAC( K,S )
                     END IF
                     NX( C )   = J
 122             CONTINUE
@@ -991,7 +1068,6 @@ C.......       sixth case:   fallback default
                 SID = SRGIDS( S )
                 GO TO 133       !  to XREF processing
 
-            ELSE
             END IF
 
             S = FIND1( RDT, NUMSCR, SRRDTR )  !  roadtype only
@@ -1013,15 +1089,6 @@ C.......       sixth case:   fallback default
                 END IF
             END IF    
 
-            S = FIND2( FIP, RDT, NUMLNK, LNKFIP, LNKRDT )  !  ultimate fallback
-            IF ( S .GT. 0 ) THEN
-                
-                
-                GO TO 155       !  to end of loop
-
-            END IF
-
-
 C...........   Find all cells intersecting this FIPS and fill in 
 C...........   corresponding gridding-matrix coefficients.
 C...........   ASSUMPTION:  list is sorted by FIP (and then by col-row),
@@ -1029,22 +1096,39 @@ C...........   with multiple entries per FIP.
             
 133         CONTINUE    !  Process XREFs
 
+C...........   Check SID against maximum to make sure no overflow
+            IF( SID .GT. NMSRG ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &                 'Surrogate index', SID, 
+     &                 'used in MGREF, but maximum (NMSRG) is', NMSRG
+                CALL M3MESG( MESG )
+                GO TO  155
+
+            ENDIF
+
             IF( FIP .NE. LFIP ) THEN
 
                 LFIP = FIP
                 F = FIND1( FIP, NFIPLIST, FIPLIST )
-            
+
+C.................  Report no surrogates found            
                 IF ( F .LT. 0 ) THEN
 
                     WRITE( MESG,94010 ) 
      &                     'No surrogates for FIP code ', FIP
                     CALL M3MESG( MESG )
+
+C.....................  Store list of unfound FIPs
+                    NOS = NOS + 1
+                    NOSURG( NOS ) = FIP
+
                     GO TO 155
 
                 END IF
 
             ELSEIF( F .LT. 0 ) THEN
-                    GO TO 155
+                GO TO 155
 
             ENDIF
 
@@ -1205,12 +1289,21 @@ C.......   Create renormalization factors for each source
 C.......   Pre-divide normalization factors
         DO  312 S = 1, NMSRC
 
-            IF( DN( S ) .EQ. 0. ) THEN
+C.............  Look for FIP in list of FIPs w/ no surrogates
+            F = FIND1( IFIP( S ), NOS, NOSURG )
+
+C.............  Check for no gridding factors and make sure source
+C               hasn't already been flagged as having no surrogates
+            IF( DN( S ) .EQ. 0. .AND. F .LE. 0 ) THEN
+
                 WRITE( MESG,94010 ) 
-     &                'No gridding factors for Source Number', S
+     &                'No gridding factors. FIP:', IFIP( S ),
+     &                'RDT:', IRCLAS( S ), 'LNK:', ILINK( S )
                 CALL M3WARN( 'GRDMMAT', 0, 0, MESG )
-            ELSE 
+
+            ELSEIF( F .LE. 0 ) THEN
                 DN( S ) = 1.0 / DN( S )
+
             ENDIF
 
 312     CONTINUE
@@ -1339,14 +1432,14 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( 4 F10.0, I10, 2F10.0 )
 
-93020   FORMAT( I7, I3 )
+93020   FORMAT( I5, 2F10.0, I10, 30F10.8 )
 
 93030   FORMAT( I5, I4, I8, I3 )        !  for surrogate XREF file
 
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10 ( A, :, I10, :, 2X ) )
+94010   FORMAT( 10 ( A, :, I8, :, 2X ) )
 
 
         END
