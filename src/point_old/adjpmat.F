@@ -161,7 +161,7 @@ C...........   LOCAL VARIABLES and their descriptions:
      &          'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC' /
 
         INTEGER         C, F, I, J, K, L  !  scratch indices
-        INTEGER         M, Y, S, V, Y  !  scratch loop variables
+        INTEGER         M, Y, S, V    !  scratch loop variables
         INTEGER         LDEV           !  log-device
         INTEGER         SRDEV          !  sources list file device
         INTEGER         XRDEV          !  x-reference file device
@@ -1145,7 +1145,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93100   FORMAT( /1X, A )
 
-93101   FORMAT( X, A )
+93101   FORMAT( 1X, A )
 
 93110   FORMAT( 16X,                   12 ( 4X, A4, :, 4X ) )
 
@@ -1172,7 +1172,7 @@ C...........   Internal bufferring  formats............ 94xxx
 
 94030   FORMAT( I5.5, I8.8, A )
 
-94040   FORMAT( A, :, I10, :, 2X, 5 ( A, :, X, A, :, 2X ) ) 
+94040   FORMAT( A, :, I10, :, 2X, 5 ( A, :, 1X, A, :, 2X ) ) 
 
         END
 
