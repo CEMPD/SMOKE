@@ -2,7 +2,7 @@
 #
 all: opts
 #
-opts: csgmerge.debug csglmerge.debug
+opts: csgmerge.debug csglmerge.debug csgldaymerge.debug
 #
 LDIRS=-L$(em) \
       -L$(io) \
@@ -11,6 +11,7 @@ LDIRS=-L$(em) \
 #
 LIBS=$(LDIRS) -lemstuff.debug -lm3io.debug -lnetcdf.debug
 #
+FFLAGS = -C -g
 #
 #
 CSGS=csgmerge.F  amrgvec.F pmrgvec.F msmatvec.F
@@ -19,7 +20,7 @@ CSGI=ARDIMS3.EXT PTDIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT MBDIMS3.EXT BIODIMS3.EXT
 #
 csgmerge.debug: $(CSGS) $(CSGI)
 	echo CSGLMERGE:
-	f77 $(DBGFLAGS) -o csgmerge.debug $(CSGS) $(LIBS)
+	f77 $(FFLAGS) -o csgmerge.debug $(CSGS) $(LIBS)
 #
 #
 #
@@ -29,5 +30,12 @@ CSGLI=ARDIMS3.EXT PTDIMS3.EXT LADIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT \
       MBDIMS3.EXT BIODIMS3.EXT
 #
 csglmerge.debug: $(CSGLS) $(CSGLI)
-	f77 $(DBGFLAGS) -o csglmerge.debug $(CSGLS) $(LIBS)
+	f77 $(FFLAGS) -o csglmerge.debug $(CSGLS) $(LIBS)
+#
+#
+#
+CSGLS2=csglmerge.2.F amrgvec.F plmvec.F msmatvec.F csvname.F
+#
+csglmerge2.debug: $(CSGLS2) $(CSGLI)
+	f77 $(FFLAGS) -o csglmerge2.debug $(CSGLS2) $(LIBS)
 #
