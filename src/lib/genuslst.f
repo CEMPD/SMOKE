@@ -40,13 +40,20 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, ISIC, CMACT, 
+     &                      CORIS, CBLRID, CPDESC
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVIFIP, NINVSCC, NINVSCL, NINVSIC, 
+     &                      NINVSIC2, NINVMACT, NINVORIS, 
+     &                      INVIFIP, INVSCC, INVSCL, INVSIC,
+     &                      INVSIC2, INVMACT, INVORIS,
+     &                      INVORFP, IORSMTCH, INVODSC, ORISBLR,
+     &                      OBSRCBG, OBSRCNT, ORISPNT, OPSRCBG,
+     &                      OPSRCNT, NORISBLR, NORISPNT, ORISFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC, LSCCEND
 
         IMPLICIT NONE
 
@@ -58,7 +65,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         FINDC
-        EXTERNAL        CRLF, FINDC
+        LOGICAL         SETSCCTYPE
+        
+        EXTERNAL        CRLF, FINDC, SETSCCTYPE
 
 C...........   Sorting index
         INTEGER, ALLOCATABLE :: INDX( : )
@@ -91,6 +100,7 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
         LOGICAL, SAVE :: FIRSTORS = .TRUE.   ! true: first run of ORIS arrays
+        LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
         CHARACTER*8            FMTSIC        ! format buffer for SIC
         CHARACTER*300          MESG          ! message buffer
@@ -100,6 +110,8 @@ C...........   Other local variables
         CHARACTER(LEN=SCCLEN3) TSCC          ! tmp SCC
         CHARACTER(LEN=SICLEN3) CSIC          ! tmp char SIC
         CHARACTER(LEN=SICLEN3) PCSIC         ! previous char SIC
+        CHARACTER(LEN=MACLEN3) TMACT         ! tmp char MACT code
+        CHARACTER(LEN=MACLEN3) PMACT         ! previous char MACT code
         CHARACTER(LEN=BLRLEN3) BLID          ! tmp boiler ID
         CHARACTER(LEN=BLRLEN3) PBLID         ! previous boiler ID
         CHARACTER(LEN=ORSLEN3) CORS          ! tmp DOE plant ID
@@ -211,7 +223,10 @@ C.................  Create unique SCCs lists
                     J = INDX( S )
 
                     TSCC  = CSCC( J )
-                    SCCL  = CSCC( J )( 1:LSCCEND )
+                    
+C.....................  Set type of SCC                
+                    SCCFLAG = SETSCCTYPE( TSCC )
+                    SCCL  = TSCC( 1:LSCCEND )
 
                     IF( TSCC .NE. PSCC ) THEN
                         J1 = J1 + 1
@@ -240,8 +255,7 @@ C.................  Initialize SIC sorting index
                     INDX( S ) = S
                 END DO
 
-C.................  Sort all SICs in the point sources inventory in increasing
-C                   order
+C.................  Sort all SICs in the inventory in increasing order
                 CALL SORTI1( NSRC, INDX, ISIC )
 
 C.................  Count number of unique SICs and number of unique
@@ -301,6 +315,57 @@ C.................  Create unique SIC list
 
             END IF   ! End SIC processing
 
+C.............  Check if CMACT is allocated.  
+C.............  If it is, generate unique list of MACT codes
+            IF( ALLOCATED( CMACT ) ) THEN
+
+C.................  Initialize MACT sorting index     
+                DO S = 1, NSRC
+                    INDX( S ) = S
+                END DO                
+
+C.................  Sort all MACTs in the inventory in increasing order
+                CALL SORTIC( NSRC, INDX, CMACT )
+
+C.................  Count number of unique MACTs
+                PMACT = '-9'
+                J1 = 0
+                DO S = 1, NSRC
+                
+                    J = INDX( S )
+                    
+                    TMACT = CMACT( J )
+                    
+                    IF( TMACT /= PMACT ) J1 = J1 + 1
+                    
+                    PMACT = TMACT
+                    
+                END DO
+                NINVMACT = J1
+
+C.................  Allocate memory for MACT lists
+                ALLOCATE( INVMACT( NINVMACT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVMACT', PROGNAME )
+
+C.................  Create unique MACTs list
+                PMACT = '-9'
+                J1 = 0
+                DO S = 1, NSRC
+                
+                    J = INDX( S )
+                    
+                    TMACT = CMACT( J )
+                    
+                    IF( TMACT /= PMACT ) THEN
+                        J1 = J1 + 1
+                        INVMACT( J1 ) = TMACT
+                        PMACT = TMACT
+                    END IF
+                    
+                END DO
+                
+            END IF    ! End MACT processing
+                
             DEALLOCATE( INDX )
 
             FIRSTIME = .FALSE.
