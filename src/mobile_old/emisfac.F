@@ -488,11 +488,11 @@ C.............  Prompt for modeling year
      &       'Enter temperatures for non-diurnal emission factors:' )
 
 C.............  Prompt for start temperature
-            BTEMP = GETREAL( 50., 110., BTEMP,
+            BTEMP = GETREAL( MINT_MIN, MINT_MAX, BTEMP,
      &                   'Enter minimum temperature [deg F]' )
 
 C.............   Prompt for end temperature
-            ETEMP = GETREAL( BTEMP, 110., ETEMP, 
+            ETEMP = GETREAL( BTEMP, MAXT_MAX, ETEMP, 
      &                   'Enter maximum temperature [deg F]' )
 
 C.............  Set temperatures
