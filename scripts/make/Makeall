@@ -5,24 +5,29 @@
 #
 ## Set controllers for turning on/off library building
 #
-setenv SMK_MAKE_LIB     N   # [ Y | N ]
-setenv SMK_MAKE_MOBLIB  N   # [ 5A | 5B | 6 | N ]
+setenv ETOOLS_MAKE_LIB  Y   # [ Y | N ]
+setenv SMK_MAKE_LIB     Y   # [ Y | N ]
+setenv SMK_MAKE_MOBLIB  5B  # [ 5A | 5B | 6 | N ]
+
+#
+## Set the directory for the EDSS installation
+if ( $?EDSS_SUBSYS ) then
+   if ( $?SMKROOT ) then
+   else
+      setenv SMKROOT $EDSS_SUBSYS/smokev1
+   endif
+else
+
+   echo "ERROR: Environment variable EDSS_SUBSYS needs to be set to"
+   echo "       use this script"
+   exit( 1 )
+
+endif
 
 #
 ## Set the directory for the sysflags and smk_mkdir scripts
-#
-
-set assigndir = ../../assigns
-if ( $?M3MODEL ) then
-   set assigndir = $M3MODEL/smoke/assigns
-
-else
-
-   if ( $?SMKROOT ) then
-      set assigndir = $SMKROOT/assigns
-   endif
-
-endif
+ 
+set assigndir = $SMKROOT/assigns
 
 #
 ## Source the sysflags script to set environment variables for compiling
@@ -31,7 +36,7 @@ endif
 if ( ! -e $assigndir/sysflags ) then
    echo "Cannot find sysflags file\!"
    echo " "
-   echo "Get set up for Models-3, EDSS, or set SMKROOT to the"
+   echo "Get set up for EDSS or set SMKROOT to the"
    echo "   path of the Assigns file."
    exit( 1 )
 else
@@ -41,15 +46,21 @@ else
 endif
 
 #
-## Create the directories
+## Make EDSS tools library
 #
-$assigndir/smk_mkdir
+if ( $ETOOLS_MAKE_LIB == Y ) then
+   echo "Building EDSS Tools library..."
+   cd $EDSS_SUBSYS/edss_tools/setup
+   source Setup
+   cd $ETLSRC
+   make clean
+   Makeit $argv
+endif
 
 #
-## Interpret the script argument
+## Set up for SMOKE compiling
 #
-
-set what = $argv
+$assigndir/ASSIGNS.m3demo.cb-iv.us36
 
 #
 ## Make SMOKE library
