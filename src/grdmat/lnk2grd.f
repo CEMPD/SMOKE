@@ -484,23 +484,23 @@ C........  sentinels on either end of fractions arrays
         YINC = 1
 133     CONTINUE
 
-C.............  Intersect new column next           
-            IF ( XFAC( IX ) .LT. YFAC( IY ) ) THEN
-                FAC = XFAC( IX ) - FF
-                FF  = XFAC( IX )
-                IC  = XCOL( IX )
-                IR  = YROW( IY )
-                IX  = IX + XINC
-
 C.............  Intersect new column and new row at same time
 C.............  or both arrays have reached end of lists
-            ELSEIF( ABS( XFAC( IX ) - YFAC( IY ) ) .LT. 1.0E-05 ) THEN
+            IF( ABS( XFAC( IX ) - YFAC( IY ) ) .LT. 1.0E-05 ) THEN
                 FAC = XFAC( IX ) - FF
                 FF  = XFAC( IX )
                 IC  = XCOL( IX )
                 IR  = YROW( IY )
                 IX  = IX + XINC
                 IY  = IY + YINC
+
+C.............  Intersect new column next           
+            ELSE IF ( XFAC( IX ) .LT. YFAC( IY ) ) THEN
+                FAC = XFAC( IX ) - FF
+                FF  = XFAC( IX )
+                IC  = XCOL( IX )
+                IR  = YROW( IY )
+                IX  = IX + XINC
 
 C.............  Intersect new row next
             ELSE
