@@ -60,8 +60,9 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS:
         INTEGER         FIND1
         INTEGER         GETIFDSC
+        INTEGER         INDEX1
 
-        EXTERNAL        FIND1, GETIFDSC
+        EXTERNAL        FIND1, GETIFDSC, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT (IN) :: DDEV           ! emissions unit no.
@@ -81,7 +82,7 @@ C...........   Local parameters, indpendent
 C.........  Parameters for output IDA formats
         INTEGER    , PARAMETER :: AROLEN ( 7 ) = ( /10,10,11,7,3,6,0/ )
         INTEGER    , PARAMETER :: MBOPLEN( 7 ) = ( /10,10,0,0,0,0,0/ )
-        INTEGER    , PARAMETER :: MBOALEN( 7 ) = ( /13,0,0,0,0,0,0/ )
+        INTEGER    , PARAMETER :: MBOALEN( 7 ) = ( /14,0,0,0,0,0,0/ )
         INTEGER    , PARAMETER :: PTOLEN ( 7 ) = ( /13,13,7,3,10,3,3/ )
 
         CHARACTER*6, PARAMETER :: AROFMT ( 7 )  = 
@@ -91,7 +92,7 @@ C.........  Parameters for output IDA formats
      &                        ( / ' F10.4',' F10.4','      ','      ',
      &                            '      ','      ','      ' / )
         CHARACTER*6, PARAMETER :: MBOAFMT( 7 ) = 
-     &                        ( / ' F13.4','      ','      ','      ',
+     &                        ( / ' F16.3','      ','      ','      ',
      &                            '      ','      ','      ' / )
         CHARACTER*6, PARAMETER :: PTOFMT ( 7 ) = 
      &                        ( / ' F13.4',' F13.4','  F7.2','    I3',
@@ -115,6 +116,7 @@ C...........   IDA output variables (names same as IDA format description)
         REAL            NETDC, LATC, LONC
 
         CHARACTER(LEN=1)        CAPUNITS, OFFSHORE  
+        CHARACTER(LEN=LNKLEN3 ) CLNK  
         CHARACTER(LEN=PLANTLEN) PLANTID  
         CHARACTER(LEN=POINTLEN) POINTID
         CHARACTER(LEN=STACKLEN) STACKID
@@ -147,6 +149,7 @@ C...........   Other local variables
         CHARACTER*100 CHARS( 7 )     !  source fields for output
         CHARACTER*200 ACTBUF         !  activity list buffer
         CHARACTER*200 POLBUF         !  pollutant list buffer
+        CHARACTER*200 UNTBUF         !  activity units buffer
         CHARACTER*300 ACTVFMT        !  output format buffer for activities
         CHARACTER*300 EMISFMT        !  output format buffer for emissions
         CHARACTER*300 MESG           !  message buffer
@@ -180,9 +183,19 @@ C.........  Write buffers for pollutants and activities to use in headers
         IF( NIACT .GT. 0 ) THEN
             ACTBUF = ACTVTY( 1 )
 
+            J = INDEX1( ACTVTY( 1 ), NIPPA, EANAM )
+            L2 = LEN_TRIM( EAUNIT( J ) ) 
+            UNTBUF = '"' // EAUNIT( J )( 1:L2 ) // '"'
+
             DO I = 2, NIACT
                 L = LEN_TRIM( ACTBUF )
                 ACTBUF = ACTBUF( 1:L ) // ' ' // ACTVTY( I )
+
+                L = LEN_TRIM( UNTBUF )
+                J = INDEX1( ACTVTY( I ), NIPPA, EANAM )
+                L2 = LEN_TRIM( EAUNIT( J ) ) 
+                UNTBUF = UNTBUF( 1:L )// ' "'// EAUNIT(J)( 1:L2 )// '"'
+
             END DO
 
         END IF
@@ -197,6 +210,7 @@ C.........  Allocate local memory
 C.........  Read data from temporary files and write each IDA record
         SELECT CASE( CATEGORY )
 
+C............................................................................
 C.........  For area sources...
         CASE ( 'AREA' )
 
@@ -255,6 +269,7 @@ C.................  Write out main entries
 
             END DO  ! loop through sources
 
+C............................................................................
 C.........  For mobile sources...
         CASE ( 'MOBILE' )
 
@@ -272,21 +287,28 @@ C.............  Write initial header
      &             '#DESC     Output from SMOKE',
      &             '#POLID    ' // POLBUF( 1:L )
 
+            L1 = LEN_TRIM( ACTBUF )
+            L2 = LEN_TRIM( UNTBUF )
             IF( VDEV .GT. 0 ) WRITE( VDEV, 93000 ) 
      &             '#TYPE     Motor Vehicle Activity Inventory',
      &             '#DESC     Output from SMOKE',
-     &             '#DATA     ' // POLBUF( 1:L )
+     &             '#DATA     ' // ACTBUF( 1:L1 ),
+     &             '#UNITS    ' // UNTBUF( 1:L2 )
 
 C.............  Write mobile-source characteristics to output file
             DO S = 1, NSRC
 
 C.................  Store others in temporary variables
-                COID = IFIP( S ) / 10000
-                FIP  = IFIP( S ) - COID * 10000
-                STID = FIP / 1000 
-                CYID = FIP - STID * 1000
-                SCC  = CSCC ( S )
-                YEAR = INVYR( S )
+                COID  = IFIP( S ) / 100000
+                FIP   = IFIP( S ) - COID * 100000
+                STID  = FIP / 1000 
+                CYID  = FIP - STID * 1000
+                CLNK  = CLINK( S )
+                SCC   = CSCC ( S )
+                YEAR  = INVYR( S )
+
+C.................  Set link to zero if blank
+                IF ( CLNK .EQ. ' ' ) CLNK = ADJUSTR( '0' )
 
 C.................  Read emissions from temporary files
                 K = 0
@@ -306,7 +328,7 @@ C.....................  Write out header
                     CALL WRITE_IDA_HEADER( DDEV, IOS )
                     IF( IOS .GT. 0 ) CYCLE            
 
-                    WRITE( DDEV, EMISFMT ) STID, CYID, SCC,
+                    WRITE( DDEV, EMISFMT ) STID, CYID, CLNK, SCC,
      &                   ( COUTRECS( J ), J = 1, NIPOL )
 
                 END IF
@@ -317,7 +339,7 @@ C.................  Read activities from temporary files
                     FDEV = TDEV( K )
                     READ( FDEV, * ) ( DATARECS( I ), I = 1, NPACT )
 
-                    CALL FORMAT_OUTREC( NPPOL, DATARECS, MBOALEN, 
+                    CALL FORMAT_OUTREC( NPACT, DATARECS, MBOALEN, 
      &                                  MBOAFMT, COUTRECS( J ) )
                 END DO
 
@@ -328,7 +350,7 @@ C.....................  Write out header
                     CALL WRITE_IDA_HEADER( VDEV, IOS )
                     IF( IOS .GT. 0 ) CYCLE
 
-                    WRITE( VDEV, ACTVFMT ) STID, CYID, SCC,
+                    WRITE( VDEV, ACTVFMT ) STID, CYID, CLNK, SCC,
      &                   ( COUTRECS( J ), J = 1, NIACT )
 
                 END IF                    
@@ -338,6 +360,7 @@ C.....................  Write out header
 
             END DO  ! loop through sources
 
+C............................................................................
 C.........  For point sources...
         CASE ( 'POINT' )
 
@@ -388,7 +411,8 @@ C.............  Write initial header
 C.............  Write point-source characteristics to output file
             DO S = 1, NSRC
 
-                CALL PARSCSRC( CSOURC( S ), IDACOLS, CHARS, NCHAR )
+                CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP,
+     &                         IDACOLS, NCHAR, CHARS )
 
 C.................  Truncate character string variables
                 PLANTID  = CHARS( 2 ) 
@@ -408,8 +432,8 @@ C.................  Convert units of stack parameters
                 STKFLOW = STKVEL * 0.25 * PI * STKDIAM * STKDIAM
 
 C.................  Store others in temporary variables
-                COID = IFIP( S ) / 10000
-                FIP  = IFIP( S ) - COID * 10000
+                COID = IFIP( S ) / 100000
+                FIP  = IFIP( S ) - COID * 100000
                 STID = FIP / 1000 
                 CYID = FIP - STID * 1000
 
@@ -434,12 +458,12 @@ C.................  Read data from temporary files
 
 C.................  Write out main entries
                 WRITE( DDEV, EMISFMT ) STID, CYID, PLANTID, POINTID,
-     &                 STACKID, CORIS, BLRID, SEGMENT, PLNTDESC, SCC,
+     &                 STACKID, ORISID, BLRID, SEGMENT, PLNTDESC, SCC,
      &                 BEGYR, ENDYR, STKHGT, STKDIAM, STKTEMP, STKFLOW, 
      &                 STKVEL, BOILCAP, CAPUNITS, WINTHRU, SPRTHRU, 
-     &                 FALTHRU, HOURS, START, NDAY, WEEKS, THRUPUT, 
-     &                 MAXRATE, HEATCON, SULFCON, ASHCON, NETDC, SIC,
-     &                 LATC, LONC, OFFSHORE, 
+     &                 SUMTHRU, FALTHRU, HOURS, START, NDAY, WEEKS, 
+     &                 THRUPUT, MAXRATE, HEATCON, SULFCON, ASHCON, 
+     &                 NETDC, SIC, LATC, LONC, OFFSHORE, 
      &                 ( COUTRECS( J ), J = 1, NIPOL )
 
                 LCOID = COID
@@ -459,9 +483,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93320   FORMAT( '(I2, I3, A10, ', I3.3, '(A47) )' )
 
-93330   FORMAT( '(I2, I3, A10, ', I3.3, '(A20) )' )
+93330   FORMAT( '(I2, I3, A10, A10, ', I3.3, '(A20) )' )           ! mb emis
 
-93335   FORMAT( '(I2, I3, 1X, A10, 1X', I3.3, '(A11) )' )
+93335   FORMAT( '(I2, 1X, I3, 1X, A10, A10, 1X', I3.3, '(A17) )' ) ! mb activity
 
 93340   FORMAT( '(I2, I3, A15, A15, A12, A6, A5, A2, A40, A10, I4, I4,', ! point
      &          'F4.0, F6.2, F4.0, F10.2, F9.2, F8.2, A1, 4F2.0, 2I2, ',
@@ -565,15 +589,20 @@ C.............  For remaining fields, build formats and add value to buffer
 C               for non-missing values
             DO I = 2, NPPOL
 
-                IF( DATAVALS( I ) .GT. BADVAL3 ) THEN
-                    FMT = '(' // FMTBUF( I ) // ')'
-                    IF( OUTTYPE( I ) .EQ. 0 ) THEN                 ! integer
-                        WRITE( BUFLOC, FMT ) INT( DATAVALS( I ) )
-                    ELSE                                           ! float
-                        WRITE( BUFLOC, FMT ) DATAVALS( I )
-                    END IF
+                FMT = '(' // FMTBUF( I ) // ')'
+
+                IF( OUTTYPE ( I ) .EQ. 0      .AND.
+     &              DATAVALS( I ) .GT. IMISS3       ) THEN
+
+                    WRITE( BUFLOC, FMT ) INT( DATAVALS( I ) )
                     BUFFER = BUFFER( 1:L ) // BUFLOC
-                ENDIF
+
+                ELSE IF ( OUTTYPE ( I ) .NE. 0       .AND.
+     &                    DATAVALS( I ) .GT. BADVAL3       ) THEN
+                    WRITE( BUFLOC, FMT ) DATAVALS( I )
+                    BUFFER = BUFFER( 1:L ) // BUFLOC
+
+                END IF
 
                 L = L + FMTLEN( I )
 
