@@ -1,8 +1,8 @@
 
         SUBROUTINE PROCINVEN( NRAWBP, MXIDAT, FILFMT, PRATIO, INVSTAT )
 
-C***********************************************************************
-C  subroutine body starts at line 106
+C**************************************************************************
+C  subroutine body starts at line 114
 C
 C  DESCRIPTION:
 C      This subroutine 
@@ -16,7 +16,7 @@ C
 C  REVISION  HISTORY:
 C      Created 4/99 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -55,11 +55,12 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2     CRLF
+        INTEGER         ENVINT
         INTEGER         INDEX1
         LOGICAL         ENVYN
         INTEGER         STR2INT
 
-        EXTERNAL        CRLF, INDEX1, ENVYN, STR2INT
+        EXTERNAL        CRLF, ENVINT, INDEX1, ENVYN, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NRAWBP            ! no.raw recs x pol/act
@@ -78,13 +79,20 @@ C...........   Other local variables
         INTEGER         IDUP        !  no. dulicate records
         INTEGER         IOS         !  i/o status
         INTEGER         LCAT        !  length of CATEGORY string
+        INTEGER         MXERR       !  max no. errors
+        INTEGER         MXWARN      !  max no. warnings
+        INTEGER         NERR        !  no. errors
+        INTEGER         NWARN       !  no. warnings
         INTEGER         PE, PS      !  pollutant postn end and start in CSOURCA 
         INTEGER         PIPCOD      !  IPOSCOD of previous iteration of loop
         INTEGER         SLEN        !  length of source 
 
         REAL            EMISI       !  inverse emissions value
         REAL            EMISN       !  new emissions value
+        REAL            EMISN_OZ    !  new ozone season emissions value
         REAL            EMISO       !  old emissions value
+        REAL            EMISO_OZ    !  old ozone season emissions value
+        REAL            EMIST       !  total old and new emissions
         REAL            RIMISS3     !  real typed integer missing value
 
         LOGICAL         DFLAG             ! true: if should error on duplicates
@@ -106,6 +114,9 @@ C.........  Get settings from the environment
         DFLAG = ENVYN( 'RAW_DUP_CHECK',
      &                 'Check for duplicate species-records',
      &                 .FALSE., IOS )
+
+        MXERR  = ENVINT( ERRSET  , ' ', 100, I )
+        MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
 C.........  Initlialze temporary data status
         TMPSTAT = 0  ! array
@@ -146,16 +157,19 @@ C.............  This IF also implies TSRCCHR = LSRCCHR
 
                 CALL FMTCSRC( TSRCCHR, NCHARS, BUFFER, L2 )
 
-                IF ( DFLAG ) THEN
+                IF ( DFLAG .AND. NERR .LE. MXERR ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Duplicate records found for' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                ELSE
+                    CALL M3MESG( MESG )
+                    NERR = NERR + 1
+
+                ELSE IF ( NWARN .LE. MXWARN ) THEN
                     MESG = 'WARNING: Duplicate records found for' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
                 END IF
-
-                CALL M3MESG( MESG )
 
                 IDUP = IDUP + 1
 
@@ -305,11 +319,17 @@ C           the memory were allocated at the same time.
         CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .TRUE., NSRC, 
      &               NRAWBP, NPPOL )
 
-C.........  Initialize pollutant/activity-specific values.  Inititalize integer
+C.........  Initialize pollutant/activity-specific values.  
+C.........  Initialize annual and ozone-season values with 0.
+C.........  Inititalize integer
 C           values with the real version of the missing integer flag, since
 C           these are stored as reals until output
-        POLVAL  = BADVAL3          ! array
-        RIMISS3 = REAL( IMISS3 )
+        IF( CATEGORY .NE. 'MOBILE' ) THEN
+            POLVAL( :,1:2 )    = 0.               ! array
+            POLVAL( :,3:NPPOL) = BADVAL3          ! array
+        END IF
+
+        RIMISS3 = REAL( IMISS3 )        
         IF( NC1 .GT. 0 ) POLVAL( :,NC1 ) = RIMISS3 ! array
         IF( NC2 .GT. 0 ) POLVAL( :,NC2 ) = RIMISS3 ! array
 
@@ -364,6 +384,7 @@ C                       statement is for new pollutants
                     K = K + 1
 
                     POLVAL( K, NEM ) = POLVLA( J, NEM )
+                    POLVAL( K, NOZ ) = POLVLA( J, NOZ )
                     POLVAL( K, NCE ) = POLVLA( J, NCE )
                     POLVAL( K, NRE ) = POLVLA( J, NRE )
                     IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
@@ -379,11 +400,39 @@ C.................  If the existing value is defined, sum with new emissions
 C                   or activity and use weighted average for control factors
                 ELSE
 
-                    EMISN = POLVLA( J, NEM )
-                    EMISO = POLVAL( K, NEM )
-                    POLVAL( K, NEM ) = EMISO + EMISN
+                    EMISN    = 0.
+                    EMISO    = 0.
+                    EMISN_OZ = 0.
+                    EMISO_OZ = 0.
 
-                    EMISI = 1. / POLVAL( K, NEM )   ! Compute inverse only once
+                    IF( POLVAL( K, NEM ) .GT. 0. ) THEN
+                	EMISN = POLVLA( J, NEM )
+                	EMISO = POLVAL( K, NEM )
+                	POLVAL( K, NEM ) = EMISO + EMISN
+                    END IF
+
+                    IF( POLVAL( K, NOZ ) .GT. 0. ) THEN
+                	EMISN_OZ = POLVLA( J, NOZ )
+                	EMISO_OZ = POLVAL( K, NOZ )
+                	POLVAL( K, NOZ ) = EMISO_OZ + EMISN_OZ
+
+                        IF( EMISN .EQ. 0. ) EMISN = EMISN_OZ
+                        IF( EMISO .EQ. 0. ) EMISO = EMISO_OZ
+                    END IF
+
+C.....................  Compute inverse only once
+                    EMIST = EMISN + EMISO
+                    IF( EMIST .GT. 0. ) THEN
+                        EMISI = 1. / EMIST
+
+C.....................  Continue in loop if zero emissions 
+                    ELSE
+                        CYCLE
+
+                    END IF
+
+C.....................  Weight the control efficiency, rule effectiveness, and 
+C                       rule penetration based on the emission values
                     POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
      &                                  POLVLA( J,NCE )*EMISN  ) * EMISI
                     POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
