@@ -208,7 +208,7 @@ C           not exceed the maximum number of sources over all hours
         ELSE IF( NPDSRC .EQ. 0 ) THEN
 
             MESG = 'No period-specific sources found in input file'
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
 
