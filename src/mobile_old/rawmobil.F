@@ -777,13 +777,13 @@ C.............  Update sources if no duplicate and no overflow
 
             EFLAG = .TRUE.
             WRITE( MESG, 94010 )
-     &             'Record count                        ', NSRC,
+     &             'Actual Record count                  ', NSRC,
      &              CRLF() // BLANK5 //
-     &             'Max dimensioned record-count (NMSRC)', NMSRC
+     &             'Compiled record-count setting (NMSRC)', NMSRC
 
             CALL M3MSG2( MESG )
             CALL M3EXIT( 'RAWMOBIL', 0, 0,
-     &        'Max record-count exceeded in MOBILE SOURCE file.', 2 )
+     &        'Compiled record count bad for MOBILE SOURCES.', 2 )
 
         ENDIF
 
