@@ -432,11 +432,17 @@ C
 cmh  999 RETURN 1
 c
 cmh add
-901   MESG = 'Problem reading scenario section of MOBILE5b inputs!'
+      MESG = 'Problem reading scenario section of MOBILE5b inputs!'
       CALL M3MSG2( MESG )
       GOTO 999
 
-902   MESG = 'Problem reading control section of MOBILE5b inputs!'
+901   MESG = 'Error exit status 1 while reading control section ' //
+     &       'of MOBILE5b inputs!'
+      CALL M3MSG2( MESG )
+      GOTO 999
+
+902   MESG = 'Error exit status 2 while reading control section ' //
+     &       'of MOBILE5b inputs!'
       CALL M3MSG2( MESG )
       GOTO 999
 
