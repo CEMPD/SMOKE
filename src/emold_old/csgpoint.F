@@ -1,0 +1,411 @@
+
+C Version "@(#)$Id$ $Source$ $Date$ 
+
+        PROGRAM CSGPOINT
+
+C***********************************************************************
+C  program body starts at line 104
+C
+C  DESCRIPTION:
+C       Use gridding-transform, model-speciation, and control matrices 
+C       from programs GRDPMAT, SPCPMAT, and CTLPMAT to grid, speciate,
+C       and control source-level point source emissions files.
+C
+C  PRECONDITIONS REQUIRED:  
+C       M3IO source-level point source emissions in canonical order used
+C       by RAWPOINT
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:
+C       Models-3 I/O; GETYN, PROMPTMFILE, TRIMLEN
+C
+C  REVISION  HISTORY:
+C       Prototype  7/95 by CJC.
+C
+C***********************************************************************
+
+      IMPLICIT NONE
+
+C...........   INCLUDES:
+
+        INCLUDE 'PTDIMS3.EXT'   !  point-source dimensioning parameters
+        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'GRDIMS3.EXT'   !  grid parameters
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+
+
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+
+        LOGICAL         DSCGRID
+        LOGICAL         GETYN
+        INTEGER         INDEX1
+        CHARACTER*16    PROMPTMFILE
+        INTEGER         TRIMLEN
+
+        EXTERNAL        DSCGRID, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
+
+
+C...........   PARAMETER
+
+        CHARACTER*16    NONE
+        PARAMETER     ( NONE = 'NONE' )
+
+C...........   LOCAL VARIABLES and their descriptions:
+C...........   Point Sources input and output arrays (one variable at a time)
+
+        REAL            EMISV( NPSRC )  !  input emissions.
+        REAL            EMISC( NPSRC )  !  controlled speciated emissions
+        REAL            EMISG( NGRID )  !  gridded output emissions
+
+C...........   Gridding Matrix (all active coeffs are 1.0, since 
+C...........   any point source "lives in" just one cell)
+
+        INTEGER         NS( NGRID )
+        INTEGER         IS( NMATX )
+
+        COMMON  / GRIDMAT / NS, IS
+
+C...........   Control Matrix
+
+        REAL            CC( NPSRC, NIPOL )
+
+C...........   Speciation Matrix, and description of how it maps input 
+C...........   variables to output variables:  SS( S, SPCREF( V,W ) )
+C...........   is used to produce species # OUTREF in the output file
+C...........   from species V in the input file
+C...........   (NOTE that names in the speciation-matrix file are of the 
+C...........   form "<INV-SPC-NAME>to<MODEL-SPC-NAME>")
+
+        REAL            SS( NPSRC, NMPOL )
+        INTEGER         NSPCOUT( NIPOL )        !  # of active rows in SPCREF
+        INTEGER         SPCREF ( NIPOL, NMPOL )
+
+        CHARACTER*16    INVNAME( NMPOL )	!  inv-spc part of name
+
+C...........   Other local variables
+
+        INTEGER         JDATE, JTIME, TSTEP
+        INTEGER         NSTEPS
+        INTEGER         LDEV
+        INTEGER         I, J, K, F, S, T, V
+
+        LOGICAL         CONTROLFLAG, OUTPUTFLAG
+
+        CHARACTER*16    PNAME   !  logical name for point-source      input file
+        CHARACTER*16    GNAME   !  logical name for grid       matrix input file
+        CHARACTER*16    CNAME   !  logical name for control    matrix input file
+        CHARACTER*16    SNAME   !  logical name for speciation matrix input file
+        CHARACTER*16    ENAME   !  logical name for emission output file
+
+        CHARACTER*16    SCRBUF  !  scratch point
+
+
+C***********************************************************************
+C   begin body of program CSGPOINT
+
+        LDEV = INIT3()
+
+        WRITE( *,92000 ) 
+     &  ' ',
+     &  'Program CSGPOINT to take a sorted source level point source ',
+     &  'emissions file and a gridding-transform matrix computed by',
+     &  'program GRDPMAT, a speciation matrix computed by SPCPMAT, ',
+     &  'optionally a control matrix produced by CTLPMAT, and produce ',
+     &  'gridded emissions.  The output time step structure of the ',
+     &  'gridded file will be the same as the time step structure of ',
+     &  'the input point source emissions file.',
+     &  ' '
+        WRITE( *,92000 ) 
+     &  'You will need to enter the logical names for the input and',
+     &  'output files (and to have set them prior to program launch,',
+     &  'using "setenv <logicalname> <pathname>").  Use "NONE" as the',
+     &  'name for the control-matrix file if you wish to omit control',
+     &  'from the operations performed, or as the name of the output',
+     &  'file if you want only to time program performance without the',
+     &  'overhead of additional I/O.',
+     &  ' '
+        WRITE( *,92000 ) 
+     &  'You may use END_OF-FILE (control-D) to quit the program',
+     &  'during logical-name entry.  Default responses are indicated',
+     &  'in brackets [LIKE THIS].',
+     &  ' '
+
+        IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
+            WRITE( *,92000 ) ' ', 'Ending program CSGPOINT', ' '
+            CALL EXIT( 0 )
+        END IF
+
+
+C.......   Get file names; open input gridding, speciation, 
+C.......   optional control matrix files, point source file, 
+C.......   optional output file
+
+        GNAME = PROMPTMFILE( 
+     &          'Enter logical name for GRID MATRIX file',
+     &          FSREAD3, 'PGMAT', 'CSGPOINT' )
+
+        SNAME = PROMPTMFILE( 
+     &          'Enter logical name for SPECIATION MATRIX file',
+     &          FSREAD3, 'PSMAT', 'CSGPOINT' )
+
+        CNAME = PROMPTMFILE( 
+     &          'Enter logical name for CONTROL MATRIX file ' //
+     &          'or "NONE"',
+     &          FSREAD3, 'PCMAT', 'CSGPOINT' )
+
+        CONTROLFLAG = ( CNAME .NE. NONE )
+
+        PNAME = PROMPTMFILE( 
+     &          'Enter logical name for POINT SOURCE file',
+     &          FSREAD3, 'PTMP', 'CSGPOINT' )
+
+C.......   Build description of output file, and optionally open it:
+
+        IF ( .NOT. DESC3( PNAME ) ) THEN
+            CALL M3EXIT( 'CSGPOINT', 0, 0, 
+     &          'Could not get description of file ' // PNAME, 2 )
+        END IF
+
+        IF ( .NOT. DSCGRID( GRDNM, SCRBUF,
+     &                      GDTYP3D, P_ALP3D, P_BET3D, P_GAM3D, 
+     &                      XCENT3D, YCENT3D, XORIG3D, YORIG3D, 
+     &                      XCELL3D, YCELL3D, 
+     &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
+            CALL M3EXIT( 'CSGAREA', 0, 0,
+     &              'Could not get description of grid ' // GRDNM, 2 )
+
+        END IF
+
+        NVARS3D = NMPOL
+        FTYPE3D = GRDDED3   !  shares most of file-description with input file.
+        NLAYS3D = 1
+        GDNAM3D = GRDNM
+        VGTYP3D = IMISS3
+        VGTOP3D = BADVAL3
+        JDATE   = SDATE3D
+        JTIME   = STIME3D
+        TSTEP   = TSTEP3D
+        IF ( TSTEP .EQ. 0 ) THEN
+            NSTEPS  = 1
+        ELSE
+            NSTEPS  = MXREC3D
+        END IF
+
+        DO  33 V = 1, NMPOL
+            VNAME3D( V ) = EMNAM( V )
+            UNITS3D( V ) = 'moles/hour'
+            VDESC3D( V ) = 'gridded speciated emissions'
+            VTYPE3D( V ) = m3REAL
+33      CONTINUE
+        FDESC3D( 1 ) = 'point source speciated gridded emissions.'
+
+
+        ENAME = PROMPTMFILE( 
+     &          'Enter logical name for OUTPUT EMIS file ' //
+     &          'or "NONE"',
+     &          FSUNKN3, 'PGTS', 'CSGPOINT' )
+
+        OUTPUTFLAG = ( ENAME .NE. NONE )
+
+
+C.......   Read gridding, speciation, and (optional) control matrices:
+
+        WRITE( *,92000 ) ' ', 'Reading GRIDDING matrix.', ' '
+        IF ( .NOT. READ3( GNAME, 'ALL', 1, 0, 0, NS ) ) THEN
+
+            CALL M3ERR( 'CSGPOINT', 0, 0,
+     &           'Could not read gridding matrix from file "' //
+     &           GNAME( 1 : TRIMLEN( GNAME ) ) // '".',
+     &           .TRUE. )
+
+        END IF      !  if read3() failed for gridding matrix
+
+        WRITE( *,92000 ) ' ','Reading SPECIATION matrix.',' '
+        IF ( .NOT. READ3( SNAME, 'ALL', 1, 0, 0, SS ) ) THEN
+
+            CALL M3ERR( 'CSGPOINT', 0, 0,
+     &           'Could not read SPECIATION matrix from file "'//
+     &           SNAME( 1 : TRIMLEN( SNAME ) ) // '".',
+     &           .TRUE. )
+
+        END IF      !  if read3() failed for speciation matrix
+
+
+C.......   Build description of how to use speciation matrix:
+
+        IF ( .NOT. DESC3( SNAME ) ) THEN
+            CALL M3EXIT( 'CSGPOINT', 0, 0, 
+     &                   'Could not get description of file ' // SNAME,
+     &                  .TRUE. )
+        END IF
+
+        DO  54  V = 1, NIPOL
+            NSPCOUT( V ) = 0
+54      CONTINUE
+
+        DO  55  V = 1, NMPOL
+
+            K = INDEX( VNAME3D( V ), '_to_' )
+            IF( K .LT. 1 ) THEN
+                CALL M3EXIT( 'CSGPOINT', 0, 0,
+     &              'Bad conversion factor name "' // 
+     &              VNAME3D( V )( 1:TRIMLEN( VNAME3D( V ) ) ) //
+     &              '" in ' // SNAME, 2 )
+            END IF
+            INVNAME( V ) = VNAME3D( V )( 1:K-1 )
+
+            I = INDEX1( INVNAME( V ), NIPOL, EINAM )
+            IF ( I .LT. 0 ) THEN
+                CALL M3ERR( 'CSGPOINT', 0, 0, 
+     &                  'Bad input species "' // 
+     &                  INVNAME( V )( 1:TRIMLEN( INVNAME( V ) ) ) // 
+     &                  '" in ' // SNAME, 
+     &                  .TRUE. )
+            END IF
+
+            SCRBUF = VNAME3D( V )( K+4:16 )
+            J = INDEX1( SCRBUF, NMPOL, EMNAM )
+            IF ( J .LT. 0 ) THEN
+                CALL M3ERR( 'CSGPOINT', 0, 0, 
+     &                      'Bad output species "' // 
+     &                      SCRBUF( 1:TRIMLEN( SCRBUF ) ) // 
+     &                      '" in ' // SNAME, 2 )
+            END IF
+
+            F = NSPCOUT( I ) + 1
+            SPCREF ( I,F ) = J
+            NSPCOUT( I )   = F
+            
+55      CONTINUE
+
+
+C.......   If CONTROLFLAG, read and apply control matrix:
+
+        IF( CONTROLFLAG ) THEN
+
+            WRITE( *,92000 ) 
+     &      ' ', 'Reading CONTROL matrix.', ' '
+
+            DO  66 S = 1, NIPOL
+
+                SCRBUF = 'CONTROL_' // EINAM( S )( 1:9 )
+                IF ( .NOT. READ3( CNAME, SCRBUF, 1, 0, 0, CC( 1,S ) ) 
+     &             ) THEN
+
+                    CALL M3ERR( 'CSGPOINT', 0, 0,
+     &                   'Could not read "' // SCRBUF( 1:12 ) // 
+     &                   '" from CONTROL FILE "' //
+     &                   CNAME( 1 : TRIMLEN( CNAME ) ) // '".',
+     &                   .TRUE. )
+
+                END IF      !  if read3() failed for control matrix
+
+                DO  65 V = 1, NMPOL
+                    IF ( EINAM( S ) .EQ. INVNAME( V ) ) THEN
+                        DO  64  I = 1, NPSRC
+                            SS( I,V ) = CC( I,S ) * SS( I,V )
+64                      CONTINUE
+                    END IF
+65              CONTINUE
+
+66          CONTINUE
+
+        END IF          !  if controlflag
+
+
+C.......   Transform and write out point source emissions values:
+
+        IF ( CONTROLFLAG .AND. OUTPUTFLAG ) THEN
+            WRITE( *,92000 ) 
+     &      ' ', 
+     &      'Calculating and writing ' //
+     &      'controlled speciated gridded emissions...'
+        ELSE IF ( CONTROLFLAG ) THEN
+            WRITE( *,92000 ) 
+     &      ' ', 
+     &      'Calculating controlled speciated gridded emissions...'
+        ELSE IF ( OUTPUTFLAG ) THEN
+            WRITE( *,92000 ) 
+     &      ' ', 
+     &      'Calculating and writing speciated gridded emissions...'
+        ELSE 
+            WRITE( *,92000 ) 
+     &      ' ', 
+     &      'Calculating speciated gridded emissions...'
+        END IF
+
+        DO  199  T = 1, NSTEPS
+
+            DO  198  V = 1, NIPOL
+
+                IF( READ3( PNAME, EINAM( V ), ALLAYS3, 
+     &                     JDATE, JTIME, EMISV ) ) THEN
+
+                    DO  197  J = 1,  NSPCOUT( V )
+
+                        K = SPCREF( V,J )
+
+                        CALL DMATVEC( NPSRC, SS( 1,K ), EMISV, EMISC )
+
+                        CALL PMATVEC( NPSRC, NGRID, NMATX, NS, IS,
+     &                                EMISC, EMISG )
+
+                        IF ( OUTPUTFLAG ) THEN
+
+                            IF ( .NOT. WRITE3( ENAME, EMNAM( K ),
+     &                                         JDATE, JTIME, 
+     &                                         EMISG ) ) THEN
+
+                                CALL M3EXIT( 'CSGPOINT', JDATE, JTIME,
+     &                          'Could not write "' // 
+     &                          EMNAM( K )( 1: TRIMLEN( EMNAM( K ))) // 
+     &                          '" to ' // ENAME, 2 )
+      
+                            END IF          !  if write3() failed
+
+                        END IF          !  if outputflag
+
+197                 CONTINUE    !  end loop on output vbles for this input vble
+
+                ELSE
+
+                    CALL M3EXIT( 'CSGPOINT', JDATE, JTIME, 
+     &                           'Could not read "' //  
+     &                           EINAM( V )( 1:TRIMLEN( EINAM( K ))) //
+     &                           '" from ' // PNAME, 2 )
+
+                END IF          !  if read3() succeeds or not
+
+198         CONTINUE            ! end loop on input variables
+
+            CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+199     CONTINUE          !  end loop on time steps
+
+999     CONTINUE          !  exit program
+
+        CALL M3EXIT( 'CSGPOINT', 0, 0, 
+     &               'Normal completion  of PROGRAM CSGPOINT', 0 )
+
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Informational (LOG) message formats... 92xxx
+
+92000   FORMAT( 5X, A )
+
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93010   FORMAT( A16 )
+
+
+C...........   Miscellaneous formats................. 95xxx
+
+95000   FORMAT ( /5X , A , $ )          !  generic prompt format.
+
+
+        END
+
