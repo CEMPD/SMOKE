@@ -2,7 +2,7 @@
         SUBROUTINE OPENCTMP( PKTTYP, IDEV )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 75
 C
 C  DESCRIPTION:
 C      This subroutine opens the temporary files that will contain the
@@ -16,13 +16,13 @@ C
 C  REVISION  HISTORY:
 C
 C
-C****************************************************************************/
+C***************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -47,8 +47,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2   CRLF
         INTEGER       GETEFILE
+        INTEGER       JUNIT
 
-        EXTERNAL      CRLF, GETEFILE
+        EXTERNAL      CRLF, GETEFILE, JUNIT
 
 C...........   SUBROUTINE ARGUMENTS:
 
@@ -58,14 +59,15 @@ C...........   SUBROUTINE ARGUMENTS:
 
 C...........   Other local variables
 
-        INTEGER         IOS                   ! i/o status
+        INTEGER          IOS                   ! i/o status
+        INTEGER, SAVE :: LP                    ! length of tmp file path
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subroutine called
 	
-        CHARACTER*16    FILENM                ! file name
-        CHARACTER*300   MESG                  ! message buffer
-        CHARACTER, SAVE ::  PATHNM            ! path name for tmp file
-        CHARACTER*16 :: PROGNAME = 'OPENCTMP' ! program name
+        CHARACTER*200, SAVE :: PATHNM         ! path name for tmp file
+        CHARACTER*220          FILENM                ! file name
+        CHARACTER*300          MESG                  ! message buffer
+        CHARACTER*16        :: PROGNAME = 'OPENCTMP' ! program name
 
 C***********************************************************************
 C   Begin body of subroutine OPENCTMP
@@ -76,6 +78,7 @@ C   Begin body of subroutine OPENCTMP
 
             MESG = 'Path where temporary control files will be written'
             CALL ENVSTR( 'TMP_CTL_PATH', MESG, '.', PATHNM, IOS )
+            LP = LEN_TRIM( PATHNM )
 
             IF( IOS .NE. 0 ) THEN
                 MESG = 'WARNING: Large temporary files being placed '//
@@ -91,25 +94,37 @@ C   Begin body of subroutine OPENCTMP
 
            CASE ( 'CTG' )
 
-              FILENM = PATHNM // '/.ctgtmp'
-              IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
+              FILENM = PATHNM( 1:LP ) // '/.ctgtmp'
+              IDEV = JUNIT()
+              OPEN( IDEV, ERR=1006, FILE=FILENM )
 
            CASE ( 'CONTROL', 'EMS_CONTROL' )
 
-              FILENM = PATHNM // '/.ctltmp'
+              FILENM = PATHNM( 1:LP ) // '/.ctltmp'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
            CASE ( 'ALLOWABLE' )
 
-              FILENM = PATHNM // '/.alwtmp'
+              FILENM = PATHNM( 1:LP ) // '/.alwtmp'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
            CASE ( 'ADD' )
 
-              FILENM = PATHNM // '/.addtmp'
+              FILENM = PATHNM( 1:LP ) // '/.addtmp'
               IDEV = GETEFILE( FILENM, .FALSE., .TRUE., PROGNAME )
 
         END SELECT
 
         RETURN
+
+C.........  Open file error
+1006    MESG = 'Could not open temporary ASCII file for control info.'
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
         END SUBROUTINE OPENCTMP
