@@ -4,13 +4,9 @@ all: opts
 #
 opts:   csgmerge csglmerge csgldaymrg
 #
-LDIRS=-L$(em) \
-      -L$(io) \
-      -L$(ncf)
 #
-LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
+LIBS=$(LDIRS) -lemlib -lioapi -lnetcdf
 #
-FFLAGS = -C
 #
 #
 CSGS=csgmerge.F  amrgvec.F pmrgvec.F msmatvec.F
@@ -25,7 +21,7 @@ csgmerge: $(CSGS) $(CSGI)
 #
 CSGLS=csglmerge.F  amrgvec.F  plmvec.F   msmatvec.F
 
-CSGLI=ARDIMS3.EXT PTDIMS3.EXT LADIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT \
+CSGLI=ARDIMS3.EXT PTDIMS3.EXT VGRD3.EXT GRDIMS3.EXT CHDIMS3.EXT \
       MBDIMS3.EXT BIODIMS3.EXT
 #
 csglmerge: $(CSGLS) $(CSGLI)
@@ -35,6 +31,9 @@ csglmerge: $(CSGLS) $(CSGLI)
 #
 CSGLS2=csgldaymrg.F amrgvec.F plmvec.F msmatvec.F csvname.F
 #
-csgldaymrg: $(CSGLS2) $(CSGLI)
+CSGLI2=ARDIMS3.EXT PTDIMS3.EXT VGRD3.EXT GRDIMS3.EXT CHDIMS3.EXT \
+       MBDIMS3.EXT BIODIMS3.EXT TMDIMS3.EXT CHDGEN3.EXT
+#
+csgldaymrg: $(CSGLS2) $(CSGLI2)
 	f77 $(FFLAGS) -o $(SCENDIR)/csgldaymrg $(CSGLS2) $(LIBS)
 #
