@@ -132,7 +132,7 @@ C.........  Loop through pollutants and generate MOBILE6 inputs
                 AIRPOL = TRIM( AIRPOL ) // ' MTBE'
             CASE( 'BUTADIENE' )
                 AIRPOL = TRIM( AIRPOL ) // ' BUTA'
-            CASE( 'FORM' )
+            CASE( 'FORMALDEHYD' )
                 AIRPOL = TRIM( AIRPOL ) // ' FORM'
             CASE( 'ACETALD' )
                 AIRPOL = TRIM( AIRPOL ) // ' ACET'

@@ -65,15 +65,15 @@ C.........  Mobile6 vehicle types
      &          'LDDV ', 'LDDT ', 'HDDV ', 'MC   ' / )
 
 C.........  Mobile6 intrinsic pollutant names
-        CHARACTER(LEN=9), PARAMETER :: M6POLS( MXM6POLS ) =
-     &      ( / 'HC       ', 'CO       ', 'NOX      ',            
-     &          'SO4      ', 'OCARB25  ', 'ECARB25  ',   
-     &          'GASPM25  ', 'SO2      ', 'NH3      ',      
-     &          'BRAKE25  ', 'TIRE25   ', 'BENZENE  ',
-     &          'MTBE     ', 'BUTADIENE', 'FORM     ',    
-     &          'ACETALD  ', 'ACROLEIN ', 'OCARBPMC ',  
-     &          'ECARBPMC ', 'GASPMC   ', 'BRAKEPMC ', 
-     &          'TIREPMC  ' / )
+        CHARACTER(LEN=11), PARAMETER :: M6POLS( MXM6POLS ) =
+     &      ( / 'HC         ', 'CO         ', 'NOX        ',            
+     &          'SO4        ', 'OCARB25    ', 'ECARB25    ',   
+     &          'GASPM25    ', 'SO2        ', 'NH3        ',      
+     &          'BRAKE25    ', 'TIRE25     ', 'BENZENE    ',
+     &          'MTBE       ', 'BUTADIENE  ', 'FORMALDEHYD',    
+     &          'ACETALD    ', 'ACROLEIN   ', 'OCARBPMC   ',  
+     &          'ECARBPMC   ', 'GASPMC     ', 'BRAKEPMC   ', 
+     &          'TIREPMC    ' / )
 
 C.........  Pollutant descriptions
         CHARACTER(LEN=12), PARAMETER :: M6POLDSC( MXM6POLS ) =
