@@ -226,7 +226,7 @@ C.......   Get file name; open input time zone file
 C.......   Get file name; open input raw area source file
 
         CALL M3MSG2( 'Now enter the list of logical file names for'
-     &               // CRLF() // BLANK5 // 'RAW AREA SOURCE files...'
+     &               // CRLF() // BLANK5 // 'RAW AREA SOURCE files...' )
 
         IFIL =    0
         S    =    0
