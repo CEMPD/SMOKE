@@ -132,6 +132,7 @@ C   begin body of program GRDAREA
      &          FSREAD3, 'AREA', 'GRDAREA' )
 
 
+C.......   Borrow much of file description from input area file.
 C.......   Get list of output variables (shrink list in file description
 C.......   data structure to just those variables desired):
 
@@ -169,26 +170,20 @@ C.......   data structure to just those variables desired):
 
 33      CONTINUE
 
+        FTYPE3D = GRDDED3   !  shares most of file-description with input file.
+        IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
+     &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D, 
+     &                     XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
+     &                     NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
+
+            CALL M3EXIT( 'CSGAREA', 0, 0,
+     &              'Could not get description of grid ' // GRDNM, 2 )
+
+        END IF
+
         NVARS3D = J
         FTYPE3D = GRDDED3   !  shares most of file-description with input file.
-        SDATE3D = 0
-        STIME3D = 0
-        TSTEP3D = 0
-        NCOLS3D = NCOLS
-        NROWS3D = NROWS
-        NLAYS3D = 1
-        NTHIK3D = NASRC
-        GDNAM3D = 'NC_UAM'
-        GDTYP3D = UTMGRD3
-        P_ALP3D = 17.0D0                 !  DBLE( ZONE )
-        P_BET3D = DBLE( BADVAL3 )
-        P_GAM3D = DBLE( BADVAL3 )
-        XCENT3D =       0.0D0
-        YCENT3D =       0.0D0
-        XCELL3D =    5000.0D0
-        YCELL3D =    5000.0D0
-        XORIG3D =  350000.0D0
-        YORIG3D = 3785000.0D0
+        GDNAM3D = GRDNM
         VGTYP3D = IMISS3
         VGTOP3D = BADVAL3
         JDATE   = SDATE3D
