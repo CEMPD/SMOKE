@@ -1,5 +1,6 @@
 
-        CHARACTER(LEN=80) FUNCTION WRSPDVMT( FREESPD, ARTSPD, SPDDIR )
+        CHARACTER(LEN=80) FUNCTION WRSPDVMT( FREESPD, ARTSPD, SPDDIR, 
+     &                                       SPDFLAG )
 
 C***********************************************************************
 C  function body starts at line 77
@@ -38,6 +39,8 @@ C
 C***********************************************************************
 
 C.........  MODULES for public variables
+C...........  This module is for mobile-specific data
+        USE MODMOBIL
 
 C.........  This module is used for MOBILE6 setup information 
         USE MODMBSET
@@ -49,23 +52,26 @@ C...........   INCLUDES
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        JUNIT
-        CHARACTER*2    CRLF    
+        CHARACTER*2    CRLF
+        INTEGER        FIND1
         
-        EXTERNAL  JUNIT, CRLF
+        EXTERNAL  JUNIT, CRLF, FIND1
 
 C...........   FUNCTION ARGUMENTS
         REAL,              INTENT (IN) :: FREESPD ! freeway speed
         REAL,              INTENT (IN) :: ARTSPD  ! arterial speed
         CHARACTER(LEN=60), INTENT (IN) :: SPDDIR  ! directory for writing speed files
+        LOGICAL,           INTENT (IN) :: SPDFLAG ! true: speed profiles are available
 
 C...........   Local arrays
-        REAL FREEPROF( 14 )                ! speed profile for freeway
-        REAL ARTPROF ( 14 )                !   "       "    "  arterial
+        REAL M6SPDPROF( 14 )                  ! M6 speed profile for a single hour
 
 C...........   Other local variables
-        INTEGER I                             ! counters and indices
+        INTEGER I,K                           ! counters and indices
         INTEGER IOS                           ! I/O status
+        INTEGER M6HOUR                        ! hour adjusted for M6 (1 = 6 AM)
         INTEGER SDEV                          ! unit no. for speed file
+        INTEGER PROFNUM                       ! speed profile number
 
         LOGICAL :: FILEEXIST = .FALSE.        ! true: file already exists
 
@@ -79,22 +85,37 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of function WRSPDVMT
 
-C.........  Create speed profiles based on average values
-        FREEPROF = 0.
-        ARTPROF  = 0.
-        
-        CALL CALC_SPEED_PROF( FREESPD, FREEPROF )
-        CALL CALC_SPEED_PROF( ARTSPD,  ARTPROF )
+C.........  Make sure speed profiles are allowed
+        IF( FREESPD < 0. .OR. ARTSPD < 0. ) THEN
+            IF( .NOT. SPDFLAG ) THEN
+                MESG = 'ERROR: Speed profiles were not read in, ' //
+     &                 'but the SPDSUM file uses profiles'
+                CALL M3EXIT( MESG, 0, 0, PROGNAME, 2 )
+            END IF
+        END IF
 
-C.........  Create name of speed vmt file
-        WRITE( FREESPDSTR, '(F6.2)' ) FREESPD
+C.........  Create name of speed vmt file - if using values, put speed in name, 
+C           otherwise, use 'pX' where X is the profile number
+        IF( FREESPD > 0. ) THEN
+            WRITE( FREESPDSTR, '(F6.2)' ) FREESPD
+        ELSE
+            WRITE( FREESPDSTR, '(I6)' ) -INT( FREESPD )
+            FREESPDSTR = 'p' // ADJUSTL( FREESPDSTR )
+        END IF
+            
         FREESPDSTR = ADJUSTL( FREESPDSTR )
         
-        WRITE( ARTSPDSTR,  '(F6.2)' ) ARTSPD
+        IF( ARTSPD > 0. ) THEN
+            WRITE( ARTSPDSTR, '(F6.2)' ) ARTSPD
+        ELSE
+            WRITE( ARTSPDSTR, '(I6)' ) -INT( ARTSPD )
+            ARTSPDSTR = 'p' // ADJUSTL( ARTSPDSTR )
+        END IF
+            
         ARTSPDSTR  = ADJUSTL( ARTSPDSTR )
 
-        FILENAME = 'spd' // FREESPDSTR( 1:LEN_TRIM( FREESPDSTR ) ) 
-     &             // '_' // ARTSPDSTR( 1:LEN_TRIM( ARTSPDSTR ) ) 
+        FILENAME = 'spd' // TRIM( FREESPDSTR ) 
+     &             // '_' // TRIM( ARTSPDSTR ) 
      &             // '.sv'
 
         WRSPDVMT = SPDDIR( 1:LEN_TRIM( SPDDIR ) ) // '/' 
@@ -125,15 +146,64 @@ C.........  Otherwise, we need to create the file
 
 C.........  Write header line to file
         WRITE( SDEV, 93000 ) 'SPEED VMT'
+
+C.........  If freeway speed is actual value, create single speed profile
+        IF( FREESPD > 0. ) THEN        
+            CALL CALC_SPEED_PROF( FREESPD, M6SPDPROF )
+
+C.............  Write 24 copies of profile to file            
+            DO I = 1, 24
+                WRITE( SDEV, 93010 ) M6FREEWAY, I, M6SPDPROF
+            END DO
+
+C.........  Otherwise, match profile number and create separate M6 profiles for each hour
+        ELSE
+            PROFNUM = -FREESPD
+            
+            K = FIND1( PROFNUM, NSPDPROF, SPDNUMS )
+            IF( K < 1 ) THEN
+                WRITE( MESG,94010) 'ERROR: Could not find speed ' //
+     &                 'profile', PROFNUM, 'in speed profiles file.'
+                CALL M3MESG( MESG )
+                WRSPDVMT = ''
+                RETURN
+            END IF
+            
+            DO I = 1,24
+                M6HOUR = I+6    ! adjust for 1 = 6 AM
+                IF( M6HOUR > 24 ) M6HOUR = M6HOUR - 24
+                CALL CALC_SPEED_PROF( SPDPROFS( K,M6HOUR ), M6SPDPROF )
+                WRITE( SDEV, 93010 ) M6FREEWAY, I, M6SPDPROF
+            END DO
+        END IF
+            
+C.........  Repeat process for arterial speed
+        IF( ARTSPD > 0. ) THEN            
+            CALL CALC_SPEED_PROF( ARTSPD,  M6SPDPROF )
+         
+            DO I = 1, 24
+                WRITE( SDEV, 93010 ) M6ARTERIAL, I, M6SPDPROF
+            END DO
         
-C.........  Write arrays to file
-        DO I = 1, 24
-            WRITE( SDEV, 93010 ) M6FREEWAY, I, FREEPROF
-        END DO
-        	
-        DO I = 1, 24
-            WRITE( SDEV, 93010 ) M6ARTERIAL, I, ARTPROF
-        END DO
+        ELSE
+            PROFNUM = -ARTSPD
+            
+            K = FIND1( PROFNUM, NSPDPROF, SPDNUMS )
+            IF( K < 1 ) THEN
+                WRITE( MESG,94010) 'ERROR: Could not find speed ' //
+     &                 'profile', PROFNUM, 'in speed profiles file.'
+                CALL M3MESG( MESG )
+                WRSPDVMT = ''
+                RETURN
+            END IF
+            
+            DO I = 1,24
+                M6HOUR = I+6    ! adjust for 1 = 6 AM 
+                IF( M6HOUR > 24 ) M6HOUR = M6HOUR - 24
+                CALL CALC_SPEED_PROF( SPDPROFS( K,M6HOUR ), M6SPDPROF )
+                WRITE( SDEV, 93010 ) M6ARTERIAL, I, M6SPDPROF
+            END DO
+        END IF
 
 C.........  Close the file        
         CLOSE( SDEV )
@@ -172,6 +242,9 @@ C.............  Local subprogram variables
             REAL    FRACTION                      ! fraction in LOWERBIN        
 
 C.............................................................................
+
+C.............  Initialize profile array
+            SPDPROF = 0.
 
 C.............  Set upper and lower speeds bracketing the actual speed
             IF( SPEED >= 65 ) THEN

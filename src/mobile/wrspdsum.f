@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRSPDSUM( MDEV, REFIDX )
+        SUBROUTINE WRSPDSUM( MDEV, REFIDX, SPDFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 104
@@ -48,6 +48,9 @@ C.........  This module contains the information about the source category
 C.........  This module is used for MOBILE6 setup information         
         USE MODMBSET
         
+C.........  This module is for cross reference tables
+        USE MODXREF, ONLY: SPDPROFID
+               
         IMPLICIT NONE
 
 C.........  INCLUDES:
@@ -65,6 +68,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV     ! SPDSUM file unit no.
         INTEGER, INTENT (IN) :: REFIDX   ! index of reference county
+        LOGICAL, INTENT (IN) :: SPDFLAG  ! true: use speed profiles
         
 C...........   Local allocatable arrays
         REAL,    ALLOCATABLE :: COUNTYSPDS ( :,: )  ! sources, speeds, and road types per county
@@ -299,10 +303,20 @@ C                   speed is not zero
                     CYCLE
                 END IF
 
-C.................  Store speed for freeways and arterials
-C                   Rounding of speeds could be added here
+C.................  If current source is not a local road, then store speed info
                 IF( SPDARRAY( N,3 ) /= M6LOCAL ) THEN
+
+C.....................  Store speed from inventory
+C                       Rounding of speeds could be added here       
                     SPDARRAY( N,2 ) = SPEED( K )
+
+C.....................  If current source uses a speed profile, store the negative ID
+                    IF( SPDFLAG ) THEN
+                        IF( SPDPROFID( K ) > 0 ) THEN
+                            SPDARRAY( N,2 ) = -SPDPROFID( K )
+                        END IF
+                    END IF
+                    
                 END IF
 
                 N = N + 1
@@ -479,9 +493,18 @@ C.............  Local subprogram variables
             INTEGER STSRCWR                   ! starting index of sources for line of SPDSUM
             INTEGER ENDSRCWR                  ! ending index of sources
 
-C.............................................................................
+            LOGICAL IDFLAG                    ! true: current spd is a profile ID
             
-C.................  Set starting and ending indices for first line
+C.............................................................................
+
+C.............  Check if current speed is actually a profile ID
+            IF( SPDARRAY( 1,2 ) < 0 ) THEN
+                IDFLAG = .TRUE.
+            ELSE
+                IDFLAG = .FALSE.
+            END IF
+            
+C.............  Set starting and ending indices for first line
             STSRCWR  = 1
             ENDSRCWR = NSRCLINE
                 
@@ -490,14 +513,22 @@ C.................  Set starting and ending indices for first line
             END IF
 
 C.............  If no. sources is more than NSRCLINE, use multiple lines
-	    NLINES = ( NUMSRC - 1 ) / NSRCLINE
+	        NLINES = ( NUMSRC - 1 ) / NSRCLINE
 
 C.............  Loop through all lines except last one (to write continuation character)
             DO M = 1, NLINES
-                
-                WRITE( MDEV,93010 ) COUNTY, 
+
+C.................  If writing a profile ID, use different format (to avoid decimal point)
+C                   and convert to positive number
+                IF( IDFLAG ) THEN
+                    WRITE( MDEV,93020 ) COUNTY, 
+     &                 INT( SPDARRAY( 1,3 ) ), -INT( SPDARRAY( 1,2 ) ), 
+     &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
+                ELSE                
+                    WRITE( MDEV,93010 ) COUNTY, 
      &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
+                END IF
                     
                 STSRCWR  = STSRCWR  + NSRCLINE
                 ENDSRCWR = ENDSRCWR + NSRCLINE
@@ -511,16 +542,24 @@ C.............  Check that ending index is not greater than actual no. sources
 			    
 C.............  Write last line (may be only line) for this speed
             IF( STSRCWR <= ENDSRCWR ) THEN
-            	
-                WRITE( MDEV,93010 ) COUNTY,
+
+                IF( IDFLAG ) THEN
+                    WRITE( MDEV,93020 ) COUNTY,
+     &                 INT( SPDARRAY( 1,3 ) ), -INT( SPDARRAY( 1,2 ) ), 
+     &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
+                ELSE          	
+                    WRITE( MDEV,93010 ) COUNTY,
      &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
+                END IF
      
             END IF
 
 C--------------  SUBPROGRAM FORMAT  STATEMENTS   --------------------------
 
 93010       FORMAT( I6, 1X, I1, 1X, F6.2, 7( 1X, I6 ), 1X, 1A )  
+
+93020       FORMAT( I6, 1X, I1, 1X, I6, 7( 1X, I6 ), 1X, 1A )
             
             END SUBROUTINE WRITE_SPD_TO_SPDSUM
         
