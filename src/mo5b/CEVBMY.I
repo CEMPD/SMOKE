@@ -1,4 +1,0 @@
-C Version "@(#)$Id$ $Source$ $Date$ 
-
-      REAL BMYMPD,BMYTPD,BMTPDF
-      COMMON /CEVBMY/ BMYMPD(25,8),BMYTPD(25,8),BMTPDF(25,8)

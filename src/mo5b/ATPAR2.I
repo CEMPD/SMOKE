@@ -1,5 +1,0 @@
-C Version "@(#)$Id$ $Source$ $Date$ 
-
-      INTEGER ATPPGM,ATPFQT,DISTYP
-      REAL CRATP
-      COMMON /ATPAR2/ ATPPGM,ATPFQT,CRATP,DISTYP(8)
