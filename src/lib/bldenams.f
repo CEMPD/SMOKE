@@ -1,19 +1,21 @@
 
-        SUBROUTINE BLDENAMS( CATEGORY, NIPPA, NPPOA, EANAM, 
+        SUBROUTINE BLDENAMS( CATEGORY_L, NIPPA_L, NPPOA, EANAM_L, 
      &                       OUTNAMES, OUTUNITS, OUTTYPES, OUTDESCS )
 
 C***********************************************************************
-C  subroutine body starts at line 151
+C  subroutine body starts at line 154
 C
 C  DESCRIPTION:
 C      This subroutine builds names for pol/act-specific inventory variables
 C      such as rule effectiveness and control efficiency, while ensuring that 
 C      no names are duplicated.  Since inventory pol/act names are allowed
 C      to be 16 characters, there needs to be a truncation and check for
-C      duplicates, and then an insertion of the prefixes.
+C      duplicates, and then an insertion of the prefixes.  If the UNITS
+C      header option has been used in an inventory input file, it assigns 
+C      variable units based on these settings.
 C
 C  PRECONDITIONS REQUIRED:
-C      Source category specified correctly
+C      Source CATEGORY_L specified correctly
 C      Pollutant/activity list and number provided
 C      Memory allocated for output arrays
 C
@@ -24,13 +26,13 @@ C
 C  REVISION  HISTORY:
 C     Created 12/98 by M. Houyoux
 C
-C****************************************************************************/
+C*************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -47,6 +49,9 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+C.........  This module contains the information about the source CATEGORY
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -59,15 +64,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: CATEGORY                ! source category
-        INTEGER     , INTENT (IN) :: NIPPA                   ! no. of pol/act
-        INTEGER     , INTENT (IN) :: NPPOA                   ! no. vars per
-                                                             ! pol or activity
-        CHARACTER(*), INTENT (IN) :: EANAM   ( NIPPA )       ! pol/act names
-        CHARACTER(*), INTENT(OUT) :: OUTNAMES( NIPPA,NPPOA ) ! var names
-        CHARACTER(*), INTENT(OUT) :: OUTUNITS( NIPPA,NPPOA ) ! var units
-        INTEGER     , INTENT(OUT) :: OUTTYPES( NIPPA,NPPOA ) ! var type:int/real
-        CHARACTER(*), INTENT(OUT) :: OUTDESCS( NIPPA,NPPOA ) ! var descriptions
+        CHARACTER(*), INTENT (IN) :: CATEGORY_L               ! source CATEGORY
+        INTEGER     , INTENT (IN) :: NIPPA_L                  ! no. of pol/act
+        INTEGER     , INTENT (IN) :: NPPOA                    ! no. vars per
+                                                              ! pol or activity
+        CHARACTER(*), INTENT (IN) :: EANAM_L ( NIPPA_L )      ! pol/act names
+        CHARACTER(*), INTENT(OUT) :: OUTNAMES( NIPPA_L,NPPOA )! var names
+        CHARACTER(*), INTENT(OUT) :: OUTUNITS( NIPPA_L,NPPOA )! var units
+        INTEGER     , INTENT(OUT) :: OUTTYPES( NIPPA_L,NPPOA )! var typ:int/real
+        CHARACTER(*), INTENT(OUT) :: OUTDESCS( NIPPA_L,NPPOA )! var descriptions
 
 C.........  Data arrays for variable names...
 
@@ -93,14 +98,17 @@ C.........  Area source variable name parameters
      &               /
 
 C.........  Mobile source variable name parameters
+        CHARACTER(LEN=CPRTLEN3) MBPREFIX( 2:NMBPPOL3 )
+        DATA MBPREFIX / OZNSEART /
+
         CHARACTER(LEN=IOULEN3) MBUNITS( NMBPPOL3 )
-        DATA MBUNITS / 'mi/yr' /
+        DATA MBUNITS / 'ton/yr', 'ton/day' /
 
         INTEGER MBTYPES( NMBPPOL3 )
-        DATA MBTYPES / M3REAL /
+        DATA MBTYPES / M3REAL, M3REAL /
 
         CHARACTER(LEN=IODLEN3) MBDESCS( NMBPPOL3 )
-        DATA MBDESCS / 'Annual Vehicle Miles Traveled' /
+        DATA MBDESCS / 'Annual Data', 'Ozone Season Data' /
 
 C.........  Point source variable name parameters
         CHARACTER(LEN=CPRTLEN3) PTPREFIX( 2:NPTPPOL3 )
@@ -126,15 +134,15 @@ C.........  Point source variable name parameters
      &               /
 
 C...........   Unsorted pollutant/activity records
-        INTEGER       INDEXA ( NIPPA )
-        CHARACTER(LEN=IOVLEN3) ABRNAMA( NIPPA )    !  pollutant/activity names
+        INTEGER       INDEXA ( NIPPA_L )
+        CHARACTER(LEN=IOVLEN3) ABRNAMA( NIPPA_L )    !  pollutant/activity names
 
 C...........   Other local variables
-        INTEGER         COD     !  tmp for pollutant/activity code
-        INTEGER         I, J    !  counters and indices
-        INTEGER         IDIF    !  abridged name length
-        INTEGER         L, L2   !  length indices
-        INTEGER         LCNT    !  same-abrigded-name counter
+        INTEGER         COD       !  tmp for pollutant/activity code
+        INTEGER         I, J, K   !  counters and indices
+        INTEGER         IDIF      !  abridged name length
+        INTEGER         L, L2, LU !  length indices
+        INTEGER         LCNT      !  same-abrigded-name counter
 
         CHARACTER(LEN=IOVLEN3)  LNAM  !  previous pollutant/activity name
         CHARACTER(LEN=IOVLEN3)  NAM   !  current pollutant/activity name
@@ -150,19 +158,19 @@ C.........  Truncate variable names based on original length and length of
 C.........  fields to be inserted
 
         IDIF = IOVLEN3 - CPRTLEN3
-        DO I = 1, NIPPA
+        DO I = 1, NIPPA_L
            INDEXA ( I ) = I
-           L = MIN( IDIF, LEN_TRIM( EANAM( I ) ) )        
-           ABRNAMA( I ) = EANAM( I )( 1:L )
+           L = MIN( IDIF, LEN_TRIM( EANAM_L( I ) ) )        
+           ABRNAMA( I ) = EANAM_L( I )( 1:L )
         END DO
 
 C.........  Sort to set up for duplicates search
-        CALL SORTIC( NIPPA, INDEXA, ABRNAMA )
+        CALL SORTIC( NIPPA_L, INDEXA, ABRNAMA )
 
 C.........  Search for duplicates and rename them
         LNAM = EMCMISS3
         LCNT = 0
-        DO I = 1, NIPPA
+        DO I = 1, NIPPA_L
 
             J = INDEXA( I )
             NAM = ABRNAMA( J )
@@ -183,15 +191,14 @@ C.........  Search for duplicates and rename them
         ENDDO
 
 C.........  Build output names
-        DO I = 1, NIPPA
+        DO I = 1, NIPPA_L
 
-            OUTNAMES( I,1 ) = EANAM( I )  ! Annual emis name is same as pol/act
+            OUTNAMES( I,1 ) = EANAM_L( I )  ! Annual emis name is same as pol/act
 
             L  = LEN_TRIM( ABRNAMA( I ) )
-            L2 = LEN_TRIM( CATEGORY )
+            L2 = LEN_TRIM( CATEGORY_L )
 
-
-            SELECT CASE( CATEGORY )
+            SELECT CASE( CATEGORY_L )
             CASE( 'AREA' )
                 OUTUNITS( I,1 ) = ARUNITS( 1 )          
                 OUTTYPES( I,1 ) = ARTYPES( 1 )           
@@ -206,9 +213,13 @@ C.........  Build output names
 
             CASE( 'MOBILE' )
 
-                OUTUNITS( I,1 ) = MBUNITS( 1 )          
-                OUTTYPES( I,1 ) = MBTYPES( 1 )           
-                OUTDESCS( I,1 ) = MBDESCS( 1 )
+                OUTUNITS( I,1 ) = MBUNITS ( 1 )          
+                OUTTYPES( I,1 ) = MBTYPES ( 1 )           
+                OUTDESCS( I,1 ) = MBDESCS ( 1 )
+                OUTNAMES( I,2 ) = MBPREFIX( 2 ) // ABRNAMA( I )( 1:L )
+                OUTUNITS( I,2 ) = MBUNITS ( 2 )          
+                OUTTYPES( I,2 ) = MBTYPES ( 2 )           
+                OUTDESCS( I,2 ) = MBDESCS ( 2 )
 
             CASE( 'POINT' )
 
@@ -225,13 +236,13 @@ C.........  Build output names
 
             CASE DEFAULT
                 MESG = 'INTERNAL ERROR: Do not know how to build ' //
-     &                 'names for category ' // CATEGORY( 1:L2 )
+     &                 'names for CATEGORY ' // CATEGORY_L( 1:L2 )
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
             END SELECT
 
-        ENDDO
+        END DO
 
         RETURN
 
