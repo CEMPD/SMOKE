@@ -637,10 +637,10 @@ C.............  Read time-dependent ZF and ZH for hydrostatic Met data
 C.............  Compute per-source heights
             IF( .NOT. ZSTATIC ) THEN
 
-                CALL SAFE_READ3( SNAME,'ZH',ALLAYS3,JDATE,JTIME,XBUF )
+                CALL SAFE_READ3( XNAME,'ZH',ALLAYS3,JDATE,JTIME,XBUF )
                 CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
 
-                CALL SAFE_READ3( SNAME,'ZF',ALLAYS3,JDATE,JTIME,XBUF )
+                CALL SAFE_READ3( XNAME,'ZF',ALLAYS3,JDATE,JTIME,XBUF )
                 CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
 
 C.................  Pre-process ZF and ZH to compute DDZH and DDZF
