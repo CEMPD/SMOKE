@@ -3,7 +3,7 @@
      &                            SXREF, SCOEF, IPOL )
 
 C***********************************************************************
-C  function body starts at line  99
+C  function body starts at line  99 
 C
 C  FUNCTION:
 C       Reads the indicated speciation profile file from DEV, 
@@ -21,27 +21,28 @@ C  REVISION  HISTORY:
 C       prototype 1/96 by CJC
 C       updated for variable species 5/95 by MRH
 C       Fixed bug in sorting-process; style changes and better commenting
+C
 C***********************************************************************
-C *
-C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
-C *                System
-C * File: @(#)$Id$
-C *
-C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
-C * All Rights Reserved
-C *
-C * See file COPYRIGHT for conditions of use.
-C *
-C * Environmental Programs Group
-C * MCNC--North Carolina Supercomputing Center
-C * P.O. Box 12889
-C * Research Triangle Park, NC  27709-2889
-C *
-C * env_progs@mcnc.org
-C *
-C * Pathname: $Source$
-C * Last updated: $Date$ 
-C *
+C 
+C  Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                 System
+C  File: @(#)$Id$
+C 
+C  COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C  All Rights Reserved
+C 
+C  See file COPYRIGHT for conditions of use.
+C 
+C  Environmental Programs Group
+C  MCNC--North Carolina Supercomputing Center
+C  P.O. Box 12889
+C  Research Triangle Park, NC  27709-2889
+C 
+C  env_progs@mcnc.org
+C 
+C  Pathname: $Source$
+C  Last updated: $Date$ 
+C
 C****************************************************************************/
 
       IMPLICIT NONE
@@ -55,13 +56,13 @@ C...........   INCLUDES:
 
 C...........   ARGUMENTS and their descriptions:
 
-        INTEGER     SDEV        !  unit number for speciation profile file
-        INTEGER     N           !  dimension for profile codes
-        INTEGER     NP          !  number of model species used
-        INTEGER     SXREF( N )  !  profile indexes (sorted)
-        REAL        SCOEF( N, MXMPOL )!  profile coefficients
-        CHARACTER*8 PLIST( NP ) !  actual model species list
-        CHARACTER*8 IPOL        !  inventory pollutant for speciation profile
+        INTEGER       SDEV        !  unit number for speciation profile file
+        INTEGER       N           !  dimension for profile codes
+        INTEGER       NP          !  number of model species used
+        INTEGER       SXREF( N )  !  profile indexes (sorted)
+        REAL          SCOEF( N, MXMPOL )!  profile coefficients
+        CHARACTER*(*) PLIST( NP ) !  actual model species list
+        CHARACTER*(*) IPOL        !  inventory pollutant for speciation profile
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -89,7 +90,6 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         CHARACTER*10    MSPEC( MXMPOL )  ! model spcs names in profile file
         CHARACTER*22    LINE
         CHARACTER*256   MESG
-
 
 C***********************************************************************
 C   begin body of function  RDSPROF
@@ -182,7 +182,7 @@ C.........  Find and index actual species to profile format
 
             INDX( I ) = V
 
-            IF( V .EQ. 0 ) THEN		!  clasify inorganics; rest are errors
+            IF( V .LE. 0 ) THEN		!  clasify inorganics; rest are errors
 
                 IF     ( ASPEC .EQ. 'CO' ) THEN
                     ICO  = I
@@ -195,7 +195,7 @@ C.........  Find and index actual species to profile format
                     WRITE( MESG,94010 ) 
      &                     'Program does not handle species "'
      &                      // ASPEC // '" correctly. ' //
-     &                     'See rdsprof library program.'
+     &                     'See RDSPROF() library routine.'
                     CALL M3WARN( 'RDSPROF', 0, 0, MESG )
                 END IF
 
@@ -207,6 +207,15 @@ C.........  Find and index actual species to profile format
         IF( EFLAG ) THEN
             RDSPROF = IMISS3
             RETURN
+        ELSE IF ( ICO  .LE. 0 ) THEN
+            CALL M3WARN( 'RDSPROF', 0, 0, 
+     &                   'CO does not appear in XREF species list' )
+        ELSE IF ( INO  .LE. 0 ) THEN
+            CALL M3WARN( 'RDSPROF', 0, 0, 
+     &                   'NO does not appear in XREF species list' )
+        ELSE IF ( INO2 .LE. 0 ) THEN
+            CALL M3WARN( 'RDSPROF', 0, 0, 
+     &                   'NO2 does not appear in XREF species list' )
         END IF
 
 
@@ -295,9 +304,9 @@ C...........   properly ordered and adjusted coefficient table.
 
             J = INDEXA( K )
             SXREF( K )       = SXREFA( J )
-            SCOEF( K, ICO  ) = COFAC
-            SCOEF( K, INO  ) = NOFAC
-            SCOEF( K, INO2 ) = NO2FAC
+            IF ( ICO  .GT. 0 )  SCOEF( K, ICO  ) = COFAC
+            IF ( INO  .GT. 0 )  SCOEF( K, INO  ) = NOFAC
+            IF ( INO2 .GT. 0 )  SCOEF( K, INO2 ) = NO2FAC
 
             DO  111  L = 1, NP
 
