@@ -416,14 +416,15 @@ C.......   Get environment variable logical variables
      &                    .TRUE., IOS )
  
 C.......   Make sure TMAT is dimensioned properly
-        IF( ONEOR24 .EQ. 1 ) THEN
+        I = ONEOR24               ! So Alpha compiler won't give errors
+        IF( I .EQ. 1 ) THEN
             TMATBYHR = .TRUE.
             WRITE( *,92000 ) 
      &      'NOTE: Parameter ONEOR24 is set to 1, which reduces the',
      &      '      required memory but increases the execution time.',
      &      ' '
 
-        ELSEIF( ONEOR24 .EQ. 24 ) THEN
+        ELSEIF( I .EQ. 24 ) THEN
             TMATBYHR = .FALSE.
             WRITE( *,92000 ) 
      &      'NOTE: Parameter ONEOR24 is set to 24, which reduces the',
