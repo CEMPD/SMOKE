@@ -37,7 +37,8 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o	\
 	srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
 	setnonhap.o rdsrcidaar.o rdsrcntiar.o rddataidaar.o rdinvdata.o rddatantiar.o \
 	procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
-	rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o
+	rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
+	rddataemsar.o
 #	 
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -79,6 +80,8 @@ procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ procinven.f
 rdcempd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
 	$(FC) $(FFLAGS) -c -o $@ rdcempd.f
+rddataemsar.o: $(MODINFO) $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ rddataemsar.f
 rddataemsmb.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rddataemsmb.f
 rddataidaar.o: $(MODINFO)
@@ -111,6 +114,8 @@ rdinvsrcs.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODMOBIL)
 	$(FC) $(FFLAGS) -c -o $@ rdinvsrcs.f
 rdlooppd.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdlooppd.f
+rdsrcemsar.o: $(MODLISTS)
+	$(FC) $(FFLAGS) -c -o $@ rdsrcemsar.f
 rdsrcemsmb.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdsrcemsmb.f
 rdsrcidaar.o:
