@@ -107,7 +107,8 @@ C...........   Other local variables
         INTEGER         CPYEAR       !  control packet year to project to
         INTEGER         IOS          !  I/O status
         INTEGER         ENLEN        !  length of the emissions inven name
-        INTEGER         NINVARR      ! number inventory variables to input
+        INTEGER         NCPE         !  no control packet entries
+        INTEGER         NINVARR      !  number inventory variables to input
         INTEGER         PYEAR        !  projected year of inventory
         INTEGER         SYEAR        !  year for projecting from
 
@@ -119,6 +120,7 @@ C...........   Other local variables
         LOGICAL      :: KFLAG   = .FALSE.  ! true: tracking file in use
         LOGICAL      :: LFLAG   = .FALSE.  ! true: allowable cntls in use
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
+        LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
         LOGICAL      :: OFLAG   = .FALSE.  ! true: create report
         LOGICAL      :: YFLAG   = .FALSE.  ! true: projection entries have years
 
@@ -223,6 +225,11 @@ C.........  Allocate memory for and read required inventory characteristics
 C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
+C.........  Initialize arrays
+        PKTCNT = 0  ! array
+        PKTBEG = 0  ! array
+        XRFCNT = 0  ! array
+
 C.........  Allocate memory for control packet information in input file.
         CALL ALOCPKTS( CDEV, SYEAR, CPYEAR, PKTCNT, PKTBEG, XRFCNT )
 
@@ -233,6 +240,14 @@ C.........  Set the flags that indicate which packets are valid
         DFLAG = ( PKTCNT( 4 ) .GT. 0 )
         RFLAG = ( PKTCNT( 5 ) .GT. 0 )
         JFLAG = ( PKTCNT( 6 ) .GT. 0 )
+        SFLAG = ( PKTCNT( 7 ) .GT. 0 )
+
+C.........  Cannot have CONTROL and EMS_CONTROL packet in same inputs
+        IF( CFLAG .AND. SFLAG ) THEN
+           MESG = 'CONTROL and EMS_CONTROL packets cannot be ' //
+     &            'in the same input file'
+           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Process packets: this means read packet, sort it, group it into 
 C           grouped, x-ref structures in MODXREF, and assign to sources, and
@@ -250,17 +265,18 @@ C           the final output files.
 C..........  Process control matrices that depend on pollutants...
 
 C.........  Multiplicative matrix
-        IF( CFLAG .OR. GFLAG .OR. LFLAG ) THEN
+        IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG ) THEN
 
 C.........  Open control matrix
             CALL OPENCMAT( ENAME, 'MULTIPLICATIVE', MNAME )
 
 C.........  Write-out control matrix
+            NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
             CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, 
-     &                     PKTCNT(2), ENAME, MNAME, CFLAG, GFLAG,
-     &                     LFLAG )
+     &                     NCPE, ENAME, MNAME, CFLAG, GFLAG,
+     &                     LFLAG, SFLAG )
 
-C STOPPED HERE: Need to write opencmat, genmultc, genaddc, report post-processor
+C STOPPED HERE: Need to write opencmat, genaddc, report post-processor
         END IF
 
 C.........  Additive matrix
