@@ -4,7 +4,7 @@
      &                       SNAME, LNAME, SVNAMES, LVNAMES )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 106
 C
 C  DESCRIPTION:
 C      Open the mass-based and mole-based speciation matrices
@@ -92,6 +92,7 @@ C.........  Other local variables
 
         CHARACTER*300    MESG     ! message buffer
 
+        CHARACTER(LEN=NAMLEN3) NAMBUF     ! file name buffer
         CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
         CHARACTER(LEN=SPNLEN3) PCODE      ! current speciation profile code
         CHARACTER(LEN=SPNLEN3) PREVCODE   ! previous speciation profile code
@@ -212,9 +213,11 @@ C.........  Set up variables specifically for mass-based file, and open it
                 END DO
             END DO
 
-            SNAME = PROMPTMFILE( 
+C.............  Open with NAMBUF for HP
+            NAMBUF = PROMPTMFILE( 
      &        'Enter logical name for MASS-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_S', PROGNAME )
+            SNAME = NAMBUF
 
         END IF
 
@@ -237,9 +240,11 @@ C.........  Set up variables specifically for mole-based file, and open it
                 END DO
             END DO
 
-            LNAME = PROMPTMFILE( 
+C.............  Open with NAMBUF for HP
+            NAMBUF = PROMPTMFILE( 
      &        'Enter logical name for MOLE-BASED SPECIATION MATRIX',
      &        FSUNKN3, CRL // 'SMAT_L', PROGNAME )
+            LNAME = NAMBUF
 
         END IF
 
