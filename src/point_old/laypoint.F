@@ -567,7 +567,8 @@ C...........   STKHT, STKDM, STKTK, STKVE
 
 C...........   Fix up missing stack parameters:
 
-        CALL FIXSTK( FDEV, IFIP, ISCC, STKHT, STKDM, STKTK, STKVE )
+        CALL FIXSTK( FDEV, NPSRC, IFIP , ISCC , STKHT, 
+     &                            STKDM, STKTK, STKVE  )
 
 
 C...........   Compute un-gridding matrices for dot and cross point
