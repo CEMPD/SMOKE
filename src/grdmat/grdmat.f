@@ -343,6 +343,11 @@ C.........  Check or initialize the output grid grid settings (depends on
 C           if a surrogates file is being used).
         CALL CHKGRID( GDNAM3D, 'GRIDDESC', 1, EFLAG )
 
+        IF ( EFLAG ) THEN
+            MESG = 'Problem with gridded input data.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  If surrogates are needed, read the gridding surrogates,  
 C           allocate memory for the surrogate assignments, and assign
 C           surrogates to each source.
