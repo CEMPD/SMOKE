@@ -64,8 +64,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL     CHKEMFAC, FIND1, SEC2TIME
 
-c note: put all of this mobile-specific common block and block data declarations
-C    n: in an include file
 C...........   EXTERNAL BLOCK DATA for MOBILE model:
 
         EXTERNAL      BD01, BD02, BD03, BD04, BD05, BD06, BD10,
@@ -201,7 +199,6 @@ C.........  End program if source category is not mobile sources
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C.........  Set number and name of activity
-C.........  NOTE - this is intended to be expanded
         ELSE
 
             NIACT = 1
@@ -338,9 +335,17 @@ C.............  Skip over any PSIs that are for combination emission factors
 C.............  Write message to screen if this is the first PSI in a group
             IF( PSIPNTR .EQ. 1 ) THEN
 
-                WRITE( MESG, 94010 ) 
-     &                 'Processing PSI', PSI, 'through', 
-     &                 PSI + NPSISCN - 1, '...'
+                WRITE( MESG, 94010 ) 'Processing PSI', PSI
+
+                IF( NPSISCN .GT. 1 ) THEN
+                    L = LEN_TRIM( MESG ) 
+                    WRITE( MESG, 94010 ) MESG( 1:L ) // ' through', 
+     &                                   PSI + NPSISCN - 1
+                END IF
+
+                L = LEN_TRIM( MESG ) 
+                MESG = MESG( 1:L ) // ' ...'
+
                 CALL M3MSG2( MESG )
 
             END IF
@@ -416,7 +421,7 @@ C.................  TFLAG_* variables screen for TI = 0 or TMMI = 0
      &                         EFSAVND( 1:NV,PSIPNTR,TI,1:NNDI )
                     END IF
 
-                    IF( TFLAG_NDI ) THEN
+                    IF( TFLAG_DIU ) THEN
                         DFACT( 1:NV,1:NDIU ) = 
      &                         EFSAVDI( 1:NV,PSIPNTR,TMMI,1:NDIU )
                     END IF
@@ -481,7 +486,6 @@ C.............  If this PSI is not a combination PSI, go to next iteration
 C.............  Write message to screen
             WRITE( MESG, 94010 ) 'Processing PSI', PSI, '...'
             CALL M3MSG2( MESG )
-c note: use generic messaging routine?
 
 C.............  Determine if creation/update of combination factor is needed...
 C.............  Loop through contributing PSIs for current PSI

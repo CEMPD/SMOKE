@@ -8,6 +8,7 @@ LIBS2         = $(LDIRS) -lsmoke -lmo5b -lioapi -lnetcdf
 LIBS2_DEBUG   = $(LDIRS) -lsmoke.debug -lmo5b.debug -lioapi.debug -lnetcdf.debug
 LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
+FFLAGS_NOOPT  = $(DBGFLAGS)
 ##
 
 all: premobl emisfac
@@ -19,22 +20,24 @@ debug: premobl.debug emisfac.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
-PRE=premobl.o adjsmet.o applumat.o asgnpsi.o chkfulldy.o dyminmax.o \
+PRE=premobl.o adjsmet.o chkfulldy.o dyminmax.o \
     getdysav.o openpsiout.o opensmet.o setsrcdy.o \
-    tmprinfo.o wrsmet.o genefmet.o setoutdt.o
+    wrsmet.o genefmet.o setoutdt.o
+
+# NOTE: the optimized version of premobl does not work
 
 premobl: $(PRE) $(ALLI) $(LIBPATH)
 	echo PREMOBL:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(PRE) $(LIBS)
+	$(FC) $(FFLAGS_NOOPT) -o $(SMK_BIN)/$(@) $(PRE) $(LIBS)
 
 premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'PREMOBL (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(PRE) $(LIBS_DEBUG)
 #
 #
-EMS=emisfac.o chkefhdr.o chkemfac.o efcombo.o efsetup.o emfacio.o expndeft.o \
+EMS=emisfac.o chkefhdr.o chkemfac.o efcombo.o emfacio.o expndeft.o \
     expndpsi.o mobil5b.o rdefdat.o rdeftmpr.o rdefupd.o seteftmpr.o setefupd.o \
-    tmprinfo.o wremfacs.o
+    wremfacs.o
 
 emisfac: $(EMS) $(ALLI) $(LIBPATH)
 	echo EMISFAC:
@@ -53,17 +56,13 @@ MODSOURC = $(MD_SRC)/modsourc.o
 #
 include $(MD_SRC)/modmake.inc
 
-adjsmet.o  : $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
-asgnpsi.o  : $(MODSOURC) $(MODXREF) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ $<
+adjsmet.o  : $(MODSOURC) $(MODINFO)          # This should not get optimization
+	$(FC) $(FFLAGS_NOOPT) -c -o $@ $<
 chkefhdr.o: $(INC)/M5CNST3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $<
 chkemfac.o : $(MODEMFAC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 efcombo.o : $(MODEMFAC) $(MODINFO) $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
-efsetup.o : $(MODEMFAC) $(INC)/M5CNST3.EXT
 	$(FC) $(FFLAGS) -c -o $@ $<
 emfacio.o : $(MODEMFAC) $(MODINFO) $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -91,10 +90,8 @@ seteftmpr.o : $(MODEMFAC) $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ $<
 setefupd.o : $(MODEMFAC)
 	$(FC) $(FFLAGS) -c -o $@ $<
-tmprinfo.o  : $(MODMET)
-	$(FC) $(FFLAGS) -c -o $@ $<
 wremfacs.o : $(MODEMFAC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 
 clean:
-	rm *.o
+	/bin/rm *.o

@@ -107,9 +107,6 @@ C             at each time step for only the used min-max-combos
 C...........  This is used only by the genefmet routine
         INTEGER, ALLOCATABLE :: TIPSI( :, :, : )
 
-C...........  Allocatable array for storing PSIs per source and 24 hours
-        INTEGER, ALLOCATABLE :: SRCPSI( :,: )
-
 C...........  Array for the variable names of the SRC-PSI file
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: PSVNAME( : )
 
@@ -326,7 +323,7 @@ C           from the inventory arrays
 
 C.........  Retrieve environment variable settings for temperature ranges
 C.........  Populate table of valid min/max temperatures in MODMET
-        CALL TMPRINFO( .TRUE., 'MINMAX' )
+        CALL TMPRINFO( .TRUE., 'BOTH' )
 
 C.........  Allocate memory for other arrays in the program
         ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
@@ -415,7 +412,9 @@ C.........  Open file(s) for parameter scheme index outputs
  
 C.........  Process temperature information...
 
-        MESG = 'Processing temperature data ...'
+        L = LEN_TRIM( TVARNAME )
+        MESG = 'Processing temperature data for using variable "' //
+     &         TVARNAME( 1:L ) // '" ...'
         CALL M3MSG2( MESG )
 
 C.........  Loop through days/hours of temperature files
@@ -426,12 +425,12 @@ C.........  Loop through days/hours of temperature files
         LDATE = -9
         DO T = 1, NSTEPS
 
-c note: Use TEMP1P5 for temperature
-
 C.................  Read current temperature file
             IF ( .NOT. READ3( TNAME, TVARNAME, 1, 
      &                        JDATE, JTIME, TA ) ) THEN
-               MESG = 'Could not read TA from ' // TNAME 
+                L = LEN_TRIM( TVARNAME )
+                MESG = 'Could not read ' // TVARNAME( 1:L ) //
+     &                 ' from ' // TNAME 
                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
             END IF
@@ -462,6 +461,7 @@ C.............  First iteration in loop, set the output date/time
      &                         ODATE, OTIME )
             END IF
 
+C.............  Update the min/max temperatures based on this hour's data
             LASTTIME = ( T .EQ. NSTEPS )
             CALL DYMINMAX( NSRC, JTIME, LASTTIME, DAYBEGT, DAYENDT, 
      &                     TASRC, TKMIN, TKMAX, TKMINOUT, TKMAXOUT )
@@ -472,9 +472,9 @@ C.............  Adjust and output min/max data
      &          JTIME .EQ. OTIME       ) ) THEN
 
 C.................  Adjust the by-source meteorology data before output
-                CALL ADJSMET( NSRC, NVLDTMM, MINT_MIN, MINT_MAX, 
+                CALL ADJSMET( NSRC, NTMPR, NVLDTMM, MINT_MIN, MINT_MAX, 
      &                        MAXT_MIN, MAXT_MAX, TMMINVL, TMXINVL,
-     &                        'temperature', VLDTMIN, VLDTMAX, 
+     &                        'temperature', VLDTMPR, VLDTMIN, VLDTMAX, 
      &                        TKMINOUT, TKMAXOUT, METIDX )
 
 C.................  Count these sources (easier, but unecessary, to repeat)

@@ -50,7 +50,7 @@ C...........   This module is the derived meteorology data for emission factors
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'FLTERR.EXT'   !  emissions constant parameters
+        INCLUDE 'FLTERR.EXT'    !  error filter statement functions
 
 C...........   EXTERNAL FUNCTIONS
         CHARACTER*2   CRLF

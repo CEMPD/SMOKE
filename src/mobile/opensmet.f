@@ -105,7 +105,7 @@ C.........  Initialize I/O API output file headers
         WRITE( FDESC3D( 6 ), 94030 ) '/MAXT_MIN/', MAXT_MIN
         WRITE( FDESC3D( 7 ), 94030 ) '/MAXT_MAX/', MAXT_MAX
         WRITE( FDESC3D( 8 ), 94030 ) '/T_INTERVAL/', TMMINVL
-        WRITE( FDESC3D( 9 ), 94030 ) '/T_MAXINTVL/', TMMINVL
+        WRITE( FDESC3D( 9 ), 94030 ) '/T_MAXINTVL/', TMXINVL
         WRITE( FDESC3D( 10 ), 94030 ) '/T_UNITS/ "deg F"'
         WRITE( FDESC3D( 11 ), 94030 ) '/T_VNAME/ ' // TVARNAME
 
@@ -152,7 +152,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-94030   FORMAT( A, F10.3, 1X, A )
+94030   FORMAT( A, F15.9, 1X, A )
 
         END SUBROUTINE OPENSMET
 

@@ -1,8 +1,8 @@
 
-        SUBROUTINE ADJSMET( NSRCIN, NVALID, MINV_MIN, MINV_MAX, 
+        SUBROUTINE ADJSMET( NSRCIN, NALL, NVALID, MINV_MIN, MINV_MAX, 
      &                      MAXV_MIN, MAXV_MAX, VINTRVL, MXINTRVL, DESC, 
-     &                      VALIDMIN, VALIDMAX, MINBYSRC, MAXBYSRC,
-     &                      METIDX )
+     &                      VALIDALL, VALIDMIN, VALIDMAX, MINBYSRC, 
+     &                      MAXBYSRC, METIDX )
 
 C***********************************************************************
 C  subroutine ADJSMET body starts at line
@@ -57,12 +57,14 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER*2  CRLF
+        INTEGER      FINDR1
         INTEGER      FINDR2
 
-        EXTERNAL     CRLF, FINDR2
+        EXTERNAL     CRLF, FINDR1, FINDR2
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: NSRCIN           ! no. sources
+        INTEGER     , INTENT    (IN) :: NALL             ! no. valid values
         INTEGER     , INTENT    (IN) :: NVALID           ! no. valid combos
         REAL        , INTENT    (IN) :: MINV_MIN         ! min of minimum vals
         REAL        , INTENT    (IN) :: MINV_MAX         ! max of minimum vals
@@ -71,6 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         REAL        , INTENT    (IN) :: VINTRVL          ! interval for vals
         REAL        , INTENT    (IN) :: MXINTRVL         ! max allowed interval
         CHARACTER(*), INTENT    (IN) :: DESC             ! data description
+        REAL        , INTENT    (IN) :: VALIDALL( NALL   )! values table
         REAL        , INTENT    (IN) :: VALIDMIN( NVALID )! min/max table
         REAL        , INTENT    (IN) :: VALIDMAX( NVALID )! min/max table
         REAL        , INTENT(IN OUT) :: MINBYSRC( NSRCIN )! min values
@@ -82,6 +85,14 @@ C...........   Other local variables
 
         INTEGER       K( 4 )       ! values
         INTEGER       MSAV         ! saved minimum value
+        INTEGER       T1, T2       ! tmp indices
+
+        DOUBLE PRECISION :: MNVMN       ! tmp min variable min
+        DOUBLE PRECISION :: MNVMX       ! tmp min variable max
+        DOUBLE PRECISION :: MXVMN       ! tmp max variable min
+        DOUBLE PRECISION :: MXVMX       ! tmp max variable max
+        DOUBLE PRECISION :: VMXIT       ! tmp max interval
+        DOUBLE PRECISION :: VINTV       ! tmp tmpr interval
 
         REAL          VAL          ! tmp value
         REAL          VMAX         ! tmp max value
@@ -90,6 +101,8 @@ C...........   Other local variables
         REAL          VMIN2        ! tmp min value
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
+        LOGICAL       :: EFLAG    = .FALSE. ! true: error found
+        LOGICAL          CHKDIFF            ! true: tmpr diffs are equal
 
         CHARACTER*300 BUFFER        ! formatted source info for messages
         CHARACTER*300 MESG          ! message buffer
@@ -103,7 +116,7 @@ C   begin body of subroutine ADJSMET
 C.........  Initialize index for the first time routine is called.  It is
 C           initialized because when sources are not inside the grid, the
 C           value will never be set.  Since the sources inside the grid are
-C           constant over time, this only needs to be done the  first time
+C           constant over time, this only needs to be done the first time
 C           the routine is called
         IF( FIRSTIME ) THEN
 
@@ -112,19 +125,28 @@ C           the routine is called
 
         END IF
 
+C.........  Set double precision temperature variables for computing and
+C           matching
+        MNVMN = DBLE( MINV_MIN )
+        MNVMX = DBLE( MINV_MAX )
+        MXVMN = DBLE( MAXV_MIN )
+        MXVMX = DBLE( MAXV_MAX )
+        VINTV = DBLE(  VINTRVL )
+        VMXIT = DBLE( MXINTRVL )
+        
 C.........  Loop through sources and process for minimum and maximum daily
 C           values
         DO S = 1, NSRCIN
 
             CSRC = CSOURC( S )
 
-            VAL = MINBYSRC( S )
+            VAL = DBLE( MINBYSRC( S ) )
 
 C.............  Screen for missing values
             IF( VAL .LT. AMISS3 ) CYCLE
 
 C..............  Round min value DOWN to nearest on interval
-            IF    ( VAL .LT. MINV_MIN ) THEN
+            IF    ( VAL .LT. MNVMN ) THEN
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                 WRITE( MESG, 94020 )
@@ -134,9 +156,9 @@ C..............  Round min value DOWN to nearest on interval
                 CALL M3MESG( MESG )
 
                 MINBYSRC( S ) = MINV_MIN 
-                VMIN          = MINV_MIN
+                VMIN          = MNVMN
 
-            ELSEIF( VAL .GT. MINV_MAX ) THEN
+            ELSEIF( VAL .GT. MNVMX ) THEN
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                 WRITE( MESG, 94020 )
@@ -146,18 +168,18 @@ C..............  Round min value DOWN to nearest on interval
                 CALL M3MESG( MESG )
 
                 MINBYSRC( S ) = MINV_MAX
-                VMIN          = MINV_MAX
+                VMIN          = MNVMX
 
-            ELSE  ! Note: round DOWN
-                VMIN = MINV_MIN + VINTRVL *
-     &                 INT( ( VAL - MINV_MIN ) / VINTRVL )
+            ELSE 
+                VMIN = MNVMN + VINTV *
+     &                 INT( ( VAL - MNVMN ) / VINTV )
 
             END IF
 
 C.............  Round max value to nearest on interval
             VAL = MAXBYSRC( S )
 
-            IF    ( VAL .LT. MAXV_MIN ) THEN
+            IF    ( VAL .LT. MXVMN ) THEN
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                 WRITE( MESG, 94020 )
@@ -167,11 +189,11 @@ C.............  Round max value to nearest on interval
                 CALL M3MESG( MESG )
 
                 MAXBYSRC( S ) = MAXV_MIN
-                VMAX = MAXV_MIN
+                VMAX = MXVMN
 
 C.............  Set to one step *below* max, because we need the extra space
 C               to allow for interpolation
-            ELSE IF( VAL .GT. MAXV_MAX ) THEN
+            ELSE IF( VAL .GT. MXVMX ) THEN
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                 WRITE( MESG, 94020 )
@@ -182,22 +204,22 @@ C               to allow for interpolation
                 CALL M3MESG( MESG )
 
                 MAXBYSRC( S ) = MAXV_MAX 
-                VMAX = MAXV_MAX - VINTRVL
+                VMAX = MXVMX - VINTV
 
-            ELSE  ! Note: round DOWN
-                VMAX = MAXV_MIN + VINTRVL *
-     &                 INT( ( VAL - MAXV_MIN ) / VINTRVL )
+            ELSE  
+                VMAX = MXVMN + VINTV *
+     &                 INT( ( VAL - MXVMN ) / VINTV )
 
             END IF
 
 C..............  Ensure relationship between TMIN and TMAX is valid
 C..............  When difference greater than the maximum interval
 C                set VMIN from VMAX, and adjust down on interval
-            IF( VMAX - VMIN .GE. MXINTRVL ) THEN
+            IF( VMAX - VMIN .GE. VMXIT ) THEN
                 MSAV = VMIN
-                VMIN = VMAX - ( MXINTRVL - 1. )
-                VMIN = MINV_MIN + VINTRVL *
-     &                 INT( ( VMIN - MINV_MIN ) / VINTRVL )
+                VMIN = VMAX - ( VMXIT - 1. )
+                VMIN = MNVMN + VINTV *
+     &                 INT( ( VMIN - MNVMN ) / VINTV )
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                 WRITE( MESG, 94020 ) 'Max - min ' // DESC // ' is >' //
@@ -209,11 +231,13 @@ C                set VMIN from VMAX, and adjust down on interval
 
             END IF
 
-C.............  If minimum and maximum different by less than the interval,
-C               need to avoid by index numbers.  So, set indices to zero.
-            IF( VMAX - VMIN .LE. VINTRVL ) THEN
+C.............  If minimum and maximum different by less than or equal to 
+C               the interval, need to avoid bad index numbers. So, set indices
+C               to zero. Use logical expression to test for equality 
+            CHKDIFF = ( ABS( VMAX - VMIN - VINTV ) .LE. 1.0E-4 )
+            IF( VMAX - VMIN .LT. VINTV .OR. CHKDIFF ) THEN
 
-                METIDX( S,1:4 ) = 0  ! array  c note: delete this line
+                METIDX( S,1:4 ) = 0  ! array  
 
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
                 WRITE( MESG, 94020 ) 'Max - min ' // DESC // ' is < ' //
@@ -222,12 +246,35 @@ C               need to avoid by index numbers.  So, set indices to zero.
      &                 CRLF() // BLANK10 // 
      &                 'Will be treated as Max = Min for current day.'
                 CALL M3MESG( MESG )
+                CYCLE  ! To head of loop
 
 C.............  Find min/max in valid list and store to index array for source
             ELSE
 
-                VMIN2 = VMIN + VINTRVL
-                VMAX2 = VMAX + VINTRVL
+C.................  Find min/max value in valid list of temperatures in order
+C                   to be sure that the values will match with the min/max
+C                   combos list
+                
+                T1 = FINDR1( VMIN, NALL, VALIDALL )
+                T2 = FINDR1( VMAX, NALL, VALIDALL )
+
+                IF( T1 .LE. 0 .OR. T2 .LE. 0 ) THEN
+
+                    EFLAG = .TRUE.
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
+
+                    WRITE( MESG,94010 )
+     &                     'INTERNAL ERROR: Min/Max temperature '//
+     &                     'processing invalid for:' //
+     &                     CRLF() // BLANK10 // BUFFER( 1:L )
+                    CALL M3MSG2( MESG )
+                    CYCLE
+
+                END IF
+
+                VMIN2 = VALIDALL( T1 + 1 )
+                VMAX2 = VALIDALL( MIN( T2 + 1, NALL ) ) 
+
                 K(1)= FINDR2( VMIN , VMAX , NVALID, VALIDMIN, VALIDMAX ) 
                 K(2)= FINDR2( VMIN2, VMAX , NVALID, VALIDMIN, VALIDMAX )
                 K(3)= FINDR2( VMIN , VMAX2, NVALID, VALIDMIN, VALIDMAX )
@@ -236,19 +283,30 @@ C.............  Find min/max in valid list and store to index array for source
                 IF( K( 1 ) .LE. 0 .OR. K( 2 ) .LE. 0 .OR.
      &              K( 3 ) .LE. 0 .OR. K( 4 ) .LE. 0      ) THEN
 
+                    EFLAG = .TRUE.
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
 
                     WRITE( MESG,94010 )
      &                     'INTERNAL ERROR: Min/Max temperature '//
      &                     'processing invalid for:' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L )
+                    CALL M3MSG2( MESG )
+                    CYCLE
+
                 END IF
 
-                METIDX( S,1:4 ) = K   ! array
+                METIDX( S,1:4 ) = K( 1:4 )   ! array
 
             END IF
 
         END DO
+
+        IF( EFLAG ) THEN
+
+            MESG = 'Problem processing temperatures'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
 
         RETURN
 
