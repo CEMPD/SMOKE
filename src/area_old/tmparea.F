@@ -334,7 +334,7 @@ C.......   and temporal profiles files
 
         ADEV = PROMPTFFILE( 
      &           'Enter logical name for ACTUAL ASC file',
-     &           .TRUE., .TRUE., 'ASCC', 'TMPAREA' )
+     &           .TRUE., .TRUE., 'ASCS', 'TMPAREA' )
 
         XDEV = PROMPTFFILE( 
      &           'Enter logical name for TEMPORAL XREF file',
@@ -504,7 +504,7 @@ C............. Check for bad IOS value and elimiate non-area records
                 IF( ID7 .GT. 0  .AND.  ID3 .GE. 0 ) THEN
 
                     J = FIND2( ID7, ID3, NASC, ASCA7, ASCA3 )
-                    IF( J .LE. 0 ) THEN   ! ASC code not found in ASCC LIST file
+                    IF( J .LE. 0 ) THEN   ! ASC code not found in ASCS LIST file
                         GO TO 21
                     END IF
 
