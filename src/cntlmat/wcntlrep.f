@@ -1,5 +1,5 @@
 
-        SUBROUTINE WCNTLREP( ODEV, ADEV, CDEV, GDEV, LDEV )
+        SUBROUTINE WCNTLREP( ADEV, CDEV, GDEV, LDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -59,12 +59,12 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETEFILE
+        INTEGER         PROMPTFFILE
 
-        EXTERNAL   GETEFILE
+        EXTERNAL   GETEFILE, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
 
-        INTEGER     , INTENT (IN) :: ODEV   ! file unit no. for output report
         INTEGER     , INTENT (IN) :: ADEV   ! file unit no. for tmp ADD file
         INTEGER     , INTENT (IN) :: CDEV   ! file unit no. for tmp CTL file 
         INTEGER     , INTENT (IN) :: GDEV   ! file unit no. for tmp CTG file
@@ -96,7 +96,8 @@ C.........  Local arrays
 C...........   Other local variables
         INTEGER          S, V  ! counters and indices
 
-        INTEGER          CIDX     ! control plant index
+        INTEGER          CIDX   ! control plant index
+        INTEGER          ODEV   ! file unit no. for output report
 
         REAL             E_IN   ! emissions before controls
         REAL             E_OUT  ! emissions after controls
@@ -115,6 +116,15 @@ C.........  Rewind temporary files
         IF( CDEV .GT. 0 ) REWIND( CDEV )
         IF( GDEV .GT. 0 ) REWIND( GDEV )
         IF( LDEV .GT. 0 ) REWIND( LDEV )
+
+C.........  Open reports file
+        IF( MAX( ADEV, CDEV, GDEV, LDEV ) .GT. 0 ) THEN
+            RPTDEV( 2 ) = PROMPTFFILE( 
+     &                'Enter logical name for SUMMARY ' //
+     &                'PROJECTION/CONTROLS REPORT',
+     &                .FALSE., .TRUE., CRL // 'CSUMREP', PROGNAME )
+            ODEV = RPTDEV( 2 )
+        END IF
 
 C.........  For each pollutant that receives controls, obtain variable
 C             names for control efficiency, rule effectiveness, and, in the
