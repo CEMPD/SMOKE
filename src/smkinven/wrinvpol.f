@@ -1,5 +1,6 @@
 
-        SUBROUTINE WPNTSPOL( ENAME, NPSRC, IPCNT, POLNAM, POLBUF )
+        SUBROUTINE WPNTSPOL( ENAME, NPSRC, IPCNT, NPPOL, 
+     &                       POLNAM, POLBUF )
 
 C***********************************************************************
 C  subroutine body starts at line 89
@@ -53,33 +54,28 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
-C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER         TRIMLEN
-
-        EXTERNAL        TRIMLEN
-
 C.........  Subroutine arguments and their descriptions:
-        CHARACTER*(*) ENAME                 !  I/O API file name
-        INTEGER       NPSRC                 !  actual source count
-        INTEGER       IPCNT                 !  pollutant count
-        CHARACTER*(*) POLNAM( IPCNT )       !  names of pollutants for output
-        REAL          RULPEN( NPSRC,IPCNT ) !  rule penetration   fraction
-        REAL          RULEFF( NPSRC,IPCNT ) !  rule effectiveness fraction
-        REAL          CTLEFF( NPSRC,IPCNT ) !  control efficiency fraction
-                                            !  pol-based emissions & other data:
-        REAL          POLBUF( NPSRC,IPCNT*NPTPPOL3 )
+        CHARACTER(*), INTENT (IN) :: ENAME            !  I/O API file name
+        INTEGER     , INTENT (IN) :: NPSRC            !  no. point sources
+        INTEGER     , INTENT (IN) :: IPCNT            !  pollutant count
+        INTEGER     , INTENT (IN) :: NPPOL            !  no. vars per pol
+        CHARACTER(*), INTENT (IN) :: POLNAM( IPCNT )  !  names of output pols
+        REAL        , INTENT (IN) :: POLBUF( NPSRC,IPCNT*NPPOL )
+                                            !  pol-based emissions & other data
+C...........   Output variable information
+        INTEGER                 EOUNITS( IPCNT,NPPOL ) ! units of output vars
+        CHARACTER(LEN=IOVLEN3)  EONAMES( IPCNT,NPPOL ) ! names for pol-spec
+        CHARACTER(LEN=IODLEN3)  CDUM   ( IPCNT,NPPOL ) ! char dummy
+
+C...........   Temporary integer array for output of integer variables
+        INTEGER                 INTBUF( NPSRC )
 
 C...........   Other local variables
         INTEGER                 I, J, V
 
-        INTEGER                 IDUM   ( IPCNT,NPTPPOL3 ) ! Int dummy
-
-        CHARACTER(LEN=IOVLEN3 ) VAR  !  tmp variable names
-        CHARACTER(LEN=IOVLEN3)  ECNAMES( IPCNT,NPTPPOL3 ) ! Names for pol-spec
-        CHARACTER(LEN=IODLEN3)  CDUM   ( IPCNT,NPTPPOL3 ) ! Char dummy
+        CHARACTER*300           MESG    !  message buffer
+        CHARACTER(LEN=IOVLEN3 ) VAR     !  tmp variable name
  
-        CHARACTER*300 MESG             !  message buffer
-
         CHARACTER*16 :: PROGNAME = 'WPNTSPOL' !  program name
 
 C***********************************************************************
@@ -87,22 +83,36 @@ C   begin body of program WPNTSPOL
 
 C.........  Create message to use in case there is an error
         MESG = 'Error writing output file "' //
-     &         ENAME( 1:TRIMLEN( ENAME ) ) // '"'
+     &         ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
 
 C.........  Get the list of variable names per pollutant
-        CALL BLDENAMS( 'POINT', IPCNT, NPTPPOL3, POLNAM, ECNAMES,
-     &                  CDUM, IDUM, CDUM )
+        CALL BLDENAMS( 'POINT', IPCNT, NPPOL, POLNAM, EONAMES,
+     &                  CDUM, EOUNITS, CDUM )
 
 C.........  Write the I/O API file, one variable at a time
         DO V = 1, IPCNT
 
-            DO I = 1, NPTPPOL3
+            DO I = 1, NPPOL
 
-                J = ( V - 1 ) * NPTPPOL3 + I
-                VAR = ECNAMES( V,I )
+                J = ( V - 1 ) * NPPOL + I
+                VAR = EONAMES( V,I )
 
-                IF( .NOT. WRITE3( ENAME, VAR, 0, 0, POLBUF(1,J) ) ) THEN
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.................  Convert real variable to an integer, if needed
+                IF( EOUNITS( V,I ) .EQ. M3INT ) THEN
+
+                    INTBUF = INT( POLBUF( 1,J ) )  ! arrays
+
+                    IF( .NOT. WRITE3( ENAME,VAR,0,0,INTBUF )) THEN
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+C.................  Simply write out real values directly
+                ELSE
+                
+                    IF( .NOT. WRITE3( ENAME,VAR,0,0,POLBUF(1,J) )) THEN
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
                 END IF
 
             ENDDO
