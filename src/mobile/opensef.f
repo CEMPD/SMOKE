@@ -41,19 +41,21 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY
 
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: EMTNAM, MXETYPE, INPUTHC, OUTPUTHC, NEFS,
+     &                      EFSNAM, EFSDSC, EFSUNT
+        
+C.........This module is required by the FileSetAPI
+        USE MODFILESET
         
         IMPLICIT NONE
 
 C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
         INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(LEN=IODLEN3) GETCFDSC
@@ -75,7 +77,10 @@ C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
-        INTEGER     I, J, K, L, LJ
+        INTEGER         I, J, K, L, LJ     ! counters and indices
+        INTEGER         IOS                ! I/O status
+
+        LOGICAL, SAVE:: INITIAL = .TRUE.   ! true: first time through subroutine
 
         CHARACTER*300   MESG      ! message buffer
         CHARACTER*256   FULLNAME  ! full file name
@@ -86,6 +91,33 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine OPENSEF
+
+C.........  On first time through subroutine, allocate file set arrays
+        IF( INITIAL ) THEN
+
+            NVARSET = SIZE( EMTNAM( :,1 ) ) + 1
+
+            DO I = 1,NVARSET
+                IF( EMTNAM( I,1 ) == ' ' ) THEN
+                    NVARSET = I
+                    EXIT
+                END IF
+            END DO
+            
+            DEALLOCATE( VNAMESET, VUNITSET, VDESCSET, VTYPESET )
+            DEALLOCATE( VARS_PER_FILE )
+            
+            ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+            ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+            ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+            ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+        
+            INITIAL = .FALSE.
+        END IF
 
 C.........  Initialize I/O API output file headers
         CALL HDRMISS3
@@ -108,27 +140,17 @@ C.........  Set header values that cannot be default
         NLAYS3D = 1
  
         I = 1
-        VNAME3D( I ) = 'SOURCES'
-        UNITS3D( I ) = 'n/a'
-        VDESC3D( I ) = 'Source number'
-        VTYPE3D( I ) = M3INT
+        VNAMESET( I ) = 'SOURCES'
+        VUNITSET( I ) = 'n/a'
+        VDESCSET( I ) = 'Source number'
+        VTYPESET( I ) = M3INT
         
 C.........  Loop through emission process/pollutant combos 
 C           (EMTNAM is created from MEPROC file and contains only the ones we want, 
 C           EFS* contains all possible MOBILE6 outputs with units and descriptions)        
-        DO I = 1, SIZE( EMTNAM,1 )
+        DO I = 1, NVARSET - 1
 
             CURRVNAME = TRIM( EMTNAM( I,1 ) )
-
-C.............  Stop when there are no variable names left            
-            IF( CURRVNAME == ' ' ) EXIT
-            
-C.............  Make sure there aren't too many variables
-            IF( I > MXVARS3 ) THEN
-                MESG = 'Too many emission factors for single ' //
-     &                 'I/O API file.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
             
 C.............  Check to see if current pollutant is the output hydrocarbon
 C               If so, change name back to input name to match M6 names
@@ -146,19 +168,19 @@ C.............  Look for name in master list of emission factor names
 C.............  If this is a non-HAP HC name or user-defined HAP, 
 C               use name from MEPROC file; otherwise use master list name            
             IF( K > 0 .OR. L <= 0 ) THEN
-                VNAME3D( I+1 ) = EMTNAM( I,1 )
+                VNAMESET( I+1 ) = EMTNAM( I,1 )
             ELSE
-                VNAME3D( I+1 ) = EFSNAM( L )
+                VNAMESET( I+1 ) = EFSNAM( L )
             END IF
 
 C.............  Use master list description and units for intrinsic pollutants            
             IF( L > 0 ) THEN
-                UNITS3D( I+1 ) = EFSUNT( L )
-                VDESC3D( I+1 ) = EFSDSC( L )
+                VUNITSET( I+1 ) = EFSUNT( L )
+                VDESCSET( I+1 ) = EFSDSC( L )
             ELSE
             	
 C.................  Otherwise need to build info for user-defined HAPS
-                UNITS3D( I+1 ) = M6UNIT
+                VUNITSET( I+1 ) = M6UNIT
 
 C.................  Extract pollutant name from current variable name
                 L = INDEX( CURRVNAME, ETJOIN )
@@ -169,7 +191,7 @@ C.................  Determine emission process and create description
                 DO J = 1, MXM6EPR
                     L = INDEX( CURRVNAME, TRIM( M6PROCS( J ) ) )
                     IF( L > 0 ) THEN
-                        VDESC3D( I+1 ) = 'EFs for ' // 
+                        VDESCSET( I+1 ) = 'EFs for ' // 
      &                      TRIM( M6PRCDSC( J ) ) // ' ' // 
      &                      POLNAME
                         EXIT
@@ -177,12 +199,12 @@ C.................  Determine emission process and create description
                 END DO
             END IF
             
-            VTYPE3D( I+1 ) = M3REAL
+            VTYPESET( I+1 ) = M3REAL
             
 C.............  Append to description of hydrocarbon pollutant if necessary
             IF( K > 0 ) THEN
-                VDESC3D( I+1 ) = TRIM( VDESC3D( I+1 ) ) // 
-     &                           ' (minus HAPS)'
+                VDESCSET( I+1 ) = TRIM( VDESCSET( I+1 ) ) // 
+     &                            ' (minus HAPS)'
             END IF            
         END DO
 
@@ -200,8 +222,8 @@ C.........  Set logical file name
         END IF       
 
 C.........  Open new file
-        IF( .NOT. OPEN3( FNAME, FSUNKN3, PROGNAME ) ) THEN
-            MESG = 'Could not create new output file ' // 
+        IF( .NOT. OPENSET( FNAME, FSUNKN3, PROGNAME ) ) THEN
+            MESG = 'Could not create new output file set ' // 
      &             TRIM( FULLNAME )
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF

@@ -633,7 +633,7 @@ C.................  Determine file type
                 ELSE
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not determine time period ' //
-     &                     'of file ' // CURFNM( 1:LEN_TRIM( CURFNM ) )
+     &                     'of file ' // TRIM( CURFNM )
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -656,21 +656,21 @@ C.................  Set logical file name
                 USETIME( AVERTYPE ) = .TRUE.
 
 C.................  Try to open file   
-                IF( .NOT. OPEN3( CURLNM, FSREAD3, PROGNAME ) ) THEN
+                IF( .NOT. OPENSET( CURLNM, FSREAD3, PROGNAME ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not open emission factors ' //
      &                     'file ' // CRLF() // BLANK10 // '"' //
-     &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) // '".'
+     &                     TRIM( CURFNM ) // '".'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
 
 C.................  Read file description
-                IF( .NOT. DESC3( CURLNM ) ) THEN
+                IF( .NOT. DESCSET( CURLNM, ALLFILES ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not get description for ' // 
      &                     'file ' // CRLF() // BLANK10 // '"' //
-     &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) // '".'
+     &                     TRIM( CURFNM ) // '".'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -704,7 +704,7 @@ C.................  Find end date in file description
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not get ending date of ' //
      &                     'file ' // CRLF() // BLANK10 // '"' //
-     &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) // '".'
+     &                     TRIM( CURFNM ) // '".'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -745,12 +745,13 @@ C.................  Allocate memory for temporary source info
                 SRCS = 0
             
 C.................  Read source information
-                IF( .NOT. READ3( CURLNM, 'SOURCES', ALLAYS3, 
-     &                           SDATE3D, STIME3D, SRCS ) ) THEN
+                IF( .NOT. READSET( CURLNM, 'SOURCES', ALLAYS3, 
+     &                             ALLFILES, SDATE3D, STIME3D, 
+     &                             SRCS ) ) THEN
      	            EFLAG = .TRUE.
                     MESG = 'ERROR: Could not read SOURCES ' // 
      &                     'from file ' // CRLF() // BLANK10 // '"' //
-     &                     CURFNM( 1:LEN_TRIM( CURFNM ) ) // '".'
+     &                     TRIM( CURFNM ) // '".'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -772,10 +773,10 @@ C.........................  Skip sources that are outside the grid
                 END DO
                 
 C.................  Close current file
-                IF( .NOT. CLOSE3( CURLNM ) ) THEN
+                IF( .NOT. CLOSESET( CURLNM ) ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Could not close file ' // 
-     &                     CURFNM( 1:LEN_TRIM( CURFNM ) )
+     &                     TRIM( CURFNM )
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -802,11 +803,11 @@ C.............  Make sure all days are covered
 C............  Print warning for sources that don't have emission factors
            DO I = 1, NSRC
                IF( EFIDX( I ) == 0 ) THEN
-                   WRITE( MESG,94070 ) 'WARNING: No VMT or emission ' //
-     &                    'factors available for' // CRLF() // 
-     &                    BLANK10 // 'Region: ', IFIP( I ),
-     &                    ' SCC: ' // CSCC( I )
-                   CALL M3MESG( MESG )
+!                   WRITE( MESG,94070 ) 'WARNING: No VMT or emission ' //
+!     &                    'factors available for' // CRLF() // 
+!     &                    BLANK10 // 'Region: ', IFIP( I ),
+!     &                    ' SCC: ' // CSCC( I )
+!                   CALL M3MESG( MESG )
                    EFIDX( I ) = -1
                END IF
            END DO
@@ -1174,39 +1175,27 @@ C.................................  Set logical file name
                                 END IF
 
 C.................................  Open current file
-                                IF( .NOT. OPEN3( CURLNM, FSREAD3, 
-     &                                           PROGNAME ) ) THEN
+                                IF( .NOT. OPENSET( CURLNM, FSREAD3, 
+     &                                             PROGNAME ) ) THEN
      	                            EFLAG = .TRUE.
                                     MESG = 'ERROR: Could not open ' //
      &                                     'emission factors file ' //
      &                                     CRLF() // BLANK10 // '"' //
-     &                                     CURFNM( 1:LEN_TRIM(CURFNM) )
-     &                                     // '".'
+     &                                     TRIM( CURFNM ) // '".'
                                     CALL M3EXIT( PROGNAME, FDATE, FTIME,
      &                                           MESG, 2 )
                                 END IF
 
-C.................................  Read file description
-                                IF( .NOT. DESC3( CURLNM ) ) THEN
-                                    MESG = 'ERROR: Could not get ' //
-     &                                     'description for file ' //
-     &                                     CRLF() // BLANK10 // '"' // 
-     &                                     CURFNM( 1:LEN_TRIM(CURFNM) )
-     &                                     // '".'
-                                    CALL M3EXIT( PROGNAME, FDATE, FTIME, 
-     &                                           MESG, 2 )
-                                END IF
-
 C.................................  Read emission factors from current file
-                                IF( .NOT. READ3( CURLNM, CBUF, ALLAYS3, 
-     &                              SDATE3D, FTIME, TEMPEF ) ) THEN
+                                IF( .NOT. READSET( CURLNM, CBUF,ALLAYS3, 
+     &                                           ALLFILES, SDATE3D, 
+     &                                           FTIME, TEMPEF ) ) THEN
                                     EFLAG = .TRUE.
                                     MESG = 'Error reading "'// 
      &                                     CBUF(1:L1) //
      &                                     '" from file ' // 
      &                                     CRLF() // BLANK10 // '"' // 
-     &                                     CURFNM( 1:LEN_TRIM(CURFNM) ) 
-     &                                     // '."'
+     &                                     TRIM( CURFNM ) // '."'
                                     CALL M3EXIT( PROGNAME, FDATE, FTIME,
      &                                           MESG, 2 )
                                 END IF

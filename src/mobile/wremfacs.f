@@ -52,9 +52,9 @@ C...........   This module contains emission factor tables and related
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CVTRDTYPE
@@ -285,8 +285,9 @@ C...............  Determine write time
               JTIME = ( IHR - 1 ) * 10000
               
 C...............  Write variable to file    
-              IF( .NOT. WRITE3( FNAME, TRIM( CURRVAR ), JDATE, 
-     &                          JTIME, SRCEFS( 1:EFPOS ) ) ) THEN
+              IF( .NOT. WRITESET( FNAME, TRIM( CURRVAR ), ALLFILES, 
+     &                            JDATE, JTIME, 
+     &                            SRCEFS( 1:EFPOS ) ) ) THEN
      	          MESG = 'Could not write ' // TRIM( CURRVAR ) // 
      &	                 'to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
                   CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
@@ -296,8 +297,8 @@ C...............  Write variable to file
           END DO  ! end emission process loop
  
 C.............  Write source numbers to file
-          IF( .NOT. WRITE3( FNAME, 'SOURCES', JDATE, JTIME,
-     &                      EFIDX( 1:EFPOS ) ) ) THEN
+          IF( .NOT. WRITESET( FNAME, 'SOURCES', ALLFILES, JDATE, 
+     &                        JTIME, EFIDX( 1:EFPOS ) ) ) THEN
      	      MESG = 'Could not write source numbers ' //
      &               ' to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
               CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
