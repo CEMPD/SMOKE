@@ -152,6 +152,11 @@ C              mole-based conversions
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
+C.............  Left-justify character strings
+            TMPPRF = ADJUSTL( TMPPRF ) 
+            POLNAM = ADJUSTL( POLNAM )
+            SPECNM = ADJUSTL( SPECNM )
+
 C.............  Search for pollutant in list of valid names, and go to the end
 C               of the loop if not found (skip entry)
             J = INDEX1( POLNAM, NIPOL, EINAM )
