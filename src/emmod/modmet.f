@@ -60,8 +60,13 @@
         REAL   , ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! per-source tmprs
         REAL   , ALLOCATABLE, PUBLIC :: TKMAX   ( : )   ! working max
         REAL   , ALLOCATABLE, PUBLIC :: TKMIN   ( : )   ! working min
-        REAL   , ALLOCATABLE, PUBLIC :: TKMAXOUT( :,: )   ! output  max
-        REAL   , ALLOCATABLE, PUBLIC :: TKMINOUT( :,: )   ! output  min
+        REAL   , ALLOCATABLE, PUBLIC :: TKMAXOUT( :,: ) ! output  max
+        REAL   , ALLOCATABLE, PUBLIC :: TKMINOUT( :,: ) ! output  min
         INTEGER, ALLOCATABLE, PUBLIC :: METIDX  ( :,: ) ! idx to master min/max
+
+!...........   Hourly temperatures [K] (dim: NSRC)
+!...              for Mobile5 processing, index 0 = 12 AM local time
+!...              for Mobile6 processing, index 0 = 6 AM local time
+        REAL   , ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour 
 
         END MODULE MODMET
