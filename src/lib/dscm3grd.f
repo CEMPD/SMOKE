@@ -1,7 +1,8 @@
 
-        LOGICAL FUNCTION DSCM3GRD( GNAME, CNAME,
-     &              CTYPE, P_ALP, P_BET, P_GAM, XCENT, YCENT,
-     &              XORIG, YORIG, XCELL, YCELL, NCOLS, NROWS, NTHIK )
+        LOGICAL FUNCTION DSCM3GRD( GNAME, GDESC, CNAME, CTYPE, PUNIT, 
+     &                             P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                             XORIG, YORIG, XCELL, YCELL, NCOLS, 
+     &                             NROWS, NTHIK )
 
 C***********************************************************************
 C  function body starts at line
@@ -43,13 +44,16 @@ C***************************************************************************
 
         IMPLICIT NONE
         
+        INCLUDE 'EMCNST3.EXT'               
         INCLUDE 'PARMS3.EXT'               
         
 C...........   ARGUMENTS and their descriptions.  All are output variables:
         
-        CHARACTER*(*) GNAME	!  grid  sys name
+        CHARACTER*(*) GNAME	!  grid name
+        CHARACTER*(*) GDESC     !  grid description
         CHARACTER*(*) CNAME	!  coord sys name
-        INTEGER       CTYPE	!  coord sys type
+        INTEGER       CTYPE	!  coord sys type (I/O API code number)
+        CHARACTER*(*) PUNIT     !  projection units (e.g., meters or degrees)
         REAL*8        P_ALP	!  first, second, third map
         REAL*8        P_BET	!  projection descriptive
         REAL*8        P_GAM	!  parameters
@@ -65,26 +69,44 @@ C...........   ARGUMENTS and their descriptions.  All are output variables:
                     
 C...........   EXTERNAL FUNCTIONS:
         
+        CHARACTER*2  CRLF
         INTEGER      GETEFILE
+        INTEGER      INDEX1
         INTEGER      TRIMLEN
 
-        EXTERNAL     GETEFILE, TRIMLEN
+        EXTERNAL     CRLF, GETEFILE, INDEX1, TRIMLEN
         
+C...........   Local parameters
+        INTEGER, PARAMETER :: MXGRDTYP = 5
+
+C...........   Grid types and names arrays
+        INTEGER      :: GRDTYPES( MXGRDTYP ) = ( / LATGRD3
+     &                                           , LAMGRD3
+     &                                           , MERGRD3
+     &                                           , STEGRD3
+     &                                           , UTMGRD3 / )
+
+        CHARACTER*15 :: GRDNAMES( MXGRDTYP ) = ( / 'GEOGRAPHIC     '
+     &                                           , 'LAMBERT        '
+     &                                           , 'MERCATOR       '
+     &                                           , 'STEREOGRAPHIC  '
+     &                                           , 'UTM            ' / )
+
 C...........   File units and logical/physical names:
         INTEGER         IDEV    !  unit number of grid information file
         CHARACTER*16    LNAME   !  logical name for grid information file
-        CHARACTER*400   PNAME   !  physical name for grid information file
 
 C...........   Scratch local variables and their descriptions:
             
-        INTEGER         I, J     !  indexes for names in lists
+        INTEGER         I, J, L  !  indexes for names in lists
         INTEGER         IOS      !  I/O status return
+        INTEGER         LEGAL    !  actual length of GNAME or GDESC from caller
 
         CHARACTER*16    CDUM     !  character dummy buffer
-        CHARACTER*300   GDESC    !  grid description
+        CHARACTER*300   BUFFER   !  multi-purpose buffer
+        CHARACTER*300   GNBUF    !  grid name buffer
+        CHARACTER*300   GDBUF    !  grid description buffer
         CHARACTER*300   MESG     !  message buffer
-
-        LOGICAL      :: EFLAG = .FALSE.
 
         CHARACTER*16 :: PROGNAME = 'DSCM3GRD' ! program name
 
@@ -99,23 +121,73 @@ C           exit status
 C.........  Open grid file
         IDEV = GETEFILE( LNAME, .TRUE., .TRUE., PROGNAME )
 
+        IF( IDEV .LE. 0 ) THEN
+
+            L = TRIMLEN( LNAME )
+            MESG = 'Could not open file "' // LNAME( 1:L ) // '"!'
+            DSCM3GRD = .FALSE.
+            RETURN
+
+        ENDIF
+
 C.........  Read grid information file
+
         READ( IDEV, 93010, END=111, ERR=222 ) 
-     &        GNAME, GDESC, CNAME, CTYPE, P_ALP, P_BET, P_GAM, 
+     &        GNBUF, GDBUF, CNAME, PUNIT, P_ALP, P_BET, P_GAM, 
      &        XCENT, YCENT, XORIG, YORIG, CDUM, XCELL, YCELL,
      &        NCOLS, NROWS, NTHIK
 
-C.........  Translate variables that need to be translated into I/O API
+C.........  Check length of input strings (that matter) with allowable length 
+C           as defined in the calling program.
 
-        IF ( LEN( GNAME ) .GT. 16 ) THEN
-            WRITE( MESG,94010 )
-     &          'Grid "', GNAME, '" Max name length 16; actual:', 
-     &          LEN( GNAME )
+        BUFFER = ADJUSTL( GNBUF )
+        L = TRIMLEN( BUFFER )
+        LEGAL = LEN( GNAME )
+        IF ( L .GT. LEGAL ) THEN
+
+            WRITE( MESG,94010 ) 'Grid name"', BUFFER( 1:L ), 
+     &             '" Has maximum allowable length of', LEGAL, '.' //
+     &             CRLF() // BLANK5 // 'Truncating to "' // 
+     &             BUFFER( 1:LEGAL ) // '"'
             CALL M3WARN( 'DSCM3GRD', 0, 0, MESG )
+
+        END IF
+
+        GNAME = BUFFER( 1:LEGAL )
+                
+        BUFFER = ADJUSTL( GDBUF )
+        L = TRIMLEN( BUFFER )
+        LEGAL = LEN( GDESC )
+        IF ( L .GT. LEGAL ) THEN
+
+            WRITE( MESG,94010 ) 'Grid description being truncated to',
+     &              LEGAL, 'allowable characters.'
+            CALL M3WARN( 'DSCM3GRD', 0, 0, MESG )
+
+        END IF
+                
+        GDESC = BUFFER( 1:LEGAL )
+
+C.........  Convert the coordinate system type to I/O API code
+
+        CALL UPCASE( CNAME )
+
+        I = INDEX1( CNAME, MXGRDTYP, GRDNAMES )
+
+        IF( I .GT. 0 ) THEN
+            CTYPE = GRDTYPES( I )
+
+        ELSE
+            L = TRIMLEN( CNAME )
+            MESG = 'INTERNAL ERROR: Coordinate system type "' //
+     &             CNAME( 1:L ) // '" is not regonized by ' // CRLF() //
+     &             BLANK5// 'library function "'// PROGNAME(1:16) // '"'
+            CALL M3MSG2( MESG )
             DSCM3GRD = .FALSE.
             RETURN
-        END IF          !  if len( gname ) > 16, or if len( vname ) > 16
-                
+
+        ENDIF
+
         DSCM3GRD = .TRUE.
 
         CLOSE( IDEV )
@@ -136,7 +208,7 @@ C******************  FORMAT  STATEMENTS   ******************************
                 
 C...........   Formatted file I/O formats............ 93xxx
 
-93010   FORMAT( A, A, A, I8, 7E10.2, A, 2E10.2, 3I8 )
+93010   FORMAT( 4(A/), 7(E10.2/), A/ 2(E10.2/), 2(I8/), I8 )
                 
 C...........   Internal buffering formats............ 94xxx
 
