@@ -219,9 +219,10 @@ C.............  Skip records that are not controlled
 C.............  Write message for pollutant for each new pollutant
             IF( PNAM .NE. LNAM ) THEN
 
-                MESG = 'Controls for pollutant ' // PNAM
+                MESG = 'Source controls for pollutant ' // PNAM
                 L = LEN_TRIM( MESG )
                 WRITE( FDEV,93000 ) ' '
+                WRITE( FDEV, 93000 ) REPEAT( '-', 80 )
                 WRITE( FDEV,93000 ) MESG( 1:L )
                 WRITE( FDEV,93000 ) ' '
                 LNAM = PNAM
@@ -261,10 +262,10 @@ C...........   Formatted file I/O formats............ 93xxx
 93000       FORMAT( A )
 
 93380       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ', 
-     &              F10.3, ' [tons/yr]. WARNING: Control factor of 1.' )
+     &              E11.4, ' [tons/yr]. WARNING: Control factor of 1.' )
 
 93400       FORMAT( 10X, A, ' Packet. Before: ', E11.4, ' After: ',  
-     &              F10.3, ' [tons/yr]. Factor:', F5.2 )
+     &              E11.4, ' [tons/yr]. Factor:', E9.3 )
 
             END SUBROUTINE CONTROL_MESG
 
