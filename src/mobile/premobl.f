@@ -118,6 +118,7 @@ C...........   File units and logical names:
         INTEGER      LDEV  ! unit number for log file
         INTEGER      RDEV  ! unit number for mobile codes conversions file
         INTEGER      SDEV  ! unit number for ASCII inventory file
+        INTEGER      TDEV  ! unit number for emissions type by activity file
 
         CHARACTER*16 ANAME ! logical name for mobile ASCII inventory file
         CHARACTER*16 ENAME ! logical name for mobile I/O API inventory file
@@ -229,11 +230,6 @@ C.......   Get file names and units; open input files
      &         'Enter logical name for EMISSION FACTOR INDEX LIST file',
      &         .TRUE., .TRUE., CRL // 'PLIST', PROGNAME )
 
-C.........  Get file name for converting road-class to road type &
-C           vehicle type name to vehicle type number.
-        MESG = 'Enter logical name for MOBILE CODES file'
-        RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES', PROGNAME )
-
 C.........  Get header description of inventory file, error if problem
         IF( .NOT. DESC3( ENAME ) ) THEN
             MESG = 'Could not get description of file "' //
@@ -257,6 +253,15 @@ C               file, or else this program does not need to be run
             END IF
 
         END IF
+
+        TDEV = PROMPTFFILE( 
+     &         'Enter logical name for EMISSION PROCESSES file',
+     &         .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
+
+C.........  Get file name for converting road-class to road type &
+C           vehicle type name to vehicle type number.
+        MESG = 'Enter logical name for MOBILE CODES file'
+        RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES', PROGNAME )
 
 C.........  Create note about time zone expected in meteorology file
         WRITE( MESG, 94010 )
@@ -385,6 +390,10 @@ C.........  Fill tables for translating mobile road classes and vehicle types
 C.........  The tables are passed through MODINFO
         CALL RDMVINFO( RDEV )
 
+C.........  Read list of activities and associated pollutants to create the
+C           list of activities to use in the processing
+        CALL RDEPROC( TDEV )
+
 C...........   Read list of parameter scheme indices and emission factor
 C...........   table names to use for each source
  
@@ -394,7 +403,9 @@ C.........  Also create the list of unique parameter scheme indices.
         CALL RDEFXREF( IDEV, .TRUE. )
 
 C...........   Map parameter scheme indexes (PSIs) onto sources for all hours
-        CALL ASGNPSI( NIACT, ACTVTY )
+C...........   Assign PSIs only for activities that are being used to create
+C              emissions. 
+        CALL ASGNPSI( NIACT, ACTVTY, NETYPE )
 
 C.........  Allocate memory for flag of which PSI/temp-combos are used. Have
 C           waited until now because need MXNPSI from RDEFXREF
@@ -497,7 +508,7 @@ C.................  Write the by-source meteorology data
 
 C.................  Update meteorology information for each emission factor
                 CALL GENEFMET( NSRC, MXXNPSI, NVLDTMM, NIACT, 
-     &                         METIDX, TIPSI )
+     &                         NETYPE, METIDX, TIPSI )
 
 C.................  Increment output time for per-day file
                 CALL NEXTIME( IDATE, ITIME, 240000 )
@@ -515,6 +526,9 @@ C......... Write temperature combinations for each PSI into an ASCII file
 
         K = 0
         DO V = 1, NIACT
+
+C.............  Skip activity if not to be used
+            IF( NETYPE( V ) .EQ. 0 ) CYCLE
 
             DO I = 1, NPSI( V )
 
