@@ -27,6 +27,13 @@ C             program. added flexibility in calculating PAR by using
 C             1. observational cloud, 2. RGRND from MM5, 3, KUO cloud, 
 C             4. KF cloud
 C
+C       Revised    1/98 by JMV : completed implementation of option 5
+C             for NO CUM param. 
+C        
+C       Revised    2/98 by JMV : implemented an option 6 of clear skies
+C             assumption.  Also added AGRC contribution to the HRBIO
+C             subroutine for consistency with HRBIOS routine.
+C                  
 C***********************************************************************
 C 
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -156,13 +163,14 @@ C.......   Name tables for file NNAME
 
         CHARACTER*16    NORMV( BTYPES * ( BSPCS - 1 ) )   ! names for VOC vbles
         CHARACTER*16    NORMN( LUSES )          !  names for  NO-emission vbles
-        CHARACTER*72    PARMENU( 5 )            ! Methods to calc. PAR
+        CHARACTER*72    PARMENU( 6 )            ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use observational clouds',
      &             'Use MM5 generated RGND',
      &             'Use KUO cloud attenuation',
      &             'Use KF  cloud attenuation',   
-     &             'Use NO CUM Param'   /
+     &             'Use NO CUM Param'  ,
+     &             'Assume Clear Skies' /
             
 
 C***********************************************************************
@@ -210,7 +218,7 @@ C.......   Get environment variable logical variables
 
 C.......   Get the method to calculate PAR
 
-        PARTYPE = GETMENU( 5, PARTYPE, 'How will PAR be calculated?',
+        PARTYPE = GETMENU( 6, PARTYPE, 'How will PAR be calculated?',
      &                     PARMENU )
 
 C.......   Get input files
@@ -498,8 +506,7 @@ C.............  Write to screen because WRITE3 only writes to LDEV
                   CALL M3EXIT( 'TMPBIO', JDATE, JTIME, MESG, 2 )
               END IF
 
-              IF ( (PARTYPE.EQ.3) .OR. (PARTYPE.EQ.4) .OR.
-     &		    (PARTYPE.EQ.5)	 ) THEN
+              IF ( PARTYPE .GE. 3 ) THEN 
                  DO 70 R = 1, NROWS
                     DO 60 C = 1, NCOLS
                        PRSFC( C, R ) = PRSFC( C, R ) / 100.0  ! Pa to mb
@@ -508,8 +515,8 @@ C.............  Write to screen because WRITE3 only writes to LDEV
               END IF
 
               CALL HRBIO( JDATE, JTIME, LAT, LON, PRSFC, TASFC,
-     &                    PINE, DECD, CONF, LEAF, OTHR, AVLAI, NORNO,
-     &                    PARTYPE, EMIS )
+     &                    PINE, DECD, CONF, AGRC, LEAF, OTHR, AVLAI, 
+     &                    NORNO, PARTYPE, EMIS )
            END IF 
 
            IF ( .NOT. WRITE3( ENAME, 'ALL', 
