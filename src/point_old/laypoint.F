@@ -411,7 +411,7 @@ C.......   Check file grid with program grid
             WRITE( MESG,94010 ) 
      &       'Grid name inconsistency. Met files: "' // GDNAM3D //
      &       '", but compiled is "' // GRDNM // '"'
-            CALL M3EXIT( 'LAYPOINT', 0, 0, MESG, 2 )
+            CALL M3WARN( 'LAYPOINT', 0, 0, MESG )
 
         ENDIF
 
