@@ -2,7 +2,7 @@
         PROGRAM SPCMMAT
 
 C***********************************************************************
-C  program body starts at line 241
+C  program body starts at line 245
 C
 C  DESCRIPTION:
 C       Construct mobile source chemical speciation matrix from data 
@@ -195,6 +195,8 @@ C........ Third part depends on road class only
 C.......   Speciation matrix variables and their names:
         
         REAL   SPCFACS( NMSRC, NVTYPE, MXMPOL*MXEPRC ) ! speciation coefficients
+
+        COMMON / FORHPX / SPCFACS       ! HP needs big arrays in common blocks
 
 C...........   Other local variables
         
