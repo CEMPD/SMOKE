@@ -433,10 +433,11 @@ C           major and PinG sources that aren't in the inventory groups will
 C           get assigned their own group.
 C.........  This routine populates arrays in MODELEV that contain the group-
 C           specific information.  It allocates some of the group arrays.
-        IF( NGRPCRIT .GT. 0 ) THEN
-            CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
-     &                     GRPVALS, GRPTYPES, NINVGRP   )
-        END IF
+C.........  NGRPCRIT may be zero if no grouping criteria have been set, but
+C           the routine will still set groups for facility stacks that match
+C           exactly
+        CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
+     &                 GRPVALS, GRPTYPES, NINVGRP   )
 
 C.........  If emissions are needed as a criteria, determine maximum daily 
 C           emissions over the time period being processed for each source
@@ -1292,11 +1293,11 @@ C---------------------  FORMAT  STATEMENTS  -------------------------
 
 94793       FORMAT( A, 1X, A16, ';', A, I10, ';' )
 
-94794       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', F10.2 ';' )
+94794       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', F10.2, ';' )
 
-94795       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', A15 ';' )
+94795       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', A15, ';' )
 
-94796       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', I10 ';' )
+94796       FORMAT( A, 1X, A16, ';     ;', 1X, A6, '; ', I10, ';' )
 
             END SUBROUTINE WRITE_REPORT
 
