@@ -42,13 +42,13 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: FLTRDAYL, IFIP
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, USEDAYLT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NSRC
 
         IMPLICIT NONE
 

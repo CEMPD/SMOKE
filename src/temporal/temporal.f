@@ -42,31 +42,36 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: TZONES, TPFLAG, FLTRDAYL
 
 C.........  This module contains the temporal cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: MDEX, WDEX, DDEX
 
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: NMON, NWEK, NHRL
 
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: NEFS, INPUTHC, OUTPUTHC, EMTNAM,
+     &                      EMTPOL, NEPOL, NETYPE
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR
+        USE MODDAYHR, ONLY: DYPNAM, DYPDSC, NDYPOA, NDYSRC, 
+     &                      HRPNAM, HRPDSC, NHRPOA, NHRSRC,
+     &                      LDSPOA, LHSPOA, LHPROF,
+     &                      INDXD, EMACD, INDXH, EMACH
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
+        USE MODMET, ONLY:
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, MXIDAT, INVDNAM, INVDVTS
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, BYEAR, NIPPA, EANAM, NSRC, 
+     &                     NIACT, INVPIDX, NIPOL, EAREAD, EINAM, ACTVTY
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY:
 
 C.........  This module is used for MOBILE6 setup information 
         USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN

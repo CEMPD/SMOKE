@@ -49,7 +49,7 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: MONFAC, WEKFAC, HRLFAC, XWKFAC
 
         IMPLICIT NONE
 

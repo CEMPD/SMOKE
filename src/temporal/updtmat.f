@@ -45,16 +45,17 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC
+        USE MODSOURC, ONLY: TPFLAG, TZONES
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: MDEX, WDEX, DDEX
 
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL
+        USE MODTMPRL, ONLY: MONFAC, WEKFAC, XWKFAC
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR
+        USE MODDAYHR, ONLY: INDXD, INDXH, NHRSRC, NDYSRC, EMACH,
+     &                      LDSPOA
 
         IMPLICIT NONE
 

@@ -45,10 +45,12 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: INPUTHC, OUTPUTHC, NSUBPOL, SUBPOLS, 
+     &                      EMTNAM, EMTIDX, NETYPE, MXETYPE, NEPOL, 
+     &                      EMTPOL
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIACT, ACTVTY
 
         IMPLICIT NONE
 

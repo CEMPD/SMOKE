@@ -44,13 +44,13 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET
+        USE MODMET, ONLY:
 
 C...........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY:
 
         IMPLICIT NONE
 

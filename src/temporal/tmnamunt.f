@@ -41,10 +41,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: NEFS, EFSNAM, EFSDSC, EFSUNT, EMTNAM, 
+     &                      EMTUNT, EMTDSC, INPUTHC, OUTPUTHC, MXETYPE,
+     &                      NETYPE
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: NIPPA, NIACT, NIPOL, EANAM, EACNV, EAUNIT,
+     &                     ACTVTY, EINAM
 
         IMPLICIT NONE
 
