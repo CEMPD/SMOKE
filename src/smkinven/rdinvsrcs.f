@@ -872,8 +872,16 @@ C.................  Store file number
 C.........  Sort sources by record array by file number then record number
         CALL M3MESG( 'Sorting sources by file and line number...' )
 
-        CALL SORTI2( NSTRECS, RECIDX, SRCSBYREC( :,1 ), 
-     &               SRCSBYREC( :,2 ) )
+C.........  If processing mobile EMS-95 format, add third dimension to sort
+C           since there will be multiple sources with the same file and 
+C           record number
+        IF( CATEGORY == 'MOBILE' .AND. EMSFLAG ) THEN
+            CALL SORTI3( NSTRECS, RECIDX, SRCSBYREC( :,1 ), 
+     &                   SRCSBYREC( :,2 ), SRCSBYREC( :,3 ) )
+        ELSE
+            CALL SORTI2( NSTRECS, RECIDX, SRCSBYREC( :,1 ),
+     &                   SRCSBYREC( :,2 ) )
+        END IF
      
 C.........  Sort inventory sources
         CALL M3MESG( 'Sorting sources by characteristics...' )
