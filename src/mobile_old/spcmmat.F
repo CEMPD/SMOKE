@@ -179,6 +179,7 @@ C...........   Other local variables
         INTEGER         SDEV            !  for surrogate coeff file
         INTEGER         XDEV            !  for surrogate xref  file
         INTEGER         LDEV            !  log-device
+        INTEGER         TDEV            !  for list file
         INTEGER         SPCPRO          !  scratch xref value
         INTEGER         IOS             !  I/O status
         INTEGER         IREC            !  input line (record) number
@@ -239,7 +240,7 @@ C.......   Get file name; open input mobile sources file
      &           'Enter logical name for SPECIATION PROFILES file',
      &           .TRUE., .TRUE., 'MSPRO', 'SPCMMAT' )
 
-        LDEV = PROMPTFFILE(
+        TDEV = PROMPTFFILE(
      &           'Enter logical name for SPECIATION LIST file',
      &           .TRUE., .TRUE., 'MSLST', 'SPCMMAT' )
 
@@ -254,7 +255,7 @@ C.......   Read in description of mobile-source file
 C.......   Read speciation list file to find out what species and emission
 C.......   processes are actually being used in this scenario
 
-        NIPOL  = CSVNAME( LDEV, .TRUE. , .FALSE., .FALSE., EINAM  )
+        NIPOL  = CSVNAME( TDEV, .TRUE. , .FALSE., .FALSE., EINAM  )
 
 C.......   For first time CSVNAME is called, see if there were any errors
         IF( NIPOL .LE. 0 ) THEN
@@ -264,13 +265,13 @@ C.......   For first time CSVNAME is called, see if there were any errors
 
         ENDIF
 
-        NMPOL  = CSVNAME( LDEV, .FALSE., .TRUE. , .FALSE., EMNAM  )
-        NEMODE = CSVNAME( LDEV, .FALSE., .FALSE., .TRUE. , MEMODE )
+        NMPOL  = CSVNAME( TDEV, .FALSE., .TRUE. , .FALSE., EMNAM  )
+        NEMODE = CSVNAME( TDEV, .FALSE., .FALSE., .TRUE. , MEMODE )
 
 C.......   Get speciation factor names and the number of names 
 C.......   from the SPECIATION LIST file
 
-        NSNAME = CSVNAME( LDEV, .TRUE., .TRUE., .TRUE., VNAME3D )
+        NSNAME = CSVNAME( TDEV, .TRUE., .TRUE., .TRUE., VNAME3D )
 
 C.......   Intialize species per MV process counter
         DO 44 I = 1, NEMODE
