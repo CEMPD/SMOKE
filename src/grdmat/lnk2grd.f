@@ -12,8 +12,8 @@ C       the total length ALEN of the link, and the fraction
 C       AFRAC( I ) of each cell:link intersections.
 C
 C  PRECONDITIONS REQUIRED:
-C       Grid description set into FDESC3.EXT prior to call
-C       right handed coord system (XCELL3D and YCELL3D positive)
+C       Grid description stored in MODGRID prior to call
+C       right handed coord system (XCELL and YCELL positive)
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
@@ -42,6 +42,10 @@ C Last updated: $Date$
 C
 C****************************************************************************
 
+C...........   MODULES for public variables
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID, ONLY: XCELL, YCELL, XORIG, YORIG, NCOLS, NROWS
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -49,8 +53,6 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    ! I/O API constants
         INCLUDE 'FDESC3.EXT'    ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'   ! I/O API function declarations
-
-C...........   COMMON in FDESC3.EXT provides XCELL3D, YCELL3D, etc.
 
 C...........   ARGUMENTS and their descriptions:
 
@@ -134,14 +136,14 @@ C...........   Initializations
         XLNK = XEND - XBEG
         YLNK = YEND - YBEG
                 
-        DDX   = 1.0 / XCELL3D
-        DDY   = 1.0 / YCELL3D
+        DDX   = 1.0 / XCELL
+        DDY   = 1.0 / YCELL
 
-        COL  = 1 + INT( DDX * ( XBEG - XORIG3D ) )      !  starting cell
-        ROW  = 1 + INT( DDY * ( YBEG - YORIG3D ) )
+        COL  = 1 + INT( DDX * ( XBEG - XORIG ) )      !  starting cell
+        ROW  = 1 + INT( DDY * ( YBEG - YORIG ) )
 
-        CCC  = 1 + INT( DDX * ( XEND - XORIG3D ) )      !  ending cell
-        RRR  = 1 + INT( DDY * ( YEND - YORIG3D ) )
+        CCC  = 1 + INT( DDX * ( XEND - XORIG ) )      !  ending cell
+        RRR  = 1 + INT( DDY * ( YEND - YORIG ) )
 
         ALEN = SQRT( XLNK**2 + YLNK**2 )                !  link length
 
@@ -152,14 +154,14 @@ C...............   Check for 0-D, 1-D cases, using tolerance of
 C...............   1.0E-5 * cellsize (on the order of 0.5-10.0 meters).
 C...............   Within a cell case:
         IF ( ( CCC .EQ. COL  .AND. RRR .EQ. ROW ) .OR.
-     &           ( ALEN .LT. 1.0E-5 * XCELL3D )            ) THEN
+     &           ( ALEN .LT. 1.0E-5 * XCELL )            ) THEN
 
 C.............  Make sure 1-cell link is inside domain
-            IF ( COL .GE. 1  .AND.  COL .LE. NCOLS3D .AND.
-     &           ROW .GE. 1  .AND.  ROW .LE. NCOLS3D      ) THEN
+            IF ( COL .GE. 1  .AND.  COL .LE. NCOLS .AND.
+     &           ROW .GE. 1  .AND.  ROW .LE. NCOLS      ) THEN
 
                 NCEL = 1
-                ACEL ( 1 ) = COL + NCOLS3D * ( ROW - 1 )
+                ACEL ( 1 ) = COL + NCOLS * ( ROW - 1 )
                 AFRAC( 1 ) = 1.0
 
             END IF
@@ -178,10 +180,10 @@ C...........   1-D problems:
 C.........  Case:  (Near)constant X -- 1-D problem in Y only
 
         IF ( ( COL .EQ. CCC )  .OR.
-     &       ( ABS( XLNK ) .LT. 1.0E-5 * XCELL3D ) ) THEN
+     &       ( ABS( XLNK ) .LT. 1.0E-5 * XCELL ) ) THEN
  
 C.............  Case:  Link is outside domain
-            IF ( COL .LT. 1 .OR. COL .GT. NCOLS3D ) THEN
+            IF ( COL .LT. 1 .OR. COL .GT. NCOLS ) THEN
                 NCEL = 0
                 RETURN
             END IF
@@ -204,7 +206,7 @@ C.............  than YEND, then flip the coordinates and use the same algorithm.
 C.............  Process intersections moving from bottom to top of domain
 
 C.............  Case: Link outside of domain
-            IF ( RRR .LT. 1  .OR.  ROW .GT. NROWS3D ) THEN
+            IF ( RRR .LT. 1  .OR.  ROW .GT. NROWS ) THEN
                 NCEL = 0
                 RETURN
 
@@ -213,12 +215,12 @@ C.............  Case: Link crosses domain at some point
 
 C.................  Initialize for all cells (inside domain) intersecting link
                 J  = 0
-                FF = DYLNK * YCELL3D
-                DO  11  IR = MAX( 1,ROW ) , MIN( RRR,NROWS3D )
+                FF = DYLNK * YCELL
+                DO  11  IR = MAX( 1,ROW ) , MIN( RRR,NROWS )
 
-                    IF( IR .GE. 1 .AND. IR. LE. NROWS3D ) THEN
+                    IF( IR .GE. 1 .AND. IR. LE. NROWS ) THEN
                         J  = J + 1
-                        ACEL ( J ) = COL + NCOLS3D * ( IR - 1 )
+                        ACEL ( J ) = COL + NCOLS * ( IR - 1 )
                         AFRAC( J ) = FF
                     ENDIF
 
@@ -227,16 +229,16 @@ C.................  Initialize for all cells (inside domain) intersecting link
                 NCEL = J
 
 C.................  Reset first fraction if it starts on interior of domain
-                IF( YBEG .GT. YORIG3D ) THEN
-                    YY = YORIG3D + YCELL3D * FLOAT( ROW )
+                IF( YBEG .GT. YORIG ) THEN
+                    YY = YORIG + YCELL * FLOAT( ROW )
                     AFRAC( 1 ) = DYLNK * ( YY - YBEG )
                 ENDIF
 
                 IF( NCEL .GT. NDIM ) CALL REPORT_BAD_CELL
 
 C.................  Reset last  fraction if it ends   on interior of domain
-                IF( YEND .LT. YORIG3D + YCELL3D * NROWS3D ) THEN
-                    YY = YORIG3D + YCELL3D * FLOAT( RRR - 1 )
+                IF( YEND .LT. YORIG + YCELL * NROWS ) THEN
+                    YY = YORIG + YCELL * FLOAT( RRR - 1 )
                     AFRAC( NCEL ) = DYLNK * ( YEND - YY )
                 ENDIF
 
@@ -250,10 +252,10 @@ C.................  Reset last  fraction if it ends   on interior of domain
 C.........  Case: (Near)-constant Y -- 1-D problem in X only:
 
         IF ( ( ROW .EQ. RRR ) .OR. 
-     &       ( ABS( YLNK ) .LT. 1.0E-5 * YCELL3D ) ) THEN
+     &       ( ABS( YLNK ) .LT. 1.0E-5 * YCELL ) ) THEN
 
 C.............  Case:  Link is outside domain
-            IF ( ROW .LT. 1  .OR. ROW .GT. NROWS3D ) THEN
+            IF ( ROW .LT. 1  .OR. ROW .GT. NROWS ) THEN
                 NCEL = 0
                 RETURN
             END IF
@@ -274,7 +276,7 @@ C.............  of XEND, then flip the coordinates and use the same algorithm.
             ENDIF
 
 C.................  Case:  Link is outside domain
-            IF ( CCC .LT. 1  .OR.  COL .GT. NCOLS3D ) THEN
+            IF ( CCC .LT. 1  .OR.  COL .GT. NCOLS ) THEN
                 NCEL = 0
                 RETURN
 
@@ -283,9 +285,9 @@ C.............  Case: Link crosses domain at some point
 
 C.................  Initialize for all cells (inside domain) intersecting link
                 J  = 0
-                FF = DXLNK * XCELL3D
-                JZ = NCOLS3D * ( ROW - 1 )
-                DO  22  IC = MAX( 1,COL ) , MIN( CCC,NCOLS3D )
+                FF = DXLNK * XCELL
+                JZ = NCOLS * ( ROW - 1 )
+                DO  22  IC = MAX( 1,COL ) , MIN( CCC,NCOLS )
                     J  = J + 1
                     ACEL ( J ) = IC + JZ
                     AFRAC( J ) = FF
@@ -296,14 +298,14 @@ C.................  Initialize for all cells (inside domain) intersecting link
                 IF( NCEL .GT. NDIM ) CALL REPORT_BAD_CELL
 
 C.................  Reset first fraction if it starts on interior of domain
-                IF( XBEG .GT. XORIG3D ) THEN
-                    XX = XORIG3D + XCELL3D * FLOAT( COL )
+                IF( XBEG .GT. XORIG ) THEN
+                    XX = XORIG + XCELL * FLOAT( COL )
                     AFRAC( 1 ) = DXLNK * ( XX - XBEG )
                 ENDIF
 
 C.................  Reset last  fraction if it ends   on interior of domain
-                IF( XEND .LT. XORIG3D + XCELL3D * NCOLS3D ) THEN
-                    XX = XORIG3D + XCELL3D * FLOAT( CCC - 1 )
+                IF( XEND .LT. XORIG + XCELL * NCOLS ) THEN
+                    XX = XORIG + XCELL * FLOAT( CCC - 1 )
                     AFRAC( NCEL ) = DXLNK * ( XEND - XX )
                 ENDIF
 
@@ -316,7 +318,7 @@ C.................  Reset last  fraction if it ends   on interior of domain
 
 C...................................................................
 C.........  2-D CASE: 
-C.........  (by construction, we know that | XLNK |, | YLNK | > 1.0E5*CELL3D)
+C.........  (by construction, we know that | XLNK |, | YLNK | > 1.0E5*CELL)
 C.........  Find the intersections of link with the grid, starting
 C.........  from XBEG, YBEG:
 C...................................................................
@@ -341,14 +343,14 @@ C.........  based on orientation of link.
         XFAC( J ) = 9.0E36    !  sentinel on front end-of-list
 
 C.........  Initialize for all cells (inside domain) intersecting link
-        FF = DXLNK * XCELL3D
+        FF = DXLNK * XCELL
         DO  111  IC = IX, NX, XINC
 
 C.............  First X-cell of link is inside domain
-            IF( IC .EQ. IX .AND. START .GE. XORIG3D .AND.
-     &          IC .GE. 1  .AND. IC    .LE. NCOLS3D       ) THEN
+            IF( IC .EQ. IX .AND. START .GE. XORIG .AND.
+     &          IC .GE. 1  .AND. IC    .LE. NCOLS       ) THEN
                 J         = J + 1
-                XX        = XORIG3D + XCELL3D * FLOAT( XB )
+                XX        = XORIG + XCELL * FLOAT( XB )
                 XCOL( J ) = IC
                 XFAC( J ) = DXLNK * FLOAT( XINC ) * ( XX - START )
 
@@ -360,16 +362,16 @@ C.............  Initialize first cell when link starts outside domain
 
 C.............  Last X-cell of link is inside domain
             ELSEIF( IC   .EQ. NX .AND. 
-     &              ENDS .LE. XORIG3D + XCELL3D * NCOLS3D .AND.
-     &              IC   .GE. 1  .AND. IC .LE. NCOLS3D          ) THEN
+     &              ENDS .LE. XORIG + XCELL * NCOLS .AND.
+     &              IC   .GE. 1  .AND. IC .LE. NCOLS          ) THEN
                 J         = J + 1
-                XX        = XORIG3D + XCELL3D * FLOAT( XE )
+                XX        = XORIG + XCELL * FLOAT( XE )
                 XCOL( J ) = IC
                 XFAC( J ) = XFAC( J-1 ) + 
      &                      DXLNK * FLOAT( XINC ) * ( ENDS - XX )
 
 C.............  Set fractions for interior of domain and non-end of link
-            ELSEIF( IC .GT. 1 .AND. IC .LE. NCOLS3D ) THEN
+            ELSEIF( IC .GT. 1 .AND. IC .LE. NCOLS ) THEN
                 J         = J + 1
                 XCOL( J ) = IC
                 XFAC( J ) = XFAC( J-1 ) + FF
@@ -416,14 +418,14 @@ C.........  stepping through loop _AND_ for changing sign in the YFAC calc
         YFAC( J ) = 9.0E36    !  sentinel on front end-of-list
 
 C.........  Calculate fractions for cells (inside domain) intersecting link
-        FF = DYLNK * YCELL3D
+        FF = DYLNK * YCELL
         DO  222  IR = IY, NY, YINC
 
 C.............  First Y-cell of link is inside domain
-            IF( IR .EQ. IY .AND. START .GE. YORIG3D .AND.
-     &          IR .GE. 1  .AND. IR    .LE. NROWS3D      ) THEN
+            IF( IR .EQ. IY .AND. START .GE. YORIG .AND.
+     &          IR .GE. 1  .AND. IR    .LE. NROWS      ) THEN
                 J         = J + 1
-                YY        = YORIG3D + YCELL3D * FLOAT( YB )
+                YY        = YORIG + YCELL * FLOAT( YB )
                 YROW( J ) = IR
                 YFAC( J ) = DYLNK * FLOAT( YINC ) * ( YY - START )
 
@@ -435,16 +437,16 @@ C.............  Initialize first cell when link starts outside domain
 
 C.............  Last Y-cell of link is inside domain
             ELSEIF( IR   .EQ. NY .AND. 
-     &              ENDS .LE. YORIG3D + YCELL3D * NROWS3D .AND.
-     &              IR   .GE. 1 .AND. IR .LE. NROWS3D           ) THEN
+     &              ENDS .LE. YORIG + YCELL * NROWS .AND.
+     &              IR   .GE. 1 .AND. IR .LE. NROWS           ) THEN
                 J         = J + 1
-                YY        = YORIG3D + YCELL3D * FLOAT( YE )
+                YY        = YORIG + YCELL * FLOAT( YE )
                 YROW( J ) = IR
                 YFAC( J ) = YFAC( J-1 ) + 
      &                      DYLNK * FLOAT( YINC ) * ( ENDS - YY )
 
 C.............  Set fractions for interior of domain and non-end of link
-            ELSEIF( IR .GT. 1 .AND. IR .LE. NROWS3D ) THEN
+            ELSEIF( IR .GT. 1 .AND. IR .LE. NROWS ) THEN
                 J         = J + 1
                 YROW( J ) = IR
                 YFAC( J ) = YFAC( J-1 ) + FF
@@ -514,7 +516,7 @@ C.............  Intersect new row next
             
             IF ( FF .LE. 2.0 ) THEN   ! Check for sentinel
                 J = J + 1
-                ACEL ( J ) = IC +  NCOLS3D * ( IR - 1 )
+                ACEL ( J ) = IC +  NCOLS * ( IR - 1 )
                 AFRAC( J ) = MIN( 1.0, MAX( 0.0, FAC ) )
                 GO TO  133              !  to head of loop
             END IF
