@@ -1,6 +1,42 @@
 
-        SUBROUTINE WREMFACS( FNAME, NUMSRC, SDATE )
+        SUBROUTINE WREMFACS( FNAME, NUMSRC, SDATE, VOLNAM )
 
+C***********************************************************************
+C  subroutine body starts at line 109
+C
+C  DESCRIPTION:
+C       Finds correct emission factor for each source and writes 
+C       emission factors to output files
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: IRCLAS, IVTYPE
@@ -9,9 +45,9 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC
         
 C...........   This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: NEFS, MXETYPE, EMTNAM
-        
-        USE MODMBSET, ONLY: SCENLIST, EMISSIONS, M6NONE
+        USE MODEMFAC, ONLY: NEFS, MXETYPE, EMTNAM, NSUBPOL, SUBPOLS, 
+     &                      OUTPUTHC, SCENLIST, EMISSIONS, NTOTHAPS, 
+     &                      HAPNAMES, HAPEFS
         
         IMPLICIT NONE
 
@@ -23,56 +59,58 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CVTRDTYPE
         INTEGER         CVTVEHTYPE
-        INTEGER         EFPOSITION
+        INTEGER         INDEX1
         
-        EXTERNAL   CVTRDTYPE, CVTVEHTYPE, EFPOSITION
+        EXTERNAL   CVTRDTYPE, CVTVEHTYPE, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME    ! logical name of emission factors file
         INTEGER,      INTENT (IN) :: NUMSRC   ! total number of sources
         INTEGER,      INTENT (IN) :: SDATE    ! episode start date
+        CHARACTER(*), INTENT (IN) :: VOLNAM   ! volatile pollutant name
 
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Local allocatable arrays
-        REAL,    ALLOCATABLE :: SRCEFS( :,: )  ! per-source emission factors
-        INTEGER, ALLOCATABLE :: EFIDX( : )     ! index of source numbers
+        REAL,    ALLOCATABLE :: SRCEFS( : )   ! per-source emission factors
+        INTEGER, ALLOCATABLE :: EFIDX( : )    ! index of source numbers
 
 C.........   Other local variables
-        INTEGER    I, L, L2, LJ     ! counters and indices        
-        INTEGER    IHR, ISRC        ! indices for assigning efs to sources
-        INTEGER    IEFTYPE          ! ditto
-        INTEGER    IPOL             ! ditto
-        INTEGER    IOS              ! i/o status
+        INTEGER    I, J, K          ! counters and indices        
+        INTEGER    IHR              ! hour loop index
+        INTEGER    ISRC             ! source loop index
+        INTEGER    IEF              ! emission process loop index
+        INTEGER    IPOL             ! pollutant loop index
+        INTEGER    IOS              ! I/O status
         INTEGER    SCENNUM          ! scenario number of source
         INTEGER    VTYPE            ! vehicle type of source
         INTEGER    FTYPE            ! facility type of source
-        INTEGER    CURRFTYPE        ! facility type for ef
         INTEGER    JDATE            ! output date
         INTEGER    JTIME            ! output time
         INTEGER    EFPOS            ! current position in emission factor arrays
         INTEGER    EMISPOS          ! position in master emission factor array
         INTEGER    POLEF            ! ef/pollutant combo position in SRCEFS
         INTEGER    VARPOL           ! pollutant specified by current variable
-        INTEGER    VAREMIS          ! emission process specified by current variable
+        
+        REAL       EFVAL            ! temporary emission factor value
         
         LOGICAL       :: LASAFLAG = .FALSE. ! true: treat local roads as arterial
-        LOGICAL       :: SRCMATCH = .FALSE. ! true: matched source to emission factors
+        LOGICAL       :: USEHAP  = .FALSE.  ! true: use user-defined toxic value
         LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
-        CHARACTER*300          MESG      !  message buffer 
+        CHARACTER(LEN=3)       EFNAME    !  emission process name
+        CHARACTER(LEN=11)      POLLNAME  !  pollutant name
         CHARACTER(LEN=16)      CURRVAR   !  current variable being written
+        CHARACTER*300          MESG      !  message buffer 
         
         CHARACTER*16  :: PROGNAME = 'WREMFACS' ! program name
         
 C***********************************************************************
-C   begin body of program WREMFACS
-
-        LJ = LEN_TRIM( ETJOIN )
+C   begin body of subroutine WREMFACS
 
 C.........  Allocate arrays for per-source efs
         IF( INITIAL ) THEN     
-            ALLOCATE( SRCEFS( NUMSRC, NEFS ), STAT=IOS )
+            ALLOCATE( SRCEFS( NUMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EMISFACS', PROGNAME )
             ALLOCATE( EFIDX( NUMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EFIDX', PROGNAME )
@@ -80,16 +118,43 @@ C.........  Allocate arrays for per-source efs
             INITIAL = .FALSE.
         END IF
 
-        DO IHR = 1, 24
-            EFPOS = 1
+        DO IHR = 1, 24  ! loop over hours
+          DO IEF = 1, MXM6EPR  ! loop over emission processes
+          
+C.............  Set facility type to NONE for all ef types except
+C               exhaust running, evp running, brake, and tire wear
+            IF( M6FAC2EF( IEF, M6NONE ) == 1 ) THEN
+                FTYPE = M6NONE
+            ELSE
+            	FTYPE = 1
+            END IF 
+
+C.............  Loop over all pollutants including user-defined                
+            DO IPOL = 1,MXM6POLS + NTOTHAPS
             
-            SRCEFS    = 0.
-            EFIDX     = 0
-        
-            DO ISRC = 1, NSRC
-                SCENNUM = SCENLIST( ISRC,1 )
-            
+C.................  Make sure this is a valid ef/pollutant combination
+              IF( IPOL <= MXM6POLS ) THEN
+                  IF( M6POL2EF( IEF, IPOL ) == -1 ) CYCLE
+              ELSE
+
+C...................  For user-defined toxics, skip CRC, BRK, and TIR
+                  IF( IEF == 7 .OR. IEF == 9 .OR. IEF == 10 ) CYCLE
+              END IF
+
+C...............  Reset array position and ef arrays                
+              EFPOS  = 0
+              SRCEFS = 0.  ! array
+              EFIDX  = 0   ! array
+              
+              DO ISRC = 1, NSRC  ! loop over sources
+
+C.................  Get scenario number for current source        
+                SCENNUM = SCENLIST( ISRC,1 )            
                 IF( SCENNUM == 0 ) CYCLE 
+
+C.................  Store array position for current source                
+                EFPOS = EFPOS + 1
+                EFIDX( EFPOS ) = ISRC
                 
 C.................  Check local-as-arterial setting for this source                
                 IF( SCENLIST( ISRC,2 ) == 2 ) THEN
@@ -97,152 +162,148 @@ C.................  Check local-as-arterial setting for this source
                 ELSE
                     LASAFLAG = .FALSE.
                 END IF
-                    
-                FTYPE = CVTRDTYPE( IRCLAS( ISRC ), LASAFLAG )
+
+C.................  Set road and vehicle type
+                IF( FTYPE /= M6NONE ) THEN
+                    FTYPE = CVTRDTYPE( IRCLAS( ISRC ), LASAFLAG )
+                END IF
+                
                 VTYPE = CVTVEHTYPE( IVTYPE( ISRC ) )
+
+C.................  Check if vehicle type is valid for this process
+                IF( IPOL <= MXM6POLS ) THEN
+                    IF( M6VEH2EF( IEF, VTYPE ) == -1 ) CYCLE
+                END IF
+
+C.................  Store appropriate emission factor in source-based array
+                IF( IPOL <= MXM6POLS ) THEN
+                    SRCEFS( EFPOS ) = 
+     &                 EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                       M6POL2EF( IEF,IPOL ), 
+     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       M6FAC2EF( IEF,FTYPE ),IHR )
+                    
+                ELSE
+                    SRCEFS( EFPOS ) = 
+     &                 HAPEFS( SCENNUM, VTYPE, IPOL - MXM6POLS, 
+     &                         IEF, IHR, FTYPE )
+                END IF
                 
-                DO IEFTYPE = 1,MXM6EPR
- 
-C.....................  Set facility type to NONE for all ef types
-C                       except exhaust running, evp running, brake,
-C                       and tire wear                
-                    IF( IEFTYPE == 1 .OR. IEFTYPE == 6 .OR.
-     &                  IEFTYPE == 9 .OR. IEFTYPE == 10 ) THEN
-                        CURRFTYPE = FTYPE
-                    ELSE
-                    	CURRFTYPE = M6NONE
-                    END IF 
-                    
-                    DO IPOL = 1,MXM6POLS
-                    
-C.........................  Determine position of EF/pollutant combo                    
-                        POLEF = M6POL2EF( IEFTYPE, IPOL )
-
-C.........................  Make sure this is a valid combination
-                        IF( POLEF == -1 ) CYCLE
-
-C.........................  Find position in master emissions array
-                        EMISPOS = EFPOSITION( SCENNUM, IPOL, VTYPE, 
-     &                                        IEFTYPE, CURRFTYPE, 
-     &                                        IHR, .FALSE. )
-                      
-                        SRCEFS( EFPOS, POLEF ) = EMISSIONS( EMISPOS )
+C.................  Create NONHAP hydrocarbon value if needed
+                IF( IPOL == 1 ) THEN
+                
+C.....................  Loop through subtraction pollutants                
+                    DO I = 1, NSUBPOL
+                        USEHAP = .FALSE.
+                        VARPOL = 0
                         
-                    END DO    ! end pollutant loop              
-                END DO    ! end emission factor loop
-                
-                EFIDX( EFPOS ) = ISRC	
-                EFPOS = EFPOS + 1
-            END DO     ! end source loop
+                        DO J = 1,MXM6POLS
+                            IF( SUBPOLS( I ) == M6POLS( J ) ) THEN
+                                VARPOL = J
+                                EXIT
+                            END IF
+                        END DO
+                        
+                        IF( VARPOL == 0 ) THEN
+C.............................  Loop through user-defined toxics
+                            DO J = 1, NTOTHAPS
+                                IF( SUBPOLS( I ) == HAPNAMES( J ) ) THEN
+                                    VARPOL = J
+                                    USEHAP = .TRUE.
+                                    EXIT
+                                END IF
+                            END DO
+                        END IF
+
+C.........................  Still couldn't match pollutant name, quit with error                            
+                        IF( VARPOL == 0 ) THEN
+                            MESG = 'Unrecognized pollutant ' //
+     &                                 SUBPOLS( I )
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+
+C.........................  Get toxic emission factor                                
+                        IF( USEHAP ) THEN
+                            EFVAL = HAPEFS( SCENNUM, VTYPE, VARPOL, 
+     &                                      IEF, IHR, FTYPE )
+                        
+                        ELSE
+                        
+C.............................  Check that this is a valid pol/ef combo
+                            IF( M6POL2EF( IEF, VARPOL ) == -1 ) CYCLE
+
+                            EFVAL = EMISSIONS( IEF )%PTR( SCENNUM,
+     &                                       M6POL2EF( IEF,VARPOL ), 
+     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       M6FAC2EF( IEF,FTYPE ),IHR )
+                        END IF
+
+C.........................  Subtract toxic ef from hydrocarbon ef                        
+                        SRCEFS( EFPOS ) = SRCEFS( EFPOS ) - EFVAL
+
+C.........................  Make sure the value is not negative
+                        IF( SRCEFS( EFPOS ) < 0. ) THEN
+                            SRCEFS( EFPOS ) = 0.
+                        END IF
+                        
+                    END DO  ! end subtract pollutant loop
+                END IF
+              END DO  ! end source loop
+                     
+C...............  Set current pollutant name based on index
+              IF( IPOL <= MXM6POLS ) THEN
+                  POLLNAME = M6POLS( IPOL )
+                  IF( POLLNAME == 'HC' ) THEN
+                      IF( OUTPUTHC /= ' ' ) THEN
+                          POLLNAME = OUTPUTHC
+                      ELSE
+                          POLLNAME = TRIM( VOLNAM )
+                      END IF
+                  END IF
+              ELSE
+C...................  Check for user-defined pollutants
+                  IF( IPOL <= MXM6POLS + NTOTHAPS ) THEN
+                      POLLNAME = HAPNAMES( IPOL - MXM6POLS )
+                  ELSE
+                      MESG = 'INTERNAL ERROR: Unexpected pollutant'
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  END IF
+              END IF
+
+C...............  Set emission process name based on index
+              EFNAME = M6PROCS( IEF )
+
+C...............  Build emission process/pollutant combination name
+              CURRVAR = EFNAME // ETJOIN // TRIM( POLLNAME )
+              
+C...............  Make sure combo is in the MEPROC file
+              K = INDEX1( TRIM( CURRVAR ), MXETYPE, EMTNAM( :,1 ) )
+              IF( K <= 0 ) CYCLE
+              
+C...............  Determine write time
+              JDATE = SDATE
+              JTIME = ( IHR - 1 ) * 10000
+              
+C...............  Write variable to file    
+              IF( .NOT. WRITE3( FNAME, TRIM( CURRVAR ), JDATE, 
+     &                          JTIME, SRCEFS( 1:EFPOS ) ) ) THEN
+     	          MESG = 'Could not write ' // TRIM( CURRVAR ) // 
+     &	                 'to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
+                  CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+              END IF
+                              
+            END DO  ! end pollutant loop
+          END DO  ! end emission process loop
  
-C.............  Write sources to file
-            JDATE = SDATE
-            JTIME = ( IHR - 1 ) * 10000
+C.............  Write source numbers to file
+          IF( .NOT. WRITE3( FNAME, 'SOURCES', JDATE, JTIME,
+     &                      EFIDX( 1:EFPOS ) ) ) THEN
+     	      MESG = 'Could not write source numbers ' //
+     &               ' to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
+              CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+          END IF
 
-            IF( .NOT. WRITE3( FNAME, 'SOURCES', JDATE, JTIME,
-     &                        EFIDX ) ) THEN
-     	        MESG = 'Could not write source numbers ' //
-     &                 ' to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // '".'
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-            END IF
-
-            DO I = 1, MXETYPE
-                CURRVAR = TRIM( EMTNAM( I,1 ) )
-                L  = INDEX( CURRVAR, ETJOIN )
-                L2 = LEN_TRIM( CURRVAR )
-
-C.................  Match pollutant in variable name to number               
-                SELECT CASE( CURRVAR( L+LJ:L2 ) )
-                CASE( 'VOC', 'THC', 'NMH', 'TOG', 'NMO', 'ROG' )
-                    VARPOL = 1
-                CASE( 'CO' )
-                    VARPOL = 2
-                CASE( 'NOX' )
-                    VARPOL = 3
-                CASE( 'SO4' )
-                    VARPOL = 4
-                CASE( 'OCARB25' )
-                    VARPOL = 5
-                CASE( 'ECARB25' )
-                    VARPOL = 6
-                CASE( 'GASPM25' )
-                    VARPOL = 7
-                CASE( 'SO2' )
-                    VARPOL = 8
-                CASE( 'NH3' )
-                    VARPOL = 9
-                CASE( 'BRAKE25' )
-                    VARPOL = 10
-                CASE( 'TIRE25' )
-                    VARPOL = 11
-                CASE( 'BEN' )
-                    VARPOL = 12
-                CASE( 'MTB' )
-                    VARPOL = 13
-                CASE( 'BUT' )
-                    VARPOL = 14
-                CASE( 'FOR' )
-                    VARPOL = 15
-                CASE( 'ACE' )
-                    VARPOL = 16
-                CASE( 'ACR' )
-                    VARPOL = 17
-                CASE( 'OCARBPMC' )
-                    VARPOL = 18
-                CASE( 'ECARBPMC' )
-                    VARPOL = 19
-                CASE( 'GASPMC' )
-                    VARPOL = 20
-                CASE( 'BRAKEPMC' )
-                    VARPOL = 21
-                CASE( 'TIREPMC' )
-                    VARPOL = 22
-                CASE DEFAULT
-                    MESG = 'Unrecognized pollutant ' //
-     &                     CURRVAR( L+LJ:L2 )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END SELECT
-
-C.................  Match emission process to number                
-                SELECT CASE( CURRVAR( 1:L-1 ) )
-                CASE( 'EXR' )
-                    VAREMIS = 1
-                CASE( 'EXS' )
-                    VAREMIS = 2
-                CASE( 'HOT' )
-                    VAREMIS = 3
-                CASE( 'DNL' )
-                    VAREMIS = 4
-                CASE( 'RST' )
-                    VAREMIS = 5
-                CASE( 'EVR' )
-                    VAREMIS = 6
-                CASE( 'CRC' )
-                    VAREMIS = 7
-                CASE( 'RFL' )
-                    VAREMIS = 8
-                CASE( 'BRK' )
-                    VAREMIS = 9
-                CASE( 'TIR' )
-                    VAREMIS = 10
-                CASE DEFAULT
-                    MESG = 'Unrecognized emission process ' //
-     &                     CURRVAR( 1:L-1 )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END SELECT
-                
-C.................  Determine position of EF/pollutant combo                    
-                POLEF = M6POL2EF( VAREMIS, VARPOL )     
-                
-                IF( .NOT. WRITE3( FNAME, CURRVAR( 1:L2 ), JDATE, 
-     &                            JTIME, SRCEFS( :,POLEF ) ) ) THEN
-     	            MESG = 'Could not write ' // TRIM( CURRVAR ) // 
-     &	                   'to "' // FNAME( 1:LEN_TRIM( FNAME ) ) // 
-     &                     '".'
-                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF                
-            END DO     ! end ef/pollutant combo loop
-            
         END DO     ! end hour loop
         
         END SUBROUTINE WREMFACS
+        
