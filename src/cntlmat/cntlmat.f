@@ -283,9 +283,6 @@ C.........  Process control matrices that depend on pollutants...
 C.........  Multiplicative matrix
         IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG ) THEN
 
-C.............  Open control matrix
-            CALL OPENCMAT( ENAME, 'MULTIPLICATIVE', MNAME )
-
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
             CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, RDEV,
