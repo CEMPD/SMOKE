@@ -2,7 +2,7 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 224
+C  program body starts at line 203
 C
 C  DESCRIPTION:
 C    This program computes the hourly emissions data from inventory emissions 
@@ -82,13 +82,10 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETNUM
         INTEGER         INDEX1
         CHARACTER*14    MMDDYY
-        INTEGER         PROMPTFFILE
-        CHARACTER*16    PROMPTMFILE
         INTEGER         RDTPROF
 
         EXTERNAL    CHKEMEPI, CRLF, ENVINT, ENVYN, FINDC, GETDATE, 
-     &              GETFLINE, GETNUM, INDEX1, MMDDYY, PROMPTFFILE, 
-     &              PROMPTMFILE, RDTPROF
+     &              GETFLINE, GETNUM, INDEX1, MMDDYY, RDTPROF
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -141,7 +138,6 @@ C...........   Logical names and unit numbers
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for emission processes file
         INTEGER         FDEV    !  unit number for EF xref file
-        INTEGER      :: UDEV = 0!  unit no. for optional input elevated srcs
         INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER*16 :: ANAME = ' '    !  logical name for ASCII inven input 
@@ -154,7 +150,6 @@ C...........   Logical names and unit numbers
         CHARACTER*16 :: NNAME = ' '    !  diurnal EF file
 c        CHARACTER*16 :: SNAME = ' '    !  PSIs per source file
         CHARACTER*16 :: TNAME = ' '    !  timestepped (low-level) output file
-        CHARACTER*16 :: UNAME = 'NONE' !  (upper-level) output file, or "NONE"
         CHARACTER*16 :: WNAME = ' '    !  ungridded min/max temperatures
 
 C...........   Other local variables
@@ -166,7 +161,6 @@ C...........   Other local variables
         INTEGER         EDATE, ETIME        ! ending Julian date and time
         INTEGER         ENLEN               ! length of ENAME string
         INTEGER         JDATE, JTIME        ! Julian date and time
-        INTEGER         JRUNLEN             ! models-3 "run length" in HHMMSS
         INTEGER         MDATE, MTIME        ! current met date/time
         INTEGER      :: MLDATE = 0          ! gridded met previous date
         INTEGER      :: MSDATE = 0          ! gridded met start date
@@ -182,7 +176,6 @@ C...........   Other local variables
         INTEGER         TNLEN               ! length of TNAME string
         INTEGER         TSTEP               ! output time step
         INTEGER         TZONE               ! output-file time zone
-        INTEGER         UNLEN               ! length of UNAME string
         INTEGER      :: WDATE               ! source min/max tmpr current date
         INTEGER      :: WSDATE = 0          ! source min/max tmpr start date
         INTEGER      :: WSTIME = 0          ! source min/max tmpr start time
@@ -194,7 +187,6 @@ C...........   Other local variables
         LOGICAL         HFLAG   !  true: hour-specific file available
         LOGICAL         MFLAG   !  true: mobile codes file available
         LOGICAL         NFLAG   !  true: use all uniform temporal profiles
-        LOGICAL         UFLAG   !  true: generating upper-level output file
 
         CHARACTER*8              TREFFMT ! tmprl x-ref format (SOURCE|STANDARD)
         CHARACTER*14             DTBUF   ! buffer for MMDDYY
@@ -246,13 +238,12 @@ C.........  Also, compare min/max temperature settings from any files that have
 C           them and populate the valid temperature arrays
         CALL OPENTMPIN( MODELNAM, NFLAG, ENAME, ANAME, DNAME, HNAME, 
      &                  FNAME, NNAME, MNAME, GNAME, WNAME, TVARNAME, 
-     &                  SDEV, XDEV, RDEV, UDEV, FDEV, TDEV, MDEV )
+     &                  SDEV, XDEV, RDEV, FDEV, TDEV, MDEV )
 
 C.........  Determine status of some files for program control purposes
         DFLAG = ( DNAME .NE. 'NONE' )  ! Day-specific emissions
         HFLAG = ( HNAME .NE. 'NONE' )  ! Hour-specific emissions
         MFLAG = ( MDEV .NE. 0 )        ! Use mobile codes file
-        UFLAG = ( UDEV .NE. 0 )        ! Generate elevated sources file
 
 C.........  Get length of inventory file name
         ENLEN = LEN_TRIM( ENAME )
@@ -374,36 +365,6 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
 C.........  Read special files...
-
-C.........  Read elevated sources, set index to source list, and get actual 
-C           number of valid entries in PELV file. Note that RDPELV will drop
-C           records if they do not match inventory.
-C.........  Allocate memory for EMISE
-        IF( UFLAG ) THEN
-
-            CALL M3MSG2( 'Reading elevated sources file...' )
-
-            NLINE = GETFLINE( UDEV, 'Elevated sources file' )
-
-            ALLOCATE( INDXE( NLINE ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INDXE', PROGNAME )
-
-            CALL RDPELV( UDEV, NSRC, NMAJOR, NPING )
-
-            ALLOCATE( EMISE( NPELV ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EMISE', PROGNAME )
-
-C.............  Update UFLAG in case NPELV is zero
-            IF( NPELV .EQ. 0 ) THEN
-                UFLAG = .FALSE.
-                MESG = 'No elevated sources matched the inventory ' //
-     &                 'so no elevated file' // CRLF() // BLANK5 //
-     &                 'will be written'
-                CALL M3WARN( PROGNAME, 0, 0, MESG )
-
-            END IF
-
-        END IF
 
 C.........  When mobile codes file is being used read mobile codes file
         IF( MFLAG ) CALL RDMVINFO( MDEV )
@@ -602,11 +563,10 @@ C.........  Create 2-d arrays of I/O pol names, activities, & emission types
         EANAM2D = RESHAPE( EANAM, (/ NGSZ, NGRP /) )
 
 C.........  Set up and open I/O API output file(s) ...
-        CALL OPENTMP( ENAME, UFLAG, SDATE, STIME, TSTEP, TZONE, NPELV,
-     &                TNAME, UNAME )
+        CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, NPELV,
+     &                TNAME )
 
         TNLEN = LEN_TRIM( TNAME )
-        UNLEN = LEN_TRIM( UNAME )
 
 C.........  Loop through pollutant/emission-type groups
         DO N = 1, NGRP
@@ -667,16 +627,27 @@ C               current group
             DO I = 1, NGSZ
 
                 CBUF = ALLIN2D( I,N )
+                L1   = LEN_TRIM( CBUF )
 
                 IF( .NOT. READ3( ENAME, CBUF, ALLAYS3, 0, 0, 
      &                           EMAC( 1,I )                ) ) THEN
                     EFLAG = .TRUE.
-                    L1 = LEN_TRIM( CBUF )
                     MESG = 'Error reading "' // CBUF( 1:L1 ) //
      &                     '" from file "' // ENAME( 1:ENLEN ) // '."'
                     CALL M3MSG2( MESG )
 
                 END IF
+
+C.................  If pollutant name is ozone-season-based, remove the
+C                   prefix from the input pollutant name
+                K = INDEX1( CBUF, NIPPA, EAREAD )
+                J = INDEX( CBUF, OZNSEART )
+                IF( J .GT. 0 ) THEN
+                    CBUF = CBUF( CPRTLEN3+1:L1 )
+                    ALLIN2D( I,N ) = CBUF
+                    EAREAD ( K )   = CBUF
+                END IF
+
             END DO
 
 C.............  For each time step and pollutant or emission type in current 
@@ -741,49 +712,10 @@ C.................  Generate hourly emissions for current hour
      &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), 
      &                         EMAC, EMACV, TMAT, EMIST )
 
-C.................  Write index to elevated emissions file. Note that this
-C                   is written for every time step, even though it currently
-C                   does not depend on time.
-                IF( UFLAG ) THEN 
-                    IF ( .NOT. WRITE3( UNAME, 'INDXE', 
-     &                                 JDATE, JTIME, INDXE ) ) THEN
-
-                        MESG = 'Could not write "INDXE" to file "' //
-     &                         UNAME( 1:UNLEN ) // '."'
-                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-
-                    END IF
-                END IF
-
 C.................  Loop through pollutants/emission-types in this group
                 DO I = 1, NGSZ
 
                     CBUF = EANAM2D( I,N )
-
-C.....................  If there are elevated sources...
-                    IF( UFLAG ) THEN 
-
-C.........................  Updated compressed format elevated emissions for 
-C                           the current pollutant I in group N
-                        DO J = 1, NPELV
-                            S = INDXE( J )
-                            EMISE( J ) = EMIST( S,I )
-                            EMIST( S,I ) = 0.0
-                        END DO
-
-C.........................  Write elevated emissions to I/O API NetCDF file
-                        CBUF = EANAM2D( I,N )
-                        IF( .NOT. WRITE3( UNAME, CBUF, 
-     &                                    JDATE, JTIME, EMISE ) ) THEN
-
-                            L = LEN_TRIM( CBUF )
-                            MESG = 'Could not write "' // CBUF( 1:L ) //
-     &                             '" to file "'//UNAME( 1:UNLEN )//'."'
-                            CALL M3EXIT( PROGNAME,JDATE,JTIME,MESG,2 )
-
-                        END IF
-
-                    END IF       ! if writing elevated sources file
 
 C.....................  Write hourly emissions to I/O API NetCDF file
                     IF( .NOT. WRITE3( TNAME, CBUF, JDATE, JTIME, 
