@@ -172,9 +172,9 @@ C   begin body of program CTLPMAT
         WRITE( *,92000 ) 
      &  ' ',
      &  'Program CTLPMAT to take the netCDF POINT SOURCES file, an',
-     &  '(ASCII) CONTROL FILE, an optional TRACK LIST of sources to',
+     &  '(ASCII) CONTROL FILE, an optional tracking list of sources to',
      &  'be tracked in the report, and produce the CONTROL MATRIX ',
-     &  'file and an optional REPORT file.',
+     &  'file and an optional control report file.',
      &  ' '
         WRITE( *,92000 ) 
      &  'You will need to have set the logical names for the input and',
@@ -190,8 +190,7 @@ C   begin body of program CTLPMAT
      &  ' '
 
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program CTLPMAT', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'CTLPMAT', 0, 0, 'Ending program CTLPMAT', 2 )
         END IF
 
 
@@ -206,16 +205,16 @@ C.......   Get file name; open input point sources, control definitions files
      &           .TRUE., .TRUE., 'PCTRL', 'CTLPMAT' )
 
         RDEV = PROMPTFFILE( 
-     &           '...for REPORT file, or "NONE"',
-     &           .FALSE., .TRUE., 'REPORT', 'CTLPMAT' )
+     &           'Enter logical name for REPORT file, or "NONE"',
+     &           .FALSE., .TRUE., 'PCREPT', 'CTLPMAT' )
 
         RFLAG = ( RDEV .GT. 0 )
 
         IF ( RFLAG ) THEN
 
             TDEV = PROMPTFFILE( 
-     &           '...for TRACKING LIST, or "ALL", or "NONE"',
-     &           .TRUE., .TRUE., 'TRACK', 'CTLPMAT' )
+     &           'Enter logical name for TRACKING LIST, "ALL" ' //
+     &           'or "NONE"', .TRUE., .TRUE., 'PCTRACK', 'CTLPMAT' )
 
         END IF
 
