@@ -20,7 +20,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -50,16 +50,17 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2     CRLF
+        INTEGER         ENVINT
         LOGICAL         ENVYN  
 
-        EXTERNAL CRLF, ENVYN
+        EXTERNAL CRLF, ENVINT, ENVYN
 
 C...........   Other local variables
 
         INTEGER         IOS      ! tmp I/O status
         INTEGER         INVIOS   ! i/o status for MEG_REPINV_YN
         INTEGER         SPCIOS   ! i/o status for MEG_REPSPC_YN
-        INTEGER         J        ! counter
+        INTEGER         I, J     ! counter
 
         CHARACTER*5     MRGSRC   ! value of MRG_SOURCE E.V.
         CHARACTER*5     CTLMULT  ! value of MRG_CTLMAT_MULT E.V.
@@ -174,11 +175,14 @@ C.........  Point-source specific environment variables
             MESG = 'Use layer fractions or not'
             LFLAG   = ENVYN( 'MRG_LAYERS_YN', MESG, .FALSE., IOS )
 
-            MESG = 'Create plume-in-grid outputs or not'
-            PINGFLAG = ENVYN( 'SMK_PING_YN', MESG, .FALSE., IOS )
+            MESG = 'Create CMAQ plume-in-grid outputs or not'
+            I = ENVINT( 'SMK_PING_METHOD', MESG, .FALSE., IOS )
+            PINGFLAG = ( I .EQ. 1 )
 
             MESG = 'Create ASCII elevated sources file or not'
             ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', MESG, .FALSE., IOS )
+
+            IF ( ELEVFLAG ) PINGFLAG = .FALSE.
 
             MESG = 'Indicator for including explicit plume ' //
      &             'rise sources'
