@@ -6,7 +6,7 @@ C***********************************************************************
 C  subroutine body starts at line 97
 C
 C  DESCRIPTION:
-C      Opens temperature output files. Creates file name based on SMK_METPATH
+C      Opens meteorology output files. Creates file name based on SMK_METPATH
 C      directory, current averaging type, and current start date. Stores
 C      end date in file header.
 C 
@@ -148,8 +148,8 @@ C.........  Get header from inventory file
 C.........  Initialize I/O API output file headers
         CALL HDRMISS3
 
-        FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) // DESC //
-     &                 ' temperature profiles file'
+        FDESC3D( 1 ) = CATEGORY( 1:LEN_TRIM( CATEGORY ) ) // ' ' // 
+     &                 DESC // ' meteorology profiles file'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         WRITE( FDESC3D( 4 ), 94030 ) '/MINTEMP/', MINTEMP
@@ -168,7 +168,7 @@ C.........  Set header values that cannot be default
         SDATE3D = SDATE
         STIME3D = 0
         TSTEP3D = 10000
-        NVARS3D = 2
+        NVARS3D = 4
         NROWS3D = NCOUNTY
         NLAYS3D = 1
  
@@ -182,6 +182,18 @@ C.........  Set header values that cannot be default
         VNAME3D( J ) = 'TKCOUNTY'
         UNITS3D( J ) = 'K'
         VDESC3D( J ) = 'Hourly source temperature by county'
+        VTYPE3D( J ) = M3REAL
+        
+        J = 3
+        VNAME3D( J ) = 'RHCOUNTY'
+        UNITS3D( J ) = '%'
+        VDESC3D( J ) = 'Hourly relative humidity percentage by county'
+        VTYPE3D( J ) = M3REAL
+        
+        J = 4
+        VNAME3D( J ) = 'BPCOUNTY'
+        UNITS3D( J ) = 'Pa'
+        VDESC3D( J ) = 'Hourly barometric pressure by county'
         VTYPE3D( J ) = M3REAL
 
 C.........  Create full file name
