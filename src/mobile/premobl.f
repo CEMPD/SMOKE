@@ -1136,8 +1136,9 @@ C.................  Apply ungridding matrix
      &                         UMAT( NSRC+NMATX+1 ), TASRC )
                 CALL APPLUMAT( NSRC, NMATX, QV, UMAT(1), UMAT( NSRC+1 ),
      &                         UMAT( NSRC+NMATX+1 ), QVSRC )
-                CALL APPLUMAT( NSRC, NMATX, PRES, UMAT(1), UMAT( NSRC+1 ),
-     &                         UMAT( NSRC+NMATX+1 ), PRESSRC )
+                CALL APPLUMAT( NSRC, NMATX, PRES, UMAT(1), 
+     &                         UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ), 
+     &                         PRESSRC )
 
 C.................  Create hourly meteorology arrays by source
                 CALL HOURTEMP( NSRC, JTIME, DAYBEGT, COUNTYSRC, 
