@@ -3,6 +3,42 @@
      &                        CTYLIST, TEMPS, NCOUNTY, VOLNAM, 
      &                        SCENNUM, SRCNUM, RPLCFLAG )
 
+C***********************************************************************
+C  subroutine body starts at line 121
+C
+C  DESCRIPTION:
+C       Creates the concatenated MOBILE6 input file
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC
@@ -10,7 +46,8 @@ C.........  This module contains the inventory arrays
 C.........  This module contains the information about the source category
         USE MODINFO
         
-        USE MODMBSET
+C...........   This module contains emission factor tables and related
+        USE MODEMFAC
 
         IMPLICIT NONE
 
@@ -200,14 +237,17 @@ C.............  Select M6 output based on volatile pollutant name
             SELECT CASE( VOLNAM( 1:LEN_TRIM( VOLNAM ) ) )
             CASE ( 'THC' )
                 WRITE( MDEV,93000 ) 'EXPRESS HC AS THC  :'
-            CASE ( 'NMH' )
+            CASE ( 'NMHC' )
                 WRITE( MDEV,93000 ) 'EXPRESS HC AS NMHC :'
             CASE ( 'TOG' )
                 WRITE( MDEV,93000 ) 'EXPRESS HC AS TOG  :'
-            CASE ( 'NMO' )
+            CASE ( 'NMOG' )
                 WRITE( MDEV,93000 ) 'EXPRESS HC AS HMOG :'
-            CASE DEFAULT
+            CASE ( 'VOC' )
                 WRITE( MDEV,93000 ) 'EXPRESS HC AS VOC  :'
+            CASE DEFAULT
+                MESG = 'ERROR: Unrecognized hydrocarbon type'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END SELECT
 
 C.............  Move to starting line for current county in SPDSUM file
