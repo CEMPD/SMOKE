@@ -141,7 +141,7 @@ C............  Allocate memory for local read arrays
 
 C.............  Use subroutine to read in data. This subroutine
 C               already handles integer and real
-            J = ADJINDX + ( V-1 ) * NPVAR
+            J = ADJINDX
             CALL RDINVPOL( RNAME, NSPARSE, NPVAR, VNAMESET( J ), 
      &                     VTYPESET( J ), SRCID, ETMP, SFLAG     )
 
