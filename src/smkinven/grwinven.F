@@ -513,10 +513,11 @@ C    n: been implemented
         SELECT CASE ( CATEGORY )
 
         CASE ( 'AREA' )
-            NINVARR = 7
+            NINVARR = 8
             IVARNAMS( 5 ) = 'CELLID'
-            IVARNAMS( 6 ) = 'CSCC'
-            IVARNAMS( 7 ) = 'CSOURC'
+            IVARNAMS( 6 ) = 'ISIC'
+            IVARNAMS( 7 ) = 'CSCC'
+            IVARNAMS( 8 ) = 'CSOURC'
 
         CASE ( 'MOBILE' )
             NINVARR = 14
@@ -553,9 +554,9 @@ C           set flag
         IF( CATEGORY  .EQ. 'AREA' ) THEN
             J = INDEX1( 'XLOCA', NINVARR, IVNAMES )
             IF( J .GT. 0 ) THEN
-                NINVARR = 9
-                IVARNAMS( 8  ) = 'XLOCA'
-                IVARNAMS( 9  ) = 'YLOCA'
+                NINVARR = 10
+                IVARNAMS( 9  ) = 'XLOCA'
+                IVARNAMS( 10 ) = 'YLOCA'
                 LAR2PT = .TRUE.
             END IF
         END IF
@@ -601,7 +602,9 @@ C.........  Update the year of the data if the projection year is non-zero
 C.........  Write out I/O API file source characteristics, if the file has been
 C           requested.  Do not write out the companion ASCII file as it would
 C           be identical to that of the original inventory.
-        IF( ONAME .NE. 'NONE' ) CALL WRINVCHR( ONAME, 0, LAR2PT )
+        IF( ONAME .NE. 'NONE' ) THEN
+            CALL WRINVCHR( ONAME, 0, LAR2PT, .FALSE. )
+        END IF
 
 C.........  Processing when IDA output is needed...
         IF( IDAFLAG ) THEN
@@ -613,7 +616,7 @@ C.............  Allocate memory for unit numbers for IDA temporary files
  
         END IF
 
-C.........  Write out the map-formatted intermedaite inven header
+C.........  Write out the map-formatted intermediate inven header
         IF( ODEV .GT. 0 ) THEN
             WRITE( ODEV, '(A)' ) CATDESC
             WRITE( ODEV, '(A)' ) '/IOAPI/ '// TRIM( NAME1 )// '.ncf'
