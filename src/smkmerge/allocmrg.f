@@ -502,7 +502,7 @@ C.............  Area
             J = 1
             ASPCSIZ = MIN( ASPCSIZ, MXVARPGP )
             ALLOCATE( ASMATX( NASRC,ASPCSIZ ), STAT=IOSA( J ) )
-	    CALL CHECKMEM( IOSA( J ), 'ASMATX', PROGNAME )
+            CALL CHECKMEM( IOSA( J ), 'ASMATX', PROGNAME )
 
 C.............  Mobile
             J = J + 1
@@ -589,6 +589,7 @@ C               with speciation matrices, and then moving to control and
 C               inventory emission matrices sizes
             IF ( RESET ) THEN
                 
+                RESET = .FALSE.
 C.................  If there is still room to make it smaller, reduce the 
 C                   maximum number of variables per group
                 IF( MXVARPGP .GT. 1 ) THEN
