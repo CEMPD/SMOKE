@@ -68,7 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
-        INTEGER, PARAMETER :: NSEG = 25      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 28      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I       ! counters and indices
@@ -121,22 +121,21 @@ C.........  Separate line into segments
 C.........  Use the file format definition to parse the line into
 C           the various data fields
         WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS     
-        CFIP( 2:3 ) = ADJUSTR( SEGMENT( 1 )( 1:2 ) )  ! state code
-        CFIP( 4:6 ) = ADJUSTR( SEGMENT( 2 )( 1:3 ) )  ! county code
+        CFIP( 2:6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
 
 C.........  Replace blanks with zeros        
         DO I = 1,FIPLEN3
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
         END DO
 
-        FCID = ADJUSTL( SEGMENT( 3 ) ) ! facility/plant ID
-        PTID = ADJUSTL( SEGMENT( 4 ) ) ! point ID
-        SKID = ADJUSTL( SEGMENT( 5 ) ) ! stack ID
-        SGID = ADJUSTL( SEGMENT( 6 ) ) ! segment ID
-        TSCC = ADJUSTL( SEGMENT( 8 ) ) ! scc code
+        FCID = ADJUSTL( SEGMENT( 2 ) ) ! facility/plant ID
+        PTID = ADJUSTL( SEGMENT( 3 ) ) ! point ID
+        SKID = ADJUSTL( SEGMENT( 4 ) ) ! stack ID
+        SGID = ADJUSTL( SEGMENT( 5 ) ) ! segment ID
+        TSCC = ADJUSTL( SEGMENT( 7 ) ) ! scc code
 
 C.........  Determine number of pollutants for this line based on CAS number
-        TCAS = ADJUSTL( SEGMENT( 19 ) )
+        TCAS = ADJUSTL( SEGMENT( 22 ) )
         I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
         IF( I < 1 ) THEN
             NPOLPERLN = 0
