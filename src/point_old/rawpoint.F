@@ -1,10 +1,30 @@
- 
-C Version @(#)$Id$ $Source$ $Date$ 
+C ****************************************************************************
+C *
+C * Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C *                System
+C * File: @(#)$Id$
+C *
+C * COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C * All Rights Reserved
+C *
+C * See file COPYRIGHT for conditions of use.
+C *
+C * Environmental Programs Group
+C * MCNC--North Carolina Supercomputing Center
+C * P.O. Box 12889
+C * Research Triangle Park, NC  27709-2889
+C *
+C * env_progs@mcnc.org
+C *
+C * Pathname: $Source$
+C * Last updated: $Date$ 
+C *
+C ****************************************************************************/
 
          PROGRAM RAWPOINT
 
 C***********************************************************************
-C  program body starts at line 186
+C  program body starts at line 206
 C
 C  DESCRIPTION:
 C       Sort data contained in EPS/AFS-style point source file and 
@@ -22,8 +42,7 @@ C       Prototype  6/95 by CJC.
 C       Version  10/95 does sorting internally on FIPS,SCC,PLANT,STACK.
 C       Version  11/95 reads, combines, and sorts multiple input files
 C       PRAW01, PRAW02, ..., each with its own inventory-year.
-C       Supports both UTM and Lambert-based coordinate systems.
-C       Version 5/96 uses base-36 ID representation for plant IDs
+C       Supports both UTM, LAT-LON, and Lambert-based coordinate systems.
 C***********************************************************************
 
       IMPLICIT NONE
@@ -52,24 +71,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FIND1   !  returns -1 for failure
         INTEGER         GETNUM
         LOGICAL         GETYN
-        CHARACTER*7     I362STR
         INTEGER         JULIAN
         LOGICAL         SETLAM
         LOGICAL         LL2LAM
         LOGICAL         UTM2LAM
-        LOGICAL         ENVYN
-        LOGICAL         ENVYN
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         SECSDIFF
         INTEGER         STR2INT
-        INTEGER         STR2I36
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, I362STR, JULIAN,
+        EXTERNAL DSCGRID, ENVYN, FIND1, GETNUM, GETYN, JULIAN,
      &           SETLAM, LL2LAM, UTM2LAM, PROMPTFFILE, PROMPTMFILE,
-     &           SECSDIFF, STR2INT, STR2I36, STR2REAL, TRIMLEN
+     &           SECSDIFF, STR2INT, STR2REAL, TRIMLEN
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -78,6 +93,7 @@ C...........   unsigned integers which may be treated as a leading 7-digit
 C...........   field, and a trailing 3-digit field.  *7 and *3 arrays below
 C...........   follow this scheme with parallel arrays
 
+        INTEGER     DAY2YR      !  Conversion factor for day to year
         INTEGER     UZONE       !  UTM zone for the file as a whole
         INTEGER     TZONE       !  time zone
         INTEGER     FIP
@@ -93,6 +109,7 @@ C...........   follow this scheme with parallel arrays
         REAL        CEFF
         REAL        REFF
         REAL        RPEN
+        REAL        SLOC
         REAL        XLOC
         REAL        YLOC
         REAL        EMIS
@@ -108,6 +125,7 @@ C...........   sorted final version (image EMISREC of data record)
         
         INTEGER     NSRC             !  current source-count
         INTEGER     INDEXA( NSMAX )  !  subscript table for SORTI4()
+        INTEGER     IDXSCC( NSMAX )  !  subscript table for SORTI1() for SCC
         INTEGER     IFIPA ( NSMAX )  !  source FIPS (county) ID
         INTEGER     ISCCA ( NSMAX )  !  source SCC
         INTEGER     ISICA ( NSMAX )  !  source SIC
@@ -161,12 +179,14 @@ C.......   variables in the output file.
 C...........   Other local variables
 
         INTEGER         S, I, J, V !  loop counters.
+        INTEGER         ADEV    !  Unit number for output actual SCCs
         INTEGER         PDEV    !  for point-source file
         INTEGER         ZDEV    !  for time zone file
         INTEGER         LDEV    !  log-device
 
-        LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
         LOGICAL         SFLAG   !  input verification:  report missing species
+        LOGICAL         VFLAG   !  input verification:  TRUE iff ERROR
+        LOGICAL         WFLAG   !  input verification:  convert LON to west hemis
 
         REAL            XX, YY  !  scratch location variables
                                 
@@ -211,7 +231,14 @@ C   begin body of program RAWPOINT
      &                 'RAWPOINT check for missing species-records',
      &                 .FALSE.,
      &                 IOS )
+     
+        WFLAG = ENVYN( 'WEST_HSPHERE', 
+     &                 'Western hemisphere flag', .TRUE., IOS )
 
+        IF( WFLAG ) THEN
+          CALL M3MESG( 'NOTE: All non-negative longitude values will' )
+          CALL M3MESG( '      be converted to Western Hemisphere.' )
+        ENDIF
 
 C.......   Get the coordinate system name and parameters
 C.......   to put into file header:
@@ -251,7 +278,6 @@ C.......   Get file name; open input time zone file
      &         'Enter logical name for TIME ZONE file',
      &         .TRUE., .TRUE., 'ZONES', 'RAWPOINT' )
 
-
 C.......   Read the point source files:
 C.......   Get file name; open input raw point source file
 
@@ -280,6 +306,18 @@ C.......   Get file name; open input raw point source file
             IREC  =  0
             VFLAG = .FALSE.
 
+C.............   Calculate DAY2YR factor
+            I = INY / 1000        !  year-number
+            IF ( MOD( I,4 ) .NE. 0 ) THEN           !  nonleap years
+                DAY2YR = 365.0
+            ELSE IF ( MOD( I,100 ) .NE. 0 ) THEN    !  noncentury leap years
+                DAY2YR = 366.0
+            ELSE IF ( MOD( I,400 ) .NE. 0 ) THEN    !  century nonleap years
+                DAY2YR = 365.0
+            ELSE                                    !  leap centuries
+                DAY2YR = 366.0
+            END IF
+
 111         CONTINUE        !  head of the PDEV-read loop
 
                 READ( PDEV, 93000, END=122, IOSTAT=IOS )LINE
@@ -290,7 +328,7 @@ C.......   Get file name; open input raw point source file
      &                  'Error ', IOS,  'reading "' // 
      &                  RNAME( 1:TRIMLEN( RNAME ) ) //
      &                  '" at line', IREC
-                    CALL M3EXIT( 'RAWPOINT', 0, 0, 2 )
+                    CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 2 )
                 END IF
 
                 IPOL  = STR2INT ( LINE( 156:160 ) )
@@ -321,7 +359,7 @@ C.......   Get file name; open input raw point source file
                 FIP   = STR2INT ( LINE(  12: 16 ) )
                 SIC   = STR2INT ( LINE(  24: 27 ) )
                 SCC   = STR2INT ( LINE(  29: 38 ) )
-                PLANT = STR2I36 ( LINE(  40: 44 ) )
+                PLANT = STR2INT ( LINE(  40: 44 ) )
                 STACK = STR2INT ( LINE(  46: 48 ) )
                 XLOC  = STR2REAL( LINE(  78: 87 ) )
                 YLOC  = STR2REAL( LINE(  89: 98 ) )
@@ -402,8 +440,7 @@ C.......   Get file name; open input raw point source file
 
                     EMIS = 0.0      !  note ZERO for day-specific "SP" records
 
-                    WRITE( MESG, 94030 ) 
-     &                  FIP, SCC, I362STR( PLANT ), STACK, IREC
+                    WRITE( MESG, 94030 ) FIP, SCC, PLANT, STACK, IREC
                     CALL M3MESG( MESG )
 
                 ELSE                                        !  unrecognized type
@@ -420,6 +457,23 @@ C.......   Get file name; open input raw point source file
 
                 END IF          !  tests on record type line( 57:58 )
 
+C................  Make changes in XLOC and YLOC if they are provided in LAT-LON
+
+               IF( ZONE .EQ. IMISS3 ) THEN
+
+C....................  Trade XLOC/YLOC because of EPS format
+                   SLOC = YLOC
+                   YLOC = XLOC
+                   XLOC = SLOC
+
+C....................  Convert longitude if WEST_HSPHERE environment
+C....................  variable is true, and lonitude is negative.
+                   IF( WFLAG .AND. XLOC .GT. 0 ) THEN
+
+                       XLOC = -XLOC
+
+                   ENDIF
+               ENDIF
 
 C...........   Normalize the UTM zone and coordinates
 C...........   NOTE that AFS files have the temerity to use KM units
@@ -507,6 +561,8 @@ C...........   and still call what they are doing "UTM":
                 IF ( S .LE. NSMAX ) THEN
 
                     INDEXA( S ) = S         !  index-table for use in SORTI4()
+                    IDXSCC( S ) = S         !  index-table for use in SORTI1()
+
                     IFIPA ( S ) = FIP
                     ISICA ( S ) = SIC
                     ISCCA ( S ) = SCC
@@ -552,7 +608,10 @@ C...........   and still call what they are doing "UTM":
      &        'Max record-count exceeded in POINT SOURCE file.', 2 )
            
         END IF
-        
+
+        ADEV = PROMPTFFILE(
+     &          'Enter the name of the ACTUAL SCC output file',
+     &          .FALSE., .TRUE., 'PSCC', 'EMSPOINT' )
         
 C.......   Use SORTI4() to perform an indirect sort by FIPS,SCC,PLANT,STACK
 C.......   then permute the records according to the result:
@@ -655,7 +714,7 @@ C.......   then permute the records according to the result:
                     WRITE( MESG,94020 )
      &                  'Missing record:  FIP:', IFIP( S ),
      &                  'SCC:',     ISCC( S ), 
-     &                  'Plant:',   I362STR( IPLANT( S ) ),
+     &                  'Plant:',   IPLANT( S ),
      &                  'Stack:',   ISTACK( S ),
      &                  'Species:', PCODE( V )
                     CALL M3MESG( MESG )
@@ -748,7 +807,7 @@ C.......   Get file name; open output point sources file
         NROWS3D = NPSRC     !  number of rows = # of point sources.
         NLAYS3D = 1
         NTHIK3D = 1
-        GDTYP3D = UTMGRD3
+        GDTYP3D = GDTYP3D
         VGTYP3D = IMISS3
         VGTOP3D = AMISS3
         GDNAM3D = COORDN
@@ -829,14 +888,22 @@ C.......   Get file name; open output point sources file
 
         VNAME3D( J ) = 'XLOCA'
         VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'meters'
-        VDESC3D( J ) = 'UTM X coordinate for site'
+        IF( GDTYP3D .EQ. LATGRD3 ) THEN
+            UNITS3D( J ) = 'deg LON'
+        ELSE
+            UNITS3D( J ) = 'meters'
+        ENDIF
+        VDESC3D( J ) = 'X coordinate for site'
         J = J + 1
 
         VNAME3D( J ) = 'YLOCA'
         VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'meters'
-        VDESC3D( J ) = 'UTM Y coordinate for site'
+        IF( GDTYP3D .EQ. LATGRD3 ) THEN
+            UNITS3D( J ) = 'deg LAT'
+        ELSE
+            UNITS3D( J ) = 'meters'
+        ENDIF
+        VDESC3D( J ) = 'Y coordinate for site'
         J = J + 1
 
         VNAME3D( J ) = 'STKHT'
@@ -853,7 +920,7 @@ C.......   Get file name; open output point sources file
 
         VNAME3D( J ) = 'STKTK'
         VTYPE3D( J ) = M3REAL
-        UNITS3D( J ) = 'deg C'
+        UNITS3D( J ) = 'deg K'
         VDESC3D( J ) = 'Stack exhaust temperature'
         J = J + 1
 
@@ -922,11 +989,27 @@ C.......   Write out the point source emissions values:
      &                   ENAME( 1:TRIMLEN( ENAME ) ) // '"',  2 )
         END IF
 
+C.......   Sort and Write out the point source emissions values:
 
-999   CONTINUE          !  exit program:  normal completion
+        CALL SORTI1( NSRC, IDXSCC, ISCCA )
 
-      MESG = 'Successful completion of Program RAWPOINT'
-      CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 0 )
+        LSCC = IMISS3
+        DO 299 I = 1, NSRC
+
+            SCC = ISCCA( IDXSCC( I ) )
+
+            IF( SCC .NE. LSCC ) THEN
+                WRITE( ADEV, 93030 ) SCC
+            ENDIF
+
+            LSCC = SCC
+
+299     CONTINUE
+
+999     CONTINUE          !  exit program:  normal completion
+
+        MESG = 'Successful completion of Program RAWPOINT'
+        CALL M3EXIT( 'RAWPOINT', 0, 0, MESG, 0 )
 
 
 C******************  FORMAT  STATEMENTS   ******************************
@@ -944,15 +1027,16 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A16 )
 
+93030   FORMAT( I8.8 )
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 3( A, :, I7, :, 1X ) )
 
-94020   FORMAT( A, I7, X, A, I10, X, A, A, X, A, I4, X, A, I6 )
+94020   FORMAT( A, I7, X, A, I10, X, A, I8, X, A, I4, X, A, I6 )
 
 94030   FORMAT( 'Emis set to zero for source ', 
-     &           I5, ':',I8, ':', A, ':', I3.3, ' at line ', I6 )
+     &           I5, ':',I8, ':', I8, ':', I3.3, ' at line ', I6 )
 
 94040   FORMAT( A, I2.2 )
 
