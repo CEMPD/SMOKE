@@ -9,7 +9,7 @@ C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
 C       from programs GRDMMAT, SPCMMAT, and CTLMMAT to grid, speciate,
-C       and control source-level area source emissions files.
+C       and control source-level mobile source emissions files.
 C
 C  PRECONDITIONS REQUIRED:  
 C       M3IO source-level area source emissions in canonical order used
@@ -20,6 +20,7 @@ C       Models-3 I/O; PROMPTMFILE
 C
 C  REVISION  HISTORY:
 C       Prototype  2/96 by CJC.
+C       Modified   6/96 by M Houyoux
 C
 C***********************************************************************
 
@@ -37,14 +38,16 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
+        INTEGER         CSVNAME
         LOGICAL         DSCGRID
         LOGICAL         GETYN
         INTEGER         INDEX1
+        INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         
-        EXTERNAL        DSCGRID, GETYN, INDEX1, PROMPTMFILE, TRIMLEN
-
+        EXTERNAL        CSVNAME, DSCGRID, GETYN, INDEX1, 
+     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN
 
 C...........   PARAMETER
 
@@ -54,7 +57,7 @@ C...........   PARAMETER
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Area Sources input and output arrays (one variable at a time)
         
-        REAL            EMISV( NMSRC, NVTYPE, NETYPE )  !  input emissions.
+        REAL            EMISV( NMSRC, NVTYPE, MXEMIS )  !  input emissions.
         REAL            EMISC( NMSRC )  !  controlled speciated emissions
         REAL            EMISG( NGRID )  !  gridded output emissions
         
@@ -66,22 +69,35 @@ C...........   Gridding Matrix, Control Matrix, Speciation Matrix
         
         COMMON  / GRIDMAT / NX, IX, CX
            
-        REAL            CC( NMSRC, NVTYPE, NETYPE )
+c       REAL            CC( NMSRC, NVTYPE, MXEMIS )
         REAL            SS( NMSRC, NVTYPE, NSMATX )
+
+C..........    Naming and matrix/vector matching arrays
+        INTEGER         NPPM  ( MXMPOL )  ! Number of spcs facs per model spcs
+
+        CHARACTER*16    EMTNAM( MXEMIS )  ! Names of emission types
+        CHARACTER*16    LNAME             ! Var name from previous loop iteration
+        CHARACTER*16    NMATCH            ! Name for matching
+        CHARACTER*16    SPCFNM( NSMATX )  ! Names of speciation factors
 
 C...........   Other local variables
         
+        INTEGER         ICNT               ! Counter
         INTEGER         JDATE, JTIME, TSTEP
+        INTEGER         NETYPE             ! No. of scenario-spec MV emis types
+        INTEGER         NMPOL              ! No. of scenario-spec model species
+        INTEGER         NSNAME             ! No. of speciation factor names
         INTEGER         NSTEPS
         INTEGER         LDEV
-        INTEGER         E, I, J, S, T, V
-        REAL            CFAC
+        INTEGER         SIDX               ! Speciation matrix index no.
+        INTEGER         TDEV               ! speciation list file unit
+        INTEGER         I, J, K, L, N, M, S, T, V
         
         LOGICAL         CONTROLFLAG, OUTPUTFLAG
 
         CHARACTER*16    ANAME   !  logical name for area-source       input file
         CHARACTER*16    GNAME   !  logical name for grid       matrix input file
-        CHARACTER*16    CNAME   !  logical name for control    matrix input file
+c       CHARACTER*16    CNAME   !  logical name for control    matrix input file
         CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
 
@@ -137,18 +153,23 @@ C.......   optional output file
      &          'Enter logical name for SPECIATION MATRIX file',
      &          FSREAD3, 'MSMAT', 'CSGMOBIL' )
 
-        CNAME = PROMPTMFILE( 
-     &          'Enter logical name for CONTROL MATRIX file ' //
-     &          'or "NONE"',
-     &          FSREAD3, 'MCMAT', 'CSGMOBIL' )
+c       CNAME = PROMPTMFILE( 
+c    &          'Enter logical name for CONTROL MATRIX file ' //
+c    &          'or "NONE"',
+c    &          FSREAD3, 'MCMAT', 'CSGMOBIL' )
 
-        CONTROLFLAG = ( CNAME .NE. NONE )
+c       CONTROLFLAG = ( CNAME .NE. NONE )
+        CONTROLFLAG = .FALSE.
+
+        TDEV = PROMPTFFILE(
+     &           'Enter logical name for SPECIATION LIST file',
+     &           .TRUE., .TRUE., 'MSLST', 'CSGMOBIL' )
 
         ANAME = PROMPTMFILE( 
-     &          'Enter logical name for MOBIL SOURCE file',
+     &          'Enter logical name for TIME-STEPPED MOBILE EMIS file',
      &          FSREAD3, 'MTMP', 'CSGMOBIL' )
 
-C.......   Build description of output file, and optionally open it:
+C.......   Start description of output file with ANAME and grid description
 
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3EXIT( 'CSGMOBIL', 0, 0, 
@@ -165,6 +186,56 @@ C.......   Build description of output file, and optionally open it:
 
         END IF
 
+C.......   Get speciation naming information from list file TDEV
+C..........  Get number of scenario-specific MV emission types
+C..........     ( Use VNAME3D as dummy so don't have to declare new array)
+ 
+        NETYPE  = CSVNAME( TDEV, .TRUE., .FALSE., .TRUE., EMTNAM )
+        NSNAME  = CSVNAME( TDEV, .TRUE., .TRUE. , .TRUE., SPCFNM )
+
+C..........  Get number and names of scenario-specific model species
+
+        NMPOL   = CSVNAME( TDEV, .FALSE., .TRUE. , .FALSE., VNAME3D ) 
+
+C.........  Initialize "last name" holder "LNAME"
+        L     = TRIMLEN( SPCFNM( 1 ) )
+        J     = INDEX  ( SPCFNM( 1 )(   1:L ), '_' )
+        K     = INDEX  ( SPCFNM( 1 )( J+1:L ), '_' ) + J
+        LNAME = SPCFNM( 1 )( K+1:L )
+
+        V     = 0
+        ICNT  = 0
+C.........  Count tail part of speciation factor variable names
+        DO 22 I = 1, NSNAME
+
+C.............  Find second "_" in variable names
+            L   = TRIMLEN( SPCFNM( I ) )
+            J   = INDEX  ( SPCFNM( I )(   1:L ), '_' )
+            K   = INDEX  ( SPCFNM( I )( J+1:L ), '_' ) + J
+
+C.............  If current name and last name don't match or on last 
+            IF ( SPCFNM( I )( K+1:L ) .NE. LNAME ) THEN
+
+C.................  Store count of names
+                V = V + 1
+                NPPM( V ) = ICNT
+
+C.................  Reset last name and counter
+                LNAME = SPCFNM( I )( K+1:L )
+                ICNT  = 1
+
+            ELSE
+                ICNT = ICNT + 1
+
+            ENDIF
+            
+   22   CONTINUE  ! End counting model species in speciation factor names
+
+C.........  Store last counter value
+        V = V + 1
+        NPPM( V ) = ICNT
+
+C.......   Finish the description of output file name
         NVARS3D = NMPOL
         FTYPE3D = GRDDED3   !  shares most of file-description with input file.
         NLAYS3D = 1
@@ -181,21 +252,20 @@ C.......   Build description of output file, and optionally open it:
         END IF
 
         DO  33 V = 1, NMPOL
-            VNAME3D( V ) = EMNAM( V )
             UNITS3D( V ) = 'moles/hour'
-            VDESC3D( V ) = 'gridded speciated emissions'
+            VDESC3D( V ) = 'Gridded speciated emissions'
             VTYPE3D( V ) = m3REAL
-33      CONTINUE
-        FDESC3D( 1 ) = 'area source speciated gridded emissions.'
+  33    CONTINUE
+        FDESC3D( 1 ) = 'Mobile source speciated gridded emissions.'
                  
-        
+C.......   Optionally open an output file        
+
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for OUTPUT EMIS file ' //
      &          'or "NONE"',
      &          FSUNKN3, 'MGTS', 'CSGMOBIL' )
 
         OUTPUTFLAG = ( ENAME .NE. NONE )
-
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
@@ -217,54 +287,11 @@ C.......   Read gridding, speciation, and (optional) control matrices:
             
         END IF      !  if read3() failed for speciation matrix
 
-
 C.......   If CONTROLFLAG, read and apply control matrix:
+C.......   NOTE: This section removed until we decide in what way
+C.......         a control matrix makes sense for MV processing
 
-        IF( CONTROLFLAG ) THEN
-
-            WRITE( *,92000 ) 
-     &      ' ', 'Reading CONTROL matrix.', ' '
-
-            IF ( .NOT. READ3( CNAME, 'ALL', 1, 0, 0, CC ) ) THEN
-                MESG = 'Could not read control matrix from '//CNAME
-                CALL M3EXIT( 'CSGMOBIL', 0,0, MESG, 2 )
-            END IF      !  if read3() failed for control matrix
-
-C...........   CO and NOX controls, by source and vehicle type:
-
-            DO  62  V = 1, NVTYPE
-            DO  61  S = 1, NMSRC
-
-                SS( S,V,1 ) = SS( S,V,1 ) * CC( S,V,1 )		!  CO
-                SS( S,V,2 ) = SS( S,V,2 ) * CC( S,V,2 )		!  NO
-                SS( S,V,3 ) = SS( S,V,3 ) * CC( S,V,2 )		!  NO2
-
-61          CONTINUE
-62          CONTINUE
-
-
-C...........   VOC controls, by source, vehicle type, and emissions mode:
-
-            DO  66  E = 4, NETYPE
-            DO  65  V = 1, NVTYPE
-            DO  64  S = 1, NMSRC
-
-                CFAC = CC( S,V,E )
-
-                DO  63  I = 1, NMPOL - 3
-
-                    J = ( E - 4 ) * ( NMPOL - 3 ) + I
-                    SS( S,V,J ) = SS( S,V,J ) * CFAC
-
-63              CONTINUE
-64          CONTINUE
-65          CONTINUE
-66          CONTINUE
-
-        END IF          !  if controlflag
-        
-
-C.......   Transform and write out area source emissions values:
+C.......   Transform and write out mobile source emissions values:
 
         IF ( CONTROLFLAG .AND. OUTPUTFLAG ) THEN
             WRITE( *,92000 ) 
@@ -285,10 +312,10 @@ C.......   Transform and write out area source emissions values:
      &      'Calculating speciated gridded emissions...'
         END IF
 
+C.........  Calculate emissions for all time steps available from MTMP
         DO  199  T = 1, NSTEPS
 
-C...................   Read in entire emissions field
-
+C.............   Read in entire emissions field
             IF( .NOT. READ3( ANAME, 'ALL', ALLAYS3, 
      &                 JDATE, JTIME, EMISV ) ) THEN
 
@@ -296,107 +323,67 @@ C...................   Read in entire emissions field
                 CALL M3EXIT( 'CSGMOBIL', JDATE, JTIME, MESG, 2 )
 
             END IF          !  if read3() succeeds or not
-            
-C...................   Compute output CO
 
-            CALL MSMATVEC( NMSRC, NVTYPE, 
-     &                     SS   ( 1,1,1 ),
-     &                     EMISV( 1,1,1 ), EMISC )
+C.............  Loop through all output model species
+            SIDX = 0
+            DO  189 V = 1, NMPOL
 
-            CALL SMATVEC( NMSRC, NGRID, MXGCOF, NX, IX, CX,
-     &                    EMISC, EMISG )
+C.................  Initialize output emissions array to 0.
+                DO 177 S = 1, NMSRC
+                    EMISC( S ) = 0.
+  177           CONTINUE
 
-            IF ( OUTPUTFLAG ) THEN
+C.................  Loop through processes associated w/ model species
+                DO 179 J = 1, NPPM( V )
 
-                IF ( .NOT. WRITE3( ENAME, 'CO',
-     &                             JDATE, JTIME, 
-     &                             EMISG ) ) THEN
+C.....................  Set index of SS for model species and process
+                    SIDX = SIDX + 1
 
-                    MESG = 'Could not write CO to ' // ENAME
-                    CALL M3EXIT( 'CSGMOBIL', JDATE, JTIME, MESG, 2 )
+C.....................  Get index of EMISV for model species and process
+C.........................  First find the location of the second "_"
+                    L = TRIMLEN( SPCFNM ( SIDX ) ) 
+                    N = INDEX  ( SPCFNM ( SIDX )(   1:L ), '_' )
+                    M = INDEX  ( SPCFNM ( SIDX )( N+1:L ), '_' ) + N
 
-                END IF          !  if write3() failed
+C.........................  Then match the first 2 name sections to EMTNAM
+                    NMATCH = SPCFNM( SIDX )( 1:M-1 )
+                    K      = INDEX1( NMATCH, NETYPE, EMTNAM )
 
-            END IF          !  if outputflag
+C.....................  Apply SS to EMISV and add result to current EMISC
 
+                    CALL MSMATVEC( NMSRC, NVTYPE, 
+     &                             SS   ( 1,1,SIDX ),
+     &                             EMISV( 1,1,K    ), EMISC )
 
-C...................   Compute output NO
+  179           CONTINUE
 
-            CALL MSMATVEC( NMSRC, NVTYPE, 
-     &                     SS   ( 1,1,2 ),
-     &                     EMISV( 1,1,2 ), EMISC )
-
-            CALL SMATVEC( NMSRC, NGRID, MXGCOF, NX, IX, CX,
-     &                    EMISC, EMISG )
-
-            IF ( OUTPUTFLAG ) THEN
-
-                IF ( .NOT. WRITE3( ENAME, 'NO',
-     &                             JDATE, JTIME, 
-     &                             EMISG ) ) THEN
-
-                    MESG = 'Could not write NO to ' // ENAME
-                    CALL M3EXIT( 'CSGMOBIL', JDATE, JTIME, MESG, 2 )
-
-                END IF          !  if write3() failed
-
-            END IF          !  if outputflag
-
-
-C...................   Compute output NO2
-
-            CALL MSMATVEC( NMSRC, NVTYPE, 
-     &                     SS   ( 1,1,3 ),
-     &                     EMISV( 1,1,3 ), EMISC )
-
-            CALL SMATVEC( NMSRC, NGRID, MXGCOF, NX, IX, CX,
-     &                    EMISC, EMISG )
-
-            IF ( OUTPUTFLAG ) THEN
-
-                IF ( .NOT. WRITE3( ENAME, 'NO2',
-     &                             JDATE, JTIME, 
-     &                             EMISG ) ) THEN
-
-                    MESG = 'Could not write CO to ' // ENAME
-                    CALL M3EXIT( 'CSGMOBIL', JDATE, JTIME, MESG, 2 )
-
-                END IF          !  if write3() failed
-
-            END IF          !  if outputflag
-
-
-C...................   Compute output VOC-derived species:
-
-            DO  198  V = 4, NMPOL
-
-                CALL MSMATVEC( NMSRC, NVTYPE * NEMODE, 
-     &                         SS   ( 1,1,V ),
-     &                         EMISV( 1,1,4 ), EMISC )
-
+C.................  Apply gridding matrix
                 CALL SMATVEC( NMSRC, NGRID, MXGCOF, NX, IX, CX,
      &                        EMISC, EMISG )
 
+C.................  Write out model species emissions
+
                 IF ( OUTPUTFLAG ) THEN
 
-                    IF ( .NOT. WRITE3( ENAME, EMNAM( V ),
+                    IF ( .NOT. WRITE3( ENAME, VNAME3D( V ),
      &                                 JDATE, JTIME, 
      &                                 EMISG ) ) THEN
 
-                        MESG = 'Could not write CO to ' // ENAME
+                        MESG = 'Could not write ' // VNAME3D( V ) //
+     &                         ' to ' // ENAME
                         CALL M3EXIT( 'CSGMOBIL', JDATE, JTIME, MESG, 2 )
 
                     END IF          !  if write3() failed
 
                 END IF          !  if outputflag
 
-198         CONTINUE            ! end loop on input variables
+  189       CONTINUE  !  End of loop on output model species
 
             CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-199     CONTINUE          !  end loop on time steps
+  199   CONTINUE          !  end loop on time steps
 
-999     CONTINUE          !  exit program
+  999   CONTINUE          !  exit program
       
         CALL M3EXIT( 'CSGMOBIL', 0, 0, 
      &               'Normal completion  of PROGRAM CSGMOBIL', 0 )
@@ -418,12 +405,6 @@ C...........   Formatted file I/O formats............ 93xxx
 
 
 C...........   Internal buffering formats............ 94xxx
-
-
-C...........   Miscellaneous formats................. 95xxx
-
-95000   FORMAT ( /5X , A , $ )          !  generic prompt format.
-
 
         END
 
