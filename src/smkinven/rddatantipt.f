@@ -146,8 +146,8 @@ C           the various data fields
         MACT   = ADJUSTL( SEGMENT( 16 ) )  ! MACT code
         NAICS  = ADJUSTL( SEGMENT( 17 ) )  ! NAICS code
         CTYPE  = ADJUSTL( SEGMENT( 18 ) )  ! coordinate type
-        LAT    = SEGMENT( 19 )             ! stack latitude
-        LON    = SEGMENT( 20 )             ! stack longitude
+        LON    = SEGMENT( 19 )             ! stack longitude
+        LAT    = SEGMENT( 20 )             ! stack latitude
         UTMZ   = ADJUSTL( SEGMENT( 21 ) )  ! UTM zone
 
         READPOL ( 1     ) = SEGMENT( 22 )
