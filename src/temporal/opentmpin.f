@@ -2,7 +2,7 @@
         SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, ENAME, ANAME, DNAME, 
      &                        HNAME, FNAME, NNAME, MNAME, GNAME, WNAME,
      &                        TVARNAME, SDEV, XDEV, RDEV, FDEV,
-     &                        CDEV, HDEV, TDEV, MDEV )
+     &                        CDEV, HDEV, TDEV, MDEV, PYEAR )
 
 C***********************************************************************
 C  subroutine body starts at line 123
@@ -20,7 +20,7 @@ C
 C  REVISION  HISTORY:
 C      Created 7/99 by M. Houyoux
 C
-C****************************************************************************/
+C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
@@ -64,12 +64,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         LOGICAL                ENVYN
         CHARACTER(LEN=IOVLEN3) GETCFDSC
+        INTEGER                GETIFDSC
         INTEGER                INDEX1
         INTEGER                PROMPTFFILE
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
 
-        EXTERNAL        CRLF, ENVYN, GETCFDSC, INDEX1, PROMPTFFILE, 
-     &                  PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, GETIFDSC, GETCFDSC, INDEX1, 
+     &                  PROMPTFFILE, PROMPTMFILE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: MODELNAM ! name for EF model
@@ -92,11 +93,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: HDEV  ! unit no.: holidays file
         INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: emissions process file
         INTEGER     , INTENT   (OUT) :: MDEV  ! unit no.: mobile codes file
-
-C...........   LOCAL PARAMETERS
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
-
-        PARAMETER   ( SCCSW   = '$Revision$' ) ! CVS Revision number
+        INTEGER     , INTENT   (OUT) :: PYEAR ! projected year
 
 C...........   Other local variables
 
@@ -110,6 +107,7 @@ C...........   Other local variables
         LOGICAL         DFLAG       ! true: day-specific  file available
         LOGICAL         EFLAG       ! true: error found
         LOGICAL         HFLAG       ! true: hour-specific file available
+        LOGICAL         OFLAG       ! true: ozone-season emissios needed
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
         
 
@@ -129,6 +127,8 @@ C.........  Get environment variables that control program behavior
 
         HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
      &                   .FALSE., IOS )
+
+        OFLAG = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
 
 C.........  Prompt for and open input I/O API and ASCII files
 C.........  Use NAMBUF for using on the HP
@@ -178,9 +178,12 @@ C.........  Otherwise, store source-category-specific header information,
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
+C.........  Set ozone-season emissions flag (INVPIDX)
         ELSE
-
+            IF( OFLAG ) INVPIDX = 1
             CALL GETSINFO
+
+            PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
 C.............  Store non-category-specific header information
             NSRC = NROWS3D
