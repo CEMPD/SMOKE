@@ -1,6 +1,6 @@
 
         SUBROUTINE PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR,
-     &                       PKTTYP, ENAME, SFLAG )
+     &                       PKTTYP, ENAME, USEPOL, SFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 116
@@ -82,6 +82,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: CPYEAR    ! year to project to 
         CHARACTER(*), INTENT (IN) :: PKTTYP    ! packet type
         CHARACTER(*), INTENT (IN) :: ENAME     ! inventory file name
+        LOGICAL , INTENT (IN OUT) :: USEPOL( NIPPA ) ! true: pol in current pkt
         LOGICAL     , INTENT(OUT) :: SFLAG     ! true: at least one packet done
 
 C.........  Reshaped inventory pollutants and associated variables
@@ -147,16 +148,18 @@ C               in the inventory
             END IF
 
 C.............  Generate reactivity matrices 
+            USEPOL = .TRUE.  ! array
             CALL GENREACT( NSRC, NIPOL, BYEAR, CPYEAR, ENAME, 
-     &                     RPOL, EINAM )
+     &                     RPOL, USEPOL, EINAM )
 
             SFLAG = .TRUE.
 
         CASE( 'PROJECTION' )
 
 C.............  Generate projection matrix
-
-            CALL GENPROJ( NSRC, NIPPA, BYEAR, CPYEAR, ENAME, EANAM )
+            USEPOL = .TRUE.  ! array
+            CALL GENPROJ( NSRC, NIPPA, BYEAR, CPYEAR, ENAME, 
+     &                    USEPOL, EANAM )
 
             SFLAG = .TRUE.
 
@@ -225,8 +228,8 @@ C.................  Write message stating the pollutants are being processed
 
                     CTGIDX = 0   ! array
                     VIDXMULT = 0 ! array
-                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
-     &                             IPSTAT, CTGIDX )
+                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
+     &                             EINAM2D( 1,N ), IPSTAT, CTGIDX )
 
                     CALL UPDATE_POLLIST( N, NGSZ, CTGIDX,
      &                                   VIDXMULT, 2 )
@@ -242,8 +245,8 @@ C.................  Write message stating the pollutants are being processed
 
                     CTLIDX = 0   ! array
                     VIDXMULT = 0 ! array
-                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
-     &                             IPSTAT, CTLIDX )
+                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
+     &                             EINAM2D( 1,N ), IPSTAT, CTLIDX )
 
                     CALL UPDATE_POLLIST( N, NGSZ, CTLIDX,
      &                                   VIDXMULT, 1 )
@@ -259,8 +262,8 @@ C.................  Write message stating the pollutants are being processed
 
                     ALWIDX = 0   ! array
                     VIDXMULT = 0 ! array
-                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
-     &                             IPSTAT, ALWIDX )
+                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
+     &                             EINAM2D( 1,N ), IPSTAT, ALWIDX )
 
                     CALL UPDATE_POLLIST( N, NGSZ, ALWIDX,
      &                                   VIDXMULT, 3 )
@@ -276,8 +279,8 @@ C.................  Write message stating the pollutants are being processed
 
                     ADDIDX = 0   ! array
                     VIDXMULT = 0 ! array
-                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, EINAM2D( 1,N ), 
-     &                             IPSTAT, ADDIDX )
+                    CALL ASGNCNTL( NSRC, NGSZ, PKTTYP, USEPOL, 
+     &                             EINAM2D( 1,N ), IPSTAT, ADDIDX )
 
 c                    CALL UPDATE_POLLIST( N, NGSZ, ADDIDX,
 c     &                                   VIDXMULT, 4 )

@@ -24,7 +24,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -75,6 +75,9 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(IN) :: PKTCNT(  NPACKET ) ! count of packet recs
         INTEGER     , INTENT(IN) :: PKTBEG ( NPACKET ) ! 1st line of pkt in file
         INTEGER , INTENT(IN OUT) :: XRFCNT ( NPACKET ) ! count of x-ref recs
+
+C...........   Local arrays allocated to stack
+        LOGICAL USEPOL( NIPPA )
 
 C...........   Derived type local variables
         TYPE ( CPACKET ) PKTINFO     ! packet information
@@ -159,6 +162,10 @@ C.............  Skip to first line of packet
             REWIND( FDEV )
             CALL SKIPL( FDEV, PKTBEG( K ) )
 
+C.............  Initialize flag that indicates which pollutants appear in
+C               a packet
+            USEPOL = .FALSE.   ! array
+
 C.............  Initialize various counters before following loop
             XCNT = 0            ! count of cross-reference records for this packet
             JX   = 0            ! control x-ref table counter
@@ -170,7 +177,7 @@ C.............  Loop through lines of current packet to read them
 
 C.................  Read packet information (populates CPKTDAT.EXT common)
                 CALL RDPACKET( FDEV, PKTLIST( K ), PKTFIXED( K ), 
-     &                         IREC, PKTINFO, EFLAG )
+     &                         USEPOL, IREC, PKTINFO, EFLAG )
 
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
@@ -251,7 +258,7 @@ C.................  Group cross-reference information for current packet
 C.................  Match controls to sources and pollutants, as needed for 
 C                   each packet type
                 CALL PROCPKTS( ADEV, CDEV, GDEV, LDEV, CPYEAR, 
-     &                         PKTLIST( K ), ENAME, OFLAG )
+     &                         PKTLIST( K ), ENAME, USEPOL, OFLAG )
 
             END IF  ! End process section
 

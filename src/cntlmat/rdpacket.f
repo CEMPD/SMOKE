@@ -1,6 +1,6 @@
 
-        SUBROUTINE RDPACKET( FDEV, PKTTYP, FIXEDFMT, IREC, PKTINFO, 
-     &                       EFLAG )
+        SUBROUTINE RDPACKET( FDEV, PKTTYP, FIXEDFMT, USEPOL, IREC, 
+     &                       PKTINFO, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -17,13 +17,13 @@ C
 C  REVISION  HISTORY:
 C      Started 3/99 by M. Houyoux
 C
-C****************************************************************************/
+C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -44,6 +44,9 @@ C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -53,15 +56,17 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS:
         LOGICAL       CHKREAL
         CHARACTER*2   CRLF
+        INTEGER       INDEX1
 	INTEGER       STR2INT
         REAL          STR2REAL
 
-        EXTERNAL      CHKREAL, CRLF, STR2INT, STR2REAL
+        EXTERNAL      CHKREAL, CRLF, INDEX1, STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS:
         INTEGER        , INTENT (IN) :: FDEV      ! in file unit number
         CHARACTER(*)   , INTENT (IN) :: PKTTYP    ! packet type
         LOGICAL        , INTENT (IN) :: FIXEDFMT  ! true: packet has fixed fmt
+        LOGICAL     , INTENT(IN OUT) :: USEPOL( NIPPA ) ! true: use pollutant
         INTEGER     , INTENT(IN OUT) :: IREC      ! file line number
         TYPE( CPACKET ), INTENT(OUT) :: PKTINFO   ! packet information
         LOGICAL        , INTENT(OUT) :: EFLAG     ! error flag
@@ -73,6 +78,7 @@ C...........   Other arrays
         CHARACTER*20 SEGMENT( MXSEG )      ! Segments of parsed packet lines
 
 C...........   Other local variables
+        INTEGER         K          ! index
         INTEGER         IOS        ! i/o error status
         INTEGER         CYID       ! tmp county ID
         INTEGER         FIP        ! tmp state/county FIPS code
@@ -119,7 +125,6 @@ C.............  Store country/state/county code for any packet format
             PKTINFO%CFIP = SEGMENT( 1 )
 
         END IF
-
 
 C.........  Process the line of data, depending on packet type
         SELECT CASE( PKTTYP )
@@ -253,6 +258,12 @@ C           a warning.
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END SELECT
+
+C.........  Set status of pollutants for current packet
+        K = INDEX1( PKTINFO%CPOL, NIPPA, EANAM )
+        IF( K .GT. 0 ) THEN
+            USEPOL( K ) = .TRUE.
+        END IF
 
         RETURN
 
