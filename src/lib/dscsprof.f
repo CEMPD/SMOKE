@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -53,8 +53,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         GETFLINE
         INTEGER         INDEX1
+        REAL            STR2REAL
 
-        EXTERNAL        CRLF, GETFLINE, INDEX1
+        EXTERNAL        CRLF, GETFLINE, INDEX1, STR2REAL
 
 C...........   Subroutine arguments (note- outputs MXSPFUL, MXSPEC, and SPCNAMES
 C              passed via module MODSPRO)
@@ -62,7 +63,10 @@ C              passed via module MODSPRO)
         INTEGER     , INTENT  (IN) :: FDEV            ! file unit number
         INTEGER     , INTENT  (IN) :: NIPOL           ! number of pollutants
         CHARACTER(*), INTENT  (IN) :: EINAM( NIPOL )  ! pollutant names
-   
+
+C.........  Local parameters
+        INTEGER, PARAMETER :: MXSEG = 6        ! # of potential line segments
+
 C...........   Arrays for getting pollutant-specific information from file
         INTEGER       NENTRA ( NIPOL )   ! number of table entries per pollutant
         INTEGER       NSPECA ( NIPOL )   ! number of species per pollutant
@@ -74,9 +78,12 @@ C...........   Arrays for getting species-specific information from file
         INTEGER     , ALLOCATABLE :: ISPOL  ( : ) ! assoc pol position in EINAM
         CHARACTER*16, ALLOCATABLE :: SPECNMA( : ) ! unsorted species names
                 
+C...........   Other arrays
+        CHARACTER*20 SEGMENT( MXSEG )             ! Segments of parsed lines
+
 C...........   Local variables
 
-        INTEGER        I, J, K    ! counters and indices
+        INTEGER        I, J, K, L ! counters and indices
         INTEGER        ICOUNT     ! tmp counter while populating SPCNAMES
         INTEGER        INPRFTP    ! tmp. profile number
         INTEGER        IOS        ! i/o status
@@ -89,11 +96,15 @@ C...........   Local variables
 
         REAL           FAC1, FAC2 ! tmp speciation profile factors
 
-        CHARACTER*5    TMPPRF     ! tmp profile number
-        CHARACTER*16   POLNAM     ! pollutant name
-        CHARACTER*16   SPECNM     ! tmp species name
+        LOGICAL     :: EFLAG = .FALSE.   ! true: error found
+
+        CHARACTER*200  LINE       ! read buffer for a line
         CHARACTER*300  MESG       ! message buffer
         
+        CHARACTER(LEN=SPNLEN3)  TMPPRF     ! tmp profile number
+        CHARACTER(LEN=IOVLEN3)  POLNAM     ! tmp pollutant name
+        CHARACTER(LEN=IOVLEN3)  SPECNM     ! tmp species name
+
         CHARACTER*16 :: PROGNAME = 'DSCSPROF' ! program name
 
 C***********************************************************************
@@ -140,22 +151,61 @@ C              mole-based conversions
         ISP    = 0
         DO I = 1, NLINES
         
-            READ( FDEV,93100,END=999,IOSTAT=IOS ) 
-     &                             TMPPRF, POLNAM, SPECNM, FAC1, FAC2
+            READ( FDEV,93000,END=999, IOSTAT=IOS ) LINE
      
             IREC = IREC + 1
              
             IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
                 WRITE( MESG, 94010 )
      &              'I/O error', IOS, 'reading speciation profile '//
      &              'file at line', IREC
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                CALL M3MESG( MESG )
+                CYCLE
             END IF
 
-C.............  Left-justify character strings
-            TMPPRF = ADJUSTL( TMPPRF ) 
-            POLNAM = ADJUSTL( POLNAM )
-            SPECNM = ADJUSTL( SPECNM )
+C.............  Separate the line of data into each part
+            CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+C.............  Left-justify character strings and convert factors to reals
+            TMPPRF = ADJUSTL ( SEGMENT( 1 ) ) 
+            POLNAM = ADJUSTL ( SEGMENT( 2 ) )
+            SPECNM = ADJUSTL ( SEGMENT( 3 ) )
+            FAC1   = STR2REAL( SEGMENT( 4 ) )
+            FAC2   = STR2REAL( SEGMENT( 5 ) )
+
+C.............  Make sure divsor factor is not zero
+            IF( FAC2 .EQ. 0. ) THEN
+                WRITE( MESG,94010 ) 'WARNING: Zero divisor found at '//
+     &                 'line ', IREC, '. Setting to 1.'
+                CALL M3MESG( MESG )
+                FAC2 = 1.
+            END IF
+
+C.............  Check width of character fields of fixed width
+            L = LEN_TRIM( TMPPRF )
+            IF( L .GT. SPNLEN3 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Speciation profile code ' //
+     &                 'exceeds max width of', SPNLEN3, 'at line', IREC
+                CALL M3MESG( MESG )
+            END IF
+
+            L = LEN_TRIM( POLNAM )
+            IF( L .GT. IOVLEN3 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Pollutant name ' //
+     &                 'exceeds max width of', IOVLEN3, 'at line', IREC
+                CALL M3MESG( MESG )
+            END IF
+
+            L = LEN_TRIM( SPECNM )
+            IF( L .GT. IOVLEN3 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Species name ' //
+     &                 'exceeds max width of', IOVLEN3, 'at line', IREC
+                CALL M3MESG( MESG )
+            END IF
 
 C.............  Search for pollutant in list of valid names, and go to the end
 C               of the loop if not found (skip entry)
@@ -215,6 +265,24 @@ C               add species to list.
             END IF
 
         END DO
+
+        IF( IPOL .EQ. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: No pollutants found in speciation '//
+     &             'profiles match the inventory!'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( ISP .EQ. 0 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: No species found in speciation profile!'
+            CALL M3MSG2( MESG )
+        END IF
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem(s) with speciation profiles file.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C...........   Determine the max species per full table, and the max species
 C              per pollutant
@@ -284,7 +352,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
-93100   FORMAT( A5, 1X, A16, 1X, A16, 1X, G13.0, 1X, G13.0, 1X, G9.0 )
+93000   FORMAT( A )
 
 C...........   Internal buffering formats............ 94xxx
 
