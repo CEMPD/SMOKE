@@ -630,7 +630,7 @@ C.............  Create format statement for output of header
      &                 HDRFMT(1:L), WIDTHS( J )
             END DO
             L = LEN_TRIM( HDRFMT )
-            WRITE( HDRFMT, '(A, ")")' ) HDRFMT( 1:L )
+            WRITE( HDRFMT, '(A)' ) HDRFMT( 1:L ) // ')'
 
 C.............  Create format statement for output of emissions
             WRITE( DATFMT, '( "(A",I2.2)' ) WIDTHS( 0 )
@@ -640,7 +640,7 @@ C.............  Create format statement for output of emissions
      &                 DATFMT(1:L), WIDTHS( J )
             END DO
             L = LEN_TRIM( DATFMT )
-            WRITE( DATFMT, '(A, ")")' ) DATFMT( 1:L )
+            WRITE( DATFMT, '(A)' ) DATFMT( 1:L ) // ')'
 
             RETURN
 
