@@ -417,16 +417,6 @@ mobile6.debug: $(MODOBJS) $(OBJS) DRIVER.o
 lib: $(MODOBJS) $(OBJS) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(MODOBJS) $(OBJS) SMKDRIVER.o
 
-# Object files that don't compile well under f90
-BD03.o: BD03.F
-	f77 -c BD03.F
-
-BD04.o: BD04.F
-	f77 -c BD04.F
-
-BD48.o: BD48.F
-	f77 -c BD48.F
-
 # Object files that depend on modules
 ATCALX.o      : DATABASE.o
 ATDB_AGGR.o   : DATABASE.o
