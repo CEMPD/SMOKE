@@ -71,16 +71,16 @@
 !...              for Mobile6 processing, index 0 = 6 AM local time
         REAL,    ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour 
 
-        REAL,    ALLOCATABLE, PUBLIC :: TDYCNTY ( :,: ) ! daily temps by county per hour
+        REAL,    ALLOCATABLE, PUBLIC :: TDYCNTY ( : )   ! daily temps by county
         INTEGER, ALLOCATABLE, PUBLIC :: DYCODES ( : )   ! FIPS codes for daily counties
 
-        REAL,    ALLOCATABLE, PUBLIC :: TWKCNTY ( :,: ) ! weekly temps by county per hour
+        REAL,    ALLOCATABLE, PUBLIC :: TWKCNTY ( : )   ! weekly temps by county
         INTEGER, ALLOCATABLE, PUBLIC :: WKCODES ( : )   ! FIPS codes for weekly counties
 
-        REAL,    ALLOCATABLE, PUBLIC :: TMNCNTY ( :,: ) ! monthly temps by county per hour
+        REAL,    ALLOCATABLE, PUBLIC :: TMNCNTY ( : )   ! monthly temps by county
         INTEGER, ALLOCATABLE, PUBLIC :: MNCODES ( : )   ! FIPS codes for monthly counties
 
-        REAL,    ALLOCATABLE, PUBLIC :: TEPCNTY ( :,: ) ! episode temps by county per hour
+        REAL,    ALLOCATABLE, PUBLIC :: TEPCNTY ( : )   ! episode temps by county
         INTEGER, ALLOCATABLE, PUBLIC :: EPCODES ( : )   ! FIPS codes for episode counties
 
         END MODULE MODMET
