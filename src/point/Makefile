@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG) 
+LIBS          = $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
 LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp
 LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp
 

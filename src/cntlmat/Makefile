@@ -2,8 +2,8 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS          = $(LDIRS) $(LIBS)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG)
+LIBS          = $(LDIRS) $(LIBS_SYS)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)
 LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a  $(TOOLS_BIN)/libedsstools.debug.a
 #
