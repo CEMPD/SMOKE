@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -49,8 +49,8 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL    DSCM3GRD
-        EXTERNAL   DSCM3GRD
+        LOGICAL    INGRID
+        EXTERNAL   INGRID
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: NRECS          ! no. records w/ coordinates
@@ -88,39 +88,6 @@ C...........   Local variables
 C***********************************************************************
 C   begin body of subroutine GENPTCEL
 
-C.........  Get grid name from the environment and read grid parameters
-        IF( .NOT. DSCM3GRD( GRDNM, GDESC, COORD, GDTYP3D, COORUNIT, 
-     &                      P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D,
-     &                      XORIG3D, YORIG3D, XCELL3D, YCELL3D,
-     &                      NCOLS3D, NROWS3D, NTHIK3D ) ) THEN
-
-            MESG = 'Could not get Models-3 grid description'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C.........  Store grid parameters for later processing
-        ELSE
-
-            XX0   = SNGL( XORIG3D )
-            YY0   = SNGL( YORIG3D )
-            XX1   = XX0 + FLOAT( NCOLS3D ) * SNGL( XCELL3D )
-            YY1   = YY0 + FLOAT( NROWS3D ) * SNGL( YCELL3D )
-            DDX   = 1.0 / SNGL( XCELL3D )
-            DDY   = 1.0 / SNGL( YCELL3D )
-            NROWS = NROWS3D
-            NCOLS = NCOLS3D
-
-            IF( NCOLS * NROWS .NE. NGRID ) THEN
- 
-                MESG = 'INTERNAL ERROR: Number of cells in "' //
-     &                 PROGNAME( 1:16 ) // '" are inconsistent '//
-     &                 'with calling program'
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-            END IF
-
-        END IF
-
 C.........  Initialize number of sources per cell
         NX = 0   ! array
 
@@ -133,38 +100,19 @@ C.........  Initialize scratch gridding matrix - before sparse storage
             INDX( I ) = I
 
             XX = XLOCA( I )
-            YY = YLOCA( I ) 
-            
-            XDUM = DDX * ( XX - XX0 )
-            IF ( XDUM .LT. 0.0  )  THEN
-                NEXCLD = NEXCLD + 1
-                CYCLE  ! To end of loop
-            END IF
+            YY = YLOCA( I )
 
-            COL = 1 + INT( XDUM )
-            IF ( COL .GT. NCOLS .OR. COL .LE. 0 )  THEN
+            IF( .NOT. INGRID( XX, YY, NCOLS, NROWS, COL, ROW ) ) THEN
                 NEXCLD = NEXCLD + 1
                 CYCLE  ! To end of loop
             END IF
-
-            YDUM = DDY * ( YY - YY0 )
-            IF ( YDUM .LT. 0.0  )  THEN
-                NEXCLD = NEXCLD + 1
-                CYCLE  ! To end of loop
-            END IF
-
-            ROW = 1 + INT( YDUM )
-            IF ( ROW .GT. NROWS .OR. ROW .LE. 0 )  THEN
-                NEXCLD = NEXCLD + 1
-                CYCLE  ! To end of loop
-            END IF
-            
-            C = COL  +  NCOLS * ( ROW - 1 )
+                         
+            C = COL + NCOLS * ( ROW - 1 )
 
             IF( C .LE. NGRID ) THEN
                 NX( C ) = NX( C ) + 1
 
-            ELSEIF( C .GT. CSAV ) THEN
+            ELSE IF( C .GT. CSAV ) THEN
                 CSAV = C
 
             END IF
@@ -174,6 +122,16 @@ C.........  Initialize scratch gridding matrix - before sparse storage
 
         END DO        !  end loop on sources I, computing gridding matrix.
         
+        IF( NCOLS * NROWS .NE. NGRID ) THEN
+
+            MESG = 'INTERNAL ERROR: Number of cells in "' //
+     &                 PROGNAME( 1:16 ) // '" are inconsistent '//
+     &                 'with calling program'
+            CALL M3MSG2( MESG )
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+        END IF
+
         IF ( CSAV .GT. NGRID ) THEN
             WRITE( MESG,94010 ) 
      &             'INTERNAL ERROR: Number of grid cells C=', CSAV,
