@@ -183,7 +183,7 @@ C.................  Open by logical name or physical name
                 FILEDESC = 'BIOGENIC GRIDDED OUTPUT file'
                 CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',BONAME,I ) 
 
-           END IF 
+            END IF 
 
             IF( MFLAG ) THEN
 
@@ -191,9 +191,9 @@ ccs...............  Check if the number of mobile species exceeds the
 ccs                 number of total species (can happen if there are 
 ccs                 more species in the speciation matrix than desired
 ccs                 in the output)
-            	IF( MNMSPC > NMSPC ) THEN
-            	    CALL SETUP_VARIABLES( MNIPPA, NMSPC, MEANAM, EMNAM )
-            	ELSE
+                IF( MNMSPC > NMSPC ) THEN
+                    CALL SETUP_VARIABLES( MNIPPA, NMSPC, MEANAM, EMNAM )
+                ELSE
                     CALL SETUP_VARIABLES( MNIPPA, MNMSPC,MEANAM, MEMNAM)
                 ENDIF
                 NLAYS3D = 1
@@ -380,7 +380,7 @@ C.............  Set constants number and values for variables
 C.............  Do this regardless of whether we have outputs or not
 C.............  For speciation...
             IF( SFLAG ) THEN
-        	NVARSET = NMSPC_L
+                NVARSET = NMSPC_L
 
                 IF( ALLOCATED( VTYPESET ) )
      &              DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
@@ -395,40 +395,40 @@ C.............  For speciation...
                 ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
 
-        	K = 0
-        	LJ = -1
+                K = 0
+                LJ = -1
 C.................  Loop through global species index
-        	DO N = 1, NGRP
+                DO N = 1, NGRP
                     DO V = 1, VGRPCNT( N )
 
 C.........................  Access global indices
-                	I = SIINDEX( V,N )
-                	IF( I .EQ. 0 ) CYCLE     ! Skip unused pollutants
-                	J = SPINDEX( V,N )
-                	IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
+                        I = SIINDEX( V,N )
+                        IF( I .EQ. 0 ) CYCLE     ! Skip unused pollutants
+                        J = SPINDEX( V,N )
+                        IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
 
 C.........................  Make sure current species is in local array
                         CBUF = EMNAM( J )
                         M = INDEX1( CBUF, NMSPC_L, EMNAM_L )
                         IF( M .LE. 0 ) CYCLE
 
-                	DESCBUF= DESCBUF(1:LD)//' Model species '// CBUF
+                        DESCBUF= DESCBUF(1:LD)//' Model species '// CBUF
 
-                	K = K + 1
-                	VNAMESET( K ) = CBUF
-                	VUNITSET( K ) = GRDUNIT( I )
-                	VDESCSET( K ) = ADJUSTL( DESCBUF )
-                	VTYPESET( K ) = M3REAL
+                        K = K + 1
+                        VNAMESET( K ) = CBUF
+                        VUNITSET( K ) = GRDUNIT( J )
+                        VDESCSET( K ) = ADJUSTL( DESCBUF )
+                        VTYPESET( K ) = M3REAL
 
-                	LJ = J
+                        LJ = J
 
                     END DO
-        	END DO
+                END DO
 
 C.............  For no speciation...
             ELSE
 
-        	NVARSET = NIPPA_L
+                NVARSET = NIPPA_L
 
                 IF( ALLOCATED( VTYPESET ) )
      &              DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
@@ -443,22 +443,22 @@ C.............  For no speciation...
                 ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
 
-        	K = 0
+                K = 0
 C.................  Loop through global list
-        	DO V = 1, NIPPA
+                DO V = 1, NIPPA
 
 C.....................  Determine if variable is an emission type, pollutant,
 C                       or activity, and set variable description accordingly
                     I = INDEX1( EANAM( V ), NIPOL, EINAM )
                     J = INDEX ( EANAM( V ), ETJOIN )
                     IF( J .GT. 0 ) THEN
-                	DESCBUF = DESCBUF(1:LD) // 
+                        DESCBUF = DESCBUF(1:LD) // 
      &                           ' Emission type ' // EANAM( V )
                     ELSE IF( I .GT. 0 ) THEN
-                	DESCBUF = DESCBUF(1:LD) // 
+                        DESCBUF = DESCBUF(1:LD) // 
      &                            ' Pollutant ' // EANAM( V )
                     ELSE
-                	DESCBUF = DESCBUF(1:LD) // 
+                        DESCBUF = DESCBUF(1:LD) // 
      &                            ' Activity ' // EANAM( V )
                     END IF
 
@@ -475,7 +475,7 @@ C.....................  Define variable information
                     VDESCSET( K ) = ADJUSTL( DESCBUF )
                     VTYPESET( K ) = M3REAL
 
-        	END DO
+                END DO
 
             END IF
 
@@ -539,7 +539,7 @@ C              and set environment variable
             END IF
 
             IF( .NOT. ENVFLAG ) THEN
-            	
+                
 C.............  Logical name is defined, open file.
                 SELECT CASE( FTYPE )
                 CASE( 'NETCDF' )
@@ -553,9 +553,9 @@ C.............  Logical name is defined, open file.
                 END SELECT
 
             ELSE
-            	
-            	EFLAG = .TRUE.
-            	
+                
+                EFLAG = .TRUE.
+                
             END IF
 
             RETURN
