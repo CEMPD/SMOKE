@@ -56,5 +56,6 @@ C...........   Surrogate-cell::FIPS table
         INTEGER, ALLOCATABLE, PUBLIC :: SRGLIST( : ) ! list of surrgate codes
         INTEGER, ALLOCATABLE, PUBLIC :: FIPCELL( :, : )    ! cell numbers
         REAL   , ALLOCATABLE, PUBLIC :: SRGFRAC( :, :, : ) ! surrogate fractions
+        REAL   , ALLOCATABLE, PUBLIC :: SRGCSUM( :, : )    ! surg sum by county
 
         END MODULE MODSURG
