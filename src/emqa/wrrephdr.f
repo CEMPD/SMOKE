@@ -601,7 +601,7 @@ C.................  Build source characteristics output format for WRREPOUT
             END DO
 
             TMPFMT = CHARFMT
-            L = LEN_TRIM( TMPFMT )
+            L = LEN_TRIM( TMPFMT ) - 1   ! (minus 1 to remove trailing comma)
             CHARFMT = TMPFMT( 1:L ) // ')'
 
         END IF
@@ -791,9 +791,11 @@ C.................  Add delimeter to output formats except for last value
                         GO TO 988
                     END IF
 
-C.................  Otherwise add the ending parenthese
+C.................  Otherwise make sure there is no comma on the end and
+C                   add the ending parenthese
                 ELSE
-                    IF( L1 .LT. QAFMTL3-1 ) THEN                        
+                    IF( L1 .LT. QAFMTL3-1 ) THEN      
+                        IF( TMPFMT( L1:L1 ) .EQ. ',' ) L1 = L1 - 1
                         OUTFMT = TMPFMT( 1:L1 ) // ')'
                     ELSE
                         GO TO 988
