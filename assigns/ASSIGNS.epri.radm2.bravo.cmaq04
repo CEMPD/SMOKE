@@ -14,37 +14,37 @@
 #
 ## I/O Naming roots
 #
-   setenv INVID     tut36        # Inventory input identifier
-   setenv INVOP     m3demo       # Base year inventory output name
-   setenv INVEN     m3demo       # Base year inventory name with version
+   setenv INVID     epri99       # Inventory input identifier
+   setenv INVOP     epri99       # Base year inventory output name
+   setenv INVEN     epri99       # Base year inventory name with version
 
-   setenv ABASE     m3demo       # Area base case output name
-   setenv BBASE     beld         # Biogenics base case output name
-   setenv MBASE     m3demo       # Mobile base case output name
-   setenv PBASE     m3demo       # Point base case output name
+   setenv ABASE     epri99       # Area base case output name
+   setenv BBASE     beld3        # Biogenics base case output name
+   setenv MBASE     epri99       # Mobile base case output name
+   setenv PBASE     epri99       # Point base case output name
 
-   setenv EBASE     m3demo       # Output merged base case name
+   setenv EBASE     epri99       # Output merged base case name
 
-   setenv METSCEN   mepa         # Met scenario name
-   setenv GRID      ed36         # Gridding root
-   setenv SPC       cmaq.cb4p25  # Speciation type
-   setenv ESDATE    19950714     # Start date of emis time-based files
-   setenv MSDATE    19950714     # Start date of met  time-based files
+   setenv METSCEN   aer          # Met scenario name
+   setenv GRID      bravo4_cmaq  # Gridding root
+   setenv SPC       nhx          # Speciation type
+   setenv ESDATE    19991005     # Start date of emis time-based files
+   setenv MSDATE    19991005     # Start date of met  time-based files
    setenv NDAYS     1            # Duration in days of emis time-based files
    setenv MDAYS     1            # Duration in days of met  time-based files
-   setenv YEAR      1995         # Year for year-specific files
+   setenv YEAR      1999         # Year for year-specific files
 
 ## Models-3 episode environment variables
 #
-   setenv G_STDATE  1995195      # Julian start date
-   setenv G_STTIME   000000      # start time (HHMMSS)
+   setenv G_STDATE  1999278      # Julian start date
+   setenv G_STTIME   120000      # start time (HHMMSS)
    setenv G_TSTEP     10000      # time step  (HHMMSS)
-   setenv G_RUNLEN   250000      # run length (HHMMSS)
+   setenv G_RUNLEN   190000      # run length (HHMMSS)
 
 ## User-defined I/O directory settings
-   setenv EDSS_SUBSYS $EDSS_ROOT/subsys              # EDSS subsystem dir
-   setenv SMKROOT     $EDSS_SUBSYS/smokev1           # System root dir
-   setenv SMKDAT      $EDSS_ROOT/data/smoke          # Data root dir
+   setenv EDSS_SUBSYS /env/proj/edss/work/jmv        # EDSS subsystem dir
+   setenv SMKROOT     /env/proj/bravo/smoke          # System root dir
+   setenv SMKDAT      /stella/data/bravo             # Data root dir
    setenv ASSIGNS     $SMKROOT/assigns               # smoke assigns files
 #
 ## Make changes to names for future year and/or control strategy
@@ -115,17 +115,17 @@ endif
 
 #
 ## General input settings
-   setenv GSREF_ID m3.091600
-   setenv GSPRO_ID $SPC.102400
+   setenv GSREF_ID m3.pmdemo
+   setenv GSPRO_ID m3.$SPC
 
 ## Meteorology IO/API input files (MCIP output files)
 #
-   setenv METDAT $SMKDAT/met/run_$METSCEN
-   setenv GRID_CRO_2D $METDAT/GRID_CRO_2D_G1
-   setenv MET_CRO_2D  $METDAT/MET_CRO_2D_G1
-   setenv GRID_CRO_3D $METDAT/GRID_CRO_3D_G1
-   setenv MET_CRO_3D  $METDAT/MET_CRO_3D_G1
-   setenv MET_DOT_3D  $METDAT/MET_DOT_3D_G1
+   setenv METDAT /stella/scratch/vukovich/bravo/mcip
+   setenv GRID_CRO_2D $METDAT/GRIDCRO2D_4km
+   setenv MET_CRO_2D  $METDAT/METCRO2D_4km_$G_STDATE
+   setenv GRID_CRO_3D $METDAT/GRIDCRO3D_4km
+   setenv MET_CRO_3D  $METDAT/METCRO3D_4km_$G_STDATE
+   setenv MET_DOT_3D  $METDAT/METDOT3D_4km_$G_STDATE
 
 ##########  SMOKE formatted raw inputs #############
 
@@ -166,7 +166,7 @@ if ( $SMK_SOURCE == 'M' ) then
 
    setenv MPROJ    $PJDAT/mproj.$MPROJ_ID.txt     # Projection factors
    setenv MGREF    $GE_DAT/mgref.$MGREF_ID.txt    # Mobile gridding x-ref
-   setenv MGPRO    $GE_DAT/amgpro.$MGPRO_ID.txt    # Mobile gridding surrogates
+   setenv MGPRO    $GE_DAT/amgpro.$MGPRO_ID.txt   # Mobile gridding surrogates
 
    setenv MTREF    $GE_DAT/mtref.$MTREF_ID.txt    # Mobile temporal x-ref
    setenv MTPRO    $GE_DAT/mtpro.$MTPRO_ID.txt    # Temporal   profiles
@@ -268,11 +268,9 @@ endif
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
    setenv BGRD      $INVOPD/bgrd.$GRID.$BSCEN.ncf        # Grd normlzd bio emis
    setenv BGRDW     $INVOPD/bgrdw.$GRID.$BSCEN.ncf       # Winter grd normlzd bio emis
-   setenv BGTS_L    $B_OUT/bgts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BGTS_S    $B_OUT/bgts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BGTS_L_O  $OUTPUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BGTS_S_O  $OUTPUT/bgts_s_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BIOSEASON $GE_DAT/bioseason.$YEAR.ncf
+   setenv BGTS_L    $B_OUT/bgts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf  # moles/hr
+   setenv BGTS_S    $B_OUT/bgts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf  # tons/hr
+
 endif
 
 # Mobile source intermediate and output files
