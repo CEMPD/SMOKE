@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, ENAME, ANAME, DNAME, 
      &                        HNAME, FNAME, NNAME, MNAME, GNAME, WNAME,
-     &                        TVARNAME, SDEV, XDEV, RDEV, UDEV, FDEV,
+     &                        TVARNAME, SDEV, XDEV, RDEV, FDEV,
      &                        TDEV, MDEV )
 
 C***********************************************************************
@@ -87,7 +87,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: SDEV  ! unit no.: ASCII inven file
         INTEGER     , INTENT   (OUT) :: XDEV  ! unit no.: x-ref file
         INTEGER     , INTENT   (OUT) :: RDEV  ! unit no.: tmprl profile file
-        INTEGER     , INTENT   (OUT) :: UDEV  ! unit no.: optional UAM elev srcs
         INTEGER     , INTENT   (OUT) :: FDEV  ! unit no.: EF x-ref file
         INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: speciation list file
         INTEGER     , INTENT   (OUT) :: MDEV  ! unit no.: mobile codes file
