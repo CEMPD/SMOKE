@@ -75,9 +75,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   PARAMETER
 
         CHARACTER*16    NONE
-        REAL            TON2GM
-        PARAMETER     ( NONE = 'NONE',
-     &                  TON2GM = 907184.74 )
+        PARAMETER     ( NONE = 'NONE' )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Mobil Sources input and output arrays (one variable at a time)
@@ -106,8 +104,6 @@ C...........   Report arrays
         INTEGER         VOLIDX( MXEMIS )
            
 C...........   Other local variables
-
-        REAL            FAC
 
         INTEGER         BEGBLK  !  beg of array of blanks in output file desc
         INTEGER         BTIME
@@ -507,17 +503,6 @@ C.................  Convert summary emissions from moles/day to tons/day
                     MESG = 'Mobile source emissions (tons/' //
      &                     'specific day) within grid ' // GRDNM
                     OUTFMT = 'F8.1'
-
-C.................  Convert from grams to tons
-
-                    FAC = 1.0 / TON2GM
-                    DO 191 I = 1, MXSTA
-                        DO 190 S = 1, NVARS3D
-                            EMSUM( I,S ) = EMSUM( I,S ) * FAC
-
-
-190                     CONTINUE
-191                 CONTINUE
 
 C.................  Sum volatile component
                     IF( NVOL .GT. 1 ) THEN
