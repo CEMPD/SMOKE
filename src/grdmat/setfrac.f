@@ -49,6 +49,9 @@ C...........   This module contains the gridding surrogates tables
 C...........   This module contains the cross-reference tables
         USE MODXREF
 
+C.........  This module contains the global variables for uncertainty
+        USE MODUNCERT
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -115,7 +118,7 @@ C.........  Default of 50 is population
             CALL RANDOM_SEED
 
             MESG = 'Switch for uncertainty mode setting'
-            UNCERT = ENVYN( 'SMK_UNCERT', MESG, .FALSE., IOU )
+            GUCFLAG = ENVYN( 'SMK_GRDMAT_UNCERT', MESG, .FALSE., IOU )
 
             DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', MESG, 50, IOS )
             DEFIDX = FIND1( DEFSRGID, NSRGS, SRGLIST )
@@ -137,7 +140,7 @@ C.........  Default of 50 is population
 
         IF ( SRGTOUSE( SRCID ) .EQ. IMISS3 ) THEN
 
-            IF ( UNCERT ) THEN
+            IF ( GUCFLAG ) THEN
                 CALL STOCHASTIC
             ELSE
                 CALL DETERMINISTIC
