@@ -7,11 +7,16 @@ C
 C  DESCRIPTION:
 C       Construct Models3/EDSS day- or hour-specific point source file 
 C       sorted by source (on FIP,SCC,PLANT,STACK) from data contained in
-C       EPS/AFS-style day specific point source file.
+C       EPS/AFS-style day specific point source file.  PDPOINT must be
+C       executed once for daily records and once for hourly records.  
+C       You can NOT mix daily and hourly records in the same input AFS
+C       file.
 C
 C  PRECONDITIONS REQUIRED:
 C       Day- or hour-specific input data for point sources concatenated in
-C       chronological order.
+C       chronological order.  There also must be a record for each source 
+C       for each of the 24 hours if using 24 hours of hour specific data 
+C       as input. 
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
@@ -125,6 +130,7 @@ C...........   Other local variables
         CHARACTER*256   MESG    !  text for M3EXIT()
         CHARACTER*240   LINE    !  input line from POINT file
         LOGICAL         EFLAG   !  Error flag
+        LOGICAL         AFLAG   !  Day or hour spec flag
 
 C***********************************************************************
 C   begin body of program PDPOINT
@@ -141,6 +147,9 @@ C   begin body of program PDPOINT
      &'use in TMPPOINT.',
      &'The time-specific input file should consist of records of the',
      &'appropriate type, sorted by date and time.',
+     &' ',
+     &'Hour-specific data must have a record for each source for',
+     &'each hour desired in the AQM ready emissions file.',
      &' ',
      &'You will need to enter the logical names for the input and',
      &'output files (and to have set them prior to program launch,',
@@ -204,8 +213,6 @@ C.......   Get starting date (default borrowed from input file:
         YY    = YEAR4( YY )                ! Convert to 4-digit year
         EDATE = 1000 * YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
 
-        CALL NEXTIME( EDATE, ETIME, 10000 ) !  ETIME:  *through* hr HH
-
         TSTEP = SEC2TIME( SECSDIFF( JDATE, JTIME, EDATE, ETIME ) )
         
         JDATE = GETDATE( SDT, 
@@ -221,12 +228,15 @@ C.......   Get starting date (default borrowed from input file:
 C.......   Set up file description (borrowing much of it from ENAME);
 C.......   get file name; open output day-point file
 
+        AFLAG = .FALSE.
+
         IF ( STEP .EQ. SEC2HR ) THEN
             UNITS = 'tons/hour'
             DNAME = 'PHOUR'
         ELSE IF ( STEP .EQ. SEC2DAY ) THEN
             UNITS = 'tons/day'
             DNAME = 'PDAY'
+            AFLAG = .TRUE.
         ELSE
             DNAME = 'PSPEC'
             HH = STEP / SEC2HR
@@ -413,7 +423,6 @@ C.............  date, reset date, and initialize number of sources
 
             YY  = YEAR4( YY )                      ! Convert to 4-digit year
             EDT = 1000 * YY + JULIAN( YY, MM, DD ) ! As Julian date YYYYDDD
-            CALL NEXTIME( EDT, ETM, 10000 )        ! ETM means *through* hr HH
 
             SECS  = SECSDIFF( SDT, STM, EDT, ETM )
             IF ( SECS .NE. STEP ) THEN
