@@ -194,10 +194,8 @@ C...........   Other local variables
         REAL            TK            ! tmp stack exit temperature [K]
         REAL            VE            ! tmp stack exit velocity diameter [m/s]
 
-        LOGICAL :: CFLAG    = .FALSE. ! true: convert from English to metric
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
-        LOGICAL :: WFLAG    = .FALSE. ! true: convert lon to western
 
         CHARACTER*80    GDESC     !  grid description
         CHARACTER*256   BUFFER
@@ -225,12 +223,6 @@ C.........  Get environment variables that control this program
 
         MESG = 'Approach for defining major/minor sources'
         ELEVTYPE = ENVINT( 'SMK_ELEV_METHOD', MESG, 0, IOS )
-
-        MESG = 'Indicator for converting all longitudes to Western'
-        WFLAG = ENVYN( 'WEST_HSPHERE', MESG, .TRUE., IOS )
-
-        MESG = 'Indicator for English to metric units conversion'
-        CFLAG = ENVYN( 'SMK_ENG2METRIC_YN', MESG, .FALSE., IOS )
 
 C.........  End program for invalid settings
         IF ( ELEVTYPE .GT. PELVCONFIG_APPROACH .OR.

@@ -247,7 +247,7 @@ C.........  Loop through met files and check time period
 
 C.............  Close previous file if needed
             IF( FILEOPEN ) THEN
-                IF( .NOT. CLOSESET( TNAME, ALLFILES ) ) THEN
+                IF( .NOT. CLOSESET( TNAME ) ) THEN
                     L = LEN_TRIM( PTMPFILE )
                     MESG = 'Could not close hourly emissions file ' //
      &                     PTMPFILE( 1:L )

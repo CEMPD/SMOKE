@@ -375,7 +375,7 @@ C.........  Get file name and open daily input inventory file
      &               FSREAD3, CRL // 'HOUR', PROGNAME )
 
 C.............  Check to see if appropriate variable list exists
-            CALL RETRIEVE_IOAPI_HEADER( HNAME )
+            CALL RETRIEVE_SET_HEADER( HNAME )
 
             NHRSRC = NROWS3D
 
@@ -1254,7 +1254,7 @@ C.............  Subprogram arguments
 
 C----------------------------------------------------------------------
 
-            IF ( .NOT. DESCSET( FILNAM,-1 ) ) THEN
+            IF ( .NOT. DESC3( FILNAM ) ) THEN
 
                 MESG = 'Could not get description of file "' //
      &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
@@ -1263,6 +1263,28 @@ C----------------------------------------------------------------------
             END IF
 
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram tries to retrieve the I/O API header
+C               and aborts if it was not successful
+            SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. DESCSET( FILNAM,-1 ) ) THEN
+
+                MESG = 'Could not get description of file "' //
+     &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+            END SUBROUTINE RETRIEVE_SET_HEADER
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
