@@ -1,7 +1,7 @@
 
-        SUBROUTINE RDEMSPT( EDEV, INY, NRAWIN, NEM, NCE, 
-     &                      NRE, MXIPOL, INVPCOD, INVPNAM, NRAWOUT, 
-     &                      IOS, IREC, ERFILDSC, EFLAG, NDROP, EDROP )
+        SUBROUTINE RDEMSPT( EDEV, INY, NRAWIN, MXIPOL, INVPCOD, INVPNAM, 
+     &                      NRAWOUT, IOS, IREC, ERFILDSC, EFLAG, 
+     &                      NDROP, EDROP )
 
 C***********************************************************************
 C  subroutine body starts at line 225
@@ -48,6 +48,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -79,9 +82,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: INY       !  inv year for this set of files
         INTEGER, INTENT (IN) :: NRAWIN    !  total raw record-count
         INTEGER, INTENT (IN) :: MXIPOL    !  max no of inventory pollutants
-        INTEGER, INTENT (IN) :: NEM       !  pos in POLVLA for annual emissions
-        INTEGER, INTENT (IN) :: NCE       !  pos in POLVLA for ctrl efficiency
-        INTEGER, INTENT (IN) :: NRE       !  pos in POLVLA for rule effectvnss
         INTEGER     , INTENT (IN) :: INVPCOD( MXIPOL ) !  inv pol 5-digit codes
         CHARACTER(*), INTENT (IN) :: INVPNAM( MXIPOL ) !  in pol names
         INTEGER, INTENT(OUT) :: NRAWOUT   !  valid raw record-count
@@ -197,7 +197,7 @@ C...........   Other local variables
         INTEGER          TDIU    !  Temporary hourly profile code
         INTEGER          TWEK    !  Temporary weekly profile code
         INTEGER          LDC, LFC, LSC, LPC  ! Lengths of DVID,FCID,SKID,PRID
-        INTEGER, SAVE :: NSRC= 0 ! Cumulative source count
+        INTEGER, SAVE :: NSRCSAV = 0 ! Cumulative source count
         INTEGER          TPF     !  Temporary temporal ID
         INTEGER          ZONE    !  Temporary UTM zone
 
@@ -800,7 +800,7 @@ C........................................................................
 C.........  NOTE: later, Get rule eff from prulefac files
         REFF = 100.0
 
-        ES   = NSRC
+        ES   = NSRCSAV
         IREC = 0
         ERFILDSC = 'emission'
         DO
@@ -971,6 +971,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 ISICA  ( ES ) = DVSICA( DVIDX( K3 ) )
                 TPFLGA ( ES ) = TPF
                 INVYRA ( ES ) = INY
+                IORISA ( ES ) = IMISS3
                 IWEKA  ( ES ) = DVIWEKA( DVIDX( K3 ) )
                 IDIUA  ( ES ) = DVIDIUA( DVIDX( K3 ) )
                 STKHTA ( ES ) = SKHEITA( SKIDX( K2 ) )
@@ -984,6 +985,7 @@ C.............  Time to store data in unsorted lists if we've made it this far
                 POLVLA ( ES,NRE ) = REFF
                 K1            = IFCKEYA( SKIDX( K2 ) )
                 CSCCA  ( ES ) = TSCC
+                CBLRIDA( ES ) = BLRBLNK3
                 CPDESCA( ES ) = FCDESCA( FCIDX( K1 ) )
 
                 WRITE( CCOD,94125 ) COD
@@ -1001,24 +1003,24 @@ C.............  Time to store data in unsorted lists if we've made it this far
 
         WRITE( MESG,94010 ) 
      &         'EMISSION FILE processed:'  // CRLF() // BLANK5 //
-     &         '   This-file  EMS-95 SOURCE  record-count', ES - NSRC,
+     &         '   This-file  EMS-95 SOURCE  record-count', ES-NSRCSAV,
      &         CRLF() // BLANK5 //
      &         '   Cumulative EMS-95 SOURCE  record-count', ES
 
         CALL M3MSG2( MESG )
 
-        NSRC = ES        !  cumulative emissions lines
+        NSRCSAV = ES        !  cumulative emissions lines
 
 C........................................................................
 
-        IF( NSRC .GT. NRAWIN ) THEN
+        IF( NSRCSAV .GT. NRAWIN ) THEN
 
             EFLAG = .TRUE.
             MESG = 'Memory allocation insufficient for EMS-95 inventory'
             CALL M3MSG2( MESG )
 
         ELSE
-            NRAWOUT = NSRC
+            NRAWOUT = NSRCSAV
 
         END IF		!  if overflow or if errors
 
