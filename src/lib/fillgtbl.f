@@ -14,7 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 4/99 by M. Houyoux
-C     Modified 11/01 by Gabe Cano - deterministic mode
+C     Modified 2/02 by Gabe Cano - deterministic mode
 C
 C****************************************************************************/
 C
@@ -77,7 +77,6 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
 
             J    = INDXTA ( I )
             ISRG = J
-c            ISRG = ISRGCDA( J, 1 )
 
             T      = XTYPE ( I )
             K      = XTCNT ( I )
