@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCINVEN( NRAWBP, FILFMT, UDEV, YDEV )
+        SUBROUTINE PROCINVEN( NRAWBP, FILFMT, UDEV, YDEV, CDEV, LDEV )
 
 C**************************************************************************
 C  subroutine body starts at line 114
@@ -66,10 +66,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
         EXTERNAL        CRLF, ENVINT, INDEX1, ENVYN, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NRAWBP  ! no.raw recs x pol/act
-        INTEGER     , INTENT (IN) :: FILFMT  ! input file(s) fmt code
-        INTEGER     , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
-        INTEGER     , INTENT (IN) :: YDEV    ! unit no. for area-to-point
+        INTEGER , INTENT (IN) :: NRAWBP  ! no.raw recs x pol/act
+        INTEGER , INTENT (IN) :: FILFMT  ! input file(s) fmt code
+        INTEGER , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
+        INTEGER , INTENT (IN) :: YDEV    ! unit no. for area-to-point
+        INTEGER , INTENT (IN) :: CDEV    ! SCC descriptions unit no.
+        INTEGER , INTENT (IN) :: LDEV    ! log file unit no.
 
 C...........   Variables dimensioned by subroutine arguments
         INTEGER         TMPSTAT( MXIDAT ) ! tmp data status
@@ -216,7 +218,7 @@ C           indicator of whether it's present or not
 
 C.........  Call adjustment routine (for now, just a placeholder for a routine
 C           that can call the area-to-point reader
-        CALL ADJUSTINV( NRAWBP, UDEV, YDEV )
+        CALL ADJUSTINV( NRAWBP, UDEV, YDEV, CDEV, LDEV )
 
 C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
 

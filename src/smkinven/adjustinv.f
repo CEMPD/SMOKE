@@ -1,5 +1,5 @@
 
-        SUBROUTINE ADJUSTINV( NRAWBP, UDEV, YDEV )
+        SUBROUTINE ADJUSTINV( NRAWBP, UDEV, YDEV, CDEV, LDEV )
 
 C**************************************************************************
 C  subroutine body starts at line 
@@ -59,9 +59,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
         EXTERNAL        CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NRAWBP  ! no. raw records by pollutant
-        INTEGER     , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
-        INTEGER     , INTENT (IN) :: YDEV    ! unit no. for ar-to-point
+        INTEGER , INTENT (IN) :: NRAWBP  ! no. raw records by pollutant
+        INTEGER , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
+        INTEGER , INTENT (IN) :: YDEV    ! unit no. for ar-to-point
+        INTEGER , INTENT (IN) :: CDEV    ! SCC descriptions unit no.
+        INTEGER , INTENT (IN) :: LDEV    ! log file unit no.
 
 C...........   Other local variables
         CHARACTER*256   MESG        ! message buffer 
@@ -78,7 +80,7 @@ C.............  Read and preprocess area-to-point factors file
 C.............  Result of this call is that the NAR2PT and AR2PTABL 
 C               arrays from MODAR2PT and the CHRT09 and ARPT09 arrays
 C               from MODLISTS will be populated.
-            CALL RDAR2PT( YDEV )
+            CALL RDAR2PT( YDEV, CDEV, LDEV )
 
 C.............  Assign area-to-point cross-reference entries to sources
 C.............  Result of this call is that the AR2PTTBL, AR2PTIDX, and

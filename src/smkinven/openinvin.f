@@ -289,13 +289,15 @@ C           zones
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
         END IF
 
-C.........  Get list of powerplant SCCs, in case needed for reporting CEM
-C           matches with the inventory
-        IF ( HFLAG ) THEN
+C.........  Get SCC descriptions if needed for reporting purposes
+        IF ( HFLAG .OR. CFLAG ) THEN
             CDEV = PROMPTFFILE(
      &             'Enter logical name for SCC DESCRIPTION file ',
      &             .TRUE., .TRUE., 'SCCDESC', PROGNAME )
+        END IF
 
+C.........  Get ORIS descriptions file
+        IF( HFLAG ) THEN
             ODEV = PROMPTFFILE(
      &             'Enter logical name for ORIS DESCRIPTION file ',
      &             .TRUE., .TRUE., 'ORISDESC', PROGNAME )

@@ -237,7 +237,7 @@ C                the input format.
 
 C.............  Processing inventory records and store in sorted order
 
-            CALL PROCINVEN( NRAWBP, FILFMT, UDEV, YDEV ) 
+            CALL PROCINVEN( NRAWBP, FILFMT, UDEV, YDEV, CDEV, LDEV ) 
 
 C.............  Determine memory needed for actual pollutants list and actual
 C               activities list and allocate them. Invstat has been updated
