@@ -1,5 +1,5 @@
 
-        SUBROUTINE RPLCTEMP( COUNTY, TEMPS, NCOUNTY, NSTEPS, 
+        SUBROUTINE RPLCTEMP( COUNTY, TEMPS, NCOUNTY, 
      &                       SCENARIO, NLINES, CTYPOS )
         
         IMPLICIT NONE
@@ -13,9 +13,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,            INTENT (IN)    :: COUNTY             ! current county being processed
-        REAL,               INTENT (IN) :: TEMPS( NCOUNTY, 0:NSTEPS-1 ) ! hourly temps per county
+        REAL,               INTENT (IN)    :: TEMPS( NCOUNTY, 24 ) ! hourly temps per county
         INTEGER,            INTENT (IN)    :: NCOUNTY  ! no. counties in temps array
-        INTEGER,            INTENT (IN)    :: NSTEPS   ! no. time steps in temps array
         CHARACTER(LEN=150), INTENT (INOUT) :: SCENARIO( NLINES ) ! scenario array
         INTEGER,            INTENT (IN)    :: NLINES             ! no. lines in scenario
         INTEGER,            INTENT (IN)    :: CTYPOS   ! position of county in TEMPS array
@@ -52,10 +51,10 @@ C.............  Search command for temperature commands
             IF( INDEX( COMMAND, 'HOURLY TEMPERATURES' ) > 0 ) THEN
 
                 WRITE( RPLCLINE,94020 ) 
-     &               'HOURLY TEMPERATURES: ', TEMPS( CTYPOS,0:11 )
+     &               'HOURLY TEMPERATURES: ', TEMPS( CTYPOS,1:12 )
                 SCENARIO( I ) = RPLCLINE
                 
-                WRITE( RPLCLINE,94030 ) TEMPS( CTYPOS,12:23 )
+                WRITE( RPLCLINE,94030 ) TEMPS( CTYPOS,13:24 )
                 SCENARIO( I + 1 ) = RPLCLINE
              END IF
 
