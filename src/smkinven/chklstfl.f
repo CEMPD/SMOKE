@@ -59,7 +59,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NLINE            ! number of lines in file
         CHARACTER(*), INTENT (IN) :: FNAME            ! logical name of file
         CHARACTER(*), INTENT (IN) :: NLSTSTR( NLINE ) ! contents of file by line
-        INTEGER     , INTENT(OUT) :: FILFMT           ! file format code
+        INTEGER     , INTENT(OUT) :: FILFMT ( NLINE ) ! file format code
 
 C...........   File units and logical/physical names
         INTEGER      TDEV        !  emissions file in list format file
@@ -68,10 +68,9 @@ C...........   Other local variables
         INTEGER      I, J
 
         INTEGER      FLEN        !  length of string FNAME
-        INTEGER      PREVFMT     !  file format code of previous iteration
 
         LOGICAL   :: EFLAG     = .FALSE. !  true: error found
-        LOGICAL   :: FIRSTITER = .TRUE.  !  true: first iteration of a loop
+        LOGICAL   :: IDAFLAG   = .FALSE. !  true: at least one file is IDA format 
 
         CHARACTER*300   INFILE      !  input file line buffer
         CHARACTER*300   MESG        !  message buffer
@@ -83,7 +82,6 @@ C   begin body of subroutine CHKLSTFL
 
         FLEN = LEN_TRIM( FNAME )
 
-        FIRSTITER = .TRUE.
 C.........  Loop through lines of list-formatted file to check the formats
         DO J = 1, NLINE
 
@@ -103,10 +101,10 @@ C.............  Open INFILE
             OPEN( TDEV, ERR=1006, FILE=INFILE, STATUS='OLD' )
 
 C.............  Determine format of INFILE
-            FILFMT = GETFORMT( TDEV )
+            FILFMT( J ) = GETFORMT( TDEV )
 
 C.............  Make sure that file format was found
-            IF( FILFMT .LT. 0 ) THEN
+            IF( FILFMT( J ) .LT. 0 ) THEN
                 
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 
@@ -115,32 +113,31 @@ C.............  Make sure that file format was found
      &                 CRLF() // BLANK10 // 
      &                 'not determine format of file listed at line', J
                 CALL M3MESG( MESG )
-
-C.............  If first iteration, save format, if not, make sure 
-C               that different formats are not used in same PTINV list
-            ELSE IF( FIRSTITER ) THEN
-                FIRSTITER = .FALSE.
-                PREVFMT = FILFMT
-
-            ELSEIF( FILFMT .NE. PREVFMT ) THEN
-                
-                EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 
-     &                 'ERROR: In SMOKE list-formatted inventory file, '
-     &                 // FNAME( 1:LEN_TRIM( FNAME ) )// ', previous '//
-     &                 CRLF() // BLANK10 // 
-     &                 'file was ' // FMTNAMES( PREVFMT ) // ' format, '
-     &                 // 'but file at line', J, 'is ' // 
-     &                 FMTNAMES( FILFMT ) // ' format.'
-                CALL M3MESG( MESG )
-
-            ENDIF
+            END IF
 
             CLOSE( TDEV )
 
-        END DO     ! End of loop through list-formatted PTINV file
+C.............  Set flag if format is IDA
+            IF( FILFMT( J ) == IDAFMT ) IDAFLAG = .TRUE.
 
-C.........  Exit if files in list-formatted file were of inconsistent type
+        END DO     ! End of loop through list-formatted file
+
+C.........  Make sure that IDA format is only used with NTI format
+        IF( IDAFLAG ) THEN
+            DO J = 1, NLINE
+                IF( FILFMT( J ) /= IDAFMT .AND.
+     &              FILFMT( J ) /= NTIFMT      ) THEN
+                    WRITE( MESG,94010 ) 
+     &                'ERROR: In SMOKE list-formatted inventory file, '
+     &                // TRIM( FNAME ) // ', ' // CRLF() // BLANK10 //
+     &                'at least one file is IDA-formatted while ' //
+     &                'another file is not IDA- or NTI-formmated.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+            END DO
+        END IF
+
+C.........  Exit if couldn't determine format of files in list-formatted file
         IF( EFLAG ) THEN
             MESG = 'Problem reading SMOKE list format'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
