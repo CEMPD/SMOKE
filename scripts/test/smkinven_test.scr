@@ -29,9 +29,9 @@ set case1_pt = N
 set case2_ar = N
 set case2_pt = N
 
-set case3_ar = Y
+set case3_ar = N
 set case3_mb = N
-set case3_pt = N
+set case3_pt = Y
 
 # Case 1
 ########################################################################
@@ -109,19 +109,22 @@ endif
 # Case 3
 ########################################################################
 
+set day = 0213
+set jday = 044
+set ard = 213
+set mbd = feb13
+
+
 if ( $case3_ar == Y ) then
 
     setenv SMK_SOURCE A
+    source $ASSIGNS/ASSIGNS.aero96.ut_aero
     setenv WKDAY_NORMALIZE      Y
+    setenv SMKINVEN_FORMULA     "FAKE=PM10-NH3"
     setenv OUTZONE              7
-    setenv INVDIR /gaia/scratch/smoke/inventory/aero96
-    setenv INVOPD /gaia/scratch/smoke/inventory/aero96
-    setenv ARINV  $INVDIR/area/arinv.aero96.211.txt
-    setenv SIPOLS $INVDIR/sipols.txt
-    setenv COSTCY /env/data/smoke/ge_dat/costcy.txt
-    setenv ASCC   $INVOPD/ASCC.aero96.txt
-    setenv ASRC   $INVOPD/ASRC.aero96.txt
-    setenv AREA   $INVOPD/area.aero96.ncf
+    setenv AREA $INVOPD/area.faketest.ncf
+    setenv ASRC $INVOPD/ASRC.faketest.ncf
+    setenv ASCC $INVOPD/ASCC.faketest.ncf
 
     $command 
 
@@ -130,19 +133,11 @@ endif
 if ( $case3_mb == Y ) then
 
     setenv SMK_SOURCE M
+    source $ASSIGNS/ASSIGNS.aero96.ut_aero
     setenv WKDAY_NORMALIZE      Y
-    setenv MCODES /gaia/scratch/smoke/inventory/aero96/mobile/mcodes.txt
     setenv OUTZONE              7
-    setenv INVDIR /gaia/scratch/smoke/inventory/aero96
-    setenv INVOPD /gaia/scratch/smoke/inventory/aero96
-    setenv MBINV  $INVDIR/mobile/mbinv.feb11.ida.txt
-    setenv SIPOLS $INVDIR/sipols.txt
-    setenv COSTCY /env/data/smoke/ge_dat/costcy.txt
-    setenv MSCC   $INVOPD/MSCC.aero96.txt
-    setenv MSRC   $INVOPD/MSRC.aero96.txt
-    setenv MOBL   $INVOPD/mobl.feb11.aero96.ncf
-    setenv SMK_USE_SIPOLS Y
-    setenv SMK_USE_ACTVNAMS N
+    setenv SMK_USE_SIPOLS       Y
+    setenv SMK_USE_ACTVNAMS     N
 
     $command 
 
@@ -151,23 +146,12 @@ endif
 if ( $case3_pt == Y ) then
 
     setenv SMK_SOURCE P
+    source $ASSIGNS/ASSIGNS.aero96.ut_aero
     setenv WKDAY_NORMALIZE      Y
-    setenv IMPORT_AVEINV_YN     Y 
+    setenv IMPORT_AVEINV_YN     N 
     setenv HOUR_SPECIFIC_YN     N
     setenv DAY_SPECIFIC_YN      Y
     setenv OUTZONE              7
-    setenv INVDIR /gaia/scratch/smoke/inventory/aero96
-    setenv INVOPD /gaia/scratch/smoke/inventory/aero96
-    setenv PTINV  $INVDIR/point/ptinv.aero96.list.txt
-    setenv PTDAY  $INVDIR/point/ptday.aero96.list.txt
-    setenv SIPOLS $INVDIR/sipols.txt
-    setenv COSTCY /env/data/smoke/ge_dat/costcy.txt
-    setenv PSCC   $INVOPD/PSCC.aero96.txt
-    setenv PSRC   $INVOPD/PSRC.aero96.txt
-    setenv PNTS   $INVOPD/pnts.aero96.ncf
-    setenv PTREF_ALT $INVOPD/ptref_alt.aero96.txt
-    setenv PDAY   $INVOPD/pday.aero96.ncf        
-    setenv PSTK   /env/data/smoke/ge_dat/stack_defaults_old.txt
 
     $command 
 

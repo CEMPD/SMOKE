@@ -20,6 +20,8 @@ endif
 # Case 1: m3demo case (IDA input formats for area, mobile, and point sources)
 # Case 2: Texas case (EPS input formats for area and point sources)
 # Case 3: Utah case (EMS-95 input formats for ar,mb,& pt sources, w/day-spec pt)
+# Case 4: Net 96
+# Case 5: REMSAD on western US - point only
 
 # Case controls
 set case1_ar  = N
@@ -31,10 +33,11 @@ set case1_all = N
 set case2_ar = N
 set case2_pt = N
 
-set case3_ar = Y
+set case3_ar = N
 set case3_mb = N
 set case3_pt = N
 
+set case5_pt = Y
 
 # Case 1
 ########################################################################
@@ -188,6 +191,53 @@ if ( $case3_pt == Y ) then
     setenv MRG_SOURCE P
     source /env/proj/smoke/work/mrh/assigns/ASSIGNS.aero96.ut_aero
     setenv PSMAT $PSMAT_L
+
+    $command 
+
+endif
+
+# Case 4
+########################################################################
+
+# Case 5
+########################################################################
+
+setenv MRG_REPSTA_YN        N          # Y outputs state totals
+setenv SMK_ASCIIELEV_YN     Y          # Y outputs ASCII elevated file
+setenv MRG_GRDOUT_UNIT      "gm moles/hr"   # units for gridded output file
+setenv MRG_TOTOUT_UNIT      moles/day   # units for state and/or county totals
+setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
+setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
+setenv SPC_INPUT            mole       # [mass|mole] controls speciation merge
+setenv SMK_ASCIIELEV_FMT    UAM        # [UAM] format of ASCII elevated file
+setenv OUTZONE              0     # output time zone of emissions
+setenv UAM_LAYERS           8          # total number of layers
+setenv UAM4_LAYBELOW        4          # below the diffbreak
+setenv UAM4_LAYABOVE        4          # above the diffbreak
+setenv UAM4_HTSFC           0          # height of surface layer in meters
+setenv UAM4_HTLOWR          150        # minimum height below diffbreak in m.
+setenv UAM4_HTUPPR          5000       # minimum height between diffbreak and
+setenv UAM_VERTICAL_METHOD  STACKHGT   # STACKHGT is default
+setenv SMK_CUTOFF_HT        40.   
+setenv UAM4_DIFFBREAK_UNIT  0         # default is 0
+setenv UAM4_REGIONTOP_UNIT  0         # default is 0
+
+if ( $case5_pt == Y ) then
+
+    setenv MRG_SOURCE P
+    setenv G_STDATE 1996258
+    setenv G_STTIME 00
+    setenv INDIR /env/scratch/long/mhouyoux/remsad
+    setenv PNTS  $INDIR/pnts.net96.ncf
+    setenv PSRC  $INDIR/PSRC.net96.txt
+    setenv PSMAT $INDIR/psmat.mole.cbiv.remsad.ncf
+    setenv PGMAT $INDIR/pgmat.us36.remsad.ncf
+    setenv PELV  $INDIR/PELV.net96.txt
+    setenv PTMP  $INDIR/ptmp.1996258.1.remsad.ncf
+    setenv PGTS  $INDIR/pgts.out.ncf
+    setenv PGTSELEV $INDIR/pgtselev.txt
+    setenv STACK_GROUPS $INDIR/stack_groups.us36.net96.ncf
+    setenv G_GRIDPATH $INDIR/G_GRIDPATH.us36
 
     $command 
 

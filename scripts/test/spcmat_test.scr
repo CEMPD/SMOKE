@@ -21,6 +21,7 @@ endif
 # Case 1: m3demo case (IDA input formats for area, mobile, and point sources)
 # Case 2: Texas case (EPS input formats for area and point sources)
 # Case 3: Utah case (EMS-95 input formats for ar,mb,& pt sources, w/day-spec pt)
+# Case 4: Net36 case (IDA input formats are area, mobile (emis), & point)
 
 # Case controls
 set case1_ar = N
@@ -30,10 +31,13 @@ set case1_pt = N
 set case2_ar = N
 set case2_pt = N
 
-set case3_ar = Y
-set case3_mb = Y
-set case3_pt = Y
+set case3_ar = N
+set case3_mb = N
+set case3_pt = N
 
+set case4_ar = N
+set case4_mb = Y
+set case4_pt = N
 
 # Case 1
 ########################################################################
@@ -131,6 +135,39 @@ if ( $case3_pt == Y ) then
 
     setenv SMK_SOURCE P
     source /env/proj/smoke/work/mrh/assigns/ASSIGNS.aero96.ut_aero
+
+    $command 
+
+endif
+
+# Case 4
+########################################################################
+
+if ( $case4_ar == Y ) then
+
+    setenv SMK_SOURCE A
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.net96.us36
+    setenv POLLUTANT_CONVERSION Y     # Y uses ROG to TOG file, for example
+
+    $command 
+
+endif
+
+if ( $case4_mb == Y ) then
+
+    setenv SMK_SOURCE M
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.net96.us36
+    setenv POLLUTANT_CONVERSION Y     # Y uses ROG to TOG file, for example
+
+    $command 
+
+endif
+
+if ( $case4_pt == Y ) then
+
+    setenv SMK_SOURCE P
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.net96.us36
+    setenv POLLUTANT_CONVERSION Y     # Y uses ROG to TOG file, for example
 
     $command 
 

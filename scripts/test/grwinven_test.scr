@@ -5,6 +5,7 @@
 
 # General settings
 setenv RUN_GRWINVEN Y
+setenv PROMPTFLAG N
 
 set debugmode = Y
 
@@ -20,18 +21,22 @@ endif
 
 # Case controls
 set case1_ar = N
-set case1_mb = Y
-set case1_pt = N
+set case1_mb = N
+set case1_pt = Y
 
 
 # Case 1
 ########################################################################
 
+setenv SMK_NUM_CTLMAT       1     # number of control/projection matrices
+setenv SMK_GRWSMKOUT_YN     N     # Y outputs a SMOKE-formatted inventory
+setenv SMK_GRWIDAOUT_YN     Y     # Y outputs an IDA-formatted inventory
+
 if ( $case1_ar == Y ) then
 
     setenv SMK_SOURCE A
     setenv FYEAR 2007
-    source /env/proj/smoke/assigns/ASSIGNS.m3demo.cb-iv.ed36_test
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.m3demo.cb-iv.ed36
 
     setenv GCNTL   $APROJ
     setenv ACMAT01 $APMAT
@@ -44,7 +49,7 @@ if ( $case1_mb == Y ) then
 
     setenv SMK_SOURCE M
     setenv FYEAR 2007
-    source /env/proj/smoke/assigns/ASSIGNS.m3demo.cb-iv.ed36_test
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.m3demo.cb-iv.ed36
 
     setenv GCNTL   $MPROJ
     setenv MCMAT01 $MPMAT
@@ -57,7 +62,7 @@ if ( $case1_pt == Y ) then
 
     setenv SMK_SOURCE P
     setenv FYEAR 2007
-    source /env/proj/smoke/assigns/ASSIGNS.m3demo.cb-iv.ed36_test
+    source /env/proj/smoke/work/mrh/assigns/ASSIGNS.m3demo.cb-iv.ed36
 
     setenv GCNTL   $PPROJ
     setenv PCMAT01 $PPMAT
