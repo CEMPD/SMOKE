@@ -57,9 +57,11 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
         
 C...........   EXTERNAL FUNCTIONS and their descriptions
+        CHARACTER*2     CRLF
         INTEGER         INDEX1
+        INTEGER         ENVINT
         
-        EXTERNAL        INDEX1
+        EXTERNAL        CRLF, INDEX1, ENVINT
         
 C.........  Pollutant names
         CHARACTER(LEN=IOVLEN3),PARAMETER :: VOCNAM = 'VOC'
@@ -70,6 +72,7 @@ C.........  Pollutant names
         
 C.........   Other local variables
         INTEGER  I,J,S        ! counters and indices
+        INTEGER  IOS          ! I/O status
         INTEGER  POL          ! pollutant number
         INTEGER  CURRPOS      ! current position in POLVAL and IPOSCOD arrays
         INTEGER  VNMPOS       ! position of VOC in pollutant names array
@@ -79,6 +82,10 @@ C.........   Other local variables
         INTEGER  VOCPOS       ! location of VOC entry in srcs array
         INTEGER  TOGPOS       ! location of TOG entry in srcs array
         INTEGER  TOXPOS       ! position of NOI toxic in poll name array
+        INTEGER  MXWARN       ! maximum number of warnings
+        INTEGER :: NWARN = 0   ! current number of warnings
+        INTEGER :: NCRNOTOX = 0! number of sources with criteria but no toxics
+        INTEGER :: NTOXNOCR = 0! number of sources with toxics but no criteria
         
         REAL     VOCEANN      ! summed annual VOC emissions
         REAL     TOGEANN      ! summed annual TOG emissions
@@ -96,6 +103,10 @@ C.........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine SETNONHAP
+
+C.........  Get maximum number of warnings
+        MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
+        NWARN = 0
 
 C.........  Find position of pollutant names in pollutant array
         VNMPOS  = INDEX1( VOCNAM, MXIDAT, INVDNAM )
@@ -223,31 +234,51 @@ C                       subtract toxic emissions from criteria values
                 
 C.........................  Give warning if source has toxics but no criteria
                         IF( VOCPOS == 0 .AND. FNDVOC ) THEN
-                            MESG = 'WARNING: Source has VOC toxic ' //
-     &                             'but no criteria emissions'
-                            CALL M3MESG( MESG )
+                            IF( NWARN <= MXWARN ) THEN
+                                MESG = 'WARNING: Source has toxic ' //
+     &                                 'but no criteria emissions'
+                                CALL M3MESG( MESG )
+                                NWARN = NWARN + 1
+                            END IF
+                        
+                            NTOXNOCR = NTOXNOCR + 1
                             EFLAG = .TRUE.
                         END IF
                     
                         IF( TOGPOS == 0 .AND. FNDTOG ) THEN
-                            MESG = 'WARNING: Source has TOG toxic ' //
-     &                             'but no criteria emissions'
-                            CALL M3MESG( MESG )
+                            IF( NWARN <= MXWARN ) THEN
+                                MESG = 'WARNING: Source has toxic ' //
+     &                                 'but no criteria emissions'
+                                CALL M3MESG( MESG )
+                                NWARN = NWARN + 1
+                            END IF
+                            
+                            NTOXNOCR = NTOXNOCR + 1
                             EFLAG = .TRUE.
                         END IF
                     
 C.........................  Give warning if source has criteria but no toxics
                         IF( VOCPOS /= 0 .AND. .NOT. FNDVOC ) THEN
-                            MESG = 'WARNING: Source has VOC criteria' //
-     &                             ' but no toxic emissions'
-                            CALL M3MESG( MESG )
+                            IF( NWARN <= MXWARN ) THEN
+                                MESG = 'WARNING: Source has VOC ' //
+     &                                 'criteria but no toxic emissions'
+                                CALL M3MESG( MESG )
+                                NWARN = NWARN + 1
+                            END IF
+                            
+                            NCRNOTOX = NCRNOTOX + 1
                             EFLAG = .TRUE.
                         END IF
                     
                         IF( TOGPOS == 0 .AND. FNDTOG ) THEN
-                            MESG = 'WARNING: Source has TOG criteria' //
-     &                             ' but no toxic emissions'
-                            CALL M3MESG( MESG )
+                            IF( NWARN <= MXWARN ) THEN
+                                MESG = 'WARNING: Source has TOG ' //
+     &                                 'criteria but no toxic emissions'
+                                CALL M3MESG( MESG )
+                                NWARN = NWARN + 1
+                            END IF
+                            
+                            NCRNOTOX = NCRNOTOX + 1
                             EFLAG = .TRUE.
                         END IF
 
@@ -261,10 +292,14 @@ C.............................  Subtract toxic emissions from criteria emissions
 
 C.................................  Check that NONHAP value is not negative
                                 IF( POLVAL( VOCPOS,NEM ) < 0. ) THEN
+                                  IF( NWARN <= MXWARN ) THEN
                                     MESG = 'WARNING: Toxic emissions' //
      &                                     ' greater than criteria'
                                     CALL M3MESG( MESG )
-                                    POLVAL( VOCPOS,NEM ) = .0
+                                    NWARN = NWARN + 1
+                                  END IF
+                                    
+                                  POLVAL( VOCPOS,NEM ) = .0
                                 END IF
      
 C.................................  Rename VOC to NONHAPVOC
@@ -279,10 +314,14 @@ C.................................  Rename VOC to NONHAPVOC
      
 C.................................  Check that NONHAP value is not negative
                                 IF( POLVAL( TOGPOS,NEM ) < 0. ) THEN
+                                  IF( NWARN <= MXWARN ) THEN
                                     MESG = 'WARNING: Toxic emissions' //
      &                                     ' greater than criteria'
                                     CALL M3MESG( MESG )
-                                    POLVAL( TOGPOS,NEM ) = .0
+                                    NWARN = NWARN + 1
+                                  END IF
+                                    
+                                  POLVAL( TOGPOS,NEM ) = .0
                                 END IF
                             
 C................................  Rename TOG to NONHAPTOG
@@ -311,6 +350,23 @@ C.........................  Reset flags and values
             END DO  ! loop through pollutants
             
         END DO  ! loop through sources
+
+        WRITE( MESG,94010 )
+     &     'During processing, the following number of sources ' //
+     &     'were encountered: ' // CRLF() // BLANK10 //
+     &     'Sources with VOC emissions but no toxic emissions: ', 
+     &     NCRNOTOX, CRLF() // BLANK10 //
+     &     'Sources with toxic emissions but no VOC emissions: ', 
+     &     NTOXNOCR
+        CALL M3MESG( MESG )
+
+        RETURN
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
         END SUBROUTINE SETNONHAP
        
