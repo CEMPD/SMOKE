@@ -1,0 +1,76 @@
+# Version @(#)$Id$
+# Path    $Source$
+# Date    $Date$
+C....................................................................
+C  INCLUDE FILE  B3DIMS3.EXT
+C
+C  CONTAINS:  
+C       dimensioning parameters for BEIS3 Prototype
+C
+C  DEPENDENT UPON:  none
+C
+C  REVISION HISTORY:
+C
+C....................................................................
+
+      INTEGER   NSEF            !  # of em class in Summer emission factor table
+      INTEGER   LUSES           !  dim:  land use ( gras, fore, wetl, agri
+      INTEGER   BSPCS           !  biogenic emission categories 
+      INTEGER   TREETY          !  dim:  tree types (pine, decid, conif)
+      INTEGER   GRAS            !  luse subscript for grass
+      INTEGER   FORE            !  luse subscript for forest
+      INTEGER   WETL            !  luse subscript for wetlands
+      INTEGER   AGRI            !  luse subscript for agriculture
+      INTEGER   RMTREE          !  luse subscript for agriculture
+      INTEGER   SPTREE          !  luse subscript for agriculture
+      INTEGER   NSEASONS        !  number of seasons modeled (2 for now)
+  
+      PARAMETER ( 
+     &            NSEF     =   4,
+     &            LUSES    =   4, 
+     &            BSPCS    =   4, 
+     &            TREETY   =   3,
+     &            GRAS     =   1, FORE = 2, WETL = 3, AGRI = 4,
+     &            RMTREE   =   9,  
+     &            SPTREE   =   5,
+     &            NSEASONS =   2   )
+
+
+C.......   Chemical-species-related parameters:
+
+      INTEGER   BCATS           !  dim for biogenic emissions species
+      INTEGER   ISOP            !  bioem  subscript for ISOP
+      INTEGER   MONO            !  bioem  subscript for MONO
+      INTEGER   OVOC            !  bioem  subscript for OVOC
+      INTEGER   NO              !  bioem  subscript for NO
+      INTEGER   NNO             !  output em subscript for NO
+      INTEGER   NMONO           !  output em subscript for MONO
+      INTEGER   NOVOC           !  output em subscript for OVOC
+      INTEGER   NISO            !  output em subscript for ISOP
+      INTEGER   NSUMMER         !  summer flag
+      INTEGER   NWINTER         !  winter flag
+
+      PARAMETER ( BCATS    = 5 ,   
+     &            ISOP     = 1, MONO = 2, OVOC = 3, NO   = 4 ,
+     &            NSUMMER  = 1, NWINTER = 2 )  
+
+C.......
+
+      REAL          SOL2PAR    ! Radiation (w/m**2) to PAR conv factor
+
+      PARAMETER( SOL2PAR = 2.07 )       ! new BEIS2 from Alados 1996
+
+C.......   Names for beis species, emitted model species:
+
+      CHARACTER*4    BIOTYPES( BCATS )
+      DATA           BIOTYPES / 'ISOP', 'MONO', 'OVOC', 'NO', 'LAI' /
+
+      CHARACTER*4    BIOSPC( BSPCS )
+      DATA           BIOSPC /  'ISOP', 'MONO', 'OVOC', 'NO  ' /
+
+      CHARACTER*1    SEASON( NSEASONS )
+      DATA           SEASON /  'S' , 'W' /
+
+
+C................   end   B3DIMS3.EXT   ....................................
+
