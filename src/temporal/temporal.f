@@ -530,8 +530,7 @@ C.................  Skip activities that do not have emissions types
                 IF( NETYPE( I ) .LE. 0 ) CYCLE            
 
 C.................  Set up emission process variable names
-                CALL EFSETUP( 'NONE', MODELNAM, MXVARS3, NEFS, VNAME3D, 
-     &                         UNITS3D, VDESC3D, VOLNAM )
+                CALL EFSETUP( 'NONE', MODELNAM, NEFS, VOLNAM )
 
             END DO
 
