@@ -877,7 +877,7 @@ C.............  Ensure SCC needed
 
             FIP  = STR2INT( LINE(  1: 5 ) )
             PLT  = STR2INT( LINE(  7:11 ) )
-            STK  = STR2INT( LINE( 13:15 ) )
+            STK  = STR2INT( LINE( 12:15 ) )
             IMON = STR2INT( LINE( 38:40 ) )
             IWEK = STR2INT( LINE( 42:44 ) )
             IDIU = STR2INT( LINE( 45:48 ) )
@@ -1622,7 +1622,9 @@ C.....................  file structure is IDDATA3
 
                             V = EIPTR_D( J )
                             S = INDXD( I )
-                            EMISV( S,V ) = EMISD( I,J )
+                            IF ( EMISD( I,J ) .NE. BADVAL3 ) THEN
+                               EMISV( S,V ) = EMISD( I,J )
+                            ENDIF
 
 122                     CONTINUE
 125                 CONTINUE
@@ -1715,7 +1717,13 @@ C.....................  file structure is IDDATA3
 
                         V = EIPTR_H( J )
                         S = INDXH( I )
-                        EMIST( S,V ) = EMISH( I,J )
+
+C......................  Do not overwrite daily records read in
+C......................  above.
+
+                        IF ( EMISH( I,J ) .NE. BADVAL3 ) THEN 
+                          EMIST( S,V ) = EMISH( I,J )
+                        ENDIF
 
 161                 CONTINUE
 166             CONTINUE
