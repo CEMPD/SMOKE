@@ -70,10 +70,11 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2       CRLF
+        LOGICAL           ENVYN
         INTEGER           PROMPTFFILE
         INTEGER           SECSDIFF
 
-        EXTERNAL  CRLF, PROMPTFFILE, SECSDIFF
+        EXTERNAL  CRLF, ENVYN, PROMPTFFILE, SECSDIFF
 
 C...........   LOCAL PARAMETERS
         CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -86,12 +87,13 @@ C...........   Speciation matrices
         INTEGER, ALLOCATABLE :: SSMAT( :,: ) ! mass-based
 
 C...........   File units and logical/physical names
-	INTEGER :: ADEV = 0   !  ASCII elevated file
+        INTEGER :: ADEV = 0   !  ASCII elevated file
         INTEGER :: CDEV = 0   !  reports configuration file
         INTEGER :: EDEV = 0   !  elevated source ID file
         INTEGER :: GDEV = 0   !  gridding supplemental file
         INTEGER :: LDEV = 0   !  log-device
         INTEGER :: NDEV = 0   !  SCC descriptions
+        INTEGER :: NIDEV = 0  !  SIC descriptions
         INTEGER :: PDEV = 0   !  speciation supplemental file
         INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
         INTEGER :: SDEV = 0   !  ASCII inven input file
@@ -118,15 +120,16 @@ C...........   Other local variables
 
         INTEGER      HWID                 ! header width
         INTEGER      IOS                  ! i/o status
-	INTEGER      EDIDX                ! ending index of loop
+        INTEGER      EDIDX                ! ending index of loop
         INTEGER   :: GDIM    = 0          ! dimension of contiguous gridding mat
         INTEGER   :: NSLIN   = 1          ! no. mole input speciation variables
         INTEGER   :: NSSIN   = 1          ! no. mass input speciation variables
 
-	REAL         RNFILES              ! real number of files per report
-	REAL         RNSECT               ! real number of sections per report
+        REAL         RNFILES              ! real number of files per report
+        REAL         RNSECT               ! real number of sections per report
 
-        LOGICAL       :: EFLAG = .FALSE.        ! true: error found
+        LOGICAL       :: EFLAG    = .FALSE.     ! true: error found
+        LOGICAL       :: ZEROFLAG = .FALSE.     ! true: report zero values
 
         CHARACTER*300          MESG             !  message buffer
         CHARACTER(LEN=QAFMTL3) OUTFMT           !  data output format string
@@ -152,10 +155,15 @@ C           get global file flags and settings, and determine maximum
 C           values for use in memory allocation.
         CALL SCANREPC( CDEV )
 
+C.........  Get environment variable settings
+        ZEROFLAG = ENVYN( 'REPORT_ZERO_VALUES', 'Leave entries ' //
+     &                    'with values equal to zero in reports',
+     &                    .FALSE., IOS )
+
 C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, PRNAME, 
      &                  SLNAME, SSNAME, TNAME, RDEV, SDEV, GDEV, PDEV, 
-     &                  TDEV, EDEV, YDEV, NDEV, ADEV )
+     &                  TDEV, EDEV, YDEV, NDEV, NIDEV, ADEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -186,8 +194,8 @@ C           so that arrays can be passed through subroutines).
 
 C.........  Read one-time input file data
         CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV, EDEV, 
-     &                YDEV, NDEV, ADEV, ENAME, CUNAME, GNAME, LNAME,
-     &                PRNAME, SLNAME, SSNAME, GMAT( 1 ),
+     &                YDEV, NDEV, NIDEV, ADEV, ENAME, CUNAME, GNAME, 
+     &                LNAME, PRNAME, SLNAME, SSNAME, GMAT( 1 ),
      &                GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ),
      &                SSMAT, SLMAT )
 
@@ -210,16 +218,16 @@ C.........  Loop through reports
 
 C............  Determine number of output files/sections per report
 
-	    IF( RPT_%RPTNVAR .GT. RPT_%NUMDATA ) THEN
-		RPT_%RPTNVAR = RPT_%NUMDATA
-	    END IF
+            IF( RPT_%RPTNVAR .GT. RPT_%NUMDATA ) THEN
+                RPT_%RPTNVAR = RPT_%NUMDATA
+            END IF
 
-	    IF( RPT_%RPTMODE .EQ. 1 ) THEN
+            IF( RPT_%RPTMODE .EQ. 1 ) THEN
 
-	        RPT_%NUMSECT = 1
+                RPT_%NUMSECT = 1
 
                 RNFILES = REAL( RPT_%NUMDATA ) / REAL( RPT_%RPTNVAR )
-	            
+                    
                 IF( RNFILES .LT. 1.0 ) THEN
 
                     RPT_%NUMFILES = 1
@@ -227,7 +235,7 @@ C............  Determine number of output files/sections per report
                 ELSE
 
                     RPT_%NUMFILES = INT( RNFILES )
-	
+        
                     IF( RNFILES .GT. RPT_%NUMFILES ) THEN
                         RPT_%NUMFILES = RPT_%NUMFILES + 1
                     END IF
@@ -236,39 +244,39 @@ C............  Determine number of output files/sections per report
 
             ELSE IF( RPT_%RPTMODE .EQ. 2 ) THEN
 
-		RPT_%NUMFILES = 1
+                RPT_%NUMFILES = 1
 
-		RNSECT = REAL( RPT_%NUMDATA ) / REAL( RPT_%RPTNVAR )
+                RNSECT = REAL( RPT_%NUMDATA ) / REAL( RPT_%RPTNVAR )
 
-		IF( RNSECT .LT. 1.0 ) THEN
+                IF( RNSECT .LT. 1.0 ) THEN
 
-		    RPT_%NUMSECT = 1
+                    RPT_%NUMSECT = 1
 
-		ELSE
+                ELSE
 
-		    RPT_%NUMSECT = INT( RNSECT )
+                    RPT_%NUMSECT = INT( RNSECT )
 
-		    IF( RNSECT .GT. RPT_%NUMSECT ) THEN
-			RPT_%NUMSECT = RPT_%NUMSECT + 1
-		    END IF
+                    IF( RNSECT .GT. RPT_%NUMSECT ) THEN
+                        RPT_%NUMSECT = RPT_%NUMSECT + 1
+                    END IF
 
-		END IF
+                END IF
 
-	    ELSE
+            ELSE
 
                 RPT_%NUMFILES = 1
-		RPT_%NUMSECT = 1
+                RPT_%NUMSECT = 1
 
             END IF
 
-	    ALLRPT( N )%NUMFILES = RPT_%NUMFILES
-	    ALLRPT( N )%NUMSECT  = RPT_%NUMSECT
-	    ALLRPT( N )%RPTNVAR  = RPT_%RPTNVAR
-	
+            ALLRPT( N )%NUMFILES = RPT_%NUMFILES
+            ALLRPT( N )%NUMSECT  = RPT_%NUMSECT
+            ALLRPT( N )%RPTNVAR  = RPT_%RPTNVAR
+        
 C............  Allocate output file number array
-	    ALLOCATE( ODEV( RPT_%NUMFILES ), STAT=IOS )
-	    CALL CHECKMEM( IOS, 'ODEV', PROGNAME )
-	    ODEV = 0
+            ALLOCATE( ODEV( RPT_%NUMFILES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ODEV', PROGNAME )
+            ODEV = 0
 
 
             WRITE( MESG,94010 ) 
@@ -304,9 +312,9 @@ c                    CALL WRMETADAT( FDEV )
 c                    note: Need to write this
 
 C.....................  Close output file(s)
-		    DO I = 1, RPT_%NUMFILES
+                    DO I = 1, RPT_%NUMFILES
                         CLOSE( ODEV( I ) )
-		    END DO
+                    END DO
 
                 END IF
 
@@ -316,7 +324,7 @@ C                   previous file number.
 
             END IF
 
-	
+        
             MESG = BLANK10 // 'Selecting records...'
             CALL M3MSG2( MESG )
 C.............  Select inventory records
@@ -350,22 +358,22 @@ C               average day emissions.
 
 C.............  Determine input units and create conversion factors
             CALL REPUNITS( N )
-		
+                
 C.............  If report is multifile or database
-	    IF( RPT_%RPTMODE .EQ. 1 .OR. RPT_%RPTMODE .EQ. 3
-     &		.OR. RPT_%RPTMODE .EQ. 0 ) THEN
-		EDIDX = RPT_%NUMFILES
+            IF( RPT_%RPTMODE .EQ. 1 .OR. RPT_%RPTMODE .EQ. 3
+     &          .OR. RPT_%RPTMODE .EQ. 0 ) THEN
+                EDIDX = RPT_%NUMFILES
 
 C.............  If report is multisection 
-	    ELSE
-		EDIDX = RPT_%NUMSECT
+            ELSE
+                EDIDX = RPT_%NUMSECT
 
-	    END IF
+            END IF
 
-	    DO I = 1, EDIDX
+            DO I = 1, EDIDX
 
-	        J = I
-	        IF( RPT_%RPTMODE .EQ. 2 ) J = 1
+                J = I
+                IF( RPT_%RPTMODE .EQ. 2 ) J = 1
 
 C.............  Write report header
                 CALL WRREPHDR( ODEV( J ), N, I,  HWID, OUTFMT )
@@ -376,12 +384,14 @@ C               for the appropriate time resolution...
 C.............  For mole-based speciation...
                 IF( RPT_%USESLMAT ) THEN
                     CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
-     &                     TNAME, LNAME, OUTFMT, SLMAT, EFLAG )
+     &                     TNAME, LNAME, OUTFMT, SLMAT, ZEROFLAG, 
+     &                     EFLAG )
 
 C.............  For mass-based and no speciation
                 ELSE
                     CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
-     &                     TNAME, LNAME, OUTFMT, SSMAT, EFLAG )
+     &                     TNAME, LNAME, OUTFMT, SSMAT, ZEROFLAG, 
+     &                     EFLAG )
                 END IF
 
 C.............  Save file number to use in next iteration
