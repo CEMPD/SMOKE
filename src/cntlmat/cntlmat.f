@@ -2,7 +2,7 @@
         PROGRAM CNTLMAT
 
 C***********************************************************************
-C  program body starts at line
+C  program body starts at line 135
 C
 C  DESCRIPTION:
 C
@@ -19,7 +19,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1998, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -262,17 +262,22 @@ C           the final output files.
         CALL PKTLOOP( CDEV, ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, CPYEAR,
      &                ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
 
-C..........  Process control matrices that depend on pollutants...
+C.........  Open reports file
+        RDEV = PROMPTFFILE( 
+     &           'Enter logical name for ASCII CONTROL REPORTS file',
+     &           .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
+
+C.........  Process control matrices that depend on pollutants...
 
 C.........  Multiplicative matrix
         IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG ) THEN
 
-C.........  Open control matrix
+C.............  Open control matrix
             CALL OPENCMAT( ENAME, 'MULTIPLICATIVE', MNAME )
 
-C.........  Write-out control matrix
+C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
-            CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, 
+            CALL GENMULTC( ATMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, RDEV,
      &                     NCPE, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG )
 
@@ -295,36 +300,11 @@ C.........  Post-process temporary report file to create final report file
 C.........  Successful completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
-C NOTE: Prune format statements, if possible
-
 C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Informational (LOG) message formats... 92xxx
-
-92000   FORMAT( 5X, A )
-
-
-C...........   Formatted file I/O formats............ 93xxx
-
-93000   FORMAT( A )
-
-93010   FORMAT( A, ':', I7, ',', I8, ',', I4.4, ',', I3.3, ' -- ', 
-     &          3( F8.5, '~>', F8.5, : '; ' )  )
-
-93020   FORMAT( A, ':', I4, ' to ', I4, 1X, I5.5, 1X, I4,
-     &          3( F8.5, '~>', F8.5, : '; ' )  )
-
-93030   FORMAT( A, ':', 1X, I5.5, 1X, I4,
-     &          3( F8.5, '~>', F8.5, : '; ' )  )
-
 
 C...........   Internal buffering formats............ 94xxx
 
-94910   FORMAT( A, :, ' at line', I7, :,  '; IOSTAT=', I7 )
-
-94920   FORMAT( A, ' "', A, :,  '" at line', I7, :, '; IOSTAT=', I7 )
-
-94930   FORMAT( A )
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
         END PROGRAM CNTLMAT
 
