@@ -242,9 +242,9 @@ C.................  Determine the year and projection status of the hourly
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
                 ATNAME = AENAME  ! array
-        	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        	ANIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
-        	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
+                NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
+                ANIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
+                NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
 
                 ALLOCATE( AEINAM ( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AEINAM', PROGNAME )
@@ -461,17 +461,17 @@ C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
                 MTNAME = MENAME  ! array
 
-        	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        	MNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
-        	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
-        	MNIACT = GETIFDSC( FDESC3D, '/ACTIVITIES/', .FALSE. )
-        	NPACT  = GETIFDSC( FDESC3D, '/PER ACTIVITY/', .FALSE. )
+                NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
+                MNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
+                NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
+                MNIACT = GETIFDSC( FDESC3D, '/ACTIVITIES/', .FALSE. )
+                NPACT  = GETIFDSC( FDESC3D, '/PER ACTIVITY/', .FALSE. )
 
-        	MNIPOL = MAX( 0, MNIPOL )
-        	NPPOL  = MAX( 0, NPPOL )
-        	MNIACT = MAX( 0, MNIACT )
-        	NPACT  = MAX( 0, NPACT )
-        	MNIPPA = MNIPOL + MNIACT
+                MNIPOL = MAX( 0, MNIPOL )
+                NPPOL  = MAX( 0, NPPOL )
+                MNIACT = MAX( 0, MNIACT )
+                NPACT  = MAX( 0, NPACT )
+                MNIPPA = MNIPOL + MNIACT
 
                 ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
@@ -669,9 +669,9 @@ C.................  Determine the year and projection status of the hourly
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
                 PTNAME = PENAME  ! array
-        	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        	PNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
-        	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
+                NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
+                PNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
+                NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
 
                 ALLOCATE( PEINAM( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PEINAM', PROGNAME )
@@ -1767,7 +1767,7 @@ C                  name are the same
                 END IF
 
                 NAMES1( I ) = VNAMESET( 2 )
-	        NAMES2( I ) = VNAMESET( IDX2 )
+                NAMES2( I ) = VNAMESET( IDX2 )
                 UNITS ( I ) = VUNITSET( IDX2 )
 
 C...............  Close output file for this variable
