@@ -274,6 +274,10 @@ C           and the master pollutant names
         CALL CHECKMEM( IOS, 'EMNAM', PROGNAME )
         ALLOCATE( EMIDX( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMIDX', PROGNAME )
+        AEMNAM = ' '  ! array
+        BEMNAM = ' '  ! array
+        MEMNAM = ' '  ! array
+        PEMNAM = ' '  ! array
 
 C.........  Call subprogram to store species names in appropriate order
 C           for all source categories and the total.

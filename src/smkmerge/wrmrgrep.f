@@ -249,15 +249,15 @@ C.....................  Set names and units for totals output
 C.....................  Get indices for source categories, depending on
 C                       speciation or not
                     IF( SFLAG ) THEN
-                        KA = INDEX1( SBUF, ANMSPC, AEMNAM )
-                        KB = INDEX1( SBUF, BNMSPC, BEMNAM )
-                        KM = INDEX1( SBUF, MNMSPC, MEMNAM )
-                        KP = INDEX1( SBUF, PNMSPC, PEMNAM )
+                        IF( AFLAG ) KA = INDEX1( SBUF, ANMSPC, AEMNAM )
+                        IF( BFLAG ) KB = INDEX1( SBUF, BNMSPC, BEMNAM )
+                        IF( MFLAG ) KM = INDEX1( SBUF, MNMSPC, MEMNAM )
+                        IF( PFLAG ) KP = INDEX1( SBUF, PNMSPC, PEMNAM )
                     ELSE
-                        KA = INDEX1( SBUF, ANIPOL, AEINAM )
+                        IF( AFLAG ) KA = INDEX1( SBUF, ANIPOL, AEINAM )
                         KB = 0
-                        KM = INDEX1( SBUF, MNIPPA, MEANAM )
-                        KP = INDEX1( SBUF, PNIPOL, PEINAM )
+                        IF( MFLAG ) KM = INDEX1( SBUF, MNIPPA, MEANAM )
+                        IF( PFLAG ) KP = INDEX1( SBUF, PNIPOL, PEINAM )
                     END IF
 
 C.....................  Set names and units for area sources

@@ -620,10 +620,10 @@ C.....................  Set species or pollutant/activity name for this
 C                       iteration
         	    IF( SFLAG ) THEN
                         SBUF = EMNAM( SPINDEX( V,N ) )
-                        KA   = INDEX1( SBUF, ANMSPC, AEMNAM )
-                        KB   = INDEX1( SBUF, BNMSPC, BEMNAM )
-                        KM   = INDEX1( SBUF, MNMSPC, MEMNAM )
-                        KP   = INDEX1( SBUF, PNMSPC, PEMNAM )
+                        IF( AFLAG ) KA  = INDEX1( SBUF, ANMSPC, AEMNAM )
+                        IF( BFLAG ) KB  = INDEX1( SBUF, BNMSPC, BEMNAM )
+                        IF( MFLAG ) KM  = INDEX1( SBUF, MNMSPC, MEMNAM )
+                        IF( PFLAG ) KP  = INDEX1( SBUF, PNMSPC, PEMNAM )
                     ELSE
                         SBUF = EANAM( SIINDEX( V,N ) )
                     END IF

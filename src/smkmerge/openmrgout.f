@@ -21,17 +21,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -61,12 +61,15 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2     CRLF
         INTEGER         INDEX1
+        INTEGER         JUNIT
         CHARACTER*16    MULTUNIT
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
+        LOGICAL         SETENVVAR
         CHARACTER*16    VERCHAR
 
-        EXTERNAL  CRLF, INDEX1, MULTUNIT, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
+     &            PROMPTMFILE, SETENVVAR, VERHCAR
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
@@ -78,18 +81,33 @@ C.........  Base and future year per
 
 C.........  Other local variables
 
-        INTEGER         I, J, K, L, L1, L2, LD, LJ, N, V
+        INTEGER         I, J, K, L, L1, L2, L3, L4, LD, LJ, N, V
+
+        INTEGER         IOS1, IOS2        ! i/o ENVSTR statuses
+
+        LOGICAL      :: EFLAG = .FALSE.   ! true: error is found
 
         CHARACTER*50    RTYPNAM      ! name for type of state/county report file
         CHARACTER*50    UNIT         ! tmp units buffer
-        CHARACTER*300   BUFFER       ! tmp buffer
-        CHARACTER*300   MESG         ! message buffer
+
+        CHARACTER*128   OUTSCEN      ! output scenario name
+        CHARACTER*128   FILEDESC     ! output file description
+        CHARACTER*256   MESG         ! message buffer
+        CHARACTER*256   BUFFER       ! tmp buffer
+        CHARACTER*256   OUTDIR       ! output path
         CHARACTER(LEN=IODLEN3) DESCBUF ! variable description buffer
 
         CHARACTER*16 :: PROGNAME = 'OPENMRGOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENMRGOUT
+
+C.........  Evaluate environment variables to possibly use to build output
+C           physical file names if logical file names are not defined.
+        CALL ENVSTR( 'OUTPUT', 'Output directory', ' ', OUTDIR, IOS1 )
+        IF ( IOS1 .EQ. 0 ) L3 = LEN_TRIM( OUTDIR )
+        CALL ENVSTR( 'ESCEN', 'Emission scenario', ' ', OUTSCEN, IOS2 )
+        IF ( IOS2 .EQ. 0 ) L4 = LEN_TRIM( OUTSCEN )
 
 C.........  Set default output file names
         CALL MRGONAMS     
@@ -136,27 +154,34 @@ C.............  Prompt for and gridded open file(s)
                 CALL SETUP_VARIABLES( ANIPOL, ANMSPC, AEINAM, AEMNAM )
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Area source emissions data'
-                AONAME = PROMPTMFILE(  
-     &            'Enter name for AREA-SOURCE GRIDDED OUTPUT file',
-     &            FSUNKN3, AONAME, PROGNAME )
+
+C.................  Open by logical name or physical name
+                FILEDESC = 'AREA-SOURCE GRIDDED OUTPUT file'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',AONAME,I ) 
+        
             END IF 
 
             IF( BFLAG ) THEN
                 CALL SETUP_VARIABLES( BNIPOL, BNMSPC, BEINAM, BEMNAM )
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Biogenic source emissions data'
-                BONAME = PROMPTMFILE(  
-     &            'Enter name for BIOGENIC-SOURCE GRIDDED OUTPUT file',
-     &            FSUNKN3, BONAME, PROGNAME )
-            END IF 
+
+C.................  Open by logical name or physical name
+                FILEDESC = 'BIOGENIC GRIDDED OUTPUT file'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',BONAME,I ) 
+
+           END IF 
 
             IF( MFLAG ) THEN
                 CALL SETUP_VARIABLES( MNIPPA, MNMSPC, MEANAM, MEMNAM )
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Mobile source emissions data'
-                MONAME = PROMPTMFILE(  
-     &            'Enter name for MOBILE-SOURCE GRIDDED OUTPUT file',
-     &            FSUNKN3, MONAME, PROGNAME )
+
+C.................  Open by logical name or physical name
+                FILEDESC = 'MOBILE-SOURCE GRIDDED OUTPUT file'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',MONAME,I ) 
+
+
             END IF 
 
             IF( PFLAG ) THEN
@@ -172,9 +197,11 @@ C.............  Prompt for and gridded open file(s)
                     VGLVS3D = 0  ! array
                 ENDIF
                 FDESC3D( 1 ) = 'Point source emissions data'
-                PONAME = PROMPTMFILE(  
-     &            'Enter name for POINT-SOURCE GRIDDED OUTPUT file',
-     &            FSUNKN3, PONAME, PROGNAME )
+
+C.................  Open by logical name or physical name
+                FILEDESC = 'POINT-SOURCE GRIDDED OUTPUT file'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',PONAME,I ) 
+
             END IF 
 
             IF( XFLAG ) THEN
@@ -190,9 +217,11 @@ C.............  Prompt for and gridded open file(s)
                    VGLVS3D = 0  ! array
                 ENDIF
                 FDESC3D( 1 ) = 'Multiple category emissions data'
-                TONAME = PROMPTMFILE(  
-     &            'Enter name for MULTI-SOURCE GRIDDED OUTPUT file',
-     &            FSUNKN3, TONAME, PROGNAME )
+
+C.................  Open by logical name or physical name
+                FILEDESC = 'MULTI-SOURCE GRIDDED OUTPUT file'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',TONAME,I ) 
+
             END IF 
 
         END IF  ! End of gridded output
@@ -247,41 +276,44 @@ C.........  Open report file(s)
             L = LEN_TRIM( RTYPNAM )
 
             IF( AFLAG ) THEN
-                ARDEV  = PROMPTFFILE(
-     &                  'Enter name for AREA-SOURCE ' // 
-     &                  RTYPNAM( 1:L ) // ' REPORT', 
-     &                  .FALSE., .TRUE., AREPNAME, PROGNAME )
+                FILEDESC = 'AREA-SOURCE ' // RTYPNAM( 1:L ) // ' REPORT'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC, 'ASCII',
+     &                                    AREPNAME, ARDEV ) 
             END IF 
 
             IF( BFLAG ) THEN
-                BRDEV  = PROMPTFFILE(
-     &                  'Enter name for BIOGENIC ' // 
-     &                  RTYPNAM( 1:L ) // ' REPORT', 
-     &                  .FALSE., .TRUE., BREPNAME, PROGNAME )
+                FILEDESC = 'BIOGENIC ' // RTYPNAM( 1:L ) // ' REPORT'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC, 'ASCII',
+     &                                    BREPNAME, BRDEV ) 
             END IF 
 
             IF( MFLAG ) THEN
-                MRDEV  = PROMPTFFILE(
-     &                  'Enter name for MOBILE-SOURCE ' // 
-     &                  RTYPNAM( 1:L ) // ' REPORT', 
-     &                  .FALSE., .TRUE., MREPNAME, PROGNAME )
+                FILEDESC = 'MOBILE-SOURCE '// RTYPNAM( 1:L )// ' REPORT'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC, 'ASCII',
+     &                                    MREPNAME, MRDEV ) 
             END IF 
 
             IF( PFLAG ) THEN
-                PRDEV  = PROMPTFFILE(
-     &                  'Enter name for POINT-SOURCE ' // 
-     &                  RTYPNAM( 1:L ) // ' REPORT', 
-     &                  .FALSE., .TRUE., PREPNAME, PROGNAME )
+                FILEDESC = 'POINT-SOURCE '// RTYPNAM( 1:L )// ' REPORT'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC, 'ASCII',
+     &                                    PREPNAME, PRDEV ) 
             END IF 
 
             IF( XFLAG ) THEN
-                TRDEV  = PROMPTFFILE(
-     &                  'Enter name for TOTAL ' // 
-     &                  RTYPNAM( 1:L ) // ' REPORT', 
-     &                  .FALSE., .TRUE., TREPNAME, PROGNAME )
+                FILEDESC = 'TOTAL '// RTYPNAM( 1:L )// ' REPORT'
+                CALL OPEN_LNAME_OR_PNAME( FILEDESC, 'ASCII',
+     &                                    TREPNAME, TRDEV ) 
             END IF 
 
         END IF  ! End of state and/or county output
+
+C.........  Abort if problem with output files.
+        IF( EFLAG ) THEN
+
+            MESG = 'Problem opening output file(s)'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
 
         RETURN
 
@@ -400,5 +432,84 @@ C.....................  Define variable information
             RETURN
 
             END SUBROUTINE SETUP_VARIABLES
+
+C------------------------------------------------------------------------
+C------------------------------------------------------------------------
+
+C.............  Routine to open by physical name and give error if problem
+            SUBROUTINE OPEN_LNAME_OR_PNAME( FILEDESC, FTYPE, 
+     &                                      LNAME, FDEV      )
+
+C.............  Subroutine arguments
+            CHARACTER(*), INTENT  ( IN ) :: FILEDESC  ! file description
+            CHARACTER(*), INTENT  ( IN ) :: FTYPE     ! NETCDF or ASCII
+            CHARACTER(*), INTENT(IN OUT) :: LNAME     ! logical file name
+            INTEGER     , INTENT   (OUT) :: FDEV      ! file unit (if any)
+
+C.............  Local variables
+            INTEGER         L, L2
+            INTEGER         IOS
+
+            CHARACTER*128   DUMSTR       ! dummy string
+            CHARACTER*256   MESG         ! output string buffer
+            CHARACTER*512   PHYSNAME     ! output path & file buffer
+            
+            LOGICAL ::      ENVFLAG = .FALSE. ! true: could not set env variable
+
+C------------------------------------------------------------------------
+
+            FDEV = 0
+            ENVFLAG = .FALSE.
+
+C.............  Check if logical output file name is defined
+            CALL ENVSTR( LNAME, FILEDESC, ' ', DUMSTR, IOS )
+
+C.............  If not defined, give note, build physical output file name 
+C              and set environment variable
+            IF( IOS1 .EQ. 0 .AND. 
+     &          IOS2 .EQ. 0 .AND. 
+     &          IOS  .NE. 0       ) THEN
+
+                L = LEN_TRIM( LNAME )
+                PHYSNAME = OUTDIR( 1:L3 ) // '/' // LNAME( 1:L ) //
+     &                     '.' // OUTSCEN( 1:L4 ) // '.ncf'
+
+                MESG = 'NOTE: Opening "' // LNAME( 1:L ) //
+     &                 '" file using Smkmerge-defined physical ' //
+     &                 'file name.'
+                CALL M3MSG2( MESG )
+
+                IF( .NOT. SETENVVAR( LNAME, PHYSNAME ) ) THEN
+                    ENVFLAG = .TRUE.
+                    MESG = 'ERROR: Could not set logical file name ' //
+     &                     CRLF() // BLANK10 // 'for file ' // 
+     &                     TRIM( PHYSNAME )
+                    CALL M3MSG2( MESG )
+                END IF
+            END IF
+
+            IF( .NOT. ENVFLAG ) THEN
+            	
+C.............  Logical name is defined, open file.
+                SELECT CASE( FTYPE )
+                CASE( 'NETCDF' )
+                    LNAME = PROMPTMFILE( 'Enter name for '// FILEDESC,
+     &                                    FSUNKN3, LNAME, PROGNAME )
+                CASE( 'ASCII' )
+                    FDEV  = PROMPTFFILE(
+     &                      'Enter name for  '// FILEDESC,
+     &                     .FALSE., .TRUE., LNAME, PROGNAME )
+
+                END SELECT
+
+            ELSE
+            	
+            	EFLAG = .TRUE.
+            	
+            END IF
+
+            RETURN
+
+            END SUBROUTINE OPEN_LNAME_OR_PNAME
 
         END SUBROUTINE OPENMRGOUT
