@@ -66,7 +66,7 @@ C.........  This module contains the lists of unique inventory information
      &                      EMISBYCAS, RECSBYCAS, EMISBYPOL, INVSTAT
 
 C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: NVTYPE
+        USE MODMOBIL, ONLY: NVTYPE, VMTMIXA
 
         IMPLICIT NONE
 
@@ -84,13 +84,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         INTEGER         FINDC
         INTEGER         GETINVYR
+        INTEGER         GETVMIX
         INTEGER         INDEX1
         INTEGER         STR2INT
         REAL            STR2REAL
         REAL            YR2DAY
 
         EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC, 
-     &                  GETINVYR, INDEX1, STR2INT, STR2REAL, YR2DAY
+     &                  GETINVYR, GETVMIX, INDEX1, STR2INT, STR2REAL, 
+     &                  YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,          INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -114,7 +116,7 @@ C...........   Output from individual reader routines
         CHARACTER(LEN=IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
 
 C...........   Other local variables
-        INTEGER         I, J, K, SP !  counters and indices
+        INTEGER         I, J, K, K1, SP !  counters and indices
 
         INTEGER         CURFIL      !  current file from list formatted inventory
         INTEGER         CURFMT      !  format of current inventory file
@@ -177,6 +179,9 @@ C...........   Other local variables
         CHARACTER(LEN=25)       X2        ! x-dir link coord 2
         CHARACTER(LEN=25)       Y2        ! y-dir link coord 2
         CHARACTER(LEN=2)        ZONE      ! UTM zone
+        CHARACTER(LEN=FIPLEN3)  CFIP      ! fips code
+        CHARACTER(LEN=RWTLEN3)  CROAD     ! road class no.
+        CHARACTER(LEN=LNKLEN3)  CLNK      ! link ID
 
         CHARACTER(LEN=ORSLEN3)  CORS      ! DOE plant ID
         CHARACTER(LEN=6)        BLID      ! boiler ID
@@ -531,10 +536,11 @@ C.............  Process line depending on file format and source category
      &                                NPOLPERLN, INVYEAR, TIMEPERIOD, 
      &                                HDRFLAG, EFLAG )
                 CASE( 'MOBILE' )
+C.....................  Need to read source information to match with VMTMIX file
                     CALL RDDATAEMSMB( LINE, READDATA, READPOL,
      &                                NPOLPERLN, INVYEAR, X1, Y1,
-     &                                X2, Y2, ZONE, LNKFLAG, HDRFLAG, 
-     &                                EFLAG )
+     &                                X2, Y2, ZONE, LNKFLAG, CFIP,
+     &                                CROAD, CLNK, HDRFLAG, EFLAG )
                     TIMEPERIOD = 'AD'
                 END SELECT
             CASE( NTIFMT )
@@ -1028,6 +1034,9 @@ C.....................  Store data in unsorted order
 C......................... If mobile EMS format, loop through vehicle types                         
                         IF( CATEGORY == 'MOBILE' .AND.
      &                      CURFMT   == EMSFMT       ) THEN
+
+C.............................  Match FIP, road, and link with vehicle mix table
+                            K1 = GETVMIX( CFIP, CROAD, CLNK )
      
                             DO K = 1, NVTYPE
                                 
@@ -1038,7 +1047,8 @@ C......................... If mobile EMS format, loop through vehicle types
                                 IPOSCODA( SP ) = POLCOD
                                 ICASCODA( SP ) = UCASPOS
                                 POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
-     &                                             POLANN
+     &                                             POLANN * 
+     &                                             VMTMIXA( K,K1 )
                                 
                                 IF( K < NVTYPE ) THEN
                                     SP = SP + 1
