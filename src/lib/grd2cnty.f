@@ -1,5 +1,5 @@
 
-        SUBROUTINE GRD2CNTY( IDXINV, IDXSPC, NGRID, NCNTY, 
+        SUBROUTINE GRD2CNTY( IDXINV, IDXSPC, NGRID, NCNTY, CNVFAC,
      &                       GRDDAT, CNYDAT )
 
 C***********************************************************************
@@ -64,6 +64,7 @@ C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: IDXSPC
         INTEGER, INTENT (IN) :: NGRID
         INTEGER, INTENT (IN) :: NCNTY
+        REAL   , INTENT (IN) :: CNVFAC
         REAL   , INTENT (IN) :: GRDDAT( NGRID )
         REAL   , INTENT(OUT) :: CNYDAT( NCNTY,* )
 
@@ -172,7 +173,8 @@ C.........  Loop through county codes and compute county total emissions
                 C    = FIPCELL( N,F )        ! Retrieve cell number
                 FRAC = SRGFRAC( SRGID,N,F )
 
-                CNYDAT( F,IDX ) = CNYDAT( F,IDX ) + GRDDAT( C ) * FRAC
+                CNYDAT( F,IDX ) = CNYDAT( F,IDX ) + 
+     &                            CNVFAC * GRDDAT( C ) * FRAC
 
             END DO  ! End loop on cells in county
 
