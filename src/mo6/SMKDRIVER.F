@@ -6,6 +6,8 @@ C  Calls MOBILE.
 C 
 C  Changes: (Last change first) 
 C 
+C  12 Jan 02 AIR Task Bug383: Moved creation of M6ERROR.TXT so that 
+C            improper program aborts do not leave file uneditable. 
 C  16 Jan 02 AIR Task 11: Added INERR to PROCHDR parameter list to 
 C            improve error handling. Improved TOTERR error handling. 
 C            Fixed unassigned output on unit 2. 
@@ -166,7 +168,7 @@ ccs      IOUIN  =  5
                        !   GETMAR.F, GETMPG.F, GETNGVEF.F, GETNGVFR.F, GETNH3BER.F, 
                        !   GETNH3SDR.F, GETPMDDR1.F, GETPMDDR2.F, GETPMDZML.F, 
                        !   GETPMGDR1.F, GETPMGDR2.F, GETPMGZML.F, and GETREG.F  
-ccs      IOUBAT = 19 
+      IOUBAT = 0        ! opened in SMKDRIVER.F  
 C 
 C     NOTE: Unit numbers 51-57 are reserved for the database output 
 C           tables and are initialized in MODULE DATABASE. 
@@ -175,20 +177,12 @@ C     Output units:
       IOUERR = 0       ! opened in SMKDRIVER.F
       IOUOUT = LDEV    ! SMOKE log file
       IOUNULL = -1 
-C
-      IOUPM = 0 
-      IOUAT = 0 
-      IOUSS = 0       
+ 
+      IOUPM  = 0        ! opened in PROCHDR.F 
+      IOUAT  = 0        ! opened in PROCHDR.F 
+      IOUSS  = 0        ! opened in PROCHDR.F 
 C 
-C 
-C     Open the IOUERR file and initialize total errors 
-C 
-ccs   All M6 input files live in SMK_M6PATH
-      CALL GETENV( "SMK_M6PATH", M6DIR )
-      M6FILE = TRIM( M6DIR ) // '/' // 'M6ERROR.TXT'
-      
-      IOUERR = JUNIT()
-      OPEN(IOUERR,FILE=M6FILE) 
+C     Initialize total errors 
 C 
       TOTERR = 0 
 C 
@@ -271,8 +265,18 @@ ccs     &          ' to stop the program.)'/)
 C 
 ccs      END DO 
 C 
-C     Open the file for reading. 
+C     Open the IOUERR file 
 C 
+ccs   All M6 input files live in SMK_M6PATH 
+      CALL GETENV( "SMK_M6PATH", M6DIR ) 
+      M6FILE = TRIM( M6DIR ) // '/' // 'M6ERROR.TXT' 
+       
+      IOUERR = JUNIT() 
+      OPEN(IOUERR,FILE=M6FILE) 
+C 
+C     Open the input file for reading. 
+C 
+ccs      IOUGEN = JUNIT() 
 ccs      OPEN(IOUGEN,FILE=INPFILE,STATUS='OLD',ACTION='READ',IOSTAT=RC) 
 ccs      IF (RC /= 0) GOTO 80 
 C 
@@ -306,6 +310,7 @@ C
 ccs      DBBATCH = ' ' 
 ccs      IF (BATMODE) THEN 
 ccs         DBBATCH = INPFILE 
+ccs         IOUBAT = JUNIT() 
 ccs         OPEN(IOUBAT,FILE=DBBATCH,STATUS='OLD',ACTION='READ',IOSTAT=RC) 
 ccs         IF (RC /= 0) GOTO 80 
 ccs         CALL NXTREC(IOUBAT, IOUOUT, INPLINE, INERR, RC) 
@@ -508,7 +513,8 @@ C     GOTO 99
 C 
    99 IF(TOTERR.EQ.0) THEN 
         EFLAG = .FALSE.
-        CLOSE (IOUERR,STATUS='DELETE') 
+        INQUIRE(FILE='M6ERROR.TXT',EXIST=FEXIST)  ! Ensure file exists before trying to delete it 
+        IF(FEXIST) CLOSE (IOUERR,STATUS='DELETE') 
       ELSE 
       	EFLAG = .TRUE.
         WRITE(IOUOUT,595) TOTERR 
@@ -530,6 +536,8 @@ ccs   Make sure any files that are open get closed
       IF( FOPEN ) CLOSE( IOUIMD )
       INQUIRE( IOUALT, OPENED=FOPEN )
       IF( FOPEN ) CLOSE( IOUALT )
+      INQUIRE( IOUBAT, OPENED=FOPEN ) 
+      IF( FOPEN ) CLOSE( IOUBAT ) 
       INQUIRE( IOUREP, OPENED=FOPEN )
       IF( FOPEN ) CLOSE( IOUREP )
       INQUIRE( IOUERR, OPENED=FOPEN )
