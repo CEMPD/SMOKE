@@ -37,7 +37,7 @@ C       chronological order.
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
-C       FIND1, PROMPTFFILE, PROMPTMFILE, GETYN
+C       FIND1, PROMPTFFILE, PROMPTMFILE, GETYN, DAYREC
 C
 C  REVISION  HISTORY:
 C       Prototype  10/95 by CJC.
@@ -83,6 +83,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &              PROMPTFFILE, PROMPTMFILE, SECSDIFF, SEC2TIME,
      &              STR2INT, STR2REAL, TIME2SEC
 
+C...........   Parameters
+        INTEGER     YEARBRK     ! Break-point for century 1900 vs. 2000
+        PARAMETER ( YEARBRK = 1960 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   NOTE that SSC (point-source-category) ID's are 10-digit
@@ -124,8 +127,7 @@ C...........   Other local variables
         INTEGER         IREC    !  input line (record) number
         CHARACTER*256   MESG    !  text for M3EXIT()
         CHARACTER*240   LINE    !  input line from POINT file
-        LOGICAL         VFLAG   !  verification flag
-
+        LOGICAL         EFLAG   !  Error flag
 
 C***********************************************************************
 C   begin body of program PDPOINT
@@ -173,7 +175,7 @@ C.......   Get starting date (default borrowed from input file:
         
         WRITE( *,92000 ) ' ', 'Reading POINT SOURCE input files...', ' '
 
-        READ( PDEV, 93000, END=122, IOSTAT=IOS )LINE
+        READ( PDEV, 93000, END=122, IOSTAT=IOS ) LINE
         IF ( IOS .NE. 0 ) THEN
             WRITE( MESG, 94010 ) 
      &          'Error ', IOS, 
@@ -186,10 +188,17 @@ C.......   Get starting date (default borrowed from input file:
         SDT   = STR2INT( LINE( 60:67 ) )
         JTIME = 10000 * MOD( SDT,100 ) 
         SDT   = SDT / 100
-        DD    = MOD( SDT , 100 )
-        MM    = MOD( SDT / 100, 100 )
-        YY    = 1900000 + 1000 * ( SDT / 10000 )
-        SDT   = YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
+        DD    = MOD( SDT , 100 )           ! Set 2-digit day
+        MM    = MOD( SDT / 100, 100 )      ! Set 2-digit month
+        YY    = SDT/10000                  ! Set 2-digit year 
+
+        IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
+            YY = 1900 + YY
+        ELSE
+            YY = 2000 + YY
+        ENDIF
+
+        SDT   = 1000 * YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
         JDATE = SDT
 
         EDT   = STR2INT( LINE( 69:76 ) )
@@ -197,8 +206,15 @@ C.......   Get starting date (default borrowed from input file:
         EDT   = EDT / 100
         DD    = MOD( EDT , 100 )
         MM    = MOD( EDT / 100, 100 )
-        YY    = 1900000 + 1000 * ( EDT / 10000 )
-        EDATE = YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
+        YY    = EDT/10000
+
+        IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
+            YY = 1900 + YY
+        ELSE
+            YY = 2000 + YY
+        ENDIF
+
+        EDATE = 1000 * YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
         CALL NEXTIME( EDATE, ETIME, 10000 ) !  ETIME:  *through* hr HH
 
         TSTEP = SEC2TIME( SECSDIFF( JDATE, JTIME, EDATE, ETIME ) )
@@ -268,7 +284,7 @@ C.......   get file name; open output day-point file
 
 C...........   Read the input file:
 
-        VFLAG = .FALSE.
+        EFLAG = .FALSE.
         IREC  = 0
         S     = 0
 
@@ -292,8 +308,8 @@ C...........   Read the input file:
      &              'Bad record type "' // LINE( 57:58 ) //
      &              '" in  DAY-POINT file at line', IREC
                 CALL M3MESG( MESG )
-                VFLAG = .TRUE.
-                GO TO 111
+                EFLAG = .TRUE.
+                GO TO 111     ! To head of PDEV read loop
 
             END IF
 
@@ -303,19 +319,53 @@ C...........   Read the input file:
             STM = 10000 * HH
             DD  = MOD( SDT / 100  , 100 )
             MM  = MOD( SDT / 10000, 100 )
-            YY  = 1900000 + 1000 * ( SDT / 1000000 )
-            SDT = YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
+            YY  = SDT/1000000                  ! Set 2-digit year 
 
+            IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
+                YY = 1900 + YY
+            ELSE
+                YY = 2000 + YY
+            ENDIF
+
+            SDT = 1000 * YY + JULIAN( YY, MM, DD )   !  as Julian date  YYYYDDD
+
+C.............  Get time step occuring between this record and the last
+            SECS = SECSDIFF( JDATE, JTIME, SDT, STM )
+
+C.............  If next date is less that current date then records unsorted
             IF ( SDT .LT. JDATE ) THEN
 
-                WRITE( MESG, 94010 ) 
+                WRITE( MESG, 94040 ) 
      &              'Records out of order:  from', JDATE, JTIME,
-     &              'to', SDT, STM,
-     &              'at line', IREC
+     &              'to', SDT, STM, 'at line', IREC
                 CALL M3MESG( MESG )
-                VFLAG = .TRUE.
-                GO TO 111
+                EFLAG = .TRUE.
+                GO TO 111     ! To head of PDEV read loop
 
+C.............  Where time step is bad
+            ELSEIF ( SDT .GT. JDATE .AND. SECS .NE. STEP ) THEN
+
+C.................  Where year is the same - error
+                IF( JDATE/1000 .EQ. SDT/1000 ) THEN
+                    WRITE( MESG, 94040 ) 
+     &                  'Bad time step:  from', JDATE, JTIME,
+     &                  'to', SDT, STM, 'at line', IREC
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                    GO TO 111     ! To head of PDEV read loop
+
+C.................  Where year is different, warn and skip
+                ELSE
+                    WRITE( MESG, 94010 ) 
+     &                  'Inconsistent year:', SDT/1000,
+     &                  '. Record ignored at line', IREC
+                    CALL M3MESG( MESG )
+                    GO TO 111     ! To head of PDEV read loop
+
+                ENDIF
+
+C.............  Where next date exceeds current date, write out current
+C.............  date, reset date, and initialize number of sources
             ELSE IF ( SDT .GT. JDATE ) THEN       ! construct and write time step
 
                 IF ( S .GT. NSMAX ) THEN
@@ -326,7 +376,7 @@ C...........   Read the input file:
      &                  'at line', IREC
                     CALL M3MESG( MESG )
                     S     = NSMAX
-                    VFLAG = .TRUE.
+                    EFLAG = .TRUE.
                 END IF
 
                 CALL DAYREC( S, INDEXA, 
@@ -334,20 +384,10 @@ C...........   Read the input file:
      &                       ICODEA, EMISDA, JDATE, JTIME,
      &                       ENAME, DNAME )
 
-                SECS = SECSDIFF( JDATE, JTIME, SDT, STM )
-                IF ( SECS .NE. STEP ) THEN
-                    WRITE( MESG, 94040 ) 
-     &                  'Bad time step:  from', JDATE, JTIME,
-     &                  'to', SDT, STM,
-     &                  'at line', IREC
-                    CALL M3MESG( MESG )
-                    VFLAG = .TRUE.
-                END IF
-
                 JDATE = SDT
                 JTIME = STM
                 S     = 0
-                       
+
             END IF
 
             IPOL  = STR2INT ( LINE( 156:160 ) )
@@ -359,8 +399,8 @@ C...........   Read the input file:
      &              'Bad line', IREC, 
      &              'Pollutant code "' // LINE( 156:160 ) // '"'
                 CALL  M3MESG( MESG )
-                VFLAG = .TRUE.
-                GO TO  111      !  to head of loop
+                EFLAG = .TRUE.
+                GO TO  111      ! To head of PDEV read loop
 
             END IF
 
@@ -371,8 +411,8 @@ C...........   Read the input file:
      &              'Bad line', IREC, 
      &              'Emis value "' // LINE( 162:171 ) // '"'
                 CALL M3MESG( MESG )
-                VFLAG = .TRUE.
-                GO TO  111
+                EFLAG = .TRUE.
+                GO TO  111      ! To head of PDEV read loop
 
             END IF
 
@@ -380,19 +420,26 @@ C...........   Read the input file:
             ETM = 10000 * HH
             DD  = MOD( EDT / 100  , 100 )
             MM  = MOD( EDT / 10000, 100 )
-            YY  = 1900000 + 1000 * ( EDT / 1000000 )
-            EDT = YY + JULIAN( YY, MM, DD )      !  as Julian date YYYYDDD
+            YY  = EDT/1000000                  ! Set 2-digit year 
+
+            IF( 1900 + YY .GE. YEARBRK ) THEN  ! Set 4-digit year
+                YY = 1900 + YY
+            ELSE
+                YY = 2000 + YY
+            ENDIF
+
+            EDT = 1000 * YY + JULIAN( YY, MM, DD )      !  as Julian date YYYYDDD
             CALL NEXTIME( EDT, ETM, 10000 )      ! ETM means *through* hr HH
 
             SECS  = SECSDIFF( SDT, STM, EDT, ETM )
             IF ( SECS .NE. STEP ) THEN
 
                 WRITE( MESG, 94010 ) 
-     &              'Bad duration ', SECS,
-     &              'in  DAY-POINT file at line', IREC
+     &              'Bad duration ', SEC2TIME( SECS ),
+     &              'in input POINT source file at line', IREC
                 CALL M3MESG( MESG )
-                VFLAG = .TRUE.
-                GO TO 111
+                EFLAG = .TRUE.
+                GO TO 111     ! To head of PDEV read loop
 
             END IF
 
@@ -422,15 +469,19 @@ C...........   Read the input file:
      &              'for', JDATE, JTIME, 
      &              'at line', IREC
                 CALL M3MESG( MESG )
-                VFLAG = .TRUE.
+                EFLAG = .TRUE.
 
             END IF
 
             GO TO  111          !  to head of PDEV-read loop
 
-
 122     CONTINUE        !  end of the PDEV-read loop
         
+        IF ( EFLAG ) THEN
+            MESG = 'Error reading period specific source file PRDAY'
+            CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 2 )
+        ENDIF
+
         IF ( S .GT. 0 ) THEN    !  if cleanup necessary
         
             IF ( S .GT. NSMAX ) THEN
@@ -442,7 +493,7 @@ C...........   Read the input file:
      &              'at line', IREC
                 CALL M3MESG( MESG )
                 S     = NSMAX
-                VFLAG = .TRUE.
+                EFLAG = .TRUE.
 
             END IF
 
@@ -454,15 +505,15 @@ C...........   Read the input file:
         END IF                  !  if s>0 (cleanup necessary)
 
 
-999   CONTINUE          !  exit program:  normal completion
+999     CONTINUE          !  exit program:  normal completion
 
-      IF ( VFLAG ) THEN
-          MESG = 'Errors encountered in Program PDPOINT'
-          CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 2 )
-      ELSE
-          MESG = 'Successful completion of Program PDPOINT'
-          CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 0 )
-      END IF
+        IF ( EFLAG ) THEN
+            MESG = 'Errors encountered in Program PDPOINT'
+            CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 2 )
+        ELSE
+            MESG = 'Successful completion of Program PDPOINT'
+            CALL M3EXIT( 'PDPOINT', 0, 0, MESG, 0 )
+        END IF
 
 
 C******************  FORMAT  STATEMENTS   ******************************
