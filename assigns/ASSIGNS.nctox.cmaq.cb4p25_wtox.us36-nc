@@ -29,33 +29,31 @@
    setenv GRID         us36-nc          # Gridding root for naming
    setenv IOAPI_GRIDNAME_1 US36NC_23X12 # Grid selected from GRIDDESC file
    setenv SPC          cmaq.cb4p25_wtox # Speciation type
-   setenv ESDATE       19960709         # Start date of emis time-based files
-   setenv MSDATE       19960709         # Start date of met  time-based files
-   setenv NDAYS        1                # Duration in days of emis time-based files
-   setenv MDAYS        1                # Duration in days of met  time-based files
-   setenv YEAR         1996             # Year for year-specific files
-
-## Intialize date controls
-   set setdate = y
-   if ( $?DAY_COUNT ) then
-       if ( $DAY_COUNT > 1 ) then
-          set setdate = n
-       endif
-   endif
-
-## Per-period environment variables (Models-3 settings)
-   if ( $setdate == y ) then
-       setenv G_STDATE  1996191      # Julian start date
-       setenv G_STTIME   000000      # start time (HHMMSS)
-       setenv G_TSTEP     10000      # time step  (HHMMSS)
-       setenv G_RUNLEN   250000      # run length (HHMMSS)
-   endif
 
 ## Mobile episode variables
    setenv EPI_STDATE 1996191     # Julian start date
    setenv EPI_STTIME  000000     # start time (HHMMSS)
    setenv EPI_RUNLEN 0750000     # run length (HHHMMSS)
    setenv EPI_NDAY   2           # number of full run days
+
+## Per-period environment variables
+   setenv G_STDATE  1996191      # Julian start date
+   setenv G_STTIME   000000      # start time (HHMMSS)
+   setenv G_TSTEP     10000      # time step  (HHMMSS)
+   setenv G_RUNLEN   250000      # run length (HHMMSS)
+   setenv ESDATE   19960709      # Start date of emis time-based files/dirs
+   setenv MSDATE   19960709      # Start date of met  time-based files
+   setenv NDAYS           1      # Duration in days of each emissions file
+   setenv MDAYS           1      # Duration in days of met  time-based files
+   setenv YEAR         1996      # Year for year-specific files
+
+## Reset days if overrides are available
+   if ( $?G_STDATE_ADVANCE ) then
+       set date = $G_STDATE
+       @ date = $date + $G_STDATE_ADVANCE
+       setenv G_STDATE $date 
+       setenv ESDATE `$IOAPIDIR/datshift $G_STDATE 0`
+   endif
 
 ## User-defined I/O directory settings
    setenv EDSS_SUBSYS $EDSS_ROOT/subsys              # EDSS subsystem dir
@@ -92,12 +90,12 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv AGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt  # Area gridding surrogates
    setenv AGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt   # Area gridding x-ref 
    setenv ATPRO     $GE_DAT/amptpro.m3.062801.us+can.txt        # Temporal profiles
-   setenv ATREF     $GE_DAT/amptref.m3.032503.us+can.txt        # Area temporal x-ref
+   setenv ATREF     $GE_DAT/amptref.m3.032502.us+can.txt        # Area temporal x-ref
 endif
 #
 ## Biogenic input files
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
-   setenv BGUSE   $INVDIR/biog/BEIS2.luse.$GRID.txt # Gridded landuse
+   setenv BGUSE   $INVDIR/biog/beld.5.us36.txt      # Gridded landuse
    setenv METLIST $INVDIR/biog/metlist.tmpbio.txt   # Meteorology file list for temperatures
    setenv RADLIST $INVDIR/biog/radlist.tmpbio.txt   # Meteorology file list for solar radiation
    setenv BFAC    $GE_DAT/bfac.summer.txt     # Default biogenic emission factors
@@ -126,7 +124,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MGPRO     $GE_DAT/abmgpro.m3.040402.us36+can+mex.txt # Mobile gridding surrogates
    setenv MGREF     $GE_DAT/amgref.m3.040402.us36+can+mex.txt  # Mobile gridding x-ref 
    setenv MTPRO     $GE_DAT/amptpro.m3.062801.us+can.txt       # Temporal profiles
-   setenv MTREF     $GE_DAT/amptref.m3.032503.us+can.txt       # Mobile temporal x-ref
+   setenv MTREF     $GE_DAT/amptref.m3.032502.us+can.txt       # Mobile temporal x-ref
    setenv GCNTL     $INVDIR/other/gcntl.control.txt        # Scenario-specific controls
    setenv MPROJ     $INVDIR/other/gcntl.proj.$BYFYR.txt    # Projection factors
 endif
@@ -142,7 +140,7 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv GCNTL      $INVDIR/other/gcntl.control.txt         # Scenario-specific controls
    setenv PPROJ      $INVDIR/other/gcntl.proj.$BYFYR.txt     # Projection factors
    setenv PTPRO      $GE_DAT/amptpro.m3.062801.us+can.txt    # Temporal profiles
-   setenv PTREF      $GE_DAT/amptref.m3.032503.us+can.txt    # Point temporal x-ref
+   setenv PTREF      $GE_DAT/amptref.m3.032502.us+can.txt    # Point temporal x-ref
    setenv PSTK       $GE_DAT/pstk.m3.txt               # Replacement stack params
 endif
 #
@@ -189,11 +187,11 @@ endif
 #
    setenv METDAT $SMKDAT/met/run_$METSCEN
    if ( $SMK_SOURCE == 'B' || $SMK_SOURCE == 'M' || $SMK_SOURCE == 'P' ) then
-      setenv GRID_CRO_2D $METDAT/gc2.$GRID.$METSCEN.ncf
-      setenv GRID_CRO_3D $METDAT/gc3.$GRID.$METSCEN.ncf
-      setenv MET_CRO_2D  $METDAT/mc2.$MSDATE.$MDAYS.$GRID.$METSCEN.ncf
-      setenv MET_CRO_3D  $METDAT/mc3.$MSDATE.$MDAYS.$GRID.$METSCEN.ncf
-      setenv MET_DOT_3D  $METDAT/md3.$MSDATE.$MDAYS.$GRID.$METSCEN.ncf
+      setenv GRID_CRO_2D $METDAT/GRIDCRO2D
+      setenv GRID_CRO_3D $METDAT/GRIDCRO3D
+      setenv MET_CRO_2D  $METDAT/METCRO2D_$G_STDATE
+      setenv MET_CRO_3D  $METDAT/METCRO3D_$G_STDATE
+      setenv MET_DOT_3D  $METDAT/METDOT3D_$G_STDATE
       setenv MET_FILE1   $MET_CRO_2D
       setenv MET_FILE2   $MET_CRO_2D
    endif
@@ -264,7 +262,7 @@ if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
    setenv BGTS_S    $B_OUT/bgts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
    setenv BGTS_L_O  $OUTPUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
    setenv BGTS_S_O  $OUTPUT/bgts_s_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BIOSEASON $GE_DAT/bioseason.$YEAR.ncf
+   setenv BIOSEASON $GE_DAT/bioseason.$YEAR.us36.ncf
    setenv B3GRD     $INVOPD/b3grd.$GRID.$BSCEN.ncf
 endif
 
@@ -326,6 +324,7 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PELV      $STATIC/PELV.$PBASE.txt       # Elev/PinG pt source list
    setenv PNTS_O    $INVOPD/pnts.map.$FYINV.txt
    setenv PTINV_O   $PTDAT/ptinv_o.$FYINV.ida.txt
+   setenv REPPELV   $REPSTAT/reppelv.$PSCEN.rpt
 endif
 
 if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
@@ -340,7 +339,7 @@ if ( $SMK_SOURCE == 'P' || $MRG_POINT == 'Y' ) then
    setenv PCMAT    $SMKDAT/run_$PSCEN/static/pcmat.$PSCEN.ncf
    setenv PGMAT    $SMKDAT/run_$PBASE/static/pgmat.$GRID.$PBASE.ncf
    setenv PPMAT    $SMKDAT/run_$PSCEN/static/ppmat.$PSCEN.ncf
-   setenv STACK_GROUPS $OUTPUT/stack_groups.$GRID.$PBASE.ncf
+   setenv STACK_GROUPS $SMKDAT/run_$PSCEN/static/stack_groups.$GRID.$PBASE.ncf
    setenv PLAY     $SMKDAT/run_$PBASE/$ESDATE/play.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
    setenv PLAY_EX  $SMKDAT/run_$PBASE/$ESDATE/play_ex.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
 endif

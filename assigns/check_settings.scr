@@ -473,12 +473,3 @@ if ( $MRG_POINT_MULT == 'Y' || $MRG_POINT_ADD == 'Y' || \
 endif
 
 exit( $status )
-
-
-
-
-
-
-
-
-
