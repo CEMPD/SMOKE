@@ -160,6 +160,7 @@ C...........   Other local variables
         LOGICAL      :: ACTFLAG = .FALSE. ! true: current pollutant is activity
         LOGICAL      :: CFLAG             ! true: recalc vel w/ flow & diam
         LOGICAL      :: EFLAG   = .FALSE. ! true: error occured
+        LOGICAL      :: EMSFLAG = .FALSE. ! true: at least one file is EMS-95 format
         LOGICAL      :: DFLAG   = .FALSE. ! true: weekday (not full week) nrmlizr 
         LOGICAL      :: FFLAG   = .FALSE. ! true: fill annual data with seasonal
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
@@ -168,6 +169,8 @@ C...........   Other local variables
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
         LOGICAL      :: NOPOLFLG= .FALSE. ! true: no pollutants stored for this line
         LOGICAL      :: WFLAG   = .FALSE. ! true: all lat-lons to western hemi
+
+        CHARACTER(LEN=2)        TIMEPERIOD! time period for EMS emissions
 
         CHARACTER(LEN=25)       X1        ! x-dir link coord 1
         CHARACTER(LEN=25)       Y1        ! y-dir link coord 1
@@ -204,14 +207,20 @@ C.........   Initialize variables for keeping track of dropped emissions
         NDROP = 0
         EDROP = 0.  ! array
 
+C.........  Check if any files are EMS-95 format
+        DO I = 1, SIZE( FILFMT )
+            IF( FILFMT( I ) == EMSFMT ) THEN
+                EMSFLAG = .TRUE.
+                EXIT
+            END IF
+        END DO
+        
 C.........  Get setting for interpreting weekly temporal profiles from the
 C           environment. Default is false for non-EMS-95 and true for EMS-95
 C           inventory inputs.
         DFLAG = .FALSE.
         
-        DO I = 1, SIZE( FILFMT )
-            IF ( FILFMT( I ) .EQ. EMSFMT ) DFLAG = .TRUE.
-        END DO
+        IF( EMSFLAG ) DFLAG = .TRUE.
         
         MESG = 'Use weekdays only to normalize weekly profiles'
         DFLAG = ENVYN( 'WKDAY_NORMALIZE', MESG, DFLAG, IOS )
@@ -236,29 +245,25 @@ C.........  Write message
 
 C.........  If EMS-95 format, check the setting for the interpretation of
 C           the weekly profiles
-        DO I = 1, SIZE( FILFMT )
-            IF( FILFMT( I ) == EMSFMT .AND. 
-     &          WKSET /= WDTPFAC ) THEN
+        IF( EMSFLAG .AND. WKSET /= WDTPFAC ) THEN
 
-                MESG = 'WARNING: EMS-95 format files will be using ' //
-     &             'non-standard approach of ' // CRLF() // BLANK10 //
-     &             'full-week normalized weekly profiles.  Can ' //
-     &             'correct by setting ' // CRLF() // BLANK10 //
-     &             'WKDAY_NORMALIZE to Y and rerunning.'
-                CALL M3MSG2( MESG )
+            MESG = 'WARNING: EMS-95 format files will be using ' //
+     &         'non-standard approach of ' // CRLF() // BLANK10 //
+     &         'full-week normalized weekly profiles.  Can ' //
+     &         'correct by setting ' // CRLF() // BLANK10 //
+     &         'WKDAY_NORMALIZE to Y and rerunning.'
+            CALL M3MSG2( MESG )
 
-            ELSE IF( FILFMT( I ) == EPSFMT .AND. 
-     &               WKSET /= WTPRFAC ) THEN
+!        ELSE IF( EPSFLAG .AND. WKSET /= WTPRFAC ) THEN
+!
+!            MESG = 'WARNING: EPS2.0 format files will be using ' //
+!     &         'non-standard approach of ' // CRLF() // BLANK10 //
+!     &         'weekday normalized weekly profiles.  Can ' //
+!     &         'correct by setting ' // CRLF() // BLANK10 //
+!     &         'WKDAY_NORMALIZE to N and rerunning.'
+!            CALL M3MSG2( MESG )
 
-                MESG = 'WARNING: EPS2.0 format files will be using ' //
-     &             'non-standard approach of ' // CRLF() // BLANK10 //
-     &             'weekday normalized weekly profiles.  Can ' //
-     &             'correct by setting ' // CRLF() // BLANK10 //
-     &             'WKDAY_NORMALIZE to N and rerunning.'
-                CALL M3MSG2( MESG )
-
-            END IF
-        END DO
+        END IF
 
 C.........  Get annual data setting from environment
         MESG = 'Fill in 0. annual data based on seasonal data.'
@@ -392,7 +397,7 @@ C.........  Otherwise, rewind individual file
 
 C.........  Allocate memory to store emissions and pollutant from a single line
 C.........  For now, set number of pollutants per line to 1 
-C           (will change if format is IDA)
+C           (will change if format is IDA or mobile EMS)
         ALLOCATE( READDATA( 1,NPPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
         ALLOCATE( READPOL( 1 ), STAT=IOS )
@@ -521,11 +526,16 @@ C.............  Process line depending on file format and source category
                 END SELECT
             CASE( EMSFMT )
                 SELECT CASE( CATEGORY )
+                CASE( 'AREA' )
+                    CALL RDDATAEMSAR( LINE, READDATA, READPOL,
+     &                                NPOLPERLN, INVYEAR, TIMEPERIOD, 
+     &                                HDRFLAG, EFLAG )
                 CASE( 'MOBILE' )
                     CALL RDDATAEMSMB( LINE, READDATA, READPOL,
      &                                NPOLPERLN, INVYEAR, X1, Y1,
      &                                X2, Y2, ZONE, LNKFLAG, HDRFLAG, 
      &                                EFLAG )
+                    TIMEPERIOD = 'AD'
                 END SELECT
             CASE( NTIFMT )
                 SELECT CASE( CATEGORY )
@@ -544,10 +554,11 @@ C.............  Process line depending on file format and source category
 C.............  Check for header lines
             IF( HDRFLAG ) THEN 
 
-C.................  If IDA or EMS format, reallocate emissions memory with proper number
-C                   of pollutants per line
-                IF( ( CURFMT == IDAFMT .OR. CURFMT == EMSFMT ) .AND. 
-     &                NPOLPERLN /= 0 ) THEN
+C.................  If IDA or mobile EMS format, reallocate emissions memory with
+C                   proper number of pollutants per line
+                IF( ( CURFMT == IDAFMT .OR. 
+     &              ( CURFMT == EMSFMT .AND. CATEGORY == 'MOBILE' ) ) 
+     &                .AND. NPOLPERLN > 1 ) THEN
                     DEALLOCATE( READDATA, READPOL )
                     ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
@@ -573,6 +584,32 @@ C.................  Calculate day to year conversion factor
                 CYCLE
             END IF
 
+C.............  Set inventory year in case there are no header lines
+            IF( INVYEAR == 0 ) THEN
+                INVYEAR = LSTYR
+                
+                YEAR2DAY = YR2DAY( INVYEAR )
+                DAY2YR = 1. / YEAR2DAY
+            END IF
+
+C.............  Make sure some emissions are kept for this source
+            IF( NPOLPERLN == 0 ) THEN
+                CYCLE
+            END IF
+
+C.............  Check that EMS-95 time period is correct
+            IF( CURFMT == EMSFMT ) THEN
+                IF( TIMEPERIOD /= 'AA' .AND.
+     &              TIMEPERIOD /= 'AD' .AND.
+     &              TIMEPERIOD /= 'DS'       ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Unsupported time ' //
+     &                     'period type "' // TIMEPERIOD //
+     &                     '" at line', IREC
+                    CALL M3MSG2( MESG )
+                END IF
+            END IF
+            
 C.............  Check that mobile link info is correct
             IF( CATEGORY == 'MOBILE' .AND. LNKFLAG ) THEN
                 IF( X1 == ' ' .OR. Y1 == ' ' .OR.
@@ -885,7 +922,20 @@ C.................  For area and point, convert control percentages
                 END IF
 
 C.................  Set the default temporal resolution of the data
-                TPF = MTPRFAC * WKSET
+                IF( CURFMT == EMSFMT ) THEN
+                    SELECT CASE( TIMEPERIOD )
+                    CASE( 'AA' )
+                        TPF = MTPRFAC * WTPRFAC     ! use month, week profiles
+                    CASE( 'AD' )
+                        TPF = WKSET                 ! use week profiles
+                        EANN = DAY2YR * EANN
+                    CASE( 'DS' )
+                        TPF = 1
+                        EANN = DAY2YR * EANN
+                    END SELECT
+                ELSE
+                    TPF = MTPRFAC * WKSET
+                END IF
 
 C.................  Replace annual data with ozone-season information
 C                   Only do this if current pollutant is not an activity, flag is set,
