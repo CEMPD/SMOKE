@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDSRG( FDEV, SRGFMT, SRGNROWS, SRGNCOLS ) 
+        SUBROUTINE RDSRG( VFLAG, FDEV, SRGFMT, SRGNROWS, SRGNCOLS ) 
 
 C***********************************************************************
 C  subroutine body starts at line 117
@@ -60,7 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL       CRLF, FIND1, STR2INT, STR2REAL
 
 C...........   Subroutine arguments
-
+        LOGICAL      , INTENT  (IN) :: VFLAG      ! true: using variable grid
         INTEGER      , INTENT  (IN) :: FDEV       ! File unit number
         CHARACTER(*) , INTENT  (IN) :: SRGFMT     ! Format of surrogates file
         INTEGER      , INTENT  (IN) :: SRGNROWS   ! number of grid rows from hdr
@@ -141,7 +141,11 @@ C......... Determine the number surrogate file entries
 
                     CALL UPCASE( LINE )
 
-                    I = INDEX( LINE, '#GRID' )! check current line for header
+                    IF( VFLAG ) THEN          ! check current line for header
+                        I = INDEX( LINE, '#VARIABLE_GRID' )
+                    ELSE
+                        I = INDEX( LINE, '#GRID' )
+                    END IF
 
                     IF( I .GT. 0 ) THEN       ! skip if current line is header
                         HFLAG = .TRUE.
@@ -217,8 +221,12 @@ C.........  Fill surrogate arrays
                 IF ( .NOT. HFLAG ) THEN
 
                     CALL UPCASE( LINE )
-
-                    I = INDEX( LINE, '#GRID' )! check current line for header
+                    
+                    IF( VFLAG ) THEN          ! check current line for header
+                        I = INDEX( LINE, '#VARIABLE_GRID' )
+                    ELSE
+                        I = INDEX( LINE, '#GRID' )
+                    END IF
 
                     IF( I .GT. 0 ) THEN   ! skip if current line is header
                         HFLAG = .TRUE.
