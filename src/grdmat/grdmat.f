@@ -13,7 +13,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Modified 12/01 by Gabe Cano - deterministic/stochastic mode
+C     Modified 2/02 by Gabe Cano - deterministic/stochastic mode
 C
 C***************************************************************************
 C
@@ -368,8 +368,12 @@ C.............  Allocate memory for indices to surrogates tables for each source
             CALL CHECKMEM( IOS, 'SRGIDPOS', PROGNAME )
             ALLOCATE( SGFIPPOS( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SGFIPPOS', PROGNAME )
-            ALLOCATE( SRGCDPOS( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SRGCDPOS', PROGNAME )
+            ALLOCATE( SGROWPOS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SGROWPOS', PROGNAME )
+            ALLOCATE( SRGTOUSE( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRGTOUSE', PROGNAME )
+
+            SRGTOUSE = IMISS3  !  Array
 
 C.............  Assigns the index of the surrogate to each source (stored
 C               in SRGIDPOS passed through MODXREF)
@@ -421,10 +425,11 @@ C.............  Allocate memory for mobile source gridding matrix
         CASE( 'MOBILE' )
 
 C.............  Convert mobile source coordinates from lat-lon to output grid
-            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
-     &                     XCENT, YCENT, XLOC1, YLOC1 )
-            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
-     &                     XCENT, YCENT, XLOC2, YLOC2 )
+c            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM,
+c     &                     XCENT, YCENT, XLOC1, YLOC1 )
+
+c            CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+c     &                     XCENT, YCENT, XLOC2, YLOC2 )
 
 C.............  Determine sizes for allocating mobile gridding matrix 
             CALL SIZGMAT( CATEGORY, NSRC, NGRID, MXSCEL, MXCSRC, NMATX )
@@ -565,6 +570,11 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
 
 94020   FORMAT( A, :, F8.2 )
+
+C...........   Internal buffering formats............ 94xxx
+
+98000   FORMAT( A, I4)
+98010   FORMAT( A)
 
         END PROGRAM GRDMAT
 
