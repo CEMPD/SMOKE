@@ -45,6 +45,7 @@
 
 !.........  Unique speciation profiles list and index to sorted tables
         INTEGER,              PUBLIC :: NSPROF         ! Number in unique list
+        INTEGER,              PUBLIC :: NPOLSPRO       ! Number of profiles for pollutant
 
         ! position in INPRF of start of each profile
         INTEGER, ALLOCATABLE, PUBLIC :: IDXSPRO ( : )

@@ -43,7 +43,7 @@ C.........  This module contains the inventory arrays
 C.........  This module contains the speciation profiles
         USE MODSPRO, ONLY: MXSPEC, MXSPFUL, SPCNAMES, INPRF, SPECID,
      &                     MASSFACT, MOLEFACT, MOLUNITS, NSPFUL, 
-     &                     SPROFN, IDXSPRO, NSPECIES, IDXSSPEC
+     &                     SPROFN, IDXSPRO, NSPECIES, IDXSSPEC, NPOLSPRO
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC, ONLY: INPUTHC, OUTPUTHC, EMTNAM, EMTPOL, NEPOL,
@@ -665,12 +665,10 @@ C.............  Initilialize multiple profiles and default reporting to true
             MULTIPRO = .TRUE.
             DEFREPRT = .TRUE.
 
-C.............  When the number of profile table entries is the same as the
-C               number of model species, then we know that there is only
-C               one profile used for all sources, so do simple processing. The
-C               one exception is when there is a pollutant-to-pollutant 
+C.............  When one profile used for all sources, so do simple processing. 
+C               The one exception is when there is a pollutant-to-pollutant 
 C               conversion, then we must still do the standard processing.
-            IF( NSPFUL .EQ. NMSPC ) THEN
+            IF( NPOLSPRO .EQ. 1 ) THEN
 
                 L1 = LEN_TRIM( SNAM )
                 L2 = LEN_TRIM( PNAM )
