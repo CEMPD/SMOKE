@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -570,7 +570,7 @@ C.........  Loop through all groups, then number of pollutants per group
                 VBUF = EANAM( SIINDEX( V,N ) )
 
                 IF ( AUFLAG ) THEN    ! Area sources
-                    K = INDEX1( VBUF, ANIPOL, AEINAM )
+                    K = INDEX1( VBUF, ANUMATV, AUVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KA( K ) .NE. 0 ) THEN
                             AU_EXIST( V,N ) = ACNT
@@ -583,7 +583,7 @@ C.........  Loop through all groups, then number of pollutants per group
                 END IF
 
                 IF ( MUFLAG ) THEN    ! Mobile sources
-                    K = INDEX1( VBUF, MNIPPA, MEANAM )
+                    K = INDEX1( VBUF, MNUMATV, MUVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KM( K ) .NE. 0 ) THEN
                             MU_EXIST( V,N ) = KM( K )
@@ -596,7 +596,7 @@ C.........  Loop through all groups, then number of pollutants per group
                 END IF
 
                 IF ( PUFLAG ) THEN    ! Point sources
-                    K = INDEX1( VBUF, PNIPOL, PEINAM )
+                    K = INDEX1( VBUF, PNUMATV, PUVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KP( K ) .NE. 0 ) THEN
                             PU_EXIST( V,N ) = PCNT
@@ -630,7 +630,7 @@ C.........  Loop through all groups, then number of pollutants per group
                 VBUF = EANAM( SIINDEX( V,N ) )
 
                 IF ( AAFLAG ) THEN    ! Area sources
-                    K = INDEX1( VBUF, ANIPOL, AEINAM )
+                    K = INDEX1( VBUF, ANAMATV, AAVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KA( K ) .NE. 0 ) THEN
                             AA_EXIST( V,N ) = ACNT
@@ -643,7 +643,7 @@ C.........  Loop through all groups, then number of pollutants per group
                 END IF
 
                 IF ( MAFLAG ) THEN    ! Mobile sources
-                    K = INDEX1( VBUF, MNIPPA, MEANAM )
+                    K = INDEX1( VBUF, MNAMATV, MAVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KM( K ) .NE. 0 ) THEN
                             MA_EXIST( V,N ) = KM( K )
@@ -656,7 +656,7 @@ C.........  Loop through all groups, then number of pollutants per group
                 END IF
 
                 IF ( PAFLAG ) THEN    ! Point sources
-                    K = INDEX1( VBUF, PNIPOL, PEINAM )
+                    K = INDEX1( VBUF, PNAMATV, PAVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KP( K ) .NE. 0 ) THEN
                             PA_EXIST( V,N ) = PCNT
