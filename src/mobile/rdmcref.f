@@ -226,7 +226,8 @@ C.............  Check that current county is inside the grid (and in the invento
                     WRITE( MESG,94010 ) 'WARNING: Ignoring county ' //
      &                     'cross-reference for inventory county',
      &                     INVCOUNTY, ',' // CRLF() // BLANK10 // 
-     &                     ' since it is not inside the grid.'
+     &                     ' since it is not inside the grid or ' //
+     &                     'does not have any VMT data.'
                     CALL M3MESG( MESG )
                     
                 ELSE    
