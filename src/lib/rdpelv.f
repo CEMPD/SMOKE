@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDPELV( FDEV, NSRC, NMAJOR, NPING )
+        SUBROUTINE RDPELV( FDEV, NSRC, ASCIFLAG, NMAJOR, NPING )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -21,17 +21,17 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
 C
-C Environmental Programs Group
-C MCNC--North Carolina Supercomputing Center
+C Environmental Modeling Center
+C MCNC
 C P.O. Box 12889
 C Research Triangle Park, NC  27709-2889
 C
-C env_progs@mcnc.org
+C smoke@emc.mcnc.org
 C
 C Pathname: $Source$
 C Last updated: $Date$ 
@@ -61,6 +61,7 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 
         INTEGER, INTENT (IN)  :: FDEV    !  unit number for elev srcs file 
         INTEGER, INTENT (IN)  :: NSRC    !  no. sources
+        LOGICAL, INTENT (IN)  :: ASCIFLAG!  true: outputing an ASCII elevated
         INTEGER, INTENT (OUT) :: NMAJOR  !  number of major sources
         INTEGER, INTENT (OUT) :: NPING   !  number of PinG sources
 
@@ -78,7 +79,6 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         INTEGER         PGRP             !  group from previous iteration
 
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
-        LOGICAL      :: RFLAG = .TRUE.   !  true: non-PinG, elevated srcs okay
 
         CHARACTER*300   BUFFER           !  buffer for formatted source chars
         CHARACTER*300   MESG             !  message buffer
@@ -92,8 +92,6 @@ C.........   Get settings from environment variables
 C.........   This variable enables have no "major" sources identified in the
 C            PELV file, and actually not doing plume rise on any sources instead
 C            of the default behaviour, which is to do plume rise on all sources
-        MESG = 'Indicator for having elevated sources'
-        RFLAG = ENVYN( 'SMK_ELEVPT_YN', MESG, .TRUE., IOS )
 
 C.........  Allocate the MODELEV arrays for identifying major/PinG sources
         ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
@@ -108,23 +106,7 @@ C.........  Initialize arrays
         LPING    = .FALSE.
         GROUPID  = 0 
 
-C......... If there is not a PELV file, then possible reset LMAJOR and return
-        IF( FDEV .LE. 0 ) THEN
-            IF( RFLAG ) THEN
-                LMAJOR = .TRUE.  ! array
-
-            ELSE
-                MESG = 'Because SMK_ELEVPT_YN = N and there is no ' //
-     &                 'elevated source file, the' // CRLF()// BLANK10//
-     &                 'Laypoint program is not needed'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            RETURN
-
-        END IF
-
-        MESG = 'Reading elevated/plume-in-grid sources file...'
+        MESG = 'Determining elevated/plume-in-grid sources...'
         CALL M3MSG2( MESG )
 
 C.........  Read in lines knowing that they are formatted in the CSOURC
@@ -133,6 +115,9 @@ C           spacing
         NPING  = 0
         IREC   = 0
         DO           !  head of the FDEV-read loop
+
+C.............  If no input file, then end read loop
+            IF( FDEV .LE. 0 ) EXIT
 
             READ( FDEV, *, END=23, IOSTAT=IOS ) IMAJR, IPING, IGRP
             IREC = IREC + 1
@@ -159,6 +144,14 @@ C.............  Set sources that are PinG sources
                 NPING = NPING + 1                
                 LPING   ( IPING ) = .TRUE.
                 GROUPID ( IPING ) = IGRP
+
+C.................  When outputting ASCII output file, flag PinG sources
+C                   as elevated sources.
+                IF ( ASCIFLAG ) THEN
+                    NMAJOR = NMAJOR + 1
+                    LMAJOR  ( IPING ) = .TRUE.
+                END IF
+
             END IF 
 
 C.............  If index is out of range, ELEVPOINT needs rerunning
@@ -177,18 +170,44 @@ C.............  If index is out of range, ELEVPOINT needs rerunning
 
 23      CONTINUE    !  end of read loop
 
-C.........  If there are no major sources specifically identified, then 
-C           change array to make all sources potentially elevated (unless
-C           the environment variable override has been set)
-        IF( RFLAG .AND. NMAJOR .EQ. 0 ) THEN
-            LMAJOR = .TRUE.  ! array
-            MESG = 'NOTE: All non-PinG sources are potentially elevated'
+C.........  If there are no major sources specifically identified...
+        IF( NMAJOR .EQ. 0 ) THEN
 
-        ELSEIF( NMAJOR .EQ. 0 ) THEN
-            MESG = 'NOTE: All non-PinG sources are low-level (layer 1)'
+C.............  Error if ASCII elevated file being created and no PELV file
+C.............  Note that when called from Laypoint, ASCIFLAG is never true,
+C               even if Laypoint is being run for UAM-style explicit plumerise
+            IF( ASCIFLAG .AND. FDEV .LE. 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: No PELV file input, but it is ' //
+     &                 'required for UAM-style processing.'
+
+C.............  Error if ASCII elevated file being created and major sources
+            ELSE IF( ASCIFLAG ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: No elevated sources identified in ' //
+     &                 'PELV input file.'
+
+C.............  For CMAQ-style, change array to make all sources potentially
+C               elevated when there is no PELV file used
+            ELSE IF( FDEV .LE. 0 ) THEN
+                NMAJOR = NSRC
+                LMAJOR = .TRUE.  ! array
+                MESG = 'NOTE: All non-PinG sources are potentially '//
+     &                 'elevated'
+
+C.............  For CMAQ-style, with a PELV file, change all to major, but
+C               give a warning.
+            ELSE
+                NMAJOR = NSRC
+                LMAJOR = .TRUE.  ! array
+                MESG = 'WARNING: No major/PinG sources in PELV file, '//
+     &                 CRLF() // BLANK10 // 'All non-PinG sources ' //
+     &                 'potentially elevated'
+
+            END IF
 
         ELSE
-            WRITE( MESG,94010 ) 'NOTE:', NMAJOR,' non-PinG sources ' //
+            WRITE( MESG,94010 ) 'NOTE:', NMAJOR,' sources ' //
      &             'will be elevated, and the rest are' //
      &             CRLF()// BLANK10 // 'low-level (layer 1)'
      &             
@@ -205,7 +224,7 @@ C           the environment variable override has been set)
 
 C.........  Abort if error occured on read
         IF( EFLAG ) THEN
-            MESG = 'Problem reading elevated sources file'
+            MESG = 'Problem with elevated sources file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
