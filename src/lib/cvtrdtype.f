@@ -1,5 +1,5 @@
 
-       INTEGER FUNCTION CVTRDTYPE( SMKROAD, LASAFLAG )
+       INTEGER FUNCTION CVTRDTYPE( SMKROAD, RLASAFLAG, ULASAFLAG )
 
 C***********************************************************************
 C  function body starts at line 68
@@ -44,7 +44,8 @@ C........  Includes
 
 C........  Function arguments
        INTEGER, INTENT (IN) :: SMKROAD   ! road type in SMOKE code ( 1 - 19 )
-       LOGICAL, INTENT (IN) :: LASAFLAG  ! true: treat local roads as arterial
+       LOGICAL, INTENT (IN) :: RLASAFLAG ! true: treat rural local roads as arterial
+       LOGICAL, INTENT (IN) :: ULASAFLAG ! true: treat urbal local roads as arterial
 
 C........  Road type parameters
        INTEGER, PARAMETER :: RURALINTERSTATE = 1   ! rural interstate
@@ -76,7 +77,7 @@ C   begin body of function CVTRDTYPE
        CASE( RURALPRINCART:RURALMINORCOLL )    ! rural arterials through collectors
            CVTRDTYPE = M6ARTERIAL
        CASE( RURALLOCAL )
-           IF( LASAFLAG ) THEN
+           IF( RLASAFLAG ) THEN
                CVTRDTYPE = M6ARTERIAL
            ELSE
                CVTRDTYPE = M6LOCAL
@@ -86,7 +87,7 @@ C   begin body of function CVTRDTYPE
        CASE( URBANPRINCART:URBANCOLL )         ! urban arterials through collectors
            CVTRDTYPE = M6ARTERIAL
        CASE( URBANLOCAL )
-           IF( LASAFLAG ) THEN
+           IF( ULASAFLAG ) THEN
                CVTRDTYPE = M6ARTERIAL
            ELSE
                CVTRDTYPE = M6LOCAL
