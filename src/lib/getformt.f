@@ -173,9 +173,9 @@ C................  Check if format is provided as a header entry
                     EXIT ! To end inner loop
                 END IF
 
-                L = INDEX( LINE, 'NTI' )
+                L = INDEX( LINE, 'TOXICS' )
                 IF( L .GT. 0 ) THEN
-                    GETFORMT = NTIFMTA
+                    GETFORMT = NTIFMT
                     EXIT ! To end inner loop
                 END IF
 
