@@ -132,7 +132,8 @@
         INTEGER, ALLOCATABLE, PUBLIC :: INVIDX( : )  ! index data to inven
         INTEGER, ALLOCATABLE, PUBLIC :: TPRIDX( : )  ! index data to hourly
         INTEGER, ALLOCATABLE, PUBLIC :: SPCIDX( : )  ! index global-to-input
-        INTEGER, ALLOCATABLE, PUBLIC :: SPCTODAT( : )! index spc-to-data
+        INTEGER, ALLOCATABLE, PUBLIC :: SPCTOINV( : )! index spc-to-inven
+        INTEGER, ALLOCATABLE, PUBLIC :: SPCTOTPR( : )! index spc-to-temporal
         INTEGER, ALLOCATABLE, PUBLIC :: TPACTIDX( : )! index etype-to-activity
 
         LOGICAL, ALLOCATABLE, PUBLIC :: DATOUT( : )  ! true: inven data needed
