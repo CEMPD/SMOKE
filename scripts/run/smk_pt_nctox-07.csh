@@ -11,6 +11,13 @@
 #                     April, 2002
 #*********************************************************************
 
+echo " "
+echo "NOTE: THIS SCRIPT HAS NOT BEEN INTEGRATED FOR THE SMOKE v1.5 RELEASE"
+echo " "
+
+exit( 1 )
+
+
 # set Assigns file names
 setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.m3demo.cb-iv.ed36
 
