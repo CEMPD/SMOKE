@@ -2,7 +2,7 @@
         PROGRAM TMPBIO
 
 C***********************************************************************
-C  program body starts at line  186
+C  program body starts at line  187
 C
 C  DESCRIPTION:
 C       Computes time stepped gridded biogenic emissions in terms of 
@@ -76,56 +76,23 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
-        CHARACTER*14    MMDDYY
         CHARACTER*16    PROMPTMFILE
         INTEGER         PROMPTFFILE
         INTEGER         TRIMLEN
-        CHARACTER*16           VERCHAR
-        INTEGER         WKDAY           !  day of week (1...7)
+        CHARACTER*16    VERCHAR
 
         EXTERNAL        CRLF, ENVINT, ENVYN, GETDATE, GETFLINE, GETNUM, 
-     &                  GETYN, HHMMSS, INDEX1, MMDDYY, PROMPTMFILE, 
-     &                  PROMPTFFILE, TRIMLEN, VERCHAR, WKDAY
+     &                  GETYN, HHMMSS, INDEX1, PROMPTMFILE, 
+     &                  PROMPTFFILE, TRIMLEN, VERCHAR
 
-C...........   LOCAL VARIABLES and their descriptions:
-
-        INTEGER         B, M    !  counters for biogenic, model species
-        INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
-        INTEGER         HR      !  current simulation hour
-        INTEGER         IOS     !  temporay IO status
-        INTEGER         JDATE   !  current simulation date (YYYYDDD)
-        INTEGER         JTIME   !  current simulation time (HHMMSS)
-        INTEGER         MDATE   !  met file 1 start date
-        INTEGER         MTIME   !  met file 1 start time
-        INTEGER         RDATE   !  met file 2 start date 
-        INTEGER         RTIME   !  met file 2 start time
-        INTEGER         TZONE   ! output-file time zone ; not used in program
-        INTEGER         LDATE   !  previous simulation date
-        INTEGER         LDEV    !  unit number for log device
-        INTEGER         RDEV    !  unit number for speciation profiles file
-        INTEGER         NSTEPS  !  run duration (hours)
-        INTEGER         MXSTEPS !  maximum number of time steps
-        INTEGER         PARTYPE !  method number to calculate PAR
-
-        LOGICAL         EFLAG   !  error flag
-        LOGICAL         PROMPTF !  iff PROMPTFLAG E.V. is true or not defined
-        LOGICAL ::      SAMEFILE = .TRUE.   ! radiation/cld and tmpr data in same file 
-
-        CHARACTER*16    ENAME   !  logical name for emissions output (moles)
-        CHARACTER*16    SNAME   !  logical name for emissions output (mass)
-        CHARACTER*16    NNAME   !  logical name for normalized-emissions input
-        CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
-        CHARACTER*16    M3NAME  !  logical name for MET_FILE1
-        CHARACTER*16    M2NAME  !  logical name for MET_FILE2
-        CHARACTER*256   MESG    !  message buffer for M3EXIT()
-
-C.......   Input met and grid variables:
+C.........  Gridded meteorology data
                 
         REAL, ALLOCATABLE :: LAT  ( :, : )    !  grid lat (deg) -90 <= LAT <= 90
         REAL, ALLOCATABLE :: LON  ( :, : )    !  grid lon (deg) -180 <= LON <= 180 
         REAL, ALLOCATABLE :: TASFC ( :, : )    !  level-1 air  temperature (K)
         REAL, ALLOCATABLE :: PRSFC  ( :, : )    !  pressure (Pa)
         REAL, ALLOCATABLE :: TSOLAR ( :, :)     !  Photosynthetic Active Radiation (PAR)
+
 C.......   Gridded normalized emissions description input from file BGRD
 
         REAL, ALLOCATABLE ::  PINE( :, :, : )         !   for pine
@@ -147,15 +114,9 @@ C.......   BEIS2 internal, output species
         REAL, ALLOCATABLE :: EMISS( :, :, : )         ! emissions in tons/hour
 
       
-        INTEGER         NCOLS   ! no. of grid columns
-        INTEGER         NGRID   ! no. of grid cells
-        INTEGER         NROWS   ! no. of grid rows
-        INTEGER         MSPCS   ! no. of emitting species
-        INTEGER         NLINES  ! no. of lines in GSPRO speciation profiles file  
-
-        CHARACTER*5     CTZONE     ! string of time zone
-        CHARACTER*16    RADNAM     !  string for shortwave radiation reaching ground
-        CHARACTER*16    TMPRNAM    !  string for temperature 
+        CHARACTER*5      CTZONE     ! string of time zone
+        CHARACTER*16     RADNAM     !  string for shortwave radiation reaching ground
+        CHARACTER*16     TMPRNAM    !  string for temperature 
         CHARACTER*50  :: METSCEN   !  temporary string for met scenario name
         CHARACTER*50  :: CLOUDSHM  !  temporary string for cloud scheme name
         CHARACTER*50  :: LUSE      !  temporary string for land use description
@@ -168,8 +129,6 @@ C.......   Name tables for file NNAME
 
         CHARACTER(LEN=SPNLEN3)       SPPRO        ! speciation profile to use
 
-        CHARACTER*16 :: PROGNAME = 'TMPBIO'   !  program name
-
         CHARACTER*72    PARMENU( 5 )            ! Methods to calc. PAR
         DATA     PARMENU
      &           / 'Use MM5 generated RGND or RSD',
@@ -177,7 +136,50 @@ C.......   Name tables for file NNAME
      &             'Use KF  cloud attenuation',   
      &             'Use No deep convection param'  ,
      &             'Assume Clear Skies' /
+
+C...........   Logical names and unit numbers
+
+        INTEGER         LDEV    !  unit number for log device
+        INTEGER         RDEV    !  unit number for speciation profiles file
             
+        CHARACTER*16    ENAME   !  logical name for emissions output (moles)
+        CHARACTER*16    SNAME   !  logical name for emissions output (mass)
+        CHARACTER*16    NNAME   !  logical name for normalized-emissions input
+        CHARACTER*16    GNAME   !  logical name for GRID_CRO_2D
+        CHARACTER*16    M3NAME  !  logical name for MET_FILE1
+        CHARACTER*16    M2NAME  !  logical name for MET_FILE2
+
+C...........   Other variables and their descriptions:
+
+        INTEGER         B, M    !  counters for biogenic, model species
+        INTEGER         I, J, K, L, C, R  !  loop counters and subscripts
+        INTEGER         HR      !  current simulation hour
+
+        INTEGER         IOS     !  temporay IO status
+        INTEGER         JDATE   !  current simulation date (YYYYDDD)
+        INTEGER         JTIME   !  current simulation time (HHMMSS)
+        INTEGER         LDATE   !  previous simulation date
+        INTEGER         MDATE   !  met file 1 start date
+        INTEGER         MSPCS   ! no. of emitting species
+        INTEGER         MTIME   !  met file 1 start time
+        INTEGER         MXSTEPS !  maximum number of time steps
+        INTEGER         NCOLS   ! no. of grid columns
+        INTEGER         NGRID   ! no. of grid cells
+        INTEGER         NLINES  ! no. of lines in GSPRO speciation profiles file  
+        INTEGER         NROWS   ! no. of grid rows
+        INTEGER         NSTEPS  !  run duration (hours)
+        INTEGER         PARTYPE !  method number to calculate PAR
+        INTEGER         RDATE   !  met file 2 start date 
+        INTEGER         RTIME   !  met file 2 start time
+        INTEGER         TZONE   !  output-file time zone ; not used in program
+
+        LOGICAL         EFLAG   !  error flag
+        LOGICAL ::      SAMEFILE = .TRUE.   ! radiation/cld and tmpr data in same file 
+
+        CHARACTER*300   MESG    !  message buffer for M3EXIT()
+
+C.......   Input met and grid variables:
+        CHARACTER*16 :: PROGNAME = 'TMPBIO'   !  program name
 
 C***********************************************************************
 C   begin body of program TMPBIO
@@ -189,6 +191,8 @@ C           to continue running the program.
 
         CALL INITEM( LDEV, SCCSW, PROGNAME )
 
+C.........  Evaluate the environment variables...
+
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
@@ -197,6 +201,11 @@ C.........  Write time zone to character string
 
         MESG = 'Speciation profile to use for biogenics'
         CALL ENVSTR( 'BIOG_SPRO', MESG, '0000', SPPRO, IOS )
+
+C........  Are the rad/cld data in the same file as tmpr data
+
+        MESG = 'Radiation/cloud in same file as temperature data?'
+        SAMEFILE = ENVYN ( 'BIOMET_SAME', MESG, .FALSE., IOS )
 
         RDEV = PROMPTFFILE(
      &           'Enter logical name for SPECIATION PROFILES file',
@@ -318,11 +327,6 @@ C........  Get met and cloud scheme descriptions from M3NAME if they exist
         CLOUDSHM = GETCFDSC( FDESC3D, '/CLOUD SCHEME/', .FALSE. )
 
         IF ( PARTYPE .NE. 5 ) THEN
-
-C........  Are the rad/cld data in the same file as tmpr data
-
-           MESG = 'Radiation/cloud in same file as temperature data?'
-           SAMEFILE = ENVYN ( 'BIOMET_SAME', MESG, .FALSE., IOS )
 
 C.........  Open second met file if needed
 
@@ -647,8 +651,7 @@ C.........  Loop thru the number of time steps
 
            IF( JDATE .NE. LDATE ) THEN
 
-               CALL M3MSG2( 'Processing ' //
-     &                      DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE ) )
+               CALL WRDAYMSG( JDATE, MESG )               
 
            ENDIF
 
