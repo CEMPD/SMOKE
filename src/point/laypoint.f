@@ -39,6 +39,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -117,14 +120,14 @@ C.........  Allocatable cross- OR dot-point meteorology input buffers
         REAL   , ALLOCATABLE :: DBUF( :,: )   ! dor-point
 
 C.........  Allocatable un-gridding matrices (uses bilinear interpolation)
-C           Dimensioned 4 by NPSRC
+C           Dimensioned 4 by NSRC
         INTEGER, ALLOCATABLE :: ND( :,: )     !  dot-point, cell indexes
         INTEGER, ALLOCATABLE :: NX( :,: )     !  cross-point, cell indexes
    
         REAL   , ALLOCATABLE :: CD( :,: )     !  dot-point, coefficients
         REAL   , ALLOCATABLE :: CX( :,: )     !  cross-point, coefficients
 
-C.........  Output layer fractions, dimensioned npsrc, emlays
+C.........  Output layer fractions, dimensioned NSRC, emlays
         REAL   , ALLOCATABLE :: LFRAC( :, : )
 
 C.........  Fixed-dimension arrays
@@ -137,6 +140,7 @@ C...........   Logical names and unit numbers
         INTEGER         RDEV    !  optional report iff REP_LAYER_MAX is set
         INTEGER         SDEV    !  ASCII part of inventory file
 
+        CHARACTER*16    ANAME   !  ASCII point-source inventory file
         CHARACTER*16    DNAME   !  dot-point layered met file name
         CHARACTER*16    ENAME   !  point-source inventory input file
         CHARACTER*16    GNAME   !  cross-point layered grid file name
@@ -158,12 +162,10 @@ C...........   Other local variables
         INTEGER          LPBL      ! first L: ZF(L) above mixing layer
         INTEGER          LSTK      ! first L: ZF(L) > STKHT
         INTEGER          LTOP      ! plume top    layer
-        INTEGER          NCHARS    ! number of point-source characteristics
         INTEGER          NCOLS     ! cross grid number of grid columns
         INTEGER          NDOTS     ! dot grid number of cells
         INTEGER          NGRID     ! cross grid number of cells
         INTEGER          NLAYS     ! number of layers in met files
-        INTEGER          NPSRC     ! number of point sources
         INTEGER          NROWS     ! cross grid number of grid rows
         INTEGER          NSTEPS    ! mumber of time steps
         INTEGER          REP_LAYR  ! layer for reporting srcs w/ high plumes
@@ -257,16 +259,22 @@ C           limits of plume rise algorithm
 
         END IF
 
+C.......   Set category to point sources
+        CATEGORY = 'POINT'
+
+C.........  Get inventory file names given source category
+        CALL GETINAME( CATEGORY, ENAME, ANAME )
+
 C.......   Get file name; open input point sources, temporal cross-reference,
 C.......   and temporal profiles files
 
         ENAME = PROMPTMFILE( 
      &          'Enter logical name for POINT I/O API INVENTORY file',
-     &          FSREAD3, 'PNTS', PROGNAME )
+     &          FSREAD3, ENAME, PROGNAME )
 
         SDEV = PROMPTFFILE( 
      &           'Enter logical name for the ASCII INVENTORY file',
-     &           .TRUE., .TRUE., 'PSRC', PROGNAME )
+     &           .TRUE., .TRUE., ANAME, PROGNAME )
 
         SNAME = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT SURFACE MET file',
@@ -284,12 +292,23 @@ C.......   and temporal profiles files
      &          'Enter name for DOT-POINT LAYERED MET file',
      &          FSREAD3, 'MET_DOT_3D', PROGNAME )
 
-C.........  Get header description of inventory file and store needed header 
-C           information
-        CALL RETRIEVE_IOAPI_HEADER( ENAME )
-        NPSRC = NROWS3D
-        IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
-        IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
+C.........  Get header description of inventory file 
+        IF( .NOT. DESC3( ENAME ) ) THEN
+            MESG = 'Could not get description of file "' //
+     &             ENAME( 1:LEN_TRIM( ENAME ) ) // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........  Otherwise, store source-category-specific header information, 
+C           including the inventory pollutants in the file (if any).  Note that 
+C           the I/O API head info is passed by include file and the
+C           results are stored in module MODINFO.
+        ELSE
+
+            CALL GETSINFO
+            IFDESC2 = GETCFDSC( FDESC3D, '/FROM/', .TRUE. )
+            IFDESC3 = GETCFDSC( FDESC3D, '/VERSION/', .TRUE. )
+
+        END IF
 
 C.........  Check multiple met files for consistency
         EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, GNAME, XNAME, DNAME ) )
@@ -364,7 +383,7 @@ C           already retrieved
         SDATE3D = SDATE
         STIME3D = STIME
         TSTEP3D = TSTEP
-        NROWS3D = NPSRC
+        NROWS3D = NSRC
         NLAYS3D = EMLAYS
         NVARS3D = 1
         VGLVS3D( 1:EMLAYS ) = VGLVSXG( 1:EMLAYS )  ! array
@@ -402,60 +421,60 @@ C.........  Write header to the report
         ENDIF
 
 C.........  Allocate memory for and read required inventory characteristics
-        CALL RPNTSCHR( ENAME, SDEV, NPSRC, NINVARR, IVARNAMS, NCHARS )
+        CALL RDINVCHR( 'POINT', ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Call subroutine to convert grid coordinates from lat-lon to
 C           coordinate system of the destination grid
-        CALL CONVRTXY( NPSRC, XLOCA, YLOCA, GDTYP, P_ALP, P_BET,
-     &                 P_GAM, XCENT, YCENT )
+        CALL CONVRTXY( NSRC, GDTYP, P_ALP, P_BET, P_GAM, 
+     &                 XCENT, YCENT, XLOCA, YLOCA )
 
 C.........  Allocate memory for all remaining variables using dimensions 
 C           obtained previously...
 
 C.........  Allocate per-source arrays
-        ALLOCATE( HFX( NPSRC ), STAT=IOS )
+        ALLOCATE( HFX( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HFX', PROGNAME )
-        ALLOCATE( HMIX( NPSRC ), STAT=IOS )
+        ALLOCATE( HMIX( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HMIX', PROGNAME )
-        ALLOCATE( TSFC( NPSRC ), STAT=IOS )
+        ALLOCATE( TSFC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TSFC', PROGNAME )
-        ALLOCATE( USTAR( NPSRC ), STAT=IOS )
+        ALLOCATE( USTAR( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'USTAR', PROGNAME )
 
 C.........  Allocate per-source and per-layer arrays
-        ALLOCATE( DDZH( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( DDZH( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DDZH', PROGNAME )
-        ALLOCATE( DDZF( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( DDZF( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DDZF', PROGNAME )
-        ALLOCATE( PRES( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( PRES( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PRES', PROGNAME )
-        ALLOCATE( QV( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( QV( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'QV', PROGNAME )
-        ALLOCATE( TA( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( TA( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TA', PROGNAME )
-        ALLOCATE( UWIND( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( UWIND( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'UWIND', PROGNAME )
-        ALLOCATE( VWIND( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( VWIND( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VWIND', PROGNAME )
-        ALLOCATE( ZF( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( ZF( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ZF', PROGNAME )
-        ALLOCATE( ZH( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( ZH( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ZH', PROGNAME )
-        ALLOCATE( ZSTK( EMLAYS,NPSRC ), STAT=IOS )
+        ALLOCATE( ZSTK( EMLAYS,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ZSTK', PROGNAME )
 
 C.........  Allocate layer fractions array
-        ALLOCATE( LFRAC( NPSRC,EMLAYS ), STAT=IOS )
+        ALLOCATE( LFRAC( NSRC,EMLAYS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
 
 C.........  Allocate ungridding arrays
-        ALLOCATE( ND( 4,NPSRC ), STAT=IOS )
+        ALLOCATE( ND( 4,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ND', PROGNAME )
-        ALLOCATE( NX( 4,NPSRC ), STAT=IOS )
+        ALLOCATE( NX( 4,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NX', PROGNAME )
-        ALLOCATE( CD( 4,NPSRC ), STAT=IOS )
+        ALLOCATE( CD( 4,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CD', PROGNAME )
-        ALLOCATE( CX( 4,NPSRC ), STAT=IOS )
+        ALLOCATE( CX( 4,NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CX', PROGNAME )
 
 C.........  Allocate per-layer arrays from 1:EMLAYS
@@ -481,23 +500,23 @@ C.........  Allocate array for tmp gridded, layered cross-point met data
 C.........  Compute un-gridding matrices for dot and cross point met data
         CALL UNGRIDB( NCOLS+1, NROWS+1, 
      &                XORIGDG, YORIGDG, XCELLDG, YCELLDG,
-     &                NPSRC, XLOCA, YLOCA, ND, CD )
+     &                NSRC, XLOCA, YLOCA, ND, CD )
 
         CALL UNGRIDB( NCOLS, NROWS, XORIG, YORIG, XCELL, YCELL,
-     &                NPSRC, XLOCA, YLOCA, NX, CX )
+     &                NSRC, XLOCA, YLOCA, NX, CX )
 
 C.........  Read time-independent ZF and ZH
 C.........  Use BMATVEC to convert from a gridded array to a source-based array
 
         CALL RETRIEVE_IOAPI_HEADER( GNAME )
         CALL SAFE_READ3( GNAME, 'ZH', ALLAYS3, SDATE3D, STIME3D, XBUF )
-        CALL BMATVEC( NGRID, NPSRC, EMLAYS, NX, CX, XBUF, ZH )
+        CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZH )
 
         CALL SAFE_READ3( GNAME, 'ZF', ALLAYS3, SDATE3D, STIME3D, XBUF )
-        CALL BMATVEC( NGRID, NPSRC, EMLAYS, NX, CX, XBUF, ZF )
+        CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, ZF )
 
 C.........  Pre-process ZF and ZH to compute DDZH and DDZF
-        DO S = 1, NPSRC
+        DO S = 1, NSRC
 
             ZZ0 = ZF( 1,S )
             ZSTK ( 1,S ) = ZZ0 - STKHT( S )
@@ -576,31 +595,31 @@ C.............  Write to report file if report feature is on
 C.............  Read and transform meteorology:
 
             CALL SAFE_READ3( SNAME, 'HFX', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, HFX )
+            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, HFX )
 
             CALL SAFE_READ3( SNAME, 'PBL', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, HMIX )
+            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, HMIX )
 
             CALL SAFE_READ3( SNAME, 'TGD', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, TSFC )
+            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, TSFC )
 
             CALL SAFE_READ3( SNAME, 'USTAR', ALLAYS3, JDATE,JTIME,XBUF )
-            CALL BMATVEC( NGRID, NPSRC, 1, NX, CX, XBUF, USTAR )
+            CALL BMATVEC( NGRID, NSRC, 1, NX, CX, XBUF, USTAR )
 
             CALL SAFE_READ3( XNAME, 'TA', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NPSRC, EMLAYS, NX, CX, XBUF, TA )
+            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, TA )
 
             CALL SAFE_READ3( XNAME, 'QV', ALLAYS3, JDATE, JTIME, XBUF )
-            CALL BMATVEC( NGRID, NPSRC, EMLAYS, NX, CX, XBUF, QV )
+            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, QV )
 
             CALL SAFE_READ3( XNAME, 'PRES', ALLAYS3, JDATE, JTIME,XBUF )
-            CALL BMATVEC( NGRID, NPSRC, EMLAYS, NX, CX, XBUF, PRES )
+            CALL BMATVEC( NGRID, NSRC, EMLAYS, NX, CX, XBUF, PRES )
 
             CALL SAFE_READ3( DNAME, 'UWIND', ALLAYS3, JDATE,JTIME,DBUF )
-            CALL BMATVEC( NDOTS, NPSRC, EMLAYS, ND, CD, DBUF, UWIND )
+            CALL BMATVEC( NDOTS, NSRC, EMLAYS, ND, CD, DBUF, UWIND )
 
             CALL SAFE_READ3( DNAME, 'VWIND', ALLAYS3, JDATE,JTIME,DBUF )
-            CALL BMATVEC( NDOTS, NPSRC, EMLAYS, ND, CD, DBUF, VWIND )
+            CALL BMATVEC( NDOTS, NSRC, EMLAYS, ND, CD, DBUF, VWIND )
 
 C.............  Precompute constants before starting source loop
 
@@ -609,7 +628,7 @@ C.............  Precompute constants before starting source loop
             QQ =     - P 
 
 C.............  Loop through sources and compute plume rise
-            DO S = 1, NPSRC
+            DO S = 1, NSRC
 
 C.................  Skip source if it is outside grid
 
@@ -665,7 +684,8 @@ C.................  Check if LTOP out of range, and report (will only work
 C.................    if REP_LAYR env var has been set b/c default is -1
                 IF( REP_LAYR .GT. 0 .AND. LTOP .GT. REP_LAYR ) THEN
 
-                    CALL PARSCSRC( CSOURC( S ), LF, CHARS, I )
+                    CALL PARSCSRC( CSOURC( S ), NCHARS, SC_BEGP, 
+     &                             SC_ENDP, LF, I, CHARS )
 
                     WRITE( OUTFMT, 93042 ) PLTLEN3, NCHARS-2, CHRLEN3
                     WRITE( RDEV,OUTFMT ) S, IFIP( S ),
@@ -724,7 +744,7 @@ C...........   Internal buffering formats.............94xxx
 C******************  INTERNAL SUBPROGRAMS  *****************************
  
         CONTAINS
- 
+
 C.............  This internal subprogram tries to retrieve the I/O API header
 C               and aborts if it was not successful
             SUBROUTINE RETRIEVE_IOAPI_HEADER( FILNAM )
@@ -741,7 +761,7 @@ C----------------------------------------------------------------------
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             ENDIF
- 
+
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
 
 C----------------------------------------------------------------------
