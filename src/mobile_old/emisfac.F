@@ -149,10 +149,12 @@ C...........   Variables for targeted update of EFs
 C...........   Variables to carry over from one MOBILE5 call to the next
 
         INTEGER      IREAD
+C       04/30/99 wts - force length to match length in bd32.F
+        INTEGER NOTUSED
         REAL         CR12HC
         REAL         CR12CO
         CHARACTER*40 TNAME
-        COMMON /IMPAR7/ TNAME,IREAD
+        COMMON /IMPAR7/ TNAME,IREAD,NOTUSED
         COMMON /IM12HC/ CR12HC(19,20,5,2)
         COMMON /IM12CO/ CR12CO(19,20,5,2)
 
