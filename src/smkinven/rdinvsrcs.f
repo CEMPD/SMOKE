@@ -161,6 +161,7 @@ C...........   Other local variables
         CHARACTER(LEN=20)      VIDFMT  ! vehicle type ID format
         CHARACTER(LEN=20)      RWTFMT  ! roadway type number format
 
+        CHARACTER(LEN=200)     PATHNM           ! path name for tmp file
         CHARACTER(LEN=300)     TENLINES( 10 )   ! first ten lines of inventory file
 
         CHARACTER*16 :: PROGNAME =  'RDINVSRCS' ! program name
@@ -170,6 +171,18 @@ C   begin body of subroutine RDINVSRCS
 
 C.........  Get log file number for reports
         LDEV = INIT3()
+
+C.........  Get temporary directory location
+        MESG = 'Path where temporary import file will be written'
+        CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
+        
+        IF( IOS /= 0 ) THEN
+            MESG = 'WARNING: Temporary input file will be placed ' //
+     &             'in executable directory because ' // CRLF() //
+     &             BLANK10 // 'SMK_TMPDIR environment variable ' //
+     &             'is not set properly'
+            CALL M3MSG2( MESG )
+        END IF
 
 C.........  Initialize toxics flag to false
         TOXFLG = .FALSE.
@@ -308,11 +321,10 @@ C.............  If not list format, set current format to inventory format
 
 C.........  Open scratch file for writing record numbers
         CDEV = JUNIT()
-c        OPEN( CDEV, STATUS='SCRATCH', IOSTAT=IOS )
-        OPEN( CDEV, FILE='test.txt', IOSTAT=IOS )
+        OPEN( CDEV, FILE=TRIM( PATHNM ) // '/import_tmp', IOSTAT=IOS )
         
         IF( IOS /= 0 ) THEN
-            MESG = 'INTERNAL ERROR: Could not open scratch file'
+            MESG = 'Could not open temporary import file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
