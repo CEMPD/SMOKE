@@ -64,11 +64,17 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*16    MULTUNIT
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
+        CHARACTER*16    VERCHAR
 
         EXTERNAL  CRLF, INDEX1, MULTUNIT, PROMPTFFILE, PROMPTMFILE
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
+
+C...........  Local parameters
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
+
+C.........  Base and future year per 
 
 C.........  Other local variables
 
@@ -86,7 +92,7 @@ C***********************************************************************
 C   begin body of subroutine OPENMRGOUT
 
 C.........  Set default output file names
-        CALL MRGONAMS
+        CALL MRGONAMS     
 
 C.........  Set up header for I/O API output files
         FTYPE3D = GRDDED3
@@ -110,11 +116,17 @@ C.........  Set up header for I/O API output files
         VGTOP3D = VGTOP
         GDNAM3D = GRDNM
 
+        FDESC3D = ' '   ! array
+        FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
+        WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR 
+        IF( PYEAR .NE. BYEAR ) 
+     &      WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
+        
 C.........  Set ozone-season description buffer
         DESCBUF = ' '
         IF( LO3SEAS ) DESCBUF = 'Ozone-season value, '
         LD = MAX( LEN_TRIM( DESCBUF ), 1 )
-
 
 C.........  Set up and open I/O API output file
         IF( LGRDOUT ) THEN
@@ -123,14 +135,25 @@ C.............  Prompt for and gridded open file(s)
             IF( AFLAG ) THEN
                 CALL SETUP_VARIABLES( ANIPOL, ANMSPC, AEINAM, AEMNAM )
                 NLAYS3D = 1
+                FDESC3D( 1 ) = 'Area source emissions data'
                 AONAME = PROMPTMFILE(  
      &            'Enter name for AREA-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, AONAME, PROGNAME )
             END IF 
 
+            IF( BFLAG ) THEN
+                CALL SETUP_VARIABLES( BNIPOL, BNMSPC, BEINAM, BEMNAM )
+                NLAYS3D = EMLAYS
+                FDESC3D( 1 ) = 'Biogenic source emissions data'
+                BONAME = PROMPTMFILE(  
+     &            'Enter name for BIOGENIC-SOURCE GRIDDED OUTPUT file',
+     &            FSUNKN3, BONAME, PROGNAME )
+            END IF 
+
             IF( MFLAG ) THEN
                 CALL SETUP_VARIABLES( MNIPPA, MNMSPC, MEANAM, MEMNAM )
                 NLAYS3D = 1
+                FDESC3D( 1 ) = 'Mobile source emissions data'
                 MONAME = PROMPTMFILE(  
      &            'Enter name for MOBILE-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, MONAME, PROGNAME )
@@ -139,6 +162,7 @@ C.............  Prompt for and gridded open file(s)
             IF( PFLAG ) THEN
                 CALL SETUP_VARIABLES( PNIPOL, PNMSPC, PEINAM, PEMNAM )
                 NLAYS3D = EMLAYS
+                FDESC3D( 1 ) = 'Point source emissions data'
                 PONAME = PROMPTMFILE(  
      &            'Enter name for POINT-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, PONAME, PROGNAME )
@@ -147,6 +171,7 @@ C.............  Prompt for and gridded open file(s)
             IF( XFLAG ) THEN
                 CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )
                 NLAYS3D = EMLAYS
+                FDESC3D( 1 ) = 'Multiple category emissions data'
                 TONAME = PROMPTMFILE(  
      &            'Enter name for MULTI-SOURCE GRIDDED OUTPUT file',
      &            FSUNKN3, TONAME, PROGNAME )
