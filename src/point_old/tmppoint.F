@@ -249,6 +249,7 @@ C...........   Other local variables
         CHARACTER*16    DNAME   !  " day-specific  input file, or "NONE"
         CHARACTER*16    HNAME   !  " hour-specific input file, or "NONE"
         CHARACTER*16    TNAME   !  " timestepped (low-level)   output file
+        CHARACTER*16    TTYPE   !  Indicator for type of XREF file
         CHARACTER*16    UNAME   !  " (upper-level) output file, or "NONE"
         CHARACTER*80    LINE    !  buffer for XREF input lines
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
@@ -359,6 +360,15 @@ C.......   and temporal profiles files
         CDEV = PROMPTFFILE( 
      &           'Enter logical name for ACTUAL SCC file >> ',
      &           .TRUE., .TRUE., 'PSCC', 'TMPPOINT' )
+
+10      CALL GETSTR(
+     &           'Enter type of TEMPORAL XREF file (LIST/EPS)',
+     &           'LIST', TTYPE )
+
+        IF( TTYPE .NE. 'LIST' .AND. TTYPE .NE. 'EPS' ) THEN
+            CALL M3MESG( TTYPE // ' not valid XREF file type.' )
+            GO TO 10
+        ENDIF 
 
         XDEV = PROMPTFFILE( 
      &           'Enter name for TEMPORAL XREF file',
@@ -676,6 +686,8 @@ C.......   Read temporal-profile cross-reference file.
 
         WRITE( *,92000 ) 
      &         ' ', 'Reading TEMPORAL XREF file...', ' '
+
+        IF( TTYPE .EQ. 'LIST' ) GO TO 69
 
         IREC  = 0
         K     = 0
@@ -1127,6 +1139,7 @@ C...........   If requested, write out filled-in XREF file:
 
         END IF  !  if yflag (optional TEMPORAL XREF file being produced)
 
+69      CONTINUE
 
 C...........   Read temporal-profiles file:  3 parts (monthly, weekly, diurnal)
 
@@ -1155,16 +1168,30 @@ C...........       default profile.
             WFLAG = ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 )
 
             IF ( .NOT. MFLAG ) THEN
-                DO  71  V = 1, NIPOL
+                DO  70  V = 1, NIPOL
                     MDEX( S,V ) = 0
-71              CONTINUE
+70              CONTINUE
             END IF
 
             IF ( .NOT. WFLAG ) THEN
-                DO  72  V = 1, NIPOL
+                DO  71  V = 1, NIPOL
                     WDEX( S,V ) = 0
-72              CONTINUE
+71              CONTINUE
             END IF
+
+C.............  Read list formatted, non-species dep temporal profiles
+            IF( TTYPE .EQ. 'LIST' ) THEN
+
+                READ( XDEV, * ) MREF( 1 ), WREF( 1 ), DREF( 1 )
+                DO 72 V = 2,NIPOL
+                    MREF( V ) = MREF( 1 )
+                    WREF( V ) = WREF( 1 )
+                    DREF( V ) = DREF( 1 )
+72              CONTINUE
+
+                GO TO 79
+
+            ENDIF
 
             FIP = IFIP  ( S )
             SCC = ISCC  ( S )
