@@ -20,7 +20,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o pretmpr.o rdefacs.o \
      setdaylt.o temporal.o tmnamunt.o tmpintrp.o updtmat.o wrtsup.o opentmp_u.o \
-     rdustati.o getrnums.o
+     rdustati.o getrnums.o rdmeths.o
 #qatmpr.o
 
 #
@@ -67,6 +67,8 @@ rdustati.o: $(MODINFO) $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ rdustati.f
 getrnums.o:  $(MODUNCERT)
 	$(FC) $(FFLAGS) -c -o $@ getrnums.f
+rdmeths.o:  $(MODINFO) $(MODUNCERT)
+	$(FC) $(FFLAGS) -c -o $@ rdmeths.f
 #
 clean:
 	/bin/rm *.o
