@@ -1,11 +1,41 @@
- 
-C Version "@(#)$Id$ $Source$ $Date$ 
+
+C********************************************************************** 
+C
+C  Subroutine GETFACR   body starts at line 96
+C  Subroutine GETFACRR  body starts at line 262
+C  Subroutine GETFACI   body starts at line 431
+C  Subroutine GETFACICR body starts at line 602
+C  Subroutine GETFACIR  body starts at line 777
+C  Subroutine GETIIR3D  body starts at line 949
+C  Subroutine GETFACD   body starts at line 1149
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         SUBROUTINE GETFACR( NAME, DEFAULT, NMAX, N, 
      &                      INDEX, NCOL, RTAB1 )
 
 C***********************************************************************
-C  program body starts at line
 C
 C  DESCRIPTION:
 C      Program prompts, opens, and reads an ascii file with an array 

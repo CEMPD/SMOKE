@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         INTEGER FUNCTION CHKXLIN( LINE, IOS, LINENO, PTYPE )
 
 C***********************************************************************
-C  subroutine body starts at line 54
+C  subroutine body starts at line 75
 C
 C  FUNCTION: Checks a line of the temporal Xref file to see if needed 
 C            for type of processing (area, point, or mobile).
@@ -18,6 +16,27 @@ C  REVISION  HISTORY:
 C       prototype 4/96 by M Houyoux
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
         IMPLICIT NONE
 
