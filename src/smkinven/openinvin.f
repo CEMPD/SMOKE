@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
      &                        XDEV, EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
-     &                        ENAME, INNAME, IDNAME, IHNAME )
+     &                        UDEV, ENAME, INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 119
@@ -17,6 +17,7 @@ C      Subroutines: I/O API subroutines
 C
 C  REVISION  HISTORY:
 C      Created 4/99 by M. Houyoux
+C      Revised 9/01 by A. Holland
 C
 C**************************************************************************
 C
@@ -70,8 +71,10 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: PDEV      ! unit no. for pol codes & names
         INTEGER     , INTENT(OUT) :: VDEV      ! unit no. for activity names
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
+        INTEGER     , INTENT(OUT) :: UDEV      ! unit no. for uncertainty file
         INTEGER     , INTENT(OUT) :: CDEV      ! unit no. for SCCs descrciption
         INTEGER     , INTENT(OUT) :: ODEV      ! unit no. for ORIS descrciption
+
         CHARACTER(*), INTENT(OUT) :: ENAME     ! optional netCDF inven input
         CHARACTER(*), INTENT(OUT) :: INNAME    ! average inventory name
         CHARACTER(*), INTENT(OUT) :: IDNAME    ! day-specific inventory 
@@ -91,15 +94,32 @@ C...........   Other local variables
         LOGICAL       SFLAG  ! true: import speeds file
         LOGICAL       VFLAG  ! true: use ACTVNAMS file
         LOGICAL       XFLAG  ! true: import VMT mix file
+        LOGICAL       UFLAG  ! true: use uncertainty file
 
         CHARACTER(LEN=NAMLEN3) ANAME
         CHARACTER(LEN=NAMLEN3) NAMBUF      ! file name buffer
         CHARACTER*300          MESG        ! message buffer 
+        CHARACTER*1            CCRL        ! first letter of category
 
         CHARACTER*16 :: PROGNAME = 'OPENINVIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENINVIN
+
+        
+        SELECT CASE ( CATEGORY )
+        
+            CASE ( 'AREA' )
+                CCRL     = 'A'
+                
+            CASE ( 'MOBILE' )
+                CCRL     = 'M'
+
+            CASE ( 'POINT' )
+                CCRL     = 'P'
+                
+        END SELECT
+
 
 C.........  Set controls for reading the pollutants and activities files
 C.........  Default is for mobile to read in activities and not pollutants
@@ -139,10 +159,13 @@ C.........  Get value of these controls from the environment
         IF ( CATEGORY .EQ. 'MOBILE' ) THEN
             MESG = 'Import VMT mix data'
             XFLAG = ENVYN ( 'IMPORT_VMTMIX_YN', MESG, .FALSE., IOS )
-
+        
             MESG = 'Import mobile speeds data'
             SFLAG = ENVYN ( 'IMPORT_SPEEDS_YN', MESG, .FALSE., IOS )
         END IF
+        
+        MESG = 'Apply uncertainty data'
+        UFLAG = ENVYN ( 'SMK_UNCERT', MESG, .FALSE., IOS )
 
 C.........  Make sure VMT mix and speeds will only be imported for mobile 
 C           sources
@@ -328,6 +351,12 @@ C.........  Get file name for inventory pollutants codes/names
             VDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ACTVNAMS',
      &                          PROGNAME )
         END IF
+        
+        IF ( UFLAG ) THEN
+             MESG = 'Enter logical name for UNCERTAINTY file'
+             UDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., CCRL//'UNCERT',
+     &                           PROGNAME )
+        END IF            
 
         RETURN
 

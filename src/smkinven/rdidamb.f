@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -72,11 +72,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         INTEGER         INDEX1
         INTEGER         STR2INT
-        REAL            STR2REAL
         REAL            YR2DAY 
 
         EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FIND1, 
-     &                  FINDC, INDEX1, STR2INT, STR2REAL, YR2DAY
+     &                  FINDC, INDEX1, STR2INT, YR2DAY
 
 C...........   Subroutine arguments. Note that number and amount of dropped
 C              VMT is initialied in calling program.
@@ -120,7 +119,7 @@ C...........   Local variables
 
         INTEGER         I, J, K, L, N, V     ! indices
 
-        INTEGER         CYID           ! tmp county code
+        INTEGER         CNY            ! tmp county code
         INTEGER         ES             ! valid raw record counter
         INTEGER         FIP            ! tmp country/state/county
         INTEGER         ICC            ! tmp country code
@@ -136,6 +135,7 @@ C...........   Local variables
         INTEGER         NVAR           ! number of data variables
         INTEGER, SAVE:: NWARN =0       ! number of warnings in this routine
         INTEGER         SS             ! counter for sources
+        INTEGER         STA            ! state code
         INTEGER         RWT            ! roadway type
         INTEGER         SCCLEN         ! length of SCC string 
         INTEGER         STID           ! tmp state code
@@ -200,8 +200,13 @@ C........................................................................
         SS   = NSRCSAV
         ES   = NSRCVAR
         IREC = 0
-        TPF  = MTPRFAC * WKSET
         CLNK = ' '
+
+c NOTE: This loop is not as efficient as it might be.  Put in READ_REAL and READ_INTEGER
+c    n: to prevent crashing with bad SGI compiler bug, but have not made the algorithm
+c    n: efficient to only check that values are real once and then store them.  There
+c    n: is still a combination of CHKINT, CHKREAL, and STR2INT used in the code. 
+
         DO
 
             INVALID = .FALSE.
@@ -341,6 +346,9 @@ C.............  Determine if SCC has proper length
                 CALL M3MESG( MESG )
             END IF
 
+C.............  Set the default temporal resolution of the data
+            TPF  = MTPRFAC * WKSET
+
 C.............  Make sure that all of the needed real values are real...
 
 C.............  Emissions or activity and associated data
@@ -357,22 +365,12 @@ C.............  Emissions or activity and associated data
                     K = K + 1
 
 C.....................  Ensure field is a real
-                    IF( .NOT. CHKREAL( SEGMENT( K ) ) ) THEN
-
-                        EFLAG = .TRUE.
-                        L = LEN_TRIM( TMPNAM( V ) )
-                        WRITE( MESG,94010 ) 
-     &                     'ERROR: Inventory data for "' //
-     &                     TMPNAM( V )( 1:L ) // '" are not a number '//
-     &                     'or have bad formatting at line', IREC
-                        CALL M3MESG( MESG )
-                        CYCLE
-
-                    END IF
+                    CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( K ),
+     &                              'inventory data', VAL, EFLAG  )
 		    
 C.....................  Convert field to an numeric value and store annual
 C                       value for next iteration
-                    IF ( N .EQ. 1 ) VANN = STR2REAL( SEGMENT( K ) )
+                    IF ( N .EQ. 1 ) VANN = VAL
 
                     IF( SEGMENT( K ) .NE. ' ' ) THEN
 
@@ -383,7 +381,11 @@ C                           with ozone season data, if user has requested it.
                         IF( FIXED .AND. VANN .EQ. 0. .AND. 
      &                      FFLAG .AND. N    .EQ. 2        ) THEN
 
-                            VAL = STR2REAL( SEGMENT( K ) ) * DAY2YR
+                            CALL READ_REAL( 50,IREC,.TRUE.,SEGMENT( K ),
+     &                                      'seasonal data',VAL,EFLAG  )
+
+                            VAL = VAL * DAY2YR
+
                             WRITE( SEGMENT(K-1), '(E10.3)' ) VAL
 
                             NNOTE = NNOTE + 1
@@ -394,6 +396,13 @@ C                           with ozone season data, if user has requested it.
      &                            IREC, 'for ' // TMPNAM( V )
                                 CALL M3MESG( MESG )
                             END IF
+
+C.............................  Remove monthly factors for this source. 
+C                               Note that this will impact ALL pollutants, 
+C                               even if only one pollutant gets filled. This 
+C                               is necessary unless TPF is changed to be 
+C                               pollutant-dependent.        
+                            TPF  = WKSET
 
                         END IF
 
@@ -424,8 +433,13 @@ C               records.  Instead  go to next line of file.
 C.............  Now use the file format definition to parse the LINE into
 C               the various data fields...
             
-            FIP  = ICC * 100000 + 1000 * STR2INT( SEGMENT( 1 ) ) +
-     &             STR2INT( SEGMENT( 2 ) )
+            CALL READ_INTEGER( 50, IREC, .FALSE.,  SEGMENT( 1 ), 
+     &                         'state code' , STA, EFLAG )
+
+            CALL READ_INTEGER( 50, IREC, .FALSE., SEGMENT( 2 ), 
+     &                         'county code', CNY, EFLAG )
+
+            FIP  = ICC * 100000 + 1000 * STA + CNY
 
             CLNK = SEGMENT( 3 )
             TSCC = SEGMENT( 4 )
@@ -501,7 +515,9 @@ C.............  Sum emissions for invalid records
                 IDROP = IDROP + 1
                 DO V = 1, NVAR
 	            K = 4 + ( V-1 ) * NPVAR + 1
-                    VDROP( V ) = VDROP( V ) + STR2REAL( SEGMENT( K ) )
+                    CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( K ),
+     &                              'inventory data', VAL, EFLAG  )
+                    VDROP( V ) = VDROP( V ) + VAL
                 END DO
                 CYCLE    ! To next input line
 
@@ -555,16 +571,19 @@ C.............  Store source characteristics if dimension is okay
      &                            ' ', CCOD, CSOURCA( ES ) )
 
 C.....................  Store main data value
+C.....................  Units conversion only applies for activities, where
+C                       NPVAR will be = 1 (no seasonal activity data)
                     K = K + 1
-                    VAL = STR2REAL( SEGMENT( K ) )
+                    CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( K ),
+     &                              'inventory data', VAL, EFLAG  )
                     POLVLA ( ES,1 ) = INVDCNV( J ) * VAL
 
 C.....................  Store related values (if any)
                     DO N = 2, NPVAR
 
                         K = K + 1
-                        VAL = STR2REAL( SEGMENT( K ) )
-
+                        CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( K ),
+     &                                  'inventory data', VAL, EFLAG  )
                         POLVLA ( ES,N ) = VAL
 
                     END DO
@@ -632,5 +651,146 @@ C...........   Internal buffering formats............ 94xxx
 94120   FORMAT( I6.6 )
 
 94125   FORMAT( I5 )
+
+        CONTAINS
+
+            SUBROUTINE READ_INTEGER( LENGTH, IREC, OFLAG, STRING, DESC, 
+     &                               INTVAL, EFLAG )
+
+            INTEGER      , INTENT ( IN )  :: LENGTH
+            INTEGER      , INTENT ( IN )  :: IREC
+            LOGICAL      , INTENT ( IN )  :: OFLAG  !  true: field is optional 
+            CHARACTER(LEN=LENGTH), INTENT( IN ) :: STRING
+            CHARACTER*(*), INTENT ( IN )  :: DESC
+            INTEGER      , INTENT ( OUT ) :: INTVAL
+            LOGICAL      , INTENT ( OUT ) :: EFLAG 
+
+C.............  Check to see if the field is blank
+            IF ( STRING .EQ. ' ' ) THEN
+
+C.................  If field is blank and optional, then set to missing
+                IF ( OFLAG ) THEN
+                    INTVAL = IMISS3
+
+C.................  If field is blank and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' is blank at line', IREC
+                    CALL M3MESG( MESG )
+                    INTVAL = IMISS3
+                    RETURN
+                END IF
+            END IF
+
+C.............  Try to read value and see what the error status is
+            READ( STRING, *, IOSTAT = IOS ) INTVAL
+
+C.............  If error, then write message and continue
+            IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: ' // DESC //
+     &                 ' has non-integer value "' // STRING //
+     &                 '"' // CRLF() // BLANK 10 // 'at line', IREC
+                CALL M3MESG( MESG )
+                INTVAL = IMISS3
+
+C.............  Check if missing value
+            ELSE IF ( INTVAL .EQ. -9 ) THEN
+
+C.................  If field is missing and optional, then set to missing
+                IF ( OFLAG ) THEN
+                    INTVAL = IMISS3
+
+C.................  If field is missing and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' has -9 missing value at line', IREC
+                    CALL M3MESG( MESG )
+                    INTVAL = IMISS3
+
+                END IF
+
+            END IF
+
+            RETURN
+
+C............................................................................
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE READ_INTEGER
+
+C--------------------------------------------------------------------------
+C--------------------------------------------------------------------------
+
+            SUBROUTINE READ_REAL( LENGTH, IREC, OFLAG, STRING, DESC, 
+     &                            REALVAL, EFLAG )
+
+            INTEGER      , INTENT ( IN )  :: LENGTH
+            INTEGER      , INTENT ( IN )  :: IREC
+            LOGICAL      , INTENT ( IN )  :: OFLAG  !  true: field is optional 
+            CHARACTER(LEN=LENGTH), INTENT( IN ) :: STRING
+            CHARACTER*(*), INTENT ( IN )  :: DESC
+            REAL         , INTENT ( OUT ) :: REALVAL
+            LOGICAL      , INTENT ( OUT ) :: EFLAG 
+
+C.............  Check to see if the field is blank
+            IF ( STRING .EQ. ' ' ) THEN
+
+C.................  If field is blank and optional, then set to missing
+                IF ( OFLAG ) THEN
+                    REALVAL = BADVAL3
+
+C.................  If field is blank and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' is blank at line', IREC
+                    CALL M3MESG( MESG )
+                    REALVAL = BADVAL3
+                    RETURN
+                END IF
+            END IF
+
+C.............  Try to read value and see what the error status is
+            READ( STRING, *, IOSTAT = IOS ) REALVAL
+
+C.............  If error, then write message and continue
+            IF ( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: ' // DESC //
+     &                 ' has non-readable value "' // STRING //
+     &                 '"' // CRLF() // BLANK 10 // 'at line', IREC
+                CALL M3MESG( MESG )
+                REALVAL = BADVAL3
+
+C.............  Check if missing value
+            ELSE IF ( REALVAL .EQ. -9 ) THEN
+
+C.................  If field is missing and optional, then set to zero
+                IF ( OFLAG ) THEN
+                    REALVAL = BADVAL3
+
+C.................  If field is missing and not optional, then error
+                ELSE
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: required ' // DESC //
+     &                     ' has -9 missing value at line', IREC
+                    CALL M3MESG( MESG )
+                    REALVAL = BADVAL3
+
+                END IF
+
+            END IF
+
+            RETURN
+
+C............................................................................
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE READ_REAL
 
         END SUBROUTINE RDIDAMB

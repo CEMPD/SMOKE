@@ -12,7 +12,7 @@ C  PRECONDITIONS REQUIRED:
 C      Input file unit FDEV opened
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C      Subroutines: I/O API subroutines, CHECKMEM, UPCASE, 
+C      Subroutines: I/O API subroutines, BLDENAMS, CHECKMEM, UPCASE, 
 C			PARSLINE, PRCLINUC, SORTIC, XREFTBL,
 C                       ASGNUNCERT, OPENUCOUT, WRUCOUT 
 C      Functions: I/O API functions, CRLF, BLKORCMT, GETNLIST
@@ -77,15 +77,26 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV            ! unit no. of uncert file
         
+C...........   Possible pollutant prefixes
+	CHARACTER*3, PARAMETER  ::
+     &              PREFIX( 5 ) =
+     &                      ( / 'OS_',
+     &                          'EF_',
+     &                          'CE_',
+     &                          'RE_',
+     &                          'RP_' / )
+     
 C...........   Sorted pollutant/emission type names
         INTEGER                   INDXP  ( NIPPA ) !  sorting index for pol/etyp
         CHARACTER(LEN=IOVLEN3) :: SRTINAM( NIPPA ) !  sorted pol/act names        
         
 C...........   Other arrays
+        CHARACTER(LEN=IOVLEN3)  PNAMES( NIPOL, NPPOL ) ! names for pol-spec
+        CHARACTER(LEN=IOVLEN3)  ANAMES( NIACT, NPACT ) ! names for act-spec
 	CHARACTER*300	SEGMENT( 100 )  ! segments of parsed packet lines
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, N  !  counters and indices
+        INTEGER         I, J, K, L, L2, L3, M, N  !  counters and indices
 
         INTEGER         IOS         !  i/o status
         INTEGER         IREC        !  record counter
@@ -108,8 +119,10 @@ C...........   Other local variables
         CHARACTER*300   BUFFER      !  line work buffer
         CHARACTER*300   LINE        !  line input buffer
         CHARACTER*300   MESG        !  message buffer
+        CHARACTER*100   CBUF        !  tmp. char
         
         CHARACTER(LEN=SICLEN3)  :: CDUM = '0'  ! dummy character field for SIC
+        CHARACTER(LEN=IODLEN3)  CDUMA( NIPPA, NPPOL ) ! char dummy
         CHARACTER(LEN=ALLLEN3)  CSRCALL   !  buffer for source char
         CHARACTER(LEN=FIPLEN3)  CFIP      !  buffer for CFIPS code
         CHARACTER(LEN=FIPLEN3)  FIPZERO   !  buffer for zero FIPS code
@@ -134,11 +147,16 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDUNCERT
 
+	UCFLAG = .TRUE.
+        
         MESG = 'Reading uncertainty file...'
         CALL M3MSG2( MESG )
 
 C.........  Compute real value of integer missing
         RIMISS3 = REAL( IMISS3 )
+        
+C.........  Compute total number of output variables
+        NUOVAR = ( NIPOL * NPPOL ) + ( NIACT * NPACT )
 
 C.........  Allocate memory for uncertainty arrays based on previous read 
 	ALLOCATE ( FAPCKT ( FPKTENT ), STAT=IOS )	! factor assignment pkt.
@@ -153,8 +171,10 @@ C.........  Allocate memory for uncertainty arrays based on previous read
 	CALL CHECKMEM ( IOS, 'PROB', PROGNAME )
 	ALLOCATE ( PARAMET ( NPPCKT, MXPARDAT ), STAT=IOS ) ! parameters
 	CALL CHECKMEM ( IOS, 'PARAMET', PROGNAME )
-        ALLOCATE ( USEPOLL ( NIPPA ), STAT=IOS )         !  flag for pol in pkt
+        ALLOCATE ( USEPOLL ( NUOVAR ), STAT=IOS )       !  flag for pol in pkt
         CALL CHECKMEM ( IOS, 'USEPOLL', PROGNAME )
+        ALLOCATE ( UONAMES ( NUOVAR ), STAT=IOS )       !  output names
+        CALL CHECKMEM ( IOS, 'UONAMES', PROGNAME )
 
 C.........  Initailize arrays
 	FAPCKT%CFIP  = ' ' 	!array
@@ -184,7 +204,34 @@ C.........  Initailize arrays
 	PARAMET = RIMISS3       !array
 	PARA    = RIMISS3       !array
         
+        UONAMES = ' '           !array
         USEPOLL = .FALSE.       !array
+
+C.........  Get the list of variable names per pollutant
+        CALL BLDENAMS( CATEGORY, NIPOL, NPPOL, EINAM, PNAMES,
+     &                 CDUMA, CDUMA, CDUMA )
+     
+C.........  Get the list of variable names per activity
+        CALL BLDENAMS( CATEGORY, NIACT, NPACT, ACTVTY, ANAMES,
+     &                 CDUMA, CDUMA, CDUMA )
+
+C.........  Combine PNAMES and ANAMES into a one-dimensional array
+	K = 1
+        DO I = 1, NIPOL
+            DO J = 1, NPPOL
+            
+                UONAMES( K ) = PNAMES( I, J )
+                K = K + 1
+            END DO
+        END DO
+        
+        DO I = 1, NIACT
+            DO J = 1, NPACT
+            
+                UONAMES( K ) = ANAMES( I, J )
+                K = K + 1
+            END DO
+        END DO
 
 C.........  Read line of file and store uncertainty data
 	IREC = 0
@@ -237,20 +284,54 @@ C	    is only one
 		  END IF
 
 C.........  Store settings for factor assignment packet
-		ELSE
+		ELSE 
 		    FAPCKT( FAENTN ) = FA_ 
                 
 C.........  Set status of pollutants for current packet
+     
                     IF( FAPCKT( FAENTN )%CPOL .EQ. '0' .OR.  
      &                  FAPCKT( FAENTN )%CPOL.EQ. '-9' ) THEN
                         USEPOLL = .TRUE.
                     ELSE                    
-                        K = INDEX1( FAPCKT(FAENTN)%CPOL, 
-     &                              NIPPA, EANAM )
-                        IF( K .GT. 0 ) THEN
-                            USEPOLL( K ) = .TRUE.
+                      K = INDEX1( FAPCKT(FAENTN)%CPOL, 
+     &                            NUOVAR, UONAMES )
+                      IF( K .LE. 0 ) THEN
+                        L = INDEX( FAPCKT(FAENTN)%CPOL(1:3),'ALL' )
+                        IF( L .GT. 0 ) THEN
+                          DO J = 1, NIPOL
+                            M = INDEX1( EINAM(J), NUOVAR, UONAMES )
+                            IF( M .GT. 0 ) THEN
+                                USEPOLL( M ) = .TRUE.
+                            END IF
+                          END DO
+                        ELSE
+                          M = INDEX1( FAPCKT(FAENTN)%CPOL(1:3),
+     &                        5, PREFIX )
+                          IF( M .GT. 0 ) THEN
+                            DO J = 1, NIPOL
+                              L2 = LEN_TRIM( EINAM(J) )
+                              CBUF = PREFIX(M)//EINAM(J)(1:L2)
+                              L3 = LEN_TRIM( CBUF )
+                              N = INDEX1( CBUF(1:L3),NUOVAR,UONAMES )
+                              IF( N .GT. 0 ) THEN
+                                USEPOLL( N ) = .TRUE.
+                              END IF
+                            END DO
+                          ELSE
+                            MESG = 
+     &                      'Cannot assign uncertainty to "'// 
+     &                             FAPCKT(FAENTN)%CPOL //
+     &                             '", it is not valid.'
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                          END IF
                         END IF
+                      ELSE IF( K .GT. 0 ) THEN
+                            USEPOLL( K ) = .TRUE.
+                      END IF
                     END IF
+                    
+                    IF( INDEX( FAPCKT( FAENTN )%CPOL, 'ALL' )
+     &                  .GT. 0 ) FAPCKT( FAENTN )%CPOL = '0'
 
 	   	END IF
 
@@ -360,7 +441,7 @@ C               with master list.
             
             CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, IDUM, IDUM,
      &                     JSPC, PFLAG, SKIPREC )
-     
+
             IF( SKIPREC ) CYCLE
             
             NREF = NREF + 1

@@ -243,9 +243,10 @@ C           not exceed the maximum number of sources over all hours
             WRITE( MESG,94010 ) 'INTERNAL ERROR: Actual number of ' //
      &             TYPNAM // 'sources, NPDSRC=', NPDSRC, CRLF() // 
      &             BLANK10 // 'dimensioned number, MXPDSRC =', MXPDSRC,
-     &             '. Fix by ensuring all period-specific' // CRLF() //
-     &             BLANK10 // 'sources in file for at the same day '//
-     &             'or hour.'
+     &             '. Fix by ensuring ALL period-specific' // CRLF() //
+     &             BLANK10 // 'sources in file for ANY day or hour ' //
+     &             'have at least one entry ' // CRLF() // BLANK10 //
+     &             'for the SAME day or hour.'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 

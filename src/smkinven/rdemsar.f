@@ -27,7 +27,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -163,7 +163,17 @@ C               properly (no header fields are required)
      &                   LINE, ICC, YR4, NPOA, IOS )
 
 C.............  Set error flag for error from header reading routine
-            IF( IOS .GT. 0 ) EFLAG = .TRUE.
+            IF( IOS .EQ. 4 ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'Maximum allowed data variables ' //
+     &                 '(MXDATFIL=', MXDATFIL, CRLF() // BLANK10 //
+     &                 ') exceeded in input file'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ELSE IF( IOS .GT. 0 ) THEN
+                EFLAG = .TRUE.
+
+            END IF
 
 C.............  Resolve any differences between year from calling program
 C               and year in file header
@@ -227,14 +237,13 @@ C.............  Set source category code
 
 C.............  Set control efficiency
             CEFF = STR2REAL( LINE( 88 : 94 ) )
-            IF ( CEFF .LT. 0 ) CEFF = 0.0
 
 C.............  Check and set time period type (Year/day/hourly)
             TMPAA = LINE( 95:96 )
             CALL UPCASE( TMPAA )
             IF ( TMPAA .EQ. 'AA' ) THEN 
 
-                TPF = MTPRFAC * WKSET       !  use month, week profiles
+                TPF = MTPRFAC * WTPRFAC       !  use month, week profiles
 
             ELSE IF ( TMPAA .EQ. 'AD' ) THEN 
 

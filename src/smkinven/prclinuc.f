@@ -183,7 +183,7 @@ C.....................  An empirical packet
                         IF( SEGMENT( 2 ) .NE. 'S' .AND. 
      &                       SEGMENT( 2 ) .NE. 'L') THEN
                           L = LEN_TRIM( SEGMENT( 2 ) )
-                          WRITE( MESG,94010 ) 'ERROR: 
+                          WRITE( MESG,94010 ) 'WARNING: 
      &   	            Empirical type ' //
      &                      'setting "' // SEGMENT( 2 )( 1:L ) // 
      &                      '" at line', IREC, 'is invalid. 
@@ -211,7 +211,7 @@ C.....................  A parametric packet
      &                      SEGMENT( 3 ).NE.'W'.AND.SEGMENT( 3 )
      &                      .NE.'B') THEN
 			  L = LEN_TRIM( SEGMENT( 3 ) )
-                          WRITE( MESG,94010 ) 'ERROR: 
+                          WRITE( MESG,94010 ) 'WARNING: 
      &			    Parametric type ' //
      &                      'setting "' // SEGMENT( 3 )( 1:L ) // 
      &                      '" at line', IREC, 'is invalid. 
@@ -280,7 +280,7 @@ C.........  General packet processing
      &              '" at line', IREC, 'is invalid. 
      &              Must be ' //
      &              '"E" or "P".'
-                  CALL M3MSG2( MESG )
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                  END IF
 		    
 		FA_%NDIST  = SEGMENT( 5 )
@@ -295,7 +295,7 @@ C.........  General packet processing
      &              '" at line', IREC, 'is invalid. 
      &              Must be ' //
      &              '"S", "I", "ST" or "IT".'
-                  CALL M3MSG2( MESG )
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 		     
 		FA_%PLT    = SEGMENT( 7 )

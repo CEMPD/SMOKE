@@ -83,8 +83,9 @@ C.........  For area sources ...
             MXCHRS = MXARCHR3
             NCHARS = MXCHRS
             JSCC   = 2
-            LSCCEND  = 4
-            RSCCBEG  = 5
+            LSCCEND  = 7
+            RSCCBEG  = 8
+            PLTIDX   = 2            
 
             SELECT CASE( FILFMT )
             CASE( EMSFMT )
@@ -99,6 +100,7 @@ C.........  For mobile sources ...
             NCHARS = MXCHRS  ! FIPS / SCC (veh type &/or road class) / veh type / lnk
             LSCCEND  = 7
             RSCCBEG  = 8
+            PLTIDX   = 2
 
             SELECT CASE( FILFMT )
             CASE( EMSFMT )
@@ -112,6 +114,7 @@ C.........  For point sources ...
             NPPOL  = NPTPPOL3
             LSCCEND  = 5
             RSCCBEG  = 6
+            PLTIDX   = 2
 
             SELECT CASE( FILFMT )
             CASE( IDAFMT )

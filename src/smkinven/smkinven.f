@@ -2,7 +2,7 @@
          PROGRAM SMKINVEN
 
 C***********************************************************************
-C  program body starts at line 170
+C  program body starts at line 171
 C
 C  DESCRIPTION:
 C    The smkinven program reads the any source inventory in one of four
@@ -18,11 +18,13 @@ C      RAW_SRC_CHECK: If Y, missing species disallowed
 C      RAW_DUP_CHECK: If Y, duplicate sources disallowed
 C      VELOC_RECALC:  If Y, recalculates velocity based on flow
 C      WEST_HSPHERE:  If N, does not reset positive longitudes to negative
+C      SMK_UNCERT:    If Y, do uncertainty
 C    Input files:  
 C      PTINV: ASCII point sources inventory
 C      PSTK: Replacement stack parameters file
 C      ZONES: Time zones files
 C      SIPOLS: Master list of pollutant codes and names (in output order)
+C      UNCERT: Uncertainty input file
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C    Subroutines: I/O API subroutines, INITEM, CHECKMEM, RDTZONE, RDSIPOLS, 
@@ -33,6 +35,7 @@ C
 C  REVISION  HISTORY:
 C    started 10/98 by M Houyoux as rawpoint.f from emspoint.F 4.3
 C    smkinven changes started 4/98
+C    uncertainty changes 9/2001 by A. Holland
 C
 C***************************************************************************
 C
@@ -113,6 +116,7 @@ C.........  File units and logical/physical names
         INTEGER    :: PDEV = 0  !  unit number for pollutants codes/names file
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
+        INTEGER    :: UDEV = 0  !  unit no. for uncertaity file
         INTEGER    :: VDEV = 0  !  unit no. for activity codes/names file
         INTEGER    :: XDEV = 0  !  unit no. for VMT mix file
         INTEGER    :: ZDEV = 0  !  unit no. for time zone file
@@ -153,19 +157,21 @@ C...........   Other local variables
         INTEGER         OUTSTEP    ! output time step HHMMSS for day/hour data
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
-        LOGICAL         DFLAG            ! true: day-specific inputs used
-        LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
-        LOGICAL         HFLAG            ! true: hour-specific inputs used
-        LOGICAL         IFLAG            ! true: average inventory inputs used
-        LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
+        LOGICAL         DFLAG             ! true: day-specific inputs used
+        LOGICAL      :: GFLAG   = .FALSE. ! true: gridded NetCDF inputs used
+        LOGICAL         HFLAG             ! true: hour-specific inputs used
+        LOGICAL         IFLAG             ! true: average inventory inputs used
+        LOGICAL      :: TFLAG   = .FALSE. ! TRUE if temporal x-ref output
 
         CHARACTER*5               TYPNAM      !  'day' or 'hour' for import
         CHARACTER*300             MESG        !  message buffer
         CHARACTER(LEN=IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
+        CHARACTER(LEN=NAMLEN3) ::  UPNAME = ' ' ! output uncertainty file name
+        CHARACTER(LEN=NAMLEN3) ::  UENAME = ' '      
+        CHARACTER(LEN=NAMLEN3) ::  UONAME = ' '  
 
         CHARACTER*16  :: PROGNAME = 'SMKINVEN'   !  program name
 
-        integer bdev
 C***********************************************************************
 C   begin body of program SMKINVEN
 
@@ -176,15 +182,15 @@ C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Set source category based on environment variable setting
-        CALL GETCTGRY
+        CALL GETCTGRY                
 
 C.........  Output time zone
-        TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
+        TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )       
 
 C.........  Get names of input files
         CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
      &                  EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
-     &                  ENAME, INAME, DNAME, HNAME )
+     &                  UDEV, ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
         DFLAG = ( DDEV .NE. 0 )
@@ -197,6 +203,7 @@ C.........  Set gridded input file name, if available
 
         MESG = 'Setting up to read inventory data...'
         CALL M3MSG2( MESG )
+
 
 C.........  Read country, state, and county file for time zones
         IF( ZDEV .GT. 0 ) CALL RDSTCY( ZDEV, 1, I )   !  "I" used as a dummy
@@ -301,6 +308,7 @@ C               this is not perfectly accurate for all counties.
         	FIP   = IFIP( S )
         	TZONES( S ) = GETTZONE( FIP )
             END DO
+                        
 
 C.............  Write out primary inventory files. Do this before the day- or 
 C               hour-specific processing so that if there is a problem, the
@@ -315,7 +323,31 @@ C.............  NOTE - Monthly not currently supported
             IF( TFLAG ) CALL WRPTREF( NSRC, IDIU, IWEK, IWEK ) 
 
         END IF  ! For ASCII annual/ave-day inputs
+        
+C.........  Open and process uncertainty file        
+        IF ( UDEV .GT. 0 ) THEN
 
+C.........  Scan the uncertainty file and make global program settings
+            CALL SCANUNCERT( UDEV )
+                    
+C.........  Read and processes the uncertainty file
+	    CALL RDUNCERT( UDEV )
+            
+C.........  Assign the uncertainty factors to the sources and pollutants
+            CALL ASGNUNCERT
+                
+C.........  Open and write the three uncertainty output files.
+            DO I = 1, 3
+            
+                CALL OPENUCOUT( UONAME, UPNAME, UENAME )
+                
+                CALL WRUCOUT( UONAME, UPNAME, UENAME )
+                  
+            END DO
+                  
+        END IF
+            
+        
 C.........  Input gridded I/O API inventory data
         IF( GFLAG ) THEN
 

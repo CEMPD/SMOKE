@@ -95,16 +95,16 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine OPENUCOUT
 
-        MESG = 'Opening uncertainty output file...'
-        CALL M3MSG2( MESG )
-
         IF( FIRSTIME ) THEN
+        
+            MESG = 'Opening uncertainty output file...'
+            CALL M3MSG2( MESG )
 
 C.........  Set up for opening I/O API output file header
 
             CALL HDRMISS3  ! Initialize for emissions 
 
-            NVARS3D = ( 4 * NIPPA ) + 1
+            NVARS3D = ( 4 * NUOVAR ) + 1
             NROWS3D = UCOUNT  !  number of rows = # of sources.
 
             FDESC3D( 1 ) = CATDESC // ' Uncertainty'
@@ -113,8 +113,8 @@ C.........  Set up for opening I/O API output file header
             WRITE( FDESC3D( 4 ),94010 ) '/NON POLLUTANT/ ', 1
 
             IF( NIPOL .GT. 0 ) THEN
-               WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL
-               WRITE( FDESC3D( 6 ),94010 ) '/PER POLLUTANT/ ', 4
+               WRITE( FDESC3D( 5 ),94010 ) '/VARIABLES/', NUOVAR
+               WRITE( FDESC3D( 6 ),94010 ) '/PER VARIABLE/ ', 4
             END IF
 
             IF( NIACT .GT. 0 ) THEN
@@ -132,9 +132,9 @@ C.........  Define source characteristic variables that are not strings
             VDESC3D( J ) = 'Source number'
             J = J + 1
 
-            DO I = 1, NIPPA
+            DO I = 1, NUOVAR
             
-                CBUF = EANAM( I )
+                CBUF = UONAMES( I )
                 L = LEN_TRIM( CBUF )
 
                 VNAME3D( J ) = 'MTH_'//CBUF( 1:L )       
@@ -181,16 +181,19 @@ C.........  Prompt for and open I/O API output file
             FIRSTIME = .FALSE.
             
         ELSE IF( SECONDTIME ) THEN
+        
+            MESG = 'Opening uncertainty output parametric file...'
+            CALL M3MSG2( MESG )
 
 C.........  Set up for opening I/O API output file header    
         
             CALL HDRMISS3  ! Initialize for emissions 
 
             NVARS3D = 1
-            NROWS3D = NPPCKT    !  number of rows = # of empirical packets.
-            NCOLS3D = MXPARDAT  !  number of cols = max # of empirical entries
+            NROWS3D = NPPCKT    !  number of rows = # of parametric packets.
+            NCOLS3D = MXPARDAT  !  number of cols = max # of parametric entries
 
-            FDESC3D( 1 ) = CATDESC // ' Uncertainty'
+            FDESC3D( 1 ) = CATDESC // ' Uncertainty Parametric Data'
             FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
             FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 
@@ -218,6 +221,9 @@ C.........  Prompt for and open I/O API output file
             SECONDTIME = .FALSE.
             
         ELSE
+        
+            MESG = 'Opening uncertainty output empirical file...'
+            CALL M3MSG2( MESG )
             
 C.........  Set up for opening I/O API output file header    
         
@@ -227,7 +233,7 @@ C.........  Set up for opening I/O API output file header
             NROWS3D = NEPCKT    !  number of rows = # of empirical packets.
             NCOLS3D = MXEMPDAT  !  number of cols = max # of empirical entries
 
-            FDESC3D( 1 ) = CATDESC // ' Uncertainty'
+            FDESC3D( 1 ) = CATDESC // ' Uncertainty Empirical Data'
             FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
             FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
 

@@ -22,7 +22,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -351,7 +351,7 @@ C           position in the master array of output pollutants/activities
             J = INDEXA( I )
             S = SRCIDA( I )
 
-C.............  Reset emissions value to zero, if it's negative
+C.............  Reset emissions values to zero, if it's negative
             IF ( POLVLA( J, NEM ) .LT. 0 .AND.
      &           POLVLA( J, NEM ) .GT. AMISS3 ) THEN
                 POLVLA( J, NEM ) = 0.
@@ -381,7 +381,21 @@ C.............  Reset emissions value to zero, if it's negative
                     NWARN = NWARN + 1
                 END IF
             END IF
-                
+
+C.............  Check control efficiency, rule effectiveness, and rule 
+C               penetration and if missing, set to default value
+            IF ( NCE .GT. 0 ) THEN
+                IF( POLVLA( J, NCE ) .LT. 0. ) POLVLA( J, NCE ) = 0.
+            END IF
+
+            IF ( NRE .GT. 0 ) THEN
+                IF( POLVLA( J, NRE ) .LT. 0. ) POLVLA( J, NRE ) = 100
+            END IF
+
+            IF ( NRP .GT. 0 ) THEN
+                IF( POLVLA( J, NRP ) .LT. 0. ) POLVLA( J, NRP ) = 100
+            END IF
+
 C.............  For a new source or a new pollutant code...
             IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
 
@@ -444,16 +458,21 @@ C.................  Continue in loop if zero emissions
 
 C.................  Weight the control efficiency, rule effectiveness, and 
 C                   rule penetration based on the emission values
-                POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
+                IF ( NCE .GT. 0 ) 
+     &          POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
      &                              POLVLA( J,NCE )*EMISN  ) * EMISI
-                POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
+                IF ( NRE .GT. 0 ) 
+     &          POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
      &                              POLVLA( J,NRE )*EMISN  ) * EMISI
                 IF( NRP .GT. 0 ) 
      &          POLVAL( K,NRP ) = ( POLVAL( K,NRP )*EMISO + 
      &                              POLVLA( J,NRP )*EMISN  ) * EMISI
-                IF( NEF .GT. 0 ) 
-     &          POLVAL( K,NEF ) = ( POLVAL( K,NEF )*EMISO + 
+                IF( NEF .GT. 0 ) THEN
+                    IF ( POLVAL( K,NEF ) .GT. 0 ) 
+     &              POLVAL( K,NEF ) = ( POLVAL( K,NEF )*EMISO + 
      &                                  POLVLA( J,NEF )*EMISN  ) * EMISI
+                END IF
+
             END IF
 
             LS = S

@@ -18,7 +18,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -463,18 +463,17 @@ C.........  Set inventory variables to read depending on source category
             IVARNAMS( 7 ) = 'CSOURC'
 
         CASE ( 'MOBILE' )
-            NINVARR = 15
+            NINVARR = 14
             IVARNAMS( 5  ) = 'IRCLAS'
             IVARNAMS( 6  ) = 'IVTYPE'
             IVARNAMS( 7  ) = 'XLOC1'
             IVARNAMS( 8  ) = 'YLOC1'
             IVARNAMS( 9  ) = 'XLOC2'
             IVARNAMS( 10 ) = 'YLOC2'
-            IVARNAMS( 11 ) = 'SPEED'
-            IVARNAMS( 12 ) = 'CSCC'
-            IVARNAMS( 13 ) = 'CLINK'
-            IVARNAMS( 14 ) = 'CVTYPE'
-            IVARNAMS( 15 ) = 'CSOURC'
+            IVARNAMS( 11 ) = 'CSCC'
+            IVARNAMS( 12 ) = 'CLINK'
+            IVARNAMS( 13 ) = 'CVTYPE'
+            IVARNAMS( 14 ) = 'CSOURC'
 
         CASE ( 'POINT' )
             NINVARR = 16
@@ -599,7 +598,15 @@ C                   loop through sources, applying factors as needed
                     DO S = 1, NSRC
                         IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
                         IF( K .GT. 0 ) PSFAC  = CFAC( S )
+
+C.........................  Adjust annual emissions or activity
                         POLVAL( S,1 ) = POLVAL( S,1 ) * ALLFAC* PSFAC
+
+C.........................  Adjust average-day emissions (OS_* variable)
+                        IF( NPPOL .GT. 1 ) THEN
+                            IF( POLVAL( S,2 ) .GT. 0. ) 
+     &                          POLVAL( S,2 )=POLVAL( S,2 )*ALLFAC*PSFAC
+                        END IF
                     END DO
 
                 ELSE IF( CTYPE(I) .EQ. CTYPREAC ) THEN ! Reactivity 

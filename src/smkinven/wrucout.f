@@ -77,14 +77,14 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of program WRUCOUT
 
-        MESG = 'Writing uncertainty output file...'
-        CALL M3MSG2( MESG )
-
 
         IF( FIRSTIME ) THEN
         
+            MESG = 'Writing uncertainty output file...'
+            CALL M3MSG2( MESG )
+        
 C.........  Create message to use in case there is an error
-            MESG = 'Error writing output file "' //
+            MESG = 'Error writing uncertainty output file "' //
      &             UONAME( 1:LEN_TRIM( UONAME ) ) // '"'        
         
 C.........  Write the first I/O API file, one variable at a time
@@ -93,9 +93,9 @@ C.........  Write the first I/O API file, one variable at a time
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            DO I = 1, NIPPA
+            DO I = 1, NUOVAR
             
-                CBUF = EANAM( I )
+                CBUF = UONAMES( I )
                 L = LEN_TRIM( CBUF )
         
                 IF( .NOT. WRITE3( UONAME, 'MTH_'//CBUF(1:L),
@@ -125,6 +125,9 @@ C.........  Write the first I/O API file, one variable at a time
             
         ELSE IF( SECONDTIME ) THEN
         
+            MESG = 'Writing uncertainty output parametric file...'
+            CALL M3MSG2( MESG )
+        
 C.........  Write the second I/O API file, one variable at a time            
         
 C.........  Create message to use in case there is an error
@@ -140,6 +143,9 @@ C.........  Create message to use in case there is an error
             
             
         ELSE
+        
+            MESG = 'Writing uncertainty output empirical file...'
+            CALL M3MSG2( MESG )
        
             
 C.........  Write the third I/O API file, one variable at a time            
