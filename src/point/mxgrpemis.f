@@ -67,14 +67,13 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2  CRLF
         INTEGER      GETFLINE
-        LOGICAL      ISOPEN
         CHARACTER*14 MMDDYY
         LOGICAL      SETENVVAR
         INTEGER      PROMPTFFILE
         INTEGER      SECSDIFF
         INTEGER      WKDAY
 
-        EXTERNAL    CRLF, GETFLINE, ISOPEN, MMDDYY, SETENVVAR, 
+        EXTERNAL    CRLF, GETFLINE, MMDDYY, SETENVVAR, 
      &              PROMPTMFILE, SECSDIFF, WKDAY
 
 C...........   Local allocatable arrays
@@ -123,6 +122,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         INTEGER         ST            ! start time
         
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
+        LOGICAL :: FILEOPEN = .FALSE. ! true: an I/O API file is open
 
         CHARACTER*16    INLGCNAM      ! input logical file name
         CHARACTER*512   PTMPFILE      ! tmp physical file name
@@ -243,12 +243,14 @@ C.........  Loop through met files and check time period
         DO N = 1, NPTLINES
 
 C.............  Close previous file if needed
-            IF( ISOPEN( TNAME ) ) THEN
+            IF( FILEOPEN ) THEN
                 IF( .NOT. CLOSE3( TNAME ) ) THEN
                     L = LEN_TRIM( PTMPFILE )
                     MESG = 'Could not close hourly emissions file ' //
      &                     PTMPFILE( 1:L )
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    FILEOPEN = .FALSE.
                 END IF
             END IF
 
@@ -276,6 +278,8 @@ C.............  Try to open file
      &                 PTMPFILE( 1:L )
                 CALL M3MSG2( MESG )
                 CYCLE
+            ELSE
+            	FILEOPEN = .TRUE.
             END IF
 
 C.............  Read description of file
@@ -491,12 +495,14 @@ C.............  Get physical file name for current iteration
 
 C.............  Close previous file if needed
             IF( PTMPFILE .NE. PREVFILE ) THEN
-                IF( ISOPEN( TNAME ) ) THEN
+                IF( FILEOPEN ) THEN
                     IF( .NOT. CLOSE3( TNAME ) ) THEN
                         L = LEN_TRIM( PREVFILE )
                         MESG = 'Could not close hourly emissions ' //
      &                         'file ' // PREVFILE( 1:L )
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ELSE
+                    	FILEOPEN = .FALSE.
                     END IF
                 END IF
 
@@ -522,6 +528,8 @@ C.............  Try to open file
      &                 PTMPFILE( 1:L )
                 CALL M3MSG2( MESG )
                 CYCLE
+            ELSE
+            	FILEOPEN = .TRUE.
             END IF
 
 C.............  Loop through pollutants that are used as selection criteria
