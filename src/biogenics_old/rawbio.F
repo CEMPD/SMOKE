@@ -661,7 +661,7 @@ c sl     &                       INDEX( INBUF( J+1:80 ) , ' ' ) )
 
                     IF     ( LAI( K ) .EQ. 3 ) THEN
                         DO  75  M = 1, BSPCS - 1
-                            EPINE( M ) = EPINE( M ) + AREA*EMFAC( K,NO )
+                            EPINE( M ) = EPINE( M ) + AREA*EMFAC( K,M )
 75                      CONTINUE
 
                     ELSE IF( LAI( K ) .EQ. 5 ) THEN
