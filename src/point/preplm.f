@@ -141,9 +141,8 @@ C              and compute virtual temperature
         END DO
  
         M    = MAX( 1, LSTK - 2 )
-        TSTK =      POLY( ZSTK( LSTK ), ZH( M ), TA( M ), 3 )
-        WSTK = MAX( POLY( ZSTK( LSTK ), ZH( M ), WSPD( M ), 3 ),
-     &              0.1 )
+        TSTK =      POLY( HTS, ZH( M ), TA( M ), 3 )
+        WSTK = MAX( POLY( HTS, ZH( M ), WSPD( M ), 3 ), 0.1 )
 
         RETURN
 
