@@ -51,7 +51,6 @@ C.........  SMOKE programs - listed in alphabetical order
         
         SELECT CASE( NAME )
         CASE( 'CNTLMAT' )       
-
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program CNTLMAT to take a SMOKE inventory file, a control',
@@ -65,7 +64,17 @@ C.........  SMOKE programs - listed in alphabetical order
      &      ' '
 
         CASE( 'ELEVPOINT' ) 
-
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program ELEVPOINT specifies elevated point sources in the',
+     &  'inventory by doing one of the following:',
+     &  '     1) Reads a list of preset "major" point sources',
+     &  '     2) Uses a "cutoff" height and an analytical plume',
+     &  '        rise equation to determine elevated sources for UAM-',
+     &  '        style point source processing.',
+     &  'It also writes one of the plume-in-grid source files for',
+     &  'the CMAQ model.',
+     &      ' '
 
         CASE( 'EMISFAC' )
             WRITE( *,92000 )
@@ -98,6 +107,16 @@ C.........  SMOKE programs - listed in alphabetical order
      &  'mobile sources, an "ungridding" matrix is also created to',
      &  'allow the use of gridded temperature data in assigning',
      &  'factors to mobile sources.',
+     &      ' '
+
+        CASE( 'GRWINVEN' )
+            WRITE( LDEV,92000 ) 
+     &      ' ',
+     &  'Program GRWINVEN reads a SMOKE area, mobile, or point source',
+     &  'inventory file and one or more control and/or projection',
+     &  'files, applies the controls and projections to the inventory,',
+     &  'and writes out a new SMOKE inventory file and/or an IDA-',
+     &  'formatted inventory file.',
      &      ' '
 
         CASE( 'LAYPOINT' ) 
@@ -224,7 +243,9 @@ C.........  SMOKE programs - listed in alphabetical order
      &  'Program TMPBIO takes postprocessed MM5 meteorology and ',
      &  'normalized gridded emissions from RAWBIO or GRDBIO, and ', 
      &  'produces time stepped gridded speciated biogenic ',
-     &  'emissions.',
+     &  'emissions. It optionally takes is a gridded winter-summer',
+     &  'designation to apply winter and summer emission factors by',
+     &  'grid cell.',
      &      ' '
 
         CASE( 'UAM2NCF' ) 
