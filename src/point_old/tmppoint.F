@@ -307,7 +307,6 @@ C...........   Other local variables
         INTEGER         TZMIN, TZMAX        ! min/max time zones in inventory
 
         CHARACTER*5     FFORMAT !  Indicator for type of XREF file
-        CHARACTER*5     FFORMAT !  Indicator for type of XREF file
         CHARACTER*14    DTBUF   !  buffer for MMDDYY
         CHARACTER*80    LINE    !  buffer for XREF input lines
         CHARACTER*256   MESG    !  buffer for M3EXIT() messages
