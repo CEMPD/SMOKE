@@ -93,6 +93,11 @@ C.........  Allocate memory for source-based arrays
         CALL CHECKMEM( IOS, 'AR2PTIDX', PROGNAME )
         ALLOCATE( AR2PTCNT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AR2PTCNT', PROGNAME )
+        
+C.........  Initialize arrays
+        AR2PTTBL = 0  ! array
+        AR2PTIDX = 0  ! array
+        AR2PTCNT = 0  ! array
 
 C.........  Loop through the unsorted sources
         LS = 0
