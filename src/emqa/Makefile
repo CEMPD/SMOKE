@@ -16,19 +16,6 @@ debug: smkreport.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
-
-#
-#GTR=getrecs.o
-#
-#getrecs: $(GTR) $(ALLI) $(LIBPATH)
-#	echo GETRECS:
-#	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GTR) $(LIBS)
-#
-#getrecs.debug: $(GTR) $(ALLI) $(LIBPATH_DEBUG)
-#	echo GETRECS \(debug\):
-#	$(FC) $(FFLAGS) -o $(@) $(GTR) $(LIBS_DEBUG)
-#
-#
 SMR=smkreport.o asgnbins.o bldrepidx.o genrprt.o openrepin.o   \
     openrepout.o qarepin.o rdgrps.o rdrepin.o rdrprts.o repmrggrd.o repunits.o\
     scanrepc.o selectsrc.o wrrephdr.o wrrepout.o
@@ -52,8 +39,6 @@ bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODFILESET)
 	$(FC) $(FFLAGS) -c -o $@ bldrepidx.f
 genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODINFO) $(MODSTCY) 
 	$(FC) $(FFLAGS) -c -o $@ genrprt.f
-getrecs.o: $(MODSOURC) $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ getrecs.f
 openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID) $(MODFILESET) $(MODCNTRL)
 	$(FC) $(FFLAGS) -c -o $@ openrepin.f
 qarepin.o: $(MODREPRT) $(MODSTCY) $(MODINFO)
