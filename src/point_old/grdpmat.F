@@ -158,6 +158,13 @@ C.......   Get file name; open actual-scc file
             CALL M3EXIT( 'GRDPMAT', 0,0, 
      &                   'Could not read description for "' //
      &                   ENAME( 1:TRIMLEN( ENAME ) ) // '"', 2 )
+
+        ELSEIF( NROWS3D .NE. NPSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  EMISSIONS file:', NROWS3D,
+     &      'program:', NPSRC
+            CALL M3EXIT( 'TMPPOINT', 0, 0, MESG, 2 )
+
         END IF
         CORDN = GDNAM3D
 
