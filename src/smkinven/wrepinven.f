@@ -1,5 +1,5 @@
 
-        SUBROUTINE WREPINVEN( ADEV )
+        SUBROUTINE WREPINVEN( ADEV, CDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -65,31 +65,36 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
 
         INTEGER     , INTENT (IN) :: ADEV  ! file unit no. for REPINVEN file
+        INTEGER     , INTENT (IN) :: CDEV
 
 C...........   Local variables
 
 	CHARACTER*1	KEEP
         CHARACTER(LEN=DDSLEN3)	DESC
+        CHARACTER(LEN=SCCLEN3)  SCC
+        CHARACTER(LEN=IOVLEN3)  DNAME
+        CHARACTER(LEN=SDSLEN3)	SCCDC
         
-        INTEGER		I, J, K
+        INTEGER		I, J, K, L
+        INTEGER		STATE
+        INTEGER		NFIPS
+        INTEGER		POLL
         
         REAL		VALCHECK
         REAL		DIFF
-        
-        CHARACTER*1, ALLOCATABLE :: KEEP( : )
+        REAL		OEMIS
+        REAL		SEMIS
 
 C...........   Other local variables
 
 	CHARACTER*300	MESG
+        CHARACTER(LEN=SDSLEN3)	CBUF
 
         CHARACTER*16  :: PROGNAME = 'WREPINVEN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WREPINVEN
 
-	ALLOCATE( KEEP( NUNIQCAS ) )
-        KEEP = ' '
-        
 C.........  Write out first report to REPINVEN file
 
         WRITE( ADEV, 93010 ) 'CAS Code', 'Keep', 'Nrecs', 
@@ -101,12 +106,12 @@ C.........  Write out first report to REPINVEN file
           
         DO I = 1, NUNIQCAS
           IF( UCASNPOL( I ) .EQ. UCASNKEP( I ) ) THEN
-            KEEP( I ) = 'Y'
+            KEEP = 'Y'
           ELSE IF( UCASNPOL( I ) .NE. UCASNKEP( I ) .AND.
      &             UCASNKEP( I ) .NE. 0 ) THEN
-            KEEP( I ) = 'P'
+            KEEP = 'P'
           ELSE IF( UCASNKEP( I ) .EQ. 0 ) THEN
-            KEEP( I ) = 'N'
+            KEEP = 'N'
           END IF
             
           K = INDEX1( UNIQCAS( I ), NINVTBL, ITCASA )
@@ -117,7 +122,7 @@ C.........  Write out first report to REPINVEN file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 1 )
           END IF
           
-          WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP( I ), RECSBYCAS( I ),
+          WRITE( ADEV, 93030 ) UNIQCAS( I ), KEEP, RECSBYCAS( I ),
      &             EMISBYCAS( I ), DESC
 
 	END DO
@@ -137,6 +142,7 @@ C.........  Write out second report to REPINVEN file
         WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
         
         DO I = 1, NINVTBL
+
           IF( SORTCAS( I ) .EQ. '        ' ) CYCLE
           
           K = INDEX1( SORTCAS( I ), NUNIQCAS, UNIQCAS )
@@ -147,9 +153,9 @@ C.........  Write out second report to REPINVEN file
 	    CALL M3WARN( PROGNAME, 0, 0, MESG )
           END IF
           
-          IF( .NOT. ITKEEPA( SCASIDX( I ) ) ) CYCLE
-          
           J = SCASIDX( I )
+          
+          IF( .NOT. ITKEEPA( J ) ) CYCLE
           
           VALCHECK = EMISBYCAS( K ) * ITFACA( J )
           DIFF = VALCHECK - EMISBYPOL( I )
@@ -163,8 +169,115 @@ C.........  Write out second report to REPINVEN file
      &           ITDSCA( J ), ITCASDSCA( J )
      
         END DO
+
+        WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+        WRITE( ADEV, 93000 ) ' '
+        WRITE( ADEV, 93000 ) ' '
+        
+
+C.........  The next two reports are only created when area
+C           to point allocation is occuring
+       
+        IF( ALLOCATED( REPAR2PT ) ) THEN
+        
+          CALL RDSCCDSC( CDEV )
+        
+C.........  Write out third report to REPINVEN file
+
+	  WRITE( ADEV, 93070 ) 'SCC Code', 'Data Name',
+     &         'FIPS count', 'Emissions before', 'Emissions after',
+     &         'SCC Description'
+     
+     	  WRITE( ADEV, 93080 ) '[tons/year]', '[tons/year]'
+        
+          WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+
+          DO I = 1, NCONDSRC
+        
+            STATE = REPAR2PT( I )%STATE
+            SCC   = REPAR2PT( I )%SCC
+            POLL  = REPAR2PT( I )%POLL
+            DNAME = INVDNAM( REPAR2PT( I )%POLL )
+            NFIPS = REPAR2PT( I )%NFIPS
+            OEMIS = REPAR2PT( I )%ORIGEMIS
+            SEMIS = REPAR2PT( I )%SUMEMIS
+           
+            K = INDEX1( SCC, NINVSCC, INVSCC )
+            IF( K .LE. 0 ) THEN
+              WRITE( MESG, 94010 )
+     &             'SCC code, ', SCC, ' ,was not '//
+     &             'found in master list of SCC codes.'
+	      CALL M3WARN( PROGNAME, 0, 0, MESG )
+            END IF
+            
+            CBUF = SCCDESC( K )
+            L = LEN_TRIM( CBUF )
+            SCCDC = CBUF( 1:L )
+            
+            DO J = 1, NCONDSRC
+            
+              IF( REPAR2PT( J )%STATE .EQ. STATE ) CYCLE
+              
+              IF( REPAR2PT( J )%SCC .EQ. SCC .AND.
+     &            REPAR2PT( J )%POLL .EQ. POLL ) THEN
+                NFIPS = NFIPS + REPAR2PT( J )%NFIPS
+                OEMIS = OEMIS + REPAR2PT( J )%ORIGEMIS
+                SEMIS = SEMIS + REPAR2PT( J )%SUMEMIS
+              END IF
+              
+            END DO
+            
+            WRITE( ADEV, 93090 ) SCC, DNAME, NFIPS,
+     &            OEMIS, SEMIS, SCCDC
+            
+          END DO
           
+          WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+          WRITE( ADEV, 93000 ) ' '
+          WRITE( ADEV, 93000 ) ' '
+        
+C.........  Write out fourth report to REPINVEN file
+
+	  WRITE( ADEV, 93100 ) 'State', 'SCC Code', 'Data Name',
+     &         'FIPS count', 'Emissions before', 'Emissions after',
+     &         'SCC Description'
+     
+          WRITE( ADEV, 93110 ) '[tons/year]', '[tons/year]'
+        
+          WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+
+          DO I = 1, NCONDSRC
+        
+            STATE = REPAR2PT( I )%STATE
+            SCC   = REPAR2PT( I )%SCC
+            DNAME = INVDNAM( REPAR2PT( I )%POLL )
+            NFIPS = REPAR2PT( I )%NFIPS
+            OEMIS = REPAR2PT( I )%ORIGEMIS
+            SEMIS = REPAR2PT( I )%SUMEMIS
+           
+            K = INDEX1( SCC, NINVSCC, INVSCC )
+            IF( K .LE. 0 ) THEN
+              WRITE( MESG, 94010 )
+     &             'SCC code, ', SCC, ' ,was not '//
+     &             'found in master list of SCC codes.'
+	      CALL M3WARN( PROGNAME, 0, 0, MESG )
+            END IF
+            
+            CBUF = SCCDESC( K )
+            L = LEN_TRIM( CBUF )
+            SCCDC = CBUF( 1:L )
+           
+            WRITE( ADEV, 93120 ) STATE, SCC, DNAME, NFIPS,
+     &            OEMIS, SEMIS, SCCDC
+     
+          END DO
           
+          WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
+          WRITE( ADEV, 93000 ) ' '
+          WRITE( ADEV, 93000 ) ' ' 
+        
+        
+        END IF
           
         RETURN
 
@@ -187,6 +300,22 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93060	FORMAT( 1X, A8, 4X, F16.10, 4X, F3.1, 4X, A16, 4X, F16.10,
      &          4X, A40, 4X, A40 )
+     
+93070	FORMAT( 1X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
+     &          4X, A16 )
+     
+93080	FORMAT( 43X, A11, 9X, A11 )
+
+93090	FORMAT( 1X, A10, 4X, A16,4X, I3, 4X, F16.10, 4X,
+     &          F16.10, 4X, A )
+     
+93100	FORMAT( 1X, A5, 2X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
+     &          4X, A16 )
+     
+93110	FORMAT( 50X, A11, 9X, A11 )
+
+93120	FORMAT( 1X, I2.2, 4X, A10, 4X, A16,4X, I3, 4X, F16.10, 4X,
+     &          F16.10, 4X, A )
      
 94010	FORMAT( 10( A, :, A8, :, 1X ) )
 
