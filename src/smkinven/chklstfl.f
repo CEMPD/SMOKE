@@ -70,7 +70,8 @@ C...........   Other local variables
         INTEGER      FLEN        !  length of string FNAME
 
         LOGICAL   :: EFLAG     = .FALSE. !  true: error found
-        LOGICAL   :: IDAFLAG   = .FALSE. !  true: at least one file is IDA format 
+        LOGICAL   :: EMSFLAG   = .FALSE. !  true: at least one file is EMS format
+        LOGICAL   :: IDAORNTI  = .FALSE. !  true: at least one file is IDA or NTI format
 
         CHARACTER*300   INFILE      !  input file line buffer
         CHARACTER*300   MESG        !  message buffer
@@ -82,7 +83,9 @@ C   begin body of subroutine CHKLSTFL
 
         FLEN = LEN_TRIM( FNAME )
 
-        IDAFLAG = .FALSE.   ! Need to reset for each each subroutine call
+        EMSFLAG  = .FALSE.   ! Need to reset for each each subroutine call
+        IDAORNTI = .FALSE.
+        
 C.........  Loop through lines of list-formatted file to check the formats
         DO J = 1, NLINE
 
@@ -116,34 +119,48 @@ C.............  Make sure that file format was found
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 
      &                 'ERROR: In SMOKE list-formatted inventory file, '
-     &                 // FNAME( 1:LEN_TRIM( FNAME ) )// ', could '//
-     &                 CRLF() // BLANK10 // 
-     &                 'not determine format of file listed at line', J
+     &                 // TRIM( FNAME ) // ', could '// CRLF() // 
+     &                 BLANK10 // 'not determine format of file ' //
+     &                 'listed at line', J
                 CALL M3MESG( MESG )
             END IF
 
             CLOSE( TDEV )
 
-C.............  Set flag if format is IDA
-            IF( FILFMT( J ) == IDAFMT ) IDAFLAG = .TRUE.
+C.............  Set flag based on format
+            IF( FILFMT( J ) == EMSFMT ) EMSFLAG = .TRUE.
+            IF( FILFMT( J ) == IDAFMT .OR. 
+     &          FILFMT( J ) == NTIFMT ) IDAORNTI = .TRUE.
+
+C.............  Check that file formats are consistent
+            IF( EMSFLAG .AND. FILFMT( J ) /= EMSFMT ) THEN
+                WRITE( MESG,94010 ) 
+     &                 'ERROR: In SMOKE list-formatted inventory file, '
+     &                 // TRIM( FNAME ) // ', at least one file is ' //
+     &                 CRLF() // BLANK10 // 'EMS-95 format ' //
+     &                 'while another is not. When using an EMS-95 ' //
+     &                 'formatted' // CRLF() // BLANK10 // 
+     &                 'inventory, all other inventory files must ' //
+     &                 'also be in EMS-95 format.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            
+            IF( IDAORNTI              .AND. 
+     &          FILFMT( J ) /= IDAFMT .AND. 
+     &          FILFMT( J ) /= NTIFMT      ) THEN
+                WRITE( MESG,94010 )
+     &                 'ERROR: In SMOKE list-formatted inventory file, '
+     &                 // TRIM( FNAME ) // ', at least one file is ' //
+     &                 CRLF() // BLANK10 // 'IDA or NTI format ' //
+     &                 'while another is neither IDA nor NTI ' //
+     &                 'format.' // CRLF() // BLANK10 // 'When ' //
+     &                 'using IDA or NTI formatted inventories, all ' //
+     &                 'other inventories ' // CRLF() // BLANK10 //
+     &                 'must also be IDA or NTI format.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
         END DO     ! End of loop through list-formatted file
-
-C.........  Make sure that IDA format is only used with NTI format
-        IF( IDAFLAG ) THEN
-            DO J = 1, NLINE
-                IF( FILFMT( J ) > 0       .AND.
-     &              FILFMT( J ) /= IDAFMT .AND.
-     &              FILFMT( J ) /= NTIFMT      ) THEN
-                    WRITE( MESG,94010 ) 
-     &                'ERROR: In SMOKE list-formatted inventory file, '
-     &                // TRIM( FNAME ) // ', ' // CRLF() // BLANK10 //
-     &                'at least one file is IDA-formatted while ' //
-     &                'another file is not IDA- or NTI-formmated.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-            END DO
-        END IF
 
 C.........  Exit if couldn't determine format of files in list-formatted file
         IF( EFLAG ) THEN
