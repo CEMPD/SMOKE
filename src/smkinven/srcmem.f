@@ -266,17 +266,17 @@ C.............  Allocate specifically based on source category
 C.........  Sorted ...
         CASE( 'SORTED' )
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( IFIP ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( IFIP ) ) THEN
                 ALLOCATE( IFIP( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( TPFLAG ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( TPFLAG ) ) THEN
                 ALLOCATE( TPFLAG( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'TPFLAG', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( INVYR ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( INVYR ) ) THEN
                 ALLOCATE( INVYR( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
             END IF
@@ -286,17 +286,17 @@ C.........  Sorted ...
                 CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( NPCNT ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( NPCNT ) ) THEN
                 ALLOCATE( NPCNT( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( CSCC ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( CSCC ) ) THEN
                 ALLOCATE( CSCC( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSCC', PROGNAME )  
             END IF
 
-            IF( UFLAG .AND. .NOT. ALLOCATED( CSOURC ) ) THEN
+            IF( UFLAG .AND. .NOT. ASSOCIATED( CSOURC ) ) THEN
                 ALLOCATE( CSOURC( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
             END IF
@@ -306,7 +306,7 @@ C.........  Sorted ...
                 CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
             END IF
 
-            IF( PFLAG .AND. AFLAG .AND. .NOT. ALLOCATED( POLVAL ) ) THEN
+            IF( PFLAG .AND. AFLAG .AND. .NOT. ASSOCIATED(POLVAL) ) THEN
                 ALLOCATE( POLVAL( NDIM2, NDIM3 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
             END IF
@@ -315,13 +315,13 @@ C.............  Deallocate for any source category
 C.............  NOTE - do not deallocate CSOURC, CSCC, or IFIP, because they 
 C               may be needed for reading day- and hour-specific data
             IF( .NOT. AFLAG .AND. .NOT. PFLAG ) THEN
-                IF( ALLOCATED( TPFLAG ) ) DEALLOCATE( TPFLAG )
-                IF( ALLOCATED( INVYR )  ) DEALLOCATE( INVYR )
+                IF( ASSOCIATED( TPFLAG ) ) DEALLOCATE( TPFLAG )
+                IF( ASSOCIATED( INVYR )  ) DEALLOCATE( INVYR )
 
             ELSE IF( .NOT. AFLAG ) THEN
                 IF( ASSOCIATED( IPOSCOD ) ) DEALLOCATE( IPOSCOD )
-                IF( ALLOCATED( POLVAL  ) ) DEALLOCATE( POLVAL )
-                IF( ALLOCATED( NPCNT   ) ) DEALLOCATE( NPCNT )
+                IF( ASSOCIATED( POLVAL  ) ) DEALLOCATE( POLVAL )
+                IF( ASSOCIATED( NPCNT   ) ) DEALLOCATE( NPCNT )
 
             END IF               
 
@@ -456,7 +456,9 @@ C.................  Do not deallocate plant description in case needed for
 C                   point sources report.
                 IF( .NOT. PFLAG .AND. 
      &              .NOT. AFLAG .AND. ALLOCATED( ISIC ) ) 
-     &              DEALLOCATE( ISIC, IDIU, IWEK, XLOCA, YLOCA, 
+!     &              DEALLOCATE( ISIC, IDIU, IWEK, XLOCA, YLOCA, 
+!     &                          STKHT, STKDM, STKTK, STKVE )
+     &              DEALLOCATE( ISIC, XLOCA, YLOCA, 
      &                          STKHT, STKDM, STKTK, STKVE )
 
             END SELECT
