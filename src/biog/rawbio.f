@@ -104,6 +104,7 @@ C...........   LOCAL VARIABLES and their descriptions:
         LOGICAL ::      EFLAG = .FALSE.     ! true: error found
         LOGICAL ::      GLUSE_YN = .TRUE.   ! gridded or county luse to be used
         LOGICAL ::      LGRID = .FALSE.     ! true: use gridded land use
+        LOGICAL         VFLAG               ! true: use variable grid
 
         CHARACTER(16)    COORUNIT           ! coordinate system projection units
         CHARACTER(16) :: DATGRDNM = ' '     ! input data grid name
@@ -122,6 +123,17 @@ C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
 
         CALL INITEM( LDEV, CVSW, PROGNAME )
+
+C.........  Explicitly disallow variable grid data - haven't updated grid cell
+C           size calculations to work correctly
+        VFLAG = ENVYN( 'USE_VARIABLE_GRID',
+     &                 'Use variable grid definition',
+     &                 .FALSE., IOS )
+
+        IF( VFLAG ) THEN
+            MESG = 'Cannot use variable grid data'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
    
 C.......   Get file name; open emission factors file
 
@@ -221,7 +233,7 @@ C.........  If surrogates are needed, allocate memory for and read the
 C           gridding surrogates
         IF( .NOT. LGRID ) THEN
 
-            CALL RDSRG( SDEV, SRGFMT, DATNROWS, DATNCOLS )
+            CALL RDSRG( .FALSE., SDEV, SRGFMT, DATNROWS, DATNCOLS )
 
         END IF
 
