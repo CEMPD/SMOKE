@@ -226,11 +226,18 @@ C.........  Set inventory variables to read for all source categories
             IVARNAMS( 3 ) = 'CELLID'
             IVARNAMS( 4 ) = 'CSOURC'
 
-C............  Check to see if the point locations are in the AREA
-C              file.  This makes the code backwards compatible with
-C              AREA files created by an older version of SMOKE.
+C............  Check to see if point locations are in the AREA
+C              file (i.e. we have area-to-point sources)
             K = INDEX1( 'XLOCA', NVARSET, VNAMESET )
             IF ( K .GT. 0 ) THEN
+            
+C.................  Make sure we're not using a variable grid
+                IF( VFLAG ) THEN
+                    MESG = 'Cannot use area-to-point sources ' //
+     &                     'with a variable grid.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
                 A2PFLAG = .TRUE.
                 NINVARR = 6
                 IVARNAMS( 5 ) = 'XLOCA'
@@ -249,17 +256,6 @@ C              AREA files created by an older version of SMOKE.
             IVARNAMS( 9 ) = 'XLOC2'
             IVARNAMS( 10 ) = 'YLOC2'
 
-C............  Check to see if the point locations are in the AREA
-C              file.  This makes the code backwards compatible with
-C              AREA files created by an older version of SMOKE.
-            K = INDEX1( 'XLOCA', NVARSET, VNAMESET )
-            IF ( K .GT. 0 ) THEN
-                A2PFLAG = .TRUE.
-                NINVARR = 13
-                IVARNAMS( 12 ) = 'XLOCA'
-                IVARNAMS( 13 ) = 'YLOCA'
-            END IF
-
         CASE ( 'POINT' )
             NINVARR = 3
             IVARNAMS( 2 ) = 'XLOCA'
@@ -269,6 +265,21 @@ C              AREA files created by an older version of SMOKE.
 
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
+
+C.........  Check if we have link data for mobile sources
+        IF( MAXVAL( XLOC1 ) .GT. AMISS3 ) THEN
+            IF( VFLAG ) THEN
+                MESG = 'Cannot use link-based data ' //
+     &                 'with a variable grid.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END IF
+
+C.........  Check if we only have link data for mobile sources
+C           (could use this to avoid reading unneeded surrogate data)
+c        IF( MINVAL( XLOC1 ) .GT. AMISS3 ) THEN
+c            LINKFLAG = .TRUE.
+c        END IF
 
 C.........  Define source-category-specific settings
         SELECT CASE( CATEGORY )
@@ -361,7 +372,7 @@ C           do not allow subgrids.
             
             IF( EFLAG ) THEN
                 MESG = 'Problem with variable grid input data.'
- 		CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
             END IF
         ELSE
             CALL CHKGRID( GDNAM3D, 'GRIDDESC', 1, EFLAG )
@@ -435,6 +446,14 @@ C           convert point source coordinates from lat-lon to output grid
 C.........  Determine if ungridding matrix is needed
         I = INDEX1( 'VMT', NIPPA, EANAM )
         IF( I .GT. 0 ) THEN
+        
+C.............  Make sure we're not using a variable grid
+            IF( VFLAG ) THEN
+                MESG = 'Cannot create ungridding matrix ' //
+     &                 'when using a variable grid.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            
             UFLAG = .TRUE.
             MESG = 'NOTE: VMT detected in inventory, ungridding matrix '
      &             //'will be created'
