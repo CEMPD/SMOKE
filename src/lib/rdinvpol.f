@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDINVPOL( FILNAM, NSRC, VCNT, VNAMES, 
+        SUBROUTINE RDINVPOL( FILNAM, NSRC, VCNT, JDATE, JTIME, VNAMES, 
      &                       POLDAT, STATUS )
 
 C***********************************************************************
@@ -45,32 +45,22 @@ C...........   INCLUDE FILES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
-C...........   EXTERNAL FUNCTIONS:
-        INTEGER         TRIMLEN
-
-        EXTERNAL        TRIMLEN
-
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER*(*)   FILNAM           ! Name of file being read	
-        INTEGER         NSRC             ! Number of sources
-        INTEGER         VCNT             ! Number of variables
-        CHARACTER*(*)   VNAMES( VCNT )   ! Variable names
-        REAL            POLDAT( NSRC,VCNT ) ! Pollutant-specific data
-        INTEGER         STATUS           ! Exit status
+        CHARACTER*(*), INTENT (IN) :: FILNAM           ! Logical file name	
+        INTEGER      , INTENT (IN) :: NSRC             ! Number of sources
+        INTEGER      , INTENT (IN) :: VCNT             ! Number of variables
+        INTEGER      , INTENT (IN) :: JDATE            ! Julian date
+        INTEGER      , INTENT (IN) :: JTIME            ! time (HHMMSS)
+        CHARACTER*(*), INTENT (IN) :: VNAMES( VCNT )   ! Variable names
+        REAL         , INTENT(OUT) :: POLDAT( NSRC,VCNT ) ! Data
+        INTEGER      , INTENT(OUT) :: STATUS           ! Exit status
 
 C...........   Other local variables
 
         INTEGER         V  ! counters and indices
 
-        INTEGER         JDATE, JTIME
-        SAVE            JDATE, JTIME
-
-        CHARACTER*16    VARBUF
+        CHARACTER(LEN=IOVLEN3)   VARBUF
         CHARACTER*300   MESG 
-
-        CHARACTER(LEN=IOVLEN3) LFILE 
-        DATA            LFILE / '-9' /
-        SAVE            LFILE
 
         CHARACTER*16 :: PROGNAME = 'RDINVPOL' ! program name
 
@@ -79,26 +69,6 @@ C   begin body of subroutine RDINVPOL
 
         STATUS = 0
 
-        IF( FILNAM .NE. LFILE ) THEN
-
-            IF( .NOT. DESC3( FILNAM ) ) THEN
-
-                STATUS = 1
-                MESG = 'Could not read description for "' //
-     &                 FILNAM( 1:TRIMLEN( FILNAM ) ) // '"'
-                CALL M3MSG2( MESG )
-                RETURN
-
-            ELSE
-
-                LFILE = FILNAM
-                JDATE = SDATE3D
-                JTIME = STIME3D
-
-            ENDIF
-
-        ENDIF
-
         DO V = 1, VCNT
 
             VARBUF = VNAMES( V )
@@ -106,12 +76,12 @@ C   begin body of subroutine RDINVPOL
      &                       JDATE, JTIME, POLDAT( 1,V ) ) ) THEN
                 STATUS = 1
                 MESG = 'ERROR: Could not read "' //
-     &                 VARBUF( 1:TRIMLEN( VARBUF ) ) // '" from file.'
+     &                 VARBUF( 1:LEN_TRIM( VARBUF ) ) // '" from file.'
                 CALL M3MSG2( MESG )
 
             END IF
 
-        ENDDO
+        END DO
 
         RETURN
 
