@@ -79,6 +79,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: TPFLGA( : ) !  temporal resolution code
         INTEGER, ALLOCATABLE, PUBLIC:: INVYRA( : ) !  inventory year
         INTEGER, ALLOCATABLE, PUBLIC:: IDIUA ( : ) !  Hourly profile code for each source
+        INTEGER, ALLOCATABLE, PUBLIC:: ISPEEDA ( : ) ! speed
         INTEGER, ALLOCATABLE, PUBLIC:: IWEKA ( : ) !  Weekly profile code for each source
         INTEGER, ALLOCATABLE, PUBLIC:: NPCNTA( : ) !  No. of pollutants per raw record
         INTEGER, ALLOCATABLE, PUBLIC:: SRCIDA( : ) !  Source ID
@@ -90,10 +91,12 @@
         REAL,    ALLOCATABLE, PUBLIC:: STKTKA( : ) !  exhaust temperature (deg K)
         REAL,    ALLOCATABLE, PUBLIC:: STKVEA( : ) !  exhaust velocity    (m/s)
         REAL,    ALLOCATABLE, PUBLIC:: POLVLA( :,: )! emis-spec values. See BLDENAMS.
+        REAL,    ALLOCATABLE, PUBLIC:: VMTA  ( : ) !  vehicle miles traveled
 
         CHARACTER(LEN=SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCA  ( : ) !  SCC
         CHARACTER(LEN=BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRIDA( : ) !  boiler ID
         CHARACTER(LEN=DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESCA( : ) !  plant desc
         CHARACTER(LEN=ALLLEN3), ALLOCATABLE, PUBLIC:: CSOURCA( : ) !  concat src
+        CHARACTER(LEN=VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) !  vehicle type
 
         END MODULE MODSOURC
