@@ -83,14 +83,14 @@ C...........   Other local variables
         INTEGER       J      ! counter and indices
         INTEGER       LCAT   ! length of CATEGORY string
 
-        LOGICAL       CFLAG  ! true: use SIPOLS file
-        LOGICAL       DFLAG  ! true: import day-specific file
-        LOGICAL       GFLAG  ! true: import gridded I/O API inventory
-        LOGICAL       HFLAG  ! true: import hour-specific file
-        LOGICAL       IFLAG  ! true: import annual/average inventory
-        LOGICAL       SFLAG  ! true: import speeds file
-        LOGICAL       VFLAG  ! true: use ACTVNAMS file
-        LOGICAL       XFLAG  ! true: import VMT mix file
+        LOGICAL    :: CFLAG = .FALSE.  ! true: use SIPOLS file
+        LOGICAL    :: DFLAG = .FALSE.  ! true: import day-specific file
+        LOGICAL    :: GFLAG = .FALSE.  ! true: import gridded I/O API inventory
+        LOGICAL    :: HFLAG = .FALSE.  ! true: import hour-specific file
+        LOGICAL    :: IFLAG = .FALSE.  ! true: import annual/average inventory
+        LOGICAL    :: SFLAG = .FALSE.  ! true: import speeds file
+        LOGICAL    :: VFLAG = .FALSE.  ! true: use ACTVNAMS file
+        LOGICAL    :: XFLAG = .FALSE.  ! true: import VMT mix file
 
         CHARACTER(LEN=NAMLEN3) ANAME
         CHARACTER(LEN=NAMLEN3) NAMBUF      ! file name buffer
