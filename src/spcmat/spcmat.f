@@ -135,7 +135,6 @@ C.........   Other local variables
         LOGICAL       :: DEFREPRT= .TRUE.  !  true: report default spc profiles
         LOGICAL       :: MULTIPRO= .TRUE.  !  true: multiple profs for pollutant
 
-        CHARACTER*4            OUTTYPE   !  output type from the environment
         CHARACTER*300          MESG      !  message buffer 
         CHARACTER(LEN=IOVLEN3) CBUF      !  smat output name temporary buffer 
         CHARACTER(LEN=IOVLEN3) ENAM      !  tmp emission types name
@@ -159,16 +158,6 @@ C.........  Retrieve the whether to prompt for and use pollutant conversion file
         KFLAG = ENVYN( 'POLLUTANT_CONVERSION', 
      &                 'Use pollutant-to-pollutant conversion file',
      &                 .FALSE., IOS )
-
-        MESG = 'Type of speciation outputs to create'  
-        CALL ENVSTR( 'SPEC_OUTPUT', MESG, 'ALL', OUTTYPE, IOS )
-
-C.........  Set flags that depend on the value of OUTTYPE
-        CALL UPCASE( OUTTYPE )
-        MASSOUT = ( INDEX( OUTTYPE, 'ALL' ) .GT. 0 )
-        MOLEOUT = ( INDEX( OUTTYPE, 'ALL' ) .GT. 0 )
-        MASSOUT = ( INDEX( OUTTYPE, 'MASS' ) .GT. 0 .OR. MASSOUT )
-        MOLEOUT = ( INDEX( OUTTYPE, 'MOLE' ) .GT. 0 .OR. MOLEOUT )
 
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
