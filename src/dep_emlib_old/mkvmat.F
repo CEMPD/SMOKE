@@ -7,7 +7,7 @@ C Version "@(#)$Id$ $Source$ $Date$
      &                      DFAC,  NDAY, DDEX, VMAT, TMAT )
 
 C***********************************************************************
-C  subroutine body starts at line  92
+C  subroutine body starts at line  97
 C
 C  FUNCTION:
 C       Construct temporal-coefficient-transform matrices for 
@@ -63,6 +63,7 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   Scratch Local variables:
 
         INTEGER         H               !  hour-loop counter
+        INTEGER         I               !  counter
         INTEGER         K               !  diurnal-profile index
         INTEGER         L               !  diurnal-xref index
         INTEGER         S               !  source counter
@@ -82,18 +83,21 @@ C.......   SAVED Local Variables
 
         LOGICAL         FIRSTIME
         DATA            FIRSTIME / .TRUE. /
+        LOGICAL         EFLAG
 
         SAVE            MWFAC, FIRSTIME, YR2DAY
 
+        CHARACTER*256   MESG
 
 C***********************************************************************
-C   begin body of subroutine  PTMAT
+C   begin body of subroutine  MKVMAT
 
 C.......   Firstime:  renormalize MFAC, WFAC
 
         IF ( FIRSTIME ) THEN
 
             FIRSTIME = .FALSE.
+            EFLAG    = .FALSE.
 
 C...........   Compute correct year-to-day conversion factor:
 
@@ -108,26 +112,42 @@ C...........   Compute correct year-to-day conversion factor:
                 YR2DAY = 1.0 / 366.0
             END IF
 
-            DO  13 S = 1, NMON
+            DO  13 I = 1, NMON
 
                 FAC = 0.0
                 DO  11 K = 1, 12
-                    FAC = FAC + MWFAC( K ) * MFAC( K,S )
+                    FAC = FAC + MWFAC( K ) * MFAC( K,I )
 11              CONTINUE
 
-                FAC = 1.0 / ( FAC * YR2DAY )
+                IF( FAC .LE. 0. ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 )
+     &                  'Monthly profiles at count', I, 
+     &                  'found to be zero!'
+                    CALL M3MESG( MESG )
+
+                ELSE
+                    FAC = 1.0 / ( FAC * YR2DAY )
+
+                ENDIF
 
                 DO  12 K = 1, 12
-                    MFAC( K,S ) = FAC * MFAC( K,S )
+                    MFAC( K,I ) = FAC * MFAC( K,I )
 12              CONTINUE
 
 13          CONTINUE
 
-            DO  23 S = 1, NWEK
+            IF( EFLAG ) THEN
+                MESG = 'Error renormalizing temporal profiles'
+                CALL M3EXIT( 'MKVMAT', 0, 0, MESG, 2 )
+            ENDIF
+
+            DO  23 I = 1, NWEK
             DO  22 K = 1, 7
-                WFAC( K,S ) = 7.0 * WFAC( K,S )
+                WFAC( K,I ) = 7.0 * WFAC( K,I )
 22          CONTINUE
 23          CONTINUE
+
 
         END IF  !  if firstime
 
@@ -172,5 +192,12 @@ C.......   Compute TMAT:
 144     CONTINUE
 
         RETURN
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
+
         END
 
