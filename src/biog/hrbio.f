@@ -596,7 +596,8 @@ C...........   Compute correction factors for NO (see note, above)
 
         END IF          !  if getatn (sun above horizon) or not
 
-        DEALLOCATE ( CLDATN, COSZEN )
+        IF ( ALLOCATED ( CLDATN ) ) DEALLOCATE ( CLDATN )
+        IF ( ALLOCATED ( COSZEN ) ) DEALLOCATE ( COSZEN )
 
         RETURN
 
