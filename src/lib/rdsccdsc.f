@@ -77,6 +77,8 @@ C...........   Local variables
 C***********************************************************************
 C   Begin body of subroutine RDSCCDSC
 
+        REWIND( FDEV )  ! In case of multiple calls
+
 C.........  Get the number of lines in the holidays file
         NLINES = GETFLINE( FDEV, 'SCC Descriptions' )
 
