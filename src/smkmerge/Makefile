@@ -20,7 +20,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 MRG= smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o mrgmult.o mrgonams.o \
      mrgvnams.o openmrgin.o openmrgout.o wmrgemis.o wrmrgrep.o initstcy.o \
-     rdmrginv.o mrgping.o mrgunits.o mrgbio.o
+     rdmrginv.o mrgelev.o mrgunits.o mrgbio.o wmrgelev.o
 #
 smkmerge: $(MRG) $(ALLI) $(LIBPATH)
 	echo SMKMERGE:
@@ -45,7 +45,7 @@ mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 #
 include $(MD_SRC)/modmake.inc
 
-allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY)
+allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
 bldmrgidx.o : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
@@ -53,25 +53,27 @@ getmrgev.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
 initstcy.o  : $(MODMERGE) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ $<
-mrgmult.o   : $(MODMERGE) $(MODSTCY)
+mrgelev.o   : $(MODMERGE) $(MODCNTL) $(MODELEV)
+	$(FC) $(FFLAGS) -c -o $@ $<
+mrgmult.o   : $(MODMERGE) $(MODSTCY) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
 mrgonams.o  : $(MODMERGE)
-	$(FC) $(FFLAGS) -c -o $@ $<
-mrgping.o   : $(MODMERGE) $(MODCNTL) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
 mrgunits.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
 mrgvnams.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
-openmrgin.o : $(MODMERGE)
+openmrgin.o : $(MODMERGE) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
 openmrgout.o: $(MODMERGE) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdmrginv.o: $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ $<
-smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG)
+smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
-wmrgemis.o  : $(MODMERGE)
+wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV)
+	$(FC) $(FFLAGS) -c -o $@ $<
+wmrgemis.o  : $(MODMERGE) $(MODELEV)
 	$(FC) $(FFLAGS) -c -o $@ $<
 wrmrgrep.o  : $(MODMERGE) $(MODSTCY)
 	$(FC) $(FFLAGS) -c -o $@ $<
