@@ -13,6 +13,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
+C     Modified 12/01 by Gabe Cano - deterministic/stochastic mode
 C
 C***************************************************************************
 C
@@ -367,6 +368,8 @@ C.............  Allocate memory for indices to surrogates tables for each source
             CALL CHECKMEM( IOS, 'SRGIDPOS', PROGNAME )
             ALLOCATE( SGFIPPOS( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SGFIPPOS', PROGNAME )
+            ALLOCATE( SRGCDPOS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRGCDPOS', PROGNAME )
 
 C.............  Assigns the index of the surrogate to each source (stored
 C               in SRGIDPOS passed through MODXREF)
