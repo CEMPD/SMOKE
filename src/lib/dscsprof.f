@@ -165,9 +165,9 @@ C              mole-based conversions
                 CYCLE
             END IF
 
-C.................  Skip blank and comment lines
-                IF( LINE .EQ. ' ' ) CYCLE
-                IF( LINE(1:1) .EQ. CINVHDR ) CYCLE
+C.............  Skip blank and comment lines
+            IF( LINE .EQ. ' ' ) CYCLE
+            IF( LINE(1:1) .EQ. CINVHDR ) CYCLE
 
 C.............  Skip all lines until the end of the header...
 C.............  Check for header start
