@@ -71,7 +71,7 @@ C.........  Pollutant names
         CHARACTER(LEN=4      ),PARAMETER :: NOIEND = '_NOI'
         
 C.........   Other local variables
-        INTEGER  I,J,S        ! counters and indices
+        INTEGER  I,J,S,L2     ! counters and indices
         INTEGER  IOS          ! I/O status
         INTEGER  POL          ! pollutant number
         INTEGER  CURRPOS      ! current position in POLVAL and IPOSCOD arrays
@@ -96,8 +96,9 @@ C.........   Other local variables
         LOGICAL  EFLAG        ! true: error occured
         LOGICAL  LASTFLAG     ! true: entry is last for current source
         
-        CHARACTER(LEN=IOVLEN3) POLNAM  ! temporary pollutant name
-        CHARACTER(LEN=256    ) MESG        ! message buffer 
+        CHARACTER(LEN=IOVLEN3) POLNAM   ! temporary pollutant name
+        CHARACTER(LEN=100    ) BUFFER   ! message buffer
+        CHARACTER(LEN=256    ) MESG     ! message buffer 
         
         CHARACTER*16 :: PROGNAME = 'SETNONHAP' ! program name
 
@@ -231,12 +232,17 @@ C.....................  Sum toxic emissions for this source
 C.....................  If this is last entry for source, check conditions and
 C                       subtract toxic emissions from criteria values
                     IF( LASTFLAG ) THEN
+
+C.........................  Format information for this source
+                        CALL FMTCSRC( CSOURC( I ), 7, BUFFER, L2 )
                 
 C.........................  Give warning if source has toxics but no criteria
                         IF( VOCPOS == 0 .AND. FNDVOC ) THEN
                             IF( NWARN <= MXWARN ) THEN
-                                MESG = 'WARNING: Source has toxic ' //
-     &                                 'but no criteria emissions'
+                                MESG = 
+     &                           'WARNING: Found toxic emissions ' //
+     &                           'but no VOC for source:' // CRLF() //
+     &                           BLANK5 // BUFFER( 1:L2 )
                                 CALL M3MESG( MESG )
                                 NWARN = NWARN + 1
                             END IF
@@ -247,8 +253,10 @@ C.........................  Give warning if source has toxics but no criteria
                     
                         IF( TOGPOS == 0 .AND. FNDTOG ) THEN
                             IF( NWARN <= MXWARN ) THEN
-                                MESG = 'WARNING: Source has toxic ' //
-     &                                 'but no criteria emissions'
+                                MESG = 
+     &                           'WARNING: Found toxic emissions ' //
+     &                           'but no TOG for source:' // CRLF() //
+     &                           BLANK5 // BUFFER( 1:L2 )
                                 CALL M3MESG( MESG )
                                 NWARN = NWARN + 1
                             END IF
@@ -260,8 +268,10 @@ C.........................  Give warning if source has toxics but no criteria
 C.........................  Give warning if source has criteria but no toxics
                         IF( VOCPOS /= 0 .AND. .NOT. FNDVOC ) THEN
                             IF( NWARN <= MXWARN ) THEN
-                                MESG = 'WARNING: Source has VOC ' //
-     &                                 'criteria but no toxic emissions'
+                                MESG = 
+     &                           'WARNING: Found VOC emissions ' //
+     &                           'but no toxics for source:'// CRLF() //
+     &                           BLANK5 // BUFFER( 1:L2 )
                                 CALL M3MESG( MESG )
                                 NWARN = NWARN + 1
                             END IF
@@ -272,8 +282,10 @@ C.........................  Give warning if source has criteria but no toxics
                     
                         IF( TOGPOS == 0 .AND. FNDTOG ) THEN
                             IF( NWARN <= MXWARN ) THEN
-                                MESG = 'WARNING: Source has TOG ' //
-     &                                 'criteria but no toxic emissions'
+                                MESG = 
+     &                           'WARNING: Found TOG emissions ' //
+     &                           'but no toxics for source:'// CRLF() //
+     &                           BLANK5 // BUFFER( 1:L2 )
                                 CALL M3MESG( MESG )
                                 NWARN = NWARN + 1
                             END IF
@@ -293,8 +305,11 @@ C.............................  Subtract toxic emissions from criteria emissions
 C.................................  Check that NONHAP value is not negative
                                 IF( POLVAL( VOCPOS,NEM ) < 0. ) THEN
                                   IF( NWARN <= MXWARN ) THEN
-                                    MESG = 'WARNING: Toxic emissions' //
-     &                                     ' greater than criteria'
+                                    MESG = 
+     &                              'WARNING: Total toxic emissions ' //
+     &                              'greater than VOC emissions for ' //
+     &                              'source:'// CRLF() // BLANK5 // 
+     &                              BUFFER( 1:L2 )
                                     CALL M3MESG( MESG )
                                     NWARN = NWARN + 1
                                   END IF
@@ -315,9 +330,11 @@ C.................................  Rename VOC to NONHAPVOC
 C.................................  Check that NONHAP value is not negative
                                 IF( POLVAL( TOGPOS,NEM ) < 0. ) THEN
                                   IF( NWARN <= MXWARN ) THEN
-                                    MESG = 'WARNING: Toxic emissions' //
-     &                                     ' greater than criteria'
-                                    CALL M3MESG( MESG )
+                                    MESG = 
+     &                              'WARNING: Total toxic emissions ' //
+     &                              'greater than TOG emissions for ' //
+     &                              'source:'// CRLF() // BLANK5 // 
+     &                              BUFFER( 1:L2 )
                                     NWARN = NWARN + 1
                                   END IF
                                     
@@ -354,9 +371,9 @@ C.........................  Reset flags and values
         WRITE( MESG,94010 )
      &     'During processing, the following number of sources ' //
      &     'were encountered: ' // CRLF() // BLANK10 //
-     &     'Sources with VOC emissions but no toxic emissions: ', 
+     &     'Sources with VOC or TOG emissions but no toxic emissions: ', 
      &     NCRNOTOX, CRLF() // BLANK10 //
-     &     'Sources with toxic emissions but no VOC emissions: ', 
+     &     'Sources with toxic emissions but no VOC or TOG emissions: ', 
      &     NTOXNOCR
         CALL M3MESG( MESG )
 
