@@ -105,7 +105,7 @@ C.........  Return if no file was needed
         END IF
 
 C.........  Get number of lines in the exemptions file
-        NLINES = GETFLINE( FDEV )
+        NLINES = GETFLINE( FDEV, 'Daylight exemptions file' )
 
 C.........  Allocate memory for the temporary arrays for reading in file
         ALLOCATE( EXMPTCSC( NLINES ), STAT=IOS )
