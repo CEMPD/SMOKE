@@ -71,9 +71,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CRLF, PROMPTFFILE, SECSDIFF
 
 C...........   LOCAL PARAMETERS
-        CHARACTER*50  SCCSW          ! SCCS string with version number at end
-
-        PARAMETER   ( SCCSW   = '$Revision$' )  ! CVS revision number
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Gridding Matrix
         INTEGER, ALLOCATABLE :: GMAT( : ) ! Contiguous gridding matrix
@@ -104,9 +102,9 @@ C...........   File units and logical/physical names
         CHARACTER*300 :: PNAME = ' '    !  previous output file name
 
 C...........   Other local variables
-        INTEGER      I, K, N                ! indices and counters
+        INTEGER      I, K, L, N           ! indices and counters
 
-        INTEGER      IOS                 ! i/o status
+        INTEGER      IOS                  ! i/o status
         INTEGER   :: GDIM    = 0          ! dimension of contiguous gridding mat
         INTEGER      JDATE                ! Julian date
         INTEGER      JTIME                ! time
@@ -127,7 +125,7 @@ C   begin body of program SMKREPORT
 
 C.........  Write out copywrite, version, web address, header info, and prompt
 C           to continue running the program.
-        CALL INITEM( LDEV, SCCSW, PROGNAME )
+        CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Prompt for and open REPCONFIG file
         CDEV = PROMPTFFILE( 
@@ -181,7 +179,7 @@ C.........  Preprocess the country/state/county data
 C.........  Preprocess the inventory data
 
 C.........  Read and store all group definitions
-c        CALL RDGRPS( CDEV )
+        CALL RDGRPS( CDEV )
 
 C.........  QA reports configuration file settings (note: maybe do this when
 c  n: storing report info)
@@ -190,13 +188,15 @@ C.........  Loop through reports
 
         DO N = 1, NREPORT
 
+            RPT_ = ALLRPT( N )
+
 C.............  Write message to log and standard output for report that is
 C               being processed
             WRITE( MESG,94010 ) '***** CREATING REPORT', N, ' *****'
             CALL M3MSG2( MESG )
 
 C.............  Get file name 
-            FNAME = ALLRPT( N )%OFILENAM
+            FNAME = RPT_%OFILENAM
 
 C.............  If current file is different than previous
             IF( FNAME .NE. PNAME ) THEN
@@ -231,7 +231,7 @@ C.............  Select inventory records
 c            note: Need to write this
 
 C.............  Apply gridding information
-            IF( ALLRPT( N )%USEGMAT ) THEN
+            IF( RPT_%USEGMAT ) THEN
                 CALL REPMRGGRD( N, GMAT( 1 ), GMAT( NGRID+1 ),
      &                          GMAT( NGRID+NMATX+1 ), EFLAG   )
             END IF
@@ -249,6 +249,22 @@ C.............  Assign bin numbers to selected records
      &             'Reading emissions data and writing report...'
             CALL M3MSG2( MESG )
 
+C.............  Update inventory input names and units, depending on status of 
+C               ozone-season emissions.
+            IF( .NOT. DESC3( ENAME ) ) THEN
+
+                L = LEN_TRIM( ENAME )
+                MESG = 'Could not get description of file "' //
+     &                 ENAME( 1:L ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ELSE
+                INVPIDX = 0
+                IF ( RPT_%O3SEASON ) INVPIDX = 1
+                CALL GETSINFO
+
+            END IF
+
 C.............  Determine input units and create conversion factors
             CALL REPUNITS( N )
 
@@ -256,7 +272,7 @@ C.............  NOTE: Move this section to input-consistency routine when that
 C                  N: routine is written
 C.............  Set ending date and time and number of time steps for report
 C.............  When using hourly inputs
-            IF( ALLRPT( N )%USEHOUR ) THEN
+            IF( RPT_%USEHOUR ) THEN
                 JDATE = SDATE
                 JTIME = STIME
 
@@ -267,14 +283,14 @@ C.................  Find ending time
 
 C.................  Compare data end time with output end time
                 I = SECSDIFF( EDATE, ETIME, 
-     &                        EDATE, ALLRPT( N )%OUTTIME )
+     &                        EDATE, RPT_%OUTTIME )
 
 C.................  If reporting time is after data ending time, reset the no.
 C                   of time steps so that the reporting ends on the previous day
                 IF( I .GT. 0 ) THEN
                     CALL NEXTIME( EDATE, ETIME, -25 * TSTEP )  
                     CALL NEXTIME( EDATE, ETIME, TSTEP )         ! Workaround
-                    ETIME = ALLRPT( N )%OUTTIME
+                    ETIME = RPT_%OUTTIME
 
                     I =  SECSDIFF( SDATE, STIME, EDATE, ETIME )
                     RPTNSTEP = I / 3600 + 1
@@ -313,7 +329,7 @@ C.............  Loop through time steps (if any) and sum emissions into bins
 C               for the appropriate time resolution...
 
 C.............  For mole-based speciation...
-            IF( ALLRPT( N )%USESLMAT ) THEN
+            IF( RPT_%USESLMAT ) THEN
                 CALL GENRPRT( ODEV, N, ENAME, TNAME, OUTFMT,
      &                        SLMAT, EFLAG )
 
