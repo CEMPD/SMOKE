@@ -202,7 +202,7 @@ C...........   Other variables and their descriptions:
         INTEGER         RTIME   !  met file 2 start time
         INTEGER         TZONE   !  output-file time zone ; not used in program
 
-        LOGICAL         EFLAG   !  error flag
+        LOGICAL ::      EFLAG    = .FALSE.  ! error flag
         LOGICAL ::      SAMEFILE = .TRUE.   ! radiation/cld and tmpr data in same file 
         LOGICAL ::      SWITCH_FILE = .TRUE.  ! use frost switch file
 
