@@ -357,13 +357,17 @@ C           emission types/pollutants names for input and output.
             IF( IDX .NE. PIDX ) THEN
                 K = K + 1                    
 
-                L1 = INDEX( EANAM( I ), ETJOIN )
-                L2 = LEN_TRIM( EANAM( I ) )
-                IINAM( K ) = EANAM( I )( L1+LT:L2 )
+                L1 = MAX( INDEX( EANAM( I ), ETJOIN ), 1 )
+                IF( L1 .GT. 1 ) L1 = L1 + LT
 
-                L1 = INDEX( SANAM( I ), ETJOIN )
+                L2 = LEN_TRIM( EANAM( I ) )
+                IINAM( K ) = EANAM( I )( L1:L2 )
+
+                L1 = MAX( INDEX( SANAM( I ), ETJOIN ), 1 )
+                IF( L1 .GT. 1 ) L1 = L1 + LT
+
                 L2 = LEN_TRIM( SANAM( I ) )
-                SINAM( K ) = SANAM( I )( L1+LT:L2 )
+                SINAM( K ) = SANAM( I )( L1:L2 )
 
                 PIDX = IDX
             END IF
