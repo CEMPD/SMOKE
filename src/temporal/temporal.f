@@ -162,7 +162,7 @@ C...........   Other local variables
         INTEGER         I, J, K, L, L1, L2, N, S, T
 
         INTEGER         IOS, IOS1, IOS2, IOS3, IOS4 ! i/o status
-        INTEGER         IOS5, IOS6, IOS7, IOS8      ! i/o status
+        INTEGER         IOS6, IOS7, IOS8      ! i/o status
         INTEGER         EDATE, ETIME        ! ending Julian date and time
         INTEGER         ENLEN               ! length of ENAME string
         INTEGER         JDATE, JTIME        ! Julian date and time
@@ -584,7 +584,7 @@ C           divide pollutants into even groups and try again.
             ALLOCATE( EMIST( NSRC, NGSZ )    , STAT=IOS8 )
 
             IF( IOS1 .GT. 0 .OR. IOS2 .GT. 0 .OR. IOS3 .GT. 0 .OR.
-     &          IOS4 .GT. 0 .OR. IOS5 .GT. 0 .OR. IOS6 .GT. 0 .OR.
+     &          IOS4 .GT. 0 .OR. IOS6 .GT. 0 .OR.
      &          IOS7 .GT. 0 .OR. IOS8 .GT. 0 ) THEN
 
                 IF( NGSZ .EQ. 1 ) THEN
