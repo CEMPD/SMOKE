@@ -2,7 +2,7 @@
         PROGRAM GETRECS
 
 C***********************************************************************
-C  program body starts at line 227
+C  program body starts at line 232
 C
 C  DESCRIPTION:
 C       Searches for a specific source, for all sources in a 
@@ -132,11 +132,13 @@ C.........  Define Layer Fractions
 
 C.........  Local parameters
         INTEGER         MXEOUT            ! Maximum number of output records
+        INTEGER         MXTSTEP           ! Maximum number of time steps to proc
         INTEGER         NMETHOD           ! number of menu items 
         INTEGER         NRANGE            ! number of ranges in range menu
         INTEGER         NSTKMTHD          ! no. of ways to sort by stack parms
 
         PARAMETER     ( MXEOUT  = 2000, 
+     &                  MXTSTEP = 144, ! 6 days
      &                  NMETHOD = 5   ,
      &                  NRANGE  = 3   ,
      &                  NSTKMTHD= 5      )
@@ -151,9 +153,9 @@ C.........  Local arrays
 
         REAL            EISUM( NIPOL )   ! Sum of day's inv pollutants
         REAL            EMSUM( NMPOL )   ! Sum of day's model species
-        REAL            EOUT ( MXEOUT, NMPOL, 24) ! output emissions
-        REAL            ETMP ( MXEOUT, NIPOL, 24) ! output temporal inv emission
-        REAL            OFRAC( MXEOUT, EMLAYS, 24)! output layer fractions
+        REAL            EOUT ( MXEOUT, NMPOL, MXTSTEP) ! output emissions
+        REAL            ETMP ( MXEOUT, NIPOL, MXTSTEP) ! output temporal inv emission
+        REAL            OFRAC( MXEOUT, EMLAYS, MXTSTEP)! output layer fractions
 
         CHARACTER*7     GSTATE( MXEOUT ) ! state of gridding matrix for output
 
@@ -291,10 +293,10 @@ C.........  Prompt for starting time
 
 C.........  Prompt for time number of time steps
 
-        NSTEPS = 24
+        NSTEPS = MXREC3D
         WRITE( MESG, 94010 ) 'Enter number of time steps of',
      &                       TSTEP, 'in HHMMSS.'
-        NSTEPS = GETNUM( 1, 9999, NSTEPS, MESG )
+        NSTEPS = GETNUM( 1, MXTSTEP, NSTEPS, MESG )
         
 C.........  Prompt for PLAY
 
@@ -740,22 +742,24 @@ C.........  Loop over time
         DO 66 T = 1, NSTEPS
 
 C.............  Read layer fractions for given hour
-            IF( READ3( LNAME, 'LFRAC', ALLAYS3,
-     &                 JDATE, JTIME, LFRAC   ) ) THEN
+            IF( LAYRFLAG ) THEN
+                IF( READ3( LNAME, 'LFRAC', ALLAYS3,
+     &                     JDATE, JTIME, LFRAC   ) ) THEN
 
-                DO 27 L = 1, EMLAYS
-                    DO 25 I = 1, NOUT
+                    DO 27 L = 1, EMLAYS
+                        DO 25 I = 1, NOUT
+    
+                            OFRAC( I, L, T ) = LFRAC( EINX( I ), L )
+    
+25                      CONTINUE
+27                  CONTINUE
 
-                        OFRAC( I, L, T ) = LFRAC( EINX( I ), L )
+                ELSE ! Read failed
 
-25                  CONTINUE
-27              CONTINUE
-
-            ELSE ! Read failed
-
-                CALL M3EXIT( 'GETRECS', JDATE, JTIME,
+                    CALL M3EXIT( 'GETRECS', JDATE, JTIME,
      &                       'Could not read "LFRAC" from '// LNAME, 2 )
-
+ 
+                ENDIF
             ENDIF
 
 C.............  Loop over inventory species
@@ -934,7 +938,7 @@ C.............  Write out time dependent emissions
             DO 77 T = 1, NSTEPS
 
                 WRITE( ODEV, 93050 ) 
-     &                 SDATE-JDATE+1, JTIME/10000, 
+     &                 JDATE-SDATE+1, JTIME/10000, 
      &                 ( ETMP( I, V, T ), V=1,NIPOL ),
      &                 ( EOUT( I, SPNT( J ), T ), J=1, NMPOL )
 
@@ -964,7 +968,7 @@ C.............  Write out time dependent emissions
 
                 CALL NEXTIME( JDATE, JTIME, TSTEP )
 
-                IF( JDATE .NE. LDATE ) THEN
+                IF( JDATE .NE. LDATE .OR. T .EQ. NSTEPS ) THEN
                      WRITE( ODEV, 93055 ) 
      &                    ( EISUM( V ), V=1, NIPOL ),
      &                    ( EMSUM( J ), J=1, NMPOL )
