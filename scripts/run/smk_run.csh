@@ -447,8 +447,8 @@ if ( $?RUN_MBSETUP ) then
       if ( $exitstat == 0 ) then         # Run program
          setenv LOGFILE $TMPLOG
          if ( $debugmode == Y ) then
-            if ( -e $UT_SRC/mbsetup.debug ) then
-               $debug_exe $UT_SRC/mbsetup.debug
+            if ( -e $MB_SRC/mbsetup.debug ) then
+               $debug_exe $MB_SRC/mbsetup.debug
             else
                 set debugexestat = 1
             endif
@@ -476,7 +476,7 @@ if ( $?RUN_MBSETUP ) then
 
       if ( $debugexestat == 1 ) then
 	 echo 'SCRIPT ERROR: mbsetup.debug program does not exist in:'
-	 echo '              '$UT_SRC
+	 echo '              '$MB_SRC
          set exitstat = 1
       endif
    endif
