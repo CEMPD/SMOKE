@@ -24,9 +24,15 @@ C ****************************************************************************/
         PROGRAM TMPBIOS
 
 C***********************************************************************
-C  program body starts at line  134
+C  program body starts at line  146
 C
 C  DESCRIPTION:
+C
+C       IN ANY CASE, tmpbios.F SHOULDN'T BE USED AT ALL !!! 
+C
+C       Its functionalities have been integrated into tmpbio.F. 
+C       tmpbios.F is saved now only for archival purpose.
+C 
 C       Computes time stepped gridded biogenic emissions in terms of 
 C       normalized gridded emissions from RAWBIO and EDSS meteorology.
 C
