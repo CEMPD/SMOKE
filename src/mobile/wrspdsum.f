@@ -52,6 +52,7 @@ C.........  This module is used for MOBILE6 setup information
 
 C.........  INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        FIND1FIRST

@@ -39,6 +39,9 @@ C***********************************************************************
        
        IMPLICIT NONE
 
+C........  Includes
+       INCLUDE 'M6CNST3.EXT'  ! MOBILE6 constants
+
 C........  Function arguments
        INTEGER, INTENT (IN) :: SMKROAD   ! road type in SMOKE code ( 1 - 19 )
        LOGICAL, INTENT (IN) :: LASAFLAG  ! true: treat local roads as arterial

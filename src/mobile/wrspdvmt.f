@@ -44,6 +44,9 @@ C.........  This module is used for MOBILE6 setup information
       
         IMPLICIT NONE
         
+C...........   INCLUDES
+        INCLUDE 'M6CNST3.EXT'  !  MOBILE6 constants
+        
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        JUNIT
         CHARACTER*2    CRLF    

@@ -54,6 +54,7 @@ C...........   This module contains emission factor tables and related
 C...........   INCLUDES:
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER           GETFLINE
