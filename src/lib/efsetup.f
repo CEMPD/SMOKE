@@ -68,7 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: VOLNAM          ! volatile pollutant name
 
 C...........   Local variables
-        INTEGER         I, K, L, L2, N ! counters and indices
+        INTEGER         I, J, K, L, L2, N ! counters and indices
 
         INTEGER         IOS     ! status from retrieving E.V.s
         INTEGER         LJ      ! length of emission type joiner
@@ -115,7 +115,7 @@ C                   used
      &                     VOLNAM( 1:L ) // '".'      
                 END IF
 
-C.............  For existing file, confirm MOBILE5 factors
+C.............  For existing file, confirm MOBILE6 names
             ELSE
 c note: add here
 
@@ -137,7 +137,7 @@ C           selected.
             CASE( 'MOBILE6' )
 
                 L = LEN_TRIM( VOLNAM )
-                PINDX = INDEX1( VOLNAM( 1:L ), NM6VPOL, M6VPOLS ) 
+                PINDX = INDEX1( VOLNAM( 1:4 ), NM6VPOL, M6VPOLS ) 
 
                 IF( PINDX .LE. 0 ) THEN
 
@@ -145,7 +145,7 @@ C           selected.
                     WRITE( MESG,94010 ) 
      &                 'ERROR: Volatile pollutant type "' //
      &                 VOLNAM( 1:L ) // '" is invalid for the ' //
-     &                 MODELNAM( 1:L ) // ' model'
+     &                 MODELNAM( 1:ML ) // ' model'
                 END IF
                   
             END SELECT
@@ -172,47 +172,44 @@ C           model being used.
 
 C.................  Set variable names, units, and descriptions from
 C                   arrays defined in the MOBILE6 include file
-                LJ = LEN_TRIM( ETJOIN )
-                N = 1
-                DO K = 1, MXM6EFS
-C.....................  Make sure we don't go out of bounds
-                    IF( N > MXM6ALL ) EXIT
+  
+                K = 0
 
-                    SELECT CASE( K )
-                    CASE( 1,19,28,31,34,37,40,41 )  
-C                       K ==  1 -> ex. running HC
-C                       K == 19 -> ex. start HC
-C                       K == 28 -> evp. hot soak HC
-C                       K == 31 -> evp. diurnal HC
-C                       K == 34 -> evp. resting HC
-C                       K == 37 -> evp. running HC
-C                       K == 40 -> evp. crankcase HC
-C                       K == 41 -> evp. refueling HC
+C.................  Loop over all emission processes
+                DO I = 1, MXM6EPR
+                
+C.....................  Loop over all pollutants                
+                    DO J = 1, MXM6POLS
+  
+C.........................  Check if this is a valid pollutant/process combo
+                        IF( M6POL2EF( I,J ) == -1 ) CYCLE
+                        
+                        K = K + 1
+    
+C.........................  Pull process name and description from include file                        
+                        VNAMES( K ) = M6PROCS( I ) // ETJOIN
+                        VDESCS( K ) = 'EFs for ' // M6PRCDSC( I )
+    
+C.........................  If pollutant is HC, append specified volatile pollutant
+C                           name; otherwise, use name and desc from include file
+                        IF( TRIM( M6POLS( J ) ) == 'HC' ) THEN
+                            VNAMES( K ) = TRIM( VNAMES( K ) ) // VOLNAM
+                            VDESCS( K ) = TRIM( VDESCS( K ) ) // ' ' // 
+     &                                    VOLNAM
+                        ELSE
+                            VNAMES( K ) = TRIM( VNAMES( K ) ) //
+     &                                    M6POLS( J )
+                            VDESCS( K ) = TRIM( VDESCS( K ) ) // ' ' //
+     &                                    M6POLDSC( J )
+                        END IF
+    
+C.........................  Store units from include file                        
+                        VUNITS( K ) = M6UNIT
+                        
+                    END DO  ! pollutant loop
+                END DO  ! emission process loop
 
-C.........................  Find volatile pol name in list of Mobile6  
-C                           emission factor names
-                        DO I = 0, NM6VPOL-1
-                            L  = INDEX( M6EFLST( N+I ), ETJOIN )
-                            L2 = LEN_TRIM( M6EFLST( N+I ) )
-                            IF( M6EFLST(N+I)( L+LJ:L2 ) == VOLNAM ) THEN
-                                VNAMES( K ) = M6EFLST( N+I )
-                                VUNITS( K ) = M6EFUNT( N+I )
-                                VDESCS( K ) = M6EFDSC( N+I )
-                                N = N + ( NM6VPOL-1 )
-                                EXIT
-                            END IF
-                        END DO
-                        	
-                    CASE DEFAULT
-                        VNAMES( K ) = M6EFLST( N )
-                        VUNITS( K ) = M6EFUNT( N )
-                        VDESCS( K ) = M6EFDSC( N )
-                    END SELECT
-                    
-                    N = N + 1
-
-                END DO
-
+C.................  Store maximum number of emission factor types
                 NEFS = MXM6EFS
 
 C.............  If file available
