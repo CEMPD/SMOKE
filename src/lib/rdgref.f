@@ -173,8 +173,9 @@ C           the source category of interest
                 CYCLE
             END IF
 
-C.............  Skip blank lines
+C.............  Skip blank lines or comments
             IF( LINE .EQ. ' ' ) CYCLE
+            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE      
 
 C.............  Depending on source category, transfer line to temporary
 C               fields.  In cases where blanks are allowed, do not use
