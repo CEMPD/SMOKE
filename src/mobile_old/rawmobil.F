@@ -318,7 +318,7 @@ C......................... Keep link records sorted so FIND will work
             GO TO 44  ! End of loop for reading link specific VMT data
    50       MLNUM = ICNT
 
-            IF( ICNT .GT. MXLSRC ) THEN   ! Internal dimensions exceeded
+            IF( MLNUM .GT. MXLSRC ) THEN   ! Internal dimensions exceeded
 
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 )
@@ -401,10 +401,10 @@ C.............  Check for bad road class number
                 IFIPA ( SRC ) = FIP
                 IRCLSA( SRC ) = RCL
                 ILINKA( SRC ) = 0
-                XLOC1A( SRC ) = AMISS3
-                XLOC2A( SRC ) = AMISS3
-                YLOC1A( SRC ) = AMISS3
-                YLOC2A( SRC ) = AMISS3
+                XLOC1A( SRC ) = BADVAL3
+                XLOC2A( SRC ) = BADVAL3
+                YLOC1A( SRC ) = BADVAL3
+                YLOC2A( SRC ) = BADVAL3
                 INVYRA( SRC ) = INYEAR
                 TPFLGA( SRC ) = MTPRFAC*WTPRFAC
                 VMTA  ( SRC ) = TVMT
@@ -610,12 +610,12 @@ C.........  Get file name; open output mobile sources file
 
         FTYPE3D = GRDDED3
         P_ALP3D = DBLE( UZONE )
-        P_BET3D = DBLE( AMISS3 )
-        P_GAM3D = DBLE( AMISS3 )
+        P_BET3D = DBLE( BADVAL3 )
+        P_GAM3D = DBLE( BADVAL3 )
         XCENT3D = 0.0D0
         YCENT3D = 0.0D0
-        XORIG3D = DBLE( AMISS3 )
-        YORIG3D = DBLE( AMISS3 )
+        XORIG3D = DBLE( BADVAL3 )
+        YORIG3D = DBLE( BADVAL3 )
         SDATE3D = 0 !  n/a
         STIME3D = 0 !  n/a
         TSTEP3D = 0             !  time independent
@@ -626,7 +626,7 @@ C.........  Get file name; open output mobile sources file
         NTHIK3D = 1
         GDTYP3D = UTMGRD3
         VGTYP3D = IMISS3
-        VGTOP3D = AMISS3
+        VGTOP3D = BADVAL3
         WRITE( GDNAM3D, 94040 ) 'UTM_', UZONE
 
         FDESC3D( 1 ) = 'NC Mobile Sources VMT values.'
@@ -740,7 +740,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 5( A, :, I7, :, 1X ) )
+94010   FORMAT( 5( A, :, I8, :, 1X ) )
 
 94020   FORMAT( A, 1X, I5, 1X, A, I7.7, I3.3, 1X, A, I5 )
 
