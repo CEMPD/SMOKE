@@ -60,8 +60,9 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER*2  CRLF
+        INTEGER      ENVINT
 
-        EXTERNAL     CRLF
+        EXTERNAL     CRLF, ENVINT
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT    (IN) :: NSRC                  ! no. sources
@@ -77,7 +78,11 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Other local variables
         INTEGER     L, S        ! counters and indices
+        INTEGER     IOS         ! I/O status
         INTEGER     TIMESLOT    ! array location
+        
+        INTEGER, SAVE :: MXWARN ! maximum number of warnings
+        INTEGER, SAVE :: NWARN  ! total number of warnings printed
 
         REAL        VAL         ! tmp value
 
@@ -94,6 +99,11 @@ C   begin body of subroutine HOURTEMP
 C.........  For the first time, initialize all entries to zero
         IF( INITIAL ) THEN
             HOUROUT = 0.  ! array
+            
+C.............  Get maximum number of warnings
+            MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
+            NWARN = 0
+            
             INITIAL = .FALSE.
         END IF
 
@@ -109,26 +119,32 @@ C.................  Check that temperature is within min and max bounds
 
                 IF( VAL < MINTEMP ) THEN
 
-C.....................  Round value up to minimum
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                    WRITE( MESG, 94020 )
+                    IF( NWARN <= MXWARN ) THEN
+                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
+                        WRITE( MESG, 94020 )
      &                     'Increasing hourly temperature from',
      &                     VAL, 'to', MINTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
-ccs                    CALL M3MESG( MESG )
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
 
+C.....................  Set value to minimum
                     VAL = MINTEMP 
 
                 ELSEIF( VAL > MAXTEMP ) THEN
 
-C.....................  Round value down to maximum
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
-                    WRITE( MESG, 94020 )
+                    IF( NWARN <= MXWARN ) THEN
+                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
+                        WRITE( MESG, 94020 )
      &                     'Decreasing hourly temperature from',
      &                     VAL, ' to', MAXTEMP, 'for source' //
      &                     CRLF() // BLANK10 // BUFFER( 1:L ) // '.'
-ccs                    CALL M3MESG( MESG )
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
 
+C.....................  Set value to maximum
                     VAL = MAXTEMP
                 
                 END IF
