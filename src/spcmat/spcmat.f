@@ -415,6 +415,10 @@ C           emission types/pollutants names for input and output.
 
         END DO
 
+C.........  Reset number of output pollutants based on new count from removing
+C           the emission processes
+        NOPOL = K
+
 C.........  Scan speciation profiles file to get all of the pollutant-species
 C           combinations that are valid for the pollutants in the inventory.
 C.........  The species names are sorted in ABC order for each pollutant, and
