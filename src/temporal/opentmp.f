@@ -78,8 +78,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   LOCAL PARAMETERS
         CHARACTER*50  SCCSW          ! SCCS string with version number at end
 
-        PARAMETER   ( SCCSW   = '@(#)opentmp.f	1.6'
-     &              )
+        PARAMETER   ( SCCSW   = '$Revision$' ) ! CVS revision number
 
 C...........   Other local variables
 
