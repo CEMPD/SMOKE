@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDNTIAR( FDEV, NRAWIN, WKSET, NRAWOUT, EFLAG, 
+        SUBROUTINE RDNTIAR( FDEV, NRAWBP, WKSET, CURREC, EFLAG, 
      &                      NDROP, EDROP )
 
 C***********************************************************************
@@ -74,9 +74,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
 C...........   NOTE that NDROP and EDROP are not used at present
         INTEGER     , INTENT (IN) :: FDEV   ! unit number of input file
-        INTEGER     , INTENT (IN) :: NRAWIN ! total raw record-count 
+        INTEGER     , INTENT (IN) :: NRAWBP ! total raw record times pols
         INTEGER     , INTENT (IN) :: WKSET  ! weekly profile interpretation
-        INTEGER     , INTENT(OUT) :: NRAWOUT! outgoing source * pollutants
+        INTEGER     ,INTENT(INOUT):: CURREC ! current no. source * pollutants
         LOGICAL     , INTENT(OUT) :: EFLAG  ! outgoing error flag
         INTEGER     ,INTENT(INOUT):: NDROP  !  number of records dropped
         REAL        ,INTENT(INOUT):: EDROP( MXIDAT )  ! emis dropped per pol
@@ -84,13 +84,11 @@ C...........   NOTE that NDROP and EDROP are not used at present
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
 
-C...........   Counters of total number of input records
-        INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
-
 C...........   Other local variables
         INTEGER         I       ! counters and indices
 
         INTEGER         COD     !  pollutant position in INVDNAM
+        INTEGER         ES      !  counter for source x pollutants
         INTEGER         FIP     !  tmp FIPS code
         INTEGER         ICC     !  position of CNTRY in CTRYNAM
         INTEGER         INY     !  inventory year
@@ -157,7 +155,7 @@ C........................................................................
 C.............  Head of the main read loop  .............................
 C........................................................................
 
-        SS   = NSRCSAV
+        ES   = CURREC
         IREC = 0
         DO
 
@@ -346,7 +344,7 @@ C.................  Remove monthly factors for this source
 C.............  Store emissions by CAS number for reporting
             EMISBYCAS( UCASPOS ) = EMISBYCAS( UCASPOS ) + EANN
             RECSBYCAS( UCASPOS ) = RECSBYCAS( UCASPOS ) + 1
-
+                    
 C.............  Loop through pollutants for this CAS number            
             DO I = SCASPOS, SCASPOS + NCASPOLS - 1
 
@@ -382,25 +380,25 @@ C.................  Check if current pollutant is kept
                 END IF
                 
 C.................  Increment source number
-                SS = SS + 1
+                ES = ES + 1
 
 C.................  Store source information
-                IF( SS <= NRAWIN ) THEN
-                    IFIPA ( SS ) = FIP
-                    TPFLGA( SS ) = TPF
-                    INVYRA( SS ) = INY
-                    CSCCA ( SS ) = TSCC
-                    POLVLA( SS,NEM ) = POLANN * INVDCNV( COD )
-                    POLVLA( SS,NOZ ) = POLOZN
-                    POLVLA( SS,NCE ) = CEFF
-                    POLVLA( SS,NRE ) = REFF
-                    POLVLA( SS,NRP ) = RPEN
+                IF( ES <= NRAWBP ) THEN
+                    IFIPA ( ES     ) = FIP
+                    TPFLGA( ES     ) = TPF
+                    INVYRA( ES     ) = INY
+                    CSCCA ( ES     ) = TSCC
+                    POLVLA( ES,NEM ) = POLANN * INVDCNV( COD )
+                    POLVLA( ES,NOZ ) = POLOZN
+                    POLVLA( ES,NCE ) = CEFF
+                    POLVLA( ES,NRE ) = REFF
+                    POLVLA( ES,NRP ) = RPEN
                     
                     CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
-     &                            CCOD, CSOURCA( SS ) )
+     &                            CCOD, CSOURCA( ES ) )
      
-                    CSOURCA( SS )( ALLLEN3+1:ALLCAS3 ) = ADJUSTR( TCAS )
+                    CSOURCA( ES )( ALLLEN3+1:ALLCAS3 ) = ADJUSTR( TCAS )
                     
                  END IF
 
@@ -412,17 +410,14 @@ C.................  Store source information
 
         WRITE( MESG,94010 ) 
      &         'NTI FILE processed:'  // CRLF() // BLANK10 //
-     &              'This-file source-count', SS - NSRCSAV,
+     &              'This-file source-count', ES - CURREC,
      &         CRLF() // BLANK10 //
-     &              'Cumulative source-count', SS
+     &              'Cumulative source-count', ES
 
         CALL M3MSG2( MESG )
 
-C.........  Update saved cumulative counts
-        NSRCSAV = SS        !  source
-
 C.........  Write message if overflow occurred
-        IF( NSRCSAV > NRAWIN ) THEN
+        IF( ES > NRAWBP ) THEN
 
             EFLAG = .TRUE.
             MESG = 'INTERNAL ERROR: Source memory allocation ' //
@@ -430,7 +425,7 @@ C.........  Write message if overflow occurred
             CALL M3MSG2( MESG )
 
         ELSE
-            NRAWOUT = NSRCSAV
+            CURREC = ES
         
         END IF
 
