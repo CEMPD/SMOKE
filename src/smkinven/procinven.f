@@ -1,5 +1,5 @@
 
-        SUBROUTINE PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV )
+        SUBROUTINE PROCINVEN( NRAWBP, NRAWSRCS, UDEV, YDEV, CDEV, LDEV )
 
 C**************************************************************************
 C  subroutine body starts at line 114
@@ -41,55 +41,55 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC 
+        USE MODSOURC, ONLY: INRECA, POLVLA, TPFLGA, INDEXA,
+     &                      IPOSCODA, SRCIDA, ICASCODA, CSOURCA, 
+     &                      CSOURC, NPCNT, POLVAL, IPOSCOD
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: MXIDAT, INVSTAT
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NEM, NOZ, NEF, NCE, NRE, NRP, 
+     &                     NPPOL, NSRC, NC1, NC2, NCHARS 
 
         IMPLICIT NONE
 
 C...........   INCLUDES
-
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER*2     CRLF
         INTEGER         ENVINT
-        INTEGER         INDEX1
         LOGICAL         ENVYN
-        INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVINT, INDEX1, ENVYN, STR2INT
+        EXTERNAL        CRLF, ENVINT, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER , INTENT (IN) :: NRAWBP  ! no.raw recs x pol/act
-        INTEGER , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
-        INTEGER , INTENT (IN) :: YDEV    ! unit no. for area-to-point
-        INTEGER , INTENT (IN) :: CDEV    ! SCC descriptions unit no.
-        INTEGER , INTENT (IN) :: LDEV    ! log file unit no.
+        INTEGER , INTENT (IN) :: NRAWBP   ! no. raw recs x pol/act
+        INTEGER , INTENT (IN) :: NRAWSRCS ! no. raw srcs
+        INTEGER , INTENT (IN) :: UDEV     ! unit no. for non-HAP exclusions
+        INTEGER , INTENT (IN) :: YDEV     ! unit no. for area-to-point
+        INTEGER , INTENT (IN) :: CDEV     ! SCC descriptions unit no.
+        INTEGER , INTENT (IN) :: LDEV     ! log file unit no.
 
 C...........   Variables dimensioned by subroutine arguments
         INTEGER         TMPSTAT( MXIDAT ) ! tmp data status
 c NOTE: GET RID OF THIS ALLOCATION METHOD!
 
 C...........   Other local variables
+        INTEGER         I, J, K, LS, L2, S    ! counter and indices
 
-        INTEGER         I, J, K, LK, LS, L2, S    ! counter and indices
-
+        INTEGER         CASNUM      !  current CAS number from ICASCODA
         INTEGER         IDUP        !  no. dulicate records
         INTEGER         IOS         !  i/o status
-        INTEGER         LCAT        !  length of CATEGORY string
         INTEGER         MXERR       !  max no. errors
         INTEGER         MXWARN      !  max no. warnings
         INTEGER         NERR        !  no. errors
         INTEGER         NWARN       !  no. warnings
-        INTEGER         PE, PS      !  pollutant postn end and start in CSOURCA 
-        INTEGER         PIPCOD      !  IPOSCOD of previous iteration of loop
-        INTEGER         SLEN        !  length of source 
+        INTEGER         PCAS        !  previous CAS number
+        INTEGER         PIPCOD      !  previous pollutant code
+        INTEGER         POLCOD      !  current pollutant code from IPOSCODA
 
         REAL            EMISI       !  inverse emissions value
         REAL            EMISN       !  new emissions value
@@ -106,14 +106,8 @@ C...........   Other local variables
         LOGICAL      :: RE_ZERO_FLAG = .FALSE. ! true: rule effective of 0 found
         LOGICAL      :: RP_ZERO_FLAG = .FALSE. ! true: rule penetration of 0 found
 
-        CHARACTER*5     TPOLPOS     !  Temporary pollutant position
         CHARACTER*256   BUFFER      !  input file line buffer
-        CHARACTER*256   MESG        ! message buffer 
-
-        CHARACTER(LEN=ALLLEN3)  LSRCCHR     !  previous CSOURC
-        CHARACTER(LEN=ALLLEN3)  TSRCCHR     !  tmporary CSOURC
-        CHARACTER(LEN=CASLEN3)  LCAS        !  previous CAS number
-        CHARACTER(LEN=CASLEN3)  TCAS        !  tmporary CAS number
+        CHARACTER*256   MESG        !  message buffer 
 
         CHARACTER*16 :: PROGNAME = 'PROCINVEN' ! program name
 
@@ -130,221 +124,42 @@ C.........  Get settings from the environment
 
         IF( YDEV > 0 ) A2PFLAG = .TRUE.
 
-C.........  Initlialze temporary data status
-        TMPSTAT = 0  ! array
+C.........  Allocate memory for sorted inventory arrays
+        ALLOCATE( CSOURC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
+        ALLOCATE( NPCNT( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NPCNT', PROGNAME )
 
-C.........  Loop through sources X pollutants to determine source IDs and check
-C           for duplicates. Also keep a count of the total unique key
-C           combinations (CSOURCA without the pollutant position)
-C.........  NOTE the last part of the CSOURCA string is the integer position 
-C           of the pollutant for that record in the INVPNAM pollutant array 
-        LSRCCHR = EMCMISS3
-        LK = IMISS3
-        LCAS = ' '
-        S = 0
-        SLEN  = SC_ENDP( MXCHRS )
-        PS    = SC_BEGP( MXCHRS + 1 )
-        PE    = SC_ENDP( MXCHRS + 1 )
-        IDUP  = 0
-        DO I = 1, NRAWBP
-            
-            J  = INDEXA( I )
-
-            TSRCCHR = CSOURCA( J )(  1:SLEN ) ! Source characteristics
-            TPOLPOS = CSOURCA( J )( PS:PE   ) ! Pos of pollutant (ASCII)
-            TCAS = CSOURCA( J )( ALLCAS3-CASLEN3+1:ALLCAS3 )  ! CAS number
-
-C.............  Update pointer for list of actual pollutants & activities
-            K = STR2INT( TPOLPOS )  ! Convert pol/activity position to integer
-            
-            TMPSTAT( K ) = 2
-            IPOSCOD( I ) = K
-           
-C.............  Increment source count by comparing this iteration to previous
-            IF( TSRCCHR .NE. LSRCCHR ) THEN
-                S = S + 1
-                LSRCCHR = TSRCCHR
-
-C.............  Give message of duplicates are not permitted in inventory
-C.............  This IF also implies TSRCCHR = LSRCCHR
-            ELSE IF( K .EQ. LK .AND. TCAS .EQ. LCAS ) THEN
-
-                CALL FMTCSRC( TSRCCHR, NCHARS, BUFFER, L2 )
-
-                IF ( DFLAG .AND. NERR .LE. MXERR ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Duplicate records found for' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-                    NERR = NERR + 1
-
-                ELSE IF ( NWARN .LE. MXWARN ) THEN
-                    MESG = 'WARNING: Duplicate records found for' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-                    NWARN = NWARN + 1
-                END IF
-
-                IDUP = IDUP + 1
-
-            END IF
-
-            LK = K  ! Store pol/activity index for comparison in next iteration
-            LCAS = TCAS
-
-C.............  Assign source ID (to use as an index) for all inv X pol/act
-            SRCIDA( I ) = S
-
-        END DO  ! On sources x pollutants/activities
-
-C.........  Set NSRC in for module MODINFO
-        NSRC = S
-
-C.........  Report the number of records that were duplicated
-        IF( IDUP .NE. 0 ) THEN
-            WRITE( MESG,94010 ) 'NOTE: The number of duplicate ' //
-     &             'records was', IDUP, '.' 
-
-            IF( .NOT. DFLAG ) THEN
-                MESG = MESG( 1:LEN_TRIM( MESG ) ) // CRLF()// BLANK10//
-     &                 'The inventory data were summed for ' //
-     &                 'these sources.'
-            END IF
-
-            CALL M3MSG2( MESG )
-
-        END IF
-
-        IF( EFLAG ) THEN
-           MESG = 'Error in raw inventory file(s)'         
-           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-C.........  Use sign of INVSTAT and value of TMPSTAT to set type (pol/act) and
-C           indicator of whether it's present or not
-        DO I = 1, MXIDAT
-            INVSTAT( I ) = INVSTAT( I ) * TMPSTAT( I )
-        END DO
-
-C.........  Call adjustment routine (for now, just a placeholder for a routine
-C           that can call the area-to-point reader
-        CALL ADJUSTINV( NRAWBP, UDEV, YDEV, CDEV, LDEV )
-
-C.........  Allocate memory for SMOKE inventory arrays (NOT sources X pollutnts)
-
-        CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .FALSE., NSRC, 
-     &               NRAWBP, NPPOL )
-
-C.........  Loop through sources x pollutants/activities to store sorted arrays
+C.........  Loop through sources to store sorted arrays
 C           for output to I/O API file.
 C.........  Keep case statement outside the loops to speed processing
-        LS = IMISS3
         SELECT CASE ( CATEGORY )
         CASE( 'AREA' ) 
 
-             DO I = 1, NRAWBP
+             DO I = 1, NRAWSRCS
 
-                J = INDEXA( I )
                 S = SRCIDA( I )
-
-                IF( S .NE. LS ) THEN
-                    LS  = S
-                    IFIP  ( S ) = IFIPA  ( J )
-                    TPFLAG( S ) = TPFLGA ( J )
-                    INVYR ( S ) = INVYRA ( J )
-                    CSCC  ( S ) = CSCCA  ( J )
-                    CELLID( S ) = 0
-                    
-                    IF( A2PFLAG ) THEN
-                        XLOCA ( S ) = XLOCAA ( J )
-                        YLOCA ( S ) = YLOCAA ( J )
-                    END IF
-
-                    CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
-                END IF
-
-            END DO
-
-       CASE( 'MOBILE' )
-
-            DO I = 1, NRAWBP
-
-                J = INDEXA( I )
-                S = SRCIDA( I )
-
-                IF( S .NE. LS ) THEN
-                    LS  = S
-                    IFIP  ( S ) = IFIPA  ( J )
-                    IRCLAS( S ) = IRCLASA( J )
-                    IVTYPE( S ) = IVTYPEA( J ) 
-                    TPFLAG( S ) = TPFLGA ( J )
-                    INVYR ( S ) = INVYRA ( J )
-                    CSCC  ( S ) = CSCCA  ( J )
-                    CLINK ( S ) = CLINKA ( J )
-                    CVTYPE( S ) = CVTYPEA( J )
-                    XLOC1 ( S ) = XLOC1A ( J )
-                    YLOC1 ( S ) = YLOC1A ( J )
-                    XLOC2 ( S ) = XLOC2A ( J )
-                    YLOC2 ( S ) = YLOC2A ( J )
-
-                    CSOURC( S ) = CSOURCA( J )( 1:SRCLEN3 )
-                END IF
-
-            END DO
-
-        CASE( 'POINT' )
-
-            DO I = 1, NRAWBP
-
-                J = INDEXA( I )
-                S = SRCIDA( I )
-
-                IF( S .NE. LS ) THEN
-                    LS  = S
-                    IFIP  ( S )  = IFIPA  ( J )
-                    ISIC  ( S )  = ISICA  ( J )
-                    IDIU  ( S )  = IDIUA  ( J )
-                    IWEK  ( S )  = IWEKA  ( J )
-                    TPFLAG( S )  = TPFLGA ( J )
-                    INVYR ( S )  = INVYRA ( J )
-                    XLOCA ( S )  = XLOCAA ( J )
-                    YLOCA ( S )  = YLOCAA ( J )
-                    STKHT ( S )  = STKHTA ( J )
-                    STKDM ( S )  = STKDMA ( J )
-                    STKTK ( S )  = STKTKA ( J )
-                    STKVE ( S )  = STKVEA ( J )
-                    CSCC  ( S )  = CSCCA  ( J )
-                    CORIS ( S )  = ADJUSTR( CORISA ( J ) )
-                    CBLRID( S )  = CBLRIDA( J )
-                    CPDESC( S )  = CPDESCA( J )
-
-                    CSOURC( S )  = CSOURCA( J )( 1:SRCLEN3 )
-                END IF
+                CSOURC( S ) = CSOURCA( I )
 
             END DO
 
         END SELECT
 
-C.........  Deallocate local memory for per-source unsorted arrays
-        CALL SRCMEM( CATEGORY, 'UNSORTED', .FALSE., .FALSE., 
-     &               1, 1, 1 )
+C.........  Deallocate per-source unsorted arrays
+        DEALLOCATE( CSOURCA )
 
-C.........  Allocate memory for aggregating any duplicate pol-specific data
-C.........  Note that the POLVAL array that contains the pollutant-specific
-C           data is dimensioned to output only one pollutant at a time. This is 
-C           because we may need to be able to handle many pollutants in the 
-C           future, and the memory requirements would be prohibitive if all of
-C           the memory were allocated at the same time.           
-
-        CALL SRCMEM( CATEGORY, 'SORTED', .TRUE., .TRUE., NSRC, 
-     &               NRAWBP, NPPOL )
+C.........  Allocate memory for sorted inventory data
+        ALLOCATE( POLVAL( NRAWBP,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
+        ALLOCATE( IPOSCOD( NRAWBP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
 
 C.........  Initialize pollutant/activity-specific values.  
 C.........  Initialize annual and ozone-season values with 0.
 C.........  Inititalize integer
 C           values with the real version of the missing integer flag, since
 C           these are stored as reals until output
-        IF( CATEGORY .NE. 'MOBILE' ) THEN
+        IF( CATEGORY /= 'MOBILE' ) THEN
             POLVAL( :,1:2 )    = 0.               ! array
             POLVAL( :,3:NPPOL) = BADVAL3          ! array
         END IF
@@ -356,29 +171,70 @@ C           these are stored as reals until output
 C.........  Initialize pollutant count per source array
         NPCNT = 0  ! array
 
+C.........  Initialize temporary data status
+        TMPSTAT = 0  ! array
+
 C.........  Store pollutant/activity-specific data in sorted order. Ensure that
 C           any duplicates are aggregated.
-C.........  Aggregate duplicate pollutant/activity-specific data 
-C.........  Note that we have already checked to ensure that if there are
-C           duplicate data, they are allowed
+C.........  Give warnings or errors when duplicates are encountered
 C.........  Note that pollutants & activities  are stored in output order
 C           because they've been previously sorted in part based on their
 C           position in the master array of output pollutants/activities
         K = 0
-        PIPCOD = IMISS3  ! Previous iteration IPOSCOD 
-        LS = IMISS3      ! Previous iteration S
+        PIPCOD = IMISS3   ! Previous iteration pollutant code
+        PCAS   = IMISS3   ! Previous CAS number
+        LS     = IMISS3   ! Previous iteration S
         DO I = 1, NRAWBP
 
             J = INDEXA( I )
-            S = SRCIDA( I )
+            S = INRECA( J )
+            
+            POLCOD = IPOSCODA( J )
+            CASNUM = ICASCODA( J )
 
+C.............  Update pointer for list of actual pollutants and activities
+            TMPSTAT( POLCOD ) = 2
+
+C.............  If current source, pollutant, and CAS number match previous,
+C               print duplicate error or warning message            
+            IF( S      == LS     .AND. 
+     &          POLCOD == PIPCOD .AND. 
+     &          CASNUM == PCAS         ) THEN
+                
+                CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                
+                IF( DFLAG .AND. NERR <= MXERR ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Duplicate records found for' //
+     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    NERR = NERR + 1
+                
+                ELSE IF( NWARN <= MXWARN ) THEN
+                    MESG = 'WARNING: Duplicate records found for' //
+     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
+                END IF
+                
+                IDUP = IDUP + 1
+            
+            END IF
+
+C.............  Skip rest of loop if duplicates are not allowed
+            IF( EFLAG ) THEN
+                LS     = S
+                PIPCOD = POLCOD
+                PCAS   = CASNUM
+                CYCLE
+            END IF
+            
 C.............  Reset emissions values to zero, if it's negative
-            IF ( POLVLA( J, NEM ) .LT. 0 .AND.
-     &           POLVLA( J, NEM ) .GT. AMISS3 ) THEN
+            IF ( POLVLA( J, NEM ) < 0 .AND.
+     &           POLVLA( J, NEM ) > IMISS3 ) THEN
                 POLVLA( J, NEM ) = 0.
 
-                IF ( NWARN .LE. MXWARN .AND.
-     &               IPOSCOD( I ) .NE. PIPCOD ) THEN
+                IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                     MESG = 'WARNING: Negative annual data reset' //
      &                     'to zero for:' //
@@ -388,12 +244,11 @@ C.............  Reset emissions values to zero, if it's negative
                 END IF
             END IF
                 
-            IF ( POLVLA( J, NOZ ) .LT. 0 .AND.
-     &           POLVLA( J, NOZ ) .GT. AMISS3 ) THEN
+            IF ( POLVLA( J, NOZ ) < 0 .AND.
+     &           POLVLA( J, NOZ ) > IMISS3 ) THEN
                 POLVLA( J, NOZ ) = 0.
 
-                IF ( NWARN .LE. MXWARN .AND.
-     &               IPOSCOD( I ) .NE. PIPCOD ) THEN
+                IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                     MESG = 'WARNING: Negative seasonal data ' //
      &                     'reset to zero for:' //
@@ -408,10 +263,10 @@ C.............  Check control efficiency, rule effectiveness, and rule
 C               penetration and if missing, set to default value.
 C.............  CE default = 0., RP default = 1., RE default = 1.
 C.............  Control efficiency
-            IF ( NCE .GT. 0 ) THEN                
-                IF( POLVLA( J, NCE ) .LT. 0. ) THEN
+            IF ( NCE > 0 ) THEN                
+                IF( POLVLA( J, NCE ) < 0. ) THEN
                     POLVLA( J, NCE ) = 0.
-                ELSE IF( POLVLA( J, NCE ) .EQ. 100. ) THEN
+                ELSE IF( POLVLA( J, NCE ) == 100. ) THEN
                     POLVLA( J, NCE ) = 0.
                     CE_100_FLAG = .TRUE.
                 ELSE
@@ -420,10 +275,10 @@ C.............  Control efficiency
             END IF
 
 C.............  Rule effectiveness
-            IF ( NRE .GT. 0 ) THEN
-                IF( POLVLA( J, NRE ) .LT. 0. ) THEN
+            IF ( NRE > 0 ) THEN
+                IF( POLVLA( J, NRE ) < 0. ) THEN
                     POLVLA( J, NRE ) = 1.
-                ELSE IF( POLVLA( J, NRE ) .EQ. 0. ) THEN
+                ELSE IF( POLVLA( J, NRE ) == 0. ) THEN
                     POLVLA( J, NRE ) = 1.
                     RE_ZERO_FLAG = .TRUE.
                 ELSE
@@ -432,10 +287,10 @@ C.............  Rule effectiveness
             END IF
 
 C.............  Rule penetration
-            IF ( NRP .GT. 0 ) THEN
-                IF( POLVLA( J, NRP ) .LT. 0. ) THEN
+            IF ( NRP > 0 ) THEN
+                IF( POLVLA( J, NRP ) < 0. ) THEN
                     POLVLA( J, NRP ) = 1.
-                ELSE IF( POLVLA( J, NRP ) .EQ. 0. ) THEN
+                ELSE IF( POLVLA( J, NRP ) == 0. ) THEN
                     POLVLA( J, NRP ) = 1.
                     RP_ZERO_FLAG = .TRUE.
                 ELSE
@@ -444,7 +299,7 @@ C.............  Rule penetration
             END IF
 
 C.............  For a new source or a new pollutant code...
-            IF( S .NE. LS .OR. IPOSCOD( I ) .NE. PIPCOD ) THEN
+            IF( S /= LS .OR. POLCOD /= PIPCOD ) THEN
 
 C.................  Sum up the number of pollutants/activities by source,
 C                   but do this here only, because this part of the IF
@@ -454,17 +309,14 @@ C                   statement is for new pollutants
 
                 POLVAL( K, NEM ) = POLVLA( J, NEM )
                 POLVAL( K, NOZ ) = POLVLA( J, NOZ )
-                IF( NCE .GT. 0 ) POLVAL( K, NCE ) = POLVLA( J, NCE )
-                IF( NRE .GT. 0 ) POLVAL( K, NRE ) = POLVLA( J, NRE )
-                IF( NEF .GT. 0 ) POLVAL( K, NEF ) = POLVLA( J, NEF )
-                IF( NRP .GT. 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
+                IF( NCE > 0 ) POLVAL( K, NCE ) = POLVLA( J, NCE )
+                IF( NRE > 0 ) POLVAL( K, NRE ) = POLVLA( J, NRE )
+                IF( NEF > 0 ) POLVAL( K, NEF ) = POLVLA( J, NEF )
+                IF( NRP > 0 ) POLVAL( K, NRP ) = POLVLA( J, NRP )
 
-C.................  Update IPOSCOD (the position of the pol/act in the 
-C                   master list) to align properly with summed emissions.
-C.................  NOTE- K is always <= to I, so there is no conflict for
-C                   reassigning IPOSCOD.
-                IPOSCOD( K ) = IPOSCOD( I )
-                PIPCOD       = IPOSCOD( I ) 
+C.................  Store position of the pol/act in the 
+C                   master list in sorted array.
+                IPOSCOD( K ) = POLCOD
 
 C.............  If the existing value is defined, sum with new emissions
 C               or activity and use weighted average for control factors
@@ -475,26 +327,26 @@ C               or activity and use weighted average for control factors
                 EMISN_OZ = 0.
                 EMISO_OZ = 0.
 
-                IF( POLVAL( K, NEM ) .GE. 0. ) THEN
+                IF( POLVAL( K, NEM ) >= 0. ) THEN
                     EMISN = POLVLA( J, NEM )
                     EMISO = POLVAL( K, NEM )
                     POLVAL( K, NEM ) = EMISO + EMISN
                 END IF
 
-                IF( POLVAL( K, NOZ ) .GE. 0. ) THEN
+                IF( POLVAL( K, NOZ ) >= 0. ) THEN
                     EMISN_OZ = POLVLA( J, NOZ )
                     EMISO_OZ = POLVAL( K, NOZ )
                     POLVAL( K, NOZ ) = EMISO_OZ + EMISN_OZ
 
 C.....................  Use ozone season emissions for weighting if 
 C                       annual emissions are not available.
-                    IF( EMISN .EQ. 0. ) EMISN = EMISN_OZ
-                    IF( EMISO .EQ. 0. ) EMISO = EMISO_OZ
+                    IF( EMISN == 0. ) EMISN = EMISN_OZ
+                    IF( EMISO == 0. ) EMISO = EMISO_OZ
                 END IF
 
 C.................  Compute inverse only once
                 EMIST = EMISN + EMISO
-                IF( EMIST .GT. 0. ) THEN
+                IF( EMIST > 0. ) THEN
                     EMISI = 1. / EMIST
 
 C.................  Continue in loop if zero emissions 
@@ -505,27 +357,48 @@ C.................  Continue in loop if zero emissions
 
 C.................  Weight the control efficiency, rule effectiveness, and 
 C                   rule penetration based on the emission values
-                IF ( NCE .GT. 0 ) 
+                IF ( NCE > 0 ) 
      &          POLVAL( K,NCE ) = ( POLVAL( K,NCE )*EMISO + 
      &                              POLVLA( J,NCE )*EMISN  ) * EMISI
-                IF ( NRE .GT. 0 ) 
+                IF ( NRE > 0 ) 
      &          POLVAL( K,NRE ) = ( POLVAL( K,NRE )*EMISO + 
      &                              POLVLA( J,NRE )*EMISN  ) * EMISI
-                IF( NRP .GT. 0 ) 
+                IF( NRP > 0 ) 
      &          POLVAL( K,NRP ) = ( POLVAL( K,NRP )*EMISO + 
      &                              POLVLA( J,NRP )*EMISN  ) * EMISI
-                IF( NEF .GT. 0 ) THEN
-                    IF ( POLVAL( K,NEF ) .GT. 0 ) 
+                IF( NEF > 0 ) THEN
+                    IF ( POLVAL( K,NEF ) > 0 ) 
      &              POLVAL( K,NEF ) = ( POLVAL( K,NEF )*EMISO + 
      &                                  POLVLA( J,NEF )*EMISN  ) * EMISI
                 END IF
 
             END IF
 
-            LS = S
+            LS     = S
+            PIPCOD = POLCOD
+            PCAS   = CASNUM
 
         END DO
+        
+C.........  Report the number of records that were duplicated
+        IF( IDUP /= 0 ) THEN
+            WRITE( MESG,94010 ) 'NOTE: The number of duplicate ' //
+     &             'records was', IDUP, '.'
+                   
+            IF( .NOT. DFLAG ) THEN
+                MESG = TRIM( MESG ) // CRLF() // BLANK10 //
+     &                 'The inventory data were summed for ' //
+     &                 'these sources.'
+            END IF
+            
+            CALL M3MSG2( MESG )
+        END IF
 
+        IF( EFLAG ) THEN
+            MESG = 'Duplicates found in raw inventory file(s)'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+        
 C.........  Print warnings about changed control efficiency, rule
 C           effectiveness, and rule penetration
         IF( CE_100_FLAG ) THEN
@@ -557,7 +430,18 @@ C           effectiveness, and rule penetration
         END IF
 
 C.........  Deallocate memory for unsorted pollutant arrays
-        CALL SRCMEM( CATEGORY, 'UNSORTED', .FALSE., .TRUE., 1, 1, 1 )
+        DEALLOCATE( POLVLA, SRCIDA, IPOSCODA, INDEXA, 
+     &              INRECA, TPFLGA, ICASCODA )
+
+C.........  Use sign of INVSTAT and value of TMPSTAT to set type (pol/act) and
+C           indicator of whether it's present or not
+        DO I = 1, MXIDAT
+            INVSTAT( I ) = INVSTAT( I ) * TMPSTAT( I )
+        END DO
+
+C.........  Call adjustment routine to create area-to-point sources and
+C           read in nonhap exclusion file
+        CALL ADJUSTINV( K, UDEV, YDEV, CDEV, LDEV ) 
                 
         RETURN
 
