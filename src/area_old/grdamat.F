@@ -684,11 +684,16 @@ C........  For Lat-lon grids, header will be irrelevant, but can't check either
      &               'Number of surrogates in header was ', NSRG
                     CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
 
-                ELSEIF ( NSRG .GT. NASRC ) THEN
+                ELSEIF ( NSRG .GT. NASRG ) THEN
                     WRITE( MESG, 94010 ) 
      &               'Number of surrogates in file =', NSRG, 
      &               'but maximum (NASRG) =', NASRG
-                    CALL M3EXIT( 'GRDAMAT', 0, 0, MESG, 2 )
+                    CALL M3WARN( 'GRDAMAT', 0, 0, MESG )
+
+                    CALL M3MSG2( 'Resetting actual number of ' //
+     &                           'surrogates to maximum.' )
+ 
+                    NSRG = NASRG
 
                 END IF
 
