@@ -62,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: S       ! source ID
         REAL   , INTENT (IN) :: SRCTMPR ! temperature at source
-        INTEGER, INTENT(OUT) :: OSRC    ! source ID
+        INTEGER,INTENT(INOUT):: OSRC    ! source ID
         INTEGER, INTENT(OUT) :: T1      ! valid tmpr index below SRCTMPR
         INTEGER, INTENT(OUT) :: T2      ! valid tmpr index above SRCTMPR 
         REAL   , INTENT(OUT) :: PP      ! factor 1
