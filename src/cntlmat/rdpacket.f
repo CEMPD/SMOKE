@@ -166,10 +166,16 @@ C.........  Process the line of data, depending on packet type
             CALL PADZERO( PKTINFO%NSCC )
 
         CASE( 'PROJECTION' )
-            PKTINFO%CSIC =           SEGMENT( 2 ) 
-            PKTINFO%CPOL =           ' '
-            PKTINFO%TSCC =           SEGMENT( 3 )
-            PKTINFO%FAC1 = STR2REAL( SEGMENT( 4 ) )
+            PKTINFO%CSIC  =           SEGMENT( 2 ) 
+            PKTINFO%CPOL  =           ' '
+            PKTINFO%TSCC  =           SEGMENT( 3 )
+            PKTINFO%FAC1  = STR2REAL( SEGMENT( 4 ) )
+            PKTINFO%PLT   = ' '
+            PKTINFO%CHAR1 = ' '
+            PKTINFO%CHAR2 = ' '
+            PKTINFO%CHAR3 = ' '
+            PKTINFO%CHAR4 = ' '
+            PKTINFO%CHAR5 = ' '
 
         CASE DEFAULT
             MESG = 'INTERNAL ERROR: Packet type ' // PKTTYP // 
