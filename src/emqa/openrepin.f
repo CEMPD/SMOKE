@@ -1,7 +1,8 @@
 
         SUBROUTINE OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, 
      &                        PRNAME, SLNAME, SSNAME, TNAME, RDEV, 
-     &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV )
+     &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
+     &                        ADEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -60,6 +61,10 @@ C.........  This module contains the global variables for the 3-d grid
 C...........  This module contains the information about the source category
         USE MODINFO
 
+C.........  This module contains the major data structure and control flags
+        USE MODMERGE, ONLY:
+     &          PELVNAME, EVDEV
+
 C.........  This module is required for the FileSetAPI
         USE MODFILESET
 
@@ -101,6 +106,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: EDEV   ! unit no.: elevated ID file (PELV)
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
+	INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
 
 C.........  Temporary array for speciation variable names
         CHARACTER(LEN=IODLEN3), ALLOCATABLE :: SLVNAMS( : )
@@ -116,63 +122,91 @@ C.........  Other local variables
         INTEGER         I, J, L, L1, L2, N, V       ! counters and indices
 
         INTEGER         IOS           ! tmp I/O status
+	INTEGER		ISD           ! start time of ASCII elevated file
+	INTEGER		IED	      ! end time of ASCII elevated file
         INTEGER         TSTEP_T       ! unused time step from environment
 
         LOGICAL      :: EFLAG = .FALSE.  ! true: error found
         LOGICAL      :: TIMEFLAG = .FALSE.  ! true: time info already init
 
         CHARACTER*16    NAMBUF       ! tmp file name buffer
+	CHARACTER*16    UNITS        ! units of ASCII elevated file
         CHARACTER*256   MESG         ! message buffer
+	CHARACTER*300   LINE         ! tmp line buffer
+
+        CHARACTER(LEN=IOULEN3) GRDENV      ! gridded output units from envrmt
 
         CHARACTER*16 :: PROGNAME = 'OPENREPIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENREPIN
 
+	IF( .NOT. AFLAG ) THEN
 C.........  Get inventory file names given source category
-        CALL GETINAME( CATEGORY, ENAME, ANAME )
+            CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Prompt for and open input I/O API and ASCII files
-        MESG= 'Enter logical name for the I/O API or MAP INVENTORY file'
-        CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
-     &                   PROGNAME, INAME, IDEV )
+            MESG= 'Enter logical name for the I/O API or '//
+     &            'MAP INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., ENAME,
+     &                       PROGNAME, INAME, IDEV )
 
 C.........  If input file is ASCII format, then open and read map 
 C           file to check files, sets environment for ENAME, opens 
 C           files, stores the list of physical file names for the 
 C           pollutant files in the MODINFO module, and stores the map
 C           file switch in MODINFO as well.
-        IF( IDEV .GT. 0 ) THEN
+            IF( IDEV .GT. 0 ) THEN
 
-            CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+                CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
 
 C.........  Otherwise, open separate I/O API and ASCII files that
 C           do not store the pollutants as separate 
-        ELSE
-            ENAME = INAME
-            SDEV = PROMPTFFILE( 
+            ELSE
+                ENAME = INAME
+                SDEV = PROMPTFFILE( 
      &           'Enter logical name for ASCII INVENTORY file',
      &           .TRUE., .TRUE., ANAME, PROGNAME )
-        END IF
+            END IF
 
 C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API header info is passed by include file and the
 C           results are stored in module MODINFO.
-        CALL GETSINFO( ENAME )
+            CALL GETSINFO( ENAME )
 
 C.........  Store non-category-specific header information
-        TSTEP  = 000000
-        NSTEPS = 1
+            TSTEP  = 000000
+            NSTEPS = 1
 
 C.........  Reset the maximum input data if any reports did not select
 C           specific data values.  MXINDAT might get larger than needed.
-        IF( DATAMISS ) THEN
-            MXINDAT = MAX( NIPPA, MXINDAT )
-        END IF
+            IF( DATAMISS ) THEN
+                MXINDAT = MAX( NIPPA, MXINDAT )
+            END IF
 
 C.........  Determine the year and projection status of the inventory
-c       CALL CHECK_INVYEAR( ENAME, APRJFLAG, FDESC3D )
+c           CALL CHECK_INVYEAR( ENAME, APRJFLAG, FDESC3D )
+
+	ELSE
+	    NCHARS = 3
+	    JSCC = 0
+	    JSTACK = 3
+
+	    ALLOCATE( SC_BEGP( NCHARS ), STAT=IOS )
+	    CALL CHECKMEM( IOS, 'SC_BEGP', PROGNAME )
+	    ALLOCATE( SC_ENDP( NCHARS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SC_ENDP', PROGNAME )
+
+	    PLTIDX = 2
+	    MXCHRS = MXPTCHR3
+
+	    DO I = 1, NCHARS
+		SC_BEGP( I ) = PTBEGL3( I )
+		SC_ENDP( I ) = PTENDL3( I )
+	    END DO
+
+	END IF
 
 C.........  For temporal inputs, prompt for hourly file
         IF( TFLAG ) THEN
@@ -504,6 +538,79 @@ C.........  Get SCC descriptions, if needed
             NDEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'SCCDESC',PROGNAME )
 
         END IF
+
+C.........  Open ASCII elevation file output by SMKMERGE, if needed
+	IF( AFLAG ) THEN
+
+	    CALL ENVSTR( 'MRG_GRDOUT_UNIT', ' ', ' ', GRDENV, IOS)
+
+	    IF( GRDENV( 1:1 ) .EQ. 'm' ) THEN
+
+	        ADEV = PROMPTFFILE(
+     &              'Enter name for ASCII ELEVATED SOURCES file', 
+     &              .TRUE., .TRUE., 'ELEVTS_L', PROGNAME )
+
+	    ELSE
+
+		ADEV = PROMPTFFILE(
+     &              'Enter name for ASCII ELEVATED SOURCES file',
+     &              .TRUE., .TRUE., 'ELEVTS_S', PROGNAME )
+
+	    END IF
+
+C.........  Read ASCII elevated file
+            MESG = 'Reading ASCII elevated file...'
+            CALL M3MSG2( MESG )
+
+	    ASCREC = 0 
+
+C............  Read in units
+	    ASCREC = ASCREC + 1
+	    READ( ADEV, '(10X,A)') UNITS
+
+C............  Skip header lines
+            DO I = 1, 2
+		ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
+            END DO
+
+C.............  Get number of species and point stacks from file
+	    ASCREC = ASCREC + 1
+            READ( ADEV, '(I10,10X,I10)' ) ASCDATA, NSRC
+
+            NIPPA = ASCDATA
+            NSVARS = NIPPA
+	    MXINDAT = MAX( NIPPA, MXINDAT )
+
+            ALLOCATE( EANAM( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
+            ALLOCATE( EAUNIT( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EAUNIT', PROGNAME )
+            EANAM = ''
+            EAUNIT = TRIM( UNITS )
+
+            DO I = 1, 4
+		ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
+            END DO
+
+C..............  Read in list of species
+            DO I = 1, ASCDATA
+		ASCREC = ASCREC + 1
+                READ( ADEV, '(A)' ) LINE
+                EANAM( I ) = TRIM( LINE )
+            END DO
+
+C..............  Read in start and end dates and times
+	    ASCREC = ASCREC + 1
+	    READ( ADEV, '(4I10)' ) ISD, STIME, IED, ETIME
+	    SDATE = ISD + 1900000
+	    EDATE = IED + 1900000
+	    BYEAR = INT( SDATE/1000 )
+	    TSTEP = 10000
+	    NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME )/3600
+
+	END IF
 
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort
