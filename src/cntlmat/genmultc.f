@@ -304,9 +304,9 @@ C             successfully written the temporary files.
 
         END DO ! end pollutant loop
 
-        REWIND( CDEV )
-        REWIND( GDEV )
-        REWIND( LDEV )
+        IF( CDEV .GT. 0 ) REWIND( CDEV )
+        IF( GDEV .GT. 0 ) REWIND( GDEV )
+        IF( LDEV .GT. 0 ) REWIND( LDEV )
 
 C...........  Fractionalize control-packet information
 
