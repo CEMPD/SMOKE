@@ -45,7 +45,26 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          NIPPA, SFLAG, NSMATV, NMSPC, EMNAM, EANAM, VGRPCNT,
+     &          IDVGP, GVNAMES, GVLOUT, 
+     &          AFLAG, BFLAG, MFLAG, PFLAG,
+     &          A_EXIST, M_EXIST, P_EXIST,
+     &          AU_EXIST, MU_EXIST, PU_EXIST,
+     &          AR_EXIST, MR_EXIST, PR_EXIST,
+     &          AS_EXIST, BS_EXIST, MS_EXIST, PS_EXIST,
+     &          SIINDEX, SPINDEX,
+     &          ANRMATV, MNRMATV, PNRMATV,
+     &          ARNMSPC, MRNMSPC, PRNMSPC,
+     &          ANSMATV, BNSMATV, MNSMATV, PNSMATV,
+     &          ASVDESC, BSVDESC, MSVDESC, PSVDESC, TSVDESC,
+     &          ARFLAG, MRFLAG, PRFLAG,
+     &          ANIPOL, MNIPPA, PNIPOL,
+     &          AEINAM, MEANAM, PEINAM,
+     &          AUFLAG, MUFLAG, PUFLAG,
+     &          ANUMATV, MNUMATV, PNUMATV,
+     &          AUVNAMS, MUVNAMS, PUVNAMS,
+     &          ARVDESC, MRVDESC, PRVDESC
 
         IMPLICIT NONE
 

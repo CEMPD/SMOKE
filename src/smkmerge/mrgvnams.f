@@ -41,10 +41,21 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          PDEV, AFLAG, ANIPOL, AEINAM, BFLAG, BNIPOL, BEINAM,
+     &          MFLAG, MNIPPA, MEANAM, PFLAG, PNIPOL, PEINAM, NIPOL,
+     &          NIPPA, EANAM, EINAM, TONAMES, TOUNITS, SPCUNIT, AONAMES,
+     &          AOUNITS, BONAMES, BOUNITS, MONAMES, MOUNITS, PONAMES,
+     &          POUNITS, ANSMATV, ARNMSPC, BNSMATV, MNSMATV, MRNMSPC,
+     &          PRNMSPC, PNSMATV, ANRMATV, MNRMATV, PNRMATV, ARFLAG,
+     &          MRFLAG, PRFLAG, SFLAG, ASVDESC, BSVDESC, MSVDESC, 
+     &          PSVDESC, NSMATV, AEMNAM, BEMNAM, MEMNAM, PEMNAM,
+     &          ANMSPC, BNMSPC, MNMSPC, PNMSPC, TSVDESC, NMSPC, EMNAM,
+     &          EMIDX, ARVDESC, MRVDESC, PRVDESC, ASVUNIT, MSVUNIT,
+     &          PSVUNIT
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT, INVDCOD
 
         IMPLICIT NONE
 

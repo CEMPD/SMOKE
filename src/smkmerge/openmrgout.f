@@ -40,13 +40,26 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          SDATE, STIME, TSTEP, BYEAR, PYEAR, LAVEDAY, LGRDOUT,
+     &          AFLAG, ANIPOL, ANMSPC, AEINAM, AEMNAM, AONAME,
+     &          BFLAG, BNIPOL, BNMSPC, BEINAM, BEMNAM, BONAME,
+     &          MFLAG, MNMSPC, NMSPC, MNIPPA, MEANAM, EMNAM, MEMNAM,
+     &          MONAME, EMLAYS,
+     &          PFLAG, PNIPOL, PNMSPC, PEINAM, PEMNAM, PONAME,
+     &          XFLAG, NIPPA, EANAM, TONAME, PINGFLAG, PINGNAME,
+     &          ELEVFLAG, EVDEV, PELVNAME, LREPSTA, LREPCNY, 
+     &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
+     &          ARDEV, BRDEV, MRDEV, PRDEV, TRDEV,
+     &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NGROUP
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, XORIG, YORIG, XCELL, YCELL,
+     &                     GDTYP, VGTYP, VGTOP, VGLVS
 
         USE MODFILESET
 
@@ -346,7 +359,7 @@ C               if a write error occurred
 
 C.............  MODULES for public variables
 C.............  This module contains the major data structure and control flags
-            USE MODMERGE
+            USE MODMERGE, ONLY: SFLAG, NIPOL, EINAM
 
 C.............  Internal subprogram arguments
             INTEGER     , INTENT (IN) :: NIPPA_L

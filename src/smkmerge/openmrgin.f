@@ -41,16 +41,38 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          LREPANY, BFLAG, GDEV, AFLAG, AENAME, ASDEV, ANMAP, 
+     &          AMAPNAM, AMAPFIL, NASRC, APRJFLAG, TFLAG, AFLAG_BD,
+     &          ATNAME, ASDATE, ANIPOL, AEINAM, INVPIDX, AONAMES, 
+     &          AOUNITS, AGNAME, ANGMAT, SFLAG, ASNAME, ANSMATV, 
+     &          ASVDESC, ASVUNIT, AUFLAG, AUNAME, ANUMATV, AUVNAMS,
+     &          ARFLAG, ARNAME, ANRMATV, ANSREAC, ARVDESC, ARNMSPC,
+     &          BTNAME, LMETCHK, BIOUNIT, BNSMATV, BNIPOL, BONAMES,
+     &          BEINAM, BOUNITS, MFLAG, MENAME, MSDEV, MNMAP, MMAPNAM,
+     &          MMAPFIL, NMSRC, MPRJFLAG, MFLAG_BD, MTNAME, MSDATE,
+     &          MNIPPA, MEANAM, MONAMES, MOUNITS, MNIPOL, MNIACT,
+     &          MGNAME, MNGMAT, MSNAME, MNSMATV, MSVDESC, MSVUNIT,
+     &          MUFLAG, MUNAME, MNUMATV, MUVNAMS, MRFLAG, MRNAME,
+     &          MNRMATV, MNSREAC, MRVDESC, MRNMSPC, PFLAG, PENAME,
+     &          PSDEV, PNMAP, PMAPNAM, PMAPFIL, NPSRC, ELEVFLAG, JSTACK,
+     &          PPRJFLAG, PFLAG_BD, PTNAME, PSDATE, PNIPOL, PEINAM, 
+     &          PONAMES, POUNITS, PGNAME, PSNAME, PNSMATV, PSVDESC, 
+     &          PSVUNIT, PUFLAG, PUNAME, PNUMATV, PUVNAMS, PRFLAG,
+     &          PRNAME, PNRMATV, PNSREAC, PRVDESC, PRNMSPC, LFLAG,
+     &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG, EDEV,
+     &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
+     &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
+     &          BSVDESC
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NGROUP, NHRSRC
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, VGTYP, VGTOP, VGLVS
 
 C.........  This module is required for the FileSetAPI
         USE MODFILESET

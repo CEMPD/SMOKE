@@ -40,13 +40,20 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          SDATE, STIME, VGRPCNT, NIPPA, NMSPC, SFLAG, AFLAG,
+     &          ANMSPC, AEMNAM, BFLAG, BNMSPC, BEMNAM, MFLAG, MNMSPC,
+     &          MEMNAM, PFLAG, PNMSPC, PEMNAM, ANIPOL, AEINAM, MNIPPA,
+     &          MEANAM, PNIPOL, PEINAM, EDATE, ETIME, LREPSTA, AEBCNY,
+     &          AEBSTA, ARDEV, TEBSTA, AUFLAG, ARFLAG, LREPCTL, AECCNY,
+     &          AECSTA, TECSTA, BEBCNY, BEBSTA, BRDEV, MEBCNY, MEBSTA,
+     &          MRDEV, MUFLAG, MRFLAG, MECCNY, MECSTA, PEBCNY, PEBSTA,
+     &          PRDEV, PUFLAG, PRFLAG, PECCNY, PECSTA, XFLAG, TRDEV, 
+     &          TUFLAG, TRFLAG, TECCNY, LREPCNY, TEBCNY, TSTEP,
+     &          LAVEDAY, EMNAM, EANAM, TOTUNIT, SIINDEX, SPINDEX
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
-
-C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD
 
         IMPLICIT NONE
 
@@ -518,6 +525,10 @@ C-----------------------------------------------------------------------------
 C-----------------------------------------------------------------------------
 
             SUBROUTINE CREATE_HEADER( CATNAME )
+
+C.............  MODULES for public variables
+C.............  This module contains the global variables for the 3-d grid
+            USE MODGRID, ONLY: GRDNM
 
 C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: CATNAME
