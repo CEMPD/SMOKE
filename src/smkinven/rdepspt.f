@@ -1,7 +1,6 @@
 
-        SUBROUTINE RDEPSPT( FDEV, NRAWIN, MXIDAT, WKSET, INVDCOD, 
-     &                      INVDNAM, INY, NRAWOUT, IOS, IREC, ERFILDSC,
-     &                      EFLAG, NDROP, EDROP )
+        SUBROUTINE RDEPSPT( FDEV, NRAWIN, WKSET, INY, NRAWOUT, IOS, 
+     &                      IREC, ERFILDSC, EFLAG, NDROP, EDROP )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -49,6 +48,9 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -86,10 +88,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV      ! input file unit no.
         INTEGER     , INTENT (IN) :: NRAWIN    ! total raw record-count
-        INTEGER     , INTENT (IN) :: MXIDAT    ! max no of inventory data
         INTEGER     , INTENT (IN) :: WKSET     ! weekly profile interpretation
-        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) !  inv data 5-digit codes
-        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) !  in data names
         INTEGER , INTENT (IN OUT) :: INY       ! inv year for this set of files
         INTEGER     , INTENT(OUT) :: NRAWOUT   ! valid raw record-count
         INTEGER     , INTENT(OUT) :: IOS       ! I/O status
@@ -242,8 +241,8 @@ C.............  Skip blank lines
 
 C.............  Scan for header lines and check to ensure all are set
 C               properly.  Note that data value names are not read.
-            CALL GETHDR( MXIDAT, MXIDAT, .TRUE., .TRUE., .FALSE., 
-     &                   INVDNAM, LINE, ICC, INY, I, IOS )
+            CALL GETHDR( MXIDAT, .TRUE., .TRUE., .FALSE., 
+     &                   LINE, ICC, INY, I, IOS )
 
 C.............  Interpret error status
             IF( IOS .GT. 0 ) THEN

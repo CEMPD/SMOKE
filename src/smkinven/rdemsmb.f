@@ -1,7 +1,7 @@
 
-        SUBROUTINE RDEMSMB( EDEV, INY, NRAWIN, NRAWBP, MXIPPA, WKSET, 
-     &                      INVDCOD, INVDNAM, NRAWOUT, IOS, IREC, 
-     &                      ERFILDSC, EFLAG, NDROP, DDROP )
+        SUBROUTINE RDEMSMB( EDEV, INY, NRAWIN, NRAWBP, WKSET, 
+     &                      NRAWOUT, IOS, IREC, ERFILDSC, EFLAG, 
+     &                      NDROP, DDROP )
 
 C***********************************************************************
 C  subroutine body starts at line 176
@@ -54,6 +54,9 @@ C.........  This module is for mobile-specific data
 C.........  This module is for cross reference tables
         USE MODXREF
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS
+
 C.........  This module contains the information about the source category
         USE MODINFO
 
@@ -86,17 +89,14 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: INY       ! inv year for this set of files
         INTEGER     , INTENT (IN) :: NRAWIN    ! total raw record-count
         INTEGER     , INTENT (IN) :: NRAWBP    ! total raw record times pols
-        INTEGER     , INTENT (IN) :: MXIPPA    ! max no of inventory pol/acvtys
         INTEGER     , INTENT (IN) :: WKSET     ! weekly profile interpretation
-        INTEGER     , INTENT (IN) :: INVDCOD( MXIPPA ) ! inv pol/activity codes
-        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIPPA ) ! inv pol/activity names
         INTEGER     , INTENT(OUT) :: NRAWOUT   ! valid raw record-count
         INTEGER     , INTENT(OUT) :: IOS       ! I/O status
         INTEGER     , INTENT(OUT) :: IREC      ! line number
         CHARACTER(*), INTENT(OUT) :: ERFILDSC  ! file desc of file in error
         LOGICAL     , INTENT(OUT) :: EFLAG     ! error flag 
         INTEGER     , INTENT(OUT) :: NDROP     ! number of records dropped
-        REAL        , INTENT(OUT) :: DDROP( MXIPPA ) ! emis dropped per pol/act
+        REAL        , INTENT(OUT) :: DDROP( MXIDAT ) ! emis dropped per pol/act
 
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
@@ -133,7 +133,6 @@ C...........   Other local variables
         INTEGER          ZONE        !  tmp time zone
 
         REAL             DAY2YR    !  local, leap-year-able, DAY to YEAR factor
-        REAL          :: SPD  = 0. !  tmp speed
         REAL             X1, X2    !  x-dir link end point coordinates
         REAL             XLOC      !  tmp x-coordinate
         REAL             Y1, Y2    !  y-dir link end point coordinates 
@@ -212,21 +211,9 @@ C.............  Set up formats
             WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
             WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
 
-C.............  Allocate memory for units of inventory file output from
-C               routine.  This routine converts mi/day to mi/year.
-            ALLOCATE( INVDUNT( 1,NMBPPOL3 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'INVDUNT', PROGNAME )
-
-            INVDUNT( 1,1 ) = 'mi/yr'
-            INVDUNT( 1,2 ) = 'mi/day'
-
             FIRSTIME = .FALSE.
 
        END IF
-
-C.........  Define day to year conversion factor and real type for integer 
-C           missing value
-        DAY2YR  = 1. / YR2DAY( INY )
 
 C.........  Determine whether this file is a non-link or link data file
         DO
@@ -291,6 +278,10 @@ C.........  Set the description of the file type and format
 C.........  Make sure the file is at the beginning
         REWIND( EDEV )
 
+C.........  Initialize units as converstion from day to year, in case units
+C           are not provided by file
+        INVDCNV = 1. / YR2DAY( INY )    ! Array
+
 C.........  Initialize before loop
         SS   = NSRCSAV
         ES   = NSRCDAT
@@ -320,13 +311,10 @@ C.............  Check read i/o status
 
             IF ( LINE .EQ. ' ' ) CYCLE      ! skip if line is blank
 
-C.............  Skip #UNITS line to avoide memory problem
-            IF( LINE( 1:6 ) .EQ. '#UNITS' ) CYCLE
-
 C.............  Scan for header lines and check to ensure all are set 
 C               properly
-            CALL GETHDR( MXDATFIL, MXIPPA, .FALSE., .FALSE., .TRUE., 
-     &                   INVDNAM, LINE, ICC, INY, NPOA, IOS )
+            CALL GETHDR( MXDATFIL, .FALSE., .FALSE., .TRUE., 
+     &                   LINE, ICC, INY, NPOA, IOS )
 
 C.............  Interpret error status
             IF( IOS .EQ. 4 ) THEN
@@ -352,6 +340,10 @@ C.............  Set the number of table columns and allocate memory
                 CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
 
             END IF
+
+C.............  Define day to year conversion factor and real type for integer 
+C               missing value
+            DAY2YR  = 1. / YR2DAY( INY )
 
 C.............  Initialize link information in case record is nonlink         
             CLNK = ' '
@@ -505,7 +497,7 @@ C.................  Assign SCC
 
 C.................  Match up with speed tables if they exist
 c                SPD = SPDTBL( K2 )
-c note: add later
+c note: add later - SPEED is to be treated as an activity like VMT
 
 C.................  Compute vehicle-mix-adjusted data values
                 DATAVAL( 1:NPOA ) = VMTMIXA( J,K1 ) * INVAL( 1:NPOA )
@@ -519,7 +511,6 @@ C.................  Time to store data in unsorted list
                     IVTYPEA( SS ) = IVT
                     CLINKA ( SS ) = CLNK
                     CVTYPEA( SS ) = VTYPE
-                    SPEEDA ( SS ) = SPD
                     TPFLGA ( SS ) = TPF
                     INVYRA ( SS ) = INY
                     CSCCA  ( SS ) = TSCC
@@ -533,11 +524,12 @@ C.................  Store data variable values
                 DO V = 1, NPOA
 
                     ES = ES + 1
+                    COD  = DATPOS( V )
 
                     IF( ES .LE. NRAWBP ) THEN
-                        POLVLA ( ES,1 ) = DAY2YR * DATAVAL( V )
+                        POLVLA ( ES,1 ) = INVDCNV( COD ) * DATAVAL( V )
 
-                        WRITE( CCOD,94125 ) POLPOS( V )
+                        WRITE( CCOD,94125 ) COD
 
                         CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, ' ', 
      &                                ' ', CCOD, CSOURCA( ES ) )

@@ -1,8 +1,7 @@
 
-        SUBROUTINE RDEPSPD( FDEV, MXIDAT, TZONE, TSTEP, MXPDSRC, 
+        SUBROUTINE RDEPSPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 
      &                      GETSIZES, GETCOUNT, FIRSTCALL, DAYFLAG, 
-     &                      INVDCOD, INVDNAM, SDATE, STIME, EDATE, 
-     &                      ETIME, EASTAT )
+     &                      SDATE, STIME, EDATE, ETIME, EASTAT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -86,16 +85,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV           ! input file unit no.
-        INTEGER, INTENT (IN) :: MXIDAT         ! max no of inventory data
         INTEGER, INTENT (IN) :: TZONE          ! output time zone
-        INTEGER, INTENT (IN) :: TSTEP          ! time step HHMMSS
+        INTEGER, INTENT (IN) :: INSTEP         ! expected data time step HHMMSS
+        INTEGER, INTENT (IN) :: OUTSTEP        ! output time step HHMMSS
         INTEGER, INTENT (IN) :: MXPDSRC        ! max. day- or hr-specific source
         LOGICAL, INTENT (IN) :: GETSIZES       ! true: get no. time steps & pols
         LOGICAL, INTENT (IN) :: GETCOUNT       ! true: get max no. srcs per time
         LOGICAL, INTENT (IN) :: FIRSTCALL      ! true: first call of a loop
         LOGICAL, INTENT (IN) :: DAYFLAG        ! true: day-, false: hour-spec
-        INTEGER     , INTENT (IN) :: INVDCOD( MXIDAT ) !  inv data 5-digit codes
-        CHARACTER(*), INTENT (IN) :: INVDNAM( MXIDAT ) !  in data names
         INTEGER, INTENT(OUT) :: SDATE          ! Julian starting date in TZONE
         INTEGER, INTENT(OUT) :: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT) :: EDATE          ! Julian ending date in TZONE
@@ -218,8 +215,8 @@ C.........  For the first call in a loop of files, initialize variables
             MAXPTR  = 0
 
 C.............  Set time step divisor
-            TDIVIDE = 3600 * TSTEP / 10000
-            TFAC    = 1. / REAL( TDIVIDE )
+            TDIVIDE = 3600 * OUTSTEP / 10000
+            TFAC    = REAL( OUTSTEP ) / REAL( INSTEP * TDIVIDE )
 
 C.............  If SDATE and STIME are now non-zero, save the number of time 
 C               steps
@@ -276,8 +273,8 @@ C.............  Skip blank lines
 
 C.............  Scan for header lines and check to ensure all are set 
 C               properly.  Note that data value names are not read.
-            CALL GETHDR( MXIDAT, MXIDAT, .TRUE., .TRUE., .FALSE., 
-     &                   INVDNAM, LINE, ICC, INY, I, IOS )
+            CALL GETHDR( MXIDAT, .TRUE., .TRUE., .FALSE., 
+     &                   LINE, ICC, INY, I, IOS )
 
 C.............  Interpret error status
             IF( IOS .GT. 0 ) THEN
@@ -420,7 +417,7 @@ C.............  Error if partial time step data found
 
 C.............  Warning if hourly data used for more than one day in a single
 C               record
-            ELSE IF ( TSTEP .EQ. 10000 .AND. RSTEPS .GT. 24. ) THEN
+            ELSE IF ( INSTEP .EQ. 10000 .AND. RSTEPS .GT. 24. ) THEN
                 WRITE( MESG,94010 ) 'WARNING: Data record at line', 
      &                 IREC, 'has hourly data for more than one day'
                 CALL M3MESG( MESG )
@@ -497,7 +494,7 @@ C.....................  Store first and last pointers in loop
                 END IF
 
 C.................  Increment time step
-                CALL NEXTIME( JDATE, JTIME, TSTEP )
+                CALL NEXTIME( JDATE, JTIME, OUTSTEP )
 
             END DO
 
@@ -622,13 +619,13 @@ C.........  Update output starting date/time and ending date/time
         SDATE = RDATE
         STIME = RTIME
         DO I = 1, MINPTR - 1
-            CALL NEXTIME( SDATE, STIME, TSTEP )
+            CALL NEXTIME( SDATE, STIME, OUTSTEP )
         END DO
 
         EDATE = RDATE
         ETIME = RTIME
         DO I = 1, MAXPTR - 1
-            CALL NEXTIME( EDATE, ETIME, TSTEP )
+            CALL NEXTIME( EDATE, ETIME, OUTSTEP )
         END DO
 
         RETURN
