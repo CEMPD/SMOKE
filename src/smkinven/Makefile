@@ -118,10 +118,3 @@ wrptref.o: $(MODINFO)
 
 clean:
 	/bin/rm -f *.o 
-ifcclean:
-	/bin/rm -f *.o  
-	/bin/rm -f *.d  
-	/bin/rm -f work.pc*
-	/bin/rm -f $(MODALL)
-	/bin/rm -f $(IOMODALL)
-	/bin/rm -f $(FSMODALL)
