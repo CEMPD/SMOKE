@@ -305,6 +305,9 @@ C.............  Write source numbers to file
           END IF
 
         END DO     ! end hour loop
+
+C.........  Reset array for storing user-defined HAPs
+        IF( ALLOCATED( HAPEFS ) ) HAPEFS = 0.  ! array
         
         END SUBROUTINE WREMFACS
         
