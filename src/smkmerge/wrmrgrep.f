@@ -1,0 +1,797 @@
+
+        SUBROUTINE WRMRGREP( JDATE, JTIME, NIDX )
+
+C***********************************************************************
+C  subroutine WRMRGREP body starts at line
+C
+C  DESCRIPTION:
+C      The purpose of this subroutine is to convert gridded values to county-
+C      total values for reporting purposes.  Note that this routine still needs
+C      to be updated for writing the intermediate control totals.
+C
+C  PRECONDITIONS REQUIRED:  
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:
+C
+C  REVISION  HISTORY:
+C       Created 8/99 by M. Houyoux
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
+
+C.........  MODULES for public variables
+C.........  This module contains the major data structure and control flags
+        USE MODMERGE
+
+C.........  This module contains the arrays for state and county summaries
+        USE MODSTCY
+
+        IMPLICIT NONE
+
+C...........   INCLUDES:
+        
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+
+C...........   EXTERNAL FUNCTIONS and their descriptions:
+        
+        CHARACTER*2     CRLF
+        INTEGER         ENVINT  
+        INTEGER         INDEX1  
+        CHARACTER*14    MMDDYY
+        INTEGER         WKDAY
+        REAL            YR2DAY
+
+        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY
+
+C...........   Subroutine arguments
+        INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
+        INTEGER, INTENT (IN) :: JTIME  ! time (HHMMSS)
+        INTEGER, INTENT (IN) :: NIDX   ! group index
+
+C...........   Local allocatable arrays
+        LOGICAL, ALLOCATABLE :: LUPDATE( : ) ! true: units/names not yet updated
+
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE ::  NAMES( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: ANAMES( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: BNAMES( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: MNAMES( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, SAVE :: PNAMES( : )
+
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE ::  UNITS( : )
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: AUNITS( : )
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: BUNITS( : )
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: MUNITS( : )
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE, SAVE :: PUNITS( : )
+
+C...........   Local group counts
+        INTEGER, SAVE :: ACNT = 0       ! area source output vars count
+        INTEGER, SAVE :: BCNT = 0       ! biogenic source output vars count
+        INTEGER, SAVE :: MCNT = 0       ! mobile source output vars count
+        INTEGER, SAVE :: PCNT = 0       ! point source output vars count
+        INTEGER, SAVE :: TCNT = 0       ! total source output vars count
+
+C...........   Other local variables
+
+        INTEGER          C, F, I, J, K, L, L2, N, V  ! counters and indices
+        INTEGER          IOS            ! i/o status
+        INTEGER          KA, KB, KM, KP ! tmp search indices
+        INTEGER, SAVE :: MAXCYWID       ! max width of county names
+        INTEGER, SAVE :: MAXSTWID       ! max width of state names
+        INTEGER, SAVE :: NC             ! tmp no. counties in domain
+        INTEGER, SAVE :: NS             ! tmp no. states in domain
+        INTEGER, SAVE :: PGRP   = 0     ! group from previous call
+        INTEGER, SAVE :: PDATE          ! date for computing PTIME
+        INTEGER, SAVE :: PTIME          ! start time of period
+        INTEGER, SAVE :: REPTIME        ! report time
+        INTEGER, SAVE :: NVPGP          ! no. variables per group
+
+        REAL   , SAVE :: UNITFAC        ! units conversion factor for reports
+ 
+        LOGICAL, SAVE :: FIRSTIME= .TRUE. ! true: first time routine called
+
+        CHARACTER*300          DATFMT     ! format for data
+        CHARACTER*300          HDRFMT     ! format for header
+        CHARACTER*300          HEADER     ! header for output files
+        CHARACTER*300          LINFLD     ! line of dashes
+        CHARACTER*300          MESG       ! message buffer
+        CHARACTER(LEN=IOVLEN3) SBUF       ! tmp pol or species name
+        CHARACTER(LEN=IOULEN3) CBUF       ! tmp units field
+
+        CHARACTER*16  :: PROGNAME = 'WRMRGREP' ! program name
+
+C***********************************************************************
+C   begin body of subroutine WRMRGREP
+
+C.........    If first time the routine is called
+        IF( FIRSTIME ) THEN
+
+            NC = NCOUNTY
+            NS = NSTATE
+
+C.............  Get time for output of reports 
+            MESG = 'Report time for country, state, and county totals'
+            REPTIME = ENVINT( 'SMK_REPORT_TIME', MESG, 230000, IOS )
+
+C............. NOTE that this would be a good place for an environment variable
+C              that permits users to select the write format of the data
+
+C.............  Get the maximum width for the state names
+            MAXSTWID = 0 
+            DO I = 1, NS
+                L = LEN_TRIM( STATNAM( I ) )
+                MAXSTWID = MAX( MAXSTWID, L )
+            END DO
+
+C.............  Get the maximum width for the county names
+            MAXCYWID = 0 
+            DO I = 1, NS
+                L = LEN_TRIM( CNTYNAM( I ) )
+                MAXCYWID = MAX( MAXCYWID, L )
+            END DO
+
+            PDATE = SDATE
+            PTIME = STIME
+
+C.............  Allocate memory for the units and names based on the
+C               largest group size
+            I = MAXVAL( VGRPCNT )
+            ALLOCATE( NAMES( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NAMES', PROGNAME )            
+            ALLOCATE( UNITS( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'UNITS', PROGNAME )            
+
+            ALLOCATE( ANAMES( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ANAMES', PROGNAME )
+            ALLOCATE( AUNITS( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'AUNITS', PROGNAME )
+
+            ALLOCATE( BNAMES( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BNAMES', PROGNAME )
+            ALLOCATE( BUNITS( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BUNITS', PROGNAME )
+
+            ALLOCATE( MNAMES( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MNAMES', PROGNAME )
+            ALLOCATE( MUNITS( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MUNITS', PROGNAME )
+ 
+            ALLOCATE( PNAMES( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PNAMES', PROGNAME )
+            ALLOCATE( PUNITS( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PUNITS', PROGNAME )
+
+C.............  Allocate memory for the logical update names/units flag
+            I = MAX( NIPPA, NMSPC )
+            ALLOCATE( LUPDATE( I ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LUPDATE', PROGNAME )
+
+            FIRSTIME = .FALSE.
+
+        END IF
+
+C.........  If current group is a new group...
+        IF( NIDX .NE. PGRP ) THEN
+
+C.............  Initialize units and names
+            UNITS  = ' '  ! array
+            AUNITS = ' '  ! array
+            BUNITS = ' '  ! array
+            MUNITS = ' '  ! array
+            PUNITS = ' '  ! array
+            ANAMES = ' '  ! array
+            BNAMES = ' '  ! array
+            MNAMES = ' '  ! array
+            PNAMES = ' '  ! array
+
+C.............  Initialize logical update states
+            LUPDATE = .TRUE.   ! array
+
+C.............  Set no. variables per group. Recall that this number can include
+C               multiple species-pollutant combos (e.g., multiple processes for
+C               mobile sources).
+            NVPGP = VGRPCNT( NIDX )
+
+C.............  Create units labels from variable units for current group
+            ACNT = 0
+            BCNT = 0
+            MCNT = 0
+            PCNT = 0
+            TCNT = 0
+            DO V = 1, NVPGP
+
+C.................  Get indices
+                I = SIINDEX( V,NIDX )  ! index to EANAM
+                J = I
+                SBUF = EANAM( J )
+
+                IF( SFLAG ) THEN
+                    J = SPINDEX( V,NIDX )  ! index to EMNAM 
+                    SBUF = EMNAM( J )
+                END IF
+
+C.................  If this species or pollutant has not already been 
+C                   encountered, update the source-category-specific arrays 
+C                   so that they will be in the same order as the global lists
+                IF( LUPDATE( J ) ) THEN
+
+                    LUPDATE( J ) = .FALSE.
+
+C.....................  Set names and units for totals output
+                    L = LEN_TRIM( TOTUNIT( I ) )
+                    CBUF = '[' // TOTUNIT( I )( 1:L ) // ']'
+
+                    TCNT = TCNT + 1
+                    NAMES( TCNT ) = SBUF
+                    UNITS( TCNT ) = CBUF
+
+C.....................  Get indices for source categories, depending on
+C                       speciation or not
+                    IF( SFLAG ) THEN
+                        KA = INDEX1( SBUF, ANMSPC, AEMNAM )
+                        KB = INDEX1( SBUF, BNMSPC, BEMNAM )
+                        KM = INDEX1( SBUF, MNMSPC, MEMNAM )
+                        KP = INDEX1( SBUF, PNMSPC, PEMNAM )
+                    ELSE
+                        KA = INDEX1( SBUF, ANIPOL, AEINAM )
+                        KB = 0
+                        KM = INDEX1( SBUF, MNIPPA, MEANAM )
+                        KP = INDEX1( SBUF, PNIPOL, PEINAM )
+                    END IF
+
+C.....................  Set names and units for area sources
+                    IF( KA .GT. 0 ) THEN
+                        ACNT = ACNT + 1
+                        ANAMES( ACNT ) = SBUF
+                        AUNITS( ACNT ) = CBUF
+                    END IF
+
+C.....................  Set names and units for biogenics
+                    IF( KB .GT. 0 ) THEN
+                        BCNT = BCNT + 1
+                        BNAMES( BCNT ) = SBUF
+                        BUNITS( BCNT ) = CBUF
+                    END IF
+
+C.....................  Set names and units for mobile sources
+                    IF( KM .GT. 0 ) THEN
+                        MCNT = MCNT + 1
+                        MNAMES( MCNT ) = SBUF
+                        MUNITS( MCNT ) = CBUF
+                    END IF
+
+C.....................  Set names and units for point sources
+                    IF( KP .GT. 0 ) THEN
+                        PCNT = PCNT + 1
+                        PNAMES( PCNT ) = SBUF
+                        PUNITS( PCNT ) = CBUF
+                    END IF
+
+                END IF  ! End if global units already defined or not
+
+            END DO      ! End loop on group
+
+            PGRP = NIDX
+
+        END IF   ! End of processing for current group
+
+
+C.........  Do not report if this time is not appropriate
+        IF( JTIME .NE. REPTIME .AND. 
+     &    ( JDATE .NE. EDATE .OR. JTIME .NE. ETIME ) ) RETURN
+
+C.............  If required, create and write state totals
+        IF( LREPSTA ) THEN
+
+C.............  Area sources
+            IF( AFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Area' )
+                CALL CREATE_STATE( NC, NS, ACNT, AEBCNY, AEBSTA )
+                CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AEBSTA)
+
+C.....................  Update state totals
+                CALL TOT_UPDATE( NS, ACNT, ANAMES, AEBSTA, TEBSTA)
+
+            END IF
+
+C.............  Biogenic sources (speciated by definition)
+            IF( BFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Biogenic' )
+                CALL CREATE_STATE( NC, NS, BCNT, BEBCNY, BEBSTA )
+                CALL WRITE_STA( BRDEV, NS, BCNT, BNAMES, BUNITS, BEBSTA)
+
+C.................  Update state totals
+                CALL TOT_UPDATE( NS, BCNT, BNAMES, BEBSTA, TEBSTA )
+
+            END IF
+
+C.............  Mobile sources
+            IF( MFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Mobile' )
+                CALL CREATE_STATE( NC, NS, MCNT, MEBCNY, MEBSTA )
+                CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MEBSTA)
+
+C.................  Update state totals
+                CALL TOT_UPDATE( NS, MCNT, MNAMES, MEBSTA, TEBSTA)
+
+            END IF
+
+C.............  Point sources
+            IF( PFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Point' )
+                CALL CREATE_STATE( NC, NS, PCNT, PEBCNY, PEBSTA )
+                CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PEBSTA)
+
+C.................  Update state totals
+                CALL TOT_UPDATE( NS, PCNT, PNAMES, PEBSTA, TEBSTA )
+
+            END IF
+
+C.............  Combined sources
+            IF( XFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Total' )
+                CALL WRITE_STA( TRDEV, NS, TCNT, NAMES, UNITS, TEBSTA )
+
+            END IF
+
+        END IF
+
+C.........  If required, write county totals
+        IF( LREPCNY ) THEN
+
+C.............  Area sources
+            IF( AFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Area' )
+                CALL WRITE_CNY( ARDEV, NC, ACNT, ANAMES, AUNITS, AEBCNY)
+
+C.................  Update state totals
+                CALL TOT_UPDATE( NC, ACNT, ANAMES, AEBCNY, TEBCNY)
+            END IF
+
+C.............  Biogenc sources (speciated by definition)
+            IF( BFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Biogenic' )
+                CALL WRITE_CNY( BRDEV, NC, BCNT, BNAMES, BUNITS, BEBCNY)
+
+C.................  Update state totals
+                CALL TOT_UPDATE( NC, BCNT, BNAMES, BEBCNY, TEBCNY )
+
+            END IF
+
+C.............  Mobile sources
+            IF( MFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Mobile' )
+                CALL WRITE_CNY( MRDEV, NC, MCNT, MNAMES, MUNITS, MEBCNY)
+
+C.................  Update state totals
+                CALL TOT_UPDATE( NC, MCNT, MNAMES, MEBCNY, TEBCNY)
+
+            END IF
+
+C.............  Point sources
+            IF( PFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Point' )
+                CALL WRITE_CNY( PRDEV, NC, PCNT, PNAMES, PUNITS, PEBCNY)
+
+C.................  Update state totals
+                CALL TOT_UPDATE( NC, PCNT, PNAMES, PEBCNY, TEBCNY)
+
+            END IF
+
+C.............  Combined sources
+            IF( XFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Total' )
+                CALL WRITE_CNY( TRDEV, NC, TCNT, NAMES, UNITS, TEBCNY )
+
+            END IF
+
+        END IF
+
+C.........  Intialize summed emissions to zero
+        CALL INITSTCY
+
+C........  After output, increment date and time one step to set the start
+C          of the next period
+        PDATE = JDATE
+        PTIME = JTIME
+        CALL NEXTIME( PDATE, PTIME, TSTEP )  ! advance one
+
+        RETURN
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats.............94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+C*****************  INTERNAL SUBPROGRAMS   *****************************
+
+        CONTAINS
+
+            SUBROUTINE CREATE_STATE( NC, NS, NDIM, CY_EMIS, ST_EMIS )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN) :: NC
+            INTEGER     , INTENT (IN) :: NS
+            INTEGER     , INTENT (IN) :: NDIM
+            REAL        , INTENT (IN) :: CY_EMIS( NC, NDIM )
+            REAL        , INTENT(OUT) :: ST_EMIS( NS, NDIM )
+
+C.............  Local variables
+            INTEGER  I, J, N
+            INTEGER  PSTA, STA
+
+C..............................................................................
+
+            PSTA = -9
+            N = 0
+            DO I = 1, NC
+
+                STA = CNTYCOD( I ) / 1000
+                IF( STA .NE. PSTA ) THEN
+                    N = N + 1
+                    PSTA = STA
+                END IF
+
+                DO J = 1, NDIM
+                    ST_EMIS( N,J ) = ST_EMIS( N,J ) + CY_EMIS( I,J )
+                END DO
+
+            END DO
+
+            RETURN
+
+            END SUBROUTINE CREATE_STATE
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE CREATE_HEADER( CATNAME )
+
+C.............  Subprogram arguments
+            CHARACTER(*), INTENT (IN) :: CATNAME
+
+C.............  Local variables
+            INTEGER   L, L2
+
+            CHARACTER*10 TYPENAM
+
+C..............................................................................
+
+            HEADER = CATNAME // ' source'
+            L  = LEN_TRIM( HEADER )
+     
+            TYPENAM = ' inventory'
+            IF( SFLAG ) TYPENAM = ' speciated'
+
+            HEADER = HEADER( 1:L ) // TYPENAM // ' emissions'
+            L = LEN_TRIM( HEADER )
+
+            IF( JDATE .NE. 0 ) THEN
+
+                WRITE( HEADER,94010 ) HEADER( 1:L ) // ' from ' //
+     &             CRLF() // BLANK5 // 
+     &             DAYS( WKDAY( PDATE ) ) // MMDDYY( PDATE ) //
+     &             ' at', PTIME, 'to' // CRLF() // BLANK5 // 
+     &             DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE ) //
+     &             ' at', JTIME
+                L = LEN_TRIM( HEADER )
+
+            END IF
+
+            HEADER = HEADER( 1:L ) // ' within grid ' // GRDNM
+
+            RETURN
+
+C.......................... FORMAT STATEMENTS ................................
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE CREATE_HEADER
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE CREATE_FORMATS( NDIM, MAXCOL1, INNAMS, INUNIT,
+     &                                 WIDTHS, OUTNAMS, OUTUNIT  )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN)     :: NDIM
+            INTEGER     , INTENT (IN)     :: MAXCOL1
+            CHARACTER(*), INTENT (IN)     :: INNAMS ( NDIM )
+            CHARACTER(*), INTENT (IN)     :: INUNIT ( NDIM )
+            INTEGER     , INTENT (IN OUT) :: WIDTHS ( 0:NDIM )
+            CHARACTER(*), INTENT (IN OUT) :: OUTNAMS( NDIM )
+            CHARACTER(*), INTENT (IN OUT) :: OUTUNIT( NDIM )
+
+C.............  Local variables
+            INTEGER       I1, I2, J, L, L1, L2
+            CHARACTER*30  :: SPACE = ' '
+
+C.............................................................................
+
+C.............  Adjust maximum width of numbers in case width of variable
+C               names or units is greater than width of numbers
+C.............  Also, move the position of the names and units so that output 
+C               strings will look right-justified in the file.
+            DO J = 1, NDIM
+                L1 = LEN_TRIM( INNAMS( J ) )
+                WIDTHS ( J ) = MAX( WIDTHS( J ), L1 )
+                L2 = LEN_TRIM( INUNIT( J ) )
+                WIDTHS ( J ) = MAX( WIDTHS( J ), L2 )
+
+                I1 = WIDTHS( J ) - L1
+                WRITE( OUTNAMS( J ), '(A,A)' ) SPACE( 1:I1 ), 
+     &                                         INNAMS( J )( 1:L1 )
+                I2 = WIDTHS( J ) - L2
+                WRITE( OUTUNIT( J ), '(A,A)' ) SPACE( 1:I2 ), 
+     &                                         INUNIT( J )( 1:L2 )
+            END DO
+
+C.............  Create format statement for output of header
+            WIDTHS( 0 ) = MAXCOL1
+            WRITE( HDRFMT, '( "(A",I2.2)' ) WIDTHS( 0 )
+            DO J = 1, NDIM
+                L = LEN_TRIM( HDRFMT ) 
+                WRITE( HDRFMT, '(A, ",1X,A",I2.2)' ) 
+     &                 HDRFMT(1:L), WIDTHS( J )
+            END DO
+            L = LEN_TRIM( HDRFMT )
+            WRITE( HDRFMT, '(A, ")")' ) HDRFMT( 1:L )
+
+C.............  Create format statement for output of emissions
+            WRITE( DATFMT, '( "(A",I2.2)' ) WIDTHS( 0 )
+            DO J = 1, NDIM
+                L = LEN_TRIM( DATFMT ) 
+                WRITE( DATFMT, '(A, ",1X,F",I2.2,".1")' ) 
+     &                 DATFMT(1:L), WIDTHS( J )
+            END DO
+            L = LEN_TRIM( DATFMT )
+            WRITE( DATFMT, '(A, ")")' ) DATFMT( 1:L )
+
+            RETURN
+
+            END SUBROUTINE CREATE_FORMATS
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE WRITE_STA( FDEV, NS, NDIM, VNAMES, INUNIT,
+     &                            ST_EMIS )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN) :: FDEV
+            INTEGER     , INTENT (IN) :: NS
+            INTEGER     , INTENT (IN) :: NDIM
+            CHARACTER(*), INTENT (IN) :: VNAMES ( NDIM )
+            CHARACTER(*), INTENT (IN) :: INUNIT ( NDIM )
+            REAL        , INTENT (IN) :: ST_EMIS( NS, NDIM )
+
+C.............  Arrays allocated by subprogram argument
+            INTEGER                MAXWID ( 0:NDIM )
+            CHARACTER(LEN=IOVLEN3) OUTNAMS( NDIM )
+            CHARACTER(LEN=IOULEN3) OUTUNIT( NDIM )
+
+C.............  Local variables
+            INTEGER       I, J, L, L2
+
+            REAL          VAL
+
+            CHARACTER*20  :: STLABEL = 'State'
+            CHARACTER*30     BUFFER
+
+C..............................................................................
+
+C.............  Get maximum width of numbers and 
+            DO J = 1, NDIM
+
+                VAL = MAXVAL( ST_EMIS( 1:NS, J ) )
+                WRITE( BUFFER, '(F30.1)' ) VAL
+                BUFFER = ADJUSTL( BUFFER )
+                MAXWID( J ) = LEN_TRIM( BUFFER )
+
+            END DO
+
+C.............  Rearrange labels and units to be in order of master list, which
+C               is the order that the emission values themselves will be in
+
+C.............  Get column labels and formats
+            CALL CREATE_FORMATS( NDIM, MAXSTWID, VNAMES, INUNIT,
+     &                           MAXWID, OUTNAMS, OUTUNIT )
+
+C.............  Create line format
+            L2 = SUM( MAXWID ) + NDIM
+            LINFLD = REPEAT( '-', L2 )
+
+C.............  Write header for state totals
+            WRITE( FDEV, '(A)' ) ' '
+            WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
+
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                          ( OUTNAMS( J ), J=1, NDIM )
+
+C.............  Write units for columns
+            WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT( J ), J=1, NDIM )
+
+C.............  Write line
+            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
+
+C.............  Write state total emissions
+            DO I = 1, NSTATE
+
+C.................  Write out state name and converted emissions
+                WRITE( FDEV, DATFMT ) STATNAM( I ), 
+     &                                ( ST_EMIS( I,J ), J=1, NDIM )
+            END DO
+
+            RETURN
+
+            END SUBROUTINE WRITE_STA
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE WRITE_CNY( FDEV, NC, NDIM, VNAMES, INUNIT,
+     &                            CY_EMIS )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN) :: FDEV
+            INTEGER     , INTENT (IN) :: NC
+            INTEGER     , INTENT (IN) :: NDIM
+            CHARACTER(*), INTENT (IN) :: VNAMES ( NDIM )
+            CHARACTER(*), INTENT (IN) :: INUNIT ( NDIM )
+            REAL        , INTENT (IN) :: CY_EMIS( NC, NDIM )
+
+C.............  Arrays allocated by subprogram argument
+            INTEGER                MAXWID ( 0:NDIM )
+            CHARACTER(LEN=IOVLEN3) OUTNAMS( NDIM )
+            CHARACTER(LEN=IOULEN3) OUTUNIT( NDIM )
+
+C.............  Local variables
+            INTEGER       I, J, L, L2, N
+            INTEGER       PSTA, STA
+
+            REAL          VAL
+
+            CHARACTER*20  :: STLABEL = 'County'
+            CHARACTER*30     BUFFER
+
+C..............................................................................
+
+C.............  Get maximum width of numbers
+            DO J = 1, NDIM
+
+                VAL = MAXVAL( CY_EMIS( 1:NC, J ) )
+                WRITE( BUFFER, '(F30.1)' ) VAL
+                BUFFER = ADJUSTL( BUFFER )
+                MAXWID( J ) = LEN_TRIM( BUFFER )
+
+            END DO
+
+C.............  Get column labels and formats
+            CALL CREATE_FORMATS( NDIM, MAXCYWID, VNAMES, INUNIT,
+     &                           MAXWID, OUTNAMS, OUTUNIT )
+
+C.............  Create line format
+            L2 = SUM( MAXWID ) + NDIM
+            LINFLD = REPEAT( '-', L2 )
+
+C.............  Write header for state totals
+            WRITE( FDEV, '(A)' ) ' '
+            WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
+
+C.............  Write county total emissions
+            N = 0
+            DO I = 1, NC
+
+                STA = CNTYCOD( I ) / 1000
+                IF( STA .NE. PSTA ) THEN
+                    N = N + 1
+                    PSTA = STA
+
+C.....................  Write out state name
+                    L = LEN_TRIM( STATNAM( N ) )
+                    WRITE( FDEV, '(A)' ) ' '
+                    WRITE( FDEV, '(A)' ) '------ '// STATNAM( N )( 1:L )
+     &                     // ' ' // REPEAT( '-', L2 - L - 8 )
+
+C.....................  Write column labels
+                    WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                                    ( OUTNAMS( J ), J=1, NDIM )
+
+C....................  Write units for columns
+                    WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT(J), J=1,NDIM )
+
+C.....................  Write line
+       	            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
+
+                END IF
+
+C.................  Write out county name and converted emissions
+                WRITE( FDEV, DATFMT ) CNTYNAM( I ), 
+     &                                ( CY_EMIS( I,J ), J=1, NDIM )
+            END DO
+
+            RETURN
+
+            END SUBROUTINE WRITE_CNY
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE TOT_UPDATE( NU, NDIM, VNAMES, INEMIS, TOTEMIS )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT    (IN) :: NU               ! no. summing units
+            INTEGER     , INTENT    (IN) :: NDIM           ! no. pols or species
+            CHARACTER(*), INTENT    (IN) :: VNAMES ( NDIM )   ! pol or spc names
+            REAL        , INTENT    (IN) :: INEMIS ( NU, NDIM ) ! component emis
+            REAL        , INTENT(IN OUT) :: TOTEMIS( NU, * )    ! total emis
+
+C.............  Local variables
+            INTEGER       I, K, V
+
+C..............................................................................
+
+C.............  Abort function call if only one source category
+            IF( .NOT. XFLAG ) RETURN
+
+C.............  Loop through pollutants or species, and search for
+C               local names in master lists to get index to totals array           
+            DO V = 1, NDIM
+
+                IF( SFLAG ) THEN
+                    K = INDEX1( VNAMES( V ), NMSPC, EMNAM )
+                ELSE
+                    K = INDEX1( VNAMES( V ), NIPPA, EANAM )
+                END IF
+
+C.................  If pollutant or species is found, then add component
+C                   emissions to the total
+                IF( K .GT. 0 ) THEN
+
+                    DO I = 1, NU
+
+                        TOTEMIS( I,K ) = TOTEMIS( I,K ) + INEMIS( I,V )
+
+                    END DO
+
+                END IF
+
+            END DO
+
+            RETURN
+
+            END SUBROUTINE TOT_UPDATE
+
+        END SUBROUTINE WRMRGREP
