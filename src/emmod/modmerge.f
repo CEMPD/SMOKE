@@ -340,7 +340,8 @@
 !.........  Units conversions information
         INTEGER               , PUBLIC :: INVPIDX = 1    ! annual/O3 season idx
 
-        REAL             , PUBLIC :: BIOFAC      ! conv fac for grd bio
+        REAL             , PUBLIC :: BIOGFAC     ! conv fac for gridded bio
+        REAL             , PUBLIC :: BIOTFAC     ! conv fac for bio totals
         REAL, ALLOCATABLE, PUBLIC :: GRDFAC( : ) ! for spc/pol/act grid outputs
         REAL, ALLOCATABLE, PUBLIC :: TOTFAC( : ) ! for spc/pol/act st/co outputs
 
