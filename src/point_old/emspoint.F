@@ -24,7 +24,7 @@ C ****************************************************************************/
          PROGRAM EMSPOINT
 
 C***********************************************************************
-C  program body starts at line 342
+C  program body starts at line 349
 C
 C  DESCRIPTION:
 C       Sort data contained in EMS-95 raw point source files and 
@@ -42,7 +42,8 @@ C
 C  REVISION  HISTORY:
 C       Prototype  5/96 by MR Houyoux (based on V1.3 rawpoint.F)
 C       Optimizations 8/96 by CJC
-C***********************************************************************
+C
+C****************************************************************************/
 
       IMPLICIT NONE
 
@@ -63,10 +64,12 @@ C...........   PARAMETER
         REAL            FTOC    ! Farenheit to Celcius ratio
         REAL            FT2M    ! Feet to meters conversion
         REAL            FLWE2M  ! Flow in cubic ft per min to cubic m per sec
+        CHARACTER*240   BLANK
 
         PARAMETER     ( FTOC   = 5./9., 
      &                  FT2M   = 0.3048,
-     &                  FLWE2M = FT2M * FT2M * FT2M / 60.0 )
+     &                  FLWE2M = FT2M * FT2M * FT2M / 60.0 ,
+     &                  BLANK  = ' ' )
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
@@ -146,120 +149,121 @@ C...........   Replacement stack parameters tables:
 
 C...........   Point sources table for facility.pt files (unsorted; sorted)
 
-        INTEGER      FS                  ! Counter & number of facility records
-        INTEGER      INDXFCA( NPFMAX )   ! subscript array for sort
-        INTEGER      FCZONEA( NPFMAX )   ! UTM zone from facility files
-        REAL         FCCRDXA( NPFMAX )   ! Facility X coordinates
-        REAL         FCCRDYA( NPFMAX )   ! Facility Y coordinates
-        CHARACTER*20 FCKEYA ( NPFMAX )   ! FIP // facility ID
-        CHARACTER*40 FCDESCA( NPFMAX )   ! facility name from facility files
+        INTEGER        FS                ! Counter & number of facility records
+        INTEGER        INDXFCA( NPFMAX ) ! subscript array for sort
+        INTEGER        FCZONEA( NPFMAX ) ! UTM zone from facility files
+        REAL           FCCRDXA( NPFMAX ) ! Facility X coordinates
+        REAL           FCCRDYA( NPFMAX ) ! Facility Y coordinates
+        CHARACTER*20   FCKEYA ( NPFMAX ) ! FIP // facility ID
+        CHARACTER*40   FCDESCA( NPFMAX ) ! facility name from facility files
 
-        INTEGER      FCZONE( NPFMAX )    ! UTM zone from facility files
-        REAL         FCCRDX( NPFMAX )    ! Facility X coordinates
-        REAL         FCCRDY( NPFMAX )    ! Facility Y coordinates
-        CHARACTER*20 FCKEY ( NPFMAX )    ! FIP // facility ID
-        CHARACTER*40 FCDESC( NPFMAX )    ! facility name from facility files
+        INTEGER        FCZONE( NPFMAX )  ! UTM zone from facility files
+        REAL           FCCRDX( NPFMAX )  ! Facility X coordinates
+        REAL           FCCRDY( NPFMAX )  ! Facility Y coordinates
+        CHARACTER*20   FCKEY ( NPFMAX )  ! FIP // facility ID
+        CHARACTER*40   FCDESC( NPFMAX )  ! facility name from facility files
 
 C...........   Point sources table for stack.pt files  (unsorted; sorted)
 
-        INTEGER      SS                  ! Counter & number of stack records
-        INTEGER      INDXSKA( NPSMAX )   ! subscript table for sort
-        INTEGER      IFCKEYA( NPSMAX )   ! subscript table for sort
-        REAL         SKDIAMA( NPSMAX )   ! stack diameter from stack files [m]
-        REAL         SKHEITA( NPSMAX )   ! stack height from stack files [m]
-        REAL         SKTEMPA( NPSMAX )   ! stack exit temp from stack files [C]
-        REAL         SKCRDXA( NPSMAX )   ! stack UTM easting coord [m]
-        REAL         SKCRDYA( NPSMAX )   ! stack UTM northing coord [m]
-        REAL         SKVELOA( NPSMAX )   ! stack exit velocity [m^3/sec]
-        CHARACTER*32 SKKEYA ( NPSMAX )   ! FIP // facility ID // stack ID
+        INTEGER        SS                ! Counter & number of stack records
+        INTEGER        INDXSKA( NPSMAX ) ! subscript table for sort
+        INTEGER        IFCKEYA( NPSMAX ) ! subscript table for sort
+        REAL           SKDIAMA( NPSMAX ) ! stack diameter from stack files [m]
+        REAL           SKHEITA( NPSMAX ) ! stack height from stack files [m]
+        REAL           SKTEMPA( NPSMAX ) ! stack exit temp from stack files [C]
+        REAL           SKCRDXA( NPSMAX ) ! stack UTM easting coord [m]
+        REAL           SKCRDYA( NPSMAX ) ! stack UTM northing coord [m]
+        REAL           SKVELOA( NPSMAX ) ! stack exit velocity [m^3/sec]
+        CHARACTER*32   SKKEYA ( NPSMAX ) ! FIP // facility ID // stack ID
 
-        INTEGER      IFCKEY( NPSMAX )   ! subscript table for sort
-        REAL         SKDIAM( NPSMAX )    ! stack diameter from stack files [m]
-        REAL         SKHEIT( NPSMAX )    ! stack height from stack files [m]
-        REAL         SKTEMP( NPSMAX )    ! stack exit temp from stack files [C]
-        REAL         SKCRDX( NPSMAX )    ! stack UTM easting coord [m]
-        REAL         SKCRDY( NPSMAX )    ! stack UTM northing coord [m]
-        REAL         SKVELO( NPSMAX )    ! stack exit velocity [m^3/sec]
-        CHARACTER*32 SKKEY ( NPSMAX )    ! FIP // facility ID // stack ID
+        INTEGER        IFCKEY( NPSMAX )  ! subscript table for sort
+        REAL           SKDIAM( NPSMAX )  ! stack diameter from stack files [m]
+        REAL           SKHEIT( NPSMAX )  ! stack height from stack files [m]
+        REAL           SKTEMP( NPSMAX )  ! stack exit temp from stack files [C]
+        REAL           SKCRDX( NPSMAX )  ! stack UTM easting coord [m]
+        REAL           SKCRDY( NPSMAX )  ! stack UTM northing coord [m]
+        REAL           SKVELO( NPSMAX )  ! stack exit velocity [m^3/sec]
+        CHARACTER*32   SKKEY ( NPSMAX )  ! FIP // facility ID // stack ID
 
 C...........   Point sources table for process.pt files  (unsorted; sorted)
 
-        INTEGER      PS                  ! Counter & number of process records
-        INTEGER      INDXPA( NPPMAX )    ! subscript table
-        INTEGER      PSSCCA( NPPMAX )    ! SCC code from process files
-        CHARACTER*56 PSKEYA( NPPMAX )    ! FIP // FCID // SKID // DVID // PRID
+        INTEGER        PS                ! Counter & number of process records
+        INTEGER        INDXPA( NPPMAX )  ! subscript table
+        INTEGER        PSSCCA( NPPMAX )  ! SCC code from process files
+        CHARACTER*56   PSKEYA( NPPMAX )  ! FIP // FCID // SKID // DVID // PRID
 
-        INTEGER      PSSCC ( NPPMAX )    ! SCC code from process files
-        CHARACTER*56 PSKEY ( NPPMAX )    ! FIP // FCID // SKID // DVID // PRID
+        INTEGER        PSSCC ( NPPMAX )  ! SCC code from process files
+        CHARACTER*56   PSKEY ( NPPMAX )  ! FIP // FCID // SKID // DVID // PRID
 
 C...........   Point sources table for device.pt files   (unsorted; sorted)
 
-        INTEGER      DS                  ! Counter & number of device records
-        INTEGER      INDXDVA( NPDMAX )   ! subscript tabale for sort
-        INTEGER      DVSICA ( NPDMAX )   ! SIC code from device files
-        INTEGER      DVIWEKA( NPDMAX )   ! Weekly profile code from device files
-        INTEGER      DVIDIUA( NPDMAX )   ! Hourly profile code...
-        CHARACTER*44 DVKEYA ( NPDMAX )   ! FIP // FCID // SKID // DVID
+        INTEGER        DS                ! Counter & number of device records
+        INTEGER        INDXDVA( NPDMAX ) ! subscript tabale for sort
+        INTEGER        DVSICA ( NPDMAX ) ! SIC code from device files
+        INTEGER        DVIWEKA( NPDMAX ) ! Weekly profile code from device files
+        INTEGER        DVIDIUA( NPDMAX ) ! Hourly profile code...
+        CHARACTER*44   DVKEYA ( NPDMAX ) ! FIP // FCID // SKID // DVID
 
-        INTEGER      DVSIC ( NPDMAX )    ! SIC code from device files
-        INTEGER      DVIWEK( NPDMAX )    ! Weekly profile code from device files
-        INTEGER      DVIDIU( NPDMAX )    ! Hourly profile code...
-        CHARACTER*44 DVKEY ( NPDMAX )    ! FIP // FCID // SKID // DVID
+        INTEGER        DVSIC ( NPDMAX )  ! SIC code from device files
+        INTEGER        DVIWEK( NPDMAX )  ! Weekly profile code from device files
+        INTEGER        DVIDIU( NPDMAX )  ! Hourly profile code...
+        CHARACTER*44   DVKEY ( NPDMAX )  ! FIP // FCID // SKID // DVID
 
 
 C...........   Point Sources Table input unsorted copy (*A); 
 C...........   sorted final version (image EMISREC of data record)
 
-        INTEGER      NSRC             !  current source-count
-        INTEGER      INDEXA( NPEMAX ) !  subscript table for SORTI4()
-        INTEGER      IDXSCC( NPEMAX ) !  subscript table for SORTI1() for SCC
-        INTEGER      IFIPA ( NPEMAX ) !  source FIPS (county) ID
-        INTEGER      ISCCA ( NPEMAX ) !  source SCC
-        INTEGER      ISICA ( NPEMAX ) !  source SIC
-        INTEGER      IPLANA( NPEMAX ) !  Plant ID
-        INTEGER      ISTACA( NPEMAX ) !  Stack ID
-        INTEGER      ICODEA( NPEMAX ) !  spcecies-subscript
-        INTEGER      TPFLGA( NPEMAX ) !  applicability of temporal profile types
-        INTEGER      INVYRA( NPEMAX ) !  inventory year
-        INTEGER      IDIUA ( NPEMAX ) !  Hourly profile code for each source
-        INTEGER      IWEKA ( NPEMAX ) !  Weekly profile code for each source
-        REAL         XLOCAA( NPEMAX ) !  UTM X-location (m)
-        REAL         YLOCAA( NPEMAX ) !  UTM Y-location (m)
-        REAL         STKHTA( NPEMAX ) !  stack height   (m)
-        REAL         STKDMA( NPEMAX ) !  stack diameter (m)
-        REAL         STKTKA( NPEMAX ) !  exhaust temperature (deg K)
-        REAL         STKVEA( NPEMAX ) !  exhaust velocity    (m/s)
-        REAL         RULPEA( NPEMAX ) !  rule penetration   fraction
-        REAL         RULEFA( NPEMAX ) !  rule effectiveness fraction
-        REAL         CTLEFA( NPEMAX ) !  control efficiency fraction
-        REAL         EMISVA( NPEMAX ) !  emissions values (tons/yr)
-        CHARACTER*15 EMFCID( NPEMAX ) !  facility IDs
-        CHARACTER*12 EMSKID( NPEMAX ) !  stack IDs
-        CHARACTER*40 EMDSCA( NPEMAX ) !  facility name from facility files
+        INTEGER        ES               !  current source-count
+        INTEGER        NSRC             !  total source-count
+        INTEGER        INDEXA( NPEMAX ) !  subscript table for SORTI4()
+        INTEGER        IFIPA ( NPEMAX ) !  source FIPS (county) ID
+        INTEGER        ISCCA ( NPEMAX ) !  source SCC
+        INTEGER        ISICA ( NPEMAX ) !  source SIC
+        INTEGER        IPLANA( NPEMAX ) !  Plant ID
+        INTEGER        ISTACA( NPEMAX ) !  Stack ID
+        INTEGER        ICODEA( NPEMAX ) !  species-subscript
+        INTEGER        TPFLGA( NPEMAX ) !  applicability of temporal profile types
+        INTEGER        INVYRA( NPEMAX ) !  inventory year
+        INTEGER        IDIUA ( NPEMAX ) !  Hourly profile code for each source
+        INTEGER        IWEKA ( NPEMAX ) !  Weekly profile code for each source
+        REAL           XLOCAA( NPEMAX ) !  UTM X-location (m)
+        REAL           YLOCAA( NPEMAX ) !  UTM Y-location (m)
+        REAL           STKHTA( NPEMAX ) !  stack height   (m)
+        REAL           STKDMA( NPEMAX ) !  stack diameter (m)
+        REAL           STKTKA( NPEMAX ) !  exhaust temperature (deg K)
+        REAL           STKVEA( NPEMAX ) !  exhaust velocity    (m/s)
+        REAL           RULPEA( NPEMAX ) !  rule penetration   fraction
+        REAL           RULEFA( NPEMAX ) !  rule effectiveness fraction
+        REAL           CTLEFA( NPEMAX ) !  control efficiency fraction
+        REAL           EMISVA( NPEMAX ) !  emissions values (tons/yr)
+        CHARACTER*15   EMFCID( NPEMAX ) !  facility IDs
+        CHARACTER*12   EMSKID( NPEMAX ) !  stack IDs
+        CHARACTER*40   EMDESC( NPEMAX ) !  facility name from facility files
 
 C.......   Common EMISREC holds an entire output record.  
 C.......   Order of arrays in EMISREC _must_ match order of
 C.......   variables in the output file.
 
-        INTEGER     NPOINT           !  current source-count
-        INTEGER     IFIP  ( NPSRC )  !  source FIPS (county) ID
-        INTEGER     ISCC  ( NPSRC )  !  source SCC
-        INTEGER     ISIC  ( NPSRC )  !  source SIC
-        INTEGER     IPLANT( NPSRC )  !  Plant ID
-        INTEGER     ISTACK( NPSRC )  !  Stack ID
-        INTEGER     TZONES( NPSRC )  !  time zones
-        INTEGER     TPFLAG( NPSRC )  !  applicability of temporal profile types
-        INTEGER     INVYR ( NPSRC )  !  inventory year for this record
-        REAL        XLOCA ( NPSRC )  !  UTM X-location (m)
-        REAL        YLOCA ( NPSRC )  !  UTM Y-location (m)
-        REAL        STKHT ( NPSRC )  !  stack height   (m)
-        REAL        STKDM ( NPSRC )  !  stack diameter (m)
-        REAL        STKTK ( NPSRC )  !  exhaust temperature (deg K)
-        REAL        STKVE ( NPSRC )  !  exhaust velocity    (m/s)
-        REAL        RULPEN( NPSRC, NIPOL )  !  rule penetration   fraction
-        REAL        RULEFF( NPSRC, NIPOL )  !  rule effectiveness fraction
-        REAL        CTLEFF( NPSRC, NIPOL )  !  control efficiency fraction
-        REAL        EMISV ( NPSRC, NIPOL )  !  emissions values (tons/yr)
+        INTEGER        NPOINT           !  current source-count
+        INTEGER        IFIP  ( NPSRC )  !  source FIPS (county) ID
+        INTEGER        ISCC  ( NPSRC )  !  source SCC
+        INTEGER        ISIC  ( NPSRC )  !  source SIC
+        INTEGER        IPLANT( NPSRC )  !  Plant ID
+        INTEGER        ISTACK( NPSRC )  !  Stack ID
+        INTEGER        TZONES( NPSRC )  !  time zones
+        INTEGER        TPFLAG( NPSRC )  !  temporal profile types
+        INTEGER        INVYR ( NPSRC )  !  inventory year for this record
+        INTEGER        IDXSCC( NPSRC )  !  subscript table for SORTI1() for SCC
+        REAL           XLOCA ( NPSRC )  !  UTM X-location (m)
+        REAL           YLOCA ( NPSRC )  !  UTM Y-location (m)
+        REAL           STKHT ( NPSRC )  !  stack height   (m)
+        REAL           STKDM ( NPSRC )  !  stack diameter (m)
+        REAL           STKTK ( NPSRC )  !  exhaust temperature (deg K)
+        REAL           STKVE ( NPSRC )  !  exhaust velocity    (m/s)
+        REAL           RULPEN( NPSRC, NIPOL )  !  rule penetration   fraction
+        REAL           RULEFF( NPSRC, NIPOL )  !  rule effectiveness fraction
+        REAL           CTLEFF( NPSRC, NIPOL )  !  control efficiency fraction
+        REAL           EMISV ( NPSRC, NIPOL )  !  emissions values (tons/yr)
 
         COMMON /EMISREC / IFIP, ISIC, ISCC, IPLANT, ISTACK, TZONES,
      &                    TPFLAG, INVYR, XLOCA, YLOCA, 
@@ -448,7 +452,7 @@ C.......   Get file name; open and process input time zone file
                 NZF = NZF + 1
                 IF ( NZF .LE. NPFIP ) THEN
                     INDXFA( NZF ) = NZF
-                    TFIPFA( NZF ) = FIP / 1000
+                    TFIPFA( NZF ) = FIP
                     TZONFA( NZF ) = TZONE
                 END IF
 
@@ -460,11 +464,11 @@ C.......   Get file name; open and process input time zone file
 
         CLOSE( ZDEV )
         IF ( NZS .GT. NPSID  .OR.  NZF .GT. NPFIP ) THEN
-            WRITE( MESG,94010 ) 'Number of SS000 records:', NZS
+            WRITE( MESG,94010 ) 'Number of state-only records  :', NZS
             CALL M3MESG( MESG )
-            WRITE( MESG,94010 ) 'Number of SSCCC records:', NZF
+            WRITE( MESG,94010 ) 'Number of state&county records:', NZF
             CALL M3MESG( MESG )
-            WRITE( MESG,94010 ) 'Dims-- SS000:', NPSID, 'SSCCC:', NPFIP
+            WRITE( MESG,94010 ) 'Dims-- NPSID:', NPSID, 'NPFIP:', NPFIP
             CALL M3MESG( MESG )
             CALL M3EXIT( 'EMSPOINT', 0, 0,
      &                   'Overflow reading time zone file', 2 )
@@ -517,8 +521,9 @@ C.......   Now read the rest of the file:
 
             IF ( IOS .NE. 0 ) THEN      !  I/O error
 
+                EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'Error reading PSTK at line', IREC
-                CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 1 )
+                CALL M3MESG( MESG )
 
             ELSE IF ( ( LFIP .GT. FIP ) .OR.
      &                ( LFIP .EQ. FIP .AND. LSCC .GT. SCC ) ) THEN !  out of order
@@ -545,11 +550,6 @@ C.......   Now read the rest of the file:
                         DM1( NR1 ) = DM
                         TK1( NR1 ) = TK
                         VE1( NR1 ) = VE
-                    ELSE
-                        WRITE( MESG,94010 ) 
-     &                  'SCC-only table overflow at line', IREC
-                        CALL M3MESG( MESG )
-                        EFLAG = .TRUE.
                     END IF
  
                 END IF                  !  if scc zero or not
@@ -564,11 +564,6 @@ C.......   Now read the rest of the file:
                     DM2( NR2 ) = DM
                     TK2( NR2 ) = TK
                     VE2( NR2 ) = VE
-                ELSE
-                    WRITE( MESG,94010 ) 
-     &              'SCC-state table overflow at line', IREC
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
                 END IF
 
             ELSE                                        !  FIP and SCC
@@ -581,11 +576,6 @@ C.......   Now read the rest of the file:
                     DM3( NR3 ) = DM
                     TK3( NR3 ) = TK
                     VE3( NR3 ) = VE
-                ELSE
-                    WRITE( MESG,94010 ) 
-     &              'FIP-SCC table overflow at line', IREC
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
                 END IF
 
             END IF      !  if I/O err, bad order, ...
@@ -598,6 +588,21 @@ C.......   Now read the rest of the file:
         IF ( EFLAG ) THEN
                 CALL M3EXIT( 'EMSPOINT', 0, 0, 
      &                       'Error reading PSTK file', 1 )
+        ELSE IF ( NR1 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'SCC-only table overflow -- dimensioned:', NPSRC,
+     &          'actual', NR1
+            CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
+        ELSE IF ( NR2 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'State-SCC table overflow -- dimensioned:', NPSRC,
+     &          'actual', NR2
+            CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
+        ELSE IF ( NR3 .GT. NPSRC ) THEN
+            WRITE( MESG,94010 )
+     &          'FIP-SCC table overflow -- dimensioned:', NPSRC,
+     &          'actual', NR3
+            CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
         END IF
 
         
@@ -616,7 +621,8 @@ C.......   Initialize variables for keeping track of dropped emissions
      &  'EMS-95 RAW POINT SOURCE files...', 
      &  ' '
         IFIL =    0
-        S    =    0     ! For sources (emission.pt)
+        NSRC =    0
+        ES   =    0     ! For sources (emission.pt)
         EFLAG = .FALSE.
 
 101     CONTINUE
@@ -633,7 +639,7 @@ C.......   Initialize variables for keeping track of dropped emissions
             EDEV = PROMPTFFILE( 
      &         'Enter the next EMISSION.PT FILE, or "NONE" to end list',
      &          .TRUE., .TRUE., EMNAME, 'EMSPOINT' )
-            IF ( EDEV .LT. 0 ) GO TO  202    !  end of loop readin input files
+            IF ( EDEV .LT. 0 ) GO TO  202    !  end of loop reading input files
 
             FDEV = PROMPTFFILE( 
      &              'Enter the next FACILITY.PT FILE',
@@ -676,10 +682,10 @@ C........................................................................
             IREC = 0
 111         CONTINUE
 
-                IREC = IREC + 1
-
 C.................  Read a line of facility.pt file; Check input status
 
+                LINE = BLANK
+                IREC = IREC + 1
                 READ( FDEV, 93000, END=112, IOSTAT=IOS ) LINE
                 IF ( IOS .NE. 0 ) THEN
                     WRITE( MESG, 94010 ) 
@@ -713,7 +719,7 @@ C.................  Check zone conversion to integer
      &                          STR2INT( LINE( 3:5 ) )
 
                     CSS  = LBLANK( LINE( 6:20 ) )
-                    FCID = LINE( CSS+6:20 )
+                    FCID = LINE( MIN(CSS+6,20):20 )
                     IF( FCID .EQ. ' ' ) FCID = CMISS3
 
                     INDXFCA( FS ) = FS
@@ -730,28 +736,30 @@ C.................  Check zone conversion to integer
 
             CLOSE( FDEV )
 
+            CALL M3MESG( 'FACILITY.PT FILE processed' )
+            WRITE( *,92010 ) 
+     &          'Actual FACILITY record count', FS,
+     &          'Max dimensioned record-count', NPFMAX
+
             IF ( FS .GT. NPFMAX ) THEN
+
                 EFLAG = .TRUE.
-                WRITE( *,92010 ) 
-     &              'Record count                ', FS,
-     &              'Max dimensioned record-count', NPFMAX
                 CALL M3MESG(
      &              'Max record-count exceeded in FACILITY file.' )
-            END IF
 
-C...........   Sort input facility table:
+            ELSE	!  else sort input facility table:
 
-            CALL SORTIC( FS, INDXFCA, FCKEYA )
-            DO  113  I = 1, FS
-                J = INDXFCA( I )
-                FCKEY ( I ) = FCKEYA ( J )
-                FCZONE( I ) = FCZONEA( J )
-                FCCRDX( I ) = FCCRDXA( J )
-                FCCRDY( I ) = FCCRDYA( J )
-                FCDESC( I ) = FCDESCA( J )
-113         CONTINUE
+                CALL SORTIC( FS, INDXFCA, FCKEYA )
+                DO  113  I = 1, FS
+                    J = INDXFCA( I )
+                    FCKEY ( I ) = FCKEYA ( J )
+                    FCZONE( I ) = FCZONEA( J )
+                    FCCRDX( I ) = FCCRDXA( J )
+                    FCCRDY( I ) = FCCRDYA( J )
+                    FCDESC( I ) = FCDESCA( J )
+113             CONTINUE
 
-            CALL M3MESG( 'FACILITY.PT FILE processed' )
+            END IF		!  if facility table overflow or not
 
 
 C........................................................................
@@ -762,10 +770,9 @@ C........................................................................
             IREC = 0
 122         CONTINUE
 
-                IREC = IREC + 1
-
 C.................  Read a line of stack.pt file and check input status
 
+                IREC = IREC + 1
                 READ( SDEV, 93000, END=123, IOSTAT=IOS ) LINE
                 IF ( IOS .NE. 0 ) THEN
                     WRITE( MESG, 94010 ) 
@@ -780,14 +787,16 @@ C.................  Get lookup into facilities table
                 WRITE( CFIP,93020 )  1000*STR2INT( LINE( 1:2 ) ) +
      &                               STR2INT( LINE( 3:5 ) )
 
+C.................  Find source match in facilities table
+
                 CSS  = LBLANK( LINE( 6:20 ) )
-                FCID = LINE( CSS+6:20 )
+                FCID = LINE( MIN(CSS+6,20):20 )
                 IF( FCID .EQ. ' ' ) FCID = CMISS3
                 FKEY = CFIP // FCID
                 K1   = FINDC( FKEY, FS, FCKEY )
                     
                 CSS  = LBLANK( LINE( 21:32 ) )
-                SKID = LINE( CSS+21:32 )
+                SKID = LINE( MIN(CSS+21,32):32 )
                 IF( SKID .EQ. ' ' ) SKID = CMISS3
 
                 IF ( K1 .LE. 0 ) THEN
@@ -808,11 +817,11 @@ C.................  Convert units for stack parameters
                 STKV = STR2REAL( LINE( 55:61 ) )
                 STKF = STR2REAL( LINE( 62:71 ) )
 
-                IF ( STKD .GT. 0.0 ) STKD = STKD * FT2M             ! Diam ft to m
-                IF ( STKD .GT. 0.0 ) STKH = STKH * FT2M             ! Heit ft to m
-                IF ( STKD .GT. 0.0 ) STKT = STKT * FTOC  +  CTOK    ! temp, degrees K
-                IF ( STKD .GT. 0.0 ) STKV = STKV * FT2M             ! Veloc ft/s to m/s
-                IF ( STKD .GT. 0.0 ) STKF = STKF * FLWE2M           ! Flow ft^3/min m^3/s
+                IF ( STKD .GT. 0.0 ) STKD = STKD * FT2M          ! Diam ft to m
+                IF ( STKH .GT. 0.0 ) STKH = STKH * FT2M          ! Ht,  ft to m
+                IF ( STKT .GT. 0.0 ) STKT = STKT * FTOC  +  CTOK ! temp, degrees K
+                IF ( STKV .GT. 0.0 ) STKV = STKV * FT2M          ! Veloc ft/s to m/s
+                IF ( STKF .GT. 0.0 ) STKF = STKF * FLWE2M        ! Flow ft^3/min m^3/s
                 
                 IF ( STKV .LE. 0.0  .AND.
      &               STKD .GT. 0.0  .AND.
@@ -822,8 +831,8 @@ C.................  Convert units for stack parameters
 
 C.............   Resolve coordinates for this stack:
 
-                XLOC = STR2REAL( LINE( 72:80 ) )! Supossed to be UTM
-                YLOC = STR2REAL( LINE( 81:89 ) )! Supossed to be UTM
+                XLOC = STR2REAL( LINE( 72:80 ) )! supposed to be UTM
+                YLOC = STR2REAL( LINE( 81:89 ) )! supposed to be UTM
                 
                 IF ( XLOC .LE. 0.0  .OR. YLOC .LE. 0.0 ) THEN
                     
@@ -834,7 +843,7 @@ C.............   Resolve coordinates for this stack:
 
                         WRITE( MESG,94010 )
      &                    'Source dropped: ' //
-     &                    'bad coords for stack rec', K2,
+     &                    'bad coords for stack rec', IREC,
      &                     ': FIP='// CFIP // '; Facility=' // 
      &                     FCID( 1:TRIMLEN( FCID ) ) //
      &                    '; and Stack=' // SKID
@@ -919,31 +928,33 @@ C.................  Store stack file information
 
             CLOSE( SDEV )
 
-            IF ( SS .GT. NPSMAX ) THEN
+            CALL M3MESG( 'STACK.PT FILE processed' )
+            WRITE( *,92010 ) 
+     &          'Actual  STACK   record-count', SS,
+     &          'Max dimensioned record-count', NPSMAX
+
+            IF ( SS .GT. NPSMAX ) THEN	!  overflow:
+
                 EFLAG = .TRUE.
-                WRITE( *,92010 ) 
-     &              'Record count                ', SS,
-     &              'Max dimensioned record-count', NPSMAX
                 CALL M3MESG(
      &              'Max record-count exceeded in STACK file.' )
-            END IF
 
-C...........   Sort input stack parameter table:
+            ELSE	!  else sort input stack parameter table:
 
-            CALL SORTIC( SS, INDXSKA, SKKEYA )
-            DO  124  I = 1, SS
-                J = INDXSKA( I )
-                SKDIAM( I ) = SKDIAMA( J )
-                IFCKEY( I ) = IFCKEYA( J )
-                SKHEIT( I ) = SKHEITA( J )
-                SKTEMP( I ) = SKTEMPA( J )
-                SKCRDX( I ) = SKCRDXA( J )
-                SKCRDY( I ) = SKCRDYA( J )
-                SKVELO( I ) = SKVELOA( J )
-                SKKEY ( I ) = SKKEYA ( J )
-124         CONTINUE
+                CALL SORTIC( SS, INDXSKA, SKKEYA )
+                DO  124  I = 1, SS
+                    J = INDXSKA( I )
+                    SKDIAM( I ) = SKDIAMA( J )
+                    IFCKEY( I ) = IFCKEYA( J )
+                    SKHEIT( I ) = SKHEITA( J )
+                    SKTEMP( I ) = SKTEMPA( J )
+                    SKCRDX( I ) = SKCRDXA( J )
+                    SKCRDY( I ) = SKCRDYA( J )
+                    SKVELO( I ) = SKVELOA( J )
+                    SKKEY ( I ) = SKKEYA ( J )
+124             CONTINUE
 
-            CALL M3MESG( 'STACK.PT FILE processed' )
+            END IF		!  if stack parameter table overflow or not
 
 
 C........................................................................
@@ -954,10 +965,9 @@ C........................................................................
             IREC = 0
 133         CONTINUE
 
-                IREC = IREC + 1
-
 C.................  Read a line of process.pt file, and check input status
 
+                IREC = IREC + 1
                 READ( PDEV, 93000, END=134, IOSTAT=IOS ) LINE
                 IF ( IOS .NE. 0 ) THEN
                     WRITE( MESG, 94010 ) 
@@ -987,19 +997,19 @@ C.................  Convert and check SCC value
      &                          STR2INT( LINE( 3:5 ) )
 
                     CSS  = LBLANK( LINE( 6:20 ) )
-                    FCID = LINE( CSS+6:20 )
+                    FCID = LINE( MIN(CSS+6,20):20 )
                     IF( FCID .EQ. ' ' ) FCID = CMISS3
 
                     CSS  = LBLANK( LINE( 21:32 ) )
-                    SKID = LINE( CSS+21:32 )
+                    SKID = LINE( MIN(CSS+21,32):32 )
                     IF( SKID .EQ. ' ' ) SKID = CMISS3
 
                     CSS  = LBLANK( LINE( 33:44 ) )
-                    DVID = LINE( CSS+33:44 )
+                    DVID = LINE( MIN(CSS+33,44):44 )
                     IF( DVID .EQ. ' ' ) DVID = CMISS3
 
                     CSS  = LBLANK( LINE( 45:56 ) )
-                    PRID = LINE( CSS+45:56 )
+                    PRID = LINE( MIN(CSS+45,56):56 )
                     IF( PRID .EQ. ' ' ) PRID = CMISS3
 
                     PSKEYA( PS ) = CFIP // 
@@ -1018,25 +1028,27 @@ C.................  Convert and check SCC value
 
             CLOSE( PDEV )
 
-            IF ( PS .GT. NPPMAX ) THEN
+            CALL M3MESG( 'PROCESS.PT FILE processed' )
+            WRITE( *,92010 ) 
+     &          'Actual PROCESS  record-count', PS,
+     &          'Max dimensioned record-count', NPPMAX
+
+            IF ( PS .GT. NPPMAX ) THEN		!  overflow
+
                 EFLAG = .TRUE.
-                WRITE( *,92010 ) 
-     &              'Record count                ', PS,
-     &              'Max dimensioned record-count', NPPMAX
                 CALL M3MESG(
      &              'Max record-count exceeded in PROCESS file.' )
-            END IF
 
-C...........   Sort input process parameter table:
+            ELSE	!  sort input process parameter table:
 
-            CALL SORTIC( PS, INDXPA,  PSKEYA )
-            DO  135  I = 1, PS
-                J = INDXPA( I )
-                PSSCC( I ) = PSSCCA( J )
-                PSKEY( I ) = PSKEYA( J )
-135         CONTINUE
+                CALL SORTIC( PS, INDXPA,  PSKEYA )
+                DO  135  I = 1, PS
+                    J = INDXPA( I )
+                    PSSCC( I ) = PSSCCA( J )
+                    PSKEY( I ) = PSKEYA( J )
+135             CONTINUE
 
-            CALL M3MESG( 'PROCESS.PT FILE processed' )
+            END IF	!  if input process parameter table overflow or not
 
 
 C........................................................................
@@ -1048,7 +1060,6 @@ C........................................................................
 144         CONTINUE
 
                 IREC = IREC + 1
-
                 READ( DDEV, 93000, END=145, IOSTAT=IOS ) LINE
                 IF ( IOS .NE. 0 ) THEN
                     WRITE( MESG, 94010 ) 
@@ -1111,15 +1122,15 @@ C temp          IMON = STR2INT( LINE( ) )
      &                          STR2INT( LINE( 3:5 ) )
 
                     CSS  = LBLANK( LINE( 6:20 ) )
-                    FCID = LINE( CSS+6:20 )
+                    FCID = LINE( MIN(CSS+6,20):20 )
                     IF( FCID .EQ. ' ' ) FCID = CMISS3
 
                     CSS  = LBLANK( LINE( 21:32 ) )
-                    SKID = LINE( CSS+21:32 )
+                    SKID = LINE( MIN(CSS+21,32):32 )
                     IF( SKID .EQ. ' ' ) SKID = CMISS3
 
                     CSS  = LBLANK( LINE( 33:44 ) )
-                    DVID = LINE( CSS+33:44 )
+                    DVID = LINE( MIN(CSS+33,44):44 )
                     IF( DVID .EQ. ' ' ) DVID = CMISS3
 
                     INDXDVA( DS ) = DS
@@ -1140,27 +1151,29 @@ C temp              DVIMONA( DS ) = IMON
 
             CLOSE( DDEV )
 
-            IF ( DS .GT. NPDMAX ) THEN
+            CALL M3MESG( 'DEVICE.PT FILE processed' )
+            WRITE( *,92010 ) 
+     &          'Actual  DEVICE  record-count', DS,
+     &          'Max dimensioned record-count', NPDMAX
+
+            IF ( DS .GT. NPDMAX ) THEN	!  overflow
+
                 EFLAG = .TRUE.
-                WRITE( *,92010 ) 
-     &              'Record count                ', DS,
-     &              'Max dimensioned record-count', NPDMAX
                 CALL M3MESG(
      &              'Max record-count exceeded in DEVICE file.' )
-            END IF
 
-C...........   Sort input device parameter table:
+            ELSE	!  sort input device parameter table:
 
-            CALL SORTIC( DS, INDXDVA, DVKEYA )
-            DO  146  I = 1, DS
-                J = INDXDVA( I )
-                DVSIC ( I ) = DVSICA ( J )
-                DVIWEK( I ) = DVIWEKA( J )
-                DVIDIU( I ) = DVIDIUA( J )
-                DVKEY ( I ) = DVKEYA ( J )
-146         CONTINUE
+                CALL SORTIC( DS, INDXDVA, DVKEYA )
+                DO  146  I = 1, DS
+                    J = INDXDVA( I )
+                    DVSIC ( I ) = DVSICA ( J )
+                    DVIWEK( I ) = DVIWEKA( J )
+                    DVIDIU( I ) = DVIDIUA( J )
+                    DVKEY ( I ) = DVKEYA ( J )
+146             CONTINUE
 
-            CALL M3MESG( 'DEVICE.PT FILE processed' )
+            END IF	!  if evice parameter table overflow or not
 
 
 C............  Read rule effectiveness file
@@ -1168,32 +1181,32 @@ C................. NOTE: Will be added later.  Not needed for SESARM
 
             RULFLAG = .FALSE.   ! No rule effectiveness files
 
+
 C........................................................................
 C.............  Head of the EDEV-read loop  .............................
 C........................................................................
 
-            IREC =  0
+            IREC =   0
             RPEN = 100.0
             REFF = 100.0
 188         CONTINUE
 
-                IREC = IREC + 1
-
 C.................  Read a line of emission.pt file and check input status
 
+                IREC = IREC + 1
                 READ( EDEV, 93000, END=199, IOSTAT=IOS ) LINE
                 IF ( IOS .NE. 0 ) THEN
                     WRITE( MESG, 94010 ) 
      &                  'Error ', IOS,  'reading "' // 
      &                  EMNAME( 1:TRIMLEN( EMNAME ) ) //
      &                  '" at line', IREC
-                    CALL M3EXIT( 'EMSPOINT', 0, 0, 2 )
+                    CALL M3EXIT( 'EMSPOINT', 0, 0, MESG, 2 )
                 END IF
 
 C.................  Check pollutant code and set index I
 
                 CSS  = LBLANK( LINE( 57:61 ) )
-                CPOL = LINE( CSS+57:61 )
+                CPOL = LINE( MIN(CSS+57,61):61 )
                 COD  = INDEX1( CPOL( 1:TRIMLEN( CPOL ) ), NIPOL, EINAM )
                 IF ( I  .LE. 0 ) THEN
                     WRITE( MESG,94010 ) 
@@ -1225,11 +1238,11 @@ C.................  and give warning later if this is not the case.
                 WRITE( CFIP,93020 ) FIP
                 CSS  = LBLANK( LINE( 6:20 ) )
 
-                FCID = LINE( CSS+6:20 )
+                FCID = LINE( MIN(CSS+6,20):20 )
                 FKEY = CFIP // FCID
 
                 CSS  = LBLANK( LINE( 21:32 ) )
-                SKID = LINE( CSS+21:32 )
+                SKID = LINE( MIN(CSS+21,32):32 )
                 IF( SKID .EQ. ' ' ) SKID = CMISS3 
                 SKEY = FKEY( 1:TRIMLEN( FKEY ) ) // SKID
                 K2   = FINDC( SKEY, SS, SKKEY )
@@ -1250,7 +1263,7 @@ C.................  and give warning later if this is not the case.
                 END IF          !  if stack key not found
 
                 CSS  = LBLANK( LINE( 33:44 ) )
-                DVID = LINE( CSS+33:44 )
+                DVID = LINE( MIN(CSS+33,44):44 )
                 IF( DVID .EQ. ' ' ) DVID = CMISS3
                 DKEY = SKEY( 1:TRIMLEN( SKEY ) ) // DVID
                 K3   = FINDC( DKEY, DS, DVKEY )
@@ -1272,7 +1285,7 @@ C.................  and give warning later if this is not the case.
                 END IF          !  if device key not found
 
                 CSS  = LBLANK( LINE( 45:56 ) )
-                PRID = LINE( CSS+45:56 )
+                PRID = LINE( MIN(CSS+45,56):56 )
                 IF( PRID .EQ. ' ' ) PRID = CMISS3
                 PKEY = DKEY( 1:TRIMLEN( DKEY ) ) // PRID
                 K4   = FINDC( PKEY, PS, PSKEY )
@@ -1342,9 +1355,9 @@ C.............  (later:  Get rule pen, eff from prulefac records)
                     REFF = 100.0     ! (will do match on ASCII keys here)
                 END IF
 
-                S = S + 1
+                ES = ES + 1
 
-                IF ( S .LE. NPEMAX ) THEN
+                IF ( ES .LE. NPEMAX ) THEN
 
 C...................   Fix up missing stack parameters:
                     
@@ -1353,7 +1366,7 @@ C...................   Fix up missing stack parameters:
                     STKT = SKTEMP( K2 )
                     STKV = SKVELO( K2 )
                     
-                    IF ( STKH .LT. 0.0 ) THEN
+                    IF ( STKH .LE. 0.0 ) THEN
                         K = FIND2( FIP, SCC, NR3, FP3, SC3 )
                         IF ( K .GT. 0 ) THEN
                             HT = HT3( K )
@@ -1384,15 +1397,12 @@ C...................   Fix up missing stack parameters:
                         END IF 
                        
                         STKH = HT
-                        IF ( STKD .LT. 0 ) STKD = DM
-                        IF ( STKT .LT. 0 ) STKT = TK
-                        IF ( STKV .LT. 0 ) STKV = VE
+                        IF ( STKD .LE. 0 ) STKD = DM
+                        IF ( STKT .LE. 0 ) STKT = TK
+                        IF ( STKV .LE. 0 ) STKV = VE
                             
-                    END IF      !  if stack height bad
-                    
-                    IF ( STKD .LT. 0.0 ) THEN
-                        FIP = IFIP( S )
-                        SCC = ISCC( S )
+                    ELSE IF ( STKD .LE. 0.0 ) THEN
+
                         K = FIND2( FIP, SCC, NR3, FP3, SC3 )
                        
                         IF ( K .GT. 0 ) THEN
@@ -1420,14 +1430,11 @@ C...................   Fix up missing stack parameters:
                         END IF 
                        
                         STKD = DM
-                        IF ( STKT .LT. 0 ) STKT = TK
-                        IF ( STKV .LT. 0 ) STKV = VE
+                        IF ( STKT .LE. 0 ) STKT = TK
+                        IF ( STKV .LE. 0 ) STKV = VE
                        
-                    END IF      !  if stack diameter bad
-                       
-                    IF ( STKT .LT. 0.0 ) THEN
-                        FIP = IFIP( S )
-                        SCC = ISCC( S )
+                    ELSE IF ( STKT .LE. 0.0 ) THEN
+
                         K = FIND2( FIP, SCC, NR3, FP3, SC3 )
                        
                         IF ( K .GT. 0 ) THEN
@@ -1451,13 +1458,10 @@ C...................   Fix up missing stack parameters:
                         END IF 
                        
                         STKT = TK
-                        IF ( STKV .LT. 0 ) STKV = VE
+                        IF ( STKV .LE. 0 ) STKV = VE
                        
-                    END IF      !  if stack exhaust temperature bad
-                       
-                    IF ( STKV .LT. 0.0 ) THEN
-                        FIP = IFIP( S )
-                        SCC = ISCC( S )
+                    ELSE IF ( STKV .LE. 0.0 ) THEN
+
                         K = FIND2( FIP, SCC, NR3, FP3, SC3 )
                        
                         IF ( K .GT. 0 ) THEN
@@ -1478,33 +1482,33 @@ C...................   Fix up missing stack parameters:
                        
                         STKV = VE
                        
-                    END IF      !  if stack exhaust velocity bad
+                    END IF      !  if stack ht, dm, tk, or ve bad
          
-                    INDEXA( S ) = S         !  index-table for use in SORTI4()
 
                     K1 = IFCKEY( K2 )
-                    IFIPA ( S ) = FIP
-                    IPLANA( S ) = K1
-                    ISTACA( S ) = K2
-                    ISCCA ( S ) = SCC
-                    EMDSCA( S ) = FCDESC( K1 )
-                    ICODEA( S ) = COD       !  subscript into EINAM(*)
-                    TPFLGA( S ) = TPF
-                    INVYRA( S ) = INY
-                    STKHTA( S ) = STKH
-                    STKDMA( S ) = STKD
-                    STKTKA( S ) = STKT
-                    STKVEA( S ) = STKV
-                    XLOCAA( S ) = SKCRDX( K2 )
-                    YLOCAA( S ) = SKCRDY( K2 )
-                    ISICA ( S ) = DVSIC ( K3 )
-                    IWEKA ( S ) = DVIWEK( K3 )
-                    IDIUA ( S ) = DVIDIU( K3 )
-                    CTLEFA( S ) = CEFF
-                    RULPEA( S ) = RPEN
-                    EMISVA( S ) = EMIS
-                    EMFCID( S ) = FCID
-                    EMSKID( S ) = SKID
+                    INDEXA( ES ) = ES         !  index-table for use in SORTI4()
+                    IFIPA ( ES ) = FIP
+                    IPLANA( ES ) = K1
+                    ISTACA( ES ) = K2
+                    ISCCA ( ES ) = SCC
+                    ICODEA( ES ) = COD       !  subscript into EINAM(*)
+                    TPFLGA( ES ) = TPF
+                    INVYRA( ES ) = INY
+                    STKHTA( ES ) = STKH
+                    STKDMA( ES ) = STKD
+                    STKTKA( ES ) = STKT
+                    STKVEA( ES ) = STKV
+                    XLOCAA( ES ) = SKCRDX( K2 )
+                    YLOCAA( ES ) = SKCRDY( K2 )
+                    ISICA ( ES ) = DVSIC ( K3 )
+                    IWEKA ( ES ) = DVIWEK( K3 )
+                    IDIUA ( ES ) = DVIDIU( K3 )
+                    CTLEFA( ES ) = CEFF
+                    RULPEA( ES ) = RPEN
+                    EMISVA( ES ) = EMIS
+                    EMFCID( ES ) = FCID
+                    EMSKID( ES ) = SKID
+                    EMDESC( ES ) = FCDESC( K1 )
 
                 END IF          !  if S in range
 
@@ -1515,6 +1519,11 @@ C...................   Fix up missing stack parameters:
             CLOSE( EDEV )
 
             CALL M3MESG( 'EMISSION.PT FILE processed' )
+            WRITE( *,92010 ) 
+     &      'This-file   SOURCE  record-count', ES - NSRC,
+     &      'Cumulative  SOURCE  record-count', ES
+            NSRC = ES        !  point source emissions lines
+
 
         GO TO 101   !  to head of loop on input files
 
@@ -1524,39 +1533,22 @@ C........................................................................
 202     CONTINUE        !  exit from loop on input files
 
         WRITE( *,92000 ) ' '
-
-        NSCC = L        !  scc codes found
-        NSRC = S        !  point source emissions lines
-
+        WRITE( *,92010 ) 
+     &      'Actual  SOURCE  record-count', NSRC,
+     &      'Max dimensioned record-count', NPEMAX
         IF ( NSRC .GT. NPEMAX ) THEN
+
             EFLAG = .TRUE.
-            WRITE( *,92010 ) 
-     &          'Record count                ', NSRC,
-     &          'Max dimensioned record-count', NPEMAX
-            CALL M3MESG( 
-     &          'Max record-count exceeded in EMISSION files.' )
+            CALL M3EXIT( 'EMSPOINT', 0, 0,
+     &          'Max record-count exceeded in EMISSION files.', 2 )
             WRITE( *,92000 ) ' '
-        END IF
 
-C...........   Exit if any errors
+        ELSE IF ( EFLAG ) THEN
 
-        IF ( EFLAG ) THEN
             CALL M3EXIT( 'EMSPOINT', 0, 0, 
      &           'Error reading POINT SOURCE FOUNDATION files.', 2 )
-        END IF
 
-        ADEV = PROMPTFFILE( 
-     &          'Enter the name of the ACTUAL SCC output file',
-     &          .FALSE., .TRUE., 'PSCC', 'EMSPOINT' )
-
-        TDEV = PROMPTFFILE( 
-     &          'Enter the name of the TEMPORAL XREF output file',
-     &          .FALSE., .TRUE., 'PTREF', 'EMSPOINT' )
-
-        CDEV = PROMPTFFILE( 
-     &          'Enter the name of the FACILITY/STACK output file',
-     &          .FALSE., .TRUE., 'PSRC', 'EMSPOINT' )
-
+        END IF		!  if overflow or if errors
 
 C.........  Report how many sources were dropped
 
@@ -1579,6 +1571,22 @@ C.........  Report how many sources were dropped
             WRITE( *,92000 ) ' '
 
         END IF          !  if ndrop > 0
+
+
+C.......   Open ASCII output files:
+
+        ADEV = PROMPTFFILE( 
+     &          'Enter the name of the ACTUAL SCC output file',
+     &          .FALSE., .TRUE., 'PSCC', 'EMSPOINT' )
+
+        TDEV = PROMPTFFILE( 
+     &          'Enter the name of the TEMPORAL XREF output file',
+     &          .FALSE., .TRUE., 'PTREF', 'EMSPOINT' )
+
+        CDEV = PROMPTFFILE( 
+     &          'Enter the name of the FACILITY/STACK output file',
+     &          .FALSE., .TRUE., 'PSRC', 'EMSPOINT' )
+
 
 C.......   Use SORTI4() to perform an indirect sort by FIPS,SCC,PLANT,STACK
 C.......   then permute the records into output order according to the result:
@@ -1615,28 +1623,37 @@ C.............  If first time got to this source...
      &           PLANT .NE. LPLT  .OR.
      &           STACK .NE. LSTK       ) THEN
 
-                IF ( SCC .NE. LLSCC ) THEN
-                    LLSCC       = SCC
-                    L           = L + 1
-                    IDXSCC( L ) = L
-                    ISCCA ( L ) = SCC
-                END IF
+                LFIP = FIP
+                LSCC = SCC
+                LPLT = PLANT
+                LSTK = STACK
+                J    = J + 1		!  actual-sources counter
 
-                J = J + 1
+C.................  Write out ASCII EMS-95 / SMOKE facility-stack table,
+C.................  temporal profiles file for source:
+C.................  ("1" is hardcoded monthly profile)
+
+                WRITE( CDEV, 93050 ) 
+     &              FIP, SCC, PLANT, STACK,
+     &              EMFCID( I ), EMSKID( I ), EMDESC( I )
 
                 IF( J .LE. NPSRC ) THEN
 
-                    DO  311  I = 1, NIPOL       !  initializations
-                        EMISV ( J,I ) = VMISS
-                        RULPEN( J,I ) = VMISS
-                        RULEFF( J,I ) = VMISS
-                        CTLEFF( J,I ) = VMISS
+                    IF ( SCC .NE. LLSCC ) THEN
+                        LLSCC       = SCC
+                        L           = L + 1
+                        IDXSCC( L ) = J
+                    END IF
+
+                    WRITE( TDEV, 93040 ) 1, IWEKA( I ), IDIUA( I )
+
+                    DO  311  V = 1, NIPOL       !  initializations
+                        EMISV ( J,V ) = VMISS
+                        RULPEN( J,V ) = VMISS
+                        RULEFF( J,V ) = VMISS
+                        CTLEFF( J,V ) = VMISS
 311                 CONTINUE
 
-                    LFIP = FIP
-                    LSCC = SCC
-                    LPLT = PLANT
-                    LSTK = STACK
 
 C.....................  Set final arrays
 
@@ -1658,7 +1675,7 @@ C.....................  Set final arrays
                     IF ( K .GT. 0 ) THEN
                         TZONES( J ) = TZONEF( K )
                     ELSE
-                        K = FIND1( FIP/1000, TFIPST )
+                        K = FIND1( FIP/1000, NZS, TFIPST )
                         IF ( K .GT. 0 ) THEN
                             TZONES( J ) = TZONST( K )
                         ELSE
@@ -1666,39 +1683,46 @@ C.....................  Set final arrays
                         END IF
                     END IF
 
-C.................  Write out ASCII EMS-95 / SMOKE facility-stack table,
-C.................  temporal profiles file for source:
-C.................  ("1" is hardcoded monthly profile)
-
-                    WRITE( CDEV, 93050 ) 
-     &                      FIP, SCC, K1, K2, EMFCID( I ), EMSKID( I )
-                    WRITE( TDEV, 93040 ) 
-     &                      1, IWEKA( I ), IDIUA( I )
-
                 ELSE            !  would have overflowed arrays:
 
-                    WRITE( MESG,94010 ) 
-     &                'NOTE: Skipping source', J, 'to avoid overflow.'
+                    WRITE( MESG,94020 ) 
+     &                'Skipping FIP:', FIP, 
+     &                'SCC:',          SCC, 
+     &                'Plant:',        PLANT,
+     &                'Stack:',        STACK,
+     &                'to avoid overflow.'
                     CALL M3MESG( MESG )
 
                     GO TO 322   ! To end of loop
 
                 END IF          !  if j <= npsrc or not
 
+C.............  Keep updating previous info so sources count
+C.............  will be correct
+            ELSE
+                LFIP = FIP
+                LSCC = SCC
+                LPLT = PLANT
+                LSTK = STACK
+
             END IF              !  if first encounter with this source
+
+C.............  Now set emissions values, but only if we haven't exceeded
+C.............  the correct number of sources
 
             IF ( J .LE. NPSRC ) THEN
 
                 V    = ICODEA( I )
                 EMIS = EMISVA( I )
-                IF ( EMISV( J,V ) .LE. 0.0 ) THEN
+
+                IF ( EMISV( J,V ) .LE. 0.0 ) THEN  !  initialize if necessary
 
                     EMISV ( J,V ) = EMIS
                     CTLEFF( J,V ) = CTLEFA( I )
                     RULEFF( J,V ) = RULEFA( I )
                     RULPEN( J,V ) = RULPEA( I )
 
-                ELSE
+                ELSE		!  else accumulate emissions
 
                     EMISV ( J,V ) = EMISV ( J,V ) + EMIS
 
@@ -1708,16 +1732,16 @@ C.................  ("1" is hardcoded monthly profile)
 
 322     CONTINUE
 
+        NSCC   = L      !  scc codes found
         NPOINT = J
 
         IF ( NPOINT .NE. NPSRC ) THEN
 
             WRITE( *,92000 ) ' '
-            WRITE( MESG,94010 ) 
+            WRITE( *,92010 ) 
      &          'Actual      number of sources', NPOINT,
      &          'Dimensioned number of sources', NPSRC,       
      &          'Do not match!'
-            CALL M3MESG ( MESG )
             WRITE( *,92000 ) ' '
 
             IF( NPOINT. GT. NPSRC ) NPOINT = NPSRC
@@ -1958,7 +1982,7 @@ C.......   Get file name; open output point sources file
 
 C.......   Write out the point source emissions values:
 
-        WRITE( *,92000 ) ' ', 'Writing out POINT output file...', ' '
+        CALL M3MESG( 'Writing out POINT output file...' )
 
         IF ( .NOT. WRITE3( ENAME, ALLVAR3, 0, 0,  IFIP ) ) THEN
             CALL M3EXIT( 'EMSPOINT', 0, 0, 
@@ -1969,12 +1993,12 @@ C.......   Write out the point source emissions values:
 
 C.......   Sort and write out the point source scc values:
 
-        CALL SORTI1( NSCC, IDXSCC, ISCCA )
+        CALL SORTI1( NSCC, IDXSCC, ISCC )
 
         LSCC = IMISS3
         DO 466 I = 1, NSCC
 
-            SCC = ISCCA( IDXSCC( I ) )
+            SCC = ISCC( IDXSCC( I ) )
 
             IF( SCC .NE. LSCC ) THEN
                 WRITE( ADEV, 93030 ) SCC
@@ -2004,13 +2028,13 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93010   FORMAT( I2.2, I3.3 )
-
 93020   FORMAT( I5.5 )
 
 93030   FORMAT( I8.8 )
 
 93040   FORMAT( I5, ',' ,I5, ',' ,I5 )
+
+C93041   FORMAT( I5, X, I5, X, I3, X, I8, X, I5.5, 3( X, I3 ) )
 
 93050   FORMAT( I5.5, ',', I8.8, ',', 2 (I6, ','), 
      &          A15 , ',', A12 , ',', A40 )
@@ -2019,17 +2043,12 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I7, :, 1X ) )
 
-94020   FORMAT( A, I7, X, A, I10, X, A, A, X, A, I4, X, A, I6 )
-
-94030   FORMAT( 'Emis set to zero for source ', 
-     &           I5, ':',I8, ':', A, ':', I3.3, ' at line ', I6 )
+94020   FORMAT( A, I7, X, A, I10, X, A, I4, X, A, I4, X, A, :, I6 )
 
 94040   FORMAT( A, I2.2 )
 
-94050   FORMAT( A, I7, 10( A, :, E10.3, :, 1X ) )
-
 94060   FORMAT( 10( A, :, E10.3, :, 1X ) )
 
-
+ 
         END
 
