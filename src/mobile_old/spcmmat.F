@@ -17,7 +17,7 @@ C       M3IO mobile-sources file from program GRDAMAT
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       Models-3 I/O
-C       CSVNAME, FIND1, FIND2, FIND3, GETEFILE, GETYN, INDEX1, 
+C       CSVNAME, FIND1, FIND2, GETEFILE, GETYN, INDEX1, 
 C       RDSPROF, TRIMLEN
 C
 C  REVISION  HISTORY:
@@ -40,7 +40,7 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         CSVNAME
-        INTEGER         FIND1, FIND2, FIND3, FIND4
+        INTEGER         FIND1, FIND2
         INTEGER         GETEFILE
         LOGICAL         GETYN
         INTEGER         INDEX1
@@ -51,7 +51,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
         
-        EXTERNAL        FIND1, FIND2, FIND3, FIND4, GETEFILE, 
+        EXTERNAL        FIND1, FIND2, GETEFILE, 
      &                  GETYN, INDEX1, PROMPTFFILE, PROMPTMFILE, 
      &                  RDSPROF, STR2INT, STR2REAL, TRIMLEN
 
@@ -805,7 +805,7 @@ C...........   Process volatile conversion factors if necessary
  
                     ELSE                  !  no state, road class match
 
-                        F = FIND2( RDT, NCNV3, RDCLV3 )
+                        F = FIND1( RDT, NCNV3, RDCLV3 )
 
                         IF ( F .GT. 0 ) THEN
  
