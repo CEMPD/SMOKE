@@ -5,12 +5,14 @@ C***********************************************************************
 C  program body starts at line 205
 C
 C  DESCRIPTION:
-C       Creates county-based 24-hour temperature profiles based on gridded
-C       meteorology data. Temperatures can be averaged across counties and
-C       different time periods. Tries to account for missing meteorology
-C       data as much as possible.
+C       Creates county-based 24-hour temperature and relative humidity 
+C       profiles based on gridded meteorology data. Temperatures and 
+C       humidity can be averaged across counties and different time periods. 
+C       Also outputs average daily barometric pressure values. Tries to 
+C       account for missing meteorology data as much as possible.
 C
-C  PRECONDITIONS REQUIRED: none
+C  PRECONDITIONS REQUIRED:
+C       Program Mbsetup has been run
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
@@ -48,9 +50,12 @@ C...........   This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC, CATLEN, NIACT, NSRC
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: MINTEMP, MAXTEMP, TASRC, TKHOUR,
+        USE MODMET, ONLY: MINTEMP, MAXTEMP, TASRC, QVSRC, PRESSRC,
+     &                    TKHOUR, RHHOUR, BPHOUR, 
      &                    DYCODES, WKCODES, MNCODES, EPCODES,
-     &                    TDYCNTY, TWKCNTY, TMNCNTY, TEPCNTY   
+     &                    TDYCNTY, TWKCNTY, TMNCNTY, TEPCNTY,
+     &                    RHDYCNTY, RHWKCNTY, RHMNCNTY, RHEPCNTY,
+     &                    BPDYCNTY, BPWKCNTY, BPMNCNTY, BPEPCNTY
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
@@ -94,6 +99,8 @@ C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Gridded meteorology data (dim: NGRID)
         REAL   , ALLOCATABLE :: TA( : )   !  one layer of temperature
+        REAL   , ALLOCATABLE :: QV( : )   !  water vapor mixing ratio
+        REAL   , ALLOCATABLE :: PRES( : ) !  pressure
 
 C...........   Ungridding Matrix
         INTEGER, ALLOCATABLE :: UMAT( : ) ! Contiguous ungridding matrix
@@ -197,9 +204,11 @@ C...........   Other local variables:
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
         
-        CHARACTER(LEN=512)     METFILE     ! tmp physical file name
-        CHARACTER(LEN=512)     PREVFILE    ! previous physical file name
+        CHARACTER(LEN=512)     METFILE     !  tmp physical file name
+        CHARACTER(LEN=512)     PREVFILE    !  previous physical file name
         CHARACTER(LEN=IOVLEN3) TVARNAME    !  temperature variable name
+        CHARACTER(LEN=IOVLEN3) PRESNAME    !  pressure variable name
+        CHARACTER(LEN=IOVLEN3) MIXNAME     !  mixing ratio name
         CHARACTER(LEN=200)     TEMPDIR     !  directory for output files
         CHARACTER(LEN=300)     MESG        !  message buffer
 
@@ -243,14 +252,21 @@ C.........  Get episode starting date and time and run length
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
                 
-C.........  Get the name of the activity to use for one run
+C.........  Get the name of the temperature variable
         MESG = 'Temperature variable name'
-        CALL ENVSTR( 'TVARNAME', MESG, 'TEMPG', TVARNAME, IOS )
+        CALL ENVSTR( 'TVARNAME', MESG, 'TA', TVARNAME, IOS )
 
-C.........  Set default name of meterology file, depending on the name of the
-C           temperature variable
-C       TNAME = 'MET_CRO_2D'
-C       IF( TVARNAME == 'TA' ) TNAME = 'MET_CRO_3D'
+C.........  Print warning if temperature variable is not from 3D file
+        IF( TVARNAME /= 'TA' ) THEN
+            MESG = 'WARNING: Selected temperature variable ' //
+     &             TRIM( TVARNAME ) // ' may be inconsistent with ' //
+     &             'data used for calculating relative humidity.'
+            CALL M3MSG2( MESG )
+        END IF
+
+C.........  Set default names for additional variables
+        PRESNAME = 'PRES'
+        MIXNAME = 'QV'
 
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
@@ -307,26 +323,22 @@ C           file, or else this program does not need to be run
         END IF
 
 C.........  Create note about time zone expected in meteorology file
-        WRITE( MESG, 94010 )
-     &     'NOTE: Time stamps of input meteorology file are assumed ' //
-     &     CRLF() // BLANK5 // '      to be in GMT'
+        WRITE( MESG, 94010 ) 'NOTE: Time stamps of input meteorology ' //
+     &                       'files are assumed to be in GMT.'
         CALL M3MSG2( MESG )
  
 C.........  Set inventory variables to read
-        NINVARR = 6
+        NINVARR = 3
         IVARNAMS( 1 ) = 'IFIP'
-        IVARNAMS( 2 ) = 'IRCLAS'
-        IVARNAMS( 3 ) = 'CSOURC'
-        IVARNAMS( 4 ) = 'CSCC'
-        IVARNAMS( 5 ) = 'CLINK'
-        IVARNAMS( 6 ) = 'TZONES'
+        IVARNAMS( 2 ) = 'CSOURC'
+        IVARNAMS( 3 ) = 'TZONES'
 
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Build unique lists of SCCs and country/state/county codes
 C           from the inventory arrays
-        CALL GENUSLST
+ccs        CALL GENUSLST
 
 C.........  Define the minimum and maximum time zones in the inventory
         TZMIN = MINVAL( TZONES )
@@ -459,15 +471,32 @@ C.............  Try to get description from file
                 CYCLE
             END IF
             
-C.............  Check that requested temperature variable is in file
+C.............  Check that requested variables are in the file
             J = INDEX1( TVARNAME, NVARS3D, VNAME3D )
             IF( J <= 0 ) THEN
             	EFLAG = .TRUE.
-                MESG = 'ERROR: Could not find ' // TVARNAME // 
-     &                 'in file ' // TRIM( METFILE )
+                MESG = 'ERROR: Could not find ' // TRIM( TVARNAME ) // 
+     &                 ' in file ' // TRIM( METFILE )
                 CALL M3MESG( MESG )
-                CYCLE
             END IF
+            
+            J = INDEX1( PRESNAME, NVARS3D, VNAME3D )
+            IF( J <= 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Could not find ' // TRIM( PRESNAME ) //
+     &                 ' in file ' // TRIM( METFILE )
+                CALL M3MESG( MESG )
+            END IF
+            
+            J = INDEX1( MIXNAME, NVARS3D, VNAME3D )
+            IF( J <= 0 ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Could not find ' // TRIM( MIXNAME ) //
+     &                 ' in file ' // TRIM( METFILE )
+                CALL M3MESG( MESG )
+            END IF
+
+            IF( EFLAG ) CYCLE
 
 C.............  Initialize (or check) reference grid with meteorology data
             CALL CHKGRID( METNAME, 'GRID', 0, GRID_ERR )
@@ -854,7 +883,9 @@ C.........  Make sure min and max fall within range allowed by MOBILE6
      &          'WARNING: Adjusting minimum temperature to ', 
      &          M6MINTEMP, ' degrees F.'
             CALL M3MSG2( MESG )
-        ELSEIF( MAXTEMP > M6MAXTEMP ) THEN
+        END IF
+            
+        IF( MAXTEMP > M6MAXTEMP ) THEN
             MAXTEMP = M6MAXTEMP
             WRITE( MESG,94070 ) 
      &          'WARNING: Adjusting maximum temperature to ',
@@ -900,16 +931,28 @@ C.........  The subgrid parameters will be set here, if there is a subgrid
 C.........  Allocate memory for other arrays in the program
         ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
+        
         ALLOCATE( TA( METNGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TA', PROGNAME )
+        ALLOCATE( QV( METNGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'QV', PROGNAME )
+        ALLOCATE( PRES( METNGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PRES', PROGNAME )
+        
         ALLOCATE( DAYBEGT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYBEGT', PROGNAME )
         ALLOCATE( DAYENDT( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYENDT', PROGNAME )
         ALLOCATE( LDAYSAV( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LDAYSAV', PROGNAME )
+        
         ALLOCATE( TASRC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TASRC', PROGNAME )
+        ALLOCATE( QVSRC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'QVSRC', PROGNAME )
+        ALLOCATE( PRESSRC( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PRESSRC', PROGNAME )
+        
         ALLOCATE( NDAYSRC( NSRC,24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NDAYSRC', PROGNAME )
 
@@ -922,24 +965,48 @@ C.........  Read ungridding matrix
         CALL RDUMAT( UNAME, NSRC, NMATX, NMATX, 
      &               UMAT( 1 ), UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 ) )
 
-C.........  Allocate memory for storing temperature profiles
+C.........  Allocate memory for storing meteorology profiles
         ALLOCATE( TKHOUR( NSRC, 24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
+        ALLOCATE( RHHOUR( NSRC, 24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RHHOUR', PROGNAME )
+        ALLOCATE( BPHOUR( NSRC, 24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BPHOUR', PROGNAME )
+        
         ALLOCATE( TDYCNTY( NDYCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TDYCNTY', PROGNAME )
+        ALLOCATE( RHDYCNTY( NDYCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RHDYCNTY', PROGNAME )
+        ALLOCATE( BPDYCNTY( NDYCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BPDYCNTY', PROGNAME )
+        
         ALLOCATE( TWKCNTY( NWKCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TWKCNTY', PROGNAME )
+        ALLOCATE( RHWKCNTY( NWKCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RHWKCNTY', PROGNAME )
+        ALLOCATE( BPWKCNTY( NWKCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BPWKCNTY', PROGNAME )
+        
         ALLOCATE( TMNCNTY( NMNCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TMNCNTY', PROGNAME )
+        ALLOCATE( RHMNCNTY( NMNCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RHMNCNTY', PROGNAME )
+        ALLOCATE( BPMNCNTY( NMNCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BPMNCNTY', PROGNAME )
+        
         ALLOCATE( TEPCNTY( NEPCNTY ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TEPCNTY', PROGNAME )
+        ALLOCATE( RHEPCNTY( NEPCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RHEPCNTY', PROGNAME )
+        ALLOCATE( BPEPCNTY( NEPCNTY ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BPEPCNTY', PROGNAME )
 
 C.........  Get output directory information from the environment
-        MESG = 'Path where hourly temperature files will be written'
+        MESG = 'Path where hourly meteorology files will be written'
         CALL ENVSTR( 'SMK_METPATH', MESG, '.', TEMPDIR, IOS )
 
         IF( IOS /= 0 ) THEN
-            MESG = 'WARNING: Temperature files being placed in ' //
+            MESG = 'WARNING: Meteorology files being placed in ' //
      &             'executable directory because ' // CRLF() //
      &             BLANK10 // 'environment variable SMK_METPATH '//
      &             'is not set properly'
@@ -971,14 +1038,13 @@ C.........  Open output files
      &                      NEPCNTY, TEMPDIR, PNAME )
         END IF
 
-C.........  Process temperature information...
-
-        L = LEN_TRIM( TVARNAME )
-        MESG = 'Processing temperature data using variable "' //
-     &         TVARNAME( 1:L ) // '" ...'
+C.........  Process meteorology data...
+        MESG = 'Processing meteorology data using variables ' //
+     &         TRIM( TVARNAME ) // ', ' // TRIM( MIXNAME ) // 
+     &         ', ' // TRIM( PRESNAME ) // '...'
         CALL M3MSG2( MESG )
 
-C.........  Loop through days/hours of temperature files
+C.........  Loop through days/hours of meteorology files
         DDATE = SDATE
         OTIME = 0
         WDATE = SDATE
@@ -1026,8 +1092,8 @@ C.................  Close previous file if needed
                 IF( METFILE .NE. PREVFILE ) THEN
                     IF( FILEOPEN ) THEN
                         IF( .NOT. CLOSE3( METNAME ) ) THEN
-                            MESG = 'Could not close hourly ' //
-     &                             'emissions file ' // TRIM( PREVFILE )
+                            MESG = 'Could not close meteorology ' //
+     &                             'file ' // TRIM( PREVFILE )
                             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                         ELSE
                         	FILEOPEN = .FALSE.
@@ -1071,24 +1137,40 @@ C.................  Reset read date when using alternate data
                     RDATE = JDATE
                 END IF
             
-C.................  Read current temperature file
+C.................  Read current meteorology file
                 IF ( .NOT. READ3( METNAME, TVARNAME, 1, 
      &                            RDATE, JTIME, TA ) ) THEN
-                    L = LEN_TRIM( TVARNAME )
-                    MESG = 'Could not read ' // TVARNAME( 1:L ) //
+                    MESG = 'Could not read ' // TRIM( TVARNAME ) //
      &                     ' from ' // TRIM( METFILE ) 
                     CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
-
+                END IF
+                
+                IF ( .NOT. READ3( METNAME, MIXNAME, 1,
+     &                            RDATE, JTIME, QV ) ) THEN
+                    MESG = 'Could not read ' // TRIM( MIXNAME ) //
+     &                     ' from ' // TRIM( METFILE )
+                    CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
+                END IF
+                
+                IF ( .NOT. READ3( METNAME, PRESNAME, 1,
+     &                            RDATE, JTIME, PRES ) ) THEN
+                    MESG = 'Could not read ' // TRIM( PRESNAME ) //
+     &                     ' from ' // TRIM( METFILE )
+                    CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
                 END IF
 
 C.................  Apply ungridding matrix 
                 CALL APPLUMAT( NSRC, NMATX, TA, UMAT(1), UMAT( NSRC+1 ),
      &                         UMAT( NSRC+NMATX+1 ), TASRC )
+                CALL APPLUMAT( NSRC, NMATX, QV, UMAT(1), UMAT( NSRC+1 ),
+     &                         UMAT( NSRC+NMATX+1 ), QVSRC )
+                CALL APPLUMAT( NSRC, NMATX, PRES, UMAT(1), UMAT( NSRC+1 ),
+     &                         UMAT( NSRC+NMATX+1 ), PRESSRC )
 
-C.................  Create hourly temperature array by source
-                CALL HOURTEMP( NSRC, JTIME, DAYBEGT, TASRC, COUNTYSRC, 
-     &                         MINTEMP, MAXTEMP, ALT_DATA, NDAYSRC,
-     &                         TKHOUR )
+C.................  Create hourly meteorology arrays by source
+                CALL HOURTEMP( NSRC, JTIME, DAYBEGT, COUNTYSRC, 
+     &                         MINTEMP, MAXTEMP, ALT_DATA, NDAYSRC )
+     
             END IF  ! check for using alternate data or day averaging
 
 C.............  Make sure we've waited long enough to catch all time zones
@@ -1103,8 +1185,9 @@ C.................  Process daily averages
 
 C.....................  Average temperatures across county group                
                     CALL AVERTEMP( NSRC, NDYCNTY, DYCODES, 
-     &                             COUNTYSRC( :,1 ), ARRAYPOS, TKHOUR, 
-     &                             TDYCNTY, NDAYSRC )
+     &                             COUNTYSRC( :,1 ), ARRAYPOS, 
+     &                             TDYCNTY, RHDYCNTY, BPDYCNTY, 
+     &                             NDAYSRC )
 
 C.....................  Open new file if necessary (1 day per output file)
                     IF( .NOT. DAYOPEN ) THEN
@@ -1116,7 +1199,7 @@ C.....................  Open new file if necessary (1 day per output file)
 
 C.....................  Write time step to file
                     CALL WRSHOUR( DNAME, DDATE, OTIME, NDYCNTY, 
-     &                            DYCODES, TDYCNTY )
+     &                            DYCODES, TDYCNTY, RHDYCNTY, BPDYCNTY )
      
                     IF( OTIME == 230000 ) THEN
 
@@ -1136,8 +1219,9 @@ C.............  If current output day is Saturday, process weekly averages
 
 C.....................  Average temperatures across county group 
                     CALL AVERTEMP( NSRC, NWKCNTY, WKCODES, 
-     &                             COUNTYSRC( :,1 ), ARRAYPOS, TKHOUR,
-     &                             TWKCNTY, NDAYSRC )
+     &                             COUNTYSRC( :,1 ), ARRAYPOS,
+     &                             TWKCNTY, RHWKCNTY, BPWKCNTY, 
+     &                             NDAYSRC )
 
 C.....................  Open new file if necessary (one week per output file)
                     IF( .NOT. WEEKOPEN ) THEN
@@ -1149,7 +1233,7 @@ C.....................  Open new file if necessary (one week per output file)
 
 C.....................  Write time step to file
                     CALL WRSHOUR( WNAME, WDATE, OTIME, NWKCNTY, 
-     &                            WKCODES, TWKCNTY )
+     &                            WKCODES, TWKCNTY, RHWKCNTY, BPWKCNTY )
                     
                     IF( OTIME == 230000 ) THEN
                     	
@@ -1177,8 +1261,9 @@ C.................  If last day of month, process monthly averages
 
 C.....................  Average temperatures across county group 
                     CALL AVERTEMP( NSRC, NMNCNTY, MNCODES, 
-     &                             COUNTYSRC( :,1 ), ARRAYPOS, TKHOUR,
-     &                             TMNCNTY, NDAYSRC )
+     &                             COUNTYSRC( :,1 ), ARRAYPOS,
+     &                             TMNCNTY, RHMNCNTY, BPMNCNTY,
+     &                             NDAYSRC )
 
 C.....................  Open new file if necessary (one month per output file)
                     IF( .NOT. MONOPEN ) THEN                        
@@ -1190,7 +1275,7 @@ C.....................  Open new file if necessary (one month per output file)
 
 C.....................  Write time step to file                     
                     CALL WRSHOUR( MNAME, MDATE, OTIME, NMNCNTY, 
-     &                            MNCODES, TMNCNTY )               
+     &                            MNCODES, TMNCNTY, RHMNCNTY, BPMNCNTY )               
                     
                     IF( OTIME == 230000 ) THEN
                     	
@@ -1227,11 +1312,13 @@ C                   not Saturday; otherwise, this has already been handled above
      
                     DO K = 1, 24                    
                         CALL AVERTEMP( NSRC, NWKCNTY, WKCODES, 
-     &                                 COUNTYSRC( :,1 ), K, TKHOUR,
-     &                                 TWKCNTY, NDAYSRC )
+     &                                 COUNTYSRC( :,1 ), K,
+     &                                 TWKCNTY, RHWKCNTY, BPWKCNTY, 
+     &                                 NDAYSRC )
                        
                         CALL WRSHOUR( WNAME, WDATE, ( K-1 )*10000, 
-     &                                NWKCNTY, WKCODES, TWKCNTY )
+     &                                NWKCNTY, WKCODES, TWKCNTY, 
+     &                                RHWKCNTY, BPWKCNTY )
                     END DO
                 END IF
 
@@ -1247,11 +1334,13 @@ C                   not the last day of the month
                 	
                     DO K = 1, 24
                         CALL AVERTEMP( NSRC, NMNCNTY, MNCODES, 
-     &                                 COUNTYSRC( :,1 ), K, TKHOUR,
-     &                                 TMNCNTY, NDAYSRC )
+     &                                 COUNTYSRC( :,1 ), K,
+     &                                 TMNCNTY, RHMNCNTY, BPMNCNTY, 
+     &                                 NDAYSRC )
                         
                         CALL WRSHOUR( MNAME, MDATE, ( K-1 )*10000, 
-     &                                NMNCNTY, MNCODES, TMNCNTY )  
+     &                                NMNCNTY, MNCODES, TMNCNTY, 
+     &                                RHMNCNTY, BPMNCNTY )  
                     END DO
                 END IF
 
@@ -1259,11 +1348,13 @@ C.................  Output episode averaged temperatures
                 IF( EPIAVER ) THEN
                     DO K = 1, 24
                         CALL AVERTEMP( NSRC, NEPCNTY, EPCODES, 
-     &                                 COUNTYSRC( :,1 ), K, TKHOUR,
-     &                                 TEPCNTY, NDAYSRC )
+     &                                 COUNTYSRC( :,1 ), K,
+     &                                 TEPCNTY, RHEPCNTY, BPEPCNTY, 
+     &                                 NDAYSRC )
      
                         CALL WRSHOUR( PNAME, SDATE, ( K-1 )*10000, 
-     &                                NEPCNTY, EPCODES, TEPCNTY )
+     &                                NEPCNTY, EPCODES, TEPCNTY,
+     &                                RHEPCNTY, BPEPCNTY )
                     END DO    
                 END IF
 
