@@ -48,7 +48,7 @@ if ( $?RUN_CNTLMAT ) then
 
              set permis = ( `echo $line | grep drwxrw` )
              if( $status != 0 ) then
-        	 chmod ug+w $dir
+        	 chmod ug+w $SMK_TMPPATH
              endif
 
 	 else
