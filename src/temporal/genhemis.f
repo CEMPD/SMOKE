@@ -311,10 +311,10 @@ C.............  Write message for day of week and date
 
         END IF   ! End new date check
 
-C.............  Initialize day-specific emissions array with average emissions
-C               Only need to do this for a new day because the sources with 
-C               day-specific data might change for each day.
-            EMACV = EMAC  ! array
+C.........  Initialize day-specific emissions array with average emissions
+C           Only need to do this for a new day because the sources with 
+C           day-specific data might change for each day.
+        EMACV = EMAC  ! array
 
 C.............  If day-specific emissions, prepare day-corrections.
 C.............  Read day-specific data for each hour, because different time
