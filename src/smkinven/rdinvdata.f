@@ -794,10 +794,14 @@ C.............  Check that point source information is correct
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
      &          CURFMT == TOXNPFMT ) THEN
                 IF( .NOT. CHKINT( SIC ) ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: SIC code is non-' //
-     &                     'integer at line', IREC
-                    CALL M3MESG( MESG )
+                    IF( NWARN < MXWARN ) THEN
+                        WRITE( MESG,94010 ) 'WARNING: SIC code is ' //
+     &                     'non-integer at line', IREC, '. Default ' //
+     &                     '0000 will be used.'
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
+                    END IF
+                    SIC = '0000'
                 ELSE IF( SIC == ' ' ) THEN
                     IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: Missing SIC ' //
