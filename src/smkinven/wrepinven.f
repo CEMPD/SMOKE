@@ -77,11 +77,16 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local variables
 
 	CHARACTER*1	KEEP               ! determines if CAS number is kept
+	CHARACTER*26    TSCCPOLL           ! temp. SCC/pollutant combination
         CHARACTER(LEN=DDSLEN3)	DESC       ! temp. SCC description
         CHARACTER(LEN=SCCLEN3)  SCC        ! temp. SCC code
         CHARACTER(LEN=IOVLEN3)  DNAME      ! temp. data name
         CHARACTER(LEN=SDSLEN3)	SCCDC      ! temp. SCC description
         CHARACTER(LEN=SCCLEN3)  PSCC       ! previous SCC code
+	CHARACTER(LEN=SCCLEN3)  TSCC       ! temp. SCC code
+	CHARACTER(LEN=IOVLEN3)  TDNAME     ! temp. data name
+
+	CHARACTER*26, ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
         
         INTEGER		I, J, K, L, S, IOS ! counters and indicies
         INTEGER		STATE              ! temp. state code
@@ -254,8 +259,12 @@ C............  Write out header
         
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
 
+	  ALLOCATE( SCCPOLL( NA2PSCC * NIPOL ), STAT=IOS )
+	  CALL CHECKMEM( IOS, 'SCCPOLL', PROGNAME )
+	  SCCPOLL = ''
+
           DO I = 1, NCONDSRC
-        
+
             STATE = REPAR2PT( I )%STATE
             SCC   = REPAR2PT( I )%SCC
             POLL  = REPAR2PT( I )%POLL
@@ -263,6 +272,14 @@ C............  Write out header
             NFIPS = REPAR2PT( I )%NFIPS
             OEMIS = REPAR2PT( I )%ORIGEMIS
             SEMIS = REPAR2PT( I )%SUMEMIS
+
+	    TSCCPOLL = SCC//DNAME
+	    K = INDEX1( TSCCPOLL, NA2PSCC * NIPOL, SCCPOLL )
+	    IF( K .LE. 0 ) THEN
+	      SCCPOLL( I ) = TSCCPOLL
+	    ELSE
+	      CYCLE
+            END IF
            
 C............  Find SCC in master list of SCC codes
             K = INDEX1( SCC, NINVSCC, INVSCC )
@@ -282,8 +299,11 @@ C............  Find SCC in master list of SCC codes
               IF( REPAR2PT( J )%STATE .EQ. STATE ) CYCLE
         
 C............  Sum emissions and count up FIPS codes by SCC      
-              IF( REPAR2PT( J )%SCC .EQ. SCC .AND.
-     &            REPAR2PT( J )%POLL .EQ. POLL ) THEN
+	      TSCC = REPAR2PT( J )%SCC
+	      TDNAME = INVDNAM( REPAR2PT( J )%POLL )
+	      TSCCPOLL = TSCC//TDNAME
+	      K = INDEX1( TSCCPOLL, NA2PSCC * NIPOL, SCCPOLL )
+	      IF( K .NE. 0 ) THEN
                 NFIPS = NFIPS + REPAR2PT( J )%NFIPS
                 OEMIS = OEMIS + REPAR2PT( J )%ORIGEMIS
                 SEMIS = SEMIS + REPAR2PT( J )%SUMEMIS
