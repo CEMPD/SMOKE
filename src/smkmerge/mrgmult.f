@@ -45,13 +45,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: ELEVFLTR
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTY
 
         IMPLICIT NONE
 

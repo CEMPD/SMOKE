@@ -39,7 +39,10 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: BIOGFAC, BIOTFAC, GRDFAC, TOTFAC,
+     &                      BIOUNIT, GRDUNIT, TOTUNIT, 
+     &                      SPCUNIT, TOUNITS, EMIDX,
+     &                      SFLAG, TFLAG, BFLAG, NIPPA, NMSPC, NUNITS
 
         IMPLICIT NONE
 
@@ -58,7 +61,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Other local variables
 
         INTEGER         IOS      ! tmp I/O status
-        INTEGER         L, V        ! counter
+        INTEGER         J, L, V        ! counter
 
         REAL            FAC1, FAC2
 
@@ -87,16 +90,26 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine MRGUNITS
 
-C.........  Allocate memory for units conversion factors and units.  Assume
-C           that units and conversion factors are the same for all species of
-C           a single pollutant.
-        ALLOCATE( GRDFAC( NIPPA ), STAT=IOS )
+C.........  Allocate memory for units conversion factors and units.
+
+C.........  If using speciation, allocate arrays to number of species;
+C           otherwise, use total number of activities and pollutants.
+C           This approach assumes that each species has the same units
+C           regardless of which pollutant it comes from, i.e.
+C           ALD2 from VOC must have the same units as ALD2 from ACETALD
+        IF( SFLAG ) THEN
+            NUNITS = NMSPC
+        ELSE
+            NUNITS = NIPPA
+        END IF
+        
+        ALLOCATE( GRDFAC( NUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRDFAC', PROGNAME )
-        ALLOCATE( TOTFAC( NIPPA ), STAT=IOS )
+        ALLOCATE( TOTFAC( NUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TOTFAC', PROGNAME )
-        ALLOCATE( GRDUNIT( NIPPA ), STAT=IOS )
+        ALLOCATE( GRDUNIT( NUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRDUNIT', PROGNAME )
-        ALLOCATE( TOTUNIT( NIPPA ), STAT=IOS )
+        ALLOCATE( TOTUNIT( NUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TOTUNIT', PROGNAME )
 
 C.........  Initialize all
@@ -118,16 +131,23 @@ C           country/state/county total data
 C.........  Loop through pollutants, and create output units accordingly
 C.........  For speciation, use the first unit for the speciation units from
 C           a given pollutants speciation factors
-        DO V = 1, NIPPA
+        DO V = 1, NUNITS
 
 C.............  Initialize the output units for speciation 
             IF( SFLAG ) THEN
-
+                
                 CALL UNITMATCH( SPCUNIT( V ) )
-                CALL UNITMATCH( TOUNITS( V ) )
+                
+C.................  Get pollutant position for this species
+C                   NOTE: If multiple pollutants contribute to this species, 
+C                         we will only be using the last one in master list; 
+C                         this shouldn't be a problem unless the original 
+C                         pollutants have different units
+                J = EMIDX( V )
+                CALL UNITMATCH( TOUNITS( J ) )
 
-        	GRDUNIT_I = MULTUNIT( SPCUNIT( V ), TOUNITS( V ) )
-        	IF( TFLAG ) THEN
+                GRDUNIT_I = MULTUNIT( SPCUNIT( V ), TOUNITS( J ) )
+                IF( TFLAG ) THEN
                     TOTUNIT_I = MULTUNIT( GRDUNIT_I, 'hr/day' )
                 ELSE 
                     TOTUNIT_I = GRDUNIT_I
@@ -138,15 +158,16 @@ C           have a variety of units depending on temporalized emissions or
 C           inventory emissions and activities.  Make sure that if the temporal
 C           resolution is per hour, that the TOTUNIT is still set as per day.
             ELSE
-                CALL UNITMATCH( TOUNITS( V ) )
-        	GRDUNIT_I = TOUNITS( V )
+                J = V
+                CALL UNITMATCH( TOUNITS( J ) )
+                GRDUNIT_I = TOUNITS( J )
 
-        	L = INDEX( TOUNITS( V ), 'hr' )
-        	IF( L .GT. 0 ) THEN
-                    TOTUNIT_I = MULTUNIT( TOUNITS( V ), 'hr/day' )
-        	ELSE
-                    TOTUNIT_I = TOUNITS( V )
-        	END IF
+                L = INDEX( TOUNITS( J ), 'hr' )
+                IF( L .GT. 0 ) THEN
+                    TOTUNIT_I = MULTUNIT( TOUNITS( J ), 'hr/day' )
+                ELSE
+                    TOTUNIT_I = TOUNITS( J )
+                END IF
 
             END IF
 
@@ -177,11 +198,11 @@ C.............  Get factor for the numerators for the gridded outputs...
             IF( SFLAG ) THEN 
                 FAC1 = UNITFAC( SPCUNIT( V ), GRDBUF, .TRUE. )  ! speciation
             ELSE
-                FAC1 = UNITFAC( TOUNITS( V ), GRDBUF, .TRUE. )
+                FAC1 = UNITFAC( TOUNITS( J ), GRDBUF, .TRUE. )
             END IF
 
 C.............  Get factor for the denominators for the gridded outputs
-            FAC2 = UNITFAC( TOUNITS( V ), GRDBUF, .FALSE. )
+            FAC2 = UNITFAC( TOUNITS( J ), GRDBUF, .FALSE. )
 
 C.............  In case E.V. setting was bogus rebuild output units based
 C               on which factors were valid
@@ -195,7 +216,7 @@ C.............  Get conversion factor for the numerators for totals
             IF( SFLAG ) THEN 
                 FAC1 = UNITFAC( SPCUNIT( V ), TOTBUF, .TRUE. )  ! speciation
             ELSE
-                FAC1 = UNITFAC( TOUNITS( V ), TOTBUF, .TRUE. )
+                FAC1 = UNITFAC( TOUNITS( J ), TOTBUF, .TRUE. )
             END IF
 
 C.............  Get factors for the denominators for the totals.  Note that

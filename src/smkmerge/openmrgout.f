@@ -40,22 +40,36 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          SDATE, STIME, TSTEP, BYEAR, PYEAR, LAVEDAY, LGRDOUT,
+     &          AFLAG, ANIPOL, ANMSPC, AEINAM, AEMNAM, AONAME,
+     &          BFLAG, BNIPOL, BNMSPC, BEINAM, BEMNAM, BONAME,
+     &          MFLAG, MNMSPC, NMSPC, MNIPPA, MEANAM, EMNAM, MEMNAM,
+     &          MONAME, EMLAYS,
+     &          PFLAG, PNIPOL, PNMSPC, PEINAM, PEMNAM, PONAME,
+     &          XFLAG, NIPPA, EANAM, TONAME, PINGFLAG, PINGNAME,
+     &          ELEVFLAG, EVDEV, PELVNAME, LREPSTA, LREPCNY, 
+     &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
+     &          ARDEV, BRDEV, MRDEV, PRDEV, TRDEV,
+     &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NGROUP
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, XORIG, YORIG, XCELL, YCELL,
+     &                     GDTYP, VGTYP, VGTOP, VGLVS
+
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
@@ -64,12 +78,11 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         JUNIT
         CHARACTER*16    MULTUNIT
         INTEGER         PROMPTFFILE  
-        CHARACTER*16    PROMPTMFILE  
         LOGICAL         SETENVVAR
         CHARACTER*16    VERCHAR
 
         EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
-     &            PROMPTMFILE, SETENVVAR, VERHCAR
+     &            SETENVVAR, VERHCAR
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
@@ -141,9 +154,9 @@ C.........  Set up header for I/O API output files
         IF( PYEAR .NE. BYEAR ) 
      &      WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
         
-C.........  Set ozone-season description buffer
+C.........  Set average day description buffer
         DESCBUF = ' '
-        IF( LO3SEAS ) DESCBUF = 'Ozone-season value, '
+        IF( LAVEDAY ) DESCBUF = 'Average day value, '
         LD = MAX( LEN_TRIM( DESCBUF ), 1 )
 
 C.........  Set up and open I/O API output file
@@ -170,10 +183,19 @@ C.................  Open by logical name or physical name
                 FILEDESC = 'BIOGENIC GRIDDED OUTPUT file'
                 CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',BONAME,I ) 
 
-           END IF 
+            END IF 
 
             IF( MFLAG ) THEN
-                CALL SETUP_VARIABLES( MNIPPA, MNMSPC, MEANAM, MEMNAM )
+
+ccs...............  Check if the number of mobile species exceeds the
+ccs                 number of total species (can happen if there are 
+ccs                 more species in the speciation matrix than desired
+ccs                 in the output)
+                IF( MNMSPC > NMSPC ) THEN
+                    CALL SETUP_VARIABLES( MNIPPA, NMSPC, MEANAM, EMNAM )
+                ELSE
+                    CALL SETUP_VARIABLES( MNIPPA, MNMSPC,MEANAM, MEMNAM)
+                ENDIF
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Mobile source emissions data'
 
@@ -239,7 +261,7 @@ C.............  Override gridded file settings
 
             FDESC3D = ' '   ! array
             
-            PINGNAME = PROMPTMFILE( 
+            PINGNAME = PROMPTSET( 
      &                     'Enter name for PING EMISSIONS OUTPUT file',
      &                     FSUNKN3, PINGNAME, PROGNAME )
         END IF
@@ -337,7 +359,7 @@ C               if a write error occurred
 
 C.............  MODULES for public variables
 C.............  This module contains the major data structure and control flags
-            USE MODMERGE
+            USE MODMERGE, ONLY: SFLAG, NIPOL, EINAM
 
 C.............  Internal subprogram arguments
             INTEGER     , INTENT (IN) :: NIPPA_L
@@ -348,6 +370,8 @@ C.............  Internal subprogram arguments
 C.............  Local subprogram varibles
             INTEGER     I, J, K, LJ, M, V
 
+            INTEGER     IOS    ! allocate status
+
             CHARACTER(LEN=IOVLEN3) CBUF
 
 C------------------------------------------------------------------------
@@ -356,58 +380,85 @@ C.............  Set constants number and values for variables
 C.............  Do this regardless of whether we have outputs or not
 C.............  For speciation...
             IF( SFLAG ) THEN
-        	NVARS3D = NMSPC_L
+                NVARSET = NMSPC_L
 
-        	K = 0
-        	LJ = -1
+                IF( ALLOCATED( VTYPESET ) )
+     &              DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
+                IF( ALLOCATED( VARS_PER_FILE ) ) 
+     &              DEALLOCATE( VARS_PER_FILE )
+                ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+                ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+                ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+                ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+                K = 0
+                LJ = -1
 C.................  Loop through global species index
-        	DO N = 1, NGRP
+                DO N = 1, NGRP
                     DO V = 1, VGRPCNT( N )
 
 C.........................  Access global indices
-                	I = SIINDEX( V,N )
-                	J = SPINDEX( V,N )
-                	IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
+                        I = SIINDEX( V,N )
+                        IF( I .EQ. 0 ) CYCLE     ! Skip unused pollutants
+                        J = SPINDEX( V,N )
+                        IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
 
 C.........................  Make sure current species is in local array
                         CBUF = EMNAM( J )
                         M = INDEX1( CBUF, NMSPC_L, EMNAM_L )
                         IF( M .LE. 0 ) CYCLE
 
-                	DESCBUF= DESCBUF(1:LD)//' Model species '// CBUF
+                        DESCBUF= DESCBUF(1:LD)//' Model species '// CBUF
 
-                	K = K + 1
-                	VNAME3D( K ) = CBUF
-                	UNITS3D( K ) = GRDUNIT( I )
-                	VDESC3D( K ) = ADJUSTL( DESCBUF )
-                	VTYPE3D( K ) = M3REAL
+                        K = K + 1
+                        VNAMESET( K ) = CBUF
+                        VUNITSET( K ) = GRDUNIT( J )
+                        VDESCSET( K ) = ADJUSTL( DESCBUF )
+                        VTYPESET( K ) = M3REAL
 
-                	LJ = J
+                        LJ = J
 
                     END DO
-        	END DO
+                END DO
 
 C.............  For no speciation...
             ELSE
 
-        	NVARS3D = NIPPA_L
+                NVARSET = NIPPA_L
 
-        	K = 0
+                IF( ALLOCATED( VTYPESET ) )
+     &              DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
+                IF( ALLOCATED( VARS_PER_FILE ) ) 
+     &              DEALLOCATE( VARS_PER_FILE )
+                ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
+                ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
+                ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
+                ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+                K = 0
 C.................  Loop through global list
-        	DO V = 1, NIPPA
+                DO V = 1, NIPPA
 
 C.....................  Determine if variable is an emission type, pollutant,
 C                       or activity, and set variable description accordingly
                     I = INDEX1( EANAM( V ), NIPOL, EINAM )
                     J = INDEX ( EANAM( V ), ETJOIN )
                     IF( J .GT. 0 ) THEN
-                	DESCBUF = DESCBUF(1:LD) // 
+                        DESCBUF = DESCBUF(1:LD) // 
      &                           ' Emission type ' // EANAM( V )
                     ELSE IF( I .GT. 0 ) THEN
-                	DESCBUF = DESCBUF(1:LD) // 
+                        DESCBUF = DESCBUF(1:LD) // 
      &                            ' Pollutant ' // EANAM( V )
                     ELSE
-                	DESCBUF = DESCBUF(1:LD) // 
+                        DESCBUF = DESCBUF(1:LD) // 
      &                            ' Activity ' // EANAM( V )
                     END IF
 
@@ -419,12 +470,12 @@ C.....................  Make sure current data variable is in local array
                     K = K + 1
 
 C.....................  Define variable information
-                    VNAME3D( K ) = EANAM  ( V )
-                    UNITS3D( K ) = GRDUNIT( V )
-                    VDESC3D( K ) = ADJUSTL( DESCBUF )
-                    VTYPE3D( K ) = M3REAL
+                    VNAMESET( K ) = EANAM  ( V )
+                    VUNITSET( K ) = GRDUNIT( V )
+                    VDESCSET( K ) = ADJUSTL( DESCBUF )
+                    VTYPESET( K ) = M3REAL
 
-        	END DO
+                END DO
 
             END IF
 
@@ -488,12 +539,12 @@ C              and set environment variable
             END IF
 
             IF( .NOT. ENVFLAG ) THEN
-            	
+                
 C.............  Logical name is defined, open file.
                 SELECT CASE( FTYPE )
                 CASE( 'NETCDF' )
-                    LNAME = PROMPTMFILE( 'Enter name for '// FILEDESC,
-     &                                    FSUNKN3, LNAME, PROGNAME )
+                    LNAME = PROMPTSET( 'Enter name for '// FILEDESC,
+     &                                  FSUNKN3, LNAME, PROGNAME    )
                 CASE( 'ASCII' )
                     FDEV  = PROMPTFFILE(
      &                      'Enter name for  '// FILEDESC,
@@ -502,9 +553,9 @@ C.............  Logical name is defined, open file.
                 END SELECT
 
             ELSE
-            	
-            	EFLAG = .TRUE.
-            	
+                
+                EFLAG = .TRUE.
+                
             END IF
 
             RETURN

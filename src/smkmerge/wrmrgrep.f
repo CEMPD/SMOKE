@@ -40,13 +40,20 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          SDATE, STIME, VGRPCNT, NIPPA, NMSPC, SFLAG, AFLAG,
+     &          ANMSPC, AEMNAM, BFLAG, BNMSPC, BEMNAM, MFLAG, MNMSPC,
+     &          MEMNAM, PFLAG, PNMSPC, PEMNAM, ANIPOL, AEINAM, MNIPPA,
+     &          MEANAM, PNIPOL, PEINAM, EDATE, ETIME, LREPSTA, AEBCNY,
+     &          AEBSTA, ARDEV, TEBSTA, AUFLAG, ARFLAG, LREPCTL, AECCNY,
+     &          AECSTA, TECSTA, BEBCNY, BEBSTA, BRDEV, MEBCNY, MEBSTA,
+     &          MRDEV, MUFLAG, MRFLAG, MECCNY, MECSTA, PEBCNY, PEBSTA,
+     &          PRDEV, PUFLAG, PRFLAG, PECCNY, PECSTA, XFLAG, TRDEV, 
+     &          TUFLAG, TRFLAG, TECCNY, LREPCNY, TEBCNY, TSTEP,
+     &          LAVEDAY, EMNAM, EANAM, TOTUNIT, SIINDEX, SPINDEX
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
-
-C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD
 
         IMPLICIT NONE
 
@@ -239,8 +246,13 @@ C                   so that they will be in the same order as the global lists
                     LUPDATE( J ) = .FALSE.
 
 C.....................  Set names and units for totals output
-                    L = LEN_TRIM( TOTUNIT( I ) )
-                    CBUF = '[' // TOTUNIT( I )( 1:L ) // ']'
+                    IF( SFLAG ) THEN
+                        L = LEN_TRIM( TOTUNIT( J ) )
+                        CBUF = '[' // TOTUNIT( J )( 1:L ) // ']'
+                    ELSE
+                        L = LEN_TRIM( TOTUNIT( I ) )
+                        CBUF = '[' // TOTUNIT( I )( 1:L ) // ']'
+                    END IF
 
                     TCNT = TCNT + 1
                     NAMES( TCNT ) = SBUF
@@ -312,7 +324,9 @@ C.............  Area sources
                 CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AEBSTA)
 
 C.....................  Update state totals
-                CALL TOT_UPDATE( NS, ACNT, ANAMES, AEBSTA, TEBSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, ACNT, ANAMES, AEBSTA, TEBSTA)
+                END IF
 
             END IF
 
@@ -323,7 +337,9 @@ C.............  Controlled area sources
                 CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AECSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, ACNT, ANAMES, AECSTA, TECSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, ACNT, ANAMES, AECSTA, TECSTA)
+                END IF
 
             END IF
 
@@ -335,7 +351,9 @@ C.............  Biogenic sources (speciated by definition)
                 CALL WRITE_STA( BRDEV, NS, BCNT, BNAMES, BUNITS, BEBSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, BCNT, BNAMES, BEBSTA, TEBSTA )
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, BCNT, BNAMES, BEBSTA, TEBSTA )
+                END IF
 
             END IF
 
@@ -347,7 +365,9 @@ C.............  Mobile sources
                 CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MEBSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, MCNT, MNAMES, MEBSTA, TEBSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, MCNT, MNAMES, MEBSTA, TEBSTA)
+                END IF
 
             END IF
 
@@ -358,7 +378,9 @@ C.............  Controlled mobile sources
                 CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MECSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, MCNT, MNAMES, MECSTA, TECSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, MCNT, MNAMES, MECSTA, TECSTA)
+                END IF
 
             END IF
 
@@ -370,7 +392,9 @@ C.............  Point sources
                 CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PEBSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, PCNT, PNAMES, PEBSTA, TEBSTA )
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, PCNT, PNAMES, PEBSTA, TEBSTA )
+                END IF
 
             END IF
 
@@ -381,7 +405,9 @@ C.............  Controlled point sources
                 CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PECSTA)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NS, PCNT, PNAMES, PECSTA, TECSTA)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, PCNT, PNAMES, PECSTA, TECSTA)
+                END IF
 
             END IF
 
@@ -412,7 +438,9 @@ C.............  Area sources
                 CALL WRITE_CNY( ARDEV, NC, ACNT, ANAMES, AUNITS, AEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, ACNT, ANAMES, AEBCNY, TEBCNY)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, ACNT, ANAMES, AEBCNY, TEBCNY)
+                END IF
             END IF
 
 C.............  Biogenc sources (speciated by definition)
@@ -422,7 +450,9 @@ C.............  Biogenc sources (speciated by definition)
                 CALL WRITE_CNY( BRDEV, NC, BCNT, BNAMES, BUNITS, BEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, BCNT, BNAMES, BEBCNY, TEBCNY )
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, BCNT, BNAMES, BEBCNY, TEBCNY )
+                END IF
 
             END IF
 
@@ -433,7 +463,9 @@ C.............  Mobile sources
                 CALL WRITE_CNY( MRDEV, NC, MCNT, MNAMES, MUNITS, MEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, MCNT, MNAMES, MEBCNY, TEBCNY)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, MCNT, MNAMES, MEBCNY, TEBCNY)
+                END IF
 
             END IF
 
@@ -444,7 +476,9 @@ C.............  Point sources
                 CALL WRITE_CNY( PRDEV, NC, PCNT, PNAMES, PUNITS, PEBCNY)
 
 C.................  Update state totals
-                CALL TOT_UPDATE( NC, PCNT, PNAMES, PEBCNY, TEBCNY)
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NC, PCNT, PNAMES, PEBCNY, TEBCNY)
+                END IF
 
             END IF
 
@@ -519,6 +553,10 @@ C-----------------------------------------------------------------------------
 
             SUBROUTINE CREATE_HEADER( CATNAME )
 
+C.............  MODULES for public variables
+C.............  This module contains the global variables for the 3-d grid
+            USE MODGRID, ONLY: GRDNM
+
 C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: CATNAME
 
@@ -534,8 +572,8 @@ C..............................................................................
             L  = LEN_TRIM( HEADER )
 
             DATANAM = ' average'
-            IF( LO3SEAS .AND. ( AFLAG .OR. PFLAG ) ) 
-     &          DATANAM = ' ozone-season'
+            IF( LAVEDAY .AND. ( AFLAG .OR. PFLAG ) ) 
+     &          DATANAM = ' average day'
             LD1 = LEN_TRIM( DATANAM )
      
             TYPENAM = ' inventory'

@@ -46,25 +46,72 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: 
+     &          AFLAG, BFLAG, MFLAG, PFLAG,                     ! source flags
+     &          AUFLAG, MUFLAG, PUFLAG,                         ! mult control flags
+     &          ARFLAG, MRFLAG, PRFLAG,                         ! reac control flags
+     &          APRJFLAG, MPRJFLAG, PPRJFLAG,                   ! growth flags
+     &          AFLAG_BD, MFLAG_BD, PFLAG_BD,                   ! by-day hourly emis flags
+     &          TFLAG, SFLAG, LFLAG,                            ! use temporal, spec, layers
+     &          PINGFLAG, ELEVFLAG, EXPLFLAG,                   ! ping, elevated, expl. plume
+     &          LMKTPON, LREPANY,                               ! mkt penetration, any reports
+     &          CDEV, EDEV, GDEV,                               ! costcy, elev/ping, grid surg
+     &          AENAME, ATNAME, AGNAME, ASNAME, ARNAME, AUNAME, ! area files
+     &          BTNAME,                                         ! biogenic files
+     &          MENAME, MTNAME, MGNAME, MSNAME, MRNAME, MUNAME, ! mobile files
+     &          PENAME, PTNAME, PGNAME, PSNAME, PRNAME, PUNAME, ! point files
+     &          PLNAME, PVNAME, PHNAME,
+     &          NASRC, NMSRC, NPSRC, EMLAYS,                    ! no. of srcs, no. emis layers
+     &          ANMSPC, BNMSPC, MNMSPC, PNMSPC, NMSPC,          ! no. species
+     &          ANGMAT, MNGMAT,                                 ! no. gridding matrix entries
+     &          ANSREAC, MNSREAC, PNSREAC,                      ! no. src w/ reac controls
+     &          ARNMSPC, MRNMSPC, PRNMSPC,                      ! no. reac species
+     &          AEMNAM, BEMNAM, MEMNAM, PEMNAM, EMNAM,          ! species names
+     &          ANMAP, AMAPNAM, AMAPFIL,                        ! area map file
+     &          MNMAP, MMAPNAM, MMAPFIL,                        ! mobile map file
+     &          PNMAP, PMAPNAM, PMAPFIL,                        ! point map file
+     &          VGRPCNT, IDVGP, GVNAMES,                        ! group count, ids, var names
+     &          SIINDEX, SPINDEX, GVLOUT,                       ! EANAM & EMNAM idx, output pts
+     &          A_EXIST, M_EXIST, P_EXIST,                      ! grp indices for inv emis
+     &          AU_EXIST, MU_EXIST, PU_EXIST,                   ! grp indices for mult controls
+     &          AR_EXIST, MR_EXIST, PR_EXIST,                   ! grp indices for reac controls
+     &          AS_EXIST, BS_EXIST, MS_EXIST, PS_EXIST,         ! grp indices for spec matrices
+     &          SDATE, STIME, NSTEPS, TSTEP, PVSDATE, PVSTIME,  ! episode information
+     &          ASDATE, MSDATE, PSDATE,                         ! dates for by-day hrly emis
+     &          BIOGFAC, BIOTFAC, GRDFAC, TOTFAC,               ! conversion factors
+     &          AEMSRC, MEMSRC, PEMSRC,                         ! inv or hrly emissions
+     &          AEISRC, MEISRC, PEISRC,                         ! inv only emissions
+     &          AGMATX, MGMATX, PGMATX,                         ! gridding matrices
+     &          ASMATX, MSMATX, PSMATX,                         ! speciation matrices
+     &          ARINFO, MRINFO, PRINFO,                         ! reactivity matrices
+     &          AEMGRD, BEMGRD, MEMGRD, PEMGRD, TEMGRD,         ! gridded emissions
+     &          AEBCNY, BEBCNY, MEBCNY, PEBCNY,                 ! cnty total spec emissions
+     &          AEUCNY, MEUCNY, PEUCNY,                         ! cnty total mult control emis
+     &          AERCNY, MERCNY, PERCNY,                         ! cnty total reac control emis
+     &          AECCNY, MECCNY, PECCNY,                         ! cnty total all-control emis
+     &          LFRAC, EANAM, TONAMES                           ! layer frac, pol/act names
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY: ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN, ACRFAC,
+     &                      MCRIDX, MCRREPEM, MCRPRJFC, MCRMKTPN, MCRFAC, 
+     &                      PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRFAC,
+     &                      ACUMATX, MCUMATX, PCUMATX
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: INDXH, NHRSRC, GRPGID, ELEVFLTR, ELEVSRC,
+     &                     GROUPID
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTY, AICNY, MICNY, PICNY
 
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG
+        USE MODSURG, ONLY: NSRGFIPS, SRGFIPS
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID, OFFLAG
 
         IMPLICIT NONE
 
@@ -91,7 +138,7 @@ C.........  LOCAL PARAMETERS and their descriptions:
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Local temporary array for input and output variable names
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: OUTNAMES( : )
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: VARNAMES( : )
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: INNAMES ( : )
 
 C...........   Local allocatable arrays for creating list of all explicit srcs
@@ -379,8 +426,8 @@ C.........  Intialize state/county summed emissions to zero
         CALL INITSTCY
 
 C.........  Allocate memory for temporary list of species and pollutant names
-        ALLOCATE( OUTNAMES( MXVARPGP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'OUTNAMES', PROGNAME )
+        ALLOCATE( VARNAMES( MXVARPGP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VARNAMES', PROGNAME )
         ALLOCATE( INNAMES( MXVARPGP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INNAMES', PROGNAME )
 
@@ -433,7 +480,7 @@ C.............  Loop through variables in current group...
             OCNT = 0
             LBUF = ' '
             INNAMES  = ' '  ! array
-            OUTNAMES = ' '  ! array
+            VARNAMES = ' '  ! array
             DO V = 1, NVPGP  ! No. variables per group 
 
                 K1 = 0
@@ -444,16 +491,16 @@ C.................  Extract name of variable in group
                 VBUF = GVNAMES( V,N )
 
 C.................  For speciation...
-        	IF( SFLAG ) THEN
+                IF( SFLAG ) THEN
 
 C.....................  Update list of output species names for message
                     SBUF = EMNAM( SPINDEX( V,N ) )
                     PBUF = EANAM( SIINDEX( V,N ) )
-                    M = INDEX1( SBUF, OCNT, OUTNAMES )
+                    M = INDEX1( SBUF, OCNT, VARNAMES )
 
                     IF( M .LE. 0 .AND. SBUF .NE. LBUF ) THEN
                         OCNT = OCNT + 1                            
-                        OUTNAMES( OCNT ) = SBUF
+                        VARNAMES( OCNT ) = SBUF
                         LBUF = SBUF
                     END IF
 
@@ -472,18 +519,18 @@ C                       position
      &                    CALL RDSMAT( PSNAME, VBUF, PSMATX( 1,K3 ) )
 
 C.................  For no speciation, prepare list of variables for output mesg
-        	ELSE
+                ELSE
 
 C.....................  Update list of pollutants names for message
                     PBUF = EANAM( SIINDEX( V,N ) )
-                    M = INDEX1( PBUF, OCNT, OUTNAMES )
+                    M = INDEX1( PBUF, OCNT, VARNAMES )
 
                     IF( M .LE. 0 ) THEN
                         OCNT = OCNT + 1                            
-                        OUTNAMES( OCNT ) = PBUF
+                        VARNAMES( OCNT ) = PBUF
                     END IF
 
-        	END IF  ! end speciation or not
+                END IF  ! end speciation or not
 
 C.................  Set input variable names
                 INNAMES ( V ) = TONAMES( SIINDEX( V,N ) )
@@ -491,7 +538,7 @@ C.................  Set input variable names
             END DO      ! End variables in group loop
 
 C.............  Write out message about data currently being processed
-            CALL POLMESG( OCNT, OUTNAMES )
+            CALL POLMESG( OCNT, VARNAMES )
 
 C.............  Initializations before main time loop 
             JDATE  = SDATE
@@ -560,25 +607,59 @@ C                   step for all area-source pollutants in current pol group
 C.................  The *_EXIST are counters that point to the position in
 C                   the source category emissions of the variables names 
 C                   in INNAMES. Data are stored in *EMSRC in the global order.
-                IF( AFLAG )
-     &              CALL RD3MASK( ATNAME( DAY ), AJDATE, JTIME, NASRC, 
-     &                            APOLSIZ, NVPGP, INNAMES( 1 ), 
-     &                            A_EXIST( 1,N ), AEMSRC )
+                IF( AFLAG ) THEN
+
+C.................  If using map-formatted inventory for time-independent    
+                    IF( ANMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
+
+                        CALL RDMAPMASK( AENAME, ANMAP, AMAPNAM, AMAPFIL, 
+     &                               NASRC, APOLSIZ, NVPGP, VARNAMES(1),
+     &                               INNAMES(1), A_EXIST(1,N), AEMSRC  )
+
+C.................  If using hourly data
+                    ELSE
+                        CALL RDSETMASK( ATNAME( DAY ), AJDATE, JTIME, 
+     &                                NASRC, APOLSIZ, NVPGP, INNAMES(1), 
+     &                                A_EXIST( 1,N ), AEMSRC )
+                    END IF
+                END IF
 
 C.................  If mobile sources, read inventory emissions or activities
 C                   for this time step for all mobile-source pollutants in 
 C                   current pol group
-                IF( MFLAG ) 
-     &              CALL RD3MASK( MTNAME( DAY ), MJDATE, JTIME, NMSRC, 
-     &                            MPOLSIZ, NVPGP, INNAMES( 1 ), 
-     &                            M_EXIST( 1,N ), MEMSRC )
+                IF( MFLAG ) THEN 
+
+C.................  If using map-formatted inventory for time-independent    
+                    IF( MNMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
+                        CALL RDMAPMASK( MENAME, MNMAP, MMAPNAM, MMAPFIL, 
+     &                               NMSRC, MPOLSIZ, NVPGP, VARNAMES(1), 
+     &                                INNAMES(1), M_EXIST(1,N), MEMSRC )
+
+C.................  If using hourly data
+                    ELSE
+                        CALL RDSETMASK( MTNAME( DAY ), MJDATE, JTIME, 
+     &                                NMSRC, MPOLSIZ, NVPGP, INNAMES(1),
+     &                                M_EXIST( 1,N ), MEMSRC )
+                    END IF
+                END IF
 
 C.................  If point sources, read inventory emissions for this time 
 C                   step for all point-source pollutants in current pol group
-                IF( PFLAG )
-     &              CALL RD3MASK( PTNAME( DAY ), PJDATE, JTIME, NPSRC, 
-     &                            PPOLSIZ, NVPGP, INNAMES( 1 ), 
-     &                            P_EXIST( 1,N ), PEMSRC )
+                IF( PFLAG ) THEN
+
+C.................  If using map-formatted inventory for time-independent    
+                    IF( PNMAP .NE. 0 .AND. .NOT. TFLAG ) THEN
+                        CALL RDMAPMASK( PENAME, PNMAP, PMAPNAM, PMAPFIL, 
+     &                               NPSRC, PPOLSIZ, NVPGP, VARNAMES(1), 
+     &                                INNAMES(1), P_EXIST(1,N), PEMSRC )
+
+C.................  If using hourly data
+                    ELSE
+                        CALL RDSETMASK( PTNAME( DAY ), PJDATE, JTIME, 
+     &                                NPSRC, PPOLSIZ, NVPGP, INNAMES(1), 
+     &                                P_EXIST( 1,N ), PEMSRC )
+                    END IF
+                END IF
 
 C.................  If layer fractions, read them for this time step
                 IF( LFLAG ) THEN
@@ -619,7 +700,7 @@ C.................  Loop through variables in the current group
 
 C.....................  Set species or pollutant/activity name for this 
 C                       iteration
-        	    IF( SFLAG ) THEN
+                    IF( SFLAG ) THEN
                         SBUF = EMNAM( SPINDEX( V,N ) )
                         IF( AFLAG ) KA  = INDEX1( SBUF, ANMSPC, AEMNAM )
                         IF( BFLAG ) KB  = INDEX1( SBUF, BNMSPC, BEMNAM )
@@ -630,8 +711,13 @@ C                       iteration
                     END IF
 
 C.....................  Set conversion factors
-                    F1 = GRDFAC( SIINDEX( V,N ) )
-                    F2 = TOTFAC( SIINDEX( V,N ) )
+                    IF( SFLAG ) THEN
+                        F1 = GRDFAC( SPINDEX( V,N ) )
+                        F2 = TOTFAC( SPINDEX( V,N ) )
+                    ELSE
+                        F1 = GRDFAC( SIINDEX( V,N ) )
+                        F2 = TOTFAC( SIINDEX( V,N ) )
+                    END IF
 
 C.....................  If area reactivity matrix applies, pre-compute
 C                       source array of reactivity emissions & mkt pentrtn
@@ -776,7 +862,8 @@ C.........................  Write out gridded data and Models-3 PinG file
 
 C.........................  Write out ASCII elevated sources file
                         IF( ELEVFLAG ) THEN
-                            CALL WMRGELEV( SBUF, NMAJOR, JDATE, JTIME )
+                            CALL WMRGELEV( SBUF, NPSRC, NMAJOR, 
+     &                                     JDATE, JTIME        )
                         END IF
 
 C.........................  Initialize gridded arrays

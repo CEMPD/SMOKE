@@ -2,9 +2,12 @@
 # Path    $Source$
 # Date    $Date$ 
 #
-LIBS	  = $(LDIRS) $(LIBS_SYS) 
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) 
+LIBS	      = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
+LIBS2         = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
+LIBS_DEBUG2   = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
 LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
+
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
 LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp
 LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp
@@ -44,17 +47,18 @@ MGD= mrggrid.o
 #
 mrggrid: $(MGD) $(ALLI) $(LIBPATH)
 	echo MRGGRID:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MGD) $(LIBS)
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MGD) $(LIBS2)
 #
 mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 	echo MRGGRID \(debug\):
-	$(FC) $(DBGFLAGS) -o $(@) $(MGD) $(LIBS_DEBUG)
+	$(FC) $(DBGFLAGS) -o $(@) $(MGD) $(LIBS_DEBUG2)
 #
 #
 ## Module dependencies
 #
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
+include $(FS_ROOT)/modmake.inc
 
 allocmrg.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ allocmrg.f
@@ -76,13 +80,13 @@ mrgunits.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ mrgunits.f
 mrgvnams.o  : $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ mrgvnams.f
-openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) 
+openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) $(MODFILESET) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ openmrgin.f
 openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ openmrgout.f
 rdmrginv.o: $(MODMERGE)
 	$(FC) $(FFLAGS) -c -o $@ rdmrginv.f
-smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) 
+smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) $(MODLISTS)
 	$(FC) $(FFLAGS) -c -o $@ smkmerge.f
 wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV) $(MODGRID) 
 	$(FC) $(FFLAGS) -c -o $@ wmrgelev.f
@@ -93,4 +97,11 @@ wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID)
 
 
 clean:
-	/bin/rm *.o
+	/bin/rm -f *.o
+ifcclean:
+	/bin/rm -f *.o  
+	/bin/rm -f *.d  
+	/bin/rm -f work.pc*
+	/bin/rm -f $(MODALL)
+	/bin/rm -f $(IOMODALL)
+	/bin/rm -f $(FSMODALL)

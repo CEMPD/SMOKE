@@ -41,10 +41,25 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          NASRC,          NMSRC,  NPSRC,          ! no. of sources by category
+     &          AIFIP,          MIFIP,  PIFIP,          ! country/state/county codes
+     &          AFLAG,  BFLAG,  MFLAG,  PFLAG,  XFLAG,  ! source type flags
+     &          LREPSTA,                                ! output state total emissions flag
+     
+     &          AEBSTA, BEBSTA, MEBSTA, PEBSTA, TEBSTA, ! state total speciated emissions
+     &          AEUSTA,         MEUSTA, PEUSTA, TEUSTA, ! state total mult-control emissions
+     &          AERSTA,         MERSTA, PERSTA, TERSTA, ! state total reac-control emissions
+     &          AECSTA,         MECSTA, PECSTA, TECSTA, ! state total all-control emissions
+     
+     &          AEBCNY, BEBCNY, MEBCNY, PEBCNY, TEBCNY, ! county total speciated emissions
+     &          AEUCNY,         MEUCNY, PEUCNY, TEUCNY, ! county total mult-control emissions
+     &          AERCNY,         MERCNY, PERCNY, TERCNY, ! county total reac-control emissions
+     &          AECCNY,         MECCNY, PECCNY, TECCNY  ! county total all-control emissions
+     
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: AICNY, MICNY, PICNY, NCOUNTY, CNTYCOD
 
         IMPLICIT NONE
 

@@ -41,10 +41,15 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          SFLAG, LGRDOUT, AFLAG, ANMSPC, AEMNAM, BFLAG, BNMSPC,
+     &          BEMNAM, MFLAG, MNMSPC, MEMNAM, PINGFLAG, PFLAG, PNMSPC,
+     &          PEMNAM, ANIPOL, AEINAM, MNIPPA, MEANAM, PNIPOL, PEINAM,
+     &          AONAME, AEMGRD, BONAME, BEMGRD, MONAME, MEMGRD, PONAME,
+     &          PEMGRD, PINGNAME, XFLAG, TONAME, TEMGRD
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: PGRPEMIS
 
         IMPLICIT NONE
 
@@ -54,6 +59,7 @@ C.........  INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
@@ -170,11 +176,15 @@ C.............  This internal subprogram uses WRITE3 and exits gracefully
 C               if a write error occurred
             SUBROUTINE SAFE_WRITE3( FILNAM, EMDATA )
 
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+
             CHARACTER(*), INTENT (IN) :: FILNAM
             REAL        , INTENT (IN) :: EMDATA( * )
 
-            IF( .NOT. WRITE3( FILNAM, VNAME,
-     &                        JDATE, JTIME, EMDATA ) ) THEN
+C.......................................................................
+
+            IF( .NOT. WRITESET( FILNAM, VNAME, ALLFILES,
+     &                          JDATE, JTIME, EMDATA ) ) THEN
 
                 MESG = 'Could not write "' // VNAME //
      &                 '" to file "'// FILNAM // '"'

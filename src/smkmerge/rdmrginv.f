@@ -40,22 +40,26 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: AFLAG,  MFLAG,  PFLAG,      ! source flags by category
+     &                      AENAME, MENAME, PENAME,     ! inventory file names
+     &                      AIFIP,  MIFIP,  PIFIP,      ! country/state/county codes
+     &                      NASRC,  NMSRC,  NPSRC       ! no. of sources
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY:
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
 
         IMPLICIT NONE
 
 C...........   INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'PARMS3.EXT'    !  i/o api parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
+        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  Local allocatable parameters
         INTEGER, ALLOCATABLE :: AFIPS ( : )  ! area source co/st/cy codes
@@ -93,7 +97,8 @@ C.........  Read in area source country, state, county code
             ALLOCATE( AIFIP( NASRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'AIFIP', PROGNAME )
 
-            IF( .NOT. READ3( AENAME,'IFIP',ALLAYS3,0,0,AIFIP ) ) THEN
+            IF( .NOT. READSET( AENAME,'IFIP',ALLAYS3,ALLFILES,
+     &                         0,0,AIFIP ) ) THEN
                 MESG = PART1 // 'AREA' // PART3
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -116,7 +121,8 @@ C.........  Read in mobile source country, state, county code
             ALLOCATE( MIFIP( NMSRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'MIFIP', PROGNAME )
 
-            IF( .NOT. READ3( MENAME,'IFIP',ALLAYS3,0,0,MIFIP ) ) THEN
+            IF( .NOT. READSET( MENAME,'IFIP',ALLAYS3,ALLFILES,
+     &                         0,0,MIFIP ) ) THEN
                 MESG = PART1 // 'MOBILE' // PART3
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -139,7 +145,8 @@ C.........  Read in point source country, state, county code
             ALLOCATE( PIFIP( NPSRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'PIFIP', PROGNAME )
 
-            IF( .NOT. READ3( PENAME,'IFIP',ALLAYS3,0,0,PIFIP ) ) THEN
+            IF( .NOT. READSET( PENAME,'IFIP',ALLAYS3,ALLFILES,
+     &                         0,0,PIFIP ) ) THEN
                 MESG = PART1 // 'POINT' // PART3
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF

@@ -45,7 +45,26 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          NIPPA, SFLAG, NSMATV, NMSPC, EMNAM, EANAM, VGRPCNT,
+     &          IDVGP, GVNAMES, GVLOUT, 
+     &          AFLAG, BFLAG, MFLAG, PFLAG,
+     &          A_EXIST, M_EXIST, P_EXIST,
+     &          AU_EXIST, MU_EXIST, PU_EXIST,
+     &          AR_EXIST, MR_EXIST, PR_EXIST,
+     &          AS_EXIST, BS_EXIST, MS_EXIST, PS_EXIST,
+     &          SIINDEX, SPINDEX,
+     &          ANRMATV, MNRMATV, PNRMATV,
+     &          ARNMSPC, MRNMSPC, PRNMSPC,
+     &          ANSMATV, BNSMATV, MNSMATV, PNSMATV,
+     &          ASVDESC, BSVDESC, MSVDESC, PSVDESC, TSVDESC,
+     &          ARFLAG, MRFLAG, PRFLAG,
+     &          ANIPOL, MNIPPA, PNIPOL,
+     &          AEINAM, MEANAM, PEINAM,
+     &          AUFLAG, MUFLAG, PUFLAG,
+     &          ANUMATV, MNUMATV, PNUMATV,
+     &          AUVNAMS, MUVNAMS, PUVNAMS,
+     &          ARVDESC, MRVDESC, PRVDESC
 
         IMPLICIT NONE
 
@@ -404,7 +423,7 @@ C           emissions, and control matrices...
 C.........  If speciation, loop through the number of variables per
 C           group and store the count for each source category.
 C.........  The counts are kept for each source category because each
-C           source category has only it's own speciation factors stored
+C           source category has only its own speciation factors stored
 C           for only the pollutants in that source category.
 C.........  The counts are used because of the variable groups.  If the
 C           position in the variable list were stored, this would not be
@@ -436,17 +455,17 @@ C.............  Loop through all groups, then number of variables per group
                         END IF
                     END IF
 
-                    IF ( BFLAG ) THEN    ! Area sources
+                    IF ( ARFLAG ) THEN    ! Area reactivity
+                        K = INDEX1( SVBUF, ARNMSPC, ARVDESC( JA ) )
+                        AR_EXIST( V,N ) = K
+                    END IF
+
+                    IF ( BFLAG ) THEN    ! Biogenic sources
                         K = INDEX1( SVBUF, BNSMATV, BSVDESC )
                         IF( K .GT. 0 ) THEN
                             BCNT = BCNT + 1
                             BS_EXIST( V,N ) = BCNT
                         END IF
-                    END IF
-
-                    IF ( ARFLAG ) THEN    ! Area reactivity
-                        K = INDEX1( SVBUF, ARNMSPC, ARVDESC( JA ) )
-                        AR_EXIST( V,N ) = K
                     END IF
 
                     IF ( MFLAG ) THEN    ! Mobile sources
@@ -505,7 +524,7 @@ C.........................  If index has already been set for the pollutant,
 C                           then reuse it, otherwise update the counter and
 C                           store
                         IF( KA( K ) .NE. 0 ) THEN
-                            A_EXIST( V,N ) = ACNT
+                            A_EXIST( V,N ) = KA( K )
                         ELSE
                             ACNT = ACNT + 1
                             A_EXIST( V,N ) = ACNT
@@ -531,7 +550,7 @@ C                           store
                     K = INDEX1( VBUF, PNIPOL, PEINAM )
                     IF( K .GT. 0 ) THEN
                         IF( KP( K ) .NE. 0 ) THEN
-                            P_EXIST( V,N ) = PCNT
+                            P_EXIST( V,N ) = KP( K )
                         ELSE
                             PCNT = PCNT + 1
                             P_EXIST( V,N ) = PCNT
@@ -564,7 +583,7 @@ C.........  Loop through all groups, then number of pollutants per group
                     K = INDEX1( VBUF, ANUMATV, AUVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KA( K ) .NE. 0 ) THEN
-                            AU_EXIST( V,N ) = ACNT
+                            AU_EXIST( V,N ) = KA( K )
                         ELSE
                             ACNT = ACNT + 1
                             AU_EXIST( V,N ) = ACNT
@@ -590,7 +609,7 @@ C.........  Loop through all groups, then number of pollutants per group
                     K = INDEX1( VBUF, PNUMATV, PUVNAMS )
                     IF( K .GT. 0 ) THEN
                         IF( KP( K ) .NE. 0 ) THEN
-                            PU_EXIST( V,N ) = PCNT
+                            PU_EXIST( V,N ) = KP( K )
                         ELSE
                             PCNT = PCNT + 1
                             PU_EXIST( V,N ) = PCNT

@@ -41,22 +41,49 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY:
+     &          LREPANY, BFLAG, GDEV, AFLAG, AENAME, ASDEV, ANMAP, 
+     &          AMAPNAM, AMAPFIL, NASRC, APRJFLAG, TFLAG, AFLAG_BD,
+     &          ATNAME, ASDATE, ANIPOL, AEINAM, INVPIDX, AONAMES, 
+     &          AOUNITS, AGNAME, ANGMAT, SFLAG, ASNAME, ANSMATV, 
+     &          ASVDESC, ASVUNIT, AUFLAG, AUNAME, ANUMATV, AUVNAMS,
+     &          ARFLAG, ARNAME, ANRMATV, ANSREAC, ARVDESC, ARNMSPC,
+     &          BTNAME, LMETCHK, BIOUNIT, BNSMATV, BNIPOL, BONAMES,
+     &          BEINAM, BOUNITS, MFLAG, MENAME, MSDEV, MNMAP, MMAPNAM,
+     &          MMAPFIL, NMSRC, MPRJFLAG, MFLAG_BD, MTNAME, MSDATE,
+     &          MNIPPA, MEANAM, MONAMES, MOUNITS, MNIPOL, MNIACT,
+     &          MGNAME, MNGMAT, MSNAME, MNSMATV, MSVDESC, MSVUNIT,
+     &          MUFLAG, MUNAME, MNUMATV, MUVNAMS, MRFLAG, MRNAME,
+     &          MNRMATV, MNSREAC, MRVDESC, MRNMSPC, PFLAG, PENAME,
+     &          PSDEV, PNMAP, PMAPNAM, PMAPFIL, NPSRC, ELEVFLAG, JSTACK,
+     &          PPRJFLAG, PFLAG_BD, PTNAME, PSDATE, PNIPOL, PEINAM, 
+     &          PONAMES, POUNITS, PGNAME, PSNAME, PNSMATV, PSVDESC, 
+     &          PSVUNIT, PUFLAG, PUNAME, PNUMATV, PUVNAMS, PRFLAG,
+     &          PRNAME, PNRMATV, PNSREAC, PRVDESC, PRNMSPC, LFLAG,
+     &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG, EDEV,
+     &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
+     &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
+     &          BSVDESC
+
+C...........  This module contains the information about the source category
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: NGROUP, NHRSRC
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, VGTYP, VGTOP, VGLVS
+
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET
 
         IMPLICIT NONE
 
 C.........  INCLUDES:
         
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
-        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file desc. data structures
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         
@@ -68,9 +95,10 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE  
         CHARACTER*16    PROMPTMFILE  
         INTEGER         SECSDIFF  
+        LOGICAL         SETENVVAR
 
         EXTERNAL  CRLF, ENVYN, GETCFDSC, GETIFDSC, PROMPTFFILE, 
-     &            PROMPTMFILE, SECSDIFF
+     &            PROMPTMFILE, SECSDIFF, SETENVVAR
 
 C...........   Subroutine arguments
 
@@ -81,8 +109,9 @@ C...........   Subroutine arguments
 
 C.........  Other local variables
 
-        INTEGER         I, J, N, V       ! counters and indices
+        INTEGER         I, J, K, N, V       ! counters and indices
 
+        INTEGER         IDEV          ! tmp unit number if ENAME is map file
         INTEGER         IOS           ! tmp I/O status
         INTEGER         ISECS         ! tmp duration in seconds
         INTEGER         NPACT         ! no. variables per activity
@@ -91,21 +120,20 @@ C.........  Other local variables
         INTEGER         NVAR          ! tmp no. variables 
 
         LOGICAL      :: CFLAG = .FALSE.  ! true: speciation type has been init
-        LOGICAL      :: DFLAG = .FALSE.  ! true: use pollutants list
         LOGICAL      :: EFLAG = .FALSE.  ! true: error in routine
         LOGICAL      :: IFLAG = .FALSE.  ! true: episode settings have been init
-        LOGICAL      :: KFLAG = .FALSE.  ! true: use activies list
         LOGICAL      :: OFLAG = .FALSE.  ! true: met info has been init
         LOGICAL      :: YFLAG = .FALSE.  ! true: year/projection info been init
         LOGICAL      :: ZFLAG = .FALSE.  ! true: time zone has been init
 
         CHARACTER*4     SPCTYPE      ! type of speciation matrix (mass|mole)
         CHARACTER*16    DUMNAME      ! tmp file name
+        CHARACTER*16    INAME        ! tmp name for inven file of unknown fmt
         CHARACTER*50    METSCENR     ! met scenario name
         CHARACTER*50    METCLOUD     ! met cloud scheme name
         CHARACTER*50    METTMP       ! temporary buffer for met info
         CHARACTER*80    GDESC        ! grid description
-        CHARACTER*300   MESG         ! message buffer
+        CHARACTER*256   MESG         ! message buffer
         CHARACTER(LEN=IOVLEN3) COORD3D    ! coordinate system name 
         CHARACTER(LEN=IOVLEN3) COORUN3D   ! coordinate system projection units
         CHARACTER(LEN=IOVLEN3) PROJTYPE   ! projection type
@@ -114,29 +142,6 @@ C.........  Other local variables
 
 C***********************************************************************
 C   begin body of subroutine OPENMRGIN
-
-C.........  Set controls for reading the pollutants and activities files
-C.........  Default is for mobile to read in activities and not pollutants
-C           and for other source categories to read in pollutants and not
-C           activities
-        IF( MFLAG ) THEN
-            KFLAG = .TRUE.
-        ELSE
-            KFLAG = .FALSE.
-        END IF
-
-        IF( AFLAG .OR. PFLAG .OR. BFLAG .OR. ( MFLAG .AND. TFLAG )) THEN
-            DFLAG = .TRUE.
-        ELSE
-            DFLAG = .FALSE.
-        END IF
-
-C.........  Get value of these controls from the environment
-        MESG = 'Indicator for using pollutants list'
-        DFLAG = ENVYN( 'SMK_USE_SIPOLS', MESG, DFLAG, IOS )
-
-        MESG = 'Indicator for using activities list'
-        KFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, KFLAG, IOS )
 
 C.........  If reporting state and/or county emissions, and processing for
 C           biogenic sources, get gridding surrogates
@@ -172,17 +177,39 @@ C.........  For area sources...
 C.............  Get inventory file names given source category
             CALL GETINAME( 'AREA', AENAME, DUMNAME )
 
-C.............  Prompt for inventory files
-            AENAME = PROMPTMFILE( 
-     &       'Enter logical name for the I/O API AREA INVENTORY file',
-     &       FSREAD3, AENAME, PROGNAME )
+C.........  Prompt for and open input I/O API and ASCII 
+C           inventory files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'AREA INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., AENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            ASDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII AREA INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
+C.........  For map-formatted inventory file
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, AENAME, DUMNAME, ASDEV )
+
+C................  Transfer from MODINFO arrays to MODMERGE arrays
+                ALLOCATE( AMAPNAM( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'AMAPNAM', PROGNAME )
+                ALLOCATE( AMAPFIL( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'AMAPFIL', PROGNAME )
+                
+                ANMAP = NMAP
+                AMAPNAM = MAPNAM   ! array
+                AMAPFIL = MAPFIL   ! array
+
+C.........  For traditional inventory file
+            ELSE
+                AENAME = INAME
+                ASDEV = PROMPTFFILE( 
+     &           'Enter logical name for the ASCII AREA INVENTORY file',
+     &           .TRUE., .TRUE., DUMNAME, PROGNAME )
+
+            END IF
 
 C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( AENAME )
+            CALL RETRIEVE_SET_HEADER( AENAME )
             NASRC = NROWS3D
 
 C.............  Determine the year and projection status of the inventory
@@ -197,7 +224,7 @@ C.................  Compare headers to make sure files are consistent.
                 CALL OPEN_TMP_FILES( 'AREA', AFLAG_BD, ATNAME, ASDATE )
 
 C.................  Set pollutants from hourly file
-                ANIPOL = NVARS3D
+                ANIPOL = NVARSET
                 ALLOCATE( AEINAM( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AEINAM', PROGNAME )
                 ALLOCATE( AONAMES( ANIPOL ), STAT=IOS )
@@ -205,8 +232,8 @@ C.................  Set pollutants from hourly file
                 ALLOCATE( AOUNITS( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( 1, 1, ANIPOL, AEINAM )
-                CALL STORE_INVINFO( 1, 1, ANIPOL, 1, INVPIDX,
+                CALL STORE_VNAMES( 1, 1, ANIPOL, .TRUE., AEINAM )
+                CALL STORE_INVINFO( 1, 1, ANIPOL, 1, INVPIDX, .TRUE.,
      &                              AONAMES, AOUNITS )
 
 C.................  Determine the year and projection status of the hourly
@@ -215,9 +242,9 @@ C.................  Determine the year and projection status of the hourly
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
                 ATNAME = AENAME  ! array
-        	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        	ANIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
-        	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
+                NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
+                ANIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
+                NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
 
                 ALLOCATE( AEINAM ( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AEINAM', PROGNAME )
@@ -226,9 +253,18 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( AOUNITS( ANIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( NVAR+1, NPPOL, ANIPOL, AEINAM )
-                CALL STORE_INVINFO( NVAR+1, NPPOL, ANIPOL, 1, INVPIDX,
-     &                              AONAMES, AOUNITS )
+C...............  For map-formatted inventories
+                IF( ANMAP .GT. 0 ) THEN
+                    CALL STORE_INVEN_VARS( ANMAP,ANIPOL,NPPOL,1+INVPIDX,
+     &                     AMAPNAM, AMAPFIL, AEINAM, AONAMES, AOUNITS ) 
+
+C...............  For old format of inventories
+                ELSE
+                    CALL STORE_VNAMES( NVAR+1, NPPOL, ANIPOL, .TRUE., 
+     &                                 AEINAM )
+                    CALL STORE_INVINFO( NVAR+1, NPPOL, ANIPOL, 1, 
+     &                              INVPIDX, .TRUE. , AONAMES, AOUNITS ) 
+                END IF
 
             END IF
 
@@ -246,19 +282,19 @@ C               compare or initialize grid information.
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable descriptions, and store mass or moles.
             IF( SFLAG ) THEN
-                ASNAME = PROMPTMFILE( 
+                ASNAME = PROMPTSET( 
      &           'Enter logical name for the AREA SPECIATION MATRIX',
      &           FSREAD3, 'ASMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( ASNAME )
+                CALL RETRIEVE_SET_HEADER( ASNAME )
                 CALL CHKSRCNO( 'area', 'ASMAT', NROWS3D, NASRC, EFLAG )
-                ANSMATV = NVARS3D
+                ANSMATV = NVARSET
                 ALLOCATE( ASVDESC( ANSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ASVDESC', PROGNAME )
                 ALLOCATE( ASVUNIT( ANSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ASVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, ANSMATV, ASVDESC )
-                CALL STORE_VUNITS( 1, 1, ANSMATV, ASVUNIT )
+                CALL STORE_VDESCS( 1, 1, ANSMATV, .TRUE., ASVDESC )
+                CALL STORE_VUNITS( 1, 1, ANSMATV, .TRUE., ASVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'area' )
@@ -270,31 +306,31 @@ C               and store control variable names.
             IF( AUFLAG ) THEN
                 MESG = 'Enter logical name for the AREA ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                AUNAME = PROMPTMFILE( MESG, FSREAD3, 'ACMAT', PROGNAME )
+                AUNAME = PROMPTSET( MESG, FSREAD3, 'ACMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( AUNAME )
-                CALL CHKSRCNO( 'area', 'AXMAT', NROWS3D, NASRC, EFLAG )
+                CALL RETRIEVE_SET_HEADER( AUNAME )
+                CALL CHKSRCNO( 'area', 'ACMAT', NROWS3D, NASRC, EFLAG )
                 ANUMATV = NVARS3D
                 ALLOCATE( AUVNAMS( ANUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, ANUMATV, AUVNAMS )
+                CALL STORE_VNAMES( 1, 1, ANUMATV, .TRUE., AUVNAMS )
 
             END IF  ! end of multiplicative control open
 
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( ARFLAG ) THEN
-                ARNAME = PROMPTMFILE( 
+                ARNAME = PROMPTSET( 
      &           'Enter logical name for the AREA REACTIVITY MATRIX',
      &           FSREAD3, 'ARMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( ARNAME )
+                CALL RETRIEVE_SET_HEADER( ARNAME )
                 CALL CHKSRCNO( 'area', 'ARMAT', NTHIK3D, NASRC, EFLAG )
                 ANRMATV = NVARS3D
                 ANSREAC = NROWS3D
                 ALLOCATE( ARVDESC( ANRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'ARVDESC', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, ANRMATV, ARVDESC )
+                CALL STORE_VDESCS( 1, 1, ANRMATV, .FALSE., ARVDESC )
 
 C.................  Retrieve the number of speciation factors 
                 ARNMSPC = GETIFDSC( FDESC3D, '/SPECIES VARS/', .TRUE. )
@@ -360,17 +396,39 @@ C.........  If we have mobile sources
 C.............  Get inventory file names given source category
             CALL GETINAME( 'MOBILE', MENAME, DUMNAME )
 
-C.............  Prompt for inventory files
-            MENAME = PROMPTMFILE( 
-     &       'Enter logical name for the I/O API MOBILE INVENTORY file',
-     &       FSREAD3, MENAME, PROGNAME )
+C.........  Prompt for and open input I/O API and ASCII 
+C           inventory files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'MOBILE INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., MENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            MSDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII MOBILE INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
+C.........  For map-formatted inventory file
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, MENAME, DUMNAME, MSDEV )
+
+C................  Transfer from MODINFO arrays to MODMERGE arrays
+                ALLOCATE( MMAPNAM( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MMAPNAM', PROGNAME )
+                ALLOCATE( MMAPFIL( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MMAPFIL', PROGNAME )
+                
+                MNMAP = NMAP
+                MMAPNAM = MAPNAM   ! array
+                MMAPFIL = MAPFIL   ! array
+
+C.........  For traditional inventory file
+            ELSE
+                MENAME = INAME
+                MSDEV = PROMPTFFILE( 'Enter logical name for ' //
+     &                  'the ASCII MOBILE INVENTORY file',
+     &                  .TRUE., .TRUE., DUMNAME, PROGNAME )
+
+            END IF
 
 C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( MENAME )
+            CALL RETRIEVE_SET_HEADER( MENAME )
             NMSRC = NROWS3D
 
 C.............  Determine the year and projection status of the inventory
@@ -384,7 +442,7 @@ C                   processing.
 C.................  Compare headers to make sure files are consistent.
                 CALL OPEN_TMP_FILES( 'MOBILE', MFLAG_BD, MTNAME, MSDATE)
 
-                MNIPPA = NVARS3D
+                MNIPPA = NVARSET
                 ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
                 ALLOCATE( MONAMES( MNIPPA ), STAT=IOS )
@@ -392,8 +450,8 @@ C.................  Compare headers to make sure files are consistent.
                 ALLOCATE( MOUNITS( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MOUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( 1, 1, MNIPPA, MEANAM )
-                CALL STORE_INVINFO( 1, 1, MNIPPA, 1, INVPIDX,
+                CALL STORE_VNAMES( 1, 1, MNIPPA, .TRUE., MEANAM )
+                CALL STORE_INVINFO( 1, 1, MNIPPA, 1, INVPIDX, .TRUE., 
      &                              MONAMES, MOUNITS )
 
 C.................  Determine the year and projection status of the hourly
@@ -403,17 +461,17 @@ C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
                 MTNAME = MENAME  ! array
 
-        	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        	MNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
-        	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
-        	MNIACT = GETIFDSC( FDESC3D, '/ACTIVITIES/', .FALSE. )
-        	NPACT  = GETIFDSC( FDESC3D, '/PER ACTIVITY/', .FALSE. )
+                NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
+                MNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
+                NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
+                MNIACT = GETIFDSC( FDESC3D, '/ACTIVITIES/', .FALSE. )
+                NPACT  = GETIFDSC( FDESC3D, '/PER ACTIVITY/', .FALSE. )
 
-        	MNIPOL = MAX( 0, MNIPOL )
-        	NPPOL  = MAX( 0, NPPOL )
-        	MNIACT = MAX( 0, MNIACT )
-        	NPACT  = MAX( 0, NPACT )
-        	MNIPPA = MNIPOL + MNIACT
+                MNIPOL = MAX( 0, MNIPOL )
+                NPPOL  = MAX( 0, NPPOL )
+                MNIACT = MAX( 0, MNIACT )
+                NPACT  = MAX( 0, NPACT )
+                MNIPPA = MNIPOL + MNIACT
 
                 ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
@@ -422,19 +480,35 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( MOUNITS( MNIPPA ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MOUNITS', PROGNAME )
 
+C...............  For map-formatted inventories
+                IF( MNMAP .GT. 0 ) THEN
+                    CALL STORE_INVEN_VARS( MNMAP-MNIACT, MNIPOL, NPPOL,
+     &                             1+INVPIDX, MMAPNAM, MMAPFIL, MEANAM,
+     &                                               MONAMES, MOUNITS ) 
+
+                    K = MNIPOL + 1
+                    CALL STORE_INVEN_VARS( MNMAP-MNIPOL, MNIACT,NPACT,2,
+     &                     MMAPNAM( K ), MMAPFIL( K ), MEANAM( K ), 
+     &                     MONAMES( K ), MOUNITS( K ) ) 
+
+C...............  For old format of inventories
+                ELSE
+
 C.................  Store pollutant names and other information
-                CALL STORE_VNAMES( NVAR+1, NPPOL, MNIPOL, MEANAM )
-                CALL STORE_INVINFO( NVAR+1, NPPOL, MNIPOL, 1, INVPIDX,
-     &                              MONAMES, MOUNITS )
+                    CALL STORE_VNAMES( NVAR+1, NPPOL, MNIPOL, .TRUE., 
+     &                                 MEANAM )
+                    CALL STORE_INVINFO( NVAR+1, NPPOL, MNIPOL, 1, 
+     &                               INVPIDX, .TRUE., MONAMES, MOUNITS )
 
 C.................  Store activity names and other information
-                I    = MNIPOL * NPPOL
-                NVAR = NVAR + I
-                CALL STORE_VNAMES( NVAR+1, NPACT, MNIACT, 
-     &                             MEANAM( MNIPOL+1 )     )
-                CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, 1, 1,
-     &                              MONAMES( MNIPOL+1 ), 
-     &                              MOUNITS( MNIPOL+1 )             )
+                    I    = MNIPOL * NPPOL
+                    NVAR = NVAR + I
+                    CALL STORE_VNAMES( NVAR+1, NPACT, MNIACT, .TRUE., 
+     &                                 MEANAM( MNIPOL+1 )     )
+                    CALL STORE_INVINFO( NVAR+1, NPACT, MNIACT, 1, 1, 
+     &                                  .TRUE.,  MONAMES( MNIPOL+1 ), 
+     &                                  MOUNITS( MNIPOL+1 )           ) 
+                END IF
 
             END IF
 
@@ -452,19 +526,19 @@ C               compare or initialize grid information.
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable descriptions, and store mass or moles.
             IF( SFLAG ) THEN
-                MSNAME = PROMPTMFILE( 
+                MSNAME = PROMPTSET( 
      &           'Enter logical name for the MOBILE SPECIATION MATRIX',
      &           FSREAD3, 'MSMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( MSNAME )
+                CALL RETRIEVE_SET_HEADER( MSNAME )
                 CALL CHKSRCNO( 'mobile', 'MSMAT', NROWS3D, NMSRC, EFLAG)
-                MNSMATV = NVARS3D
+                MNSMATV = NVARSET
                 ALLOCATE( MSVDESC( MNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MSVDESC', PROGNAME )
                 ALLOCATE( MSVUNIT( MNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MSVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, MNSMATV, MSVDESC )
-                CALL STORE_VUNITS( 1, 1, MNSMATV, MSVUNIT )
+                CALL STORE_VDESCS( 1, 1, MNSMATV, .TRUE., MSVDESC )
+                CALL STORE_VUNITS( 1, 1, MNSMATV, .TRUE., MSVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'mobile' )
@@ -476,31 +550,31 @@ C               and store control variable names.
             IF( MUFLAG ) THEN
                 MESG = 'Enter logical name for the MOBILE ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                MUNAME = PROMPTMFILE( MESG, FSREAD3, 'MCMAT', PROGNAME )
+                MUNAME = PROMPTSET( MESG, FSREAD3, 'MCMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( MUNAME )
+                CALL RETRIEVE_SET_HEADER( MUNAME )
                 CALL CHKSRCNO( 'mobile', 'MCMAT', NROWS3D, NMSRC, EFLAG)
                 MNUMATV = NVARS3D
                 ALLOCATE( MUVNAMS( MNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, MNUMATV, MUVNAMS )
+                CALL STORE_VNAMES( 1, 1, MNUMATV, .TRUE., MUVNAMS )
 
             END IF  ! end of multiplicative control open
 
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( MRFLAG ) THEN
-                MRNAME = PROMPTMFILE( 
+                MRNAME = PROMPTSET( 
      &           'Enter logical name for the MOBILE REACTIVITY MATRIX',
      &           FSREAD3, 'MRMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( ARNAME )
+                CALL RETRIEVE_SET_HEADER( ARNAME )
                 CALL CHKSRCNO( 'mobile', 'MRMAT', NTHIK3D, NMSRC, EFLAG)
                 MNRMATV = NVARS3D
                 MNSREAC = NROWS3D
                 ALLOCATE( MRVDESC( MNRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MRVDESC', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, MNRMATV, MRVDESC )
+                CALL STORE_VDESCS( 1, 1, MNRMATV, .FALSE., MRVDESC )
 
 C.................  Retrieve the number of speciation factors 
                 MRNMSPC = GETIFDSC( FDESC3D, '/SPECIES VARS/', .TRUE. )
@@ -526,17 +600,39 @@ C.........  If we have point sources
 C.............  Get inventory file names given source category
             CALL GETINAME( 'POINT', PENAME, DUMNAME )
 
-C.............  Prompt for inventory files
-            PENAME = PROMPTMFILE( 
-     &       'Enter logical name for the I/O API POINT INVENTORY file',
-     &       FSREAD3, PENAME, PROGNAME )
+C.........  Prompt for and open input I/O API and ASCII 
+C           inventory files
+            MESG= 'Enter logical name for the I/O API or MAP ' //
+     &            'POINT INVENTORY file'
+            CALL PROMPTWHAT( MESG, FSREAD3, .TRUE., .TRUE., PENAME,
+     &                       PROGNAME, INAME, IDEV )
 
-            PSDEV = PROMPTFFILE( 
-     &       'Enter logical name for the ASCII POINT INVENTORY file',
-     &       .TRUE., .TRUE., DUMNAME, PROGNAME )
+C.........  For map-formatted inventory file
+            IF( IDEV .GT. 0 ) THEN
+
+                CALL RDINVMAP( INAME, IDEV, PENAME, DUMNAME, PSDEV )
+
+C................  Transfer from MODINFO arrays to MODMERGE arrays
+                ALLOCATE( PMAPNAM( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PMAPNAM', PROGNAME )
+                ALLOCATE( PMAPFIL( NMAP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'PMAPFIL', PROGNAME )
+                
+                PNMAP = NMAP
+                PMAPNAM = MAPNAM   ! array
+                PMAPFIL = MAPFIL   ! array
+
+C.........  For traditional inventory file
+            ELSE
+                PENAME = INAME
+                PSDEV = PROMPTFFILE( 
+     &          'Enter logical name for the ASCII POINT INVENTORY file',
+     &          .TRUE., .TRUE., DUMNAME, PROGNAME )
+
+            END IF
 
 C.............  Get number of sources
-            CALL RETRIEVE_IOAPI_HEADER( PENAME )
+            CALL RETRIEVE_SET_HEADER( PENAME )
             NPSRC = NROWS3D
 
 C.............  If outputing ASCII elevated sources, retrieve the position
@@ -555,7 +651,7 @@ C                   processing.
 C.................  Compare headers to make sure files are consistent.
                 CALL OPEN_TMP_FILES( 'POINT', PFLAG_BD, PTNAME, PSDATE)
 
-                PNIPOL = NVARS3D
+                PNIPOL = NVARSET
                 ALLOCATE( PEINAM( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PEINAM', PROGNAME )
                 ALLOCATE( PONAMES( PNIPOL ), STAT=IOS )
@@ -563,8 +659,8 @@ C.................  Compare headers to make sure files are consistent.
                 ALLOCATE( POUNITS( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( 1, 1, PNIPOL, PEINAM )
-                CALL STORE_INVINFO( 1, 1, PNIPOL, 1, INVPIDX,
+                CALL STORE_VNAMES( 1, 1, PNIPOL, .TRUE., PEINAM )
+                CALL STORE_INVINFO( 1, 1, PNIPOL, 1, INVPIDX, .TRUE., 
      &                              PONAMES, POUNITS )
 
 C.................  Determine the year and projection status of the hourly 
@@ -573,9 +669,9 @@ C.................  Determine the year and projection status of the hourly
 C.............  Otherwise, just set parameters and pollutants from inven file
             ELSE
                 PTNAME = PENAME  ! array
-        	NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
-        	PNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
-        	NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
+                NVAR   = GETIFDSC( FDESC3D, '/NON POLLUTANT/', .TRUE. )
+                PNIPOL = GETIFDSC( FDESC3D, '/POLLUTANTS/', .FALSE. )
+                NPPOL  = GETIFDSC( FDESC3D, '/PER POLLUTANT/', .FALSE. )
 
                 ALLOCATE( PEINAM( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PEINAM', PROGNAME )
@@ -584,9 +680,19 @@ C.............  Otherwise, just set parameters and pollutants from inven file
                 ALLOCATE( POUNITS( PNIPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POUNITS', PROGNAME )
 
-                CALL STORE_VNAMES( NPTVAR3+1, NPTPPOL3, PNIPOL, PEINAM )
-                CALL STORE_INVINFO( NVAR+1, NPPOL, PNIPOL, 1, INVPIDX,
-     &                              PONAMES, POUNITS )
+C...............  For map-formatted inventories
+                IF( PNMAP .GT. 0 ) THEN
+                    CALL STORE_INVEN_VARS( PNMAP,PNIPOL,NPPOL,1+INVPIDX,
+     &                     PMAPNAM, PMAPFIL, PEINAM, PONAMES, POUNITS ) 
+
+C...............  For old format of inventories
+                ELSE
+
+                    CALL STORE_VNAMES( NPTVAR3+1, NPTPPOL3, PNIPOL,  
+     &                                 .TRUE., PEINAM )
+                    CALL STORE_INVINFO( NVAR+1, NPPOL, PNIPOL, 1,
+     &                               INVPIDX, .TRUE., PONAMES, POUNITS )
+                END IF
 
             END IF
 
@@ -603,19 +709,19 @@ C               compare or initialize grid information.
 C.............  Open speciation matrix, compare number of sources, store
 C               speciation variable names, and store mass or moles.
             IF( SFLAG ) THEN
-                PSNAME = PROMPTMFILE( 
+                PSNAME = PROMPTSET( 
      &           'Enter logical name for the POINT SPECIATION MATRIX',
      &           FSREAD3, 'PSMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( PSNAME )
+                CALL RETRIEVE_SET_HEADER( PSNAME )
                 CALL CHKSRCNO( 'point','PSMAT',NROWS3D,NPSRC,EFLAG )
-                PNSMATV = NVARS3D
+                PNSMATV = NVARSET
                 ALLOCATE( PSVDESC( PNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PSVDESC', PROGNAME )
                 ALLOCATE( PSVUNIT( PNSMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PSVUNIT', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, PNSMATV, PSVDESC )
-                CALL STORE_VUNITS( 1, 1, PNSMATV, PSVUNIT )
+                CALL STORE_VDESCS( 1, 1, PNSMATV, .TRUE., PSVDESC )
+                CALL STORE_VUNITS( 1, 1, PNSMATV, .TRUE., PSVUNIT )
 
 C.................  Ensure consistent spec matrix type for all source categories
                 CALL CHECK_SPEC_TYPE( 'point' )
@@ -627,31 +733,31 @@ C               and store control variable names.
             IF( PUFLAG ) THEN
                 MESG = 'Enter logical name for the POINT ' //
      &                 'MULTIPLICATIVE CONTROL MATRIX'
-                PUNAME = PROMPTMFILE( MESG, FSREAD3, 'PCMAT', PROGNAME )
+                PUNAME = PROMPTSET( MESG, FSREAD3, 'PCMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( PUNAME )
-                CALL CHKSRCNO( 'point', 'PXMAT', NROWS3D, NPSRC, EFLAG )
+                CALL RETRIEVE_SET_HEADER( PUNAME )
+                CALL CHKSRCNO( 'point', 'PCMAT', NROWS3D, NPSRC, EFLAG )
                 PNUMATV = NVARS3D
                 ALLOCATE( PUVNAMS( PNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, PNUMATV, PUVNAMS )
+                CALL STORE_VNAMES( 1, 1, PNUMATV, .TRUE., PUVNAMS )
 
             END IF  ! end of multiplicative control open
 
 C.............  Open reactivity control matrix, compare number of sources, and
 C               store control variable descriptions, and store mass or moles.
             IF( PRFLAG ) THEN
-                PRNAME = PROMPTMFILE( 
+                PRNAME = PROMPTSET( 
      &           'Enter logical name for the POINT REACTIVITY MATRIX',
      &           FSREAD3, 'PRMAT', PROGNAME )
 
-                CALL RETRIEVE_IOAPI_HEADER( PRNAME )
+                CALL RETRIEVE_SET_HEADER( PRNAME )
                 CALL CHKSRCNO( 'point', 'PRMAT', NTHIK3D, NPSRC, EFLAG )
                 PNRMATV = NVARS3D
                 PNSREAC = NROWS3D
                 ALLOCATE( PRVDESC( PNRMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PRVDESC', PROGNAME )
-                CALL STORE_VDESCS( 1, 1, PNRMATV, PRVDESC )
+                CALL STORE_VDESCS( 1, 1, PNRMATV, .FALSE., PRVDESC )
 
 C.................  Retrieve the number of speciation factors 
                 PRNMSPC = GETIFDSC( FDESC3D, '/SPECIES VARS/', .TRUE. )
@@ -750,24 +856,10 @@ C.................  Open stack groups file output from Elevpoint
 
         END IF      ! End of section for point sources
 
-C.........  Get master pollutants list so we will be able to output in the
-C           proper order in case different source categories have different
-C           pollutants.
-        IF( DFLAG ) THEN
-
-            PDEV = PROMPTFFILE( 
-     &         'Enter logical name for POLLUTANT CODES & NAMES file',
-     &         .TRUE., .TRUE., 'SIPOLS', PROGNAME )
-        END IF
-
-C.........  Get master activities list 
-        IF( KFLAG ) THEN
-
-            VDEV = PROMPTFFILE( 
-     &         'Enter logical name for ACTIVITY CODES & NAMES file',
-     &         .TRUE., .TRUE., 'ACTVNAMS', PROGNAME )
-
-        END IF
+C.........  Get file name for inventory pollutants codes/names
+        MESG = 'Enter logical name for INVENTORY DATA TABLE file'
+        PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'INVTABLE',
+     &                      PROGNAME )
 
 C.........  Get country, state, and county names no matter what, because it is
 C           needed to allocate memory for the state and county totals, even
@@ -787,7 +879,8 @@ C.........  If we are using temporalized emissions, then update date/time and
 C           duration using environment variable settings, then prompt.
         IF( TFLAG ) THEN
 
-            CALL GETM3EPI( TZONE, SDATE, STIME, NSTEPS )
+            CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
+            TSTEP = 10000   ! only 1-hour time steps supported
             EDATE = SDATE
             ETIME = STIME
             CALL NEXTIME( EDATE, ETIME, ( NSTEPS-1 ) * TSTEP )
@@ -795,7 +888,7 @@ C           duration using environment variable settings, then prompt.
         END IF   !  if have temporalized inputs and outputs
 
 C.........  Compare base year with episode and warn if not consistent
-        IF( SDATE / 1000 .NE. BYEAR ) THEN
+        IF( BYEAR .NE. 0 .AND. SDATE / 1000 .NE. BYEAR ) THEN
 
             WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR, 
      &             'is inconsistent with year ' // CRLF() // BLANK10 //
@@ -850,6 +943,29 @@ C----------------------------------------------------------------------
             ENDIF
  
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram tries to retrieve the description for a file
+C               set and aborts if it was not successful
+            SUBROUTINE RETRIEVE_SET_HEADER( FILNAM )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. DESCSET( FILNAM, ALLFILES ) ) THEN
+
+                MESG = 'Could not get description of file set "' //
+     &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            ENDIF
+ 
+            END SUBROUTINE RETRIEVE_SET_HEADER
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
@@ -984,7 +1100,7 @@ C.............  Local arrays
 C.............  Local variables
             INTEGER        D, L, N      ! counters and indices
 
-            INTEGER        INVPIDX   ! tmp index for ozone-season or not
+            INTEGER        INVPIDX   ! tmp index for average day or not
             INTEGER        LOCZONE   ! tmp time zone
             INTEGER        LOCNVAR   ! tmp local number of variables in file 
             INTEGER        NFILE     ! no. hourly emission files
@@ -1014,7 +1130,7 @@ C.............  For by-day processing...
      &                     // ' ' // LOCCAT // ' HOURLY EMISSIONS file'
                     TMPNAM = CRL // 'TMP_' // SUFFIX( D )
 
-                    FNAME( D ) = PROMPTMFILE( MESG,FSREAD3,
+                    FNAME( D ) = PROMPTSET( MESG,FSREAD3,
      &                                        TMPNAM,PROGNAME )
                     IDX( D ) = D
                 END DO
@@ -1027,7 +1143,7 @@ C.............  For standard processing...
      &                 ' HOURLY EMISSIONS file'
                 TMPNAM = CRL // 'TMP'
 
-                FNAME = PROMPTMFILE( MESG,FSREAD3,TMPNAM,PROGNAME ) ! array
+                FNAME = PROMPTSET( MESG,FSREAD3,TMPNAM,PROGNAME ) ! array
                 IDX( NFILE ) = 1
 
             END IF
@@ -1038,7 +1154,7 @@ C.............  Loop through each file and ensure they are consistent
                 TMPNAM = FNAME( IDX( D ) )
 
 C.................  Get header and compare source number and time range
-                CALL RETRIEVE_IOAPI_HEADER( TMPNAM )
+                CALL RETRIEVE_SET_HEADER( TMPNAM )
 
 C.................  Store the starting date
                 SDATE( IDX( D ) ) = SDATE3D
@@ -1058,10 +1174,10 @@ C.................  Check the number of sources
 
                 END SELECT
 
-C.................  Determine ozone-season emissions status from hourly file
-                INVPIDX = GETIFDSC( FDESC3D, '/OZONE SEASON/', .FALSE. )
+C.................  Determine average day emissions status from hourly file
+                INVPIDX = GETIFDSC( FDESC3D, '/AVERAGE DAY/', .FALSE. )
                 IF( INVPIDX .EQ. 1 ) THEN
-                    MESG = 'NOTE: Ozone-season emissions in ' //
+                    MESG = 'NOTE: Average day emissions in ' //
      &                     LOCCAT // ' hourly emissions file'
                     CALL M3MSG2( MESG )
                 END IF
@@ -1127,25 +1243,25 @@ C                   making comparisons with other files.
                     ALLOCATE( LOCVUNIT( LOCNVAR ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'LOCVUNIT', PROGNAME )
 
-                    LOCVNAM ( 1:LOCNVAR ) = VNAME3D( 1:LOCNVAR )
-                    LOCVUNIT( 1:LOCNVAR ) = UNITS3D( 1:LOCNVAR )
+                    LOCVNAM ( 1:LOCNVAR ) = VNAMESET( 1:LOCNVAR )
+                    LOCVUNIT( 1:LOCNVAR ) = VUNITSET( 1:LOCNVAR )
 
 C.................  Compare the pollutant names and units
                 ELSE
 
 C.....................  Check to make sure the number is consistent first
-                    IF( NVARS3D .NE. LOCNVAR ) NFLAG = .TRUE.
+                    IF( NVARSET .NE. LOCNVAR ) NFLAG = .TRUE.
 
 C.....................  Make sure no overflows                    
-                    N = MIN( NVARS3D, LOCNVAR )
+                    N = MIN( NVARSET, LOCNVAR )
 
 C.....................  compare variable names and units among files
-                   DO V = 1, N
-                        IF( LOCVNAM( V ) .NE. VNAME3D( V ) ) THEN
+                    DO V = 1, N
+                        IF( LOCVNAM( V ) .NE. VNAMESET( V ) ) THEN
                             VFLAG = .TRUE.
                         END IF
 
-                        IF( LOCVUNIT( V ) .NE. UNITS3D( V ) ) THEN
+                        IF( LOCVUNIT( V ) .NE. VUNITSET( V ) ) THEN
                             UFLAG = .TRUE.
                         END IF
                     END DO
@@ -1286,7 +1402,7 @@ C------------------  FORMAT  STATEMENTS   -----------------------------
 
 C...........   Internal buffering formats.............94xxx
 
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
 
             END SUBROUTINE CHECK_INVYEAR
 
@@ -1423,13 +1539,14 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable names into
 C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VNAMES( ISTART, INCRMT, NNAM, NAMES )
+            SUBROUTINE STORE_VNAMES( ISTART, INCRMT, NNAM, LFSET, NAMES)
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VNAMES of names
-            INTEGER      INCRMT        ! increment of VNAMES for names
-            INTEGER      NNAM          ! number of names
-            CHARACTER(*) NAMES( NNAM ) ! stored variable names
+            INTEGER,      INTENT (IN) :: ISTART ! starting position in VNAMES of names
+            INTEGER,      INTENT (IN) :: INCRMT ! increment of VNAMES for names
+            INTEGER,      INTENT (IN) :: NNAM   ! number of names
+            LOGICAL,      INTENT (IN) :: LFSET  ! true: input file is FileSetAPI
+            CHARACTER(*), INTENT(OUT) :: NAMES( NNAM ) ! stored variable names
 
 C.............  Local variables
             INTEGER  I, J
@@ -1439,7 +1556,12 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NNAM
 
-                NAMES( I ) = VNAME3D( J )
+                IF( LFSET ) THEN    ! From FileSetAPI
+                    NAMES( I ) = VNAMESET( J )
+                ELSE                ! From standard I/O API
+                    NAMES( I ) = VNAME3D( J )
+                END IF
+
                 J = J + INCRMT
 
             END DO
@@ -1452,16 +1574,17 @@ C.............  This subprogram stores I/O API NetCDF variable names and
 C               units from the inventory file into a local array based 
 C               on indices in subprogram call.
             SUBROUTINE STORE_INVINFO( ISTART, NPER, NPOA, IDX1, IDX2,
-     &                                NAMES, UNITS )
+     &                                LFSET, NAMES, UNITS )
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VNAMES of names
-            INTEGER      NPER          ! no. variables per pollutant
-            INTEGER      NPOA          ! number of pollutants or activities
-            INTEGER      IDX1          ! start index for output variables
-            INTEGER      IDX2          ! index to which pol-assoc variable
-            CHARACTER(*) NAMES( NPOA ) ! stored variable names
-            CHARACTER(*) UNITS( NPOA ) ! stored variable units
+            INTEGER,       INTENT (IN) :: ISTART ! starting position in VNAMES of names
+            INTEGER,       INTENT (IN) :: NPER   ! no. variables per pollutant
+            INTEGER,       INTENT (IN) :: NPOA   ! number of pollutants or activities
+            INTEGER,       INTENT (IN) :: IDX1   ! start index for output variables
+            INTEGER,       INTENT (IN) :: IDX2   ! index to which pol-assoc variable
+            LOGICAL,       INTENT (IN) :: LFSET  ! true: input file is FileSetAPI
+            CHARACTER(*), INTENT (OUT) :: NAMES( NPOA ) ! stored variable names
+            CHARACTER(*), INTENT (OUT) :: UNITS( NPOA ) ! stored variable units
 
 C.............  Local variables
             INTEGER  I, J, K
@@ -1474,8 +1597,17 @@ C----------------------------------------------------------------------
 
                 J = J + NPER
                 K = K + 1
-                NAMES( K ) = VNAME3D( J )
-                UNITS( K ) = UNITS3D( J )
+
+C................  If input file is from the FileSetAPI
+                IF( LFSET ) THEN
+                    NAMES( K ) = VNAMESET( J )
+                    UNITS( K ) = VUNITSET( J )
+
+C................  If input file is from the standard I/O
+                ELSE
+                    NAMES( K ) = VNAME3D( J )
+                    UNITS( K ) = UNITS3D( J )
+                END IF
 
             END DO
  
@@ -1485,16 +1617,19 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable descriptions into
 C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VDESCS( ISTART, INCRMT, NDESC, DESCS )
+            SUBROUTINE STORE_VDESCS( ISTART,INCRMT,NDESC,LFSET,DESCS )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VDESCS of names
-            INTEGER      INCRMT        ! increment of VDESCS for names
-            INTEGER      NDESC         ! number of descriptions
-            CHARACTER(*) DESCS( NDESC )! stored variable descriptions
+            INTEGER     , INTENT (IN) :: ISTART   ! starting position in VDESCS of names
+            INTEGER     , INTENT (IN) :: INCRMT   ! increment of VDESCS for names
+            INTEGER     , INTENT (IN) :: NDESC    ! number of descriptions
+            LOGICAL     , INTENT (IN) :: LFSET    ! number of descriptions
+            CHARACTER(*), INTENT(OUT) :: DESCS( NDESC )! stored variable descriptions
 
 C.............  Local variables
-            INTEGER  I, J, L
+            INTEGER  I, J
 
 C----------------------------------------------------------------------
 
@@ -1503,8 +1638,12 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NDESC
 
-                L = LEN_TRIM( VDESC3D( J ) )
-                DESCS( I ) = VDESC3D( J )( 1:L )
+                IF( LFSET ) THEN  ! From FileSetAPI
+                    DESCS( I ) = TRIM( VDESCSET( J ) )
+                ELSE              ! From standard I/O API
+                    DESCS( I ) = TRIM( VDESC3D( J ) )
+                END IF
+
                 J = J + INCRMT
 
             END DO
@@ -1515,13 +1654,16 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 C.............  This subprogram stores I/O API NetCDF variable units into
 C               a local array based on indices in subprogram call.
-            SUBROUTINE STORE_VUNITS( ISTART, INCRMT, NUNIT, UNITS )
+            SUBROUTINE STORE_VUNITS( ISTART,INCRMT,NUNIT,LFSET,UNITS )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.............  Subprogram arguments
-            INTEGER      ISTART        ! starting position in VDESCS of names
-            INTEGER      INCRMT        ! increment of VDESCS for names
-            INTEGER      NUNIT         ! number of units
-            CHARACTER(*) UNITS( NUNIT )! stored variable units
+            INTEGER     , INTENT (IN) :: ISTART        ! starting position in VDESCS of names
+            INTEGER     , INTENT (IN) :: INCRMT        ! increment of VDESCS for names
+            INTEGER     , INTENT (IN) :: NUNIT         ! number of units
+            LOGICAL     , INTENT (IN) :: LFSET         ! number of descriptions
+            CHARACTER(*), INTENT(OUT) :: UNITS( NUNIT )! stored variable units
 
 C.............  Local variables
             INTEGER  I, J, L
@@ -1533,12 +1675,114 @@ C----------------------------------------------------------------------
             J = ISTART
             DO I = 1, NUNIT
 
-                L = LEN_TRIM( UNITS3D( J ) )
-                UNITS( I ) = UNITS3D( J )( 1:L )
+                IF( LFSET ) THEN  ! From FileSetAPI
+                    UNITS( I ) = TRIM( VUNITSET( J ) )
+                ELSE              ! From standard I/O API
+                    UNITS( I ) = TRIM( UNITS3D( J ) )
+                END IF 
+
                 J = J + INCRMT
 
             END DO
  
             END SUBROUTINE STORE_VUNITS
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+C.............  This subprogram stores pollutant and activity names and
+C               units using the map-formatted inventory information 
+            SUBROUTINE STORE_INVEN_VARS( NMAPVAR, NHDRVAR, NPPOL, IDX2, 
+     &                                   MAPVARS, MAPFILES, NAMES1, 
+     &                                   NAMES2, UNITS )
+
+            INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+
+C.............  Subprogram arguments
+            INTEGER,      INTENT (IN) :: NMAPVAR    ! no. data in map file
+            INTEGER,      INTENT (IN) :: NHDRVAR    ! no. data in inven header
+            INTEGER,      INTENT (IN) :: NPPOL      ! no. variables per data var
+            INTEGER,      INTENT (IN) :: IDX2       ! index to which pol-assoc var
+            CHARACTER(*), INTENT (IN) :: MAPVARS ( NMAPVAR )   ! map file var names
+            CHARACTER(*), INTENT (IN) :: MAPFILES( NMAPVAR )   ! map file file names
+            CHARACTER(*), INTENT(OUT) :: NAMES1  ( NHDRVAR )   ! var names list
+            CHARACTER(*), INTENT(OUT) :: NAMES2  ( NHDRVAR )   ! var names read list
+            CHARACTER(*), INTENT(OUT) :: UNITS   ( NHDRVAR )   ! var units
+
+C.............  Local variables
+            INTEGER  I, J
+
+            CHARACTER*16    :: TMPNAME = ' '   ! tmp logical file name
+
+C----------------------------------------------------------------------
+
+C............  Ensure that the number of map variables and the number of 
+C              variables listed in the input file are consistent
+            IF( NMAPVAR .NE. NHDRVAR ) THEN
+                WRITE( MESG,94010 ) 'Number of map-formatted ' //
+     &             'variables is inconsistent with header of  '//
+     &             'inventory file.' // CRLF()// BLANK10 // 
+     &             'I/O API header has', NHDRVAR,'variables indicated'//
+     &              ', but map-formated inventory file has', NMAPVAR
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C............  Loop through variables requested
+            DO I = 1, NMAPVAR
+
+                TMPNAME = 'IOAPI_DAT'
+                IF( .NOT. SETENVVAR( TMPNAME, MAPFILES( I ) ) ) THEN
+                    MESG = 'ERROR: Could not set logical file name '
+     &                          // CRLF() // BLANK10 // 'for file ' //
+     &                          TRIM( MAPFILES( I ) )
+                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+                ELSE IF( .NOT. OPENSET( TMPNAME,FSREAD3,PROGNAME )) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Could not open "'//TRIM(MAPVARS(I))//
+     &                      '" file listed in ' // CRLF() // BLANK10 // 
+     &                      'map-formatted inventory for file name: ' //
+     &                      CRLF() // BLANK10 // TRIM( MAPFILES( I ) )
+                    CALL M3MSG2( MESG )
+                    CYCLE
+
+                ELSE IF( .NOT. DESCSET( TMPNAME,ALLFILES ) ) THEN
+                    MESG = 'Could not get description of file "' //
+     &                     TRIM( TMPNAME ) // '".'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END IF
+
+C................  Ensure that map variable name and file variable 
+C                  name are the same
+                IF( MAPVARS( I ) .NE. VNAMESET( 2 ) ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Variable name "'// TRIM(MAPVARS(I))//
+     &                    '" in map-formatted inventory is mapped to '//
+     &                     CRLF()// BLANK10// 'a file with variable "'//
+     &                     TRIM( VNAMESET( 2 ) )//'". Map-formatted '//
+     &                     'inventory has been corrupted.'
+                    CALL M3MSG2( MESG )
+                    CYCLE
+                END IF
+
+                NAMES1( I ) = VNAMESET( 2 )
+                NAMES2( I ) = VNAMESET( IDX2 )
+                UNITS ( I ) = VUNITSET( IDX2 )
+
+C...............  Close output file for this variable
+                IF( .NOT. CLOSESET( TMPNAME ) ) THEN
+                    MESG = 'Could not close file:'//CRLF()//BLANK10//
+     &                     TRIM( MAPFILES( I ) )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+            END DO
+
+C...........   Internal buffering formats.............94xxx
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+            END SUBROUTINE STORE_INVEN_VARS
 
         END SUBROUTINE OPENMRGIN

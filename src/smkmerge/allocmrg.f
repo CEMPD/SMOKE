@@ -42,19 +42,41 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE
+        USE MODMERGE, ONLY: 
+     &          AFLAG, NASRC, ANGMAT, AEMGRD, LREPINV, ANIPOL, LREPSPC,
+     &          ANMSPC, LREPSTA, LREPCTL, AUFLAG, ARFLAG, ANSREAC,
+     &          ANSMATV, BFLAG, MFLAG, NMSRC, MNGMAT, MEMGRD, MNIPPA,
+     &          MNMSPC, MUFLAG, MRFLAG, MNSREAC, MNSMATV, PFLAG, NPSRC,
+     &          PEMGRD, PNIPOL, PNMSPC, PUFLAG, PRFLAG, PNSREAC, 
+     &          PNSMATV, LFLAG, EXPLFLAG, EMLAYS, ELEVFLAG, PINGFLAG, 
+     &          ELEVADJ, TEMGRD, XFLAG, NIPPA, NMSPC, TUFLAG, TRFLAG,
+     &          ANUMATV, MNUMATV, PNUMATV, SFLAG, NSMATV, ASMATX, 
+     &          MSMATX, PSMATX, AEMSRC, MEMSRC, PEMSRC, AGMATX, ARINFO,
+     &          AEBSTA, AEUSTA, AERSTA, AECSTA, AEBCNY, AEUCNY, AECCNY,
+     &          BEMGRD, BEBSTA, BEBCNY, MGMATX, MRINFO, MEBSTA, MEUSTA,
+     &          MERSTA, MECSTA, MEBCNY, MEUCNY, MERCNY, MECCNY, PGMATX,
+     &          PRINFO, PEBSTA, PEUSTA, PERSTA, PECSTA, PEBCNY, PEUCNY,
+     &          PERCNY, PECCNY, LFRAC, TEBSTA, TEUSTA, TERSTA, TECSTA,
+     &          TEBCNY, TEUCNY, TERCNY, TECCNY, AEISRC, MEISRC, PEISRC,
+     &          AERCNY, BNMSPC
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV
+        USE MODELEV, ONLY: ELEVFLTR, ELEVSRC, NHRSRC, INDXH, NGROUP, 
+     &                     GRPGID, GRPXL, GRPYL, GRPCOL, GRPROW, 
+     &                     GRPHT, GRPDM, GRPTK, GRPVE
 
 C.........  This module contains the control packet data and control matrices
-        USE MODCNTRL
+        USE MODCNTRL, ONLY:
+     &                  ACUMATX, MCUMATX, PCUMATX,
+     &                  ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN, ACRFAC,
+     &                  MCRIDX, MCRREPEM, MCRPRJFC, MCRMKTPN, MCRFAC,
+     &                  PCRIDX, PCRREPEM, PCRPRJFC, PCRMKTPN, PCRFAC
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY
+        USE MODSTCY, ONLY: NCOUNTY, NSTATE
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID
+        USE MODGRID, ONLY: NGRID
 
         IMPLICIT NONE
 
@@ -480,7 +502,7 @@ C.............  Area
             J = 1
             ASPCSIZ = MIN( ASPCSIZ, MXVARPGP )
             ALLOCATE( ASMATX( NASRC,ASPCSIZ ), STAT=IOSA( J ) )
-	    CALL CHECKMEM( IOSA( J ), 'ASMATX', PROGNAME )
+            CALL CHECKMEM( IOSA( J ), 'ASMATX', PROGNAME )
 
 C.............  Mobile
             J = J + 1
@@ -567,6 +589,7 @@ C               with speciation matrices, and then moving to control and
 C               inventory emission matrices sizes
             IF ( RESET ) THEN
                 
+                RESET = .FALSE.
 C.................  If there is still room to make it smaller, reduce the 
 C                   maximum number of variables per group
                 IF( MXVARPGP .GT. 1 ) THEN
@@ -590,7 +613,6 @@ C.................  Deallocate existing allocations to prepare for next
 C                   iteration 
                 DEALLOCATE( ASMATX , MSMATX , PSMATX  )
                 DEALLOCATE( ACUMATX, MCUMATX, PCUMATX )
-                DEALLOCATE( ACAMATX, MCAMATX, PCAMATX )
                 DEALLOCATE( AEMSRC , MEMSRC , PEMSRC  )
 
 C.............  Memory allocation was successfull
