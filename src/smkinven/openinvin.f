@@ -1,6 +1,6 @@
 
         SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
-     &                        XDEV, EDEV, PDEV, ZDEV, CDEV, ODEV, 
+     &                        XDEV, EDEV, PDEV, ZDEV, CDEV, ODEV, YDEV,
      &                        ENAME, INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
@@ -71,6 +71,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
         INTEGER     , INTENT(OUT) :: CDEV      ! unit no. for SCCs description
         INTEGER     , INTENT(OUT) :: ODEV      ! unit no. for ORIS description
+        INTEGEr     , INTENT(OUT) :: YDEV      ! unit no. for area-to-point
         CHARACTER(*), INTENT(OUT) :: ENAME     ! optional netCDF inven input
         CHARACTER(*), INTENT(OUT) :: INNAME    ! average inventory name
         CHARACTER(*), INTENT(OUT) :: IDNAME    ! day-specific inventory 
@@ -82,13 +83,12 @@ C...........   Other local variables
         INTEGER       J      ! counter and indices
         INTEGER       LCAT   ! length of CATEGORY string
 
-        LOGICAL    :: CFLAG = .FALSE.  ! true: use SIPOLS file
+        LOGICAL    :: CFLAG = .FALSE.  ! true: import area-to-point file
         LOGICAL    :: DFLAG = .FALSE.  ! true: import day-specific file
         LOGICAL    :: GFLAG = .FALSE.  ! true: import gridded I/O API inventory
         LOGICAL    :: HFLAG = .FALSE.  ! true: import hour-specific file
         LOGICAL    :: IFLAG = .FALSE.  ! true: import annual/average inventory
         LOGICAL    :: SFLAG = .FALSE.  ! true: import speeds file
-        LOGICAL    :: VFLAG = .FALSE.  ! true: use ACTVNAMS file
         LOGICAL    :: XFLAG = .FALSE.  ! true: import VMT mix file
 
         CHARACTER(LEN=NAMLEN3) ANAME
@@ -100,25 +100,7 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine OPENINVIN
 
-C.........  Set controls for reading the pollutants and activities files
-C.........  Default is for mobile to read in activities and not pollutants
-C           and for other source categories to read in pollutants and not
-C           activities
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            CFLAG = .FALSE.
-            VFLAG = .TRUE.
-        ELSE
-            CFLAG = .TRUE.
-            VFLAG = .FALSE.
-        END IF
-
 C.........  Get value of these controls from the environment
-        MESG = 'Indicator for using pollutants list'
-        CFLAG = ENVYN( 'SMK_USE_SIPOLS', MESG, CFLAG, IOS )
-
-        MESG = 'Indicator for using activities list'
-        VFLAG = ENVYN( 'SMK_USE_ACTVNAMS', MESG, VFLAG, IOS )
-
         MESG = 'Import average inventory data'
         IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', MESG, .TRUE., IOS )
 
@@ -128,6 +110,9 @@ C.........  Get value of these controls from the environment
 
             MESG = 'Import hour-specific data'
             HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
+        ELSE
+            MESG = 'Read and use area-to-point factors file'
+            CFLAG = ENVYN ( 'SMK_ARTOPNT_YN', MESG, .FALSE., IOS )
         END IF
 
         IF ( CATEGORY .EQ. 'AREA' ) THEN
@@ -161,7 +146,6 @@ C.........  Make sure gridded point source file is not attempted
 C.........  When gridded data are imported, override other settings
         IF( GFLAG ) THEN
             CFLAG = .FALSE.
-            VFLAG = .FALSE.
             IFLAG = .FALSE.
             DFLAG = .FALSE.
             HFLAG = .FALSE.
@@ -201,7 +185,7 @@ C.........  Find name name of raw inventory file
 
         END IF
 
-C.........
+C.........   Get NetCDF gridded inventory file (without SCCs)
         IF( GFLAG ) THEN
 
             MESG = 'Enter logical name of the GRIDDED ' // 
@@ -311,6 +295,11 @@ C           matches with the inventory
      &             'Enter logical name for ORIS DESCRIPTION file ',
      &             .TRUE., .TRUE., 'ORISDESC', PROGNAME )
         END IF
+
+C.........  Get file name for area-to-point factors file
+        MESG = 'Enter logical name for AREA-TO-POINT FACTORS file'
+        YDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ARTOPNT',
+     &                      PROGNAME )
 
 C.........  Get file name for inventory pollutants codes/names
         MESG = 'Enter logical name for INVENTORY DATA TABLE file'
