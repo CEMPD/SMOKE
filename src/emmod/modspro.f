@@ -81,11 +81,14 @@
 	CHARACTER(LEN=IOULEN3), ALLOCATABLE, PUBLIC :: MOLUNITS( :,: )
 
 !.........  Header definitions for NONHAP<pollutants>
+        CHARACTER*5, PARAMETER :: HDREND   = '/END/'   ! end of header
+        CHARACTER*7, PARAMETER :: HDRSTART = '/NONHAP' ! start of header
+
         INTEGER                            , PUBLIC :: NSPDEF   ! no. pols with def'ns
         INTEGER                            , PUBLIC :: MXSPLST  ! max items per def'n list
         INTEGER               , ALLOCATABLE, PUBLIC :: NSPLST   ( : ) ! no. item in each (nspdef)
-        CHARACTER(LEN=POLLEN3), ALLOCATABLE, PUBLIC :: SPCDEFPOL( : ) ! pols with def'ns (nspdef)
-        CHARACTER(LEN=POLLEN3), ALLOCATABLE, PUBLIC :: SPCDEFLST( :,: ) ! the def'ns (mxsplst,nspdef)
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: SPCDEFPOL( : ) ! pols with def'ns (nspdef)
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: SPCDEFLST( :,: ) ! the def'ns (mxsplst,nspdef)
 
 !.........  Sorted groups of pollutant to pollutant conversion factors
 
