@@ -191,8 +191,9 @@ C
 C 
 C  Output the database results. 
 C 
-      CALL PMOUTDB(ICY,INERR) 
-      IF(INERR.GT.0) RETURN 
+ccs      CALL PMOUTDB(ICY,INERR) 
+ccs      IF(INERR.GT.0) RETURN 
+      CALL SMKPMOUT
 C 
 C  Output the spreadsheet output. 
 C 

@@ -582,7 +582,8 @@ C
 C 
 C  Output the database results. 
 C 
-      CALL ATOUTDB(ICY,INERR) 
+ccs      CALL ATOUTDB(ICY,INERR) 
+      CALL SMKATOUT
 C 
 C  Output the spreadsheet results. 
 C 
