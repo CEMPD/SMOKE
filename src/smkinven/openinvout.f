@@ -1,8 +1,8 @@
 
-        SUBROUTINE OPENINVOUT( ENAME, ANAME, SDEV )
+        SUBROUTINE OPENINVOUT( MXIDAT, INVDNAM, ENAME, ANAME, SDEV )
 
-C***********************************************************************
-C  subroutine body starts at line 100
+C*************************************************************************
+C  subroutine body starts at line 118
 C
 C  DESCRIPTION:
 C      This subroutine sets up the header and variables for the I/O API 
@@ -19,13 +19,13 @@ C
 C  REVISION  HISTORY:
 C      Created 4/99 by M. Houyoux
 C
-C****************************************************************************/
+C*************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -60,18 +60,22 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER*2     CRLF
+        INTEGER         INDEX1
         INTEGER         PROMPTFFILE
         CHARACTER(LEN=NAMLEN3) PROMPTMFILE
         CHARACTER*16    VERCHAR
 
-        EXTERNAL CRLF, PROMPTFFILE, PROMPTMFILE, VERCHAR
+        EXTERNAL CRLF, INDEX1, PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT(OUT) :: ENAME ! emis i/o api inven logical name
-        CHARACTER(*), INTENT(OUT) :: ANAME ! emis ASCII inven logical name
-        INTEGER     , INTENT(OUT) :: SDEV  ! ascii output inven file unit no.
+        INTEGER     , INTENT(IN)  :: MXIDAT ! max. inventory data names
+        CHARACTER(*), INTENT(IN)  :: INVDNAM( MXIDAT ) ! inv. data names
+        CHARACTER(*), INTENT(OUT) :: ENAME  ! emis i/o api inven logical name
+        CHARACTER(*), INTENT(OUT) :: ANAME  ! emis ASCII inven logical name
+        INTEGER     , INTENT(OUT) :: SDEV   ! ascii output inven file unit no.
 
 C...........   LOCAL PARAMETERS
+        CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
         CHARACTER*50, PARAMETER :: SCCSW  = '@(#)$Id$'  ! SCCS string with vers no.
 
 C...........   Names, Units, types, & descriptions for pollutant-specific 
@@ -84,17 +88,34 @@ C              output variables
 
 C...........   Other local variables
 
-        INTEGER       I, J, L1, L2, V     ! counter and indices
+        INTEGER       I, J, K, L, L1, L2, V     ! counter and indices
+
+        INTEGER       IOS       ! i/o status
+        INTEGER       LEQU      ! position of '=' in formula
+        INTEGER       LDIV      ! position of '-' or '+' in formula
+        INTEGER       LMNS      ! position of '-' in formula
+        INTEGER       LPLS      ! position of '+' in formula
         INTEGER       NIOVARS   ! Number of I/O API file non-emis variables
         INTEGER       NDATMAX   ! Max no of pols+activitys, based on I/O API
         INTEGER       NNPVAR    ! No. non-pollutant inventory variables
 
+        LOGICAL    :: CHKPLUS  = .FALSE. ! true: formula uses a + sign
+        LOGICAL    :: CHKMINUS = .FALSE. ! true: formula uses a - sign
+
+        CHARACTER*60  VAR_FORMULA
         CHARACTER*300 MESG      ! message buffer 
+
+        CHARACTER(LEN=IOVLEN3 ) VIN_A
+        CHARACTER(LEN=IOVLEN3 ) VNAME
+        CHARACTER(LEN=IOULEN3)  UNITS  ! tmp units name
 
         CHARACTER*16 :: PROGNAME = 'OPENINVOUT' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENINVOUT
+
+C.........  Get environment variable settings
+        CALL ENVSTR( FORMEVNM, MESG, ' ', VAR_FORMULA, IOS )
 
 C.........  Get output inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
@@ -178,7 +199,8 @@ C.........  Set up for opening I/O API output file header
 
         WRITE( FDESC3D( 9  ),94010 ) '/NUMBER CHARS/ ' , NCHARS 
         WRITE( FDESC3D( 10 ),94010 ) '/SCC POSITION/ ' , JSCC 
-        WRITE( FDESC3D( 11 ),94010 ) '/BASE YEAR/ '    , BYEAR 
+        WRITE( FDESC3D( 11 ),94010 ) '/STACK POSITION/ ' , JSTACK 
+        WRITE( FDESC3D( 12 ),94010 ) '/BASE YEAR/ '    , BYEAR 
 
 c note: now that FDESC for the inven file goes passed 10 fields, must check
 C n:    other programs to avoid conflicts with FDESC
@@ -300,17 +322,27 @@ C.........  Define source characteristic variables that are not strings
 
         END IF
 
-C.........  Get names, units, etc. of output pollutant-specific records
-        CALL BLDENAMS( CATEGORY, NIPOL, NPPOL, EINAM, 
+C.........  Get names, units, etc. of output pollutant-specific and activity-
+C           specific records
+        CALL BLDENAMS( CATEGORY, NIPPA, NPPOL, EANAM, 
      &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
 
-        DO V = 1 , NIPOL
+        DO V = 1 , NIPPA
             
             DO I = 1, NPPOL ! Loop through number of variables per pollutant
 
+C.................  Reset units from inventory input file, if they are available
+                IF( ALLOCATED( INVDUNT ) ) THEN
+                    K = INDEX1( EONAMES( V, 1 ), MXIDAT, INVDNAM )
+                    UNITS = INVDUNT( K, I )
+                ELSE
+                    UNITS = EOUNITS( V, I )
+                END IF
+
+C.................  Store variable names and information
                 VNAME3D( J ) = EONAMES( V, I )
                 VTYPE3D( J ) = EOTYPES( V, I )
-                UNITS3D( J ) = EOUNITS( V, I )
+                UNITS3D( J ) = UNITS
                 VDESC3D( J ) = EODESCS( V, I )
                 J = J + 1
 
@@ -318,25 +350,70 @@ C.........  Get names, units, etc. of output pollutant-specific records
 
         END DO        !  end loop on inventory pollutants V
 
+C.........  If there is a computed output variable, add it to the variable list.
+C           Base the other variable settings (besides the name) on the first 
+C           of the two variables in the formula.
+        IF( VAR_FORMULA .NE. ' ' ) THEN
 
-C.........  Get names, units, etc. of output activity-specific records
-        CALL BLDENAMS( CATEGORY, NIACT, NPPOL, ACTVTY, 
-     &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
+C.............  Make sure not using activities - not supported 
+            IF( NIACT .GT. 0 ) THEN
+                MESG = 'Formula not support when using activities'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
-        DO V = 1 , NIACT
-            
-            DO I = 1, NPPOL ! Loop through number of variables per activity
+C.............  Make sure formula makes sense
+            LEQU = INDEX( VAR_FORMULA, '=' )
+            LPLS = INDEX( VAR_FORMULA, '+' )
+            LMNS = INDEX( VAR_FORMULA, '-' )
 
-                VNAME3D( J ) = EONAMES( V, I )
-                VTYPE3D( J ) = EOTYPES( V, I )
-                UNITS3D( J ) = EOUNITS( V, I )
-                VDESC3D( J ) = EODESCS( V, I )
-                J = J + 1
+            CHKPLUS  = ( LPLS .GT. 0 )
+            CHKMINUS = ( LMNS .GT. 0 )
 
-            END DO    !  end loop on number of variables per activity
+            LDIV = LPLS
+            IF( CHKMINUS ) LDIV = LMNS
 
-        END DO        !  end loop on inventory activities V
+            IF( LEQU .LE. 0 .OR. 
+     &        ( .NOT. CHKPLUS .AND. .NOT. CHKMINUS ) ) THEN
 
+                L = LEN_TRIM( FORMEVNM )
+                MESG = 'Could not interpret formula for extra ' //
+     &                 'pollutant from environment variable ' //
+     &                 CRLF() // BLANK10 // '"' // FORMEVNM( 1:L ) //
+     &                 '": ' // VAR_FORMULA
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Extract formula variable names
+            VNAME = ADJUSTL ( VAR_FORMULA(      1:LEQU-1 ) )
+            VIN_A = ADJUSTL ( VAR_FORMULA( LEQU+1:LDIV-1 ) )
+
+C.............  Find formula inputs in existing variable list
+            V = INDEX1( VIN_A, NIPPA, EANAM )
+
+            IF( V .LE. 0 ) THEN
+                L = LEN_TRIM( VIN_A )
+                MESG = 'Variable "'// VIN_A( 1:L ) // 
+     &                 '" from formula was not found in inventory.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            DO I = 1, NPPOL ! Loop through number of variables per pollutant
+
+                L = LEN_TRIM( VIN_A )
+                L = INDEX( EONAMES( V, I ), VIN_A(1:L) )
+        	VNAME3D( J ) = EONAMES( V, I )( 1:L-1 ) // VNAME
+        	VTYPE3D( J ) = EOTYPES( V, I )
+        	UNITS3D( J ) = EOUNITS( V, I )
+        	VDESC3D( J ) = EODESCS( V, I )
+        	J = J + 1
+
+            END DO    !  end loop on number of variables per pollutant
+
+C.............  Update header settings
+            NVARS3D = NVARS3D + NPPOL
+            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
+
+        END IF
 
 C.........  Prompt for and open I/O API output file
         ENAME= PROMPTMFILE( 
