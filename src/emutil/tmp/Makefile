@@ -8,14 +8,23 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: mvcondns smk2emis uam2ncf
+all: geofac mvcondns smk2emis uam2ncf 
 
-debug: mvcondns.debug smk2emis.debug uam2ncf.debug
+debug: geofac.debug mvcondns.debug smk2emis.debug uam2ncf.debug 
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
 
+
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
+
+geofac: $(GEOF) $(ALLI) $(LIBPATH)
+	echo GEOFAC:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GEOF) $(LIBS)
+
+geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'GEOFAC (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(GEOF) $(LIBS_DEBUG)
 
 MVC=mvcondns.o
 
