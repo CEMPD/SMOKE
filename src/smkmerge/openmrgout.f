@@ -163,9 +163,13 @@ C.............  Prompt for and gridded open file(s)
                 CALL SETUP_VARIABLES( PNIPOL, PNMSPC, PEINAM, PEMNAM )
                 NLAYS3D = EMLAYS
                 IF( ALLOCATED( VGLVS ) ) THEN
-                   VGLVS3D = VGLVS
+                    J = LBOUND( VGLVS3D,1 )
+                    DO V = 0, EMLAYS
+                        VGLVS3D( J ) = VGLVS( V )
+                        J = J + 1
+                    END DO
                 ELSE
-                   VGLVS3D = 0
+                    VGLVS3D = 0  ! array
                 ENDIF
                 FDESC3D( 1 ) = 'Point source emissions data'
                 PONAME = PROMPTMFILE(  
@@ -177,9 +181,13 @@ C.............  Prompt for and gridded open file(s)
                 CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )
                 NLAYS3D = EMLAYS
                 IF( ALLOCATED( VGLVS ) ) THEN
-                   VGLVS3D = VGLVS
+                    J = LBOUND( VGLVS3D,1 )
+                    DO V = 0, EMLAYS
+                        VGLVS3D( J ) = VGLVS( V )
+                        J = J + 1
+                    END DO
                 ELSE
-                   VGLVS3D = 0
+                   VGLVS3D = 0  ! array
                 ENDIF
                 FDESC3D( 1 ) = 'Multiple category emissions data'
                 TONAME = PROMPTMFILE(  
