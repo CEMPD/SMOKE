@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENTMP( ENAME, SDATE, STIME, TSTEP, TZONE, 
+        SUBROUTINE OPENTMP( ENAME, SDATE, STIME, TSTEP, NSTEPS, TZONE, 
      &                      NPELV, TNAME, PDEV )
 
 C***********************************************************************
@@ -41,10 +41,12 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC
+        USE MODEMFAC, ONLY: EMTDSC, EMTNAM, NETYPE
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: ACTVTY, BYEAR, CATDESC, CRL, EANAM, EADESC, 
+     &                     EAREAD, EAUNIT, EINAM, INVPIDX, NIACT, 
+     &                     NIPPA, NIPOL
 
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
@@ -60,20 +62,22 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         INTEGER                INDEX1
+        INTEGER                IOAPI_GRD_SIZE
         CHARACTER(LEN=IODLEN3) GETCFDSC
         INTEGER                GETIFDSC
         CHARACTER(LEN=IOULEN3) MULTUNIT
         INTEGER                PROMPTFFILE
         CHARACTER*16           VERCHAR
 
-        EXTERNAL        CRLF, INDEX1, GETCFDSC, GETIFDSC, MULTUNIT,
-     &                  VERCHAR
+        EXTERNAL        CRLF, INDEX1, IOAPI_GRD_SIZE, GETCFDSC, 
+     &                  GETIFDSC, MULTUNIT, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME  ! emissions inven logical name
         INTEGER     , INTENT (IN) :: SDATE  ! episode start date 
         INTEGER     , INTENT (IN) :: STIME  ! episode start time
         INTEGER     , INTENT (IN) :: TSTEP  ! episode time step
+        INTEGER     , INTENT (IN) :: NSTEPS ! number of time steps
         INTEGER     , INTENT (IN) :: TZONE  ! zone used for hours in output files
         INTEGER     , INTENT (IN) :: NPELV  ! number of elevated sources
         CHARACTER(*), INTENT(OUT) :: TNAME  ! lay-1 (or all) hourly logical name 
@@ -87,7 +91,9 @@ C...........   Other local variables
         INTEGER         I, J, K, V     ! counters and indices
 
         INTEGER         IOS         ! i/o status
+        INTEGER         FILESIZE    ! approximate size of emission factors file
         INTEGER         NINVVAR     ! number of inventory variables
+        INTEGER         NVARFILE    ! number of variables per file
         INTEGER         PYEAR       ! projected year from inventory file (or -1)
 
         CHARACTER*5     CTZONE      ! string of time zone
@@ -134,7 +140,7 @@ C.........  Get header information from inventory file
         WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR 
         IF( PYEAR .GT. 0 ) 
      &      WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
-	WRITE( FDESC3D( 7 ),94010 ) '/OZONE SEASON/', INVPIDX
+        WRITE( FDESC3D( 7 ),94010 ) '/OZONE SEASON/', INVPIDX
 
         FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
         FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
@@ -150,6 +156,31 @@ C.........  Allocate memory for output arrays
         CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
         ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
+
+C.........  Check file size and adjust number of files to avoid 2 GB limit
+        NFILESET = 1
+        DO
+            NVARFILE = ( NVARSET + NFILESET - 1 ) / NFILESET
+            FILESIZE = IOAPI_GRD_SIZE( 1, NROWS3D, 1, NVARFILE, NSTEPS )
+            
+            IF( FILESIZE / 1000000 > 1500 ) THEN
+                NFILESET = NFILESET + 1
+            ELSE
+                EXIT
+            END IF
+        END DO
+
+        IF( NFILESET > 1 ) THEN
+            ALLOCATE( VARS_PER_FILE( NFILESET ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VARS_PER_FILE', PROGNAME )
+            
+            DO I = 1, NFILESET - 1
+                VARS_PER_FILE( I ) = NVARFILE
+            END DO
+
+            VARS_PER_FILE( NFILESET ) = 
+     &            NVARSET - ( NVARFILE*( NFILESET - 1 ) )
+        END IF
 
 C.........  Set variable names and characteristics from the emission types
         K = 0
@@ -167,7 +198,7 @@ C               expanded to contain the emission types
 
             DO V = 1, NETYPE( I-NIPOL )
 
-        	K = K + 1
+            K = K + 1
                 IF( K .GT. NVARSET ) THEN
                     MESG = 'INTERNAL ERROR: Memory overflow building '//
      &                     'I/O API output variables'
@@ -175,10 +206,10 @@ C               expanded to contain the emission types
                     CYCLE
                 END IF
 
-        	VNAMESET( K ) = EMTNAM( V,J )
-        	VUNITSET( K ) = EAUNIT( I )   
-        	VDESCSET( K ) = EMTDSC( V,J )
-        	VTYPESET( K ) = M3REAL
+            VNAMESET( K ) = EMTNAM( V,J )
+            VUNITSET( K ) = EAUNIT( I )   
+            VDESCSET( K ) = EMTDSC( V,J )
+            VTYPESET( K ) = M3REAL
 
             END DO  ! End loop on emission types for output
         END DO      ! End loop on activities output
