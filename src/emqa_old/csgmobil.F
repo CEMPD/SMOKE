@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM CSGMOBIL
 
 C***********************************************************************
-C  program body starts at line 104
+C  program body starts at line 130
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -23,12 +21,33 @@ C       Prototype  2/96 by CJC.
 C       Modified   6/96 by M Houyoux
 C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
 C...........   INCLUDES:
         
-        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
+        INCLUDE 'CHDGEN3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
         INCLUDE 'MBDIMS3.EXT'   !  area-source dimensioning parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
@@ -136,8 +155,7 @@ C   begin body of program CSGMOBIL
      &  ' '
         
         IF ( .NOT. GETYN( 'Continue with program?', .TRUE. ) ) THEN
-            WRITE( *,92000 ) ' ', 'Ending program CSGMOBIL', ' '
-            CALL EXIT( 0 )
+            CALL M3EXIT( 'CSGMOBIL', 0, 0, 'Ending program', 2 )
         END IF
 
 
@@ -269,7 +287,8 @@ C.......   Optionally open an output file
 
 C.......   Read gridding, speciation, and (optional) control matrices:
 
-        WRITE( *,92000 ) ' ', 'Reading GRIDDING matrix.', ' '
+        CALL M3MSG2( 'Reading GRIDDING matrix...' )
+
         IF ( .NOT. READ3( GNAME, ALLVAR3, 1, 0, 0, NX ) ) THEN
 
             CALL M3EXIT( 'CSGMOBIL', 0, 0,
@@ -278,7 +297,8 @@ C.......   Read gridding, speciation, and (optional) control matrices:
             
         END IF      !  if read3() failed for gridding matrix
 
-        WRITE( *,92000 ) ' ','Reading SPECIATION matrix.',' '
+        CALL M3MSG2( 'Reading SPECIATION matrix...' )
+
         IF ( .NOT. READ3( SNAME, ALLVAR3, ALLAYS3, 0, 0, SS ) ) THEN
 
             CALL M3EXIT( 'CSGMOBIL', 0, 0,
@@ -294,22 +314,17 @@ C.......         a control matrix makes sense for MV processing
 C.......   Transform and write out mobile source emissions values:
 
         IF ( CONTROLFLAG .AND. OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing ' //
-     &      'controlled speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating and writing ' //
+     &                   'controlled speciated gridded emissions...' )
         ELSE IF ( CONTROLFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating controlled speciated gridded emissions...'
+     &      CALL M3MSG2( 
+     &       'Calculating controlled speciated gridded emissions...' )
         ELSE IF ( OUTPUTFLAG ) THEN
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating and writing speciated gridded emissions...'
+            CALL M3MSG2(
+     &       'Calculating and writing speciated gridded emissions...' )
         ELSE 
-            WRITE( *,92000 ) 
-     &      ' ', 
-     &      'Calculating speciated gridded emissions...'
+            CALL M3MSG2( 'Calculating speciated gridded emissions...' )
+
         END IF
 
 C.........  Calculate emissions for all time steps available from MTMP

@@ -1,10 +1,8 @@
 
-C Version "@(#)$Id$ $Source$ $Date$ 
-
         PROGRAM TMPMOBIL
 
 C***********************************************************************
-C  program body starts at line 265
+C  program body starts at line 354
 C
 C  DESCRIPTION:
 C       Produces source-level temporally allocated VMT using the 
@@ -23,17 +21,39 @@ C       TIME2SEC, TRIMLEN, WKDAY
 C
 C  REVISION  HISTORY:
 C       Prototype  1/96 by CJC.
+C       MANY revisions by M Houyoux - see SCCS history
+C
 C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 1996, MCNC--North Carolina Supercomputing Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Programs Group
+C MCNC--North Carolina Supercomputing Center
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C env_progs@mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C****************************************************************************
 
       IMPLICIT NONE
 
-
 C...........   INCLUDES:
 
-        INCLUDE 'CHDIMS3.EXT'   !  emis chem parms (inventory + model)
-        INCLUDE 'TMDIMS3.EXT'   !  emis temporal modeling parms
         INCLUDE 'MBDIMS3.EXT'   !  mobile-source dimensioning parameters
+        INCLUDE 'CHDGEN3.EXT'   !  general spec chemistry parms (inv + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parms
+        INCLUDE 'TMDIMS3.EXT'   !  emis temporal modeling parms
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -43,13 +63,16 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER         CHKXLIN
+        CHARACTER*2     CRLF
         INTEGER         CSVNAME
         INTEGER         FIND1, FIND2, FIND3
+        INTEGER         GETDATE 
         INTEGER         GETEFILE
         INTEGER         GETNUM
         LOGICAL         GETYN
         INTEGER         INDEX1
         LOGICAL         ISDSTIME
+        INTEGER         JULIAN
         CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
@@ -61,9 +84,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
 
-        EXTERNAL    CHKXLIN, CSVNAME,
-     &              FIND1, FIND2, FIND3, GETEFILE, GETNUM, GETYN, 
-     &              INDEX1, ISDSTIME, MMDDYY, PROMPTFFILE, PROMPTMFILE,
+        EXTERNAL    CHKXLIN, CRLF, CSVNAME, FIND1, FIND2, FIND3,
+     &              GETDATE, GETEFILE, GETNUM, GETYN, INDEX1, ISDSTIME,
+     &              JULIAN, MMDDYY, PROMPTFFILE, PROMPTMFILE,
      &              RDMPLIST, RDTPROF, STR2INT, SEC2TIME, TIME2SEC, 
      &              TRIMLEN, WKDAY
 
@@ -76,9 +99,6 @@ C...........   PARAMETERS and their descriptions
         PARAMETER     ( BLANK5  = ' ' ,
      &                  BLANK16 = ' ' ,
      &                  FTOC    = 5.0D0 / 9.0D0 )
-
-        CHARACTER*2     CRLF  ! Carridge return and line feed
-        SAVE            CRLF
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Mobile Sources input and output arrays
@@ -165,6 +185,8 @@ C...............   Temporal x-ref arrays
         INTEGER WPRFA( MXREF )      ! Weekly temporal profile for XREF
         INTEGER DPRFA( MXREF )      ! Daily temporal profile for XREF
 
+C......... Common block for ordering variables for EQUIVALENCE below
+
         COMMON / TXREF / INDXA, FIPFA, RDTFA, LNKFA, VHTFA, 
      &                   CODEA, MPRFA, WPRFA, DPRFA
 
@@ -241,7 +263,6 @@ C...........   Other local variables
         LOGICAL         OFLAG   !  sources outside grid
         LOGICAL         MFLAG   !  perform monthly adjustments flag
         LOGICAL         WFLAG   !  perform weekly adjustments flag
-        LOGICAL         SFLAG   !  Write certain messages to screen
 
         INTEGER         COD     !  Temporary pollutant code
         INTEGER         EMT     !  Temporary MV emissions type
@@ -259,7 +280,7 @@ C...........   Other local variables
         INTEGER         JTIME	!  for output file
         INTEGER         JMDATE	!  Met date using output zone
         INTEGER         JMTIME	!  Met time using output zone
-        INTEGER         JYEAR
+        INTEGER         YEAR    !  Simulation output year
         INTEGER         LNK     !  Temporary user defined link code
         INTEGER         MAXTL   !  Intermediate temperature indice variable
         INTEGER         NDATE	!  Ending date for min/max temp file
@@ -306,6 +327,7 @@ C...........   Other local variables
   
         CHARACTER*3     INV     !  temporary string for inventory species name
         CHARACTER*3     PROC    !  temporary string for process name
+        CHARACTER*14    DTBUF   !  Buffer for MMDDYY 
         CHARACTER*16    BUFFER  !  Temporary buffer
         CHARACTER*16    ANAME   !  logical name for mobile-source     input file
         CHARACTER*16    DNAME   !  logical name for diurnal EFs       input file
@@ -368,15 +390,6 @@ C   begin body of program TMPMOBIL
             CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Ending program', 2 )
         END IF
 
-C.......   Set caridge return / line feed variable
-        CRLF( 1:1 ) = CHAR( 13 )
-        CRLF( 2:2 ) = CHAR( 10 )
-
-C.......   Determine status of LOGFILE variable
-        SFLAG = .FALSE.
-        CALL ENVSTR( 'LOGFILE', 'Log File', ' ', BUFFER, IOS )
-        IF( IOS .EQ. 0 ) SFLAG = .TRUE.
-
 C.......   Get file name; open input mobile sources, temporal cross-reference,
 C.......   and temporal profiles files
 
@@ -394,11 +407,7 @@ C.......   and temporal profiles files
 
 C.........  Prompt for time zone of temperature data.
 
-        MESG = 'NOTE: Time stamps assumed to be in GMT.'
-
-        IF( SFLAG )
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        CALL M3MSG2( 'NOTE: Time stamps assumed to be in GMT.' )
 
         MNAME = PROMPTMFILE( 
      &          'Enter logical name for SURFACE TEMPERATURE input file',
@@ -446,27 +455,28 @@ C.........  Get starting date and time from met data file
         TZONE  = 0
         TZONE  = GETNUM( -12, 12, TZONE, 
      &           'Enter time zone for output emissions (0 for GMT)' )
-        JDATE  = GETNUM( 0, 9999999, SDATE3D, 
-     &                   'Enter simulation starting date (YYYYDDD)' )
+        JDATE  = GETDATE( SDATE3D, 
+     &           'Enter simulation starting date (YYYYDDD)|(YYYYMMDD)' )
         JTIME  = GETNUM( 0, 999999, STIME3D, 
      &                   'Enter simulation starting time  (HHMMSS)' )
         NSTEPS = GETNUM( 1, 999999, MXREC3D,
      &                   'Enter simulation duration (hours)' )
 
 C.........  Record integer entries in LDEV
+        DTBUF = MMDDYY( JDATE )
         WRITE( MESG,94050 ) 
-     &         'Output Time Zone :', TZONE, CRLF // BLANK5 //
-     &         '       Start Date:', JDATE, CRLF // BLANK5 //
-     &         '       Start Time:', JTIME, CRLF // BLANK5 //
-     &         '       Duration  :', NSTEPS
+     &  'Output Time Zone :',  TZONE,       CRLF() // BLANK5 //
+     &  '       Start Date:'// DTBUF( 1:TRIMLEN( DTBUF ) ) //
+     &                                      CRLF() // BLANK5 //
+     &  '       Start Time:',  JTIME,       CRLF() // BLANK5 //
+     &  '       Time Step :',  1, 'hour' // CRLF() // BLANK5 //
+     &  '       Duration  :',  NSTEPS, 'hours'
 
-        IF( SFLAG )
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
 C.........  Hard-code time step b/c all processors assume hourly processing
         TSTEP  = 10000
-        JYEAR  = JDATE / 1000
+        YEAR   = JDATE / 1000
 
 C.........  Calculate simulation ending date and time
         EDATE = JDATE
@@ -493,8 +503,8 @@ C.........  Abort if (start time) < (first time for temperatures)
      &                    MNAME( 1:TRIMLEN( MNAME ) ) // ' ...' )
 
             WRITE( MESG,94030 ) 
-     &        'Given time zone     :', IZONE,         CRLF // BLANK5 //
-     &        'Sim  start date&time:', MDATE,  MTIME, CRLF // BLANK5 //
+     &        'Given time zone     :', IZONE,         CRLF()// BLANK5 //
+     &        'Sim  start date&time:', MDATE,  MTIME, CRLF()// BLANK5 //
      &        'File start date&time:', SDATE3D,STIME3D
 
             CALL M3MESG( MESG )
@@ -511,8 +521,8 @@ C.........  the meterology start date/time
      &                     MNAME( 1:TRIMLEN( MNAME ) ) // ' ...' )
 
             WRITE( MESG,94030 ) 
-     &        'Given time zone      :', TZONE,         CRLF // BLANK5 //
-     &        'Sim   start date&time:', JDATE,  JTIME, CRLF // BLANK5 //
+     &        'Given time zone      :', TZONE,         CRLF()// BLANK5//
+     &        'Sim   start date&time:', JDATE,  JTIME, CRLF()// BLANK5//
      &        'TKDAT start date&time:', JMDATE, JMTIME
 
             CALL M3MESG( MESG )
@@ -551,9 +561,9 @@ C.........  This is intentionally comparing dates from different time zones
      &                   ' ...' )
 
             WRITE( MESG,94040 ) 
-     &             'Sim  start date:', JDATE, CRLF // BLANK5 //
-     &             'Sim  end   date:', EDATE, CRLF // BLANK5 //
-     &             'File start date:', WDATE, CRLF // BLANK5 //
+     &             'Sim  start date:', JDATE, CRLF() // BLANK5 //
+     &             'Sim  end   date:', EDATE, CRLF() // BLANK5 //
+     &             'File start date:', WDATE, CRLF() // BLANK5 //
      &             'File end   date:', NDATE
             CALL M3MESG( MESG )
 
@@ -564,7 +574,7 @@ C.........  If simulation time not is not zero, give warning message
 
             WRITE( MESG,94040 ) 
      &             'Simulation time zone is ', TZONE, 
-     &             'but min/max' // CRLF // BLANK5 //
+     &             'but min/max' // CRLF() // BLANK5 //
      &             'temperatures are based on time zone 0 (GMT)'
 
             CALL M3WARN( 'TMPMOBIL', 0, 0, MESG )
@@ -647,11 +657,7 @@ C.............   V+3 moves NVTYPE after the primary and the two met headers
 
 C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK.
 
-        MESG = 'Reading VMT INVENTORY file...'
-
-        IF( SFLAG ) 
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        CALL M3MSG2( 'Reading VMT INVENTORY file...' )
 
         IF ( .NOT. READ3( ANAME, 'IFIP', ALLAYS3, 0,0, IFIP ) ) THEN
             CALL M3EXIT( 'TMPMOBIL', 0, 0, 
@@ -686,16 +692,12 @@ C...........   Read in emissions indexing data IFIP, IRCLAS, ILINK.
 
 C.........  Read vehicle mix fractions tables, and multiply with
 C.........  source VMT totals
-        CALL RDVMIX( VDEV, JYEAR, IFIP, IRCLAS, ILINK, VMT, MXMAT )
+        CALL RDVMIX( VDEV, YEAR, IFIP, IRCLAS, ILINK, VMT, MXMAT )
 
 C.........  Read temporal-profiles file:  
 C.........  4 parts (monthly, weekly, weekday diurnal, weekend diurnal)
 
-        MESG = 'Reading TEMPORAL PROFILES file...'
-
-        IF( SFLAG ) 
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        CALL M3MSG2( 'Reading TEMPORAL PROFILES file...' )
 
         NMON = RDTPROF( PDEV, 'MONTHLY', 12, NMCOD, MONREF, MONFAC )
         NWEK = RDTPROF( PDEV, 'WEEKLY',   7, NWCOD, WEKREF, WEKFAC )
@@ -735,24 +737,27 @@ C.........   Decide which inventory pollutnat is volatile
 
 C.........  Read and process temporal XREF 
 
-        MESG = 'Reading TEMPORAL XREF file...'
-        
-        IF( SFLAG ) 
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        CALL M3MSG2( 'Reading TEMPORAL XREF file...' )
 
         IREC  = 0
         K     = 0
         EFLAG = .FALSE.
  
 44      CONTINUE
- 
+
             IREC = IREC + 1
 
+C.............  Read in X-REF using LINE variable, so that blank
+C.............  values will be converted to negative values by STR2INT
+C.............  Also enables the use of CHKXLIN function, and is
+C.............  consistent with the other SMOKE programs which require
+C.............  this. MRH.
             READ( XDEV, 93000, END=50, IOSTAT=IOS ) LINE
 
             IF( CHKXLIN( LINE, IOS, IREC, 'MOBILE' ) .NE. 0 ) THEN
+
                 GO TO 44
+
             END IF
 
 C.............  Ensure valid pollutant code
@@ -767,11 +772,17 @@ C.............  Ensure valid pollutant code
                 END IF
             END IF
 
-C.............   Perform mobile-specific checks on XREF entry
+C.............  Store fields in LINE into temporary variables
+            FIP  = STR2INT( LINE( 1 : 5 ) )
             LNK  = MAX ( STR2INT( LINE( 13:15 ) ), 0 ) ! Use stack portion
             VHT  = STR2INT( LINE( 23:24 ) )
             RDT  = STR2INT( LINE( 25:27 ) )
             PROC =          LINE( 28:30 )
+            IMON = STR2INT( LINE( 38:40 ) )
+            IWEK = STR2INT( LINE( 42:44 ) )
+            IDIU = STR2INT( LINE( 45:48 ) )
+
+C.............  Perform mobile-specific checks on XREF entry
 C.............  Inspect emission mode index
 
 C.............  If process is invalid (numeric, like 000)
@@ -848,33 +859,25 @@ C.............  Skip profile if road class not used
 C.............  Store XREF entry
             ELSE
 
-
                 DO 47 I = N1, N2
 
                     ICOD = INDEX1( MEMODE( EMT ) // '_' // 
      &                             EINAM( I ), NETYPE, EMTNAM )
 
+                    K = K + 1
+
 C.....................  Check table size for overflow
-                    IF ( K .GE. MXREF ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 )
-     &                      'Max XREF table size ', MXREF,
-     &                      'exceeded at line', IREC
-                        CALL M3MESG( MESG )
+                    IF ( K .LE. MXREF ) THEN
  
-                    ELSE
-
-                        K = K + 1
-
                         INDXA( K ) = K
-                        FIPFA( K ) = STR2INT( LINE( 1 : 5 ) )
+                        FIPFA( K ) = FIP
                         RDTFA( K ) = RDT
                         LNKFA( K ) = LNK
                         VHTFA( K ) = VHT
                         CODEA( K ) = ICOD
-                        MPRFA( K ) = STR2INT( LINE( 38:40 ) )
-                        WPRFA( K ) = STR2INT( LINE( 42:44 ) )
-                        DPRFA( K ) = STR2INT( LINE( 45:48 ) )
+                        MPRFA( K ) = IMON
+                        WPRFA( K ) = IWEK
+                        DPRFA( K ) = IDIU
 
                     ENDIF   ! x-ref overflow or not
 
@@ -886,21 +889,22 @@ C.....................  Check table size for overflow
 
    50   CONTINUE
 
-        IF ( EFLAG ) THEN
-            MESG = 'Error reading TEMPORAL XREF file'
-            CALL M3EXIT( 'TMPMOBIL', 0, 0, MESG, 2 )
-        END IF
-
         NPRFA = K
 
-C.......   Process cross-reference file
-        MESG = 'Processing TEMPORAL XREF file... '
-        
-        IF( SFLAG ) 
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        WRITE( MESG,94010 )
+     &      'Number of XREF entries--dimensioned', MXREF,
+     &      'actual', NPRFA
+        CALL M3MSG2( MESG )
+
+        IF ( EFLAG ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 'Bad XREF file', 2 )
+        ELSEIF( NPRFA .GT. MXREF ) THEN
+            CALL M3EXIT( 'TMPMOBIL', 0, 0, 'XREF table overflow', 2 )
+        ENDIF
 
 C.......   Sort and Process temporal cross-references, according to category
+
+        CALL M3MSG2( 'Processing TEMPORAL XREF file...' )
         CALL SORTI4( NPRFA, INDXA, FIPFA, RDTFA, LNKFA, VHTFA )
 
 C.......   Initialize category-specific xref profile number tables
@@ -1236,11 +1240,7 @@ C............. Now look up these refs in profiles table
 
 C...........   Read and process emissions factors cross reference file MPLIST
 
-        MESG = 'Reading EMISSION FACTORS XREF file...'
-
-        IF( SFLAG ) 
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        CALL M3MSG2( 'Reading EMISSION FACTORS XREF file...' )
 
         NMPLIST = RDMPLIST( FDEV, MPFIP, MPRDT, MPLNK,
      &                      MPREF, REFCNT, REFLIST )
@@ -1368,7 +1368,7 @@ C.......   non-diurnal emissions factor temperature tables:
         DNLTI  = 1.0 / ( FTOC * TINTV )
 
 C.......   Set date for reading emission factors
-        FDATE = JYEAR * 1000 + 1
+        FDATE = YEAR * 1000 + 1
 
 C.......   Read emissions factor tables:
         EFLAG = .FALSE.
@@ -1487,11 +1487,7 @@ C......................................................................
 
 C...........   For each time step, write out the area source emissions values:
 
-        MESG = 'Writing out emissions values...'
-
-        IF( SFLAG ) 
-     &  WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-        CALL M3MESG( CRLF // BLANK5 // MESG( 1:TRIMLEN( MESG ) ) )
+        CALL M3MSG2( 'Writing out emissions values...' )
 
         EFLAG = .FALSE.
 
@@ -1538,10 +1534,7 @@ C.................  Create temporal adjustment matrix for current day
                     MESG = 'Processing ' //
      &                     DAYS( DAY ) // MMDDYY( JDATE )
 
-                    IF( SFLAG )
-     &              WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-                    CALL M3MESG( CRLF // BLANK5 // 
-     &                           MESG( 1:TRIMLEN( MESG ) ) )
+                    CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH,  DAY, 
      &                           TZONE,  TZONES,
@@ -1556,10 +1549,7 @@ C.................  Create temporal adjustment matrix for current day
                     MESG = 'Processing weekend day ' //
      &                     DAYS( DAY ) // MMDDYY( JDATE )
 
-                    IF( SFLAG )
-     &              WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-                    CALL M3MESG( CRLF // BLANK5 // 
-     &                           MESG( 1:TRIMLEN( MESG ) ) )
+                    CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
 
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAY, 
      &                           TZONE,  TZONES,
@@ -1572,10 +1562,7 @@ C.................  Create temporal adjustment matrix for current day
                     MESG = 'Processing midweek day ' //
      &                     DAYS( DAY ) // MMDDYY( JDATE )
 
-                    IF( SFLAG )
-     &              WRITE( *,92000 ) ' ', MESG( 1:TRIMLEN( MESG ) )
-                    CALL M3MESG( CRLF // BLANK5 // 
-     &                           MESG( 1:TRIMLEN( MESG ) ) )
+                    CALL M3MESG( MESG( 1:TRIMLEN( MESG ) ) )
 
                     CALL MKVMAT( NMSRC,  NETYPE, JDATE, MONTH, DAY, 
      &                           TZONE,  TZONES,
@@ -1597,6 +1584,9 @@ C.................  Read ungridded MIN/MAX temperature indices for the day
                 CALL NEXTIME( WDATE, WTIME, 230000 )
 
             END IF      ! if jdate not ldate
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 94060 ) HHMMSS( JTIME )
 
             H  = 1 + MOD( JTIME / 10000 , 24 )
             KU = 0
@@ -1907,7 +1897,6 @@ C.................  Set up if diurnal emissions are zero
 
       CALL M3EXIT( 'TMPMOBIL',0,0, 'Normal completion of TMPMOBIL', 0 )
 
-
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Informational (LOG) message formats... 92xxx
@@ -1931,7 +1920,10 @@ C...........   Internal buffering formats............ 94xxx
 
 94040   FORMAT( 10 ( A, :, I8, :, 1X ) )
 
-94050   FORMAT( A, 1X, I7, A, 1X, I7.7, A, 1X, I7.6, A, 1X, I7 )
+94050   FORMAT( A, 1X, I6, A, 1X, A, 1X, I6.6, 
+     &          A, 1X, I6, 1X, A, 1X, I6, A   )
+
+94060   FORMAT( 8X, 'at time ', A8 )
 
         END
 
