@@ -72,12 +72,6 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Sorting index for creating unique species list
         INTEGER  :: SRTIDX( NSVARS )
 
-C...........  Local allocatable arrays
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: EONAMES( :,: ) ! Names
-        INTEGER               , ALLOCATABLE :: EOTYPES( :,: ) ! Types (Real|Int)
-        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units
-        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Descriptions
-
 C...........   Other local variables
         INTEGER          E, I, I1, I2, I3, J, K, L, L2, N, V ! counters and indices
 
@@ -148,8 +142,10 @@ C.........  Speciation variable arrays
         CALL CHECKMEM( IOS, 'SUMPOLNAM', PROGNAME )
         ALLOCATE( SPCOUT( NSVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCOUT', PROGNAME )
-        ALLOCATE( SPCTODAT( NSVARS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SPCTODAT', PROGNAME )
+        ALLOCATE( SPCTOINV( NSVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCTOINV', PROGNAME )
+        ALLOCATE( SPCTOTPR( NSVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCTOTPR', PROGNAME )
         ALLOCATE( SPCIDX( NSVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCIDX', PROGNAME )
         ALLOCATE( SLUNIT( NSVARS ), STAT=IOS )
@@ -169,28 +165,13 @@ C.........  Speciation variable arrays
         SUMETPNAM     = ' '     ! array
         SUMPOLNAM     = ' '     ! array
         SPCOUT        = .FALSE. ! array
-        SPCTODAT      = 0       ! array
+        SPCTOINV      = 0       ! array
+        SPCTOTPR      = 0       ! array
         SPCIDX        = 0       ! array
 
 C.........  Set the length of the emission type joiner
         LT = LEN_TRIM( ETJOIN )
         LS = LEN_TRIM( SPJOIN )
-
-C.........  Retrieve data variable names for ozone season variables...
-C.........  Allocate memory for temporary buffers for BLDENAMS call
-        N = MAX( NPPOL, 2 )
-        ALLOCATE( EONAMES( NIPPA,N ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EONAMES', PROGNAME )
-        ALLOCATE( EOUNITS( NIPPA,N ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EOUNITS', PROGNAME )
-        ALLOCATE( EOTYPES( NIPPA,N ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EOTYPES', PROGNAME )
-        ALLOCATE( EODESCS( NIPPA,N ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EODESCS', PROGNAME )
-
-C.........  Get variable names
-        CALL BLDENAMS( CATEGORY, NIPPA, N, EANAM, 
-     &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
 
 C.........  Populate the emission type list and the pollutant list from the
 C           reporting bins module
@@ -340,12 +321,12 @@ C.................  Find pollutant or emission type in list and store index
 C.................  For species based on inventory pollutant, set index
                 IF( I1 .GT. 0 ) THEN
 
-                    SPCTODAT( V ) = I1
+                    SPCTOINV( V ) = MAX( I1,0 )
 
 C.................  For species based on activity, set index and write note
                 ELSE IF( I2 .GT. 0 .AND. TPACTIDX( I3 ) .GT. 0 ) THEN
 
-                    SPCTODAT( V ) = I2
+                    SPCTOTPR( V ) = I3 + NIPPA
 
                     I2 = INDEX1( SBUF, V, SPCNAM )
                     IF( I2 .LE. 0 ) THEN
@@ -357,7 +338,7 @@ C.................  For species based on activity, set index and write note
 
 C.................  For emission type not based on activity
                 ELSE IF( I2 .GT. 0 ) THEN
-                    SPCTODAT( V ) = I2
+                    SPCTOINV( V ) = I2
 
 C.................  Otherwise, skip species 
                 ELSE
@@ -370,14 +351,19 @@ C.................  Otherwise, skip species
 
                 END IF
 
+C.................  Update index for species-to-temporal pollutant
+                IF( I3 .GT. 0 ) THEN
+                    SPCTOTPR( V ) = I3 + NIPPA
+                ENDIF
+
 C.................  Data variable is emission type
                 IF( J .GT. 0 ) THEN
 
-                    SPCNAM   ( V ) = SBUF
-                    ETPSPCNAM( V ) = VBUF
-                    PRCSPCNAM( V ) = VBUF( 1:J-1 ) // ETJOIN // SBUF
-                    SUMETPNAM( V ) = 'S-' // EBUF
-                    SUMPOLNAM( V ) = 'S-' // VBUF( J+LT:K-1 )
+                    SPCNAM   ( V )= SBUF
+                    ETPSPCNAM( V )= VBUF
+                    PRCSPCNAM( V )= 'S-'// VBUF( 1:J-1 )// ETJOIN// SBUF
+                    SUMETPNAM( V )= 'S-'// EBUF
+                    SUMPOLNAM( V )= 'S-'// VBUF( J+LT:K-1 )
 
 C.................  No emission type
                 ELSE
@@ -442,10 +428,7 @@ C           variables depends on whether we have speciation or not
 C.........  Allocate memory of reading and output data names
         ALLOCATE( OUTDNAM( MXOUTDAT, NREPORT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'OUTDNAM', PROGNAME )
-        ALLOCATE( RDNAMES( MXOUTDAT, NREPORT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RDNAMES', PROGNAME )
         OUTDNAM = ' '
-        RDNAMES = ' '
 
 C.........  Go through reports, and assign indices to from data to output 
 C           columns
@@ -477,11 +460,7 @@ C.................  If species is same as pollutant, then add prefix
                         J = J + 1
                 	SBUF = EMNAM( V )
 
-                        IF( RPT_%USEHOUR ) THEN
-                            K = INDEX1( SBUF, NTPDAT, TPNAME )
-                        ELSE
-                            K = INDEX1( SBUF, NIPPA, EANAM )
-                        END IF
+                        K = INDEX1( SBUF, NDATALL, DATNAM )
 
                         IF( K .GT. 0 ) THEN
                 	    OUTDNAM( J,N ) = 'S-' // SBUF
@@ -502,21 +481,6 @@ C.............  Otherwise, set output data values as input data values
 
             END IF
 
-C.............  Set names to read from inventory or hourly emissions file...
-C.............  If hourly data, always the same names (even w/ ozone season)
-            IF( RPT_%USEHOUR ) THEN
-                RDNAMES( 1:NTPDAT,N ) = TPNAME( 1:NTPDAT )
-
-C.............  If inventory data and ozone season
-            ELSE IF( RPT_%O3SEASON ) THEN
-                RDNAMES( 1:NIPPA, N ) = EONAMES( 1:NIPPA,2 )
-
-C.............  If inventory data without ozone season
-            ELSE
-                RDNAMES( 1:NIPPA, N ) = EANAM( 1:NIPPA )
-
-            END IF
-
 C.............  Loop through requested data for this report
             DO I = 1, NDATA
 
@@ -532,6 +496,7 @@ C                       report is inventory
                     IF(.NOT. RPT_%USEHOUR .AND. TPRIDX(E) .GT. 0 ) CYCLE
 
 C.....................  To emission type column
+C.....................  Only when emission type is not based on activity
                     IF( OUTDNAM( I,N ) .EQ. ETPNAM( E ) ) THEN
                         TODOUT( E,N )%ETP = I
                         TODOUT( E,N )%AGG = 1
@@ -554,16 +519,23 @@ C.................  If speciation for current report
 C.....................  Loop through names of speciation variables
                     DO V = 1, NSVARS
 
-C.........................  Get species to data index
-                        E = SPCTODAT( V )
-
-C.........................  Skip species that don't match inventory data
-                        IF( E .LE. 0 ) CYCLE
+C.........................  Get species to inventory data index
+                        E = SPCTOINV( V )
 
 C..........................  Set inventory variable as having speciation
-                        TODOUT( E,N )%SPCYN= ( ALLRPT( N )%USESLMAT .OR.
-     &                                         ALLRPT( N )%USESSMAT    )
+                        IF( E .GT. 0 )
+     &                      TODOUT( E,N )%SPCYN= ( RPT_%USESLMAT .OR.
+     &                                             RPT_%USESSMAT    )
 
+C.........................  Get species to hourly data index
+                        E = SPCTOTPR( V )
+
+C..........................  Set hourly variable as having speciation
+                        IF( E .GT. 0 )
+     &                      TODOUT( E,N )%SPCYN= ( RPT_%USESLMAT .OR.
+     &                                             RPT_%USESSMAT    )
+
+C.........................  Skip species that don't match inventory data
 C.........................  To species column
                 	IF( OUTDNAM( I,N ) .EQ. SPCNAM( V ) ) THEN
                             TOSOUT( V,N )%SPC = I
@@ -644,9 +616,6 @@ C.........  If there was any error, exit
              MESG = 'Problem setting up input data to output columns.'
              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-
-C.........  Deallocate local memory
-        DEALLOCATE( EONAMES, EOUNITS, EOTYPES, EODESCS )
 
         RETURN
 
