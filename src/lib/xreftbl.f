@@ -95,6 +95,7 @@ C             that are appropriate for a given degree are actually populated.
         CHARACTER(LEN=SICLEN3) PCSIC ( NXTYPES )  ! previous SIC
         CHARACTER(LEN=SRCLEN3) PCSRC ( NXTYPES )  ! previous CSRC
         CHARACTER(LEN=SS5LEN3) PCSSC ( NXTYPES )  ! previous CSRC(part) // SCC
+        CHARACTER(LEN=MACLEN3) PCMCT ( NXTYPES )  ! previous MACT
 
 C...........   Array of source characeristics
         CHARACTER*300           CHARS( MXCHRS )
@@ -287,7 +288,12 @@ C.........  For CSRC, don't include pollutant for grouping.
             CSRC    = CSRCTA( J )( 1:SC_ENDP( NCHARS ) )
             TSCC    = CSCCTA( J )
             IF( NFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
-            CMCT    = CMACTA( J )
+            
+            IF( ALLOCATED( CMACTA ) ) THEN
+                CMCT = CMACTA( J )
+            ELSE
+                CMCT = MCTZERO
+            END IF
 
             DO J = 1, NCHARS
                 CHARS( J ) = CSRC( SC_BEGP( J ):SC_ENDP( J ) )
@@ -369,9 +375,9 @@ C               these characteristics will appear earlier in the sorted list
                     IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
                     
                         NT = 32
-                        IF( IFIP .NE. PIFIP( NT ) ) THEN
+                        IF( CMCT .NE. PCMCT( NT ) ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                            PCMCT( NT ) = CMCT
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -381,21 +387,21 @@ C               these characteristics will appear earlier in the sorted list
                     ELSE                                         ! Complete SCC
                     
                         NT = 33
-                        IF( IFIP .NE. PIFIP( NT ) .OR.
+                        IF( CMCT .NE. PCMCT( NT ) .OR.
      &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                            PCMCT( NT ) = CMCT
                             PTSCC( NT ) = TSCC
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
                             NT = 0
-                            
-                        ELSE
-                            SAMEFLAG = .TRUE.
                         END IF
                     
                     END IF
+
+C.....................  Set SCC to zero to avoid lower level SCC checks
+                    TSCC = REPEAT( '0', SCCLEN3 )
 
                 ELSE IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
 
@@ -551,9 +557,11 @@ C                   as the old Right-left method is still needed.
                     IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
                     
                         NT = 34
-                        IF( IFIP .NE. PIFIP( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
                             PIFIP( NT ) = IFIP
+                            PCMCT( NT ) = CMCT
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -564,20 +572,22 @@ C                   as the old Right-left method is still needed.
                     
                         NT = 35
                         IF( IFIP .NE. PIFIP( NT ) .OR.
-     &                      TSCC .NE. PTSCC( NT )      ) THEN
+     &                      TSCC .NE. PTSCC( NT ) .OR.
+     &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
                             PIFIP( NT ) = IFIP
                             PTSCC( NT ) = TSCC
+                            PCMCT( NT ) = CMCT
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
                             NT = 0
-                            
-                        ELSE
-                            SAMEFLAG = .TRUE.
                         END IF
                     
                     END IF
+
+C.....................  Set SCC to zero to avoid lower level SCC checks
+                    TSCC = REPEAT( '0', SCCLEN3 )
                     
                 ELSE IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
 
@@ -720,9 +730,11 @@ C                   as the old Right-left method is still needed.
                     IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
                     
                         NT = 36
-                        IF( IFIP .NE. PIFIP( NT ) ) THEN
+                        IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
                             PIFIP( NT ) = IFIP
+                            PCMCT( NT ) = CMCT
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
@@ -733,20 +745,22 @@ C                   as the old Right-left method is still needed.
                     
                         NT = 37
                         IF( IFIP .NE. PIFIP( NT ) .OR.
-     &                      TSCC .NE. PTSCC( NT )      ) THEN
+     &                      TSCC .NE. PTSCC( NT ) .OR.
+     &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
                             PIFIP( NT ) = IFIP
                             PTSCC( NT ) = TSCC
+                            PCMCT( NT ) = CMCT
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
                             CALL REPORT_DUP_XREF
                             NT = 0
-                            
-                        ELSE
-                            SAMEFLAG = .TRUE.
                         END IF
                     
                     END IF
+
+C.....................  Set SCC to zero to avoid lower level SCC checks
+                    TSCC = REPEAT( '0', SCCLEN3 )
 
                 ELSEIF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
 
@@ -1076,12 +1090,24 @@ C......................................................................
      &             ' x-ref file:' // CRLF() // BLANK10 //
      &             BUFFER( 1:L2 )
 
-            L1 = LEN_TRIM( MESG )
-            IF( TSCC .NE. SCCZERO ) MESG = MESG( 1:L1 ) // 
-     &                                     ' TSCC: ' // TSCC
+            IF( TSCC .NE. SCCZERO ) THEN
+                L1 = LEN_TRIM( MESG )
+                MESG = MESG( 1:L1 ) // ' TSCC: ' // TSCC
+            END IF
+            
             IF( ISP .GT. 0 ) THEN
                 L1 = LEN_TRIM( MESG )
-                MESG = MESG( 1:L1 ) // ' POL:' // EANAM( ISP )
+                MESG = MESG( 1:L1 ) // ' POL: ' // EANAM( ISP )
+            END IF
+
+            IF( CMCT .NE. MCTZERO ) THEN
+                L1 = LEN_TRIM( MESG )
+                MESG = MESG( 1:L1 ) // ' MACT: ' // CMCT
+            END IF
+
+            IF( CSIC .NE. SICZERO ) THEN
+                L1 = LEN_TRIM( MESG )
+                MESG = MESG( 1:L1 ) // ' SIC: ' // CSIC
             END IF
 
             CALL M3MSG2( MESG )
