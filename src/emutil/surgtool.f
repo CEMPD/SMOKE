@@ -180,7 +180,7 @@ C.........  Open input surrogates file
 
 C.........  Read the surrogates header and initialize the grid description
 C.........  Also get the format of the surrogates file.
-        CALL RDSRGHDR( SDEV, SRGFMT )
+        CALL RDSRGHDR( .FALSE., SDEV, SRGFMT )
 
         L = LEN_TRIM( SRGFMT )
         MESG = 'NOTE: Input surrogates are ' // SRGFMT( 1:L ) // 
