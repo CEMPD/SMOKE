@@ -2,7 +2,7 @@
         PROGRAM CSGMOBIL
 
 C***********************************************************************
-C  program body starts at line 130
+C  program body starts at line 133
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -50,6 +50,7 @@ C...........   INCLUDES:
         INCLUDE 'CHDGEN3.EXT'   !  emis chem parms (inventory + model)
         INCLUDE 'GRDIMS3.EXT'   !  grid parameters
         INCLUDE 'MBDIMS3.EXT'   !  area-source dimensioning parameters
+        INCLUDE 'TMDIMS3.EXT'   !  temporal dimensioning parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
@@ -60,13 +61,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CSVNAME
         LOGICAL         DSCGRID
         LOGICAL         GETYN
+        CHARACTER*10    HHMMSS
         INTEGER         INDEX1
+        CHARACTER*14    MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
+        INTEGER         WKDAY           !  day of week (1...7)
         
-        EXTERNAL        CSVNAME, DSCGRID, GETYN, INDEX1, 
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN
+        EXTERNAL        CSVNAME, DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
+     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY
 
 C...........   PARAMETER
 
@@ -167,9 +171,35 @@ C.......   optional output file
      &          'Enter logical name for GRID MATRIX file',
      &          FSREAD3, 'MGMAT', 'CSGMOBIL' )
 
+C.......   Get description of GNAME for dimensioning check
+        IF ( .NOT. DESC3( GNAME ) ) THEN
+            CALL M3EXIT( 'CSGMOBIL', 0, 0, 
+     &              'Could not get description of file ' // GNAME, 2 )
+        END IF
+
+        IF( NTHIK3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MGMAT file:', NTHIK3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'CSGMOBIL', 0, 0, MESG, 2 )
+        END IF
+
         SNAME = PROMPTMFILE( 
      &          'Enter logical name for SPECIATION MATRIX file',
      &          FSREAD3, 'MSMAT', 'CSGMOBIL' )
+
+C.......   Get description of SNAME for dimensioning check
+        IF ( .NOT. DESC3( SNAME ) ) THEN
+            CALL M3EXIT( 'CSGMOBIL', 0, 0, 
+     &              'Could not get description of file ' // SNAME, 2 )
+        END IF
+
+        IF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MSMAT file:', NROWS3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'CSGMOBIL', 0, 0, MESG, 2 )
+        END IF
 
 c       CNAME = PROMPTMFILE( 
 c    &          'Enter logical name for CONTROL MATRIX file ' //
@@ -181,19 +211,27 @@ c       CONTROLFLAG = ( CNAME .NE. NONE )
 
         TDEV = PROMPTFFILE(
      &           'Enter logical name for SPECIATION LIST file',
-     &           .TRUE., .TRUE., 'MSLST', 'CSGMOBIL' )
+     &           .TRUE., .TRUE., 'SPCS', 'CSGMOBIL' )
 
         ANAME = PROMPTMFILE( 
      &          'Enter logical name for TIME-STEPPED MOBILE EMIS file',
      &          FSREAD3, 'MTMP', 'CSGMOBIL' )
 
-C.......   Start description of output file with ANAME and grid description
 
+C.......   Get description of ANAME for building output file and checking header
         IF ( .NOT. DESC3( ANAME ) ) THEN
             CALL M3EXIT( 'CSGMOBIL', 0, 0, 
      &              'Could not get description of file ' // ANAME, 2 )
         END IF
 
+        IF( NROWS3D .NE. NMSRC ) THEN
+            WRITE( MESG, 94010 )
+     &      'Dimension mismatch.  MTMP file:', NROWS3D,
+     &      'program:', NMSRC
+            CALL M3EXIT( 'CSGMOBIL', 0, 0, MESG, 2 )
+        END IF
+
+C.......   Get description of grid for building output file
         IF ( .NOT.DSCGRID( GRDNM, SCRBUF, GDTYP3D, 
      &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, YCENT3D, 
      &                     XORIG3D, YORIG3D, XCELL3D, YCELL3D, 
@@ -330,6 +368,18 @@ C.......   Transform and write out mobile source emissions values:
 C.........  Calculate emissions for all time steps available from MTMP
         DO  199  T = 1, NSTEPS
 
+C...............   If this is a new month, or new day, write message
+            IF ( MOD( T,24 ) .EQ. 1 ) THEN
+                    
+                MESG = 'Processing ' //
+     &                 DAYS( WKDAY( JDATE ) ) // MMDDYY( JDATE )
+                CALL M3MSG2( MESG( 1:TRIMLEN( MESG ) ) )
+
+            END IF
+
+C.............  Write to screen because WRITE3 only writes to LDEV
+            WRITE( *, 93020 ) HHMMSS( JTIME )
+
 C.............   Read in entire emissions field
             IF( .NOT. READ3( ANAME, ALLVAR3, ALLAYS3, 
      &                 JDATE, JTIME, EMISV ) ) THEN
@@ -418,8 +468,13 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A16 )
 
+93020   FORMAT( 8X, 'at time ', A8 )
+ 
 
 C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( 10( A, :, I10, :, 2X ) )
+ 
 
         END
 
