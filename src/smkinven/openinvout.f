@@ -75,7 +75,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   LOCAL PARAMETERS
         CHARACTER*16, PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
-        CHARACTER*50, PARAMETER :: SCCSW  = '$Revision$'
+        CHARACTER*50, PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   Names, Units, types, & descriptions for pollutant-specific 
 C              output variables.  NOTE - second dimension will work so long
@@ -85,6 +85,11 @@ C              as NPPOL > NPACT, which is expected to always be the case
         INTEGER               , ALLOCATABLE :: EOTYPES( :,: ) ! Types (Real|Int)
         CHARACTER(LEN=IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units  
         CHARACTER(LEN=IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Dscriptions  
+
+        CHARACTER(LEN=IOVLEN3), ALLOCATABLE :: AONAMES( :,: ) ! Names 
+        INTEGER               , ALLOCATABLE :: AOTYPES( :,: ) ! Types (Real|Int)
+        CHARACTER(LEN=IOULEN3), ALLOCATABLE :: AOUNITS( :,: ) ! Units  
+        CHARACTER(LEN=IODLEN3), ALLOCATABLE :: AODESCS( :,: ) ! Dscriptions  
 
 C...........   Other local variables
 
@@ -186,7 +191,7 @@ C.........  Set up for opening I/O API output file header
 
         FDESC3D( 1 ) = CATDESC // ' source inventory'
         FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
-        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( SCCSW )
+        FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         WRITE( FDESC3D( 4 ),94010 ) '/NON POLLUTANT/ ', NNPVAR
 
         IF( NIPOL .GT. 0 ) THEN
@@ -370,21 +375,19 @@ C.................  Store variable names and information
 
         END DO        !  end loop on inventory pollutants V
 
-C.........  Deallocate and reallocate names (etc.) for activities
-        DEALLOCATE( EONAMES, EOUNITS, EOTYPES, EODESCS )
-
-        ALLOCATE( EONAMES( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EONAMES', PROGNAME )
-        ALLOCATE( EOUNITS( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EOUNITS', PROGNAME )
-        ALLOCATE( EOTYPES( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EOTYPES', PROGNAME )
-        ALLOCATE( EODESCS( NIACT,NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EODESCS', PROGNAME )
+C.........  Allocate names for activities
+        ALLOCATE( AONAMES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AONAMES', PROGNAME )
+        ALLOCATE( AOUNITS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AOUNITS', PROGNAME )
+        ALLOCATE( AOTYPES( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AOTYPES', PROGNAME )
+        ALLOCATE( AODESCS( NIACT,NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AODESCS', PROGNAME )
 
 C.........  Get names, units, etc. of output activity-specific records
         CALL BLDENAMS( CATEGORY, NIACT, NPACT, ACTVTY, 
-     &                 EONAMES, EOUNITS, EOTYPES, EODESCS )
+     &                 AONAMES, AOUNITS, AOTYPES, AODESCS )
 
 C.........  Create output variables for activities
         DO V = 1 , NIACT
@@ -393,20 +396,20 @@ C.........  Create output variables for activities
 
 C.................  Set units for the primary data value
                 IF( I .EQ. 1 ) THEN
-                    K = INDEX1( EONAMES( V, 1 ), MXIDAT, INVDNAM )
+                    K = INDEX1( AONAMES( V, 1 ), MXIDAT, INVDNAM )
                     UNITS = INVDUNT( K )
 
 C.................  Set units for the other data values (per activity)
                 ELSE
-                    UNITS = EOUNITS( V, I )
+                    UNITS = AOUNITS( V, I )
 
                 END IF
 
 C.................  Store variable names and information
-                VNAME3D( J ) = EONAMES( V, I )
-                VTYPE3D( J ) = EOTYPES( V, I )
+                VNAME3D( J ) = AONAMES( V, I )
+                VTYPE3D( J ) = AOTYPES( V, I )
                 UNITS3D( J ) = UNITS
-                VDESC3D( J ) = EODESCS( V, I )
+                VDESC3D( J ) = AODESCS( V, I )
                 J = J + 1
 
             END DO    !  end loop on number of variables per activity
@@ -488,6 +491,10 @@ C.........  Prompt for and open ASCII output file
         SDEV= PROMPTFFILE( 
      &      'Enter logical name for the ASCII INVENTORY output file',
      &      .FALSE., .TRUE., ANAME, PROGNAME )
+
+C.........  Deallocate local memory
+        DEALLOCATE( EONAMES, EOTYPES, EOUNITS, EODESCS )
+        DEALLOCATE( AONAMES, AOTYPES, AOUNITS, AODESCS )
 
         RETURN
 
