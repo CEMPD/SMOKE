@@ -175,6 +175,7 @@ C.........  Other variables and their descriptions:
         LOGICAL         GETATN
         LOGICAL         PX_VERSION     ! true: using PX version of MCIP
         LOGICAL         INITIAL_RUN, INITIAL_HOUR
+        LOGICAL         VFLAG         ! true: use variable grid
 
         CHARACTER(8)       CHKNAME    ! check for virtual mode
         CHARACTER(50)      CLOUDSHM   ! cloud scheme name
@@ -201,6 +202,11 @@ C   begin body of subroutine TMPBEIS312
 
 C.........  Evaluate the environment variables...
 
+C.........  Check if processing variable grid data
+        VFLAG = ENVYN( 'USE_VARIABLE_GRID', 
+     &                 'Use variable grid definition', 
+     &                 .FALSE., IOS )
+     
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
@@ -525,6 +531,10 @@ C           (all but variables-table in description is borrowed from M3NAME)
         FDESC3D( 5 ) = '/LANDUSE/ ' // LUSE
         FDESC3D( 6 ) = '/MET SCENARIO/ ' // METSCEN
         FDESC3D( 7 ) = '/CLOUD SCHEME/ ' // CLOUDSHM
+
+        IF( VFLAG ) THEN
+            FDESC3D( 8 ) = '/VARIABLE GRID/ ' // GDNAM3D
+        END IF
 
 C.........  Open first output file (moles/time period)
         LNAME = PROMPTMFILE(
