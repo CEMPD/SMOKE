@@ -145,6 +145,8 @@ C...........   Other local variables:
         INTEGER    KU      !  counter of grid cells per source
         INTEGER    LNK     !  temporary FIP code
         INTEGER    MAXTL   !  intermediate temperature index value
+        INTEGER    NEXTDATE!  Date for next hour in loop
+        INTEGER    NEXTHOUR!  Time for next hour in loop
         INTEGER    NSTEPS  !  number of time steps to process temperature data
         INTEGER    OSRC    !  number of sources outside grid
         INTEGER    RDT     !  temporary FIP code
@@ -507,15 +509,18 @@ C.........  Loop through days/hours of temperature files
 
         DO 499 H = 1, NSTEPS
 
+C.............  Evaluate date for checking position in day of current date/time
+            NEXTDATE = JDATE
+            NEXTHOUR = JTIME
+            CALL NEXTIME( NEXTDATE, NEXTHOUR, TSTEP )
+
 C.................................................................
 C.............  Process last hour of a day or last hour
 C.................................................................
 
-C           IF( ( JTIME/10000 .EQ. 23 .OR. H .EQ. NSTEPS ) 
-C    &          .AND. H .NE. 1 ) THEN
-            IF( MOD( H, 24 ) .EQ. 23 ) THEN
+            IF( NEXTDATE .NE. JDATE .OR. H .EQ. NSTEPS ) THEN
 
-C.................  Try to read current temperature file
+C.................  Read current temperature file
                 IF ( .NOT. READ3( TNAME,
      &               'TA', 1, JDATE, JTIME, TA ) ) THEN
 
@@ -713,37 +718,28 @@ C.....................................  Insert new TMMIT(J) for PSI(K)
 
   199           CONTINUE
 
-C.................  Give warning if end of day is not hour 23
+C.................  For first instance only
 
-C               IF( JTIME .NE. 230000 ) THEN 
-C                   WRITE( MESG, 94010 )
-C    &                     'Day not ending on HHMMSS 230000'
-
-C                   CALL M3WARN( 'PREDIUR', JDATE, JTIME, MESG )
-
-C               ENDIF
-
-                CALL M3MSG2( 'Writing out MIN/MAX TEMPERATURE file...' )
+                IF( H .EQ. 24 ) 
+     &          CALL M3MSG2( 'Writing out MIN/MAX TEMPERATURE file...' )
 
 C.................  Write out min/max information for the current day
 
                 IF( .NOT. WRITE3( 
-C    &              ONAME, 'ALL', JDATE, 0, TMMI ) ) THEN
      &              ONAME, 'ALL', IDATE, ITIME, TMMI ) ) THEN 
 
                     CALL M3EXIT( 'PREDIUR', JDATE, 0,
      &                           'Could not write timestep to "' //
      &                           ONAME( 1 : TRIMLEN( ONAME ) ) // 
      &                           '".', 2 )
-                CALL NEXTIME( IDATE, ITIME, TSTEP3D ) ! prepare for the next day
-
                 ENDIF
+
+                CALL NEXTIME( IDATE, ITIME, TSTEP3D ) ! prepare for the next day
 
 C.................................................................
 C.............  Process first hour of a new day
 C.................................................................
-C           ELSEIF( JTIME .EQ. 0 .OR. H .EQ. 1 ) THEN
-            ELSEIF( MOD( H, 24 ) .EQ. 1 ) THEN
+            ELSEIF( JTIME .EQ. 0 .OR. H .EQ. 1 ) THEN
 
 C.................  Try to read current temperature file
                 IF ( .NOT. READ3( TNAME,
