@@ -2,7 +2,7 @@
         PROGRAM CSGMOBIL
 
 C***********************************************************************
-C  program body starts at line 134
+C  program body starts at line 157
 C
 C  DESCRIPTION:
 C       Use gridding-transform, model-speciation, and control matrices 
@@ -60,6 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         INTEGER         CSVNAME
         LOGICAL         DSCGRID
+        LOGICAL         ENVYN
         LOGICAL         GETYN
         CHARACTER*10    HHMMSS
         INTEGER         INDEX1
@@ -68,14 +69,18 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*16    PROMPTMFILE
         INTEGER         TRIMLEN
         INTEGER         WKDAY           !  day of week (1...7)
+        REAL            YR2DAY
         
-        EXTERNAL        CSVNAME, DSCGRID, GETYN, HHMMSS, INDEX1, MMDDYY,
-     &                  PROMPTFFILE, PROMPTMFILE, TRIMLEN, WKDAY
+        EXTERNAL        CSVNAME, DSCGRID, ENVYN, GETYN, HHMMSS, INDEX1,
+     &                  MMDDYY, PROMPTFFILE, PROMPTMFILE, TRIMLEN,
+     &                  WKDAY, YR2DAY
 
 C...........   PARAMETER
 
         CHARACTER*16    NONE
-        PARAMETER     ( NONE = 'NONE' )
+        REAL            TON2GM
+        PARAMETER     ( NONE   = 'NONE',
+     &                  TON2GM = 907184.74 )
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Area Sources input and output arrays (one variable at a time)
@@ -103,26 +108,45 @@ C..........    Naming and matrix/vector matching arrays
         CHARACTER*16    NMATCH            ! Name for matching
         CHARACTER*16    SPCFNM( MXMPOL*MXEPRC )  ! Names of speciation factors
 
+C...........   Inventory arrays
+        INTEGER         IFIP  ( NMSRC )   ! FIPs  code for each source
+        INTEGER         ISPTR ( NMSRC )   ! Pointer for each state
+        INTEGER         STATES( MXSTA )   ! Unique list of state IDs
+
+C...........   Report arrays
+        REAL            EMSUM( MXSTA, MXMPOL ) ! Summed emissions by state
+
 C...........   Other local variables
-        
+
+        REAL            FAC     !  temporary conversion factor
+       
+        INTEGER         BTIME              ! beginning time of day in run
+        INTEGER         I, J, K, L, N, M, S, T, V
         INTEGER         ICNT               ! Counter
-        INTEGER         LDATE, JDATE, JTIME, TSTEP
+        INTEGER         IOS                ! dummy io status
+        INTEGER         INO, INO2          ! position in list of pollutants
+        INTEGER         JDATE, JTIME, TSTEP
         INTEGER         NETYPE             ! No. of scenario-spec MV emis types
         INTEGER         NMPOL              ! No. of scenario-spec model species
         INTEGER         NSNAME             ! No. of speciation factor names
         INTEGER         NSTEPS
+        INTEGER         LDATE, LTIME       ! previous date and time in loop
         INTEGER         LDEV
-        INTEGER         SIDX               ! Speciation matrix index no.
+        INTEGER         LSTA               ! previous state code
+        INTEGER         NSTA               ! actual number of states
+        INTEGER         RDEV               ! output report unit number
+        INTEGER         SIDX               ! speciation matrix index no.
+        INTEGER         STA                ! temporay state code
         INTEGER         TDEV               ! speciation list file unit
-        INTEGER         I, J, K, L, N, M, S, T, V
         
-        LOGICAL         CONTROLFLAG, OUTPUTFLAG
+        LOGICAL         CONTROLFLAG, OUTPUTFLAG, ST_REPORT
 
         CHARACTER*16    ANAME   !  logical name for area-source       input file
-        CHARACTER*16    GNAME   !  logical name for grid       matrix input file
 c       CHARACTER*16    CNAME   !  logical name for control    matrix input file
-        CHARACTER*16    SNAME   !  logical name for speciation matrix input file
         CHARACTER*16    ENAME   !  logical name for emission output file
+        CHARACTER*16    INAME   !  logical name for inventory input file
+        CHARACTER*16    GNAME   !  logical name for grid       matrix input file
+        CHARACTER*16    SNAME   !  logical name for speciation matrix input file
 
         CHARACTER*16    SCRBUF  !  scratch name area
         CHARACTER*256   MESG    !  scratch message area
@@ -162,6 +186,9 @@ C   begin body of program CSGMOBIL
             CALL M3EXIT( 'CSGMOBIL', 0, 0, 'Ending program', 2 )
         END IF
 
+C.......   Get environment variable settings
+        ST_REPORT = ENVYN( 'ST_REPORT', 'Per-State report writing flag',
+     &                      .TRUE., IOS )
 
 C.......   Get file names; open input gridding, speciation, 
 C.......   optional control matrix files, area source file, 
@@ -217,6 +244,59 @@ c       CONTROLFLAG = ( CNAME .NE. NONE )
      &          'Enter logical name for TIME-STEPPED MOBILE EMIS file',
      &          FSREAD3, 'MTMP', 'CSGMOBIL' )
 
+        IF( ST_REPORT ) THEN
+
+            INAME = PROMPTMFILE( 
+     &              'Enter logical name for MOBIL INVENTORY file',
+     &              FSREAD3, 'MOBL', 'CSGMOBIL' )
+
+            IF( .NOT. READ3( INAME, 'IFIP', ALLAYS3, 0, 0, IFIP ) ) THEN
+
+                CALL M3EXIT( 'CSGMOBIL', 0, 0,
+     &                       'Error reading FIP from file' // ANAME, 2 )
+            END IF
+
+            RDEV  = PROMPTFFILE(
+     &             'Enter logical name for TOTALS REPORT or "NONE"',
+     &             .FALSE., .TRUE., 'MGTSREP', 'CSGMOBIL' )
+
+C............  Create state codes arrays
+            LSTA = -9
+            K    = 0
+            DO 22 I = 1, NMSRC
+
+                STA = IFIP( I ) / 1000
+
+                IF( STA .GT. LSTA ) THEN
+
+                    K = K + 1
+
+                    IF( K .LE. MXSTA ) STATES( K ) = STA
+                    LSTA  = STA
+
+                ENDIF
+
+                ISPTR ( I ) = K   
+
+22          CONTINUE
+
+            NSTA = K
+
+            IF( NSTA .GT. MXSTA ) THEN
+                WRITE( MESG,94010 ) 
+     &                'Number of states is ', NSTA,
+     &                'but maximum (MXSTA) is', MXSTA
+                CALL M3EXIT( 'CSGMOBIL', JDATE, JTIME, MESG, 2 )
+            ENDIF
+
+C............  Initialize emission summary array
+            DO 28 I = 1, MXSTA
+                DO 27 S = 1, NMPOL
+                    EMSUM( I,S ) = 0.
+27              CONTINUE
+28          CONTINUE
+
+        ENDIF
 
 C.......   Get description of ANAME for building output file and checking header
         IF ( .NOT. DESC3( ANAME ) ) THEN
@@ -262,7 +342,7 @@ C.........  Initialize "last name" holder "LNAME"
         V     = 0
         ICNT  = 0
 C.........  Count tail part of speciation factor variable names
-        DO 22 I = 1, NSNAME
+        DO 31 I = 1, NSNAME
 
 C.............  Find second "_" in variable names
             L   = TRIMLEN( SPCFNM( I ) )
@@ -285,7 +365,7 @@ C.................  Reset last name and counter
 
             ENDIF
             
-   22   CONTINUE  ! End counting model species in speciation factor names
+   31   CONTINUE  ! End counting model species in speciation factor names
 
 C.........  Store last counter value
         V = V + 1
@@ -365,7 +445,14 @@ C.......   Transform and write out mobile source emissions values:
 
         END IF
 
+C............  Set position of "special" species in name list
+        IF( ST_REPORT ) THEN
+            INO  = INDEX1( 'NO' , NMPOL, VNAME3D )
+            INO2 = INDEX1( 'NO2', NMPOL, VNAME3D )
+        ENDIF
+
 C.........  Calculate emissions for all time steps available from MTMP
+        BTIME = JTIME
         LDATE = 0
         DO  199  T = 1, NSTEPS
 
@@ -443,10 +530,66 @@ C.................  Write out model species emissions
 
                 END IF          !  if outputflag
 
+C.........................  When reporting is switched on, calculate emissions
+C.........................  summaries by state and report to output QA file
+C.........................  EMSUM must be initialized
+                IF( ST_REPORT ) THEN
+ 
+                    CALL AGRDSUM( NMSRC, NGRID, NMATX, NX, IX,
+     &                            CX, ISPTR, EMISC, EMSUM( 1,V ) )
+
+                ENDIF
+
   189       CONTINUE  !  End of loop on output model species
 
             LDATE = JDATE
+            LTIME = JTIME
             CALL NEXTIME( JDATE, JTIME, TSTEP )
+
+C.............  Write report if report flag is switched on and day is done
+            IF( ST_REPORT .AND. 
+     &          ( LDATE .NE. JDATE .OR. T .EQ. NSTEPS ) ) THEN
+ 
+C.................  Convert summary emissions from moles/day to tons/day
+ 
+                DO 193 S = 1, NMPOL
+ 
+C.....................  Conversion factor for AREA as input file
+                    IF( S .NE. INO ) THEN
+                        FAC = EMWT( S ) / TON2GM
+                    ELSE
+                        FAC = EMWT( INO2 ) / TON2GM
+                    ENDIF
+ 
+                    DO 191 I = 1, NSTA
+ 
+                       EMSUM( I,S ) = EMSUM( I,S ) * FAC
+ 
+191                 CONTINUE
+ 
+193             CONTINUE
+
+                WRITE( RDEV, 94010 ) DAYS( WKDAY( LDATE ) ) // 
+     &                               MMDDYY( LDATE ) // ' from', 
+     &                               BTIME, 'to', LTIME
+ 
+                MESG = 'Mobile source emissions (tons/specific day) ' //
+     &                 'within grid ' // GRDNM
+
+                CALL STATELST( RDEV  , MESG , MXSTA , NSTA , NMPOL,
+     &                         'F7.1', VNAME3D, STATES, EMSUM         )
+
+C.................  Reinitialize emissions summary
+                DO 198 I = 1, MXSTA
+                    DO 197 S = 1, NMPOL
+                        EMSUM( I,S ) = 0.
+197                 CONTINUE
+198             CONTINUE
+
+C.................  Set begining time for next day
+                BTIME = JTIME 
+
+            ENDIF
 
   199   CONTINUE          !  end loop on time steps
 
