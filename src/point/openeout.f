@@ -85,6 +85,7 @@ C...........   Other local variables
         CHARACTER*80    GDESC               !  grid description
         CHARACTER*300   MESG
 
+        CHARACTER(LEN=NAMLEN3) NAMBUF           ! file name buffer
         CHARACTER(LEN=IOVLEN3) COORD3D
         CHARACTER(LEN=IOVLEN3) COORUN3D
         CHARACTER(LEN=IODLEN3) IFDESC2, IFDESC3 ! fields 2 & 3 from inven FDESC
@@ -231,7 +232,11 @@ C.............  Set the file variables
  
             MESG = 'Enter logical name for ELEVATED STACK GROUPS ' //
      &              'file'
-            MNAME= PROMPTMFILE( MESG, FSUNKN3, 'STACK_GROUPS', PROGNAME)
+
+C.............  Open file. Use NAMBUF for HP.
+            MNAME  = 'STACK_GROUPS'
+            NAMBUF = PROMPTMFILE( MESG, FSUNKN3, MNAME, PROGNAME )
+            MNAME  = NAMBUF
 
         END IF
 
