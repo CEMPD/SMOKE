@@ -1,12 +1,12 @@
 
-        SUBROUTINE WRSHOUR( FNAME, JDATE, JTIME, NCNTY, ARRAYPOS,
+        SUBROUTINE WRSHOUR( FNAME, JDATE, JTIME, NCNTY,
      &                      CNTYCODES, HOURTEMP )
    
 C***********************************************************************
-C  subroutine WRSHOUR body starts at line < >
+C  subroutine WRSHOUR body starts at line 62
 C
 C  DESCRIPTION:
-C      Write per-source hourly temperature data
+C      Write by county hourly temperature data
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -48,9 +48,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: JDATE          ! julian date
         INTEGER     , INTENT (IN) :: JTIME          ! time HHMMSS
         INTEGER     , INTENT (IN) :: NCNTY          ! no. counties
-        INTEGER     , INTENT (IN) :: ARRAYPOS       ! position in temperature array
         INTEGER     , INTENT (IN) :: CNTYCODES( NCNTY )   ! county FIPS codes
-        REAL        , INTENT (IN) :: HOURTEMP( NCNTY,24 ) ! hourly values
+        REAL        , INTENT (IN) :: HOURTEMP( NCNTY )    ! hourly values
 
 C...........   Local variables
         INTEGER         I       ! index variable
@@ -72,7 +71,7 @@ C.........  Write county codes to file
 
 C.........  Write one hour of temperatures to file        
         IF( .NOT. WRITE3( FNAME, 'TKCOUNTY', JDATE, JTIME,  
-     &                    HOURTEMP( :,ARRAYPOS ) ) ) THEN 
+     &                    HOURTEMP( : ) ) ) THEN 
             MESG = 'Could not write hourly data to "' //
      &              FNAME( 1:LEN_TRIM( FNAME ) ) //  '".'
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
