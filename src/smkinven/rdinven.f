@@ -316,14 +316,24 @@ c                CALL RDEPSMV(  )
 
             NRAWBP = NRAWOUT
 
-C.........  NTI 1996 format.  THIS FEATURE IS NOT SUPPORTED IN SMOKE.
-        ELSE IF( INVFMT .EQ. NTIFMTA ) THEN
+C.........  Toxics format (single file)
+        ELSEIF( INVFMT .EQ. NTIFMT ) THEN
 
             SELECT CASE( CATEGORY )
             CASE( 'AREA' )
-                CALL RDNTIAR( FDEV )
+                CALL RDNTIAR( FDEV, NRAWIN, WKSET, NRAWOUT, EFLAG,
+     &                        NDROP, EDROP )
+            
+            CASE( 'MOBILE' )
+                CALL RDNTIMB( FDEV, NRAWIN, WKSET, NRAWOUT, EFLAG,
+     &                        NDROP, EDROP )
+                
             END SELECT
 
+            KFLAG = ( KFLAG .OR. EFLAG )  ! overall subroutine kill
+            
+            NRAWBP = NRAWOUT
+            
 C.........  SMOKE list format requires a loop for multiple files
 C.........  Includes EMS-95 format
         ELSEIF( INVFMT .EQ. LSTFMT ) THEN  
