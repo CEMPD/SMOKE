@@ -229,7 +229,7 @@ C.........  Precompute intermediate grid overlay variables
            INSYS  = 4       !  Lambert conformal conic
            INZONE = 67
            INUNIT = 2       !  input units:  meters
-           INSPH  = 8       !  GRS 1980 spheroid
+           INSPH  = 19      !  normal sphere
            IPR    = 0       !  print error messages, if any
            JPR    = 1       !  do NOT print projection parameters
            LEMSG  = INIT3() !  unit number for log file
@@ -241,7 +241,7 @@ C.........  Precompute intermediate grid overlay variables
            INSYS  = 1       !  Universal Transverse Mercator
            INZONE = NINT( P_ALP )
            INUNIT = 2       !  input units:  meters
-           INSPH  = 8       !  GRS 1980 spheroid
+           INSPH  = 19      !  normal sphere 
            IPR    = 0       !  print error messages, if any
            JPR    = 1       !  do NOT print projection parameters
            LEMSG  = INIT3() !  unit number for log file
@@ -253,7 +253,7 @@ C.........  Precompute intermediate grid overlay variables
            INSYS  = 0       !  geographic (=Lat-Lon)
            INZONE = 0
            INUNIT = 4       !  input units:  meters
-           INSPH  = 8       !  GRS 1980 spheroid
+           INSPH  = 19      !  normal sphere
            IPR    = 0       !  print error messages, if any
            JPR    = 1       !  do NOT print projection parameters
            LEMSG  = INIT3() !  unit number for log file
@@ -318,7 +318,7 @@ C.........  Compute intermediate grid-overlay variables
             IOSYS  = 4       !  Lambert conformal conic
             IOZONE = 69
             IOUNIT = 2       !  output units:  meters
-            IOSPH  = 8       !  GRS 1980 spheroid
+            IOSPH  = 19      !  normal sphere
 
             OUTTYPE = 'LAMBERT'
             OUTUNIT = 'METERS'
@@ -329,7 +329,7 @@ C.........  Compute intermediate grid-overlay variables
             IOSYS  = 1       !  Universal Transverse Mercator
             IOZONE = NINT( P_ALP2 )
             IOUNIT = 2       !  input units:  meters
-            IOSPH  = 8       !  GRS 1980 spheroid
+            IOSPH  = 19      !  normal sphere
 
             OUTTYPE = 'LAT-LON'
             OUTUNIT = 'DEGREES'
@@ -340,7 +340,7 @@ C.........  Compute intermediate grid-overlay variables
             IOSYS  = 0       !  geographic coords (=Lat-Lon)
             IOZONE = 0
             IOUNIT = 4       !  output units:  degrees
-            IOSPH  = 8       !  GRS 1980 spheroid
+            IOSPH  = 19      !  normal sphere
 
             OUTTYPE = 'UTM'
             OUTUNIT = 'METERS'
