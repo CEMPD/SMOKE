@@ -1,6 +1,6 @@
 
-        SUBROUTINE GENRPRT( FDEV, RCNT, HWID, ENAME, TNAME, LNAME, 
-     &                      OUTFMT, SMAT, EFLAG )
+        SUBROUTINE GENRPRT( FDEV, RCNT, HWID, ADEV, ENAME, TNAME,
+     &                      LNAME, OUTFMT, SMAT, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -85,6 +85,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT    ! report number
         INTEGER     , INTENT (IN) :: HWID    ! header width
+	INTEGER     , INTENT (IN) :: ADEV    ! unit no. ASCII elevated file
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT (IN) :: TNAME   ! hourly data file name
         CHARACTER(*), INTENT (IN) :: LNAME   ! layer fractions file name
@@ -111,12 +112,17 @@ C...........   Other local variables
         INTEGER         LOUT              ! number of output layers
         INTEGER         NDATA             ! number of data columns
         INTEGER         NV                ! number data or spc variables
+	INTEGER		SRCNO		  ! source no. from ASCII elevated file
+
+	REAL		EMISVAL		  ! emissions values from ASCII elevated file
 
         LOGICAL      :: FIRSTIME = .TRUE.  ! true: first time routine called
         LOGICAL      :: SFLAG    = .FALSE. ! true: speciation applies to rpt
 
+	CHARACTER*10		  POL         ! species from ASCII elevated file
         CHARACTER*16           :: RNAME = 'IOAPI_DAT' ! logical name for reading pols
         CHARACTER*256             MESG        !  message buffer
+	CHARACTER*300		  LINE        !  tmp line buffer
         CHARACTER(LEN=IOVLEN3) :: VBUF        !  tmp variable name
 
         CHARACTER*16 :: PROGNAME = 'GENRPRT' ! program name
@@ -170,7 +176,8 @@ C.............  Set hour index
             H =  1 + MOD( JTIME / 10000 , 24 )
 
 C...........  Read hourly emissions, if needed
-            IF( RPT_%USEHOUR ) THEN
+C..............  From temporal file
+            IF( RPT_%USEHOUR .AND. .NOT. AFLAG ) THEN
                 DO V = 1, NTPDAT
 
                     VBUF = TPNAME( V )
@@ -182,9 +189,87 @@ C...........  Read hourly emissions, if needed
                     END IF
                 END DO
 
+C.............  From ASCII elevated file
+	    ELSE IF( RPT_%BYHOUR .AND. AFLAG ) THEN
+		DO V = 1, NIPPA
+		    DO S = 1, NSRC
+
+			VBUF = EANAM( V )
+			READ( ADEV, 93010 ) SRCNO, POL, EMISVAL
+			ASCREC = ASCREC + 1
+
+			IF( SRCNO .NE. S ) THEN
+			    POLVAL( S, V ) = 0.
+			    BACKSPACE( ADEV )
+			    CYCLE
+
+			ELSE
+			    POLVAL( S, V ) = EMISVAL
+	
+			END IF
+
+			IF( POL .NE. VBUF ) THEN
+			    WRITE( MESG, '(A,I5)' )
+     &                      'Reading in pollutant "' //
+     &                      TRIM( VBUF ) // '", but found ' //
+     &                      'pollutant "' // TRIM( POL ) //
+     &                      '" at line ', ASCREC
+			    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+			END IF
+
+		    END DO
+		END DO
+
+		IF( T .NE. RPTNSTEP ) THEN
+		    DO I = 1, 12
+                        ASCREC = ASCREC + 1
+                        READ( ADEV, '(A)' ) LINE
+                    END DO
+		END IF
+
 C...........  Otherwise, read inventory emissions
-            ELSE
+            ELSE IF( .NOT. RPT_%USEHOUR .AND. .NOT. AFLAG ) THEN
                 CALL RDMAPPOL( NSRC, NIPPA, 1, EAREAD, POLVAL )
+
+	    ELSE IF( .NOT. RPT_%USEHOUR .AND. AFLAG ) THEN
+		POLVAL = 0.
+		DO I = 1, NSTEPS
+		    DO V = 1, NIPPA
+			DO S = 1, NSRC
+
+			  VBUF = EANAM( V )
+                          READ( ADEV, 93010 ) SRCNO, POL, EMISVAL
+                          ASCREC = ASCREC + 1
+
+                          IF( SRCNO .NE. S ) THEN
+                            BACKSPACE( ADEV )
+                            CYCLE
+
+                          ELSE
+                            POLVAL( S, V ) = POLVAL( S, V ) +
+     &                                       EMISVAL
+
+                          END IF
+
+                          IF( POL .NE. VBUF ) THEN
+                            WRITE( MESG, '(A,I5)' )
+     &                      'Reading in pollutant "' //
+     &                      TRIM( VBUF ) // '", but found ' //
+     &                      'pollutant "' // TRIM( POL ) //
+     &                      '" at line ', ASCREC
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                          END IF
+
+                    	END DO
+               	    END DO
+
+		    IF( I .NE. NSTEPS ) THEN
+                        DO J = 1, 12
+                          ASCREC = ASCREC + 1
+                          READ( ADEV, '(A)' ) LINE
+                        END DO
+                    END IF
+		END DO
 
             END IF
 
@@ -226,7 +311,7 @@ C.....................  Set index from global to actually input pol/act/etype
                     J = INVIDX( E )
                     IF( RPT_%USEHOUR ) J = TPRIDX( E )
 
-C.....................  Skip variable if it isn't used for any reports
+C.....................  Skip variable if it is not used for any reports
                     IF( J .EQ. 0 ) CYCLE
 
 C..................  Determine index to projection matrix
@@ -397,6 +482,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+
+93010 	FORMAT( I10, A10, F10.3 )
 
 C...........   Internal buffering formats............ 94xxx
 
