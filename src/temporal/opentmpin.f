@@ -123,11 +123,11 @@ C   begin body of subroutine OPENTMPIN
 
 C.........  Get environment variables that control program behavior
         IF ( CATEGORY .EQ. 'POINT' ) THEN
-            DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', 'Use day-specific data',
+            DFLAG = ENVYN( 'DAY_SPECIFIC_YN', 'Use day-specific data',
      &                      .FALSE., IOS )
 
-            HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
-     &                      .FALSE., IOS )
+            HFLAG = ENVYN( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
+     &                     .FALSE., IOS )
         END IF
 
         OFLAG = ENVYN( 'SMK_O3SEASON_YN', MESG, .FALSE., IOS )
