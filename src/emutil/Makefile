@@ -8,11 +8,12 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 extractida invsplit metcombine metscan pktreduc smk2emis \
-     surgtool uam2ncf 
+all: beld3to2 bluesky2inv extractida invsplit metcombine metscan pktreduc \
+     smk2emis surgtool uam2ncf 
 
-debug: beld3to2.debug extractida.debug invsplit.debug metcombine.debug \
-       metscan.debug pktreduc.debug smk2emis.debug surgtool.debug uam2ncf.debug  
+debug: beld3to2.debug bluesky2inv.debug extractida.debug invsplit.debug \
+       metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
+       surgtool.debug uam2ncf.debug  
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
@@ -29,6 +30,16 @@ beld3to2: $(B3TO2) $(ALLI) $(LIBPATH)
 beld3to2.debug: $(B3TO2) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'BELD3TO2 (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(B3TO2) $(LIBS_DEBUG)
+
+BL2IV=bluesky2inv.o
+
+bluesky2inv: $(BL2IV) $(ALLI) $(LIBPATH)
+	echo BlueSky2Inv:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(BL2IV) $(LIBS)
+
+bluesky2inv.debug: $(BL2IV) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'BlueSky2Inv (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(BL2IV) $(LIBS_DEBUG)
 
 EXTI=extractida.o
 
