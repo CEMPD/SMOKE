@@ -15,9 +15,10 @@ C.........  This module contains the information about the source category
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        FIND1FIRST
         INTEGER        FINDR1FIRST
+        INTEGER        CVTRDTYPE
         CHARACTER*2    CRLF    
         
-        EXTERNAL  FINDR1FIRST, FIND1FIRST, CRLF
+        EXTERNAL  FINDR1FIRST, FIND1FIRST, CVTRDTYPE, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV     ! SPDSUM file unit no.
@@ -245,30 +246,7 @@ C.................  Store source number
                 SPDARRAY( N,1 ) = K
                 
 C.................  Convert facility type to road class and store
-                SELECT CASE( IRCLAS( K ) )
-                CASE( RURALINTERSTATE ) 
-                    SPDARRAY( N,3 ) = FREEWAY
-                CASE( RURALPRINCART:RURALMINORCOLL )    ! rural arterials through collectors
-                    SPDARRAY( N,3 ) = ARTERIAL
-                CASE( RURALLOCAL )
-                    IF( LASAFLAG ) THEN
-                        SPDARRAY( N,3 ) = ARTERIAL
-                    ELSE
-                        SPDARRAY( N,3 ) = LOCAL
-                    END IF
-                CASE( URBANINTERSTATE:URBANFREEWAY )    ! urban interstate and freeway
-                    SPDARRAY( N,3 ) = FREEWAY
-                CASE( URBANPRINCART:URBANCOLL )         ! urban arterials through collectors
-                    SPDARRAY( N,3 ) = ARTERIAL
-                CASE( URBANLOCAL )
-                    IF( LASAFLAG ) THEN
-                        SPDARRAY( N,3 ) = ARTERIAL
-                    ELSE
-                        SPDARRAY( N,3 ) = LOCAL
-                    END IF
-C  add error message for default case
-C                CASE DEFAULT                   
-                END SELECT
+                SPDARRAY( N,3 ) = CVTRDTYPE( IRCLAS( K ), LASAFLAG )
                 
 C.................  Store speed for freeways and arterials
 C                   Rounding of speeds could be added here                    
