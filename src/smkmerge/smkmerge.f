@@ -225,7 +225,7 @@ C.........  Do setup for biogenic state and county reporting
         IF( BFLAG .AND. LREPANY ) THEN
 
 C.............  Read gridding surrogates
-            CALL RDSRG( GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
+            CALL RDSRG( .FALSE., GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
 
 C.........  If output grid is different from surrogates, write message
             IF ( OFFLAG ) THEN

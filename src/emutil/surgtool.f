@@ -417,7 +417,7 @@ C.........  Open output file
 
 C.........  Allocate memory for and read the gridding surrogates file,
 C           extracting data for a subgrid, if necessary
-        CALL RDSRG( SDEV, SRGFMT, NROWS, NCOLS )
+        CALL RDSRG( .FALSE., SDEV, SRGFMT, NROWS, NCOLS )
 
 C.........  Allocate memory for output surrogates assuming that number of
 C           records from input file will > output records.
