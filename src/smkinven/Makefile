@@ -32,7 +32,7 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 RAW=adjustinv.o asgnar2pt.o chklstfl.o fixstk.o genpdout.o gethdr.o getpdinfo.o initinfo.o \
     openinvin.o openinvout.o openpdout.o procinven.o rdcempd.o rdemsar.o \
     rdemsmb.o rdemspd.o rdemspt.o rdepsar.o rdepspd.o rdepspt.o rdgrdapi.o \
-    rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o smkinven.o \
+    rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o rdntiar.o rdntimb.o smkinven.o \
     srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o 
 #    
 #
@@ -99,6 +99,10 @@ rdinven.o: $(MODSOURC) $(MODLISTS) $(MODMOBIL) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdinven.f
 rdlooppd.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ rdlooppd.f
+rdntiar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rdntiar.f
+rdntimb.o: $(MODSOURC) $(MODMOBIL) $(MODLISTS) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ rdntimb.f
 smkinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ smkinven.f
 srcmem.o: $(MODSOURC)
