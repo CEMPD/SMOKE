@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDDEVEMSPT( FDEV )
+        SUBROUTINE RDDEVEMSPT( FDEV, NCNTY, FIPTOCSRC )
 
 C***********************************************************************
 C  subroutine body starts at line 232
@@ -53,12 +53,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
         CHARACTER*2     CRLF
         INTEGER         FINDCFIRST
+        INTEGER         FIND1
         INTEGER         STR2INT
         
-        EXTERNAL        CHKINT, CRLF, FINDCFIRST, STR2INT
+        EXTERNAL        CHKINT, CRLF, FINDCFIRST, FIND1, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER,          INTENT (IN) :: FDEV   ! unit no. of inv file
+        INTEGER,          INTENT (IN) :: FDEV    ! unit no. of inv file
+        INTEGER,          INTENT (IN) :: NCNTY   ! no. counties in inventory
+        INTEGER,          INTENT (IN) :: FIPTOCSRC( NCNTY+1,2 )  ! index into CSOURC
 
 C...........   Other local variables
         INTEGER              I, K1                  ! counters and indices
@@ -66,6 +69,8 @@ C...........   Other local variables
         INTEGER              ACTCNT                 ! actual count of processed records
         INTEGER              IOS                    ! I/O status
         INTEGER              IREC                   ! no. records in file
+        INTEGER              IFIP                   ! integer FIPS code
+        INTEGER              STIDX, ENDIDX          ! start and end idx into CSOURC
         INTEGER              KEYLEN                 ! length of source key
         INTEGER              SIC                    ! SIC code
         INTEGER              TDIU                   ! hourly profile code
@@ -105,16 +110,28 @@ C.............  Check for I/O errors
 C.............  Check for end of file
             IF( IOS < 0 ) EXIT
         
-C.............  Create source key
+C.............  Read FIPS code from file
             CFIP( 1:1 ) = '0'
             CFIP( 2:3 ) = LINE( 1:2 )
             CFIP( 4:6 ) = LINE( 3:5 )
-                        
+
 C.............  Replace blanks with zeros        
             DO I = 1,FIPLEN3
                 IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
             END DO
             
+C.............  Find county in FIPTOCSRC array
+            IFIP = STR2INT( CFIP( 1:6 ) )
+            K1 = FIND1( IFIP, NCNTY+1, FIPTOCSRC( :,1 ) )
+
+C.............  Make sure county is in the inventory
+            IF( K1 <= 0 ) CYCLE
+            
+C.............  Set starting and ending indices            
+            STIDX = FIPTOCSRC( K1,2 )
+            ENDIDX = FIPTOCSRC( K1+1,2 ) - 1
+
+C.............  Build source key
             FCID = ADJUSTL( LINE(  6:20 ) )
             SKID = ADJUSTL( LINE( 21:32 ) )
             DVID = ADJUSTL( LINE( 33:44 ) )
@@ -126,7 +143,8 @@ C.............  Replace blanks with zeros
             KEYLEN = LEN_TRIM( SRCKEY )
             
 C.............  Find source key in CSOURC array
-            K1 = FINDCFIRST( SRCKEY, NSRC, CSOURC( : )( 1:KEYLEN ) )
+            K1 = FINDCFIRST( SRCKEY, ENDIDX-STIDX+1, 
+     &                       CSOURC( STIDX:ENDIDX )( 1:KEYLEN ) )
         
 C.............  If key not found, go to next line
             IF( K1 <= 0 ) CYCLE

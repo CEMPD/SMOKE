@@ -42,6 +42,9 @@ C...........   MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC
         
+C...........   This module contains the source ararys
+        USE MODSOURC, ONLY: CSOURC
+        
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: LSTSTR
 
@@ -53,8 +56,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         GETINVYR
+        INTEGER         STR2INT
         
-        EXTERNAL        CRLF, GETINVYR
+        EXTERNAL        CRLF, GETINVYR, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,          INTENT (IN) :: FDEV   ! unit no. of inv file
@@ -63,11 +67,15 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL,          INTENT (IN) :: WFLAG  ! true: convert lat-lons to western hemisphere
 
 C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: UTMZONE( : )    ! UTM zone from facility file
+        INTEGER, ALLOCATABLE :: UTMZONE( : )     ! UTM zone from facility file
+        INTEGER, ALLOCATABLE :: FIPTOCSRC( :,: ) ! index by FIP into CSOURC arary
 
 C...........   Other local variables
-        INTEGER              I                      ! counter
+        INTEGER              I, J                   ! counter
         INTEGER              IOS                    ! I/O status
+        INTEGER              PCNTY                ! previous state FIPS code
+        INTEGER              CNTY                 ! current state code
+        INTEGER              NCNTY                ! no. states in inventory
 
         CHARACTER(LEN=8)     PFILTYPE               ! previous file type
         CHARACTER(LEN=300)   INFILE                 ! inventory file name
@@ -77,6 +85,48 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine PROCEMSPT
+
+C.........  Create FIPTOCSRC array, to index into CSOURC array based on state
+
+C.........  Count total number of counties in the inventory
+        PCNTY = 0
+        NCNTY = 0
+        
+        DO I = 1, NSRC
+        
+            CNTY = STR2INT( CSOURC( I )( 1:6 ) )
+            IF( CNTY /= PCNTY ) THEN
+                NCNTY = NCNTY + 1
+                PCNTY = CNTY
+            END IF
+        
+        END DO
+
+C.........  Allocate memory - use NCNTY+1 so that last entry can be size of CSOURC array
+        ALLOCATE( FIPTOCSRC( NCNTY+1,2 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'FIPTOCSRC', PROGNAME )
+        
+C.........  Fill in array with index values
+        PCNTY = 0
+        J = 0
+        
+        DO I = 1, NSRC
+            CNTY = STR2INT( CSOURC( I )( 1:6 ) )
+            IF( CNTY /= PCNTY ) THEN
+                J = J + 1
+
+C.................  Make sure that J is within array bounds                
+                IF( J > NCNTY + 1 ) EXIT
+                
+                FIPTOCSRC( J,1 ) = CNTY
+                FIPTOCSRC( J,2 ) = I
+                PCNTY = CNTY
+            END IF
+        END DO
+        
+C.........  Fill in values for final position in FIPTOCSRC array
+        FIPTOCSRC( NCNTY+1,1 ) = 1000000  ! fake FIPS code larger than any real ones
+        FIPTOCSRC( NCNTY+1,2 ) = NSRC + 1
 
 C.........  Allocate local arrays
         ALLOCATE( UTMZONE( NSRC ), STAT=IOS )
@@ -123,19 +173,20 @@ C.............  Call correct reader based on previous file type
             
             CASE( 'EMISSION' )
                 PFILTYPE = 'FACILITY'
-                CALL RDFACEMSPT( FDEV, UTMZONE )
+                CALL RDFACEMSPT( FDEV, UTMZONE, NCNTY, FIPTOCSRC )
                 
             CASE( 'FACILITY' )
                 PFILTYPE = 'PROCESS'
-                CALL RDPROCEMSPT( FDEV )
+                CALL RDPROCEMSPT( FDEV, NCNTY, FIPTOCSRC )
             
             CASE( 'PROCESS' )
                 PFILTYPE = 'STACK'
-                CALL RDSTKEMSPT( FDEV, CFLAG, WFLAG, UTMZONE )
+                CALL RDSTKEMSPT( FDEV, CFLAG, WFLAG, UTMZONE, 
+     &                           NCNTY, FIPTOCSRC )
             
             CASE( 'STACK' )
                 PFILTYPE = 'DEVICE'
-                CALL RDDEVEMSPT( FDEV )
+                CALL RDDEVEMSPT( FDEV, NCNTY, FIPTOCSRC )
             
             END SELECT
             
@@ -144,7 +195,7 @@ C.............  Call correct reader based on previous file type
         END DO  ! loop over all files in inventory list
 
 C.........  Deallocate local memory
-        DEALLOCATE( UTMZONE )
+        DEALLOCATE( FIPTOCSRC, UTMZONE )
 
 C******************  FORMAT  STATEMENTS   ******************************
 

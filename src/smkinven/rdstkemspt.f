@@ -1,5 +1,6 @@
 
-        SUBROUTINE RDSTKEMSPT( FDEV, CFLAG, WFLAG, UTMZONE )
+        SUBROUTINE RDSTKEMSPT( FDEV, CFLAG, WFLAG, UTMZONE,
+     &                         NCNTY, FIPTOCSRC )
 
 C***********************************************************************
 C  subroutine body starts at line 232
@@ -54,15 +55,19 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2     CRLF
         INTEGER         FINDCFIRST
+        INTEGER         FIND1
+        INTEGER         STR2INT
         REAL            STR2REAL
         
-        EXTERNAL        CRLF, FINDCFIRST, STR2REAL
+        EXTERNAL        CRLF, FINDCFIRST, FIND1, STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,          INTENT (IN) :: FDEV   ! unit no. of inv file
         LOGICAL,          INTENT (IN) :: CFLAG  ! true: recalc vel w/ flow and diam
         LOGICAL,          INTENT (IN) :: WFLAG  ! true: convert lat-lons to western hemisphere
         INTEGER,          INTENT (IN) :: UTMZONE( NSRC )   ! UTM zone by source
+        INTEGER,          INTENT (IN) :: NCNTY  ! no. counties in inventory
+        INTEGER,          INTENT (IN) :: FIPTOCSRC( NCNTY+1,2 )  ! index into CSOURC
 
 C...........   Other local variables
         INTEGER              I, K1                  ! counters and indices
@@ -70,6 +75,8 @@ C...........   Other local variables
         INTEGER              ACTCNT                 ! actual count of processed records
         INTEGER              IOS                    ! I/O status
         INTEGER              IREC                   ! no. records in file
+        INTEGER              IFIP                   ! integer FIPS code
+        INTEGER              STIDX, ENDIDX          ! start and end idx into CSOURC
         INTEGER              KEYLEN                 ! length of source key
         INTEGER              ZONE                   ! UTM zone
         
@@ -117,7 +124,7 @@ C.............  Check for I/O errors
 C.............  Check for end of file
             IF( IOS < 0 ) EXIT
     
-C.............  Create source key
+C.............  Read FIPS code from file
             CFIP( 1:1 ) = '0'
             CFIP( 2:3 ) = LINE( 1:2 )
             CFIP( 4:6 ) = LINE( 3:5 )
@@ -127,6 +134,18 @@ C.............  Replace blanks with zeros
                 IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
             END DO
             
+C.............  Find county in FIPTOCSRC array
+            IFIP = STR2INT( CFIP( 1:6 ) )
+            K1 = FIND1( IFIP, NCNTY+1, FIPTOCSRC( :,1 ) )
+
+C.............  Make sure county is in the inventory
+            IF( K1 <= 0 ) CYCLE
+            
+C.............  Set starting and ending indices            
+            STIDX = FIPTOCSRC( K1,2 )
+            ENDIDX = FIPTOCSRC( K1+1,2 ) - 1
+            
+C.............  Build source key
             FCID = ADJUSTL( LINE(  6:20 ) )
             SKID = ADJUSTL( LINE( 21:32 ) )
             
@@ -137,7 +156,8 @@ C.............  Replace blanks with zeros
             KEYLEN = LEN_TRIM( SRCKEY )
             
 C.............  Find source key in CSOURC array
-            K1 = FINDCFIRST( SRCKEY, NSRC, CSOURC( : )( 1:KEYLEN ) )
+            K1 = FINDCFIRST( SRCKEY, ENDIDX-STIDX+1, 
+     &                       CSOURC( STIDX:ENDIDX )( 1:KEYLEN ) )
     
 C.............  If key not found, go to next line
             IF( K1 <= 0 ) CYCLE
