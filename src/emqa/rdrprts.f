@@ -89,8 +89,6 @@ C   begin body of subroutine RDRPRTS
 C.........  Allocate memory for report arrays based on previous read of file 
 C           and previously determined settings...
 
-c note: Add DELIM and ALLOUTHR; remove OUTTIME?
-
 C.........  Allocate and initialize report arrays
         ALLOCATE( ALLRPT( NREPORT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ALLRPT', PROGNAME )
@@ -204,7 +202,7 @@ C.............  Data subselection
      &          INDNAM( 1:RPT_%NUMDATA, N ) = SEGMENT( 3:NS )
 
 C.............  Units - for now, one unit applies to all
-C note: Must edit here.
+C               note: Must edit here to permit units to be different by variable
             IF( LIN_UNIT ) THEN
                 ALLUSET( :, N ) = UNITSET
             END IF
