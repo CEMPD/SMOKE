@@ -264,10 +264,10 @@ C.........  Read FIP, road class, and Link IDs from inventory file
      &                   'Error reading IRCLAS from file' // ANAME, 2 )
         END IF
  
-        IF ( .NOT. READ3( ANAME, 'ILINK', ALLAYS3, 0,0, ILINK ) ) THEN
-            CALL M3EXIT( 'PREDIUR', 0, 0,
-     &                   'Error reading ILINK from file' // ANAME, 2 )
-        END IF
+c       IF ( .NOT. READ3( ANAME, 'ILINK', ALLAYS3, 0,0, ILINK ) ) THEN
+c           CALL M3EXIT( 'PREDIUR', 0, 0,
+c    &                   'Error reading ILINK from file' // ANAME, 2 )
+c       END IF
 
 C.........  Read Ungridding Matrix, but check dimensions first
 
@@ -476,7 +476,7 @@ C...........   Read and process emissions factors cross reference file MPLIST
  
         CALL M3MSG2( 'Reading EMISSION FACTORS XREF file ...' )
  
-        NMPLIST = RDMPLIST( NLDEV, MPFIP, MPRDT, MPLNK, MPVTP,
+        NMPLIST = RDMPLIST( NLDEV, MPFIP, MPRDT, MPLNK,
      &                      MPREF, REFCNT, REFLIST )
 
         IF ( NMPLIST .LE. 0 ) THEN
@@ -494,7 +494,8 @@ C...........   unique, pure emission factor index:
             FIP = IFIP  ( S )
             STA = 1000 * ( FIP / 1000 )
             RDT = IRCLAS( S )
-            LNK = ILINK ( S )
+cmh         LNK = ILINK ( S )
+            LNK = 0
 
             NPSI( S ) = 0   ! Initialize counter of PSIs per source
 
