@@ -104,6 +104,7 @@ C...........   Other local variables
         LOGICAL      :: SKIPPOL= .FALSE.   ! true: pol-spec entries skipped
         LOGICAL      :: SKIPREC= .FALSE.   ! true: packet entries skipped
 
+        CHARACTER(LEN=4) :: FAKECSIC = '0000' ! fake CSIC code needed for call to FLTRXREF
         CHARACTER*5     CPOS               ! char pollutant position in EINAM
         CHARACTER*300   MESG               ! message buffer
         CHARACTER(LEN=SCCLEN3) SCCZERO     ! buffer for zero SCC
@@ -184,7 +185,7 @@ C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pollutant name 
 C                   with master list.
-                CALL FLTRXREF( PKTINFO%CFIP, '0000', 
+                CALL FLTRXREF( PKTINFO%CFIP, FAKECSIC, 
      &                         SCCZERO, PKTINFO%CPOL, IXSIC, 
      &                         IXSCC, JPOL, LTMP, SKIPREC  )
      
