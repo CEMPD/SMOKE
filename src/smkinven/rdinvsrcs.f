@@ -459,7 +459,9 @@ C.................  Process line depending on file format and source category
                 END SELECT
 
 C.................  Check for header lines
-                IF( HDRFLAG ) CYCLE
+                IF( HDRFLAG ) THEN
+                    CYCLE
+                END IF
 
 C.................  Write first ten lines of inventory to log file
                 IF( NWRLINE < 10 ) THEN
@@ -596,6 +598,9 @@ C                   sources won't go over ISTREC limit
 C.................  Build concatenated source information
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
+                    CALL PADZERO( CFIP )
+                    CALL PADZERO( TSCC )
+                
                     CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3, 
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                            CHRBLNK3, TCSOURC )
