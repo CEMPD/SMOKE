@@ -211,8 +211,10 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
          endif 
 
          if ( $MRG_BIOG == 'Y' ) then
-	    setenv REPBGTS_L $REPORTS/$BSCEN/scenario/repbgts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
-	    setenv REPBGTS_S $REPORTS/$BSCEN/scenario/repbgts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	    setenv REPBGTS_L  $REPORTS/$BSCEN/scenario/repbgts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	    setenv REPB3GTS_L $REPORTS/$BSCEN/scenario/repb3gts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	    setenv REPBGTS_S  $REPORTS/$BSCEN/scenario/repbgts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+	    setenv REPB3GTS_S $REPORTS/$BSCEN/scenario/repb3gts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
          endif 
 
          if ( $MRG_MOBILE == 'Y' ) then
