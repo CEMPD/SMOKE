@@ -41,11 +41,11 @@ EMS=emisfac.o chkefhdr.o chkemfac.o efcombo.o emfacio.o expndeft.o \
 
 emisfac: $(EMS) $(ALLI) $(LIBPATH)
 	echo EMISFAC:
-	$(FC) $(FFLAGS) -I$(SMKROOT)/mo5b -o $(SMK_BIN)/$(@) $(EMS) $(LIBS2)
+	$(FC) $(FFLAGS) -I$(M5_SRC) -o $(SMK_BIN)/$(@) $(EMS) $(LIBS2)
 
 emisfac.debug: $(EMS) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'EMISFAC (debug):'
-	$(FC) $(FFLAGS) -I$(SMKROOT)/mo5b -o $(@) $(EMS) $(LIBS2_DEBUG)
+	$(FC) $(FFLAGS) -I$(M5_SRC) -o $(@) $(EMS) $(LIBS2_DEBUG)
 #
 #
 # Modules
@@ -75,7 +75,7 @@ expndpsi.o : $(MODEMFAC)
 genefmet.o: $(MODXREF) $(MODEMFAC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 mobil5b.o : $(MODEMFACS) $(MODINFO) $(MODMET) $(INC)/M5CNST3.EXT
-	$(FC) $(FFLAGS) -I$(SMKROOT)/mo5b -c -o $@ $<
+	$(FC) $(FFLAGS) -I$(M5_SRC) -c -o $@ $<
 openpsiout.o  : $(MODINFO) $(MODMET)
 	$(FC) $(FFLAGS) -c -o $@ $<
 opensmet.o  : $(MODINFO) $(MODMET)
