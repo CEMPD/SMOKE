@@ -84,12 +84,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         TRIMLEN
+        REAL            YEAR4  
         REAL            YR2DAY 
         
         EXTERNAL CRLF, DSCGRID, ENVYN, FIND1, GETYN, JUNIT,
      &           JULIAN, LAMBERT, LL2LAM, UTM2LAM, PROMPTFFILE, 
      &           PROMPTMFILE, SECSDIFF, STR2INT, STR2REAL, TRIMLEN, 
-     &           YR2DAY
+     &           YEAR4, YR2DAY
 
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -328,8 +329,8 @@ C.............  Exit to line 123 if read is EOF
                 ELSEIF( INY .LT. 1970 ) THEN
  
                     CALL M3EXIT( 'RAWPOINT', 0, 0,
-     &                   'INVYEAR packet has set bad 4-digit year' //
-     &                   'in PNLST file', 2 )
+     &               'INVYEAR packet has set 4-digit year below 1970 '//
+     &               'minimum in PNLST file', 2 )
  
                 ENDIF
 
@@ -430,15 +431,15 @@ C.............  making changes
                     STM = 10000 * HH
                     DD  = MOD( SDT / 100  , 100 )
                     MM  = MOD( SDT / 10000, 100 )
-                    YY  = 1900 + SDT / 1000000
-                    SDT = 1900 + JULIAN( YY, MM, DD )       !  as Julian date
+                    YY  = YEAR4( SDT / 1000000 )
+                    SDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
 
                     HH  = MOD( EDT        , 100 )
                     ETM = 10000 * HH
                     DD  = MOD( EDT / 100  , 100 )
                     MM  = MOD( EDT / 10000, 100 )
-                    YY  = 1900 + EDT / 1000000 
-                    EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
+                    YY  = YEAR4( EDT / 1000000 )
+                    EDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
 
                     NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
@@ -458,15 +459,15 @@ C.............  making changes
                     STM = 10000 * HH
                     DD  = MOD( SDT / 100  , 100 )
                     MM  = MOD( SDT / 10000, 100 )
-                    YY  = 1900 + SDT / 1000000
-                    SDT = 1900 + JULIAN( YY, MM, DD )       !  as Julian date
+                    YY  = YEAR4( SDT / 1000000 )
+                    SDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
 
                     HH  = MOD( EDT        , 100 )
                     ETM = 10000 * HH
                     DD  = MOD( EDT / 100  , 100 )
                     MM  = MOD( EDT / 10000, 100 )
-                    YY  = 1900 + EDT / 1000000 
-                    EDT = 1900 + JULIAN( YY, MM, DD )        !  as Julian date
+                    YY  = YEAR4( EDT / 1000000 )
+                    EDT = (YY/100)*100 + JULIAN( YY, MM, DD )  !  as Julian date
                     CALL NEXTIME( EDT, ETM, 10000 ) ! ETM means *through* hr HH
 
                     NDAYS  = SECSDIFF( SDT, STM, EDT, ETM ) / SEC2DAY
