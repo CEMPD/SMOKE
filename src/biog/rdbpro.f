@@ -40,10 +40,6 @@ C Last updated: $Date$
 C
 C***********************************************************************
 
-C...........   Modules for public variables
-C...........   This module contains the speciation profile tables
-        USE MODSPRO, ONLY:
-
         IMPLICIT NONE
 
 C...........   Include files
