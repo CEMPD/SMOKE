@@ -83,6 +83,7 @@ setenv OUTZONE              0     # output time zone of emissions, GMT = 0
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
 setenv SMK_TMPPATH          $SMKDAT/tmp # directory for temporary files
 setenv AUTO_DELETE_LOG      N     # Y automatically deletes logs without asking
+setenv IOAPI_GRIDNAME_1     T2_36_C  # Grid name defined in the GRIDDESC file
 
 # Invoke Assigns file
 source $ASSIGNS_FILE

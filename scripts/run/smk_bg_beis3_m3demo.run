@@ -37,13 +37,15 @@ setenv BIOG_SPRO        BV309  # speciation profile code to use for biogenics
 setenv BG_CLOUD_TYPE    1      # method used to calculate PAR
 
 # For Smkmerge - getting state/county reports
-setenv MRG_TEMPORAL_YN    Y        # Y merges with hourly emissions
-setenv MRG_SPCMAT_YN      Y        # Y merges with speciation matrix
-setenv MRG_REPSTA_YN      Y        # Y outputs state totals
-setenv MRG_REPCNY_YN      Y        # Y outputs county totals
-setenv MRG_TOTOUT_UNIT    tons/day # units for state and/or county totals
-setenv SPC_INPUT          mass     # [mass|mole] controls speciation merge
-setenv AREA_SURROGATE_NUM 60       # number for area surrogate
+setenv MRG_GRDOUT_YN      Y         # Y merges with gridding matrix
+setenv MRG_TEMPORAL_YN    Y         # Y merges with hourly emissions
+setenv MRG_SPCMAT_YN      Y         # Y merges with speciation matrix
+setenv MRG_REPSTA_YN      Y         # Y outputs state totals
+setenv MRG_REPCNY_YN      N         # Y outputs county totals
+setenv MRG_GRDOUT_UNIT    moles/s   # units for gridded output file 
+setenv MRG_TOTOUT_UNIT    moles/day # units for state and/or county totals
+setenv SPC_INPUT          mole      # [mass|mole] controls speciation merge
+setenv AREA_SURROGATE_NUM 60        # number for area surrogate
 
 # Multiple-program controls
 setenv PROMPTFLAG       N          # Y (never set to Y for batch processing)
@@ -54,6 +56,8 @@ setenv SMK_MAXERROR     100        # maximum number of errors in log file
 setenv OUTZONE           0         # output time zone of emissions, 0 = GMT
 setenv SMK_DEFAULT_TZONE 5         # time zone to fix in missing COSTCY file
 setenv AUTO_DELETE_LOG  N          # Y automatically deletes logs without asking
+setenv IOAPI_GRIDNAME_1 T2_36_C    # Grid name defined in the GRIDDESC file
+
 
 # Invoke Assigns file
 source $ASSIGNS_FILE

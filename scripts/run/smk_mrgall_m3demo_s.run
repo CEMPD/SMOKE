@@ -33,13 +33,13 @@ setenv RUN_MRGGRID          N  #  run pre-gridded merge program
 setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
 setenv MRG_SPCMAT_YN        Y          # Y merges with speciation matrix
 setenv MRG_LAYERS_YN        Y          # Y merges with layer fractions
-setenv MRG_GRDOUT_YN        N          # Y outputs gridded file
+setenv MRG_GRDOUT_YN        Y          # Y outputs gridded file
 setenv MRG_REPSTA_YN        Y          # Y outputs state totals
 setenv MRG_REPCNY_YN        N          # Y outputs county totals
 setenv SMK_O3SEASON_YN      N          # Y uses O3-season emis, not annual
-setenv SMK_PING_METHOD      0          # 1 processes and outputs for PinG, 0 no PING used 
-setenv MRG_GRDOUT_UNIT      tons/hr    # units for gridded output file
-setenv MRG_TOTOUT_UNIT      tons/day   # units for state and/or county totals
+setenv SMK_PING_METHOD      1          # 1 processes and outputs for PinG, 0 no PING used 
+setenv MRG_GRDOUT_UNIT      tons/day    # units for gridded output file
+setenv MRG_TOTOUT_UNIT      tons/yr   # units for state and/or county totals
 setenv SMK_EMLAYS           12         # number of emissions layers
 setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
 setenv OUTZONE              0          # output time zone of emissions, 0 = GMT
@@ -54,6 +54,7 @@ setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_USE_ACTVNAMS     ' '   # Y force use of activities list
 setenv SMK_USE_SIPOLS       ' '   # Y force use if pollutants list
 setenv AUTO_DELETE_LOG      N     # Y automatically deletes logs without asking
+setenv IOAPI_GRIDNAME_1     T2_36_C # Grid name defined in the GRIDDESC file
 
 # Invoke Assigns file
 source $ASSIGNS_FILE
@@ -76,6 +77,8 @@ endif
 
 
 ##############################################################################
+# override section
+setenv BGTS_S $B3GTS_S
 #
 ## Run programs
 #

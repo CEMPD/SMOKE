@@ -82,17 +82,18 @@ setenv SPC_INPUT            mole       # [mass|mole] controls speciation merge
 setenv QA_TYPE              state      # run state reports at each proc stage
 
 # Multiple-program controls
-setenv PROMPTFLAG           N     # Y (never set to Y for batch processing)
-setenv REPORT_DEFAULTS      N     # Y reports default profile application
-setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
-setenv WEST_HSPHERE         Y     # Y converts stack coords to wst hemisphere
-setenv SMK_USE_ACTVNAMS     ' '   # Y force use of activities list
-setenv SMK_USE_SIPOLS       ' '   # Y force use if pollutants list
-setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
-setenv SMK_MAXERROR         100   # maximum number of errors in log file
-setenv OUTZONE              0     # output time zone of emissions, 0 = GMT
-setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv AUTO_DELETE_LOG      N     # Y automatically deletes logs without asking
+setenv PROMPTFLAG           N        # Y (never set to Y for batch processing)
+setenv REPORT_DEFAULTS      N        # Y reports default profile application
+setenv SMK_O3SEASON_YN      N        # Y uses O3-season emissions instead of annual
+setenv WEST_HSPHERE         Y        # Y converts stack coords to wst hemisphere
+setenv SMK_USE_ACTVNAMS     ' '      # Y force use of activities list
+setenv SMK_USE_SIPOLS       ' '      # Y force use if pollutants list
+setenv SMK_MAXWARNING       100      # maximum number of warnings in log file
+setenv SMK_MAXERROR         100      # maximum number of errors in log file
+setenv OUTZONE              0        # output time zone of emissions, 0 = GMT
+setenv SMK_DEFAULT_TZONE    5        # time zone to fix in missing COSTCY file
+setenv AUTO_DELETE_LOG      N        # Y automatically deletes logs without asking
+setenv IOAPI_GRIDNAME_1     T2_36_C  # Grid name defined in the GRIDDESC file
 
 # Invoke Assigns file
 source $ASSIGNS_FILE

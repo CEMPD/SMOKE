@@ -1,4 +1,12 @@
-#!/bin/csh -fx
+#!/bin/csh -f
+#
+# Script to execute the program BELD3to2
+# BELD3to2 converts BEIS3 landuse IO/API files to 
+# BEIS2 input text files.
+#
+# Script Created April, 2002 
+#       Jeff Vukovich, MCNC - Enviromental Modeling Center 
+#
 
 # Input files (netCDF) from SMOKE Tool
 

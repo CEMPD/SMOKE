@@ -66,7 +66,7 @@ setenv CONTROL_REPORT       Y           # Y outputs a report of factors by sourc
 
 # For Elevpoint
 setenv SMK_ENG2METRIC_YN    N     # Y converts stack parameters to metric units
-setenv SMK_ELEV_METHOD      0     # 0=Laypoint sets elev srcs; 1=use PELVCONFIG
+setenv SMK_ELEV_METHOD      1     # 0=Laypoint sets elev srcs; 1=use PELVCONFIG
 
 # For Temporal
 setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles
@@ -75,7 +75,7 @@ setenv ZONE4WM              Y     # Y uses time zones for start of day & month
 
 # For Laypoint
 setenv REP_LAYER_MAX        ' '   # Layer no. for reporting high plume rise
-setenv SMK_SPECELEV_YN     N      # Y uses PELV to flag elevated sources
+setenv SMK_SPECELEV_YN      Y     # Y uses PELV to flag elevated sources
 
 # For Smkmerge
 setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
@@ -102,7 +102,7 @@ setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv HOUR_SPECIFIC_YN     N     # Y imports and uses hour-specific inventory
 setenv DAY_SPECIFIC_YN      N     # Y imports and uses day-specific inventory
 setenv SMK_O3SEASON_YN      N     # Y uses O3-season emissions instead of annual
-setenv SMK_PING_METHOD      0     # 1 processes and outputs for PinG, 0 no PING used 
+setenv SMK_PING_METHOD      1     # 1 processes and outputs for PinG, 0 no PING used 
 setenv WEST_HSPHERE         Y     # Y converts stack coords to wst hemisphere
 setenv SMK_USE_ACTVNAMS     ' '   # Y force use of activities list
 setenv SMK_USE_SIPOLS       ' '   # Y force use if pollutants list
@@ -112,6 +112,7 @@ setenv SMK_MAXERROR         100   # maximum number of errors in log file
 setenv OUTZONE              0     # output time zone of emissions, 0 = GMT
 setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
 setenv AUTO_DELETE_LOG      N     # Y automatically deletes logs without asking
+setenv IOAPI_GRIDNAME_1     T2_36_C  # Grid name defined in the GRIDDESC file
 
 # Invoke Assigns file
 source $ASSIGNS_FILE

@@ -7,8 +7,8 @@
 # This script sets up needed environment variables for running mobile source
 # emissions in SMOKE, and calls the script that runs the SMOKE programs. 
 #
-# Script created by : M. Houyoux, North Carolina 
-#                     Supercomputing Center
+# Script created by : M. Houyoux, MCNC Environmental Modeling Center 
+#
 #
 #*********************************************************************
 

@@ -116,6 +116,8 @@ setenv SMK_MINT_MAX         100.  # upper limit for minimum temperature
 setenv SMK_MINT_MIN         52.   # lower limit for minimum temperature
 setenv SMK_TF_INTERVAL      2.0   # temperature interval
 setenv SMK_TF_MAXINTVL      40.   # maximum allowed temperature interval
+setenv IOAPI_GRIDNAME_1     T2_36_C  # Grid name defined in the GRIDDESC file
+
 
 # Invoke Assigns file
 source $ASSIGNS_FILE

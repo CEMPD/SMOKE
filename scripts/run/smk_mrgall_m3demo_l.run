@@ -26,8 +26,8 @@ setenv MRG_CTLMAT_ADD  ' '   # [A|P|AP] for merging with additive controls
 setenv MRG_CTLMAT_REAC ' '   # [A|M|P|AMP] for merging with reactivity controls
 
 # time-dependent programs
-setenv RUN_SMKMERGE         Y  #  run merge program
-setenv RUN_MRGGRID          N  #  run pre-gridded merge program
+setenv RUN_SMKMERGE         N  #  run merge program
+setenv RUN_MRGGRID          Y  #  run pre-gridded merge program
 
 # For Smkmerge
 setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
@@ -54,6 +54,7 @@ setenv REPORT_DEFAULTS      N     # Y reports default profile application
 setenv SMK_USE_ACTVNAMS     ' '   # Y force use of activities list
 setenv SMK_USE_SIPOLS       ' '   # Y force use if pollutants list
 setenv AUTO_DELETE_LOG      N     # Y automatically deletes logs without asking
+setenv IOAPI_GRIDNAME_1     T2_36_C  # Grid name defined in the GRIDDESC file
 
 # Invoke Assigns file
 source $ASSIGNS_FILE
@@ -61,7 +62,7 @@ source $ASSIGNS_FILE
 if ( $RUN_MRGGRID == Y ) then
     setenv FILELIST $STATIC/filelist.txt
     setenv OUTFILE  $OUTPUT/egts3d_l.$ESDATE.1.$GRID.$ESCEN.ncf	
-    setenv BGTS $OUTPUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf 
+    setenv BGTS $OUTPUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf 
     setenv MGTS $OUTPUT/mgts_l.$ESDATE.1.$GRID.$MSCEN.ncf
     setenv AGTS $OUTPUT/agts_l.$ESDATE.1.$GRID.$ASCEN.ncf
     setenv PGTS $OUTPUT/pgts3d_l.$ESDATE.1.$GRID.$PSCEN.ncf

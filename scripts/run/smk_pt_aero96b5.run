@@ -53,7 +53,7 @@ setenv SMK_GSREF_FIXED      N     # Y uses fixed-format speciation x-ref
 setenv SPEC_OUTPUT          ALL   # [ALL|MASS|MOLE] controls program outputs
 
 # For Cntlmat
-setenv TMP_CTL_PATH $EDSS_ROOT/data/tmp # directory for temporary program files
+setenv TMP_CTL_PATH         $SMKDAT/tmp  # directory for temporary program files
 
 # For Elevpoint
 setenv SMK_CUTOFF_HT        40.   # Elev source cutoff ht [m] or 0. if not used
