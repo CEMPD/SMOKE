@@ -1,6 +1,44 @@
 
         SUBROUTINE RPLCTEMP( COUNTY, TEMPS, NCOUNTY, 
      &                       SCENARIO, NLINES, CTYPOS )
+
+C***********************************************************************
+C  subroutine body starts at line 75
+C
+C  DESCRIPTION:
+C       Replaces temperatures in the MOBILE6 input file with values
+C       from Premobl
+C
+C  PRECONDITIONS REQUIRED:
+C       Temperature command must be present in the MOBILE6 scenario
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
         
         IMPLICIT NONE
 

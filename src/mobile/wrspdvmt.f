@@ -1,7 +1,45 @@
 
         CHARACTER(LEN=80) FUNCTION WRSPDVMT( FREESPD, ARTSPD, SPDDIR )
 
+C***********************************************************************
+C  function body starts at line 77
+C
+C  DESCRIPTION:
+C       Writes the SPEED VMT output file
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:  none
+C
+C  REVISION  HISTORY:
+C     10/01: Created by C. Seppanen
+C
+C***********************************************************************
+C
+C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
+C                System
+C File: @(#)$Id$
+C
+C COPYRIGHT (C) 2002, MCNC Environmental Modeling Center
+C All Rights Reserved
+C
+C See file COPYRIGHT for conditions of use.
+C
+C Environmental Modeling Center
+C MCNC
+C P.O. Box 12889
+C Research Triangle Park, NC  27709-2889
+C
+C smoke@emc.mcnc.org
+C
+C Pathname: $Source$
+C Last updated: $Date$ 
+C
+C***********************************************************************
+
 C.........  MODULES for public variables
+
+C.........  This module is used for MOBILE6 setup information 
         USE MODMBSET
       
         IMPLICIT NONE
