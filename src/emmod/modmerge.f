@@ -54,12 +54,6 @@
         LOGICAL, PUBLIC :: PUFLAG
         LOGICAL, PUBLIC :: TUFLAG  ! total
 
-!.........  Flags to indicate additive controls being used
-        LOGICAL, PUBLIC :: AAFLAG
-        LOGICAL, PUBLIC :: MAFLAG
-        LOGICAL, PUBLIC :: PAFLAG
-        LOGICAL, PUBLIC :: TAFLAG  ! total
-
 !.........  Flags to indicate reactivity controls being used
         LOGICAL, PUBLIC :: ARFLAG
         LOGICAL, PUBLIC :: MRFLAG
@@ -120,7 +114,6 @@
         CHARACTER*16, PUBLIC :: ATNAME( 7 ) ! area temporal input
         CHARACTER*16, PUBLIC :: AGNAME ! area gridding matrix input
         CHARACTER*16, PUBLIC :: ASNAME ! area speciation matrix input 
-        CHARACTER*16, PUBLIC :: AANAME ! area additive control matrix input
         CHARACTER*16, PUBLIC :: ARNAME ! area reactivity control matrix input
         CHARACTER*16, PUBLIC :: AUNAME ! area multiplicative cntl matrix input
         CHARACTER*16, PUBLIC :: AONAME ! area output gridded file
@@ -134,7 +127,6 @@
         CHARACTER*16, PUBLIC :: MTNAME( 7 ) ! mobile temporal input
         CHARACTER*16, PUBLIC :: MGNAME ! mobile gridding matrix input
         CHARACTER*16, PUBLIC :: MSNAME ! mobile speciation matrix input
-        CHARACTER*16, PUBLIC :: MANAME ! mobile additive control matrix input
         CHARACTER*16, PUBLIC :: MRNAME ! mobile reactivity control matrix input
         CHARACTER*16, PUBLIC :: MUNAME ! mobile multiplicative cntl matrix input
         CHARACTER*16, PUBLIC :: MONAME ! mobile output gridded file
@@ -145,7 +137,6 @@
         CHARACTER*16, PUBLIC :: PGNAME ! point gridding matrix input
         CHARACTER*16, PUBLIC :: PSNAME ! point speciation matrix input 
         CHARACTER*16, PUBLIC :: PLNAME ! point layer fractions file 
-        CHARACTER*16, PUBLIC :: PANAME ! point additive control matrix input
         CHARACTER*16, PUBLIC :: PRNAME ! point reactivity control matrix input
         CHARACTER*16, PUBLIC :: PUNAME ! point multiplicative cntl matrix input
         CHARACTER*16, PUBLIC :: PONAME ! point output gridded file
@@ -193,11 +184,6 @@
         INTEGER, PUBLIC :: ANUMATV = 0  ! area
         INTEGER, PUBLIC :: MNUMATV = 0  ! mobile
         INTEGER, PUBLIC :: PNUMATV = 0  ! point
-
-!.........  Number of additive array variables
-        INTEGER, PUBLIC :: ANAMATV = 0  ! area
-        INTEGER, PUBLIC :: MNAMATV = 0  ! mobile
-        INTEGER, PUBLIC :: PNAMATV = 0  ! point
 
 !.........  Number of reactivity array variables
         INTEGER, PUBLIC :: ANRMATV = 0  ! area
@@ -272,11 +258,6 @@
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MUVNAMS( : ) ! mobile
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PUVNAMS( : ) ! point
 
-!.........  Pollutant names from additive control matrix
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AAVNAMS( : ) ! area
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: MAVNAMS( : ) ! mobile
-        CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: PAVNAMS( : ) ! point
-
 !.........  Species names
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: AEMNAM  ( : ) ! area
         CHARACTER(LEN=IOVLEN3), ALLOCATABLE, PUBLIC :: BEMNAM  ( : ) ! mobile
@@ -306,11 +287,6 @@
         INTEGER, ALLOCATABLE, PUBLIC :: AU_EXIST( :,: )   ! area
         INTEGER, ALLOCATABLE, PUBLIC :: MU_EXIST( :,: )   ! mobile
         INTEGER, ALLOCATABLE, PUBLIC :: PU_EXIST( :,: )   ! point
-
-!.........  Group indices for additive control matrices
-        INTEGER, ALLOCATABLE, PUBLIC :: AA_EXIST( :,: )   ! area
-        INTEGER, ALLOCATABLE, PUBLIC :: MA_EXIST( :,: )   ! mobile
-        INTEGER, ALLOCATABLE, PUBLIC :: PA_EXIST( :,: )   ! point
 
 !.........  Group indices for reactivity control matrices
         INTEGER, ALLOCATABLE, PUBLIC :: AR_EXIST( :,: )   ! area
@@ -420,12 +396,6 @@
         REAL   , ALLOCATABLE, PUBLIC :: PEUSTA( :,: ) ! point , dim nsta, ndim
         REAL   , ALLOCATABLE, PUBLIC :: TEUSTA( :,: ) ! all   , dim nsta, ndim
 
-!.........  State total additive-controlled emissions
-        REAL   , ALLOCATABLE, PUBLIC :: AEASTA( :,: ) ! area  , dim nsta, ndim
-        REAL   , ALLOCATABLE, PUBLIC :: MEASTA( :,: ) ! mobile, dim nsta, ndim
-        REAL   , ALLOCATABLE, PUBLIC :: PEASTA( :,: ) ! point , dim nsta, ndim
-        REAL   , ALLOCATABLE, PUBLIC :: TEASTA( :,: ) ! all   , dim nsta, ndim
-
 !.........  State total reactivity-controlled emissions
         REAL   , ALLOCATABLE, PUBLIC :: AERSTA( :,: ) ! area  , dim nsta, ndim
         REAL   , ALLOCATABLE, PUBLIC :: MERSTA( :,: ) ! mobile, dim nsta, ndim
@@ -450,12 +420,6 @@
         REAL   , ALLOCATABLE, PUBLIC :: MEUCNY( :,: ) ! mobile, dim ncny, ndim
         REAL   , ALLOCATABLE, PUBLIC :: PEUCNY( :,: ) ! point , dim ncny, ndim
         REAL   , ALLOCATABLE, PUBLIC :: TEUCNY( :,: ) ! all   , dim ncny, ndim
-
-!.........  County total additive-controlled emissions
-        REAL   , ALLOCATABLE, PUBLIC :: AEACNY( :,: ) ! area  , dim ncny, ndim
-        REAL   , ALLOCATABLE, PUBLIC :: MEACNY( :,: ) ! mobile, dim ncny, ndim
-        REAL   , ALLOCATABLE, PUBLIC :: PEACNY( :,: ) ! point , dim ncny, ndim
-        REAL   , ALLOCATABLE, PUBLIC :: TEACNY( :,: ) ! all   , dim ncny, ndim
 
 !.........  County total reactivity-controlled emissions
         REAL   , ALLOCATABLE, PUBLIC :: AERCNY( :,: ) ! area  , dim ncny, ndim
