@@ -42,7 +42,7 @@ setenv RUN_SMKREPORT Y         # Y runs reporting for state reports
 # For Grwinven
 setenv SMK_NUM_CTLMAT       1     # number of control/projection matrices
 setenv SMK_GRWSMKOUT_YN     Y     # Y outputs a SMOKE-formatted inventory
-setenv SMK_GRWIDAOUT_YN     Y     # Y outputs an IDA-formatted inventory
+setenv SMK_GRWIDAOUT_YN     N     # Y outputs an IDA-formatted inventory
 
 # For Temporal
 setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles
