@@ -185,7 +185,7 @@ C.........  Variable dimensioning components, independent
 
         PARAMETER   ( CPRTLEN3 = 3
      &              , NARPPOL3 = 6
-     &              , NARVAR3  = 5
+     &              , NARVAR3  = 6 
      &              , NMBVAR3  = 10
      &              , NMBPPOL3 = 2   
      &              , NPTPPOL3 = 7
