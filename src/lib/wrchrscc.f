@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRCHRSCC( FDEV, NSRC, CSCC )
+        SUBROUTINE WRCHRSCC( CSCC )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -8,8 +8,6 @@ C  DESCRIPTION:
 C      This subroutine writes character string SCC codes
 C
 C  PRECONDITIONS REQUIRED:
-C      Output temporal x-ref file opened on unit FDEV
-C      Number of sources NSRC defined correctly
 C      Index sorted in order of increasing ISCC value and ISCC populated
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -45,19 +43,25 @@ C.........  MODULES for public variables
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS
 
+C.........  This module contains the information about the source category
+        USE MODINFO
+
         IMPLICIT NONE
 
 C...........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
+C.........  EXTERNAL FUNCTIONS and their descriptions:
+        INTEGER     PROMPTFFILE
+        EXTERNAL    PROMPTFFILE
+
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: FDEV          !  ASCII file unit
-        INTEGER     , INTENT (IN) :: NSRC          !  actual source count
         CHARACTER(*), INTENT (IN) :: CSCC( NSRC )  !  unsorted SCCs
 
 C...........   Other local variables
         INTEGER       J, S
+        INTEGER       FDEV                !  output file unit number
 
         CHARACTER*300 MESG                !  message buffer
         CHARACTER(LEN=SCCLEN3) TSCC, LSCC !  current and previous 10-digit SCC
@@ -66,6 +70,16 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine WRCHRSCC
+
+C.............  Get unique-SCC output file
+        FDEV = PROMPTFFILE( 
+     &          'Enter the name of the ACTUAL SCC output file',
+     &          .FALSE., .TRUE., CRL // 'SCC', PROGNAME )
+
+C.........  Write out SCCs list (this subroutine expect the data structure
+C           that is being provided.
+
+        CALL M3MSG2( 'Writing out ACTUAL SCC file...' )
 
 C.........  Call the routine that generates the unique SCC list 
         CALL GENUSLST
