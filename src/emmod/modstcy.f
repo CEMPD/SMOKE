@@ -58,9 +58,10 @@
         CHARACTER(20), ALLOCATABLE, PUBLIC :: CNTYNAM( : ) ! County names
 
 !.........  Other arrays by county 
-        INTEGER, ALLOCATABLE, PUBLIC :: CNTYTZON( : )  ! time zone by county
-        REAL   , ALLOCATABLE, PUBLIC :: CNTYPOPL( : )  ! population by county
-        LOGICAL, ALLOCATABLE, PUBLIC :: USEDAYLT( : )  ! true: use daylight time
+        INTEGER,      ALLOCATABLE, PUBLIC :: CNTYTZON( : ) ! time zone by county
+        CHARACTER(3), ALLOCATABLE, PUBLIC :: CNTYTZNM( : ) ! time zone name by county
+        REAL   ,      ALLOCATABLE, PUBLIC :: CNTYPOPL( : ) ! population by county
+        LOGICAL,      ALLOCATABLE, PUBLIC :: USEDAYLT( : ) ! true: use daylight time
 
 !.........  Other arrays by state
         REAL   , ALLOCATABLE, PUBLIC :: STATPOPL( : )  ! population by state
