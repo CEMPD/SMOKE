@@ -1,6 +1,6 @@
 
         SUBROUTINE OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, 
-     &                        XDEV, EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
+     &                        XDEV, EDEV, PDEV, ZDEV, CDEV, ODEV, 
      &                        ENAME, INNAME, IDNAME, IHNAME )
 
 C***********************************************************************
@@ -67,8 +67,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: SDEV      ! unit no. for optional inven in
         INTEGER     , INTENT(OUT) :: XDEV      ! unit no. for vmt mix file
         INTEGER     , INTENT(OUT) :: EDEV      ! unit no. for speeds file
-        INTEGER     , INTENT(OUT) :: PDEV      ! unit no. for pol codes & names
-        INTEGER     , INTENT(OUT) :: VDEV      ! unit no. for activity names
+        INTEGER     , INTENT(OUT) :: PDEV      ! unit no. for inven data table
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
         INTEGER     , INTENT(OUT) :: CDEV      ! unit no. for SCCs description
         INTEGER     , INTENT(OUT) :: ODEV      ! unit no. for ORIS description
@@ -314,20 +313,9 @@ C           matches with the inventory
         END IF
 
 C.........  Get file name for inventory pollutants codes/names
-        IF( CFLAG ) THEN 
-            MESG = 'Enter logical name for POLLUTANT CODES & ' //
-     &             'NAMES file'
-            PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SIPOLS',
-     &                          PROGNAME )
-        END IF
-
-C.........  Get file name for inventory pollutants codes/names
-        IF( VFLAG ) THEN
-            MESG = 'Enter logical name for ACTIVITY CODES & ' //
-     &             'NAMES file'
-            VDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'ACTVNAMS',
-     &                          PROGNAME )
-        END IF
+        MESG = 'Enter logical name for INVENTORY DATA TABLE file'
+        PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'INVTABLE',
+     &                      PROGNAME )
 
         RETURN
 

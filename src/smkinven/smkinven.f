@@ -110,10 +110,9 @@ C.........  File units and logical/physical names
         INTEGER    :: IDEV = 0  !  unit no. for inventory file (various formats)
         INTEGER    :: LDEV = 0  !  unit no. for log file
         INTEGER    :: ODEV = 0  !  unit number for ORIS description
-        INTEGER    :: PDEV = 0  !  unit number for pollutants codes/names file
+        INTEGER    :: PDEV = 0  !  unit number for inventory data table
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
-        INTEGER    :: VDEV = 0  !  unit no. for activity codes/names file
         INTEGER    :: XDEV = 0  !  unit no. for VMT mix file
         INTEGER    :: ZDEV = 0  !  unit no. for time zone file
 
@@ -182,7 +181,7 @@ C.........  Output time zone
 
 C.........  Get names of input files
         CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
-     &                  EDEV, PDEV, VDEV, ZDEV, CDEV, ODEV, 
+     &                  EDEV, PDEV, ZDEV, CDEV, ODEV, 
      &                  ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
@@ -200,9 +199,8 @@ C.........  Set gridded input file name, if available
 C.........  Read country, state, and county file for time zones
         IF( ZDEV .GT. 0 ) CALL RDSTCY( ZDEV, 1, I )   !  "I" used as a dummy
 
-C.........  Read, sort, and store pollutant codes/names file and activities
-C           codes/names file that contain all valid pollutants and activities
-        CALL RDCODNAM( PDEV, VDEV )
+C.........  Read, sort, and store inventory data table file
+        CALL RDCODNAM( PDEV )
 
 C.........  Read mobile-source files
         IF( CATEGORY .EQ. 'MOBILE' ) THEN          
