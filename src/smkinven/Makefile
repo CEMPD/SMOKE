@@ -16,9 +16,10 @@ debug: smkinven.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
-RAW=smkinven.o rdinven.o rdidaar.o rdidamb.o rdidapt.o rdemspt.o fixstk.o \
-    procinven.o openinvout.o srcmem.o initinfo.o chklstfl.o wrinvchr.o \
-    wrinvpol.o wrptref.o openinvin.o
+RAW=chklstfl.o fixstk.o genpdout.o getpdinfo.o initinfo.o openinvin.o       \
+    openinvout.o openpdout.o procinven.o rdemsar.o rdemspd.o rdemspt.o      \
+    rdidaar.o rdidamb.o rdidapt.o rdinven.o rdlooppd.o smkinven.o srcmem.o  \
+    wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o
 #    
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -34,21 +35,33 @@ include $(MD_SRC)/modmake.inc
 
 fixstk.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ $<
+genpdout.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
+	$(FC) $(FFLAGS) -c -o $@ $<
+genpdinfo.o: $(MODINFO) $(MODDAYHR)
+	$(FC) $(FFLAGS) -c -o $@ $<
 initinfo.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 openinvout.o: $(MODLISTS) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
+openpdout.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
 procinven.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
+rdemsar.o: $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $< 
+rdemspd.o: $(MODSOURC) $(MODINFO) $(MODDAYHR)
+	$(FC) $(FFLAGS) -c -o $@ $< 
 rdemspt.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
-rdidaar.o: $(MODSOURC) $(MODINFO)
+rdidaar.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdidamb.o: $(MODSOURC) $(MODINFO)
+rdidamb.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-rdidapt.o: $(MODSOURC) $(MODINFO)
+rdidapt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 rdinven.o: $(MODSOURC) $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+rdlooppd.o: $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
 smkinven.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $< 
@@ -56,6 +69,12 @@ srcmem.o: $(MODSOURC)
 	$(FC) $(FFLAGS) -c -o $@ $<
 wrinvchr.o: $(MODSOURC) $(MODINFO)
 	$(FC) $(FFLAGS) -c -o $@ $<
-#
+wrinvemis.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+wrptref.o: $(MODINFO)
+	$(FC) $(FFLAGS) -c -o $@ $<
+wrpdemis.o: $(MODSOURC) $(MODINFO) $(MODDAYHR) 
+	$(FC) $(FFLAGS) -c -o $@ $<
+
 clean:
 	/bin/rm *.o
