@@ -57,8 +57,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL        CHKINT, CRLF, GETFLINE, STR2INT
 
-        EXTERNAL  CHKINT, CRLF, STR2INT
-
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! NHAPEXCLUDE file unit no.
  
