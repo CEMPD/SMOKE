@@ -69,7 +69,7 @@ C...........   Local variables
 C***********************************************************************
 C   begin body of subroutine OPENREPOUT
 
-
+        IOS = -1
 C.........  If file name is less than 16 characters, check if file name is a
 C           defined environment variable
         L = LEN_TRIM( FILNAM )
@@ -89,7 +89,7 @@ C           name
         ELSE
 
             FDEV = JUNIT()
-            OPEN( FDEV, ERR=1006, FILE=FILNAM, STATUS='UNKNOWN' )
+            OPEN( FDEV,ERR=1006,FILE=FILNAM,STATUS='UNKNOWN',RECL=2500 )
 
         END IF
 
