@@ -2,15 +2,15 @@
 #
 all: opts
 #
-opts:   csgmerge csglmerge
+opts:   csgmerge csglmerge csglmerge2
 #
 LDIRS=-L$(em) \
       -L$(io) \
       -L$(ncf)
-
 #
 LIBS=$(LDIRS) -lemstuff -lm3io -lnetcdf
 #
+FFLAGS = -C
 #
 #
 CSGS=csgmerge.F  amrgvec.F pmrgvec.F msmatvec.F
@@ -30,4 +30,11 @@ CSGLI=ARDIMS3.EXT PTDIMS3.EXT LADIMS3.EXT GRDIMS3.EXT CHDIMS3.EXT \
 #
 csglmerge: $(CSGLS) $(CSGLI)
 	f77 $(FFLAGS) -o $(SCENDIR)/csglmerge $(CSGLS) $(LIBS)
+#
+#
+#
+CSGLS2=csglmerge.2.F amrgvec.F plmvec.F msmatvec.F csvname.F
+#
+csglmerge2: $(CSGLS2) $(CSGLI)
+	f77 $(FFLAGS) -o $(SCENDIR)/csglmerge2 $(CSGLS2) $(LIBS)
 #
