@@ -1,6 +1,7 @@
 
-        SUBROUTINE PKTLOOP( FDEV, PDEV, CDEV, GDEV, LDEV, WDEV, CPYEAR,
-     &                      ACTION, ENAME, PKTCNT, PKTBEG, XRFCNT )
+        SUBROUTINE PKTLOOP( FDEV, PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, 
+     &                      CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, 
+     &                      XRFCNT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -43,13 +44,14 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, ISPTA,
+     &                     MPRNA
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS
+        USE MODLISTS, ONLY:
 
 C.........  This module contains the information about the source category
-        USE MODINFO
+        USE MODINFO, ONLY: CATEGORY, NIPPA
 
         IMPLICIT NONE
 
@@ -69,6 +71,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(IN) :: CDEV      ! file unit no. for tmp CTL file 
         INTEGER     , INTENT(IN) :: GDEV      ! file unit no. for tmp CTG file
         INTEGER     , INTENT(IN) :: LDEV      ! file unit no. for tmp ALW file
+        INTEGER     , INTENT(IN) :: MDEV      ! file unit no. for tmp MACT file
         INTEGER     , INTENT(IN) :: WDEV      ! warnings/errors file unit
         INTEGER     , INTENT(IN) :: CPYEAR    ! year to project to
         CHARACTER(*), INTENT(IN) :: ACTION    ! action to take for packets 
@@ -140,7 +143,8 @@ C               unsorted x-ref data
 
 C.................  Deallocate memory for ungrouped cross-reference information
                 IF( ALLOCATED( INDXTA ) ) THEN
-                    DEALLOCATE( INDXTA, ISPTA, MPRNA, CSCCTA, CSRCTA )
+                    DEALLOCATE( INDXTA, ISPTA, MPRNA, CSCCTA, CMACTA, 
+     &                          CSRCTA )
                 END IF
 
 C.................  Allocate memory for ungrouped cross-reference information
@@ -152,6 +156,8 @@ C.................  Allocate memory for ungrouped cross-reference information
                 CALL CHECKMEM( IOS, 'MPRNA', PROGNAME )
                 ALLOCATE( CSCCTA( J ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
+                ALLOCATE( CMACTA( J ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CMACTA', PROGNAME )
                 ALLOCATE( CSRCTA( J ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
 
@@ -201,7 +207,8 @@ C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pollutant name 
 C                   with master list.
                 CALL FLTRXREF( PKTINFO%CFIP, CSIC, 
-     &                         SCCZERO, PKTINFO%CPOL, IXSIC, 
+     &                         SCCZERO, PKTINFO%CPOL, 
+     &                         PKTINFO%CMCT, IXSIC, 
      &                         IXSCC, JPOL, LTMP, SKIPREC  )
 
 C............  Report that invalid SIC is provided in a cross-reference file.
@@ -218,6 +225,13 @@ C              for toxics (EPA SMOKE/MPEI project, Task 6)
                     CALL M3MSG2( MESG )
                 END IF
      
+C.................  For CONTROL packet entries, check application control flag
+                IF( PKTLIST( K ) == 'CONTROL' ) THEN
+                    IF( PKTINFO%APPFLAG /= 'Y' ) THEN
+                        SKIPREC = .TRUE.
+                    END IF
+                END IF
+                    
                 IF( SKIPREC ) CYCLE  ! Skip this record
 
                 SKIPPOL = ( SKIPPOL .OR. LTMP )
@@ -291,9 +305,9 @@ C.................  Group cross-reference information for current packet
 
 C.................  Match controls to sources and pollutants, as needed for 
 C                   each packet type
-                CALL PROCPKTS( PDEV, CDEV, GDEV, LDEV, WDEV, CPYEAR, 
-     &                         PKTLIST( K ), ENAME, LPOLSPEC, USEPOL, 
-     &                         OFLAG )
+                CALL PROCPKTS( PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, 
+     &                         CPYEAR, PKTLIST( K ), ENAME, LPOLSPEC, 
+     &                         USEPOL, OFLAG )
 
             END IF  ! End process section
 
