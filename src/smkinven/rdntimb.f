@@ -1,12 +1,12 @@
 
-        SUBROUTINE RDNTIAR( FDEV, NRAWIN, WKSET, NRAWOUT, EFLAG, 
+        SUBROUTINE RDNTIMB( FDEV, NRAWIN, WKSET, NRAWOUT, EFLAG, 
      &                      NDROP, EDROP )
 
 C***********************************************************************
 C  subroutine body starts at line 156
 C
 C  DESCRIPTION:
-C      This subroutine reads the NTI format area-source inventory
+C      This subroutine reads the NTI format mobile-source inventory
 C      files.  It can read multiple NTI files, if needed.
 C
 C  PRECONDITIONS REQUIRED:
@@ -14,7 +14,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      copied from rdemsar.f by C. Seppanen (11/02) 
+C      copied from rdntimb.f by C. Seppanen (11/02) 
 C
 C**************************************************************************
 C
@@ -43,6 +43,9 @@ C...........   MODULES for public variables
 C...........   This module is the point source inventory arrays
         USE MODSOURC
 
+C.........  This module is for mobile-specific data
+        USE MODMOBIL
+        
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS
 
@@ -62,13 +65,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER*2            CRLF
         INTEGER                ENVINT
         LOGICAL                ENVYN
+        INTEGER                FIND1
         INTEGER                FINDC
         INTEGER                INDEX1
         INTEGER                STR2INT
         REAL                   STR2REAL
         REAL                   YR2DAY 
 
-        EXTERNAL    CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC, 
+        EXTERNAL    CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FIND1, FINDC, 
      &              INDEX1, STR2INT, STR2REAL, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
@@ -88,7 +92,7 @@ C...........   Counters of total number of input records
         INTEGER, SAVE :: NSRCSAV = 0 ! cumulative source count
 
 C...........   Other local variables
-        INTEGER         I       ! counters and indices
+        INTEGER         I, J    ! counters and indices
 
         INTEGER         COD     !  pollutant position in INVDNAM
         INTEGER         FIP     !  tmp FIPS code
@@ -96,13 +100,15 @@ C...........   Other local variables
         INTEGER         INY     !  inventory year
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  line counter
+        INTEGER         IVT     ! tmp vehicle type code
         INTEGER, SAVE:: MXWARN  !  maximum number of warnings
         INTEGER         NCASPOLS!  number of pollutants per CAS
-        INTEGER      :: NSEG = 9!  number of segments in line
+        INTEGER      :: NSEG = 6!  number of segments in line
         INTEGER         NPOA    !  number of pollutants in file
         INTEGER, SAVE:: NWARN =0!  number of warnings in this routine
-        INTEGER         SCCLEN         ! length of SCC string 
+        INTEGER         SCCLEN  ! length of SCC string 
         INTEGER         SS      !  counter for sources
+        INTEGER         RWT     ! roadway type
         INTEGER         TPF     !  tmp temporal adjustments setting
         INTEGER         SCASPOS !  position of CAS number in sorted array
         INTEGER         UCASPOS !  position of CAS number in unique array
@@ -120,20 +126,26 @@ C...........   Other local variables
         LOGICAL, SAVE:: FFLAG    = .FALSE. ! true: fill in 0. annual with seasonal
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
 
-        CHARACTER*300   MESG    !  message buffer
-
-        CHARACTER(LEN=50)      SEGMENT( 9 ) ! segments of line
+        CHARACTER*300   MESG         !  message buffer
+        CHARACTER*20  VIDFMT         ! vehicle type ID format
+        CHARACTER*20  RWTFMT         ! roadway type number format
+        
+        CHARACTER(LEN=50)      SEGMENT( 6 ) ! segments of line
         CHARACTER(LEN=POLLEN3) CCOD  ! character pollutant index to INVDNAM
-        CHARACTER(LEN=FIPLEN3) CFIP  ! character FIP code
+        CHARACTER(LEN=FIPLEN3) CFIP  ! character FIPS code
+        CHARACTER(LEN=VIDLEN3) CIVT  ! tmp vehicle type ID
+        CHARACTER(LEN=LNKLEN3) CLNK  ! tmp link ID 
+        CHARACTER(LEN=RWTLEN3) CRWT  ! tmp roadway type
         CHARACTER(LEN=IOVLEN3) CPOL  ! tmp pollutant name
         CHARACTER(LEN=300)     LINE  ! input line from inventory file
         CHARACTER(LEN=SCCLEN3) TSCC  ! tmp scc
         CHARACTER(LEN=CASLEN3) TCAS  ! tmp cas number
+        CHARACTER(LEN=VTPLEN3) VTYPE ! tmp vehicle type
 
-        CHARACTER*16 :: PROGNAME = 'RDNTIAR' ! Program name
+        CHARACTER*16 :: PROGNAME = 'RDNTIMB' ! Program name
 
 C***********************************************************************
-C   begin body of subroutine RDNTIAR
+C   begin body of subroutine RDNTIMB
 
         IF ( FIRSTIME ) THEN
 
@@ -150,6 +162,10 @@ C.........  Reinitialize for multiple subroutine calls
         INY   = 0
         NPOA  = 0
 
+C.........  Create formats
+        WRITE( VIDFMT, '("(I",I2.2,")")' ) VIDLEN3
+        WRITE( RWTFMT, '("(I",I2.2,")")' ) RWTLEN3
+        
 C.........  Make sure the file is at the beginning
         REWIND( FDEV )
 
@@ -159,6 +175,7 @@ C........................................................................
 
         SS   = NSRCSAV
         IREC = 0
+        CLNK = ' '
         DO
 
 C.............  Read a line of NTI file as a character string
@@ -232,15 +249,11 @@ C.............  Make sure that all of the needed real values are real...
 
 C.............  Emissions and associated data
             IF( .NOT. CHKREAL( SEGMENT( 5 ) ) .OR.
-     &          .NOT. CHKREAL( SEGMENT( 6 ) ) .OR.
-     &          .NOT. CHKREAL( SEGMENT( 7 ) ) .OR.
-     &          .NOT. CHKREAL( SEGMENT( 8 ) ) .OR.
-     &          .NOT. CHKREAL( SEGMENT( 9 ) )      ) THEN
+     &          .NOT. CHKREAL( SEGMENT( 6 ) )      ) THEN
      	
      	        EFLAG = .TRUE.
      	        WRITE( MESG,94010 ) 'ERROR: Emissions data, ' //
-     &                 'control percentage, and/or rule ' //
-     &                 'percentages are not a number or have ' //
+     &                 'are not a number or have ' //
      &                 'bad formatting at line', IREC
                 CALL M3MESG( MESG )
      	    END IF
@@ -283,10 +296,6 @@ C.............  Get total number of pollutants per CAS number and
 C               position of CAS number in sorted array
             NCASPOLS = UCASNPOL( UCASPOS )
             SCASPOS  = UCASIDX( UCASPOS )
-            
-C.............  If there has been an error, do not try to store any of the
-C               records.  Instead go to next line of file.
-            IF( EFLAG ) CYCLE
 
 C.............  Define day to year conversion factor
             DAY2YR  = 1. / YR2DAY( INY )
@@ -295,47 +304,73 @@ C.............  Set country/state/county code
             FIP  = ICC  * 100000 +
      &             1000 * STR2INT( SEGMENT( 1 ) ) +
      &                    STR2INT( SEGMENT( 2 ) )
-            WRITE( CFIP,94120 ) FIP
-            CALL PADZERO( CFIP )
 
 C.............  Save SCC value
             TSCC = SEGMENT( 3 )
 
+C.............  Check that vehicle type is an integer and in list of valid types
+            IF( .NOT. CHKINT( TSCC( 3:6 ) ) ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Vehicle type "' //
+     &                 TSCC( 3:6 ) // '" at line', IREC, 'is invalid'
+                CALL M3MESG( MESG )
+            ELSE
+                IVT = STR2INT( TSCC( 3:6 ) )
+                DO J = 1, NVTYPE
+                    IF( IVT == IVTIDLST( J ) ) EXIT
+                END DO
+                	
+                IF( J > NVTYPE ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 ) 'ERROR: Vehicle type "' //
+     &                     TSCC( 3:6 ) // '" at line', IREC,
+     &                     'was not found in list of valid types'
+                    CALL M3MESG( MESG )
+                ELSE
+                    VTYPE = CVTYPLST( J )
+                END IF
+            END IF
+
+C.............  Check that road class is an integer and in list of valid types
+            IF( .NOT. CHKINT( TSCC( 8:10 ) ) ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Road class "' // 
+     &                 TSCC( 8:10 ) // '" at line', IREC, 'is invalid'
+                CALL M3MESG( MESG )
+            ELSE
+                RWT = STR2INT( TSCC( 8:10 ) )
+                J = FIND1( RWT, NRCLAS, AMSRDCLS )
+                
+                IF( J <= 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: Road class "' //
+     &                     TSCC( 8:10 ) // '" at line', IREC,
+     &                     'was not found in list of valid classes'
+                    CALL M3MESG( MESG )
+                ELSE
+                    RWT = RDWAYTYP( J )  
+                END IF
+            END IF
+
+C.............  If there has been an error, do not try to store any of the
+C               records.  Instead go to next line of file.
+            IF( EFLAG ) CYCLE
+
 C.............  Set the default temporal resolution of the data
             TPF  = MTPRFAC * WKSET
+
+C.............  Create string source characteristics and pad with zeroes
+            WRITE( CFIP,94120 ) FIP
+            CALL PADZERO( CFIP )
+            CALL PADZERO( TSCC )
+            WRITE( CRWT,RWTFMT ) RWT
+            WRITE( CIVT,VIDFMT ) IVT
 
 C.............  Read emissions data as real values
             CALL READ_REAL( 50, IREC, .FALSE., SEGMENT( 5 ),
      &                      'annual emissions', EANN, EFLAG )
             CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( 6 ),
      &                      'average day emissions', EOZN, EFLAG )
-            CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( 7 ),
-     &                      'control efficiency', CEFF, EFLAG )
-            CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( 8 ),
-     &                      'rule effectiveness', REFF, EFLAG )
-            CALL READ_REAL( 50, IREC, .TRUE., SEGMENT( 9 ),
-     &                      'rule penetration', RPEN, EFLAG )
-
-            IF( CEFF .LT. AMISS3 ) THEN
-                WRITE( MESG,94010 ) 'WARNING: Missing control ' //
-     &                 'efficiency at line', IREC 
-                IF( NWARN .LT. MXWARN ) CALL M3MESG( MESG )
-                NWARN = NWARN + 1
-            END IF
-            
-            IF( REFF .LT. AMISS3 ) THEN
-                WRITE( MESG,94010 ) 'WARNING: Missing rule ' //
-     &                 'effectiveness at line', IREC
-                IF( NWARN .LT. MXWARN ) CALL M3MESG( MESG )
-                NWARN = NWARN + 1
-            END IF
-
-            IF( RPEN .LT. AMISS3 ) THEN
-                WRITE( MESG,94010 ) 'WARNING: Missing rule ' //
-     &                 'pentration at line', IREC 
-                IF( NWARN .LT. MXWARN ) CALL M3MESG( MESG )
-                NWARN = NWARN + 1
-            END IF
 
 C.............  Replace annual data with ozone-season information if
 C               user option is set
@@ -391,19 +426,24 @@ C.................  Increment source number
 
 C.................  Store source information
                 IF( SS <= NRAWIN ) THEN
-                    IFIPA ( SS ) = FIP
-                    TPFLGA( SS ) = TPF
-                    INVYRA( SS ) = INY
-                    CSCCA ( SS ) = TSCC
-                    POLVLA( SS,NEM ) = POLANN * INVDCNV( COD )
-                    POLVLA( SS,NOZ ) = POLOZN
-                    POLVLA( SS,NCE ) = CEFF
-                    POLVLA( SS,NRE ) = REFF
-                    POLVLA( SS,NRP ) = RPEN
+                    IFIPA  ( SS ) = FIP
+                    IRCLASA( SS ) = RWT
+                    IVTYPEA( SS ) = IVT
+                    CLINKA ( SS ) = CLNK
+                    CVTYPEA( SS ) = VTYPE
+                    TPFLGA ( SS ) = TPF
+                    INVYRA ( SS ) = INY
+                    CSCCA  ( SS ) = TSCC
+                    XLOC1A ( SS ) = BADVAL3
+                    YLOC1A ( SS ) = BADVAL3
+                    XLOC2A ( SS ) = BADVAL3
+                    YLOC2A ( SS ) = BADVAL3
+                    POLVLA ( SS,NEM ) = POLANN * INVDCNV( COD )
+                    POLVLA ( SS,NOZ ) = POLOZN
                     
-                    CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
-     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
-     &                            CCOD, CSOURCA( SS ) )
+                    CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, 
+     &                            CHRBLNK3, CHRBLNK3, CCOD, 
+     &                            CSOURCA( SS ) )
                  END IF
 
             END DO
@@ -527,4 +567,4 @@ C............................................................................
             END SUBROUTINE READ_REAL
 
 
-        END SUBROUTINE RDNTIAR
+        END SUBROUTINE RDNTIMB
