@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDEMSMB( EDEV, INY, NRAWIN, NRAWBP, WKSET, 
+        SUBROUTINE RDEMSMB( EDEV, INY, NRAWBP, WKSET, 
      &                      NRAWOUT, IOS, IREC, ERFILDSC, EFLAG, 
      &                      NDROP, DDROP )
 
@@ -87,7 +87,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: EDEV      ! unit no. for input file
         INTEGER     , INTENT (IN) :: INY       ! inv year for this set of files
-        INTEGER     , INTENT (IN) :: NRAWIN    ! total raw record-count
         INTEGER     , INTENT (IN) :: NRAWBP    ! total raw record times pols
         INTEGER     , INTENT (IN) :: WKSET     ! weekly profile interpretation
         INTEGER     , INTENT(OUT) :: NRAWOUT   ! valid raw record-count
@@ -124,10 +123,8 @@ C...........   Other local variables
         INTEGER       :: NPOA = 0    !  number of input data variables
         INTEGER          NPRECOL     !  no. src char columns for list-directed
         INTEGER, SAVE :: NSRCDAT = 0 !  cumulative source x pollutants count
-        INTEGER, SAVE :: NSRCSAV = 0 !  cumulative source count
         INTEGER          ROAD        !  temporary road class code
         INTEGER          RWT         !  temporary roadway type
-        INTEGER          SS          !  counter for rec (no data vars)
         INTEGER          STID        !  tmp state ID
         INTEGER          TPF         !  temporary temporal ID
         INTEGER          YR4         !  tmp unused year
@@ -279,7 +276,6 @@ C.........  Make sure the file is at the beginning
         REWIND( EDEV )
 
 C.........  Initialize before loop
-        SS   = NSRCSAV
         ES   = NSRCDAT
         IREC = 0
         ERFILDSC = 'EMS-95 mobile data'
@@ -514,32 +510,27 @@ c note: add later - SPEED is to be treated as an activity like VMT
 
 C.................  Compute vehicle-mix-adjusted data values
                 DATAVAL( 1:NPOA ) = VMTMIXA( J,K1 ) * INVAL( 1:NPOA )
-C.................  Time to store data in unsorted list
-                SS = SS + 1
 
-                IF ( SS .LE. NRAWIN ) THEN
-
-                    IFIPA  ( SS ) = FIP
-                    IRCLASA( SS ) = RWT
-                    IVTYPEA( SS ) = IVT
-                    CLINKA ( SS ) = CLNK
-                    CVTYPEA( SS ) = VTYPE
-                    TPFLGA ( SS ) = TPF
-                    INVYRA ( SS ) = YR4
-                    CSCCA  ( SS ) = TSCC
-                    XLOC1A ( SS ) = X1
-                    YLOC1A ( SS ) = Y1
-                    XLOC2A ( SS ) = X2
-                    YLOC2A ( SS ) = Y2
-                END IF
-
-C.................  Store data variable values
+C.................  Store source information
                 DO V = 1, NPOA
 
                     ES = ES + 1
                     COD  = DATPOS( V )
-
+                    
                     IF( ES .LE. NRAWBP ) THEN
+                        IFIPA  ( ES ) = FIP
+                        IRCLASA( ES ) = RWT
+                        IVTYPEA( ES ) = IVT
+                        CLINKA ( ES ) = CLNK
+                        CVTYPEA( ES ) = VTYPE
+                        TPFLGA ( ES ) = TPF
+                        INVYRA ( ES ) = YR4
+                        CSCCA  ( ES ) = TSCC
+                        XLOC1A ( ES ) = X1
+                        YLOC1A ( ES ) = Y1
+                        XLOC2A ( ES ) = X2
+                        YLOC2A ( ES ) = Y2
+                    
                         POLVLA ( ES,1 ) = INVDCNV( COD ) * DATAVAL( V )
 
                         WRITE( CCOD,94125 ) COD
@@ -558,10 +549,6 @@ C.................  Store data variable values
 
         WRITE( MESG,94010 ) 
      &         'DATA FILE processed:'  // CRLF() // BLANK10 //
-     &              'This-file source-count', SS - NSRCSAV,
-     &         CRLF() // BLANK10 //
-     &              'Cumulative source-count', SS,
-     &         CRLF() // BLANK10 //
      &              'This-file source*data-count', ES - NSRCDAT,
      &         CRLF() // BLANK10 //
      &              'Cumulative source*data-count', ES
@@ -569,7 +556,6 @@ C.................  Store data variable values
         CALL M3MSG2( MESG )
 
         NSRCDAT = ES        !  cumulative records * data variables
-        NSRCSAV = SS        !  cumulative records 
 
         IF( NSRCDAT .GT. NRAWBP ) THEN
 
