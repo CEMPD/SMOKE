@@ -2,7 +2,7 @@
         SUBROUTINE RDSCONV( FDEV, NIPOL, CATEGORY, EINAM, OUTNAM )
 
 C***********************************************************************
-C  subroutine body starts at line
+C  subroutine body starts at line 142
 C
 C  DESCRIPTION:
 C       Reads the pollutant organic conversion file, compares the entries
@@ -26,7 +26,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2001, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C  
 C See file COPYRIGHT for conditions of use.
@@ -44,6 +44,9 @@ C
 C************************************************************************
 
 C...........   MODULES for public variables   
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS
+
 C...........   This module contains the speciation profile tables
         USE MODSPRO
 
@@ -66,12 +69,13 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER*2   CRLF
+        INTEGER       FINDC
         INTEGER       GETFLINE
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
 
-        EXTERNAL      GETFLINE, INDEX1, STR2INT, STR2REAL
+        EXTERNAL      FINDC, GETFLINE, INDEX1, STR2INT, STR2REAL
 
 C.........  LOCAL PARAMETERS:
         INTEGER, PARAMETER :: TBLLEN = FPSLEN3 + POLLEN3
@@ -209,10 +213,15 @@ C.............  Store data for current record when file's current pollutant is
 C               in EINAM
             ELSEIF( RFLAG ) THEN
 
-                I = I + 1
-
                 CFIP = ADJUSTR( LINE( CS1:CE1 ) )
                 TSCC = ADJUSTR( LINE( CS2:CE2 ) )
+
+C.................  Determine if SCC is in inventory list
+                K = FINDC( TSCC, NINVSCC, INVSCC )
+
+                IF( K .LE. 0 ) CYCLE   ! Skip record if SCC not in inventory
+
+                I = I + 1
 
 C.................  Convert SCC to mobile internal standard
                 IF( CATEGORY .EQ. 'MOBILE' ) THEN
