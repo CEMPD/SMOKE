@@ -23,7 +23,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 1999, MCNC--North Carolina Supercomputing Center
+C COPYRIGHT (C) 2000, MCNC--North Carolina Supercomputing Center
 C All Rights Reserved
 C
 C See file COPYRIGHT for conditions of use.
@@ -49,7 +49,9 @@ C.........  INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER*2  CRLF
-        EXTERNAL     CRLF
+        INTEGER      STR2INT
+
+        EXTERNAL     CRLF, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: UNIT1    ! first unit
@@ -57,7 +59,7 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) :: LNUM     ! true: for numerators
 
 C...........   Other local variables
-        INTEGER         K1, K2, L1, L2, LB1, LB2
+        INTEGER         I, K1, K2, L1, L2, LB1, LB2
         INTEGER         EXP1       ! exponent on first unit
         INTEGER         EXP2       ! exponent on second unit
 
@@ -71,17 +73,15 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of function UNITFAC
 
+C.........  Initialize factor
+        UNITFAC = 1.0
+
 C.........  Retrieve length of unit strings
         L1 = LEN_TRIM( UNIT1 )
         L2 = LEN_TRIM( UNIT2 )
 
 C.........  Cases where one or more of the provided units are blank
-        IF( L1 .LE. 0 .OR. L2 .LE. 0 ) THEN
-
-            UNITFAC = 1.0
-            RETURN
-
-        END IF
+        IF( L1 .LE. 0 .OR. L2 .LE. 0 ) RETURN
 
 C.........  Determine positions of the divide-by symbol in the units
         K1 = INDEX( UNIT1, '/' )
@@ -108,12 +108,6 @@ C           value of LNUM
 
         CALL UNITMATCH( BUF1 )
         CALL UNITMATCH( BUF2 )
-
-C.........  Check if units are the same and return a 1.
-        IF( BUF1 .EQ. BUF2 ) THEN
-            UNITFAC = 1.
-            RETURN
-        END IF
 
 C.........  Separate out any leading adjustments (e.g., 10E6)
         EXP1 = 0
@@ -143,6 +137,15 @@ C.........  Set conversion factor by comparing units prefixes
 C.........  Set conversion factor by comparing numerators of main units
         SELECT CASE( BUF1 )
 
+            CASE( 'moles' )
+
+                SELECT CASE( BUF2 )
+                    CASE( 'moles' ) 
+                        UNITFAC = 1.
+                    CASE DEFAULT
+                        CALL CASE_NOT_FOUND( UNITFAC )
+                END SELECT
+
             CASE( 'g' )
                 
                 SELECT CASE( BUF2 )
@@ -150,6 +153,7 @@ C.........  Set conversion factor by comparing numerators of main units
                         UNITFAC = 1. / 1000.
                     CASE( 'tons' )
                         UNITFAC = GM2TON
+                    CASE( 'g' )
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
@@ -161,7 +165,8 @@ C.........  Set conversion factor by comparing numerators of main units
                         UNITFAC = 1000.
                     CASE( 'tons' )
                         UNITFAC = GM2TON / 1000.
-                    CASE DEFAULT
+                     CASE( 'kg' )
+                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
@@ -172,6 +177,7 @@ C.........  Set conversion factor by comparing numerators of main units
                         UNITFAC = TON2GM
                     CASE( 'kg' )
                         UNITFAC = TON2GM / 1000.
+                    CASE( 'tons' )
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
@@ -179,6 +185,7 @@ C.........  Set conversion factor by comparing numerators of main units
             CASE( 'yr' )
 
                 SELECT CASE( BUF2 )
+                    CASE( 'yr' )
                     CASE( 'day' )
                         UNITFAC = 365.
                     CASE( 'hr' )
@@ -196,6 +203,7 @@ C.........  Set conversion factor by comparing numerators of main units
                  SELECT CASE( BUF2 )
                     CASE( 'yr' )
                         UNITFAC = 1. / 365.
+                    CASE( 'day' )
                     CASE( 'hr' )
                         UNITFAC = 24.
                     CASE( 'min' )
@@ -213,6 +221,7 @@ C.........  Set conversion factor by comparing numerators of main units
                         UNITFAC = 1. / ( 365. * 24. )
                     CASE( 'day' )
                         UNITFAC = 1. / 24.
+                    CASE( 'hr' )
                     CASE( 'min' )
                         UNITFAC = 60.
                     CASE( 's' )
@@ -230,6 +239,7 @@ C.........  Set conversion factor by comparing numerators of main units
                         UNITFAC = 1. / ( 24. * 60. )
                     CASE( 'hr' )
                         UNITFAC = 1. / 60.
+                    CASE( 'min' )
                     CASE( 's' )
                         UNITFAC = 60.
                     CASE DEFAULT
@@ -247,6 +257,7 @@ C.........  Set conversion factor by comparing numerators of main units
                         UNITFAC = 1. / 3600.
                     CASE( 'min' )
                         UNITFAC = 1. / 60.
+                    CASE( 's' )
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
@@ -254,7 +265,8 @@ C.........  Set conversion factor by comparing numerators of main units
             CASE( 'km' )
 
                 SELECT CASE( BUF2 )
-                    CASE( 'mile' )
+                    CASE( 'km' )
+                    CASE( 'miles' )
                         UNITFAC = 0.6213712
                     CASE( 'm' )
                         UNITFAC = 1000.
@@ -264,10 +276,11 @@ C.........  Set conversion factor by comparing numerators of main units
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
 
-            CASE( 'mile' )
+            CASE( 'miles' )
                 SELECT CASE( BUF2 )
                     CASE( 'km' )
                         UNITFAC = 1.609344
+                    CASE( 'miles' )
                     CASE( 'm' )
                         UNITFAC = 1609.344
                     CASE( 'ft' )
@@ -281,8 +294,9 @@ C.........  Set conversion factor by comparing numerators of main units
                 SELECT CASE( BUF2 )
                     CASE( 'km' )
                         UNITFAC = 0.001
-                    CASE( 'mile' )
+                    CASE( 'miles' )
                         UNITFAC = 6.213712E-4
+                    CASE( 'm' )
                     CASE( 'ft' )
                         UNITFAC = 3.2808399
                     CASE DEFAULT
@@ -294,10 +308,11 @@ C.........  Set conversion factor by comparing numerators of main units
                 SELECT CASE( BUF2 )
                     CASE( 'km' )
                         UNITFAC = 0.0003048
-                    CASE( 'mile' )
+                    CASE( 'miles' )
                         UNITFAC = 1.893939E-4
                     CASE( 'm' )
                         UNITFAC = 0.3048
+                    CASE( 'ft' )
                     CASE DEFAULT
                         CALL CASE_NOT_FOUND( UNITFAC )
                 END SELECT
