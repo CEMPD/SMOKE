@@ -444,13 +444,13 @@ OBJS6 = \
 .F.o:
 	$(FC) $(FFLAGS) -DM6LIB -c -o $@ $<
 
-mobile6: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) iBDRIVER.o
+mobile6: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) DRIVER.o
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS)
 
 mobile6.debug: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) DRIVER.o
 	$(FC) $(DBGFLAGS) -o $(@) $(MODOBJS) $(OBJS) DRIVER.o $(LIBS_DEBUG)
 
-lib: $(MODOBJS) $(OBJS) SMKDRIVER.o
+lib: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS1) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS2)
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS3)
@@ -458,7 +458,7 @@ lib: $(MODOBJS) $(OBJS) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS5)
 	ar rv $(SMK_BIN)/libmo6.a $(OBJS6) $(MODOBJS)
 
-debug: $(MODOBJS) $(OBJS) SMKDRIVER.o
+debug: $(MODOBJS) $(OBJS1) $(OBJS2) $(OBJS3) $(OBJS4) $(OBSJ5) $(OBJS6) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS1) SMKDRIVER.o
 	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS2)
 	ar rv $(SMK_BIN)/libmo6.debug.a $(OBJS3)
