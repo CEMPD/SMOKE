@@ -52,7 +52,7 @@ C...........   PARAMETERS and their descriptions:
 
         INTEGER		MAXMET
         REAL            SIGA, D60, D15, D24, D100
-        REAL            ROTDAY , ROTHR, ROTLON, SDEC
+        REAL            ROTDAY, SDEC
         REAL            WL50
 
         PARAMETER ( 
@@ -64,9 +64,7 @@ C...........   PARAMETERS and their descriptions:
      &             D60 = 1.0 / 60.0,
      &             D15 = 1.0 / 15.0 ,
      &             D24 = 1.0 / 24.0 ,
-     &          ROTDAY = 360.0 / 365.242,   ! rotation per day
-     &          ROTHR  = D24 * ROTDAY,      ! rotation per hour
-     &          ROTLON = PI180 * ROTHR )    ! rot (radians) per degree lon
+     &          ROTDAY = 360.0 / 365.242 )   ! rotation per day
 
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
@@ -124,9 +122,10 @@ C.......   loop counters, etc:
 
 C.......   Variables for zenith angle calculation:
 
-        REAL            TIMLOC, T, DADM, DF
-        REAL            DESIN, DECOS, DESIN2, DECOS2 
-        REAL            SIG, DECSIN, DECCOS, EQT, TST, HRANGL, CZ
+        REAL            T, DADM, SNDAY, CSDAY, SNDA2, CSDA2 
+        REAL            AMM, DESIN, DECOS
+        REAL            SIGMA, CZ
+        REAL            H0, H1
 
 C.......   Variables for cloud attenuation calculation:
 
@@ -182,68 +181,67 @@ C   begin body of subroutine  CLDATEN
 C.......   Compute each station's cloud attenuation and locations,
 C.......   ordered for CBARNES1:
 
-        TIMLOC = ROTHR * ( FLOAT( JTIME / 10000 ) +
-     &                   D60 * ( FLOAT( MOD( JTIME / 100 , 100 ) ) +
-     &                           D60 * FLOAT( MOD( JTIME , 100 ) ) ) )
-        DADM   = ROTDAY * FLOAT( MOD( JDATE , 1000 ) ) + TIMLOC
-        NT     = 0
-
+        DADM  = ROTDAY * FLOAT( MOD( JDATE, 1000 ) - 1 )
+        write (98,*) 'DADM = ', DADM
+        SNDAY = SIN( PI180 * DADM )
+        CSDAY = COS( PI180 * DADM )
+        SNDA2 = 2.0 * SNDAY * CSDAY
+        CSDA2 = CSDAY * CSDAY - SNDAY * SNDAY
+        SIGMA  =   SIGA + DADM
+     &             + 1.914827 * SNDAY  - 0.079525 * CSDAY
+     &             + 0.019938 * SNDA2 - 0.001620 * CSDA2
+        write (98,*) 'SIGMA = ',SIGMA 
+        DESIN  =  SDEC * SIN( PI180 * SIGMA )
+        DECOS  =  SQRT( 1.0 - DESIN * DESIN )
+ 
+        AMM   =  12.0 + 0.123570 * SNDAY - 0.004289 * CSDAY
+     &                + 0.153809 * SNDA2 + 0.060783 * CSDA2
+        write (98,*) 'AMM = ', AMM
+ 
+        H0     =  15.0 * ( FLOAT( JTIME / 10000 ) +
+     &                     D60 * ( FLOAT( MOD( JTIME / 100, 100 ) )
+     &                           + D60 * FLOAT( MOD( JTIME , 100 ) ) )
+     &                   - AMM )
+        write (98,*) 'H0 = ', H0
+ 
+ 
+        NT = 0 
         DO  33  N = 1, NMET
-
+ 
             ALAT = RMET(  1,N )
             ALON = RMET(  2,N )
-
-            SLAT( N ) = ALAT
-            SLON( N ) = ALON
-
-C...........   Compute CZ = cos( zenith angle ) (from SOLELV() )
-
-            T      = D15 * ALON
-            DF     = ROTLON * T +  DADM
-            DESIN  =  SIN( DF )             !  SINE   of this angle
-            DECOS  =  COS( DF )             !  COSINE of this angle
-            DESIN2 =  2.0 * DESIN * DECOS            !  SINE   of double-angle
-            DECOS2 =  DECOS * DECOS - DESIN * DESIN  !  COSINE of double-angle
-            SIG    =  SIGA + DF
-     &                     + 1.914827 * DESIN  - 0.079525 * DECOS
-     &                     + 0.019938 * DESIN2 - 0.00162  * DECOS2
-
-C...........   The equation of time adjustment, uses sine of the declination
-
-            EQT  =  0.123470 * DESIN  - 0.004289 * DECOS
-     &            + 0.153809 * DESIN2 + 0.060783 * DECOS2
-
-C...........   The true solar time
-
-            TST    = T + TIMLOC - EQT
-            HRANGL = 15.0 * PI180 * ( TST - 12.0 )
-
-C...........   Compute the sine of the solar elevation (= cos of zenith angle)
-
-            DECSIN = SDEC * SIN( PI180 * SIG )
-            DECCOS = SQRT( 1.0 - DECSIN )
-
-            CZ = DECSIN * SIN( ALAT ) + 
-     &           DECCOS * COS( ALAT ) * COS( HRANGL )
-
-
-C...........   Now compute this stations cloud attenuation, in terms of
-C...........   its sky descriptor:
-
-            DESCRI = NINT( RMET( 4,N ) )
-
-            IF ( DESCRI .LT. 0 )  THEN
-
+ 
+            DESCRI = NINT( RMET( 4,N ) )        !  sky descriptor
+ 
+            IF ( DESCRI .LT. 0 )  THEN          !  "missing"
+ 
                 GO TO  33
-
-            ELSE IF ( DESCRI .EQ. 0 ) THEN
-
+ 
+            ELSE IF ( DESCRI .EQ. 0 ) THEN      !  "complete coverage"
+ 
                 NT = NT + 1
                 SLAT( NT ) = ALAT
                 SLON( NT ) = ALON
                 ATEN( NT ) = 1.0
+ 
+            END IF
+ 
+C...........   Partial coverage cases:
+C...........   Compute CZ = cos( zenith angle ) (from SOLELV() )
+ 
+            write (98,*) 'H0 = ', H0
+            write (98,*) 'ALON = ', ALON
+            H1 = PI180 * ( H0 + ALON )
+            write (98,*) 'H1 = ', H1
 
-            ELSE IF ( DESCRI .EQ. 1 ) THEN
+            CZ  = DESIN * SIN (PI180 * ALAT)  
+     &          + DECOS * COS (PI180 * ALAT) * COS(H1)
+
+ 
+C...........   Now compute this stations cloud attenuation, in terms of
+C...........   its sky descriptor:
+ 
+            IF ( DESCRI .EQ. 1 ) THEN
 
 C...........   if the sky descriptor is 1 or 8, then a ground level obscuration
 C...........   is indicated.   There is not a differentiation made between 
@@ -272,17 +270,18 @@ C...............   of the layer.
 C...............   If the sky descriptor indicated 'thin' sky cover (=2,3,4)
 C...............   adjust the total transmittance half way back to 1.0
 
-                NT = NT + 1
                 HGT( 1 ) = RMET( 6,N )
                 IF ( HGT( 1 ) .LT. 0.0 ) GO TO  33
                 
+                NT = NT + 1
                 CZ    = 1.0 / MAX( CZ, 0.2 )
                 COVER = RMET( 3,N )
                 PCT( 1 ) = RMET(  5,N )
-                HGT( 2 ) = RMET(  7,N )
-                PCT( 2 ) = RMET(  8,N )
-                HGT( 3 ) = RMET(  9,N )
-                PCT( 3 ) = RMET( 10,N )
+
+                PCT( 2 ) = RMET(  7,N )
+                HGT( 2 ) = RMET(  8,N )
+                PCT( 3 ) = RMET(  9,N )
+                HGT( 3 ) = RMET( 10,N )
 
                 IF ( HGT( 2 ) .LT. 0.0 ) THEN
                     M = 1
@@ -291,20 +290,21 @@ C...............   adjust the total transmittance half way back to 1.0
                 ELSE
                     M = 3
                 END IF
-
+                write (98,*) 'M = ', M, JTIME
                 T = 1.0
                 DO  11  I = 1, M
                     IF      ( HGT(I) .LT. 1000.0 ) THEN
                         TTYPE = AA(2) + BB(2) * CZ
-                    ELSE IF ( HGT(I) .LT. 1000.0 ) THEN
+                    ELSE IF ( HGT(I) .LT. 3000.0 ) THEN
                         TTYPE = AA(3) + BB(3) * CZ
-                    ELSE IF ( HGT(I) .LT. 1000.0 ) THEN
+                    ELSE IF ( HGT(I) .LT. 7000.0 ) THEN
                         TTYPE = AA(4) + BB(4) * CZ
                     ELSE
                         TTYPE = AA(5) + BB(5) * CZ
                     END IF
                     T = T * ( 1.0 - D100 * ( 1.0 - TTYPE ) *  PCT( I ) )
 11              CONTINUE
+                write (98,*) 'T = ', T
 
                 IF ( DESCRI .LE. 4 ) THEN
                     ATEN( NT ) = 0.5 + 0.5 * T
@@ -331,12 +331,41 @@ C...............   an opaque sky cover value of 100.
 
 33      CONTINUE		!  end loop on stations N
 
+C...........   Make sure at least one surface station was kept
+ 
+       IF (NT .LE. 0) THEN
+          DO 36 C = 1, NCOLS
+             DO 35 R = 1, NROWS
+                CLDATN (C, R) = 1.0
+35          CONTINUE
+36       CONTINUE
+ 
+          GO TO 155
+ 
+       END IF
+        
+
 
 C...........   Grid the sky coverage fraction:
 
         CALL CBARNES1( NCOLS * NROWS, LAT, LON, 
      &                 NT, SLAT, SLON, ATEN, WL50, CLDATN )
 
+
+c       write(98,*) '**************************************'
+c       write(98,*) 'CLDATN  ', JTIME
+c       write(98,*) '**************************************'
+c       do j = 1, NROWS
+c          write(98,*) (cldatn(i,j),i=1,NCOLS)
+c       end do
+        write(98,*) '**************************************'
+        write(98,*) 'ATEN  ', JTIME
+        write(98,*) '**************************************'
+        write(98,*) aten(1)
+        
+c       do i = 1, MAXMET
+c          write(98,*) aten(i)
+c       end do
 
 C...........   Trap the cloud attenuation factor between 0.05 and 1.0:
         
@@ -350,6 +379,8 @@ C...........   Trap the cloud attenuation factor between 0.05 and 1.0:
            END IF
 44      CONTINUE
 55      CONTINUE
+
+155     CONTINUE
 
         RETURN
 
