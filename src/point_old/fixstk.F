@@ -297,7 +297,7 @@ C.........  the missing stack parameters, which should get defaults.
                 WRITE( MESG,94050 ) 
      &                 'FIPS code:', IFIP( S ), 'SCC:', ISCC( S ),
      &                 'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                 'EMIS:', ( EMISV( S,I ), I = 1, NPOL )
+     &                 'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) )
 
                 CALL M3MESG( MESG )
 
@@ -409,7 +409,7 @@ C...........   Treat parameters equal to 0 as missing
                     WRITE( MESG,94050 ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, NPOL ), 
+     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
      &                CRLF() // BLANK5 //  '             Old        New'
                     CALL M3MESG( MESG )
 
@@ -473,7 +473,7 @@ C...........   Treat parameters equal to 0 as missing
                     WRITE( MESG,94050 ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, NPOL ), 
+     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
      &                CRLF() // BLANK5 //  '             Old        New'
                     CALL M3MESG( MESG )
 
@@ -529,7 +529,7 @@ C...........   Treat parameters equal to 0 as missing
                     WRITE( MESG,94050 ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, NPOL ), 
+     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
      &                CRLF() // BLANK5 //  '             Old        New'
                     CALL M3MESG( MESG )
 
@@ -577,7 +577,7 @@ C...........   Treat parameters equal to 0 as missing
                     WRITE( MESG,94050 ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, NPOL ), 
+     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
      &                CRLF() // BLANK5 //  '             Old        New'
                     CALL M3MESG( MESG )
 
@@ -603,7 +603,7 @@ C.........  This is in a separate loop to permit better reporting
                 WRITE( MESG,94050 ) 
      &                'FIPS code:', FIP, 'SCC:', SCC,
      &                'PLT:', IPLT( S ), 'STK:', ISTK( S ),
-     &                'EMIS:', ( EMISV( S,I ), I = 1, NPOL ), 
+     &                'EMIS:', ( EMISV( S,I ), I = 1, MIN( NPOL,19 ) ), 
      &                CRLF() // BLANK5 //  '             Old        New'
                     CALL M3MESG( MESG )
 
