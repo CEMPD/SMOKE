@@ -66,8 +66,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(OUT) :: SN   ( NRECS ) ! record number
 
 C...........   Allocatable arrays
-        REAL, ALLOCATABLE :: LAT ( :,: )  ! latitudes for grid cell centers
-        REAL, ALLOCATABLE :: LON ( :,: )  ! longitudes for grid cell centers
+        REAL, ALLOCATABLE :: XVALS( :,: ) ! x values for grid cell boundaries
+        REAL, ALLOCATABLE :: YVALS( :,: ) ! y values for grid cell boundaries
 
 C...........   Local variables
 
@@ -122,27 +122,27 @@ C.........  Check grid against previously set grid description
         NRDOT = NROWS + 1
         
 C.........  Allocate memory for grid cell coordinates
-        ALLOCATE( LAT( NCDOT, NRDOT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LAT', PROGNAME )
-        ALLOCATE( LON( NCDOT, NRDOT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LON', PROGNAME )
+        ALLOCATE( XVALS( NCDOT, NRDOT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'XVALS', PROGNAME )
+        ALLOCATE( YVALS( NCDOT, NRDOT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'YVALS', PROGNAME )
         
 C.........  Read grid cell coordinates
-        IF( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, LAT ) ) THEN
-            MESG = 'Could not read LAT from file "' //
+        IF( .NOT. READ3( GNAME, 'LON', 1, 0, 0, XVALS ) ) THEN
+            MESG = 'Could not read LON from file "' //
      &             TRIM( GNAME ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
-        IF( .NOT. READ3( GNAME, 'LON', 1, 0, 0, LON ) ) THEN
-            MESG = 'Could not read LON from file "' //
+        IF( .NOT. READ3( GNAME, 'LAT', 1, 0, 0, YVALS ) ) THEN
+            MESG = 'Could not read LAT from file "' //
      &             TRIM( GNAME ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Convert coordinates to map projection units
         CALL CONVRTXY( NCDOT*NRDOT, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
-     &                 XCENT, YCENT, LAT, LON )
+     &                 XCENT, YCENT, XVALS, YVALS )
 
 C.........  Initialize number of sources per cell
         NX = 0   ! array
@@ -166,7 +166,7 @@ C.........  Initialize scratch gridding matrix - before sparse storage
 C.............  Find correct column for point
             DO J = 1, NCOLS
             
-                IF( XX >= LON( J,1 ) .AND. XX <= LON( J+1,1 ) ) EXIT
+                IF( XX >= XVALS( J,1 ) .AND. XX <= XVALS( J+1,1 ) ) EXIT
 
             END DO
             
@@ -175,7 +175,7 @@ C.............  Find correct column for point
 C.............  Find correct row for point
             DO J = 1, NRDOT
             
-                IF( YY >= LAT( J,1 ) .AND. YY <= LAT( J+1,1 ) ) EXIT
+                IF( YY >= YVALS( J,1 ) .AND. YY <= YVALS( J+1,1 ) ) EXIT
                 
             END DO
             
