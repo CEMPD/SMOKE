@@ -1356,7 +1356,7 @@ C.................  Convert units on values
                 IF( STKDM( CURSRC ) < 0. ) STKDM( CURSRC ) = 0.
                 STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
                 
-                IF( STKTK( CURSRC ) < 0. ) THEN
+                IF( STKTK( CURSRC ) <= 0. ) THEN
                     STKTK( CURSRC ) = 0.
                 ELSE
                     STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32 ) *   ! F to K
