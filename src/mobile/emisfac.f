@@ -617,7 +617,7 @@ C                       Can't use MAXVAL on Linux
                     
                     DO J = 1, MXM6FACS
                         IF( M6FAC2EF( I,J ) > MAXFAC ) THEN
-                            MAXFAC = M6VEH2EF( I,J )
+                            MAXFAC = M6FAC2EF( I,J )
                         END IF
                     END DO
                     
