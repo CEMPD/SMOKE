@@ -14,9 +14,9 @@ LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp
 
 #
 
-all: smkmerge mrggrid
+all: smkmerge mrggrid mrgelev
 
-debug: smkmerge.debug mrggrid.debug
+debug: smkmerge.debug mrggrid.debug mrgelev.debug
 
 pvm: smkmerge.pvm
 
@@ -53,6 +53,15 @@ mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 	echo MRGGRID \(debug\):
 	$(FC) $(DBGFLAGS) -o $(@) $(MGD) $(LIBS_DEBUG2)
 #
+MGE= mrgasciielev.o
+#
+mrgelev: $(MGE) $(ALLI) $(LIBPATH)
+	echo MRGELEV:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MGE) $(LIBS2)
+#
+mrgelev.debug: $(MGE) $(ALLI) $(LIBPATH_DEBUG)
+	echo MRGELEV \(debug\):
+	$(FC) $(DBGFLAGS) -o $(@) $(MGE) $(LIBS_DEBUG2)
 #
 ## Module dependencies
 #
