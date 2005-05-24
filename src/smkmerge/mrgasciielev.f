@@ -5,10 +5,12 @@ C  program body starts at line
 C
 C  DESCRIPTION:
 C       This program combines ASCII elevated files produced by 
-C       Smkmerge.
+C       Smkmerge. It can optionally use a corresponding list of elevated
+C       point source files to flag combined PinG sources.
 C
 C  PRECONDITIONS REQUIRED:
 C       ASCII elevated files created by Smkmerge
+C       Point source elevated files created by Elevpoint
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C       
@@ -45,32 +47,47 @@ C.........  INCLUDES
         
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
+        INTEGER       FINDC
         INTEGER       GETFLINE
         INTEGER       JUNIT
         INTEGER       PROMPTFFILE
 
-        EXTERNAL      CRLF, GETFLINE, JUNIT, PROMPTFFILE
+        EXTERNAL      CRLF, FINDC, GETFLINE, JUNIT, PROMPTFFILE
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
+        INTEGER,       PARAMETER :: MXPING = 300        ! final number of PinG sources
 
 C.........  LOCAL VARIABLES
 
 C.........  Allocatable arrays
-        INTEGER, ALLOCATABLE :: FILEDEV( : )        ! input file device numbers
+        INTEGER, ALLOCATABLE :: FILEDEV( :,: )      ! input file device numbers
+        INTEGER, ALLOCATABLE :: FILELNS( : )        ! num. lines per PELV file
         INTEGER, ALLOCATABLE :: NSRCS( : )          ! num. srcs per file
         INTEGER, ALLOCATABLE :: SDATE( : )          ! start date by file
         INTEGER, ALLOCATABLE :: STIME( : )          ! start time by file
         INTEGER, ALLOCATABLE :: EDATE( : )          ! end date by file
         INTEGER, ALLOCATABLE :: ETIME( : )          ! end time by file
+        INTEGER, ALLOCATABLE :: SRCIDX( : )         ! index for sorting sources
+        INTEGER, ALLOCATABLE :: EMISIDX( : )        ! index for sorting emissions
         
-        CHARACTER(256), ALLOCATABLE :: FILENAM( : ) ! input file names
+        CHARACTER(256), ALLOCATABLE :: FILENAM( :,: ) ! input file names
         CHARACTER(10),  ALLOCATABLE :: SPCNAM( : )  ! model species names
+        CHARACTER(FPLLEN3+CHRLEN3), ALLOCATABLE :: PELVSRCA(:) ! unsorted source list
+        CHARACTER(FPLLEN3+CHRLEN3), ALLOCATABLE :: PELVSRC(:)  ! sorted source list
+        
+        REAL, ALLOCATABLE :: PELVEMISA( : )      ! unsorted source emissions
+        REAL, ALLOCATABLE :: PELVEMIS( : )       ! sorted source emissions
+        
+        LOGICAL, ALLOCATABLE :: PINGFND( : )     ! true: PinG source was found
+        LOGICAL, ALLOCATABLE :: ISPING( : )      ! true: source remains PinG
 
 C.........  File units and logical names
         INTEGER          LDEV       ! unit for log file
-        INTEGER          IDEV       ! unit for logical names list for elevated files
+        INTEGER          IDEV       ! unit for list of elevated files
+        INTEGER          PDEV       ! unit for list of PELV files 
         INTEGER          ODEV       ! unit for output file
+        INTEGER          RDEV       ! temporary unit for reading input
         INTEGER          TDEV       ! temporary unit for input files
 
 C.........  ASCII elevated file header variables
@@ -112,9 +129,19 @@ C.........  ASCII elevated file header variables
 C.........  Source information variables
         REAL             XCOORD               ! x-coordinate
         REAL             YCOORD               ! y-coordinate
-        INTEGER          FIP                  ! FIPS code
+        CHARACTER(10)    TFIP                 ! FIPS code
         CHARACTER(10)    FCID                 ! facility ID
         CHARACTER(10)    SKID                 ! stack ID
+
+        REAL             STKHT                ! stack height
+        REAL             STKDM                ! stack diameter
+        REAL             STKTK                ! stack temperature
+        REAL             STKVE                ! stack velocity
+
+        CHARACTER(FIPLEN3)         FIP        ! FIPS code
+        CHARACTER(PLTLEN3)         PLT        ! plant/facility code
+        CHARACTER(CHRLEN3)         PNT        ! point/stack code
+        CHARACTER(FPLLEN3+CHRLEN3) CSRC       ! FIP // PLT // CHAR1 string
 
 C.........  Hourly emissions variables
         INTEGER          NUM                  ! source number
@@ -126,16 +153,21 @@ C.........  Other local variables
         INTEGER          IDUM, IDUM2          ! dummy integers
         INTEGER          IOS                  ! i/o status
         INTEGER          MXFILES              ! maximum number of input files
+        INTEGER          MXPFILES             ! maximum number of PELV files
+        INTEGER          MXLINES              ! maximum number of lines
         INTEGER          NFILES               ! number of input files
+        INTEGER          NPINGSRC             ! number of PinG sources
         INTEGER          NTOTSRCS             ! total number of output sources
         INTEGER          IBD, IBT             ! start date and time
         INTEGER          IED, IET             ! end date and time
         INTEGER          BASENUM              ! base source number for hourly emissions
+        INTEGER          ENUM, PNUM, GNUM     ! elevated, PinG, and group numbers
 
         REAL             FDUM, FDUM2          ! dummy reals
 
         LOGICAL ::       EFLAG = .FALSE.      ! true: an error happened
-
+        LOGICAL          FOUND                ! true: matching source was found
+        LOGICAL          PINGFLAG             ! true: process PinG sources
         CHARACTER(256)   DUMMY                ! dummy character string
         CHARACTER(256)   LINE                 ! input line
         CHARACTER(300)   MESG                 ! message buffer
@@ -151,57 +183,101 @@ C.........  Write out copywrite, version, web address, header info, and
 C           prompt to continue running the program
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
-C.........  Open list of input files
+C.........  Open lists of input files
         MESG = 'Enter logical name for ASCII ELEVATED inputs list'
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'FILELIST', PROGNAME )
+
+        MESG = 'Enter logical name for ELEVATED POINT SOURCE ' //
+     &         'inputs list (or "NONE")'
+        PDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'PELVLIST', PROGNAME )
+        IF( PDEV == -2 ) THEN
+            PINGFLAG = .FALSE.
+        ELSE
+            PINGFLAG = .TRUE.
+        END IF
 
 C.........  Open output file
         MESG = 'Enter logical name for output ' //
      &         'ASCII ELEVATED SOURCES file'
         ODEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'OUTFILE', PROGNAME )
 
-C.........  Determine maximum number of input files in list
-        MXFILES = GETFLINE( IDEV, 'List of files to merge' )
+C.........  Determine maximum number of input files in lists
+        MXFILES  = GETFLINE( IDEV, 'List of files to merge' )
+        
+        IF( PINGFLAG ) THEN
+            MXPFILES = GETFLINE( PDEV, 'List of PELV input files' )
+        
+            IF( MXFILES /= MXPFILES ) THEN
+                MESG = 'ERROR: Number of ASCII elevated files does ' //
+     &            'not match number of elevated point source files'
+                CALL M3MSG2( MESG )
+                
+                MESG = 'Problem with input files'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END IF
         
 C.........  Allocate memory to store file device units
-        ALLOCATE( FILEDEV( MXFILES ), STAT=IOS )
+        ALLOCATE( FILEDEV( MXFILES, 2 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FILEDEV', PROGNAME )
-        ALLOCATE( FILENAM( MXFILES ), STAT=IOS )
+        ALLOCATE( FILENAM( MXFILES, 2 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FILENAM', PROGNAME )
-        
-        J = 0
-        DO I = 1, MXFILES
-        
-            READ( IDEV, 93000, IOSTAT=IOS ) LINE
-            
-            IF( IOS /= 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'I/O error', IOS,
-     &              'reading file list at line', I
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
-            
-C.............  Skip any blank lines
-            IF( LINE == ' ' ) CYCLE
-            
-C.............  Open input file
-            TDEV = JUNIT()
-            OPEN( UNIT=TDEV, FILE=TRIM( LINE ), STATUS='OLD',
-     &            ACTION='READ', IOSTAT=IOS )
-            
-            IF( IOS /= 0 ) THEN
-                EFLAG = .TRUE.
-                MESG = 'Could not open file ' // CRLF() // BLANK5 // 
-     &                 TRIM( LINE )
-                CALL M3MESG( MESG )
-                CYCLE
+        ALLOCATE( FILELNS( MXFILES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'FILELNS', PROGNAME )
+
+C.........  Read lists of input files
+        RDEV = IDEV
+        DO J = 1, 2
+            IF( J == 1 ) THEN
+                MESG = 'Reading list of ASCII elevated files...'
             ELSE
-                J = J + 1
-                FILEDEV( J ) = TDEV
-                FILENAM( J ) = TRIM( LINE )
+                IF( .NOT. PINGFLAG ) EXIT
+                MESG = 'Reading list of elevated point source files...'
+                MXLINES = 0
             END IF
-        
+            CALL M3MSG2( MESG )
+            
+            K = 0
+            DO I = 1, MXFILES
+            
+                READ( RDEV, 93000, IOSTAT=IOS ) LINE
+                
+                IF( IOS /= 0 ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 ) 'I/O error', IOS,
+     &                  'reading list of input files at line', I
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
+            
+C.................  Skip any blank lines
+                IF( LINE == ' ' ) CYCLE
+
+C.................  Open input file
+                TDEV = JUNIT()
+                OPEN( UNIT=TDEV, FILE=TRIM( LINE ), STATUS='OLD',
+     &                ACTION='READ', IOSTAT=IOS )
+            
+                IF( IOS /= 0 ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'Could not open file ' // CRLF() // BLANK5 // 
+     &                     TRIM( LINE )
+                    CALL M3MESG( MESG )
+                    CYCLE
+                ELSE
+                    K = K + 1
+                    FILEDEV( K,J ) = TDEV
+                    FILENAM( K,J ) = TRIM( LINE )
+                END IF
+                
+C.................  For PELV files, count number of lines
+                IF( J == 2 ) THEN
+                    FILELNS( K ) = 
+     &                  GETFLINE( TDEV, 'Elevated point source file' )
+                END IF
+            END DO
+            
+            RDEV = PDEV        
         END DO
 
         IF( EFLAG ) THEN
@@ -209,7 +285,111 @@ C.............  Open input file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        NFILES = J
+C.........  Store actual number of files opened
+        NFILES = K
+
+C.........  Build list of PinG sources from PELV files
+        IF( PINGFLAG ) THEN
+            MESG = 'Building list of PinG sources...'
+            CALL M3MSG2( MESG )
+        
+            MXLINES = 0
+            DO I = 1, NFILES
+                MXLINES = MXLINES + FILELNS( I )
+            END DO
+    
+            ALLOCATE( PELVSRCA( MXLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PELVSRCA', PROGNAME )
+            ALLOCATE( PELVEMISA( MXLINES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PELVEMISA', PROGNAME )
+    
+            L = 0
+            DO I = 1, NFILES
+            
+                TDEV = FILEDEV( I,2 )
+
+C.................  Loop through lines in file
+                DO J = 1, FILELNS( I )
+
+C.....................  Read line as if all fields are present
+                    READ( TDEV, 93095 ) ENUM, PNUM, GNUM,
+     &                  FIP, PLT, PNT, EMIS
+
+C.....................  For non-PinG lines, the elevated source
+C                       number will be zero
+                    IF( ENUM /= 0 ) CYCLE
+            
+                    PLT = ADJUSTL( PLT )
+                    PNT = ADJUSTL( PNT )
+
+C.....................  Build source string to match ASCII elevated file;
+C                       plant name and characteristic are truncated to 10
+                    CSRC = FIP // ADJUSTR( PLT( 1:10 ) ) // 
+     &                     ADJUSTR( PNT( 1:10 ) )
+
+C.....................  Check if we already have this source
+                    FOUND = .FALSE.
+                    DO K = 1, L
+                        IF( PELVSRCA( K ) == CSRC ) THEN
+                            PELVEMISA( K ) = PELVEMISA( K ) + EMIS
+                            FOUND = .TRUE.
+                            EXIT
+                        END IF
+                    END DO
+                
+                    IF( .NOT. FOUND ) THEN
+                        L = L + 1
+                        PELVSRCA( L ) = CSRC
+                        PELVEMISA( L ) = EMIS
+                    END IF
+                
+                END DO
+            
+            END DO
+
+            NPINGSRC = L
+
+C.............  Sort PinG list based on source information
+            ALLOCATE( SRCIDX( NPINGSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRCIDX', PROGNAME )
+            ALLOCATE( EMISIDX( NPINGSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMISIDX', PROGNAME )
+            ALLOCATE( PELVSRC( NPINGSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PELVSRC', PROGNAME )
+            ALLOCATE( PELVEMIS( NPINGSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PELVEMIS', PROGNAME )
+            ALLOCATE( PINGFND( NPINGSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PINGFND', PROGNAME )
+            ALLOCATE( ISPING( NPINGSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ISPING', PROGNAME )
+
+            DO I = 1, NPINGSRC
+                SRCIDX( I ) = I
+                EMISIDX( I ) = I
+            END DO
+    
+            CALL SORTIC( NPINGSRC, SRCIDX, PELVSRCA )
+            
+            DO I = 1, NPINGSRC
+                PELVSRC( I ) = PELVSRCA( SRCIDX( I ) )
+                PELVEMIS( I ) = PELVEMISA( SRCIDX( I ) )
+            END DO
+            
+            DEALLOCATE( SRCIDX, PELVSRCA, PELVEMISA )
+            
+C.............  Create second sort index for emissions; this will be
+C               used for matching the top 300 sources
+            CALL SORTR1( NPINGSRC, EMISIDX, PELVEMIS )
+            
+            DO I = 1, NPINGSRC
+                WRITE( *,* ) PELVEMIS( EMISIDX( I ) )
+            END DO
+            
+            ISPING = .FALSE.
+            DO I = NPINGSRC, MAX( NPINGSRC - MXPING + 1,1 ), -1
+                ISPING( EMISIDX( I ) ) = .TRUE.
+            END DO
+        END IF
 
 C.........  Allocate memory for file header information
         ALLOCATE( NSRCS( NFILES ), STAT=IOS )
@@ -224,10 +404,13 @@ C.........  Allocate memory for file header information
         CALL CHECKMEM( IOS, 'ETIME', PROGNAME )
 
 C.........  Check the header of each input file
+        MESG = 'Checking headers of input files...'
+        CALL M3MSG2( MESG )
+
         GRDENV = ''
         DO I = 1, NFILES
         
-            TDEV = FILEDEV( I )
+            TDEV = FILEDEV( I,1 )
             
             READ( TDEV, 93010 ) DUMMY, TMPGRDENV
             IF( TRIM( DUMMY ) /= 'CONTROL' ) THEN
@@ -339,7 +522,7 @@ C.........  Read and check species names for each file
 
         DO I = 1, NFILES
         
-            TDEV = FILEDEV( I )
+            TDEV = FILEDEV( I,1 )
         
             DO J = 1, NMSPC
                 READ( TDEV, 93020 ) TMPNAM
@@ -365,7 +548,7 @@ C.........  Continue checking file headers
         P_ALPHA = 0
         DO I = 1, NFILES
         
-            TDEV = FILEDEV( I )
+            TDEV = FILEDEV( I,1 )
 
 C.............  Read file start and end dates and times
             READ( TDEV, 93030 ) SDATE( I ), STIME( I ),
@@ -499,24 +682,50 @@ C.........  Read and output source information for each file
         K = 0
         DO I = 1, NFILES
         
-            TDEV = FILEDEV( I )
+            TDEV = FILEDEV( I,1 )
         
             DO J = 1, NSRCS( I )
                 READ( TDEV, 93065 ) IDUM, DUMMY, XCOORD, YCOORD, ! FORMAT PROBLEM
-     &              FCID, SKID, FIP
+     &              FCID, SKID, TFIP
 
                 IF( TRIM( DUMMY ) /= 'STD' ) THEN
                     MESG = 'Problem reading source information'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
+
+C.................  Read stack parameters                    
+                READ( TDEV, 93080 ) STKHT, STKDM, STKTK, STKVE
+                
+C.................  Check for source in PinG list
+                IF( STKDM < 0 .AND. PINGFLAG ) THEN
+                    TFIP = ADJUSTR( TFIP )
+                
+                    CSRC = TFIP( 5:10 ) // FCID // SKID
+                
+                    L = FINDC( CSRC, NPINGSRC, PELVSRC )
+                    
+                    IF( L < 1 ) THEN
+                        MESG = 'WARNING: PinG source ' //
+     &                      TRIM( CSRC ) // ' is in an ASCII ' //
+     &                      'elevated file' // CRLF() // BLANK10 // 
+     &                      'but not in the corresponding PELV ' //
+     &                      'file; retaining PinG status for source'
+                        CALL M3MESG( MESG )
+                    ELSE
+                        PINGFND( L ) = .TRUE.
+
+C.........................  Check if source remains as PinG source
+                        IF( .NOT. ISPING( L ) ) THEN
+                            STKDM = -STKDM
+                        END IF
+                        WRITE( *,* ) ISPING( L ), PELVEMIS( L ), STKDM
+                    END IF
+                END IF
                 
                 K = K + 1
                 WRITE( ODEV, 93065 ) K, 'STD       ', XCOORD, ! FORMAT PROBLEM
-     &              YCOORD, FCID, SKID, FIP
-
-C................. Read stack parameters; this will change when we set PinG sources                    
-                READ( TDEV, 93000 ) LINE
-                WRITE( ODEV, 93000 ) TRIM( LINE )
+     &              YCOORD, FCID, SKID, TFIP                
+                WRITE( ODEV, 93080 ) STKHT, STKDM, STKTK, STKVE
             END DO
             
             READ( TDEV, 93000 ) DUMMY
@@ -539,7 +748,7 @@ C.........  Read and output hourly emissions for each file
         
             DO I = 1, NFILES
             
-                TDEV = FILEDEV( I )
+                TDEV = FILEDEV( I,1 )
                 
                 IF( L /= 1 ) THEN
                     READ( TDEV, 93000 ) DUMMY
@@ -657,7 +866,7 @@ C.........  Read and output hourly emissions for each file
                 BASENUM = 0
                 
                 DO J = 1, NFILES
-                    TDEV = FILEDEV( J )
+                    TDEV = FILEDEV( J,1 )
                     
                     DO
                         READ( UNIT=TDEV, FMT=93070, IOSTAT=IOS ) 
@@ -687,6 +896,22 @@ C                           if we've started a new species
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
+C.........  Check for any sources that were in PELV but not in ASCII elevated file
+        IF( PINGFLAG ) THEN
+        
+            DO I = 1, NPINGSRC
+            
+                IF( .NOT. PINGFND( I ) ) THEN
+                    CSRC = PELVSRC( I )
+                    MESG = 'WARNING: PinG source ' // TRIM( CSRC ) //
+     &                ' was in a PELV file' // CRLF() // BLANK10 // 
+     &                'but not in the corresponding ASCII elevated file'
+                    CALL M3MESG( MESG )
+                END IF
+            END DO
+        
+        END IF
+
 C.........  End program successfully        
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
@@ -712,9 +937,15 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93060   FORMAT( 2I10, 3F10.0 )
 
-93065   FORMAT( I10, A10, F10.5, F10.5, 2A10, I10.5 )
+93065   FORMAT( I10, A10, F10.5, F10.5, 2A10, A10 )
 
 93070   FORMAT( I10, A10, F10.3 )
+
+93080   FORMAT( F10.1, F10.2, F10.1, F10.0 )
+
+93090   FORMAT( 3(I8,1X) )
+
+93095   FORMAT( 3(I8,1X), A6, 1X, 2(A15,1X), F10.3 )
 
 C...........   Internal buffering formats.............94xxx
 
