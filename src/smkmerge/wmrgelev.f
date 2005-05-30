@@ -415,6 +415,11 @@ C.........................  Set output stack parameters and coordinates
 
                     END IF  ! end new FIP/plant/stack
 
+C..................  For PinG sources, may need to overwrite stored diameter;
+C                    first source in group may not be PinG, but later sources
+C                    can be
+                    IF( DM < 0 ) EOUTDM ( KK ) = DM
+
 C..................  Store arrays for writing emissions
                     ELAYER ( I ) = L
                     EIDX2  ( I ) = KK
