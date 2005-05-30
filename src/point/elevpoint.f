@@ -58,7 +58,7 @@ C.........  This module contains arrays for plume-in-grid and major sources
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATLEN, NSRC, MXCHRS, 
-     &                     SC_BEGP, SC_ENDP, NCHARS, EINAM
+     &                     SC_BEGP, SC_ENDP, NCHARS, EINAM, JSTACK
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
@@ -216,6 +216,7 @@ C...........   Other local variables
         CHARACTER(IOVLEN3) COORUN3D !  coordinate system units 
         CHARACTER(ALLLEN3) CSRC     !  buffer for source char, incl pol/act
         CHARACTER(PLTLEN3) PLT      !  tmp plant code
+        CHARACTER(CHRLEN3) STK      !  tmp stack code
 
         CHARACTER(16) :: PROGNAME = 'ELEVPOINT'   !  program name
 
@@ -224,7 +225,7 @@ C   begin body of program ELEVPOINT
 
         LDEV = INIT3()
 
-C.........  Write out copywrite, version, web address, header info, and prompt
+C.........  Write out copyright, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
@@ -955,7 +956,15 @@ C.........  Write ASCII file
                 END IF
                 IGRP = GROUPID( S )
 
-                WRITE( PDEV, 93620 ) MS, PS, IGRP
+c                IF( LPING( S ) .AND. NEVPEMV ) THEN
+                    CSRC = CSOURC( S )
+                    PLT = CSRC( PTBEGL3( 2 ):PTENDL3( 2 ) )
+                    STK = CSRC( PTBEGL3( JSTACK ):PTENDL3( JSTACK ) )
+                    WRITE( PDEV, 93630 ) MS, PS, IGRP, IFIP( S ), 
+     &                  PLT, STK, MXEMIS( S,1 )
+c                ELSE
+c                    WRITE( PDEV, 93620 ) MS, PS, IGRP
+c                END IF
 
             END IF
 
@@ -1012,6 +1021,8 @@ C...........   Formatted file I/O formats............ 93xxx
      &          F9.0, F9.0, F8.0, F7.0, F7.0, F7.0, F10.0 )
 
 93620   FORMAT( 3(I8,1X) )
+
+93630   FORMAT( 3(I8,1X), I6.5, 1X, 2(A15,1X), F10.3 )
 
 C...........   Internal buffering formats............ 94xxx
 
@@ -1130,51 +1141,46 @@ C.................  Build header (this is sloppy job for now)
                 DO WHILE( N < NHEADER )
                     
                     N = N + 1
-                    L1 = LEN_TRIM( BUFFER )
 
                     IF ( N .GE. 4 .AND. N .LE. 8 ) THEN
                         M = M + 1
                         IF ( M .GT. NCHARS-2 ) CYCLE
                     END IF
 
-                    BUFFER = BUFFER( 1:L1 ) //'; ' // HEADERS( N )
+                    BUFFER = TRIM( BUFFER ) //'; ' // HEADERS( N )
 
                 END DO
 
 C.................  Add plume rise onto header
                 IF( LCUTOFF ) THEN
-                    L1 = LEN_TRIM( BUFFER )
-                    BUFFER = BUFFER( 1:L1 ) // '; Rise '
+                    BUFFER = TRIM( BUFFER ) // '; Rise '
                 END IF
 
 C.................  Add pollutants onto header
                 DO K = 1, NEVPEMV
-                    L1 = LEN_TRIM( BUFFER )
-                    BUFFER = BUFFER( 1:L1 ) // '; Group ' // 
+                    BUFFER = TRIM( BUFFER ) // '; Group ' // 
      &                       EINAM( EVPEMIDX( K ) )
                 END DO
 
 C.................  Add results onto header
                 MX = MAX( MXELVCHK, MXPNGCHK )
                 DO K = 1, MX
-                    L1 = LEN_TRIM( BUFFER )
-                    WRITE( BUFFER, '(4(A,I1))' ) BUFFER( 1:L1 ) //
+                    WRITE( BUFFER, '(4(A,I1))' ) TRIM( BUFFER ) //
      &                     '; Var', K, '; Type', K, '; Test', K,
      &                     '; Val', K
                     IF( K .LT. MX ) THEN
-                        L1 = LEN_TRIM( BUFFER )
-                        WRITE( BUFFER, '(A)' ) BUFFER( 1:L1 ) //
+                        WRITE( BUFFER, '(A)' ) TRIM( BUFFER ) //
      &                         '; AND'
                     END IF
 
                 END DO
 
 C.................  Write out header
-                L1 = LEN_TRIM( BUFFER )
-                WRITE( FDEV, '(A)' ) BUFFER( 1:L1 )
+                WRITE( FDEV, '(A)' ) TRIM( BUFFER )
 
+                L1 = LEN_TRIM( BUFFER )
                 BUFFER =  REPEAT( '-', L1 )
-                WRITE( FDEV, '(A)' ) BUFFER( 1:L1 )
+                WRITE( FDEV, '(A)' ) TRIM( BUFFER )
 
                 FIRSTIME = .FALSE.
 
@@ -1187,31 +1193,27 @@ C.............  Subdivide source description
 C.............  Write source information format and then use format
             WRITE( FMTBUF, 94790 ) FIPLEN3, PLTLEN3, 
      &           ( CHRLEN3, N=1,NCHARS-2 ), DSCLEN3
-            L1 = LEN_TRIM( FMTBUF )
-            FMTBUF = FMTBUF( 1:L1 ) // ')'
+            FMTBUF = TRIM( FMTBUF ) // ')'
 
             WRITE( BUFFER, FMTBUF ) S, ( CHARS( N ), N = 1, NCHARS ), 
      &                              CPDESC( S )
-
+            
 C.............  Add label, group number, stack parameters, and emissions
-            L1 = LEN_TRIM( BUFFER )
-            WRITE( BUFFER, 94791 ) BUFFER( 1:L1 ), LABEL, IGRP,
+            WRITE( BUFFER, 94791 ) TRIM( BUFFER ), LABEL, IGRP,
      &             VALS( HT_IDX ), VALS( DM_IDX ), VALS( TK_IDX ),
      &             VALS( VE_IDX ), VALS( FL_IDX )
-
+            
 C.............  If needed, add plume rise value
             IF ( LCUTOFF ) THEN
-                L1 = LEN_TRIM( BUFFER )
-                WRITE( BUFFER, 94792 ) BUFFER( 1:L1 ), RISE( S )
+                WRITE( BUFFER, 94792 ) TRIM( BUFFER ), RISE( S )
             END IF
 
 C.............  Add emissions
             IF ( NEVPEMV .GT. 0 ) THEN
-                L1 = LEN_TRIM( BUFFER )
-                WRITE( BUFFER, 94792 ) BUFFER( 1:L1 ), 
+                WRITE( BUFFER, 94792 ) TRIM( BUFFER ), 
      &                 ( VALS( K ), K = NM+1, NV ) 
             END IF
-
+            
 C.............  Write characteristics that caused matching
             DFLAG = .FALSE.
             DO L = 1, NORS
@@ -1226,28 +1228,27 @@ C.............................  Exit after this OR
                             DFLAG = .TRUE.
 
 C.............................  Add to report for this OR and AND (if any)
-                            L2 = LEN_TRIM( BUFFER )
                             IF ( TYPES( L,M,N ) .EQ. 'TOP' ) THEN
-                                WRITE( BUFFER, 94793 ) BUFFER( 1:L2 ), 
+                                WRITE( BUFFER, 94793 ) TRIM( BUFFER ), 
      &                                 VNAME( N ), ' RANK;      =;', 
      &                                 INT( RANK( N ) )
 
 C.............................  For integer values stored as reals
                             ELSE IF ( N .EQ. SRC_IDX .OR.
      &                                N .EQ. FIP_IDX      ) THEN 
-                                WRITE( BUFFER, 94796 ) BUFFER( 1:L2 ), 
+                                WRITE( BUFFER, 94796 ) TRIM( BUFFER ), 
      &                                 VNAME( N ), TYPES( L,M,N ),  
      &                                 INT( COMPARE( L,M,N ) )
 
 C.............................  Use "IS" type as way to I.D. string criteria
                             ELSE IF ( TYPES( L,M,N ) .EQ. 'IS' ) THEN
-                                WRITE( BUFFER, 94795 ) BUFFER( 1:L2 ), 
+                                WRITE( BUFFER, 94795 ) TRIM( BUFFER ), 
      &                                 VNAME( N ), TYPES( L,M,N ),
      &                                 COMCHRS( L,M,N )
 
 C.............................  For all reals
                             ELSE IF ( TYPES( L,M,N ) .NE. ' ' ) THEN
-                                WRITE( BUFFER, 94794 ) BUFFER( 1:L2 ), 
+                                WRITE( BUFFER, 94794 ) TRIM( BUFFER ), 
      &                                 VNAME( N ), TYPES( L,M,N ),  
      &                                 COMPARE( L,M,N )
 
@@ -1264,8 +1265,7 @@ C                       to output buffer
                         DO N = 1, NV
                             IF ( STATUS( L,M+1,N ) ) THEN
 
-                                L2 = LEN_TRIM( BUFFER ) 
-                                BUFFER = BUFFER( 1:L2 ) // ' AND;'
+                                BUFFER = TRIM( BUFFER ) // ' AND;'
                                 EXIT  ! end loop
 
                             END IF
@@ -1281,8 +1281,7 @@ C.................  Exit from "OR" loop if one of the OR criteria has been met
             END DO
 
 C.............  Write buffer to report file
-            L2 = LEN_TRIM( BUFFER )
-            WRITE( FDEV, '(A)' ) BUFFER( 1:L2 )
+            WRITE( FDEV, '(A)' ) TRIM( BUFFER )
 
 C---------------------  FORMAT  STATEMENTS  -------------------------
 
