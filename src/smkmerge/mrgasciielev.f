@@ -1,21 +1,31 @@
         PROGRAM MRGELEV
 
 C***********************************************************************
-C  program body starts at line
+C  program body starts at line 218
 C
 C  DESCRIPTION:
 C       This program combines ASCII elevated files produced by 
 C       Smkmerge. It can optionally use a corresponding list of elevated
-C       point source files to flag combined PinG sources.
+C       point source files to flag combined PinG sources. The time period
+C       of the output file is adjusted based on the latest starting file
+C       and earliest ending file, unless MRG_DIFF_DAY is set in which case
+C       the time period is based on the standard environment variables.
 C
 C  PRECONDITIONS REQUIRED:
 C       ASCII elevated files created by Smkmerge
 C       Point source elevated files created by Elevpoint
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
-C       
+C       INITEM
+C       GETM3EPI
+C       M3MESG, M3MSG2, M3EXIT
+C       CHECKMEM
+C       SORTIC, SORTR1
+C       SETOUTDATE
+C       NEXTIME
+C       WRDAYMSG
 C
-C  REVISION  HISTORY:
+C  REVISION HISTORY:
 C       Created 4/2005 by C. Seppanen
 C
 C***********************************************************************
@@ -47,12 +57,17 @@ C.........  INCLUDES
         
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
+        LOGICAL       ENVYN
         INTEGER       FINDC
         INTEGER       GETFLINE
+        CHARACTER(10) HHMMSS
         INTEGER       JUNIT
         INTEGER       PROMPTFFILE
+        INTEGER       SECSDIFF
+        INTEGER       SEC2TIME
 
-        EXTERNAL      CRLF, FINDC, GETFLINE, JUNIT, PROMPTFFILE
+        EXTERNAL      CRLF, ENVYN, FINDC, GETFLINE, HHMMSS, JUNIT,
+     &                PROMPTFFILE, SECSDIFF, SEC2TIME
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
@@ -66,10 +81,10 @@ C.........  Allocatable arrays
         INTEGER, ALLOCATABLE :: NSRCS( : )          ! num. srcs per file
         INTEGER, ALLOCATABLE :: SDATE( : )          ! start date by file
         INTEGER, ALLOCATABLE :: STIME( : )          ! start time by file
-        INTEGER, ALLOCATABLE :: EDATE( : )          ! end date by file
-        INTEGER, ALLOCATABLE :: ETIME( : )          ! end time by file
+        INTEGER, ALLOCATABLE :: NSTEP( : )          ! no. time steps by file
         INTEGER, ALLOCATABLE :: SRCIDX( : )         ! index for sorting sources
         INTEGER, ALLOCATABLE :: EMISIDX( : )        ! index for sorting emissions
+        INTEGER, ALLOCATABLE :: SAVLNUM( : )        ! current line number for each file
         
         CHARACTER(256), ALLOCATABLE :: FILENAM( :,: ) ! input file names
         CHARACTER(10),  ALLOCATABLE :: SPCNAM( : )  ! model species names
@@ -81,12 +96,14 @@ C.........  Allocatable arrays
         
         LOGICAL, ALLOCATABLE :: PINGFND( : )     ! true: PinG source was found
         LOGICAL, ALLOCATABLE :: ISPING( : )      ! true: source remains PinG
+        LOGICAL, ALLOCATABLE :: USEFIRST( : )    ! true: use first time step of file
 
 C.........  File units and logical names
         INTEGER          LDEV       ! unit for log file
         INTEGER          IDEV       ! unit for list of elevated files
         INTEGER          PDEV       ! unit for list of PELV files 
         INTEGER          ODEV       ! unit for output file
+        INTEGER          RPTDEV     ! unit for merge report file
         INTEGER          RDEV       ! temporary unit for reading input
         INTEGER          TDEV       ! temporary unit for input files
 
@@ -147,19 +164,35 @@ C.........  Hourly emissions variables
         INTEGER          NUM                  ! source number
         CHARACTER(10)    VNAME                ! species name
         REAL             EMIS                 ! hourly emissions
+
+C.........  Output time variables
+        INTEGER ::       G_SDATE = 0          ! start date
+        INTEGER ::       G_STIME = 0          ! start time
+        INTEGER ::       G_NSTEPS = 1         ! number of time steps
+        INTEGER ::       G_TSTEP = 0          ! time step
         
 C.........  Other local variables
         INTEGER          I, J, K, L           ! indexes and counters
         INTEGER          IDUM, IDUM2          ! dummy integers
         INTEGER          IOS                  ! i/o status
+        INTEGER          JDATE, JTIME         ! date and time for looping
+        INTEGER          LDATE                ! last date processed
+        INTEGER          LNUM                 ! current line number
         INTEGER          MXFILES              ! maximum number of input files
         INTEGER          MXPFILES             ! maximum number of PELV files
         INTEGER          MXLINES              ! maximum number of lines
         INTEGER          NFILES               ! number of input files
         INTEGER          NPINGSRC             ! number of PinG sources
         INTEGER          NTOTSRCS             ! total number of output sources
-        INTEGER          IBD, IBT             ! start date and time
-        INTEGER          IED, IET             ! end date and time
+        INTEGER          IBD, IBT             ! start date and time in elev. format
+        INTEGER          IED, IET             ! end date and time in elev. format
+        INTEGER          TMPBD, TMPBT         ! tmp. start date/time in elev. format
+        INTEGER          TMPED, TMPET         ! tmp. end date/time in elev. format
+        INTEGER          RDATE                ! date to read data for
+        INTEGER          SECS                 ! number of seconds
+        INTEGER          TMPDATE              ! temporary date
+        INTEGER          TMPTIME              ! temporary time
+        INTEGER          TMPSTEP              ! temporary number of time steps
         INTEGER          BASENUM              ! base source number for hourly emissions
         INTEGER          ENUM, PNUM, GNUM     ! elevated, PinG, and group numbers
 
@@ -167,10 +200,15 @@ C.........  Other local variables
 
         LOGICAL ::       EFLAG = .FALSE.      ! true: an error happened
         LOGICAL          FOUND                ! true: matching source was found
+        LOGICAL          MRGDIFF              ! true: merge files from different days
+        LOGICAL          MSGPRINT             ! true: print warning message
         LOGICAL          PINGFLAG             ! true: process PinG sources
+        LOGICAL          LLGRID               ! true: grid is lat-lon
+        
         CHARACTER(256)   DUMMY                ! dummy character string
+        CHARACTER(30)    FMT                  ! output format for emissions
         CHARACTER(256)   LINE                 ! input line
-        CHARACTER(300)   MESG                 ! message buffer
+        CHARACTER(512)   MESG                 ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'MRGELEV' ! program name
 
@@ -195,11 +233,15 @@ C.........  Open lists of input files
         ELSE
             PINGFLAG = .TRUE.
         END IF
+        
+C.........  Get environment variables
+        MESG = 'Merge files from different days into single file'
+        MRGDIFF = ENVYN( 'MRG_DIFF_DAYS', MESG, .FALSE., IOS )
 
-C.........  Open output file
-        MESG = 'Enter logical name for output ' //
-     &         'ASCII ELEVATED SOURCES file'
-        ODEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'OUTFILE', PROGNAME )
+C.........  Get date and time settings from environment        
+        IF( MRGDIFF ) THEN
+            CALL GETM3EPI( -1, G_SDATE, G_STIME, G_TSTEP, G_NSTEPS )
+        END IF
 
 C.........  Determine maximum number of input files in lists
         MXFILES  = GETFLINE( IDEV, 'List of files to merge' )
@@ -209,10 +251,11 @@ C.........  Determine maximum number of input files in lists
         
             IF( MXFILES /= MXPFILES ) THEN
                 MESG = 'ERROR: Number of ASCII elevated files does ' //
-     &            'not match number of elevated point source files'
+     &            'not match number of' // 
+     &            CRLF() // BLANK10 // 'elevated point source files'
                 CALL M3MSG2( MESG )
                 
-                MESG = 'Problem with input files'
+                MESG = 'Problem with input file list'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
         END IF
@@ -244,8 +287,8 @@ C.........  Read lists of input files
                 
                 IF( IOS /= 0 ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'I/O error', IOS,
-     &                  'reading list of input files at line', I
+                    WRITE( MESG,94010 ) 'ERROR: I/O error ', IOS,
+     &                  'reading list of input files at line ', I
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -260,8 +303,8 @@ C.................  Open input file
             
                 IF( IOS /= 0 ) THEN
                     EFLAG = .TRUE.
-                    MESG = 'Could not open file ' // CRLF() // BLANK5 // 
-     &                     TRIM( LINE )
+                    MESG = 'ERROR: Could not open input file ' // 
+     &                     CRLF() // BLANK10 // TRIM( LINE )
                     CALL M3MESG( MESG )
                     CYCLE
                 ELSE
@@ -381,10 +424,6 @@ C.............  Create second sort index for emissions; this will be
 C               used for matching the top 300 sources
             CALL SORTR1( NPINGSRC, EMISIDX, PELVEMIS )
             
-            DO I = 1, NPINGSRC
-                WRITE( *,* ) PELVEMIS( EMISIDX( I ) )
-            END DO
-            
             ISPING = .FALSE.
             DO I = NPINGSRC, MAX( NPINGSRC - MXPING + 1,1 ), -1
                 ISPING( EMISIDX( I ) ) = .TRUE.
@@ -398,10 +437,15 @@ C.........  Allocate memory for file header information
         CALL CHECKMEM( IOS, 'SDATE', PROGNAME )
         ALLOCATE( STIME( NFILES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'STIME', PROGNAME )
-        ALLOCATE( EDATE( NFILES ), STAT=IOS )
+        ALLOCATE( NSTEP( NFILES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EDATE', PROGNAME )
-        ALLOCATE( ETIME( NFILES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ETIME', PROGNAME )
+        ALLOCATE( SAVLNUM( NFILES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SAVLNUM', PROGNAME )
+        
+        IF( MRGDIFF ) THEN
+            ALLOCATE( USEFIRST( NFILES ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'USEFIRST', PROGNAME )
+        END IF
 
 C.........  Check the header of each input file
         MESG = 'Checking headers of input files...'
@@ -411,59 +455,50 @@ C.........  Check the header of each input file
         DO I = 1, NFILES
         
             TDEV = FILEDEV( I,1 )
+            LNUM = 0
             
             READ( TDEV, 93010 ) DUMMY, TMPGRDENV
-            IF( TRIM( DUMMY ) /= 'CONTROL' ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
-            END IF
-            
+            LNUM = LNUM + 1
+            CALL CHECK_HEADER( DUMMY, 'CONTROL', FILENAM( I ), LNUM )
+
             READ( TDEV, 93000 ) DUMMY
-            IF( TRIM( DUMMY ) /= 'PTSOURCE' ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
-            END IF
+            LNUM = LNUM + 1
+            CALL CHECK_HEADER( DUMMY, 'PTSOURCE', FILENAM( I ), LNUM )
             
             READ( TDEV, 93000 ) TMPNOTE
+            LNUM = LNUM + 1
             
             READ( TDEV, 93015 ) TMPNMSPC, IDUM, TMPNOUT, 
      &                          IDUM2, TMPNPARAM
+            LNUM = LNUM + 1
             IF( IDUM /= 0 .OR. IDUM2 /= 1 ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
+                CALL WRITE_HEADER_ERROR( FILENAM( I ), LNUM )
             END IF
             
             READ( TDEV, 93015 ) TMPPDEVOUT, IDUM, TMPGSWITCH
+            LNUM = LNUM + 1
             IF( IDUM /= 0 ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
+                CALL WRITE_HEADER_ERROR( FILENAM( I ), LNUM )
             END IF
             
             READ( TDEV, 93015 ) TMPUSWITCH, TMPLSWITCH, IDUM, 
      &                          TMPMSWITCH, TMPVSWITCH
+            LNUM = LNUM + 1
             IF( IDUM /= 0 ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
+                CALL WRITE_HEADER_ERROR( FILENAM( I ), LNUM )
             END IF
             
             READ( TDEV, 93015 ) IDUM, IDUM2, TMPESWITCH
+            LNUM = LNUM + 1
             IF( IDUM /= 1 .OR. IDUM2 /= 0 ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
+                CALL WRITE_HEADER_ERROR( FILENAM( I ), LNUM )
             END IF
             
             READ( TDEV, 93015 ) TMPDDEVOUT, TMPRDEVOUT, IDUM, 
      &                          TMPTDEVOUT, TMPMDEVOUT, TMPWDEVOUT
+            LNUM = LNUM + 1
             IF( IDUM /= 0 ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
+                CALL WRITE_HEADER_ERROR( FILENAM( I ), LNUM )
             END IF
 
 C.............  Store variables the first time, otherwise compare to previous            
@@ -501,20 +536,14 @@ C.............  Store variables the first time, otherwise compare to previous
      &              TMPTDEVOUT /= TDEVOUT .OR.
      &              TMPMDEVOUT /= MDEVOUT .OR.
      &              TMPWDEVOUT /= WDEVOUT      ) THEN
-                    EFLAG = .TRUE.
                     CALL WRITE_HEADER_DIFF( FILENAM( I ) )
-                    CYCLE
                 END IF
             END IF
             
             NSRCS( I ) = TMPNOUT
+            SAVLNUM( I ) = LNUM
 
-        END DO
-        
-        IF( EFLAG ) THEN
-            MESG = 'Problem with file header information'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF        
+        END DO     
 
 C.........  Read and check species names for each file
         ALLOCATE( SPCNAM( NMSPC ), STAT=IOS )
@@ -523,66 +552,84 @@ C.........  Read and check species names for each file
         DO I = 1, NFILES
         
             TDEV = FILEDEV( I,1 )
+            LNUM = SAVLNUM( I )
         
             DO J = 1, NMSPC
                 READ( TDEV, 93020 ) TMPNAM
+                LNUM = LNUM + 1
                 
                 IF( I == 1 ) THEN
                     SPCNAM( J ) = TMPNAM
                 ELSE
                     IF( TMPNAM /= SPCNAM( J ) ) THEN
-                        EFLAG = .TRUE.
                         CALL WRITE_HEADER_DIFF( FILENAM( I ) )
-                        EXIT
                     END IF
                 END IF
             END DO
+            
+            SAVLNUM( I ) = LNUM
         END DO
-
-        IF( EFLAG ) THEN
-            MESG = 'Problem with file model species names'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
 
 C.........  Continue checking file headers
         P_ALPHA = 0
         DO I = 1, NFILES
         
             TDEV = FILEDEV( I,1 )
+            LNUM = SAVLNUM( I )
 
 C.............  Read file start and end dates and times
-            READ( TDEV, 93030 ) SDATE( I ), STIME( I ),
-     &                          EDATE( I ), ETIME( I )
+            READ( TDEV, 93030 ) IBD, IBT, IED, IET
+            LNUM = LNUM + 1
         
-            READ( TDEV, 93000 ) DUMMY
-            IF( TRIM( DUMMY ) /= 'END' ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
+            IF( IBD > 70000 ) THEN
+                SDATE( I ) = IBD + 1900000
+            ELSE
+                SDATE( I ) = IBD + 2000000
             END IF
+            
+            STIME( I ) = IBT * 100
+            
+            IF( IED > 70000 ) THEN
+                TMPDATE = IED + 1900000
+            ELSE
+                TMPDATE = IED + 2000000
+            END IF
+        
+            TMPTIME = IET * 100
+            
+            SECS = SECSDIFF( SDATE( I ), STIME( I ), TMPDATE, TMPTIME )
+            NSTEP( I ) = 1 + (SECS / 3600)
+            
+            READ( TDEV, 93000 ) DUMMY
+            LNUM = LNUM + 1
+            CALL CHECK_HEADER( DUMMY, 'END', FILENAM( I ), LNUM )
 
 C.............  Read grid and layer information            
             READ( TDEV, 93000 ) DUMMY
-            IF( TRIM( DUMMY ) /= 'REGION' ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
-            END IF
+            LNUM = LNUM + 1
+            CALL CHECK_HEADER( DUMMY, 'REGION', FILENAM( I ), LNUM )
             
             READ( TDEV, 93040 ) FDUM, FDUM2, TMPALPHA
+            LNUM = LNUM + 1
             IF( FDUM /= 0. .OR. FDUM2 /= 0. ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
+                CALL WRITE_HEADER_ERROR( FILENAM( I ), LNUM )
             END IF
             
             READ( TDEV, 93040 ) TMPXORIG, TMPYORIG
-            
-            READ( TDEV, 93045 ) TMPXCELL, TMPYCELL  ! FORMAT PROBLEM
+            LNUM = LNUM + 1
+
+C.............  Format for x- and y-cell sizes changes depending on if grid
+C               is lat-lon; we don't have to worry about the difference on input
+C               because Fortran ignores number of decimal places when input
+C               has a decimal point
+            READ( TDEV, 93040 ) TMPXCELL, TMPYCELL
+            LNUM = LNUM + 1
             
             READ( TDEV, 93050 ) TMPNCOLS, TMPNROWS, TMPNULAYS
+            LNUM = LNUM + 1
             READ( TDEV, 93060 ) TMPNZLOWR, TMPNZUPPR, TMPHTSUR, 
      &                          TMPHTLOWR, TMPHTUPPR
+            LNUM = LNUM + 1
             
             IF( P_ALPHA == 0 ) THEN
                 P_ALPHA = TMPALPHA
@@ -612,31 +659,27 @@ C.............  Read grid and layer information
      &              TMPHTSUR  /= HTSUR   .OR.
      &              TMPHTLOWR /= HTLOWR  .OR.
      &              TMPHTUPPR /= HTUPPR       ) THEN
-                    EFLAG = .TRUE.
                     CALL WRITE_HEADER_DIFF( FILENAM( I ) )
-                    CYCLE
                 END IF
             END IF
 
             READ( TDEV, 93000 ) DUMMY
-            IF( TRIM( DUMMY ) /= 'END' ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
-            END IF
+            LNUM = LNUM + 1
+            CALL CHECK_HEADER( DUMMY, 'END', FILENAM( I ), LNUM )
             
             READ( TDEV, 93000 ) DUMMY
-            IF( TRIM( DUMMY ) /= 'POINT SOURCES' ) THEN
-                EFLAG = .TRUE.
-                CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                CYCLE
-            END IF
+            LNUM = LNUM + 1
+            CALL CHECK_HEADER( DUMMY, 'POINT SOURCES', FILENAM( I ), LNUM )
 
+            SAVLNUM( I ) = LNUM
         END DO
 
-        IF( EFLAG ) THEN
-            MESG = 'Problem with file region information'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.........  Check if grid is lat-lon; if not lat-lon, then x-cell size won't
+C           fit into F10.7 format
+        LLGRID = .TRUE.
+        WRITE( MESG,'( F10.7 )' ) XCELL
+        IF( MESG( 1:1 ) == '*' ) THEN
+            LLGRID = .FALSE.
         END IF
 
 C.........  Calculate total number of output sources
@@ -645,11 +688,31 @@ C.........  Calculate total number of output sources
             NTOTSRCS = NTOTSRCS + NSRCS( I )
         END DO
 
-C.........  Determine start and end date/time
-        IBD = SDATE( 1 )
-        IBT = STIME( 1 )
-        IED = EDATE( 1 )
-        IET = ETIME( 1 )
+C.........  Determine output date, time, and number of time steps
+        CALL SETOUTDATE( G_SDATE, G_STIME, G_NSTEPS, NFILES, SDATE,
+     &                   STIME, NSTEP, FILENAM, MRGDIFF, USEFIRST )                         
+
+        TMPDATE = G_SDATE
+        TMPTIME = G_STIME
+        CALL NEXTIME( TMPDATE, TMPTIME, ( G_NSTEPS - 1 ) * 10000 )
+        
+        IBD = REMOVE_4DIGIT_YEAR( G_SDATE )
+        IED = REMOVE_4DIGIT_YEAR( TMPDATE )
+        
+        IBT = G_STIME / 100
+        IET = TMPTIME / 100
+
+C.........  Open output file
+        MESG = 'Enter logical name for output ' //
+     &         'ASCII ELEVATED SOURCES file'
+        ODEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'OUTFILE', PROGNAME )
+
+C.........  Open report file if needed
+        IF( MRGDIFF ) THEN
+!            MESG = 'Enter logical name for the MRGELEV REPORT file'
+!            RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'REPMRGELEV', 
+!     &                          PROGNAME )
+        END IF
 
 C.........  Write header to output file
         WRITE( ODEV, 93010 ) 'CONTROL', GRDENV
@@ -671,7 +734,13 @@ C.........  Write header to output file
         WRITE( ODEV, 93000 ) 'REGION'
         WRITE( ODEV, 93040 ) 0., 0., P_ALPHA
         WRITE( ODEV, 93040 ) XORIG, YORIG
-        WRITE( ODEV, 93045 ) XCELL, YCELL   ! FORMAT PROBLEM
+        
+        IF( LLGRID ) THEN
+            WRITE( ODEV, 93045 ) XCELL, YCELL
+        ELSE
+            WRITE( ODEV, 93040 ) XCELL, YCELL
+        END IF
+        
         WRITE( ODEV, 93050 ) NCOLS, NROWS, NULAYS
         WRITE( ODEV, 93060 ) NZLOWR, NZUPPR, HTSUR, HTLOWR, HTUPPR
         WRITE( ODEV, 93000 ) 'END'
@@ -680,21 +749,21 @@ C.........  Write header to output file
 
 C.........  Read and output source information for each file
         K = 0
+        MSGPRINT = .TRUE.
         DO I = 1, NFILES
         
             TDEV = FILEDEV( I,1 )
+            LNUM = SAVLNUM( I )
         
             DO J = 1, NSRCS( I )
-                READ( TDEV, 93065 ) IDUM, DUMMY, XCOORD, YCOORD, ! FORMAT PROBLEM
+                READ( TDEV, 93070 ) IDUM, DUMMY, XCOORD, YCOORD,
      &              FCID, SKID, TFIP
-
-                IF( TRIM( DUMMY ) /= 'STD' ) THEN
-                    MESG = 'Problem reading source information'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'STD', FILENAM( I ), LNUM )
 
 C.................  Read stack parameters                    
                 READ( TDEV, 93080 ) STKHT, STKDM, STKTK, STKVE
+                LNUM = LNUM + 1
                 
 C.................  Check for source in PinG list
                 IF( STKDM < 0 .AND. PINGFLAG ) THEN
@@ -705,12 +774,22 @@ C.................  Check for source in PinG list
                     L = FINDC( CSRC, NPINGSRC, PELVSRC )
                     
                     IF( L < 1 ) THEN
-                        MESG = 'WARNING: PinG source ' //
-     &                      TRIM( CSRC ) // ' is in an ASCII ' //
-     &                      'elevated file' // CRLF() // BLANK10 // 
-     &                      'but not in the corresponding PELV ' //
-     &                      'file; retaining PinG status for source'
-                        CALL M3MESG( MESG )
+                        IF( MSGPRINT ) THEN
+                            MESG = 'WARNING: The following PinG ' //
+     &                        'sources are in the ASCII elevated ' //
+     &                        'files but' // CRLF() // BLANK10 // 
+     &                        'are not in the corresponding PELV ' //
+     &                        'files; the sources will remain as ' //
+     &                        CRLF() // BLANK10 // 'PinG sources in ' //
+     &                        'the output file.'
+                            CALL M3MESG( MESG )
+                            MSGPRINT = .FALSE.
+                        ELSE
+                            MESG = 'FIPS: ' // TFIP( 5:10 ) //
+     &                             '    Facility: ' // FCID //
+     &                             '    Stack: ' // SKID
+                            CALL M3MESG( MESG )
+                        END IF
                     ELSE
                         PINGFND( L ) = .TRUE.
 
@@ -718,131 +797,178 @@ C.........................  Check if source remains as PinG source
                         IF( .NOT. ISPING( L ) ) THEN
                             STKDM = -STKDM
                         END IF
-                        WRITE( *,* ) ISPING( L ), PELVEMIS( L ), STKDM
                     END IF
                 END IF
                 
                 K = K + 1
-                WRITE( ODEV, 93065 ) K, 'STD       ', XCOORD, ! FORMAT PROBLEM
-     &              YCOORD, FCID, SKID, TFIP                
+                IF( LLGRID ) THEN
+                    WRITE( ODEV, 93065 ) K, 'STD       ', XCOORD,
+     &                  YCOORD, FCID, SKID, TFIP
+                ELSE
+                    WRITE( ODEV, 93070 ) K, 'STD       ', XCOORD,
+     &                  YCOORD, FCID, SKID, TFIP
+                END IF
                 WRITE( ODEV, 93080 ) STKHT, STKDM, STKTK, STKVE
             END DO
             
             READ( TDEV, 93000 ) DUMMY
-            IF( TRIM( DUMMY ) /= 'END' ) THEN
-                MESG = 'Problem reading source information'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-        END DO
+            LNUM = LNUM + 1
+            CALL CHECK_HEADER( DUMMY, 'END', FILENAM( I ), LNUM )
 
-C.........  Check that we read the right number of sources
-        IF( K /= NTOTSRCS ) THEN
-            MESG = 'Wrong number of sources'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2)
-        END IF
+            SAVLNUM( I ) = LNUM
+
+        END DO
         
         WRITE( ODEV, 93000 ) 'END'
 
 C.........  Read and output hourly emissions for each file
-        DO L = 1, 25 ! loop over output hours somehow
+        LDATE = 0
+        JDATE = G_SDATE
+        JTIME = G_STIME
+        DO L = 1, G_NSTEPS
+
+C.............  Write message for new day        
+            IF( JDATE /= LDATE ) THEN
+                CALL WRDAYMSG( JDATE, MESG )
+            END IF
+
+C.............  Write message for each hour
+            WRITE( MESG,94020 ) HHMMSS( JTIME )
+            CALL M3MSG2( MESG )
         
             DO I = 1, NFILES
             
                 TDEV = FILEDEV( I,1 )
+                LNUM = SAVLNUM( I )
                 
+C.................  Set read date
+                IF( MRGDIFF .AND. USEFIRST( I ) ) THEN
+                    IDUM = 0
+                    TMPSTEP = SEC2TIME( 
+     &                          SECSDIFF( 
+     &                            G_SDATE, IDUM, JDATE, IDUM ) )
+                    RDATE = SDATE( I )
+                    CALL NEXTIME( RDATE, IDUM, TMPSTEP )
+                ELSE
+                    RDATE = JDATE
+                END IF
+
+C.................  Convert dates and times to elevated format
+                TMPBD = REMOVE_4DIGIT_YEAR( RDATE )
+                TMPBT = JTIME / 100
+
+C.................  Calculate end date and time                
+                TMPDATE = RDATE
+                TMPTIME = JTIME
+                CALL NEXTIME( TMPDATE, TMPTIME, 10000 )
+                
+                TMPED = REMOVE_4DIGIT_YEAR( TMPDATE )
+                TMPET = TMPTIME / 100
+                                
+C.................  If not the first time step, read end of previous emissions section                
                 IF( L /= 1 ) THEN
                     READ( TDEV, 93000 ) DUMMY
-                    IF( TRIM( DUMMY ) /= 'END' ) THEN
-                        EFLAG = .TRUE.
-                        CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                        CYCLE
-                    END IF
+                    LNUM = LNUM + 1
+                    CALL CHECK_HEADER( DUMMY, 'END', 
+     &                                 FILENAM( I ), LNUM )
                     
                     READ( TDEV, 93000 ) DUMMY
-                    IF( TRIM( DUMMY ) /= 'ENDTIME' ) THEN
-                        EFLAG = .TRUE.
-                        CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                        CYCLE
-                    END IF
+                    LNUM = LNUM + 1
+                    CALL CHECK_HEADER( DUMMY, 'ENDTIME', 
+     &                                 FILENAM( I ), LNUM )
                 END IF
                 
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 'TIME INTERVAL' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'TIME INTERVAL', 
+     &                             FILENAM( I ), LNUM )
                 
                 READ( TDEV, 93050 ) IBD, IBT, IED, IET
+                LNUM = LNUM + 1
+
+C.................  During first time step, skip ahead as needed to correct
+C                   place in file; after first time step, all reads should be
+C                   sequential so no skipping is needed
+                IF( L == 1 ) THEN
+                    DO WHILE( IBD /= TMPBD .AND. IBT /= TMPBT )
+
+C.........................  Skip through data for wrong time steps
+                        DO J = 1, 8
+                            READ( TDEV, * ) DUMMY
+                            LNUM = LNUM + 1
+                        END DO
+
+                        DO
+                            READ( TDEV, * ) DUMMY
+                            LNUM = LNUM + 1
+                            IF( TRIM( DUMMY ) == 'END' ) EXIT
+                        END DO
+                        
+                        DO J = 1, 2
+                            READ( TDEV, * ) DUMMY
+                            LNUM = LNUM + 1
+                        END DO
+
+                        READ( TDEV, 93050 ) IBD, IBT, IED, IET
+                        LNUM = LNUM + 1
+                    END DO
+                ELSE
+                    IF( IBD /= TMPBD .OR. IBT /= TMPBT .OR.
+     &                  IED /= TMPED .OR. IET /= TMPET      ) THEN
+                        CALL WRITE_HEADER_ERROR( FILENAM( I ), LNUM )
+                    END IF
+                END IF
+
+C.................  Set output start date, start time, end date, and end time
+                IBD = REMOVE_4DIGIT_YEAR( JDATE )
+                IBT = JTIME / 100
+                
+                TMPDATE = JDATE
+                TMPTIME = JTIME
+                CALL NEXTIME( TMPDATE, TMPTIME, 10000 )
+                
+                IED = REMOVE_4DIGIT_YEAR( TMPDATE )
+                IET = TMPTIME / 100
                 
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 'METHOD' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'METHOD', FILENAM( I ), LNUM )
                 
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 'STD       ALL       ' //
-     &              'EMVALUES  0.        50000.' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'STD       ALL       ' //
+     &              'EMVALUES  0.        50000.', FILENAM( I ), LNUM )
                 
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 'END' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'END', FILENAM( I ), LNUM )
                 
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 'VERTICAL METHOD' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
-           
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'VERTICAL METHOD', 
+     &                             FILENAM( I ), LNUM )
+     
                 READ( TDEV, 93000 ) DUMMY
-                IF( DUMMY( 1:20 ) /= 'STD       ALL       ' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
-                IF( DUMMY( 31:46 ) /= ' 0.       10000.' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY( 1:20 ), 'STD       ' //
+     &              'ALL       ', FILENAM( I ), LNUM )
+                CALL CHECK_HEADER( DUMMY( 31:46 ), ' 0.       10000.',
+     &                             FILENAM( I ), LNUM )
                 VERTTYPE = DUMMY( 21:30 )
     
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 'END' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'END', FILENAM( I ), LNUM )
                 
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 'EMISSIONS VALUES' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'EMISSIONS VALUES', 
+     &                             FILENAM( I ), LNUM )
                 
                 READ( TDEV, 93000 ) DUMMY
-                IF( TRIM( DUMMY ) /= 
-     &              'ALL       ALL            0.000' ) THEN
-                    EFLAG = .TRUE.
-                    CALL WRITE_HEADER_ERROR( FILENAM( I ) )
-                    CYCLE
-                END IF
-            
-                IF( EFLAG ) THEN
-                    MESG = 'Problem with emissions header'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
+                LNUM = LNUM + 1
+                CALL CHECK_HEADER( DUMMY, 'ALL       ALL' //
+     &              '            0.000', FILENAM( I ), LNUM )
             
                 IF( I == 1 ) THEN
                     WRITE( ODEV, 93000 ) 'TIME INTERVAL'
@@ -860,6 +986,8 @@ C.........  Read and output hourly emissions for each file
      &                  '            0.000'
                 END IF
 
+                SAVLNUM( I ) = LNUM
+
             END DO
 
             DO I = 1, NMSPC
@@ -867,27 +995,49 @@ C.........  Read and output hourly emissions for each file
                 
                 DO J = 1, NFILES
                     TDEV = FILEDEV( J,1 )
+                    LNUM = SAVLNUM( J )
                     
                     DO
-                        READ( UNIT=TDEV, FMT=93070, IOSTAT=IOS ) 
-     &                      NUM, VNAME, EMIS ! FORMAT PROBLEM
+                        READ( UNIT=TDEV, FMT=93075, IOSTAT=IOS ) 
+     &                      NUM, VNAME, EMIS
+                        LNUM = LNUM + 1
 
 C.........................  Check if we've reached the END line or
 C                           if we've started a new species
                         IF( IOS /= 0 .OR. VNAME /= SPCNAM( I ) ) THEN
                             BACKSPACE( TDEV )
+                            LNUM = LNUM - 1
                             EXIT
                         END IF
+
+C.........................  Set up output format for emissions
+                        IF( EMIS > 999999999. ) THEN
+                            FMT = '( I10, A10, E10.3 )'
+                        ELSE IF( EMIS > 99999999. ) THEN
+                            FMT = '( I10, A10, F10.0 )'
+                        ELSE IF( EMIS > 9999999. ) THEN
+                            FMT = '( I10, A10, F10.1 )'
+                        ELSE IF( EMIS > 999999. ) THEN
+                            FMT = '( I10, A10, F10.2 )'
+                        ELSE
+                            FMT = '( I10, A10, F10.3 )'
+                        END IF
      
-                        WRITE( ODEV, 93070 ) BASENUM + NUM, VNAME, EMIS ! FORMAT
+                        WRITE( ODEV, FMT ) BASENUM + NUM, VNAME, EMIS
                     END DO
             
                     BASENUM = BASENUM + NSRCS( J )
+                    
+                    SAVLNUM( J ) = LNUM
                 END DO
+
             END DO
 
             WRITE( ODEV, 93000 ) 'END'
             WRITE( ODEV, 93000 ) 'ENDTIME'
+        
+            LDATE = JDATE
+            CALL NEXTIME( JDATE, JTIME, 10000 )
         
         END DO ! loop over time steps
         
@@ -898,15 +1048,26 @@ C                           if we've started a new species
 
 C.........  Check for any sources that were in PELV but not in ASCII elevated file
         IF( PINGFLAG ) THEN
-        
+
+            MSGPRINT = .TRUE.        
             DO I = 1, NPINGSRC
             
                 IF( .NOT. PINGFND( I ) ) THEN
-                    CSRC = PELVSRC( I )
-                    MESG = 'WARNING: PinG source ' // TRIM( CSRC ) //
-     &                ' was in a PELV file' // CRLF() // BLANK10 // 
-     &                'but not in the corresponding ASCII elevated file'
-                    CALL M3MESG( MESG )
+                    IF( MSGPRINT ) THEN
+                        MESG = 'WARNING: The following PinG ' //
+     &                         'sources are in the PELV files but ' //
+     &                         'are not' // CRLF() // BLANK10 //
+     &                         'in the corresponding ASCII elevated ' //
+     &                         'files.'
+                        CALL M3MESG( MESG )
+                        MSGPRINT = .FALSE.
+                    ELSE
+                        CSRC = PELVSRC( I )
+                        MESG = 'FIPS: ' // CSRC( 1:6 ) //
+     &                         '    Facility: ' // CSRC( 7:16 ) //
+     &                         '    Stack: ' // CSRC( 17:26 )
+                        CALL M3MESG( MESG )
+                    END IF
                 END IF
             END DO
         
@@ -939,7 +1100,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93065   FORMAT( I10, A10, F10.5, F10.5, 2A10, A10 )
 
-93070   FORMAT( I10, A10, F10.3 )
+93070   FORMAT( I10, A10, F10.0, F10.0, 2A10, A10 )
+
+93075   FORMAT( I10, A10, F10.0 )
 
 93080   FORMAT( F10.1, F10.2, F10.1, F10.0 )
 
@@ -951,27 +1114,72 @@ C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
+94020   FORMAT( 8X, 'at time ', A8 )
+
 C******************  INTERNAL SUBPROGRAMS  *****************************
         
         CONTAINS
 
 C.............  This internal subroutine writes an error message
 C               when a bad header is read.
-            SUBROUTINE WRITE_HEADER_ERROR( FILENAM )
+            SUBROUTINE WRITE_HEADER_ERROR( FILENAM, LNUM )
             
 C.............  Subroutine arguments
             CHARACTER(*), INTENT(IN) :: FILENAM   ! file name
+            INTEGER,      INTENT(IN) :: LNUM      ! line number
 
 C.............  Local subroutine variables            
-            CHARACTER(300) MESG
+            CHARACTER(512) MESG
             
 C.............................................................................            
                 
-            MESG = 'ERROR: header incorrect in file ' //
-     &             CRLF() // BLANK5 // TRIM( FILENAM )
+            WRITE( MESG,94010 ) 'ERROR: Header incorrect in file ' //
+     &             CRLF() // BLANK10 // TRIM( FILENAM ) //
+     &             CRLF() // BLANK10 // 'at line ', LNUM
             CALL M3MESG( MESG )
+            
+            MESG = 'Problem with file header information'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )            
                 
             END SUBROUTINE WRITE_HEADER_ERROR
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+C.............  This internal subroutine checks the value of a line
+C               against the expected value.
+            SUBROUTINE CHECK_HEADER( STRING, VALUE, FILENAM, LNUM )
+            
+C.............  Subroutine arguments
+            CHARACTER(*), INTENT(IN) :: STRING  ! string that was read
+            CHARACTER(*), INTENT(IN) :: VALUE   ! expected value
+            CHARACTER(*), INTENT(IN) :: FILENAM ! file name
+            INTEGER,      INTENT(IN) :: LNUM    ! line number
+            
+C.............  Local subroutine variables            
+            CHARACTER(512) MESG
+            
+C.............................................................................            
+            
+            IF( TRIM( STRING ) /= TRIM( VALUE ) ) THEN
+                WRITE( MESG,94010 ) 'ERROR: Header incorrect ' //
+     &                 'in file' // 
+     &                 CRLF() // BLANK10 // TRIM( FILENAM ) //
+     &                 CRLF() // BLANK10 // 'at line ', LNUM
+                CALL M3MESG( MESG )
+                MESG = BLANK10 // 'Expected string "' // 
+     &                 TRIM( VALUE ) // '" but read "' //
+     &                 TRIM( STRING ) // '"'
+                CALL M3MESG( MESG )
+                
+                MESG = 'Problem with file header information'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+            
+            END SUBROUTINE CHECK_HEADER
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
 
 C.............  This internal subroutine writes an error message
 C               when a header value is inconsistent with previous values.
@@ -981,15 +1189,40 @@ C.............  Subroutine arguments
             CHARACTER(*), INTENT(IN) :: FILENAM   ! file name
 
 C.............  Local subroutine variables            
-            CHARACTER(300) MESG
+            CHARACTER(512) MESG
             
 C.............................................................................            
                 
-            MESG = 'ERROR: header value in file ' //
-     &             CRLF() // BLANK5 // TRIM( FILENAM ) //
-     &             ' does not match previous values'
+            MESG = 'ERROR: Header value in file' //
+     &             CRLF() // BLANK10 // TRIM( FILENAM ) //
+     &             CRLF() // BLANK10 // 'does not match previous values'
             CALL M3MESG( MESG )
-                
+            
+            MESG = 'Problem with file header information'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            
             END SUBROUTINE WRITE_HEADER_DIFF
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+        
+C.............  This internal subroutine removes the first two digits of the
+C               year from a 7-digit Julian date.
+            INTEGER FUNCTION REMOVE_4DIGIT_YEAR( JDATE )
+            
+C.............  Subroutine arguments
+            INTEGER, INTENT(IN) :: JDATE
+            
+C.............  Local subroutine variables
+            INTEGER YRREMOVE
+
+C.............................................................................            
+
+            YRREMOVE = ( JDATE / 100000 ) * 100000   ! integer math
+            REMOVE_4DIGIT_YEAR = JDATE - YRREMOVE
+            
+            RETURN
+            
+            END FUNCTION REMOVE_4DIGIT_YEAR
         
         END PROGRAM MRGELEV
