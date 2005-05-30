@@ -221,7 +221,6 @@ C           of files
         IF( MRGDIFF ) THEN
             ALLOCATE( USEFIRST( MXNFIL ), STAT=IOS )
             CALL CHECKMEM( IOS, 'USEFIRST', PROGNAME )
-            USEFIRST = .TRUE.
         END IF
 
 C.........  Allocate output layer structure
@@ -428,140 +427,25 @@ C.........  Give error message and end program unsuccessfully
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
+C.........  Check that environment settings are consistent with files
         IF( MRGDIFF ) THEN
-
-C.............  Check that all files have same start time
-            STIME = STIMEA( 1 )
-            
-            DO F = 2, NFILE
-                NAM = FNAME( F )
-            
-                IF( STIMEA( F ) /= STIME ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Start time', 
-     &                 STIMEA( F ), 'in file "' // TRIM( NAM ) //
-     &                 '" is inconsistent with first file value of',
-     &                 STIME
-                    CALL M3MSG2( MESG )
-                END IF
-            END DO
-            
-            IF( EFLAG ) THEN
-                MESG = 'Inconsistent start time among the files!'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Check that environment settings are consistent with files
             IF( TSTEP /= G_TSTEP ) THEN
-                WRITE( MESG,94010 ) 'ERROR: Value for G_TSTEP',
-     &              G_TSTEP, 'is inconsistent' // CRLF() // BLANK10 //
-     &              'with the time step of the files', TSTEP
-                CALL M3EXIT( PROGNAME, 0 ,0, MESG, 2 )
-            END IF
-
-            IF( STIME /= G_STIME ) THEN
-                WRITE( MESG,94010 ) 'ERROR: Value for G_STTIME',
-     &              G_STIME, 'is inconsistent' // CRLF() // BLANK10 //
-     &              'with the start time of the files', STIME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-            
-            DO F = 1, NFILE
-                NAM = FNAME( F )
+                WRITE( MESG,94010 ) 'ERROR: Value for G_TSTEP ',
+     &              G_TSTEP, 'is inconsistent with the time step' //
+     &              CRLF() // BLANK10 // 'of the input files', TSTEP
+                CALL M3MSG2( MESG )
                 
-C.................  Check that all files are at least long enough to
-C                   to cover requested output duration
-                IF( DURATA( F ) < G_NSTEPS ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Number of time steps',
-     &                  DURATA( F ), 'in file "' // TRIM( NAM ) // 
-     &                  '" is insufficient' // CRLF() // BLANK10 //
-     &                  'to cover the requsted number of output ' //
-     &                  'time steps', G_NSTEPS
-                    CALL M3MSG2( MESG )
-                END IF
-
-C.................  Check if file contains output start date and 
-C                   enough data to cover output duration
-                IF( .NOT. EFLAG ) THEN
-                    SECS = SECSDIFF( SDATEA( F ), STIMEA( F ),
-     &                               G_SDATE, G_STIME )
-                    STEPS = SECS/3600
-
-                    IF( STEPS > 0 .AND. STEPS < DURATA( F ) ) THEN
-                        IF( DURATA(F) - STEPS >= G_NSTEPS ) THEN
-                            USEFIRST( F ) = .FALSE.
-                        ELSE
-                            WRITE( MESG,94010 ) 'WARNING: File "' //
-     &                          TRIM( NAM ) // '" contains the ' //
-     &                          'requested output start date ', G_SDATE,
-     &                          CRLF() // BLANK10 // 'and start time',
-     &                          G_STIME, 'but does not contain ' //
-     &                          'enough data ' 
-     &                          // CRLF() // BLANK10 //
-     &                          'to cover the requested number of ' //
-     &                          'output time steps', G_NSTEPS, '.'
-                            CALL M3MSG2( MESG )
-                            WRITE( MESG,94010 ) BLANK5 //
-     &                          'Data from the ' //
-     &                          'start date of the file ', SDATEA( F ),
-     &                          'will be used instead.'
-                            CALL M3MSG2( MESG )
-                        END IF
-                    END IF
-                END IF
-            END DO
-            
-            IF( EFLAG ) THEN
-                MESG = 'Problem with duration of files'
+                MESG = 'Inconsistent environment settings'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-        
-            SDATE = G_SDATE
-            NSTEPS = G_NSTEPS
-        
-        ELSE
-        
-C.............  Set start date/time as latest start date/time
-            RDATE = ( SDATEA( 1 )/1000 ) * 1000 + 1  ! Set reference date
-
-C.............  Find maximum seconds count b/w file and reference
-            SECSMAX = 0
-            DO F = 1, NFILE
-                SECS = SECSDIFF( RDATE, STIMEA( 1 ), 
-     &                           SDATEA( F ), STIMEA( F ) )
-                SECSMAX = MAX( SECSMAX, SECS )
-
-            END DO
-
-C.............  Set latest start date/time of all files
-            TIMET = SEC2TIME( SECSMAX )
-
-            SDATE = RDATE
-            STIME = STIMEA( 1 )
-            CALL NEXTIME( SDATE, STIME, TIMET )
-
-C.............  Set duration given shortest file, but initialize duration with
-C             longest possible period across all durations.
-            EDATE = SDATE
-            ETIME = STIME
-            CALL NEXTIME( EDATE, ETIME, MAXVAL( DURATA ) * 10000 )
-            SECSMIN = SECSDIFF( SDATE, STIME, EDATE, ETIME ) ! for point
-
-            DO F = 1, NFILE
-                EDATE = SDATEA( F )
-                ETIME = STIMEA( F )
-                CALL NEXTIME( EDATE, ETIME, DURATA( F ) * 10000 )
-                SECS = SECSDIFF( SDATE, STIME, EDATE, ETIME )
-                SECSMIN = MIN( SECSMIN, SECS )
-
-            END DO
-           
-            TIMET = SEC2TIME( SECSMIN )
-
-            NSTEPS= TIMET / 10000 ! number of time steps 
-
         END IF
+
+C.........  Deterimine output date, time, and number of time steps
+        SDATE = G_SDATE
+        STIME = G_STIME
+        NSTEPS = G_NSTEPS
+        CALL SETOUTDATE( SDATE, STIME, NSTEPS, NFILE, SDATEA,
+     &                   STIMEA, DURATA, FNAME, MRGDIFF, USEFIRST )
 
 C.........  Build master output variables list
         NVOUT = 0
@@ -670,7 +554,7 @@ C.........  Prompt for and open output file
      &          'Enter logical name for MERGED GRIDDED OUTPUT file',
      &          FSUNKN3, 'OUTFILE', PROGNAME )
 
-C.........  Propmt for and open report file
+C.........  Prompt for and open report file
         IF( MRGDIFF ) THEN
             RDEV = PROMPTFFILE(
      &             'Enter logical name for the MRGGRID REPORT file',
