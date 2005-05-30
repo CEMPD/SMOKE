@@ -43,7 +43,7 @@ smkmerge.pvm: $(MRG) $(ALLI) $(LIBPATH)
 	echo SMKMERGE \(pvm\):
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS_PVM)
 #
-MGD= mrggrid.o
+MGD= mrggrid.o setoutdate.o
 #
 mrggrid: $(MGD) $(ALLI) $(LIBPATH)
 	echo MRGGRID:
@@ -53,7 +53,7 @@ mrggrid.debug: $(MGD) $(ALLI) $(LIBPATH_DEBUG)
 	echo MRGGRID \(debug\):
 	$(FC) $(DBGFLAGS) -o $(@) $(MGD) $(LIBS_DEBUG2)
 #
-MGE= mrgasciielev.o
+MGE= mrgasciielev.o setoutdate.o
 #
 mrgelev: $(MGE) $(ALLI) $(LIBPATH)
 	echo MRGELEV:
