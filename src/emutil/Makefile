@@ -8,10 +8,10 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: beld3to2 bluesky2inv extractida invsplit metcombine metscan pktreduc \
+all: aggwndw beld3to2 bluesky2inv extractida invsplit metcombine metscan pktreduc \
      smk2emis surgtool uam2ncf 
 
-debug: beld3to2.debug bluesky2inv.debug extractida.debug invsplit.debug \
+debug: aggwndw.debug beld3to2.debug bluesky2inv.debug extractida.debug invsplit.debug \
        metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
        surgtool.debug uam2ncf.debug  
 
@@ -20,6 +20,16 @@ debug: beld3to2.debug bluesky2inv.debug extractida.debug invsplit.debug \
 
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
+
+AGGW=aggwndw.o
+
+aggwndw: $(AGGW) $(ALLI) $(LIBPATH)
+	echo AGGWNDW:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(AGGW) $(LIBS)
+
+aggwndw.debug: $(AGGW) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'AGGWNDW (debug):'
+	$(FC) $(DBGFLAGS) -o $(@) $(AGGW) $(LIBS_DEBUG)
 
 B3TO2=beld3to2.o
 
