@@ -170,6 +170,13 @@ C.........  Output time variables
         INTEGER ::       G_STIME = 0          ! start time
         INTEGER ::       G_NSTEPS = 1         ! number of time steps
         INTEGER ::       G_TSTEP = 0          ! time step
+
+C.........  PinG source count variables
+        INTEGER          NPINGSRC             ! no. sources in PELV files
+        INTEGER          NPINGASCII           ! no. sources in ASCII elevated files
+        INTEGER          NMISSPELV            ! no. sources missing from PELV files
+        INTEGER          NMISSASCII           ! no. sources missing from ASCII files
+        INTEGER          NPINGOUT             ! no. sources in output ASCII elevated file
         
 C.........  Other local variables
         INTEGER          I, J, K, L           ! indexes and counters
@@ -182,7 +189,6 @@ C.........  Other local variables
         INTEGER          MXPFILES             ! maximum number of PELV files
         INTEGER          MXLINES              ! maximum number of lines
         INTEGER          NFILES               ! number of input files
-        INTEGER          NPINGSRC             ! number of PinG sources
         INTEGER          NTOTSRCS             ! total number of output sources
         INTEGER          IBD, IBT             ! start date and time in elev. format
         INTEGER          IED, IET             ! end date and time in elev. format
@@ -700,6 +706,14 @@ C.........  Calculate total number of output sources
             NTOTSRCS = NTOTSRCS + NSRCS( I )
         END DO
 
+C.........  Check that environment settings are consistent with files
+        IF( MRGDIFF ) THEN
+            IF( G_TSTEP /= 10000 ) THEN
+                MESG = 'Output time step must be 10000 for hourly data'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END IF
+
 C.........  Determine output date, time, and number of time steps
         CALL SETOUTDATE( G_SDATE, G_STIME, G_NSTEPS, NFILES, SDATE,
      &                   STIME, NSTEP, FILENAM, MRGDIFF, USEFIRST )                         
@@ -761,6 +775,9 @@ C.........  Write header to output file
 
 C.........  Read and output source information for each file
         K = 0
+        NPINGASCII = 0
+        NMISSPELV = 0
+        NPINGOUT = 0
         MSGPRINT = .TRUE.
         DO I = 1, NFILES
         
@@ -779,6 +796,8 @@ C.................  Read stack parameters
                 
 C.................  Check for source in PinG list
                 IF( STKDM < 0 .AND. PINGFLAG ) THEN
+                    NPINGASCII = NPINGASCII + 1
+                    
                     TFIP = ADJUSTR( TFIP )
                 
                     CSRC = TFIP( 5:10 ) // FCID // SKID
@@ -786,6 +805,8 @@ C.................  Check for source in PinG list
                     L = FINDC( CSRC, NPINGSRC, PELVSRC )
                     
                     IF( L < 1 ) THEN
+                        NMISSPELV = NMISSPELV + 1
+                        
                         IF( MSGPRINT ) THEN
                             MESG = 'WARNING: The following PinG ' //
      &                        'sources are in the ASCII elevated ' //
@@ -796,18 +817,20 @@ C.................  Check for source in PinG list
      &                        'the output file.'
                             CALL M3MESG( MESG )
                             MSGPRINT = .FALSE.
-                        ELSE
-                            MESG = 'FIPS: ' // TFIP( 5:10 ) //
-     &                             '    Facility: ' // FCID //
-     &                             '    Stack: ' // SKID
-                            CALL M3MESG( MESG )
                         END IF
+                        
+                        MESG = 'FIPS: ' // TFIP( 5:10 ) //
+     &                         '    Facility: ' // FCID //
+     &                         '    Stack: ' // SKID
+                        CALL M3MESG( MESG )
                     ELSE
                         PINGFND( L ) = .TRUE.
 
 C.........................  Check if source remains as PinG source
                         IF( .NOT. ISPING( L ) ) THEN
                             STKDM = -STKDM
+                        ELSE
+                            NPINGOUT = NPINGOUT + 1
                         END IF
                     END IF
                 END IF
@@ -1061,10 +1084,13 @@ C.........................  Set up output format for emissions
 C.........  Check for any sources that were in PELV but not in ASCII elevated file
         IF( PINGFLAG ) THEN
 
+            NMISSASCII = 0
             MSGPRINT = .TRUE.        
             DO I = 1, NPINGSRC
             
                 IF( .NOT. PINGFND( I ) ) THEN
+                    NMISSASCII = NMISSASCII + 1
+                    
                     IF( MSGPRINT ) THEN
                         MESG = 'WARNING: The following PinG ' //
      &                         'sources are in the PELV files but ' //
@@ -1073,15 +1099,34 @@ C.........  Check for any sources that were in PELV but not in ASCII elevated fi
      &                         'files.'
                         CALL M3MESG( MESG )
                         MSGPRINT = .FALSE.
-                    ELSE
-                        CSRC = PELVSRC( I )
-                        MESG = 'FIPS: ' // CSRC( 1:6 ) //
-     &                         '    Facility: ' // CSRC( 7:16 ) //
-     &                         '    Stack: ' // CSRC( 17:26 )
-                        CALL M3MESG( MESG )
                     END IF
+                    
+                    CSRC = PELVSRC( I )
+                    MESG = 'FIPS: ' // CSRC( 1:6 ) //
+     &                     '    Facility: ' // CSRC( 7:16 ) //
+     &                     '    Stack: ' // CSRC( 17:26 )
+                    CALL M3MESG( MESG )
                 END IF
             END DO
+        
+            MESG = 'Number of PinG sources -'
+            CALL M3MSG2( MESG )
+            
+            WRITE( MESG,94010 ) BLANK5 // 'In input ASCII elevated ' //
+     &          'files:                       ', NPINGASCII
+            CALL M3MSG2( MESG )
+            WRITE( MESG,94010 ) BLANK5 // 'In PELV files:          ' //
+     &          '                             ', NPINGSRC
+            CALL M3MSG2( MESG )
+            WRITE( MESG,94010 ) BLANK5 // 'In input ASCII elevated ' //
+     &          'files but not in PELV files: ', NMISSPELV
+            CALL M3MSG2( MESG )
+            WRITE( MESG,94010 ) BLANK5 // 'In PELV files but not in' //
+     &          ' input ASCII elevated files: ', NMISSASCII
+            CALL M3MSG2( MESG )
+            WRITE( MESG,94010 ) BLANK5 // 'In output ASCII elevated' //
+     &          ' file:                       ', NPINGOUT
+            CALL M3MSG2( MESG )
         
         END IF
 
