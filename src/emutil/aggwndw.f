@@ -79,10 +79,12 @@ C.........  EXTERNAL FUNCTIONS
         CHARACTER(2)    CRLF
         LOGICAL         DBLERR
         LOGICAL         DSCM3GRD
+        INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
         LOGICAL         SETENVVAR
 
-        EXTERNAL        CRLF, DBLERR, DSCM3GRD, PROMPTMFILE, SETENVVAR
+        EXTERNAL        CRLF, DBLERR, DSCM3GRD, PROMPTFFILE, 
+     &                  PROMPTMFILE, SETENVVAR
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
@@ -98,6 +100,7 @@ C.........  Allocatable arrays
 
 C.........  Logical file names and unit numbers
         INTEGER         LDEV              !  unit number for log file
+        INTEGER         RDEV              !  unit number of report file
 
         CHARACTER(16)   INAME             !  logical name for input  emissions data file
         CHARACTER(16)   ONAME             !  logical name for output emissions data file
@@ -112,6 +115,8 @@ C.........  Other local variables
         INTEGER     NROWS_IN                    ! number of rows in input grid
         INTEGER     NCOLS_IN                    ! number of columns in input grid
         INTEGER     NSTEPS                      ! number of time steps in input
+        INTEGER     POLLWIDTH                   ! width of pollutant names
+        INTEGER     UNITWIDTH                   ! width of emissions units
 
         REAL(8)     DDX, DDY                    ! inverse of grid cell size
         REAL(8)     X0, Y0                      ! shifted origin
@@ -120,11 +125,18 @@ C.........  Other local variables
         REAL(8)     YN_IN, YN_OUT               ! upper boundary of input and output grids
         REAL(8)     CHK_X                       ! check subgrid even with grid in x
         REAL(8)     CHK_Y                       ! check subgrid even with grid in y
+        
+        REAL        INTOTAL                     ! input emissions total for reporting
+        REAL        OUTTOTAL                    ! output emissions total for reporting
+        REAL        PCTDIFF                     ! percent difference in totals
 
         LOGICAL ::  EFLAG = .FALSE.             ! true: error found
 
         CHARACTER(80)    GDESC                  ! grid description
         CHARACTER(80)    COORUNIT               ! coordinate units
+        CHARACTER(100)   HDRFMT                 ! format for report header
+        CHARACTER(100)   RPTFMT                 ! format for report output
+        CHARACTER(100)   TMPFMT                 ! temporary format
         CHARACTER(256)   MESG                   ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'AGGWNDW'   ! program name
@@ -313,8 +325,50 @@ C           and just change grid information
         GDNAM3D = GRDNM
 
 C.........  Open output emissions file
-        MESG = 'Enter logical name for output EMISSIONS data file'
+        MESG = 'Enter logical name for OUTPUT DATA file'
         ONAME = PROMPTMFILE( MESG, FSUNKN3, 'OUTFILE', PROGNAME )
+
+C.........  Open report file
+        MESG = 'Enter logical name for OUTPUT REPORT file'
+        RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'REPFILE', PROGNAME )
+
+C.........  Build report header and format string for report output
+
+C.........  Determine maximum width of pollutant names and units
+        POLLWIDTH = LEN_TRIM( 'Pollutant' )
+        UNITWIDTH = 0
+        DO I = 1, NVARS3D
+            POLLWIDTH = MAX( POLLWIDTH, LEN_TRIM( VNAME3D( I ) ) )
+            UNITWIDTH = MAX( UNITWIDTH, LEN_TRIM( UNITS3D( I ) ) )
+        END DO
+
+        HDRFMT = "(A7, '; ', A6, '; ', A5, '; ', A"
+        RPTFMT = "(I7, '; ', I6, '; ', I5, '; ', A"
+
+        IF( POLLWIDTH < 10 ) THEN
+            TMPFMT = '(A,I1,A)'
+        ELSE
+            TMPFMT = '(A,I2,A)'
+        END IF
+        
+        WRITE( HDRFMT, TMPFMT ) TRIM( HDRFMT ), POLLWIDTH, ", '; ', A"
+        WRITE( RPTFMT, TMPFMT ) TRIM( RPTFMT ), POLLWIDTH,
+     &                          ", '; ', F15.2, ' ', A"
+
+        IF( UNITWIDTH < 10 ) THEN
+            TMPFMT = '(A,I1,A,I1,A)'
+        ELSE
+            TMPFMT = '(A,I2,A,I2,A)'
+        END IF
+
+        WRITE( HDRFMT, '(A,I2,A,I2,A)' ) TRIM( HDRFMT ), UNITWIDTH + 16,
+     &                                 ", '; ', A", UNITWIDTH + 16, ")"
+        
+        WRITE( RPTFMT, TMPFMT ) TRIM( RPTFMT ), UNITWIDTH,
+     &                          ", '; ', F15.2, ' ', A", UNITWIDTH, ")"
+
+        WRITE( RDEV, HDRFMT ) 'Date', 'Hour', 'Layer', 'Pollutant',
+     &                        'Input emissions', 'Output emissions'
 
 C.....  For each variable in the original input emissions file,
 C       at each time step:
@@ -363,6 +417,32 @@ C.....................  Loop over grid cells
      
                         END DO
                     END DO
+
+C.....................  Calculate report information
+                    INTOTAL = 0.
+                    DO J = 1, NROWS_IN
+                        DO I = 1, NCOLS_IN
+                            INTOTAL = INTOTAL + VDATA_IN( I,J )
+                        END DO
+                    END DO
+                    
+                    OUTTOTAL = 0.
+                    DO J = 1, NROWS
+                        DO I = 1, NCOLS
+                            OUTTOTAL = OUTTOTAL + VDATA_OUT( I,J,K )
+                        END DO
+                    END DO
+                    
+C.....................  Output report information
+                    WRITE( RDEV, RPTFMT ) JDATE, JTIME, K, VNAME3D( L ),
+     &                  INTOTAL, UNITS3D( L ), OUTTOTAL, UNITS3D( L )
+                    
+C.....................  Check percent difference between totals and flag
+C                       if different is too big; "too big" is pretty much
+C                       a guess here (0.01%)
+                    PCTDIFF = 100. * ( OUTTOTAL - INTOTAL ) / INTOTAL
+                    
+                    IF( ABS( PCTDIFF ) > 0.01 ) EFLAG = .TRUE.
                     
                 END DO  ! End loop over layers
 
@@ -381,7 +461,14 @@ C.............  Increment date & time by time step
             CALL NEXTIME( JDATE, JTIME, TSTEP3D )
         
         END DO   ! End loop over time steps
+
+C.........  Check if any in and out totals did not match
+        IF( EFLAG ) THEN
+            MESG = 'Input and output emissions differ by more ' //
+     &             'than 0.01%'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
  
-        CALL M3EXIT( PROGNAME, 0, 0, '', 0 )
+        CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
         END PROGRAM AGGWNDW
