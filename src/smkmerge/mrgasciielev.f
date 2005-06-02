@@ -86,7 +86,7 @@ C.........  Allocatable arrays
         INTEGER, ALLOCATABLE :: EMISIDX( : )        ! index for sorting emissions
         INTEGER, ALLOCATABLE :: SAVLNUM( : )        ! current line number for each file
         
-        CHARACTER(256), ALLOCATABLE :: FILENAM( :,: ) ! input file names
+        CHARACTER(256), ALLOCATABLE :: FILENAM( : ) ! input file names
         CHARACTER(10),  ALLOCATABLE :: SPCNAM( : )  ! model species names
         CHARACTER(FPLLEN3+CHRLEN3), ALLOCATABLE :: PELVSRCA(:) ! unsorted source list
         CHARACTER(FPLLEN3+CHRLEN3), ALLOCATABLE :: PELVSRC(:)  ! sorted source list
@@ -260,10 +260,10 @@ C.........  Determine maximum number of input files in lists
             END IF
         END IF
         
-C.........  Allocate memory to store file device units
+C.........  Allocate memory to store file info
         ALLOCATE( FILEDEV( MXFILES, 2 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FILEDEV', PROGNAME )
-        ALLOCATE( FILENAM( MXFILES, 2 ), STAT=IOS )
+        ALLOCATE( FILENAM( MXFILES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FILENAM', PROGNAME )
         ALLOCATE( FILELNS( MXFILES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FILELNS', PROGNAME )
@@ -296,6 +296,14 @@ C.........  Read lists of input files
 C.................  Skip any blank lines
                 IF( LINE == ' ' ) CYCLE
 
+C.................  When reading PELV list, allow file name to be NONE
+                IF( J == 2 .AND. TRIM( LINE ) == 'NONE' ) THEN
+                    K = K + 1
+                    FILEDEV( K,J ) = 0
+                    FILELNS( K ) = 0
+                    CYCLE
+                END IF
+
 C.................  Open input file
                 TDEV = JUNIT()
                 OPEN( UNIT=TDEV, FILE=TRIM( LINE ), STATUS='OLD',
@@ -310,7 +318,10 @@ C.................  Open input file
                 ELSE
                     K = K + 1
                     FILEDEV( K,J ) = TDEV
-                    FILENAM( K,J ) = TRIM( LINE )
+                    
+                    IF( J == 1 ) THEN
+                        FILENAM( K ) = TRIM( LINE )
+                    END IF
                 END IF
                 
 C.................  For PELV files, count number of lines
@@ -350,6 +361,7 @@ C.........  Build list of PinG sources from PELV files
             DO I = 1, NFILES
             
                 TDEV = FILEDEV( I,2 )
+                IF( TDEV == 0 ) CYCLE
 
 C.................  Loop through lines in file
                 DO J = 1, FILELNS( I )
