@@ -440,9 +440,11 @@ C.....................  Output report information
 C.....................  Check percent difference between totals and flag
 C                       if different is too big; "too big" is pretty much
 C                       a guess here (0.01%)
-                    PCTDIFF = 100. * ( OUTTOTAL - INTOTAL ) / INTOTAL
+                    IF( INTOTAL /= 0. ) THEN
+                        PCTDIFF = 100. * ( OUTTOTAL-INTOTAL ) / INTOTAL
                     
-                    IF( ABS( PCTDIFF ) > 0.01 ) EFLAG = .TRUE.
+                        IF( ABS( PCTDIFF ) > 0.01 ) EFLAG = .TRUE.
+                    END IF
                     
                 END DO  ! End loop over layers
 
