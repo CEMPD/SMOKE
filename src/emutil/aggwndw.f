@@ -422,6 +422,9 @@ C.....................  Calculate report information
                     INTOTAL = 0.
                     DO J = 1, NROWS_IN
                         DO I = 1, NCOLS_IN
+                            IF( OUTROW( I,J ) == 0 .OR.
+     &                          OUTCOL( I,J ) == 0      ) CYCLE
+
                             INTOTAL = INTOTAL + VDATA_IN( I,J )
                         END DO
                     END DO
@@ -438,12 +441,21 @@ C.....................  Output report information
      &                  INTOTAL, UNITS3D( L ), OUTTOTAL, UNITS3D( L )
                     
 C.....................  Check percent difference between totals and flag
-C                       if different is too big; "too big" is pretty much
+C                       if difference is too big; "too big" is pretty much
 C                       a guess here (0.01%)
                     IF( INTOTAL /= 0. ) THEN
                         PCTDIFF = 100. * ( OUTTOTAL-INTOTAL ) / INTOTAL
                     
-                        IF( ABS( PCTDIFF ) > 0.01 ) EFLAG = .TRUE.
+                        IF( ABS( PCTDIFF ) > 0.01 ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG, 94020 )
+     &                        'ERROR: Input and output emissions ' //
+     &                        'differ by ', PCTDIFF, ' percent for' //
+     &                        CRLF() // BLANK10 // 'pollutant ' //
+     &                        TRIM( VNAME3D( L ) ) // ' at time ',
+     &                        JDATE, ':', JTIME
+                            CALL M3MESG( MESG )
+                        END IF
                     END IF
                     
                 END DO  ! End loop over layers
@@ -472,5 +484,11 @@ C.........  Check if any in and out totals did not match
         END IF
  
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats............ 94xxx
+
+94020   FORMAT( A, E12.5, A, I7, A, I6.6 )
 
         END PROGRAM AGGWNDW
