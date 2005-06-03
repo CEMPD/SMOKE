@@ -956,15 +956,15 @@ C.........  Write ASCII file
                 END IF
                 IGRP = GROUPID( S )
 
-c                IF( LPING( S ) .AND. NEVPEMV ) THEN
+                IF( LPING( S ) .AND. NEVPEMV ) THEN
                     CSRC = CSOURC( S )
                     PLT = CSRC( PTBEGL3( 2 ):PTENDL3( 2 ) )
                     STK = CSRC( PTBEGL3( JSTACK ):PTENDL3( JSTACK ) )
                     WRITE( PDEV, 93630 ) MS, PS, IGRP, IFIP( S ), 
      &                  PLT, STK, MXEMIS( S,1 )
-c                ELSE
-c                    WRITE( PDEV, 93620 ) MS, PS, IGRP
-c                END IF
+                ELSE
+                    WRITE( PDEV, 93620 ) MS, PS, IGRP
+                END IF
 
             END IF
 
