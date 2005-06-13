@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRSPDSUM( MDEV, REFIDX, SPDFLAG )
+        SUBROUTINE WRSPDSUM( MDEV, REFIDX, SPDFLAG, INVFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 104
@@ -68,6 +68,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV     ! SPDSUM file unit no.
         INTEGER, INTENT (IN) :: REFIDX   ! index of reference county
         LOGICAL, INTENT (IN) :: SPDFLAG  ! true: use speed profiles
+        LOGICAL, INTENT (IN) :: INVFLAG  ! true: use inventory speed as default
         
 C...........   Local allocatable arrays
         REAL,    ALLOCATABLE :: COUNTYSPDS ( :,: )  ! sources, speeds, and road types per county
@@ -342,13 +343,17 @@ C.........................  If current source uses a speed profile, store the ne
                         IF( SPDPROFID( K ) > 0 ) THEN
                             SPDARRAY( N,2 ) = -SPDPROFID( K )
                         ELSE
-                            EFLAG = .TRUE.
-                            CALL FMTCSRC( CSOURC( K ), NCHARS, 
-     &                                    BUFFER, L2 )
-                            MESG = 'ERROR: No speed data found for ' //
-     &                             'source:' // CRLF() // BLANK5 //
+                            IF( INVFLAG ) THEN
+                                SPDARRAY( N,2 ) = SPEED( K )
+                            ELSE
+                                EFLAG = .TRUE.
+                                CALL FMTCSRC( CSOURC( K ), NCHARS, 
+     &                                        BUFFER, L2 )
+                                MESG = 'ERROR: No speed data found ' //
+     &                             'for source:' // CRLF() // BLANK5 //
      &                             BUFFER( 1:L2 )
-                            CALL M3MESG( MESG )
+                                CALL M3MESG( MESG )
+                            END IF
                         END IF
                     END IF
                     
