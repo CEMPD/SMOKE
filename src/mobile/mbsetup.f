@@ -112,6 +112,7 @@ C.........   Other local variables
         
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         LOGICAL       :: SPDFLAG = .FALSE. !  true: use speed profiles
+        LOGICAL       :: INVFLAG = .FALSE. !  true: use inv speeds as default
         
         CHARACTER(300)   MESG      !  message buffer 
         
@@ -146,6 +147,13 @@ C.........  Check if speed profiles are to be used
         SPDFLAG = ENVYN( 'USE_SPEED_PROFILES', 
      &            'Use speed profiles instead of inventory speeds', 
      &            .FALSE., IOS )
+
+C.........  If using speed profiles, check if fallback is annual
+        IF( SPDFLAG ) THEN
+            INVFLAG = ENVYN( 'USE_INVSPD_DEFAULT',
+     &                'Use inventory speed information if profiles ' // 
+     &                'are not available', .FALSE., IOS )
+        END IF
      
 C.......   Get file names and units; open input files
 C.........  Prompt for and open inventory file 
@@ -223,7 +231,7 @@ C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Read speed and VMT information from inventory
-        IF( .NOT. SPDFLAG ) THEN
+        IF( .NOT. SPDFLAG .OR. INVFLAG ) THEN
 
 C.............  Make sure speed is in the inventory
             M = INDEX1( 'SPEED', NMAP, MAPNAM )
@@ -329,7 +337,7 @@ C.............  Assign speed profile to each source
 
 C.........  Loop through all the reference counties
         DO I = 1, NREFC
-            CALL WRSPDSUM( PDEV, I, SPDFLAG )
+            CALL WRSPDSUM( PDEV, I, SPDFLAG, INVFLAG )
         END DO
 
         WRITE( PDEV,94010 ) ' '
