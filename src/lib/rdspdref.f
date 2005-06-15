@@ -1,7 +1,6 @@
 
         SUBROUTINE RDSPDREF( FDEV )
 
-
 C***********************************************************************
 C  subroutine body starts at line 
 C
@@ -167,6 +166,14 @@ C.............  Make sure that the speed profile number is an integer
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Speed profile code ' //
      &                 'is not an integer at line', IREC
+                CALL M3MESG( MESG )
+            END IF
+
+C.............  Check that profile number is not too long
+            IF( LEN_TRIM( ADJUSTL( SEGMENT( 3 ) ) ) > SPDLEN3 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Speed profile code ' //
+     &              'is longer than', SPDLEN3, 'digits at line', IREC
                 CALL M3MESG( MESG )
             END IF
 
