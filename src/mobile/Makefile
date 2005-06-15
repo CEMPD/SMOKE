@@ -19,7 +19,7 @@ debug: mbsetup.debug premobl.debug emisfac.debug
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
-MBSET=mbsetup.o rdmcref.o rdmvref.o wrspdsum.o wrtimegr.o asgnspds.o
+MBSET=mbsetup.o rdmcref.o rdmvref.o wrspdsum.o wrtimegr.o asgnspds.o getspdfmt.o
 
 mbsetup: $(MBSET) $(ALLI) $(LIBPATH)
 	echo MBSETUP:
@@ -33,7 +33,7 @@ mbsetup.debug: $(MBSET) $(ALLI) $(LIBPATH_DEBUG)
 #
 PRE=premobl.o rdspdsrc.o openshour.o asgngrps.o \
       hourtemp.o avertemp.o wrshour.o opengroup.o \
-      rdgroups.o
+      rdgroups.o getspdfmt.o
 
 premobl: $(PRE) $(ALLI) $(LIBPATH)
 	echo 'PREMOBL:'
@@ -48,7 +48,7 @@ premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 EMS=emisfac.o rdm6list.o wrm6input.o rdgrplist.o \
      openscen.o rdspdline.o chkm6scn.o getspdln.o \
      wrspdvmt.o rdhourtemp.o rplctemp.o wrm6header.o \
-     opensef.o wremfacs.o rplcmet.o calcrelhum.o
+     opensef.o wremfacs.o rplcmet.o calcrelhum.o getspdfmt.o
 
 emisfac: $(EMS) $(ALLI) $(LIBPATH)
 	echo 'EMISFAC:'
