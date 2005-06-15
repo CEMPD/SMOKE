@@ -44,6 +44,7 @@ C.........  Width of other global character strings
         INTEGER, PARAMETER :: SDSLEN3 = 200 ! SCC description field
         INTEGER, PARAMETER :: SPNLEN3 =  5  ! Speciation profile code
         INTEGER, PARAMETER :: PLSLEN3 = IOVLEN3 * 2 + 1  ! Speciation vdesc3d
+        INTEGER, PARAMETER :: SPDLEN3 = 7   ! Speed code length
 
 C.........  Position within SCC of mobile roadway type and vehicle type ID
         INTEGER, PARAMETER :: SRS = 8 
