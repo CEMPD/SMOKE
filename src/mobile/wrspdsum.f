@@ -539,9 +539,20 @@ C.............  Local subprogram variables
             INTEGER STSRCWR                   ! starting index of sources for line of SPDSUM
             INTEGER ENDSRCWR                  ! ending index of sources
 
+            LOGICAL, SAVE :: FIRST = .TRUE.   ! true: first time through subroutine
             LOGICAL IDFLAG                    ! true: current spd is a profile ID
 
+            CHARACTER(100), SAVE :: INTFMT    ! format string with integer
+            CHARACTER(100), SAVE :: REALFMT   ! format string with real
+
 C.............................................................................
+
+C.............  Create output format first time through
+            IF( FIRST ) THEN
+                CALL GETSPDFMT( INTFMT, REALFMT )
+            
+                FIRST = .FALSE.
+            END IF
 
 C.............  Check if current speed is actually a profile ID
             IF( SPDARRAY( 1,2 ) < 0 ) THEN
@@ -568,13 +579,13 @@ C.................  If writing a profile ID, use different format (to avoid deci
 C                   and convert to positive number
                 IF( IDFLAG ) THEN
 
-                    WRITE( MDEV,93020 ) COUNTY, 
+                    WRITE( MDEV,INTFMT ) COUNTY, 
      &                 INT( SPDARRAY( 1,3 ) ), -INT( SPDARRAY( 1,2 ) ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
 
                 ELSE                
 
-                    WRITE( MDEV,93010 ) COUNTY, 
+                    WRITE( MDEV,REALFMT ) COUNTY, 
      &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) ), '\'
 
@@ -594,22 +605,16 @@ C.............  Write last line (may be only line) for this speed
             IF( STSRCWR <= ENDSRCWR ) THEN
 
                 IF( IDFLAG ) THEN
-                    WRITE( MDEV,93020 ) COUNTY,
+                    WRITE( MDEV,INTFMT ) COUNTY,
      &                 INT( SPDARRAY( 1,3 ) ), -INT( SPDARRAY( 1,2 ) ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
                 ELSE
-                    WRITE( MDEV,93010 ) COUNTY,
+                    WRITE( MDEV,REALFMT ) COUNTY,
      &                 INT( SPDARRAY( 1,3 ) ), SPDARRAY( 1,2 ), 
      &                 INT( SPDARRAY( STSRCWR:ENDSRCWR,1 ) )
                 END IF
      
             END IF
-
-C--------------  SUBPROGRAM FORMAT  STATEMENTS   --------------------------
-
-93010       FORMAT( I6, 1X, I1, 1X, F6.2, 7( 1X, I6 ), 1X, 1A )  
-
-93020       FORMAT( I6, 1X, I1, 1X, I6, 7( 1X, I6 ), 1X, 1A )
             
             END SUBROUTINE WRITE_SPD_TO_SPDSUM
         
