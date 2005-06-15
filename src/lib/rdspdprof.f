@@ -63,7 +63,7 @@ C...........   Local parameters
         INTEGER    , PARAMETER :: MXCOL = 25
 
 C...........   Array of input fields
-        CHARACTER(6)  SEGMENT( MXCOL )
+        CHARACTER(SPDLEN3)  SEGMENT( MXCOL )
 
 C...........   Local, allocatable arrays
         REAL,    ALLOCATABLE :: SPDPROFA( :,: )   ! unsorted hourly speed profiles
