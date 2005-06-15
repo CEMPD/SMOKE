@@ -44,6 +44,7 @@ C...........  This module is for mobile-specific data
         
 C...........   INCLUDES
         INCLUDE 'M6CNST3.EXT'  !  MOBILE6 constants
+        INCLUDE 'EMCNST3.EXT'  !  emissions constants
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        JUNIT
@@ -74,10 +75,12 @@ C...........   Other local variables
 
         LOGICAL :: FILEEXIST = .FALSE.        ! true: file already exists
 
-        CHARACTER(6)   FREESPDSTR         ! freeway speed as string
-        CHARACTER(6)   ARTSPDSTR          ! arterial speed as string
-        CHARACTER(80)  FILENAME           ! filename of speed file
-        CHARACTER(300) MESG               ! message buffer
+        CHARACTER(SPDLEN3+1) FREESPDSTR       ! freeway speed as string
+        CHARACTER(SPDLEN3+1) ARTSPDSTR        ! arterial speed as string
+        CHARACTER(10)      TMPIFMT            ! temporary integer format string
+        CHARACTER(10)      TMPRFMT            ! temporary real format string
+        CHARACTER(80)      FILENAME           ! filename of speed file
+        CHARACTER(300)     MESG               ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'WRSPDVMT'   ! program name
         
@@ -95,19 +98,27 @@ C.........  Make sure speed profiles are allowed
 
 C.........  Create name of speed vmt file - if using values, put speed in name, 
 C           otherwise, use 'pX' where X is the profile number
-        IF( FREESPD >= 0. ) THEN
-            WRITE( FREESPDSTR, '(F6.2)' ) FREESPD
+        IF( SPDLEN3 >= 10 ) THEN
+            WRITE( TMPIFMT, '(A, I2, A)' ) '(I', SPDLEN3, ')'
+            WRITE( TMPRFMT, '(A, I2, A)' ) '(F', SPDLEN3, '.2)'
         ELSE
-            WRITE( FREESPDSTR, '(I6)' ) -INT( FREESPD )
+            WRITE( TMPIFMT, '(A, I1, A)' ) '(I', SPDLEN3, ')'
+            WRITE( TMPRFMT, '(A, I1, A)' ) '(F', SPDLEN3, '.2)'
+        END IF
+
+        IF( FREESPD >= 0. ) THEN
+            WRITE( FREESPDSTR, TMPRFMT ) FREESPD
+        ELSE
+            WRITE( FREESPDSTR, TMPIFMT ) -INT( FREESPD )
             FREESPDSTR = 'p' // ADJUSTL( FREESPDSTR )
         END IF
             
         FREESPDSTR = ADJUSTL( FREESPDSTR )
         
         IF( ARTSPD >= 0. ) THEN
-            WRITE( ARTSPDSTR, '(F6.2)' ) ARTSPD
+            WRITE( ARTSPDSTR, TMPRFMT ) ARTSPD
         ELSE
-            WRITE( ARTSPDSTR, '(I6)' ) -INT( ARTSPD )
+            WRITE( ARTSPDSTR, TMPIFMT ) -INT( ARTSPD )
             ARTSPDSTR = 'p' // ADJUSTL( ARTSPDSTR )
         END IF
             
