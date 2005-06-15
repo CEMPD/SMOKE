@@ -76,16 +76,28 @@ C...........   Other local variables
         INTEGER IOS                       ! I/O status
         INTEGER COUNTY                    ! county from SPDSUM file
 
-        LOGICAL   :: EFLAG     = .FALSE. !  true: error found
+        LOGICAL, SAVE :: FIRST = .TRUE.   ! true: first time through subroutine
+        LOGICAL       :: EFLAG = .FALSE.  ! true: error found
                 
-        CHARACTER   CONTCHAR          ! continuation character from SPDSUM file
-        CHARACTER(6)       SPDSTR     ! string for reading speed info
-        CHARACTER(300)     MESG       !  message buffer
+        CHARACTER               CONTCHAR  ! continuation character from SPDSUM file
+        CHARACTER(SPDLEN3)      SPDSTR    ! string for reading speed info
+        CHARACTER(300)          MESG      ! message buffer
+        CHARACTER(100), SAVE :: INTFMT    ! format of SPDSUM with integer
+        CHARACTER(100), SAVE :: REALFMT   ! format of SPDSUM with real
 
         CHARACTER(16) :: PROGNAME = 'RDSPDLINE'   ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSPDLINE
+
+        IF( FIRST ) THEN
+            CALL GETSPDFMT( INTFMT, REALFMT )
+            
+C.............  Swap integer for character
+            INTFMT( 18:18 ) = 'A'
+            
+            FIRST = .FALSE.
+        END IF
 
         SOURCES = 0
         
@@ -99,7 +111,7 @@ C.............  Make sure we don't try to read past the end of the file
             END IF
 
 C.............  Read line from SPDSUM file
-            READ( SDEV, 93010, IOSTAT=IOS ) COUNTY, ROADTYPE, 
+            READ( SDEV, INTFMT, IOSTAT=IOS ) COUNTY, ROADTYPE, 
      &            SPDSTR, SOURCES( 1:7 ), CONTCHAR
        
             IF( IOS /= 0 ) THEN
@@ -174,7 +186,6 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
-93010   FORMAT( I6, 1X, I1, 1X, A6, 7( 1X, I6 ), 1X, 1A )  
 
 C...........   Internal buffering formats............ 94xxx
 

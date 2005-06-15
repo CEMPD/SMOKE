@@ -70,6 +70,8 @@ C...........   Other local variables
                 
         CHARACTER   CONTCHAR          ! continuation character from SPDSUM file
         
+        CHARACTER(100)     INTFMT     ! SPDSUM format string with integer
+        CHARACTER(100)     REALFMT    ! SPDSUM format string with real
         CHARACTER(300)     MESG       !  message buffer
 
         CHARACTER(16) :: PROGNAME = 'RDSPDSRC'   ! program name
@@ -77,12 +79,14 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDSPDSRC
 
+        CALL GETSPDFMT( INTFMT, REALFMT )
+
         DO
         
             SOURCES = 0   ! array
         
 C.............  Read line from SPDSUM file
-            READ( SDEV, 93010, IOSTAT=IOS, END=10 ) COUNTY, ROADTYPE, 
+            READ( SDEV, REALFMT, IOSTAT=IOS, END=10 ) COUNTY, ROADTYPE, 
      &            SPEED, SOURCES, CONTCHAR
 
 C.............  Exit if we've reached the end of the file
@@ -123,7 +127,6 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
-93010   FORMAT( I6, 1X, I1, 1X, F6.2, 7( 1X, I6 ), 1X, 1A )  
 
 C...........   Internal buffering formats............ 94xxx
 
