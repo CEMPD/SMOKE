@@ -123,7 +123,7 @@ C   begin body of program MBSETUP
 
         LDEV = INIT3()
 
-C.........  Write out copywrite, version, web address, header info, and prompt
+C.........  Write out copyright, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 

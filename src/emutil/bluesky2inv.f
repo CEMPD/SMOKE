@@ -132,7 +132,7 @@ C   begin body of program BLUESKY2INV
 
       LDEV = INIT3()
 
-C.......  Write copywrite, version, web address, header info, and prompt
+C.......  Write copyright, version, web address, header info, and prompt
 C         to continue running the program.
       CALL INITEM( LDEV, CVSW, PROGNAME )
 

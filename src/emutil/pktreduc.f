@@ -137,7 +137,7 @@ C   begin body of program PKTREDUC
 C.........  Setup formats
         WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) FIPLEN3, FIPLEN3
 
-C.........  Write out copywrite, version, web address, header info, and prompt
+C.........  Write out copyright, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, SCCSW, PROGNAME )
 

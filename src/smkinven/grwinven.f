@@ -152,8 +152,8 @@ C...........   Other local variables
         LOGICAL      :: ADJVAL  = .FALSE.  ! true: adjust data value to 0-100 scale
 
         CHARACTER(16)   EVNAME  !  tmp environment variable name
-        CHARACTER(16)   NAME1   ! tmp file name component
-        CHARACTER(16)   NAME2   ! tmp file name component
+        CHARACTER(80)   NAME1   ! tmp file name component
+        CHARACTER(80)   NAME2   ! tmp file name component
         CHARACTER(100)  BUFFER  !  text buffer
         CHARACTER(256)  MESG    !  message buffer
         CHARACTER(IOVLEN3) :: VARBUF   ! tmp variable name
@@ -169,7 +169,7 @@ C   begin body of program GRWINVEN
 
         LDEV = INIT3()
 
-C.........  Write out copywrite, version, web address, header info, and prompt
+C.........  Write out copyright, version, web address, header info, and prompt
 C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
