@@ -1,6 +1,3 @@
-C TODO:
-C   calculate replacement heat input values
-C   report min and max emissions values
 
         PROGRAM CEMSCAN
         
@@ -35,15 +32,36 @@ C.........  Static arrays
         
 C.........  Allocatable arrays
         CHARACTER(ORSLEN3+BLRLEN3), ALLOCATABLE :: UNITLIST( : ) ! list of units
+        INTEGER, ALLOCATABLE :: UNITIDX  ( : )  ! index to sorted unit list
+        
+        REAL,    ALLOCATABLE :: NOXEMIS  ( : )  ! NOx emissions by unit
+        REAL,    ALLOCATABLE :: SO2EMIS  ( : )  ! SO2 emissions by unit
+        REAL,    ALLOCATABLE :: OPTIMESUM( : )  ! operating time by unit
+        REAL,    ALLOCATABLE :: GLOADSUM ( : )  ! gross load by unit
+        REAL,    ALLOCATABLE :: SLOADSUM ( : )  ! s load by unit
         REAL,    ALLOCATABLE :: HEATINPUT( : )  ! heat input by unit
-        REAL,    ALLOCATABLE :: FLOWRATE ( : )  ! flow rate by unit
+        
+        REAL,    ALLOCATABLE :: MAXNOX   ( : )  ! max. NOx emissions by unit
+        REAL,    ALLOCATABLE :: MAXSO2   ( : )  ! max. SO2 emissions by unit
+        REAL,    ALLOCATABLE :: MAXOPTIME( : )  ! max. operating time by unit
+        REAL,    ALLOCATABLE :: MAXGLOAD ( : )  ! max. gross load by unit
+        REAL,    ALLOCATABLE :: MAXSLOAD ( : )  ! max. s load by unit
         REAL,    ALLOCATABLE :: MAXHEAT  ( : )  ! max. heat input by unit
+        
+        REAL,    ALLOCATABLE :: MINNOX   ( : )  ! min. NOx emissions by unit
+        REAL,    ALLOCATABLE :: MINSO2   ( : )  ! min. SO2 emissions by unit
+        REAL,    ALLOCATABLE :: MINOPTIME( : )  ! min. operating time by unit
+        REAL,    ALLOCATABLE :: MINGLOAD ( : )  ! min. gross load by unit
+        REAL,    ALLOCATABLE :: MINSLOAD ( : )  ! min. s load by unit
         REAL,    ALLOCATABLE :: MINHEAT  ( : )  ! min. heat input by unit
-        REAL,    ALLOCATABLE :: MAXFLOW  ( : )  ! max. flow rate by unit
-        REAL,    ALLOCATABLE :: MINFLOW  ( : )  ! min. flow rate by unit
+        
         INTEGER, ALLOCATABLE :: NUMHOURS ( : )  ! total no. hours by unit
-        INTEGER, ALLOCATABLE :: HEATHOURS( : )  ! no. hours with "good" heat input
-        INTEGER, ALLOCATABLE :: FLOWHOURS( : )  ! no. hours for calculating ave. flow
+        INTEGER, ALLOCATABLE :: NOXHOURS ( : )  ! no. hours with NOx emissions
+        INTEGER, ALLOCATABLE :: SO2HOURS ( : )  ! no. hours with SO2 emissions
+        INTEGER, ALLOCATABLE :: OPHOURS  ( : )  ! no. hours with operating time
+        INTEGER, ALLOCATABLE :: GLDHOURS ( : )  ! no. hours with gross load
+        INTEGER, ALLOCATABLE :: SLDHOURS ( : )  ! no. hours with s load
+        INTEGER, ALLOCATABLE :: HEATHOURS( : )  ! no. hours with heat input
 
 C.........  File units
         INTEGER LDEV                            ! file unit for log file
@@ -54,31 +72,32 @@ C.........  File units
 
 C.........  Other local variables
         INTEGER I, J, K, L                      ! indices and counters
+        INTEGER IDX                             ! unit index
         INTEGER IOS                             ! I/O status
         INTEGER NUNITS                          ! total number of units
         INTEGER MXFILES                         ! max. number of input files
         INTEGER MXUNITS                         ! max. number of units
         INTEGER NLINES                          ! number of lines in input file
         
+        REAL    NOX                             ! tmp. NOx emissions
+        REAL    SO2                             ! tmp. SO2 emissions
+        REAL    OPTIME                          ! tmp. operating time
+        REAL    GLOAD                           ! tmp. gross load
+        REAL    SLOAD                           ! tmp. s load
         REAL    HTINPUT                         ! tmp. heat input
-        REAL    STKFL                           ! tmp. flow rate
         
         LOGICAL :: EFLAG = .FALSE.              ! true: an error has occurred
-        LOGICAL :: FLOWCHECK = .TRUE.           ! true: check if input has flow data
-        LOGICAL :: CALCFLOW                     ! true: CEM files have flow data
-        LOGICAL :: FLOWBAD                      ! true: flow rate is bad for current line
-        LOGICAL :: HEATBAD                      ! true: heat input is bad for current line
         
         CHARACTER(ORSLEN3+BLRLEN3) UNIT         ! tmp. unit string
         CHARACTER(ORSLEN3) ORIS                 ! tmp. ORIS ID
         CHARACTER(BLRLEN3) BLRID                ! tmp. boiler ID
         CHARACTER(300)     LINE                 ! line buffer
-        CHARACTER(256)     MESG                 ! message buffer
+        CHARACTER(300)     MESG                 ! message buffer
         
         CHARACTER(16) :: PROGNAME = 'CEMSCAN'   ! program name
 
 C***********************************************************************
-C   begin body of program METCOMBINE
+C   begin body of program CEMSCAN
 
         LDEV = INIT3()
         
@@ -97,26 +116,62 @@ C.........  Get program setting environment variables
 C.........  Allocate memory for storing CEM data          
         ALLOCATE( UNITLIST( MXUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'UNITLIST', PROGNAME )
+        ALLOCATE( UNITIDX( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'UNITIDX', PROGNAME )
+        
+        ALLOCATE( NOXEMIS( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NOXEMIS', PROGNAME )
+        ALLOCATE( SO2EMIS( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SO2EMIS', PROGNAME )
+        ALLOCATE( OPTIMESUM( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'OPTIMESUM', PROGNAME )
+        ALLOCATE( GLOADSUM( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GLOADSUM', PROGNAME )
+        ALLOCATE( SLOADSUM( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SLOADSUM', PROGNAME )
         ALLOCATE( HEATINPUT( MXUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HEATINPUT', PROGNAME )
-        ALLOCATE( FLOWRATE( MXUNITS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'FLOWRATE', PROGNAME )
+        
+        ALLOCATE( MAXNOX( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXNOX', PROGNAME )
+        ALLOCATE( MAXSO2( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXSO2', PROGNAME )
+        ALLOCATE( MAXOPTIME( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXOPTIME', PROGNAME )
+        ALLOCATE( MAXGLOAD( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXGLOAD', PROGNAME )
+        ALLOCATE( MAXSLOAD( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXSLOAD', PROGNAME )
+        ALLOCATE( MAXHEAT( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXHEAT', PROGNAME )
+        
+        ALLOCATE( MINNOX( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MINNOX', PROGNAME )
+        ALLOCATE( MINSO2( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MINSO2', PROGNAME )
+        ALLOCATE( MINOPTIME( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MINOPTIME', PROGNAME )
+        ALLOCATE( MINGLOAD( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MINGLOAD', PROGNAME )
+        ALLOCATE( MINSLOAD( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MINSLOAD', PROGNAME )
+        ALLOCATE( MINHEAT( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MINHEAT', PROGNAME )
         
         ALLOCATE( NUMHOURS( MXUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NUMHOURS', PROGNAME )
+        ALLOCATE( NOXHOURS( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NOXHOURS', PROGNAME )
+        ALLOCATE( SO2HOURS( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SO2HOURS', PROGNAME )
+        ALLOCATE( OPHOURS( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'OPHOURS', PROGNAME )
+        ALLOCATE( GLDHOURS( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GLDHOURS', PROGNAME )
+        ALLOCATE( SLDHOURS( MXUNITS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SLDHOURS', PROGNAME )
         ALLOCATE( HEATHOURS( MXUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HEATHOURS', PROGNAME )
-        ALLOCATE( FLOWHOURS( MXUNITS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'FLOWHOURS', PROGNAME )
-        
-        ALLOCATE( MAXHEAT( MXUNITS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MAXHEAT', PROGNAME )
-        ALLOCATE( MINHEAT( MXUNITS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MINHEAT', PROGNAME )
-        ALLOCATE( MAXFLOW( MXUNITS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MAXFLOW', PROGNAME )
-        ALLOCATE( MINFLOW( MXUNITS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MINFLOW', PROGNAME )
 
 C.........  Open list of input files
         MESG = 'Enter logical name for CEM inputs list'
@@ -184,42 +239,19 @@ C.................  Skip blank or comment lines
                 ! temporarily skip 1st line until files are changed
                 if( j == 1 ) cycle
 
-C.................  Reset data checks and parse line
-                FLOWBAD = .FALSE.
-                HEATBAD = .FALSE.
-                
                 CALL PARSLINE( LINE, MXSEG, SEGMENT )
-
-C.................  After parsing first line, check if it has flow                
-                IF( FLOWCHECK ) THEN
-                    IF( SEGMENT( 12 ) == '' ) THEN
-                        CALCFLOW = .FALSE.
-                        MESG = 'NOTE: Program will not calculate ' //
-     &                    'average hourly flow since CEM data' //
-     &                    BLANK10 // 'does not contain flow rates.'
-                        CALL M3MSG2( MESG )
-                    ELSE
-                        CALCFLOW = .TRUE.
-                        MESG = 'NOTE: Program will calculate ' //
-     &                    'average hourly flow.'
-                        CALL M3MSG2( MESG )
-                    END IF
-                    
-                    FLOWCHECK = .FALSE.
-                END IF
                     
 C.................  Store data from file
                 UNIT = ''
                 UNIT = SEGMENT( 1 )( 1:ORSLEN3 ) // 
      &                 SEGMENT( 2 )( 1:BLRLEN3 )
                 
+                NOX     = STR2REAL( SEGMENT( 5 ) )
+                SO2     = STR2REAL( SEGMENT( 6 ) )
+                OPTIME  = STR2REAL( SEGMENT( 8 ) )
+                GLOAD   = STR2REAL( SEGMENT( 9 ) )
+                SLOAD   = STR2REAL( SEGMENT( 10 ) )
                 HTINPUT = STR2REAL( SEGMENT( 11 ) )
-                IF( HTINPUT < 0. ) HEATBAD = .TRUE.
-                
-                IF( CALCFLOW ) THEN
-                    STKFL = STR2REAL( SEGMENT( 12 ) )
-                    IF( STKFL < 0. ) FLOWBAD = .TRUE.
-                END IF
 
 C.................  Determine where current unit should go in sorted list of 
 C                   units and check if it is already present
@@ -232,35 +264,28 @@ C                   units and check if it is already present
                 IF( K == -1 ) THEN
                     K = FINDC( UNIT, NUNITS, UNITLIST )
                     
-                    NUMHOURS ( K ) = NUMHOURS( K ) + 1
+                    IDX = UNITIDX( K )
                     
-                    IF( .NOT. HEATBAD ) THEN
-                        HEATINPUT( K ) = HEATINPUT( K ) + HTINPUT
-                        HEATHOURS( K ) = HEATHOURS( K ) + 1
-                    END IF
+                    NUMHOURS( IDX ) = NUMHOURS( IDX ) + 1
                     
-                    IF( MAXHEAT( K ) < HTINPUT ) THEN
-                        MAXHEAT( K ) = HTINPUT
-                    END IF
-                    
-                    IF( MINHEAT( K ) > HTINPUT ) THEN
-                        MINHEAT( K ) = HTINPUT
-                    END IF
-                    
-                    IF( CALCFLOW ) THEN
-                        IF( .NOT. FLOWBAD ) THEN
-                            FLOWRATE ( K ) = FLOWRATE ( K ) + STKFL
-                            FLOWHOURS( K ) = FLOWHOURS( K ) + 1
-                        END IF
-                    
-                        IF( MAXFLOW( K ) < STKFL ) THEN
-                            MAXFLOW( K ) = STKFL
-                        END IF
-                    
-                        IF( MINFLOW( K ) > STKFL ) THEN
-                            MINFLOW( K ) = STKFL
-                        END IF
-                    END IF
+                    CALL STORE_DATA( NOX, NOXEMIS( IDX ), 
+     &                               NOXHOURS( IDX ), MAXNOX( IDX ), 
+     &                               MINNOX( IDX ) )
+                    CALL STORE_DATA( SO2, SO2EMIS( IDX ), 
+     &                               SO2HOURS( IDX ), MAXSO2( IDX ), 
+     &                               MINSO2( IDX ) )
+                    CALL STORE_DATA( OPTIME, OPTIMESUM( IDX ), 
+     &                               OPHOURS( IDX ), MAXOPTIME( IDX ), 
+     &                               MINOPTIME( IDX ) )
+                    CALL STORE_DATA( GLOAD, GLOADSUM( IDX ), 
+     &                               GLDHOURS( IDX ), MAXGLOAD( IDX ), 
+     &                               MINGLOAD( IDX ) )
+                    CALL STORE_DATA( SLOAD, SLOADSUM( IDX ), 
+     &                               SLDHOURS( IDX ), MAXSLOAD( IDX ), 
+     &                               MINSLOAD( IDX ) )
+                    CALL STORE_DATA( HTINPUT, HEATINPUT( IDX ), 
+     &                               HEATHOURS( IDX ), MAXHEAT( IDX ), 
+     &                               MINHEAT( IDX ) )
                     
                     CYCLE
                 END IF
@@ -271,50 +296,39 @@ C.................  Make sure we have space to add unit
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ELSE
 
-C.....................  Move existing entries down in arrays to make room
+C.....................  Move existing entries down in unit list to make room
                     DO L = NUNITS, K, -1
-                        UNITLIST ( L+1 ) = UNITLIST ( L )
-                        HEATINPUT( L+1 ) = HEATINPUT( L )
-                        FLOWRATE ( L+1 ) = FLOWRATE ( L )
-                        
-                        NUMHOURS ( L+1 ) = NUMHOURS ( L )
-                        HEATHOURS( L+1 ) = HEATHOURS( L )
-                        FLOWHOURS( L+1 ) = FLOWHOURS( L )
-                        
-                        MAXHEAT  ( L+1 ) = MAXHEAT  ( L )
-                        MINHEAT  ( L+1 ) = MINHEAT  ( L )
-                        MAXFLOW  ( L+1 ) = MAXFLOW  ( L )
-                        MINFLOW  ( L+1 ) = MINFLOW  ( L )
+                        UNITLIST( L+1 ) = UNITLIST( L )
+                        UNITIDX ( L+1 ) = UNITIDX ( L )
                     END DO
-                    
+
+C.....................  Store data                    
                     UNITLIST ( K ) = UNIT
-                    NUMHOURS ( K ) = 1
-                    
-                    IF( .NOT. HEATBAD ) THEN
-                        HEATINPUT( K ) = HTINPUT
-                        HEATHOURS( K ) = 1
-                    ELSE
-                        HEATINPUT( K ) = 0.
-                        HEATHOURS( K ) = 0
-                    END IF
-                    
-                    MAXHEAT  ( K ) = HTINPUT
-                    MINHEAT  ( K ) = HTINPUT
-                    
-                    IF( CALCFLOW ) THEN
-                        IF( .NOT. FLOWBAD ) THEN
-                            FLOWRATE ( K ) = STKFL
-                            FLOWHOURS( K ) = 1
-                        ELSE
-                            FLOWRATE ( K ) = 0.
-                            FLOWHOURS( K ) = 0
-                        END IF
-                        
-                        MAXFLOW  ( K ) = STKFL
-                        MINFLOW  ( K ) = STKFL
-                    END IF
                     
                     NUNITS = NUNITS + 1
+                    IDX = NUNITS
+                    
+                    UNITIDX ( K ) = IDX
+                    NUMHOURS( IDX ) = 1
+                    
+                    CALL INIT_DATA( NOX, NOXEMIS( IDX ), 
+     &                              NOXHOURS( IDX ), MAXNOX( IDX ), 
+     &                              MINNOX( IDX ) )
+                    CALL INIT_DATA( SO2, SO2EMIS( IDX ), 
+     &                              SO2HOURS( IDX ), MAXSO2( IDX ), 
+     &                              MINSO2( IDX ) )
+                    CALL INIT_DATA( OPTIME, OPTIMESUM( IDX ), 
+     &                              OPHOURS( IDX ), MAXOPTIME( IDX ), 
+     &                              MINOPTIME( IDX ) )
+                    CALL INIT_DATA( GLOAD, GLOADSUM( IDX ), 
+     &                              GLDHOURS( IDX ), MAXGLOAD( IDX ), 
+     &                              MINGLOAD( IDX ) )
+                    CALL INIT_DATA( SLOAD, SLOADSUM( IDX ), 
+     &                              SLDHOURS( IDX ), MAXSLOAD( IDX ), 
+     &                              MINSLOAD( IDX ) )
+                    CALL INIT_DATA( HTINPUT, HEATINPUT( IDX ), 
+     &                              HEATHOURS( IDX ), MAXHEAT( IDX ), 
+     &                              MINHEAT( IDX ) )
                 END IF
             END DO
             
@@ -322,29 +336,43 @@ C.....................  Move existing entries down in arrays to make room
         
         END DO
         
+C.........  Write output file header
+        WRITE( ODEV, 93000 ) '#ORIS  BOILER  NOX          ' //
+     &    'SO2          OPTIME       GLOAD       SLOAD         HTINPUT'
+
 C.........  Write report header
-        MESG = 'ORIS ID; Boiler ID; Tot Hrs; Heat Hrs; ' //
-     &         'Ann Heat Input; Max Heat Input; Min Heat Input; ' //
-     &         'Flow Hrs; Ave Flow Rate; Max Flow Rate; Min Flow Rate'
-        WRITE( RDEV, '(A)' ) TRIM( MESG )
+        WRITE( RDEV, 93000 ) 'ORIS ID; Boiler ID; Tot Hrs; ' //
+     &    ' NOx Hrs; Ann NOx Emis; Max NOx Emis; Min NOx Emis; ' //
+     &    ' SO2 Hrs; Ann SO2 Emis; Max SO2 Emis; Min SO2 Emis; ' //
+     &    '  Op Hrs;  Ann Op Time;  Max Op Time;  Min Op Time; ' //
+     &    ' Gld Hrs;    Ann GLOAD;    Max GLOAD;    Min GLOAD; ' //
+     &    ' Sld Hrs;    Ann SLOAD;    Max SLOAD;    Min SLOAD; ' //
+     &    'Heat Hrs; Ann Ht Input; Max Ht Input; Min Ht Input'
 
 C.........  Write output and report file
         DO I = 1, NUNITS
-            IF( FLOWRATE( I ) /= 0. ) THEN
-                STKFL = FLOWRATE( I ) / FLOWHOURS( I )
-            ELSE
-                STKFL = 0.
-            END IF
             
             ORIS  = UNITLIST( I )( 1:ORSLEN3 )
             BLRID = UNITLIST( I )( ORSLEN3+1:ORSLEN3+BLRLEN3 )
+            IDX   = UNITIDX ( I )
             
-            WRITE( ODEV,93010 ) ORIS, BLRID, HEATINPUT( I ), STKFL
+            WRITE( ODEV,93010 ) ORIS, BLRID, NOXEMIS( IDX ), 
+     &        SO2EMIS( IDX ), OPTIMESUM( IDX ), GLOADSUM( IDX ),
+     &        SLOADSUM( IDX ), HEATINPUT( IDX )
             
-            WRITE( RDEV,93020 ) ORIS, BLRID, NUMHOURS( I ), 
-     &          HEATHOURS( I ), HEATINPUT( I ), MAXHEAT( I ), 
-     &          MINHEAT( I ), FLOWHOURS( I ), STKFL, MAXFLOW( I ), 
-     &          MINFLOW( I )
+            WRITE( RDEV,93020 ) ORIS, BLRID, NUMHOURS( IDX ), 
+     &        NOXHOURS( IDX ), NOXEMIS( IDX ), MAXNOX( IDX ), 
+     &            MINNOX( IDX ),
+     &        SO2HOURS( IDX ), SO2EMIS( IDX ), MAXSO2( IDX ), 
+     &            MINSO2( IDX ),
+     &        OPHOURS( IDX ), OPTIMESUM( IDX ), MAXOPTIME( IDX ), 
+     &            MINOPTIME( IDX ),
+     &        GLDHOURS( IDX ), GLOADSUM( IDX ), MAXGLOAD( IDX ), 
+     &            MINGLOAD( IDX ),
+     &        SLDHOURS( IDX ), SLOADSUM( IDX ), MAXSLOAD( IDX ), 
+     &            MINSLOAD( IDX ),
+     &        HEATHOURS( IDX ), HEATINPUT( IDX ), MAXHEAT( IDX ), 
+     &            MINHEAT( IDX )
         END DO
 
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -354,13 +382,62 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
-93010   FORMAT( A6, 1X, A6, 1X, E12.5, 1X, E12.5 )
-93020   FORMAT( 1X, A6, ';', 4X, A6, ';', 4X, I4.4, ';', 5X, I4.4, ';',
-     &          3( 3X, E12.5, ';' ), 5X, I4.4, ';', 2( 2X, E12.5, ';' ),
-     &          2X, E12.5 )
+93010   FORMAT( A6, 1X, A6, 6( 1X, E12.5 ) )
+93020   FORMAT( 1X, A6, ';', 4X, A6, ';', 4X, I4, ';', 
+     &          6( 5X, I4, ';', 3( 1X, E12.5, ';' ) ) )
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+        CONTAINS
+        
+            SUBROUTINE INIT_DATA( VAL, SUM, HOURS, MAX, MIN )            
+            
+C.............  Subroutine arguments
+            REAL,    INTENT(IN)     :: VAL    ! data value
+            REAL,    INTENT(IN OUT) :: SUM    ! summed data
+            INTEGER, INTENT(IN OUT) :: HOURS  ! no. valid hours
+            REAL,    INTENT(IN OUT) :: MAX    ! max. data val
+            REAL,    INTENT(IN OUT) :: MIN    ! min. data val
+
+C----------------------------------------------------------------------
+
+            HOURS = 0
+            IF( VAL >= 0. ) HOURS = 1
+            
+            SUM = VAL
+            MAX = VAL
+            MIN = VAL
+
+            END SUBROUTINE INIT_DATA
+
+C----------------------------------------------------------------------
+
+            SUBROUTINE STORE_DATA( VAL, SUM, HOURS, MAX, MIN )
+            
+C.............  Subroutine arguments
+            REAL,    INTENT(IN)     :: VAL    ! data value
+            REAL,    INTENT(IN OUT) :: SUM    ! summed data
+            INTEGER, INTENT(IN OUT) :: HOURS  ! no. valid hours
+            REAL,    INTENT(IN OUT) :: MAX    ! max. data val
+            REAL,    INTENT(IN OUT) :: MIN    ! min. data val
+
+C----------------------------------------------------------------------
+
+            IF( VAL >= 0. ) THEN
+                IF( SUM < 0. ) SUM = 0.
+                SUM = SUM + VAL
+                HOURS = HOURS + 1
+            END IF
+            
+            IF( MAX < VAL ) MAX = VAL
+            IF( MIN > VAL ) MIN = VAL
+
+            RETURN
+
+            END SUBROUTINE STORE_DATA
+            
         END PROGRAM CEMSCAN
