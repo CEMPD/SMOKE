@@ -1,7 +1,7 @@
 
         SUBROUTINE RDCEMPD( FDEV, TZONE, TSTEP, MXPDSRC, GETSIZES, 
      &                      GETCOUNT, FIRSTCALL, DAYFLAG, SDATE, STIME, 
-     &                      EDATE, ETIME, EASTAT )
+     &                      EDATE, ETIME, EASTAT, SPSTAT )
 
 C***************************************************************************
 C  subroutine body starts at line 189
@@ -41,44 +41,43 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
+C.........  This module is the inventory arrays
+        USE MODSOURC, ONLY: CSOURC
+
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: ORISFLAG, NINVORIS, INVORIS, NORISPNT,
-     &                      ORISPNT, NORISBLR, ORISBLR, IORSMTCH,
-     &                      INVORFP, OBSRCNT, OPSRCNT, OBSRCBG,
-     &                      OPSRCBG
+        USE MODLISTS, ONLY: ORISFLAG, NINVORIS, INVORIS,
+     &                      NORISBLR, ORISBLR, IORSMTCH,
+     &                      INVORFP, OBSRCNT, OBSRCBG, OBSRCNM
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NIPPA, EANAM, CATEGORY, BYEAR, NSRC
+        USE MODINFO, ONLY: NIPPA, EANAM, CATEGORY, BYEAR, NSRC, JSTACK
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: NUNFDORS, UNFDORS, MXPDPT, NPDPT, LPDSRC,
-     &                      IDXSRC, SPDIDA, CODEA, EMISVA
+     &                      IDXSRC, SPDIDA, CODEA, EMISVA,
+     &                      NOBRLIST, OBRLIST, ANNNOX, ANNSO2, ANNGLOAD,
+     &                      ANNSLOAD, ANNHEAT
 
         IMPLICIT NONE
 
 C...........   INCLUDES
-
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
-        INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-        INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
-        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  EXTERNAL FUNCTIONS
-        LOGICAL      CHKREAL
+        LOGICAL      BLKORCMT
         CHARACTER(2) CRLF
+        REAL         ENVREAL
         LOGICAL      ENVYN
         INTEGER      FINDC
         INTEGER      GETTZONE
         INTEGER      INDEX1
         INTEGER      JULIAN
         INTEGER      SECSDIFF
-        INTEGER      STR2INT
-        REAL         STR2REAL
         INTEGER      YEAR4
 
-        EXTERNAL     CHKREAL, CRLF, ENVYN, FINDC, GETTZONE, INDEX1, 
-     &               JULIAN, SECSDIFF, STR2INT, STR2REAL, YEAR4
+        EXTERNAL     BLKORCMT, CRLF, ENVREAL, ENVYN, FINDC, GETTZONE, 
+     &               INDEX1, JULIAN, SECSDIFF, YEAR4
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV           ! file unit no.
@@ -94,20 +93,21 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,INTENT(INOUT):: EDATE          ! Julian ending date in TZONE
         INTEGER,INTENT(INOUT):: ETIME          ! ending time of data in TZONE
         LOGICAL, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        LOGICAL, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: NCEMPOL  = 3   ! number of pollutants in CEM data
-        INTEGER, PARAMETER :: CO2IDX   = 1   ! index to CEMPOLS for CO2
+        INTEGER, PARAMETER :: NCEMPOL  = 2   ! number of pollutants in CEM data
+        INTEGER, PARAMETER :: NOXIDX   = 1   ! index to CEMPOLS for NOX
         INTEGER, PARAMETER :: SO2IDX   = 2   ! index to CEMPOLS for SO2
-        INTEGER, PARAMETER :: NOXIDX   = 3   ! index to CEMPOLS for NOX
 
         CHARACTER(IOVLEN3), PARAMETER :: CEMPOLS( NCEMPOL ) = 
-     &                                      ( / 'CO2             '
-     &                                        , 'SO2             '
-     &                                        , 'NOX             ' / )
+     &                                      ( / 'NOX             '
+     &                                        , 'SO2             ' / )
 
 C...........   Local allocatable
-        REAL, ALLOCATABLE, SAVE :: EMIS( :,: ) ! inven emissions for CEM pols
+        REAL, ALLOCATABLE, SAVE :: EMIS( :,: ) ! annual inventory emissions
+        REAL, ALLOCATABLE       :: STKVAL( : ) ! summed stack flow rates
+        CHARACTER(PLTLEN3+CHRLEN3), ALLOCATABLE :: STKNAM( : ) ! stack names by source
 
 C...........   Temporary read arrays
         INTEGER, SAVE :: CEMPIDX( NCEMPOL )   ! Index from CEMPOLS to EASTAT
@@ -118,26 +118,29 @@ C.........  File names and unit numbers
         CHARACTER(IOVLEN3) :: ANAME  ! emis ASCII inven logical name
 
 C...........   Other local variables
-        INTEGER          HS, I, J, L, L1, L2, S, S1, S2, T, V  ! counters and indices
+        INTEGER          I, J, L, N, S, S1, V  ! counters and indices
 
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
         INTEGER          FIP              ! tmp co/st/cy code
+        INTEGER, SAVE :: FLOWPOS          ! position of hourly flow rate variable
         INTEGER          HH               ! 2-digit hour (0-23) from CEM data
+        INTEGER          INVOBPOS         ! position in inventory ORIS/boiler list
+        INTEGER          INVORPOS         ! position in invenotry ORIS list
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
         INTEGER          JDATE            ! tmp Julian date
         INTEGER          JTIME            ! tmp HHMMSS time
         INTEGER, SAVE :: LOOPNO = 0       ! no. of loops
+        INTEGER          MASOBPOS         ! position in master ORIS/boiler list
         INTEGER, SAVE :: MAXPTR           ! maximum time step reference pointer
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
         INTEGER, SAVE :: MXUNFDORS = 0    ! max no. of bad ORIS IDs
-        INTEGER, SAVE :: NFIELD = 0       ! number of data fields
-        INTEGER, SAVE :: NFM1   = 0       ! number of data fields minus 1
+        INTEGER          MXSTKS           ! max stacks per source
         INTEGER          NS               ! tmp no. sources per ORIS
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
-        INTEGER, SAVE :: NRECS  = 0       ! number of CEM records
+        INTEGER          NSTK             ! number of stacks per source
         INTEGER          PFIP             ! previous iteration FIPS code
         INTEGER          PTR              ! tmp time step pointer
         INTEGER       :: RDATE = 1980001  ! reference date: Jan 1, 1980
@@ -145,40 +148,46 @@ C...........   Other local variables
         INTEGER, SAVE :: SDATESAV = 0     ! saved start date
         INTEGER, SAVE :: STIMESAV = 0     ! saved start time
         INTEGER, SAVE :: TDIVIDE  = 1     ! time step divisor
-        INTEGER          WD               ! tmp field width
         INTEGER          YEAR             ! 4-digit year
         INTEGER          YY               ! 2-digit year
         INTEGER          YYMMDD           ! year, month, and day
         INTEGER          ZONE             ! source time zones
 
         REAL             DENOM            ! denominator for assignment weighting
-        REAL             GLOAD            ! unused CEM data field
+        REAL             GLOAD            ! tmp gross load
         REAL             HTINPUT          ! tmp heat input
-        REAL             NSDV1            ! no. src. per ORIS / 1.
+        REAL             NOXRATE          ! tmp NOx emission rate
         REAL             OPTIME           ! tmp operating time (unused)
-        REAL             SLOAD            ! unused CEM data field
+        REAL             SLOAD            ! tmp steam load
+        REAL             ANNFAC           ! factor for calculating hourly emissions
+        REAL             EMISVAL          ! calculated hourly emissions
+        REAL, SAVE    :: FLOWFAC          ! factor for calculating hourly flow rate
+        REAL             FLOWVAL          ! calculate hourly flow rate
+        REAL             SUMFLOW          ! summed hourly flow rate
 
-        LOGICAL       :: BLRFLAG          ! true: matched rec to inv oris/blr
-        LOGICAL, SAVE :: DFLAG = .FALSE.  ! true: dates have been set by the data
-        LOGICAL       :: EFLAG = .FALSE.  ! TRUE iff ERROR
-        LOGICAL       :: MATCHFLG = .FALSE.! true: a CEM/inventory match found
-        LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
-        LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
-        LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
-        LOGICAL, SAVE :: YFLAG  = .FALSE. ! true: year mismatch found
+        LOGICAL       :: ALLZERO            ! true: set all values to zero
+        LOGICAL       :: CEMPOL   = .FALSE. ! true: processing CEM pollutant
+        LOGICAL, SAVE :: DFLAG    = .FALSE. ! true: dates have been set by the data
+        LOGICAL       :: EFLAG    = .FALSE. ! true: an error has occurred
+        LOGICAL       :: MATCHFLG = .FALSE. ! true: a CEM/inventory match found
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
+        LOGICAL       :: FIRSTLINE          ! true: just read first line of data
+        LOGICAL, SAVE :: SFLAG              ! true: use daily total from hourly
+        LOGICAL       :: WARNOUT  = .FALSE. ! true: output warnings
+        LOGICAL, SAVE :: YFLAG    = .FALSE. ! true: year mismatch found
 
-        CHARACTER(5)      BBUF             ! tmp boiler ID from CEM data
-        CHARACTER(256) :: MESG   = ' '     ! message buffer
+        CHARACTER(256) :: MESG    = ' '     ! message buffer
 
-        CHARACTER(BLRLEN3) BLID       ! tmp boiler ID with inventory length
+        CHARACTER(BLRLEN3) BLID       ! tmp boiler ID
         CHARACTER(BLRLEN3) PBLID      ! previous boiler ID
         CHARACTER(IOVLEN3) CBUF       ! tmp variable name
         CHARACTER(FIPLEN3) CFIP       ! tmp co/st/cy code
-        CHARACTER(CHRLEN3) PNT        ! tmp characteristic 1
         CHARACTER(ORSLEN3) CORS       ! tmp DOE plant ID
         CHARACTER(ORSLEN3) PCORS      ! previous DOE plant ID
         CHARACTER(SCCLEN3) TSCC       ! tmp source category code
         CHARACTER(ALLLEN3) CSRC       ! tmp source string
+        CHARACTER(PLTLEN3) PLT        ! tmp plant code
+        CHARACTER(CHRLEN3) STK        ! tmp stack code
 
         CHARACTER(16) :: PROGNAME = 'RDCEMPD' !  program name
 
@@ -202,46 +211,55 @@ C.............  Give note if file is being read as a daily file
                 CALL M3MSG2( MESG )
             END IF
 
-C.............  Allocate memory for bad source storage
-c            ALLOCATE( BADSRC( NSRC ), STAT=IOS )
-c            CALL CHECKMEM( IOS, 'BADSRC', PROGNAME )
+C.............  Get environment variable for calculating flow rate
+            MESG = 'Heat input factor for calculating flow rate ' //
+     &             '(ft^3/MMBTU)'
+            FLOWFAC = ENVREAL( 'FLOW_RATE_FACTOR', MESG, 0, IOS )
+            
+            IF( FLOWFAC > 0. ) THEN
+                FLOWPOS = MXSPDAT + CODFLAG3
+                MESG = 'NOTE: Hourly flow rates will be calculated ' //
+     &                 'from CEM data'
+                CALL M3MSG2( MESG )
+            ELSE
+                MESG = 'NOTE: Hourly flow rates will not be ' //
+     &                 'calculated from CEM data'
+                CALL M3MSG2( MESG )
+            END IF
 
-C.............  Set status of input variables based purely on what we know is 
-C               contained in the input CEM data (NOx, CO2, and SO2)
+C.............  Store location of CEM pollutants in master pollutants array
             CEMPIDX = 0        ! array
             DO V = 1, NCEMPOL
                 I = INDEX1( CEMPOLS( V ), NIPPA, EANAM )
-
-                IF ( I .GT. 0 ) EASTAT( I ) = .TRUE.
                 CEMPIDX( V ) = I
-
             END DO
 
 C.............  Create unique lists with ORIS
             ORISFLAG = .TRUE.
             CALL GENUSLST
 
+C.............  Read CEM summary information
+            CALL RDCEMSUM
+            
 C.............  Get output inventory file names given source category
             CALL GETINAME( CATEGORY, ENAME, ANAME )
 
-C.............  Allocate memory for inventory emissions for creating weights
-            ALLOCATE( EMIS( NSRC, NCEMPOL ), STAT=IOS )
+C.............  Allocate memory for inventory emissions
+            ALLOCATE( EMIS( NSRC, NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EMIS', PROGNAME )
             EMIS = BADVAL3  ! array
 
 C.............  Read emissions from inventory file
-            DO V = 1, NCEMPOL
-
-                IF ( CEMPIDX( V ) .LE. 0 ) CYCLE
-
-                CBUF = EANAM ( CEMPIDX( V ) )
-
-                CALL RDMAPPOL( NSRC, 1, 1, CBUF, EMIS( 1,V ) )
-
-            END DO
+            CALL RDMAPPOL( NSRC, NIPPA, 1, EANAM, EMIS )
 
             FIRSTIME = .FALSE.
 
+        END IF
+
+C.........  Set variable status
+        EASTAT = .TRUE.
+        IF( FLOWFAC > 0. ) THEN
+            SPSTAT( MXSPDAT ) = .TRUE.
         END IF
 
 C.............  Allocate memory for bad ORIS IDs
@@ -287,96 +305,76 @@ C           of the reference date/time so that the indexing will work properly.
 
         IREC = 0
         PCORS = ' '
+        FIRSTLINE = .TRUE.
         
-C.........  Skip #CEM header line if it is present
-        READ( FDEV, * ) MESG
-        IF( INDEX( MESG, '#CEM' ) < 0 ) THEN
-            BACKSPACE( FDEV )
-        ELSE
-            IREC = IREC + 1
-        END IF
-        
-c        TDAT = 0   !  array
         DO         !  Head of period-specific file read loop
+
+C.............  Skip comments or blank lines (also includes #CEM header)
+            READ( FDEV, *, END=299 ) MESG
+            IF( BLKORCMT( MESG ) ) THEN
+                IREC = IREC + 1
+                CYCLE
+            ELSE
+                BACKSPACE( FDEV )
+            END IF
 
 C.............  There is no error checking to help speed things up
             READ( FDEV, *, ERR=1001, END=299 ) 
-     &            CORS, BBUF, YYMMDD, HH, CEMEMIS( CO2IDX ),
-     &            CEMEMIS( SO2IDX ), CEMEMIS( NOXIDX ), OPTIME,
+     &            CORS, BLID, YYMMDD, HH, CEMEMIS( NOXIDX ),
+     &            CEMEMIS( SO2IDX ), NOXRATE, OPTIME,
      &            GLOAD, SLOAD, HTINPUT
      
             IREC = IREC + 1
 
 C.............  Write message about which record number we're on
-            IF ( IREC <= 2 .OR. MOD( IREC,500000 ) .EQ. 0 ) THEN
+            IF ( FIRSTLINE .OR. MOD( IREC,500000 ) .EQ. 0 ) THEN
 
-                IF( NRECS .GT. 0 .AND. GETCOUNT ) THEN
+                IF( GETCOUNT ) THEN
                     WRITE( MESG, 94010 ) 
      &                 BLANK5// 'Counting record numbers', IREC, 
-     &                 'to', MIN( IREC + 500000 - 1, NRECS ), '...'
+     &                 'to', IREC + 500000 - 1, '...'
                     CALL M3MSG2( MESG )
 
-                ELSE IF ( NRECS .GT. 0 ) THEN
+                ELSE
                     WRITE( MESG, 94010 ) 
      &                 BLANK5// 'Processing record numbers', IREC, 
-     &                 'to', MIN( IREC + 500000 - 1, NRECS ), '...'
+     &                 'to', IREC + 500000 - 1, '...'
                     CALL M3MSG2( MESG )
 
                 END IF
 
+                FIRSTLINE = .FALSE.
+
             END IF
 
-C.............  Initialize flag to indicate oris/boiler match or oris/point
-            BLRFLAG = .FALSE.
-
-C.............  Format strings properly. Assumed BLRLEN3 < 5.
+C.............  Format strings properly
             CORS = ADJUSTR( CORS )
-            BBUF = ADJUSTL( BBUF )
-            BLID = BBUF( 1:BLRLEN3 )
             BLID = ADJUSTR( BLID )
-            PNT  = BBUF
-            PNT  = ADJUSTR( PNT )
 
-C.............  Compute emissions from rate and heat input and adjust
-C               units from pounds to short tons
-            CEMEMIS( CO2IDX ) = CEMEMIS( CO2IDX ) * LB2TON
-            CEMEMIS( NOXIDX ) = CEMEMIS( NOXIDX ) * HTINPUT * LB2TON
-            CEMEMIS( SO2IDX ) = CEMEMIS( SO2IDX ) * LB2TON
-
-C.............  Set Julian day from MMDDYY6 SAS format
-            YY    = YYMMDD/10000
-            MONTH = ( YYMMDD - YY * 10000 ) / 100
-            DAY   = YYMMDD - YY * 10000 - MONTH * 100
-            YEAR  = YEAR4( YY )
-
-C.............  Ensure that year of data is consistent with base year
-            IF ( YEAR .NE. BYEAR ) YFLAG = .TRUE. 
-
-            JDATE = 1000 * YEAR + JULIAN( YEAR, MONTH, DAY )
-
-C.............  Skip dates that are outside the range allowed
-            IF ( JDATE .LT. SDATE .AND. JDATE .GT. EDATE ) CYCLE
-
-C.............  Convert from times 0 through 23 to HHMMSS
-            JTIME = HH * 10000
+C.............  Skip entry if not in master list of ORIS/boilers
+C.............  If CEM summary and input CEM data are consistent, the only
+C               non-matches will be entries skipped by CEMScan
+            MASOBPOS = FINDC( CORS // BLID, NOBRLIST, OBRLIST )
+            IF( MASOBPOS <= 0 ) CYCLE
 
 C.............  Search for ORIS ID in ORIS/FIPs code list and then get time
 C               zone from FIPS/Time zone list.
-            I = FINDC( CORS, NINVORIS, INVORIS )
+            INVORPOS = FINDC( CORS, NINVORIS, INVORIS )
 
 C.............  If ORIS ID is not found in list...
-            IF( I .LE. 0 ) THEN
+            IF( INVORPOS <= 0 ) THEN
 
                 IF( GETSIZES ) THEN
 
-                    IF ( CORS .NE. PCORS ) MXUNFDORS = MXUNFDORS + 1
+                    IF ( CORS /= PCORS ) MXUNFDORS = MXUNFDORS + 1
 
-                ELSE IF( NUNFDORS .GT. 0 ) THEN
+                ELSE IF( NUNFDORS > 0 ) THEN
+                
 C.....................  Check to see if ORIS in in list
-                    J = INDEX1( CORS, NUNFDORS, UNFDORS )
+                    I = INDEX1( CORS, NUNFDORS, UNFDORS )
 
 C.....................  Add to list if it's not there
-                    IF ( J .LE. 0 ) THEN 
+                    IF ( I <= 0 ) THEN 
                         NUNFDORS = NUNFDORS + 1
                         UNFDORS( NUNFDORS ) = CORS
                     END IF
@@ -391,25 +389,43 @@ C.................  If ORIS is first UNFDORS one
 
 C.................  Skip it
                 CYCLE
-
-C.............  Otherwise, get FIPs code and time zone
-            ELSE
-                MATCHFLG = .TRUE.
-                FIP   = INVORFP( I )
-                ZONE  = GETTZONE( FIP )
             END IF
- 
-C.............  Convert date and time to output time zone.
+            
+            IORSMTCH( INVORPOS ) = .TRUE.
+
+C.............  Skip entry if not in inventory list of ORIS/boilers
+            INVOBPOS = FINDC( CORS // BLID, NORISBLR, ORISBLR )
+            IF( INVOBPOS <= 0 ) CYCLE
+
+            MATCHFLG = .TRUE.
+
+C.............  Set Julian day
+            YY    = YYMMDD/10000
+            MONTH = ( YYMMDD - YY * 10000 ) / 100
+            DAY   = YYMMDD - YY * 10000 - MONTH * 100
+            YEAR  = YEAR4( YY )
+
+C.............  Ensure that year of data is consistent with base year
+            IF ( YEAR .NE. BYEAR ) YFLAG = .TRUE. 
+
+            JDATE = 1000 * YEAR + JULIAN( YEAR, MONTH, DAY )
+
+C.............  Convert from times 0 through 23 to HHMMSS
+            JTIME = HH * 10000
+
+C.............  Convert date and time to output time zone
+            FIP  = INVORFP ( INVORPOS )
+            ZONE = GETTZONE( FIP )
             CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
 
 C.............  Determine time step pointer based on reference time
             PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1
 
 C.............  Store minimum time step number as compared to reference
-            IF( PTR .LT. MINPTR ) MINPTR = PTR
+            IF( PTR < MINPTR ) MINPTR = PTR
 
 C.............  Store maximum time step number as compared to reference
-            IF( PTR .GT. MAXPTR ) MAXPTR = PTR
+            IF( PTR > MAXPTR ) MAXPTR = PTR
 
 C.............  If only getting dates, go to next loop iteration
             IF( GETSIZES ) CYCLE
@@ -419,110 +435,208 @@ C.............  Determine time step pointer based on actual start time
 
 C.............  Skip record if it is out of range of output file
 C.............  NOTE - this is only useful if reading only part of data
-            IF( PTR. LT. 1 .OR. PTR .GT. NSTEPS ) CYCLE
+            IF( PTR < 1 .OR. PTR > NSTEPS ) CYCLE
 
-C.............  Try to match using ORIS and points (from IDA only!)
-            J = FINDC( CORS // PNT, NORISPNT, ORISPNT )
-
-C.................  If no match, search for this record in list of 
-C                   ORIS // boilers
-            IF ( J .LE. 0 ) THEN
-                J = FINDC( CORS // BLID, NORISBLR, ORISBLR )
-
-C.................  Skip sources that don't match
-                IF ( J .LE. 0 ) CYCLE
-                
-                BLRFLAG = .TRUE.
-                NS = OBSRCNT( J )  ! number of sources from oris/boiler
-                IORSMTCH( I ) = .TRUE.
-
-C.............  Get number of sources for this ORIS//point
-            ELSE
-                NS = OPSRCNT( J )  ! number of sources from oris/point
-                IORSMTCH( I ) = .TRUE.
-
-            END IF
+C.............  Get number of inventory sources for this ORIS/boiler
+            NS = OBSRCNT( INVOBPOS )
+            S1 = OBSRCBG( INVOBPOS )
 
 C.............  Count estimated source count per time step. Actual may not
-C               include all pollutants, but this should be
-            MXPDPT( PTR ) = MXPDPT( PTR ) + NS * NCEMPOL
+C               include all pollutants, but this should be bigger than needed
+            MXPDPT( PTR ) = MXPDPT( PTR ) + NS * ( NIPPA + 1 )
 
 C.............  If only counting records per time step, go to next loop
 C               iteration
             IF( GETCOUNT ) CYCLE
 
-C.............  Get source list from those records that do match
-            IF ( BLRFLAG ) THEN
-                S1 = OBSRCBG( J )  ! first source
-            ELSE
-                S1 = OPSRCBG( J )  ! first source
+            ALLZERO = .FALSE.
+
+C.............  Check if NOx emissions are valid; if not, set all values to 0.
+            IF( CEMEMIS( NOXIDX ) <= 0. ) ALLZERO = .TRUE.
+
+C.............  Compute factor for calculate hourly emissions; check that
+C               hourly value is valid
+            IF( .NOT. ALLZERO ) THEN
+                IF( ANNHEAT( MASOBPOS ) > 0. .AND. HTINPUT > 0. ) THEN
+                    ANNFAC = HTINPUT / ANNHEAT( MASOBPOS )
+                ELSE IF( ANNSLOAD( MASOBPOS ) > 0. .AND. SLOAD > 0. ) THEN
+                    ANNFAC = SLOAD / ANNSLOAD( MASOBPOS )
+                ELSE IF( ANNGLOAD( MASOBPOS ) > 0. .AND. GLOAD > 0. ) THEN
+                    ANNFAC = GLOAD / ANNGLOAD( MASOBPOS )
+                ELSE
+                    ALLZERO = .TRUE.
+                    WRITE( MESG,94010 ) 
+     &              'WARNING: All emissions set to 0. for ORIS: ' //
+     &              CORS // ' Boiler: ' // BLID // CRLF() // BLANK10 //
+     &              'for date: ', YYMMDD, 'and hour: ', HH,
+     &              'since hourly heat input,' // CRLF() // BLANK10 //
+     &              'gross load, and steam load are missing'
+                    CALL M3MESG( MESG )
+                END IF
             END IF
 
-            S2 = S1 + NS - 1   ! last source
+            IF( ALLZERO ) THEN
+                DO I = 0, NS - 1
+                    S = OBSRCNM( S1 + I )
+                    
+                    DO V = 1, NIPPA
+                        EMISVAL = 0.
+                        CALL STORE_SOURCE_DATA( S, PTR, V, EMISVAL )
+                    END DO
+                    
+                    IF( FLOWFAC > 0. ) THEN
+                        FLOWVAL = 0.
+                        CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, 
+     &                                          FLOWVAL )
+                    END IF
+                END DO
+                
+                CYCLE
+            END IF
+
+C.............  Compute emissions from rate and heat input and adjust
+C               units from pounds to short tons
+            CEMEMIS( NOXIDX ) = CEMEMIS( NOXIDX ) * LB2TON
+            CEMEMIS( SO2IDX ) = CEMEMIS( SO2IDX ) * LB2TON
 
 C.............  Record needed data for this source and time step
-            T = PTR
-            DO V = 1, NCEMPOL
+            DO V = 1, NIPPA
 
-C.................  Skip CEM pollutants that are not in the inventory
-                IF ( CEMPIDX( V ) .LE. 0 ) CYCLE
+C.................  Check annual emissions for each source; annual emissions
+C                   are always used to calculate hourly emissions, so check
+C                   for any missing values
+                DO I = 0, NS - 1
+                    S = OBSRCNM( S1 + I )
+                    
+                    IF( EMIS( S,V ) < 0. ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'ERROR: Missing "' //
+     &                      TRIM( EANAM( V ) ) // '" emissions ' //
+     &                      'for source number ', S
+                        CALL M3MESG( MESG )
+                    END IF
+                END DO
+                
+                IF( EFLAG ) CYCLE
 
-C.............  Create weights for allocating CEM emissions to
-C               these sources based on the emissions in the annual inventory.
-C.............  Make sure that if the emissions are zero, weights are uniform.
+C.................  Check if pollutant is CEM pollutant
+                CEMPOL = .FALSE.
+                DO N = 1, NCEMPOL
+                    IF( CEMPIDX( N ) == V ) THEN
 
-                DENOM = SUM( EMIS( S1:S2,V ) )
-                IF ( DENOM .EQ. 0. ) THEN
-                    EMIS( S1:S2,V ) = 1.  ! array
-                    DENOM = SUM( EMIS( S1:S2,V ) )
-
-                ELSE IF ( DENOM .LT. 0. ) THEN
-                    EFLAG = .TRUE.
-                    CBUF = EANAM( CEMPIDX( V ) )
-                    L = LEN_TRIM( CBUF ) 
-                    WRITE( MESG,94010 ) 'ERROR: Missing "' // 
-     &                     CBUF( 1:L ) // '" emissions at or ' //
-     &                     'near source', S
-                    CALL M3MESG( MESG )
-
-                END IF
-
-                DENOM = 1. / DENOM
-
-
-C.................  Loop through sources that match this ORIS/boiler
-C.................  Store hourly emissions using weights if multiple sources
-C                   match the ORIS/boiler. Weights are based on annual
-C                   inventory emissions.
-                DO S = S1, S2
-
-                    LPDSRC( S ) = .TRUE.
-                    NPDPT( T ) = NPDPT( T ) + 1
-
-                    HS = NPDPT( T )
-
-                    IF( HS .LE. MXPDSRC ) THEN
-
-                        IDXSRC( HS,T ) = HS
-                        SPDIDA( HS,T ) = S
-                        CODEA ( HS,T ) = CEMPIDX(V)
-                        IF( CEMEMIS( V ) .LT. 0 ) THEN
-                            EMISVA( HS,T ) = BADVAL3
+C.........................  Only use CEM data for SO2 if annual emissions are non-zero
+                        IF( N == SO2IDX ) THEN
+                          IF( ANNSO2( MASOBPOS ) > 0. ) THEN
+                            CEMPOL = .TRUE.
+                            IF( CEMEMIS( N ) < 0. ) THEN
+                              CEMEMIS( N ) = 0.
+                              WRITE( MESG,94010 ) 
+     &                          'WARNING: Missing SO2 emissions for ' //
+     &                          'ORIS: ' // CORS // ' Boiler: ' // 
+     &                          BLID // CRLF() // BLANK10 // 
+     &                          'for date: ', YYMMDD, 'and hour: ', HH,
+     &                          'reset to 0.'
+                              CALL M3MESG( MESG )
+                            END IF
+                          END IF
                         ELSE
-                            EMISVA( HS,T )= CEMEMIS(V)* EMIS(S,V)* DENOM
+                          CEMPOL = .TRUE.
                         END IF
+                        
+                        EXIT
+                    END IF
+                END DO
 
+                IF( CEMPOL ) THEN
+
+C.....................  Create weights for allocating CEM emissions to the
+C                       sources based on the emissions in the annual inventory
+                    DENOM = 0.
+
+                    DO I = 0, NS - 1
+                        S = OBSRCNM( S1 + I )
+                        DENOM = DENOM + EMIS( S,V )
+                    END DO
+
+C.....................  If annual emissions are all zero, use uniform weights
+                    IF( DENOM == 0. ) THEN
+                        DO I = 0, NS - 1
+                            S = OBSRCNM( S1 + I )
+                            EMIS( S,V ) = 1.
+                            DENOM = DENOM + EMIS( S,V )
+                        END DO
                     END IF
 
-                END DO  ! end loop over sources that match ORID/Boiler ID
+                    DENOM = 1. / DENOM
+                END IF
 
-            END DO      ! end loop over CEM pollutants
+C.................  Loop through sources that match this ORIS/boiler
+C.................  Store hourly emissions using weights for CEM pollutants;
+C                   otherwise calculate hourly emissions using annual CEM factor
+                DO I = 0, NS - 1
+                    S = OBSRCNM( S1 + I )
+
+                    IF( CEMPOL ) THEN
+                        EMISVAL = CEMEMIS( N ) * EMIS( S,V ) * DENOM
+                    ELSE
+                        EMISVAL = ANNFAC * EMIS( S,V )
+                    END IF
+
+                    CALL STORE_SOURCE_DATA( S, PTR, V, EMISVAL )
+
+                END DO  ! end loop over sources that match ORIS/boiler
+
+            END DO      ! end loop over pollutants
+
+C.............  Calculate and store flow rate
+            IF( FLOWFAC > 0. .AND. HTINPUT > 0. ) THEN
+                FLOWVAL = FLOWFAC * HTINPUT * HR2SEC
+
+C.................  Calculate rate for each stack corresponding to ORIS/boiler
+                MXSTKS = OBSRCNT( INVOBPOS )
+
+                IF( ALLOCATED( STKNAM ) ) DEALLOCATE( STKNAM, STKVAL )
+                ALLOCATE( STKNAM( MXSTKS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'STKNAM', PROGNAME )
+                ALLOCATE( STKVAL( MXSTKS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'STKVAL', PROGNAME )
+                STKNAM = ' '
+                STKVAL = 0.
+
+                NSTK = 0
+                DO I = 0, NS - 1
+                    S = OBSRCNM( S1 + I )
+                    CSRC = CSOURC( S )
+                    PLT = CSRC( PTBEGL3( 2 ):PTENDL3( 2 ) )
+                    STK = CSRC( PTBEGL3( JSTACK ):PTENDL3( JSTACK ) )
+
+                    J = INDEX1( PLT // STK, NSTK, STKNAM )
+
+                    IF( J > 0 ) THEN
+                        STKVAL( J ) = STKVAL( J ) + FLOWVAL
+                    ELSE
+                        NSTK = NSTK + 1
+                        STKNAM( NSTK ) = PLT // STK
+                        STKVAL( NSTK ) = FLOWVAL
+                    END IF
+                END DO
+
+                DO I = 0, NS - 1
+                    S = OBSRCNM( S1 + I )
+                    CSRC = CSOURC( S )
+                    PLT = CSRC( PTBEGL3( 2 ):PTENDL3( 2 ) )
+                    STK = CSRC( PTBEGL3( JSTACK ):PTENDL3( JSTACK ) )
+
+                    J = INDEX1( PLT // STK, NSTK, STKNAM )
+                    
+                    CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, 
+     &                                      STKVAL( J ) )
+                END DO
+            END IF
 
         END DO          ! end loop over lines in file
 
 299     CONTINUE   ! Exit from read loop
-
-        NRECS = IREC
 
         IF ( .NOT. MATCHFLG ) THEN
             EFLAG = .TRUE.
@@ -562,7 +676,6 @@ C.........  Update output starting date/time and ending date/time
 1001    WRITE( MESG,94010 ) 'Problem reading CEM data at line', IREC
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
   
-
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
@@ -574,5 +687,39 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94020   FORMAT( I6.6 )
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+        CONTAINS
+        
+            SUBROUTINE STORE_SOURCE_DATA( SRC, PTR, VAR, VAL )
+            
+C.............  Subroutine arguments
+            INTEGER, INTENT(IN) :: SRC
+            INTEGER, INTENT(IN) :: PTR
+            INTEGER, INTENT(IN) :: VAR
+            REAL,    INTENT(IN) :: VAL
+            
+            INTEGER  HRSRC
+            
+C----------------------------------------------------------------------
+
+            LPDSRC( SRC ) = .TRUE.
+            NPDPT ( PTR ) = NPDPT( PTR ) + 1
+            
+            HRSRC = NPDPT( PTR )
+            
+            IF( HRSRC <= MXPDSRC ) THEN
+            
+                IDXSRC( HRSRC,PTR ) = HRSRC
+                SPDIDA( HRSRC,PTR ) = SRC
+                CODEA ( HRSRC,PTR ) = VAR
+                EMISVA( HRSRC,PTR ) = VAL
+                
+            END IF
+
+            RETURN
+            
+            END SUBROUTINE STORE_SOURCE_DATA
 
         END SUBROUTINE RDCEMPD
