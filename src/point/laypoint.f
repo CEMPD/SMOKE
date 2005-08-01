@@ -200,7 +200,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16)   SNAME   !  cross-point surface met file name
         CHARACTER(16)   TNAME   !  dot-point surface grid file
         CHARACTER(16)   XNAME   !  cross-point layered met file name
-        CHARACTER(16)   TNAME   !  temporalized data file name
+        CHARACTER(16)   MNAME   !  temporalized data file name
         CHARACTER(16) DAYNAME   !  daily inventory file name
 
 C...........   Other local variables
@@ -535,12 +535,12 @@ C.............  Give warning if no valid data
 C.........  If using hourly fire data, open hourly and daily files
 C           Will read heat flux from PTMP and area burned from PDAY
         IF( HOURFIRE ) THEN
-            TNAME = PROMPTSET(
+            MNAME = PROMPTSET(
      &          'Enter logical name for the HOURLY EMISSIONS file',
      &          FSREAD3, CRL // 'TMP', PROGNAME )
 
 C.............  Check to see if appropriate variable list exists     
-            CALL RETRIEVE_SET_HEADER( TNAME )
+            CALL RETRIEVE_SET_HEADER( MNAME )
             
             I = INDEX1( 'HFLUX', NVARSET, VNAMESET )
             IF( I <= 0 ) THEN
@@ -1074,10 +1074,10 @@ C               heat flux
             
 C.................  Can't use SAFE_READ3 because data is stored in
 C                   a fileset
-                IF( .NOT. READSET( TNAME, 'HFLUX', ALLAYS3, ALLFILES,
+                IF( .NOT. READSET( MNAME, 'HFLUX', ALLAYS3, ALLFILES,
      &                             JDATE, JTIME, BFLX ) ) THEN
                     MESG = 'Could not read "HFLUX" from file "' //
-     &                     TRIM( TNAME ) // '".'
+     &                     TRIM( MNAME ) // '".'
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
                 
