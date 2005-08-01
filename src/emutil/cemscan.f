@@ -31,7 +31,7 @@ C.........  Static arrays
         CHARACTER(20) SEGMENT(MXSEG)            ! parsed input line
         
 C.........  Allocatable arrays
-        CHARACTER(ORSLEN3+BLRLEN3), ALLOCATABLE :: UNITLIST( : ) ! list of units
+        CHARACTER(OBRLEN3), ALLOCATABLE :: UNITLIST( : ) ! list of units
         INTEGER, ALLOCATABLE :: UNITIDX  ( : )  ! index to sorted unit list
         
         REAL,    ALLOCATABLE :: NOXEMIS  ( : )  ! NOx emissions by unit
@@ -77,7 +77,6 @@ C.........  Other local variables
         INTEGER NUNITS                          ! total number of units
         INTEGER MXFILES                         ! max. number of input files
         INTEGER MXUNITS                         ! max. number of units
-        INTEGER NLINES                          ! number of lines in input file
         
         REAL    NOX                             ! tmp. NOx emissions
         REAL    SO2                             ! tmp. SO2 emissions
@@ -88,7 +87,8 @@ C.........  Other local variables
         
         LOGICAL :: EFLAG = .FALSE.              ! true: an error has occurred
         
-        CHARACTER(ORSLEN3+BLRLEN3) UNIT         ! tmp. unit string
+        CHARACTER          OUT                  ! Y: entry should be output
+        CHARACTER(OBRLEN3) UNIT                 ! tmp. unit string
         CHARACTER(ORSLEN3) ORIS                 ! tmp. ORIS ID
         CHARACTER(BLRLEN3) BLRID                ! tmp. boiler ID
         CHARACTER(300)     LINE                 ! line buffer
@@ -216,35 +216,35 @@ C.............  Open input file
                 CYCLE
             END IF
 
-            MESG = 'Successfully opened input file: ' // TRIM( LINE )
+            MESG = 'Successfully opened input file: ' // CRLF() //
+     &             BLANK10 // TRIM( LINE )
             CALL M3MSG2( MESG )
 
-C.............  Get number of lines in current file            
-            NLINES = GETFLINE( TDEV, 'CEM input file' )
-
 C.............  Read through lines in file            
-            DO J = 1, NLINES
+            DO
                 READ( TDEV, 93000, IOSTAT=IOS ) LINE
-                
-                IF( IOS /= 0 ) THEN
+
+C.................  Check for I/O errors                
+                IF( IOS > 0 ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: I/O error'
+                    WRITE( MESG,94010 ) 'ERROR: I/O error ', IOS,
+     &                  'reading input file'
                     CALL M3MESG( MESG )
                     EXIT
                 END IF
 
+C.................  Check for end of file
+                IF( IOS < 0 ) EXIT
+
 C.................  Skip blank or comment lines
                 IF( BLKORCMT( LINE ) ) CYCLE
                 
-                ! temporarily skip 1st line until files are changed
-                if( j == 1 ) cycle
-
                 CALL PARSLINE( LINE, MXSEG, SEGMENT )
                     
 C.................  Store data from file
                 UNIT = ''
-                UNIT = SEGMENT( 1 )( 1:ORSLEN3 ) // 
-     &                 SEGMENT( 2 )( 1:BLRLEN3 )
+                UNIT = ADJUSTR( SEGMENT( 1 )( 1:ORSLEN3 ) ) // 
+     &                 ADJUSTR( SEGMENT( 2 )( 1:BLRLEN3 ) )
                 
                 NOX     = STR2REAL( SEGMENT( 5 ) )
                 SO2     = STR2REAL( SEGMENT( 6 ) )
@@ -292,7 +292,7 @@ C                   units and check if it is already present
 
 C.................  Make sure we have space to add unit                
                 IF( NUNITS + 1 > MXUNITS ) THEN
-                    MESG = 'MAX_CEM_UNITS too small'
+                    MESG = 'MAX_CEM_UNITS value too small'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ELSE
 
@@ -341,7 +341,7 @@ C.........  Write output file header
      &    'SO2          OPTIME       GLOAD       SLOAD         HTINPUT'
 
 C.........  Write report header
-        WRITE( RDEV, 93000 ) 'ORIS ID; Boiler ID; Tot Hrs; ' //
+        WRITE( RDEV, 93000 ) 'ORIS ID; Boiler ID; Out; Tot Hrs; ' //
      &    ' NOx Hrs; Ann NOx Emis; Max NOx Emis; Min NOx Emis; ' //
      &    ' SO2 Hrs; Ann SO2 Emis; Max SO2 Emis; Min SO2 Emis; ' //
      &    '  Op Hrs;  Ann Op Time;  Max Op Time;  Min Op Time; ' //
@@ -353,14 +353,22 @@ C.........  Write output and report file
         DO I = 1, NUNITS
             
             ORIS  = UNITLIST( I )( 1:ORSLEN3 )
-            BLRID = UNITLIST( I )( ORSLEN3+1:ORSLEN3+BLRLEN3 )
+            BLRID = UNITLIST( I )( ORSLEN3+1:OBRLEN3 )
             IDX   = UNITIDX ( I )
             
-            WRITE( ODEV,93010 ) ORIS, BLRID, NOXEMIS( IDX ), 
-     &        SO2EMIS( IDX ), OPTIMESUM( IDX ), GLOADSUM( IDX ),
-     &        SLOADSUM( IDX ), HEATINPUT( IDX )
+            OUT = 'Y'
+            IF( NOXEMIS  ( IDX ) <= 0. ) OUT = 'N'
+            IF( HEATINPUT( IDX ) <= 0. .AND.
+     &          SLOADSUM ( IDX ) <= 0. .AND.
+     &          GLOADSUM ( IDX ) <= 0.       ) OUT = 'N'
             
-            WRITE( RDEV,93020 ) ORIS, BLRID, NUMHOURS( IDX ), 
+            IF( OUT == 'Y' ) THEN
+                WRITE( ODEV,93010 ) ORIS, BLRID, NOXEMIS( IDX ), 
+     &            SO2EMIS( IDX ), OPTIMESUM( IDX ), GLOADSUM( IDX ),
+     &            SLOADSUM( IDX ), HEATINPUT( IDX )
+            END IF
+            
+            WRITE( RDEV,93020 ) ORIS, BLRID, OUT, NUMHOURS( IDX ), 
      &        NOXHOURS( IDX ), NOXEMIS( IDX ), MAXNOX( IDX ), 
      &            MINNOX( IDX ),
      &        SO2HOURS( IDX ), SO2EMIS( IDX ), MAXSO2( IDX ), 
@@ -383,7 +391,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 93010   FORMAT( A6, 1X, A6, 6( 1X, E12.5 ) )
-93020   FORMAT( 1X, A6, ';', 4X, A6, ';', 4X, I4, ';', 
+93020   FORMAT( 1X, A6, ';', 4X, A6, ';', 3X, A1, ';', 4X, I4, ';', 
      &          6( 5X, I4, ';', 3( 1X, E12.5, ';' ) ) )
 
 C...........   Internal buffering formats............ 94xxx
