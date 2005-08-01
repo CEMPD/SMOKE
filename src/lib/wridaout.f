@@ -76,7 +76,7 @@ C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: PLANTLEN = 15 ! IDA fmt plant ID length
         INTEGER, PARAMETER :: POINTLEN = 15 ! IDA fmt point ID length 
         INTEGER, PARAMETER :: STACKLEN = 12 ! IDA fmt stack ID length
-        INTEGER, PARAMETER :: BOILRLEN = 5  ! IDA fmt boiler ID length
+        INTEGER, PARAMETER :: BOILRLEN = 6  ! IDA fmt boiler ID length
         INTEGER, PARAMETER :: SEGMTLEN = 2  ! IDA fmt segment ID length
         INTEGER, PARAMETER :: PDESCLEN = 40 ! IDA fmt plant description length
         INTEGER, PARAMETER :: SCCLEN   = 10 ! IDA fmt SCC field length
