@@ -101,13 +101,17 @@ C...........   Local parameters
         INTEGER, PARAMETER :: SO2IDX   = 2   ! index to CEMPOLS for SO2
 
         CHARACTER(IOVLEN3), PARAMETER :: CEMPOLS( NCEMPOL ) = 
-     &                                      ( / 'NOX             '
-     &                                        , 'SO2             ' / )
+     &                                      ( / 'NOX             ',
+     &                                          'SO2             ' / )
 
 C...........   Local allocatable
         REAL, ALLOCATABLE, SAVE :: EMIS( :,: ) ! annual inventory emissions
         REAL, ALLOCATABLE       :: STKVAL( : ) ! summed stack flow rates
+        
         CHARACTER(PLTLEN3+CHRLEN3), ALLOCATABLE :: STKNAM( : ) ! stack names by source
+        
+        LOGICAL, ALLOCATABLE, SAVE :: MASLIST( :,: ) ! flag if have data for ORIS/boiler
+                                                     ! and time step
 
 C...........   Temporary read arrays
         INTEGER, SAVE :: CEMPIDX( NCEMPOL )   ! Index from CEMPOLS to EASTAT
@@ -136,12 +140,13 @@ C...........   Other local variables
         INTEGER, SAVE :: MAXPTR           ! maximum time step reference pointer
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
+        INTEGER, SAVE :: MXCALL           ! max times the routine is called
         INTEGER, SAVE :: MXUNFDORS = 0    ! max no. of bad ORIS IDs
         INTEGER          MXSTKS           ! max stacks per source
-        INTEGER          NS               ! tmp no. sources per ORIS
+        INTEGER, SAVE :: NCALL            ! number of times the routine has been called
+        INTEGER          NS               ! tmp no. sources per ORIS/boiler
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
         INTEGER          NSTK             ! number of stacks per source
-        INTEGER          PFIP             ! previous iteration FIPS code
         INTEGER          PTR              ! tmp time step pointer
         INTEGER       :: RDATE = 1980001  ! reference date: Jan 1, 1980
         INTEGER       :: RTIME = 0        ! reference time
@@ -294,14 +299,53 @@ C               this means it is the first call or daily or hourly)
             LOOPNO = LOOPNO + 1
             WARNOUT = ( LOOPNO .EQ. 1 )
 
+C.............  Set up counters for number of times this routine has been called
+            IF( GETSIZES ) MXCALL = 0
+            NCALL = 0
+            
         END IF
 
-C.........  Loop through file and read it. In the first section, determine
-C           the minimum and maximum date. Use a reference date to do this. In
-C           the second section, determine the number of records per time 
-C           step. In the third section, read and store the data.  When storing
-C           data, time step index is computed from the start date/time instead
-C           of the reference date/time so that the indexing will work properly.
+        IF( GETSIZES ) MXCALL = MXCALL + 1
+        NCALL = NCALL + 1
+
+C.........  Get count of records per time step if we're ready
+C.........  Every sources that matches the master list of ORIS/boilers
+C           will have emissions for every time step
+        IF( GETCOUNT ) THEN
+            IF( MXPDPT( 1 ) == 0 ) THEN
+                DO MASOBPOS = 1, NOBRLIST
+                    INVOBPOS = FINDC( OBRLIST( MASOBPOS ), 
+     &                                NORISBLR, ORISBLR )
+                    IF( INVOBPOS <= 0 ) CYCLE
+                    
+                    NS = OBSRCNT( INVOBPOS )
+                    
+                    IF( INVOBPOS > 0 ) THEN
+                        DO PTR = 1, NSTEPS
+                            MXPDPT( PTR ) = MXPDPT( PTR ) + 
+     &                                      NS * ( NIPPA + 1 )
+                        END DO
+                    END IF
+                END DO
+            END IF
+
+C.............  Allocate memory to indicate if the CEM data contains entries
+C               for a given ORIS/boiler and time step
+            IF( .NOT. ALLOCATED( MASLIST ) ) THEN
+                ALLOCATE( MASLIST( NOBRLIST,NSTEPS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MASLIST', PROGNAME )
+                MASLIST = .FALSE.
+            END IF
+            
+            RETURN
+        END IF
+            
+C.........  Loop through file and read it. 
+C           1. In the first section, determine the minimum and maximum date. 
+C              Use a reference date to do this.
+C           2. In the second section, read and store the data.  When storing
+C              data, time step index is computed from the start date/time instead
+C              of the reference date/time so that the indexing will work properly.
 
         IREC = 0
         PCORS = ' '
@@ -329,16 +373,16 @@ C.............  There is no error checking to help speed things up
 C.............  Write message about which record number we're on
             IF ( FIRSTLINE .OR. MOD( IREC,500000 ) .EQ. 0 ) THEN
 
-                IF( GETCOUNT ) THEN
+                IF( GETSIZES ) THEN
                     WRITE( MESG, 94010 ) 
-     &                 BLANK5// 'Counting record numbers', IREC, 
-     &                 'to', IREC + 500000 - 1, '...'
+     &                 BLANK5// 'Determining dates for record numbers',
+     &                 IREC, 'to', IREC + 500000 - 1, '...'
                     CALL M3MSG2( MESG )
 
                 ELSE
                     WRITE( MESG, 94010 ) 
-     &                 BLANK5// 'Processing record numbers', IREC, 
-     &                 'to', IREC + 500000 - 1, '...'
+     &                 BLANK5// 'Processing data for record numbers',
+     &                 IREC, 'to', IREC + 500000 - 1, '...'
                     CALL M3MSG2( MESG )
 
                 END IF
@@ -437,17 +481,12 @@ C.............  Skip record if it is out of range of output file
 C.............  NOTE - this is only useful if reading only part of data
             IF( PTR < 1 .OR. PTR > NSTEPS ) CYCLE
 
+C.............  Store indicator for this ORIS/boiler and time step
+            MASLIST( MASOBPOS, PTR ) = .TRUE.
+
 C.............  Get number of inventory sources for this ORIS/boiler
             NS = OBSRCNT( INVOBPOS )
             S1 = OBSRCBG( INVOBPOS )
-
-C.............  Count estimated source count per time step. Actual may not
-C               include all pollutants, but this should be bigger than needed
-            MXPDPT( PTR ) = MXPDPT( PTR ) + NS * ( NIPPA + 1 )
-
-C.............  If only counting records per time step, go to next loop
-C               iteration
-            IF( GETCOUNT ) CYCLE
 
             ALLZERO = .FALSE.
 
@@ -655,6 +694,43 @@ C.........  Abort if error found while reading file
         IF( EFLAG ) THEN
             MESG = 'Problem processing CEM data'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  If this is the last time through this routine, make sure that
+C           all ORIS/boilers are accounted for
+        IF( .NOT. GETSIZES .AND. 
+     &      .NOT. GETCOUNT .AND. 
+     &      NCALL == MXCALL      ) THEN
+            
+            DO MASOBPOS = 1, NOBRLIST
+                DO PTR = 1, NSTEPS
+                    IF( MASLIST( MASOBPOS,PTR ) == .FALSE. ) THEN
+                        INVOBPOS = FINDC( OBRLIST( MASOBPOS ), 
+     &                                    NORISBLR, ORISBLR )
+                        IF( INVOBPOS <= 0 ) CYCLE
+                        
+                        NS = OBSRCNT( INVOBPOS )
+                        S1 = OBSRCBG( INVOBPOS )
+                        
+                        DO I = 0, NS - 1
+                            S = OBSRCNM( S1 + I )
+                            
+                            DO V = 1, NIPPA
+                                EMISVAL = 0.
+                                CALL STORE_SOURCE_DATA( S, PTR, 
+     &                                                  V, EMISVAL )
+                            END DO
+                            
+                            IF( FLOWFAC > 0. ) THEN
+                                FLOWVAL = 0.
+                                CALL STORE_SOURCE_DATA( S, PTR, FLOWPOS, 
+     &                                                  FLOWVAL )
+                            END IF                           
+                        END DO
+                    END IF
+                END DO
+            END DO
+            
         END IF
 
 C.........  Update output starting date/time and ending date/time
