@@ -81,7 +81,7 @@ C...........   Local file formats
         INTEGER, ALLOCATABLE, SAVE :: FILFMT( : )  ! file format code
 
 C...........   Character strings of day- or hr-specific list file 
-        CHARACTER(300), ALLOCATABLE, SAVE :: NLSTSTR( : )
+        CHARACTER(300), ALLOCATABLE, SAVE :: LSTSTR( : )
 
 C...........   Other local variables
         INTEGER   I, L                        ! counters and indices
@@ -150,48 +150,33 @@ C.........  Generate message for GETFLINE and RDLINES calls
 C.........  Get number of lines of inventory files in list format
         NFILE = GETFLINE( FDEV, MESG )
 
-C.........  If not allocated, allocate memory for file format codes
-        IF ( .NOT. ALLOCATED( FILFMT ) ) THEN
+C.........  Determine format of day- or hour-specific inputs, and store file
+C           names
+        IF( ( DAYFLAG .AND. DCALLONE ) .OR. HCALLONE ) THEN
+
+C.............  Allocate memory for storing file formats
+            IF( ALLOCATED( FILFMT ) ) DEALLOCATE( FILFMT )
             ALLOCATE( FILFMT( NFILE ), STAT=IOS )
             CALL CHECKMEM( IOS, 'FILFMT', PROGNAME )
             FILFMT = 0  ! array
-        END IF
-
-C.........  Determine format of day- or hour-specific inputs, and store file
-C           names
-C.........  Day-specific inputs...
-C.........  First time called for day-specific
-        IF( DAYFLAG .AND. DCALLONE ) THEN
 
 C.............  Allocate memory for storing contents of list-format'd file
-            ALLOCATE( NLSTSTR( NFILE ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'NLSTSTR', PROGNAME )
+            IF( ALLOCATED( LSTSTR ) ) DEALLOCATE( LSTSTR )
+            ALLOCATE( LSTSTR( NFILE ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LSTSTR', PROGNAME )
 
 C.............  Store lines of day-specific list file
-            CALL RDLINES( FDEV, MESG, NFILE, NLSTSTR )
+            CALL RDLINES( FDEV, MESG, NFILE, LSTSTR )
 
 C.............  Get file format for files listed in day-specific list file
-            CALL CHKLSTFL( NFILE, FNAME, NLSTSTR, FILFMT )
-
-            DCALLONE = .FALSE.
-
-C.........  Hours-specific inputs...
-C.........  First time called for hour-specific
-        ELSE IF( .NOT. DAYFLAG .AND. HCALLONE ) THEN
-
-C.............  Allocate memory for storing contents of list-format'd file
-            IF( ALLOCATED( NLSTSTR ) ) DEALLOCATE( NLSTSTR )
-            ALLOCATE( NLSTSTR( NFILE ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'NLSTSTR', PROGNAME )
-
-C.............  Store lines of hour-specific list file
-            CALL RDLINES( FDEV, MESG, NFILE, NLSTSTR )
-
-C.............  Get file format for files listed in hour-specific list file
-            CALL CHKLSTFL( NFILE, FNAME, NLSTSTR, FILFMT )
-
-            HCALLONE = .FALSE.
-
+            CALL CHKLSTFL( NFILE, FNAME, LSTSTR, FILFMT )
+        
+            IF( DAYFLAG ) THEN
+                DCALLONE = .FALSE.
+            ELSE
+                HCALLONE = .FALSE.
+            END IF
+            
         END IF
 
 C.........  Get the number of lines in the input file
@@ -202,7 +187,7 @@ C.........  Get the number of lines in the input file
         IREC = 0
         DO IFIL = 1, NFILE
 
-            NAMTMP = NLSTSTR( IFIL )
+            NAMTMP = LSTSTR( IFIL )
 
 C.............  If line is LIST header, skip to next line
             IF( INDEX( NAMTMP, 'LIST' ) > 0 ) CYCLE
@@ -265,9 +250,9 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
 
             ELSE IF ( FILFMT( IFIL ) .EQ. CEMFMT ) THEN
 
-                CALL RDCEMPD( IDEV, TZONE, INSTEP, MXPDSRC, 
-     &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, 
-     &                        SDATE, STIME, EDATE, ETIME, EASTAT )
+                CALL RDCEMPD( IDEV, TZONE, INSTEP, MXPDSRC, DFLAG,
+     &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME,
+     &                        EDATE, ETIME, EASTAT, SPSTAT )
 
             ELSE
 
