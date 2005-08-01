@@ -51,9 +51,9 @@
         INTEGER, PUBLIC :: NSCCPSIC ! no. all SCCs for all SICs
         INTEGER, PUBLIC :: NINVIFIP ! no. unique country/state/county codes
         INTEGER, PUBLIC :: NINVMACT ! no. unique MACTs in inventory
-        INTEGER, PUBLIC :: NORISBLR ! no. unique ORIS // boilers
-        INTEGER, PUBLIC :: NORISPNT ! no. unique ORIS // points
         INTEGER, PUBLIC :: NINVORIS ! no. unique ORIS 
+        INTEGER, PUBLIC :: NORISBLR ! no. unique ORIS // boilers
+        INTEGER, PUBLIC :: NOBLRSRC ! no. sources matching ORIS/boiler combinations
 
 !.........  Controllers
         LOGICAL, PUBLIC :: ORISFLAG  ! true: create ORIS-based arrays
@@ -84,13 +84,11 @@
         INTEGER,            ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
         INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCBG( : ) ! 1st source per ORIS/boiler
         INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCNT( : ) ! source count per ORIS/boiler
-        INTEGER,            ALLOCATABLE, PUBLIC :: OPSRCBG( : ) ! 1st source per ORIS/point
-        INTEGER,            ALLOCATABLE, PUBLIC :: OPSRCNT( : ) ! source count per ORIS/point
+        INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCNM( : ) ! src numbers matching ORIS/boiler
         LOGICAL,            ALLOCATABLE, PUBLIC :: IORSMTCH( : ) ! true: inventory ORIS matched to CEM
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: INVORIS( : ) ! unique ORIS
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC :: INVODSC( : ) ! plant description from inventory
         CHARACTER(OBRLEN3), ALLOCATABLE, PUBLIC :: ORISBLR( : ) ! ORIS // boiler
-        CHARACTER(OPTLEN3), ALLOCATABLE, PUBLIC :: ORISPNT( : ) ! ORIS // point
 
 !.........  For valid pollutants and activities...
         INTEGER, PUBLIC :: MXIDAT = 0   ! Max no of inv pols & acvtys
