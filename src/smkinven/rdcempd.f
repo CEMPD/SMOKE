@@ -590,7 +590,7 @@ C                   otherwise calculate hourly emissions using annual CEM factor
 
 C.............  Calculate and store flow rate
             IF( FLOWFAC > 0. .AND. HTINPUT > 0. ) THEN
-                FLOWVAL = FLOWFAC * HTINPUT * HR2SEC
+                FLOWVAL = FLOWFAC * HTINPUT * HR2SEC * FT2M3
 
 C.................  Calculate rate for each stack corresponding to ORIS/boiler
                 MXSTKS = OBSRCNT( INVOBPOS )
