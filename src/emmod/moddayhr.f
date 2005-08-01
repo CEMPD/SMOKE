@@ -98,4 +98,13 @@ C...........   List of ORIS IDs in hour-specific data not in inventory
         INTEGER, PUBLIC :: NUNFDORS
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: UNFDORS( : )
 
+C...........   Data from master list of ORIS/boiler combinations
+        INTEGER, PUBLIC :: NOBRLIST
+        CHARACTER(OBRLEN3), ALLOCATABLE :: OBRLIST ( : )
+        REAL,               ALLOCATABLE :: ANNNOX  ( : )
+        REAL,               ALLOCATABLE :: ANNSO2  ( : )
+        REAL,               ALLOCATABLE :: ANNGLOAD( : )
+        REAL,               ALLOCATABLE :: ANNSLOAD( : )
+        REAL,               ALLOCATABLE :: ANNHEAT ( : )
+
         END MODULE MODDAYHR
