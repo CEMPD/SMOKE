@@ -42,7 +42,7 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
         rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
         rddataemsar.o rdsrcemspt.o rddataemspt.o procemspt.o \
         rddevemspt.o rdfacemspt.o rdprocemspt.o rdstkemspt.o \
-        rdsrcntipt.o rdsrcntinp.o rddatantipt.o rddatantinp.o
+        rdsrcntipt.o rdsrcntinp.o rddatantipt.o rddatantinp.o rdcemsum.o
 #
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -74,6 +74,7 @@ procemspt.o: $(MODINFO) $(MODSOURC) $(MODLISTS)
 procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 procinvsrcs.o: $(MODSOURC) $(MODINFO) $(MODMOBIL)
 rdcempd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
+rdcemsum.o: $(MODLISTS) $(MODDAYHR)
 rddataemsar.o: $(MODINFO) $(MODLISTS)
 rddataemsmb.o: $(MODINFO)
 rddataemspt.o: $(MODINFO) $(MODLISTS)
