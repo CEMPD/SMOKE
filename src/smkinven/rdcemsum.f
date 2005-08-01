@@ -38,9 +38,6 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: NORISBLR, ORISBLR
-
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: NOBRLIST, OBRLIST, ANNNOX, ANNSO2, ANNGLOAD,
      &                      ANNSLOAD, ANNHEAT
@@ -157,7 +154,7 @@ C.............  Check for end of file
             
             N = N + 1
             
-            OBRLIST ( N ) = CORS // BLID
+            OBRLIST ( N ) = ADJUSTR( CORS ) // ADJUSTR( BLID )
             ANNNOX  ( N ) = NOXVAL
             ANNSO2  ( N ) = SO2VAL
             ANNGLOAD( N ) = GLOAD
@@ -165,6 +162,8 @@ C.............  Check for end of file
             ANNHEAT ( N ) = HTINPUT
         
         END DO
+        
+        NOBRLIST = N
 
         RETURN
 
