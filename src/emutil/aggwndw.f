@@ -187,9 +187,11 @@ C.........  Check projection parameters
 
 C.........  Check that output grid cell size is a multiple of input cell size
         IF( .NOT. EFLAG ) THEN
-            IF ( DBLERR( MOD( XCELL, XCELL3D ), 0.D0 ) .OR.
-     &           DBLERR( MOD( YCELL, YCELL3D ), 0.D0 )      ) THEN
-
+            CHK_X = XCELL / XCELL3D
+            CHK_Y = YCELL / YCELL3D
+        
+            IF ( DBLERR( CHK_X, DNINT( CHK_X ) ) .OR.
+     &           DBLERR( CHK_Y, DNINT( CHK_Y ) )      ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Output grid cell size is not an ' //
      &                 'integer multiple of input grid cell size'
@@ -200,18 +202,24 @@ C.........  Check that output grid cell size is a multiple of input cell size
 C.........  Check that the grid boundaries are aligned
         IF( .NOT. EFLAG ) THEN
             CHK_X = ( XORIG - XORIG3D ) / XCELL3D
-            CHK_X = CHK_X - INT( CHK_X )
-            
             CHK_Y = ( YORIG - YORIG3D ) / YCELL3D
-            CHK_Y = CHK_Y - INT( CHK_Y )
             
-            IF ( DBLERR( CHK_X, 0.D0 ) .OR.
-     &           DBLERR( CHK_Y, 0.D0 )      ) THEN
-
-                EFLAG = .TRUE.
-                MESG = 'ERROR: Input and output grid cell ' //
-     &                 'boundaries are not aligned'
-                CALL M3MSG2( MESG )
+            IF( CHK_X /= 0. ) THEN
+                IF( (CHK_X - DNINT( CHK_X )) / CHK_X > 0.001 ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Input and output grid cell ' //
+     &                'boundaries are not aligned in the x-direction'
+                    CALL M3MSG2( MESG )
+                END IF
+            END IF
+            
+            IF( CHK_Y /= 0. ) THEN
+                IF( (CHK_Y - DNINT( CHK_Y )) / CHK_Y > 0.001 ) THEN
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: Input and output grid cell ' //
+     &                'boundaries are not aligned in the y-direction'
+                    CALL M3MSG2( MESG )
+                END IF
             END IF
         END IF
 
