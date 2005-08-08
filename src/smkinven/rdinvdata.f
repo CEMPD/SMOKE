@@ -834,7 +834,7 @@ C.................  Check NTI specific values
                     
                 END IF
             END IF
-
+ 
 C.............  Check that data values are numbers
             DO I = 1, NPOLPERLN
                 POLNAM = READPOL( I )
@@ -1090,10 +1090,10 @@ C.................  Set the default temporal resolution of the data
                         TPF = MTPRFAC * WTPRFAC     ! use month, week profiles
                     CASE( 'AD' )
                         TPF = WKSET                 ! use week profiles
-                        EANN = DAY2YR * EANN
+                        IF( EANN > 0. ) EANN = DAY2YR * EANN
                     CASE( 'DS' )
                         TPF = 1
-                        EANN = DAY2YR * EANN
+                        IF( EANN > 0. ) EANN = DAY2YR * EANN
                     END SELECT
                 ELSE
                     TPF = MTPRFAC * WKSET
@@ -1135,14 +1135,16 @@ C                   is split
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
-                    EMISBYCAS( UCASPOS ) = EMISBYCAS( UCASPOS ) + EANN
+                    IF( EANN > 0. ) THEN
+                      EMISBYCAS( UCASPOS ) = EMISBYCAS( UCASPOS ) + EANN
+                    END IF
                     RECSBYCAS( UCASPOS ) = RECSBYCAS( UCASPOS ) + 1
 
                 ELSE
                     NPOLPERCAS = 1
                     POLFAC = 1.
                 END IF
-                    
+ 
                 DO J = 0, NPOLPERCAS - 1
 
 C.....................  If toxic format, set current pollutant
@@ -1156,11 +1158,15 @@ C.........................  Set factor for this CAS number
 C.........................  Multiply annual emissions by factor                        
                         IF( EANN > 0. ) THEN
                             POLANN = EANN * POLFAC
+                        ELSE
+                            POLANN = EANN
                         END IF
                         
 C.........................  Store emissions by pollutant for reporting
-                        EMISBYPOL( SCASPOS ) = 
-     &                      EMISBYPOL( SCASPOS ) + POLANN
+                        IF( POLANN > 0. ) THEN
+                            EMISBYPOL( SCASPOS ) = 
+     &                          EMISBYPOL( SCASPOS ) + POLANN
+                        END IF
                         
 C.........................  Make sure current pollutant is kept
                         IF( ITKEEPA( SCASIDX( SCASPOS ) ) ) THEN
@@ -1181,7 +1187,7 @@ C.........................  Find code corresponding to current pollutant
                     ELSE  
                         POLANN = EANN
                     END IF
-                
+
 C.....................  Store data in unsorted order
                     SP = SP + 1
                 
@@ -1203,9 +1209,13 @@ C.............................  Match FIP, road, and link with vehicle mix table
                                 INDEXA( SP ) = SP
                                 IPOSCODA( SP ) = POLCOD
                                 ICASCODA( SP ) = UCASPOS
-                                POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
-     &                                             POLANN * 
-     &                                             VMTMIXA( K,K1 )
+                                IF( POLANN > 0. ) THEN
+                                  POLVLA( SP,NEM ) = INVDCNV( POLCOD ) *
+     &                                               POLANN * 
+     &                                               VMTMIXA( K,K1 )
+                                ELSE
+                                  POLVLA( SP,NEM ) = POLANN
+                                END IF
                                 
                                 IF( K < NVTYPE ) THEN
                                     SP = SP + 1
@@ -1226,9 +1236,13 @@ C                               pollutants are processed
                             INDEXA  ( SP ) = SP        ! index for sorting POLVLA
                             IPOSCODA( SP ) = POLCOD    ! pollutant code
                             ICASCODA( SP ) = UCASPOS   ! CAS number (set to 0 for non-toxic sources)
-                        
-                            POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
-     &                                         POLANN
+                       
+                            IF( POLANN > 0. ) THEN 
+                              POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
+     &                                           POLANN
+                            ELSE
+                              POLVLA( SP,NEM ) = POLANN
+                            END IF
                             
                             IF( .NOT. ACTFLAG ) THEN
                                 IF( EDAY > 0. ) THEN
