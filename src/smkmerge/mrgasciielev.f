@@ -223,7 +223,7 @@ C   begin body of program MRGELEV
 
         LDEV = INIT3()
 
-C.........  Write out copywrite, version, web address, header info, and 
+C.........  Write out copyright, version, web address, header info, and 
 C           prompt to continue running the program
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
