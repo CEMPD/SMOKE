@@ -186,7 +186,7 @@ C...........   Other local variables
         CHARACTER(LNKLEN3)  CLNK      ! link ID
 
         CHARACTER(ORSLEN3)  CORS      ! DOE plant ID
-        CHARACTER(6)        BLID      ! boiler ID
+        CHARACTER(BLRLEN3)  BLID      ! boiler ID
         CHARACTER(40)       DESC      ! plant description
         CHARACTER(ERPLEN3)  ERPTYP    ! emissions release point type
         CHARACTER(4)        HT        ! stack height
@@ -235,12 +235,12 @@ C.........   Initialize variables for keeping track of dropped emissions
 C.........  Initialize nonpoint flag to false
         NONPOINT = .FALSE.
 
-C.........  Check if any files are EMS-95 or SMOKE toxics nonpoint format
+C.........  Check if any files are EMS-95 or ORL nonpoint format
         DO I = 1, NLINE
             IF( FILFMT( I ) == EMSFMT ) THEN
                 EMSFLAG = .TRUE.
                 EXIT
-            ELSE IF( FILFMT( I ) == TOXNPFMT ) THEN
+            ELSE IF( FILFMT( I ) == ORLNPFMT ) THEN
                 NONPOINT = .TRUE.
                 EXIT
             END IF
@@ -644,28 +644,28 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                NPOLPERLN, TIMEPERIOD, 
      &                                HDRFLAG, EFLAG )
                 END SELECT
-            CASE( TOXFMT )
+            CASE( ORLFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
-                    CALL RDDATANTIAR( LINE, READDATA, READPOL, 
+                    CALL RDDATAORLAR( LINE, READDATA, READPOL, 
      &                                INVYEAR, HDRFLAG, EFLAG )
                     NPOLPERLN = 1   ! have to set fake value to force reporting
                 CASE( 'MOBILE' )
-                    CALL RDDATANTIMB( LINE, READDATA, READPOL,
+                    CALL RDDATAORLMB( LINE, READDATA, READPOL,
      &                                INVYEAR, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
                 CASE( 'POINT' )
-                    CALL RDDATANTIPT( LINE, READDATA, READPOL,
+                    CALL RDDATAORLPT( LINE, READDATA, READPOL,
      &                                INVYEAR, DESC, ERPTYP, SRCTYP, 
      &                                HT, DM, TK, FL, VL, SIC, MACT, 
      &                                NAICS, CTYPE, LAT, LON, ZONE,
      &                                HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                 END SELECT
-            CASE( TOXNPFMT )
+            CASE( ORLNPFMT )
                 
-                CALL RDDATANTINP( LINE, READDATA, READPOL,
+                CALL RDDATAORLNP( LINE, READDATA, READPOL,
      &                            INVYEAR, SIC, MACT, SRCTYP, NAICS, 
      &                            HDRFLAG, EFLAG )
                 NPOLPERLN = 1
@@ -791,7 +791,7 @@ C.............  Check that point source information is correct
             END IF
                 
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
-     &          CURFMT == TOXNPFMT ) THEN
+     &          CURFMT == ORLNPFMT ) THEN
                 IF( .NOT. CHKINT( SIC ) ) THEN
                     IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: SIC code is ' //
@@ -812,8 +812,8 @@ C.............  Check that point source information is correct
                     SIC = '0000'
                 END IF
                 
-C.................  Check NTI specific values
-                IF( CURFMT == TOXFMT ) THEN
+C.................  Check ORL specific values
+                IF( CURFMT == ORLFMT ) THEN
                                         
                     IF( CTYPE /= 'U' .AND. CTYPE /= 'L' ) THEN
                         EFLAG = .TRUE.
@@ -875,7 +875,7 @@ C.............  Skip rest of loop if an error has occured
             IF( EFLAG ) CYCLE
 
 C.............  Get current CAS number position and check that it is valid
-            IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
+            IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
@@ -902,7 +902,7 @@ C                   by stored, but need values for reporting
                 END IF
 
             ELSE
-C.................  For non-toxic sources, set UCASPOS to use in ICASCODA
+C.................  For non-ORL sources, set UCASPOS to use in ICASCODA
                 UCASPOS = 0
                 NOPOLFLG = .FALSE.
             END IF
@@ -939,9 +939,9 @@ C.............  Loop through all pollutants for current line
                         
                 POLNAM = READPOL( I )
 
-C.................  If format is not toxics, find code corresponding to current pollutant
+C.................  If format is not ORL, find code corresponding to current pollutant
                 ACTFLAG = .FALSE.
-                IF( CURFMT /= TOXFMT .AND. CURFMT /= TOXNPFMT ) THEN
+                IF( CURFMT /= ORLFMT .AND. CURFMT /= ORLNPFMT ) THEN
                     POLCOD = INDEX1( POLNAM, MXIDAT, INVDNAM )
                     IF( POLCOD == 0 ) THEN
                         WRITE( MESG,94010 ) 'ERROR: Unknown  ' //
@@ -1129,9 +1129,9 @@ C                   zero or negative
                     EDAY = EANN * YEAR2DAY
                 END IF
 
-C.................  If current format is toxics, check if current CAS number
+C.................  If current format is ORL, check if current CAS number
 C                   is split
-                IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
+                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
@@ -1147,8 +1147,8 @@ C.....................  Store emissions by CAS number for reporting
  
                 DO J = 0, NPOLPERCAS - 1
 
-C.....................  If toxic format, set current pollutant
-                    IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
+C.....................  If ORL format, set current pollutant
+                    IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 
@@ -1235,7 +1235,7 @@ C                               pollutants are processed
                             INRECA  ( SP ) = CURSRC    ! map to sorted source number
                             INDEXA  ( SP ) = SP        ! index for sorting POLVLA
                             IPOSCODA( SP ) = POLCOD    ! pollutant code
-                            ICASCODA( SP ) = UCASPOS   ! CAS number (set to 0 for non-toxic sources)
+                            ICASCODA( SP ) = UCASPOS   ! CAS number (set to 0 for non-ORL sources)
                        
                             IF( POLANN > 0. ) THEN 
                               POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
@@ -1329,10 +1329,10 @@ C.................  Skip rest of loop
             TPFLAG( CURSRC ) = TPF
             
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
-     &          CURFMT == TOXNPFMT ) THEN
+     &          CURFMT == ORLNPFMT ) THEN
                 ISIC( CURSRC ) = STR2INT( SIC )
                 
-                IF( CURFMT == TOXFMT .OR. CURFMT == TOXNPFMT ) THEN
+                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
                     CALL PADZERO( SRCTYP )
                     CALL PADZERO( MACT )
                     CALL PADZERO( NAICS )
@@ -1341,7 +1341,7 @@ C.................  Skip rest of loop
                     CNAICS ( CURSRC ) = NAICS
                 END IF
                 
-                IF( CURFMT == TOXFMT ) THEN
+                IF( CURFMT == ORLFMT ) THEN
                     CALL PADZERO( ERPTYP )
                     CERPTYP( CURSRC ) = ERPTYP
                     
