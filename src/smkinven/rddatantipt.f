@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDDATANTIPT( LINE, READDATA, READPOL, IYEAR, DESC,
+        SUBROUTINE RDDATAORLPT( LINE, READDATA, READPOL, IYEAR, DESC,
      &                          ERPTYP, SRCTYP, HT, DM, TK, FL, VL, SIC, 
      &                          MACT, NAICS, CTYPE, LAT, LON, UTMZ, 
      &                          HDRFLAG, EFLAG )
@@ -8,7 +8,7 @@ C***********************************************************************
 C  subroutine body starts at line 156
 C
 C  DESCRIPTION:
-C      This subroutine processes a line from an NTI format point-source inventory
+C      This subroutine processes a line from an ORL format point-source inventory
 C      file and returns the inventory data values.
 C
 C  PRECONDITIONS REQUIRED:
@@ -95,10 +95,10 @@ C...........   Other local variables
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            ! message buffer
 
-        CHARACTER(16) :: PROGNAME = 'RDDATANTIPT' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDDATAORLPT' ! Program name
 
 C***********************************************************************
-C   begin body of subroutine RDDATANTIPT
+C   begin body of subroutine RDDATAORLPT
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly
@@ -156,7 +156,7 @@ C           the various data fields
         READDATA( 1,NRE ) = SEGMENT( 26 ) ! rule effectiveness
         READDATA( 1,NC1 ) = SEGMENT( 27 ) ! primary control equipment code
         READDATA( 1,NC2 ) = SEGMENT( 28 ) ! secondary control equipment code
-            
+        
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
 
@@ -177,4 +177,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94125   FORMAT( I5 )
 
-        END SUBROUTINE RDDATANTIPT
+        END SUBROUTINE RDDATAORLPT

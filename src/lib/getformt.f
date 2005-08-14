@@ -126,15 +126,15 @@ C.................  Check if format is provided as a header entry
                     EXIT ! To end read loop
                 END IF
 
-                L = INDEX( LINE, 'TOXICS' )
+                L = INDEX( LINE, 'ORL' )
                 IF( L .GT. 0 ) THEN
                     L = INDEX( LINE, 'NONPOINT' )
                     IF( L .GT. 0 ) THEN
-                        GETFORMT = TOXNPFMT
-                        EXIT ! To end read loop
+                        GETFORMT = ORLNPFMT
+                    ELSE
+                        GETFORMT = ORLFMT
                     END IF
                     
-                    GETFORMT = TOXFMT
                     EXIT ! To end read loop
                 END IF
 
@@ -164,8 +164,8 @@ C.........  If format has not been set, print error about missing header
      &             'format due to missing or bad header ' //
      &             'information. ' // CRLF() // BLANK16 //
      &             'Valid headers are: ' // CRLF() // BLANK16 //
-     &             '#LIST, #IDA, #EMS-95, #TOXICS, ' //
-     &             '#TOXICS NONPOINT, or #CEM'
+     &             '#LIST, #IDA, #EMS-95, #ORL, ' //
+     &             '#ORL NONPOINT, or #CEM'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 

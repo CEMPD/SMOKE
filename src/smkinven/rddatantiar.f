@@ -1,12 +1,12 @@
 
-        SUBROUTINE RDDATANTIAR( LINE, READDATA, READPOL, IYEAR, 
+        SUBROUTINE RDDATAORLAR( LINE, READDATA, READPOL, IYEAR, 
      &                          HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
 C
 C  DESCRIPTION:
-C      This subroutine processes a line from an NTI format area-source inventory
+C      This subroutine processes a line from an ORL format area-source inventory
 C      file and returns the inventory data values.
 C
 C  PRECONDITIONS REQUIRED:
@@ -78,10 +78,10 @@ C...........   Other local variables
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            !  message buffer
 
-        CHARACTER(16) :: PROGNAME = 'RDDATANTIAR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDDATAORLAR' ! Program name
 
 C***********************************************************************
-C   begin body of subroutine RDDATANTIAR
+C   begin body of subroutine RDDATAORLAR
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly (country and year required)
@@ -143,4 +143,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94125   FORMAT( I5 )
 
-        END SUBROUTINE RDDATANTIAR
+        END SUBROUTINE RDDATAORLAR

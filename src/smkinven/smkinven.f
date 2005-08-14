@@ -60,7 +60,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, TZONES, CSCC, IDIU, IWEK
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FILFMT, LSTSTR
+        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX,
@@ -165,7 +165,7 @@ C...........   Other local variables
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL         NONPOINT         ! true: importing nonpoint inventory
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
-        LOGICAL         TOXFLG           ! true: toxics are being processed
+        LOGICAL         ORLFLG           ! true: ORL format inventory
         LOGICAL         STKFLG           ! true: check stack parameters
 
         CHARACTER(5)          TYPNAM      !  'day' or 'hour' for import
@@ -234,7 +234,7 @@ C               are contained in the module MODSOURC
             CALL M3MSG2( 'Reading inventory sources...' )
 
             CALL RDINVSRCS( IDEV, XDEV, EDEV, INAME,
-     &                      NRAWBP, NRAWSRCS, TFLAG, TOXFLG )
+     &                      NRAWBP, NRAWSRCS, TFLAG, ORLFLG )
 
 C.............  Process source information and store in sorted order
             CALL M3MSG2( 'Processing inventory sources...' )
@@ -247,10 +247,10 @@ C               sorted order
             
             CALL RDINVDATA( IDEV, INAME, NRAWBP, NONPOINT )
 
-C.............  Check if toxics are being processed and reset NHAPEXCLUDE if needed
-            IF( .NOT. TOXFLG .AND. UDEV > 0 ) THEN
+C.............  Check if ORL inventory and reset NHAPEXCLUDE if needed
+            IF( .NOT. ORLFLG .AND. UDEV > 0 ) THEN
                 MESG = 'NOTE: Ignoring SMK_NHAPEXCLUDE_YN setting ' //
-     &                 'since toxics are not being processed'
+     &                 'since an ORL inventory is not being processed'
                 CALL M3MSG2( MESG )
                 UDEV = 0
             END IF
@@ -261,7 +261,7 @@ C.............  Process inventory records and store in sorted order
             CALL PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV ) 
 
 C.............  Integrate criteria and toxic pollutants
-            IF( TOXFLG ) THEN
+            IF( ORLFLG ) THEN
                 CALL SETNONHAP
             END IF
 
@@ -365,7 +365,7 @@ C.........  Input gridded I/O API inventory data
 
 c note: STOPPED HERE
 
-        END IF  ! For gridded NetI/O APIDF inventory
+        END IF  ! For gridded I/O API NetCDF inventory
 
 C.........  Output SMOKE inventory files
         IF( IFLAG .OR. GFLAG ) THEN
@@ -459,12 +459,8 @@ C.............  Read and output hour-specific data
 
         END IF
 
-C.............  Write out toxics report file
-
-        CALL M3MSG2( ' ' )
-        CALL M3MSG2( ' ' )
-        CALL M3MSG2( 'Writing toxics report file...' )
-
+C.............  Write inventory report file
+        CALL M3MSG2( 'Writing inventory report file...' )
         CALL WREPINVEN( ADEV, CDEV )
 
 C.........  End program successfully

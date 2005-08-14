@@ -265,7 +265,7 @@ C.............  Convert state code to integer
             CASE ( IDAFMT )
                 STA = STR2INT( LINE( 1:2 ) )
 
-            CASE ( TOXFMT, TOXNPFMT )
+            CASE ( ORLFMT, ORLNPFMT )
                 READ( LINE, * ) STA
 
             CASE ( EMSFMT )

@@ -1,6 +1,6 @@
 
         SUBROUTINE RDINVSRCS( FDEV, VDEV, SDEV, FNAME, 
-     &                        NRAWBP, NRAWSRCS, TFLAG, TOXFLG )
+     &                        NRAWBP, NRAWSRCS, TFLAG, ORLFLG )
 
 C***********************************************************************
 C  subroutine body starts at line 133
@@ -93,7 +93,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT(OUT) :: NRAWBP       ! no. of sources with pols/acts
         INTEGER,      INTENT(OUT) :: NRAWSRCs     ! no. of raw sources
         LOGICAL,      INTENT(OUT) :: TFLAG        ! true: PTREF output
-        LOGICAL,      INTENT(OUT) :: TOXFLG       ! true: read toxics inventory
+        LOGICAL,      INTENT(OUT) :: ORLFLG       ! true: read ORL inventory
 
 C...........   Local parameters
         INTEGER      , PARAMETER :: MXRECS = 1000000  ! maximum records per iteration
@@ -196,8 +196,8 @@ C.........  Get temporary directory location
             END IF
         END IF
 
-C.........  Initialize toxics flag to false
-        TOXFLG = .FALSE.
+C.........  Initialize ORL flag to false
+        ORLFLG = .FALSE.
 
 C.........  Create formats for mobile data
         IF( CATEGORY == 'MOBILE' ) THEN
@@ -231,14 +231,14 @@ C.............  Allocate memory for storing contents of list-format'd file
 C.............  Store lines of PTINV file
             CALL RDLINES( FDEV, MESG, NLINE, LSTSTR )
 
-C.................  Reset number of lines to remove blanks
-C                   (RDLINES does not store blank lines)
-                DO I = 1, NLINE
-                    IF( LSTSTR( I ) == ' ' ) THEN
-                        NLINE = I - 1
-                        EXIT
-                    END IF    
-                END DO
+C.............  Reset number of lines to remove blanks
+C               (RDLINES does not store blank lines)
+            DO I = 1, NLINE
+                IF( LSTSTR( I ) == ' ' ) THEN
+                    NLINE = I - 1
+                    EXIT
+                END IF    
+            END DO
 
 C.............  Check the format of the list-formatted inventory file and
 C               return the code for the type of files it contains
@@ -556,25 +556,25 @@ C.................  Process line depending on file format and source category
      &                                   HDRFLAG, EFLAG )
                         TSCC = ' '   ! set fake SCC code
                     END SELECT
-                CASE( TOXFMT )
-                    TOXFLG = .TRUE.
+                CASE( ORLFMT )
+                    ORLFLG = .TRUE.
                     
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
-                        CALL RDSRCNTIAR( LINE, CFIP, TSCC, NPOLPERLN,
+                        CALL RDSRCORLAR( LINE, CFIP, TSCC, NPOLPERLN,
      &                                   HDRFLAG, EFLAG )
                     CASE( 'MOBILE' )
-                        CALL RDSRCNTIMB( LINE, CFIP, CLNK, TSCC,
+                        CALL RDSRCORLMB( LINE, CFIP, CLNK, TSCC,
      &                                   NPOLPERLN, HDRFLAG, EFLAG )
                     CASE( 'POINT' )
-                        CALL RDSRCNTIPT( LINE, CFIP, FCID, PTID, SKID,
+                        CALL RDSRCORLPT( LINE, CFIP, FCID, PTID, SKID,
      &                                   SGID, TSCC, NPOLPERLN,
      &                                   HDRFLAG, EFLAG )
                     END SELECT
-                CASE( TOXNPFMT )
-                    TOXFLG = .TRUE.
+                CASE( ORLNPFMT )
+                    ORLFLG = .TRUE.
                     
-                    CALL RDSRCNTINP( LINE, CFIP, TSCC, NPOLPERLN,
+                    CALL RDSRCORLNP( LINE, CFIP, TSCC, NPOLPERLN,
      &                               HDRFLAG, EFLAG )
                 END SELECT
 
@@ -649,7 +649,7 @@ C.....................  Make sure SCC is at least 8 characters long
                 
                 IF( CATEGORY == 'MOBILE' ) THEN
 
-                    IF( CURFMT == IDAFMT .OR. CURFMT == TOXFMT ) THEN
+                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT ) THEN
 
 C.........................  Check if SCC has proper length
                         IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
@@ -714,7 +714,7 @@ C.....................  Ensure that road class is valid and convert from road cl
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
-                    IF( CURFMT == IDAFMT .OR. CURFMT == TOXFMT ) THEN
+                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT ) THEN
 
 C.........................  Make sure SCC is at least 8 characters long
                         IF( LEN_TRIM( TSCC ) < 8 ) THEN
@@ -867,7 +867,7 @@ C.............................  Update total number of sources with pollutants
                     CALL PADZERO( TSCC )
                 
                     SELECT CASE( CURFMT ) 
-                    CASE( IDAFMT, TOXFMT )
+                    CASE( IDAFMT, ORLFMT )
                         CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
      &                                TSCC, CHRBLNK3, CHRBLNK3, 
      &                                TCSOURC )

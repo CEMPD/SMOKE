@@ -1,12 +1,12 @@
 
-        SUBROUTINE RDSRCNTIAR( LINE, CFIP, TSCC, NPOLPERLN, 
+        SUBROUTINE RDSRCORLAR( LINE, CFIP, TSCC, NPOLPERLN, 
      &                         HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
 C
 C  DESCRIPTION:
-C      This subroutine processes a line from an NTI format area-source inventory
+C      This subroutine processes a line from an ORL format area-source inventory
 C      file and returns the unique source characteristics.
 C
 C  PRECONDITIONS REQUIRED:
@@ -78,10 +78,10 @@ C...........   Other local variables
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            !  message buffer
 
-        CHARACTER(16) :: PROGNAME = 'RDSRCNTIAR' ! Program name
+        CHARACTER(16) :: PROGNAME = 'RDSRCORLAR' ! Program name
 
 C***********************************************************************
-C   begin body of subroutine RDSRCNTIAR
+C   begin body of subroutine RDSRCORLAR
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly (country and year required)
@@ -114,9 +114,8 @@ C.........  Separate line into segments
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS        
-        CFIP( 2:3 ) = ADJUSTR( SEGMENT( 1 )( 1:2 ) )
-        CFIP( 4:6 ) = ADJUSTR( SEGMENT( 2 )( 1:3 ) )
+        WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS
+        CFIP( 2:6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
 
 C.........  Replace blanks with zeros        
         DO I = 1,FIPLEN3
@@ -154,4 +153,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94125   FORMAT( I5 )
 
-        END SUBROUTINE RDSRCNTIAR
+        END SUBROUTINE RDSRCORLAR

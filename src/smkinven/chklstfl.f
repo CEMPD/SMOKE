@@ -68,7 +68,7 @@ C...........   Other local variables
         INTEGER      IOS                 !  I/O status
 
         LOGICAL   :: EMSFLAG   = .FALSE. !  true: at least one file is EMS format
-        LOGICAL   :: IDAORNTI  = .FALSE. !  true: at least one file is IDA or NTI format
+        LOGICAL   :: IDAORORL  = .FALSE. !  true: at least one file is IDA or ORL format
 
         CHARACTER(300)  INFILE      !  input file line buffer
         CHARACTER(500)  MESG        !  message buffer
@@ -79,7 +79,7 @@ C***********************************************************************
 C   begin body of subroutine CHKLSTFL
 
         EMSFLAG  = .FALSE.   ! Need to reset for each each subroutine call
-        IDAORNTI = .FALSE.
+        IDAORORL = .FALSE.
         EXTFORMAT = -1
         
 C.........  Loop through lines of list-formatted file to check the formats
@@ -119,11 +119,11 @@ C.............  Check for #LIST entry
                 ELSE IF( INDEX( INFILE, 'CEM' ) > 0 ) THEN
                     EXTFORMAT = CEMFMT
                     
-                ELSE IF( INDEX( INFILE, 'TOXICS' ) > 0 ) THEN
+                ELSE IF( INDEX( INFILE, 'ORL' ) > 0 ) THEN
                     IF( INDEX( INFILE, 'NONPOINT' ) > 0 ) THEN
-                        EXTFORMAT = TOXNPFMT
+                        EXTFORMAT = ORLNPFMT
                     ELSE
-                        EXTFORMAT = TOXFMT
+                        EXTFORMAT = ORLFMT
                     END IF
                 END IF
                 
@@ -150,8 +150,8 @@ C.............  Determine format of INFILE
 C.............  Set flag based on format
             IF( FILFMT( J ) == EMSFMT ) EMSFLAG = .TRUE.
             IF( FILFMT( J ) == IDAFMT .OR. 
-     &          FILFMT( J ) == TOXFMT .OR.
-     &          FILFMT( J ) == TOXNPFMT ) IDAORNTI = .TRUE.
+     &          FILFMT( J ) == ORLFMT .OR.
+     &          FILFMT( J ) == ORLNPFMT ) IDAORORL = .TRUE.
 
 C.............  Check that file formats are consistent
             IF( EMSFLAG .AND. FILFMT( J ) /= EMSFMT ) THEN
@@ -166,20 +166,20 @@ C.............  Check that file formats are consistent
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            IF( IDAORNTI                .AND. 
+            IF( IDAORORL                .AND. 
      &          FILFMT( J ) /= IDAFMT   .AND. 
-     &          FILFMT( J ) /= TOXFMT   .AND.
-     &          FILFMT( J ) /= TOXNPFMT       ) THEN
+     &          FILFMT( J ) /= ORLFMT   .AND.
+     &          FILFMT( J ) /= ORLNPFMT       ) THEN
                 WRITE( MESG,94010 )
      &                 'ERROR: In SMOKE list-formatted inventory file, '
      &                 // TRIM( FNAME ) // ', at least one file is ' //
-     &                 CRLF() // BLANK10 // 'IDA or SMOKE toxics ' //
+     &                 CRLF() // BLANK10 // 'IDA or ORL ' //
      &                 'format while another is neither IDA nor ' //
-     &                 'SMOKE toxics format.' // CRLF() // BLANK10 //
-     &                 'When using IDA or SMOKE toxics formatted ' //
+     &                 'ORL format.' // CRLF() // BLANK10 //
+     &                 'When using IDA or ORL formatted ' //
      &                 'inventories, all other inventories ' // 
-     &                 CRLF() // BLANK10 // 'must also be IDA or SMOKE '
-     &                 // 'toxics format.'
+     &                 CRLF() // BLANK10 // 'must also be IDA or ORL '
+     &                 // 'format.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
