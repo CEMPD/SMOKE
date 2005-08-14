@@ -61,7 +61,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,            INTENT(INOUT):: NPOLPERLN             ! no. pollutants per line
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
-        CHARACTER(6),       INTENT (OUT) :: BLID                  ! boiler ID
+        CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
         CHARACTER(40),      INTENT (OUT) :: DESC                  ! plant description
         CHARACTER(4),       INTENT (OUT) :: HT                    ! stack height
         CHARACTER(6),       INTENT (OUT) :: DM                    ! stack diameter
