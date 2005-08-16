@@ -92,6 +92,8 @@ C...........   File units and logical/physical names
         INTEGER :: LDEV = 0   !  log-device
         INTEGER :: NDEV = 0   !  SCC descriptions
         INTEGER :: NIDEV = 0  !  SIC descriptions
+        INTEGER :: NMDEV = 0  !  MACT descriptions
+        INTEGER :: NNDEV = 0  !  NAICS descriptions
         INTEGER :: PDEV = 0   !  speciation supplemental file
         INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
         INTEGER :: SDEV = 0   !  ASCII inven input file
@@ -161,7 +163,8 @@ C.........  Get environment variable settings
 C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, PRNAME, 
      &                  SLNAME, SSNAME, TNAME, RDEV, SDEV, GDEV, PDEV, 
-     &                  TDEV, EDEV, YDEV, NDEV, NIDEV, ADEV )
+     &                  TDEV, EDEV, YDEV, NDEV, NIDEV, ADEV, NMDEV,
+     &                  NNDEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -195,7 +198,7 @@ C.........  Read one-time input file data
      &                YDEV, NDEV, NIDEV, ADEV, ENAME, CUNAME, GNAME, 
      &                LNAME, PRNAME, SLNAME, SSNAME, GMAT( 1 ),
      &                GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ),
-     &                SSMAT, SLMAT )
+     &                SSMAT, SLMAT, NMDEV, NNDEV )
 
 C.........  Preprocess the country/state/county data
 c note: Could add routine to reduce list of co/st/cy data to just records 
