@@ -41,23 +41,26 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
-     &                      IWEK, IDIU, SPPROF, ISIC 
+     &                      IWEK, IDIU, SPPROF, ISIC, CMACT, CNAICS,
+     &                      CSRCTYP
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC
+        USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
+     &                      INVMACT, NINVNAICS, INVNAICS
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, AFLAG, ALLRPT, NSPCPOL,
      &                      SPCPOL, STKX, STKY, LOC_BEGP, LOC_ENDP
 
 C.........  This module contains report arrays for each output bin
-        USE MODREPBN, ONLY: NOUTREC, NOUTBINS, BINBAD, BINCOIDX, 
+        USE MODREPBN, ONLY: NOUTREC, NOUTBINS, BINBAD, BINCOIDX,
      &                      BINSTIDX, BINCYIDX, BINREGN, BINSMKID,
      &                      BINSCC, BINSRGID1, BINSRGID2, BINSNMIDX,
      &                      BINRCL, BINMONID, BINWEKID, BINDIUID,
      &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
-     &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL, OUTSRC,
-     &                      BINSIC, BINSICIDX
+     &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL,OUTSRC,
+     &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
+     &                      BINNAICS, BINNAIIDX, BINSRCTYP
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS
@@ -86,7 +89,8 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local parameters
         INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SICLEN3 + SPNLEN3
-
+     &                                     + MACLEN3 + NAILEN3 + STPLEN3
+     
 C...........   Sorting arrays
         INTEGER          , ALLOCATABLE :: SORTIDX( : )
 
@@ -118,6 +122,9 @@ C...........   Local variables
         CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
         CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC        ! tmp SCC
+        CHARACTER(MACLEN3) MACT       ! tmp MACT
+        CHARACTER(NAILEN3) NAICS      ! tmp NAICS
+        CHARACTER(STPLEN3) SRCTYP     ! tmp SRCTYP
         CHARACTER(SPNLEN3) SPCID      ! tmp speciation profile
         CHARACTER(PLTLEN3) PLANT      ! tmp plant ID
         CHARACTER(PLTLEN3) PREVPLT    ! previous plant ID
@@ -142,9 +149,10 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF, '(A,I2.2,A,I1,A,I2.2,A,I2.2,A)' ) 
-     &         '(4I8, A', SCCLEN3, ',I',SICLEN3,',5I8,A', SPNLEN3,
-     &               ',A', PLTLEN3,',I8,A)'
+      WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,
+     &                A,I1,A)') 
+     &    '(4I8,A',SCCLEN3,',I',SICLEN3,',5I8,A', SPNLEN3,',A',
+     &    PLTLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', STPLEN3, ')'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -162,6 +170,9 @@ C           report
         SPCID  = ' '
         PLANT  = ' '
         SCC    = ' '
+        MACT   = ' '
+        NAICS  = ' '
+        SRCTYP = ' '
         ESTAT  = ' '
 
 C.........  Create a sorting array for all output records
@@ -211,21 +222,30 @@ C.................  If BY COUNTRY, insert region code with trailing zeros
 
                 END IF  ! End by county, state, or country
 
+C.................  If BY SIC, insert full SIC
+                IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
+
 C.................  If BY SCC10, insert full SCC, and nothing else needed
                 IF( RPT_%BYSCC ) THEN
 
                     SCC = CSCC( OUTSRC( I ) )
-
 C.................  If BY ROADCLASS, insert roadclass code        
+
                 ELSE IF( RPT_%BYRCL ) THEN
 
                     RCL = IRCLAS( OUTSRC( I ) )
 
                 END IF  ! End by source or by roadclass
 
-C.................  If BY SIC, insert full SIC
-                IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
+C.................  If BY MACT, insert full MACT
+                IF( RPT_%BYMACT ) MACT = CMACT( OUTSRC( I ) )
 
+C.................  If BY NAICS, insert full NAICS
+                IF( RPT_%BYNAICS ) NAICS = CNAICS( OUTSRC( I ) )
+
+C.................  If BY SRCTYP, insert full Source type
+                IF( RPT_%BYSRCTYP ) SRCTYP = CSRCTYP( OUTSRC( I ) )
+            
             END IF      ! End by source or not
 
 C.................  If by surrogates IDs, insert them depending on resolution
@@ -300,14 +320,17 @@ C.................  If BY ELEVSTAT, insert elevated status code
                 END IF
 
             END IF  ! End by elevated status
-
+            
 C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, SIC,
      &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
-     &                             SPCID, PLANT, RCL, ESTAT
+     &                             SPCID, PLANT, RCL, ESTAT, MACT,
+     &                             NAICS, SRCTYP
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
+
+            
 
         END DO   ! End loop I over output records
 
@@ -340,6 +363,11 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSMKID  ) ) DEALLOCATE( BINSMKID )
         IF( ALLOCATED( BINSCC    ) ) DEALLOCATE( BINSCC )
         IF( ALLOCATED( BINSIC    ) ) DEALLOCATE( BINSIC )
+        IF( ALLOCATED( BINMACT   ) ) DEALLOCATE( BINMACT )
+        IF( ALLOCATED( BINMACIDX ) ) DEALLOCATE( BINMACIDX )
+        IF( ALLOCATED( BINNAICS  ) ) DEALLOCATE( BINNAICS )
+        IF( ALLOCATED( BINNAIIDX ) ) DEALLOCATE( BINNAIIDX )
+        IF( ALLOCATED( BINSRCTYP ) ) DEALLOCATE( BINSRCTYP)
         IF( ALLOCATED( BINSRGID1 ) ) DEALLOCATE( BINSRGID1 )
         IF( ALLOCATED( BINSRGID2 ) ) DEALLOCATE( BINSRGID2 )
         IF( ALLOCATED( BINSNMIDX ) ) DEALLOCATE( BINSNMIDX )
@@ -396,6 +424,32 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSICIDX( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSICIDX', PROGNAME )
         ENDIF
+                
+        IF( RPT_%BYMACT   ) THEN
+            ALLOCATE( BINMACT   ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINMACT', PROGNAME )
+        ENDIF
+        
+        IF( RPT_%MACTNAM   ) THEN
+            ALLOCATE( BINMACIDX( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINMACIDX', PROGNAME )
+        ENDIF
+        
+        IF( RPT_%BYNAICS   ) THEN
+            ALLOCATE( BINNAICS   ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINNAICS', PROGNAME )
+        ENDIF
+
+        IF( RPT_%NAICSNAM   ) THEN
+            ALLOCATE( BINNAIIDX( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINNAIIDX', PROGNAME )
+        ENDIF
+
+        IF( RPT_%BYSRCTYP   ) THEN
+            ALLOCATE( BINSRCTYP   ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSRCTYP', PROGNAME )
+        ENDIF
+        
         IF( RPT_%SRGRES .EQ. 1 ) THEN
             ALLOCATE( BINSRGID1( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSRGID1', PROGNAME )
@@ -462,7 +516,8 @@ C.........  Populate the bin characteristic arrays (not the data array)
 
                 READ( BUFFER,FMTBUF ) 
      &                COL, ROW, SRCID, FIP, SCC, SIC, SRGID1, SRGID2, 
-     &                MONID, WEKID, DIUID, SPCID, PLANT, RCL, ESTAT
+     &                MONID, WEKID, DIUID, SPCID, PLANT, RCL, ESTAT, 
+     &                MACT, NAICS, SRCTYP
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -556,6 +611,27 @@ C.................  Store SIC name index
                     K = FIND1( SIC, NINVSIC, INVSIC )
                     BINSICIDX( B ) = K
                 END IF
+
+C.................  Store MACT
+                IF( RPT_%BYMACT ) BINMACT( B ) = MACT
+
+C.................  Store MACT name index
+                IF( RPT_%MACTNAM ) THEN
+                    K = FINDC( MACT, NINVMACT, INVMACT )
+                    BINMACIDX( B ) = K
+                END IF
+
+C.................  Store NAICS
+                IF( RPT_%BYNAICS ) BINNAICS( B ) = NAICS
+
+C.................  Store NAICS name index
+                IF( RPT_%NAICSNAM ) THEN
+                    K = FINDC( NAICS, NINVNAICS, INVNAICS )
+                    BINNAIIDX( B ) = K
+                END IF
+
+C.................  Store SRCTYP
+                IF( RPT_%BYSRCTYP ) BINSRCTYP( B ) = SRCTYP
 
 C.................  Store surrogate codes
                 IF( RPT_%SRGRES .EQ. 1 ) BINSRGID1( B ) = SRGID1
