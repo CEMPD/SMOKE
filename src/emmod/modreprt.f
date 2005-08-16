@@ -282,7 +282,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: MACDSWIDTH=0 ! width of MACT description column
         INTEGER      , PUBLIC :: NAIWIDTH  =0 ! width of NAICS
         INTEGER      , PUBLIC :: NAIDSWIDTH=0 ! width of NAICS description column
-        INTEGER      , PUBLIC :: STYPWDITH =0 ! width of source type code
+        INTEGER      , PUBLIC :: STYPWIDTH =0 ! width of source type code
         INTEGER      , PUBLIC :: SPCWIDTH  =0 ! width of speciation profile label
         INTEGER      , PUBLIC :: SRCWIDTH  =0 ! width of source IDs column
         INTEGER      , PUBLIC :: SRG1WIDTH =0 ! width of primary surg column
