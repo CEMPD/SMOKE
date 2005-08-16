@@ -125,6 +125,9 @@
             LOGICAL       :: BYPLANT       ! true: by plant 
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSIC         ! true: by SIC 
+            LOGICAL       :: BYMACT        ! true: by MACT
+            LOGICAL       :: BYNAICS       ! true: by NAICS
+            LOGICAL       :: BYSRCTYP      ! true: by source type
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
             LOGICAL       :: BYSTACK       ! true: by stack
@@ -141,6 +144,8 @@
             LOGICAL       :: AVEDAY        ! true: use average day data
             LOGICAL       :: SCCNAM        ! true: output SCC name
             LOGICAL       :: SICNAM        ! true: output SIC name
+            LOGICAL       :: MACTNAM       ! true: output MACT name
+            LOGICAL       :: NAICSNAM      ! true: output NAICS name
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
             LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
@@ -189,6 +194,8 @@
         LOGICAL, PUBLIC :: LFLAG  = .FALSE. ! true: read in layer fracs file
         LOGICAL, PUBLIC :: NFLAG  = .FALSE. ! true: read in SCC names file
         LOGICAL, PUBLIC :: NIFLAG = .FALSE. ! true: read in SIC names file
+        LOGICAL, PUBLIC :: NMFLAG = .FALSE. ! true: read in MACT names file
+        LOGICAL, PUBLIC :: NNFLAG = .FALSE. ! true: read in NAICS names file
         LOGICAL, PUBLIC :: SLFLAG = .FALSE. ! true: read in mole speciation matrix
         LOGICAL, PUBLIC :: SSFLAG = .FALSE. ! true: read in mass speciation matrix
         LOGICAL, PUBLIC :: PRFLAG = .FALSE. ! true: read projection matrix
@@ -255,31 +262,36 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
 
 !.........  Temporary output file-specific settings
 !.........  All widths include leading blanks and trailing commas
-        INTEGER      , PUBLIC :: CELLWIDTH=0 ! width of cell output columns
-        INTEGER      , PUBLIC :: CHARWIDTH=0 ! width of source char output cols
-        INTEGER      , PUBLIC :: COWIDTH  =0 ! width of country name column
-        INTEGER      , PUBLIC :: CYWIDTH  =0 ! width of county name column
-        INTEGER      , PUBLIC :: DATEWIDTH=0 ! width of date column
-        INTEGER      , PUBLIC :: DIUWIDTH =0 ! width of diurnal profile label
-        INTEGER      , PUBLIC :: ELEVWIDTH=0 ! width of elevated srcs flag col
-        INTEGER      , PUBLIC :: HOURWIDTH=0 ! width of hour column
-        INTEGER      , PUBLIC :: LAYRWIDTH=0 ! width of layer number label
-        INTEGER      , PUBLIC :: MONWIDTH =0 ! width of monthly profile label
-        INTEGER      , PUBLIC :: PDSCWIDTH=0 ! width of plant description col
-        INTEGER      , PUBLIC :: REGNWIDTH=0 ! width of region column
-        INTEGER      , PUBLIC :: SCCWIDTH =0 ! width of SCC
-        INTEGER      , PUBLIC :: SDSCWIDTH=0 ! width of SCC description column
-        INTEGER      , PUBLIC :: SICWIDTH =0 ! width of SIC
-        INTEGER      , PUBLIC :: SIDSWIDTH=0 ! width of SIC description column
-        INTEGER      , PUBLIC :: SPCWIDTH =0 ! width of speciation profile label
-        INTEGER      , PUBLIC :: SRCWIDTH =0 ! width of source IDs column
-        INTEGER      , PUBLIC :: SRG1WIDTH=0 ! width of primary surg column
-        INTEGER      , PUBLIC :: SRG2WIDTH=0 ! width of fallback surg column
-        INTEGER      , PUBLIC :: STWIDTH  =0 ! width of state name column
-        INTEGER      , PUBLIC :: STKPWIDTH=0 ! width of stack parameters columns
-        INTEGER      , PUBLIC :: UNITWIDTH=0 ! width of unit column
-        INTEGER      , PUBLIC :: VARWIDTH=0  ! width of variable column
-        INTEGER      , PUBLIC :: WEKWIDTH =0 ! width of weekly profile label
+        INTEGER      , PUBLIC :: CELLWIDTH =0 ! width of cell output columns
+        INTEGER      , PUBLIC :: CHARWIDTH =0 ! width of source char output cols
+        INTEGER      , PUBLIC :: COWIDTH   =0 ! width of country name column
+        INTEGER      , PUBLIC :: CYWIDTH   =0 ! width of county name column
+        INTEGER      , PUBLIC :: DATEWIDTH =0 ! width of date column
+        INTEGER      , PUBLIC :: DIUWIDTH  =0 ! width of diurnal profile label
+        INTEGER      , PUBLIC :: ELEVWIDTH =0 ! width of elevated srcs flag col
+        INTEGER      , PUBLIC :: HOURWIDTH =0 ! width of hour column
+        INTEGER      , PUBLIC :: LAYRWIDTH =0 ! width of layer number label
+        INTEGER      , PUBLIC :: MONWIDTH  =0 ! width of monthly profile label
+        INTEGER      , PUBLIC :: PDSCWIDTH =0 ! width of plant description col
+        INTEGER      , PUBLIC :: REGNWIDTH =0 ! width of region column
+        INTEGER      , PUBLIC :: SCCWIDTH  =0 ! width of SCC
+        INTEGER      , PUBLIC :: SDSCWIDTH =0 ! width of SCC description column
+        INTEGER      , PUBLIC :: SICWIDTH  =0 ! width of SIC
+        INTEGER      , PUBLIC :: SIDSWIDTH =0 ! width of SIC description column
+        INTEGER      , PUBLIC :: MACTWIDTH =0 ! width of MACT
+        INTEGER      , PUBLIC :: MACDSWIDTH=0 ! width of MACT description column
+        INTEGER      , PUBLIC :: NAIWIDTH  =0 ! width of NAICS
+        INTEGER      , PUBLIC :: NAIDSWIDTH=0 ! width of NAICS description column
+        INTEGER      , PUBLIC :: STYPWDITH =0 ! width of source type code
+        INTEGER      , PUBLIC :: SPCWIDTH  =0 ! width of speciation profile label
+        INTEGER      , PUBLIC :: SRCWIDTH  =0 ! width of source IDs column
+        INTEGER      , PUBLIC :: SRG1WIDTH =0 ! width of primary surg column
+        INTEGER      , PUBLIC :: SRG2WIDTH =0 ! width of fallback surg column
+        INTEGER      , PUBLIC :: STWIDTH   =0 ! width of state name column
+        INTEGER      , PUBLIC :: STKPWIDTH =0 ! width of stack parameters columns
+        INTEGER      , PUBLIC :: UNITWIDTH =0 ! width of unit column
+        INTEGER      , PUBLIC :: VARWIDTH  =0 ! width of variable column
+        INTEGER      , PUBLIC :: WEKWIDTH  =0 ! width of weekly profile label
 
         CHARACTER(50),  PUBLIC :: CELLFMT     ! format string for cell columns
         CHARACTER(50),  PUBLIC :: DATEFMT     ! format string for date column
