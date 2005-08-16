@@ -100,6 +100,8 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINSNMIDX( : )   ! SCC name index
         INTEGER, ALLOCATABLE, PUBLIC :: BINSIC   ( : )   ! SIC 
         INTEGER, ALLOCATABLE, PUBLIC :: BINSICIDX( : )   ! SIC name index
+        INTEGER, ALLOCATABLE, PUBLIC :: BINMACIDX( : )   ! MACT name index
+        INTEGER, ALLOCATABLE, PUBLIC :: BINNAIIDX( : )   ! NAICS name index
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID1( : )   ! primary surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID2( : )   ! fallback surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSTIDX ( : )   ! index to state name
@@ -111,9 +113,12 @@
         REAL   , ALLOCATABLE, PUBLIC :: BINDATA  ( :,: ) ! output data values
 
         CHARACTER, ALLOCATABLE, PUBLIC :: BINELEV( : )! elevated flag
-        CHARACTER(PLTLEN3), ALLOCATABLE, PUBLIC :: BINPLANT( : ) ! Plant ID
-        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC  ( : ) ! SCC
-        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: BINSPCID( : ) ! spec prof
+        CHARACTER(PLTLEN3), ALLOCATABLE, PUBLIC :: BINPLANT ( : ) ! Plant ID
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC   ( : ) ! SCC
+        CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC :: BINMACT  ( : ) ! MACT
+        CHARACTER(NAILEN3), ALLOCATABLE, PUBLIC :: BINNAICS ( : ) ! NAICS
+        CHARACTER(STPLEN3), ALLOCATABLE, PUBLIC :: BINSRCTYP( : ) ! source type
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: BINSPCID ( : ) ! spec prof
 
 !.........  Arrays for determining output from emission types to report columns
 !.........  Dimensioned ( NIPPA, NREPORT )
