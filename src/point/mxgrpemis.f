@@ -42,10 +42,14 @@ C...........   This module is the source inventory arrays
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: LELVRNK, LPNGRNK, GROUPID, NEVPEMV, MXEMIS,
-     &                     MXEIDX, MXRANK, EVPEMIDX, GINDEX
+     &                     MXEIDX, MXRANK, EVPEMIDX, GINDEX, SRCXL, 
+     &                     SRCYL
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NIPOL, NSRC, EINAM
+
+C.........  This module contains the global variables for the 3-d grid
+        USE MODGRID, ONLY: NCOLS, NROWS
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET
@@ -68,13 +72,14 @@ C...........   ARGUMENTS and their descriptions:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         INTEGER      GETFLINE
+        LOGICAL      INGRID
         CHARACTER(14) MMDDYY
         LOGICAL      SETENVVAR
         INTEGER      PROMPTFFILE
         INTEGER      SECSDIFF
         INTEGER      WKDAY
 
-        EXTERNAL    CRLF, GETFLINE, MMDDYY, SETENVVAR, 
+        EXTERNAL    CRLF, GETFLINE, INGRID, MMDDYY, SETENVVAR, 
      &              PROMPTMFILE, SECSDIFF, WKDAY
 
 C...........   Local allocatable arrays
@@ -103,6 +108,7 @@ C...........   Local fixed arrays
 C...........   OTHER LOCAL VARIABLES and their descriptions:
         INTEGER     G, J, K, K2, L, L2, N, S, V, T    ! indices and counters
 
+        INTEGER         COL           ! tmp grid column
         INTEGER         DAY           ! tmp day of week
         INTEGER         ED            ! tmp end date
         INTEGER         EDATE         ! ending date YYYYDDD
@@ -119,6 +125,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         INTEGER         NPTLINES      ! number of lines in list file TDEV
         INTEGER         NS            ! tmp number time steps
         INTEGER         PG            ! previous G
+        INTEGER         ROW           ! tmp grid row
         INTEGER         SD            ! start date
         INTEGER         ST            ! start time
         
@@ -595,11 +602,18 @@ C.....................  Otherwise, add emissions for this time step for source
 
         END DO       ! End loop on time steps
 
-C.........  Replace source emissions with group emissions...
+C.........  Replace source emissions with group emissions and exclude
+C           sources that are outside of the grid...
 C.........  Loop through pollutants that are used as selection criteria
         DO K = 1, NEVPEMV
 
             DO S = 1, NSRC
+
+                IF( .NOT. INGRID( SRCXL( S ), SRCYL( S ), 
+     &                            NCOLS, NROWS, COL, ROW ) ) THEN
+                    MXEMIS( S,K ) = AMISS3
+                    CYCLE
+                END IF
 
                 G = GROUPID( S )
                 IF ( G .LE. 0 ) CYCLE  ! Skip sources without group
