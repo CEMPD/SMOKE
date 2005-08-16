@@ -43,7 +43,7 @@
 !.........  Packet-specific parameters
         INTEGER, PARAMETER, PUBLIC :: NALLPCKT = 10
         INTEGER, PARAMETER, PUBLIC :: RPKTLEN  = 21
-        INTEGER, PARAMETER, PUBLIC :: NCRTSYBL = 12
+        INTEGER, PARAMETER, PUBLIC :: NCRTSYBL = 13
         INTEGER, PARAMETER, PUBLIC :: RPT_IDX  = 1  ! pos. report pkt in master
         INTEGER, PARAMETER, PUBLIC :: TIM_IDX  = 2  ! pos. report time in mstr
         INTEGER, PARAMETER, PUBLIC :: ADY_IDX  = 3  ! pos. average day in master
@@ -89,7 +89,8 @@
      &                                      '+/- ',
      &                                      '-/+ ',
      &                                      'TOP ',
-     &                                      'IS  '  / )
+     &                                      'IS  ',
+     &                                      '%   '  / )
 
 !.........  Define types needed for module
         TYPE :: EACHRPT
