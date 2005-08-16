@@ -308,7 +308,7 @@ C.....................  Exit from loop if a match has been found.
 
                 END DO  ! loop through temporary groups at the plant
 
-C.................  If a match was not found for this source, add it's stack
+C.................  If a match was not found for this source, add its stack
 C                   parameters to the temporary group list
                 IF( .NOT. LGROUP ) THEN
                     NLOCGRP = NLOCGRP + 1
