@@ -205,7 +205,7 @@ C.........  Check that the grid boundaries are aligned
             CHK_Y = ( YORIG - YORIG3D ) / YCELL3D
             
             IF( CHK_X /= 0. ) THEN
-                IF( (CHK_X - DNINT( CHK_X )) / CHK_X > 0.001 ) THEN
+                IF( ABS( (DNINT(CHK_X) - CHK_X) / CHK_X ) > 0.001 ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Input and output grid cell ' //
      &                'boundaries are not aligned in the x-direction'
@@ -214,7 +214,7 @@ C.........  Check that the grid boundaries are aligned
             END IF
             
             IF( CHK_Y /= 0. ) THEN
-                IF( (CHK_Y - DNINT( CHK_Y )) / CHK_Y > 0.001 ) THEN
+                IF( ABS( (DNINT(CHK_Y) - CHK_Y) / CHK_Y ) > 0.001 ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Input and output grid cell ' //
      &                'boundaries are not aligned in the y-direction'
