@@ -453,7 +453,7 @@ C.................  Unsorted ORIS arrays
                         IF( INVORFPA( J ) /= FIP ) THEN
                             EFLAG = .TRUE.
                             MESG = 'ERROR: Different FIPS codes ' //
-     &                             'found for single ORIS ID'
+     &                             'found for ORIS ID ' // CORS
                             CALL M3MESG( MESG )
                             CYCLE
                         END IF
@@ -461,7 +461,7 @@ C.................  Unsorted ORIS arrays
                         IF( INVODSCA( J ) /= PDSC ) THEN
                             EFLAG = .TRUE.
                             MESG = 'ERROR: Different plant ' //
-     &                        'descriptions found for single ORIS ID'
+     &                        'descriptions found for ORIS ID ' // CORS
                             CALL M3MESG( MESG )
                             CYCLE
                         END IF
