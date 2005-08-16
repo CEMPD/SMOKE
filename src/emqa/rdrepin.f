@@ -2,7 +2,8 @@
         SUBROUTINE RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
      &                      EDEV, YDEV, NDEV, NIDEV, ADEV, ENAME, 
      &                      CUNAME, GNAME, LNAME, PRNAME, SLNAME, 
-     &                      SSNAME, NX, IX, CX, SSMAT, SLMAT )
+     &                      SSNAME, NX, IX, CX, SSMAT, SLMAT, NMDEV, 
+     &                      NNDEV )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -53,7 +54,7 @@ C.........  This module contains Smkreport-specific settings
      &                      NSTEPS, TSTEP, LOC_BEGP, LOC_ENDP,
      &                      ASCREC, PRRPTFLG, PRFLAG, MINC,
      &                      NSPCPOL, SPCPOL, NMAJOR, NPING, ALLRPT,
-     &                      STKX, STKY, LSPCPOL, NIFLAG
+     &                      STKX, STKY, LSPCPOL, NIFLAG, NMFLAG, NNFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, SPCOUT
@@ -110,6 +111,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT (IN) :: NDEV   ! unit no.: SCC descriptions
         INTEGER     , INTENT (IN) :: NIDEV  ! unit no.: SIC descriptions
+        INTEGER     , INTENT (IN) :: NMDEV  ! unit no.: MACT descriptions
+        INTEGER     , INTENT (IN) :: NNDEV  ! unit no.: NAICS descriptions
         INTEGER     , INTENT (IN) :: ADEV   ! unit no.: ASCII elevated file
         CHARACTER(*), INTENT (IN) :: ENAME  ! name for I/O API inven input
         CHARACTER(*), INTENT (IN) :: CUNAME ! mulitplicative control matrix name
@@ -220,6 +223,24 @@ C.........  SCC code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYSCC ) ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'CSCC'
+            END IF
+
+C.........  MACT code
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYMACT ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CMACT'
+            END IF
+
+C.........  NAICS code
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYNAICS ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CNAICS'
+            END IF
+
+C.........  Source type code
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYSRCTYP ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CSRCTYP'
             END IF
 
 C.........  Source description
@@ -781,9 +802,15 @@ C.........  If needed, read in elevated source indentification file
 
 C.........  If needed, read in SCC descriptions file
         IF( NFLAG ) CALL RDSCCDSC( NDEV )
-
+        
 C.........  If needed, read in SIC descriptions file
         IF( NIFLAG ) CALL RDSICDSC( NIDEV )
+
+C.........  If needed, read in MACT descriptions file
+        IF( NMFLAG ) CALL RDMACTDSC( NMDEV )
+
+C.........  If needed, read in NAICS descriptions file
+        IF( NNFLAG ) CALL RDNAICSDSC( NNDEV )
 
 C.........  If needed, read in layer fractions file to identify elevated
 C           sources
