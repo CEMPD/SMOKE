@@ -36,7 +36,7 @@ FILES_R = \
   rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o  rdspdref.o \
   rdsprof.o    rdsref.o     rdsrghdr.o   rdsrg.o      rdstcy.o     rdtprof.o  \
   rdtref.o     rdtzone.o    rdumat.o     rdvmix.o     rdxclude.o   readwr3.o  \
-  rmcommnt.o
+  rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o
 
 FILES_SVWX = \
   setscctype.o setsrcdy.o   ungridbv.o   verchar.o    wrchrscc.o   wrdaymsg.o \
@@ -114,8 +114,10 @@ rdhdays.o  : $(MODTMPRL)
 rdinvchr.o : $(MODSOURC)
 rdinvmap.o : $(MODINFO)
 rdinvpol.o : $(MODFILESET) 
+rdmactdsc.o: $(MODLISTS)
 rdmappol.o : $(MODINFO) $(MODFILESET)
 rdmvinfo.o : $(MODMOBIL)
+rdnaicsdsc.o : $(MODLISTS)
 rdorsdsc.o : $(MODSTCY)
 rdpelv.o   : $(MODELEV)
 rdsccdsc.o : $(MODLISTS)
