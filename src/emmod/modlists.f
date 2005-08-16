@@ -44,16 +44,17 @@
 
 !.........  Sizes of the arrays...
 
-        INTEGER, PUBLIC :: NINVSIC  ! no. unique SICs in inventory
-        INTEGER, PUBLIC :: NINVSIC2 ! no. unique 2-digit SICs in inventory
-        INTEGER, PUBLIC :: NINVSCC  ! no. unique SCCs in inventory
-        INTEGER, PUBLIC :: NINVSCL  ! no. unique left SCCs in inventory
-        INTEGER, PUBLIC :: NSCCPSIC ! no. all SCCs for all SICs
-        INTEGER, PUBLIC :: NINVIFIP ! no. unique country/state/county codes
-        INTEGER, PUBLIC :: NINVMACT ! no. unique MACTs in inventory
-        INTEGER, PUBLIC :: NINVORIS ! no. unique ORIS 
-        INTEGER, PUBLIC :: NORISBLR ! no. unique ORIS // boilers
-        INTEGER, PUBLIC :: NOBLRSRC ! no. sources matching ORIS/boiler combinations
+        INTEGER, PUBLIC :: NINVSIC   ! no. unique SICs in inventory
+        INTEGER, PUBLIC :: NINVSIC2  ! no. unique 2-digit SICs in inventory
+        INTEGER, PUBLIC :: NINVSCC   ! no. unique SCCs in inventory
+        INTEGER, PUBLIC :: NINVSCL   ! no. unique left SCCs in inventory
+        INTEGER, PUBLIC :: NSCCPSIC  ! no. all SCCs for all SICs
+        INTEGER, PUBLIC :: NINVIFIP  ! no. unique country/state/county codes
+        INTEGER, PUBLIC :: NINVMACT  ! no. unique MACTs in inventory
+        INTEGER, PUBLIC :: NINVNAICS ! no. unique NAICS in inventory
+        INTEGER, PUBLIC :: NINVORIS  ! no. unique ORIS 
+        INTEGER, PUBLIC :: NORISBLR  ! no. unique ORIS // boilers
+        INTEGER, PUBLIC :: NOBLRSRC  ! no. sources matching ORIS/boiler combinations
 
 !.........  Controllers
         LOGICAL, PUBLIC :: ORISFLAG  ! true: create ORIS-based arrays
@@ -78,7 +79,12 @@
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
 
 !.........  MACT codes dimensioned by NINVMACT
-        CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC :: INVMACT( : )
+        CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC :: INVMACT( : ) ! MACT codes
+        CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: MACTDESC( : ) ! descrptn
+
+!.........  NAICS codes dimensioned by NINVNAICS
+        CHARACTER(NAILEN3), ALLOCATABLE, PUBLIC :: INVNAICS( : ) ! NAICS codes
+        CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: NAICSDESC( : ) ! descrptn
 
 !.........  ORIS arrays
         INTEGER,            ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
