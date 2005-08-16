@@ -42,6 +42,9 @@ C***********************************************************************
 
         IMPLICIT NONE
 
+C...........   INCLUDES:
+        INCLUDE 'PARMS3.EXT'    !  I/O API parameters
+        
 C...........   ARGUMENTS and their descriptions:
         INTEGER     , INTENT (IN) :: NV      ! Number of values
         INTEGER     , INTENT (IN) :: NORS    ! Number of OR conditions
@@ -60,6 +63,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
 
         REAL       REFMIN       ! tmp minimum for range check
         REAL       REFMAX       ! tmp maximum for range check
+        REAL       TMPVAL       ! tmp value
 
         LOGICAL    ANDSTAT          ! true: all ands apply
         LOGICAL :: EFLAG = .FALSE.  ! true: error encountered
@@ -116,9 +120,17 @@ C               if they are present
      &                      VALS(N) .GT. REFMAX      ) THEN
                             ANDSTAT = .FALSE.
                         END IF
-
+                    CASE( '%' )
+                        TMPVAL = REFS( N ) * COMPARE( L,M,N ) * 0.01
+                        REFMIN = REFS( N ) - TMPVAL
+                        REFMAX = REFS( N ) + TMPVAL
+                        IF( VALS(N) .LE. REFMIN .OR.
+     &                      VALS(N) .GT. REFMAX      ) THEN
+                            ANDSTAT = .FALSE.
+                        END IF
                     CASE( 'TOP' )
-                        IF ( RANK(N) .GT. COMPARE(L,M,N) ) THEN
+                        IF ( RANK(N) .GT. COMPARE(L,M,N) .OR.
+     &                       VALS(N) .EQ. AMISS3              ) THEN
                             ANDSTAT = .FALSE.
 
                         END IF
