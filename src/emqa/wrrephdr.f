@@ -45,7 +45,8 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: STKHT, STKDM, STKTK, STKVE, CPDESC
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVSCC, SCCDESC, NINVSIC, SICDESC
+        USE MODLISTS, ONLY: NINVSCC, SCCDESC, NINVSIC, SICDESC,
+     &                      NINVMACT, MACTDESC, NINVNAICS, NAICSDESC
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: QAFMTL3, AFLAG, OUTDNAM, RPT_, LREGION,
@@ -61,14 +62,16 @@ C.........  This module contains Smkreport-specific settings
      &                      MINC, LENELV3, SDATE, STIME, EDATE, ETIME,
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
      &                      ALLRPT, LOC_BEGP, LOC_ENDP, SICFMT,
-     &                      SICWIDTH, SIDSWIDTH
+     &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
+     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
      &                      BINSRGID1, BINSRGID2, BINMONID, BINWEKID,
      &                      BINDIUID, BINRCL, BINDATA, BINSNMIDX,
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
-     &                      BINPLANT, BINSIC, BINSICIDX
+     &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
+     &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -116,24 +119,29 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRCNTY = 10
         INTEGER, PARAMETER :: IHDRSCC  = 11
         INTEGER, PARAMETER :: IHDRSIC  = 12
-        INTEGER, PARAMETER :: IHDRSRG1 = 13
-        INTEGER, PARAMETER :: IHDRSRG2 = 14
-        INTEGER, PARAMETER :: IHDRMON  = 15
-        INTEGER, PARAMETER :: IHDRWEK  = 16
-        INTEGER, PARAMETER :: IHDRDIU  = 17
-        INTEGER, PARAMETER :: IHDRSPC  = 18
-        INTEGER, PARAMETER :: IHDRHT   = 19
-        INTEGER, PARAMETER :: IHDRDM   = 20
-        INTEGER, PARAMETER :: IHDRTK   = 21
-        INTEGER, PARAMETER :: IHDRVE   = 22
-        INTEGER, PARAMETER :: IHDRELEV = 23
-        INTEGER, PARAMETER :: IHDRPNAM = 24
-        INTEGER, PARAMETER :: IHDRSNAM = 25
-        INTEGER, PARAMETER :: IHDRINAM = 26    ! SIC name
-        INTEGER, PARAMETER :: IHDRVAR  = 27
-        INTEGER, PARAMETER :: IHDRDATA = 28
-        INTEGER, PARAMETER :: IHDRUNIT = 29
-        INTEGER, PARAMETER :: NHEADER  = 29
+        INTEGER, PARAMETER :: IHDRMACT = 13
+        INTEGER, PARAMETER :: IHDRNAI  = 14
+        INTEGER, PARAMETER :: IHDRSTYP = 15
+        INTEGER, PARAMETER :: IHDRSRG1 = 16
+        INTEGER, PARAMETER :: IHDRSRG2 = 17
+        INTEGER, PARAMETER :: IHDRMON  = 18
+        INTEGER, PARAMETER :: IHDRWEK  = 19
+        INTEGER, PARAMETER :: IHDRDIU  = 20
+        INTEGER, PARAMETER :: IHDRSPC  = 21
+        INTEGER, PARAMETER :: IHDRHT   = 22
+        INTEGER, PARAMETER :: IHDRDM   = 23
+        INTEGER, PARAMETER :: IHDRTK   = 24
+        INTEGER, PARAMETER :: IHDRVE   = 25
+        INTEGER, PARAMETER :: IHDRELEV = 26
+        INTEGER, PARAMETER :: IHDRPNAM = 27
+        INTEGER, PARAMETER :: IHDRSNAM = 28
+        INTEGER, PARAMETER :: IHDRINAM = 29    ! SIC name
+        INTEGER, PARAMETER :: IHDRMNAM = 30
+        INTEGER, PARAMETER :: IHDRNNAM = 31
+        INTEGER, PARAMETER :: IHDRVAR  = 32
+        INTEGER, PARAMETER :: IHDRDATA = 33
+        INTEGER, PARAMETER :: IHDRUNIT = 34
+        INTEGER, PARAMETER :: NHEADER  = 34
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -150,6 +158,9 @@ C...........   Local parameters
      &                              'County         ',
      &                              'SCC            ',
      &                              'SIC            ',
+     &                              'MACT           ',
+     &                              'NAICS          ',
+     &                              'Source type    ',
      &                              'Primary Srg    ',
      &                              'Fallbk Srg     ',
      &                              'Monthly Prf    ',
@@ -164,16 +175,20 @@ C...........   Local parameters
      &                              'Plt Name       ',
      &                              'SCC Description',
      &                              'SIC Description',
+     &                              'MACT Descriptn ',
+     &                              'NAICS Descriptn',
      &                              'Variable       ',
      &                              'Data value     ',
      &                              'Units          ' / )
 
 C...........   Local variables that depend on module variables
-        LOGICAL    LCTRYUSE( NCOUNTRY )
-        LOGICAL    LSTATUSE( NSTATE )
-        LOGICAL    LCNTYUSE( NCOUNTY )
-        LOGICAL    LSCCUSE ( NINVSCC )
-        LOGICAL    LSICUSE ( NINVSIC )
+        LOGICAL    LCTRYUSE ( NCOUNTRY )
+        LOGICAL    LSTATUSE ( NSTATE )
+        LOGICAL    LCNTYUSE ( NCOUNTY )
+        LOGICAL    LSCCUSE  ( NINVSCC )
+        LOGICAL    LSICUSE  ( NINVSIC )
+        LOGICAL    LMACTUSE ( NINVMACT )
+        LOGICAL    LNAICSUSE( NINVNAICS )
 
         CHARACTER(10) CHRHDRS( NCHARS )  ! Source characteristics headers
 
@@ -203,6 +218,8 @@ C...........   Other local variables
         LOGICAL  :: STATMISS              ! true: >=1 missing state name
         LOGICAL  :: SCCMISS               ! true: >=1 missing SCC name
         LOGICAL  :: SICMISS               ! true: >=1 missing SIC name
+        LOGICAL  :: MACTMISS              ! true: >=1 missing MACT name
+        LOGICAL  :: NAICSMISS             ! true: >=1 missing NAICS name
         LOGICAL  :: DYSTAT                ! true: write average day header
 
         LOGICAL  :: FIRSTIME = .TRUE.     ! true: first time routine called
@@ -230,12 +247,18 @@ C.........  Initialize local variables for current report
         CNTYMISS = .FALSE.
         SCCMISS  = .FALSE.
         SICMISS  = .FALSE.
-        LCTRYUSE = .FALSE.  ! array
-        LSTATUSE = .FALSE.  ! array
-        LCNTYUSE = .FALSE.  ! array
-        LSCCUSE  = .FALSE.  ! array
-        LSICUSE  = .FALSE.  ! array
-        PWIDTH   = 0        ! array
+        MACTMISS = .FALSE.
+        NAICSMISS= .FALSE.
+
+        LCTRYUSE = .FALSE.    ! array
+        LSTATUSE = .FALSE.    ! array
+        LCNTYUSE = .FALSE.    ! array
+        LSCCUSE  = .FALSE.    ! array
+        LSICUSE  = .FALSE.    ! array
+        LMACTUSE = .FALSE.    ! array
+        LNAICSUSE= .FALSE.    ! array
+        
+        PWIDTH   = 0          ! array
         LU       = 0
 
         IF( AFLAG ) THEN
@@ -354,8 +377,20 @@ C.............  Include SIC description
                 J = BINSICIDX( I ) 
                 IF( J .GT. 0 ) LSICUSE( J ) = .TRUE.
             END IF
+ 
+C.............  Include MACT description
+            IF( RPT_%MACTNAM ) THEN
+                J = BINMACIDX( I ) 
+                IF( J .GT. 0 ) LMACTUSE( J ) = .TRUE.
+            END IF
 
-        END DO  ! End loop through bins
+C.............  Include NAICS description
+            IF( RPT_%NAICSNAM ) THEN
+                J = BINNAIIDX( I ) 
+                IF( J .GT. 0 ) LNAICSUSE( J ) = .TRUE.
+            END IF
+
+       END DO  ! End loop through bins
 
 C............................................................................
 C.........  Set the widths of each output column, while including the
@@ -570,6 +605,39 @@ C.........  SIC column
 
             WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
             SICWIDTH = W1 + LV
+        END IF
+
+C.........  MACT column
+        IF( RPT_%BYMACT ) THEN
+            J = LEN_TRIM( HEADERS( IHDRMACT ) )
+            J = MAX( MACLEN3, J )
+    
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRMACT), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            MACTWIDTH = J + LV
+        END IF
+
+C.........  NAICS column
+        IF( RPT_%BYNAICS ) THEN
+            J = LEN_TRIM( HEADERS( IHDRNAI ) )
+            J = MAX( NAILEN3, J )
+    
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRNAI), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            NAIWIDTH = J + LV
+        END IF
+
+C.........  SRCTYP column
+        IF( RPT_%BYSRCTYP ) THEN
+            J = LEN_TRIM( HEADERS( IHDRSTYP ) )
+            J = MAX( STPLEN3, J )
+    
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRSTYP), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            STYPWIDTH = J + LV
         END IF
 
 C.........  Primary surrogates column
@@ -822,6 +890,60 @@ C.............  Set SIC name column width
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             SIDSWIDTH = J + LV - 2       ! quotes in count for header print
+
+        END IF
+
+C.........  MACT names
+        IF( RPT_%MACTNAM ) THEN
+
+C.............  For MACT descriptions in the inventory, get max name 
+C               width
+            NWIDTH = 0
+            DO I = 1, NINVMACT
+                IF( LMACTUSE( I ) ) THEN
+                    NWIDTH = MAX( NWIDTH, LEN_TRIM( MACTDESC( I ) ) )
+                    IF ( NWIDTH .EQ. 0 ) MACTMISS = .TRUE.
+                END IF
+            END DO
+
+C.............  If any missing MACT names, check widths
+            IF( MACTMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
+
+C.............  Set MACT name column width 
+            J = LEN_TRIM( HEADERS( IHDRMNAM ) )
+            J = MAX( NWIDTH, J ) + 2     ! two for quotes
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRMNAM), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            MACDSWIDTH = J + LV - 2       ! quotes in count for header print
+
+        END IF
+
+C.........  NAICS names
+        IF( RPT_%NAICSNAM ) THEN
+
+C.............  For NAICS descriptions in the inventory, get max name 
+C               width
+            NWIDTH = 0
+            DO I = 1, NINVNAICS
+                IF( LNAICSUSE( I ) ) THEN
+                    NWIDTH = MAX( NWIDTH, LEN_TRIM( NAICSDESC( I ) ) )
+                    IF ( NWIDTH .EQ. 0 ) NAICSMISS = .TRUE.
+                END IF
+            END DO
+
+C.............  If any missing NAICS names, check widths
+            IF( NAICSMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
+
+C.............  Set NAICS name column width 
+            J = LEN_TRIM( HEADERS( IHDRNNAM ) )
+            J = MAX( NWIDTH, J ) + 2     ! two for quotes
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRNNAM), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            NAIDSWIDTH = J + LV - 2       ! quotes in count for header print
 
         END IF
 
