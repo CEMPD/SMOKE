@@ -2,7 +2,7 @@
         SUBROUTINE OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, 
      &                        PRNAME, SLNAME, SSNAME, TNAME, RDEV, 
      &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
-     &                        NIDEV, ADEV )
+     &                        NIDEV, ADEV, NMDEV, NNDEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -48,7 +48,7 @@ C.........  This module contains Smkreport-specific settings
      &                      PRBYR, PRPYR, PYEAR, CHKPFX, CUFLAG,
      &                      LFLAG, EMLAYS, VFLAG, YFLAG, NFLAG,
      &                      ASCREC, ASCDATA, STIME, SDATE, ETIME,
-     &                      EDATE, TZONE, NIFLAG
+     &                      EDATE, TZONE, NIFLAG, NMFLAG, NNFLAG
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NTPDAT, TPNAME, TPUNIT, TPDESC
@@ -106,6 +106,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: YDEV   ! unit no.: cy/st/co file
         INTEGER     , INTENT(OUT) :: NDEV   ! unit no.: SCC descriptions
         INTEGER     , INTENT(OUT) :: NIDEV  ! unit no.: SIC descriptions
+        INTEGER     , INTENT(OUT) :: NMDEV  ! unit no.: MACT descriptions
+        INTEGER     , INTENT(OUT) :: NNDEV  ! unit no.: NAICS descriptions
         INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
 
 C.........  Temporary array for speciation variable names
@@ -528,6 +530,24 @@ C.........  Get SIC descriptions, if needed
 
             MESG = 'Enter logical name for SIC DESCRIPTIONS'
             NIDEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'SICDESC',PROGNAME )
+
+        END IF
+
+C.........  Get MACT descriptions, if needed
+        IF( NMFLAG ) THEN
+
+            MESG = 'Enter logical name for MACT DESCRIPTIONS'
+            NMDEV = PROMPTFFILE( 
+     &                  MESG,.TRUE.,.TRUE.,'MACTDESC',PROGNAME )
+
+        END IF
+
+C.........  Get NAICS descriptions, if needed
+        IF( NNFLAG ) THEN
+
+            MESG = 'Enter logical name for NAICS DESCRIPTIONS'
+            NNDEV = PROMPTFFILE( 
+     &                  MESG,.TRUE.,.TRUE.,'NAICSDESC',PROGNAME )
 
         END IF
 
