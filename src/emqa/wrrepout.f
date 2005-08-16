@@ -50,7 +50,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: SCCDESC, SICDESC
+        USE MODLISTS, ONLY: SCCDESC, SICDESC, MACTDESC, NAICSDESC
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, VARWIDTH,
@@ -64,7 +64,9 @@ C.........  This module contains Smkreport-specific settings
      &                      STKPFMT, STKPWIDTH, ELEVWIDTH,
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
-     &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH
+     &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH,
+     &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
+     &                      NAIDSWIDTH, STYPWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -73,7 +75,8 @@ C.........  This module contains report arrays for each output bin
      &                      BINMONID, BINWEKID, BINDIUID,
      &                      BINSRGID1, BINSRGID2, BINSPCID, BINRCL,
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
-     &                      BINSICIDX
+     &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
+     &                      BINNAIIDX, BINSRCTYP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM
@@ -346,6 +349,40 @@ C.............  Include SIC code in string
                     MXLE = MXLE + SICWIDTH + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
+
+                END IF
+
+C.............  Include MACT code in string
+                IF( RPT_%BYMACT ) THEN
+                    L = MACTWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       BINMACT( I )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include NAICS code in string
+                IF( RPT_%BYNAICS ) THEN
+                    L = NAIWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       BINNAICS( I )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include SRCTYP code in string
+                IF( RPT_%BYSRCTYP ) THEN
+                    L = STYPWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE+4 ) // 
+     &                    BINSRCTYP( I )( 1:L1-4 ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
                 END IF
 
 C.............  Include primary surrogate code
@@ -502,6 +539,30 @@ C.............  This is knowingly including extra blanks before final quote
                     L1 = L - LV - 1                        ! 1 for space
                     STRING = STRING( 1:LE ) // 
      &                       '"'// SICDESC( J )( 1:L1 )// '"' // DELIM
+                    MXLE = MXLE + L + 2
+                    LE = MIN( MXLE, STRLEN )
+                END IF
+
+C.............  Include MACT description
+C.............  This is knowingly including extra blanks before final quote
+                IF( RPT_%MACTNAM ) THEN
+                    J = BINMACIDX( I ) 
+                    L = MACDSWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       '"'// MACTDESC( J )( 1:L1 )// '"' // DELIM
+                    MXLE = MXLE + L + 2
+                    LE = MIN( MXLE, STRLEN )
+                END IF
+
+C.............  Include NAICS description
+C.............  This is knowingly including extra blanks before final quote
+                IF( RPT_%NAICSNAM ) THEN
+                    J = BINNAIIDX( I ) 
+                    L = NAIDSWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       '"'// NAICSDESC( J )( 1:L1 )// '"' // DELIM
                     MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
                 END IF
