@@ -54,7 +54,7 @@ C.........  This module contains arrays for plume-in-grid and major sources
      &                     PNGTYPES, GRPGID, GRPCNT, GRPLAT, GRPLON,
      &                     GRPDM, GRPHT, GRPTK, GRPVE, GRPFL, GRPGIDA,
      &                     GRPIDX, GRPCOL, GRPROW, GRPXL, GRPYL, RISE,
-     &                     MXEMIS, MXRANK, EVPEMIDX
+     &                     MXEMIS, MXRANK, EVPEMIDX, SRCXL, SRCYL
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATLEN, NSRC, MXCHRS, 
@@ -356,6 +356,10 @@ C.........  Allocate memory for source status arrays and group numbers
         CALL CHECKMEM( IOS, 'GINDEX', PROGNAME )
         ALLOCATE( SRCGROUP( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCGROUP', PROGNAME )
+        ALLOCATE( SRCXL( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCXL', PROGNAME )
+        ALLOCATE( SRCYL( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCYL', PROGNAME )
 
 C.........  Initialize source status and group number arrays
         LMAJOR  = .FALSE.   ! array
@@ -386,6 +390,12 @@ C           to grid cells for the STACK_GROUPS file.
             NGRID = NCOLS * NROWS
 
         END IF            
+
+C.........  Convert source x,y locations to coordinates of the projected grid
+        SRCXL = XLOCA
+        SRCYL = YLOCA
+        CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
+     &                 XCENT, YCENT, SRCXL, SRCYL )
 
 C.........  Allocate memory so that we can use the GENPTCEL
         ALLOCATE( NX( NGRID ), STAT=IOS )
