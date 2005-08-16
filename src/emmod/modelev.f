@@ -49,6 +49,8 @@
         REAL   , ALLOCATABLE, PUBLIC:: ELEVFLTR( : ) ! =0. for lower, =1. elev
         LOGICAL, ALLOCATABLE, PUBLIC:: LMAJOR  ( : ) ! true: src is a major src
         LOGICAL, ALLOCATABLE, PUBLIC:: LPING   ( : ) ! true: src is a PinG src
+        REAL   , ALLOCATABLE, PUBLIC:: SRCXL   ( : ) ! x-location given projection
+        REAL   , ALLOCATABLE, PUBLIC:: SRCYL   ( : ) ! y-location given projection
 
 !...........   Allocatable arrays for stack groups
         INTEGER, ALLOCATABLE, PUBLIC:: GRPGID( : ) ! sorted stack group ID
