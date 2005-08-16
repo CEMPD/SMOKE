@@ -61,7 +61,7 @@ C.........  This module contains Smkreport-specific settings
      &                      SSFLAG, SLFLAG, TFLAG, LFLAG, NFLAG, PSFLAG,
      &                      GSFLAG, TSFLAG, UNITSET, MXRPTNVAR,
      &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME,
-     &                      NIFLAG
+     &                      NIFLAG, NMFLAG, NNFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC
@@ -394,6 +394,11 @@ C.........................  Reset report settings to defaults
                         RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
                         RPT_%BYSCC     = .FALSE.
+                        RPT_%BYMACT    = .FALSE.
+                        RPT_%BYNAICS   = .FALSE.
+                        RPT_%BYSRCTYP  = .FALSE.
+                        RPT_%MACTNAM   = .FALSE.
+                        RPT_%NAICSNAM  = .FALSE.
                         RPT_%BYSPC     = .FALSE.
                         RPT_%BYSRC     = .FALSE.
                         RPT_%BYSRG     = .FALSE.
@@ -824,6 +829,38 @@ C.............  BY options affecting inputs needed
                         CALL M3MSG2( MESG )
                     END IF
 
+                CASE( 'MACT' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYMACT  = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NMFLAG = .TRUE.
+                            RPT_%MACTNAM = .TRUE.
+                            IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY MACT instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+
+                CASE( 'NAICS' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYNAICS  = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NNFLAG = .TRUE.
+                            RPT_%NAICSNAM = .TRUE.
+                            IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY NAICS instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+
                 CASE( 'SCC10' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
                         RPT_%BYSCC  = .TRUE.
@@ -836,6 +873,18 @@ C.............  BY options affecting inputs needed
                     ELSE
                         WRITE( MESG, 94010 )
      &                     'WARNING: BY SCC10 instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+
+                CASE( 'SRCTYP' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYSRCTYP  = .TRUE.
+                        RPT_%SCCRES = 10
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY SRCTYP instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
