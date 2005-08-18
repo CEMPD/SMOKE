@@ -29,7 +29,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C  
-C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
+C COPYRIGHT (C) 2005, Environmental Modeling for Policy Development
 C All Rights Reserved
 C 
 C Carolina Environmental Program
@@ -878,7 +878,7 @@ C.............  BY options affecting inputs needed
                         CALL M3MSG2( MESG )
                     END IF
 
-                CASE( 'SRCTYP' )
+                CASE( 'SRCTYPE' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
                         RPT_%BYSRCTYP  = .TRUE.
                         RPT_%SCCRES = 10
