@@ -21,7 +21,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
+C COPYRIGHT (C) 2005, Environmental Modeling for Policy Development
 C All Rights Reserved
 C 
 C Carolina Environmental Program
@@ -39,7 +39,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, ISIC, CMACT, 
-     &                      CORIS, CBLRID, CPDESC
+     &                      CORIS, CBLRID, CPDESC, CNAICS
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, NINVSCC, NINVSCL, NINVSIC, 
@@ -48,7 +48,7 @@ C.........  This module contains the lists of unique source characteristics
      &                      INVSIC2, INVMACT, INVORIS,
      &                      INVORFP, IORSMTCH, INVODSC, ORISBLR,
      &                      OBSRCBG, OBSRCNT, NORISBLR, NOBLRSRC,
-     &                      OBSRCNM, ORISFLAG
+     &                      OBSRCNM, ORISFLAG, NINVNAICS, INVNAICS
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, LSCCEND
@@ -104,6 +104,8 @@ C...........   Other local variables
         CHARACTER(SICLEN3) PCSIC         ! previous char SIC
         CHARACTER(MACLEN3) TMACT         ! tmp char MACT code
         CHARACTER(MACLEN3) PMACT         ! previous char MACT code
+        CHARACTER(NAILEN3) TNAICS        ! tmp char NAICS code
+        CHARACTER(NAILEN3) PNAICS        ! previous char NAICS code
         CHARACTER(BLRLEN3) BLID          ! tmp boiler ID
         CHARACTER(BLRLEN3) PBLID         ! previous boiler ID
         CHARACTER(ORSLEN3) CORS          ! tmp DOE plant ID
@@ -352,6 +354,57 @@ C.................  Create unique MACTs list
                 END DO
                 
             END IF    ! End MACT processing
+
+C.............  Check if CNAICS is allocated.  
+C.............  If it is, generate unique list of NAICS codes
+            IF( ASSOCIATED( CNAICS ) ) THEN
+
+C.................  Initialize NAICS sorting index     
+                DO S = 1, NSRC
+                    INDX( S ) = S
+                END DO                
+
+C.................  Sort all NAICS in the inventory in increasing order
+                CALL SORTIC( NSRC, INDX, CNAICS )
+
+C.................  Count number of unique NAICS
+                PNAICS = '-9'
+                J1 = 0
+                DO S = 1, NSRC
+                
+                    J = INDX( S )
+                    
+                    TNAICS = CNAICS( J )
+                    
+                    IF( TNAICS /= PNAICS ) J1 = J1 + 1
+                    
+                    PNAICS = TNAICS
+                    
+                END DO
+                NINVNAICS = J1
+
+C.................  Allocate memory for NAICS lists
+                ALLOCATE( INVNAICS( NINVNAICS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVNAICS', PROGNAME )
+
+C.................  Create unique NAICS list
+                PMACT = '-9'
+                J1 = 0
+                DO S = 1, NSRC
+                
+                    J = INDX( S )
+                    
+                    TNAICS = CNAICS( J )
+                    
+                    IF( TNAICS /= PNAICS ) THEN
+                        J1 = J1 + 1
+                        INVNAICS( J1 ) = TNAICS
+                        PNAICS = TNAICS
+                    END IF
+                    
+                END DO
+                
+            END IF    ! End NAICS processing
                 
             DEALLOCATE( INDX )
 
