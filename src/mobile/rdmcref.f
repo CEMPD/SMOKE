@@ -48,13 +48,14 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        LOGICAL        BLKORCMT
         LOGICAL        CHKINT
         INTEGER        GETFLINE
         INTEGER        STR2INT
         INTEGER        FIND1
         CHARACTER(2)   CRLF    
         
-        EXTERNAL  CHKINT, GETFLINE, STR2INT, FIND1, CRLF
+        EXTERNAL  BLKORCMT, CHKINT, GETFLINE, STR2INT, FIND1, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV             ! MCREF file unit no.
@@ -138,8 +139,8 @@ C.............  Read line
                 CYCLE
             END IF
             
-C.............  Skip blank lines
-            IF( LINE == ' ' ) CYCLE
+C.............  Skip blank or comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Parse the line into 4 segments
             CALL PARSLINE( LINE, 4, SEGMENT )
