@@ -49,13 +49,13 @@ C...........   INCLUDES
          INCLUDE 'CPKTDAT.EXT'   !  control packet contents
 
 C...........   EXTERNAL FUNCTIONS:
-        LOGICAL       CHKREAL
+        LOGICAL       CHKREAL, BLKORCMT
         CHARACTER(2)  CRLF
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
 
-        EXTERNAL      CHKREAL, CRLF, INDEX1, STR2INT, STR2REAL
+        EXTERNAL      BLKORCMT, CHKREAL, CRLF, INDEX1, STR2INT, STR2REAL
 
 C...........   SUBROUTINE ARGUMENTS:
         INTEGER        , INTENT (IN) :: FDEV      ! in file unit number
@@ -109,9 +109,9 @@ C   Begin body of subroutine RDPACKET
 
         END IF
 
-C.........  Check for comment lines
+C.........  Check for comment and blank lines
         CFLAG = .FALSE.
-        IF( LINE( 1:1 ) == CINVHDR ) THEN
+        IF( BLKORCMT( LINE ) ) THEN
             CFLAG = .TRUE.
             RETURN
         END IF
