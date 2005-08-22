@@ -63,8 +63,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FINDC
         INTEGER         GETFLINE
+        LOGICAL         BLKORCMT
 
-        EXTERNAL        CRLF, FINDC, GETFLINE
+        EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE
 
 C...........   ARGUMENTS and their descriptions:
 
@@ -118,11 +119,12 @@ C.........  Other local variables
         INTEGER         I, J, K, L1, L2, L3, S   !  counters and indices
 
         INTEGER         FIP     !  temporary FIPs code
+        INTEGER         NCNT    !  number of entry lines
         INTEGER         IOS     !  I/O error status
         INTEGER         IREC    !  current record number
         INTEGER         LDEV    !  log file unit number
-        INTEGER         NLINE   !  Number of lines
-        INTEGER         NPSTK   !  Number of PSTK entries
+        INTEGER         NLINE   !  number of lines
+        INTEGER         NPSTK   !  number of PSTK entries
         INTEGER         SID     !  temporary state ID
 
         REAL            HT      !  temporary height
@@ -137,6 +139,7 @@ C.........  Other local variables
         CHARACTER(8)       FMTSTA    !  format for converting cntry/state
         CHARACTER(300)     BUFFER    !  temporary buffer
         CHARACTER(300)     MESG      !  message buffer
+        CHARACTER(300)     LINE      !  read buffer for a line
         CHARACTER(FIPLEN3) CFIP      !  tmp character-string FIP
         CHARACTER(FIPLEN3) FIPZERO   !  zero buffer for FIPS code
         CHARACTER(STALEN3) CSTA      !  tmp country/state
@@ -204,39 +207,41 @@ C.........  Create zero-filled buffers
 
 C.........  Read the PSTK file until hit the end of the file
 C.........  For now, require the SCC to be in quotes to use list formatting
-
+        NCNT  = 0
         IREC  = 0
         DO I = 1, NLINE       !  head of input loop
-
-            READ( FDEV, *, IOSTAT=IOS ) 
-     &            FIP, TSCC, HT, DM, TK, VE
-
+        
+            READ( FDEV, *, IOSTAT=IOS ) LINE
             IREC = IREC + 1
-
+            
             IF ( IOS .GT. 0 ) THEN      !  I/O error
-
                 WRITE( MESG,94010 ) 'I/O Error', IOS, 
      &                 'reading stack replacements file at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
+            END IF
+               
+            IF( BLKORCMT( LINE ) ) THEN
+                CYCLE
             ELSE
+                BACKSPACE( FDEV )
+            END IF
+            
+            READ( FDEV, *, IOSTAT=IOS ) FIP, TSCC, HT, DM, TK, VE
+            NCNT = NCNT + 1      ! actual line #s after skipping blank and comments
 
-                WRITE( CFIP, FMTFIP ) FIP
+            WRITE( CFIP, FMTFIP ) FIP
 
-                CALL PADZERO( TSCC )
+            CALL PADZERO( TSCC )
 
-                INDXA( I ) = I
-                SFSCA( I ) = CFIP // TSCC
-                SHTA ( I ) = HT
-                SDMA ( I ) = DM
-                STKA ( I ) = TK
-                SVEA ( I ) = VE
+            INDXA( NCNT ) = NCNT
+            SFSCA( NCNT ) = CFIP // TSCC
+            SHTA ( NCNT ) = HT
+            SDMA ( NCNT ) = DM
+            STKA ( NCNT ) = TK
+            SVEA ( NCNT ) = VE
+        END DO  
 
-            ENDIF
-
-        ENDDO  
-
-        NPSTK = NLINE
+        NPSTK = NCNT
 
 C.........  Sort PSTK data 
         CALL SORTIC( NPSTK, INDXA, SFSCA )
@@ -280,7 +285,7 @@ C.........  Disaggregate PSTK data into 4 categories
 
             END IF
 
-        ENDDO ! End loop on NPSTK
+        END DO ! End loop on NPSTK
  
 C.........  Bound stack parameters to minima and maxima values
 C.........  This is in a separate loop to permit better reporting
@@ -310,7 +315,7 @@ C.........  the missing stack parameters, which should get defaults.
                 WRITE( MESG,94010 ) BUFFER( 1:L2 ) // ' SCC: '// TSCC
                 CALL M3MESG( MESG )
 
-            ENDIF
+            END IF
 
             IF ( HT .GT. MAXHT ) THEN
                 WRITE( LDEV,94030 ) 'Height', HT, MAXHT
@@ -357,7 +362,7 @@ C.........  the missing stack parameters, which should get defaults.
             STKTK( S ) = TK
             STKVE( S ) = VE
 
-        ENDDO ! Loop on sources
+        END DO ! Loop on sources
 
         CALL M3MSG2( 'Fixing MISSING stack parameters...' )
 
@@ -437,18 +442,18 @@ C.............  Set up temporary character strings
                     IF ( STKDM( S ) .LE. 0 ) THEN
                         WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
                         STKDM( S ) = DM
-                    ENDIF
+                    END IF
 
                     IF ( STKTK( S ) .LE. 0 ) THEN
                         WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
                         STKTK( S ) = TK
-                    ENDIF 
+                    END IF 
 
                     IF ( STKVE( S ) .LE. 0 ) THEN
                         WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                         STKVE( S ) = VE
-                    ENDIF
-                ENDIF
+                    END IF
+                END IF
 
             END IF      !  if stack height bad
 
@@ -503,13 +508,13 @@ C.............  Set up temporary character strings
                     IF ( STKTK( S ) .LE. 0 ) THEN
                         WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
                         STKTK( S ) = TK
-                    ENDIF 
+                    END IF 
 
                     IF ( STKVE( S ) .LE. 0 ) THEN
                         WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                         STKVE( S ) = VE
-                    ENDIF
-                ENDIF
+                    END IF
+                END IF
 
             END IF      !  if stack diameter bad
 
@@ -561,8 +566,8 @@ C.............  Set up temporary character strings
                     IF ( STKVE( S ) .LE. 0 ) THEN
                         WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                         STKVE( S ) = VE
-                    ENDIF
-                ENDIF
+                    END IF
+                END IF
 
             END IF      !  if stack exhaust temperature bad
 
@@ -607,11 +612,11 @@ C.............  Set up temporary character strings
 
                     WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                     STKVE( S ) = VE
-                ENDIF
+                END IF
 
             END IF      !  if stack exhaust velocity bad
 
-        ENDDO  !  end loop on sources for fixing missing stack parameters
+        END DO  !  end loop on sources for fixing missing stack parameters
 
 C.........  Apply ultimate fallback parameters, and write report
 C.........  This is in a separate loop to permit better reporting
@@ -633,26 +638,26 @@ C.........  This is in a separate loop to permit better reporting
                 IF ( STKHT( S ) .LE. 0 ) THEN
                     WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT0
                     STKHT( S ) = HT0
-                ENDIF
+                END IF
 
                 IF ( STKDM( S ) .LE. 0 ) THEN
                     WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM0
                     STKDM( S ) = DM0
-                ENDIF
+                END IF
 
                 IF ( STKTK( S ) .LE. 0 ) THEN
                     WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK0
                     STKTK( S ) = TK0
-                ENDIF 
+                END IF 
 
                 IF ( STKVE( S ) .LE. 0 ) THEN
                     WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE0
                     STKVE( S ) = VE0
-                ENDIF
+                END IF
 
-            ENDIF
+            END IF
 
-        ENDDO  ! Loop through sources for applying ultimate fallbacks
+        END DO  ! Loop through sources for applying ultimate fallbacks
 
         DEALLOCATE( INDXA )
         DEALLOCATE( SFSCA )
