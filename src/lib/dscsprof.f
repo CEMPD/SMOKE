@@ -53,8 +53,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         INDEX1
         REAL            STR2REAL
+        LOGICAL         BLKORCMT
 
-        EXTERNAL        CRLF, GETFLINE, INDEX1, STR2REAL
+        EXTERNAL        BLKORCMT, CRLF, GETFLINE, INDEX1, STR2REAL
 
 C...........   Subroutine arguments (note- outputs MXSPFUL, MXSPEC, and SPCNAMES
 C              passed via module MODSPRO)
@@ -112,7 +113,7 @@ C...........   Local variables
 
 C***********************************************************************
 C   Begin body of subroutine DSCSPROF
-
+        
 C...........  Make sure routine arguments are valid
         IF( FDEV .LE. 0 .OR. NIPOL .LE. 0 ) THEN
             MESG = 'INTERNAL ERROR: Invalid subroutine arguments'
@@ -169,8 +170,8 @@ C              mole-based conversions
             END IF
 
 C.............  Skip blank and comment lines
-            IF( LINE .EQ. ' ' ) CYCLE
-            IF( LINE(1:1) .EQ. CINVHDR ) CYCLE
+
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Skip all lines until the end of the header...
 C.............  Check for header start

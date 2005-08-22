@@ -54,6 +54,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
+        LOGICAL         BLKORCMT
         CHARACTER(2)    CRLF
         INTEGER         FIND1
         INTEGER         FINDC
@@ -61,7 +62,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         STR2INT
 
-        EXTERNAL  CHKINT, CRLF, FIND1, FINDC, GETFLINE, INDEX1, STR2INT
+        EXTERNAL  CHKINT, CRLF, FIND1, FINDC, GETFLINE, INDEX1, STR2INT,
+     &            BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
@@ -168,9 +170,8 @@ C           the source category of interest
                 CYCLE
             END IF
 
-C.............  Skip blank lines or comments
-            IF( LINE .EQ. ' ' ) CYCLE
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE      
+C.............  Skip blank or comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Depending on source category, transfer line to temporary
 C               fields.  In cases where blanks are allowed, do not use

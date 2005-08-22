@@ -56,8 +56,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        FIND1
         INTEGER        STR2INT
         REAL           STR2REAL
+        LOGICAL        BLKORCMT
 
-        EXTERNAL       CRLF, FIND1, STR2INT, STR2REAL
+        EXTERNAL       CRLF, FIND1, STR2INT, STR2REAL, BLKORCMT
 
 C...........   Subroutine arguments
         LOGICAL      , INTENT  (IN) :: VFLAG      ! true: using variable grid
@@ -152,10 +153,7 @@ C......... Determine the number surrogate file entries
                         CYCLE
                     END IF
 
-                ELSE IF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
-                    CYCLE
-
-                ELSE IF ( LINE( 1:1 ) .EQ. CINVHDR ) THEN ! skip comment lines
+                ELSE IF ( BLKORCMT( LINE ) ) THEN ! skip if current line is blank OR comment
                     CYCLE
 
                 ELSE
@@ -233,10 +231,7 @@ C.........  Fill surrogate arrays
                         CYCLE
                     END IF
 
-                ELSE IF ( LINE .EQ. ' ' ) THEN ! skip if current line is blank
-                    CYCLE
-
-                ELSE IF ( LINE( 1:1 ) .EQ. CINVHDR ) THEN ! skip comment lines
+                ELSE IF ( BLKORCMT( LINE ) ) THEN ! skip if current line is blank OR comment
                     CYCLE
 
                 END IF

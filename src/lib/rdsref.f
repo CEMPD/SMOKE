@@ -54,14 +54,15 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)     CRLF
-        LOGICAL         ENVYN
+        LOGICAL         ENVYN, BLKORCMT
         INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         GETFLINE
         INTEGER         INDEX1
         INTEGER         STR2INT
 
-        EXTERNAL  CRLF, ENVYN, FIND1, FINDC, GETFLINE, INDEX1, STR2INT
+        EXTERNAL  BLKORCMT, CRLF, ENVYN, FIND1, FINDC, GETFLINE, INDEX1,
+     &            STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
@@ -217,8 +218,7 @@ C           interest
             END IF
 
 C.............  Skip blank lines or comments
-            IF( LINE .EQ. ' ' ) CYCLE
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+            IF( BLKORCMT( LINE ) ) CYCLE
 
             J = INDEX( LINE, PDEFPCKT ) ! can be in middle of file
             L = LEN_TRIM( LINE )

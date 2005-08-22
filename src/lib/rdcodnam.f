@@ -64,6 +64,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
+        LOGICAL         BLKORCMT
         CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         INDEX1
@@ -71,7 +72,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
 
         EXTERNAL CHKINT, CHKREAL, CRLF, GETFLINE, INDEX1, STR2INT, 
-     &           STR2REAL
+     &           STR2REAL, BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: FDEV   ! iventory table unit no.
@@ -210,8 +211,8 @@ C.........  Read Inventory Table
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Skip comment lines
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+C.............  Skip comment and blank lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Check if line is a process/pollutant combination
             IF( INDEX( LINE( 1:16 ), ETJOIN ) > 0 ) THEN

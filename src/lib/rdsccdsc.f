@@ -48,8 +48,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER        FINDC 
         INTEGER        GETFLINE
+        LOGICAL        BLKORCMT
 
-        EXTERNAL       FINDC, GETFLINE
+        EXTERNAL       BLKORCMT, FINDC, GETFLINE
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV           ! file unit number
@@ -98,8 +99,8 @@ C.........  Read the SCC descriptions, and store with SCC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) CYCLE
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Left adjust line
             LINE = ADJUSTL( LINE )

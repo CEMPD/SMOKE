@@ -439,6 +439,7 @@ C               the contents of the area-to-point factors file
 C...............   EXTERNAL FUNCTIONS and their descriptions:
             LOGICAL         CHKINT
             LOGICAL         CHKREAL
+            LOGICAL         BLKORCMT
             CHARACTER(2)    CRLF
             INTEGER         GETFLINE
             INTEGER         GETNLIST
@@ -446,7 +447,7 @@ C...............   EXTERNAL FUNCTIONS and their descriptions:
             REAL            STR2REAL
 
             EXTERNAL CHKINT, CHKREAL, CRLF, GETFLINE, GETNLIST,
-     &               STR2INT, STR2REAL
+     &               STR2INT, STR2REAL, BLKORCMT
 
 C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: STATUS  ! call status: COUNT|STORE
@@ -502,8 +503,8 @@ C............  Loop through lines of input file and
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
-C.................  Skip comment lines
-                IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+C.................  Skip comment and blank lines
+                IF( BLKORCMT ( LINE ) ) CYCLE
 
 C................  If line is a header line, add number of SCCs for
 C                  the current table

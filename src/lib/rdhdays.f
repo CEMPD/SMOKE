@@ -50,13 +50,15 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         LOGICAL        CHKINT
+        LOGICAL        BLKORCMT
         INTEGER        INDEX1 
         INTEGER        GETFLINE
         INTEGER        JULIAN
         INTEGER        STR2INT
         INTEGER        YEAR4 
 
-        EXTERNAL       CHKINT, INDEX1, GETFLINE, JULIAN, STR2INT, YEAR4
+        EXTERNAL       CHKINT, INDEX1, GETFLINE, JULIAN, STR2INT, YEAR4,
+     &                 BLKORCMT
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV           ! file unit number
@@ -130,8 +132,8 @@ C.........  Read the unsorted, unfiltered holidays data
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) CYCLE
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Parse the line into its 2 segments
             CALL PARSLINE( LINE, 5, SEGMENT )
@@ -235,7 +237,7 @@ C.............  Store holiday records that match episode
             HOLREGNA( I ) = REGN
             HDJDATEA( I ) = JDATE
             HDALTDYA( I ) = DAY
-
+            
         END DO
 
         NHOLIDAY = I

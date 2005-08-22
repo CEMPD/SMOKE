@@ -55,6 +55,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
+        LOGICAL         BLKORCMT
         CHARACTER(2)    CRLF
         INTEGER         FINDC
         INTEGER         GETNLIST
@@ -63,7 +64,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
 
         EXTERNAL  CHKINT, CRLF, FINDC, GETNLIST, GETFLINE, INDEX1, 
-     &            STR2INT
+     &            STR2INT, BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV              ! x-ref file unit no.
@@ -205,8 +206,8 @@ C            arrays.
             L = LEN_TRIM( LINE )
             NFIELD = GETNLIST( L,LINE ) 
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) THEN
+C.............  Skip blank or comment lines
+            IF( BLKORCMT( LINE ) ) THEN
                 CYCLE
 
 C.............  Auto check for LIST or EPS2.0 formated temporal x-ref...
@@ -367,8 +368,8 @@ C           the source category of interest
                 CYCLE
             END IF
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) CYCLE
+C.............  Skip blank or comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
             J = INDEX( LINE, PDEFPCKT ) ! can be in middle of file
             L = LEN_TRIM( LINE )

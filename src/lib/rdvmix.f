@@ -51,6 +51,7 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        LOGICAL         BLKORCMT
         LOGICAL         CHKINT
         CHARACTER(2)    CRLF
         LOGICAL         ENVYN
@@ -62,7 +63,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
 
         EXTERNAL  CHKINT, CRLF, ENVYN, FINDC, GETNLIST, GETFLINE, 
-     &            INDEX1, STR2INT, STR2REAL
+     &            INDEX1, STR2INT, STR2REAL, BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV              ! VMT mix file unit no.
@@ -290,9 +291,8 @@ C           the source category of interest
                 CYCLE
             END IF
 
-C.............  Skip blank lines and header lines
-            IF( LINE .EQ. ' ' ) CYCLE
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+C.............  Skip blank lines and header (comment) lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Separate line of data or read as fixed format...
 C.............  Fixed format. NOTE - the hour field is ignored in this format,

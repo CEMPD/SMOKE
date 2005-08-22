@@ -52,8 +52,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER(2)  CRLF
         REAL          STR2REAL
+        LOGICAL       BLKORCMT
 
-        EXTERNAL      CRLF, STR2REAL
+        EXTERNAL      BLKORCMT, CRLF, STR2REAL
 
 C...........   Subroutine arguments
 
@@ -155,8 +156,7 @@ C               lines
             IF( IREC .LE. LASTHDR ) CYCLE
 
 C.............  Skip blank and comment lines
-            IF( LINE .EQ. ' ' ) CYCLE
-            IF( LINE(1:1) .EQ. CINVHDR ) CYCLE
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Separate the line of data into each part
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
@@ -351,8 +351,7 @@ C.................  Check error status
                 END IF
 
 C.................  Skip blank and comment lines
-                IF( LINE .EQ. ' ' ) CYCLE
-                IF( LINE(1:1) .EQ. CINVHDR ) CYCLE
+                IF( BLKORCMT( LINE ) ) CYCLE
 
                 ONSTART = .FALSE.
 

@@ -74,10 +74,11 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
+        LOGICAL       BLKORCMT
         LOGICAL       SETSCCTYPE
 
-        EXTERNAL      FINDC, GETFLINE, INDEX1, STR2INT, STR2REAL, 
-     &                SETSCCTYPE
+        EXTERNAL      BLKORCMT, FINDC, GETFLINE, INDEX1, STR2INT, 
+     &                STR2REAL, SETSCCTYPE
 
 C.........  LOCAL PARAMETERS:
         INTEGER, PARAMETER :: TBLLEN = FPSLEN3 + POLLEN3
@@ -169,7 +170,7 @@ C.........  Set up column starts and ends
         CE2 = CS2 + SCCLEN3 - 1
         CS3 = CE2 + 2
         CE3 = CS3 + 4
-
+        
         MESG = 'Reading pollutant to pollutant conversion file...'
         CALL M3MSG2( MESG )
 
@@ -181,7 +182,6 @@ C.........  Read pollutant pollutants conversion factors file
         DO IREC = 1, NLINE !  head of the FDEV-read loop
 
             READ( FDEV, 93010, END=999, IOSTAT=IOS ) LINE
-
             IF ( IOS .NE. 0 ) THEN
 
                 EFLAG = .TRUE.
@@ -195,8 +195,8 @@ C.........  Read pollutant pollutants conversion factors file
 
             LINE16 = ADJUSTL( LINE( 1:16 ) )
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) THEN
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) THEN
                 CYCLE
 
 C.............  Check if line is pollutant-to-pollutant indicator or conversion
@@ -232,7 +232,7 @@ C.................  Determine if SCC is in inventory list
                 IF( K1 .LE. 0 .AND. K2 .LE. 0 ) CYCLE   ! Skip record if SCC not in inventory
 
                 I = I + 1
-
+                
 C.................  Convert SCC to mobile internal standard
                 IF( CATEGORY .EQ. 'MOBILE' ) THEN
                     CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )

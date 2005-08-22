@@ -50,12 +50,13 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        LOGICAL         BLKORCMT
         LOGICAL         CHKINT
         CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
 
-        EXTERNAL        CHKINT, CRLF, GETFLINE, STR2INT
+        EXTERNAL        BLKORCMT, CHKINT, CRLF, GETFLINE, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! NHAPEXCLUDE file unit no.
@@ -129,10 +130,7 @@ C           the source category of interest
             END IF
 
 C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) CYCLE
-
-C.............  Skip comment lines
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Depending on source category, transfer line to temporary
 C               fields.  In cases where blanks are allowed, do not use
@@ -168,7 +166,7 @@ C.............  Store case-indpendent fields
             INDXTA ( N ) = N
             IFIPTA ( N ) = IFIP
             CSCCTA ( N ) = SEGMENT( 2 )
-
+            
 C.............  Store sorting criteria for source.
 C.............  NOTE - if point sources are added, make sure that
 C               TSCC is justified correctly.

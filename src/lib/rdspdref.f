@@ -48,12 +48,13 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
+        LOGICAL         BLKORCMT
         LOGICAL         CHKINT
         CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
 
-        EXTERNAL        CHKINT, CRLF, GETFLINE, STR2INT
+        EXTERNAL        BLKORCMT, CHKINT, CRLF, GETFLINE, STR2INT
         
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! SPDREF file unit no.
@@ -136,11 +137,8 @@ C.............  Check for end of file
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) CYCLE
-
-C.............  Skip comment lines
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
             
 C.............  Parse line into segments
             CALL PARSLINE( LINE, MXCOL, SEGMENT ) 

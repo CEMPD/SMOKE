@@ -59,8 +59,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     GETFLINE
         INTEGER     GETNLIST
         INTEGER     INDEX1
+        LOGICAL     BLKORCMT
 
-        EXTERNAL    GETFLINE, GETNLIST, INDEX1
+        EXTERNAL    BLKORCMT, GETFLINE, GETNLIST, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
@@ -143,8 +144,8 @@ C           check packet information
                 CYCLE
             END IF
 
-C.............  Skip any blank lines
-            IF( LINE == ' ' ) THEN
+C.............  Skip any blank and comment lines
+            IF( BLKORCMT( LINE ) ) THEN
                 NTLINES = NTLINES - 1
                 CYCLE
             END IF
@@ -271,8 +272,8 @@ C.........  Store contents of emissions processes file in output order
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
 
-C.............  Skip blank line
-            IF( LINE .EQ. ' ' ) CYCLE
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
 
             LINE = ADJUSTL( LINE )
             L1 = LEN_TRIM( LINE )
