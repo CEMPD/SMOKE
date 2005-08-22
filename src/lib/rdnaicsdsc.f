@@ -99,7 +99,7 @@ C.........  Read the NAICS descriptions, and store with NAICS
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Skip blank lines
+C.............  Skip blank and comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Left adjust line

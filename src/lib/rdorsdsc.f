@@ -115,7 +115,7 @@ C.........  Read the SCC descriptions, and store with SCC
 C.............  Left adjust line
             LINE = ADJUSTL( LINE )
 
-C.............  Skip blank lines
+C.............  Skip blank and comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Get SCC line
