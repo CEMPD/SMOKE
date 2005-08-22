@@ -60,6 +60,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER(2)  CRLF
         EXTERNAL      CRLF
+        LOGICAL       BLKORCMT
+        
+        EXTERNAL      BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS:
 
@@ -134,8 +137,7 @@ C           are not permitted.
             END IF
 
 C.............  Skip blank lines and comment lines
-            IF( LINE .EQ. ' ' ) CYCLE
-            IF( LINE( 1:1 ) == CINVHDR ) CYCLE
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  If inside packet...
             IF( INSIDE ) THEN
