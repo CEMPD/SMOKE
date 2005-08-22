@@ -50,12 +50,13 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL        CHKINT
+        LOGICAL        BLKORCMT
         INTEGER        GETFLINE
         INTEGER        STR2INT
         INTEGER        FIND1
         CHARACTER(2)   CRLF    
         
-        EXTERNAL  CHKINT, GETFLINE, STR2INT, FIND1, CRLF
+        EXTERNAL  BLKORCMT, CHKINT, GETFLINE, STR2INT, FIND1, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV     ! MVREF file unit no.
@@ -136,7 +137,7 @@ C.........  Read line
             END IF
             
 C.............  Skip blank lines
-            IF( LINE == ' ' ) CYCLE
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Parse the line into segments
             CALL PARSLINE( LINE, NREFFLAGS + 2, SEGMENT )
