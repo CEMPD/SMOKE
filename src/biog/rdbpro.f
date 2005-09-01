@@ -50,8 +50,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         INDEX1
         REAL            STR2REAL
+        LOGICAL         BLKORCMT
 
-        EXTERNAL        CRLF, GETFLINE, INDEX1, STR2REAL
+        EXTERNAL        CRLF, GETFLINE, INDEX1, STR2REAL, BLKORCMT
 
 C...........   Subroutine arguments (note- outputs MXSPFUL, MXSPEC, and SPCNAMES
 C              passed via module MODSPRO)
@@ -126,7 +127,7 @@ C              mole-based conversions
       
             IREC = IREC + 1
              
-            IF ( IOS .GT. 0 ) THEN
+            IF( IOS .GT. 0 ) THEN
                 WRITE( MESG, 94010 )
      &              'I/O error', IOS, 'reading speciation profile '//
      &              'file at line', IREC
@@ -134,7 +135,7 @@ C              mole-based conversions
             END IF
 
 C.............  Skip blank and comment lines
-            IF ( LINE .EQ. ' ' .OR. LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Separate the line of data into each part
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
@@ -142,7 +143,7 @@ C.............  Separate the line of data into each part
 C.............  Left-justify character strings and convert factors to reals
             TMPPRF = ADJUSTL ( SEGMENT( 1 ) )
 
-            IF ( TMPPRF .NE. SPPRO ) CYCLE
+            IF( TMPPRF .NE. SPPRO ) CYCLE
 
             FOUND_FLAG = .TRUE.
 
@@ -157,19 +158,19 @@ C               of the loop if not found (skip entry)
 
             J = INDEX1( POLNAM, NIPOL, EINAM )
     
-            IF ( J .EQ. 0 ) CYCLE
+            IF( J .EQ. 0 ) CYCLE
             
             SPOS = INDEX1( SPECNM, MSPCS, EMSPC )
 
             IF ( SPOS .GT. 0 ) THEN
 
-               IF ( SDIV .EQ. 0 ) THEN
-                  EFLAG = .TRUE.
-                  CYCLE
-               ENDIF
+                IF ( SDIV .EQ. 0 ) THEN
+                    EFLAG = .TRUE.
+                    CYCLE
+                ENDIF
 
-               MLFAC( SPOS, J ) = SPLTFAC / SDIV
-               MSFAC( SPOS, J ) = SMFAC * GM2TON
+                MLFAC( SPOS, J ) = SPLTFAC / SDIV
+                MSFAC( SPOS, J ) = SMFAC * GM2TON
              
             END IF
        
