@@ -50,10 +50,11 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C..........  EXTERNAL FUNCTIONS
+        LOGICAL         BLKORCMT
         CHARACTER(2)    CRLF
         INTEGER         STR2INT         !  read (unjustified) int from str
 
-        EXTERNAL        CRLF, STR2INT
+        EXTERNAL        BLKORCMT, CRLF, STR2INT
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV     ! unit number for profiles file
@@ -418,6 +419,7 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 
 C.............  This internal subprogram counts the number of temporal
 C               profiles of a certain type
+
             SUBROUTINE COUNT_TPROF( PTYPE, NSKIP, NPROF )
 
 C.............  Subroutine arguments
@@ -432,7 +434,7 @@ C.............  Local variables
             INTEGER         IOS             ! i/o status
 
             LOGICAL      :: FOUND           !  true: profile type has been found
-
+            
             CHARACTER(120)  LINE    !  char-string buffer for profiles input
             CHARACTER(300)  MESG    !  message buffer
 
@@ -465,6 +467,8 @@ C.................  Check read error status
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
+                
+                IF( BLKORCMT( LINE ) ) CYCLE
 
 C.................  Scan line for profile type (e.g., /MONTHLY/)
                 IF( .NOT. FOUND ) THEN
@@ -483,10 +487,11 @@ C                   section
                     I = I + 1
 
                 END IF
-
+          
             END DO   ! End of first read though to determine memory needs
 
 111         NPROF = I
+
 
             REWIND( FDEV )        
        
@@ -507,6 +512,7 @@ C----------------------------------------------------------------------
 
 C.............  This internal subprogram reads the temporal profiles of
 C               a given type, and stores in unsorted order
+
             SUBROUTINE READ_TPROF( NSKIP, NPROF )
 
 C.............  Subroutine arguments
@@ -539,17 +545,22 @@ C.............  Read unsorted entries of the requested profile type
             IREC = NSKIP
             DO I = 1, NPROF
 
-                READ( FDEV, 93000, IOSTAT=IOS ) LINE
-                IREC = IREC + 1
+C.................  Loop until non-blank or comment line
+                DO
+                    READ( FDEV, 93000, IOSTAT=IOS ) LINE
+                    IREC = IREC + 1
 
-                IF( IOS .GT. 0 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'I/O error', IOS, 
-     &                     'reading TEMPORAL PROFILE file at line', IREC
+                    IF( IOS .GT. 0 ) THEN
+                        EFLAG = .TRUE.
+                        WRITE( MESG,94010 ) 'I/O error', IOS, 
+     &                    'reading TEMPORAL PROFILE file at line', IREC
 
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
+                        CALL M3MESG( MESG )
+                        CYCLE
+                    END IF
+                
+                    IF( .NOT. BLKORCMT( LINE ) ) EXIT
+                END DO 
 
                 CODEA( I ) = STR2INT( LINE( 1:5 ) )
                 INDXA( I ) = I
