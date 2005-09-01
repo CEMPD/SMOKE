@@ -50,8 +50,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
+        LOGICAL         BLKORCMT
 
-        EXTERNAL  CRLF, GETFLINE, STR2INT
+        EXTERNAL  BLKORCMT, CRLF, GETFLINE, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
@@ -120,8 +121,8 @@ C.........  Get the number of lines for each section
                 CYCLE
             END IF
 
-            IF( LINE .EQ. ' ' ) CYCLE  ! Skip blank lines
-
+            IF( BLKORCMT( LINE ) ) CYCLE  ! Skip blank and comment lines
+            
             K1 = INDEX( LINE, '/VEHICLE TYPES/' )
             K2 = INDEX( LINE, '/ROAD CLASSES/'  )
             K3 = INDEX( LINE, '/SCC/'  )

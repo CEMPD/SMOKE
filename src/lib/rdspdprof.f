@@ -48,12 +48,13 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
         LOGICAL         CHKREAL
+        LOGICAL         BLKORCMT
         CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
         REAL            STR2REAL
         
-        EXTERNAL        CHKINT, CHKREAL, CRLF, GETFLINE, 
+        EXTERNAL        BLKORCMT, CHKINT, CHKREAL, CRLF, GETFLINE, 
      &                  STR2INT, STR2REAL
 
 C...........   Subroutine arguments
@@ -123,48 +124,45 @@ C............  Check for end of file
                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
            END IF
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) CYCLE
+C............  Skip blank lines and comment lines
+           IF( BLKORCMT( LINE ) ) CYCLE
 
-C.............  Skip comment lines
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+C............  Parse line into segments
+           CALL PARSLINE( LINE, MXCOL, SEGMENT ) 
 
-C.............  Parse line into segments
-            CALL PARSLINE( LINE, MXCOL, SEGMENT ) 
+C............  Check that the profile number is a positive integer
+           IF( .NOT. CHKINT( SEGMENT( 1 ) ) .OR.
+     &         STR2INT( SEGMENT( 1 ) ) < 1 ) THEN
+               EFLAG = .TRUE.
+               WRITE( MESG,94010 ) 'ERROR: Profile number is not ' //
+     &                'an integer or is less than 1 at line', I
+               CALL M3MESG( MESG )
+           END IF
 
-C.............  Check that the profile number is a positive integer
-            IF( .NOT. CHKINT( SEGMENT( 1 ) ) .OR.
-     &          STR2INT( SEGMENT( 1 ) ) < 1 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Profile number is not ' //
-     &                 'an integer or is less than 1 at line', I
-                CALL M3MESG( MESG )
-            END IF
-
-C.............  Check that hourly speeds are valid
-            DO J = 2, 25
-                IF( .NOT. CHKREAL( SEGMENT( J ) ) .OR.
-     &              STR2REAL( SEGMENT( J ) ) < 0. ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Invalid hourly ' //
-     &                     'speed for hour', J-1, 'at line', I
-                    CALL M3MESG( MESG )
-                END IF
-            END DO
+C............  Check that hourly speeds are valid
+           DO J = 2, 25
+               IF( .NOT. CHKREAL( SEGMENT( J ) ) .OR.
+     &             STR2REAL( SEGMENT( J ) ) < 0. ) THEN
+                   EFLAG = .TRUE.
+                   WRITE( MESG,94010 ) 'ERROR: Invalid hourly ' //
+     &                    'speed for hour', J-1, 'at line', I
+                   CALL M3MESG( MESG )
+               END IF
+           END DO
             
-C.............  Skip rest of loop if there has been an error
-            IF( EFLAG ) CYCLE
+C............  Skip rest of loop if there has been an error
+           IF( EFLAG ) CYCLE
+           
+           K = K + 1
+           IF( K .GT. NLINES ) CYCLE  ! Ensure no overflow
+           
+C............  Store profile information
+           SPDIDXA( K ) = K
+           SPDNUMA( K ) = STR2INT( SEGMENT( 1 ) )
             
-            K = K + 1
-            IF( K .GT. NLINES ) CYCLE  ! Ensure no overflow
-            
-C.............  Store profile information
-            SPDIDXA( K ) = K
-            SPDNUMA( K ) = STR2INT( SEGMENT( 1 ) )
-            
-            DO J = 2, 25
-                SPDPROFA( K,J-1 ) = STR2REAL( SEGMENT( J ) )
-            END DO           
+           DO J = 2, 25
+               SPDPROFA( K,J-1 ) = STR2REAL( SEGMENT( J ) )
+           END DO           
             
        END DO  ! End loop reading SPDPROF file
 
@@ -215,7 +213,7 @@ C............  Check that duplicate profile numbers have not been used
                CYCLE
            END IF
            
-           SPDNUMS( I ) = SPDNUMA ( J )
+           SPDNUMS( I ) = SPDNUMA( J )
            PREVNUM = SPDNUMA( J )
            
            SPDPROFS( I,: ) = SPDPROFA( J,: )
