@@ -117,8 +117,8 @@ C...........   Other local variables
         LOGICAL      :: FFLAG    = .FALSE. ! true: formula in use
         LOGICAL         ZFLAG              ! true: write zeros to output file
 
-        CHARACTER(16)   NAME1            ! tmp file name component
-        CHARACTER(16)   NAME2            ! tmp file name component
+        CHARACTER(80)   NAME1            ! tmp file name component
+        CHARACTER(80)   NAME2            ! tmp file name component
         CHARACTER(128)  BUFFER           ! message buffer
         CHARACTER(256)  MESG             ! message buffer
 

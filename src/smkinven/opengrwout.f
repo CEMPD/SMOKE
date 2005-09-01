@@ -67,7 +67,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(16), INTENT (IN) :: ENAME ! emis input inven logical name
         INTEGER      , INTENT (IN) :: FYEAR ! future year or 0 for no projection
-        CHARACTER(16), INTENT (IN) :: NAME1 ! physical name part for i/o api
+        CHARACTER(80), INTENT (IN) :: NAME1 ! physical name part for i/o api
         INTEGER      , INTENT(OUT) :: ODEV  ! output map inventory file
         INTEGER      , INTENT(OUT) :: DDEV  ! IDA output emissions file number
         INTEGER      , INTENT(OUT) :: VDEV  ! IDA output activity file number

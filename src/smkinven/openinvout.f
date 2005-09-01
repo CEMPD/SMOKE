@@ -106,8 +106,8 @@ C...........   Other local variables
 
         CHARACTER(256) MESG      ! message buffer 
 
-        CHARACTER(16)       NAME1  ! tmp file name component
-        CHARACTER(16)       NAME2  ! tmp file name component
+        CHARACTER(80)       NAME1  ! tmp file name component
+        CHARACTER(80)       NAME2  ! tmp file name component
         CHARACTER(NAMLEN3)  NAMBUF ! file name buffer
         CHARACTER(IOVLEN3)  VIN_A
         CHARACTER(IOVLEN3)  VIN_B
