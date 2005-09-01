@@ -34,7 +34,7 @@ C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
 C
-C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
+C COPYRIGHT (C) 2005, Environmental Modeling for Policy Development
 C All Rights Reserved
 C
 C Carolina Environmental Program
@@ -56,6 +56,7 @@ C.........  INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         
 C.........  EXTERNAL FUNCTIONS
+        LOGICAL       BLKORCMT
         CHARACTER(2)  CRLF
         LOGICAL       ENVYN
         INTEGER       FINDC
@@ -66,8 +67,8 @@ C.........  EXTERNAL FUNCTIONS
         INTEGER       SECSDIFF
         INTEGER       SEC2TIME
 
-        EXTERNAL      CRLF, ENVYN, FINDC, GETFLINE, HHMMSS, JUNIT,
-     &                PROMPTFFILE, SECSDIFF, SEC2TIME
+        EXTERNAL      BLKORCMT, CRLF, ENVYN, FINDC, GETFLINE, HHMMSS,
+     &                JUNIT, PROMPTFFILE, SECSDIFF, SEC2TIME
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
@@ -102,7 +103,8 @@ C.........  File units and logical names
         INTEGER          LDEV       ! unit for log file
         INTEGER          IDEV       ! unit for list of elevated files
         INTEGER          PDEV       ! unit for list of PELV files 
-        INTEGER          ODEV       ! unit for output file
+        INTEGER          ODEV       ! unit for ASCII output file
+        INTEGER          BDEV       ! unit for binary output file
         INTEGER          RPTDEV     ! unit for merge report file
         INTEGER          RDEV       ! temporary unit for reading input
         INTEGER          TDEV       ! temporary unit for input files
@@ -142,6 +144,32 @@ C.........  ASCII elevated file header variables
         REAL               :: HTUPPR,  TMPHTUPPR  ! min cell ht b/w diffbr and top
 
         CHARACTER(10)      :: VERTTYPE            ! vertical method type
+
+C.........  Binary elevated file variables
+        CHARACTER(10)   :: HDRKEY = 'PTSOURCE'
+        INTEGER(4)      :: INTBIN(20)         ! storage for integers
+        REAL(4)         :: REALBIN(20)        ! storage for reals
+        CHARACTER(4)       SPECID(10)         ! species name
+        
+        REAL(4),    ALLOCATABLE :: SRCDEFS( :,: ) ! point source definitions
+        REAL(4),    ALLOCATABLE :: SRCFLOW( : )   ! flow rate for point sources
+        REAL(4),    ALLOCATABLE :: SRCHTS ( : )   ! plume height for sources
+        REAL(4),    ALLOCATABLE :: SRCEMIS( : )   ! emissions for each source
+        
+        INTEGER(4), ALLOCATABLE :: SRCCOLS( : )   ! column for point sources
+        INTEGER(4), ALLOCATABLE :: SRCROWS( : )   ! row for point sources
+        INTEGER(4), ALLOCATABLE :: SRCLAYS( : )   ! layer for point sources
+        
+C.........  Report file variables
+C..         Reused for each time step and species
+        REAL, ALLOCATABLE :: RPTBYFILE ( : )   ! emissions by file
+        REAL                 RPTASCII          ! emissions in ASCII file
+        REAL                 RPTBINARY         ! emissions in binary file
+C..         Summed over time steps
+        REAL, ALLOCATABLE :: RPTALLFILE( :,: ) ! emissions by file and species
+        REAL                 RPTALLASC ( : )   ! emissions in ASCII file by species
+        REAL                 RPTALLBIN ( : )   ! emissions in binary file by species
+        REAL                 RPTFILESUM        ! summed emissions across input files
 
 C.........  Source information variables
         REAL             XCOORD               ! x-coordinate
@@ -201,6 +229,7 @@ C.........  Other local variables
         INTEGER          TMPSTEP              ! temporary number of time steps
         INTEGER          BASENUM              ! base source number for hourly emissions
         INTEGER          ENUM, PNUM, GNUM     ! elevated, PinG, and group numbers
+        INTEGER          ROW, COL             ! calculated row and column for source
 
         REAL             FDUM, FDUM2          ! dummy reals
 
@@ -213,6 +242,8 @@ C.........  Other local variables
         
         CHARACTER(256)   DUMMY                ! dummy character string
         CHARACTER(30)    FMT                  ! output format for emissions
+        CHARACTER(100)   RPTFMT               ! output format for report
+        CHARACTER(100)   RPTALLFMT            ! output format for all time step report
         CHARACTER(256)   LINE                 ! input line
         CHARACTER(512)   MESG                 ! message buffer
 
@@ -299,8 +330,8 @@ C.........  Read lists of input files
                     CYCLE
                 END IF
             
-C.................  Skip any blank lines
-                IF( LINE == ' ' ) CYCLE
+C.................  Skip blank or comment lines
+                IF( BLKORCMT( LINE ) ) CYCLE
 
 C.................  When reading PELV list, allow file name to be NONE
                 IF( J == 2 .AND. TRIM( LINE ) == 'NONE' ) THEN
@@ -566,6 +597,7 @@ C.............  Store variables the first time, otherwise compare to previous
 C.........  Read and check species names for each file
         ALLOCATE( SPCNAM( NMSPC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCNAM', PROGNAME )
+        SPCNAM = ' '
 
         DO I = 1, NFILES
         
@@ -728,50 +760,51 @@ C.........  Determine output date, time, and number of time steps
         IBT = G_STIME / 100
         IET = TMPTIME / 100
 
-C.........  Open output file
+C.........  Open output files
         MESG = 'Enter logical name for output ' //
      &         'ASCII ELEVATED SOURCES file'
         ODEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'OUTFILE', PROGNAME )
 
-C.........  Open report file if needed
-        IF( MRGDIFF ) THEN
-!            MESG = 'Enter logical name for the MRGELEV REPORT file'
-!            RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'REPMRGELEV', 
-!     &                          PROGNAME )
-        END IF
+        MESG = 'Enter logical name for output ' //
+     &         'BINARY ELEVATED SOURCES file'
+        BDEV = PROMPTFFILE( MESG, .FALSE., .FALSE., 'PTSOURCE', PROGNAME )
 
-C.........  Write header to output file
-        WRITE( ODEV, 93010 ) 'CONTROL', GRDENV
-        WRITE( ODEV, 93000 ) 'PTSOURCE'
-        WRITE( ODEV, 93000 ) FNOTE
-        WRITE( ODEV, 93015 ) NMSPC, 0, NTOTSRCS, 1, NPARAM
-        WRITE( ODEV, 93015 ) PDEVOUT, 0, GSWITCH
-        WRITE( ODEV, 93015 ) USWITCH, LSWITCH, 0, MSWITCH, VSWITCH
-        WRITE( ODEV, 93015 ) 1, 0, ESWITCH
-        WRITE( ODEV, 93015 ) DDEVOUT, RDEVOUT, 0, TDEVOUT, 
-     &                       MDEVOUT, WDEVOUT
-     
-        DO I = 1, NMSPC
-            WRITE( ODEV, 93020 ) SPCNAM( I )
-        END DO
+C.........  Open report file
+        MESG = 'Enter logical name for the MRGELEV REPORT file'
+        RPTDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'REPMRGELEV', 
+     &                        PROGNAME )
+
+C.........  Write header to output files
+        CALL WRITE_ASCII_HEADER
+        CALL WRITE_BINARY_HEADER
+        CALL WRITE_REPORT_HEADER
+
+C.........  Build report format string
+        RPTFMT = "(I5, ';', 1X, I4, ';', 1X, A10, ';', "
+        WRITE( RPTFMT, '(A,I2)' ) TRIM( RPTFMT ), NFILES + 3
+        RPTFMT = TRIM( RPTFMT ) // "(1X, E12.5, ';'))"
         
-        WRITE( ODEV, 93030 ) IBD, IBT, IED, IET
-        WRITE( ODEV, 93000 ) 'END'
-        WRITE( ODEV, 93000 ) 'REGION'
-        WRITE( ODEV, 93040 ) 0., 0., P_ALPHA
-        WRITE( ODEV, 93040 ) XORIG, YORIG
+        RPTALLFMT = "('All  ; All ; ', A10, ';',"
+        WRITE( RPTALLFMT, '(A,I2)' ) TRIM( RPTALLFMT ), NFILES + 3
+        RPTALLFMT = TRIM( RPTALLFMT ) // "(1X, E12.5, ';'))"
+
+C.........  Allocate space for source information
+        ALLOCATE( SRCDEFS( 6,NTOTSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCDEFS', PROGNAME )
+        ALLOCATE( SRCCOLS( NTOTSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCCOLS', PROGNAME )
+        ALLOCATE( SRCROWS( NTOTSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCROWS', PROGNAME )
+        ALLOCATE( SRCLAYS( NTOTSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCLAYS', PROGNAME )
+        ALLOCATE( SRCFLOW( NTOTSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCFLOW', PROGNAME )
+        ALLOCATE( SRCHTS( NTOTSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCHTS', PROGNAME )
+        ALLOCATE( SRCEMIS( NTOTSRCS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCEMIS', PROGNAME )
         
-        IF( LLGRID ) THEN
-            WRITE( ODEV, 93045 ) XCELL, YCELL
-        ELSE
-            WRITE( ODEV, 93040 ) XCELL, YCELL
-        END IF
-        
-        WRITE( ODEV, 93050 ) NCOLS, NROWS, NULAYS
-        WRITE( ODEV, 93060 ) NZLOWR, NZUPPR, HTSUR, HTLOWR, HTUPPR
-        WRITE( ODEV, 93000 ) 'END'
-        
-        WRITE( ODEV, 93000 ) 'POINT SOURCES'
+        SRCEMIS = 0.    ! array
 
 C.........  Read and output source information for each file
         K = 0
@@ -836,6 +869,8 @@ C.........................  Check if source remains as PinG source
                 END IF
                 
                 K = K + 1
+
+C.................  Write source to ASCII file
                 IF( LLGRID ) THEN
                     WRITE( ODEV, 93065 ) K, 'STD       ', XCOORD,
      &                  YCOORD, FCID, SKID, TFIP
@@ -844,6 +879,32 @@ C.........................  Check if source remains as PinG source
      &                  YCOORD, FCID, SKID, TFIP
                 END IF
                 WRITE( ODEV, 93080 ) STKHT, STKDM, STKTK, STKVE
+                
+C.................  Save source to write to binary file
+                SRCDEFS( 1,K ) = XCOORD     ! x-coord of source
+                SRCDEFS( 2,K ) = YCOORD     ! y-coord of source
+                SRCDEFS( 3,K ) = STKHT      ! stack height
+                SRCDEFS( 4,K ) = STKDM      ! stack diameter
+                SRCDEFS( 5,K ) = STKTK      ! stack temperature
+                SRCDEFS( 6,K ) = STKVE      ! stack exit velocity
+                
+                COL = 1 + INT( ( XCOORD - XORIG ) / XCELL ) ! src column
+                IF( COL > NCOLS .OR. COL <= 0 ) THEN
+                    SRCCOLS( K ) = 0
+                ELSE
+                    SRCCOLS( K ) = COL
+                END IF
+                
+                ROW = 1 + INT( ( YCOORD - YORIG ) / YCELL ) ! src row
+                IF( ROW > NROWS .OR. ROW <= 0 ) THEN
+                    SRCROWS( K ) = 0
+                ELSE
+                    SRCROWS( K ) = ROW
+                END IF
+                
+                SRCLAYS( K ) = 1            ! layer of source
+                SRCFLOW( K ) = -9.          ! flow rate
+                SRCHTS ( K ) = STKHT        ! plume height
             END DO
             
             READ( TDEV, 93000 ) DUMMY
@@ -856,10 +917,28 @@ C.........................  Check if source remains as PinG source
         
         WRITE( ODEV, 93000 ) 'END'
 
+C.........  Write point source definition record to binary file
+        WRITE( BDEV ) SRCDEFS
+
+C.........  Allocate space for report information
+        ALLOCATE( RPTBYFILE( NFILES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RPTBYFILE', PROGNAME )
+        ALLOCATE( RPTALLFILE( NMSPC, NFILES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RPTALLFILE', PROGNAME )
+        ALLOCATE( RPTALLASC( NMSPC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RPTALLASC', PROGNAME )
+        ALLOCATE( RPTALLBIN( NMSPC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RPTALLBIN', PROGNAME )
+
 C.........  Read and output hourly emissions for each file
         LDATE = 0
         JDATE = G_SDATE
         JTIME = G_STIME
+        
+        RPTALLFILE = 0.   ! array
+        RPTALLASC  = 0.   ! array
+        RPTALLBIN  = 0.   ! array
+
         DO L = 1, G_NSTEPS
 
 C.............  Write message for new day        
@@ -1004,29 +1083,49 @@ C.................  Set output start date, start time, end date, and end time
                 LNUM = LNUM + 1
                 CALL CHECK_HEADER( DUMMY, 'ALL       ALL' //
      &              '            0.000', FILENAM( I ), LNUM )
-            
-                IF( I == 1 ) THEN
-                    WRITE( ODEV, 93000 ) 'TIME INTERVAL'
-                    WRITE( ODEV, 93050 ) IBD, IBT, IED, IET
-                    WRITE( ODEV, 93000 ) 'METHOD'
-                    WRITE( ODEV, 93000 ) 'STD       ALL       ' //
-     &                  'EMVALUES  0.        50000.'
-                    WRITE( ODEV, 93000 ) 'END'
-                    WRITE( ODEV, 93000 ) 'VERTICAL METHOD'
-                    WRITE( ODEV, 93000 ) 'STD       ALL       ' //
-     &                  VERTTYPE // ' 0.       10000.'
-                    WRITE( ODEV, 93000 ) 'END'
-                    WRITE( ODEV, 93000 ) 'EMISSIONS VALUES'
-                    WRITE( ODEV, 93000 ) 'ALL       ALL' //
-     &                  '            0.000'
-                END IF
 
                 SAVLNUM( I ) = LNUM
 
             END DO
 
+C.............  Write time step information to ASCII file
+            WRITE( ODEV, 93000 ) 'TIME INTERVAL'
+            WRITE( ODEV, 93050 ) IBD, IBT, IED, IET
+            WRITE( ODEV, 93000 ) 'METHOD'
+            WRITE( ODEV, 93000 ) 'STD       ALL       ' //
+     &          'EMVALUES  0.        50000.'
+            WRITE( ODEV, 93000 ) 'END'
+            WRITE( ODEV, 93000 ) 'VERTICAL METHOD'
+            WRITE( ODEV, 93000 ) 'STD       ALL       ' //
+     &          VERTTYPE // ' 0.       10000.'
+            WRITE( ODEV, 93000 ) 'END'
+            WRITE( ODEV, 93000 ) 'EMISSIONS VALUES'
+            WRITE( ODEV, 93000 ) 'ALL       ALL' //
+     &          '            0.000'
+
+C.............  Write time interval record to binary file
+            INTBIN (1) = IBD        ! beginning date
+            REALBIN(1) = IBT / 100  ! beginning time
+            INTBIN (2) = IED        ! ending date
+            REALBIN(2) = IET / 100  ! ending time
+            
+            WRITE( BDEV ) INTBIN(1), REALBIN(1), INTBIN(2), REALBIN(2)
+
+C.............  Write counter record to binary file
+            INTBIN (1) = 1        ! segment number
+            INTBIN (2) = NTOTSRCS ! number of point sources in segment
+            
+            WRITE( BDEV ) INTBIN(1), INTBIN(2)
+
+C.............  Write point source location record to binary file
+            WRITE( BDEV ) ( SRCCOLS( I ), SRCROWS( I ), SRCLAYS( I ),
+     &                      SRCFLOW( I ), SRCHTS( I ), I = 1, NTOTSRCS )
+
+C.............  Loop through emissions by species
             DO I = 1, NMSPC
                 BASENUM = 0
+                RPTBYFILE = 0.  ! array
+                RPTASCII  = 0.
                 
                 DO J = 1, NFILES
                     TDEV = FILEDEV( J,1 )
@@ -1057,16 +1156,60 @@ C.........................  Set up output format for emissions
                         ELSE
                             FMT = '( I10, A10, F10.3 )'
                         END IF
-     
+
+C.........................  Write emissions to ASCII file     
                         WRITE( ODEV, FMT ) BASENUM + NUM, VNAME, EMIS
-                    END DO
+                        
+C.........................  Store emissions to write to binary file
+                        SRCEMIS( BASENUM+NUM ) = EMIS
+
+C.........................  Store reporting information
+                        RPTBYFILE( J ) = RPTBYFILE( J ) + EMIS
+                        RPTASCII = RPTASCII + EMIS
+                        
+                    END DO  ! loop over lines in file
             
                     BASENUM = BASENUM + NSRCS( J )
                     
                     SAVLNUM( J ) = LNUM
+                    
+                END DO  ! loop over files
+
+C.................  Write point source emissions record to binary file
+                INTBIN(1) = 1
+                DO J = 1, 10
+                    SPECID( J ) = SPCNAM( I )( J:J )
+                END DO
+                
+                WRITE( BDEV ) INTBIN(1), SPECID, SRCEMIS
+                
+C.................  Calculate emissions total for report
+                RPTBINARY = 0.
+                DO J = 1, NTOTSRCS
+                    RPTBINARY = RPTBINARY + SRCEMIS( J )
                 END DO
 
-            END DO
+C.................  Write report information for this time step
+                RPTFILESUM = 0.
+                DO K = 1, NFILES
+                    RPTFILESUM = RPTFILESUM + RPTBYFILE( K )
+                END DO
+
+                WRITE( RPTDEV,RPTFMT ) IBD, IBT, SPCNAM( I ), 
+     &              ( RPTBYFILE( K ), K = 1, NFILES ), RPTFILESUM, 
+     &              RPTASCII, RPTBINARY
+
+C.................  Store overall report information
+                DO K = 1, NFILES
+                    RPTALLFILE( I,K ) = RPTALLFILE( I,K ) + RPTBYFILE( K )
+                END DO
+                
+                RPTALLASC( I ) = RPTALLASC( I ) + RPTASCII
+                RPTALLBIN( I ) = RPTALLBIN( I ) + RPTBINARY
+                
+                SRCEMIS = 0.    ! array
+
+            END DO  ! loop over species
 
             WRITE( ODEV, 93000 ) 'END'
             WRITE( ODEV, 93000 ) 'ENDTIME'
@@ -1080,6 +1223,18 @@ C.........................  Set up output format for emissions
             MESG = 'Problem reading hourly emissions'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+
+C.........  Write report totals for all time steps
+        DO I = 1, NMSPC
+            RPTFILESUM = 0.
+            DO K = 1, NFILES
+                RPTFILESUM = RPTFILESUM + RPTALLFILE( I,K )
+            END DO
+        
+            WRITE( RPTDEV,RPTALLFMT ) SPCNAM( I ), 
+     &          ( RPTALLFILE( I,K ), K = 1, NFILES ), RPTFILESUM,
+     &          RPTALLASC( I ), RPTALLBIN( I )
+        END DO
 
 C.........  Check for any sources that were in PELV but not in ASCII elevated file
         IF( PINGFLAG ) THEN
@@ -1281,5 +1436,163 @@ C.............................................................................
             RETURN
             
             END FUNCTION REMOVE_4DIGIT_YEAR
-        
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+C.............  This internal subroutine writes the header information of
+C               an ASCII elevated file
+            SUBROUTINE WRITE_ASCII_HEADER
+
+            WRITE( ODEV, 93010 ) 'CONTROL', GRDENV
+            WRITE( ODEV, 93000 ) 'PTSOURCE'
+            WRITE( ODEV, 93000 ) FNOTE
+            WRITE( ODEV, 93015 ) NMSPC, 0, NTOTSRCS, 1, NPARAM
+            WRITE( ODEV, 93015 ) PDEVOUT, 0, GSWITCH
+            WRITE( ODEV, 93015 ) USWITCH, LSWITCH, 0, MSWITCH, VSWITCH
+            WRITE( ODEV, 93015 ) 1, 0, ESWITCH
+            WRITE( ODEV, 93015 ) DDEVOUT, RDEVOUT, 0, TDEVOUT, 
+     &                           MDEVOUT, WDEVOUT
+         
+            DO I = 1, NMSPC
+                WRITE( ODEV, 93020 ) SPCNAM( I )
+            END DO
+            
+            WRITE( ODEV, 93030 ) IBD, IBT, IED, IET
+            WRITE( ODEV, 93000 ) 'END'
+            WRITE( ODEV, 93000 ) 'REGION'
+            WRITE( ODEV, 93040 ) 0., 0., P_ALPHA
+            WRITE( ODEV, 93040 ) XORIG, YORIG
+            
+            IF( LLGRID ) THEN
+                WRITE( ODEV, 93045 ) XCELL, YCELL
+            ELSE
+                WRITE( ODEV, 93040 ) XCELL, YCELL
+            END IF
+            
+            WRITE( ODEV, 93050 ) NCOLS, NROWS, NULAYS
+            WRITE( ODEV, 93060 ) NZLOWR, NZUPPR, HTSUR, HTLOWR, HTUPPR
+            WRITE( ODEV, 93000 ) 'END'
+            
+            WRITE( ODEV, 93000 ) 'POINT SOURCES'
+            
+            END SUBROUTINE WRITE_ASCII_HEADER
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+C.............  This internal subroutine writes the header information of
+C               a binary PTSOURCE file
+            SUBROUTINE WRITE_BINARY_HEADER
+
+C.............  Local subroutine variables
+            CHARACTER(4)       FILENAME(10)   ! file name
+            CHARACTER(4)       FILEID(60)     ! file identifier
+            CHARACTER(4), ALLOCATABLE :: SPECIDS(:,:)  ! species names
+
+C.............................................................................            
+            
+C.............  Build and write file description header record            
+            FILENAME = ' '
+            DO I = 1, LEN_TRIM( HDRKEY )
+                FILENAME( I ) = HDRKEY( I:I )
+            END DO
+            
+            FILEID   = ' '
+            DO I = 1, LEN_TRIM( FNOTE )
+                FILEID( I ) = FNOTE( I:I )
+            END DO
+            
+            INTBIN (1) = 1          ! number of segments
+            INTBIN (2) = NMSPC      ! number of chemical species
+            INTBIN (3) = IBD        ! beginning date of file
+            REALBIN(1) = IBT / 100  ! beginning time of file
+            INTBIN (4) = IED        ! ending date of file
+            REALBIN(2) = IET / 100  ! ending time of file
+            
+            WRITE( BDEV ) FILENAME, FILEID, INTBIN(1), INTBIN(2), 
+     &                    INTBIN(3), REALBIN(1), INTBIN(4), REALBIN(2)
+
+C.............  Build and write region description header record
+            REALBIN(1) = 0.       ! x-coord of reference origin
+            REALBIN(2) = 0.       ! y-coord of reference origin
+            INTBIN (1) = P_ALPHA  ! UTM zone
+            REALBIN(3) = XORIG    ! x-coord of modeling region origin
+            REALBIN(4) = YORIG    ! y-coord of modeling region origin
+            REALBIN(5) = XCELL    ! x-dir cell size
+            REALBIN(6) = YCELL    ! y-dir cell size
+            INTBIN (2) = NCOLS    ! number of cells in x-dir
+            INTBIN (3) = NROWS    ! number of cells in y-dir
+            INTBIN (4) = NULAYS   ! number of cells in z-dir
+            INTBIN (5) = NZLOWR   ! number of cells between surface and diff break
+            INTBIN (6) = NZUPPR   ! number of cells between diff break and top
+            REALBIN(7) = HTSUR    ! height of surface layer
+            REALBIN(8) = HTLOWR   ! height of cells between surface and diff break
+            REALBIN(9) = HTUPPR   ! height of cells between diff break and top
+            
+            WRITE( BDEV ) REALBIN(1), REALBIN(2), INTBIN(1), REALBIN(3),
+     &                    REALBIN(4), REALBIN(5), REALBIN(6), INTBIN(2),
+     &                    INTBIN(3), INTBIN(4), INTBIN(5), INTBIN(6),
+     &                    REALBIN(7), REALBIN(8), REALBIN(9)
+
+C.............  Build and write segment description header record
+            INTBIN (1) = 0        ! x-location of segment origin
+            INTBIN (2) = 0        ! y-location of segment origin
+            INTBIN (3) = NCOLS    ! number of cells in x-dir in segment
+            INTBIN (4) = NROWS    ! number of cells in y-dir in segment
+            
+            WRITE( BDEV ) INTBIN(1), INTBIN(2), INTBIN(3), INTBIN(4)
+
+C.............  Build and write species description header records
+            ALLOCATE( SPECIDS( 10, NMSPC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SPECIDS', PROGNAME )
+            SPECIDS = ' '
+
+            DO I = 1, NMSPC
+                DO J = 1, 10
+                    SPECIDS( J,I ) = SPCNAM( I )( J:J )
+                END DO
+            END DO
+                
+            WRITE( BDEV ) SPECIDS
+            
+            DEALLOCATE( SPECIDS )
+
+C.............  Build and write time-invariant counter record
+            INTBIN (1) = 1        ! segment number
+            INTBIN (2) = NTOTSRCS ! number of point sources in segment
+            
+            WRITE( BDEV ) INTBIN(1), INTBIN(2)
+            
+            END SUBROUTINE WRITE_BINARY_HEADER
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+C.............  This internal subroutine writes the header of the report file
+            SUBROUTINE WRITE_REPORT_HEADER
+
+C.............  Local subroutine variables
+            INTEGER LEN             ! current length of buffer
+
+            CHARACTER(300) BUFFER
+
+C.............................................................................            
+
+            BUFFER = 'Date ; Time; Species   ; '
+            LEN = 25
+            
+            DO I = 1, NFILES
+                WRITE( BUFFER, '(A,I2,A)' ) 
+     &              BUFFER( 1:LEN ) // 'File ', I, '     ; '
+                LEN = LEN + 14
+            END DO
+            
+            BUFFER = BUFFER( 1:LEN ) // 'Sum         ; ' //
+     &               'ASCII       ; Binary      ;'
+
+            WRITE( RPTDEV,'(A)' ) TRIM( BUFFER )
+
+            END SUBROUTINE WRITE_REPORT_HEADER
+
         END PROGRAM MRGELEV
