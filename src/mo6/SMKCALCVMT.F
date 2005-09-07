@@ -33,7 +33,7 @@ C  First time, initialize storage arrays
           INITIAL = .FALSE.
       END IF
       
-      SMKTYPE = M6VEHMAP( IV )
+      SMKTYPE = M6VEHMAP( M6TYPE )
 
 C  Check if VMT fraction needs to be calculated for this type      
       IF( CALCVMT( M6TYPE ) ) THEN
@@ -48,6 +48,6 @@ C  Check if VMT fraction needs to be calculated for this type
           CALCVMT( M6TYPE ) = .FALSE.
       END IF
       
-      SUMVMT = M6VMTSUM( TYPE )
+      SUMVMT = VMTFRAC( TYPE )
       
       END SUBROUTINE SMKCALCVMT
