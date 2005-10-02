@@ -54,9 +54,10 @@ C.......  INCLUDE files
 
 C.......  EXTERNAL functions
       LOGICAL  BLKORCMT
+      INTEGER  FINDC
       INTEGER  INDEX1
       
-      EXTERNAL BLKORCMT, INDEX1
+      EXTERNAL BLKORCMT, FINDC, INDEX1
 
 C.......  Subroutine arguments
       INTEGER, INTENT(IN) :: FDEV               ! M6MAP file unit number
@@ -106,7 +107,7 @@ C.......  Allocate and initialize arrays
 C.......  Read and process lines of file
       IREC = 0
       DO
-          READ( FDEV,* ) LINE
+          READ( FDEV, 'A', IOSTAT=IOS ) LINE
 
 C...........  Exit if we've reached the end of the file          
           IF( IOS < 0 ) EXIT
@@ -143,7 +144,7 @@ C...........  Check if MOBILE6 type is in master list
           END IF
 
 C...........  Check if SMOKE type is in inventory
-          SMKIDX = INDEX1( TRIM( SMKTYPE ), NINVVTYP, INVVTYP )
+          SMKIDX = FINDC( TRIM( SMKTYPE ), NINVVTYP, INVVTYP )
           IF( SMKIDX < 1 ) THEN
               WRITE( MESG, 94010 ) 'WARNING: Vehicle type ' //
      &            TRIM( SMKTYPE ) // ' at line', IREC,
