@@ -36,11 +36,11 @@ FILES_R = \
   rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o  rdspdref.o \
   rdsprof.o    rdsref.o     rdsrghdr.o   rdsrg.o      rdstcy.o     rdtprof.o  \
   rdtref.o     rdtzone.o    rdumat.o     rdvmix.o     rdxclude.o   readwr3.o  \
-  rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o
+  rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o
 
 FILES_SVWX = \
   setscctype.o setsrcdy.o   ungridbv.o   verchar.o    wrchrscc.o   wrdaymsg.o \
-  wridaout.o   wridapol.o   xreftbl.o
+  wridaout.o   wridapol.o   wrorlout.o   xreftbl.o
 
 FILES_TMP = 
 
@@ -113,7 +113,8 @@ rdgref.o   : $(MODXREF) $(MODINFO)
 rdhdays.o  : $(MODTMPRL)
 rdinvchr.o : $(MODSOURC)
 rdinvmap.o : $(MODINFO)
-rdinvpol.o : $(MODFILESET) 
+rdinvpol.o : $(MODFILESET)
+rdm6map.o  : $(MODLISTS) $(MODEMFAC)
 rdmactdsc.o: $(MODLISTS)
 rdmappol.o : $(MODINFO) $(MODFILESET)
 rdmvinfo.o : $(MODMOBIL)
@@ -138,6 +139,7 @@ setscctype.o: $(MODINFO)
 setsrcdy.o : $(MODINFO)
 wrchrscc.o : $(MODLISTS) $(MODINFO)
 wridaout.o : $(MODSOURC) $(MODSTCY) $(MODINFO)
+wrorlout.o : $(MODSOURC) $(MODSTCY) $(MODLISTS) $(MODINFO)
 xreftbl.o  : $(MODXREF) $(MODINFO)
 
 clean:
