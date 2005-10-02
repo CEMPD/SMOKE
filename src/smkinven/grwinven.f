@@ -56,12 +56,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER(2)            CRLF
         INTEGER                 ENVINT
+        LOGICAL                 ENVYN
         INTEGER                 GETIFDSC
         INTEGER                 INDEX1
         INTEGER                 PROMPTFFILE
         INTEGER                 STR2INT
 
-        EXTERNAL CRLF, ENVINT, GETIFDSC,
+        EXTERNAL CRLF, ENVINT, ENVYN, GETIFDSC,
      &           INDEX1, PROMPTFFILE, STR2INT
 
 C...........  LOCAL PARAMETERS and their descriptions:
@@ -109,10 +110,12 @@ C...........  Inventory file variable names
 C...........   File units and logical/physical names
 
         INTEGER  :: DDEV = 0 !  unit no. for output IDA emissions file
-        INTEGER  :: IDEV = 0 !  tmp unit number if ENAME is map file
+        INTEGER  :: IDEV = 0 !  unit no. for inventory table
         INTEGER  :: VDEV = 0 !  unit no. for output IDA activity file
         INTEGER  :: LDEV = 0 !  log-device
+        INTEGER  :: MDEV = 0 !  tmp unit number if ENAME is map file
         INTEGER  :: ODEV = 0 !  for output map inventory file
+        INTEGER  :: RDEV = 0 !  for output ORL emissions file
         INTEGER  :: SDEV = 0 !  for ASCII input inventory file
         INTEGER  :: ZDEV = 0 !  for country/state/county file
 
@@ -147,8 +150,10 @@ C...........   Other local variables
         LOGICAL      :: EFLAG   = .FALSE.  ! true: error found
         LOGICAL      :: IDAFLAG = .FALSE.  ! true: IDA output file(s) 
         LOGICAL      :: LAR2PT  = .FALSE.  ! true: area inven has xloc/yloc
+        LOGICAL      :: ORLFLAG = .FALSE.  ! true: ORL output file
         LOGICAL      :: PFLAG   = .FALSE.  ! true: project matrix encountered
         LOGICAL      :: SFLAG   = .FALSE.  ! true: inventory read error
+        LOGICAL      :: SMKFLAG = .FALSE.  ! true: SMOKE intermediate output file(s)
         LOGICAL      :: ADJVAL  = .FALSE.  ! true: adjust data value to 0-100 scale
 
         CHARACTER(16)   EVNAME  !  tmp environment variable name
@@ -204,6 +209,21 @@ C.........  Get environment variables that control this program
             CALL M3MSG2( MESG )
         END IF
 
+        EVNAME = 'SMK_GRWSMKOUT_YN'
+        MESG   = 'Output SMOKE inventory file'
+        SMKFLAG = ENVYN( EVNAME, MESG, .TRUE., IOS )
+        IF( IOS .GT. 0 ) EFLAG = .TRUE.
+        
+        EVNAME = 'SMK_GRWIDAOUT_YN'
+        MESG   = 'Output IDA inventory file'
+        IDAFLAG = ENVYN( EVNAME, MESG, .FALSE., IOS )
+        IF( IOS .GT. 0 ) EFLAG = .TRUE.
+        
+        EVNAME = 'SMK_GRWORLOUT_YN'
+        MESG   = 'Output ORL inventory file'
+        ORLFLAG = ENVYN( EVNAME, MESG, .FALSE., IOS )
+        IF( IOS .GT. 0 ) EFLAG = .TRUE.
+
         IF( EFLAG ) THEN
             MESG = 'Problem with input environment variables'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -218,14 +238,23 @@ C.........  Get inventory file names given source category
 C.........  Prompt for and open inventory file 
         INAME = ENAME
         MESG = 'Enter logical name for the MAP INVENTORY file'
-        IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INAME, PROGNAME )
+        MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INAME, PROGNAME )
 
 C.........  Open and read map file
-        CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
+        CALL RDINVMAP( INAME, MDEV, ENAME, ANAME, SDEV )
 
+C.........  Open country, state, and county file
         ZDEV = PROMPTFFILE(
      &         'Enter logical name for COUNTRY, STATE, AND ' //
      &         'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+
+C.........  If using ORL output format, open and read inventory table
+        IF( ORLFLAG ) THEN
+            IDEV = PROMPTFFILE(
+     &             'Enter logical name for INVENTORY TABLE',
+     &             .TRUE., .TRUE., 'INVTABLE', PROGNAME )
+            CALL RDCODNAM( IDEV )
+        END IF
 
 C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
@@ -499,11 +528,14 @@ C    n: been implemented
         SELECT CASE ( CATEGORY )
 
         CASE ( 'AREA' )
-            NINVARR = 8
-            IVARNAMS( 5 ) = 'CELLID'
-            IVARNAMS( 6 ) = 'ISIC'
-            IVARNAMS( 7 ) = 'CSCC'
-            IVARNAMS( 8 ) = 'CSOURC'
+            NINVARR = 11
+            IVARNAMS( 5 )  = 'CELLID'
+            IVARNAMS( 6 )  = 'ISIC'
+            IVARNAMS( 7 )  = 'CSCC'
+            IVARNAMS( 8 )  = 'CSOURC'
+            IVARNAMS( 9 )  = 'CMACT'
+            IVARNAMS( 10 ) = 'CNAICS'
+            IVARNAMS( 11 ) = 'CSRCTYP'
 
         CASE ( 'MOBILE' )
             NINVARR = 14
@@ -519,7 +551,7 @@ C    n: been implemented
             IVARNAMS( 14 ) = 'CSOURC'
 
         CASE ( 'POINT' )
-            NINVARR = 16
+            NINVARR = 20
             IVARNAMS( 5  ) = 'ISIC'
             IVARNAMS( 6  ) = 'XLOCA'
             IVARNAMS( 7  ) = 'YLOCA'
@@ -532,6 +564,10 @@ C    n: been implemented
             IVARNAMS( 14 ) = 'CBLRID'
             IVARNAMS( 15 ) = 'CPDESC'
             IVARNAMS( 16 ) = 'CSOURC'
+            IVARNAMS( 17 ) = 'CMACT'
+            IVARNAMS( 18 ) = 'CNAICS'
+            IVARNAMS( 19 ) = 'CSRCTYP'
+            IVARNAMS( 20 ) = 'CERPTYP'
 
         END SELECT
 
@@ -551,10 +587,9 @@ C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  Open output file(s)
-        CALL OPENGRWOUT( ENAME, PPYEAR, NAME1, ODEV, DDEV, VDEV, ONAME,
-     &                   DATPATH )
-
-        IDAFLAG = ( DDEV .GT. 0 .OR. VDEV .GT. 0 )
+        CALL OPENGRWOUT( ENAME, PPYEAR, NAME1, SMKFLAG, IDAFLAG,
+     &                   ORLFLAG, ODEV, DDEV, VDEV, RDEV, 
+     &                   ONAME, DATPATH )
 
 C.........  Separate the pol/act file path into two parts to be
 C           able to build relative file names for the map file.
@@ -598,7 +633,7 @@ C.............  Allocate memory for unit numbers for IDA temporary files
         END IF
 
 C.........  Write out the map-formatted intermediate inven header
-        IF( ODEV .GT. 0 ) THEN
+        IF( SMKFLAG ) THEN
             WRITE( ODEV, '(A)' ) CATDESC
             WRITE( ODEV, '(A)' ) '/IOAPI/ '// TRIM( NAME1 )// '.ncf'
             WRITE( ODEV, '(A)' ) '/TEXT/ '// TRIM( NAME2 )// '.txt'
@@ -721,7 +756,7 @@ C.........................  Adjust average-day emissions (OS_* variable)
             END DO  ! End loop on control/projection matrices
 
 C.............  Write out pollutant-based variables to SMOKE file
-            IF( ODEV .GT. 0 ) THEN
+            IF( SMKFLAG ) THEN
       
 C.................  The FileSet headers are still correct from
 C                   opening this pollutant's file, so no need
@@ -735,10 +770,10 @@ C.................  Write the map inventory file entry
 
             END IF
 
-C.............  Write out pollutant-based variables to temporary files for IDA
+C.............  Prepare pollutant/activity information and write it out for IDA
             IF( IDAFLAG ) THEN
 
-C...............  ALlocate memory for arc-based output arrays, if needed
+C...............  Allocate memory for src-based output arrays, if needed
                 IF( .NOT. ALLOCATED( SRCDAT ) ) THEN
                     ALLOCATE( SRCDAT( NSRC,NPVAR ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'SRCDAT', PROGNAME )
@@ -768,18 +803,25 @@ C                       Can use VNAMESET since FileSet headers haven't been chan
                         END IF
                     END DO
                 END DO
-                    
+
+C.................  Write out temporary format for IDA                    
                 CALL WRIDAPOL( CATEGORY, VARBUF, NSRC, NPVAR, SRCDAT, 
      &                         TDEV( V ), IOS )
 
+            END IF
+
+C.............  Write out ORL format for current pollutant
+            IF( ORLFLAG ) THEN
+                CALL WRORLOUT( RDEV, VARBUF, NREC, NPVAR, SRCID,
+     &                         DATAVAR, IOS )
             END IF
 
             IF( IOS .GT. 0 ) EFLAG = .TRUE.
 
         END DO  ! End loop on inventory variables
             
-C.........  Write out the map-formatted intermedaite inven header
-        IF( ODEV .GT. 0 ) THEN
+C.........  Write out the map-formatted intermediate inven header
+        IF( SMKFLAG ) THEN
             WRITE( ODEV, '(A)' ) '/END/'
         END IF
 
