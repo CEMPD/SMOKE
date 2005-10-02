@@ -132,6 +132,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MCODES    $INVDIR/mobile/mcodes.txt              # mobile codes
    setenv MCREF     $INVDIR/mobile/mcref.$MSCEN.txt        # County cross-reference file
    setenv MVREF     $INVDIR/mobile/mvref.$MSCEN.txt        # County settings file
+   setenv M6MAP     $INVDIR/mobile/m6map.txt               # MOBILE6 vehicle mapping file
    setenv METLIST   $INVDIR/mobile/metlist.premobl.txt     # Episode meteorology files list
    setenv SPDREF    $INVDIR/mobile/spdref.$MSCEN.txt       # Speed cross-reference file
    setenv SPDPRO    $INVDIR/mobile/spdpro.$MSCEN.txt       # Speed profiles file
@@ -164,6 +165,8 @@ endif
    setenv SCCDESC     $GE_DAT/scc_desc.txt         # SCC descriptions
    setenv SRGDESC     $GE_DAT/srg_desc.us36.txt    # surrogate descriptions
    setenv ORISDESC    $GE_DAT/oris_info.txt        # ORIS ID descriptions
+   setenv MACTDESC    $GE_DAT/mact_desc.txt        # MACT descriptions
+   setenv NAICSDESC   $GE_DAT/naics_desc.txt       # NAICS descriptions
    setenv GSCNV       $GE_DAT/gscnv.txt            # ROG to TOG conversion facs
    setenv GSREF       $GE_DAT/gsref.$SPC.txt       # Speciation x-ref
    setenv GSPRO       $GE_DAT/gspro.$SPC.txt       # Speciation profiles
