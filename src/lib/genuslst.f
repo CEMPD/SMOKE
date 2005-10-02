@@ -39,7 +39,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, ISIC, CMACT, 
-     &                      CORIS, CBLRID, CPDESC, CNAICS
+     &                      CORIS, CBLRID, CPDESC, CNAICS, CVTYPE
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, NINVSCC, NINVSCL, NINVSIC, 
@@ -48,7 +48,8 @@ C.........  This module contains the lists of unique source characteristics
      &                      INVSIC2, INVMACT, INVORIS,
      &                      INVORFP, IORSMTCH, INVODSC, ORISBLR,
      &                      OBSRCBG, OBSRCNT, NORISBLR, NOBLRSRC,
-     &                      OBSRCNM, ORISFLAG, NINVNAICS, INVNAICS
+     &                      OBSRCNM, ORISFLAG, NINVNAICS, INVNAICS,
+     &                      NINVVTYP, INVVTYP
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, LSCCEND
@@ -96,6 +97,8 @@ C...........   Other local variables
         LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
         CHARACTER(300)     MESG          ! message buffer
+        CHARACTER(VTPLEN3) PVTYP         ! previous vehicle type
+        CHARACTER(VTPLEN3) TVTYP         ! tmp vehicle type
         CHARACTER(SCCLEN3) PSCC          ! previous iteration SCC
         CHARACTER(SCCLEN3) PSCCL         ! previous iteration left SCC
         CHARACTER(SCCLEN3) SCCL          ! tmp left SCC
@@ -166,6 +169,50 @@ C.................  Create unique country/state/county codes list
                 END DO
 
             END IF   ! End of IFIP allocated or not
+
+C.............  Check if CVTYPE is allocated
+C.............  If it is, generate unique list of vehicle types
+            IF( ALLOCATED( CVTYPE ) ) THEN
+            
+C.................  Initialize vehicle type sorting index
+                DO S = 1, NSRC
+                    INDX( S ) = S
+                END DO
+                
+C.................  Sort vehicle types
+                CALL SORTIC( NSRC, INDX, CVTYPE )
+                
+C.................  Count number of unique vehicle types
+                PVTYP = '-9'
+                J1 = 0
+                DO S = 1, NSRC
+                    J = INDX( S )
+                    TVTYP = CVTYPE( J )
+                    
+                    IF( TVTYP /= PVTYP ) J1 = J1 + 1
+                    
+                    PVTYP = TVTYP
+                END DO
+                NINVVTYP = J1
+
+C.................  Allocate memory for vehicle type list
+                ALLOCATE( INVVTYP( NINVVTYP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVVTYP', PROGNAME )
+                
+C.................  Create list of unique vehicle types
+                PVTYP = '-9'
+                J1 = 0
+                DO S = 1, NSRC
+                    J = INDX( S )
+                    TVTYP = CVTYPE( J )
+                    
+                    IF( TVTYP /= PVTYP ) THEN
+                        J1 = J1 + 1
+                        INVVTYP( J1 ) = TVTYP
+                        PVTYP = TVTYP
+                    END IF
+                END DO
+            END IF  ! end vehicle type processing
 
 C.............  Check if CSCC is allocated.  
 C.............  If it is, generate unique list of SCCs and left SCCs
