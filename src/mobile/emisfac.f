@@ -53,7 +53,7 @@ C...........   This module is the derived meteorology data for emission factors
 C...........   This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, NUMSCEN, SCENLIST, EMISSIONS,
      &                      INPUTHC, OUTPUTHC, NSUBPOL, SUBPOLS,
-     &                      NEPOL, EMTPOL, EMTNAM
+     &                      NEPOL, EMTPOL, EMTNAM, NVTYPE, SMKVEH2EF
 
 C.........This module is required by the FileSetAPI
         USE MODFILESET
@@ -103,6 +103,7 @@ C           this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
         
 C.........  Unit numbers and logical file names
+        INTEGER         ADEV     ! unit number for MOBILE6 vehicle mapping file
         INTEGER         CDEV     ! unit number for county MOBILE6 scenarios file (M6LIST)
         INTEGER         GDEV     ! unit number for time period group file (GROUP)
         INTEGER         IDEV     ! tmp unit number if ENAME is map file
@@ -219,6 +220,10 @@ C.........  Prompt for and open inventory file
 C.........  Open and read map file
         CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
 
+        ADEV = PROMPTFFILE(
+     &           'Enter logical name for M6MAP vehicle mapping file',
+     &           .TRUE., .TRUE., 'M6MAP', PROGNAME )
+    
         PDEV = PROMPTFFILE(
      &           'Enter logical name for SPDSUM speed summary file',
      &           .TRUE., .TRUE., 'SPDSUM', PROGNAME )
@@ -303,11 +308,17 @@ C           file, or else this program does not need to be run
 C.........  Set inventory variables to read
         IVARNAMS( 1 ) = 'IFIP'
         IVARNAMS( 2 ) = 'IRCLAS'
-        IVARNAMS( 3 ) = 'IVTYPE'
-        NINVARR = 3
+        IVARNAMS( 3 ) = 'CVTYPE'
+        NINVARR = 3 
 
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
+
+C.........  Build unique list of inventory vehicle types
+        CALL GENUSLST
+
+C.........  Read MOBILE6 vehicle mapping file
+        CALL RDM6MAP( ADEV )
 
 C.........  Set up emission process variable names
         CALL EFSETUP( 'NONE', MODELNAM, NEFS, VOLNAM )
@@ -554,10 +565,8 @@ C.............  Create the concatenated MOBILE6 input file
 
 C.............  Open new input file
             MDEV = JUNIT()
-            WRITE( M6INPUT,94010 ) M6DIR( 1:LEN_TRIM( M6DIR ) ) // 
-     &                             '/m6input.' // 
-     &                             GRP_NAME( 1:LEN_TRIM( GRP_NAME ) ) //
-     &                             '.', SDATE, '.txt'
+            WRITE( M6INPUT,94010 ) TRIM( M6DIR ) // '/m6input_' //
+     &                             TRIM( GRP_NAME ) // '_', SDATE, '.in' 
             OPEN( UNIT=MDEV, FILE=M6INPUT, STATUS='REPLACE', 
      &            ACTION='WRITE', IOSTAT=IOS )
             
@@ -599,7 +608,7 @@ C.............  Allocate space for storing emission factors
                 ALLOCATE( EMISSIONS( MXM6EPR ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'EMISSIONS', PROGNAME )
 
-                DO I = 1,MXM6EPR
+                DO I = 1, MXM6EPR
                 
 C.....................  Calculate maximum values for this emission process
 C                       Can't use MAXVAL on Linux
@@ -609,9 +618,9 @@ C                       Can't use MAXVAL on Linux
                         END IF
                     END DO
                     
-                    DO J = 1, MXM6VTYP
-                        IF( M6VEH2EF( I,J ) > MAXVEH ) THEN
-                            MAXVEH = M6VEH2EF( I,J )
+                    DO J = 1, NVTYPE
+                        IF( SMKVEH2EF( I,J ) > MAXVEH ) THEN
+                            MAXVEH = SMKVEH2EF( I,J )
                         END IF
                     END DO
                     
@@ -630,7 +639,7 @@ C                       Can't use MAXVAL on Linux
                 INITIAL = .FALSE.
             END IF
             
-            DO I = 1,MXM6EPR
+            DO I = 1, MXM6EPR
                 EMISSIONS( I )%PTR = 0.
             END DO
 
