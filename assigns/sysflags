@@ -14,8 +14,8 @@ source $EDSS_SUBSYS/filesetapi/Setup
 
 # Make directories for library, object files, and executables
 setenv    SMK_BIN "$SMKROOT/$EDSS_EXE"
-setenv    IOAPIDIR $EDSS_SUBSYS/ioapi/bin/$EDSS_EXE
-setenv    NETCDFDIR $EDSS_SUBSYS/netcdf/bin/$EDSS_EXE
+setenv    IOAPIDIR $EDSS_SUBSYS/ioapi/$EDSS_EXE
+setenv    NETCDFDIR $EDSS_SUBSYS/netcdf/$EDSS_EXE
 if( ! -e $SMK_BIN ) mkdir -p $SMK_BIN
 if( ! -e $MD_SRC/$EDSS_EXE ) mkdir -p $MD_SRC/$EDSS_EXE
 if( ! -e $IOAPIDIR ) mkdir -p $IOAPIDIR
