@@ -76,14 +76,14 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
      &              INDEX1, PROMPTFFILE, PROMPTMFILE, SECSDIFF, TRIMLEN
 
 C.........  Allocatable arrays
-        INTEGER, ALLOCATABLE ::  INTNAM ( :,: )  ! output species names
-        REAL,    ALLOCATABLE ::  EMIS   ( :,: )  ! input and output variable
+        CHARACTER(4), ALLOCATABLE :: SPCNAM ( :,: )  ! output species names
+        REAL,         ALLOCATABLE :: EMIS   ( :,: )  ! input and output variable
 
         CHARACTER(IOVLEN3), ALLOCATABLE :: OUTNAMS( : ) ! output spec names
 
 C.........  Static arrays
-        INTEGER    IFTYPE( 10 )  ! UAM filename in integer format
-        INTEGER    IFNOTE( 60 )  ! UAM note in integer format
+        CHARACTER(4)    CFTYPE( 10 )  ! UAM filename
+        CHARACTER(4)    CFNOTE( 60 )  ! UAM note
 
         CHARACTER(IOVLEN3) SEGMENT( 2 )
 
@@ -180,11 +180,10 @@ C.........  Only EMISSIONS supported at this point
         MESG = 'UAM file label for output file'
         CALL ENVSTR( 'FLABEL', MESG, 'EMISSIONS', HDRKEY, IOS )
 
-C..... Convert UAM keyword name to integer format (as in UAM)
-
-        DO J= 1, 10
-            TEMPCH = HDRKEY( J:J )
-            READ(TEMPCH, 93100) IFTYPE( J )
+C.........  Convert UAM keyword name to character format (as in UAM)
+        CFTYPE = ' '
+        DO J = 1, 10
+            CFTYPE( J ) = HDRKEY( J:J )
         END DO
 
 C.........  Prompt for name of output file
@@ -217,8 +216,8 @@ C.........   for UTM and UAM4 variables
         MESG = 'Min. ht. of cells between diffbreak and top [meters]'
         HTUPPR = ENVREAL( 'UAM4_HTUPPR', MESG, 0., IOS )
 
-C..... Create FNOTE from grid name and UAM_NOTE env. variable
-C..... Convert FNOTE to integer format (as in UAM)
+C.........  Create FNOTE from grid name and UAM_NOTE env. variable
+C.........  Convert FNOTE to character format (as in UAM)
 
         NOTEDEF = ' UAM gridded emissions from ' // PROGNAME
 
@@ -227,9 +226,9 @@ C..... Convert FNOTE to integer format (as in UAM)
 
         FNOTE  = GDNAM3D // UNOTE ( 1 : 44 )  
 
-        DO J = 1,60
-            TEMPCH = FNOTE( J: J )
-            READ(TEMPCH, 93100) IFNOTE( J )
+        CFNOTE = ' '
+        DO J = 1, 60
+            CFNOTE( J ) = FNOTE( J:J )
         END DO
 
 C.........  Read NetCDF header information:
@@ -275,6 +274,7 @@ C.............  Prompt for starting time of UAM output file
 
         STIME  = GETNUM( JTIME, 235959, JTIME,
      &                 'Enter starting time (HHMMSS)' )
+        BTIME  = INT( STIME / TSTEP )
 
 C.............  Prompt for time number of time steps 
 C.............  Number of hours to output to UAM file   
@@ -296,7 +296,7 @@ C.........  Calculate ending date and time
         END IF
        
         IED = IBD + NDAYS
-        ETIME = STIME + ( NHRS * TSTEP ) 
+        ETIME = MOD( ( BTIME + NHRS - 1 ), 24 )
 
 C.........  Allocate memory for and read remapping information
         ALLOCATE( OUTNAMS( NSPECS ), STAT=IOS )
@@ -369,17 +369,14 @@ C.................  If found, write message and reassign
 
         END IF
 
-C..... Allocate for species name in integer format
+C.........  Allocate for species name in character format
+        ALLOCATE( SPCNAM( NSPECS, 10  ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCNAM', PROGNAME )
 
-        ALLOCATE( INTNAM( NSPECS, 10  ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INTNAM', PROGNAME )
-
-C..... Convert output species names to integer format
-
+C.........  Convert output species names to character format
         DO I = 1, NSPECS
           DO J = 1, 10
-              TEMPCH = OUTNAMS( I )( J:J )
-              READ( TEMPCH , 93100) INTNAM ( I, J ) 
+              SPCNAM( I,J ) = OUTNAMS( I )( J:J )
           END DO
         END DO
 
@@ -391,7 +388,7 @@ C.........  Write UAM Binary file  .........................................
 
 C....   Write UAM EMISSIONS header
 
-        WRITE(ODEV,ERR=7010) IFTYPE, IFNOTE, NSEG, NSPECS, IBD,
+        WRITE(ODEV,ERR=7010) CFTYPE, CFNOTE, NSEG, NSPECS, IBD,
      &                       REAL( BTIME ), IED , REAL( ETIME )
 
         WRITE(ODEV,ERR=7010) UTMX, UTMY, IUTMZONE,
@@ -402,9 +399,9 @@ C....   Write UAM EMISSIONS header
 
         WRITE(ODEV,ERR=7010) IXY, IXY, NCOLS3D, NROWS3D
 
-C.........  Write out integer form of output variable names
+C.........  Write out character form of output variable names
 
-        WRITE(ODEV,ERR=7010) ((INTNAM(J,I),I=1,10),J=1,NSPECS)
+        WRITE(ODEV,ERR=7010) ((SPCNAM(J,I),I=1,10),J=1,NSPECS)
 
 C.........  Initialize time and date for time step after STIME and SDATE
 
@@ -452,7 +449,7 @@ C.....................  Read input file for time and species of interest
 
 C.............  Write UAM formatted output data for all variables
 
-                WRITE(ODEV,ERR=7011) NSEG, (INTNAM( K,J ),J=1,10),
+                WRITE(ODEV,ERR=7011) NSEG, (SPCNAM( K,J ),J=1,10),
      &                     (( EMIS( I,J ),I = 1,NCOLS3D ), J=1,NROWS3D )
 
             END DO       ! Output variables loop
