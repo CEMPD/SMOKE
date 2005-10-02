@@ -44,7 +44,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: TZONES, TPFLAG, CVTYPE
+        USE MODSOURC, ONLY: TZONES, TPFLAG
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: MDEX, WDEX, DDEX
@@ -67,7 +67,6 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures
-        INCLUDE 'M6CNST3.EXT'   !  MOBILE6 constants
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)   CRLF
@@ -100,9 +99,6 @@ C...........   TMAT update variables
         INTEGER, SAVE :: HRCALC( 24 )        ! List of GMT hrs for calc'g TMAT
         INTEGER, SAVE :: MONTH ( 24, 0:23 )  ! time zone's month 1 ... 12
         INTEGER, SAVE :: DAYOW ( 24, 0:23 )  ! time zone's day   1 ... 7
-
-C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE, SAVE :: VIDX( : ) ! index for vehicle type
 
 C...........   Other local variables
 
@@ -192,32 +188,6 @@ C.............  Determine hours of output day in GMT for updating TMAT
 C.............  Set flags for daily and hourly data
             DFLAG = ( DNAME .NE. 'NONE' )
             HFLAG = ( HNAME .NE. 'NONE' )
-
-C.............  For mobile sources, define the vehicle type index for all 
-C               sources so it doesn't need to be looked up each time
-            IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                ALLOCATE( VIDX( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'VIDX', PROGNAME )
-
-C.................  Convert mobile vehicle type values to their index values
-                DO S = 1, NSRC
-                    I = INDEX1( CVTYPE( S ), MXM6VTYP, M6VTYPES )
-
-                    IF( I .LE. 0 ) THEN
-                        L = LEN_TRIM( CVTYPE( S ) )
-                        MESG = 'WARNING: Inventory vehicle type '// 
-     &                     CVTYPE( S )( 1:L ) //
-     &                     ' not used in MOBILE model.' // CRLF()//
-     &                     BLANK10 // 'No emission factors available '//
-     &                     'so emissions will not be computed.'
-                        CALL M3MSG2( MESG )                   
-                    END IF
-
-                    VIDX( S ) = I
-
-                END DO
-
-            END IF  ! End of mobile only section
 
             FIRSTIME = .FALSE.
 
@@ -466,13 +436,6 @@ C               E.G. this is for mobile sources
 C.................  Loop through sources and apply emission factors to
 C                   hourly activity for non-diurnal emissions    
                 DO S = 1, NSRC
-
-C.....................  Set vehicle type code
-                    C = VIDX( S )
-
-C.....................  Skip computation if no emission factors available 
-C                       for inventory type
-                    IF( C .LE. 0 ) CYCLE
 
 C.....................  Apply emission factors tp hourly activity data
 C.....................  Convert to tons (assuming EFs are in grams)
