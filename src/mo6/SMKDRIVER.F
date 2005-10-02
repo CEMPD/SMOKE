@@ -278,7 +278,7 @@ ccs   Make sure SMK_M6PATH is set
           RETURN
       END IF
 
-      M6FILE = TRIM( M6DIR ) // '/' // 'M6ERROR.TXT' 
+      M6FILE = TRIM( INPFILE ) // '.ERR' 
        
       IOUERR = JUNIT() 
       OPEN(IOUERR,FILE=M6FILE) 

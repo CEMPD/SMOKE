@@ -1,13 +1,13 @@
       SUBROUTINE SMKEVPOTHER(IEVAP,IV,JDX,GRAMS_MI,IROAD)
       
 C  SMKEVPOTHER aggregates evaporative emissions (except running loss) by 
-C  vehicle age and vehicle category (8 types).  It then writes the emmisions 
+C  vehicle age and vehicle category.  It then writes the emissions 
 C  to the database file.
 
       USE DATABASE, ONLY : DBSELPOL, DBSELVEH, DBSELEFT, DBSCTITLE,
      &                     TABCHAR, DBUNIT, DBSELFAC                
 #ifdef M6LIB
-      USE MODEMFAC, ONLY : EMISSIONS
+      USE MODEMFAC, ONLY : EMISSIONS, NVTYPE, SMKVEH2EF
 #endif
       
       IMPLICIT NONE
@@ -32,7 +32,7 @@ C  to the database file.
       REAL, INTENT(IN)   ::  GRAMS_MI(24)  ! gm/mile emission factors
             
       REAL, ALLOCATABLE, SAVE :: EVPOTHER (:,:,:) ! aggregated evap efs
-                                                  ! dimensions: (IH,IV,IEVAP)
+                                                  ! dimensions: (IH,IVEH,IEVAP)
       REAL, ALLOCATABLE, SAVE :: ZMILES   (:,:)   ! summed miles
                                                   ! dimensions: (IH,IEVAP)
       REAL, ALLOCATABLE, SAVE :: ZGMHOUR  (:,:)   ! summed gm/hour
@@ -43,7 +43,7 @@ C  to the database file.
       
       INTEGER :: IH            ! hour
       INTEGER :: IOS           ! I/O status
-      INTEGER :: VTYPE, IVX    ! vehicle type and index
+      INTEGER :: IVEH          ! vehicle type
       INTEGER :: EFTYPE, EFX   ! emission factor type and index
       INTEGER :: EMISPOS       ! position in master emission factor array
       
@@ -58,7 +58,7 @@ C  to the database file.
       
 C  First time, initialize emission factor array
       IF (INITIAL) THEN
-         ALLOCATE( EVPOTHER( MAXIH,5,5 ), STAT=IOS )
+         ALLOCATE( EVPOTHER( MAXIH,NVTYPE,5 ), STAT=IOS )
          CALL CHECKMEM( IOS, 'EVPOTHER', PROGNAME )
          ALLOCATE( ZMILES  ( MAXIH,5   ), STAT=IOS )
          CALL CHECKMEM( IOS, 'ZMILES', PROGNAME )
@@ -89,38 +89,11 @@ C  Convert database emission type number to indexing numbers
          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
       END SELECT
 
-C  Select appropriate vehicle class (8 types) for vehicle type (28)
-ccs  (check if this is available as a function somewhere)
-      SELECT CASE (IV)
-      CASE (1)
-         IVX = 1
-         SUMVMT = VMTMIX(1)
-      CASE (2,3)
-         IVX = 2
-         SUMVMT = VMTGT12
-      CASE (4,5)
-         IVX = 3
-         SUMVMT = VMTGT34
-      CASE (6:13,25)
-         IVX = 4
-         SUMVMT = VMTHDG
-
-C  The following types are not used for evaporative emissions.
-      CASE (14)
-         RETURN
-      CASE (15,28)
-         RETURN
-      CASE (16:23,26,27)
-         RETURN
-
-C  Motorcycles are a special case, but will need to be stored in the arrays
-      CASE (24)                
-         IVX = 5              ! set to 5 for arrays, but use 8 for output 
-         SUMVMT = VMTMIX(24)
-      CASE DEFAULT
-         MESG = 'INTERNAL ERROR: Unexpected vehicle type'
-         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-      END SELECT
+C  Skip vehicle types not used for evaporative emissions
+      IF (IV > 13 .AND. IV /= 24 .AND. IV /= 25) RETURN
+      
+C  Map MOBILE6 vehicle type to SMOKE vehicle type
+      CALL SMKCALCVMT( IV, IVEH, SUMVMT )
 
       DO IH = 1,24
          MILES = BMYMPD(JDX,IV)*HVMT(IH)*MEVMYR(JDX,IV)
@@ -137,7 +110,7 @@ C        gm/mile over ages, then aggregate by vehicle type
                ZGMMILE = ZGMHOUR(IH,EFX)/ZMILES(IH,EFX)
             END IF
 
-            EVPOTHER(IH,IVX,EFX) = EVPOTHER(IH,IVX,EFX) + 
+            EVPOTHER(IH,IVEH,EFX) = EVPOTHER(IH,IVEH,EFX) + 
      &            (ZGMMILE*VMTMIX(IV))/SUMVMT
 
 C.....      Reinitialize arrays after last hour and emission type
@@ -172,31 +145,24 @@ C....       Check if this is a valid pollutant/process combo
 C....       Check if this is a valid facility/process combo
             IF (M6FAC2EF( EFTYPE, IFAC ) == -1) CYCLE
             
-            DO IVX = 1,5
-            
-C....          Convert vehicle index back to vehicle class
-               IF (IVX == 5) THEN
-                  VTYPE = 8
-               ELSE
-                  VTYPE = IVX
-               END IF
+            DO IVEH = 1,NVTYPE
 
 C....          Check if this is a valid vehicle/process combo
-               IF (M6VEH2EF( EFTYPE, VTYPE ) == -1) CYCLE
+               IF (SMKVEH2EF( EFTYPE, IVEH ) == -1) CYCLE
 
 #ifdef M6LIB  
                   DO IH = 1,24
                      EMISSIONS( EFTYPE )%PTR( 
      &                   STR2INT( DBSCTITLE ),
      &                   M6POL2EF( EFTYPE, IP ),
-     &                   M6VEH2EF( EFTYPE, VTYPE ),
+     &                   SMKVEH2EF( EFTYPE, IVEH ),
      &                   M6FAC2EF( EFTYPE, IFAC ), IH ) = 
-     &               EVPOTHER( IH, IVX, EFX )
+     &               EVPOTHER( IH, IVEH, EFX )
                   END DO
 #else
                   WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP,
-     &               TABCHAR,VTYPE,TABCHAR,EFTYPE,TABCHAR,IFAC,
-     &               TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVX,EFX),
+     &               TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
+     &               TABCHAR,IH,TABCHAR,EVPOTHER(IH,IVEH,EFX),
      &               IH=1,24)
   110 FORMAT(A10,A1,I1,A1,I2,A1,I1,A1,I1,A1,I2,A1,E12.5)
 #endif  

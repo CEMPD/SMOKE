@@ -4,7 +4,7 @@ C  SMKHAPS aggregates user-defined toxic emission factors by vehicle
 C  age and type.
 
       USE DATABASE, ONLY : DBUNIT, TABCHAR, DBSCTITLE
-      USE MODEMFAC, ONLY : NUMSCEN, NTOTHAPS, PMHAPS, HAPEFS
+      USE MODEMFAC, ONLY : NUMSCEN, NTOTHAPS, PMHAPS, HAPEFS, NVTYPE
       
       IMPLICIT NONE
       
@@ -28,13 +28,13 @@ C  age and type.
       LOGICAL, INTENT(IN) :: OUTPUT  ! true: output data to file or memory
       
       REAL, ALLOCATABLE, SAVE :: HAPAGGR (:,:,:,:,:)  ! aggregated toxics emission factors
-                                                      ! dimensions: (IV,IP,EFIDX,IH,IFAC)
+                                                      ! dimensions: (IVEH,IP,EFIDX,IH,IFAC)
       REAL, ALLOCATABLE, SAVE :: ZMILES (:,:,:,:)     ! summed miles
                                                       ! dimensions: (IP,EFIDX,IH,IFAC)
       REAL, ALLOCATABLE, SAVE :: ZGMHOUR(:,:,:,:)     ! summed gm/hour
                                                       ! dimensions: (IP,EFIDX,IH,IFAC)
       
-      INTEGER :: IVEH        ! vehicle type (1 - 8)
+      INTEGER :: IVEH        ! SMOKE vehicle type
       INTEGER :: EFTYPE      ! emission factor type (1 - 8)
       INTEGER :: IPNEW       ! pollutant number adjusted for PM species
       INTEGER :: IPOL        ! pollutant number from ADD HAPS file (50 - 99)
@@ -59,10 +59,10 @@ C  Begin body of subroutine SMKHAPS
 
 C  Allocate and initialize arrays first time
       IF (INITIAL) THEN
-          ALLOCATE( HAPAGGR( 8,NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
+          ALLOCATE( HAPAGGR( NVTYPE,NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
           CALL CHECKMEM( IOS, 'HAPAGGR', PROGNAME )
 
-          ALLOCATE( HAPEFS ( NUMSCEN,8,NTOTHAPS,8,MAXIH,5 ), STAT=IOS )
+          ALLOCATE( HAPEFS ( NUMSCEN,NVTYPE,NTOTHAPS,8,MAXIH,5 ), STAT=IOS )
           CALL CHECKMEM( IOS, 'HAPEFS', PROGNAME )
 
           ALLOCATE(  ZMILES( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
@@ -92,34 +92,9 @@ C  If this is the second time through, only bother with PM ratio pollutants
 
 C  If the vehicle type has changed, need to aggregate previous values
       IF( PREVVEH /= IV ) THEN
- 
-C  Select appropriate vehicle class (8 types) for vehicle type (28)
-          SELECT CASE (PREVVEH)
-          CASE (1)
-             IVEH = 1
-             SUMVMT = VMTMIX(1)
-          CASE (2,3)
-             IVEH = 2
-             SUMVMT = VMTGT12
-          CASE (4,5)
-             IVEH = 3
-             SUMVMT = VMTGT34
-          CASE (6:13,25)
-             IVEH = 4
-             SUMVMT = VMTHDG
-          CASE (14)
-             IVEH = 5
-             SUMVMT = VMTMIX(14)
-          CASE (15,28)
-             IVEH = 6
-             SUMVMT = VMTLDDT
-          CASE (16:23,26,27)
-             IVEH = 7
-             SUMVMT = VMTHDD
-          CASE (24)
-             IVEH = 8
-             SUMVMT = VMTMIX(24)
-          END SELECT
+
+C  Map MOBILE6 vehicle type to SMOKE vehicle type
+          CALL SMKCALCVMT( PREVVEH, IVEH, SUMVMT ) 
  
           DO IPTMP = 1,NTOTHAPS
               DO IEF = 1,6
@@ -176,7 +151,7 @@ C  Calculate and store miles and gm/hour
           DO IPTMP = 1,NMAP
               IPNEW = IPTMP
               
-              DO IVEH = 1,8
+              DO IVEH = 1,NVTYPE
                   DO EFTYPE = 1,8
                   
 C  Skip evap crankcase since there are toxics are not available

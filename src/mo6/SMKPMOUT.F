@@ -1,13 +1,13 @@
       SUBROUTINE SMKPMOUT
        
 C  SMKPMOUT aggregates particulate emissions by vehicle age and 
-C  vehicle category (8 types).  It then writes the emissions to the
+C  vehicle category.  It then writes the emissions to the
 C  database file.
 
       USE DATABASE, ONLY : DBSELPART,DBSELEFT,DBSELFAC, 
      &                     DBUNIT,TABCHAR,DBSCTITLE 
 #ifdef M6LIB
-      USE MODEMFAC, ONLY : EMISSIONS
+      USE MODEMFAC, ONLY : EMISSIONS, NVTYPE, SMKVEH2EF
 #endif
 
       IMPLICIT NONE
@@ -36,22 +36,35 @@ C  database file.
       INTEGER  ::  IP       ! actual pollutant number (7 - 15)
       INTEGER  ::  JDX      ! age
       INTEGER  ::  IV       ! vehicle type (1 - 28)
-      INTEGER  ::  IVEH     ! vehicle class (1 - 8)
+      INTEGER  ::  IVEH     ! vehicle class
       INTEGER  ::  SMKPOL   ! SMOKE pollutant number based on M6 index
       INTEGER  ::  POL25    ! SMOKE pollutant number for 2.5 pollutant
+      INTEGER  ::  IOS      ! I/O status
       
-      REAL              ::  SUMVMT  ! vmt fraction for one of 8 vehicle types
-      REAL              ::  MILES   ! hourly miles
-      REAL              ::  ZMILES  ! used to sum hourly miles
-      REAL              ::  ZGMHOUR ! used to sum gm/hour
-      REAL              ::  ZGMMILE ! used to calculate hourly gm/mile
-      REAL,DIMENSION(8) ::  PMAGGR  ! fully aggregated PM output
-      REAL              ::  SUBVAL  ! 2.5 value to subtract from 10 value
+      REAL              ::  SUMVMT    ! vmt fraction for one of 8 vehicle types
+      REAL              ::  MILES     ! hourly miles
+      REAL              ::  ZMILES    ! used to sum hourly miles
+      REAL              ::  ZGMHOUR   ! used to sum gm/hour
+      REAL              ::  ZGMMILE   ! used to calculate hourly gm/mile
+      REAL              ::  SUBVAL    ! 2.5 value to subtract from 10 value
+      
+      REAL, ALLOCATABLE, SAVE ::  PMAGGR(:) ! fully aggregated PM output
+                                      ! dimensions: (IVEH)
+
+      LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
       CHARACTER(300) :: MESG                   ! message buffer
       CHARACTER(16)  :: PROGNAME = 'SMKPMOUT'  ! program name
 
 C  Begin body of subroutine SMKPMOUT
+
+C  Allocate array first time
+      IF (INITIAL) THEN
+          ALLOCATE( PMAGGR( NVTYPE ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'PMAGGR', PROGNAME )
+          
+          INITIAL = .FALSE.
+      END IF
 
 C  Loop over particulate pollutants
       DO IPPM = 1,MAXIPPM
@@ -118,37 +131,9 @@ C.....            Gas vehicles do not have OCARBON or ECARBON output
 
 C.....            No GASPM output for diesel vehicles
                   IF (IPPM == 4 .AND. VVDSL(IV) == 1) CYCLE
-               
-C  Select appropriate vehicle class (8 types) for vehicle type (28)               
-                  SELECT CASE (IV)
-                  CASE (1)
-                     IVEH = 1
-                     SUMVMT = VMTMIX(IV)
-                  CASE (2,3)
-                     IVEH = 2
-                     SUMVMT = VMTGT12
-                  CASE (4,5)
-                     IVEH = 3
-                     SUMVMT = VMTGT34
-                  CASE (6:13,25)
-                     IVEH = 4
-                     SUMVMT = VMTHDG
-                  CASE (14)
-                     IVEH = 5
-                     SUMVMT = VMTMIX(IV)
-                  CASE (15,28)
-                     IVEH = 6
-                     SUMVMT = VMTLDDT
-                  CASE (16:23,26,27)
-                     IVEH = 7
-                     SUMVMT = VMTHDD
-                  CASE (24)
-                     IVEH = 8
-                     SUMVMT = VMTMIX(IV)
-                  CASE DEFAULT
-                     MESG = 'INTERNAL ERROR: Unexpected vehicle type'
-                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                  END SELECT
+
+C  Map MOBILE6 vehicle type to SMOKE vehicle type
+                  CALL SMKCALCVMT( IV, IVEH, SUMVMT )
       
                   ZMILES  = 0.
                   ZGMHOUR = 0.
@@ -172,9 +157,9 @@ C  Select appropriate vehicle class (8 types) for vehicle type (28)
                END DO  ! loop over 28 vehicle types
 
 #ifdef M6LIB
-               DO IVEH = 1,8
+               DO IVEH = 1,NVTYPE
 C  Check that this vehicle/process combo is valid
-                  IF (M6VEH2EF( EFTYPE, IVEH ) == -1) CYCLE
+                  IF (SMKVEH2EF( EFTYPE, IVEH ) == -1) CYCLE
      
 C  Subtract 2.5 values from 10 values if needed
                   IF (PSZCUT == 10) THEN
@@ -200,7 +185,7 @@ C  Check that new pollutant is valid for current process
                          SUBVAL = EMISSIONS( EFTYPE )%PTR(
      &                       STR2INT( DBSCTITLE ),
      &                       M6POL2EF( EFTYPE, POL25 ),
-     &                       M6VEH2EF( EFTYPE, IVEH ),
+     &                       SMKVEH2EF( EFTYPE, IVEH ),
      &                       M6FAC2EF( EFTYPE, IFAC ), IH )
                      END IF
                   ELSE
@@ -210,15 +195,15 @@ C  Check that new pollutant is valid for current process
                   EMISSIONS( EFTYPE )%PTR( 
      &                STR2INT( DBSCTITLE ),
      &                M6POL2EF( EFTYPE, SMKPOL ),
-     &                M6VEH2EF( EFTYPE, IVEH ),
+     &                SMKVEH2EF( EFTYPE, IVEH ),
      &                M6FAC2EF( EFTYPE, IFAC ), IH ) = 
      &            PMAGGR( IVEH ) - SUBVAL
                         
-               END DO  ! loop over 8 vehicle types
+               END DO  ! loop over SMOKE vehicle types
 #else
                WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
      &            TABCHAR,IVEH,TABCHAR,EFTYPE,TABCHAR,IFAC,
-     &            TABCHAR,IH,TABCHAR,PMAGGR(IVEH),IVEH=1,8)
+     &            TABCHAR,IH,TABCHAR,PMAGGR(IVEH),IVEH=1,NVTYPE)
   110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,E12.5)
 #endif
                

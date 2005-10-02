@@ -1,7 +1,7 @@
       SUBROUTINE SMKATOUT
        
 C  SMKATOUT aggregates air toxics emissions by vehicle age and 
-C  vehicle category (8 types).  It then writes the emissions to the
+C  vehicle category.  It then writes the emissions to the
 C  database file.
 
       USE DATABASE, ONLY : DBSELTOX,DBSELEFT,DBSELFAC, 
@@ -9,7 +9,7 @@ C  database file.
       USE ATHEAP, ONLY : DBAT
       
 #ifdef M6LIB      
-      USE MODEMFAC, ONLY : EMISSIONS
+      USE MODEMFAC, ONLY : EMISSIONS, NVTYPE, SMKVEH2EF
 #endif
      
       IMPLICIT NONE
@@ -42,20 +42,33 @@ C  database file.
       INTEGER  ::  JDX      ! age
       INTEGER  ::  IDX      ! year
       INTEGER  ::  IV       ! vehicle type (1 - 28)
-      INTEGER  ::  IVEH     ! vehicle class (1 - 8)
+      INTEGER  ::  IVEH     ! SMOKE vehicle class
       INTEGER  ::  SMKPOL   ! SMOKE pollutant number based on M6 index
+      INTEGER  ::  IOS      ! I/O status
       
-      REAL              ::  SUMVMT   ! vmt fraction for one of 8 vehicle types 
+      REAL              ::  SUMVMT   ! vmt fraction for one of SMOKE vehicle types 
       REAL              ::  MILES    ! hourly miles                            
       REAL              ::  ZMILES   ! used to sum hourly miles                
       REAL              ::  ZGMHOUR  ! used to sum gm/hour                     
-      REAL              ::  ZGMMILE  ! used to calculate hourly gm/mile        
-      REAL,DIMENSION(8) ::  ATAGGR   ! fully aggregated AT output              
+      REAL              ::  ZGMMILE  ! used to calculate hourly gm/mile
+      
+      REAL, ALLOCATABLE, SAVE ::  ATAGGR(:) ! fully aggregated AT output
+                                      ! dimensions: (IVEH)
+
+      LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time through subroutine
 
       CHARACTER(300) :: MESG                   ! message buffer
       CHARACTER(16)  :: PROGNAME = 'SMKATOUT'  ! program name
 
 C  Begin body of subroutine SMKATOUT
+
+C  Allocate array first time
+      IF (INITIAL) THEN
+          ALLOCATE( ATAGGR( NVTYPE ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'ATAGGR', PROGNAME )
+          
+          INITIAL = .FALSE.
+      END IF
 
 C  Loop over air toxic pollutants
       DO IAT = 1,MAXIAT
@@ -112,7 +125,7 @@ C  Check that we need this facility type
 C  Reinitialize output array
                   ATAGGR = 0.
             
-                  DO IV = 1,MAXVEH
+                  DO IV = 1,MAXVEH 
 
 C  Skip unused vehicle, pollutant, and emission factor combinations
 
@@ -125,35 +138,8 @@ C.....               Heavy duty vehicles and buses do not have engine start emis
 C.....               Diesels do not have evaporative emissions
                      IF (VVDSL(IV) == 1 .AND. ETYPE >= 3) CYCLE
                                  
-C  Select appropriate vehicle class (8 types) for vehicle type (28)               
-                     SELECT CASE (IV)
-                     CASE (1)
-                        IVEH = 1
-                        SUMVMT = VMTMIX(1)
-                     CASE (2,3)
-                        IVEH = 2
-                        SUMVMT = VMTGT12
-                     CASE (4,5)
-                        IVEH = 3
-                        SUMVMT = VMTGT34
-                     CASE (6:13,25)
-                        IVEH = 4
-                        SUMVMT = VMTHDG
-                     CASE (14)
-                        IVEH = 5
-                        SUMVMT = VMTMIX(14)
-                     CASE (15,28)
-                        IVEH = 6
-                        SUMVMT = VMTLDDT
-                     CASE (16:23,26,27)
-                        IVEH = 7
-                        SUMVMT = VMTHDD
-                     CASE (24)
-                        IVEH = 8
-                        SUMVMT = VMTMIX(24)
-                     CASE DEFAULT
-ccs  Print some error message
-                     END SELECT
+C  Map MOBILE6 vehicle type to SMOKE vehicle type  
+                     CALL SMKCALCVMT( IV, IVEH, SUMVMT )
       
                      ZMILES  = 0.
                      ZGMHOUR = 0.
@@ -179,21 +165,21 @@ ccs  Print some error message
                   END DO  ! loop over 28 vehicle types
 
 #ifdef M6LIB
-                  DO IVEH = 1,8
+                  DO IVEH = 1,NVTYPE
                   
 C  Check if this is a valid process/vehicle combo
-                      IF( M6VEH2EF( ETYPE, IVEH ) == -1 ) CYCLE
+                      IF( SMKVEH2EF( ETYPE, IVEH ) == -1 ) CYCLE
                                         
                       EMISSIONS( ETYPE )%PTR( STR2INT( DBSCTITLE), 
      &                                        M6POL2EF( ETYPE, SMKPOL ), 
-     &                                        M6VEH2EF( ETYPE, IVEH ), 
+     &                                        SMKVEH2EF( ETYPE, IVEH ), 
      &                                        M6FAC2EF( ETYPE, IFAC ), 
      &                                        IH ) = ATAGGR( IVEH )
-                  END DO  ! loop over 8 vehicle types
+                  END DO  ! loop over SMOKE vehicle types
 #else
                   WRITE(DBUNIT(1),110) (DBSCTITLE,TABCHAR,IP, 
      &               TABCHAR,IVEH,TABCHAR,ETYPE,TABCHAR,IFAC,
-     &               TABCHAR,IH,TABCHAR,ATAGGR(IVEH),IVEH=1,8)
+     &               TABCHAR,IH,TABCHAR,ATAGGR(IVEH),IVEH=1,NVTYPE)
   110 FORMAT(A10,A1,I2,A1,I2,A1,I2,A1,I1,A1,I2,A1,E12.5)
 #endif
 
