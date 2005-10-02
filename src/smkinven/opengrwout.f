@@ -1,12 +1,13 @@
 
-        SUBROUTINE OPENGRWOUT( ENAME, FYEAR, NAME1, ODEV, DDEV, VDEV,
+        SUBROUTINE OPENGRWOUT( ENAME, FYEAR, NAME1, SFLAG, IFLAG,
+     &                         OFLAG, ODEV, DDEV, VDEV, RDEV,
      &                         ONAME, VARPATH )
 
 C***********************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This subroutine 
+C      This subroutine opens files needed by the Grwinven program.
 C
 C  PRECONDITIONS REQUIRED:
 C
@@ -14,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created 2/2000 by M. Houyoux
+C      Updated 6/8/2005 by M. Houyoux for ORL format
 C
 C***************************************************************************
 C
@@ -52,7 +54,6 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER(2)        CRLF
-        LOGICAL             ENVYN
         CHARACTER(IODLEN3)  GETCFDSC
         INTEGER             GETIFDSC
         INTEGER             GETEFILE
@@ -61,16 +62,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
         LOGICAL             SETENVVAR
         CHARACTER(16)       VERCHAR
 
-        EXTERNAL CRLF, ENVYN, GETCFDSC, GETEFILE, INDEX1, PROMPTFFILE, 
+        EXTERNAL CRLF, GETCFDSC, GETEFILE, INDEX1, PROMPTFFILE, 
      &           SETENVVAR, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(16), INTENT (IN) :: ENAME ! emis input inven logical name
         INTEGER      , INTENT (IN) :: FYEAR ! future year or 0 for no projection
         CHARACTER(80), INTENT (IN) :: NAME1 ! physical name part for i/o api
+        LOGICAL      , INTENT (IN) :: SFLAG ! true: output SMOKE file
+        LOGICAL      , INTENT (IN) :: IFLAG ! true: output IDA file
+        LOGICAL      , INTENT (IN) :: OFLAG ! true: output ORL file
         INTEGER      , INTENT(OUT) :: ODEV  ! output map inventory file
         INTEGER      , INTENT(OUT) :: DDEV  ! IDA output emissions file number
         INTEGER      , INTENT(OUT) :: VDEV  ! IDA output activity file number
+        INTEGER      , INTENT(OUT) :: RDEV  ! ORL output emissions file number
         CHARACTER(16), INTENT(OUT) :: ONAME ! output logical main i/o api
         CHARACTER(PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
 
@@ -83,9 +88,6 @@ C...........   Other local variables
         INTEGER         CATIDX    ! index for source category
         INTEGER         IOS       ! i/o status
         INTEGER         L, N         ! counters and indices
-
-        LOGICAL      :: IFLAG = .TRUE.   ! true: output IDA file
-        LOGICAL      :: SFLAG = .TRUE.   ! true: output SMOKE file
  
         CHARACTER(16)   ANAME     ! tmp dummy buffer
         CHARACTER(16)   INAME     ! tmp output IDA file name
@@ -102,20 +104,11 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine OPENGRWOUT
 
-C.........  Evaluate environment variables that control the output files
-C           used
-        EVNAME = 'SMK_GRWSMKOUT_YN'
-        MESG   = 'Output SMOKE inventory file'
-        SFLAG = ENVYN( EVNAME, MESG, .TRUE., IOS )
-
-        EVNAME = 'SMK_GRWIDAOUT_YN'
-        MESG   = 'Output IDA inventory file'
-        IFLAG = ENVYN( EVNAME, MESG, .FALSE., IOS )
-
 C.........  Initialize outputs
         ONAME = 'NONE'
         DDEV  = 0
         VDEV  = 0
+        RDEV  = 0
 
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, NNAME, ANAME )
@@ -211,7 +204,7 @@ C.........  Provide variable path
 C.........  Get index for source category to use for output file names
         CATIDX = INDEX1( CATEGORY, NCAT, CATLIST )
 
-C.........  Prompt file emissions IDA file
+C.........  Prompt for emissions IDA file
         IF( IFLAG .AND. NIPOL .GT. 0 ) THEN
             MESG  = 'Enter logical name for the IDA EMISSIONS ' //
      &              'output file'
@@ -220,13 +213,22 @@ C.........  Prompt file emissions IDA file
             DDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
         END IF
 
-C.........  Prompt file activity IDA file
+C.........  Prompt for activity IDA file
         IF( IFLAG .AND. NIACT .GT. 0 ) THEN
             MESG  = 'Enter logical name for the IDA ACTIVITY ' //
      &              'output file'
             INAME = ANAMLIST( CATIDX ) // '_AO'
 
             VDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
+        END IF
+
+C.........  Prompt for emissions ORL file
+        IF( OFLAG ) THEN
+            MESG  = 'Enter logical name for the ORL EMISSIONS ' //
+     &              'output file'
+            INAME = ANAMLIST( CATIDX ) // '_O'
+            
+            RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
         END IF
 
         RETURN
