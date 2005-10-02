@@ -579,10 +579,6 @@ C.........  If not explicit plume rise only, open and process other met files
      &          'Enter name for CROSS-POINT SURFACE MET file',
      &          FSREAD3, 'MET_CRO_2D', PROGNAME )
 
-            GNAME = PROMPTMFILE( 
-     &          'Enter name for CROSS-POINT LAYERED GRID file',
-     &          FSREAD3, 'GRID_CRO_3D', PROGNAME )
-
             XNAME = PROMPTMFILE( 
      &          'Enter name for CROSS-POINT LAYERED MET file',
      &          FSREAD3, 'MET_CRO_3D', PROGNAME )
@@ -604,10 +600,10 @@ C.........  If not explicit plume rise only, open and process other met files
 C.............  Check multiple met files for consistency
             IF( GFLAG ) THEN
                 EFLAG = ( .NOT. CHKMETEM( CNAME, SNAME, TNAME,
-     &                                    GNAME, XNAME, DNAME ) )
+     &                                    'NONE', XNAME, DNAME ) )
             ELSE
                 EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, 'NONE',
-     &                                     GNAME, XNAME, DNAME ) )
+     &                                    'NONE', XNAME, DNAME ) )
             END IF
 
             IF ( EFLAG ) THEN
@@ -931,6 +927,25 @@ C.............  Compute un-gridding matrices for dot and cross point met data
 C.............  Read time-independent ZF and ZH for non-hydrostatic Met data
 C.............  Compute per-source heights
             IF( ZSTATIC ) THEN
+
+C.................  Open GRIDCRO3D file and check that it matches other met files
+                GNAME = PROMPTMFILE( 
+     &              'Enter name for CROSS-POINT LAYERED GRID file',
+     &              FSREAD3, 'GRID_CRO_3D', PROGNAME )
+
+                IF( GFLAG ) THEN
+                    EFLAG = ( .NOT. CHKMETEM( CNAME, SNAME, TNAME,
+     &                                        GNAME, XNAME, DNAME ) )
+                ELSE
+                    EFLAG = ( .NOT. CHKMETEM( 'NONE', SNAME, 'NONE',
+     &                                         GNAME, XNAME, DNAME ) )
+                END IF
+                
+                IF( EFLAG ) THEN
+                    MESG = 'GRID_CRO_3D file inconsistent with ' //
+     &                     'other met files.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
                 CALL RETRIEVE_IOAPI_HEADER( GNAME )
                 CALL GET_VARIABLE_NAME( 'ZH', VNAME )
