@@ -37,15 +37,18 @@ C
 C***********************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: IRCLAS, IVTYPE
+        USE MODSOURC, ONLY: IRCLAS, CVTYPE
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC
+
+C.......  This module contains the lists of unique source characteristics
+      USE MODLISTS, ONLY: NINVVTYP, INVVTYP
         
 C...........   This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, MXETYPE, EMTNAM, NSUBPOL, SUBPOLS, 
      &                      OUTPUTHC, SCENLIST, EMISSIONS, NTOTHAPS, 
-     &                      HAPNAMES, HAPEFS
+     &                      HAPNAMES, HAPEFS, SMKVEH2EF
         
         IMPLICIT NONE
 
@@ -56,10 +59,10 @@ C...........   INCLUDES:
         
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         CVTRDTYPE
-        INTEGER         CVTVEHTYPE
+        INTEGER         FINDC
         INTEGER         INDEX1
         
-        EXTERNAL   CVTRDTYPE, CVTVEHTYPE, INDEX1
+        EXTERNAL   CVTRDTYPE, FINDC, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME    ! logical name of emission factors file
@@ -130,7 +133,7 @@ C               exhaust running, evp running, brake, and tire wear
             END IF 
 
 C.............  Loop over all pollutants including user-defined                
-            DO IPOL = 1,MXM6POLS + NTOTHAPS
+            DO IPOL = 1, MXM6POLS + NTOTHAPS
             
 C.................  Make sure this is a valid ef/pollutant combination
               IF( IPOL <= MXM6POLS ) THEN
@@ -182,11 +185,11 @@ C.................  Set road and vehicle type
      &                                 ULASAFLAG )
                 END IF
                 
-                VTYPE = CVTVEHTYPE( IVTYPE( ISRC ) )
+                VTYPE = FINDC( CVTYPE( ISRC ), NINVVTYP, INVVTYP )
 
 C.................  Check if vehicle type is valid for this process
                 IF( IPOL <= MXM6POLS ) THEN
-                    IF( M6VEH2EF( IEF, VTYPE ) == -1 ) CYCLE
+                    IF( SMKVEH2EF( IEF, VTYPE ) == -1 ) CYCLE
                 END IF
 
 C.................  Store appropriate emission factor in source-based array
@@ -195,7 +198,7 @@ C.................  Store appropriate emission factor in source-based array
                     SRCEFS( EFPOS ) = 
      &                 EMISSIONS( IEF )%PTR( SCENNUM,
      &                                       M6POL2EF( IEF,IPOL ), 
-     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       SMKVEH2EF( IEF,VTYPE ),
      &                                       M6FAC2EF( IEF,FTYPE ),IHR )
 
 C.....................  Adjust for ramp emissions if freeway
@@ -203,7 +206,7 @@ C.....................  Adjust for ramp emissions if freeway
                         RAMPEF = 
      &                     EMISSIONS( IEF )%PTR( SCENNUM,
      &                                           M6POL2EF( IEF,IPOL ), 
-     &                                           M6VEH2EF( IEF,VTYPE ),
+     &                                           SMKVEH2EF( IEF,VTYPE ),
      &                                           M6FAC2EF( IEF,M6RAMP ),
      &                                           IHR )
                         SRCEFS( EFPOS ) = 
@@ -277,14 +280,14 @@ C.............................  Check that this is a valid pol/ef combo
 
                             EFVAL = EMISSIONS( IEF )%PTR( SCENNUM,
      &                                       M6POL2EF( IEF,VARPOL ), 
-     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       SMKVEH2EF( IEF,VTYPE ),
      &                                       M6FAC2EF( IEF,FTYPE ),IHR )
      
 C.............................  Adjust for ramp emissions
                             IF( FTYPE == M6FREEWAY ) THEN
                                 RAMPEF = EMISSIONS( IEF )%PTR( SCENNUM,
      &                                       M6POL2EF( IEF,VARPOL ), 
-     &                                       M6VEH2EF( IEF,VTYPE ),
+     &                                       SMKVEH2EF( IEF,VTYPE ),
      &                                       M6FAC2EF( IEF,M6RAMP ),
      &                                       IHR )
                                 EFVAL = 
