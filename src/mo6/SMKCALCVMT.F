@@ -48,6 +48,6 @@ C  Check if VMT fraction needs to be calculated for this type
           CALCVMT( M6TYPE ) = .FALSE.
       END IF
       
-      SUMVMT = VMTFRAC( TYPE )
+      SUMVMT = VMTFRAC( M6TYPE )
       
       END SUBROUTINE SMKCALCVMT
