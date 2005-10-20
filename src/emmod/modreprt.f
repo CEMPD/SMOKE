@@ -41,7 +41,7 @@
         INCLUDE 'EMPRVT3.EXT'
 
 !.........  Packet-specific parameters
-        INTEGER, PARAMETER, PUBLIC :: NALLPCKT = 10
+        INTEGER, PARAMETER, PUBLIC :: NALLPCKT = 11
         INTEGER, PARAMETER, PUBLIC :: RPKTLEN  = 21
         INTEGER, PARAMETER, PUBLIC :: NCRTSYBL = 13
         INTEGER, PARAMETER, PUBLIC :: RPT_IDX  = 1  ! pos. report pkt in master
@@ -54,6 +54,7 @@
         INTEGER, PARAMETER, PUBLIC :: ELG_IDX  = 8  ! pos. elevated grp in mstr
         INTEGER, PARAMETER, PUBLIC :: PNG_IDX  = 9  ! pos. ping in master
         INTEGER, PARAMETER, PUBLIC :: ELV_IDX  = 10 ! pos. elevated in master
+        INTEGER, PARAMETER, PUBLIC :: LAB_IDX  = 11 ! pos. label in master
         INTEGER, PARAMETER, PUBLIC :: NOELOUT3 = 1  ! code for low-level only
         INTEGER, PARAMETER, PUBLIC :: ELEVOUT3 = 2  ! code for elevated only
         INTEGER, PARAMETER, PUBLIC :: PINGOUT3 = 3  ! code for PinG only
@@ -75,7 +76,8 @@
      &                                      '/DEFINE SUBGRID/     ',
      &                                      '/SPECIFY ELEV GROUPS/',
      &                                      '/SPECIFY PING/       ',
-     &                                      '/SPECIFY ELEV/       '  / )
+     &                                      '/SPECIFY ELEV/       ',
+     &                                      '/SET LABEL/          ' / )
         
         CHARACTER(4), PARAMETER, PUBLIC :: CRTSYBL( NCRTSYBL ) = 
      &                                  ( / '=   ',
@@ -138,6 +140,7 @@
             LOGICAL       :: BYWEK         ! true: by weekly temporal code
             LOGICAL       :: CHKPROJ       ! true: check projctns vs. rpt
             LOGICAL       :: CHKCNTL       ! true: check controls vs. rpt
+            LOGICAL       :: LATLON        ! true: output stack coordinates
             LOGICAL       :: LAYFRAC       ! true: use PLAY file
             LOGICAL       :: NORMCELL      ! true: normalize by cell area
             LOGICAL       :: NORMPOP       ! true: normalize by county pop
@@ -153,12 +156,14 @@
             LOGICAL       :: USECUMAT      ! true: use multiplicative controls
             LOGICAL       :: USEGMAT       ! true: use gridding
             LOGICAL       :: USEHOUR       ! true: use hourly data
+            LOGICAL       :: USELABEL      ! true: use user-defined label
             LOGICAL       :: USEPRMAT      ! true: use projection matrix
             LOGICAL       :: USESLMAT      ! true: use mole spec
             LOGICAL       :: USESSMAT      ! true: use mass spec
 
             CHARACTER          :: DELIM         ! output delimeter
             CHARACTER(20)      :: DATAFMT       ! data format
+            CHARACTER(LENLAB3) :: LABEL         ! user-defined label
             CHARACTER(LENLAB3) :: REGNNAM       ! region names
             CHARACTER(IOVLEN3) :: SPCPOL        ! pollutant for BYSPC
             CHARACTER(LENLAB3) :: SUBGNAM       ! subgrid names
@@ -270,6 +275,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: DIUWIDTH  =0 ! width of diurnal profile label
         INTEGER      , PUBLIC :: ELEVWIDTH =0 ! width of elevated srcs flag col
         INTEGER      , PUBLIC :: HOURWIDTH =0 ! width of hour column
+        INTEGER      , PUBLIC :: LTLNWIDTH =0 ! width of lat/lon columns
+        INTEGER      , PUBLIC :: LABELWIDTH=0 ! width of user-defined label
         INTEGER      , PUBLIC :: LAYRWIDTH =0 ! width of layer number label
         INTEGER      , PUBLIC :: MONWIDTH  =0 ! width of monthly profile label
         INTEGER      , PUBLIC :: PDSCWIDTH =0 ! width of plant description col
@@ -298,6 +305,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(50),  PUBLIC :: DIUFMT      ! format string for diurnal profile
         CHARACTER(50),  PUBLIC :: HOURFMT     ! format string for hour column
         CHARACTER(50),  PUBLIC :: MONFMT      ! format string for monthly profile
+        CHARACTER(50),  PUBLIC :: LTLNFMT     ! format string for lat/lons
         CHARACTER(50),  PUBLIC :: LAYRFMT     ! format string for layer column
         CHARACTER(50),  PUBLIC :: REGNFMT     ! format string for region column
         CHARACTER(50),  PUBLIC :: SICFMT      ! format string for SIC
