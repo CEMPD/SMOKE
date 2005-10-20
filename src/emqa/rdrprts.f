@@ -146,11 +146,13 @@ C.........  Allocate and initialize report arrays
         ALLRPT%USECUMAT   = .FALSE.
         ALLRPT%USEGMAT    = .FALSE.
         ALLRPT%USEHOUR    = .FALSE.
+        ALLRPT%USELABEL   = .FALSE.
         ALLRPT%USEPRMAT   = .FALSE.
         ALLRPT%USESLMAT   = .FALSE.
         ALLRPT%USESSMAT   = .FALSE.
         ALLRPT%DELIM      = ' '
         ALLRPT%DATAFMT    = ' '
+        ALLRPT%LABEL      = ' '
         ALLRPT%OFILENAM   = ' '
         ALLRPT%REGNNAM    = ' '
         ALLRPT%SUBGNAM    = ' '
@@ -166,7 +168,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%RPTMODE    = 0
         ALLRPT%RPTNVAR    = 0
         ALLRPT%RSTARTLIN  = 0
-        ALLRPT%SCCRES     = 10
+        ALLRPT%SCCRES     = 4
         ALLRPT%SRGRES     = 0
 
         ALLOUTHR = .FALSE.
