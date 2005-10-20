@@ -54,6 +54,8 @@ C.........  Position within SCC of mobile roadway type and vehicle type ID
         PRIVATE :: SVS
         PRIVATE :: SVE 
 
+        PRIVATE :: NSCCLV3
+
 C.........  Variable dimensioning components and parameters, dependent...
 
 C.........  Start of each field in source definitions
