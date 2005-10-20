@@ -52,7 +52,7 @@ C.........  This module contains Smkreport-specific settings
      &                      LIN_SUBDATA, LIN_SUBGRID, LIN_SUBREGN,
      &                      LIN_TITLE, LIN_UNIT, LIN_SPCIFY, PCKTNAM,
      &                      PKT_IDX, NALLPCKT, ALLPCKTS, PKTSTART, 
-     &                      TIM_IDX, PKTEND, ADY_IDX, FIL_IDX, 
+     &                      TIM_IDX, PKTEND, ADY_IDX, FIL_IDX,
      &                      DEL_IDX, REG_IDX, SBG_IDX, GRP_INCLSTAT,
      &                      GRP_LABEL, YFLAG, ELG_IDX, PNG_IDX, ELV_IDX,
      &                      SPCF_NOR, SPCF_NAND, RPT_IDX, LREGION,
@@ -61,7 +61,7 @@ C.........  This module contains Smkreport-specific settings
      &                      SSFLAG, SLFLAG, TFLAG, LFLAG, NFLAG, PSFLAG,
      &                      GSFLAG, TSFLAG, UNITSET, MXRPTNVAR,
      &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME,
-     &                      NIFLAG, NMFLAG, NNFLAG
+     &                      NIFLAG, NMFLAG, NNFLAG, LAB_IDX, LENLAB3
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC
@@ -84,8 +84,12 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: LINE        ! full input record less commnt
         CHARACTER(*), INTENT (IN) :: SEGMENT( * )! parsed input record
 
+C...........   Local parameters
+        CHARACTER(1), PARAMETER :: SCCLEV( NSCCLV3 ) =
+     &                             (/ '1', '2', '3', '4' /)
+
 C...........   Other local variables
-        INTEGER          I, J, L, L2            ! counters and indices
+        INTEGER          I, J, K, L, L2      ! counters and indices
         INTEGER          IOS                 ! i/o status
 
         INTEGER, SAVE :: IREC_MIN = 99999999 ! minimum record number
@@ -96,10 +100,15 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTLOOP = .TRUE.   ! true: file already read once
         LOGICAL, SAVE :: LCATSET   = .FALSE.  ! true: source category set
         LOGICAL, SAVE :: LDELIM    = .FALSE.  ! true: manual delimeter set
+        LOGICAL, SAVE :: LLABEL    = .FALSE.  ! true: user-defined label set
 
         CHARACTER        DAYYN             !  Y or N for average day
         CHARACTER(6)     FILNUM            !  tmp file number string
         CHARACTER(300)   MESG              !  message buffer
+
+        CHARACTER(LENLAB3) ENVBUF              ! environment variable buffer
+        CHARACTER(LENLAB3), SAVE :: TMPLABEL   ! tmp label name
+        CHARACTER(LENLAB3) TMPLABEL2           ! another tmp label name
 
         CHARACTER(16) :: PROGNAME = 'PRCLINRC' ! program name
 
@@ -121,6 +130,7 @@ C.........  Initialize for start of file
             RPT_%AVEDAY   = .FALSE.  ! default to not use average day data
             RPT_%OUTTIME  = 230000   ! default to output at 2300 hours
             RPT_%DELIM    = ';'      ! default to semi-colon
+            RPT_%USELABEL = .FALSE.  ! default to not use a label in report
 
             FIRSTIME = .FALSE.
 
@@ -363,6 +373,62 @@ C                       elevated sources
                         SPCF_NOR    = 0
                         SPCF_NAND   = 0
 
+C.....................  Set a label - figure out what the label is...
+                    CASE( LAB_IDX )
+
+C.........................  Ensure a label is provided
+                        IF( J+1 >= L2 ) THEN
+                            CALL NO_SETTING_FOUND( IREC, PKT_IDX )
+                        ELSE
+                            TMPLABEL2 = ADJUSTL( LINE( J+1:L2 ) )
+                        END IF
+
+C.........................  If label is too long, it will be truncated
+                        IF( L2 - J > LENLAB3 ) THEN
+                            WRITE( MESG,94010 ) 
+     &                             'WARNING: Label longer than',
+     &                             LENLAB3, '-character maximum at line',
+     &                             IREC, 'and will be truncated.'
+                            CALL M3MSG2( MESG )
+                        END IF
+
+C.........................  Check if label is an environment variable
+                        IF( TMPLABEL2( 1:1 ) == '$' ) THEN
+
+C.............................  Try to evaluate environment variable
+                            ENVBUF = TMPLABEL2( 2:LENLAB3 )
+                            CALL ENVSTR( ENVBUF,' ',' ',TMPLABEL2,IOS )
+
+C.............................  If E.V. can't be evaluated, write message
+                            IF( IOS /= 0 ) THEN
+                                WRITE( MESG,94010 )
+     &                            'WARNING: Environment variable "' //  
+     &                            TRIM( ENVBUF ) // '" used in label '//
+     &                            'at line', IREC, 'is misformatted, '//
+     &                            'not defined, or defined as blank.'
+                                CALL M3MSG2( MESG )
+                                LLABEL = .FALSE.
+
+C.............................  Otherwise, store label
+                            ELSE
+                                LLABEL = .TRUE.
+                                TMPLABEL = TMPLABEL2
+
+                            END IF
+
+C.........................  If label is set to OFF, then turn it off
+                        ELSE IF( TMPLABEL2( 1:3 ) == 'OFF' ) THEN
+                            LLABEL = .FALSE.
+
+C.........................  If not environment variable, then set label for report
+                        ELSE
+                            LLABEL = .TRUE.
+                            TMPLABEL = TMPLABEL2
+                        END IF
+
+                        PKTEND   = IREC
+                        INPACKET = .FALSE.            ! end implied 
+
 C.....................  A report packet
                     CASE( RPT_IDX )
 
@@ -408,6 +474,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYWEK     = .FALSE.
                         RPT_%CHKPROJ   = .FALSE.
                         RPT_%CHKCNTL   = .FALSE.
+                        RPT_%LATLON    = .FALSE.
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
                         RPT_%NORMPOP   = .FALSE.
@@ -420,6 +487,7 @@ C.........................  Reset report settings to defaults
                         RPT_%USECUMAT  = .FALSE.
                         RPT_%USEGMAT   = .FALSE.
                         RPT_%USEHOUR   = .FALSE.
+                        RPT_%USELABEL  = LLABEL 
                         RPT_%USEPRMAT  = .FALSE.
                         RPT_%USESLMAT  = .FALSE.
                         RPT_%USESSMAT  = .FALSE.
@@ -435,7 +503,7 @@ C.........................  Reset report settings to defaults
                         RPT_%RPTMODE   = 0
                         RPT_%RPTNVAR   = 0
                         RPT_%RSTARTLIN = 0    ! init for consistency
-                        RPT_%SCCRES    = 10
+                        RPT_%SCCRES    = 4
                         RPT_%SRGRES    = 0
 
                         RPT_%DATAFMT   = 'E8.3'
@@ -446,6 +514,8 @@ C.........................  Reset report settings to defaults
                         TITLE          = ' '
                         IF( .NOT. LDELIM )
      &                     RPT_%DELIM    = ';'      ! default to semi-colon
+                        IF( LLABEL )
+     &                     RPT_%LABEL = TMPLABEL
 
                     END SELECT
 
@@ -864,7 +934,7 @@ C.............  BY options affecting inputs needed
                 CASE( 'SCC10' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
                         RPT_%BYSCC  = .TRUE.
-                        RPT_%SCCRES = 10
+                        RPT_%SCCRES = 4
                         IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
                             NFLAG = .TRUE.
                             RPT_%SCCNAM = .TRUE.
@@ -881,7 +951,6 @@ C.............  BY options affecting inputs needed
                 CASE( 'SRCTYPE' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
                         RPT_%BYSRCTYP  = .TRUE.
-                        RPT_%SCCRES = 10
                     ELSE
                         WRITE( MESG, 94010 )
      &                     'WARNING: BY SRCTYP instruction at ' //
@@ -889,18 +958,52 @@ C.............  BY options affecting inputs needed
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
                     END IF
-               
+
+                CASE( 'SCC' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYSCC = .TRUE.
+                        K = INDEX1( SEGMENT(3)(1:1), NSCCLV3, SCCLEV )
+
+                        IF( K > 0 ) THEN
+                            RPT_%SCCRES = STR2INT( SEGMENT( 3 ) )
+
+                        ELSE
+                            WRITE( MESG,94010 )
+     &                        'WARNING: BY SCC instruction at ' //
+     &                        'line', IREC, 'does not include proper '//
+     &                        'SCC aggregation level 1-4. Assuming ' //
+     &                        'full SCC.'
+                            CALL M3MSG2( MESG )
+                            RPT_%SCCRES = 4
+                        END IF
+
+                        IF( SEGMENT( 3 ) == 'NAME' .OR.
+     &                      SEGMENT( 4 ) == 'NAME'      ) THEN
+                            NFLAG = .TRUE.
+                            RPT_%SCCNAM = .TRUE.
+                            IF( .NOT. LDELIM ) RPT_%DELIM = '|'
+                        END IF
+
+                    ELSE
+                        WRITE( MESG,94010 )
+     &                     'WARNING: BY SCC instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+                        
                 CASE( 'SOURCE' )
                     RPT_%BYSRC   = .TRUE.
                     RPT_%BYPLANT = .FALSE.  ! would be a duplicate
                     RPT_%BYCNTY  = .TRUE.
                     IF( .NOT. AFLAG ) THEN
                         RPT_%BYSCC   = .TRUE.
-                        RPT_%SCCRES  = 10
+                        RPT_%SCCRES  = 4
                         IF ( CATEGORY .EQ. 'POINT' ) RPT_%BYSIC = .TRUE.
                     END IF
                     IF( SEGMENT( 3 ) .EQ. 'NAME' .OR.
-     &                  SEGMENT( 4 ) .EQ. 'NAME' ) THEN
+     &                  SEGMENT( 4 ) .EQ. 'NAME' .OR.
+     &                  SEGMENT( 5 ) .EQ. 'NAME'      ) THEN
                         IF( CATEGORY .EQ. 'POINT' ) THEN
                             RPT_%SRCNAM = .TRUE.
                         ELSE
@@ -912,8 +1015,14 @@ C.............  BY options affecting inputs needed
 
                     IF( CATEGORY     .EQ. 'POINT'    .AND.
      &                ( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
-     &                  SEGMENT( 4 ) .EQ. 'STACKPARM'     ) )
+     &                  SEGMENT( 4 ) .EQ. 'STACKPARM' .OR.
+     &                  SEGMENT( 5 ) .EQ. 'STACKPARM'      ) )
      &                  RPT_%STKPARM = .TRUE.
+
+                    IF( SEGMENT( 3 ) .EQ. 'LATLON' .OR.
+     &                  SEGMENT( 4 ) .EQ. 'LATLON' .OR.
+     &                  SEGMENT( 5 ) .EQ. 'LATLON'      )
+     &                  RPT_%LATLON = .TRUE.
 
                 CASE( 'SPCCODE' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
@@ -953,9 +1062,13 @@ C.............  BY options affecting inputs needed
                 CASE( 'STACK' )
                     RPT_%BYSTACK = .TRUE.
                     RPT_%BYPLANT = .TRUE.
-                    IF( SEGMENT( 3 ) .EQ. 'STACKPARM' ) THEN
-                        RPT_%STKPARM = .TRUE.
-                    END IF
+                    IF( SEGMENT( 3 ) .EQ. 'STACKPARM' .OR.
+     &                  SEGMENT( 4 ) .EQ. 'STACKPARM'      )
+     &                  RPT_%STKPARM = .TRUE.
+
+                    IF( SEGMENT( 3 ) .EQ. 'LATLON' .OR.
+     &                  SEGMENT( 4 ) .EQ. 'LATLON'      )
+     &                  RPT_%LATLON = .TRUE.
 
                 CASE( 'MONCODE' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
