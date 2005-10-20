@@ -72,6 +72,7 @@
         CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: SICDESC( : ) ! descrptn
 
 !.........  SCC arrays dimensioned by NINVSCC
+        INTEGER, ALLOCATABLE, PUBLIC :: SCCDLEV( :,: ) ! SCC desc length for levels
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCC( : ) ! SCCs
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: INVSCL( : ) ! left SCCs
         CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: SCCDESC( : ) ! descrptn
