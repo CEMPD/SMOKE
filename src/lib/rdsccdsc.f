@@ -37,7 +37,7 @@ C**************************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: SCCDESC, NINVSCC, INVSCC
+        USE MODLISTS, ONLY: SCCDESC, NINVSCC, INVSCC, SCCDLEV
 
         IMPLICIT NONE
 
@@ -56,7 +56,7 @@ C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV           ! file unit number
 
 C...........   Local variables
-        INTEGER         J, N               ! indices and counters
+        INTEGER         J, K, L, N, P         ! indices and counters
 
         INTEGER         ENDLEN                ! end length for reading descriptn
         INTEGER         IOS                   ! i/o status
@@ -65,6 +65,7 @@ C...........   Local variables
 
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
 
+        CHARACTER(1)    CHAR                  ! single character buffer
         CHARACTER(256)  LINE                  ! Read buffer for a line
         CHARACTER(300)  MESG                  ! Message buffer
 
@@ -83,7 +84,11 @@ C.........  Get the number of lines in the holidays file
 C.........  Allocate memory for the SCC descriptions and initialize
         ALLOCATE( SCCDESC( NINVSCC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCCDESC', PROGNAME )
+        ALLOCATE( SCCDLEV( NINVSCC, NSCCLV3 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SCCDLEV', PROGNAME )
+
         SCCDESC = 'Description unavailable'          ! array
+        SCCDLEV = 23                                 ! array
 
 C.........  Read the SCC descriptions, and store with SCC
         ENDLEN = SCCLEN3 + SDSLEN3
@@ -115,6 +120,24 @@ C               store the description.
 
             IF ( J .GT. 0 ) THEN
                 SCCDESC( J ) = ADJUSTL( LINE( SCCLEN3+1:ENDLEN ) )
+
+C.................  Determine and store the position of semi-colons that indicate
+C                   the parts of the SCCs for the different levels
+                L = LEN_TRIM( SCCDESC( J ) )
+                P = 0
+                CHAR = ' '
+                DO K = 1, L
+                    CHAR = SCCDESC( J )( K:K )
+                    IF( CHAR == ';' ) THEN
+                        P = P + 1
+                        SCCDLEV( J,P ) = K - 1
+                    END IF
+
+C.....................  Get out of loop after 2nd-to-last - all other semi-colons
+C                       are included in final section of name
+                    IF( P == NSCCLV3-1 ) EXIT
+                END DO
+                SCCDLEV( J,NSCCLV3 ) = L
             END IF
 
         END DO
