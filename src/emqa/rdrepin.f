@@ -262,6 +262,14 @@ C.........  Stack parameters
                 IVARNAMS( NINVARR ) = 'STKVE'
             END IF
 
+C.........  Point-source lat-lon
+            IF( ANY_TRUE( NREPORT, ALLRPT%LATLON ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'XLOCA'
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'YLOCA'
+            END IF
+
 C.........  Plant name
             IF( ANY_TRUE( NREPORT, ALLRPT%SRCNAM ) ) THEN
                 NINVARR = NINVARR + 1
