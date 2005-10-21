@@ -71,6 +71,9 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, NSTATE, STATCOD, NCOUNTY,
      &                     CNTYCOD, CTRYPOPL, STATPOPL, CNTYPOPL
+
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: CATEGORY
         
         IMPLICIT NONE
 
@@ -90,6 +93,10 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local parameters
         INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
+        INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) =
+     &                        ( / 1, 3, 6, 8 / )
+        INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) =
+     &                        ( / 2, 4, 7, 10 / )
      
 C...........   Sorting arrays
         INTEGER          , ALLOCATABLE :: SORTIDX( : )
@@ -97,7 +104,7 @@ C...........   Sorting arrays
         CHARACTER(BUFLEN), ALLOCATABLE :: SORTBUF( : )
 
 C...........   Local variables
-        INTEGER         B, C, F, I, J, K, LB, S
+        INTEGER         B, C, F, I, J, K, L, LB, S
 
         INTEGER         COL               ! tmp column number
         INTEGER         DIUID             ! tmp diurnal profile number
@@ -119,6 +126,7 @@ C...........   Local variables
         CHARACTER(60)          FMTBUF     ! format buffer
         CHARACTER(300)         MESG       ! message buffer
 
+        CHARACTER(5)       SCCTYPE    ! tmp determination of SCC type
         CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
         CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC        ! tmp SCC
@@ -222,13 +230,44 @@ C.................  If BY COUNTRY, insert region code with trailing zeros
 
                 END IF  ! End by county, state, or country
 
-C.................  If BY SIC, insert full SIC
-                IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
-
-C.................  If BY SCC10, insert full SCC, and nothing else needed
+C.................  If BY SCC, insert SCC based on SCCRES (resolution) set in input file
                 IF( RPT_%BYSCC ) THEN
 
                     SCC = CSCC( OUTSRC( I ) )
+
+C.....................  Get rid of leading zeros
+                    IF( SCC( 1:2 ) == '00' ) SCC = SCC(3:SCCLEN3) // '  '
+
+                    IF( RPT_%SCCRES < 4 ) THEN
+
+                        L = LEN( TRIM( SCC ) )
+                        SELECT CASE( L )
+
+C.........................  If 10 characters long, then nonpoint SCC
+                        CASE( 10 )
+                            SCCTYPE = 'AREA'
+
+C.........................  If 8 characters long, then point SCC
+                        CASE( 8 )
+                            SCCTYPE = 'POINT'
+
+C.........................  If SCC length less than full SCC, then assume based on category
+                        CASE DEFAULT
+                            SCCTYPE = CATEGORY
+
+                        END SELECT
+
+C.........................  Set SCC to use for bins based on level from REPCONFIG
+                        IF( SCCTYPE == 'POINT' ) THEN
+                            SCC = SCC( 1:PTSCCLEV( RPT_%SCCRES ) )
+
+                        ELSE IF( SCCTYPE == 'AREA' .OR.
+     &                           SCCTYPE == 'MOBILE'    ) THEN
+                            SCC = SCC( 1:ARSCCLEV( RPT_%SCCRES ) )
+
+                        END IF
+                    END IF
+
 C.................  If BY ROADCLASS, insert roadclass code        
 
                 ELSE IF( RPT_%BYRCL ) THEN
@@ -237,6 +276,9 @@ C.................  If BY ROADCLASS, insert roadclass code
 
                 END IF  ! End by source or by roadclass
 
+C.................  If BY SIC, insert full SIC
+                IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
+ 
 C.................  If BY MACT, insert full MACT
                 IF( RPT_%BYMACT ) MACT = CMACT( OUTSRC( I ) )
 
@@ -597,9 +639,11 @@ C.................  Store SMOKE ID
 C.................  Store SCC
                 IF( RPT_%BYSCC ) BINSCC( B ) = SCC
 
-C.................  Store SCC name index
+C.................  Store SCC name index (for full name, regardless of SCC truncation.
+C                   Note: have confirmed that using the OUTSRC(J) index with CSCC maps
+C                   to SCC from BUFFER properly
                 IF( RPT_%SCCNAM ) THEN
-                    K = FINDC( SCC, NINVSCC, INVSCC )
+                    K = FINDC( CSCC( OUTSRC(J) ), NINVSCC, INVSCC )
                     BINSNMIDX( B ) = K
                 END IF
 
