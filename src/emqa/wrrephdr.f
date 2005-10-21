@@ -45,7 +45,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: STKHT, STKDM, STKTK, STKVE, CPDESC
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVSCC, SCCDESC, NINVSIC, SICDESC,
+        USE MODLISTS, ONLY: NINVSCC, SCCDESC, SCCDLEV, NINVSIC, SICDESC,
      &                      NINVMACT, MACTDESC, NINVNAICS, NAICSDESC
 
 C.........  This module contains Smkreport-specific settings
@@ -63,7 +63,8 @@ C.........  This module contains Smkreport-specific settings
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
      &                      ALLRPT, LOC_BEGP, LOC_ENDP, SICFMT,
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
-     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH
+     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
+     &                      LTLNFMT, LTLNWIDTH, LABELWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -132,16 +133,19 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRDM   = 23
         INTEGER, PARAMETER :: IHDRTK   = 24
         INTEGER, PARAMETER :: IHDRVE   = 25
-        INTEGER, PARAMETER :: IHDRELEV = 26
-        INTEGER, PARAMETER :: IHDRPNAM = 27
-        INTEGER, PARAMETER :: IHDRSNAM = 28
-        INTEGER, PARAMETER :: IHDRINAM = 29    ! SIC name
-        INTEGER, PARAMETER :: IHDRMNAM = 30
-        INTEGER, PARAMETER :: IHDRNNAM = 31
-        INTEGER, PARAMETER :: IHDRVAR  = 32
-        INTEGER, PARAMETER :: IHDRDATA = 33
-        INTEGER, PARAMETER :: IHDRUNIT = 34
-        INTEGER, PARAMETER :: NHEADER  = 34
+        INTEGER, PARAMETER :: IHDRLAT  = 26
+        INTEGER, PARAMETER :: IHDRLON  = 27
+        INTEGER, PARAMETER :: IHDRELEV = 28
+        INTEGER, PARAMETER :: IHDRPNAM = 29
+        INTEGER, PARAMETER :: IHDRSNAM = 30
+        INTEGER, PARAMETER :: IHDRINAM = 31    ! SIC name
+        INTEGER, PARAMETER :: IHDRMNAM = 32
+        INTEGER, PARAMETER :: IHDRNNAM = 33
+        INTEGER, PARAMETER :: IHDRVAR  = 34
+        INTEGER, PARAMETER :: IHDRDATA = 35
+        INTEGER, PARAMETER :: IHDRUNIT = 36
+        INTEGER, PARAMETER :: IHDRLABL = 37
+        INTEGER, PARAMETER :: NHEADER  = 37
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -171,6 +175,8 @@ C...........   Local parameters
      &                              'Stk Dm         ',
      &                              'Stk Tmp        ',
      &                              'Stk Vel        ',
+     &                              'Latitude       ',
+     &                              'Longitude      ',
      &                              'Elevstat       ',
      &                              'Plt Name       ',
      &                              'SCC Description',
@@ -179,7 +185,8 @@ C...........   Local parameters
      &                              'NAICS Descriptn',
      &                              'Variable       ',
      &                              'Data value     ',
-     &                              'Units          ' / )
+     &                              'Units          ',
+     &                              'Label          ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LCTRYUSE ( NCOUNTRY )
@@ -418,6 +425,16 @@ C.........  Variable column
 
         END IF
 
+C.........  User-defined label
+        IF( RPT_%USELABEL ) THEN
+            J = LEN_TRIM( RPT_%LABEL )
+            LABELWIDTH = J + LV
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRLABL), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+        END IF
+
 C.........  Date column
         IF( RPT_%BYDATE ) THEN
             J = 10  ! header width is MM/DD/YYYY
@@ -587,9 +604,17 @@ C.............  Set country name column width
 C.........  SCC column
         IF( RPT_%BYSCC ) THEN
             J = LEN_TRIM( HEADERS( IHDRSCC ) )
+            IF( RPT_%SCCRES < NSCCLV3 ) J = J + 7  ! Plus " Tier #"
             J = MAX( SCCLEN3, J )
-    
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRSCC), LH, HDRBUF )
+   
+            IF( RPT_%SCCRES < NSCCLV3 ) THEN
+                WRITE( BUFFER, '(A,I1)' ) TRIM( HEADERS(IHDRSCC) ) // 
+     &                                    ' Tier ', RPT_%SCCRES
+            ELSE
+                BUFFER = TRIM( HEADERS(IHDRSCC) )
+            END IF
+
+            CALL ADD_TO_HEADER( J, BUFFER, LH, HDRBUF )
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             SCCWIDTH = J + LV
@@ -817,6 +842,28 @@ C.........  Stack parameters.  +3 for decimal and 2 significant figures
 
         END IF
 
+C.........  Point-source latitude and longitude
+        IF( RPT_%LATLON ) THEN
+        
+            J = LEN_TRIM( HEADERS( IHDRLAT ) )
+            PWIDTH( 1 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), HEADERS( IHDRLAT ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), '    ', LU, UNTBUF )
+            
+            J = LEN_TRIM( HEADERS( IHDRLON ) )
+            PWIDTH( 2 ) = 13
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), HEADERS( IHDRLON ),
+     &                          LH, HDRBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), '     ', LU, UNTBUF )
+            
+            WRITE( LTLNFMT, 94642 ) PWIDTH( 1 ), RPT_%DELIM,
+     &                              PWIDTH( 2 ), RPT_%DELIM
+     
+            LTLNWIDTH = SUM( PWIDTH( 1:2 ) ) + 2*LV
+            
+        END IF
+
 C.........  Elevated flag column
         IF( RPT_%BYELEV ) THEN
             J = LEN_TRIM( HEADERS( IHDRELEV ) )
@@ -847,7 +894,9 @@ C               width
             NWIDTH = 0
             DO I = 1, NINVSCC
                 IF( LSCCUSE( I ) ) THEN
-                    NWIDTH = MAX( NWIDTH, LEN_TRIM( SCCDESC( I ) ) )
+                    J = RPT_%SCCRES
+                    L = SCCDLEV( I,J )
+                    NWIDTH = MAX( NWIDTH, LEN( SCCDESC( I )( 1:L ) ) )
                     IF ( NWIDTH .EQ. 0 ) SCCMISS = .TRUE.
                 END IF
             END DO
@@ -1392,6 +1441,8 @@ C...........   Internal buffering formats............ 94xxx
 
 94640   FORMAT( '(', 3('1X,F', I2.2, '.2,"', A, '",'), 
      &          '1X,F', I2.2, '.2,"', A, '")' )
+
+94642   FORMAT( '(1X,F',I2.2,'.8,"', A,'",1X,F',I2.2,'.8,"',A,'")' )  ! lat/lons
 
 94645   FORMAT( '(I', I1, ',"', A, '")' )
 
