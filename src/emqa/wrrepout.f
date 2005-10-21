@@ -47,10 +47,12 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE
+        USE MODSOURC, ONLY: CPDESC, CSOURC, STKHT, STKDM, STKTK, STKVE,
+     &                      XLOCA, YLOCA
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: SCCDESC, SICDESC, MACTDESC, NAICSDESC
+        USE MODLISTS, ONLY: SCCDESC, SCCDLEV, SICDESC, MACTDESC, 
+     &                      NAICSDESC
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, VARWIDTH,
@@ -66,7 +68,8 @@ C.........  This module contains Smkreport-specific settings
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
      &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH,
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
-     &                      NAIDSWIDTH, STYPWIDTH
+     &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
+     &                      LTLNWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -207,6 +210,16 @@ C.............  Include variable in string
      &                       OUTDNAM( V, RCNT )( 1:L1 ) // DELIM
                     MXLE = MXLE + L
                     LE = MIN( MXLE, STRLEN )
+
+                END IF
+
+C..............  Include user-defined label in string
+                IF( RPT_%USELABEL ) THEN
+
+                    STRING = STRING( 1:LE )// TRIM( RPT_%LABEL )// DELIM
+                    MXLE = MXLE + LEN_TRIM( RPT_%LABEL ) + LX + LV
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
 
                 END IF
 
@@ -497,6 +510,16 @@ C.............  Include stack parameters
                     LE = MIN( MXLE, STRLEN )
                 END IF
 
+C.............  Include lat/lons for point sources
+                IF( RPT_%LATLON ) THEN
+                    S = BINSMKID( I )
+                    BUFFER = ' '
+                    WRITE( BUFFER, LTLNFMT ) YLOCA( S ), XLOCA( S )
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + LTLNWIDTH
+                    LE = MIN( MXLE, STRLEN )
+                END IF
+
 C.............  Include elevated sources flag
                 IF( RPT_%BYELEV ) THEN
                     L = ELEVWIDTH
@@ -525,8 +548,10 @@ C.............  This is knowingly including extra blanks before final quote
                     J = BINSNMIDX( I ) 
                     L = SDSCWIDTH
                     L1 = L - LV - 1                        ! 1 for space
+                    K = SCCDLEV( J, RPT_%SCCRES )
                     STRING = STRING( 1:LE ) // 
-     &                       '"'// SCCDESC( J )( 1:L1 )// '"' // DELIM
+     &                       SCCDESC( J )( 1:K ) //
+     &                       REPEAT( " ", L1-K ) // DELIM
                     MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
                 END IF
