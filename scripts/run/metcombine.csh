@@ -14,7 +14,7 @@
 #*****************************************************************************
 
 # set Assigns file name
-setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 
 # Metcombine settings
 setenv VARLIST "TEMPG, PRES, QV"   # list of variables to extract
