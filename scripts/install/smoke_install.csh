@@ -134,7 +134,7 @@ echo "Installation completed successfully."
 echo " "
 echo "Please follow the instructions in Section 4.4 of the SMOKE User's Manual"
 echo "   to run the nctox test case."
-echo "http://www.cep.unc.edu/empd/products/smoke/version2.1/html/ch04s04.html"
+echo "http://www.cep.unc.edu/empd/products/smoke/version2.2/html/ch04s04.html"
 echo " "
 
 exit( 0 )
