@@ -3,56 +3,70 @@
 # This script checks to see if the SMOKE installation worked successfully
 
 set errfile = $SCRIPTS/install/.err
+set errstat = 0
 
-# Set environment variables for getting QA_SETUP environment variables
-setenv MRG_SOURCE ABMP
-setenv RUN_SMKMERGE Y
-setenv MRG_TEMPORAL_YN Y
-setenv MRG_SPCMAT_YN Y
-setenv MRG_REPSTA_YN Y
-
-# Get E.V.s from Assigns file
-source $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
+set repdir = $SMKROOT/doc/checkdemo/reports
+set fyrepdir = $REPORTS/nctox_18/scenario
 
 # Check stationary area sources
 echo 'Stationary area source differences' > $errfile
-diff $REPSCEN/agt.state*191* $SMKROOT/doc/checkdemo/reports/agt.state*191* >> $errfile
-set ar_stat = $status
-diff $REPSCEN/ats.state*191* $SMKROOT/doc/checkdemo/reports/ats.state*191* >> $errfile
-set ar_stat = $status
+
+diff $REPSCEN/repagts_l.*0710* $repdir/repagts_l.*.nctox.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $fyrepdir/repagts_l.*0710* $repdir/repagts_l.*.nctox_18.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
 
 # Check biogenic sources
-echo 'BEIS2 biogenic source differences' >> $errfile
-diff $REPBGTS_S $SMKROOT/doc/checkdemo/reports/repbgts_s.* >> $errfile
-set bg_stat = $status
+echo 'Biogenic source differences' >> $errfile
 
-echo 'BEIS3 biogenic source differences' >> $errfile
-diff $REPB3GTS_S $SMKROOT/doc/checkdemo/reports/repb3gts_s.* >> $errfile
-set bg3_stat = $status
+diff $REPSCEN/repb3gts_s.*0710* $repdir/repb3gts_s.*.nctox.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
 
 # Check mobile sources
 echo 'Mobile source differences' >> $errfile
-diff $REPSCEN/mgt.state*191* $SMKROOT/doc/checkdemo/reports/mgt.state*191* >> $errfile
-set mb_stat = $status
-diff $REPSCEN/mts.state*191* $SMKROOT/doc/checkdemo/reports/mts.state*191* >> $errfile
-set mb_stat = $status
+
+diff $REPSCEN/repmgts_l.*0710* $repdir/repmgts_l.*.nctox.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $fyrepdir/repmgts_l.*0710* $repdir/repmgts_l.*.nctox_18.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
 
 # Check nonroad area sources
 echo 'Nonroad source differences' >> $errfile
-diff $REPSCEN/ngt.state*191* $SMKROOT/doc/checkdemo/reports/ngt.state*191* >> $errfile
-set nr_stat = $status
-diff $REPSCEN/nts.state*191* $SMKROOT/doc/checkdemo/reports/nts.state*191* >> $errfile
-set nr_stat = $status
+
+diff $REPSCEN/repngts_l.*0710* $repdir/repngts_l.*.nctox.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $fyrepdir/repngts_l.*0710* $repdir/repngts_l.*.nctox_18.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
 
 # Check point sources
 echo 'Point source differences' >> $errfile
-diff $REPSCEN/pgt.state*191* $SMKROOT/doc/checkdemo/reports/pgt.state*191* >> $errfile
-set pt_stat = $status
-diff $REPSCEN/pts.state*191* $SMKROOT/doc/checkdemo/reports/pts.state*191* >> $errfile
-set pt_stat = $status
 
-# Unset environment variables to allow grep to work:
-unsetenv AG*_L AG*_S MG*_L MG*_S PG*_L PG*_S BG*_L BG*_S NG*_L NG*_S EG*_L EG*_S
+diff $REPSCEN/reppgts_l.*0710* $repdir/reppgts_l.*.nctox.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $fyrepdir/reppgts_l.*0710* $repdir/reppgts_l.*.nctox_18.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
 
 # Make sure all programs completed successfully
 set num_log_file = `ls $LOGS | wc -l`
@@ -67,7 +81,7 @@ if( $num_log_file != $num_success ) then
 endif
 cd $sav_dir
 
-if ( $ar_stat != 0 || $bg_stat != 0 || $bg3_stat != 0 || $mb_stat != 0 || $nr_stat != 0 || $pt_stat != 0 ) then
+if ( $errstat != 0 ) then
    mv $errfile $SMKROOT/doc/install_diffs.txt
    echo ' '
    echo 'Differences between your installation and correct answers exist\!'

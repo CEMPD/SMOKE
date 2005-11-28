@@ -40,7 +40,7 @@ if ( ! $?EDSS_ROOT ) then
     exit( 1 )
 endif
 
-echo "SMOKE v2.1 will be installed in the following directory:"
+echo "SMOKE v2.2 will be installed in the following directory:"
 echo "      $EDSS_ROOT"
 echo " "
 
@@ -73,8 +73,8 @@ endif
 
 # Source the assigns file
 cd subsys/smoke/assigns
-set file = ASSIGNS.nctox.cmaq.cb4p25_wtox.unc36-nc
-source ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
+set file = ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
+source $file 
 if ( $status > 0 ) then
    echo "ERROR: Could not source the Assigns file $file"
    echo "       Please contact the CMAS Help Desk at http://www.cmascenter.org"
@@ -87,14 +87,6 @@ endif
 
 # Make necessary symbolic links
 echo "Creating symbolic links..."
-cd $EDSS_SUBSYS
-ln -s ioapi/fixed_src ioapi_includes
-if ( $status > 0 ) then
-   echo "ERROR: Could not create a symbolic link for the I/O API includes"
-   echo "       Please contact the CMAS Help Desk at http://www.cmascenter.org"
-   set exitstat = 1
-endif
-
 cd $SMKROOT/src
 foreach dir ( biog cntlmat emmod emqa emutil grdmat inc lib \
               mo6 mobile point smkinven smkmerge spcmat temporal )
@@ -117,7 +109,7 @@ echo "Creating inventory list files..."
 
 cd $ARDAT
 echo "#LIST" > arinv.stationary.lst
-ls $ARDAT/arinv.nonpoint.nti99_NC.txt >> arinv.stationary.lst
+ls $ARDAT/arinv.nonpoint.nti99_NC.new.txt >> arinv.stationary.lst
 ls $ARDAT/arinv.stationary.nei96_NC.ida.txt >> arinv.stationary.lst
 
 cd $MBDAT
@@ -141,7 +133,7 @@ rm -rf $tmpfile
 echo "Installation completed successfully."
 echo " "
 echo "Please follow the instructions in Section 4.4 of the SMOKE User's Manual"
-echo "   to run the nctox default case."
+echo "   to run the nctox test case."
 echo "http://www.cep.unc.edu/empd/products/smoke/version2.1/html/ch04s04.html"
 echo " "
 
