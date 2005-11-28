@@ -635,7 +635,7 @@ C.............  Local parameters
 C.............  Local variables
             INTEGER       I1, I2, J, L, L1, L2
             CHARACTER(30)  :: SPACE = ' '
-            CHARACTER(300) :: TMPFMT
+            CHARACTER(500) :: TMPFMT
 
 C.............................................................................
 
@@ -836,6 +836,7 @@ C.............  Write line
             WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
 C.............  Write county total emissions
+            PSTA = -9
             N = 0
             DO I = 1, NC
 
