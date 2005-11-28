@@ -1,144 +1,147 @@
 #!/bin/csh -f
-#BSUB 0:30
-
+#
 # Version @(#)$Id$
 # Path    $Source$
 # Date    $Date$
-
-# This script sets up needed environment variables for running on-road mobile
-# source emissions in SMOKE, and calls the script that runs the SMOKE
+#
+# This script sets up needed environment variables for processing on-road mobile
+# source emissions in SMOKE and calls the scripts that run the SMOKE
 # programs. 
 #
 # Script created by : M. Houyoux, CEP Environmental Modeling Center 
 #
 #*********************************************************************
 
-# set Assigns file name
-setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
+## Set Assigns file name
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 
-# set source category
-setenv SMK_SOURCE M           # source category to process
-setenv MRG_SOURCE M           # source category to merge
-setenv MRG_CTLMAT_MULT ' '    # [A|P|AP] for merging with multiplier controls
-setenv MRG_CTLMAT_ADD  ' '    # [A|P|AP] for merging with additive controls
-setenv MRG_CTLMAT_REAC ' '    # [A|M|P|AMP] for merging with reactivity controls
+## Set source category
+setenv SMK_SOURCE    M          # source category to process
+setenv MRG_SOURCE    M          # source category to merge
 
-## time independent programs
-setenv RUN_SMKINVEN  Y        #  run inventory import program
-setenv RUN_SPCMAT    Y        #  run speciation matrix program
-setenv RUN_GRDMAT    Y        #  run gridding matrix program
-setenv RUN_CNTLMAT   N        #  run control matrix program
-setenv RUN_MBSETUP   Y        #  run speed/temperature setup program        
+## Set programs to run...
 
-## episode dependent programs
-setenv RUN_PREMOBL   Y        #  Y runs temperature preprocessing program
-setenv RUN_EMISFAC   Y        #  Y runs emission factors program
+## Time-independent programs
+setenv RUN_SMKINVEN  Y          # run inventory import program
+setenv RUN_SPCMAT    Y          # run speciation matrix program
+setenv RUN_GRDMAT    Y          # run gridding matrix program
+setenv RUN_MBSETUP   Y          # run speed/temperature setup program
 
-## time-dependent programs
-setenv RUN_TEMPORAL  Y        #  run temporal allocation program
-setenv RUN_SMKMERGE  Y        #  run merge program
-setenv RUN_SMK2EMIS  N        #  run conversion of 2-d to UAM binary
+## Episode-dependent programs
+setenv RUN_PREMOBL   Y          # run temperature processing program
+setenv RUN_EMISFAC   Y          # run emission factors program
 
-## quality assurance
-setenv RUN_SMKREPORT Y        # Y runs reporting for state reports
+## Time-dependent programs
+setenv RUN_TEMPORAL  Y          # run temporal allocation program
+setenv RUN_SMKMERGE  Y          # run merge program
+
+## Quality assurance
+setenv RUN_SMKREPORT Y          # run emissions reporting program
 
 ## Program-specific controls...
 
 ## For Smkinven
-setenv FILL_ANNUAL          N  # Y fills annual value when only average day is provided
-setenv IMPORT_VMTMIX_YN     N  # Y imports VMT mix - needed for EMS-95 inputs
-setenv RAW_DUP_CHECK        N  # Y errors on duplicate records
-setenv SMK_BASEYR_OVERRIDE  0  # Enter year of the base year when future-year inven provided
-setenv SMK_NHAPEXCLUDE_YN   Y  # Y uses NonHAP exclusions file
-setenv SMKINVEN_FORMULA    " " # Internal PMC calculation
-setenv SMK_VMTMIX_FIXFMT    N  # Y uses fixed-format VMT Mix file (EMS-95 input format only)
-setenv WEST_HSPHERE         Y  # Y converts ALL stack coords to western hemisphere
-setenv WKDAY_NORMALIZE      N  # Y normalizes weekly profiles by weekdays
-#     OUTZONE              # see multiple-program controls, below
-#     REPORT_DEFAULTS      # see multiple-program controls, below
+setenv FILL_ANNUAL          N   # Y fills annual data with average-day data
+setenv IMPORT_VMTMIX_YN     N   # Y imports VMT mix data for use with EMS-95 inventory
+setenv RAW_DUP_CHECK        N   # Y checks for duplicate records
+setenv SMK_BASEYR_OVERRIDE  0   # year to override the base year of the inventory
+setenv SMK_DEFAULT_TZONE    5   # default time zone for sources not in the COSTCY file
+setenv SMK_EMS95_FIXFMT     N   # Y indicates that EMS-95 inventory is fixed format
+setenv SMK_NHAPEXCLUDE_YN   Y   # Y uses NHAPEXCLUDE file when integrating toxic sources
+setenv SMKINVEN_FORMULA     " " # formula for computing emissions value
+setenv WEST_HSPHERE         Y   # Y converts longitudes to negative values
+setenv WKDAY_NORMALIZE      N   # Y treats average-day emissions as weekday only
+setenv WRITE_ANN_ZERO       N   # Y writes zero emission values to intermediate inventory
+#      INVNAME1         set by make_invdir.csh script
+#      INVNAME2         set by make_invdir.csh scripts
+#      OUTZONE          see "Multiple-program controls" below
+#      REPORT_DEFAULTS  see "Multiple-program controls" below
+#      SMK_MAXERROR     see "Multiple-program controls" below
+#      SMK_MAXWARNING   see "Multiple-program controls" below
+#      SMK_TMPDIR       set by assigns/set_dirs.scr script
 
 ## For Grdmat
-setenv SMK_DEFAULT_SRGID    8     # default surrogate code (8=popl'n)
+setenv SMK_DEFAULT_SRGID    100 # surrogate code number to use as fallback
+#      IOAPI_ISPH       set by Assigns file
+#      REPORT_DEFAULTS  see "Multiple-program controls" below
 
 ## For Spcmat
-setenv POLLUTANT_CONVERSION Y     # Y uses ROG to TOG file, for example
-#     REPORT_DEFAULTS         # see multiple-program controls, below
+setenv POLLUTANT_CONVERSION Y   # Y uses the GSCNV pollutant conversion file
+#      REPORT_DEFAULTS  see "Multiple-program controls" below
 
-## For Cntlmat
-setenv REACTIVITY_POL       ' '   # Set to VOC or ROG (only for reactivity controls) 
-#     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_AVEDAY_YN           # see multiple-program controls
+## For Mbsetup
+setenv USE_INVSPD_DEFAULT   Y   # Y uses inventory speeds when missing hourly speeds
+#      USE_SPEED_PROFILES see "Multiple-program controls" below
 
-# For Mbsetup
-#     USE_SPEED_PROFILES      # see multiple-program controls, below
-#     Temporary file paths    # set automatically
+## For Premobl
+setenv SMK_MAXTEMP          120. # maximum allowable hourly temperature in deg F
+setenv SMK_MINTEMP          0.   # minimum allowable hourly temperature in deg F
+setenv TVARNAME             TEMPG # temperature variable name in meteorology files
+setenv UNIFORM_STIME        -1   # indicates day start time; -1 uses time zones
+#      OUTZONE          see "Multiple-program controls" below
+#      SMK_METPATH      set by assigns/set_dirs.scr script
 
-# For Premobl
-setenv SMK_MINTEMP           0.   # MOBILE6 minimum allowed daily temperature [deg F]
-setenv SMK_MAXTEMP         120.   # MOBILE6 Maximum allowed daily temperature [deg F]
-setenv TVARNAME          TEMPG    # temperature variable name in meteorology files
-setenv UNIFORM_STIME        -1    # -1 or HHMMSS for uniform start hour for "days"
-#     OUTZONE                 # see multiple-program controls, below
-#     Episode settings        # in Assigns file
-#     Temporary file paths    # set automatically
+## For Emisfac
+setenv ADJUST_HR_SPEED      Y   # Y adjusts hourly speeds for freeway ramps
+setenv ADJUST_INV_SPEED     Y   # Y adjusts inventory speeds for freeway ramps
+setenv M6_FLAT_VMT          Y   # Y uses flat hourly VMT profile when running MOBILE6
+setenv MB_HC_TYPE           TOG # name of hydrocarbon pollutant to generate factors for
+setenv REPLACE_HUMIDITY     Y   # Y replaces humidity data in MOBILE6 inputs
+setenv REPLACE_TEMPERATURES Y   # Y replaces temperature data in MOBILE6 inputs
+#      EF_YEAR          set by assigns/set_case.scr script
+#      GROUP_TYPE       set to [daily|weekly|monthly|episode] when running Emisfac below
+#      SMK_EMISPATH     set by assigns/set_dirs.scr script
+#      SMK_M6PATH       set by assigns/set_dirs.scr script
+#      SMK_METPATH      set by assigns/set_dirs.scr script
+#      SMK_SPDPATH      set by assigns/set_dirs.scr script
+#      USE_SPEED_PROFILES see "Multiple-program controls" below
 
-# For Emisfac
-setenv MB_HC_TYPE           TOG   # hydrocarbon type from MOBILE6
-setenv REPLACE_TEMPERATURES   Y   # Y: use gridded hourly tmprs; N: use tmprs in M6 files
-#     EF_YEAR                 # SMK_FUTURE_YN=N: set to $YEAR from Assigns
-#                             # SMK_FUTURE_YN=Y: set to $FYEAR from scripts
-#     GROUP_TYPE              # set to [daily|weekly|monthly|episode], see below
-#     USE_SPEED_PROFILES      # see multiple-program controls, below
-#     Temporary file paths    # set automatically
+## For Temporal
+setenv RENORM_TPROF         Y   # Y normalizes the temporal profiles
+setenv UNIFORM_TPROF_YN     N   # Y uses uniform temporal profiles for all sources
+setenv ZONE4WM              Y   # Y applies temporal profiles using time zones
+#      OUTZONE          see "Multiple-program controls" below
+#      REPORT_DEFAULTS  see "Multiple-program controls" below
+#      SMK_AVEDAY_YN    see "Multiple-program controls" below
+#      SMK_MAXERROR     see "Multiple-program controls" below
+#      SMK_MAXWARNING   see "Multiple-program controls" below
 
-# For Temporal
-setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles
-setenv UNIFORM_TPROF_YN     N     # Y makes all temporal profiles uniform
-setenv ZONE4WM              Y     # Y uses time zones for start of day & month
-#     OUTZONE                 # see multiple-program controls, below
-#     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_AVEDAY_YN           # see multiple-program controls, below
-#     Date/time settings      # in Assigns file
+## For Smkmerge
+setenv MRG_SPCMAT_YN        Y   # Y produces speciated output 
+setenv MRG_TEMPORAL_YN      Y   # Y produces temporally allocated output
+setenv MRG_GRDOUT_YN        Y   # Y produces a gridded output file
+setenv MRG_REPCNY_YN        Y   # Y produces a report of emission totals by county
+setenv MRG_REPSTA_YN        Y   # Y produces a report of emission totals by state
+setenv MRG_GRDOUT_UNIT      moles/s   # units for the gridded output file
+setenv MRG_TOTOUT_UNIT      moles/day # units for the state and county reports
+setenv SMK_REPORT_TIME      230000    # hour for reporting daily emissions
+#      SMK_AVEDAY_YN    see "Multiple-program controls" below
 
-# For Smkmerge
-setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
-setenv MRG_SPCMAT_YN        Y          # Y merges with speciation matrix
-setenv MRG_GRDOUT_YN        Y          # Y outputs gridded file
-setenv MRG_REPSTA_YN        N          # Y outputs state totals
-setenv MRG_REPCNY_YN        N          # Y outputs county totals
-setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file
-setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
-setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
-setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
-#     SMK_AVEDAY_YN               # see multiple-program controls
+## For Smkreport
+setenv REPORT_ZERO_VALUES   N   # Y outputs entries with all zero values
 
-# For Smk2emis
-setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
+## Multiple-program controls
+setenv OUTZONE              0   # time zone of output emissions
+setenv REPORT_DEFAULTS      N   # Y reports sources that use default cross-reference
+setenv SMK_AVEDAY_YN        N   # Y uses average-day emissions instead of annual emissions
+setenv SMK_MAXERROR         100 # maximum number of error messages in log file
+setenv SMK_MAXWARNING       100 # maximum number of warning messages in log file
+setenv USE_SPEED_PROFILES   N   # Y uses hourly speed profiles instead of inventory speeds
 
-# Multiple-program controls
-setenv OUTZONE              0     # output time zone of emissions
-setenv REPORT_DEFAULTS      N     # Y reports default profile application
-setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv SMK_AVEDAY_YN        N     # Y uses average day emissions instead of annual
-setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
-setenv SMK_MAXERROR         100   # maximum number of errors in log file
-setenv USE_SPEED_PROFILES   N     # Y uses speed profiles instead of inventory speeds
+## Script settings
+setenv SRCABBR              mb  # abbreviation for naming log files
+setenv QA_TYPE              all # type of QA to perform [none, all, part1, part2, or custom]
+setenv PROMPTFLAG           N   # Y prompts for user input
+setenv AUTO_DELETE          Y   # Y automatically deletes I/O API NetCDF output files
+setenv AUTO_DELETE_LOG      Y   # Y automatically deletes log files
+setenv DEBUGMODE            N   # Y runs program in debugger
+setenv DEBUG_EXE            pgdbg # debugger to use when DEBUGMODE = Y
 
-# Script settings
-setenv SRCABBR            mb      # abbreviation for naming log files
-setenv QA_TYPE            all     # [none, all, part1-part4, or custom]
-setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
-setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
-setenv AUTO_DELETE_LOG    Y       # Y automatically deletes logs without asking
-setenv DEBUGMODE          N       # Y changes script to use debugger
-setenv DEBUG_EXE          pgdbg   # Sets the debugger to use when DEBUGMODE = Y
-
-# Override settings
-# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-setenv SPC_SRC_SPECIFIC  Y        # Y uses source specific speciation files
-setenv YEAR_OVERRIDE     1999     # Overrides YEAR (base) in Assigns file
-setenv INVTABLE_OVERRIDE invtable_onroad.cb4.120202.txt   # Inventory table override
-# setenv CNTLCASE                 # Control case name
+## Assigns file override settings
+# setenv SPC_OVERRIDE  cmaq.cb4p25  # chemical mechanism override
+setenv SPC_SRC_SPECIFIC     Y       # Y uses source specific speciation files
+setenv YEAR_OVERRIDE        1999    # base year override
+setenv INVTABLE_OVERRIDE    invtable_onroad.cb4.010804.txt # inventory table override
 
 ##############################################################################
 
@@ -151,7 +154,7 @@ setenv INVTABLE_OVERRIDE invtable_onroad.cb4.120202.txt   # Inventory table over
 #        FYEAR if SMK_FUTURE_YN = Y.  The CNTLCASE variable will only
 #        be used in the directory name if it is defined.
 
-## Run Smkinven, Spcmat, Grdmat, Cntlmat, Mbsetup, and Premobl if needed
+## Run Smkinven, Spcmat, Grdmat, Mbsetup, and Premobl
 #
 setenv RUN_PART1 Y
 source $ASSIGNS_FILE   # Invoke Assigns file
@@ -159,14 +162,14 @@ source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 1
 setenv RUN_PART1 N
 
-## Run emisfac for cases needed by temperature choices in MVREF file
+## Run Emisfac for cases needed by temperature choices in MVREF file
 #
 foreach group ( episode )  # can include ( daily weekly monthly episode )
   setenv GROUP_TYPE $group
   source emisfac_run.csh     # Run programs
 endif
 
-## Loop through days to run Temporal, Smkmerge, and Smk2emis
+## Loop through days to run Temporal and Smkmerge
 #
 setenv RUN_PART2 Y
 setenv RUN_PART4 Y
@@ -189,4 +192,3 @@ unsetenv G_STDATE_ADVANCE
 ## Ending of script
 #
 exit( 0 )
-

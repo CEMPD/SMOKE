@@ -1,119 +1,130 @@
 #!/bin/csh -f
-
+#
 # Version @(#)$Id$
 # Path    $Source$
 # Date    $Path$
-
+#
 # This script sets up needed environment variables for creating future-year
-# point-source emissions and calls the script that runs the SMOKE programs. 
+# point-source emissions and calls the scripts that run the SMOKE programs. 
 #
 # Script created by : M. Houyoux, CEP Environmental Modeling Center 
 #                     February 2003
 #*********************************************************************
 
-# set Assigns file names
-setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us36-nc
+## Set Assigns file name
+setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 
-# set future year
-setenv FYEAR 2018              # year of future case
+## Set future year
+setenv FYEAR 2018               # year of future case
 
-# set source category
-setenv SMK_SOURCE  P           # source category to process
-setenv MRG_SOURCE  P           # source category to merge
+## Set source category
+setenv SMK_SOURCE    P          # source category to process
+setenv MRG_SOURCE    P          # source category to merge
+setenv MRG_CTLMAT_MULT ' '      # source category to merge multiplicative controls
+setenv MRG_CTLMAT_REAC ' '      # source category to merge reactivity controls
 
-# time independent programs
-setenv RUN_CNTLMAT   Y         # Y runs control matrix program
-setenv RUN_GRWINVEN  Y         # Y runs control application program
+## Set programs to run...
 
-# time-dependent programs
-setenv RUN_TEMPORAL  Y         # Y runs temporal allocation program
-setenv RUN_ELEVPOINT Y         # Y runs elevated/PinG sources selection program
-setenv RUN_SMKMERGE  Y         # Y runs merge program
-setenv RUN_SMK2EMIS  N         # run conversion of 2-d to UAM binary
+## Time-independent programs
+setenv RUN_CNTLMAT   Y          # run control and growth matrix program
+setenv RUN_GRWINVEN  Y          # run control and growth application program
 
-# quality assurance
-setenv RUN_SMKREPORT Y         # Y runs reporting for state reports
+## Time-dependent programs
+setenv RUN_TEMPORAL  Y          # run temporal allocation program
+setenv RUN_ELEVPOINT Y          # run elevated/PinG sources selection program
+setenv RUN_SMKMERGE  Y          # run merge program
+
+## Quality assurance
+setenv RUN_SMKREPORT Y          # run emissions reporting program
 
 # Program-specific controls...
 
+## Program-specific controls...
+
 # For Cntlmat
-#      SMK_AVEDAY_YN (see below)  # Y uses seas emis in assessing cutoff, etc.
-#      REPORT_DEFAULTS            # See multi-program controls
+setenv PROJECTION_YN_SPEC   Y   # Y uses year-specific /PROJECTION/ packet data
+setenv REACTIVITY_POL       ' ' # pollutant name to use in computing reactivity matrix
+setenv XREF_SICOVERSCC      Y   # Y matches sources by SIC before SCC
+#      REPORT_DEFAULTS  see "Multiple-program controls" below
+#      SMK_AVEDAY_YN    see "Multiple-program controls" below
+#      SMK_TMPDIR       set by assigns/set_dirs.scr script
 
-# For Grwinven
-setenv SMK_NUM_CTLMAT       1     # number of control/projection matrices
-setenv SMK_GRWSMKOUT_YN     Y     # Y outputs a SMOKE-formatted inventory
-setenv SMK_GRWIDAOUT_YN     Y     # Y outputs an IDA-formatted inventory
+## For Grwinven
+setenv SMK_GRWIDAOUT_YN     N   # Y outputs an IDA-formatted inventory
+setenv SMK_GRWORLOUT_YN     Y   # Y outputs an ORL-formatted inventory
+setenv SMK_GRWSMKOUT_YN     Y   # Y outputs a SMOKE-formatted inventory
+setenv SMK_NUM_CTLMAT       1   # number of control/growth matrices
 
-# For Elevpoint
-setenv SMK_ELEV_METHOD      1     # 0=Laypoint sets elev srcs; 1=use PELVCONFIG
-setenv UNIFORM_STIME        -1    # -1 or HHMMSS for uniform start hour for daily emissions days
-#     SMK_PING_METHOD         # see multiple-program controls, below
+## For Elevpoint
+setenv SMK_ELEV_METHOD      1   # 1 uses PELVCONFIG file to determine elevated sources
+setenv UNIFORM_STIME        -1  # indicates day start time; -1 uses time zones
+#      IOAPI_ISPH       set by Assigns file
+#      SMK_PING_METHOD  see "Multiple-program controls" below
 
-# For Temporal
-setenv RENORM_TPROF         Y     # Y renormalizes temporal profiles
-setenv UNIFORM_TPROF_YN     N     # Y makes all temporal profiles uniform
-setenv ZONE4WM              Y     # Y uses time zones for start of day & month
-#     DAY_SPECIFIC_YN         # see multiple-program controls, below
-#     HOUR_SPECIFIC_YN        # see multiple-program controls, below
-#     OUTZONE                 # see multiple-program controls, below
-#     REPORT_DEFAULTS         # see multiple-program controls, below
-#     SMK_AVEDAY_YN           # see multiple-program controls, below
-#     Date/time settings      # in Assigns file
+## For Temporal
+setenv RENORM_TPROF         Y   # Y normalizes the temporal profiles
+setenv UNIFORM_TPROF_YN     N   # Y uses uniform temporal profiles for all sources
+setenv ZONE4WM              Y   # Y applies temporal profiles using time zones
+#      DAY_SPECIFIC_YN  see "Multiple-program controls" below
+#      HOUR_SPECIFIC_YN see "Multiple-program controls" below
+#      OUTZONE          see "Multiple-program controls" below
+#      REPORT_DEFAULTS  see "Multiple-program controls" below
+#      SMK_AVEDAY_YN    see "Multiple-program controls" below
+#      SMK_MAXERROR     see "Multiple-program controls" below
+#      SMK_MAXWARNING   see "Multiple-program controls" below
 
-# For Smkmerge
-setenv MRG_TEMPORAL_YN      Y          # Y merges with hourly emissions
-setenv MRG_SPCMAT_YN        Y          # Y merges with speciation matrix
-setenv MRG_LAYERS_YN        Y          # Y merges with layer fractions
-setenv MRG_GRDOUT_YN        Y          # Y outputs gridded file
-setenv MRG_REPSTA_YN        N          # Y outputs state totals
-setenv MRG_REPCNY_YN        N          # Y outputs county totals
-setenv SMK_ASCIIELEV_YN     N          # Y outputs ASCII elevated file
-setenv MRG_GRDOUT_UNIT      moles/s    # units for gridded output file 
-setenv MRG_TOTOUT_UNIT      moles/day  # units for state and/or county totals
-setenv MRG_REPORT_TIME      230000     # hour in OUTZONE for reporting emissions
-setenv MRG_MARKETPEN_YN     N          # apply reac. controls market penetration
-#     EXPLICIT_PLUME_YN           # see multiple-program controls
-#     SMK_EMLAYS                  # see multiple-program controls
-#     SMK_AVEDAY_YN               # see multiple-program controls
-#     SMK_PING_METHOD             # see multiple-program controls, below
+## For Smkmerge
+setenv MRG_LAYERS_YN        Y   # Y produces layered output
+setenv MRG_SPCMAT_YN        Y   # Y produces speciated output 
+setenv MRG_TEMPORAL_YN      Y   # Y produces temporally allocated output
+setenv MRG_GRDOUT_YN        Y   # Y produces a gridded output file
+setenv MRG_REPCNY_YN        Y   # Y produces a report of emission totals by county
+setenv MRG_REPSTA_YN        Y   # Y produces a report of emission totals by state
+setenv MRG_REPCTL_YN        N   # Y separately reports controlled emissions
+setenv MRG_GRDOUT_UNIT      moles/s   # units for the gridded output file
+setenv MRG_TOTOUT_UNIT      moles/day # units for the state and county reports
+setenv MRG_MARKETPEN_YN     N   # Y uses market penetration from reactivity matrices
+setenv SMK_ASCIIELEV_YN     N   # Y creates an ASCII elevated point sources file
+setenv SMK_REPORT_TIME      230000    # hour for reporting daily emissions
+#      EXPLICIT_PLUMES_YN see "Multiple-program controls" below
+#      SMK_AVEDAY_YN    see "Multiple-program controls" below
+#      SMK_EMLAYS       see "Multiple-program controls" below
+#      SMK_PING_METHOD  see "Multiple-program controls" below
 
-# For Smk2emis
-setenv SMK2EMIS_VMAP_YN     N     # Y uses name remapping file
+## For Smkreport
+setenv REPORT_ZERO_VALUES   N   # Y outputs entries with all zero values
 
 # Multiple-program controls
-setenv DAY_SPECIFIC_YN      N     # Y imports and uses day-specific inventory
-setenv EXPLICIT_PLUME_YN    N     # Y for special wildfire processing for UAM/REMSAD/CAMx
-setenv HOUR_SPECIFIC_YN     N     # Y imports and uses hour-specific inventory
-setenv OUTZONE              0     # output time zone of emissions
-setenv REPORT_DEFAULTS      N     # Y reports default profile application
-setenv SMK_EMLAYS           12    # number of emissions layers
-setenv SMK_DEFAULT_TZONE    5     # time zone to fix in missing COSTCY file
-setenv SMK_AVEDAY_YN        N     # Y uses average day emissions instead of annual
-setenv SMK_MAXWARNING       100   # maximum number of warnings in log file
-setenv SMK_MAXERROR         100   # maximum number of errors in log file
-setenv SMK_PING_METHOD      1     # 1 outputs for PinG (using Elevpoint outputs), 0 no PING
-setenv SMK_SPECELEV_YN      N     # Y uses the indicator for major/minor sources
-setenv VELOC_RECALC         N     # Y recalculates velocity from diam and flow
+setenv DAY_SPECIFIC_YN      N   # Y imports and uses day-specific inventory data
+setenv EXPLICIT_PLUME_YN    N   # Y processes only sources using explicit plume rise
+setenv HOUR_SPECIFIC_YN     N   # Y imports and uses hour-specific inventory data
+setenv OUTZONE              0   # time zone of output emissions
+setenv REPORT_DEFAULTS      N   # Y reports sources that use default cross-reference
+setenv SMK_EMLAYS           12  # number of emissions layers
+setenv SMK_AVEDAY_YN        N   # Y uses average-day emissions instead of annual emissions
+setenv SMK_MAXERROR         100 # maximum number of error messages in log file
+setenv SMK_MAXWARNING       100 # maximum number of warning messages in log file
+setenv SMK_PING_METHOD      1   # 1 processes and outputs PinG sources
+setenv VELOC_RECALC         N   # Y recalculates stack velocity using flow and diameter
 
-# Script settings
-setenv SRCABBR        pt.$FYEAR   # abbreviation for naming log files
-setenv QA_TYPE            all     # [none, all, part1-part4, or custom]
-setenv PROMPTFLAG         N       # Y (never set to Y for batch processing)
-setenv AUTO_DELETE        Y       # Y deletes SMOKE I/O API output files (recommended)
-setenv AUTO_DELETE_LOG    Y       # Y automatically deletes logs without asking
-setenv DEBUGMODE          N       # Y changes script to use debugger
-setenv DEBUG_EXE          pgdbg   # Sets the debugger to use when DEBUGMODE = Y
+## Script settings
+setenv SRCABBR              pt.$FYEAR # abbreviation for naming log files
+setenv QA_TYPE              all # type of QA to perform [none, all, part1, part2, or custom]
+setenv PROMPTFLAG           N   # Y prompts for user input
+setenv AUTO_DELETE          Y   # Y automatically deletes I/O API NetCDF output files
+setenv AUTO_DELETE_LOG      Y   # Y automatically deletes log files
+setenv DEBUGMODE            N   # Y runs program in debugger
+setenv DEBUG_EXE            pgdbg # debugger to use when DEBUGMODE = Y
 
-# Override settings (comment out if not used)
-# setenv SPC_OVERRIDE  cmaq.cb4p25  # Chemical mechanism override
-# setenv YEAR_OVERRIDE              # Overrides YEAR (base) in Assigns file
-# setenv INVTABLE_OVERRIDE          # Inventory table override
-# setenv CNTLCASE                   # Control case
+## Assigns file override settings
+# setenv SPC_OVERRIDE  cmaq.cb4p25  # chemical mechanism override
+# setenv YEAR_OVERRIDE              # base year override
+# setenv INVTABLE_OVERRIDE          # inventory table override
+# setenv CNTLCASE                   # control case name
 
 ##############################################################################
 
-## NOTE: GCNTL file for point sources must be in the $PRDAT directory for the
+## NOTE: GCNTL file for point sources must be in the $PTDAT directory for the
 #        base case simulation and should have the names, as follows:
 #            Projection only       :  gcntl.$YEAR_$FYEAR.txt,
 #            Control only          :  gcntl.$CNTLCASE.txt,
@@ -176,7 +187,7 @@ source smk_run.csh     # Run programs
 source qa_run.csh      # Run QA for part 3
 setenv RUN_PART3 N
 
-## Loop through days to run Smkmerge and Smk2emis 
+## Loop through days to run Smkmerge 
 #
 setenv RUN_PART4 Y
 set cnt = 0
@@ -196,4 +207,3 @@ unsetenv G_STDATE_ADVANCE
 ## Ending of script
 #
 exit( $status )
-
