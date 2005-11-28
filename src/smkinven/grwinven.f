@@ -576,9 +576,9 @@ C           set flag
         IF( CATEGORY  .EQ. 'AREA' ) THEN
             J = INDEX1( 'XLOCA', NINVARR, IVNAMES )
             IF( J .GT. 0 ) THEN
-                NINVARR = 10
-                IVARNAMS( 9  ) = 'XLOCA'
-                IVARNAMS( 10 ) = 'YLOCA'
+                NINVARR = 13
+                IVARNAMS( 12 ) = 'XLOCA'
+                IVARNAMS( 13 ) = 'YLOCA'
                 LAR2PT = .TRUE.
             END IF
         END IF
