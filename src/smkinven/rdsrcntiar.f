@@ -122,10 +122,10 @@ C.........  Replace blanks with zeros
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
         END DO
         
-        TSCC = SEGMENT( 3 )              ! SCC code
+        TSCC = SEGMENT( 2 )              ! SCC code
 
 C.........  Determine number of pollutants for this line based on CAS number
-        TCAS = ADJUSTL( SEGMENT( 4 ) )
+        TCAS = ADJUSTL( SEGMENT( 3 ) )
         I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
         IF( I < 1 ) THEN
             NPOLPERLN = 0

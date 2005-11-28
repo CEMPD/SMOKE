@@ -118,7 +118,7 @@ C           the various data fields
         WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS
         CFIP( 2:6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
         CLNK = ' '                        ! link ID
-        TSCC = SEGMENT( 3 )               ! scc code
+        TSCC = SEGMENT( 2 )               ! scc code
 
 C.........  Replace blanks with zeros        
         DO I = 1,FIPLEN3
@@ -126,7 +126,7 @@ C.........  Replace blanks with zeros
         END DO
         
 C.........  Determine number of pollutants for this line based on CAS number
-        TCAS = ADJUSTL( SEGMENT( 4 ) )
+        TCAS = ADJUSTL( SEGMENT( 3 ) )
         I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
         IF( I < 1 ) THEN
             NVARPERLN = 0

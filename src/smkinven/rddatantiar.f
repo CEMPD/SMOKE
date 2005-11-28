@@ -115,13 +115,13 @@ C.........  Separate line into segments
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        READPOL ( 1     ) = SEGMENT( 4 )
-        READDATA( 1,NEM ) = SEGMENT( 5 )
-        READDATA( 1,NDY ) = SEGMENT( 6 )
+        READPOL ( 1     ) = SEGMENT( 3 )
+        READDATA( 1,NEM ) = SEGMENT( 4 )
+        READDATA( 1,NDY ) = SEGMENT( 5 )
         READDATA( 1,NEF ) = ' '
-        READDATA( 1,NCE ) = SEGMENT( 7 )
-        READDATA( 1,NRE ) = SEGMENT( 8 )
-        READDATA( 1,NRP ) = SEGMENT( 9 )
+        READDATA( 1,NCE ) = SEGMENT( 6 )
+        READDATA( 1,NRE ) = SEGMENT( 7 )
+        READDATA( 1,NRP ) = SEGMENT( 8 )
         
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
