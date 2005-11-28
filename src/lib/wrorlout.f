@@ -156,7 +156,7 @@ C.........  For area sources...
 
 C.................  Write initial header
                 WRITE( RDEV, 93000 ) 
-     &               '#TOXICS NONPOINT',
+     &               '#ORL NONPOINT',
      &               '#TYPE     Nonpoint Source Toxics Inventory',
      &               '#DESC        (Output from SMOKE)'
                 FIRSTIME = .FALSE.
@@ -175,9 +175,24 @@ C.................  Store others in temporary variables
                 YEAR = INVYR( S )
 
                 SCC  = CSCC ( S )
-                MACT = CMACT( S )
-                SRCTYPE = CSRCTYP( S )
-                NAICS = CNAICS( S )
+                
+                IF( ASSOCIATED( CMACT ) ) THEN
+                    MACT = CMACT( S )
+                ELSE
+                    MACT = '-9'
+                END IF
+
+                IF( ASSOCIATED( CSRCTYP ) ) THEN
+                    SRCTYPE = CSRCTYP( S )
+                ELSE
+                    SRCTYPE = '-9'
+                END IF
+
+                IF( ASSOCIATED( CNAICS ) ) THEN
+                    NAICS = CNAICS( S )
+                ELSE
+                    NAICS = '-9'
+                END IF
 
 C.................  Account for missing or default codes
                 IF ( SCC(1:2) .EQ. '00' ) SCC = SCC(3:SCCLEN3)
@@ -224,7 +239,7 @@ C.........  For point sources...
 
 C.................  Write initial header
                 WRITE( RDEV, 93000 ) 
-     &               '#TOXICS POINT',
+     &               '#ORL',
      &               '#TYPE     Point Source Inventory',
      &               '#DESC        (Output from SMOKE)'
                 FIRSTIME = .FALSE.
@@ -254,13 +269,32 @@ C.................  Store others in temporary variables
                 SIC    = ISIC ( S )                
                 YEAR   = INVYR( S )                
 
-                ORISID   = CORIS( S )
-                BLRID    = CBLRID( S )
                 PLNTDESC = CPDESC( S )
-                MACT     = CMACT( S )
-                ERPTYPE  = CERPTYP( S )
-                SRCTYPE  = CSRCTYP( S )
-                NAICS    = CNAICS( S )
+
+                IF( ASSOCIATED( CMACT ) ) THEN
+                    MACT = CMACT( S )
+                ELSE
+                    MACT = '-9'
+                END IF
+
+                IF( ALLOCATED( CERPTYP ) ) THEN
+                    ERPTYPE = CERPTYP( S )
+                ELSE
+                    ERPTYPE = '-9'
+                END IF
+
+                IF( ASSOCIATED( CSRCTYP ) ) THEN
+                    SRCTYPE = CSRCTYP( S )
+                ELSE
+                    SRCTYPE = '-9'
+                END IF
+
+                IF( ASSOCIATED( CNAICS ) ) THEN
+                    NAICS = CNAICS( S )
+                ELSE
+                    NAICS = '-9'
+                END IF
+
                 XLOC     = XLOCA( S )                
                 YLOC     = YLOCA( S )                
 
