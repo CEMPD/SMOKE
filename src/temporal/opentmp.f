@@ -1,6 +1,6 @@
 
-        SUBROUTINE OPENTMP( ENAME, SDATE, STIME, TSTEP, NSTEPS, TZONE, 
-     &                      NPELV, TNAME, PDEV )
+        SUBROUTINE OPENTMP( II, ENAME, SDATE, STIME, TSTEP, NSTEPS,
+     &                      TZONE, NPELV, TNAME, PDEV, PFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 103
@@ -46,6 +46,9 @@ C.........  This module contains the information about the source category
      &                     EAREAD, EAUNIT, EINAM, INVPIDX, NIACT, 
      &                     NIPPA, NIPOL
 
+C.........  This module contains the temporal profile tables
+C        USE MODTMPRL, ONLY: STDATE
+
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
 
@@ -66,11 +69,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(IOULEN3) MULTUNIT
         INTEGER            PROMPTFFILE
         CHARACTER(16)      VERCHAR
+        LOGICAL            SETENVVAR
 
         EXTERNAL        CRLF, INDEX1, IOAPI_GRD_SIZE, GETCFDSC, 
-     &                  GETIFDSC, MULTUNIT, VERCHAR
+     &                  GETIFDSC, MULTUNIT, VERCHAR, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
+        INTEGER     , INTENT (IN) :: II     ! episode time preriod index 
         CHARACTER(*), INTENT (IN) :: ENAME  ! emissions inven logical name
         INTEGER     , INTENT (IN) :: SDATE  ! episode start date 
         INTEGER     , INTENT (IN) :: STIME  ! episode start time
@@ -80,6 +85,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NPELV  ! number of elevated sources
         CHARACTER(*), INTENT(OUT) :: TNAME  ! lay-1 (or all) hourly logical name 
         INTEGER     , INTENT(OUT) :: PDEV   ! unit number of temporal supmtl file
+        LOGICAL     , INTENT (IN) :: PFLAG  ! true: episode time periods needed
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
@@ -97,7 +103,9 @@ C...........   Other local variables
         CHARACTER(5)    CTZONE      ! string of time zone
         CHARACTER(300)  MESG        ! message buffer 
 
-        CHARACTER(NAMLEN3)  NAMBUF           ! file name buffer
+        CHARACTER(NAMLEN3)  NAMBUF       ! [A|M|P]TMP file name buffer
+        CHARACTER(200)  NAMBUFT          ! [A|M|P]TMPNAME file name buffer
+        CHARACTER(200)  NAMBUFS          ! [A|M|P]TSUPNAME file name buffer
         CHARACTER(IODLEN3)  IFDESC2, IFDESC3 ! fields 2 & 3 from PNTS FDESC
 
         CHARACTER(16) :: PROGNAME = 'OPENTMP' ! program name
@@ -240,11 +248,32 @@ C.............  Double check that pollutant is in the inventory file
         END DO  ! End loop on pollutants for output
 
 C.........  Prompt for and open I/O API output file(s)...
+        
+        CALL GETENV( CRL // 'TMPNAME', NAMBUFT )
+        WRITE( NAMBUFT, '( A, I7, A )' ) TRIM( NAMBUFT ), SDATE, '.ncf'
+
+C..........  Set logical file name
+        IF( .NOT. SETENVVAR( CRL // 'TMP', NAMBUFT ) ) THEN
+            MESG = 'Could not set logical file name for ' //
+     &             'file ' // TRIM( NAMBUFT )
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
         MESG = 'Enter name for output HOURLY EMISSIONS file'
         NAMBUF = PROMPTSET( MESG, FSUNKN3, CRL // 'TMP', PROGNAME ) 
         TNAME = NAMBUF
-
+     
 C.........  Open supplemental speciation file
+        CALL GETENV( CRL // 'TSUPNAME', NAMBUFS )
+        WRITE( NAMBUFS, '( A, I7, A )' ) TRIM( NAMBUFS ), SDATE, '.txt'
+        
+C..........  Set logical file name
+        IF( .NOT. SETENVVAR( CRL // 'TSUP', NAMBUFS ) ) THEN
+            MESG = 'Could not set logical file name for ' //
+     &             'file ' // TRIM( NAMBUFS )
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
         MESG = 'Enter logical name for the TEMPORAL SUPPLEMENTAL '//
      &         'file'
         PDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 
@@ -259,6 +288,8 @@ C...........   Internal buffering formats............ 94xxx
 94000   FORMAT( I2.2 )
  
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94020   FORMAT( A, :, I8, :, A )
 
         END SUBROUTINE OPENTMP
 
