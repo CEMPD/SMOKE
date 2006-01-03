@@ -46,11 +46,13 @@ C.........  This module contains the temporal cross-reference tables
         USE MODXREF, ONLY: MDEX, WDEX, DDEX
 
 C.........  This module contains the temporal profile tables
-        USE MODTMPRL, ONLY: NMON, NWEK, NHRL
+        USE MODTMPRL, ONLY: NMON, NWEK, NHRL, STDATE, STTIME, RUNLEN,
+     &                      ITDATE
 
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: NEFS, INPUTHC, OUTPUTHC, EMTNAM,
-     &                      EMTPOL, NEPOL, NETYPE
+        USE MODEMFAC, ONLY: NEFS, INPUTHC, OUTPUTHC, EMTNAM, EMTPOL,
+     &                      NEPOL, NETYPE, EFDAYS, EFIDX, EFLIST,
+     &                      EFLOGS, EFTYPE, TEMPEF, USETIME
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DYPNAM, DYPDSC, NDYPOA, NDYSRC, 
@@ -84,6 +86,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT
         LOGICAL         ENVYN
         INTEGER         FINDC
+        INTEGER         JULIAN
         INTEGER         GETDATE
         INTEGER         GETFLINE
         INTEGER         GETNUM
@@ -94,11 +97,10 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         RDTPROF
         INTEGER         SECSDIFF
         INTEGER         STR2INT
-        LOGICAL         SETENVVAR
 
-        EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, 
+        EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, JULIAN,
      &              GETDATE, GETFLINE, GETNUM, INDEX1, ISDSTIME, MMDDYY,
-     &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT, SETENVVAR
+     &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -108,16 +110,7 @@ C.........  Emission arrays
         REAL   , ALLOCATABLE :: EMAC ( :,: ) !  inven emissions or activities
         REAL   , ALLOCATABLE :: EMACV( :,: ) !  day-adjst emis or activities
         REAL   , ALLOCATABLE :: EMIST( :,: ) !  timestepped output emssions
-
-C.........  Emission factor arrays        
-        CHARACTER(256), ALLOCATABLE :: EFLIST( : )  ! listing of emission factor file names
-        CHARACTER(16) , ALLOCATABLE :: EFLOGS( : )  ! listing of ef logical file names
-        INTEGER       , ALLOCATABLE :: EFDAYS( :,: )! ef file by day for each time period
-        REAL          , ALLOCATABLE :: EMFAC ( :,: )! mobile emission factors by source
-        REAL          , ALLOCATABLE :: TEMPEF( : )  ! temporary holding array for efs
-        CHARACTER     , ALLOCATABLE :: EFTYPE( : )  ! ef file type (day, week, etc.) for each src
-        INTEGER       , ALLOCATABLE :: EFIDX ( : )  ! location of ef in file for each source
-        INTEGER       , ALLOCATABLE :: SRCS  ( : )  ! temporary array for sources in each ef file
+        REAL   , ALLOCATABLE :: EMFAC( :,: ) !  mobile emission factors by source
 
 C.........  Temporal allocation Matrix.  
         REAL, ALLOCATABLE :: TMAT( :, :, : ) ! temporal allocation factors
@@ -138,9 +131,6 @@ C           pollutant per time step.
         INTEGER, ALLOCATABLE :: INDXE( : )   ! SMOKE source IDs
         REAL   , ALLOCATABLE :: EMISE( : )   ! elevated source emissions
 
-C...........   Ungridding Matrix
-        INTEGER, ALLOCATABLE :: UMAT( : )   ! contiguous ungridding matrix
-
 C.........  Names of pollutants and activities associated with output variables
         CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN( : ) 
 
@@ -155,6 +145,7 @@ C...........   Logical names and unit numbers
         INTEGER      :: CDEV = 0!  unit number for region codes file
         INTEGER      :: EDEV = 0!  unit number for ef file list
         INTEGER      :: HDEV = 0!  unit number for holidays file
+        INTEGER         KDEV    !  unit number for time periods file
         INTEGER         LDEV    !  unit number for log file
         INTEGER      :: MDEV = 0!  unit number for mobile codes file
         INTEGER         PDEV    !  unit number for supplemental tmprl file
@@ -162,7 +153,6 @@ C...........   Logical names and unit numbers
         INTEGER         SDEV    !  unit number for ASCII inventory file
         INTEGER         TDEV    !  unit number for emission processes file
         INTEGER         XDEV    !  unit no. for cross-reference file
-        INTEGER         VDEV    !  unit no. for inventory data table
 
         CHARACTER(16) :: ANAME = ' '    !  logical name for ASCII inven input 
         CHARACTER(16) :: GNAME = ' '    !  ungridding matrix
@@ -171,18 +161,18 @@ C...........   Logical names and unit numbers
         CHARACTER(16) :: FNAME = ' '    !  emission factors file
         CHARACTER(16) :: HNAME = 'NONE' !  hour-specific input file, or "NONE"
         CHARACTER(16) :: TNAME = ' '    !  timestepped (low-level) output file
-        CHARACTER(16) :: TMPNAME = ' '  !  temporary inventory logical name
 
 C...........   Other local variables
 
-        INTEGER         I, J, K, L, L1, L2, N, S, T
+        INTEGER         I, II, J, K, L, L1, L2, N, S, T
 
         INTEGER         IOS, IOS1, IOS2, IOS3, IOS4 ! i/o status
         INTEGER         IOS6, IOS7, IOS8, IOS9      ! i/o status
         INTEGER         AVERTYPE            ! time period averaging type
         INTEGER         DYSTPOS, DYENDPOS   ! start and end position in file name string
         INTEGER         EARLYDATE           ! earliest starting date based on time zones
-        INTEGER         EARLYTIME           ! earliest starting time
+        INTEGER         EARLYTIME           ! earliest starting time based on time zones
+        INTEGER         EARLST              ! earliest starting date within entire episode periods
         INTEGER         EDATE, ETIME        ! ending Julian date and time
         INTEGER         EFSDATE, EFEDATE    ! start and end date of current ef file
         INTEGER         ENLEN               ! length of ENAME string
@@ -191,15 +181,18 @@ C...........   Other local variables
         INTEGER         FDATE, FTIME        ! emission factor date and time
         INTEGER         HYPPOS              ! position of hyphen in file name string
         INTEGER         JDATE, JTIME        ! Julian date and time
+        INTEGER         NDAYS               ! no. days in episode
+        INTEGER         JYEAR, JMNTH, JDAYS ! tmp year, month, and date
         INTEGER         LATEDATE            ! latest ending date based on time zones
         INTEGER         LATETIME            ! latest ending time
-        INTEGER         NDAYS               ! no. days in episode
+        INTEGER         LATEST              ! latest starting date within entire episode periods
         INTEGER         NINVARR             ! no. inventory variables to read
         INTEGER         NLINES              ! no. lines in ef list file
         INTEGER         NMATX               ! size of ungridding matrix
         INTEGER         NMAJOR              ! no. major sources
         INTEGER         NPING               ! no. ping sources
         INTEGER         NSTEPS              ! number of output time steps
+        INTEGER         NTPERIOD            ! No of time periods
         INTEGER      :: PYEAR = 0           ! projected year
         INTEGER         SDATE, STIME        ! starting Julian date and time
         INTEGER         STPOS               ! starting position in ef day array
@@ -207,23 +200,25 @@ C...........   Other local variables
         INTEGER         TSTEP               ! output time step
         INTEGER         TZONE               ! output-file time zone
         INTEGER         TZMIN               ! minimum time zone in inventory      
-        INTEGER         TZMAX               ! maximum time zone in inventory      
+        INTEGER         TZMAX               ! maximum time zone in inventory
+        INTEGER         TDMAX               ! maximum episode days
 
         REAL            RTMP                ! tmp float
 
-        LOGICAL      :: DAYLIT    = .FALSE.  ! true: TZONES are in daylight time
-        LOGICAL         DFLAG   !  true: day-specific  file available
-        LOGICAL      :: EFLAG = .FALSE.  !  error-flag
-        LOGICAL      :: EFLAG2= .FALSE.  !  error-flag (2)
-        LOGICAL         ENDFLAG !  true: couldn't find file end date
-        LOGICAL      :: FNDOUTPUT = .FALSE.  ! true: found output hydrocarbon
-        LOGICAL         HFLAG   !  true: hour-specific file available
-        LOGICAL         MFLAG   !  true: mobile codes file available
-        LOGICAL         NFLAG   !  true: use all uniform temporal profiles
-        LOGICAL         WFLAG   !  true: write QA on current time step
-        LOGICAL      :: USETIME( 4 ) = .FALSE. ! true: time period is used
+        LOGICAL      :: DAYLIT    = .FALSE. ! true: TZONES are in daylight time
+        LOGICAL         DFLAG               !  true: day-specific  file available
+        LOGICAL      :: EFLAG = .FALSE.     !  error-flag
+        LOGICAL      :: EFLAG2= .FALSE.     !  error-flag (2)
+        LOGICAL         ENDFLAG             !  true: couldn't find file end date
+        LOGICAL      :: FNDOUTPUT = .FALSE. ! true: found output hydrocarbon
+        LOGICAL         HFLAG               !  true: hour-specific file available
+        LOGICAL         MFLAG               !  true: mobile codes file available
+        LOGICAL         NFLAG               !  true: use all uniform temporal profiles
+        LOGICAL         PFLAG               !  true: episode time periods needed
+        LOGICAL         WFLAG               !  true: write QA on current time step
 
         CHARACTER(8)         TREFFMT   ! tmprl x-ref format (SOURCE|STANDARD)
+        CHARACTER(8)         SCDATE    ! tmprl date
         CHARACTER(14)        DTBUF     ! buffer for MMDDYY
         CHARACTER(3)         INTBUF    ! buffer for integer
         CHARACTER(20)        MODELNAM  ! emission factor model name
@@ -253,7 +248,7 @@ C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
 C.........  Get environment variable that overrides temporal profiles and 
-C               uses only uniform profiles.
+C               uses only uniform profiles. 
         NFLAG = ENVYN( 'UNIFORM_TPROF_YN', MESG, .FALSE., IOS )
 
 C.........  Set source category based on environment variable setting
@@ -273,9 +268,9 @@ C.........  Get inventory file names given source category
 C.........  Prompt for and open input files
 C.........  Also, store source-category specific information in the MODINFO 
 C           module.
-        CALL OPENTMPIN( MODELNAM, NFLAG, ENAME, ANAME, DNAME, HNAME, 
-     &                  GNAME, SDEV, XDEV, RDEV, CDEV, HDEV, TDEV, 
-     &                  MDEV, EDEV, PYEAR )
+        CALL OPENTMPIN( MODELNAM, NFLAG, PFLAG, ENAME, ANAME, DNAME,
+     &                  HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, HDEV,
+     &                  KDEV, TDEV, MDEV, EDEV, PYEAR )
 
 C.........  Determine status of some files for program control purposes
         DFLAG = ( DNAME .NE. 'NONE' )  ! Day-specific emissions
@@ -285,36 +280,76 @@ C.........  Determine status of some files for program control purposes
 C.........  Get length of inventory file name
         ENLEN = LEN_TRIM( ENAME )
 
-C.........  Get episode settings from the Models-3 environment variables
-        SDATE  = 0
-        STIME  = 0
-        NSTEPS = 1
-        CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
-        TSTEP  = 10000  ! Only 1-hour time steps supported
+C.........  Read episode time period lists from PROCDATES.txt
+        IF( PFLAG ) CALL RDDATES( KDEV, NTPERIOD )
+        IF( .NOT. PFLAG ) NTPERIOD = 1
+       
+C.........  Allocate memory for imaginary temporary julian date
+        ALLOCATE( ITDATE( NTPERIOD ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ITDATE', PROGNAME )
 
-C.........  Compare base year with episode and warn if not consistent
-        IF( SDATE / 1000 .NE. BYEAR ) THEN
+        DO II = 1, NTPERIOD
+        
+            NDAYS = 0
 
-            WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR, 
-     &             'is inconsistent with year ' // CRLF() // BLANK10 //
-     &             'of episode start date', SDATE/1000
-            CALL M3MSG2( MESG )
+C.........  Get episode settings from episode time periods file
+            IF( PFLAG ) THEN
+        
+                WRITE( SCDATE,'(I8)' ) STDATE( II )
+                JYEAR = STR2INT( SCDATE( :4 ) )
+                JMNTH = STR2INT( SCDATE( 5:6 ) )
+                JDAYS = STR2INT( SCDATE( 7: ) )
+                SDATE = JULIAN( JYEAR, JMNTH, JDAYS )
+                WRITE( SCDATE, '( I4, I3 )' ) JYEAR, SDATE
+                ITDATE( II ) = STR2INT( SCDATE )
+                SDATE = ITDATE( II )
+                STIME = STTIME( II )
+                TSTEP  = 10000  ! Only 1-hour time steps supported
+                NSTEPS = RUNLEN ( II ) / TSTEP
+             ELSE
+        
+C..........  Get episode settings from the Models-3 environment variables
+C             when $GE_DAT/procdates.txt is not available for episode time periods
+                SDATE  = 0
+                STIME  = 0
+                NSTEPS = 1
+                CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
+                TSTEP  = 10000  ! Only 1-hour time steps supported
+             END IF
+             
+C..........  Determine number of days in episode
 
-        ENDIF
+C..........  Earliest day is start time in maximum time zone
+             EARLYDATE = SDATE
+             EARLYTIME = STIME
+             CALL NEXTIME( EARLYDATE, EARLYTIME, 
+     &                    -( TZMAX - TZONE )*10000 )
+             
+C..........  If time is before 6 am, need previous day also
+             IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
+             
+C..........  Latest day is end time in minimum time zone
+C..........  Calculate the ending date and time
+             EDATE = SDATE
+             ETIME = STIME
+             CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
+             
+             LATEDATE = EDATE
+             LATETIME = ETIME
+             CALL NEXTIME( LATEDATE, LATETIME, 
+     &                    -( TZMIN - TZONE )*10000 )
+         
+C..........  If time is before 6 am, don't need last day
+             IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
+         
+             NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
+             NDAYS = NDAYS + 1
+             IF( NDAYS > TDMAX ) TDMAX = NDAYS
+             IF( II == 1 ) EARLST = SDATE
+             IF( SDATE < EARLST ) EARLST = SDATE
+             IF( SDATE > LATEST ) LATEST = SDATE
 
-C.........  Give a note if running for a projected year
-        IF( PYEAR .GT. 0 ) THEN
-
-            WRITE( MESG,94010 ) 'NOTE: Emissions based on projected '//
-     &             'year', PYEAR
-            CALL M3MSG2( MESG )
-
-        END IF
-
-C.........  Calculate the ending date and time
-        EDATE = SDATE
-        ETIME = STIME
-        CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
+        END DO ! end of entire time episode periodes loops
 
 C.........  Check requested episode against available emission factors
 
@@ -336,20 +371,20 @@ C.............  Allocate memory for pollutant pointer
             DYPNAM = ' '  ! array
             DYPDSC = ' '  ! array
 
-C.............  Set day-specific file dates, check dates, and report problems
-            CALL PDSETUP( DNAME, SDATE, STIME, EDATE, ETIME, TZONE,  
+CC.............  Set day-specific file dates, check dates, and report problems
+            CALL PDSETUP( DNAME, EARLST, STIME, LATEST, ETIME, TZONE,  
      &                    NIPPA, EANAM, NDYPOA, NDYSRC, EFLAG, DYPNAM,
      &                    DYPDSC )
-
+      
         ENDIF
-
+      
 C.........  Allocate memory for reading day-specific emissions data
 C.........  NDYSRC is initialized to zero in case DFLAG is false
         ALLOCATE( INDXD( NDYSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXD', PROGNAME )
         ALLOCATE( EMACD( NDYSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMACD', PROGNAME )
-
+      
 C.........  For hour-specific data input...
         IF( HFLAG ) THEN
 
@@ -369,24 +404,23 @@ C.............  Allocate memory for pollutant pointer
             HRPDSC = ' '  ! array
 
 C.............  Set day-specific file dates, check dates, and report problems
-            CALL PDSETUP( HNAME, SDATE, STIME, EDATE, ETIME, TZONE,  
+            CALL PDSETUP( HNAME, EARLST, STIME, LATEST, ETIME, TZONE,  
      &                    NIPPA, EANAM, NHRPOA, NHRSRC, EFLAG2, HRPNAM,
      &                    HRPDSC )
 
         ENDIF
-
+      
 C.........  Allocate memory for reading hour-specific emissions data
 C.........  NHRSRC is initialized to 0 in case HFLAG is false
         ALLOCATE( INDXH( NHRSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXH', PROGNAME )
         ALLOCATE( EMACH( NHRSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMACH', PROGNAME )
-
+        
         IF( EFLAG .OR. EFLAG2 ) THEN
             MESG = 'Problem with day- or hour-specific inputs'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
-
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'IFIP'
         IVARNAMS( 2 ) = 'TZONES'
@@ -442,7 +476,7 @@ C.........  Populate filter for sources that use daylight time
         CALL SETDAYLT
 
 C.........  Read holidays file
-        CALL RDHDAYS( HDEV, SDATE, EDATE )
+        CALL RDHDAYS( HDEV, EARLST, LATEST )
 
 C.........  When mobile codes file is being used read mobile codes file
         IF( MFLAG ) CALL RDMVINFO( MDEV )
@@ -451,365 +485,8 @@ C.........  Perform steps needed for using activities and emission factors
 
         IF( NIACT .GT. 0 ) THEN
 
-C.............  Allocate memory for emission factor arrays
-            ALLOCATE( TEMPEF( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TEMPEF', PROGNAME )
-            ALLOCATE( EFTYPE( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFFILE', PROGNAME )
-            ALLOCATE( EFIDX( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFIDX', PROGNAME )
-
-            TEMPEF = 0.
-            EFTYPE = ' '
-            EFIDX  = 0
-
-C.............  Determine number of days in episode
-
-C.............  Earliest day is start time in maximum time zone
-            EARLYDATE = SDATE
-            EARLYTIME = STIME
-            CALL NEXTIME( EARLYDATE, EARLYTIME, 
-     &                   -( TZMAX - TZONE )*10000 )
-            
-C.............  If time is before 6 am, need previous day also
-            IF( EARLYTIME < 60000 ) THEN
-                EARLYDATE = EARLYDATE - 1
-            END IF
-            
-C.............  Latest day is end time in minimum time zone
-            LATEDATE = EDATE
-            LATETIME = ETIME
-            CALL NEXTIME( LATEDATE, LATETIME, 
-     &                   -( TZMIN - TZONE )*10000 )
-
-C.............  If time is before 6 am, don't need last day
-            IF( LATETIME < 60000 ) THEN
-                LATEDATE = LATEDATE - 1
-            END IF
-
-            NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
-            NDAYS = NDAYS + 1
-            ALLOCATE( EFDAYS( NDAYS,4 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFDAYS', PROGNAME )
-            EFDAYS = 0
-
-C.............  Read header of ungridding matrix
-            IF( .NOT. DESC3( GNAME ) ) THEN
-                MESG = 'Could not get description for file ' // GNAME
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Store number of ungridding factors
-            NMATX = NCOLS3D
-
-C.............  Allocate memory for ungridding matrix
-            ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
-
-C.............  Read ungridding matrix
-            CALL RDUMAT( GNAME, NSRC, NMATX, NMATX, UMAT( 1 ),
-     &                   UMAT( NSRC+1 ), UMAT( NSRC+NMATX+1 )  )
-
-C.............  Store sources that are outside the grid
-            DO S = 1, NSRC
-                IF( UMAT( S ) == 0 ) THEN
-                    EFIDX( S ) = -9
-                END IF
-            END DO
-
-C.............  Read emission processes file.  Populate array in MODEMFAC.
-            CALL RDEPROC( TDEV )
-
-C.............  Loop through activities and...
-C.............  NOTE - this is not fully implemented for multiple activities. 
-C               To do this, the data structures and RDEFACS will need to be 
-C               updated. Also, the variable names in the emission factor file
-C               are not truly supporting 16-character pollutant and 
-C               emission process names, because it is only set up for MOBILE5
-            DO I = 1, NIACT
-
-C.................  Skip activities that do not have emissions types
-                IF( NETYPE( I ) .LE. 0 ) CYCLE            
-
-C.................  Set up emission process variable names
-                CALL EFSETUP( 'NONE', MODELNAM, NEFS, VOLNAM )
-
-            END DO
-
-C.............  Read inventory table
-            VDEV = PROMPTFFILE( 
-     &           'Enter logical name for INVENTORY DATA TABLE file',
-     &           .TRUE., .TRUE., 'INVTABLE', PROGNAME )
-            CALL RDCODNAM( VDEV )
-
-C.............  Check if processing NONHAP values
-
-C.............  Set input and output hydrocarbon names
-            INPUTHC = TRIM( VOLNAM )
-            OUTPUTHC = 'NONHAP' // TRIM( INPUTHC )
-
-            FNDOUTPUT = .FALSE.
-            K = 0
-
-C.............  Loop through all pollutants        
-            DO I = 1, MXIDAT
-            
-                IF( INVDNAM( I ) == OUTPUTHC ) THEN
-                    FNDOUTPUT = .TRUE.
-                    CYCLE
-                END IF
-
-C.................  If requested hydrocarbon is not TOG or VOC, skip rest of loop
-                IF( INPUTHC /= 'TOG' .AND. INPUTHC /= 'VOC' ) EXIT
-         
-                IF( INVDVTS( I ) /= 'N' ) THEN
-            
-C.....................  Check that pollutant is generated by MOBILE6   
-                    DO J = 1, NEPOL
-                        IF( INVDNAM( I ) == EMTPOL( J ) ) THEN
-                            IF( INVDVTS( I ) == 'V' ) THEN
-                                K = K + 1
-                            ELSE IF( INPUTHC == 'TOG' ) THEN
-                                K = K + 1
-                            END IF
-                            EXIT
-                        END IF
-                    END DO
-                END IF
-            END DO
-
-C.............  If output was not found, set name to blank        
-            IF( .NOT. FNDOUTPUT .OR. K == 0 ) THEN
-                OUTPUTHC = ' '             
-            END IF
-
-C.............  Rename emission factors if necessary
-            IF( OUTPUTHC /= ' ' ) THEN
-                DO I = 1, SIZE( EMTNAM,1 )
-                    L = INDEX( EMTNAM( I,1 ), ETJOIN )
-                    L2 = LEN_TRIM( ETJOIN )
-                    
-                    IF( EMTNAM( I,1 )( L+L2:IOVLEN3 ) == INPUTHC ) THEN
-                        EMTNAM( I,1 )( L+L2:IOVLEN3 ) = OUTPUTHC
-                        CYCLE
-                    END IF
-                END DO
-            END IF
-
-C.............  Read list of emission factor files
-            NLINES = GETFLINE( EDEV, 'Emission factor file list' )
-
-            ALLOCATE( EFLIST( NLINES ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFLIST', PROGNAME )
-            ALLOCATE( EFLOGS( NLINES ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'EFLOGS', PROGNAME )
-        
-            EFLIST = ' '
-            EFLOGS = ' '
-            CALL RDLINES( EDEV, 'Emission factor file list', NLINES, 
-     &                    EFLIST )
-
-C.............  Loop through EF files
-            MESG = 'Checking emission factor files...'
-            CALL M3MSG2( MESG )
-
-            DO N = 1, NLINES
-
-                CURFNM = EFLIST( N )
-                
-C.................  Skip any blank lines
-                IF( CURFNM == ' ' ) CYCLE
-
-C.................  Determine file type
-                IF( INDEX( CURFNM, 'daily' ) > 0 ) THEN
-                    AVERTYPE = DAILY
-                ELSE IF( INDEX( CURFNM, 'weekly' ) > 0 ) THEN
-                    AVERTYPE = WEEKLY
-                ELSE IF( INDEX( CURFNM, 'monthly' ) > 0 ) THEN
-                    AVERTYPE = MONTHLY
-                ELSE IF( INDEX( CURFNM, 'episode' ) > 0 ) THEN
-                    AVERTYPE = EPISLEN
-                ELSE
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not determine time period ' //
-     &                     'of file ' // TRIM( CURFNM )
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-                
-C.................  Assign and store logical file name
-                WRITE( INTBUF,94030 ) N
-                CURLNM = 'EMISFAC_' // ADJUSTL( INTBUF )
-                EFLOGS( N ) = CURLNM
-
-C.................  Set logical file name
-                IF( .NOT. SETENVVAR( CURLNM, CURFNM ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not set logical file name ' //
-     &                     'for file ' // CRLF() // BLANK10 // '"' //
-     &                     TRIM( CURFNM ) // '".'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-
-                USETIME( AVERTYPE ) = .TRUE.
-
-C.................  Try to open file   
-                IF( .NOT. OPENSET( CURLNM, FSREAD3, PROGNAME ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not open emission factors ' //
-     &                     'file ' // CRLF() // BLANK10 // '"' //
-     &                     TRIM( CURFNM ) // '".'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-
-C.................  Read file description
-                IF( .NOT. DESCSET( CURLNM, ALLFILES ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not get description for ' // 
-     &                     'file ' // CRLF() // BLANK10 // '"' //
-     &                     TRIM( CURFNM ) // '".'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-                
-                EFSDATE = SDATE3D
-
-C.................  Find end date in file description
-                SEARCHSTR = '/END DATE/ '
-                L = LEN_TRIM( SEARCHSTR ) + 1
-                ENDFLAG = .FALSE.
-                
-                DO I = 1, MXDESC3
-                   IF( INDEX( FDESC3D( I ), 
-     &                        SEARCHSTR( 1:L ) ) > 0 ) THEN
-                       TEMPLINE = FDESC3D( I )
-                       IF( CHKINT( TEMPLINE( L+1:L+8 ) ) ) THEN
-                           EFEDATE = STR2INT( TEMPLINE( L+1:L+8 ) )
-                           EXIT
-                       ELSE
-                           ENDFLAG = .TRUE.
-                           EXIT
-                       END IF
-                   END IF
-                   
-                   IF( I == MXDESC3 ) THEN
-                       ENDFLAG = .TRUE.
-                   END IF
-                END DO
-
-                IF( ENDFLAG ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not get ending date of ' //
-     &                     'file ' // CRLF() // BLANK10 // '"' //
-     &                     TRIM( CURFNM ) // '".'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-
-C.................  Determine starting and ending positions in array
-                STPOS  = SECSDIFF( EARLYDATE, 0, EFSDATE, 0 )/(24*3600)
-                STPOS  = STPOS + 1
-                ENDPOS = SECSDIFF( EARLYDATE, 0, EFEDATE, 0 )/(24*3600)
-                ENDPOS = ENDPOS + 1
-
-C.................  Make sure starting and ending positions are valid
-                IF( STPOS < 1 ) THEN
-                    IF( ENDPOS > 0 ) THEN
-                        STPOS = 1
-                    ELSE
-                        CYCLE
-                    END IF
-                END IF 
-                
-                IF( ENDPOS > NDAYS ) THEN
-                    IF( STPOS <= NDAYS ) THEN
-                        ENDPOS = NDAYS
-                    ELSE
-                        CYCLE
-                    END IF
-                END IF
-
-C.................  Store day info
-                DO I = STPOS, ENDPOS
-                    EFDAYS( I, AVERTYPE ) = N
-                END DO
-
-C.................  Allocate memory for temporary source info
-                IF( ALLOCATED( SRCS ) ) DEALLOCATE( SRCS )
-                ALLOCATE( SRCS( NROWS3D ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'SRCS', PROGNAME )
-            
-                SRCS = 0
-            
-C.................  Read source information
-                IF( .NOT. READSET( CURLNM, 'SOURCES', ALLAYS3, 
-     &                             ALLFILES, SDATE3D, STIME3D, 
-     &                             SRCS ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not read SOURCES ' // 
-     &                     'from file ' // CRLF() // BLANK10 // '"' //
-     &                     TRIM( CURFNM ) // '".'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-
-C.................  Store source information
-                DO S = 1, NROWS3D
-                                    
-                    IF( SRCS( S ) /= 0 ) THEN
-
-C.........................  Make sure source number is valid
-                        IF( SRCS( S ) < 1 .OR. SRCS( S ) > NSRC ) CYCLE
-                        
-C.........................  Skip sources that are outside the grid
-                        IF( EFIDX( SRCS( S ) ) == -9 ) CYCLE
-                    
-                        EFIDX( SRCS( S ) ) = S
-                        WRITE( EFTYPE( SRCS( S ) ),'(I1)' ) AVERTYPE
-                    END IF
-                END DO
-                
-C.................  Close current file
-                IF( .NOT. CLOSESET( CURLNM ) ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not close file ' // 
-     &                     TRIM( CURFNM )
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-                
-            END DO
- 
-C.............  Exit if there was a problem with the emission factor files
-            IF( EFLAG ) THEN
-                MESG = 'Problem checking emission factor files'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Make sure all days are covered
-            DO I = DAILY, EPISLEN
-                IF( USETIME( I ) .EQV. .TRUE. ) THEN 
-                    IF( MINVAL( EFDAYS( 1:NDAYS,I ) ) == 0 ) THEN
-                        MESG = 'ERROR: Emission factor files do not ' //
-     &                         'cover requested time period.'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-                END IF
-            END DO
-
-C............  Print warning for sources that don't have emission factors
-           DO I = 1, NSRC
-               IF( EFIDX( I ) == 0 ) THEN
-!                   WRITE( MESG,94070 ) 'WARNING: No VMT or emission ' //
-!     &                    'factors available for' // CRLF() // 
-!     &                    BLANK10 // 'Region: ', IFIP( I ),
-!     &                    ' SCC: ' // CSCC( I )
-!                   CALL M3MESG( MESG )
-                   EFIDX( I ) = -1
-               END IF
-           END DO
+            CALL CHKEMFAC( GNAME, TDEV, EDEV, NTPERIOD, PFLAG, MODELNAM,
+     &                     TZONE, TDMAX )
 
         END IF
 
@@ -866,7 +543,7 @@ C               pollutant is also part of the inventory pollutants
             N = N + 1
             ALLIN( N ) = EAREAD( I )
             EANAM( N ) = EINAM ( I )
-
+			
         END DO
 
 C.........  Add activities, & emission types to read and output lists
@@ -887,10 +564,6 @@ C.............  If any emissions types associated with this activity, store them
 
 C.........  Reset number of pollutants and emission types based on those used
         NIPPA = N
-
-C.........  Set up and open I/O API output file(s) ...
-        CALL OPENTMP( ENAME, SDATE, STIME, TSTEP, NSTEPS, TZONE, NPELV,
-     &                TNAME, PDEV )
 
         TNLEN = LEN_TRIM( TNAME )
 
@@ -924,7 +597,7 @@ C           for all pollutants & emission types to start, and if this fails,
 C           divide pollutants into even groups and try again.
 
         NGSZ = NIPPA            ! No. of pollutant & emis types in each group
-        NGRP = 1               ! Number of groups
+        NGRP = 1                ! Number of groups
 
 C.........  Make sure total array size is not larger than maximum
         DO
@@ -1007,6 +680,79 @@ C.........  Create 2-d arrays of I/O pol names, activities, & emission types
             END DO
         END DO
 
+C......  Get episode settings from episode time periods file
+
+      DO II = 1, NTPERIOD
+C......  Determine number of days in episode
+        IF( PFLAG ) THEN
+           SDATE = ITDATE( II )
+           STIME = STTIME( II )
+           TSTEP  = 10000  ! Only 1-hour time steps supported
+           NSTEPS = RUNLEN ( II ) / TSTEP
+        ELSE
+
+C.....  Get episode settings from the Models-3 environment variables
+C       when $GE_DAT/procdates.txt is not available for episode time periods
+           SDATE  = 0
+           STIME  = 0
+           NSTEPS = 1
+           CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
+           TSTEP  = 10000  ! Only 1-hour time steps supported
+        END IF
+
+C.........  Earliest day is start time in maximum time zone
+        EARLYDATE = SDATE
+        EARLYTIME = STIME
+        CALL NEXTIME( EARLYDATE, EARLYTIME, 
+     &               -( TZMAX - TZONE )*10000 )
+            
+C.........  If time is before 6 am, need previous day also
+        IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
+        
+C.........  Latest day is end time in minimum time zone
+        EDATE = SDATE
+        ETIME = STIME
+        CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
+
+        LATEDATE = EDATE
+        LATETIME = ETIME
+        CALL NEXTIME( LATEDATE, LATETIME, 
+     &               -( TZMIN - TZONE )*10000 )
+C.........  If time is before 6 am, don't need last day
+        IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
+
+        NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
+        NDAYS = NDAYS + 1
+
+C.....  Allocate memory for emission factor arrays
+        ALLOCATE( TEMPEF( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TEMPEF', PROGNAME )
+
+        TEMPEF = 0.
+
+C.........  Compare base year with episode and warn if not consistent
+        IF( SDATE / 1000 .NE. BYEAR ) THEN
+
+            WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR, 
+     &             'is inconsistent with year ' // CRLF() // BLANK10 //
+     &             'of episode start date', SDATE/1000
+            CALL M3MSG2( MESG )
+
+        ENDIF
+
+C.........  Set up and open I/O API output file(s) ...
+        CALL OPENTMP( II, ENAME, SDATE, STIME, TSTEP, NSTEPS, TZONE,
+     &                NPELV, TNAME, PDEV, PFLAG )
+
+C.........  Give a note if running for a projected year
+        IF( PYEAR .GT. 0 ) THEN
+
+            WRITE( MESG,94010 ) 'NOTE: Emissions based on projected '//
+     &             'year', PYEAR
+            CALL M3MSG2( MESG )
+
+        END IF
+
 C.........  Loop through pollutant/emission-type groups
         DO N = 1, NGRP
 
@@ -1054,6 +800,7 @@ C               pollutant/emission-type group
             EMAC  = 0.
             EMACV = 0.
             EMIST = 0.
+
             IF( NIACT .GT. 0 ) EMFAC = IMISS3
 
 C.............  Assign temporal profiles by source and pollutant
@@ -1061,6 +808,7 @@ C.............  Assign temporal profiles by source and pollutant
 
 C.............  If using uniform profiles, set all temporal profile number
 C               to 1; otherwise, assign profiles with cross-reference info
+
             IF( NFLAG ) THEN
                 MDEX = 1
                 WDEX = 1
@@ -1097,8 +845,8 @@ C                 error to avoid problems in genhemis routine
                     CALL M3MSG2( MESG )
                 END IF
 
-C.................  If pollutant name is average day-based, remove the
-C                   prefix from the input pollutant name
+C...............  If pollutant name is average day-based, remove the
+C                 prefix from the input pollutant name
                 K = INDEX1( CBUF, NIPPA, EAREAD )
                 J = INDEX( CBUF, AVEDAYRT )
                 IF( J .GT. 0 ) THEN
@@ -1136,161 +884,29 @@ C                   to not get daylight time conversion.
                 IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
                     
                     DAYLIT = .TRUE.
-                    
                     TZONES = TZONES - 1 * FLTRDAYL   ! arrays
-                
+
                 ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
                 
                     DAYLIT = .FALSE.
-                
                     TZONES = TZONES + 1 * FLTRDAYL   ! arrays
                 
                 END IF
-                    
+
+C............  Create array of emission factors by source
                 IF( NIACT .GT. 0 ) THEN
 
-C.....................  Create array of emission factors by source
+                    CALL RDEMFAC( II, N, NSRC, NGRP, NGSZ, EARLYDATE,
+     &                            JDATE, JTIME, NDAYS, TZMAX, TZMIN,
+     &                            TZONE, EMFAC, EANAM2D ) 
 
-C.....................  Loop through pollutants/emission-types in this group
-                    DO I = 1, NGSZ
-                        CBUF = EANAM2D( I,N )
-                        L1   = LEN_TRIM( CBUF )
-
-C.........................  Skip blanks that can occur when NGRP > 1
-                        IF ( CBUF .EQ. ' ' ) CYCLE
-
-C.........................  Check that this pollutant uses emission factors
-C                           Look for double underscore in pollutant name
-                        K = INDEX( CBUF, ETJOIN )
-                        IF( K == 0 ) THEN
-                            EMFAC( :,I ) = -1
-                            CYCLE
-                        END IF 
-
-C.........................  Loop through time zones
-                        DO J = TZMIN, TZMAX
-                   
-C.............................  Adjust time zone J based on output time zone and account
-C                               for 6 AM starting time in files
-                            K = J - TZONE + 6
-                   
-                            FDATE = JDATE
-                            FTIME = JTIME
-                            CALL NEXTIME( FDATE, FTIME, -K * 10000 )
-
-C.............................  Use date and time to find appropriate ef file
-                            STPOS = SECSDIFF( EARLYDATE, 0, FDATE, 0 )
-                            STPOS = STPOS / ( 24*3600 )
-                            STPOS = STPOS + 1
-                            
-                            DO L = DAILY, EPISLEN
-                                IF( USETIME( L ) .EQV. .FALSE. ) CYCLE
-                                
-                                IF( STPOS <= 0 .OR. STPOS > NDAYS ) THEN
-                                    WRITE( *,* ) NDAYS
-                                    MESG = 'ERROR: Invalid position'
-                                    CALL M3EXIT( PROGNAME, FDATE, FTIME,
-     &                                           MESG, 2 )
-                                END IF
-                                
-                                CURFNM = EFLIST( EFDAYS( STPOS,L ) )
-                                CURLNM = EFLOGS( EFDAYS( STPOS,L ) )
-
-C.................................  Set logical file name
-                                IF( .NOT. SETENVVAR( CURLNM, 
-     &                                               CURFNM ) ) THEN
-                                    EFLAG = .TRUE.
-                                    MESG = 'ERROR: Could not set ' //
-     &                                     'logical file name for ' //
-     &                                     'file ' // CRLF() // BLANK10
-     &                                     // '"' // TRIM( CURFNM ) // 
-     &                                     '".'
-                                    CALL M3EXIT( PROGNAME, FDATE, FTIME,
-     &                                           MESG, 2 )
-                                END IF
-
-C.................................  Open current file
-                                IF( .NOT. OPENSET( CURLNM, FSREAD3, 
-     &                                             PROGNAME ) ) THEN
-                                    EFLAG = .TRUE.
-                                    MESG = 'ERROR: Could not open ' //
-     &                                     'emission factors file ' //
-     &                                     CRLF() // BLANK10 // '"' //
-     &                                     TRIM( CURFNM ) // '".'
-                                    CALL M3EXIT( PROGNAME, FDATE, FTIME,
-     &                                           MESG, 2 )
-                                END IF
-
-C.................................  Read file description
-                                IF( .NOT. DESCSET( CURLNM, 
-     &                                             ALLFILES ) ) THEN
-                                    MESG = 'ERROR: Could not get ' //
-     &                                     'description for file ' //
-     &                                     CRLF() // BLANK10 // '"' // 
-     &                                     TRIM( CURFNM ) // '".'
-                                    CALL M3EXIT( PROGNAME, FDATE, FTIME, 
-     &                                           MESG, 2 )
-                                END IF
-
-C.................................  Read emission factors from current file
-                                IF( .NOT. READSET( CURLNM, CBUF,ALLAYS3, 
-     &                                           ALLFILES, SDATE3D, 
-     &                                           FTIME, TEMPEF ) ) THEN
-                                    EFLAG = .TRUE.
-                                    MESG = 'Error reading "'// 
-     &                                     CBUF(1:L1) //
-     &                                     '" from file ' // 
-     &                                     CRLF() // BLANK10 // '"' // 
-     &                                     TRIM( CURFNM ) // '."'
-                                    CALL M3EXIT( PROGNAME, FDATE, FTIME,
-     &                                           MESG, 2 )
-                                END IF
-                
-C.................................  Store emission factors by source                            
-                                DO S = 1, NSRC
-                            
-C.....................................  Skip sources that are outside the grid or
-C                                       don't use emission factors
-                                    IF( EFIDX( S ) == -9 .OR. 
-     &                                  EFIDX( S ) == -1 ) THEN
-                                        EMFAC( S,I ) = 0
-                                        CYCLE
-                                    END IF
-
-                                    IF( TZONES( S ) == J .AND. 
-     &                                  STR2INT(EFTYPE( S )) == L ) THEN
-                                        EMFAC( S,I ) = 
-     &                                       TEMPEF( EFIDX( S ) )
-                                    END IF
-                                END DO   ! end source loop
-
-                            END DO   ! end time period loop
-
-                        END DO   ! end time zone loop
-
-C.........................  If there are any missing values in the data, give an
-C                           error to avoid problems in genhemis routine
-                        RTMP = MINVAL( EMFAC( 1:NSRC,I ) )
-                        IF( RTMP == IMISS3 ) THEN
-                            EFLAG = .TRUE.
-                            MESG = 'ERROR: Missing emission ' //
-     &                         'factors(s) for "'// CBUF( 1:L1 ) // '".'
-                            CALL M3MSG2( MESG )
-                        END IF
-                    END DO  ! End loop on pollutants/emission-types I in this group
-
-C.....................  Abort if error found
-                    IF( EFLAG ) THEN
-                        MESG = 'Problem with emission factors.'
-                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
- 
                 END IF
-
+       
 C.................  Generate hourly emissions for current hour
                 CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
      &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), 
      &                         EMAC, EMFAC, EMACV, TMAT, EMIST )
+
 
 C.................  Loop through pollutants/emission-types in this group
                 DO I = 1, NGSZ
@@ -1302,8 +918,7 @@ C.....................  Skip blanks that can occur when NGRP > 1
 
 C.....................  Write hourly emissions to I/O API NetCDF file
                     IF( .NOT. WRITESET( TNAME, CBUF, ALLFILES, JDATE,
-     &                                  JTIME, EMIST( 1,I ) )     ) THEN
-
+     &                                  JTIME, EMIST( 1,I ) )    ) THEN
                         L = LEN_TRIM( CBUF )
                         MESG = 'Could not write "' // CBUF( 1:L ) // 
      &                         '" to file "' // TNAME( 1:TNLEN ) // '."'
@@ -1323,7 +938,14 @@ c    &                       EANAM2D( 1,N ), EMAC )
 
             END DO      ! End loop on time steps T
 
-        END DO          ! End loop on pollutant groups N
+         END DO          ! End loop on pollutant groups N
+
+         IF( .NOT. CLOSESET( TNAME ) ) THEN
+             MESG = 'Could not close file "' // TRIM( TNAME ) // '".'
+             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+         END IF
+
+       END DO            ! End loop on time period II
 
 C.........  Exit program with normal completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -1334,12 +956,8 @@ C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-94030   FORMAT( I3 )
-
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
      
-94070   FORMAT( A, I5, A )
-
         END PROGRAM TEMPORAL
 
