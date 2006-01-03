@@ -1,7 +1,7 @@
 
-        SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, ENAME, ANAME, DNAME, 
-     &                        HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, 
-     &                        HDEV, TDEV, MDEV, EDEV, PYEAR )
+        SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, PFLAG, ENAME, ANAME,
+     &                        DNAME, HNAME, GNAME, SDEV, XDEV, RDEV,
+     &                        CDEV, HDEV, KDEV, TDEV, MDEV, EDEV, PYEAR )
 
 C***********************************************************************
 C  subroutine body starts at line 123
@@ -69,6 +69,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: MODELNAM ! name for EF model
         LOGICAL     , INTENT    (IN) :: UFLAG    ! use uniform temporal profile
+        LOGICAL     , INTENT(IN OUT) :: PFLAG    ! use episode time periods
         CHARACTER(*), INTENT(IN OUT) :: ENAME ! name for I/O API inven input
         CHARACTER(*), INTENT(IN OUT) :: ANAME ! name for ASCII inven input 
         CHARACTER(*), INTENT   (OUT) :: DNAME ! day-spec file
@@ -79,6 +80,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: RDEV  ! unit no.: tmprl profile file
         INTEGER     , INTENT   (OUT) :: CDEV  ! unit no.: region codes file
         INTEGER     , INTENT   (OUT) :: HDEV  ! unit no.: holidays file
+        INTEGER     , INTENT   (OUT) :: KDEV  ! unit no.: time periods file
         INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: emissions process file
         INTEGER     , INTENT   (OUT) :: MDEV  ! unit no.: mobile codes file
         INTEGER     , INTENT   (OUT) :: EDEV  ! unit no.: emission factor file list
@@ -113,6 +115,7 @@ C.........  Get environment variables that control program behavior
 
             HFLAG = ENVYN( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
      &                     .FALSE., IOS )
+
         END IF
 
         OFLAG = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
@@ -149,6 +152,17 @@ C.........  Open and read map file
      &           .TRUE., .TRUE., CRL // 'TPRO', PROGNAME )
         END IF
 
+C.........  Open the time periods that Temporal should process
+
+         MESG = 'Enter logical name for Episode Time Periods file ' //
+     &          'inputs list (or "NONE")'
+         KDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,'PROCDATES', PROGNAME )
+         IF( KDEV == -2 ) THEN
+             PFLAG = .FALSE.
+         ELSE
+             PFLAG = .TRUE.
+         END IF
+
 C.........  Store source-category-specific header information, 
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
@@ -157,7 +171,7 @@ C.........  Set average day emissions flag (INVPIDX)
         IF( OFLAG ) INVPIDX = 1
         CALL GETSINFO( ENAME )
 
-        PYEAR   = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
+        PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
 C.............  Store non-category-specific header information
         NSRC = NROWS3D
@@ -171,7 +185,7 @@ C.........  Open holidays file for determining holidays by region
         HDEV = PROMPTFFILE(
      &             'Enter logical name for HOLIDAYS file',
      &             .TRUE., .TRUE., 'HOLIDAYS', PROGNAME )
-
+     
 C.........  Open additional files for when activity data are in the inventory.
 C.........  NOTE - this structure currently assumes that all of the
 C           files needed for using MOBILE5 emission factors would be needed
