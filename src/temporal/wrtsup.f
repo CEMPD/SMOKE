@@ -193,6 +193,8 @@ C.........  Deallocate local temporary variables
         DEALLOCATE( MONPROF, WEKPROF, HRLPROF )
 
         RETURN
+        
+        CLOSE( FDEV )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
