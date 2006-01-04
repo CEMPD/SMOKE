@@ -54,8 +54,8 @@
         INTEGER    , PUBLIC :: NEMSFILE ! no. EMS-95 files
         INTEGER    , PUBLIC :: NIACT =0 ! no. unique activities in inventory
         INTEGER    , PUBLIC :: NIPOL =0 ! no. unique pollutants in inventory
-        INTEGER    , PUBLIC :: NIPPA =0 ! NIACT + NIPPA
-        INTEGER    , PUBLIC :: NIPAS =0 ! NIACT + NIPPA + NSPDAT
+        INTEGER    , PUBLIC :: NIPPA =0 ! NIACT + NIPOL
+        INTEGER    , PUBLIC :: NIPAS =0 ! NIACT + NIPOL + NSPDAT
         INTEGER    , PUBLIC :: NPACT =0 ! number of variables per activity
         INTEGER    , PUBLIC :: NPPOL =0 ! number of variables per pollutant
         INTEGER    , PUBLIC :: NSPDAT=0 ! number of special data variables
