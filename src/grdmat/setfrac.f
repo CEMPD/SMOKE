@@ -1,5 +1,5 @@
 
-        SUBROUTINE SETFRAC( SRCID, SRGIDX, CELIDX, FIPIDX, NC, 
+        SUBROUTINE SETFRAC( SRCID, SRGIDX, TGTSRG, CELIDX, FIPIDX, NC, 
      &                      REPORT, CSRC, OUTID1, OUTID2, FRAC )
 
 C***********************************************************************
@@ -43,6 +43,9 @@ C...........   MODULES for public variables
 C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NSRGS, SRGLIST, SRGCSUM, SRGFRAC
 
+C...........   This module contains the cross-reference tables
+        USE MODXREF, ONLY: ASRGID 
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -52,6 +55,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         ENVINT
+        INTEGER         ENVYN
         INTEGER         FIND1
 
         EXTERNAL        CRLF, ENVINT, FIND1
@@ -59,6 +63,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: SRCID         ! source ID
         INTEGER     , INTENT (IN) :: SRGIDX        ! surrogate index
+        INTEGER     , INTENT (IN) :: TGTSRG        ! target surrogate
         INTEGER     , INTENT (IN) :: CELIDX        ! cell index
         INTEGER     , INTENT (IN) :: FIPIDX        ! FIPS code index
         INTEGER     , INTENT (IN) :: NC            ! no. src chars for msg
@@ -73,10 +78,9 @@ C...........   Local allocatable arrays...
         INTEGER          L2       !  indices and counters.
         INTEGER          IOS      !  i/o status
 
-        INTEGER, SAVE :: DEFSRGID !  default surrogate ID
-        INTEGER, SAVE :: ISDEF    !  default surrogate ID code index
+        INTEGER          DEFSRGID !  default surrogate ID
 
-        LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
+        LOGICAL      :: FSGFLAG = .FALSE.  ! true: use default fallback surrogate
 
         CHARACTER(300)  BUFFER    !  source fields buffer
         CHARACTER(300)  MESG      !  message buffer 
@@ -90,25 +94,11 @@ C...........   Local allocatable arrays...
 C***********************************************************************
 C   begin body of subroutine SETFRAC
 
-C.........  Determine default surrogate number from the environment
-C.........  Default of 50 is population
-        IF( FIRSTIME ) THEN
-
-            DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', MESG, 50, IOS )
-            ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
-
-            IF( ISDEF .LE. 0 ) THEN
-                WRITE( MESG,94010 ) 'WARNING: Fallback surrogate', 
-     &             DEFSRGID, 'not found in surrogate list, resetting '//
-     &             'it to ', SRGLIST( 1 )
-                CALL M3MSG2( MESG )
-                DEFSRGID = SRGLIST( 1 )
-                ISDEF = 1
-            END IF
-
-            FIRSTIME = .FALSE.
-
-        END IF  ! if firstime
+        FSGFLAG  = ENVYN( 'SMK_USE_FALLBACK', 'Using default' //
+     &                    ' surrogate sets', .FALSE., IOS )
+            
+        DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', 'Default surrogate',
+     &                      8, IOS )
 
 C.........  Create abridged name for warning messages
         IF( CSRC /= ' ' ) THEN
@@ -118,26 +108,32 @@ C.........  Create abridged name for warning messages
         END IF
 
 C.........  Check if surrogate selected by cross-reference for this
-C                   source is non-zero in the country/state/county code of
-C                   interest.
-        IF( SRGCSUM( SRGIDX,FIPIDX ) .EQ. 0. ) THEN
+C           source is non-zero in the country/state/county code of interest
 
-C.............  Write note about changing surrogate used for current
-C               source if it has not yet been written
-            IF( REPORT .AND. CSRC2 .NE. LCSRC2 ) THEN
+        IF( FSGFLAG ) THEN 
 
-                CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
+            IF( SRGCSUM( SRGIDX,FIPIDX ) .EQ. 0. )THEN
+           
+C.................  Write note about changing surrogate used for current
+C                   source if it has not yet been written
+                IF( TGTSRG .NE. DEFSRGID ) THEN
 
-                WRITE( MESG,94010 ) 
-     &                 'WARNING: Using fallback surrogate', DEFSRGID,
-     &                 CRLF()// BLANK10 // 'to prevent zeroing ' //
-     &                 'by original surrogate for:'
-     &                 // CRLF()// BLANK10// BUFFER( 1:L2 ) //
-     &                 ' Surrogate ID: ', SRGLIST( SRGIDX )
-                CALL M3MESG( MESG )
-
-C.................  Write warning for default fraction of zero
-                IF( SRGCSUM( ISDEF,FIPIDX ) .EQ. 0. ) THEN
+                    IF( REPORT .AND. CSRC2 .NE. LCSRC2 ) THEN
+           
+                        CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
+            
+                        WRITE( MESG,94010 ) 
+     &                     'WARNING: Using fallback surrogate',DEFSRGID,
+     &                     CRLF()// BLANK10 // 'to prevent zeroing ' //
+     &                     'by original surrogate for:'
+     &                     // CRLF()// BLANK10// BUFFER( 1:L2 ) //
+     &                     ' Surrogate code ', TGTSRG
+                        CALL M3MESG( MESG )
+                        
+                    END IF
+                    
+C.....................  Write warning for default fraction of zero
+                ELSE
 
                     CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
                     MESG = 'WARNING: Fallback surrogate data '//
@@ -145,25 +141,30 @@ C.................  Write warning for default fraction of zero
      &                     BLANK10 // 'inside the grid for:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
-
+           
                 END IF
+           
+C.................  Set surrogate fraction using default surrogate
+                FRAC = 0.0
+                OUTID1 = TGTSRG
+                OUTID2 = DEFSRGID
+
+C.............  Set surrogate fraction with cross-reference-selected
+C               surrogate
+            ELSE
+
+                FRAC = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
+                OUTID1 = TGTSRG
+                OUTID2 = 0
 
             END IF
-
-C.............  Set surrogate fraction using default surrogate
-            FRAC = SRGFRAC( ISDEF,CELIDX,FIPIDX )
-            OUTID1 = SRGLIST( SRGIDX )
-            OUTID2 = DEFSRGID
-
-C.........  Set surrogate fraction with cross-reference-selected
-C           surrogate
+            
         ELSE
-
             FRAC = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
-            OUTID1 = SRGLIST( SRGIDX )
+            OUTID1 = TGTSRG
             OUTID2 = 0
-
-        END IF
+            
+        END IF            
 
         LCSRC  = CSRC   ! Store source info for next iteration
         LCSRC2 = CSRC2  ! Store abridged source info
