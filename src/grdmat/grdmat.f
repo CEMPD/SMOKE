@@ -38,10 +38,10 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
-     &                      CELLID   
+     &                      CELLID, IFIP   
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF, ONLY: SRGIDPOS, SGFIPPOS
+        USE MODXREF, ONLY: ASRGID, SRGFIPIDX
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, COORD, GDTYP, 
@@ -54,6 +54,11 @@ C.........  This module contains the information about the source category
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
 
+C...........   This module contains the gridding surrogates desciption files
+        USE MODSURG, ONLY: NSRGS, SRGLIST, NTSRGDSC, SRGFNAM, NSRGFIPS,
+     &                     SRGFIPS, SRGFCOD, TMPLINE, SRGFMT, SRGNCOLS,
+     &                     SRGNROWS
+     
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -71,25 +76,38 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL            ENVYN
         CHARACTER(IODLEN3) GETCFDSC
         INTEGER            INDEX1
+        INTEGER            FIND1
         LOGICAL            INGRID
         INTEGER            PROMPTFFILE
         CHARACTER(16)      VERCHAR
-   
+        INTEGER            ENVINT
+        INTEGER            GETFLINE
+        LOGICAL            BLKORCMT
+        LOGICAL            SETENVVAR
+
         EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, INGRID, 
-     &            PROMPTFFILE, PROMPTMFILE, VERCHAR
+     &            PROMPTFFILE, VERCHAR, FIND1, ENVINT, GETFLINE,
+     &            BLKORCMT, SETENVVAR
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
+C...........   Local parameters
+        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+
+C...........   Other arrays
+        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
+
+        INTEGER, ALLOCATABLE :: TSRGLIST( : )      ! tmp surrogate list
 
 C...........   Gridding Matrix
 
-        INTEGER, ALLOCATABLE :: GMAT( : ) ! Contiguous gridding matrix
+        INTEGER, ALLOCATABLE :: GMAT( : )          ! Contiguous gridding matrix
 
 C...........   Ungridding Matrix
 
-        INTEGER, ALLOCATABLE :: UMAT( : ) ! Contiguous ungridding matrix
+        INTEGER, ALLOCATABLE :: UMAT( : )          ! Contiguous ungridding matrix
 
 C.........  Array that contains the names of the inventory variables needed 
 C           for this program
@@ -114,24 +132,32 @@ c        INTEGER         ADEV    !  for adjustments file
 
 C...........   Other local variables
         
-        INTEGER         I, L1, L2, K, S !  indices and counters.
+        INTEGER         I, II, IT, J, L1, L2, NT, N, NN, K, KK, S !  indices and counters.
 
-        INTEGER         COL     ! tmp column
-        INTEGER         CMAX    ! max number srcs per cell
-        INTEGER         CMIN    ! min number srcs per cell
-        INTEGER         ENLEN   ! length of the emissions inven name
-        INTEGER         IOS     ! i/o status
-        INTEGER         NK      ! Number of gridding coefficients 
-        INTEGER         NKU     ! Number of ungridding coefficients
-        INTEGER         NINVARR ! no. of inventory characteristics
-        INTEGER         NMATX   ! no cell-source intersections
-        INTEGER         NMATXU  ! no county-source intrsctns for all sources
-        INTEGER         MXCCL   ! max no cells per county or link
-        INTEGER         MXCSRC  ! max no cells per source
-        INTEGER         MXSCEL  ! max no sources per cell
-        INTEGER         ROW     ! tmp row
-        INTEGER         SRGNROWS! no. rows in surrogates file
-        INTEGER         SRGNCOLS! no. cols in surrogates file
+        INTEGER         COL       ! tmp column
+        INTEGER         CMAX      ! max number srcs per cell
+        INTEGER         CMIN      ! min number srcs per cell
+        INTEGER         ENLEN     ! length of the emissions inven name
+        INTEGER         FIP       ! tmp country/state/county code
+        INTEGER         LSSC      ! previous tmp country/state/county code
+        INTEGER         IOS       ! i/o status
+        INTEGER         IREC      ! Record counter
+        INTEGER         NK        ! Number of gridding coefficients 
+        INTEGER         NKU       ! Number of ungridding coefficients
+        INTEGER         NINVARR   ! no. of inventory characteristics
+        INTEGER         NMATX     ! no cell-source intersections
+        INTEGER         NMATXU    ! no county-source intrsctns for all sources
+        INTEGER      :: NLINES = 0! number of lines in input file
+        INTEGER         NLIST     ! tmp surrogate list 
+        INTEGER         NTLINES   ! max no. of line buffers
+        INTEGER         MXCCL     ! max no cells per county or link
+        INTEGER         MXCSRC    ! max no cells per source
+        INTEGER         MXSCEL    ! max no sources per cell
+        INTEGER         ROW       ! tmp row
+        INTEGER         SSC       ! surrogates code
+        INTEGER         DEFSRGID  !  default surrogate ID
+        INTEGER         ISDEF     !  default surrogate ID code index
+        INTEGER         OSDEF     !  original default surrogate ID code index
 
         REAL            CAVG   ! average number sources per cell
 
@@ -142,13 +168,19 @@ C...........   Other local variables
         LOGICAL      :: SRGFLAG = .FALSE.  ! true: surrogates are needed
         LOGICAL      :: UFLAG   = .FALSE.  ! true: create ungridding matrix
         LOGICAL      :: VFLAG   = .FALSE.  ! true: use variable grid
+        LOGICAL      :: FSGFLAG = .FALSE.  ! true: use default fallback surrogate
 
-        CHARACTER(16)       COORUNIT !  coordinate system projection units
+C...........   Local parameters
+        CHARACTER(16)       COORUNIT         !  coordinate system projection units
         CHARACTER(16)    :: INVGRDNM  = ' '  !  inventory grid name
         CHARACTER(16)    :: SRGGRDNM  = ' '  !  surrogates file grid name
-        CHARACTER(16)       SRGFMT   !  surrogates format
-        CHARACTER(80)       GDESC    !  grid description
+        CHARACTER(16)       GRDSRG           !  reading type of surrogate files
+        CHARACTER(80)       GDESC            !  grid description
+        CHARACTER(196)      NAMBUF           !  surrogate file name buffer
+        CHARACTER(256)      NAMBUFT          !  tmp surrogate file name buffer
+        CHARACTER(256)      TSRGFNAM         !  tmp surrogate file name buffer
         CHARACTER(300)      MESG     !  message buffer
+        CHARACTER(80)       LINE                  ! Read buffer for a line
 
         CHARACTER(IODLEN3)  IFDESC2, IFDESC3 !  fields 2 & 3 from PNTS FDESC
 
@@ -304,10 +336,6 @@ C.........  Get gridding surrogates and x-ref file, if needed
             XDEV = PROMPTFFILE( 
      &           'Enter logical name for GRIDDING SURROGATE XREF file',
      &           .TRUE., .TRUE., CRL // 'GREF', PROGNAME )
-
-            GDEV = PROMPTFFILE( 
-     &           'Enter logical name for SURROGATE COEFFICIENTS file',
-     &           .TRUE., .TRUE., CRL // 'GPRO', PROGNAME )
         END IF
 
 C.........  Get mobile-specific files
@@ -327,42 +355,186 @@ C           and the header of the surrogates file to get the grid on which
 C           the surrogates are available.
         IF( SRGFLAG ) THEN
 
-C.............  Build unique lists of SCCs and country/state/county codes
-C               from the inventory arrays
+C.........  Build unique lists of SCCs and country/state/county codes
+C           from the inventory arrays
             CALL GENUSLST
 
-C.............  For mobile sources, read the mobile codes
+C.........  For mobile sources, read the mobile codes
             IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
-
             CALL M3MSG2( 'Reading gridding cross-reference file...' )
 
-C.............  Read the gridding cross-reference
+C.........  Read the gridding cross-reference
             CALL RDGREF( XDEV )
-
             CALL M3MSG2( 'Reading gridding surrogates header...' )
 
-C.............  Read the surrogates header and initialize the grid description
-C.............  Also, obtain the format of the file.
-C.............  Save the name of the input grid
-            CALL RDSRGHDR( VFLAG, GDEV, SRGFMT )
-            SRGGRDNM = GRDNM
-            SRGNCOLS = NCOLS
-            SRGNROWS = NROWS
+C.........  Read surrogate description file
+            CALL M3MSG2( 'Reading gridding surrogate description' //
+     &                   ' file... ' )
+            CALL RDSRGDESC
 
-        END IF   ! If surrogates are being used or not
+C..........  Read the link definition file
+c            CALL RDLNKDEF( )
 
-C.........  Get grid name from the environment and read grid parameters
-        IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D, COORUNIT,
-     &                     P_ALP3D, P_BET3D, P_GAM3D, XCENT3D, 
+C.........  Determine default surrogate number from the environment
+C.........  Default surrogate code 8 is population
+
+            FSGFLAG  = ENVYN( 'SMK_USE_FALLBACK', 'Using default' //
+     &                        ' surrogate sets', .FALSE., IOS )
+            
+            DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', 'Default surrogate',
+     &                          8, IOS )
+
+            ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
+        
+            IF( ISDEF .LT. 1 ) THEN
+                WRITE( MESG, 93000 ) 'ERROR: Default surrogate code' //
+     &              ' is not available in your surrogate description' //
+     &              ' ($GE_DAT/SRGDESC) : User must set a population' //
+     &              ' surrogate code as default'
+                CALL M3EXIT( MESG )
+
+            ELSE
+                WRITE( MESG, 94010 ) 'Default surrogate sets to ',
+     &                                DEFSRGID
+                CALL M3MSG2( MESG )
+
+            END IF
+
+C.........  Allocate memory for indices to surrogates tables for each source
+            ALLOCATE( ASRGID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ASRGID', PROGNAME )
+            ALLOCATE( SRGFIPIDX( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRGFIPIDX', PROGNAME )
+
+C.........  Assigns the index of the surrogate to each source (stored
+C           in SRGIDPOS passed through MODXREF)
+            CALL ASGNSURG
+
+C.........  Sort surrogates by county code & cell & surrogate code
+            CALL SORTI1( NSRC, SRGFIPIDX, ASRGID )
+
+C.........  Creating surrogate list of assigned surrogate codes
+C.........  Count surrogate codes in surrogates file
+            LSSC  = -1
+            NSRGS = 0
+            DO I = 1, NSRC
+
+                J   = SRGFIPIDX( I )
+                SSC = ASRGID( J )
+
+                IF( SSC .NE. LSSC ) THEN
+                    NSRGS = NSRGS + 1
+                    LSSC = SSC
+                END IF
+
+            END DO
+
+            DEALLOCATE( SRGLIST )
+            
+C.........  Allocate memory for creating assigned surrogates tables
+            ALLOCATE( SRGLIST( NSRGS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SRGLIST', PROGNAME )
+
+C.........  Initialize arrays
+            SRGLIST = 0  ! array
+        
+C.........  Store the surrogate ID list
+            LSSC  = -1
+            NN = 0
+            DO I = 1, NSRC
+
+                J   = SRGFIPIDX( I )
+                SSC = ASRGID( J )
+
+                IF( SSC .NE. LSSC ) THEN
+                   NN = NN + 1
+                   SRGLIST( NN ) = SSC
+                   LSSC = SSC
+                END IF
+
+            END DO
+
+C.........  Re-create SRGLIST including default surrogate 
+C.........  if it doesn't exit in a new assigned SRGLIST
+            ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
+            OSDEF = ISDEF
+
+            IF( ISDEF < 1 ) THEN
+                KK = NSRGS
+                NSRGS = KK + 1
+            
+C.............  Allocate memory for creating assigned surrogates tables
+                ALLOCATE( SRGLIST( NSRGS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'SRGLIST', PROGNAME )
+
+C.............  Initialize arrays
+                SRGLIST = 0  ! array
+        
+C.............  Store the surrogate ID list
+                LSSC  = -1
+                NN = 0
+                DO I = 1, NSRC
+
+                    J   = SRGFIPIDX( I )
+                    SSC = ASRGID( J )
+
+                    IF( SSC .NE. LSSC ) THEN
+                    
+                        IF( LSSC < DEFSRGID .AND. SSC > DEFSRGID ) THEN
+                            NN = NN + 1
+                            SRGLIST( NN ) = DEFSRGID
+                            LSSC = DEFSRGID
+
+                        ELSE
+                            NN = NN + 1
+                            SRGLIST( NN ) = SSC
+                            LSSC = SSC
+
+                        END IF
+
+                    END IF
+
+                END DO
+
+            END IF
+            
+C.........  Read the surrogates header and initialize the grid description
+C.........  Also, obtain the format of the file.
+C.........  Save the name of the input grid
+C.........  Ensure the grid name from the surrogate description files are consistent
+            DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
+           
+C.............  Prompt for and open I/O API output file(s)...
+                CALL GETENV( "SRG_PATH", NAMBUF )
+                WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
+
+                IF( NAMBUFT .NE. TSRGFNAM  ) THEN
+                    CALL OPEN_SRGFILE
+
+                    CALL RDSRGHDR( VFLAG, GDEV, SRGFMT )
+                    SRGGRDNM = GRDNM
+                    SRGNCOLS = NCOLS
+                    SRGNROWS = NROWS
+                    CLOSE( GDEV )
+                END IF
+
+                TSRGFNAM = NAMBUFT    ! store a previous surrogate file name buffer
+             
+            END DO
+                    
+        END IF
+
+C.................  Get grid name from the environment and read grid parameters
+                IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D,
+     &                     COORUNIT, P_ALP3D, P_BET3D, P_GAM3D, XCENT3D,
      &                     YCENT3D, XORIG3D, YORIG3D, XCELL3D,
      &                     YCELL3D, NCOLS3D, NROWS3D, NTHIK3D)) THEN
 
-            MESG = 'Could not get Models-3 grid description.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    MESG = 'Could not get Models-3 grid description.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
-        END IF
-
-C.........  Check or initialize the output grid grid settings (depends on
+C.........  Check or initialize the output grid settings (depends on
 C           if a surrogates file is being used). For variable grids,
 C           do not allow subgrids.
         IF( VFLAG ) THEN
@@ -380,32 +552,6 @@ C           do not allow subgrids.
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
         END IF
-
-C.........  If surrogates are needed, read the gridding surrogates,  
-C           allocate memory for the surrogate assignments, and assign
-C           surrogates to each source.
-        IF( SRGFLAG ) THEN
-
-            CALL M3MSG2( 'Reading gridding surrogates...' )
-
-C.............  Allocate memory for and read the gridding surrogates file,
-C               extracting data for a subgrid, if necessary
-            CALL RDSRG( VFLAG, GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
-            
-C..............  Read the link definition file
-c            CALL RDLNKDEF( )
-
-C.............  Allocate memory for indices to surrogates tables for each source
-            ALLOCATE( SRGIDPOS( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SRGIDPOS', PROGNAME )
-            ALLOCATE( SGFIPPOS( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SGFIPPOS', PROGNAME )
-
-C.............  Assigns the index of the surrogate to each source (stored
-C               in SRGIDPOS passed through MODXREF)
-            CALL ASGNSURG
-
-        END IF   ! If surrogates are being used or not
 
 C.........  Ensure that the output grid is consistent with the input grid
         IF ( INVGRDNM .NE. ' ' .AND.
@@ -461,48 +607,47 @@ C.............  Make sure we're not using a variable grid
         END IF
         CALL M3MSG2( MESG )
 
-C.........  Depending on source category, convert coordinates, determine size
-C           of gridding matrix, and allocate gridding matrix.
-
+C.....  Depending on source category, convert coordinates, determine size
+C       of gridding matrix, and allocate gridding matrix.
         SELECT CASE( CATEGORY )
-
+       
         CASE( 'AREA' )
-
+       
 C.............  Determine sizes for allocating area gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC, 
-     &                    MXCCL, NMATX, NMATXU )
+            CALL SIZGMAT( CATEGORY, NSRC, VFLAG, OSDEF, FSGFLAG,
+     &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU )
 
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
-
+       
         CASE( 'MOBILE' )
-
+       
 C.............  Convert mobile source coordinates from lat-lon to output grid
             CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
      &                     XCENT, YCENT, XLOC1, YLOC1 )
             CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XLOC2, YLOC2 )
-
+       
 C.............  Determine sizes for allocating mobile gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, MXSCEL, MXCSRC,  
-     &                    MXCCL, NMATX, NMATXU )
- 
+            CALL SIZGMAT( CATEGORY, NSRC, VFLAG, OSDEF, FSGFLAG,
+     &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU )
+       
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
-
+       
 C.............  Allocate memory for mobile source ungridding matrix
             IF( .NOT. UFLAG ) NMATXU = 1
             ALLOCATE( UMAT( NSRC + 2*NMATXU ), STAT=IOS )
             CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
-
+       
         CASE( 'POINT' )
-
+       
 C.............  Convert point source coordinates from lat-lon to output grid
             CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XLOCA, YLOCA )
-
+       
 C.............  Set the number of source-cell intersections
             DO S = 1, NSRC
                 IF( INGRID( XLOCA( S ), YLOCA( S ), 
@@ -510,19 +655,19 @@ C.............  Set the number of source-cell intersections
                     NMATX = NMATX + 1
                 END IF
             END DO
-
+       
 C.............  Allocate memory for point source gridding matrix
             ALLOCATE( GMAT( NGRID + NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
-
+       
         END SELECT
-
+       
 C.........  Abort of there are no source-cell intersections
         IF( NMATX .EQ. 0 ) THEN
             MESG = 'No source-cell intersections found.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-
+        
 C.........  Get file names; open output gridding matrix (and ungridding matrix
 C           for mobile) using grid characteristics from DSCM3GRD() above        
 C.........  Also open report file 
@@ -535,22 +680,23 @@ C.........  Generate gridding matrix for given source category, and write it
 C           out.  It is necessary to write it out while in the subroutine,
 C           because of the type transformation from real to integer that
 C           is done so the sparse i/o api format can be used.
-
+            
         SELECT CASE( CATEGORY )
 
         CASE( 'AREA' )
 
-            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX, 
-     &                     GMAT( 1 ), GMAT( NGRID+1 ), 
+            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX, VFLAG,
+     &                     DEFSRGID, FSGFLAG, GMAT( 1 ),GMAT( NGRID+1 ),
      &                     GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
 
         CASE( 'MOBILE' )
 
             CALL GENMGMAT( ENAME, GNAME, UNAME, RDEV, MXSCEL, MXCSRC, 
-     &                     MXCCL, NSRC, NMATX, NMATXU, UFLAG, GMAT( 1 ),
-     &                     GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ), 
-     &                     UMAT( 1 ), UMAT( NSRC+1 ), 
-     &                     UMAT( NSRC+NMATXU+1 ),NK, CMAX, CMIN, NKU )
+     &                     MXCCL, NSRC, NMATX, NMATXU, UFLAG, VFLAG,
+     &                     DEFSRGID, FSGFLAG, GMAT( 1 ),GMAT( NGRID+1 ),
+     &                     GMAT( NGRID+NMATX+1 ), UMAT( 1 ),
+     &                     UMAT( NSRC+1 ), UMAT( NSRC+NMATXU+1 ), NK,
+     &                     CMAX, CMIN, NKU )
 
         CASE( 'POINT' )
    
@@ -584,11 +730,11 @@ C.........  Report statistics for ungridding matrix
             CALL M3MSG2( 'UNGRIDDING-MATRIX statistics:' )
 
             WRITE( MESG,94010 ) 
-     &        'Total number of coefficients   :', NKU 
+     &        'Total number of coefficients    :', NKU 
 
             WRITE( MESG, 94020 ) MESG( 1:LEN_TRIM( MESG ) ) //
      &        CRLF() // BLANK5 //
-     &        'Mean number of cells per source:', CAVG
+     &        'Mean number of cells per source :', CAVG
 
             CALL M3MSG2( MESG )
 
@@ -612,6 +758,7 @@ C...........   Informational (LOG) message formats... 92xxx
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
+93001   FORMAT( 2A )
 
 93010   FORMAT( A16 )
 
@@ -622,6 +769,39 @@ C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT( A, :, F10.2 )
 
+C******************  INTERNAL SUBPROGRAMS  *****************************
+        CONTAINS
+
+C.........  This internal subprogram open individual surrogate file 
+
+            SUBROUTINE OPEN_SRGFILE
+C----------------------------------------------------------------------
+                 
+C.........  Set logical file name
+            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUFT )) THEN
+                MESG = 'Could not set logical file ' //
+     &                 'name of file ' // TRIM( NAMBUFT )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.........  Get the number of lines in the surrogate description file desription file
+            GDEV = PROMPTFFILE( 'Reading surrogate files..',
+     &             .TRUE., .TRUE., 'SRG_PATH', PROGNAME )
+     
+            REWIND( GDEV )
+
+            NLINES = GETFLINE( GDEV, 'Reading srg files' )
+            
+            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUF )) THEN
+                MESG = 'Could not set logical file ' //
+     &                 'name of file ' // TRIM( NAMBUF )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            RETURN
+
+C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
+
+            END SUBROUTINE OPEN_SRGFILE
+
         END PROGRAM GRDMAT
-
-
