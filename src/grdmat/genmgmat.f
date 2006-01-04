@@ -1,8 +1,8 @@
 
         SUBROUTINE GENMGMAT( ENAME, GNAME, UNAME, FDEV, MXSCEL, MXCSRC, 
-     &                       MXCCL, NMSRC, NMATX, NMATXU, UFLAG, NX, 
-     &                       IX, CX, NU, IU, CU, NCOEF, CMAX, CMIN, 
-     &                       NCOEFU )
+     &                       MXCCL, NMSRC, NMATX, NMATXU, UFLAG, VFLAG,
+     &                       DEFSRGID, FSGFLAG, NX, IX, CX, NU, IU, CU,
+     &                       NCOEF, CMAX, CMIN, NCOEFU )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -42,20 +42,22 @@ C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: VMT, XLOCA, YLOCA, IFIP, CSOURC, CLINK,
      &                      IRCLAS, XLOC1, YLOC1, XLOC2, YLOC2   
 
-C...........   This module contains the cross-reference tables
-        USE MODXREF, ONLY: SRGIDPOS, SGFIPPOS
-
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, GRDNM, COORD, NCOLS, NROWS
 
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG, ONLY: NCELLS, FIPCELL
+        USE MODSURG, ONLY: NCELLS, FIPCELL, NSRGS, SRGLIST, NSRGFIPS,
+     &                     SRGFIPS, TMPLINE, NTSRGDSC, SRGFNAM, SRGFCOD,
+     &                     SRGFMT, SRGNCOLS, SRGNROWS, NTLINES
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, NCHARS
+
+C...........   This module contains the cross-reference tables
+        USE MODXREF, ONLY: ASRGID
 
         IMPLICIT NONE
 
@@ -68,13 +70,17 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
-        INTEGER         ENVINT
         INTEGER         FIND1
-        INTEGER         FINDC
         LOGICAL         INGRID
         LOGICAL         DSCM3GRD
+        INTEGER         GETFLINE
+        LOGICAL         BLKORCMT
+        LOGICAL         SETENVVAR
+        INTEGER         STR2INT
+        INTEGER         PROMPTFFILE
 
-        EXTERNAL        CRLF, ENVINT, FIND1, FINDC, INGRID, DSCM3GRD
+        EXTERNAL        CRLF, FIND1, INGRID, DSCM3GRD, GETFLINE,
+     &                  BLKORCMT, SETENVVAR, STR2INT, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME         ! inventory file name
@@ -88,6 +94,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NMATX         ! no. source-cell intersects
         INTEGER     , INTENT (IN) :: NMATXU        ! county-cell intrscts for all sources
         LOGICAL     , INTENT (IN) :: UFLAG         ! true: create gridding matrix
+        LOGICAL     , INTENT (IN) :: VFLAG         ! true: using variable grid
+        INTEGER     , INTENT (IN) :: DEFSRGID      ! default surrogate ID
+        LOGICAL     , INTENT (IN) :: FSGFLAG       ! true: using default fallback surrogate
         INTEGER     , INTENT(OUT) :: NX  ( NGRID ) ! no. srcs per cell
         INTEGER     , INTENT(OUT) :: IX  ( NMATX ) ! src IDs 
         REAL        , INTENT(OUT) :: CX  ( NMATX ) ! gridding coefficients
@@ -100,11 +109,18 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: NCOEFU        ! no. of ungridding coeffs
 
 C...........   Local allocatable arrays...
+C...........   LOCAL VARIABLES and their descriptions:
+C...........   Local parameters
+        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+
+C...........   Other arrays
+        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 
         INTEGER, ALLOCATABLE :: IDXSRT ( : )! sorting index
         INTEGER, ALLOCATABLE :: IDXSRT2( : )! 2nd sorting index
+        INTEGER, ALLOCATABLE :: SRCFIPS( : )! FIPS list from sources
         INTEGER, ALLOCATABLE :: IC     ( : )! cell IDs
         INTEGER, ALLOCATABLE :: IS     ( : )! source IDs
         INTEGER, ALLOCATABLE :: NCL    ( : )! position for county and/or link
@@ -139,17 +155,22 @@ C...........   Temporary arrays for storing surrogate codes to use
 
 C...........   Other local variables
 
-        INTEGER         C, CNT, F, I, IDX, J, K, N, S !  indices and counters
+        INTEGER         C, CNT, F, I, II, IDX, J, JJ, K, KK, N, NT, S !  indices and counters
         INTEGER         LC, LN              !  "previous" values of these
 
+        INTEGER         GDEV     !  for surrogate coeff file
         INTEGER         CNTMAX   !  counter for storing correct max dimensions
         INTEGER         COL      !  tmp column
         INTEGER         FIP      !  tmp country/state/county code
         INTEGER         ID1, ID2 !  tmp primary and secondary surg codes
         INTEGER         IOS      !  i/o status
+        INTEGER         IREC     ! Record counter
         INTEGER         ISIDX    !  surrogate ID code index
+        INTEGER         NFIP     !  no of FIPS list from sources
+        INTEGER         ISDEF    !  default surrogate ID code index
         INTEGER         L2       !  string length
         INTEGER         LFIP     !  cy/st/co code from previous iteration
+        INTEGER         LLFIP    !  cy/st/co code from previous iteration
         INTEGER         LNKEND   !  width of sourc info to end of link ID
         INTEGER         NCEL     !  tmp number of cells 
         INTEGER         NCOULNK  !  number of counties and links
@@ -157,6 +178,10 @@ C...........   Other local variables
         INTEGER         NNOSRG   !  no. of cy/st/co codes with no surrogates
         INTEGER         ROW      ! tmp row
         INTEGER         RWT      !  tmp roadway type
+        INTEGER         NTL       ! max no. of line buffers
+        INTEGER         TGTSRG    ! target surrogates code
+        INTEGER         SSC       ! surrogates code
+        INTEGER      :: NLINES = 0! number of lines in input file
 
         REAL            ADJ, ADJC   ! tmp adjustment factors
         REAL            ALEN        ! link length
@@ -165,15 +190,21 @@ C...........   Other local variables
         REAL            XEND, YEND  ! tmp X and Y link end   coordinates
         real            sum
 
-        LOGICAL      :: EFLAG = .FALSE.  ! true: error detected
-        LOGICAL      :: IFLAG = .FALSE.  ! true: internal error detected
-        LOGICAL      :: LFLAG = .FALSE.  ! true: location data available
-        LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
+        LOGICAL      :: EFLAG = .FALSE.    ! true: error detected
+        LOGICAL      :: IFLAG = .FALSE.    ! true: internal error detected
+        LOGICAL      :: LFLAG = .FALSE.    ! true: location data available
+        LOGICAL      :: XYSET = .FALSE.    ! true: X/Y available for src
+        LOGICAL      :: FALLBACK = .FALSE. ! true: run fallback surrogate at last
+        LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
 
+        CHARACTER(80)   LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER    !  source fields buffer
         CHARACTER(256)  MESG      !  message buffer 
+        CHARACTER(196)  NAMBUF    !  surrogate file name buffer
+        CHARACTER(256)  NAMBUFT   !  tmp surrogate file name buffer
+        CHARACTER(256)  TSRGFNAM  !  tmp surrogate file name buffer
 
         CHARACTER(LNKLEN3)    CLNK   ! tmp link ID
         CHARACTER(LNKLEN3)    LLNK   ! previous link ID
@@ -232,12 +263,12 @@ C.........  Allocate memory for temporary gridding matrix and other
         CALL CHECKMEM( IOS, 'CS', PROGNAME )
         ALLOCATE( CSJ( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSJ', PROGNAME )
-        ALLOCATE( INDOMAIN( NMSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INDOMAIN', PROGNAME )
         ALLOCATE( ACEL( NGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ACEL', PROGNAME )
         ALLOCATE( AFAC( NGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AFAC', PROGNAME )
+        ALLOCATE( INDOMAIN( NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDOMAIN', PROGNAME )
         ALLOCATE( FIPNOSRG( NINVIFIP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FIPNOSRG', PROGNAME )
         ALLOCATE( LKOGRD( NMSRC ), STAT=IOS )
@@ -255,16 +286,58 @@ C.........  Allocate memory for temporary gridding matrix and other
         SURGID1 = 0   ! array
         SURGID2 = 0   ! array
 
+C.....  Store the number and values of unfound cy/st/co codes
+C.....  Keep track of sources that are outside the domain
+        NFIP = 0
+        LLFIP = -1
+        DO I = 1, NSRC
+
+            FIP  = IFIP( I )
+
+            F = FIND1( FIP, NSRGFIPS, SRGFIPS )
+
+            IF ( F .LE. 0 ) THEN
+
+                IF( FIP .NE. LFIP ) THEN
+                    NNOSRG = NNOSRG + 1
+                    FIPNOSRG( NNOSRG ) = FIP
+                    LFIP = FIP
+                END IF
+
+                INDOMAIN( I ) = .FALSE.
+                CYCLE   ! To next source
+
+            END IF
+            
+            IF( FIP .NE. LLFIP ) THEN
+                NFIP = NFIP + 1
+                LLFIP = FIP
+            END IF
+            
+
+        END DO
+
+C.....  Store assigned cy/st/co (FIPS) codes from sources
+        ALLOCATE( SRCFIPS( NFIP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCFIPS', PROGNAME )
+        SRCFIPS = 0
+        LLFIP = -1
+        NFIP = 0
+
+        DO I = 1, NSRC
+
+            FIP  = IFIP( I )
+
+            IF( FIP .NE. LLFIP ) THEN
+                NFIP = NFIP + 1
+                SRCFIPS( NFIP ) = FIP
+                LLFIP = FIP
+            END IF
+            
+        END DO
+
 C.........  Set flag to indicate that XLOCA/YLOCA are available
         LFLAG = ALLOCATED( XLOCA )
-
-C.......   Compute gridding matrix:
-C.......       First case:   explicit link (ILINK > 0
-C.......       Second case:  some LNKDEF entry applies
-C.......       Third case:   FIP+roadtype cross-reference match
-C.......       Fourth case:  state+roadtype cross-reference match
-C.......       fifth case:   roadtype cross-reference match
-C.......       sixth case:   fallback default
 
         MESG = 'Computing gridding matrix and statistics...'
         CALL M3MSG2( MESG )
@@ -279,275 +352,391 @@ C.......       sixth case:   fallback default
         ADJC    = 1.    !  temporary
         N       = 0
 
-        DO S = 1, NSRC
+C.........  default fallback surrogate will run at last after
+C           re-assigned zero fraction surrogate
+
+        DO II = 1, NSRGS  ! loop through only the surrogate code assigned by sources
+
+            TGTSRG = SRGLIST( II )
+            ISDEF  = FIND1( DEFSRGID, NSRGS, SRGLIST )
+            KK = II
             
-            FIP  = IFIP  ( S )
-            RWT  = IRCLAS( S )
-            CLNK = CLINK ( S )
-            CSRC = CSOURC( S )
+            IF( FSGFLAG ) THEN
 
-C.............  Initialize sources as being in the domain
-            INDOMAIN( S ) = .TRUE.
-
-C.............  Count the number of county and links
-            IF ( FIP .NE. LFIP .OR. CLNK .NE. LLNK ) N = N + 1            
-
-C.............  Determine if x/y location is available
-            XYSET = .FALSE.
-            IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
-
-C.............  Special case for source has an x/y location
-            IF( XYSET ) THEN
-
-C................  If source is in the domain, get cell number and store
-                IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
-
-                    C = ( ROW-1 ) * NCOLS + COL
-                    NX( C ) = NX( C ) + 1
-                    J = J + 1
-
-C.....................  Check that the maximum number of sources per cell is ok
-                    IF ( J .LE. NMATX ) THEN
-                        IS ( J ) = S
-                        IC ( J ) = C
-                        NCL( J ) = N
-                        CS ( J ) = 1.0
-                    END IF
-
-C................  Otherwise, mark source as being outside domain
-                ELSE
-                    INDOMAIN( S ) = .FALSE.
-                END IF
-
-                CYCLE           ! To head of loop over sources
-
-            END IF   ! End if assigned point location or not
-
-C.............  Find FIP/RoadWayType adjustment for FIP and RWT
-c            ADJ = ADJMV( NADJ1, FIP, RWT, ADJFIP, ADJRWT, ADJFAC1 )
-
-C.............  Process for link source...
-            IF ( CLNK .NE. ' ' ) THEN
-
-C.................  Convert coordinate system from UTM to required system
-
-                XBEG = XLOC1 ( S )
-                YBEG = YLOC1 ( S )
-                XEND = XLOC2 ( S )
-                YEND = YLOC2 ( S )
-
-C.................  Compute the fractions of the link in each grid cell
-                CALL LNK2GRD( NGRID, XBEG, YBEG, XEND, YEND,
-     &                        NCEL, ACEL, AFAC, ALEN, IFLAG  )
-
-C.................  Make sure that there was enough storage 
-                IF ( IFLAG ) THEN
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    WRITE( MESG,94010 )
-     &                 'INTERNAL ERROR: Overflow for link to ' //
-     &                 'grid conversion for:' // CRLF()// BLANK10//
-     &                 BUFFER( 1:L2 )
-
-                    CALL M3MESG( MESG )
-                    CYCLE
-
-C.................  If link is outside the grid, store its information and 
-C                   go to next loop iteration
-                ELSE IF( NCEL .EQ. 0 ) THEN
-
-                    NLKOGRD = NLKOGRD + 1
-                    LKOGRD( NLKOGRD ) = CSRC( 1:LNKEND )
-
-                    CYCLE
-                    
-C.................  Write warning if the link has zero-length link
-                ELSE IF( ALEN .EQ. 0.0 ) THEN
-
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    WRITE( MESG,94010 )
-     &                  'WARNING: Zero-length link for: ' // CRLF() //
-     &                  BLANK10 // BUFFER( 1:L2 ) // '.'// CRLF() //
-     &                  BLANK10 // 'Emissions put in cell', ACEL( 1 )
-                    CALL M3MESG( MESG )
-
-                END IF
-
-C.................  Loop through cells intersecting the current link
-                DO K = 1, NCEL
-
-                    C = ACEL( K )
-
-C.....................  Find cell-based adjustment for cell C
-c                    ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
-c     &                            ADJFAC2 )
-
-C.....................  Warn when both types of adjustments are applied
-c                    IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
-
-c                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-c                        WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
-c     &                         'RoadWayType and cell-specific adjustments'
-c     &                         // ' applied for ' // CRLF() // BLANK10//
-c     &                         BUFFER( 1:L2 )
-c                        CALL M3MSG2( MESG )
-
-c                    END IF
-
-C.....................  Make sure cell ID is in valid range.
-                    IF( C .GT. NGRID .OR. C .LT. 0 ) THEN
-                        EFLAG = .TRUE.
-                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                        WRITE( MESG,94010 ) 'Tried to assign link to'//
-     &                         ' illegal cell =', C, 'for:' //
-     &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
-                        CALL M3MESG( MESG )
-                        CYCLE    ! to next cell in link
-
-C.....................  Otherwise, increase the count of records and
-C.....................  store the source count for this cell
-                    ELSE
-                        J = J + 1
-                        NX( C ) = NX( C ) + 1
-
-                    END IF
-
-C.....................  Check that the maximum number of src-cell intersections
-C                       is okay
-                    IF ( J .LE. NMATX ) THEN
-
-                        IDXSRT( J ) = J
-                        IS    ( J ) = S
-                        IC    ( J ) = C
-                        NCL   ( J ) = N
-                        CS    ( J ) = AFAC( K )
-                        CSJ   ( J ) = ADJ * ADJC * AFAC( K )
-                    END IF
-
-                END DO  ! end loop over cells for this link
-
-                CYCLE   ! to next source
-
-            END IF      ! end of link-specific processing
-
-C............. Start of non-link processing (will only get here if the
-C              source is a non-link source)...
-
-C............. Look for source in the grid-by-link table
-c            S = FIND2( FIP, RWT, NUMLNK, LNKFIP, LNKRWT )  !  use LNKDEF factor
-c            IF ( S .GT. 0 ) THEN
+                IF( II < ISDEF ) THEN
                 
-c                DO K = 1, LNKCNT( S )
-c                    C = LNKCEL( J,S )
-c                    J = NX( C ) + 1
+                    TGTSRG = SRGLIST( II - 1 )
+                    KK = II - 1
+                
+                ELSE IF( II >= ISDEF ) THEN
+C.............  default fallback surrogate will run at last after
+C               re-assigned zero fraction surrogate
 
-C.....................  Find cell-based adjustment for cell C
-c                    ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
-c     &                            ADJFAC2 )
-
-C.....................  Warn when both types of adjustments are applied
-c                    IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
-
-c                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-c                        WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
-c     &                         'RoadWayType and cell-specific adjustments'
-c     &                         // ' applied for ' // CRLF() // BLANK10//
-c     &                         BUFFER( 1:L2 ) // ' Cell:', C
-c                        CALL M3MSG2( MESG )
-
-c                    END IF
-
-C.....................  Check that the maximum number of sources per cell is ok
-c                    IF ( J .LE. MXSCEL ) THEN
-c                        IS ( J,C ) = S
-c                        CS ( J,C ) = LNKFAC( K,S )
-c                        CSJ( J,C ) = ADJ * ADJC * LNKFAC( K,S )
-c                    END IF
-
-C.....................  Store the count of sources for current cell
-c                    NX( C )   = J
-
-c                END DO   ! end of loop on cells for this source
-
-c                CYCLE    ! to next source
-
-c            END IF       ! end of grid-by-link processing
-
-C.............  Process for non-link, non-grid-by-link sources...
-
-C.............  Retrieve the indices to the surrogates tables
-            ISIDX = SRGIDPOS( S )
-            F     = SGFIPPOS( S )
-
-C.............  Store the number and values of unfound cy/st/co codes
-C.............  Keep track of sources that are outside the domain
-            IF ( F .LE. 0 ) THEN
-
-                IF( FIP .NE. LFIP ) THEN
-                    NNOSRG = NNOSRG + 1
-                    FIPNOSRG( NNOSRG ) = FIP
-                    LFIP = FIP
+                    IF( II == NSRGS ) THEN
+                        TGTSRG = DEFSRGID
+                        KK = ISDEF
+                        
+                    ELSE
+                        TGTSRG = SRGLIST( II + 1 )
+                        KK = II + 1
+                    
+                    END IF
+                
                 END IF
-              
-                INDOMAIN( S ) = .FALSE.
-                CYCLE   ! To next source
 
             END IF
-
-C.............  Loop through all of the cells intersecting this co/st/cy code. 
-            DO K = 1, NCELLS( F )
             
-                C = FIPCELL( K,F )   ! Retrieve cell number
+            NTL    = NTLINES( KK )
 
-C.................  Set the surrogate fraction
-                CALL SETFRAC( S, ISIDX, K, F, 2, INDOMAIN( S ), 
-     &                        CSRC, ID1, ID2, FRAC )
+            IF( NTL .EQ. 0 ) CYCLE
 
-C.................  Store surg IDs for reporting
-                SURGID1( S ) = ID1
-                SURGID2( S ) = ID2
+            WRITE( MESG,94010 ) 'Assigned surrogate', TGTSRG,
+     &          ' is currently looping through sources'
+            CALL M3MSG2( MESG ) 
 
-                IF( FRAC .GT. 0 ) THEN
+C.........  Allocate memory for indices to surrogates tables for each source
+            ALLOCATE( TMPLINE( NTL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPLINE', PROGNAME )
+       
+C.......... If surrogates are needed, read and store the gridding surrogates, 
+C           allocate memory for the surrogate assignments, and assign
+C           surrogates to each source.
+            NT = 0      ! initializing the counts of total line numbers
+            TMPLINE = ''
+            TSRGFNAM = ''
+      
+            DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
+       
+C.............  Prompt for and open I/O API output file(s)...
+                CALL GETENV( "SRG_PATH", NAMBUF )
+                WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
+                
+                IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
+       
+                IF( NAMBUFT .NE. TSRGFNAM  ) THEN
+                    CALL OPEN_SRGFILE
 
-                    J = J + 1              ! increment no. src-cell intersection
-                    NX( C ) = NX( C ) + 1  ! increment no. srcs per cell
+                    IREC = 0
+                    SSC = 0
+C.................  Reading surrogate files
+                    DO JJ = 1, NLINES
 
-C.....................  Find cell-based adjustment for cell C
-c                    ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, ADJFAC2 )
+                       READ ( GDEV, 93000, END=111, IOSTAT=IOS ) LINE
+                       IREC = IREC + 1
 
-C.....................  Warn when both types of adjustments are applied
-c                    IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
+                       IF ( BLKORCMT( LINE ) ) CYCLE
 
-c                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-c                        WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
-c     &                         'RoadWayType and cell-specific adjustments'//
-c     &                         ' applied for ' // CRLF() // BLANK10 //
-c     &                         BUFFER( 1:L2 ) // ' Cell:', C
-c                        CALL M3MSG2( MESG )
+                       CALL PARSLINE( LINE, MXSEG, SEGMENT )
+                       SSC    = STR2INT ( SEGMENT( 1 ) )
 
-c                    END IF
+C.................  Skip entry if SSC is not in the assigned SRGLIST by source
+                       IF( SSC .NE. TGTSRG ) CYCLE
 
+                       NT = NT + 1
+                       TMPLINE( NT ) = LINE
 
-C.....................  Check that the maximum number of src-cell intersections
-C                       is okay
-                    IF ( J .LE. NMATX ) THEN
-                        IDXSRT( J ) = J
-                        IS    ( J ) = S
-                        IC    ( J ) = C
-                        NCL   ( J ) = N
-                        CS    ( J ) = FRAC
-                        CSJ   ( J ) = ADJ * ADJC * FRAC
+111                 END DO
+
+                    TSRGFNAM = NAMBUFT    ! store a previous surrogate file name
+                    CLOSE( GDEV )
+
+                 END IF      ! skip if surrogate file has the same srg file
+
+            END DO       ! loop over all surrogate files in SRGDESC file
+
+            CALL GRDRDSRG( NT, VFLAG )
+            
+            DEALLOCATE( TMPLINE )
+
+C.......   Compute gridding matrix:
+C.......       First case:   explicit link (ILINK > 0
+C.......       Second case:  some LNKDEF entry applies
+C.......       Third case:   FIP+roadtype cross-reference match
+C.......       Fourth case:  state+roadtype cross-reference match
+C.......       fifth case:   roadtype cross-reference match
+C.......       sixth case:   fallback default
+
+            DO S = 1, NSRC
+
+                FIP  = IFIP  ( S )
+                RWT  = IRCLAS( S )
+                CLNK = CLINK ( S )
+                CSRC = CSOURC( S )
+                SSC  = ASRGID( S )
+
+                IF( SSC .NE. TGTSRG ) CYCLE
+
+C.................  Count the number of county and links
+                N = FIND1( FIP, NFIP, SRCFIPS )
+            
+C.................  Determine if x/y location is available
+                XYSET = .FALSE.
+                IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
+            
+C.................  Special case for source has an x/y location
+                IF( XYSET ) THEN
+            
+C....................  If source is in the domain, get cell number and store
+                    IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                          NCOLS, NROWS, COL, ROW  ) ) THEN
+            
+                        C = ( ROW-1 ) * NCOLS + COL
+                        NX( C ) = NX( C ) + 1
+                        J = J + 1
+            
+C.........................  Check that the maximum number of sources per cell is ok
+                        IF ( J .LE. NMATX ) THEN
+                            IS ( J ) = S
+                            IC ( J ) = C
+                            NCL( J ) = N
+                            CS ( J ) = 1.0
+                        END IF
+            
+C....................  Otherwise, mark source as being outside domain
+                    ELSE
+                        INDOMAIN( S ) = .FALSE.
+
+                    END IF
+            
+                    CYCLE           ! To head of loop over sources
+            
+                END IF   ! End if assigned point location or not
+            
+C.................  Find FIP/RoadWayType adjustment for FIP and RWT
+c                ADJ = ADJMV( NADJ1, FIP, RWT, ADJFIP, ADJRWT, ADJFAC1 )
+            
+C.................  Process for link source...
+                IF ( CLNK .NE. ' ' ) THEN
+            
+C.....................  Convert coordinate system from UTM to required system
+            
+                    XBEG = XLOC1 ( S )
+                    YBEG = YLOC1 ( S )
+                    XEND = XLOC2 ( S )
+                    YEND = YLOC2 ( S )
+            
+C.....................  Compute the fractions of the link in each grid cell
+                    CALL LNK2GRD( NGRID, XBEG, YBEG, XEND, YEND,
+     &                            NCEL, ACEL, AFAC, ALEN, IFLAG  )
+            
+C.....................  Make sure that there was enough storage 
+                    IF ( IFLAG ) THEN
+                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                        WRITE( MESG,94010 )
+     &                     'INTERNAL ERROR: Overflow for link to ' //
+     &                     'grid conversion for:' // CRLF()// BLANK10//
+     &                     BUFFER( 1:L2 )
+            
+                        CALL M3MESG( MESG )
+                        CYCLE
+            
+C.....................  If link is outside the grid, store its information and 
+C                       go to next loop iteration
+                    ELSE IF( NCEL .EQ. 0 ) THEN
+            
+                        NLKOGRD = NLKOGRD + 1
+                        LKOGRD( NLKOGRD ) = CSRC( 1:LNKEND )
+                        
+                        CYCLE
+                        
+C.....................  Write warning if the link has zero-length link
+                    ELSE IF( ALEN .EQ. 0.0 ) THEN
+            
+                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                        WRITE( MESG,94010 )
+     &                    'WARNING: Zero-length link for: ' // CRLF() //
+     &                     BLANK10 // BUFFER( 1:L2 ) // '.'// CRLF() //
+     &                     BLANK10 // 'Emissions put in cell', ACEL( 1 )
+                        CALL M3MESG( MESG )
+            
                     END IF
 
-                END IF  ! if surrogate fraction > 0.
+C.....................  Loop through cells intersecting the current link
+                    DO K = 1, NCEL
+            
+                        C = ACEL( K )
+            
+C.........................  Find cell-based adjustment for cell C
+c                        ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
+c     &                                ADJFAC2 )
+            
+C.........................  Warn when both types of adjustments are applied
+c                        IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
+            
+c                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+c                            WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
+c     &                             'RoadWayType and cell-specific adjustments'
+c     &                             // ' applied for ' // CRLF() // BLANK10//
+c     &                             BUFFER( 1:L2 )
+c                            CALL M3MSG2( MESG )
+            
+c                        END IF
+            
+C.........................  Make sure cell ID is in valid range.
+                        IF( C .GT. NGRID .OR. C .LT. 0 ) THEN
+                            EFLAG = .TRUE.
+                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                            WRITE( MESG,94010 ) 'Tried to assign link'//
+     &                             ' to illegal cell =', C, 'for:' //
+     &                             CRLF() // BLANK5 // BUFFER( 1:L2 )
+                            CALL M3MESG( MESG )
+                            CYCLE    ! to next cell in link
+            
+C.........................  Otherwise, increase the count of records and
+C.........................  store the source count for this cell
+                        ELSE
+                            J = J + 1
+                            NX( C ) = NX( C ) + 1
+            
+                        END IF
+            
+C.........................  Check that the maximum number of src-cell intersections
+C                           is okay
+                        IF ( J .LE. NMATX ) THEN
+            
+                            IDXSRT( J ) = J
+                            IS    ( J ) = S
+                            IC    ( J ) = C
+                            NCL   ( J ) = N
+                            CS    ( J ) = AFAC( K )
+                            CSJ   ( J ) = ADJ * ADJC * AFAC( K )
+                        END IF
+            
+                    END DO  ! end loop over cells for this link
+            
+                    CYCLE   ! to next source
+            
+                END IF      ! end of link-specific processing
+            
+C................. Start of non-link processing (will only get here if the
+C                  source is a non-link source)...
+            
+C................. Look for source in the grid-by-link table
+c                S = FIND2( FIP, RWT, NUMLNK, LNKFIP, LNKRWT )  !  use LNKDEF factor
+c                IF ( S .GT. 0 ) THEN
+                    
+c                    DO K = 1, LNKCNT( S )
+c                        C = LNKCEL( J,S )
+c                        J = NX( C ) + 1
+            
+C.........................  Find cell-based adjustment for cell C
+c                        ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
+c     &                                ADJFAC2 )
+            
+C.........................  Warn when both types of adjustments are applied
+c                        IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
+            
+c                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+c                            WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
+c     &                             'RoadWayType and cell-specific adjustments'
+c     &                             // ' applied for ' // CRLF() // BLANK10//
+c     &                             BUFFER( 1:L2 ) // ' Cell:', C
+c                            CALL M3MSG2( MESG )
+            
+c                        END IF
+            
+C.........................  Check that the maximum number of sources per cell is ok
+c                        IF ( J .LE. MXSCEL ) THEN
+c                            IS ( J,C ) = S
+c                            CS ( J,C ) = LNKFAC( K,S )
+c                            CSJ( J,C ) = ADJ * ADJC * LNKFAC( K,S )
+c                        END IF
+            
+C.........................  Store the count of sources for current cell
+c                        NX( C )   = J
+            
+c                    END DO   ! end of loop on cells for this source
+            
+c                    CYCLE    ! to next source
+            
+c                END IF       ! end of grid-by-link processing
+            
+C.................  Process for non-link, non-grid-by-link sources...
+            
+C.................  Retrieve the indices to the surrogates tables
+                ISIDX = 1
+                F    = FIND1( FIP, NSRGFIPS, SRGFIPS )
 
-            END DO    !  end of loop on cells K for this FIP
+C.................  Store the number and values of unfound cy/st/co codes
+C.................  Keep track of sources that are outside the domain
+                IF ( F .LE. 0 ) THEN
 
-            LFIP = FIP
-            LLNK = CLNK
+C.................  Re-assigning org assigned srg to default fallback srg
+                    IF( FSGFLAG ) ASRGID( S ) = DEFSRGID
+                    CYCLE   ! To next source
 
-        END DO        !  end loop on sources S, computing gridding matrix.
-        
+                END IF
+            
+C.................  Loop through all of the cells intersecting this co/st/cy code. 
+                DO K = 1, NCELLS( F )
+
+                    C = FIPCELL( K,F )   ! Retrieve cell number
+            
+C.....................  Set the surrogate fraction
+                    CALL SETFRAC( S, ISIDX, TGTSRG, K, F, 2, 
+     &                            INDOMAIN( S ), CSRC, ID1, ID2, FRAC )
+            
+C.....................  Re-assigning org assigned srg to default fallback srg
+                    IF( ID2 .EQ. DEFSRGID .AND. FSGFLAG ) THEN
+                        ASRGID( S ) = DEFSRGID
+                        CYCLE
+                    END IF
+             
+C.....................  Store surg IDs for reporting
+                    SURGID1( S ) = ID1
+                    SURGID2( S ) = ID2
+            
+                    IF( FRAC .GT. 0 ) THEN
+            
+                        J = J + 1              ! increment no. src-cell intersection
+                        NX( C ) = NX( C ) + 1  ! increment no. srcs per cell
+            
+C.........................  Find cell-based adjustment for cell C
+c                        ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, ADJFAC2 )
+            
+C.........................  Warn when both types of adjustments are applied
+c                        IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
+            
+c                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+c                            WRITE( MESG,94010 ) 'WARNING: Both FIP/'//
+c     &                             'RoadWayType and cell-specific adjustments'//
+c     &                             ' applied for ' // CRLF() // BLANK10 //
+c     &                             BUFFER( 1:L2 ) // ' Cell:', C
+c                            CALL M3MSG2( MESG )
+            
+c                        END IF
+            
+            
+C.........................  Check that the maximum number of src-cell intersections
+C                           is okay
+                        IF ( J .LE. NMATX ) THEN
+                            IDXSRT( J ) = J
+                            IS    ( J ) = S
+                            IC    ( J ) = C
+                            NCL   ( J ) = N
+                            CS    ( J ) = FRAC
+                            CSJ   ( J ) = ADJ * ADJC * FRAC
+                        END IF
+            
+                    END IF  ! if surrogate fraction > 0.
+            
+                END DO    !  end of loop on cells K for this FIP
+            
+                LFIP = FIP
+                LLNK = CLNK
+            
+            END DO        !  end loop on sources S, computing gridding matrix.
+
+        END DO        !  end loop on surrogate code.
+
+C.........  For first time routine is called in all cases,
+        IF( LASTIME ) THEN
+           MESG = 'WARNING: Some surrogates renormalized when ' //
+     &            'total of surrogates by county were ' // CRLF() //
+     &             BLANK10 // 'greater than 1.'
+           CALL M3MSG2( MESG )
+        ENDIF
+     
 C.........  Abort if error
         IF( EFLAG .OR. IFLAG ) THEN
             MESG = 'Problem creating gridding matrix.'
@@ -592,12 +781,17 @@ C.........  and compute statistics.  Already NX part of gridding matrix
         CMAX = 0
         CMIN = 99999999
         DO C = 1, NGRID
+
             J = NX( C )
+
             IF (      J .GT. CMAX ) THEN
                 CMAX = J
+
             ELSE IF ( J .GT. 0 .AND. J .LT. CMIN ) THEN
                 CMIN = J
+
             END IF
+
         END DO
  
         DO K = 1, NCOEF  ! Loop through cell-src intersections
@@ -698,6 +892,9 @@ C            VMT by cell/source over County total VMT
                 C   = IC( J )
                 S   = IS( J )
                 N   = NCL( J )
+                
+c                write(*,*) K,J,C,S,N
+                
                 IF ( N .EQ. 0 .OR. C .LE. 0 ) CYCLE  ! skip records outside the grid
 
                 CLIDX( S ) = N
@@ -813,11 +1010,49 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
 
+93000   FORMAT( A )
+
 93360   FORMAT( I8, 1X, I4, 1X, I4 )
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
  
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+        CONTAINS
+
+C.........  This internal subprogram open individual surrogate file 
+
+            SUBROUTINE OPEN_SRGFILE
+C----------------------------------------------------------------------
+                 
+C.........  Set logical file name
+            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUFT )) THEN
+                MESG = 'Could not set logical file ' //
+     &                 'name of file ' // TRIM( NAMBUFT )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.........  Get the number of lines in the surrogate description file desription file
+            GDEV = PROMPTFFILE( 'Reading surrogate files..',
+     &             .TRUE., .TRUE., 'SRG_PATH', PROGNAME )
+     
+            REWIND( GDEV )
+
+            NLINES = GETFLINE( GDEV, 'Reading srg files' )
+            
+            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUF )) THEN
+                MESG = 'Could not set logical file ' //
+     &                 'name of file ' // TRIM( NAMBUF )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            RETURN
+
+C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
+
+            END SUBROUTINE OPEN_SRGFILE
+
         END SUBROUTINE GENMGMAT
 
