@@ -50,12 +50,26 @@ C...........   Surrogate-cell::FIPS table
         
         INTEGER,              PUBLIC :: NSRGFIPS     ! no. srgs county codes
         INTEGER,              PUBLIC :: NSRGS        ! no. surrogate ID codes
+        INTEGER,              PUBLIC :: MXCFIP       ! Max cells per county code
+        INTEGER,              PUBLIC :: SRGNROWS     ! no. rows in surrogates file
+        INTEGER,              PUBLIC :: SRGNCOLS     ! no. cols in surrogates file
+        CHARACTER(16),        PUBLIC :: SRGFMT       !  surrogates format
 
-        INTEGER, ALLOCATABLE, PUBLIC :: NCELLS ( : ) ! no. cells per county code
-        INTEGER, ALLOCATABLE, PUBLIC :: SRGFIPS( : ) ! list of cnty codes
-        INTEGER, ALLOCATABLE, PUBLIC :: SRGLIST( : ) ! list of surrgate codes
+        INTEGER, ALLOCATABLE, PUBLIC :: NTLINES( : )       ! no. line buffer for each surrogate
+        INTEGER, ALLOCATABLE, PUBLIC :: NCELLS ( : )       ! no. cells per county code
+        INTEGER, ALLOCATABLE, PUBLIC :: SRGFIPS( : )       ! list of cnty codes
+        INTEGER, ALLOCATABLE, PUBLIC :: SRGLIST( : )       ! list of surrgate codes
         INTEGER, ALLOCATABLE, PUBLIC :: FIPCELL( :, : )    ! cell numbers
         REAL   , ALLOCATABLE, PUBLIC :: SRGFRAC( :, :, : ) ! surrogate fractions
         REAL   , ALLOCATABLE, PUBLIC :: SRGCSUM( :, : )    ! surg sum by county
+
+C...........   Surrogate description files : SRGDESC
+
+        INTEGER,                      PUBLIC :: NTSRGDSC     ! total no of surrogate files in SRGDESC
+        INTEGER        , ALLOCATABLE, PUBLIC :: SRGFCOD( : ) ! surrgate code
+        CHARACTER( 60 ), ALLOCATABLE, PUBLIC :: SRGFREG( : ) ! surrgate region
+        CHARACTER( 60 ), ALLOCATABLE, PUBLIC :: SRGFDES( : ) ! surrgate description
+        CHARACTER( 60 ), ALLOCATABLE, PUBLIC :: SRGFNAM( : ) ! surrgate file name
+        CHARACTER( 80 ), ALLOCATABLE, PUBLIC :: TMPLINE( : ) ! tmp line buffers
 
         END MODULE MODSURG
