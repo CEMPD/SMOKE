@@ -88,11 +88,18 @@
         INTEGER,       ALLOCATABLE, PUBLIC :: PMHAPS( : )   ! indicates if HAP is PM based (size: NMAP)
         CHARACTER(16), ALLOCATABLE, PUBLIC :: HAPNAMES( : ) ! pollutant names (size: NTOTHAPS)
         REAL,          ALLOCATABLE, PUBLIC :: HAPEFS( :,:,:,:,:,: ) ! HAP emission factors
-                                                                    ! size (SCEN,IVEH,IP,EF,IH,IFAC)
+                                                                    ! size (SCEN,IVEH,IP,EF,IH,IFAC)     
+!.........  Emission factor arrays        
+        CHARACTER(256), ALLOCATABLE, PUBLIC :: EFLIST( : )    ! listing of emission factor file names
+        CHARACTER(16) , ALLOCATABLE, PUBLIC :: EFLOGS( : )    ! listing of ef logical file names
+        INTEGER       , ALLOCATABLE, PUBLIC :: EFDAYS( :,:,: )! ef file by day for each time period
+        REAL          , ALLOCATABLE, PUBLIC :: TEMPEF( : )    ! temporary holding array for efs
+        CHARACTER     , ALLOCATABLE, PUBLIC :: EFTYPE( :,: )  ! ef file type (day, week, etc.) for each src
+        INTEGER       , ALLOCATABLE, PUBLIC :: EFIDX ( :,: )  ! location of ef in file for each source
+        LOGICAL       , ALLOCATABLE, PUBLIC :: USETIME( :,: ) ! true: time period is used
 
 !.........  Variables for mapping MOBILE6-to-SMOKE vehicle types
         INTEGER, PUBLIC :: NVTYPE                        ! number of SMOKE vehicle types
         INTEGER, ALLOCATABLE, PUBLIC :: M6VEHMAP( : )    ! SMOKE vehicle type for each MOBILE6 type
         INTEGER, ALLOCATABLE, PUBLIC :: SMKVEH2EF( :,: ) ! SMOKE vehicle / emission process mapping
-
         END MODULE MODEMFAC
