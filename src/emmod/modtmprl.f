@@ -62,6 +62,11 @@
         INTEGER, ALLOCATABLE, PUBLIC :: WEKREF( : )   ! Weekly codes 
         INTEGER, ALLOCATABLE, PUBLIC :: HRLREF( : )   ! Diurnal codes
 
+        INTEGER, ALLOCATABLE, PUBLIC :: STDATE( : )   ! Start date
+        INTEGER, ALLOCATABLE, PUBLIC :: STTIME( : )   ! Start time 
+        INTEGER, ALLOCATABLE, PUBLIC :: RUNLEN( : )   ! Run hours
+        INTEGER, ALLOCATABLE, PUBLIC :: ITDATE( : )   ! Start julian date
+
         REAL   , ALLOCATABLE, PUBLIC :: MONFAC( :,: ) ! Monthly factors
         REAL   , ALLOCATABLE, PUBLIC :: WEKFAC( :,: ) ! Weekly facs (week-norm)
         REAL   , ALLOCATABLE, PUBLIC :: XWKFAC( :,: ) ! Weekly facs (wkday-norm)
