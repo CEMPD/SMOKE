@@ -50,10 +50,10 @@ C...........   This module contains the cross-reference tables
      &                     CHRT06, CHRT07, CHRT08, CHRT09,
      &                     ISRG01, ISRG02, ISRG03, ISRG04, ISRG05,
      &                     ISRG06, ISRG07, ISRG08, ISRG09,
-     &                     SRGIDPOS, SGFIPPOS, TXCNT
+     &                     TXCNT, ASRGID, SRGFIPIDX
 
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG, ONLY: NSRGS, SRGLIST, NSRGFIPS, SRGFIPS
+        USE MODSURG, ONLY: NSRGS, SRGLIST
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, LSCCEND, NCHARS, NSRC
@@ -74,7 +74,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL    CRLF, ENVYN, FIND1, FINDC, SETSCCTYPE
 
 C.........  Other local variables
-        INTEGER          I, J, L2, S    !  counters and indices
+        INTEGER          I, II, J, L2, S    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5  ! tmp find indices
         INTEGER          FIP     !  tmp country/state/county code
@@ -125,7 +125,7 @@ C.............  Allocate memory for surrogate ID position
 C.........  Set up formats
         WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
         WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
-
+        
 C.........  Loop through the sources
         DO S = 1, NSRC
 
@@ -301,13 +301,11 @@ C               codes from the surrogates file for each source.
             SUBROUTINE SETSOURCE_GSURG
 
 C.............  Local variables
-            INTEGER          IFIPPOS  ! position of cy/st/co code in list
             INTEGER          ISRGPOS  ! position of surrogate code in list
-            INTEGER, SAVE :: LFIP     ! FIPS code from previous iteration
-            INTEGER, SAVE :: SAVFPOS  ! IFIPPOS from previous iteration 
 
 C----------------------------------------------------------------------
-
+            SRGFIPIDX( S ) = S
+            
             ISRGPOS = MAX( FIND1( ISRG, NSRGS, SRGLIST ), 0 )
 
             IF( ISRGPOS .EQ. 0 ) THEN
@@ -323,25 +321,9 @@ C----------------------------------------------------------------------
                 CALL M3MESG( MESG )
 
             END IF
-
-            SRGIDPOS( S ) = ISRGPOS
-           
-C.............  For non-link sources, find cy/st/co code in surrogates table
-C.............  Only do find if this FIPS code is different from previous, for
-C               efficiency pruposes.  The sources that are outside the grid
-C               will be written out from the matrix generator routines.
-            IFIPPOS = 0
-            IF( FIP .NE. LFIP ) THEN
-                IFIPPOS = FIND1( FIP, NSRGFIPS, SRGFIPS )
-                LFIP    = FIP
-                SAVFPOS = IFIPPOS
-
-            ELSE IF( FIP .EQ. LFIP ) THEN
-                IFIPPOS = SAVFPOS
-
-            END IF
-
-            SGFIPPOS( S ) = IFIPPOS
+            
+c            SRGIDPOS( S ) = ISRGPOS
+            ASRGID( S ) = ISRG
 
             RETURN
 
