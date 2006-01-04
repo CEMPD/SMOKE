@@ -18,8 +18,8 @@ debug: grdmat.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-GRD= asgnsurg.o genagmat.o genmgmat.o genpgmat.o grdmat.o lnk2grd.o opengmat.o \
-     sizgmat.o setfrac.o
+GRD= asgnsurg.o genagmat.o genmgmat.o genpgmat.o grdmat.o grdrdsrg.o \
+     lnk2grd.o opengmat.o sizgmat.o setfrac.o sizrdsrg.o
 #
 grdmat: $(GRD) $(ALLI) $(LIBPATH)
 	echo GRDMAT
@@ -35,12 +35,14 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgnsurg.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODINFO) 
-genagmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID)
-genmgmat.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID)
+genagmat.o: $(MODSOURC) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID) $(MODXREF)
+genmgmat.o: $(MODSOURC) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID) $(MODXREF)
 grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODGRID) $(MODFILESET)
 opengmat.o: $(MODINFO)
 setfrac.o: $(MODSURG)
-sizgmat.o: $(MODSOURC) $(MODXREF) $(MODGRID) $(MODSURG)
+sizgmat.o: $(MODSOURC) $(MODGRID) $(MODSURG)
+grdrdsrg.o: $(MODGRID) $(MODSURG)
+sizrdsrg.o: $(MODGRID) $(MODSURG)
 #
 clean:
 	/bin/rm -f *.o 
