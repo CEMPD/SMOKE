@@ -49,8 +49,8 @@
         INTEGER, ALLOCATABLE :: ASGNINDX( : ) ! index for projection/controls
 
 !.........  Per-source arrays for position in gridding surrogates table
-        INTEGER, ALLOCATABLE :: SRGIDPOS( : ) ! surrogate position
-        INTEGER, ALLOCATABLE :: SGFIPPOS( : ) ! cy/st/co code position
+        INTEGER, ALLOCATABLE, PUBLIC :: ASRGID   ( : ) ! tmp surrgate codes
+        INTEGER, ALLOCATABLE, PUBLIC :: SRGFIPIDX( : ) ! tmp surrgate codes
 
 !.........  Per-source arrays with index for assigning emission factors (by 
 !           pollutant). Index goes to IPSIA.
@@ -379,6 +379,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IFIPTA ( : ) !  co/st/cy FIPS codes
         INTEGER, ALLOCATABLE, PUBLIC:: ISPTA  ( : ) !  pollutant index to EINAM
         INTEGER, ALLOCATABLE, PUBLIC:: ISRGCDA( : ) !  spatial surrogate codes
+        INTEGER, ALLOCATABLE, PUBLIC:: SRGIDAA( : ) !  assigned spatial surrogate codes
         INTEGER, ALLOCATABLE, PUBLIC:: MPRNA  ( : ) !  monthly profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: WPRNA  ( : ) !  weekly profile codes
         INTEGER, ALLOCATABLE, PUBLIC:: DPRNA  ( : ) !  diurnal profile codes
