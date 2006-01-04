@@ -1,6 +1,7 @@
 
-        SUBROUTINE GENAGMAT( GNAME, FDEV, MXSCEL, NASRC, NMATX, 
-     &                       NX, IX, CX, NCOEF, CMAX, CMIN )
+        SUBROUTINE GENAGMAT( GNAME, FDEV, MXSCEL, NASRC, NMATX, VFLAG,
+     &                       DEFSRGID, FSGFLAG, NX, IX, CX, NCOEF, CMAX,
+     &                       CMIN )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -39,11 +40,10 @@ C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, IFIP, CELLID, CSOURC
 
-C...........   This module contains the cross-reference tables
-        USE MODXREF, ONLY: SRGIDPOS, SGFIPPOS
-
 C...........   This module contains the gridding surrogates tables
-        USE MODSURG, ONLY: NCELLS, FIPCELL
+        USE MODSURG, ONLY: NCELLS, FIPCELL, NSRGS, SRGLIST, NSRGFIPS,
+     &                     SRGFIPS, TMPLINE, NTSRGDSC, SRGFNAM, SRGFCOD,
+     &                     SRGFMT, SRGNCOLS, SRGNROWS, NTLINES
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, NCOLS, NROWS
@@ -53,6 +53,9 @@ C.........  This module contains the lists of unique source characteristics
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NCHARS, NSRC
+
+C...........   This module contains the cross-reference tables
+        USE MODXREF, ONLY: ASRGID
 
         IMPLICIT NONE
 
@@ -66,11 +69,16 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER(2)    CRLF
         INTEGER         FIND1
-        INTEGER         FINDC
         LOGICAL         INGRID
         LOGICAL         DSCM3GRD
+        INTEGER         GETFLINE
+        LOGICAL         BLKORCMT
+        LOGICAL         SETENVVAR
+        INTEGER         STR2INT
+        INTEGER         PROMPTFFILE
 
-        EXTERNAL        CRLF, FIND1, FINDC, INGRID, DSCM3GRD
+        EXTERNAL        CRLF, FIND1, INGRID, DSCM3GRD, BLKORCMT,
+     &                  SETENVVAR, STR2INT, GETFLINE, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name
@@ -78,6 +86,9 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: MXSCEL        ! max sources per cell
         INTEGER     , INTENT (IN) :: NASRC         ! no. mobile sources
         INTEGER     , INTENT (IN) :: NMATX         ! no. source-cell intersects
+        INTEGER     , INTENT (IN) :: DEFSRGID      ! default surrogate ID
+        LOGICAL     , INTENT (IN) :: FSGFLAG       ! true: using default fallback surrogate
+        LOGICAL     , INTENT (IN) :: VFLAG         ! true: using variable grid
         INTEGER     , INTENT(OUT) :: NX  ( NGRID ) ! no. srcs per cell
         INTEGER     , INTENT(OUT) :: IX  ( NMATX ) ! src IDs 
         REAL        , INTENT(OUT) :: CX  ( NMATX ) ! gridding coefficients
@@ -86,6 +97,13 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: CMIN          ! min no. of sources per cell
 
 C...........   Local allocatable arrays...
+C...........   LOCAL VARIABLES and their descriptions:
+C...........   Local parameters
+        INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+
+C...........   Other arrays
+        CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
+
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
         INTEGER, ALLOCATABLE :: IS ( :,: ) ! source IDs for each cell
@@ -101,29 +119,41 @@ C...........   Temporary arrays for storing surrogate codes to use
         INTEGER, ALLOCATABLE :: SURGID2( : ) ! secondary surrogate code
 
 C...........   Other local variables
-        INTEGER         C, F, I, J, K, N, S !  indices and counters.
+        INTEGER         C, F, I, II, J, JJ, K, KK, N, NT, S !  indices and counters.
 
+        INTEGER         GDEV    !  for surrogate coeff file
         INTEGER         COL     ! tmp column
         INTEGER         FIP     ! tmp country/state/county code
         INTEGER         ID1,ID2 ! tmp primary and secondary surg codes
         INTEGER         IOS     ! i/o status
+        INTEGER         IREC    ! Record counter
         INTEGER         ISIDX   ! tmp surrogate ID code index
+        INTEGER         ISDEF   !  default surrogate ID code index
         INTEGER         JMAX    ! counter for storing correct max dimensions
         INTEGER         L2      ! string length
         INTEGER         LFIP    ! cy/st/co code from previous iteration
         INTEGER         NCEL    ! tmp number of cells 
         INTEGER         NNOSRG  ! no. of cy/st/co codes with no surrogates
         INTEGER         ROW     ! tmp row
+        INTEGER         NTL     ! max no. of line buffers
+        INTEGER         TGTSRG    ! target surrogates code
+        INTEGER         SSC       ! surrogates code
+        INTEGER      :: NLINES = 0! number of lines in input file
 
         REAL            FRAC    ! tmp surrogate fraction
 
         LOGICAL      :: EFLAG = .FALSE.  !  true: error detected
         LOGICAL      :: LFLAG = .FALSE.  !  true: location data available
-        LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
+        LOGICAL      :: XYSET = .FALSE.  ! true: X/Y available for src
+        LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
 
+        CHARACTER(80)   LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  MESG      !  message buffer 
+        CHARACTER(196)  NAMBUF    !  surrogate file name buffer
+        CHARACTER(256)  NAMBUFT   !  tmp surrogate file name buffer
+        CHARACTER(256)  TSRGFNAM  !  tmp surrogate file name buffer
 
         CHARACTER(SRCLEN3)    CSRC  ! tmp source chars string
 
@@ -150,9 +180,131 @@ C.........  Allocate memory for temporary gridding matrix and other
         CALL CHECKMEM( IOS, 'SURGID2', PROGNAME )
         SURGID1 = 0   ! array
         SURGID2 = 0   ! array
+        LFIP  = 0
+        NNOSRG   = 0
+        JMAX  = -1
+
+C.....  Store the number and values of unfound cy/st/co codes
+C.....  Keep track of sources that are outside the domain
+        DO I = 1, NSRC
+
+            FIP  = IFIP( I )
+
+            F = FIND1( FIP, NSRGFIPS, SRGFIPS )
+
+            IF ( F .LE. 0 ) THEN
+
+                IF( FIP .NE. LFIP ) THEN
+                    NNOSRG = NNOSRG + 1
+                    FIPNOSRG( NNOSRG ) = FIP
+                    LFIP = FIP
+                END IF
+
+                INDOMAIN( I ) = .FALSE.
+                CYCLE   ! To next source
+
+            END IF
+
+        END DO
 
 C.........  Set flag to indicate that XLOCA/YLOCA are available
         LFLAG = ALLOCATED( XLOCA )
+
+        MESG = 'Computing gridding matrix and statistics...'
+        CALL M3MSG2( MESG )
+
+C.........  default fallback surrogate will run at last after
+C           re-assigned zero fraction surrogate
+
+        DO II = 1, NSRGS  ! loop through only the surrogate code assigned by sources
+    
+            TGTSRG = SRGLIST( II )
+            ISDEF  = FIND1( DEFSRGID, NSRGS, SRGLIST )
+            KK = II
+
+            IF( FSGFLAG ) THEN
+
+                IF( II >= ISDEF ) THEN
+C.............  default fallback surrogate will run at last after
+C               re-assigned zero fraction surrogate
+
+                    IF( II == NSRGS ) THEN
+                        TGTSRG = DEFSRGID
+                        KK = ISDEF
+                        
+                    ELSE
+                        TGTSRG = SRGLIST( II + 1 )
+                        KK = II + 1
+                    
+                    END IF
+                
+                END IF
+
+            END IF
+
+            NTL    = NTLINES( KK )
+
+            IF( NTL .EQ. 0 ) CYCLE
+
+            IF( .NOT. FSGFLAG .AND. II == NSRGS ) CYCLE ! skip fallback surrogate
+            
+            WRITE( MESG,94010 ) 'Assigned surrogate', TGTSRG,
+     &          ' is currently looping through sources'
+            CALL M3MSG2( MESG ) 
+
+C.........  Allocate memory for indices to surrogates tables for each source
+            ALLOCATE( TMPLINE( NTL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPLINE', PROGNAME )
+       
+C.......... If surrogates are needed, read and store the gridding surrogates, 
+C           allocate memory for the surrogate assignments, and assign
+C           surrogates to each source.
+            NT = 0      ! initializing the counts of total line numbers
+            TMPLINE = ''
+            TSRGFNAM = ''
+      
+            DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
+       
+C.............  Prompt for and open I/O API output file(s)...
+                CALL GETENV( "SRG_PATH", NAMBUF )
+                WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
+                
+                IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
+       
+                IF( NAMBUFT .NE. TSRGFNAM  ) THEN
+                    CALL OPEN_SRGFILE
+
+                    IREC = 0
+                    SSC = 0
+C.................  Reading surrogate files
+                    DO JJ = 1, NLINES
+
+                       READ ( GDEV, 93000, END=111, IOSTAT=IOS ) LINE
+                       IREC = IREC + 1
+
+                       IF ( BLKORCMT( LINE ) ) CYCLE
+
+                       CALL PARSLINE( LINE, MXSEG, SEGMENT )
+                       SSC    = STR2INT ( SEGMENT( 1 ) )
+
+C.................  Skip entry if SSC is not in the assigned SRGLIST by source
+                       IF( SSC .NE. TGTSRG ) CYCLE
+
+                       NT = NT + 1
+                       TMPLINE( NT ) = LINE
+
+111                 END DO
+
+                    TSRGFNAM = NAMBUFT  ! store a previous surrogate file name
+                    CLOSE( GDEV )
+
+                 END IF      ! skip if surrogate file has the same srg file
+
+            END DO       ! loop over all surrogate files in SRGDESC file
+
+            CALL GRDRDSRG( NT, VFLAG )
+            
+            DEALLOCATE( TMPLINE )
 
 C.......   Compute gridding matrix:
 C.......       First case:   explicit link (ILINK > 0
@@ -162,138 +314,143 @@ C.......       Fourth case:  state+roadtype cross-reference match
 C.......       fifth case:   roadtype cross-reference match
 C.......       sixth case:   fallback default
 
-        MESG = 'Computing gridding matrix and statistics...'
-        CALL M3MSG2( MESG )
+            DO S = 1, NSRC
 
-        LFIP  = 0
-        NNOSRG   = 0
-        JMAX  = -1
+                FIP  = IFIP  ( S )
+                C    = CELLID( S )
+                CSRC = CSOURC( S )
+                SSC  = ASRGID( S )
 
-        DO S = 1, NSRC
+                IF( SSC .NE. TGTSRG ) CYCLE
+
+C.................  Determine if x/y location is available
+                XYSET = .FALSE.
+                IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
             
-            FIP  = IFIP  ( S )
-            C    = CELLID( S )
-            CSRC = CSOURC( S )
+C.................  Special case for source has an x/y location
+                IF( XYSET ) THEN
+            
+C....................  If source is in the domain, get cell number and store
+                    IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                          NCOLS, NROWS, COL, ROW  ) ) THEN
+            
+                        C = ( ROW-1 ) * NCOLS + COL
+                        J = NX( C )
+            
+C.........................  Check that the maximum number of sources per cell is ok
+                        IF ( J .LT. MXSCEL ) THEN  ! Not .LE.
+                            J = J + 1
+                            IS ( J,C ) = S
+                            CS ( J,C ) = 1.0
+C.........................  Keep track of the maximum sources per cell for err mesg
+                        ELSE
+                            IF( J+1 .GT. JMAX ) JMAX = J+1
+            
+                        END IF
+            
+                        NX( C ) = J
+            
+C....................  Otherwise, mark source as being outside domain
+c                    ELSE
+                        INDOMAIN( S ) = .FALSE.
+                    END IF
 
-C.............  Initialize sources as being in the domain
-            INDOMAIN( S ) = .TRUE.
-
-C.............  Determine if x/y location is available
-            XYSET = .FALSE.
-            IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
-
-C.............  Special case for source has an x/y location
-            IF( XYSET ) THEN
-
-C................  If source is in the domain, get cell number and store
-                IF( INGRID( XLOCA( S ), YLOCA( S ), 
-     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
-
-                    C = ( ROW-1 ) * NCOLS + COL
+                    CYCLE           ! To head of loop over sources
+            
+C.................  Special case for source already assigned a grid cell
+                ELSE IF( C .GT. 0 ) THEN
+                
                     J = NX( C )
-
-C.....................  Check that the maximum number of sources per cell is ok
-                    IF ( J .LT. MXSCEL ) THEN  ! Not .LE.
+            
+C.....................  Check that the maximum number of sources per cell is ok                
+                    IF( J .LT. MXSCEL ) THEN
                         J = J + 1
-                        IS ( J,C ) = S
-                        CS ( J,C ) = 1.0
-C.....................  Keep track of the maximum sources per cell for err mesg
+                        IS( 1,C ) = S
+                        CS( 1,C ) = 1.0
+                        
                     ELSE
                         IF( J+1 .GT. JMAX ) JMAX = J+1
                     END IF
-
-                    NX( C ) = J
-
-C................  Otherwise, mark source as being outside domain
-                ELSE
-                    INDOMAIN( S ) = .FALSE.
-                END IF
-
-                CYCLE           ! To head of loop over sources
-
-C.............  Special case for source already assigned a grid cell
-            ELSE IF( C .GT. 0 ) THEN
-            
-                J = NX( C )
-
-C.................  Check that the maximum number of sources per cell is ok                
-                IF( J .LT. MXSCEL ) THEN
-                    J = J + 1
-                    IS( 1,C ) = S
-                    CS( 1,C ) = 1.0
                     
-                ELSE
-                    IF( J+1 .GT. JMAX ) JMAX = J+1
+                    NX( C ) = J
+                    CYCLE           ! To head of loop over sources
+
                 END IF
-                
-                NX( C ) = J
-                
-                CYCLE           ! To head of loop over sources
-            END IF
-
-C.............  For non-cell sources...
-
-C.............  Retrieve the indices to the surrogates tables
-            ISIDX = SRGIDPOS( S )
-            F   = SGFIPPOS( S )
-
-C.............  Store the number and values of unfound cy/st/co codes
-C.............  Keep track of sources that are outside the domain
-            IF ( F .LE. 0 ) THEN
-
-                IF( FIP .NE. LFIP ) THEN
-                    NNOSRG = NNOSRG + 1
-                    FIPNOSRG( NNOSRG ) = FIP
-                    LFIP = FIP
-                END IF
-              
-                INDOMAIN( S ) = .FALSE.
-                CYCLE   ! To next source
-
-            END IF
-
-C.............  Loop through all of the cells intersecting this FIPS code. 
-            DO K = 1, NCELLS( F )
             
-                C    = FIPCELL( K,F )  ! Retrieve cell number
+C.................  For non-cell sources...
+            
+C.................  Retrieve the indices to the surrogates tables
+                ISIDX = 1
+                F   = FIND1( FIP, NSRGFIPS, SRGFIPS )
 
-C.................  Set the surrogate fraction
-                CALL SETFRAC( S, ISIDX, K, F, NCHARS, 
-     &                        INDOMAIN( S ), CSRC, ID1, ID2, FRAC )
+C.................  Store the number and values of unfound cy/st/co codes
+C.................  Keep track of sources that are outside the domain
+                IF ( F .LE. 0 ) THEN
 
-C.................  Store surg IDs for reporting
-                SURGID1( S ) = ID1
-                SURGID2( S ) = ID2
+C.................  Re-assigning org assigned srg to default fallback srg
+                    IF( FSGFLAG ) ASRGID( S ) = DEFSRGID
+                    CYCLE   ! To next source
 
-                IF( FRAC .GT. 0 ) THEN
+                END IF
+            
+C.................  Loop through all of the cells intersecting this FIPS code. 
+                DO K = 1, NCELLS( F )
 
-                    J    = NX( C )
-C.....................  Check that the maximum number of sources per cell is ok
-C.....................  Note that this J comparison to MXSCEL is not the typical
-C                       .LE. on purpose.
-                    IF ( J .LT. MXSCEL .AND. FRAC .NE. 0. ) THEN
-                        J = J + 1
-                        IS ( J,C ) = S
-                        CS ( J,C ) = FRAC
+                    C    = FIPCELL( K,F )  ! Retrieve cell number
 
-C.....................  Keep track of the maximum sources per cell for err mesg
-                    ELSE
-                        IF( J+1 .GT. JMAX ) JMAX = J+1
+C.....................  Set the surrogate fraction
+                    CALL SETFRAC( S, ISIDX, TGTSRG, K, F, NCHARS, 
+     &                            INDOMAIN( S ), CSRC, ID1, ID2, FRAC )
+
+C.....................  Re-assigning org assigned srg to default fallback srg
+                    IF( ID2 .EQ. DEFSRGID .AND. FSGFLAG ) THEN
+                        ASRGID( S ) = DEFSRGID
+                        CYCLE
                     END IF
 
-C.....................  Store the count of sources for current cell
-                    NX( C )   = J
+C.....................  Store surg IDs for reporting
+                    SURGID1( S ) = ID1
+                    SURGID2( S ) = ID2
+            
+                    IF( FRAC .GT. 0 ) THEN
+            
+                        J    = NX( C )
+C.........................  Check that the maximum number of sources per cell is ok
+C.........................  Note that this J comparison to MXSCEL is not the typical
+C                           .LE. on purpose.
+                        IF ( J .LT. MXSCEL .AND. FRAC .NE. 0. ) THEN
+                            J = J + 1
+                            IS ( J,C ) = S
+                            CS ( J,C ) = FRAC
+            
+C.........................  Keep track of the maximum sources per cell for err mesg
+                        ELSE
+                            IF( J+1 .GT. JMAX ) JMAX = J+1
+                        END IF
+            
+C.........................  Store the count of sources for current cell
+                        NX( C )   = J
+            
+                    END IF  ! if surrogate fraction > 0.
 
-                END IF  ! if surrogate fraction > 0.
+                END DO    !  end of loop on cells K for this FIP
 
-            END DO    !  end of loop on cells K for this FIP
+            END DO        !  end loop on sources S, computing gridding matrix.
 
-        END DO        !  end loop on sources S, computing gridding matrix.
+        END DO        !  end loop on assigned surrogate list
+
+C.........  For first time routine is called in all cases,
+        IF( LASTIME ) THEN
+           MESG = 'WARNING: Some surrogates renormalized when ' //
+     &            'total of surrogates by county were ' // CRLF() //
+     &             BLANK10 // 'greater than 1.'
+           CALL M3MSG2( MESG )
+        ENDIF
 
 C.........  Abort if overflow occurred
         IF ( JMAX .GT. MXSCEL ) THEN   
             
-            WRITE( MESG,94010 )
+            WRITE( MESG, 94010 )
      &       'INTERNAL ERROR: Gridding matrix not ' //
      &       'written.' // CRLF() // BLANK10 //
      &       'Arrays would have overflowed.' 
@@ -330,7 +487,7 @@ C.........  representation and compute statistics.
                     CX( K ) = CS( N,C )
                 END IF
             END DO
-                   
+            
         END DO    !  end of loop on cells C for this FIP
 
         NCOEF = K
@@ -354,19 +511,55 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, 0, FIPNOSRG, ' ' )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( IS, CS, INDOMAIN, FIPNOSRG, SURGID1, SURGID2 )
+        DEALLOCATE( IS, CS, FIPNOSRG, INDOMAIN, SURGID1, SURGID2 )
 
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
+93000   FORMAT( A )
 
 93360   FORMAT( I8, 1X, I4, 1X, I4 )
 
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I9, :, 1X ) )
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+        CONTAINS
+
+C.........  This internal subprogram open individual surrogate file 
+
+            SUBROUTINE OPEN_SRGFILE
+C----------------------------------------------------------------------
+                 
+C.........  Set logical file name
+            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUFT )) THEN
+                MESG = 'Could not set logical file ' //
+     &                 'name of file ' // TRIM( NAMBUFT )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.........  Get the number of lines in the surrogate description file desription file
+            GDEV = PROMPTFFILE( 'Reading surrogate files..',
+     &             .TRUE., .TRUE., 'SRG_PATH', PROGNAME )
+     
+            REWIND( GDEV )
+
+            NLINES = GETFLINE( GDEV, 'Reading srg files' )
+            
+            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUF )) THEN
+                MESG = 'Could not set logical file ' //
+     &                 'name of file ' // TRIM( NAMBUF )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            RETURN
+
+C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
+
+            END SUBROUTINE OPEN_SRGFILE
  
         END SUBROUTINE GENAGMAT
 
