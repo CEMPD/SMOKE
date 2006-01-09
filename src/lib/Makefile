@@ -30,13 +30,13 @@ FILES_FGIMNP = \
   progdesc.o
 
 FILES_R = \
-  rdar2pt.o    rdascc.o     rdchrscc.o   rdcodnam.o   rdeproc.o    rdgmat.o   \
-  rdgref.o     rdhdays.o    rdinvchr.o   rdinvmap.o   rdinvpol.o   rdlines.o  \
-  rdmapmask.o  rdmappol.o   rdmvinfo.o   rdorsdsc.o   rdpelv.o     rdrmat.o   \
-  rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o  rdspdref.o \
-  rdsprof.o    rdsref.o     rdsrghdr.o   rdsrg.o      rdstcy.o     rdtprof.o  \
-  rdtref.o     rdtzone.o    rdumat.o     rdvmix.o     rdxclude.o   readwr3.o  \
-  rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o
+  rdar2pt.o    rdascc.o     rdchrscc.o   rdcodnam.o   rddates.o    rdeproc.o  \
+  rdgmat.o     rdgref.o     rdhdays.o    rdinvchr.o   rdinvmap.o   rdinvpol.o \
+  rdlines.o    rdmapmask.o  rdmappol.o   rdmvinfo.o   rdorsdsc.o   rdpelv.o   \
+  rdrmat.o     rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o\
+  rdspdref.o   rdsprof.o    rdsref.o     rdsrgdesc.o  rdsrghdr.o   rdsrg.o    \
+  rdstcy.o     rdtprof.o    rdtref.o     rdtzone.o    rdumat.o     rdvmix.o   \
+  rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o
 
 FILES_SVWX = \
   setscctype.o setsrcdy.o   ungridbv.o   verchar.o    wrchrscc.o   wrdaymsg.o \
@@ -108,6 +108,7 @@ prclinrc.o : $(MODREPRT) $(MODINFO)
 procspro.o : $(MODSPRO)
 rdar2pt.o  : $(MODXREF) $(MODLISTS) $(MODAR2PT)
 rdcodnam.o : $(MODLISTS)
+rddates.o  : $(MODTMPRL)
 rdeproc.o  : $(MODEMFAC) $(MODINFO)
 rdgref.o   : $(MODXREF) $(MODINFO)
 rdhdays.o  : $(MODTMPRL)
@@ -130,6 +131,7 @@ rdspdref.o : $(MODXREF)
 rdsprof.o  : $(MODSPRO)
 rdsref.o   : $(MODXREF) $(MODINFO)
 rdsrg.o    : $(MODSURG) $(MODGRID)
+rdsrgdesc.o: $(MODSURG)
 rdstcy.o   : $(MODSTCY) 
 rdtprof.o  : $(MODTMPRL)
 rdtref.o   : $(MODXREF) $(MODINFO)
