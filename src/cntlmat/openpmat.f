@@ -114,6 +114,15 @@ C.........  Set I/O API header parms that need values
 
         IF( ALLOCATED( VTYPESET ) ) 
      &      DEALLOCATE( VTYPESET, VNAMESET, VUNITSET, VDESCSET )
+
+C.........  Set number of variables in output file based on whether pollutant-specific
+C           assignments are being used
+        IF( POLSFLAG ) THEN
+            NVARSET = NVPROJ
+        ELSE
+            NVARSET = 1
+        END IF
+
         ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
         ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
@@ -130,7 +139,6 @@ C           that this will be set automatically by openset
 C.........  If pollutant-specific assignments, then set up projection matrix
 C           with one variable for each pollutant being projected
         IF( POLSFLAG ) THEN
-            NVARSET = NVPROJ
             DO J = 1, NVPROJ
                 VNAMESET( J )= PNAMPROJ( J )  ! Lowercase used to permit inv data named "PFAC"
                 VTYPESET( J )= M3REAL
@@ -141,7 +149,6 @@ C           with one variable for each pollutant being projected
 C.........  If no pollutant-specific assignments, then set up projection
 C           matrix to reflect that all pollutants affected the 
         ELSE
-            NVARSET = 1
             J = 1
             VNAMESET( J )= 'pfac'  ! Lowercase used to permit inv data named "PFAC"
             VTYPESET( J )= M3REAL
