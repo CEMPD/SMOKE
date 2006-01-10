@@ -63,6 +63,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: JT        ! index to control data tables
         TYPE(CPACKET),INTENT (IN) :: PKTINFO   ! packet information
 
+	CHARACTER(300)   MESG                  ! message buffer
         CHARACTER(16) :: PROGNAME = 'FILLCDAT' ! program name
 
 C***********************************************************************
@@ -125,14 +126,24 @@ C   Begin body of subroutine FILLCDAT
             CMACSRCTYP( JT ) = PKTINFO%CSTYP
             CALL PADZERO( CMACSRCTYP( JT ) )
             
-C.............  Make sure src type is only 00, 01, or 02            
+C.............  Make sure src type is only 00, 01, 02, 03 or 04            
             IF( CMACSRCTYP( JT ) /= '01' .AND.
-     &          CMACSRCTYP( JT ) /= '02'       ) THEN
+     &          CMACSRCTYP( JT ) /= '02' .AND.
+     &          CMACSRCTYP( JT ) /= '03' .AND. 
+     &          CMACSRCTYP( JT ) /= '04'      ) THEN
                 CMACSRCTYP( JT ) = '00'
+		WRITE( MESG,94010 ) 'WARNING: Source type '//
+     &            'code at entry ', JT, ' is invalid. Source '//
+     &            'type code will be set to 00.'
+		CALL M3MESG( MESG )
             END IF
 
         END SELECT
 
         RETURN
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+94010	FORMAT( 10( A, :, I4, :, 1X ) )
 
         END SUBROUTINE FILLCDAT
