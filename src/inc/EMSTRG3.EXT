@@ -14,7 +14,7 @@ C.........  Maximum number of source characteristics for each source category
 C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: BLRLEN3 =  6 ! boiler field
         INTEGER, PARAMETER :: BVGLEN3 =  4 ! biogenic veg ID
-        INTEGER, PARAMETER :: CASLEN3 = 10 ! CAS code length
+        INTEGER, PARAMETER :: CASLEN3 = 16 ! CAS code length
         INTEGER, PARAMETER :: CELLEN3 =  8 ! cell number
         INTEGER, PARAMETER :: CHRLEN3 = 15 ! 5 plant characteristics
         INTEGER, PARAMETER :: CNYLEN3 =  3 ! county code
