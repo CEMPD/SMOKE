@@ -80,11 +80,11 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Parameters
         INTEGER, PARAMETER :: NFIELDS = 14  ! no. input fields
         INTEGER, PARAMETER :: FBEG( NFIELDS ) = 
-     &                      ( / 1 , 13, 24, 30, 32, 34,
-     &                          40, 42, 44, 46, 48, 52, 69, 110 / )
+     &                      ( / 1 , 13, 30, 36, 38, 40,
+     &                          46, 48, 50, 52, 54, 58, 75, 116 / )
         INTEGER, PARAMETER :: FEND( NFIELDS ) = 
-     &                      ( / 11, 22, 28, 30, 32, 38,
-     &                          40, 42, 44, 46, 50, 67, 108, 153 / )
+     &                      ( / 11, 28, 34, 36, 38, 44,
+     &                          46, 48, 50, 52, 56, 73, 114, 159 / )
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: LOCIDX  ( : ) ! sorting index
@@ -291,7 +291,7 @@ C.............  Check that integer fields are integers
 C.............  Check that float fields are floats
             IF( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Factor value is not an '//
+                WRITE( MESG,94010 ) 'ERROR: Factor value is not a '//
      &                 'floating point value at line', IREC
                 CALL M3MSG2( MESG )
             END IF
