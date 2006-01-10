@@ -363,11 +363,11 @@ C...........   Formatted file I/O formats............ 93xxx
 93000   FORMAT( A )
 
 93200   FORMAT( I5.5, 1X, A10, 1X, I4, 1X, A6, 1X, A2, 1X, A8, 1X,
-     &          A15, 1X, E13.6, 1X, E13.6, 3( 1X, F6.2 ) )           ! nonpoint
+     &          A16, 1X, E13.6, 1X, E13.6, 3( 1X, F6.2 ) )           ! nonpoint
 
 93600   FORMAT( I5.5, 4( 1X, A15), 1X, '"',A40,'"', 1X, A10, 1X, A2, 1X,
      &          A2, 5( 1X, F10.2), 1X, I4, 1X, A6, 1X, A8, 1X, A1, 
-     &          2( 1X, F13.8), 1X, I3, 1X, A15, 2( 1X, E13.6 ),
+     &          2( 1X, F13.8), 1X, I3, 1X, A16, 2( 1X, E13.6 ),
      &          2( 1X, F6.2 ), 1X, I2, 1X, I2 )                      ! point
 
 C...........   Internal buffering formats............ 94xxx
