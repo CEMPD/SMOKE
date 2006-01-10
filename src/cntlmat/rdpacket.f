@@ -236,12 +236,12 @@ C           a warning.
             PKTINFO%CPOL  =           SEGMENT( 4 )
             PKTINFO%CSIC  =           SEGMENT( 5 )
             PKTINFO%CMCT  =           SEGMENT( 6 )
-            PKTINFO%PLT   = ' '
-            PKTINFO%CHAR1 = ' '
-            PKTINFO%CHAR2 = ' '
-            PKTINFO%CHAR3 = ' '
-            PKTINFO%CHAR4 = ' '
-            PKTINFO%CHAR5 = ' '
+	    PKTINFO%PLT   =           SEGMENT( 7 )
+            PKTINFO%CHAR1 =           SEGMENT( 8 )
+            PKTINFO%CHAR2 =           SEGMENT( 9 )
+            PKTINFO%CHAR3 =           SEGMENT( 10 )
+            PKTINFO%CHAR4 =           SEGMENT( 11 ) 
+            PKTINFO%CHAR5 =           SEGMENT( 12 )
 
         CASE( 'EMS_CONTROL' )
             STID = STR2INT( LINE( 1:2 ) )
