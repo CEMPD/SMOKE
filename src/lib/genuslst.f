@@ -97,6 +97,7 @@ C...........   Other local variables
         LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
         CHARACTER(300)     MESG          ! message buffer
+	CHARACTER(5)	   CFIP          ! tmp fip for mesage
         CHARACTER(VTPLEN3) PVTYP         ! previous vehicle type
         CHARACTER(VTPLEN3) TVTYP         ! tmp vehicle type
         CHARACTER(SCCLEN3) PSCC          ! previous iteration SCC
@@ -551,19 +552,20 @@ C.................  Unsorted ORIS arrays
                         INVODSCA( NINVORIS ) = PDSC
                     ELSE
                         IF( INVORFPA( J ) /= FIP ) THEN
-                            EFLAG = .TRUE.
-                            MESG = 'ERROR: Different FIPS codes ' //
-     &                             'found for ORIS ID ' // CORS
+			    WRITE( CFIP, '(I5)' ) INVORFPA( J )
+                       	    MESG = 'WARNING: Different FIPS codes ' //
+     &                            'found for ORIS ID ' // CORS
+     &                            // '.  Will use ' // CFIP //
+     &                            ' for reporting.'
                             CALL M3MESG( MESG )
-                            CYCLE
                         END IF
                         
                         IF( INVODSCA( J ) /= PDSC ) THEN
-                            EFLAG = .TRUE.
-                            MESG = 'ERROR: Different plant ' //
+                            MESG = 'WARNING: Different plant ' //
      &                        'descriptions found for ORIS ID ' // CORS
+     &                        // '.  Will use ' // INVODSCA( J ) //
+     &                        ' for reporting.'
                             CALL M3MESG( MESG )
-                            CYCLE
                         END IF
                     END IF
                 END IF
