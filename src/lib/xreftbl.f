@@ -971,6 +971,7 @@ C.....................  Process NT 16 through 11
      &                             'be specified'
                             CALL REPORT_INVALID_XREF( MESG )
                             NT = 0
+			    EXIT                      ! End loop with NT
 
                         END IF
 
