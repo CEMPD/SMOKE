@@ -490,8 +490,11 @@ C                   deallocate memory for array
 C.....................  Read in line of character data
                     IF( MCTIN .AND. NAIIN .AND. STPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                        CMT, CNAI, CSTP
-                    ELSE
+     &                        CSTP, CMT, CNAI
+                    ELSE IF( STPIN .AND. .NOT. MCTIN ) THEN
+		 	READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                        CSTP
+		    ELSE
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
                     END IF
 
@@ -514,6 +517,17 @@ C.....................  Read in line of character data
 
             CASE ( 'MOBILE' )
 
+C.................  Determine if source type code is present
+                J = INDEX1( 'Source type code', NCOL, HEADER )
+                STPIN = ( J > 0 )
+
+C.................  If source type code not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. STPIN .AND. STPFLAG ) THEN
+                    DEALLOCATE( CSRCTYP )
+                    NULLIFY( CSRCTYP )
+                END IF
+
                 DO S = 1, NSRC
 
 C.....................  Initialize temporary characteristics
@@ -521,14 +535,21 @@ C.....................  Initialize temporary characteristics
                     CLNK  = ' '
 
 C.....................  Read in line of character data
-                    READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
+		    IF( STPIN ) THEN
+			READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
+     &                                         CLNK, CVID, CS, CVTP,CSTP
+		    ELSE
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
      &                                            CLNK, CVID, CS, CVTP
+		    END IF
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
                     IF( VTPFLAG ) CVTYPE( S ) = CVTP
 
                     IF( LNKFLAG ) CLINK ( S ) = CLNK
+
+		    IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, CRWT, CLNK, CVID,
