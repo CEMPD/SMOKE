@@ -394,7 +394,7 @@ C.........  Default surrogate code 8 is population
                 CALL M3EXIT( MESG )
 
             ELSE
-                WRITE( MESG, 94010 ) 'Default surrogate sets to ',
+                WRITE( MESG, 94010 ) 'Default surrogate set to ',
      &                                DEFSRGID
                 CALL M3MSG2( MESG )
 
