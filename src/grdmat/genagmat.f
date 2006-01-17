@@ -42,8 +42,8 @@ C...........   This module is the source inventory arrays
 
 C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NCELLS, FIPCELL, NSRGS, SRGLIST, NSRGFIPS,
-     &                     SRGFIPS, TMPLINE, NTSRGDSC, SRGFNAM, SRGFCOD,
-     &                     SRGFMT, SRGNCOLS, SRGNROWS, NTLINES
+     &                     SRGFIPS, NTSRGDSC, SRGFNAM, SRGFCOD, SRGFMT,
+     &                     SRGNCOLS, SRGNROWS, NTLINES
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, NCOLS, NROWS
@@ -103,7 +103,7 @@ C...........   Local parameters
 
 C...........   Other arrays
         CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
-
+        CHARACTER(60), ALLOCATABLE :: TMPLINE( : ) ! tmp line buffer
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
         INTEGER, ALLOCATABLE :: IS ( :,: ) ! source IDs for each cell
@@ -128,7 +128,7 @@ C...........   Other local variables
         INTEGER         IOS     ! i/o status
         INTEGER         IREC    ! Record counter
         INTEGER         ISIDX   ! tmp surrogate ID code index
-        INTEGER         ISDEF   !  default surrogate ID code index
+        INTEGER         ISDEF   ! default surrogate ID code index
         INTEGER         JMAX    ! counter for storing correct max dimensions
         INTEGER         L2      ! string length
         INTEGER         LFIP    ! cy/st/co code from previous iteration
@@ -147,7 +147,7 @@ C...........   Other local variables
         LOGICAL      :: XYSET = .FALSE.  ! true: X/Y available for src
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
 
-        CHARACTER(80)   LINE      ! Read buffer for a line
+        CHARACTER(30)   LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  MESG      !  message buffer 
@@ -266,7 +266,7 @@ C           surrogates to each source.
             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
        
 C.............  Prompt for and open I/O API output file(s)...
-                CALL GETENV( "SRG_PATH", NAMBUF )
+                CALL GETENV( "SRGPRO_PATH", NAMBUF )
                 WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
                 
                 IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
@@ -302,10 +302,10 @@ C.................  Skip entry if SSC is not in the assigned SRGLIST by source
 
             END DO       ! loop over all surrogate files in SRGDESC file
 
-            CALL GRDRDSRG( NT, VFLAG )
-            
-            DEALLOCATE( TMPLINE )
+            CALL GRDRDSRG( NT, TMPLINE, VFLAG )
 
+            DEALLOCATE( TMPLINE )
+            
 C.......   Compute gridding matrix:
 C.......       First case:   explicit link (ILINK > 0
 C.......       Second case:  some LNKDEF entry applies
@@ -400,7 +400,8 @@ C.................  Loop through all of the cells intersecting this FIPS code.
 
 C.....................  Set the surrogate fraction
                     CALL SETFRAC( S, ISIDX, TGTSRG, K, F, NCHARS, 
-     &                            INDOMAIN( S ), CSRC, ID1, ID2, FRAC )
+     &                           INDOMAIN( S ), CSRC, DEFSRGID, FSGFLAG,
+     &                           ID1, ID2, FRAC )
 
 C.....................  Re-assigning org assigned srg to default fallback srg
                     IF( ID2 .EQ. DEFSRGID .AND. FSGFLAG ) THEN
@@ -535,7 +536,7 @@ C.........  This internal subprogram open individual surrogate file
 C----------------------------------------------------------------------
                  
 C.........  Set logical file name
-            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUFT )) THEN
+            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUFT )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUFT )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -543,13 +544,13 @@ C.........  Set logical file name
 
 C.........  Get the number of lines in the surrogate description file desription file
             GDEV = PROMPTFFILE( 'Reading surrogate files..',
-     &             .TRUE., .TRUE., 'SRG_PATH', PROGNAME )
+     &             .TRUE., .TRUE., 'SRGPRO_PATH', PROGNAME )
      
             REWIND( GDEV )
 
             NLINES = GETFLINE( GDEV, 'Reading srg files' )
             
-            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUF )) THEN
+            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUF )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUF )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
