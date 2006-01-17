@@ -70,6 +70,5 @@ C...........   Surrogate description files : SRGDESC
         CHARACTER( 60 ), ALLOCATABLE, PUBLIC :: SRGFREG( : ) ! surrgate region
         CHARACTER( 60 ), ALLOCATABLE, PUBLIC :: SRGFDES( : ) ! surrgate description
         CHARACTER( 60 ), ALLOCATABLE, PUBLIC :: SRGFNAM( : ) ! surrgate file name
-        CHARACTER( 80 ), ALLOCATABLE, PUBLIC :: TMPLINE( : ) ! tmp line buffers
 
         END MODULE MODSURG
