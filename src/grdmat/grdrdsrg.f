@@ -1,5 +1,5 @@
 
-        SUBROUTINE GRDRDSRG( NT, VFLAG ) 
+        SUBROUTINE GRDRDSRG( NT, TMPLINE, VFLAG ) 
 
 C***********************************************************************
 C  subroutine body starts at line 117
@@ -40,8 +40,8 @@ C...........   Modules for public variables
 C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: IDXSRGA, IDXSRGB, SCELLA, SFIPSA, SSRGIDA,
      &                     SFRACA, NSRGREC, NSRGFIPS, SRGFIPS, FIPCELL,
-     &                     NCELLS, SRGFRAC, SRGCSUM, TMPLINE, SRGFMT,
-     &                     SRGNCOLS, SRGNROWS
+     &                     NCELLS, SRGFRAC, SRGCSUM, SRGFMT, SRGNCOLS,
+     &                     SRGNROWS
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: XOFF, YOFF, NCOLS, NROWS
@@ -62,8 +62,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL       CRLF, FIND1, STR2INT, STR2REAL, BLKORCMT
 
 C...........   Subroutine arguments
-        INTEGER      , INTENT  (IN) :: NT         ! no of surrogate entry
-        LOGICAL      , INTENT  (IN) :: VFLAG      ! true: using variable grid
+        INTEGER      , INTENT  (IN) :: NT            ! no of surrogate entry
+        CHARACTER(*) , INTENT  (IN) :: TMPLINE( NT ) ! tmp line buffer
+        LOGICAL      , INTENT  (IN) :: VFLAG         ! true: using variable grid
 
 C...........   Local parameters
 
@@ -105,7 +106,7 @@ C...........   Local variables
         CHARACTER(20)   COLRANGE              ! buffer w/ column range
         CHARACTER(20)   ROWRANGE              ! buffer w/ row range
         CHARACTER(80)   LINE                  ! Read buffer for a line
-        CHARACTER(600)  MESG                  ! Message buffer
+        CHARACTER(200)  MESG                  ! Message buffer
 
         CHARACTER(16) :: PROGNAME = 'GRDRDSRG'    !  program name
 
@@ -182,10 +183,6 @@ C.................  Check the value of the column number
      &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN
                     WFLAG = .TRUE.
                     OFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'WARNING: Column value ', COL,
-     &                     'is outside range ' // COLRANGE( 1:LC ) // 
-     &                     ' at line', IREC
-                    CALL M3MESG( MESG )
                 END IF
 
 C.................  Check the value of the row number
@@ -193,10 +190,6 @@ C.................  Check the value of the row number
      &            ( COL .EQ. 0 .AND. ROW .NE. 0     )    ) THEN
                     WFLAG = .TRUE.
                     OFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'WARNING: Row value ', ROW,
-     &                     'is outside range ' // ROWRANGE( 1:LR ) // 
-     &                     ' at line', IREC
-                    CALL M3MESG( MESG )                    
 
 C.................  Special treatment for cell (0,0) (skip for now)
                 ELSE IF( ROW .EQ. 0 .AND. COL. EQ. 0 ) THEN
@@ -212,16 +205,6 @@ C.................  Skip entry after subgrid adjustment
                 IF( COL .LE. 0 .OR. COL .GT. NCOLS .OR.
      &              ROW .LE. 0 .OR. ROW .GT. NROWS       ) CYCLE
 
-C.................  Check the value of the ratio value
-                IF( RATIO .GT. 1. ) THEN
-                    WRITE( MESG,94020 )
-     &                     'WARNING: resetting surrogates ratio at ' //
-     &                     'line', IREC, 'from', RATIO, 'to 1.'
-     &                     
-                    CALL M3MESG( MESG )
-                    RATIO = 1.
-                END IF
-                
 C.................  Skip entry if rows and columns are out of range
                 IF( WFLAG ) CYCLE
                 
@@ -258,9 +241,6 @@ C.........  Now create the derived surrogates tables from the original data...
 
 C.........  Sort surrogates by county code & cell & surrogate code
         CALL SORTI3( NSRGALL, IDXSRGA, SFIPSA, SCELLA, SSRGIDA )
-
-C.........  Sort surrogates by surrogate code
-        CALL SORTI1( NSRGALL, IDXSRGB, SSRGIDA )
 
 C.........  Count county codes in surrogates file and maximum number of cells
 C       per cy/st/co code.
@@ -409,7 +389,6 @@ C.........  Give a warning message for significant counties
 C.........  Reset number of surrogate records stored in the module with
 C           the correct number after reading file and removing records that
 C           are outside the subgrid (if any)
-        NSRGREC = NSRGALL
 
 C.....  Deallocate local variables
 
