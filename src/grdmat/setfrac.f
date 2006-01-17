@@ -1,6 +1,7 @@
 
         SUBROUTINE SETFRAC( SRCID, SRGIDX, TGTSRG, CELIDX, FIPIDX, NC, 
-     &                      REPORT, CSRC, OUTID1, OUTID2, FRAC )
+     &                      REPORT, CSRC, DEFSRG, SRGFLAG, OUTID1,
+     &                      OUTID2, FRAC )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -69,6 +70,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NC            ! no. src chars for msg
         LOGICAL     , INTENT (IN) :: REPORT        ! true: okay to report
         CHARACTER(*), INTENT (IN) :: CSRC          ! source chars
+        INTEGER     , INTENT (IN) :: DEFSRG        ! defaul surrogate code
+        LOGICAL     , INTENT (IN) :: SRGFLAG       ! true: using fallback surrogate
         INTEGER     , INTENT(OUT) :: OUTID1        ! primary srg ID
         INTEGER     , INTENT(OUT) :: OUTID2        ! secondary srg ID
         REAL        , INTENT(OUT) :: FRAC          ! surrogate fraction
@@ -77,10 +80,6 @@ C...........   Local allocatable arrays...
 
         INTEGER          L2       !  indices and counters.
         INTEGER          IOS      !  i/o status
-
-        INTEGER          DEFSRGID !  default surrogate ID
-
-        LOGICAL      :: FSGFLAG = .FALSE.  ! true: use default fallback surrogate
 
         CHARACTER(300)  BUFFER    !  source fields buffer
         CHARACTER(300)  MESG      !  message buffer 
@@ -94,12 +93,6 @@ C...........   Local allocatable arrays...
 C***********************************************************************
 C   begin body of subroutine SETFRAC
 
-        FSGFLAG  = ENVYN( 'SMK_USE_FALLBACK', 'Using default' //
-     &                    ' surrogate sets', .FALSE., IOS )
-            
-        DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', 'Default surrogate',
-     &                      8, IOS )
-
 C.........  Create abridged name for warning messages
         IF( CSRC /= ' ' ) THEN
             CSRC2 = CSRC( 1:VIDPOS3-1 )
@@ -110,20 +103,20 @@ C.........  Create abridged name for warning messages
 C.........  Check if surrogate selected by cross-reference for this
 C           source is non-zero in the country/state/county code of interest
 
-        IF( FSGFLAG ) THEN 
+        IF( SRGFLAG ) THEN 
 
             IF( SRGCSUM( SRGIDX,FIPIDX ) .EQ. 0. )THEN
            
 C.................  Write note about changing surrogate used for current
 C                   source if it has not yet been written
-                IF( TGTSRG .NE. DEFSRGID ) THEN
+                IF( TGTSRG .NE. DEFSRG ) THEN
 
                     IF( REPORT .AND. CSRC2 .NE. LCSRC2 ) THEN
            
                         CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
             
                         WRITE( MESG,94010 ) 
-     &                     'WARNING: Using fallback surrogate',DEFSRGID,
+     &                     'WARNING: Using fallback surrogate',DEFSRG,
      &                     CRLF()// BLANK10 // 'to prevent zeroing ' //
      &                     'by original surrogate for:'
      &                     // CRLF()// BLANK10// BUFFER( 1:L2 ) //
@@ -147,7 +140,7 @@ C.....................  Write warning for default fraction of zero
 C.................  Set surrogate fraction using default surrogate
                 FRAC = 0.0
                 OUTID1 = TGTSRG
-                OUTID2 = DEFSRGID
+                OUTID2 = DEFSRG
 
 C.............  Set surrogate fraction with cross-reference-selected
 C               surrogate
