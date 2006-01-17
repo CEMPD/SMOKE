@@ -1,6 +1,7 @@
 
-        SUBROUTINE SIZGMAT( CATEGORY, NSRC, VFLAG, OSDEF, FSGFLAG,
-     &                      MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU )
+        SUBROUTINE SIZGMAT( CATEGORY, NSRC, VFLAG, OSDEF, DEFSRGID, 
+     &                      SRGFLAG, MXSCEL, MXCSRC, MXCCL, NMATX,
+     &                      NMATXU )
 
 C***********************************************************************
 C  subroutine body starts at line 102
@@ -50,8 +51,9 @@ C.........  This module contains the global variables for the 3-d grid
 
 C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NCELLS, FIPCELL, NSRGS, SRGLIST, NSRGFIPS,
-     &                     SRGFIPS, TMPLINE, NTSRGDSC, SRGFNAM, SRGFCOD,
-     &                     NTLINES, MXCFIP
+     &                     SRGFIPS, NTSRGDSC, SRGFNAM, SRGFCOD, NTLINES,
+     &                     MXCFIP
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -79,7 +81,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRC      ! local number of sources
         LOGICAL     , INTENT (IN) :: VFLAG     ! true: using variable grid
         INTEGER     , INTENT (IN) :: OSDEF     ! original index of default surrogate ID
-        LOGICAL     , INTENT (IN) :: FSGFLAG   ! true: using default fallback surrogate
+        INTEGER     , INTENT (IN) :: DEFSRGID  ! default surrogate code
+        LOGICAL     , INTENT (IN) :: SRGFLAG   ! true: using default fallback surrogate
         INTEGER     , INTENT(OUT) :: MXSCEL    ! max sources per cell   
         INTEGER     , INTENT(OUT) :: MXCSRC    ! max cells per source   
         INTEGER     , INTENT(OUT) :: MXCCL     ! max cells per county or link   
@@ -100,7 +103,6 @@ C...........   Other local variables
         INTEGER         CCNT             ! counters for no. non-zero-surg cells
         INTEGER      :: CELLSRC = 0      ! cell number as source char
         INTEGER         COL              ! tmp column
-        INTEGER         DEFSRGID         !  default surrogate ID
         INTEGER         FIP              ! country/state/county code
         INTEGER         GDEV             !  for surrogate coeff file
         INTEGER         ID1, ID2         ! primary and 2ndary surg codes
@@ -119,6 +121,7 @@ C...........   Other local variables
 
 C...........   Other arrays
         CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
+        CHARACTER(60), ALLOCATABLE :: TMPLINE( : )   ! tmp line buffer
 
         REAL            ALEN        ! link length
 
@@ -127,7 +130,7 @@ C...........   Other arrays
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
         CHARACTER(300)      MESG             !  message buffer
-        CHARACTER(80)       LINE             ! Read buffer for a line
+        CHARACTER(30)       LINE             ! Read buffer for a line
         CHARACTER(196)      NAMBUF           !  surrogate file name buffer
         CHARACTER(256)      NAMBUFT          !  tmp surrogate file name buffer
         CHARACTER(256)      TSRGFNAM         !  tmp surrogate file name buffer
@@ -142,11 +145,6 @@ C   begin body of subroutine SIZGMAT
 C.....  Print status message
         MESG = 'Computing gridding matrix size...'
         CALL M3MSG2( MESG )
-
-C.....  Determine default surrogate number from the environment
-C.....  Default surrogate code 8 is population
-        DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', 'Default surrogate',
-     &                      8, IOS )
 
 C.....  Set flag to indicate that XLOCA/YLOCA are available
         LFLAG = ALLOCATED( XLOCA )
@@ -165,51 +163,38 @@ C.....  Allocate memory for indices to surrogates tables for each source
         CALL CHECKMEM( IOS, 'NTLINES', PROGNAME )
  
 C.....  Count total line buffers to define memory size
-        DO II = 1, NSRGS + 1  ! loop through only the surrogate code assigned by sources
+        DO II = 1, NSRGS    ! loop through only the surrogate code assigned by sources
 
             NTL = 0
             TSRGFNAM = ' '
 
+            TGTSRG = SRGLIST( II )
+            KK = II
+
             ISDEF  = FIND1( DEFSRGID, NSRGS, SRGLIST )
 
-C.........  default fallback surrogate will run at last after
-C           re-assigned zero fraction surrogate
-            IF( ISDEF .EQ. 1 ) THEN
+C.........  default fallback surrogate will run for the last for gap filling.
+            IF( II >= ISDEF ) THEN
 
-                TGTSRG = SRGLIST( II )
-                KK = II
-                
-                IF( II .EQ. NSRGS + 1 ) THEN
+C.............  default fallback surrogate will run at last after
+C               re-assigned zero fraction surrogate
+                IF( II == NSRGS ) THEN
                     TGTSRG = DEFSRGID
                     KK = ISDEF
+                        
+                ELSE
+                    TGTSRG = SRGLIST( II + 1 )
+                    KK = II + 1
+                    
                 END IF
-                
+              
             END IF
-
-            IF( ISDEF .GT. 1 ) THEN
-                
-                IF( II .EQ. 1 ) THEN
-                    TGTSRG = SRGLIST( ISDEF )
-                    KK = ISDEF
-                ELSE IF( II .GT. 1 .AND. II .LE. ISDEF ) THEN
-                    TGTSRG = SRGLIST( II - 1 )
-                    KK = II - 1
-                ELSE IF( II .GT. ISDEF .AND. II .LT. NSRGS + 1 ) THEN
-                    TGTSRG = SRGLIST( II )
-                    KK = II
-                ELSE IF( II .EQ. NSRGS + 1 ) THEN
-                    TGTSRG = DEFSRGID
-                    KK = ISDEF
-                END IF
             
-            END IF
-                
-
 C.........   Count total line buffers to define memory size
             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
        
 C.............  Prompt for and open I/O API output file(s)...
-                CALL GETENV( "SRG_PATH", NAMBUF )
+                CALL GETENV( "SRGPRO_PATH", NAMBUF )
                 WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
 
                 IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
@@ -252,8 +237,8 @@ C.........  Store no of line buffers of each surrogate
             IF( NTL .EQ. 0 ) CYCLE
             NTLINES( KK ) = NTL
 
-C.........  skip default surrogate if FSGFLAG is false
-            IF( .NOT. FSGFLAG .AND. OSDEF .LE. 0 ) NTLINES( ISDEF ) = 0
+C.........  skip default surrogate if SRGFLAG is false
+            IF( .NOT. SRGFLAG .AND. OSDEF .LE. 0 ) NTLINES( ISDEF ) = 0
 
 C.........  Allocate memory for indices to surrogates tables for each source
             ALLOCATE( TMPLINE( NTL ), STAT=IOS )
@@ -269,7 +254,7 @@ C           surrogates to each source.
             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
        
 C.............  Prompt for and open I/O API output file(s)...
-                CALL GETENV( "SRG_PATH", NAMBUF )
+                CALL GETENV( "SRGPRO_PATH", NAMBUF )
                 WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
                 
                 IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
@@ -304,11 +289,9 @@ C.................  Skip entry if SSC is not in the assigned SRGLIST by source
 
             END DO       ! loop over all surrogate files in SRGDESC file
 
-            CALL SIZRDSRG( NT, VFLAG )
+            CALL SIZRDSRG( NT, TMPLINE, VFLAG )
 
             DEALLOCATE( TMPLINE )
-            
-            IF( II == 1 ) CYCLE
 
 C.........  Loop over sources per each assigned surrogate
             DO S = 1, NSRC
@@ -345,7 +328,7 @@ C........................  Set as 1 cell and get the cell number
 C.....................  Otherwise, skip this source because it's outside the grid
                     ELSE
                         NCEL = 0
-                        
+
                     END IF
             
 C................  If area/non-link source...
@@ -360,16 +343,24 @@ C                       surrogates tables from MODSURG
                     IF ( F .GT. 0 ) THEN
             
                         NCEL = NCELLS( F )
-                        ACEL( 1:NCEL ) = FIPCELL( 1:NCEL, F )      ! arrays
+                        ACEL( 1:NCEL ) = FIPCELL( 1:NCEL, F )   ! arrays
             
                         DO K = 1, NCEL
                             CALL SETFRAC( S, ISIDX, TGTSRG, K, F, 1,  
-     &                               .FALSE.,' ', ID1, ID2, AFAC( K ) )
+     &                                  .FALSE.,' ', DEFSRGID, SRGFLAG,
+     &                                   ID1, ID2, AFAC( K ) )
+
+C.........................  Re-assigning org assigned srg to default fallback srg
+                            IF( ID2 .EQ. DEFSRGID .AND. SRGFLAG ) THEN
+                                ASRGID( S ) = DEFSRGID
+                                CYCLE
+                            END IF
+
                         END DO
-                        
-                        
+
 C.....................  Otherwise, skip this source because it's outside the grid
                     ELSE
+                        IF( SRGFLAG ) ASRGID( S ) = DEFSRGID
                         CYCLE
 
                     END IF
@@ -388,7 +379,7 @@ C.....................  Make sure that there was enough storage
                         CALL M3MSG2( MESG )
                         CYCLE
                     END IF
-                    
+
                 END IF
 C           
 C.................  Loop through the cells for this source and increment the number
@@ -396,15 +387,11 @@ C                   of sources per cell.
                 CCNT = 0
                 DO N = 1, NCEL
             
-                    IF( AFAC( N ) .GT. 0. ) THEN
+                    IF( AFAC( N ) .GT. 0.0 ) THEN
                         C = ACEL( N )
                         NX( C ) = NX( C ) + 1
                         CCNT = CCNT + 1
                     END IF
-
-C...................  Count all county/cell intersections for all sources.  This
-C                     is needed for ungridding matrix.
-                    NMATXU = NMATXU + 1
 
                 END DO    ! End loop on cells for this source
             
@@ -412,7 +399,7 @@ C.................  Update the maximum number of cells per source
                 IF( CCNT .GT. MXCSRC ) MXCSRC = CCNT
             
 C.................  Update the maximum number of cells per county or link
-                IF ( NCEL .GT. MXCCL ) MXCCL = NCEL
+                IF( NCEL .GT. MXCCL ) MXCCL = NCEL
             
             END DO        ! End loop on sources
 
@@ -439,6 +426,91 @@ C.........  And determine the total number of source-cell intersections
 
         END DO        ! End loop on cells
 
+C..........................................................
+C.........  Estimating ungridding matrices sizes ..........
+C..........................................................
+
+C...... Loop over sources per each assigned surrogate
+        DO S = 1, NSRC
+
+            FIP = IFIP( S )
+            SSC  = ASRGID( S )
+            IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
+            IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
+
+C.........  Determine if x/y location is available
+            XYSET = .FALSE.
+            IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
+
+C.........  If cell-specific source...
+            IF ( CELLSRC .GT. 0 ) THEN
+                NCEL = 1
+                ACEL( 1 ) = CELLID( S )
+                AFAC( 1 ) = 1.
+       
+C.........  Check if source has been converted to point src
+            ELSE IF( XYSET ) THEN
+       
+C..............  If source is in the domain....
+                IF( INGRID( XLOCA( S ), YLOCA( S ), 
+     &                      NCOLS, NROWS, COL, ROW  ) ) THEN
+       
+C....................  Set as 1 cell and get the cell number
+                    NCEL = 1
+                    ACEL( 1 ) = ( ROW-1 ) * NCOLS + COL
+                    AFAC( 1 ) = 1.
+       
+C.................  Otherwise, skip this source because it's outside the grid
+                ELSE
+                    NCEL = 0
+
+                END IF
+       
+C............  If area/non-link source...
+            ELSE IF( CLNK .EQ. ' ' ) THEN
+       
+C.................  Retrieve the index to the surrogates cy/st/co list
+                ISIDX = 1
+                F     = FIND1( FIP, NSRGFIPS, SRGFIPS )
+
+C.............  Retrieve the cell intersection info from the
+C               surrogates tables from MODSURG
+                IF ( F .GT. 0 ) THEN
+       
+                    NCEL = NCELLS( F )
+
+C.............  Otherwise, skip this source because it's outside the grid
+                ELSE
+                    CYCLE
+
+                END IF
+
+C.............  If link source, determine the number of cells for this source
+            ELSE
+                CALL LNK2GRD( NGRID, XLOC1( S ), YLOC1( S ), 
+     &                       XLOC2( S ), YLOC2( S ), NCEL, ACEL,
+     &                       AFAC, ALEN, EFLAG)
+
+C.............  Make sure that there was enough storage 
+                IF( EFLAG ) THEN
+                    WRITE( MESG,94010 )
+     &                  'INTERNAL ERROR: Overflow for source', S
+                    CALL M3MSG2( MESG )
+                    CYCLE
+                END IF
+
+            END IF
+C      
+C.............  Count all county/cell intersections for all sources.  This
+C               is needed for ungridding matrix.
+            DO N = 1, NCEL
+
+                NMATXU = NMATXU + 1
+
+            END DO    ! End loop on cells for this source
+
+        END DO        ! End loop on sources
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
@@ -458,7 +530,7 @@ C.........  This internal subprogram open individual surrogate file
 C----------------------------------------------------------------------
                  
 C.........  Set logical file name
-            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUFT )) THEN
+            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUFT )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUFT )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -466,13 +538,13 @@ C.........  Set logical file name
 
 C.........  Get the number of lines in the surrogate description file desription file
             GDEV = PROMPTFFILE( 'Reading surrogate files..',
-     &             .TRUE., .TRUE., 'SRG_PATH', PROGNAME )
+     &             .TRUE., .TRUE., 'SRGPRO_PATH', PROGNAME )
      
             REWIND( GDEV )
 
             NLINES = GETFLINE( GDEV, 'Reading srg files' )
             
-            IF( .NOT. SETENVVAR( "SRG_PATH", NAMBUF )) THEN
+            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUF )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUF )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
