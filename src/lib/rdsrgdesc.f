@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDSRGDESC( NT )
+        SUBROUTINE RDSRGDESC( FDEV )
 
 C**************************************************************************
 C  subroutine body starts at line
@@ -54,12 +54,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL       BLKORCMT, GETFLINE, PROMPTFFILE, STR2INT
 
 C...........   Subroutine arguments
-        INTEGER, INTENT ( OUT ) :: NT         ! No of surrogate files
+        INTEGER, INTENT ( IN )  :: FDEV       ! file unit number
 
 C...........   Local variables
-        INTEGER         I, J, K, N               ! indices and counters
+        INTEGER         I, J, K, N, NT           ! indices and counters
 
-        INTEGER         FDEV                  ! for surrogate description file
         INTEGER         MDEV                  ! for surrogate files
         INTEGER         ENDLEN                ! end length for reading descriptn
         INTEGER         IOS                   ! i/o status
@@ -71,18 +70,15 @@ C...........   Local variables
 
         CHARACTER(256)  LINE                  ! Read buffer for a line
         CHARACTER(300)  MESG                  ! Message buffer
-        CHARACTER(60)  SFN                   ! temporary surrogate file name
-        CHARACTER(60)  LSFN                  ! previous temporary surrogage file name
-        CHARACTER(60)  SEGMENT( 4 )           ! line parsing array
+        CHARACTER(60)   SEGMENT( 4 )           ! line parsing array
 
         CHARACTER(16) :: PROGNAME = 'RDSRGDESC'    !  program name
 
 C***********************************************************************
 C   Begin body of subroutine RDSRGDESC
-        
-        MESG = 'Enter logical name for the surrogate description file'
-        FDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SRGDESC', PROGNAME )
 
+        REWIND( FDEV )  ! In case of multiple calls
+        
 C.........  Get the number of lines in the surrogate description file
         NLINES = GETFLINE( FDEV, 'SRGDESC Descriptions' )
 
