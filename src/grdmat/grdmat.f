@@ -551,7 +551,7 @@ C.............  Prompt for and open I/O API output file(s)...
             END DO
 
         END IF
-
+        
 C.................  Get grid name from the environment and read grid parameters
         IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D,
      &       COORUNIT, P_ALP3D, P_BET3D, P_GAM3D, XCENT3D,
