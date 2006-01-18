@@ -46,7 +46,7 @@ C...........   This module contains the gridding surrogates tables
      &                     SRGNCOLS, SRGNROWS, NTLINES
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: NGRID, NCOLS, NROWS
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS, XOFF, YOFF
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP
@@ -121,31 +121,33 @@ C...........   Temporary arrays for storing surrogate codes to use
 C...........   Other local variables
         INTEGER         C, F, I, II, J, JJ, K, KK, N, NT, S !  indices and counters.
 
-        INTEGER         GDEV    !  for surrogate coeff file
-        INTEGER         COL     ! tmp column
-        INTEGER         FIP     ! tmp country/state/county code
-        INTEGER         ID1,ID2 ! tmp primary and secondary surg codes
-        INTEGER         IOS     ! i/o status
-        INTEGER         IREC    ! Record counter
-        INTEGER         ISIDX   ! tmp surrogate ID code index
-        INTEGER         ISDEF   ! default surrogate ID code index
-        INTEGER         JMAX    ! counter for storing correct max dimensions
-        INTEGER         L2      ! string length
-        INTEGER         LFIP    ! cy/st/co code from previous iteration
-        INTEGER         NCEL    ! tmp number of cells 
-        INTEGER         NNOSRG  ! no. of cy/st/co codes with no surrogates
-        INTEGER         ROW     ! tmp row
-        INTEGER         NTL     ! max no. of line buffers
+        INTEGER         GDEV      !  for surrogate coeff file
+        INTEGER         COL       ! tmp column
+        INTEGER         TCOL      ! tmp column
+        INTEGER         FIP       ! tmp country/state/county code
+        INTEGER         ID1,ID2   ! tmp primary and secondary surg codes
+        INTEGER         IOS       ! i/o status
+        INTEGER         ISIDX     ! tmp surrogate ID code index
+        INTEGER         ISDEF     ! default surrogate ID code index
+        INTEGER         JMAX      ! counter for storing correct max dimensions
+        INTEGER         L2        ! string length
+        INTEGER         LFIP      ! cy/st/co code from previous iteration
+        INTEGER         NCEL      ! tmp number of cells 
+        INTEGER         NNOSRG    ! no. of cy/st/co codes with no surrogates
+        INTEGER         ROW       ! tmp row
+        INTEGER         TROW      ! tmp row
+        INTEGER         NTL       ! max no. of line buffers
         INTEGER         TGTSRG    ! target surrogates code
         INTEGER         SSC       ! surrogates code
         INTEGER      :: NLINES = 0! number of lines in input file
 
         REAL            FRAC    ! tmp surrogate fraction
 
-        LOGICAL      :: EFLAG = .FALSE.  !  true: error detected
-        LOGICAL      :: LFLAG = .FALSE.  !  true: location data available
-        LOGICAL      :: XYSET = .FALSE.  ! true: X/Y available for src
+        LOGICAL      :: EFLAG = .FALSE.    !  true: error detected
+        LOGICAL      :: LFLAG = .FALSE.    !  true: location data available
+        LOGICAL      :: XYSET = .FALSE.    ! true: X/Y available for src
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
+        LOGICAL         WFLAG              ! true: per iteration warning flag
 
         CHARACTER(30)   LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
@@ -274,20 +276,49 @@ C.............  Prompt for and open I/O API output file(s)...
                 IF( NAMBUFT .NE. TSRGFNAM  ) THEN
                     CALL OPEN_SRGFILE
 
-                    IREC = 0
                     SSC = 0
 C.................  Reading surrogate files
                     DO JJ = 1, NLINES
 
                        READ ( GDEV, 93000, END=111, IOSTAT=IOS ) LINE
-                       IREC = IREC + 1
 
                        IF ( BLKORCMT( LINE ) ) CYCLE
 
                        CALL PARSLINE( LINE, MXSEG, SEGMENT )
                        SSC    = STR2INT ( SEGMENT( 1 ) )
+                       TCOL   = STR2INT ( SEGMENT( 3 ) )
+                       TROW   = STR2INT ( SEGMENT( 4 ) )
 
-C.................  Skip entry if SSC is not in the assigned SRGLIST by source
+C........................  Check the value of the column number
+                       IF( TCOL .LT. 0 .OR.  TCOL .GT. SRGNCOLS  .OR.
+     &                   ( TROW .EQ. 0 .AND. TCOL .NE. 0 ) ) THEN
+                           WFLAG = .TRUE.
+                       END IF
+              
+C........................  Check the value of the row number
+                       IF( TROW .LT. 0 .OR.  TROW .GT. SRGNROWS  .OR.
+     &                   ( TCOL .EQ. 0 .AND. TROW .NE. 0 ) ) THEN
+                           WFLAG = .TRUE.
+                       CALL M3MESG( MESG )                    
+              
+C........................  Special treatment for cell (0,0) (skip for now)
+                       ELSE IF( TROW .EQ. 0 .AND. TCOL. EQ. 0 ) THEN
+                           CYCLE
+              
+                       END IF
+              
+C....................  Adjust column and row for subgrid
+                       TCOL = TCOL - XOFF
+                       TROW = TROW - YOFF
+              
+C....................  Skip entry after subgrid adjustment
+                       IF( TCOL .LE. 0 .OR. TCOL .GT. NCOLS .OR.
+     &                     TROW .LE. 0 .OR. TROW .GT. NROWS ) CYCLE
+
+C.....................  Skip entry if rows and columns are out of range
+                       IF( WFLAG ) CYCLE
+
+C.....................  Skip entry if SSC is not in the assigned SRGLIST by source
                        IF( SSC .NE. TGTSRG ) CYCLE
 
                        NT = NT + 1
