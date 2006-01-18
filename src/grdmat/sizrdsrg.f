@@ -401,10 +401,11 @@ C...........   Internal buffering formats............ 94xxx
 
 94012   FORMAT( A, I8, 1X, A, I5, 1X, A, F8.4, A, F8.4 )
 
-94020   FORMAT( A, 1X, I8, 1X, A, 1X, F10.6, 1X, A )
+94020   FORMAT( A, 1X, I8, 1X, A, 1X, I5, 1X, A, 1X, F10.6, 1X, A )
 
 94030   FORMAT( A, 1X, I6.6, A, I3.2, A, F8.4 )
 
 94031   FORMAT( A, 1X, I3.2, A, F8.4 )
 
         END SUBROUTINE SIZRDSRG
+  
