@@ -83,8 +83,6 @@ C...........   Local variables
         INTEGER         COL                   ! Temp grid column number (x-axis)
         INTEGER         FIP                   ! tmp country/state/county code
         INTEGER         IOS                   ! i/o status
-        INTEGER         IREC                  ! Record counter
-        INTEGER         LC, LR                ! length of COLRANGE & ROWRANGE
         INTEGER         LCEL                  ! cell ID from previous iteration
         INTEGER         LFIP                  ! county code from prev iteration
         INTEGER         LSSC                  ! srg ID from previous iteration
@@ -141,16 +139,7 @@ C.........  Initialize arrays
         SSRGIDA = 0. ! array
         SFRACA  = 0. ! array
 
-C.........  Create message fields for errors
-        WRITE( COLRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, SRGNCOLS
-        WRITE( ROWRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, SRGNROWS
-
-        LC = LEN_TRIM( COLRANGE )
-        LR = LEN_TRIM( ROWRANGE )
-
-
 C.........  Fill surrogate arrays
-        IREC    = 0
 
         SELECT CASE( SRGFMT )
 
@@ -178,25 +167,6 @@ C              quotes around the text strings
                 
                 WFLAG = .FALSE.
                 
-C.................  Check the value of the column number
-                IF( COL .LT. 0 .OR.  COL .GT. SRGNCOLS  .OR.
-     &            ( ROW .EQ. 0 .AND. COL .NE. 0     )    ) THEN
-                    WFLAG = .TRUE.
-                    OFLAG = .TRUE.
-                END IF
-
-C.................  Check the value of the row number
-                IF( ROW .LT. 0 .OR.  ROW .GT. SRGNROWS  .OR.
-     &            ( COL .EQ. 0 .AND. ROW .NE. 0     )    ) THEN
-                    WFLAG = .TRUE.
-                    OFLAG = .TRUE.
-
-C.................  Special treatment for cell (0,0) (skip for now)
-                ELSE IF( ROW .EQ. 0 .AND. COL. EQ. 0 ) THEN
-                    CYCLE
-
-                END IF
-
 C.................  Adjust column and row for subgrid
                 COL = COL - XOFF
                 ROW = ROW - YOFF
