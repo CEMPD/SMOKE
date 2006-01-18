@@ -47,12 +47,12 @@ C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: ASRGID
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: NGRID, NCOLS, NROWS
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS, XOFF, YOFF
 
 C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NCELLS, FIPCELL, NSRGS, SRGLIST, NSRGFIPS,
      &                     SRGFIPS, NTSRGDSC, SRGFNAM, SRGFCOD, NTLINES,
-     &                     MXCFIP
+     &                     MXCFIP, SRGNCOLS, SRGNROWS
 
         IMPLICIT NONE
 
@@ -103,15 +103,18 @@ C...........   Other local variables
         INTEGER         CCNT             ! counters for no. non-zero-surg cells
         INTEGER      :: CELLSRC = 0      ! cell number as source char
         INTEGER         COL              ! tmp column
+        INTEGER         TCOL             ! tmp column
         INTEGER         FIP              ! country/state/county code
         INTEGER         GDEV             !  for surrogate coeff file
         INTEGER         ID1, ID2         ! primary and 2ndary surg codes
+        INTEGER         LC, LR           ! length of COLRANGE & ROWRANGE
         INTEGER         ISIDX            ! tmp surrogate ID code index
         INTEGER         IOS              ! i/o status
         INTEGER         IREC             ! Record counter
         INTEGER         ISDEF            !  default surrogate ID code index
         INTEGER         NCEL             ! tmp number of cells
         INTEGER         ROW              ! tmp row
+        INTEGER         TROW             ! tmp row
         INTEGER         NTL              ! max no. of line buffers
         INTEGER         TGTSRG           ! target surrogates code
         INTEGER         SSC              ! surrogates code
@@ -128,12 +131,15 @@ C...........   Other arrays
         LOGICAL      :: EFLAG = .FALSE. ! true: error flag
         LOGICAL      :: LFLAG = .FALSE. ! true: location data available
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
+        LOGICAL         WFLAG           ! true: per iteration warning flag
 
         CHARACTER(300)      MESG             !  message buffer
         CHARACTER(30)       LINE             ! Read buffer for a line
         CHARACTER(196)      NAMBUF           !  surrogate file name buffer
         CHARACTER(256)      NAMBUFT          !  tmp surrogate file name buffer
         CHARACTER(256)      TSRGFNAM         !  tmp surrogate file name buffer
+        CHARACTER(20)       COLRANGE         ! buffer w/ column range
+        CHARACTER(20)       ROWRANGE         ! buffer w/ row range
 
         CHARACTER(LNKLEN3) :: CLNK = ' '   ! tmp link ID
 
@@ -161,6 +167,13 @@ C.....  Loop through sources
 C.....  Allocate memory for indices to surrogates tables for each source
         ALLOCATE( NTLINES( NSRGS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NTLINES', PROGNAME )
+
+C.....  Create message fields for errors
+        WRITE( COLRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, SRGNCOLS
+        WRITE( ROWRANGE, '( "( ", I1, " to ", I4, " )" )' ) 1, SRGNROWS
+
+        LC = LEN_TRIM( COLRANGE )
+        LR = LEN_TRIM( ROWRANGE )
  
 C.....  Count total line buffers to define memory size
         DO II = 1, NSRGS    ! loop through only the surrogate code assigned by sources
@@ -220,17 +233,57 @@ C.................  Reading surrogate files
 
                        CALL PARSLINE( LINE, MXSEG, SEGMENT )
                        SSC    = STR2INT ( SEGMENT( 1 ) )
+                       TCOL   = STR2INT ( SEGMENT( 3 ) )
+                       TROW   = STR2INT ( SEGMENT( 4 ) )
+
+C.....................  Check the value of the column number
+                        IF( TCOL .LT. 0 .OR.  TCOL .GT. SRGNCOLS  .OR.
+     &                    ( TROW .EQ. 0 .AND. TCOL .NE. 0 ) ) THEN
+                            WFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'WARNING: Column value',
+     &                             TCOL, 'is outside range ' //
+     &                             COLRANGE( 1:LC ) // ' from FIPS ',
+     &                             FIP, 'and surrogate', SSC
+                            CALL M3MESG( MESG )
+                        END IF
+
+C.....................  Check the value of the row number
+                        IF( TROW .LT. 0 .OR.  TROW .GT. SRGNROWS  .OR.
+     &                    ( TCOL .EQ. 0 .AND. TROW .NE. 0 ) ) THEN
+                            WFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'WARNING: Row value ', 
+     &                             TROW, 'is outside range ' // 
+     &                             ROWRANGE( 1:LR ) // ' from FIPS ',
+     &                             FIP, 'and surrogate', SSC
+                            CALL M3MESG( MESG )                    
+
+C.....................  Special treatment for cell (0,0) (skip for now)
+                        ELSE IF( TROW .EQ. 0 .AND. TCOL. EQ. 0 ) THEN
+                            CYCLE
+
+                        END IF
+
+C.....................  Adjust column and row for subgrid
+                        TCOL = TCOL - XOFF
+                        TROW = TROW - YOFF
+
+C.....................  Skip entry after subgrid adjustment
+                        IF( TCOL .LE. 0 .OR. TCOL .GT. NCOLS .OR.
+     &                      TROW .LE. 0 .OR. TROW .GT. NROWS ) CYCLE
+
+C...................... Skip entry if rows and columns are out of range
+                        IF( WFLAG ) CYCLE
 
 C.................  Skip entry if SSC is not in the assigned SRGLIST by source
-                       IF( SSC .EQ. TGTSRG ) NTL = NTL + 1
-
+                        IF( SSC .EQ. TGTSRG ) NTL = NTL + 1
+                        
 111                 END DO
 
                     TSRGFNAM = NAMBUFT    ! store a previous surrogate file name buffer
                     CLOSE( GDEV )
        
                 END IF      ! skip if surrogate file has the same srg file
-             
+            
             END DO       ! loop over all surrogate files in SRGDESC file
             
 C.........  Store no of line buffers of each surrogate
@@ -262,17 +315,46 @@ C.............  Prompt for and open I/O API output file(s)...
                 IF( NAMBUFT .NE. TSRGFNAM  ) THEN
                     CALL OPEN_SRGFILE
 
-                    IREC = 0
 C.................  Reading surrogate files
                     DO JJ = 1, NLINES
 
                        READ ( GDEV, 93000, END=113, IOSTAT=IOS ) LINE
-                       IREC = IREC + 1
 
                        IF ( BLKORCMT( LINE ) ) CYCLE
 
                        CALL PARSLINE( LINE, MXSEG, SEGMENT )
                        SSC    = STR2INT ( SEGMENT( 1 ) )
+                       TCOL   = STR2INT ( SEGMENT( 3 ) )
+                       TROW   = STR2INT ( SEGMENT( 4 ) )
+
+C........................  Check the value of the column number
+                       IF( TCOL .LT. 0 .OR.  TCOL .GT. SRGNCOLS  .OR.
+     &                   ( TROW .EQ. 0 .AND. TCOL .NE. 0 ) ) THEN
+                           WFLAG = .TRUE.
+                       END IF
+              
+C........................  Check the value of the row number
+                       IF( TROW .LT. 0 .OR.  TROW .GT. SRGNROWS  .OR.
+     &                   ( TCOL .EQ. 0 .AND. TROW .NE. 0 ) ) THEN
+                           WFLAG = .TRUE.
+                       CALL M3MESG( MESG )                    
+              
+C........................  Special treatment for cell (0,0) (skip for now)
+                       ELSE IF( TROW .EQ. 0 .AND. TCOL. EQ. 0 ) THEN
+                           CYCLE
+              
+                       END IF
+              
+C....................  Adjust column and row for subgrid
+                       TCOL = TCOL - XOFF
+                       TROW = TROW - YOFF
+              
+C....................  Skip entry after subgrid adjustment
+                       IF( TCOL .LE. 0 .OR. TCOL .GT. NCOLS .OR.
+     &                     TROW .LE. 0 .OR. TROW .GT. NROWS ) CYCLE
+
+C.....................  Skip entry if rows and columns are out of range
+                       IF( WFLAG ) CYCLE
 
 C.................  Skip entry if SSC is not in the assigned SRGLIST by source
                        IF( SSC .EQ. TGTSRG ) THEN
