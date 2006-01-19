@@ -2,7 +2,7 @@
         SUBROUTINE RDDATAORLPT( LINE, READDATA, READPOL, IYEAR, DESC,
      &                          ERPTYP, SRCTYP, HT, DM, TK, FL, VL, SIC, 
      &                          MACT, NAICS, CTYPE, LAT, LON, UTMZ, 
-     &                          HDRFLAG, EFLAG )
+     &                          CORS, BLID, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -74,12 +74,14 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
         CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
         CHARACTER(2),       INTENT (OUT) :: UTMZ                  ! UTM zone
+	CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
+        CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
-        INTEGER, PARAMETER :: NSEG = 28      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 63      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I       ! counters and indices
@@ -156,6 +158,9 @@ C           the various data fields
         READDATA( 1,NRE ) = SEGMENT( 26 ) ! rule effectiveness
         READDATA( 1,NC1 ) = SEGMENT( 27 ) ! primary control equipment code
         READDATA( 1,NC2 ) = SEGMENT( 28 ) ! secondary control equipment code
+
+	CORS   = ADJUSTL( SEGMENT( 30 ) )  ! DOE plant ID
+        BLID   = ADJUSTL( SEGMENT( 31 ) )  ! boiler ID
         
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
