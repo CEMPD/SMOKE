@@ -180,9 +180,10 @@ C.............  Associate temporary pointers with sorted arrays
             OLDCSOURC  => CSOURC
             OLDCSCC    => CSCC
 
+	    OLDCSRCTYP => CSRCTYP
+
             IF( ASSOCIATED( CMACT ) ) THEN
                 OLDCMACT   => CMACT
-                OLDCSRCTYP => CSRCTYP
                 OLDCNAICS  => CNAICS
             END IF
 
@@ -215,20 +216,22 @@ C.............  Allocate memory for larger sorted arrays
             CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
             ALLOCATE( CSCC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
+
+	    ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+
+            CSRCTYP = ' '   ! array
             
             IF( ASSOCIATED( OLDCMACT ) ) THEN
                 ALLOCATE( CMACT( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CMACT', PROGNAME )
-                ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
                 ALLOCATE( CNAICS( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CNAICS', PROGNAME )
                 
                 CMACT   = ' '   ! array
-                CSRCTYP = ' '   ! array
                 CNAICS  = ' '   ! array
             END IF
-            
+
             ALLOCATE( XLOCA( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
             ALLOCATE( YLOCA( NSRC ), STAT=IOS )
@@ -310,12 +313,13 @@ C.........................  Increment source position and copy source info
                         INVYR( NEWSRCPOS ) = OLDINVYR( S )
                         CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
                         CSCC( NEWSRCPOS ) = OLDCSCC( S )
+                        CSRCTYP( NEWSRCPOS ) = OLDCSRCTYP( S )
                         
                         IF( ASSOCIATED( OLDCMACT ) ) THEN
                             CMACT  ( NEWSRCPOS ) = OLDCMACT  ( S )
                             CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
-                            CSRCTYP( NEWSRCPOS ) = OLDCSRCTYP( S )
                         END IF
+
                         
 C.........................  Store X and Y locations
                         XLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LON
@@ -388,13 +392,13 @@ C                   then need to copy information to new arrays
                     INVYR( NEWSRCPOS ) = OLDINVYR( S )
                     CSOURC( NEWSRCPOS ) = OLDCSOURC( S )
                     CSCC( NEWSRCPOS ) = OLDCSCC( S )
+                    CSRCTYP( NEWSRCPOS ) = OLDCSRCTYP( S )
                         
                     IF( ASSOCIATED( OLDCMACT ) ) THEN
                         CMACT  ( NEWSRCPOS ) = OLDCMACT  ( S )
                         CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
-                        CSRCTYP( NEWSRCPOS ) = OLDCSRCTYP( S )
                     END IF
-                    
+
                     DO K = OLDRECPOS, OLDRECPOS + OLDNPCNT( S ) - 1
                         
                         NEWRECPOS = NEWRECPOS + 1
@@ -415,11 +419,12 @@ C.........  Deallocate old source and emissions arrays
         IF( NA2PSRCS > 0 ) THEN
             DEALLOCATE( OLDIFIP, OLDISIC, OLDNPCNT, OLDIPOSCOD, 
      &                  OLDTPFLAG, OLDINVYR, OLDPOLVAL, OLDCSOURC, 
-     &                  OLDCSCC )
+     &                  OLDCSCC, OLDCSRCTYP )
      
             IF( ASSOCIATED( OLDCMACT ) ) THEN
-                DEALLOCATE( OLDCMACT, OLDCNAICS, OLDCSRCTYP )
+                DEALLOCATE( OLDCMACT, OLDCNAICS )
             END IF
+
         END IF
 
 C.........  Sort source information for reporting
