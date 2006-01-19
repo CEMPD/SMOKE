@@ -160,7 +160,7 @@ C              quotes around the text strings
                 COL    = STR2INT ( SEGMENT( 3 ) )
                 ROW    = STR2INT ( SEGMENT( 4 ) )
                 RATIO  = STR2REAL( SEGMENT( 5 ) )
-                
+
                 WFLAG = .FALSE.
                 
 C.................  Adjust column and row for subgrid
@@ -193,6 +193,7 @@ C.................  Skip entry if rows and columns are out of range
                 SFIPSA ( J ) = FIP
                 SSRGIDA( J ) = SSC
                 SFRACA ( J ) = RATIO
+
 
             END DO
             

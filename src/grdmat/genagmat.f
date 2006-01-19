@@ -149,7 +149,7 @@ C...........   Other local variables
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
         LOGICAL         WFLAG              ! true: per iteration warning flag
 
-        CHARACTER(30)   LINE      ! Read buffer for a line
+        CHARACTER(60)   LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  MESG      !  message buffer 

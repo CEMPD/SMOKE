@@ -133,8 +133,8 @@ C...........   Other arrays
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
         LOGICAL         WFLAG           ! true: per iteration warning flag
 
+        CHARACTER(60)       LINE             ! Read buffer for a line
         CHARACTER(300)      MESG             !  message buffer
-        CHARACTER(30)       LINE             ! Read buffer for a line
         CHARACTER(196)      NAMBUF           !  surrogate file name buffer
         CHARACTER(256)      NAMBUFT          !  tmp surrogate file name buffer
         CHARACTER(256)      TSRGFNAM         !  tmp surrogate file name buffer
