@@ -162,7 +162,7 @@ C...........   Other local variables
         CHARACTER(300)     BUFFER  ! tmp line buffer
         CHARACTER(300)     OUTLINE ! line to write to scratch file
         CHARACTER(300)     INFILE  !  input file line buffer
-        CHARACTER(300)     LINE    !  input file line buffer
+        CHARACTER(400)     LINE    !  input file line buffer
         CHARACTER(300)     MESG    !  message buffer
         CHARACTER(20)      VIDFMT  ! vehicle type ID format
         CHARACTER(20)      RWTFMT  ! roadway type number format
@@ -219,7 +219,7 @@ C.............  Generate message for GETFLINE and RDLINES calls
 C.............  Get number of lines of inventory files in list format
             NLINE = GETFLINE( FDEV, MESG )
 
-C.............  Allocate memory for storing contents of list-format'd file
+C.............  Allocate memory for storing contents of list-formatted file
             ALLOCATE( FILFMT( NLINE ), STAT=IOS )
             CALL CHECKMEM( IOS, 'FILFMT', PROGNAME )
             ALLOCATE( LSTSTR( NLINE ), STAT=IOS )
