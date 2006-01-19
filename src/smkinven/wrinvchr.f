@@ -74,20 +74,22 @@ C.........  Arrays for column formatting
         CHARACTER(300) CHARS ( MXCHRS+8 ) !  source fields for output
 
 C.........  Source-specific header arrays
-        CHARACTER(20) :: ARHEADRS( MXARCHR3+1 ) = 
+        CHARACTER(20) :: ARHEADRS( MXARCHR3+2 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'SCC                 ',
-     &                                        'Cell                ' / )
+     &                                        'Cell                ',
+     &                                        'Source type code    ' / )
 
-        CHARACTER(20) :: MBHEADRS( MXMBCHR3+2 ) = 
+        CHARACTER(20) :: MBHEADRS( MXMBCHR3+3 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Roadway Type code   ',
      &                                        'Link ID             ',
      &                                        'Vehicle Type code   ',
      &                                        'SCC                 ', 
-     &                                        'Vehicle Type Name   ' / ) 
+     &                                        'Vehicle Type Name   ',
+     &                                        'Source type code    ' / )
 
         CHARACTER(20) :: PTHEADRS( MXPTCHR3+9 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
@@ -118,7 +120,7 @@ C.........  Other local variables
         INTEGER       L1, L2, NL       !  counters and indices
         INTEGER       M1, M2, M3, M4   !  positions after src characteristics
         INTEGER       M5, M6, M7, M8
-        INTEGER       NASCII           !  number of posible output fields
+        INTEGER       NASCII           !  number of possible output fields
         INTEGER       NC               !  number of output fields
 
         CHARACTER(100) BUFFER              !  test buffer
@@ -257,10 +259,10 @@ C.........  End subroutine if ASCII file is not to be written
 C.........  Set the number of potential ASCII columns in SDEV output file
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
-            NASCII = MXARCHR3
-            IF( NONPOINT ) NASCII = NASCII + 3
+            NASCII = MXARCHR3 + 1
+            IF( NONPOINT ) NASCII = NASCII + 2
         CASE( 'MOBILE' )
-            NASCII = MXMBCHR3+1
+            NASCII = MXMBCHR3+2
         CASE( 'POINT' )
             NASCII = MXPTCHR3+8
         END SELECT
@@ -271,11 +273,10 @@ C           the source-specific fields
         CALL CHECKMEM( IOS, 'HDRFLDS', PROGNAME )
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
-            HDRFLDS( 1:4 ) = ARHEADRS  ! array
+            HDRFLDS( 1:5 ) = ARHEADRS  ! array
             IF( NONPOINT ) THEN
-                HDRFLDS( NASCII+1-2 ) = 'MACT code           '
-                HDRFLDS( NASCII+1-1 ) = 'NAICS code          '
-                HDRFLDS( NASCII+1 )   = 'Source type code    '
+                HDRFLDS( NASCII+1-1 ) = 'MACT code           '
+                HDRFLDS( NASCII+1 )   = 'NAICS code          '
             END IF
         CASE( 'MOBILE' )
             HDRFLDS = MBHEADRS  ! array
@@ -310,24 +311,33 @@ C.........  Get the maximum column width for each of the columns in ASCII file
             SELECT CASE ( CATEGORY )
             CASE( 'AREA' )
                 IF( NONPOINT ) THEN
+		    J = LEN_TRIM( CSRCTYP( S ) )
+                    IF( CSRCTYP( S ) /= ' ' .AND.
+     &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
+
                     J = LEN_TRIM( CMACT( S ) )
                     IF( CMACT( S ) /= ' ' .AND.
-     &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
+     &                  J > COLWID( M2 ) ) COLWID( M2 ) = J
      
                     J = LEN_TRIM( CNAICS( S ) )
                     IF( CNAICS( S ) /= ' ' .AND.
-     &                  J > COLWID( M2 ) ) COLWID( M2 ) = J
-                        
-                    J = LEN_TRIM( CSRCTYP( S ) )
-                    IF( CSRCTYP( S ) /= ' ' .AND.
      &                  J > COLWID( M3 ) ) COLWID( M3 ) = J
-                END IF
+                ELSE
+
+	            J = LEN_TRIM( CSRCTYP( S ) )
+                    IF( CSRCTYP( S ) /= ' ' .AND. 
+     &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
+		END IF
             
             CASE( 'MOBILE' ) 
 
                 J = LEN_TRIM( CVTYPE( S ) )                   ! could be blank
                 IF( CVTYPE( S ) .NE. ' ' .AND.
      &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
+
+                J = LEN_TRIM( CSRCTYP( S ) )
+                IF( CSRCTYP( S ) /= ' ' .AND.
+     &              J > COLWID( M2 ) ) COLWID( M2 ) = J
 
             CASE( 'POINT' )
 
@@ -432,25 +442,37 @@ C.............  Store remaining source attributes in separate fields (CHARS)
             SELECT CASE ( CATEGORY )
             CASE( 'AREA' )
                 IF( NONPOINT ) THEN
-                    IF( LF( M1 ) ) THEN
+		    IF( LF( M1 ) ) THEN
+                        NC = NC + 1
+                        CHARS( NC ) = CSRCTYP( S )
+                    END IF
+
+                    IF( LF( M2 ) ) THEN
                         NC = NC + 1
                         CHARS( NC ) = CMACT( S )
                     END IF
                     
-                    IF( LF( M2 ) ) THEN
+                    IF( LF( M3 ) ) THEN
                         NC = NC + 1
                         CHARS( NC ) = CNAICS( S )
                     END IF
-                    
-                    IF( LF( M3 ) ) THEN
+                ELSE         
+
+	            IF( LF( M1 ) ) THEN
                         NC = NC + 1
                         CHARS( NC ) = CSRCTYP( S )
-                    END IF
-                END IF          
+		    END IF
+                END IF
+
             CASE( 'MOBILE' )
                 IF( LF( M1 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CVTYPE( S )
+                END IF
+
+                IF( LF( M2 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CSRCTYP( S )
                 END IF
 
             CASE( 'POINT' ) 
