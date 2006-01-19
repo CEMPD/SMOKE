@@ -1,6 +1,6 @@
 
         SUBROUTINE RDDATAORLAR( LINE, READDATA, READPOL, IYEAR, 
-     &                          HDRFLAG, EFLAG )
+     &                          SRCTYP, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -57,12 +57,13 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NARPPOL3 )! array of data values
         CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! pollutant name
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
+	CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
-        INTEGER, PARAMETER :: NSEG = 9       ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 26      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I        ! counters and indices
@@ -122,6 +123,8 @@ C           the various data fields
         READDATA( 1,NCE ) = SEGMENT( 6 )
         READDATA( 1,NRE ) = SEGMENT( 7 )
         READDATA( 1,NRP ) = SEGMENT( 8 )
+
+	SRCTYP = ADJUSTL( SEGMENT( 9 ) )   ! source type code
         
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
