@@ -98,7 +98,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
         CHARACTER(*), INTENT (IN) :: FNAME        ! logical name of file
         INTEGER,      INTENT (IN) :: NRAWBP       ! no. sources with pollutants
-        LOGICAL,      INTENT(OUT) :: NONPOINT     ! true: proccessing nonpoint inventory
+        LOGICAL,      INTENT(OUT) :: NONPOINT     ! true: processing nonpoint inventory
 
 C...........   Local parameters
         INTEGER, PARAMETER :: DATALEN3 = 25  ! length of data field
@@ -340,6 +340,11 @@ C.........  Allocate memory for storing inventory data
         ALLOCATE( INVYR( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
 
+	ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+
+	CSRCTYP = ' '       ! array
+
         IF( CATEGORY == 'AREA' ) THEN
             ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
@@ -364,18 +369,15 @@ C.........  Allocate memory for storing inventory data
         END IF
         
         IF( CATEGORY == 'POINT' .OR. NONPOINT ) THEN
-            ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
             ALLOCATE( CMACT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CMACT', PROGNAME )
             ALLOCATE( CNAICS( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CNAICS', PROGNAME )
         
-            CSRCTYP = ' '       ! array
             CMACT   = ' '       ! array
             CNAICS  = ' '       ! array
         END IF
-        
+
         IF( CATEGORY == 'POINT' ) THEN
             ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
@@ -648,11 +650,11 @@ C.....................  Need to read source information to match with VMTMIX fil
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
                     CALL RDDATAORLAR( LINE, READDATA, READPOL, 
-     &                                INVYEAR, HDRFLAG, EFLAG )
+     &                                INVYEAR, SRCTYP, HDRFLAG, EFLAG )
                     NPOLPERLN = 1   ! have to set fake value to force reporting
                 CASE( 'MOBILE' )
                     CALL RDDATAORLMB( LINE, READDATA, READPOL,
-     &                                INVYEAR, HDRFLAG, EFLAG )
+     &                                INVYEAR, SRCTYP, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
                 CASE( 'POINT' )
@@ -660,7 +662,7 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                INVYEAR, DESC, ERPTYP, SRCTYP, 
      &                                HT, DM, TK, FL, VL, SIC, MACT, 
      &                                NAICS, CTYPE, LAT, LON, ZONE,
-     &                                HDRFLAG, EFLAG )
+     &                                CORS, BLID, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                 END SELECT
             CASE( ORLNPFMT )
@@ -1329,19 +1331,24 @@ C.................  Skip rest of loop
             TPFLAG( CURSRC ) = TPF
             
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
-     &          CURFMT == ORLNPFMT ) THEN
-                ISIC( CURSRC ) = STR2INT( SIC )
-                
-                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
-                    CALL PADZERO( SRCTYP )
-                    CALL PADZERO( MACT )
+     &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFMT ) THEN
+
+		IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
+     &                .OR. CURFMT == ORLNPFMT ) THEN
+                    ISIC( CURSRC ) = STR2INT( SIC )
+
+		    CALL PADZERO( MACT )
                     CALL PADZERO( NAICS )
-                    CSRCTYP( CURSRC ) = SRCTYP
                     CMACT  ( CURSRC ) = MACT
                     CNAICS ( CURSRC ) = NAICS
-                END IF
+		END IF
                 
-                IF( CURFMT == ORLFMT ) THEN
+		IF( CURFMT /= IDAFMT ) THEN
+		    CALL PADZERO( SRCTYP )
+		    CSRCTYP( CURSRC ) = SRCTYP
+		END IF
+                
+                IF( CATEGORY == 'POINT' .AND. CURFMT /= IDAFMT ) THEN
                     CALL PADZERO( ERPTYP )
                     CERPTYP( CURSRC ) = ERPTYP
                     
@@ -1365,11 +1372,8 @@ C.....................  Convert UTM values to lat-lon
                 XLOCA   ( CURSRC ) = STR2REAL( LON )
                 YLOCA   ( CURSRC ) = STR2REAL( LAT )
                 CPDESC  ( CURSRC ) = DESC
-                
-                IF( CURFMT == IDAFMT ) THEN
-                    CORIS   ( CURSRC ) = ADJUSTR( CORS )
-                    CBLRID  ( CURSRC ) = ADJUSTR( BLID )
-                END IF
+                CORIS   ( CURSRC ) = ADJUSTR( CORS )
+                CBLRID  ( CURSRC ) = ADJUSTR( BLID )
                 
 C.................  Convert units on values 
                 IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
