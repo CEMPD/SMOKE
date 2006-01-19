@@ -66,7 +66,7 @@ C...........   SUBROUTINE ARGUMENTS
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
-        INTEGER, PARAMETER :: NSEG = 12      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 34      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I        ! counters and indices
