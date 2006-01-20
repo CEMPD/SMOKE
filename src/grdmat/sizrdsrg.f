@@ -174,8 +174,8 @@ C.................  Skip entry after subgrid adjustment
 C.................  Check the value of the ratio value
                 IF( RATIO .GT. 1. ) THEN
                     WRITE( MESG,94020 )
-     &                     'WARNING: resetting surrogates ratio at ' //
-     &                     ' from FIPS ', FIP, 'and surrogate', SSC,
+     &                     'WARNING: resetting surrogates ratio ' //
+     &                     ' for FIPS ', FIP, 'and surrogate', SSC,
      &                     ' from', RATIO, 'to 1.'
                     CALL M3MESG( MESG )
 
