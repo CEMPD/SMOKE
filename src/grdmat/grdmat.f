@@ -381,13 +381,13 @@ C..........  Read the link definition file
 c            CALL RDLNKDEF( )
 
 C.........  Determine default surrogate number from the environment
-C.........  Default surrogate code 8 is population
+C.........  Default surrogate code 100 is population
 
             FSGFLAG  = ENVYN( 'SMK_USE_FALLBACK', 'Using default' //
      &                        ' surrogate sets', .FALSE., IOS )
             
             DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', 'Default surrogate',
-     &                          8, IOS )
+     &                          100, IOS )
 
             ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
         
@@ -399,7 +399,7 @@ C.........  Default surrogate code 8 is population
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             ELSE
-                WRITE( MESG, 94010 ) 'Default surrogate sets to ',
+                WRITE( MESG, 94010 ) 'Default surrogate set to ',
      &                                DEFSRGID
                 CALL M3MSG2( MESG )
 
