@@ -54,6 +54,7 @@ setenv WRITE_ANN_ZERO       N   # Y writes zero emission values to intermediate 
 #      SMK_TMPDIR       set by assigns/set_dirs.scr script
 
 ## For Grdmat
+setenv SMK_USE_FALLBACK     Y   # Y use fallback surrogate code
 setenv SMK_DEFAULT_SRGID    100 # surrogate code number to use as fallback
 #      IOAPI_ISPH       set by Assigns file
 #      REPORT_DEFAULTS  see "Multiple-program controls" below
