@@ -148,7 +148,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
 
-        CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
+        CHARACTER(256) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(300) :: LINE   = ' '    ! line buffer 
         CHARACTER(300) :: MESG   = ' '    ! message buffer
 

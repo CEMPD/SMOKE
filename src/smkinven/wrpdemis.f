@@ -96,7 +96,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
         LOGICAL, SAVE :: LFLAG    = .FALSE.  ! true: iteration on special var
 
-        CHARACTER(100)   BUFFER           ! src description buffer
+        CHARACTER(256)   BUFFER           ! src description buffer
         CHARACTER(300)   MESG             ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'WRPDEMIS' !  program name
