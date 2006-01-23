@@ -1,6 +1,24 @@
 
         PROGRAM CEMSCAN
         
+C***********************************************************************
+C  program body starts at line 39
+C
+C  DESCRIPTION: 
+C      Program to read a year's worth of CEM data and calculate summed annual
+C      NOx emissions, SO2 emissions, heat input, gross load, and steam load. 
+C      The output from CEMScan is used by Smkinven to calculate hourly emissions
+C      from annual inventory data when reading CEM data. 
+C
+C  PRECONDITIONS REQUIRED:
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:
+C
+C  REVISION  HISTORY:
+C     Written by C. Seppane
+C
+C***********************************************************************
+
         IMPLICIT NONE
 
 C.........  INCLUDES
@@ -390,9 +408,9 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
-93010   FORMAT( A6, 1X, A6, 6( 1X, E12.5 ) )
+93010   FORMAT( A6, 1X, A6, 6( 1X, E17.10) )
 93020   FORMAT( 1X, A6, ';', 4X, A6, ';', 3X, A1, ';', 4X, I4, ';', 
-     &          6( 5X, I4, ';', 3( 1X, E12.5, ';' ) ) )
+     &          6( 5X, I4, ';', 3( 1X, E17.10, ';' ) ) )
 
 C...........   Internal buffering formats............ 94xxx
 
