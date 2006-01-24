@@ -90,10 +90,12 @@ C...........   Local variables
         INTEGER         MXCFIP                ! Max cells per county code
         INTEGER         ROW                   ! Tmp grid row number (y-axis)
         INTEGER         SSC                   ! Tmp spatial surrogate code
+        INTEGER         LCC                   ! previous tmp cell ID
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
 
         REAL            RATIO                 ! Temp spatial surrogate Ratio
+        REAL            LRATIO                ! previous tmp spatial surrogate Ratio
 
         LOGICAL      :: GFLAG = .FALSE.       ! true: per iteration surg > 1
         LOGICAL      :: HFLAG = .FALSE.       ! true: header found
@@ -272,7 +274,10 @@ C.........  Initialize arrays
 C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
         LFIP     = -1
         LCEL     = -1
+        LCC      = -1
+        LRATIO   = -1.
         NSRGFIPS = 0
+
         DO I = 1, NSRGALL
           
             J     = IDXSRGA( I )
@@ -287,9 +292,23 @@ C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
                 SRGFIPS( NSRGFIPS ) = FIP
                 CELCNT   = 0             ! init cell counter per county
                 LFIP     = FIP
-              
+                LRATIO = RATIO
+                LCC    = C
+
+            ELSE
+                IF( LCC .EQ. C .AND. LRATIO .NE. RATIO ) THEN
+                    WRITE( MESG,93000 ) 'ERROR : There are ' //
+     &                   'duplicaties entries with same FIPS and ' // 
+     &                   'surrogate with different raction values ' //
+     &                   ':: Check the list of ERROR in log file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )                    
+                END IF
+
+                LCC    = C
+                LRATIO = RATIO
+
             END IF
-      
+
             IF( C   .NE. LCEL .OR. CELCNT .EQ. 0 ) THEN
       
                 CELCNT = CELCNT + 1      ! increment cell counter per county
