@@ -173,6 +173,6 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93010   FORMAT( A6, 1X, A6, 6( 1X, E12.5 ) )
+93010   FORMAT( A6, 1X, A6, 6( 1X, E17.10 ) )
         
         END SUBROUTINE RDCEMSUM
