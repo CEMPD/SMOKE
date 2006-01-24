@@ -15,7 +15,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Written by C. Seppane
+C     Written by C. Seppanen
 C
 C***********************************************************************
 
