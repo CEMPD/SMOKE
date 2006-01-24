@@ -355,8 +355,9 @@ C.....................  Store data
         END DO
         
 C.........  Write output file header
-        WRITE( ODEV, 93000 ) '#ORIS  BOILER  NOX          ' //
-     &    'SO2          OPTIME       GLOAD       SLOAD         HTINPUT'
+        WRITE( ODEV, 93000 ) '#ORIS  BOILER  NOX               ' //
+     &    'SO2               OPTIME            GLOAD' //
+     &    '            SLOAD              HTINPUT'
 
 C.........  Write report header
         WRITE( RDEV, 93000 ) 'ORIS ID; Boiler ID; Out; Tot Hrs; ' //
