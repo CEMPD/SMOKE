@@ -280,8 +280,9 @@ C.........  Initialize arrays
 C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
         LFIP     = -1
         LCEL     = -1
-        NSRGFIPS = 0
+        LCC      = -1
         LRATIO   = -1.
+        NSRGFIPS = 0
 
         DO I = 1, NSRGALL
           
@@ -313,7 +314,7 @@ C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
      &                   'duplicaties entries with same FIPS', FIP,
      &                   'and surrogate ', SSC, 'with different ' //
      &                   'fraction values', RATIO, 'and ', LRATIO
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )                    
+                    CALL M3MESG( PROGNAME, 0, 0, MESG, 2 )                    
                 END IF
 
                 LCC    = C
