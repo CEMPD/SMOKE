@@ -361,12 +361,16 @@ C.........  Write output file header
 
 C.........  Write report header
         WRITE( RDEV, 93000 ) 'ORIS ID; Boiler ID; Out; Tot Hrs; ' //
-     &    ' NOx Hrs; Ann NOx Emis; Max NOx Emis; Min NOx Emis; ' //
-     &    ' SO2 Hrs; Ann SO2 Emis; Max SO2 Emis; Min SO2 Emis; ' //
-     &    '  Op Hrs;  Ann Op Time;  Max Op Time;  Min Op Time; ' //
-     &    ' Gld Hrs;    Ann GLOAD;    Max GLOAD;    Min GLOAD; ' //
-     &    ' Sld Hrs;    Ann SLOAD;    Max SLOAD;    Min SLOAD; ' //
-     &    'Heat Hrs; Ann Ht Input; Max Ht Input; Min Ht Input'
+     &    ' NOx Hrs;      Ann NOx Emis;      Max NOx Emis; ' //
+     &    '     Min NOx Emis;  SO2 Hrs;' //
+     &    '      Ann SO2 Emis;      Max SO2 Emis;      ' //
+     &    'Min SO2 Emis;   Op Hrs;       Ann Op Time;' //
+     &    '       Max Op Time;       Min Op Time; ' //
+     &    ' Gld Hrs;         Ann GLOAD;         Max GLOAD;    ' //
+     &    '     Min GLOAD;  Sld Hrs;    ' //
+     &    '     Ann SLOAD;         Max SLOAD;         Min SLOAD; ' //
+     &    'Heat Hrs;      Ann Ht Input;      Max Ht Input; ' //
+     &    '     Min Ht Input'
 
 C.........  Write output and report file
         DO I = 1, NUNITS
