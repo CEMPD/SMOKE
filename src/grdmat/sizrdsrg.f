@@ -280,8 +280,6 @@ C.........  Initialize arrays
 C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
         LFIP     = -1
         LCEL     = -1
-        LCC      = -1
-        LRATIO   = -1.
         NSRGFIPS = 0
 
         DO I = 1, NSRGALL
@@ -298,8 +296,8 @@ C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
                 SRGFIPS( NSRGFIPS ) = FIP
                 CELCNT   = 0             ! init cell counter per county
                 LFIP     = FIP
-                LRATIO = RATIO
-                LCC    = C
+                LCC      = -1
+                LRATIO   = -1.
 
             ELSE
                 IF( LCC .EQ. C .AND. LRATIO .EQ. RATIO ) THEN
