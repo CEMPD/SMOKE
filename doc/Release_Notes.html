@@ -1,0 +1,357 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+
+"http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+<titleSMOKE v2.2 Release Notes</title>
+
+</head>
+
+  
+
+
+
+  <h1>SMOKE v2.3 Release Notes</h1>
+
+  
+
+<p align="center"><a href="#overview">Overview of Updates</a> | <a href="#program">Changes by Program</a> | <a href="#scripts">Scripts and Assigns Files</a> | <a href="#newfiles">New/Revised Input Files</a> | <a href="#technical">Technical Details</a></p>
+
+  
+
+<a name="overview">
+
+<h2>Overview of Updates in SMOKE 2.3</h2></a>
+
+  
+
+<ol>
+
+  <li><p>Smkinven can read the extended ORL format.&nbsp; It accepts source type codes for area, nonroad mobile and onroad mobile 
+
+	sources, as well as ORIS and boiler identification codes for point sources.</p></li>
+
+	<li>
+
+	<p>Smkinven will match hourly point source data to annual data in either 
+
+	IDA or ORL format.</p></li>
+
+	<li>
+
+	<p>Smkinven allows multiple plant descriptions and FIPS codes for an ORIS 
+
+	ID when matching hourly point data to annual data.</p></li>
+
+	<li>
+
+	<p>Smkinven uses 16 characters for the CAS code, also known as the pollutant code, 
+	to allow criteria pollutants to be input using the ORL format.</p></li>
+	<li>
+
+	<p>Smkinven now treats duplicate sources as separate sources and will issue 
+	a warning.</p></li>
+
+	<li>
+
+	<p>Cntlmat accepts source type codes of 03 and 04 for nonroad and onroad 
+
+	mobile respectively.</p></li>
+
+	<li>
+
+	<p>Temporal can run for multiple non-sequential processing dates.</p></li>
+
+	<li>
+
+	<p>Grdmat can read in surrogates from either one file or multiple files and now requires 
+         the SRGDESC file.  As a result of this update, Grdmat requires far less memory 
+         to run than it did in previous versions.</p></li>
+
+       <li><p>Smkinven can now output longer messages when processing hour and day 
+          specific emissions.</p></li>
+
+       <li><p>CEMscan now outputs 10 decimal places for emissions instead of 5.</p></li>
+	<li>
+	<p>Cntlmat will accept twelve new cases in the projection packet for plant-specific 
+	source matching.</p></li>
+	<li>
+	<p>Cntlmat has had a bug fix in the plant-specific cross reference assignment.</p></li>
+
+  </ol>
+
+  
+
+<a name="program"><h2>Changes by Program</h2></a>
+
+  
+
+<p align="center"><a href="#cemscan">CEMscan</a> | <a href="#cntlmat">Cntlmat</a> | <a href="#grdmat">Grdmat</a> | <a href="#smkinven">Smkinven</a> | 
+
+<a href="#temporal">Temporal</a></p>
+
+
+<a name="cemscan">
+
+<h3>CEMscan</h3></a>
+
+  
+
+<ul>
+
+	<li>The precision of the output data has been increased to 10 decimal places.</li>
+
+</ul>
+
+  
+
+<a name="cntlmat">
+
+<h3>Cntlmat</h3></a>
+
+  
+
+<ul>
+
+	<li><p>The MACT control packet now allows for source type codes 03 and 04 for 
+
+	nonroad and onroad mobile respectively.</p></li>
+	<li><p>The following twelve cases were added to the projection packet:</p></li>
+
+</ul>
+
+  
+
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+1. Country/State/County code, plant ID, point ID, stack ID, segment ID, 8-digit 
+SCC code, pollutant<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+2. Country/State/County code, plant ID, point ID, stack ID, segment ID, 
+pollutant<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+3. Country/State/County code, plant ID, SCC, pollutant<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+4. Country/State/County code, plant ID, point ID, stack ID, pollutant<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+5. Country/State/County code, plant ID, point ID, pollutant<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+6. Country/State/County code, plant ID, pollutant<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+7. Country/State/County code, plant ID, point ID, stack ID, segment ID, 8-digit 
+SCC code<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+8. Country/State/County code, plant ID, point ID, stack ID, segment ID<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+9. Country/State/County code, plant ID, SCC<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+10. Country/State/County code, plant ID, point ID, stack ID<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+11. Country/State/County code, plant ID, point ID<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+12. Country/State/County code, plant ID</p>
+
+  
+
+<a name="grdmat"><h3>Grdmat</h3></a>
+
+  
+
+<ul>
+
+  <li><p>Reads in assigned surrogates one at a time, either from one file or multiple files; 
+
+	thus greatly reducing memory usage.</p></li>
+
+	<li><p>The environment variables AGPRO and MGPRO are no longer used.&nbsp; Instead, a new file 
+
+	SRGDESC, is used to specify the file name of the file containing the surrogate profile, 
+
+	the surrogate code, and the region to which the surrogate file applies.</p></li>
+
+	<li><p>A new environment variable, SRGPRO_PATH, points to the directory that 
+
+	contains the surrogate file(s).</p></li>
+
+	<li><p>A fallback surrogate must be defined with the variable SMK_DEFAULT_SRGID .  This is usually set
+      to the population surrogate. </p></li>
+
+      <li><p>The SMK_USE_FALLBACK variable is used to specify whether to use the fallback surrogate or not.</p></li>
+
+  </ul>
+
+  
+
+<a name="smkinven"><h3>Smkinven</h3></a>
+
+  
+
+<ul>
+
+  <li><p>Pollutant code width is increased from 10 to 16 characters.</p></li>
+
+  
+
+<li><p>The extended ORL format is now supported, but it still accepts the older ORL format.&nbsp; 
+
+Below is a list of the new variables accepted for each source category:</p></li>
+
+  
+
+    <ul>
+
+      <li>
+
+      <p>Area: source type code</p>
+
+      </li>
+
+		<li>
+
+      <p>Mobile: source type code</p>
+
+      </li>
+
+		<li>
+
+      <p>Point: ORIS and boiler ID</p>
+
+      </li>
+
+      </ul>
+
+  
+
+<li><p>With addition of ORIS and boiler ID to point source ORL input files, 
+
+SMOKE will match hourly data to either IDA or ORL formatted input files.</p></li>
+
+	<li>
+
+	<p>When matching hourly point data, SMOKE will now allow for multiple plant 
+
+	descriptions and FIPS codes for a single ORIS ID.</p></li>
+
+       <li><p>Smkinven can now output longer messages when processing hour and day 
+          specific emissions.</p></li>
+	<li>
+	<p>Duplicate sources will be treated as separate sources.&nbsp; This is so 
+	that hourly CEM data can match to sources that may be identical in their 
+	source characteristics but have different boiler IDs.</p></li>
+
+  
+
+</ul>
+
+  
+
+<a name="temporal"><h3>Temporal</h3></a>
+
+  
+
+<ul>
+
+  <li><p>The PROCDATES file can be optionally specified to give Temporal a list of dates to process.</p></li>
+
+	<li><p>If the PROCDATES file exists, G_STDATE, G_STTIME, G_TSTEP, and G_RUNLEN 
+
+	will be set using the values from the PROCDATES file.</p></li>
+
+	<li><p>Output files are now dynamically named for each processing period (e.g., per day).</p></li>
+  
+
+</ul>
+
+  
+
+<a name="scripts"><h2>Scripts and Assigns File</h2></a>
+
+  
+
+<ul>
+
+  <li><p>Updated the default Assigns file 
+
+	(ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc) to include PROCDATES, SRGDESC and 
+
+	SRGPRO_PATH variables.</p></li>
+
+	<li>
+
+	<p>Changed AGPRO and MGPRO environment variables to be comments and to point to the 
+
+	SRGPRO_PATH variable.</p></li>
+
+	<li>
+
+	<p>Added ATMPNAME, ATSUPNAME, MTMPNAME, MTSUPNAME, PTMPNAME and PTSUPNAME to the
+
+	Assigns file to help set the value of [A|M|P]TMP.</p></li>
+
+	<li>
+
+	<p>Added SMK_USE_FALLBACK and SMK_DEFAULT_SRGID to run scripts for all 
+
+	sources to control the use of a fallback surrogate.</p></li>
+
+  </ul>
+
+  
+
+<a name="newfiles"><h2>New/Revised Input Files</h2></a>
+
+  
+
+<ul>
+
+  <li><p>The columns in the INVTABLE file have been adjusted to allow for the 16 
+
+	character CAS code.</p></li>
+
+	<li><p>The PROCDATES file is an optional input file for Temporal that 
+      specifies non-sequential processing dates.</p></li>
+
+	<li><p>The SRGDESC file is a mandatory input file for Grdmat that 
+      is used to assign surrogate files to the surrogate codes and descriptions.</p></li>
+
+  </ul>
+
+  
+
+<a name="technical"><h2>Technical Details</h2></a>
+
+  
+
+<ul>
+
+  <li>
+
+	<p>Compiled with the I/O API library version 3.0 from the I/OAPI home page 
+
+	with Makeinclude.Linux2_x86pg_pgcc_nomp.</p></li>
+	<li>
+
+	<p>Note: To get interactive screen outputs during run, follow the steps 
+	below:<br>
+	<br>
+	
+	<ul>
+	<li>Add &quot;IOAPIDEFS = -DIOAPI_STDOUT&quot; in Makefile</li>
+	<li>Add &quot;DEFINEFLAGS = 
+	IOAPI_DEFS $(ARCHFLAGS) $(PARFLAGS)&quot; in Makefile.nocpl.sed for a proper 
+	IOAPI compilation for SMOKE model.</li></li>
+	</ul>
+  </ul>
+
+
+
+</body>
+
+
+
+</html>
+
