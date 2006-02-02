@@ -52,6 +52,10 @@
 
 	<p>Smkinven uses 16 characters for the CAS code, also known as the pollutant code, 
 	to allow criteria pollutants to be input using the ORL format.</p></li>
+	<li>
+
+	<p>Smkinven now treats duplicate sources as separate sources and will issue 
+	a warning.</p></li>
 
 	<li>
 
@@ -234,6 +238,10 @@ SMOKE will match hourly data to either IDA or ORL formatted input files.</p></li
 
        <li><p>Smkinven can now output longer messages when processing hour and day 
           specific emissions.</p></li>
+	<li>
+	<p>Duplicate sources will be treated as separate sources.&nbsp; This is so 
+	that hourly CEM data can match to sources that may be identical in their 
+	source characteristics but have different boiler IDs.</p></li>
 
   
 
@@ -325,7 +333,18 @@ SMOKE will match hourly data to either IDA or ORL formatted input files.</p></li
 	<p>Compiled with the I/O API library version 3.0 from the I/OAPI home page 
 
 	with Makeinclude.Linux2_x86pg_pgcc_nomp.</p></li>
+	<li>
 
+	<p>Note: To get interactive screen outputs during run, follow the steps 
+	below:<br>
+	<br>
+	
+	<ul>
+	<li>Add &quot;IOAPIDEFS = -DIOAPI_STDOUT&quot; in Makefile</li>
+	<li>Add &quot;DEFINEFLAGS = 
+	IOAPI_DEFS $(ARCHFLAGS) $(PARFLAGS)&quot; in Makefile.nocpl.sed for a proper 
+	IOAPI compilation for SMOKE model.</li></li>
+	</ul>
   </ul>
 
 
