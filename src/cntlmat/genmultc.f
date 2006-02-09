@@ -150,13 +150,18 @@ C...........   Other local variables
         REAL             INVEFF   ! inventory baseline efficiency
         REAL             MACT     ! max. achievable cntrl tech. cntrl factor
         REAL             NEWCEFF  ! control efficiency for new sources
+        REAL             NEWFAC   ! tmp for new 1-ceff*reff*rpen
         REAL             NEWFRAC  ! fraction of new sources vs. existing
+        REAL             OLDFAC   ! tmp for old (base) 1-ceff*reff*rpen
         REAL             RACT     ! reasonably achiev. cntrl tech. cntrl factor
         REAL             REPLACE  ! replacement emissions
         REAL             RULEFF   ! tmp rule effectiveness
         REAL             RULPEN   ! tmp rule penetration
 
         LOGICAL          LAVEDAY  ! true: use average day emissions
+        LOGICAL          LCOMPARE ! true: during a "replacement" of controls,
+C                                         make sure new controls are more reduction
+C                                         than the old controls.
         LOGICAL, SAVE :: APPLFLAG = .FALSE. ! true: something has been applied
         LOGICAL, SAVE :: OPENFLAG = .FALSE. ! true: output file has been opened
 
@@ -182,6 +187,10 @@ C.........  Get environment variables that control program behavior
 C.........  Get path for temporary files
         MESG = 'Path where temporary control files will be written'
         CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
+
+C.........  Get environment variables that control program behavior
+        MESG = 'Use annual or average day emissions'
+        LCOMPARE = ENVYN( 'COMPARE_REPLACE_CONTROL', MESG, .TRUE., IOS )
 
 C.........  Open reports file
         RPTDEV( 1 ) = PROMPTFFILE( 
@@ -514,12 +523,45 @@ C................  If control packet applies to this source, compute factor
                     RULEFF = FACREFF( CTLINDX )
                     RULPEN = FACRLPN( CTLINDX )
 
+                    NEWFAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
+                    OLDFAC = 1.0 
+                    IF( BACKOUT( S ) .NE. 0. ) OLDFAC= 1.0/BACKOUT( S )
+
 C.....................  Check if this is a "replace" entry                    
                     IF( CTLRPLC( CTLINDX ) ) THEN
-                        FAC = BACKOUT( S )*
-     &                        ( 1.0 - CTLEFF*RULEFF*RULPEN )
+
+C.........................  Check if new reduction is more than old reduction
+                        IF( LCOMPARE ) THEN
+
+C.............................  If so, then backout old reduction and apply new
+                            IF ( NEWFAC .LT. OLDFAC ) THEN
+                                FAC = BACKOUT( S )* NEWFAC
+
+C.............................  Otherwise, do nothing (keep with old reduction)
+                            ELSE
+                                CSRC = CSOURC( S )
+                                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                                WRITE( MESG,94110) 'WARNING: CONTROL '//
+     &                          'packet record number', CTLINDX, 
+     &                          'control ignored for source because '//
+     &                          'base year controls are greater for:'//
+     &                          CRLF()// BLANK10//
+     &                          BUFFER( 1:L2 ) // ' POL:' // PNAM
+                                CALL M3MESG( MESG )
+
+                                FAC = 1.0
+                            ENDIF
+
+C.........................  If not checking, then always backout old reduction
+C                           and apply new reduction
+                        ELSE
+                            FAC = BACKOUT( S )* NEWFAC
+                        END IF
+
                         FACTOR( S ) = FAC
                         E1 = DATVAL( S,E )
+
+C.....................  Otherwise, apply as additional controls
                     ELSE
                         FAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
                         FACTOR( S ) = FACTOR( S ) * FAC
