@@ -767,7 +767,11 @@ C.................  Try for any FIPS code match
                 IF( F0 .GT. 0 ) THEN
                     MREF = MPRT07( F0,V ) 
                     WREF = WPRT07( F0,V )
+
+                    IF( DPRT07( F0,V ) .GE. ADDPS ) DPRT07( F0,V ) = 
+     &                  DPRT07( F0,V ) - ADDPS
                     DREF = DPRT07( F0,V )
+
                     CALL SETSOURCE_TPROFS
                     RETURN                       !  to end of sources-loop
                 END IF
@@ -778,7 +782,12 @@ C.................  Try for any country/state code match
                 IF( F0 .GT. 0 ) THEN
                     MREF = MPRT04( F0,V ) 
                     WREF = WPRT04( F0,V )
+
+
+                    IF( DPRT04( F0,V ) .GE. ADDPS ) DPRT04( F0,V ) = 
+     &                  DPRT04( F0,V ) - ADDPS
                     DREF = DPRT04( F0,V )
+
                     CALL SETSOURCE_TPROFS
                     RETURN                       !  to end of sources-loop
                 END IF
