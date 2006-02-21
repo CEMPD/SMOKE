@@ -70,8 +70,9 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: MNAME      ! controls file name
 
 C.........  Other local variables
-        INTEGER          J              !  counters and indices
+        INTEGER          J, N           !  counters and indices
         INTEGER          IOS            !  i/o status
+        INTEGER		 NVARS          !  number of output variables
 
         CHARACTER(NAMLEN3) NAMBUF   ! file name buffer
         CHARACTER(300)     MESG     ! message buffer
@@ -112,13 +113,16 @@ C.........  Set I/O API header parms that need values
 C.........  Deallocate, then allocate, output arrays
         IF( ALLOCATED( VTYPESET ) )
      &      DEALLOCATE( VNAMESET, VTYPESET, VUNITSET, VDESCSET )
-        ALLOCATE( VNAMESET( NVARSET ), STAT=IOS )
+
+        NVARS = ( 3 * NVARSET ) + NVARSET
+        
+        ALLOCATE( VNAMESET( NVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VNAMESET', PROGNAME )
-        ALLOCATE( VTYPESET( NVARSET ), STAT=IOS )
+        ALLOCATE( VTYPESET( NVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VTYPESET', PROGNAME )
-        ALLOCATE( VUNITSET( NVARSET ), STAT=IOS )
+        ALLOCATE( VUNITSET( NVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VUNITSET', PROGNAME )
-        ALLOCATE( VDESCSET( NVARSET ), STAT=IOS )
+        ALLOCATE( VDESCSET( NVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VDESCSET', PROGNAME )
 
 C.........  Also deallocate the number of variables per file so
@@ -126,15 +130,41 @@ C           that this will be set automatically by openset
         DEALLOCATE( VARS_PER_FILE )
 
 C.........  Set up non-speciation variables
+        N = 0
+        
         DO J = 1,NVARSET
 
-           VNAMESET( J )= PNAMMULT( J )
-           VTYPESET( J )= M3REAL
-           VUNITSET( J )= 'fraction'
-           VDESCSET( J )= 'Multiplicative control factor for pollutant '
+					 N = N + 1
+           VNAMESET( N )= PNAMMULT( J )
+           VTYPESET( N )= M3REAL
+           VUNITSET( N )= 'fraction'
+           VDESCSET( N )= 'Multiplicative control factor for pollutant '
+     &                   // TRIM( PNAMMULT( J ) )
+     
+           N = N + 1
+           VNAMESET( N )= 'CE_'//PNAMMULT( J )
+           VTYPESET( N )= M3REAL
+           VUNITSET( N )= 'fraction'
+           VDESCSET( N )= 'Control efficiency for pollutant '
+     &                   // TRIM( PNAMMULT( J ) )
+     
+           N = N + 1
+           VNAMESET( N )= 'RE_'//PNAMMULT( J )
+           VTYPESET( N )= M3REAL
+           VUNITSET( N )= 'fraction'
+           VDESCSET( N )= 'Rule effectivness for pollutant '
      &                   // TRIM( PNAMMULT( J ) )
 
+	         N = N + 1
+           VNAMESET( N )= 'RP_'//PNAMMULT( J )
+           VTYPESET( N )= M3REAL
+           VUNITSET( N )= 'fraction'
+           VDESCSET( N )= 'Rule penetration for pollutant '
+     &                   // TRIM( PNAMMULT( J ) )
+     
         END DO
+        
+        NVARSET = N
 
         MESG = 'Enter logical name for control matrix...'
         CALL M3MSG2( MESG )
