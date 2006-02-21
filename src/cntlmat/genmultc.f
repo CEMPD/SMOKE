@@ -124,7 +124,7 @@ C.........   Local arrays
         CHARACTER(IODLEN3)      OUTDESCS( NVCMULT,6 ) ! var descriptions
 
 C...........   Other local variables
-        INTEGER          E, I, J, K, L2, S  ! counters and indices
+        INTEGER          E, I, J, K, L, L2, S  ! counters and indices
 
         INTEGER       :: ALWINDX = 0 ! indices to ALW controls table
         INTEGER       :: CTGINDX = 0 ! indices to CTG controls table
@@ -157,6 +157,13 @@ C...........   Other local variables
         REAL             REPLACE  ! replacement emissions
         REAL             RULEFF   ! tmp rule effectiveness
         REAL             RULPEN   ! tmp rule penetration
+        
+        REAL, ALLOCATABLE :: BASECEFF( : )  ! control eff. from base inv.
+        REAL, ALLOCATABLE :: BASEREFF( : )  ! rule eff. from base inv.
+        REAL, ALLOCATABLE :: BASERPEN( : )  ! rule penetration from base inv.
+        REAL, ALLOCATABLE :: CEFF( : )   ! control efficiency per source
+        REAL, ALLOCATABLE :: REFF( : )   ! rule effectiveness per source
+        REAL, ALLOCATABLE :: RPEN( : )   ! rule penetration per source
 
         LOGICAL          LAVEDAY  ! true: use average day emissions
         LOGICAL          LCOMPARE ! true: during a "replacement" of controls,
@@ -387,6 +394,14 @@ C...........  If CONTROL packet is present: For the current pollutant, read
 C             in control efficiency, rule effectiveness, and, in the case of 
 C             AREA sources, rule penetration.
             IF ( CFLAG ) THEN
+            	
+C...........  Allocate arrays to store control information from base inventory
+		ALLOCATE( BASECEFF( NSRC ) )
+		ALLOCATE( BASEREFF( NSRC ) )
+		ALLOCATE( BASERPEN( NSRC ) )
+		BASECEFF = 0.
+		BASEREFF = 1.
+		BASERPEN = 1.
 
 C...........  Then calculate the factor which will be used to account 
 C             for control information already in the inventory
@@ -398,6 +413,11 @@ C             for control information already in the inventory
                     IF ( NCE .GT. 0 ) CTLEFF = DATVAL( S,NCE )
                     IF ( NRE .GT. 0 ) RULEFF = DATVAL( S,NRE )
                     IF ( NRP .GT. 0 ) RULPEN = DATVAL( S,NRP )
+
+C..................  Store control information from base inventory
+                    BASECEFF( S ) = CTLEFF
+                    BASEREFF( S ) = RULEFF
+                    BASERPEN( S ) = RULPEN
 
 C..................  Perform division by zero check.
                  
@@ -507,6 +527,15 @@ C...........  Apply /CONTROL/ packet controls if present for the current
 C             pollutant
 C.............................................................................
            IF ( CFLAG .AND. PCTLFLAG( I, 1 ) ) THEN
+           	
+C................  Allocate arrays to store control eff., rule eff. and 
+C                  rule penetration for each source
+              ALLOCATE( CEFF( NSRC ) )
+              ALLOCATE( REFF( NSRC ) )
+              ALLOCATE( RPEN( NSRC ) )
+              CEFF = 0.
+              REFF = 1.
+              RPEN = 1.
 
 C...............  Loop through sources
               DO S = 1, NSRC
@@ -526,7 +555,7 @@ C................  If control packet applies to this source, compute factor
                     NEWFAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
                     OLDFAC = 1.0 
                     IF( BACKOUT( S ) .NE. 0. ) OLDFAC= 1.0/BACKOUT( S )
-
+                    
 C.....................  Check if this is a "replace" entry                    
                     IF( CTLRPLC( CTLINDX ) ) THEN
 
@@ -536,6 +565,11 @@ C.........................  Check if new reduction is more than old reduction
 C.............................  If so, then backout old reduction and apply new
                             IF ( NEWFAC .LT. OLDFAC ) THEN
                                 FAC = BACKOUT( S )* NEWFAC
+                                
+C.............................  Store control information for this source
+                                CEFF( S ) = CTLEFF
+                                REFF( S ) = RULEFF
+                                RPEN( S ) = RULPEN
 
 C.............................  Otherwise, do nothing (keep with old reduction)
                             ELSE
@@ -550,12 +584,23 @@ C.............................  Otherwise, do nothing (keep with old reduction)
                                 CALL M3MESG( MESG )
 
                                 FAC = 1.0
+                                
+C.............................  Store control information for this source
+                                CEFF( S ) = BASECEFF( S )
+                                REFF( S ) = BASEREFF( S )
+                                RPEN( S ) = BASERPEN( S )
+
                             ENDIF
 
 C.........................  If not checking, then always backout old reduction
 C                           and apply new reduction
                         ELSE
                             FAC = BACKOUT( S )* NEWFAC
+                         
+                            CEFF( S ) = CTLEFF
+                            REFF( S ) = RULEFF
+                            RPEN( S ) = RULPEN
+
                         END IF
 
                         FACTOR( S ) = FAC
@@ -565,6 +610,11 @@ C.....................  Otherwise, apply as additional controls
                     ELSE
                         FAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
                         FACTOR( S ) = FACTOR( S ) * FAC
+                      
+                        CEFF( S ) = CTLEFF
+                        REFF( S ) = RULEFF
+                        RPEN( S ) = RULPEN
+
                     END IF
 
 C...................  Overwrite temporary file line with new info
@@ -853,6 +903,28 @@ C.............  Write multiplicative controls for current pollutant
                     MESG = 'Failed to write multiplicative control ' // 
      &                     'factors for pollutant ' // PNAM
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
+                L = LEN_TRIM( PNAM )
+                IF( .NOT. WRITESET( MNAME, 'CE_'//PNAM(1:L), ALLFILES, 0, 0, 
+     &                              CEFF )                     ) THEN
+                    MESG = 'Failed to write control efficiency ' //
+     &                     'for pollutant ' // PNAM
+		CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
+                IF( .NOT. WRITESET( MNAME, 'RE_'//PNAM(1:L), ALLFILES, 0, 0, 
+     &                              REFF )                     ) THEN
+                    MESG = 'Failed to write rule effectivness ' //
+     &                     'for pollutant ' // PNAM
+		CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
+                IF( .NOT. WRITESET( MNAME, 'RP_'//PNAM(1:L), ALLFILES, 0, 0, 
+     &                              RPEN )                     ) THEN
+                    MESG = 'Failed to write rule penetration ' //
+     &                     'for pollutant ' // PNAM
+          	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
             END IF
 
