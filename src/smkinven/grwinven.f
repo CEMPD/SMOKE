@@ -98,6 +98,9 @@ C...........  Variables for each control/projection matrix
 C...........  Control matrix factors
         REAL, ALLOCATABLE :: CFAC   ( : )  ! by-variable factors
         REAL, ALLOCATABLE :: CFACALL( :,: )  ! all-variable factors
+        REAL, ALLOCATABLE :: CEFF   ( : )  ! by-variable control efficiency
+        REAL, ALLOCATABLE :: REFF   ( : )  ! by-variable rule effectivness
+        REAL, ALLOCATABLE :: RPEN   ( : )  ! by-variable rule penetration
 
 C...........  Temporary IDA pollutant files unit nos.
         INTEGER, ALLOCATABLE :: TDEV( : )
@@ -375,7 +378,7 @@ C.............  For projection and control matrices, interpret variable
 C               names and compare to pollutant list. Determine whether 
 C               matrix applies to the inventory or not.
             N = 0
-            DO V = 1, NVARSET
+            DO V = 1, NVARSET, 4
 
                 VARBUF = VNAMESET( V )
                 CPVNAMS( V,I ) = VARBUF
@@ -482,6 +485,15 @@ C           and/or activities
         CALL CHECKMEM( IOS, 'CFACALL', PROGNAME )
         ALLOCATE( CFAC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFAC', PROGNAME )
+        ALLOCATE( CEFF( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CEFF', PROGNAME )
+        ALLOCATE( REFF( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'REFF', PROGNAME )
+        ALLOCATE( RPEN( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RPEN', PROGNAME )
+        CEFF( S ) = 0.
+        REFF( S ) = 0.
+        RPEN( S ) = 0.
 
 C.........  Read in control matrix variables that are "all".  First, store
 C           position of data in storage array, then read.
@@ -648,6 +660,7 @@ C.........  Loop through inventory pollutants and activities
         DO V = 1, NIPPA
 
             VARBUF = EANAM( V )
+
             K1 = INDEX1( VARBUF, NIACT, ACTVTY )
 
 C.............  Determine name index and count depending on pol or activity
@@ -700,7 +713,38 @@ C                   and projection matrices
      &                         TRIM( CNAME( I ) ) // '"'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
+                    
+                    L = LEN_TRIM( VARBUF )
+                    IF( .NOT. READSET( CNAME( I ), 'CE_'//VARBUF(1:L),
+     &                        ALLAYS3, ALLFILES, 0, 0, CEFF ) ) THEN
+                        MESG = 'ERROR: Could not read "' //
+     &                         TRIM( VARBUF ) //'" from file "' // 
+     &                         TRIM( CNAME( I ) ) // '"'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                    
+                    IF( .NOT. READSET( CNAME( I ), 'RE_'//VARBUF(1:L),
+     &                        ALLAYS3, ALLFILES, 0, 0, REFF ) ) THEN
+                        MESG = 'ERROR: Could not read "' //
+     &                         TRIM( VARBUF ) //'" from file "' // 
+     &                         TRIM( CNAME( I ) ) // '"'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+                    
+                    IF( .NOT. READSET( CNAME( I ), 'RP_'//VARBUF(1:L),
+     &                        ALLAYS3, ALLFILES, 0, 0, RPEN ) ) THEN
+                        MESG = 'ERROR: Could not read "' //
+     &                         TRIM( VARBUF ) //'" from file "' // 
+     &                         TRIM( CNAME( I ) ) // '"'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
 
+                ELSE
+                	
+                    CEFF( S ) = 0.
+                    REFF( S ) = 0.
+                    RPEN( S ) = 0.
+                	  
                 END IF
 
 C.................  Set default factors
@@ -747,6 +791,18 @@ C.........................  Adjust average-day emissions (OS_* variable)
                         IF( NPVAR .GT. 1 ) THEN
                             IF( DATAVAR( C,2 ) .GT. 0. ) 
      &                          DATAVAR(C,2)=DATAVAR(C,2)*ALLFAC*PSFAC
+     
+C.........................  Set the control efficiency, rule effectiveness
+C                           and rule penetration to the values from the
+C                           control matrix.
+                            IF( CATEGORY .EQ. 'AREA' ) THEN
+                              DATAVAR( C,4 ) = CEFF( S )
+                              DATAVAR( C,5 ) = REFF( S )
+                              DATAVAR( C,6 ) = RPEN( S )
+                            ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
+                 	      DATAVAR( C,3 ) = CEFF( S )
+                              DATAVAR( C,4 ) = REFF( S )
+                            END IF
                         END IF
 
                     END DO
