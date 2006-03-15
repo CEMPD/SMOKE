@@ -15,7 +15,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C      Created by M. Houyoux 5/99
+C      Created by B.H. Baek 02/06
 C
 C**************************************************************************
 C
