@@ -377,7 +377,7 @@ C.............  If report is multisection
                 IF( RPT_%RPTMODE .EQ. 2 ) J = 1
 
 C.............  Write report header
-                CALL WRREPHDR( ODEV( J ), N, I,  HWID, OUTFMT )
+                CALL WRREPHDR( ODEV( J ), N, I, HWID, OUTFMT )
 
 C.............  Loop through time steps (if any) and sum emissions into bins
 C               for the appropriate time resolution...
