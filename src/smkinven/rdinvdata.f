@@ -53,7 +53,7 @@ C...........   This module is the inventory arrays
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2,  ! sorted real characteristics
      &                      YLOC2, STKHT, STKDM, STKTK, STKVE, 
      &                      CORIS, CBLRID, CPDESC, CERPTYP,     ! sorted character characteristics
-     &                      CMACT, CNAICS, CSRCTYP                  
+     &                      CMACT, CNAICS, CSRCTYP
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NDY, NEF, NCE, NRE, NRP, 
@@ -63,7 +63,8 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: FILFMT, LSTSTR, MXIDAT, INVDCNV, INVDNAM,
      &                      NUNIQCAS, UNIQCAS, UCASNKEP, ITNAMA, 
      &                      SCASIDX, UCASIDX, UCASNPOL, ITKEEPA, ITFACA,
-     &                      EMISBYCAS, RECSBYCAS, EMISBYPOL, INVSTAT
+     &                      EMISBYCAS, RECSBYCAS, EMISBYPOL, INVSTAT,
+     &                      FIREFLAG
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, VMTMIXA
@@ -84,6 +85,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         INTEGER         FINDC
         INTEGER         GETINVYR
+        INTEGER         GETFLINE
         INTEGER         GETVMIX
         INTEGER         INDEX1
         INTEGER         STR2INT
@@ -92,7 +94,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC, 
      &                  GETINVYR, GETVMIX, INDEX1, STR2INT, STR2REAL, 
-     &                  YR2DAY
+     &                  YR2DAY, GETFLINE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -101,8 +103,12 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL,      INTENT(OUT) :: NONPOINT     ! true: processing nonpoint inventory
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: DATALEN3 = 25  ! length of data field
-        
+        INTEGER, PARAMETER :: DATALEN3 = 25      ! length of data field
+        INTEGER, PARAMETER :: NSEG   = 32        ! maximum no of segments
+        INTEGER            IDXFIRE  ( NSEG )     ! index for wildfire pollutants
+        CHARACTER(40     ) SEGMENT ( NSEG )      ! segments of line
+        CHARACTER(CHRLEN3), ALLOCATABLE:: FIREPOL  ( : )    ! names of pollutant in wild fire
+
 C...........   Dropped emissions
         INTEGER         NDROP             !  number of records dropped
         REAL            EDROP  ( MXIDAT ) !  total dropped for each pol/activity
@@ -116,7 +122,7 @@ C...........   Output from individual reader routines
         CHARACTER(IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, SP !  counters and indices
+        INTEGER         I, J, K, K1, L, L1, NN, SP !  counters and indices
 
         INTEGER         CURFIL      !  current file from list formatted inventory
         INTEGER         CURFMT      !  format of current inventory file
@@ -129,7 +135,9 @@ C...........   Other local variables
         INTEGER         IZONE       !  UTM zone
         INTEGER         LSTYR       !  inventory year from list file
         INTEGER         MXWARN      !  maximum number of warnings
+        INTEGER      :: NFRPOL  = 0 !  no. of pollutants in wildfire only
         INTEGER         NLINE       !  no. of lines in list file
+        INTEGER      :: NLINEFR = 0 !  no. of wildfire inventory file
         INTEGER         NPOLPERCAS  !  no. of pollutants per CAS number
         INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
         INTEGER      :: NWARN = 0   !  current number of warnings
@@ -322,7 +330,7 @@ C           by the IDA and EPS formats, including NPPOL
                 EXIT
             END IF
         END DO
-        
+
 C.........  Allocate memory for storing inventory data
         ALLOCATE( INDEXA( NRAWBP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
@@ -340,18 +348,18 @@ C.........  Allocate memory for storing inventory data
         ALLOCATE( INVYR( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVYR', PROGNAME )
 
-	ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+        ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
 
-	CSRCTYP = ' '       ! array
+	      CSRCTYP = ' '       ! array
 
         IF( CATEGORY == 'AREA' ) THEN
             ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
-            
+
             ISIC = 0         ! array
         END IF
-        
+
         IF( CATEGORY == 'MOBILE' ) THEN
             ALLOCATE( XLOC1( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'XLOC1', PROGNAME )
@@ -361,13 +369,13 @@ C.........  Allocate memory for storing inventory data
             CALL CHECKMEM( IOS, 'XLOC2', PROGNAME )
             ALLOCATE( YLOC2( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'YLOC2', PROGNAME )
-            
+
             XLOC1 = BADVAL3  ! array
             YLOC1 = BADVAL3  ! array
             XLOC2 = BADVAL3  ! array
             YLOC2 = BADVAL3  ! array
         END IF
-        
+
         IF( CATEGORY == 'POINT' .OR. NONPOINT ) THEN
             ALLOCATE( CMACT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CMACT', PROGNAME )
@@ -489,12 +497,16 @@ C           (will change if format is IDA or mobile EMS)
         CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
         ALLOCATE( READPOL( 1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
-        
+
         CURFMT = FILFMT( CURFIL )
 
         IREC = 0    ! current record number
         ISTREC = 0  ! current stored record
         SP = 0      ! current source with pollutant index
+        NN = 0      ! number of wildfire pollutants
+
+C.........  Counts total lines of current file
+        NLINEFR = GETFLINE( FDEV, INFILE )
 
 C.........  Loop through inventory files and read data
         DO
@@ -605,7 +617,41 @@ C.................  Otherwise, not a list file, so exit
                 END IF
              
             END IF   ! end check for end of file
-            
+
+C.............  Create a list of pollutants (#ORL FIRE ONLY)
+C.............  Check the header of #ORL FIRE (wildfire case)
+            L1 = INDEX( LINE, 'POLLUTANT' )
+            IF( L1 > 0 ) THEN
+
+C.................  Separate line into segments
+                CALL PARSLINE( LINE, NSEG, SEGMENT )
+
+C.................  Count no of pollutants available
+                NFRPOL = 0
+                IDXFIRE = 0
+                    SEGMENT( NSEG ) = 'HFLUX'   ! adding HFLUX 
+                DO I = 2, NSEG
+                    IF( SEGMENT( I ) == ' ' ) CYCLE 
+                    IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE 
+                    NFRPOL = NFRPOL + 1
+                    IDXFIRE( NFRPOL ) = I
+                END DO
+
+C..................  Stroing a list of all pollutants available in wildfire
+                ALLOCATE( FIREPOL( NFRPOL ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'FIREPOL', PROGNAME )
+                FIREPOL = ' '
+                NFRPOL = 0
+                DO I = 2, NSEG
+                    IF( SEGMENT( I ) == ' ' ) CYCLE 
+                    IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE 
+                    NFRPOL = NFRPOL + 1
+                    J = IDXFIRE( NFRPOL )
+                    FIREPOL( NFRPOL ) = ADJUSTL( SEGMENT( J ) )
+                END DO
+
+            END IF
+
 C.............  Skip blank lines
             IF( LINE == ' ' ) CYCLE
 
@@ -628,6 +674,7 @@ C.............  Process line depending on file format and source category
      &                                DESC, HT, DM, TK, FL, VL, SIC,
      &                                LAT, LON, HDRFLAG, EFLAG )
                 END SELECT
+
             CASE( EMSFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
@@ -646,6 +693,7 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                NPOLPERLN, TIMEPERIOD, 
      &                                HDRFLAG, EFLAG )
                 END SELECT
+
             CASE( ORLFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
@@ -657,6 +705,7 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                INVYEAR, SRCTYP, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
+
                 CASE( 'POINT' )
                     CALL RDDATAORLPT( LINE, READDATA, READPOL,
      &                                INVYEAR, DESC, ERPTYP, SRCTYP, 
@@ -665,13 +714,28 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                CORS, BLID, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                 END SELECT
+
             CASE( ORLNPFMT )
-                
                 CALL RDDATAORLNP( LINE, READDATA, READPOL,
      &                            INVYEAR, SIC, MACT, SRCTYP, NAICS, 
      &                            HDRFLAG, EFLAG )
                 NPOLPERLN = 1
+
+            CASE( ORLFIREFMT )
+                CALL RDDATAORLFR( LINE, READDATA, READPOL, INVYEAR,
+     &                            DESC, ERPTYP, SRCTYP, SIC, MACT,
+     &                            NAICS, CTYPE, LAT, LON, ZONE, CORS,
+     &                            BLID, HDRFLAG, EFLAG, IREC, NN,
+     &                            NLINEFR, NFRPOL, FIREPOL )
+                NPOLPERLN = 1
+
             END SELECT
+
+C...........  If file format is point, ORL FIRE, make sure adding other pollutants
+            IF( IREC >= NLINEFR .AND. IREC < NLINEFR + NFRPOL ) THEN
+                BACKSPACE( FDEV )
+            END IF
+
             
 C.............  Check for header lines
             IF( HDRFLAG ) THEN 
@@ -763,12 +827,13 @@ C.............  Check that mobile link info is correct
             END IF
 
 C.............  Check that point source information is correct
-            IF( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) THEN
+            IF( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT .AND.
+     &          CURFMT /= ORLFIREFMT ) THEN
                 IF( .NOT. CHKREAL( HT ) .OR.
      &              .NOT. CHKREAL( DM ) .OR.
      &              .NOT. CHKREAL( TK ) .OR.
      &              .NOT. CHKREAL( FL ) .OR.
-     &              .NOT. CHKREAL( VL )      )THEN
+     &              .NOT. CHKREAL( VL )     )THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Stack parameters ' //
      &                     'are not numbers or have bad formatting' // 
@@ -793,7 +858,7 @@ C.............  Check that point source information is correct
             END IF
                 
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
-     &          CURFMT == ORLNPFMT ) THEN
+     &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFIREFMT ) THEN
                 IF( .NOT. CHKINT( SIC ) ) THEN
                     IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: SIC code is ' //
@@ -838,7 +903,7 @@ C.................  Check ORL specific values
             END IF
  
 C.............  Check that data values are numbers
-            DO I = 1, NPOLPERLN
+            DO I = 1, NPOLPERLN      ! NPOLPERLN = l be 1 when it is orl format
                 POLNAM = READPOL( I )
 
 C.................  Loop through values for this pollutant
@@ -858,7 +923,7 @@ C                   require an extra search to get the pollutant code
                         EXIT
                     END IF
                 END DO  ! end loop over data values
-                
+
                 IF( READDATA( I,1 ) == ' ' .AND.
      &              READDATA( I,2 ) == ' '       ) THEN
                     IF( NWARN < MXWARN ) THEN
@@ -877,7 +942,8 @@ C.............  Skip rest of loop if an error has occured
             IF( EFLAG ) CYCLE
 
 C.............  Get current CAS number position and check that it is valid
-            IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
+            IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
+     &          CURFMT == ORLFIREFMT ) THEN
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
@@ -943,8 +1009,10 @@ C.............  Loop through all pollutants for current line
 
 C.................  If format is not ORL, find code corresponding to current pollutant
                 ACTFLAG = .FALSE.
-                IF( CURFMT /= ORLFMT .AND. CURFMT /= ORLNPFMT ) THEN
+                IF( CURFMT /= ORLFMT .AND. CURFMT /= ORLNPFMT .AND.
+     &              CURFMT /= ORLFIREFMT ) THEN
                     POLCOD = INDEX1( POLNAM, MXIDAT, INVDNAM )
+
                     IF( POLCOD == 0 ) THEN
                         WRITE( MESG,94010 ) 'ERROR: Unknown  ' //
      &                      'pollutant ' // TRIM( POLNAM ) // 
@@ -956,7 +1024,7 @@ C.................  If format is not ORL, find code corresponding to current pol
                         ACTFLAG = .TRUE.
                     END IF
                 END IF
-            
+
 C.................  Convert data to real numbers and check for missing values                
                 EANN = STR2REAL( READDATA( I,NEM ) )
                 
@@ -980,7 +1048,7 @@ C.................  Convert data to real numbers and check for missing values
                 
                 IF( .NOT. ACTFLAG ) THEN
                     EDAY = STR2REAL( READDATA( I,NDY ) )
-                
+
                     IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
                         IF( NWARN < MXWARN ) THEN
                             WRITE( MESG,94010 ) 'WARNING: ' //
@@ -997,7 +1065,7 @@ C.................  Convert data to real numbers and check for missing values
 C.................  For area and point, convert control percentages
                 IF( CATEGORY == 'AREA' .OR. CATEGORY == 'POINT' ) THEN
                     EMFC = STR2REAL( READDATA( I,NEF ) )
-                    
+         
                     IF( EMFC < AMISS3 .OR. EMFC == -9 ) THEN
                         IF( NWARN < MXWARN ) THEN
                             WRITE( MESG,94010 ) 'WARNING: Missing ' //
@@ -1084,7 +1152,7 @@ C.................  For area and point, convert control percentages
                         CSEC = BADVAL3
                     END IF
                 END IF
-
+         
 C.................  Set the default temporal resolution of the data
                 IF( CURFMT == EMSFMT ) THEN
                     SELECT CASE( TIMEPERIOD )
@@ -1133,13 +1201,15 @@ C                   zero or negative
 
 C.................  If current format is ORL, check if current CAS number
 C                   is split
-                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
+                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
+     &              CURFMT == ORLFIREFMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
                     IF( EANN > 0. ) THEN
                       EMISBYCAS( UCASPOS ) = EMISBYCAS( UCASPOS ) + EANN
                     END IF
+
                     RECSBYCAS( UCASPOS ) = RECSBYCAS( UCASPOS ) + 1
 
                 ELSE
@@ -1150,7 +1220,8 @@ C.....................  Store emissions by CAS number for reporting
                 DO J = 0, NPOLPERCAS - 1
 
 C.....................  If ORL format, set current pollutant
-                    IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
+                    IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
+     &                  CURFMT == ORLFIREFMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 
@@ -1252,10 +1323,12 @@ C                               pollutants are processed
                                 ELSE
                                     POLVLA( SP,NDY ) = EDAY
                                 END IF
+
+                                IF( FIREFLAG ) POLVLA( SP,NDY )=BADVAL3
                             END IF
-                        
+
                             IF( CATEGORY == 'AREA' .OR. 
-     &                          CATEGORY == 'POINT'     ) THEN
+     &                          CATEGORY == 'POINT'    ) THEN
                                 POLVLA( SP,NEF ) = EMFC
                                 POLVLA( SP,NCE ) = CEFF
                                 POLVLA( SP,NRE ) = REFF
@@ -1326,27 +1399,27 @@ C.....................  Convert lat-lon coords to western hemisphere
 C.................  Skip rest of loop                
                 CYCLE
             END IF
-                 
+
             INVYR ( CURSRC ) = INVYEAR
             TPFLAG( CURSRC ) = TPF
-            
+
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
      &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFMT ) THEN
 
-		IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
-     &                .OR. CURFMT == ORLNPFMT ) THEN
-                    ISIC( CURSRC ) = STR2INT( SIC )
+                 IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
+     &                 .OR. CURFMT == ORLNPFMT ) THEN
+                        ISIC( CURSRC ) = STR2INT( SIC )
 
-		    CALL PADZERO( MACT )
-                    CALL PADZERO( NAICS )
-                    CMACT  ( CURSRC ) = MACT
-                    CNAICS ( CURSRC ) = NAICS
-		END IF
+                     CALL PADZERO( MACT )
+                     CALL PADZERO( NAICS )
+                     CMACT  ( CURSRC ) = MACT
+                     CNAICS ( CURSRC ) = NAICS
+                 END IF
                 
-		IF( CURFMT /= IDAFMT ) THEN
-		    CALL PADZERO( SRCTYP )
-		    CSRCTYP( CURSRC ) = SRCTYP
-		END IF
+                 IF( CURFMT /= IDAFMT ) THEN
+                     CALL PADZERO( SRCTYP )
+                     CSRCTYP( CURSRC ) = SRCTYP
+                 END IF
                 
                 IF( CATEGORY == 'POINT' .AND. CURFMT /= IDAFMT ) THEN
                     CALL PADZERO( ERPTYP )
@@ -1411,7 +1484,36 @@ C.................  Correct hemisphere for stack longitude
                 END IF
                     
             END IF
-            
+
+
+            IF( CURFMT == ORLFIREFMT )THEN
+                CALL PADZERO( MACT )
+                CALL PADZERO( NAICS )
+                CALL PADZERO( SRCTYP )
+                CALL PADZERO( ERPTYP )
+
+                ISIC   ( CURSRC ) = STR2INT( SIC )
+                CMACT  ( CURSRC ) = MACT
+                CNAICS ( CURSRC ) = NAICS
+                CSRCTYP( CURSRC ) = SRCTYP
+                CERPTYP( CURSRC ) = ERPTYP
+                XLOCA  ( CURSRC ) = STR2REAL( LON )
+                YLOCA  ( CURSRC ) = STR2REAL( LAT )
+                STKHT  ( CURSRC ) = BADVAL3
+                STKDM  ( CURSRC ) = BADVAL3
+                STKTK  ( CURSRC ) = BADVAL3
+                STKVE  ( CURSRC ) = BADVAL3
+                CPDESC ( CURSRC ) = DESC
+                CORIS  ( CURSRC ) = ADJUSTR( CORS )
+                CBLRID ( CURSRC ) = ADJUSTR( BLID )
+
+C.................  Correct hemisphere for stack longitude
+                IF( WFLAG .AND. XLOCA( CURSRC ) > 0. ) THEN
+                    XLOCA( CURSRC ) = -XLOCA( CURSRC )
+                END IF
+
+            END IF
+
         END DO  ! end loop through records array
 
 C.........  Abort if there was an error

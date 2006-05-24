@@ -48,7 +48,10 @@ C.........  This module contains the inventory arrays
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NCHARS, MXCHRS, 
      &                     SC_BEGP, SC_ENDP
-        
+
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: FIREFLAG
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -123,9 +126,9 @@ C.........  Other local variables
         INTEGER       NASCII           !  number of possible output fields
         INTEGER       NC               !  number of output fields
 
-        CHARACTER(100) BUFFER              !  test buffer
-        CHARACTER(300) OUTFMT              !  output format
-        CHARACTER(300) MESG                !  message buffer
+        CHARACTER(100) BUFFER              ! test buffer
+        CHARACTER(300) OUTFMT              ! output format
+        CHARACTER(300) MESG                ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'WRINVCHR' !  program name
 
@@ -141,7 +144,6 @@ C.........  Write the I/O API file, one variable at a time
      &                       0, 0, IFIP ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-
         IF ( .NOT. WRITESET( ENAME, 'TZONES', ALLFILES, 
      &                       0, 0, TZONES ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -271,6 +273,7 @@ C.........  Allocate memory for and populate the output header fields from
 C           the source-specific fields
         ALLOCATE( HDRFLDS( NASCII+1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HDRFLDS', PROGNAME )
+
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
             HDRFLDS( 1:5 ) = ARHEADRS  ! array
@@ -311,7 +314,7 @@ C.........  Get the maximum column width for each of the columns in ASCII file
             SELECT CASE ( CATEGORY )
             CASE( 'AREA' )
                 IF( NONPOINT ) THEN
-		    J = LEN_TRIM( CSRCTYP( S ) )
+                    J = LEN_TRIM( CSRCTYP( S ) )
                     IF( CSRCTYP( S ) /= ' ' .AND.
      &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
 
@@ -327,7 +330,7 @@ C.........  Get the maximum column width for each of the columns in ASCII file
 	            J = LEN_TRIM( CSRCTYP( S ) )
                     IF( CSRCTYP( S ) /= ' ' .AND. 
      &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
-		END IF
+                    END IF
             
             CASE( 'MOBILE' ) 
 
@@ -442,7 +445,7 @@ C.............  Store remaining source attributes in separate fields (CHARS)
             SELECT CASE ( CATEGORY )
             CASE( 'AREA' )
                 IF( NONPOINT ) THEN
-		    IF( LF( M1 ) ) THEN
+                    IF( LF( M1 ) ) THEN
                         NC = NC + 1
                         CHARS( NC ) = CSRCTYP( S )
                     END IF
@@ -458,10 +461,10 @@ C.............  Store remaining source attributes in separate fields (CHARS)
                     END IF
                 ELSE         
 
-	            IF( LF( M1 ) ) THEN
+                    IF( LF( M1 ) ) THEN
                         NC = NC + 1
                         CHARS( NC ) = CSRCTYP( S )
-		    END IF
+                    END IF
                 END IF
 
             CASE( 'MOBILE' )

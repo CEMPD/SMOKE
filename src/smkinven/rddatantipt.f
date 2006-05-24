@@ -74,7 +74,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
         CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
         CHARACTER(2),       INTENT (OUT) :: UTMZ                  ! UTM zone
-	CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
+        CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
         CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
@@ -159,7 +159,7 @@ C           the various data fields
         READDATA( 1,NC1 ) = SEGMENT( 27 ) ! primary control equipment code
         READDATA( 1,NC2 ) = SEGMENT( 28 ) ! secondary control equipment code
 
-	CORS   = ADJUSTL( SEGMENT( 30 ) )  ! DOE plant ID
+        CORS   = ADJUSTL( SEGMENT( 30 ) )  ! DOE plant ID
         BLID   = ADJUSTL( SEGMENT( 31 ) )  ! boiler ID
         
 C.........  Make sure routine knows it's been called already

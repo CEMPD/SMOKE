@@ -139,7 +139,7 @@ C.........  Ensure that input file is a list-formatted file
             MESG = 'Problem reading inventory file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-         
+
 C.........  Get the dates (in the output time zone) from the files, 
 C           flag the pollutants of interest, and flag the special variables
 C           contained in the file.
@@ -158,7 +158,7 @@ C           records per time step
         CALL M3MSG2( MESG )
 
 C.........  Get the maximum number of records per time step - i.e., populate
-C           MXSRCPD
+C           MXPDSRC
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
      &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
      &                 EASTAT, SPSTAT )

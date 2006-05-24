@@ -42,7 +42,7 @@ C...........  This module contains the information about the source category
         IMPLICIT NONE
 
 C...........   INCLUDES:
-        
+
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations

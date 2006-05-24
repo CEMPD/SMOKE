@@ -120,11 +120,20 @@ C.............  Check for #LIST entry
                     EXTFORMAT = CEMFMT
                     
                 ELSE IF( INDEX( INFILE, 'ORL' ) > 0 ) THEN
+
                     IF( INDEX( INFILE, 'NONPOINT' ) > 0 ) THEN
                         EXTFORMAT = ORLNPFMT
+
+                    ELSE IF( INDEX( INFILE, 'FIRE' ) > 0 ) THEN
+                        EXTFORMAT = ORLFIREFMT
+
+                    ELSE IF( INDEX( INFILE, 'FIREEMIS' ) > 0 ) THEN
+                        EXTFORMAT = ORLDYFRFMT
+
                     ELSE
                         EXTFORMAT = ORLFMT
                     END IF
+
                 END IF
                 
                 CYCLE
@@ -132,6 +141,7 @@ C.............  Check for #LIST entry
 
 C.............  Open INFILE
             TDEV = JUNIT()
+
             OPEN( TDEV, FILE=INFILE, STATUS='OLD', IOSTAT=IOS )
 
 C.............  Check for problems opening raw input file
@@ -144,14 +154,15 @@ C.............  Check for problems opening raw input file
         
 C.............  Determine format of INFILE
             FILFMT( J ) = GETFORMT( TDEV, EXTFORMAT )
-
             CLOSE( TDEV )
 
 C.............  Set flag based on format
             IF( FILFMT( J ) == EMSFMT ) EMSFLAG = .TRUE.
-            IF( FILFMT( J ) == IDAFMT .OR. 
-     &          FILFMT( J ) == ORLFMT .OR.
-     &          FILFMT( J ) == ORLNPFMT ) IDAORORL = .TRUE.
+            IF( FILFMT( J ) == IDAFMT     .OR. 
+     &          FILFMT( J ) == ORLFMT     .OR.
+     &          FILFMT( J ) == ORLNPFMT   .OR.
+     &          FILFMT( J ) == ORLFIREFMT .OR.
+     &          FILFMT( J ) == ORLDYFRFMT     ) IDAORORL = .TRUE.
 
 C.............  Check that file formats are consistent
             IF( EMSFLAG .AND. FILFMT( J ) /= EMSFMT ) THEN
@@ -166,10 +177,12 @@ C.............  Check that file formats are consistent
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            IF( IDAORORL                .AND. 
-     &          FILFMT( J ) /= IDAFMT   .AND. 
-     &          FILFMT( J ) /= ORLFMT   .AND.
-     &          FILFMT( J ) /= ORLNPFMT       ) THEN
+            IF( IDAORORL                  .AND. 
+     &          FILFMT( J ) /= IDAFMT     .AND. 
+     &          FILFMT( J ) /= ORLFMT     .AND.
+     &          FILFMT( J ) /= ORLNPFMT   .AND.
+     &          FILFMT( J ) /= ORLFIREFMT .AND.
+     &          FILFMT( J ) /= ORLDYFRFMT      ) THEN
                 WRITE( MESG,94010 )
      &                 'ERROR: In SMOKE list-formatted inventory file, '
      &                 // TRIM( FNAME ) // ', at least one file is ' //

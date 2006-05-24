@@ -330,7 +330,7 @@ c             IF(.NOT. READSET(INFILE,'IFIP',ALLAYS3,1,0,0,IFIP)) THEN
      &            THEN
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               ENDIF
-            
+
             CASE DEFAULT
                 UNREAD = UNREAD + 1
                 UNRIDX( UNREAD ) = N
@@ -492,9 +492,9 @@ C.....................  Read in line of character data
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
      &                        CSTP, CMT, CNAI
                     ELSE IF( STPIN .AND. .NOT. MCTIN ) THEN
-		 	READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                        CSTP
-		    ELSE
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                                                CSTP
+                    ELSE
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
                     END IF
 
@@ -535,13 +535,13 @@ C.....................  Initialize temporary characteristics
                     CLNK  = ' '
 
 C.....................  Read in line of character data
-		    IF( STPIN ) THEN
-			READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
+                    IF( STPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
      &                                         CLNK, CVID, CS, CVTP,CSTP
-		    ELSE
+                    ELSE
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
      &                                            CLNK, CVID, CS, CVTP
-		    END IF
+                    END IF
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
@@ -549,7 +549,7 @@ C.....................  Read in line of character data
 
                     IF( LNKFLAG ) CLINK ( S ) = CLNK
 
-		    IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
+                    IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, CRWT, CLNK, CVID,
@@ -720,7 +720,6 @@ C.....................  Read in line of character data
      &                  CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
      &                                CHARS(3), CHARS(4), CHARS(5),
      &                                POLBLNK3, CSOURC( S ) )
-
                     CALL CHECK_CORRUPTED
 
                 END DO  ! End loop on sources

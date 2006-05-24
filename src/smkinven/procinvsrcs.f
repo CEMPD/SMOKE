@@ -155,7 +155,6 @@ C.................  Set vehicle type based on vehicle ID
                 CSCC( S ) = TSRC( CH4POS3:CH4POS3+SCCLEN3-1 )
                 
                 CSOURC( S ) = TSRC
-            
             END DO
 
         END SELECT

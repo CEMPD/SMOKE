@@ -533,7 +533,7 @@ C.............  If SCCs are needed for matching...
                 IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
                 CHAR4 = TSCC
 
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID//'     ', 
      &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
@@ -543,7 +543,7 @@ C.............  If SCCs are not being used for matching (at least not yet)...
             ELSE
 
 C.................  Build source characteristics field for searching inventory
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID//'     ', 
      &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
 
 C.................  Search for this record in sources
@@ -561,10 +561,11 @@ C                   if reading the SCC in helps (needed for IDA format)
                     IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
                     CHAR4 = TSCC
 
-                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID//'     ', 
      &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
 C.....................  Search for this record in sources
                     J = FINDC( CSRC, NS, CSOURC( SS ) )
+
                     IF ( J .GT. 0 ) TFLAG = .TRUE.
 
                 END IF
@@ -611,6 +612,7 @@ C.............  Record needed data for this source and time step
                 NPDPT( T ) = NPDPT( T ) + 1
 
                 HS = NPDPT( T )
+            print*,HS,T,S,CDAT,TDAT(H)
 
                 IF( HS .LE. MXPDSRC ) THEN
 

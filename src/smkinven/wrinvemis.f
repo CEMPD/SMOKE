@@ -45,7 +45,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, NPCNT, IPOSCOD, POLVAL
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT, FIREFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, NMAP,
@@ -518,7 +518,7 @@ C......................  Skip records with zero data or missing data
 
                         N = N + 1
                         SRCID( N ) = S
-                        
+
                         DO J = 1, NPVAR     ! rearrange pollutant-specific info
                             SRCPOL( N,J ) = POLVAL( K,J )
                         END DO
@@ -647,6 +647,8 @@ C                 sparse storage.  Populate sparse arrays.
                 MINANN = 0.
                 MINAVD = 0.
                 DO S = 1, NSRC
+                
+                    IF( FIREFLAG ) ZFLAG = .TRUE.    ! disregard zero values on PMC(wildfire only)
 
 C.....................  Skip records with zero data
                     IF( .NOT. ZFLAG ) THEN
@@ -712,7 +714,7 @@ C...............  Reset I/O API header information
 C...............  For header variable info, rely on the fact that all pollutants
 C                 have the SRCID in position 1 and the same types and units.
                 VNAMESET( 2:NPVAR+1 ) = VNAMFORM( 1:NPVAR )
-
+          
 C...............  Build name and output pollutant file
                 RFNAME = TRIM( RPATH )// '/'// TRIM( VNAME )// '.ncf'
                 CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NSRC, NPVAR, 

@@ -47,6 +47,9 @@ C.........  This module contains the information about the source category
      &                     NIPOL, NPPOL, NIACT, NPACT, NCHARS,
      &                     JSCC, JSTACK
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: FIREFLAG
+
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
         
@@ -157,14 +160,12 @@ C.........  Get output inventory file names given source category
 C.........  Open map-formatted inventory file without prompting
         IDEV = GETEFILE( ENAME, .FALSE., .TRUE., PROGNAME )
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
-
             MESG = 'Could not open INVENTORY MAP file:' // CRLF() // 
      &              BLANK10 // TRIM( ENAME ) // '.'
             CALL M3MSG2( MESG )
 
             MESG = 'Ending program.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
         END IF      !  if getefile() failed
 
 C.........  Evaluate physical file name of inventory map
@@ -364,7 +365,6 @@ C.........  Define source characteristic variables that are not strings
             J = J + 1
 
         CASE( 'POINT' )
-
             VNAMESET( J ) = 'ISIC'
             VTYPESET( J ) = M3INT
             VUNITSET( J ) = 'n/a'

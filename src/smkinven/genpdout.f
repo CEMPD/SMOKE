@@ -275,7 +275,7 @@ C.........  Loop through time steps and output emissions and other data
         JDATE = SDATE
         JTIME = STIME
         DO T = 1, NSTEPS
-
+        
             CALL WRPDEMIS( JDATE, JTIME, T, NPDSRC, NVAR, NVSP, 
      &                     ONAME, OFLAG, EAIDX, SPIDX, PDEMOUT( 1,1 ), 
      &                     PDEMOUT( 1,2 ), EFLAG )

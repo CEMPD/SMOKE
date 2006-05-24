@@ -154,7 +154,7 @@ C.........  Store sorted records for this hour
             J = IDXSRC( I,TIDX )
             S = SPDIDA( J,TIDX )
             V = CODEA ( J,TIDX )
-
+            
 C.............  Intialize as not a special data variable (e.g., not flow rate)
             LFLAG = .FALSE.
 
@@ -166,7 +166,7 @@ C.............  Check for bad index
 
 C.............  Check for index for special variables and set V to be consistent
 C               with the output structure of the file
-            ELSE IF ( V .GT. CODFLAG3 ) THEN
+            ELSE IF ( V .GT. CODFLAG3 ) THEN   ! CODFLAG3 = 9000 for special data types
                 V2 = V - CODFLAG3      ! remove flag on index
                 V = NVAR + SPIDX( V2 ) ! reset to condensed order from master
                 LFLAG = .TRUE.         ! flag as a special data variable

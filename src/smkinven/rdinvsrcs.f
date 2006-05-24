@@ -21,6 +21,7 @@ C      Functions:
 C
 C  REVISION  HISTORY:
 C      Created 1/03 by C. Seppanen (based on rdinven.f)
+C      Updated 2/06 by B. Baek (adding wildfire format)
 C
 C**************************************************************************
 C
@@ -52,7 +53,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, CATEGORY, NEMSFILE
         
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: FILFMT, LSTSTR
+        USE MODLISTS, ONLY: FILFMT, LSTSTR, FIREFLAG
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, NRCLAS, IVTIDLST, CVTYPLST, 
@@ -98,20 +99,24 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local parameters
         INTEGER      , PARAMETER :: MXRECS = 1000000  ! maximum records per iteration
         INTEGER      , PARAMETER :: NSCSEG = 8        ! num. segments in scratch file
+        INTEGER      , PARAMETER :: NSEG   = 32       ! maximum no of segments
         
 C...........   Local arrays
         CHARACTER(SRCLEN3) TMPCSOURC( MXRECS )   ! source information from inventory file(s)
         INTEGER            TCSRCIDX ( MXRECS )   ! index for sorting source info
         INTEGER            FRSNUMS  ( MXRECS,3 ) ! triplets of file, record, and source number
         CHARACTER(SRCLEN3) SCSEGMENT( NSCSEG )   ! segments from scratch file
-        INTEGER, ALLOCATABLE:: CSRCIDX  ( : )        ! index for sorting CSOURCA
+        CHARACTER( 40 )    SEGMENT  ( NSEG )     ! segments of line
+        INTEGER            IDXFIRE  ( NSEG )     ! index for wildfire pollutants
+        CHARACTER(CHRLEN3), ALLOCATABLE:: FIREPOL  ( : )    ! names of pollutant in wild fire
+        INTEGER,            ALLOCATABLE:: CSRCIDX  ( : )    ! index for sorting CSOURCA
 
 C...........   File units and logical/physical names
         INTEGER         EDEV( 5 )   !  up to 5 EMS-95 emissions files
         INTEGER         CDEV        !  scratch file
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, K2, L, S !  counters and indices
+        INTEGER         I, J, K, K1, K2, L, L1, NN, S !  counters and indices
 
         INTEGER         CSRC_LEN     !  length of source characteristics
         INTEGER         CURFMT       !  format of current inventory file
@@ -119,12 +124,15 @@ C...........   Other local variables
         INTEGER         IOS          !  i/o status
         INTEGER         INVFMT       !  inventory format code
         INTEGER         IREC         !  no. of records read
+        INTEGER         NREC         !  no. of records read per file
         INTEGER         ISTREC       !  no. of records stored
         INTEGER         IVT          !  vehicle type code
         INTEGER         LDEV         !  device no. for log file
         INTEGER         MXWARN       !  maximum number of warnings
+        INTEGER      :: NFRPOL  = 0  !  no. of pollutants in wildfire only
         INTEGER         NINVFILES    !  number of EMS-95 inventory files
         INTEGER         NLINE        !  number of lines in list format file
+        INTEGER      :: NLINEFR = 0  !  no. of wildfire inventory file
         INTEGER         NPOLPERLN    !  no. of pollutants per line of inventory file
         INTEGER         NRECPERLN    !  no. of records per line
         INTEGER      :: NWARN = 0    !  current number of warnings
@@ -161,9 +169,9 @@ C...........   Other local variables
         CHARACTER(4)       CFIL    ! file number
         CHARACTER(300)     BUFFER  ! tmp line buffer
         CHARACTER(300)     OUTLINE ! line to write to scratch file
-        CHARACTER(300)     INFILE  !  input file line buffer
-        CHARACTER(400)     LINE    !  input file line buffer
-        CHARACTER(300)     MESG    !  message buffer
+        CHARACTER(300)     INFILE  ! input file line buffer
+        CHARACTER(500)     LINE    ! input file line buffer
+        CHARACTER(300)     MESG    ! message buffer
         CHARACTER(20)      VIDFMT  ! vehicle type ID format
         CHARACTER(20)      RWTFMT  ! roadway type number format
 
@@ -198,6 +206,7 @@ C.........  Get temporary directory location
 
 C.........  Initialize ORL flag to false
         ORLFLG = .FALSE.
+        FIREFLAG = .FALSE.
 
 C.........  Create formats for mobile data
         IF( CATEGORY == 'MOBILE' ) THEN
@@ -279,7 +288,6 @@ C.........  If EMS-95 point source inventory, check for correct number of files
             NINVFILES = 0
             DO I = 1, NLINE
                 CURFMT = FILFMT( I )
-                
 C.................  Skip any non-file lines (INVYEAR, #LIST, etc.)
                 IF( CURFMT < 0 ) CYCLE
                                 
@@ -389,7 +397,7 @@ C.............  Check for errors while opening file
 
 C.............  Set default inventory characteristics that depend on file format
             CALL INITINFO( CURFMT )
-            
+
         ELSE
 
 C.............  If not list format, set current format to inventory format
@@ -413,7 +421,12 @@ C.........  Loop over files and multiples of MXRECS
 
 C.............  Reset counters        
             S = 0       ! source number
+            NN= 0       ! number of wildfire pollutants
+            NREC = 0    ! current record number per file
             ISTREC= 0   ! number of records stored
+
+C.............  Counts total lines of current file
+            NLINEFR = GETFLINE( FDEV, INFILE )
 
 C.............  Loop through records in current file
             DO
@@ -422,6 +435,7 @@ C.............  Loop through records in current file
                 READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
                 IREC = IREC + 1
+                NREC = NREC + 1
             
                 IF( IOS > 0 ) THEN
                     EFLAG = .TRUE.
@@ -477,7 +491,7 @@ C.............................  Make sure there are still files to read
                                         
                             OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
      &                            IOSTAT=IOS )
-                    
+
 C.............................  Check for errors while opening file
                             IF( IOS /= 0 ) THEN
                         
@@ -499,7 +513,6 @@ C.............................  Check for errors while opening file
 C.............................  Set default inventory characteristics that depend on file format
                             CALL INITINFO( FILFMT( CURFIL ) )
                             CURFMT = FILFMT( CURFIL )
-                            
                             NWRLINE = 0
                   
 C.............................  Skip back to the beginning of the loop
@@ -518,10 +531,43 @@ C.....................  Otherwise, not a list file, so exit
                     END IF
                  
                 END IF   ! end check for end of file
-            
-C.................  Skip blank lines
-                IF( LINE == ' ' ) CYCLE            
 
+C.................  Create a list of pollutants (#ORL FIRE ONLY)
+C.................  Check the header of #ORL FIRE (wildfire case)
+                L1 = INDEX( LINE, 'POLLUTANT' )
+                IF( L1 > 0 ) THEN
+
+C.....................  Separate line into segments
+                    CALL PARSLINE( LINE, NSEG, SEGMENT )
+
+C.....................  Count no of pollutants available
+                    NFRPOL = 0
+                    IDXFIRE = 0
+                    SEGMENT( NSEG ) = 'HFLUX'   ! adding HFLUX 
+                    DO I = 2, NSEG
+                        IF( SEGMENT( I ) == ' ' ) CYCLE 
+                        IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE  ! Skip. It is a default var in FIRE ORL
+                        NFRPOL = NFRPOL + 1
+                        IDXFIRE( NFRPOL ) = I
+                    END DO
+
+C......................  Stroing a list of all pollutants available in wildfire
+                    ALLOCATE( FIREPOL( NFRPOL ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'FIREPOL', PROGNAME )
+                    FIREPOL = ' '
+                    NFRPOL = 0
+                    DO I = 2, NSEG
+                        IF( SEGMENT( I ) == ' ' ) CYCLE 
+                        IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE 
+                        NFRPOL = NFRPOL + 1
+                        J = IDXFIRE( NFRPOL )
+                        FIREPOL( NFRPOL ) = ADJUSTL( SEGMENT( J ) )
+                    END DO
+                END IF
+
+C.................  Skip blank lines
+                IF( LINE == ' ' ) CYCLE
+              
 C.................  Process line depending on file format and source category
                 SELECT CASE( CURFMT )
                 CASE( IDAFMT )
@@ -537,9 +583,11 @@ C.................  Process line depending on file format and source category
      &                                   SGID, TSCC, NPOLPERLN, 
      &                                   HDRFLAG, EFLAG )
                     END SELECT
+
                 CASE( EPSFMT )
                     MESG = 'EPS 2.0 format is not currently supported'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
                 CASE( EMSFMT )
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )
@@ -556,6 +604,7 @@ C.................  Process line depending on file format and source category
      &                                   HDRFLAG, EFLAG )
                         TSCC = ' '   ! set fake SCC code
                     END SELECT
+
                 CASE( ORLFMT )
                     ORLFLG = .TRUE.
                     
@@ -571,12 +620,28 @@ C.................  Process line depending on file format and source category
      &                                   SGID, TSCC, NPOLPERLN,
      &                                   HDRFLAG, EFLAG )
                     END SELECT
+
                 CASE( ORLNPFMT )
                     ORLFLG = .TRUE.
-                    
+                   
                     CALL RDSRCORLNP( LINE, CFIP, TSCC, NPOLPERLN,
      &                               HDRFLAG, EFLAG )
+
+                CASE( ORLFIREFMT )
+                    ORLFLG   = .TRUE.
+                    FIREFLAG = .TRUE.
+
+                    CALL RDSRCORLFR( LINE, CFIP, FCID, PTID, SKID, SGID,
+     &                               TSCC, NPOLPERLN, HDRFLAG, EFLAG,
+     &                               NREC, NN, NLINEFR, NFRPOL, FIREPOL)
+
                 END SELECT
+
+C.................  If file format is point, ORL FIRE, make sure adding other pollutants
+                IF( IREC >= NLINEFR .AND. IREC < NLINEFR + NFRPOL ) THEN
+                    BACKSPACE( FDEV )
+                END IF
+
 
 C.................  Check for header lines
                 IF( HDRFLAG ) THEN
@@ -587,12 +652,12 @@ C.................  Write first ten lines of inventory to log file
                 IF( NWRLINE < 10 ) THEN
                     NWRLINE = NWRLINE + 1
                     TENLINES( NWRLINE ) = BLANK10 // TRIM( LINE )
-                    
+
                     IF( NWRLINE == 10 ) THEN
                         MESG = BLANK10 // 
      &                      'First 10 lines of current inventory:'
                         WRITE( LDEV, '(A)' ) TRIM( MESG )
-                        
+
                         DO I = 1,NWRLINE
                             WRITE( LDEV, '(A)' ) TRIM( TENLINES( I ) )
                         END DO
@@ -863,10 +928,11 @@ C.............................  Update total number of sources with pollutants
      &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                                TCSOURC )
                     END IF
+
                 CASE( 'POINT' )
                     CALL PADZERO( TSCC )
                 
-                    SELECT CASE( CURFMT ) 
+                    SELECT CASE( CURFMT )
                     CASE( IDAFMT, ORLFMT )
                         CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
      &                                TSCC, CHRBLNK3, CHRBLNK3, 
@@ -875,7 +941,13 @@ C.............................  Update total number of sources with pollutants
                         CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
      &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                                TCSOURC )
+
+                    CASE( ORLFIREFMT )
+                        CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID,  
+     &                                TSCC, CHRBLNK3, CHRBLNK3, 
+     &                                TCSOURC )
                     END SELECT
+
                 END SELECT
                 
                 CSRC_LEN = LEN_TRIM( TCSOURC )
@@ -903,7 +975,7 @@ C.................  Store current source number for this record
 
 C.................  Update total number of sources with pollutants
                 NRAWBP = NRAWBP + NPOLPERLN
-        
+
             END DO  ! loop through MXRECS lines
 
 C.............  Abort if there was a reading error
@@ -1017,7 +1089,7 @@ C.........  Allocate memory to read complete scratch file
         S = 0
         ISTREC = 0
         TCSOURC = ' '
-        
+
 C.........  Read source info from scratch file
         DO
         
@@ -1048,7 +1120,7 @@ C.................  Store information from line
             END IF
             
 C.............  Loop through segments (file and record numbers)
-            DO I = 1,NSCSEG-1
+            DO I = 1, NSCSEG-1
 
 C.................  Exit if segment is blank (reached end of line)
                 IF( SCSEGMENT( I ) == ' ' ) EXIT
@@ -1067,8 +1139,9 @@ C.................  Store file number
                 SRCSBYREC( ISTREC,2 ) = 
      &              STR2INT( SCSEGMENT( I )( K+1:L ) )
                 SRCSBYREC( ISTREC,3 ) = S
+
             END DO
-        
+
         END DO
 
         NRAWSRCS = S

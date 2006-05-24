@@ -198,7 +198,6 @@ C.........  Set up default file name and prompting message
 
         END IF
 
-
 C.........  Prompt for output file
         FNAME = PROMPTMFILE( MESG, FSUNKN3, FNAME, PROGNAME )
 

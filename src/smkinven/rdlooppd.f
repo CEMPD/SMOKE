@@ -254,6 +254,12 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME,
      &                        EDATE, ETIME, EASTAT, SPSTAT )
 
+            ELSE IF ( FILFMT( IFIL ) .EQ. ORLDYFRFMT ) THEN
+
+                CALL RDORLFR( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG,
+     &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME,
+     &                        EDATE, ETIME, EASTAT, SPSTAT )
+
             ELSE
 
                 WRITE( MESG,94010 ) 'File format', FILFMT(IFIL), 'of '//

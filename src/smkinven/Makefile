@@ -34,15 +34,15 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
         gethdr.o getpdinfo.o initinfo.o \
         openinvin.o openinvout.o openpdout.o procinven.o procinvsrcs.o rdcempd.o \
-        rdemspd.o rdepspd.o rdgrdapi.o \
+        rdemspd.o rdorlfr.o rdepspd.o rdgrdapi.o \
         rdinvsrcs.o rdlooppd.o smkinven.o \
         srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
         setnonhap.o rdsrcidaar.o rdsrcntiar.o rddataidaar.o rdinvdata.o rddatantiar.o \
         procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
         rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
         rddataemsar.o rdsrcemspt.o rddataemspt.o procemspt.o \
-        rddevemspt.o rdfacemspt.o rdprocemspt.o rdstkemspt.o \
-        rdsrcntipt.o rdsrcntinp.o rddatantipt.o rddatantinp.o rdcemsum.o
+        rddevemspt.o rdfacemspt.o rdprocemspt.o rdstkemspt.o rdsrcntifr.o\
+        rdsrcntipt.o rdsrcntinp.o rddatantipt.o rddatantinp.o rddatantifr.o rdcemsum.o
 #
 #
 smkinven: $(RAW) $(ALLI) $(LIBPATH)
@@ -85,6 +85,7 @@ rddatantiar.o: $(MODINFO)
 rddatantimb.o: $(MODINFO)
 rddatantinp.o: $(MODINFO)
 rddatantipt.o: $(MODINFO)
+rddatantifr.o: $(MODINFO)
 rddevemspt.o: $(MODINFO) $(MODSOURC)
 rdemspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
 rdepsar.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
@@ -95,6 +96,7 @@ rdgrdapi.o: $(MODSOURC) $(MODINFO)
 rdinvdata.o: $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMOBIL)
 rdinvsrcs.o: $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMOBIL)
 rdlooppd.o: $(MODINFO)
+rdorlfr.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
 rdprocemspt.o: $(MODINFO) $(MODSOURC)
 rdsrcemsar.o: $(MODLISTS)
 rdsrcemsmb.o: $(MODINFO)
@@ -104,6 +106,7 @@ rdsrcidamb.o: $(MODINFO)
 rdsrcidapt.o:
 rdsrcntiar.o: $(MODLISTS)
 rdsrcntimb.o: $(MODLISTS)
+rdsrcntifr.o: $(MODINFO)
 rdsrcntinp.o: $(MODLISTS)
 rdsrcntipt.o: $(MODLISTS)
 rdstkemspt.o: $(MODINFO) $(MODSOURC)

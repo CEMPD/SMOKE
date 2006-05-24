@@ -38,6 +38,8 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C
 C***************************************************************************
+C...........  This module contains the information about the source category
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
 
         IMPLICIT NONE
 
@@ -58,7 +60,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
-        INTEGER     , INTENT(OUT) :: ADEV     ! unit number for inven file
+        INTEGER     , INTENT(OUT) :: ADEV      ! unit number for inven file
         INTEGER     , INTENT(OUT) :: DDEV      ! unit no. for day-specific file
         INTEGER     , INTENT(OUT) :: HDEV      ! unit no. for hr-specific file
         INTEGER     , INTENT(OUT) :: RDEV      ! unit no. for stack replacements
