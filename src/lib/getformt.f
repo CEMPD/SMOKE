@@ -55,7 +55,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: EXTFORMAT  ! external format (used for list files)
 
 C...........   Other local variables
-        INTEGER         L, L1   ! indices
+        INTEGER         L, L1, L2, L3   ! indices
         INTEGER         IREC    ! current record number
         INTEGER         IOS     ! I/O status
 
@@ -95,7 +95,6 @@ C.............  Check for header lines
             IF( L1 .EQ. 1 ) THEN
             
 C.................  Check if format is provided as a header entry
-
                 L = INDEX( LINE, 'LIST' )
                 IF( L .GT. 0 ) THEN
                     GETFORMT = LSTFMT
@@ -131,6 +130,16 @@ C.................  Check if format is provided as a header entry
                     L = INDEX( LINE, 'NONPOINT' )
                     IF( L .GT. 0 ) THEN
                         GETFORMT = ORLNPFMT
+                    ELSE
+                        GETFORMT = ORLFMT
+                    END IF
+
+                    L2 = INDEX( LINE, 'FIRE' )
+                    L3 = INDEX( LINE, 'FIREEMIS' )
+                    IF( L2 .GT. 0 .AND. L3 .LE. 0 ) THEN
+                        GETFORMT = ORLFIREFMT
+                    ELSE IF( L3 .GT. 0 .AND. L2 .GT. 0 ) THEN
+                        GETFORMT = ORLDYFRFMT
                     ELSE
                         GETFORMT = ORLFMT
                     END IF
