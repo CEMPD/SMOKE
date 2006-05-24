@@ -20,7 +20,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Created 7/2000 by M Houyoux
+C     Created 7/2000 by M. Houyoux
 C     Revised 7/2003 by A. Holland
 C
 C***********************************************************************
@@ -61,7 +61,8 @@ C.........  This module contains Smkreport-specific settings
      &                      SSFLAG, SLFLAG, TFLAG, LFLAG, NFLAG, PSFLAG,
      &                      GSFLAG, TSFLAG, UNITSET, MXRPTNVAR,
      &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME,
-     &                      NIFLAG, NMFLAG, NNFLAG, LAB_IDX, LENLAB3
+     &                      NIFLAG, NMFLAG, NNFLAG, LAB_IDX, LENLAB3,
+     &                      DLFLAG, MATFLAG, NFDFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATDESC
@@ -101,6 +102,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: LCATSET   = .FALSE.  ! true: source category set
         LOGICAL, SAVE :: LDELIM    = .FALSE.  ! true: manual delimeter set
         LOGICAL, SAVE :: LLABEL    = .FALSE.  ! true: user-defined label set
+        LOGICAL, SAVE :: HHFLAG    = .FALSE.  ! true: indicator of BY HOUR set for BY LAYER
 
         CHARACTER        DAYYN             !  Y or N for average day
         CHARACTER(6)     FILNUM            !  tmp file number string
@@ -830,6 +832,7 @@ C.............  BY options affecting inputs needed
                     END IF
 
                     RPT_%BYHOUR = .TRUE.
+                    HHFLAG      = .TRUE.          ! indicator flag for BY LAYER instruction only
 
                 CASE( 'LAYER' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
@@ -839,6 +842,11 @@ C.............  BY options affecting inputs needed
                         RPT_%BYLAYER = .TRUE.
                         RPT_%LAYFRAC = .TRUE.
                         RPT_%USEHOUR = .TRUE.     ! Implies temporal allocation
+                        DLFLAG       = .FALSE.    ! initializing every report
+
+C.........................  Daily layered emission is set to Y if BYHOUR is not set at this point
+                        IF( .NOT. HHFLAG ) DLFLAG = .TRUE.
+
                         RPT_%BYHOUR  = .TRUE.
 
                       ELSE IF( FIRSTLOOP ) THEN
@@ -899,6 +907,23 @@ C.............  BY options affecting inputs needed
                         CALL M3MSG2( MESG )
                     END IF
 
+                CASE( 'MATBURNED' )    ! using SIC as an alias for MATBURNED in wildfire
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYSIC  = .TRUE.
+                        MATFLAG     = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NIFLAG = .TRUE.
+                            RPT_%SICNAM = .TRUE.
+                            IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY MATBURNED instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+
                 CASE( 'MACT' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
                         RPT_%BYMACT  = .TRUE.
@@ -910,6 +935,23 @@ C.............  BY options affecting inputs needed
                     ELSE
                         WRITE( MESG, 94010 )
      &                     'WARNING: BY MACT instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+
+                CASE( 'NFDRSCODE' )    ! using MACT as an alias for NFDRSCODE in wildfire
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYMACT  = .TRUE.
+                        NFDFLAG      = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NMFLAG = .TRUE.
+                            RPT_%MACTNAM = .TRUE.
+                            IF( .NOT. LDELIM ) RPT_%DELIM  = '|'
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY NFDRSCODE instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )
