@@ -15,6 +15,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Updated Feb. 2005 with changes from J. Godowitch & G. Pouliot
+C     Updated to read either ACRESBURNED(EPA) or AREA(Bluesky) as acres burned variables
 C
 C***********************************************************************
 C  
@@ -275,6 +276,7 @@ C...........   Other local variables
         LOGICAL          LFG( 9 )         ! true: source characteristic is valid
         LOGICAL          FIREFLAG         ! true: calculate plumes for fire data
         LOGICAL          HOURFIRE         ! true: use hourly fire data
+        LOGICAL, SAVE :: WILDFLAG =.TRUE. ! true: calculate plumes for fire data (NO BLUESKY USE)
 
         CHARACTER(50)    CHARS( 9 )!  tmp source characeristics 
         CHARACTER(50) :: METSCEN   !  temporary string for met scenario name
@@ -557,10 +559,16 @@ C.............  Check to see if appropriate variable list exists
 C.............  Check to see if appropriate variable list exists
             CALL RETRIEVE_IOAPI_HEADER( DAYNAME )
 
-            I = INDEX1( 'AREA', NVARS3D, VNAME3D )
-            IF( I <= 0 ) THEN
+            I = INDEX1( 'ACRESBURNED', NVARS3D, VNAME3D )
+            J = INDEX1( 'AREA', NVARS3D, VNAME3D )
+
+            IF( I <= 0 .OR. J > 0 ) WILDFLAG = .FALSE.
+
+            IF( I <= 0 .AND. J <= 0 .AND. .NOT. WILDFLAG ) THEN
                 MESG = 'ERROR: Cannot find acres burned ' //
-     &                 'variable "AREA" in daily inventory file.'
+     &                 'variable "ACRESBURNED" or "AREA" in daily ' //
+     &                  CRLF() // BLANK10 // 'inventory file '
+     &                  // TRIM( DAYNAME )
                 CALL M3MSG2( MESG )
                 EFLAG = .TRUE.
             END IF
@@ -1091,18 +1099,25 @@ C.................  Can't use SAFE_READ3 because data is stored in
 C                   a fileset
                 IF( .NOT. READSET( MNAME, 'HFLUX', ALLAYS3, ALLFILES,
      &                             JDATE, JTIME, BFLX ) ) THEN
+
                     MESG = 'Could not read "HFLUX" from file "' //
      &                     TRIM( MNAME ) // '".'
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
-                
+               
 C.................  Convert BTU/hr to Briggs bouyancy
                 BFLX = BFLX * BTU2M4PS3  ! array
 
 C.................  Day-specific file replicates data at each hour
 C                   of the day
-                CALL SAFE_READ3( DAYNAME, 'AREA', ALLAYS3,
-     &                           JDATE, JTIME, ACRES )
+                IF( WILDFLAG ) THEN
+
+                    CALL SAFE_READ3( DAYNAME, 'ACRESBURNED', ALLAYS3,
+     &                           JDATE, JTIME, ACRES )   ! Wildfire inventory format
+                ELSE
+                    CALL SAFE_READ3( DAYNAME, 'AREA', ALLAYS3,
+     &                           JDATE, JTIME, ACRES )   ! Bluesky2inv format
+                END IF
 
             END IF
 
@@ -1631,7 +1646,7 @@ C----------------------------------------------------------------------
                 L1 = LEN_TRIM( VARNAM )
                 L2 = LEN_TRIM( FILNAM )
                 MESG = 'Could not read "' // VARNAM( 1:L1 ) // 
-     &                 '" from file "' // FILNAM( 1:L2 ) // '."'
+     &                 '" from file "' // FILNAM( 1:L2 ) // '".'
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
             END IF
