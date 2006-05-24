@@ -210,6 +210,9 @@
         LOGICAL, PUBLIC :: TSFLAG = .FALSE. ! true: read tmprl supplementary
         LOGICAL, PUBLIC :: VFLAG  = .FALSE. ! true: read in elevated source file PELV
         LOGICAL, PUBLIC :: YFLAG  = .FALSE. ! true: read in country, state, county info
+        LOGICAL, PUBLIC :: DLFLAG = .FALSE. ! true: writing daily emission by layer
+        LOGICAL, PUBLIC :: NFDFLAG= .FALSE. ! true: read in NFDRSCODE header
+        LOGICAL, PUBLIC :: MATFLAG= .FALSE. ! true: read in MATBURNED header
 
 !.........  REPCONFIG file characteristics
         INTEGER, PUBLIC :: MXGRPREC = 0   ! max no. of raw recs for any group

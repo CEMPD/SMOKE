@@ -64,7 +64,8 @@ C.........  This module contains Smkreport-specific settings
      &                      ALLRPT, LOC_BEGP, LOC_ENDP, SICFMT,
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
      &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
-     &                      LTLNFMT, LTLNWIDTH, LABELWIDTH
+     &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
+     &                      NFDFLAG, MATFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -145,7 +146,9 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRDATA = 35
         INTEGER, PARAMETER :: IHDRUNIT = 36
         INTEGER, PARAMETER :: IHDRLABL = 37
-        INTEGER, PARAMETER :: NHEADER  = 37
+        INTEGER, PARAMETER :: IHDRNFDRS= 38
+        INTEGER, PARAMETER :: IHDRMATBN= 39
+        INTEGER, PARAMETER :: NHEADER  = 39
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -186,7 +189,9 @@ C...........   Local parameters
      &                              'Variable       ',
      &                              'Data value     ',
      &                              'Units          ',
-     &                              'Label          ' / )
+     &                              'Label          ',
+     &                              'NFDRS          ',
+     &                              'MATBURNED      ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LCTRYUSE ( NCOUNTRY )
@@ -448,14 +453,16 @@ C.........  Date column
 
 C.........  Hour column
         IF( RPT_%BYHOUR ) THEN
-            J = LEN_TRIM( HEADERS( IHDRHOUR ) )  ! header width
-            WRITE( HOURFMT, 94630 ) J, 2, RPT_%DELIM  ! leading zeros
-            J = MAX( 2, J )
-            HOURWIDTH = J + LV
+            IF( .NOT. DLFLAG ) THEN
+                J = LEN_TRIM( HEADERS( IHDRHOUR ) )  ! header width
+                WRITE( HOURFMT, 94630 ) J, 2, RPT_%DELIM  ! leading zeros
+                J = MAX( 2, J )
+                HOURWIDTH = J + LV
 
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRHOUR), LH, HDRBUF )
-            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+                CALL ADD_TO_HEADER( J, HEADERS(IHDRHOUR), LH, HDRBUF )
+                CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
+            END IF
         END IF
 
 C.........  Layer column
@@ -622,25 +629,42 @@ C.........  SCC column
 
 C.........  SIC column
         IF( RPT_%BYSIC ) THEN
-            J = LEN_TRIM( HEADERS( IHDRSIC ) )
-            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSIC )
-            W1 = MAX( W1, J )  
-            CALL ADD_TO_HEADER( W1, HEADERS(IHDRSIC), LH, HDRBUF )
-            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+            IF( MATFLAG ) THEN
+                J = LEN_TRIM( HEADERS( IHDRMATBN ) )
+                W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSIC )
+                W1 = MAX( W1, J )  
+                CALL ADD_TO_HEADER( W1, HEADERS(IHDRMATBN), LH, HDRBUF )
+                CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
 
-            WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
-            SICWIDTH = W1 + LV
+                WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
+                SICWIDTH = W1 + LV
+            ELSE
+                J = LEN_TRIM( HEADERS( IHDRSIC ) )
+                W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSIC )
+                W1 = MAX( W1, J )  
+                CALL ADD_TO_HEADER( W1, HEADERS(IHDRSIC), LH, HDRBUF )
+                CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+                WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
+                SICWIDTH = W1 + LV
+            END IF
         END IF
 
 C.........  MACT column
         IF( RPT_%BYMACT ) THEN
-            J = LEN_TRIM( HEADERS( IHDRMACT ) )
-            J = MAX( MACLEN3, J )
-    
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRMACT), LH, HDRBUF )
-            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
-
-            MACTWIDTH = J + LV
+            IF( NFDFLAG ) THEN
+                J = LEN_TRIM( HEADERS( IHDRNFDRS ) )
+                J = MAX( MACLEN3, J )
+                CALL ADD_TO_HEADER( J, HEADERS(IHDRNFDRS), LH, HDRBUF )
+                CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+                MACTWIDTH = J + LV
+            ELSE
+                J = LEN_TRIM( HEADERS( IHDRMACT ) )
+                J = MAX( MACLEN3, J )
+                CALL ADD_TO_HEADER( J, HEADERS(IHDRMACT), LH, HDRBUF )
+                CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+                MACTWIDTH = J + LV
+            END IF
         END IF
 
 C.........  NAICS column

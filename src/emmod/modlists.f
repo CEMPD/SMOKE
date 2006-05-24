@@ -64,6 +64,9 @@
         INTEGER,        ALLOCATABLE :: FILFMT( : )  ! format of inventory file(s)
         CHARACTER(300), ALLOCATABLE :: LSTSTR( : )  ! contents of list-fmt inventory file
 
+!.........  Wildfire Point Source ORLFIREFMT flag
+        LOGICAL, PUBLIC :: FIREFLAG  ! true: ORL FIRE format inventory
+
 !.........  Unique lists of source characteristics and associated arrays...
 
 !.........  SIC arrays dimensioned by NINVSIC

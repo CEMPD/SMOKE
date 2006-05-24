@@ -69,6 +69,7 @@
         REAL   , ALLOCATABLE, PUBLIC:: STKTK ( : )  !  exhaust temp   (deg K)
         REAL   , ALLOCATABLE, PUBLIC:: STKVE ( : )  !  exhaust veloc  (m/s)
         REAL   , ALLOCATABLE, PUBLIC:: VMT   ( : )  !  vehicle miles traveled (miles/day)
+        REAL   , ALLOCATABLE, PUBLIC:: HEATCONTENT ( : )  !  heatcontent constant (m/s)
 
         REAL   , POINTER,     PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
 

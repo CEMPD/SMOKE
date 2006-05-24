@@ -48,7 +48,7 @@ C...........   This module is the inventory arrays
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: QAFMTL3, RPT_, SDATE, STIME, RPTNSTEP,
      &                      AFLAG, ASCREC, NSTEPS, EMLAYS, TSTEP,
-     &                      ALLRPT, ALLOUTHR, UCNVFAC
+     &                      ALLRPT, ALLOUTHR, UCNVFAC, DLFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, NOUTBINS, NOUTREC, BINDATA,
@@ -100,8 +100,8 @@ C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: SIDX( : ) ! spc/dat idx for incl pol/act
 
         REAL, ALLOCATABLE, SAVE :: BINARR( : )  ! helping sum to bins of data
-
         REAL, ALLOCATABLE, SAVE :: LFRAC1L( : ) ! layer fractions
+        REAL, ALLOCATABLE       :: TMPBIN( :,:,:,: ) ! array layered data per each time step
 
 C...........   Other local variables
         INTEGER          E, H, I, J, K, L, N, S, T, V   ! counters and indices
@@ -162,6 +162,13 @@ C.........  Allocate local memory for bin helper summing array
         ALLOCATE( BINARR( NOUTBINS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BINARR', PROGNAME )
 
+        IF( DLFLAG ) THEN
+            ALLOCATE( TMPBIN( EMLAYS, RPTNSTEP, NOUTBINS, NDATA )
+     &                       ,STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPBIN', PROGNAME )
+            TMPBIN = 0 ! array
+        END IF
+
 C.........  Set variable loop maxmimum based on speciation status
         NV = NIPPA + NTPDAT
         IF( SFLAG ) NV = NSVARS
@@ -173,7 +180,6 @@ C.........  Loop through time steps
         JDATE = SDATE
         JTIME = STIME
         DO T = 1, RPTNSTEP
-
 C.............  Set hour index
             H =  1 + MOD( JTIME / 10000 , 24 )
 
@@ -428,7 +434,6 @@ C.........................  Sum non-gridded output records into temporary bins
      &                                        ACUMATX( S,KM) *
      &                                      BINPOPDIV( N )
                             END DO
-
                         END IF
 
 C.........................  Add temporary bins values to output columns
@@ -439,19 +444,27 @@ C.........................  Add temporary bins values to output columns
 
                 END DO      ! End loop on data or speciation variables
 
-C.................  If this is an output hour...
+C.................  If this is an output hour when it is not BY LAYER
                 IF( ALLOUTHR( H,RCNT ) ) THEN
 
 C.....................  Convert units of output data
                     DO J = 1, NDATA
                         BINDATA( :,J ) = BINDATA( :,J ) * UCNVFAC( J )
+
+C.......................... Store tmp bindata for summing daily layered emission later
+                        IF( DLFLAG ) TMPBIN( L,T,:,J ) = BINDATA( :,J )
                     END DO
+
+C..................... Skip writing hourly emission when need daily total layered emissions
+                    IF( DLFLAG ) THEN
+                        BINDATA = 0
+                        CYCLE
+                    END IF
 
 C.....................  Write emission totals
                     CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, 
-     &                             L,  RPT_%DELIM, OUTFMT, ZEROFLAG, 
+     &                             L, RPT_%DELIM, OUTFMT, ZEROFLAG, 
      &                             EFLAG )
-
 C.....................  Reinitialize sum array
                     BINDATA = 0  ! array
 
@@ -472,10 +485,35 @@ C.............  Increment time step
 
         END DO    ! End loop over time steps
 
+C.........  Summing hourly layered for total daily laytered emission when DLFLAG is set to TRUE
+C           Skipped hourly output at line 464 and sum hourly emissions for daily total
+        IF( DLFLAG ) THEN
+
+            DO L = 1, LOUT
+                BINDATA = 0   ! array (summing layered hourly emissions)
+
+                DO T = 1, RPTNSTEP-1
+
+                    DO J = 1, NDATA
+
+                        BINDATA( :,J ) = BINDATA( :,J ) 
+     &                                   + TMPBIN( L,T,:,J )
+                    END DO
+
+                END DO
+C.................  Write daily layered emission totals
+                CALL WRREPOUT( FDEV, RCNT, NDATA, JDATE, JTIME, L,
+     &                      RPT_%DELIM, OUTFMT, ZEROFLAG, EFLAG )
+
+            END DO
+
+        END IF
+
 C.........  Write line to separate reports from each other and from metadata
         WRITE( FDEV, '(/,A,/)' ) REPEAT( '#', HWID )
 
 C.........  Deallocate routine-specific memory
+        IF( DLFLAG ) DEALLOCATE( TMPBIN )
         DEALLOCATE( POLVAL, LFRAC1L, BINARR )
 
         RETURN

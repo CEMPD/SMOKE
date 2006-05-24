@@ -69,7 +69,7 @@ C.........  This module contains Smkreport-specific settings
      &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH,
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
-     &                      LTLNWIDTH
+     &                      LTLNWIDTH, DLFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -245,12 +245,14 @@ C.................  Add date field to header
 
 C.............  Include hour in string
                 IF( RPT_%BYHOUR ) THEN
-                    BUFFER = ' '
-                    WRITE( BUFFER, HOURFMT ) OUTHOUR  ! Integer
-                    STRING = STRING( 1:LE ) // BUFFER
-                    MXLE = MXLE + HOURWIDTH + LX
-                    LE = MIN( MXLE, STRLEN )
-                    LX = 0
+                    IF( .NOT. DLFLAG ) THEN
+                        BUFFER = ' '
+                        WRITE( BUFFER, HOURFMT ) OUTHOUR  ! Integer
+                        STRING = STRING( 1:LE ) // BUFFER
+                        MXLE = MXLE + HOURWIDTH + LX
+                        LE = MIN( MXLE, STRLEN )
+                        LX = 0
+                    END IF
                 END IF
 
 C.............  Include layer in string
