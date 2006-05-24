@@ -69,8 +69,10 @@ C.........  Input file format constants
         INTEGER, PARAMETER  :: CEMFMT   = 6    ! CEM input file
         INTEGER, PARAMETER  :: ORLFMT   = 7    ! One record per line (ORL) format
         INTEGER, PARAMETER  :: ORLNPFMT = 8    ! ORL nonpoint format
+        INTEGER, PARAMETER  :: ORLFIREFMT = 9  ! ORL FIRE format
+        INTEGER, PARAMETER  :: ORLDYFRFMT = 10  ! ORL FIREEMIS format
 
-        CHARACTER(12), PARAMETER :: FMTNAMES( 0:8 ) = 
+        CHARACTER(12), PARAMETER :: FMTNAMES( 0:10 ) = 
      &                        ( / 'list        ', 
      &                            'EMS-95      ', 
      &                            'EPS         ', 
@@ -79,7 +81,9 @@ C.........  Input file format constants
      &                            'I/O API     ',
      &                            'CEM         ', 
      &                            'ORL         ',
-     &                            'ORL nonpoint' / )
+     &                            'ORL nonpoint',
+     &                            'ORL FIRE    ',
+     &                            'ORL FIREEMIS' / )
 
 C.........  Indicator for inventory header fields
         CHARACTER, PARAMETER :: CINVHDR = '#'
