@@ -20,6 +20,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 1/99
+C      Updated by B.H. Baek 5/06 (Re-normalize hourly factors for wildfires)
 C
 C************************************************************************
 C
@@ -100,9 +101,13 @@ C...........   TMAT update variables
         INTEGER, SAVE :: MONTH ( 24, 0:23 )  ! time zone's month 1 ... 12
         INTEGER, SAVE :: DAYOW ( 24, 0:23 )  ! time zone's day   1 ... 7
 
+        REAL, ALLOCATABLE :: STHOUR( : )         ! episode start hour
+        REAL, ALLOCATABLE :: EDHOUR( : )         ! episode end hour
+        REAL              :: TMPHRLFAC( 24 )      ! tmp hourly factors
+
 C...........   Other local variables
 
-        INTEGER          C, H, I, J, K, L, M, S, V !  indices and counters
+        INTEGER          C, H, I, II, J, K, K1, K2, KK, L, M, S, V !  indices and counters
 
         INTEGER, SAVE :: TZMIN   ! minimum time zone in inventory
         INTEGER, SAVE :: TZMAX   ! maximum time zone in inventory
@@ -110,6 +115,8 @@ C...........   Other local variables
         INTEGER          DAY        ! tmp emissions day of week (1=monday)
         INTEGER          HCORR      ! hour correction factor
         INTEGER          HOUR       ! hour of day (1 ... 24)
+        INTEGER       :: ST = 0     ! resetting time for episode begin
+        INTEGER       :: ED = 0     ! resetting time for episode end
         INTEGER          IOS        ! i/o status
         INTEGER, SAVE :: LDATE = -1 ! date used in previous subroutine call
         INTEGER, SAVE :: LTIME = -1 ! time used in previous subroutine call
@@ -117,8 +124,13 @@ C...........   Other local variables
         INTEGER          PIDX       ! tmp pollutant/activity index
         INTEGER          TDATE      ! date for computing time zones update arr 
         INTEGER          TTIME      ! time for computing time zones update arr 
+        INTEGER          EPSBEG     ! tmp episode start hour
+        INTEGER          EPSEND     ! tmp episode end hour
 
-        REAL             UFAC       ! tmp units conversion factor
+        REAL             UFAC            ! tmp units conversion factor
+        REAL          :: NORMFAC   = 0.  ! normalizing factors for hourly factors
+        REAL          :: SUMHRLFAC = 0.  ! tmp partial sum of hourly factors
+        REAL          :: TOTHRLFAC = 0.  ! tmp sum of hourly factors
 
         LOGICAL, SAVE :: DFLAG              ! true: day-specific data
         LOGICAL, SAVE :: EFLAG    = .FALSE. ! true: error found
@@ -127,6 +139,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: HFLAG              ! true: hour-specific data
         LOGICAL, SAVE :: OUTMSG = .TRUE.    ! true: output message for new day
         LOGICAL       :: RDFLAG = .TRUE.    ! true: read dy data for this iter
+        LOGICAL       :: FIREFLAG=.FALSE.   ! true: read wildfires only
         LOGICAL       :: RHFLAG = .TRUE.    ! true: read hr data for this iter
         LOGICAL, SAVE :: TMATCALC           ! true: need to calculate new TMAT
         LOGICAL, SAVE :: UFLAG  = .FALSE.   ! true: use src-spec hr profiles
@@ -190,6 +203,14 @@ C.............  Set flags for daily and hourly data
             HFLAG = ( HNAME .NE. 'NONE' )
 
             FIRSTIME = .FALSE.
+
+C.............  Allocate memories for BEGHOUR and ENDHOUR
+            ALLOCATE( STHOUR( NDYSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STHOUR', PROGNAME )
+            ALLOCATE( EDHOUR( NDYSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EDHOUR', PROGNAME )
+            STHOUR = 0.0
+            EDHOUR = 0.0
 
         END IF  ! End of first time section
 
@@ -265,9 +286,9 @@ C           Only need to do this for a new day because the sources with
 C           day-specific data might change for each day.
         EMACV = EMAC  ! array
 
-C.............  If day-specific emissions, prepare day-corrections.
-C.............  Read day-specific data for each hour, because different time
-C               zones may be used for different sources and this approach
+C.........  If day-specific emissions, prepare day-corrections.
+C.........  Read day-specific data for each hour, because different time
+C           zones may be used for different sources and this approach
 C               is much more workable.
         IF( DFLAG ) THEN
 
@@ -275,19 +296,36 @@ C               is much more workable.
 C.................  Read source index for this day
             IF ( .NOT. READ3( DNAME, 'INDXD', ALLAYS3,
      &                        JDATE, JTIME, INDXD      ) ) THEN
-
                 WRITE( MESG,94010 ) 'WARNING: Could not read "INDXD" '//
      &               'from file "'// DNAME//'", at', JDATE, ':', JTIME
                 CALL M3MESG( MESG )
 
                 RDFLAG = .FALSE.
                 INDXD = 0   ! array
-
             END IF      !  if read3() failed on dname
+
+            FIREFLAG = .TRUE.
+
+C.............  Read source beginning hour(BEGHOUR) for this day
+            IF ( .NOT. READ3( DNAME, 'BEGHOUR', ALLAYS3,
+     &                        JDATE, JTIME, STHOUR      ) ) THEN
+                WRITE( MESG,94010 ) 'NOTE: re-normalize temporalized' //
+     &               ' hourly factors based on begining and ending' // 
+     &               CRLF() // '     hours of wildfire on ', JDATE
+                CALL M3MSG2( MESG )
+
+                FIREFLAG = .FALSE.
+            END IF      !  if read3() failed on dname
+
+C.............  Read source ending hour(ENDHOUR) for this day
+            IF ( .NOT. READ3( DNAME, 'ENDHOUR', ALLAYS3,
+     &                        JDATE, JTIME, EDHOUR      ) ) THEN
+                FIREFLAG = .FALSE.
+            END IF      !  ifread3() failed on dname
 
         END IF          ! if using day-specific emissions
 
-C.........  Set integer hour of day for output time 
+C.........  Set integer hour of day for output time
 
         HOUR = 1 + MOD( JTIME / 10000 , 24 )
 
@@ -297,11 +335,10 @@ C.........  Determine if this TMAT needs to be updated
 C.........  Construct TMAT -- array of effective composite profile coefficients
 
         IF( TMATCALC ) THEN
-                
+
 C.............  Build temporal allocation matrix
-            CALL MKTMAT( NSRC, NPLE, JDATE, TZONE, TZONES, 
-     &                   TPFLAG, MDEX, WDEX, DDEX,
-     &                   MONTH, DAYOW, TMAT )
+            CALL MKTMAT( NSRC, NPLE, JDATE, TZONE, TZONES, TPFLAG,
+     &                   MDEX, WDEX, DDEX, MONTH, DAYOW, TMAT )
 
         END IF         ! if TMAT is to be calculated
 
@@ -336,6 +373,9 @@ C           or an activity
         DO V = 1, NPLE
 
             NAMBUF = NAMIN( V )
+
+C.............  Skip BENHOUR and ENDHOUR from a list of pollutants in wildfires
+c            IF( NAMBUF .EQ. 'BENHOUR' .OR. NAMBUF .EQ. 'ENDHOUR' ) CYCLE
 
 C.............  Skip blanks that can occur when NGRP > 1
             IF ( NAMBUF .EQ. ' ' ) CYCLE
@@ -410,7 +450,71 @@ C                       emissions and hourly profile adjustments
                     DAY = DAYOW( HOUR, TZONES( S ) )                        
                     K   = 1 + MOD( HOUR + HCORR - TZONES( S ), 24 )
 
-                    EMIST( S,V ) = UFAC * EMACD( I ) * HRLFAC( K,L,DAY )
+C.....................  Re-normalizing hourly temporal factors for wildfires only
+                    IF( FIREFLAG ) THEN
+
+                        EPSBEG = 1 + MOD( INT( STHOUR( I ) )/10000, 24 )
+                        EPSEND = 1 + MOD( INT( EDHOUR( I ) )/10000, 24 )
+                        K1 = 1 + MOD( EPSBEG + HCORR - TZONES( S ), 24 )
+                        K2 = 1 + MOD( EPSEND + HCORR - TZONES( S ), 24 )
+
+                        TOTHRLFAC = 0.0
+                        SUMHRLFAC = 0.0
+                        TMPHRLFAC = 0.0
+
+                        TMPHRLFAC( 1:24 ) = HRLFAC( 1:24,L,DAY )
+
+C.........................  Sum of 24 hourly temporal factors and store org hourly factors
+C                           to tmp hourly factors array
+                        DO II = 1, 24
+                            TOTHRLFAC = TOTHRLFAC + TMPHRLFAC( II )
+                        END DO
+
+C.........................  Sum of hourly temporal factors b/n BENHR and ENDHR
+                        IF( K1 .GE. K2 ) THEN
+                            DO II = K1, 24
+                               SUMHRLFAC = SUMHRLFAC + TMPHRLFAC( II )
+                            END DO
+
+                            DO II = 1, K2
+                               SUMHRLFAC = SUMHRLFAC + TMPHRLFAC( II )
+                            END DO
+
+                            DO II = K2+1, K1-1
+                               TMPHRLFAC( II ) = 0.0   ! resetting to zero
+                            END DO
+
+                        ELSE   ! when end hour is greater than start hour
+
+                            DO II = K1, K2
+                               SUMHRLFAC = SUMHRLFAC + TMPHRLFAC( II )
+                            END DO
+
+                            DO II = 1, K1-1
+                               TMPHRLFAC( II ) = 0.0   ! resetting to zero
+                            END DO
+
+                            DO II = K2+1, 24
+                               TMPHRLFAC( II ) = 0.0   ! resetting to zero
+                            END DO
+
+                        END IF
+
+                        NORMFAC = TOTHRLFAC / SUMHRLFAC
+
+C.........................  Re-normalizing hourly temporal factors
+                        DO II = 1, 24
+                            TMPHRLFAC( II ) = TMPHRLFAC( II ) * NORMFAC
+                        END DO
+
+                        EMIST( S,V ) = UFAC * EMACD( I ) * 
+     &                                 TMPHRLFAC( K )
+                   
+                   ELSE       ! end of computing wildfires hourly emission factors
+
+                        EMIST( S,V ) = UFAC * EMACD( I ) *
+     &                                 HRLFAC( K,L,DAY )
+                   END IF
 
                 END DO
 
