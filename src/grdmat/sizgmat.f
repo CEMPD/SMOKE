@@ -69,10 +69,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         SETENVVAR
         INTEGER         STR2INT
         INTEGER         GETFLINE
-        INTEGER         PROMPTFFILE
+        INTEGER         GETEFILE
 
         EXTERNAL        CRLF, FIND1, INGRID, BLKORCMT, SETENVVAR,
-     &                  STR2INT, GETFLINE, PROMPTFFILE, ENVINT
+     &                  STR2INT, GETFLINE, ENVINT, GETEFILE
 
 
 C...........   SUBROUTINE ARGUMENTS
@@ -134,7 +134,7 @@ C...........   Other arrays
 
         CHARACTER(60)       LINE             ! Read buffer for a line
         CHARACTER(300)      MESG             !  message buffer
-        CHARACTER(196)      NAMBUF           !  surrogate file name buffer
+        CHARACTER(256)      NAMBUF           !  surrogate file name buffer
         CHARACTER(256)      NAMBUFT          !  tmp surrogate file name buffer
         CHARACTER(256)      TSRGFNAM         !  tmp surrogate file name buffer
         CHARACTER(20)       COLRANGE         ! buffer w/ column range
@@ -632,9 +632,14 @@ C.........  Set logical file name
             END IF
 
 C.........  Get the number of lines in the surrogate description file desription file
-            MESG = 'Enter logical name for surrogate files'
-            GDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
-     &                         NAMBUFT, PROGNAME )
+            GDEV = GETEFILE( 'SRGPRO_PATH',.TRUE., .TRUE., PROGNAME )
+
+            IF( GDEV .LT. 0 ) THEN
+                MESG = 'Could not open input surrogate file' // 
+     &                 TRIM( NAMBUFT )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
             REWIND( GDEV )
 
             NLINES = GETFLINE( GDEV, 'Reading surrogate files' )
