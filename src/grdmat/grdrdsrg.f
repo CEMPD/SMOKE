@@ -114,6 +114,7 @@ C***********************************************************************
 C   Begin body of subroutine GRDRDSRG
 
         NSRGREC = NT
+
 C......... Allocate memory for surrogate arrays
         ALLOCATE( IDXSRGA( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXSRGA', PROGNAME )
@@ -155,9 +156,9 @@ C.........  Fill surrogate arrays
 
                 IF ( .NOT. HFLAG ) CALL UPCASE( LINE )
 
-C............  Parse the line of data into segments based on the rules
-C              for "list-formatted" in fortran, but not requiring 
-C              quotes around the text strings
+C................  Parse the line of data into segments based on the rules
+C                  for "list-formatted" in fortran, but not requiring 
+C                  quotes around the text strings
 
                 CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
@@ -271,7 +272,7 @@ C.........  Initialize arrays
         SRGFRAC = 0. ! array
         SRGCSUM = 0. ! array
       
-C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
+C.........  Store the surrogate fractions, FIPS codes, and cell numbers...
         LFIP     = -1
         LCEL     = -1
         LCC      = -1
@@ -337,10 +338,10 @@ C           less than or equal to 1.
             GFLAG = .FALSE.
             CNTCHK = 0
       
-C.........  Check if county total surrogates greater than 1
+C.............  Check if county total surrogates greater than 1
             IF( SRGCSUM( K,I ) .GT. 1.001 ) THEN
       
-C.........  If first problem on this line
+C.................  If first problem on this line
                 IF( .NOT. GFLAG ) THEN
                     WRITE( MESG,94030 ) 'WARNING: County ' //
      &              'surrogate total greater than 1. for '//
@@ -349,8 +350,8 @@ C.........  If first problem on this line
                     GFLAG = .TRUE.
                     CNTCHK = CNTCHK + 1
       
-C.............  If multiple problems on this line, but fewer than
-C               the MESG length will permit, add to message
+C.................  If multiple problems on this line, but fewer than
+C                   the MESG length will permit, add to message
                 ELSE IF( CNTCHK .LE. 27 ) THEN
                     L = LEN_TRIM( MESG )
                     WRITE( MESG,94031 ) MESG( 1:L )// ', SSC(', 
@@ -370,7 +371,7 @@ C.............  Renormalize all surrogates with totals > 1
                 END DO
             END IF
       
-C.........  Give a warning message for significant counties
+C.............  Give a warning message for significant counties
             IF( GFLAG ) CALL M3MESG( MESG )
 
         END DO
@@ -379,7 +380,7 @@ C.........  Reset number of surrogate records stored in the module with
 C           the correct number after reading file and removing records that
 C           are outside the subgrid (if any)
 
-C.....  Deallocate local variables
+C.........  Deallocate local variables
 
         DEALLOCATE( IDXSRGA, IDXSRGB, SCELLA, SFIPSA, SSRGIDA, SFRACA )
 

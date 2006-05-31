@@ -356,19 +356,19 @@ C           and the header of the surrogates file to get the grid on which
 C           the surrogates are available.
         IF( SRGFLAG ) THEN
 
-C.........  Build unique lists of SCCs and country/state/county codes
-C           from the inventory arrays
+C.............  Build unique lists of SCCs and country/state/county codes
+C               from the inventory arrays
             CALL GENUSLST
 
-C.........  For mobile sources, read the mobile codes
+C..............  For mobile sources, read the mobile codes
             IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
             CALL M3MSG2( 'Reading gridding cross-reference file...' )
 
-C.........  Read the gridding cross-reference
+C.............  Read the gridding cross-reference
             CALL RDGREF( XDEV )
             CALL M3MSG2( 'Reading gridding surrogates header...' )
 
-C.........  Read surrogate description file
+C.............  Read surrogate description file
             MESG = 'Enter logical name for surrogate description file'
             FDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SRGDESC',
      &                          PROGNAME )
@@ -377,14 +377,14 @@ C.........  Read surrogate description file
      &                   ' file... ' )
             CALL RDSRGDESC( FDEV )
 
-C..........  Read the link definition file
+C..............  Read the link definition file
 c            CALL RDLNKDEF( )
 
-C.........  Determine default surrogate number from the environment
-C.........  Default surrogate code 100 is population
+C.............  Determine default surrogate number from by environment variable
+C.............  Default surrogate code 100 is population
 
             FSGFLAG  = ENVYN( 'SMK_USE_FALLBACK', 'Using default' //
-     &                        ' surrogate sets', .FALSE., IOS )
+     &                        ' fallback surrogate', .FALSE., IOS )
             
             DEFSRGID = ENVINT( 'SMK_DEFAULT_SRGID', 'Default surrogate',
      &                          100, IOS )
@@ -395,31 +395,26 @@ C.........  Default surrogate code 100 is population
                 WRITE( MESG, 93000 ) 'ERROR: Default surrogate code' //
      &              ' is not available in your surrogate description' //
      &              ' ($GE_DAT/SRGDESC) : User must set a population' //
-     &              ' surrogate code as default'
+     &              ' surrogate code as default regardless of' //
+     &              ' SMK_USE_FALLBACK setting'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            ELSE
-                WRITE( MESG, 94010 ) 'Default surrogate set to ',
-     &                                DEFSRGID
-                CALL M3MSG2( MESG )
-
             END IF
 
-C.........  Allocate memory for indices to surrogates tables for each source
+C..............  Allocate memory for indices to surrogates tables for each source
             ALLOCATE( ASRGID( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ASRGID', PROGNAME )
             ALLOCATE( SRGFIPIDX( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SRGFIPIDX', PROGNAME )
 
-C.........  Assigns the index of the surrogate to each source (stored
+C.............  Assigns the index of the surrogate to each source (stored
 C           in SRGIDPOS passed through MODXREF)
             CALL ASGNSURG
 
-C.........  Sort surrogates by county code & cell & surrogate code
+C............  Sort surrogates by county code & cell & surrogate code
             CALL SORTI1( NSRC, SRGFIPIDX, ASRGID )
 
-C.........  Creating surrogate list of assigned surrogate codes
-C.........  Count surrogate codes in surrogates file
+C.............  Creating surrogate list of assigned surrogate codes
+C.............  Count surrogate codes in surrogates file
             LSSC  = -1
             NSRGS = 0
             DO I = 1, NSRC
@@ -436,14 +431,14 @@ C.........  Count surrogate codes in surrogates file
 
             DEALLOCATE( SRGLIST )
             
-C.........  Allocate memory for creating assigned surrogates tables
+C.............  Allocate memory for creating assigned surrogates tables
             ALLOCATE( SRGLIST( NSRGS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SRGLIST', PROGNAME )
 
-C.........  Initialize arrays
+C.............  Initialize arrays
             SRGLIST = 0  ! array
         
-C.........  Store the surrogate ID list
+C.............  Store the surrogate ID list
             LSSC  = -1
             NN = 0
             DO I = 1, NSRC
@@ -459,22 +454,23 @@ C.........  Store the surrogate ID list
 
             END DO
 
-C.........  Re-create SRGLIST including default surrogate 
-C.........  if it doesn't exit in a new assigned SRGLIST
+C.............  Re-create SRGLIST including default surrogate 
+C.............  if it doesn't exit in a new assigned SRGLIST
             ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
             OSDEF = ISDEF
 
             IF( ISDEF < 1 ) THEN
                 NSRGS = NSRGS + 1
-            
-C.............  Allocate memory for creating assigned surrogates tables
-                ALLOCATE( SRGLIST( NSRGS ), STAT=IOS )
+
+C.................  Allocate memory for creating assigned surrogates tables
+                DEALLOCATE ( SRGLIST )
+                ALLOCATE( SRGLIST( NSRGS + 1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'SRGLIST', PROGNAME )
 
-C.............  Initialize arrays
+C.................  Initialize arrays
                 SRGLIST = 0  ! array
         
-C.............  Store the surrogate ID list
+C.................  Store the surrogate ID list
                 LSSC  = -1
                 NN = 0
                 DO I = 1, NSRC
@@ -488,12 +484,10 @@ C.............  Store the surrogate ID list
                             NN = NN + 1
                             SRGLIST( NN ) = DEFSRGID
                             LSSC = DEFSRGID
-
                         ELSE
                             NN = NN + 1
                             SRGLIST( NN ) = SSC
                             LSSC = SSC
-
                         END IF
 
                     END IF
@@ -502,10 +496,10 @@ C.............  Store the surrogate ID list
 
             END IF
 
-C.........  Read the surrogates header and initialize the grid description
-C.........  Also, obtain the format of the file.
-C.........  Save the name of the input grid
-C.........  Ensure the grid name from the surrogate description files are consistent
+C.............  Read the surrogates header and initialize the grid description
+C.............  Also, obtain the format of the file.
+C.............  Save the name of the input grid
+C.............  Ensure the grid name from the surrogate description files are consistent
             LSRGNCOLS = -1
             LSRGNROWS = -1
             LSRGGRDNM = ''
@@ -513,8 +507,8 @@ C.........  Ensure the grid name from the surrogate description files are consis
 
             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
            
-C.............  Prompt for and open I/O API output file(s)...
-                CALL GETENV( "SRGPRO_PATH", NAMBUF )
+C.................  Prompt for and open I/O API output file(s)...
+                CALL GETENV( 'SRGPRO_PATH', NAMBUF )
                 WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
 
                 IF( NAMBUFT .NE. TSRGFNAM  ) THEN
@@ -552,7 +546,7 @@ C.............  Prompt for and open I/O API output file(s)...
 
         END IF
         
-C.................  Get grid name from the environment and read grid parameters
+C.........  Get grid name from the environment and read grid parameters
         IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D,
      &       COORUNIT, P_ALP3D, P_BET3D, P_GAM3D, XCENT3D,
      &       YCENT3D, XORIG3D, YORIG3D, XCELL3D,
@@ -565,13 +559,11 @@ C.................  Get grid name from the environment and read grid parameters
 C.........  Check or initialize the output grid settings (depends on
 C           if a surrogates file is being used). For variable grids,
 C           do not allow subgrids.
-
-
         IF( VFLAG ) THEN
             CALL CHKGRID( GDNAM3D, 'GRIDDESC', 0, EFLAG )
             
             IF( EFLAG ) THEN
-                MESG = 'Problem with variable grid input data.'
+                MESG = 'Problem with variable grid input data'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
             END IF
         ELSE
@@ -637,8 +629,8 @@ C.............  Make sure we're not using a variable grid
         END IF
         CALL M3MSG2( MESG )
 
-C.....  Depending on source category, convert coordinates, determine size
-C       of gridding matrix, and allocate gridding matrix.
+C.........  Depending on source category, convert coordinates, determine size
+C           of gridding matrix, and allocate gridding matrix.
         SELECT CASE( CATEGORY )
        
         CASE( 'AREA' )
@@ -709,7 +701,7 @@ C.........  Generate gridding matrix for given source category, and write it
 C           out.  It is necessary to write it out while in the subroutine,
 C           because of the type transformation from real to integer that
 C           is done so the sparse i/o api format can be used.
-            
+
         SELECT CASE( CATEGORY )
 
         CASE( 'AREA' )
@@ -770,7 +762,7 @@ C.........  Report statistics for ungridding matrix
         END IF 
 
 C.........  End of program
-      
+
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
@@ -801,27 +793,28 @@ C...........   Internal buffering formats............ 94xxx
 C******************  INTERNAL SUBPROGRAMS  *****************************
         CONTAINS
 
-C.........  This internal subprogram open individual surrogate file 
+C.........  This internal subprogram opens individual surrogate file 
 
             SUBROUTINE OPEN_SRGFILE
 C----------------------------------------------------------------------
                  
 C.........  Set logical file name
-            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUFT )) THEN
+            IF( .NOT. SETENVVAR( 'SRGPRO_PATH', NAMBUFT )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUFT )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
 C.........  Get the number of lines in the surrogate description file desription file
-            GDEV = PROMPTFFILE( 'Reading surrogate files..',
-     &             .TRUE., .TRUE., 'SRGPRO_PATH', PROGNAME )
-     
+            MESG = 'Enter logical name for surrogate files'
+            GDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
+     &                         'SRGPRO_PATH', PROGNAME )
+
             REWIND( GDEV )
 
-            NLINES = GETFLINE( GDEV, 'Reading srg files' )
+            NLINES = GETFLINE( GDEV, 'Reading surrogate files' )
             
-            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUF )) THEN
+            IF( .NOT. SETENVVAR( 'SRGPRO_PATH', NAMBUF )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUF )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
