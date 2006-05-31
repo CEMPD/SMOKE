@@ -48,7 +48,8 @@ C.........  This module contains the global variables for the 3-d grid
 C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NCELLS, FIPCELL, NSRGS, SRGLIST, NSRGFIPS,
      &                     SRGFIPS, NTSRGDSC, SRGFNAM, SRGFCOD,
-     &                     SRGFMT, SRGNCOLS, SRGNROWS, NTLINES
+     &                     SRGFMT, SRGNCOLS, SRGNROWS, NTLINES,
+     &                     SRGCSUM, SRGFRAC
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP
@@ -115,13 +116,12 @@ C...........   Local parameters
 
 C...........   Other arrays
         CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
-        CHARACTER(60), ALLOCATABLE :: TMPLINE( : ) ! tmp line buffer
+        CHARACTER(100), ALLOCATABLE :: TPLINE( : ) ! tmp line buffer
 
 C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 
         INTEGER, ALLOCATABLE :: IDXSRT ( : )! sorting index
         INTEGER, ALLOCATABLE :: IDXSRT2( : )! 2nd sorting index
-        INTEGER, ALLOCATABLE :: SRCFIPS( : )! FIPS list from sources
         INTEGER, ALLOCATABLE :: IC     ( : )! cell IDs
         INTEGER, ALLOCATABLE :: IS     ( : )! source IDs
         INTEGER, ALLOCATABLE :: NCL    ( : )! position for county and/or link
@@ -131,6 +131,7 @@ C...........   Scratch Gridding Matrix (subscripted by source-within-cell, cell)
 C...........   Scratch Ungridding Matrix information
         INTEGER, ALLOCATABLE :: CLIDX     ( : ) ! county or link index by source
         INTEGER, ALLOCATABLE :: CNT_CL    ( : ) ! cell count per county or link
+        INTEGER, ALLOCATABLE :: NNCL      ( : ) ! no of county or link index by source
         INTEGER, ALLOCATABLE :: VMT_CELL( :,: ) ! cell numbers for county or link
         REAL   , ALLOCATABLE :: VMT_FRAC( :,: ) ! VMT fraction for cell/county or cell/link
         REAL   , ALLOCATABLE :: VMT_CL_INV( : ) ! inverse of VMT by county or link
@@ -200,7 +201,7 @@ C...........   Other local variables
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
         LOGICAL         WFLAG              ! true: per iteration warning flag
 
-        CHARACTER(60)   LINE      ! Read buffer for a line
+        CHARACTER(100)   LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER    !  source fields buffer
@@ -262,6 +263,8 @@ C.........  Allocate memory for temporary gridding matrix and other
         CALL CHECKMEM( IOS, 'IS', PROGNAME )
         ALLOCATE( NCL( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NCL', PROGNAME )
+        ALLOCATE( NNCL( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NNCL', PROGNAME )
         ALLOCATE( CS( NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CS', PROGNAME )
         ALLOCATE( CSJ( NMATX ), STAT=IOS )
@@ -283,20 +286,30 @@ C.........  Allocate memory for temporary gridding matrix and other
         IC  = 0
         IS  = 0
         NCL = 0
+        NNCL =0
         CS  = 0.
         CSJ = 0.
         FIPNOSRG = 0
         SURGID1 = 0   ! array
         SURGID2 = 0   ! array
+        
+        LLNK    = ' '
+        LLFIP   = 0
+        LFIP    = 0
+        N       = 0
 
-C.....  Store the number and values of unfound cy/st/co codes
-C.....  Keep track of sources that are outside the domain
-        NFIP = 0
-        LLFIP = -1
+C.........  Store the number and values of unfound cy/st/co codes
+C.........  Keep track of sources that are outside the domain
         DO I = 1, NSRC
 
             FIP  = IFIP( I )
+            CLNK = CLINK ( I )
 
+C.............  Count and store the number of county and links
+            IF ( FIP .NE. LLFIP .OR. CLNK .NE. LLNK ) N = N + 1
+            NNCL( I ) = N
+
+C.............  storing st/cy/ct index within a domain
             F = FIND1( FIP, NSRGFIPS, SRGFIPS )
 
             IF ( F .LE. 0 ) THEN
@@ -312,33 +325,11 @@ C.....  Keep track of sources that are outside the domain
 
             END IF
             
-            IF( FIP .NE. LLFIP ) THEN
-                NFIP = NFIP + 1
-                LLFIP = FIP
-            END IF
-            
+            LLFIP = FIP
+            LLNK  = CLNK
 
         END DO
-
-C.....  Store assigned cy/st/co (FIPS) codes from sources
-        ALLOCATE( SRCFIPS( NFIP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCFIPS', PROGNAME )
-        SRCFIPS = 0
-        LLFIP = -1
-        NFIP = 0
-
-        DO I = 1, NSRC
-
-            FIP  = IFIP( I )
-
-            IF( FIP .NE. LLFIP ) THEN
-                NFIP = NFIP + 1
-                SRCFIPS( NFIP ) = FIP
-                LLFIP = FIP
-            END IF
-            
-        END DO
-
+        
 C.........  Set flag to indicate that XLOCA/YLOCA are available
         LFLAG = ALLOCATED( XLOCA )
 
@@ -353,7 +344,6 @@ C.........  Set flag to indicate that XLOCA/YLOCA are available
         NLKOGRD = 0
         ADJ     = 1.    !  temporary
         ADJC    = 1.    !  temporary
-        N       = 0
 
 C.........  default fallback surrogate will run at last after
 C           re-assigned zero fraction surrogate
@@ -367,120 +357,130 @@ C           re-assigned zero fraction surrogate
             IF( FSGFLAG ) THEN
 
                 IF( II < ISDEF ) THEN
-                
                     TGTSRG = SRGLIST( II - 1 )
                     KK = II - 1
                 
+C.................  default fallback surrogate will run at last after
+C                   re-assigned zero fraction surrogate
                 ELSE IF( II >= ISDEF ) THEN
-C.............  default fallback surrogate will run at last after
-C               re-assigned zero fraction surrogate
 
                     IF( II == NSRGS ) THEN
                         TGTSRG = DEFSRGID
                         KK = ISDEF
-                        
                     ELSE
                         TGTSRG = SRGLIST( II + 1 )
                         KK = II + 1
-                    
                     END IF
-                
                 END IF
-
             END IF
             
             NTL    = NTLINES( KK )
 
-            IF( NTL .EQ. 0 ) CYCLE
-
-            WRITE( MESG,94010 ) 'Assigned surrogate', TGTSRG,
-     &          ' is currently looping through sources'
-            CALL M3MSG2( MESG ) 
-
-C.........  Allocate memory for indices to surrogates tables for each source
-            ALLOCATE( TMPLINE( NTL ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TMPLINE', PROGNAME )
-       
-C.......... If surrogates are needed, read and store the gridding surrogates, 
-C           allocate memory for the surrogate assignments, and assign
-C           surrogates to each source.
-            NT = 0      ! initializing the counts of total line numbers
-            TMPLINE = ''
-            TSRGFNAM = ''
-      
-            DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
-       
-C.............  Prompt for and open I/O API output file(s)...
-                CALL GETENV( "SRGPRO_PATH", NAMBUF )
-                WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
+C.............  Warning message when there are no surrogate available due to out of domain
+            IF( NTL .EQ. 0 ) THEN
+                WRITE( MESG,94010 ) 'WARNING: The surrogate', TGTSRG,
+     &              ' does not exist within a domain range: emissions'//
+     &              ' of sources assigned to', TGTSRG,
+     &              ' will be set to zero'
+                CALL M3MSG2( MESG )
                 
-                IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
-       
-                IF( NAMBUFT .NE. TSRGFNAM  ) THEN
-                    CALL OPEN_SRGFILE
+                SRGFRAC = 0.0
+                SRGCSUM = 0.0
 
-                    SSC = 0
-C.................  Reading surrogate files
-                    DO JJ = 1, NLINES
+            ELSE
 
-                       READ ( GDEV, 93000, END=111, IOSTAT=IOS ) LINE
+                WRITE( MESG,94010 ) 'Looping surrogate', TGTSRG,
+     &              ' through sources to generate gridding matrix'
+                CALL M3MSG2( MESG )
+                
 
-                       IF ( BLKORCMT( LINE ) ) CYCLE
+C.................  Allocate memory for indices to surrogates tables for each source
+                ALLOCATE( TPLINE( NTL ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'TPLINE', PROGNAME )
 
-                       CALL PARSLINE( LINE, MXSEG, SEGMENT )
-                       SSC    = STR2INT ( SEGMENT( 1 ) )
-                       TCOL   = STR2INT ( SEGMENT( 3 ) )
-                       TROW   = STR2INT ( SEGMENT( 4 ) )
+C.................  If surrogates are needed, read and store the gridding surrogates, 
+C               allocate memory for the surrogate assignments, and assign
+C               surrogates to each source.
+                NT = 0
+                TPLINE = ' '
+                TSRGFNAM = ' '
 
-C........................  Check the value of the column number
-                       IF( TCOL .LT. 0 .OR.  TCOL .GT. SRGNCOLS  .OR.
-     &                   ( TROW .EQ. 0 .AND. TCOL .NE. 0 ) ) THEN
-                           WFLAG = .TRUE.
-                       END IF
+                 DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
+
+C.....................  Prompt for and open I/O API output file(s)...
+                    CALL GETENV( 'SRGPRO_PATH', NAMBUF )
+                    WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ),
+     &                                         SRGFNAM( I )
+
+                    IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
+
+                    IF( NAMBUFT .NE. TSRGFNAM  ) THEN
+                        CALL OPEN_SRGFILE
+
+C.........................  Reading surrogate files
+                        DO JJ = 1, NLINES
+
+                           READ ( GDEV, 93000, END=111, IOSTAT=IOS )LINE
+
+                           IF ( BLKORCMT( LINE ) ) CYCLE
+
+                           CALL PARSLINE( LINE, MXSEG, SEGMENT )
+                           SSC    = STR2INT ( SEGMENT( 1 ) )
+                           TCOL   = STR2INT ( SEGMENT( 3 ) )
+                           TROW   = STR2INT ( SEGMENT( 4 ) )
+
+C............................  Check the value of the column number
+                           IF( TCOL .LT. 0 .OR.  TCOL .GT. SRGNCOLS .OR.
+     &                       ( TROW .EQ. 0 .AND. TCOL .NE. 0 ) ) THEN
+                               WFLAG = .TRUE.
+                           END IF
               
-C........................  Check the value of the row number
-                       IF( TROW .LT. 0 .OR.  TROW .GT. SRGNROWS  .OR.
-     &                   ( TCOL .EQ. 0 .AND. TROW .NE. 0 ) ) THEN
-                           WFLAG = .TRUE.
-                       CALL M3MESG( MESG )                    
-              
-C........................  Special treatment for cell (0,0) (skip for now)
-                       ELSE IF( TROW .EQ. 0 .AND. TCOL. EQ. 0 ) THEN
-                           CYCLE
-              
-                       END IF
-              
-C....................  Adjust column and row for subgrid
-                       TCOL = TCOL - XOFF
-                       TROW = TROW - YOFF
-              
-C....................  Skip entry after subgrid adjustment
-                       IF( TCOL .LE. 0 .OR. TCOL .GT. NCOLS .OR.
-     &                     TROW .LE. 0 .OR. TROW .GT. NROWS ) CYCLE
+C............................  Check the value of the row number
+                           IF( TROW .LT. 0 .OR.  TROW .GT. SRGNROWS .OR.
+     &                       ( TCOL .EQ. 0 .AND. TROW .NE. 0 ) ) THEN
+                                WFLAG = .TRUE.
+                           CALL M3MESG( MESG )                    
 
-C.....................  Skip entry if rows and columns are out of range
-                       IF( WFLAG ) CYCLE
+C............................  Special treatment for cell (0,0) (skip for now)
+                           ELSE IF( TROW .EQ. 0 .AND. TCOL. EQ. 0 ) THEN
+                               CYCLE
 
-C.....................  Skip entry if SSC is not in the assigned SRGLIST by source
-                       IF( SSC .NE. TGTSRG ) CYCLE
+                           END IF
 
-                       NT = NT + 1
-                       TMPLINE( NT ) = LINE
+C............................  Adjust column and row for subgrid
+                           TCOL = TCOL - XOFF
+                           TROW = TROW - YOFF
 
-111                 END DO
+C............................  Skip entry after subgrid adjustment
+                           IF( TCOL .LE. 0 .OR. TCOL .GT. NCOLS .OR.
+     &                         TROW .LE. 0 .OR. TROW .GT. NROWS ) CYCLE
 
-                    TSRGFNAM = NAMBUFT    ! store a previous surrogate file name
-                    CLOSE( GDEV )
+C............................  Skip entry if rows and columns are out of range
+                           IF( WFLAG ) CYCLE
 
-                 END IF      ! skip if surrogate file has the same srg file
+C.............................  Skip entry if SSC is not in the assigned SRGLIST by source
+                           IF( SSC .EQ. TGTSRG ) THEN
+                               NT = NT + 1
+                               TPLINE( NT ) = LINE
+                           END IF
+                       
+111                     END DO
 
-            END DO       ! loop over all surrogate files in SRGDESC file
+                        TSRGFNAM = NAMBUFT    ! store a previous surrogate file name buffer
+                        CLOSE( GDEV )
 
-            CALL GRDRDSRG( NT, TMPLINE, VFLAG )
-            
-            DEALLOCATE( TMPLINE )
+                    END IF      ! skip if surrogate file has the same srg file
 
-C.......   Compute gridding matrix:
+                END DO       ! loop over all surrogate files in SRGDESC file
+
+C.................  Populating assigned surrogated
+                CALL GRDRDSRG( NT, TPLINE, VFLAG ) ! populating surrogates
+
+                DEALLOCATE( TPLINE )
+
+            END IF   ! end of populating surrogates
+
+C.......    Compute gridding matrix:
 C.......       First case:   explicit link (ILINK > 0
 C.......       Second case:  some LNKDEF entry applies
 C.......       Third case:   FIP+roadtype cross-reference match
@@ -498,9 +498,6 @@ C.......       sixth case:   fallback default
 
                 IF( SSC .NE. TGTSRG ) CYCLE
 
-C.................  Count the number of county and links
-                N = FIND1( FIP, NFIP, SRCFIPS )
-            
 C.................  Determine if x/y location is available
                 XYSET = .FALSE.
                 IF( LFLAG ) XYSET = ( XLOCA( S ) .GT. AMISS3 )
@@ -508,7 +505,7 @@ C.................  Determine if x/y location is available
 C.................  Special case for source has an x/y location
                 IF( XYSET ) THEN
             
-C....................  If source is in the domain, get cell number and store
+C.....................  If source is in the domain, get cell number and store
                     IF( INGRID( XLOCA( S ), YLOCA( S ), 
      &                          NCOLS, NROWS, COL, ROW  ) ) THEN
             
@@ -520,7 +517,7 @@ C.........................  Check that the maximum number of sources per cell is
                         IF ( J .LE. NMATX ) THEN
                             IS ( J ) = S
                             IC ( J ) = C
-                            NCL( J ) = N
+                            NCL( J ) = NNCL( S )
                             CS ( J ) = 1.0
                         END IF
             
@@ -588,11 +585,11 @@ C.....................  Loop through cells intersecting the current link
             
                         C = ACEL( K )
             
-C.........................  Find cell-based adjustment for cell C
+C..........................  Find cell-based adjustment for cell C
 c                        ADJC = ADJMV( NADJ2, C, 0, ADJCELL, ADJCELL, 
 c     &                                ADJFAC2 )
             
-C.........................  Warn when both types of adjustments are applied
+C..........................  Warn when both types of adjustments are applied
 c                        IF( ADJ .NE. 1. .AND. ADJC .NE. 1. ) THEN
             
 c                            CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
@@ -629,7 +626,7 @@ C                           is okay
                             IDXSRT( J ) = J
                             IS    ( J ) = S
                             IC    ( J ) = C
-                            NCL   ( J ) = N
+                            NCL   ( J ) = NNCL( S )
                             CS    ( J ) = AFAC( K )
                             CSJ   ( J ) = ADJ * ADJC * AFAC( K )
                         END IF
@@ -695,6 +692,8 @@ C.................  Keep track of sources that are outside the domain
 
 C.................  Re-assigning org assigned srg to default fallback srg
                     IF( FSGFLAG ) ASRGID( S ) = DEFSRGID
+c                    IF ( FIP .NE. LFIP .OR. CLNK .NE. LLNK ) N = N - 1            
+
                     CYCLE   ! To next source
 
                 END IF
@@ -703,15 +702,16 @@ C.................  Loop through all of the cells intersecting this co/st/cy cod
                 DO K = 1, NCELLS( F )
 
                     C = FIPCELL( K,F )   ! Retrieve cell number
-            
+
 C.....................  Set the surrogate fraction
                     CALL SETFRAC( S, ISIDX, TGTSRG, K, F, 2, 
      &                           INDOMAIN( S ), CSRC, DEFSRGID, FSGFLAG,
      &                           ID1, ID2, FRAC )
-            
+
 C.....................  Re-assigning org assigned srg to default fallback srg
                     IF( ID2 .EQ. DEFSRGID .AND. FSGFLAG ) THEN
                         ASRGID( S ) = DEFSRGID
+c                        IF ( FIP .NE. LFIP .OR. CLNK .NE. LLNK ) N = N-1            
                         CYCLE
                     END IF
              
@@ -746,7 +746,7 @@ C                           is okay
                             IDXSRT( J ) = J
                             IS    ( J ) = S
                             IC    ( J ) = C
-                            NCL   ( J ) = N
+                            NCL   ( J ) = NNCL( S )
                             CS    ( J ) = FRAC
                             CSJ   ( J ) = ADJ * ADJC * FRAC
                         END IF
@@ -789,7 +789,7 @@ C.........  Abort if error
 
 C.........  Abort if overflow occurred
         IF ( NCOEF .GT. NMATX ) THEN   
-            
+
             WRITE( MESG,94010 )
      &        'INTERNAL ERROR: Gridding and ungridding matrices not ' //
      &        'written.' // CRLF() // BLANK10 //
@@ -816,13 +816,10 @@ C.........  and compute statistics.  Already NX part of gridding matrix
         DO C = 1, NGRID
 
             J = NX( C )
-
             IF (      J .GT. CMAX ) THEN
                 CMAX = J
-
             ELSE IF ( J .GT. 0 .AND. J .LT. CMIN ) THEN
                 CMIN = J
-
             END IF
 
         END DO
@@ -832,7 +829,7 @@ C.........  and compute statistics.  Already NX part of gridding matrix
             J = IDXSRT( K )                           
             IX( K ) = IS ( J )
             CX( K ) = CSJ( J )
-                   
+
         END DO
 
 C.........  Write gridding matrix
@@ -850,7 +847,7 @@ C.........  Write output surrogates codes
         END DO
 
 C.........  Deallocate memory that is no longer needed
-        DEALLOCATE( CSJ, IDXSRT )
+        DEALLOCATE( CSJ, NNCL, IDXSRT )
 
 C............................................................................
 C..........   Generate ungridding matrix ....................................
@@ -867,11 +864,11 @@ C............  Create a new sorting index
                 IDXSRT2( J ) = J
             END DO
 
-C.........  Sort the scratch gridding matrix arrays to organize by county/link,
-C           cell, and source
+C.............  Sort the scratch gridding matrix arrays to organize by county/link,
+C               cell, and source
             CALL SORTI3( NCOEF, IDXSRT2, NCL, IC, IS )
 
-C..........  Allocate memory for county/link VMT within grid
+C.............  Allocate memory for county/link VMT within grid
             ALLOCATE( CLIDX( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CLIDX', PROGNAME )
             ALLOCATE( CNT_CL( NCOULNK ), STAT=IOS )
@@ -891,7 +888,7 @@ C..........  Allocate memory for county/link VMT within grid
             VMT_CL_INV  = 0.   ! array
             vmt_label = 0
 
-C..........  Compute county/link VMT total within grid
+C.............  Compute county/link VMT total within grid
             DO K = 1, NCOEF
                 J = IDXSRT2( K )
                 S = IS ( J )
@@ -908,14 +905,14 @@ C...............  County and/or link total VMT
 
             END DO       ! end loop to compute VMT totals
 
-C..........  Inverse of county and/or link total VMT
+C.............  Inverse of county and/or link total VMT
             DO N = 1, NCOULNK
                 IF( VMT_CL_INV( N ) .GT. 0. ) VMT_CL_INV( N ) = 
      &                                             1. / VMT_CL_INV( N )
             END DO
 
-C..........  Loop through cell-source intersections and compute county total
-C            VMT by cell/source over County total VMT
+C.............  Loop through cell-source intersections and compute county total
+C               VMT by cell/source over County total VMT
             LN = -1
             LC = -1
             CNTMAX = 0
@@ -1053,27 +1050,27 @@ C...........   Internal buffering formats............ 94xxx
 C******************  INTERNAL SUBPROGRAMS  *****************************
         CONTAINS
 
-C.........  This internal subprogram open individual surrogate file 
+C.........  This internal subprogram opens individual surrogate file 
 
             SUBROUTINE OPEN_SRGFILE
 C----------------------------------------------------------------------
                  
 C.........  Set logical file name
-            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUFT )) THEN
+            IF( .NOT. SETENVVAR( 'SRGPRO_PATH', NAMBUFT )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUFT )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
 C.........  Get the number of lines in the surrogate description file desription file
-            GDEV = PROMPTFFILE( 'Reading surrogate files..',
-     &             .TRUE., .TRUE., 'SRGPRO_PATH', PROGNAME )
-     
+            MESG = 'Enter logical name for surrogate files'
+            GDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
+     &                         'SRGPRO_PATH', PROGNAME )
             REWIND( GDEV )
 
-            NLINES = GETFLINE( GDEV, 'Reading srg files' )
+            NLINES = GETFLINE( GDEV, 'Reading surrogate files' )
             
-            IF( .NOT. SETENVVAR( "SRGPRO_PATH", NAMBUF )) THEN
+            IF( .NOT. SETENVVAR( 'SRGPRO_PATH', NAMBUF )) THEN
                 MESG = 'Could not set logical file ' //
      &                 'name of file ' // TRIM( NAMBUF )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
