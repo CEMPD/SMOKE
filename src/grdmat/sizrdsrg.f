@@ -109,6 +109,7 @@ C***********************************************************************
 C   Begin body of subroutine SIZRDSRG
 
         NSRGREC = NT
+
 C......... Allocate memory for surrogate arrays
         ALLOCATE( IDXSRGA( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXSRGA', PROGNAME )
@@ -150,9 +151,9 @@ C.........  Fill surrogate arrays
 
                 IF ( .NOT. HFLAG ) CALL UPCASE( LINE )
 
-C............  Parse the line of data into segments based on the rules
-C              for "list-formatted" in fortran, but not requiring 
-C              quotes around the text strings
+C................  Parse the line of data into segments based on the rules
+C                  for "list-formatted" in fortran, but not requiring 
+C                  quotes around the text strings
 
                 CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
@@ -278,7 +279,7 @@ C.........  Initialize arrays
         SRGFRAC = 0. ! array
         SRGCSUM = 0. ! array
       
-C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
+C........  Store the surrogate fractions, FIPS codes, and cell numbers...
         LFIP     = -1
         LCEL     = -1
         NSRGFIPS = 0
@@ -302,18 +303,18 @@ C.............  Store the surrogate fractions, FIPS codes, and cell numbers...
 
             ELSE
                 IF( LCC .EQ. C .AND. LRATIO .EQ. RATIO ) THEN
-                    WRITE( MESG,94011 ) 'WARNING: There are ' //
-     &                   'duplicaties entries with same FIPS', FIP,
-     &                   'surrogate ', SSC, 'and fraction value', RATIO
+                    WRITE( MESG,94011 ) 'WARNING: Duplicate entries' //
+     &                   ' with same FIPS', FIP, 'surrogate ', SSC,
+     &                   ' and fraction value', RATIO
                     CALL M3MESG( MESG )                    
                 END IF
 
                 IF( LCC .EQ. C .AND. LRATIO .NE. RATIO ) THEN
-                    WRITE( MESG,94012 ) 'ERROR : There are ' //
-     &                   'duplicaties entries with same FIPS', FIP,
-     &                   'and surrogate ', SSC, 'with different ' //
-     &                   'fraction values', RATIO, 'and ', LRATIO
-                    CALL M3MESG( PROGNAME, 0, 0, MESG, 2 )                    
+                    WRITE( MESG,94012 ) 'ERROR: Duplicate entries' //
+     &                   ' with same FIPS', FIP, 'and surrogate ', SSC,
+     &                   ' with different fraction values', RATIO,
+     &                   ' and ', LRATIO
+                    CALL M3MESG( MESG )                    
                 END IF
 
                 LCC    = C
@@ -341,7 +342,7 @@ C               each time
 
         END DO
 
-C.....  Deallocate local variables
+C.........  Deallocate local variables
 
         DEALLOCATE( IDXSRGA, IDXSRGB, SCELLA, SFIPSA, SSRGIDA, SFRACA )
 
