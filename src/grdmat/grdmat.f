@@ -81,12 +81,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(16)      VERCHAR
         INTEGER            ENVINT
         INTEGER            GETFLINE
+        INTEGER            GETEFILE
         LOGICAL            BLKORCMT
         LOGICAL            SETENVVAR
 
         EXTERNAL  CRLF, ENVYN, DSCM3GRD, GETCFDSC, INDEX1, INGRID, 
      &            PROMPTFFILE, VERCHAR, FIND1, ENVINT, GETFLINE,
-     &            BLKORCMT, SETENVVAR
+     &            BLKORCMT, SETENVVAR, GETEFILE
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -806,9 +807,13 @@ C.........  Set logical file name
             END IF
 
 C.........  Get the number of lines in the surrogate description file desription file
-            MESG = 'Enter logical name for surrogate files'
-            GDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
-     &                         'SRGPRO_PATH', PROGNAME )
+            GDEV = GETEFILE( 'SRGPRO_PATH',.TRUE., .TRUE., PROGNAME )
+
+            IF( GDEV .LT. 0 ) THEN
+                MESG = 'Could not open input surrogate file' // 
+     &                 TRIM( NAMBUFT )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
             REWIND( GDEV )
 
