@@ -78,10 +78,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         BLKORCMT
         LOGICAL         SETENVVAR
         INTEGER         STR2INT
-        INTEGER         PROMPTFFILE
+        INTEGER         GETEFILE
 
         EXTERNAL        CRLF, FIND1, INGRID, DSCM3GRD, GETFLINE,
-     &                  BLKORCMT, SETENVVAR, STR2INT, PROMPTFFILE
+     &                  BLKORCMT, SETENVVAR, STR2INT, GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME         ! inventory file name
@@ -206,7 +206,7 @@ C...........   Other local variables
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER    !  source fields buffer
         CHARACTER(256)  MESG      !  message buffer 
-        CHARACTER(196)  NAMBUF    !  surrogate file name buffer
+        CHARACTER(256)  NAMBUF    !  surrogate file name buffer
         CHARACTER(256)  NAMBUFT   !  tmp surrogate file name buffer
         CHARACTER(256)  TSRGFNAM  !  tmp surrogate file name buffer
 
@@ -1063,9 +1063,14 @@ C.........  Set logical file name
             END IF
 
 C.........  Get the number of lines in the surrogate description file desription file
-            MESG = 'Enter logical name for surrogate files'
-            GDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
-     &                         'SRGPRO_PATH', PROGNAME )
+            GDEV = GETEFILE( 'SRGPRO_PATH',.TRUE., .TRUE., PROGNAME )
+
+            IF( GDEV .LT. 0 ) THEN
+                MESG = 'Could not open input surrogate file' // 
+     &                 TRIM( NAMBUFT )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
             REWIND( GDEV )
 
             NLINES = GETFLINE( GDEV, 'Reading surrogate files' )
