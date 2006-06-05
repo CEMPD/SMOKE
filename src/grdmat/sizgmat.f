@@ -130,6 +130,7 @@ C...........   Other arrays
         LOGICAL      :: EFLAG = .FALSE. ! true: error flag
         LOGICAL      :: LFLAG = .FALSE. ! true: location data available
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
+        LOGICAL      :: CFLAG = .TRUE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
         LOGICAL         WFLAG           ! true: per iteration warning flag
 
         CHARACTER(60)       LINE             ! Read buffer for a line
@@ -382,7 +383,7 @@ C............................  Skip entry if SSC is not in the assigned SRGLIST 
 
                 END DO       ! loop over all surrogate files in SRGDESC file
 
-                CALL SIZRDSRG( NT, TMPLINE, VFLAG ) ! populating surrogates
+                CALL RDSRG4GRD( NT, TMPLINE, CFLAG ) ! populating surrogates
 
                 DEALLOCATE( TMPLINE )
 
@@ -576,7 +577,7 @@ C               surrogates tables from MODSURG
 
 C.............  Otherwise, skip this source because it's outside the grid
                 ELSE
-                    CYCLE
+		                NCEL = 1 
 
                 END IF
 
