@@ -302,7 +302,7 @@ C.........  Store the surrogate fractions, FIPS codes, and cell numbers...
      &                   'duplicaties entries with same FIPS and ' // 
      &                   'surrogate with different raction values ' //
      &                   ':: Check the list of ERROR in log file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )                    
+                    CALL M3EXIT( MESG )                    
                 END IF
 
                 LCC    = C
