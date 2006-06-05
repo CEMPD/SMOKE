@@ -197,8 +197,8 @@ C...........   Other local variables
         LOGICAL      :: IFLAG = .FALSE.    ! true: internal error detected
         LOGICAL      :: LFLAG = .FALSE.    ! true: location data available
         LOGICAL      :: XYSET = .FALSE.    ! true: X/Y available for src
-        LOGICAL      :: FALLBACK = .FALSE. ! true: run fallback surrogate at last
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
+        LOGICAL      :: CFLAG   = .FALSE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
         LOGICAL         WFLAG              ! true: per iteration warning flag
 
         CHARACTER(100)   LINE      ! Read buffer for a line
@@ -474,7 +474,7 @@ C.............................  Skip entry if SSC is not in the assigned SRGLIST
                 END DO       ! loop over all surrogate files in SRGDESC file
 
 C.................  Populating assigned surrogated
-                CALL GRDRDSRG( NT, TPLINE, VFLAG ) ! populating surrogates
+                CALL RDSRG4GRD( NT, TPLINE, CFLAG ) ! populating surrogates
 
                 DEALLOCATE( TPLINE )
 
@@ -711,7 +711,6 @@ C.....................  Set the surrogate fraction
 C.....................  Re-assigning org assigned srg to default fallback srg
                     IF( ID2 .EQ. DEFSRGID .AND. FSGFLAG ) THEN
                         ASRGID( S ) = DEFSRGID
-c                        IF ( FIP .NE. LFIP .OR. CLNK .NE. LLNK ) N = N-1            
                         CYCLE
                     END IF
              
@@ -783,7 +782,7 @@ C.........  Abort if error
             CALL M3MSG2( MESG )
 
         END IF
-
+        
         NCOEF = J
         NCOULNK = N
 
@@ -922,7 +921,6 @@ C               VMT by cell/source over County total VMT
                 C   = IC( J )
                 S   = IS( J )
                 N   = NCL( J )
-                
                 IF ( N .EQ. 0 .OR. C .LE. 0 ) CYCLE  ! skip records outside the grid
 
                 CLIDX( S ) = N
@@ -993,6 +991,7 @@ C................  Store the cell numbers and VMT fractions into the ungridding 
                 
             END DO
             NCOEFU = K
+        print*, NCOEF,CMAX,CMIN,NCOEFU,'NCOEF,CMAX,CMIN,NCOEFU,,,,,BH'
 
 C.............  Check for overflow
             IF( NCOEFU .GT. NMATXU ) THEN
