@@ -18,8 +18,8 @@ debug: grdmat.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-GRD= asgnsurg.o genagmat.o genmgmat.o genpgmat.o grdmat.o grdrdsrg.o \
-     lnk2grd.o opengmat.o sizgmat.o setfrac.o sizrdsrg.o
+GRD= asgnsurg.o genagmat.o genmgmat.o genpgmat.o grdmat.o \
+     lnk2grd.o opengmat.o sizgmat.o setfrac.o rdsrg4grd.o
 #
 grdmat: $(GRD) $(ALLI) $(LIBPATH)
 	echo GRDMAT
@@ -41,8 +41,7 @@ grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODGRID) $(MODFILESET)
 opengmat.o: $(MODINFO)
 setfrac.o: $(MODSURG)
 sizgmat.o: $(MODSOURC) $(MODGRID) $(MODSURG)
-grdrdsrg.o: $(MODGRID) $(MODSURG)
-sizrdsrg.o: $(MODGRID) $(MODSURG)
+rdsrg4grd.o: $(MODGRID) $(MODSURG)
 #
 clean:
 	/bin/rm -f *.o 
