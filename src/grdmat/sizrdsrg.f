@@ -303,18 +303,18 @@ C........  Store the surrogate fractions, FIPS codes, and cell numbers...
 
             ELSE
                 IF( LCC .EQ. C .AND. LRATIO .EQ. RATIO ) THEN
-                    WRITE( MESG,94011 ) 'WARNING: Duplicate entries' //
+                    WRITE( MESG,94011 ) 'ERROR: Duplicate entries' //
      &                   ' with same FIPS', FIP, 'surrogate ', SSC,
      &                   ' and fraction value', RATIO
-                    CALL M3MESG( MESG )                    
+                    CALL M3MSG2( MESG )                    
                 END IF
 
                 IF( LCC .EQ. C .AND. LRATIO .NE. RATIO ) THEN
-                    WRITE( MESG,94012 ) 'ERROR: Duplicate entries' //
+                    WRITE( MESG,94012 ) 'WARNING: Duplicate entries' //
      &                   ' with same FIPS', FIP, 'and surrogate ', SSC,
      &                   ' with different fraction values', RATIO,
      &                   ' and ', LRATIO
-                    CALL M3MESG( MESG )                    
+                    CALL M3EXIT( MESG )                    
                 END IF
 
                 LCC    = C
