@@ -147,6 +147,7 @@ C...........   Other local variables
         LOGICAL      :: LFLAG = .FALSE.    !  true: location data available
         LOGICAL      :: XYSET = .FALSE.    ! true: X/Y available for src
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
+        LOGICAL      :: CFLAG   = .FALSE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
         LOGICAL         WFLAG              ! true: per iteration warning flag
 
         CHARACTER(60)   LINE      ! Read buffer for a line
@@ -338,7 +339,7 @@ C............................  Skip entry if SSC is not in the assigned SRGLIST 
                 END DO       ! loop over all surrogate files in SRGDESC file
 
 C.................  Populating assigned surrogated
-                CALL GRDRDSRG( NT, TMPLINE, VFLAG ) ! populating surrogates
+                CALL RDSRG4GRD( NT, TMPLINE, CFLAG ) ! populating surrogates
 
                 DEALLOCATE( TMPLINE )
 
