@@ -126,9 +126,9 @@ C                   source if it has not yet been written
                     
 C.........................  Write warning for default fraction of zero
                         CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
-                        MESG = 'WARNING: Fallback surrogate data '//
-     &                       'will cause zero emissions' // CRLF() //
-     &                       BLANK10 // 'inside the grid for:'//
+                        MESG = 'WARNING: Zero fallback surrogate '//
+     &                       'data will cause zero emissions' //
+     &                       CRLF() // BLANK10 // 'for:'//
      &                       CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
 
