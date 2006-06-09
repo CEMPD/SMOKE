@@ -314,7 +314,7 @@ C.............  Set up partial strings for checking country/state/county
             IFIP    = STR2INT( CFIP )         ! For checking previous
             CSTA    = CFIP( 1:STALEN3 )
             ICYID   = IFIP - STR2INT( CSTA ) * 1000
-            IF( PLTIDX /= 0 ) THEN
+            IF( PLTIDX /= 0 .AND. PLTIDX <= NCHARS ) THEN
                 CNFIP = CSRC( SC_BEGP( PLTIDX ):SC_ENDP( NCHARS ) )
             ELSE
                 CNFIP = ' '
@@ -971,7 +971,6 @@ C.....................  Process NT 16 through 11
      &                             'be specified'
                             CALL REPORT_INVALID_XREF( MESG )
                             NT = 0
-			    EXIT                      ! End loop with NT
 
                         END IF
 
