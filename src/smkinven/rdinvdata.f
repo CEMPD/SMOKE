@@ -840,7 +840,28 @@ C.............  Check that point source information is correct
      &                     CRLF() // BLANK10 // 'at line', IREC
                     CALL M3MSG2( MESG )
                 END IF
-                
+
+C.................  Check stack height, diameter, and temperature values are
+C                   great than zero. reset it to a missing value '-9.0' if not.
+                IF( STR2REAL( DM ) == 0.0 ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: Stack diameter ' //
+     &                 'is equal to 0 at line', IREC ,': reset it to -9'
+                    CALL M3MESG( MESG )
+                    DM = '  -9.0'        ! reset it to a missing val
+
+                ELSE IF( STR2REAL( TK ) == 0.0 ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: Stack temperature ' //
+     &                 'is equal to 0 at line', IREC ,': reset it to -9'
+                    CALL M3MESG( MESG )
+                    TK = '-9.0'           ! reset it to a missing val
+
+                ELSE IF( STR2REAL( VL ) == 0.0 ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: Stack velocity ' //
+     &                 'is equal to 0 at line', IREC ,': reset it to -9'
+                    VL = '     -9.0'      ! reset it to a missing val
+
+                END IF
+
                 IF( .NOT. CHKREAL( LAT ) .OR.
      &              .NOT. CHKREAL( LON )      ) THEN
                     EFLAG = .TRUE.
@@ -1437,29 +1458,31 @@ C.....................  Convert UTM values to lat-lon
                 END IF
             END IF
             
-            IF( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) THEN
-                STKHT   ( CURSRC ) = STR2REAL( HT )
-                STKDM   ( CURSRC ) = STR2REAL( DM )
-                STKTK   ( CURSRC ) = STR2REAL( TK )
-                STKVE   ( CURSRC ) = STR2REAL( VL )
-                XLOCA   ( CURSRC ) = STR2REAL( LON )
-                YLOCA   ( CURSRC ) = STR2REAL( LAT )
-                CPDESC  ( CURSRC ) = DESC
-                CORIS   ( CURSRC ) = ADJUSTR( CORS )
-                CBLRID  ( CURSRC ) = ADJUSTR( BLID )
+            IF( CATEGORY == 'POINT' ) THEN
+                IF( CURFMT /= EMSFMT .AND. CURFMT /= ORLFIREFMT ) THEN
+                    STKHT   ( CURSRC ) = STR2REAL( HT )
+                    STKDM   ( CURSRC ) = STR2REAL( DM )
+                    STKTK   ( CURSRC ) = STR2REAL( TK )
+                    STKVE   ( CURSRC ) = STR2REAL( VL )
+                    XLOCA   ( CURSRC ) = STR2REAL( LON )
+                    YLOCA   ( CURSRC ) = STR2REAL( LAT )
+                    CPDESC  ( CURSRC ) = DESC
+                    CORIS   ( CURSRC ) = ADJUSTR( CORS )
+                    CBLRID  ( CURSRC ) = ADJUSTR( BLID )
                 
-C.................  Convert units on values 
-                IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
-                STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m
+C.....................  Convert units on values 
+                    IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
+                    STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m
                 
-                IF( STKDM( CURSRC ) < 0. ) STKDM( CURSRC ) = 0.
-                STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
+                    IF( STKDM( CURSRC ) < 0. ) STKDM( CURSRC ) = 0.
+                    STKDM( CURSRC ) = STKDM( CURSRC ) * FT2M   ! ft to m
                 
-                IF( STKTK( CURSRC ) <= 0. ) THEN
-                    STKTK( CURSRC ) = 0.
-                ELSE
-                    STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32 ) *   ! F to K
-     &                                FTOC + CTOK
+                    IF( STKTK( CURSRC ) <= 0. ) THEN
+                        STKTK( CURSRC ) = 0.
+                    ELSE
+                        STKTK( CURSRC ) = ( STKTK( CURSRC ) - 32 ) *   ! F to K
+     &                                    FTOC + CTOK
+                    END IF
                 END IF
                 
 C.................  Recompute velocity if that option has been set
