@@ -77,7 +77,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   LOCAL PARAMETERS and their descriptions:
         INTEGER, PARAMETER :: MXLOCGRP = 2000  ! Max number groups per facility
-        INTEGER, PARAMETER :: MXSPGRP  = 500   ! Max number sources per group
+        INTEGER, PARAMETER :: MXSPGRP  = 2000  ! Max number sources per group
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: TGRPCNT( : ) ! tmp no. sources in group
@@ -191,7 +191,7 @@ C.........  Loop through sources to establish groups
             TK  = STKTK ( S )
             VE  = STKVE ( S )
             FL  = 0.25 * PI * DM * DM * VE
-
+            
             GINDEX( S ) = S   ! Set sorting index
 
 C.............  For a new facility, assume that a group will form, but store
