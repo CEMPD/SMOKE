@@ -540,6 +540,11 @@ C                  rule penetration for each source
 C...............  Loop through sources
               DO S = 1, NSRC
 
+C...............  Initialize control info. to base values
+		 CEFF( S ) = BASECEFF( S )
+		 REFF( S ) = BASEREFF( S )
+		 RPEN( S ) = BASERPEN( S )
+
                  E1  = DATVAL( S,E ) * FACTOR( S )
                  FAC = 1.
 
