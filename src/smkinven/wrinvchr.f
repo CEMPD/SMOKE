@@ -112,6 +112,25 @@ C.........  Source-specific header arrays
      &                                        'Emission release pt ',  
      &                                        'Facility description' / )
 
+        CHARACTER(20) :: FRHEADRS( MXPTCHR3+9 ) = 
+     &                                    ( / 'SMOKE Source ID     ',  
+     &                                        'Cntry/St/Co FIPS    ',
+     &                                        'Plant code = FireID ', 
+     &                                        'Source char 1 =LOCID', 
+     &                                        'Source char 2       ',
+     &                                        'Source char 3       ',  
+     &                                        'Source char 4       ', 
+     &                                        'Source char 5       ',
+     &                                        'SCC                 ',  
+     &                                        'DOE plant ID        ',  
+     &                                        'Boiler code         ',
+     &                                        'MACT code = NFRDS   ',
+     &                                        'NAICS code          ',
+     &                                        'Source type code    ',
+     &                                        'Emission release pt ',  
+     &                                        'Facility description' / )
+
+
 C.........  Allocatable header arrays
         CHARACTER(20), ALLOCATABLE :: HDRFLDS( : )
 
@@ -285,6 +304,7 @@ C           the source-specific fields
             HDRFLDS = MBHEADRS  ! array
         CASE( 'POINT' )
             HDRFLDS = PTHEADRS  ! array
+            IF( FIREFLAG ) HDRFLDS = FRHEADRS  ! array
         END SELECT
  
 C.........  Set positions for outputs to ASCII file that are after the source
