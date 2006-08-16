@@ -333,9 +333,9 @@ C......................  Add PMC variable if PM10 and PM2_5 are available
                         CALL M3MESG( MESG )
 
                     ELSE
-                        MESG = 'WARNING: Skip coarse PM (PMC) ' //
-     &                         'computation due to a precomputed ' //
-     &                         'PMC available in Day-specific file'
+                        MESG = 'WARNING: Skipping coarse PM (PMC) ' //
+     &                         'computation due to precomputed ' //
+     &                         'PMC available in day-specific file'
                         CALL M3MSG2( MESG )
 
                         SEGMENT( NFRPOL + 1 ) = 'HFLUX'     ! adding HFLUX into a list
@@ -714,8 +714,8 @@ C.................  Check to see if data name is in list of special names
                         L = LEN_TRIM( CDAT )
                         WRITE( MESG,93000 ) 
      &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
-     &                   '" on date' // TRIM( DATE ) //
-     &                   '- not in inventory'
+     &                   '" on date ' // TRIM( DATE ) //
+     &                   ' - not in inventory'
                         CALL M3MESG( MESG )
                     END IF
                     CYCLE      !  to head of loop
