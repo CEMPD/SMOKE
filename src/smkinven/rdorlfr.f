@@ -328,7 +328,7 @@ C......................  Add PMC variable if PM10 and PM2_5 are available
                         SEGMENT( NFRPOL + 1 ) = 'PMC'       ! adding PMC into a list
                         SEGMENT( NFRPOL + 2 ) = 'HFLUX'     ! adding HFLUX into a list
                         NFRPOL = NFRPOL + 2
-                        MESG = ' Cumputing PMC due to availability' //
+                        MESG = ' Computing PMC due to availability' //
      &                         ' of PM10 and PM2_5 in Day-specific file'
                         CALL M3MESG( MESG )
 
