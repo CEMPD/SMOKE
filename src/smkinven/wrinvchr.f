@@ -49,6 +49,9 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NCHARS, MXCHRS, 
      &                     SC_BEGP, SC_ENDP
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: FIREFLAG
+
         IMPLICIT NONE
 
 C...........   INCLUDES
