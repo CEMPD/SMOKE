@@ -651,7 +651,7 @@ C.........  Determine whether height information is time dependent or time
 C           independent. Non-hydrostatic is time-independent and hydrostatic
 C           is time-dependent.
             SELECT CASE( VGTYP )
-            CASE ( VGSGPH3, VGHVAL3 ) 
+            CASE ( VGSGPH3, VGHVAL3, VGWRFEM ) 
                 ZSTATIC = .FALSE.
 
             CASE ( VGSGPN3 )
