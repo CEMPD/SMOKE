@@ -105,6 +105,7 @@ C...........   Other local variables
 
         CHARACTER(256)     BUFFER      !  input file line buffer
         CHARACTER(256)     MESG        !  message buffer 
+        CHARACTER(256)     PBUFFER     !  source buffer from previous iteration
 
         CHARACTER(16) :: PROGNAME = 'PROCINVEN' ! program name
 
@@ -176,20 +177,22 @@ C               print duplicate error or warning message
                 
                 CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                 
-                IF( DFLAG .AND. NERR <= MXERR ) THEN
+                IF( DFLAG .AND. NERR <= MXERR .AND. 
+     &              BUFFER .NE. PBUFFER ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Duplicate records found for' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
                     NERR = NERR + 1
                 
-                ELSE IF( NWARN <= MXWARN ) THEN
+                ELSE IF( NWARN <= MXWARN .AND. BUFFER .NE. PBUFFER )THEN
                     MESG = 'WARNING: Duplicate records found for' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
                     NWARN = NWARN + 1
                 END IF
                 
+                PBUFFER = BUFFER
                 IDUP = IDUP + 1
             
             END IF
