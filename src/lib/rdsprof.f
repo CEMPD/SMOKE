@@ -41,8 +41,9 @@ C.........  MODULES for public variables
 C.........  This module contains the speciation profiles
         USE MODSPRO, ONLY: MXSPFUL, HDRSTART, NSPLST, NSPFUL,
      &                     SPCDEFPOL, SPCDEFLST, NPOLSPRO, SPECID,
-     &                     NSPDEF, MXSPLST, HDREND, INPRF,
-     &                     MOLEFACT, MASSFACT 
+     &                     NSPDEF, MXSPLST, INPRF,MOLEFACT, MASSFACT 
+
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM
 
         IMPLICIT NONE
         
@@ -50,11 +51,12 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS:
-        CHARACTER(2)  CRLF
-        REAL          STR2REAL
         LOGICAL       BLKORCMT
+        CHARACTER(2)  CRLF
+        INTEGER       INDEX1
+        REAL          STR2REAL
 
-        EXTERNAL      BLKORCMT, CRLF, STR2REAL
+        EXTERNAL      BLKORCMT, CRLF, INDEX1, STR2REAL
 
 C...........   Subroutine arguments
 
@@ -63,7 +65,7 @@ C...........   Subroutine arguments
         INTEGER     , INTENT   (OUT) :: NMSPC       ! no. unique species IDs
                                 
 C.........  Local parameters
-        INTEGER    , PARAMETER :: MXSEG    = 6         ! # of potential segments
+        INTEGER    , PARAMETER :: MXSEG = 6         ! # of potential segments
 
 C...........   Local unsorted arrays
 
@@ -314,18 +316,39 @@ C.............  Subprogram arguments
             INTEGER     , INTENT (IN) :: FDEV   ! unit number
             CHARACTER(*), INTENT (IN) :: STATUS ! Read status 'SCAN' or 'STORE'
 
-C.............  Local variables
-            INTEGER    L
-            INTEGER :: NCNT = 0
+C.............  Local allocatable variables
+            INTEGER, ALLOCATABLE :: NCNT( : )  ! Count of entries for NONHAP definition
+            INTEGER, ALLOCATABLE :: NHAPINDX( : ) ! Position of count of NHAP<pol> in list
+            LOGICAL, ALLOCATABLE :: NHAPFLAG( : ) ! true: flags INVDNAM with NHAP<pol> pollutant
 
+C.............  Local variables
+            INTEGER    L            
+
+            LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
             LOGICAL :: EFLAG    = .FALSE.  ! true: error found
             LOGICAL :: INHEADER = .FALSE.  ! true: in header section
-            LOGICAL :: ONSTART  = .FALSE.  ! true: on header start line
 
 C----------------------------------------------------------------------
 
 C.............  Rewind file
             REWIND( FDEV )
+
+C.............  The firsttime this subprogram is called, allocate memory
+C               for local counters.
+            IF ( FIRSTIME ) THEN 
+                ALLOCATE( NCNT( MXIDAT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NCNT', PROGNAME )  
+                ALLOCATE( NHAPINDX( MXIDAT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NHAPINDX', PROGNAME )  
+                ALLOCATE( NHAPFLAG( MXIDAT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NHAPFLAG', PROGNAME )
+                FIRSTIME = .FALSE.
+            END IF
+
+C.............  Initialize local counters (each time subprogram called)
+            NCNT     = 0        ! array
+            NHAPINDX = 0        ! array
+            NHAPFLAG = .FALSE.  ! array
 
 C.............  If status is "SCAN" then Scan for headers, count number 
 C               of headers, and get the maximum number of entries per 
@@ -333,8 +356,8 @@ C               header.
 C.............  If status is "STORE"  then store the info in the allocated
 C               header arrays.
             IREC  = 0
-            NSPDEF = 0
-            MXSPLST = 0
+            NSPDEF = 0   ! global variable from module
+            MXSPLST = 0  ! global variable from module
             DO
         
                 READ( FDEV, 93000, END=500, IOSTAT=IOS ) LINE
@@ -350,55 +373,57 @@ C.................  Check error status
                     CYCLE
                 END IF
 
-C.................  Skip blank and comment lines
-                IF( BLKORCMT( LINE ) ) CYCLE
+                INHEADER = .FALSE.
 
-                ONSTART = .FALSE.
+C.................  Check if blank or comment line (or could be a header)
+                IF( BLKORCMT( LINE ) ) THEN
 
-C.................  Check for header start
-                L = INDEX( LINE, HDRSTART ) 
-                IF( L .GT. 0 ) THEN
-                    INHEADER = .TRUE.
-                    NCNT = 0
-                    NSPDEF = NSPDEF + 1
-                    ONSTART = .TRUE.
-                END IF
+C.....................  Check for NHAP header line
+                    IF( LINE( 1:HDRSTLEN ) .EQ. HDRSTART ) THEN
 
-C.................  Check for end of header
-                L = INDEX( LINE, HDREND ) 
-                IF( L .GT. 0 ) THEN
-                    INHEADER = .FALSE.
-                    LASTHDR = IREC
-                    CYCLE
-                END IF
+                        INHEADER = .TRUE.
 
-C.................  Checking on header end...
-C.................  Separate the line of data into each part
-                CALL PARSLINE( LINE, MXSEG, SEGMENT )
+                        CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
-C.................  If reach the first nonheader line...
-                IF( SEGMENT( 2 ) .NE. ' ' ) THEN
+C........................  Figure out if this is a new NHAP pollutant or one
+C                          that we've already had in a previous header line
+                        J = INDEX1( SEGMENT( 2 ), MXIDAT, INVDNAM )
 
-C....................  Give warning for automatically setting the end of
-C                      the last header
-                    IF( INHEADER ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Setting end of '//
-     &                         'header in speciation profile file at '//
-     &                         'line', IREC - 1
-                        INHEADER = .FALSE.
-                        LASTHDR = IREC - 1
-                    END IF
+                        IF ( J .LE. 0 .AND. STATUS .EQ. 'SCAN' ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG,94010 ) 'ERROR: Pollutant "'//
+     &                        TRIM( SEGMENT(2) )//'" at line', IREC,
+     &                        'in Speciation Profile header is not '//
+     &                        'in the Inventory Table.'
+                            CALL M3MSG2( MESG )
+                            CYCLE
+                        END IF
 
-C....................  Exit from loop because end of header section
-                    EXIT
+C.........................  If pollutant previously found, then set counters
+                        IF ( NHAPFLAG( J ) ) THEN
+                            NCNT( J ) = NCNT( J ) + 1
+                            NSPDEF = NHAPINDX( J )
 
-                END IF
+C........................  If pollutant not previously found, update/initialize counters
+                        ELSE
+                            NSPDEF = NSPDEF + 1
+                            NCNT    ( J ) = 1
+                            NHAPINDX( J ) = NSPDEF
+                            NHAPFLAG( J ) = .TRUE.
+                        END IF
 
-C.................  Keep track of maximum number of entries
-                IF( INHEADER .AND. .NOT. ONSTART ) THEN
-                    NCNT = NCNT + 1
-                    MXSPLST = MAX( MXSPLST, NCNT )
-                END IF
+C.....................  Otherwise, skip plain blank or comment
+                    ELSE
+                        CYCLE
+                    END IF      ! End NHAP header or not
+
+                END IF          ! End blank or comment line
+
+C.................  If an actual profile data line, skip line
+                IF( .NOT. INHEADER ) CYCLE
+
+C.................  Keep track of maximum number of entries for any pollutant
+                MXSPLST = MAXVAL( NCNT )
 
                 SELECT CASE( STATUS )
 
@@ -409,30 +434,10 @@ C................  If scanning, just go to next interation
 C................  If storing, then store fields
                 CASE( 'STORE' )
 
-                    LINE = ADJUSTL( LINE )
-
-C....................  Store name of pollutant
-                    IF( ONSTART ) THEN
-                        L = LEN_TRIM( LINE )
-
-C.......................  Check if bad header
-                        IF( L .LE. HDRSTLEN ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 
-     &                        'ERROR: Header does not specific a ' //
-     &                        'pollutant in profiles at line', IREC
-                            CALL M3MSG2( MESG )
-                            CYCLE
-                        END IF
-
-                        SPCDEFPOL( NSPDEF ) = LINE( 2:L-1 )
-
-C....................  Store definition of that pollutant and count
-                    ELSE
-                        NSPLST( NSPDEF ) = NCNT
-                        SPCDEFLST( NCNT,NSPDEF ) = TRIM( LINE )
-
-                    END IF
+                    N = NCNT( J )
+                    SPCDEFPOL(   NSPDEF ) = SEGMENT( 2 ) 
+                    SPCDEFLST( N,NSPDEF ) = SEGMENT( 3 )
+                    NSPLST   (   NSPDEF ) = N  ! Final value will be max value
 
                 CASE DEFAULT
                     MESG = 'INTERNAL ERROR: Subprogram ' //
@@ -443,10 +448,10 @@ C....................  Store definition of that pollutant and count
 
                 END SELECT
 
-                CYCLE
-
             END DO
 
+500         CONTINUE  ! continue after ending read loop
+       
 C.............  Abort if error
             IF( EFLAG ) THEN
                 MESG = 'Problem reading speciation profile file'
@@ -458,9 +463,6 @@ C.............  Rewind input file
 
             RETURN
 
-500         MESG = 'Unexpected end of file prior to end of header'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-       
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Formatted file I/O formats............ 93xxx
