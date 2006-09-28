@@ -112,7 +112,6 @@ C...........   Other local variables
         LOGICAL      :: MFLAG   = .FALSE.  ! true: mact cntls is use
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
         LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
-        LOGICAL      :: OFLAG   = .FALSE.  ! true: create report
         LOGICAL      :: YFLAG   = .FALSE.  ! true: projection entries have years
 
         CHARACTER(7)    ACTION             ! buffer for PKTLOOP action
@@ -273,7 +272,7 @@ C.........  Multiplicative matrix
 
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
-            CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV,
+            CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV, 
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG, MFLAG )
         END IF
