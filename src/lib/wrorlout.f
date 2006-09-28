@@ -101,6 +101,9 @@ C...........   ORL output variables (names same as ORL format description)
         CHARACTER(STPLEN3) SRCTYPE
         CHARACTER(CHRLEN3) STACKID
         CHARACTER(ERPLEN3) ERPTYPE
+        CHARACTER(ORSLEN3) CORS   ! temporary DOE plant ID
+        CHARACTER(BLRLEN3) CBLR   ! temporary boiler name
+        CHARACTER(20)      NEIUID ! temp NEI unique ID
 
 C...........   Other local variables
 
@@ -267,7 +270,9 @@ C.................  Store others in temporary variables
                 COID   = IFIP( S ) / 100000
                 FIP    = IFIP( S ) - COID * 100000
                 SIC    = ISIC ( S )                
-                YEAR   = INVYR( S )                
+                YEAR   = INVYR( S )
+                CORS   = CORIS( S )
+                CBLR   = CBLRID( S )
 
                 PLNTDESC = CPDESC( S )
 
@@ -335,17 +340,21 @@ C.................  Set default or placeholder variables
                 UTMZ = -9
                 CPRI = 0
                 CSEC = 0
+                NEIUID = '-9'
 
 C.................  Write out header
                CALL WRITE_ORL_HEADER( RDEV, IOS )
                 IF( IOS .GT. 0 ) CYCLE
 
 C.................  Write out data
-                WRITE( RDEV, 93600 ) FIP, PLANTID, POINTID, STACKID,
-     &                 SEGMENT, PLNTDESC, SCC, ERPTYPE, SRCTYPE, STKHGT,
-     &                 STKDIAM, STKTEMP, STKFLOW, STKVEL, SIC, MACT,
-     &                 NAICS, CTYPE, XLOC, YLOC, UTMZ, CAS, ANN_EMIS,
-     &                 AVD_EMIS, CEFF, REFF, CPRI, CSEC
+                WRITE( RDEV, 93600 ) FIP, TRIM(PLANTID), TRIM(POINTID), 
+     &                 TRIM(STACKID), TRIM(SEGMENT), TRIM(PLNTDESC),
+     &                 TRIM(SCC), TRIM(ERPTYPE), TRIM(SRCTYPE), STKHGT,
+     &                 STKDIAM, STKTEMP, STKFLOW, STKVEL, SIC, TRIM(MACT),
+     &                 TRIM(NAICS), CTYPE, XLOC, YLOC, UTMZ, TRIM(CAS), 
+     &                 ANN_EMIS, AVD_EMIS, CEFF, REFF, CPRI, CSEC,
+C               Start extended ORL variables
+     &                 NEIUID, CORS, CBLR
 
                 LCOID = COID
                 LYEAR = YEAR
@@ -365,10 +374,11 @@ C...........   Formatted file I/O formats............ 93xxx
 93200   FORMAT( I5.5, 1X, A10, 1X, I4, 1X, A6, 1X, A2, 1X, A8, 1X,
      &          A16, 1X, E13.6, 1X, E13.6, 3( 1X, F6.2 ) )           ! nonpoint
 
-93600   FORMAT( I5.5, 4( 1X, A15), 1X, '"',A40,'"', 1X, A10, 1X, A2, 1X,
-     &          A2, 5( 1X, F10.2), 1X, I4, 1X, A6, 1X, A8, 1X, A1, 
-     &          2( 1X, F13.8), 1X, I3, 1X, A16, 2( 1X, E13.6 ),
-     &          2( 1X, F6.2 ), 1X, I2, 1X, I2 )                      ! point
+93600   FORMAT( I5.5, 4( ',','"',A,'"'), ',', '"',A,'"', ',', A, ',', 
+     &          A, ',',
+     &          A, 5( ',', F10.2), ',', I4.4, ',', A, ',', A, ',', A1, 
+     &          2( ',', F13.8), ',', I3, ',', A, 2( ',', E13.6 ),
+     &          2( ',', F6.2 ), ',', I2, ',', I2, 3(',"',A,'"') )                      ! point
 
 C...........   Internal buffering formats............ 94xxx
 
