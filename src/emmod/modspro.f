@@ -82,8 +82,7 @@
         CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: MOLUNITS( :,: )
 
 !.........  Header definitions for NONHAP<pollutants>
-        CHARACTER(5), PARAMETER :: HDREND   = '/END/'   ! end of header
-        CHARACTER(7), PARAMETER :: HDRSTART = '/NONHAP' ! start of header
+        CHARACTER(4), PARAMETER :: HDRSTART = '#NHAP' ! start of header
 
         INTEGER,                         PUBLIC :: NSPDEF   ! no. pols with def'ns
         INTEGER,                         PUBLIC :: MXSPLST  ! max items per def'n list
@@ -110,5 +109,13 @@
         INTEGER,                         PUBLIC :: NCNV3
         REAL,               ALLOCATABLE, PUBLIC :: CNVFC03( :,: ) 
         CHARACTER(FPSLEN3), ALLOCATABLE, PUBLIC :: CNVRT03( : )
+
+!.........  Factors by speciation profile (for all pollutants)
+!.........  In this case, the other three groups are not used, since the
+!           GSCNV file has to be by FIPS/SCC or by profile (not both in the
+!           same file)
+        INTEGER,                         PUBLIC :: NCNV4
+        REAL,               ALLOCATABLE, PUBLIC :: CNVFC04( :,: ) 
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: CNVRT04( : )
 
         END MODULE MODSPRO
