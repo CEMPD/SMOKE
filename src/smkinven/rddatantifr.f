@@ -1,9 +1,8 @@
 
-        SUBROUTINE RDDATAORLFR( LINE, READDATA, READPOL, IYEAR, DESC,
+        SUBROUTINE RDDATAORLFR( LINE, NN, READDATA, READPOL, IYEAR,DESC,
      &                          ERPTYP, SRCTYP, SIC, MACT, NAICS, CTYPE,
      &                          LAT, LON, UTMZ, CORS, BLID, HDRFLAG,
-     &                          EFLAG, IREC, NF, NLINEFR, NFRPOL,
-     &                          FIREPOL )
+     &                          EFLAG, BKSPFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -44,6 +43,9 @@ C...........   MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NC1, NC2
 
+C...........   This module is the inventory arrays
+        USE MODSOURC, ONLY: FIREPOL
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -57,6 +59,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
+        INTEGER,            INTENT  (IN) :: NN                    ! no of current FIREPOL
         CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NPTPPOL3 )! array of data values
         CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! array of pollutant names
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
@@ -74,11 +77,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
-        INTEGER,            INTENT  (IN) :: IREC                  ! no of current record line buffer
-        INTEGER,            INTENT(INOUT):: NF                    ! no of current FIREPOL
-        INTEGER,            INTENT  (IN) :: NLINEFR               ! no of lines of current opened file
-        INTEGER,            INTENT  (IN) :: NFRPOL                ! no of FIREPOL list
-        CHARACTER(CHRLEN3), INTENT  (IN) :: FIREPOL( NFRPOL )     ! extra pol names in wildfire
+        LOGICAL,            INTENT  (IN) :: BKSPFLAG              ! backspace flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
@@ -130,14 +129,13 @@ C.........  If a header line was encountered, set flag and return
 
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
+        SEGMENT( 11 ) = 'HEATCONTENT'                  ! initialize pol names
 
 C.........  Re-define line buffer with other pollutants (CO,NOX,SO2, and others)
-        IF( IREC > NLINEFR .AND. IREC <= NLINEFR + NFRPOL ) THEN
-            NF = NF + 1
-            SEGMENT( 10 ) = ADJUSTL( FIREPOL( NF ) )  ! replace with other #DATA pol name
-            SEGMENT( 11 ) = '1.000E-36'               ! replace with a blank for those pol
+        IF( BKSPFLAG ) THEN
+            SEGMENT( 11 ) = ADJUSTL( FIREPOL( NN ) )   ! replace with additional pol names
+            SEGMENT( 10 ) = '1.000E-36'                ! replace with a blank for those pol 
         END IF
-
 C.........  Use the file format definition to parse the line into
 C           the various data fields
         DESC   = ADJUSTL( SEGMENT( 5 ) )   ! plant description
@@ -154,8 +152,8 @@ C           the various data fields
         CORS   = ADJUSTL( ' ' )            ! dummy DOE plant ID
         BLID   = ADJUSTL( ' ' )            ! dummy boiler ID
 
-        READPOL ( 1     ) = SEGMENT( 10 )  ! name of variable
-        READDATA( 1,NEM ) = SEGMENT( 11 )  ! HEATCONTENT Data
+        READPOL ( 1     ) = SEGMENT( 11 )  ! name of variable
+        READDATA( 1,NEM ) = SEGMENT( 10 )  ! Data
         READDATA( 1,NDY ) = '-9'    ! dummy average-day emissions
         READDATA( 1,NEF ) = '-9'    ! dummy emission factor
         READDATA( 1,NCE ) = '-9'    ! dummy control efficiency
