@@ -46,6 +46,7 @@
         REAL   , ALLOCATABLE, PUBLIC:: FACCTG ( : )  ! CTG control factor
         REAL   , ALLOCATABLE, PUBLIC:: FACMACT( : )  ! MACT control factor
         REAL   , ALLOCATABLE, PUBLIC:: FACRACT( : )  ! RACT control factor
+        CHARACTER(120), ALLOCATABLE, PUBLIC:: CTGCOMT( : ) ! packet comment
 
 !.........  CONTROL-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: ICTLEQUP( : )  ! prim. ctl equipment code
@@ -55,12 +56,14 @@
         REAL   , ALLOCATABLE, PUBLIC:: FACRLPN ( : )  ! rule penetrtion (0-100)
         LOGICAL, ALLOCATABLE, PUBLIC:: CTLRPLC ( : )  ! replacement flag
                                                       !   true: replace, false: add
+        CHARACTER(120), ALLOCATABLE, PUBLIC:: CTLCOMT( : ) ! packet comment
 
 !.........  ALLOWABLE-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: IALWSIC ( : )  ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: FACALW  ( : )  ! allowable control factor
         REAL   , ALLOCATABLE, PUBLIC:: EMCAPALW( : )  ! emissions cap
         REAL   , ALLOCATABLE, PUBLIC:: EMREPALW( : )  ! replacement emissions
+        CHARACTER(120), ALLOCATABLE, PUBLIC:: ALWCOMT( : ) ! packet comment
 
 !.........  REACTIVITY-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: IREASIC ( : )  ! SIC code
@@ -69,10 +72,12 @@
         REAL   , ALLOCATABLE, PUBLIC:: MKTPNREA( : )  ! market pen rt [frac/yr]
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCREA( : ) ! New SCC
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: CSPFREA( : ) ! SPROF
+        CHARACTER(120), ALLOCATABLE, PUBLIC:: REACOMT( : ) ! packet comment
 
 !.........  PROJECT PTS/AMS-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: IPRJSIC ( : )  ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: PRJFC   ( : )  ! projection factor
+        CHARACTER(120), ALLOCATABLE, PUBLIC:: PRJCOMT( : ) ! packet comment
 
 !.........  EMS_CONTROL-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: IEMSSIC ( : )  ! SIC code
@@ -84,12 +89,14 @@
         REAL   , ALLOCATABLE, PUBLIC:: EMSRLPN ( : )  ! rule penetrtion (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: EMSPTCF ( : )  ! pt src conversion fac
         REAL   , ALLOCATABLE, PUBLIC:: EMSTOTL ( : )  ! aggregated factor
+        CHARACTER(120), ALLOCATABLE, PUBLIC:: EMSCOMT( : ) ! packet comment
 
 !.........  MACT-packet-specific data tables
         CHARACTER(STPLEN3), ALLOCATABLE, PUBLIC:: CMACSRCTYP( : )  ! source code type
         REAL   , ALLOCATABLE, PUBLIC:: MACEXEFF( : )  ! CE for existing sources (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: MACNWEFF( : )  ! CE for new sources (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: MACNWFRC( : )  ! fraction of new sources (0-100)
+        CHARACTER(120), ALLOCATABLE, PUBLIC:: MACCOMT( : ) ! packet comment
 
 !..............................................................................
 !.........  Cntlmat work arrays for computing matrices
@@ -101,8 +108,8 @@
 
 !..............................................................................
 !.........  Cntlmat variables for reporting ...
-        INTEGER, PARAMETER :: NCNTLRPT = 4    ! no. of Cntlmat reports
-        INTEGER            :: RPTDEV( NCNTLRPT ) = ( / 0, 0, 0, 0 / )
+        INTEGER, PARAMETER :: NCNTLRPT = 5    ! no. of Cntlmat reports
+        INTEGER            :: RPTDEV( NCNTLRPT ) = ( / 0, 0, 0, 0, 0 / )
 
         INTEGER, ALLOCATABLE :: GRPINDX ( : )   ! index from sources to groups
         INTEGER, ALLOCATABLE :: GRPSTIDX( : )   ! sorting index
