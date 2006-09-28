@@ -45,7 +45,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, NPCNT, IPOSCOD, POLVAL
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT, FIREFLAG
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, NMAP,
@@ -66,26 +66,27 @@ C...........   INCLUDES
 
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
+        INTEGER       ENVINT
         LOGICAL       ENVYN
         INTEGER       INDEX1
         LOGICAL       SETENVVAR
 
-        EXTERNAL      CRLF, ENVYN, INDEX1, SETENVVAR
+        EXTERNAL      CRLF, ENVINT, ENVYN, INDEX1, SETENVVAR
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: IDEV           ! unit number for map file
+        INTEGER     , INTENT (IN) :: IDEV          ! unit number for map file
         CHARACTER(PHYLEN3), INTENT (IN) :: DATPATH ! path for pol/act files
-        CHARACTER(*), INTENT (IN) :: VAR_FORMULA    ! formula string
+        CHARACTER(*), INTENT (IN) :: VAR_FORMULA   ! formula string
 
 C...........   LOCAL PARAMETERS
         CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
 
-C.........  Inventory temporay arrays
-        INTEGER, ALLOCATABLE:: IPPTR ( : ) ! position in POLVAL sparse array
+C.........  Inventory temporary arrays
+        INTEGER, ALLOCATABLE:: IPPTR ( : ) ! position in POLVAL sparse array (for input pols/actv)
+        INTEGER, ALLOCATABLE:: IPPTR2( : ) ! position in POLVAL sparse array (for computed values)
         INTEGER, ALLOCATABLE:: IPMAX ( : ) ! max IPPTR by source
         INTEGER, ALLOCATABLE:: SRCID ( : ) ! source index
         REAL   , ALLOCATABLE:: SRCPOL( :,: )  ! data-spec values by source
-        REAL   , ALLOCATABLE:: COMPUTED( :,: )! computed data-spec values by src
 
 C...........   Names, Units, types, & descriptions for pollutant-specific 
 C              output variables.  NOTE - second dimension will work so long
@@ -96,25 +97,35 @@ C              as NPPOL > NPACT, which is expected to always be the case
         CHARACTER(IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units  
         CHARACTER(IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Dscriptions  
 
+C............   Allocatable arrays for formulas
+        LOGICAL, ALLOCATABLE            :: CHKPLUS ( : ) ! true: formula uses a + sign
+        LOGICAL, ALLOCATABLE            :: CHKMINUS( : ) ! true: formula uses a - sign
+        CHARACTER(128), ALLOCATABLE     :: FORMULAS( : ) ! formulas for emissions
+        CHARACTER(IOVLEN3), ALLOCATABLE :: VIN_A( : ) ! first variable in equation
+        CHARACTER(IOVLEN3), ALLOCATABLE :: VIN_B( : ) ! second variable in equation
+        CHARACTER(IOVLEN3), ALLOCATABLE :: VNAME( : ) ! computed variable name
+
 C...........   Other local allocatable arrays
-        CHARACTER(IOVLEN3), ALLOCATABLE :: SAVEANAM( : )  ! tmp variables
+        CHARACTER(IOVLEN3), ALLOCATABLE :: SAVEANAM( : ) ! tmp variables
 
 C...........   Other local variables
-        INTEGER         I, S, L, L2, N, V1, V2, VA, VB     ! counters and indices
+        INTEGER         F, I, S, L, L2, N, V1, V2, VA, VB     ! counters and indices
 
         INTEGER         IOS       ! i/o status
         INTEGER         LEQU      ! position of '=' in formula
         INTEGER         LDIV      ! position of '-' or '+' in formula
         INTEGER         LMNS      ! position of '-' in formula
         INTEGER         LPLS      ! position of '+' in formula
+
         INTEGER         MCNT      ! count of actual mapped pol/act files
+        INTEGER         MXWARN    ! maximum number of warnings of each type to write
+        INTEGER         NCOMP     ! no. computed variables
 
         INTEGER         RIMISS3          ! real value of integer missing
 
-        LOGICAL      :: CHKPLUS  = .FALSE. ! true: formula uses a + sign
-        LOGICAL      :: CHKMINUS = .FALSE. ! true: formula uses a - sign
         LOGICAL      :: EFLAG    = .FALSE. ! true: error found
         LOGICAL      :: FFLAG    = .FALSE. ! true: formula in use
+        LOGICAL      :: TFLAG    = .FALSE. ! true: current formula has error
         LOGICAL         ZFLAG              ! true: write zeros to output file
 
         CHARACTER(80)   NAME1            ! tmp file name component
@@ -122,9 +133,6 @@ C...........   Other local variables
         CHARACTER(128)  BUFFER           ! message buffer
         CHARACTER(256)  MESG             ! message buffer
 
-        CHARACTER(IOVLEN3 ) VIN_A    ! first variable in equation
-        CHARACTER(IOVLEN3 ) VIN_B    ! second variable in equation
-        CHARACTER(IOVLEN3 ) VNAME    ! computed variable name
         CHARACTER(PHYLEN3) :: BPATH  ! base path
         CHARACTER(PHYLEN3) :: RPATH  ! relative path
 
@@ -152,6 +160,8 @@ C..........  Get environment variables
             CALL M3MSG2( MESG )
         END IF
 
+        MXWARN  = ENVINT( WARNSET  , ' ', 100, IOS )
+
         IF( EFLAG ) THEN
             MESG = 'Problem with input environment variables'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -163,121 +173,128 @@ C..........  Get environment variables
 C.........  Compute real value of integer missing
         RIMISS3 = REAL( IMISS3 )
 
-C.........  Allocate memory for local source-specific arrays used for output   
-C.........  Allocate memory for indices IPPTR & IPMAX for pointing to position
-C           in sparsely stored data array.  
-        ALLOCATE( IPPTR( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IPPTR', PROGNAME )
-        ALLOCATE( IPMAX( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IPMAX', PROGNAME )
-        ALLOCATE( SRCPOL( NSRC, NPTPPOL3 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
-        ALLOCATE( SRCID( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
-       
-C.........  Initialize global index based on count of number of sources per 
-C           pollutant
-C.........  Since the emission values are already sorted in the output order of
-C           the pollutants/activities, can use the IPPTR and IPMAX indices 
-C           to keep track of what pollutant/activity we are on for each source
-C           (sources can have different numbers and types of output pollutants
-C           and activities).
-        IPPTR( 1 ) = 1
-        IPMAX( 1 ) = NPCNT( 1 )
-        DO S = 2, NSRC
-            IPPTR( S ) = IPPTR( S-1 ) + NPCNT( S-1 )
-            IPMAX( S ) = IPPTR( S )   + NPCNT( S ) - 1
-        END DO
-
 C.........  Set maximum number of map variables for map-formatted outputs
         NMAP = NIPOL + NIACT
         MCNT = 0              ! initialize actual pol/act file count for later
 
-C.........  If there is a computed output variable, get set up for that
+C.........  If there is one or more computed output variable, get set up
         L = LEN_TRIM( VAR_FORMULA )
         IF( L .GT. 0 ) THEN
 
+C.............  Figure out how many variables there are based on the
+C               number of commas found in the string.
+            NCOMP = 1
+            DO I = 1, L
+                IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
+            ENDDO
+
             FFLAG = .TRUE.
-            NMAP = NMAP + 1  ! one more variable to map
+            NMAP = NMAP + NCOMP  ! NCOMP more variable(s) to map
 
-C.............  Make sure formula makes sense
-            LEQU = INDEX( VAR_FORMULA, '=' )
-            LPLS = INDEX( VAR_FORMULA, '+' )
-            LMNS = INDEX( VAR_FORMULA, '-' )
+C.............  Allocate array to store formulas
+            ALLOCATE( CHKPLUS( NCOMP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHKPLUS', PROGNAME )
+            ALLOCATE( CHKMINUS( NCOMP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHKMINUS', PROGNAME )
+            ALLOCATE( FORMULAS( NCOMP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FORMULAS', PROGNAME )
+            ALLOCATE( VIN_A( NCOMP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VIN_A', PROGNAME )
+            ALLOCATE( VIN_B( NCOMP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VIN_B', PROGNAME )
+            ALLOCATE( VNAME( NCOMP ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'VNAME', PROGNAME )
 
-            CHKPLUS  = ( LPLS .GT. 0 )
-            CHKMINUS = ( LMNS .GT. 0 )
+C.............  Split out formulas in string to array
+            CALL PARSLINE( VAR_FORMULA, NCOMP, FORMULAS )
 
-            LDIV = LPLS
-            IF( CHKMINUS ) LDIV = LMNS
+C.............  Loop through formulas
+            DO F = 1, NCOMP
 
-            IF( LEQU .LE. 0 .OR. 
-     &        ( .NOT. CHKPLUS .AND. .NOT. CHKMINUS ) ) THEN
+C.................  Make sure formula makes sense
+                LEQU = INDEX( FORMULAS( F ), '=' )
+                LPLS = INDEX( FORMULAS( F ), '+' )
+                LMNS = INDEX( FORMULAS( F ), '-' )
 
-                L = LEN_TRIM( FORMEVNM )
-                MESG = 'Could not interpret formula for extra ' //
-     &                 'pollutant from environment variable ' //
-     &                 CRLF() // BLANK10 // '"' // FORMEVNM( 1:L ) //
-     &                 '": ' // VAR_FORMULA
-                EFLAG = .TRUE.
-            END IF
+                CHKPLUS( F )  = ( LPLS .GT. 0 )
+                CHKMINUS( F ) = ( LMNS .GT. 0 )
 
-C.............  Extract formula variable names
-            L     = LEN_TRIM( VAR_FORMULA )
-            VNAME = ADJUSTL ( VAR_FORMULA(      1:LEQU-1 ) )
-            VIN_A = ADJUSTL ( VAR_FORMULA( LEQU+1:LDIV-1 ) )
-            VIN_B = ADJUSTL ( VAR_FORMULA( LDIV+1:L      ) )
+                LDIV = LPLS
+                IF( CHKMINUS( F ) ) LDIV = LMNS
 
-C.............  Find formula inputs in existing variable list
-            VA = INDEX1( VIN_A, NIPPA, EANAM )
-            VB = INDEX1( VIN_B, NIPPA, EANAM )
+                IF( LEQU .LE. 0 .OR. 
+     &            ( .NOT. CHKPLUS(F) .AND. .NOT. CHKMINUS(F) ) ) THEN
 
-            IF( VA .LE. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_A )
-                MESG = 'Variable "'// VIN_A( 1:L ) // 
-     &                 '" from formula was not found in inventory.'
-                CALL M3MSG2( MESG )
-            END IF
+                    L = LEN_TRIM( FORMEVNM )
+                    MESG = 'Could not interpret formula for extra ' //
+     &                     'pollutant from environment variable ' //
+     &                     CRLF() // BLANK10 // '"' // FORMEVNM( 1:L ) //
+     &                     '": ' // TRIM( FORMULAS( F ) )
+                    TFLAG = .TRUE.
+                END IF
 
-            IF( VB .LE. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_B )
-                MESG = 'Variable "'// VIN_B( 1:L ) // 
-     &                 '" from formula was not found in inventory.'
-                CALL M3MSG2( MESG )
-            END IF
+C.................  Extract formula variable names
+                L      = LEN_TRIM( FORMULAS( F ) )
+                VNAME(F)= ADJUSTL( FORMULAS( F )(      1:LEQU-1 ) )
+                VIN_A(F)= ADJUSTL( FORMULAS( F )( LEQU+1:LDIV-1 ) )
+                VIN_B(F)= ADJUSTL( FORMULAS( F )( LDIV+1:L      ) )
 
-            V1 = INDEX1( VIN_A, NIACT, ACTVTY )
-            V2 = INDEX1( VIN_B, NIACT, ACTVTY )
+C.................  Find formula inputs in existing variable list
+                VA = INDEX1( VIN_A( F ), NIPPA, EANAM )
+                VB = INDEX1( VIN_B( F ), NIPPA, EANAM )
 
-            IF( V1 .GT. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_A )
-                MESG = 'ERROR: Variable "'// VIN_A( 1:L )// '" is an'//
-     &                 'activity, which is not allowed in a formula.'
-                CALL M3MSG2( MESG )
-            END IF
+                IF( VA .LE. 0 ) THEN
+                    TFLAG = .TRUE.
+                    L = LEN_TRIM( VIN_A( F ) )
+                    MESG = 'Variable "'// VIN_A( F )( 1:L ) // 
+     &                     '" from formula was not found in inventory.'
+                    CALL M3MSG2( MESG )
+                END IF
 
-            IF( V2 .GT. 0 ) THEN
-                EFLAG = .TRUE.
-                L = LEN_TRIM( VIN_B )
-                MESG = 'ERROR: Variable "'// VIN_B( 1:L )// '" is an'//
-     &                 'activity, which is not allowed in a formula.'
-                CALL M3MSG2( MESG )
-            END IF
+                IF( VB .LE. 0 ) THEN
+                    TFLAG = .TRUE.
+                    L = LEN_TRIM( VIN_B( F ) )
+                    MESG = 'Variable "'// VIN_B( F )( 1:L ) // 
+     &                     '" from formula was not found in inventory.'
+                    CALL M3MSG2( MESG )
+                END IF
 
-            IF( EFLAG ) THEN
-                MESG = 'Problem processing formula.'
+                V1 = INDEX1( VIN_A( F ), NIACT, ACTVTY )
+                V2 = INDEX1( VIN_B( F ), NIACT, ACTVTY )
+
+                IF( V1 .GT. 0 ) THEN
+                    TFLAG = .TRUE.
+                    L = LEN_TRIM( VIN_A( F ) )
+                    MESG='ERROR: Variable "'//VIN_A(F)(1:L)//'" is an'//
+     &                    'activity, which is not allowed in a formula.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+                IF( V2 .GT. 0 ) THEN
+                    TFLAG = .TRUE.
+                    L = LEN_TRIM( VIN_B( F ) )
+                    MESG='ERROR: Variable "'//VIN_B(F)(1:L)//'" is an'//
+     &                   'activity, which is not allowed in a formula.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+                IF( TFLAG ) THEN
+                    WRITE( MESG,94010 ) 'ERROR: Problem processing '//
+     &                     'formula', F, ': "'//TRIM(FORMULAS(F)) // '"'
+                    CALL M3MSG2( MESG )
+                END IF
+
+                IF ( TFLAG ) EFLAG = .TRUE.
+
+            END DO
+
+            IF ( EFLAG ) THEN
+                MESG = 'Problem processing formulas. ' //
+     &                 'See previous error messages.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Allocate memory for computed variable
-            ALLOCATE( COMPUTED( NSRC, NPTPPOL3 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'COMPUTED', PROGNAME )
-            COMPUTED = 0.   ! array
-
-        END IF
+        END IF  ! if any formulas
 
 C.........  Allocate memory for map file arrays
         ALLOCATE( MAPNAM( NMAP ), STAT=IOS )
@@ -346,10 +363,35 @@ C           able to build relative file names for the map file.
             END IF
 
         END DO
-C.........  Loop through pollutants, store, and write to inventory file
+
+C.........  Allocate memory for indices IPPTR & IPMAX for pointing to position
+C           in sparsely stored data array.  
+        ALLOCATE( IPPTR( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IPPTR', PROGNAME )
+        ALLOCATE( IPPTR2( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IPPTR2', PROGNAME )
+        ALLOCATE( IPMAX( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IPMAX', PROGNAME )
+
+C.........  Allocate memory for storing and writing emissions
+        ALLOCATE( SRCPOL( NSRC, NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
+        ALLOCATE( SRCID( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
+
+C.........  Loop through non-formula pollutants, store, and write to inventory file
         IF( NIPOL .GT. 0 ) 
      &      CALL LOOP_FOR_OUTPUT( NIPOL, NPPOL, IDEV, EIIDX, 
      &                            EINAM, MCNT )
+
+C.........  Loop through formula-based pollutants, compute, and write to inventory file
+        IF( NCOMP .GT. 0 ) 
+     &      CALL OUTPUT_FORMULAS( NIPOL, NPPOL, IDEV, EIIDX, 
+     &                            EINAM, MCNT )
+
+C.............  Deallocate local memory for storing and writing emissions
+        IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
+        IF( ALLOCATED( SRCID ) )    DEALLOCATE( SRCID )
 
 C.........  If computed variable, update EANAM, in case needed for day- 
 C           and hour-specific data
@@ -360,13 +402,25 @@ C           and hour-specific data
             SAVEANAM = EANAM       ! array
 
             DEALLOCATE( EANAM )
-            ALLOCATE( EANAM( NIPPA+1 ), STAT=IOS )
+            ALLOCATE( EANAM( NIPPA+NCOMP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
 
+C.............  Save names of existing pollutants
             EANAM( 1:NIPOL ) = SAVEANAM( 1:NIPOL )
-            EANAM( NIPOL+1 ) = VNAME
-            EANAM( NIPOL+2:NIPPA+1 ) = SAVEANAM( NIPOL+1:NIPPA )
-            NIPPA = NIPPA + 1
+
+C.............  Add names of computed pollutants
+            DO F = 1, NCOMP
+                EANAM( NIPOL+F ) = VNAME( F )
+            END DO
+
+C.............  Save names of existing activities
+            EANAM( NIPOL+NCOMP+1:NIPPA+NCOMP )=SAVEANAM( NIPOL+1:NIPPA )
+
+C.............  Update pollutant/activity counts
+            NIPOL = NIPOL + NCOMP
+            NIPPA = NIPPA + NCOMP
+
+C.............  Release memory for temporary array
             DEALLOCATE( SAVEANAM )
 
         END IF
@@ -399,6 +453,12 @@ C.........  Set number of variables and allocate file description arrays
         
         IF( ALLOCATED( VARS_PER_FILE ) ) DEALLOCATE( VARS_PER_FILE )
 
+C.........  Allocate memory for storing and writing activities
+        ALLOCATE( SRCPOL( NSRC, NPACT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
+        ALLOCATE( SRCID( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
+
 C.........  Loop through activity data, store, and write to inventory file
         IF( NIACT .GT. 0 ) 
      &      CALL LOOP_FOR_OUTPUT( NIACT, NPACT, IDEV, AVIDX, 
@@ -406,10 +466,10 @@ C.........  Loop through activity data, store, and write to inventory file
 
 C.........  Deallocate local arrays
         IF( ALLOCATED( IPPTR ) )    DEALLOCATE( IPPTR )
+        IF( ALLOCATED( IPPTR2 ) )   DEALLOCATE( IPPTR2 )
         IF( ALLOCATED( IPMAX ) )    DEALLOCATE( IPMAX )
         IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
         IF( ALLOCATED( SRCID ) )    DEALLOCATE( SRCID )
-        IF( ALLOCATED( COMPUTED ) ) DEALLOCATE( COMPUTED )
 
         DEALLOCATE( EONAMES, EOTYPES, EOUNITS, EODESCS )
 
@@ -461,125 +521,20 @@ C.............  Subroutine arguments
             CHARACTER(*), INTENT (IN) :: NAMES( NOUT ) ! names of pols/act
             INTEGER , INTENT (IN OUT) :: MCNT          ! map counter
 
-C.............  Local allocatable arrays...
-C.............  Array for storing temporary variable names for computed var
-            CHARACTER(IOVLEN3), ALLOCATABLE :: VNAMFORM( : )
-
-C.............  Array for output of pol/act and assoc data
-            REAL , ALLOCATABLE :: OUTVAL( :,: )
-
 C.............  Local variables
-            INTEGER    I, J, K, L, M, N, S
+            INTEGER    I, J, K, L, M
 
             INTEGER          NREC      ! number of output records for each pollutant
-
-            REAL           MINANN      ! min negative annual value
-            REAL           MINAVD      ! min negative seasonal/ave day value
-
-            LOGICAL     :: FFLAGA = .FALSE.  ! true: first part of formula processed
-            LOGICAL     :: FFLAGB = .FALSE.  ! true: 2nd part of formula processed
 
             CHARACTER(PHYLEN3) :: RFNAME ! relative physical file name
 
 C----------------------------------------------------------------------
 
+C.............  Loop through output variables (pollutants or activities)
             DO I = 1, NOUT
 
-C.................  Initialize SRCPOL pollutant/activity-specific data array
-C                   as missing
-                SRCPOL( :,1 ) = 0.      ! array
-                IF( NDY .GT. 0 ) SRCPOL( :,NDY ) = 0.      ! array
-                IF( NC1 .GT. 0 ) SRCPOL( :,NC1 ) = RIMISS3 ! array
-                IF( NC2 .GT. 0 ) SRCPOL( :,NC2 ) = RIMISS3 ! array
-                IF( NCE .GT. 0 ) SRCPOL( :,NCE ) = 0.      ! array
-                IF( NRE .GT. 0 ) SRCPOL( :,NRE ) = 100.    ! array
-                IF( NRP .GT. 0 ) SRCPOL( :,NRP ) = 100.    ! array
-
-C.................  Transfer emissions or activity data to output SRCPOL array
-                K = 0
-                N = 0
-                DO S = 1, NSRC
-
-C.....................  Set position in sparse array by comparing pointer to max
-                    K = MIN( IPPTR( S ), IPMAX( S ) ) 
-
-C.....................  Retrieve emissions from the pollutant array if the 
-C                       source pollutant ID equals the pollutant ID of the 
-C                       pollutant of iteration I.
-                    IF( IPOSCOD( K ) .EQ. INDX( I ) ) THEN
-
-                        IPPTR( S ) = K + 1  ! pointer for source S
-
-C......................  Skip records with zero data or missing data
-                        IF( .NOT. ZFLAG ) THEN
-                            IF( POLVAL( K,1 ) .LE. 0 . AND.
-     &                          POLVAL( K,2 ) .LE. 0        ) CYCLE
-                        END IF
-
-                        N = N + 1
-                        SRCID( N ) = S
-
-                        DO J = 1, NPVAR     ! rearrange pollutant-specific info
-                            SRCPOL( N,J ) = POLVAL( K,J )
-                        END DO
-
-C......................  If current data variable is the first variable in the
-C                        formula, then store data in formula arrays
-                        IF( NAMES( I ) .EQ. VIN_A ) THEN
-                            FFLAGA = .TRUE.
-                            COMPUTED( S,1 ) = COMPUTED( S,1 ) +         ! Annual value
-     &                                        MAX( 0., SRCPOL( N,1 ) )
-
-                            IF( NPVAR .GT. 1 ) COMPUTED(S,2)=           ! Average day value
-     &                          COMPUTED(S,2) + MAX( 0., SRCPOL(N,2) )
-
-                            IF( NPVAR .GT. 2 )                          ! Other info
-     &                          COMPUTED(S,3:NPVAR) = SRCPOL(N,3:NPVAR) 
-
-C...........................  Store variable names for computed variable
-                            IF( .NOT. ALLOCATED( VNAMFORM ) ) THEN
-                                ALLOCATE( VNAMFORM( NPVAR ), STAT=IOS )
-                                CALL CHECKMEM( IOS,'VNAMFORM',PROGNAME )
-                                VNAMFORM = ' '
-                                DO J = 1, NPVAR
-                                    L= LEN_TRIM( NAMES( I ) )
-                                    L= INDEX(EONAMES(I,J),NAMES(I)(1:L))
-                                    IF ( L .GT. 1 ) THEN
-                                        VNAMFORM(J)=EONAMES(I,J)(1:L-1)
-     &                                              // TRIM( VNAME )
-                                    ELSE
-                                        VNAMFORM( J ) = VNAME
-                                    END IF
-                                END DO
-                            END IF  ! need to store variable name info
-
-                        END IF  ! end if pollutant I is first var in formula
-
-C......................  If current data variable is the second variable in the
-C                        formula, then use data in formula to compute output value
-                        IF( NAMES( I ) .EQ. VIN_B ) THEN
-
-                            FFLAGB = .TRUE.
-                            IF( CHKPLUS ) THEN
-                                COMPUTED( S,1 )= COMPUTED( S,1 ) + 
-     &                                           MAX( 0., SRCPOL(N,1) )
-
-                                IF ( NPVAR .GT. 1 ) COMPUTED( S,2 ) = 
-     &                               COMPUTED(S,2) + MAX(0.,SRCPOL(N,2))
-
-                            ELSE IF( CHKMINUS ) THEN
-                                COMPUTED( S,1 )= COMPUTED( S,1 ) - 
-     &                                           MAX( 0., SRCPOL(N,1) )
-                                IF ( NPVAR .GT. 1 ) COMPUTED( S,2 ) = 
-     &                               COMPUTED(S,2) - MAX(0.,SRCPOL(N,2))
-
-                            END IF  ! If formula uses plus or minus
-                        END IF      ! If pol I is 2nd var in formula
-
-                   END IF           ! If pol/act available for current source
-
-                END DO  ! end of loop through sources
-                NREC = N
+                NREC = 0
+                CALL FILL_OUTPUT_DATA( INDX(I), NPVAR, 'ORDERED', NREC )
 
 C.................  Give warning if no emissions data available
                 IF( NREC .EQ. 0 ) THEN                    
@@ -590,8 +545,6 @@ C.................  Give warning if no emissions data available
                     CALL M3MSG2( MESG )
                     CYCLE
                 END IF
-
-C.................  Give warning about maximum value of negative numbers
 
 C.................  Set up to open output file...
 C.................  Set the pollutant-specific items for the I/O API header
@@ -608,22 +561,21 @@ C.................  Set the pollutant-specific items for the I/O API header
 
 C.................  Reset units for the primary (annual) data value
                 K = INDEX1( EONAMES( I,1 ), MXIDAT, INVDNAM )
+                IF( K .LE. 0 ) THEN
+                    MESG = 'ERROR: Cannot find pollutant "'//
+     &                     TRIM( EONAMES( I,1 ) ) // '" from '//
+     &                     'inventory in INVTABLE file.'
+                    CALL M3MSG2( MESG )
+                    EFLAG = .TRUE.
+                    CYCLE
+                END IF
+
                 VUNITSET( 2 ) = INVDUNT( K )
-
-C.................  Allocate memory for output arrays
-                ALLOCATE( OUTVAL( NREC, NPVAR ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'OUTVAL', PROGNAME )
-
-                DO J = 1, NPVAR
-                    OUTVAL( 1:NREC,J ) = SRCPOL( 1:NREC, J )
-                END DO
 
 C.................  Build name and output pollutant or activity file
                 RFNAME = TRIM( RPATH )// '/'// TRIM( NAMES(I) )// '.ncf'
-                CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NREC, NPVAR, 
-     &                         NAMES(I), SRCID(1:NREC), OUTVAL, EFLAG )
-
-                DEALLOCATE( OUTVAL )
+                CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NSRC, NPVAR, 
+     &                         NAMES(I), SRCID, SRCPOL, EFLAG )
 
 C...............  Update map file counter and map file names
                 MCNT = MCNT + 1
@@ -632,101 +584,7 @@ C...............  Update map file counter and map file names
 
             END DO  ! end loop I through output variables
 
-C...........  If formula has been finished on this iteration, then
-C             also output the emissions from the formula
-            IF( FFLAGA .AND. FFLAGB ) THEN
-
-C...............  Reset flags so that the information won't be written again
-                FFLAGA = .FALSE.
-                FFLAGB = .FALSE.
-
-C...............  Count up the number of non-zero records for the computed
-C                 emissions.  No need to reformat SRCPOL or SRCID, because it is 
-C                 sparse storage.  Populate sparse arrays.
-                NREC = 0
-                MINANN = 0.
-                MINAVD = 0.
-                DO S = 1, NSRC
-                
-                    IF( FIREFLAG ) ZFLAG = .TRUE.    ! disregard zero values on PMC(wildfire only)
-
-C.....................  Skip records with zero data
-                    IF( .NOT. ZFLAG ) THEN
-                        IF( COMPUTED( S,1 ) == 0 .AND.
-     &                      COMPUTED( S,2 ) == 0       ) CYCLE
-                    END IF
-
-                    NREC = NREC + 1
-                    SRCID ( NREC ) = S
-
-C......................  Check for negative values for annual value
-                    IF( COMPUTED( S,1 ) .LT. 0 ) THEN
-                        L = LEN_TRIM( VNAMFORM( 1 ) )
-                        CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
-                        WRITE( MESG,94020 ) 
-     &                    'WARNING: Resetting negative value of "'//
-     &                    VNAMFORM(1)(1:L)//'" from', COMPUTED(S,1),
-     &                    'to 0. for source:'// CRLF() // BLANK10// 
-     &                    BUFFER( 1:L2 )
-                        CALL M3MESG( MESG )
-                        MINANN = MIN( MINANN, COMPUTED( S,1 ) )
-                        COMPUTED( S,1 ) = 0.
-                    END IF
-
-C......................  Check for negative values for average day value
-                    IF( COMPUTED( S,2 ) .LT. 0 ) THEN
-                        L = LEN_TRIM( VNAMFORM( 2 ) )
-                        CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
-                        WRITE( MESG,94020 ) 
-     &                    'WARNING: Resetting negative value of "'//
-     &                    VNAMFORM(2)(1:L)//'" from', COMPUTED(S,2),
-     &                    'to 0. for source:'// CRLF() // BLANK10// 
-     &                    BUFFER( 1:L2 )
-                        CALL M3MESG( MESG )
-                        MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
-                        COMPUTED( S,2 ) = 0.
-                    END IF
-                    
-                    SRCPOL( NREC,1:NPVAR ) = COMPUTED( S,1:NPVAR )
-
-                END DO          ! End loop through sources for sparse storage
-
-C...............  Give warning for that includes negative annual value
-                IF( MINANN .LT. 0. ) THEN
-                    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
-     &                     'value for "'// TRIM( VNAMFORM(1) ) //
-     &                     '" was', MINANN, 'and was reset to 0.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-C...............  Give warning for that includes negative seasonal value
-                IF( MINAVD .LT. 0. ) THEN
-                    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
-     &                     'value for "'// TRIM( VNAMFORM(2) ) //
-     &                     '" was', MINAVD, 'and was reset to 0.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-C...............  Set up output arrays in sparse format....
-C...............  Reset I/O API header information
-                NROWS3D = NREC
-
-C...............  For header variable info, rely on the fact that all pollutants
-C                 have the SRCID in position 1 and the same types and units.
-                VNAMESET( 2:NPVAR+1 ) = VNAMFORM( 1:NPVAR )
-          
-C...............  Build name and output pollutant file
-                RFNAME = TRIM( RPATH )// '/'// TRIM( VNAME )// '.ncf'
-                CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NSRC, NPVAR, 
-     &                         VNAME, SRCID, SRCPOL, EFLAG )
-
-C...............  Update map file counter and map relative file names
-                MCNT = MCNT + 1
-                MAPNAM( MCNT ) = VNAME
-                MAPFIL( MCNT ) = TRIM( RFNAME )
-
-            END IF  ! if formula is ready to be written
-
+C.............  Exit program
             IF( EFLAG ) THEN
                 MESG = 'Problem writing data.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -741,5 +599,435 @@ C...........   Internal buffering formats............ 94xxx
 94020       FORMAT( 10( A, :, E10.2, :, 1X ) )
 
             END SUBROUTINE LOOP_FOR_OUTPUT
-  
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
+C.............  This internal subprogram is for writing out the computed formulas' 
+C               inventory data.
+C.............  Most variables are defined from the main subroutine
+            SUBROUTINE OUTPUT_FORMULAS( NOUT, NPVAR, IDEV, INDX, 
+     &                                  NAMES, MCNT )
+
+C.............  Subroutine arguments 
+            INTEGER     , INTENT (IN) :: NOUT          ! no. pols/act for output
+            INTEGER     , INTENT (IN) :: NPVAR         ! no. vars per data
+            INTEGER     , INTENT (IN) :: IDEV          ! unit no. for map file
+            INTEGER     , INTENT (IN) :: INDX ( NOUT ) ! index to master list
+            CHARACTER(*), INTENT (IN) :: NAMES( NOUT ) ! names of pols/act
+            INTEGER , INTENT (IN OUT) :: MCNT          ! map counter
+
+C.............  Arrays for emissions or activities output
+            REAL   , ALLOCATABLE:: COMPUTED( :,: ) ! computed data-spec values by src
+
+C.............  Local variables
+            INTEGER    F, J, K, L, M, N, S
+
+            INTEGER          IDXA      ! position of first formula variable in list
+            INTEGER          IDXB      ! position of 2nd formula variable in list
+            INTEGER          NREC      ! number of output records for each pollutant
+            INTEGER          WARNCNT_A ! number of times output warning A 
+            INTEGER          WARNCNT_B ! number of times output warning B 
+
+            REAL           MINANN      ! min negative annual value
+            REAL           MINAVD      ! min negative seasonal/ave day value
+
+            LOGICAL     :: FFLAGA = .FALSE.  ! true: first part of formula processed
+            LOGICAL     :: FFLAGB = .FALSE.  ! true: 2nd part of formula processed
+
+            CHARACTER*256      :: BUFFER
+            CHARACTER(PHYLEN3) :: RFNAME ! relative physical file name
+
+
+C----------------------------------------------------------------------
+
+C.............  Write message saying that formula variables are being computed
+            WRITE( MESG,94010 ) 'NOTE: Computing variables for',
+     &                           NCOMP, 'formulas.'
+            CALL M3MSG2( MESG )
+
+C.............  Allocate full-source sized array for performing emissions computations
+            ALLOCATE( COMPUTED( NSRC, NPTPPOL3 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'COMPUTED', PROGNAME )
+
+C.............  Deallocate arrays for variable names for output to SMOKE intermediate files
+            DEALLOCATE( EONAMES, EOUNITS, EOTYPES, EODESCS )
+
+C.............  Allocate memory for temporary variable names etc.
+            ALLOCATE( EONAMES( NCOMP,NPVAR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EONAMES', PROGNAME )
+            ALLOCATE( EOUNITS( NCOMP,NPVAR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOUNITS', PROGNAME )
+            ALLOCATE( EOTYPES( NCOMP,NPVAR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EOTYPES', PROGNAME )
+            ALLOCATE( EODESCS( NCOMP,NPVAR ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EODESCS', PROGNAME )
+        
+C.............  Get names, units, etc. of output activity-specific records
+            CALL BLDENAMS( CATEGORY, NCOMP, NPVAR, VNAME, 
+     &                     EONAMES, EOUNITS, EOTYPES, EODESCS )
+
+C.............  Loop through formulas. Note that the variables have already
+C               been checked in the main routine to make sure the names match if
+C               the code has gotten this far, so no additional checks on the INDEX1
+C               calls included here.
+            DO F = 1, NCOMP
+
+C.................  Write message about current formula
+                MESG = 'NOTE: Computing variable "'//TRIM( VNAME(F) )// 
+     &                 '" using formula "'// TRIM( FORMULAS(F) )// '"'
+                CALL M3MSG2( MESG )
+
+C.................  Initialize values for minimum negative values
+                MINANN = 0.
+                MINAVD = 0.
+
+C.................  Initialize values for warning counts (once per formula)
+                WARNCNT_A = 0
+                WARNCNT_B = 0
+
+C.................  Initialize array to account for sparse storage when filling in
+                COMPUTED = 0.  ! array
+
+C.................  Find first variable in formula in list of pollutants
+                IDXA = INDEX1( VIN_A( F ), NOUT, NAMES )
+
+C.................  Populate SRCPOL array from first input variable
+                NREC = 0
+                CALL FILL_OUTPUT_DATA( INDX(IDXA),NPVAR,'SEARCH',NREC )
+
+C.................  Give error if no emissions data available
+                IF( NREC .EQ. 0 ) THEN                    
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: no sources with data for output '//
+     &                     'of data variable "'// TRIM(NAMES(IDXA))//'"'
+     &                     //CRLF()//BLANK10// 
+     &                     'Variable "'//TRIM(VNAME(F))//'" will '//
+     &                     'not be computed.'
+                    CALL M3MSG2( MESG )
+                    CYCLE
+                END IF
+
+C.................  Initialize full-source computational array with first variable
+                DO N = 1, NREC
+                    S = SRCID( N )
+                    COMPUTED( S,1 ) = SRCPOL( N,1 )
+
+                    IF( NPVAR .GT. 1 ) COMPUTED( S,2 )= SRCPOL( N,2 ) ! Average day value
+
+                    IF( NPVAR .GT. 2 )                                ! Other info
+     &                  COMPUTED( S,3:NPVAR ) = SRCPOL( N,3:NPVAR ) 
+
+                END DO
+
+C.................  Find second variable in formula in list of pollutants
+                IDXB = INDEX1( VIN_B( F ), NOUT, NAMES )
+
+C.................  Populate SRCPOL array with second input variable
+                NREC = 0
+                CALL FILL_OUTPUT_DATA( INDX(IDXB),NPVAR,'SEARCH',NREC )
+               
+C.................  Give error if no emissions data available
+                IF( NREC .EQ. 0 ) THEN                    
+                    EFLAG = .TRUE.
+                    MESG = 'ERROR: no sources with data for output '//
+     &                     'of data variable "'// TRIM(NAMES(IDXB))//'"'
+     &                     //CRLF()//BLANK10// 
+     &                     'Variable "'//TRIM(VNAME(F))//'" will '//
+     &                     'not be computed.'
+                    CALL M3MSG2( MESG )
+                    CYCLE
+                END IF
+
+C.................  Compute variable by adding or subtracting second variable
+                DO N = 1, NREC
+                    S = SRCID( N )
+
+                    IF( CHKPLUS( F ) ) THEN     ! Formula is an addition
+
+                        COMPUTED( S,1 ) = COMPUTED( S,1 ) + 
+     &                                    MAX( 0., SRCPOL( N,1 ) )
+
+                        IF ( NPVAR .GT. 1 ) 
+     &                       COMPUTED( S,2 ) = 
+     &                       COMPUTED( S,2 ) + MAX( 0.,SRCPOL( N,2 ) )
+
+                    ELSE IF( CHKMINUS( F ) ) THEN    ! Formula is a subtraction
+
+                        COMPUTED( S,1 ) = COMPUTED( S,1 ) - 
+     &                                    MAX( 0., SRCPOL( N,1 ) )
+
+                        IF ( NPVAR .GT. 1 ) 
+     &                       COMPUTED( S,2 ) = 
+     &                       COMPUTED( S,2 ) - MAX( 0.,SRCPOL( N,2 ) )
+
+C.........................  Check to see if the computed value is now negative, and
+C                           if so, reset to zero.
+                        IF( COMPUTED( S,1 ) .LT. 0 ) THEN
+                            WARNCNT_A = WARNCNT_A + 1
+
+                            IF ( WARNCNT_A .LE. MXWARN ) THEN
+
+                              CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
+
+                              WRITE( MESG,94020 ) 'WARNING: '//
+     &                         'Resetting negative value of annual "'//
+     &                         TRIM(VNAME(F))//'" from', COMPUTED(S,1),
+     &                         'to 0. for source:'//CRLF()//BLANK10// 
+     &                         BUFFER( 1:L2 )
+                              CALL M3MESG( MESG )
+                            END IF
+
+                            MINANN = MIN( MINANN, COMPUTED( S,1 ) )
+                            COMPUTED( S,1 ) = 0.
+
+                        END IF
+
+C..........................  Check for negative values for average day value
+                        IF( COMPUTED( S,2 ) .LT. 0 ) THEN
+                            WARNCNT_B = WARNCNT_B + 1
+
+                            IF ( WARNCNT_B .LE. MXWARN ) THEN
+                              CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
+
+                              WRITE( MESG,94020 ) 'WARNING: '//
+     &                         'Resetting negative value of "'//
+     &                         'average-day "'//TRIM(VNAME(F))// 
+     &                         '" from',COMPUTED(S,2),'to 0. for '//
+     &                         'source:'//CRLF()//BLANK10// BUFFER(1:L2)
+                              CALL M3MESG( MESG )
+                            END IF
+
+                            MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
+                            COMPUTED( S,2 ) = 0.
+
+                        END IF
+
+                    END IF   ! If formula is a plus or a minus
+
+                END DO       ! End loop over values in second variable
+
+C................   Copy data to output structure (no condensing output structure)
+                IF ( ZFLAG ) THEN
+                    DO S = 1, NSRC
+                        SRCID( S ) = S
+                    END DO
+
+                    SRCPOL( 1:S,1:NPVAR ) = COMPUTED( 1:S,1:NPVAR)   ! array
+                    NREC = NSRC
+
+C................   Condense data to output structure by excluding zeros
+                ELSE
+                    N = 0
+                    DO S = 1, NSRC
+
+C.........................  Skip records with zero data, unless option (ZFLAG) says not to
+                        IF( COMPUTED( S,1 ) == 0 .AND.
+     &                      COMPUTED( S,2 ) == 0       ) CYCLE
+
+                        N = N + 1
+                        SRCID ( N ) = S                
+                        SRCPOL( N,1:NPVAR ) = COMPUTED( S,1:NPVAR )
+
+                    END DO          ! End loop through sources for sparse storage
+                    NREC = N
+
+                END IF
+
+C...............  Give warning for that includes negative annual value
+                IF( MINANN .LT. 0. ) THEN
+                    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
+     &                     'value for "'// TRIM( EONAMES(F,1) ) //
+     &                     '" was', MINANN, 'and was reset to 0.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+C...............  Give warning for that includes negative seasonal value
+                IF( MINAVD .LT. 0. ) THEN
+                    WRITE( MESG,94020 ) 'WARNING: Largest negative '//
+     &                     'value for "'// TRIM( EONAMES(F,2) ) //
+     &                     '" was', MINAVD, 'and was reset to 0.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+C.................  Set up to open output file...
+C.................  Set the pollutant-specific items for the I/O API header
+                NROWS3D = NREC
+
+                M = 1
+                DO J = 1, NPVAR
+                    M = M + 1
+                    VNAMESET( M ) = EONAMES( F,J )
+                    VTYPESET( M ) = EOTYPES( F,J )
+                    VUNITSET( M ) = EOUNITS( F,J )
+                    VDESCSET( M ) = EODESCS( F,J )
+                END DO    
+
+C.................  Reset units for the primary (annual) data value
+                K = INDEX1( EONAMES( F,1 ), MXIDAT, INVDNAM )
+                IF( K .LE. 0 ) THEN
+                    MESG = 'ERROR: Cannot find pollutant "'//
+     &                     TRIM( EONAMES( F,1 ) ) // '" from '//
+     &                     'inventory in INVTABLE file.'
+                    CALL M3MSG2( MESG )
+                    EFLAG = .TRUE.
+                    CYCLE
+                END IF
+
+                VUNITSET( 2 ) = INVDUNT( K )
+
+C...............  Build name and output pollutant file
+                RFNAME = TRIM( RPATH )// '/'// TRIM( VNAME(F) )// '.ncf'
+                CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NSRC, NPVAR, 
+     &                         VNAME(F), SRCID, SRCPOL, EFLAG )
+
+C...............  Update map file counter and map relative file names
+                MCNT = MCNT + 1
+                MAPNAM( MCNT ) = VNAME( F )
+                MAPFIL( MCNT ) = TRIM( RFNAME )
+
+            END DO   !  End of formulas, loop on F
+
+C.............  Deallocate local memory
+            IF( ALLOCATED( COMPUTED ) ) DEALLOCATE( COMPUTED )
+
+C.............  Exit if error found (all formulas couldn't be computed)
+            IF ( EFLAG ) THEN
+                MESG = 'Could not output all formulas. ' //
+     &                 'See previous error messages.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            RETURN
+
+C......................  FORMAT  STATEMENTS   ..........................
+
+C...............   Internal buffering formats............ 94xxx
+
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
+94020       FORMAT( 10( A, :, E10.2, :, 1X ) )
+
+            END SUBROUTINE OUTPUT_FORMULAS
+
+C-----------------------------------------------------------------------
+C-----------------------------------------------------------------------
+
+C.............  This internal subprogram is for writing out the computed formulas' 
+C               inventory data.
+C.............  Most variables are defined from the main subroutine
+            SUBROUTINE FILL_OUTPUT_DATA( POLINDEX, NPVAR, 
+     &                                   CALLTYPE, NREC   )
+
+C.............  Subroutine arguments 
+            INTEGER     , INTENT(IN) :: POLINDEX ! index of pollutant or activity to fill
+            INTEGER     , INTENT(IN) :: NPVAR    ! no. variables per pol/act
+            CHARACTER(*), INTENT(IN) :: CALLTYPE ! ordered or search
+            INTEGER     , INTENT(OUT):: NREC     ! number of non-zero records in array for current pollutant
+
+C.............  Local variables
+            INTEGER    I, J, K, N, S
+
+            LOGICAL       :: FFLAG             ! pollutant has been found
+            LOGICAL, SAVE :: FIRSTIME = .TRUE. ! first time called
+
+            CHARACTER*256    MESG  ! error message buffer
+
+C----------------------------------------------------------------------
+
+C.............  Since the emission values are already sorted in the output order of
+C               the pollutants/activities, can use the IPPTR and IPMAX indices 
+C               to keep track of what pollutant/activity we are on for each source
+C               (sources can have different numbers and types of output pollutants
+C               and activities).
+C.............  IPPTR2 has been added for use in "search" mode.  It is never
+C               reset from its initial value, unlike IPPTR.  Need to have both
+C               because IPPTR is used for the input pollutants and activities,
+C               whereas IPPTR2 is used for just the computed pollutants. Since
+C               the computed pollutants are inserted between the input pollutants
+C               and the activities, it's necessary to have both arrays
+            IF ( FIRSTIME ) THEN
+
+                IPPTR ( 1 ) = 1
+                IPPTR2( 1 ) = 1
+                IPMAX( 1 ) = NPCNT( 1 )
+                DO S = 2, NSRC
+                    IPPTR ( S ) = IPPTR( S-1 ) + NPCNT( S-1 )
+                    IPPTR2( S ) = IPPTR( S )
+                    IPMAX ( S ) = IPPTR( S )   + NPCNT( S ) - 1
+                END DO
+                FIRSTIME = .FALSE.
+
+            END IF
+
+C.............  Initialize SRCPOL pollutant/activity-specific data array
+C               as missing
+            SRCPOL( :,1 ) = 0.      ! array
+            IF( NDY .GT. 0 ) SRCPOL( :,NDY ) = 0.      ! array
+            IF( NC1 .GT. 0 ) SRCPOL( :,NC1 ) = RIMISS3 ! array
+            IF( NC2 .GT. 0 ) SRCPOL( :,NC2 ) = RIMISS3 ! array
+            IF( NCE .GT. 0 ) SRCPOL( :,NCE ) = 0.      ! array
+            IF( NRE .GT. 0 ) SRCPOL( :,NRE ) = 100.    ! array
+            IF( NRP .GT. 0 ) SRCPOL( :,NRP ) = 100.    ! array
+
+C.................  Transfer emissions or activity data to output SRCPOL array
+            K = 0
+            N = 0
+            DO S = 1, NSRC
+
+                FFLAG = .FALSE.
+                SELECT CASE( CALLTYPE )
+                CASE ( 'ORDERED' )
+
+C.....................  Set position in sparse array by comparing pointer to max
+                    K = MIN( IPPTR( S ), IPMAX( S ) ) 
+                    IF( IPOSCOD( K ) .EQ. POLINDEX ) THEN
+                        IPPTR( S ) = K + 1  ! pointer for source S
+                        FFLAG = .TRUE.
+                    END IF
+
+                CASE ( 'SEARCH' )
+
+                    K = MIN( IPPTR2( S ), IPMAX( S ) ) 
+                    DO J = 1, NPCNT( S )
+
+                        IF( IPOSCOD( K ) .EQ. POLINDEX ) THEN
+                            FFLAG = .TRUE.
+                            EXIT            ! pollutant has been found, break out of loop
+                        ELSE
+                            K = MIN( K + 1, IPMAX( S ) ) 
+
+                        END IF
+
+                    END DO
+
+                END SELECT
+
+C.....................  Retrieve emissions from the pollutant array if the 
+C                       source pollutant ID equals the pollutant ID of the 
+C                       pollutant of iteration I.
+                IF( FFLAG ) THEN
+
+C......................  Skip records with zero data or missing data
+                    IF( .NOT. ZFLAG ) THEN
+                        IF( POLVAL( K,1 ) .LE. 0 . AND.
+     &                      POLVAL( K,2 ) .LE. 0        ) CYCLE
+                    END IF
+
+                    N = N + 1
+                    SRCID( N ) = S
+
+                    DO J = 1, NPVAR     ! rearrange pollutant-specific info
+                        SRCPOL( N,J ) = POLVAL( K,J )
+                    END DO
+
+                END IF           ! If pol/act available for current source
+
+            END DO  ! end of loop through sources
+            NREC = N
+
+            RETURN
+
+            END SUBROUTINE FILL_OUTPUT_DATA
+
         END SUBROUTINE WRINVEMIS
