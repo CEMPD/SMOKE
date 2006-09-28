@@ -75,6 +75,7 @@ C...........   Other arrays
 
 C...........   Other local variables
         INTEGER         K          ! index
+        INTEGER         LC, LN     ! line positions for using comments
         INTEGER         IOS        ! i/o error status
         INTEGER         CYID       ! tmp county ID
         INTEGER         FIP        ! tmp state/county FIPS code
@@ -124,7 +125,15 @@ C               for "list-formatted" in fortran, but not requiring
 C               quotes around the text strings
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
+            LC = INDEX( LINE, '!' )
+            IF ( LC .LE. 0 ) LC = 0
+            LN = LEN( LINE )
+
+            PKTINFO%COMMENT = " "
+            IF ( LC .GT. 0 ) PKTINFO%COMMENT = LINE( LC+1:LN )
+
         END IF
+
 
 C.........  Process the line of data, depending on packet type
         SELECT CASE( PKTTYP )
@@ -236,12 +245,12 @@ C           a warning.
             PKTINFO%CPOL  =           SEGMENT( 4 )
             PKTINFO%CSIC  =           SEGMENT( 5 )
             PKTINFO%CMCT  =           SEGMENT( 6 )
-	    PKTINFO%PLT   =           SEGMENT( 7 )
-            PKTINFO%CHAR1 =           SEGMENT( 8 )
-            PKTINFO%CHAR2 =           SEGMENT( 9 )
-            PKTINFO%CHAR3 =           SEGMENT( 10 )
-            PKTINFO%CHAR4 =           SEGMENT( 11 ) 
-            PKTINFO%CHAR5 =           SEGMENT( 12 )
+            PKTINFO%PLT   = ' '
+            PKTINFO%CHAR1 = ' '
+            PKTINFO%CHAR2 = ' '
+            PKTINFO%CHAR3 = ' '
+            PKTINFO%CHAR4 = ' '
+            PKTINFO%CHAR5 = ' '
 
         CASE( 'EMS_CONTROL' )
             STID = STR2INT( LINE( 1:2 ) )
