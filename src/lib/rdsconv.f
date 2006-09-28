@@ -46,9 +46,9 @@ C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSCL, INVSCL
 
 C...........   This module contains the speciation profile tables
-        USE MODSPRO, ONLY: CNVFC00, CNVFC01, CNVFC02, CNVFC03,
-     &                     CNVRT01, CNVRT02, CNVRT03,
-     &                     NCNV1, NCNV2, NCNV3
+        USE MODSPRO, ONLY: CNVFC00, CNVFC01, CNVFC02, CNVFC03, CNVFC04,
+     &                     CNVRT01, CNVRT02, CNVRT03, CNVRT04,
+     &                     NCNV1, NCNV2, NCNV3, NCNV4
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, LSCCEND
@@ -82,6 +82,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS:
         INTEGER, PARAMETER :: TBLLEN = FPSLEN3 + POLLEN3
+        INTEGER, PARAMETER :: MXSEG    = 4         ! # of potential segments
 
 C.........  LOCAL VARIABLES and their descriptions:
 C.........  Unsorted pollutant conversion table
@@ -94,8 +95,15 @@ C.........  Unsorted pollutant conversion table
 
         CHARACTER(TBLLEN), ALLOCATABLE :: PCVA( : ) ! FIPS// SCC// pol index
 
+C.........  Arrays for reading by-profile format
+        LOGICAL, ALLOCATABLE :: OUTERR( : ) ! true: error found for input pol
+        LOGICAL, ALLOCATABLE :: OUTSET( : ) ! true: output pol name was set for input pol
+
+C...........   Other arrays
+        CHARACTER(32) SEGMENT( MXSEG )          ! Segments of parsed lines
+
 C.........  Counter for different types of records in the input file
-        INTEGER :: N( 0:3 )
+        INTEGER :: N( 0:4 )
 
 C.........  Other local variables
         INTEGER         I, J, K, K1, K2, L, T, V ! counters and indices
@@ -115,8 +123,10 @@ C.........  Other local variables
         LOGICAL      :: RFLAG = .FALSE.  ! true: Skip records in this section
         LOGICAL      :: SFLAG = .FALSE.  ! true: Records were skipped
         LOGICAL         SCCFLAG          ! true: SCC type is different from previous
+        LOGICAL      :: LBYPROF = .FALSE. ! true: file provided in by-profile format
 
         CHARACTER(10)          CPOL      ! tmp pollutant index in ENAM
+        CHARACTER(16)          FLABEL    ! File type label
         CHARACTER(16)          LINE16    ! tmp 16-char line
         CHARACTER(300)         LINE      ! line buffer
         CHARACTER(300)         MESG      ! message buffer
@@ -134,6 +144,7 @@ C.........  Other local variables
         CHARACTER(FIPLEN3-STALEN3) CYIDZERO ! zero county code
         CHARACTER(IOVLEN3) IBUF      ! tmp inventory pol name buffer
         CHARACTER(IOVLEN3) SBUF      ! tmp output    pol name buffer
+        CHARACTER(SPNLEN3) SPROF     ! tmp speciation profile ID
         CHARACTER(RWTLEN3) CRWT      ! roadway type no.
         CHARACTER(VIDLEN3) CVID      ! vehicle type ID no.
 
@@ -195,13 +206,24 @@ C.........  Read pollutant pollutants conversion factors file
 
             LINE16 = ADJUSTL( LINE( 1:16 ) )
 
-C.............  Skip blank and comment lines
-            IF( BLKORCMT( LINE ) ) THEN
+C.............  Check for header that indicates if file is by profile or by 
+C               FIPS/SCC.  Also, skip comment lines.
+            IF( LINE16( 1:1 ) .EQ. CINVHDR ) THEN
+                FLABEL = ADJUSTL( LINE16( 2:16 ) )
+                LBYPROF = .FALSE.
+                IF ( FLABEL .EQ. 'BYPROFILE' .OR.
+     &               FLABEL .EQ. 'BY PROFILE'     ) THEN
+                    LBYPROF = .TRUE.
+                END IF
+                CYCLE
+
+C.............  Skip blank lines
+            ELSEIF( LINE .EQ. ' ' ) THEN
                 CYCLE
 
 C.............  Check if line is pollutant-to-pollutant indicator or conversion
-C               data
-            ELSEIF( LINE16( 1:1 ) .GT. '9' ) THEN
+C               data by looking up for FIPS/SCC format only
+            ELSEIF( .NOT. LBYPROF .AND. LINE16( 1:1 ) .GT. '9' ) THEN
                 IBUF = LINE16
                 SBUF = ADJUSTL( LINE( 18:33 ) )
 
@@ -209,12 +231,112 @@ C               data
                 IF( ISP .GT. 0 ) THEN
                     OUTNAM( ISP ) = SBUF
                     RFLAG = .TRUE.      ! Okay, read in entries in this section
+                    WRITE( MESG, 94010 )
+     &                  'NOTE: Reading GSCNV file for pollutant "'// 
+     &                  TRIM( IBUF )// '" starting at line', IREC
+                    CALL M3MESG( MESG )
                 ELSE
                     RFLAG = .FALSE.     ! Don't read b/c pollutant not in inven
+                    WRITE( MESG, 94010 ) 'WARNING: '//
+     &                  'Section of GSCNV file for pollutant "'// 
+     &                  TRIM( IBUF )// '" is skipped starting at line', 
+     &                  IREC
+                    CALL M3MSG2( MESG )
                 ENDIF
+                CYCLE
 
-C.............  Store data for current record when file's current pollutant is 
-C               in ENAM
+            END IF
+
+C.............  Read differently depending on whether the file is provided
+C               by speciation profile or by FIPS/SCC
+C.............  Count data by profile for current record whe file's current
+C               pollutant is in the inventory (i.e., in ENAM)
+            IF( LBYPROF ) THEN
+
+C.................  Make sure that memory is available for error checks
+                IF ( .NOT. ALLOCATED( OUTSET ) ) THEN
+                    ALLOCATE( OUTSET( NNAM ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'OUTSET', PROGNAME )
+                    ALLOCATE( OUTERR( NNAM ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'OUTERR', PROGNAME )
+                    OUTSET = .FALSE.  ! array
+                    OUTERR = .FALSE.  ! array
+                END IF
+
+C.................  Parse line into components              
+		CALL PARSLINE( LINE, 4, SEGMENT )
+
+		IBUF  = SEGMENT( 1 )( 1:IOVLEN3 )
+                SBUF  = SEGMENT( 2 )( 1:IOVLEN3 )
+                SPROF = SEGMENT( 3 )( 1:SPNLEN3 )
+                FAC   = STR2REAL( SEGMENT( 4 ) )
+
+C.................  Check whether pollutant in column one is an inventory pollutant.
+                ISP = INDEX1( IBUF, NNAM, ENAM )
+                WRITE( CPOL, '(I5.5)' ) ISP
+
+C.................  If pollutant is an inventory pollutant, then store its output name
+                IF( ISP .GT. 0 ) THEN
+
+                    RFLAG = .TRUE.          ! This record was okay
+
+C.....................  If output name already set, then compare current record with
+C                       previous one.
+                    IF( OUTSET( ISP ) .AND. .NOT. OUTERR(ISP) ) THEN
+                        IF ( SBUF .NE. OUTNAM( ISP ) ) THEN
+                            WRITE( MESG,94010 ) 
+     &                        'ERROR: Output pollutant name "'// 
+     &                        TRIM( SBUF ) // '" at line',IREC,
+     &                        'of pollutant-to-pollutant conversion '//
+     &                        CRLF()//BLANK10// 'file must be the '//
+     &                        'same as previous output pollutant "'//
+     &                        TRIM( OUTNAM( ISP ) ) // '" for input '//
+     &                        'pollutant "' // TRIM( IBUF )//'".'
+                            CALL M3MSG2( MESG )
+
+                            OUTERR( ISP ) = .TRUE.
+                            EFLAG = .TRUE.
+                            CYCLE
+                        END IF
+
+C.....................  Otherwise, set OUTNAME and OUTSET for current pollutant
+                    ELSE
+                        OUTNAM( ISP ) = SBUF
+                        OUTSET( ISP ) = .TRUE.  ! OUTNAM was already set for this ISP
+                    END IF
+
+C.................  If pollutant is not an inventory pollutant, and previous record was 
+C                   okay, then write out a message
+                ELSE IF( RFLAG ) THEN
+                    RFLAG = .FALSE.     ! Don't read b/c pollutant not in inven
+                    SFLAG = .TRUE.
+                    WRITE( MESG, 94010 )
+     &                'WARNING: Records in GSCNV file for pollutant "'//
+     &                TRIM( IBUF )// '" ignored starting at line', IREC
+                    CALL M3MSG2( MESG )
+                    CYCLE 
+
+C.................  Set indicator for writing out warning that some entries were
+C                   skipped in file. 
+                ELSE
+                    RFLAG = .FALSE.
+                    SFLAG = .TRUE.
+                    CYCLE
+
+		END IF
+
+                T = 4
+                I = I + 1
+                INDX( I ) = I
+                PCVA( I ) = SPROF // CPOL
+                FACA( I ) = FAC
+                TYPA( I ) = T
+                ISPA( I ) = ISP
+
+                N( T ) = N( T ) + 1
+
+C.............  Store data by FIPS/SCC for current record when file's 
+C               current pollutant is in the inventory (i.e., in ENAM)
             ELSEIF( RFLAG ) THEN
 
                 CFIP = ADJUSTR( LINE( CS1:CE1 ) )
@@ -303,6 +425,14 @@ C               skipped in file.
             CALL M3WARN( PROGNAME, 0, 0, MESG )
         END IF
 
+        IF ( EFLAG ) THEN
+
+            MESG = 'ERROR: Problem found in pollutant-to-pollutant '//
+     &             'data. Correct error messages list above and rerun.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
 C.........  Sort records from pollutant conversion file
         CALL SORTIC( NCONV, INDX, PCVA )
          
@@ -341,6 +471,16 @@ C.........  Allocate memory for pollutant conversion and initialize to 1.0
             CNVRT03 = ' '
         ENDIF
 
+        NCNV4 = N( 4 )
+        ALLOCATE( CNVFC04( NCNV4, NNAM ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVFC04', PROGNAME )
+        ALLOCATE( CNVRT04( NCNV4 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVRT04', PROGNAME )
+        IF( NCNV4 .GT. 0 ) THEN
+            CNVFC04 = 1.0
+            CNVRT04 = ' '
+        ENDIF
+
 C.........  Store pollutant conversion factors in sorted tables
         PFIPSCC = ' '
         N = 0             ! array
@@ -353,31 +493,62 @@ C.........  Store pollutant conversion factors in sorted tables
             PCV  = PCVA( J )
             FAC  = FACA( J ) 
 
-            CSTA = PCV(       1:STALEN3 )
-            CFIP = PCV(       1:FIPLEN3 )
-            TSCC = PCV( PLTPOS3:FPSLEN3 )
+C.............  For Profile-based format
+            IF( T .EQ. 4 ) THEN
+                SPROF = PCV( 1: SPNLEN3 )
 
-            CFIPSCC = CFIP // TSCC
+C.................  If current profile/pollutant is not equal to previous profile/pollutant
+                IF ( PCV .NE. PREVPCV ) THEN
+                    N( T ) = N( T ) + 1
+                    K = N( T )
 
-            IF( CFIPSCC .NE. PFIPSCC ) THEN
-                N( T ) = N( T ) + 1
-                K = N( T )
-                PFIPSCC = CFIPSCC
+C.................  If duplicate entry found...
+                ELSE 
+
+                    MESG = 'ERROR: Duplicate entry in pollutant ' //
+     &                 'conversion file:' // CRLF() // BLANK10 //
+     &                 'Profile: "' // SPROF // 
+     &                 '"; IN POL: "' // TRIM( ENAM( V ) ) // 
+     &                 '"; OUT POL: "' // TRIM( OUTNAM( V ) ) // '"'
+                    CALL M3MSG2( MESG )
+                    EFLAG = .TRUE.
+                    CYCLE
+
+                ENDIF
+
+C.............  For FIPS/SCC-based file format
+            ELSE
+                CSTA  = PCV(       1:STALEN3 )
+                CFIP  = PCV(       1:FIPLEN3 )
+                TSCC  = PCV( PLTPOS3:FPSLEN3 )
+
+                CFIPSCC = CFIP // TSCC
+
+C.................  If current entry keys are not equal to the previous entry's keys
+                IF( CFIPSCC .NE. PFIPSCC ) THEN
+                    N( T ) = N( T ) + 1
+                    K = N( T )
+                    PFIPSCC = CFIPSCC
+                END IF
+
+C.................  If duplicate entry found...
+                IF( PCV .EQ. PREVPCV ) THEN
+
+                    MESG = 'ERROR: Duplicate entry in pollutant ' //
+     &                 'conversion file:' // CRLF() // BLANK10 //
+     &                 'FIP: ' // CFIP // 
+     &                 '; SCC: ' // TSCC // 
+     &                 '; IN POL: "' // TRIM( ENAM( V ) ) //
+     &                 '"; OUT POL: "' // TRIM( OUTNAM( V ) ) // '"'
+                    CALL M3MSG2( MESG )
+                    EFLAG = .TRUE.
+                    CYCLE
+
+                ENDIF
+
             END IF
 
-            IF( PCV .EQ. PREVPCV ) THEN
-
-                L = LEN_TRIM( ENAM( V ) )
-
-                MESG = 'WARNING: Duplicate entry in pollutant ' //
-     &                 'conversion file:' // CRLF() // BLANK10 //
-     &                 'FIP: '// CFIP// ' SCC: '// TSCC// ' IN POL: '//
-     &                 ENAM( V )( 1:L )// ' OUT POL: ' // OUTNAM( V )
-                CALL M3MSG2( MESG )
-                CYCLE
-
-            ENDIF
-
+C.............  Set up arrays for entries of each matching resolution.
             SELECT CASE( T ) 
 
             CASE( 0 )
@@ -394,6 +565,10 @@ C.........  Store pollutant conversion factors in sorted tables
             CASE( 3 )
                 CNVFC03( K,V ) = FAC
                 CNVRT03( K   ) = CFIP // TSCC
+
+            CASE( 4 )
+                CNVFC04( K,V ) = FAC
+                CNVRT04( K   ) = PCV( 1:SPNLEN3 )
 
             CASE DEFAULT
 
@@ -413,10 +588,14 @@ C.........  Store pollutant conversion factors in sorted tables
         NCNV1 = N( 1 )
         NCNV2 = N( 2 )
         NCNV3 = N( 3 )
+        NCNV4 = N( 4 )
 
 C.........  Deallocate temporary sorting arrays
         DEALLOCATE( INDX, PCVA, TYPA, FACA )
-        
+
+C.........  Deallocate other local memory
+        IF( ALLOCATED( OUTSET ) ) DEALLOCATE( OUTSET, OUTERR )        
+
 C.........  Abort for read error
         IF( EFLAG ) THEN
 
