@@ -21,6 +21,10 @@ C     Functions: Models-3 functions
 C
 C  REVISION  HISTORY:
 C     Created 10/98 by M. Houyoux
+C     Updated Aug 2006 by M. Houyoux for SMOKE 2.3 to add mode and change
+C         internal code documentation from SAROAD to SPECIATE4 ID.
+C     Updated Sep 2006 by M. Houyoux to automatically add _NOI pollutants
+C         for entries that are no-integrate model species.
 C
 C****************************************************************************
 C
@@ -78,19 +82,23 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: FDEV   ! iventory table unit no.
 
 C...........   Parameters
-        INTEGER, PARAMETER :: NFIELDS = 14  ! no. input fields
+        INTEGER, PARAMETER :: NFIELDS = 15  ! no. input fields
         INTEGER, PARAMETER :: FBEG( NFIELDS ) = 
-     &                      ( / 1 , 13, 30, 36, 38, 40,
-     &                          46, 48, 50, 52, 54, 58, 75, 116 / )
+     &                      ( / 1 , 13, 17, 34, 40, 42, 44,
+     &                          50, 52, 54, 56, 58, 62, 79, 119 / )
         INTEGER, PARAMETER :: FEND( NFIELDS ) = 
-     &                      ( / 11, 28, 34, 36, 38, 44,
-     &                          46, 48, 50, 52, 56, 73, 114, 159 / )
+     &                      ( / 11, 15, 32, 38, 40, 42, 49,
+     &                          50, 52, 54, 56, 60, 77, 118, 158 / )
+        CHARACTER(4),       PARAMETER :: NOIEND = '_NOI'
 
 C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: LOCIDX  ( : ) ! sorting index
-        INTEGER, ALLOCATABLE :: INVPOSA ( : ) ! position in original list
-        INTEGER, ALLOCATABLE :: INVDCODA( : ) ! 5-digit SAROAD code (if any)
+        INTEGER, ALLOCATABLE :: LOCATIDX  ( : ) ! sorting index
+        INTEGER, ALLOCATABLE :: INVDCODA( : ) ! 5-digit SPECIATE4 ID (if any)
         INTEGER, ALLOCATABLE :: INVSTATA( : ) ! Status (<0 activity; >0 pol)
+
+        LOGICAL, ALLOCATABLE :: LADDNOI ( : ) ! true: add NOI entry for this pollutant
+
+        REAL   , ALLOCATABLE :: INVPOSA ( : ) ! position in original list
 
         CHARACTER         , ALLOCATABLE :: INVDVTSA( : ) ! V=VOC, T=TOG, N=not
         CHARACTER(IOULEN3), ALLOCATABLE :: INVDUNTA( : ) ! units for SMOKE intmdt inventory
@@ -101,13 +109,14 @@ C...........   Local arrays
         CHARACTER(64) SEGMENT( NFIELDS )
 
 C...........   Other local variables
-        INTEGER         J, L, N     !  counters and indices
+        INTEGER         J, K, L, N     !  counters and indices
 
         INTEGER         CNT     !  count of pollutants per CAS
         INTEGER         CNTK    !  count of kept pollutants per CAS
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record number
         INTEGER         NDAT    !  number of data values
+        INTEGER         NNOI    !  number of "no integrate" pollutants
 
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error found
         LOGICAL          KEEPVAL             ! initialized keep status
@@ -215,16 +224,19 @@ C.............  Skip comment and blank lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Check if line is a process/pollutant combination
-            IF( INDEX( LINE( 1:16 ), ETJOIN ) > 0 ) THEN
-                SEGMENT( 1 ) = ADJUSTL( LINE( 1:16 ) )
+C            IF( INDEX( LINE( 1:16 ), ETJOIN ) > 0 ) THEN
+C                SEGMENT( 1 ) = ADJUSTL( LINE( 1:16 ) )
 
-C.................  Skip CAS number, SAROAD code, and reactivity, then
-C                   store remaining fields               
-                DO N = 5, NFIELDS
-                    SEGMENT( N ) = 
-     &                  ADJUSTL( LINE( FBEG( N ):FEND( N ) ) )
-                END DO
-            ELSE
+C.................  Skip CAS number, SPECIATE4 code, and reactivity, then
+C                   store remaining fields
+C  commented out by Marc Houyoux for SMOKE2.3 - unsure why they were being skipped, but
+C  they are needed for the case when process-pollutant combinations are
+C  provided in the emissions inventory.
+C                DO N = 6, NFIELDS
+C                    SEGMENT( N ) =
+C     &                  ADJUSTL( LINE( FBEG( N ):FEND( N ) ) )
+C                END DO
+C            ELSE
 
 C.................  Parse the line into its sections based on file format def'n
                 DO N = 1, NFIELDS
@@ -233,7 +245,7 @@ C.................  Parse the line into its sections based on file format def'n
      &                  ADJUSTL( LINE( FBEG( N ):FEND( N ) ) )
 
                 END DO
-            END IF
+C            END IF
 
 C.............  Get length of data name
             L = LEN_TRIM( SEGMENT( 1 ) )
@@ -267,21 +279,21 @@ C.............  Check that data name does not have illegal characters
             END DO
 
 C.............  Check that integer fields are integers
-            IF( .NOT. CHKINT( SEGMENT( 3 ) ) ) THEN
+            IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: SAROAD code is not an ' //
+                WRITE( MESG,94010 ) 'ERROR: SPECIATE4 ID is not an ' //
      &                 'integer at line', IREC
                 CALL M3MSG2( MESG )
             END IF
 
-            IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
+            IF( .NOT. CHKINT( SEGMENT( 5 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Reactivity group code ' //
      &                 'is not an integer at line', IREC
                 CALL M3MSG2( MESG )
             END IF
 
-            IF( .NOT. CHKINT( SEGMENT( 11 ) ) ) THEN
+            IF( .NOT. CHKINT( SEGMENT( 12 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: NTI code is not an ' //
      &                 'integer at line', IREC
@@ -289,7 +301,7 @@ C.............  Check that integer fields are integers
             END IF
 
 C.............  Check that float fields are floats
-            IF( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
+            IF( .NOT. CHKREAL( SEGMENT( 7 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Factor value is not a '//
      &                 'floating point value at line', IREC
@@ -299,21 +311,23 @@ C.............  Check that float fields are floats
 C.............  Convert to upper case, where needed
             CALL UPCASE( SEGMENT( 1 )( 1:FLEN(1) ) )
             CALL UPCASE( SEGMENT( 2 )( 1:FLEN(2) ) )
-            CALL UPCASE( SEGMENT( 5 )( 1:FLEN(5) ) )
+            CALL UPCASE( SEGMENT( 3 )( 1:FLEN(3) ) )
+            CALL UPCASE( SEGMENT( 6 )( 1:FLEN(6) ) )
             CALL UPCASE( SEGMENT( 7 )( 1:FLEN(7) ) )
             CALL UPCASE( SEGMENT( 8 )( 1:FLEN(8) ) )
             CALL UPCASE( SEGMENT( 9 )( 1:FLEN(9) ) )
             CALL UPCASE( SEGMENT( 10)( 1:FLEN(10) ) )
+            CALL UPCASE( SEGMENT( 11)( 1:FLEN(11) ) )
 
 C.............  Correct unknown entries
-            IF( SEGMENT( 7 ) .NE. 'V' .AND.
-     &          SEGMENT( 7 ) .NE. 'T'       ) SEGMENT( 7 ) = 'N'
-            IF( SEGMENT( 8 ) .NE. 'Y'       ) SEGMENT( 8 ) = 'N'
+            IF( SEGMENT( 8 ) .NE. 'V' .AND.
+     &          SEGMENT( 8 ) .NE. 'T'       ) SEGMENT( 8 ) = 'N'
             IF( SEGMENT( 9 ) .NE. 'Y'       ) SEGMENT( 9 ) = 'N'
             IF( SEGMENT( 10) .NE. 'Y'       ) SEGMENT( 10) = 'N'
+            IF( SEGMENT( 11) .NE. 'Y'       ) SEGMENT( 11) = 'N'
 
 C.............  Error for blank units
-            IF( SEGMENT( 12 ) .EQ. ' ' ) THEN
+            IF( SEGMENT( 13 ) .EQ. ' ' ) THEN
 
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 )
@@ -331,21 +345,35 @@ C.............  Store unsorted variables
                 ITIDXA2  ( NDAT ) = NDAT
                 ITLINNO  ( NDAT ) = IREC
                 ITNAMA   ( NDAT ) = TRIM( SEGMENT( 1 ) )
-                ITCASA   ( NDAT ) = TRIM( SEGMENT( 2 ) )
-                ITCODA   ( NDAT ) = STR2INT( SEGMENT( 3 ) )
-                ITREAA   ( NDAT ) = STR2INT( SEGMENT( 4 ) )
-                ITKEEPA  ( NDAT ) = ( SEGMENT( 5 ) .EQ. 'Y' )
-                ITFACA   ( NDAT ) = STR2REAL( SEGMENT( 6 ) )
-                ITVTSA   ( NDAT ) = TRIM( SEGMENT( 7 ) )
-                ITMSPC   ( NDAT ) = ( SEGMENT( 8 ) .EQ. 'Y' )
-                ITEXPL   ( NDAT ) = ( SEGMENT( 9 ) .EQ. 'Y' )
-                ITNTIA   ( NDAT ) = STR2INT( SEGMENT( 11 ) )
-                ITUNTA   ( NDAT ) = TRIM( SEGMENT( 12 ) )
-                ITDSCA   ( NDAT ) = TRIM( SEGMENT( 13 ) )
-                ITCASDSCA( NDAT ) = TRIM( SEGMENT( 14 ) )
+                ITCASA   ( NDAT ) = TRIM( SEGMENT( 3 ) )
+                ITCODA   ( NDAT ) = STR2INT( SEGMENT( 4 ) )
+                ITREAA   ( NDAT ) = STR2INT( SEGMENT( 5 ) )
+                ITKEEPA  ( NDAT ) = ( SEGMENT( 6 ) .EQ. 'Y' )
+                ITFACA   ( NDAT ) = STR2REAL( SEGMENT( 7 ) )
+                ITVTSA   ( NDAT ) = TRIM( SEGMENT( 8 ) )
+                ITMSPC   ( NDAT ) = ( SEGMENT( 9 ) .EQ. 'Y' )
+                ITEXPL   ( NDAT ) = ( SEGMENT( 10 ) .EQ. 'Y' )
+                ITNTIA   ( NDAT ) = STR2INT( SEGMENT( 12 ) )
+                ITUNTA   ( NDAT ) = TRIM( SEGMENT( 13 ) )
+                ITDSCA   ( NDAT ) = TRIM( SEGMENT( 14 ) )
+                ITCASDSCA( NDAT ) = TRIM( SEGMENT( 15 ) )
                 ITCASDNMA( NDAT ) = ITCASA( NDAT ) // ITNAMA( NDAT )
 
-                IF( SEGMENT( 10 ) .EQ. 'Y' ) ITSTATA( NDAT ) = -1
+C.................  Set name depending on whether or not the mode is
+C                   included in the format.
+                L = LEN_TRIM( SEGMENT( 2 ) )
+
+C.................  If no mode provided:
+                IF ( L .LE. 0 ) THEN
+                    ITNAMA( NDAT ) = TRIM( SEGMENT( 1 ) )
+
+C.................  If the mode is provided
+                ELSE
+                    ITNAMA( NDAT ) = TRIM( SEGMENT( 2 ) ) // ETJOIN //
+     &                               TRIM( SEGMENT( 1 ) )
+                END IF
+
+                IF( SEGMENT( 11 ) .EQ. 'Y' ) ITSTATA( NDAT ) = -1
                 IF( ITKEEPA( NDAT ) ) NINVKEEP = NINVKEEP + 1
 
             END IF
@@ -491,23 +519,46 @@ C.........  Sort inventory table to create unique data list and associated array
 
 C.........  Count the number of unique data names that are kept
         LNAM = ' '
+        NNOI = 0
+        MXIDAT = 0
         DO N = 1, NINVTBL
             J = ITIDXA2( N ) 
             IF( .NOT. ITKEEPA( J ) ) CYCLE
-            
-            IF( ITNAMA( J ) .NE. LNAM ) MXIDAT = MXIDAT + 1
+
+C.............  Check if this pollutant  name is not the same as the previous one            
+            IF( ITNAMA( J ) .NE. LNAM ) THEN 
+
+C.................  Count the number of unique data names
+                MXIDAT = MXIDAT + 1
+
+C.................  If pollutant is a part of VOC or TOG, is "no-integrate" 
+C                   and a model species, increase the count for inserting 
+C                   the _NOI pollutants.
+                IF ( ( ITVTSA(J) .EQ. 'V' .OR. ITVTSA(J) .EQ. 'T' ).AND.
+     &               ITMSPC( J ) .AND. .NOT. ITEXPL( J ) ) THEN
+
+                    NNOI = NNOI + 1
+
+                ENDIF
+
+            END IF
+
             LNAM = ITNAMA( J )
         END DO
 
+        MXIDAT = MXIDAT + NNOI
+
 C.........  Allocate memory for local inventory pollutants/activities
-        ALLOCATE( LOCIDX( MXIDAT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LOCIDX', PROGNAME )
+        ALLOCATE( LOCATIDX( MXIDAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCATIDX', PROGNAME )
         ALLOCATE( INVPOSA( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVPOSA', PROGNAME )
         ALLOCATE( INVDCODA( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVDCODA', PROGNAME )
         ALLOCATE( INVSTATA( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVSTATA', PROGNAME )
+        ALLOCATE( LADDNOI( MXIDAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LADDNOI', PROGNAME )
         ALLOCATE( INVDVTSA( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVDVTSA', PROGNAME )
         ALLOCATE( INVDUNTA( MXIDAT ), STAT=IOS )
@@ -515,10 +566,11 @@ C.........  Allocate memory for local inventory pollutants/activities
         ALLOCATE( INVDDSCA( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVDDSCA', PROGNAME )
 
-        LOCIDX   = 0    ! array
-        INVPOSA  = 0    ! array
+        LOCATIDX = 0    ! array
+        INVPOSA  = 0.    ! array
         INVDCODA = 0    ! array
         INVSTATA = 0    ! array
+        LADDNOI  = .FALSE. ! array
         INVDVTSA = ' '  ! array
         INVDUNTA = ' '  ! array
         INVDDSCA = ' '  ! array
@@ -547,7 +599,7 @@ C.........  Allocate memory for output inventory pollutants/activities
         INVDUNT = ' '  ! array
         INVDDSC = ' '  ! array
 
-C.........  Allocate memory for sorted SAROAD codes and index
+C.........  Allocate memory for sorted SPECATE4 IDs and index
         ALLOCATE( IDXCOD( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXCOD', PROGNAME )
         ALLOCATE( SORTCOD( MXIDAT ), STAT=IOS )
@@ -577,19 +629,19 @@ C.................  Reset keep status for current inventory data value
             END IF
 
 C.............  Store first position in original table
-            IF( INVPOSA( MXIDAT ) .EQ. 0 ) THEN
-                 LOCIDX ( MXIDAT ) = MXIDAT
-                 INVPOSA( MXIDAT ) = 
-     &                    INDEX1( ITNAMA( J ), NINVTBL, ITNAMA )
+            IF( INVPOSA( MXIDAT ) .EQ. 0. ) THEN
+                 LOCATIDX ( MXIDAT ) = MXIDAT
+                 INVPOSA( MXIDAT ) = REAL( 
+     &                    INDEX1( ITNAMA( J ), NINVTBL, ITNAMA ) )
             END IF
   
-C.............  Store SAROAD code if not yet set, otherwise, check that its the same code
+C.............  Store SPECIATE4 ID if not yet set, otherwise, check that its the same code
             IF( INVDCODA( MXIDAT ) .EQ. 0 ) THEN
                 INVDCODA( MXIDAT ) = ITCODA( J )
 
             ELSE IF( ITCODA( J ) .NE. INVDCODA( MXIDAT ) ) THEN
-                WRITE( MESG,94010 ) 'WARNING: Different SAROAD ' //
-     &                 'code for the same data name at line', IREC,
+                WRITE( MESG,94010 ) 'WARNING: Different SPECIATE4 ' //
+     &                 'IDs for the same data name at line', IREC,
      &                 CRLF()// BLANK10// 'Using code', 
      &                 INVDCODA( MXIDAT ), 'and ignoring code',
      &                 ITCODA( J )
@@ -666,34 +718,66 @@ C               that for the current data name
 
             END IF
 
+C.............  Insert no-integrate entries (memory already increased with NNOI variable)
+            IF ( ( ITVTSA(J) .EQ. 'V' .OR. ITVTSA(J) .EQ. 'T' ).AND.
+     &             ITMSPC( J ) .AND. .NOT. ITEXPL( J ) ) THEN
+
+                K = MXIDAT
+                MXIDAT = MXIDAT + 1
+                LOCATIDX  ( MXIDAT ) = MXIDAT
+                INVPOSA ( MXIDAT ) = INVPOSA ( K ) + 0.1
+                INVDCODA( MXIDAT ) = INVDCODA( K )
+                INVSTATA( MXIDAT ) = INVSTATA( K )
+                INVDVTSA( MXIDAT ) = INVDVTSA( K )
+                INVDUNTA( MXIDAT ) = INVDUNTA( K )
+                INVDDSCA( MXIDAT ) = INVDDSCA( K )
+                LADDNOI ( MXIDAT ) = .TRUE.
+
+            END IF
+
 C.............  Set data previous name for next iteration
             LNAM = ITNAMA( J )
 
         END DO       ! end loop to store unique data names
 
 C.........  Resort inventory data names based on original position in inventory table
-        CALL SORTI1( MXIDAT, LOCIDX, INVPOSA )
+        CALL SORTR1( MXIDAT, LOCATIDX, INVPOSA )
 
         DO N = 1, MXIDAT
-            J = LOCIDX( N )
-            INVDNAM( N ) = ITNAMA( INVPOSA( J ) )
-            INVDCOD( N ) = INVDCODA( J )
-            INVSTAT( N ) = INVSTATA( J )
-            INVDVTS( N ) = INVDVTSA( J )
-            INVDUNT( N ) = INVDUNTA( J )
-            INVDDSC( N ) = INVDDSCA( J )
+            J = LOCATIDX( N )
 
-C.............  Reset LOCIDX for use in next sorting step
-            LOCIDX( N ) = N
+            IF( LADDNOI( J ) ) THEN
+
+                INVDNAM( N ) = TRIM( ITNAMA( INT( INVPOSA( J ) ) ) ) // 
+     &                         NOIEND
+                INVDCOD( N ) = INVDCODA( J )
+                INVSTAT( N ) = INVSTATA( J )
+                INVDVTS( N ) = 'N' 
+                INVDUNT( N ) = INVDUNTA( J )
+                INVDDSC( N ) = 'No-integrate '// INVDDSCA( J )
+
+            ELSE
+
+                INVDNAM( N ) = ITNAMA( INT( INVPOSA( J ) ) )
+                INVDCOD( N ) = INVDCODA( J )
+                INVSTAT( N ) = INVSTATA( J )
+                INVDVTS( N ) = INVDVTSA( J )
+                INVDUNT( N ) = INVDUNTA( J )
+                INVDDSC( N ) = INVDDSCA( J )
+
+            END IF
+
+C.............  Reset LOCATIDX for use in next sorting step
+            LOCATIDX( N ) = N
 
         END DO
 
-C.........  Sort data list by SAROAD codes
-        CALL SORTI1( MXIDAT, LOCIDX, INVDCOD )
+C.........  Sort data list by SPECIATE IDs
+        CALL SORTI1( MXIDAT, LOCATIDX, INVDCOD )
 
-C.........  Store SAROAD in sorted order
+C.........  Store SPECIATE IDs in sorted order
         DO N = 1, MXIDAT
-            J = LOCIDX( N )
+            J = LOCATIDX( N )
             IDXCOD( N )  = J
             SORTCOD( N ) = INVDCOD( J )
         END DO
@@ -702,8 +786,8 @@ C.........  Rewind inventory table file
         IF ( FDEV .NE. 0 ) REWIND( FDEV )
 
 C.........  Deallocate local memory
-        DEALLOCATE( LOCIDX, INVPOSA, INVDCODA, INVSTATA, INVDVTSA,
-     &              INVDUNTA, INVDDSCA )
+        DEALLOCATE( LOCATIDX, INVPOSA, INVDCODA, INVSTATA, INVDVTSA,
+     &              INVDUNTA, INVDDSCA, LADDNOI )
 
         RETURN
 
