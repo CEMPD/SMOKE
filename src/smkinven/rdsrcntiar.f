@@ -74,7 +74,7 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
-        CHARACTER(50)      SEGMENT( NSEG ) ! segments of line
+        CHARACTER(128)      SEGMENT( NSEG ) ! segments of line
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            !  message buffer
 
