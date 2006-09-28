@@ -131,17 +131,17 @@ C.................  Check if format is provided as a header entry
                     IF( L .GT. 0 ) THEN
                         GETFORMT = ORLNPFMT
                     ELSE
-                        GETFORMT = ORLFMT
-                    END IF
 
-                    L2 = INDEX( LINE, 'FIRE' )
-                    L3 = INDEX( LINE, 'FIREEMIS' )
-                    IF( L2 .GT. 0 .AND. L3 .LE. 0 ) THEN
-                        GETFORMT = ORLFIREFMT
-                    ELSE IF( L3 .GT. 0 .AND. L2 .GT. 0 ) THEN
-                        GETFORMT = ORLDYFRFMT
-                    ELSE
-                        GETFORMT = ORLFMT
+                        L2 = INDEX( LINE, 'FIRE' )
+                        L3 = INDEX( LINE, 'FIREEMIS' )
+                        IF( L2 .GT. 0 .AND. L3 .LE. 0 ) THEN
+                            GETFORMT = ORLFIREFMT
+                        ELSE IF( L3 .GT. 0 .AND. L2 .GT. 0 ) THEN
+                            GETFORMT = ORLDYFRFMT
+                        ELSE
+                            GETFORMT = ORLFMT
+                        END IF
+
                     END IF
                     
                     EXIT ! To end read loop
