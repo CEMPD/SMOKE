@@ -95,9 +95,6 @@ C.........  Allocate memory for the SRGDESC descriptions and initialize
         CALL CHECKMEM( IOS, 'SRGFNAM', PROGNAME )
         
 C.........  Read surrogate files in SRGDESC file and store
-
-C        CALL GETENV( "SRG_PATH", SRGBUF )
-
         N = 0
         IREC = 0       
         DO I = 1, NLINES
