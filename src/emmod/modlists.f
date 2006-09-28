@@ -113,7 +113,7 @@
 
 C.........  Full list of inventory pollutants/activities (in output order)
 C.........  Dimensioned by MXIDAT
-        INTEGER, ALLOCATABLE, PUBLIC :: INVDCOD( : ) ! 5-digit SAROAD code (if any)
+        INTEGER, ALLOCATABLE, PUBLIC :: INVDCOD( : ) ! 5-digit SPECIATE4 ID (if any)
         INTEGER, ALLOCATABLE, PUBLIC :: INVSTAT( : ) ! Status (<0 activity; >0 pol)
 
         REAL   , ALLOCATABLE, PUBLIC :: INVDCNV( : ) ! local conversion factor
@@ -127,7 +127,7 @@ C.........  Inventory table arrays - unsorted raw data, dimensioned by NINVTBL
         INTEGER, ALLOCATABLE, PUBLIC :: ITIDXA ( : ) ! Sorting index 1
         INTEGER, ALLOCATABLE, PUBLIC :: ITIDXA2( : ) ! Sorting index 2
         INTEGER, ALLOCATABLE, PUBLIC :: ITLINNO( : ) ! Line number of input file for record
-        INTEGER, ALLOCATABLE, PUBLIC :: ITCODA ( : ) ! 5-digit SAROAD code (if any)
+        INTEGER, ALLOCATABLE, PUBLIC :: ITCODA ( : ) ! 5-digit SPECIATE4 ID (if any)
         INTEGER, ALLOCATABLE, PUBLIC :: ITNTIA ( : ) ! NTI HAP number
         INTEGER, ALLOCATABLE, PUBLIC :: ITREAA ( : ) ! Reactivity group
         INTEGER, ALLOCATABLE, PUBLIC :: ITSTATA( : ) ! Status (<0 activity; >0 pol)
@@ -159,10 +159,10 @@ C           CAS are kept) - dimensioned by NUNIQCAS
         INTEGER,            ALLOCATABLE, PUBLIC :: UCASNKEP( : ) ! kept pol count per CAS code
         CHARACTER(CASLEN3), ALLOCATABLE, PUBLIC :: UNIQCAS ( : ) ! CAS code (left justified)
 
-C.........  SAROAD numbers in sorted order and reference index back to input order
+C.........  SPECIATE4 IDs in sorted order and reference index back to input order
 C           Dimensioned by MXIDAT
         INTEGER, ALLOCATABLE, PUBLIC :: IDXCOD ( : ) ! index to INVDNAM
-        INTEGER, ALLOCATABLE, PUBLIC :: SORTCOD( : ) ! SAROAD number
+        INTEGER, ALLOCATABLE, PUBLIC :: SORTCOD( : ) ! SPECIATE4 ID
 
 C.........  Arrays for per CAS reports - dimensioned by NUNIQCAS
 C           The array order is the same as UNIQCAS
