@@ -2,7 +2,7 @@
         SUBROUTINE RDXCLUDE( FDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line 98
 C
 C  DESCRIPTION:
 C     Reads the NHAPEXCLUDE file that contains a list of country/
@@ -40,8 +40,12 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
+
 C.........  This module is for cross reference tables
         USE MODXREF, ONLY: INDXTA, IFIPTA, CSRCTA, CSCCTA
+
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: CATEGORY
 
         IMPLICIT NONE
 
@@ -62,11 +66,14 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! NHAPEXCLUDE file unit no.
  
 C...........   Local parameters
-        INTEGER    , PARAMETER :: MXCOL = 2
+        INTEGER    , PARAMETER :: MXCOL = 8
 
 C...........   Array of input fields
-        CHARACTER(SCCLEN3)  SEGMENT( MXCOL )
+        CHARACTER(CHRLEN3)  SEGMENT( MXCOL )
   
+C...........   Array of point source plant characeristics
+        CHARACTER(CHRLEN3) CHARS( 5 )
+
 C...........   Other local variables
         INTEGER         I, N    !  counters and indices
 
@@ -82,7 +89,9 @@ C...........   Other local variables
         CHARACTER(128)     LINE     !  line buffer
         CHARACTER(256)     MESG     !  message buffer
         CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(PLTLEN3) PLT      !  temporary plant ID
         CHARACTER(SCCLEN3) TSCC     !  temporary SCC
+        CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol
 
         CHARACTER(16) :: PROGNAME = 'RDXCLUDE' ! program name
 
@@ -140,6 +149,10 @@ C               STR2INT to prevent warning messages.
             CFIP = SEGMENT( 1 )
             TSCC = SEGMENT( 2 )
 
+C.............  Smart interpretation of SCC
+            CALL FLTRNEG( TSCC )     ! Filter 0 and -9 to blank
+            CALL PADZERO( TSCC )     ! Pad with zeros
+
 C.............  Make sure that the co/st/cy code is an integer
             IF( .NOT. CHKINT( CFIP ) ) THEN
                 EFLAG = .TRUE.
@@ -165,12 +178,35 @@ C               leading zeros
 C.............  Store case-indpendent fields
             INDXTA ( N ) = N
             IFIPTA ( N ) = IFIP
-            CSCCTA ( N ) = SEGMENT( 2 )
+            CSCCTA ( N ) = TSCC
             
 C.............  Store sorting criteria for source.
 C.............  NOTE - if point sources are added, make sure that
 C               TSCC is justified correctly.
-            CSRCTA( N ) = CFIP // TSCC
+
+C.............  For point sources
+            IF ( CATEGORY == 'POINT' ) THEN
+
+                PLT      = SEGMENT( 3 )
+                CHARS(1) = SEGMENT( 4 )
+                CHARS(2) = SEGMENT( 5 )
+                CHARS(3) = SEGMENT( 6 )
+                CHARS(4) = SEGMENT( 7 )
+                CHARS(5) = SEGMENT( 8 )
+
+C.................  Store sorting criteria as right-justified in fields
+                CALL BLDCSRC( CFIP, PLT, CHARS(1),
+     &                        CHARS(2), CHARS(3), CHARS(4),
+     &                        CHARS(5), POLBLNK3, CSRCALL   )
+
+                CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC 
+
+C.............  For area and mobile sources
+            ELSE
+
+                CSRCTA( N ) = CFIP // TSCC
+
+            END IF
 
         END DO      ! End of loop on I for reading in NHAPEXCLUDE file
 

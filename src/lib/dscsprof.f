@@ -38,8 +38,7 @@ C***************************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the speciation profile tables
-        USE MODSPRO, ONLY: HDRSTART, HDREND, MXSPFUL, MXSPEC,
-     &                     SPCNAMES, MOLUNITS
+        USE MODSPRO, ONLY: MXSPFUL, MXSPEC, SPCNAMES, MOLUNITS
 
         IMPLICIT NONE
 
@@ -172,23 +171,6 @@ C              mole-based conversions
 C.............  Skip blank and comment lines
 
             IF( BLKORCMT( LINE ) ) CYCLE
-
-C.............  Skip all lines until the end of the header...
-C.............  Check for header start
-            L = INDEX( LINE, HDRSTART ) 
-            IF( L .GT. 0 ) INHEADER = .TRUE.
-
-            L = INDEX( LINE, HDREND )
-            IF( INHEADER ) THEN
-                IF( L .GT. 0 ) THEN
-                    INHEADER = .FALSE.
-                END IF
-                CYCLE
-            ELSE IF ( L .GT. 0 ) THEN
-                WRITE(MESG,94010) 'Header end found before header '//
-     &                            'started at line', IREC
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
 
 C.............  Separate the line of data into each part
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
