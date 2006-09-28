@@ -38,6 +38,7 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
+
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: CSOURC
@@ -52,7 +53,8 @@ C.........  This module contains the control packet data and control matrices
      &                      EMSTOTL, CUTCTG, FACCTG, FACMACT, 
      &                      FACRACT, EMCAPALW, EMREPALW, GRPSTIDX,
      &                      GRPCHAR, EMSPTCF, MACEXEFF, MACNWEFF,
-     &                      MACNWFRC, CTLRPLC
+     &                      MACNWFRC, CTLRPLC, CTGCOMT, CTLCOMT, ALWCOMT, 
+     &                      REACOMT, PRJCOMT, EMSCOMT, MACCOMT
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NEM, NDY, NCE, NRE, NRP, 
@@ -134,6 +136,7 @@ C...........   Other local variables
         INTEGER          IOS      ! input/output status
         INTEGER          PIDX     ! previous IDX
         INTEGER          RDEV     ! Report unit number
+        INTEGER          RDEV2    ! Report unit number 2
         INTEGER          SCCBEG   ! begining of SCC in CSOURC string
         INTEGER          SCCEND   ! end of SCC in CSOURC string
 
@@ -169,9 +172,12 @@ C...........   Other local variables
         LOGICAL          LCOMPARE ! true: during a "replacement" of controls,
 C                                         make sure new controls are more reduction
 C                                         than the old controls.
+        LOGICAL          LREPORT  ! true: output a record to report
+        LOGICAL       :: LREPHDR  = .TRUE.  ! true: output report header
         LOGICAL, SAVE :: APPLFLAG = .FALSE. ! true: something has been applied
         LOGICAL, SAVE :: OPENFLAG = .FALSE. ! true: output file has been opened
 
+        CHARACTER(1)       REPCTYPE   ! control type for report
         CHARACTER(100)     OUTFMT     ! header format buffer
         CHARACTER(200)     PATHNM     ! path name for tmp file
         CHARACTER(220)     FILENM     ! file name
@@ -199,12 +205,18 @@ C.........  Get environment variables that control program behavior
         MESG = 'Use annual or average day emissions'
         LCOMPARE = ENVYN( 'COMPARE_REPLACE_CONTROL', MESG, .TRUE., IOS )
 
-C.........  Open reports file
+C.........  Open reports files
         RPTDEV( 1 ) = PROMPTFFILE( 
      &                'Enter logical name for MULTIPLICATIVE ' //
      &                'CONTROLS REPORT',
      &                .FALSE., .TRUE., CRL // 'CREP', PROGNAME )
         RDEV = RPTDEV( 1 )
+
+        RPTDEV( 5 ) = PROMPTFFILE( 
+     &                'Enter logical name for DETAILED ' //
+     &                'CONTROL PACKET REPORT',
+     &                .FALSE., .TRUE., CRL // 'CREP2', PROGNAME )
+        RDEV2 = RPTDEV( 5 )
 
 C.........  Open *output* temporary files depending on whether an input 
 C           temporary file exists - indicating that the packet is being used
@@ -396,12 +408,12 @@ C             AREA sources, rule penetration.
             IF ( CFLAG ) THEN
             	
 C...........  Allocate arrays to store control information from base inventory
-		ALLOCATE( BASECEFF( NSRC ) )
-		ALLOCATE( BASEREFF( NSRC ) )
-		ALLOCATE( BASERPEN( NSRC ) )
-		BASECEFF = 0.
-		BASEREFF = 1.
-		BASERPEN = 1.
+                ALLOCATE( BASECEFF( NSRC ) )
+                ALLOCATE( BASEREFF( NSRC ) )
+                ALLOCATE( BASERPEN( NSRC ) )
+                BASECEFF = 0.
+                BASEREFF = 1.
+                BASERPEN = 1.
 
 C...........  Then calculate the factor which will be used to account 
 C             for control information already in the inventory
@@ -530,20 +542,15 @@ C.............................................................................
            	
 C................  Allocate arrays to store control eff., rule eff. and 
 C                  rule penetration for each source
-              ALLOCATE( CEFF( NSRC ) )
-              ALLOCATE( REFF( NSRC ) )
-              ALLOCATE( RPEN( NSRC ) )
-              CEFF = 0.
-              REFF = 1.
-              RPEN = 1.
+               ALLOCATE( CEFF( NSRC ) )
+               ALLOCATE( REFF( NSRC ) )
+               ALLOCATE( RPEN( NSRC ) )
+               CEFF = 0.
+               REFF = 1.
+               RPEN = 1.
 
 C...............  Loop through sources
               DO S = 1, NSRC
-
-C...............  Initialize control info. to base values
-		 CEFF( S ) = BASECEFF( S )
-		 REFF( S ) = BASEREFF( S )
-		 RPEN( S ) = BASERPEN( S )
 
                  E1  = DATVAL( S,E ) * FACTOR( S )
                  FAC = 1.
@@ -560,6 +567,8 @@ C................  If control packet applies to this source, compute factor
                     NEWFAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
                     OLDFAC = 1.0 
                     IF( BACKOUT( S ) .NE. 0. ) OLDFAC= 1.0/BACKOUT( S )
+
+                    LREPORT = .FALSE.
                     
 C.....................  Check if this is a "replace" entry                    
                     IF( CTLRPLC( CTLINDX ) ) THEN
@@ -575,6 +584,7 @@ C.............................  Store control information for this source
                                 CEFF( S ) = CTLEFF
                                 REFF( S ) = RULEFF
                                 RPEN( S ) = RULPEN
+                                LREPORT   = .TRUE.
 
 C.............................  Otherwise, do nothing (keep with old reduction)
                             ELSE
@@ -601,24 +611,84 @@ C.........................  If not checking, then always backout old reduction
 C                           and apply new reduction
                         ELSE
                             FAC = BACKOUT( S )* NEWFAC
-                         
+                            
                             CEFF( S ) = CTLEFF
                             REFF( S ) = RULEFF
                             RPEN( S ) = RULPEN
+                            LREPORT   = .TRUE.
 
                         END IF
 
                         FACTOR( S ) = FAC
                         E1 = DATVAL( S,E )
 
+                        REPCTYPE = "R"
+
 C.....................  Otherwise, apply as additional controls
                     ELSE
                         FAC = ( 1.0 - CTLEFF*RULEFF*RULPEN )
                         FACTOR( S ) = FACTOR( S ) * FAC
-                      
-                        CEFF( S ) = CTLEFF
-                        REFF( S ) = RULEFF
-                        RPEN( S ) = RULPEN
+                        
+C.........................  For this calculation, put entire 
+C                           additional reduction (REFF, RPEN, CEFF)
+C                           into new CEFF and use base REFF and RPEN
+                        CEFF( S ) = 1 - FACTOR( S )  ! simplify, while awaiting correct formula
+                        REFF( S ) = 1.  ! Set to 1, while awaiting correct formula
+                        RPEN( S ) = 1.  ! Set to 1, while awaiting correct formula
+                        LREPORT   = .TRUE.
+                        REPCTYPE = "A"
+
+                    END IF
+
+C...................  Write out report entry if control packet entry
+C                     has been applied
+                    IF( LREPORT ) THEN
+
+                        SELECT CASE( CATEGORY )
+                        CASE( 'POINT' )
+                            IF ( LREPHDR ) THEN
+                                WRITE(RDEV2,93421)
+                                LREPHDR = .FALSE.
+                            END IF
+
+                            WRITE( RDEV2, 93420 ) 
+     &                         TRIM(CSOURC(S)(PTBEGL3(1):PTENDL3(1))), 
+     &                         TRIM(CSOURC(S)(PTBEGL3(2):PTENDL3(2))), 
+     &                         TRIM(CSOURC(S)(PTBEGL3(3):PTENDL3(3))), 
+     &                         TRIM(CSOURC(S)(PTBEGL3(4):PTENDL3(4))), 
+     &                         TRIM(CSOURC(S)(PTBEGL3(5):PTENDL3(5))), 
+     &                         TRIM(CSOURC(S)(PTBEGL3(6):PTENDL3(6))), 
+     &                         TRIM(PNAM), 100.*(1.-OLDFAC),
+     &                         100.*CEFF(S)*REFF(S)*RPEN(S), REPCTYPE, 
+     &                         TRIM( CTLCOMT( CTLINDX ) )
+                        CASE( 'AREA' )
+                            IF ( LREPHDR ) THEN
+                                WRITE(RDEV2,93423)
+                                LREPHDR = .FALSE.
+                            END IF
+                            WRITE( RDEV2, 93422 ) 
+     &                         TRIM(CSOURC(S)(ARBEGL3(1):ARENDL3(1))), 
+     &                         TRIM(CSOURC(S)(ARBEGL3(2):ARENDL3(2))), 
+     &                         TRIM(PNAM), 100.*(1.-OLDFAC),
+     &                         100.*CEFF(S)*REFF(S)*RPEN(S), REPCTYPE, 
+     &                         TRIM( CTLCOMT( CTLINDX ) )
+
+                        CASE( 'MOBILE' )
+                            IF ( LREPHDR ) THEN
+                                WRITE(RDEV2,93425)
+                                LREPHDR = .FALSE.
+                            END IF
+                            WRITE( RDEV2, 93424 ) 
+     &                         TRIM(CSOURC(S)(MBBEGL3(1):MBENDL3(1))), 
+     &                         TRIM(CSOURC(S)(MBBEGL3(2):MBENDL3(2))), 
+     &                         TRIM(CSOURC(S)(MBBEGL3(3):MBENDL3(3))), 
+     &                         TRIM(CSOURC(S)(MBBEGL3(4):MBENDL3(4))), 
+     &                         TRIM(CSOURC(S)(MBBEGL3(5):MBENDL3(5))), 
+     &                         TRIM(PNAM), 100.*(1.-OLDFAC),
+     &                         100.*CEFF(S)*REFF(S)*RPEN(S), REPCTYPE, 
+     &                         TRIM( CTLCOMT( CTLINDX ) )
+
+                        END SELECT
 
                     END IF
 
@@ -915,21 +985,21 @@ C.............  Write multiplicative controls for current pollutant
      &                              CEFF )                     ) THEN
                     MESG = 'Failed to write control efficiency ' //
      &                     'for pollutant ' // PNAM
-		CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
                 
                 IF( .NOT. WRITESET( MNAME, 'RE_'//PNAM(1:L), ALLFILES, 0, 0, 
      &                              REFF )                     ) THEN
                     MESG = 'Failed to write rule effectivness ' //
      &                     'for pollutant ' // PNAM
-		CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
                 
                 IF( .NOT. WRITESET( MNAME, 'RP_'//PNAM(1:L), ALLFILES, 0, 0, 
      &                              RPEN )                     ) THEN
                     MESG = 'Failed to write rule penetration ' //
      &                     'for pollutant ' // PNAM
-          	CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
             END IF
 
@@ -1066,6 +1136,16 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93412   FORMAT( 1X, A6, ';', 1X, A15, ';', 1X, 
      &          100( 10X, E11.4, :, ';' ))
+
+93420   FORMAT( 7(A, ','), 2(F8.2,','),A,',',A )
+93421   FORMAT( 'FIP,PLANTID,CHAR1,CHAR2,CHAR2,CHAR4,SCC,POL,',
+     &          'BASCRR,NEWCRR,REPLACE,COMMENT' )
+
+93422   FORMAT( 3(A, ','), 2(F8.2,','),A,',',A )
+93423   FORMAT( 'FIP,SCC,POL,BASCRR,NEWCRR,REPLACE,COMMENT' )
+
+93424   FORMAT( 6(A, ','), 2(F8.2,','),A,',',A )
+93425   FORMAT( 'FIP,ROADTYPE,LINK,VEHTYPE,SCC,NEWCRR,REPLACE,COMMENT' )
 
 C...........   Internal buffering formats............ 94xxx
 
