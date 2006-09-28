@@ -1,6 +1,6 @@
 
-        SUBROUTINE HOURTEMP( NSRC, JTIME, DAYBEGT, SRCARRAY, 
-     &                       MINTEMP, MAXTEMP, SKIPDATA, NDAYSRC )
+        SUBROUTINE HOURTEMP( NSRC, JDATE, JTIME, DAYBEGT, SRCARRAY, 
+     &                    MINTEMP, MAXTEMP, SKIPDATA, LDAYSAV, NDAYSRC )
 
 C***********************************************************************
 C  subroutine body starts at line 92
@@ -61,17 +61,20 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS
         CHARACTER(2) CRLF
         INTEGER      ENVINT
+        INTEGER      ISDSTIME
 
-        EXTERNAL     CRLF, ENVINT
+        EXTERNAL     CRLF, ENVINT, ISDSTIME
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT    (IN) :: NSRC                  ! no. sources
+        INTEGER, INTENT    (IN) :: JDATE                 ! YYYYDDD
         INTEGER, INTENT    (IN) :: JTIME                 ! HHMMSS
         INTEGER, INTENT    (IN) :: DAYBEGT ( NSRC )      ! begin. time for day
         INTEGER, INTENT    (IN) :: SRCARRAY( NSRC,2 )    ! per-source FIPS and averaging type
         REAL   , INTENT    (IN) :: MINTEMP               ! minimum temperature
         REAL   , INTENT    (IN) :: MAXTEMP               ! maximum temperature
-        LOGICAL, INTENT    (IN) :: SKIPDATA             ! skip data for non-day averaging
+        LOGICAL, INTENT    (IN) :: SKIPDATA              ! skip data for non-day averaging
+        LOGICAL, INTENT    (IN) :: LDAYSAV ( NSRC )      ! true: use daylight time
         INTEGER, INTENT(IN OUT) :: NDAYSRC ( NSRC,24 )   ! no. days to average per source
 
 C...........   Other local variables
@@ -86,13 +89,14 @@ C...........   Other local variables
         REAL        MIXVAL      ! mixing ratio value
         REAL        PRESVAL     ! pressure value
 
-        LOGICAL, SAVE :: INITIAL = .TRUE.  ! true: first time
+        LOGICAL       :: DAYLIT  = .FALSE.  ! true: date is daylight savings
+        LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time
 
         CHARACTER(300)     BUFFER    ! formatted source info for messages
         CHARACTER(300)     MESG      ! message buffer
         CHARACTER(SRCLEN3) CSRC      ! tmp concat source characteristics
  
-       CHARACTER(16) :: PROGNAME = 'HOURTEMP' ! program name
+        CHARACTER(16) :: PROGNAME = 'HOURTEMP' ! program name
 
 C***********************************************************************
 C   begin body of subroutine HOURTEMP
@@ -109,7 +113,6 @@ C.............  Get maximum number of warnings
             
             INITIAL = .FALSE.
         END IF
-
 C.........  Loop through sources
         DO S = 1, NSRC
 
@@ -117,6 +120,12 @@ C.............  Calculate time slot in output array for this time step
 C               Appropriate 24 hour time will be day starting time (6 AM in local 
 C               time zone ) subtracted from met data time (in GMT)
             TIMESLOT = 1 + ( JTIME - DAYBEGT( S ) ) / 10000 
+
+C.............  Restore daylight saving time if necessay
+            DAYLIT = ISDSTIME( JDATE )
+            IF( DAYLIT .AND. LDAYSAV( S ) ) THEN
+                TIMESLOT = TIMESLOT - 1      ! substract 1hr on DST date
+            END IF
                 
 C.............  If timeslot is less than zero, add 24; if better data comes
 C               along, the old data will get overwritten (helps in case of
