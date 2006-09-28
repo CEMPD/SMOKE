@@ -132,6 +132,13 @@ C.............  Check for #LIST entry
 
                     ELSE
                         EXTFORMAT = ORLFMT
+                        WRITE( MESG,94010 ) 'WARNING: No format '//
+     &                    'included with #LIST ORL entry in '//
+     &                    'inventory input file.'// CRLF() // BLANK5 // 
+     &                    'Assuming ORL point, nonroad, or on-road.'
+
+                        CALL M3MSG2( MESG )
+
                     END IF
 
                 END IF
