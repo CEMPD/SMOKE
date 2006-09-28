@@ -46,7 +46,7 @@ C...........   This module is the inventory arrays
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVSCC, NINVORIS, INVORIS, INVSCC,
-     &                      IORSMTCH, SCCDESC, INVODSC, INVORFP
+     &                      IORSMTCH, SCCDESC, INVODSC, INVORFP,FIREFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NCHARS, SC_BEGP, SC_ENDP, NSRC
@@ -194,7 +194,7 @@ C           determined.
 C.........  Allocate memory for reading data
         ALLOCATE( MXPDPT( NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MXPDPT', PROGNAME )
-        ALLOCATE( NPDPT ( NSTEPS )        , STAT=IOS )
+        ALLOCATE( NPDPT ( NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NPDPT', PROGNAME )
         ALLOCATE( CODEA ( MXPDSRC,NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CODEA', PROGNAME )
@@ -236,7 +236,7 @@ C.........  Determine the actual number of day-specific or hour-specific sources
 
 C.........  Make sure that that actual number of sources over all sources does
 C           not exceed the maximum number of sources over all hours
-        IF( NPDSRC .GT. MXPDSRC ) THEN
+        IF( NPDSRC .GT. MXPDSRC .AND. .NOT. FIREFLAG ) THEN
 
             WRITE( MESG,94010 ) 'INTERNAL ERROR: Actual number of ' //
      &             TYPNAM // 'sources, NPDSRC=', NPDSRC, CRLF() // 
