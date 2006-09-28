@@ -114,9 +114,9 @@ C.........  Source-specific header arrays
 
         CHARACTER(20) :: FRHEADRS( MXPTCHR3+9 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
-     &                                        'Cntry/St/Co FIPS    ',
+     &                                        'Cntry/St/Co         ',
      &                                        'Plant code = FireID ', 
-     &                                        'Source char 1 =LOCID', 
+     &                                        'Source char 1       ', 
      &                                        'Source char 2       ',
      &                                        'Source char 3       ',  
      &                                        'Source char 4       ', 
@@ -124,7 +124,7 @@ C.........  Source-specific header arrays
      &                                        'SCC                 ',  
      &                                        'DOE plant ID        ',  
      &                                        'Boiler code         ',
-     &                                        'MACT code = NFRDS   ',
+     &                                        'MACT code           ',
      &                                        'NAICS code          ',
      &                                        'Source type code    ',
      &                                        'Emission release pt ',  
