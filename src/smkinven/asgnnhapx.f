@@ -2,7 +2,7 @@
         SUBROUTINE ASGNNHAPX
 
 C***********************************************************************
-C  subroutine body starts at line 107
+C  subroutine body starts at line 112
 C
 C  DESCRIPTION:
 C      For each source, find the most specific match to determine
@@ -49,10 +49,11 @@ C...........   This module contains the cross-reference tables
      &                     CHRT05A, CHRT05B, CHRT05C,
      &                     CHRT06, CHRT07,
      &                     CHRT08A, CHRT08B, CHRT08C,
-     &                     CHRT09
+     &                     CHRT09, CHRT10, CHRT11, CHRT12,
+     &                     CHRT13, CHRT14, CHRT15, CHRT16
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, SCCLEV1, SCCLEV2, SCCLEV3
+        USE MODINFO, ONLY: CATEGORY, NSRC, SCCLEV1, SCCLEV2, SCCLEV3
 
         IMPLICIT NONE
 
@@ -102,6 +103,18 @@ C.........  Other local variables
         CHARACTER(FPSLEN3) CFIPS_B  ! tmp FIPS code // level 2 of SCC
         CHARACTER(FPSLEN3) CFIPS_C  ! tmp FIPS code // level 3 of SCC
         CHARACTER(FPSLEN3) CFIPS_D  ! tmp FIPS code // level 4 (all) of SCC
+        CHARACTER(SS5LEN3):: CSRC5=' '! tmp source chars through char5
+        CHARACTER(SS4LEN3):: CSRC4=' '! tmp source chars through char4
+        CHARACTER(SS3LEN3):: CSRC3=' '! tmp source chars through char3
+        CHARACTER(SS2LEN3):: CSRC2=' '! tmp source chars through char2
+        CHARACTER(SS1LEN3):: CSRC1=' '! tmp source chars through char1
+        CHARACTER(SS5LEN3):: CHK16=' '! tmp source chars through char5// SCC
+        CHARACTER(SS4LEN3):: CHK15=' '! tmp source chars through char4// SCC
+        CHARACTER(SS3LEN3):: CHK14=' '! tmp source chars through char3// SCC
+        CHARACTER(SS2LEN3):: CHK13=' '! tmp source chars through char2// SCC
+        CHARACTER(SS1LEN3):: CHK12=' '! tmp source chars through char1// SCC
+        CHARACTER(SS0LEN3):: CHK11=' '! tmp FIPS // Plant // SCC
+        CHARACTER(FPLLEN3):: CHK10=' '! tmp FIPS code // plant id
 
         CHARACTER(16) :: PROGNAME = 'ASGNNHAPX' ! program name
 
@@ -137,6 +150,66 @@ C.............  Set type of SCC
             CSTAS_B = CSTA // TSCC_B
             CSTAS_C = CSTA // TSCC_C
             CSTAS_D = CSTA // TSCC_D
+
+            IF ( CATEGORY == 'POINT' ) THEN
+
+                CHK16   = CSRC( 1:PTENDL3( 7 ) ) // TSCC_D
+                CHK15   = CSRC( 1:PTENDL3( 6 ) ) // TSCC_D
+                CHK14   = CSRC( 1:PTENDL3( 5 ) ) // TSCC_D
+                CHK13   = CSRC( 1:PTENDL3( 4 ) ) // TSCC_D
+                CHK12   = CSRC( 1:PTENDL3( 3 ) ) // TSCC_D
+                CHK11   = CSRC( 1:PTENDL3( 2 ) ) // TSCC_D
+                CHK10   = CSRC( 1:PTENDL3( 2 ) )
+
+                CSRC5   = CSRC( 1:PTENDL3( 7 ) ) 
+                CSRC4   = CSRC( 1:PTENDL3( 6 ) ) 
+                CSRC3   = CSRC( 1:PTENDL3( 5 ) ) 
+                CSRC2   = CSRC( 1:PTENDL3( 4 ) ) 
+                CSRC1   = CSRC( 1:PTENDL3( 3 ) ) 
+
+C.................  Look for plant/char/scc assignments at various levels
+                F6 = FINDC( CHK16, TXCNT( 16 ), CHRT16 )
+                F5 = FINDC( CHK15, TXCNT( 15 ), CHRT15 )
+                F4 = FINDC( CHK14, TXCNT( 14 ), CHRT14 )
+                F3 = FINDC( CHK13, TXCNT( 13 ), CHRT13 )
+                F2 = FINDC( CHK12, TXCNT( 12 ), CHRT12 )
+
+C.................  Look for plant/char assignments at various levels
+                IF( F6 .LE. 0 ) F6 = FINDC( CSRC5, TXCNT( 16 ), CHRT16 )
+                IF( F5 .LE. 0 ) F5 = FINDC( CSRC4, TXCNT( 15 ), CHRT15 ) 
+                IF( F4 .LE. 0 ) F4 = FINDC( CSRC3, TXCNT( 14 ), CHRT14 ) 
+                IF( F3 .LE. 0 ) F3 = FINDC( CSRC2, TXCNT( 13 ), CHRT13 ) 
+                IF( F2 .LE. 0 ) F2 = FINDC( CSRC1, TXCNT( 12 ), CHRT12 ) 
+
+C.................  Look for plant/SCC and plant assignments
+                F1 = FINDC( CHK11, TXCNT( 11 ), CHRT11 ) 
+                F0 = FINDC( CHK10, TXCNT( 10 ), CHRT10 )
+
+C.................  Choose the most specific assignment first
+                IF( F6 .GT. 0 ) THEN
+                    LNONHAP( S ) = .FALSE.
+                    CYCLE                       !  to end of sources-loop
+                ELSE IF( F5 .GT. 0 ) THEN
+                    LNONHAP( S ) = .FALSE.
+                    CYCLE                       !  to end of sources-loop
+                ELSE IF( F4 .GT. 0 ) THEN
+                    LNONHAP( S ) = .FALSE.
+                    CYCLE                       !  to end of sources-loop
+                ELSE IF( F3 .GT. 0 ) THEN
+                    LNONHAP( S ) = .FALSE.
+                    CYCLE                       !  to end of sources-loop
+                ELSE IF( F2 .GT. 0 ) THEN
+                    LNONHAP( S ) = .FALSE.
+                    CYCLE                       !  to end of sources-loop
+                ELSE IF( F1 .GT. 0 ) THEN
+                    LNONHAP( S ) = .FALSE.
+                    CYCLE                       !  to end of sources-loop
+                ELSE IF( F0 .GT. 0 ) THEN
+                    LNONHAP( S ) = .FALSE.
+                    CYCLE                       !  to end of sources-loop
+                END IF
+                  
+            END IF
 
 C.............  Try for any FIPS code & SCC matches; then any Cy/st code & 
 C               SCC matches
