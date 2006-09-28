@@ -60,10 +60,11 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
+        LOGICAL         ENVYN
         INTEGER         STR2INT
         LOGICAL         SETSCCTYPE
 
-        EXTERNAL   CRLF, STR2INT, SETSCCTYPE
+        EXTERNAL   CRLF, ENVYN, STR2INT, SETSCCTYPE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: OPTYPE ! operation type (tmprl,spec,ctg...)
@@ -130,6 +131,8 @@ C...........   Other local variables
         LOGICAL    :: TFLAG = .FALSE.  ! true: operation type is temporal
         LOGICAL    :: XFLAG = .FALSE.  ! true: operation type is nonhapVOC exclusion
         LOGICAL    :: YFLAG = .FALSE.  ! true: operation type is area-to-point
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subroutine called
+        LOGICAL, SAVE :: FULLSCC  = .FALSE. ! true: use only full SCC entries
 
         CHARACTER          CDUM          ! dummy character string
         CHARACTER(256)     BUFFER        ! source definition buffer
@@ -165,6 +168,14 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine XREFTBL
+
+C.........  For first time routine is called ...
+        IF( FIRSTIME ) THEN
+
+            MESG = 'Use only full SCC matches'
+            FULLSCC = ENVYN ( 'FULLSCC_ONLY', MESG, .FALSE., I )
+
+        ENDIF
 
         LOPT = LEN_TRIM( OPTYPE )
 
@@ -467,7 +478,7 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
 
                     END IF
 
-                ELSE IF( SCCR .EQ. SCRZERO ) THEN        ! Left SCC
+                ELSE IF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 
                     NT = 2
                     IF( TSCC .NE. PTSCC( NT ) ) THEN
@@ -500,7 +511,8 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
 C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
-                IF ( OFLAG .AND. NT .NE. 1 .AND. TSCC .NE. SCCZERO )THEN
+                IF ( .NOT. FULLSCC .AND. OFLAG .AND. NT .NE. 1 .AND. 
+     &                TSCC .NE. SCCZERO )THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  Level-1 SCC
 
@@ -627,7 +639,7 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                         NT = 0
                     END IF
 
-                ELSEIF( SCCR .EQ. SCRZERO ) THEN         ! left SCC
+                ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN         ! left SCC
 
                     NT = 5
                     IF( IFIP .NE. PIFIP( NT ) .OR. 
@@ -666,7 +678,8 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
 C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
-                IF ( OFLAG .AND. NT .NE. 4 .AND. TSCC .NE. SCCZERO) THEN
+                IF ( .NOT. FULLSCC .AND. OFLAG .AND. NT .NE. 4 .AND. 
+     &                TSCC .NE. SCCZERO ) THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  State/Level-1 SCC
 
@@ -800,7 +813,7 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                         NT = 0
                     END IF
 
-                ELSEIF( SCCR .EQ. SCRZERO ) THEN        ! Left SCC
+                ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 
                     NT = 8
                     IF( IFIP .NE. PIFIP( NT ) .OR. 
@@ -839,7 +852,8 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
 C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
-                IF ( OFLAG .AND. NT .NE. 7 .AND. TSCC .NE. SCCZERO) THEN
+                IF ( .NOT. FULLSCC .AND. OFLAG .AND. NT .NE. 7 .AND. 
+     &               TSCC .NE. SCCZERO ) THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  FIPS/Level-1 SCC
 
@@ -930,7 +944,7 @@ C                        since in this section, SCC=0
 
                     ENDDO           ! End loop on plant characteristics
 
-                ELSEIF( SCCR .EQ. SCRZERO ) THEN         ! Left SCC
+                ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN         ! Left SCC
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
 
@@ -971,6 +985,7 @@ C.....................  Process NT 16 through 11
      &                             'be specified'
                             CALL REPORT_INVALID_XREF( MESG )
                             NT = 0
+			    EXIT                      ! End loop with NT
 
                         END IF
 
