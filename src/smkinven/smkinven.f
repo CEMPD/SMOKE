@@ -33,7 +33,6 @@ C  REVISION  HISTORY:
 C    started 10/98 by M Houyoux as rawpoint.f from emspoint.F 4.3
 C    smkinven changes started 4/98
 C    toxics changes 11/2002  A. Holland
-C    Addition of wildfire orl point source 3/06  B.H. Baek
 C
 C***************************************************************************
 C
@@ -170,7 +169,7 @@ C...........   Other local variables
         LOGICAL         STKFLG           ! true: check stack parameters
 
         CHARACTER(5)          TYPNAM      !  'day' or 'hour' for import
-        CHARACTER(60)         VAR_FORMULA !  formula string
+        CHARACTER(512)        VAR_FORMULA !  formula string
         CHARACTER(256)        MESG        !  message buffer
         CHARACTER(IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
         CHARACTER(PHYLEN3) :: VARPATH = './' ! path for pol/act files
@@ -239,7 +238,7 @@ C               are contained in the module MODSOURC
 
 C.............  Process source information and store in sorted order
             CALL M3MSG2( 'Processing inventory sources...' )
-
+            
             CALL PROCINVSRCS( NRAWSRCS )
 
 C.............  Read the data from the raw inventory files and store in 
@@ -258,10 +257,13 @@ C.............  Check if ORL inventory and reset NHAPEXCLUDE if needed
 
 C.............  Process inventory records and store in sorted order
             CALL M3MSG2( 'Processing inventory data...' )
+
             CALL PROCINVEN( NRAWBP, UDEV, YDEV, CDEV, LDEV ) 
 
 C.............  Integrate criteria and toxic pollutants
-            IF( ORLFLG ) CALL SETNONHAP
+            IF( ORLFLG ) THEN
+                CALL SETNONHAP
+            END IF
 
 C.............  Determine memory needed for actual pollutants list and actual
 C               activities list and allocate them. Invstat has been updated
@@ -269,10 +271,9 @@ C               to be +/- 2 depending on whether the pollutant or activity was
 C               present in the inventory.
             NIPOL = 0
             NIACT = 0
-
             DO I = 1, MXIDAT
-               IF( INVSTAT( I ) .GT.  1 ) NIPOL = NIPOL + 1
-               IF( INVSTAT( I ) .LT. -1 ) NIACT = NIACT + 1
+                IF( INVSTAT( I ) .GT.  1 ) NIPOL = NIPOL + 1
+                IF( INVSTAT( I ) .LT. -1 ) NIACT = NIACT + 1
             ENDDO
 
             NIPPA = NIPOL + NIACT
@@ -311,14 +312,13 @@ C.............  These are for opening output file and processing output data
                    AVIDX ( J2 ) = I
                    ACTVTY( J2 ) = INVDNAM( I )
                    EANAM ( J1 ) = INVDNAM( I )
-              END IF
+               END IF
 
             END DO
 
 C.............   Fix stack parameters for point sources
 C.............   Some of these arguments are variables that are defined in the
 C                module MODSOURC
-
             IF( CATEGORY .EQ. 'POINT' ) THEN
                 MESG = 'Check stack parameter values'
                 STKFLG = ENVYN( 'CHECK_STACKS_YN', MESG, .TRUE., IOS )
@@ -359,15 +359,23 @@ C.............  NOTE - Monthly not currently supported
         END IF  ! For ASCII annual/ave-day inputs
 
 C.........  Input gridded I/O API inventory data
-        IF( GFLAG ) CALL RDGRDAPI( GNAME, GRDNM ) 
+        IF( GFLAG ) THEN
+
+            CALL RDGRDAPI( GNAME, GRDNM ) 
+
+c note: STOPPED HERE
+
+        END IF  ! For gridded I/O API NetCDF inventory
 
 C.........  Output SMOKE inventory files
         IF( IFLAG .OR. GFLAG ) THEN
 
 C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
+
             CALL OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, MDEV, SDEV,
      &                       ADEV, VARPATH, VAR_FORMULA )
+
             MESG = 'Writing SMOKE ' // TRIM( CATEGORY ) // 
      &             ' SOURCE INVENTORY file...'
 
