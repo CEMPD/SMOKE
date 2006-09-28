@@ -292,102 +292,95 @@ C.............  Write the status of reading surrogate files.
      &                          'to define the size of gridding matrix'
             CALL M3MSG2( MESG )
 
-C.............  Warning message when there are no surrogate available due to out of domain
+C.............  Warning message when there are no surrogate available.
             IF( NTL .EQ. 0 ) THEN
-                WRITE( MESG,94010 ) 'WARNING: The surrogate', TGTSRG,
-     &              ' does not exist within a domain range: emissions'//
-     &              ' of sources assigned to', TGTSRG,
-     &              ' will be set to zero'
-                CALL M3MESG( MESG )
+                WRITE( MESG,94010 ) 'ERROR: The surrogate', TGTSRG,
+     &              ' file does not exist in the $GE_DAT/SRGDESC'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                SRGFRAC = 0.0
-                SRGCSUM = 0.0
+            END IF
 
-            ELSE
-C.................  Allocate memory for indices to surrogates tables for each source
-                ALLOCATE( TMPLINE( NTL ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'TMPLINE', PROGNAME )
+C.............  Allocate memory for indices to surrogates tables for each source
+            ALLOCATE( TMPLINE( NTL ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TMPLINE', PROGNAME )
 
-C.................  If surrogates are needed, read and store the gridding surrogates, 
-C                   allocate memory for the surrogate assignments, and assign
-C                   surrogates to each source.
-                NT = 0
-                TMPLINE = ' '
-                TSRGFNAM = ' '
+C............  If surrogates are needed, read and store the gridding surrogates, 
+C              allocate memory for the surrogate assignments, and assign
+C              surrogates to each source.
+            NT = 0
+            TMPLINE = ' '
+            TSRGFNAM = ' '
 
-                 DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
+             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
 
-C.....................  Prompt for and open I/O API output file(s)...
-                    CALL GETENV( 'SRGPRO_PATH', NAMBUF )
-                    WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ),
-     &                                         SRGFNAM( I )
+C.................  Prompt for and open I/O API output file(s)...
+                CALL GETENV( 'SRGPRO_PATH', NAMBUF )
+                WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
 
-                    IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
+                IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
 
-                    IF( NAMBUFT .NE. TSRGFNAM  ) THEN
-                        CALL OPEN_SRGFILE
+                IF( NAMBUFT .NE. TSRGFNAM  ) THEN
+                    CALL OPEN_SRGFILE
 
-C.........................  Reading surrogate files
-                        DO JJ = 1, NLINES
+C.....................  Reading surrogate files
+                    DO JJ = 1, NLINES
 
-                           READ ( GDEV, 93000, END=113, IOSTAT=IOS )LINE
+                       READ ( GDEV, 93000, END=113, IOSTAT=IOS )LINE
 
-                           IF ( BLKORCMT( LINE ) ) CYCLE
+                       IF ( BLKORCMT( LINE ) ) CYCLE
 
-                           CALL PARSLINE( LINE, MXSEG, SEGMENT )
-                           SSC    = STR2INT ( SEGMENT( 1 ) )
-                           TCOL   = STR2INT ( SEGMENT( 3 ) )
-                           TROW   = STR2INT ( SEGMENT( 4 ) )
+                       CALL PARSLINE( LINE, MXSEG, SEGMENT )
+                       SSC    = STR2INT ( SEGMENT( 1 ) )
+                       TCOL   = STR2INT ( SEGMENT( 3 ) )
+                       TROW   = STR2INT ( SEGMENT( 4 ) )
 
-C............................  Check the value of the column number
-                           IF( TCOL .LT. 0 .OR.  TCOL .GT. SRGNCOLS .OR.
-     &                       ( TROW .EQ. 0 .AND. TCOL .NE. 0 ) ) THEN
-                               WFLAG = .TRUE.
-                           END IF
+C........................  Check the value of the column number
+                       IF( TCOL .LT. 0 .OR.  TCOL .GT. SRGNCOLS .OR.
+     &                   ( TROW .EQ. 0 .AND. TCOL .NE. 0 ) ) THEN
+                           WFLAG = .TRUE.
+                       END IF
               
-C............................  Check the value of the row number
-                           IF( TROW .LT. 0 .OR.  TROW .GT. SRGNROWS .OR.
-     &                       ( TCOL .EQ. 0 .AND. TROW .NE. 0 ) ) THEN
-                                WFLAG = .TRUE.
+C........................  Check the value of the row number
+                       IF( TROW .LT. 0 .OR.  TROW .GT. SRGNROWS .OR.
+     &                   ( TCOL .EQ. 0 .AND. TROW .NE. 0 ) ) THEN
+                           WFLAG = .TRUE.
                            CALL M3MESG( MESG )                    
 
-C............................  Special treatment for cell (0,0) (skip for now)
-                           ELSE IF( TROW .EQ. 0 .AND. TCOL. EQ. 0 ) THEN
-                               CYCLE
+C........................  Special treatment for cell (0,0) (skip for now)
+                       ELSE IF( TROW .EQ. 0 .AND. TCOL. EQ. 0 ) THEN
+                           CYCLE
 
-                           END IF
+                       END IF
 
-C............................  Adjust column and row for subgrid
-                           TCOL = TCOL - XOFF
-                           TROW = TROW - YOFF
+C........................  Adjust column and row for subgrid
+                       TCOL = TCOL - XOFF
+                       TROW = TROW - YOFF
 
-C............................  Skip entry after subgrid adjustment
-                           IF( TCOL .LE. 0 .OR. TCOL .GT. NCOLS .OR.
-     &                         TROW .LE. 0 .OR. TROW .GT. NROWS ) CYCLE
+C........................  Skip entry after subgrid adjustment
+                       IF( TCOL .LE. 0 .OR. TCOL .GT. NCOLS .OR.
+     &                     TROW .LE. 0 .OR. TROW .GT. NROWS ) CYCLE
 
-C............................  Skip entry if rows and columns are out of range
-                           IF( WFLAG ) CYCLE
+C........................  Skip entry if rows and columns are out of range
+                       IF( WFLAG ) CYCLE
 
-C............................  Skip entry if SSC is not in the assigned SRGLIST by source
-                           IF( SSC .EQ. TGTSRG ) THEN
-                               NT = NT + 1
-                               TMPLINE( NT ) = LINE
-                           END IF
+C........................  Skip entry if SSC is not in the assigned SRGLIST by source
+                       IF( SSC .EQ. TGTSRG ) THEN
+                           NT = NT + 1
+                           TMPLINE( NT ) = LINE
+                       END IF
                        
-113                     END DO
+113                 END DO
 
-                        TSRGFNAM = NAMBUFT    ! store a previous surrogate file name buffer
-                        CLOSE( GDEV )
+                    TSRGFNAM = NAMBUFT    ! store a previous surrogate file name buffer
+                    CLOSE( GDEV )
 
-                    END IF      ! skip if surrogate file has the same srg file
+                END IF      ! skip if surrogate file has the same srg file
 
-                END DO       ! loop over all surrogate files in SRGDESC file
+            END DO       ! loop over all surrogate files in SRGDESC file
 
-                CALL RDSRG4GRD( NT, TMPLINE, CFLAG ) ! populating surrogates
+            CALL RDSRG4GRD( NT, TMPLINE, CFLAG ) ! populating surrogates
 
-                DEALLOCATE( TMPLINE )
-
-            END IF   ! end of populating surrogates
+            DEALLOCATE( TMPLINE )
 
 C.............  Loop over sources per each assigned surrogate
             DO S = 1, NSRC
