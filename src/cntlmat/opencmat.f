@@ -72,7 +72,7 @@ C.........  SUBROUTINE ARGUMENTS
 C.........  Other local variables
         INTEGER          J, N           !  counters and indices
         INTEGER          IOS            !  i/o status
-        INTEGER		 NVARS          !  number of output variables
+        INTEGER					 NVARS          !  number of output variables
 
         CHARACTER(NAMLEN3) NAMBUF   ! file name buffer
         CHARACTER(300)     MESG     ! message buffer
