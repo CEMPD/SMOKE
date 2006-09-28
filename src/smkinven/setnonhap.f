@@ -5,7 +5,7 @@ C**************************************************************************
 C  subroutine body starts at line 
 C
 C  DESCRIPTION:
-C      This subroutine is integrates criteria and toxics pollutant 
+C      This subroutine integrates criteria and toxics pollutant 
 C      emissions by creating NONHAP values.
 C
 C  PRECONDITIONS REQUIRED:
@@ -192,7 +192,8 @@ C.............  Initialize values for this source
             LASTFLAG = .FALSE.
 
 C.............  Process source if it is not integrated
-            IF( ALLOCATED( LNONHAP ) .AND. .NOT. LNONHAP( I ) ) THEN
+            IF( ALLOCATED( LNONHAP ) ) THEN
+            IF( .NOT. LNONHAP( I ) ) THEN
 
 C.................  Loop through pollutants for this source
                 DO J = 1, NPCNT( I )
@@ -246,6 +247,7 @@ C.........................  If found, set pollutant for current source to NOI po
 C.................  Skip rest of loop since we're done with this source
                 CYCLE
 
+            END IF
             END IF
 
 C.............  Loop through pollutants for this source            
