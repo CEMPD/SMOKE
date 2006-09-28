@@ -47,9 +47,6 @@ C.........  This module contains the information about the source category
      &                     NIPOL, NPPOL, NIACT, NPACT, NCHARS,
      &                     JSCC, JSTACK
 
-C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: FIREFLAG
-
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
         
@@ -99,6 +96,7 @@ C...........   Other local variables
         INTEGER       LMNS      ! position of '-' in formula
         INTEGER       LPLS      ! position of '+' in formula
         INTEGER       NIOVARS   ! Number of I/O API file non-emis variables
+        INTEGER       NCOMP     ! no. of computed variables
         INTEGER       NDATMAX   ! Max no of pols+activitys, based on I/O API
         INTEGER       NNPVAR    ! No. non-pollutant inventory variables
         INTEGER       YEAR      ! predominant year of inventory
@@ -160,12 +158,14 @@ C.........  Get output inventory file names given source category
 C.........  Open map-formatted inventory file without prompting
         IDEV = GETEFILE( ENAME, .FALSE., .TRUE., PROGNAME )
         IF ( IDEV .LT. 0 ) THEN     !  failure to open
+
             MESG = 'Could not open INVENTORY MAP file:' // CRLF() // 
      &              BLANK10 // TRIM( ENAME ) // '.'
             CALL M3MSG2( MESG )
 
             MESG = 'Ending program.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         END IF      !  if getefile() failed
 
 C.........  Evaluate physical file name of inventory map
@@ -265,8 +265,17 @@ C.........  Set number of variables and allocate file description arrays
         END IF
 
 C........  Get setup up for later processing of a formula for adding a variable
-        IF( VAR_FORMULA .NE. ' ' ) THEN
-            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + 1
+        L = LEN_TRIM( VAR_FORMULA )
+        IF( L .GT. 0 ) THEN
+
+C.............  Figure out how many variables there are based on the
+C               number of commas found in the string.
+            NCOMP = 1
+            DO I = 1, L
+                IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
+            ENDDO
+
+            WRITE( FDESC3D( 5 ),94010 ) '/POLLUTANTS/', NIPOL + NCOMP
         END IF  
 
 C.........  Define source characteristic variables that are not strings
@@ -365,6 +374,7 @@ C.........  Define source characteristic variables that are not strings
             J = J + 1
 
         CASE( 'POINT' )
+
             VNAMESET( J ) = 'ISIC'
             VTYPESET( J ) = M3INT
             VUNITSET( J ) = 'n/a'
