@@ -1139,8 +1139,9 @@ C.................  Apply ungridding matrix
      &                         PRESSRC )
 
 C.................  Create hourly meteorology arrays by source
-                CALL HOURTEMP( NSRC, JTIME, DAYBEGT, COUNTYSRC, 
-     &                         MINTEMP, MAXTEMP, ALT_DATA, NDAYSRC )
+                CALL HOURTEMP( NSRC, JDATE, JTIME, DAYBEGT, COUNTYSRC, 
+     &                         MINTEMP, MAXTEMP, ALT_DATA, LDAYSAV, 
+     &                         NDAYSRC )
      
             END IF  ! check for using alternate data or day averaging
 
