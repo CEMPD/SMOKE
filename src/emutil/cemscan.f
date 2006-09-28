@@ -41,7 +41,7 @@ C.........  EXTERNAL FUNCTIONS
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
-        INTEGER, PARAMETER :: MXSEG = 12        ! number of segments in line
+        INTEGER, PARAMETER :: MXSEG = 16        ! number of segments in line
 
 C.........  LOCAL VARIABLES
 
