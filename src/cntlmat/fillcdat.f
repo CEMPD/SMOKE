@@ -45,7 +45,9 @@ C.........  This module contains the control packet data and control matrices
      &                      CSCCREA, CSPFREA, IPRJSIC, PRJFC, IEMSSIC,
      &                      BASCEFF, BASREFF, BASRLPN, EMSCEFF, EMSREFF,
      &                      EMSRLPN, EMSPTCF, EMSTOTL, CTLRPLC,
-     &                      MACEXEFF, MACNWEFF, MACNWFRC, CMACSRCTYP
+     &                      MACEXEFF, MACNWEFF, MACNWFRC, CMACSRCTYP, 
+     &                      CTGCOMT, CTLCOMT, ALWCOMT,
+     &                      REACOMT, PRJCOMT, EMSCOMT, MACCOMT
 
         IMPLICIT NONE
         
@@ -63,7 +65,6 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: JT        ! index to control data tables
         TYPE(CPACKET),INTENT (IN) :: PKTINFO   ! packet information
 
-	CHARACTER(300)   MESG                  ! message buffer
         CHARACTER(16) :: PROGNAME = 'FILLCDAT' ! program name
 
 C***********************************************************************
@@ -76,6 +77,7 @@ C   Begin body of subroutine FILLCDAT
             CUTCTG ( JT ) = PKTINFO%FAC2
             FACMACT( JT ) = PKTINFO%FAC3
             FACRACT( JT ) = PKTINFO%FAC4
+            CTGCOMT( JT ) = PKTINFO%COMMENT
 
         CASE( 'CONTROL' )
             ICTLEQUP( JT ) = INT    ( PKTINFO%FAC1 )
@@ -85,14 +87,16 @@ C   Begin body of subroutine FILLCDAT
             FACRLPN ( JT ) = PKTINFO%FAC4
             IF( PKTINFO%REPFLAG == 'R' .OR.
      &          PKTINFO%REPFLAG == 'Y'      ) THEN
-                CTLRPLC = .TRUE.
+                CTLRPLC( JT ) = .TRUE.
             END IF
+            CTLCOMT( JT ) = PKTINFO%COMMENT
 
         CASE( 'ALLOWABLE' )
             IALWSIC ( JT ) = STR2INT( PKTINFO%CSIC )
             FACALW  ( JT ) = PKTINFO%FAC1
             EMCAPALW( JT ) = PKTINFO%FAC2
             EMREPALW( JT ) = PKTINFO%FAC3
+            ALWCOMT( JT ) = PKTINFO%COMMENT
 
         CASE( 'REACTIVITY' )
             EMREPREA( JT ) = PKTINFO%FAC1
@@ -100,10 +104,12 @@ C   Begin body of subroutine FILLCDAT
             MKTPNREA( JT ) = PKTINFO%FAC3
             CSCCREA ( JT ) = PKTINFO%NSCC
             CSPFREA ( JT ) = PKTINFO%TMPPRF
+            REACOMT( JT ) = PKTINFO%COMMENT
 
         CASE( 'PROJECTION' )
             IPRJSIC( JT ) = STR2INT( PKTINFO%CSIC )
             PRJFC  ( JT ) = PKTINFO%FAC1
+            PRJCOMT( JT ) = PKTINFO%COMMENT
 
         CASE( 'EMS_CONTROL' )
             IEMSSIC ( JT ) = STR2INT( PKTINFO%CSIC )
@@ -117,6 +123,7 @@ C   Begin body of subroutine FILLCDAT
      &          EMSPTCF ( JT ) = PKTINFO%FAC7
             IF( PKTINFO%FAC8 .GT. 0. ) 
      &          EMSTOTL ( JT ) = PKTINFO%FAC8
+            EMSCOMT( JT ) = PKTINFO%COMMENT
 
         CASE( 'MACT' )
             MACEXEFF( JT ) = PKTINFO%FAC1
@@ -125,25 +132,16 @@ C   Begin body of subroutine FILLCDAT
             
             CMACSRCTYP( JT ) = PKTINFO%CSTYP
             CALL PADZERO( CMACSRCTYP( JT ) )
+            MACCOMT( JT ) = PKTINFO%COMMENT
             
-C.............  Make sure src type is only 00, 01, 02, 03 or 04            
+C.............  Make sure src type is only 00, 01, or 02            
             IF( CMACSRCTYP( JT ) /= '01' .AND.
-     &          CMACSRCTYP( JT ) /= '02' .AND.
-     &          CMACSRCTYP( JT ) /= '03' .AND. 
-     &          CMACSRCTYP( JT ) /= '04'      ) THEN
+     &          CMACSRCTYP( JT ) /= '02'       ) THEN
                 CMACSRCTYP( JT ) = '00'
-		WRITE( MESG,94010 ) 'WARNING: Source type '//
-     &            'code at entry ', JT, ' is invalid. Source '//
-     &            'type code will be set to 00.'
-		CALL M3MESG( MESG )
             END IF
 
         END SELECT
 
         RETURN
-
-C******************  FORMAT  STATEMENTS   ******************************
-
-94010	FORMAT( 10( A, :, I4, :, 1X ) )
 
         END SUBROUTINE FILLCDAT
