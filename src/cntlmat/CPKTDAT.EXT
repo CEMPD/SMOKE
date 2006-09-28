@@ -29,6 +29,8 @@ C Last updated: $Date$
 C
 C************************************************************************
 
+        INTEGER, PARAMETER :: CMTLEN3 = 120
+
         TYPE :: CPACKET
 
             SEQUENCE
@@ -58,5 +60,6 @@ C************************************************************************
             CHARACTER          :: APPFLAG ! tmp char application flag
             CHARACTER          :: REPFLAG ! tmp char replacement flag
             CHARACTER(STPLEN3) :: CSTYP   ! tmp source type code
+            CHARACTER(CMTLEN3) :: COMMENT ! tmp comment from control packet
 
         END TYPE
