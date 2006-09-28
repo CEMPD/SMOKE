@@ -41,6 +41,8 @@
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
 !.........  Sorted list of point sources for SMOKE inventory file
+        INTEGER,              PUBLIC:: NFRPOL       !  no. pollutants in wildfire case
+
         INTEGER, POINTER,     PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
         INTEGER, POINTER,     PUBLIC:: ISIC  ( : )  !  source SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
@@ -84,7 +86,8 @@
         CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
         CHARACTER(NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
         CHARACTER(STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
-        
+        CHARACTER(CHRLEN3), ALLOCATABLE, PUBLIC:: FIREPOL( : ) ! names of pollutant from wild fire
+       
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
 
 !.........  Unsorted list of point sources for SMOKE inventory file
