@@ -47,7 +47,8 @@ C.........  This module contains the control packet data and control matrices
      &                      PRJFC, IEMSSIC, BASCEFF, BASREFF, BASRLPN, 
      &                      EMSCEFF, EMSREFF, EMSRLPN, EMSPTCF, EMSTOTL,
      &                      CTLRPLC, MACEXEFF, MACNWEFF, MACNWFRC,
-     &                      CMACSRCTYP
+     &                      CMACSRCTYP, CTGCOMT, CTLCOMT, ALWCOMT, 
+     &                      REACOMT, PRJCOMT, EMSCOMT, MACCOMT
 
         IMPLICIT NONE
         
@@ -259,10 +260,13 @@ C.........  CTG packet
         CALL CHECKMEM( IOS, 'FACMACT', PROGNAME )
         ALLOCATE( FACRACT( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FACRACT', PROGNAME )
+        ALLOCATE( CTGCOMT( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         CUTCTG  = 0.  ! array
         FACCTG  = 0.  ! array
         FACMACT = 0.  ! array
         FACRACT = 0.  ! array
+        CTGCOMT = " " ! array
 
 C.........  CONTROL packet
         J = PKTCNT( 2 ) 
@@ -278,12 +282,15 @@ C.........  CONTROL packet
         CALL CHECKMEM( IOS, 'FACRLPN', PROGNAME )
         ALLOCATE( CTLRPLC( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CTLRPLC', PROGNAME )
+        ALLOCATE( CTLCOMT( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         ICTLEQUP = 0   ! array
         ICTLSIC  = 0   ! array
         FACCEFF  = 0.  ! array
         FACREFF  = 0.  ! array
         FACRLPN  = 0.  ! array
         CTLRPLC = .FALSE.  ! array
+        CTLCOMT = " " ! array
 
 C.........  ALLOWABLE packet
         J = PKTCNT( 3 ) 
@@ -295,10 +302,13 @@ C.........  ALLOWABLE packet
         CALL CHECKMEM( IOS, 'EMCAPALW', PROGNAME )
         ALLOCATE( EMREPALW( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMREPALW', PROGNAME )
+        ALLOCATE( ALWCOMT( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         IALWSIC  = 0  ! array
         FACALW   = 0. ! array
         EMCAPALW = 0. ! array
         EMREPALW = 0. ! array
+        ALWCOMT = " " ! array
 
 C.........  REACTIVITY packet
         J = PKTCNT( 5 ) 
@@ -314,12 +324,15 @@ C.........  REACTIVITY packet
         CALL CHECKMEM( IOS, 'CSCCREA', PROGNAME )
         ALLOCATE( CSPFREA( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSPFREA', PROGNAME )
+        ALLOCATE( REACOMT( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         IREASIC  = 0   ! array
         EMREPREA = 0.  ! array
         PRJFCREA = 0.  ! array
         MKTPNREA = 0.  ! array
         CSCCREA  = ' ' ! array
         CSPFREA  = ' ' ! array
+        REACOMT = " " ! array
 
 C.........  PROJECTION packet
         J = PKTCNT( 6 )
@@ -327,8 +340,11 @@ C.........  PROJECTION packet
         CALL CHECKMEM( IOS, 'IPRJSIC', PROGNAME )
         ALLOCATE( PRJFC( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PRJFC', PROGNAME )
+        ALLOCATE( PRJCOMT( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         IPRJSIC = 0   ! array
         PRJFC   = 0.  ! array
+        PRJCOMT = " " ! array
 
 C.........  EMS-95 CONTROL packet
         J = PKTCNT( 7 ) 
@@ -350,6 +366,8 @@ C.........  EMS-95 CONTROL packet
         CALL CHECKMEM( IOS, 'EMSPTCF', PROGNAME )
         ALLOCATE( EMSTOTL( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMSTOTL', PROGNAME )
+        ALLOCATE( EMSCOMT( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         IEMSSIC  = 0    ! array
         BASCEFF  = 0.   ! array
         BASRLPN  = 100. ! array
@@ -357,6 +375,7 @@ C.........  EMS-95 CONTROL packet
         EMSRLPN  = 100. ! array
         EMSPTCF  = 1.   ! array - initialize because it will be used
         EMSTOTL  = 0.   ! array - initialize because it will be checked
+        EMSCOMT = " " ! array
 
 C.........  MACT packet
         J = PKTCNT( 8 )
@@ -368,10 +387,13 @@ C.........  MACT packet
         CALL CHECKMEM( IOS, 'MACNWEFF', PROGNAME )
         ALLOCATE( MACNWFRC( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MACNWFRC', PROGNAME )
+        ALLOCATE( MACCOMT( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         CMACSRCTYP = '00'  ! array
         MACEXEFF = 0.  ! array
         MACNWEFF = 0.  ! array
         MACNWFRC = 0.  ! array
+        MACCOMT = " " ! array
 
 C.........  Make sure that at least one packet is defined
         J = 0
