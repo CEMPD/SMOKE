@@ -625,7 +625,7 @@ C.................  Otherwise, not a list file, so exit
 
 C.............  Create a list of pollutants (#ORL FIRE ONLY)
 C.............  Check the header of #ORL FIRE (wildfire case)
-            L1 = INDEX( LINE, '#DATA' )
+            L1 = INDEX( LINE, 'POLLUTANT' )
 
             IF( L1 > 0 .AND. FIRSTIME .AND. FIREFLAG  ) THEN
 
@@ -672,7 +672,6 @@ C..................  Stroing a list of all pollutants available in wildfire
                 END DO
 
                 FIRSTIME = .FALSE.
-                L1 = 0
                 CYCLE
 
             ELSE IF( L1 > 0 .AND. FIREFLAG )THEN
@@ -725,7 +724,6 @@ C..................... Rebuild a list of entire pollutant names
                     END DO
                     CYCLE
                 END IF
-                L1 = 0
 
             END IF
 
@@ -960,8 +958,8 @@ C                   great than zero. reset it to a missing value '-9.0' if not.
                 END IF
             END IF
                 
-            IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
-     &          CURFMT == ORLNPFMT .OR. CURFMT /= ORLFIREFMT ) THEN
+            IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT .AND.
+     &            CURFMT /= ORLFIREFMT ) .OR. CURFMT == ORLNPFMT ) THEN
                 IF( .NOT. CHKINT( SIC ) ) THEN
                     IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: SIC code is ' //
