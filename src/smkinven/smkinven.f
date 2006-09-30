@@ -375,6 +375,7 @@ C.............  Open output I/O API and ASCII files
 
             CALL OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, MDEV, SDEV,
      &                       ADEV, VARPATH, VAR_FORMULA )
+            print*,ENAME
 
             MESG = 'Writing SMOKE ' // TRIM( CATEGORY ) // 
      &             ' SOURCE INVENTORY file...'
