@@ -625,7 +625,7 @@ C.................  Otherwise, not a list file, so exit
 
 C.............  Create a list of pollutants (#ORL FIRE ONLY)
 C.............  Check the header of #ORL FIRE (wildfire case)
-            L1 = INDEX( LINE, 'POLLUTANT' )
+            L1 = INDEX( LINE, '#DATA' )
 
             IF( L1 > 0 .AND. FIRSTIME .AND. FIREFLAG  ) THEN
 
