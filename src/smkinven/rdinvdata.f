@@ -650,14 +650,7 @@ C.................  Count no of pollutants available
                 IF( L4 < 1 ) SEGMENT( NSEG-2 ) = 'ACRESBURNED' ! adding acres burned 
                 IF( L5 < 1 ) SEGMENT( NSEG-3 ) = 'ENDHOUR'     ! adding ending hour
                 IF( L6 < 1 ) SEGMENT( NSEG-4 ) = 'BEGHOUR'     ! adding beginning hour
-                IF( L7 > 0 .AND. L8 < 1 ) THEN
-C.................  Get environment variable SMK_FORMULA settings
-                    IF(  CALL ENVSTR( SMKFORM, ' ', ' ', FORMULA, IOS )
-
-C.................  Get setup up for later processing of a formula for adding a variable
-                    L9 = INDEX( FORMULA , 'PMC' )
-                    IF( L9 < 1 ) SEGMENT( NSEG-5 ) = 'PMC'     ! adding PMC
-                END IF
+                IF( L7 > 0 .AND. L8 < 1 ) SEGMENT( NSEG-5 ) = 'PMC'     ! adding coarse PM
 
                 DO I = 2, NSEG
                     IF( SEGMENT( I ) == ' ' ) CYCLE 
@@ -694,13 +687,8 @@ C.................  Separate line into segments
                 L8 = INDEX( LINE, 'PMC' )
 
                 IF( L7 > 0 .AND. L8 < 1 ) THEN
-C.................  Get environment variable SMK_FORMULA settings
-                    IF(  CALL ENVSTR( SMKFORM, ' ', ' ', FORMULA, IOS )
-
-C.................  Get setup up for later processing of a formula for adding a variable
-                    L9 = INDEX( FORMULA , 'PMC' )
                     NP = INDEX1( 'PMC', K, FIREPOL )
-                    IF( L9 < 1 .AND. NP < 1 ) SEGMENT( NSEG ) = 'PMC' ! adding PMC
+                    IF( NP < 1 ) SEGMENT( NSEG ) = 'PMC'     ! adding coarse PM
                 END IF
 
                 DO I = 2, NSEG
@@ -739,7 +727,7 @@ C..................... Rebuild a list of entire pollutant names
                     CYCLE
                 END IF
 
-            END IF
+            END IF
 
 C.............  Skip blank lines
             IF( LINE == ' ' ) CYCLE
