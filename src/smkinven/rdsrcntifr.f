@@ -158,7 +158,7 @@ C.........  Determine number of pollutants for this line based on CAS number
      &             ' is not available in a list of CAS pollutants'//
      &             ' from $INVDIR/other/INVTABLE.'// CRLF()//BLANK10//
      &             ' Please update a list of pollutant names ' //
-     &             '( #POLLUTANT ) in a master wildfire inventory file.'
+     &             '( #DATA ) in a master wildfire inventory file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             NPOLPERLN = 0
