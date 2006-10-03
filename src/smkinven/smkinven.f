@@ -375,7 +375,14 @@ C.............  Open output I/O API and ASCII files
 
             CALL OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, MDEV, SDEV,
      &                       ADEV, VARPATH, VAR_FORMULA )
-            print*,ENAME
+
+C.............  Check smkinven formula option is not set for fire modeling
+            L = LEN_TRIM( VAR_FORMULA )
+            IF( FIREFLAG .AND. L > 0 ) THEN
+                MESG = 'ERROR: SMKINVEN_FORMULA option is not ' //
+     &                 'available during fire emission modeling.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
             MESG = 'Writing SMOKE ' // TRIM( CATEGORY ) // 
      &             ' SOURCE INVENTORY file...'
