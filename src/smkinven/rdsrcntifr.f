@@ -155,7 +155,7 @@ C.........  Determine number of pollutants for this line based on CAS number
             II = INDEX1( TCAS, NINVTBL, ITNAMA )
             IF( II > 0 ) THEN
                 MESG = 'FATAL ERROR: Pollutant ' // TRIM( TCAS )  //
-     &             ' is not available in a list of CAS pollutants'//
+     &             ' is not available in a list of CAS numbers'//
      &             ' from $INVDIR/other/INVTABLE.'// CRLF()//BLANK10//
      &             ' Please update a list of pollutant names ' //
      &             '( #DATA ) in a master wildfire inventory file.'
