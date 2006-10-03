@@ -470,7 +470,7 @@ C.........  Deallocate local arrays
         IF( ALLOCATED( IPPTR ) )    DEALLOCATE( IPPTR )
         IF( ALLOCATED( IPPTR2 ) )   DEALLOCATE( IPPTR2 )
         IF( ALLOCATED( IPMAX ) )    DEALLOCATE( IPMAX )
-        IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
+c        IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
         IF( ALLOCATED( SRCID ) )    DEALLOCATE( SRCID )
 
         DEALLOCATE( EONAMES, EOTYPES, EOUNITS, EODESCS )
@@ -1022,7 +1022,7 @@ C......................  Skip records with zero data or missing data
                     DO J = 1, NPVAR     ! rearrange pollutant-specific info
                         SRCPOL( N,J ) = POLVAL( K,J )
                     END DO
-
+                 print*,npvar,srcpol
                 END IF           ! If pol/act available for current source
 
             END DO  ! end of loop through sources
