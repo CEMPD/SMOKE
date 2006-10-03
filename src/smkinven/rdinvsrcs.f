@@ -544,8 +544,8 @@ C.................  Check the header of #ORL FIRE (wildfire case)
                     L4 = INDEX( LINE, 'ACRESBURNED' )
                     L5 = INDEX( LINE, 'ENDHOUR' )
                     L6 = INDEX( LINE, 'BEGHOUR' )
-                    L7 = INDEX( LINE, 'PM10' )
-                    L8 = INDEX( LINE, 'PMC' )
+                    L7 = INDEX( LINE, 'PM10-PRI' )
+                    L8 = INDEX( LINE, 'PMC-PRI' )
 
 C.....................  Separate line into segments CALL 
                     CALL PARSLINE( LINE, NSEG, SEGMENT )
@@ -558,7 +558,9 @@ C.....................  Count no of pollutants available
                     IF( L4 < 1 ) SEGMENT( NSEG-2 ) = 'ACRESBURNED' ! adding acres burned 
                     IF( L5 < 1 ) SEGMENT( NSEG-3 ) = 'ENDHOUR'     ! adding ending hour
                     IF( L6 < 1 ) SEGMENT( NSEG-4 ) = 'BEGHOUR'     ! adding beginning hour
-                    IF( L7 > 0 .AND. L8 < 1 ) SEGMENT( NSEG-5 ) = 'PMC'     ! adding coarse PM
+                    IF( L7 > 0 .AND. L8 < 1 ) THEN
+                        SEGMENT( NSEG-5 ) = 'PMC-PRI'     ! adding coarse PM
+                    END IF
 
                     DO I = 2, NSEG
                         IF( SEGMENT( I ) == ' ' ) CYCLE 
@@ -592,12 +594,12 @@ C.....................  Separate line into segments
                     K = NFRPOL
                     J = NFRPOL
 
-                    L7 = INDEX( LINE, 'PM10' )
-                    L8 = INDEX( LINE, 'PMC' )
+                    L7 = INDEX( LINE, 'PM10-PRI' )
+                    L8 = INDEX( LINE, 'PMC-PRI' )
 
                     IF( L7 > 0 .AND. L8 < 1 ) THEN
-                        NP = INDEX1( 'PMC', K, FIREPOL )
-                        IF( NP < 1 ) SEGMENT( NSEG ) = 'PMC'     ! adding coarse PM
+                        NP = INDEX1( 'PMC-PRI', K, FIREPOL )
+                        IF( NP < 1 ) SEGMENT( NSEG ) = 'PMC-PRI'     ! adding coarse PM
                     END IF
 
                     DO I = 2, NSEG
@@ -637,7 +639,7 @@ C..................... Rebuild a list of entire pollutant names
                     END IF
                     L1 = 0
 
-                END IF
+                END IF
 
 C.................  Skip blank lines
                 IF( LINE == ' ' ) CYCLE
