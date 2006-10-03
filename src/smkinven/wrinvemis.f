@@ -374,7 +374,8 @@ C           in sparsely stored data array.
         CALL CHECKMEM( IOS, 'IPMAX', PROGNAME )
 
 C.........  Allocate memory for storing and writing emissions
-        ALLOCATE( SRCPOL( NSRC, NPPOL ), STAT=IOS )
+c        ALLOCATE( SRCPOL( NSRC, NPPOL ), STAT=IOS )
+        ALLOCATE( SRCPOL( NSRC, NPTPPOL3 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
         ALLOCATE( SRCID( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
@@ -454,7 +455,8 @@ C.........  Set number of variables and allocate file description arrays
         IF( ALLOCATED( VARS_PER_FILE ) ) DEALLOCATE( VARS_PER_FILE )
 
 C.........  Allocate memory for storing and writing activities
-        ALLOCATE( SRCPOL( NSRC, NPACT ), STAT=IOS )
+c        ALLOCATE( SRCPOL( NSRC, NPACT ), STAT=IOS )
+        ALLOCATE( SRCPOL( NSRC, NPTPPOL3 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
         ALLOCATE( SRCID( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
