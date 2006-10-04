@@ -374,8 +374,7 @@ C           in sparsely stored data array.
         CALL CHECKMEM( IOS, 'IPMAX', PROGNAME )
 
 C.........  Allocate memory for storing and writing emissions
-c        ALLOCATE( SRCPOL( NSRC, NPPOL ), STAT=IOS )
-        ALLOCATE( SRCPOL( NSRC, NPTPPOL3 ), STAT=IOS )
+        ALLOCATE( SRCPOL( NSRC, NPPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
         ALLOCATE( SRCID( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
@@ -455,8 +454,7 @@ C.........  Set number of variables and allocate file description arrays
         IF( ALLOCATED( VARS_PER_FILE ) ) DEALLOCATE( VARS_PER_FILE )
 
 C.........  Allocate memory for storing and writing activities
-c        ALLOCATE( SRCPOL( NSRC, NPACT ), STAT=IOS )
-        ALLOCATE( SRCPOL( NSRC, NPTPPOL3 ), STAT=IOS )
+        ALLOCATE( SRCPOL( NSRC, NPACT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
         ALLOCATE( SRCID( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
@@ -465,7 +463,6 @@ C.........  Loop through activity data, store, and write to inventory file
         IF( NIACT .GT. 0 ) 
      &      CALL LOOP_FOR_OUTPUT( NIACT, NPACT, IDEV, AVIDX, 
      &                            ACTVTY, MCNT )
-
 C.........  Deallocate local arrays
         IF( ALLOCATED( IPPTR ) )    DEALLOCATE( IPPTR )
         IF( ALLOCATED( IPPTR2 ) )   DEALLOCATE( IPPTR2 )
@@ -1022,7 +1019,7 @@ C......................  Skip records with zero data or missing data
                     DO J = 1, NPVAR     ! rearrange pollutant-specific info
                         SRCPOL( N,J ) = POLVAL( K,J )
                     END DO
-                 print*,npvar,srcpol
+
                 END IF           ! If pol/act available for current source
 
             END DO  ! end of loop through sources
