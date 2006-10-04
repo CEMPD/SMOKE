@@ -991,7 +991,6 @@ C................  Store the cell numbers and VMT fractions into the ungridding 
                 
             END DO
             NCOEFU = K
-        print*, NCOEF,CMAX,CMIN,NCOEFU,'NCOEF,CMAX,CMIN,NCOEFU,,,,,BH'
 
 C.............  Check for overflow
             IF( NCOEFU .GT. NMATXU ) THEN
