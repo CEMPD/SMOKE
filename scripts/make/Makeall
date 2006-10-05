@@ -5,10 +5,10 @@
 #
 ## Set controllers for turning on/off library building
 #
-setenv FILESET_MAKE_LIB  N   # [ Y | N ]  # For FileSetAPI library
-setenv ETOOLS_MAKE_LIB   N   # [ Y | N ]  # For edss_tools library
+setenv FILESET_MAKE_LIB  Y   # [ Y | N ]  # For FileSetAPI library
+setenv ETOOLS_MAKE_LIB   Y   # [ Y | N ]  # For edss_tools library
 setenv SMK_MAKE_LIB      Y   # [ Y | N ]  # For SMOKE library
-setenv SMK_MAKE_MOBLIB   N   # [ Y | N ]  # For MOBILE6 library
+setenv SMK_MAKE_MOBLIB   Y   # [ Y | N ]  # For MOBILE6 library
 setenv SMK_MAKE          Y   # [ Y | N ]  # For SMOKE programs
 #
 ## Set the directory for the SMOKE installation
