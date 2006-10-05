@@ -2,7 +2,7 @@
 #
 # Include file for making modules and doing needed copies, etc.
 #
-MD_OUT = $(MD_SRC)/$(EDSS_EXE)
+MD_OUT = $(MD_SRC)/$(SMOKE_EXE)
 
 MODSOURC = $(MD_OUT)/modsourc.o
 MODMOBIL = $(MD_OUT)/modmobil.o
