@@ -2,8 +2,7 @@
 #
 ## HEADER ########################################################
 #
-#  This script sets the dependent i/o directories for SMOKE for an EDSS
-#  configuration
+#  This script sets the dependent i/o directories for SMOKE 
 #
 # Make sure category-specific speciation is available
 if ( $?A_SPC_OVERRIDE ) then
