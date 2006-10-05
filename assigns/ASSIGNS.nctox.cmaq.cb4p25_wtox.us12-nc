@@ -1,6 +1,6 @@
 #/bin/csh -fx
 #
-## HEADER ########################################################
+## HEADER ##################################################################
 #
 #  SMOKE ASSIGNS file (sets up for area, biogenic, mobile, nonroad, and point sources)
 #
@@ -12,6 +12,12 @@
 #     This assigns file sets up the environment variables for use of 
 #     SMOKE Version 2.1 outside of the Models-3 system.
 #
+#  Usage:
+#     source <Assign>
+#     Note: First set the SMK_HOME env variable to the base SMOKE installation
+#
+## END HEADER ##############################################################
+
 ## I/O Naming roots
 #
    setenv INVID     nctox        # Inventory input identifier
@@ -57,10 +63,10 @@
    endif
 
 ## User-defined I/O directory settings
-   setenv EDSS_SUBSYS $EDSS_ROOT/subsys              # EDSS subsystem dir
-   setenv SMKROOT     $EDSS_SUBSYS/smoke             # System root dir
-   setenv SMKDAT      $EDSS_ROOT/data                # Data root dir
-   setenv ASSIGNS     $SMKROOT/assigns               # smoke assigns files
+   setenv SMK_SUBSYS  $SMK_HOME/subsys              # SMOKE subsystem dir
+   setenv SMKROOT     $SMK_SUBSYS/smoke             # System root dir
+   setenv SMKDAT      $SMK_HOME/data                # Data root dir
+   setenv ASSIGNS     $SMKROOT/assigns              # smoke assigns files
 #
 ## Override speciation setting, if override variable is set
 if ( $?SPC_OVERRIDE ) then
@@ -171,7 +177,7 @@ endif
    setenv GSCNV       $GE_DAT/gscnv.txt            # ROG to TOG conversion facs
    setenv GSREF       $GE_DAT/gsref.$SPC.txt       # Speciation x-ref
    setenv GSPRO       $GE_DAT/gspro.$SPC.txt       # Speciation profiles
-   setenv PROCDATES   $GE_DAT/procdates.txt        # time periods that Temporal should process
+#   setenv PROCDATES   $GE_DAT/procdates.txt        # time periods that Temporal should process
 
    # For cases when GSREF and GSPRO is not a shared file.
    if ( $?SMK_SOURCE && $?SPC_SRC_SPECIFIC ) then
