@@ -107,7 +107,7 @@ C.......  Allocate and initialize arrays
 C.......  Read and process lines of file
       IREC = 0
       DO
-          READ( FDEV, 'A', IOSTAT=IOS ) LINE
+          READ( FDEV, '(A)', IOSTAT=IOS ) LINE
 
 C...........  Exit if we've reached the end of the file          
           IF( IOS < 0 ) EXIT
