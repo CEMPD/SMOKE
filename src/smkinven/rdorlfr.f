@@ -115,7 +115,7 @@ C...........   Temporary read arrays
         REAL            TDAT( 24 )       ! temporary data values
 
 C...........   Local arrays
-        INTEGER                               :: IDXFIRE( NSEG ) ! index for wildfire pollutants
+        INTEGER                               :: IDXFIRE( 32 )   ! index for wildfire pollutants
         CHARACTER(ALLLEN3), ALLOCATABLE, SAVE :: HFXBSRC( : )    ! Build source characteristics field for HFLUX
         CHARACTER(ALLLEN3), ALLOCATABLE, SAVE :: PMCBSRC( : )    ! Build source characteristics field for PMC
         CHARACTER(ALLLEN3), ALLOCATABLE, SAVE :: FULBSRC( : )    ! Build source characteristics field for FUEL_LOAD
@@ -227,13 +227,13 @@ C           heat flux and coarse PMC (if applicable) and for storing
 C           acre burned, and fuel loading for computing HFLUX and PM10 
 C           PM2_5 for computing PMC
 
-            ALLOCATE( HFXBSRC( NSRC*10 ), STAT=IOS )
+            ALLOCATE( HFXBSRC( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'HFXBSRC', PROGNAME )
-            ALLOCATE( FULBSRC( NSRC*10 ), STAT=IOS )
+            ALLOCATE( FULBSRC( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'FULBSRC', PROGNAME )
-            ALLOCATE( DTACBRN( NSRC*10 ), STAT=IOS )
+            ALLOCATE( DTACBRN( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DTACBRN', PROGNAME )
-            ALLOCATE( DTFUELD( NSRC*10 ), STAT=IOS )
+            ALLOCATE( DTFUELD( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DTFUELD', PROGNAME )
 
             HFXBSRC = ' '
@@ -241,13 +241,13 @@ C           PM2_5 for computing PMC
             DTACBRN = 0.
             DTFUELD = 0.
 
-            ALLOCATE( PMCBSRC( NSRC*10 ), STAT=IOS )
+            ALLOCATE( PMCBSRC( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'PMCBSRC', PROGNAME )
-            ALLOCATE( P25BSRC( NSRC*10 ), STAT=IOS )
+            ALLOCATE( P25BSRC( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'P25BSRC', PROGNAME )
-            ALLOCATE( DTPM10( NSRC*10 ), STAT=IOS )
+            ALLOCATE( DTPM10( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DTPM10', PROGNAME )
-            ALLOCATE( DTPM25( NSRC*10 ), STAT=IOS )
+            ALLOCATE( DTPM25( NSRC*20 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DTPM25', PROGNAME )
 
             PMCBSRC = ' '
