@@ -49,6 +49,9 @@ C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: PDTOTL, NPDPT, IDXSRC, SPDIDA, CODEA,
      &                      EMISVA, DYTOTA
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: FIREFLAG
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -60,7 +63,10 @@ C...........   INCLUDES
 
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2) CRLF
+        INTEGER      ENVINT
         LOGICAL      ENVYN
+
+        EXTERNAL     CRLF, ENVINT, ENVYN
 
 
 C.........  SUBROUTINE ARGUMENTS
@@ -89,7 +95,9 @@ C...........   Other local variables
         INTEGER          I, J, K, L2, LS, S, V, V2
 
         INTEGER          IOS                  ! i/o status
+        INTEGER, SAVE :: NWARN = 0            ! warning count
         INTEGER, SAVE :: MXEA                 ! maximum pol/var # in EAIDX
+        INTEGER, SAVE :: MXWARN               ! max no. warnings
         INTEGER          NOUT                 ! tmp no. sources per time step
 
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: error on duplicates
@@ -111,6 +119,9 @@ C.............  Get settings from the environment.
             DFLAG = ENVYN( 'RAW_DUP_CHECK',
      &                     'Error if duplicate inventory records',
      &                     .FALSE., IOS )
+
+C.............  Get maximum number of warnings
+            MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
 C.............  Allocate memory for flag for writing missing-data messages
             ALLOCATE( NOMISS( NSRC,NVASP ), STAT=IOS )
@@ -240,19 +251,31 @@ C.................  Format source information
 
 C.................  Check for missing values
                 IF ( PDDATA( I,V ) .LT. AMISS3 ) THEN
+
+C.....................  For fires data, reset "missing" values
+C                       to zero, since Temporal will not need to
+C                       know the difference between missing and zero.
+C                       This is because there are no "annual" values
+C                       to fill in for missing daily/hourly data for fires.
+                    IF( FIREFLAG ) PDDATA( I,V ) = 0.
+
                     IF( NOMISS( S,V ) ) THEN
-                        IF ( V .LE. NVAR ) THEN
-                            MESG = 'WARNING: Data missing for: ' //
+                        NWARN = NWARN + 1
+
+                        IF( NWARN <= MXWARN ) THEN
+                            IF ( V .LE. NVAR ) THEN
+                                MESG = 'WARNING: Data missing for: ' //
      &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
      &                             ' VAR: '// EANAM( EAIDX( V ) )
-                        ELSE
-                            K = V - NVAR
-                            MESG = 'WARNING: Data missing for: ' //
+                            ELSE
+                                K = V - NVAR
+                                MESG = 'WARNING: Data missing for: ' //
      &                             CRLF()//BLANK10//BUFFER( 1:L2 )//
      &                             ' VAR: '//SPDATNAM( SPIDX2( K ) )
-                        END IF
+                            END IF
 
-                        CALL M3MESG( MESG )
+                            CALL M3MESG( MESG )
+                        END IF
                         NOMISS( S,V ) = .FALSE.
                     END IF
 
@@ -291,7 +314,7 @@ C.........  Write emissions for this time step
             MESG= 'Error writing output file "' // FNAME(1:L2) // '"'
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
-        END IF
+        END IF        
  
         RETURN
 
