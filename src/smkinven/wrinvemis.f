@@ -45,7 +45,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, NPCNT, IPOSCOD, POLVAL
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT, FIREFLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, NMAP,
@@ -167,8 +167,17 @@ C..........  Get environment variables
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        MESG = 'Write zero values to annual emissions inventory'
-        ZFLAG = ENVYN( 'WRITE_ANN_ZERO', MESG, .FALSE., IOS )
+C.........  If processing fires, then must write out zero values, since
+C           zero is used to fill in the annual data
+        IF ( FIREFLAG ) THEN
+            ZFLAG = .TRUE.
+
+C.........  Otherwise, check environment to see if user wants to output
+C           zero values
+        ELSE
+            MESG = 'Write zero values to annual emissions inventory'
+            ZFLAG = ENVYN( 'WRITE_ANN_ZERO', MESG, .FALSE., IOS )
+        END IF
 
 C.........  Compute real value of integer missing
         RIMISS3 = REAL( IMISS3 )
@@ -765,7 +774,10 @@ C                           if so, reset to zero.
                         IF( COMPUTED( S,1 ) .LT. 0 ) THEN
                             WARNCNT_A = WARNCNT_A + 1
 
-                            IF ( WARNCNT_A .LE. MXWARN ) THEN
+C.............................  If warning count is less than max and not
+C                               fires.
+                            IF ( WARNCNT_A .LE. MXWARN .AND.
+     &                           .NOT. FIREFLAG ) THEN
 
                               CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
 
@@ -812,7 +824,7 @@ C................   Copy data to output structure (no condensing output structur
                         SRCID( S ) = S
                     END DO
 
-                    SRCPOL( 1:S,1:NPVAR ) = COMPUTED( 1:S,1:NPVAR)   ! array
+                    SRCPOL( 1:NSRC,1:NPVAR ) = COMPUTED( 1:NSRC,1:NPVAR)   ! array
                     NREC = NSRC
 
 C................   Condense data to output structure by excluding zeros
