@@ -53,7 +53,7 @@ C...........   This module is the inventory arrays
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2,  ! sorted real characteristics
      &                      YLOC2, STKHT, STKDM, STKTK, STKVE, 
      &                      CORIS, CBLRID, CPDESC, CERPTYP,     ! sorted character characteristics
-     &                      CMACT, CNAICS, CSRCTYP, FIREPOL, NFRPOL
+     &                      CMACT, CNAICS, CSRCTYP
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NDY, NEF, NCE, NRE, NRP, 
@@ -64,7 +64,7 @@ C.........  This module contains the lists of unique inventory information
      &                      NUNIQCAS, UNIQCAS, UCASNKEP, ITNAMA, 
      &                      SCASIDX, UCASIDX, UCASNPOL, ITKEEPA, ITFACA,
      &                      EMISBYCAS, RECSBYCAS, EMISBYPOL, INVSTAT,
-     &                      FIREFLAG, NINVTBL
+     &                      FIREFLAG, NINVTBL, ITCASA
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, VMTMIXA
@@ -105,9 +105,6 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local parameters
         INTEGER, PARAMETER :: DATALEN3 = 25      ! length of data field
-        INTEGER, PARAMETER :: NSEG   = 60        ! maximum no of segments
-        INTEGER            IDXFIRE  ( NSEG )     ! index for wildfire pollutants
-        CHARACTER(40     ) SEGMENT ( NSEG )      ! segments of line
 
 C...........   Dropped emissions
         INTEGER         NDROP             !  number of records dropped
@@ -120,10 +117,9 @@ C...........   File units and logical/physical names
 C...........   Output from individual reader routines
         CHARACTER(DATALEN3), ALLOCATABLE :: READDATA( :,: )  ! data values
         CHARACTER(IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
-        CHARACTER(CHRLEN3),  ALLOCATABLE :: TMPFIRE ( : )    ! names of tmp pollutant in wild fire
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, L, NN, NP, SP !  counters and indices
+        INTEGER         I, J, K, K1, L, NP, SP !  counters and indices
         INTEGER         L1, L2, L3, L4, L5, L6, L7, L8, L9
 
         INTEGER         CURFIL      !  current file from list formatted inventory
@@ -139,17 +135,16 @@ C...........   Other local variables
         INTEGER         MXWARN      !  maximum number of warnings
         INTEGER         NLINE       !  no. of lines in list file
         INTEGER         NPOLPERCAS  !  no. of pollutants per CAS number
-        INTEGER         NPOLPERLN   !  no. of pollutants per line of inventory file
-        INTEGER         NREC        !  no. of wildfires records read per file
+        INTEGER      :: NPOLPERLN = 1  !  no. of pollutants per line of inventory file
         INTEGER      :: NWARN = 0   !  current number of warnings
         INTEGER         POLCOD      !  pollutant code
         INTEGER         TMPSTREC    !  temporary stored record counter
         INTEGER         TPF         !  temporal adjustments setting
         INTEGER         SCASPOS     !  position of CAS number in sorted array
         INTEGER         UCASPOS     !  position of CAS number in unique array
-        INTEGER         NFRPOS      !  position of fire pol in inventory
         INTEGER         WKSET       !  setting for wkly profile TPFLAG component
         INTEGER      :: FWCOUNT     !  Filling warning count
+        INTEGER      :: SAVNVAR = 1 !  Saved number of variables on previous line
 
         REAL            CEFF        !  tmp control effectiveness
         REAL            EANN        !  annual-ave emission value
@@ -186,7 +181,6 @@ C...........   Other local variables
         LOGICAL      :: NOPOLFLG= .FALSE. ! true: no pollutants stored for this line
         LOGICAL      :: WFLAG   = .FALSE. ! true: all lat-lons to western hemi
         LOGICAL      :: FIRSTIME = .TRUE. ! true: first time through 
-        LOGICAL      :: BKSPFLAG= .FALSE. ! true: back up one line
 
         CHARACTER(2)        TIMEPERIOD! time period for EMS emissions
 
@@ -194,15 +188,15 @@ C...........   Other local variables
         CHARACTER(25)       Y1        ! y-dir link coord 1
         CHARACTER(25)       X2        ! x-dir link coord 2
         CHARACTER(25)       Y2        ! y-dir link coord 2
-        CHARACTER(2)        ZONE      ! UTM zone
+        CHARACTER(2)     :: ZONE = ' ' ! UTM zone
         CHARACTER(FIPLEN3)  CFIP      ! fips code
         CHARACTER(RWTLEN3)  CROAD     ! road class no.
         CHARACTER(LNKLEN3)  CLNK      ! link ID
 
-        CHARACTER(ORSLEN3)  CORS      ! DOE plant ID
-        CHARACTER(BLRLEN3)  BLID      ! boiler ID
+        CHARACTER(ORSLEN3) :: CORS = ' ' ! DOE plant ID
+        CHARACTER(BLRLEN3) :: BLID = ' ' ! boiler ID
         CHARACTER(40)       DESC      ! plant description
-        CHARACTER(ERPLEN3)  ERPTYP    ! emissions release point type
+        CHARACTER(ERPLEN3) :: ERPTYP = ' ' ! emissions release point type
         CHARACTER(4)        HT        ! stack height
         CHARACTER(6)        DM        ! stack diameter
         CHARACTER(4)        TK        ! exit temperature
@@ -210,13 +204,11 @@ C...........   Other local variables
         CHARACTER(9)        VL        ! exit velocity
         CHARACTER(SICLEN3)  SIC       ! SIC
         CHARACTER(MACLEN3)  MACT      ! MACT code
-        CHARACTER(NAILEN3)  NAICS     ! NAICS code
-        CHARACTER(STPLEN3)  SRCTYP    ! source type code
+        CHARACTER(NAILEN3) :: NAICS = ' '  ! NAICS code
+        CHARACTER(STPLEN3) :: SRCTYP = ' ' ! source type code
         CHARACTER           CTYPE     ! coordinate type
         CHARACTER(9)        LAT       ! stack latitude
         CHARACTER(9)        LON       ! stack longitude
-        CHARACTER(100)      FORMULA   !  formula string
-        CHARACTER(16), PARAMETER :: SMKFORM = 'SMKINVEN_FORMULA'
 
         CHARACTER(IOVLEN3) POLNAM     !  tmp pollutant name
         CHARACTER(300)     INFILE     !  input file line buffer
@@ -511,7 +503,6 @@ C           (will change if format is IDA or mobile EMS)
         IREC = 0    ! current record number
         ISTREC = 0  ! current stored record
         SP = 0      ! current source with pollutant index
-        NN = 0      ! number of wildfire pollutants
 
 C.........  Loop through inventory files and read data
         DO
@@ -519,7 +510,6 @@ C.........  Loop through inventory files and read data
             READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
-            IF( .NOT. BKSPFLAG ) NREC = NREC + 1
             
             IF( IOS > 0 ) THEN
                 EFLAG = .TRUE.
@@ -538,7 +528,6 @@ C.................  If list format, try to open next file
 C.....................  Close current file and reset counter
                     CLOSE( FDEV )
                     IREC = 0
-                    NREC = 0
 
 C.....................  Advance to next file
                     IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
@@ -625,112 +614,6 @@ C.................  Otherwise, not a list file, so exit
              
             END IF   ! end check for end of file
 
-C.............  Create a list of pollutants (#ORL FIRE ONLY)
-C.............  Check the header of #ORL FIRE (wildfire case)
-            L1 = INDEX( LINE, '#DATA' )
-
-            IF( L1 > 0 .AND. FIRSTIME .AND. FIREFLAG  ) THEN
-
-                L2 = INDEX( LINE, 'HFLUX' )
-                L3 = INDEX( LINE, 'FUEL_LOAD' ) 
-                L4 = INDEX( LINE, 'ACRESBURNED' )
-                L5 = INDEX( LINE, 'ENDHOUR' )
-                L6 = INDEX( LINE, 'BEGHOUR' )
-                L7 = INDEX( LINE, 'PM10-PRI' )
-                L8 = INDEX( LINE, 'PMC-PRI' )
-
-C.................  Separate line into segments CALL 
-                CALL PARSLINE( LINE, NSEG, SEGMENT )
-
-C.................  Count no of pollutants available
-                NFRPOL = 0
-                IDXFIRE = 0
-                IF( L2 < 1 ) SEGMENT( NSEG )   = 'HFLUX'       ! adding heat flux
-                IF( L3 < 1 ) SEGMENT( NSEG-1 ) = 'FUEL_LOAD'   ! adding fuel loading 
-                IF( L4 < 1 ) SEGMENT( NSEG-2 ) = 'ACRESBURNED' ! adding acres burned 
-                IF( L5 < 1 ) SEGMENT( NSEG-3 ) = 'ENDHOUR'     ! adding ending hour
-                IF( L6 < 1 ) SEGMENT( NSEG-4 ) = 'BEGHOUR'     ! adding beginning hour
-                IF( L7 > 0 .AND. L8 < 1 ) THEN
-                    SEGMENT( NSEG-5 ) = 'PMC-PRI'     ! adding coarse PM
-                END IF
-
-                DO I = 2, NSEG
-                    IF( SEGMENT( I ) == ' ' ) CYCLE 
-                    IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE  ! Skip. It is a var in FIRE ORL
-                    NFRPOL = NFRPOL + 1
-                    IDXFIRE( NFRPOL ) = I
-                END DO
-
-C..................  Stroing a list of all pollutants available in wildfire
-                ALLOCATE( FIREPOL( NFRPOL ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'FIREPOL', PROGNAME )
-                FIREPOL = ' '
-                NFRPOL = 0
-
-                DO I = 2, NSEG
-                    IF( SEGMENT( I ) == ' ' ) CYCLE 
-                    IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE 
-                    NFRPOL = NFRPOL + 1
-                    J = IDXFIRE( NFRPOL )
-                    FIREPOL( NFRPOL ) = ADJUSTL( SEGMENT( J ) )
-                END DO
-
-                FIRSTIME = .FALSE.
-                CYCLE
-
-            ELSE IF( L1 > 0 .AND. FIREFLAG )THEN
-
-C.................  Separate line into segments
-                CALL PARSLINE( LINE, NSEG, SEGMENT )
-                K = NFRPOL
-                J = NFRPOL
-
-                L7 = INDEX( LINE, 'PM10-PRI' )
-                L8 = INDEX( LINE, 'PMC-PRI' )
-
-                IF( L7 > 0 .AND. L8 < 1 ) THEN
-                    NP = INDEX1( 'PMC-PRI', K, FIREPOL )
-                    IF( NP < 1 ) SEGMENT( NSEG ) = 'PMC-PRI'     ! adding coarse PM
-                END IF
-
-                DO I = 2, NSEG
-                    IF( SEGMENT( I ) == ' ' ) CYCLE 
-                    IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE  ! skip. 
-                    NP = INDEX1( SEGMENT( I ), K, FIREPOL )
-                    IF( NP < 1 ) NFRPOL = NFRPOL + 1    ! increase number of pollutants
-                END DO
-                
-C..................  Backup and re-stroing a list of all pollutants available in wildfire
-                IF( NFRPOL > K ) THEN
-                    ALLOCATE( TMPFIRE( K ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'TMPFIRE', PROGNAME )
-
-                    DO I = 1,K
-                        TMPFIRE(I) = FIREPOL(I)                   ! backup old/previous pol list
-                    END DO
-
-                    ALLOCATE( FIREPOL( NFRPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'FIREPOL', PROGNAME )
-                    FIREPOL = ' '
-                    DO I = 1, K
-                    FIREPOL( I ) = TMPFIRE( I )         ! restore into new array
-                    END DO
-
-C..................... Rebuild a list of entire pollutant names
-                    DO I = 2, NSEG
-                        IF( SEGMENT( I ) == ' ' ) CYCLE 
-                        IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE  ! skip.
-                        NP = INDEX1( SEGMENT( I ), K, TMPFIRE )
-                        IF( NP < 1 ) THEN
-                            J = J + 1
-                            FIREPOL( J ) = SEGMENT( I )    ! creating a new list of pollutants in wildfire case
-                        END IF
-                    END DO
-                    CYCLE
-                END IF
-
-            END IF
-
 C.............  Skip blank lines
             IF( LINE == ' ' ) CYCLE
 
@@ -798,27 +681,11 @@ C.....................  Need to read source information to match with VMTMIX fil
                 CALL RDDATAORLNP( LINE, READDATA, READPOL,
      &                            INVYEAR, SIC, MACT, SRCTYP, NAICS, 
      &                            HDRFLAG, EFLAG )
-                NPOLPERLN = 1
 
             CASE( ORLFIREFMT )
-                CALL RDDATAORLFR( LINE, NN, READDATA, READPOL, INVYEAR,
-     &                            DESC, ERPTYP, SRCTYP, SIC, MACT,
-     &                            NAICS, CTYPE, LAT, LON, ZONE, CORS,
-     &                            BLID, HDRFLAG, EFLAG, BKSPFLAG )
-                NPOLPERLN = 1
-
-C................. Backup a line to add pollutant (wildfire case)
-                IF( .NOT. BLKORCMT( LINE ) ) BKSPFLAG = .TRUE.
-                IF( BKSPFLAG ) THEN
-                     NN = NN + 1
-                     IF( NN > NFRPOL ) THEN
-                         BKSPFLAG = .FALSE.
-                         NN = 0
-                     ELSE
-                         BACKSPACE( FDEV )
-                     END IF
-                END IF
-
+                CALL RDDATAORLFR( LINE, READDATA, READPOL, 
+     &                            NPOLPERLN, INVYEAR, DESC, SIC, MACT,
+     &                            CTYPE, LAT, LON, HDRFLAG, EFLAG)
             END SELECT
 
 C.............  Check for header lines
@@ -827,13 +694,15 @@ C.............  Check for header lines
 C.................  If IDA or mobile EMS format, reallocate emissions memory with
 C                   proper number of pollutants per line
                 IF( ( CURFMT == IDAFMT .OR. 
-     &              ( CURFMT == EMSFMT .AND. CATEGORY == 'MOBILE' ) ) 
-     &                .AND. NPOLPERLN > 1 ) THEN
+     &              ( CURFMT == EMSFMT .AND. CATEGORY == 'MOBILE' ) .OR.
+     &                CURFMT == ORLFIREFMT )
+     &                .AND. NPOLPERLN .NE. SAVNVAR ) THEN
                     DEALLOCATE( READDATA, READPOL )
                     ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
                     ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
+                    SAVNVAR = NPOLPERLN
                 END IF
 
 C.................  Calculate day to year conversion factor
@@ -1017,39 +886,39 @@ C.................  Check ORL FIRE specific values
                     WRITE( MESG,94010 ) 'ERROR: Latitude and/or ' //
      &                     'longitude are not numbers or have bad ' //
      &                     'formatting' // CRLF() // BLANK10 //
-     &                     'at line', NREC
+     &                     'at line', IREC
                     CALL M3MSG2( MESG )
                 ELSE IF( LAT == ' ' .OR. LON == ' ' ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Latitude and/or ' //
-     &                     'longitude are missing at line', NREC
+     &                     'longitude are missing at line', IREC
                     CALL M3MSG2( MESG )
                 END IF
 
                 IF( .NOT. CHKINT( SIC ) ) THEN
                     IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: SIC code is ' //
-     &                     'non-integer at line', NREC, '. Default ' //
-     &                     '0000 will be used.'
+                        WRITE( MESG,94010 ) 'WARNING: Material-' //
+     &                     'burned code is non-integer at line', 
+     &                     IREC, '. Default of 0 will be used.'
                         CALL M3MESG( MESG )
                         NWARN = NWARN + 1
                     END IF
-                    SIC = '0000'
+                    SIC = '0'
                 ELSE IF( SIC == ' ' ) THEN
                     IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Missing SIC ' //
-     &                         'code at line', NREC, '. Default ' //
-     &                         '0000 will be used.'
+                        WRITE( MESG,94010 ) 'WARNING: Missing ' //
+     &                         'material-burned code at line', IREC, 
+     &                         '. Default of 0 will be used.'
                         CALL M3MESG( MESG )
                         NWARN = NWARN + 1
                     END IF
-                    SIC = '0000'
+                    SIC = '0'
                 END IF
 
                 IF( MACT == ' ' ) THEN
                     IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Missing MACT ' //
-     &                         'code at line', NREC, '. Default ' //
+                        WRITE( MESG,94010 ) 'WARNING: Missing NFDRS ' //
+     &                         'code at line', IREC, '. Default ' //
      &                         'UNKNWN will be used.'
                         CALL M3MESG( MESG )
                         NWARN = NWARN + 1
@@ -1060,14 +929,18 @@ C.................  Check ORL FIRE specific values
             END IF
 
 C.............  Check that data values are numbers
-            DO I = 1, NPOLPERLN      ! NPOLPERLN = l be 1 when it is orl format
+            IF( .NOT. FIREFLAG ) THEN
+              DO I = 1, NPOLPERLN      ! NPOLPERLN = l be 1 when it is non-fire orl format
                 POLNAM = READPOL( I )
 
 C.................  Loop through values for this pollutant
 C                   Technically, activities will not have NPPOL values,
 C                   but we put in blanks when reading the data to avoid problems
 C                   Could check if pollutant is an activity, but that would 
-C                   require an extra search to get the pollutant code                            
+C                   require an extra search to get the pollutant code
+
+C.................  No need to check these for fires format, since we know
+C                   that most values will not be populated intentionally.
                 DO J = 1, NPPOL
                     IF( .NOT. CHKREAL( READDATA( I,J ) ) ) THEN
                         EFLAG = .TRUE.
@@ -1092,9 +965,10 @@ C                   require an extra search to get the pollutant code
                     END IF
                     READDATA( I,1 ) = '0.'
                     READDATA( I,2 ) = '0.'
-                END IF            
+                END IF
 
-            END DO  ! end loop over pollutants per line
+               END DO  ! end loop over pollutants per line
+            END IF   ! not ORL fires format             
 
 C.............  Skip rest of loop if an error has occured
             IF( EFLAG ) CYCLE
@@ -1126,21 +1000,9 @@ C                   by stored, but need values for reporting
                     END IF
                 END IF
 
-            ELSE IF( CURFMT == ORLFIREFMT ) THEN
-                POLNAM = READPOL( 1 )
-                UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
-                IF( UCASPOS < 1 ) THEN
-                    CYCLE
-                ELSE
-                    IF( UCASNKEP( UCASPOS ) == 0 ) THEN
-                        NOPOLFLG = .TRUE.
-                    ELSE
-                        NOPOLFLG = .FALSE.
-                    END IF
-                END IF
-
+C.................  For non-ORL sources and ORL fires, set UCASPOS to use in 
+C                   ICASCODA
             ELSE
-C.................  For non-ORL sources, set UCASPOS to use in ICASCODA
                 UCASPOS = 0
                 NOPOLFLG = .FALSE.
             END IF
@@ -1177,7 +1039,8 @@ C.............  Loop through all pollutants for current line
                         
                 POLNAM = READPOL( I )
 
-C.................  If format is not ORL, find code corresponding to current pollutant
+C.................  If format is not ORL or ORL Fires, find code corresponding 
+C                   to current pollutant
                 ACTFLAG = .FALSE.
                 IF( CURFMT /= ORLFMT .AND. CURFMT /= ORLNPFMT .AND.
      &              CURFMT /= ORLFIREFMT ) THEN
@@ -1193,6 +1056,20 @@ C.................  If format is not ORL, find code corresponding to current pol
                     IF( INVSTAT( POLCOD ) < 0 ) THEN
                         ACTFLAG = .TRUE.
                     END IF
+
+C.................  For ORL fires, #DATA line will have used CAS numbers, so
+C                   need to translate these into pollutant names.
+                ELSE IF ( CURFMT == ORLFIREFMT ) THEN
+                    POLCOD = INDEX1( POLNAM, NINVTBL, ITCASA )
+                    POLCOD = INDEX1( ITNAMA(POLCOD), MXIDAT, INVDNAM )
+
+                    IF( POLCOD == 0 ) THEN
+                        WRITE( MESG,94010 ) 'ERROR: Unknown  ' //
+     &                      'pollutant ' // TRIM( POLNAM ) // 
+     &                      ' at line', IREC
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
                 END IF
 
 C.................  Convert data to real numbers and check for missing values                
@@ -1375,8 +1252,7 @@ C                   zero or negative
 
 C.................  If current format is ORL, check if current CAS number
 C                   is split
-                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &              CURFMT == ORLFIREFMT ) THEN
+                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
@@ -1394,8 +1270,7 @@ C.....................  Store emissions by CAS number for reporting
                 DO J = 0, NPOLPERCAS - 1
 
 C.....................  If ORL format, set current pollutant
-                    IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &                  CURFMT == ORLFIREFMT ) THEN
+                    IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 

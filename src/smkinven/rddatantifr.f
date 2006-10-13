@@ -1,8 +1,7 @@
 
-        SUBROUTINE RDDATAORLFR( LINE, NN, READDATA, READPOL, IYEAR,DESC,
-     &                          ERPTYP, SRCTYP, SIC, MACT, NAICS, CTYPE,
-     &                          LAT, LON, UTMZ, CORS, BLID, HDRFLAG,
-     &                          EFLAG, BKSPFLAG )
+        SUBROUTINE RDDATAORLFR( LINE, READDATA, READPOL, NDATPERLN, 
+     &                          IYEAR, DESC, SIC, MACT, CTYPE, 
+     &                          LAT, LON, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -41,10 +40,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NC1, NC2
-
-C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: FIREPOL
+        USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NC1, NC2, TMPNAM
 
         IMPLICIT NONE
 
@@ -59,39 +55,39 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
-        INTEGER,            INTENT  (IN) :: NN                    ! no of current FIREPOL
-        CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NPTPPOL3 )! array of data values
-        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! array of pollutant names
+        CHARACTER(*),       INTENT (OUT) :: READDATA( NDATPERLN,NPTPPOL3 )! array of data values
+        CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( NDATPERLN )          ! array of pollutant names
+        INTEGER,            INTENT (OUT) :: NDATPERLN             ! number of data values per line
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(40),      INTENT (OUT) :: DESC                  ! plant description
-        CHARACTER(ERPLEN3), INTENT (OUT) :: ERPTYP                ! emissions release point type
-        CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
-        CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! SIC
-        CHARACTER(MACLEN3), INTENT (OUT) :: MACT                  ! MACT code
-        CHARACTER(NAILEN3), INTENT (OUT) :: NAICS                 ! NAICS code
+        CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! Material burned code (stored in SIC)
+        CHARACTER(MACLEN3), INTENT (OUT) :: MACT                  ! NFDRS code (stored in MACT)
         CHARACTER,          INTENT (OUT) :: CTYPE                 ! coordinate type
         CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
         CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
-        CHARACTER(2),       INTENT (OUT) :: UTMZ                  ! UTM zone
-        CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
-        CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
-        LOGICAL,            INTENT  (IN) :: BKSPFLAG              ! backspace flag
 
 C...........   Local parameters, indpendent
-        INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
-        INTEGER, PARAMETER :: NSEG = 63      ! number of segments in line
+        INTEGER, PARAMETER :: MXPOLFIL = 1000  ! arbitrary maximum pollutants in file
+        INTEGER, PARAMETER :: NSEG = 10      ! number of segments in line for format
+        INTEGER, PARAMETER :: NEXTRA  = 4    ! number of extra non-data fields that need
+                                             ! to be added as "pollutants)
+        CHARACTER(IOVLEN3), PARAMETER :: FIREVNAM( NEXTRA ) = ! fire variable names
+     &                      ( / 'HEATCONTENT     ',
+     &                          'HFLUX           ',
+     &                          'ENDHOUR         ',
+     &                          'BEGHOUR         '  / )
 
 C...........   Other local variables
-        INTEGER         I       ! counters and indices
+        INTEGER         I, L       ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
         INTEGER, SAVE:: INY     !  inventory year
         INTEGER         IOS     !  i/o status
-        INTEGER, SAVE:: NPOL    !  number of pollutants in file
+        INTEGER, SAVE:: NDAT = -1 !  number of data values as set by header
 
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
+        LOGICAL, SAVE:: FIRSTDATA = .TRUE. ! true: first time data row in encountered
  
         CHARACTER(40)      SEGMENT( NSEG ) ! segments of line
         CHARACTER(300)     MESG            ! message buffer
@@ -103,8 +99,8 @@ C   begin body of subroutine RDDATAORLFR
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly
-        CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .FALSE., 
-     &               LINE, ICC, INY, NPOL, IOS )
+        CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .TRUE., 
+     &               LINE, ICC, INY, NDAT, IOS )
 
 C.........  Interpret error status
         IF( IOS == 4 ) THEN
@@ -122,48 +118,57 @@ C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
             HDRFLAG = .TRUE.
             IYEAR = INY
+            IF( NDAT > 0 ) NDATPERLN = NDAT + NEXTRA  
             RETURN
         ELSE
             HDRFLAG = .FALSE.
         END IF
 
+C.........  Give error if #DATA line has not defined the pollutants that
+C           are contained in the day-specific data file. NOTE: This code
+C           will not be reached until after the last header line)
+        IF ( NDAT < 0 ) THEN
+            WRITE( MESG, 94010 ) 'First data line reached in ORL '//
+     &             'FIRE file with required #DATA header found.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........  Otherwise, the READPOL array has been redfined and now can
+C           be populated with the TMPNAM array set by the GETHDR routine
+        ELSE IF ( FIRSTDATA ) THEN
+
+            FIRSTDATA = .FALSE.
+            READPOL( 1:NEXTRA ) = FIREVNAM( 1:NEXTRA ) 
+            READPOL( NEXTRA+1:NDATPERLN ) = TMPNAM( 1:NDAT )  ! array
+
+        END IF
+
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
-        SEGMENT( 11 ) = 'HEATCONTENT'                  ! initialize pol names
 
-C.........  Re-define line buffer with other pollutants (CO,NOX,SO2, and others)
-        IF( BKSPFLAG ) THEN
-            SEGMENT( 11 ) = ADJUSTL( FIREPOL( NN ) )   ! replace with additional pol names
-            SEGMENT( 10 ) = '1.000E-36'                ! replace with a blank for those pol 
-        END IF
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        DESC   = ADJUSTL( SEGMENT( 5 ) )   ! plant description
-        LAT    = SEGMENT( 6 )              ! stack latitude
-        LON    = SEGMENT( 7 )              ! stack longitude
-        MACT   = ADJUSTL( SEGMENT( 8 ) )   ! MACT code (NFDRSCODE)
-        SIC    = SEGMENT( 9 )              ! SIC (MATBURNED)
-        CTYPE  = ADJUSTL( 'L' )            ! fixed coordinate type for wildfire
+        DESC   = SEGMENT( 5 )              ! fire description
+        LAT    = SEGMENT( 6 )              ! fire latitude
+        LON    = SEGMENT( 7 )              ! fire longitude
+        MACT   = SEGMENT( 8 )              ! MACT code (NFDRSCODE field)
+        SIC    = SEGMENT( 9 )              ! SIC (MATBURNED field)
+        CTYPE  = 'L'                       ! lat-lon coordinate type part of format
 
-        ERPTYP = ADJUSTL( ' ' )            ! dummy emissions release point type 
-        SRCTYP = ADJUSTL( ' ' )            ! dummy source type code    
-        NAICS  = ADJUSTL( ' ' )            ! dummy NAICS code
-        UTMZ   = ADJUSTL( ' ' )            ! dummy UTM zone
-        CORS   = ADJUSTL( ' ' )            ! dummy DOE plant ID
-        BLID   = ADJUSTL( ' ' )            ! dummy boiler ID
+C.........  Populate all of the data fields with dummy values
+        DO I = 1, NDATPERLN
+            READDATA( I,NEM ) = '0.0'   ! dummy annual emissions
+            READDATA( I,NDY ) = '-9'    ! dummy average-day emissions
+            READDATA( I,NEF ) = '-9'    ! dummy emission factor
+            READDATA( I,NCE ) = '-9'    ! dummy control efficiency
+            READDATA( I,NRE ) = '-9'    ! dummy rule effectiveness
+            READDATA( I,NC1 ) = '-9'    ! dummy primary control equipment code
+            READDATA( I,NC2 ) = '-9'    ! dummy secondary control equipment code
+        END DO
 
-        READPOL ( 1     ) = SEGMENT( 11 )  ! name of variable
-        READDATA( 1,NEM ) = SEGMENT( 10 )  ! Data
-        READDATA( 1,NDY ) = '-9'    ! dummy average-day emissions
-        READDATA( 1,NEF ) = '-9'    ! dummy emission factor
-        READDATA( 1,NCE ) = '-9'    ! dummy control efficiency
-        READDATA( 1,NRE ) = '-9'    ! dummy rule effectiveness
-        READDATA( 1,NC1 ) = '-9'    ! dummy primary control equipment code
-        READDATA( 1,NC2 ) = '-9'    ! dummy secondary control equipment code
-
-C.........  Make sure routine knows it's been called already
-        FIRSTIME = .FALSE.
-        
+C.........  Populate heat content value
+        L = LEN( READDATA( 1, NEM ) )
+        READDATA( 1, NEM ) = SEGMENT( 10 )( 1:L )
+      
 C.........  Return from subroutine 
         RETURN
 
