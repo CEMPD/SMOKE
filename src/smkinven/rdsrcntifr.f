@@ -1,7 +1,6 @@
 
-        SUBROUTINE RDSRCORLFR( LINE, NN, CFIP, FIREID, LOCID, SKID,
-     &                         SGID, TSCC, NPOLPERLN, HDRFLAG, EFLAG,
-     &                         BKSPFLAG )
+        SUBROUTINE RDSRCORLFR( LINE, CFIP, FIREID, LOCID, SKID,
+     &                         SGID, TSCC, NDATPERLN, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -43,9 +42,6 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS, NINVTBL,
      &                      ITNAMA, ITCASA
 
-C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: FIREPOL
-
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -60,21 +56,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
-        INTEGER,            INTENT (IN) :: NN        ! no of current FIREPOL
         CHARACTER(FIPLEN3), INTENT(OUT) :: CFIP      ! fip code
         CHARACTER(PLTLEN3), INTENT(OUT) :: FIREID    ! fire ID
         CHARACTER(CHRLEN3), INTENT(OUT) :: LOCID     ! location ID
         CHARACTER(CHRLEN3), INTENT(OUT) :: SKID      ! dummy stack ID
         CHARACTER(CHRLEN3), INTENT(OUT) :: SGID      ! dummy segment ID
         CHARACTER(SCCLEN3), INTENT(OUT) :: TSCC      ! dummy scc code
-        INTEGER,            INTENT(OUT) :: NPOLPERLN ! no. pollutants per line
+        INTEGER,            INTENT(OUT) :: NDATPERLN ! no. pollutants per line
         LOGICAL,            INTENT(OUT) :: HDRFLAG   ! true: line is a header line
         LOGICAL,            INTENT(OUT) :: EFLAG     ! error flag
-        LOGICAL,            INTENT (IN) :: BKSPFLAG  ! backspace flag
 
 C...........   Local parameters, indpendent
-        INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
-        INTEGER, PARAMETER :: NSEG = 63      ! number of segments in line
+        INTEGER, PARAMETER :: MXPOLFIL = 1000  ! arbitrary maximum pollutants in file
+        INTEGER, PARAMETER :: NSEG = 10      ! number of segments in line
+        INTEGER, PARAMETER :: NEXTRA  = 4    ! number of extra non-data fields that need
 
 C...........   Other local variables
         INTEGER         I, II       ! counters and indices
@@ -82,13 +77,9 @@ C...........   Other local variables
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
         INTEGER         INY     !  inventory year
         INTEGER         IOS     !  i/o status
-        INTEGER, SAVE:: NPOL    !  number of pollutants in file
-
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
+        INTEGER, SAVE:: NDAT = -1 !  number of pollutants in file
  
         CHARACTER(CHRLEN3) SEGMENT( NSEG ) ! segments of line
-        CHARACTER(CASLEN3) TCAS            ! tmp cas number
-        CHARACTER( 2 )     ID              ! fake SCC ID for extra pol
         CHARACTER(300)     MESG            ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'RDSRCORLFR' ! Program name
@@ -98,8 +89,8 @@ C   begin body of subroutine RDSRCORLFR
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly
-        CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .FALSE., 
-     &               LINE, ICC, INY, NPOL, IOS )
+        CALL GETHDR( MXPOLFIL, .TRUE., .TRUE., .TRUE., 
+     &               LINE, ICC, INY, NDAT, IOS )
 
 C.........  Interpret error status
         IF( IOS == 4 ) THEN
@@ -117,58 +108,35 @@ C.........  Interpret error status
 C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
             HDRFLAG = .TRUE.
+            IF( NDAT > 0 ) NDATPERLN = NDAT + NEXTRA  
             RETURN
         ELSE
             HDRFLAG = .FALSE.
         END IF
         
+C.........  Give error if #DATA line has not defined the pollutants that
+C           are contained in the day-specific data file. NOTE: This code
+C           will not be reached until after the last header line)
+        IF ( NDAT < 0 ) THEN
+            WRITE( MESG, 94010 ) 'First data line reached in ORL '//
+     &             'FIRE file with required #DATA header found.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
-        SEGMENT( 11 ) = 'HEATCONTENT'
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS     
-        CFIP( 2:6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
+        CALL PADZERO( SEGMENT( 1 )( 1:5 ) )
+        WRITE( CFIP, '(I1,A)' ) ICC, SEGMENT( 1 )( 1:5 )  ! country code of FIPS     
 
-C.........  Replace blanks with zeros        
-        DO I = 1,FIPLEN3
-            IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
-        END DO
-
-        FIREID = ADJUSTL( SEGMENT( 2 ) )  ! fire ID
-        LOCID  = ADJUSTL( SEGMENT( 3 ) )  ! location ID
-        TSCC   = ADJUSTL( SEGMENT( 4 ) )  ! scc code
-        SKID   = '               '        ! dummy stack ID
-        SGID   = '               '        ! dummy segment ID
-
-C.........  Re-define line buffer with other pollutants (CO,NOX,SO2, and others)
-        IF( BKSPFLAG ) THEN
-            SEGMENT( 11 ) = ADJUSTL( FIREPOL( NN ) )   ! replace with additional pol names
-        END IF
+        FIREID = SEGMENT( 2 )   ! fire ID
+        LOCID  = SEGMENT( 3 )   ! location ID
+        TSCC   = SEGMENT( 4 )   ! scc code
+        SKID   = ' '            ! dummy stack ID
+        SGID   = ' '            ! dummy segment ID
         
-C.........  Determine number of pollutants for this line based on CAS number
-        TCAS = ADJUSTL( SEGMENT( 11 ) )
-        I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
-        
-        IF( I < 1 ) THEN
-            II = INDEX1( TCAS, NINVTBL, ITNAMA )
-            IF( II > 0 ) THEN
-                MESG = 'FATAL ERROR: Pollutant ' // TRIM( TCAS )  //
-     &             ' is not available in a list of CAS numbers'//
-     &             ' from $INVDIR/other/INVTABLE.'// CRLF()//BLANK10//
-     &             ' Please update a list of pollutant names ' //
-     &             '( #DATA ) in a master wildfire inventory file.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-            NPOLPERLN = 0
-        ELSE
-            NPOLPERLN = UCASNKEP( I )
-        END IF
-
-C.........  Make sure routine knows it's been called already
-        FIRSTIME = .FALSE.
-
 C.........  Return from subroutine 
         RETURN
 
