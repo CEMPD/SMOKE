@@ -51,6 +51,7 @@
 !           specific source number over all periods.
         INTEGER, ALLOCATABLE, PUBLIC:: MXPDPT( : )   ! Max part-day recs per hr
         INTEGER, ALLOCATABLE, PUBLIC:: NPDPT ( : )   ! No. part-day recs per hr
+        INTEGER, ALLOCATABLE, PUBLIC:: NPDPTP( :,: ) ! No. part-day recs per hr/pol
         INTEGER, ALLOCATABLE, PUBLIC:: CODEA ( :,: ) ! pol/act index to EANAM
         INTEGER, ALLOCATABLE, PUBLIC:: IDXSRC( :,: ) ! sorting index
         INTEGER, ALLOCATABLE, PUBLIC:: SPDIDA( :,: ) ! index to CSOURC
