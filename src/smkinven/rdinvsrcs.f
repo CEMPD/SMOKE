@@ -46,7 +46,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: CSOURCA, SRCIDA, FIREPOL, NFRPOL,
+        USE MODSOURC, ONLY: CSOURCA, SRCIDA, 
      &                      NSTRECS, SRCSBYREC, RECIDX
 
 C.........  This module contains the information about the source category
@@ -109,9 +109,7 @@ C...........   Local arrays
         INTEGER            FRSNUMS  ( MXRECS,3 ) ! triplets of file, record, and source number
         CHARACTER(SRCLEN3) SCSEGMENT( NSCSEG )   ! segments from scratch file
         CHARACTER( 40 )    SEGMENT  ( NSEG )     ! segments of line
-        INTEGER            IDXFIRE  ( NSEG )     ! index for wildfire pollutants
 
-        CHARACTER(CHRLEN3), ALLOCATABLE:: TMPFIRE  ( : )    ! names of tmp pollutant in wild fire
         INTEGER,            ALLOCATABLE:: CSRCIDX  ( : )    ! index for sorting CSOURCA
 
 C...........   File units and logical/physical names
@@ -119,7 +117,7 @@ C...........   File units and logical/physical names
         INTEGER         CDEV        !  scratch file
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, K2, L, NN, NP, S !  counters and indices
+        INTEGER         I, J, K, K1, K2, L, NP, S !  counters and indices
         INTEGER         L0, L1, L2, L3, L4, L5, L6, L7, L8, L9
 
         INTEGER         CSRC_LEN     !  length of source characteristics
@@ -128,7 +126,6 @@ C...........   Other local variables
         INTEGER         IOS          !  i/o status
         INTEGER         INVFMT       !  inventory format code
         INTEGER         IREC         !  no. of records read
-        INTEGER         NREC         !  no. of wildfires records read per file
         INTEGER         ISTREC       !  no. of records stored
         INTEGER         IVT          !  vehicle type code
         INTEGER         LDEV         !  device no. for log file
@@ -149,7 +146,7 @@ C...........   Other local variables
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
         LOGICAL      :: FIRSTIME = .TRUE. ! true: first time through 
-        LOGICAL      :: BKSPFLAG = .FALSE. ! true: back up one line
+c        LOGICAL      :: BKSPFLAG = .FALSE. ! true: back up one line
 
         CHARACTER(FIPLEN3) CFIP    ! fips code
         CHARACTER(LNKLEN3) CLNK    ! link ID
@@ -425,7 +422,6 @@ C.........  Loop over files and multiples of MXRECS
 
 C.............  Reset counters        
             S = 0       ! source number
-            NN= 0       ! number of wildfire pollutants
             ISTREC= 0   ! number of records stored
 
 C.............  Loop through records in current file
@@ -434,9 +430,7 @@ C.............  Loop through records in current file
               
                 READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
-                IREC = IREC + 1
-                IF( .NOT. BKSPFLAG ) NREC = NREC + 1
-            
+                IREC = IREC + 1          
                 IF( IOS > 0 ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG, 94010 ) 'I/O error', IOS,
@@ -454,7 +448,6 @@ C.....................  If list format, try to open next file
 C.........................  Close current file and reset counter
                         CLOSE( FDEV )
                         IREC = 0
-                        NREC = 0
 
 C.........................  Advance to next file
                         IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
@@ -533,114 +526,6 @@ C.....................  Otherwise, not a list file, so exit
                  
                 END IF   ! end check for end of file
 
-C.................  Create a list of pollutants (#ORL FIRE ONLY)
-C.................  Check the header of #ORL FIRE (wildfire case)
-                L1 = INDEX( LINE, '#DATA' )
-
-                IF( L1 > 0 .AND. FIRSTIME .AND. FIREFLAG  ) THEN
-
-                    L2 = INDEX( LINE, 'HFLUX' )
-                    L3 = INDEX( LINE, 'FUEL_LOAD' ) 
-                    L4 = INDEX( LINE, 'ACRESBURNED' )
-                    L5 = INDEX( LINE, 'ENDHOUR' )
-                    L6 = INDEX( LINE, 'BEGHOUR' )
-                    L7 = INDEX( LINE, 'PM10-PRI' )
-                    L8 = INDEX( LINE, 'PMC-PRI' )
-
-C.....................  Separate line into segments CALL 
-                    CALL PARSLINE( LINE, NSEG, SEGMENT )
-
-C.....................  Count no of pollutants available
-                    NFRPOL = 0
-                    IDXFIRE = 0
-                    IF( L2 < 1 ) SEGMENT( NSEG )   = 'HFLUX'       ! adding heat flux
-                    IF( L3 < 1 ) SEGMENT( NSEG-1 ) = 'FUEL_LOAD'   ! adding fuel loading 
-                    IF( L4 < 1 ) SEGMENT( NSEG-2 ) = 'ACRESBURNED' ! adding acres burned 
-                    IF( L5 < 1 ) SEGMENT( NSEG-3 ) = 'ENDHOUR'     ! adding ending hour
-                    IF( L6 < 1 ) SEGMENT( NSEG-4 ) = 'BEGHOUR'     ! adding beginning hour
-                    IF( L7 > 0 .AND. L8 < 1 ) THEN
-                        SEGMENT( NSEG-5 ) = 'PMC-PRI'     ! adding coarse PM
-                    END IF
-
-                    DO I = 2, NSEG
-                        IF( SEGMENT( I ) == ' ' ) CYCLE 
-                        IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE  ! Skip. It is a var in FIRE ORL
-                        NFRPOL = NFRPOL + 1
-                        IDXFIRE( NFRPOL ) = I
-                    END DO
-
-C......................  Stroing a list of all pollutants available in wildfire
-                    ALLOCATE( FIREPOL( NFRPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'FIREPOL', PROGNAME )
-                    FIREPOL = ' '
-                    NFRPOL = 0
-
-                    DO I = 2, NSEG
-                        IF( SEGMENT( I ) == ' ' ) CYCLE 
-                        IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE 
-                        NFRPOL = NFRPOL + 1
-                        J = IDXFIRE( NFRPOL )
-                        FIREPOL( NFRPOL ) = ADJUSTL( SEGMENT( J ) )
-                    END DO
-
-                    FIRSTIME = .FALSE.
-                    L1 = 0
-                    CYCLE
-
-                ELSE IF( L1 > 0 .AND. FIREFLAG )THEN
-
-C.....................  Separate line into segments
-                    CALL PARSLINE( LINE, NSEG, SEGMENT )
-                    K = NFRPOL
-                    J = NFRPOL
-
-                    L7 = INDEX( LINE, 'PM10-PRI' )
-                    L8 = INDEX( LINE, 'PMC-PRI' )
-
-                    IF( L7 > 0 .AND. L8 < 1 ) THEN
-                        NP = INDEX1( 'PMC-PRI', K, FIREPOL )
-                        IF( NP < 1 ) SEGMENT( NSEG ) = 'PMC-PRI'     ! adding coarse PM
-                    END IF
-
-                    DO I = 2, NSEG
-                        IF( SEGMENT( I ) == ' ' ) CYCLE 
-                        IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE  ! skip. 
-                        NP = INDEX1( SEGMENT( I ), K, FIREPOL )
-                        IF( NP < 1 ) NFRPOL = NFRPOL + 1    ! increase number of pollutants
-                    END DO
-                    
-C......................  Backup and re-stroing a list of all pollutants available in wildfire
-                    IF( NFRPOL > K  ) THEN
-                        ALLOCATE( TMPFIRE( K ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'TMPFIRE', PROGNAME )
-
-                        DO I = 1,K
-                            TMPFIRE(I) = FIREPOL(I)                   ! backup old/previous pol list
-                        END DO
-
-                        ALLOCATE( FIREPOL( NFRPOL ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'FIREPOL', PROGNAME )
-                        FIREPOL = ' '
-                        DO I = 1, K
-                        FIREPOL( I ) = TMPFIRE( I )         ! restore into new array
-                        END DO
-
-C..................... Rebuild a list of entire pollutant names
-                        DO I = 2, NSEG
-                            IF( SEGMENT( I ) == ' ' ) CYCLE 
-                            IF( SEGMENT( I ) == 'HEATCONTENT' ) CYCLE  ! skip.
-                            NP = INDEX1( SEGMENT( I ), K, TMPFIRE )
-                            IF( NP < 1 ) THEN
-                                 J = J + 1
-                                 FIREPOL( J ) = SEGMENT( I )    ! creating a new list of pollutants in wildfire case
-                            END IF
-                        END DO
-                        CYCLE
-                    END IF
-                    L1 = 0
-
-                END IF
-
 C.................  Skip blank lines
                 IF( LINE == ' ' ) CYCLE
               
@@ -707,21 +592,15 @@ C.................  Process line depending on file format and source category
                     ORLFLG   = .FALSE.
                     FIREFLAG = .TRUE.
 
-                    CALL RDSRCORLFR( LINE, NN, CFIP, FCID, PTID, SKID,
+                    CALL RDSRCORLFR( LINE, CFIP, FCID, PTID, SKID,
      &                               SGID, TSCC, NPOLPERLN, HDRFLAG, 
-     &                               EFLAG, BKSPFLAG )
+     &                               EFLAG )
 
-C................. Backup a line to add pollutant (wildfire case)
-                    IF( .NOT. BLKORCMT( LINE ) ) BKSPFLAG = .TRUE.
-                    IF( BKSPFLAG ) THEN
-                        NN = NN + 1
-                        IF( NN > NFRPOL ) THEN
-                            BKSPFLAG = .FALSE.
-                            NN = 0
-                        ELSE
-                            BACKSPACE( FDEV )
-                        END IF
-                    END IF
+                CASE DEFAULT
+                    WRITE( MESG, 94010 ) 'Routine rdinvsrc.f not '//
+     &                     'expecting to read file of format code', 
+     &                      CURFMT
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 END SELECT
 
@@ -746,60 +625,31 @@ C.................  Write first ten lines of inventory to log file
                     END IF
                 END IF
 
-C.................  Check that source characteristics are correct
-                IF( FIREFLAG ) THEN
-                    IF( NPOLPERLN == 0 ) THEN
-                        IF( NWARN < MXWARN ) THEN
-                            WRITE( MESG,94010 ) 'WARNING: No kept '//
-     &                         'pollutants found at line', NREC, '. ' //
-     &                         'The source will be dropped.'
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-                        CYCLE
-                    END IF
-
-                    IF( .NOT. CHKINT( CFIP ) ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: State and/or ' //
-     &                     'county code is non-integer at line', NREC
-                        CALL M3MESG( MESG )
-                    END IF
-
-                    IF( CFIP( 2:3 ) == '00' .OR.
-     &                  CFIP( 4:6 ) == '000'     ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: State and/or ' //
-     &                     'county code is zero (missing) at line', NREC
-                        CALL M3MESG( MESG )
-                    END IF
-                
-                ELSE
-C.....................  Make sure some emissions are kept for this source
-                    IF( NPOLPERLN == 0 ) THEN
-                        IF( NWARN < MXWARN ) THEN
-                            WRITE( MESG,94010 ) 'WARNING: No kept '//
+C.................  Check that source characteristics are correct          
+C.................  Make sure some emissions are kept for this source
+                IF( NPOLPERLN == 0 ) THEN
+                    IF( NWARN < MXWARN ) THEN
+                        WRITE( MESG,94010 ) 'WARNING: No kept '//
      &                         'pollutants found at line', IREC, '. ' //
      &                         'The source will be dropped.'
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-                        CYCLE
-                    END IF
-
-                    IF( .NOT. CHKINT( CFIP ) ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: State and/or ' //
-     &                     'county code is non-integer at line', IREC
                         CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
                     END IF
+                    CYCLE
+                END IF
 
-                    IF( CFIP( 2:3 ) == '00' .OR.
-     &                  CFIP( 4:6 ) == '000'     ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: State and/or ' //
+                IF( .NOT. CHKINT( CFIP ) ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG,94010 ) 'ERROR: State and/or ' //
+     &                     'county code is non-integer at line', IREC
+                    CALL M3MESG( MESG )
+                END IF
+
+                IF( CFIP( 2:3 ) == '00' .OR.
+     &              CFIP( 4:6 ) == '000'     ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: State and/or ' //
      &                     'county code is zero (missing) at line', IREC
                     CALL M3MESG( MESG )
-                    END IF
-
                 END IF
 
 C.................  Check source specific characteristics
@@ -882,7 +732,8 @@ C.....................  Ensure that road class is valid and convert from road cl
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
-                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT ) THEN
+                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT .OR.
+     &                  CURFMT == ORLFIREFMT ) THEN
 
 C.........................  Make sure SCC is at least 8 characters long
                         IF( LEN_TRIM( TSCC ) < 8 ) THEN
@@ -910,7 +761,7 @@ C.........................  Make sure we have a facility/plant ID
 
                     END IF
                     
-                    IF( CURFMT == EMSFMT ) THEN
+!                    IF( CURFMT == EMSFMT ) THEN
 
 C.........................  Check for facility, stack, device, and process IDs
 !                        IF( FCID == ' ' ) THEN
@@ -941,7 +792,7 @@ C.........................  Check for facility, stack, device, and process IDs
 !                            CALL M3MESG( MESG )
 !                        END IF
                     
-                    END IF
+!                    END IF
                 
                 END IF
 
