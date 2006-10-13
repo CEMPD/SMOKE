@@ -363,8 +363,6 @@ C.........  Input gridded I/O API inventory data
 
             CALL RDGRDAPI( GNAME, GRDNM ) 
 
-c note: STOPPED HERE
-
         END IF  ! For gridded I/O API NetCDF inventory
 
 C.........  Output SMOKE inventory files
@@ -375,14 +373,6 @@ C.............  Open output I/O API and ASCII files
 
             CALL OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, MDEV, SDEV,
      &                       ADEV, VARPATH, VAR_FORMULA )
-
-C.............  Check smkinven formula option is not set for fire modeling
-            L = LEN_TRIM( VAR_FORMULA )
-            IF( FIREFLAG .AND. L > 0 ) THEN
-                MESG = 'ERROR: SMKINVEN_FORMULA option is not ' //
-     &                 'available during fire emission modeling.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
 
             MESG = 'Writing SMOKE ' // TRIM( CATEGORY ) // 
      &             ' SOURCE INVENTORY file...'
