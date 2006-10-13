@@ -52,7 +52,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NCHARS, SC_BEGP, SC_ENDP, NSRC
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: MXPDPT, NPDPT, CODEA, IDXSRC,
+        USE MODDAYHR, ONLY: MXPDPT, NPDPT, NPDPTP, CODEA, IDXSRC,
      &                      SPDIDA, EMISVA, DYTOTA, LPDSRC,
      &                      PDEMOUT, PDTOTL, NUNFDORS, UNFDORS
 
@@ -219,6 +219,13 @@ C.........  Initialize arrays
         DYTOTA = BADVAL3  ! array
         LPDSRC = .FALSE.  ! array
 
+C.........  Initialize special arrays for fires processing
+        IF ( FIREFLAG ) THEN
+            ALLOCATE( NPDPTP( NSTEPS,NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'NPDPTP', PROGNAME )
+            NPDPTP = 0        ! array
+        END IF
+
 C.........  Message before reading the input file (list of files)
         MESG = 'Reading ' // TYPNAM // '-specific data...'
         CALL M3MSG2( MESG )
@@ -229,10 +236,19 @@ C.........  Loop through input files and actually read the data
      &                 EASTAT, SPSTAT )
 
 C.........  Determine the actual number of day-specific or hour-specific sources
-        NPDSRC = 0
-        DO S = 1, NSRC
-            IF( LPDSRC( S ) ) NPDSRC = NPDSRC + 1
-        END DO
+C.........  If fire-data processing, use a different approach to determine the
+C           sources, since the fire data are so sparse.  This prevents the PDAY
+C           files from containing a ton of empty records at the end of
+C           each time step (since the PDAY files are sparsely stored with a
+C           source index that changes as needed for each time step)
+        IF ( FIREFLAG ) THEN
+            NPDSRC = MAXVAL( NPDPTP ) ! array
+        ELSE
+            NPDSRC = 0
+            DO S = 1, NSRC
+                IF( LPDSRC( S ) ) NPDSRC = NPDSRC + 1
+            END DO
+        END IF
 
 C.........  Make sure that that actual number of sources over all sources does
 C           not exceed the maximum number of sources over all hours
