@@ -41,7 +41,8 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVDUNT, INVDCNV, INVDNAM
+        USE MODLISTS, ONLY: MXIDAT, INVDUNT, INVDCNV, INVDNAM,
+     &                      ITCASA, ITNAMA, NINVTBL, ITKEEPA
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYNAM, CTRYCOD
@@ -84,6 +85,7 @@ C...........   Other local variables
 
         INTEGER         COD       !  tmp data variable position in valid list
         INTEGER         IOS       !  i/o status
+        INTEGER         NFINAL    !  final count of all "kept" pollutants
         INTEGER      :: NUNIT = 0 !  i/o status
 
         LOGICAL, SAVE:: ACT_FLAG  = .FALSE. ! true: activities in data file
@@ -288,7 +290,7 @@ C                   and storing positions in master list
 
 C.................  Set special value of error status when the number of
 C                   data variables attempted is greater than max allowed
-                IF( NPOA .GT. MXDATA ) THEN
+                IF( NPOA .GT. MXDATA .AND. DFLAG ) THEN
                     EOS = 4
                 END IF
 
@@ -297,21 +299,51 @@ C.................  Parse the header line into the pollutant names
 
 C.................  Store the position in master list of each pollutant
 C.................  Write error if pollutant is not found.
+                NFINAL = 0
                 DO V = 1, NPOA
 
                     CVAR = TMPNAM( V )
                     L = LEN_TRIM( CVAR )
+
+C.....................  Look for variable in SMOKE variable names
                     COD = INDEX1( CVAR, MXIDAT, INVDNAM )
                     IF( COD .LE. 0 ) THEN
-                        EOS = 1
-                        MESG = 'ERROR: Data variable "' // CVAR( 1:L )//
-     &                         '" not in master data variable list!'
-                        CALL M3MSG2( MESG )
+
+C........................  Look for variable in Inventory Pollutant codes                       
+                        COD = INDEX1( CVAR, NINVTBL, ITCASA )
+
+C.......................   If pollutant is not "kept", then take it
+C                          out of the count and the list
+                        IF ( ITKEEPA( COD ) ) THEN
+
+                            IF( COD .GT. 0 ) THEN
+                                COD = INDEX1( ITNAMA(COD), MXIDAT, INVDNAM )
+                                DATPOS( V ) = COD
+
+                                NFINAL = NFINAL + 1
+                                TMPNAM( NFINAL ) = CVAR
+
+C.............................  If not found in list of names or codes, then error
+                            ELSE
+                                EOS = 1
+                                MESG = 'ERROR: Data variable "' // 
+     &                               CVAR( 1:L )// '" not in master '//
+     &                               'data variable list!'
+                                CALL M3MSG2( MESG )
+                            END IF
+                        END IF
+
+C.....................  Variable found in SMOKE names
                     ELSE
                         DATPOS( V ) = COD
+                        NFINAL = NFINAL + 1
+
                     END IF
 
                 END DO
+
+C.................  Reset NPOA with final count that drops unkept variables
+                NPOA = NFINAL
 
             END IF
 
