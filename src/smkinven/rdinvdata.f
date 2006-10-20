@@ -596,7 +596,8 @@ C.........................  Reallocate memory to store emissions from a single l
                         CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
                         ALLOCATE( READPOL( 1 ), STAT=IOS )
                         CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
-                        
+                        SAVNVAR = 1
+
 C.........................  Skip back to the beginning of the loop
                         CYCLE
               
