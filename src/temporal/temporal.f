@@ -300,7 +300,7 @@ C.........  Get episode settings from episode time periods file
                 JMNTH = STR2INT( SCDATE( 5:6 ) )
                 JDAYS = STR2INT( SCDATE( 7: ) )
                 SDATE = JULIAN( JYEAR, JMNTH, JDAYS )
-                WRITE( SCDATE, '( I4, I3 )' ) JYEAR, SDATE
+                WRITE( SCDATE, '( I4, I3.3 )' ) JYEAR, SDATE
                 ITDATE( II ) = STR2INT( SCDATE )
                 SDATE = ITDATE( II )
                 STIME = STTIME( II )
