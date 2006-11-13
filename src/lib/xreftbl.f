@@ -221,10 +221,11 @@ C.........  Check for valid operation type
             POADFLT = .TRUE.
             OFLAG   = .TRUE.
         CASE( 'NONHAP' )
-            POADFLT = .FALSE.
+            POADFLT = .TRUE.
             XFLAG   = .TRUE.
             NFLAG   = .FALSE.
             OFLAG   = .TRUE.
+            PLTIDX  = 2     ! for point (added for source-specific NHAPEXCLUDE)
         CASE( 'PROJECTION' )
             POADFLT = .TRUE.
             JFLAG   = .TRUE.
@@ -296,6 +297,7 @@ C.........  For CSRC, don't include pollutant for grouping.
             J = INDXTA( I )
             CSRC    = CSRCTA( J )( 1:SC_ENDP( NCHARS ) )
             TSCC    = CSCCTA( J )
+
             IF( NFLAG ) ISP = ISPTA ( J )  ! no pollutants for gridding
             
             IF( ALLOCATED( CMACTA ) ) THEN
@@ -985,7 +987,7 @@ C.....................  Process NT 16 through 11
      &                             'be specified'
                             CALL REPORT_INVALID_XREF( MESG )
                             NT = 0
-			    EXIT                      ! End loop with NT
+                            EXIT                      ! End loop with NT
 
                         END IF
 
