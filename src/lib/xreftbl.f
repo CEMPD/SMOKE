@@ -963,7 +963,6 @@ C                       full TSCC assignment.
 C.....................  Process NT 16 through 11
                     NT = 9 + MXCHRS
                     DO J = MXCHRS, 2, -1
-
                         IF( ( J .EQ. NCHKCHR .OR. J .EQ. 2  ) .AND.
      &                      CHARS( J ) .NE. ' '                   ) THEN
 
@@ -982,13 +981,18 @@ C.....................  Process NT 16 through 11
                                 EXIT                      ! End loop with NT
                             END IF
 
-                        ELSE IF( CHARS( J ) .NE. ' ' ) THEN
+                        ELSE IF( CHARS( J ) .NE. ' ' .AND. 
+     &                                                .NOT. XFLAG ) THEN
                             MESG = 'Non-zero SCC is not allowed to ' //
      &                             'be specified'
                             CALL REPORT_INVALID_XREF( MESG )
                             NT = 0
                             EXIT                      ! End loop with NT
 
+                        ELSE IF( CHARS( J ) .NE. ' ' .AND. XFLAG ) THEN
+
+                            CYCLE
+                        
                         END IF
 
                         NT = NT - 1
