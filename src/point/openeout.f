@@ -67,7 +67,7 @@ C..........    Subroutine arguments and their descriptions
         INTEGER     , INTENT (IN) :: SDATE   ! start date of episode
         INTEGER     , INTENT (IN) :: STIME   ! start time of episode
         CHARACTER(*), INTENT (IN) :: ENAME   ! i/o api inventory file
-        INTEGER     , INTENT (IN) :: VFLAG   ! true: using variable grid
+        LOGICAL     , INTENT (IN) :: VFLAG   ! true: using variable grid
         INTEGER     , INTENT (OUT):: PDEV    ! ASCII file for major/ping src IDs
         CHARACTER(*), INTENT (OUT):: MNAME   ! logical name of ping srcs groups
 
