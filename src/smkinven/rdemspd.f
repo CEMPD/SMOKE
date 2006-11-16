@@ -510,7 +510,7 @@ C               look it up and get indidies
             IF( FIP .NE. LFIP ) THEN
                 J = FIND1( FIP, NINVIFIP, INVIFIP )
                 IF( J .LE. 0 ) THEN
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not ',
+                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not ' //
      &                     'find FIPS code', FIP, 'in internal list.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
