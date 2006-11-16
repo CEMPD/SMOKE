@@ -167,8 +167,8 @@ C..         Reused for each time step and species
         REAL                 RPTBINARY         ! emissions in binary file
 C..         Summed over time steps
         REAL, ALLOCATABLE :: RPTALLFILE( :,: ) ! emissions by file and species
-        REAL                 RPTALLASC ( : )   ! emissions in ASCII file by species
-        REAL                 RPTALLBIN ( : )   ! emissions in binary file by species
+        REAL, ALLOCATABLE :: RPTALLASC ( : )   ! emissions in ASCII file by species
+        REAL, ALLOCATABLE :: RPTALLBIN ( : )   ! emissions in binary file by species
         REAL                 RPTFILESUM        ! summed emissions across input files
 
 C.........  Source information variables
