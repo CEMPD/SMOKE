@@ -966,7 +966,7 @@ C.........  Write ASCII file
                 END IF
                 IGRP = GROUPID( S )
 
-                IF( LPING( S ) .AND. NEVPEMV ) THEN
+                IF( LPING( S ) .AND. ( NEVPEMV .GT. 0 ) ) THEN
                     CSRC = CSOURC( S )
                     PLT = CSRC( PTBEGL3( 2 ):PTENDL3( 2 ) )
                     STK = CSRC( PTBEGL3( JSTACK ):PTENDL3( JSTACK ) )
