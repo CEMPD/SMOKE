@@ -304,23 +304,26 @@ C.................  Read source index for this day
                 INDXD = 0   ! array
             END IF      !  if read3() failed on dname
 
-            FIREFLAG = .TRUE.
-
 C.............  Read source beginning hour(BEGHOUR) for this day
-            IF ( .NOT. READ3( DNAME, 'BEGHOUR', ALLAYS3,
+            IF ( READ3( DNAME, 'BEGHOUR', ALLAYS3,
      &                        JDATE, JTIME, STHOUR      ) ) THEN
-                WRITE( MESG,94010 ) 'NOTE: re-normalize temporalized' //
+                WRITE( MESG,94010 ) 'NOTE: Re-normalize temporalized' //
      &               ' hourly factors based on begining and ending' // 
      &               CRLF() // '     hours of wildfire on ', JDATE
                 CALL M3MSG2( MESG )
 
-                FIREFLAG = .FALSE.
+                FIREFLAG = .TRUE.
             END IF      !  if read3() failed on dname
 
 C.............  Read source ending hour(ENDHOUR) for this day
-            IF ( .NOT. READ3( DNAME, 'ENDHOUR', ALLAYS3,
+            IF ( READ3( DNAME, 'ENDHOUR', ALLAYS3,
      &                        JDATE, JTIME, EDHOUR      ) ) THEN
-                FIREFLAG = .FALSE.
+                WRITE( MESG,94010 ) 'NOTE: Re-normalize temporalized' //
+     &               ' hourly factors based on begining and ending' // 
+     &               CRLF() // '     hours of wildfire on ', JDATE
+                CALL M3MSG2( MESG )
+
+                FIREFLAG = .TRUE.
             END IF      !  ifread3() failed on dname
 
         END IF          ! if using day-specific emissions
