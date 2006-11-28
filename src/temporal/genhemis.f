@@ -1,7 +1,7 @@
 
         SUBROUTINE GENHEMIS( NPLE, JDATE, JTIME, TZONE, DNAME, HNAME,
      &                       NAMIN, NAMOUT, EMAC, EMFAC, EMACV, TMAT, 
-     &                       EMIST )  
+     &                       EMIST, LDATE )  
 
 C***********************************************************************
 C  subroutine body starts at line 173
@@ -93,6 +93,7 @@ C...........   SUBROUTINE ARGUMENTS
         REAL        , INTENT (OUT)   :: EMACV( NSRC, NPLE ) ! work emis/actvy
         REAL        , INTENT (OUT)   :: TMAT ( NSRC, NPLE, 24 ) ! tmprl matrix
         REAL        , INTENT (OUT)   :: EMIST( NSRC, NPLE )     ! hourly emis
+        INTEGER     , INTENT (IN OUT):: LDATE               ! reset previous
 
 C...........   TMAT update variables
 
@@ -118,7 +119,6 @@ C...........   Other local variables
         INTEGER       :: ST = 0     ! resetting time for episode begin
         INTEGER       :: ED = 0     ! resetting time for episode end
         INTEGER          IOS        ! i/o status
-        INTEGER, SAVE :: LDATE = -1 ! date used in previous subroutine call
         INTEGER, SAVE :: LTIME = -1 ! time used in previous subroutine call
         INTEGER          MON        ! tmp month number (1=Jan)
         INTEGER          PIDX       ! tmp pollutant/activity index
@@ -215,6 +215,7 @@ C.............  Allocate memories for BEGHOUR and ENDHOUR
         END IF  ! End of first time section
 
 C.........  For new date...
+
         IF( JDATE .NE. LDATE ) THEN
 
 C.............  Store month and day of week for this output date for
