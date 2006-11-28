@@ -202,6 +202,7 @@ C...........   Other local variables
         INTEGER         TZMIN               ! minimum time zone in inventory      
         INTEGER         TZMAX               ! maximum time zone in inventory
         INTEGER         TDMAX               ! maximum episode days
+        INTEGER         LDATE               ! date used in previous subroutine call
 
         REAL            RTMP                ! tmp float
 
@@ -287,28 +288,28 @@ C.........  Read episode time period lists from PROCDATES.txt
 C.........  Allocate memory for imaginary temporary julian date
         ALLOCATE( ITDATE( NTPERIOD ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ITDATE', PROGNAME )
-
+        
         DO II = 1, NTPERIOD
         
             NDAYS = 0
 
-C.........  Get episode settings from episode time periods file
+C.............  Get episode settings from episode time periods file
             IF( PFLAG ) THEN
         
                 WRITE( SCDATE,'(I8)' ) STDATE( II )
-                JYEAR = STR2INT( SCDATE( :4 ) )
+                JYEAR = STR2INT( SCDATE( 1:4 ) )
                 JMNTH = STR2INT( SCDATE( 5:6 ) )
-                JDAYS = STR2INT( SCDATE( 7: ) )
+                JDAYS = STR2INT( SCDATE( 7:  ) )
                 SDATE = JULIAN( JYEAR, JMNTH, JDAYS )
-                WRITE( SCDATE, '( I4, I3.3 )' ) JYEAR, SDATE
-                ITDATE( II ) = STR2INT( SCDATE )
+                ITDATE( II ) = JYEAR*1000 + SDATE
+                
                 SDATE = ITDATE( II )
                 STIME = STTIME( II )
                 TSTEP  = 10000  ! Only 1-hour time steps supported
                 NSTEPS = RUNLEN ( II ) / TSTEP
              ELSE
         
-C..........  Get episode settings from the Models-3 environment variables
+C...............  Get episode settings from the Models-3 environment variables
 C             when $GE_DAT/procdates.txt is not available for episode time periods
                 SDATE  = 0
                 STIME  = 0
@@ -317,19 +318,19 @@ C             when $GE_DAT/procdates.txt is not available for episode time perio
                 TSTEP  = 10000  ! Only 1-hour time steps supported
              END IF
              
-C..........  Determine number of days in episode
+C............  Determine number of days in episode
 
-C..........  Earliest day is start time in maximum time zone
+C............  Earliest day is start time in maximum time zone
              EARLYDATE = SDATE
              EARLYTIME = STIME
              CALL NEXTIME( EARLYDATE, EARLYTIME, 
      &                    -( TZMAX - TZONE )*10000 )
              
-C..........  If time is before 6 am, need previous day also
+C............  If time is before 6 am, need previous day also
              IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
              
-C..........  Latest day is end time in minimum time zone
-C..........  Calculate the ending date and time
+C............  Latest day is end time in minimum time zone
+C............  Calculate the ending date and time
              EDATE = SDATE
              ETIME = STIME
              CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
@@ -339,7 +340,7 @@ C..........  Calculate the ending date and time
              CALL NEXTIME( LATEDATE, LATETIME, 
      &                    -( TZMIN - TZONE )*10000 )
          
-C..........  If time is before 6 am, don't need last day
+C............  If time is before 6 am, don't need last day
              IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
          
              NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
@@ -683,6 +684,9 @@ C.........  Create 2-d arrays of I/O pol names, activities, & emission types
 C......  Get episode settings from episode time periods file
 
       DO II = 1, NTPERIOD
+      
+         LDATE = -1
+      
 C......  Determine number of days in episode
         IF( PFLAG ) THEN
            SDATE = ITDATE( II )
@@ -905,7 +909,7 @@ C............  Create array of emission factors by source
 C.................  Generate hourly emissions for current hour
                 CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
      &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), 
-     &                         EMAC, EMFAC, EMACV, TMAT, EMIST )
+     &                         EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
 
 
 C.................  Loop through pollutants/emission-types in this group
