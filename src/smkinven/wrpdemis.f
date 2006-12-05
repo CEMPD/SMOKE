@@ -100,8 +100,8 @@ C...........   Other local variables
         INTEGER, SAVE :: MXWARN               ! max no. warnings
         INTEGER          NOUT                 ! tmp no. sources per time step
 
+        LOGICAL          FIRSTIME            ! true: first time routine called
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: error on duplicates
-        LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
         LOGICAL, SAVE :: LFLAG    = .FALSE.  ! true: iteration on special var
 
         CHARACTER(256)   BUFFER           ! src description buffer
@@ -111,6 +111,8 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program WRPDEMIS
+
+        FIRSTIME = .TRUE.
 
 C.........  For the first time the routine is called...
         IF( FIRSTIME ) THEN
@@ -165,7 +167,7 @@ C.........  Store sorted records for this hour
             J = IDXSRC( I,TIDX )
             S = SPDIDA( J,TIDX )
             V = CODEA ( J,TIDX )
-            
+
 C.............  Intialize as not a special data variable (e.g., not flow rate)
             LFLAG = .FALSE.
 
