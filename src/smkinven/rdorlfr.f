@@ -772,10 +772,7 @@ C               look it up and get indidies
                 LFIP = FIP
 
             END IF
-
-C.............  Include hack to change how CSRC is constructed
-C               when CSOURCE has been read from inventory PNTS file
-C               instead of created in the same SMOKE run.
+C.............  Build source characteristics field for searching inventory
             IF( .NOT. IFLAG ) THEN
                 CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID//'     ', 
      &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
