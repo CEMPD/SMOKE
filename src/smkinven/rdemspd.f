@@ -65,6 +65,7 @@ C...........   INCLUDES
 
 C.........  EXTERNAL FUNCTIONS
         CHARACTER(2) CRLF
+        INTEGER      ENVINT
         LOGICAL      ENVYN
         INTEGER      FIND1
         INTEGER      FINDC
@@ -75,7 +76,7 @@ C.........  EXTERNAL FUNCTIONS
         REAL         STR2REAL
         INTEGER      YEAR4
 
-        EXTERNAL     CRLF, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
+        EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
      &               SECSDIFF, STR2INT, STR2REAL, YEAR4
 
 C.........  SUBROUTINE ARGUMENTS
@@ -123,11 +124,13 @@ C...........   Other local variables
         INTEGER, SAVE :: MAXPTR           ! maximum time step reference pointer
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
+    	INTEGER, SAVE :: MXWARN       	  ! max no. warnings
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NFIELD = 0       ! number of data fields
         INTEGER, SAVE :: NFM1   = 0       ! number of data fields minus 1
         INTEGER       :: NPOA   = 0       ! unused header number of pol/act
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
+        INTEGER, SAVE :: NWARN( 3 )       ! warnings counter
         INTEGER          PTR              ! tmp time step pointer
         INTEGER       :: RDATE = 1980001  ! reference date: Jan 1, 1980
         INTEGER       :: RTIME = 0        ! reference time
@@ -147,6 +150,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
+        LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
 
         CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(300) :: LINE   = ' '    ! line buffer 
@@ -170,11 +174,17 @@ C   begin body of program RDEMSPD
 C.........  First time routine called
         IF( FIRSTIME ) THEN
 
+C.............  Get value of these controls from the environment
+            IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', ' ', .TRUE., IOS )
+
 C.............  Get environment variable using an hourly file as a daily file
 C.............  NOTE - the hourly file will have been assigned as a daily
 C               file when it was opened.
             MESG = 'Use daily totals only from hourly data file'
             SFLAG = ENVYN( 'HOURLY_TO_DAILY', MESG, .FALSE., IOS )
+
+C.............  Get maximum number of warnings
+            MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
 C.............  Give note if file is being read as a daily file
             IF( DAYFLAG .AND. SFLAG ) THEN
@@ -218,6 +228,9 @@ C.............  Build helper arrays for making searching faster
                     END IF
                 END DO
             END DO
+
+C.............  Initialize warnings counter
+    	    NWARN = 0  ! array
 
             FIRSTIME = .FALSE.
 
@@ -359,12 +372,14 @@ C.............  Set time zone number
  
 C.............  If daily emissions are not in the output time zone, print 
 C               warning
-            IF( WARNOUT .AND. DAYFLAG .AND. ZONE .NE. TZONE ) THEN
+            IF( WARNOUT .AND. DAYFLAG .AND. ZONE .NE. TZONE .AND.
+     &          NWARN( 1 ) .LE. MXWARN ) THEN
                 WRITE( MESG,94010 ) 
      &                'WARNING: Time zone ', ZONE, 'in day-specific ' //
      &                'file at line', IREC, CRLF() // BLANK10 //  
      &                'does not match output time zone', TZONE
                 CALL M3MESG( MESG )
+    	    	NWARN( 1 ) = NWARN( 1 ) + 1
 
             END IF
 
@@ -392,12 +407,13 @@ C.................  Check to see if data name is in list of special names
 
                 IF ( COD .LE. 0 ) THEN
 
-                    IF( WARNOUT ) THEN
+                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
                         L = LEN_TRIM( CDAT )
                         WRITE( MESG,94010 ) 
      &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
      &                   '" at line', IREC, '- not in inventory'
                         CALL M3MESG( MESG )
+    	    	    	NWARN( 2 ) = NWARN( 2 ) + 1
                     END IF
                     CYCLE      !  to head of loop
 
@@ -495,13 +511,13 @@ C.............  Set key for searching sources
      &                    STR2INT( LINE( 3:5 ) )
             WRITE( CFIP,94020 ) FIP
 
-            FCID = ADJUSTL( LINE( 6:20 ) ) 
+            FCID = ADJUSTL( LINE( 6:20 ) )
 
-            SKID = ADJUSTL( LINE( 21:32 ) )
+            SKID = ADJUSTL( LINE( 21:32 ) )   ! point ID in IDA
 
-            DVID = ADJUSTL( LINE( 33:44 ) )
+            DVID = ADJUSTL( LINE( 33:44 ) )   ! stack ID in IDA
 
-            PRID = ADJUSTL( LINE( 45:56 ) )
+            PRID = ADJUSTL( LINE( 45:56 ) )   ! segment in IDA
 
             TSCC = ' '
 
@@ -510,7 +526,7 @@ C               look it up and get indidies
             IF( FIP .NE. LFIP ) THEN
                 J = FIND1( FIP, NINVIFIP, INVIFIP )
                 IF( J .LE. 0 ) THEN
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not ' //
+                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
      &                     'find FIPS code', FIP, 'in internal list.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
@@ -533,8 +549,14 @@ C.............  If SCCs are needed for matching...
                 IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
                 CHAR4 = TSCC
 
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
+C.................  Build source characteristics field for searching inventory
+                IF( .NOT. IFLAG ) THEN
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                       '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                ELSE
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                END IF
 
 C.................  Search for this record in sources
                 J = FINDC( CSRC, NS, CSOURC( SS ) )
@@ -543,8 +565,13 @@ C.............  If SCCs are not being used for matching (at least not yet)...
             ELSE
 
 C.................  Build source characteristics field for searching inventory
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                IF( .NOT. IFLAG ) THEN
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                       '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                ELSE
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                END IF
 
 C.................  Search for this record in sources
                 J = FINDC( CSRC, NS, CSOURC( SS ) )
@@ -561,8 +588,15 @@ C                   if reading the SCC in helps (needed for IDA format)
                     IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
                     CHAR4 = TSCC
 
-                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+C.....................  Build source characteristics field for searching inventory
+                    IF( .NOT. IFLAG ) THEN
+                        CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                         '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                    ELSE
+                        CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
      &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                    END IF
+
 C.....................  Search for this record in sources
                     J = FINDC( CSRC, NS, CSOURC( SS ) )
                     IF ( J .GT. 0 ) TFLAG = .TRUE.
@@ -587,10 +621,13 @@ C                   invoked once.
                     BADSRC( NBADSRC ) = CSRC
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    MESG = 'WARNING: Period-specific record does ' //
-     &                     'not match inventory sources: '//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
+    	    	    IF( NWARN( 3 ) .LE. MXWARN ) THEN
+                        MESG = 'WARNING: Period-specific record does '//
+     &                         'not match inventory sources: '//
+     &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+    	    	    	NWARN( 3 ) = NWARN( 3 ) + 1
+    	    	    END IF
 
                 END IF
 
