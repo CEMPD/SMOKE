@@ -412,8 +412,8 @@ C           results are stored in module MODINFO.
             IVARNAMS( 5 ) = 'CBLRID'  ! In case CEM input
             IVARNAMS( 6 ) = 'CPDESC'  ! In case CEM input
 
-            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, 
-     &                     NINVARR, IVARNAMS )
+            CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR,
+     &                     IVARNAMS )
 
         END IF !   End processing of average annual import or not
 
