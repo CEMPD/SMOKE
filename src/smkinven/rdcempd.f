@@ -75,9 +75,10 @@ C.........  EXTERNAL FUNCTIONS
         INTEGER      JULIAN
         INTEGER      SECSDIFF
         INTEGER      YEAR4
+        INTEGER      STR2INT
 
         EXTERNAL     BLKORCMT, CRLF, ENVREAL, ENVYN, FINDC, GETTZONE, 
-     &               INDEX1, JULIAN, SECSDIFF, YEAR4
+     &               INDEX1, JULIAN, SECSDIFF, YEAR4, STR2INT
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV           ! file unit no.
@@ -181,6 +182,7 @@ C...........   Other local variables
         LOGICAL       :: WARNOUT  = .FALSE. ! true: output warnings
         LOGICAL, SAVE :: YFLAG    = .FALSE. ! true: year mismatch found
 
+        CHARACTER( 6 )   CYYMMDD            ! tmp YYMMDD
         CHARACTER(256) :: MESG    = ' '     ! message buffer
 
         CHARACTER(BLRLEN3) BLID       ! tmp boiler ID
@@ -364,10 +366,10 @@ C.............  Skip comments or blank lines (also includes #CEM header)
 
 C.............  There is no error checking to help speed things up
             READ( FDEV, *, ERR=1001, END=299 ) 
-     &            CORS, BLID, YYMMDD, HH, CEMEMIS( NOXIDX ),
+     &            CORS, BLID, CYYMMDD, HH, CEMEMIS( NOXIDX ),
      &            CEMEMIS( SO2IDX ), NOXRATE, OPTIME,
      &            GLOAD, SLOAD, HTINPUT
-     
+
             IREC = IREC + 1
 
 C.............  Write message about which record number we're on
@@ -444,6 +446,7 @@ C.............  Skip entry if not in inventory list of ORIS/boilers
             MATCHFLG = .TRUE.
 
 C.............  Set Julian day
+            YYMMDD = STR2INT( CYYMMDD )
             YY    = YYMMDD/10000
             MONTH = ( YYMMDD - YY * 10000 ) / 100
             DAY   = YYMMDD - YY * 10000 - MONTH * 100
