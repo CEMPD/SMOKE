@@ -156,11 +156,11 @@ C.................  Include a return and indent if line gets too long
                 IF( K .GT. EMOUTLN3 ) THEN
                     K = 18 + L3
                     WRITE( OUTBUFF, 94900 ) OUTBUFF( 1:L ) //
-     &                     CRLF() // BLANK10 // LABEL( I )( 1:L4 ),
+     &                   CRLF() // BLANK10 // LABEL( I )( 1:L4 ) ,
      &                     BUFFER( 1:L3 )
                 ELSE
                     WRITE( OUTBUFF, 94900 ) OUTBUFF( 1:L ) // ' ' //
-     &                     LABEL( I )( 1:L4 ), BUFFER( 1:L3 )
+     &                     LABEL( I )( 1:L4 ) , BUFFER( 1:L3 )
 
                 ENDIF
             ENDIF
