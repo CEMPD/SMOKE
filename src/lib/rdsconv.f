@@ -123,7 +123,7 @@ C.........  Other local variables
         LOGICAL      :: RFLAG = .FALSE.  ! true: Skip records in this section
         LOGICAL      :: SFLAG = .FALSE.  ! true: Records were skipped
         LOGICAL         SCCFLAG          ! true: SCC type is different from previous
-        LOGICAL      :: LBYPROF = .FALSE. ! true: file provided in by-profile format
+        LOGICAL, SAVE:: LBYPROF = .FALSE. ! true: file provided in by-profile format
 
         CHARACTER(10)          CPOL      ! tmp pollutant index in ENAM
         CHARACTER(16)          FLABEL    ! File type label
@@ -210,7 +210,7 @@ C.............  Check for header that indicates if file is by profile or by
 C               FIPS/SCC.  Also, skip comment lines.
             IF( LINE16( 1:1 ) .EQ. CINVHDR ) THEN
                 FLABEL = ADJUSTL( LINE16( 2:16 ) )
-                LBYPROF = .FALSE.
+c mrh                LBYPROF = .FALSE.
                 IF ( FLABEL .EQ. 'BYPROFILE' .OR.
      &               FLABEL .EQ. 'BY PROFILE'     ) THEN
                     LBYPROF = .TRUE.
@@ -264,9 +264,9 @@ C.................  Make sure that memory is available for error checks
                 END IF
 
 C.................  Parse line into components              
-		CALL PARSLINE( LINE, 4, SEGMENT )
+                CALL PARSLINE( LINE, 4, SEGMENT )
 
-		IBUF  = SEGMENT( 1 )( 1:IOVLEN3 )
+                IBUF  = SEGMENT( 1 )( 1:IOVLEN3 )
                 SBUF  = SEGMENT( 2 )( 1:IOVLEN3 )
                 SPROF = SEGMENT( 3 )( 1:SPNLEN3 )
                 FAC   = STR2REAL( SEGMENT( 4 ) )
@@ -323,7 +323,7 @@ C                   skipped in file.
                     SFLAG = .TRUE.
                     CYCLE
 
-		END IF
+                END IF
 
                 T = 4
                 I = I + 1
@@ -356,10 +356,9 @@ C.................  Determine if SCC is in inventory list
                 I = I + 1
                 
 C.................  Convert SCC to mobile internal standard
-                IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
-
-                END IF
+c mrh                IF( CATEGORY .EQ. 'MOBILE' ) THEN
+c mrh                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
+c mrh                END IF
    
                 WRITE( CPOL, '(I5.5)' ) ISP
 
@@ -505,13 +504,13 @@ C.................  If current profile/pollutant is not equal to previous profil
 C.................  If duplicate entry found...
                 ELSE 
 
-                    MESG = 'ERROR: Duplicate entry in pollutant ' //
+                    MESG = 'WARNING: Duplicate entry in pollutant ' //
      &                 'conversion file:' // CRLF() // BLANK10 //
      &                 'Profile: "' // SPROF // 
      &                 '"; IN POL: "' // TRIM( ENAM( V ) ) // 
      &                 '"; OUT POL: "' // TRIM( OUTNAM( V ) ) // '"'
                     CALL M3MSG2( MESG )
-                    EFLAG = .TRUE.
+c bbh                    EFLAG = .TRUE.
                     CYCLE
 
                 ENDIF
