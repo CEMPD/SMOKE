@@ -124,6 +124,7 @@ C.........  Other local variables
         CHARACTER(STALEN3)   CSTA    ! tmp Country/state code
         CHARACTER(SRCLEN3)   CSRC    ! tmp source chars string
         CHARACTER(SCCLEN3)   TSCC    ! tmp 10-digit SCC
+        CHARACTER(SCCLEN3)   SCCORIG ! tmp original SCC for mobile processing
         CHARACTER(SCCLEN3)   TSCCL   ! tmp left digits of TSCC
         CHARACTER(SCCLEN3)   TSCCINIT! tmp initial 10-digit SCC
         CHARACTER(SPNLEN3)   SPCODE  ! tmp speciation profile code
@@ -229,7 +230,8 @@ C.........  Find index in complete list of pollutants and set length of name
             CSRC  = CSOURC( S )
             CFIP  = CSRC( 1:FIPLEN3 )
             CSTA  = CFIP( 1:STALEN3 )                 
-            TSCC  = CSCC( S )         
+            TSCC  = CSCC( S )
+            SCCORIG = TSCC
             
 C.............  Set type of SCC                
             SCCFLAG = SETSCCTYPE ( TSCC )
@@ -267,6 +269,7 @@ C.............  Create selection
 
             CASE ( 'MOBILE' )
 
+c.................  Change mobile-source SCC to facilitate correct hierarchy.
                 WRITE( CRWT, RWTFMT ) IRCLAS( S )
                 WRITE( CVID, VIDFMT ) IVTYPE( S )
 
@@ -723,11 +726,11 @@ C                           pollutant-specific SCC match
 C                           pollutant-specific roadway type match
 C                           pollutant-specific vehicle type match
 
-                F5 = FINDC( CHK09 , NCNV3, CNVRT03 ) 
-                F4 = FINDC( CHK06 , NCNV2, CNVRT02 ) 
+                F5 = FINDC( CFIP // SCCORIG , NCNV3, CNVRT03 ) 
+                F4 = FINDC( CSTA // SCCORIG , NCNV2, CNVRT02 ) 
                 F3 = FINDC( TSCC  , NCNV1, CNVRT01 ) 
-                F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
-                F1 = FINDC( CHKVID, NCNV1, CNVRT01 ) 
+c mrh                F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
+                F1 = FINDC( SCCORIG( 1:LSCCEND ), NCNV1, CNVRT01 ) 
 
                 IF( F5 .GT. 0  ) THEN
                     CNVFAC = CNVFC03( F5,V )
@@ -738,8 +741,8 @@ C                           pollutant-specific vehicle type match
                 ELSE IF( F3 .GT. 0 )THEN
                     CNVFAC = CNVFC01( F3,V )
 
-                ELSE IF( F2 .GT. 0 )THEN
-                    CNVFAC = CNVFC01( F2,V )
+c mrh                ELSE IF( F2 .GT. 0 )THEN
+c mrh                    CNVFAC = CNVFC01( F2,V )
 
                 ELSE IF( F1 .GT. 0 )THEN
                     CNVFAC = CNVFC01( F1,V )
