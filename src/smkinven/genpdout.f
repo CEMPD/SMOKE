@@ -292,7 +292,7 @@ C.........  Loop through time steps and output emissions and other data
         JTIME = STIME
         DO T = 1, NSTEPS
         
-            CALL WRPDEMIS( JDATE, JTIME, T, NPDSRC, NVAR, NVSP, 
+            CALL WRPDEMIS( DFLAG, JDATE, JTIME, T, NPDSRC, NVAR, NVSP, 
      &                     ONAME, OFLAG, EAIDX, SPIDX, PDEMOUT( 1,1 ), 
      &                     PDEMOUT( 1,2 ), EFLAG )
 

@@ -1,7 +1,7 @@
 
-        SUBROUTINE WRPDEMIS( JDATE, JTIME, TIDX, NPDSRC, NVAR, NVASP, 
-     &                       FNAME, PFLAG, EAIDX, SPIDX, PDIDX, PDDATA, 
-     &                       EFLAG )
+        SUBROUTINE WRPDEMIS( DAYFLAG, JDATE, JTIME, TIDX, NPDSRC, NVAR,
+     &                       NVASP, FNAME, PFLAG, EAIDX, SPIDX, PDIDX,
+     &                       PDDATA, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -70,7 +70,8 @@ C.........  EXTERNAL FUNCTIONS
 
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER,      INTENT  (IN) :: JDATE                ! Julian date
+        LOGICAL     , INTENT  (IN) :: DAYFLAG              ! true: day-, false: hour-spec
+        INTEGER     , INTENT  (IN) :: JDATE                ! Julian date
         INTEGER     , INTENT  (IN) :: JTIME                ! time HHMMSS
         INTEGER     , INTENT  (IN) :: TIDX                 ! time index
         INTEGER     , INTENT  (IN) :: NPDSRC               ! no. part-day srcs
@@ -100,7 +101,8 @@ C...........   Other local variables
         INTEGER, SAVE :: MXWARN               ! max no. warnings
         INTEGER          NOUT                 ! tmp no. sources per time step
 
-        LOGICAL          FIRSTIME            ! true: first time routine called
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
+        LOGICAL, SAVE :: HOURFLAG = .FALSE.  ! true: hour-spec
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: error on duplicates
         LOGICAL, SAVE :: LFLAG    = .FALSE.  ! true: iteration on special var
 
@@ -112,10 +114,11 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of program WRPDEMIS
 
-        FIRSTIME = .TRUE.
+C.........  Reset FIRSTIME flag for either day-spec or hour-spec
+        IF( .NOT. FIRSTIME .AND. .NOT. DAYFLAG ) FIRSTIME = .TRUE.
 
 C.........  For the first time the routine is called...
-        IF( FIRSTIME ) THEN
+        IF( FIRSTIME .AND. .NOT. HOURFLAG ) THEN
 
 C.............  Get settings from the environment.
             DFLAG = ENVYN( 'RAW_DUP_CHECK',
@@ -149,6 +152,7 @@ C.............  Create reverse index for special variables
             END DO
 
             FIRSTIME = .FALSE.
+            IF( .NOT. DAYFLAG ) HOURFLAG = .TRUE.
 
         END IF
 
