@@ -124,7 +124,7 @@ C...........   Other local variables
         INTEGER, SAVE :: MAXPTR           ! maximum time step reference pointer
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
-    	INTEGER, SAVE :: MXWARN       	  ! max no. warnings
+        INTEGER, SAVE :: MXWARN       	  ! max no. warnings
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NFIELD = 0       ! number of data fields
         INTEGER, SAVE :: NFM1   = 0       ! number of data fields minus 1
