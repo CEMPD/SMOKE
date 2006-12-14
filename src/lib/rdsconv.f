@@ -210,7 +210,6 @@ C.............  Check for header that indicates if file is by profile or by
 C               FIPS/SCC.  Also, skip comment lines.
             IF( LINE16( 1:1 ) .EQ. CINVHDR ) THEN
                 FLABEL = ADJUSTL( LINE16( 2:16 ) )
-c mrh                LBYPROF = .FALSE.
                 IF ( FLABEL .EQ. 'BYPROFILE' .OR.
      &               FLABEL .EQ. 'BY PROFILE'     ) THEN
                     LBYPROF = .TRUE.
@@ -356,10 +355,6 @@ C.................  Determine if SCC is in inventory list
                 I = I + 1
                 
 C.................  Convert SCC to mobile internal standard
-c mrh                IF( CATEGORY .EQ. 'MOBILE' ) THEN
-c mrh                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
-c mrh                END IF
-   
                 WRITE( CPOL, '(I5.5)' ) ISP
 
                 FAC = STR2REAL( LINE( CS3:CE3 ) )
@@ -504,13 +499,13 @@ C.................  If current profile/pollutant is not equal to previous profil
 C.................  If duplicate entry found...
                 ELSE 
 
-                    MESG = 'WARNING: Duplicate entry in pollutant ' //
+                    MESG = 'ERROR: Duplicate entry in pollutant ' //
      &                 'conversion file:' // CRLF() // BLANK10 //
      &                 'Profile: "' // SPROF // 
      &                 '"; IN POL: "' // TRIM( ENAM( V ) ) // 
      &                 '"; OUT POL: "' // TRIM( OUTNAM( V ) ) // '"'
                     CALL M3MSG2( MESG )
-c bbh                    EFLAG = .TRUE.
+                    EFLAG = .TRUE.
                     CYCLE
 
                 ENDIF
