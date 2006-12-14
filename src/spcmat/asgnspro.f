@@ -729,7 +729,6 @@ C                           pollutant-specific vehicle type match
                 F5 = FINDC( CFIP // SCCORIG , NCNV3, CNVRT03 ) 
                 F4 = FINDC( CSTA // SCCORIG , NCNV2, CNVRT02 ) 
                 F3 = FINDC( TSCC  , NCNV1, CNVRT01 ) 
-c mrh                F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
                 F1 = FINDC( SCCORIG( 1:LSCCEND ), NCNV1, CNVRT01 ) 
 
                 IF( F5 .GT. 0  ) THEN
@@ -740,9 +739,6 @@ c mrh                F2 = FINDC( CHKRWT, NCNV1, CNVRT01 )
 
                 ELSE IF( F3 .GT. 0 )THEN
                     CNVFAC = CNVFC01( F3,V )
-
-c mrh                ELSE IF( F2 .GT. 0 )THEN
-c mrh                    CNVFAC = CNVFC01( F2,V )
 
                 ELSE IF( F1 .GT. 0 )THEN
                     CNVFAC = CNVFC01( F1,V )
