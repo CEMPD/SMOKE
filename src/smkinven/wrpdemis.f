@@ -232,7 +232,7 @@ C.............  Otherwise, sum emissions, report, and set error if needed
                     
                 ELSE
                     MESG = 'WARNING: Duplicate source in ' //
-     &                     'inventory will haved summed emissions:' 
+     &                     'inventory will have summed emissions:' 
      &                     //CRLF() // BLANK10 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
                 END IF
