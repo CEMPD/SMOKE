@@ -735,6 +735,7 @@ C.........  If time is before 6 am, don't need last day
         NDAYS = NDAYS + 1
 
 C.....  Allocate memory for emission factor arrays
+        IF( ALLOCATED( TEMPEF ) ) DEALLOCATE ( TEMPEF )
         ALLOCATE( TEMPEF( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TEMPEF', PROGNAME )
 
