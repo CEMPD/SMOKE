@@ -201,7 +201,7 @@ C...........   Other local variables
         INTEGER         TZONE               ! output-file time zone
         INTEGER         TZMIN               ! minimum time zone in inventory      
         INTEGER         TZMAX               ! maximum time zone in inventory
-        INTEGER         TDMAX               ! maximum episode days
+        INTEGER      :: TDMAX = 0           ! maximum episode days
         INTEGER         LDATE               ! date used in previous subroutine call
 
         REAL            RTMP                ! tmp float
@@ -281,6 +281,52 @@ C.........  Determine status of some files for program control purposes
 C.........  Get length of inventory file name
         ENLEN = LEN_TRIM( ENAME )
 
+C.........  Set inventory variables to read for all source categories
+        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 2 ) = 'TZONES'
+        IVARNAMS( 3 ) = 'TPFLAG'
+        IVARNAMS( 4 ) = 'CSCC'
+        IVARNAMS( 5 ) = 'CSOURC'
+
+C.........  Set inventory variables to read for specific source categories
+        IF( CATEGORY .EQ. 'AREA' ) THEN
+            NINVARR = 5
+
+        ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            NINVARR = 9
+            IVARNAMS( 6 ) = 'IRCLAS'
+            IVARNAMS( 7 ) = 'IVTYPE'
+            IVARNAMS( 8 ) = 'CLINK'
+            IVARNAMS( 9 ) = 'CVTYPE'
+
+        ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
+            NINVARR = 5
+
+        END IF
+
+C.........  Allocate memory for and read in required inventory characteristics
+        CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
+
+C.........  Reset TPFLAG if average day emissions are being used since
+C           we don't want to apply the monthly adjustment factors in this case.
+        IF ( INVPIDX .EQ. 1 ) THEN
+            DO S = 1, NSRC
+                IF ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 ) THEN
+                    TPFLAG( S ) = TPFLAG( S ) / MTPRFAC
+                END IF
+            END DO
+        END IF
+
+C.........  Build unique lists of SCCs per SIC from the inventory arrays
+        CALL GENUSLST
+
+C.........  Define the minimum and maximum time zones in the inventory
+        TZMIN = MINVAL( TZONES )
+        TZMAX = MAXVAL( TZONES )
+
+C.........  Adjust TZMIN for possibility of daylight savings
+        TZMIN = MAX( TZMIN - 1, 0 )
+
 C.........  Read episode time period lists from PROCDATES.txt
         IF( PFLAG ) CALL RDDATES( KDEV, NTPERIOD )
         IF( .NOT. PFLAG ) NTPERIOD = 1
@@ -319,6 +365,10 @@ C             when $GE_DAT/procdates.txt is not available for episode time perio
              END IF
              
 C............  Determine number of days in episode
+             IF( II == 1 ) THEN
+                 EARLST = SDATE
+                 LATEST = SDATE
+             END IF
 
 C............  Earliest day is start time in maximum time zone
              EARLYDATE = SDATE
@@ -346,7 +396,8 @@ C............  If time is before 6 am, don't need last day
              NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
              NDAYS = NDAYS + 1
              IF( NDAYS > TDMAX ) TDMAX = NDAYS
-             IF( II == 1 ) EARLST = SDATE
+
+C..............  Check earliest and latest dates during episode
              IF( SDATE < EARLST ) EARLST = SDATE
              IF( SDATE > LATEST ) LATEST = SDATE
 
@@ -422,51 +473,6 @@ C.........  NHRSRC is initialized to 0 in case HFLAG is false
             MESG = 'Problem with day- or hour-specific inputs'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
-C.........  Set inventory variables to read for all source categories
-        IVARNAMS( 1 ) = 'IFIP'
-        IVARNAMS( 2 ) = 'TZONES'
-        IVARNAMS( 3 ) = 'TPFLAG'
-        IVARNAMS( 4 ) = 'CSCC'
-        IVARNAMS( 5 ) = 'CSOURC'
-
-C.........  Set inventory variables to read for specific source categories
-        IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 5
-
-        ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            NINVARR = 9
-            IVARNAMS( 6 ) = 'IRCLAS'
-            IVARNAMS( 7 ) = 'IVTYPE'
-            IVARNAMS( 8 ) = 'CLINK'
-            IVARNAMS( 9 ) = 'CVTYPE'
-
-        ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-            NINVARR = 5
-
-        END IF
-
-C.........  Allocate memory for and read in required inventory characteristics
-        CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
-
-C.........  Reset TPFLAG if average day emissions are being used since
-C           we don't want to apply the monthly adjustment factors in this case.
-        IF ( INVPIDX .EQ. 1 ) THEN
-            DO S = 1, NSRC
-                IF ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 ) THEN
-                    TPFLAG( S ) = TPFLAG( S ) / MTPRFAC
-                END IF
-            END DO
-        END IF
-
-C.........  Build unique lists of SCCs per SIC from the inventory arrays
-        CALL GENUSLST
-
-C.........  Define the minimum and maximum time zones in the inventory
-        TZMIN = MINVAL( TZONES )
-        TZMAX = MAXVAL( TZONES )
-
-C.........  Adjust TZMIN for possibility of daylight savings
-        TZMIN = MAX( TZMIN - 1, 0 )
 
 C.........  Read special files...
 
