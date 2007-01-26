@@ -92,9 +92,9 @@ C...........   Other local variables
         INTEGER         J           ! index
         INTEGER         L           ! string length
 
-        LOGICAL         DFLAG       ! true: day-specific  file available
-        LOGICAL      :: EFLAG = .FALSE.  ! true: error found
-        LOGICAL         HFLAG       ! true: hour-specific file available
+        LOGICAL      :: DFLAG = .FALSE.      ! true: day-specific  file available
+        LOGICAL      :: EFLAG = .FALSE.      ! true: error found
+        LOGICAL      :: HFLAG = .FALSE.      ! true: hour-specific file available
         LOGICAL         OFLAG       ! true: average day emissions needed
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
 
