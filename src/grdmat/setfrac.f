@@ -1,7 +1,7 @@
 
         SUBROUTINE SETFRAC( SRCID, SRGIDX, TGTSRG, CELIDX, FIPIDX, NC, 
      &                      REPORT, CSRC, DEFSRG, SRGFLAG, OUTID1,
-     &                      OUTID2, FRAC )
+     &                      OUTID2, FRAC, SFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -75,6 +75,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: OUTID1        ! primary srg ID
         INTEGER     , INTENT(OUT) :: OUTID2        ! secondary srg ID
         REAL        , INTENT(OUT) :: FRAC          ! surrogate fraction
+        LOGICAL     , INTENT (IN) :: SFLAG         ! true: called by sizgmat, false: by gengmat
 
 C...........   Local allocatable arrays...
 
@@ -109,35 +110,33 @@ C           source is non-zero in the country/state/county code of interest
            
 C.................  Write note about changing surrogate used for current
 C                   source if it has not yet been written
-                IF( TGTSRG .NE. DEFSRG ) THEN
+                IF( ( TGTSRG .NE. DEFSRG ) .AND. SFLAG ) THEN
 
                     IF( REPORT .AND. CSRC2 .NE. LCSRC2 ) THEN
-           
                         CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
-            
                         WRITE( MESG,94010 ) 
-     &                     'WARNING: Using fallback surrogate',DEFSRG,
-     &                     CRLF()// BLANK10 // 'to prevent zeroing ' //
-     &                     'by original surrogate for:'
+     &                     'WARNING: Using fallback surrogate ',DEFSRG,
+     &                     ' to prevent zeroing by orig surrogate for:'
      &                     // CRLF()// BLANK10// BUFFER( 1:L2 ) //
-     &                     ' Surrogate code ', TGTSRG
+     &                     ' Surrogate ID: ', TGTSRG
                         CALL M3MESG( MESG )
-                        
-                    
-C.........................  Write warning for default fraction of zero
-                        CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
-                        MESG = 'WARNING: Zero fallback surrogate '//
-     &                       'data will cause zero emissions' //
-     &                       CRLF() // BLANK10 // 'for:'//
-     &                       CRLF() // BLANK10 // BUFFER( 1:L2 )
-                        CALL M3MESG( MESG )
-
                     END IF
+
+                END IF
+
+C.....................  Write warning for default fraction of zero
+                IF( ( TGTSRG .EQ. DEFSRG ) .AND. .NOT. SFLAG ) THEN
+
+                    CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
+                    MESG ='WARNING: Zero fallback surrogate data will'//
+     &                    ' cause zero emissions inside the grid for:'//
+     &                    CRLF() // BLANK10 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
            
                 END IF
            
 C.................  Set surrogate fraction using default surrogate
-                FRAC = 0.0
+                FRAC   = 1.0E-36
                 OUTID1 = TGTSRG
                 OUTID2 = DEFSRG
 
@@ -145,14 +144,14 @@ C.............  Set surrogate fraction with cross-reference-selected
 C               surrogate
             ELSE
 
-                FRAC = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
+                FRAC   = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
                 OUTID1 = TGTSRG
                 OUTID2 = 0
 
             END IF
             
         ELSE
-            FRAC = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
+            FRAC   = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
             OUTID1 = TGTSRG
             OUTID2 = 0
             
