@@ -131,7 +131,7 @@ C...........   Other arrays
         LOGICAL      :: LFLAG = .FALSE. ! true: location data available
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
         LOGICAL      :: CFLAG = .TRUE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
-        LOGICAL         WFLAG           ! true: per iteration warning flag
+        LOGICAL      :: WFLAG = .FALSE. ! true: per iteration warning flag
 
         CHARACTER(60)       LINE             ! Read buffer for a line
         CHARACTER(300)      MESG             !  message buffer
@@ -437,7 +437,7 @@ C                       surrogates tables from MODSURG
                         DO K = 1, NCEL
                             CALL SETFRAC( S, ISIDX, TGTSRG, K, F, 1,  
      &                                  .FALSE.,' ', DEFSRGID, SRGFLAG,
-     &                                   ID1, ID2, AFAC( K ) )
+     &                                   ID1, ID2, AFAC( K ), CFLAG )
 
 C.........................  Re-assigning org assigned srg to default fallback srg
                             IF( ID2 .EQ. DEFSRGID .AND. SRGFLAG ) THEN
