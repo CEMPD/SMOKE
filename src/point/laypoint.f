@@ -84,10 +84,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
         INTEGER         WKDAY
+        REAL            STR2REAL
 
         EXTERNAL   CHKMETEM, CRLF, DSCM3GRD, DSCM3LAY, ENVINT, ENVREAL, 
      &             ENVYN, FIND1, GETCFDSC, HHMMSS, INDEX1, MMDDYY, 
-     &             PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY
+     &             PROMPTFFILE, PROMPTMFILE, VERCHAR, WKDAY, STR2REAL
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -96,7 +97,8 @@ C...........  LOCAL PARAMETERS and their descriptions:
         REAL, PARAMETER :: ZERO      = 0.0     ! dummy zero value
         REAL, PARAMETER :: BTU2M4PS3 = 0.00000258  ! conv. factor for bouyancy flux
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C.........  Indicator for which public inventory arrays need to be read
         INTEGER,            PARAMETER :: NINVARR = 8
@@ -250,6 +252,7 @@ C...........   Other local variables
         REAL             TMPBFLX   !  tmp Briggs bouyancy (m^4/s^4)
         REAL             TMPACRE   !  tmp area burned (acres)
         REAL             SFRACT    !  smouldering fraction
+        REAL             ALTITUDE  !  aircraft altitude (m)
 
         REAL(8)          METXORIG  ! cross grid X-coord origin of met grid 
         REAL(8)          METYORIG  ! cross grid Y-coord origin of met grid
@@ -274,6 +277,7 @@ C...........   Other local variables
         LOGICAL       :: YFLAG = .FALSE.  ! true: use hourly velocities
         LOGICAL       :: ZSTATIC = .TRUE. ! true: Get heights from GRID_CRO file
         LOGICAL          LFG( 9 )         ! true: source characteristic is valid
+        LOGICAL          AIRFLAG          ! true: calculate plumes for aircraft/EDMS data
         LOGICAL          FIREFLAG         ! true: calculate plumes for fire data
         LOGICAL          HOURFIRE         ! true: use hourly fire data
         LOGICAL, SAVE :: WILDFLAG =.TRUE. ! true: calculate plumes for fire data (NO BLUESKY USE)
@@ -315,9 +319,23 @@ C.........   Get setting from environment variables
         MESG = 'Indicator for processing ONLY explicit plume ' //
      &         'rise sources'
         XFLAG = ENVYN( 'EXPLICIT_PLUMES_YN', MESG, .FALSE., IOS )
-        
+
         MESG = 'Vertical spread method'
         IPVERT = ENVINT( 'VERTICAL_SPREAD', MESG, 0, IOS )
+
+        MESG = 'Use aircraft inventory data'
+        AIRFLAG = ENVYN( 'USE_EDMS_DATA_YN', MESG, .FALSE., IOS )
+
+C.........  Reset flags for aircraft emissions
+        IF( AIRFLAG ) THEN
+            VFLAG = .FALSE.    ! no SMK_SPECELEV_YN
+            HFLAG = .FALSE.    ! no HOUR_PLUMDATA_YN
+            XFLAG = .FALSE.    ! no EXPLICIT_PLUMES_YN
+            MESG = 'NOTE: To process EDMS aircraft inventory, ' //
+     &         'SMK_SPECELEV_YN, HOUR_PLUMEDATA_YN, and  ' //
+     &          CRLF() //BLANK10 // 'EXPLICIT_PLUMES_YN were set to N'
+            CALL M3MSG2( MESG )
+        END IF
 
         MESG = 'Use fire plume rise calculations'
         FIREFLAG = ENVYN( 'FIRE_PLUME_YN', MESG, .FALSE., IOS )
@@ -776,7 +794,7 @@ C.........  Allocate memory for and read required inventory characteristics
 
 C.........  For fire data, set stack height to zero regardless of inventory
 C           Inventory values may have been "corrected" by Smkinven
-        IF( FIREFLAG ) THEN
+        IF( FIREFLAG .AND. AIRFLAG ) THEN
             STKHT = 0.
         END IF
 
@@ -1180,7 +1198,7 @@ C.............  Loop through sources and compute plume rise
             K = 0
             DO S = 1, NSRC
 
-                IF( .NOT. FIREFLAG ) THEN
+                IF( .NOT. FIREFLAG .OR. .NOT. AIRFLAG ) THEN
                     DM = STKDM( S )
                     HT = STKHT( S )
                     TK = STKTK( S )
@@ -1283,6 +1301,44 @@ C.....................  Otherwise, set top and bottom of plume to be in layer 1.
      &                                          LHALFHT( L )        ) /
      &                                          LFULLHT( EMLAYS )
                     END DO
+
+C.................  Processing EDMS aircraft emission inventory
+                ELSE IF( AIRFLAG ) THEN
+
+C.....................  Compute pressures, use sigma values and surface pressures
+                    DO L = EMLAYS, 0, -1
+                        PRESF( L ) = VGLVSXG( L ) *
+     &                               ( PRSFC( S ) - VGTOP ) * CONVPA +
+     &                               VGTOP * CONVPA
+                    END DO
+
+C.....................  Convert surface pressure from Pa to mb                    
+                    PSFC = PRSFC( S ) * CONVPA
+
+C.....................  Compute derived met vars needed before layer assignments
+                    CALL PREPLM( EMLAYS, HMIX( S ), STKHT( S ), PSFC, 
+     &                       TSFC( S ), DDZF( 1,S ), QV( 1,S ), 
+     &                       TA( 1,S ), UWIND( 1,S ), VWIND( 1,S ), 
+     &                       ZH( 1,S ), ZF( 1,S ), ZSTK( 1,S ), 
+     &                       PRESF( 1 ), LSTK, LPBL, TSTK, WSTK,
+     &                       DTHDZ, WSPD, ZZF )
+
+C.....................  Retreive altitude from source characterisitcs and 
+C                       convert ft to meter
+                    ALTITUDE = STR2REAL( CSOURC( S )
+     &                                ( PTBEGL3(4):PTENDL3(4) ) )
+                    ALTITUDE = ALTITUDE * 0.3048  ! convert ft to meter
+                    ZBOT = ALTITUDE
+                    ZTOP = ALTITUDE + 999
+
+C.....................  Setup for computing plume fractions, assuming uniform
+C                       distribution in pressure (~mass concentration -- minor
+C                       hydrostatic assumption) from bottom to top.
+                    SURFACE = PSFC
+                    LFULLHT( 0:EMLAYS ) = ZZF ( 0:EMLAYS   )
+                    LHALFHT( 1:EMLAYS ) = ZH  ( 1:EMLAYS,S )
+                    WEIGHTS( 1:EMLAYS ) = PRES( 1:EMLAYS,S ) * CONVPA
+                    TEMPS  ( 1:EMLAYS ) = TA  ( 1:EMLAYS,S )
 
 C.................  For non-explicit plume rise, preprocess met data...
                 ELSE

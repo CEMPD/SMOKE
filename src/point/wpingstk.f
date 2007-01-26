@@ -60,7 +60,8 @@ C..........    Subroutine arguments and their descriptions
         INTEGER     , INTENT (IN) :: STIME   ! start time
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C...........   Local variables allocatable arrays
 C...........   These are for sorting groups and outputting in sorted order

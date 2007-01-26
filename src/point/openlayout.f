@@ -65,7 +65,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        VERCHAR, PROMPTFFILE, PROMPTMFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: SDATE    ! Julian start date
