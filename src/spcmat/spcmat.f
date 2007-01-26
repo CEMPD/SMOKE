@@ -74,7 +74,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
