@@ -88,7 +88,8 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) :: PFLAG  ! true: episode time periods needed
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$'  ! CVS revision tag
 
 C...........   Other local variables
 
