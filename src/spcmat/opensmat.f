@@ -79,7 +79,8 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: LVNAMES( MXSPEC, NIPPA )   ! mole out vars
       
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$'  ! CVS revision tag
 
 C.........  Count of species per inventory pollutant/emission type
         INTEGER    NSPEC( NIPPA )
