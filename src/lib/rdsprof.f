@@ -155,7 +155,7 @@ C...........  Read in speciation profile
 
 C.............  If we haven't already passed the headers, skip all header
 C               lines
-            IF( IREC .LE. LASTHDR ) CYCLE
+C bbh           IF( IREC .LE. LASTHDR ) CYCLE
 
 C.............  Skip blank and comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
