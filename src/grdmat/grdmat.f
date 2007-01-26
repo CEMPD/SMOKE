@@ -90,7 +90,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &            BLKORCMT, SETENVVAR, GETEFILE
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 C...........   Local parameters
@@ -665,7 +666,7 @@ C.............  Allocate memory for mobile source ungridding matrix
             CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
        
         CASE( 'POINT' )
-       
+
 C.............  Convert point source coordinates from lat-lon to output grid
             CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XLOCA, YLOCA )
