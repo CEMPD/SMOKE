@@ -88,7 +88,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$'  ! CVS revision tag
 
 C...........   LOCAL VARIABLES and their descriptions:
 
@@ -321,7 +322,7 @@ C.........  Read MOBILE6 vehicle mapping file
         CALL RDM6MAP( ADEV )
 
 C.........  Set up emission process variable names
-        CALL EFSETUP( 'NONE', MODELNAM, NEFS, VOLNAM )
+        CALL EFSETUP( 'NONE', MODELNAM, VOLNAM )
 
 C.........  Read emission processes file.  Populate array in MODEMFAC.
         CALL RDEPROC( TDEV )
