@@ -177,6 +177,7 @@ C.........  Store number of ungridding factors
         NMATX = NCOLS3D
 
 C.........  Allocate memory for ungridding matrix
+    	IF( ALLOCATED( UMAT ) ) DEALLOCATE( UMAT )
         ALLOCATE( UMAT( NSRC + 2*NMATX ), STAT=IOS )
         CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
 
