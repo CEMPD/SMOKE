@@ -388,9 +388,10 @@ C.........................  Ensure a label is provided
 C.........................  If label is too long, it will be truncated
                         IF( L2 - J > LENLAB3 ) THEN
                             WRITE( MESG,94010 ) 
-     &                             'WARNING: Label longer than',
-     &                             LENLAB3, '-character maximum at line',
-     &                             IREC, 'and will be truncated.'
+     &                            'WARNING: Label longer than',
+     &                            LENLAB3, '-character maximum at line',
+     &                            IREC, 'and will be truncated.'
+
                             CALL M3MSG2( MESG )
                         END IF
 

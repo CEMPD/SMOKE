@@ -350,11 +350,11 @@ C.................  Write out data
                 WRITE( RDEV, 93600 ) FIP, TRIM(PLANTID), TRIM(POINTID), 
      &                 TRIM(STACKID), TRIM(SEGMENT), TRIM(PLNTDESC),
      &                 TRIM(SCC), TRIM(ERPTYPE), TRIM(SRCTYPE), STKHGT,
-     &                 STKDIAM, STKTEMP, STKFLOW, STKVEL, SIC, TRIM(MACT),
-     &                 TRIM(NAICS), CTYPE, XLOC, YLOC, UTMZ, TRIM(CAS), 
-     &                 ANN_EMIS, AVD_EMIS, CEFF, REFF, CPRI, CSEC,
-C               Start extended ORL variables
-     &                 NEIUID, CORS, CBLR
+     &                 STKDIAM, STKTEMP, STKFLOW, STKVEL, SIC, 
+     &                 TRIM(MACT), TRIM(NAICS), CTYPE, XLOC, YLOC, UTMZ, 
+     &                 TRIM(CAS), ANN_EMIS, AVD_EMIS, CEFF, REFF, CPRI, 
+     &                 CSEC,
+     &                 NEIUID, CORS, CBLR     ! Extended ORL variables
 
                 LCOID = COID
                 LYEAR = YEAR
