@@ -212,6 +212,13 @@ C.........  Store unique list across all source categories
 
         NINVIFIP = N
 
+C.........  Deallocate local memory
+    	IF( ALLOCATED( AFIPS ) ) DEALLOCATE( AFIPS )
+    	IF( ALLOCATED( MFIPS ) ) DEALLOCATE( MFIPS )
+    	IF( ALLOCATED( PFIPS ) ) DEALLOCATE( PFIPS )
+    	IF( ALLOCATED( TMPFIP ) ) DEALLOCATE( TMPFIP )
+    	IF( ALLOCATED( SIDX ) ) DEALLOCATE( SIDX )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
