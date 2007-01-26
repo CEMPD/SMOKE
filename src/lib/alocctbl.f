@@ -89,184 +89,184 @@ C.........  First deallocate if these have previously been allocated
         ICTL01 = IMISS3
 
         J = ICSIZE( 2 )                               ! SCC=left, FIP=0
-        ALLOCATE( ICTL02( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL02( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL02', PROGNAME )
         ICTL02 = IMISS3
 
         J = ICSIZE( 3 )                               ! SCC=all, FIP=0
-        ALLOCATE( ICTL03( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL03( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL03', PROGNAME )
         ICTL03 = IMISS3
   
         J = ICSIZE( 4 )                               ! SCC=0, FIP=state
-        ALLOCATE( ICTL04( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL04( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL04', PROGNAME )
         ICTL04 = IMISS3
 
         J = ICSIZE( 5 )                               ! SCC=left, FIP=state
-        ALLOCATE( ICTL05( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL05( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL05', PROGNAME )
         ICTL05 = IMISS3
             
         J = ICSIZE( 6 )                               ! SCC=all, FIP=state
-        ALLOCATE( ICTL06( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL06( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL06', PROGNAME )
         ICTL06 = IMISS3
                         
         J = ICSIZE( 7 )                               ! SCC=0, FIP=all
-        ALLOCATE( ICTL07( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL07( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL07', PROGNAME )
         ICTL07 = IMISS3
             
         J = ICSIZE( 8 )                               ! SCC=left, FIP=all
-        ALLOCATE( ICTL08( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL08( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL08', PROGNAME )
         ICTL08 = IMISS3
                         
         J = ICSIZE( 9 )                               ! SCC=all, FIP=all
-        ALLOCATE( ICTL09( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL09( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL09', PROGNAME )
         ICTL09 = IMISS3
             
         J = ICSIZE( 10 )                              ! PLANT=non-blank, SCC=0
-        ALLOCATE( ICTL10( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL10( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL10', PROGNAME )
         ICTL10 = IMISS3
             
         J = ICSIZE( 11 )                              ! PLANT=non-blank, SCC=all     
-        ALLOCATE( ICTL11( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL11( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL11', PROGNAME )
         ICTL11 = IMISS3
             
         J = ICSIZE( 12 )                              ! CHAR1=non-blank, SCC=all     
-        ALLOCATE( ICTL12( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL12( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL12', PROGNAME )
         ICTL12 = IMISS3
             
         J = ICSIZE( 13 )                              ! CHAR2=non-blank, SCC=all
-        ALLOCATE( ICTL13( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL13( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL13', PROGNAME )
         ICTL13 = IMISS3
             
         J = ICSIZE( 14 )                              ! CHAR3=non-blank, SCC=all
-        ALLOCATE( ICTL14( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL14( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL14', PROGNAME )
         ICTL14 = IMISS3
           
         J = ICSIZE( 15 )                              ! CHAR4=non-blank, SCC=all
-        ALLOCATE( ICTL15( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL15( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL15', PROGNAME )
         ICTL15 = IMISS3
             
         J = ICSIZE( 16 )                              ! CHAR5=non-blank, SCC=all
-        ALLOCATE( ICTL16( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL16( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL16', PROGNAME )
         ICTL16 = IMISS3
             
 C.........  NOTE- Added later            
         J = MAX( 1, ICSIZE( 17 ) )                     ! SCC=level 1, FIP=0
-        ALLOCATE( ICTL02A( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL02A( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL02A', PROGNAME )
         ICTL02A = IMISS3
 
         J = MAX( 1, ICSIZE( 18 ) )                     ! SCC=level 2, FIP=0
-        ALLOCATE( ICTL02B( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL02B( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL02B', PROGNAME )
         ICTL02B = IMISS3
 
         J = MAX( 1, ICSIZE( 19 ) )                     ! SCC=level 3, FIP=0
-        ALLOCATE( ICTL02C( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL02C( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL02C', PROGNAME )
         ICTL02C = IMISS3
 
         J = MAX( 1, ICSIZE( 20 ) )                     ! SCC=level 1, FIP=state
-        ALLOCATE( ICTL05A( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL05A( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL05A', PROGNAME )
         ICTL05A = IMISS3
 
         J = MAX( 1, ICSIZE( 21 ) )                     ! SCC=level 2, FIP=state
-        ALLOCATE( ICTL05B( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL05B( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL05B', PROGNAME )
         ICTL05B = IMISS3
 
         J = MAX( 1, ICSIZE( 22 ) )                     ! SCC=level 3, FIP=state
-        ALLOCATE( ICTL05C( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL05C( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL05C', PROGNAME )
         ICTL05C = IMISS3
 
         J = MAX( 1, ICSIZE( 23 ) )                     ! SCC=level 1, FIP=all
-        ALLOCATE( ICTL08A( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL08A( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL08A', PROGNAME )
         ICTL08A = IMISS3
 
         J = MAX( 1, ICSIZE( 24 ) )                     ! SCC=level 2, FIP=all
-        ALLOCATE( ICTL08B( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL08B( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL08B', PROGNAME )
         ICTL08B = IMISS3
 
         J = MAX( 1, ICSIZE( 25 ) )                     ! SCC=level 3, FIP=all
-        ALLOCATE( ICTL08C( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL08C( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL08C', PROGNAME )
         ICTL08C = IMISS3
 
         J = MAX( 1, ICSIZE( 26 ) )                     ! SIC=2-digit, FIP=0
-        ALLOCATE( ICTL26( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL26( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL26', PROGNAME )
         ICTL26 = IMISS3
 
         J = MAX( 1, ICSIZE( 27 ) )                     ! SIC=all, FIP=0
-        ALLOCATE( ICTL27( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL27( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL27', PROGNAME )
         ICTL27 = IMISS3
 
         J = MAX( 1, ICSIZE( 28 ) )                     ! SIC=2-digit, FIP=state
-        ALLOCATE( ICTL28( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL28( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL28', PROGNAME )
         ICTL28 = IMISS3
 
         J = MAX( 1, ICSIZE( 29 ) )                     ! SIC=all, FIP=state
-        ALLOCATE( ICTL29( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL29( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL29', PROGNAME )
         ICTL29 = IMISS3
 
         J = MAX( 1, ICSIZE( 30 ) )                     ! SIC=2-digit, FIP=county
-        ALLOCATE( ICTL30( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL30( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL30', PROGNAME )
         ICTL30 = IMISS3
 
         J = MAX( 1, ICSIZE( 31 ) )                     ! SIC=all, FIP=county
-        ALLOCATE( ICTL31( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL31( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL31', PROGNAME )
         ICTL31 = IMISS3
 
 !.........  MACT code matches
         J = MAX( 1, ICSIZE( 32 ) )                     ! FIP=0, SCC=0, MACT=all
-        ALLOCATE( ICTL32( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL32( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL32', PROGNAME )
         ICTL32 = IMISS3
 
         J = MAX( 1, ICSIZE( 33 ) )                     ! FIP=0, SCC=all, MACT=all
-        ALLOCATE( ICTL33( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL33( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL33', PROGNAME )
         ICTL33 = IMISS3
 
         J = MAX( 1, ICSIZE( 34 ) )                     ! FIP=state, SCC=0, MACT=all
-        ALLOCATE( ICTL34( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL34( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL34', PROGNAME )
         ICTL34 = IMISS3
 
         J = MAX( 1, ICSIZE( 35 ) )                     ! FIP=state, SCC=all, MACT=all
-        ALLOCATE( ICTL35( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL35( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL35', PROGNAME )
         ICTL35 = IMISS3
 
         J = MAX( 1, ICSIZE( 36 ) )                     ! FIP=all, SCC=0, MACT=all
-        ALLOCATE( ICTL36( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL36( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL36', PROGNAME )
         ICTL36 = IMISS3
 
         J = MAX( 1, ICSIZE( 37 ) )                     ! FIP=all, SCC=all, MACT=all
-        ALLOCATE( ICTL37( J,NIPPA ), STAT=IOS )
+        ALLOCATE( ICTL37( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL37', PROGNAME )
         ICTL37 = IMISS3
 
