@@ -663,7 +663,10 @@ C                       members of a group will have the same rank
         END IF
 
 C.........  Deallocate local memory
-        DEALLOCATE( DAYBEGT, DAYENDT, SRCSUM, GRPSUM, MXEIDX )
+        DEALLOCATE( DAYBEGT, DAYENDT, MXRECLST, SDATELST, STIMELST )
+    	DEALLOCATE( TIMIDX, LDAYSAV, EMIS, GRPSUM, SRCSUM, MXGRPEM )
+    	DEALLOCATE( PTMPLIST )
+    	DEALLOCATE( MXEIDX )
 
         RETURN
 
