@@ -1352,6 +1352,46 @@ C.............................................................................
             
             MESG = 'Problem with file header information'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )            
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93000   FORMAT( A )
+
+93010   FORMAT( A7, 3X, A )
+
+93015   FORMAT( 6I10 )
+
+93020   FORMAT( A10 )
+
+93030   FORMAT( 4I10 )
+
+93040   FORMAT( 2F10.0, I10 )
+
+93045   FORMAT( 2F10.7 )
+
+93050   FORMAT( 4I10 )
+
+93060   FORMAT( 2I10, 3F10.0 )
+
+93065   FORMAT( I10, A10, F10.5, F10.5, 2A10, A10 )
+
+93070   FORMAT( I10, A10, F10.0, F10.0, 2A10, A10 )
+
+93075   FORMAT( I10, A10, F10.0 )
+
+93080   FORMAT( F10.1, F10.2, F10.1, F10.0 )
+
+93090   FORMAT( 3(I8,1X) )
+
+93095   FORMAT( 3(I8,1X), A6, 1X, 2(A15,1X), F10.3 )
+
+C...........   Internal buffering formats.............94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94020   FORMAT( 8X, 'at time ', A8 )
                 
             END SUBROUTINE WRITE_HEADER_ERROR
 
@@ -1387,6 +1427,46 @@ C.............................................................................
                 MESG = 'Problem with file header information'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93000   FORMAT( A )
+
+93010   FORMAT( A7, 3X, A )
+
+93015   FORMAT( 6I10 )
+
+93020   FORMAT( A10 )
+
+93030   FORMAT( 4I10 )
+
+93040   FORMAT( 2F10.0, I10 )
+
+93045   FORMAT( 2F10.7 )
+
+93050   FORMAT( 4I10 )
+
+93060   FORMAT( 2I10, 3F10.0 )
+
+93065   FORMAT( I10, A10, F10.5, F10.5, 2A10, A10 )
+
+93070   FORMAT( I10, A10, F10.0, F10.0, 2A10, A10 )
+
+93075   FORMAT( I10, A10, F10.0 )
+
+93080   FORMAT( F10.1, F10.2, F10.1, F10.0 )
+
+93090   FORMAT( 3(I8,1X) )
+
+93095   FORMAT( 3(I8,1X), A6, 1X, 2(A15,1X), F10.3 )
+
+C...........   Internal buffering formats.............94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94020   FORMAT( 8X, 'at time ', A8 )
             
             END SUBROUTINE CHECK_HEADER
 
@@ -1475,6 +1555,46 @@ C               an ASCII elevated file
             WRITE( ODEV, 93000 ) 'END'
             
             WRITE( ODEV, 93000 ) 'POINT SOURCES'
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Formatted file I/O formats............ 93xxx
+
+93000   FORMAT( A )
+
+93010   FORMAT( A7, 3X, A )
+
+93015   FORMAT( 6I10 )
+
+93020   FORMAT( A10 )
+
+93030   FORMAT( 4I10 )
+
+93040   FORMAT( 2F10.0, I10 )
+
+93045   FORMAT( 2F10.7 )
+
+93050   FORMAT( 4I10 )
+
+93060   FORMAT( 2I10, 3F10.0 )
+
+93065   FORMAT( I10, A10, F10.5, F10.5, 2A10, A10 )
+
+93070   FORMAT( I10, A10, F10.0, F10.0, 2A10, A10 )
+
+93075   FORMAT( I10, A10, F10.0 )
+
+93080   FORMAT( F10.1, F10.2, F10.1, F10.0 )
+
+93090   FORMAT( 3(I8,1X) )
+
+93095   FORMAT( 3(I8,1X), A6, 1X, 2(A15,1X), F10.3 )
+
+C...........   Internal buffering formats.............94xxx
+
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
+
+94020   FORMAT( 8X, 'at time ', A8 )
             
             END SUBROUTINE WRITE_ASCII_HEADER
 
