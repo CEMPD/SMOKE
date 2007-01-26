@@ -62,7 +62,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL     CRLF, GETCFDSC, GETIFDSC, PROMPTMFILE, VERCHAR
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: ENAME      ! emissions inven logical name
