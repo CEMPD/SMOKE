@@ -8,10 +8,10 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: aggwndw beld3to2 bluesky2inv cemscan extractida invsplit metcombine metscan pktreduc \
+all: aggwndw beld3to2 bluesky2inv cemscan edms2inv extractida invsplit metcombine metscan pktreduc \
      smk2emis surgtool uam2ncf 
 
-debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug extractida.debug invsplit.debug \
+debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug edms2inv.debug extractida.debug invsplit.debug \
        metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
        surgtool.debug uam2ncf.debug  
 
@@ -60,6 +60,16 @@ cemscan: $(CEM) $(ALLI) $(LIBPATH)
 cemscan.debug: $(CEM) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'CEMScan (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(CEM) $(LIBS_DEBUG)
+
+EM2IV=edms2inv.o
+
+edms2inv: $(EM2IV) $(ALLI) $(LIBPATH)
+	echo Edms2Inv:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(EM2IV) $(LIBS)
+
+edms2inv.debug: $(EM2IV) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'Edms2Inv (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(EM2IV) $(LIBS_DEBUG)
 
 EXTI=extractida.o
 
