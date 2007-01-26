@@ -186,7 +186,7 @@ C.....................  Sum number of lines in EMS-95 emission files
                     END IF
 
 C.................  For NTI format files inside a SMOKE list file
-                ELSE IF( FILFMT .EQ. NTIFMT ) THEN
+                ELSE IF( FILFMT .EQ. ORLFMT ) THEN
                     CALL GETNTISZ( TDEV, CATEGORY, N1 )
                     NREC = NREC + N1
 
@@ -221,7 +221,7 @@ C.........  For an IDA format file
             CALL GETIDASZ( FDEV, CATEGORY, NREC )
 
 C.........  For a toxics format file
-        ELSE IF( INVFMT .EQ. NTIFMT ) THEN
+        ELSE IF( INVFMT .EQ. ORLFMT ) THEN
             CALL GETNTISZ( FDEV, CATEGORY, NREC )
 
         ELSE
