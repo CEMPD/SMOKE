@@ -91,7 +91,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
         INTEGER, PARAMETER :: LAYPOINT_APPROACH   = 0
         INTEGER, PARAMETER :: NOPING_APPROACH     = 0
