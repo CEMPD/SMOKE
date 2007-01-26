@@ -98,7 +98,6 @@ C...........   Local variables
         LOGICAL      :: GFLAG = .FALSE.       ! true: per iteration surg > 1
         LOGICAL      :: HFLAG = .FALSE.       ! true: header found
         LOGICAL      :: OFLAG = .FALSE.       ! true: overall warning flag
-        LOGICAL      :: RFLAG = .FALSE.       ! true: renormalized surrogates
         LOGICAL         WFLAG                 ! true: per iteration warning flag
 
         CHARACTER(80)   LINE                  ! Read buffer for a line
@@ -110,6 +109,19 @@ C***********************************************************************
 C   Begin body of subroutine RDSRG4GRD
 
         NSRGREC = NT
+
+C......... Allocate memory for surrogate arrays
+        IF (ALLOCATED(IDXSRGA)) DEALLOCATE (IDXSRGA)
+        IF (ALLOCATED(IDXSRGB)) DEALLOCATE (IDXSRGB)
+        IF (ALLOCATED(SCELLA)) DEALLOCATE (SCELLA)
+        IF (ALLOCATED(SFIPSA)) DEALLOCATE (SFIPSA)
+        IF (ALLOCATED(SSRGIDA)) DEALLOCATE (SSRGIDA)
+        IF (ALLOCATED(SFRACA)) DEALLOCATE (SFRACA)
+        IF (ALLOCATED(NCELLS)) DEALLOCATE (NCELLS)
+        IF (ALLOCATED(SRGFIPS)) DEALLOCATE (SRGFIPS)
+        IF (ALLOCATED(SRGFRAC)) DEALLOCATE (SRGFRAC)
+        IF (ALLOCATED(SRGCSUM)) DEALLOCATE (SRGCSUM)
+        IF (ALLOCATED(FIPCELL)) DEALLOCATE (FIPCELL)
 
 C......... Allocate memory for surrogate arrays
         ALLOCATE( IDXSRGA( NSRGREC ), STAT=IOS )
@@ -177,9 +189,9 @@ C.................  Skip entry after subgrid adjustment
 C.................  Check the value of the ratio value
                 IF( RATIO .GT. 1. .AND. CFLAG ) THEN
                     WRITE( MESG,94020 )
-     &                     'WARNING: resetting surrogates ratio ' //
-     &                     ' for FIPS ', FIP, 'and surrogate', SSC,
-     &                     ' from', RATIO, 'to 1.'
+     &                 'WARNING: resetting surrogates ratio ' //
+     &                 ' of Co/St/Ct (FIPS):', FIP, 'and surrogate :',
+     &                 SSC, ' from', RATIO, 'to 1.0'
                     CALL M3MESG( MESG )
 
                     RATIO = 1.
@@ -355,40 +367,20 @@ C           less than or equal to 1.
                 CNTCHK = 0
 
 C.................  Check if county total surrogates greater than 1
-                IF( SRGCSUM( K,I ) .GT. 1.001 ) THEN
-
-C.....................  If first problem on this line
-                    IF( .NOT. GFLAG ) THEN
-                        WRITE( MESG,94030 ) 'WARNING: County ' //
-     &                  'surrogate total greater than 1. for '//
-     &                  'county' // CRLF() // BLANK10, SRGFIPS( I ), 
-     &                  ', SSC(', K , '):', SRGCSUM( K,I )
-                        GFLAG = .TRUE.
-                        CNTCHK = CNTCHK + 1
-
-C.....................  If multiple problems on this line, but fewer than
-C                       the MESG length will permit, add to message
-                    ELSE IF( CNTCHK .LE. 27 ) THEN
-                        L = LEN_TRIM( MESG )
-                        WRITE( MESG,94031 ) MESG( 1:L )// ', SSC(', 
-     &                           K , '):', SRGCSUM( K,I )
-                        CNTCHK = CNTCHK + 1
-
-                    END IF
-
-               END IF
+                IF( SRGCSUM( K,I ) .GT. 1.0 ) THEN
+                    WRITE( MESG,94030 ) 'WARNING: Re-normalizing ' //
+     &                 'county total surrogate fractions of Co/St/Ct: ',
+     &                 SRGFIPS( I ), ' :: Surrogate:', SSC ,
+     &                  ' greater than 1 :: ', SRGCSUM( K,I )
+                    CALL M3MESG( MESG )
 
 C.................  Renormalize all surrogates with totals > 1
-                IF( SRGCSUM( K,I ) .GT. 1. ) THEN
-                    RFLAG = .TRUE.  ! Set to give global warning
                     DO C = 1, NCELLS( I )
                         SRGFRAC( K,C,I ) = SRGFRAC( K,C,I ) /
      &                                     SRGCSUM( K,I )
                     END DO
                 END IF
 
-C.................  Give a warning message for significant counties
-                IF( GFLAG ) CALL M3MESG( MESG )
 
             END DO
 
@@ -419,11 +411,9 @@ C...........   Internal buffering formats............ 94xxx
 
 94012   FORMAT( A, I8, 1X, A, I5, 1X, A, F8.4, A, F8.4 )
 
-94020   FORMAT( A, 1X, I8, 1X, A, 1X, I5, 1X, A, 1X, F10.6, 1X, A )
+94020   FORMAT( A, 1X, I6.6, 1X, A, 1X, I3.3, 1X, A, 1X, F11.8, 1X, A )
 
-94030   FORMAT( A, 1X, I6.6, A, I3.2, A, F8.4 )
-
-94031   FORMAT( A, 1X, I3.2, A, F8.4 )
+94030   FORMAT( A, 1X, I6.6, A, 1X, I3.3, A, 1X, F11.8 )
 
         END SUBROUTINE RDSRG4GRD
   
