@@ -618,6 +618,9 @@ C.........  Loop through all groups, then number of pollutants per group
             END DO      ! end loop on pollutants per group
         END DO          ! end loop on groups
 
+C......... Deallocate local memory
+    	DEALLOCATE( PPSCNT )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
