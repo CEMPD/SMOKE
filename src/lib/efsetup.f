@@ -1,5 +1,5 @@
 
-        SUBROUTINE EFSETUP( FNAME, MODELNAM, NVAR, VOLNAM )
+        SUBROUTINE EFSETUP( FNAME, MODELNAM, VOLNAM )
    
 C***********************************************************************
 C  subroutine EFSETUP body starts at line < >
@@ -54,7 +54,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME           ! logical file or 'NONE'
         CHARACTER(*), INTENT (IN) :: MODELNAM        ! name of EF model
-        INTEGER     , INTENT(OUT) :: NVAR            ! actual no of variables
         CHARACTER(*), INTENT(OUT) :: VOLNAM          ! volatile pollutant name
 
 C...........   Local variables
