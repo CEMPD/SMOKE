@@ -706,7 +706,7 @@ C.................  Loop through all of the cells intersecting this co/st/cy cod
 C.....................  Set the surrogate fraction
                     CALL SETFRAC( S, ISIDX, TGTSRG, K, F, 2, 
      &                           INDOMAIN( S ), CSRC, DEFSRGID, FSGFLAG,
-     &                           ID1, ID2, FRAC )
+     &                           ID1, ID2, FRAC, CFLAG )
 
 C.....................  Re-assigning org assigned srg to default fallback srg
                     IF( ID2 .EQ. DEFSRGID .AND. FSGFLAG ) THEN

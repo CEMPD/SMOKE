@@ -148,7 +148,7 @@ C...........   Other local variables
         LOGICAL      :: XYSET = .FALSE.    ! true: X/Y available for src
         LOGICAL      :: LASTIME = .FALSE.  ! true: X/Y available for src
         LOGICAL      :: CFLAG   = .FALSE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
-        LOGICAL         WFLAG              ! true: per iteration warning flag
+        LOGICAL      :: WFLAG   = .FALSE.  ! true: per iteration warning flag
 
         CHARACTER(60)   LINE      ! Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
@@ -440,8 +440,7 @@ C.................  Loop through all of the cells intersecting this FIPS code.
 C.....................  Set the surrogate fraction
                     CALL SETFRAC( S, ISIDX, TGTSRG, K, F, NCHARS, 
      &                           INDOMAIN( S ), CSRC, DEFSRGID, FSGFLAG,
-     &                           ID1, ID2, FRAC )
-
+     &                           ID1, ID2, FRAC, CFLAG )
 
 C.....................  Re-assigning org assigned srg to default fallback srg
                     IF( ID2 .EQ. DEFSRGID .AND. FSGFLAG ) THEN
