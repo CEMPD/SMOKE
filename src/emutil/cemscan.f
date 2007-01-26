@@ -40,7 +40,8 @@ C.........  EXTERNAL FUNCTIONS
      &                LOCATC, PROMPTFFILE, STR2REAL
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$'  ! CVS release tag
         INTEGER, PARAMETER :: MXSEG = 16        ! number of segments in line
 
 C.........  LOCAL VARIABLES
@@ -406,7 +407,12 @@ C.........  Write output and report file
      &            MINHEAT( IDX )
         END DO
 
-        CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
+        IF( EFLAG ) THEN
+            MESG = 'See errors listed above.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ELSE
+            CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
+        END IF
 
 C******************  FORMAT  STATEMENTS   ******************************
 

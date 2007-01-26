@@ -56,7 +56,8 @@ C...........   INCLUDES:
 
 C...........   PARAMETERS and their descriptions:
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
 

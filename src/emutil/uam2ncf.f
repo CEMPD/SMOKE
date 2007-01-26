@@ -61,7 +61,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   PARAMETER
 
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C.......  Input and output emissions
 

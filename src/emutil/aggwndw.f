@@ -87,7 +87,8 @@ C.........  EXTERNAL FUNCTIONS
      &                  PROMPTMFILE, SETENVVAR
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$'  ! CVS release tag
 
 C.........  LOCAL VARIABLES
 

@@ -53,7 +53,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL        INDEX1, PROMPTMFILE, STRLIST
 
 C.........  LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$'  ! CVS release tag
 
         INTEGER,      PARAMETER :: MAXVARS = 80        ! maximum number of variables
 

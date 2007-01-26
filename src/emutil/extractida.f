@@ -55,7 +55,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL   CRLF, FINDC, GETFLINE, PROMPTFFILE
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name' ! CVS release tag
 
 C............   Allocatable arrays
         INTEGER,               ALLOCATABLE :: INDEXA  ( : ) ! sorting index

@@ -75,7 +75,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  CRLF, ENVYN, PROMPTFFILE, SECSDIFF
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C...........   Gridding Matrix
         INTEGER, ALLOCATABLE :: GMAT( : ) ! Contiguous gridding matrix

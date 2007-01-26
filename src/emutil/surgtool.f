@@ -74,7 +74,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL   CRLF, DSCM3GRD, PROMPTFFILE
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C............   Allocatable arrays for computing grid cell intersections
         INTEGER, ALLOCATABLE::   C2( :, : )     !  output grid cell
