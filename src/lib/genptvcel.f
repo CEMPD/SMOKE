@@ -214,6 +214,9 @@ C.............  Compute grid cell number based on column and row
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 ) 
         END IF
 
+C......... Deallocate local memory
+    	DEALLOCATE( XVALS, YVALS )
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
