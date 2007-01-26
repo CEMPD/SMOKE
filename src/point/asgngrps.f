@@ -476,7 +476,8 @@ C               the same stack locations.
 
 C.........  Deallocate local memory
         DEALLOCATE( TGRPCNT, TGRPHT, TGRPDM, TGRPTK, 
-     &              TGRPVE, TGRPFL, GPSTAT )
+     &              TGRPVE, TGRPFL, VALS, REFS, GPSTAT, 
+     &              CHRS, COMCHRS )
 
         RETURN
 
