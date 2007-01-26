@@ -322,6 +322,9 @@ C.........  Create reference county index array
             PRCOUNTY = REFCOUNTY
         END DO
 
+C.........  Deallocate local memory
+        DEALLOCATE( MCREFRAW, MCREFINV, IDX, IDX2 )
+ 
         RETURN
 
 999     MESG = 'End of file'

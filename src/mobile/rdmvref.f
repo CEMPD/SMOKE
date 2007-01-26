@@ -284,7 +284,10 @@ C.............  Get county from MCREF index array
             MESG = 'Problem(s) found in reference county settings file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-        
+
+C.........  Deallocate local memory
+        DEALLOCATE( MVREFRAW, IDX )
+
         RETURN
 
 999     MESG = 'End of file'
