@@ -123,7 +123,8 @@ C.........  Successful completion
         RETURN
 
 C.........  Unexpected end of file
-998     MESG = 'INTERNAL ERROR: Unexpected end of NAICS description file'
+998     MESG = 'INTERNAL ERROR: Unexpected end' //
+     &         ' of NAICS description file'
         CALL M3MSG2( MESG )
 
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
