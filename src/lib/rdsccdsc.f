@@ -81,6 +81,9 @@ C   Begin body of subroutine RDSCCDSC
 C.........  Get the number of lines in the holidays file
         NLINES = GETFLINE( FDEV, 'SCC Descriptions' )
 
+C.........  Deallocate SCCDLEV if it was allocated 
+        IF (ALLOCATED(SCCDLEV)) DEALLOCATE(SCCDLEV)
+
 C.........  Allocate memory for the SCC descriptions and initialize
         ALLOCATE( SCCDESC( NINVSCC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCCDESC', PROGNAME )

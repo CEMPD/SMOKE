@@ -301,8 +301,8 @@ C.........  Store sorted SCC table
         END DO
 
 C.........  Deallocate temporary unsorted arrays
-        DEALLOCATE( CVTYPA, VIDXA, RDCLSA, RDWAYA, RIDXA )
-        DEALLOCATE( SCCRVCA, SCCTBLA )
+        DEALLOCATE( LTYPE, RDCLSA, RDWAYA, RIDXA, IVTIDA )
+        DEALLOCATE( VIDXA, SIDXA, CVTYPA, SCCRVCA, SCCTBLA )
 
 C.........  Rewind file
         REWIND( FDEV )

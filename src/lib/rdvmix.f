@@ -411,7 +411,7 @@ C           subroutines.
         CALL XREFTBL( 'VMTMIX', NXREF )
 
 C.........  Deallocate local and global temporal memory needs
-        DEALLOCATE( SEGMENT, VTNAMES, VIDX, INDXTA, CSRCTA )
+        DEALLOCATE( SEGMENT, VTNAMES, VIDX, VMIX, INDXTA, CSRCTA )
 
 C.........  Rewind file
         REWIND( FDEV )
