@@ -107,7 +107,7 @@ C.......  Allocate and initialize arrays
 C.......  Read and process lines of file
       IREC = 0
       DO
-          READ( FDEV, '(A)', IOSTAT=IOS ) LINE
+          READ( FDEV, 94020, IOSTAT=IOS ) LINE
 
 C...........  Exit if we've reached the end of the file          
           IF( IOS < 0 ) EXIT
@@ -223,5 +223,6 @@ C         have to use MODINFO
 C******************  FORMAT  STATEMENTS   ******************************
 
 94010 FORMAT( 10( A, :, I8, :, 1X ) )
+94020 FORMAT( A )
 
       END SUBROUTINE RDM6MAP
