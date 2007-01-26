@@ -148,6 +148,8 @@ C.............  Divide surrogate value by sum on cell
                 END DO  ! End loop on cells in county
             END DO      ! End loop on counties in domain
 
+    	    DEALLOCATE( SRGSUM )
+
             FIRSTIME = .FALSE.
 
         END IF
