@@ -102,9 +102,9 @@ C...........   TMAT update variables
         INTEGER, SAVE :: MONTH ( 24, 0:23 )  ! time zone's month 1 ... 12
         INTEGER, SAVE :: DAYOW ( 24, 0:23 )  ! time zone's day   1 ... 7
 
-        REAL, ALLOCATABLE :: STHOUR( : )         ! episode start hour
-        REAL, ALLOCATABLE :: EDHOUR( : )         ! episode end hour
-        REAL              :: TMPHRLFAC( 24 )      ! tmp hourly factors
+        REAL, ALLOCATABLE, SAVE :: STHOUR( : )         ! episode start hour
+        REAL, ALLOCATABLE, SAVE :: EDHOUR( : )         ! episode end hour
+        REAL                    :: TMPHRLFAC( 24 )     ! tmp hourly factors
 
 C...........   Other local variables
 
