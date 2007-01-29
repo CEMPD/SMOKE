@@ -129,11 +129,13 @@ C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
 C.............  Allocate memory for flag for writing missing-data messages
+            IF( ALLOCATED( NOMISS ) ) DEALLOCATE( NOMISS )
             ALLOCATE( NOMISS( NSRC,NVASP ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NOMISS', PROGNAME )
             NOMISS = .TRUE.  ! Array
 
 C.............  Create reverse index for pollutants and activities
+            IF (ALLOCATED (EAIDX2 )) DEALLOCATE (EAIDX2)
             MXEA = MAXVAL( EAIDX )
             ALLOCATE( EAIDX2( MXEA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EAIDX2', PROGNAME )
@@ -144,6 +146,7 @@ C.............  Create reverse index for pollutants and activities
             END DO
  
 C.............  Create reverse index for special variables
+            IF (ALLOCATED (SPIDX2 )) DEALLOCATE (SPIDX2)
             ALLOCATE( SPIDX2( MXSPDAT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPIDX2', PROGNAME )
             DO V = 1, MXSPDAT
