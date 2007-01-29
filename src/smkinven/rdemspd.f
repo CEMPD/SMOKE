@@ -230,7 +230,7 @@ C.............  Build helper arrays for making searching faster
             END DO
 
 C.............  Initialize warnings counter
-    	    NWARN = 0  ! array
+            NWARN = 0  ! array
 
             FIRSTIME = .FALSE.
 
@@ -379,7 +379,7 @@ C               warning
      &                'file at line', IREC, CRLF() // BLANK10 //  
      &                'does not match output time zone', TZONE
                 CALL M3MESG( MESG )
-    	    	NWARN( 1 ) = NWARN( 1 ) + 1
+                NWARN( 1 ) = NWARN( 1 ) + 1
 
             END IF
 
@@ -413,7 +413,7 @@ C.................  Check to see if data name is in list of special names
      &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
      &                   '" at line', IREC, '- not in inventory'
                         CALL M3MESG( MESG )
-    	    	    	NWARN( 2 ) = NWARN( 2 ) + 1
+                        NWARN( 2 ) = NWARN( 2 ) + 1
                     END IF
                     CYCLE      !  to head of loop
 
@@ -621,13 +621,13 @@ C                   invoked once.
                     BADSRC( NBADSRC ) = CSRC
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-    	    	    IF( NWARN( 3 ) .LE. MXWARN ) THEN
+                    IF( NWARN( 3 ) .LE. MXWARN ) THEN
                         MESG = 'WARNING: Period-specific record does '//
      &                         'not match inventory sources: '//
      &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
-    	    	    	NWARN( 3 ) = NWARN( 3 ) + 1
-    	    	    END IF
+                        NWARN( 3 ) = NWARN( 3 ) + 1
+                     END IF
 
                 END IF
 
