@@ -69,7 +69,7 @@ C...........   Other local variables
         INTEGER         I       ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
-        INTEGER         INY     !  inventory year
+        INTEGER, SAVE:: INY     !  inventory year
         INTEGER         IOS     !  i/o status
         INTEGER, SAVE:: NVAR    !  number of variables in file
 

@@ -64,13 +64,13 @@ C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXVARFIL = 112 ! maximum data variables in file
 
 C...........   Local allocatable arrays
-        CHARACTER(25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
+        CHARACTER(25), ALLOCATABLE, SAVE :: SEGMENT( : )  ! list-formatted strings
         
 C...........   Other local variables
         INTEGER         I, J, K, L, N, V  ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
-        INTEGER         INY     !  inventory year
+        INTEGER, SAVE:: INY     !  inventory year
         INTEGER         IOS     !  i/o status
         INTEGER, SAVE:: NVAR    !  number of variables in file
         INTEGER         NSEG    ! number of input segments
@@ -132,6 +132,8 @@ C.........  If not fixed format, allocate memory for number of segments
             NSEG = 4 + NVAR * NPACT
             ALLOCATE( SEGMENT( NSEG ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
+            SEGMENT = ' '   ! array
+    	ELSE IF ( .NOT. FIXED ) THEN
             SEGMENT = ' '   ! array
         END IF
         
