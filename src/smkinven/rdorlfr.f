@@ -94,7 +94,7 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL, INTENT( IN ):: GETSIZES       ! true: get no. time steps & pols
         LOGICAL, INTENT( IN ):: GETCOUNT       ! true: get max no. srcs per time
         LOGICAL, INTENT( IN ):: FIRSTCALL      ! true: first call of a loop
-        LOGICAL, INTENT( IN ):: DAYFLAG        ! true: day-, false: hour-spec
+        LOGICAL, INTENT( IN ):: DAYFLAG        ! true: day-specific wildfire data
         INTEGER,INTENT(INOUT):: SDATE          ! Julian starting date in TZONE
         INTEGER,INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT) :: EDATE          ! Julian ending date in TZONE
@@ -138,7 +138,7 @@ C...........   Local arrays
         CHARACTER(ALLLEN3), ALLOCATABLE, SAVE :: CSRCDAY  ( : )      ! sorted source/day array
 
 C...........   Other local variables
-        INTEGER          H, HS, I, II, J, K, L, LL, N, S, T    ! counters and indices
+        INTEGER          H, HS, I, II, J, K, L, LL, N, S, T, V1, V2    ! counters and indices
         INTEGER          L0, L1, L2, L3, L4, L5
         INTEGER          ES, NS, SS       ! end src, tmp no. src, start sourc
 
@@ -161,22 +161,14 @@ C...........   Other local variables
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
         INTEGER, SAVE :: MXWARN           !  maximum number of warnings
-        INTEGER, SAVE :: NWARN = 0        !  current number of warnings
+        INTEGER, SAVE :: NWARN( 3 )       ! warnings counter
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NCOMP = 0        ! no. of formulas
-        INTEGER, SAVE :: NFIELD = 0       ! number of data fields
-        INTEGER, SAVE :: NHFLX   = 0      ! no. of heat flux var 2
         INTEGER, SAVE :: NACRBND = 0      ! no. of acres burned var
         INTEGER, SAVE :: NFUELD  = 0      ! no. of fuel loading var
-        INTEGER, SAVE :: NPRCHFX = 0      ! no. of precomputed HFLUX
-        INTEGER, SAVE :: NPRCFRM = 0      ! no. of precomputed formula results
-        INTEGER, SAVE :: NFUEL  = 0       ! no. of FUEL_LOAD
-        INTEGER, SAVE :: NFRM   = 0       ! no. of records with precomputed formula value
-        INTEGER, SAVE :: NVAR1  = 0       ! no. of first variables in formula
-        INTEGER, SAVE :: NVAR2  = 0       ! no. of second variables in formula
-        INTEGER       :: NPOA   = 0       ! unused header number of pol/act
+        INTEGER       :: NPOA    = 0      ! unused header number of pol/act
         INTEGER, SAVE :: NSRCDAY = 0      ! no. of src/day combos for computed vars
-        INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
+        INTEGER, SAVE :: NSTEPS  = 0      ! number of time steps
         INTEGER          PTR              ! tmp time step pointer
         INTEGER       :: RDATE = 1980001  ! reference date: Jan 1, 1980
         INTEGER       :: RTIME = 0        ! reference time
@@ -191,7 +183,9 @@ C...........   Other local variables
         REAL             TDAT             ! temporary data values
 
         LOGICAL, SAVE :: CHKMINUS 
+        LOGICAL, SAVE :: VFLAG  = .FALSE. ! true: first variables in formula available
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
+        LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: DFLAG  = .FALSE. ! true: dates set by data
         LOGICAL       :: EFLAG  = .FALSE. ! TRUE iff ERROR
         LOGICAL       :: WARNOUT= .FALSE. ! true: then output warnings
@@ -210,8 +204,6 @@ C...........   Other local variables
 
 C.........  Saved local character variables
         CHARACTER(IOVLEN3), SAVE :: FVAR      ! name of formula resulting variable
-        CHARACTER(IOVLEN3), SAVE :: INAMVAR1  ! tmp variable1 cas number (*16)
-        CHARACTER(IOVLEN3), SAVE :: INAMVAR2  ! tmp variable2 cas number (*16)
         CHARACTER(IOVLEN3), SAVE :: VAR1      ! formula input variable 1
         CHARACTER(IOVLEN3), SAVE :: VAR2      ! formula input variable 2
 
@@ -247,66 +239,101 @@ C.............  Get value of these controls from the environment
 
 C.............  Figure out how many variables there are based on the
 C               number of commas found in the string.
-            IF( LEN( VAR_FORMULA ) > 0 ) NCOMP = 1
-            DO I = 1, L
-                IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
-            ENDDO
+            L  = LEN_TRIM( VAR_FORMULA )
+            IF( L > 0 ) THEN
+                NCOMP = 1
+                DO I = 1, L
+                    IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
+                ENDDO
 
-C.............  Only one formula is allowed
-            IF ( NCOMP > 1 ) THEN
-                WRITE( MESG,94010 ) 'Only one formula (not the',NCOMP,
-     &                 'given) are allowed when running day-'//
+C.................  Only one formula is allowed
+                IF ( NCOMP > 1 ) THEN
+                    WRITE( MESG,94010 ) 'Only one formula (not the',
+     &                  NCOMP, 'given) are allowed when running day-'//
      &                 'specific fires.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
-C.............  Obtain names for formula variables and whether formula is minus or plus
-            L1 = INDEX( VAR_FORMULA, '=' )
-            L2 = INDEX( VAR_FORMULA, '+' )
-            L3 = INDEX( VAR_FORMULA, '-' )
+C.................  Obtain names for formula variables and whether formula is minus or plus
+                L1 = INDEX( VAR_FORMULA, '=' )
+                L2 = INDEX( VAR_FORMULA, '+' )
+                L3 = INDEX( VAR_FORMULA, '-' )
 
-            CHKMINUS = .FALSE.
-            CHKMINUS = ( L3 .GT. 0 )
+                CHKMINUS = .FALSE.
+                CHKMINUS = ( L3 .GT. 0 )
 
-            IF( L1 .LE. 0 .OR. ( L2 .LE. 0 .AND. L3 .LE. 0 ) ) THEN
-                MESG = 'Could not interpret formula for extra ' //
-     &                 'pollutant from environment variable ' //
-     &                 CRLF() // BLANK10 // '"' // TRIM( FORMEVNM ) //
-     &                 '": ' // TRIM( VAR_FORMULA )
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+                IF( L1 .LE. 0 .OR. ( L2 .LE. 0 .AND. L3 .LE. 0 ) ) THEN
+                    MESG = 'Could not interpret formula for extra ' //
+     &                  'pollutant from environment variable ' //
+     &                  CRLF() // BLANK10 // '"' // TRIM( FORMEVNM ) //
+     &                  '": ' // TRIM( VAR_FORMULA )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
 C.................  Extract formula variable names
-            L4 = L2
-            IF( CHKMINUS ) L4 = L3
+                L4 = L2
+                IF( CHKMINUS ) L4 = L3
 
-            L      = LEN_TRIM( VAR_FORMULA )
-            FVAR = ADJUSTL( VAR_FORMULA(    1:L1-1 ) )
-            VAR1 = ADJUSTL( VAR_FORMULA( L1+1:L4-1 ) )
-            VAR2 = ADJUSTL( VAR_FORMULA( L4+1:L    ) )
+                FVAR = ADJUSTL( VAR_FORMULA(    1:L1-1 ) )
+                VAR1 = ADJUSTL( VAR_FORMULA( L1+1:L4-1 ) )
+                VAR2 = ADJUSTL( VAR_FORMULA( L4+1:L    ) )
 
+C.................  Check Pollutant Code Numbers for formula pollutant #1
+                I = INDEX1( VAR1, NINVTBL, ITCASA )
+                IF( I < 1 ) THEN
+                    L = LEN_TRIM( VAR1 )
+                    MESG = 'Variable "'// VAR1( 1:L ) // 
+     &                 '" from formula was not found in inventory ' //
+     &                 'pollutant code (CAS nubmer)'
+                    CALL M3MSG2( MESG )
+
+                ELSE
+                    VAR1 = ITNAMA( I )
+
+                END IF
+
+                V1 = INDEX1( VAR1, NIPPA, EANAM )
+                IF( V1 .LE. 0 ) THEN
+                    TFLAG = .TRUE.
+                    MESG = 'WARNING: Variable "'// TRIM( VAR1 ) // 
+     &                     '" from formula was not found in inventory.'
+                    CALL M3MSG2( MESG )
+                END IF
+
+C.................  Check Pollutant Code Numbers for formula pollutant #2
+                I = INDEX1( VAR2, NINVTBL, ITCASA )
+                IF( I < 1 ) THEN
+                    L = LEN_TRIM( VAR2 )
+                    MESG = 'Variable "'// VAR2( 1:L ) // 
+     &                 '" from formula was not found in inventory ' //
+     &                 'pollutant code (CAS nubmer)'
+                    CALL M3MSG2( MESG )
+
+                ELSE
+                    VAR2 = ITNAMA( I )
+
+                END IF
+
+                V2 = INDEX1( VAR2, NIPPA, EANAM )
+                IF( V2 .LE. 0 ) THEN
+                    TFLAG = .TRUE.
+                    MESG = 'WARNING: Variable "'// TRIM( VAR2 ) // 
+     &                     '" from formula was not found in inventory.'
+                    CALL M3MSG2( MESG )
+                END IF
+                
+                IF( V1 .LE. 0 .OR. V2 .LE. 0 ) THEN
+                    MESG='ERROR: Problem processing formula " ' //
+     &                    TRIM( VAR_FORMULA ) // ' "'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+            END IF
+            
+C.............  Allocate memory for storing counting number of sources per day/pollutant
             ALLOCATE( NSRCPDDAT( 366,NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NSRCPDDAT', PROGNAME )
             NSRCPDDAT = 0  ! array
-
-C.............  Check Pollutant Code Numbers for formula pollutants
-            I = INDEX1( VAR1, NINVTBL, ITNAMA )
-            INAMVAR1 = ITCASA( I )
-            IF( INAMVAR1 == ' ' ) THEN
-                MESG = 'ERROR: Enter Inventory Polluant Code for '//
-     &                 TRIM( VAR1 ) // ' pollutant ' //
-     &                 'in the inventory table file ($INVTABLE).'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            I = INDEX1( VAR2, NINVTBL, ITNAMA )
-            INAMVAR2 = ITCASA( I )
-            IF( INAMVAR2 == ' ' ) THEN
-                MESG = 'ERROR: Enter Inventory Polluant Code for '//
-     &                 TRIM( VAR2 ) // ' pollutant ' //
-     &                 'in the inventory table file ($INVTABLE).'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
 
 C.............  Allocate memory for bad source storage
             ALLOCATE( BADSRC( NSRC ), STAT=IOS )
@@ -362,6 +389,10 @@ C.............  Open I/O API inventory HEATCONTENT file and store
             FIRSTIME = .FALSE.
             FIREFLAG = .TRUE.
 
+
+C.............  Initialize warnings counter
+            NWARN = 0  ! array
+
         END IF  ! End first time subroutine is called
 
 C.........  For the first call in a loop of files, initialize variables
@@ -371,9 +402,6 @@ C.........  For the first call in a loop of files, initialize variables
 
 C.............  Set time step divisor
             TDIVIDE = 3600 * TSTEP / 10000
-
-C.............  Set the number of day-specific fields
-            IF( DAYFLAG ) NFIELD = 1
 
 C.............  If dates have been set by the data, set the number of steps
 C               steps
@@ -501,6 +529,8 @@ C               the various data fields
             ESTIME = STR2INT( SEGMENT( 8 ) ) * 10000 ! episode start time
             EETIME = STR2INT( SEGMENT( 9 ) ) * 10000 ! episode end time
 
+            IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
+
 C............. Check fire beginning and ending time format and print warning if necessary
             IF( EETIME > 230000 .OR. EETIME < 0 ) THEN
                 MESG = 'ERROR: Region: '// CFIP // ' SCC: ' // TSCC //
@@ -555,38 +585,39 @@ C.............  Check and Set emissions values
 
 C.............  Counting the number of times precomputed HFLUX and precomputed formula
 C               values appear in the input file
-            IF( CDAT == 'HFLUX' .AND. .NOT. HFXFLAG ) THEN
-                NPRCHFX = NPRCHFX + 1
-            END IF
+            IF( CDAT == 'HFLUX' .AND. .NOT. HFXFLAG ) PRCHFX = .TRUE.
+            IF( CDAT == FVAR    .AND. .NOT. FRMFLAG ) PRCFRM = .TRUE.
 
-            IF( CDAT == FVAR .AND. .NOT. FRMFLAG ) THEN
-                NPRCFRM = NPRCFRM + 1
-            END IF
-
-C.............  Counting and adding HFLUX, BEGHOUR, ENDHOUR and/or formula variables
+C.............  Counting and adding HFLUX, BEGHOUR, ENDHOUR and/or formula variable
 C               building a list of source characteristics and store
-            IF( HFXFLAG .AND. .NOT. PRCHFX ) CDAT = 'HFLUX'
             IF( BNHRFLAG ) CDAT = 'BEGHOUR'
             IF( ENHRFLAG ) CDAT = 'ENDHOUR'
-            IF( FRMFLAG .AND. .NOT. PRCFRM ) CDAT = FVAR
+
+            IF( HFXFLAG ) THEN
+                IF( .NOT. PRCHFX ) CDAT = 'HFLUX'
+            END IF
+
+            IF( FRMFLAG ) THEN
+                IF( .NOT. PRCFRM ) CDAT = FVAR
+            END IF
 
 C.............  Adding additional variables and lines if necessary
             HFXFLAG = .FALSE.
             IF( CDAT == 'ACRESBURNED' .AND. .NOT. PRCHFX ) THEN
+                NACRBND = NACRBND + 1
                 HFXFLAG = .TRUE.    ! indicating adding HFLUX
                 BACKSPACE( FDEV )
-                NACRBND = NACRBND + 1
             END IF
 
-            IF( CDAT == 'FUEL_LOAD' ) THEN
+            IF( CDAT == 'FUEL_LOAD' .AND. .NOT. PRCHFX ) THEN
                 NFUELD = NFUELD + 1
             END IF
 
             FRMFLAG = .FALSE.
-            IF( CDAT == INAMVAR1 .AND. .NOT. PRCFRM ) THEN
+            IF( CDAT == VAR1 .AND. .NOT. PRCFRM ) THEN
+                VFLAG   = .TRUE.   ! indicating var1 available for formula
                 FRMFLAG = .TRUE.   ! indicating adding formula var
                 BACKSPACE( FDEV )
-                NVAR1 = NVAR1 + 1
             END IF
 
             BNHRFLAG = .FALSE.
@@ -615,15 +646,16 @@ C.............  Set time zone number
             
 C.............  If daily emissions are not in the output time zone, print 
 C               warning
-            IF( WARNOUT .AND. DAYFLAG .AND. ZONE .NE. TZONE 
-     &          .AND. GETCOUNT ) THEN
-                WRITE( MESG,94010 ) 
-     &                'WARNING: Time zone ', ZONE, 'in day-specific ' //
-     &                'file at line of pollutant ' // TRIM( CDAT ) //
-     &                ' on ' // TRIM( DATE ) // 
-     &                ' does not match output time zone', TZONE
-                CALL M3MESG( MESG )
-
+            IF( GETCOUNT ) THEN
+               IF( WARNOUT .AND. ( ZONE .NE. TZONE ) .AND. 
+     &            ( NWARN( 1 ) .LE. MXWARN )               ) THEN
+                   WRITE( MESG,94010 ) 'WARNING: Time zone ', ZONE, 
+     &                 'in day-specific file at line of pollutant ' //
+     &                 TRIM( CDAT ) // ' on ' // TRIM( DATE ) // 
+     &                 ' does not match output time zone', TZONE
+                   CALL M3MESG( MESG )
+                   NWARN( 1 ) = NWARN( 1 ) + 1
+                END IF
             END IF
 
 C.............  Convert date and time to output time zone.
@@ -640,54 +672,39 @@ C.............  Store maximum time step number as compared to rference
 
 C.............  Check pollutant code and set index I
             COD  = INDEX1( CDAT, NIPPA, EANAM )
-            IF( COD > 0  ) II = 1
 
-            IF( COD .LE. 0 ) THEN
-                II = INDEX1( CDAT, NINVTBL, ITCASA )
+C.............  Check to see if data name is in inventory list
+            IF ( COD .LE. 0 ) THEN
 
-C.................  This code resets the pollutant name CDAT to the SMOKE name
-C                   instead of the inventory name (which could be the CAS number)
-                IF( II > 1 ) THEN
-                    CTMP = CDAT
-                    CDAT = ADJUSTL( ITNAMA( II ) )
-                    COD  = INDEX1( CDAT, NIPPA, EANAM )
-                END IF
-            END IF
-
-C.............  Check to see if data name is in Inventory Table list
-            IF( II <= 0 ) THEN
-
-                J = 0
-                IF( NBADPOLS > 0 ) J = INDEX1( CDAT, NBADPOLS, BADPOLS )
-
-                IF ( J <= 0 ) THEN
-
-                    WRITE( MESG,93000 ) 
-     &                 'WARNING: Skipping pollutant "'// TRIM( CDAT ) //
-     &                 '" in PTDAY file because it is not in the '//
-     &                 'Inventory Table (INVTABLE) file.'
-                    CALL M3MSG2( MESG )
-
-                    NBADPOLS = NBADPOLS + 1
-                    BADPOLS( NBADPOLS ) = CDAT
-
+C.................  Error msg if "HFLUX" is not listed in inventory list
+                IF( CDAT == 'HFLUX' ) THEN
+                    MESG = 'ERROR: Please add " HFLUX " variable ' //
+     &                     'in the inventory table file (INVTABLE).'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
-                CYCLE      !  to head of read loop
+C.................  Check to see if data name is in list of special names
+                COD = INDEX1( CDAT, MXSPDAT, SPDATNAM )
 
-C.............  Check to see if data name is in inventory data list
-            ELSE IF( COD .LE. 0 ) THEN
+                IF ( COD .LE. 0 ) THEN
 
-                IF ( .NOT. LCODWARN( II ) ) CYCLE  ! If have already warned, then cycle
+                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
+                        L = LEN_TRIM( CDAT )
+                        WRITE( MESG,94010 ) 
+     &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
+     &                   '" at line', IREC, '- not in inventory'
+                        CALL M3MESG( MESG )
+                        NWARN( 2 ) = NWARN( 2 ) + 1
+                    END IF
+                    CYCLE      !  to head of loop
 
-                LCODWARN( II ) = .TRUE.
+C.................  Otherwise, store status of special data and flag code with
+C                   special integer so can ID these records later.
+                ELSE
+                    SPSTAT( COD ) = .TRUE.
+                    COD = CODFLAG3 + COD
 
-                WRITE( MESG,93000 ) 
-     &                'WARNING: Skipping pollutant "'// TRIM( CTMP ) //
-     &                '" in PTDAY file because it is not in PTINV file.'
-                CALL M3MSG2( MESG )
-
-                CYCLE      !  to head of read loop
+                END IF
 
 C.............  If it is, store status of inventory data
             ELSE 
@@ -703,8 +720,6 @@ C               any variables, including HFLUX, and formula variables
 C.............  If only getting dates and pollutant information, go 
 C               to next loop iteration
             IF( GETSIZES ) CYCLE
-C-------------------------------------------------------------------------------
-C-------------------------------------------------------------------------------
 
 C.............  Determine time step pointer based on actual start time
             PTR = SECSDIFF( SDATESAV,STIMESAV,JDATE,JTIME )/TDIVIDE + 1
@@ -721,39 +736,41 @@ C.............  Count estimated record count per time step
 C.............  Store formula variable values.  Only need to do this on the the second
 C               pass.  Need to do this before the third pass through the data, because
 C               that is when the formula calculation is made.           
-            IF( GETCOUNT .AND.                                  ! Second pass through code ONLY
-     &        ( .NOT. PRCFRM .AND.                              ! No precomputed formula AND      
-     &           ( FRMFLAG .OR. CDAT == VAR2 ) ) .OR.           ! either formula values
-     &        ( .NOT. PRCHFX .AND.                              ! No precomputed Heat flux
-     &           ( HFXFLAG .OR. CDAT == 'FUEL_LOAD' ) )  ) THEN ! Acres burned value or fuel load value
+            IF( GETCOUNT ) THEN
+              IF( .NOT. PRCFRM .OR. .NOT. PRCHFX ) THEN          ! No precomputed formula/heat flux
+                IF( ( FRMFLAG .OR. CDAT == VAR2 ) .OR.           ! first or second vars either (OR)     
+     &              ( HFXFLAG .OR. CDAT == 'FUEL_LOAD' ) ) THEN  ! Acres burned value or fuel load value
 
-C.................  Figure out which source/day this is for storing in correct source/day
-C.................  This code does *not* assume that the data have been sorted first.
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                        TSCC, DATE, POLBLNK3, CSRCD )
+C.....................  Figure out which source/day this is for storing in correct source/day
+C.....................  This code does *not* assume that the data have been sorted first.
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                            TSCC, DATE, POLBLNK3, CSRCD )
 
-C.................  Build unsorted arrays of source/days and emissions for calculating formula
-                SD = 0
-                IF( NSRCDAY > 0 ) SD= INDEX1( CSRCD, NSRCDAY, CSRCDAYA )
-                IF( SD <= 0 ) THEN
-                    NSRCDAY = NSRCDAY + 1
-                    SD = NSRCDAY
-                    CSRCDAYA( SD ) = CSRCD
-                    IDXSD   ( SD ) = SD
+C.....................  Build unsorted arrays of source/days and emissions for calculating formula
+                    SD = 0
+                    IF( NSRCDAY > 0 ) THEN
+                        SD= INDEX1( CSRCD, NSRCDAY, CSRCDAYA )
+                    END IF
+
+                    IF( SD <= 0 ) THEN
+                        NSRCDAY = NSRCDAY + 1
+                        SD = NSRCDAY
+                        CSRCDAYA( SD ) = CSRCD
+                        IDXSD   ( SD ) = SD
+                    END IF
+
+                    IF( FRMFLAG ) DTVAR1( SD ) = TDAT         ! storing variable 1 for formula calc
+                    IF( CDAT == VAR2 ) DTVAR2( SD ) = TDAT    ! storing variable 2 for formula calc
+                    IF( HFXFLAG ) DTACBRN( SD ) = TDAT        ! storing acres burned
+                    IF( CDAT == 'FUEL_LOAD' ) DTFUELD( SD ) = TDAT ! storing fuel load
+
                 END IF
-
-                IF( FRMFLAG ) DTVAR1( SD ) = TDAT         ! storing variable 1 for formula calc
-                IF( CDAT == VAR2 ) DTVAR2( SD ) = TDAT    ! storing variable 2 for formula calc
-                IF( HFXFLAG ) DTACBRN( SD ) = TDAT        ! storing acres burned
-                IF( CDAT == 'FUEL_LOAD' ) DTFUELD( SD ) = TDAT ! storing fuel load
-
-            END IF
+              END IF
+            END IF    ! Second pass only
             
 C.............  If only counting records per time step, go to next loop
 C               iteration
             IF( GETCOUNT ) CYCLE
-C-------------------------------------------------------------------------------
-C-------------------------------------------------------------------------------
 
 C.............  If FIPS code is not the same as last time, then
 C               look it up and get indidies
@@ -772,19 +789,58 @@ C               look it up and get indidies
                 LFIP = FIP
 
             END IF
-C.............  Build source characteristics field for searching inventory
-            IF( .NOT. IFLAG ) THEN
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID//'     ', 
-     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
+
+C.............  If SCCs are needed for matching...
+            IF ( TFLAG ) THEN
+C.................  Build source characteristics field for searching inventory
+                IF( .NOT. IFLAG ) THEN
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                       '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                ELSE
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                END IF
+
+C.................  Search for this record in sources
+                J = FINDC( CSRC, NS, CSOURC( SS ) )
+
+C.............  If SCCs are not being used for matching (at least not yet)...
             ELSE
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
-     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
+
+C.................  Build source characteristics field for searching inventory
+                IF( .NOT. IFLAG ) THEN
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                       '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                ELSE
+                    CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                END IF
+
+C.................  Search for this record in sources
+                J = FINDC( CSRC, NS, CSOURC( SS ) )
+
+C.................  If source is not found for day-specific processing, see 
+C                   if reading the SCC in helps (needed for IDA format)
+                IF( J .LE. 0 ) THEN
+
+C.....................  Build source characteristics field for searching inventory
+                    IF( .NOT. IFLAG ) THEN
+                        CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                         '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                    ELSE
+                        CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, 
+     &                            TSCC, CHRBLNK3, POLBLNK3, CSRC )
+                    END IF
+
+C.....................  Search for this record in sources
+                    J = FINDC( CSRC, NS, CSOURC( SS ) )
+                    IF ( J .GT. 0 ) TFLAG = .TRUE.
+
+                END IF
+
             END IF
 
-C.............  Search for this record in sources
-            J = FINDC( CSRC, NS, CSOURC( SS ) )
-
-C.............  If source not found, store source in list of bad sources
+C.............  Store source in list of bad sources
 C.............  Print warning about sources not found in the inventory
             IF( J .LE. 0 ) THEN
 
@@ -800,10 +856,13 @@ C                   invoked once.
                     BADSRC( NBADSRC ) = CSRC
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    MESG = 'WARNING: Period-specific record does ' //
-     &                     'not match inventory sources: '//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
+                    IF( NWARN( 3 ) .LE. MXWARN ) THEN
+                        MESG = 'WARNING: Period-specific record does '//
+     &                         'not match inventory sources: '//
+     &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        NWARN( 3 ) = NWARN( 3 ) + 1
+                    END IF
 
                 END IF
 
@@ -838,7 +897,6 @@ C.................  Lookup source/date string in master list to get position
                     EFLAG = .TRUE.
 
                 ELSE 
-
 C.....................  Compute Heat Flux value
                     TDAT = DTACBRN( K ) * DTFUELD( K ) * ! computing HFLUX (BTU/day)
      &                     HEATCONTENT( S ) * TON2LB     ! HEATCONTENT(BTU/lb)=8000
@@ -849,7 +907,8 @@ C.....................  Compute Heat Flux value
 
 C.............  Compute formula.  This calculation uses stored values of formula inputs that
 C               were stored on the second pass through this subroutine.
-            IF( CDAT == FVAR .AND. NVAR1 > 0 .AND. .NOT. PRCFRM ) THEN
+            IF( .NOT. PRCFRM ) THEN
+            IF( CDAT == FVAR .AND. VFLAG ) THEN
 
 C.................  Build source/date string to lookup position for doing calculation
                 CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, TSCC, DATE,
@@ -859,13 +918,13 @@ C.................  Lookup source/date string in master list to get position
                 SD = FINDC( CSRCD, NSRCDAY, CSRCDAY )
                 K  = IDXSD( SD )
 
-C.....................  If PM2.5 value is missing, then assume zero
+C.....................  If VAR2 value is missing, then assume zero
                 IF( DTVAR2( K ) < AMISS3 ) THEN
                     LL = LEN_TRIM( CSRCD )
                     CALL FMTCSRC( CSRCD, 6, BUFFER, L2 )
 
                     MESG = 'WARNING: Resetting missing value of '//
-     &                     'PM2.5 to 0. for source:'//
+     &                     TRIM( VAR2 ) // ' to 0. for source:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) // 
      &                     ' on date ' // CSRCD( LL-7: LL )
                     CALL M3MSG2( MESG )
@@ -874,14 +933,15 @@ C.....................  If PM2.5 value is missing, then assume zero
 
                 END IF
 
-C.....................  Compute formula value
-               IF( CHKMINUS ) THEN
-                   TDAT = DTVAR1( K ) - DTVAR2( K )  ! computing formula result
-               ELSE
-                   TDAT = DTVAR1( K ) + DTVAR2( K )  ! computing formula result
-               END IF
+C.................  Compute formula value
+                IF( CHKMINUS ) THEN
+                    TDAT = DTVAR1( K ) - DTVAR2( K )  ! computing formula result
+                ELSE
+                    TDAT = DTVAR1( K ) + DTVAR2( K )  ! computing formula result
+                END IF
 
-               IF( TDAT < 0 ) THEN
+C................  Warning msg when new computed value is negative
+                IF( TDAT < 0 ) THEN
                     LL = LEN_TRIM( CSRCD )
                     CALL FMTCSRC( CSRCD, 6, BUFFER, L2 )
 
@@ -895,6 +955,8 @@ C.....................  Compute formula value
                     TDAT = 0.0
 
                 END IF
+
+            END IF
             END IF
 
             IF( CDAT == 'BEGHOUR' ) TDAT = REAL( ESTIME )  ! storing BEGHOUR
@@ -926,27 +988,26 @@ C.............  Record needed data for this source and time step
 
 C.........  Warning messages for HFLUX and formula result (QA checks)
         IF( GETCOUNT ) THEN
-            IF( NPRCHFX > 0 .AND. .NOT. PRCHFX ) THEN
+
+            IF( PRCHFX ) THEN
                 MESG = 'WARNING: Skipping internal heat flux '//
      &                 'computation due to the existence of '//
-     &                 'precomputed HFLUX in PTDAY'
+     &                 'precomputed HFLUX in PTDAY file'
                 CALL M3MSG2( MESG )
-                PRCHFX = .TRUE.
-            END IF
-
-            IF( NPRCFRM > 0 .AND. .NOT. PRCFRM ) THEN
-                MESG = 'WARNING: Skipping formula computation for '//
-     &                 TRIM(FVAR)// ' due to the existence of '//
-     &                 'precomputed '//TRIM(FVAR)// ' in PTDAY'
-                CALL M3MSG2( MESG )
-                PRCFRM = .TRUE.
             END IF
 
 C.............  Give warning if variables needed for formula are not present  
-            IF( NVAR1 < 1 .AND. .NOT. PRCFRM ) THEN
+            IF( PRCFRM ) THEN
+                MESG = 'WARNING: Skipping internal '//TRIM( FVAR )//
+     &               ' computation due to the existence of'//
+     &               ' precomputed ' //TRIM( FVAR )// ' in PTDAY file'
+                CALL M3MSG2( MESG )
+            END IF
+
+            IF( .NOT. VFLAG ) THEN
                 MESG = 'WARNING: No ' // TRIM( VAR1 ) //
-     &                 ' data are available to '//
-     &                 'compute '//TRIM(FVAR)// '- values will be 0.0'
+     &                 ' data is available to compute '//
+     &                 TRIM( FVAR ) // ' - values will be 0.0'
                 CALL M3MSG2( MESG )
             END IF
 
