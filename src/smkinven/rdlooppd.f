@@ -258,7 +258,7 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
 
                 CALL RDORLFR( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG,
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME,
-     &                        EDATE, ETIME, EASTAT )
+     &                        EDATE, ETIME, EASTAT, SPSTAT )
 
             ELSE
 
