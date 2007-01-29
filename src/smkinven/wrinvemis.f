@@ -45,7 +45,8 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, NPCNT, IPOSCOD, POLVAL
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT, FIREFLAG
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT, FIREFLAG, NINVTBL,
+     &                      ITNAMA, ITCASA
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, NMAP,
@@ -109,7 +110,7 @@ C...........   Other local allocatable arrays
         CHARACTER(IOVLEN3), ALLOCATABLE :: SAVEANAM( : ) ! tmp variables
 
 C...........   Other local variables
-        INTEGER         F, I, S, L, L2, N, V1, V2, VA, VB     ! counters and indices
+        INTEGER         F, I, J, S, L, L2, N, V1, V2, VA, VB     ! counters and indices
 
         INTEGER         IOS       ! i/o status
         INTEGER         LEQU      ! position of '=' in formula
@@ -244,11 +245,37 @@ C.................  Make sure formula makes sense
 
 C.................  Extract formula variable names
                 L      = LEN_TRIM( FORMULAS( F ) )
-                VNAME(F)= ADJUSTL( FORMULAS( F )(      1:LEQU-1 ) )
-                VIN_A(F)= ADJUSTL( FORMULAS( F )( LEQU+1:LDIV-1 ) )
-                VIN_B(F)= ADJUSTL( FORMULAS( F )( LDIV+1:L      ) )
+                VNAME( F )= ADJUSTL( FORMULAS( F )(      1:LEQU-1 ) )
+                VIN_A( F )= ADJUSTL( FORMULAS( F )( LEQU+1:LDIV-1 ) )
+                VIN_B( F )= ADJUSTL( FORMULAS( F )( LDIV+1:L      ) )
 
 C.................  Find formula inputs in existing variable list
+                J = INDEX1( VIN_A( F ), NINVTBL, ITCASA )
+                IF( J < 1 ) THEN
+                    L = LEN_TRIM( VIN_A( F ) )
+                    MESG = 'Variable "'// VIN_A( F )( 1:L ) // 
+     &                 '" from formula was not found in inventory ' //
+     &                 'pollutant code (CAS nubmer)'
+                    CALL M3MSG2( MESG )
+
+                ELSE
+                    VIN_A( F ) = ITNAMA( J )
+
+                END IF
+
+                J = INDEX1( VIN_B( F ), NINVTBL, ITCASA )
+                IF( J < 1 ) THEN
+                    L = LEN_TRIM( VIN_B( F ) )
+                    MESG = 'Variable "'// VIN_B( F )( 1:L ) // 
+     &                 '" from formula was not found in inventory ' //
+     &                 'pollutant code (CAS nubmer)'
+                    CALL M3MSG2( MESG )
+
+                ELSE
+                    VIN_B( F ) = ITNAMA( J )
+
+                END IF
+
                 VA = INDEX1( VIN_A( F ), NIPPA, EANAM )
                 VB = INDEX1( VIN_B( F ), NIPPA, EANAM )
 
