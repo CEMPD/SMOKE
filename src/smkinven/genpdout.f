@@ -432,6 +432,7 @@ C.........  Create header:
      &       ( CHRHDRS( I ), I=2, NCHARS ), LABEL(1), LABEL(2)
 
 C.........  Create content
+        IF( ALLOCATED( ELECSCC ) ) DEALLOCATE( ELECSCC )
         ALLOCATE( ELECSCC( NINVSCC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ELECSCC', PROGNAME )
         ELECSCC = ' '  ! array
