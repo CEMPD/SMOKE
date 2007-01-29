@@ -82,7 +82,8 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   LOCAL PARAMETERS
         CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 

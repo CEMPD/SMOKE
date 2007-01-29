@@ -80,7 +80,8 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
 
 C...........   LOCAL PARAMETERS
-        CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
+        CHARACTER(50), PARAMETER :: 
+     &  CVSW = '$Name$' ! CVS release tag
 
 C...........   Other local variables
 
