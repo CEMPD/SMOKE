@@ -77,7 +77,7 @@ C...........   Local arrays
         INTEGER         IE( NPPOL )  ! end position for each pol char
         
 C...........   Local allocatable arrays
-        CHARACTER(25), ALLOCATABLE :: SEGMENT( : )  ! list-formatted strings
+        CHARACTER(25), ALLOCATABLE, SAVE :: SEGMENT( : )  ! list-formatted strings
         
 C...........   Other local variables
         INTEGER         I,J,K   ! counters and indices
@@ -157,6 +157,8 @@ C.........  If not fixed format, allocate memory for number of segments
             NSEG = 4 + NPOL * NPACT
             ALLOCATE( SEGMENT( NSEG ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
+            SEGMENT = ' '   ! array
+    	ELSE IF ( .NOT. FIXED ) THEN
             SEGMENT = ' '   ! array
         END IF
 
