@@ -131,7 +131,7 @@ C...........   Other local variables
         INTEGER         IREC        !  no. of records read
         INTEGER         ISTREC      !  no. of records stored
         INTEGER         IZONE       !  UTM zone
-        INTEGER         LSTYR       !  inventory year from list file
+        INTEGER      :: LSTYR = 0   !  inventory year from list file
         INTEGER         MXWARN      !  maximum number of warnings
         INTEGER         NLINE       !  no. of lines in list file
         INTEGER         NPOLPERCAS  !  no. of pollutants per CAS number
@@ -1567,6 +1567,10 @@ C.................  Correct hemisphere for stack longitude
             END IF
 
         END DO  ! end loop through records array
+
+C.........  Deallocate local memory, if its allocated
+       IF( ALLOCATED( READDATA ) ) DEALLOCATE( READDATA ) 
+       IF( ALLOCATED( READPOL  ) ) DEALLOCATE( READPOL ) 
 
 C.........  Abort if there was an error
         IF( EFLAG ) THEN
