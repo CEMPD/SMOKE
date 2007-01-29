@@ -433,6 +433,9 @@ C............  Write out report data fields
           
           WRITE( ADEV, 93000 ) REPEAT( '-', 150 )
      
+C.........  Deallocate local memory
+    	  IF( ALLOCATED( ASSIGNED ) ) DEALLOCATE( ASSIGNED )  
+    	  IF( ALLOCATED( UNASSIGN ) ) DEALLOCATE( UNASSIGN )  
      
         END IF
           
