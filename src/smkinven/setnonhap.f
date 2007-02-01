@@ -336,7 +336,7 @@ C..................... Otherwise, if pollutant is not an explicit species, renam
 C.........................  Create NOI name
                         POLNAM = INVDNAM( CPOL )
                         IF( LEN_TRIM( POLNAM ) > 11 ) THEN
-                            POLNAM = POLNAM(1:11)
+                            POLNAM = POLNAM(1:12)
                         END IF
                         POLNAM = TRIM( POLNAM ) // NOIEND
 
@@ -521,6 +521,12 @@ C.....................  Rename VOC to NONHAPVOC
             END DO  ! loop through pollutants
 
         END DO  ! loop through sources
+
+        IF( EFLAG ) THEN
+            MESG = 'Problem during processing NONHAP' // VOC_TOG //
+     &             ' calculation'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Loop through pollutants that need NONHAP calculation
         N = 0
