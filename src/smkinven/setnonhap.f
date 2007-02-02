@@ -352,8 +352,7 @@ C.........................  If found, set pollutant for current source to NOI po
      &                             'pollutant ' // TRIM( POLNAM ) //
      &                             ' was not found in the ' //
      &                             'INVTABLE file.'
-                            CALL M3MESG( MESG )
-                            EFLAG = .TRUE.
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                         END IF
                      
                     END IF  ! check if pollutant is model or explicit species
@@ -521,12 +520,6 @@ C.....................  Rename VOC to NONHAPVOC
             END DO  ! loop through pollutants
 
         END DO  ! loop through sources
-
-        IF( EFLAG ) THEN
-            MESG = 'Problem during processing NONHAP' // VOC_TOG //
-     &             ' calculation'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
 
 C.........  Loop through pollutants that need NONHAP calculation
         N = 0
