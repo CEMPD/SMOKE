@@ -78,7 +78,7 @@ C...........   Other local variables
         INTEGER         I, J, K, LS, L2, S    ! counter and indices
 
         INTEGER         CASNUM      !  current CAS number from ICASCODA
-        INTEGER         IDUP        !  no. dulicate records
+        INTEGER      :: IDUP = 0    !  no. dulicate records
         INTEGER         IOS         !  i/o status
         INTEGER         MXERR       !  max no. errors
         INTEGER         MXWARN      !  max no. warnings
@@ -98,6 +98,7 @@ C...........   Other local variables
 
         LOGICAL         ACTFLAG           ! true: current pollutant is activity
         LOGICAL         DFLAG             ! true: if should error on duplicates
+        LOGICAL      :: NEGOK = .FALSE.   ! true: negative values are okay
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error occured
         LOGICAL      :: CE_100_FLAG  = .FALSE. ! true: control eff of 100 found
         LOGICAL      :: RE_ZERO_FLAG = .FALSE. ! true: rule effective of 0 found
@@ -114,6 +115,9 @@ C   begin body of subroutine PROCINVEN
 C.........  Get settings from the environment
         DFLAG = ENVYN( 'RAW_DUP_CHECK',
      &                 'Check for duplicate species-records',
+     &                 .FALSE., IOS )
+        NEGOK = ENVYN( 'ALLOW_NEGATIVE',
+     &                 'Allow negative output data',
      &                 .FALSE., IOS )
 
         MXERR  = ENVINT( ERRSET  , ' ', 100, I )
@@ -209,19 +213,37 @@ C.............  Check if current pollutant is an activity
 C.............  Reset emissions values to zero, if it's negative
             IF ( POLVLA( J, NEM ) < 0 .AND.
      &           POLVLA( J, NEM ) > AMISS3 ) THEN
-                POLVLA( J, NEM ) = 0.
+
+    	    	    IF( .NOT. NEGOK ) POLVLA( J, NEM ) = 0.
 
                 IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                    IF( ACTFLAG ) THEN
-                        MESG = 'WARNING: Negative inventory data' //
-     &                         'reset to zero for:' // CRLF() //
-     &                         BLANK5 // BUFFER( 1:L2 )
+
+C.....................  If negative are not okay
+                    IF( NEGOK ) THEN
+                        IF( ACTFLAG ) THEN
+                            MESG = 'WARNING: Negative inventory data'//
+     &                             'retained for:' // CRLF() //
+     &                             BLANK5 // BUFFER( 1:L2 )
+                        ELSE
+                            MESG = 'WARNING: Negative annual data ' //
+     &                             'retained for:' //
+     &                              CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        END IF
+
+C.....................  If negative values are not okay
                     ELSE
-                        MESG = 'WARNING: Negative annual data reset' //
-     &                         'to zero for:' //
-     &                          CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        IF( ACTFLAG ) THEN
+                            MESG = 'WARNING: Negative inventory data'//
+     &                             'reset to zero for:' // CRLF() //
+     &                             BLANK5 // BUFFER( 1:L2 )
+                        ELSE
+                            MESG = 'WARNING: Negative annual data ' //
+     &                             'reset to zero for:' //
+     &                              CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        END IF
                     END IF
+
                     CALL M3MESG( MESG )
                     NWARN = NWARN + 1
                 END IF
@@ -230,13 +252,25 @@ C.............  Reset emissions values to zero, if it's negative
             IF( .NOT. ACTFLAG ) THEN                
                 IF ( POLVLA( J, NDY ) < 0 .AND.
      &               POLVLA( J, NDY ) > AMISS3 ) THEN
-                    POLVLA( J, NDY ) = 0.
+
+                    IF( .NOT. NEGOK ) POLVLA( J, NDY ) = 0.
     
                     IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
                         CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                        MESG = 'WARNING: Negative average day data ' //
-     &                         'reset to zero for:' //
-     &                         CRLF() // BLANK5 // BUFFER( 1:L2 )
+
+C.........................  If negative emissions are okay
+                        IF( NEGOK ) THEN
+                            MESG = 'WARNING: Negative average day ' //
+     &                             'data retained for:' //
+     &                             CRLF() // BLANK5 // BUFFER( 1:L2 )
+
+C.........................  If negative emissions are not okay
+                        ELSE
+                            MESG = 'WARNING: Negative average day ' //
+     &                             'data reset to zero for:' //
+     &                             CRLF() // BLANK5 // BUFFER( 1:L2 )
+                        END IF  
+
                         CALL M3MESG( MESG )
                         NWARN = NWARN + 1
                     END IF
