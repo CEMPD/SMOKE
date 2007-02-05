@@ -120,12 +120,13 @@ C...........   Other local variables
 
         INTEGER         MCNT      ! count of actual mapped pol/act files
         INTEGER         MXWARN    ! maximum number of warnings of each type to write
-        INTEGER         NCOMP     ! no. computed variables
+        INTEGER      :: NCOMP = 0 ! no. computed variables
 
         INTEGER         RIMISS3          ! real value of integer missing
 
         LOGICAL      :: EFLAG    = .FALSE. ! true: error found
         LOGICAL      :: FFLAG    = .FALSE. ! true: formula in use
+        LOGICAL      :: NEGOK    = .FALSE. ! true: okay to output negative emission values
         LOGICAL      :: TFLAG    = .FALSE. ! true: current formula has error
         LOGICAL         ZFLAG              ! true: write zeros to output file
 
@@ -162,6 +163,10 @@ C..........  Get environment variables
         END IF
 
         MXWARN  = ENVINT( WARNSET  , ' ', 100, IOS )
+
+        NEGOK = ENVYN( 'ALLOW_NEGATIVE',
+     &                 'Allow negative output data',
+     &                 .FALSE., IOS )
 
         IF( EFLAG ) THEN
             MESG = 'Problem with input environment variables'
@@ -746,9 +751,10 @@ C.................  Give error if no emissions data available
 C.................  Initialize full-source computational array with first variable
                 DO N = 1, NREC
                     S = SRCID( N )
-                    COMPUTED( S,1 ) = SRCPOL( N,1 )
+                    COMPUTED( S,1 ) = MAX( 0., SRCPOL( N,1 ) )
 
-                    IF( NPVAR .GT. 1 ) COMPUTED( S,2 )= SRCPOL( N,2 ) ! Average day value
+                    IF( NPVAR .GT. 1 ) COMPUTED( S,2 ) = 
+     &                                 MAX( 0., SRCPOL( N,2 ) ) ! Average day value
 
                     IF( NPVAR .GT. 2 )                                ! Other info
      &                  COMPUTED( S,3:NPVAR ) = SRCPOL( N,3:NPVAR ) 
@@ -808,16 +814,29 @@ C                               fires.
 
                               CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
 
-                              WRITE( MESG,94020 ) 'WARNING: '//
-     &                         'Resetting negative value of annual "'//
-     &                         TRIM(VNAME(F))//'" from', COMPUTED(S,1),
-     &                         'to 0. for source:'//CRLF()//BLANK10// 
-     &                         BUFFER( 1:L2 )
+                              IF( NEGOK ) THEN
+
+                                WRITE( MESG,94020 ) 'WARNING: '//
+     &                          'Retaining negative value of annual "'//
+     &                          TRIM(VNAME(F))//'" of', COMPUTED(S,1),
+     &                          ' for source:'//CRLF()//BLANK10// 
+     &                          BUFFER( 1:L2 )
+
+                              ELSE
+
+                                WRITE( MESG,94020 ) 'WARNING: '//
+     &                          'Resetting negative value of annual "'//
+     &                          TRIM(VNAME(F))//'" from', COMPUTED(S,1),
+     &                          'to 0. for source:'//CRLF()//BLANK10// 
+     &                          BUFFER( 1:L2 )
+
+                              END IF
+
                               CALL M3MESG( MESG )
                             END IF
 
                             MINANN = MIN( MINANN, COMPUTED( S,1 ) )
-                            COMPUTED( S,1 ) = 0.
+                            IF( .NOT. NEGOK ) COMPUTED( S,1 ) = 0.
 
                         END IF
 
@@ -828,16 +847,24 @@ C..........................  Check for negative values for average day value
                             IF ( WARNCNT_B .LE. MXWARN ) THEN
                               CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
 
-                              WRITE( MESG,94020 ) 'WARNING: '//
-     &                         'Resetting negative value of "'//
-     &                         'average-day "'//TRIM(VNAME(F))// 
-     &                         '" from',COMPUTED(S,2),'to 0. for '//
-     &                         'source:'//CRLF()//BLANK10// BUFFER(1:L2)
+                              IF( NEGOK ) THEN
+                                WRITE( MESG,94020 ) 'WARNING: '//
+     &                           'Retaining negative value of "'//
+     &                           'average-day "'//TRIM(VNAME(F))// 
+     &                           '" of',COMPUTED(S,2),'for source:'//
+     &                           CRLF()//BLANK10//BUFFER(1:L2)
+                              ELSE
+                                WRITE( MESG,94020 ) 'WARNING: '//
+     &                           'Resetting negative value of "'//
+     &                           'average-day "'//TRIM(VNAME(F))// 
+     &                           '" from',COMPUTED(S,2),'to 0. for '//
+     &                          'source:'//CRLF()//BLANK10//BUFFER(1:L2)
+                              END IF 
                               CALL M3MESG( MESG )
                             END IF
 
                             MINAVD = MIN( MINAVD, COMPUTED( S,2 ) )
-                            COMPUTED( S,2 ) = 0.
+                            IF ( .NOT. NEGOK ) COMPUTED( S,2 ) = 0.
 
                         END IF
 
@@ -876,7 +903,10 @@ C...............  Give warning for that includes negative annual value
                 IF( MINANN .LT. 0. ) THEN
                     WRITE( MESG,94020 ) 'WARNING: Largest negative '//
      &                     'value for "'// TRIM( EONAMES(F,1) ) //
-     &                     '" was', MINANN, 'and was reset to 0.'
+     &                     '" was', MINANN
+                    IF( .NOT. NEGOK )
+     &                  MESG = TRIM( MESG ) // ' and was reset to 0.'
+
                     CALL M3MSG2( MESG )
                 END IF
 
@@ -884,7 +914,10 @@ C...............  Give warning for that includes negative seasonal value
                 IF( MINAVD .LT. 0. ) THEN
                     WRITE( MESG,94020 ) 'WARNING: Largest negative '//
      &                     'value for "'// TRIM( EONAMES(F,2) ) //
-     &                     '" was', MINAVD, 'and was reset to 0.'
+     &                     '" was', MINAVD
+                    IF( .NOT. NEGOK )
+     &                  MESG = TRIM( MESG ) // ' and was reset to 0.'
+
                     CALL M3MSG2( MESG )
                 END IF
 
