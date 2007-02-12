@@ -269,7 +269,7 @@ C.........  Get inventory file names given source category
 C.........  Prompt for and open input files
 C.........  Also, store source-category specific information in the MODINFO 
 C           module.
-        CALL OPENTMPIN( MODELNAM, NFLAG, PFLAG, ENAME, ANAME, DNAME,
+        CALL OPENTMPIN( NFLAG, PFLAG, ENAME, ANAME, DNAME,
      &                  HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, HDEV,
      &                  KDEV, TDEV, MDEV, EDEV, PYEAR )
 
