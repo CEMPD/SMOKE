@@ -89,7 +89,7 @@ C...........   Local variables
         CHARACTER(5)   TMPPRF     ! tmp profile number
         CHARACTER(16)  POLNAM     ! pollutant name
         CHARACTER(16)  SPECNM     ! tmp species name
-        CHARACTER(200) LINE       ! buffer for profile data
+        CHARACTER(300) LINE       ! buffer for profile data
         CHARACTER(256) MESG       ! message buffer
         
         CHARACTER(16) :: PROGNAME = 'RDBPRO' ! program name

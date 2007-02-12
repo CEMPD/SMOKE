@@ -65,7 +65,7 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 
         CHARACTER(20), ALLOCATABLE :: SEGMENT( : )   ! Segments of parsed lines
         CHARACTER(300)  MESG             !  message buffer
-        CHARACTER(200)  LINE             !  buffer for variables
+        CHARACTER(300)  LINE             !  buffer for variables
 
         CHARACTER(16) :: PROGNAME = 'RDB3FAC' ! program name
 

@@ -969,7 +969,7 @@ C.............  Read radiation data
             END IF
 
 C.............  Calculate hourly rainfall totals
-            INDEX = MOD( HR, RHOURS )
+            INDEX = MOD( HR-1, RHOURS ) + 1
             RAINFALL( 1:NCOLS, 1:NROWS, INDEX ) = RN + RC
 
             IF( .NOT. INITIAL_RUN ) THEN

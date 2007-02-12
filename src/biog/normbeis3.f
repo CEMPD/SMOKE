@@ -4,12 +4,13 @@
 C***********************************************************************
 C
 C  DESCRIPTION:  Produces normalized biogenic emissions for use with
-C                SMOKE-BEIS versions 3.09 or 3.12
+C                SMOKE-BEIS versions 3.09 or 3.13
 C
 C  SUBROUTINES AND FUNCTIONS CALLED: Calls Normbeis309 or Normbeis312
 C
 C  REVISION  HISTORY: 3/00 Prototype, Jeff Vukovich
 C                     8/04 Integrated v3.12, C. Seppanen
+C                     4/06 Changed Beis3.12 to BEIS3.13 G. Pouliot
 C
 C***********************************************************************
 C
@@ -78,16 +79,16 @@ C           size calculations to work correctly
 
 C.........  Get the BEIS3 model version to use
         MESG = 'Version of BEIS3 to use'
-        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.12', BEISVER, IOS )
+        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.13', BEISVER, IOS )
         
         SELECT CASE( BEISVER )
         CASE( '3.09' )
             CALL NORMBEIS309( CVSW )
-        CASE( '3.12' )
+        CASE( '3.13' )
             CALL NORMBEIS312( CVSW )
         CASE DEFAULT
             MESG = 'ERROR: Unrecognized BEIS_VERSION setting; valid ' //
-     &             'settings are 3.09 and 3.12'
+     &             'settings are 3.09 and 3.13'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END SELECT
 

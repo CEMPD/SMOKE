@@ -1,5 +1,5 @@
 
-        SUBROUTINE HRNO( JDATE, JTIME, NX, NY, MSPCS, TA, SOILM, SOILT,
+        SUBROUTINE HRNO( JDATE, JTIME, NX, NY, TA, SOILM, SOILT,
      &                   ISLTYP, RAIN, GROWAGNO, NGROWAGNO, NONAGNO, 
      &                   PX_VERSION, INITIAL_HOUR, PTYPE, PULSEDATE, 
      &                   PULSETIME, EMPOL )
@@ -118,7 +118,6 @@ C.........  ARGUMENTS and their descriptions
         INTEGER, INTENT (IN)  :: JTIME   !  current simulation time (HHMMSS)
         INTEGER, INTENT (IN)  :: NX      !  no. columns
         INTEGER, INTENT (IN)  :: NY      !  no. rows
-        INTEGER, INTENT (IN)  :: MSPCS   !  no. of output species
 
         REAL, INTENT (IN)  ::  TA    ( NX, NY )    !  air temperature (K)
         REAL, INTENT (IN)  ::  SOILM ( NX, NY )    !  soil moisture (m3/m3)
@@ -136,7 +135,9 @@ C.........  ARGUMENTS and their descriptions
         INTEGER, INTENT (IN OUT) :: PULSEDATE (NX, NY) ! date of pulse start
         INTEGER, INTENT (IN OUT) :: PULSETIME (NX, NY) ! date of pulse end
 
-        REAL, INTENT (OUT) :: EMPOL ( NX, NY, MSPCS )  !  output pol emissions
+
+        REAL, INTENT (OUT) :: EMPOL ( NX, NY, NSEF )  !  output pol emissions
+        REAL TMP1, TMP2, TMP3, TMP4
 
 C.........  Local PARAMETERS
         INTEGER, PARAMETER :: MAXSTYPES = 11
@@ -231,17 +232,31 @@ C.....................  Calculate NO emissions by going thru temperature cases
                         ELSE
                             CFNOGRASS = 0.0
                         END IF
+                       
+     
 
-                        EMPOL( C,R,NSEF ) = 
-     &                      MAX( ( GROWAGNO( C,R ) * CFNO * 
-     &                          FERTILIZER_ADJ( JDATE ) * 
-     &                          VEG_ADJ( JDATE ) *
-     &                          PRECIP_ADJ( JDATE, JTIME, RAIN( C,R ),
-     &                              SOILM( C,R ), ISLTYP( C,R ),
-     &                              PTYPE( C,R ), PULSEDATE( C,R ), 
-     &                              PULSETIME( C,R ) ) ),
-     &                          ( NGROWAGNO( C,R ) * CFNOGRASS ) ) +
-     &                      NONAGNO( C,R ) * CFNOGRASS                   
+
+                        TMP1 = GROWAGNO( C,R ) * CFNO *
+     &                         FERTILIZER_ADJ( JDATE ) *
+     &                         VEG_ADJ( JDATE )
+     
+                        IF (INITIAL_HOUR) THEN
+			    TMP2 = 1.0
+			    PTYPE(C,R) = 0
+                            PULSEDATE(C,R) = 0
+                            PULSETIME(C,R) = 0
+			ELSE
+                        TMP2 = PRECIP_ADJ( JDATE, JTIME, RAIN( C,R ),                                   
+     &                              PTYPE( C,R ), PULSEDATE( C,R ),
+     &                              PULSETIME( C,R ) )
+                        ENDIF
+                        TMP3 = NGROWAGNO( C,R ) * CFNOGRASS 
+			
+			TMP4 =  NONAGNO( C,R ) * CFNOGRASS
+      
+
+                        EMPOL( C,R,NSEF )=MAX((TMP1*TMP2),TMP3)+TMP4
+			                 
 
                     END IF
 
@@ -295,25 +310,28 @@ C.................  If using PX version of MCIP
                         ELSE
                             CFNOGRASS = 0.
                         END IF
-
-                        EMPOL( C,R,NSEF ) = 
-     &                      MAX( ( GROWAGNO( C,R ) * CFNO *
-     &                          FERTILIZER_ADJ( JDATE ) *
-     &                          VEG_ADJ( JDATE ) *
-     &                          PRECIP_ADJ( JDATE, JTIME, RAIN( C,R ),
+                        TMP1 = GROWAGNO( C,R ) * CFNO *
+     &                         FERTILIZER_ADJ( JDATE ) *
+     &                         VEG_ADJ( JDATE )
+     
+                        TMP2 = PRECIP_ADJ_PX( JDATE, JTIME, RAIN( C,R ),
      &                              SOILM( C,R ), ISLTYP( C,R ),                                    
      &                              PTYPE( C,R ), PULSEDATE( C,R ),
-     &                              PULSETIME( C,R ) ) ),
-     &                          ( NGROWAGNO( C,R ) * CFNOGRASS ) ) +
-     &                      NONAGNO( C,R ) * CFNOGRASS
+     &                              PULSETIME( C,R ) )
+                        TMP3 = NGROWAGNO( C,R ) * CFNOGRASS 
+			
+			TMP4 =  NONAGNO( C,R ) * CFNOGRASS
+      
+
+                        EMPOL( C,R,NSEF )=MAX((TMP1*TMP2),TMP3)+TMP4
+
+     
+     
 
                     END IF  ! growing season check
                 END IF  ! PX version check
             END DO  ! loop over columns
         END DO  ! loop over rows
-     
-        RETURN
-
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
@@ -321,11 +339,15 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( A, F10.2, 1X, A, I3, ',', I3 )
 94020   FORMAT( A, F10.2, 1X, A, I3, ',', I3, A )
 
-C***************** CONTAINS ********************************************
+        RETURN
+
+
 
         CONTAINS
 
-            REAL FUNCTION PRECIP_ADJ( JDATE, JTIME, RAIN, SOILM, ISLTYP,
+
+            REAL FUNCTION PRECIP_ADJ_PX( JDATE, JTIME, RAIN, SOILM, 
+     &                                ISLTYP,
      &                                PTYPE, PULSEDATE, PULSETIME )
 
 C***********************************************************************
@@ -350,6 +372,7 @@ C     pulsetype      determines type & duration of NO emission pulse from rainra
 C
 C  REVISION  HISTORY:
 C    11/01 : Prototype by GAP
+C    3/05  : create separate functions for PX vs non-PX versions
 C 
 C***********************************************************************
 
@@ -360,8 +383,8 @@ C.............  Function arguments
             INTEGER, INTENT(IN) :: JTIME
             
             REAL, INTENT(IN) :: RAIN
-            REAL, INTENT(IN) :: SOILM
-            REAL, INTENT(IN) :: ISLTYP
+            REAL, INTENT(IN) :: SOILM   ! only avilable if PX version
+            REAL, INTENT(IN) :: ISLTYP  ! only available if PX version
             
             INTEGER, INTENT(IN OUT) :: PTYPE     ! pulse type
             INTEGER, INTENT(IN OUT) :: PULSEDATE ! date of pulse start
@@ -369,10 +392,11 @@ C.............  Function arguments
 
 C.............  External functions
             INTEGER  GETEFILE
-            INTEGER  PULSETYPE
-            REAL     PRECIPFACT
+!            INTEGER  PULSETYPE
+!            REAL     PRECIPFACT
             
-            EXTERNAL GETEFILE, PULSETYPE, PRECIPFACT
+            EXTERNAL GETEFILE
+!	     PULSETYPE, PRECIPFACT
 
 C.............  Local parameters
             REAL, PARAMETER :: SAT_THRES = 0.95
@@ -392,18 +416,124 @@ C             start a new NO emission pulse
 C             otherwise continue present NO pulse
 C        4. override adjustment for saturated soils 
 
-            IF( PX_VERSION ) SOILCAT = INT( ISLTYP )
+            SOILCAT = INT( ISLTYP )
 
             IF( INITIAL_HOUR ) THEN
                 PTYPE = 0
                 PULSEDATE = 0
                 PULSETIME = 0
                 
+
                 IF( SOILCAT <= MAXSTYPES ) THEN
-                    PRECIP_ADJ = 2.
+                   PRECIP_ADJ_PX = 2.
                 ELSE
-                    PRECIP_ADJ = 1.
+                   PRECIP_ADJ_PX = 1.
                 END IF
+
+            ELSE
+
+                IF( PULSETYPE( RAIN ) <= PTYPE ) THEN
+
+C.....................  No new rainfall or new rainfall class less than current one
+                    PRECIP_ADJ_PX = PRECIPFACT( PTYPE, JDATE, JTIME,
+     &                              PULSEDATE, PULSETIME )
+
+                ELSE
+
+C.....................  Rainfall class type increases (NO emission pulse generated)
+                    PULSEDATE = JDATE
+                    PULSETIME = JTIME
+                    PTYPE = PULSETYPE( RAIN )
+
+                    PRECIP_ADJ_PX = PRECIPFACT( PTYPE, JDATE, JTIME,
+     &                              PULSEDATE, PULSETIME )
+                END IF
+
+
+                    IF( SOILCAT <= MAXSTYPES ) THEN
+                        IF( SOILM >= 
+     &                      SAT_THRES * SATURATION( SOILCAT ) ) THEN
+                            PRECIP_ADJ_PX = 0.
+                        END IF
+                    END IF
+
+
+            END IF
+
+            RETURN
+            
+            END FUNCTION PRECIP_ADJ_PX
+	    
+            REAL FUNCTION PRECIP_ADJ( JDATE, JTIME, RAIN,
+     &                                PTYPE, PULSEDATE, PULSETIME )
+
+C***********************************************************************
+C  function body starts at line  386
+C
+C  DESCRIPTION:
+C  
+C     computes precipitation adjustment factor for estimate of NO emissions 
+C     uses  julian day, time, soil moisture
+C     requires the use of three arrays that are re-used each time step
+C     PTYPE, PULSEDATE, PULSETIME 
+C     These arrays store the type of NO pulse initiated by the rainfall
+C     and the starting date and time of the pulse.
+C
+C  PRECONDITIONS REQUIRED:
+C     Soil Moisture current time, Soil Moisture previous time,
+C     Soil type, Land Use, PTYPE, PULSEDATE, PULSETIME 
+C
+C  SUBROUTINES AND FUNCTIONS CALLED:
+C     precipfact     computes precip adjustment factor from rainrate and time since pulse initiation
+C     pulsetype      determines type & duration of NO emission pulse from rainrate
+C
+C  REVISION  HISTORY:
+C    11/01 : Prototype by GAP
+C    3/05  : created a non-PX version of this function 
+C 
+C***********************************************************************
+
+            IMPLICIT NONE
+
+C.............  Function arguments
+            INTEGER, INTENT(IN) :: JDATE
+            INTEGER, INTENT(IN) :: JTIME
+            
+            REAL, INTENT(IN) :: RAIN
+
+            
+            INTEGER, INTENT(IN OUT) :: PTYPE     ! pulse type
+            INTEGER, INTENT(IN OUT) :: PULSEDATE ! date of pulse start
+            INTEGER, INTENT(IN OUT) :: PULSETIME ! date of pulse end
+
+C.............  External functions
+            INTEGER  GETEFILE
+
+            
+            EXTERNAL GETEFILE
+
+
+
+
+
+C-----------------------------------------------------------------------------
+
+C.............  Summary of algorithm
+C        1. initalize if first hour
+C        2. no rainfall or new rainfall class less than current one, continue existing NO emission pulse
+C        3. if new rainfall that increases rainfall class, then create new NO emission pulse
+C             using pulsetype, rainrate,ptype, and date/time
+C             if stronger NO pulse compared to previous time step , then
+C             start a new NO emission pulse
+
+
+
+
+            IF( INITIAL_HOUR ) THEN
+                PTYPE = 0
+                PULSEDATE = 0
+                PULSETIME = 0
+		PRECIP_ADJ = 1.		
             ELSE
 
                 IF( PULSETYPE( RAIN ) <= PTYPE ) THEN
@@ -423,14 +553,6 @@ C.....................  Rainfall class type increases (NO emission pulse generat
      &                              PULSEDATE, PULSETIME )
                 END IF
 
-                IF( PX_VERSION ) THEN
-                    IF( SOILCAT <= MAXSTYPES ) THEN
-                        IF( SOILM >= 
-     &                      SAT_THRES * SATURATION( SOILCAT ) ) THEN
-                            PRECIP_ADJ = 0.
-                        END IF
-                    END IF
-                END IF
 
             END IF
 
@@ -452,7 +574,7 @@ C.............  Function arguments
             INTEGER, INTENT(IN) :: DATE
 
 C.............  External functions
-            INTEGER, EXTERNAL :: GROWSEASON
+!            INTEGER, EXTERNAL :: GROWSEASON
 
 C.............  Local variables
             INTEGER  GDAY
@@ -473,6 +595,14 @@ C-----------------------------------------------------------------------------
      &                              GDAY
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( A, F10.2, 1X, A, I3, ',', I3 )
+94020   FORMAT( A, F10.2, 1X, A, I3, ',', I3, A )
+
             
             RETURN
             
@@ -491,7 +621,7 @@ C.............  Function arguments
             INTEGER, INTENT(IN) :: DATE
 
 C.............  External functions
-            INTEGER, EXTERNAL :: GROWSEASON
+!            INTEGER, EXTERNAL :: GROWSEASON
 
 C.............  Local variables
             INTEGER  GDAY
@@ -512,7 +642,14 @@ C-----------------------------------------------------------------------------
      &                              GDAY
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-            
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( A, F10.2, 1X, A, I3, ',', I3 )
+94020   FORMAT( A, F10.2, 1X, A, I3, ',', I3, A )
+
             RETURN
       
             END FUNCTION VEG_ADJ
@@ -563,7 +700,14 @@ C-----------------------------------------------------------------------------
      &                              DATE, 'jday = ', JDAY
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-            
+
+C******************  FORMAT  STATEMENTS   ******************************
+
+C...........   Internal buffering formats............ 94xxx
+
+94010   FORMAT( A, F10.2, 1X, A, I3, ',', I3 )
+94020   FORMAT( A, F10.2, 1X, A, I3, ',', I3, A )
+
             RETURN
             
             END FUNCTION GROWSEASON
@@ -574,13 +718,13 @@ C.............  This internal function computes a precipitation adjustment
 C               factor from YL 1995 based on a rain rate. The pulse type is
 C               and integer ranging from 0 to 3 indicating the type of 
 C               rainfall rate.
-            REAL FUNCTION PRECIPFACT( PULSETYPE, JDATE, JTIME, 
+            REAL FUNCTION PRECIPFACT( IPULSETYPE, JDATE, JTIME, 
      &                                SDATE, STIME )
 
             IMPLICIT NONE
             
 C.............  Function arguments
-            INTEGER, INTENT(IN OUT) :: PULSETYPE
+            INTEGER, INTENT(IN OUT) :: IPULSETYPE
             INTEGER, INTENT(IN) :: JDATE
             INTEGER, INTENT(IN) :: JTIME
             INTEGER, INTENT(IN) :: SDATE
@@ -596,28 +740,28 @@ C-----------------------------------------------------------------------------
 
             HRDIFF = SECSDIFF( SDATE, STIME, JDATE, JTIME ) / 3600.
             
-            SELECT CASE( PULSETYPE )
+            SELECT CASE( IPULSETYPE )
             CASE( 0 )
                 PRECIPFACT = 1.
             CASE( 1 )
                 IF( ( HRDIFF / 24. ) < 2. ) THEN
                     PRECIPFACT = 11.19 * EXP(-0.805*(HRDIFF+24)/24.)
                 ELSE
-                    PULSETYPE = 0
+                    IPULSETYPE = 0
                     PRECIPFACT = 1.
                 END IF
             CASE( 2 )
                 IF( ( HRDIFF / 24. ) < 6. ) THEN
                     PRECIPFACT = 14.68 * EXP(-0.384*(HRDIFF+24)/24.)
                 ELSE
-                    PULSETYPE = 0
+                    IPULSETYPE = 0
                     PRECIPFACT = 1.
                 END IF
             CASE DEFAULT
                 IF( ( HRDIFF / 24. ) < 13. ) THEN
                     PRECIPFACT = 18.46 * EXP(-0.208*(HRDIFF+24)/24.)
                 ELSE
-                    PULSETYPE = 0
+                    IPULSETYPE = 0
                     PRECIPFACT = 1.
                 END IF
             END SELECT

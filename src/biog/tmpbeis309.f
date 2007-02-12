@@ -375,7 +375,7 @@ C.........  Check for radiation variable
 
 C.........  Get name of surface pressure variable to use
         MESG = 'Variable name for surface pressure'
-        CALL ENVSTR( 'PRES_VAR', MESG, 'PRES', PRESNAM, IOS )
+        CALL ENVSTR( 'PRES_VAR', MESG, 'PRSFC', PRESNAM, IOS )
         
 C.........  Get default time characteristic for output file:
 C           If we're going to prompt, then set the defaults based on met
