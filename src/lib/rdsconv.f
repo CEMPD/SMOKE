@@ -210,7 +210,7 @@ C.............  Check for header that indicates if file is by profile or by
 C               FIPS/SCC.  Also, skip comment lines.
             IF( LINE16( 1:1 ) .EQ. CINVHDR ) THEN
                 FLABEL = ADJUSTL( LINE16( 2:16 ) )
-                LBYPROF = .FALSE.
+c mrh                LBYPROF = .FALSE.
                 IF ( FLABEL .EQ. 'BYPROFILE' .OR.
      &               FLABEL .EQ. 'BY PROFILE'     ) THEN
                     LBYPROF = .TRUE.
@@ -356,9 +356,9 @@ C.................  Determine if SCC is in inventory list
                 I = I + 1
 
 C.................  Convert SCC to mobile internal standard
-                IF( CATEGORY .EQ. 'MOBILE' ) THEN
-                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
-                END IF
+c mrh                IF( CATEGORY .EQ. 'MOBILE' ) THEN
+c mrh                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
+c mrh                END IF
                 
 C.................  Convert SCC to mobile internal standard
                 WRITE( CPOL, '(I5.5)' ) ISP
