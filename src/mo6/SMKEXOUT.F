@@ -121,7 +121,7 @@ C.....             Check if this is a valid facility/process combo
                    DO IH = 1,24
                       EMISSIONS( EFTYPE )%PTR( STR2INT( DBSCTITLE ),
      &                                         M6POL2EF( EFTYPE, IP ),
-     &                                         SMKVEH2EF( EFTYPE, IVEH ),
+     &                                         SMKVEH2EF( EFTYPE, IVEH),
      &                                         M6FAC2EF( EFTYPE, IFAC ),
      &                                         IH ) = 
      &                EXHAUST( IH,IFAC,IVEH )
