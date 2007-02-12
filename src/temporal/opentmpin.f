@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENTMPIN( MODELNAM, UFLAG, PFLAG, ENAME, ANAME,
+        SUBROUTINE OPENTMPIN( UFLAG, PFLAG, ENAME, ANAME,
      &                        DNAME, HNAME, GNAME, SDEV, XDEV, RDEV,
      &                        CDEV, HDEV, KDEV, TDEV, MDEV, EDEV, PYEAR )
 
@@ -67,7 +67,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  PROMPTFFILE, PROMPTMFILE
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT    (IN) :: MODELNAM ! name for EF model
         LOGICAL     , INTENT    (IN) :: UFLAG    ! use uniform temporal profile
         LOGICAL     , INTENT(IN OUT) :: PFLAG    ! use episode time periods
         CHARACTER(*), INTENT(IN OUT) :: ENAME ! name for I/O API inven input
@@ -195,8 +194,6 @@ C           model assigned to each activity, and opens files depending on the
 C           emission factor model.
 C.........  Use NAMBUF for the HP
         IF( NIACT .GT. 0 ) THEN
-
-            L = LEN_TRIM( MODELNAM )
 
             NAMBUF= PROMPTMFILE( 
      &              'Enter logical name for UNGRIDDING MATRIX file',
