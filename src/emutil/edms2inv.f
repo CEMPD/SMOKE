@@ -608,7 +608,7 @@ C.......................  Skip any zero daily total
               END IF
 
 C..............  Store output values : convert metric g/sec to short tons/hr
-              ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) * 0.0036
+              ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) * 0.003968254
 
           END DO
 
@@ -764,7 +764,17 @@ C.............  Get line
             CALL M3MSG2( MESG)
 
         END IF
+
+        RETURN
         
+C...................  FORMAT  STATEMENTS   ............................
+
+C.......  Formatted file I/O formats...... 93xxx
+93000   FORMAT( A )
+
+C.......  Internal buffering formats...... 94xxx
+94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
+
         END SUBROUTINE READ_ICAO_FIPS
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
@@ -849,6 +859,16 @@ C.............  Get line
         END IF
 
         NAPT = N
+
+        RETURN
+
+C...................  FORMAT  STATEMENTS   ............................
+
+C.......  Formatted file I/O formats...... 93xxx
+93000   FORMAT( A )
+
+C.......  Internal buffering formats...... 94xxx
+94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
 
         END SUBROUTINE READ_EDMS_SCC
 
