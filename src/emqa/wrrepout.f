@@ -494,7 +494,10 @@ C.................  Disaggregate source characteristics
 
 C.................  Write characteristics
                     BUFFER = ' '
-                    WRITE( BUFFER, CHARFMT )( CHARS( K ), K = MINC, NC )
+                    IF( MINC < NC ) THEN    ! only for mobile, point 
+                        WRITE( BUFFER, CHARFMT )
+     &                                ( CHARS( K ), K = MINC, NC )
+                    END IF
                     STRING = STRING( 1:LE ) // BUFFER
                     MXLE = MXLE + CHARWIDTH + LX
                     LE = MIN( MXLE, STRLEN )

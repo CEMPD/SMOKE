@@ -297,8 +297,10 @@ C.........  NOTE that (1) will not be used and none will be for area sources
             CHRHDRS( 2 ) = HEADERS( IHDRSCC )
 
         CASE( 'MOBILE' )
-            CHRHDRS( 2 ) = 'Road'
-            CHRHDRS( 3 ) = 'Veh Type'
+            CHRHDRS( 2 ) = 'Road '
+            CHRHDRS( 3 ) = 'Link'
+            CHRHDRS( 4 ) = 'Veh Type'
+            CHRHDRS( 5 ) = 'SCC'
 
         CASE( 'POINT' )
             CHRHDRS( 2 ) = 'Plant ID'
@@ -789,6 +791,7 @@ C           characteristics, and NCHARS reset accordingly.
 
             CHARWIDTH = 0
             CHARFMT = '('
+
             DO K = MINC, NCHARS
 
 C.................  Build source characteristics output format for WRREPOUT
