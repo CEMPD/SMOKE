@@ -62,7 +62,8 @@ C  Allocate and initialize arrays first time
           ALLOCATE( HAPAGGR( NVTYPE,NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
           CALL CHECKMEM( IOS, 'HAPAGGR', PROGNAME )
 
-          ALLOCATE( HAPEFS ( NUMSCEN,NVTYPE,NTOTHAPS,8,MAXIH,5 ), STAT=IOS )
+          ALLOCATE( HAPEFS ( NUMSCEN,NVTYPE,NTOTHAPS,8,MAXIH,5 ), 
+     &                       STAT=IOS )
           CALL CHECKMEM( IOS, 'HAPEFS', PROGNAME )
 
           ALLOCATE(  ZMILES( NTOTHAPS,6,MAXIH,5 ), STAT=IOS )
