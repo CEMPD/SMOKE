@@ -101,6 +101,7 @@ C...........   Check if area is zero or missing
             RETURN
         END IF
 
+
 C...........   Compute LBOT, LTOP so that
 C...........   ZZF( LBOT-1 ) <= ZBOT < ZZF( LBOT ) and
 C...........   ZZF( LTOP-1 ) <= ZTOP < ZZF( LTOP )
@@ -227,8 +228,16 @@ C.............  Calculate top using hydrostatic assumption
         END IF          !  if ztop in same layer as zbot, or not
 
 C.........  For fire smouldering effects, include fractions below LBOT
-        BESIZE = 0.0703 * LOG( ACRES ) + 0.3
-        
+        IF (ACRES .EQ. 0.0) THEN
+            BESIZE = 0.0
+        ELSE
+            BESIZE = 0.0703 * LOG( ACRES ) + 0.3
+        ENDIF
+
+C......... Reset BESIZE to 1 when it is greater than 1 (a very large fire)
+C          then we must set to 1 to avoid negative sfract
+        IF (BESIZE .gt. 1.0) BESIZE = 1.0
+
         SFRACT = 1.0D0 - DBLE( BESIZE )
         
         PDIFF = DBLE( PRESF( 0 ) ) - DBLE( PBOT )

@@ -41,7 +41,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, STKDM, STKHT, STKTK, STKVE,
-     &                      CSOURC, IFIP
+     &                      CSOURC, IFIP, CSCC
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NHRSRC, HRSTKTK, HRSTKVE, HRSTKFL, LMAJOR,
@@ -77,6 +77,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            ENVREAL
         LOGICAL         ENVYN
         INTEGER         FIND1
+        INTEGER         MFIND1
         CHARACTER(50)   GETCFDSC
         CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
@@ -101,7 +102,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
      &  CVSW = '$Name$' ! CVS release tag
 
 C.........  Indicator for which public inventory arrays need to be read
-        INTEGER,            PARAMETER :: NINVARR = 8
+        INTEGER,            PARAMETER :: NINVARR = 9  
         CHARACTER(IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
      &                                 ( / 'IFIP           '
      &                                   , 'XLOCA          '
@@ -110,6 +111,7 @@ C.........  Indicator for which public inventory arrays need to be read
      &                                   , 'STKDM          '
      &                                   , 'STKTK          '
      &                                   , 'STKVE          '
+     &                                   , 'CSCC           ' 
      &                                   , 'CSOURC         ' / )
 
 C...........   LOCAL VARIABLES and their descriptions:
@@ -139,6 +141,13 @@ C           Dimensioned by layers, then sources
         REAL   , ALLOCATABLE :: ZH   ( :,: )  !  layer center  height (m)
         REAL   , ALLOCATABLE :: ZSTK ( :,: )  !  zf( l,s ) - stkht(s) (m)
         REAL   , ALLOCATABLE :: DENS ( :,: )  !  air density (kg/m^3)
+
+C........... added variables by George Pouliot 2/8/07 (for bug fix wildfires)
+        INTEGER :: DAY_NSRC  !number of sources in daily file (not the same as in inventory)
+        REAL, ALLOCATABLE    ::  DAY_ACRES(:)   ! acres in daily file by source
+        INTEGER, ALLOCATABLE ::  DAY_INDEX(:)   ! index of sources in daily file
+        INTEGER :: MY_LOOP, MY_INDEX   ! for linear search
+
 
 C.........  Allocatable, temporary per-layer variables from 1:EMLAYS
         REAL   , ALLOCATABLE :: WSPD ( : )    !  wind speed (m/s)
@@ -207,7 +216,6 @@ C...........   Logical names and unit numbers
         CHARACTER(16) DAYNAME   !  daily inventory file name
 
 C...........   Other local variables
-
         INTEGER          I, J, K, L, L1, L2, S, T  ! counters and indices
 
         INTEGER          EMLAYS    ! number of emissions layers
@@ -319,7 +327,7 @@ C.........   Get setting from environment variables
         MESG = 'Indicator for processing ONLY explicit plume ' //
      &         'rise sources'
         XFLAG = ENVYN( 'EXPLICIT_PLUMES_YN', MESG, .FALSE., IOS )
-
+        
         MESG = 'Vertical spread method'
         IPVERT = ENVINT( 'VERTICAL_SPREAD', MESG, 0, IOS )
 
@@ -428,7 +436,7 @@ C.........  Open and read map file
         CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
 
 C.........  Store source-category-specific header information, 
-C           including the inventory pollutants in the file (if any).  Note that 
+C           including the inventory pollutants in the file (if any).   
 C           the I/O API header info is passed by include file and the
 C           results are stored in module MODINFO.
         CALL GETSINFO( ENAME )
@@ -591,6 +599,11 @@ C.............  Check to see if appropriate variable list exists
                 EFLAG = .TRUE.
             END IF
             
+            DAY_NSRC = NROWS3D
+            WRITE( MESG,94010 )'NOTE: Number of Sources in Daily File',
+     &                         DAY_NSRC
+            CALL M3MSG2( MESG )
+
             IF( EFLAG ) THEN
                 MESG = 'Problem with hourly fire data inputs'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -794,7 +807,7 @@ C.........  Allocate memory for and read required inventory characteristics
 
 C.........  For fire data, set stack height to zero regardless of inventory
 C           Inventory values may have been "corrected" by Smkinven
-        IF( FIREFLAG .AND. AIRFLAG ) THEN
+        IF( FIREFLAG .OR. AIRFLAG ) THEN
             STKHT = 0.
         END IF
 
@@ -830,6 +843,10 @@ C.........  Allocate per-source arrays
         IF( HOURFIRE ) THEN
             ALLOCATE( BFLX( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BFLX', PROGNAME )
+            ALLOCATE( DAY_ACRES( DAY_NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DAY_ACRES', PROGNAME )
+            ALLOCATE( DAY_INDEX( DAY_NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DAY_INDEX', PROGNAME )
             ALLOCATE( ACRES( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ACRES', PROGNAME )
         END IF
@@ -1116,7 +1133,7 @@ C               heat flux
 C.................  Can't use SAFE_READ3 because data is stored in
 C                   a fileset
                 IF( .NOT. READSET( MNAME, 'HFLUX', ALLAYS3, ALLFILES,
-     &                             JDATE, JTIME, BFLX ) ) THEN
+     &                             JDATE, JTIME, BFLX ) ) THEN     ! PTMP file (all sources)
 
                     MESG = 'Could not read "HFLUX" from file "' //
      &                     TRIM( MNAME ) // '".'
@@ -1131,10 +1148,27 @@ C                   of the day
                 IF( WILDFLAG ) THEN
 
                     CALL SAFE_READ3( DAYNAME, 'ACRESBURNED', ALLAYS3,
-     &                           JDATE, JTIME, ACRES )   ! Wildfire inventory format
+     &                           JDATE, JTIME, DAY_ACRES )   ! Wildfire inventory format
+
+                     IF ( .NOT. READ3( DAYNAME, 'INDXD', ALLAYS3,
+     &                        JDATE, JTIME, DAY_INDEX ) ) THEN
+
+                           MESG = 'Could not read "INDXD" from file "'//
+     &                     TRIM( DAYNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                     END IF
                 ELSE
                     CALL SAFE_READ3( DAYNAME, 'AREA', ALLAYS3,
-     &                           JDATE, JTIME, ACRES )   ! Bluesky2inv format
+     &                           JDATE, JTIME, DAY_ACRES )   ! Bluesky2inv format
+
+                    IF ( .NOT. READ3( DAYNAME, 'INDXD', ALLAYS3,
+     &                        JDATE, JTIME, DAY_INDEX ) ) THEN
+                       MESG = 'Could not read "INDXD" from file "' //
+     &                     TRIM( DAYNAME ) // '".'
+                       CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )        
+                    END IF
+
                 END IF
 
             END IF
@@ -1196,6 +1230,7 @@ C.............  Precompute constants before starting source loop
 
 C.............  Loop through sources and compute plume rise
             K = 0
+            
             DO S = 1, NSRC
 
                 IF( .NOT. FIREFLAG .OR. .NOT. AIRFLAG ) THEN
@@ -1208,6 +1243,27 @@ C.............  Loop through sources and compute plume rise
                     
                 XL = XLOCA( S )
                 YL = YLOCA( S )
+
+C.................  Skip fire source if not in day-specific file
+                IF( FIREFLAG .AND. HOURFIRE ) THEN
+
+                   MY_INDEX = -1
+                   DO MY_LOOP = 1, DAY_NSRC
+                       IF(S .EQ. DAY_INDEX(MY_LOOP)) THEN
+                           MY_INDEX = MY_LOOP
+                       ENDIF
+                   ENDDO
+                   IF(MY_INDEX .LE. 0) CYCLE
+                ENDIF
+
+C.................  Put smoldering fire sources in layer 1 and skip plume rise
+                IF(( FIREFLAG ) ) THEN
+                    IF( CSCC(S)(9:9) .EQ. 'S' ) THEN
+                        LFRAC( S,2:EMLAYS) = 0.0
+                        LFRAC( S,1 ) = 1.0
+                        CYCLE
+                    ENDIF
+                ENDIF
 
 C.................  Find source in index list if hourly data or used
                 IF ( HFLAG ) THEN
@@ -1461,12 +1517,42 @@ C.................  Check plume rise for nonsense values
 C.................  Allocate plume to layers
                 IF( FIREFLAG ) THEN
                     IF( HOURFIRE ) THEN
-                        TMPACRE = ACRES( S )
+
+                      MY_INDEX = -1
+                      DO MY_LOOP = 1, DAY_NSRC
+                          IF (S .EQ. DAY_INDEX(MY_LOOP)) THEN
+                              MY_INDEX = MY_LOOP
+                          ENDIF
+                      ENDDO
+
+                      IF( MY_INDEX .GT. 0) THEN
+                          IF( DAY_ACRES( MY_INDEX ) .GT. 0.0) THEN
+                            TMPACRE = DAY_ACRES( MY_INDEX )
+
+                          ELSE
+                            WRITE( MESG,94010 )'NOTE: Fire Has Zero ' //
+     &                      'Acres: all emissions assigned to layer 1'//
+     &                      CRLF() // BLANK10 // 'SOURCE NUMBER = ', S,
+     &                      ' : ' // 'FIPS CODE = ', IFIP( S ), ' ' //
+     &                     CRLF()//BLANK10//BUFFER( 1:L2 )
+                           CALL M3MSG2( MESG )
+
+                           TMPACRE = 0.0
+                         ENDIF
+
+                      ELSE
+                         WRITE( MESG,94010 )
+     &                       'ERROR: Fire Source not found '//
+     &                       CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+                      ENDIF
                     END IF
-                
+
                     CALL FIRE_POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, 
      &                                 LFULLHT, TEMPS, LHALFHT, TMPACRE,
      &                                 SFRACT, LTOP, TFRAC )
+
                 ELSE
                     CALL POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, 
      &                            LFULLHT, TEMPS, LHALFHT, LTOP, TFRAC )
@@ -1529,6 +1615,7 @@ C.................    if REP_LAYR env var has been set b/c default is -1
      &                     WSTK, LPBL, LTOP 
 
                 END IF
+
 
             END DO    !  end loop on sources S
 
@@ -1742,8 +1829,4 @@ C----------------------------------------------------------------------
             END SUBROUTINE COMPUTE_DELTA_ZS
 
         END PROGRAM LAYPOINT
-
-
-
-
 
