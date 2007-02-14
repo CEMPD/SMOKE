@@ -38,7 +38,8 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, ISIC, INVYR, XLOCA, YLOCA,
      &                      CORIS, STKHT, STKDM, STKTK, STKVE,
      &                      CSCC, CSOURC, CPDESC, CLINK, CBLRID,
-     &                      CERPTYP, CMACT, CNAICS, CSRCTYP
+     &                      CERPTYP, CMACT, CNAICS, CSRCTYP, CNEIUID,
+     &                      CEXTORL
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, CTRYNAM
@@ -103,7 +104,8 @@ C...........   ORL output variables (names same as ORL format description)
         CHARACTER(ERPLEN3) ERPTYPE
         CHARACTER(ORSLEN3) CORS   ! temporary DOE plant ID
         CHARACTER(BLRLEN3) CBLR   ! temporary boiler name
-        CHARACTER(20)      NEIUID ! temp NEI unique ID
+        CHARACTER(NEILEN3) CNEI   ! NEI unique ID
+        CHARACTER(EXTLEN3) CEXT   ! Extended ORL vars
 
 C...........   Other local variables
 
@@ -273,7 +275,8 @@ C.................  Store others in temporary variables
                 YEAR   = INVYR( S )
                 CORS   = CORIS( S )
                 CBLR   = CBLRID( S )
-
+                CNEI   = CNEIUID( S )
+                CEXT   = CEXTORL( S )
                 PLNTDESC = CPDESC( S )
 
                 IF( ASSOCIATED( CMACT ) ) THEN
@@ -340,10 +343,9 @@ C.................  Set default or placeholder variables
                 UTMZ = -9
                 CPRI = 0
                 CSEC = 0
-                NEIUID = '-9'
 
 C.................  Write out header
-               CALL WRITE_ORL_HEADER( RDEV, IOS )
+                CALL WRITE_ORL_HEADER( RDEV, IOS )
                 IF( IOS .GT. 0 ) CYCLE
 
 C.................  Write out data
@@ -353,8 +355,7 @@ C.................  Write out data
      &                 STKDIAM, STKTEMP, STKFLOW, STKVEL, SIC, 
      &                 TRIM(MACT), TRIM(NAICS), CTYPE, XLOC, YLOC, UTMZ, 
      &                 TRIM(CAS), ANN_EMIS, AVD_EMIS, CEFF, REFF, CPRI, 
-     &                 CSEC,
-     &                 NEIUID, CORS, CBLR     ! Extended ORL variables
+     &                 CSEC, CNEI, CORS, CBLR, CEXT     ! Extended ORL variables
 
                 LCOID = COID
                 LYEAR = YEAR
@@ -378,7 +379,7 @@ C...........   Formatted file I/O formats............ 93xxx
      &          A, ',',
      &          A, 5( ',', F10.2), ',', I4.4, ',', A, ',', A, ',', A1, 
      &          2( ',', F13.8), ',', I3, ',', A, 2( ',', E13.6 ),
-     &          2( ',', F6.2 ), ',', I2, ',', I2, 3(',"',A,'"') )                      ! point
+     &          2( ',', F6.2 ), ',', I2, ',', I2, 3(',"',A,'"'), A )  ! point
 
 C...........   Internal buffering formats............ 94xxx
 

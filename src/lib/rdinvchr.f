@@ -42,7 +42,7 @@ C...........   This module is the source inventory arrays
      &                      XLOC1, YLOC1, XLOC2, YLOC2, SPEED, STKHT,
      &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
      &                      CLINK, CPDESC, CSOURC, CVTYPE, CMACT,
-     &                      CNAICS, CSRCTYP, CERPTYP
+     &                      CNAICS, CSRCTYP, CERPTYP, CNEIUID, CEXTORL
 
         IMPLICIT NONE
 
@@ -92,10 +92,14 @@ C...........   Other local variables
         LOGICAL       :: ERPIN   = .FALSE.  ! True: emission release type in input file
         LOGICAL       :: ERPFLAG = .FALSE.  ! True: emission release point type requested
         LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
+        LOGICAL       :: EXTIN   = .FALSE.  ! True: additional extended orl vars in input file
+        LOGICAL       :: EXTFLAG = .FALSE.  ! True: additional extended orl vars requested
         LOGICAL       :: MCTIN   = .FALSE.  ! True: MACT code in input file
         LOGICAL       :: MACFLAG = .FALSE.  ! True: MACT code requested
         LOGICAL       :: NAIIN   = .FALSE.  ! True: NAICS code in input file
         LOGICAL       :: NAIFLAG = .FALSE.  ! True: NAICS code requested
+        LOGICAL       :: NEIIN   = .FALSE.  ! True: NEI Unique ID in input file
+        LOGICAL       :: NEIFLAG = .FALSE.  ! True: NEI Unique ID requested
         LOGICAL       :: ORSIN   = .FALSE.  ! Ture: DOE plant ID in input file
         LOGICAL       :: ORSFLAG = .FALSE.  ! True: DOE plant ID requested
         LOGICAL       :: PDSIN   = .FALSE.  ! True: plant desc in input file
@@ -112,6 +116,8 @@ C...........   Other local variables
         CHARACTER(FIPLEN3) CFIP   ! temporary character FIPs code
         CHARACTER(CHRLEN3) CHARS( 5 ) ! temporary plant characteristics
         CHARACTER(LNKLEN3) CLNK   ! temporary link ID
+        CHARACTER(NEILEN3) CNEI   ! NEI unique ID
+        CHARACTER(EXTLEN3) CEXT   ! Extended ORL vars
         CHARACTER(ORSLEN3) CORS   ! temporary DOE plant ID
         CHARACTER(DSCLEN3) CPDS   ! temporary plant description
         CHARACTER(RWTLEN3) CRWT   ! temporary roadway type
@@ -424,6 +430,16 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     ALLOCATE( CERPTYP( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CERPTYP', PROGNAME )
 
+                CASE( 'CNEIUID' )
+                    NEIFLAG = .TRUE.
+                    ALLOCATE( CNEIUID( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CNEIUID', PROGNAME )
+
+                CASE( 'CEXTORL' )
+                    EXTFLAG = .TRUE.
+                    ALLOCATE( CEXTORL( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
+
                 CASE DEFAULT
                     EFLAG = .TRUE.
                     MESG = 'INTERNAL ERROR: Program "' // 
@@ -595,6 +611,14 @@ C.................  Determine if plant description is present
                 J = INDEX1( 'Facility description', NCOL, HEADER )
                 PDSIN = ( J .GT. 0 )
 
+C.................  Determine if plant description is present
+                J = INDEX1( 'NEI unique ID', NCOL, HEADER )
+                NEIIN = ( J .GT. 0 )
+
+C.................  Determine if plant description is present
+                J = INDEX1( 'Additional extended', NCOL, HEADER )
+                EXTIN = ( J .GT. 0 )
+
 C.................  If DOE plant ID not present but has been requested, then 
 C                   internal err
                 IF( .NOT. ORSIN .AND. ORSFLAG ) THEN
@@ -611,6 +635,26 @@ C                   internal err
 
                     MESG = 'WARNING: Boiler requested, but ' //
      &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
+                END IF
+
+C.................  If NEI unique ID not present but has been requested, then 
+C                   internal err
+                IF( .NOT. NEIIN .AND. NEIFLAG ) THEN
+
+                    MESG = 'WARNING: NEI unique ID requested, but ' //
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
+                END IF
+
+C.................  If NEI unique ID not present but has been requested, then 
+C                   internal err
+                IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
+
+                    MESG = 'WARNING: Additional extended requested, ' //
+     &                     'but is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
 
                 END IF
@@ -649,9 +693,11 @@ C                   deallocate memory for array
 
                 END IF
                 
-                CORS = ' '
+                CORS  = ' '
                 CBLR  = ' '
                 CPDS  = ' '
+                CNEI  = ' '
+                CEXT  = ' '
 
                 DO S = 1, NSRC
 
@@ -664,23 +710,24 @@ C.....................  Read in line of character data
      &                  MCTIN .AND. NAIIN .AND. STPIN .AND. ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS
+     &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
 
                     ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND. 
      &                       NAIIN .AND. STPIN .AND. ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS
+     &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
      
                     ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. 
      &                       STPIN .AND. ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS      
+     &                      CSTP, CERP, CPDS    
 
                     ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CPDS
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CNEI, CEXT
 
                     ELSE IF( ORSIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
@@ -688,7 +735,8 @@ C.....................  Read in line of character data
 
                     ELSE IF( ORSIN .AND. BLRIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
+     &                      CNEI, CEXT
      
                     ELSE IF( PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
@@ -706,15 +754,20 @@ C.....................  Read in line of character data
 
                     IF( BLRFLAG ) CBLRID( S ) = ADJUSTR( CBLR )
 
+                    IF( NEIFLAG ) CNEIUID( S )= ADJUSTR( CNEI )
+
+                    IF( EXTFLAG ) CEXTORL( S )= ADJUSTL( CEXT )
+
                     IF( MACFLAG .AND. MCTIN ) CMACT( S ) = CMT
-                    
+
                     IF( NAIFLAG .AND. NAIIN ) CNAICS( S ) = CNAI
-                    
+
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
-                    
+
                     IF( ERPFLAG .AND. ERPIN ) CERPTYP( S ) = CERP
 
                     IF( PDSFLAG ) CPDESC( S ) = CPDS
+
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
