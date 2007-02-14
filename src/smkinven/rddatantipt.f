@@ -2,7 +2,8 @@
         SUBROUTINE RDDATAORLPT( LINE, READDATA, READPOL, IYEAR, DESC,
      &                          ERPTYP, SRCTYP, HT, DM, TK, FL, VL, SIC, 
      &                          MACT, NAICS, CTYPE, LAT, LON, UTMZ, 
-     &                          CORS, BLID, HDRFLAG, EFLAG )
+     &                          NEID, CORS, BLID, EXTORL, HDRFLAG,
+     &                          EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -74,8 +75,10 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
         CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
         CHARACTER(2),       INTENT (OUT) :: UTMZ                  ! UTM zone
+        CHARACTER(NEILEN3), INTENT (OUT) :: NEID                  ! NEI unique ID
         CHARACTER(ORSLEN3), INTENT (OUT) :: CORS                  ! DOE plant ID
         CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
+        CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
 
@@ -84,7 +87,7 @@ C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: NSEG = 63      ! number of segments in line
 
 C...........   Other local variables
-        INTEGER         I       ! counters and indices
+        INTEGER         I, L, L1, LL       ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
         INTEGER, SAVE:: INY     !  inventory year
@@ -93,6 +96,8 @@ C...........   Other local variables
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
  
+        CHARACTER(40)      TMPSEG          ! tmp segments of line
+        CHARACTER(300)     TMPORL          ! tmp extended orl line buffer
         CHARACTER(40)      SEGMENT( NSEG ) ! segments of line
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            ! message buffer
@@ -159,9 +164,22 @@ C           the various data fields
         READDATA( 1,NC1 ) = SEGMENT( 27 ) ! primary control equipment code
         READDATA( 1,NC2 ) = SEGMENT( 28 ) ! secondary control equipment code
 
+        NEID   = ADJUSTL( SEGMENT( 29 ) )  ! NEI Unique ID
+        IF( NEID == ' ' ) NEID = '-9'
         CORS   = ADJUSTL( SEGMENT( 30 ) )  ! DOE plant ID
         BLID   = ADJUSTL( SEGMENT( 31 ) )  ! boiler ID
-        
+
+C.........  Read extended orl variables and store it as string
+        EXTORL = ' '
+        DO I = 32, 63
+            TMPSEG = ','
+            IF( SEGMENT( I ) /= ' ' ) THEN
+                TMPSEG = ',' // TRIM( SEGMENT( I ) )
+            ENDIF
+            
+            EXTORL = TRIM( EXTORL ) // TRIM( TMPSEG )
+        END DO
+
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
 

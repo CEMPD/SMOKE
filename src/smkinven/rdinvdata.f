@@ -53,7 +53,7 @@ C...........   This module is the inventory arrays
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2,  ! sorted real characteristics
      &                      YLOC2, STKHT, STKDM, STKTK, STKVE, 
      &                      CORIS, CBLRID, CPDESC, CERPTYP,     ! sorted character characteristics
-     &                      CMACT, CNAICS, CSRCTYP
+     &                      CMACT, CNAICS, CSRCTYP, CNEIUID, CEXTORL
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NDY, NEF, NCE, NRE, NRP, 
@@ -193,8 +193,10 @@ C...........   Other local variables
         CHARACTER(RWTLEN3)  CROAD     ! road class no.
         CHARACTER(LNKLEN3)  CLNK      ! link ID
 
+        CHARACTER(NEILEN3) :: NEID = ' ' ! NEI unique ID
         CHARACTER(ORSLEN3) :: CORS = ' ' ! DOE plant ID
         CHARACTER(BLRLEN3) :: BLID = ' ' ! boiler ID
+        CHARACTER(EXTLEN3) :: EXTORL = ' ' ! Extended ORL vars
         CHARACTER(40)       DESC      ! plant description
         CHARACTER(ERPLEN3) :: ERPTYP = ' ' ! emissions release point type
         CHARACTER(4)        HT        ! stack height
@@ -405,6 +407,8 @@ C.........  Allocate memory for storing inventory data
             CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
             ALLOCATE( YLOCA ( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
+            ALLOCATE( CNEIUID ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CNEIUID', PROGNAME )
             ALLOCATE( CORIS ( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CORIS', PROGNAME )
             ALLOCATE( CBLRID( NSRC ), STAT=IOS )
@@ -413,6 +417,8 @@ C.........  Allocate memory for storing inventory data
             CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )
             ALLOCATE( CERPTYP( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CERPTYP', PROGNAME )
+            ALLOCATE( CEXTORL ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
 
             ISIC     = 0         ! array
             IDIU     = 0         ! array
@@ -423,10 +429,12 @@ C.........  Allocate memory for storing inventory data
             STKVE    = 0.        ! array
             XLOCA    = IMISS3    ! array
             YLOCA    = IMISS3    ! array
+            CNEIUID  = ' '       ! array
             CORIS    = ORSBLNK3  ! array
             CBLRID   = BLRBLNK3  ! array
             CPDESC   = ' '       ! array
             CERPTYP  = ' '       ! array
+            CEXTORL  = ' '       ! array
         END IF
 
 C.........  Initialize pollutant-specific values as missing
@@ -674,7 +682,8 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                INVYEAR, DESC, ERPTYP, SRCTYP, 
      &                                HT, DM, TK, FL, VL, SIC, MACT, 
      &                                NAICS, CTYPE, LAT, LON, ZONE,
-     &                                CORS, BLID, HDRFLAG, EFLAG )
+     &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
+     &                                EFLAG )
                     NPOLPERLN = 1
                 END SELECT
 
@@ -1496,8 +1505,10 @@ C.....................  Convert UTM values to lat-lon
                     XLOCA   ( CURSRC ) = STR2REAL( LON )
                     YLOCA   ( CURSRC ) = STR2REAL( LAT )
                     CPDESC  ( CURSRC ) = DESC
+                    CNEIUID ( CURSRC ) = ADJUSTR( NEID )
                     CORIS   ( CURSRC ) = ADJUSTR( CORS )
                     CBLRID  ( CURSRC ) = ADJUSTR( BLID )
+                    CEXTORL ( CURSRC ) = ADJUSTL( EXTORL )
                 
 C.....................  Convert units on values 
                     IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.

@@ -43,7 +43,8 @@ C.........  This module contains the inventory arrays
      &                      CELLID, ISIC, IRCLAS, IVTYPE, 
      &                      STKHT, STKDM, STKTK, STKVE,
      &                      CMACT, CNAICS, CSRCTYP, CERPTYP,
-     &                      CVTYPE, CSCC, CORIS, CBLRID, CPDESC
+     &                      CVTYPE, CSCC, CORIS, CBLRID, CPDESC,
+     &                      CNEIUID, CEXTORL
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NCHARS, MXCHRS, 
@@ -70,11 +71,11 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
         LOGICAL     , INTENT (IN) :: NONPOINT! true: processing nonpoint inventory
 
 C.........  Arrays for column formatting
-        INTEGER       COLWID( MXCHRS+8 ) !  width of source info columns
+        INTEGER       COLWID( MXCHRS+10 ) !  width of source info columns
 
-        LOGICAL       LF    ( MXCHRS+8 ) !  true if column should be output
+        LOGICAL       LF    ( MXCHRS+10 ) !  true if column should be output
 
-        CHARACTER(300) CHARS ( MXCHRS+8 ) !  source fields for output
+        CHARACTER(300) CHARS( MXCHRS+10 ) !  source fields for output
 
 C.........  Source-specific header arrays
         CHARACTER(20) :: ARHEADRS( MXARCHR3+2 ) = 
@@ -94,7 +95,7 @@ C.........  Source-specific header arrays
      &                                        'Vehicle Type Name   ',
      &                                        'Source type code    ' / )
 
-        CHARACTER(20) :: PTHEADRS( MXPTCHR3+9 ) = 
+        CHARACTER(20) :: PTHEADRS( MXPTCHR3+11 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Plant code          ', 
@@ -110,9 +111,11 @@ C.........  Source-specific header arrays
      &                                        'NAICS code          ',
      &                                        'Source type code    ',
      &                                        'Emission release pt ',  
-     &                                        'Facility description' / )
+     &                                        'Facility description',
+     &                                        'NEI unique ID       ',
+     &                                        'Additional extended ' / )
 
-        CHARACTER(20) :: FRHEADRS( MXPTCHR3+9 ) = 
+        CHARACTER(20) :: FRHEADRS( MXPTCHR3+11 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co         ',
      &                                        'Plant code = FireID ', 
@@ -128,8 +131,9 @@ C.........  Source-specific header arrays
      &                                        'NAICS code          ',
      &                                        'Source type code    ',
      &                                        'Emission release pt ',  
-     &                                        'Facility description' / )
-
+     &                                        'Facility description',
+     &                                        'NEI unique ID       ',
+     &                                        'Additional extended ' / )
 
 C.........  Allocatable header arrays
         CHARACTER(20), ALLOCATABLE :: HDRFLDS( : )
@@ -141,7 +145,7 @@ C.........  Other local variables
         INTEGER       IOS              !  memory allocation status
         INTEGER       L1, L2, NL       !  counters and indices
         INTEGER       M1, M2, M3, M4   !  positions after src characteristics
-        INTEGER       M5, M6, M7, M8
+        INTEGER       M5, M6, M7, M8, M9, M10
         INTEGER       NASCII           !  number of possible output fields
         INTEGER       NC               !  number of output fields
 
@@ -285,7 +289,7 @@ C.........  Set the number of potential ASCII columns in SDEV output file
         CASE( 'MOBILE' )
             NASCII = MXMBCHR3+2
         CASE( 'POINT' )
-            NASCII = MXPTCHR3+8
+            NASCII = MXPTCHR3+10
         END SELECT
 
 C.........  Allocate memory for and populate the output header fields from
@@ -317,6 +321,8 @@ C           characteristics fields
         M6 = MXCHRS + 6
         M7 = MXCHRS + 7
         M8 = MXCHRS + 8
+        M9 = MXCHRS + 9
+        M10 = MXCHRS + 10
 
 C.........  Get the maximum column width for each of the columns in ASCII file
         COLWID = 0    ! array
@@ -392,9 +398,17 @@ C.........  Get the maximum column width for each of the columns in ASCII file
                 IF( CERPTYP( S ) .NE. ' ' .AND.
      &              J .GT. COLWID( M7 ) ) COLWID( M7 ) = J
 
-                J = LEN_TRIM( CPDESC( S ) )                 ! could be blank
+                J = LEN_TRIM( CPDESC( S ) )                  ! could be blank
                 IF( CPDESC( S ) .NE. ' ' .AND.
      &              J .GT. COLWID( M8 ) ) COLWID( M8 ) = J
+
+                J = LEN_TRIM( CNEIUID( S ) )                 ! could be blank
+                IF( CNEIUID( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M9 ) ) COLWID( M9 ) = J
+
+                J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
+                IF( CEXTORL( S ) .NE. ' ' .AND.
+     &              J .GT. COLWID( M10 ) ) COLWID( M10 ) = J
 
             END SELECT
 
@@ -539,6 +553,16 @@ C.............  Store remaining source attributes in separate fields (CHARS)
                     CHARS( NC ) = CPDESC( S )
                 END IF
 
+                IF( LF( M9 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CNEIUID( S )
+                END IF
+
+                IF( LF( M10 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CEXTORL( S )
+                END IF
+
             END SELECT
 
 C.............  Write source characteristics and attributes
@@ -566,6 +590,6 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-94100   FORMAT( 9( A, I2.2 ) )
+94100   FORMAT( 9( A, I3.3 ) )
 
         END SUBROUTINE WRINVCHR

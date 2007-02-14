@@ -564,7 +564,7 @@ C    n: been implemented
             IVARNAMS( 14 ) = 'CSOURC'
 
         CASE ( 'POINT' )
-            NINVARR = 20
+            NINVARR = 22
             IVARNAMS( 5  ) = 'ISIC'
             IVARNAMS( 6  ) = 'XLOCA'
             IVARNAMS( 7  ) = 'YLOCA'
@@ -581,6 +581,8 @@ C    n: been implemented
             IVARNAMS( 18 ) = 'CNAICS'
             IVARNAMS( 19 ) = 'CSRCTYP'
             IVARNAMS( 20 ) = 'CERPTYP'
+            IVARNAMS( 21 ) = 'CNEIUID'
+            IVARNAMS( 22 ) = 'CEXTORL'
 
         END SELECT
 
@@ -801,7 +803,7 @@ C                           control matrix.
                               DATAVAR( C,5 ) = REFF( S )
                               DATAVAR( C,6 ) = RPEN( S )
                             ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
-                 	      DATAVAR( C,3 ) = CEFF( S )
+                              DATAVAR( C,3 ) = CEFF( S )
                               DATAVAR( C,4 ) = REFF( S )
                             END IF
                         END IF
