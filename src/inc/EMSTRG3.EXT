@@ -36,6 +36,7 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: STPLEN3 =  2 ! source type code (used for toxics)
         INTEGER, PARAMETER :: VIDLEN3 =  4 ! vehicle type ID
         INTEGER, PARAMETER :: VTPLEN3 =  6 ! vehicle type
+        INTEGER, PARAMETER :: EXTLEN3 =300 ! additional extended orl var
 
 C.........  Width of other global character strings 
         INTEGER, PARAMETER :: IOVLEN3 = 16  ! length of I/O API variables
@@ -119,6 +120,7 @@ C.........  Widths that depend on other widths
         INTEGER, PARAMETER :: MSSLEN3 = MSTLEN3 + SCCLEN3 ! MACT // Cy/St // SCC
         INTEGER, PARAMETER :: MFPLEN3 = MACLEN3 + FIPLEN3 ! MACT // FIPS
         INTEGER, PARAMETER :: MFSLEN3 = MFPLEN3 + SCCLEN3 ! MACT // FIPS // SCC
+        INTEGER, PARAMETER :: NEILEN3 = SCCLEN3 + SCCLEN3 ! NEI Unique ID 
 
         INTEGER, PARAMETER :: SS0LEN3 = CH1POS3-1 + SCCLEN3 ! -> Plant // SCC
         INTEGER, PARAMETER :: SS1LEN3 = CH2POS3-1 + SCCLEN3 ! -> Char1 // SCC
