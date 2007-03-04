@@ -219,7 +219,7 @@ C.......  Get environment variable settings
       MESG = 'Enter logical name for output annual inventory'
       ADEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'PTINV', PROGNAME )
       
-      MESG = 'Enter logical name for output daily inventory'
+      MESG = 'Enter logical name for output hourly inventory'
       DDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'PTHOUR', PROGNAME )
 
 
@@ -367,7 +367,7 @@ C...............  Get state and county code from airport source ID
 
 C...................  To ensure that AIRPORT and ORIGIN info were existed in EDMS_MAIN file
                   IF( .NOT. AFLAG ) THEN
-                      MESG = 'ERROR: Could not find the CIAO airport '//
+                      MESG = 'ERROR: Could not find the ICAO airport '//
      &                       'code (AIRPORT) from MAIN_EMDS file'
                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                   END IF
@@ -379,7 +379,6 @@ C...................  To ensure that AIRPORT and ORIGIN info were existed in EDM
                   END IF
 
                   APRT = ICAOCODE // '-' // ADJUSTL( SEGMENT( 2 ) )
-                  ZLOC = STR2REAL( SEGMENT( 6 ) )
 
 C...................  Define the location of airport id in main EDMS source list
                   K = INDEX1( APRT, NAPT, APTLOC )
@@ -429,11 +428,24 @@ C...................  Check if we already have this airport in master list
                           COUNTY( MXLOC ) = CYID
                           LAT   ( MXLOC ) = LATVAL
                           LON   ( MXLOC ) = LONVAL
-                          HEIGHT( MXLOC ) = ZLOC * 3.28084  ! conver meter to ft
                       END IF
                   END IF
 
               END IF
+
+	    IF( INDEX( LINE, 'SRCPARAM' ) > 0 .AND. .NOT. COUNT ) THEN
+	      APRT = ICAOCODE // '-' // ADJUSTL( SEGMENT( 2 ) )
+	      ZLOC = STR2REAL( SEGMENT ( 4 ) )
+
+	      K = INDEX1( APRT, MXSRC, APRTID )
+	      IF( K .LE. 0 ) THEN
+		MESG = 'ERROR: Could not find matching source '
+     &		       // TRIM( SEGMENT( 2 ) )
+		CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+	      END IF
+
+	      HEIGHT( K ) = ZLOC * 3.28084  ! convert m to ft
+	    END IF
 
           END DO
 
