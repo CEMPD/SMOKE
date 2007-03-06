@@ -73,7 +73,7 @@ C...........   Line parsing array
 C...........   Other local variables
         INTEGER         I, L    ! counters and indices
 
-        INTEGER          ICNT    !  no. non-blank/non-comment lines
+        INTEGER      :: ICNT = 0    !  no. non-blank/non-comment lines
         INTEGER          IOS     !  i/o status
         INTEGER          IREC    !  record counter
         INTEGER       :: N = 1   !  no. segments in line

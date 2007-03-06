@@ -482,10 +482,11 @@ C               then set it to blank
         END IF      ! End if speciation
 
 C.........  Determine if any reports did not have a DATA instruction
+        I = 0  ! added by GAP 1/17/07
         DO V = 1, NREPORT
             IF( ALLRPT( V )%NUMDATA < 0 ) THEN
                 I = ALLRPT( V )%NUMDATA
-                EXIT
+                EXIT            
             END IF
         END DO
 !        I = MINVAL( ALLRPT%NUMDATA )

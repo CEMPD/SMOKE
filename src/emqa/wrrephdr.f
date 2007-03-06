@@ -1172,6 +1172,8 @@ C                       current report
 C.................  If exponential output format
                 ELSE
 
+                    W1 = 0 ! added by GAP 1/17/07
+
 C.....................  Set the left part of the format.  Compare needed width 
 C                       with requested width and width of the column header
 C                       and units header
