@@ -121,10 +121,10 @@ C...........   Other local variables
  
         LOGICAL, SAVE :: FIRSTIME= .TRUE. ! true: first time routine called
 
-        CHARACTER(500)     DATFMT     ! format for data
-        CHARACTER(500)     HDRFMT     ! format for header
-        CHARACTER(500)     HEADER     ! header for output files
-        CHARACTER(500)     LINFLD     ! line of dashes
+        CHARACTER(3000)    DATFMT     ! format for data
+        CHARACTER(3000)    HDRFMT     ! format for header
+        CHARACTER(3000)    HEADER     ! header for output files
+        CHARACTER(3000)    LINFLD     ! line of dashes
         CHARACTER(300)     MESG       ! message buffer
         CHARACTER(IOVLEN3) SBUF       ! tmp pol or species name
         CHARACTER(IOULEN3) CBUF       ! tmp units field
@@ -763,6 +763,10 @@ C.............  Write column labels
 C.............  Write state total emissions
             DO I = 1, NSTATE
 
+C.................  Build output format depending on data values
+                CALL DYNAMIC_FORMATS( NSTATE, NDIM, I, ST_EMIS,
+     &                                MAXWID(1), DATFMT )
+
 C.................  Write out state name and converted emissions
                 WRITE( FDEV, DATFMT ) STATNAM( I ), 
      &                                ( ST_EMIS( I,J ), J=1, NDIM )
@@ -905,4 +909,62 @@ C                   emissions to the total
 
             END SUBROUTINE TOT_UPDATE
 
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE DYNAMIC_FORMATS( N1, N2, STCNT, ST_EMIS, 
+     &                                  WIDTH, DATFMT )
+
+            INTEGER     , INTENT (IN)  :: N1
+            INTEGER     , INTENT (IN)  :: N2
+            INTEGER     , INTENT (IN)  :: STCNT      ! counter for state index
+            REAL        , INTENT (IN)  :: ST_EMIS( N1, N2 )
+            INTEGER     , INTENT (IN)  :: WIDTH( N2 )
+            CHARACTER(*), INTENT (OUT) :: DATFMT
+
+C.............  Local variables
+            INTEGER  I
+            CHARACTER(5) :: FMT
+
+C..............................................................................
+
+C.............  Initialize format array
+            DATFMT = '(A'
+
+C............. Determine significant figures that we want to report. 
+C............. Use a minimum of 5 significant figures, and a minimum
+C              of 1 decimal place.  If value is < 0.1, then use exponential
+C              with 4 decimal places
+            DO I = 1, N2
+
+                IF ( ST_EMIS( STCNT,I ) .EQ. 0. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'I', WIDTH(I)
+
+                ELSE IF( ST_EMIS( STCNT,I ) .GE. 1000. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.1'
+
+                ELSE IF ( ST_EMIS( STCNT,I ) .GE. 100. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.2'
+
+                ELSE IF ( ST_EMIS( STCNT,I ) .GE. 10. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.3'
+
+                ELSE IF ( ST_EMIS( STCNT,I ) .GE. 0.1 ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.4'
+
+                ELSE IF ( ST_EMIS( STCNT,I ) .LT. 0.1 ) THEN 
+                   WRITE( FMT, '(A,I2.2,A)' ) 'E',WIDTH(I),'.4'
+                END IF
+
+                DATFMT = TRIM( DATFMT ) // ',"; "' // FMT
+
+            END DO
+
+            DATFMT = TRIM( DATFMT ) // ')'
+
+            RETURN
+
+            END SUBROUTINE DYNAMIC_FORMATS
+
         END SUBROUTINE WRMRGREP
+
