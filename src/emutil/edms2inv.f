@@ -668,22 +668,18 @@ C...........  Adding new pollutants
       END DO
 
 C.......  Write annual inventory header
-      WRITE( ADEV,93000 ) '#IDA'
+      WRITE( ADEV,93000 ) '#ORL'
       WRITE( ADEV,93000 ) '#TYPE    Airport EDMS Inventory'
       WRITE( ADEV,93000 ) '#COUNTRY US'
       WRITE( ADEV,93000 ) '#YEAR    ' // YEAR
-      
-      MESG = '#DATA'
-      DO I = 1, NOUTVAR
-          MESG = TRIM( MESG ) // ' ' // TRIM( OUTVAR( I ) )
-      END DO
-      WRITE( ADEV,93000 ) TRIM( MESG )
-      
+
 C.......  Write annual inventory values
       DO I = 1, MXSRC
-          WRITE( ADEV,93010 ) STATE( I ), COUNTY( I ), APRTID( I ), 
-     &        LOCID( I ), HEIGHT( I ), TSCC( I ), HEIGHT( I ),
-     &        LAT( I ), LON( I )
+           DO J = 1, NOUTVAR
+               WRITE( ADEV,93010 ) STATE( I ), COUNTY( I ), APRTID( I ), 
+     &             LOCID( I ), HEIGHT( I ), TSCC( I ), HEIGHT( I ),
+     &             LAT( I ), LON( I ), UTMZONE, OUTVAR( J )
+          END DO
       END DO
 
 C.......  End program successfully
@@ -693,7 +689,9 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C.......  Formatted file I/O formats...... 93xxx
 93000 FORMAT( A )
-93010 FORMAT( I2.2, I3.3, A15, I15, I12, 54X, A10, 8x, I4, 107X, 2F9.4 )
+93010 FORMAT( I2.2,I3.3,',"',A,'","',I5,'","',I10,'",,"","',A10,
+     &        '",,,"',I10,'",,,,,,,,"L",',F9.4,',',F9.4,',',I2,
+     &        ',"',A,'",,,,,,,,,,,,,,,,,,' )
 93020 FORMAT( I2.2, I3.3, A15, 2I12,12X, A5, A8, A3, 24E7.1,E8.2,1X,A10)
 
 C.......  Internal buffering formats...... 94xxx
@@ -887,3 +885,7 @@ C.......  Internal buffering formats...... 94xxx
 C......................................................................
 
       END PROGRAM EDMS2INV
+
+
+
+
