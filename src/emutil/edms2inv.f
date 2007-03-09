@@ -678,7 +678,7 @@ C.......  Write annual inventory values
            DO J = 1, NOUTVAR
                WRITE( ADEV,93010 ) STATE( I ), COUNTY( I ), APRTID( I ), 
      &             LOCID( I ), HEIGHT( I ), TSCC( I ), HEIGHT( I ),
-     &             LAT( I ), LON( I ), UTMZONE, OUTVAR( J )
+     &             LON( I ), LAT( I ), UTMZONE, OUTVAR( J )
           END DO
       END DO
 
