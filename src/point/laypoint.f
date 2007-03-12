@@ -1385,7 +1385,7 @@ C                       convert ft to meter
      &                                ( PTBEGL3(4):PTENDL3(4) ) )
                     ALTITUDE = ALTITUDE * 0.3048  ! convert ft to meter
                     ZBOT = ALTITUDE
-                    ZTOP = ALTITUDE + 999
+                    ZTOP = ALTITUDE
 
 C.....................  Setup for computing plume fractions, assuming uniform
 C                       distribution in pressure (~mass concentration -- minor
