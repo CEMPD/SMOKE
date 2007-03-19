@@ -134,7 +134,6 @@ C...........   Other local variables
                                 
         INTEGER         C, I, J, K, K1, K2, L, L1, L2, 
      &                  LM, M, N, S, V                  !  counters and indices
-
         INTEGER         IOS        ! i/o status
         INTEGER         IYEAR      ! inventory year
         INTEGER         MXPVAR     ! max of NPPOL and NPACT
@@ -379,7 +378,7 @@ C.............  For projection and control matrices, interpret variable
 C               names and compare to pollutant list. Determine whether 
 C               matrix applies to the inventory or not.
             N = 0
-            DO V = 1, NVARSET, 4
+            DO V = 1, NVARSET
 
                 VARBUF = VNAMESET( V )
                 CPVNAMS( V,I ) = VARBUF
@@ -482,6 +481,7 @@ C           are present, the input order is maintained.
 
 C.........  Allocate memory for control factors that apply to all pollutants
 C           and/or activities
+        
         ALLOCATE( CFACALL( NSRC, NCALL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFACALL', PROGNAME )
         ALLOCATE( CFAC( NSRC ), STAT=IOS )
@@ -530,6 +530,7 @@ C           named "ALL" and "PFAC"
             END IF
 
         END DO ! End loop on matrices
+
 c note: the "all" feature is not documented in cntlmat because it has not
 C    n: been implemented
 
@@ -681,6 +682,8 @@ C.............  Deallocate and allocate memory for input arrays
             ALLOCATE( DATAVAR( NREC,NPVAR ), STAT=IOS )
             CALL CHECKMEM( IOS, 'DATAVAR', PROGNAME )
             
+            DATAVAR = 0.0
+            
             CALL RDINVPOL( TNAME, NREC, NPVAR, VNAMESET( 2:NPVAR+1 ), 
      &                    VTYPESET( 2:NPVAR+1 ), SRCID, DATAVAR, SFLAG )
 
@@ -701,45 +704,42 @@ C.............  Loop through matrices, if any
             DO I = 1, NCMAT
 
                 J = CINDXA( I )
-
+                
 C.................  Search for pollutant name in list for this matrix
                 K = INDEX1( VARBUF, NCPVARS( J ), CPVNAMS( 1,J ) )
 
 C.................  Read in pollutant-specific array for multiplicative
 C                   and projection matrices
+                
                 IF( K .GT. 0 ) THEN
 
-                    IF( .NOT. READSET( CNAME( I ), VARBUF, ALLAYS3,
-     &                                 ALLFILES, 0, 0, CFAC ) ) THEN
-                        MESG = 'ERROR: Could not read "' //
-     &                         TRIM( VARBUF ) //'" from file "' // 
-     &                         TRIM( CNAME( I ) ) // '"'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
+                   IF( .NOT. READSET( CNAME( I ), VARBUF, ALLAYS3,
+     &                                ALLFILES, 0, 0, CFAC ) ) THEN
+                       MESG = 'ERROR: Could not read "' //
+     &                        TRIM( VARBUF ) //'" from file "' // 
+     &                        TRIM( CNAME( I ) ) // '"'
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                   END IF
                     
-                    L = LEN_TRIM( VARBUF )
-                    IF( .NOT. READSET( CNAME( I ), 'CE_'//VARBUF(1:L),
-     &                        ALLAYS3, ALLFILES, 0, 0, CEFF ) ) THEN
-                        MESG = 'ERROR: Could not read "' //
-     &                         TRIM( VARBUF ) //'" from file "' // 
-     &                         TRIM( CNAME( I ) ) // '"'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-                    
-                    IF( .NOT. READSET( CNAME( I ), 'RE_'//VARBUF(1:L),
-     &                        ALLAYS3, ALLFILES, 0, 0, REFF ) ) THEN
-                        MESG = 'ERROR: Could not read "' //
-     &                         TRIM( VARBUF ) //'" from file "' // 
-     &                         TRIM( CNAME( I ) ) // '"'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-                    
-                    IF( .NOT. READSET( CNAME( I ), 'RP_'//VARBUF(1:L),
-     &                        ALLAYS3, ALLFILES, 0, 0, RPEN ) ) THEN
-                        MESG = 'ERROR: Could not read "' //
-     &                         TRIM( VARBUF ) //'" from file "' // 
-     &                         TRIM( CNAME( I ) ) // '"'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                   IF( .NOT. PFLAG ) THEN  ! not for PROJECTION packet/matrix 
+
+                      L = LEN_TRIM( VARBUF )
+                      IF( .NOT. READSET( CNAME( I ), 'CE_'//VARBUF(1:L),
+     &                          ALLAYS3, ALLFILES, 0, 0, CEFF ) ) THEN
+                          MESG = 'ERROR: Could not read "' //
+     &                           TRIM( VARBUF ) //'" from file "' // 
+     &                           TRIM( CNAME( I ) ) // '"'
+                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                      END IF
+
+                      IF( .NOT. READSET( CNAME( I ), 'RP_'//VARBUF(1:L),
+     &                          ALLAYS3, ALLFILES, 0, 0, RPEN ) ) THEN
+                          MESG = 'ERROR: Could not read "' //
+     &                           TRIM( VARBUF ) //'" from file "' // 
+     &                           TRIM( CNAME( I ) ) // '"'
+                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                      END IF
+
                     END IF
 
                 ELSE
@@ -788,6 +788,7 @@ C.........................  Adjust average-day emissions (OS_* variable)
 
                         IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
                         IF( K .GT. 0 ) PSFAC  = CFAC( S )
+
                         DATAVAR( C,1 ) = DATAVAR( C,1 )* ALLFAC* PSFAC
 
 C.........................  Adjust average-day emissions (OS_* variable)
@@ -798,6 +799,7 @@ C.........................  Adjust average-day emissions (OS_* variable)
 C.........................  Set the control efficiency, rule effectiveness
 C                           and rule penetration to the values from the
 C                           control matrix.
+
                             IF( CATEGORY .EQ. 'AREA' ) THEN
                               DATAVAR( C,4 ) = CEFF( S )
                               DATAVAR( C,5 ) = REFF( S )
@@ -944,4 +946,5 @@ C...........   Internal buffering formats............ 94xxx
 94100   FORMAT( 10( A, :, I3, :, 1X ) )
 
         END
+
 
