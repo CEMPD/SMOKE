@@ -119,6 +119,7 @@ C.........  Create array of the days of the week in capital letters
 
 C.........  Read the unsorted, unfiltered holidays data
         I = 0
+        IREC = 0 
         DO N = 1, NLINES
 
             READ ( FDEV, 93000, END=99, IOSTAT=IOS ) LINE
