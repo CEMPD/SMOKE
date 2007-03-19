@@ -1,7 +1,6 @@
 
-        SUBROUTINE SIZGMAT( CATEGORY, NSRC, VFLAG, OSDEF, DEFSRGID, 
-     &                      SRGFLAG, MXSCEL, MXCSRC, MXCCL, NMATX,
-     &                      NMATXU )
+        SUBROUTINE SIZGMAT( CATEGORY, NSRC, VFLAG, DEFSRGID, SRGFLAG,
+     &                      MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU )
 
 C***********************************************************************
 C  subroutine body starts at line 102
@@ -79,7 +78,6 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
         INTEGER     , INTENT (IN) :: NSRC      ! local number of sources
         LOGICAL     , INTENT (IN) :: VFLAG     ! true: using variable grid
-        INTEGER     , INTENT (IN) :: OSDEF     ! original index of default surrogate ID
         INTEGER     , INTENT (IN) :: DEFSRGID  ! default surrogate code
         LOGICAL     , INTENT (IN) :: SRGFLAG   ! true: using default fallback surrogate
         INTEGER     , INTENT(OUT) :: MXSCEL    ! max sources per cell   
