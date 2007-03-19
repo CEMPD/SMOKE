@@ -807,21 +807,30 @@ C.............  Check that point source information is correct
 C.................  Check stack height, diameter, and temperature values are
 C                   great than zero. reset it to a missing value '-9.0' if not.
                 IF( STR2REAL( DM ) == 0.0 ) THEN
+                    IF( NWARN < MXWARN ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Stack diameter ' //
      &                 'is equal to 0 at line', IREC ,': reset it to -9'
                     CALL M3MESG( MESG )
                     DM = '  -9.0'        ! reset it to a missing val
+                    NWARN = NWARN + 1
+                    END IF
 
                 ELSE IF( STR2REAL( TK ) == 0.0 ) THEN
+                    IF( NWARN < MXWARN ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Stack temperature ' //
      &                 'is equal to 0 at line', IREC ,': reset it to -9'
                     CALL M3MESG( MESG )
                     TK = '-9.0'           ! reset it to a missing val
+                    NWARN = NWARN + 1
+                    END IF
 
                 ELSE IF( STR2REAL( VL ) == 0.0 ) THEN
+                    IF( NWARN < MXWARN ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Stack velocity ' //
      &                 'is equal to 0 at line', IREC ,': reset it to -9'
                     VL = '     -9.0'      ! reset it to a missing val
+                    NWARN = NWARN + 1
+                    END IF
 
                 END IF
 
