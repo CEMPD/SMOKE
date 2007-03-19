@@ -185,6 +185,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: CHKMINUS 
         LOGICAL, SAVE :: VFLAG  = .FALSE. ! true: first variables in formula available
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
+        LOGICAL, SAVE :: FFLAG  = .FALSE. ! true: using formula to compute new poll
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: DFLAG  = .FALSE. ! true: dates set by data
         LOGICAL       :: EFLAG  = .FALSE. ! TRUE iff ERROR
@@ -241,6 +242,7 @@ C.............  Figure out how many variables there are based on the
 C               number of commas found in the string.
             L  = LEN_TRIM( VAR_FORMULA )
             IF( L > 0 ) THEN
+                FFLAG = .TRUE.
                 NCOMP = 1
                 DO I = 1, L
                     IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
@@ -531,6 +533,10 @@ C               the various data fields
 
             IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
 
+C.............  Conver CAS number to pollutant names if available
+            I = INDEX1( CDAT, NINVTBL, ITCASA )
+            IF( I > 0 ) CDAT = ITNAMA( I )
+
 C............. Check fire beginning and ending time format and print warning if necessary
             IF( EETIME > 230000 .OR. EETIME < 0 ) THEN
                 MESG = 'ERROR: Region: '// CFIP // ' SCC: ' // TSCC //
@@ -614,10 +620,12 @@ C.............  Adding additional variables and lines if necessary
             END IF
 
             FRMFLAG = .FALSE.
+            IF( FFLAG ) THEN
             IF( CDAT == VAR1 .AND. .NOT. PRCFRM ) THEN
                 VFLAG   = .TRUE.   ! indicating var1 available for formula
                 FRMFLAG = .TRUE.   ! indicating adding formula var
                 BACKSPACE( FDEV )
+            END IF
             END IF
 
             BNHRFLAG = .FALSE.
@@ -1005,10 +1013,12 @@ C.............  Give warning if variables needed for formula are not present
             END IF
 
             IF( .NOT. VFLAG ) THEN
+            IF( FFLAG ) THEN
                 MESG = 'WARNING: No ' // TRIM( VAR1 ) //
      &                 ' data is available to compute '//
      &                 TRIM( FVAR ) // ' - values will be 0.0'
                 CALL M3MSG2( MESG )
+            END IF
             END IF
 
             IF( NACRBND .NE. NFUELD .AND. .NOT. PRCHFX ) THEN
