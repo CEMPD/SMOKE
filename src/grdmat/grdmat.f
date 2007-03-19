@@ -139,7 +139,7 @@ C...........   Other local variables
         INTEGER         CMIN      ! min number srcs per cell
         INTEGER         ENLEN     ! length of the emissions inven name
         INTEGER         FIP       ! tmp country/state/county code
-        INTEGER         LSSC      ! previous tmp country/state/county code
+        INTEGER         LSSC      ! previous tmp surrogate codes
         INTEGER         IOS       ! i/o status
         INTEGER         IREC      ! Record counter
         INTEGER         NK        ! Number of gridding coefficients 
@@ -159,7 +159,6 @@ C...........   Other local variables
         INTEGER         LSRGNROWS ! tmp surrogate row
         INTEGER         DEFSRGID  !  default surrogate ID
         INTEGER         ISDEF     !  default surrogate ID code index
-        INTEGER         OSDEF     !  original default surrogate ID code index
 
         REAL            CAVG   ! average number sources per cell
 
@@ -459,14 +458,13 @@ C.............  Store the surrogate ID list
 C.............  Re-create SRGLIST including default surrogate 
 C.............  if it doesn't exit in a new assigned SRGLIST
             ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
-            OSDEF = ISDEF
 
             IF( ISDEF < 1 ) THEN
                 NSRGS = NSRGS + 1
 
 C.................  Allocate memory for creating assigned surrogates tables
                 DEALLOCATE ( SRGLIST )
-                ALLOCATE( SRGLIST( NSRGS + 1 ), STAT=IOS )
+                ALLOCATE( SRGLIST( NSRGS ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'SRGLIST', PROGNAME )
 
 C.................  Initialize arrays
@@ -482,10 +480,11 @@ C.................  Store the surrogate ID list
 
                     IF( SSC .NE. LSSC ) THEN
                     
-                        IF( LSSC < DEFSRGID .AND. SSC > DEFSRGID ) THEN
+                        IF( LSSC < DEFSRGID .AND. DEFSRGID < SSC ) THEN
                             NN = NN + 1
                             SRGLIST( NN ) = DEFSRGID
                             LSSC = DEFSRGID
+
                         ELSE
                             NN = NN + 1
                             SRGLIST( NN ) = SSC
@@ -497,6 +496,8 @@ C.................  Store the surrogate ID list
                 END DO
 
             END IF
+
+            ISDEF = FIND1( DEFSRGID, NSRGS, SRGLIST )
 
 C.............  Read the surrogates header and initialize the grid description
 C.............  Also, obtain the format of the file.
@@ -637,8 +638,8 @@ C           of gridding matrix, and allocate gridding matrix.
        
         CASE( 'AREA' )
 C.............  Determine sizes for allocating area gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, VFLAG, OSDEF, DEFSRGID,
-     &                    FSGFLAG, MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
+            CALL SIZGMAT( CATEGORY, NSRC, VFLAG, DEFSRGID, FSGFLAG,
+     &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
 
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
@@ -653,8 +654,8 @@ C.............  Convert mobile source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOC2, YLOC2 )
        
 C.............  Determine sizes for allocating mobile gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, VFLAG, OSDEF, DEFSRGID,
-     &                    FSGFLAG, MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
+            CALL SIZGMAT( CATEGORY, NSRC, VFLAG, DEFSRGID, FSGFLAG,
+     &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
        
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
