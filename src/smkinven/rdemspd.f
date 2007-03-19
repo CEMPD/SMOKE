@@ -45,7 +45,7 @@ C.........  This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, CSOURC
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVTBL, ITNAMA, ITCASA
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NSRC, EANAM, NCHARS
@@ -397,9 +397,14 @@ C.............  Store maximum time step number as compared to reference
 
 C.............  Check pollutant code and set index I
             CDAT = ADJUSTL( LINE( 57:61 ) )
-            COD  = INDEX1( CDAT, NIPPA, EANAM )
+
+C.............  Conver CAS number to pollutant names if available
+            I = INDEX1( CDAT, NINVTBL, ITCASA )
+            IF( I > 0 ) CDAT = ITNAMA( I )
 
 C.............  Check to see if data name is in inventory list
+            COD  = INDEX1( CDAT, NIPPA, EANAM )
+
             IF ( COD .LE. 0 ) THEN
 
 C.................  Check to see if data name is in list of special names
