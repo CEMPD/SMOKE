@@ -324,8 +324,9 @@ C.........  Define the minimum and maximum time zones in the inventory
         TZMIN = MINVAL( TZONES )
         TZMAX = MAXVAL( TZONES )
 
-C.........  Adjust TZMIN for possibility of daylight savings
+C.........  Adjust TZMIN and TZMAX for possibility of daylight savings
         TZMIN = MAX( TZMIN - 1, 0 )
+        TZMAX = MIN( TZMAX + 1, 23 )
 
 C.........  Read episode time period lists from PROCDATES.txt
         IF( PFLAG ) CALL RDDATES( KDEV, NTPERIOD )

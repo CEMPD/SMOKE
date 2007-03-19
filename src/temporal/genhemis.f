@@ -136,6 +136,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: EFLAG    = .FALSE. ! true: error found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first call to subrtn
         LOGICAL, SAVE :: FIRSTSTP = .TRUE.  ! true: first time step
+        LOGICAL, SAVE :: FIRSTFIRE= .TRUE.  ! true: check processing fire
         LOGICAL, SAVE :: HFLAG              ! true: hour-specific data
         LOGICAL, SAVE :: OUTMSG = .TRUE.    ! true: output message for new day
         LOGICAL       :: RDFLAG = .TRUE.    ! true: read dy data for this iter
@@ -186,8 +187,9 @@ C.............  Define the minimum and maximum time zones in the inventory
             TZMIN = MINVAL( TZONES )
             TZMAX = MAXVAL( TZONES )
 
-C.............  Adjust TZMIN for possibility of daylight savings
+C.............  Adjust TZMIN and TZMAX for possibility of daylight savings
             TZMIN = MAX( TZMIN - 1, 0 )
+            TZMAX = MIN( TZMAX + 1, 23 )
 
 C.............  Determine hours of output day in GMT for updating TMAT
             NHRCALC = TZMAX - TZMIN + 1
@@ -306,7 +308,8 @@ C.................  Read source index for this day
             END IF      !  if read3() failed on dname
 
 C.............  Read source beginning hour(BEGHOUR) for this day
-            IF ( READ3( DNAME, 'BEGHOUR', ALLAYS3,
+            IF( FIRSTFIRE ) THEN
+            IF( READ3( DNAME, 'BEGHOUR', ALLAYS3,
      &                        JDATE, JTIME, STHOUR      ) ) THEN
                 WRITE( MESG,94010 ) 'NOTE: Re-normalize temporalized' //
      &               ' hourly factors based on begining and ending' // 
@@ -317,7 +320,7 @@ C.............  Read source beginning hour(BEGHOUR) for this day
             END IF      !  if read3() failed on dname
 
 C.............  Read source ending hour(ENDHOUR) for this day
-            IF ( READ3( DNAME, 'ENDHOUR', ALLAYS3,
+            IF( READ3( DNAME, 'ENDHOUR', ALLAYS3,
      &                        JDATE, JTIME, EDHOUR      ) ) THEN
                 WRITE( MESG,94010 ) 'NOTE: Re-normalize temporalized' //
      &               ' hourly factors based on begining and ending' // 
@@ -326,6 +329,9 @@ C.............  Read source ending hour(ENDHOUR) for this day
 
                 FIREFLAG = .TRUE.
             END IF      !  ifread3() failed on dname
+
+            FIRSTFIRE = .FALSE.
+            END IF
 
         END IF          ! if using day-specific emissions
 
@@ -378,9 +384,6 @@ C           or an activity
 
             NAMBUF = NAMIN( V )
 
-C.............  Skip BENHOUR and ENDHOUR from a list of pollutants in wildfires
-c            IF( NAMBUF .EQ. 'BENHOUR' .OR. NAMBUF .EQ. 'ENDHOUR' ) CYCLE
-
 C.............  Skip blanks that can occur when NGRP > 1
             IF ( NAMBUF .EQ. ' ' ) CYCLE
 
@@ -424,6 +427,7 @@ C.............  Apply hourly factors to all sources for current pollutant or
 C               activity. Also apply units conversion.
             DO S = 1, NSRC
                 EMIST( S,V ) = UFAC * EMACV( S,V ) * TMAT( S,V,HOUR )
+
             END DO
 
 C.............  If day-specific data are available for current pollutant
@@ -518,6 +522,7 @@ C.........................  Re-normalizing hourly temporal factors
 
                         EMIST( S,V ) = UFAC * EMACD( I ) *
      &                                 HRLFAC( K,L,DAY )
+c      if(HRLFAC(K,L,DAY)>1) print*,EMIST(S,V),HRLFAC(K,L,DAY),S,V,NAMBUF
                    END IF
 
                 END DO
