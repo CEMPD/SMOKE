@@ -11,6 +11,9 @@
 #
 #*********************************************************************
 
+## Set optional customized SMKMERGE output file names
+## setenv SMKMERGE_CUSTOM_OUTPUT  N  # Y define your own output file names from SMKMERGE
+
 ## Set Assigns file name
 setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 
@@ -21,7 +24,7 @@ setenv MRG_SOURCE    ABMP       # source category to merge
 ## Set programs to run...
 
 ## For merging from matrices
-setenv RUN_SMKMERGE  N          # run merge program
+setenv RUN_SMKMERGE  Y          # run merge program
 #      NOTE: in sample script, not used because nonroad is treated as a separate category
 
 ## For merging from previously generated gridded Smkmerge outputs

@@ -11,6 +11,9 @@
 #
 #*********************************************************************
 
+## Set optional customized SMKMERGE output file names
+## setenv SMKMERGE_CUSTOM_OUTPUT  N  # Y define your own output file names from SMKMERGE
+
 ## Set Assigns file name
 setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 
@@ -47,10 +50,12 @@ setenv RAW_DUP_CHECK        N   # Y checks for duplicate records
 setenv SMK_BASEYR_OVERRIDE  0   # year to override the base year of the inventory
 setenv SMK_DEFAULT_TZONE    5   # default time zone for sources not in the COSTCY file
 setenv SMK_NHAPEXCLUDE_YN   Y   # Y uses NHAPEXCLUDE file when integrating toxic sources
+setenv NONHAP_TYPE          VOC # VOC or TOG for nonhap calculation 
 setenv SMKINVEN_FORMULA     "PMC=PM10-PM2_5" # formula for computing emissions value
 setenv WEST_HSPHERE         Y   # Y converts longitudes to negative values
 setenv WKDAY_NORMALIZE      N   # Y treats average-day emissions as weekday only
 setenv WRITE_ANN_ZERO       N   # Y writes zero emission values to intermediate inventory
+setenv ALLOW_NEGATIVE       N   # Y allow negative output emission data
 #      DAY_SPECIFIC_YN  see "Multiple-program controls" below
 #      HOUR_SPECIFIC_YN see "Multiple-program controls" below
 #      INVNAME1         set by make_invdir.csh script
@@ -70,7 +75,6 @@ setenv POLLUTANT_CONVERSION Y   # Y uses the GSCNV pollutant conversion file
 
 ## For Elevpoint
 setenv SMK_ELEV_METHOD      1   # 1 uses PELVCONFIG file to determine elevated sources
-setenv UNIFORM_STIME        -1  # indicates day start time; -1 uses time zones
 #      IOAPI_ISPH       set by Assigns file
 #      SMK_PING_METHOD  see "Multiple-program controls" below
 
@@ -95,6 +99,7 @@ setenv HOURLY_FIRE_YN       N   # Y reads fire data from the PTMP and PDAY files
 setenv REP_LAYER_MAX        -1  # layer number for reporting high plume rise
 setenv SMK_SPECELEV_YN      Y   # Y uses the PELV file to set elevated sources
 setenv VERTICAL_SPREAD      0   # sets the vertical spread method for plume heights
+setenv USE_EDMS_DATA_YN     N   # Y treat EDMS aircraft elevation height as plume rise
 #      EXPLICIT_PLUMES_YN see "Multiple-program controls" below
 #      IOAPI_ISPH       set by Assigns file
 #      SMK_EMLAYS       see "Multiple-program controls" below

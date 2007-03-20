@@ -57,7 +57,6 @@ setenv SMK_NUM_CTLMAT       1   # number of control/growth matrices
 
 ## For Elevpoint
 setenv SMK_ELEV_METHOD      1   # 1 uses PELVCONFIG file to determine elevated sources
-setenv UNIFORM_STIME        -1  # indicates day start time; -1 uses time zones
 #      IOAPI_ISPH       set by Assigns file
 #      SMK_PING_METHOD  see "Multiple-program controls" below
 

@@ -11,6 +11,9 @@
 #
 #*********************************************************************
 
+## Set optional customized SMKMERGE output file names
+## setenv SMKMERGE_CUSTOM_OUTPUT  N  # Y define your own output file names from SMKMERGE
+
 ## Set Assigns file name
 setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 

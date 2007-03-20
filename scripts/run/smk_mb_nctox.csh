@@ -11,6 +11,9 @@
 # Script created by : M. Houyoux, CEP Environmental Modeling Center 
 #
 #*********************************************************************
+## Set optional customized SMKMERGE output file names
+## setenv SMKMERGE_CUSTOM_OUTPUT  N  # Y define your own output file names from SMKMERGE
+
 
 ## Set Assigns file name
 setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
@@ -48,10 +51,12 @@ setenv SMK_BASEYR_OVERRIDE  0   # year to override the base year of the inventor
 setenv SMK_DEFAULT_TZONE    5   # default time zone for sources not in the COSTCY file
 setenv SMK_EMS95_FIXFMT     N   # Y indicates that EMS-95 inventory is fixed format
 setenv SMK_NHAPEXCLUDE_YN   Y   # Y uses NHAPEXCLUDE file when integrating toxic sources
+setenv NONHAP_TYPE         VOC  # VOC or TOG for nonhap calculation 
 setenv SMKINVEN_FORMULA     " " # formula for computing emissions value
 setenv WEST_HSPHERE         Y   # Y converts longitudes to negative values
 setenv WKDAY_NORMALIZE      N   # Y treats average-day emissions as weekday only
 setenv WRITE_ANN_ZERO       N   # Y writes zero emission values to intermediate inventory
+setenv ALLOW_NEGATIVE       N   # Y allow negative output emission data
 #      INVNAME1         set by make_invdir.csh script
 #      INVNAME2         set by make_invdir.csh scripts
 #      OUTZONE          see "Multiple-program controls" below
@@ -143,7 +148,6 @@ setenv DEBUG_EXE            pgdbg # debugger to use when DEBUGMODE = Y
 setenv SPC_SRC_SPECIFIC     Y       # Y uses source specific speciation files
 setenv YEAR_OVERRIDE        1999    # base year override
 setenv INVTABLE_OVERRIDE    invtable_onroad.cb4.010804.txt # inventory table override
-
 ##############################################################################
 
 # NOTE:  The MOBILE6 inputs for the case you want to run

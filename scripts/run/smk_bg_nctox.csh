@@ -11,6 +11,9 @@
 #
 #*********************************************************************
 
+## Set optional customized SMKMERGE output file names
+## setenv SMKMERGE_CUSTOM_OUTPUT  N  # Y define your own output file names from SMKMERGE
+
 ## Set Assigns file name
 setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 
@@ -18,7 +21,7 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 setenv SMK_SOURCE    B          # source category to process
 setenv MRG_SOURCE    B          # source category to merge
 
-setenv BEIS_VERSION  3.12       # version of BEIS3 to use (currently 3.09 or 3.12)
+setenv BEIS_VERSION  3.13       # version of BEIS3 to use (currently 3.09 or 3.13)
 
 ## Set programs to run...
 
@@ -46,7 +49,7 @@ setenv TMPR_VAR             TEMP10 # name of temperature variable
 setenv PRES_VAR             PRSFC  # name of surface pressure variable
 #      BEIS_VERSION     already set above
 
-## For Tmpbeis3 with BEIS_VERSION = 3.12
+## For Tmpbeis3 with BEIS_VERSION = 3.13
 setenv OUT_UNITS            2   # molar output units (1 = moles/hr, 2 = moles/s)
 setenv PX_VERSION           Y   # Y indicates that met data is from PX version of MM5
 setenv SOILT_VAR            SOIT1 # name of soil temperature variable if using PX version
@@ -61,7 +64,7 @@ setenv INITIAL_RUN          Y   # Y: running first day of scenario, N for subseq
 setenv AREA_SURROGATE_NUM   340 # surrogate code number for land-area surrogate
 setenv MRG_SPCMAT_YN        Y   # Y produces speciated output 
 setenv MRG_TEMPORAL_YN      Y   # Y produces temporally allocated output
-setenv MRG_GRDOUT_YN        N   # Y produces a gridded output file
+setenv MRG_GRDOUT_YN        Y   # Y produces a gridded output file
 setenv MRG_REPCNY_YN        Y   # Y produces a report of emission totals by county
 setenv MRG_REPSTA_YN        Y   # Y produces a report of emission totals by state
 setenv MRG_GRDOUT_UNIT      tons/day # units for the gridded output file
