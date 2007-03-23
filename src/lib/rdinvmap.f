@@ -249,9 +249,15 @@ C........  Make sure all of the lines were there
         IF( APHYS .EQ. ' ' .OR.
      &      EPHYS .EQ. ' ' .OR.
      &      NMAP  .EQ. 0   .OR.
-     &      MAPNAM(1) .EQ. ' ' .OR.
-     &      MAPFIL(1) .EQ. ' ' .OR.
+     &      SIZE(MAPNAM).EQ.0 .OR.
+     &      SIZE(MAPFIL).EQ.0 .OR.
      &      RPFLAG                  ) THEN
+            MESG = 'Corrupted map formatted file - missing lines'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF (MAPNAM(1) .EQ. ' ' .OR.
+     &      MAPFIL(1) .EQ. ' ') THEN
             MESG = 'Corrupted map formatted file - missing lines'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
