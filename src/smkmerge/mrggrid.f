@@ -591,14 +591,15 @@ C.................  Output array
                 DO F = 1, NFILE
 
 C.....................  Set read date
-                    IF( MRGDIFF .AND. USEFIRST( F ) ) THEN
+                    IF( MRGDIFF ) THEN
+                      IF( USEFIRST( F ) ) THEN
                         DUMMY = 0
                         STEPS = SEC2TIME( 
      &                            SECSDIFF( 
      &                              SDATE, DUMMY, JDATE, DUMMY ) )
                         RDATE = SDATEA( F )
                         CALL NEXTIME( RDATE, DUMMY, STEPS )
-                        
+                      END IF 
                     ELSE
                         RDATE = JDATE
                     END IF
