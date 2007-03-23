@@ -846,7 +846,7 @@ C.........  Write output surrogates codes
         END DO
 
 C.........  Deallocate memory that is no longer needed
-        DEALLOCATE( CSJ, NNCL, IDXSRT )
+        DEALLOCATE( CSJ, NNCL )
 
 C............................................................................
 C..........   Generate ungridding matrix ....................................
@@ -1026,9 +1026,9 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, NLKOGRD, FIPNOSRG, LKOGRD )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( IS, CS, NCL, INDOMAIN )
+        DEALLOCATE( NCL, INDOMAIN )
         DEALLOCATE( ACEL, AFAC, FIPNOSRG, LKOGRD )
-        IF( UFLAG ) DEALLOCATE( IDXSRT2 )
+c bbh        IF( UFLAG ) DEALLOCATE( IDXSRT2 )
 
         RETURN
 

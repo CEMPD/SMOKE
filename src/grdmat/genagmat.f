@@ -84,14 +84,14 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: GNAME         ! gridding mtx logical name
         INTEGER     , INTENT (IN) :: FDEV          ! surg codes report file
         INTEGER     , INTENT (IN) :: MXSCEL        ! max sources per cell
-        INTEGER     , INTENT (IN) :: NASRC         ! no. mobile sources
+        INTEGER     , INTENT (IN) :: NASRC         ! no. sources
         INTEGER     , INTENT (IN) :: NMATX         ! no. source-cell intersects
+        LOGICAL     , INTENT (IN) :: VFLAG         ! true: using variable grid
         INTEGER     , INTENT (IN) :: DEFSRGID      ! default surrogate ID
         LOGICAL     , INTENT (IN) :: FSGFLAG       ! true: using default fallback surrogate
-        LOGICAL     , INTENT (IN) :: VFLAG         ! true: using variable grid
         INTEGER     , INTENT(OUT) :: NX  ( NGRID ) ! no. srcs per cell
-        INTEGER     , INTENT(OUT) :: IX  ( NMATX ) ! src IDs 
-        REAL        , INTENT(OUT) :: CX  ( NMATX ) ! gridding coefficients
+        INTEGER     , INTENT(OUT) :: IX  ( NASRC ) ! src IDs 
+        REAL        , INTENT(OUT) :: CX  ( NASRC ) ! gridding coefficients
         INTEGER     , INTENT(OUT) :: NCOEF         ! no. of gridding coeffs
         INTEGER     , INTENT(OUT) :: CMAX          ! max no. of sources per cell
         INTEGER     , INTENT(OUT) :: CMIN          ! min no. of sources per cell
@@ -551,7 +551,7 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, 0, FIPNOSRG, ' ' )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( IS, CS, FIPNOSRG, INDOMAIN, SURGID1, SURGID2 )
+        DEALLOCATE( FIPNOSRG, INDOMAIN, SURGID1, SURGID2 )
 
         RETURN
 
