@@ -86,7 +86,7 @@ C...........   Other local variables
         INTEGER         IPS       ! counter for records in which POLID = POLNAM
         INTEGER         IOS       ! i/o error status
         INTEGER         IREC      ! record counter
-        INTEGER         LASTHDR   ! line number of last header line
+        INTEGER      :: LASTHDR = 0  ! line number of last header line
 
         REAL            DIVISATP          ! tmp divisor
         REAL            FACTRATP          ! tmp split factor
@@ -155,7 +155,7 @@ C...........  Read in speciation profile
 
 C.............  If we haven't already passed the headers, skip all header
 C               lines
-C bbh           IF( IREC .LE. LASTHDR ) CYCLE
+            IF( IREC .LE. LASTHDR ) CYCLE
 
 C.............  Skip blank and comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
