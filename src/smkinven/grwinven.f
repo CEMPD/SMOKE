@@ -433,7 +433,7 @@ C.................  Check if projection matrix base year is consistent with
 C                   inventory
                 PBYEAR = GETIFDSC( FDESC3D, '/BASE YEAR/', .TRUE. )
                 PPYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .TRUE. )
-                    
+
                 IF( PBYEAR .NE. IYEAR ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: Projection matrix ' //
@@ -763,8 +763,11 @@ C                   loop through sources, applying factors as needed
 
                         S = SRCID( C )   ! Get source from input index
 
-                        IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
-                        IF( K .GT. 0 ) PSFAC  = CFAC( S )
+                        IF( N .GT. 0 ) THEN
+                            ALLFAC = CFACALL( S,N )
+                        ELSE IF ( K .GT. 0 ) THEN
+                            PSFAC  = CFAC( S ) 
+                        END IF
 
 C.........................  Skip if the base year is not the same as the
 C                           base year of the projection matrix...
@@ -786,8 +789,11 @@ C.........................  Adjust average-day emissions (OS_* variable)
                     DO C = 1, NREC
                         S = SRCID( C )   ! Get source from input index
 
-                        IF( N .GT. 0 ) ALLFAC = CFACALL( S,N )
-                        IF( K .GT. 0 ) PSFAC  = CFAC( S )
+                        IF( N .GT. 0 ) THEN
+                            ALLFAC = CFACALL( S,N )
+                        ELSE IF( K .GT. 0 ) THEN
+                            PSFAC  = CFAC( S )
+                        END IF
 
                         DATAVAR( C,1 ) = DATAVAR( C,1 )* ALLFAC* PSFAC
 
