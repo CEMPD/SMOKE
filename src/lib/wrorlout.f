@@ -114,8 +114,8 @@ C...........   Other local variables
         INTEGER         COID     ! tmp country code
         INTEGER         FDEV     ! tmp unit no.
         INTEGER         IOS      ! i/o status
-        INTEGER         LCOID    ! previous country ID in loop
-        INTEGER         LYEAR    ! previous year in loop
+        INTEGER,SAVE :: LCOID = -9    ! previous country ID in loop
+        INTEGER,SAVE :: LYEAR = -9    ! previous year in loop
         INTEGER         NCHAR    ! number of strings returned from PARSCSRC
         INTEGER         YEAR     ! tmp 4-digit year
 
@@ -138,8 +138,6 @@ C   begin body of subroutine WRORLOUT
 
 C.........  Initializations
         STATUS = 0
-        LCOID = -9
-        LYEAR = -9
 
 C.........  Write warning if activities are in inventory.
         IF( NIACT .GT. 0 ) THEN
