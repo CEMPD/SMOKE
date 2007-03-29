@@ -52,6 +52,7 @@ C.......  EXTERNAL FUNCTIONS and their descriptions:
       INTEGER       FIND1
       INTEGER       FINDC
       INTEGER       GETFLINE
+      INTEGER	    GETNLIST
       INTEGER       INDEX1
       INTEGER       JULIAN
       INTEGER       PROMPTFFILE
@@ -62,7 +63,8 @@ C.......  EXTERNAL FUNCTIONS and their descriptions:
       LOGICAL       ENVYN
       
       EXTERNAL      CRLF, ENVINT, FIND1, INDEX1, GETFLINE, PROMPTFFILE, 
-     &              STR2INT, STR2REAL, STRLIST, BLKORCMT, ENVYN, JULIAN
+     &              STR2INT, STR2REAL, STRLIST, BLKORCMT, ENVYN, JULIAN,
+     &              GETNLIST
 
 C.......  LOCAL PARAMETERS
       CHARACTER(50), PARAMETER :: 
@@ -83,10 +85,15 @@ C.......  Allocatable arrays
       INTEGER,       ALLOCATABLE :: LOCID ( : )
       INTEGER,       ALLOCATABLE :: STATE ( : )
       INTEGER,       ALLOCATABLE :: COUNTY( : )
+      INTEGER,       ALLOCATABLE :: POINTS( : )
       REAL,          ALLOCATABLE :: LAT   ( : )
       REAL,          ALLOCATABLE :: LON   ( : )
+      REAL,          ALLOCATABLE :: AREA  ( : )
+      REAL,          ALLOCATABLE :: X     ( : )
+      REAL,          ALLOCATABLE :: Y     ( : )
       INTEGER,       ALLOCATABLE :: HEIGHT( : )
       CHARACTER(5),  ALLOCATABLE :: OUTVAR( : )
+      CHARACTER(8),  ALLOCATABLE :: TYPE  ( : )
 
       REAL,          ALLOCATABLE :: ALLVAL( :,: )    ! output variable values
 
@@ -102,7 +109,7 @@ C.......  File units and logical names
       INTEGER         SDEV                ! ICAO airport code, FIPS, LAT and LONG
 
 C.......  Other local variables
-      INTEGER         I, J, K, L, L1, L2  ! counters and indices
+      INTEGER         I, J, K, L, L1, L2, M  ! counters and indices
       INTEGER         IOS                 ! i/o status
       INTEGER         IREC                ! line counter
       INTEGER         IHOUR               ! current time step
@@ -128,6 +135,7 @@ C.......  Other local variables
       INTEGER         MXLOC               ! Max number of LOCATION in input file
       INTEGER         MXFILES             ! Max number of input files listed in FILELIST
       INTEGER         UTMZONE             ! airport UTM zone
+      INTEGER	      SEGS                ! number of x, y segments
 
       REAL            DAYTOT              ! Daily total emission
       REAL            LATICAO             ! ICAO latitude
@@ -143,6 +151,9 @@ C.......  Other local variables
       REAL            LATVAL              ! absolute latitude
       REAL            LONVAL              ! absolute longitude
       REAL            ZLOC                ! elevated height
+      REAL	      WIDTH               ! source width
+      REAL            LENGTH              ! source length
+      REAL            SUM                 ! sum to determine area
 
       LOGICAL         ADD                 ! true: add current airport source to master list
       LOGICAL         NPFLAG              ! true: flag for new pollutants
@@ -167,6 +178,7 @@ C.......  Other local variables
       CHARACTER(5)    FIPSID              ! Airport FIPS code
       CHARACTER(5)    POLNAM              ! tmp pollutant name
       CHARACTER(3)    TZONE               ! time zone
+      CHARACTER(8)    SRCTYPE             ! tmp source type
 
       CHARACTER(256)  LINE                ! input line buffer
       CHARACTER(256)  MESG                ! message buffer
@@ -256,6 +268,12 @@ C             number of airport sources
               CALL CHECKMEM( IOS, 'LON', PROGNAME )
               ALLOCATE( HEIGHT( MXSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'HEIGHT', PROGNAME )
+	      ALLOCATE( TYPE( MXSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'TYPE', PROGNAME )
+	      ALLOCATE( AREA( MXSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'AREA', PROGNAME )
+	      ALLOCATE( POINTS( MXSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'POINTS', PROGNAME )
       
               TSCC   = ''   ! arrays
               APRTID = ''   ! arrays
@@ -265,6 +283,9 @@ C             number of airport sources
               LAT    = 0.
               LON    = 0.
               HEIGHT = 0
+	      TYPE   = ''
+	      AREA   = 0.
+	      POINTS = 0
 
           END IF
 
@@ -391,6 +412,9 @@ C...................  Define the location of airport id in main EDMS source list
 
                   SCC = APTSCC( K )
 
+C...............  Save the source type
+		  SRCTYPE = SEGMENT( 3 )
+
 C...............  Convert rel. x,y to abs. lat and long
                   XLOC = STR2REAL( SEGMENT( 4 ) )
                   YLOC = STR2REAL( SEGMENT( 5 ) )
@@ -428,6 +452,7 @@ C...................  Check if we already have this airport in master list
                           COUNTY( MXLOC ) = CYID
                           LAT   ( MXLOC ) = LATVAL
                           LON   ( MXLOC ) = LONVAL
+			  TYPE  ( MXLOC ) = SRCTYPE
                       END IF
                   END IF
 
@@ -445,6 +470,99 @@ C...................  Check if we already have this airport in master list
 	      END IF
 
 	      HEIGHT( K ) = ZLOC * 3.28084  ! convert m to ft
+
+	      IF( TYPE( K ) .EQ. 'AREA' ) THEN
+		WIDTH = STR2REAL( SEGMENT( 5 ) )
+		LENGTH = STR2REAL( SEGMENT( 6 ) )
+		AREA( K ) = WIDTH * LENGTH
+
+	      ELSE IF( TYPE( K ) .EQ. 'VOLUME' ) THEN
+		AREA( K ) = 1.0
+
+	      ELSE IF( TYPE( K ) .EQ. 'AREAPOLY' ) THEN
+		POINTS( K ) = STR2INT( SEGMENT( 5 ) )
+	      END IF
+
+	    END IF
+
+	    IF( INDEX( LINE, 'AREAVERT' ) > 0 .AND. .NOT. COUNT ) THEN
+	      APRT = ICAOCODE // '-' // ADJUSTL( SEGMENT( 2 ) )
+
+	      SEGS = GETNLIST( 256, LINE )
+	      SEGS = SEGS - 2
+	      IF( SEGS .EQ. 0 ) CYCLE
+
+	      K = INDEX1( APRT, MXSRC, APRTID )
+	      IF( K .LE. 0 ) THEN
+	        MESG = 'ERROR: Could not find matching source '
+     &		       // TRIM( SEGMENT( 2 ) )
+	        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+	      END IF
+
+	      ALLOCATE( X( POINTS( K ) ) )
+	      ALLOCATE( Y( POINTS( K ) ) )
+	      X = 0.
+	      Y = 0.
+
+	      IF( SEGS .EQ. ( POINTS( K ) * 2 ) ) THEN
+		M = 2
+		DO J = 1, POINTS( K )
+		  M = M + 1
+		  X( J ) = STR2REAL( SEGMENT( M ) )
+		  M = M + 1
+		  Y( J ) = STR2REAL( SEGMENT( M ) )
+		END DO
+
+	      ELSE IF( SEGS .LT. ( POINTS( K ) * 2 ) ) THEN
+	   	M = 2
+		DO J = 1, SEGS / 2
+		  M = M + 1
+		  X( J ) = STR2REAL( SEGMENT( M ) )
+		  M = M + 1
+		  Y( J ) = STR2REAL( SEGMENT( M ) )
+		END DO
+
+		READ( EDEV, 93000, IOSTAT=IOS ) LINE
+		IREC = IREC + 1
+
+                IF( IOS > 0 ) THEN
+                  WRITE( MESG,94010 ) 'I/O error', IOS,
+     &                'reading input file at line', IREC
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C...............  Check for end of file              
+                IF( IOS < 0 ) THEN
+                  IREC = IREC - 1
+                  EXIT
+                END IF
+
+C...............  Read data from LINE
+                CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+		M = 2
+		DO J = ( SEGS / 2 ) + 1, POINTS( K )
+		  M = M + 1
+		  X( J ) = STR2REAL( SEGMENT( M ) )
+		  M = M + 1
+		  Y( J ) = STR2REAL( SEGMENT( M ) )
+		END DO
+	      END IF
+
+	      SUM = 0.
+	      DO J = 1, POINTS( K )
+		IF( J .LT. POINTS( K ) ) THEN
+		  SUM = SUM + ( ( X( J ) * Y( J + 1 ) ) -
+     &                        ( X( J + 1 ) * Y( J ) ) )
+		ELSE
+		  SUM = SUM + ( ( X( J ) * Y( 1 ) ) -
+     &                        ( X( 1 ) * Y( J ) ) )
+		END IF
+	      END DO
+
+	      AREA( K ) = ABS( 0.5 * SUM )
+
+	      DEALLOCATE( X, Y )
 	    END IF
 
           END DO
@@ -620,7 +738,8 @@ C.......................  Skip any zero daily total
               END IF
 
 C..............  Store output values : convert metric g/sec to short tons/hr
-              ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) * 0.003968254
+              ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
+     &                              * 0.003968254 * AREA( K )
 
           END DO
 
