@@ -499,13 +499,13 @@ C...........   Formatted file I/O formats............ 93xxx
 93220   FORMAT( 1X, E13.6, 1X, E13.6, 1X, E13.6, 1X, F4.0, 1X, E13.6, ! point
      &          1X, E10.2, 1X, E10.3 )
 
-93320   FORMAT( '(I2.2, I3.3, A10, ', I3.3, '(A47) )' )
+93320   FORMAT( '(I2, I3, A10, ', I3.3, '(A47) )' )
 
-93330   FORMAT( '(I2.2, I3.3, A10, A10, ', I3.3, '(A20) )' )           ! mb emis
+93330   FORMAT( '(I2, I3, A10, A10, ', I3.3, '(A20) )' )           ! mb emis
 
-93335   FORMAT( '(I2.2, 1X, I3.3, 1X, A10, A10, 1X,', I3.3, '(A17) )' ) ! mb activity
+93335   FORMAT( '(I2, 1X, I3, 1X, A10, A10, 1X,', I3.3, '(A17) )' ) ! mb activity
 
-93340   FORMAT( '(I2.2,I3.3,A15,A15,A12, A6, A6, A2, A40, A10, I4, I4,', ! point
+93340   FORMAT( '(I2, I3, A15, A15, A12, A6, A6, A2, A40, A10, I4, I4,', ! point
      &          'I4, F6.2, I4, F10.2, F9.2, F8.2, A1, 4F2.0, 2I2, ',
      &          'I1, I2, F11.1, F12.3, F8.2, F5.2, F5.2, F9.3, I4.4,',
      &          '2F9.4, A1, ', I3.3,'(A52) )' )
