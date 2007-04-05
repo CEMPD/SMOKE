@@ -273,7 +273,7 @@ C.................  Store others in temporary variables
                 YEAR   = INVYR( S )
                 CORS   = CORIS( S )
                 CBLR   = CBLRID( S )
-                CNEI   = CNEIUID( S )
+                CNEI   = ADJUSTL( CNEIUID( S ) )
                 CEXT   = CEXTORL( S )
                 PLNTDESC = CPDESC( S )
 
@@ -353,7 +353,7 @@ C.................  Write out data
      &                 STKDIAM, STKTEMP, STKFLOW, STKVEL, SIC, 
      &                 TRIM(MACT), TRIM(NAICS), CTYPE, XLOC, YLOC, UTMZ, 
      &                 TRIM(CAS), ANN_EMIS, AVD_EMIS, CEFF, REFF, CPRI, 
-     &                 CSEC, CNEI, CORS, CBLR, CEXT     ! Extended ORL variables
+     &              CSEC, TRIM(CNEI), TRIM(CORS), TRIM(CBLR), TRIM(CEXT)     ! Extended ORL variables
 
                 LCOID = COID
                 LYEAR = YEAR
@@ -373,10 +373,9 @@ C...........   Formatted file I/O formats............ 93xxx
 93200   FORMAT( I5.5, 1X, A10, 1X, I4, 1X, A6, 1X, A2, 1X, A8, 1X,
      &          A16, 1X, E13.6, 1X, E13.6, 3( 1X, F6.2 ) )           ! nonpoint
 
-93600   FORMAT( I5.5, 4( ',','"',A,'"'), ',', '"',A,'"', ',', A, ',', 
-     &          A, ',',
-     &          A, 5( ',', F10.2), ',', I4.4, ',', A, ',', A, ',', A1, 
-     &          2( ',', F13.8), ',', I3, ',', A, 2( ',', E13.6 ),
+93600   FORMAT( I5.5, 8( ',"',A, '"'), 5( ',', F10.2), ',', I4,
+     &          2( ',"',A, '"'),',', A1, 
+     &          2( ',', F10.5), ',', I3, ',"', A, '"', 2( ',', E13.6 ),
      &          2( ',', F6.2 ), ',', I2, ',', I2, 3(',"',A,'"'), A )  ! point
 
 C...........   Internal buffering formats............ 94xxx
