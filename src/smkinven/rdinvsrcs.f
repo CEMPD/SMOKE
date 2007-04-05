@@ -101,7 +101,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local parameters
         INTEGER      , PARAMETER :: MXRECS = 1000000  ! maximum records per iteration
         INTEGER      , PARAMETER :: NSCSEG = 8        ! num. segments in scratch file
-        INTEGER      , PARAMETER :: NSEG   = 60       ! maximum no of segments
+        INTEGER      , PARAMETER :: NSEG   = 70       ! maximum no of segments
         
 C...........   Local arrays
         CHARACTER(SRCLEN3) TMPCSOURC( MXRECS )   ! source information from inventory file(s)

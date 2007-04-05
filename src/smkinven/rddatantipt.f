@@ -84,7 +84,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
-        INTEGER, PARAMETER :: NSEG = 63      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 70      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I, L, L1, LL       ! counters and indices
