@@ -117,7 +117,14 @@ C.........  Get environment variables that control program behavior
 
         END IF
 
+C.........  Waring message for imcompatiblity of FILL_ANNUAL setting from Smkinven
         OFLAG = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
+        IF( OFLAG ) THEN
+            MESG = 'WARNING: If FILL_ANNUAL was set to Y in previous '//
+     &             'SMKINVEN run, ' // CRLF() // BLANK10 // 
+     &             'SMK_AVEDAY_YN should be set to N in TEMPORAL run.'
+            CALL M3MSG2( MESG )
+        END IF            
 
 C.........  Prompt for and open inventory file
         INAME = ENAME 
