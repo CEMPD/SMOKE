@@ -102,6 +102,7 @@ C...........   Local allocatable arrays
 
         CHARACTER         , ALLOCATABLE :: INVDVTSA( : ) ! V=VOC, T=TOG, N=not
         CHARACTER(IOULEN3), ALLOCATABLE :: INVDUNTA( : ) ! units for SMOKE intmdt inventory
+        CHARACTER(CASLEN3), ALLOCATABLE :: INVDCASA( : ) ! CAS nubmer
         CHARACTER(DDSLEN3), ALLOCATABLE :: INVDDSCA( : ) ! inventory data description
 
 C...........   Local arrays
@@ -118,7 +119,12 @@ C...........   Other local variables
         INTEGER         NDAT    !  number of data values
         INTEGER         NNOI    !  number of "no integrate" pollutants
 
-        LOGICAL       :: EFLAG    = .FALSE.  ! true: error found
+        LOGICAL       :: AFLAG    = .FALSE.  ! true: duplicate activitiy found
+        LOGICAL       :: CFLAG    = .FALSE.  ! true: duplicate CAS number found
+        LOGICAL       :: NFLAG    = .FALSE.  ! true: duplicate unit found
+        LOGICAL       :: SFLAG    = .FALSE.  ! true: duplicate SPECIATE 4 found
+        LOGICAL       :: VFLAG    = .FALSE.  ! true: duplicate V/T found
+        LOGICAL       :: EFLAG    = .FALSE.  ! true:  found
         LOGICAL          KEEPVAL             ! initialized keep status
 
         CHARACTER             BUF1    !  tmp 1-char buffer
@@ -563,6 +569,8 @@ C.........  Allocate memory for local inventory pollutants/activities
         CALL CHECKMEM( IOS, 'INVDVTSA', PROGNAME )
         ALLOCATE( INVDUNTA( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVDUNTA', PROGNAME )
+        ALLOCATE( INVDCASA( MXIDAT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INVDCASA', PROGNAME )
         ALLOCATE( INVDDSCA( MXIDAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INVDDSCA', PROGNAME )
 
@@ -573,6 +581,7 @@ C.........  Allocate memory for local inventory pollutants/activities
         LADDNOI  = .FALSE. ! array
         INVDVTSA = ' '  ! array
         INVDUNTA = ' '  ! array
+        INVDCASA = ' '  ! array
         INVDDSCA = ' '  ! array
 
 C.........  Allocate memory for output inventory pollutants/activities
@@ -646,6 +655,10 @@ C.............  Store SPECIATE4 ID if not yet set, otherwise, check that its the
      &                 INVDCODA( MXIDAT ), 'and ignoring code',
      &                 ITCODA( J )
                 CALL M3MSG2( MESG )
+
+            ELSE IF( ITCODA( J ) .EQ. INVDCODA( MXIDAT ) ) THEN
+                SFLAG = .TRUE.
+
             END IF
 
 C.............  Store activity status if not yet set, otherwise, check that its the same
@@ -660,6 +673,10 @@ C.............  Store activity status if not yet set, otherwise, check that its 
      &                 'line', IREC, 'different from previously '//
      &                 'set status of "'// BUF1// '".' 
                 CALL M3MSG2( MESG )
+
+            ELSE IF( ITSTATA( J ) .EQ. INVSTATA( MXIDAT ) ) THEN
+                AFLAG = .TRUE.
+
             END IF
 
 C.............  Store VOC/TOG status if not yet set, otherwise, check that its the same
@@ -673,6 +690,10 @@ C.............  Store VOC/TOG status if not yet set, otherwise, check that its t
      &                 'is different from previously '//
      &                 'set status of "' // INVDVTSA( MXIDAT )// '".'
                 CALL M3MSG2( MESG )
+
+            ELSE IF( ITVTSA( J ) .EQ. INVDVTSA( MXIDAT ) ) THEN
+                VFLAG = .TRUE.
+
             END IF
 
 C.............  Store the data description if not yet set, otherwise, check that its the same
@@ -687,11 +708,24 @@ C.............  Store the data description if not yet set, otherwise, check that
      &                 'ignoring units "' // TRIM( ITUNTA( J ) ) //
      &                 '".'
                 CALL M3MSG2( MESG )
+
+            ELSE IF( ITUNTA( J ) .EQ. INVDUNTA( MXIDAT ) ) THEN
+                NFLAG = .TRUE.
+
+            END IF
+
+C.............  Store the CAS number if not yet set, otherwise, check that its the same
+            IF( INVDCASA( MXIDAT ) .EQ. ' ' ) THEN
+                INVDCASA( MXIDAT ) = ITCASA( J )
+
+            ELSE IF( ITCASA( J ) .EQ. INVDCASA( MXIDAT ) ) THEN
+                CFLAG = .TRUE.
+
             END IF
 
 C.............  Store the data units if not yet set, otherwise, check that its the same
             IF( INVDDSCA( MXIDAT ) .EQ. ' ' ) THEN
-              INVDDSCA( MXIDAT ) = ITDSCA( J )
+                INVDDSCA( MXIDAT ) = ITDSCA( J )
 
             ELSE IF( ITDSCA( J ) .NE. INVDDSCA( MXIDAT ) ) THEN
                 WRITE( MESG,94010 ) 'WARNING: Different descriptions '//
@@ -701,7 +735,8 @@ C.............  Store the data units if not yet set, otherwise, check that its t
      &                 TRIM( INVDDSCA(MXIDAT) ) // '" and ignoring:' //
      &                 CRLF()// BLANK16// '"'// 
      &                 TRIM( ITDSCA( J ) ) // '".'
-              CALL M3MSG2( MESG )
+                CALL M3MSG2( MESG )
+
             END IF
 
 C.............  Give warning if keep status for this iteration is not the same as
@@ -716,6 +751,23 @@ C               that for the current data name
      &                 TRIM( ITNAMA( J ) ) // '".'
                 CALL M3MSG2( MESG )
 
+            END IF
+
+C.............  Error msg for exact duplicate entries
+C              : added to prevent doubling emssions by exact duplicate entries (ex: PM10)
+            IF( AFLAG ) THEN    ! duplicate activity entries
+            IF( CFLAG ) THEN    ! duplicate CAS#
+            IF( NFLAG ) THEN    ! duplicate units 
+            IF( SFLAG ) THEN    ! duplicate SPECAITE 4
+            IF( VFLAG ) THEN    ! duplicate V or T
+                WRITE( MESG,94010 ) 'ERROR: Duplicate entry of ' // 
+     &                TRIM( ITNAMA( J ) ) // ' at line', IREC
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            END IF
+            END IF
+            END IF
+            END IF
             END IF
 
 C.............  Insert no-integrate entries (memory already increased with NNOI variable)
@@ -738,7 +790,20 @@ C.............  Insert no-integrate entries (memory already increased with NNOI 
 C.............  Set data previous name for next iteration
             LNAM = ITNAMA( J )
 
+C.............  Initialize flags
+            AFLAG = .FALSE.
+            CFLAG = .FALSE.
+            NFLAG = .FALSE.
+            SFLAG = .FALSE.
+            VFLAG = .FALSE.
+
         END DO       ! end loop to store unique data names
+
+C.........  Abort if error found during read
+        IF ( EFLAG ) THEN
+            MESG = 'Problem with input file contents.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Resort inventory data names based on original position in inventory table
         CALL SORTR1( MXIDAT, LOCATIDX, INVPOSA )
