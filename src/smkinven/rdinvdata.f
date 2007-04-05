@@ -309,7 +309,13 @@ C           the weekly profiles
 C.........  Get annual data setting from environment
         MESG = 'Fill in 0. annual data based on average day data.'
         FFLAG = ENVYN( 'FILL_ANNUAL', MESG, .FALSE., IOS )
-
+        IF( FFLAG ) THEN
+            MESG = 'NOTE: Once FILL_ANNUAL is set to Y in SMKINVEN ' //
+     &             'run, SMK_AVEDAY_YN should be set to N '//
+     &             CRLF() // BLANK10 // 'in other SMOKE programs.'
+            CALL M3MSG2( MESG )
+        END IF
+           
 C.........  Get point specific settings
         IF( CATEGORY == 'POINT' ) THEN
             MESG = 'Flag for recalculating velocity'
