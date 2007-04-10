@@ -738,8 +738,13 @@ C.......................  Skip any zero daily total
               END IF
 
 C..............  Store output values : convert metric g/sec to short tons/hr
-              ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
-     &                              * 0.003968254 * AREA( K )
+	      IF( POLNAM .EQ. 'NO' ) THEN
+	        ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
+     &                                * 0.003968254 * AREA( K ) * 0.682
+	      ELSE
+                ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
+     &                                * 0.003968254 * AREA( K )
+	      END IF
 
           END DO
 
