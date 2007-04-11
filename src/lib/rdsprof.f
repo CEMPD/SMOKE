@@ -317,12 +317,12 @@ C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: STATUS ! Read status 'SCAN' or 'STORE'
 
 C.............  Local allocatable variables
-            INTEGER, ALLOCATABLE :: NCNT( : )  ! Count of entries for NONHAP definition
-            INTEGER, ALLOCATABLE :: NHAPINDX( : ) ! Position of count of NHAP<pol> in list
-            LOGICAL, ALLOCATABLE :: NHAPFLAG( : ) ! true: flags INVDNAM with NHAP<pol> pollutant
+            INTEGER, ALLOCATABLE, SAVE :: NCNT( : )  ! Count of entries for NONHAP definition
+            INTEGER, ALLOCATABLE, SAVE :: NHAPINDX( : ) ! Position of count of NHAP<pol> in list
+            LOGICAL, ALLOCATABLE, SAVE :: NHAPFLAG( : ) ! true: flags INVDNAM with NHAP<pol> pollutant
 
 C.............  Local variables
-            INTEGER    L            
+            INTEGER    L, J, N, IREC            
 
             LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
             LOGICAL :: EFLAG    = .FALSE.  ! true: error found
