@@ -836,7 +836,7 @@ C..................  Error msg when total HAPs is greater than TOG
                  IF( NONHAP( NDY,K,IHOUR ) < 0.0 ) THEN
                     WRITE( MESG, 94010 )'ERROR: Toal sum of HAPs is '//
      &                 'greater then CAP TOG emission on ' // PDATE //
-     &                 ' at time ::', IHOUR 
+     &                 ' at timestep ::', IHOUR 
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                  END IF
 
