@@ -157,7 +157,7 @@ C...........   Other local variables
         CHARACTER(300) :: MESG   = ' '    ! message buffer
 
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
-        CHARACTER(POLLEN3) CDAT      ! tmp data name
+        CHARACTER(CASLEN3) CDAT      ! tmp data name
         CHARACTER(CHRLEN3) CHAR4     ! tmp characteristic 4
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID
