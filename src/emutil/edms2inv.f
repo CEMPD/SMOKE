@@ -193,7 +193,6 @@ C.......  Other local variables
       CHARACTER(256)  MESG                ! message buffer
 
       CHARACTER(IOVLEN3)  POLNAM          ! tmp pollutant name
-      CHARACTER(IOVLEN3)  FPOLNAM         ! full pollutant name
       CHARACTER(IOVLEN3)  LPOLNAM         ! tmp previous pollutant name
       
       CHARACTER(16) :: PROGNAME = 'EDMS2INV' ! program name
@@ -660,7 +659,6 @@ C...........  Initialize values before reading file
           IREC   = 0
           NPFLAG = .TRUE.
           POLNAM = ' '
-          FPOLNAM= ' '
           PDATE  = ' '
           TDATE  = ' '
           ALLVAL = 0.0
@@ -712,8 +710,6 @@ C.....................  One cond:1st pol has to be THC to reduce usage of memory
 
 C...................  look for pol names in a list of pols
                   POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
-                  IF( POS > 0 ) FPOLNAM = ITNAMA( POS )
-
                   IF( POS < 1 ) THEN
                       MESG = 'ERROR: Pollutant ' // TRIM( POLNAM )//
      &                       ' is not found in the INVTABLE file.'
@@ -801,8 +797,7 @@ C.......................  Skip any zero daily total
                         WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
      &                   APRTID( J ),LOCID( J ), HEIGHT( J ), POLNAM,
      &                   PDATE, TZONE, 
-     &                   ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J ),
-     &                   FPOLNAM
+     &                   ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J )
                       END IF
                   END DO
 
@@ -884,8 +879,7 @@ C...............  Skip any zero daily total
               IF( POLNAM /= 'TOG' ) THEN 
                 WRITE( DDEV,93020 ) STATE( J ), COUNTY(J), APRTID(J),
      &            LOCID( J ),HEIGHT( J ), POLNAM, TDATE, TZONE,
-     &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
-     &            FPOLNAM
+     &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J )
               END IF
 
               CDATE( NDY ) = TDATE    ! Store current date 
@@ -916,10 +910,8 @@ C...........  Adding new pollutants
 C.......  Write out computed NONHAPTOG = TOG - total HAPs
       IF( LHAP > 0 ) THEN
           POLNAM  = 'NONHA'
-          FPOLNAM = 'NONHAPTOG'
       ELSE
           POLNAM  = 'TOG'
-          FPOLNAM = 'TOG'
       END IF
 
       NOUTVAR = NOUTVAR + 1
@@ -944,8 +936,7 @@ C...............  Skip any zero daily total
 
               WRITE( DDEV,93020 ) STATE(J), COUNTY(J), APRTID( J ),
      &            LOCID( J ),HEIGHT( J ), POLNAM, CDATE( I ), TZONE,
-     &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
-     &            FPOLNAM
+     &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J )
           END DO
       END DO
 
@@ -979,8 +970,7 @@ C.......  Formatted file I/O formats...... 93xxx
 93010 FORMAT( I2.2,I3.3,',"',A,'","',I5,'","',I10,'",,"","',A10,
      &        '",,,"',I10,'",,,,,,,,"L",',F9.4,',',F9.4,',',I2,
      &        ',"',A,'",,,,,,,,,,,,,,,,,,' )
-93020 FORMAT(I2.2, I3.3, A15, 2I12,12X, A5, A8, A3, 24E7.1,E8.2,1X,A10,
-     &       1X,A16)
+93020 FORMAT(I2.2, I3.3, A15, 2I12,12X, A5, A8, A3, 24E7.1,E8.2,1X,A10)
 
 C.......  Internal buffering formats...... 94xxx
 94010 FORMAT( 10 ( A, :, I8, :, 2X  ) )
