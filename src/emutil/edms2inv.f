@@ -39,8 +39,8 @@ C***********************************************************************
 C.......  MODULES
       USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, CNTYTZNM
 
-      USE MODLISTS, ONLY: INVSTAT, MXIDAT, INVDNAM, INVDVTS,
-     &                    ITMSPC, ITEXPL, ITNAMA, NINVTBL
+      USE MODLISTS, ONLY: ITMSPC, ITCASA, ITVTSA, ITEXPL, ITNAMA,
+     &                    NINVTBL
 
 
       IMPLICIT NONE
@@ -145,7 +145,6 @@ C.......  Other local variables
       INTEGER         MXFILES             ! Max number of input files listed in FILELIST
       INTEGER         UTMZONE             ! airport UTM zone
       INTEGER         SEGS                ! number of x, y segments
-      INTEGER         RAWPOS              ! raw position in INVDNAM array
       INTEGER         POS                 ! position in INVDNAM array
 
       REAL            DAYTOT              ! Daily total emission
@@ -194,6 +193,7 @@ C.......  Other local variables
       CHARACTER(256)  MESG                ! message buffer
 
       CHARACTER(IOVLEN3)  POLNAM          ! tmp pollutant name
+      CHARACTER(IOVLEN3)  FPOLNAM         ! full pollutant name
       CHARACTER(IOVLEN3)  LPOLNAM         ! tmp previous pollutant name
       
       CHARACTER(16) :: PROGNAME = 'EDMS2INV' ! program name
@@ -608,7 +608,6 @@ C.......  Look up time zone based on state and county
       TZONE = CNTYTZNM( K )
 
 C.......  Write hourly inventory header
-      WRITE( DDEV,93000 ) '#EMS-95'
       WRITE( DDEV,93000 ) '#TYPE    Hourly Airport EDMS Inventory'
       WRITE( DDEV,93000 ) '#COUNTRY US'
 
@@ -657,11 +656,11 @@ C...........  Open input file
 
 C...........  Initialize values before reading file
           NDY    = 1
-          RAWPOS = 0
           POS    = 0
           IREC   = 0
           NPFLAG = .TRUE.
           POLNAM = ' '
+          FPOLNAM= ' '
           PDATE  = ' '
           TDATE  = ' ' 
 
@@ -711,14 +710,15 @@ C.....................  One cond:1st pol has to be THC to reduce usage of memory
                   IF( POLNAM == 'PM25' ) POLNAM = 'PM2_5'
 
 C...................  look for pol names in a list of pols
-                  POS  = INDEX1( POLNAM, MXIDAT, INVDNAM )
+                  POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
+
+                  IF( POS > 0 ) FPOLNAM = ITNAMA( POS )
+
                   IF( POS < 1 ) THEN
                       MESG = 'ERROR: Pollutant ' // TRIM( POLNAM )//
      &                       ' is not found in the INVTABLE file.'
                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                   END IF
-
-                  RAWPOS = INDEX1( POLNAM, NINVTBL, ITNAMA )
 
               END IF
 
@@ -798,12 +798,11 @@ C.......................  Skip any zero daily total
                       IF( DAYTOT == 0.0 ) CYCLE 
 
                       IF( POLNAM /= 'TOG' ) THEN 
-c bbh                     IF( ITMSPC(RAWPOS) .OR. INVDVTS(POS)=='N') THEN  
                         WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
      &                   APRTID( J ),LOCID( J ), HEIGHT( J ), POLNAM,
      &                   PDATE, TZONE, 
-     &                   ( ALLVAL(J,K), K = 1,24 ), DAYTOT, TSCC( J )
-c bbh                     END IF
+     &                   ( ALLVAL(J,K), K = 1,24 ), DAYTOT, TSCC( J ),
+     &                   FPOLNAM
                       END IF
                   END DO
 
@@ -819,9 +818,8 @@ C...............  Store output values : convert metric g/sec to short tons/hr
               ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
      &                              * 0.003968254 * AREA( K )
 
-C..............  Conversion THC and all HAPs (g in CH4) to (g in C)
-C                0.947 = mass conv factor (0.865) * 1.0947 (THC to VOC)
-              IF( INVDVTS(POS)=='V' .OR. INVDVTS(POS)=='T' )THEN
+C..............  Conversion all HAPs (g in CH4) to (g in C)
+              IF( ITVTSA(POS)=='V' .OR. ITVTSA(POS)=='T' )THEN
                   ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.947
 
                   IF( POLNAM /= LPOLNAM ) THEN
@@ -847,12 +845,18 @@ C............... Convert NO emission in NO2 equivalcy to NO equivalency (33/40)
 
               END IF
 
-C...............  Convert TOG(g in C) = 1.148106 * VOC(g in C) 
+C...............  Convert THC(g in CH4) to TOG(g in C) 
 C                 Note: This conversion factor 1.148106 is based on
 C                 GSPRO #1098 for SCC 227502000 only.
 C...............  Store converted TOG (THC-->TOG) to NONHAP(:,:,:) initially
               IF( POLNAM == 'TOG' ) THEN
+
+C................... 0.947 = mass conv factor (0.865) * 1.0947 (THC to VOC)
+                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.947  !CH4 to C
+
+C...............  Convert TOG(g in C) = 1.148106 * VOC(g in C) 
                   ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 1.148106
+
                   NONHAP( NDY, K, IHOUR ) = ALLVAL( K, IHOUR )
               END IF
 
@@ -877,11 +881,10 @@ C...............  Skip any zero daily total
               IF( DAYTOT == 0.0 ) CYCLE
 
               IF( POLNAM /= 'TOG' ) THEN 
-c bbh              IF( ITMSPC(RAWPOS) .OR. INVDVTS(POS)=='N')THEN  
                 WRITE( DDEV,93020 ) STATE( J ), COUNTY(J), APRTID(J),
      &            LOCID( J ),HEIGHT( J ), POLNAM, TDATE, TZONE,
-     &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J )
-c bbh             END IF
+     &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
+     &            FPOLNAM
               END IF
 
               CDATE( NDY ) = TDATE    ! Store current date 
@@ -938,7 +941,8 @@ C...............  Skip any zero daily total
 
               WRITE( DDEV,93020 ) STATE(J), COUNTY(J), APRTID( J ),
      &            LOCID( J ),HEIGHT( J ), POLNAM, CDATE( I ), TZONE,
-     &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J )
+     &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
+     &            FPOLNAM
           END DO
       END DO
 
@@ -972,7 +976,8 @@ C.......  Formatted file I/O formats...... 93xxx
 93010 FORMAT( I2.2,I3.3,',"',A,'","',I5,'","',I10,'",,"","',A10,
      &        '",,,"',I10,'",,,,,,,,"L",',F9.4,',',F9.4,',',I2,
      &        ',"',A,'",,,,,,,,,,,,,,,,,,' )
-93020 FORMAT( I2.2, I3.3, A15, 2I12,12X, A5, A8, A3, 24E7.1,E8.2,1X,A10)
+93020 FORMAT(I2.2, I3.3, A15, 2I12,12X, A5, A8, A3, 24E7.1,E8.2,1X,A10,
+     &       1X,A16)
 
 C.......  Internal buffering formats...... 94xxx
 94010 FORMAT( 10 ( A, :, I8, :, 2X  ) )
