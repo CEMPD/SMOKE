@@ -115,7 +115,7 @@ C.......  File units and logical names
       INTEGER      :: PDEV = 0            ! unit number for inventory data table
 
 C.......  Other local variables
-      INTEGER         I, J, K, L, L1, M  ! counters and indices
+      INTEGER         I, J, K, L, L1, M, T ! counters and indices
       INTEGER         IOS                 ! i/o status
       INTEGER         IREC                ! line counter
       INTEGER         IHOUR               ! current time step
@@ -662,7 +662,8 @@ C...........  Initialize values before reading file
           POLNAM = ' '
           FPOLNAM= ' '
           PDATE  = ' '
-          TDATE  = ' ' 
+          TDATE  = ' '
+          ALLVAL = 0.0
 
 C...........  Read through input file          
           DO
@@ -711,7 +712,6 @@ C.....................  One cond:1st pol has to be THC to reduce usage of memory
 
 C...................  look for pol names in a list of pols
                   POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
-
                   IF( POS > 0 ) FPOLNAM = ITNAMA( POS )
 
                   IF( POS < 1 ) THEN
@@ -790,8 +790,8 @@ C.......................  Writing current processing hour message
                       DAYTOT = 0.0
 
 C.......................  compute daily total by summing 24hrs hourly emis
-                      DO K = 1, 24
-                          DAYTOT = DAYTOT + ALLVAL( J,K )
+                      DO T = 1, 24
+                          DAYTOT = DAYTOT + ALLVAL( J,T )
                       END DO
 
 C.......................  Skip any zero daily total
@@ -801,7 +801,7 @@ C.......................  Skip any zero daily total
                         WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
      &                   APRTID( J ),LOCID( J ), HEIGHT( J ), POLNAM,
      &                   PDATE, TZONE, 
-     &                   ( ALLVAL(J,K), K = 1,24 ), DAYTOT, TSCC( J ),
+     &                   ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J ),
      &                   FPOLNAM
                       END IF
                   END DO
@@ -834,9 +834,10 @@ C                     to compute NONHAPTOG
 
 C..................  Error msg when total HAPs is greater than TOG
                  IF( NONHAP( NDY,K,IHOUR ) < 0.0 ) THEN
-                      MESG = 'ERROR: Toal sum of HAPs is greater ' //
-     &                       'then CAP TOG emission.'
-                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    WRITE( MESG, 94010 )'ERROR: Toal sum of HAPs is '//
+     &                 'greater then CAP TOG emission on ' // PDATE //
+     &                 ' at time ::', IHOUR 
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                  END IF
 
 C............... Convert NO emission in NO2 equivalcy to NO equivalency (33/40)
@@ -914,9 +915,11 @@ C...........  Adding new pollutants
 
 C.......  Write out computed NONHAPTOG = TOG - total HAPs
       IF( LHAP > 0 ) THEN
-          POLNAM = 'NONHAPTOG'
+          POLNAM  = 'NONHA'
+          FPOLNAM = 'NONHAPTOG'
       ELSE
-          POLNAM = 'TOG'
+          POLNAM  = 'TOG'
+          FPOLNAM = 'TOG'
       END IF
 
       NOUTVAR = NOUTVAR + 1
