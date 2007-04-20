@@ -40,7 +40,7 @@ C.......  MODULES
       USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, CNTYTZNM
 
       USE MODLISTS, ONLY: ITMSPC, ITCASA, ITVTSA, ITEXPL, ITNAMA,
-     &                    NINVTBL
+     &                    NINVTBL, MXIDAT, INVDNAM
 
 
       IMPLICIT NONE
@@ -193,6 +193,7 @@ C.......  Other local variables
       CHARACTER(256)  MESG                ! message buffer
 
       CHARACTER(IOVLEN3)  POLNAM          ! tmp pollutant name
+      CHARACTER(IOVLEN3)  FPOLNAM         ! tmp full pollutant name
       CHARACTER(IOVLEN3)  LPOLNAM         ! tmp previous pollutant name
       
       CHARACTER(16) :: PROGNAME = 'EDMS2INV' ! program name
@@ -659,6 +660,7 @@ C...........  Initialize values before reading file
           IREC   = 0
           NPFLAG = .TRUE.
           POLNAM = ' '
+          FPOLNAM= ' '
           PDATE  = ' '
           TDATE  = ' '
           ALLVAL = 0.0
@@ -687,29 +689,36 @@ C...............  Read name for current pollutant
                   POLNAM = ADJUSTL( LINE( L+10:L+50 ) )
                   L1 = LEN_TRIM( POLNAM )
 
+C...................  One cond:1st pol has to be THC to reduce usage of memory
+                  IF( I == 1 ) THEN
+                      IF( POLNAM /= 'THC' ) THEN
+                          MESG = 'ERROR: You MUST process THC first '
+     &                         // 'before processing other pollutants.'
+                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                      END IF
+                  END IF
+
                   IF( POLNAM == 'VOC' ) THEN
                       MESG = 'ERROR: Can not process VOC BUT can ' //
      &                    'convert THC to VOC.'
                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
+C...................  One cond:1st pol has to be THC to reduce usage of memory
                   ELSE IF( POLNAM == 'THC' ) THEN
-C.....................  One cond:1st pol has to be THC to reduce usage of memory
                       IF( I == 1 ) THEN
                           MESG = 'NOTE: Pollutant THC is internally ' //
      &                        'converted to TOG.'
                           CALL M3MSG2( MESG )
                           POLNAM = 'TOG'
-                      ELSE
-                          MESG = 'ERROR: You MUST process THC first '
-     &                        // 'before processing other pollutants.'
-                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                       END IF
                   END IF
 
                   IF( POLNAM == 'PM25' ) POLNAM = 'PM2_5'
 
 C...................  look for pol names in a list of pols
-                  POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
+C                  POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
+                  POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
+                  FPOLNAM = ITCASA( POS )
                   IF( POS < 1 ) THEN
                       MESG = 'ERROR: Pollutant ' // TRIM( POLNAM )//
      &                       ' is not found in the INVTABLE file.'
@@ -797,7 +806,8 @@ C.......................  Skip any zero daily total
                         WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
      &                   APRTID( J ),LOCID( J ), HEIGHT( J ), POLNAM,
      &                   PDATE, TZONE, 
-     &                   ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J )
+     &                   ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J ),
+     &                   FPOLNAM
                       END IF
                   END DO
 
@@ -879,7 +889,8 @@ C...............  Skip any zero daily total
               IF( POLNAM /= 'TOG' ) THEN 
                 WRITE( DDEV,93020 ) STATE( J ), COUNTY(J), APRTID(J),
      &            LOCID( J ),HEIGHT( J ), POLNAM, TDATE, TZONE,
-     &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J )
+     &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
+     &            FPOLNAM
               END IF
 
               CDATE( NDY ) = TDATE    ! Store current date 
@@ -910,8 +921,10 @@ C...........  Adding new pollutants
 C.......  Write out computed NONHAPTOG = TOG - total HAPs
       IF( LHAP > 0 ) THEN
           POLNAM  = 'NONHA'
+          FPOLNAM = 'NONHAPTOG'
       ELSE
           POLNAM  = 'TOG'
+          FPOLNAM = 'TOG'
       END IF
 
       NOUTVAR = NOUTVAR + 1
@@ -936,7 +949,8 @@ C...............  Skip any zero daily total
 
               WRITE( DDEV,93020 ) STATE(J), COUNTY(J), APRTID( J ),
      &            LOCID( J ),HEIGHT( J ), POLNAM, CDATE( I ), TZONE,
-     &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J )
+     &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
+     &            FPOLNAM
           END DO
       END DO
 
@@ -970,7 +984,8 @@ C.......  Formatted file I/O formats...... 93xxx
 93010 FORMAT( I2.2,I3.3,',"',A,'","',I5,'","',I10,'",,"","',A10,
      &        '",,,"',I10,'",,,,,,,,"L",',F9.4,',',F9.4,',',I2,
      &        ',"',A,'",,,,,,,,,,,,,,,,,,' )
-93020 FORMAT(I2.2, I3.3, A15, 2I12,12X, A5, A8, A3, 24E7.1,E8.2,1X,A10)
+93020 FORMAT(I2.2, I3.3, A15, 2I12,12X, A5, A8, A3, 24E7.1,E8.2,1X,A10,
+     &       1X, A16)
 
 C.......  Internal buffering formats...... 94xxx
 94010 FORMAT( 10 ( A, :, I8, :, 2X  ) )
