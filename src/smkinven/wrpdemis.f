@@ -1,7 +1,7 @@
 
         SUBROUTINE WRPDEMIS( DAYFLAG, JDATE, JTIME, TIDX, NPDSRC, NVAR,
-     &                       NVASP, FNAME, PFLAG, EAIDX, SPIDX, PDIDX,
-     &                       PDDATA, EFLAG )
+     &                       NVASP, FNAME, PFLAG, EAIDX, SPIDX, 
+     &                       LASTSTEP, PDIDX, PDDATA, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -47,10 +47,10 @@ C.........  This module contains the information about the source category
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: PDTOTL, NPDPT, IDXSRC, SPDIDA, CODEA,
-     &                      EMISVA, DYTOTA
+     &                      EMISVA, DYTOTA, CIDXA
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: FIREFLAG
+        USE MODLISTS, ONLY: FIREFLAG, NUNIQCAS, UNIQCAS
 
         IMPLICIT NONE
 
@@ -81,19 +81,21 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT  (IN) :: PFLAG                ! true: gen profiles
         INTEGER     , INTENT  (IN) :: EAIDX( NVAR )        ! pol/act index
         INTEGER     , INTENT  (IN) :: SPIDX( MXSPDAT )     ! special var index
+        LOGICAL     , INTENT  (IN) :: LASTSTEP             ! true: last timestep
         INTEGER     , INTENT (OUT) :: PDIDX ( NPDSRC )     ! sparse src index
         REAL        , INTENT (OUT) :: PDDATA( NPDSRC,NVASP)! sparse data storage
         LOGICAL     , INTENT (OUT) :: EFLAG                ! true: error found
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: EAIDX2( : )    ! reverse index for EAIDX
+        INTEGER, ALLOCATABLE, SAVE :: IDNNOTE( : )   ! flag to note for Inventory Data names renamed to same SMOKE data name
         LOGICAL, ALLOCATABLE, SAVE :: NOMISS( :,: )
 
 C...........   Local arrays
         INTEGER, ALLOCATABLE, SAVE :: SPIDX2( : )
 
 C...........   Other local variables
-        INTEGER          I, J, K, L2, LS, S, V, V2
+        INTEGER          I, J, K, L2, LN, LS, N, S, V, V2
 
         INTEGER          IOS                  ! i/o status
         INTEGER, SAVE :: NWARN = 0            ! warning count
@@ -101,13 +103,17 @@ C...........   Other local variables
         INTEGER, SAVE :: MXWARN               ! max no. warnings
         INTEGER          NOUT                 ! tmp no. sources per time step
 
+        LOGICAL       :: DUPFLAG  = .FALSE.  ! true: record is an actual duplicate
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
         LOGICAL, SAVE :: HOURFLAG = .FALSE.  ! true: hour-spec
         LOGICAL, SAVE :: DFLAG    = .FALSE.  ! true: error on duplicates
         LOGICAL, SAVE :: LFLAG    = .FALSE.  ! true: iteration on special var
 
+        CHARACTER(6  )   TYPE             ! "Hourly" or "Daily"
         CHARACTER(256)   BUFFER           ! src description buffer
         CHARACTER(300)   MESG             ! message buffer
+        CHARACTER(CASLEN3) IDNAM          ! tmp Inventory Data Name
+        CHARACTER(IOVLEN3) SMKNAM         ! tmp SMOKE name
 
         CHARACTER(16) :: PROGNAME = 'WRPDEMIS' !  program name
 
@@ -154,6 +160,12 @@ C.............  Create reverse index for special variables
                 IF( K .GT. 0 ) SPIDX2( K ) = V       
             END DO
 
+C.............  Create warning array for apparent duplicates
+            IF (ALLOCATED (IDNNOTE)) DEALLOCATE (IDNNOTE)
+            ALLOCATE( IDNNOTE(NUNIQCAS), STAT=IOS )
+            CALL CHECKMEM( IOS, 'IDNNOTE', PROGNAME )
+            IDNNOTE = 0  ! Array
+
             FIRSTIME = .FALSE.
             IF( .NOT. DAYFLAG ) HOURFLAG = .TRUE.
 
@@ -163,17 +175,26 @@ C.............  Create reverse index for special variables
         PDDATA = BADVAL3  ! array (emissions/activities)
         PDTOTL = BADVAL3  ! array (total daily emissions/activities)
 
-C.........  Sort sources for current time step
-        CALL SORTI1( NPDPT( TIDX ), IDXSRC( 1,TIDX ), SPDIDA( 1,TIDX ) )
+C.........  Sort sources & inventory data codes for current time step
+C.........  Added CIDXA into sorting in SMOKE 2.3.2 to handle now using
+C           inventory data codes instead of SMOKE pollutant codes only.
+C           Want to prevent false duplicates caused by Inventory Table renaming 
+C           multiple Inventory Data Code (i.e., CAS numbers) to the same
+C           SMOKE name.  These are not really duplicates and should be
+C           ignored by the warning messages below.
+        CALL SORTI2( NPDPT( TIDX ), IDXSRC( 1,TIDX ), 
+     &               SPDIDA( 1,TIDX ), CIDXA( 1,TIDX ) )
 
 C.........  Store sorted records for this hour
         LS = 0  ! previous source
+        LN = -9 ! previous Inventory Data Code position in UNIQCAS
         K  = 0
         DO I = 1, NPDPT( TIDX )
 
             J = IDXSRC( I,TIDX )
             S = SPDIDA( J,TIDX )
             V = CODEA ( J,TIDX )
+            N = CIDXA ( J,TIDX )
 
 C.............  Intialize as not a special data variable (e.g., not flow rate)
             LFLAG = .FALSE.
@@ -197,11 +218,18 @@ C.............  Otherwise, set index for period-specific pollutant or activity
 
             END IF
 
+C.............  Initialize duplicates flag
+            DUPFLAG = .FALSE.
+
 C.............  If current source is not equal to previous source
             IF( S .NE. LS ) THEN
                 K = K + 1
                 PDIDX( K ) = S
                 LS         = S
+
+C.............  If source is the same, look for duplicate data variables
+            ELSE IF ( N .EQ. LN ) THEN
+                DUPFLAG = .TRUE.      !  This iteration has a duplicate
             END IF
 
 C.............  If emissions are not yet set for current source and variable
@@ -219,29 +247,44 @@ C.............  Otherwise, sum emissions, report, and set error if needed
                 IF( .NOT. LFLAG .AND. DYTOTA( J,TIDX ) .GE. 0. )
      &              PDTOTL( K,V )  = PDTOTL( K,V ) + DYTOTA( J,TIDX )
 
-                CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+C.................  If the source is an actual duplicate (the same source
+C                   and Inventory Data Name), proceed accordingly.  Do
+C                   not write warnings for Inventory Data Names that
+C                   are combined into the same SMOKE name.
+                IF ( DUPFLAG ) THEN
+                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                 
-                IF( DFLAG ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Duplicate source in inventory:'//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-                    CYCLE
-                ELSE IF ( LFLAG ) THEN
-                    MESG = 'WARNING: Duplicate source in ' //
-     &                     'inventory. Will store only one value '//
-     &                     'for '// CRLF()// BLANK10// SPDATDSC( V2 )//
-     &                     ':' // CRLF() // BLANK10 // BUFFER( 1:L2 )
-                    
+                    IF( DFLAG ) THEN
+                        EFLAG = .TRUE.
+                        MESG = 'ERROR: Duplicate source in inventory:'//
+     &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                        CYCLE
+                    ELSE IF ( LFLAG ) THEN
+                        MESG = 'WARNING: Duplicate source in ' //
+     &                         'inventory. Will store only one value '//
+     &                         'for '// CRLF()// BLANK10//SPDATDSC(V2)//
+     &                         ':' // CRLF() // BLANK10 // BUFFER(1:L2)
+                    ELSE
+                        MESG = 'WARNING: Duplicate source in ' //
+     &                         'inventory will have summed emissions:' 
+     &                         //CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3MESG( MESG )
+                    END IF
+
+C.................  If multiple entries for this K, V then record for later
+C                   note on this Inventory Data Name.  This section is 
+C                   encountered only if multiple Inventory Date Names
+C                   for this source/hour stored as same SMOKE name.
                 ELSE
-                    MESG = 'WARNING: Duplicate source in ' //
-     &                     'inventory will have summed emissions:' 
-     &                     //CRLF() // BLANK10 // BUFFER( 1:L2 )
-                    CALL M3MESG( MESG )
-                END IF
+                    IDNNOTE( N ) = V 
+
+                END IF   !  If duplicate or not
             END IF
 
-        END DO
+            LN = N  ! Set LN for next iteration
+
+        END DO  ! End loop over data for this time step
 
 C.........  Set tmp variable for loops
         NOUT = K
@@ -324,6 +367,22 @@ C.........  Write emissions for this time step
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
         END IF        
+
+C.........  If this is the last time step, then write notes
+        IF( LASTSTEP ) THEN
+            TYPE = 'Hourly'
+            IF( DAYFLAG ) TYPE = 'Daily' 
+            DO I = 1, NUNIQCAS
+                IF( IDNNOTE( I ) .GT. 0 ) THEN
+                    IDNAM = UNIQCAS( I )
+                    SMKNAM = EANAM( IDNNOTE( I ) )
+                    MESG= 'NOTE: '//TRIM( TYPE )// ' inventory data "'//
+     &                    TRIM( IDNAM ) // '" summed with other '//
+     &                    'pollutants to compute "'//TRIM(SMKNAM)//'".'
+                    CALL M3MSG2( MESG )
+                END IF
+            END DO
+        END IF
  
         RETURN
 

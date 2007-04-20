@@ -45,14 +45,16 @@ C.........  This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, CSOURC
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVTBL, ITNAMA, ITCASA
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVTBL, ITFACA, ITNAMA,
+     &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS,
+     &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NSRC, EANAM, NCHARS
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT, LPDSRC, NPDPT, IDXSRC, SPDIDA,
-     &                      CODEA, EMISVA, DYTOTA
+     &                      CODEA, EMISVA, DYTOTA, CIDXA
 
         IMPLICIT NONE
 
@@ -103,6 +105,10 @@ C...........   Local list of FIPS start/end positions to facilitate
 C              faster lookups
         INTEGER, ALLOCATABLE, SAVE :: STARTSRC( : )
         INTEGER, ALLOCATABLE, SAVE :: ENDSRC( : )
+
+C...........   Local list of arrays for warning handling
+        LOGICAL, ALLOCATABLE, SAVE :: WARNKEEP( : ) ! true: write warning for Keep = N
+        LOGICAL, ALLOCATABLE, SAVE :: WARNMULT( : ) ! true: write warning for Multiple pollutants from a single pollutant in Inventory Table
         
 C...........   Temporary read arrays
         REAL            TDAT( 24 )       ! temporary data values
@@ -111,6 +117,7 @@ C...........   Other local variables
         INTEGER          H, HS, I, J, L, L1, L2, S, T    ! counters and indices
         INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
+        INTEGER          CIDX             ! tmp data index
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
         INTEGER          FIP              ! tmp co/st/cy code
@@ -130,10 +137,12 @@ C...........   Other local variables
         INTEGER, SAVE :: NFM1   = 0       ! number of data fields minus 1
         INTEGER       :: NPOA   = 0       ! unused header number of pol/act
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
-        INTEGER, SAVE :: NWARN( 3 )       ! warnings counter
+        INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
         INTEGER          PTR              ! tmp time step pointer
         INTEGER       :: RDATE = 1980001  ! reference date: Jan 1, 1980
         INTEGER       :: RTIME = 0        ! reference time
+        INTEGER, SAVE :: S1 = 0           ! saved 1st position of extra field
+        INTEGER, SAVE :: S2 = 0           ! saved 2nd position of extra field
         INTEGER, SAVE :: SDATESAV = 0     ! saved start date
         INTEGER, SAVE :: STIMESAV = 0     ! saved start time
         INTEGER, SAVE :: TDIVIDE  = 1     ! time step divisor
@@ -142,6 +151,7 @@ C...........   Other local variables
         INTEGER       :: YR4 = 0          ! unused header year
         INTEGER          ZONE             ! source time zones
 
+        REAL             CONVFAC          ! tmp conversion factor from Inventory Table
         REAL             TOTAL            ! tmp daily total of hourly file
 
         LOGICAL, SAVE :: DFLAG = .FALSE.  ! true: dates set by data
@@ -151,13 +161,15 @@ C...........   Other local variables
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
+        LOGICAL, SAVE :: NFLAG  = .FALSE. ! true: Special pollutant name field used on that line
 
         CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(300) :: LINE   = ' '    ! line buffer 
-        CHARACTER(300) :: MESG   = ' '    ! message buffer
+        CHARACTER(512) :: MESG   = ' '    ! message buffer
 
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
-        CHARACTER(CASLEN3) CDAT      ! tmp data name
+        CHARACTER(CASLEN3) CDAT      ! tmp Inventory data (input) name
+        CHARACTER(IOVLEN3) CNAM      ! tmp SMOKE name
         CHARACTER(CHRLEN3) CHAR4     ! tmp characteristic 4
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID
@@ -247,8 +259,12 @@ C.............  Set time step divisor
 C.............  Set the number of fields, depending on day- or hour-specific
             IF( DAYFLAG ) THEN
                 NFIELD = 1
+                S1 = 103   ! special pollutant field start position
+                S2 = 118   ! special pollutant field end position
             ELSE
                 NFIELD  = 24
+                S1 = 261
+                S2 = 276
             END IF
             NFM1   = NFIELD - 1
 
@@ -268,6 +284,15 @@ C               this means it is the first call or daily or hourly)
             IF( GETSIZES ) LOOPNO = 0
             LOOPNO = LOOPNO + 1
             WARNOUT = ( LOOPNO .EQ. 1 )
+
+C.............  Deallocate warning arrays
+            IF( ALLOCATED( WARNKEEP ) ) DEALLOCATE( WARNKEEP, WARNMULT )
+            ALLOCATE( WARNKEEP( NUNIQCAS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'WARNKEEP', PROGNAME )
+            ALLOCATE( WARNMULT( NUNIQCAS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'WARNMULT', PROGNAME )
+            WARNKEEP = .TRUE.
+            WARNMULT = .TRUE.
 
         END IF
 
@@ -289,6 +314,10 @@ C.............  Read first line of file
 
 C.............  Skip blank lines 
             IF( L .EQ. 0 ) CYCLE
+
+C.............  Determine whether special pollutant field is used
+            NFLAG = .FALSE.
+            IF ( L .GT. S1 ) NFLAG = .TRUE.
 
 C.............  Scan for header lines and check to ensure all are set
 C               properly
@@ -316,8 +345,8 @@ C               same file.
 C.............  If the file is hourly but the only the daily is to be read, then
 C               behave as if it is a daily file.
             IF( DAYFLAG .AND. 
-     &             ( L .GT. 101 .AND. .NOT. SFLAG ) .OR.
-     &             ( L .LE. 101 .AND.       SFLAG )      ) THEN
+     &             ( L .GT. S2  .AND. .NOT. SFLAG ) .OR.  ! line longer that allowed
+     &             ( L .LE. 101 .AND.       SFLAG )      ) THEN    ! line shorter than allowed
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: bad format or daily ' //
      &                 'data found in day-specific file at line', IREC
@@ -396,45 +425,122 @@ C.............  Store maximum time step number as compared to reference
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
 C.............  Check pollutant code and set index I
-            CDAT = ADJUSTL( LINE( 57:61 ) )
+C.............  First, check special pollutant field to see if it's filled in
+            IF( NFLAG ) THEN
+               CDAT = ADJUSTL( LINE( S1:S2 ) )
 
-C.............  Conver CAS number to pollutant names if available
-            I = INDEX1( CDAT, NINVTBL, ITCASA )
-            IF( I > 0 ) CDAT = ITNAMA( I )
+C.............  Otherwise, use original pollutant field
+            ELSE
+               CDAT = ADJUSTL( LINE( 57:61 ) )
+            END IF
+
+C.............  Look up pollutant name in unique sorted array of
+C               Inventory pollutant names
+            CIDX  = FINDC( CDAT, NUNIQCAS, UNIQCAS )
 
 C.............  Check to see if data name is in inventory list
             COD  = INDEX1( CDAT, NIPPA, EANAM )
 
-            IF ( COD .LE. 0 ) THEN
+C.............  If pollutant name is not in Inventory Table list
+            IF ( CIDX .LE. 0 ) THEN
 
 C.................  Check to see if data name is in list of special names
-                COD = INDEX1( CDAT, MXSPDAT, SPDATNAM )
+                CIDX= INDEX1( CDAT, MXSPDAT, SPDATNAM )
 
-                IF ( COD .LE. 0 ) THEN
+C.................  Store status of special data and flag code with
+C                   special integer so can ID these records later.
+                IF( CIDX .GT. 0 ) THEN
+                    SPSTAT( COD ) = .TRUE.
+                    COD = CODFLAG3 + COD
 
-                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
-                        L = LEN_TRIM( CDAT )
-                        WRITE( MESG,94010 ) 
+C................  If not in list of special names, check to see
+C                  if it's a SMOKE pollutant name (intermediate name)
+                ELSE IF ( CIDX .LE. 0 ) THEN
+
+                    CIDX= INDEX1( CDAT, NIPPA, EANAM )
+
+                    L = LEN_TRIM( CDAT )
+
+C....................  If a SMOKE pollutant name, write out warning message
+C                      accordingly.
+                    IF( CIDX .GT. 0 . AND.
+     &                  WARNOUT .AND. NWARN( 4 ) .LE. MXWARN ) THEN
+                        WRITE( MESG,94010 )
      &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
-     &                   '" at line', IREC, '- not in inventory'
+     &                   '" at line', IREC, '- incorrect use of '//
+     &                   'Inventory Data Name instead of Inventory '//
+     &                   'Pollutant Code.'
+                        CALL M3MESG( MESG )
+                        NWARN( 4 ) = NWARN( 4 ) + 1
+
+C....................  Otherwise, if not in any list, write out warning
+                    ELSE IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
+     &                   '" at line', IREC, '- not in Inventory Table'
                         CALL M3MESG( MESG )
                         NWARN( 2 ) = NWARN( 2 ) + 1
                     END IF
                     CYCLE      !  to head of loop
 
-C.................  Otherwise, store status of special data and flag code with
-C                   special integer so can ID these records later.
-                ELSE
-                    SPSTAT( COD ) = .TRUE.
-                    COD = CODFLAG3 + COD
-
                 END IF
 
-C.............  If it is, store status of inventory data
-            ELSE 
-                EASTAT( COD ) = .TRUE.
+C.............  Otherwise, pollutant is in list of Inventory Data Names
+            ELSE
 
-            END IF
+C.................  Write warning if pollutant is not kept.  Write only
+C                   one time.
+               IF( UCASNKEP(CIDX) .LE. 0 .AND. WARNKEEP(CIDX) ) THEN
+                   WARNKEEP( CIDX ) = .FALSE.
+                   IF( GETSIZES ) THEN 
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping all lines for pollutant "'//
+     &                   TRIM( CDAT )// '" because pollutant is not '//
+     &                   'kept by Inventory Table.'
+                       CALL M3MESG( MESG )
+                   END IF 
+                   CYCLE
+               ELSE IF ( UCASNKEP(CIDX) .GT. 1 .AND. 
+     &                   WARNMULT(CIDX)              ) THEN
+                   WARNMULT( CIDX ) = .FALSE.
+                   IF( GETSIZES ) THEN 
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping all lines for pollutant "'//
+     &                   TRIM( CDAT )// '" because Inventory Table '//
+     &                   'splits it into',UCASNKEP(CIDX),'pollutants.'//
+     &                   CRLF()//BLANK10//'The SMOKE code needs to '//
+     &                   'be enhanced to support this approach for '//
+     &                   'day- and hour-specific data.'
+                       CALL M3MESG( MESG )
+                   END IF
+                   CYCLE
+               END IF
+
+C................  Get Inventory Data SMOKE name from Inventory Table arrays/indices
+               CNAM = ITNAMA( SCASIDX( UCASIDX( CIDX ) ) )
+
+C................  Look up SMOKE name in list of annual EI pollutants
+               COD = INDEX1( CNAM, NIPPA, EANAM )
+
+C................  Check to ensure that the SMOKE intermediate name
+C                  set by the Inventory Table is actually in the annual
+C                  inventory.  If not, write warning message and cycle.
+               IF( COD .LE. 0 ) THEN
+                   IF( WARNOUT .AND. NWARN( 5 ) .LE. MXWARN ) THEN
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping pollutant "'// TRIM(CNAM)//
+     &                   '" at line', IREC, '- not in annual inventory.'
+                       CALL M3MESG( MESG )
+                       NWARN( 5 ) = NWARN( 5 ) + 1
+                   END IF
+                   CYCLE
+
+C................  If it's found, then record that this pollutant was found
+               ELSE
+                   EASTAT( COD ) = .TRUE.
+               END IF
+
+            END IF  ! if cidx le 0 or not
 
 C.............  If only getting dates and pollutant information, go 
 C               to next loop iteration
@@ -632,7 +738,7 @@ C                   invoked once.
      &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
                         NWARN( 3 ) = NWARN( 3 ) + 1
-                     END IF
+                    END IF
 
                 END IF
 
@@ -644,6 +750,11 @@ C.............  Otherwise, update master list of sources in the inventory
                 LPDSRC( S ) = .TRUE.
 
             END IF
+
+C.............  Set conversion factor from Inventory Table. Default is
+C               1., which is also what is used in all but a handful of
+C               special toxics cases.
+            CONVFAC = ITFACA( SCASIDX( UCASIDX( CIDX ) ) )
 
 C.............  Record needed data for this source and time step
             H = 0
@@ -658,9 +769,10 @@ C.............  Record needed data for this source and time step
 
                     IDXSRC( HS,T ) = HS
                     SPDIDA( HS,T ) = S
+                    CIDXA ( HS,T ) = CIDX
                     CODEA ( HS,T ) = COD
-                    EMISVA( HS,T ) = TDAT( H )  ! Store data in emissions
-                    DYTOTA( HS,T ) = TOTAL
+                    EMISVA( HS,T ) = CONVFAC * TDAT( H )  ! Store data in emissions
+                    DYTOTA( HS,T ) = CONVFAC * TOTAL
 
                 END IF
 

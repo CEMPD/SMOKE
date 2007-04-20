@@ -52,7 +52,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NCHARS, SC_BEGP, SC_ENDP, NSRC
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: MXPDPT, NPDPT, NPDPTP, CODEA, IDXSRC,
+        USE MODDAYHR, ONLY: MXPDPT, NPDPT, NPDPTP, CODEA, CIDXA, IDXSRC,
      &                      SPDIDA, EMISVA, DYTOTA, LPDSRC,
      &                      PDEMOUT, PDTOTL, NUNFDORS, UNFDORS
 
@@ -124,6 +124,7 @@ C...........   Other local variables
         LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first time routine called
+        LOGICAL       :: LASTSTEP = .FALSE.  ! true: last time step when calling wrpdemis
         LOGICAL, SAVE :: OFLAG    = .FALSE.  ! true: PFLAG & hourly
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: create hourly profiles
         LOGICAL, SAVE :: SFLAG    = .FALSE.  ! true: create daily totals
@@ -198,6 +199,8 @@ C.........  Allocate memory for reading data
         CALL CHECKMEM( IOS, 'NPDPT', PROGNAME )
         ALLOCATE( CODEA ( MXPDSRC,NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CODEA', PROGNAME )
+        ALLOCATE( CIDXA ( MXPDSRC,NSTEPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CIDXA', PROGNAME )
         ALLOCATE( IDXSRC( MXPDSRC,NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXSRC', PROGNAME )
         ALLOCATE( SPDIDA( MXPDSRC,NSTEPS ), STAT=IOS )
@@ -213,6 +216,7 @@ C.........  Initialize arrays
         MXPDPT = 0        ! array
         NPDPT  = 0        ! array
         CODEA  = 0        ! array
+        CIDXA  = 0        ! array
         IDXSRC = 0        ! array
         SPDIDA = 0        ! array
         EMISVA = BADVAL3  ! array
@@ -292,9 +296,10 @@ C.........  Loop through time steps and output emissions and other data
         JTIME = STIME
         DO T = 1, NSTEPS
         
+            LASTSTEP = ( T .EQ. NSTEPS ) 
             CALL WRPDEMIS( DFLAG, JDATE, JTIME, T, NPDSRC, NVAR, NVSP, 
-     &                     ONAME, OFLAG, EAIDX, SPIDX, PDEMOUT( 1,1 ), 
-     &                     PDEMOUT( 1,2 ), EFLAG )
+     &                     ONAME, OFLAG, EAIDX, SPIDX, LASTSTEP,
+     &                     PDEMOUT( 1,1 ), PDEMOUT( 1,2 ), EFLAG )
 
             CALL NEXTIME( JDATE, JTIME, OUTSTEP )
 
@@ -310,7 +315,7 @@ C.........  Deallocate local memory
         DEALLOCATE( EASTAT )
 
 C.........  Deallocate global memory
-        DEALLOCATE( MXPDPT, NPDPT, CODEA, IDXSRC, SPDIDA, EMISVA, 
+        DEALLOCATE( MXPDPT, NPDPT, CODEA, CIDXA, IDXSRC, SPDIDA, EMISVA, 
      &              DYTOTA, LPDSRC, PDEMOUT, PDTOTL )
 
 C.........  Exit from subroutin if not writing CEM report...
