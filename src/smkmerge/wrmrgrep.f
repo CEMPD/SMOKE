@@ -852,9 +852,15 @@ C.............  Write county total emissions
 
 C.................  Write out county name and converted emissions
                 WRITE( CDATFIP, '(I7.7,1X,I6.6)' ) JDATE, CNTYCOD( I )
+
+C.................  Build output format depending on data values
+                CALL DYNAMIC_FORMATS( NC, NDIM, I, CY_EMIS,
+     &                                MAXWID(1), DATFMT )
+
                 WRITE( FDEV,DATFMT ) CDATFIP // ' '// STATNAM(N) // 
      &                               CNTYNAM(I), 
      &                               ( CY_EMIS( I,J ), J=1, NDIM )
+
             END DO
 
             RETURN
@@ -912,13 +918,13 @@ C                   emissions to the total
 C-----------------------------------------------------------------------------
 C-----------------------------------------------------------------------------
 
-            SUBROUTINE DYNAMIC_FORMATS( N1, N2, STCNT, ST_EMIS, 
+            SUBROUTINE DYNAMIC_FORMATS( N1, N2, STCNT, EMIS, 
      &                                  WIDTH, DATFMT )
 
             INTEGER     , INTENT (IN)  :: N1
             INTEGER     , INTENT (IN)  :: N2
-            INTEGER     , INTENT (IN)  :: STCNT      ! counter for state index
-            REAL        , INTENT (IN)  :: ST_EMIS( N1, N2 )
+            INTEGER     , INTENT (IN)  :: STCNT      ! counter for state/county index
+            REAL        , INTENT (IN)  :: EMIS( N1, N2 )  ! state/count emission
             INTEGER     , INTENT (IN)  :: WIDTH( N2 )
             CHARACTER(*), INTENT (OUT) :: DATFMT
 
@@ -937,22 +943,22 @@ C              of 1 decimal place.  If value is < 0.1, then use exponential
 C              with 4 decimal places
             DO I = 1, N2
 
-                IF ( ST_EMIS( STCNT,I ) .EQ. 0. ) THEN
-                   WRITE( FMT, '(A,I2.2,A)' ) 'I', WIDTH(I)
+                IF ( EMIS( STCNT,I ) .EQ. 0. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.0'
 
-                ELSE IF( ST_EMIS( STCNT,I ) .GE. 1000. ) THEN
+                ELSE IF( EMIS( STCNT,I ) .GE. 1000. ) THEN
                    WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.1'
 
-                ELSE IF ( ST_EMIS( STCNT,I ) .GE. 100. ) THEN
+                ELSE IF ( EMIS( STCNT,I ) .GE. 100. ) THEN
                    WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.2'
 
-                ELSE IF ( ST_EMIS( STCNT,I ) .GE. 10. ) THEN
+                ELSE IF ( EMIS( STCNT,I ) .GE. 10. ) THEN
                    WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.3'
 
-                ELSE IF ( ST_EMIS( STCNT,I ) .GE. 0.1 ) THEN
+                ELSE IF ( EMIS( STCNT,I ) .GE. 0.1 ) THEN
                    WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.4'
 
-                ELSE IF ( ST_EMIS( STCNT,I ) .LT. 0.1 ) THEN 
+                ELSE IF ( EMIS( STCNT,I ) .LT. 0.1 ) THEN 
                    WRITE( FMT, '(A,I2.2,A)' ) 'E',WIDTH(I),'.4'
                 END IF
 
