@@ -635,7 +635,7 @@ C.............  Local parameters
 C.............  Local variables
             INTEGER       I1, I2, J, L, L1, L2
             CHARACTER(30)  :: SPACE = ' '
-            CHARACTER(500) :: TMPFMT
+            CHARACTER(3000) :: TMPFMT
 
 C.............................................................................
 
