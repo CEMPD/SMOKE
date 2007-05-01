@@ -405,7 +405,7 @@ C.........  Check dimensions
 
 C.........  Abort if error found during read
         IF ( EFLAG ) THEN
-            MESG = 'Problem with input file contents.'
+            MESG = 'Problem with INVTABLE input file contents.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
@@ -801,7 +801,7 @@ C.............  Initialize flags
 
 C.........  Abort if error found during read
         IF ( EFLAG ) THEN
-            MESG = 'Problem with input file contents.'
+            MESG = 'Problem with INVTABLE input file contents.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
