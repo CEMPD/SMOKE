@@ -146,10 +146,10 @@ C...........   Other local variables
         INTEGER      :: MXSRCDY= 0 ! max no. day-specific sources
         INTEGER      :: MXSRCHR= 0 ! max no. hour-specific sources
         INTEGER      :: NDAT = 0   ! tmp no. actual pols & activities
-        INTEGER         NFIPLIN    ! number of lines in ZDEV
-        INTEGER         NINVARR    ! no. inventory variables to read
-        INTEGER         NRAWBP     ! number of sources with pollutants
-        INTEGER         NRAWSRCS   ! number of unique sources
+        INTEGER      :: NFIPLIN = 0! number of lines in ZDEV
+        INTEGER      :: NINVARR = 0! no. inventory variables to read
+        INTEGER      :: NRAWBP = 0 ! number of sources with pollutants
+        INTEGER      :: NRAWSRCS= 0! number of unique sources
         INTEGER      :: NVARDY = 0 ! no. day-specific variables
         INTEGER      :: NVSPDY = 0 ! no. day-specific special variables
         INTEGER      :: NVARHR = 0 ! no. hour-specific variables
