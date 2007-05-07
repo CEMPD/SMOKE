@@ -1318,8 +1318,8 @@ C.....................  compare variable names and units among files
 
 C.............  Write message and set error if any inconsistencies
             IF( NFLAG ) THEN
-                EFLAG = .TRUE.
-                MESG = 'ERROR: ' // LOCCAT // ' source hourly ' //
+c bbh               EFLAG = .TRUE.
+                MESG = 'WARNING: ' // LOCCAT // ' source hourly ' //
      &                 'emission files have inconsistent ' //
      &                 CRLF() // BLANK10 // 'number of variables.'
                 CALL M3MSG2( MESG )
