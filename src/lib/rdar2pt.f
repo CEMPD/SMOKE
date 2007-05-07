@@ -138,7 +138,7 @@ C.........  Set up formats
 C.........  Loop through the input file to determine how many header
 C           lines there are and the maximum number of entries in 
 C           a single table
-        CALL READ_ARTOPT_FILE( 'COUNT' )
+        CALL READ_ARTOPT_FILE( 'COUNT', MXSCC )
 
 C.........  Allocate memory for unsorted input tables
         ALLOCATE( IDXA2P( MXROWA2P, NTABLA2P ), STAT=IOS )
@@ -180,7 +180,7 @@ C.........  Read and store contents of the file (both the SCC
 C           entries as well as the tables).
 C.........  In this call, populate INXA2P, UNSRTA2P, AR2PTSCC,
 C           NUMSCC, and NAR2PT
-        CALL READ_ARTOPT_FILE( 'STORE' )
+        CALL READ_ARTOPT_FILE( 'STORE', MXSCC )
 
 C.........  Sort index for finding sorted order for each table.
 C.........  Compute expected number of cross-reference entries
@@ -434,7 +434,7 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 
 C.............  This internal subprogram counts entries in or reads
 C               the contents of the area-to-point factors file
-            SUBROUTINE READ_ARTOPT_FILE( STATUS )
+            SUBROUTINE READ_ARTOPT_FILE( STATUS, MXSCC )
 
 C...............   EXTERNAL FUNCTIONS and their descriptions:
             LOGICAL         CHKINT
@@ -451,6 +451,7 @@ C...............   EXTERNAL FUNCTIONS and their descriptions:
 
 C.............  Subprogram arguments
             CHARACTER(*), INTENT (IN) :: STATUS  ! call status: COUNT|STORE
+            INTEGER, INTENT (IN OUT)  :: MXSCC   ! count the max SCC per section
 
 C.............  Local variables
             INTEGER          I, L, L1, L2, K, N, NS   ! counters and indices
