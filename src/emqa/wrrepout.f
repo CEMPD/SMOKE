@@ -109,7 +109,7 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT(OUT) :: EFLAG
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: STRLEN = 2000   ! Maximum info string length
+        INTEGER, PARAMETER :: STRLEN = 3500   ! Maximum info string length
 
 C...........   Arrays for source characteristics output formatting
         CHARACTER(300) CHARS ( MXCHRS ) !  source fields for output
