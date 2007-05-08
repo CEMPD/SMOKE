@@ -61,7 +61,7 @@
         INTEGER, PARAMETER, PUBLIC :: LENLAB3  = 200! length of group labels
         INTEGER, PARAMETER, PUBLIC :: LENELV3  = 1  ! length of elev status
         INTEGER, PARAMETER, PUBLIC :: LENTTL3  = 300! length of titles
-        INTEGER, PARAMETER, PUBLIC :: QAFMTL3  = 2000 ! lngth of format statmnt
+        INTEGER, PARAMETER, PUBLIC :: QAFMTL3  = 3500 ! lngth of format statmnt
 
         CHARACTER(4), PARAMETER, PUBLIC :: CHKPFX = 'chk_'
 
