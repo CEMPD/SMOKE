@@ -321,12 +321,18 @@ C.............  Local allocatable variables
             INTEGER, ALLOCATABLE, SAVE :: NHAPINDX( : ) ! Position of count of NHAP<pol> in list
             LOGICAL, ALLOCATABLE, SAVE :: NHAPFLAG( : ) ! true: flags INVDNAM with NHAP<pol> pollutant
 
+C.............   Local arrays
+            CHARACTER(64) SEGMENT( 3 )          ! Segments of parsed lines
+
 C.............  Local variables
-            INTEGER    L, J, N, IREC            
+            INTEGER    L, J, N, IREC, IOS            
 
             LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
             LOGICAL :: EFLAG    = .FALSE.  ! true: error found
             LOGICAL :: INHEADER = .FALSE.  ! true: in header section
+
+            CHARACTER(256)  LINE              ! read buffer for a line
+            CHARACTER(256)  MESG              ! text for M3EXIT()
 
 C----------------------------------------------------------------------
 
@@ -383,7 +389,7 @@ C.....................  Check for NHAP header line
 
                         INHEADER = .TRUE.
 
-                        CALL PARSLINE( LINE, MXSEG, SEGMENT )
+                        CALL PARSLINE( LINE, 3, SEGMENT )
 
 C........................  Figure out if this is a new NHAP pollutant or one
 C                          that we've already had in a previous header line
