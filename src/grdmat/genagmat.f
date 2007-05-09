@@ -90,8 +90,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: DEFSRGID      ! default surrogate ID
         LOGICAL     , INTENT (IN) :: FSGFLAG       ! true: using default fallback surrogate
         INTEGER     , INTENT(OUT) :: NX  ( NGRID ) ! no. srcs per cell
-        INTEGER     , INTENT(OUT) :: IX  ( NASRC ) ! src IDs 
-        REAL        , INTENT(OUT) :: CX  ( NASRC ) ! gridding coefficients
+        INTEGER     , INTENT(OUT) :: IX  ( NMATX ) ! src IDs 
+        REAL        , INTENT(OUT) :: CX  ( NMATX ) ! gridding coefficients
         INTEGER     , INTENT(OUT) :: NCOEF         ! no. of gridding coeffs
         INTEGER     , INTENT(OUT) :: CMAX          ! max no. of sources per cell
         INTEGER     , INTENT(OUT) :: CMIN          ! min no. of sources per cell
