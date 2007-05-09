@@ -642,7 +642,7 @@ C.............  Determine sizes for allocating area gridding matrix
      &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
 
 C.............  Allocate memory for mobile source gridding matrix
-            ALLOCATE( GMAT( NGRID + NMATX ), STAT=IOS )
+            ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
        
         CASE( 'MOBILE' )
@@ -658,12 +658,12 @@ C.............  Determine sizes for allocating mobile gridding matrix
      &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
        
 C.............  Allocate memory for mobile source gridding matrix
-            ALLOCATE( GMAT( NGRID + NMATX ), STAT=IOS )
+            ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
             CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
        
 C.............  Allocate memory for mobile source ungridding matrix
             IF( .NOT. UFLAG ) NMATXU = 1
-            ALLOCATE( UMAT( NSRC + NMATXU ), STAT=IOS )
+            ALLOCATE( UMAT( NSRC + 2*NMATXU ), STAT=IOS )
             CALL CHECKMEM( IOS, 'UMAT', PROGNAME )
        
         CASE( 'POINT' )
