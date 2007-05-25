@@ -807,7 +807,7 @@ C.........  Allocate memory for and read required inventory characteristics
 
 C.........  For fire data, set stack height to zero regardless of inventory
 C           Inventory values may have been "corrected" by Smkinven
-        IF( FIREFLAG .OR. AIRFLAG ) THEN
+        IF( FIREFLAG ) THEN
             STKHT = 0.
         END IF
 
@@ -1381,9 +1381,7 @@ C.....................  Compute derived met vars needed before layer assignments
 
 C.....................  Retreive altitude from source characterisitcs and 
 C                       convert ft to meter
-                    ALTITUDE = STR2REAL( CSOURC( S )
-     &                                ( PTBEGL3(4):PTENDL3(4) ) )
-                    ALTITUDE = ALTITUDE * 0.3048  ! convert ft to meter
+                    ALTITUDE = STKHT( S )
                     ZBOT = ALTITUDE
                     ZTOP = ALTITUDE
 
