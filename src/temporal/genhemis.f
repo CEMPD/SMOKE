@@ -278,7 +278,6 @@ C.............  Set day of week based on output day
 c           DAYADJ = EMWKDAY( JDATE )
 cSTOPPED HERE:
 c note: Need to create EMWKDAY and update WRDAYMSG also to use it.
-
 C.............  Write message for day of week and date
             CALL WRDAYMSG( JDATE, MESG )
 
@@ -308,30 +307,22 @@ C.................  Read source index for this day
             END IF      !  if read3() failed on dname
 
 C.............  Read source beginning hour(BEGHOUR) for this day
-            IF( FIRSTFIRE ) THEN
             IF( READ3( DNAME, 'BEGHOUR', ALLAYS3,
      &                        JDATE, JTIME, STHOUR      ) ) THEN
                 WRITE( MESG,94010 ) 'NOTE: Re-normalize temporalized' //
      &               ' hourly factors based on begining and ending' // 
      &               CRLF() // '     hours of wildfire on ', JDATE
-                CALL M3MSG2( MESG )
+                IF( FIRSTFIRE ) CALL M3MSG2( MESG )
 
                 FIREFLAG = .TRUE.
+                FIRSTFIRE = .FALSE.
             END IF      !  if read3() failed on dname
 
 C.............  Read source ending hour(ENDHOUR) for this day
             IF( READ3( DNAME, 'ENDHOUR', ALLAYS3,
      &                        JDATE, JTIME, EDHOUR      ) ) THEN
-                WRITE( MESG,94010 ) 'NOTE: Re-normalize temporalized' //
-     &               ' hourly factors based on begining and ending' // 
-     &               CRLF() // '     hours of wildfire on ', JDATE
-                CALL M3MSG2( MESG )
-
                 FIREFLAG = .TRUE.
             END IF      !  ifread3() failed on dname
-
-            FIRSTFIRE = .FALSE.
-            END IF
 
         END IF          ! if using day-specific emissions
 
@@ -522,7 +513,7 @@ C.........................  Re-normalizing hourly temporal factors
 
                         EMIST( S,V ) = UFAC * EMACD( I ) *
      &                                 HRLFAC( K,L,DAY )
-c      if(HRLFAC(K,L,DAY)>1) print*,EMIST(S,V),HRLFAC(K,L,DAY),S,V,NAMBUF
+
                    END IF
 
                 END DO
