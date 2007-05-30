@@ -592,6 +592,11 @@ C.........  Adjust temporal profiles for use in generating temporal emissions
 C.........  NOTE - All variables are passed by modules.
         CALL NORMTPRO
 
+C......  Get episode settings from episode time periods file
+      DO II = 1, NTPERIOD
+      
+        LDATE = -1     ! initializing previous date
+
 C.........  It is important that all major arrays must be allocated by this 
 C           point because the next memory allocation step is going to pick a
 C           data structure that will fit within the limits of the host.
@@ -618,6 +623,15 @@ C.........  Make sure total array size is not larger than maximum
         END DO
 
         DO
+
+            IF( ALLOCATED( TMAT  ) ) DEALLOCATE( TMAT )
+            IF( ALLOCATED( MDEX  ) ) DEALLOCATE( MDEX )
+            IF( ALLOCATED( WDEX  ) ) DEALLOCATE( WDEX )
+            IF( ALLOCATED( DDEX  ) ) DEALLOCATE( DDEX )
+            IF( ALLOCATED( EMAC  ) ) DEALLOCATE( EMAC )
+            IF( ALLOCATED( EMACV ) ) DEALLOCATE( EMACV )
+            IF( ALLOCATED( EMIST ) ) DEALLOCATE( EMIST )
+            IF( ALLOCATED( EMFAC ) ) DEALLOCATE( EMFAC )
 
             ALLOCATE( TMAT ( NSRC, NGSZ, 24 ), STAT=IOS1 )
             ALLOCATE( MDEX ( NSRC, NGSZ )    , STAT=IOS2 )
@@ -663,6 +677,12 @@ C.........  Make sure total array size is not larger than maximum
 C.........  Allocate a few small arrays based on the size of the groups
 C.........  NOTE that this has a small potential for a problem if these little
 C           arrays exceed the total memory limit.
+        IF( ALLOCATED( ALLIN2D ) ) DEALLOCATE( ALLIN2D )
+        IF( ALLOCATED( EANAM2D ) ) DEALLOCATE( EANAM2D )
+        IF( ALLOCATED( LDSPOA  ) ) DEALLOCATE( LDSPOA  )
+        IF( ALLOCATED( LHSPOA  ) ) DEALLOCATE( LHSPOA  )
+        IF( ALLOCATED( LHPROF  ) ) DEALLOCATE( LHPROF  )
+
         ALLOCATE( ALLIN2D( NGSZ, NGRP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ALLIN2D', PROGNAME )
         ALLOCATE( EANAM2D( NGSZ, NGRP ), STAT=IOS )
@@ -688,12 +708,6 @@ C.........  Create 2-d arrays of I/O pol names, activities, & emission types
             END DO
         END DO
 
-C......  Get episode settings from episode time periods file
-
-      DO II = 1, NTPERIOD
-      
-         LDATE = -1
-      
 C......  Determine number of days in episode
         IF( PFLAG ) THEN
            SDATE = ITDATE( II )
