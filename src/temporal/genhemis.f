@@ -1,7 +1,7 @@
 
         SUBROUTINE GENHEMIS( NPLE, JDATE, JTIME, TZONE, DNAME, HNAME,
-     &                       NAMIN, NAMOUT, EMAC, EMFAC, EMACV, TMAT, 
-     &                       EMIST, LDATE )  
+     &                       NAMIN, NAMOUT, EAREAD2D, EMAC, EMFAC,
+     &                       EMACV, TMAT, EMIST, LDATE )  
 
 C***********************************************************************
 C  subroutine body starts at line 173
@@ -58,7 +58,7 @@ C.........  This module contains data for day- and hour-specific data
      &                      LDSPOA, LHSPOA, LHPROF
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, CATEGORY, NIPPA, EAREAD, EACNV
+        USE MODINFO, ONLY: NSRC, CATEGORY, NIPPA, EACNV
 
         IMPLICIT NONE
 
@@ -88,6 +88,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN)    :: HNAME     ! hour-spec file name or NONE
         CHARACTER(*), INTENT (IN)    :: NAMIN ( NPLE )      ! inv pol names
         CHARACTER(*), INTENT (IN)    :: NAMOUT( NPLE )      ! inv pol names
+        CHARACTER(*), INTENT (IN)    :: EAREAD2D( NIPPA )   ! tmp inv pol names
         REAL        , INTENT (IN)    :: EMAC ( NSRC, NPLE ) ! inv emis or actvty
         REAL        , INTENT (IN)    :: EMFAC( NSRC, NPLE ) ! emission factors
         REAL        , INTENT (OUT)   :: EMACV( NSRC, NPLE ) ! work emis/actvy
@@ -136,7 +137,6 @@ C...........   Other local variables
         LOGICAL, SAVE :: EFLAG    = .FALSE. ! true: error found
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first call to subrtn
         LOGICAL, SAVE :: FIRSTSTP = .TRUE.  ! true: first time step
-        LOGICAL, SAVE :: FIRSTFIRE= .TRUE.  ! true: check processing fire
         LOGICAL, SAVE :: HFLAG              ! true: hour-specific data
         LOGICAL, SAVE :: OUTMSG = .TRUE.    ! true: output message for new day
         LOGICAL       :: RDFLAG = .TRUE.    ! true: read dy data for this iter
@@ -213,6 +213,22 @@ C.............  Allocate memories for BEGHOUR and ENDHOUR
             CALL CHECKMEM( IOS, 'EDHOUR', PROGNAME )
             STHOUR = 0.0
             EDHOUR = 0.0
+
+C.............  Define whether processing wildfire or not
+            IF( .NOT. READ3( DNAME, 'BEGHOUR', ALLAYS3,
+     &                        JDATE, JTIME, STHOUR      ) ) THEN
+                MESG = 'WARNING: Processing non-wildfire sources '
+                CALL M3MESG( MESG )
+
+                FIREFLAG = .FALSE.
+            ELSE
+                MESG = 'WARNING: Processing Wildfire emissions....'
+                CALL M3MESG( MESG )
+                FIREFLAG = .TRUE.
+
+            END IF      !  if read3() failed on dname
+
+            STHOUR = 0.0   ! array
 
         END IF  ! End of first time section
 
@@ -299,30 +315,32 @@ C.................  Read source index for this day
             IF ( .NOT. READ3( DNAME, 'INDXD', ALLAYS3,
      &                        JDATE, JTIME, INDXD      ) ) THEN
                 WRITE( MESG,94010 ) 'WARNING: Could not read "INDXD" '//
-     &               'from file "'// DNAME//'", at', JDATE, ':', JTIME
+     &               'from file "'// TRIM( DNAME )//'", at', JDATE, ':',
+     &                JTIME
                 CALL M3MESG( MESG )
 
                 RDFLAG = .FALSE.
                 INDXD = 0   ! array
             END IF      !  if read3() failed on dname
 
-C.............  Read source beginning hour(BEGHOUR) for this day
-            IF( READ3( DNAME, 'BEGHOUR', ALLAYS3,
+C.............  Read start and ending hour(ENDHOUR) for wildfire processing
+            IF( FIREFLAG ) THEN
+                IF( .NOT. READ3( DNAME, 'BEGHOUR', ALLAYS3,
      &                        JDATE, JTIME, STHOUR      ) ) THEN
-                WRITE( MESG,94010 ) 'NOTE: Re-normalize temporalized' //
-     &               ' hourly factors based on begining and ending' // 
-     &               CRLF() // '     hours of wildfire on ', JDATE
-                IF( FIRSTFIRE ) CALL M3MSG2( MESG )
+                    WRITE(MESG,94010)'WARNING: Could not read  '//
+     &                 '"BEGHOUR" from file "'// TRIM( DNAME )//'", at',
+     &                 JDATE, ':', JTIME
+                    CALL M3MESG( MESG )
+                END IF      !  if read3() failed on dname
 
-                FIREFLAG = .TRUE.
-                FIRSTFIRE = .FALSE.
-            END IF      !  if read3() failed on dname
-
-C.............  Read source ending hour(ENDHOUR) for this day
-            IF( READ3( DNAME, 'ENDHOUR', ALLAYS3,
+                IF( .NOT. READ3( DNAME, 'ENDHOUR', ALLAYS3,
      &                        JDATE, JTIME, EDHOUR      ) ) THEN
-                FIREFLAG = .TRUE.
-            END IF      !  ifread3() failed on dname
+                    WRITE(MESG,94010)'WARNING: Could not read  '//
+     &                 '"ENDHOUR" from file "'// TRIM( DNAME )//'", at',
+     &                 JDATE, ':', JTIME
+                    CALL M3MESG( MESG )
+                END IF      !  ifread3() failed on dname
+            END IF
 
         END IF          ! if using day-specific emissions
 
@@ -378,11 +396,11 @@ C           or an activity
 C.............  Skip blanks that can occur when NGRP > 1
             IF ( NAMBUF .EQ. ' ' ) CYCLE
 
-C.............  Find pollutant/activity in list of all.  Use EAREAD b/c
+C.............  Find pollutant/activity in list of all.  Use EAREAD2D b/c
 C               EANAM has been update to contain emission types.
 C.............  NOTE - this is sloppy because NIPPA has a larger dimension
-C               than EAREAD for emission types
-            PIDX = INDEX1( NAMBUF, NIPPA, EAREAD )
+C               than EAREAD2D for emission types
+            PIDX = INDEX1( NAMBUF, NIPPA, EAREAD2D )
 
 C.............  Set units conversion factor for this pollutant/activity
             UFAC = EACNV( PIDX )
