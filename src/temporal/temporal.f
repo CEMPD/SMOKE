@@ -139,6 +139,7 @@ C.........  Reshaped input variables and output variables
         INTEGER         NGSZ                ! no. of pols/emis-types per group 
         CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN2D( :,: ) 
         CHARACTER(IOVLEN3), ALLOCATABLE:: EANAM2D( :,: ) 
+        CHARACTER(IOVLEN3), ALLOCATABLE:: EAREAD2D( : ) 
 
 C...........   Logical names and unit numbers
 
@@ -520,6 +521,9 @@ C           of the activities
         CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
         ALLOCATE( ALLIN( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ALLIN', PROGNAME )
+        ALLOCATE( EAREAD2D( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EAREAD2D', PROGNAME )
+        EAREAD2D = ' '
 
 C.........  Create 1-d arrays of I/O pol names
 C.........  If pollutant is created by one or more activities, then give a
@@ -551,7 +555,7 @@ C               pollutant is also part of the inventory pollutants
             N = N + 1
             ALLIN( N ) = EAREAD( I )
             EANAM( N ) = EINAM ( I )
-			
+
         END DO
 
 C.........  Add activities, & emission types to read and output lists
@@ -597,6 +601,11 @@ C......  Get episode settings from episode time periods file
       
         LDATE = -1     ! initializing previous date
 
+C.........  Initialize EAREAD2D every processing date
+        DO I = 1, NIPPA
+            EAREAD2D( I ) = EAREAD( I )
+        END DO
+
 C.........  It is important that all major arrays must be allocated by this 
 C           point because the next memory allocation step is going to pick a
 C           data structure that will fit within the limits of the host.
@@ -623,15 +632,6 @@ C.........  Make sure total array size is not larger than maximum
         END DO
 
         DO
-
-            IF( ALLOCATED( TMAT  ) ) DEALLOCATE( TMAT )
-            IF( ALLOCATED( MDEX  ) ) DEALLOCATE( MDEX )
-            IF( ALLOCATED( WDEX  ) ) DEALLOCATE( WDEX )
-            IF( ALLOCATED( DDEX  ) ) DEALLOCATE( DDEX )
-            IF( ALLOCATED( EMAC  ) ) DEALLOCATE( EMAC )
-            IF( ALLOCATED( EMACV ) ) DEALLOCATE( EMACV )
-            IF( ALLOCATED( EMIST ) ) DEALLOCATE( EMIST )
-            IF( ALLOCATED( EMFAC ) ) DEALLOCATE( EMFAC )
 
             ALLOCATE( TMAT ( NSRC, NGSZ, 24 ), STAT=IOS1 )
             ALLOCATE( MDEX ( NSRC, NGSZ )    , STAT=IOS2 )
@@ -878,7 +878,7 @@ C                 prefix from the input pollutant name
                 IF( J .GT. 0 ) THEN
                     CBUF = CBUF( CPRTLEN3+1:L1 )
                     ALLIN2D( I,N ) = CBUF
-                    EAREAD ( K )   = CBUF
+                    EAREAD2D ( K ) = CBUF
                 END IF
 
             END DO
@@ -930,7 +930,7 @@ C............  Create array of emission factors by source
        
 C.................  Generate hourly emissions for current hour
                 CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
-     &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), 
+     &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D, 
      &                         EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
 
 
@@ -970,6 +970,8 @@ c    &                       EANAM2D( 1,N ), EMAC )
              MESG = 'Could not close file "' // TRIM( TNAME ) // '".'
              CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
          END IF
+
+         DEALLOCATE( TMAT, MDEX, WDEX, DDEX, EMAC, EMACV, EMIST, EMFAC )
 
        END DO            ! End loop on time period II
 
