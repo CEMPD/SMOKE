@@ -64,13 +64,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         INTEGER         GETFLINE
         LOGICAL         BLKORCMT
+        INTEGER         STR2INT
+        REAL            STR2REAL
 
-        EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE
+        EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE, STR2REAL,
+     &                  STR2INT
 
 C...........   ARGUMENTS and their descriptions:
 
-        INTEGER       FDEV             ! unit no. for stack parameter file PSTK
-        INTEGER       NSRC             ! actual number of sources
+        INTEGER, INTENT( IN ) :: FDEV      ! unit no. for stack parameter file PSTK
+        INTEGER, INTENT( IN ) :: NSRC      ! actual number of sources
 
 C...........   LOCAL PARAMETERS and their descriptions:
         REAL   , PARAMETER :: MINHT =    0.5    ! Min stack height (m)
@@ -83,6 +86,11 @@ C...........   LOCAL PARAMETERS and their descriptions:
         REAL   , PARAMETER :: MAXVE =  500.0    ! Max stack exit velocity (m/s)
 
 C...........    LOCAL VARIABLES and their descriptions:
+C...........   SUBROUTINE PARAMETERS
+        INTEGER      , PARAMETER :: NSEG = 6        ! number of fields for ORL FIREDATA input format
+
+C...........   Temporary read arrays
+        CHARACTER(8)      SEGMENT( NSEG ) ! segments of line
 
 C.........  Unsorted arrays from stack replacements file
 
@@ -95,10 +103,10 @@ C.........  Unsorted arrays from stack replacements file
 
 C.........  Tables of stack parameter updates
 C.........  Ultimate defaults
-        REAL               HT0      !  ultimate fallback height
-        REAL               DM0      !  ultimate fallback diameter
-        REAL               TK0      !  ultimate fallback temperature
-        REAL               VE0      !  ultimate fallback velocity
+        REAL            :: HT0 = -1     !  ultimate fallback height
+        REAL            :: DM0 = -1     !  ultimate fallback diameter
+        REAL            :: TK0 = -1     !  ultimate fallback temperature
+        REAL            :: VE0 = -1     !  ultimate fallback velocity
 
 C.........  SCC-only table
         INTEGER                            NR1       ! number
@@ -211,7 +219,7 @@ C.........  For now, require the SCC to be in quotes to use list formatting
         IREC  = 0
         DO I = 1, NLINE       !  head of input loop
         
-            READ( FDEV, *, IOSTAT=IOS ) LINE
+            READ( FDEV, 93000, IOSTAT=IOS ) LINE
             IREC = IREC + 1
             
             IF ( IOS .GT. 0 ) THEN      !  I/O error
@@ -220,25 +228,28 @@ C.........  For now, require the SCC to be in quotes to use list formatting
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
                
-            IF( BLKORCMT( LINE ) ) THEN
-                CYCLE
-            ELSE
-                BACKSPACE( FDEV )
-            END IF
+            IF( BLKORCMT( LINE ) ) CYCLE
             
-            READ( FDEV, *, IOSTAT=IOS ) FIP, TSCC, HT, DM, TK, VE
+c            READ( FDEV, *, IOSTAT=IOS ) FIP, TSCC, HT, DM, TK, VE
+C.............  Get lines
+            CALL PARSLINE( LINE, NSEG, SEGMENT )
+
             NCNT = NCNT + 1      ! actual line #s after skipping blank and comments
 
+            FIP = STR2INT( SEGMENT( 1 ) ) 
             WRITE( CFIP, FMTFIP ) FIP
+
+            TSCC = TRIM( SEGMENT( 2 ) )
 
             CALL PADZERO( TSCC )
 
             INDXA( NCNT ) = NCNT
             SFSCA( NCNT ) = CFIP // TSCC
-            SHTA ( NCNT ) = HT
-            SDMA ( NCNT ) = DM
-            STKA ( NCNT ) = TK
-            SVEA ( NCNT ) = VE
+            SHTA ( NCNT ) = STR2REAL( SEGMENT( 3 ) )
+            SDMA ( NCNT ) = STR2REAL( SEGMENT( 4 ) )
+            STKA ( NCNT ) = STR2REAL( SEGMENT( 5 ) )
+            SVEA ( NCNT ) = STR2REAL( SEGMENT( 6 ) )
+
         END DO  
 
         NPSTK = NCNT
@@ -627,6 +638,18 @@ C.........  This is in a separate loop to permit better reporting
 
             IF( DFLAG( S ) ) THEN
 
+C.................  Error msg when there are no default x-reference available
+                IF( HT0 < 0.0 .AND. DM0 < 0.0 .AND.
+     &              TK0 < 0.0 .AND. VE0 < 0.0       ) THEN
+
+                     WRITE( MESG,94010 )
+     &                 'ERROR: No PSTK cross-reference ' //
+     &                 'available (and no default) for:' //
+     &                 CRLF() // BLANK5 // BUFFER( 1:L2 )
+                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                END IF
+                
                 CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
 
                 WRITE( MESG,94010 ) 
@@ -677,6 +700,8 @@ C.........  This is in a separate loop to permit better reporting
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
+
+93000   FORMAT( A )
 
 94010   FORMAT( 10 ( A, :, I8, :, 1X ) )
 
