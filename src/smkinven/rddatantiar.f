@@ -124,7 +124,7 @@ C           the various data fields
         READDATA( 1,NRE ) = SEGMENT( 7 )
         READDATA( 1,NRP ) = SEGMENT( 8 )
 
-	SRCTYP = ADJUSTL( SEGMENT( 9 ) )   ! source type code
+	      SRCTYP = ADJUSTL( SEGMENT( 9 ) )   ! source type code
         
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
