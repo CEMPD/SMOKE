@@ -81,8 +81,8 @@ C...........   Other local variables
         LOGICAL       :: EFLAG   = .FALSE. !  true: error found
         LOGICAL       :: LCATSET = .FALSE. !  true: source category set
 
-        CHARACTER(300)   BUFFER            !  line work buffer
-        CHARACTER(300)   LINE              !  line input buffer
+        CHARACTER(1024)  BUFFER            !  line work buffer
+        CHARACTER(1024)  LINE              !  line input buffer
         CHARACTER(300)   MESG              !  message buffer
 
         CHARACTER(16) :: PROGNAME = 'SCANREPC' ! program name
