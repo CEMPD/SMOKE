@@ -716,14 +716,15 @@ C...................  One cond:1st pol has to be THC to reduce usage of memory
                   IF( POLNAM == 'PM25' ) POLNAM = 'PM2_5'
 
 C...................  look for pol names in a list of pols
-C                  POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
-                  POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
-                  FPOLNAM = ITCASA( POS )
+                  POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
+c bbh                  POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
+
                   IF( POS < 1 ) THEN
-                      MESG = 'ERROR: Pollutant ' // TRIM( POLNAM )//
+                      MESG = 'ERROR: Pollutant ID ' // TRIM( POLNAM )//
      &                       ' is not found in the INVTABLE file.'
                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                   END IF
+                  FPOLNAM = ITNAMA( POS )
 
               END IF
 
