@@ -102,6 +102,7 @@ C...........   Other local variables
         INTEGER         COL              ! tmp column
         INTEGER         TCOL             ! tmp column
         INTEGER         FIP              ! country/state/county code
+        INTEGER         LFIP             ! tmp country/state/county code
         INTEGER         GDEV             !  for surrogate coeff file
         INTEGER         ID1, ID2         ! primary and 2ndary surg codes
         INTEGER         LC, LR           ! length of COLRANGE & ROWRANGE
@@ -109,6 +110,7 @@ C...........   Other local variables
         INTEGER         IOS              ! i/o status
         INTEGER         IREC             ! Record counter
         INTEGER         ISDEF            !  default surrogate ID code index
+        INTEGER         NWARN            ! tmp number of WARNING msg
         INTEGER         NCEL             ! tmp number of cells
         INTEGER         ROW              ! tmp row
         INTEGER         TROW             ! tmp row
@@ -309,7 +311,7 @@ C              surrogates to each source.
             TMPLINE = ' '
             TSRGFNAM = ' '
 
-             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
+            DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
 
 C.................  Prompt for and open I/O API output file(s)...
                 CALL GETENV( 'SRGPRO_PATH', NAMBUF )
@@ -379,6 +381,9 @@ C........................  Skip entry if SSC is not in the assigned SRGLIST by s
             CALL RDSRG4GRD( NT, TMPLINE, CFLAG ) ! populating surrogates
 
             DEALLOCATE( TMPLINE )
+            
+            LFIP = 0
+            NWARN = 0
 
 C.............  Loop over sources per each assigned surrogate
             DO S = 1, NSRC
@@ -447,7 +452,23 @@ C.........................  Re-assigning org assigned srg to default fallback sr
 
 C.....................  Otherwise, skip this source because it's outside the grid
                     ELSE
-                        IF( SRGFLAG ) ASRGID( S ) = DEFSRGID
+                        IF( SRGFLAG ) THEN
+                            ASRGID( S ) = DEFSRGID
+                            IF( II < NSRGS ) CYCLE
+                        END IF
+
+C..........................  Critical warning message about zeroing emission 
+C                            due to no surrogates for this co/st/cy
+                        IF( LFIP .NE. FIP ) THEN
+                            WRITE( MESG,94010 ) 'WARNING: Causing ' //
+     &                         'zeroing emissions due to missing '//
+     &                         'surrogate', TGTSRG, ' for co/st/cy ::',
+     &                         FIP
+                            NWARN = NWARN + 1
+                            IF( NWARN < 100 ) CALL M3MESG( MESG )
+                            LFIP = FIP
+                        END IF
+
                         CYCLE
 
                     END IF
