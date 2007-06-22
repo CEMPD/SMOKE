@@ -46,9 +46,9 @@ C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, LV1, LV2, LV3, TODOUT, ETPNAM,
      &                      DATNAM, INVIDX, TPRIDX, INVTOPRJ, INVTOCMU,
      &                      TOSOUT, SPCNAM, ETPSPCNAM, PRCSPCNAM,
-     &                      SUMETPNAM, SUMPOLNAM, SPCOUT, SPCTOINV,
-     &                      SPCTOTPR, SPCIDX, TPACTIDX, SLUNIT,
-     &                      SSUNIT, NMSPC, EMNAM, NSPCIN
+     &                      SUMETPNAM, SUMPOLNAM, SUMSPCNAM, SPCOUT, 
+     &                      SPCTOINV, SPCTOTPR, SPCIDX, TPACTIDX, 
+     &                      SLUNIT, SSUNIT, NMSPC, EMNAM, NSPCIN
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NTPDAT, TPNAME, TPDESC
@@ -169,6 +169,8 @@ C.........  Speciation variable arrays
         CALL CHECKMEM( IOS, 'SUMETPNAM', PROGNAME )
         ALLOCATE( SUMPOLNAM( NSVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SUMPOLNAM', PROGNAME )
+        ALLOCATE( SUMSPCNAM( NSVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SUMSPCNAM', PROGNAME )
         ALLOCATE( SPCOUT( NSVARS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCOUT', PROGNAME )
         ALLOCATE( SPCTOINV( NSVARS ), STAT=IOS )
@@ -187,12 +189,14 @@ C.........  Speciation variable arrays
         TOSOUT%PRCSPC = 0       ! array
         TOSOUT%SUMETP = 0       ! array
         TOSOUT%SUMPOL = 0       ! array
+        TOSOUT%SUMSPC = 0       ! array
         TOSOUT%AGG    = 0       ! array
         SPCNAM        = ' '     ! array
         ETPSPCNAM     = ' '     ! array
         PRCSPCNAM     = ' '     ! array
         SUMETPNAM     = ' '     ! array
         SUMPOLNAM     = ' '     ! array
+        SUMSPCNAM     = ' '     ! array
         SPCOUT        = .FALSE. ! array
         SPCTOINV      = 0       ! array
         SPCTOTPR      = 0       ! array
@@ -427,12 +431,14 @@ C.................  Data variable is emission type
                     PRCSPCNAM( V )= 'S-'// VBUF( 1:J-1 )// ETJOIN// SBUF
                     SUMETPNAM( V )= 'S-'// EBUF
                     SUMPOLNAM( V )= 'S-'// VBUF( J+LT:K-1 )
+                    SUMSPCNAM( V )= 'S-'// TRIM( SBUF )
 
 C.................  No emission type
                 ELSE
 
                     SPCNAM   ( V ) = SBUF
                     SUMPOLNAM( V ) = 'S-' // EBUF
+                    SUMSPCNAM( V ) = 'S-' // TRIM( SBUF )
 
                 END IF
 
@@ -676,8 +682,16 @@ C.........................  To post-speciation summed emission type column
 
 C.........................  To post-speciation summed pollutant column
 C.........................  Also for species with same name as pollutants
-                        IF( OUTDNAM( I,N ) .EQ. SUMPOLNAM( V ) ) THEN 
+                        IF( OUTDNAM( I,N ) .EQ. SUMPOLNAM( V ) ) THEN
                             TOSOUT( V,N )%SUMPOL = I
+                            TOSOUT( V,N )%AGG = 1
+                            IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
+                            SPCOUT( V ) = .TRUE.
+                            ANYOUT = .TRUE.
+
+C.........................  To post-speciation summed species column
+                        ELSEIF( OUTDNAM( I,N ) .EQ. SUMSPCNAM(V) ) THEN 
+                            TOSOUT( V,N )%SUMSPC = I
                             TOSOUT( V,N )%AGG = 1
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
                             SPCOUT( V ) = .TRUE.
