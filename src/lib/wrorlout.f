@@ -64,10 +64,11 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS:
         CHARACTER*2     CRLF
+        LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         INDEX1
 
-        EXTERNAL        CRLF, FIND1, INDEX1
+        EXTERNAL        CRLF, ENVYN, FIND1, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT (IN) :: RDEV           ! emissions unit no.
@@ -122,9 +123,11 @@ C...........   Other local variables
         REAL            M2FT     ! meters to feet
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
+        LOGICAL, SAVE :: LNONRD   = .FALSE.
         LOGICAL ORLCOLS( 7 )
         DATA    ORLCOLS / 6*.TRUE., .FALSE. /
 
+        CHARACTER(4)   CSIC           !  tmp character SIC code
         CHARACTER(4)   CYEAR          !  character 4-digit year
         CHARACTER(128) CHARS( 7 )     !  source fields for output
         CHARACTER(256) POLBUF         !  pollutant list buffer
@@ -157,11 +160,24 @@ C.........  For area sources...
 
             IF ( FIRSTIME ) THEN
 
+C.................  Retrieve environment variable to optionally write out ORL 
+C                   Nonroad format instead of ORL nonpoint.
+                MESG = 'Output Nonroad ORL format instead of nonpoint'        
+                LNONRD = ENVYN ( 'ORL_NONROAD_OUT', MESG, .FALSE., IOS )
+
 C.................  Write initial header
-                WRITE( RDEV, 93000 ) 
-     &               '#ORL NONPOINT',
-     &               '#TYPE     Nonpoint Source Toxics Inventory',
-     &               '#DESC        (Output from SMOKE)'
+                IF( LNONRD ) THEN
+                    WRITE( RDEV, 93000 ) 
+     &                  '#ORL NONROAD',
+     &                  '#TYPE     Nonroad Inventory',
+     &                  '#DESC        (Output from SMOKE)'
+                ELSE
+                    WRITE( RDEV, 93000 ) 
+     &                  '#ORL NONPOINT',
+     &                  '#TYPE     Nonpoint Inventory',
+     &                  '#DESC        (Output from SMOKE)'
+                END IF
+
                 FIRSTIME = .FALSE.
 
             END IF
@@ -222,8 +238,18 @@ C.................  Write out header
                 IF( IOS .GT. 0 ) CYCLE
 
 C.................  Write out entries for this record
-                WRITE( RDEV,93200 ) FIP, SCC, SIC, MACT, SRCTYPE,
-     &               NAICS, CAS, ANN_EMIS, AVD_EMIS, CEFF, REFF, RPEN
+C.................  Write ORL nonroad format
+                IF( LNONRD ) THEN
+                   WRITE( RDEV,93200 ) FIP, SCC, TRIM(CAS), ANN_EMIS, 
+     &                    AVD_EMIS, CEFF, REFF, RPEN, SRCTYPE
+
+C.................  Write ORL nonpoint format
+                ELSE
+                   WRITE( CSIC,'(I4.4)' ) SIC
+                   WRITE( RDEV,93210 ) FIP, SCC, TRIM(CSIC), TRIM(MACT), 
+     &                    TRIM(SRCTYPE), TRIM(NAICS), TRIM(CAS), 
+     &                    ANN_EMIS, AVD_EMIS, CEFF, REFF, RPEN
+                END IF
 
                 LCOID = COID
                 LYEAR = YEAR
@@ -370,11 +396,14 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-93200   FORMAT( I5.5, 1X, A10, 1X, I4, 1X, A6, 1X, A2, 1X, A8, 1X,
-     &          A16, 1X, E13.6, 1X, E13.6, 3( 1X, F6.2 ) )           ! nonpoint
+93200   FORMAT( I5.5, ',', A, ',', A, ',', E15.8, ',', E15.8, 
+     &          3( ',', F6.2 ),',', A )   ! nonroad
 
-93600   FORMAT( I5.5, 8( ',"',A, '"'), 5( ',', F10.2), ',', I4,
-     &          2( ',"',A, '"'),',', A1, 
+93210   FORMAT( I5.5, ',' A, ',', A, ',' A, ',', A, ',', A, ',',
+     &          A, ',', E15.8, ',', E15.8, 3( ',', F6.2 ) )   ! nonpoint
+
+93600   FORMAT( I5.5, 8( ',"',A, '"'), 4( ',', F10.2), ',', F10.4,
+     &          ',', I4, 2( ',"',A, '"'),',', A1, 
      &          2( ',', F10.5), ',', I3, ',"', A, '"', 2( ',', E13.6 ),
      &          2( ',', F6.2 ), ',', I2, ',', I2, 3(',"',A,'"'), A )  ! point
 
