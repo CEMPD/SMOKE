@@ -408,6 +408,9 @@ C             AREA sources, rule penetration.
             IF ( CFLAG ) THEN
             	
 C...........  Allocate arrays to store control information from base inventory
+                IF( ALLOCATED( BASECEFF ) ) THEN
+                    DEALLOCATE( BASECEFF, BASEREFF, BASERPEN )
+                END IF
                 ALLOCATE( BASECEFF( NSRC ) )
                 ALLOCATE( BASEREFF( NSRC ) )
                 ALLOCATE( BASERPEN( NSRC ) )
@@ -542,6 +545,9 @@ C.............................................................................
            	
 C................  Allocate arrays to store control eff., rule eff. and 
 C                  rule penetration for each source
+               IF( ALLOCATED( CEFF ) ) THEN
+                   DEALLOCATE( CEFF, REFF, RPEN )
+               END IF
                ALLOCATE( CEFF( NSRC ) )
                ALLOCATE( REFF( NSRC ) )
                ALLOCATE( RPEN( NSRC ) )
@@ -1113,7 +1119,9 @@ C          report processing.
 C.........  Deallocate local memory
         DEALLOCATE( BACKOUT, DATVAL, FACTOR )
 
-        DEALLOCATE( GRPINDX, GRPFLAG, GRPINEM, GRPOUTEM )
+        DEALLOCATE( GRPINDX )
+
+        DEALLOCATE( GRPFLAG, GRPINEM, GRPOUTEM )
 
         RETURN
 
