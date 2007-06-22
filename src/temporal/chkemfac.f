@@ -210,7 +210,7 @@ C           emission process names, because it is only set up for MOBILE5
 C.............  Skip activities that do not have emissions types
             IF( NETYPE( I ) .LE. 0 ) CYCLE            
 C.............  Set up emission process variable names
-            CALL EFSETUP( 'NONE', MODELNAM, NEFS, VOLNAM )
+            CALL EFSETUP( 'NONE', MODELNAM, VOLNAM )
 
         END DO
 
