@@ -218,6 +218,8 @@ C...............  Allocate first set of reporting arrays
                 IF( .NOT. ALLOCATED( GRPINDX ) ) THEN
                     ALLOCATE( GRPINDX( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'GRPINDX', PROGNAME )
+                END IF
+                IF( .NOT. ALLOCATED( GRPSTIDX ) ) THEN
                     ALLOCATE( GRPSTIDX( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'GRPSTIDX', PROGNAME )
                     ALLOCATE( GRPCHAR( NSRC ), STAT=IOS )
@@ -284,12 +286,14 @@ C......................  Count the number of state/SCCs in the domain
 
                     END IF    ! If point or non-point sources 
 
-                    ALLOCATE( GRPFLAG( NGRP ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'GRPFLAG', PROGNAME )
-                    ALLOCATE( GRPINEM( NGRP, NIPPA ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'GRPINEM', PROGNAME )
-                    ALLOCATE( GRPOUTEM( NGRP, NIPPA ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'GRPOUTEM', PROGNAME )
+                    IF( .NOT. ALLOCATED( GRPFLAG ) ) THEN
+                        ALLOCATE( GRPFLAG( NGRP ), STAT=IOS )
+                        CALL CHECKMEM( IOS, 'GRPFLAG', PROGNAME )
+                        ALLOCATE( GRPINEM( NGRP, NIPPA ), STAT=IOS )
+                        CALL CHECKMEM( IOS, 'GRPINEM', PROGNAME )
+                        ALLOCATE( GRPOUTEM( NGRP, NIPPA ), STAT=IOS )
+                        CALL CHECKMEM( IOS, 'GRPOUTEM', PROGNAME )
+                    END IF
                 END IF    ! If group information not previously allocated
 
                 GRPINEM  = 0. ! array
