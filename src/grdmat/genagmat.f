@@ -551,7 +551,7 @@ C.........  Report links that are outside the grid
 c        CALL RPSRCOUT( NNOSRG, 0, FIPNOSRG, ' ' )
 
 C.........  Dellallocate locally allocated memory
-        DEALLOCATE( FIPNOSRG, INDOMAIN, SURGID1, SURGID2 )
+        DEALLOCATE( IS, CS, FIPNOSRG, INDOMAIN, SURGID1, SURGID2 )
 
         RETURN
 
