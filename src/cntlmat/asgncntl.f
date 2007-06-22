@@ -107,8 +107,8 @@ C.........  Other local variables
         LOGICAL       :: SICXREF  = .FALSE. ! true: SIC assignments in x-ref
         LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
-        CHARACTER(8)       FMTFIP   ! format for writing FIPS code
-        CHARACTER(8)       FMTSIC   ! format for writing SIC code
+        CHARACTER(8), SAVE :: FMTFIP   ! format for writing FIPS code
+        CHARACTER(8), SAVE :: FMTSIC   ! format for writing SIC code
         CHARACTER(256)     BUFFER   ! source fields buffer
         CHARACTER(256)     MESG     ! message buffer
         CHARACTER(STALEN3) CSTA     ! tmp Country/state code
