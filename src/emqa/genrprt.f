@@ -387,6 +387,7 @@ C.............................  Add temporary bins values to output columns
                             CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%PRCSPC )
                             CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%SUMETP )
                             CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%SUMPOL )
+                            CALL UPDATE_OUTCOL( TOSOUT(V,RCNT)%SUMSPC )
 
                         END IF
 
