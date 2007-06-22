@@ -110,7 +110,8 @@ C           source is non-zero in the country/state/county code of interest
            
 C.................  Write note about changing surrogate used for current
 C                   source if it has not yet been written
-                IF( ( TGTSRG .NE. DEFSRG ) .AND. SFLAG ) THEN
+                IF( SFLAG ) THEN
+                IF( TGTSRG .NE. DEFSRG ) THEN
 
                     IF( REPORT .AND. CSRC2 .NE. LCSRC2 ) THEN
                         CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
@@ -123,9 +124,11 @@ C                   source if it has not yet been written
                     END IF
 
                 END IF
+                END IF
 
 C.....................  Write warning for default fraction of zero
-                IF( ( TGTSRG .EQ. DEFSRG ) .AND. .NOT. SFLAG ) THEN
+                IF( .NOT. SFLAG ) THEN
+                IF( TGTSRG .EQ. DEFSRG ) THEN
 
                     CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
                     MESG ='WARNING: Zero fallback surrogate data will'//
@@ -133,6 +136,7 @@ C.....................  Write warning for default fraction of zero
      &                    CRLF() // BLANK10 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
            
+                END IF
                 END IF
            
 C.................  Set surrogate fraction using default surrogate
@@ -151,10 +155,37 @@ C               surrogate
             END IF
             
         ELSE
-            FRAC   = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
-            OUTID1 = TGTSRG
-            OUTID2 = 0
-            
+C.........  Check if surrogate selected by cross-reference for this
+C           source is non-zero in the country/state/county code of interest
+
+            IF( SRGCSUM( SRGIDX,FIPIDX ) .LE. 0. )THEN
+           
+C.................  Write warning for default fraction of zero
+                IF( .NOT. SFLAG ) THEN
+
+                    CALL FMTCSRC( CSRC2, NC, BUFFER, L2 )
+                    MESG ='WARNING: Zero fallback surrogate data will'//
+     &                    ' cause zero emissions inside the grid for:'//
+     &                    CRLF() // BLANK10 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+
+                END IF
+
+C.................  Set surrogate fraction using default surrogate
+                FRAC   = 1.0E-36
+                OUTID1 = TGTSRG
+                OUTID2 = 0
+
+C.............  Set surrogate fraction with cross-reference-selected
+C               surrogate
+            ELSE
+
+                FRAC   = SRGFRAC( SRGIDX, CELIDX, FIPIDX )
+                OUTID1 = TGTSRG
+                OUTID2 = 0
+
+            END IF
+
         END IF            
 
         LCSRC  = CSRC   ! Store source info for next iteration
