@@ -71,6 +71,7 @@
             INTEGER            :: PRCSPC     ! output index for process || spc
             INTEGER            :: SUMETP     ! output index for summed to etype
             INTEGER            :: SUMPOL     ! output index for summed to pol
+            INTEGER            :: SUMSPC     ! output index for summed to species
             INTEGER            :: AGG        ! output for any
 
         END TYPE
@@ -138,6 +139,7 @@
         CHARACTER(LV2), ALLOCATABLE, PUBLIC :: PRCSPCNAM( : )  ! valid process || species
         CHARACTER(LV2), ALLOCATABLE, PUBLIC :: SUMETPNAM( : )  ! S- || emis type names
         CHARACTER(LV1), ALLOCATABLE, PUBLIC :: SUMPOLNAM( : )  ! S- || pollutant names
+        CHARACTER(LV1), ALLOCATABLE, PUBLIC :: SUMSPCNAM( : )  ! S- || species names
 
         CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: SLUNIT( : ) ! spc var units
         CHARACTER(IODLEN3), ALLOCATABLE, PUBLIC :: SSUNIT( : ) ! spc var units
