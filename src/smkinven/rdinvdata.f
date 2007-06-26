@@ -1137,16 +1137,10 @@ C.................  Convert data to real numbers and check for missing values
 C.................  For area and point, convert control percentages
                 IF( CATEGORY == 'AREA' .OR. CATEGORY == 'POINT' ) THEN
                     EMFC = STR2REAL( READDATA( I,NEF ) )
-         
-                    IF( EMFC < AMISS3 .OR. EMFC == -9 ) THEN
-                        IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
-                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                         'emission factor for ' //
-     &                         TRIM( POLNAM ) // ' at line', IREC
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-                        
+
+C.....................  MRH removed emission factors warning on 6/6/07 because
+C                       SMOKE doesn't need emission factor, so why create warning?         
+                    IF( EMFC < AMISS3 .OR. EMFC == -9 ) THEN                     
                         EMFC = BADVAL3
                     END IF
                 
@@ -1198,29 +1192,17 @@ C.................  For area and point, convert control percentages
                 IF( CATEGORY == 'POINT' ) THEN
                     CPRI = STR2REAL( READDATA( I,NC1 ) )
                     
-                    IF( CPRI < AMISS3 .OR. CPRI == -9 ) THEN
-                        IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
-                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                         'primary control code for ' //
-     &                        TRIM( POLNAM ) // ' at line', IREC
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-                        
+C.....................  MRH removed primary control code warning on 6/6/07 because
+C                       SMOKE doesn't need code, so why create warning?         
+                    IF( CPRI < AMISS3 .OR. CPRI == -9 ) THEN                      
                         CPRI = BADVAL3
                     END IF
                     
                     CSEC = STR2INT( READDATA( I,NC2 ) )
                     
-                    IF( CSEC < AMISS3 .OR. CSEC == -9 ) THEN
-                        IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
-                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                         'secondary control code for ' //
-     &                         TRIM( POLNAM ) // ' at line', IREC
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-                        
+C.....................  MRH removed secondary control code warning on 6/6/07 because
+C                       SMOKE doesn't need code, so why create warning?         
+                    IF( CSEC < AMISS3 .OR. CSEC == -9 ) THEN                      
                         CSEC = BADVAL3
                     END IF
                 END IF
