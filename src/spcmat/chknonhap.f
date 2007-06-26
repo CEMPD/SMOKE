@@ -63,11 +63,10 @@ C...........   Subroutine arguments
         CHARACTER(*), INTENT  (IN) :: PNAM       ! pol name of interest
         LOGICAL     , INTENT (OUT) :: EFLAG      ! error flag
                                 
-C...........   Local unsorted arrays
-      
 C...........   Other local variables
 
         INTEGER         I, J, K  ! counters and indices
+        INTEGER         IOS      ! allocate status
         INTEGER         CNT
 
         CHARACTER(256)   MESG              ! message buffer
@@ -109,7 +108,8 @@ C...................  If data name not found in definition, then
 C                     give an error.  If it is found count it.
                     IF( K .LE. 0 ) THEN
                         EFLAG = .TRUE.
-                        MESG = 'ERROR: Pollutant "'// TRIM( INVDNAM(J) )
+                        WRITE( MESG,94010 ) 
+     &                         'ERROR: Pollutant "'// TRIM( INVDNAM(J) )
      &                         // '" part of definition of '// 
      &                         TRIM( PNAM ) // ' in INVTABLE but' //
      &                         CRLF() // BLANK10 // 'is missing from '//
