@@ -233,7 +233,7 @@ C               variables from the main program.
 C.............  Subprogram arguments
             INTEGER   N             ! local size for dimensioning
             INTEGER   M             ! local size for dimensioning
-            INTEGER   ITABLE( N,M ) ! index to control data table
+            INTEGER   ITABLE( -1:N,M ) ! index to control data table
 
 C......................................................................
 
