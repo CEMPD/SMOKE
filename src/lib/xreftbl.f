@@ -174,6 +174,7 @@ C.........  For first time routine is called ...
 
             MESG = 'Use only full SCC matches'
             FULLSCC = ENVYN ( 'FULLSCC_ONLY', MESG, .FALSE., I )
+            FIRSTIME = .FALSE.
 
         ENDIF
 
