@@ -31,21 +31,21 @@ if ( $exitstat > 0 ) then
    exit( $exitstat )
 endif
 
-# Check that EDSS_ROOT is set
-if ( ! $?EDSS_ROOT ) then
-    echo "ERROR: You must define the EDSS_ROOT environment variable"
+# Check that SMK_HOME is set
+if ( ! $?SMK_HOME ) then
+    echo "ERROR: You must define the SMK_HOME environment variable"
     echo "       before running this script.  Use the following command"
-    echo "       to set your EDSS_ROOT variable:"
-    echo "          setenv EDSS_ROOT <your chosen SMOKE installation dir>"
+    echo "       to set your SMK_HOME variable:"
+    echo "          setenv SMK_HOME <your chosen SMOKE installation dir>"
     exit( 1 )
 endif
 
-echo "SMOKE v2.2 will be installed in the following directory:"
-echo "      $EDSS_ROOT"
+echo "SMOKE v2.3.2 will be installed in the following directory:"
+echo "      $SMK_HOME"
 echo " "
 
 # Install files
-cd $EDSS_ROOT
+cd $SMK_HOME
 
 set file = smoke.nctox.data.tar.gz
 echo "Unpacking file $file..."
