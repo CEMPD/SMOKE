@@ -50,8 +50,8 @@ setenv RAW_DUP_CHECK        N   # Y checks for duplicate records
 setenv SMK_BASEYR_OVERRIDE  0   # year to override the base year of the inventory
 setenv SMK_DEFAULT_TZONE    5   # default time zone for sources not in the COSTCY file
 setenv SMK_EMS95_FIXFMT     N   # Y indicates that EMS-95 inventory is fixed format
-setenv SMK_NHAPEXCLUDE_YN   Y   # Y uses NHAPEXCLUDE file when integrating toxic sources
-setenv NONHAP_TYPE         VOC  # VOC or TOG for nonhap calculation 
+setenv SMK_NHAPEXCLUDE_YN   N   # Y uses NHAPEXCLUDE file when integrating toxic sources
+setenv NONHAP_TYPE         TOG  # VOC or TOG for nonhap calculation 
 setenv SMKINVEN_FORMULA     " " # formula for computing emissions value
 setenv WEST_HSPHERE         Y   # Y converts longitudes to negative values
 setenv WKDAY_NORMALIZE      N   # Y treats average-day emissions as weekday only
