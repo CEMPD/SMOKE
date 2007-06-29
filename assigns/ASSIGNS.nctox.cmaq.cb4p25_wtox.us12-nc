@@ -170,7 +170,7 @@ endif
    setenv HOLIDAYS    $GE_DAT/holidays.txt         # holidays for day change
    setenv SCCDESC     $GE_DAT/scc_desc_030804.txt  # SCC descriptions
    setenv SRGDESC     $GE_DAT/SRGDESC              # surrogate descriptions
-   setenv SRGPRO_PATH $GE_DAT/                     # surrogate files path
+   setenv SRGPRO_PATH $GE_DAT/Surrogates_12km/     # surrogate files path
    setenv ORISDESC    $GE_DAT/oris_info.txt        # ORIS ID descriptions
    setenv MACTDESC    $GE_DAT/mact_desc.txt        # MACT descriptions
    setenv NAICSDESC   $GE_DAT/naics_desc.txt       # NAICS descriptions
@@ -322,8 +322,8 @@ if ( $SMK_SOURCE == 'B' ) then
 endif
 
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
-   setenv BGTS_L    $B_OUT/bgts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf
-   setenv BGTS_S    $B_OUT/bgts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+   setenv BGTS_L    $B_OUT/b3gts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+   setenv BGTS_S    $B_OUT/b3gts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
    setenv B3GTS_L   $B_OUT/b3gts_l.$ESDATE.$NDAYS.$GRID.$MSB.ncf
    setenv B3GTS_S   $B_OUT/b3gts_s.$ESDATE.$NDAYS.$GRID.$MSB.ncf
    setenv BGTS_L_O  $B_OUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
@@ -447,10 +447,36 @@ endif
       unsetenv NRINV NCNTL NROAD NTMP NTMPNAME NSMAT_S NSMAT_L NRMAT_S NRMAT_L NRSUP NCMAT NGMAT NPMAT
       unsetenv NSCC NEPINVEN NTSUP NTSUPNAME NSSUP NGSUP NCREP NPROJREP NREACREP NCSUMREP NROAD_O NRINV_O
    endif
-#
-#  Merge output files
-   source $ASSIGNS/setmerge_files.scr
-#
+
+# Cumstomized Smkmerge output file names when merging all souce sectors
+# If using Smkmerge to merge all sectors
+   
+   if ( $SMKMERGE_CUSTOM_OUTPUT == Y && $RUN_SMKMERGE == Y ) then
+
+         setenv EOUT  $OUTPUT/egts_l.$ESDATE.$NDAYS.$SPC.$GRID.$ESCEN.ncf 
+         setenv AOUT  $A_OUT/agts_l.$ESDATE.$NDAYS.$GRID.$ASCEN.ncf 
+         setenv BOUT  $B_OUT/bgts_l_o.$ESDATE.$NDAYS.$GRID.$MSB.ncf
+         setenv MOUT  $M_OUT/mgts_l.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+         setenv POUT  $P_OUT/pgts3d_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
+         setenv PING  $OUTPUT/pingts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf 
+         setenv ELEV  $OUTPUT/elevts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.txt 
+         setenv REPEG $REPSCEN/rep_all_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPAG $REPSCEN/rep_ar_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPBG $REPSCEN/rep_bg_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPMG $REPSCEN/rep_mb_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPPG $REPSCEN/rep_pt_${ESDATE}_${GRID}_${SPC}.txt
+         setenv AGTS_L    $AOUT 
+         setenv PGTS_L    $POUT
+         setenv PGTS3D_L  $POUT
+         setenv EGTS_L    $EOUT
+         setenv REPB3GTS_L $REPSCEN/repb3gts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+         setenv REPB3GTS_S $REPSCEN/repb3gts_s.$ESDATE.$NDAYS.$GRID.$BSCEN.rpt
+    else
+
+      source $ASSIGNS/setmerge_files.scr    #  Define merging output file names 
+
+    endif
+
 #  Create and change permissions for output directories
    $ASSIGNS/smk_mkdir
 
