@@ -313,6 +313,15 @@ else
    setenv MRG_REPCNY_YN ' ' 
 endif
 
+
+if( $?SMKMERGE_CUSTOM_OUTPUT ) then
+   if( $?SMKMERGE_CUSTOM_OUTPUT == 'y' )  then
+      setenv SMKMERGE_CUSTOM_OUTPUT Y
+   endif
+else
+   setenv SMKMERGE_CUSTOM_OUTPUT N
+endif
+
 # Set default new environment variables
 
 setenv MRG_AREA        N
@@ -333,6 +342,15 @@ setenv MRG_POINT_REAC  N
 setenv MRG_POINT_CNTL  N
 setenv MRG_MULTI       N
 setenv MRG_MULTI_CNTL  N
+setenv MM              l
+
+# Determine if MM should be mole or mass based on script settings
+if ( $?MRG_GRDOUT_UNIT ) then
+   set check = `echo $MRG_GRDOUT_UNIT | grep mole`
+   if ( $status == 1 ) then
+       setenv MM s
+   endif
+endif
 
 # Parse character strings so can loop through them. Then loop through arrays 
 # and set appropriate variables
