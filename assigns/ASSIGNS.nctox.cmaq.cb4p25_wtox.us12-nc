@@ -460,11 +460,11 @@ endif
          setenv POUT  $P_OUT/pgts3d_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
          setenv PING  $OUTPUT/pingts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf 
          setenv ELEV  $OUTPUT/elevts_l.$ESDATE.$NDAYS.$GRID.$PSCEN.txt 
-         setenv REPEG $REPSCEN/rep_all_${ESDATE}_${GRID}_${SPC}.txt
-         setenv REPAG $REPSCEN/rep_ar_${ESDATE}_${GRID}_${SPC}.txt
-         setenv REPBG $REPSCEN/rep_bg_${ESDATE}_${GRID}_${SPC}.txt
-         setenv REPMG $REPSCEN/rep_mb_${ESDATE}_${GRID}_${SPC}.txt
-         setenv REPPG $REPSCEN/rep_pt_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPEG $REPSCEN/rep_${MM}_all_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPAG $REPSCEN/rep_${MM}_ar_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPBG $REPSCEN/rep_${MM}_bg_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPMG $REPSCEN/rep_${MM}_mb_${ESDATE}_${GRID}_${SPC}.txt
+         setenv REPPG $REPSCEN/rep_${MM}_pt_${ESDATE}_${GRID}_${SPC}.txt
          setenv AGTS_L    $AOUT 
          setenv PGTS_L    $POUT
          setenv PGTS3D_L  $POUT
