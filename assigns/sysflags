@@ -100,7 +100,7 @@ case Linux2_x86ifc:
     setenv M6_FFLAGS "$M6_FFLAG -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT} -I${MD_SRC}/${SMOKE_EXE}"
     breaksw
 default:
-    setenv M6_FFLAGS "$FFLAG"
+    setenv M6_FFLAGS "$FFLAGS"
 endsw
 
 echo " "
