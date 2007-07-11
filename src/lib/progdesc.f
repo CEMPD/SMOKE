@@ -203,7 +203,7 @@ C.........  SMOKE programs - listed in alphabetical order
             WRITE( LDEV,92000 ) 
      &      ' ',
      &  'Program SMKINVEN to take ASCII area or point source files',
-     &  'in IDA, EPS2, EMS-95, or SMOKE list format, or mobile files',
+     &  'in IDA, EMS-95, or SMOKE list format, or mobile files',
      &  'in IDA format, and produce the I/O API and ASCII SMOKE',  
      &  'inventory files and list of unique SCCs in the inventory.',
      &      ' '
