@@ -82,8 +82,8 @@ C...........   Other local variables
         INTEGER         IOS         !  i/o status
         INTEGER         MXERR       !  max no. errors
         INTEGER         MXWARN      !  max no. warnings
-        INTEGER         NERR        !  no. errors
-        INTEGER         NWARN       !  no. warnings
+        INTEGER      :: NERR  = 0   !  no. errors
+        INTEGER      :: NWARN = 0   !  no. warnings
         INTEGER         PCAS        !  previous CAS number
         INTEGER         PIPCOD      !  previous pollutant code
         INTEGER         POLCOD      !  current pollutant code from IPOSCODA
