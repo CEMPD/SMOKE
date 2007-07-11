@@ -442,6 +442,7 @@ C.........  Create content
         CALL CHECKMEM( IOS, 'ELECSCC', PROGNAME )
         ELECSCC = ' '  ! array
 
+        K = 0
         DO I = 1, NINVSCC
 
             BUFFER = SCCDESC( I )
