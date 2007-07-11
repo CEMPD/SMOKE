@@ -99,6 +99,9 @@ C.......  Allocatable arrays
       CHARACTER(8),  ALLOCATABLE :: TYPE  ( : )
       CHARACTER(8),  ALLOCATABLE :: CDATE ( : )   ! current DATE
 
+      REAL,          ALLOCATABLE :: EFTOTAL( : )
+      CHARACTER(15), ALLOCATABLE :: NPTOTAL( : )
+
       REAL,          ALLOCATABLE :: ALLVAL( :,: )    ! output variable values
       REAL,          ALLOCATABLE :: NONHAP( :,:,: )    ! output NONHAPTOG variable values
 
@@ -111,6 +114,7 @@ C.......  File units and logical names
       INTEGER      :: KDEV = 0            ! EDMS source id and SCC
       INTEGER      :: HDEV = 0            ! list of hourly emission input files
       INTEGER      :: LDEV = 0            ! unit number for log file
+      INTEGER      :: RDEV = 0            ! report file
       INTEGER      :: SDEV = 0            ! ICAO airport code, FIPS, LAT and LONG
       INTEGER      :: PDEV = 0            ! unit number for inventory data table
 
@@ -164,6 +168,7 @@ C.......  Other local variables
       REAL            WIDTH               ! source width
       REAL            LENGTH              ! source length
       REAL            SUM                 ! sum to determine area
+      REAL            TOTAL               ! emission total of period
 
       LOGICAL         ADD                 ! true: add current airport source to master list
       LOGICAL         NPFLAG              ! true: flag for new pollutants
@@ -253,6 +258,8 @@ C......  Open unit numbers of input files
       MESG = 'Enter logical name for output hourly inventory'
       DDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'PTHOUR', PROGNAME )
 
+      MESG = 'Enter logical name for report file'
+      RDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'REPORT', PROGNAME )
 
 C.......  initialize array for storing pollutant names
       ALLOCATE( OUTVAR( 50 ), STAT=IOS )
@@ -611,6 +618,9 @@ C.......  Write hourly inventory header
       WRITE( DDEV,93000 ) '#TYPE    Hourly Airport EDMS Inventory'
       WRITE( DDEV,93000 ) '#COUNTRY US'
 
+C.......  Reading a input list file
+      MXFILES = GETFLINE( HDEV, 'FILELIST input file' )
+
 C.......  Allocate arrays to store output values
       ALLOCATE( ALLVAL( MXSRC, 24 ), STAT=IOS )
       CALL CHECKMEM( IOS, 'ALLVAL', PROGNAME )
@@ -618,13 +628,19 @@ C.......  Allocate arrays to store output values
       CALL CHECKMEM( IOS, 'NONHAP', PROGNAME )
       ALLOCATE( CDATE( NDATE ), STAT=IOS )
       CALL CHECKMEM( IOS, 'CDATE', PROGNAME )
+      ALLOCATE( NPTOTAL( MXFILES ), STAT=IOS )
+      CALL CHECKMEM( IOS, 'NPTOTAL', PROGNAME )
+      ALLOCATE( EFTOTAL( MXFILES ), STAT=IOS )
+      CALL CHECKMEM( IOS, 'EFTOTAL', PROGNAME )
 
       ALLVAL = 0.  ! array
       NONHAP = 0.  ! array
       CDATE  = ' ' ! array
+      EFTOTAL = 0. ! array
+      NPTOTAL = ' ' ! array
 
 C.......  Process files in input list
-      MXFILES = GETFLINE( HDEV, 'FILELIST input file' )
+
       LHAP = 0
       LPOLNAM = ' '
       DO I = 1, MXFILES
@@ -664,13 +680,14 @@ C...........  Initialize values before reading file
           PDATE  = ' '
           TDATE  = ' '
           ALLVAL = 0.0
+          TOTAL  = 0.0          
 
 C...........  Read through input file          
           DO
 
               READ( FDEV, 93000, IOSTAT=IOS ) LINE
               IREC = IREC + 1
-              
+
               IF( IOS > 0 ) THEN
                   WRITE( MESG,94010 ) 'I/O error', IOS,
      &                'reading input file at line', IREC
@@ -688,7 +705,6 @@ C...............  Read name for current pollutant
               IF ( L > 0 ) THEN
                   POLNAM = ADJUSTL( LINE( L+10:L+50 ) )
                   L1 = LEN_TRIM( POLNAM )
-
 C...................  One cond:1st pol has to be THC to reduce usage of memory
                   IF( I == 1 ) THEN
                       IF( POLNAM /= 'THC' ) THEN
@@ -717,7 +733,6 @@ C...................  One cond:1st pol has to be THC to reduce usage of memory
 
 C...................  look for pol names in a list of pols
                   POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
-c bbh                  POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
 
                   IF( POS < 1 ) THEN
                       MESG = 'ERROR: Pollutant ID ' // TRIM( POLNAM )//
@@ -804,11 +819,11 @@ C.......................  Skip any zero daily total
                       IF( DAYTOT == 0.0 ) CYCLE 
 
                       IF( POLNAM /= 'TOG' ) THEN 
-                        WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
-     &                   APRTID( J ),LOCID( J ), HEIGHT( J ), POLNAM,
-     &                   PDATE, TZONE, 
-     &                   ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J ),
-     &                   FPOLNAM
+                         WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
+     &                      APRTID( J ),LOCID( J ), HEIGHT( J ), 
+     &                      POLNAM, PDATE, TZONE, 
+     &                     ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J ),
+     &                     FPOLNAM
                       END IF
                   END DO
 
@@ -820,9 +835,12 @@ C.......................  Skip any zero daily total
 
               END IF
 
-C...............  Store output values : convert metric g/sec to short tons/hr
+C...............  Store output values : convert metric g/sec/m2 to short tons/hr
               ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
      &                              * 0.003968254 * AREA( K )
+
+C...............  Store output values for report: convert metric g/sec/m2 to kg/hr
+              TOTAL = TOTAL + STR2REAL( SEGMENT( 8 ) ) * 3.6 * AREA( K )
 
 C..............  Conversion all HAPs (g in CH4) to (g in C)
               IF( ITVTSA(POS)=='V' .OR. ITVTSA(POS)=='T' )THEN
@@ -900,6 +918,11 @@ C...............  Skip any zero daily total
 
           CLOSE( FDEV )
 
+C...........  Store total emission factor and EDMS pollutant names
+          NPTOTAL( I ) = '          ' // POLNAM
+          IF( POLNAM == 'TOG' ) NPTOTAL( I ) = '          ' //'THC  '
+          EFTOTAL( I ) = TOTAL
+
 C...........  Adding new pollutants
           ADD = .TRUE.
 
@@ -975,6 +998,19 @@ C.......  Write annual inventory values
           END DO
       END DO
 
+C...........  Writing reports for total emission EDMS pollutant
+      WRITE( MESG,94010 ) 'Writing total emissions of EDMS pollutants'
+      CALL M3MSG2( MESG )
+
+C.......  Write ORL format annual inventory header for CAP/HAPs
+      WRITE( RDEV,93000 ) '# Report of total emission factors for '//
+     &                    'the FAA EDMS pollutants'
+      WRITE( RDEV,93000 ) '# Period : ' // STDATE // ' - ' // ENDATE
+      
+C.......  Write total emission factors for EDMS pollutants
+      WRITE( RDEV,93001 ) ( NPTOTAL( J ), J = 1, MXFILES )      
+      WRITE( RDEV,94012 ) ( EFTOTAL( J ), J = 1, MXFILES )
+
 C.......  End program successfully
       CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
@@ -982,6 +1018,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C.......  Formatted file I/O formats...... 93xxx
 93000 FORMAT( A )
+93001 FORMAT( 50(A,) )
 93010 FORMAT( I2.2,I3.3,',"',A,'","',I5,'","',I10,'",,"","',A10,
      &        '",,,"',I10,'",,,,,,,,"L",',F9.4,',',F9.4,',',I2,
      &        ',"',A,'",,,,,,,,,,,,,,,,,,' )
@@ -991,6 +1028,7 @@ C.......  Formatted file I/O formats...... 93xxx
 C.......  Internal buffering formats...... 94xxx
 94010 FORMAT( 10 ( A, :, I8, :, 2X  ) )
 94011 FORMAT( 10 ( A, :, F10.3, :, 2X  ) )
+94012 FORMAT( 50F15.3 )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
