@@ -156,6 +156,7 @@ C.........  Get maximum number of warnings
         NWARN = 0
 
 C.........  Define size of arrays for NONHAP calculation
+        NNONHAP = 0
         DO I = 1, MXIDAT
 
 C.............  Counts total numbers of names for mobile emission processing modes
