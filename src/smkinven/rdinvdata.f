@@ -143,7 +143,7 @@ C...........   Other local variables
         INTEGER         SCASPOS     !  position of CAS number in sorted array
         INTEGER         UCASPOS     !  position of CAS number in unique array
         INTEGER         WKSET       !  setting for wkly profile TPFLAG component
-        INTEGER      :: FWCOUNT     !  Filling warning count
+        INTEGER      :: FWCOUNT = 0 !  Filling warning count
         INTEGER      :: SAVNVAR = 1 !  Saved number of variables on previous line
 
         REAL            CEFF        !  tmp control effectiveness
@@ -294,15 +294,6 @@ C           the weekly profiles
      &         'correct by setting ' // CRLF() // BLANK10 //
      &         'WKDAY_NORMALIZE to Y and rerunning.'
             CALL M3MSG2( MESG )
-
-!        ELSE IF( EPSFLAG .AND. WKSET /= WTPRFAC ) THEN
-!
-!            MESG = 'WARNING: EPS2.0 format files will be using ' //
-!     &         'non-standard approach of ' // CRLF() // BLANK10 //
-!     &         'weekday normalized weekly profiles.  Can ' //
-!     &         'correct by setting ' // CRLF() // BLANK10 //
-!     &         'WKDAY_NORMALIZE to N and rerunning.'
-!            CALL M3MSG2( MESG )
 
         END IF
 
