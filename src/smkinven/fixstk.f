@@ -90,7 +90,7 @@ C...........   SUBROUTINE PARAMETERS
         INTEGER      , PARAMETER :: NSEG = 6        ! number of fields for ORL FIREDATA input format
 
 C...........   Temporary read arrays
-        CHARACTER(8)      SEGMENT( NSEG ) ! segments of line
+        CHARACTER(10)      SEGMENT( NSEG ) ! segments of line
 
 C.........  Unsorted arrays from stack replacements file
 
@@ -239,7 +239,7 @@ C.............  Get lines
             FIP = STR2INT( SEGMENT( 1 ) ) 
             WRITE( CFIP, FMTFIP ) FIP
 
-            TSCC = TRIM( SEGMENT( 2 ) )
+            TSCC = SEGMENT( 2 )
 
             CALL PADZERO( TSCC )
 
