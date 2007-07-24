@@ -102,6 +102,9 @@ C.......  Allocatable arrays
       REAL,          ALLOCATABLE :: EFTOTAL( : )
       CHARACTER(15), ALLOCATABLE :: NPTOTAL( : )
 
+      REAL,          ALLOCATABLE :: CVFACT( : )
+      CHARACTER(15), ALLOCATABLE :: NPFACT( : )
+
       REAL,          ALLOCATABLE :: ALLVAL( :,: )    ! output variable values
       REAL,          ALLOCATABLE :: NONHAP( :,:,: )    ! output NONHAPTOG variable values
 
@@ -117,9 +120,10 @@ C.......  File units and logical names
       INTEGER      :: RDEV = 0            ! report file
       INTEGER      :: SDEV = 0            ! ICAO airport code, FIPS, LAT and LONG
       INTEGER      :: PDEV = 0            ! unit number for inventory data table
+      INTEGER      :: TDEV = 0            ! EDMS species conversion factors
 
 C.......  Other local variables
-      INTEGER         I, J, K, L, L1, M, T ! counters and indices
+      INTEGER         I, J, K, L, L1, M, NF, T ! counters and indices
       INTEGER         IOS                 ! i/o status
       INTEGER         IREC                ! line counter
       INTEGER         IHOUR               ! current time step
@@ -145,6 +149,7 @@ C.......  Other local variables
       INTEGER         NOUTVAR             ! number of output variables
       INTEGER         MXSRC               ! Max number of SRCPARAM in input file
       INTEGER         NAPT                ! A number of EDMS_SCCs list
+      INTEGER         NFAC                ! A number of conversion factors
       INTEGER         MXLOC               ! Max number of LOCATION in input file
       INTEGER         MXFILES             ! Max number of input files listed in FILELIST
       INTEGER         UTMZONE             ! airport UTM zone
@@ -168,6 +173,7 @@ C.......  Other local variables
       REAL            WIDTH               ! source width
       REAL            LENGTH              ! source length
       REAL            SUM                 ! sum to determine area
+      REAL            CONVF               ! HAPs conversion factors
       REAL            TOTAL               ! emission total of period
 
       LOGICAL         ADD                 ! true: add current airport source to master list
@@ -247,6 +253,9 @@ C......  Open unit numbers of input files
 
       MESG = 'Enter logical name for a file of EDMS source and SCC'
       KDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'EDMS_SCC', PROGNAME )
+
+      MESG = 'Enter logical name for a file of conversion factors'
+      TDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'EDMS_FACT', PROGNAME )
 
       MESG = 'Enter logical name for country, state, and county ' //
      &       'file'
@@ -358,6 +367,9 @@ C...............  Look for airport ICAO code and location coordinate
 
 C...................  Look for airport FIPS, XLOC and YLOC using ICAO code
                   CALL READ_ICAO_FIPS( ICAOCODE )
+
+C...................  stores EDMS source IDs and SCCs
+                  CALL READ_EDMS_FACTOR
 
 C...................  stores EDMS source IDs and SCCs
                   CALL READ_EDMS_SCC
@@ -842,10 +854,41 @@ C...............  Store output values : convert metric g/sec/m2 to short tons/hr
 C...............  Store output values for report: convert metric g/sec/m2 to kg/hr
               TOTAL = TOTAL + STR2REAL( SEGMENT( 8 ) ) * 3.6 * AREA( K )
 
-C..............  Conversion all HAPs (g in CH4) to (g in C)
-              IF( ITVTSA(POS)=='V' .OR. ITVTSA(POS)=='T' )THEN
-                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.947
+C...............  Convert THC(g in CH4) to TOG(g) 
+C                 Note: This conversion factor 1.148106 is based on
+C                 GSPRO #1098 for SCC 227502000 only.
+C...............  Store converted TOG (THC-->TOG) to NONHAP(:,:,:) initially
+              IF( POLNAM == 'TOG' ) THEN
 
+C................... 0.947 = mass conv factor (0.865) * 1.0947 (THC to VOC)
+                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.947  !CH4 to C
+
+C...............  Convert TOG(g in C) = 1.148106 * VOC(g in C) 
+                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 1.148106
+
+                  NONHAP( NDY, K, IHOUR ) = ALLVAL( K, IHOUR )
+
+C............... Convert NO emission in NO2 equivalcy to NO equivalency (30/44)
+              ELSE IF( POLNAM == 'NO' ) THEN
+                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.682
+
+C..............  Conversion all HAPs (g in CH4) to (g)
+              ELSE IF( ITVTSA(POS)=='V' .OR. ITVTSA(POS)=='T' )THEN
+
+C...................  Apply individual HAP conversion factor to convert
+C                     CH4 equivalent to species mass equivalent.
+                  NF = INDEX1( POLNAM, NFAC, NPFACT )
+                  IF( NF < 1 ) THEN
+                      MESG = 'ERROR: Could not find the matched EDMS '//
+     &                   'conversion factor of ( ' // TRIM( POLNAM ) // 
+     &                   ' ) from EDMS_FACTOR file'
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  END IF
+                  CONVF = CVFACT( NF )
+
+                  ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * CONVF
+
+C...................  Count a number of HAPs
                   IF( POLNAM /= LPOLNAM ) THEN
                       LHAP = LHAP + 1   ! counts HAPs 
                       LPOLNAM = POLNAM
@@ -864,25 +907,6 @@ C..................  Error msg when total HAPs is greater than TOG
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                  END IF
 
-C............... Convert NO emission in NO2 equivalcy to NO equivalency (33/40)
-              ELSE IF( POLNAM == 'NO' ) THEN
-                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.682
-
-              END IF
-
-C...............  Convert THC(g in CH4) to TOG(g in C) 
-C                 Note: This conversion factor 1.148106 is based on
-C                 GSPRO #1098 for SCC 227502000 only.
-C...............  Store converted TOG (THC-->TOG) to NONHAP(:,:,:) initially
-              IF( POLNAM == 'TOG' ) THEN
-
-C................... 0.947 = mass conv factor (0.865) * 1.0947 (THC to VOC)
-                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.947  !CH4 to C
-
-C...............  Convert TOG(g in C) = 1.148106 * VOC(g in C) 
-                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 1.148106
-
-                  NONHAP( NDY, K, IHOUR ) = ALLVAL( K, IHOUR )
               END IF
 
           END DO
@@ -1008,8 +1032,8 @@ C.......  Write ORL format annual inventory header for CAP/HAPs
       WRITE( RDEV,93000 ) '# Period : ' // STDATE // ' - ' // ENDATE
       
 C.......  Write total emission factors for EDMS pollutants
-      WRITE( RDEV,93001 ) ( NPTOTAL( J ), J = 1, MXFILES )      
-      WRITE( RDEV,94012 ) ( EFTOTAL( J ), J = 1, MXFILES )
+      WRITE( RDEV,93001 ) ( NPTOTAL( J ), J = 1, NOUTVAR )      
+      WRITE( RDEV,94012 ) ( EFTOTAL( J ), J = 1, NOUTVAR )
 
 C.......  End program successfully
       CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -1118,6 +1142,86 @@ C.......  Internal buffering formats...... 94xxx
 94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
 
         END SUBROUTINE READ_ICAO_FIPS
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+C      This subroutine stores a list of EDMS CH4 equilvalent pollutant 
+C      with conversion factors to convert to species mass emission factor unit
+
+       SUBROUTINE READ_EDMS_FACTOR
+
+C...........   Local variables
+          INTEGER         I, N                  ! indices and counters
+
+          INTEGER      :: NLINES = 0            ! number of lines in input file
+
+          CHARACTER(256)  LINE                  ! Read buffer for a line
+          CHARACTER(300)  MESG                  ! Message buffer
+          CHARACTER(15 )  SEGMENT( 2 )          ! line parsing array
+
+C......................................................................
+
+C.........  Get the number of lines
+        NLINES = GETFLINE( TDEV, 'EDMS_FACTOR input file' )
+
+C...........  Determine number of lines in filelist; this will be the maximum
+C             number of airport sources
+        ALLOCATE( CVFACT( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CVFACT', PROGNAME )
+        ALLOCATE( NPFACT( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NPFACT', PROGNAME )
+
+        NPFACT = ' '
+        CVFACT = 0.0
+        
+C.........  Read the ICAO_FIPS file and find FIPS for ICAOCODE
+        N = 0
+        IREC  = 0
+
+        DO I = 1, NLINES
+
+            READ ( TDEV, 93000, IOSTAT=IOS ) LINE
+            IREC = IREC + 1
+
+            IF ( IOS .GT. 0 ) THEN
+                WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading EDMS_FACTOR '//
+     &                'description file at line', IREC
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Left adjust line
+            LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
+
+C.............  Get line
+            CALL PARSLINE( LINE, 2, SEGMENT )
+
+            N = N + 1
+            NPFACT( N ) = SEGMENT( 1 )
+            CVFACT( N ) = STR2REAL( SEGMENT( 2 ) )
+        END DO    ! end of loop
+
+        IF( N == 0 ) THEN 
+            MESG = 'ERROR: No entries of EDMS source with SCC'
+            CALL M3MSG2( MESG )
+        END IF
+
+        NFAC = N
+
+        RETURN
+
+C...................  FORMAT  STATEMENTS   ............................
+
+C.......  Formatted file I/O formats...... 93xxx
+93000   FORMAT( A )
+
+C.......  Internal buffering formats...... 94xxx
+94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
+
+        END SUBROUTINE READ_EDMS_FACTOR
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
