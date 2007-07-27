@@ -870,7 +870,7 @@ C...............  Convert TOG(g in C) = 1.148106 * VOC(g in C)
 
 C............... Convert NO emission in NO2 equivalcy to NO equivalency (30/44)
               ELSE IF( POLNAM == 'NO' ) THEN
-                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.682
+                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.652
 
 C..............  Conversion all HAPs (g in CH4) to (g)
               ELSE IF( ITVTSA(POS)=='V' .OR. ITVTSA(POS)=='T' )THEN
