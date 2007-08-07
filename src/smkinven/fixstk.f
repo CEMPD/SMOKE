@@ -66,6 +66,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         BLKORCMT
         INTEGER         STR2INT
         REAL            STR2REAL
+        INTEGER         ENVINT
 
         EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE, STR2REAL,
      &                  STR2INT
@@ -135,6 +136,9 @@ C.........  Other local variables
         INTEGER         NPSTK   !  number of PSTK entries
         INTEGER         SID     !  temporary state ID
 
+        INTEGER, SAVE :: NWARN = 0            ! warning count
+        INTEGER, SAVE :: MXWARN               ! max no. warnings
+
         REAL            HT      !  temporary height
         REAL            DM      !  temporary diameter
         REAL            TK      !  temporary exit temperature
@@ -167,6 +171,9 @@ C   begin body of subroutine FIXSTK
 C.........   Get LOG file unit, so can write to directly (using M3MESG would
 C            add too many spaces for some messages)
         LDEV = INIT3()
+
+C.........   Get maximum number of warnings
+        MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
         CALL M3MSG2( 'Reading default stack parameters...' )
 
@@ -322,48 +329,59 @@ C.........  the missing stack parameters, which should get defaults.
      &           VE .GT. MAXVE .OR.
      &         ( VE .LT. MINVE .AND. VE .GT. 0 ) ) THEN
 
-                CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
-                WRITE( MESG,94010 ) BUFFER( 1:L2 ) // ' SCC: '// TSCC
-                CALL M3MESG( MESG )
+               NWARN = NWARN + 1
+               IF( NWARN <= MXWARN ) THEN
+                  CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
+                  WRITE( MESG,94010 ) BUFFER( 1:L2 ) // ' SCC: '// TSCC
+                  CALL M3MESG( MESG )
+               END IF
 
             END IF
 
             IF ( HT .GT. MAXHT ) THEN
-                WRITE( LDEV,94030 ) 'Height', HT, MAXHT
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94030 ) 'Height', HT, MAXHT
                 HT = MAXHT
 
             ELSEIF( HT .LT. MINHT .AND. HT .GT. 0 ) THEN
-                WRITE( LDEV,94040 ) 'Height', HT, MINHT
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94040 ) 'Height', HT, MINHT
                 HT = MINHT
 
             END IF
 
             IF ( DM .GT. MAXDM ) THEN
-                WRITE( LDEV,94030 ) '  Diam', DM, MAXDM
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94030 ) '  Diam', DM, MAXDM
                 DM = MAXDM
 
             ELSEIF( DM .LT. MINDM .AND. DM .GT. 0 ) THEN
-                WRITE( LDEV,94040 ) '  Diam', DM, MINDM
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94040 ) '  Diam', DM, MINDM
                 DM = MINDM
 
             END IF
 
             IF ( TK .GT. MAXTK )THEN
-                WRITE( LDEV,94030 ) '  Temp', TK, MAXTK
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94030 ) '  Temp', TK, MAXTK
                 TK = MAXTK
 
             ELSEIF( TK .LT. MINTK .AND. TK .GT. 0 ) THEN 
-                WRITE( LDEV,94040 ) '  Temp', TK, MINTK
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94040 ) '  Temp', TK, MINTK
                 TK = MINTK
 
             END IF
 
             IF ( VE .GT. MAXVE )THEN
-                WRITE( LDEV,94030 ) ' Veloc', VE, MAXVE
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94030 ) ' Veloc', VE, MAXVE
                 VE = MAXVE
 
             ELSEIF( VE .LT. MINVE .AND. VE .GT. 0 ) THEN
-                WRITE( LDEV,94040 ) ' Veloc', VE, MINVE
+                IF( NWARN <= MXWARN ) 
+     &              WRITE( LDEV,94040 ) ' Veloc', VE, MINVE
                 VE = MINVE
  
             END IF
@@ -381,6 +399,7 @@ C...........   Now do replacements of MISSING stack parameters:
 C...........   4 passes -- ht, dm, tk, ve
 C...........   Treat parameters equal to 0 as missing
 
+        NWARN = 0
         DO S = 1, NSRC
 
             K = 0                ! Initialize K to test if replacements made
@@ -440,28 +459,34 @@ C.............  Set up temporary character strings
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
+                    NWARN = NWARN + 1
+
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
      &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
 
-                    WRITE( LDEV,94020 )     'Height', STKHT( S ), HT
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT
                     STKHT( S ) = HT
 
                     IF ( STKDM( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
+                        IF( NWARN <= MXWARN )
+     &                      WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
                         STKDM( S ) = DM
                     END IF
 
                     IF ( STKTK( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
+                        IF( NWARN <= MXWARN )
+     &                      WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
                         STKTK( S ) = TK
                     END IF 
 
                     IF ( STKVE( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                        IF( NWARN <= MXWARN )
+     &                      WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                         STKVE( S ) = VE
                     END IF
                 END IF
@@ -506,23 +531,28 @@ C.............  Set up temporary character strings
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
+                    NWARN = NWARN + 1
+
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
      &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
 
-                    WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM
                     STKDM( S ) = DM
 
                     IF ( STKTK( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
+                        IF( NWARN <= MXWARN )
+     &                      WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
                         STKTK( S ) = TK
                     END IF 
 
                     IF ( STKVE( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                        IF( NWARN <= MXWARN )
+     &                      WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                         STKVE( S ) = VE
                     END IF
                 END IF
@@ -564,18 +594,22 @@ C.............  Set up temporary character strings
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
+                    NWARN = NWARN + 1
+
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
      &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
 
-                    WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK
                     STKTK( S ) = TK
 
                     IF ( STKVE( S ) .LE. 0 ) THEN
-                        WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                        IF( NWARN <= MXWARN )
+     &                      WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                         STKVE( S ) = VE
                     END IF
                 END IF
@@ -614,14 +648,17 @@ C.............  Set up temporary character strings
 
                 IF( .NOT. DFLAG( S ) ) THEN
 
+                    NWARN = NWARN + 1
+
                     CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2)
                     WRITE( MESG,94010 ) 
      &                     BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                     CRLF() // BLANK5 // 
      &                     '             Old        New'
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
 
-                    WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE
                     STKVE( S ) = VE
                 END IF
 
@@ -634,6 +671,7 @@ C.........  This is in a separate loop to permit better reporting
      
         CALL M3MESG( 'Ultimate fallback stack parameters report:' )
 
+        NWARN = 0
         DO S = 1, NSRC
 
             IF( DFLAG( S ) ) THEN
@@ -652,29 +690,34 @@ C.................  Error msg when there are no default x-reference available
                 
                 CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
 
+                NWARN = NWARN + 1
                 WRITE( MESG,94010 ) 
      &                 BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
      &                 CRLF() // BLANK5 // 
      &                 '             Old        New'
-                CALL M3MESG( MESG )
+                IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
 
                 IF ( STKHT( S ) .LE. 0 ) THEN
-                    WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT0
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) 'Height', STKHT( S ), HT0
                     STKHT( S ) = HT0
                 END IF
 
                 IF ( STKDM( S ) .LE. 0 ) THEN
-                    WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM0
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) '  Diam', STKDM( S ), DM0
                     STKDM( S ) = DM0
                 END IF
 
                 IF ( STKTK( S ) .LE. 0 ) THEN
-                    WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK0
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) '  Temp', STKTK( S ), TK0
                     STKTK( S ) = TK0
                 END IF 
 
                 IF ( STKVE( S ) .LE. 0 ) THEN
-                    WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE0
+                    IF( NWARN <= MXWARN )
+     &                  WRITE( LDEV,94020 ) ' Veloc', STKVE( S ), VE0
                     STKVE( S ) = VE0
                 END IF
 
