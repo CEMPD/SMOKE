@@ -707,40 +707,87 @@ C.....................  Initialize temporary characteristics
 C.....................  Read in line of character data
 
                     IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                  MCTIN .AND. NAIIN .AND. STPIN .AND. ERPIN ) THEN
+     &                  MCTIN .AND. NAIIN .AND. STPIN .AND.
+     &                  NEIIN .AND. EXTIN .AND. ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
      &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
 
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
+     &                  MCTIN .AND. NAIIN .AND. STPIN .AND. ERPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS
+
                     ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND. 
-     &                       NAIIN .AND. STPIN .AND. ERPIN ) THEN
+     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
+     &                       NEIIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
      &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
      
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND. 
+     &                       NAIIN .AND. STPIN .AND. ERPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS
+     
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. 
+     &                       STPIN .AND. ERPIN .AND. NEIIN .AND. 
+     &                       EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS, CNEI, CEXT   
+
                     ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. 
      &                       STPIN .AND. ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS    
+     &                      CSTP, CERP, CPDS
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
+     &                       NEIIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CNEI, CEXT
 
                     ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CNEI, CEXT
+     &                      CPDS
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. 
+     &                       NEIIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
+     &                      CNEI, CEXT
 
                     ELSE IF( ORSIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS
 
-                    ELSE IF( ORSIN .AND. BLRIN ) THEN
+                    ELSE IF( ORSIN .AND. BLRIN .AND.
+     &                       NEIIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
      &                      CNEI, CEXT
      
+                    ELSE IF( ORSIN .AND. BLRIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
+
+                    ELSE IF( PDSIN .AND. NEIIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI,
+     &                      CEXT      
+
                     ELSE IF( PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1, NC ), CS, CPDS      
+
+                    ELSE IF( NEIIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CNEI, CEXT
 
                     ELSE 
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
