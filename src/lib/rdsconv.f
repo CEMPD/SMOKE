@@ -133,6 +133,7 @@ C.........  Other local variables
 
         CHARACTER(TBLLEN)  PCV       ! tmp pollutant conversion chars
         CHARACTER(TBLLEN)  PREVPCV   ! tmp previous pol conversion chars
+        CHARACTER(SPNLEN3) PREVSPROF ! tmp previous speciation profile
         CHARACTER(STALEN3) CSTA      ! tmp Cy/St code
         CHARACTER(FIPLEN3) CFIP      ! tmp Cy/St/Co code
         CHARACTER(FIPLEN3) FIPZERO   ! zero Cy/St/Co code
@@ -485,6 +486,7 @@ C.........  Store pollutant conversion factors in sorted tables
         PFIPSCC = ' '
         N = 0             ! array
         PREVPCV = EMCMISS3
+        PREVSPROF = EMCMISS3
         DO I = 1, NCONV
 
             J    = INDX( I )
@@ -497,13 +499,15 @@ C.............  For Profile-based format
             IF( T .EQ. 4 ) THEN
                 SPROF = PCV( 1: SPNLEN3 )
 
-C.................  If current profile/pollutant is not equal to previous profile/pollutant
-                IF ( PCV .NE. PREVPCV ) THEN
+C.................  If current profile is not equal to previous profile
+                IF ( SPROF .NE. PREVSPROF ) THEN
                     N( T ) = N( T ) + 1
                     K = N( T )
+                END IF
+                PREVSPROF = SPROF
 
 C.................  If duplicate entry found...
-                ELSE 
+                IF( PCV .EQ. PREVPCV ) THEN
 
                     MESG = 'ERROR: Duplicate entry in pollutant ' //
      &                 'conversion file:' // CRLF() // BLANK10 //
