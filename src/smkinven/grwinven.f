@@ -720,8 +720,8 @@ C                   and projection matrices
      &                        TRIM( CNAME( I ) ) // '"'
                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                    END IF
-                    
-                   IF( .NOT. PFLAG ) THEN  ! not for PROJECTION packet/matrix 
+
+                   IF( CTYPE(I) .NE. CTYPPROJ ) THEN  ! not for PROJECTION packet/matrix 
 
                       L = LEN_TRIM( VARBUF )
                       IF( .NOT. READSET( CNAME( I ), 'CE_'//VARBUF(1:L),
@@ -774,13 +774,13 @@ C                           base year of the projection matrix...
                         IF( INVYR_BASE( S ) .NE. PBYEAR ) CYCLE
 
 C.........................  Adjust annual emissions or activity
-                        DATAVAR( C,1 ) = DATAVAR( C,1 ) * ALLFAC* PSFAC
+                        DATAVAR( C,1 ) = 
+     &                       MAX( DATAVAR( C,1 ) * ALLFAC* PSFAC, 0. )
 
 C.........................  Adjust average-day emissions (OS_* variable)
-                        IF( NPVAR .GT. 1 ) THEN
-                            IF( DATAVAR( C,2 ) .GT. 0. ) 
-     &                          DATAVAR(C,2)=DATAVAR(C,2)*ALLFAC*PSFAC
-                        END IF
+                        IF( NPVAR .GT. 1 ) DATAVAR( C,2 ) =
+     &                       MAX( DATAVAR( C,2 ) * ALLFAC * PSFAC,0. )
+
                     END DO
 
                 ELSEIF( CTYPE(I) .EQ. CTYPMULT ) THEN ! Multiply (standard)
@@ -795,13 +795,15 @@ C.........................  Adjust average-day emissions (OS_* variable)
                             PSFAC  = CFAC( S )
                         END IF
 
-                        DATAVAR( C,1 ) = DATAVAR( C,1 )* ALLFAC* PSFAC
+                        DATAVAR( C,1 ) = 
+     &                           MAX( DATAVAR( C,1 )*ALLFAC*PSFAC, 0. )
 
 C.........................  Adjust average-day emissions (OS_* variable)
                         IF( NPVAR .GT. 1 ) THEN
                             IF( DATAVAR( C,2 ) .GT. 0. ) 
-     &                          DATAVAR(C,2)=DATAVAR(C,2)*ALLFAC*PSFAC
-     
+     &                          DATAVAR(C,2)=
+     &                            MAX( DATAVAR(C,2)*ALLFAC*PSFAC, 0. )
+
 C.........................  Set the control efficiency, rule effectiveness
 C                           and rule penetration to the values from the
 C                           control matrix.
