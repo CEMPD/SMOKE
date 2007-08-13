@@ -657,6 +657,13 @@ C.................  Add to state population
 C.........  Deallocate locally allocated memory
         IF( ALLOCATED( INSTATE ) ) DEALLOCATE( INSTATE )
 
+        IF ( EFLAG ) THEN
+            MESG = 'Problem reading country/state/county file. '//
+     &             'See previously listed errors.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+        END IF
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
