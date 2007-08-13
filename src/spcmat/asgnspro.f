@@ -1,6 +1,6 @@
 
         SUBROUTINE ASGNSPRO( MASSOUT, MOLEOUT, REPORT, NSRCIN, SDEV, 
-     &                       ENAM, MASSMATX, MOLEMATX )
+     &                       ENAM, LVALCHK, MASSMATX, MOLEMATX )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -92,8 +92,12 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: NSRCIN         ! number of sources
         INTEGER     , INTENT    (IN) :: SDEV           ! suplmt file unit no.
         CHARACTER(*), INTENT    (IN) :: ENAM    ! pol/emis type name of interest
+        LOGICAL     , INTENT    (IN) :: LVALCHK ! true: check value of pol/emis from EI
         REAL        , INTENT(IN OUT) :: MASSMATX( NSRCIN,* )! mass spec matx
         REAL        , INTENT(IN OUT) :: MOLEMATX( NSRCIN,* )! mole spec matx
+
+C.........  Local allocatable arrays
+        REAL, ALLOCATABLE, SAVE :: EMISTMP( : )  ! tmp emis for 1 pollutant by source
 
 C.........  Other local variables
         INTEGER          K, L, L2, LV, S, V    !  counters and indices
@@ -186,6 +190,10 @@ C.............  Set up format for writing roadway type, vehicle ID, and SIC to s
 C.............  Figure out if SIC and/or MACT codes are available
             IF ( ASSOCIATED ( ISIC  ) ) SICFLAG  = .TRUE.
             IF ( ASSOCIATED ( CMACT ) ) MACTFLAG = .TRUE.
+
+C.............  Allocate local memory for reading emissions
+            ALLOCATE( EMISTMP( NSRCIN ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMISTMP', PROGNAME )
             
             FIRSTIME = .FALSE.
 
@@ -214,6 +222,12 @@ C.........  Initialize matrices to 0.
             MOLEMATX( :,1:MXSPEC ) = 0.    ! array
         END IF
 
+C.........  Read emissions for current pollutant. If the emissions for a
+C           source are zero, then the profile is not needed and the
+C           massmatx and molematx calculations can be skipped.
+C.........  Only do this when emissions (not VMT) in inventory (LVALCHK=TRUE)
+        IF( LVALCHK ) CALL RDMAPPOL( NSRCIN, 1, 1, ENAM, EMISTMP )
+
 C.........  Write pollutant of interest to the supplemental file
         WRITE( SDEV, '(A)' ) '"' // ENAM // '"'
 
@@ -226,6 +240,9 @@ C.........  Find index in complete list of pollutants and set length of name
         LV = LEN_TRIM( EANAM( V ) )
 
         DO S = 1, NSRCIN
+
+C.............  If emissions are zero for this source, then skip it
+            IF( LVALCHK .AND. EMISTMP( S ) .LE. 0 ) CYCLE
 
             CSRC  = CSOURC( S )
             CFIP  = CSRC( 1:FIPLEN3 )

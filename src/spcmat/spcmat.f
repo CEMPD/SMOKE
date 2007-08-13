@@ -91,6 +91,7 @@ C.........   Speciation matrices:
 C.........  Inventory pollutants actually in the inventory
         LOGICAL           , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
         LOGICAL           , ALLOCATABLE :: IDXCHK( : ) ! true: EAIDX value accounted for
+        LOGICAL           , ALLOCATABLE :: LEMIS ( : ) ! true: emissions, not activity-based
         CHARACTER(IOVLEN3), ALLOCATABLE :: IINAM ( : ) ! initial pols
         CHARACTER(IOVLEN3), ALLOCATABLE :: SINAM ( : ) ! output pollutants
 
@@ -347,6 +348,8 @@ C           pollutants
         CALL CHECKMEM( IOS, 'EAIDX', PROGNAME )  
         ALLOCATE( SANAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SANAM', PROGNAME )
+        ALLOCATE( LEMIS( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LEMIS', PROGNAME )
         ALLOCATE( IINAM( NOPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IINAM', PROGNAME )
         ALLOCATE( SINAM( NOPOL ), STAT=IOS )
@@ -360,6 +363,7 @@ C.........  Initialize arrays
         EANAM  = ' '      ! array
         EAIDX  = 1        ! array
         SANAM  = ' '      ! array
+        LEMIS  = .TRUE.   ! array
         IINAM  = ' '      ! array
         SINAM  = ' '      ! array
         SPCOUT = .TRUE.   ! array
@@ -397,6 +401,9 @@ C.................  If it does not already appear in list, store pollutant name
 
 C.................  Set index back to master list (IINAM) position 
                 EAIDX( J ) = N
+
+C.................  Flag that this entry is activity-based, not raw emissions
+                LEMIS( J ) = .FALSE.
 
             END DO
 
@@ -721,8 +728,8 @@ C.................  Abridge profiles so that there is an array of unique profile
 
 C.................  Assign speciation profile and populate speciation matrices
 C                   for all sources for this pollutant.
-                CALL ASGNSPRO( MASSOUT, MOLEOUT, DEFREPRT, NSRC, 
-     &                         UDEV, ENAM, MASSMATX, MOLEMATX )
+                CALL ASGNSPRO( MASSOUT, MOLEOUT, DEFREPRT, NSRC, UDEV,
+     &                         ENAM, LEMIS( K ), MASSMATX, MOLEMATX )
 
 C.................  Deallocate memory for unique profiles arrays
                 DEALLOCATE( SPROFN, IDXSPRO, NSPECIES, IDXSSPEC )
