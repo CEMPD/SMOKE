@@ -110,6 +110,8 @@ C...........   Other local variables
         LOGICAL      :: JFLAG   = .FALSE.  ! true: projections in use
         LOGICAL      :: KFLAG   = .FALSE.  ! true: tracking file in use
         LOGICAL      :: LFLAG   = .FALSE.  ! true: allowable cntls in use
+        LOGICAL      :: LCTMP   = .FALSE.  ! true: tmp control file written
+        LOGICAL      :: LPTMP   = .FALSE.  ! true: tmp projection file written
         LOGICAL      :: MFLAG   = .FALSE.  ! true: mact cntls is use
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
         LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
@@ -220,7 +222,7 @@ C.........  Initialize arrays
 
 C.........  Allocate memory for control packet information in input file.
         CALL ALOCPKTS( CDEV, WDEV, SYEAR, CPYEAR, PKTCNT, 
-     &                 PKTBEG, XRFCNT )
+     &                 PKTBEG, XRFCNT, LPTMP, LCTMP )
 
 C.........  Set the flags that indicate which packets are valid
         GFLAG = ( PKTCNT( 1 ) .GT. 0 )
@@ -257,25 +259,48 @@ C           the final output files.
         ACTION = 'PROCESS'
         CALL PKTLOOP( CDEV, PTMPDEV, CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV, 
      &                WDEV, CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, 
-     &                XRFCNT )
+     &                XRFCNT, LPTMP, LCTMP )
 
 C.........  Process projection matrix that depends on pol/acts...
-        IF( JFLAG ) THEN
+        IF( JFLAG .AND. LPTMP ) THEN
 
             CALL GENPROJ( PTMPDEV, CPYEAR, ENAME )
+
+        ELSE IF ( JFLAG ) THEN
+            MESG = 'WARNING: No records from the projection packet '//
+     &             'matched the inventory.'
+            CALL M3MSG2( MESG )
 
         END IF
 
 C.........  Process control matrices that depend on pollutants...
 
 C.........  Multiplicative matrix
-        IF( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG .OR. MFLAG ) THEN
+        IF( LCTMP .AND.
+     &    ( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG .OR. MFLAG ) ) THEN
 
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
             CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV, 
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
      &                     LFLAG, SFLAG, MFLAG )
+        ELSE IF ( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG .OR. 
+     &            MFLAG ) THEN
+            MESG = 'WARNING: No records from any control packet '//
+     &             'matched the inventory.'
+            CALL M3MSG2( MESG )
+
+        END IF
+
+C.........  Do a final check that at least 1 tmp file had records written.
+C           This is supposed to be checked by ALOCPKTS, but add here in case it
+C           fails for some reason (like bug/code change error).
+        IF( .NOT. LPTMP .AND. .NOT. LCTMP ) THEN
+
+            MESG = 'ERROR: No records from any packet matched the '//
+     &             'inventory sources.' 
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
         END IF
 
 C.........  Post-process temporary files to create final report file
@@ -291,4 +316,3 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
         END PROGRAM CNTLMAT
-

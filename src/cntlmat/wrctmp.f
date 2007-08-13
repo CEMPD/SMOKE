@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRCTMP( IDEV, POLID, IDX, VIDX )
+        SUBROUTINE WRCTMP( IDEV, POLID, IDX, VIDX, LOUTANY )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -49,6 +49,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: POLID          ! pollutant number
         INTEGER     , INTENT (IN) :: IDX ( NSRC )   ! index to data tables
         INTEGER     , INTENT(OUT) :: VIDX( NIPPA )  ! pollutant/act flags
+        LOGICAL     , INTENT(OUT) :: LOUTANY        ! true: at least one pollutant output
 
 C...........   Other local variables
 
@@ -56,6 +57,8 @@ C...........   Other local variables
 
 C***********************************************************************
 C   Begin body of subroutine WRCTMP
+
+        LOUTANY = .FALSE.
 
 C.............. Write indices to control factor packets to a temporary file
 C               for only those pollutants that have controls
@@ -65,8 +68,10 @@ C               for only those pollutants that have controls
                 WRITE( IDEV, '(I8)' ) IDX( S )
 
             END DO   ! end source loop
-        END IF
+            LOUTANY = .TRUE.
 
+        END IF
+    
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************

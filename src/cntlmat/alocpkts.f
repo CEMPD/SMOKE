@@ -1,6 +1,6 @@
 
         SUBROUTINE ALOCPKTS( FDEV, WDEV, INYEAR, CPYEAR, PKTCNT, PKTBEG,
-     &                       XRFCNT )
+     &                       XRFCNT, LPTMP, LCTMP )
 
 C***********************************************************************
 C  subroutine body starts at line 107
@@ -66,6 +66,9 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL      BLKORCMT
 
 C...........   SUBROUTINE ARGUMENTS:
+C...........   Note: LPTMP and LCTMP needed only because PKTLOOP call needs them.
+C                    They will not be set until after tmp files are written after
+C                    calling PROCPKTS later in the main routine.
 
         INTEGER     , INTENT (IN) :: FDEV      ! in file unit number
         INTEGER     , INTENT (IN) :: WDEV      ! errors/warning file
@@ -74,6 +77,8 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(OUT) :: PKTCNT( NPACKET ) ! count of packet recs
         INTEGER     , INTENT(OUT) :: PKTBEG( NPACKET ) ! 1st line of pkt in file
         INTEGER     , INTENT(OUT) :: XRFCNT( NPACKET ) ! count of x-ref entries
+        LOGICAL     , INTENT(OUT) :: LPTMP     ! true: projection tmp file written
+        LOGICAL     , INTENT(OUT) :: LCTMP     ! true: control tmp file written
 
 C...........   Logical names and unit numbers
 
@@ -417,7 +422,7 @@ C           accordingly.
         ACTION = 'COUNT'
         CALL PKTLOOP( FDEV, PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, 
      &                CPYEAR, ACTION, BLANK5, PKTCNT, PKTBEG, 
-     &                XRFCNT )
+     &                XRFCNT, LPTMP, LCTMP )
 
 C.........  Rewind file
         REWIND( FDEV )

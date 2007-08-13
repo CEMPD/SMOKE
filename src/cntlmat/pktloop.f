@@ -1,7 +1,7 @@
 
         SUBROUTINE PKTLOOP( FDEV, PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, 
      &                      CPYEAR, ACTION, ENAME, PKTCNT, PKTBEG, 
-     &                      XRFCNT )
+     &                      XRFCNT, LPTMP, LCTMP )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -73,6 +73,8 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(IN) :: PKTCNT(  NPACKET ) ! count of packet recs
         INTEGER     , INTENT(IN) :: PKTBEG ( NPACKET ) ! 1st line of pkt in file
         INTEGER , INTENT(IN OUT) :: XRFCNT ( NPACKET ) ! count of x-ref recs
+        LOGICAL    , INTENT(OUT) :: LPTMP     ! true: projection tmp file written
+        LOGICAL    , INTENT(OUT) :: LCTMP     ! true: control tmp file written
 
 C...........   Local arrays allocated to stack
         LOGICAL USEPOL( NIPPA )
@@ -320,7 +322,7 @@ C.................  Match controls to sources and pollutants, as needed for
 C                   each packet type
                 CALL PROCPKTS( PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, 
      &                         CPYEAR, PKTLIST( K ), ENAME, LPOLSPEC, 
-     &                         USEPOL, OFLAG )
+     &                         USEPOL, OFLAG, LPTMP, LCTMP )
 
             END IF  ! End process section
 

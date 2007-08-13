@@ -1,6 +1,7 @@
 
         SUBROUTINE PROCPKTS( PDEV, CDEV, GDEV, LDEV, MDEV, WDEV, CPYEAR,
-     &                       PKTTYP, ENAME, LPSASGN, USEPOL, SFLAG )
+     &                       PKTTYP, ENAME, LPSASGN, USEPOL, SFLAG,
+     &                       LPTMP, LCTMP )
 
 C***********************************************************************
 C  subroutine body starts at line 116
@@ -89,6 +90,8 @@ C...........   SUBROUTINE ARGUMENTS:
         LOGICAL     , INTENT (IN) :: LPSASGN   ! true: matrix needs to be by pollutant
         LOGICAL , INTENT (IN OUT) :: USEPOL( NIPPA ) ! true: pol in current pkt
         LOGICAL     , INTENT(OUT) :: SFLAG     ! true: at least one packet done
+        LOGICAL     , INTENT(OUT) :: LPTMP     ! true: projection tmp file written
+        LOGICAL     , INTENT(OUT) :: LCTMP     ! true: control tmp file written
 
 C.........  Reshaped inventory pollutants and associated variables
 c        INTEGER         NGRP                ! number of pollutant groups 
@@ -110,6 +113,7 @@ C...........   Other local variables
         LOGICAL       :: EFLAG    = .FALSE.   ! error flag
         LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
         LOGICAL, SAVE :: OFLAG(NPACKET) = .FALSE.   ! true: tmp file has not been opened
+        LOGICAL       :: CCHEK                ! temporary control tmp file status per packet
 
         CHARACTER(5)    CPOS        ! tmp sorted position of pol
         CHARACTER(256)  LINE        ! read buffer for a line
@@ -323,7 +327,7 @@ C.........  For projection matrix only for now...
                CALL OPENCTMP( PKTTYP, PDEV )
                OFLAG(1) = .TRUE.
             END IF
-            CALL WRCTMP( PDEV, 1, ASGNINDX, 1 )
+            CALL WRCTMP( PDEV, 1, ASGNINDX, 1, LPTMP )
 
             SFLAG = .TRUE. 
 
@@ -363,7 +367,7 @@ C......................  Generate projection matrix
                        CALL OPENCTMP( PKTTYP, PDEV )
                        OFLAG(1) = .TRUE.
                     END IF
-                    CALL WRCTMP( PDEV, V, ASGNINDX, VIDXPROJ )
+                    CALL WRCTMP( PDEV, V, ASGNINDX, VIDXPROJ, LPTMP )
 
                     SFLAG = .TRUE. 
 
@@ -379,7 +383,9 @@ C......................  Generate projection matrix
                        CALL OPENCTMP( PKTTYP, GDEV )
                        OFLAG(2) = .TRUE.
                     END IF
-                    CALL WRCTMP( GDEV, V, ASGNINDX, VIDXMULT )
+                    
+                    CALL WRCTMP( GDEV, V, ASGNINDX, VIDXMULT, CCHEK )
+                    LCTMP = ( LCTMP .OR. CCHEK )
 
                     SFLAG = .TRUE.
 
@@ -406,7 +412,8 @@ C                     do not have the base-year control effectiveness
                        CALL OPENCTMP( PKTTYP, CDEV )
                        OFLAG(3) = .TRUE.
                     END IF
-                    CALL WRCTMP( CDEV, V, ASGNINDX, VIDXMULT )
+                    CALL WRCTMP( CDEV, V, ASGNINDX, VIDXMULT, CCHEK )
+                    LCTMP = ( LCTMP .OR. CCHEK )
 
                     SFLAG = .TRUE.
 
@@ -422,7 +429,8 @@ C                     do not have the base-year control effectiveness
                        CALL OPENCTMP( PKTTYP, LDEV )
                        OFLAG(4) = .TRUE.
                     END IF
-                    CALL WRCTMP( LDEV, V, ASGNINDX, VIDXMULT )
+                    CALL WRCTMP( LDEV, V, ASGNINDX, VIDXMULT, CCHEK )
+                    LCTMP = ( LCTMP .OR. CCHEK )
 
                     SFLAG = .TRUE.
 
@@ -439,7 +447,8 @@ C                     do not have the base-year control effectiveness
                         CALL OPENCTMP( PKTTYP, MDEV )
                         OFLAG(5) = .TRUE.
                     END IF
-                    CALL WRCTMP( MDEV, V, ASGNINDX, VIDXMULT )
+                    CALL WRCTMP( MDEV, V, ASGNINDX, VIDXMULT, CCHEK )
+                    LCTMP = ( LCTMP .OR. CCHEK )
                     
                     SFLAG = .TRUE.
 
