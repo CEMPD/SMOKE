@@ -8,11 +8,11 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: aggwndw beld3to2 bluesky2inv cemscan edms2inv extractida invsplit metcombine metscan pktreduc \
+all: aggwndw beld3to2 bluesky2inv cemscan edms2inv extractida geofac invsplit metcombine metscan pktreduc \
      smk2emis surgtool uam2ncf 
 
 debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug edms2inv.debug extractida.debug invsplit.debug \
-       metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
+       geofac.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
        surgtool.debug uam2ncf.debug  
 
 .f.o:
