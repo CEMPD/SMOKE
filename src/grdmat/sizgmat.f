@@ -507,7 +507,7 @@ C.................  Update the maximum number of cells per source
                 IF( CCNT .GT. MXCSRC ) MXCSRC = CCNT
             
 C.................  Update the maximum number of cells per county or link
-                IF( NCEL .GT. MXCCL ) MXCCL = NCEL
+                IF( NCEL .GT. MXCCL ) MXCCL = NCEL + 1
             
             END DO        ! End loop on sources
 
@@ -589,7 +589,7 @@ C               surrogates tables from MODSURG
 
 C.............  Otherwise, skip this source because it's outside the grid
                 ELSE
-		                NCEL = 1 
+                    NCEL = 1 
 
                 END IF
 
