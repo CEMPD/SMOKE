@@ -1318,7 +1318,8 @@ C.....................  compare variable names and units among files
 
 C.............  Write message and set error if any inconsistencies
             IF( NFLAG ) THEN
-c bbh               EFLAG = .TRUE.
+c bbh               EFLAG = .TRUE.  ! removed to prevent false errer of odd nubmer
+c                                     of species for tmp files
                 MESG = 'WARNING: ' // LOCCAT // ' source hourly ' //
      &                 'emission files have inconsistent ' //
      &                 CRLF() // BLANK10 // 'number of variables.'
