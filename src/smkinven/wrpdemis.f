@@ -99,6 +99,7 @@ C...........   Other local variables
 
         INTEGER          IOS                  ! i/o status
         INTEGER, SAVE :: NWARN = 0            ! warning count
+        INTEGER, SAVE :: NWARN1= 0            ! warning count
         INTEGER, SAVE :: MXEA                 ! maximum pol/var # in EAIDX
         INTEGER, SAVE :: MXWARN               ! max no. warnings
         INTEGER          NOUT                 ! tmp no. sources per time step
@@ -253,7 +254,9 @@ C                   not write warnings for Inventory Data Names that
 C                   are combined into the same SMOKE name.
                 IF ( DUPFLAG ) THEN
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-                
+                    NWARN1 = NWARN1 + 1
+
+                    IF( NWARN1 <= MXWARN ) THEN
                     IF( DFLAG ) THEN
                         EFLAG = .TRUE.
                         MESG = 'ERROR: Duplicate source in inventory:'//
@@ -270,6 +273,7 @@ C                   are combined into the same SMOKE name.
      &                         'inventory will have summed emissions:' 
      &                         //CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
+                    END IF
                     END IF
 
 C.................  If multiple entries for this K, V then record for later
@@ -288,7 +292,7 @@ C                   for this source/hour stored as same SMOKE name.
 
 C.........  Set tmp variable for loops
         NOUT = K
-        
+
 C.........  Check if there are missing values and output errors, if the
 C           flag is set to treat these as errors
 C.........  Also use loop to create diurnal profiles from emission values,
