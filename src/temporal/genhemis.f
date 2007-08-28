@@ -218,12 +218,12 @@ C.............  Define whether processing wildfire or not
             IF( .NOT. READ3( DNAME, 'BEGHOUR', ALLAYS3,
      &                        JDATE, JTIME, STHOUR      ) ) THEN
                 MESG = 'WARNING: Processing non-wildfire sources '
-                CALL M3MESG( MESG )
+                CALL M3MSG2( MESG )
 
                 FIREFLAG = .FALSE.
             ELSE
                 MESG = 'WARNING: Processing Wildfire emissions....'
-                CALL M3MESG( MESG )
+                CALL M3MSG2( MESG )
                 FIREFLAG = .TRUE.
 
             END IF      !  if read3() failed on dname
