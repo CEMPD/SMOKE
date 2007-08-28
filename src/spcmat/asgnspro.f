@@ -116,6 +116,7 @@ C.........  Other local variables
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
         LOGICAL, SAVE :: MACTFLAG = .FALSE. ! true: MACT codes available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
+        LOGICAL, SAVE :: LNOZERO  = .FALSE. ! true: skip speication for zero emission
         LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
         LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
@@ -182,6 +183,10 @@ C.............  Retrieve environment variables
             MESG = 'Switch for reporting default speciation profiles'
             REPDEFLT = ENVYN ( 'REPORT_DEFAULTS', MESG, .TRUE., IOS )
 
+C.............  Retrieve skipping speciation profile flags for zero emissions
+            MESG = 'Setting for assigning profile for zero emissions'
+            LNOZERO = ENVYN ( 'NO_SPC_ZERO_EMIS', MESG, .FALSE., IOS )
+
 C.............  Set up format for writing roadway type, vehicle ID, and SIC to strings
             WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
             WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
@@ -242,7 +247,7 @@ C.........  Find index in complete list of pollutants and set length of name
         DO S = 1, NSRCIN
 
 C.............  If emissions are zero for this source, then skip it
-            IF( LVALCHK .AND. EMISTMP( S ) .LE. 0 ) CYCLE
+            IF( LVALCHK .AND. LNOZERO .AND. EMISTMP( S ) <= 0 ) CYCLE
 
             CSRC  = CSOURC( S )
             CFIP  = CSRC( 1:FIPLEN3 )
