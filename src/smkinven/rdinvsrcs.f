@@ -135,6 +135,7 @@ C...........   Other local variables
         INTEGER         NPOLPERLN    !  no. of pollutants per line of inventory file
         INTEGER         NRECPERLN    !  no. of records per line
         INTEGER      :: NWARN = 0    !  current number of warnings
+        INTEGER      :: NWARN1= 0    !  current number of warnings 1
         INTEGER      :: NWRLINE = 0  !  no. of lines in file writting to log
         INTEGER         ROAD         !  road class number
         INTEGER         RWT          !  roadway type
@@ -642,14 +643,16 @@ C.................  Make sure some emissions are kept for this source
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: State and/or ' //
      &                     'county code is non-integer at line', IREC
-                    CALL M3MESG( MESG )
+                    IF( NWARN < MXWARN ) CALL M3MESG( MESG )
+                    NWARN1 = NWARN1 + 1
                 END IF
 
                 IF( CFIP( 2:3 ) == '00' .OR.
      &              CFIP( 4:6 ) == '000'     ) THEN
                     WRITE( MESG,94010 ) 'WARNING: State and/or ' //
      &                     'county code is zero (missing) at line', IREC
-                    CALL M3MESG( MESG )
+                    IF( NWARN < MXWARN ) CALL M3MESG( MESG )
+                    NWARN1 = NWARN1 + 1
                 END IF
 
 C.................  Check source specific characteristics
