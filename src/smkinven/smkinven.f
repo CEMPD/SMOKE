@@ -57,7 +57,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, TZONES, CSCC, IDIU, IWEK
+        USE MODSOURC, ONLY: IFIP, ISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG
@@ -362,6 +362,15 @@ C.........  Input gridded I/O API inventory data
         IF( GFLAG ) THEN
 
             CALL RDGRDAPI( GNAME, GRDNM ) 
+
+C.............  initialize arrays for later 
+            ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
+            ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+
+            ISIC = 0         ! array
+            CSRCTYP = ' '       ! array
 
         END IF  ! For gridded I/O API NetCDF inventory
 
