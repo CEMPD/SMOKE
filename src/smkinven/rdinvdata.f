@@ -1244,7 +1244,7 @@ C                   annual data is greater than zero, and average day data is
 C                   zero or negative
                 IF( .NOT. ACTFLAG .AND. 
      &                 EANN >  0. .AND. 
-     &                 EDAY <= 0.       ) THEN
+     &                 EDAY <  0.       ) THEN
                     EDAY = EANN * YEAR2DAY
                 END IF
 
