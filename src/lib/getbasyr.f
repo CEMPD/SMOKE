@@ -113,26 +113,35 @@ C.........  Post-process list of year groups to find most prevalent year
         ICNT   = 0
         GRPMAX = 0
         NYEARS = 0
-        DO S = 1, NSRC
+	IF ( NSRC .EQ. 1) THEN
 
-            IF( YRGRP( S ) .NE. PGRP .OR. S .EQ. NSRC ) THEN
+            BASEYEAR = PYEAR
+	    NYEARS = 1
+	    PGRP   = YRGRP( 1 )
+            PYEAR = INVYR( INDX( 1 ) )	   	
 
-                IF( ICNT .GT. GRPMAX ) THEN
-                    GRPMAX = ICNT
-                    BASEYEAR = PYEAR
+	ELSE
+            DO S = 1, NSRC
+
+                IF( YRGRP( S ) .NE. PGRP .OR. S .EQ. NSRC ) THEN
+
+                    IF( ICNT .GT. GRPMAX ) THEN
+                        GRPMAX = ICNT
+                        BASEYEAR = PYEAR
+                    END IF
+
+                    NYEARS = NYEARS + 1
+                    ICNT   = 0
+                    PGRP   = YRGRP( S ) 
+
                 END IF
 
-                NYEARS = NYEARS + 1
-                ICNT   = 0
-                PGRP   = YRGRP( S ) 
+                PYEAR = INVYR( INDX( S ) )
+                ICNT  = ICNT + 1
 
-            END IF
-
-            PYEAR = INVYR( INDX( S ) )
-            ICNT  = ICNT + 1
-
-        END DO
-
+            END DO
+        ENDIF
+	
         IF( NYEARS .EQ. 1 ) THEN
 
             WRITE( MESG,94010 ) 
