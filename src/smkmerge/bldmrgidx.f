@@ -80,8 +80,11 @@ C...........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT  (IN) :: MXVARPGP ! Max no. pollutants per group
         INTEGER, INTENT (OUT) :: NGRP     ! Actual number of groups
 
-C...........   Local llocatable arrays
+C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: PPSCNT( : )  ! count of pols per spc or emtype
+        INTEGER, ALLOCATABLE :: KAU   ( : )  ! helper array for area mult matrix indices
+        INTEGER, ALLOCATABLE :: KMU   ( : )  ! helper array for mobile mult matrix indices
+        INTEGER, ALLOCATABLE :: KPU   ( : )  ! helper array for point mult matrix indices
 
 C...........   Call allocated arrays
 C...........   Group index counter for each source-category-specific list of 
@@ -562,15 +565,31 @@ C.........  Now build indices for multiplicative controls...
 C.........  For each source category, store per-group position for 
 C           inventory pollutants...
 
+C.........  Allocate helper arrays for setup of mulitplicative control matrix
+        IF( AUFLAG ) THEN
+            ALLOCATE( KAU( ANUMATV ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'KAU', PROGNAME )
+        END IF
+
+        IF( MUFLAG ) THEN
+            ALLOCATE( KMU( MNUMATV ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'KMU', PROGNAME )
+        END IF
+
+        IF( PUFLAG ) THEN
+            ALLOCATE( KPU( PNUMATV ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'KPU', PROGNAME )
+        END IF
+
 C.........  Loop through all groups, then number of pollutants per group
         DO N = 1, NGRP
 
             ACNT = 0 
             MCNT = 0 
             PCNT = 0 
-            KA   = 0   ! array
-            KM   = 0   ! array
-            KP   = 0   ! array
+            IF( AUFLAG ) KAU  = 0   ! array
+            IF( MUFLAG ) KMU  = 0   ! array
+            IF( PUFLAG ) KPU  = 0   ! array
 
             DO V = 1, VGRPCNT( N )
 
@@ -579,12 +598,12 @@ C.........  Loop through all groups, then number of pollutants per group
                 IF ( AUFLAG ) THEN    ! Area sources
                     K = INDEX1( VBUF, ANUMATV, AUVNAMS )
                     IF( K .GT. 0 ) THEN
-                        IF( KA( K ) .NE. 0 ) THEN
-                            AU_EXIST( V,N ) = KA( K )
+                        IF( KAU( K ) .NE. 0 ) THEN
+                            AU_EXIST( V,N ) = KAU( K )
                         ELSE
                             ACNT = ACNT + 1
                             AU_EXIST( V,N ) = ACNT
-                            KA( K ) = ACNT
+                            KAU( K ) = ACNT
                         END IF
                     END IF
                 END IF
@@ -592,12 +611,12 @@ C.........  Loop through all groups, then number of pollutants per group
                 IF ( MUFLAG ) THEN    ! Mobile sources
                     K = INDEX1( VBUF, MNUMATV, MUVNAMS )
                     IF( K .GT. 0 ) THEN
-                        IF( KM( K ) .NE. 0 ) THEN
-                            MU_EXIST( V,N ) = KM( K )
+                        IF( KMU( K ) .NE. 0 ) THEN
+                            MU_EXIST( V,N ) = KMU( K )
                         ELSE
                             MCNT = MCNT + 1
                             MU_EXIST( V,N ) = MCNT
-                            KM( K ) = MCNT
+                            KMU( K ) = MCNT
                         END IF
                     END IF
                 END IF
@@ -605,12 +624,12 @@ C.........  Loop through all groups, then number of pollutants per group
                 IF ( PUFLAG ) THEN    ! Point sources
                     K = INDEX1( VBUF, PNUMATV, PUVNAMS )
                     IF( K .GT. 0 ) THEN
-                        IF( KP( K ) .NE. 0 ) THEN
-                            PU_EXIST( V,N ) = KP( K )
+                        IF( KPU( K ) .NE. 0 ) THEN
+                            PU_EXIST( V,N ) = KPU( K )
                         ELSE
                             PCNT = PCNT + 1
                             PU_EXIST( V,N ) = PCNT
-                            KP( K ) = PCNT
+                            KPU( K ) = PCNT
                         END IF
                     END IF
                 END IF
@@ -620,6 +639,9 @@ C.........  Loop through all groups, then number of pollutants per group
 
 C......... Deallocate local memory
     	DEALLOCATE( PPSCNT )
+        IF( AUFLAG ) DEALLOCATE( KAU )
+        IF( MUFLAG ) DEALLOCATE( KMU )
+        IF( PUFLAG ) DEALLOCATE( KPU )
 
         RETURN
 
