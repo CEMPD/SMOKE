@@ -210,6 +210,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
         CHARACTER(16)   LNAME   !  layer fractions matrix output file
         CHARACTER(16)   SNAME   !  cross-point surface met file name
+        CHARACTER(16)   TGNAM   !  Ground temperature variable name
         CHARACTER(16)   TNAME   !  dot-point surface grid file
         CHARACTER(16)   XNAME   !  cross-point layered met file name
         CHARACTER(16)   MNAME   !  temporalized data file name
@@ -330,6 +331,9 @@ C.........   Get setting from environment variables
         
         MESG = 'Vertical spread method'
         IPVERT = ENVINT( 'VERTICAL_SPREAD', MESG, 0, IOS )
+ 
+        MESG = 'Ground temperature'
+        CALL ENVSTR( 'PLUME_GTEMP_NAME', MESG, 'TEMP2', TGNAM, IOS )
 
         MESG = 'Use aircraft inventory data'
         AIRFLAG = ENVYN( 'USE_EDMS_DATA_YN', MESG, .FALSE., IOS )
@@ -1751,7 +1755,7 @@ C.............  Currently there is only one alternative for each
             CASE( 'ZF' )
                 OUTNAME = 'X3HT0F'
             CASE( 'TGD' ) 
-                OUTNAME = 'TEMP1P5'
+                OUTNAME = TGNAM
             CASE DEFAULT
                 MESG = 'INTERNAL ERROR: Do not have an alternative ' //
      &                 'name for met variable ' // INNAME
