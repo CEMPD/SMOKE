@@ -100,6 +100,7 @@ setenv REP_LAYER_MAX        -1  # layer number for reporting high plume rise
 setenv SMK_SPECELEV_YN      Y   # Y uses the PELV file to set elevated sources
 setenv VERTICAL_SPREAD      0   # sets the vertical spread method for plume heights
 setenv USE_EDMS_DATA_YN     N   # Y treat EDMS aircraft elevation height as plume rise
+setenv PLUME_GTEMP_NAME  TEMP1P5 # Ground temp. variable name for plume rise computation. 
 #      EXPLICIT_PLUMES_YN see "Multiple-program controls" below
 #      IOAPI_ISPH       set by Assigns file
 #      SMK_EMLAYS       see "Multiple-program controls" below
