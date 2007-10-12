@@ -1,6 +1,7 @@
 
         SUBROUTINE RDDATAORLNP( LINE, READDATA, READPOL, IYEAR, SIC,
-     &                          MACT, SRCTYP, NAICS, HDRFLAG, EFLAG )
+     &                          MACT, SRCTYP, NAICS, EXTORL, HDRFLAG,
+     &                          EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -61,12 +62,13 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(MACLEN3), INTENT (OUT) :: MACT                  ! MACT code
         CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
         CHARACTER(NAILEN3), INTENT (OUT) :: NAICS                 ! NAICS code
+        CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
-        INTEGER, PARAMETER :: NSEG = 34      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 60      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I        ! counters and indices
@@ -76,9 +78,11 @@ C...........   Other local variables
         INTEGER         IOS      !  i/o status
         INTEGER, SAVE:: NPOA     !  number of pollutants in file
 
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
+        LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
+        LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
  
         CHARACTER(25)      SEGMENT( NSEG ) ! segments of line
+        CHARACTER(25)      TMPSEG          ! tmp segments of line
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            !  message buffer
 
@@ -131,7 +135,21 @@ C           the various data fields
         READDATA( 1,NCE ) = SEGMENT( 10 ) ! control efficiency
         READDATA( 1,NRE ) = SEGMENT( 11 ) ! rule effectiveness
         READDATA( 1,NRP ) = SEGMENT( 12 ) ! rule penetration
-        
+C.........  Read extended orl variables and store it as string
+        EXTORL = ' '
+        DO I = 13, 37
+            IF( SEGMENT( I ) == ' ' ) THEN
+                TMPSEG = ','
+            ELSE
+                TMPSEG = ',' // TRIM( SEGMENT( I ) )
+                BLKFLAG = .FALSE.
+            ENDIF
+            
+            EXTORL = TRIM( EXTORL ) // TRIM( TMPSEG )
+        END DO
+
+        IF( BLKFLAG ) EXTORL = ''
+
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
 

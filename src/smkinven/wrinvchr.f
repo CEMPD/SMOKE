@@ -85,7 +85,7 @@ C.........  Source-specific header arrays
      &                                        'Cell                ',
      &                                        'Source type code    ' / )
 
-        CHARACTER(20) :: MBHEADRS( MXMBCHR3+3 ) = 
+        CHARACTER(20) :: MBHEADRS( MXMBCHR3+4 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Roadway Type code   ',
@@ -93,7 +93,8 @@ C.........  Source-specific header arrays
      &                                        'Vehicle Type code   ',
      &                                        'SCC                 ', 
      &                                        'Vehicle Type Name   ',
-     &                                        'Source type code    ' / )
+     &                                        'Source type code    ', 
+     &                                        'Additional extended ' / )
 
         CHARACTER(20) :: PTHEADRS( MXPTCHR3+11 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
@@ -284,12 +285,12 @@ C.........  End subroutine if ASCII file is not to be written
 C.........  Set the number of potential ASCII columns in SDEV output file
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
-            NASCII = MXARCHR3 + 1
+            NASCII = MXARCHR3 + 2
             IF( NONPOINT ) NASCII = NASCII + 2
         CASE( 'MOBILE' )
-            NASCII = MXMBCHR3+2
+            NASCII = MXMBCHR3 + 3
         CASE( 'POINT' )
-            NASCII = MXPTCHR3+10
+            NASCII = MXPTCHR3 + 10
         END SELECT
 
 C.........  Allocate memory for and populate the output header fields from
@@ -301,9 +302,10 @@ C           the source-specific fields
         CASE( 'AREA' )
             HDRFLDS( 1:5 ) = ARHEADRS  ! array
             IF( NONPOINT ) THEN
-                HDRFLDS( NASCII+1-1 ) = 'MACT code           '
-                HDRFLDS( NASCII+1 )   = 'NAICS code          '
+                HDRFLDS( NASCII-1 ) = 'MACT code           '
+                HDRFLDS( NASCII )   = 'NAICS code          '
             END IF
+            HDRFLDS( NASCII+1 ) = 'Additional extended '
         CASE( 'MOBILE' )
             HDRFLDS = MBHEADRS  ! array
         CASE( 'POINT' )
@@ -334,7 +336,7 @@ C.........  Get the maximum column width for each of the columns in ASCII file
                 BUFFER = ADJUSTL( CSOURC( S )( L1:L2 ) )
                 J = LEN_TRIM( BUFFER )                      ! could be blank
                 IF( BUFFER .NE. ' '    .AND.
-     &              J .GT. COLWID( K )      ) COLWID( K ) = J 
+     &              J > COLWID( K )      ) COLWID( K ) = J 
             END DO
 
             SELECT CASE ( CATEGORY )
@@ -351,64 +353,78 @@ C.........  Get the maximum column width for each of the columns in ASCII file
                     J = LEN_TRIM( CNAICS( S ) )
                     IF( CNAICS( S ) /= ' ' .AND.
      &                  J > COLWID( M3 ) ) COLWID( M3 ) = J
+
+                    J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
+                    IF( CEXTORL( S ) .NE. ' ' .AND.
+     &                  J > COLWID( M4 ) ) COLWID( M4 ) = J
+
                 ELSE
 
-	            J = LEN_TRIM( CSRCTYP( S ) )
+                    J = LEN_TRIM( CSRCTYP( S ) )
                     IF( CSRCTYP( S ) /= ' ' .AND. 
      &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
-                    END IF
-            
+
+                    J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
+                    IF( CEXTORL( S ) .NE. ' ' .AND.
+     &                  J > COLWID( M2 ) ) COLWID( M2 ) = J
+
+                END IF
+
             CASE( 'MOBILE' ) 
 
                 J = LEN_TRIM( CVTYPE( S ) )                   ! could be blank
                 IF( CVTYPE( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
+     &              J > COLWID( M1 ) ) COLWID( M1 ) = J
 
                 J = LEN_TRIM( CSRCTYP( S ) )
                 IF( CSRCTYP( S ) /= ' ' .AND.
      &              J > COLWID( M2 ) ) COLWID( M2 ) = J
 
+                J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
+                IF( CEXTORL( S ) .NE. ' ' .AND.
+     &              J > COLWID( M3 ) ) COLWID( M3 ) = J
+
             CASE( 'POINT' )
 
                 J = LEN_TRIM( CSCC( S ) )                   ! could be blank
                 IF( CSCC( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M1 ) ) COLWID( M1 ) = J
+     &              J > COLWID( M1 ) ) COLWID( M1 ) = J
 
                 J = LEN_TRIM( CORIS( S ) )                  ! could be blank
                 IF( CORIS( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M2 ) ) COLWID( M2 ) = J
+     &              J > COLWID( M2 ) ) COLWID( M2 ) = J
 
                 J = LEN_TRIM( CBLRID( S ) )                 ! could be blank
                 IF( CBLRID( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M3 ) ) COLWID( M3 ) = J
+     &              J > COLWID( M3 ) ) COLWID( M3 ) = J
      
                 J = LEN_TRIM( CMACT( S ) )                 ! could be blank
                 IF( CMACT( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M4 ) ) COLWID( M4 ) = J
+     &              J > COLWID( M4 ) ) COLWID( M4 ) = J
      
                 J = LEN_TRIM( CNAICS( S ) )                 ! could be blank
                 IF( CNAICS( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M5 ) ) COLWID( M5 ) = J
+     &              J > COLWID( M5 ) ) COLWID( M5 ) = J
      
                 J = LEN_TRIM( CSRCTYP( S ) )                 ! could be blank
                 IF( CSRCTYP( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M6 ) ) COLWID( M6 ) = J
-     
+     &              J > COLWID( M6 ) ) COLWID( M6 ) = J
+
                 J = LEN_TRIM( CERPTYP( S ) )                 ! could be blank
                 IF( CERPTYP( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M7 ) ) COLWID( M7 ) = J
+     &              J > COLWID( M7 ) ) COLWID( M7 ) = J
 
                 J = LEN_TRIM( CPDESC( S ) )                  ! could be blank
                 IF( CPDESC( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M8 ) ) COLWID( M8 ) = J
+     &              J > COLWID( M8 ) ) COLWID( M8 ) = J
 
                 J = LEN_TRIM( CNEIUID( S ) )                 ! could be blank
                 IF( CNEIUID( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M9 ) ) COLWID( M9 ) = J
+     &              J > COLWID( M9 ) ) COLWID( M9 ) = J
 
                 J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
                 IF( CEXTORL( S ) .NE. ' ' .AND.
-     &              J .GT. COLWID( M10 ) ) COLWID( M10 ) = J
+     &              J > COLWID( M10 ) ) COLWID( M10 ) = J
 
             END SELECT
 
@@ -426,7 +442,7 @@ C           are no gaps in the list of source characteristics, even though
 C           this means outputting blank fields.
 C.........  Find the most specific defined source characteristic
         DO COLMAX = NCHARS, 2, -1
-            IF( COLWID( COLMAX ) .GT. 0 ) EXIT
+            IF( COLWID( COLMAX ) > 0 ) EXIT
         END DO
 
         DO I = 2, COLMAX
@@ -437,7 +453,7 @@ C.........  Consider that every source might not have the same thing defined!
 C.........  If a column is defined for _any_ source, then it must be
 C           written for all sources.  Set flags for which are defined.
         DO K = 1, NASCII
-            LF( K ) = ( COLWID( K ) .GT. 0 )  
+            LF( K ) = ( COLWID( K ) > 0 )  
         END DO
 
 C.........  Set number of columns for ASCII file (initialize +1 b/c MXARCHR3 
@@ -493,12 +509,24 @@ C.............  Store remaining source attributes in separate fields (CHARS)
                         NC = NC + 1
                         CHARS( NC ) = CNAICS( S )
                     END IF
+
+                    IF( LF( M4 ) ) THEN
+                        NC = NC + 1
+                        CHARS( NC ) = CEXTORL( S )
+                    END IF
+
                 ELSE         
 
                     IF( LF( M1 ) ) THEN
                         NC = NC + 1
                         CHARS( NC ) = CSRCTYP( S )
                     END IF
+
+                    IF( LF( M2 ) ) THEN
+                        NC = NC + 1
+                        CHARS( NC ) = CEXTORL( S )
+                    END IF
+
                 END IF
 
             CASE( 'MOBILE' )
@@ -510,6 +538,11 @@ C.............  Store remaining source attributes in separate fields (CHARS)
                 IF( LF( M2 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CSRCTYP( S )
+                END IF
+
+                IF( LF( M3 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CEXTORL( S )
                 END IF
 
             CASE( 'POINT' ) 

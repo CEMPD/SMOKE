@@ -41,7 +41,7 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, NPCNT, IPOSCOD, TPFLAG, INVYR,
      &                      POLVAL, CSOURC, CSCC,
-     &                      XLOCA, YLOCA, CELLID,
+     &                      XLOCA, YLOCA, CELLID, CEXTORL,
      &                      ISIC, CSRCTYP, CMACT, CNAICS
 
 C...........   This module contains the cross-reference tables
@@ -83,6 +83,7 @@ C...........   Local pointers
         CHARACTER(MACLEN3), POINTER :: OLDCMACT  ( : )  ! MACT code
         CHARACTER(NAILEN3), POINTER :: OLDCNAICS ( : )  ! NAICS code
         CHARACTER(STPLEN3), POINTER :: OLDCSRCTYP( : )  ! source type code
+        CHARACTER(EXTLEN3), POINTER :: OLDCEXTORL( : )  ! extended orl
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: REPIDX( : )      ! index for sorting
@@ -180,20 +181,25 @@ C.............  Associate temporary pointers with sorted arrays
             OLDCSOURC  => CSOURC
             OLDCSCC    => CSCC
 
-	    OLDCSRCTYP => CSRCTYP
+            OLDCSRCTYP => CSRCTYP
 
             IF( ASSOCIATED( CMACT ) ) THEN
                 OLDCMACT   => CMACT
                 OLDCNAICS  => CNAICS
             END IF
 
+            IF( ASSOCIATED( CEXTORL ) ) THEN
+                OLDCEXTORL   => CEXTORL
+            END IF
+
 C.............  Nullify original sorted arrays
             NULLIFY( IFIP, ISIC, NPCNT, IPOSCOD, TPFLAG, INVYR,
-     &               POLVAL, CSOURC, CSCC, CMACT, CSRCTYP, CNAICS )
+     &               POLVAL, CSOURC, CSCC, CMACT, CSRCTYP, CNAICS,
+     &               CEXTORL )
 
 C.............  Deallocate original X and Y location arrays
 C               Don't need to store old values since they aren't set
-            DEALLOCATE( XLOCA, YLOCA, CELLID )
+            DEALLOCATE( XLOCA, YLOCA, CELLID  )
 
 C.............  Allocate memory for larger sorted arrays
             ALLOCATE( IFIP( NSRC ), STAT=IOS )
@@ -217,7 +223,7 @@ C.............  Allocate memory for larger sorted arrays
             ALLOCATE( CSCC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
 
-	    ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
+            ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
 
             CSRCTYP = ' '   ! array
@@ -230,6 +236,13 @@ C.............  Allocate memory for larger sorted arrays
                 
                 CMACT   = ' '   ! array
                 CNAICS  = ' '   ! array
+            END IF
+
+            IF( ASSOCIATED( OLDCEXTORL ) ) THEN
+                ALLOCATE( CEXTORL( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
+                
+                CEXTORL = ' '   ! array
             END IF
 
             ALLOCATE( XLOCA( NSRC ), STAT=IOS )
@@ -320,7 +333,10 @@ C.........................  Increment source position and copy source info
                             CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
                         END IF
 
-                        
+                        IF( ASSOCIATED( OLDCEXTORL ) ) THEN
+                            CEXTORL( NEWSRCPOS ) = OLDCEXTORL( S )
+                        END IF
+
 C.........................  Store X and Y locations
                         XLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LON
                         YLOCA( NEWSRCPOS ) = AR2PTABL( ROW+J,TBLE )%LAT
@@ -399,6 +415,10 @@ C                   then need to copy information to new arrays
                         CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
                     END IF
 
+                    IF( ASSOCIATED( OLDCEXTORL ) ) THEN
+                        CEXTORL( NEWSRCPOS ) = OLDCEXTORL( S )
+                    END IF
+
                     DO K = OLDRECPOS, OLDRECPOS + OLDNPCNT( S ) - 1
                         
                         NEWRECPOS = NEWRECPOS + 1
@@ -423,6 +443,10 @@ C.........  Deallocate old source and emissions arrays
      
             IF( ASSOCIATED( OLDCMACT ) ) THEN
                 DEALLOCATE( OLDCMACT, OLDCNAICS )
+            END IF
+
+            IF( ASSOCIATED( OLDCEXTORL ) ) THEN
+                DEALLOCATE( OLDCEXTORL )
             END IF
 
         END IF

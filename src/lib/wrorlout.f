@@ -90,11 +90,9 @@ C...........   ORL output variables (names same as ORL format description)
         REAL            XLOC, YLOC, ANN_EMIS, AVD_EMIS, CEFF, REFF, RPEN
 
         CHARACTER*1        CTYPE          !  tmp coordinate system type
-        CHARACTER(BLRLEN3) BLRID
         CHARACTER(CASLEN3) CAS
         CHARACTER(MACLEN3) MACT
         CHARACTER(NAILEN3) NAICS
-        CHARACTER(ORSLEN3) ORISID
         CHARACTER(CHRLEN3) POINTID
         CHARACTER(PLTLEN3) PLANTID  
         CHARACTER(DSCLEN3) PLNTDESC
@@ -106,7 +104,7 @@ C...........   ORL output variables (names same as ORL format description)
         CHARACTER(ORSLEN3) CORS   ! temporary DOE plant ID
         CHARACTER(BLRLEN3) CBLR   ! temporary boiler name
         CHARACTER(NEILEN3) CNEI   ! NEI unique ID
-        CHARACTER(EXTLEN3) CEXT   ! Extended ORL vars
+        CHARACTER(EXTLEN3) :: CEXT = ''   ! Extended ORL vars
 
 C...........   Other local variables
 
@@ -194,7 +192,7 @@ C.................  Store others in temporary variables
                 YEAR = INVYR( S )
 
                 SCC  = CSCC ( S )
-                
+ 
                 IF( ASSOCIATED( CMACT ) ) THEN
                     MACT = CMACT( S )
                 ELSE
@@ -213,6 +211,12 @@ C.................  Store others in temporary variables
                     NAICS = '-9'
                 END IF
 
+                IF( ASSOCIATED( CEXTORL ) ) THEN
+                    CEXT = ADJUSTL( CEXTORL( S ) )
+                ELSE
+                    CEXT = ''
+                END IF
+
 C.................  Account for missing or default codes
                 IF ( SCC(1:2) .EQ. '00' ) SCC = SCC(3:SCCLEN3)
                 IF ( MACT .EQ. '000000' ) MACT = '-9'
@@ -221,6 +225,7 @@ C.................  Account for missing or default codes
                 IF ( LEN( TRIM( SRCTYPE ) ) .EQ. 0 ) SRCTYPE = '-9'
                 IF ( NAICS .EQ. '000000' ) NAICS = '-9'
                 IF ( LEN( TRIM( NAICS ) ) .EQ. 0 ) NAICS = '-9'
+                IF ( LEN( TRIM( CEXT ) ) .EQ. 0 ) CEXT = ''
 
 C.................  Retrieve pollutant code from Inventory Table
                 I = INDEX1( DATNAM, NINVTBL, ITNAMA )
@@ -241,14 +246,13 @@ C.................  Write out entries for this record
 C.................  Write ORL nonroad format
                 IF( LNONRD ) THEN
                    WRITE( RDEV,93200 ) FIP, SCC, TRIM(CAS), ANN_EMIS, 
-     &                    AVD_EMIS, CEFF, REFF, RPEN, SRCTYPE
-
+     &                  AVD_EMIS, CEFF, REFF, RPEN, SRCTYPE, TRIM(CEXT)
 C.................  Write ORL nonpoint format
                 ELSE
                    WRITE( CSIC,'(I4.4)' ) SIC
                    WRITE( RDEV,93210 ) FIP, SCC, TRIM(CSIC), TRIM(MACT), 
-     &                    TRIM(SRCTYPE), TRIM(NAICS), TRIM(CAS), 
-     &                    ANN_EMIS, AVD_EMIS, CEFF, REFF, RPEN
+     &                  TRIM(SRCTYPE), TRIM(NAICS), TRIM(CAS), ANN_EMIS,
+     &                  AVD_EMIS, CEFF, REFF, RPEN, TRIM(CEXT)
                 END IF
 
                 LCOID = COID
@@ -300,7 +304,6 @@ C.................  Store others in temporary variables
                 CORS   = CORIS( S )
                 CBLR   = CBLRID( S )
                 CNEI   = ADJUSTL( CNEIUID( S ) )
-                CEXT   = CEXTORL( S )
                 PLNTDESC = CPDESC( S )
 
                 IF( ASSOCIATED( CMACT ) ) THEN
@@ -327,6 +330,12 @@ C.................  Store others in temporary variables
                     NAICS = '-9'
                 END IF
 
+                IF( ASSOCIATED( CEXTORL ) ) THEN
+                    CEXT = ADJUSTL( CEXTORL( S ) )
+                ELSE
+                    CEXT = '-9'
+                END IF
+
                 XLOC     = XLOCA( S )                
                 YLOC     = YLOCA( S )                
 
@@ -344,6 +353,7 @@ C.................  Account for missing or default codes
                 IF ( NAICS .EQ. '000000' ) NAICS = '-9'
                 IF ( NAICS .EQ. '0000-9' ) NAICS = '-9'
                 IF ( LEN( TRIM( NAICS ) ) .EQ. 0 ) NAICS = '-9'
+                IF ( LEN( TRIM( CEXT ) ) .EQ. 0 ) CEXT = ''
 
 C.................  Convert units of stack parameters
                 STKHGT  = STKHT( S ) * M2FT
@@ -379,7 +389,8 @@ C.................  Write out data
      &                 STKDIAM, STKTEMP, STKFLOW, STKVEL, SIC, 
      &                 TRIM(MACT), TRIM(NAICS), CTYPE, XLOC, YLOC, UTMZ, 
      &                 TRIM(CAS), ANN_EMIS, AVD_EMIS, CEFF, REFF, CPRI, 
-     &              CSEC, TRIM(CNEI), TRIM(CORS), TRIM(CBLR), TRIM(CEXT)     ! Extended ORL variables
+     &                 CSEC, TRIM(CNEI), TRIM(CORS), TRIM(CBLR),
+     &                 TRIM(CEXT)     ! Extended ORL variables
 
                 LCOID = COID
                 LYEAR = YEAR
@@ -397,10 +408,10 @@ C...........   Formatted file I/O formats............ 93xxx
 93000   FORMAT( A )
 
 93200   FORMAT( I5.5, ',', A, ',', A, ',', E15.8, ',', E15.8, 
-     &          3( ',', F6.2 ),',', A )   ! nonroad
+     &          3( ',', F6.2 ),',', A, A )   ! nonroad
 
 93210   FORMAT( I5.5, ',' A, ',', A, ',' A, ',', A, ',', A, ',',
-     &          A, ',', E15.8, ',', E15.8, 3( ',', F6.2 ) )   ! nonpoint
+     &          A, ',', E15.8, ',', E15.8, 3( ',', F6.2 ), A )   ! nonpoint
 
 93600   FORMAT( I5.5, 8( ',"',A, '"'), 4( ',', F10.2), ',', F10.4,
      &          ',', I4, 2( ',"',A, '"'),',', A1, 

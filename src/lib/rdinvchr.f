@@ -480,6 +480,10 @@ C.................  Determine if source type code is present
                 J = INDEX1( 'Source type code', NCOL, HEADER )
                 STPIN = ( J > 0 )
 
+C.................  Determine if plant description is present
+                J = INDEX1( 'Additional extended', NCOL, HEADER )
+                EXTIN = ( J .GT. 0 )
+
 C.................  If MACT code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. MCTIN .AND. MACFLAG ) THEN
@@ -501,15 +505,32 @@ C                   deallocate memory for array
                     NULLIFY( CSRCTYP )
                 END IF
 
+C.................  If extended columns not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
+                    DEALLOCATE( CEXTORL )
+                    NULLIFY( CEXTORL )
+                END IF
+
+                CEXT  = ' '
+
                 DO S = 1, NSRC
 
 C.....................  Read in line of character data
-                    IF( MCTIN .AND. NAIIN .AND. STPIN ) THEN
+                    IF( MCTIN .AND. NAIIN .AND. STPIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                        CSTP, CMT, CNAI, CEXT
+                    ELSE IF( MCTIN .AND. NAIIN .AND. STPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
      &                        CSTP, CMT, CNAI
+                    ELSE IF( STPIN .AND. .NOT. MCTIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                                                CSTP, CEXT
                     ELSE IF( STPIN .AND. .NOT. MCTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
      &                                                CSTP
+                    ELSE IF( EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS, CEXT
                     ELSE
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
                     END IF
@@ -521,6 +542,9 @@ C.....................  Read in line of character data
                     IF( NAIFLAG .AND. NAIIN ) CNAICS( S ) = CNAI
                     
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
+
+                    IF( EXTFLAG .AND. EXTIN ) CEXTORL( S ) = 
+     &                                             ADJUSTL( CEXT )
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, CS, CHRBLNK3, CHRBLNK3,
@@ -537,12 +561,25 @@ C.................  Determine if source type code is present
                 J = INDEX1( 'Source type code', NCOL, HEADER )
                 STPIN = ( J > 0 )
 
+C.................  Determine if plant description is present
+                J = INDEX1( 'Additional extended', NCOL, HEADER )
+                EXTIN = ( J > 0 )
+
 C.................  If source type code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. STPIN .AND. STPFLAG ) THEN
                     DEALLOCATE( CSRCTYP )
                     NULLIFY( CSRCTYP )
                 END IF
+
+C.................  If extended columns not present but has been requested,
+C                   deallocate memory for array
+                IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
+                    DEALLOCATE( CEXTORL )
+                    NULLIFY( CEXTORL )
+                END IF
+
+                CEXT  = ' '
 
                 DO S = 1, NSRC
 
@@ -551,12 +588,18 @@ C.....................  Initialize temporary characteristics
                     CLNK  = ' '
 
 C.....................  Read in line of character data
-                    IF( STPIN ) THEN
+                    IF( STPIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
-     &                                         CLNK, CVID, CS, CVTP,CSTP
+     &                                    CLNK, CVID, CS, CVTP,CSTP,CEXT
+                    ELSE IF( STPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
+     &                                    CLNK, CVID, CS, CVTP,CSTP
+                    ELSE IF( EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
+     &                                     CLNK, CVID, CS, CVTP,CEXT
                     ELSE
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
-     &                                            CLNK, CVID, CS, CVTP
+     &                                     CLNK, CVID, CS, CVTP
                     END IF
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
@@ -566,6 +609,9 @@ C.....................  Read in line of character data
                     IF( LNKFLAG ) CLINK ( S ) = CLNK
 
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
+
+                    IF( EXTFLAG .AND. EXTIN ) CEXTORL( S ) = 
+     &                                             ADJUSTL( CEXT )
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, CRWT, CLNK, CVID,
@@ -649,7 +695,7 @@ C                   internal err
 
                 END IF
 
-C.................  If NEI unique ID not present but has been requested, then 
+C.................  If extended columns not present but has been requested, then 
 C                   internal err
                 IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
 

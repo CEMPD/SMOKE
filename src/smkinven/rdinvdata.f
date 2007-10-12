@@ -349,14 +349,17 @@ C.........  Allocate memory for storing inventory data
 
         ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+        ALLOCATE( CEXTORL ( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
 
 	      CSRCTYP = ' '       ! array
+        CEXTORL = ' '       ! array
 
         IF( CATEGORY == 'AREA' ) THEN
             ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
 
-            ISIC = 0         ! array
+            ISIC = 0            ! array
         END IF
 
         IF( CATEGORY == 'MOBILE' ) THEN
@@ -380,7 +383,7 @@ C.........  Allocate memory for storing inventory data
             CALL CHECKMEM( IOS, 'CMACT', PROGNAME )
             ALLOCATE( CNAICS( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CNAICS', PROGNAME )
-        
+
             CMACT   = ' '       ! array
             CNAICS  = ' '       ! array
         END IF
@@ -414,8 +417,6 @@ C.........  Allocate memory for storing inventory data
             CALL CHECKMEM( IOS, 'CPDESC', PROGNAME )
             ALLOCATE( CERPTYP( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CERPTYP', PROGNAME )
-            ALLOCATE( CEXTORL ( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
 
             ISIC     = 0         ! array
             IDIU     = 0         ! array
@@ -431,7 +432,6 @@ C.........  Allocate memory for storing inventory data
             CBLRID   = BLRBLNK3  ! array
             CPDESC   = ' '       ! array
             CERPTYP  = ' '       ! array
-            CEXTORL  = ' '       ! array
         END IF
 
 C.........  Initialize pollutant-specific values as missing
@@ -622,7 +622,7 @@ C.................  Otherwise, not a list file, so exit
 
 C.............  Skip blank lines
             IF( LINE == ' ' ) CYCLE
-
+            EXTORL = ' '
 C.............  Process line depending on file format and source category
             SELECT CASE( CURFMT )
             CASE( IDAFMT )
@@ -665,12 +665,13 @@ C.....................  Need to read source information to match with VMTMIX fil
             CASE( ORLFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
-                    CALL RDDATAORLAR( LINE, READDATA, READPOL, 
-     &                                INVYEAR, SRCTYP, HDRFLAG, EFLAG )
+                    CALL RDDATAORLAR( LINE, READDATA, READPOL, INVYEAR,
+     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
                     NPOLPERLN = 1   ! have to set fake value to force reporting
+
                 CASE( 'MOBILE' )
-                    CALL RDDATAORLMB( LINE, READDATA, READPOL,
-     &                                INVYEAR, SRCTYP, HDRFLAG, EFLAG )
+                    CALL RDDATAORLMB( LINE, READDATA, READPOL, INVYEAR,
+     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
 
@@ -685,8 +686,8 @@ C.....................  Need to read source information to match with VMTMIX fil
                 END SELECT
 
             CASE( ORLNPFMT )
-                CALL RDDATAORLNP( LINE, READDATA, READPOL,
-     &                            INVYEAR, SIC, MACT, SRCTYP, NAICS, 
+                CALL RDDATAORLNP( LINE, READDATA, READPOL, INVYEAR,
+     &                            SIC, MACT, SRCTYP, NAICS, EXTORL, 
      &                            HDRFLAG, EFLAG )
 
             CASE( ORLFIREFMT )
@@ -694,7 +695,7 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                            NPOLPERLN, INVYEAR, DESC, SIC, MACT,
      &                            CTYPE, LAT, LON, HDRFLAG, EFLAG)
             END SELECT
-
+            
 C.............  Check for header lines
             IF( HDRFLAG ) THEN 
 
@@ -1245,7 +1246,7 @@ C                   zero or negative
                 IF( .NOT. ACTFLAG .AND. 
      &                 EANN >  0. .AND. 
      &                 EDAY <  0.       ) THEN
-                    EDAY = EANN * YEAR2DAY
+                     EDAY = EANN * YEAR2DAY
                 END IF
 
 C.................  If current format is ORL, check if current CAS number
@@ -1461,11 +1462,13 @@ C.................  Skip rest of loop
                      CALL PADZERO( NAICS )
                      CMACT  ( CURSRC ) = MACT
                      CNAICS ( CURSRC ) = NAICS
+                     CEXTORL( CURSRC ) = ADJUSTL( EXTORL )
                  END IF
                 
                  IF( CURFMT /= IDAFMT ) THEN
                      CALL PADZERO( SRCTYP )
                      CSRCTYP( CURSRC ) = SRCTYP
+                     CEXTORL( CURSRC ) = ADJUSTL( EXTORL )
                  END IF
                 
                 IF( CATEGORY == 'POINT' .AND. CURFMT /= IDAFMT ) THEN
@@ -1483,7 +1486,7 @@ C.....................  Convert UTM values to lat-lon
                     END IF
                 END IF
             END IF
-            
+      
             IF( CATEGORY == 'POINT' ) THEN
                 IF( CURFMT /= EMSFMT .AND. CURFMT /= ORLFIREFMT ) THEN
                     STKHT   ( CURSRC ) = STR2REAL( HT )
@@ -1497,7 +1500,7 @@ C.....................  Convert UTM values to lat-lon
                     CORIS   ( CURSRC ) = ADJUSTR( CORS )
                     CBLRID  ( CURSRC ) = ADJUSTR( BLID )
                     CEXTORL ( CURSRC ) = ADJUSTL( EXTORL )
-                
+
 C.....................  Convert units on values 
                     IF( STKHT( CURSRC ) < 0. ) STKHT( CURSRC ) = 0.
                     STKHT( CURSRC ) = STKHT( CURSRC ) * FT2M   ! ft to m

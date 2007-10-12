@@ -1,6 +1,6 @@
 
         SUBROUTINE RDDATAORLAR( LINE, READDATA, READPOL, IYEAR, 
-     &                          SRCTYP, HDRFLAG, EFLAG )
+     &                          SRCTYP, EXTORL, HDRFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -57,13 +57,14 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (OUT) :: READDATA( 1,NARPPOL3 )! array of data values
         CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! pollutant name
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
-	CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
+        CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
+        CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
-        INTEGER, PARAMETER :: NSEG = 26      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 50      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I        ! counters and indices
@@ -73,9 +74,11 @@ C...........   Other local variables
         INTEGER         IOS      !  i/o status
         INTEGER, SAVE:: NPOA     !  number of pollutants in file
 
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
+        LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
+        LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
  
         CHARACTER(25)      SEGMENT( NSEG ) ! segments of line
+        CHARACTER(25)      TMPSEG          ! tmp segments of line
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            !  message buffer
 
@@ -124,8 +127,23 @@ C           the various data fields
         READDATA( 1,NRE ) = SEGMENT( 7 )
         READDATA( 1,NRP ) = SEGMENT( 8 )
 
-	      SRCTYP = ADJUSTL( SEGMENT( 9 ) )   ! source type code
+        SRCTYP = ADJUSTL( SEGMENT( 9 ) )   ! source type code
+
+C.........  Read extended orl variables and store it as string
+        EXTORL = ' '
+        DO I = 10, 30
+            IF( SEGMENT( I ) == ' ' ) THEN
+                TMPSEG = ','
+            ELSE
+                TMPSEG = ',' // TRIM( SEGMENT( I ) )
+                BLKFLAG = .FALSE.
+            ENDIF
+            
+            EXTORL = TRIM( EXTORL ) // TRIM( TMPSEG )
+        END DO
         
+        IF( BLKFLAG ) EXTORL = ' '
+
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
 

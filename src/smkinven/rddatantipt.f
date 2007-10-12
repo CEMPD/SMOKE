@@ -84,7 +84,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 60  ! arbitrary maximum pollutants in file
-        INTEGER, PARAMETER :: NSEG = 70      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 75      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I, L, L1, LL       ! counters and indices
@@ -94,10 +94,10 @@ C...........   Other local variables
         INTEGER         IOS     !  i/o status
         INTEGER, SAVE:: NPOL    !  number of pollutants in file
 
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
+        LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
+        LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
  
         CHARACTER(40)      TMPSEG          ! tmp segments of line
-        CHARACTER(300)     TMPORL          ! tmp extended orl line buffer
         CHARACTER(40)      SEGMENT( NSEG ) ! segments of line
         CHARACTER(CASLEN3) TCAS            ! tmp cas number
         CHARACTER(300)     MESG            ! message buffer
@@ -171,14 +171,18 @@ C           the various data fields
 
 C.........  Read extended orl variables and store it as string
         EXTORL = ' '
-        DO I = 32, 63
-            TMPSEG = ','
-            IF( SEGMENT( I ) /= ' ' ) THEN
+        DO I = 32, 70
+            IF( SEGMENT( I ) == ' ' ) THEN
+                TMPSEG = ','
+            ELSE
                 TMPSEG = ',' // TRIM( SEGMENT( I ) )
+                BLKFLAG = .FALSE.
             ENDIF
             
             EXTORL = TRIM( EXTORL ) // TRIM( TMPSEG )
         END DO
+
+        IF( BLKFLAG ) EXTORL = ' '
 
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
