@@ -1790,9 +1790,17 @@ C----------------------------------------------------------------------
 
                 L1 = LEN_TRIM( VARNAM )
                 L2 = LEN_TRIM( FILNAM )
+
+                IF( VARNAM == 'TEMP2' .OR. VARNAM == 'TEMP1P5' ) THEN
+                    MESG = 'Please reset PLUME_GTEMP_NAME to match ' //
+     &                 'to a variable name from file '// FILNAM( 1:L2)
+                    CALL M3MSG2( MESG )
+                END IF
+
                 MESG = 'Could not read "' // VARNAM( 1:L1 ) // 
      &                 '" from file "' // FILNAM( 1:L2 ) // '".'
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
 
             END IF
 
