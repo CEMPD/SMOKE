@@ -134,7 +134,7 @@ C...........   Other local variables
         INTEGER         NLINE        !  number of lines in list format file
         INTEGER         NPOLPERLN    !  no. of pollutants per line of inventory file
         INTEGER         NRECPERLN    !  no. of records per line
-        INTEGER      :: NWARN = 0    !  current number of warnings
+        INTEGER      :: NWARN0= 0    !  current number of warnings
         INTEGER      :: NWARN1= 0    !  current number of warnings 1
         INTEGER      :: NWRLINE = 0  !  no. of lines in file writting to log
         INTEGER         ROAD         !  road class number
@@ -196,13 +196,13 @@ C.........  Get temporary directory location
         CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
         
         IF( IOS /= 0 ) THEN
-            IF( NWARN < MXWARN ) THEN
+            IF( NWARN0 < MXWARN ) THEN
                 MESG = 'WARNING: Temporary input file will be ' //
      &                 'placed in executable directory because ' // 
      &                 CRLF() // BLANK10 // 'SMK_TMPDIR environment '//
      &                 'variable is not set properly'
                 CALL M3MSG2( MESG )
-                NWARN = NWARN + 1
+                NWARN0 = NWARN0 + 1
             END IF
         END IF
 
@@ -629,12 +629,12 @@ C.................  Write first ten lines of inventory to log file
 C.................  Check that source characteristics are correct          
 C.................  Make sure some emissions are kept for this source
                 IF( NPOLPERLN == 0 ) THEN
-                    IF( NWARN < MXWARN ) THEN
+                    IF( NWARN0 < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: No kept '//
      &                         'pollutants found at line', IREC, '. ' //
      &                         'The source will be dropped.'
                         CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
+                        NWARN0 = NWARN0 + 1
                     END IF
                     CYCLE
                 END IF
@@ -643,7 +643,7 @@ C.................  Make sure some emissions are kept for this source
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: State and/or ' //
      &                     'county code is non-integer at line', IREC
-                    IF( NWARN < MXWARN ) CALL M3MESG( MESG )
+                    IF( NWARN1 < MXWARN ) CALL M3MESG( MESG )
                     NWARN1 = NWARN1 + 1
                 END IF
 
@@ -651,7 +651,7 @@ C.................  Make sure some emissions are kept for this source
      &              CFIP( 4:6 ) == '000'     ) THEN
                     WRITE( MESG,94010 ) 'WARNING: State and/or ' //
      &                     'county code is zero (missing) at line', IREC
-                    IF( NWARN < MXWARN ) CALL M3MESG( MESG )
+                    IF( NWARN1 < MXWARN ) CALL M3MESG( MESG )
                     NWARN1 = NWARN1 + 1
                 END IF
 
@@ -740,13 +740,13 @@ C.....................  Ensure that road class is valid and convert from road cl
 
 C.........................  Make sure SCC is at least 8 characters long
                         IF( LEN_TRIM( TSCC ) < 8 ) THEN
-                            IF( NWARN < MXWARN ) THEN
+                            IF( NWARN0 < MXWARN ) THEN
                                 WRITE( MESG,94010 ) 'WARNING: SCC ' //
      &                             'code is less than 8 characters ' //
      &                             'long at line', IREC, '. Adding ' //
      &                             'trailing zeros.'
                                 CALL M3MESG( MESG )
-                                NWARN = NWARN + 1
+                                NWARN0 = NWARN0 + 1
                             END IF
                             
                             DO I = LEN_TRIM( TSCC )+1, 8
