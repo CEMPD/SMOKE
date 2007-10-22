@@ -161,7 +161,7 @@ C...........   Other local variables
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
         INTEGER, SAVE :: MXWARN           !  maximum number of warnings
-        INTEGER, SAVE :: NWARN( 3 )       ! warnings counter
+        INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NCOMP = 0        ! no. of formulas
         INTEGER, SAVE :: NACRBND = 0      ! no. of acres burned var
@@ -935,8 +935,8 @@ C.....................  If VAR2 value is missing, then assume zero
      &                     TRIM( VAR2 ) // ' to 0. for source:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) // 
      &                     ' on date ' // CSRCD( LL-7: LL )
-                    CALL M3MSG2( MESG )
-
+                    IF( NWARN(4) <= MXWARN ) CALL M3MSG2( MESG )
+                    NWARN( 4 ) = NWARN( 4 ) + 1
                     DTVAR2( K ) = 0.0
 
                 END IF
@@ -958,7 +958,8 @@ C................  Warning msg when new computed value is negative
      &                     ' to 0. for source:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) // 
      &                     ' on date ' // CSRCD( LL-7: LL )
-                    CALL M3MSG2( MESG )
+                    IF( NWARN(5) <= MXWARN ) CALL M3MSG2( MESG )
+                    NWARN( 5 ) = NWARN( 5 ) + 1
 
                     TDAT = 0.0
 
