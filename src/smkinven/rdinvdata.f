@@ -1457,7 +1457,8 @@ C.................  Skip rest of loop
                  IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
      &                 .OR. CURFMT == ORLNPFMT               ) THEN
                      ISIC( CURSRC ) = STR2INT( SIC )
-
+                     IF( MACT == '-9' ) MACT = ' '
+                     IF( NAICS == '-9' ) NAICS = ' '
                      CALL PADZERO( MACT )
                      CALL PADZERO( NAICS )
                      CMACT  ( CURSRC ) = MACT
