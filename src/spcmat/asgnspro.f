@@ -81,9 +81,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         INTEGER         FINDC
         INTEGER         INDEX1
+        INTEGER         ENVINT 
         LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVYN, FINDC, INDEX1, SETSCCTYPE
+        EXTERNAL CRLF, ENVYN, FINDC, INDEX1, SETSCCTYPE, ENVINT
 
 C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: MASSOUT        ! true: create mass-based
@@ -100,7 +101,7 @@ C.........  Local allocatable arrays
         REAL, ALLOCATABLE, SAVE :: EMISTMP( : )  ! tmp emis for 1 pollutant by source
 
 C.........  Other local variables
-        INTEGER          K, L, L2, LV, S, V    !  counters and indices
+        INTEGER         K, L, L2, LV, S, V    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER       :: F0B = 0      ! extra find index for mobile
@@ -109,6 +110,8 @@ C.........  Other local variables
         INTEGER          IOS          ! i/o status
         INTEGER          NCHKCHR      ! position of last non-SCC src char
         INTEGER          NCOUT        ! no. output source chars for mesgs
+        INTEGER       :: NWARN=0      ! current number of warnings of each type to write
+        INTEGER          MXWARN       ! maximum number of warnings of each type to write
 
         REAL             CNVFAC       ! tmp pol-to-pol conversion factor
 
@@ -178,6 +181,9 @@ C   begin body of subroutine ASGNSPRO
 
 C.........  For first time routine is called in all cases,
         IF( FIRSTIME ) THEN
+
+C.............  Get maximum number of warnings 
+            MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
 
 C.............  Retrieve environment variables
             MESG = 'Switch for reporting default speciation profiles'
@@ -608,7 +614,7 @@ C               the use of defaults.
             IF( CSPT01( V ) .NE. EMCMISS3 .AND. 
      &          REPDEFLT .AND. REPORT           ) THEN
                 SPCODE = CSPT01( V )
-                    
+
                 CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
 
                 MESG = 'NOTE: Using default speciation profile "' //
@@ -616,7 +622,9 @@ C               the use of defaults.
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
      &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-                CALL M3MESG( MESG )
+                IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
+
+                NWARN  = NWARN + 1    
 
                 CALL SETSOURCE_SMATS
 
