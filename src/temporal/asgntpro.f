@@ -121,7 +121,7 @@ C.........  Other local variables
         CHARACTER(10)        RWTFMT   ! fmt to write roadway type to string
         CHARACTER(10)        VIDFMT   ! format to write veh ID to string
         CHARACTER(300)       BUFFER   ! source fields buffer
-        CHARACTER(300)           MESG     ! message buffer
+        CHARACTER(300)       MESG     ! message buffer
         CHARACTER(SRCLEN3)   CSRC     ! tmp source chars string
         CHARACTER(FIPLEN3)   CFIP     ! tmp (character) FIPS code
         CHARACTER(STALEN3)   CSTA     ! tmp Country/state code
