@@ -393,8 +393,8 @@ C.............  Include SRCTYP code in string
                 IF( RPT_%BYSRCTYP ) THEN
                     L = STYPWIDTH
                     L1 = L - LV - 1                        ! 1 for space
-                    STRING = STRING( 1:LE+4 ) // 
-     &                    BINSRCTYP( I )( 1:L1-4 ) // DELIM
+                    STRING = STRING( 1:LE+9 ) // 
+     &                    BINSRCTYP( I )( 1:L1-9 ) // DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
