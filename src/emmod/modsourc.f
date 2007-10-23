@@ -74,7 +74,7 @@
         REAL   , POINTER,     PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
 
         CHARACTER(SCCLEN3), POINTER,     PUBLIC:: CSCC   ( : ) ! SCC
-        CHARACTER(EXTLEN3), ALLOCATABLE, PUBLIC:: CEXTORL( : ) ! Additional Extended ORL vars
+        CHARACTER(EXTLEN3), POINTER,     PUBLIC:: CEXTORL( : ) ! Additional Extended ORL vars
         CHARACTER(NEILEN3), ALLOCATABLE, PUBLIC:: CNEIUID( : ) ! NEI Unique ID
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC:: CORIS  ( : ) ! DOE plant ID
         CHARACTER(BLRLEN3), ALLOCATABLE, PUBLIC:: CBLRID ( : ) ! boiler ID
