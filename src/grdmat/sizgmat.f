@@ -507,7 +507,7 @@ C.................  Update the maximum number of cells per source
                 IF( CCNT .GT. MXCSRC ) MXCSRC = CCNT
             
 C.................  Update the maximum number of cells per county or link
-                IF( NCEL .GT. MXCCL ) MXCCL = NCEL + 1
+                IF( NCEL .GT. MXCCL ) MXCCL = NCEL
             
             END DO        ! End loop on sources
 
