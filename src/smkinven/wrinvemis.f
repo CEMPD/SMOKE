@@ -430,10 +430,6 @@ C.........  Loop through formula-based pollutants, compute, and write to invento
      &      CALL OUTPUT_FORMULAS( NIPOL, NPPOL, IDEV, EIIDX, 
      &                            EINAM, MCNT )
 
-C.............  Deallocate local memory for storing and writing emissions
-        IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
-        IF( ALLOCATED( SRCID ) )    DEALLOCATE( SRCID )
-
 C.........  If computed variable, update EANAM, in case needed for day- 
 C           and hour-specific data
         IF( FFLAG ) THEN
@@ -494,12 +490,6 @@ C.........  Set number of variables and allocate file description arrays
         
         IF( ALLOCATED( VARS_PER_FILE ) ) DEALLOCATE( VARS_PER_FILE )
 
-C.........  Allocate memory for storing and writing activities
-        ALLOCATE( SRCPOL( NSRC, NPACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCPOL', PROGNAME )
-        ALLOCATE( SRCID( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SRCID', PROGNAME )
-
 C.........  Loop through activity data, store, and write to inventory file
         IF( NIACT .GT. 0 ) 
      &      CALL LOOP_FOR_OUTPUT( NIACT, NPACT, IDEV, AVIDX, 
@@ -508,7 +498,7 @@ C.........  Deallocate local arrays
         IF( ALLOCATED( IPPTR ) )    DEALLOCATE( IPPTR )
         IF( ALLOCATED( IPPTR2 ) )   DEALLOCATE( IPPTR2 )
         IF( ALLOCATED( IPMAX ) )    DEALLOCATE( IPMAX )
-c        IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
+        IF( ALLOCATED( SRCPOL ) )   DEALLOCATE( SRCPOL )
         IF( ALLOCATED( SRCID ) )    DEALLOCATE( SRCID )
 
         DEALLOCATE( EONAMES, EOTYPES, EOUNITS, EODESCS )
@@ -614,6 +604,7 @@ C.................  Reset units for the primary (annual) data value
 
 C.................  Build name and output pollutant or activity file
                 RFNAME = TRIM( RPATH )// '/'// TRIM( NAMES(I) )// '.ncf'
+
                 CALL WRINVPOL( CATEGORY, BPATH, RFNAME, NSRC, NPVAR, 
      &                         NAMES(I), SRCID, SRCPOL, EFLAG )
 
