@@ -45,7 +45,7 @@ C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, CTRYNAM
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: NINVTBL, ITNAMA, ITCASA
+        USE MODLISTS, ONLY: NINVTBL, ITNAMA, ITCASA, ITFACA
 
 C...........   This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, NIPOL, NIACT,
@@ -228,8 +228,27 @@ C.................  Account for missing or default codes
                 IF ( LEN( TRIM( CEXT ) ) .EQ. 0 ) CEXT = ''
 
 C.................  Retrieve pollutant code from Inventory Table
-                I = INDEX1( DATNAM, NINVTBL, ITNAMA )
-                CAS = ITCASA( I )
+C.................  Ensure that only CAS codes where the factor is 1 are used.
+C.................  If there are multiple CAS codes where the factor is 1, use the first one
+C.................     (accomplished since original INVTABLE list order is maintained already)
+                CAS = ' '
+                DO I = 1, NINVTBL
+
+                    IF ( DATNAM .EQ. ITNAMA( I ) .AND. ITFACA( I ) .EQ. 1. ) THEN
+                        CAS = ITCASA( I )
+                        EXIT              ! Exit loop
+                    END IF
+
+                END DO           
+
+                IF ( CAS .EQ. ' ' ) THEN
+                    MESG = 'ERROR: CAS number for pollutant "'// 
+     &                     TRIM( DATNAM ) // '" and factor = 1 in '//
+     &                     'INVTABLE is no found.'
+                    CALL M3MSG2( MESG )
+                    STATUS = 2 
+                    CYCLE
+                END IF
 
 C.................  Get emissions and emissions-dependent values.
                 ANN_EMIS = SRCDAT( C,1 )
@@ -457,7 +476,7 @@ C-------------------------------------------------------------------------
                 ELSE
                     STATUS = 1
                     LOCSTAT = 1
-                    WRITE( MESG,94010 ) 'Invalid country code', K,
+                    WRITE( MESG,94010 ) 'ERROR: Invalid country code', K,
      &                     'found at source', S
                     CALL M3MESG( MESG )
 
