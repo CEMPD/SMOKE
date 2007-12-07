@@ -1084,7 +1084,7 @@ C                   might not be there
      &                           JDATE, JTIME, LOCINDXH( 1,1 ) ) ) THEN
                     L1 = LEN_TRIM( HNAME )
                     WRITE( MESG,94010 ) 'WARNING: Could not read '//
-     &                     '"IDXH" from file "' //
+     &                     '"INDXH" from file "' //
      &                     HNAME( 1:L1 ) // '", at', JDATE, ':', JTIME
                     CALL M3MESG( MESG )
 
