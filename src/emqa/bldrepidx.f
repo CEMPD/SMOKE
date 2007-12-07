@@ -96,6 +96,7 @@ C...........   Other local variables
         INTEGER          NDATA   !  tmp number of data variables per report
         INTEGER          NDATALL !  no. of all input data
 
+        LOGICAL       :: SKIP    = .FALSE. !  true: skipping selecting output species 
         LOGICAL       :: ANYOUT  = .FALSE. !  true: data select will be output
         LOGICAL       :: EFLAG   = .FALSE. !  true: error found
         LOGICAL       :: SFLAG   = .FALSE. !  true: speciation
@@ -427,7 +428,7 @@ C.................  Data variable is emission type
                 IF( J .GT. 0 ) THEN
 
                     SPCNAM   ( V )= SBUF
-                    ETPSPCNAM( V )= VBUF
+                    ETPSPCNAM( V )= EBUF
                     PRCSPCNAM( V )= 'S-'// VBUF( 1:J-1 )// ETJOIN// SBUF
                     SUMETPNAM( V )= 'S-'// EBUF
                     SUMPOLNAM( V )= 'S-'// VBUF( J+LT:K-1 )
@@ -564,6 +565,7 @@ C.............  Otherwise, set output data values as input data values
 C.............  Loop through requested data for this report
             DO I = 1, NDATA
 
+                SKIP   = .FALSE.
                 ANYOUT = .FALSE.
 
 C.................  Loop through names of emission types, emis, or act
@@ -581,6 +583,7 @@ C.....................  Only when emission type is not based on activity
                         TODOUT( E,N )%ETP = I
                         TODOUT( E,N )%AGG = 1
                         ANYOUT = .TRUE.
+                        SKIP   = .TRUE.
                     END IF
 
 C.....................  To pollutant/activity column
@@ -588,6 +591,7 @@ C.....................  To pollutant/activity column
                         TODOUT( E,N )%DAT = I
                         TODOUT( E,N )%AGG = 1
                         ANYOUT = .TRUE.
+                        SKIP   = .TRUE.
                     END IF
 
 C..................  If projection matrix applies to this report
@@ -619,6 +623,8 @@ C..................  If mult. control matrix applies to this report
                     END IF
 
                 END DO  ! End loop over emission types, emis, or act
+
+                IF( SKIP ) CYCLE  ! skip once output species is chosen
 
 C.................  If speciation for current report
                 IF( RPT_%USESLMAT .OR.
@@ -669,10 +675,9 @@ C.........................  To process/species column
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
                             SPCOUT( V ) = .TRUE.
                             ANYOUT = .TRUE.
-                        END IF
 
 C.........................  To post-speciation summed emission type column
-                        IF( OUTDNAM( I,N ) .EQ. SUMETPNAM( V ) ) THEN 
+                        ELSEIF( OUTDNAM( I,N ) .EQ. SUMETPNAM(V) ) THEN 
                             TOSOUT( V,N )%SUMETP = I
                             TOSOUT( V,N )%AGG = 1
                             IF( .NOT. SPCOUT( V ) ) NSPCIN = NSPCIN + 1
