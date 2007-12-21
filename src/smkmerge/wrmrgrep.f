@@ -571,7 +571,7 @@ C.............  Local variables
 
 C..............................................................................
 
-            HEADER = CATNAME // ' source'
+            HEADER = '# ' // CATNAME // ' source'
             L  = LEN_TRIM( HEADER )
 
             DATANAM = ' average'
@@ -594,9 +594,9 @@ C..............................................................................
                 LD2 = LEN_TRIM( DAYS( K2 ) )
 
                 WRITE( HEADER,94010 ) HEADER( 1:L ) // ' from ' //
-     &             CRLF() // BLANK5 // 
+     &             CRLF() // '#' // BLANK5(1:4) // 
      &             DAYS( K1 )( 1:LD1 ) // ' ' // MMDDYY( PDATE ) //
-     &             ' at', PTIME, 'to' // CRLF() // BLANK5 // 
+     &             ' at', PTIME, 'to' // CRLF() // '#' // BLANK5(1:4) // 
      &             DAYS( K2 )( 1:LD2 ) // ' '// MMDDYY( JDATE ) //
      &             ' at', JTIME
                 L = LEN_TRIM( HEADER )
@@ -720,7 +720,8 @@ C.............  Local variables
 
             REAL          VAL
 
-            CHARACTER(20) :: STLABEL = 'State'
+            CHARACTER(20) :: HDRBUF  = '#'
+            CHARACTER(20) :: STLABEL = '# State'
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -739,26 +740,27 @@ C.............  Rearrange labels and units to be in order of master list, which
 C               is the order that the emission values themselves will be in
 
 C.............  Get column labels and formats
-            CALL CREATE_FORMATS( NDIM, MAXSTWID, VNAMES, INUNIT,
+            CALL CREATE_FORMATS( NDIM, 6+MAXSTWID, VNAMES, INUNIT,
      &                           MAXWID, OUTNAMS, OUTUNIT )
 
 C.............  Create line format
-            L2 = SUM( MAXWID ) + NDIM
-            LINFLD = REPEAT( '-', L2 )
+c            L2 = SUM( MAXWID ) + NDIM
+c            LINFLD = REPEAT( '-', L2 )
 
 C.............  Write header for state totals
             WRITE( FDEV, '(A)' ) ' '
             WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
 
 C.............  Write line
-            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
+c            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
-C.............  Write units for columns
-            WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT( J ), J=1, NDIM )
-            
 C.............  Write column labels
             WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
      &                          ( OUTNAMS( J ), J=1, NDIM )
+
+C.............  Write units for columns
+            WRITE( FDEV, HDRFMT ) ADJUSTL( HDRBUF), 
+     &                            ( OUTUNIT(J), J=1,NDIM )
 
 C.............  Write state total emissions
             DO I = 1, NSTATE
@@ -802,7 +804,8 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
-            CHARACTER(20) :: STLABEL = 'County'
+            CHARACTER(60) :: HDRBUF  = '#'
+            CHARACTER(60) :: STLABEL = '# County'
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -818,12 +821,12 @@ C.............  Get maximum width of numbers
             END DO
 
 C.............  Get column labels and formats
-            CALL CREATE_FORMATS( NDIM, 15+MAXSTWID+MAXCYWID, VNAMES,
+            CALL CREATE_FORMATS( NDIM, 26+MAXSTWID+MAXCYWID, VNAMES,
      &                           INUNIT, MAXWID, OUTNAMS, OUTUNIT )
 
 C.............  Create line format
-            L2 = SUM( MAXWID ) + NDIM
-            LINFLD = REPEAT( '-', L2 )
+c            L2 = SUM( MAXWID ) + NDIM
+c            LINFLD = REPEAT( '-', L2 )
 
 C.............  Write header for county totals
             WRITE( FDEV, '(A)' ) ' '
@@ -834,10 +837,11 @@ C.............  Write column labels
      &                            ( OUTNAMS( J ), J=1, NDIM )
 
 C.............  Write units for columns
-            WRITE( FDEV, HDRFMT ) ' ', ( OUTUNIT(J), J=1,NDIM )
+            WRITE( FDEV, HDRFMT ) ADJUSTL( HDRBUF), 
+     &                            ( OUTUNIT(J), J=1,NDIM )
 
 C.............  Write line
-            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
+c            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
 C.............  Write county total emissions
             PSTA = -9
