@@ -1,5 +1,5 @@
 
-        SUBROUTINE GENRPRT( FDEV, RCNT, HWID, ADEV, ENAME, TNAME,
+        SUBROUTINE GENRPRT( FDEV, RCNT, ADEV, ENAME, TNAME,
      &                      LNAME, OUTFMT, SMAT, ZEROFLAG, EFLAG )
 
 C***********************************************************************
@@ -85,7 +85,6 @@ C...........   EXTERNAL FUNCTIONS
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV    ! output file unit number
         INTEGER     , INTENT (IN) :: RCNT    ! report number
-        INTEGER     , INTENT (IN) :: HWID    ! header width
         INTEGER     , INTENT (IN) :: ADEV    ! unit no. ASCII elevated file
         CHARACTER(*), INTENT (IN) :: ENAME   ! inventory file name
         CHARACTER(*), INTENT (IN) :: TNAME   ! hourly data file name
@@ -509,9 +508,6 @@ C.................  Write daily layered emission totals
             END DO
 
         END IF
-
-C.........  Write line to separate reports from each other and from metadata
-        WRITE( FDEV, '(/,A,/)' ) REPEAT( '#', HWID )
 
 C.........  Deallocate routine-specific memory
         IF( DLFLAG ) DEALLOCATE( TMPBIN )

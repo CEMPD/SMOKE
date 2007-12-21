@@ -220,6 +220,7 @@ C...........   Other local variables
         INTEGER     W1, W2          ! tmp widths
         INTEGER     STIDX           ! starting index of loop
         INTEGER     EDIDX           ! ending index of loop
+        INTEGER, SAVE:: PDEV  = 0   ! previous output file unit number
 
         REAL        VAL             ! tmp data value
         REAL        PREVAL          ! tmp previous data value
@@ -1260,9 +1261,12 @@ C............................................................................
 C.........  Write out the header to the report
 C............................................................................
 
+C.........  Write line to separate reports from each other and from metadata
+        IF( PDEV == FDEV ) WRITE( FDEV, '(/,A,/)' ) REPEAT( '#', LH )
+
 C.........  If multifile report, write out number of current file
         IF( RPT_%NUMFILES .GT. 1 ) THEN
-            WRITE( MESG,94020 ) 'File', FILENUM, 'of', RPT_%NUMFILES
+            WRITE( MESG,94020 ) '# File', FILENUM, 'of', RPT_%NUMFILES
             WRITE( FDEV,93000 ) TRIM( MESG )
 
         END IF
@@ -1274,62 +1278,62 @@ C           to the report verbatim.
         DO I = 1, RPT_%NUMTITLE
 
             L2 = LEN_TRIM( TITLES( I,RCNT ) )
-            WRITE( FDEV,93000 ) TITLES( I,RCNT )( 1:L2 )
+            WRITE( FDEV,93000 ) '# ' // TITLES( I,RCNT )( 1:L2 )
 
         END DO
 
 C.........  Automatic Titles  ...............................................
 
 C.........  Source category processed
-        WRITE( FDEV,93000 ) 'Processed as ' // TRIM( CATDESC ) // 
+        WRITE( FDEV,93000 ) '# Processed as ' // TRIM( CATDESC ) // 
      &                      ' sources'
 
 C.........  The year of the inventory
-        WRITE( MESG,94010 ) 'Base inventory year', BYEAR
+        WRITE( MESG,94010 ) '# Base inventory year', BYEAR
         WRITE( FDEV,93000 ) TRIM( MESG )
 
         IF( PYEAR .NE. 0 ) THEN 
-            WRITE( MESG,94010 ) 'Projected inventory year', PYEAR
+            WRITE( MESG,94010 ) '# Projected inventory year', PYEAR
             WRITE( FDEV,93000 ) TRIM( MESG )
         END IF
 
 C.........  Whether projection factors were applied and for what year
         IF( RPT_%USEPRMAT ) THEN
-            WRITE( MESG,94010 ) 'Projection factors applied to ' //
+            WRITE( MESG,94010 ) '# Projection factors applied to ' //
      &             'inventory for converting from', PRBYR, 'to', PRPYR
             WRITE( FDEV,93000 ) TRIM( MESG )
         END IF
 
 C.........  Whether multiplicative control factors were applied
         IF( RPT_%USECUMAT ) THEN
-            WRITE( FDEV,93000 ) 'Multiplicative control factors ' //
+            WRITE( FDEV,93000 ) '# Multiplicative control factors ' //
      &             'applied'
         END IF
 
 C.........  Whether a gridding matrix was applied and the grid name
         IF( RPT_%USEGMAT .OR. AFLAG ) THEN
-            WRITE( FDEV,93000 ) 'Gridding matrix applied for grid' // 
+            WRITE( FDEV,93000 ) '# Gridding matrix applied for grid' // 
      &                          TRIM( GRDNM )
         ELSE
-            WRITE( FDEV,93000 ) 'No gridding matrix applied'
+            WRITE( FDEV,93000 ) '# No gridding matrix applied'
         END IF
 
 C.........  Whether a speciation matrix was applied and mole- or mass-based
         IF( RPT_%USESLMAT .OR. AFLAG ) THEN
-            WRITE( FDEV,93000 ) 'Molar speciation matrix applied'
+            WRITE( FDEV,93000 ) '# Molar speciation matrix applied'
 
         ELSE IF( RPT_%USESSMAT ) THEN
-            WRITE( FDEV,93000 ) 'Mass speciation matrix applied'
+            WRITE( FDEV,93000 ) '# Mass speciation matrix applied'
 
         ELSE
-            WRITE( FDEV,93000 ) 'No speciation matrix applied'
+            WRITE( FDEV,93000 ) '# No speciation matrix applied'
 
         END IF
 
 C.........  What pollutant was used for speciation profiles
         IF( RPT_%BYSPC ) THEN
             L = LEN_TRIM( RPT_%SPCPOL )
-            WRITE( FDEV,93000 ) 'Speciation profiles for pollutant "' //
+            WRITE( FDEV,93000 )'# Speciation profiles for pollutant "'//
      &                          RPT_%SPCPOL( 1:L ) // '"'
         END IF
 
@@ -1343,12 +1347,12 @@ C.........  For hourly data, the time period processed
             L2 = LEN_TRIM( DAYS( K2 ) )
 
             WRITE( FDEV,93010 ) 
-     &            'Temporal factors applied for episode from'
-            WRITE( FDEV,93010 ) BLANK5 // 
+     &            '# Temporal factors applied for episode from'
+            WRITE( FDEV,93010 ) '# ' // BLANK5 // 
      &             DAYS( K1 )( 1:L1 ) // ' ' // MMDDYY( SDATE ) //
      &             ' at', STIME, 'to'
 
-            WRITE( FDEV,93010 ) BLANK5 // 
+            WRITE( FDEV,93010 ) '# ' // BLANK5 // 
      &             DAYS( K2 )( 1:L2 ) // ' '// MMDDYY( EDATE ) //
      &             ' at', ETIME
 
@@ -1359,7 +1363,7 @@ C               messages and titles accordingly.
             IF( INVPIDX .EQ. 1 ) DYSTAT = .TRUE.
 
         ELSE
-            WRITE( FDEV,93000 ) 'No temporal factors applied'
+            WRITE( FDEV,93000 ) '# No temporal factors applied'
 
             DYSTAT = .FALSE.
             IF( RPT_%AVEDAY ) DYSTAT = .TRUE.
@@ -1368,20 +1372,20 @@ C               messages and titles accordingly.
 
 C.........  Write average day status
         IF( DYSTAT ) THEN
-            WRITE( FDEV,93000 ) 'Average day data basis in report'
+            WRITE( FDEV,93000 ) '# Average day data basis in report'
         ELSE
-            WRITE( FDEV,93000 ) 'Annual total data basis in report'
+            WRITE( FDEV,93000 ) '# Annual total data basis in report'
         END IF
 
 C.........  Write normalization status
         IF( RPT_%NORMCELL ) THEN
             L = LEN_TRIM( GRDNM )
-            WRITE( FDEV, 93000 ) 'Data divided by grid cell areas '//
+            WRITE( FDEV, 93000 ) '# Data divided by grid cell areas '//
      &                           'based on grid ' // GRDNM( 1:L )
         END IF
 
         IF( RPT_%NORMPOP ) THEN
-            WRITE( FDEV, 93020 ) 'Data divided by year ', STCYPOPYR,
+            WRITE( FDEV, 93020 ) '# Data divided by year ', STCYPOPYR,
      &                           ' population'
         END IF
 
@@ -1389,7 +1393,7 @@ C.........  The name of the group used to select the data
         IF( RPT_%REGNNAM .NE. ' ' ) THEN
 
             L = LEN_TRIM( RPT_%REGNNAM )
-            WRITE( FDEV,93000 ) 'Region group "' // RPT_%REGNNAM( 1:L )
+            WRITE( FDEV,93000 ) '# Region group "'//RPT_%REGNNAM( 1:L )
      &                          // '" applied'
 
         END IF
@@ -1398,7 +1402,7 @@ C.........  The name of the subgrid used to select the data
         IF( RPT_%SUBGNAM .NE. ' ' ) THEN
 
             L = LEN_TRIM( RPT_%SUBGNAM )
-            WRITE( FDEV,93000 ) 'Subgrid "' // RPT_%SUBGNAM( 1:L )
+            WRITE( FDEV,93000 ) '# Subgrid "' // RPT_%SUBGNAM( 1:L )
      &                          // '" applied'
 
         END IF
@@ -1424,10 +1428,8 @@ C.........   Write data output units
 
         END IF
 
-C.........  Write line of minus signs, needed for parsing by GUI tools.
-        HDRBUF = ' '
-        WRITE( LINFMT, '(A,I4.4,A)' ) '(', LH, '("-"))'
-        WRITE( FDEV,LINFMT )
+C.........  Store previous output file unit number
+        PDEV = FDEV
 
 C.........  Successful completion of routine
         RETURN
@@ -1496,7 +1498,7 @@ C.............  If this is the firstime for this report
             IF( LHDR .EQ. 0 ) THEN
 
 C.................  Initialize header and its length
-                HDRBUF = ' ' // LABEL
+                HDRBUF = ' ' // '#' // LABEL
                 LHDR   = LCOL + LV
 
 C.............  If not a new report...

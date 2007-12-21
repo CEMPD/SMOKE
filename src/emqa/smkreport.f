@@ -213,7 +213,6 @@ C.........  Read and store all group definitions
         CALL RDGRPS( CDEV )
 
 C.........  Loop through reports
-
         DO N = 1, NREPORT
 
             RPT_ = ALLRPT( N )
@@ -229,7 +228,7 @@ C............  Determine number of output files/sections per report
                 RPT_%NUMSECT = 1
 
                 RNFILES = REAL( RPT_%NUMDATA ) / REAL( RPT_%RPTNVAR )
-                    
+
                 IF( RNFILES .LT. 1.0 ) THEN
 
                     RPT_%NUMFILES = 1
@@ -275,11 +274,6 @@ C............  Determine number of output files/sections per report
             ALLRPT( N )%NUMSECT  = RPT_%NUMSECT
             ALLRPT( N )%RPTNVAR  = RPT_%RPTNVAR
         
-C............  Allocate output file number array
-            ALLOCATE( ODEV( RPT_%NUMFILES ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'ODEV', PROGNAME )
-            ODEV = 0
-
 
             WRITE( MESG,94010 ) 
      &             '***** CHECKING INPUTS FOR REPORT', N, ' *****'
@@ -304,6 +298,13 @@ C.............  Get file name
 
 C.............  If current file is different than previous
             IF( FNAME .NE. PNAME ) THEN
+
+                IF( ALLOCATED( ODEV ) ) DEALLOCATE( ODEV )
+
+C................  Allocate output file number array
+                ALLOCATE( ODEV( RPT_%NUMFILES ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'ODEV', PROGNAME )
+                ODEV = 0
 
 C.................  When not first report...
                 IF( N .GT. 1 ) THEN
@@ -385,13 +386,13 @@ C               for the appropriate time resolution...
 
 C.............  For mole-based speciation...
                 IF( RPT_%USESLMAT ) THEN
-                    CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
+                    CALL GENRPRT( ODEV( J ), N, ADEV,  ENAME,
      &                     TNAME, LNAME, OUTFMT, SLMAT, ZEROFLAG, 
      &                     EFLAG )
 
 C.............  For mass-based and no speciation
                 ELSE
-                    CALL GENRPRT( ODEV( J ), N, HWID, ADEV,  ENAME,
+                    CALL GENRPRT( ODEV( J ), N, ADEV,  ENAME,
      &                     TNAME, LNAME, OUTFMT, SSMAT, ZEROFLAG, 
      &                     EFLAG )
                 END IF
@@ -400,8 +401,6 @@ C.............  Save file number to use in next iteration
                 PNAME  = FNAME
 
             END DO    ! end loop over files/sections
-
-            DEALLOCATE( ODEV )
 
         END DO   ! end loop over reports
 
