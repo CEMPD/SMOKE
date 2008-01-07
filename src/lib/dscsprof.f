@@ -37,6 +37,9 @@ C
 C***************************************************************************
 
 C...........   Modules for public variables
+C.........  This module contains the information about the source category
+        USE MODINFO, ONLY: CRL
+
 C...........   This module contains the speciation profile tables
         USE MODSPRO, ONLY: MXSPFUL, MXSPEC, SPCNAMES, MOLUNITS
 
@@ -100,6 +103,7 @@ C...........   Local variables
 
         LOGICAL     :: EFLAG    = .FALSE.   ! true: error found
         LOGICAL     :: INHEADER = .FALSE.   ! true: in file header
+        LOGICAL     :: BFLAG    = .FALSE.   ! true: running for biogenics
 
         CHARACTER(256) LINE       ! read buffer for a line
         CHARACTER(256) MESG       ! message buffer
@@ -107,6 +111,7 @@ C...........   Local variables
         CHARACTER(SPNLEN3)  TMPPRF     ! tmp profile number
         CHARACTER(IOVLEN3)  POLNAM     ! tmp pollutant name
         CHARACTER(IOVLEN3)  SPECNM     ! tmp species name
+        CHARACTER(SPNLEN3)  SPPRO      ! biogenics speciation profile to use
 
         CHARACTER(16) :: PROGNAME = 'DSCSPROF' ! program name
 
@@ -118,7 +123,23 @@ C...........  Make sure routine arguments are valid
             MESG = 'INTERNAL ERROR: Invalid subroutine arguments'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-       
+
+C...........  Get source category, transfered by MODINFO module
+        CALL GETCTGRY
+
+C...........  For biogenics, evaluate speciation profile code to use
+        IF( CRL == 'B' ) THEN
+            BFLAG = .TRUE.
+            MESG = 'Speciation profile to use for biogenics'
+            CALL ENVSTR( 'BIOG_SPRO', MESG, ' ', SPPRO, IOS )
+
+            IF( IOS .NE. 0 ) THEN
+                MESG = 'ERROR: Variable BIOG_SPRO needs to be set ' //
+     &                 'to run'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END IF
+
 C...........   Determine length of input file and allocate memory for
 C              a temporary species names array, an array that
 C              associates a pollutant with each species name, an
@@ -177,6 +198,10 @@ C.............  Separate the line of data into each part
 
 C.............  Left-justify character strings and convert factors to reals
             TMPPRF = ADJUSTL ( SEGMENT( 1 ) ) 
+
+C.............  For biogenics, skip any entry that is not needed
+            IF( BFLAG .AND. TMPPRF .NE. SPPRO ) CYCLE
+
             POLNAM = ADJUSTL ( SEGMENT( 2 ) )
             SPECNM = ADJUSTL ( SEGMENT( 3 ) )
             FAC1   = STR2REAL( SEGMENT( 4 ) )
