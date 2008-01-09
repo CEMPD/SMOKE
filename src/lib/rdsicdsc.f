@@ -54,10 +54,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL       FIND1, GETFLINE, STR2INT, BLKORCMT
 
 C...........   Subroutine arguments
-        INTEGER, INTENT (IN) :: FDEV           ! file unit number
+        INTEGER, INTENT (IN) :: FDEV          ! file unit number
+
+C.........  Local parameters
+        INTEGER, PARAMETER :: MXSEG = 5       ! max # of potential line segments
+
+C.........  Other arrays
+        CHARACTER( SDSLEN3 ) SEGMENT( MXSEG ) ! Segment of parsed lines
 
 C...........   Local variables
-        INTEGER         J, N               ! indices and counters
+        INTEGER         J, L, N               ! indices and counters
 
         INTEGER         ENDLEN                ! end length for reading descriptn
         INTEGER         IOS                   ! i/o status
@@ -65,6 +71,8 @@ C...........   Local variables
         INTEGER      :: NLINES = 0            ! number of lines in input file
         INTEGER         SIC                   ! tmp SIC
 
+        LOGICAL      :: DFLAG = .FALSE.       ! true: processing delimited format
+        LOGICAL      :: FFLAG = .FALSE.       ! true: processing fixed format
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
 
         CHARACTER(256)  LINE                  ! Read buffer for a line
@@ -77,7 +85,7 @@ C   Begin body of subroutine RDSICDSC
 
         REWIND( FDEV )  ! In case of multiple calls
 
-C.........  Get the number of lines in the holidays file
+C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'SIC Descriptions' )
 
 C.........  Allocate memory for the SCC descriptions and initialize
@@ -99,21 +107,51 @@ C.........  Read the SCC descriptions, and store with SCC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Skip blank and comment lines
-            IF( BLKORCMT( LINE ) ) CYCLE
+C.............  Check header to define the format (comma-delimited or fixed)
+C               If it is not header, Skip blank and comment lines
+            IF( INDEX( LINE, '#FIXED' ) > 0 ) THEN
+                FFLAG = .TRUE.    ! processing fixed format
+                CYCLE
+            ELSE IF( INDEX( LINE, '#DELIMITED' ) > 0 ) THEN
+                DFLAG = .TRUE.    ! processing delimited format
+                CYCLE
+            ELSE IF( BLKORCMT( LINE ) ) THEN
+                CYCLE
+            END IF
 
 C.............  Left adjust line
             LINE = ADJUSTL( LINE )
 
 C.............  Get SIC line
-            SIC = STR2INT( LINE( 1:SICLEN3 ) )
+            IF( DFLAG ) THEN
+                CALL PARSLINE( LINE, 2, SEGMENT )
+                SIC = STR2INT( SEGMENT( 1 )( 1:SICLEN3 ) )
 
-C.............  Find SCC in inventory list, and if it's in the inventory, 
-C               store the description.
-            J = FIND1( SIC, NINVSIC, INVSIC )
+C.................  Find SIC in inventory list, and if it's in the
+C                   inventory, store the description.
+                J = FIND1( SIC, NINVSIC, INVSIC )
 
-            IF ( J .GT. 0 ) THEN
-                SICDESC( J ) = ADJUSTL( LINE( SICLEN3+1:ENDLEN ) )
+                IF ( J .GT. 0 ) THEN
+                    SICDESC( J ) = ADJUSTL( SEGMENT( 2 ) )
+                END IF
+   
+            ELSE IF( FFLAG ) THEN
+                SIC = STR2INT( LINE( 1:SICLEN3 ) )
+
+C.................  Find SIC in inventory list, and if it's in the
+C                   inventory, store the description.
+                J = FIND1( SIC, NINVSIC, INVSIC )
+
+                IF ( J .GT. 0 ) THEN
+                    SICDESC( J ) = ADJUSTL( LINE( SICLEN3+1:ENDLEN ) )
+                END IF
+
+            ELSE
+                MESG = 'ERROR: Could not find a header. See more ' //
+     &                 'detail in the SMOKE manual.'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
             END IF
 
         END DO

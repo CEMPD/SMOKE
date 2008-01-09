@@ -55,8 +55,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV          ! file unit number
 
+C.........  Local parameters
+        INTEGER, PARAMETER :: MXSEG = 5       ! max # of potential line segments
+
+C.........  Other arrays
+        CHARACTER( SDSLEN3 ) SEGMENT( MXSEG ) ! Segment of parsed lines
+
 C...........   Local variables
-        INTEGER         J, N                  ! indices and counters
+        INTEGER         J, L, N               ! indices and counters
 
         INTEGER         ENDLEN                ! end length for reading descriptn
         INTEGER         IOS                   ! i/o status
@@ -77,7 +83,7 @@ C   Begin body of subroutine RDMACTDSC
         
         REWIND( FDEV )  ! In case of multiple calls
 
-C.........  Get the number of lines in the holidays file
+C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'MACT Descriptions' )
 
 C.........  Allocate memory for the MACT descriptions and initialize
@@ -107,18 +113,18 @@ C.............  Left adjust line
             LINE = ADJUSTL( LINE )
 
 C.............  Get MACT line
-            TMACT = LINE( 1:MACLEN3 )
-            
+            CALL PARSLINE( LINE, 2, SEGMENT )
+            TMACT = SEGMENT( 1 )( 1:MACLEN3 )
+           
             CALL PADZERO( TMACT )
 
-C.............  Find MACT in inventory list, and if it's in the inventory, 
+C.............  Find MACT in inventory list, and if it's in the inventory,
 C               store the description.
             J = FINDC( TMACT, NINVMACT, INVMACT )
 
             IF ( J .GT. 0 ) THEN
-                MACTDESC( J ) = ADJUSTL( LINE( MACLEN3+1:ENDLEN ) )
+                MACTDESC( J ) = ADJUSTL( SEGMENT( 2 ) )
             END IF
-
 
         END DO
 

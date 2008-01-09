@@ -55,6 +55,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV           ! file unit number
 
+C.........  Local parameters
+        INTEGER, PARAMETER :: MXSEG = 5       ! max # of potential line segments
+
+C.........  Other arrays
+        CHARACTER( SDSLEN3 ) SEGMENT( MXSEG ) ! Segment of parsed lines
+
 C...........   Local variables
         INTEGER         J, K, L, N, P         ! indices and counters
 
@@ -63,13 +69,15 @@ C...........   Local variables
         INTEGER      :: IREC = 0              ! record number
         INTEGER      :: NLINES = 0            ! number of lines in input file
 
+        LOGICAL      :: DFLAG = .FALSE.       ! true: processing delimited format
+        LOGICAL      :: FFLAG = .FALSE.       ! true: processing fixed format
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
 
         CHARACTER(1)    CHAR                  ! single character buffer
         CHARACTER(256)  LINE                  ! Read buffer for a line
         CHARACTER(300)  MESG                  ! Message buffer
 
-        CHARACTER(SCCLEN3 ) TSCC          ! tmp SCC
+        CHARACTER( SCCLEN3 ) TSCC          ! tmp SCC
 
         CHARACTER(16) :: PROGNAME = 'RDSCCDSC'    !  program name
 
@@ -107,25 +115,57 @@ C.........  Read the SCC descriptions, and store with SCC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  Skip blank and comment lines
-            IF( BLKORCMT( LINE ) ) CYCLE
+C.............  Check header to define the format (comma-delimited or fixed)
+C               If it is not header, Skip blank and comment lines
+            IF( INDEX( LINE, '#FIXED' ) > 0 ) THEN
+                FFLAG = .TRUE.    ! processing fixed format
+                CYCLE
+            ELSE IF( INDEX( LINE, '#DELIMITED' ) > 0 ) THEN
+                DFLAG = .TRUE.    ! processing delimited format
+                CYCLE
+            ELSE IF( BLKORCMT( LINE ) ) THEN
+                CYCLE
+            END IF
 
 C.............  Left adjust line
             LINE = ADJUSTL( LINE )
 
 C.............  Get SCC line
-            TSCC = LINE( 1:SCCLEN3 )
-            CALL PADZERO( TSCC )
+            IF( DFLAG ) THEN
+                CALL PARSLINE( LINE, 2, SEGMENT )
+                TSCC = SEGMENT( 1 )( 1:SCCLEN3 )
+                CALL PADZERO( TSCC )
 
-C.............  Find SCC in inventory list, and if it's in the inventory, 
-C               store the description.
-            J = FINDC( TSCC, NINVSCC, INVSCC )
+C.................  Find SCC in inventory list, and if it's in the
+C                   inventory, store the description.
+                J = FINDC( TSCC, NINVSCC, INVSCC )
+                IF ( J .GT. 0 ) THEN
+                    SCCDESC( J ) = ADJUSTL( SEGMENT( 2 ) )
+                END IF
+   
+            ELSE IF( FFLAG ) THEN
+                TSCC = LINE( 1:SCCLEN3 )
+                CALL PADZERO( TSCC )
 
-            IF ( J .GT. 0 ) THEN
-                SCCDESC( J ) = ADJUSTL( LINE( SCCLEN3+1:ENDLEN ) )
+C.................  Find SCC in inventory list, and if it's in the
+C                   inventory, store the description.
+                J = FINDC( TSCC, NINVSCC, INVSCC )
 
+                IF ( J .GT. 0 ) THEN
+                    SCCDESC( J ) = ADJUSTL( LINE( SCCLEN3+1:ENDLEN ) )
+                END IF
+
+            ELSE
+                MESG = 'ERROR: Could not find a header. See more ' //
+     &                 'detail in the SMOKE manual.'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+
+            END IF
+            
 C.................  Determine and store the position of semi-colons that indicate
 C                   the parts of the SCCs for the different levels
+            IF( J > 0 ) THEN
                 L = LEN_TRIM( SCCDESC( J ) )
                 P = 0
                 CHAR = ' '

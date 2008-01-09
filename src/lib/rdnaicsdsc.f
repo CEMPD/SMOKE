@@ -53,10 +53,16 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL       BLKORCMT, FINDC, GETFLINE
 
 C...........   Subroutine arguments
-        INTEGER, INTENT (IN) :: FDEV           ! file unit number
+        INTEGER, INTENT (IN) :: FDEV          ! file unit number
+
+C.........  Local parameters
+        INTEGER, PARAMETER :: MXSEG = 5       ! max # of potential line segments
+
+C.........  Other arrays
+        CHARACTER( SDSLEN3 ) SEGMENT( MXSEG ) ! Segment of parsed lines
 
 C...........   Local variables
-        INTEGER         J, N               ! indices and counters
+        INTEGER         J, L, N               ! indices and counters
 
         INTEGER         ENDLEN                ! end length for reading descriptn
         INTEGER         IOS                   ! i/o status
@@ -64,6 +70,7 @@ C...........   Local variables
         INTEGER      :: NLINES = 0            ! number of lines in input file
 
         LOGICAL      :: EFLAG = .FALSE.       ! true: error found
+
 
         CHARACTER(256)  LINE                  ! Read buffer for a line
         CHARACTER(300)  MESG                  ! Message buffer
@@ -77,7 +84,7 @@ C   Begin body of subroutine RDNAICSDSC
 
         REWIND( FDEV )  ! In case of multiple calls
 
-C.........  Get the number of lines in the holidays file
+C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'NAICS Descriptions' )
 
 C.........  Allocate memory for the NAICS descriptions and initialize
@@ -106,15 +113,15 @@ C.............  Left adjust line
             LINE = ADJUSTL( LINE )
 
 C.............  Get NAICS line
-            TNAICS = LINE( 1:NAILEN3 )
+            CALL PARSLINE( LINE, 2, SEGMENT )
+            TNAICS = SEGMENT( 1 )( 1:NAILEN3 )
             CALL PADZERO( TNAICS )
 
-C.............  Find NAICSS in inventory list, and if it's in the inventory, 
+C.............  Find NAICSS in inventory list, and if it's in the inventory,
 C               store the description.
             J = FINDC( TNAICS, NINVNAICS, INVNAICS )
-
             IF ( J .GT. 0 ) THEN
-                NAICSDESC( J ) = ADJUSTL( LINE( NAILEN3+1:ENDLEN ) )
+                NAICSDESC( J ) = ADJUSTL( SEGMENT( 2 ) )
             END IF
 
         END DO
