@@ -484,23 +484,40 @@ C.................  Determine if plant description is present
                 J = INDEX1( 'Additional extended', NCOL, HEADER )
                 EXTIN = ( J .GT. 0 )
 
-C.................  If MACT code not present but has been requested,
-C                   deallocate memory for array
+C.................  If MACT not present but has been requested, then 
+C                   internal err
                 IF( .NOT. MCTIN .AND. MACFLAG ) THEN
+
+                    MESG = 'WARNING: MACT requested, but ' //
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CMACT )
                     NULLIFY( CMACT )
+
                 END IF
-                
-C.................  If NAICS code not present but has been requested,
-C                   deallocate memory for array
+
+C.................  If boiler not present but has been requested, then 
+C                   internal err
                 IF( .NOT. NAIIN .AND. NAIFLAG ) THEN
+
+                    MESG = 'WARNING: NAICS requested, but ' //
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CNAICS )
                     NULLIFY( CNAICS )
+
                 END IF
 
 C.................  If source type code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. STPIN .AND. STPFLAG ) THEN
+
+                    MESG = 'WARNING: Source type code requested, but '//
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CSRCTYP )
                     NULLIFY( CSRCTYP )
                 END IF
@@ -508,6 +525,11 @@ C                   deallocate memory for array
 C.................  If extended columns not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
+
+                    MESG = 'WARNING: Additional extended requested, ' //
+     &                     'but is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CEXTORL )
                     NULLIFY( CEXTORL )
                 END IF
@@ -568,6 +590,11 @@ C.................  Determine if plant description is present
 C.................  If source type code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. STPIN .AND. STPFLAG ) THEN
+
+                    MESG = 'WARNING: Source type code requested, but '//
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CSRCTYP )
                     NULLIFY( CSRCTYP )
                 END IF
@@ -575,6 +602,11 @@ C                   deallocate memory for array
 C.................  If extended columns not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
+
+                    MESG = 'WARNING: Additional extended requested, ' //
+     &                     'but is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CEXTORL )
                     NULLIFY( CEXTORL )
                 END IF
@@ -665,6 +697,32 @@ C.................  Determine if plant description is present
                 J = INDEX1( 'Additional extended', NCOL, HEADER )
                 EXTIN = ( J .GT. 0 )
 
+C.................  If MACT not present but has been requested, then 
+C                   internal err
+                IF( .NOT. MCTIN .AND. MACFLAG ) THEN
+
+                    MESG = 'WARNING: MACT requested, but ' //
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
+                    DEALLOCATE( CMACT )
+                    NULLIFY( CMACT )
+
+                END IF
+
+C.................  If boiler not present but has been requested, then 
+C                   internal err
+                IF( .NOT. NAIIN .AND. NAIFLAG ) THEN
+
+                    MESG = 'WARNING: NAICS requested, but ' //
+     &                     'is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
+                    DEALLOCATE( CNAICS )
+                    NULLIFY( CNAICS )
+
+                END IF
+
 C.................  If DOE plant ID not present but has been requested, then 
 C                   internal err
                 IF( .NOT. ORSIN .AND. ORSFLAG ) THEN
@@ -672,6 +730,8 @@ C                   internal err
                     MESG = 'WARNING: ORIS ID requested, but ' //
      &                     'is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
+
+                    DEALLOCATE( CORIS )
 
                 END IF
 
@@ -683,6 +743,8 @@ C                   internal err
      &                     'is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
 
+                    DEALLOCATE( CBLRID )
+
                 END IF
 
 C.................  If NEI unique ID not present but has been requested, then 
@@ -692,6 +754,8 @@ C                   internal err
                     MESG = 'WARNING: NEI unique ID requested, but ' //
      &                     'is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
+
+                    DEALLOCATE( CNEIUID )
 
                 END IF
 
@@ -703,25 +767,19 @@ C                   internal err
      &                     'but is not present in ASCII inventory file'
                     CALL M3MSG2( MESG )
 
-                END IF
+                    DEALLOCATE( CEXTORL )
+                    NULLIFY( CEXTORL )
 
-C.................  If MACT code not present but has been requested,
-C                   deallocate memory for array
-                IF( .NOT. MCTIN .AND. MACFLAG ) THEN
-                    DEALLOCATE( CMACT )
-                    NULLIFY( CMACT )
-                END IF
-                
-C.................  If NAICS code not present but has been requested,
-C                   deallocate memory for array
-                IF( .NOT. NAIIN .AND. NAIFLAG ) THEN
-                    DEALLOCATE( CNAICS )
-                    NULLIFY( CNAICS )
                 END IF
 
 C.................  If source type code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. STPIN .AND. STPFLAG ) THEN
+
+                    MESG = 'WARNING: Source type code requested, ' //
+     &                     'but is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CSRCTYP )
                     NULLIFY( CSRCTYP )
                 END IF
@@ -729,7 +787,13 @@ C                   deallocate memory for array
 C.................  If emission release code not present but has been requested,
 C                   deallocate memory for array
                 IF( .NOT. ERPIN .AND. ERPFLAG ) THEN
+
+                    MESG = 'WARNING: Emission release point requested, '
+     &                  // 'but is not present in ASCII inventory file'
+                    CALL M3MSG2( MESG )
+
                     DEALLOCATE( CERPTYP )
+
                 END IF
                 
                 IF( EFLAG ) THEN
