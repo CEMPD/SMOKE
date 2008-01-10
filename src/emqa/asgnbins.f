@@ -280,13 +280,38 @@ C.................  If BY SIC, insert full SIC
                 IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
  
 C.................  If BY MACT, insert full MACT
-                IF( RPT_%BYMACT ) MACT = CMACT( OUTSRC( I ) )
+                IF( RPT_%BYMACT ) THEN
+                    IF( .NOT. ASSOCIATED( CMACT ) ) THEN
+                        MESG = 'ERROR: BY MACT is requested, but ' //
+     &                    'MACT is not present in ASCII inventory file'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ELSE
+                        MACT = CMACT( OUTSRC( I ) )
+                    END IF
+                END IF
 
 C.................  If BY NAICS, insert full NAICS
-                IF( RPT_%BYNAICS ) NAICS = CNAICS( OUTSRC( I ) )
+                IF( RPT_%BYNAICS ) THEN
+                    IF( .NOT. ASSOCIATED( CNAICS ) ) THEN
+                        MESG = 'ERROR: BY NAICS is requested, but ' //
+     &                    'NAICS is not present in ASCII inventory file'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ELSE
+                       NAICS = CNAICS( OUTSRC( I ) )
+                    END IF
+                END IF
 
 C.................  If BY SRCTYP, insert full Source type
-                IF( RPT_%BYSRCTYP ) SRCTYP = CSRCTYP( OUTSRC( I ) )
+                IF( RPT_%BYSRCTYP ) THEN
+                    IF( .NOT. ASSOCIATED( CSRCTYP ) ) THEN
+                        MESG = 'ERROR: BY SRCTYP is requested, but ' //
+     &                    'source type code is not present in ASCII ' //
+     &                    'inventory file'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ELSE
+                        SRCTYP = CSRCTYP( OUTSRC( I ) )
+                    END IF
+                END IF
             
             END IF      ! End by source or not
 
