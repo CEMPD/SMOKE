@@ -78,7 +78,7 @@ C.......  LOCAL PARAMETERS
 C.......  LOCAL VARIABLES
 
 C.......  Static arrays
-      CHARACTER(20)   SEGMENT( MXSEG )    ! parsed input line
+      CHARACTER(150)   SEGMENT( MXSEG )    ! parsed input line
 
 C.......  Allocatable arrays
       CHARACTER(15), ALLOCATABLE :: APRTID( : )
@@ -123,7 +123,7 @@ C.......  File units and logical names
       INTEGER      :: TDEV = 0            ! EDMS species conversion factors
 
 C.......  Other local variables
-      INTEGER         I, J, K, L, L1, M, NF, T ! counters and indices
+      INTEGER         I, II, J, K, L, L1, M, NF, T ! counters and indices
       INTEGER         IOS                 ! i/o status
       INTEGER         IREC                ! line counter
       INTEGER         IHOUR               ! current time step
@@ -154,6 +154,9 @@ C.......  Other local variables
       INTEGER         MXFILES             ! Max number of input files listed in FILELIST
       INTEGER         UTMZONE             ! airport UTM zone
       INTEGER         SEGS                ! number of x, y segments
+      INTEGER         NSEGS               ! total number of x, y segments
+      INTEGER         MXSEGS              ! max number of x, y segments
+      INTEGER         NRPT                ! number of repeat
       INTEGER         POS                 ! position in INVDNAM array
 
       REAL            DAYTOT              ! Daily total emission
@@ -500,110 +503,132 @@ C...................  Check if we already have this airport in master list
               END IF
 
             IF( INDEX( LINE, 'SRCPARAM' ) > 0 .AND. .NOT. COUNT ) THEN
-              APRT = ICAOCODE // '-' // ADJUSTL( SEGMENT( 2 ) )
-              ZLOC = STR2REAL( SEGMENT ( 4 ) )
+                APRT = ICAOCODE // '-' // ADJUSTL( SEGMENT( 2 ) )
+                ZLOC = STR2REAL( SEGMENT ( 4 ) )
 
-              K = INDEX1( APRT, MXSRC, APRTID )
-              IF( K .LE. 0 ) THEN
-                MESG = 'ERROR: Could not find matching source '
+                K = INDEX1( APRT, MXSRC, APRTID )
+                IF( K .LE. 0 ) THEN
+                    MESG = 'ERROR: Could not find matching source '
      &                       // TRIM( SEGMENT( 2 ) )
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-              END IF
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
-              HEIGHT( K ) = ZLOC * 3.28084  ! convert m to ft
+                HEIGHT( K ) = ZLOC * 3.28084  ! convert m to ft
 
-              IF( TYPE( K ) .EQ. 'AREA' ) THEN
-                WIDTH = STR2REAL( SEGMENT( 5 ) )
-                LENGTH = STR2REAL( SEGMENT( 6 ) )
-                AREA( K ) = WIDTH * LENGTH
+                IF( TYPE( K ) .EQ. 'AREA' ) THEN
+                    WIDTH = STR2REAL( SEGMENT( 5 ) )
+                    LENGTH = STR2REAL( SEGMENT( 6 ) )
+                    AREA( K ) = WIDTH * LENGTH
 
-              ELSE IF( TYPE( K ) .EQ. 'VOLUME' ) THEN
-                AREA( K ) = 1.0
+                ELSE IF( TYPE( K ) .EQ. 'VOLUME' ) THEN
+                    AREA( K ) = 1.0
 
-              ELSE IF( TYPE( K ) .EQ. 'AREAPOLY' ) THEN
-                POINTS( K ) = STR2INT( SEGMENT( 5 ) )
-              END IF
+                ELSE IF( TYPE( K ) .EQ. 'AREAPOLY' ) THEN
+                    POINTS( K ) = STR2INT( SEGMENT( 5 ) )
+
+                ENDIF
 
             END IF
 
             IF( INDEX( LINE, 'AREAVERT' ) > 0 .AND. .NOT. COUNT ) THEN
-              APRT = ICAOCODE // '-' // ADJUSTL( SEGMENT( 2 ) )
+                APRT = ICAOCODE // '-' // ADJUSTL( SEGMENT( 2 ) )
 
-              SEGS = GETNLIST( 256, LINE )
-              SEGS = SEGS - 2
-              IF( SEGS .EQ. 0 ) CYCLE
+                SEGS = GETNLIST( 256, LINE )
+                SEGS = SEGS - 2
+                IF( SEGS .EQ. 0 ) CYCLE
 
-              K = INDEX1( APRT, MXSRC, APRTID )
-              IF( K .LE. 0 ) THEN
-                MESG = 'ERROR: Could not find matching source '
+                K = INDEX1( APRT, MXSRC, APRTID )
+                IF( K .LE. 0 ) THEN
+                    MESG = 'ERROR: Could not find matching source '
      &                       // TRIM( SEGMENT( 2 ) )
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-              END IF
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
-              ALLOCATE( X( POINTS( K ) ) )
-              ALLOCATE( Y( POINTS( K ) ) )
-              X = 0.
-              Y = 0.
+C.................  Allocate memory
+                ALLOCATE( X( POINTS( K ) ) )
+                ALLOCATE( Y( POINTS( K ) ) )
+                X = 0.
+                Y = 0.
 
-              IF( SEGS .EQ. ( POINTS( K ) * 2 ) ) THEN
-                M = 2
+                IF( SEGS .EQ. ( POINTS( K ) * 2 ) ) THEN
+                    M = 2
+                    DO J = 1, POINTS( K )
+                        M = M + 1
+                        X( J ) = STR2REAL( SEGMENT( M ) )
+                        M = M + 1
+                        Y( J ) = STR2REAL( SEGMENT( M ) )
+                    END DO
+
+                ELSE IF( SEGS .LT. ( POINTS( K ) * 2 ) ) THEN
+                    M = 2
+                    DO J = 1, SEGS / 2
+                        M = M + 1
+                        X( J ) = STR2REAL( SEGMENT( M ) )
+                        M = M + 1
+                        Y( J ) = STR2REAL( SEGMENT( M ) )
+                    END DO
+
+                    NSEGS = SEGS
+                    NRPT  = INT( POINTS( K ) / 5 )
+
+                    DO II = 1,  NRPT 
+
+                        READ( EDEV, 93000, IOSTAT=IOS ) LINE
+                        IREC = IREC + 1
+
+                        IF( IOS > 0 ) THEN
+                            WRITE( MESG,94010 ) 'I/O error', IOS,
+     &                          'reading input file at line', IREC
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+
+C.........................  Check for end of file              
+                        IF( IOS < 0 ) THEN
+                            IREC = IREC - 1
+                            EXIT
+                        END IF
+
+C.........................  Skip if no data available
+                        SEGS = GETNLIST( 256, LINE )
+                        SEGS = SEGS - 2
+                        IF( SEGS .NE. 0 ) THEN
+
+C.............................  Read data from LINE
+                            CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+                            M = 2
+                            MXSEGS = ( NSEGS/2 ) + ( SEGS/2 )
+
+                            DO J = ( NSEGS/2 ) + 1, MXSEGS
+                                M = M + 1
+                                X( J ) = STR2REAL( SEGMENT( M ) )
+                                M = M + 1
+                                Y( J ) = STR2REAL( SEGMENT( M ) )
+                            END DO
+
+                            NSEGS = NSEGS + SEGS
+
+                        END IF
+
+                    END DO   ! end of looping polygon source vertice coordinates
+
+                END IF
+
+                SUM = 0.
                 DO J = 1, POINTS( K )
-                  M = M + 1
-                  X( J ) = STR2REAL( SEGMENT( M ) )
-                  M = M + 1
-                  Y( J ) = STR2REAL( SEGMENT( M ) )
+                    IF( J .LT. POINTS( K ) ) THEN
+                        SUM = SUM + ( ( X( J ) * Y( J + 1 ) ) -
+     &                              ( X( J + 1 ) * Y( J ) ) )
+                    ELSE
+                        SUM = SUM + ( ( X( J ) * Y( 1 ) ) -
+     &                              ( X( 1 ) * Y( J ) ) )
+                    END IF
                 END DO
 
-              ELSE IF( SEGS .LT. ( POINTS( K ) * 2 ) ) THEN
-                   M = 2
-                DO J = 1, SEGS / 2
-                  M = M + 1
-                  X( J ) = STR2REAL( SEGMENT( M ) )
-                  M = M + 1
-                  Y( J ) = STR2REAL( SEGMENT( M ) )
-                END DO
+                AREA( K ) = ABS( 0.5 * SUM )
 
-                READ( EDEV, 93000, IOSTAT=IOS ) LINE
-                IREC = IREC + 1
+                DEALLOCATE( X, Y )
 
-                IF( IOS > 0 ) THEN
-                  WRITE( MESG,94010 ) 'I/O error', IOS,
-     &                'reading input file at line', IREC
-                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C...............  Check for end of file              
-                IF( IOS < 0 ) THEN
-                  IREC = IREC - 1
-                  EXIT
-                END IF
-
-C...............  Read data from LINE
-                CALL PARSLINE( LINE, MXSEG, SEGMENT )
-
-                M = 2
-                DO J = ( SEGS / 2 ) + 1, POINTS( K )
-                  M = M + 1
-                  X( J ) = STR2REAL( SEGMENT( M ) )
-                  M = M + 1
-                  Y( J ) = STR2REAL( SEGMENT( M ) )
-                END DO
-              END IF
-
-              SUM = 0.
-              DO J = 1, POINTS( K )
-                IF( J .LT. POINTS( K ) ) THEN
-                  SUM = SUM + ( ( X( J ) * Y( J + 1 ) ) -
-     &                        ( X( J + 1 ) * Y( J ) ) )
-                ELSE
-                  SUM = SUM + ( ( X( J ) * Y( 1 ) ) -
-     &                        ( X( 1 ) * Y( J ) ) )
-                END IF
-              END DO
-
-              AREA( K ) = ABS( 0.5 * SUM )
-
-              DEALLOCATE( X, Y )
             END IF
 
           END DO
@@ -655,12 +680,54 @@ C.......  Process files in input list
 
       LHAP = 0
       LPOLNAM = ' '
+      POLNAM = ' '
+      FPOLNAM = ' '
       DO I = 1, MXFILES
 
           READ( HDEV, 93000, IOSTAT=IOS ) LINE
 
 C...........  Skip blank and comment lines
           IF( BLKORCMT( LINE ) ) CYCLE
+
+C...........  Define current processing pollutant
+          CALL PARSLINE( LINE, 2, SEGMENT )
+          POLNAM = TRIM( SEGMENT( 1 ) )
+          LINE = ADJUSTL( SEGMENT( 2 ) )
+
+C...........  One cond:1st pol has to be THC to reduce usage of memory
+          IF( I == 1 ) THEN
+              IF( POLNAM /= 'THC' ) THEN
+                  MESG = 'ERROR: You MUST process THC first '
+     &                    // 'before processing other pollutants.'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              END IF
+          END IF
+
+          IF( POLNAM == 'VOC' ) THEN
+              MESG = 'ERROR: Can not process VOC BUT can ' //
+     &               'convert THC to VOC.'
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C...........  One cond:1st pol has to be THC to reduce usage of memory
+          ELSE IF( POLNAM == 'THC' ) THEN
+              IF( I == 1 ) THEN
+                  MESG = 'NOTE: Pollutant THC is internally ' //
+     &                   'converted to TOG.'
+                  CALL M3MSG2( MESG )
+                  POLNAM = 'TOG'
+              END IF
+          END IF
+
+          IF( POLNAM == 'PM25' ) POLNAM = 'PM2_5'
+
+C...........  look for pol names in a list of pols
+          POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
+
+          IF( POS < 1 ) THEN
+              MESG = 'ERROR: Pollutant ID ' // TRIM( POLNAM )//
+     &               ' is not found in the INVTABLE file.'
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+          END IF
+          FPOLNAM = ITNAMA( POS )
 
 C...........  Check for i/o errors
           IF( IOS /= 0 ) THEN
@@ -669,8 +736,8 @@ C...........  Check for i/o errors
               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
           END IF
 
-C...........  Open input file      
-          OPEN( FDEV, FILE=LINE, STATUS='OLD', IOSTAT=IOS )
+C...........  Open input pollutant file      
+          OPEN( FDEV, FILE = LINE, STATUS='OLD', IOSTAT=IOS )
 
           IF( IOS /= 0 ) THEN
               MESG = 'Could not open file:' // 
@@ -687,8 +754,6 @@ C...........  Initialize values before reading file
           POS    = 0
           IREC   = 0
           NPFLAG = .TRUE.
-          POLNAM = ' '
-          FPOLNAM= ' '
           PDATE  = ' '
           TDATE  = ' '
           ALLVAL = 0.0
@@ -710,49 +775,6 @@ C...............  Check for end of file
               IF( IOS < 0 ) THEN
                   IREC = IREC - 1
                   EXIT
-              END IF
-
-C...............  Read name for current pollutant
-              L = INDEX( LINE, 'POLLUTANT' )
-              IF ( L > 0 ) THEN
-                  POLNAM = ADJUSTL( LINE( L+10:L+50 ) )
-                  L1 = LEN_TRIM( POLNAM )
-C...................  One cond:1st pol has to be THC to reduce usage of memory
-                  IF( I == 1 ) THEN
-                      IF( POLNAM /= 'THC' ) THEN
-                          MESG = 'ERROR: You MUST process THC first '
-     &                         // 'before processing other pollutants.'
-                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                      END IF
-                  END IF
-
-                  IF( POLNAM == 'VOC' ) THEN
-                      MESG = 'ERROR: Can not process VOC BUT can ' //
-     &                    'convert THC to VOC.'
-                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C...................  One cond:1st pol has to be THC to reduce usage of memory
-                  ELSE IF( POLNAM == 'THC' ) THEN
-                      IF( I == 1 ) THEN
-                          MESG = 'NOTE: Pollutant THC is internally ' //
-     &                        'converted to TOG.'
-                          CALL M3MSG2( MESG )
-                          POLNAM = 'TOG'
-                      END IF
-                  END IF
-
-                  IF( POLNAM == 'PM25' ) POLNAM = 'PM2_5'
-
-C...................  look for pol names in a list of pols
-                  POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
-
-                  IF( POS < 1 ) THEN
-                      MESG = 'ERROR: Pollutant ID ' // TRIM( POLNAM )//
-     &                       ' is not found in the INVTABLE file.'
-                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                  END IF
-                  FPOLNAM = ITNAMA( POS )
-
               END IF
 
 C...............  Skip blank/comment/non-HOUREMIS lines
