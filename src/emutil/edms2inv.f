@@ -721,6 +721,7 @@ C...........  One cond:1st pol has to be THC to reduce usage of memory
 
 C...........  look for pol names in a list of pols
           POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
+          IF( POS < 1 ) POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
 
           IF( POS < 1 ) THEN
               MESG = 'ERROR: Pollutant ID ' // TRIM( POLNAM )//
@@ -870,11 +871,11 @@ C.......................  Skip any zero daily total
               END IF
 
 C...............  Store output values : convert metric g/sec/m2 to short tons/hr
-              ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
+              ALLVAL( K, IHOUR ) =  STR2REAL( LINE( 34:46 ) ) 
      &                              * 0.003968254 * AREA( K )
 
 C...............  Store output values for report: convert metric g/sec/m2 to kg/hr
-              TOTAL = TOTAL + STR2REAL( SEGMENT( 8 ) ) * 3.6 * AREA( K )
+              TOTAL = TOTAL + STR2REAL( LINE( 34: 46 ) ) * 3.6 * AREA(K)
 
 C...............  Convert THC(g in CH4) to TOG(g) 
 C                 Note: This conversion factor 1.148106 is based on
