@@ -82,6 +82,7 @@
 
 !.........  Country/state/county codes dimensioned by NINVIFIP
         INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: INVCFIP( : )
 
 !.........  Vehicle types dimensioned by NINVVTYP
         CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC :: INVVTYP( : )
