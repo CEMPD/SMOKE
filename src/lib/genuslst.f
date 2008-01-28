@@ -44,7 +44,7 @@ C.........  This module contains the inventory arrays
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, NINVSCC, NINVSCL, NINVSIC, 
      &                      NINVSIC2, NINVMACT, NINVORIS, 
-     &                      INVIFIP, INVSCC, INVSCL, INVSIC,
+     &                      INVIFIP, INVCFIP, INVSCC, INVSCL, INVSIC,
      &                      INVSIC2, INVMACT, INVORIS,
      &                      INVORFP, IORSMTCH, INVODSC, ORISBLR,
      &                      OBSRCBG, OBSRCNT, NORISBLR, NOBLRSRC,
@@ -96,8 +96,9 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTORS = .TRUE.   ! true: first run of ORIS arrays
         LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
+        CHARACTER(10)      FIPFMT        ! format to write FIP to CFIP
         CHARACTER(300)     MESG          ! message buffer
-	CHARACTER(5)	   CFIP          ! tmp fip for mesage
+	CHARACTER(FIPLEN3) CFIP          ! tmp fip for mesage
         CHARACTER(VTPLEN3) PVTYP         ! previous vehicle type
         CHARACTER(VTPLEN3) TVTYP         ! tmp vehicle type
         CHARACTER(SCCLEN3) PSCC          ! previous iteration SCC
@@ -139,6 +140,10 @@ C.............  Check if IFIP is allocated.
 C.............  If it is, generate unique list of country/state/county codes
             IF( ASSOCIATED( IFIP ) ) THEN
 
+C.................  Create the FIP code format string
+                WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) 
+     &                 FIPLEN3, FIPLEN3
+
 C.................  Count number of unique codes
                 PFIP = IMISS3
                 J1 = 0
@@ -154,6 +159,8 @@ C.................  Count number of unique codes
 C.................  Allocate memory for country/state/county lists
                 ALLOCATE( INVIFIP( NINVIFIP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVIFIP', PROGNAME )
+                ALLOCATE( INVCFIP( NINVIFIP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVCFIP', PROGNAME )
 
 C.................  Create unique country/state/county codes list
                 PFIP = IMISS3
@@ -161,9 +168,11 @@ C.................  Create unique country/state/county codes list
                 DO S = 1, NSRC
  
                     FIP = IFIP( S )
+                    WRITE( CFIP,FIPFMT ) FIP
                     IF( FIP .NE. PFIP ) THEN
                         J1 = J1 + 1
                         INVIFIP( J1 ) = FIP
+                        INVCFIP( J1 ) = CFIP
                         PFIP = FIP
                     END IF
 
