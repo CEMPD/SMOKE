@@ -162,7 +162,7 @@ C.........  Loop through file and read until the end.
             END IF
 
 C.............  Skip blank and comment lines
-            IF( CLKORCMT ) CYCLE
+            IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Split out columns from line
             CALL PARSLINE( LINE, 24, SEGMENT )
