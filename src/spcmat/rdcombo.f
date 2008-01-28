@@ -42,10 +42,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     FINDC 
         INTEGER     GETFLINE
         INTEGER     STR2INT
+        LOGICAL     BLKORCMT
         REAL        STR2REAL  
 
         EXTERNAL    CRLF, ENVINT, FINDC, GETFLINE, STR2INT, STR2REAL
-
+     &              BLKORCMT
+ 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT    (IN) :: CDEV    ! unit number of input file
         CHARACTER(*), INTENT    (IN) :: ENAM    ! pol/emis type name of interest
@@ -159,11 +161,8 @@ C.........  Loop through file and read until the end.
                 CYCLE
             END IF
 
-C.............  Skip blank lines
-            IF( LINE .EQ. ' ' ) CYCLE
-
-C.............  Skip header lines
-            IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
+C.............  Skip blank and comment lines
+            IF( CLKORCMT ) CYCLE
 
 C.............  Split out columns from line
             CALL PARSLINE( LINE, 24, SEGMENT )
