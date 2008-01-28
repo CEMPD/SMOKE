@@ -47,6 +47,9 @@ C...........   MODULES for public variables
 C...........   This module contains the source arrays
         USE MODSOURC, ONLY: CSOURC, CSCC, IRCLAS, IVTYPE, ISIC, CMACT
 
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
+
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: TXCNT, CHRT02, CHRT03, CHRT04, 
      &          CHRT05, CHRT06, CHRT07, CHRT08, CHRT09, CHRT10,
@@ -64,7 +67,8 @@ C...........   This module contains the speciation profile tables
      &                     NCNV1, NCNV2, NCNV3, NCNV4, NSPROF, SPROFN,
      &                     CNVFC00, CNVFC01, CNVFC02, CNVFC03, CNVFC04,
      &                     IDXSPRO, IDXSSPEC, NSPECIES,
-     &                     MASSFACT, MOLEFACT
+     &                     MASSFACT, MOLEFACT, CMBNP, CMBSPCD, CMBWGHT, 
+     &                     CMBMAX
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, NIPPA, EANAM, 
@@ -82,9 +86,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         INTEGER         INDEX1
         INTEGER         ENVINT 
+        INTEGER         PROMPTFFILE
         LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVYN, FINDC, INDEX1, SETSCCTYPE, ENVINT
+        EXTERNAL CRLF, ENVYN, FINDC, INDEX1, PROMPTFFILE,
+     &           SETSCCTYPE, ENVINT
 
 C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: MASSOUT        ! true: create mass-based
@@ -100,8 +106,12 @@ C.........  SUBROUTINE ARGUMENTS
 C.........  Local allocatable arrays
         REAL, ALLOCATABLE, SAVE :: EMISTMP( : )  ! tmp emis for 1 pollutant by source
 
+C.........  Other local arrays
+        CHARACTER( SPNLEN3 ) :: CCODE  ( CMBMAX )
+        REAL                 :: CWEIGHT( CMBMAX )
+
 C.........  Other local variables
-        INTEGER         K, L, L2, LV, S, V    !  counters and indices
+        INTEGER         K, L, L2, LV, NP, S, V    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER       :: F0B = 0      ! extra find index for mobile
@@ -110,12 +120,14 @@ C.........  Other local variables
         INTEGER          IOS          ! i/o status
         INTEGER          NCHKCHR      ! position of last non-SCC src char
         INTEGER          NCOUT        ! no. output source chars for mesgs
+        INTEGER          NPCOMBO      ! tmp no. of profiles in combination profile
         INTEGER       :: NWARN=0      ! current number of warnings of each type to write
         INTEGER          MXWARN       ! maximum number of warnings of each type to write
 
         REAL             CNVFAC       ! tmp pol-to-pol conversion factor
 
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
+        LOGICAL       :: LRDCOMBO           ! true: for first COMBO for a pollutant/emis type
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
         LOGICAL, SAVE :: MACTFLAG = .FALSE. ! true: MACT codes available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
@@ -209,6 +221,10 @@ C.............  Allocate local memory for reading emissions
             FIRSTIME = .FALSE.
 
         ENDIF
+
+C.........  Initialize that combo file would need to be read
+C           for this pollutant at first instance of COMBO in GSREF
+        LRDCOMBO = .TRUE.
 
 C.........  Initialize roadway type zero and vehicle type zero
         RWTZERO = REPEAT( '0', RWTLEN3 )
@@ -383,6 +399,7 @@ C                       pollutant-specific PLANT non-blank       match
 
             IF( F6 .GT. 0 .AND. CSPT16(F6,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT16( F6,V )
+                CALL COMBO_SETUP
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
@@ -679,6 +696,103 @@ C               speciation profile is unavailable for a given pollutant
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 
+C.............  This internal subroutine checks to see if the assignment has
+C               been made to a COMBO profile and takes action accordingly.
+C               Its main jobs are to read in the GSREF_COMBO file, find the
+C               combination profile in the dataset, and to setup the number 
+C               of profiles in a combination profile.
+            SUBROUTINE COMBO_SETUP
+
+C.............  Local variables
+            INTEGER   F, I
+            INTEGER, SAVE :: CDEV = 0       ! unit number for GSPRO_COMBO
+            LOGICAL :: FIRSTCOMBO = .TRUE.  ! true: until first COMBO entry found in GSREF
+
+C----------------------------------------------------------------------
+
+C.............  If speciation profile code assigned is a combination profile...
+            IF ( SPCODE .EQ. 'COMBO' ) THEN
+
+C................. For the first combo profile encountered, open the GSPRO_COMBO
+C                  file. Arrays are passed back via the MODSPRO module
+                IF ( FIRSTCOMBO ) THEN
+
+                    CDEV = PROMPTFFILE( 
+     &                'Enter logical name for COMBINATION PROFILE file',
+     &           .     TRUE., .TRUE., 'GSPRO_COMBO', PROGNAME )
+
+                    FIRSTCOMBO = .FALSE.
+
+                END IF
+
+C.................  If first time for this pollutant, read the combo file
+C.................  It will store only for pollutant/type ENAM and SPCMAT_PERIOD
+C                        from the environment
+                IF ( LRDCOMBO ) THEN
+
+                    CALL RDCOMBO( CDEV, ENAM )
+                    LRDCOMBO = .FALSE.
+
+                END IF
+
+C.................  Match the FIPS code to the combination profile
+                F = FINDC( CFIP, NINVIFIP, INVCFIP )
+
+C.................  If FIPS code is not found, then internal error since these
+C                   arrays are supposed to be built from inventory list of FIPs codes
+                IF ( F <= 0 ) THEN
+                    MESG = 'INTERNAL ERROR: FIPS code not found '//
+     &                     'in INVCFIP array from MODLISTS for:'//
+     &                     CRLF() // BLANK10 // 'FIP: '// TRIM(CFIP)
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+
+C.................  Otherwise, store information from combination data, if found                
+                ELSE 
+
+                    NPCOMBO = CMBNP( F )
+
+C.....................  If FIPs code found, set the arrays for SETSOURCE_SMATS
+                    IF ( NPCOMBO > 0 ) THEN
+
+                        DO I = 1, NPCOMBO
+                            CCODE  ( I ) = CMBSPCD( F,I )
+                            CWEIGHT( I ) = CMBWGHT( F,I )
+                        END DO
+
+C.....................  Otherwise, a COMBO was specified, but none found
+C.....................  Note that NPCOMBO = 0 should cause loop in SETSOURCE_SMAT
+C                          to be skipped
+                    ELSE
+                        MESG = 'ERROR: No FIPS-specific entry '//
+     &                         'in GSPRO_COMBO for:'//
+     &                         CRLF() // BLANK10 // 
+     &                         'FIP: '// TRIM(CFIP) // ' and'//
+     &                         'pollutant "'// TRIM( ENAM ) //'"'
+                        CALL M3MESG( MESG )
+                        EFLAG = .TRUE.
+
+                    END IF
+
+                END IF
+
+C.............  If this entry is not a combination profile, setup to simply
+C               use the single profile specified
+            ELSE
+
+                NPCOMBO      = 1
+                CCODE  ( 1 ) = SPCODE
+                CWEIGHT( 1 ) = 1.
+
+            END IF
+
+            RETURN
+
+            END SUBROUTINE COMBO_SETUP
+
+C----------------------------------------------------------------------
+C----------------------------------------------------------------------
+
 C.............  This internal subprogram searches for the speciation profile
 C               code in the abriged list (from MODSPRO) and if found, applies
 C               the speciation factors for all species in that profile to 
@@ -696,131 +810,167 @@ C.............  Local variables
 
 C----------------------------------------------------------------------
 
-            VALID = .TRUE.
-            K = MAX( FINDC( SPCODE, NSPROF, SPROFN ), 0 )
+C.............  Loop over all profiles in combination profile
+C.............  Note that for non-combo profiles, NPCOMBO has been set to 1
+C                  and CCODE(1) to SPCODE.
+            DO NP = 1, NPCOMBO
 
-C.............  If profile is not found in set of profiles, try to apply
-C               the default for this pollutant
-            IF( K .LE. 0 ) THEN
+                VALID = .TRUE.
+                K = MAX( FINDC( CCODE( NP ), NSPROF, SPROFN ), 0 )
 
-                CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
+C.................  If profile is not found in set of profiles, try to apply
+C                   the default for this pollutant (as long as it's not a combo)
+                IF( K .LE. 0 .AND. NPCOMBO .EQ. 1 ) THEN
 
-                MESG = 'WARNING: Speciation profile "' // SPCODE // 
+                    CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
+
+                    MESG = 'WARNING: Speciation profile "'// CCODE(NP)//
      &                 '" is not in profiles, but it was assigned' //
      &                 CRLF() // BLANK10 // 'to source:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
      &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
 
-                CALL M3MESG( MESG )
-
-                K = MAX( FINDC( CSPT01( V ), NSPROF, SPROFN ), 0 )
-
-                IF( CSPT01( V ) .NE. EMCMISS3 .AND. K .GT. 0 ) THEN
-                    MESG = BLANK5 // 'Using default profile ' // 
-     &                     CSPT01( V )
                     CALL M3MESG( MESG )
 
-                ELSE 
-                    EFLAG = .TRUE.
-                    VALID = .FALSE.
-                    CALL REPORT_MISSING_DEFAULT
+                    K = MAX( FINDC( CSPT01( V ), NSPROF, SPROFN ), 0 )
+
+                    IF( CSPT01( V ) .NE. EMCMISS3 .AND. K .GT. 0 ) THEN
+                        MESG = BLANK5 // 'Using default profile ' // 
+     &                     CSPT01( V )
+                        CALL M3MESG( MESG )
+
+                    ELSE 
+                        EFLAG = .TRUE.
+                        VALID = .FALSE.
+                        CALL REPORT_MISSING_DEFAULT
                     
+                    END IF
+
+C.................  Profile is not found for a combination profile, give a 
+C                   different error (and don't look for the default)
+                ELSE IF ( K .LE. 0 ) THEN
+
+                    CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
+
+                    MESG = 'ERROR: Speciation profile "'// CCODE(NP)//
+     &                 '" is not in profiles, but it was assigned' //
+     &                 CRLF() // BLANK10 // 'as COMBO to source:' //
+     &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                 CRLF() // BLANK10 // 
+     &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                    CYCLE
+
                 END IF
 
-            END IF
+C.................  Check if pollutant-to-pollutant conversion factor is available
+C                   by speciation profile, by checking if their count > 0
+                IF( NCNV4 .GT. 0 .AND. VALID ) THEN
 
-C.............  Check if pollutant-to-pollutant conversion factor is available
-C               by speciation profile, by checking if their count > 0
-            IF( NCNV4 .GT. 0 .AND. VALID ) THEN
+                    F1 = FINDC( ADJUSTL( CCODE(NP) ), NCNV4, CNVRT04 ) 
 
-                F1 = FINDC( ADJUSTL( SPCODE ), NCNV4, CNVRT04 ) 
+                    IF( F1 .GT. 0 )THEN
+                        CNVFAC = CNVFC04( F1,V )
 
-                IF( F1 .GT. 0 )THEN
-                    CNVFAC = CNVFC04( F1,V )
+C.....................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
+C                       there is no need for error checking
+                    ELSE
+                        CNVFAC = CNVFC00( V )
 
-C.................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
-C                   there is no need for error checking
-                ELSE
-                    CNVFAC = CNVFC00( V )
+                    END IF
 
-                END IF
+C.................  Screen for pollutant-to-pollutant conversion factors by checking
+C                   if they have been allocated
+                ELSE IF( ALLOCATED( CNVRT03 ) .AND. VALID ) THEN
 
-C.............  Screen for pollutant-to-pollutant conversion factors by checking
-C               if they have been allocated
-            ELSE IF( ALLOCATED( CNVRT03 ) .AND. VALID ) THEN
+C.....................  If have a combination profile, then this is not a valid
+C                       way to set the pollutant-to-pollutant factors
+                    IF( NPCOMBO > 1 ) THEN
+                        MESG = 'ERROR: Can not assign pollutant-to-'//
+     &                         'pollutant factors using FIPS/SCC '//
+     &                         'using combination profiles.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
 
-C.................  Try for pollutant-specific FIPS code & SCC match; then
+C.....................  Try for pollutant-specific FIPS code & SCC match; then
 C                           pollutant-specific Cy/st code & SCC match; then
 C                           pollutant-specific SCC match
 C                           pollutant-specific roadway type match
 C                           pollutant-specific vehicle type match
 
-                F5 = FINDC( CFIP // SCCORIG , NCNV3, CNVRT03 ) 
-                F4 = FINDC( CSTA // SCCORIG , NCNV2, CNVRT02 ) 
-                F3 = FINDC( TSCC  , NCNV1, CNVRT01 ) 
-                F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
-                F1 = FINDC( SCCORIG( 1:LSCCEND ), NCNV1, CNVRT01 ) 
+                    F5 = FINDC( CFIP // SCCORIG , NCNV3, CNVRT03 ) 
+                    F4 = FINDC( CSTA // SCCORIG , NCNV2, CNVRT02 ) 
+                    F3 = FINDC( TSCC  , NCNV1, CNVRT01 ) 
+                    F2 = FINDC( CHKRWT, NCNV1, CNVRT01 ) 
+                    F1 = FINDC( SCCORIG( 1:LSCCEND ), NCNV1, CNVRT01 ) 
 
-                IF( F5 .GT. 0  ) THEN
-                    CNVFAC = CNVFC03( F5,V )
+                    IF( F5 .GT. 0  ) THEN
+                        CNVFAC = CNVFC03( F5,V )
 
-                ELSE IF( F4 .GT. 0 )THEN
-                    CNVFAC = CNVFC02( F4,V )
+                    ELSE IF( F4 .GT. 0 )THEN
+                        CNVFAC = CNVFC02( F4,V )
 
-                ELSE IF( F3 .GT. 0 )THEN
-                    CNVFAC = CNVFC01( F3,V )
+                    ELSE IF( F3 .GT. 0 )THEN
+                        CNVFAC = CNVFC01( F3,V )
 
-                ELSE IF( F2 .GT. 0 )THEN
-                    CNVFAC = CNVFC01( F2,V )
+                    ELSE IF( F2 .GT. 0 )THEN
+                        CNVFAC = CNVFC01( F2,V )
 
-                ELSE IF( F1 .GT. 0 )THEN
-                    CNVFAC = CNVFC01( F1,V )
+                    ELSE IF( F1 .GT. 0 )THEN
+                        CNVFAC = CNVFC01( F1,V )
 
-C.................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
-C                   there is no need for error checking
+C.....................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
+C                       there is no need for error checking
+                    ELSE
+                        CNVFAC = CNVFC00( V )
+
+                    END IF
+
+C.................  If they don't exist, simply set the conversion factor to one
                 ELSE
-                    CNVFAC = CNVFC00( V )
+
+                    CNVFAC = 1.
 
                 END IF
 
-C.............  If they don't exist, simply set the conversion factor to one
-            ELSE
+C.................  Now that the default profile has been tried, check one last time
+C                   for K and then apply speciation factors
+                IF( K .GT. 0 ) THEN
 
-                CNVFAC = 1.
+C.....................  Get indices to full speciation table
+                    ITBL = IDXSPRO ( K )
+                    NTBL = NSPECIES( K )
 
-            END IF
+                    I = ITBL - 1
+                    DO N = 1, NTBL
 
-C.............  Now that the default profile has been tried, check one last time
-C               for K and then apply speciation factors
-            IF( K .GT. 0 ) THEN
+                        I = I + 1
+                        J = IDXSSPEC( K,N )
 
-C.................  Get indices to full speciation table
-                ITBL = IDXSPRO ( K )
-                NTBL = NSPECIES( K )
+                        IF( MASSOUT ) THEN
+                            MASSMATX( S,J )= MASSMATX( S,J ) +
+     &                            CWEIGHT( NP ) * CNVFAC * MASSFACT( I )
+                        END IF
 
-                I = ITBL - 1
-                DO N = 1, NTBL
+                        IF( MOLEOUT ) THEN
+                            MOLEMATX( S,J )= MOLEMATX( S,J ) + 
+     &                            CWEIGHT( NP ) * CNVFAC * MOLEFACT( I )
+                        END IF
 
-                    I = I + 1
-                    J = IDXSSPEC( K,N )
+                    END DO 
 
-                    IF( MASSOUT ) THEN
-                        MASSMATX( S,J )= CNVFAC * MASSFACT( I )
-                    END IF
+                END IF
 
-                    IF( MOLEOUT ) THEN
-                        MOLEMATX( S,J )= CNVFAC * MOLEFACT( I )
-                    END IF
-
-                END DO 
-
-            END IF
+            END DO  ! Loop over combination profiles, index NP
 
 C.............  Write speciation profile code by source to the speciation
-C               supplemental file (to be used by Smkreport)
-            IF ( K .GT. 0 ) THEN
-                WRITE( SDEV, '(A)' ) SPROFN( K )
+C               supplemental file (to be used by Smkreport). If using a
+C               COMBO profile, it will just read COMBO
+            IF ( NPCOMBO .GT. 0 .AND. K .GT. 0 ) THEN
+                WRITE( SDEV, '(A)' ) SPCODE
             ELSE
                 WRITE( SDEV, '(A)' ) 'Drop'
             END IF
