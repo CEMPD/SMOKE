@@ -669,7 +669,7 @@ C               strings will look right-justified in the file.
 
 C.............  Create format statement for output of header
             WIDTHS( 0 ) = MAXCOL1
-            WRITE( HDRFMT, '( "(A",I2.2,A)' ) WIDTHS( 0 ), ',";"'
+            WRITE( HDRFMT, '( "(A",A)' ) ',";"'
             DO J = 1, NDIM
                 TMPFMT = HDRFMT
                 L = LEN_TRIM( TMPFMT ) 
@@ -748,19 +748,19 @@ c            L2 = SUM( MAXWID ) + NDIM
 c            LINFLD = REPEAT( '-', L2 )
 
 C.............  Write header for state totals
-            WRITE( FDEV, '(A)' ) ' '
+            WRITE( FDEV, '(A)' ) '# '
             WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
 
 C.............  Write line
 c            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
-C.............  Write column labels
-            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
-     &                          ( OUTNAMS( J ), J=1, NDIM )
-
 C.............  Write units for columns
             WRITE( FDEV, HDRFMT ) ADJUSTL( HDRBUF), 
      &                            ( OUTUNIT(J), J=1,NDIM )
+
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                          ( OUTNAMS( J ), J=1, NDIM )
 
 C.............  Write state total emissions
             DO I = 1, NSTATE
@@ -829,16 +829,16 @@ c            L2 = SUM( MAXWID ) + NDIM
 c            LINFLD = REPEAT( '-', L2 )
 
 C.............  Write header for county totals
-            WRITE( FDEV, '(A)' ) ' '
+            WRITE( FDEV, '(A)' ) '# '
             WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
-
-C.............  Write column labels
-            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
-     &                            ( OUTNAMS( J ), J=1, NDIM )
 
 C.............  Write units for columns
             WRITE( FDEV, HDRFMT ) ADJUSTL( HDRBUF), 
      &                            ( OUTUNIT(J), J=1,NDIM )
+
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                            ( OUTNAMS( J ), J=1, NDIM )
 
 C.............  Write line
 c            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
