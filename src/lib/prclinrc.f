@@ -61,7 +61,8 @@ C.........  This module contains Smkreport-specific settings
      &                      SSFLAG, SLFLAG, TFLAG, LFLAG, NFLAG, PSFLAG,
      &                      GSFLAG, TSFLAG, UNITSET, MXRPTNVAR,
      &                      ELEVOUT3, PINGOUT3, NOELOUT3, FIL_ONAME,
-     &                      NIFLAG, NMFLAG, NNFLAG, LAB_IDX, LENLAB3,
+     &                      NIFLAG, NMFLAG, NNFLAG, NOFLAG, 
+     &                      LAB_IDX, LENLAB3,
      &                      DLFLAG, MATFLAG, NFDFLAG
 
 C.........  This module contains the information about the source category
@@ -465,9 +466,11 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSCC     = .FALSE.
                         RPT_%BYMACT    = .FALSE.
                         RPT_%BYNAICS   = .FALSE.
+                        RPT_%BYORIS    = .FALSE.
                         RPT_%BYSRCTYP  = .FALSE.
                         RPT_%MACTNAM   = .FALSE.
                         RPT_%NAICSNAM  = .FALSE.
+                        RPT_%ORISNAM   = .FALSE.
                         RPT_%BYSPC     = .FALSE.
                         RPT_%BYSRC     = .FALSE.
                         RPT_%BYSRG     = .FALSE.
@@ -863,6 +866,21 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
      &                   'the ASCIIELEV instruction.'
                       CALL M3MSG2( MESG )
 
+                    END IF
+
+                CASE( 'ORIS' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYORIS = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'NAME' ) THEN
+                            NOFLAG = .TRUE.
+                            RPT_%ORISNAM = .TRUE.
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY ORIS instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
                     END IF
 
                 CASE( 'PLANT' )

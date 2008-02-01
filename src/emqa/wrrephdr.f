@@ -65,7 +65,7 @@ C.........  This module contains Smkreport-specific settings
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
      &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
-     &                      NFDFLAG, MATFLAG
+     &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -73,11 +73,12 @@ C.........  This module contains report arrays for each output bin
      &                      BINDIUID, BINRCL, BINDATA, BINSNMIDX,
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
-     &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP
+     &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
+     &                      BINORIS, BINORSIDX
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
-     &                     CTRYNAM, STATNAM, CNTYNAM
+     &                     CTRYNAM, STATNAM, CNTYNAM, ORISDSC, NORIS
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM
@@ -148,50 +149,54 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRLABL = 37
         INTEGER, PARAMETER :: IHDRNFDRS= 38
         INTEGER, PARAMETER :: IHDRMATBN= 39
-        INTEGER, PARAMETER :: NHEADER  = 39
+        INTEGER, PARAMETER :: IHDRORIS = 40
+        INTEGER, PARAMETER :: IHDRORNM = 41
+        INTEGER, PARAMETER :: NHEADER  = 41
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
-        CHARACTER(15), PARAMETER :: HEADERS( NHEADER ) = 
-     &                          ( / 'Date           ',
-     &                              'Hour           ',
-     &                              'Layer          ',
-     &                              'X cell         ',
-     &                              'Y cell         ',
-     &                              'Source ID      ',
-     &                              'Region         ',
-     &                              'Country        ',
-     &                              'State          ',
-     &                              'County         ',
-     &                              'SCC            ',
-     &                              'SIC            ',
-     &                              'MACT           ',
-     &                              'NAICS          ',
-     &                              'Source type    ',
-     &                              'Primary Srg    ',
-     &                              'Fallbk Srg     ',
-     &                              'Monthly Prf    ',
-     &                              'Weekly Prf     ',
-     &                              'Diurnal Prf    ',
-     &                              'Spec Prf       ',
-     &                              'Stk Ht         ',
-     &                              'Stk Dm         ',
-     &                              'Stk Tmp        ',
-     &                              'Stk Vel        ',
-     &                              'Latitude       ',
-     &                              'Longitude      ',
-     &                              'Elevstat       ',
-     &                              'Plt Name       ',
-     &                              'SCC Description',
-     &                              'SIC Description',
-     &                              'MACT Descriptn ',
-     &                              'NAICS Descriptn',
-     &                              'Variable       ',
-     &                              'Data value     ',
-     &                              'Units          ',
-     &                              'Label          ',
-     &                              'NFDRS          ',
-     &                              'MATBURNED      ' / )
+        CHARACTER(17), PARAMETER :: HEADERS( NHEADER ) = 
+     &                          ( / 'Date             ',
+     &                              'Hour             ',
+     &                              'Layer            ',
+     &                              'X cell           ',
+     &                              'Y cell           ',
+     &                              'Source ID        ',
+     &                              'Region           ',
+     &                              'Country          ',
+     &                              'State            ',
+     &                              'County           ',
+     &                              'SCC              ',
+     &                              'SIC              ',
+     &                              'MACT             ',
+     &                              'NAICS            ',
+     &                              'Source type      ',
+     &                              'Primary Srg      ',
+     &                              'Fallbk Srg       ',
+     &                              'Monthly Prf      ',
+     &                              'Weekly Prf       ',
+     &                              'Diurnal Prf      ',
+     &                              'Spec Prf         ',
+     &                              'Stk Ht           ',
+     &                              'Stk Dm           ',
+     &                              'Stk Tmp          ',
+     &                              'Stk Vel          ',
+     &                              'Latitude         ',
+     &                              'Longitude        ',
+     &                              'Elevstat         ',
+     &                              'Plt Name         ',
+     &                              'SCC Description  ',
+     &                              'SIC Description  ',
+     &                              'MACT Description ',
+     &                              'NAICS Description',
+     &                              'Variable         ',
+     &                              'Data value       ',
+     &                              'Units            ',
+     &                              'Label            ',
+     &                              'NFDRS            ',
+     &                              'MATBURNED        ',
+     &                              'ORIS             ',
+     &                              'ORIS Description ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LCTRYUSE ( NCOUNTRY )
@@ -201,6 +206,7 @@ C...........   Local variables that depend on module variables
         LOGICAL    LSICUSE  ( NINVSIC )
         LOGICAL    LMACTUSE ( NINVMACT )
         LOGICAL    LNAICSUSE( NINVNAICS )
+        LOGICAL    LORISUSE ( NORIS )
 
         CHARACTER(10) CHRHDRS( NCHARS )  ! Source characteristics headers
 
@@ -228,6 +234,7 @@ C...........   Other local variables
         LOGICAL  :: CNRYMISS              ! true: >=1 missing country name
         LOGICAL  :: CNTYMISS              ! true: >=1 missing county name
         LOGICAL  :: DATFLOAT              ! true: use float output format
+        LOGICAL  :: ORISMISS              ! true: >=1 missing ORIS name
         LOGICAL  :: STATMISS              ! true: >=1 missing state name
         LOGICAL  :: SCCMISS               ! true: >=1 missing SCC name
         LOGICAL  :: SICMISS               ! true: >=1 missing SIC name
@@ -262,6 +269,7 @@ C.........  Initialize local variables for current report
         SICMISS  = .FALSE.
         MACTMISS = .FALSE.
         NAICSMISS= .FALSE.
+        ORISMISS = .FALSE.
 
         LCTRYUSE = .FALSE.    ! array
         LSTATUSE = .FALSE.    ! array
@@ -270,6 +278,7 @@ C.........  Initialize local variables for current report
         LSICUSE  = .FALSE.    ! array
         LMACTUSE = .FALSE.    ! array
         LNAICSUSE= .FALSE.    ! array
+        LORISUSE = .FALSE.    ! array
         
         PWIDTH   = 0          ! array
         LU       = 0
@@ -403,6 +412,12 @@ C.............  Include NAICS description
             IF( RPT_%NAICSNAM ) THEN
                 J = BINNAIIDX( I ) 
                 IF( J .GT. 0 ) LNAICSUSE( J ) = .TRUE.
+            END IF
+
+C.............  Include ORIS description
+            IF( RPT_%ORISNAM ) THEN
+                J = BINORSIDX( I ) 
+                IF( J .GT. 0 ) LORISUSE( J ) = .TRUE.
             END IF
 
        END DO  ! End loop through bins
@@ -834,6 +849,23 @@ C.........  Plant ID
 
         END IF
 
+C.........  ORIS ID
+        IF( RPT_%BYORIS ) THEN
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINORIS( I ) ) )
+            END DO
+
+            J = LEN_TRIM( HEADERS( IHDRORIS ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS( IHDRORIS ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            ORSWIDTH = J + LV
+
+        END IF
+
 C.........  Stack parameters.  +3 for decimal and 2 significant figures
         IF( RPT_%STKPARM ) THEN
 
@@ -912,6 +944,30 @@ C.........  Plant descriptions
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             PDSCWIDTH = J + LV
+        END IF
+
+C.........  ORIS descriptions
+        IF( RPT_%ORISNAM ) THEN
+            NWIDTH = 0
+            DO I = 1, NORIS
+                IF( LORISUSE( I ) ) THEN
+                    L = LEN( ORISDSC( I ) )
+                    NWIDTH = MAX( NWIDTH, L )
+                    IF ( L .EQ. 0 ) ORISMISS = .TRUE.
+                END IF
+            END DO
+
+C.............  If any missing ORIS names, check widths
+            IF( ORISMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
+
+C.............  Set ORIS name column width 
+            J = LEN_TRIM( HEADERS( IHDRORNM ) )
+            J = MAX( NWIDTH, J ) + 2 ! two for quotes
+
+            CALL ADD_TO_HEADER( J, HEADERS( IHDRORNM ), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            ORSDSWIDTH = J + LV - 2       ! quotes in count for header print
         END IF
 
 C.........  SCC names
@@ -1005,8 +1061,9 @@ C               width
             NWIDTH = 0
             DO I = 1, NINVNAICS
                 IF( LNAICSUSE( I ) ) THEN
-                    NWIDTH = MAX( NWIDTH, LEN_TRIM( NAICSDESC( I ) ) )
-                    IF ( NWIDTH .EQ. 0 ) NAICSMISS = .TRUE.
+                    L = LEN_TRIM( NAICSDESC( I ) )
+                    NWIDTH = MAX( NWIDTH, L )
+                    IF ( L .EQ. 0 ) NAICSMISS = .TRUE.
                 END IF
             END DO
 
@@ -1414,9 +1471,6 @@ C.........  Remove leading spaces from column headers
         HDRBUF = HDRBUF( 2:L )
         L = L - 1
 
-C.........  Write column headers
-        WRITE( FDEV, 93000 ) HDRBUF( 1:L )
-
         IF( RPT_%RPTMODE .NE. 3 ) THEN
 C.........  Remove leading spaces from column units
             L = LEN_TRIM( UNTBUF )
@@ -1427,6 +1481,9 @@ C.........   Write data output units
             WRITE( FDEV, 93000 ) UNTBUF( 1:L )
 
         END IF
+
+C.........  Write column headers
+        WRITE( FDEV, 93000 ) HDRBUF( 1:L )
 
 C.........  Store previous output file unit number
         PDEV = FDEV

@@ -69,7 +69,7 @@ C.........  This module contains Smkreport-specific settings
      &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH,
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
-     &                      LTLNWIDTH, DLFLAG
+     &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -79,10 +79,11 @@ C.........  This module contains report arrays for each output bin
      &                      BINSRGID1, BINSRGID2, BINSPCID, BINRCL,
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
-     &                      BINNAIIDX, BINSRCTYP
+     &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
+     &                      BINORIS, BINORSIDX
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM
+        USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS
@@ -143,6 +144,7 @@ C...........   Other local variables
         CHARACTER(100)      BUFFER            !  string building buffer
         CHARACTER(300)      MESG              !  message buffer
         CHARACTER(STRLEN)   STRING            !  output string
+        CHARACTER(SCCLEN3)  TSCC              ! tmp SCC string
 
         CHARACTER(16) :: PROGNAME = 'WRREPOUT' ! program name
 
@@ -349,8 +351,10 @@ C.............  Include SCC code in string
                 IF( RPT_%BYSCC ) THEN
                     L = SCCWIDTH
                     L1 = L - LV - 1                        ! 1 for space
+                    TSCC = BINSCC( I )
+                    IF( TSCC(1:2) .EQ. '00' ) TSCC = '  '//TSCC(3:SCCLEN3)
                     STRING = STRING( 1:LE ) // 
-     &                       BINSCC( I )( 1:L1 ) // DELIM
+     &                       TSCC( 1:L1 ) // DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
@@ -372,7 +376,7 @@ C.............  Include MACT code in string
                     L = MACTWIDTH
                     L1 = L - LV - 1                        ! 1 for space
                     STRING = STRING( 1:LE ) // 
-     &                       BINMACT( I )( 1:L1 ) // DELIM
+     &                       BINMACT( I )( 1:MIN(L1,MACLEN3) ) // DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
@@ -383,7 +387,7 @@ C.............  Include NAICS code in string
                     L = NAIWIDTH
                     L1 = L - LV - 1                        ! 1 for space
                     STRING = STRING( 1:LE ) // 
-     &                       BINNAICS( I )( 1:L1 ) // DELIM
+     &                       BINNAICS( I )( 1:MIN(L1,NAILEN3) ) // DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
@@ -504,6 +508,17 @@ C.................  Write characteristics
                     LX = 0
                 END IF
 
+C.............  Include ORIS code in string
+                IF( RPT_%BYORIS ) THEN
+                    L = ORSWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       BINORIS( I )( 1:MIN(L1,ORSLEN3) ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
 C.............  Include stack parameters
                 IF( RPT_%STKPARM ) THEN
                     S = BINSMKID( I ) 
@@ -544,6 +559,24 @@ C.............  Include plant description (for point sources)
                     STRING = STRING( 1:LE ) // 
      &                       CPDESC( S )( 1:L1 ) // DELIM
                     MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
+                END IF
+
+C.............  Include ORIS description
+C.............  This is knowingly including extra blanks before final quote
+                IF( RPT_%ORISNAM ) THEN
+                    J = BINORSIDX( I ) 
+                    L = ORSDSWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    IF ( J > 0 ) THEN
+                        BUFFER = '"'//ORISDSC( J )(1:L1)//'"'
+                    ELSE
+                        BUFFER = ' '  ! Leave field blank without quotes
+                    ENDIF
+
+                    STRING = STRING( 1:LE ) // BUFFER(1:L1+2) // DELIM
+
+                    MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
                 END IF
 

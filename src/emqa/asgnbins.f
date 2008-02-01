@@ -42,7 +42,7 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
      &                      IWEK, IDIU, SPPROF, ISIC, CMACT, CNAICS,
-     &                      CSRCTYP
+     &                      CSRCTYP, CORIS
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
@@ -60,7 +60,8 @@ C.........  This module contains report arrays for each output bin
      &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
      &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
-     &                      BINNAICS, BINNAIIDX, BINSRCTYP
+     &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
+     &                      BINORSIDX
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS
@@ -70,7 +71,8 @@ C.........  This module contains arrays for plume-in-grid and major sources
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, NSTATE, STATCOD, NCOUNTY,
-     &                     CNTYCOD, CTRYPOPL, STATPOPL, CNTYPOPL
+     &                     CNTYCOD, CTRYPOPL, STATPOPL, CNTYPOPL,
+     &                     NORIS, ORISLST
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
@@ -93,6 +95,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local parameters
         INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
+     &                                     + ORSLEN3
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) =
      &                        ( / 1, 3, 6, 8 / )
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) =
@@ -132,6 +135,7 @@ C...........   Local variables
         CHARACTER(SCCLEN3) SCC        ! tmp SCC
         CHARACTER(MACLEN3) MACT       ! tmp MACT
         CHARACTER(NAILEN3) NAICS      ! tmp NAICS
+        CHARACTER(ORSLEN3) ORIS       ! tmp ORIS
         CHARACTER(STPLEN3) SRCTYP     ! tmp SRCTYP
         CHARACTER(SPNLEN3) SPCID      ! tmp speciation profile
         CHARACTER(PLTLEN3) PLANT      ! tmp plant ID
@@ -157,10 +161,11 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-      WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,
+      WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
      &                A,I1,A)') 
      &    '(4I8,A',SCCLEN3,',I',SICLEN3,',5I8,A', SPNLEN3,',A',
-     &    PLTLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', STPLEN3, ')'
+     &    PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', 
+     &    STPLEN3, ')'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -180,6 +185,7 @@ C           report
         SCC    = ' '
         MACT   = ' '
         NAICS  = ' '
+        ORIS   = ' '
         SRCTYP = ' '
         ESTAT  = ' '
 
@@ -267,53 +273,64 @@ C.........................  Set SCC to use for bins based on level from REPCONFI
 
                         END IF
                     END IF
+                END IF  ! end if by SCC
+            END IF  ! end if by source
 
-C.................  If BY ROADCLASS, insert roadclass code        
+C.............  If BY ROADCLASS, insert roadclass code        
 
-                ELSE IF( RPT_%BYRCL ) THEN
+            IF( RPT_%BYRCL ) THEN
 
-                    RCL = IRCLAS( OUTSRC( I ) )
+                RCL = IRCLAS( OUTSRC( I ) )
 
-                END IF  ! End by source or by roadclass
+            END IF  ! End by source or by roadclass
 
 C.................  If BY SIC, insert full SIC
-                IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
+            IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
  
 C.................  If BY MACT, insert full MACT
-                IF( RPT_%BYMACT ) THEN
-                    IF( .NOT. ASSOCIATED( CMACT ) ) THEN
-                        MESG = 'ERROR: BY MACT is requested, but ' //
+            IF( RPT_%BYMACT ) THEN
+                IF( .NOT. ASSOCIATED( CMACT ) ) THEN
+                    MESG = 'ERROR: BY MACT is requested, but ' //
      &                    'MACT is not present in ASCII inventory file'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    ELSE
-                        MACT = CMACT( OUTSRC( I ) )
-                    END IF
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    MACT = CMACT( OUTSRC( I ) )
                 END IF
+            END IF
 
 C.................  If BY NAICS, insert full NAICS
-                IF( RPT_%BYNAICS ) THEN
-                    IF( .NOT. ASSOCIATED( CNAICS ) ) THEN
-                        MESG = 'ERROR: BY NAICS is requested, but ' //
+            IF( RPT_%BYNAICS ) THEN
+                IF( .NOT. ASSOCIATED( CNAICS ) ) THEN
+                    MESG = 'ERROR: BY NAICS is requested, but ' //
      &                    'NAICS is not present in ASCII inventory file'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    ELSE
-                       NAICS = CNAICS( OUTSRC( I ) )
-                    END IF
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                   NAICS = CNAICS( OUTSRC( I ) )
                 END IF
+            END IF
+
+C.................  If BY ORIS, insert full ORIS
+            IF( RPT_%BYORIS ) THEN
+                IF( .NOT. ALLOCATED( CORIS ) ) THEN
+                    MESG = 'ERROR: BY ORIS is requested, but ' //
+     &                    'ORIS is not present in ASCII inventory file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                   ORIS = CORIS( OUTSRC( I ) )
+                END IF
+            END IF
 
 C.................  If BY SRCTYP, insert full Source type
-                IF( RPT_%BYSRCTYP ) THEN
-                    IF( .NOT. ASSOCIATED( CSRCTYP ) ) THEN
-                        MESG = 'ERROR: BY SRCTYP is requested, but ' //
+            IF( RPT_%BYSRCTYP ) THEN
+                IF( .NOT. ASSOCIATED( CSRCTYP ) ) THEN
+                    MESG = 'ERROR: BY SRCTYP is requested, but ' //
      &                    'source type code is not present in ASCII ' //
      &                    'inventory file'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    ELSE
-                        SRCTYP = CSRCTYP( OUTSRC( I ) )
-                    END IF
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    SRCTYP = CSRCTYP( OUTSRC( I ) )
                 END IF
-            
-            END IF      ! End by source or not
+            END IF
 
 C.................  If by surrogates IDs, insert them depending on resolution
             IF( RPT_%BYSRG ) THEN
@@ -391,13 +408,11 @@ C.................  If BY ELEVSTAT, insert elevated status code
 C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, SIC,
      &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
-     &                             SPCID, PLANT, RCL, ESTAT, MACT,
+     &                             SPCID, PLANT, ORIS, RCL, ESTAT, MACT,
      &                             NAICS, SRCTYP
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
-
-            
 
         END DO   ! End loop I over output records
 
@@ -434,6 +449,8 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINMACIDX ) ) DEALLOCATE( BINMACIDX )
         IF( ALLOCATED( BINNAICS  ) ) DEALLOCATE( BINNAICS )
         IF( ALLOCATED( BINNAIIDX ) ) DEALLOCATE( BINNAIIDX )
+        IF( ALLOCATED( BINORIS   ) ) DEALLOCATE( BINORIS )
+        IF( ALLOCATED( BINORSIDX ) ) DEALLOCATE( BINORSIDX )
         IF( ALLOCATED( BINSRCTYP ) ) DEALLOCATE( BINSRCTYP)
         IF( ALLOCATED( BINSRGID1 ) ) DEALLOCATE( BINSRGID1 )
         IF( ALLOCATED( BINSRGID2 ) ) DEALLOCATE( BINSRGID2 )
@@ -512,6 +529,16 @@ C.........  Allocate memory for bins
             CALL CHECKMEM( IOS, 'BINNAIIDX', PROGNAME )
         ENDIF
 
+        IF( RPT_%BYORIS   ) THEN
+            ALLOCATE( BINORIS   ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINORIS', PROGNAME )
+        ENDIF
+
+        IF( RPT_%ORISNAM   ) THEN
+            ALLOCATE( BINORSIDX( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINORSIDX', PROGNAME )
+        ENDIF
+
         IF( RPT_%BYSRCTYP   ) THEN
             ALLOCATE( BINSRCTYP   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSRCTYP', PROGNAME )
@@ -583,8 +610,8 @@ C.........  Populate the bin characteristic arrays (not the data array)
 
                 READ( BUFFER,FMTBUF ) 
      &                COL, ROW, SRCID, FIP, SCC, SIC, SRGID1, SRGID2, 
-     &                MONID, WEKID, DIUID, SPCID, PLANT, RCL, ESTAT, 
-     &                MACT, NAICS, SRCTYP
+     &                MONID, WEKID, DIUID, SPCID, PLANT, ORIS, RCL, 
+     &                ESTAT, MACT, NAICS, SRCTYP
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -697,6 +724,15 @@ C.................  Store NAICS name index
                 IF( RPT_%NAICSNAM ) THEN
                     K = FINDC( NAICS, NINVNAICS, INVNAICS )
                     BINNAIIDX( B ) = K
+                END IF
+
+C.................  Store ORIS
+                IF( RPT_%BYORIS ) BINORIS( B ) = ORIS
+
+C.................  Store ORIS name index
+                IF( RPT_%ORISNAM ) THEN
+                    K = FINDC( ORIS, NORIS, ORISLST )
+                    BINORSIDX( B ) = K
                 END IF
 
 C.................  Store SRCTYP

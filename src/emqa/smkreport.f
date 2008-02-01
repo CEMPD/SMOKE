@@ -95,6 +95,7 @@ C...........   File units and logical/physical names
         INTEGER :: NIDEV = 0  !  SIC descriptions
         INTEGER :: NMDEV = 0  !  MACT descriptions
         INTEGER :: NNDEV = 0  !  NAICS descriptions
+        INTEGER :: NODEV = 0  !  ORIS descriptions
         INTEGER :: PDEV = 0   !  speciation supplemental file
         INTEGER :: RDEV(3) = ( / 0,0,0 / ) !  ASCII reports from Cntlmat program
         INTEGER :: SDEV = 0   !  ASCII inven input file
@@ -165,7 +166,7 @@ C.........  Prompt for and open all other input files
         CALL OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, PRNAME, 
      &                  SLNAME, SSNAME, TNAME, RDEV, SDEV, GDEV, PDEV, 
      &                  TDEV, EDEV, YDEV, NDEV, NIDEV, ADEV, NMDEV,
-     &                  NNDEV )
+     &                  NNDEV, NODEV )
 
 C.........  Read and store all report instructions
         CALL RDRPRTS( CDEV )
@@ -195,11 +196,12 @@ C           so that arrays can be passed through subroutines).
         CALL CHECKMEM( IOS, 'SSMAT', PROGNAME )
 
 C.........  Read one-time input file data
-        CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV, EDEV, 
-     &                YDEV, NDEV, NIDEV, ADEV, ENAME, CUNAME, GNAME, 
-     &                LNAME, PRNAME, SLNAME, SSNAME, GMAT( 1 ),
+        CALL RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
+     &                EDEV, YDEV, NDEV, NIDEV, NMDEV, NNDEV, 
+     &                NODEV, ADEV, ENAME, CUNAME, GNAME, LNAME, 
+     &                PRNAME, SLNAME, SSNAME, GMAT( 1 ),
      &                GMAT( NGRID+1 ), GMAT( NGRID+NMATX+1 ),
-     &                SSMAT, SLMAT, NMDEV, NNDEV )
+     &                SSMAT, SLMAT )
 
 C.........  Preprocess the country/state/county data
 c note: Could add routine to reduce list of co/st/cy data to just records 

@@ -2,7 +2,7 @@
         SUBROUTINE OPENREPIN( ENAME, ANAME, CUNAME, GNAME, LNAME, 
      &                        PRNAME, SLNAME, SSNAME, TNAME, RDEV, 
      &                        SDEV, GDEV, PDEV, TDEV, EDEV, YDEV, NDEV,
-     &                        NIDEV, ADEV, NMDEV, NNDEV )
+     &                        NIDEV, ADEV, NMDEV, NNDEV, NODEV )
 
 C***********************************************************************
 C  subroutine OPENREPIN body starts at line
@@ -48,7 +48,8 @@ C.........  This module contains Smkreport-specific settings
      &                      PRBYR, PRPYR, PYEAR, CHKPFX, CUFLAG,
      &                      LFLAG, EMLAYS, VFLAG, YFLAG, NFLAG,
      &                      ASCREC, ASCDATA, STIME, SDATE, ETIME,
-     &                      EDATE, TZONE, NIFLAG, NMFLAG, NNFLAG
+     &                      EDATE, TZONE, NIFLAG, NMFLAG, NNFLAG,
+     &                      NOFLAG
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NTPDAT, TPNAME, TPUNIT, TPDESC
@@ -108,6 +109,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: NIDEV  ! unit no.: SIC descriptions
         INTEGER     , INTENT(OUT) :: NMDEV  ! unit no.: MACT descriptions
         INTEGER     , INTENT(OUT) :: NNDEV  ! unit no.: NAICS descriptions
+        INTEGER     , INTENT(OUT) :: NODEV  ! unit no.: ORIS descriptions
         INTEGER     , INTENT(OUT) :: ADEV   ! unit no.: ASCII elevated file
 
 C.........  Temporary array for speciation variable names
@@ -548,6 +550,15 @@ C.........  Get NAICS descriptions, if needed
             MESG = 'Enter logical name for NAICS DESCRIPTIONS'
             NNDEV = PROMPTFFILE( 
      &                  MESG,.TRUE.,.TRUE.,'NAICSDESC',PROGNAME )
+
+        END IF
+
+C.........  Get ORIS descriptions, if needed
+        IF( NOFLAG ) THEN
+
+            MESG = 'Enter logical name for ORIS DESCRIPTIONS'
+            NODEV = PROMPTFFILE( 
+     &                  MESG,.TRUE.,.TRUE.,'ORISDESC',PROGNAME )
 
         END IF
 

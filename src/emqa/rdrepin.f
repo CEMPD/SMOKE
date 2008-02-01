@@ -1,9 +1,9 @@
 
         SUBROUTINE RDREPIN( NSLIN, NSSIN, RDEV, SDEV, GDEV, PDEV, TDEV,
-     &                      EDEV, YDEV, NDEV, NIDEV, ADEV, ENAME, 
-     &                      CUNAME, GNAME, LNAME, PRNAME, SLNAME, 
-     &                      SSNAME, NX, IX, CX, SSMAT, SLMAT, NMDEV, 
-     &                      NNDEV )
+     &                      EDEV, YDEV, NDEV, NIDEV, NMDEV, NNDEV, 
+     &                      NODEV, ADEV, ENAME, CUNAME, GNAME, LNAME, 
+     &                      PRNAME, SLNAME, SSNAME, NX, IX, CX, SSMAT, 
+     &                      SLMAT )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -54,7 +54,8 @@ C.........  This module contains Smkreport-specific settings
      &                      NSTEPS, TSTEP, LOC_BEGP, LOC_ENDP,
      &                      ASCREC, PRRPTFLG, PRFLAG, MINC,
      &                      NSPCPOL, SPCPOL, NMAJOR, NPING, ALLRPT,
-     &                      STKX, STKY, LSPCPOL, NIFLAG, NMFLAG, NNFLAG
+     &                      STKX, STKY, LSPCPOL, NIFLAG, NMFLAG, NNFLAG,
+     &                      NOFLAG
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NSVARS, SPCOUT
@@ -113,6 +114,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NIDEV  ! unit no.: SIC descriptions
         INTEGER     , INTENT (IN) :: NMDEV  ! unit no.: MACT descriptions
         INTEGER     , INTENT (IN) :: NNDEV  ! unit no.: NAICS descriptions
+        INTEGER     , INTENT (IN) :: NODEV  ! unit no.: ORIS descriptions
         INTEGER     , INTENT (IN) :: ADEV   ! unit no.: ASCII elevated file
         CHARACTER(*), INTENT (IN) :: ENAME  ! name for I/O API inven input
         CHARACTER(*), INTENT (IN) :: CUNAME ! mulitplicative control matrix name
@@ -124,8 +126,8 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: NX( NGRID ) ! no. srcs per cell
         INTEGER     , INTENT(OUT) :: IX( NMATX ) ! src IDs
         REAL        , INTENT(OUT) :: CX( NMATX ) ! gridding coefficients
-        REAL        , INTENT(OUT) :: SLMAT( NSRC, NSLIN ) ! mole spec coefs
         REAL        , INTENT(OUT) :: SSMAT( NSRC, NSSIN ) ! mass spec coefs
+        REAL        , INTENT(OUT) :: SLMAT( NSRC, NSLIN ) ! mole spec coefs
  
 C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE :: IBUF   ( : )  ! tmp var for temporal profiles
@@ -198,6 +200,7 @@ C.........  Set local variables for determining input inventory variables
      &                  ANY_TRUE( NREPORT, ALLRPT%BYSTAT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYCNTY ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
+     &                  ANY_TRUE( NREPORT, ALLRPT%BYORIS ) .OR.
      &                  ANY_CVAL( NREPORT, ALLRPT%REGNNAM )     )
 
 C.........  Build array of inventory variable names based on report settings
@@ -235,6 +238,12 @@ C.........  NAICS code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYNAICS ) ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'CNAICS'
+            END IF
+
+C.........  ORIS code
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYORIS ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CORIS'
             END IF
 
 C.........  Source type code
@@ -819,6 +828,9 @@ C.........  If needed, read in MACT descriptions file
 
 C.........  If needed, read in NAICS descriptions file
         IF( NNFLAG ) CALL RDNAICSDSC( NNDEV )
+
+C.........  If needed, read in ORIS descriptions file
+        IF( NOFLAG ) CALL RDORSDSC( NODEV )
 
 C.........  If needed, read in layer fractions file to identify elevated
 C           sources

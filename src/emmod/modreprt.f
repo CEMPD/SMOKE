@@ -129,6 +129,7 @@
             LOGICAL       :: BYSIC         ! true: by SIC 
             LOGICAL       :: BYMACT        ! true: by MACT
             LOGICAL       :: BYNAICS       ! true: by NAICS
+            LOGICAL       :: BYORIS        ! true: by ORIS 
             LOGICAL       :: BYSRCTYP      ! true: by source type
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
@@ -149,6 +150,7 @@
             LOGICAL       :: SICNAM        ! true: output SIC name
             LOGICAL       :: MACTNAM       ! true: output MACT name
             LOGICAL       :: NAICSNAM      ! true: output NAICS name
+            LOGICAL       :: ORISNAM       ! true: output ORIS name  
             LOGICAL       :: SRCNAM        ! true: output facility nm
             LOGICAL       :: STKPARM       ! true: output stack parms
             LOGICAL       :: USEASCELEV    ! true: use ascii elevation file
@@ -201,6 +203,7 @@
         LOGICAL, PUBLIC :: NIFLAG = .FALSE. ! true: read in SIC names file
         LOGICAL, PUBLIC :: NMFLAG = .FALSE. ! true: read in MACT names file
         LOGICAL, PUBLIC :: NNFLAG = .FALSE. ! true: read in NAICS names file
+        LOGICAL, PUBLIC :: NOFLAG = .FALSE. ! true: read in ORIS names file
         LOGICAL, PUBLIC :: SLFLAG = .FALSE. ! true: read in mole speciation matrix
         LOGICAL, PUBLIC :: SSFLAG = .FALSE. ! true: read in mass speciation matrix
         LOGICAL, PUBLIC :: PRFLAG = .FALSE. ! true: read projection matrix
@@ -291,6 +294,8 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: MACDSWIDTH=0 ! width of MACT description column
         INTEGER      , PUBLIC :: NAIWIDTH  =0 ! width of NAICS
         INTEGER      , PUBLIC :: NAIDSWIDTH=0 ! width of NAICS description column
+        INTEGER      , PUBLIC :: ORSWIDTH  =0 ! width of ORIS
+        INTEGER      , PUBLIC :: ORSDSWIDTH=0 ! width of ORIS description column
         INTEGER      , PUBLIC :: STYPWIDTH =0 ! width of source type code
         INTEGER      , PUBLIC :: SPCWIDTH  =0 ! width of speciation profile label
         INTEGER      , PUBLIC :: SRCWIDTH  =0 ! width of source IDs column
