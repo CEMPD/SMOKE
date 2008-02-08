@@ -175,7 +175,9 @@ C.............  Get period, pollutant, and number of profiles from line
 
 C.............  If period or pollutant doesn't match, or if number
 C               of profiles is <=0, then skip
-            IF ( CPOL .NE. ENAM .OR. PER .NE. PERIOD .OR. NP <=0 ) CYCLE
+            IF ( PER > 0 ) THEN
+              IF (CPOL .NE. ENAM .OR. PER .NE. PERIOD .OR. NP <=0) CYCLE
+            END IF
 
 C.............  Error message if a number of profile is greater than 10
             IF ( NP > 10 ) THEN
