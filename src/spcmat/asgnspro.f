@@ -83,13 +83,14 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         LOGICAL         ENVYN
+        INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         INDEX1
         INTEGER         ENVINT 
         INTEGER         PROMPTFFILE
         LOGICAL         SETSCCTYPE
 
-        EXTERNAL CRLF, ENVYN, FINDC, INDEX1, PROMPTFFILE,
+        EXTERNAL CRLF, ENVYN, FINDC, FIND1, INDEX1, PROMPTFFILE,
      &           SETSCCTYPE, ENVINT
 
 C.........  SUBROUTINE ARGUMENTS
@@ -399,7 +400,6 @@ C                       pollutant-specific PLANT non-blank       match
 
             IF( F6 .GT. 0 .AND. CSPT16(F6,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT16( F6,V )
-                CALL COMBO_SETUP
                 CALL SETSOURCE_SMATS
                 CYCLE                       !  to end of sources-loop
 
@@ -695,22 +695,34 @@ C               speciation profile is unavailable for a given pollutant
 
 C----------------------------------------------------------------------
 C----------------------------------------------------------------------
-
-C.............  This internal subroutine checks to see if the assignment has
-C               been made to a COMBO profile and takes action accordingly.
-C               Its main jobs are to read in the GSREF_COMBO file, find the
-C               combination profile in the dataset, and to setup the number 
-C               of profiles in a combination profile.
-            SUBROUTINE COMBO_SETUP
+C.............  This internal subprogram searches for the speciation profile
+C               code in the abriged list (from MODSPRO) and if found, applies
+C               the speciation factors for all species in that profile to 
+C               the speciation matrices.
+C.............  Most variables are defined through host association.
+            SUBROUTINE SETSOURCE_SMATS
 
 C.............  Local variables
-            INTEGER   F, I
+            INTEGER   F, I, J, K, N  ! indices and counters
+
+            INTEGER   ITBL        ! position in full table of current profile
+            INTEGER   NTBL        ! number of species of current profile
+
             INTEGER, SAVE :: CDEV = 0       ! unit number for GSPRO_COMBO
+
+            LOGICAL   VALID 
+
             LOGICAL :: FIRSTCOMBO = .TRUE.  ! true: until first COMBO entry found in GSREF
 
 C----------------------------------------------------------------------
 
 C.............  If speciation profile code assigned is a combination profile...
+C.............  This internal subroutine checks to see if the assignment has
+C               been made to a COMBO profile and takes action accordingly.
+C               Its main jobs are to read in the GSREF_COMBO file, find the
+C               combination profile in the dataset, and to setup the number 
+C               of profiles in a combination profile.
+
             IF ( SPCODE .EQ. 'COMBO' ) THEN
 
 C................. For the first combo profile encountered, open the GSPRO_COMBO
@@ -729,7 +741,6 @@ C.................  If first time for this pollutant, read the combo file
 C.................  It will store only for pollutant/type ENAM and SPCMAT_PERIOD
 C                        from the environment
                 IF ( LRDCOMBO ) THEN
-
                     CALL RDCOMBO( CDEV, ENAM )
                     LRDCOMBO = .FALSE.
 
@@ -743,7 +754,7 @@ C                   arrays are supposed to be built from inventory list of FIPs 
                 IF ( F <= 0 ) THEN
                     MESG = 'INTERNAL ERROR: FIPS code not found '//
      &                     'in INVCFIP array from MODLISTS for:'//
-     &                     CRLF() // BLANK10 // 'FIP: '// TRIM(CFIP)
+     &                     CRLF() // BLANK10 // 'FIP: '// TRIM( CFIP )
                     CALL M3MESG( MESG )
                     EFLAG = .TRUE.
 
@@ -756,7 +767,7 @@ C.....................  If FIPs code found, set the arrays for SETSOURCE_SMATS
                     IF ( NPCOMBO > 0 ) THEN
 
                         DO I = 1, NPCOMBO
-                            CCODE  ( I ) = CMBSPCD( F,I )
+                            CCODE  ( I ) = ADJUSTR( CMBSPCD( F,I ) )
                             CWEIGHT( I ) = CMBWGHT( F,I )
                         END DO
 
@@ -786,37 +797,13 @@ C               use the single profile specified
 
             END IF
 
-            RETURN
-
-            END SUBROUTINE COMBO_SETUP
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
-
-C.............  This internal subprogram searches for the speciation profile
-C               code in the abriged list (from MODSPRO) and if found, applies
-C               the speciation factors for all species in that profile to 
-C               the speciation matrices.
-C.............  Most variables are defined through host association.
-            SUBROUTINE SETSOURCE_SMATS
-
-C.............  Local variables
-            INTEGER   I, J, K, N  ! indices and counters
-
-            INTEGER   ITBL        ! position in full table of current profile
-            INTEGER   NTBL        ! number of species of current profile
-
-            LOGICAL   VALID 
-
-C----------------------------------------------------------------------
-
 C.............  Loop over all profiles in combination profile
 C.............  Note that for non-combo profiles, NPCOMBO has been set to 1
 C                  and CCODE(1) to SPCODE.
             DO NP = 1, NPCOMBO
 
                 VALID = .TRUE.
-                K = MAX( FINDC( CCODE( NP ), NSPROF, SPROFN ), 0 )
+                K = MAX( INDEX1( CCODE( NP ), NSPROF, SPROFN ),0 )
 
 C.................  If profile is not found in set of profiles, try to apply
 C                   the default for this pollutant (as long as it's not a combo)
@@ -828,10 +815,10 @@ C                   the default for this pollutant (as long as it's not a combo)
      &                 '" is not in profiles, but it was assigned' //
      &                 CRLF() // BLANK10 // 'to source:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+     &                 ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
 
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
 
                     K = MAX( FINDC( CSPT01( V ), NSPROF, SPROFN ), 0 )
 
@@ -857,10 +844,10 @@ C                   different error (and don't look for the default)
      &                 '" is not in profiles, but it was assigned' //
      &                 CRLF() // BLANK10 // 'as COMBO to source:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
-     &                 CRLF() // BLANK10 // 
-     &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+     &                 ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
 
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
+                    NWARN = NWARN + 1
                     EFLAG = .TRUE.
                     CYCLE
 

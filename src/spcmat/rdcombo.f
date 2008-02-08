@@ -37,7 +37,7 @@ C...........   INCLUDES
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER   CRLF
+        CHARACTER(2) CRLF
         INTEGER     ENVINT 
         INTEGER     FINDC 
         INTEGER     GETFLINE
@@ -63,7 +63,7 @@ C.........  Local arrays
         INTEGER, SAVE :: ERRCNT( 6 )  
         INTEGER, SAVE :: WARNCNT( 2 )  
         REAL    :: CWEIGHT( CMBMAX )          ! tmp array for profile weights
-        CHARACTER(POLLEN3) :: SEGMENT( 24 )  ! Segments of parsed lines
+        CHARACTER(IOVLEN3) :: SEGMENT( 24 )  ! Segments of parsed lines
 
 C.........  Other local variables
         INTEGER         F, I, N       !  counters and indices
@@ -81,15 +81,16 @@ C.........  Other local variables
 
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL, SAVE :: FIRSTIME = .TRUE.
+        LOGICAL, SAVE :: FIRSTSTA = .TRUE.
 
         CHARACTER(FIPLEN3) CFIP     !  tmp buffer for state/county FIPS code
         CHARACTER(STALEN3) CSTA     !  tmp buff for state FIPS code
         CHARACTER(STALEN3) PSTA     !  tmp buff for previous state FIPS code
-        CHARACTER(POLLEN3) CPOL     !  tmp buffer for pollutant code
+        CHARACTER(IOVLEN3) CPOL     !  tmp buffer for pollutant code
         CHARACTER(256)     MESG     !  message buffer
         CHARACTER(512)     LINE     !  line buffer
 
-        CHARACTER(16) :: PROGNAME = 'RCOMBO' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDCOMBO' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDCOMBO
@@ -176,6 +177,14 @@ C.............  If period or pollutant doesn't match, or if number
 C               of profiles is <=0, then skip
             IF ( CPOL .NE. ENAM .OR. PER .NE. PERIOD .OR. NP <=0 ) CYCLE
 
+C.............  Error message if a number of profile is greater than 10
+            IF ( NP > 10 ) THEN
+                WRITE( MESG,94010 ) 'ERROR: A number of COMBO '//
+     &                 'profiles for county '//CFIP//' is greater '//
+     &                 'than a max. 10 at line', IREC
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
 C.............  Get FIPs code and pad with leading zeros, if needed
             CFIP = SEGMENT( 2 )
             CALL PADZERO( CFIP )
@@ -188,7 +197,8 @@ C               loop through all FIPs codes and apply information.
 
 C.................  Extract state code from state/county FIPS code
                 CSTA = CFIP(1:STALEN3)
-
+                
+                FIRSTSTA = .TRUE.
                 DO F = 1, NINVIFIP   ! Loop through inventory state/county FIPS codes
 
 C.....................  If inventory state code matches COMBO record state,
@@ -198,7 +208,7 @@ C                       the store information for current county
 C.........................  Give error if any county-specific entries already 
 C                           applied in the input file
                         IF( CMBTYP( F ) == CNTYTYP .AND. 
-     &                      ERRCNT(1) <=  MXERR          ) THEN
+     &                      ERRCNT(1) <=  MXERR ) THEN
 
                             WRITE( MESG,94010 ) 'ERROR: State-specific '
      &                        //'record at line',IREC,'comes after '//
@@ -210,18 +220,19 @@ C                           applied in the input file
                             CYCLE
 
                         END IF
-            
+
 C.........................  Give error if duplicate (non-zero) entry
                         IF ( CMBTYP( F ) == STATETYP .AND.
-     &                       CSTA .NE. PSTA .AND.
+     &                       CSTA == PSTA .AND. FIRSTSTA .AND.
      &                       ERRCNT(2) <= MXERR        ) THEN
 
                             WRITE( MESG,94010 )
      &                        'ERROR: Duplicate entry found at line', 
      &                        IREC,'for state "' // CSTA //
-     &                        '" of GSPRO_COMBO file'
+     &                        '000" of GSPRO_COMBO file'
                             CALL M3MESG( MESG )
                             ERRCNT(2) = ERRCNT(2) + 1
+                            FIRSTSTA = .FALSE.
                             EFLAG = .TRUE.
                             CYCLE
 
@@ -238,7 +249,7 @@ C.........................  If on a new state (not just looping over all countie
 
 C.............................  Convert fractions from strings to reals
                             DO N = 1,  NP
-                                CWEIGHT( N ) = STR2REAL( SEGMENT( 4+N*2 ) )
+                                CWEIGHT( N ) = STR2REAL(SEGMENT(4+N*2))
                             END DO
 
 C.............................  Check if profile fractions meet the +/- 0.001 criterion
@@ -256,6 +267,7 @@ C                               to renormalize.
                         END DO
                     
                     END IF
+
 
 C.....................  Set previous state code for next iteration
                     PSTA = CSTA
@@ -347,7 +359,7 @@ C.............  Write additional message with total number of missing counties
 C.............  Note: want this always to be reported, regardless of MAXERROR
             IF( FMISS > 0 ) THEN
                 WRITE( MESG,94010 ) 'ERROR:',FMISS, 'State/County '//
-     &                 'FIPS codes out of ',NINVIFIP, 'are missing'//
+     &                 'FIPS codes out of ',NINVIFIP, 'are missing '//
      &                 'entries in the GSPRO_COMBO file'//CRLF()//
      &                 BLANK10// 'for period', PERIOD,'and pollutant '//
      &                 TRIM( ENAM )
