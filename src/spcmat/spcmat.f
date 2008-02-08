@@ -723,7 +723,7 @@ C                   conversion is done (so don't reset multipro)
 
 C.............  If this pollutant has multiple profiles...
             IF( MULTIPRO ) THEN
-          print*,trim(enam),' ',trim(pnam),' ',trim(snam)
+
 C.................  Abridge profiles so that there is an array of unique profiles
                 CALL PROCSPRO( NMSPC, SPCNAMES( 1,V ) )
 
