@@ -225,9 +225,10 @@ C.........  Set inventory variables to read for all source categories
 
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
-            NINVARR = 4
+            NINVARR = 5
             IVARNAMS( 3 ) = 'CMACT'
             IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 5 ) = 'IFIP'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
             NINVARR = 5
@@ -722,7 +723,7 @@ C                   conversion is done (so don't reset multipro)
 
 C.............  If this pollutant has multiple profiles...
             IF( MULTIPRO ) THEN
-
+          print*,trim(enam),' ',trim(pnam),' ',trim(snam)
 C.................  Abridge profiles so that there is an array of unique profiles
                 CALL PROCSPRO( NMSPC, SPCNAMES( 1,V ) )
 
