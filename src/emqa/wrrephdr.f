@@ -1466,11 +1466,6 @@ C.........  The name of the subgrid used to select the data
 
 C.........  Column headers  .................................................
 
-C.........  Remove leading spaces from column headers
-        L = LEN_TRIM( HDRBUF )
-        HDRBUF = HDRBUF( 2:L )
-        L = L - 1
-
         IF( RPT_%RPTMODE .NE. 3 ) THEN
 C.........  Remove leading spaces from column units
             L = LEN_TRIM( UNTBUF )
@@ -1481,6 +1476,11 @@ C.........   Write data output units
             WRITE( FDEV, 93000 ) UNTBUF( 1:L )
 
         END IF
+
+C.........  Remove leading spaces from column headers
+        L = LEN_TRIM( HDRBUF )
+        HDRBUF = HDRBUF( 2:L )
+        L = L - 1
 
 C.........  Write column headers
         WRITE( FDEV, 93000 ) HDRBUF( 1:L )
