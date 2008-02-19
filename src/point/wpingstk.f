@@ -34,12 +34,12 @@ C Pathname: $Source$
 C Last updated: $Date$ 
 C  
 C***********************************************************************
-
+        
 C...........   MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP, GRPIDX, GRPGIDA, GRPCNT, GRPCOL,
      &                     GRPROW, GRPDM, GRPFL, GRPHT, GRPLAT, GRPLON,
-     &                     GRPTK, GRPVE, GRPXL, GRPYL
+     &                     GRPTK, GRPVE, GRPXL, GRPYL, GRPFIP,GRPLMAJOR, GRPLPING
 
         IMPLICIT NONE
 
@@ -69,6 +69,9 @@ C...........   These are for sorting groups and outputting in sorted order
         INTEGER, ALLOCATABLE :: LOCCNT( : )
         INTEGER, ALLOCATABLE :: LOCCOL( : )
         INTEGER, ALLOCATABLE :: LOCROW( : )
+	INTEGER, ALLOCATABLE :: LOCFIP( : )
+	INTEGER, ALLOCATABLE :: LOCLMAJOR( : )
+	INTEGER, ALLOCATABLE :: LOCLPING( : )
 
         REAL   , ALLOCATABLE :: LOCDM ( : )
         REAL   , ALLOCATABLE :: LOCFL ( : )
@@ -120,7 +123,15 @@ C.........  Allocate memory for local arrays
         CALL CHECKMEM( IOS, 'LOCXL', PROGNAME )
         ALLOCATE( LOCYL( NGROUP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LOCYL', PROGNAME )
+        ALLOCATE( LOCFIP( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCFIP', PROGNAME )
 
+        ALLOCATE( LOCLMAJOR( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCLMAJOR', PROGNAME )
+
+        ALLOCATE( LOCLPING( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCLPING', PROGNAME )
+			
 C.........  Store sorted information
         DO I = 1, NGROUP
             J = GRPIDX( I )
@@ -138,6 +149,9 @@ C.........  Store sorted information
             LOCVE ( I ) = GRPVE ( J )
             LOCXL ( I ) = GRPXL ( J )
             LOCYL ( I ) = GRPYL ( J )
+	    LOCFIP( I ) = GRPFIP( J )
+	    LOCLMAJOR( I ) = GRPLMAJOR( J )
+	    LOCLPING( I ) = GRPLPING( J )
             
         END DO
 
@@ -195,10 +209,24 @@ C.........  Store sorted information
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
+
+        IF ( .NOT. WRITE3( FNAME, 'IFIP', SDATE, STIME, LOCFIP ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF ( .NOT. WRITE3( FNAME, 'LMAJOR', SDATE, STIME, LOCLMAJOR ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+	
+
+        IF ( .NOT. WRITE3( FNAME, 'LPING', SDATE, STIME, LOCLPING ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+			
 C.........  Deallocate local memory
         DEALLOCATE( LOCGID, LOCCNT, LOCCOL, LOCROW,
      &              LOCDM, LOCFL, LOCHT, LOCLAT, LOCLON, LOCTK,
-     &              LOCVE, LOCXL, LOCYL )
+     &              LOCVE, LOCXL, LOCYL, LOCFIP, LOCLMAJOR, LOCLPING )
 
         RETURN
 

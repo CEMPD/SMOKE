@@ -1,5 +1,5 @@
 
-        LOGICAL FUNCTION EVALCRIT( NV, NORS, MXAND, VALS, REFS, RANK, 
+        LOGICAL FUNCTION EVALCRIT_DEBUG( NV, NORS, MXAND, VALS, REFS, RANK, 
      &                             CHRS, COMPARE, COMPCHR, TYPES, 
      &                             STATUS )
 
@@ -55,7 +55,7 @@ C...........   ARGUMENTS and their descriptions:
         CHARACTER(*), INTENT (IN) :: CHRS   ( NV )       ! String values
         REAL        , INTENT (IN) :: COMPARE( NORS, MXAND, NV ) ! Formula values
         CHARACTER(*), INTENT (IN) :: COMPCHR( NORS, MXAND, NV ) ! Formula strings
-        CHARACTER(*), INTENT (IN) :: TYPES  ( NORS, MXAND, NV ) ! Condition
+        CHARACTER(6), INTENT (IN) :: TYPES  ( NORS, MXAND, NV ) ! Condition
         LOGICAL     , INTENT(OUT) :: STATUS ( NORS, MXAND, NV ) ! true: condition met
 
 C...........   OTHER LOCAL VARIABLES and their descriptions:
@@ -70,12 +70,12 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
 
         CHARACTER(300)  MESG
 
-        CHARACTER(16) :: PROGNAME = 'EVALCRIT'   !  program name
+        CHARACTER(16) :: PROGNAME = 'EVALCRIT_DEBUG'   !  program name
 
 C***********************************************************************
 C   begin body of function EVALCRIT
 
-        EVALCRIT  = .FALSE.
+        EVALCRIT_DEBUG  = .FALSE.
         STATUS    = .FALSE.    ! array
 
 C.........  Loop through OR conditions.  If any are true, then loop is done
@@ -161,10 +161,10 @@ C.....................  Also reset status for all ANDs on this OR to FALSE
             END DO      ! End of ANDs loop
 
 C.............  Update OR status
-            EVALCRIT = ANDSTAT
+            EVALCRIT_DEBUG = ANDSTAT
 
 C.............  If any OR status is true, then whole thing is true
-            IF( EVALCRIT ) EXIT
+            IF( EVALCRIT_DEBUG ) EXIT
 
         END DO    ! End of ORs loop
 
@@ -174,4 +174,4 @@ C.........  Abort if error occurred
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        END FUNCTION EVALCRIT
+        END FUNCTION EVALCRIT_DEBUG

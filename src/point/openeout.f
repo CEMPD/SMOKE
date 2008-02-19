@@ -143,7 +143,7 @@ C              of the Met file in here.
                 FDESC3D( 13 ) = '/VARIABLE GRID/ ' // GDNAM3D
             END IF
 
-            NVARS3D = 13
+            NVARS3D = 16
             NROWS3D = NGROUP
             NCOLS3D = 1
             NLAYS3D = 1
@@ -229,6 +229,28 @@ C.............  Set the file variables
             VTYPE3D( J ) = M3REAL
             UNITS3D( J ) = COORUN3D
             VDESC3D( J ) = 'Projection y coordinate'
+
+            J = J + 1
+
+            VNAME3D( J ) = 'IFIP'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'FIPS CODE'
+
+            J = J + 1
+
+            VNAME3D( J ) = 'LMAJOR'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = '1= MAJOR SOURCE in domain, 0=otherwise'
+
+            J = J + 1
+
+            VNAME3D( J ) = 'LPING'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = '1=PING SOURCE in domain, 0=otherwise'
+	    	    	    	    
  
             MESG = 'Enter logical name for ELEVATED STACK GROUPS ' //
      &              'file'

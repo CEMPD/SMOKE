@@ -48,7 +48,7 @@ C...........   This module is the source inventory arrays
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: GINDEX, GROUPID, GRPGID, GRPLAT, GRPLON,
-     &                     GRPDM, GRPHT, GRPTK, GRPVE, GRPFL, GRPCNT
+     &                     GRPDM, GRPHT, GRPTK, GRPVE, GRPFL, GRPCNT,GRPFIP
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, NCHARS, SC_BEGP, SC_ENDP
@@ -112,7 +112,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         INTEGER     GLM              ! local G max value
         INTEGER     IOS              ! i/o status
         INTEGER     LOCG             ! local G
-        INTEGER     MXGCNT           ! max of all GCNT entries
+        INTEGER  :: MXGCNT = 0           ! max of all GCNT entries
         INTEGER  :: NLOCGRP = 1      ! number of local (facility) groups
         INTEGER     PFIP             ! previous FIPS code
         INTEGER     PRVG             ! G for previous interation
@@ -410,6 +410,8 @@ C.........  Allocate memory for group information and populate group arrays
         CALL CHECKMEM( IOS, 'GRPFL', PROGNAME )
         ALLOCATE( GRPCNT( NINVGRP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
+        ALLOCATE( GRPFIP( NINVGRP ), STAT=IOS )
+	CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
 
         GRPGID  = 0
         GRPLAT  = BADVAL3
@@ -420,6 +422,7 @@ C.........  Allocate memory for group information and populate group arrays
         GRPVE   = BADVAL3
         GRPFL   = BADVAL3
         GRPCNT  = 0
+	GRPFIP  = 0
 
 C.........  Store the group information more succinctly
         PRVG = 0
@@ -441,7 +444,7 @@ C.............  Store. Location will be from first source encountered in group
                 GRPVE ( G ) = TGRPVE ( I )
                 GRPFL ( G ) = TGRPFL ( I )
                 GRPCNT( G ) = TGRPCNT( I )
-
+                GRPFIP( G ) = IFIP   ( I )
 C.............  Otherwise, give warnings if stacks in the same group do not have
 C               the same stack locations.
             ELSE 
