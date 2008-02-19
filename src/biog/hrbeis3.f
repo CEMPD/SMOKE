@@ -53,7 +53,7 @@ C.........  INCLUDES
 !        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 !        INCLUDE 'EMCNST3.EXT'     ! Emissions constants
 !        INCLUDE 'CONST3.EXT'      ! More constants
-        INCLUDE 'B3V12DIMS3.EXT'  ! biogenic-related constants
+        INCLUDE 'B3V14DIMS3.EXT'  ! biogenic-related constants
 
 C.........  ARGUMENTS and their descriptions
         INTEGER, INTENT (IN)  :: JDATE   !  current simulation date (YYYYDDD)
@@ -66,7 +66,7 @@ C.........  ARGUMENTS and their descriptions
         LOGICAL, INTENT (IN)  :: INITIAL_HOUR  ! true:
 
         REAL, INTENT (IN)  ::  COSZEN   ( NX, NY )    !  cosine of zenith angle
-        REAL, INTENT (IN)  ::  SEMIS    ( NX, NY, NSEF-1 ) ! norm emissions
+        REAL, INTENT (IN)  ::  SEMIS    ( NX, NY, NSEF ) ! norm emissions
         REAL, INTENT (IN)  ::  GROWAGNO ( NX, NY )    ! growing season NO emissions
         REAL, INTENT (IN)  ::  NGROWAGNO( NX, NY )    ! non-growing season NO emissions
         REAL, INTENT (IN)  ::  NONAGNO  ( NX, NY )    ! non-agriculuture NO emissions
@@ -93,6 +93,7 @@ C.........  SCRATCH LOCAL VARIABLES and their descriptions
         REAL            CFCLAI       !  ISOP CORR FAC -- LAI
         REAL            CFNO         !  NO correction factor
         REAL            CFOVOC       !  non-isop corr fac
+	REAL            CFSESQT      !  sesquiterpene corr fac
         REAL            PAR          !  photo. actinic flux (UE/M**2-S)
         REAL            CT, DT       !  temperature correction
         REAL            TAIR         !  surface temperature
@@ -216,12 +217,16 @@ C                   Limit temerature to 315 K for monoterpenes and other VOCs
                     TAIR = 315.0
                 END IF
 
-                CFOVOC = EXP( 0.09 * ( TAIR - 303.0 ) )
-
+                CFOVOC  = EXP( 0.09 * ( TAIR - 303.0 ) )
+                CFSESQT = EXP( 0.17 * ( TAIR - 303.0 ) )
+		
                 IAFTER = NLAI + 1
-                DO I = IAFTER, NSEF - 1
+                DO I = IAFTER, NSEF - 2
                     EMPOL( C,R,I ) = SEMIS( C,R,I ) * CFOVOC
                 END DO
+		DO I = NSEF, NSEF  ! Sesquiterpene emissions
+		    EMPOL( C,R,I ) = SEMIS( C,R,I ) * CFSESQT
+		END DO
 
             END DO ! end loop over columns
         END DO ! end loop over rows

@@ -43,7 +43,7 @@ C.........  INCLUDES
         INCLUDE 'PARMS3.EXT'      ! I/O API constants
         INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
-        INCLUDE 'B3V12DIMS3.EXT'     ! BEIS3-related declarations
+        INCLUDE 'B3V14DIMS3.EXT'     ! BEIS3-related declarations
   
 C.........  EXTERNAL FUNCTIONS and their descriptions
         INTEGER         GETFLINE

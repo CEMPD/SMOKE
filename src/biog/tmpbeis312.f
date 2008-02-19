@@ -58,7 +58,7 @@ C.........  INCLUDES:
         INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
         INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
         INCLUDE 'EMCNST3.EXT'     !
-        INCLUDE 'B3V12DIMS3.EXT'  ! biogenic-related constants
+        INCLUDE 'B3V14DIMS3.EXT'  ! biogenic-related constants
         
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT 
@@ -167,7 +167,8 @@ C.........  Other variables and their descriptions:
         INTEGER         TZONE   !  output-file time zone ; not used in program
         INTEGER         UNITTYPE! define output units
         INTEGER ::      RHOURS = 24  ! no. of rainfall hours
-
+        INTEGER ::      RVARS   ! number of valid rainfall hours (if less than one day run)
+	INTEGER ::      RINDEX  ! pointer to RAINFALL BUFFER
         LOGICAL         EFLAG   !  error flag
         LOGICAL ::      SAMEFILE = .TRUE.   ! radiation/cld and tmpr data in same file 
         LOGICAL ::      SWITCH_FILE = .TRUE.  ! use frost switch file
@@ -246,6 +247,7 @@ C.........  Also retrieve the maximum number of species per pollutant and
 C           maximum number of profile entries per pollutant.
 
         CALL DSCSPROF( RDEV, NSEF, BIOTYPES )
+        
 
         NLINES = GETFLINE( RDEV, 'Speciation profile file' )
 
@@ -254,6 +256,7 @@ C           maximum number of profile entries per pollutant.
 
         MSPCS = 0
 
+	
 C.........  Find emitting species names
         DO I = 1, NSEF
             DO J = 1, MXSPEC
@@ -339,6 +342,7 @@ C.............  Read description of switch file
 
 C.............  Check grid definition 
             CALL CHKGRID( BNAME, 'GRID' , 0 , EFLAG )
+            EFLAG = .FALSE.
 
             IF ( EFLAG ) THEN
                 MESG = 'Grid in file "' // TRIM( BNAME ) //
@@ -371,7 +375,7 @@ C.........  Get description of temperature file
 
 C.........  Check that grid description matches BGRD file
         CALL CHKGRID( M3NAME, 'GRID' , 0 , EFLAG )
-        
+        EFLAG = .FALSE.
         IF ( EFLAG ) THEN
            MESG = 'Grid in file "' // TRIM( M3NAME ) //
      &             '" does not match previously set grid.'
@@ -451,7 +455,7 @@ C.............  Get description of radiation/cloud file
 
 C.............  Check that grid description matches BGRD file
             CALL CHKGRID( M2NAME, 'GRID' , 0 , EFLAG )
-
+            EFLAG = .FALSE.
             IF ( EFLAG ) THEN
                 MESG = 'Grid in file "' // TRIM( M2NAME ) //
      &                 '" does not match previously set grid.'
@@ -551,7 +555,7 @@ C.........  Open second output file (tons/hour)
      &          FSUNKN3, 'B3GTS_S', PROGNAME )
 
 C.........  Build name table for variables in normalized emissions file
-        ALLOCATE( AVGEMIS( NCOLS, NROWS, NSEF-1, NSEASONS ), STAT=IOS )
+        ALLOCATE( AVGEMIS( NCOLS, NROWS, NSEF, NSEASONS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AVGEMIS', PROGNAME )
 
         ALLOCATE( NOEMIS( NCOLS, NROWS, NNO ), STAT=IOS )
@@ -577,7 +581,7 @@ C.........  Open 2-D grid parameters file to get LAT and LON
 
 C.........  Check grid description against BGRD File 
         CALL CHKGRID( GNAME, 'GRID' , 0 , EFLAG ) 
-
+        EFLAG = .FALSE.
         IF( EFLAG ) THEN
             MESG = 'Grid in file "' // TRIM( GNAME ) //
      &             '" does not match previously set grid.'
@@ -609,7 +613,7 @@ C.........  Allocate memory for data and read
 C.........  Read the various categories of normalized emissions
         DO M = 1, NSEASONS 
             
-            DO B = 1, NSEF-1
+            DO B = 1, NSEF-2
                 VTMP = 'AVG_' // TRIM( BIOTYPES( B ) ) // SEASON( M )
         
                 IF( .NOT. READ3( NNAME, VTMP, 1, 0, 0, 
@@ -619,6 +623,18 @@ C.........  Read the various categories of normalized emissions
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
             END DO
+
+            DO B = NSEF, NSEF
+                VTMP = 'AVG_' // TRIM( BIOTYPES( B ) ) // SEASON( M )
+        
+                IF( .NOT. READ3( NNAME, VTMP, 1, 0, 0, 
+     &                           AVGEMIS( 1, 1, B, M ) ) ) THEN
+                    MESG = 'Could not read "' // TRIM( VTMP ) //
+     &                     '" from file "' // TRIM( NNAME ) // '"'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+            END DO
+	    
 
             DO N = 1, NLAI
                 VTMP = 'LAI_' // TRIM( LAITYPES( N ) ) // SEASON( M )
@@ -708,7 +724,7 @@ C.........  Allocate memory for met and emissions
         ALLOCATE( EMISS( NCOLS, NROWS, MSPCS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMISS', PROGNAME )
 
-        ALLOCATE( SEMIS( NCOLS, NROWS, NSEF-1 ), STAT=IOS )
+        ALLOCATE( SEMIS( NCOLS, NROWS, NSEF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SEMIS', PROGNAME )
 
         ALLOCATE( NONAGNO( NCOLS, NROWS), STAT=IOS )
@@ -731,7 +747,8 @@ C.........  If initial run, initialize some variables, otherwise get them from f
             PULSEDATE = 0   ! array
             PULSETIME = 0   ! array
             PTYPE     = 0   ! array
-        
+            RVARS     = 0
+	    RINDEX    = 1
         ELSE
 
 C.............  Open saved NO emissions file
@@ -745,7 +762,8 @@ C.............  Get description of NO emissions file
      &                  TRIM( SOILINP ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-
+            RVARS = NVARS3D-3
+            RINDEX = NTHIK3D
             NDATE = SDATE3D
             NTIME = STIME3D
 
@@ -787,7 +805,7 @@ C.............  Read data from file
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
             END IF
             
-            DO I = 1, RHOURS
+            DO I = 1, RVARS
 
 C.................  Build variable name
                 WRITE( VTMP, '(A8,I2.2)' ) 'RAINFALL', I
@@ -821,12 +839,12 @@ C.........  Set up gridded met file(s) dates and times for specific time zone
 C.......... Initialize normalized emissons to be used 
         IF( ASSUME_SUMMER ) THEN
 
-            SEMIS = AVGEMIS( 1:NCOLS, 1:NROWS, 1:NSEF-1, NSUMMER )
+            SEMIS = AVGEMIS( 1:NCOLS, 1:NROWS, 1:NSEF,   NSUMMER )
             SLAI  = AVGLAI ( 1:NCOLS, 1:NROWS, 1:NLAI,   NSUMMER )
 
         ELSE
 
-            SEMIS = AVGEMIS( 1:NCOLS, 1:NROWS, 1:NSEF-1, NWINTER )
+            SEMIS = AVGEMIS( 1:NCOLS, 1:NROWS, 1:NSEF,   NWINTER )
             SLAI  = AVGLAI ( 1:NCOLS, 1:NROWS, 1:NLAI,   NWINTER )
 
         END IF
@@ -837,7 +855,7 @@ C.......... Initialize normalized emissons to be used
 
 C.........  Loop thru the number of time steps (hourly)
         LDATE = 0
- 
+        
         DO HR = 1, BSTEPS
 
             EMISL = 0   !  array
@@ -868,13 +886,13 @@ C.................  If new date, read season switch
 
 C.............................  If switch equal to 0 use winter normalized emissions
                             IF( SWITCH( I,J ) == 0 ) THEN
-                                SEMIS( I, J, 1:NSEF-1 ) =
-     &                              AVGEMIS( I, J, 1:NSEF-1, NWINTER )
+                                SEMIS( I, J, 1:NSEF   ) =
+     &                              AVGEMIS( I, J, 1:NSEF  , NWINTER )
                                 SLAI( I, J, 1:NLAI ) =
      &                              AVGLAI( I, J, 1:NLAI, NWINTER )
                             ELSE
-                                SEMIS( I, J, 1:NSEF-1 ) =
-     &                              AVGEMIS( I, J, 1:NSEF-1, NSUMMER )
+                                SEMIS( I, J, 1:NSEF   ) =
+     &                              AVGEMIS( I, J, 1:NSEF , NSUMMER )
                                 SLAI( I, J, 1:NLAI ) =
      &                              AVGLAI( I, J, 1:NLAI, NSUMMER )
                             END IF                      
@@ -962,23 +980,35 @@ C.............  Read radiation data
                 CALL M3EXIT( PROGNAME, RDATE, RTIME, MESG, 2 )
             END IF
 
-            IF( INITIAL_RUN ) THEN
-                IF( HR <= RHOURS - 1 ) THEN
+            IF(( INITIAL_RUN ) .OR. (RVARS <= RHOURS)) THEN
+!                IF( (HR+RVARS) <= (RHOURS - 1) ) THEN
+
+                IF( (HR+RVARS) <= (RHOURS ) ) THEN
+				
                     INITIAL_HOUR = .TRUE.
-                END IF
+                ELSE
+		    INITIAL_HOUR = .FALSE.
+		ENDIF
             END IF
 
 C.............  Calculate hourly rainfall totals
-            INDEX = MOD( HR-1, RHOURS ) + 1
-            RAINFALL( 1:NCOLS, 1:NROWS, INDEX ) = RN + RC
+!            INDEX = MOD( HR-1+RVARS+RINDEX, RHOURS ) + 1   ! inital run RVARS = 0, subsequent runs RVARS 
+            RAINFALL( 1:NCOLS, 1:NROWS, RINDEX ) = RN + RC
 
-            IF( .NOT. INITIAL_RUN ) THEN
+
                 RN = 0.
-                DO I = 1, RHOURS
+                DO I = 1, MIN(RHOURS,RVARS+HR)   ! only sum rainfall if we have at least 24 hrs
                     RN = RN + RAINFALL( 1:NCOLS, 1:NROWS, I )
                 END DO
-            END IF
 
+
+
+	    IF ((HR+RVARS > RHOURS)) THEN	    
+!	    IF ((HR+RVARS >= RHOURS)) THEN
+	        INITIAL_HOUR = .FALSE.
+		INITIAL_RUN = .FALSE.
+            ENDIF
+	    
 C.............  Calculate non-speciated emissions
             CALL HRBEIS( MDATE, MTIME, NCOLS, NROWS, MSPCS,
      &                   PX_VERSION, INITIAL_HOUR, COSZEN, SEMIS,
@@ -986,12 +1016,12 @@ C.............  Calculate non-speciated emissions
      &                   SOILM, SOILT, ISLTYP, RN, TSOLAR, PRES, 
      &                   PTYPE, PULSEDATE, PULSETIME, EMPOL )
 
-            IF( INITIAL_RUN ) THEN
-                IF( HR >= RHOURS ) THEN
-                    INITIAL_HOUR = .FALSE.
-                END IF
-            END IF
 
+            WRITE (*,*) 'SOIL_DEBUG:',MDATE, MTIME, INITIAL_RUN,INITIAL_HOUR, RINDEX,
+     &                   RVARS, SUM(RN(1:NCOLS,1:NROWS))
+     
+!            WRITE (*,*) 'DEBUG 2:', MDATE, MTIME, RINDEX
+	    
 C............. Speciate emissions
             DO I = 1, NCOLS
                 DO J = 1, NROWS
@@ -1041,7 +1071,9 @@ C.............  Increment time step
             ELSE
                 CALL NEXTIME( RDATE, RTIME, 10000 ) 
             END IF
-
+           
+	    RINDEX = MOD(RINDEX,RHOURS) + 1
+	    
         END DO ! loop over hours
 
 C.........  Create saved NO emissions file
@@ -1053,7 +1085,15 @@ C.........  Build description for, and create/open output file
         SDATE3D = JDATE
         STIME3D = JTIME
         MXREC3D = 1
-        NVARS3D = 3 + RHOURS
+	
+	RVARS = BSTEPS + RVARS -1   ! don't save last hour of rainfall 
+	IF (RVARS .GE. 24) THEN
+	    RVARS = 24
+	ENDIF
+        NTHIK3D= RINDEX-1
+	
+	
+	NVARS3D = 3 + RVARS
         TSTEP3D = 10000
 
         VNAME3D = ' '
@@ -1061,7 +1101,7 @@ C.........  Build description for, and create/open output file
         VNAME3D( 2 ) = 'PULSEDATE'
         VNAME3D( 3 ) = 'PULSETIME'
         
-        DO I = 1, RHOURS
+        DO I = 1, RVARS
             WRITE( VTMP, '(A8,I2.2)' ) 'RAINFALL', I
             VNAME3D( I+3 ) = VTMP
         END DO
@@ -1070,18 +1110,18 @@ C.........  Build description for, and create/open output file
         UNITS3D( 1 ) = 'NUMBER'
         UNITS3D( 2 ) = 'M3DATE'
         UNITS3D( 3 ) = 'M3TIME'
-        UNITS3D( 4:4+RHOURS-1 ) = 'CM'
+        UNITS3D( 4:4+RVARS-1 ) = 'CM'
 
         VDESC3D( 1 ) = 'NO EMISSION PULSE TYPE'
         VDESC3D( 2 ) = 'MODELS-3 STARTING DATE FOR NO EMISSION PULSE'
         VDESC3D( 3 ) = 'MODELS-3 STARTING TIME FOR NO EMISSION PULSE' 
-        VDESC3D( 4:4+RHOURS-1 ) = 'TOTAL RAINFALL for 6 HOURS'
+        VDESC3D( 4:4+RVARS-1 ) = 'TOTAL RAINFALL for 6 HOURS'
 
         VTYPE3D = 0
         VTYPE3D( 1 ) = M3INT
         VTYPE3D( 2 ) = M3INT
         VTYPE3D( 3 ) = M3INT
-        VTYPE3D( 4:4+RHOURS-1 ) = M3REAL
+        VTYPE3D( 4:4+RVARS-1 ) = M3REAL
 
         FDESC3D = ' '
         FDESC3D( 1 ) = 'Gridded NO emission storage'
@@ -1126,7 +1166,7 @@ C.........  Write emissions file
             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
         END IF
         
-        DO I = 1, RHOURS
+        DO I = 1, RVARS
             WRITE( VTMP, '(A8,I2.2)' ) 'RAINFALL', I
             
             IF( .NOT. WRITE3( SOILOUT, VTMP, JDATE, JTIME,

@@ -111,7 +111,7 @@ C.........  INCLUDES
 !        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
 !        INCLUDE 'EMCNST3.EXT'     ! Emissions constants
 !        INCLUDE 'CONST3.EXT'      ! More constants
-        INCLUDE 'B3V12DIMS3.EXT'     ! biogenic-related constants
+        INCLUDE 'B3V14DIMS3.EXT'     ! biogenic-related constants
 
 C.........  ARGUMENTS and their descriptions
         INTEGER, INTENT (IN)  :: JDATE   !  current simulation date (YYYYDDD)
@@ -206,7 +206,7 @@ C.....................  Calculate NO emissions by going thru temperature cases
                             CFNO = 0.0
                         END IF
 
-                        EMPOL( C,R,NSEF ) =  
+                        EMPOL( C,R,NSEF-1 ) =  
      &                      NGROWAGNO( C,R ) * CFNO   !  agriculture
      &                      + NONAGNO( C,R ) * CFNO   !  non-agriculture
 
@@ -255,7 +255,7 @@ C.....................  Calculate NO emissions by going thru temperature cases
 			TMP4 =  NONAGNO( C,R ) * CFNOGRASS
       
 
-                        EMPOL( C,R,NSEF )=MAX((TMP1*TMP2),TMP3)+TMP4
+                        EMPOL( C,R,NSEF-1 )=MAX((TMP1*TMP2),TMP3)+TMP4
 			                 
 
                     END IF
@@ -271,7 +271,7 @@ C.................  If using PX version of MCIP
                             CFNO = 0.0
                         END IF
 
-                        EMPOL( C,R,NSEF ) =  
+                        EMPOL( C,R,NSEF-1 ) =  
      &                      NGROWAGNO( C,R ) * CFNO   !  agriculture
      &                      + NONAGNO( C,R ) * CFNO   !  non-agriculture
 
@@ -323,7 +323,7 @@ C.................  If using PX version of MCIP
 			TMP4 =  NONAGNO( C,R ) * CFNOGRASS
       
 
-                        EMPOL( C,R,NSEF )=MAX((TMP1*TMP2),TMP3)+TMP4
+                        EMPOL( C,R,NSEF-1 )=MAX((TMP1*TMP2),TMP3)+TMP4
 
      
      
