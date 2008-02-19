@@ -107,6 +107,7 @@ C.........  Starts and ends of each field in mobile source definition
 C.........  Widths that depend on other widths
         INTEGER, PARAMETER :: CDTLEN3 = CASLEN3 + IOVLEN3 ! CAS // Data name
         INTEGER, PARAMETER :: FPLLEN3 = FIPLEN3 + PLTLEN3 ! FIPS // Plant
+        INTEGER, PARAMETER :: FPMLEN3 = FPLLEN3 + MACLEN3 ! FIPS // Plant // MACT
         INTEGER, PARAMETER :: FPSLEN3 = FIPLEN3 + SCCLEN3 ! FIPS // SCC
         INTEGER, PARAMETER :: FPILEN3 = FIPLEN3 + SICLEN3 ! FIPS // SIC
         INTEGER, PARAMETER :: STALEN3 = FIPLEN3 - CNYLEN3 ! Country/St

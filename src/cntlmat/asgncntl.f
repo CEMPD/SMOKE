@@ -53,13 +53,13 @@ C.........  This module is for cross reference tables
      &          CHRT08A, CHRT08B, CHRT08C, CHRT09, CHRT10,
      &          CHRT11, CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
      &          CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
-     &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37,
+     &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37, CHRT38,
      &          ICTL01, ICTL02A, ICTL02B, ICTL02C, ICTL03, ICTL04,
      &          ICTL05A, ICTL05B, ICTL05C, ICTL06, ICTL07,
      &          ICTL08A, ICTL08B, ICTL08C, ICTL09, ICTL10,
      &          ICTL11, ICTL12, ICTL13, ICTL14, ICTL15, ICTL16,
      &          ICTL26, ICTL27, ICTL28, ICTL29, ICTL30, ICTL31,
-     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37
+     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37, ICTL38
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, NIPPA, EANAM,
@@ -92,7 +92,7 @@ C.........  SUBROUTINE ARGUMENTS
 C.........  Other local variables
         INTEGER          I, J, K, L, L2, S, V    !  counters and indices
 
-        INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
+        INTEGER          F0, F1, F1B, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER          F7, F8, F9, F10, F11        ! tmp find indices
         INTEGER          IDX    !  tmp index to control data table
         INTEGER          ISTAT  !  tmp indicator for internal subprogram calls
@@ -152,6 +152,7 @@ C.........  Other local variables
         CHARACTER(MFPLEN3) :: CMFP = ' '     ! tmp FIPS code // MACT
         CHARACTER(MFSLEN3) :: CMFPSC = ' '   ! tmp FIPS code // SCC // MACT
         CHARACTER(STPLEN3) :: CSTYP = ' '    ! tmp source type code
+        CHARACTER(FPMLEN3) :: CFPM = ' '     ! tmp FIPS code // Plant // MACT
 
         CHARACTER(16) :: PROGNAME = 'ASGNCNTL' ! program name
 
@@ -255,7 +256,6 @@ C.................  Set type of SCC
                     CMSTSC = CSTA // TSCC_D // CMCT
                     CMST   = CSTA // CMCT
                     CMSCC  = TSCC_D // CMCT
-                    
                     CSTYP  = CSRCTYP( S )
                 END IF
 
@@ -283,6 +283,8 @@ C                     source characteristics.
                     CSSC2   = CSRC( 1:PTENDL3( 4 ) ) // TSCC_D
                     CSSC1   = CSRC( 1:PTENDL3( 3 ) ) // TSCC_D
                     CSSC0   = CSRC( 1:PTENDL3( 2 ) ) // TSCC_D
+
+                    IF ( MACTFLAG ) CFPM = CSRC( 1:PTENDL3(2) ) // CMCT
                     
                 CASE DEFAULT
 
@@ -295,12 +297,16 @@ C                           pollutant-specific CHAR3 non-blank// SCC or blank ma
 C                           pollutant-specific CHAR2 non-blank// SCC or blank match; then
 C                           pollutant-specific CHAR1 non-blank// SCC or blank match; then
 C                           pollutant-specific PLANT non-blank// SCC match; then
+C                           pollutant-specific PLANT non-blank// MACT match; then
 C                           pollutant-specific PLANT non-blank       match
                 F6 = 0
                 F5 = 0
                 F4 = 0
                 F3 = 0
                 F2 = 0
+                F1 = 0
+                F1B= 0
+                F0 = 0
                 SELECT CASE( NCHKCHR )
                 CASE( 7 )
                     F6 = FINDC( CSSC5, TXCNT( 16 ), CHRT16 )
@@ -319,7 +325,8 @@ C                           pollutant-specific PLANT non-blank       match
                 IF( F4 .LE. 0 ) F4 = FINDC( CSRC3, TXCNT( 14 ), CHRT14 ) 
                 IF( F3 .LE. 0 ) F3 = FINDC( CSRC2, TXCNT( 13 ), CHRT13 ) 
                 IF( F2 .LE. 0 ) F2 = FINDC( CSRC1, TXCNT( 12 ), CHRT12 ) 
-                F1 = FINDC( CSSC0, TXCNT( 11 ), CHRT11 ) 
+                F1 = FINDC( CSSC0, TXCNT( 11 ), CHRT11 )
+                F1B= FINDC( CFPM,  TXCNT( 38 ), CHRT38 )  ! FIP, Plant, MACT
                 F0 = FINDC( CSRC0, TXCNT( 10 ), CHRT10 )
 
 C..................  Do an additional check for the most detailed source assignment
@@ -357,6 +364,12 @@ C                    with SCC as well.
 
                 ELSEIF( F1 .GT. 0 .AND. ICTL11(F1,V) .GE. ADDPS ) THEN
                     IDX = ICTL11( F1,V ) - ADDPS
+                    CALL SETSOURCE_CONTROL_INDEX
+                    DATSPFLAG = .TRUE.
+                    CYCLE                       !  to end of sources-loop
+
+                ELSEIF( F1B .GT. 0 .AND. ICTL38(F1B,V) .GE. ADDPS ) THEN
+                    IDX = ICTL38( F1B,V ) - ADDPS
                     CALL SETSOURCE_CONTROL_INDEX
                     DATSPFLAG = .TRUE.
                     CYCLE                       !  to end of sources-loop
@@ -404,6 +417,11 @@ C                           any PLANT non-blank        match
 
                 ELSEIF( F1 .GT. 0 .AND. ICTL11(F1,V) .NE. IMISS3 ) THEN
                     IDX = ICTL11( F1,V )
+                    CALL SETSOURCE_CONTROL_INDEX
+                    CYCLE                       !  to end of sources-loop
+
+                ELSEIF( F1B .GT. 0 .AND. ICTL38(F1B,V) .NE. IMISS3 ) THEN
+                    IDX = ICTL38( F1B,V )
                     CALL SETSOURCE_CONTROL_INDEX
                     CYCLE                       !  to end of sources-loop
 

@@ -76,8 +76,8 @@
 !.........  Count of number of entries in each (non-default) table
 !           NOTE- Added 9 (from 16-25) for special SCC-level matching
 !           NOTE- Added 6 (from 26-31) for special SIC matching
-!           NOTE- Added 6 (from 32-37) for special MACT matching
-        INTEGER, PARAMETER, PUBLIC :: NXTYPES = 37
+!           NOTE- Added 6 (from 32-38) for special MACT matching
+        INTEGER, PARAMETER, PUBLIC :: NXTYPES = 38
         INTEGER, PUBLIC            :: TXCNT( NXTYPES )
 
 !.........  Sorted groups of cross-references
@@ -373,6 +373,11 @@
         INTEGER           , ALLOCATABLE, PUBLIC :: ICTL37( :,: )
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT37( :,: )
         CHARACTER(MFSLEN3), ALLOCATABLE, PUBLIC :: CHRT37( : )
+
+!.........  FIPS code = all, Plant=non-blank, SCC=0, MACT = all (Type 38)
+        INTEGER           , ALLOCATABLE, PUBLIC :: ICTL38( :,: )
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: CSPT38( :,: )
+        CHARACTER(FPMLEN3), ALLOCATABLE, PUBLIC :: CHRT38( : )
 
 !.........  Unsorted, unprocessed cross-reference arrays
         INTEGER, ALLOCATABLE, PUBLIC:: INDXTA ( : ) !  sorting index
