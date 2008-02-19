@@ -46,10 +46,11 @@ C.........  This module contains the major data structure and control flags
      &                      AEINAM,         MEANAM, PEINAM,
      &                      AONAME, BONAME, MONAME, PONAME, TONAME, 
      &                      AEMGRD, BEMGRD, MEMGRD, PEMGRD, TEMGRD,
-     &                      LGRDOUT, PINGFLAG, PINGNAME
+     &                      LGRDOUT, PINGFLAG, PINGNAME,
+     &                      INLINEFLAG, INLINENAME
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: PGRPEMIS
+        USE MODELEV, ONLY: PGRPEMIS,ELEVEMIS
 
         IMPLICIT NONE
 
@@ -115,7 +116,7 @@ C           indicator arrays for determining output or not.
                 MOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( ( LGRDOUT .OR. PINGFLAG ) .AND. PFLAG ) THEN
+            IF( ( LGRDOUT .OR. PINGFLAG .OR. INLINEFLAG ) .AND. PFLAG ) THEN
                 J = INDEX1( VNAME, PNMSPC, PEMNAM )
                 POUTFLAG = ( J .GT. 0 )
             END IF
@@ -133,7 +134,7 @@ C.........  Non-speciated (it's not possible to have biogenics w/o speciation)
                 MOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( ( LGRDOUT .OR. PINGFLAG ) .AND. PFLAG ) THEN
+            IF( ( LGRDOUT .OR. PINGFLAG .OR. INLINEFLAG) .AND. PFLAG ) THEN
                 J = INDEX1( VNAME, PNIPOL, PEINAM )
                 POUTFLAG = ( J .GT. 0 )
             END IF            
@@ -157,6 +158,10 @@ C.........  For plume-in-grid, output file...
         IF( POUTFLAG .AND. PINGFLAG ) 
      &      CALL SAFE_WRITE3( PINGNAME, PGRPEMIS )
 
+C.........  For plume-in-grid, output file...
+        IF( POUTFLAG .AND. INLINEFLAG ) 
+     &      CALL SAFE_WRITE3( INLINENAME, ELEVEMIS )
+     
 C.........  For multiple source categories, output totals file...
         IF( LGRDOUT .AND. XFLAG ) CALL SAFE_WRITE3( TONAME, TEMGRD )
 

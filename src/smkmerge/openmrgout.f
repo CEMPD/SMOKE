@@ -45,7 +45,8 @@ C.........  This module contains the major data structure and control flags
      &          MFLAG, MNMSPC, NMSPC, MNIPPA, MEANAM, EMNAM, MEMNAM,
      &          MONAME, EMLAYS,
      &          PFLAG, PNIPOL, PNMSPC, PEINAM, PEMNAM, PONAME,
-     &          XFLAG, NIPPA, EANAM, TONAME, PINGFLAG, PINGNAME,
+     &          XFLAG, NIPPA, EANAM, TONAME, PINGFLAG, 
+     &          INLINEFLAG, PINGNAME,INLINENAME,
      &          ELEVFLAG, EVDEV, PELVNAME, LREPSTA, LREPCNY, 
      &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
      &          ARDEV, BRDEV, MRDEV, PRDEV, TRDEV,
@@ -268,6 +269,25 @@ C.............  Override gridded file settings
      &                     FSUNKN3, PINGNAME, PROGNAME )
         END IF
 
+
+C.........  Open plume-in-grid output
+        IF( INLINEFLAG ) THEN
+
+C.............  Override gridded file settings
+            NCOLS3D = 1
+            NROWS3D = NGROUP
+            NLAYS3D = 1
+            GDTYP3D = GDTYP
+            VGTYP3D = IMISS3
+            VGTOP3D = BADVAL3
+
+            FDESC3D = ' '   ! array
+            
+            INLINENAME = PROMPTSET( 
+     &                     'Enter name for INLINE EMISSIONS OUTPUT file',
+     &                     FSUNKN3, INLINENAME, PROGNAME )
+        END IF
+	
 C.........  Open plume-in-grid output
         IF( ELEVFLAG .AND. NGRP .GT. 1 ) THEN
 

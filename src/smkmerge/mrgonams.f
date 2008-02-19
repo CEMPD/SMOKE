@@ -46,7 +46,7 @@ C.........  This module contains the major data structure and control flags
      &                      AREPNAME, BREPNAME, MREPNAME, PREPNAME, 
      &                      TREPNAME,
      &                      AONAME, BONAME, MONAME, PONAME, TONAME,
-     &                      PINGNAME, PELVNAME, NUNITS, GRDUNIT
+     &                      PINGNAME, INLINENAME,PELVNAME, NUNITS, GRDUNIT
 
         IMPLICIT NONE
 
@@ -93,7 +93,8 @@ C.........  Initialize - everything will be gridded
             TONAME = 'EOUT'
     
             PINGNAME = 'PING'
-            PELVNAME = 'ELEV'       
+            PELVNAME = 'ELEV'
+	    INLINENAME = 'INLN'       
 
         ELSE
 
@@ -110,6 +111,7 @@ C.........  Initialize - everything will be gridded
             TONAME = 'EG'
     
             PINGNAME = 'PING'
+	    INLINENAME = 'INLN'
             PELVNAME = 'ELEV'
     
             IF( TFLAG ) THEN
@@ -125,6 +127,7 @@ C.........  Initialize - everything will be gridded
                 CALL TRIM_AND_CONCAT( PONAME, 'T' )
                 CALL TRIM_AND_CONCAT( TONAME, 'T' )
                 CALL TRIM_AND_CONCAT( PINGNAME, 'T' )
+                CALL TRIM_AND_CONCAT( INLINENAME, 'T' )		
                 CALL TRIM_AND_CONCAT( PELVNAME, 'T' )
     
             END IF
@@ -144,6 +147,7 @@ C.........  Initialize - everything will be gridded
                 CALL TRIM_AND_CONCAT( PONAME, 'S' )
                 CALL TRIM_AND_CONCAT( TONAME, 'S' )
                 CALL TRIM_AND_CONCAT( PINGNAME, 'S' )
+                CALL TRIM_AND_CONCAT( INLINENAME, 'S' )		
                 CALL TRIM_AND_CONCAT( PELVNAME, 'S' )
     
             END IF
@@ -176,6 +180,7 @@ C.........  Initialize - everything will be gridded
     
                 CALL TRIM_AND_CONCAT( PONAME, 'C' )
                 CALL TRIM_AND_CONCAT( PINGNAME, 'C' )
+		CALL TRIM_AND_CONCAT( INLINENAME, 'C' )
                 CALL TRIM_AND_CONCAT( PELVNAME, 'C' )
     
             END IF
@@ -228,6 +233,7 @@ C.................  Get output file names depending on if there are moles in uni
                     CALL TRIM_AND_CONCAT( PONAME, '_L' )
                     CALL TRIM_AND_CONCAT( TONAME, '_L' )
                     CALL TRIM_AND_CONCAT( PINGNAME, '_L' )
+		    CALL TRIM_AND_CONCAT( INLINENAME, '_L' )
                     CALL TRIM_AND_CONCAT( PELVNAME, '_L' )
     
                 ELSE 
@@ -244,6 +250,7 @@ C.................  Get output file names depending on if there are moles in uni
                     CALL TRIM_AND_CONCAT( PONAME, '_S' )
                     CALL TRIM_AND_CONCAT( TONAME, '_S' )
                     CALL TRIM_AND_CONCAT( PINGNAME, '_S' )
+		    CALL TRIM_AND_CONCAT( INLINENAME, '_S' )
                     CALL TRIM_AND_CONCAT( PELVNAME, '_S' )
     
                 END IF

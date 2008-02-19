@@ -76,6 +76,7 @@
         LOGICAL, PUBLIC :: LFLAG   ! use layer fractions
         LOGICAL, PUBLIC :: HFLAG   ! create hourly outputs
         LOGICAL, PUBLIC :: PINGFLAG! create plume-in-grid hourly file
+	LOGICAL, PUBLIC :: INLINEFLAG ! create in-line ptsource file
         LOGICAL, PUBLIC :: ELEVFLAG! create ASCII elevated sources file
         LOGICAL, PUBLIC :: EXPLFLAG! use PHOUR file to get explicit plume rise
         LOGICAL, PUBLIC :: VARFLAG ! use variable grid definition
@@ -143,6 +144,7 @@
         CHARACTER(16), PUBLIC :: PVNAME ! point elevated stack groups file
         CHARACTER(16), PUBLIC :: PHNAME ! point hourly explicit plume info file
         CHARACTER(16), PUBLIC :: PINGNAME ! plume-in-grid emissions file name
+	CHARACTER(16), PUBLIC :: INLINENAME ! in-line pt source emissions file name
         CHARACTER(16), PUBLIC :: PELVNAME ! elevated ASCII emissions file name
         CHARACTER(16), PUBLIC :: PREPNAME ! point report file name
 

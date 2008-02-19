@@ -52,6 +52,7 @@ C.........  This module contains the major data structure and control flags
      &          AFLAG_BD, MFLAG_BD, PFLAG_BD,                   ! by-day hourly emis flags
      &          TFLAG, SFLAG, LFLAG,                            ! use temporal, spec, layers
      &          PINGFLAG, ELEVFLAG, EXPLFLAG,                   ! ping, elevated, expl. plume
+     &          INLINEFLAG,
      &          LMKTPON, LREPANY,                               ! mkt penetration, any reports
      &          CDEV, EDEV, GDEV,                               ! costcy, elev/ping, grid surg
      &          AENAME, ATNAME, AGNAME, ASNAME, ARNAME, AUNAME, ! area files
@@ -277,7 +278,7 @@ C.........  Allocate memory for fixed-size arrays by source category...
 
 C.........  Read in elevated sources and plume-in-grid information, if needed
 C.........  Reset flag for PinG if none in the input file
-        IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG ) ) THEN
+        IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG .OR. INLINEFLAG) ) THEN
 
             CALL RDPELV( EDEV, NPSRC, ELEVFLAG, NMAJOR, NPING )
 
@@ -846,7 +847,7 @@ C.........................  Apply valid matrices & store
 C.........................  Apply matrices for elevated and plume-in-grid 
 C                           outputs, if this pollutant is used for point srcs.
                         IF( K1. GT. 0 .AND.
-     &                    ( ELEVFLAG .OR. PINGFLAG ) ) THEN
+     &                    ( ELEVFLAG .OR. PINGFLAG  .OR. INLINEFLAG) ) THEN
                             CALL MRGELEV( NPSRC, NMAJOR, NPING, 
      &                                    K1, K2, K4, F1 )
                         END IF

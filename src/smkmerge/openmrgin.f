@@ -57,7 +57,8 @@ C.........  This module contains the major data structure and control flags
      &          PONAMES, POUNITS, PGNAME, PSNAME, PNSMATV, PSVDESC, 
      &          PSVUNIT, PUFLAG, PUNAME, PNUMATV, PUVNAMS, PRFLAG,
      &          PRNAME, PNRMATV, PNSREAC, PRVDESC, PRNMSPC, LFLAG,
-     &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG, EDEV,
+     &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG,
+     &          INLINEFLAG, EDEV,
      &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
      &          BSVDESC, BFLAG, VARFLAG
@@ -854,7 +855,7 @@ C                   to the potential for 0-based or 1-based VGLVS3D
 
 C.............  For plume-in-grid outputs or for UAM-style elevated point
 C               sources (PTSRCE input file)...
-            IF( ELEVFLAG .OR. PINGFLAG ) THEN
+            IF( ELEVFLAG .OR. PINGFLAG .OR. INLINEFLAG ) THEN
 
 C.................  If elevated ASCII and units are grams, print warning
                 IF( ELEVFLAG .AND. SPCTYPE .EQ. MASSSTR ) THEN

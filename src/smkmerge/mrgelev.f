@@ -45,7 +45,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: ELEVFLAG, PEMSRC, PSMATX, PRINFO
+        USE MODMERGE, ONLY: ELEVFLAG, PEMSRC, PSMATX, PRINFO,INLINEFLAG
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: PCUMATX
@@ -129,6 +129,13 @@ C.....................  Store index to major count
 
                 END IF
 
+C.................  Set elevated sources index
+                IF( INLINEFLAG .AND. LMAJOR( S ) .AND. (.NOT. LPING(S)) ) THEN
+
+                    K = FIND1( GROUPID( S ), NGROUP, GRPGID )
+                    IF( K .GT. 0 ) ELEVSIDX( S ) = K
+                END IF
+		
 C.................  Set PinG indicies
                 IF( LPING( S ) ) THEN
 
@@ -151,6 +158,8 @@ C.............  Abort if dimensions incorrect
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
             END IF
 
+
+	    
             FIRSTIME = .FALSE.
 
         END IF  ! end of firstime section

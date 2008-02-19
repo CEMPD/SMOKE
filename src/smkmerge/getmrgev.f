@@ -45,7 +45,7 @@ C.........  This module contains the major data structure and control flags
      &                      PINGFLAG, ELEVFLAG, EXPLFLAG, VARFLAG,
      &                      LMETCHK, LMKTPON, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPINV, LREPSPC, LREPCTL, 
-     &                      LREPANY, LAVEDAY, INVPIDX
+     &                      LREPANY, LAVEDAY, INVPIDX, INLINEFLAG
 
         IMPLICIT NONE
 
@@ -180,9 +180,21 @@ C.........  Point-source specific environment variables
             I = ENVINT( 'SMK_PING_METHOD', MESG, .FALSE., IOS )
             PINGFLAG = ( I .EQ. 1 )
 
+            MESG = 'Create CMAQ in-line point source outputs or not'
+            I = ENVINT( 'SMK_ELEV_METHOD', MESG, .FALSE., IOS )
+            INLINEFLAG = ( I .EQ. 2 )	    
+	    
+
             MESG = 'Create ASCII elevated sources file or not'
             ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', MESG, .FALSE., IOS )
 
+            IF( ELEVFLAG .AND. INLINEFLAG ) THEN
+                MESG = 'ERROR: ASCII elevated output cannot be switched on'//
+     &                 'with in-line CMAQ outputs ' // CRLF() // BLANK10
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )		
+            END IF
+	    
+            
             IF ( ELEVFLAG ) PINGFLAG = .FALSE.
 
             MESG = 'Indicator for including explicit plume ' //

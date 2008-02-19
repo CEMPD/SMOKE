@@ -44,6 +44,7 @@ C.........  This module contains the major data structure and control flags
      &                      AUFLAG, MUFLAG, PUFLAG, TUFLAG,
      &                      ARFLAG, MRFLAG, PRFLAG, TRFLAG,
      &                      SFLAG, LFLAG, PINGFLAG, ELEVFLAG, EXPLFLAG,
+     &                      INLINEFLAG,
      &                      LREPSTA, LREPINV, LREPSPC, LREPCTL,
      &                      NASRC, NMSRC, NPSRC, EMLAYS,
      &                      ANIPOL, PNIPOL, MNIPPA, NIPPA,
@@ -381,7 +382,7 @@ C.........  Point source fixed-size arrays
 
             END IF
 
-            IF( ELEVFLAG .OR. PINGFLAG ) THEN
+            IF( ELEVFLAG .OR. PINGFLAG .OR. INLINEFLAG) THEN
                 ALLOCATE( GRPGID( NGROUP ), STAT=IOS )   ! stack group ID
                 CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
             END IF
