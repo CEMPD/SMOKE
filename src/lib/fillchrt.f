@@ -45,7 +45,7 @@ C.........  This module is for cross reference tables
      &          CHRT05A, CHRT05B, CHRT05C,
      &          CHRT08A, CHRT08B, CHRT08C,
      &          CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
-     &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37,
+     &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37, CHRT38,
      &          INDXTA, CSRCTA, CSCCTA, CMACTA 
 
 C.........  This module contains the information about the source category
@@ -243,6 +243,8 @@ C.............  MACT based cases
                 CHRT36( K ) = CFIP // CMCT
             CASE( 37 )
                 CHRT37( K ) = CFIP // TSCC // CMCT
+            CASE( 38 )
+                CHRT38( K ) = CSRC( 1:ENDLEN( 2 ) ) // CMCT
                 
             CASE DEFAULT
 

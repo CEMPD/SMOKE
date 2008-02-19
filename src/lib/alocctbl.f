@@ -49,7 +49,7 @@ C...........   This module is for cross reference tables
      &          ICTL05A, ICTL05B, ICTL05C,
      &          ICTL08A, ICTL08B, ICTL08C,
      &          ICTL26, ICTL27, ICTL28, ICTL29, ICTL30, ICTL31,
-     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37
+     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37, ICTL38
 
         IMPLICIT NONE
 
@@ -132,6 +132,11 @@ C.........  First deallocate if these have previously been allocated
         ALLOCATE( ICTL10( -1:J,NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTL10', PROGNAME )
         ICTL10 = IMISS3
+            
+        J = ICSIZE( 38 )                              ! PLANT=non-blank, MACT=all
+        ALLOCATE( ICTL38( -1:J,NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ICTL38', PROGNAME )
+        ICTL38 = IMISS3
             
         J = ICSIZE( 11 )                              ! PLANT=non-blank, SCC=all     
         ALLOCATE( ICTL11( -1:J,NIPPA ), STAT=IOS )

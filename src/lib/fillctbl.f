@@ -46,7 +46,7 @@ C.........  This module is for cross reference tables
      &          ICTL05A, ICTL05B, ICTL05C,
      &          ICTL08A, ICTL08B, ICTL08C,
      &          ICTL26, ICTL27, ICTL28, ICTL29, ICTL30, ICTL31,
-     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37  
+     &          ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37, ICTL38  
 
         IMPLICIT NONE
 
@@ -206,6 +206,9 @@ C               digits) so that the pol-specific can be identified later
                 
             CASE( 37 )
                 CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL37 )
+                                        
+            CASE( 38 )
+                CALL SET_CNTRL_INDEX( TDIM, NIPPA, ICTL38 )
                                         
             CASE DEFAULT
 

@@ -147,6 +147,7 @@ C...........   Other local variables
         CHARACTER(SCCLEN3) SCRZERO       ! buf for 0 right 5 digits of TSCC
         CHARACTER(SNFLEN3) CNFIP         ! characterstics without FIPS code
         CHARACTER(SRCLEN3) CSRC          ! temporary source char string
+        CHARACTER(FPLLEN3) CFPL         ! temporary FIPS // plant ID
         CHARACTER(FIPLEN3) CFIP          ! temporary (character) FIPS code
         CHARACTER(MACLEN3) CMCT          ! temporary MACT code
         CHARACTER(FIPLEN3) FIPZERO       ! buffer for zero FIPS code
@@ -328,6 +329,7 @@ C.............  Set up partial strings for checking country/state/county
             IFIP    = STR2INT( CFIP )         ! For checking previous
             CSTA    = CFIP( 1:STALEN3 )
             ICYID   = IFIP - STR2INT( CSTA ) * 1000
+            CFPL   = CSRC( SC_BEGP( 1 ):SC_ENDP( PLTIDX ) )
             IF( PLTIDX /= 0 .AND. PLTIDX <= NCHARS ) THEN
                 CNFIP = CSRC( SC_BEGP( PLTIDX ):SC_ENDP( NCHARS ) )
             ELSE
@@ -945,11 +947,38 @@ C                        an SCC match, we're really processing for NT=10
 C                        since in this section, SCC=0
                         IF( NT .EQ. 11 ) NT = 10
 
-                    ENDDO           ! End loop on plant characteristics
+                    END DO           ! End loop on plant characteristics
+
+C.....................  Check for Plant-MACT combination
+                    IF( CMCT .NE. MCTZERO ) THEN                       ! Plant/MACT specified
+
+C.........................  Give warning and skip if other fields besides plant are included
+                        IF( CFPL .NE. CSRC ) THEN
+                            MESG = 'Plant-MACT entry with other source '//
+     &                             'characteristics is skipped'
+                            CALL REPORT_INVALID_XREF( MESG )
+                            NT = 0
+
+                        ELSE
+
+                            NT = 38
+                            IF( IFIP .NE. PIFIP( NT ) .OR.
+     &                          CFPL .NE. PCSRC( NT ) .OR.
+     &                          CMCT .NE. PCMCT( NT )      ) THEN
+                                N( NT ) = N( NT ) + 1
+                                PIFIP( NT ) = IFIP
+                                PCSRC( NT ) = CFPL
+                                PCMCT( NT ) = CMCT
+
+                            ELSEIF( ISP .EQ. PISP ) THEN
+                                CALL REPORT_DUP_XREF
+                                NT = 0
+                            END IF
+                        END IF
+
+                    END IF
 
                 ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN         ! Left SCC
-
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L )
 
                     MESG = 'Partial SCC "' // TSCC // '" is given ' //
      &                     'instead of full SCC'
@@ -1164,6 +1193,11 @@ C......................................................................
      &             CRLF() // BLANK10 // INMESG( 1:L1 ) // ':' //
      &             CRLF() // BLANK10 // BUFFER( 1:L2 )
      &                
+            IF( CMCT .NE. MCTZERO ) THEN
+                L1 = LEN_TRIM( MESG )
+                MESG = MESG( 1:L1 ) // ' MACT:' // CMCT
+            END IF
+
             IF( ISP .GT. 0 ) THEN
                 L1 = LEN_TRIM( MESG )
                 MESG = MESG( 1:L1 ) // ' POA:' // EANAM( ISP )

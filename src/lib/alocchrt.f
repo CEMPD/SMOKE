@@ -44,7 +44,7 @@ C...........   This module is for cross reference tables
      &      CHRT05A, CHRT05B, CHRT05C,
      &      CHRT08A, CHRT08B, CHRT08C,
      &      CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
-     &      CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37
+     &      CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37, CHRT38
 
         IMPLICIT NONE
 
@@ -72,6 +72,7 @@ C.........  First deallocate if these have previously been allocated
             DEALLOCATE( CHRT08A, CHRT08B, CHRT08C )
             DEALLOCATE( CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31 )
             DEALLOCATE( CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37 )
+            DEALLOCATE( CHRT38 )
 
         END IF
 
@@ -220,6 +221,10 @@ C.........  Added most recently
         J = MAX( 1, ICSIZE( 37 ) )                     ! MACT=all, FIP=all, SCC=all
         ALLOCATE( CHRT37( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CHRT37', PROGNAME )
+
+        J = MAX( 1, ICSIZE( 38 ) )                     ! PLANT=non-blank, MACT=all
+        ALLOCATE( CHRT38( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CHRT38', PROGNAME )
 
         RETURN
 
