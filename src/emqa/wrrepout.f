@@ -118,7 +118,7 @@ C...........   Arrays for source characteristics output formatting
         LOGICAL, ALLOCATABLE, SAVE :: LF ( : ) ! true if column should be output
 
 C...........   Other local variables
-        INTEGER     I, J, K, L, L1, S, V           ! counters and indices
+        INTEGER     I, J, K, L, L1, N, S, V           ! counters and indices
 
         INTEGER     DAY                       ! day of month
         INTEGER     IOS                       ! i/o status
@@ -352,7 +352,7 @@ C.............  Include SCC code in string
                     L = SCCWIDTH
                     L1 = L - LV - 1                        ! 1 for space
                     TSCC = BINSCC( I )
-                    IF( TSCC(1:2) .EQ. '00' ) TSCC = '  '//TSCC(3:SCCLEN3)
+                    IF( TSCC(1:2) .EQ. '00' ) TSCC='  '//TSCC(3:SCCLEN3)
                     STRING = STRING( 1:LE ) // 
      &                       TSCC( 1:L1 ) // DELIM
                     MXLE = MXLE + L + LX
@@ -592,6 +592,13 @@ C.............  This is knowingly including extra blanks before final quote
      &                       REPEAT( " ", L1-K ) // DELIM
                     MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
+
+C.....................  Write warning msg when the description is unavailable
+                    N = INDEX( SCCDESC( J ), 'Description unavailable' )
+                    MESG = 'WARNING: Description of SCC ' // 
+     &                      TRIM(BINSCC( I )) // ' is not available'
+                    IF ( N .GT. 0 ) CALL M3MESG( MESG )
+
                 END IF
 
 C.............  Include SIC description
@@ -604,6 +611,14 @@ C.............  This is knowingly including extra blanks before final quote
      &                       '"'// SICDESC( J )( 1:L1 )// '"' // DELIM
                     MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
+
+C.....................  Write warning msg when the description is unavailable
+                    N = INDEX( SICDESC( J ), 'Description unavailable' )
+                    WRITE( BUFFER, SICFMT ) BINSIC( I )    ! Integer
+                    MESG = 'WARNING: Description of SIC ' // 
+     &                      TRIM( BUFFER ) // ' is not available'
+                    IF ( N .GT. 0 ) CALL M3MESG( MESG )
+
                 END IF
 
 C.............  Include MACT description
@@ -616,6 +631,13 @@ C.............  This is knowingly including extra blanks before final quote
      &                       '"'// MACTDESC( J )( 1:L1 )// '"' // DELIM
                     MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
+
+C.....................  Write warning msg when the description is unavailable
+                    N = INDEX( MACTDESC( J ), 'Description unavailable')
+                    MESG = 'WARNING: Description of MACT ' // 
+     &                      TRIM(BINMACT( I )) // ' is not available'
+                    IF ( N .GT. 0 ) CALL M3MESG( MESG )
+
                 END IF
 
 C.............  Include NAICS description
@@ -628,6 +650,13 @@ C.............  This is knowingly including extra blanks before final quote
      &                       '"'// NAICSDESC( J )( 1:L1 )// '"' // DELIM
                     MXLE = MXLE + L + 2
                     LE = MIN( MXLE, STRLEN )
+
+C.....................  Write warning msg when the description is unavailable
+                    N = INDEX( NAICSDESC( J ),'Description unavailable')
+                    MESG = 'WARNING: Description of NAICS ' // 
+     &                      TRIM(BINNAICS( I )) // ' is not available'
+                    IF ( N .GT. 0 ) CALL M3MESG( MESG )
+
                 END IF
 
 C.............  Remove leading spaces and get new length
