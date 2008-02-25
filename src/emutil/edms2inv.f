@@ -95,7 +95,9 @@ C.......  Allocatable arrays
       REAL,          ALLOCATABLE :: X     ( : )
       REAL,          ALLOCATABLE :: Y     ( : )
       INTEGER,       ALLOCATABLE :: HEIGHT( : )
-      CHARACTER(5),  ALLOCATABLE :: OUTVAR( : )
+      INTEGER,       ALLOCATABLE :: ACRFT_NOX( : )
+      INTEGER,       ALLOCATABLE :: ACRFT_PMT( : )
+      CHARACTER(15), ALLOCATABLE :: OUTVAR( : )
       CHARACTER(8),  ALLOCATABLE :: TYPE  ( : )
       CHARACTER(8),  ALLOCATABLE :: CDATE ( : )   ! current DATE
 
@@ -123,7 +125,7 @@ C.......  File units and logical names
       INTEGER      :: TDEV = 0            ! EDMS species conversion factors
 
 C.......  Other local variables
-      INTEGER         I, II, J, K, L, L1, M, NF, T ! counters and indices
+      INTEGER         I, II, J, K, L, L1, M, N, NF, T ! counters and indices
       INTEGER         IOS                 ! i/o status
       INTEGER         IREC                ! line counter
       INTEGER         IHOUR               ! current time step
@@ -180,6 +182,9 @@ C.......  Other local variables
       REAL            TOTAL               ! emission total of period
 
       LOGICAL         ADD                 ! true: add current airport source to master list
+      LOGICAL      :: NO_FLAG = .FALSE.   ! true: flag for processing NO
+      LOGICAL      :: NO2_FLAG= .FALSE.   ! true: flag for processing NO2
+      LOGICAL      :: PM_FLAG = .FALSE.   ! true: flag for processing PMTOTAL
       LOGICAL         NPFLAG              ! true: flag for new pollutants
       LOGICAL      :: AFLAG = .FALSE.     ! true: read AIRPORT ICAO aiprot code from MAIN_EDMS file
       LOGICAL      :: OFLAG = .FALSE.     ! true: read ORIGIN cord from MAIN_EDMS file
@@ -193,8 +198,6 @@ C.......  Other local variables
       CHARACTER(8)    STDATE              ! Start DATE
       CHARACTER(8)    ENDATE              ! Ending DATE
       CHARACTER(8)    PDATE               ! previous DATE
-      CHARACTER(11)   CHOUR               ! current DATE//HOUR
-      CHARACTER(11)   PCHOUR              ! previous DATE//HOUR
       CHARACTER(4)    YEAR                ! inventory year
       CHARACTER(2)    CMONTH              ! data start month
       CHARACTER(8)    DEFDATE             ! default date for fake daily entries
@@ -207,7 +210,6 @@ C.......  Other local variables
       CHARACTER(256)  MESG                ! message buffer
 
       CHARACTER(IOVLEN3)  POLNAM          ! tmp pollutant name
-      CHARACTER(IOVLEN3)  FPOLNAM         ! tmp full pollutant name
       CHARACTER(IOVLEN3)  LPOLNAM         ! tmp previous pollutant name
       
       CHARACTER(16) :: PROGNAME = 'EDMS2INV' ! program name
@@ -297,6 +299,10 @@ C             number of airport sources
               CALL CHECKMEM( IOS, 'TSCC', PROGNAME )
               ALLOCATE( APRTID( MXSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'APRTID', PROGNAME )
+              ALLOCATE( ACRFT_NOX( MXSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'ACRFT_NOX', PROGNAME )
+              ALLOCATE( ACRFT_PMT( MXSRC ), STAT=IOS )
+              CALL CHECKMEM( IOS, 'ACRFT_PMT', PROGNAME )
               ALLOCATE( LOCID( MXSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'LOCID', PROGNAME )
               ALLOCATE( STATE( MXSRC ), STAT=IOS )
@@ -327,6 +333,8 @@ C             number of airport sources
               TYPE   = ''
               AREA   = 0.
               POINTS = 0
+              ACRFT_NOX = 0
+              ACRFT_PMT = 0
 
           END IF
 
@@ -678,16 +686,19 @@ C.......  Allocate arrays to store output values
 
 C.......  Process files in input list
 
+      I = 0
       LHAP = 0
       LPOLNAM = ' '
       POLNAM = ' '
-      FPOLNAM = ' '
-      DO I = 1, MXFILES
+      DO N = 1, MXFILES
 
           READ( HDEV, 93000, IOSTAT=IOS ) LINE
 
 C...........  Skip blank and comment lines
           IF( BLKORCMT( LINE ) ) CYCLE
+
+C...........  Number of files
+          I = I + 1
 
 C...........  Define current processing pollutant
           CALL PARSLINE( LINE, 2, SEGMENT )
@@ -707,6 +718,7 @@ C...........  One cond:1st pol has to be THC to reduce usage of memory
               MESG = 'ERROR: Can not process VOC BUT can ' //
      &               'convert THC to VOC.'
               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
 C...........  One cond:1st pol has to be THC to reduce usage of memory
           ELSE IF( POLNAM == 'THC' ) THEN
               IF( I == 1 ) THEN
@@ -717,18 +729,17 @@ C...........  One cond:1st pol has to be THC to reduce usage of memory
               END IF
           END IF
 
+C...........  Rename total aircraft PM species
           IF( POLNAM == 'PM25' ) POLNAM = 'PM2_5'
 
 C...........  look for pol names in a list of pols
-          POS  = INDEX1( POLNAM, NINVTBL, ITCASA )
-          IF( POS < 1 ) POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
+          POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
 
           IF( POS < 1 ) THEN
               MESG = 'ERROR: Pollutant ID ' // TRIM( POLNAM )//
      &               ' is not found in the INVTABLE file.'
               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
           END IF
-          FPOLNAM = ITNAMA( POS )
 
 C...........  Check for i/o errors
           IF( IOS /= 0 ) THEN
@@ -752,7 +763,6 @@ C...........  Open input pollutant file
 
 C...........  Initialize values before reading file
           NDY    = 1
-          POS    = 0
           IREC   = 0
           NPFLAG = .TRUE.
           PDATE  = ' '
@@ -781,18 +791,18 @@ C...............  Check for end of file
 C...............  Skip blank/comment/non-HOUREMIS lines
               IF( INDEX( LINE, 'HOUREMIS' ) < 1 ) CYCLE
 
+C...............  Read data from LINE
+              CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
 C...............  Skip when it is out of range of episode dates
-              IYR   = STR2INT( LINE( 13:14 ) )    ! integer current hour
-              IMON  = STR2INT( LINE( 16:17 ) )    ! integer current hour
-              IDAY  = STR2INT( LINE( 19:20 ) )    ! integer current hour
+              IYR   = STR2INT( SEGMENT( 3 ) )    ! integer current year
+              IMON  = STR2INT( SEGMENT( 4 ) )    ! integer current month
+              IDAY  = STR2INT( SEGMENT( 5 ) )    ! integer current hour
               IDATE = JULIAN( IYR, IMON, IDAY )
 
 C...............  Skip non-target episode date
               IF( IDATE < SDATE ) CYCLE
               IF( IDATE > EDATE ) GOTO 555
-
-C...............  Read data from LINE
-              CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
 C...............  Ensure that it read pollutant name first
               IF( POLNAM == ' ' ) THEN
@@ -800,9 +810,6 @@ C...............  Ensure that it read pollutant name first
      &                   'defined in EDMS hourly files.'
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               END IF
-
-C...............  Store date info  'yy mm dd'
-              CHOUR = LINE( 13:23 )
 
 C...............  temporarily store source characteristics
               IHOUR = STR2INT( SEGMENT( 6 ) )    ! integer current hour
@@ -818,11 +825,15 @@ C...............  Define the location of airport id in main EDMS source list
               END IF
 
 C...............  Store the date of hourly emissions
-              TDATE = CHOUR( 4:5 ) // '/' // CHOUR( 7:8 ) //
-     &                '/' // CHOUR( 1:2 )
+              TDATE = TRIM(SEGMENT( 4 )) // '/' // TRIM(SEGMENT( 5 )) //
+     &                '/' // TRIM(SEGMENT( 3 ))
+
+              IF( TDATE == ' ' ) THEN
+                  MESG = 'INTERNAL ERROR: Incorrect format of HRE file'
+              END IF
 
               IF( FIRSTIME ) THEN
-                  YEAR = '20' // CHOUR( 1:2 )
+                  YEAR = '20' // TRIM( SEGMENT( 3 ) )
                   WRITE( DDEV,93000 ) '#YEAR    ' // YEAR
                   FIRSTIME = .FALSE.
               END IF
@@ -854,11 +865,13 @@ C.......................  Skip any zero daily total
                       IF( DAYTOT == 0.0 ) CYCLE 
 
                       IF( POLNAM /= 'TOG' ) THEN 
+                      IF( POLNAM /= 'PMTOTAL' ) THEN 
                          WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
      &                      APRTID( J ),LOCID( J ), HEIGHT( J ), 
-     &                      POLNAM, PDATE, TZONE, 
+     &                      POLNAM(1:5), PDATE, TZONE, 
      &                     ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J ),
-     &                     FPOLNAM
+     &                     POLNAM
+                      END IF
                       END IF
                   END DO
 
@@ -871,11 +884,11 @@ C.......................  Skip any zero daily total
               END IF
 
 C...............  Store output values : convert metric g/sec/m2 to short tons/hr
-              ALLVAL( K, IHOUR ) =  STR2REAL( LINE( 34:46 ) ) 
+              ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
      &                              * 0.003968254 * AREA( K )
 
 C...............  Store output values for report: convert metric g/sec/m2 to kg/hr
-              TOTAL = TOTAL + STR2REAL( LINE( 34: 46 ) ) * 3.6 * AREA(K)
+              TOTAL = TOTAL + STR2REAL( SEGMENT( 8 ) ) * 3.6 * AREA(K)
 
 C...............  Convert THC(g in CH4) to TOG(g) 
 C                 Note: This conversion factor 1.148106 is based on
@@ -893,7 +906,53 @@ C...............  Convert TOG(g in C) = 1.148106 * VOC(g in C)
 
 C............... Convert NO emission in NO2 equivalcy to NO equivalency (30/44)
               ELSE IF( POLNAM == 'NO' ) THEN
+                  NO_FLAG = .TRUE.
+                  IF( ALLVAL( K, IHOUR ) > 0 ) ACRFT_NOX( K ) = K
                   ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.652
+
+C............... Convert NO2 emission in NO2 equivalcy to NO equivalency (30/44)
+              ELSE IF( POLNAM == 'NO2' ) THEN
+                  NO2_FLAG = .TRUE.
+                  IF( ALLVAL( K, IHOUR ) > 0 ) ACRFT_NOX( K ) = K
+
+C............... Check NO/NO2 emission has been processed for NOX renoralization
+C............... which means excluding aircraft emissions from NOX HRE.
+              ELSE IF( POLNAM == 'NOX' ) THEN
+                  IF( .NOT. NO_FLAG .OR. .NOT. NO2_FLAG ) THEN
+                      MESG = 'ERROR: Please process both NO and NO2 '//
+     &                       'HRE files before processing NOX HRE file'
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  END IF
+
+                  IF( K == ACRFT_NOX( K ) ) THEN
+                      ALLVAL( K, IHOUR ) = 0.0
+                      CYCLE   ! Skip if it is aircraft source
+                  END IF
+
+C............... Check PMTOTAL has been processed for PM10/PM25 renormalization
+              ELSE IF( POLNAM == 'PMTOTAL' ) THEN
+                  PM_FLAG = .TRUE.
+                  IF( ALLVAL( K, IHOUR ) > 0 )  ACRFT_PMT( K ) = K
+                  CYCLE         ! Skip processing PMTOTAL
+
+C............... Check PM25 has been processed for PM10/PM25 renormalization
+C............... which means excluding aircraft emissions from PM10/PM2_5 HRE.
+              ELSE IF( POLNAM == 'PM10' .OR. POLNAM == 'PM2_5' ) THEN
+                  IF( .NOT. PM_FLAG ) THEN
+                      MESG = 'ERROR: Please process PMTOTAL HRE files'//
+     &                  ' before processing NOX, PM10 or PM2_5 HRE file'
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  END IF
+
+                  IF( K == ACRFT_PMT( K ) ) THEN
+                      ALLVAL( K, IHOUR ) = 0.0
+                      CYCLE   ! Skip if it is aircraft source
+                  END IF
+
+
+C............... Temporarly adjustment of PEC emission
+              ELSE IF( POLNAM == 'PEC' ) THEN
+                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.2623
 
 C..............  Conversion all HAPs (g in CH4) to (g)
               ELSE IF( ITVTSA(POS)=='V' .OR. ITVTSA(POS)=='T' )THEN
@@ -934,7 +993,7 @@ C..................  Error msg when total HAPs is greater than TOG
 
           END DO
 
-C...........  Write out last date stored output values to PTHOUR hourly inv file\
+C...........  Write out last date stored output values to PTHOUR hourly inv file
 C             before processing next pollutant file.
 555       DO J = 1, MXSRC
 
@@ -951,12 +1010,14 @@ C...............  compute daily total by summing 24hrs hourly emis
 
 C...............  Skip any zero daily total
               IF( DAYTOT == 0.0 ) CYCLE
-
               IF( POLNAM /= 'TOG' ) THEN 
+              IF( POLNAM /= 'PMTOTAL' ) THEN 
+
                 WRITE( DDEV,93020 ) STATE( J ), COUNTY(J), APRTID(J),
      &            LOCID( J ),HEIGHT( J ), POLNAM, TDATE, TZONE,
      &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
-     &            FPOLNAM
+     &            POLNAM
+              END IF
               END IF
 
               CDATE( NDY ) = TDATE    ! Store current date 
@@ -966,8 +1027,8 @@ C...............  Skip any zero daily total
           CLOSE( FDEV )
 
 C...........  Store total emission factor and EDMS pollutant names
-          NPTOTAL( I ) = '          ' // POLNAM
-          IF( POLNAM == 'TOG' ) NPTOTAL( I ) = '          ' //'THC  '
+          NPTOTAL( I ) = ADJUSTR( POLNAM )
+          IF( POLNAM == 'TOG' ) NPTOTAL( I ) = '          ' //'  THC'
           EFTOTAL( I ) = TOTAL
 
 C...........  Adding new pollutants
@@ -981,9 +1042,11 @@ C...........  Adding new pollutants
           END DO
 
           IF( ADD ) THEN
-              IF( POLNAM /= 'TOG' ) then
+              IF( POLNAM /= 'TOG' ) THEN
+              IF( POLNAM /= 'PMTOTAL' ) THEN
                   NOUTVAR = NOUTVAR + 1
                   OUTVAR( NOUTVAR ) = POLNAM
+              END IF
               END IF
           END IF
 
@@ -991,11 +1054,9 @@ C...........  Adding new pollutants
 
 C.......  Write out computed NONHAPTOG = TOG - total HAPs
       IF( LHAP > 0 ) THEN
-          POLNAM  = 'NONHA'
-          FPOLNAM = 'NONHAPTOG'
+          POLNAM = 'NONHAPTOG'
       ELSE
           POLNAM  = 'TOG'
-          FPOLNAM = 'TOG'
       END IF
 
       NOUTVAR = NOUTVAR + 1
@@ -1021,7 +1082,8 @@ C...............  Skip any zero daily total
               WRITE( DDEV,93020 ) STATE(J), COUNTY(J), APRTID( J ),
      &            LOCID( J ),HEIGHT( J ), POLNAM, CDATE( I ), TZONE,
      &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
-     &            FPOLNAM
+     &            POLNAM
+
           END DO
       END DO
 
@@ -1043,6 +1105,7 @@ C.......  Write annual inventory values
      &             LOCID( I ), HEIGHT( I ), TSCC( I ), HEIGHT( I ),
      &             LON( I ), LAT( I ), UTMZONE, OUTVAR( J )
           END DO
+
       END DO
 
 C...........  Writing reports for total emission EDMS pollutant
@@ -1055,8 +1118,8 @@ C.......  Write ORL format annual inventory header for CAP/HAPs
       WRITE( RDEV,93000 ) '# Period : ' // STDATE // ' - ' // ENDATE
       
 C.......  Write total emission factors for EDMS pollutants
-      WRITE( RDEV,93001 ) ( NPTOTAL( J ), J = 1, NOUTVAR )      
-      WRITE( RDEV,94012 ) ( EFTOTAL( J ), J = 1, NOUTVAR )
+      WRITE( RDEV,93001 ) ( NPTOTAL( J ), J = 1, MXFILES )      
+      WRITE( RDEV,94012 ) ( EFTOTAL( J ), J = 1, MXFILES )
 
 C.......  End program successfully
       CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
@@ -1135,7 +1198,7 @@ C.............  Get line
             IF( ICAOTMP == ICAOCODE ) THEN
                 N = N + 1
                 FIPSID  =  ADJUSTL( SEGMENT( 2 ) )
-                LATICAO = STR2REAL( SEGMENT( 3) )
+                LATICAO = STR2REAL( SEGMENT( 3 ) )
                 LONICAO = STR2REAL( SEGMENT( 4 ) )
                 UTMZONE = STR2INT ( SEGMENT( 5 ) )
             END IF
@@ -1344,7 +1407,3 @@ C.......  Internal buffering formats...... 94xxx
 C......................................................................
 
       END PROGRAM EDMS2INV
-
-
-
-
