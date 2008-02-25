@@ -125,7 +125,7 @@ C.......  File units and logical names
       INTEGER      :: TDEV = 0            ! EDMS species conversion factors
 
 C.......  Other local variables
-      INTEGER         I, II, J, K, L, L1, M, N, NF, T ! counters and indices
+      INTEGER         I, II, J, K, L, L1, M, NN, NF, T ! counters and indices
       INTEGER         IOS                 ! i/o status
       INTEGER         IREC                ! line counter
       INTEGER         IHOUR               ! current time step
@@ -690,7 +690,7 @@ C.......  Process files in input list
       LHAP = 0
       LPOLNAM = ' '
       POLNAM = ' '
-      DO N = 1, MXFILES
+      DO NN = 1, MXFILES
 
           READ( HDEV, 93000, IOSTAT=IOS ) LINE
 
@@ -1052,6 +1052,9 @@ C...........  Adding new pollutants
 
       END DO
 
+C.......  Total number of processing species      
+      NN = I
+
 C.......  Write out computed NONHAPTOG = TOG - total HAPs
       IF( LHAP > 0 ) THEN
           POLNAM = 'NONHAPTOG'
@@ -1118,8 +1121,8 @@ C.......  Write ORL format annual inventory header for CAP/HAPs
       WRITE( RDEV,93000 ) '# Period : ' // STDATE // ' - ' // ENDATE
       
 C.......  Write total emission factors for EDMS pollutants
-      WRITE( RDEV,93001 ) ( NPTOTAL( J ), J = 1, MXFILES )      
-      WRITE( RDEV,94012 ) ( EFTOTAL( J ), J = 1, MXFILES )
+      WRITE( RDEV,93001 ) ( NPTOTAL( J ), J = 1, NN )      
+      WRITE( RDEV,94012 ) ( EFTOTAL( J ), J = 1, NN )
 
 C.......  End program successfully
       CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
