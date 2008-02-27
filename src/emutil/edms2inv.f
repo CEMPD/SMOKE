@@ -97,15 +97,15 @@ C.......  Allocatable arrays
       INTEGER,       ALLOCATABLE :: HEIGHT( : )
       INTEGER,       ALLOCATABLE :: ACRFT_NOX( : )
       INTEGER,       ALLOCATABLE :: ACRFT_PMT( : )
-      CHARACTER(15), ALLOCATABLE :: OUTVAR( : )
+      CHARACTER(16), ALLOCATABLE :: OUTVAR( : )
       CHARACTER(8),  ALLOCATABLE :: TYPE  ( : )
       CHARACTER(8),  ALLOCATABLE :: CDATE ( : )   ! current DATE
 
       REAL,          ALLOCATABLE :: EFTOTAL( : )
-      CHARACTER(15), ALLOCATABLE :: NPTOTAL( : )
+      CHARACTER(16), ALLOCATABLE :: NPTOTAL( : )
 
       REAL,          ALLOCATABLE :: CVFACT( : )
-      CHARACTER(15), ALLOCATABLE :: NPFACT( : )
+      CHARACTER(16), ALLOCATABLE :: NPFACT( : )
 
       REAL,          ALLOCATABLE :: ALLVAL( :,: )    ! output variable values
       REAL,          ALLOCATABLE :: NONHAP( :,:,: )    ! output NONHAPTOG variable values
@@ -685,7 +685,6 @@ C.......  Allocate arrays to store output values
       NPTOTAL = ' ' ! array
 
 C.......  Process files in input list
-
       I = 0
       LHAP = 0
       LPOLNAM = ' '
@@ -910,7 +909,7 @@ C............... Convert NO emission in NO2 equivalcy to NO equivalency (30/44)
                   IF( ALLVAL( K, IHOUR ) > 0 ) ACRFT_NOX( K ) = K
                   ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.652
 
-C............... Convert NO2 emission in NO2 equivalcy to NO equivalency (30/44)
+C............... Process NO2 emission
               ELSE IF( POLNAM == 'NO2' ) THEN
                   NO2_FLAG = .TRUE.
                   IF( ALLVAL( K, IHOUR ) > 0 ) ACRFT_NOX( K ) = K
@@ -1246,7 +1245,7 @@ C...........   Local variables
 
           CHARACTER(256)  LINE                  ! Read buffer for a line
           CHARACTER(300)  MESG                  ! Message buffer
-          CHARACTER(15 )  SEGMENT( 2 )          ! line parsing array
+          CHARACTER(16 )  SEGMENT( 2 )          ! line parsing array
 
 C......................................................................
 
