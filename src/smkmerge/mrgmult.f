@@ -44,7 +44,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC, PINGFLAG,
-     &       INLINEFLAG	
+     &       INLINEFLAG
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVFLTR
