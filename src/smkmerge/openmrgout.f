@@ -287,7 +287,7 @@ C.............  Override gridded file settings
      &                     'Enter name for INLINE EMISSIONS OUTPUT file',
      &                     FSUNKN3, INLINENAME, PROGNAME )
         END IF
-	
+        
 C.........  Open plume-in-grid output
         IF( ELEVFLAG .AND. NGRP .GT. 1 ) THEN
 
