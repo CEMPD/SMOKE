@@ -59,7 +59,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: GRPCOL( : ) ! col number
         INTEGER, ALLOCATABLE, PUBLIC:: GRPROW( : ) ! row number
         INTEGER, ALLOCATABLE, PUBLIC:: GRPIDX( : ) ! sorting index for GRPGIDA
-        INTEGER, ALLOCATABLE, PUBLIC:: GRPFIP( : ) ! fips code of stack	
+        INTEGER, ALLOCATABLE, PUBLIC:: GRPFIP( : ) ! fips code of stack        
 
         REAL   , ALLOCATABLE, PUBLIC:: GRPDM ( : ) ! group intl stack diam [m]
         REAL   , ALLOCATABLE, PUBLIC:: GRPFL ( : ) ! group exit flw rate [m^3/s]
@@ -72,8 +72,8 @@
         REAL   , ALLOCATABLE, PUBLIC:: GRPYL ( : ) ! y-location given projection
 
         INTEGER, ALLOCATABLE, PUBLIC:: GRPLPING( : ) ! flag indicating a ping source group
-	INTEGER, ALLOCATABLE, PUBLIC:: GRPLMAJOR( : ) ! flag indicating a major source group
-	 
+        INTEGER, ALLOCATABLE, PUBLIC:: GRPLMAJOR( : ) ! flag indicating a major source group
+         
 !...........   Variables for grouping criteria, major source criteria,
 !              and PinG source criteria
         INTEGER, PUBLIC :: NGRPVAR  = 0 ! No. of variables used to set groups
