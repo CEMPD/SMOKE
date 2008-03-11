@@ -250,7 +250,7 @@ C.............  Set the file variables
             VTYPE3D( J ) = M3INT
             UNITS3D( J ) = 'none'
             VDESC3D( J ) = '1=PING SOURCE in domain, 0=otherwise'
-	    	    	    	    
+                                                
  
             MESG = 'Enter logical name for ELEVATED STACK GROUPS ' //
      &              'file'

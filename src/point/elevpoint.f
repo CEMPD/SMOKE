@@ -92,13 +92,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT
         REAL            ENVREAL
         LOGICAL         ENVYN
-        LOGICAL         EVALCRIT_DEBUG
+        LOGICAL         EVALCRIT
         INTEGER         FINDC
         REAL            PLUMRIS
         INTEGER         PROMPTFFILE
 
         EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, 
-     &                  EVALCRIT_DEBUG, FINDC, PLUMRIS, PROMPTFFILE
+     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(50), PARAMETER :: 
@@ -108,7 +108,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
         INTEGER, PARAMETER :: NOPING_APPROACH     = 0
         INTEGER, PARAMETER :: PELVCONFIG_APPROACH = 2
 
-	
+        
 C...........   Indicator for which public inventory arrays need to be read
         INTEGER,            PARAMETER :: NINVARR = 11
         CHARACTER(IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
@@ -158,7 +158,7 @@ C...........   Other allocatable arrays
         REAL   , ALLOCATABLE :: RANK( : )  ! tmp ranked value
         LOGICAL, ALLOCATABLE :: EVSTAT( :,:,: ) ! tmp status of elev checks
         LOGICAL, ALLOCATABLE :: PGSTAT( :,:,: ) ! tmp status of PiNG checks
-	LOGICAL, ALLOCATABLE :: SMOLDER (:) 
+        LOGICAL, ALLOCATABLE :: SMOLDER (:) 
         CHARACTER(PLTLEN3), ALLOCATABLE :: CHRS( : ) ! tmp test character strings
 
 C...........   File units and logical/physical names
@@ -222,7 +222,7 @@ C...........   Other local variables
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
         LOGICAL    VFLAG              ! true: use variable grid
-	LOGICAL :: IS_FIRE            ! true if source sector is a fire source (bad stack params)
+        LOGICAL :: IS_FIRE            ! true if source sector is a fire source (bad stack params)
 
         CHARACTER(10)   SCC
         CHARACTER(80)   GDESC     !  grid description
@@ -252,9 +252,9 @@ C.........  Get environment variables that control this program
 
         MESG = 'Approach for defining major/minor sources'
         ELEVTYPE = ENVINT( 'SMK_ELEV_METHOD', MESG, 0, IOS )
-	
+        
 
-	
+        
 
 C.........  End program for invalid settings
         IF ( ELEVTYPE .GT. PELVCONFIG_APPROACH .OR.
@@ -369,13 +369,13 @@ C           results are stored in module MODINFO.
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
-! if at least one stack parameters is missing, then we have a fire inventory)
+C.........  If at least one stack parameters is missing, then we have a fire inventory
         IS_FIRE = .TRUE.
         DO J= 1, NSRC
-	   IF (STKHT(J) .NE. BADVAL3) THEN
-	       IS_FIRE = .FALSE.
-	   ENDIF
-	END DO
+           IF (STKHT(J) .NE. BADVAL3) THEN
+               IS_FIRE = .FALSE.
+           ENDIF
+        END DO
         
 
 C.........  Allocate memory for source status arrays and group numbers
@@ -396,11 +396,11 @@ C.........  Allocate memory for source status arrays and group numbers
 
         ALLOCATE( SMOLDER( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SMOLDER', PROGNAME )
-	SMOLDER(1:NSRC) = .FALSE.	! array
+        SMOLDER(1:NSRC) = .FALSE.        ! array
 
 C.........  Initialize source status and group number arrays
 
-        SMOLDER(1:NSRC) = .FALSE.	! array
+        SMOLDER(1:NSRC) = .FALSE.        ! array
         LMAJOR  = .FALSE.   ! array
         LPING   = .FALSE.   ! array
         GROUPID = 0         ! array
@@ -450,7 +450,7 @@ C.........  If needed, read config file
             CALL RPELVCFG( CDEV )
 
         END IF
-	
+        
 C.........  Allocate memory for temporary arrays for use in Evalcrit
         I = MAX( NGRPVAR, NEVPVAR )
         ALLOCATE( VALS( I ), STAT=IOS )
@@ -485,15 +485,22 @@ C.........  NGRPCRIT may be zero if no grouping criteria have been set, but
 C           the routine will still set groups for facility stacks that match
 C           exactly
         IF (.NOT. IS_FIRE) THEN
-        CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
-     &                 GRPVALS, GRPTYPES, NINVGRP   )
+           CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
+     &                    GRPVALS, GRPTYPES, NINVGRP   )
         ELSE
-	   NINVGRP = NSRC
-	   DO J = 1, NSRC
-	      GINDEX(J) = J
-	   ENDDO
-	   
-	ENDIF
+           NINVGRP = NSRC
+           DO J = 1, NSRC
+              GINDEX(J) = J
+           ENDDO
+
+           ALLOCATE( GRPGID( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
+           ALLOCATE( GRPCNT( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
+           GRPGID = 0
+           GRPCNT = 0
+
+        ENDIF
 
 C.........  If emissions are needed as a criteria, determine maximum daily 
 C           emissions over the time period being processed for each source
@@ -550,6 +557,7 @@ C.................  Update stack parameters, if needed
                 STKTK( S ) = GRPTK ( IGRP )
                 STKVE( S ) = GRPVE ( IGRP )
                 IFIP ( S ) = GRPFIP( IGRP )
+
             END IF
 
 C.............  Store reordered group IDs
@@ -566,7 +574,7 @@ C.............  Set temporary values for the current source
             SCC  = CSCC   ( S )
             IF (SCC(9:9) .eq. 'S') SMOLDER(S) = .TRUE.
 
-	    
+            
 
 C.............  Set values to be compared in selection formulas for this 
 C               source, depending on whether source is in a group or not...
@@ -634,7 +642,7 @@ C               criteria given
 
 C.................  See if source matches criteria for elevated sources
                 EVSTAT = .FALSE.  ! array
-                IF ( EVALCRIT_DEBUG( NEVPVAR, NELVCRIT, MXELVCHK, VALS, VALS, 
+                IF ( EVALCRIT( NEVPVAR, NELVCRIT, MXELVCHK, VALS, VALS, 
      &                         RANK, CHRS, ELVVALS, ELVCHRS, ELVTYPES, 
      &                         EVSTAT ) ) THEN
                     IF ( IGRP .NE. PGRP ) NMJRGRP = NMJRGRP + 1
@@ -644,43 +652,40 @@ C.................  See if source matches criteria for elevated sources
                 END IF
 
             END IF            ! End elevated sources approach
-
-
 
             IF( ELEVTYPE .EQ. PELVCONFIG_APPROACH ) THEN
 
 C.................  See if source matches criteria for elevated sources
                 EVSTAT = .FALSE.  ! array
 
+                IF ((IS_FIRE) .AND. (SMOLDER(S))) THEN
+                    LMAJOR( S ) = .FALSE.
 
-		IF ((IS_FIRE) .AND. (SMOLDER(S))) THEN
-		    LMAJOR( S ) = .FALSE.
-		ELSE
-                IF ( EVALCRIT_DEBUG( NEVPVAR, NELVCRIT, MXELVCHK, VALS, VALS, 
+                ELSE
+                   IF ( EVALCRIT( NEVPVAR, NELVCRIT, MXELVCHK,VALS,VALS, 
      &                         RANK, CHRS, ELVVALS, ELVCHRS, ELVTYPES, 
      &                         EVSTAT ) ) THEN
-                    NMAJOR = NMAJOR + 1
-                    IF ( IGRP .NE. PGRP ) NMJRGRP = NMJRGRP + 1
-                    LMAJOR( S ) = .TRUE.
+                      NMAJOR = NMAJOR + 1
+                      IF ( IGRP .NE. PGRP ) NMJRGRP = NMJRGRP + 1
+                      LMAJOR( S ) = .TRUE.
 
-                END IF
+                   END IF
                 END IF
             END IF            ! End elevated sources approach
-	    
-	    
-
+            
+            
 C.............  If PELVCONFIG used for PinG sources, check if source matches 
 C               criteria given
-            IF( PINGTYPE .EQ. (PELVCONFIG_APPROACH-1) ) THEN
+            IF( PINGTYPE .EQ. ( PELVCONFIG_APPROACH-1 ) ) THEN
 
 C.................  See if source matches criteria for PinG sources
                 PGSTAT = .FALSE.  ! array
 
+                IF ((IS_FIRE) .AND. (SMOLDER(S))) THEN
+                   LPING(S) = .FALSE.
 
-		IF ((IS_FIRE) .AND. (SMOLDER(S))) THEN
-		   LPING(S) = .FALSE.
-		ELSE
-                   IF ( EVALCRIT_DEBUG( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, VALS, 
+                ELSE
+                   IF ( EVALCRIT( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, VALS, 
      &                         RANK, CHRS, PNGVALS, PNGVALS, PNGTYPES, 
      &                         PGSTAT )  ) THEN
                     NPING = NPING + 1
@@ -688,13 +693,8 @@ C.................  See if source matches criteria for PinG sources
                     LPING( S ) = .TRUE.
 
                    END IF
-		END IF
+                END IF
             END IF     ! End whether PinG approach is to use PELVCONFIG or not
-	    
-
-
-
-	    	    
 
 C.............  If source is a major source or a PinG source, but it's not in 
 C               a group, increase the total maximum group count. 
@@ -768,15 +768,15 @@ C           unsorted.  The WPINGSTK routine uses this index
         CALL CHECKMEM( IOS, 'GRPXL', PROGNAME )
         ALLOCATE( GRPYL( NGROUP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRPYL', PROGNAME )
-	ALLOCATE( GRPFIP(NGROUP), STAT=IOS )
-	CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
+        ALLOCATE( GRPFIP(NGROUP), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
 
-	ALLOCATE( GRPLMAJOR(NGROUP), STAT=IOS )
-	CALL CHECKMEM( IOS, 'GRPLMAJOR', PROGNAME )
+        ALLOCATE( GRPLMAJOR(NGROUP), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPLMAJOR', PROGNAME )
 
-	ALLOCATE( GRPLPING(NGROUP), STAT=IOS )
-	CALL CHECKMEM( IOS, 'GRPLPING', PROGNAME )
-			
+        ALLOCATE( GRPLPING(NGROUP), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPLPING', PROGNAME )
+                        
         ALLOCATE( INDX( NGROUP ), STAT=IOS )
         ALLOCATE( GN( NGROUP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GN', PROGNAME )
@@ -792,7 +792,7 @@ C           unsorted.  The WPINGSTK routine uses this index
         GRPTK   = BADVAL3
         GRPVE   = BADVAL3
         GRPFL   = BADVAL3
-	GRPFIP  = 0
+        GRPFIP  = 0
         GRPCNT  = 0
         GRPCOL  = 0
         GRPROW  = 0
@@ -800,8 +800,8 @@ C           unsorted.  The WPINGSTK routine uses this index
         GRPYL   = BADVAL3
         GN      = 0
         SN      = 0
-	GRPLMAJOR = 0
-	GRPLPING  = 0
+        GRPLMAJOR = 0
+        GRPLPING  = 0
 
 C.........  Loop over sources to fill in group settings with new group numbers 
 C           and to populate group arrays for major and PinG sources. 
@@ -815,8 +815,6 @@ C           with the LOCGID construct.
         CHRS = ' '      ! array
         DO S = 1, NSRC
 
-
-	    
 C.............  If major or PinG
             IF ( LMAJOR( S ) .OR. LPING( S ) ) THEN
 
@@ -881,9 +879,9 @@ C.................  Store the rest of the group settings in output arrays
                     GRPTK ( G ) = STKTK ( S )
                     GRPVE ( G ) = STKVE ( S )
                     GRPFL ( G ) = 0.25 * PI * GRPDM(G)*GRPDM(G)*GRPVE(G)
-		    GRPFIP( G ) = IFIP (S )
-		    IF (LMAJOR(S)) GRPLMAJOR( G ) = 1
-		    IF (LPING(S)) GRPLPING ( G ) = 1
+                    GRPFIP( G ) = IFIP (S )
+                    IF (LMAJOR(S)) GRPLMAJOR( G ) = 1
+                    IF (LPING(S)) GRPLPING ( G ) = 1
                 END IF
 
 C.................  Write out report information...
@@ -919,7 +917,7 @@ C.................  If source is PinG, write out for PinG
 
 C..................... Evaluate PinG criteria again to get PGSTAT for writing;
 C                      if valid, then write report fields
-                    IF ( EVALCRIT_DEBUG( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, 
+                    IF ( EVALCRIT( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, 
      &                             VALS, RANK, CHRS, PNGVALS, PNGCHRS,
      &                             PNGTYPES, PGSTAT ) ) THEN
 
@@ -942,8 +940,8 @@ C.....................  Otherwise, internal error
 C..................... Evaluate elevated criteria again to get PGSTAT for 
 C                      writing; if valid, then write report fields
                 ELSE 
-		    
-                    IF ( EVALCRIT_DEBUG( NEVPVAR, NELVCRIT, MXELVCHK, VALS, 
+                    
+                    IF ( EVALCRIT( NEVPVAR, NELVCRIT, MXELVCHK, VALS, 
      &                             VALS, RANK, CHRS, ELVVALS, ELVCHRS,
      &                             ELVTYPES, EVSTAT )  ) THEN
 
@@ -991,7 +989,7 @@ C.............  Determine grid cells for these coordinate locations
             CALL GENPTVCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX,
      &                      INDX, GN, SN )
         ELSE
-	
+        
             CALL GENPTCEL( NGROUP, NGRID, GRPXL, GRPYL, NEXCLD, NX, 
      &                     INDX, GN, SN )
         END IF
@@ -1105,15 +1103,15 @@ C               add call to FIXSTK routine
             MINFL = MINVAL( GRPFL( 1:NGROUP ) )
             IF ( .NOT. IS_FIRE) THEN
             IF(( MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LT. 0. ) ) THEN
-	    
+            
                 MESG = 'Bad stack group or stack split file. ' //
      &                 'Unable to assign stack ' // CRLF()//BLANK10//
      &                 'parameters to all stack groups. Could be '//
      &                 'a source matching problem.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-		
+                
             END IF
-	    END IF
+            END IF
 
 C.............  Give warning if any plume-in-grid stack groups are outside the
 C               grid

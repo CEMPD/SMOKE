@@ -275,7 +275,7 @@ C                   plant
 
 C.....................  Check tolerances. Use REFS for RANK field since RANK
 C                       can't be used to group stacks (it makes no sense)
-                    STATUS = EVALCRIT( NSP, NCRIT, MXCHK, VALS, REFS,
+                    STATUS = EVALCRIT( NSP, NCRIT, MXCHK, VALS, REFS, 
      &                                 REFS, CHRS, CRITVALS, COMCHRS,
      &                                 CRITYPES, GPSTAT)
 
@@ -411,7 +411,7 @@ C.........  Allocate memory for group information and populate group arrays
         ALLOCATE( GRPCNT( NINVGRP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
         ALLOCATE( GRPFIP( NINVGRP ), STAT=IOS )
-	CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
+        CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
 
         GRPGID  = 0
         GRPLAT  = BADVAL3
@@ -422,7 +422,7 @@ C.........  Allocate memory for group information and populate group arrays
         GRPVE   = BADVAL3
         GRPFL   = BADVAL3
         GRPCNT  = 0
-	GRPFIP  = 0
+        GRPFIP  = 0
 
 C.........  Store the group information more succinctly
         PRVG = 0
