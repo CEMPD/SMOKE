@@ -1,6 +1,6 @@
 
         SUBROUTINE OPENEOUT( NGROUP, SDATE, STIME, ENAME, 
-     &                       VFLAG, PDEV, MNAME )
+     &                       VFLAG, LFLAG, PDEV, MNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -68,6 +68,7 @@ C..........    Subroutine arguments and their descriptions
         INTEGER     , INTENT (IN) :: STIME   ! start time of episode
         CHARACTER(*), INTENT (IN) :: ENAME   ! i/o api inventory file
         LOGICAL     , INTENT (IN) :: VFLAG   ! true: using variable grid
+        LOGICAL     , INTENT (IN) :: LFLAG   ! true: write lat/lon
         INTEGER     , INTENT (OUT):: PDEV    ! ASCII file for major/ping src IDs
         CHARACTER(*), INTENT (OUT):: MNAME   ! logical name of ping srcs groups
 
@@ -139,7 +140,7 @@ C              of the Met file in here.
             FDESC3D( 11 ) = '/INVEN FROM/ ' // IFDESC2
             FDESC3D( 12 ) = '/INVEN VERSION/ ' // IFDESC3
 
-            IF( VFLAG ) THEN
+            IF( VFLAG ) THEN     ! when processing variable grid
                 FDESC3D( 13 ) = '/VARIABLE GRID/ ' // GDNAM3D
             END IF
 
@@ -151,6 +152,10 @@ C              of the Met file in here.
             STIME3D = STIME
             TSTEP3D = 10000
 
+            IF( .NOT. LFLAG ) THEN     ! do not write Lat/Lon
+                NVARS3D = 14     ! remove Lat and Lon variables
+            END IF
+
 C.............  Set the file variables
             J = 1
             VNAME3D( J ) = 'ISTACK'
@@ -159,17 +164,19 @@ C.............  Set the file variables
             VDESC3D( J ) = 'Stack group number'
             J = J + 1
 
-            VNAME3D( J ) = 'LATITUDE'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'Latitude'
-            J = J + 1
+            IF( LFLAG ) THEN    ! skip writing Lat and Lon variables
+                VNAME3D( J ) = 'LATITUDE'
+                VTYPE3D( J ) = M3REAL
+                UNITS3D( J ) = 'degrees'
+                VDESC3D( J ) = 'Latitude'
+                J = J + 1
 
-            VNAME3D( J ) = 'LONGITUDE'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'degrees'
-            VDESC3D( J ) = 'Longitude'
-            J = J + 1
+                VNAME3D( J ) = 'LONGITUDE'
+                VTYPE3D( J ) = M3REAL
+                UNITS3D( J ) = 'degrees'
+                VDESC3D( J ) = 'Longitude'
+                J = J + 1
+            END IF
 
             VNAME3D( J ) = 'STKDM'
             VTYPE3D( J ) = M3REAL

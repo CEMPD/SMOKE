@@ -222,7 +222,8 @@ C...........   Other local variables
         LOGICAL :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
         LOGICAL    VFLAG              ! true: use variable grid
-        LOGICAL :: IS_FIRE            ! true if source sector is a fire source (bad stack params)
+        LOGICAL :: LFLAG    = .TRUE.  ! true: write out lat/lon info
+        LOGICAL :: FFLAG    = .TRUE.  ! true if source sector is a fire source
 
         CHARACTER(10)   SCC
         CHARACTER(80)   GDESC     !  grid description
@@ -252,13 +253,21 @@ C.........  Get environment variables that control this program
 
         MESG = 'Approach for defining major/minor sources'
         ELEVTYPE = ENVINT( 'SMK_ELEV_METHOD', MESG, 0, IOS )
-        
 
-        
+C.........  Define whether write out lat/lon info for the elevated sources
+        LFLAG = ENVYN( 'ELEV_WRITE_LATLON', MESG, .TRUE., IOS )
+
+        IF( .NOT. LFLAG ) THEN
+        IF( PINGTYPE == PELVCONFIG_APPROACH - 1 ) THEN
+            MESG = 'ERROR: Cannot set ELEV_WRITE_LATLON to N when ' //
+     &             'processing plume-in-grid (PinG) sources'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ENDIF
+        ENDIF
 
 C.........  End program for invalid settings
         IF ( ELEVTYPE .GT. PELVCONFIG_APPROACH .OR.
-     &       PINGTYPE .GT. PELVCONFIG_APPROACH      ) THEN
+     &       PINGTYPE .GT. PELVCONFIG_APPROACH-1      ) THEN
 
             IF ( ELEVTYPE .GT. PELVCONFIG_APPROACH ) THEN
                 MESG = 'WARNING: SMK_ELEV_METHOD value is invalid!'//
@@ -275,7 +284,7 @@ C.........  End program for invalid settings
                 CALL M3MSG2( MESG )
             END IF
 
-            IF ( PINGTYPE .GT. PELVCONFIG_APPROACH ) THEN
+            IF ( PINGTYPE .GT. PELVCONFIG_APPROACH-1 ) THEN
                 MESG = 'WARNING: SMK_PING_METHOD value is invalid!'//
      &             CRLF() // BLANK10 // 'Valid values are: '// 
      &             CRLF() // BLANK10 // 
@@ -370,10 +379,9 @@ C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
 C.........  If at least one stack parameters is missing, then we have a fire inventory
-        IS_FIRE = .TRUE.
         DO J= 1, NSRC
            IF (STKHT(J) .NE. BADVAL3) THEN
-               IS_FIRE = .FALSE.
+               FFLAG = .FALSE.
            ENDIF
         END DO
         
@@ -430,7 +438,6 @@ C           to grid cells for the STACK_GROUPS file.
 
         END IF            
         
-
 C.........  Convert source x,y locations to coordinates of the projected grid
         SRCXL = XLOCA
         SRCYL = YLOCA
@@ -484,7 +491,7 @@ C           specific information.  It allocates some of the group arrays.
 C.........  NGRPCRIT may be zero if no grouping criteria have been set, but
 C           the routine will still set groups for facility stacks that match
 C           exactly
-        IF (.NOT. IS_FIRE) THEN
+        IF (.NOT. FFLAG ) THEN
            CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
      &                    GRPVALS, GRPTYPES, NINVGRP   )
         ELSE
@@ -658,7 +665,7 @@ C.................  See if source matches criteria for elevated sources
 C.................  See if source matches criteria for elevated sources
                 EVSTAT = .FALSE.  ! array
 
-                IF ((IS_FIRE) .AND. (SMOLDER(S))) THEN
+                IF ( FFLAG .AND. SMOLDER( S ) ) THEN
                     LMAJOR( S ) = .FALSE.
 
                 ELSE
@@ -681,7 +688,7 @@ C               criteria given
 C.................  See if source matches criteria for PinG sources
                 PGSTAT = .FALSE.  ! array
 
-                IF ((IS_FIRE) .AND. (SMOLDER(S))) THEN
+                IF ( FFLAG .AND. SMOLDER( S ) ) THEN
                    LPING(S) = .FALSE.
 
                 ELSE
@@ -1056,7 +1063,8 @@ C.........  If all values are zero, give error
         END IF
 
 C.........  Open output files
-        CALL OPENEOUT( NGROUP, SDATE, STIME, ENAME, VFLAG, PDEV, MNAME )
+        CALL OPENEOUT( NGROUP, SDATE, STIME, ENAME, VFLAG, LFLAG,
+     &                 PDEV, MNAME )
 
 C.........  Write ASCII file
         MESG = 'Writing ELEVATED POINT SOURCE output file...'
@@ -1101,8 +1109,9 @@ C               add call to FIXSTK routine
             MINTK = MINVAL( GRPTK( 1:NGROUP ) )
             MINVE = MINVAL( GRPVE( 1:NGROUP ) )
             MINFL = MINVAL( GRPFL( 1:NGROUP ) )
-            IF ( .NOT. IS_FIRE) THEN
-            IF(( MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LT. 0. ) ) THEN
+
+            IF ( .NOT. FFLAG ) THEN
+            IF((MIN( MINDM, MINHT, MINTK, MINVE, MINFL ) .LT. 0.) ) THEN
             
                 MESG = 'Bad stack group or stack split file. ' //
      &                 'Unable to assign stack ' // CRLF()//BLANK10//
@@ -1125,7 +1134,7 @@ C               grid
             MESG='Writing ELEVATED/PING STACK PARAMETERS output file...'
             CALL M3MSG2( MESG )
 
-            CALL WPINGSTK( MNAME, SDATE, STIME )
+            CALL WPINGSTK( MNAME, SDATE, STIME, LFLAG )
 
         END IF
 
@@ -1423,5 +1432,5 @@ C---------------------  FORMAT  STATEMENTS  -------------------------
 
             END SUBROUTINE WRITE_REPORT
 
-        END PROGRAM ELEVPOINT
 
+        END PROGRAM ELEVPOINT

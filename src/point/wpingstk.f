@@ -1,5 +1,5 @@
 
-        SUBROUTINE WPINGSTK( FNAME, SDATE, STIME )
+        SUBROUTINE WPINGSTK( FNAME, SDATE, STIME, LFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -39,7 +39,8 @@ C...........   MODULES for public variables
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP, GRPIDX, GRPGIDA, GRPCNT, GRPCOL,
      &                     GRPROW, GRPDM, GRPFL, GRPHT, GRPLAT, GRPLON,
-     &                     GRPTK, GRPVE, GRPXL, GRPYL, GRPFIP,GRPLMAJOR, GRPLPING
+     &                     GRPTK, GRPVE, GRPXL, GRPYL, GRPFIP,GRPLMAJOR,
+     &                     GRPLPING
 
         IMPLICIT NONE
 
@@ -58,6 +59,7 @@ C..........    Subroutine arguments and their descriptions
         CHARACTER(*), INTENT (IN) :: FNAME   ! i/o api inventory file
         INTEGER     , INTENT (IN) :: SDATE   ! Julian start date
         INTEGER     , INTENT (IN) :: STIME   ! start time
+        LOGICAL     , INTENT (IN) :: LFLAG   ! true: write lat/lon
 
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
@@ -161,12 +163,14 @@ C.........  Store sorted information
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( FNAME,'LATITUDE',SDATE,STIME,LOCLAT )) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
+        IF( LFLAG ) THEN     ! skip writing Lat and Lon variables.
+          IF( .NOT. WRITE3( FNAME,'LATITUDE',SDATE,STIME,LOCLAT )) THEN
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+          END IF
 
-        IF ( .NOT. WRITE3( FNAME,'LONGITUDE',SDATE,STIME,LOCLON )) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+          IF( .NOT. WRITE3( FNAME,'LONGITUDE',SDATE,STIME,LOCLON )) THEN
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+          END IF
         END IF
 
         IF ( .NOT. WRITE3( FNAME, 'STKDM', SDATE, STIME, LOCDM ) ) THEN
@@ -214,12 +218,12 @@ C.........  Store sorted information
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF ( .NOT. WRITE3( FNAME, 'LMAJOR', SDATE, STIME, LOCLMAJOR ) ) THEN
+        IF ( .NOT. WRITE3( FNAME,'LMAJOR',SDATE,STIME,LOCLMAJOR ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
 
-        IF ( .NOT. WRITE3( FNAME, 'LPING', SDATE, STIME, LOCLPING ) ) THEN
+        IF ( .NOT. WRITE3( FNAME,'LPING',SDATE, STIME, LOCLPING ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
                         
