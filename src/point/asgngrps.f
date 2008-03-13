@@ -72,8 +72,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         LOGICAL      EVALCRIT
         LOGICAL      FLTERR
+        INTEGER      ENVINT
 
-        EXTERNAL    CRLF, EVALCRIT, FLTERR
+        EXTERNAL    CRLF, EVALCRIT, FLTERR, ENVINT
 
 C...........   LOCAL PARAMETERS and their descriptions:
         INTEGER, PARAMETER :: MXLOCGRP = 2000  ! Max number groups per facility
@@ -116,6 +117,8 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         INTEGER  :: NLOCGRP = 1      ! number of local (facility) groups
         INTEGER     PFIP             ! previous FIPS code
         INTEGER     PRVG             ! G for previous interation
+        INTEGER, SAVE :: NWARN = 0   ! warning count
+        INTEGER, SAVE :: MXWARN      ! max no. warnings
 
         REAL        DM               ! tmp stack diameter [m]
         REAL        FL               ! tmp stack exit flow [m]
@@ -143,6 +146,9 @@ C   begin body of subroutine ASGNGRPS
 C.........  Write status message
         MESG = 'Assigning stack groups...'
         CALL M3MSG2( MESG )
+
+C.........   Get maximum number of warnings
+        MXWARN = ENVINT( WARNSET , ' ', 100, I )
 
 C.........  Allocate temporary arrays to store group stack parameters
         ALLOCATE( TGRPCNT( NSRC ), STAT=IOS )
@@ -451,6 +457,8 @@ C               the same stack locations.
 
                 CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
 
+                NWARN = NWARN + 1
+
                 IF ( FLTERR( GRPLAT( G ), YLOCA( I ) ) ) THEN
                     WRITE( MESG,94078 ) 'WARNING: Source latitude',
      &                     YLOCA( I ), 'is inconsistent with group' // 
@@ -458,7 +466,7 @@ C               the same stack locations.
      &                     'taken from the first source in the group, '
      &                     // 'for source:' // CRLF() // BLANK10 //
      &                     BUFFER( 1:L2 ) 
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
                 END IF
 
                 IF ( FLTERR( GRPLON( G ), XLOCA( I ) ) ) THEN
@@ -468,7 +476,7 @@ C               the same stack locations.
      &                     'taken from the first source in the group, '
      &                     // 'for source:' // CRLF() // BLANK10 //
      &                     BUFFER( 1:L2 ) 
-                    CALL M3MESG( MESG )
+                    IF( NWARN <= MXWARN )CALL M3MESG( MESG )
                 END IF
 
             END IF
