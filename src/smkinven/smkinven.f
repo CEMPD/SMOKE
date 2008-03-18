@@ -80,11 +80,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)  CRLF
         INTEGER       ENVINT
         LOGICAL       ENVYN
+        INTEGER       INDEX1
         INTEGER       GETFLINE
         INTEGER       GETTZONE
         INTEGER       STR2INT
 
-        EXTERNAL      CRLF, ENVINT, ENVYN, GETFLINE, GETTZONE, STR2INT
+        EXTERNAL      CRLF, ENVINT, ENVYN, INDEX1, GETFLINE, GETTZONE, 
+     &                STR2INT
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -413,13 +415,21 @@ C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
             CALL GETSINFO( ENAME )
 
-            NINVARR = 6
+C.............  Since not reading inventory files yet, but need to know
+C               if this is a fire inventory, scan inventory data names
+C               to see if HFLUX is present. If so, FIREFLAG = .true.
+            IF ( INDEX1( 'HFLUX',NIPPA,EANAM ) .GT. 0 ) FIREFLAG= .TRUE.
+
+            NINVARR = 4
             IVARNAMS( 1 ) = 'IFIP'    ! In case CEM input
             IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
             IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
-            IVARNAMS( 4 ) = 'CORIS'   ! In case CEM input
-            IVARNAMS( 5 ) = 'CBLRID'  ! In case CEM input
-            IVARNAMS( 6 ) = 'CPDESC'  ! In case CEM input
+            IVARNAMS( 4 ) = 'CPDESC'  ! In case CEM input
+            IF ( .NOT. FIREFLAG ) THEN
+                NINVARR = 6
+                IVARNAMS( 5 ) = 'CORIS'   ! In case CEM input
+                IVARNAMS( 6 ) = 'CBLRID'  ! In case CEM input
+            END IF
 
             CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR,
      &                     IVARNAMS )
