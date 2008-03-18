@@ -68,7 +68,7 @@ C.........  Local arrays
 C.........  Other local variables
         INTEGER         F, I, N       !  counters and indices
 
-        INTEGER         FMISS   !  tmp count of FIPs codes missing records in GSPRO_COMBO
+        INTEGER         FCNT    !  tmp count of FIPs codes missing records in GSPRO_COMBO
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
         INTEGER         NLINES  !  number of lines
@@ -173,11 +173,14 @@ C.............  Get period, pollutant, and number of profiles from line
             PER  = STR2INT( SEGMENT( 3 ) )
             NP   = STR2INT( SEGMENT( 4 ) )
 
-C.............  If period or pollutant doesn't match, or if number
+C.............  If pollutant doesn't match, or if number
 C               of profiles is <=0, then skip
-            IF ( PER > 0 ) THEN
-              IF (CPOL .NE. ENAM .OR. PER .NE. PERIOD .OR. NP <=0) CYCLE
-            END IF
+            IF ( CPOL .NE. ENAM .OR. NP <= 0 ) CYCLE
+
+C.............  If period is greater than 0 and doesn't match, then skip
+C.............  This intentionally allows all entries with PERIOD=0 to apply
+C               to all periods (if CPOL and NP criteria are met)
+            IF ( PER > 0 .AND. PER .NE. PERIOD ) CYCLE
 
 C.............  Error message if a number of profile is greater than 10
             IF ( NP > 10 ) THEN
@@ -335,36 +338,35 @@ C.........  Note: want this always to be reported, regardless of MAXERROR
             CALL M3MESG( MESG )
             EFLAG = .TRUE.
 
-C.........  Check that all counties were set with either the state or county
-C           approach.
+C.........  Record to log how many counties received the COMBO approach
         ELSE
 
-            FMISS = 0
+            FCNT = 0
             DO F = 1, NINVIFIP
 
-C.................  Write error message for counties not found
-                IF ( CMBTYP( F ) .EQ. 0 .AND. ERRCNT(5) <= MXERR ) THEN
-                    FMISS = FMISS + 1
-                    WRITE( MESG,94010 ) 'ERROR: State/County FIPS '//
-     &                     INVCFIP( F )//' is missing data in the '//
-     &                     'GSPRO_COMBO file'//CRLF()//BLANK10//
-     &                     'for period', PERIOD, 'and pollutant '//
-     &                     TRIM( ENAM )
-                    CALL M3MESG( MESG )
-                    ERRCNT(5) = ERRCNT(5) + 1
-                    EFLAG = .TRUE.
-                END IF
+C.................  Count counties found
+                IF ( CMBTYP( F ) .GT. 0 ) FCNT = FCNT + 1
 
             END DO
 
-C.............  Write additional message with total number of missing counties
+C.............  Write error if nothing matched (there should have been
+C               at least one thing or else this routine wouldn't have 
+C               been called)
 C.............  Note: want this always to be reported, regardless of MAXERROR
-            IF( FMISS > 0 ) THEN
-                WRITE( MESG,94010 ) 'ERROR:',FMISS, 'State/County '//
-     &                 'FIPS codes out of ',NINVIFIP, 'are missing '//
-     &                 'entries in the GSPRO_COMBO file'//CRLF()//
-     &                 BLANK10// 'for period', PERIOD,'and pollutant '//
-     &                 TRIM( ENAM )
+            IF ( FCNT == 0 ) THEN
+                WRITE( MESG,94010 ) 'ERROR: No counties assigned '//
+     &             'COMBO profiles'//CRLF()//BLANK10//
+     &             'for period', PERIOD,'and pollutant "'// 
+     &             TRIM( ENAM ) //'"'
+                EFLAG = .TRUE.
+
+C.............  Write message with total number of counties receiving approach
+C.............  Note: want this always to be reported, regardless of MAXERROR
+            ELSE
+                WRITE( MESG,94010 ) 'NOTE:',FCNT, 'counties assigned '//
+     &             'COMBO profiles'//CRLF()//BLANK10//
+     &             'for period', PERIOD,'and pollutant "'// 
+     &             TRIM( ENAM ) //'"'
                 CALL M3MESG( MESG )
             END IF
 
@@ -375,7 +377,8 @@ C.........  Deallocate local memory
 
 C.........  If error found, abort program
         IF( EFLAG ) THEN
-            MESG = 'Problem reading profile combos file GSPRO_COMBO'
+            MESG = 'Problem reading or applying profile combos data '//
+     &             'from GSPRO_COMBO'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF 
 
