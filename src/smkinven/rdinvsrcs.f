@@ -83,10 +83,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         INTEGER         INDEX1
         LOGICAL         BLKORCMT
+        LOGICAL         SETENVVAR
+        INTEGER*4       GETPID   
 
-        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR,  
+        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, GETPID
      &                  GETVMIX, JUNIT, FIND1, FIND1FIRST, FINDC,
-     &                  CHKINT, STR2INT, INDEX1, BLKORCMT
+     &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -137,6 +139,7 @@ C...........   Other local variables
         INTEGER      :: NWARN0= 0    !  current number of warnings
         INTEGER      :: NWARN1= 0    !  current number of warnings 1
         INTEGER      :: NWRLINE = 0  !  no. of lines in file writting to log
+        INTEGER*4       PID          !  UNIX process ID at runtime
         INTEGER         ROAD         !  road class number
         INTEGER         RWT          !  roadway type
         INTEGER      :: TOTSRCS = 0  !  total number of sources
@@ -176,8 +179,9 @@ c        LOGICAL      :: BKSPFLAG = .FALSE. ! true: back up one line
         CHARACTER(300)     MESG    ! message buffer
         CHARACTER(20)      VIDFMT  ! vehicle type ID format
         CHARACTER(20)      RWTFMT  ! roadway type number format
+        CHARACTER(1024)    TMPFILNAM  ! File name of tmp file
 
-        CHARACTER(200)     PATHNM           ! path name for tmp file
+        CHARACTER(512)     PATHNM           ! path name for tmp file
         CHARACTER(300)     TENLINES( 10 )   ! first ten lines of inventory file
 
         CHARACTER(16) :: PROGNAME =  'RDINVSRCS' ! program name
@@ -194,7 +198,7 @@ C.........  Get maximum number of warnings
 C.........  Get temporary directory location
         MESG = 'Path where temporary import file will be written'
         CALL ENVSTR( 'SMK_TMPDIR', MESG, '.', PATHNM, IOS )
-        
+
         IF( IOS /= 0 ) THEN
             IF( NWARN0 < MXWARN ) THEN
                 MESG = 'WARNING: Temporary input file will be ' //
@@ -206,6 +210,18 @@ C.........  Get temporary directory location
             END IF
         END IF
 
+C.........  Get process ID for using in tmp file name
+        PID = GETPID()
+
+C.........  Build tmp file name and set environment variable to its value,
+C           so calling script can clean up tmp file if desired.
+        WRITE( TMPFILNAM, '(A,I8)') TRIM( PATHNM )// '/import_tmp_', PID
+        IF ( .NOT. SETENVVAR( 'SMKINVEN_TMPFILE', TMPFILNAM )) THEN
+            MESG = 'Could not set environment variable for Smkinven '//
+     &            'temporary file name:'// CRLF()// BLANK10// TMPFILNAM
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+        
 C.........  Initialize ORL (fire) flag to false
         ORLFLG = .FALSE.
         FIREFLAG = .FALSE.
@@ -411,7 +427,7 @@ C.............  If not list format, set current format to inventory format
 
 C.........  Open scratch file for writing record numbers
         CDEV = JUNIT()
-        OPEN( CDEV, FILE=TRIM( PATHNM ) // '/import_tmp', IOSTAT=IOS )
+        OPEN( CDEV, FILE=TMPFILNAM, IOSTAT=IOS, STATUS='NEW' )
         
         IF( IOS /= 0 ) THEN
             MESG = 'Could not open temporary import file'
