@@ -450,7 +450,8 @@ C.........  Variable column
 
 C.........  User-defined label
         IF( RPT_%USELABEL ) THEN
-            J = LEN_TRIM( RPT_%LABEL )
+            J = MAX( LEN_TRIM( RPT_%LABEL ), 
+     &               LEN_TRIM( HEADERS(IHDRLABL) ) )
             LABELWIDTH = J + LV
 
             CALL ADD_TO_HEADER( J, HEADERS(IHDRLABL), LH, HDRBUF )
