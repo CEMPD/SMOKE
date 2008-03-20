@@ -254,6 +254,9 @@ C.................  Open by logical name or physical name
 C.........  Open plume-in-grid output
         IF( PINGFLAG ) THEN
 
+C.............  Get variable names for I/O API file
+            CALL SETUP_VARIABLES( PNIPOL, PNMSPC, PEINAM, PEMNAM )
+
 C.............  Override gridded file settings
             NCOLS3D = 1
             NROWS3D = NGROUP
@@ -272,6 +275,9 @@ C.............  Override gridded file settings
 
 C.........  Open plume-in-grid output
         IF( INLINEFLAG ) THEN
+
+C.............  Get variable names for I/O API file
+            CALL SETUP_VARIABLES( PNIPOL, PNMSPC, PEINAM, PEMNAM )
 
 C.............  Override gridded file settings
             NCOLS3D = 1

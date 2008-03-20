@@ -81,6 +81,7 @@ C.........  Other local variables
         LOGICAL      :: BOUTFLAG = .FALSE.  ! true: output biogenic sources
         LOGICAL      :: MOUTFLAG = .FALSE.  ! true: output mobile sources
         LOGICAL      :: POUTFLAG = .FALSE.  ! true: output point sources
+        LOGICAL      :: IOUTFLAG = .FALSE.  ! true: output point Ping or inline
 
         CHARACTER(IOVLEN3) FILNAM       ! tmp logical file name
         CHARACTER(300)     MESG         ! message buffer
@@ -95,6 +96,7 @@ C.........  Initialize output flags
         BOUTFLAG = .FALSE.
         MOUTFLAG = .FALSE.
         POUTFLAG = .FALSE.
+        IOUTFLAG = .FALSE.
 
 C.........  Determine the source categories that are valid for output
 C.........  If the subroutine call is for speciated output, use different
@@ -116,9 +118,14 @@ C           indicator arrays for determining output or not.
                 MOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( ( LGRDOUT .OR. PINGFLAG .OR. INLINEFLAG ) .AND. PFLAG ) THEN
+            IF( LGRDOUT .AND. PFLAG ) THEN
                 J = INDEX1( VNAME, PNMSPC, PEMNAM )
                 POUTFLAG = ( J .GT. 0 )
+            END IF
+
+            IF( ( PINGFLAG .OR. INLINEFLAG ) .AND. PFLAG ) THEN
+                J = INDEX1( VNAME, PNMSPC, PEMNAM )
+                IOUTFLAG = ( J .GT. 0 )
             END IF
 
 C.........  Non-speciated (it's not possible to have biogenics w/o speciation)
@@ -134,9 +141,14 @@ C.........  Non-speciated (it's not possible to have biogenics w/o speciation)
                 MOUTFLAG = ( J .GT. 0 )
             END IF
 
-            IF( ( LGRDOUT .OR. PINGFLAG .OR. INLINEFLAG) .AND. PFLAG ) THEN
+            IF( LGRDOUT .AND. PFLAG ) THEN
                 J = INDEX1( VNAME, PNIPOL, PEINAM )
                 POUTFLAG = ( J .GT. 0 )
+            END IF            
+
+            IF( ( PINGFLAG .OR. INLINEFLAG) .AND. PFLAG ) THEN
+                J = INDEX1( VNAME, PNIPOL, PEINAM )
+                IOUTFLAG = ( J .GT. 0 )
             END IF            
 
         END IF
@@ -155,11 +167,11 @@ C.........  For point sources, output file...
         IF( POUTFLAG ) CALL SAFE_WRITE3( PONAME, PEMGRD )
 
 C.........  For plume-in-grid, output file...
-        IF( POUTFLAG .AND. PINGFLAG ) 
+        IF( IOUTFLAG .AND. PINGFLAG ) 
      &      CALL SAFE_WRITE3( PINGNAME, PGRPEMIS )
 
 C.........  For plume-in-grid, output file...
-        IF( POUTFLAG .AND. INLINEFLAG ) 
+        IF( IOUTFLAG .AND. INLINEFLAG ) 
      &      CALL SAFE_WRITE3( INLINENAME, ELEVEMIS )
      
 C.........  For multiple source categories, output totals file...
