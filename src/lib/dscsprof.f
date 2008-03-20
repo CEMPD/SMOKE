@@ -68,6 +68,7 @@ C              passed via module MODSPRO)
 
 C.........  Local parameters
         INTEGER, PARAMETER :: MXSEG = 6        ! # of potential line segments
+        INTEGER, PARAMETER :: TMPNSPEC = 5000  ! # tmp number of species per pollutant
 
 C...........   Arrays for getting pollutant-specific information from file
         INTEGER       NENTRA ( NIPOL )   ! number of table entries per pollutant
@@ -150,7 +151,7 @@ C              index array, and an array to determine output units
         CALL CHECKMEM( IOS, 'SPECNMA', PROGNAME )
         ALLOCATE( INDX1A( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDX1A', PROGNAME )
-        ALLOCATE( TMPNAMES( MXVARS3,NIPOL ), STAT=IOS )
+        ALLOCATE( TMPNAMES( TMPNSPEC,NIPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TMPNAMES', PROGNAME )
         ALLOCATE( LMOLAR( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LMOLAR', PROGNAME )
@@ -307,8 +308,18 @@ C               add species to list.
 
                     K = K + 1
 
-                    IF( K .LE. MXVARS3 ) THEN
+                    IF( K .LE. TMPNSPEC ) THEN
                         TMPNAMES( K, IPOS( M ) ) = SPECNM
+
+                    ELSE
+
+                       WRITE(MESG,94010)
+     &                   'INTERNAL ERROR: The', TMPNSPEC, 'species '//
+     &                   'per pollutant limit was exceeded by ' //
+     &                   'pollutant '//TRIM(POLNAM)//' in ' // PROGNAME
+                       CALL M3MSG2( MESG )
+                       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
                     END IF
 
                     NSPECA( IPOS( M ) ) = K
