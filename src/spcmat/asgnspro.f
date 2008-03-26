@@ -123,7 +123,7 @@ C.........  Other local variables
         INTEGER          NCOUT        ! no. output source chars for mesgs
         INTEGER          NPCOMBO      ! tmp no. of profiles in combination profile
         INTEGER       :: NWARN=0      ! current number of warnings of each type to write
-        INTEGER          MXWARN       ! maximum number of warnings of each type to write
+        INTEGER, SAVE :: MXWARN       ! maximum number of warnings of each type to write
 
         REAL             CNVFAC       ! tmp pol-to-pol conversion factor
 
