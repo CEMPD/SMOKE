@@ -40,7 +40,7 @@ C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP, GRPIDX, GRPGIDA, GRPCNT, GRPCOL,
      &                     GRPROW, GRPDM, GRPFL, GRPHT, GRPLAT, GRPLON,
      &                     GRPTK, GRPVE, GRPXL, GRPYL, GRPFIP,GRPLMAJOR,
-     &                     GRPLPING
+     &                     GRPLPING, GRPACRES, FFLAG
 
         IMPLICIT NONE
 
@@ -84,7 +84,7 @@ C...........   These are for sorting groups and outputting in sorted order
         REAL   , ALLOCATABLE :: LOCVE ( : )
         REAL   , ALLOCATABLE :: LOCXL ( : )
         REAL   , ALLOCATABLE :: LOCYL ( : )
-
+        REAL   , ALLOCATABLE :: LOCACRES( : )
 C...........   Other local variables
         INTEGER         I, J, L      ! indices and counters
         INTEGER         IOS          ! i/o status
@@ -133,7 +133,10 @@ C.........  Allocate memory for local arrays
 
         ALLOCATE( LOCLPING( NGROUP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LOCLPING', PROGNAME )
-                        
+
+        ALLOCATE( LOCACRES( NGROUP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LOCACRES', PROGNAME )
+	                        
 C.........  Store sorted information
         DO I = 1, NGROUP
             J = GRPIDX( I )
@@ -154,7 +157,7 @@ C.........  Store sorted information
             LOCFIP( I ) = GRPFIP( J )
             LOCLMAJOR( I ) = GRPLMAJOR( J )
             LOCLPING( I ) = GRPLPING( J )
-            
+	    IF (FFLAG) LOCACRES( I ) = GRPACRES( J)
         END DO
 
         MESG = 'Error writing to output file "' // FNAME // '"'
@@ -226,11 +229,17 @@ C.........  Store sorted information
         IF ( .NOT. WRITE3( FNAME,'LPING',SDATE, STIME, LOCLPING ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+	IF (FFLAG) THEN
+           IF ( .NOT. WRITE3( FNAME,'ACRESBURNED',SDATE, STIME, LOCACRES ) ) THEN
+              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+           END IF		
+	END IF
                         
 C.........  Deallocate local memory
         DEALLOCATE( LOCGID, LOCCNT, LOCCOL, LOCROW,
      &              LOCDM, LOCFL, LOCHT, LOCLAT, LOCLON, LOCTK,
-     &              LOCVE, LOCXL, LOCYL, LOCFIP, LOCLMAJOR, LOCLPING )
+     &              LOCVE, LOCXL, LOCYL, LOCFIP, LOCLMAJOR, LOCLPING,
+     &              LOCACRES )
 
         RETURN
 

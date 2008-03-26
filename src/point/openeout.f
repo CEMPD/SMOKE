@@ -39,7 +39,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CRL, CATDESC
-
+        USE MODELEV, ONLY: FFLAG
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -144,7 +144,11 @@ C              of the Met file in here.
                 FDESC3D( 13 ) = '/VARIABLE GRID/ ' // GDNAM3D
             END IF
 
-            NVARS3D = 16
+            IF (FFLAG) THEN
+            NVARS3D = 17
+	    ELSE
+	    NVARS3D = 16
+	    ENDIF
             NROWS3D = NGROUP
             NCOLS3D = 1
             NLAYS3D = 1
@@ -152,10 +156,15 @@ C              of the Met file in here.
             STIME3D = STIME
             TSTEP3D = 10000
 
-            IF( .NOT. LFLAG ) THEN     ! do not write Lat/Lon
-                NVARS3D = 14     ! remove Lat and Lon variables
+            IF(( .NOT. LFLAG ) .AND. (.NOT. FFLAG))THEN     ! do not write Lat/Lon
+                NVARS3D = 15     ! remove Lat and Lon variables
             END IF
 
+            IF(( .NOT. LFLAG ) .AND. (FFLAG))THEN     ! do not write Lat/Lon
+                NVARS3D = 16     ! remove Lat and Lon variables
+            END IF
+	              
+ 
 C.............  Set the file variables
             J = 1
             VNAME3D( J ) = 'ISTACK'
@@ -257,7 +266,15 @@ C.............  Set the file variables
             VTYPE3D( J ) = M3INT
             UNITS3D( J ) = 'none'
             VDESC3D( J ) = '1=PING SOURCE in domain, 0=otherwise'
-                                                
+
+            IF (FFLAG) THEN
+            J = J + 1
+
+            VNAME3D( J ) = 'ACRESBURNED'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'acres/day'
+            VDESC3D( J ) = 'number of acres burned for a fire in one day'
+	    ENDIF                                                
  
             MESG = 'Enter logical name for ELEVATED STACK GROUPS ' //
      &              'file'

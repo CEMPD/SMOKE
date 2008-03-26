@@ -27,6 +27,9 @@ C
 C                  3) added new option for select sources for in-line plume rise in CMAQ
 C                      SMK_ELEV_METHOD=2
 C                   George Pouliot                 
+
+C                  4) Allow the passing through of ACRES from PDAY file into stack
+C                      groups file 3/18/08
 C
 C************************************************************************
 C  
@@ -64,7 +67,8 @@ C.........  This module contains arrays for plume-in-grid and major sources
      &                     GRPDM, GRPHT, GRPTK, GRPVE, GRPFL, GRPGIDA,
      &                     GRPIDX, GRPCOL, GRPROW, GRPXL, GRPYL, RISE,
      &                     GRPFIP, GRPLMAJOR, GRPLPING,
-     &                     MXEMIS, MXRANK, EVPEMIDX, SRCXL, SRCYL
+     &                     MXEMIS, MXRANK, EVPEMIDX, SRCXL, SRCYL, DAY_ACRES,
+     &                     FFLAG, DAY_INDEX, ACRES, GRPACRES
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, CATLEN, NSRC, MXCHRS, 
@@ -96,9 +100,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         REAL            PLUMRIS
         INTEGER         PROMPTFFILE
+        CHARACTER(16)   PROMPTMFILE
+	INTEGER         INDEX1	
 
-        EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, 
-     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE
+        EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, INDEX1,
+     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE, PROMPTMFILE
 
 C...........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(50), PARAMETER :: 
@@ -175,7 +181,7 @@ C...........   File units and logical/physical names
         CHARACTER(16)   MNAME   !  plume-in-grid srcs stack groups output file
 
 C...........   Other local variables
-        INTEGER         G, I, J, K, S, L, L2, N, V    ! indices and counters
+        INTEGER         G, I, J, K, S, L, L2, N, V, I1,J1,T    ! indices and counters
 
         INTEGER         COL           ! tmp column number
         INTEGER      :: ELEVTYPE = 0  ! code for elevated source approach
@@ -205,6 +211,8 @@ C...........   Other local variables
         INTEGER      :: TSTEP = 10000 ! time step HHMMSS
         INTEGER      :: TSTEP_T       ! unsued timestep from environment
         INTEGER         TZONE         ! output time zone
+        INTEGER      :: DAY_NSRC, MY_INDEX,MY_LOOP
+        INTEGER      :: JDATE, JTIME
 
         REAL            DM            ! tmp inside stack diameter [m]
         REAL            FL            ! tmp stack exit flow rate [m^3/s]
@@ -223,12 +231,15 @@ C...........   Other local variables
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
         LOGICAL    VFLAG              ! true: use variable grid
         LOGICAL :: LFLAG    = .TRUE.  ! true: write out lat/lon info
-        LOGICAL :: FFLAG    = .TRUE.  ! true if source sector is a fire source
+!        LOGICAL :: FFLAG    = .TRUE.  ! true if source sector is a fire source
+	
 
         CHARACTER(10)   SCC
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER
         CHARACTER(256)  MESG
+        CHARACTER(16) DAYNAME   !  daily inventory file name
+
 
         CHARACTER(IOVLEN3) COORD3D  !  coordinate system name
         CHARACTER(IOVLEN3) COORUN3D !  coordinate system units 
@@ -378,13 +389,14 @@ C           results are stored in module MODINFO.
 C.........  Allocate memory for and read in required inventory characteristics
         CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR, IVARNAMS )
 
+
 C.........  If at least one stack parameters is missing, then we have a fire inventory
         DO J= 1, NSRC
            IF (STKHT(J) .NE. BADVAL3) THEN
                FFLAG = .FALSE.
            ENDIF
         END DO
-        
+
 
 C.........  Allocate memory for source status arrays and group numbers
         ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
@@ -408,7 +420,7 @@ C.........  Allocate memory for source status arrays and group numbers
 
 C.........  Initialize source status and group number arrays
 
-        SMOLDER(1:NSRC) = .FALSE.        ! array
+
         LMAJOR  = .FALSE.   ! array
         LPING   = .FALSE.   ! array
         GROUPID = 0         ! array
@@ -441,8 +453,13 @@ C           to grid cells for the STACK_GROUPS file.
 C.........  Convert source x,y locations to coordinates of the projected grid
         SRCXL = XLOCA
         SRCYL = YLOCA
+
+
+		
         CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
      &                 XCENT, YCENT, SRCXL, SRCYL )
+
+     
 
 C.........  Allocate memory so that we can use the GENPTCEL
         ALLOCATE( NX( NGRID ), STAT=IOS )
@@ -491,6 +508,7 @@ C           specific information.  It allocates some of the group arrays.
 C.........  NGRPCRIT may be zero if no grouping criteria have been set, but
 C           the routine will still set groups for facility stacks that match
 C           exactly
+
         IF (.NOT. FFLAG ) THEN
            CALL ASGNGRPS( NGRPVAR, NGRPCRIT, MXGRPCHK, 
      &                    GRPVALS, GRPTYPES, NINVGRP   )
@@ -500,10 +518,37 @@ C           exactly
               GINDEX(J) = J
            ENDDO
 
-           ALLOCATE( GRPGID( NINVGRP ), STAT=IOS )
-           CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
            ALLOCATE( GRPCNT( NINVGRP ), STAT=IOS )
            CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
+
+	   	   
+           ALLOCATE( GRPGID( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
+
+
+        ALLOCATE( GRPLAT( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPLAT', PROGNAME )
+        ALLOCATE( GRPLON( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPLON', PROGNAME )
+        ALLOCATE( GRPDM( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPDM', PROGNAME )
+        ALLOCATE( GRPHT( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPHT', PROGNAME )
+        ALLOCATE( GRPTK ( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPTK', PROGNAME )
+        ALLOCATE( GRPVE( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPVE', PROGNAME )
+        ALLOCATE( GRPFL( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPFL', PROGNAME )
+
+        ALLOCATE( GRPFIP( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
+
+        ALLOCATE( GRPACRES( NINVGRP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'GRPACRES', PROGNAME )
+
+
+	   GRPACRES = 0.0
            GRPGID = 0
            GRPCNT = 0
 
@@ -539,6 +584,99 @@ C               groups must be computed to assign MEPSEs and MPSs.
 
         END IF  ! End of whether emissions are needed as a criteria
 
+
+        IF (FFLAG) THEN
+             DAYNAME = PROMPTMFILE( 
+     &               'Enter logical name for DAY-SPECIFIC file',
+     &               FSREAD3, CRL // 'DAY', PROGNAME )
+
+C.............  Check to see if appropriate variable list exists
+            CALL RETRIEVE_IOAPI_HEADER( DAYNAME )
+
+            I1 = INDEX1( 'ACRESBURNED', NVARS3D, VNAME3D )
+            J1 = INDEX1( 'AREA', NVARS3D, VNAME3D )
+
+
+
+            IF( I1 <= 0 .AND. J1 <= 0  ) THEN
+                MESG = 'ERROR: Cannot find acres burned ' //
+     &                 'variable "ACRESBURNED" or "AREA" in daily ' //
+     &                  CRLF() // BLANK10 // 'inventory file '
+     &                  // TRIM( DAYNAME )
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            END IF
+            
+            DAY_NSRC = NROWS3D
+            WRITE( MESG,94010 )'NOTE: Number of Sources in Daily File',
+     &                         DAY_NSRC
+            CALL M3MSG2( MESG )
+
+            IF( EFLAG ) THEN
+                MESG = 'Problem with hourly fire data inputs'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+
+            ALLOCATE( DAY_ACRES( DAY_NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DAY_ACRES', PROGNAME )
+            ALLOCATE( DAY_INDEX( DAY_NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DAY_INDEX', PROGNAME )
+            ALLOCATE( ACRES( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ACRES', PROGNAME )
+	    ACRES(1:NSRC) = 0.0
+
+            JDATE = SDATE
+	    JTIME = STIME
+	    DO T = 1, NSTEPS
+            CALL SAFE_READ3( DAYNAME, 'ACRESBURNED', ALLAYS3,
+     &          JDATE, JTIME, DAY_ACRES )   ! Wildfire inventory format
+
+                     IF ( .NOT. READ3( DAYNAME, 'INDXD', ALLAYS3,
+     &                        JDATE, JTIME, DAY_INDEX ) ) THEN
+
+                           MESG = 'Could not read "INDXD" from file "'//
+     &                     TRIM( DAYNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
+
+                     END IF
+
+                   DO S = 1, NSRC
+                      MY_INDEX = -1
+                      DO MY_LOOP = 1, DAY_NSRC
+                       IF(S .EQ. DAY_INDEX(MY_LOOP)) THEN
+                           MY_INDEX = MY_LOOP
+                       ENDIF
+                      ENDDO
+                      IF(MY_INDEX .GT. 0) THEN
+
+
+		         IF ((DAY_ACRES( MY_INDEX )) .GT. ACRES(S)) THEN
+			 
+                             ACRES(S) = DAY_ACRES( MY_INDEX )
+			 ENDIF
+		      ENDIF	 
+
+                   ENDDO
+        
+                     
+	    
+	    CALL NEXTIME(JDATE, JTIME,10000)
+	    
+	    ENDDO 
+
+            DO S = 1, NSRC
+	      IF (ACRES(S) .GT. 0.0) THEN
+	      
+!                 WRITE (*,*) S,ACRES(S)
+              ENDIF
+	    ENDDO
+
+	    	          
+
+	    	    
+        ENDIF            
+
 C.........  Loop through sources to determine elevated and PinG sources.  If
 C           source is in a stack group, use group settings to compare to
 C           the elevated and/or PinG criteria.
@@ -567,6 +705,26 @@ C.................  Update stack parameters, if needed
 
             END IF
 
+	   
+
+!            IF (FFLAG) 
+!                      MY_INDEX = -1
+!                      DO MY_LOOP = 1, DAY_NSRC
+!                          IF (S .EQ. DAY_INDEX(MY_LOOP)) THEN
+!                              MY_INDEX = MY_LOOP
+!                          ENDIF
+!                      ENDDO
+
+!                      IF( MY_INDEX .GT. 0) THEN
+!                          IF( DAY_ACRES( MY_INDEX ) .GT. 0.0) THEN
+!                            ACRES(J) = DAY_ACRES( MY_INDEX )
+
+!                         ENDIF
+
+!                      ENDIF
+		      		      
+!	    ENDIF 
+		      
 C.............  Store reordered group IDs
             SRCGROUP( S ) = IGRP
 
@@ -665,6 +823,7 @@ C.................  See if source matches criteria for elevated sources
 C.................  See if source matches criteria for elevated sources
                 EVSTAT = .FALSE.  ! array
 
+
                 IF ( FFLAG .AND. SMOLDER( S ) ) THEN
                     LMAJOR( S ) = .FALSE.
 
@@ -687,6 +846,9 @@ C               criteria given
 
 C.................  See if source matches criteria for PinG sources
                 PGSTAT = .FALSE.  ! array
+
+
+
 
                 IF ( FFLAG .AND. SMOLDER( S ) ) THEN
                    LPING(S) = .FALSE.
@@ -739,6 +901,7 @@ C.........  Deallocate inventory groups so that these can be allocated
 
             DEALLOCATE( GRPLAT, GRPLON, GRPDM, GRPHT, GRPTK, 
      &                  GRPVE, GRPFL, GRPCNT, GRPFIP )
+            IF (FFLAG) DEALLOCATE (GRPACRES)
 
         END IF
 
@@ -783,7 +946,10 @@ C           unsorted.  The WPINGSTK routine uses this index
 
         ALLOCATE( GRPLPING(NGROUP), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRPLPING', PROGNAME )
-                        
+        IF (FFLAG) THEN
+           ALLOCATE( GRPACRES(NGROUP), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPACRES', PROGNAME )
+	ENDIF                        
         ALLOCATE( INDX( NGROUP ), STAT=IOS )
         ALLOCATE( GN( NGROUP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GN', PROGNAME )
@@ -809,6 +975,7 @@ C           unsorted.  The WPINGSTK routine uses this index
         SN      = 0
         GRPLMAJOR = 0
         GRPLPING  = 0
+	IF (FFLAG) GRPACRES = BADVAL3
 
 C.........  Loop over sources to fill in group settings with new group numbers 
 C           and to populate group arrays for major and PinG sources. 
@@ -887,6 +1054,7 @@ C.................  Store the rest of the group settings in output arrays
                     GRPVE ( G ) = STKVE ( S )
                     GRPFL ( G ) = 0.25 * PI * GRPDM(G)*GRPDM(G)*GRPVE(G)
                     GRPFIP( G ) = IFIP (S )
+		    IF (FFLAG) GRPACRES( G ) = ACRES( S)
                     IF (LMAJOR(S)) GRPLMAJOR( G ) = 1
                     IF (LPING(S)) GRPLPING ( G ) = 1
                 END IF
@@ -1433,4 +1601,57 @@ C---------------------  FORMAT  STATEMENTS  -------------------------
             END SUBROUTINE WRITE_REPORT
 
 
+
+            SUBROUTINE RETRIEVE_IOAPI_HEADER( FILNAM )
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. DESC3( FILNAM ) ) THEN
+
+                MESG = 'Could not get description of file "' //
+     &                 FILNAM( 1:LEN_TRIM( FILNAM ) ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+            END IF
+
+            END SUBROUTINE RETRIEVE_IOAPI_HEADER
+	    
+            SUBROUTINE SAFE_READ3( FILNAM, VARNAM, LAYER, 
+     &                             JDATE, JTIME, XBUF     )
+
+C.............  Subprogram arguments
+            CHARACTER(*) FILNAM    ! logical file name
+            CHARACTER(*) VARNAM    ! variable name
+            INTEGER      LAYER     ! layer number (or ALLAYS3)
+            INTEGER      JDATE     ! Julian date
+            INTEGER      JTIME     ! time
+            REAL         XBUF( * ) ! read buffer
+	    
+	    INTEGER :: L3, L4
+
+C----------------------------------------------------------------------
+
+            IF ( .NOT. READ3( FILNAM, VARNAM, LAYER,
+     &                        JDATE, JTIME, XBUF ) ) THEN
+
+                L3 = LEN_TRIM( VARNAM )
+                L4 = LEN_TRIM( FILNAM )
+
+                IF( VARNAM == 'TEMP2' .OR. VARNAM == 'TEMP1P5' ) THEN
+                    MESG = 'Please reset PLUME_GTEMP_NAME to match ' //
+     &                 'to a variable name from file '// FILNAM( 1:L2)
+                    CALL M3MSG2( MESG )
+                END IF
+
+                MESG = 'Could not read "' // VARNAM( 1:L3 ) // 
+     &                 '" from file "' // FILNAM( 1:L4 ) // '".'
+                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
+
+            END IF
+
+            END SUBROUTINE SAFE_READ3	    
         END PROGRAM ELEVPOINT
