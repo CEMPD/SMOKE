@@ -70,7 +70,7 @@
         REAL   , ALLOCATABLE, PUBLIC:: GRPVE ( : ) ! group exit velocity [m/s]
         REAL   , ALLOCATABLE, PUBLIC:: GRPXL ( : ) ! x-location given projection
         REAL   , ALLOCATABLE, PUBLIC:: GRPYL ( : ) ! y-location given projection
-
+        REAL   , ALLOCATABLE, PUBLIC:: GRPACRES( :) ! acres/day for a fire
         INTEGER, ALLOCATABLE, PUBLIC:: GRPLPING( : ) ! flag indicating a ping source group
         INTEGER, ALLOCATABLE, PUBLIC:: GRPLMAJOR( : ) ! flag indicating a major source group
          
@@ -138,5 +138,9 @@
         REAL   , ALLOCATABLE, PUBLIC :: HRSTKTK( : ) ! stack temperature [K]
         REAL   , ALLOCATABLE, PUBLIC :: HRSTKVE( : ) ! stack exit velocity [m/s]
         REAL   , ALLOCATABLE, PUBLIC :: HRSTKFL( : ) ! stack exit flow rate [m/s]
+        REAL   , ALLOCATABLE, PUBLIC :: DAY_ACRES(:) ! number of acres per day
+        INTEGER, ALLOCATABLE, PUBLIC :: DAY_INDEX(:)
+        REAL   , ALLOCATABLE, PUBLIC :: ACRES(:)
+        LOGICAL, PUBLIC :: FFLAG    = .TRUE.  ! true if source sector is a fire source
 
         END MODULE MODELEV
