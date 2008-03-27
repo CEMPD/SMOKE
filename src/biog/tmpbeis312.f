@@ -1017,11 +1017,6 @@ C.............  Calculate non-speciated emissions
      &                   PTYPE, PULSEDATE, PULSETIME, EMPOL )
 
 
-            WRITE (*,*) 'SOIL_DEBUG:',MDATE, MTIME, INITIAL_RUN,INITIAL_HOUR, RINDEX,
-     &                   RVARS, SUM(RN(1:NCOLS,1:NROWS))
-     
-!            WRITE (*,*) 'DEBUG 2:', MDATE, MTIME, RINDEX
-	    
 C............. Speciate emissions
             DO I = 1, NCOLS
                 DO J = 1, NROWS
