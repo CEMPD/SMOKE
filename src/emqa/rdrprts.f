@@ -113,6 +113,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYDATE     = .FALSE.
         ALLRPT%BYDIU      = .FALSE.
         ALLRPT%BYELEV     = .FALSE.
+        ALLRPT%ELVSTKGRP  = .FALSE.
         ALLRPT%BYHOUR     = .FALSE.
         ALLRPT%BYLAYER    = .FALSE.
         ALLRPT%BYMON      = .FALSE.

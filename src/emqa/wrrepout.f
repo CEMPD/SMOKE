@@ -69,7 +69,8 @@ C.........  This module contains Smkreport-specific settings
      &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH,
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
-     &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH
+     &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
+     &                      STKGWIDTH, STKGFMT
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -80,7 +81,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
-     &                      BINORIS, BINORSIDX
+     &                      BINORIS, BINORSIDX, BINSTKGRP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC
@@ -360,7 +361,7 @@ C.............  Include SCC code in string
                     LX = 0
                 END IF
 
-C.............  Include SIC code in string
+C.............  Include SIC code
                 IF( RPT_%BYSIC ) THEN
                     BUFFER = ' '
                     WRITE( BUFFER, SICFMT ) BINSIC( I )    ! Integer
@@ -549,6 +550,17 @@ C.............  Include elevated sources flag
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
+                END IF
+
+C.............  Include stack group IDs when elevated sources flag = Y
+                IF( RPT_%ELVSTKGRP ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, STKGFMT ) BINSTKGRP( I )    ! Integer
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + STKGWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+
                 END IF
 
 C.............  Include plant description (for point sources)

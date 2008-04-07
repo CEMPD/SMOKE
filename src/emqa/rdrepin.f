@@ -65,7 +65,7 @@ C.........  This module contains the control packet data and control matrices
      &                      PNAMPROJ, PNAMMULT
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: LMAJOR, LPING
+        USE MODELEV, ONLY: LMAJOR, LPING, GROUPID
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP
@@ -340,8 +340,11 @@ C..............  Read in point source characteristics
             CALL CHECKMEM( IOS, 'LPING', PROGNAME )
             ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
+            ALLOCATE( GROUPID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'GROUPID', PROGNAME )
             LPING  = .FALSE.
             LMAJOR = .TRUE. 
+            GROUPID= 0 
 
             DO I = 1, NSRC
 
@@ -846,6 +849,12 @@ C           sources
                 ALLOCATE( LPING( NSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'LPING', PROGNAME )
                 LPING  = .FALSE.   ! array
+            END IF
+
+            IF( .NOT. ALLOCATED( GROUPID ) ) THEN
+                ALLOCATE( GROUPID( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'GROUPID', PROGNAME )
+                GROUPID = 0   ! array
             END IF
 
             ALLOCATE( LFRAC1L( NSRC ), STAT=IOS )

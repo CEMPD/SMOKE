@@ -480,6 +480,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYWEK     = .FALSE.
                         RPT_%CHKPROJ   = .FALSE.
                         RPT_%CHKCNTL   = .FALSE.
+                        RPT_%ELVSTKGRP = .FALSE.
                         RPT_%LATLON    = .FALSE.
                         RPT_%LAYFRAC   = .FALSE.
                         RPT_%NORMCELL  = .FALSE.
@@ -822,6 +823,9 @@ C.............  BY options affecting inputs needed
                 CASE( 'ELEVSTAT' )
                     IF( CATEGORY .EQ. 'POINT' ) THEN
                         RPT_%BYELEV = .TRUE.
+                        IF( SEGMENT( 3 ) .EQ. 'STACKGROUP' ) THEN
+                            RPT_%ELVSTKGRP = .TRUE.
+                        END IF
 
                     ELSE IF( FIRSTLOOP ) THEN
 

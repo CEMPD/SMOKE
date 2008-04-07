@@ -61,13 +61,13 @@ C.........  This module contains report arrays for each output bin
      &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
-     &                      BINORSIDX
+     &                      BINORSIDX, BINSTKGRP
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: LPING, LMAJOR
+        USE MODELEV, ONLY: LPING, LMAJOR, GROUPID
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, NSTATE, STATCOD, NCOUNTY,
@@ -93,7 +93,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT    ! current report number
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: BUFLEN = 101 + SCCLEN3 + SICLEN3 + SPNLEN3
+        INTEGER, PARAMETER :: BUFLEN = 109 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
      &                                     + ORSLEN3
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) =
@@ -123,6 +123,7 @@ C...........   Local variables
         INTEGER         SRCID             ! tmp source ID
         INTEGER         SRGID1            ! tmp primary surrogate ID
         INTEGER         SRGID2            ! tmp fallback surrogate ID
+        INTEGER         STKGRP            ! tmp stack group ID
         INTEGER         WEKID             ! tmp weekly profile number
 
         CHARACTER              ESTAT      ! tmp elevated status
@@ -161,11 +162,11 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-      WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
+        WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
      &                A,I1,A)') 
      &    '(4I8,A',SCCLEN3,',I',SICLEN3,',5I8,A', SPNLEN3,',A',
      &    PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', 
-     &    STPLEN3, ')'
+     &    STPLEN3, ',I8)'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -177,6 +178,7 @@ C           report
         SIC    = 0
         SRGID1 = 0
         SRGID2 = 0
+        STKGRP = 0
         MONID  = 0
         WEKID  = 0
         DIUID  = 0
@@ -395,6 +397,8 @@ C                 be the first source for the current plant
 C.................  If BY ELEVSTAT, insert elevated status code
             IF( RPT_%BYELEV ) THEN
 
+                IF( RPT_%ELVSTKGRP ) STKGRP = GROUPID( OUTSRC( I ) )
+
                 IF( LPING( OUTSRC( I ) ) ) THEN       ! PinG
                     ESTAT = 'P'
                 ELSE IF( LMAJOR( OUTSRC( I ) ) ) THEN ! Elevated
@@ -409,7 +413,7 @@ C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, SIC,
      &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
      &                             SPCID, PLANT, ORIS, RCL, ESTAT, MACT,
-     &                             NAICS, SRCTYP
+     &                             NAICS, SRCTYP, STKGRP
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
@@ -464,6 +468,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
         IF( ALLOCATED( BINY      ) ) DEALLOCATE( BINY )
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
+        IF( ALLOCATED( BINSTKGRP ) ) DEALLOCATE( BINSTKGRP )
         IF( ALLOCATED( BINPOPDIV ) ) DEALLOCATE( BINPOPDIV )
         IF( ALLOCATED( BINDATA   ) ) DEALLOCATE( BINDATA )
 
@@ -584,9 +589,15 @@ C.........  Allocate memory for bins
             ALLOCATE( BINY     ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINY', PROGNAME )
         ENDIF
+
         IF( RPT_%BYELEV  ) THEN
             ALLOCATE( BINELEV  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINELEV', PROGNAME )
+        ENDIF
+
+        IF( RPT_%ELVSTKGRP ) THEN
+            ALLOCATE( BINSTKGRP  ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSTKGRP', PROGNAME )
         ENDIF
 
         ALLOCATE( BINPOPDIV( NOUTBINS ), STAT=IOS )
@@ -611,7 +622,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
                 READ( BUFFER,FMTBUF ) 
      &                COL, ROW, SRCID, FIP, SCC, SIC, SRGID1, SRGID2, 
      &                MONID, WEKID, DIUID, SPCID, PLANT, ORIS, RCL, 
-     &                ESTAT, MACT, NAICS, SRCTYP
+     &                ESTAT, MACT, NAICS, SRCTYP, STKGRP
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -762,6 +773,11 @@ C.................  Store x-cell and y-cell
 
 C.................  Store Elevated status
                 IF( RPT_%BYELEV ) BINELEV( B ) = ESTAT
+
+C.................  Store Elevated stack group IDs
+                IF( RPT_%ELVSTKGRP ) THEN
+                    BINSTKGRP( B ) = STKGRP
+                END IF
 
             END IF
 

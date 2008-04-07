@@ -65,7 +65,8 @@ C.........  This module contains Smkreport-specific settings
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
      &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
-     &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH
+     &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
+     &                      STKGWIDTH, STKGFMT
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -74,7 +75,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
-     &                      BINORIS, BINORSIDX
+     &                      BINORIS, BINORSIDX, BINSTKGRP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -138,20 +139,21 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRLAT  = 26
         INTEGER, PARAMETER :: IHDRLON  = 27
         INTEGER, PARAMETER :: IHDRELEV = 28
-        INTEGER, PARAMETER :: IHDRPNAM = 29
-        INTEGER, PARAMETER :: IHDRSNAM = 30
-        INTEGER, PARAMETER :: IHDRINAM = 31    ! SIC name
-        INTEGER, PARAMETER :: IHDRMNAM = 32
-        INTEGER, PARAMETER :: IHDRNNAM = 33
-        INTEGER, PARAMETER :: IHDRVAR  = 34
-        INTEGER, PARAMETER :: IHDRDATA = 35
-        INTEGER, PARAMETER :: IHDRUNIT = 36
-        INTEGER, PARAMETER :: IHDRLABL = 37
-        INTEGER, PARAMETER :: IHDRNFDRS= 38
-        INTEGER, PARAMETER :: IHDRMATBN= 39
-        INTEGER, PARAMETER :: IHDRORIS = 40
-        INTEGER, PARAMETER :: IHDRORNM = 41
-        INTEGER, PARAMETER :: NHEADER  = 41
+        INTEGER, PARAMETER :: IHDRSTKG = 29
+        INTEGER, PARAMETER :: IHDRPNAM = 30
+        INTEGER, PARAMETER :: IHDRSNAM = 31
+        INTEGER, PARAMETER :: IHDRINAM = 32    ! SIC name
+        INTEGER, PARAMETER :: IHDRMNAM = 33
+        INTEGER, PARAMETER :: IHDRNNAM = 34
+        INTEGER, PARAMETER :: IHDRVAR  = 35
+        INTEGER, PARAMETER :: IHDRDATA = 36
+        INTEGER, PARAMETER :: IHDRUNIT = 37
+        INTEGER, PARAMETER :: IHDRLABL = 38
+        INTEGER, PARAMETER :: IHDRNFDRS= 39
+        INTEGER, PARAMETER :: IHDRMATBN= 40
+        INTEGER, PARAMETER :: IHDRORIS = 41
+        INTEGER, PARAMETER :: IHDRORNM = 42
+        INTEGER, PARAMETER :: NHEADER  = 42
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -184,6 +186,7 @@ C...........   Local parameters
      &                              'Latitude         ',
      &                              'Longitude        ',
      &                              'Elevstat         ',
+     &                              'Stack Groups     ',
      &                              'Plt Name         ',
      &                              'SCC Description  ',
      &                              'SIC Description  ',
@@ -934,6 +937,19 @@ C.........  Elevated flag column
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             ELEVWIDTH = J + LV
+
+        END IF
+
+C.........  Stack group IDs when BY ELEVSTAT (RPT_%BYELEV)
+        IF( RPT_%ELVSTKGRP ) THEN
+            J = LEN_TRIM( HEADERS( IHDRSTKG ) )
+            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSTKGRP )
+            W1 = MAX( W1, J )  
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRSTKG), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( STKGFMT, 94625 ) W1, RPT_%DELIM
+            STKGWIDTH = W1 + LV
         END IF
 
 C.........  Plant descriptions
@@ -1467,6 +1483,14 @@ C.........  The name of the subgrid used to select the data
 
 C.........  Column headers  .................................................
 
+C.........  Remove leading spaces from column headers
+        L = LEN_TRIM( HDRBUF )
+        HDRBUF = HDRBUF( 2:L )
+        L = L - 1
+
+C.........  Write column headers
+        WRITE( FDEV, 93000 ) HDRBUF( 1:L )
+
         IF( RPT_%RPTMODE .NE. 3 ) THEN
 C.........  Remove leading spaces from column units
             L = LEN_TRIM( UNTBUF )
@@ -1477,14 +1501,6 @@ C.........   Write data output units
             WRITE( FDEV, 93000 ) UNTBUF( 1:L )
 
         END IF
-
-C.........  Remove leading spaces from column headers
-        L = LEN_TRIM( HDRBUF )
-        HDRBUF = HDRBUF( 2:L )
-        L = L - 1
-
-C.........  Write column headers
-        WRITE( FDEV, 93000 ) HDRBUF( 1:L )
 
 C.........  Store previous output file unit number
         PDEV = FDEV

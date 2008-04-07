@@ -121,6 +121,7 @@
             LOGICAL       :: BYDATE        ! true: by date
             LOGICAL       :: BYDIU         ! true: by diurnal temporal code
             LOGICAL       :: BYELEV        ! true: by elev status
+            LOGICAL       :: ELVSTKGRP     ! true: stack gourp ID by elev status
             LOGICAL       :: BYHOUR        ! true: by hour
             LOGICAL       :: BYLAYER       ! true: by layer
             LOGICAL       :: BYMON         ! true: by monthly temporal code
@@ -297,6 +298,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: ORSWIDTH  =0 ! width of ORIS
         INTEGER      , PUBLIC :: ORSDSWIDTH=0 ! width of ORIS description column
         INTEGER      , PUBLIC :: STYPWIDTH =0 ! width of source type code
+        INTEGER      , PUBLIC :: STKGWIDTH =0 ! width of stack group ID code
         INTEGER      , PUBLIC :: SPCWIDTH  =0 ! width of speciation profile label
         INTEGER      , PUBLIC :: SRCWIDTH  =0 ! width of source IDs column
         INTEGER      , PUBLIC :: SRG1WIDTH =0 ! width of primary surg column
@@ -316,6 +318,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(50),  PUBLIC :: LAYRFMT     ! format string for layer column
         CHARACTER(50),  PUBLIC :: REGNFMT     ! format string for region column
         CHARACTER(50),  PUBLIC :: SICFMT      ! format string for SIC
+        CHARACTER(50),  PUBLIC :: STKGFMT     ! format string for stack group IDs 
         CHARACTER(50),  PUBLIC :: SRCFMT      ! format string for source IDs
         CHARACTER(50),  PUBLIC :: SRG1FMT     ! format string for primary surg
         CHARACTER(50),  PUBLIC :: SRG2FMT     ! format string for fallback surg
