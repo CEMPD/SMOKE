@@ -237,8 +237,8 @@ C           consistent with the inventory file header
 
             MESG = 'This occurs when the inventory contained ' //
      &             'pollutants with all zero values.' // CRLF() // 
-     &             'You should confirm this in your Smkinven log '//
-     &             'file.'
+     &             BLANK5//'You should confirm this in your '//
+     &             'Smkinven log file.'
             CALL M3MSG2( MESG )
             NIPOL = NIPOL - ( NIPPA - NMAP )
             NIPPA = NIPOL + NIACT
