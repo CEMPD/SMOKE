@@ -144,11 +144,8 @@ C              of the Met file in here.
                 FDESC3D( 13 ) = '/VARIABLE GRID/ ' // GDNAM3D
             END IF
 
-            IF (FFLAG) THEN
-            NVARS3D = 17
-	    ELSE
-	    NVARS3D = 16
-	    ENDIF
+            NVARS3D = 14   ! Start with 14, but add more depending on options
+
             NROWS3D = NGROUP
             NCOLS3D = 1
             NLAYS3D = 1
@@ -156,15 +153,6 @@ C              of the Met file in here.
             STIME3D = STIME
             TSTEP3D = 10000
 
-            IF(( .NOT. LFLAG ) .AND. (.NOT. FFLAG))THEN     ! do not write Lat/Lon
-                NVARS3D = 15     ! remove Lat and Lon variables
-            END IF
-
-            IF(( .NOT. LFLAG ) .AND. (FFLAG))THEN     ! do not write Lat/Lon
-                NVARS3D = 16     ! remove Lat and Lon variables
-            END IF
-	              
- 
 C.............  Set the file variables
             J = 1
             VNAME3D( J ) = 'ISTACK'
@@ -185,6 +173,8 @@ C.............  Set the file variables
                 UNITS3D( J ) = 'degrees'
                 VDESC3D( J ) = 'Longitude'
                 J = J + 1
+
+                NVARS3D = NVARS3D + 2
             END IF
 
             VNAME3D( J ) = 'STKDM'
@@ -267,13 +257,15 @@ C.............  Set the file variables
             UNITS3D( J ) = 'none'
             VDESC3D( J ) = '1=PING SOURCE in domain, 0=otherwise'
 
-            IF (FFLAG) THEN
-            J = J + 1
+C............. If fire, then add acres burned to dataset
+            IF ( FFLAG ) THEN
+                J = J + 1
+                NVARS3D = NVARS3D + 1
 
-            VNAME3D( J ) = 'ACRESBURNED'
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'acres/day'
-            VDESC3D( J ) = 'number of acres burned for a fire in one day'
+                VNAME3D( J ) = 'ACRESBURNED'
+                VTYPE3D( J ) = M3REAL
+                UNITS3D( J ) = 'acres/day'
+                VDESC3D( J ) = 'number of acres burned for a fire in one day'
 	    ENDIF                                                
  
             MESG = 'Enter logical name for ELEVATED STACK GROUPS ' //
