@@ -338,7 +338,7 @@ C.................  Store case-specific fields from cross reference
 C.....................  Convert TSCC to internal value
                     CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
 
-                    CALL BLDCSRC( CFIP, CRWT, LNKZERO, CHRBLNK3,
+                    CALL BLDCSRC( CFIP, CRWT, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                            POLBLNK3, CSRCALL )
 
