@@ -89,9 +89,12 @@ C.........  Other local variables
         INTEGER          I, J, K, V     !  counters and indices
         INTEGER          IOS            !  I/O status
 
+        INTEGER          FMTLEN   ! length of non-blank CTMP
         INTEGER          ICNT     ! cntr for the total number of output vars
         INTEGER          NCNT     ! cntr for number of species per inv pol
 
+        CHARACTER(12)    CTMP     ! character buffer for variable count
+        CHARACTER(56)    NAMFMT   ! format for name of variables
         CHARACTER(300)   MESG     ! message buffer
 
         CHARACTER(NAMLEN3) NAMBUF     ! file name buffer
@@ -126,9 +129,20 @@ C.................  End inner loop if species is blank
 C.................  Count total number of output variables
                 ICNT = ICNT + 1
 
+C.................  Create custom format statement for building
+C                   variable names. This is needed when number
+C                   of variables exceeds 999, since the original
+C                   format statement was I3.3 for ICNT. This actually
+C                   happened for some tagging cases at EPA.
+                WRITE( CTMP, '(I12)' ) ICNT
+                CTMP = ADJUSTL( CTMP )
+                FMTLEN = MAX( LEN( TRIM( CTMP ) ), 3 )  ! Max with 3 to replicate previous version's behavior
+                WRITE( NAMFMT, '(A,I2.2,A,I2.2,A)' ) 
+     &                 '(A4,I', FMTLEN, '.', FMTLEN, ')'
+
                 NCNT = NCNT + 1
-                WRITE( SVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
-                WRITE( LVNAMES( J,K ), '(A4,I3.3)' ) 'SVAR', ICNT
+                WRITE( SVNAMES( J,K ), NAMFMT ) 'SVAR', ICNT
+                WRITE( LVNAMES( J,K ), NAMFMT ) 'SVAR', ICNT
 
             END DO
 
