@@ -46,6 +46,10 @@ C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, NCOLS, NROWS, NLAYS, 
      &                     VGLVS, VGTYP, VGTOP
 
+C.........  This module is required for the FileSetAPI
+        USE MODFILESET, ONLY : FILE_INFO, RNAMES, NVARSET, VNAMESET, 
+     &                         VUNITSET, VDESCSET
+
         IMPLICIT NONE
  
 C...........   INCLUDES:
@@ -53,7 +57,8 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'
         INCLUDE 'IODECL3.EXT'
         INCLUDE 'FDESC3.EXT'
-      
+        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
+
 C...........   EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
         LOGICAL       ENVYN
@@ -88,6 +93,7 @@ C...........   Input file descriptors
         INTEGER,       ALLOCATABLE :: SDATEA( : ) ! start date
         INTEGER,       ALLOCATABLE :: STIMEA( : ) ! start time
         INTEGER,       ALLOCATABLE :: NLAYSA( : ) ! number of layers in the file
+        INTEGER,       ALLOCATABLE :: NFILES( : ) ! number of files in each fileset
         CHARACTER(16), ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
         LOGICAL,       ALLOCATABLE :: USEFIRST(:) ! true: use first time step of file
 
@@ -118,7 +124,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16) PNAME           ! Point source input file name 
 
 C...........   Other local variables 
-        INTEGER       C, F, J, K, L, L1, L2, NL, V, T ! pointers and counters
+        INTEGER       C, F, I, J, K, L, L1, L2, NL, V, T ! pointers and counters
 
         INTEGER       DUMMY                      ! dummy value for use with I/O API functions
         INTEGER       EDATE                      ! ending julian date
@@ -192,8 +198,15 @@ C.............  Get date and time settings from environment
 C.........  Determine maximum number of input files in file
         MXNFIL = GETFLINE( IDEV, 'List of files to merge' )
 
+C.........  Write message out about MXVARS3
+        WRITE( MESG,94010 ) 'Mrggrid compiled with I/O API MXVARS3 =',
+     &                      MXVARS3
+        CALL M3MSG2( MESG )
+
 C.........  Allocate memory for arrays that just depend on the maximum number
 C           of files
+        ALLOCATE( NFILES( MXNFIL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NFILES', PROGNAME )
         ALLOCATE( DURATA( MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DURATA', PROGNAME )
         ALLOCATE( NCOLSA( MXNFIL ), STAT=IOS )
@@ -257,15 +270,20 @@ C.............  Read file names - exit if read is at end of file
                 LE = LEN_TRIM( LINE )
                 FNAME( F ) = LINE( LB+1:LE )
 
-                IF ( .NOT. OPEN3( FNAME( F ), FSREAD3, PROGNAME )) THEN
+                IF ( .NOT. OPENSET( FNAME(F), FSREAD3, PROGNAME )) THEN
  
                     MESG = 'Could not open file "' //
-     &                     FNAME( F )( 1 : LEN_TRIM( FNAME(F) ) )// '".'
+     &                     FNAME( F )( 1:LEN_TRIM( FNAME(F) ) )// '".'
                     CALL M3MSG2( MESG )
                     MESG = 'Ending program "MRGGRID".'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 END IF      !  if open3() failed
+
+C.................  Store whether it's a fileset file or not
+                I = INDEX1( FNAME(F), MXFILE3, RNAMES )
+                NFILES( F ) = SIZE( FILE_INFO( I )%LNAMES )
+
             END IF
 
         END DO
@@ -294,7 +312,7 @@ C.........  Loop through 2D input files
         DO F = 1, NFILE
 
             NAM = FNAME( F )
-            IF ( .NOT. DESC3( NAM ) ) THEN
+            IF ( .NOT. DESCSET( NAM, NFILES( F ) ) ) THEN
                 MESG = 'Could not get description of file "'  //
      &                  NAM( 1:LEN_TRIM( NAM ) ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -302,17 +320,17 @@ C.........  Loop through 2D input files
                 NROWSA( F ) = NROWS3D
                 NCOLSA( F ) = NCOLS3D
                 NLAYSA( F ) = NLAYS3D
-                NVARSA( F ) = NVARS3D
+                NVARSA( F ) = NVARSET
                 SDATEA( F ) = SDATE3D
                 STIMEA( F ) = STIME3D
                 DURATA( F ) = MXREC3D
                 
                 IF( F == 1 ) TSTEP = TSTEP3D
                 
-                DO V = 1, NVARS3D
-                    VNAMEA( V,F ) = VNAME3D( V )
-                    VUNITA( V,F ) = UNITS3D( V )
-                    VDESCA( V,F ) = VDESC3D( V )
+                DO V = 1, NVARSET
+                    VNAMEA( V,F ) = VNAMESET( V )
+                    VUNITA( V,F ) = VUNITSET( V )
+                    VDESCA( V,F ) = VDESCSET( V )
                 END DO
             END IF
 
@@ -505,7 +523,7 @@ C.........  Sort output variables into alphabetical order
 
 C.........  Set up for opening output file...
 C.........  Get grid information
-        IF( .NOT. DESC3( FNAME( 1 ) ) ) THEN
+        IF( .NOT. DESCSET( FNAME( 1 ), NFILES( 1 ) ) ) THEN
             MESG = 'Could not get description of file "'  //
      &              FNAME( 1 )( 1:LEN_TRIM( FNAME(1) ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -613,8 +631,9 @@ C.....................  If file has species, read (do this for all files)...
 
 C.........................  If 2-d input file, read, and add
                         IF( NL .EQ. 1 ) THEN
-                            IF( .NOT. READ3( NAM, VNM, 1, RDATE,  
-     &                                       JTIME, E2D          )) THEN
+                            IF( .NOT. 
+     &                           READSET( NAM, VNM, 1, NFILES( F ),
+     &                                    RDATE, JTIME, E2D     )) THEN
 
                                 MESG = 'Could not read "' // VNM //
      &                                 '" from file "' //
@@ -629,8 +648,9 @@ C.........................  If 3-d input file, allocate memory, read, and add
                         ELSE
 
                             DO K = 1, NL
-                                IF( .NOT. READ3( NAM, VNM, K, RDATE,  
-     &                                           JTIME, E2D      )) THEN
+                                IF( .NOT. 
+     &                               READSET( NAM,VNM,K,NFILES( F ),
+     &                                        RDATE, JTIME, E2D  )) THEN
 
                                     MESG = 'Could not read "' // VNM //
      &                                     '" from file "' //
