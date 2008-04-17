@@ -48,7 +48,7 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT (IN) :: IDEV           ! logical file name
         INTEGER     , INTENT (IN) :: POLID          ! pollutant number
         INTEGER     , INTENT (IN) :: IDX ( NSRC )   ! index to data tables
-        INTEGER     , INTENT(OUT) :: VIDX( NIPPA )  ! pollutant/act flags
+        INTEGER     , INTENT (IN) :: VIDX( NIPPA )  ! pollutant/act flags
         LOGICAL     , INTENT(OUT) :: LOUTANY        ! true: at least one pollutant output
 
 C...........   Other local variables
