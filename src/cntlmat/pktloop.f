@@ -234,6 +234,11 @@ C                       cause this record to be skipped
                         CALL M3MSG2( MESG )
                     END IF
                 END IF
+
+C.................  For non-point sectors, if plant field is filled in, then
+C                   skip this record.
+                IF ( CATEGORY /= 'POINT' .AND. 
+     &               PKTINFO%PLT /= ' '        ) CYCLE
           
 C.................  For CONTROL or MACT packet entries, check application control flag
                 IF( PKTLIST( K ) == 'CONTROL' .OR.
