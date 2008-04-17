@@ -89,6 +89,7 @@ C...........   Other local variables
         INTEGER         LJ              ! string length of emis types joiner
         INTEGER         IOS             ! i/o error status
         INTEGER         JA, JM, JP      ! position in rctvty var desc of pol-spc
+        INTEGER         MXSMATV         ! maximum size for unsorted pol-to-spc list
         INTEGER         NCNT            ! counter
         INTEGER      :: NIACT  = 0      ! actual no activites
 
@@ -229,20 +230,21 @@ C           species name.  Make sure the same name is not stored twice.
         JA   = ANRMATV - ARNMSPC + 1
         JM   = MNRMATV - MRNMSPC + 1
         JP   = PNRMATV - PRNMSPC + 1
+        MXSMATV = ANSMATV + BNSMATV + MNSMATV + PNSMATV
         IF( ARFLAG ) 
-     &    CALL BUILD_VDESC_UNSORT( NCNT, ARNMSPC, ARVDESC(JA) ) ! area rctvty
+     &    CALL BUILD_VDESC_UNSORT( NCNT, ARNMSPC, MXSMATV, ARVDESC(JA) ) ! area rctvty
         IF( MRFLAG ) 
-     &    CALL BUILD_VDESC_UNSORT( NCNT, MRNMSPC, MRVDESC(JM) ) ! mobile rctvty
+     &    CALL BUILD_VDESC_UNSORT( NCNT, MRNMSPC, MXSMATV, MRVDESC(JM) ) ! mobile rctvty
         IF( PRFLAG ) 
-     &    CALL BUILD_VDESC_UNSORT( NCNT, PRNMSPC, PRVDESC(JP) ) ! point rctvty
+     &    CALL BUILD_VDESC_UNSORT( NCNT, PRNMSPC, MXSMATV, PRVDESC(JP) ) ! point rctvty
         IF( AFLAG .AND. SFLAG ) 
-     &    CALL BUILD_VDESC_UNSORT( NCNT, ANSMATV, ASVDESC     ) ! area spectn
+     &    CALL BUILD_VDESC_UNSORT( NCNT, ANSMATV, MXSMATV, ASVDESC ) ! area spectn
         IF( BFLAG ) 
-     &    CALL BUILD_VDESC_UNSORT( NCNT, BNSMATV, BSVDESC     ) ! biogenics
+     &    CALL BUILD_VDESC_UNSORT( NCNT, BNSMATV, MXSMATV, BSVDESC ) ! biogenics
         IF( MFLAG .AND. SFLAG ) 
-     &    CALL BUILD_VDESC_UNSORT( NCNT, MNSMATV, MSVDESC     ) ! mobile spectn
+     &    CALL BUILD_VDESC_UNSORT( NCNT, MNSMATV, MXSMATV, MSVDESC ) ! mobile spectn
         IF( PFLAG .AND. SFLAG ) 
-     &    CALL BUILD_VDESC_UNSORT( NCNT, PNSMATV, PSVDESC     ) ! point spectn
+     &    CALL BUILD_VDESC_UNSORT( NCNT, PNSMATV, MXSMATV, PSVDESC ) ! point spectn
 
         NSMATV = NCNT 
 
@@ -514,7 +516,7 @@ C----------------------------------------------------------------------
 
 C.............  This internal subprogram builds the unsorted list of unique
 C               pollutant-to-species speciation variable descriptions.
-            SUBROUTINE BUILD_VDESC_UNSORT( NCNT, NVARS, VDESCS )
+            SUBROUTINE BUILD_VDESC_UNSORT( NCNT, NVARS, MXTMP, VDESCS )
 
             INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
@@ -522,14 +524,15 @@ C.............  Subprogram arguments
 
             INTEGER     , INTENT(IN OUT) :: NCNT            ! running count
             INTEGER     , INTENT    (IN) :: NVARS           ! no of var descs
+            INTEGER     , INTENT    (IN) :: MXTMP           ! max no of var descs
             CHARACTER(*), INTENT    (IN) :: VDESCS( NVARS ) ! spec var descs
 
 C.............  Local subprogram arrays
-            INTEGER,            SAVE :: EMBIN ( MXVARS3 )
-            CHARACTER(IOVLEN3), SAVE :: EMLIST( MXVARS3 )
+            INTEGER,            ALLOCATABLE, SAVE :: EMBIN ( : )
+            CHARACTER(IOVLEN3), ALLOCATABLE, SAVE :: EMLIST( : )
 
 C.............  Local subprogram variables
-            INTEGER, SAVE :: EMCNT                ! count of species
+            INTEGER, SAVE :: EMCNT = 0            ! count of species
             INTEGER          I, K1, K2, K3, L, L2 ! counters and indices
             INTEGER          LJ, LS               ! string lengths of separators
 
@@ -541,6 +544,16 @@ C.............  Local subprogram variables
             CHARACTER(IODLEN3)     TDESC  ! tmp combined pollutant & species
 
 C----------------------------------------------------------------------
+
+C.............  Allocate local memory
+            IF ( .NOT. ALLOCATED( EMBIN ) ) THEN
+                ALLOCATE( EMBIN( MXTMP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EMBIN', PROGNAME )
+                ALLOCATE( EMLIST( MXTMP ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'EMLIST', PROGNAME )
+                EMBIN  = 0
+                EMLIST = ' '
+            END IF
 
             LJ = LEN_TRIM( ETJOIN )
             LS = LEN_TRIM( SPJOIN )
@@ -576,11 +589,15 @@ C                   number.
                 IF( K3 .GT. 0 ) THEN
                     K3 = EMBIN( K3 )
                     
-                ELSE
+                ELSE IF ( EMCNT + 1 <= MXTMP ) THEN
                     EMCNT = EMCNT + 1
                     EMLIST( EMCNT ) = SPCNAM
                     EMBIN ( EMCNT ) = K1
                     K3 = K1
+
+                ELSE
+                    MESG = 'INTERNAL ERROR: Array overflow for EMBIN.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                                         
                 END IF
 
