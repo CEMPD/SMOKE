@@ -338,12 +338,17 @@ C.................  Store case-specific fields from cross reference
 C.....................  Convert TSCC to internal value
                     CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
 
-                    CALL BLDCSRC( CFIP, CRWT, CHRBLNK3, CHRBLNK3,
+C M Houyoux note: TSCC has been put in here instead of road type
+C     and link has been removed.  These were breaking the county-SCC specific
+C     assignments by setting CNFIP in xreftbl.f to be non-blank and not the SCC.
+C     However, this change breaks link-specific profile assignments, which
+C     are not likely to be used anyway.  I suggest that we just remove
+C     link-specific assignments from the documentation for Spcmat.
+                    CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                            POLBLNK3, CSRCALL )
 
-                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // 
-     &                            CMCT // CPOS
+                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CPOS
 
                 CASE( 'POINT' )
 
