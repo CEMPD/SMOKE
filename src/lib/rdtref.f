@@ -464,7 +464,14 @@ C.....................  Reset road class to blank if no link.  Road class is
 C                       now stored as part of SCC
                     IF( CLNK .EQ. ' ' ) CRWT = ' '
 
-                    CALL BLDCSRC( CFIP, CRWT, CLNK, CHRBLNK3,
+C M Houyoux note: TSCC has been put in here instead of road type
+C     and link has been removed.  These were breaking the county-SCC specific
+C     assignments by setting CNFIP in xreftbl.f to be non-blank and not the SCC.
+C     However, this change breaks link-specific profile assignments, which
+C     are not likely to be used anyway.  I suggest that we just remove
+C     link-specific assignments from the documentation for Spcmat.
+
+                    CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                            POLBLNK3, CSRCALL )
 
