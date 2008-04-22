@@ -133,6 +133,7 @@ C...........   Other local variables
         INTEGER    :: G_STIME = 0                ! start time from environment
         INTEGER    :: G_NSTEPS = 1               ! number of time steps from environment
         INTEGER    :: G_TSTEP = 0                ! time step from environment
+        INTEGER       ICNTFIL                    ! tmp count of fileset file count  
         INTEGER       IOS                        ! i/o status
         INTEGER       IREC                       ! line number count
         INTEGER       JDATE                      ! iterative julian date
@@ -312,7 +313,9 @@ C.........  Loop through 2D input files
         DO F = 1, NFILE
 
             NAM = FNAME( F )
-            IF ( .NOT. DESCSET( NAM, NFILES( F ) ) ) THEN
+            ICNTFIL = ALLFILES
+            IF( NFILES( F ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
+            IF ( .NOT. DESCSET( NAM, ICNTFIL ) ) THEN
                 MESG = 'Could not get description of file "'  //
      &                  NAM( 1:LEN_TRIM( NAM ) ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -523,7 +526,10 @@ C.........  Sort output variables into alphabetical order
 
 C.........  Set up for opening output file...
 C.........  Get grid information
-        IF( .NOT. DESCSET( FNAME( 1 ), NFILES( 1 ) ) ) THEN
+        ICNTFIL = ALLFILES
+        IF( NFILES( 1 ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
+
+        IF( .NOT. DESCSET( FNAME( 1 ), ICNTFIL ) ) THEN
             MESG = 'Could not get description of file "'  //
      &              FNAME( 1 )( 1:LEN_TRIM( FNAME(1) ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -629,10 +635,13 @@ C.....................  Set tmp variables
 C.....................  If file has species, read (do this for all files)...
                     IF( LVOUTA( V,F ) ) THEN
 
+                        ICNTFIL = ALLFILES
+                        IF( NFILES( F ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
+
 C.........................  If 2-d input file, read, and add
                         IF( NL .EQ. 1 ) THEN
                             IF( .NOT. 
-     &                           READSET( NAM, VNM, 1, NFILES( F ),
+     &                           READSET( NAM, VNM, 1, ICNTFIL,
      &                                    RDATE, JTIME, E2D     )) THEN
 
                                 MESG = 'Could not read "' // VNM //
@@ -649,7 +658,7 @@ C.........................  If 3-d input file, allocate memory, read, and add
 
                             DO K = 1, NL
                                 IF( .NOT. 
-     &                               READSET( NAM,VNM,K,NFILES( F ),
+     &                               READSET( NAM,VNM,K,ICNTFIL,
      &                                        RDATE, JTIME, E2D  )) THEN
 
                                     MESG = 'Could not read "' // VNM //
