@@ -267,6 +267,10 @@ C                   file.
                 SPCODE = ADJUSTR( SPCODE )
                 CPOA   = ADJUSTL( CPOA   )
 
+C.................  Skip all point entries for nonpoint sectors
+                IF ( CATEGORY /= 'POINT' .AND. 
+     &               PLT /= ' '                ) CYCLE
+
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, and compare
 C                   pollutant/emission type name with master list.

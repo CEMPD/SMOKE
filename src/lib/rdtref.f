@@ -389,6 +389,12 @@ C.................  Make sure SCC is set to SCCZERO if it is missing
                 CPOA = SEGMENT( 5 )   ! pollutant/emission type name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
 
+                PLT  = SEGMENT ( 7 )
+
+C.................  Skip all point entries for nonpoint sectors
+                IF ( CATEGORY /= 'POINT' .AND. 
+     &               PLT /= ' '                ) CYCLE
+
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros, compare SCC version master list, compare
 C                   SIC version to master list, and compare pol/act name 
@@ -478,7 +484,6 @@ C     link-specific assignments from the documentation for Spcmat.
                 CASE( 'POINT' )
 
 C.....................  Store string source characteristics 
-                    PLT = SEGMENT ( 7 )
                     CHARS( 1:5 ) = SEGMENT( 8:MXTCOL )
 
                     CALL BLDCSRC( CFIP, PLT, CHARS(1),
