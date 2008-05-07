@@ -984,6 +984,9 @@ C.............  Value is too large for
             ELSE IF( VAL .GT. 999999. ) THEN
                 FMT = '( I10, A10, F10.2 )'
 
+            ELSE IF( VAL .GT. 0. .AND. VAL .LT. 1. ) THEN
+                FMT = '( I10, A10, E10.4 )'
+
             ELSE
                 FMT = '( I10, A10, F10.3 )'
 
