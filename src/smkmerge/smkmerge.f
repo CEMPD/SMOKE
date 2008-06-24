@@ -65,7 +65,7 @@ C.........  This module contains the major data structure and control flags
      &          ANGMAT, MNGMAT,                                 ! no. gridding matrix entries
      &          ANSREAC, MNSREAC, PNSREAC,                      ! no. src w/ reac controls
      &          ARNMSPC, MRNMSPC, PRNMSPC,                      ! no. reac species
-     &          AEMNAM, BEMNAM, MEMNAM, PEMNAM, EMNAM,          ! species names
+     &          AEMNAM, BEMNAM, MEMNAM, PEMNAM, EMNAM, NSMATV,  ! species names and length of EMNAM
      &          ANMAP, AMAPNAM, AMAPFIL,                        ! area map file
      &          MNMAP, MMAPNAM, MMAPFIL,                        ! mobile map file
      &          PNMAP, PMAPNAM, PMAPFIL,                        ! point map file
@@ -147,6 +147,10 @@ C...........   Local allocatable arrays for creating list of all explicit srcs
         INTEGER, ALLOCATABLE :: TMPIDX( : )
         LOGICAL, ALLOCATABLE :: SRCFLG( : )
 
+C...........    Local allocatable array for tracking whether species have
+C               already been processed for elevated sources.
+        LOGICAL, ALLOCATABLE :: ELEV_SPCSET( : )
+
 C...........    Local variables for array sizes     
         INTEGER         APOLSIZ ! work area inventory emissions array size
         INTEGER         MPOLSIZ ! work mobile inventory emissions array size
@@ -196,6 +200,8 @@ C...........   Other local variables
         REAL          :: RDUM = 0      ! dummy real value
         REAL             RDUM1, RDUM2, RDUM3, RDUM4, RDUM5, RDUM6
         REAL             F1, F2, FB    ! tmp conversion factors
+
+        LOGICAL      :: INITELEV = .TRUE.   ! true: reintialize ELEVEMIS array
 
         CHARACTER(16)      SRGFMT           ! gridding surrogates format
         CHARACTER(16)   :: SRGGRDNM  = ' '  !  surrogates file grid name
@@ -432,6 +438,11 @@ C.........  Allocate memory for temporary list of species and pollutant names
         ALLOCATE( INNAMES( MXVARPGP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INNAMES', PROGNAME )
 
+C.........   Allocate memory for logical array for whether species set for elevated output
+        ALLOCATE( ELEV_SPCSET( NSMATV ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ELEV_SPCSET', PROGNAME )
+        ELEV_SPCSET = .FALSE.  ! array
+        
 C.........  Loop through processing groups (if speciation, this will be specia-
 C           tion groups, but if no speciation, this will be pollutant groups,  
 C           for purposes of memory usage if many pollutants and/or species)
@@ -549,6 +560,9 @@ C.............  Initializations before main time loop
 
 C.............  Loop through output time steps
             DO T = 1, NSTEPS   ! at least once for time-independent
+
+C.................  Reinitialize array for flagging elevated species as "set"
+                ELEV_SPCSET = .FALSE.  ! array
 
 C................. For time-dependent processing, write out a few messages...
                 IF( TFLAG ) THEN
@@ -848,8 +862,21 @@ C.........................  Apply matrices for elevated and plume-in-grid
 C                           outputs, if this pollutant is used for point srcs.
                         IF( K1. GT. 0 .AND.
      &                    ( ELEVFLAG .OR. PINGFLAG  .OR. INLINEFLAG) ) THEN
+
+C.............................  Determine whether or not this species has been
+C                               merged before to set initialization flag. This
+C                               additional step is to handle the case where multiple
+C                               pollutants feed the same species.
+                            INITELEV = .TRUE.
+                            IF ( SFLAG ) THEN
+                                IF( ELEV_SPCSET( SPINDEX( V,N ) ) )
+     &                              INITELEV = .FALSE.
+                                ELEV_SPCSET( SPINDEX( V,N ) ) = .TRUE.
+                            END IF
+
                             CALL MRGELEV( NPSRC, NMAJOR, NPING, 
-     &                                    K1, K2, K4, F1 )
+     &                                    K1, K2, K4, F1, INITELEV )
+
                         END IF
 
                     END IF
