@@ -1,6 +1,6 @@
 
         SUBROUTINE MRGELEV( NSRC, NMAJOR, NPING, 
-     &                      KEY1, KEY2, KEY4, CNV )
+     &                      KEY1, KEY2, KEY4, CNV, LINIT )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -73,6 +73,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: KEY2        ! mult controls index
         INTEGER     , INTENT (IN) :: KEY4        ! speciation index
         REAL        , INTENT (IN) :: CNV         ! units conversion factor
+        LOGICAL     , INTENT (IN) :: LINIT       ! true: initialize ELEVEMIS
 
 C.........  Other local variables
         INTEGER         I, J, K, L, S   ! counters and indicies
@@ -164,9 +165,12 @@ C.............  Abort if dimensions incorrect
 
         END IF  ! end of firstime section
 
-C.........  Initialize emissions values
-        PGRPEMIS = 0  ! array
-        ELEVEMIS = 0  ! array
+C.........  Initialize emissions values if calling routine indicates
+C           that this is a new species being processed.
+        IF ( LINIT ) THEN
+            PGRPEMIS = 0  ! array
+            ELEVEMIS = 0  ! array
+        END IF
 
 C.........  Check if this is a valid inventory pollutant for this call
         IF( KEY1 .GT. 0 ) THEN
