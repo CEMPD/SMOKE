@@ -153,7 +153,7 @@ C.........  Other local variables
         INTEGER          JDATEP1             ! julian date, plus 1 time step
         INTEGER          JTIMEP1             ! time, plus 1 time step
         INTEGER          NEXPLOOP            ! no. for explicit plume loop
-        INTEGER          NOUT                ! number output stacks
+        INTEGER, SAVE :: NOUT                ! number output stacks
         INTEGER, SAVE :: PTIME = -9          ! previous call's time (HHMMSS)
         INTEGER          ROW                 ! tmp row
 
