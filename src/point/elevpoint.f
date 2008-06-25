@@ -101,7 +101,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            PLUMRIS
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
-	INTEGER         INDEX1	
+        INTEGER         INDEX1        
 
         EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, INDEX1,
      &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE, PROMPTMFILE
@@ -232,7 +232,7 @@ C...........   Other local variables
         LOGICAL    VFLAG              ! true: use variable grid
         LOGICAL :: LFLAG    = .TRUE.  ! true: write out lat/lon info
 !        LOGICAL :: FFLAG    = .TRUE.  ! true if source sector is a fire source
-	
+        
 
         CHARACTER(10)   SCC
         CHARACTER(80)   GDESC     !  grid description
@@ -266,6 +266,8 @@ C.........  Get environment variables that control this program
         ELEVTYPE = ENVINT( 'SMK_ELEV_METHOD', MESG, 0, IOS )
 
 C.........  Define whether write out lat/lon info for the elevated sources
+        MESG = 'Define whether write out lat/lon info for the ' //
+     &         'elevated sources or not'
         LFLAG = ENVYN( 'ELEV_WRITE_LATLON', MESG, .TRUE., IOS )
 
         IF( .NOT. LFLAG ) THEN
@@ -453,13 +455,9 @@ C           to grid cells for the STACK_GROUPS file.
 C.........  Convert source x,y locations to coordinates of the projected grid
         SRCXL = XLOCA
         SRCYL = YLOCA
-
-
-		
+                
         CALL CONVRTXY( NSRC, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
      &                 XCENT, YCENT, SRCXL, SRCYL )
-
-     
 
 C.........  Allocate memory so that we can use the GENPTCEL
         ALLOCATE( NX( NGRID ), STAT=IOS )
@@ -521,34 +519,32 @@ C           exactly
            ALLOCATE( GRPCNT( NINVGRP ), STAT=IOS )
            CALL CHECKMEM( IOS, 'GRPCNT', PROGNAME )
 
-	   	   
+                      
            ALLOCATE( GRPGID( NINVGRP ), STAT=IOS )
            CALL CHECKMEM( IOS, 'GRPGID', PROGNAME )
 
+           ALLOCATE( GRPLAT( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPLAT', PROGNAME )
+           ALLOCATE( GRPLON( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPLON', PROGNAME )
+           ALLOCATE( GRPDM( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPDM', PROGNAME )
+           ALLOCATE( GRPHT( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPHT', PROGNAME )
+           ALLOCATE( GRPTK ( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPTK', PROGNAME )
+           ALLOCATE( GRPVE( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPVE', PROGNAME )
 
-        ALLOCATE( GRPLAT( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPLAT', PROGNAME )
-        ALLOCATE( GRPLON( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPLON', PROGNAME )
-        ALLOCATE( GRPDM( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPDM', PROGNAME )
-        ALLOCATE( GRPHT( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPHT', PROGNAME )
-        ALLOCATE( GRPTK ( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPTK', PROGNAME )
-        ALLOCATE( GRPVE( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPVE', PROGNAME )
-        ALLOCATE( GRPFL( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPFL', PROGNAME )
+           ALLOCATE( GRPFL( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPFL', PROGNAME )
 
-        ALLOCATE( GRPFIP( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
+           ALLOCATE( GRPFIP( NINVGRP ), STAT=IOS )
+          CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
+           ALLOCATE( GRPACRES( NINVGRP ), STAT=IOS )
+           CALL CHECKMEM( IOS, 'GRPACRES', PROGNAME )
 
-        ALLOCATE( GRPACRES( NINVGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'GRPACRES', PROGNAME )
-
-
-	   GRPACRES = 0.0
+           GRPACRES = 0.0
            GRPGID = 0
            GRPCNT = 0
 
@@ -585,7 +581,7 @@ C               groups must be computed to assign MEPSEs and MPSs.
         END IF  ! End of whether emissions are needed as a criteria
 
 
-        IF (FFLAG) THEN
+        IF( FFLAG )THEN
              DAYNAME = PROMPTMFILE( 
      &               'Enter logical name for DAY-SPECIFIC file',
      &               FSREAD3, CRL // 'DAY', PROGNAME )
@@ -595,8 +591,6 @@ C.............  Check to see if appropriate variable list exists
 
             I1 = INDEX1( 'ACRESBURNED', NVARS3D, VNAME3D )
             J1 = INDEX1( 'AREA', NVARS3D, VNAME3D )
-
-
 
             IF( I1 <= 0 .AND. J1 <= 0  ) THEN
                 MESG = 'ERROR: Cannot find acres burned ' //
@@ -624,57 +618,40 @@ C.............  Check to see if appropriate variable list exists
             CALL CHECKMEM( IOS, 'DAY_INDEX', PROGNAME )
             ALLOCATE( ACRES( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ACRES', PROGNAME )
-	    ACRES(1:NSRC) = 0.0
+            ACRES(1:NSRC) = 0.0
 
             JDATE = SDATE
-	    JTIME = STIME
-	    DO T = 1, NSTEPS
+            JTIME = STIME
+            DO T = 1, NSTEPS
             CALL SAFE_READ3( DAYNAME, 'ACRESBURNED', ALLAYS3,
      &          JDATE, JTIME, DAY_ACRES )   ! Wildfire inventory format
 
-                     IF ( .NOT. READ3( DAYNAME, 'INDXD', ALLAYS3,
+                   IF ( .NOT. READ3( DAYNAME, 'INDXD', ALLAYS3,
      &                        JDATE, JTIME, DAY_INDEX ) ) THEN
 
-                           MESG = 'Could not read "INDXD" from file "'//
-     &                     TRIM( DAYNAME ) // '".'
-                     CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
+                       MESG = 'Could not read "INDXD" from file "'//
+     &                         TRIM( DAYNAME ) // '".'
+                       CALL M3EXIT( PROGNAME, SDATE, STIME, MESG, 2 )
 
-                     END IF
+                   END IF
 
                    DO S = 1, NSRC
                       MY_INDEX = -1
                       DO MY_LOOP = 1, DAY_NSRC
-                       IF(S .EQ. DAY_INDEX(MY_LOOP)) THEN
-                           MY_INDEX = MY_LOOP
-                       ENDIF
+                         IF(S == DAY_INDEX(MY_LOOP) ) MY_INDEX = MY_LOOP
                       ENDDO
                       IF(MY_INDEX .GT. 0) THEN
-
-
-		         IF ((DAY_ACRES( MY_INDEX )) .GT. ACRES(S)) THEN
-			 
+                         IF ((DAY_ACRES( MY_INDEX )) .GT. ACRES(S)) THEN
                              ACRES(S) = DAY_ACRES( MY_INDEX )
-			 ENDIF
-		      ENDIF	 
+                         ENDIF
+                      ENDIF         
 
                    ENDDO
-        
-                     
-	    
-	    CALL NEXTIME(JDATE, JTIME,10000)
-	    
-	    ENDDO 
 
-            DO S = 1, NSRC
-	      IF (ACRES(S) .GT. 0.0) THEN
-	      
-!                 WRITE (*,*) S,ACRES(S)
-              ENDIF
-	    ENDDO
-
-	    	          
-
-	    	    
+                CALL NEXTIME(JDATE, JTIME,10000)
+            
+            ENDDO 
+                        
         ENDIF            
 
 C.........  Loop through sources to determine elevated and PinG sources.  If
@@ -705,26 +682,6 @@ C.................  Update stack parameters, if needed
 
             END IF
 
-	   
-
-!            IF (FFLAG) 
-!                      MY_INDEX = -1
-!                      DO MY_LOOP = 1, DAY_NSRC
-!                          IF (S .EQ. DAY_INDEX(MY_LOOP)) THEN
-!                              MY_INDEX = MY_LOOP
-!                          ENDIF
-!                      ENDDO
-
-!                      IF( MY_INDEX .GT. 0) THEN
-!                          IF( DAY_ACRES( MY_INDEX ) .GT. 0.0) THEN
-!                            ACRES(J) = DAY_ACRES( MY_INDEX )
-
-!                         ENDIF
-
-!                      ENDIF
-		      		      
-!	    ENDIF 
-		      
 C.............  Store reordered group IDs
             SRCGROUP( S ) = IGRP
 
@@ -757,32 +714,32 @@ C               (include emissions TOTAL for group).
 C.............  If cutoff approach is used, compute and store plume rise
             IF( LCUTOFF ) THEN
 
-!                IF( HT .LT. 0. .OR. 
-!     &              TK .LE. 0. .OR.
-!     &              VE .LE. 0. .OR.
-!     &              DM .LE. 0.      ) THEN
+                IF( HT .LT. 0. .OR. 
+     &              TK .LE. 0. .OR.
+     &              VE .LE. 0. .OR.
+     &              DM .LE. 0.      ) THEN
 
-!                    EFLAG = .TRUE.
-!                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+                    EFLAG = .TRUE.
+                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
-!                    WRITE( MESG,94030 ) HT, DM, TK, VE
+                    WRITE( MESG,94030 ) HT, DM, TK, VE
 
-!                    L = LEN_TRIM( MESG )
-!                    MESG = 'ERROR: Invalid stack parameters for:' //
-!     &                     CRLF() // BLANK10 // 
-!     &                     BUFFER( 1:L2 )// ' with'// CRLF()// BLANK10//
-!     &                     MESG( 1:L )                
-!                    CALL M3MESG( MESG )
-!                    VALS( RISE_IDX ) = 0.
+                    L = LEN_TRIM( MESG )
+                    MESG = 'ERROR: Invalid stack parameters for:' //
+     &                     CRLF() // BLANK10 // 
+     &                     BUFFER( 1:L2 )// ' with'// CRLF()// BLANK10//
+     &                     MESG( 1:L )                
+                    CALL M3MESG( MESG )
+                    VALS( RISE_IDX ) = 0.
 
 C.................  When stack parameters are okay...
-!                ELSE
+                ELSE
 
 C.....................  Calculate estimated plume rise
                     RISE( S ) = PLUMRIS( HT, TK, VE, DM )
                     VALS( RISE_IDX ) = RISE( S )
 
-!                END IF        ! end bad stack parms or not
+                END IF        ! end bad stack parms or not
 
 C.............  Otherwise, set value of rise to zero
             ELSE
@@ -949,7 +906,7 @@ C           unsorted.  The WPINGSTK routine uses this index
         IF (FFLAG) THEN
            ALLOCATE( GRPACRES(NGROUP), STAT=IOS )
            CALL CHECKMEM( IOS, 'GRPACRES', PROGNAME )
-	ENDIF                        
+        ENDIF                        
         ALLOCATE( INDX( NGROUP ), STAT=IOS )
         ALLOCATE( GN( NGROUP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GN', PROGNAME )
@@ -975,7 +932,7 @@ C           unsorted.  The WPINGSTK routine uses this index
         SN      = 0
         GRPLMAJOR = 0
         GRPLPING  = 0
-	IF (FFLAG) GRPACRES = BADVAL3
+        IF (FFLAG) GRPACRES = BADVAL3
 
 C.........  Loop over sources to fill in group settings with new group numbers 
 C           and to populate group arrays for major and PinG sources. 
@@ -1054,7 +1011,7 @@ C.................  Store the rest of the group settings in output arrays
                     GRPVE ( G ) = STKVE ( S )
                     GRPFL ( G ) = 0.25 * PI * GRPDM(G)*GRPDM(G)*GRPVE(G)
                     GRPFIP( G ) = IFIP (S )
-		    IF (FFLAG) GRPACRES( G ) = ACRES( S)
+                    IF (FFLAG) GRPACRES( G ) = ACRES( S)
                     IF (LMAJOR(S)) GRPLMAJOR( G ) = 1
                     IF (LPING(S)) GRPLPING ( G ) = 1
                 END IF
@@ -1110,7 +1067,6 @@ C.....................  Otherwise, internal error
                         CALL M3MESG( MESG )
 
                     END IF
-
 
 C..................... Evaluate elevated criteria again to get PGSTAT for 
 C                      writing; if valid, then write report fields
@@ -1618,7 +1574,7 @@ C----------------------------------------------------------------------
             END IF
 
             END SUBROUTINE RETRIEVE_IOAPI_HEADER
-	    
+            
             SUBROUTINE SAFE_READ3( FILNAM, VARNAM, LAYER, 
      &                             JDATE, JTIME, XBUF     )
 
@@ -1629,8 +1585,8 @@ C.............  Subprogram arguments
             INTEGER      JDATE     ! Julian date
             INTEGER      JTIME     ! time
             REAL         XBUF( * ) ! read buffer
-	    
-	    INTEGER :: L3, L4
+            
+            INTEGER :: L3, L4
 
 C----------------------------------------------------------------------
 
@@ -1653,5 +1609,5 @@ C----------------------------------------------------------------------
 
             END IF
 
-            END SUBROUTINE SAFE_READ3	    
+            END SUBROUTINE SAFE_READ3            
         END PROGRAM ELEVPOINT
