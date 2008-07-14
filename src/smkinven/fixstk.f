@@ -81,7 +81,7 @@ C...........   LOCAL PARAMETERS and their descriptions:
         REAL   , PARAMETER :: MINDM =    0.01   ! Min stack diameter (m)
         REAL   , PARAMETER :: MINTK =  260.0    ! Min stack exit temperature (K)
         REAL   , PARAMETER :: MINVE =    0.0001 ! Min stack exit velocity (m/s)
-        REAL   , PARAMETER :: MAXHT = 2100.0    ! Max stack height (m)
+        REAL   , PARAMETER :: MAXHT = 5100.0    ! Max stack height (m)
         REAL   , PARAMETER :: MAXDM =  100.0    ! Max stack diameter (m)
         REAL   , PARAMETER :: MAXTK = 2000.0    ! Max stack exit temperature (K)
         REAL   , PARAMETER :: MAXVE =  500.0    ! Max stack exit velocity (m/s)
