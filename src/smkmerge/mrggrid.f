@@ -61,18 +61,21 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
-        LOGICAL       ENVYN
-        INTEGER       GETFLINE
-        LOGICAL       GETYN       
+        LOGICAL       BLKORCMT
+        LOGICAL       ENVYN, GETYN
+        INTEGER       GETFLINE, GETEFILE
         INTEGER       INDEX1
         INTEGER       LBLANK
         INTEGER       PROMPTFFILE
         CHARACTER(16) PROMPTMFILE
         INTEGER       SEC2TIME
         INTEGER       SECSDIFF
+        REAL          STR2REAL
+        LOGICAL       CHKREAL
 
         EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
-     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF
+     &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF,
+     &           BLKORCMT, STR2REAL, CHKREAL
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -82,8 +85,12 @@ C.........  LOCAL PARAMETERS and their descriptions:
 C...........   LOCAL VARIABLES and their descriptions:
 
 C...........   Emissions arrays
-        REAL, ALLOCATABLE :: E2D ( : )   ! 2-d emissions
-        REAL, ALLOCATABLE :: EOUT( :,: ) ! output emissions
+        REAL, ALLOCATABLE :: E2D ( : )        ! 2-d emissions
+        REAL, ALLOCATABLE :: EOUT( :,: )      ! output emissions
+        REAL, ALLOCATABLE :: BEFORE_ADJ( : )  ! emissions before factors applied
+        REAL, ALLOCATABLE :: AFTER_ADJ ( : )  ! emissions after factors applied
+        REAL, ALLOCATABLE :: BEFORE_SPC( : )  ! emissions before factors applied
+        REAL, ALLOCATABLE :: AFTER_SPC ( : )  ! emissions after factors applied
 
 C...........   Input file descriptors
         INTEGER,       ALLOCATABLE :: DURATA( : ) ! no. time steps
@@ -96,11 +103,14 @@ C...........   Input file descriptors
         INTEGER,       ALLOCATABLE :: NFILES( : ) ! number of files in each fileset
         CHARACTER(16), ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
         LOGICAL,       ALLOCATABLE :: USEFIRST(:) ! true: use first time step of file
-
         LOGICAL,       ALLOCATABLE :: LVOUTA( :,: ) ! iff out var in input file
         CHARACTER(16), ALLOCATABLE :: VNAMEA( :,: ) ! variable names
         CHARACTER(16), ALLOCATABLE :: VUNITA( :,: ) ! variable units
         CHARACTER(80), ALLOCATABLE :: VDESCA( :,: ) ! var descrip
+        REAL,          ALLOCATABLE :: ADJ_FACTOR( : ) ! adjustment factors
+        CHARACTER(16), ALLOCATABLE :: ADJ_LFN( : )    ! Species name
+        CHARACTER(16), ALLOCATABLE :: ADJ_SPC( :    ) ! logicalFileName
+        CHARACTER(33), ALLOCATABLE :: ADJ_LFNSPC( : ) ! concatenated {logicalFileName}_{Species}
         CHARACTER(16)                 VNAMEP( MXVARS3 ) ! pt variable names
         CHARACTER(16)                 VUNITP( MXVARS3 ) ! pt variable units
         CHARACTER(80)                 VDESCP( MXVARS3 ) ! pt var descrip
@@ -117,14 +127,17 @@ C...........   Intermediate output variable arrays
 
 C...........   Logical names and unit numbers
 
+        INTEGER       ADEV            ! unit for logical names list for SEG
         INTEGER       IDEV            ! unit for logical names list for 2d files
         INTEGER       LDEV            ! unit for log file
         INTEGER       RDEV            ! unit for merge report file
+        INTEGER       ODEV            ! unit for QA report file
+        INTEGER       SDEV            ! unit for overall QA report file
         CHARACTER(16) ONAME           ! Merged output file name
         CHARACTER(16) PNAME           ! Point source input file name 
 
 C...........   Other local variables 
-        INTEGER       C, F, I, J, K, L, L1, L2, NL, V, T ! pointers and counters
+        INTEGER       ADJ, C, DD, F, I, J, K, L, L1, L2, NL, V, T ! pointers and counters
 
         INTEGER       DUMMY                      ! dummy value for use with I/O API functions
         INTEGER       EDATE                      ! ending julian date
@@ -141,6 +154,8 @@ C...........   Other local variables
         INTEGER       LB                         ! leading blanks counter
         INTEGER       LE                         ! location of end of string
         INTEGER       MXNFIL                     ! max no. of 2-d input files
+        INTEGER       MXNFAC                     ! max no. of adjustment factors
+        INTEGER       NADJ                       ! no. of adjustment factors
         INTEGER       NFILE                      ! no. of 2-d input files
         INTEGER       NSTEPS                     ! no. of output time steps
         INTEGER       NVOUT                      ! no. of output variables
@@ -156,14 +171,24 @@ C...........   Other local variables
         INTEGER       TSTEP                      ! time step
         INTEGER       VLB                        ! VGLVS3D lower bound 
 
+        REAL       :: FACS = 1.0                 ! adjustment factor 
+        REAL          RATIO                      ! ratio 
+
         CHARACTER(16)  FDESC                     ! tmp file description
         CHARACTER(16)  NAM                       ! tmp file name
         CHARACTER(16)  VNM                       ! tmp variable name
+        CHARACTER(33)  LFNSPC                    ! tmp spec and file name
         CHARACTER(256) LINE                      ! input buffer
         CHARACTER(256) MESG                      ! message field
+        CHARACTER(80)  NAME1                     ! tmp file name component
         CHARACTER(15)  RPTCOL                    ! single column in report line
+        CHARACTER(10)  EFMT                      ! output emissions foamat
+        CHARACTER(100) REPFMT                    ! output emissions foamat
+        CHARACTER(300) REPFILE                   ! name of report file
         CHARACTER(300) RPTLINE                   ! line of report file
+        CHARACTER(16)  SEGMENT( 5 )              ! line parsing arrays
 
+        LOGICAL    :: HEADER  = .FALSE.   ! header line flag
         LOGICAL    :: EFLAG   = .FALSE.   ! error flag
         LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
         LOGICAL    :: LFLAG   = .FALSE.   ! true iff 3-d file input
@@ -171,7 +196,6 @@ C...........   Other local variables
         LOGICAL       MRGDIFF             ! true: merge files from different days
 
         CHARACTER(16) :: PROGNAME = 'MRGGRID' ! program name
-
 C***********************************************************************
 C   begin body of program MRGGRID
  
@@ -186,6 +210,45 @@ C.........  Read names of input files and open files
 
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
      &                      'FILELIST', PROGNAME   )
+
+C........  Write summary of sector specific factor adjustment output
+        ODEV = PROMPTFFILE(
+     &         'Enter logical name for the MRGGRID QA REPORT file',
+     &         .FALSE., .TRUE., 'REPMERGE', PROGNAME )
+
+        MXNFIL = GETFLINE( ODEV, '' )
+
+        CALL GETENV( 'REPMERGE', REPFILE )
+        
+        OPEN( ODEV,FILE=REPFILE,STATUS='UNKNOWN',POSITION='APPEND')
+
+C.........  Write header line to report     
+        IF( MXNFIL == 0 ) THEN
+            WRITE( ODEV,93000 ) '# MRGGRID logical file specific QA Report'
+            WRITE( ODEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(16)|' // 
+     &                     'Varchar(16)|Real(8)|Real(8)|Real(8)|Real(8)'
+            WRITE( ODEV,93000 ) 'DATE,FileName,Species,Factor,Before,'//
+     &                          'After,Ratio'
+        END IF
+
+C........  Write summary of overall factor adjustment output by species
+        SDEV = PROMPTFFILE(
+     &         'Enter logical name for the MRGGRID Overall REPORT file',
+     &         .FALSE., .TRUE., 'REPMERGE_SUM', PROGNAME ) 
+
+        MXNFIL = GETFLINE( SDEV, '' )
+
+        CALL GETENV( 'REPMERGE_SUM', REPFILE )
+        
+        OPEN(SDEV,FILE=REPFILE,STATUS='UNKNOWN',POSITION='APPEND' )
+
+C.........  Write header line to report     
+        IF( MXNFIL == 0 ) THEN
+            WRITE( SDEV,93000 ) '# MRGGRID Overall Summary Report by Species'
+            WRITE( SDEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(16)|' //
+     &                          'Real(8)|Real(8)|Real(8)'
+            WRITE( SDEV,93000 ) 'DATE,Species,Before,After,Ratio'
+        END IF
 
 C.........  Get environment variables
         MESG = 'Merge files from different days into single file'
@@ -261,7 +324,8 @@ C.............  Read file names - exit if read is at end of file
                 CYCLE
             END IF
 
-            IF( LINE .EQ. ' ' ) CYCLE
+C.............  Skip blank and comment lines
+            IF ( BLKORCMT( LINE ) ) CYCLE
 
             F = F + 1
 
@@ -304,6 +368,153 @@ C.................  Store whether it's a fileset file or not
 
         ENDIF
 
+C.........  Get environment variable settings for adjustment factor input file
+        CALL ENVSTR( 'ADJ_FACS', MESG, ' ', NAME1 , IOS )
+
+C.........  Determine maximum number of input files in file
+        IF( IOS < 0 ) THEN     !  failure to open
+            ADEV = IOS
+            MXNFAC = 1
+            MESG = 'NOTE : No adjustment factors are applied because'//
+     &             ' the ADJ_FACS environment variable is not defined' 
+            CALL M3MSG2( MESG )
+
+        ELSE
+            MESG = 'Enter logical name for a list of adjustment factors'
+            ADEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'ADJ_FACS',PROGNAME )
+            MXNFAC = GETFLINE( ADEV, 'List of adjustment factos' )
+
+        END IF
+
+C.........  Allocate memory for arrays that just depend on the maximum number
+C           of adjustment factors in ADJ_FACS input file.
+        ALLOCATE( ADJ_LFN( MXNFAC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ADJ_LFN', PROGNAME )
+        ALLOCATE( ADJ_SPC( MXNFAC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ADJ_SPC', PROGNAME )
+        ALLOCATE( ADJ_LFNSPC( MXNFAC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ADJ_LFNSPC', PROGNAME )
+        ALLOCATE( ADJ_FACTOR( MXNFAC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ADJ_FACTOR', PROGNAME )
+
+        ADJ_SPC = ' '
+        ADJ_LFN = ' '
+        ADJ_LFNSPC = ' '
+        ADJ_FACTOR = 0.0
+
+        IF( ADEV < 0 ) GOTO 30
+
+C.........  Loop through input files and open them
+        IREC = 0
+        F = 0
+        DO
+        
+C.............  Read file names - exit if read is at end of file
+            READ( ADEV, 93000, END = 30, IOSTAT=IOS ) LINE
+            IREC = IREC + 1
+
+            IF ( IOS .NE. 0 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
+     &              'I/O error', IOS, 
+     &              'reading adustment factor file at line', IREC
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
+C.............  Skip blank and comment lines
+            IF ( BLKORCMT( LINE ) ) CYCLE
+
+C.............  Get line
+            CALL PARSLINE( LINE, 3, SEGMENT )
+
+            CALL UPCASE( SEGMENT( 1 ) )   ! species name
+            CALL UPCASE( SEGMENT( 2 ) )   ! logical file name
+
+C.............  Search adjustment factor for the current file
+            NAM = TRIM( SEGMENT( 2 ) )
+            
+            L = INDEX1( NAM, NFILE, FNAME )
+
+            IF( .NOT. CHKREAL( SEGMENT( 3 ) ) ) THEN
+            IF( L <= 0 .AND. .NOT. HEADER ) THEN
+                HEADER = .TRUE.
+                CYCLE
+            END IF
+            END IF
+
+            IF( HEADER ) THEN
+            IF( L <= 0 ) THEN
+                MESG = 'ERROR: Not found the adjustment factor ' // 
+     &                 TRIM(NAM) // ' file in the FILELIST.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            ELSE
+                F = F + 1
+
+                ADJ_SPC( F ) = TRIM( SEGMENT( 1 ) )
+                ADJ_LFN( F ) = TRIM( SEGMENT( 2 ) ) 
+                ADJ_LFNSPC( F ) = TRIM( SEGMENT( 1 ) ) // '_' // 
+     &                            TRIM( SEGMENT( 2 ) )
+                ADJ_FACTOR( F ) = STR2REAL( SEGMENT( 3 ) )
+
+                IF( ADJ_FACTOR( F ) < 0 ) THEN
+                    MESG = 'ERROR: Can not apply a negative ' //
+     &                  'adjustment factor for the species ' //
+     &                  TRIM( ADJ_SPC(F) ) // ' from the ' // 
+     &                  TRIM( NAM ) // ' file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                ELSE IF( ADJ_FACTOR( F ) == 0 ) THEN
+                    MESG = 'WARNING: ' // TRIM( ADJ_SPC(F) ) // 
+     &                  ' emissions from the ' //TRIM(NAM)// ' file' //
+     &                  ' will be zero due to a zero adjustment factor' 
+                    CALL M3MSG2( MESG )
+
+                END IF
+
+            END IF
+            END IF
+
+        END DO
+30      CONTINUE
+
+        IF( ADEV < 0 ) THEN 
+            NADJ = 1
+        ELSE
+            NADJ = F
+        END IF
+
+C.........  Duplicate Check of ADJ_FACS file
+        DO  F = 1, NADJ
+            LFNSPC = ADJ_LFNSPC( F )
+            DD = 0
+            DO I = 1, NADJ
+                IF( LFNSPC == ADJ_LFNSPC( I ) ) DD = DD + 1
+            END DO
+	    
+            IF( DD > 1 ) THEN
+                MESG = 'ERROR: Duplicate entries of '// TRIM(ADJ_SPC(F))
+     &               // ' species from the ' // TRIM( ADJ_LFN(F) ) // 
+     &              ' file in the ADJ_FACS file.' // LFNSPC
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            END IF
+        ENDDO
+
+C.........  Give error message and end program unsuccessfully
+        IF( EFLAG ) THEN
+            MESG = 'ERROR: Duplicate entries in the ADJ_FACS file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Allocate arrays that will store sector-specific daily/gridded total emissinos
+        ALLOCATE( BEFORE_ADJ( NADJ ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BEFORE_ADJ', PROGNAME )
+        ALLOCATE( AFTER_ADJ( NADJ ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AFTER_ADJ', PROGNAME )
+        BEFORE_ADJ = 0.0
+        AFTER_ADJ  = 0.0
+
 C.........  Determine I/O API layer storage lower bound
         VLB = LBOUND( VGLVS3D,1 )
 
@@ -335,6 +546,18 @@ C.........  Loop through 2D input files
                     VUNITA( V,F ) = VUNITSET( V )
                     VDESCA( V,F ) = VDESCSET( V )
                 END DO
+            END IF
+
+C.............  Search for adj factor species and logical file in the FILELIST
+            J = INDEX1( NAM, NADJ, ADJ_LFN )
+            IF( J > 0 ) THEN
+                K = INDEX1( ADJ_SPC( J ), NVARSET, VNAMESET )
+                IF( K <= 0 ) THEN
+                    MESG = 'ERROR: The species ' //TRIM(ADJ_SPC(J))// 
+     &                 ' you want to adjust is not available in the ' //
+     &                 TRIM(NAM) // ' file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
             END IF
 
 C.............  Compare all other time steps back to first file.
@@ -599,9 +822,18 @@ C.............  Write header line to report
             WRITE( RDEV,93000 ) TRIM( RPTLINE )
         END IF
 
+C.........  Allocate arrays that will store overall daily/gridded total emissinos by species
+        ALLOCATE( BEFORE_SPC( NVOUT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BEFORE_SPC', PROGNAME )
+        ALLOCATE( AFTER_SPC( NVOUT ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'AFTER_SPC', PROGNAME )
+        BEFORE_SPC = 0.0
+        AFTER_SPC  = 0.0
+
 C.........  Loop through hours
         JDATE = SDATE
         JTIME = STIME
+        FACS  = 1.0
         DO T = 1, NSTEPS
 
 C.............  Loop through species
@@ -632,6 +864,23 @@ C.....................  Set tmp variables
                     NAM = FNAME ( F )       ! input file name
                     NL  = NLAYSA( F )       ! number of layers
 
+C.....................  Search adjustment factor for the current file
+                    LFNSPC = TRIM( VNM ) // '_' // TRIM( NAM )
+                    ADJ = INDEX1( LFNSPC, NADJ, ADJ_LFNSPC )
+
+C.....................  Assign adjustment factor for the current species
+                    IF( ADJ > 0 ) THEN
+                        FACS = ADJ_FACTOR( ADJ )
+
+                        WRITE( MESG,93011 )'Apply adjustment factor' ,
+     &                      FACS, ' to the '  // TRIM( VNM ) //
+     &                      ' species from the '//TRIM( NAM )// ' file'
+                        CALL M3MSG2( MESG )
+                    ELSE
+                        FACS = 1.0
+                        
+                    END IF
+
 C.....................  If file has species, read (do this for all files)...
                     IF( LVOUTA( V,F ) ) THEN
 
@@ -651,7 +900,22 @@ C.........................  If 2-d input file, read, and add
      &                                       MESG, 2 )
                             ENDIF
 
-                            EOUT( 1:NGRID,1 ) = EOUT( 1:NGRID,1 ) + E2D
+C.............................  Logical file specific summary
+                            BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + 
+     &                                        SUM( E2D(1:NGRID) )
+
+                            AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + 
+     &                                        SUM( E2D(1:NGRID)*FACS )
+
+                            BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
+     &                                        SUM( E2D(1:NGRID) )
+
+C.............................  Overall summary by species
+                            AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
+     &                                        SUM( E2D(1:NGRID)*FACS )
+
+                            EOUT( 1:NGRID,1 ) = EOUT( 1:NGRID,1 ) + 
+     &                                          E2D( 1:NGRID) * FACS
 
 C.........................  If 3-d input file, allocate memory, read, and add
                         ELSE
@@ -668,8 +932,22 @@ C.........................  If 3-d input file, allocate memory, read, and add
      &                                           MESG, 2 )
                                 END IF
 
+C.................................  Logical file specific summary
+                                BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + 
+     &                                            SUM( E2D(1:NGRID) )
+
+                                AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + 
+     &                                            SUM(E2D(1:NGRID)*FACS)
+
+C.................................  Overall summary by species
+                                BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
+     &                                           SUM( E2D(1:NGRID) )
+
+                                AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
+     &                                            SUM(E2D(1:NGRID)*FACS)
+
                                 EOUT( 1:NGRID,K )= EOUT( 1:NGRID,K ) + 
-     &                                              E2D( 1:NGRID )
+     &                                             E2D( 1:NGRID )*FACS
                             END DO
 
                         END IF  ! if 2-d or 3-d
@@ -710,6 +988,69 @@ C.............  Write this time step to report
       
         END DO       ! loop through timesteps
 
+        WRITE( RDEV,93000 ) TRIM( RPTLINE )
+
+C........  Write summary of sector specific factor adjustment output
+C          Columns: Date, Sector, Species, value before, value after, ratio of before/after
+C          Later we can add the total amount of the adjusted species summed accross all of the input files
+C          and the total amount of the adjusted species in the output file.
+
+C.........  Write header line to report     
+        DO F = 1, NADJ
+
+            VNM = ADJ_SPC( F )     ! species name
+            NAM = ADJ_LFN( F )     ! logical file name
+            FACS   = ADJ_FACTOR( F )   ! adjustment factor
+            LFNSPC = ADJ_LFNSPC( F )
+            RATIO = ( AFTER_ADJ( F ) / BEFORE_ADJ( F ) )
+
+            IF( BEFORE_ADJ( F ) == 0.0 ) CYCLE
+
+            REPFMT = "(I8,2(',',A),',',F10.3,',',"
+
+C.............  Define the format of real values
+            CALL GET_FORMAT( VNM, BEFORE_ADJ( F ), EFMT )
+            REPFMT = TRIM( REPFMT ) // TRIM( EFMT )
+
+            CALL GET_FORMAT( VNM, AFTER_ADJ( F ), EFMT )
+            REPFMT = TRIM( REPFMT ) // TRIM( EFMT )
+            REPFMT = TRIM( REPFMT ) // "F10.3)"
+
+            WRITE( RPTLINE,REPFMT ) SDATE, NAM, VNM, FACS,
+     &                            BEFORE_ADJ( F ), AFTER_ADJ( F ), RATIO
+
+            IF( RATIO /= 1.0 ) WRITE( ODEV,93000 ) TRIM( RPTLINE )
+        END DO
+
+        CLOSE(ODEV)
+
+C.........  Write header line to overall summary report     
+        DO V = 1, NVOUT
+
+            VNM   = VNAME3D( V )     ! species name
+            RATIO = ( AFTER_SPC( V ) / BEFORE_SPC( V ) )
+
+            IF( BEFORE_SPC( V ) == 0.0 ) CYCLE
+
+            REPFMT = "( I8,',',A,',',"
+
+C.............  Define the format of real values
+            CALL GET_FORMAT( VNM, BEFORE_SPC( V ), EFMT )
+            REPFMT = TRIM( REPFMT ) // TRIM( EFMT )
+
+            CALL GET_FORMAT( VNM, AFTER_SPC( V ), EFMT )
+            REPFMT = TRIM( REPFMT ) // TRIM( EFMT )
+            REPFMT = TRIM( REPFMT ) // "F10.3)"
+
+            WRITE( RPTLINE,REPFMT ) SDATE, VNM, BEFORE_SPC(V),
+     &                              AFTER_SPC(V),RATIO
+
+            IF( RATIO /= 1.0 ) WRITE( SDEV,93000 ) TRIM( RPTLINE )
+
+        END DO
+
+        CLOSE( SDEV )
+
 C......... Normal Completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0)
     
@@ -725,6 +1066,8 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93010   FORMAT( A15 )
 
+93011   FORMAT(  A, F8.5, A )
+
 93020   FORMAT( I15 )
 
 C...........   Internal buffering formats............ 94xxx
@@ -732,5 +1075,58 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I7, :, 1X ) )
 
 94020   FORMAT( A, :, I3, :, 1X, 10 ( A, :, F8.5, :, 1X ) )
+
+
+C*****************  INTERNAL SUBPROGRAMS  ******************************
+
+        CONTAINS
+
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram determines the format to output
+C               emission values
+            SUBROUTINE GET_FORMAT( VBUF, VAL, FMT )
+
+C.............  Subroutine arguments
+            CHARACTER(*), INTENT (IN) :: VBUF
+            REAL        , INTENT (IN) :: VAL
+            CHARACTER(*), INTENT(OUT) :: FMT
+
+C----------------------------------------------------------------------
+
+C.............  Value is too large for 
+            IF( VAL .GT. 999999999. ) THEN
+                FMT = "E10.3,',',"
+
+                L = LEN_TRIM( VBUF )
+                WRITE( MESG,95020 ) 'WARNING: "' // VBUF( 1:L ) // 
+     &              '"Emissions value of', VAL, CRLF()// BLANK10// 
+     &              '" is too large for file format, so writing ' //
+     &              'in scientific notation for source'
+
+                CALL M3MESG( MESG )
+
+            ELSE IF( VAL .GT. 99999999. ) THEN
+                FMT = "F10.0,',',"
+
+            ELSE IF( VAL .GT. 9999999. ) THEN
+                FMT = "F10.1,',',"
+
+            ELSE IF( VAL .GT. 999999. ) THEN
+                FMT = "F10.2,',',"
+
+            ELSE IF( VAL .GT. 0. .AND. VAL .LT. 1. ) THEN
+                FMT = "E10.4,',',"
+
+            ELSE
+                FMT = "F10.3,',',"
+
+            END IF
+
+            RETURN
+
+95020       FORMAT( 10( A, :, E12.5, :, 1X ) )
+
+            END SUBROUTINE GET_FORMAT
 
         END PROGRAM MRGGRID
