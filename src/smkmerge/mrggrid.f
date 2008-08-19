@@ -153,6 +153,7 @@ C...........   Other local variables
         INTEGER       JTIME                      ! iterative time HHMMSS
         INTEGER       LB                         ! leading blanks counter
         INTEGER       LE                         ! location of end of string
+        INTEGER       MXNF                       ! tmp no. of 2-d input files
         INTEGER       MXNFIL                     ! max no. of 2-d input files
         INTEGER       MXNFAC                     ! max no. of adjustment factors
         INTEGER       NADJ                       ! no. of adjustment factors
@@ -186,6 +187,7 @@ C...........   Other local variables
         CHARACTER(100) REPFMT                    ! output emissions foamat
         CHARACTER(300) REPFILE                   ! name of report file
         CHARACTER(300) RPTLINE                   ! line of report file
+        CHARACTER(16)  SPCTMP                    ! tmp species name
         CHARACTER(16)  SEGMENT( 5 )              ! line parsing arrays
 
         LOGICAL    :: HEADER  = .FALSE.   ! header line flag
@@ -210,45 +212,6 @@ C.........  Read names of input files and open files
 
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,
      &                      'FILELIST', PROGNAME   )
-
-C........  Write summary of sector specific factor adjustment output
-        ODEV = PROMPTFFILE(
-     &         'Enter logical name for the MRGGRID QA REPORT file',
-     &         .FALSE., .TRUE., 'REPMERGE', PROGNAME )
-
-        MXNFIL = GETFLINE( ODEV, '' )
-
-        CALL GETENV( 'REPMERGE', REPFILE )
-        
-        OPEN( ODEV,FILE=REPFILE,STATUS='UNKNOWN',POSITION='APPEND')
-
-C.........  Write header line to report     
-        IF( MXNFIL == 0 ) THEN
-            WRITE( ODEV,93000 ) '# MRGGRID logical file specific QA Report'
-            WRITE( ODEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(16)|' // 
-     &                     'Varchar(16)|Real(8)|Real(8)|Real(8)|Real(8)'
-            WRITE( ODEV,93000 ) 'DATE,FileName,Species,Factor,Before,'//
-     &                          'After,Ratio'
-        END IF
-
-C........  Write summary of overall factor adjustment output by species
-        SDEV = PROMPTFFILE(
-     &         'Enter logical name for the MRGGRID Overall REPORT file',
-     &         .FALSE., .TRUE., 'REPMERGE_SUM', PROGNAME ) 
-
-        MXNFIL = GETFLINE( SDEV, '' )
-
-        CALL GETENV( 'REPMERGE_SUM', REPFILE )
-        
-        OPEN(SDEV,FILE=REPFILE,STATUS='UNKNOWN',POSITION='APPEND' )
-
-C.........  Write header line to report     
-        IF( MXNFIL == 0 ) THEN
-            WRITE( SDEV,93000 ) '# MRGGRID Overall Summary Report by Species'
-            WRITE( SDEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(16)|' //
-     &                          'Real(8)|Real(8)|Real(8)'
-            WRITE( SDEV,93000 ) 'DATE,Species,Before,After,Ratio'
-        END IF
 
 C.........  Get environment variables
         MESG = 'Merge files from different days into single file'
@@ -375,14 +338,55 @@ C.........  Determine maximum number of input files in file
         IF( IOS < 0 ) THEN     !  failure to open
             ADEV = IOS
             MXNFAC = 1
-            MESG = 'NOTE : No adjustment factors are applied because'//
-     &             ' the ADJ_FACS environment variable is not defined' 
+            MESG = 'NOTE : No adjustment factors were applied because'//
+     &             ' there is no ADJ_FACS environment variable defined' 
             CALL M3MSG2( MESG )
 
         ELSE
             MESG = 'Enter logical name for a list of adjustment factors'
             ADEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'ADJ_FACS',PROGNAME )
             MXNFAC = GETFLINE( ADEV, 'List of adjustment factos' )
+
+C............  Write summary of sector specific factor adjustment output
+            ODEV = PROMPTFFILE(
+     &         'Enter logical name for the MRGGRID QA REPORT file',
+     &         .FALSE., .TRUE., 'REPMERGE', PROGNAME )
+
+            MXNF = 0
+            DO         ! head of report file
+                READ( ODEV, 93000, END=222 ) LINE
+                MXNF = MXNF + 1
+            ENDDO
+222         CONTINUE
+
+C.............  Write header line to report     
+            IF( MXNF == 0 ) THEN
+              WRITE( ODEV,93000 ) '#MRGGRID logical file QA Report'
+              WRITE( ODEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(16)|' // 
+     &                     'Varchar(16)|Real(8)|Real(8)|Real(8)|Real(8)'
+              WRITE( ODEV,93000 ) 'DATE,FileName,Species,Factor,'//
+     &                          'Before,After,Ratio'
+            END IF
+
+C............  Write summary of overall factor adjustment output by species
+            SDEV = PROMPTFFILE(
+     &         'Enter logical name for the MRGGRID Overall REPORT file',
+     &         .FALSE., .TRUE., 'REPMERGE_SUM', PROGNAME ) 
+
+            MXNF = 0
+            DO         ! head of report file
+                READ( SDEV, 93000, END=333 ) LINE
+                MXNF = MXNF + 1
+            ENDDO
+333         CONTINUE
+
+C.............  Write header line to report     
+            IF( MXNF == 0 ) THEN
+              WRITE( SDEV,93000 ) '#MRGGRID Overall Summary by Species'
+              WRITE( SDEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(16)|' //
+     &                          'Real(8)|Real(8)|Real(8)'
+              WRITE( SDEV,93000 ) 'DATE,Species,Before,After,Ratio'
+            END IF
 
         END IF
 
@@ -445,8 +449,8 @@ C.............  Search adjustment factor for the current file
 
             IF( HEADER ) THEN
             IF( L <= 0 ) THEN
-                MESG = 'ERROR: Not found the adjustment factor ' // 
-     &                 TRIM(NAM) // ' file in the FILELIST.'
+                MESG = 'ERROR: The adjustment factor for ' // TRIM(NAM)
+     &              // ' file was not found in the FILELIST.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ELSE
                 F = F + 1
@@ -549,16 +553,21 @@ C.........  Loop through 2D input files
             END IF
 
 C.............  Search for adj factor species and logical file in the FILELIST
-            J = INDEX1( NAM, NADJ, ADJ_LFN )
-            IF( J > 0 ) THEN
-                K = INDEX1( ADJ_SPC( J ), NVARSET, VNAMESET )
-                IF( K <= 0 ) THEN
-                    MESG = 'ERROR: The species ' //TRIM(ADJ_SPC(J))// 
-     &                 ' you want to adjust is not available in the ' //
-     &                 TRIM(NAM) // ' file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            DO J = 1, NADJ
+                L = INDEX( ADJ_LFNSPC( J ), '_' )
+                LFNSPC = ADJ_LFNSPC( J )( L+1: ) ! retriev logical file from ADJ_FACS
+                IF( LFNSPC == NAM ) THEN
+                    SPCTMP = ADJ_LFNSPC( J )( 1:L-1 )   ! retrieve spcieces name from ADJ_FACS
+                    K = INDEX1( SPCTMP, NVARSET, VNAMESET )
+                    IF( K <= 0 ) THEN
+                        EFLAG = .TRUE.
+                        MESG = 'ERROR: The species '//TRIM(ADJ_SPC(J))// 
+     &                  ' you want to adjust is not available in the '//
+     &                  TRIM(NAM) // ' file'
+                        CALL M3MSG2( MESG )
+                    END IF
                 END IF
-            END IF
+            END DO
 
 C.............  Compare all other time steps back to first file.
 C.............  They must match exactly.
@@ -667,7 +676,7 @@ C                       the current file and all previous files
 
 C.........  Give error message and end program unsuccessfully
         IF( EFLAG ) THEN
-            MESG = 'Inconsistent time step, grid, or layers ' //
+            MESG = 'Inconsistent time step, grid, species, or layers '//
      &              'among the files!'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
@@ -735,6 +744,7 @@ C.................  If variable is in the output list, check the units
                 END IF      ! End variable in output list already or not
 
             END DO          ! End loop through variables in this file
+
         END DO              ! End loop through files.
 
 C.........  Give error message and end program unsuccessfully
@@ -901,11 +911,13 @@ C.........................  If 2-d input file, read, and add
                             ENDIF
 
 C.............................  Logical file specific summary
-                            BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + 
-     &                                        SUM( E2D(1:NGRID) )
+                            IF( ADJ > 0 ) THEN
+                                BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + 
+     &                                              SUM( E2D(1:NGRID) )
 
-                            AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + 
-     &                                        SUM( E2D(1:NGRID)*FACS )
+                                AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + 
+     &                                          SUM( E2D(1:NGRID)*FACS )
+                            END IF
 
                             BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
      &                                        SUM( E2D(1:NGRID) )
@@ -933,11 +945,13 @@ C.........................  If 3-d input file, allocate memory, read, and add
                                 END IF
 
 C.................................  Logical file specific summary
-                                BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + 
-     &                                            SUM( E2D(1:NGRID) )
+                                IF( ADJ > 0 ) THEN
+                                  BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ )+ 
+     &                                              SUM( E2D(1:NGRID) )
 
-                                AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + 
+                                  AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ )+ 
      &                                            SUM(E2D(1:NGRID)*FACS)
+                                END IF
 
 C.................................  Overall summary by species
                                 BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
@@ -1019,10 +1033,12 @@ C.............  Define the format of real values
             WRITE( RPTLINE,REPFMT ) SDATE, NAM, VNM, FACS,
      &                            BEFORE_ADJ( F ), AFTER_ADJ( F ), RATIO
 
-            IF( RATIO /= 1.0 ) WRITE( ODEV,93000 ) TRIM( RPTLINE )
+            IF( ADEV > 0 .AND. RATIO /= 1.0 ) THEN
+                WRITE( ODEV,93000 ) TRIM( RPTLINE )
+            ENDIF
         END DO
 
-        CLOSE(ODEV)
+c        IF( ADEV > 0 ) CLOSE(ODEV)
 
 C.........  Write header line to overall summary report     
         DO V = 1, NVOUT
@@ -1045,11 +1061,12 @@ C.............  Define the format of real values
             WRITE( RPTLINE,REPFMT ) SDATE, VNM, BEFORE_SPC(V),
      &                              AFTER_SPC(V),RATIO
 
-            IF( RATIO /= 1.0 ) WRITE( SDEV,93000 ) TRIM( RPTLINE )
-
+            IF( SDEV > 0 .AND.  RATIO /= 1.0 ) THEN
+                WRITE( SDEV,93000 ) TRIM( RPTLINE )
+            END IF
         END DO
 
-        CLOSE( SDEV )
+C        IF( ADEV > 0 ) CLOSE( SDEV )
 
 C......... Normal Completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0)
