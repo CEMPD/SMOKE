@@ -110,7 +110,7 @@ C...........   SUBROUTINE ARGUMENTS
      &                INTENT(OUT) :: OUTFMT     ! output record format
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: OLINELEN = 3500
+        INTEGER, PARAMETER :: OLINELEN = 10000
         INTEGER, PARAMETER :: IHDRDATE = 1
         INTEGER, PARAMETER :: IHDRHOUR = 2
         INTEGER, PARAMETER :: IHDRLAYR = 3
