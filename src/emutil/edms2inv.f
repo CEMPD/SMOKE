@@ -78,7 +78,7 @@ C.......  LOCAL PARAMETERS
 C.......  LOCAL VARIABLES
 
 C.......  Static arrays
-      CHARACTER(150)   SEGMENT( MXSEG )    ! parsed input line
+      CHARACTER(260)   SEGMENT( MXSEG )    ! parsed input line
 
 C.......  Allocatable arrays
       CHARACTER(15), ALLOCATABLE :: APRTID( : )
@@ -95,8 +95,6 @@ C.......  Allocatable arrays
       REAL,          ALLOCATABLE :: X     ( : )
       REAL,          ALLOCATABLE :: Y     ( : )
       INTEGER,       ALLOCATABLE :: HEIGHT( : )
-      INTEGER,       ALLOCATABLE :: ACRFT_NOX( : )
-      INTEGER,       ALLOCATABLE :: ACRFT_PMT( : )
       CHARACTER(16), ALLOCATABLE :: OUTVAR( : )
       CHARACTER(8),  ALLOCATABLE :: TYPE  ( : )
       CHARACTER(8),  ALLOCATABLE :: CDATE ( : )   ! current DATE
@@ -107,8 +105,22 @@ C.......  Allocatable arrays
       REAL,          ALLOCATABLE :: CVFACT( : )
       CHARACTER(16), ALLOCATABLE :: NPFACT( : )
 
+      REAL,          ALLOCATABLE :: CVHAPT( : )
+      CHARACTER(16), ALLOCATABLE :: NPHAPT( : )
+
+      REAL,          ALLOCATABLE :: CVHAPP( : )
+      CHARACTER(16), ALLOCATABLE :: NPHAPP( : )
+
+      REAL,          ALLOCATABLE :: TURTOG( :,:,: )    ! turbine engine org TOG
+      REAL,          ALLOCATABLE :: PSTTOG( :,:,: )    ! piston engine org TOG
+
+      REAL,          ALLOCATABLE :: PM_PMC( :,:,: )    ! turbine engine org TOG
+
+      REAL,          ALLOCATABLE :: PSTVAL( :,: )    ! output variable values
+      REAL,          ALLOCATABLE :: PSTNHAP( :,:,: )    ! output NONHAPVOC variable values
+
       REAL,          ALLOCATABLE :: ALLVAL( :,: )    ! output variable values
-      REAL,          ALLOCATABLE :: NONHAP( :,:,: )    ! output NONHAPTOG variable values
+      REAL,          ALLOCATABLE :: NONHAP( :,:,: )    ! output NONHAPVOC variable values
 
 C.......  File units and logical names
       INTEGER      :: ADEV = 0            ! output annual inventory
@@ -116,6 +128,8 @@ C.......  File units and logical names
       INTEGER      :: DDEV = 0            ! output daily inventory
       INTEGER      :: EDEV = 0            ! list of main EDMS input files
       INTEGER      :: FDEV = 0            ! input file
+      INTEGER      :: GDEVT= 0            ! turbine engine HAP list-new 1098 profile
+      INTEGER      :: GDEVP= 0            ! piston engine HAP list-1099 profile
       INTEGER      :: KDEV = 0            ! EDMS source id and SCC
       INTEGER      :: HDEV = 0            ! list of hourly emission input files
       INTEGER      :: LDEV = 0            ! unit number for log file
@@ -152,6 +166,8 @@ C.......  Other local variables
       INTEGER         MXSRC               ! Max number of SRCPARAM in input file
       INTEGER         NAPT                ! A number of EDMS_SCCs list
       INTEGER         NFAC                ! A number of conversion factors
+      INTEGER         NFAC_TURBINE        ! A number of conversion factors for Turbine HAPs
+      INTEGER         NFAC_PISTON         ! A number of conversion factors for Piston HAPs
       INTEGER         MXLOC               ! Max number of LOCATION in input file
       INTEGER         MXFILES             ! Max number of input files listed in FILELIST
       INTEGER         UTMZONE             ! airport UTM zone
@@ -161,7 +177,9 @@ C.......  Other local variables
       INTEGER         NRPT                ! number of repeat
       INTEGER         POS                 ! position in INVDNAM array
 
+      REAL            CUREMIS             ! current hourly kg/hr
       REAL            DAYTOT              ! Daily total emission
+      REAL            PSTTOT              ! Daily total emission
       REAL            LATICAO             ! ICAO latitude
       REAL            LONICAO             ! ICAO longitude
       REAL         :: LATORG  = 9999.0    ! EDMS origin latitude
@@ -180,11 +198,11 @@ C.......  Other local variables
       REAL            SUM                 ! sum to determine area
       REAL            CONVF               ! HAPs conversion factors
       REAL            TOTAL               ! emission total of period
+      REAL            VAL1                ! tmp value1
+      REAL            VAL2                ! tmp value2
 
       LOGICAL         ADD                 ! true: add current airport source to master list
-      LOGICAL      :: NO_FLAG = .FALSE.   ! true: flag for processing NO
-      LOGICAL      :: NO2_FLAG= .FALSE.   ! true: flag for processing NO2
-      LOGICAL      :: PM_FLAG = .FALSE.   ! true: flag for processing PMTOTAL
+      LOGICAL,SAVE :: PM_FLAG = .FALSE.   ! true: flag for processing PMC
       LOGICAL         NPFLAG              ! true: flag for new pollutants
       LOGICAL      :: AFLAG = .FALSE.     ! true: read AIRPORT ICAO aiprot code from MAIN_EDMS file
       LOGICAL      :: OFLAG = .FALSE.     ! true: read ORIGIN cord from MAIN_EDMS file
@@ -262,6 +280,12 @@ C......  Open unit numbers of input files
       MESG = 'Enter logical name for a file of conversion factors'
       TDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'EDMS_FACT', PROGNAME )
 
+      MESG = 'Enter logical name for a file of a list of turbine HAPs'
+      GDEVT= PROMPTFFILE( MESG, .TRUE., .TRUE., 'TURBINE_HAP',PROGNAME )
+
+      MESG = 'Enter logical name for a file of a list of piston HAPs'
+      GDEVP= PROMPTFFILE( MESG, .TRUE., .TRUE., 'PISTON_HAP', PROGNAME )
+
       MESG = 'Enter logical name for country, state, and county ' //
      &       'file'
       CDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'COSTCY', PROGNAME )
@@ -299,10 +323,6 @@ C             number of airport sources
               CALL CHECKMEM( IOS, 'TSCC', PROGNAME )
               ALLOCATE( APRTID( MXSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'APRTID', PROGNAME )
-              ALLOCATE( ACRFT_NOX( MXSRC ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'ACRFT_NOX', PROGNAME )
-              ALLOCATE( ACRFT_PMT( MXSRC ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'ACRFT_PMT', PROGNAME )
               ALLOCATE( LOCID( MXSRC ), STAT=IOS )
               CALL CHECKMEM( IOS, 'LOCID', PROGNAME )
               ALLOCATE( STATE( MXSRC ), STAT=IOS )
@@ -333,8 +353,6 @@ C             number of airport sources
               TYPE   = ''
               AREA   = 0.
               POINTS = 0
-              ACRFT_NOX = 0
-              ACRFT_PMT = 0
 
           END IF
 
@@ -384,6 +402,12 @@ C...................  stores EDMS source IDs and SCCs
 
 C...................  stores EDMS source IDs and SCCs
                   CALL READ_EDMS_SCC
+
+C...................  stores old 1099 HAP factors for Piston engines
+                  CALL READ_PISTON_HAP_FACTOR
+
+C...................  stores new 1098 HAP factors for Turbine engines
+                  CALL READ_TURBINE_HAP_FACTOR
 
 C...................  Write airport ICAO code and assigned fips code
                   MESG = 'Current AIRPORT ICAO CODE : ' //  ICAOCODE // 
@@ -464,6 +488,13 @@ C...................  Define the location of airport id in main EDMS source list
 
                   SCC = APTSCC( K )
 
+                  L = LEN_TRIM( SCC )
+                  IF( L < 1 ) THEN
+                      MESG = 'ERROR : Incorrect SCC airport code ' //
+     &                       'format or not listed in EDMS_SCC file.'
+                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                  END IF
+
 C...............  Save the source type
                   SRCTYPE = SEGMENT( 3 )
 
@@ -531,8 +562,16 @@ C...................  Check if we already have this airport in master list
                 ELSE IF( TYPE( K ) .EQ. 'VOLUME' ) THEN
                     AREA( K ) = 1.0
 
+                ELSE IF( TYPE( K ) .EQ. 'POINT' ) THEN
+                    AREA( K ) = 1.0
+
                 ELSE IF( TYPE( K ) .EQ. 'AREAPOLY' ) THEN
                     POINTS( K ) = STR2INT( SEGMENT( 5 ) )
+
+                ELSE
+                    MESG = 'ERROR: Area of the source ' // APRT // 
+     &                     ' is not found'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
                 ENDIF
 
@@ -671,6 +710,19 @@ C.......  Allocate arrays to store output values
       CALL CHECKMEM( IOS, 'ALLVAL', PROGNAME )
       ALLOCATE( NONHAP( NDATE, MXSRC, 24 ), STAT=IOS )
       CALL CHECKMEM( IOS, 'NONHAP', PROGNAME )
+
+      ALLOCATE( PSTVAL( MXSRC, 24 ), STAT=IOS )
+      CALL CHECKMEM( IOS, 'PSTVAL', PROGNAME )
+      ALLOCATE( PSTNHAP( NDATE, MXSRC, 24 ), STAT=IOS )
+      CALL CHECKMEM( IOS, 'PSTNHAP', PROGNAME )
+
+      ALLOCATE( TURTOG( NDATE, MXSRC, 24 ), STAT=IOS )
+      CALL CHECKMEM( IOS, 'TURTOG', PROGNAME )
+      ALLOCATE( PSTTOG( NDATE, MXSRC, 24 ), STAT=IOS )
+      CALL CHECKMEM( IOS, 'PSTTOG', PROGNAME )
+      ALLOCATE( PM_PMC( NDATE, MXSRC, 24 ), STAT=IOS )
+      CALL CHECKMEM( IOS, 'PM_PMC', PROGNAME )
+
       ALLOCATE( CDATE( NDATE ), STAT=IOS )
       CALL CHECKMEM( IOS, 'CDATE', PROGNAME )
       ALLOCATE( NPTOTAL( MXFILES ), STAT=IOS )
@@ -680,6 +732,14 @@ C.......  Allocate arrays to store output values
 
       ALLVAL = 0.  ! array
       NONHAP = 0.  ! array
+
+      PSTVAL = 0.  ! array
+      PSTNHAP = 0.  ! array
+
+      TURTOG = 0.  ! array
+      PSTTOG = 0.  ! array
+      PM_PMC = 0.  ! array
+
       CDATE  = ' ' ! array
       EFTOTAL = 0. ! array
       NPTOTAL = ' ' ! array
@@ -706,30 +766,20 @@ C...........  Define current processing pollutant
 
 C...........  One cond:1st pol has to be THC to reduce usage of memory
           IF( I == 1 ) THEN
-              IF( POLNAM /= 'THC' ) THEN
-                  MESG = 'ERROR: You MUST process THC first '
+              IF( POLNAM /= 'VOC' ) THEN
+                  MESG = 'ERROR: You MUST process VOC first '
      &                    // 'before processing other pollutants.'
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               END IF
           END IF
 
-          IF( POLNAM == 'VOC' ) THEN
-              MESG = 'ERROR: Can not process VOC BUT can ' //
-     &               'convert THC to VOC.'
-              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-C...........  One cond:1st pol has to be THC to reduce usage of memory
-          ELSE IF( POLNAM == 'THC' ) THEN
-              IF( I == 1 ) THEN
-                  MESG = 'NOTE: Pollutant THC is internally ' //
-     &                   'converted to TOG.'
-                  CALL M3MSG2( MESG )
-                  POLNAM = 'TOG'
-              END IF
-          END IF
-
 C...........  Rename total aircraft PM species
           IF( POLNAM == 'PM25' ) POLNAM = 'PM2_5'
+          IF( POLNAM == 'PM10' ) THEN
+              MESG = 'WARING: Computing PMC = PM10 - PM2_5'
+              CALL M3MSG2( MESG )
+              POLNAM = 'PMC'
+          END IF
 
 C...........  look for pol names in a list of pols
           POS  = INDEX1( POLNAM, NINVTBL, ITNAMA )
@@ -767,6 +817,7 @@ C...........  Initialize values before reading file
           PDATE  = ' '
           TDATE  = ' '
           ALLVAL = 0.0
+          PSTVAL = 0.0
           TOTAL  = 0.0          
 
 C...........  Read through input file          
@@ -823,6 +874,9 @@ C...............  Define the location of airport id in main EDMS source list
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               END IF
 
+c............... temporarily fix for skipping GATE_### sources
+c              IF ( TSCC(K)(1:4) == 'GATE' ) CYCLE
+
 C...............  Store the date of hourly emissions
               TDATE = TRIM(SEGMENT( 4 )) // '/' // TRIM(SEGMENT( 5 )) //
      &                '/' // TRIM(SEGMENT( 3 ))
@@ -854,23 +908,42 @@ C.......................  Writing current processing hour message
                       IF( J == 1 ) CALL M3MSG2( MESG )
 
                       DAYTOT = 0.0
-
+                      PSTTOT = 0.0
+                    
 C.......................  compute daily total by summing 24hrs hourly emis
                       DO T = 1, 24
                           DAYTOT = DAYTOT + ALLVAL( J,T )
+                          PSTTOT = PSTTOT + PSTVAL( J,T )
                       END DO
 
 C.......................  Skip any zero daily total
                       IF( DAYTOT == 0.0 ) CYCLE 
+c                      IF( TSCC( J )(1:4) == 'GATE' ) CYCLE
 
-                      IF( POLNAM /= 'TOG' ) THEN 
-                      IF( POLNAM /= 'PMTOTAL' ) THEN 
+                      IF( POLNAM /= 'VOC' ) THEN 
+
+                       IF( TSCC(J) == '2275050000' ) THEN
+                         SCC = '2275051000'
+                         WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
+     &                      APRTID( J ),LOCID( J ), HEIGHT( J ), 
+     &                      POLNAM(1:5), PDATE, TZONE, 
+     &                     ( ALLVAL(J,T), T = 1,24 ), DAYTOT,
+     &                      SCC, POLNAM
+
+                         SCC = '2275052000'
+                         WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
+     &                      APRTID( J ),LOCID( J ), HEIGHT( J ), 
+     &                      POLNAM(1:5), PDATE, TZONE, 
+     &                     ( PSTVAL(J,T), T = 1,24 ), PSTTOT,
+     &                      SCC, POLNAM
+                       ELSE
                          WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
      &                      APRTID( J ),LOCID( J ), HEIGHT( J ), 
      &                      POLNAM(1:5), PDATE, TZONE, 
      &                     ( ALLVAL(J,T), T = 1,24 ), DAYTOT, TSCC( J ),
      &                     POLNAM
-                      END IF
+                       END IF
+
                       END IF
                   END DO
 
@@ -879,95 +952,271 @@ C.......................  Skip any zero daily total
 
                   PDATE = TDATE           ! Store previous date
                   ALLVAL = 0.0
+                  PSTVAL = 0.0
 
               END IF
 
 C...............  Store output values : convert metric g/sec/m2 to short tons/hr
               ALLVAL( K, IHOUR ) =  STR2REAL( SEGMENT( 8 ) ) 
      &                              * 0.003968254 * AREA( K )
-
 C...............  Store output values for report: convert metric g/sec/m2 to kg/hr
-              TOTAL = TOTAL + STR2REAL( SEGMENT( 8 ) ) * 3.6 * AREA(K)
+              CUREMIS = STR2REAL( SEGMENT( 8 ) ) * 3.6 * AREA(K)
+              TOTAL = TOTAL + CUREMIS
 
-C...............  Convert THC(g in CH4) to TOG(g) 
-C                 Note: This conversion factor 1.148106 is based on
-C                 GSPRO #1098 for SCC 227502000 only.
+C...............  General Aviation Split ( 76% Turbine and 24% Piston Engine)
+              IF( TSCC( K ) == '2275050000' ) THEN  ! General Aviation
+
+C................... Turbine Engine : 76% of total of emission
+C................... Convert VOC to THC using orig CSSI convertion factors
+                  VAL1 = ALLVAL( K, IHOUR ) * 0.76
+
+C................... Piston Engine :24% of total of emission
+C................... Convert VOC to THC using orig CSSI convertion factors
+                  VAL2 = ALLVAL( K, IHOUR ) * 0.24
+
+                  ALLVAL( K, IHOUR ) = VAL1   ! 76% turbine split emissions
+                  PSTVAL( K, IHOUR ) = VAL2   ! 24% piston split emissions\
+              ENDIF
+
+C...............  Convert THC(g in CH4) or VOC(as VOC) to TOG(g) 
 C...............  Store converted TOG (THC-->TOG) to NONHAP(:,:,:) initially
-              IF( POLNAM == 'TOG' ) THEN
+C...............  Store converted TOG (VOC-->TOG) to NONHAP(:,:,:) initially
+              IF( POLNAM == 'VOC' ) THEN
 
-C................... 0.947 = mass conv factor (0.865) * 1.0947 (THC to VOC)
-                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.947  !CH4 to C
+                  IF( TSCC( K ) == '2275020000' ) THEN   ! commercial
 
-C...............  Convert TOG(g in C) = 1.148106 * VOC(g in C) 
-                  ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 1.148106
+C....................... Convert VOC to THC using orig CSSI convertion factors
+                      ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) / 0.947
 
-                  NONHAP( NDY, K, IHOUR ) = ALLVAL( K, IHOUR )
+C.......................  Convert original THC to new TOG with updated conv factor from FAA
+                      ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 1.151066
 
-C............... Convert NO emission in NO2 equivalcy to NO equivalency (30/44)
+                      TURTOG( NDY,K,IHOUR ) = ALLVAL( K,IHOUR )
+                      
+                  ELSE IF( TSCC( K ) == '2275001000' ) THEN    ! millitary
+
+C....................... Convert VOC to THC using orig CSSI convertion factors
+                      ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) / 0.95556
+
+C.......................  Convert original THC to new TOG with updated conv factor from FAA
+                      ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 1.151066
+
+                      TURTOG( NDY,K,IHOUR ) = ALLVAL( K,IHOUR )
+
+                  ELSE IF( TSCC( K ) == '2275050000' ) THEN  ! General Aviation
+
+C....................... Turbine Engine : 76% of total of emission
+C....................... Convert VOC to THC using orig CSSI convertion factors
+                      ALLVAL( K,IHOUR ) = ALLVAL( K, IHOUR ) / 0.91966
+
+C.......................  Convert original THC to new VOC with updated conv factor from FAA
+                      ALLVAL( K,IHOUR ) = ALLVAL( K, IHOUR ) * 1.151066
+
+C....................... Piston Engine :24% of total of emission
+C....................... Convert VOC to THC using orig CSSI convertion factors
+                      PSTVAL( K,IHOUR ) = PSTVAL( K, IHOUR ) / 0.83471
+
+C.......................  Convert original THC to new TOG with updated conv factor from FAA
+                      PSTVAL( K,IHOUR ) = PSTVAL( K, IHOUR ) * 0.83471
+
+                      TURTOG( NDY,K,IHOUR ) = ALLVAL( K,IHOUR )
+                      PSTTOG( NDY,K,IHOUR ) = PSTVAL( K,IHOUR )
+
+                  ELSE IF( TSCC( K ) == '2275060000' ) THEN    ! Air Texi
+
+C....................... Convert VOC to THC using orig CSSI convertion factors
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) / 0.91966
+
+C.......................  Convert original THC to new TOG with updated conv factor from FAA
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.151066
+
+                      TURTOG( NDY,K,IHOUR ) = ALLVAL( K,IHOUR )
+
+                  ELSE IF( TSCC( K ) == '2275070000' ) THEN    ! APU
+
+C.......................  Convert original THC(=VOC) to new TOG with updated conv factor from FAA
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.151066
+
+                      TURTOG( NDY,K,IHOUR ) = ALLVAL( K,IHOUR )
+
+                  ELSE IF( TSCC( K ) == '10100604' ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 2.272727
+
+                  ELSE IF( TSCC( K ) == '20300101' ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.1682243
+
+                  ELSE IF( TSCC( K ) == '20400199' ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.0077597
+
+                  ELSE IF( TSCC( K ) == '31399999' .OR.
+     &                     TSCC( K ) == '40202402'        ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.15664175
+
+                  ELSE IF( TSCC( K )(1:5) == '22010' ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.19631535
+
+                  ELSE IF( TSCC( K )(5:9) == '00800' ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.03241972
+
+                  ELSE IF( TSCC( K )(1:7) == '2501995' ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.02176356
+
+                  ELSE IF( TSCC( K ) == '2501060000' ) THEN
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.00887813
+
+                  ELSE                     ! SCC = '22300....'
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * 1.0
+
+                  ENDIF
+
+C................... Store original TOG values to NONHAPTOG arrays and org TOG array
+C................... estimate aircraft only HAPs based upon new 1098 and 1099 species factors
+
+                  NONHAP( NDY, K, IHOUR )  = ALLVAL( K,IHOUR )
+                  PSTNHAP( NDY, K, IHOUR ) = PSTVAL( K,IHOUR )
+
+C............... Convert NO emission in NO2 equivalcy to NO equivalency (30/46)
               ELSE IF( POLNAM == 'NO' ) THEN
-                  NO_FLAG = .TRUE.
-                  IF( ALLVAL( K, IHOUR ) > 0 ) ACRFT_NOX( K ) = K
                   ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.652
-
-C............... Process NO2 emission
-              ELSE IF( POLNAM == 'NO2' ) THEN
-                  NO2_FLAG = .TRUE.
-                  IF( ALLVAL( K, IHOUR ) > 0 ) ACRFT_NOX( K ) = K
+                  PSTVAL( K, IHOUR ) = PSTVAL( K, IHOUR ) * 0.652
 
 C............... Check NO/NO2 emission has been processed for NOX renoralization
 C............... which means excluding aircraft emissions from NOX HRE.
               ELSE IF( POLNAM == 'NOX' ) THEN
-                  IF( .NOT. NO_FLAG .OR. .NOT. NO2_FLAG ) THEN
-                      MESG = 'ERROR: Please process both NO and NO2 '//
-     &                       'HRE files before processing NOX HRE file'
-                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                  END IF
 
-                  IF( K == ACRFT_NOX( K ) ) THEN
+                  IF(TSCC(K)(1:5)=='22750' .AND. TSCC(K)(6:6)/='7') THEN
                       ALLVAL( K, IHOUR ) = 0.0
-                      CYCLE   ! Skip if it is aircraft source
+                      PSTVAL( K, IHOUR ) = 0.0
+                      TOTAL = TOTAL - CUREMIS
                   END IF
-
-C............... Check PMTOTAL has been processed for PM10/PM25 renormalization
-              ELSE IF( POLNAM == 'PMTOTAL' ) THEN
-                  PM_FLAG = .TRUE.
-                  IF( ALLVAL( K, IHOUR ) > 0 )  ACRFT_PMT( K ) = K
-                  CYCLE         ! Skip processing PMTOTAL
 
 C............... Check PM25 has been processed for PM10/PM25 renormalization
 C............... which means excluding aircraft emissions from PM10/PM2_5 HRE.
-              ELSE IF( POLNAM == 'PM10' .OR. POLNAM == 'PM2_5' ) THEN
-                  IF( .NOT. PM_FLAG ) THEN
-                      MESG = 'ERROR: Please process PMTOTAL HRE files'//
-     &                  ' before processing NOX, PM10 or PM2_5 HRE file'
-                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                  END IF
+              ELSE IF( POLNAM == 'PMC' .OR. POLNAM == 'PM2_5' ) THEN
 
-                  IF( K == ACRFT_PMT( K ) ) THEN
+                  IF(TSCC(K)(1:5)=='22750' .AND. TSCC(K)(6:6)/='7') THEN
                       ALLVAL( K, IHOUR ) = 0.0
-                      CYCLE   ! Skip if it is aircraft source
+                      PSTVAL( K, IHOUR ) = 0.0
+                      TOTAL = TOTAL - CUREMIS
                   END IF
+                  
+                 IF( POLNAM == 'PM2_5' ) THEN
+                     PM_FLAG = .TRUE.
+                     PM_PMC( NDY,K,IHOUR ) = ALLVAL( K,IHOUR )
 
+                 ELSE
+                     IF( .NOT. PM_FLAG ) THEN
+                          MESG = 'ERROR: You MUST process PM2_5 first '
+     &                        // 'before processing PMC (or PM10).'
+                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                     ENDIF
+
+C......................  Computing PMC by subtracting PM2_5 from PM10
+                     ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) 
+     &                                   - PM_PMC( NDY,K,IHOUR )
+
+                     IF( ALLVAL( K,IHOUR ) < 0 ) THEN
+                         WRITE( MESG, 94010 )'WARNING: PMC is negative '//
+     &                   ':: Reset it to zero :: date :: ' // PDATE //
+     &                   ' at timestep ::', IHOUR 
+                         CALL M3MSG2( MESG )
+                         ALLVAL( K,IHOUR ) = 0.0
+                     ENDIF
+                 ENDIF
 
 C............... Temporarly adjustment of PEC emission
               ELSE IF( POLNAM == 'PEC' ) THEN
                   ALLVAL( K, IHOUR ) = ALLVAL( K, IHOUR ) * 0.2623
+                  PSTVAL( K, IHOUR ) = PSTVAL( K, IHOUR ) * 0.2623
 
 C..............  Conversion all HAPs (g in CH4) to (g)
               ELSE IF( ITVTSA(POS)=='V' .OR. ITVTSA(POS)=='T' )THEN
 
 C...................  Apply individual HAP conversion factor to convert
 C                     CH4 equivalent to species mass equivalent.
-                  NF = INDEX1( POLNAM, NFAC, NPFACT )
-                  IF( NF < 1 ) THEN
-                      MESG = 'ERROR: Could not find the matched EDMS '//
-     &                   'conversion factor of ( ' // TRIM( POLNAM ) // 
-     &                   ' ) from EDMS_FACTOR file'
-                      CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                  END IF
-                  CONVF = CVFACT( NF )
+c...................  ONLY FOR NON-AIRCRAFT SOURCES NONHAPTOG COMPUTATION
+                  IF( TSCC( K )(1:5) /= '22750' ) THEN
+                      NF = INDEX1( POLNAM, NFAC, NPFACT )
+                      IF( NF < 1 ) THEN
+                          MESG = 'WARNING:Could not find the matched '//
+     &                    'EDMS conversion factor of ( '//TRIM(POLNAM)// 
+     &                    ' ) from EDMS_FACTOR file for NON-AIRCRAFT'
+c                          CALL M3MSG2( MESG )
+                      END IF
 
-                  ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * CONVF
+                      IF( NF > 0 ) THEN
+                          CONVF = CVFACT( NF )
+                      ELSE
+                          CONVF = 0
+                      END IF
+
+                      ALLVAL( K,IHOUR ) = ALLVAL( K,IHOUR ) * CONVF
+
+C.......................  Substract all HAPs from CAP TOG (stored in NONHAP array)
+C                         to compute NONHAPTOG
+                      NONHAP( NDY,K,IHOUR ) = NONHAP( NDY,K,IHOUR )
+     &                                        - ALLVAL( K, IHOUR )
+
+C...................  ONLY FOR AIRCRAFT SOURCES NONHAPTOG COMPUTATION
+                  ELSE
+                      ALLVAL( K,IHOUR ) = 0.0
+
+c.......................  TURBINE engine specific HAP estimates
+                      NF = INDEX1( POLNAM, NFAC_TURBINE, NPHAPT )
+                      IF( NF < 1 ) THEN
+                           MESG = 'NOTE: ' // TRIM(POLNAM) // ' is '//
+     &                    'not a TURBINE-specific HAP species of ' //
+     &                    TSCC( K )
+c                          CALL M3MSG2( MESG )
+                      END IF
+                      IF( NF > 0 ) THEN
+                          CONVF = CVHAPT( NF )
+                      ELSE
+                          CONVF = 0
+                      END IF
+
+                      ALLVAL( K,IHOUR ) = TURTOG( NDY,K,IHOUR ) * CONVF
+
+C.......................  Substract all HAPs from CAP TOG (stored in NONHAP array)
+C                         to compute NONHAPTOG
+                      NONHAP( NDY,K,IHOUR ) = NONHAP( NDY,K,IHOUR )
+     &                                        - ALLVAL( K, IHOUR )
+
+c.......................  PISTON engine specific HAP estimates
+                      IF( TSCC( K ) == '2275050000' ) THEN
+                      
+                        PSTVAL( K,IHOUR ) = 0.0
+                        NF = INDEX1( POLNAM, NFAC_PISTON, NPHAPP )
+                        IF( NF < 1 ) THEN
+                             MESG = 'NOTE: ' // TRIM(POLNAM) // ' is '//
+     &                      'not a PISTONE-specific HAP species of ' //
+     &                      TSCC( K )
+c                            CALL M3MSG2( MESG )
+                        END IF
+
+                        IF( NF > 0 ) THEN
+                            CONVF = CVHAPT( NF )
+                        ELSE
+                            CONVF = 0
+                        END IF
+
+                        PSTVAL( K,IHOUR ) = PSTTOG( NDY,K,IHOUR )*CONVF
+
+C.........................  Substract all HAPs from CAP TOG (stored in PSTNHAP array)
+C                           to compute NONHAPTOG
+                        PSTNHAP( NDY,K,IHOUR ) = PSTNHAP( NDY,K,IHOUR )
+     &                                         - PSTVAL( K, IHOUR )
+
+                        IF( PSTNHAP( NDY,K,IHOUR ) < 0.0 ) THEN
+                           WRITE( MESG, 94010 )'ERROR: Total sum of '//
+     &                      'HAPs is greater than PISTON VOC emission'//
+     &                      ' on '//PDATE// ' at timestep ::', IHOUR 
+                           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
+
+                      ENDIF
+
+                  END IF
 
 C...................  Count a number of HAPs
                   IF( POLNAM /= LPOLNAM ) THEN
@@ -975,18 +1224,13 @@ C...................  Count a number of HAPs
                       LPOLNAM = POLNAM
                   END IF
 
-C...................  Substract all HAPs from CAP TOG (stored in NONHAP array)
-C                     to compute NONHAPTOG
-                  NONHAP( NDY,K,IHOUR ) = NONHAP( NDY,K,IHOUR )
-     &                                    - ALLVAL( K, IHOUR )
-
 C..................  Error msg when total HAPs is greater than TOG
-                 IF( NONHAP( NDY,K,IHOUR ) < 0.0 ) THEN
-                    WRITE( MESG, 94010 )'ERROR: Toal sum of HAPs is '//
-     &                 'greater then CAP TOG emission on ' // PDATE //
-     &                 ' at timestep ::', IHOUR 
+                  IF( NONHAP( NDY,K,IHOUR ) < 0.0 ) THEN
+                    WRITE( MESG, 94010 )'ERROR: Total sum of HAPs is '//
+     &                   'greater than CAP VOC emission on ' // PDATE //
+     &                   ' at timestep ::', IHOUR 
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                 END IF
+                  END IF
 
               END IF
 
@@ -1002,21 +1246,40 @@ C...............  Writing current processing hour message
               IF( J == 1 ) CALL M3MSG2( MESG )
 
               DAYTOT = 0.0
+              PSTTOT = 0.0
 C...............  compute daily total by summing 24hrs hourly emis
               DO K = 1, 24
                   DAYTOT = DAYTOT + ALLVAL( J,K )
+                  PSTTOT = PSTTOT + PSTVAL( J,K )
               END DO
 
 C...............  Skip any zero daily total
               IF( DAYTOT == 0.0 ) CYCLE
-              IF( POLNAM /= 'TOG' ) THEN 
-              IF( POLNAM /= 'PMTOTAL' ) THEN 
+c              IF( TSCC( J )(1:4) =='GATE' ) CYCLE
 
-                WRITE( DDEV,93020 ) STATE( J ), COUNTY(J), APRTID(J),
-     &            LOCID( J ),HEIGHT( J ), POLNAM, TDATE, TZONE,
-     &            ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
-     &            POLNAM
-              END IF
+              IF( POLNAM /= 'VOC' ) THEN 
+
+                IF( TSCC(J) == '2275050000' ) THEN
+                    SCC = '2275051000'
+                    WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
+     &                     APRTID( J ),LOCID( J ), HEIGHT( J ), 
+     &                     POLNAM(1:5), TDATE, TZONE, 
+     &                    ( ALLVAL(J,K), K = 1,24 ), DAYTOT,
+     &                     SCC, POLNAM
+
+                    SCC = '2275052000'
+                    WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
+     &                      APRTID( J ),LOCID( J ), HEIGHT( J ), 
+     &                      POLNAM(1:5), TDATE, TZONE, 
+     &                     ( PSTVAL(J,K), K = 1,24 ), PSTTOT,
+     &                      SCC, POLNAM
+                ELSE
+                  WRITE( DDEV,93020 ) STATE( J ), COUNTY(J), APRTID(J),
+     &              LOCID( J ),HEIGHT( J ), POLNAM, TDATE, TZONE,
+     &              ( ALLVAL( J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
+     &              POLNAM
+                END IF
+
               END IF
 
               CDATE( NDY ) = TDATE    ! Store current date 
@@ -1027,7 +1290,7 @@ C...............  Skip any zero daily total
 
 C...........  Store total emission factor and EDMS pollutant names
           NPTOTAL( I ) = ADJUSTR( POLNAM )
-          IF( POLNAM == 'TOG' ) NPTOTAL( I ) = '          ' //'  THC'
+          IF( POLNAM == 'VOC' ) NPTOTAL( I ) = '          ' //'  VOC'
           EFTOTAL( I ) = TOTAL
 
 C...........  Adding new pollutants
@@ -1041,11 +1304,9 @@ C...........  Adding new pollutants
           END DO
 
           IF( ADD ) THEN
-              IF( POLNAM /= 'TOG' ) THEN
-              IF( POLNAM /= 'PMTOTAL' ) THEN
+              IF( POLNAM /= 'VOC' ) THEN
                   NOUTVAR = NOUTVAR + 1
                   OUTVAR( NOUTVAR ) = POLNAM
-              END IF
               END IF
           END IF
 
@@ -1054,7 +1315,7 @@ C...........  Adding new pollutants
 C.......  Total number of processing species      
       NN = I
 
-C.......  Write out computed NONHAPTOG = TOG - total HAPs
+C.......  Write out computed NONHAPVOC = VOC - total HAPs
       IF( LHAP > 0 ) THEN
           POLNAM = 'NONHAPTOG'
       ELSE
@@ -1073,18 +1334,41 @@ C...............  Writing current processing hour message
               IF( J == 1 .AND. LHAP > 0 ) CALL M3MSG2( MESG )
 
               DAYTOT = 0.0
+              PSTTOT = 0.0
 C...............  compute daily total by summing 24hrs hourly emis
               DO K = 1, 24
-                  DAYTOT = DAYTOT + ALLVAL( J,K )
+                  DAYTOT = DAYTOT + NONHAP( I,J,K )
+                  PSTTOT = PSTTOT + PSTNHAP( I,J,K )
               END DO
 
 C...............  Skip any zero daily total
-              IF( DAYTOT == 0.0 ) CYCLE
+             IF( DAYTOT == 0.0 ) CYCLE
+c             IF( TSCC( J )(1:4) == 'GATE' ) CYCLE
 
-              WRITE( DDEV,93020 ) STATE(J), COUNTY(J), APRTID( J ),
-     &            LOCID( J ),HEIGHT( J ), POLNAM, CDATE( I ), TZONE,
-     &            ( NONHAP( I, J, K ), K = 1,24 ), DAYTOT, TSCC( J ),
-     &            POLNAM
+                IF( TSCC(J) == '2275050000' ) THEN
+                    SCC = '2275051000'
+                    WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
+     &                     APRTID( J ),LOCID( J ), HEIGHT( J ), 
+     &                     POLNAM(1:5), CDATE(I), TZONE, 
+     &                    ( NONHAP(I,J,K), K = 1,24 ), DAYTOT,
+     &                     SCC, POLNAM
+
+                    SCC = '2275052000'
+                    WRITE( DDEV,93020 ) STATE( J ), COUNTY( J ), 
+     &                      APRTID( J ),LOCID( J ), HEIGHT( J ), 
+     &                      POLNAM(1:5), CDATE(I), TZONE, 
+     &                    ( PSTNHAP(I,J,K), K = 1,24 ), PSTTOT,
+     &                     SCC, POLNAM
+                ELSE
+
+                   WRITE( DDEV,93020 ) STATE(J), COUNTY(J), APRTID( J ),
+     &                LOCID( J ),HEIGHT( J ), POLNAM, CDATE( I ), TZONE,
+     &                ( NONHAP( I, J, K ), K = 1,24 ),DAYTOT, TSCC( J ),
+     &                 POLNAM
+
+
+                ENDIF
+
 
           END DO
       END DO
@@ -1102,11 +1386,33 @@ C.......  Write ORL format annual inventory header for CAP/HAPs
 
 C.......  Write annual inventory values
       DO I = 1, MXSRC
-           DO J = 1, NOUTVAR
+
+c           IF( TSCC( I )(1:4) == 'GATE' ) CYCLE
+
+           IF( TSCC(I) == '2275050000' ) THEN
+             DO J = 1, NOUTVAR
+               SCC = '2275051000'
+               WRITE( ADEV,93010 ) STATE( I ), COUNTY( I ), APRTID( I ), 
+     &             LOCID( I ), HEIGHT( I ), SCC, HEIGHT( I ),
+     &             LON( I ), LAT( I ), UTMZONE, OUTVAR( J )
+             END DO
+             DO J = 1, NOUTVAR
+               SCC = '2275052000'
+               WRITE( ADEV,93010 ) STATE( I ), COUNTY( I ), APRTID( I ), 
+     &             LOCID( I ), HEIGHT( I ), SCC, HEIGHT( I ),
+     &             LON( I ), LAT( I ), UTMZONE, OUTVAR( J )
+             END DO
+
+           ELSE
+
+             DO J = 1, NOUTVAR
                WRITE( ADEV,93010 ) STATE( I ), COUNTY( I ), APRTID( I ), 
      &             LOCID( I ), HEIGHT( I ), TSCC( I ), HEIGHT( I ),
      &             LON( I ), LAT( I ), UTMZONE, OUTVAR( J )
-          END DO
+             END DO
+
+           END IF
+
 
       END DO
 
@@ -1290,6 +1596,7 @@ C.............  Get line
             N = N + 1
             NPFACT( N ) = SEGMENT( 1 )
             CVFACT( N ) = STR2REAL( SEGMENT( 2 ) )
+
         END DO    ! end of loop
 
         IF( N == 0 ) THEN 
@@ -1310,6 +1617,166 @@ C.......  Internal buffering formats...... 94xxx
 94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
 
         END SUBROUTINE READ_EDMS_FACTOR
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+C      This subroutine stores a list of aircraft EDMS HAPs to convert 
+C      to species mass emission based upon TOG emissions
+
+       SUBROUTINE READ_TURBINE_HAP_FACTOR
+
+C...........   Local variables
+          INTEGER         I, N                  ! indices and counters
+
+          INTEGER      :: NLINES = 0            ! number of lines in input file
+
+          CHARACTER(256)  LINE                  ! Read buffer for a line
+          CHARACTER(300)  MESG                  ! Message buffer
+          CHARACTER(16 )  SEGMENT( 2 )          ! line parsing array
+
+C......................................................................
+
+C.........  Get the number of lines
+        NLINES = GETFLINE( GDEVT, 'TURBINE_HAP input file' )
+
+C...........  Determine number of lines in filelist; this will be the maximum
+C             number of airport sources
+        ALLOCATE( CVHAPT( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CVHAPT', PROGNAME )
+        ALLOCATE( NPHAPT( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NPHAPT', PROGNAME )
+
+        NPHAPT = ' '
+        CVHAPT = 0.0
+        
+        N = 0
+        IREC  = 0
+
+        DO I = 1, NLINES
+
+            READ ( GDEVT, 93000, IOSTAT=IOS ) LINE
+            IREC = IREC + 1
+
+            IF ( IOS .GT. 0 ) THEN
+                WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading HAP_FACTOR '//
+     &                'description file at line', IREC
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Left adjust line
+            LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
+
+C.............  Get line
+            CALL PARSLINE( LINE, 2, SEGMENT )
+
+            N = N + 1
+            NPHAPT( N ) = SEGMENT( 1 )
+            CVHAPT( N ) = STR2REAL( SEGMENT( 2 ) )
+
+        END DO    ! end of loop
+
+        IF( N == 0 ) THEN 
+            MESG = 'ERROR: No entries of TURBINE HAPs'
+            CALL M3MSG2( MESG )
+        END IF
+
+        NFAC_TURBINE = N
+
+        RETURN
+
+C...................  FORMAT  STATEMENTS   ............................
+
+C.......  Formatted file I/O formats...... 93xxx
+93000   FORMAT( A )
+
+C.......  Internal buffering formats...... 94xxx
+94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
+
+        END SUBROUTINE READ_TURBINE_HAP_FACTOR
+
+C******************  INTERNAL SUBPROGRAMS  *****************************
+
+C      This subroutine stores a list of aircraft EDMS HAPs to convert 
+C      to species mass emission based upon TOG emissions
+
+       SUBROUTINE READ_PISTON_HAP_FACTOR
+
+C...........   Local variables
+          INTEGER         I, N                  ! indices and counters
+
+          INTEGER      :: NLINES = 0            ! number of lines in input file
+
+          CHARACTER(256)  LINE                  ! Read buffer for a line
+          CHARACTER(300)  MESG                  ! Message buffer
+          CHARACTER(16 )  SEGMENT( 2 )          ! line parsing array
+
+C......................................................................
+
+C.........  Get the number of lines
+        NLINES = GETFLINE( GDEVP, 'PISTON_HAP input file' )
+
+C...........  Determine number of lines in filelist; this will be the maximum
+C             number of airport sources
+        ALLOCATE( CVHAPP( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CVHAPP', PROGNAME )
+        ALLOCATE( NPHAPP( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NPHAPP', PROGNAME )
+
+        NPHAPP = ' '
+        CVHAPP = 0.0
+        
+        N = 0
+        IREC  = 0
+
+        DO I = 1, NLINES
+
+            READ ( GDEVP, 93000, IOSTAT=IOS ) LINE
+            IREC = IREC + 1
+
+            IF ( IOS .GT. 0 ) THEN
+                WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading HAP_FACTOR '//
+     &                'description file at line', IREC
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Left adjust line
+            LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+            IF( BLKORCMT( LINE ) ) CYCLE
+
+C.............  Get line
+            CALL PARSLINE( LINE, 2, SEGMENT )
+
+            N = N + 1
+            NPHAPP( N ) = SEGMENT( 1 )
+            CVHAPP( N ) = STR2REAL( SEGMENT( 2 ) )
+
+        END DO    ! end of loop
+
+        IF( N == 0 ) THEN 
+            MESG = 'ERROR: No entries of PISTON HAPs'
+            CALL M3MSG2( MESG )
+        END IF
+
+        NFAC_PISTON = N
+
+        RETURN
+
+C...................  FORMAT  STATEMENTS   ............................
+
+C.......  Formatted file I/O formats...... 93xxx
+93000   FORMAT( A )
+
+C.......  Internal buffering formats...... 94xxx
+94010   FORMAT( 10 ( A, :, I8, :, 2X  ) )
+
+        END SUBROUTINE READ_PISTON_HAP_FACTOR
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
