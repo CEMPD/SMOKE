@@ -138,6 +138,8 @@
         REAL   , ALLOCATABLE, PUBLIC :: HRSTKTK( : ) ! stack temperature [K]
         REAL   , ALLOCATABLE, PUBLIC :: HRSTKVE( : ) ! stack exit velocity [m/s]
         REAL   , ALLOCATABLE, PUBLIC :: HRSTKFL( : ) ! stack exit flow rate [m/s]
+
+!.........  Processing wildfire sources
         REAL   , ALLOCATABLE, PUBLIC :: DAY_ACRES(:) ! number of acres per day
         INTEGER, ALLOCATABLE, PUBLIC :: DAY_INDEX(:)
         REAL   , ALLOCATABLE, PUBLIC :: ACRES(:)
