@@ -295,7 +295,7 @@ C.................  If using PX version of MCIP
                         END IF
                         
                         SOILCAT = INT( ISLTYP( C,R ) )
-                        IF( SOILCAT <= MAXSTYPES ) THEN
+                        IF( SOILCAT > 0. .AND. SOILCAT <= MAXSTYPES ) THEN
                             RATIO = SOILM( C,R ) / SATURATION( SOILCAT )
                             CFNO = RATIO*CFNOWET + (1.-RATIO)*CFNODRY
                         ELSE
