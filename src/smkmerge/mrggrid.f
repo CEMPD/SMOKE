@@ -111,6 +111,11 @@ C...........   Input file descriptors
         CHARACTER(16), ALLOCATABLE :: ADJ_LFN( : )    ! Species name
         CHARACTER(16), ALLOCATABLE :: ADJ_SPC( :    ) ! logicalFileName
         CHARACTER(33), ALLOCATABLE :: ADJ_LFNSPC( : ) ! concatenated {logicalFileName}_{Species}
+        CHARACTER(16), ALLOCATABLE :: TAG_LFN( : )    ! Tagging species name
+        CHARACTER(16), ALLOCATABLE :: TAG_SPC( :    ) ! Tagging logicalFileName
+        CHARACTER(33), ALLOCATABLE :: TAG_LFNSPC( : ) ! Tagging concatenated {logicalFileName}_{Species}
+        CHARACTER(16), ALLOCATABLE :: TAG_APPEND( : )  ! Tagging index
+        CHARACTER(48), ALLOCATABLE :: TAG_LFNSPCTAG( : )  ! Tagging index(logicalfile+species+tag)
         CHARACTER(16)                 VNAMEP( MXVARS3 ) ! pt variable names
         CHARACTER(16)                 VUNITP( MXVARS3 ) ! pt variable units
         CHARACTER(80)                 VDESCP( MXVARS3 ) ! pt var descrip
@@ -133,12 +138,18 @@ C...........   Logical names and unit numbers
         INTEGER       RDEV            ! unit for merge report file
         INTEGER       ODEV            ! unit for QA report file
         INTEGER       SDEV            ! unit for overall QA report file
+        INTEGER       TDEV            ! unit for taggin input file
+        INTEGER       GDEV            ! unit for taggin species QA file
         CHARACTER(16) ONAME           ! Merged output file name
         CHARACTER(16) PNAME           ! Point source input file name 
 
 C...........   Other local variables 
-        INTEGER       ADJ, C, DD, F, I, J, K, L, L1, L2, NL, V, T ! pointers and counters
+        INTEGER       C, DD, F, I, J, K, L, L1, L2, N, NL, V, T ! pointers and counters
 
+        INTEGER       ADJ                        ! tmp adjustment factor main index
+        INTEGER       ADJ1                       ! tmp adjustment factor index 1
+        INTEGER       ADJ2                       ! tmp adjustment factor index 2
+        INTEGER       TAG                        ! tmp tagging species index
         INTEGER       DUMMY                      ! dummy value for use with I/O API functions
         INTEGER       EDATE                      ! ending julian date
         INTEGER       ETIME                      ! ending time HHMMSS
@@ -156,7 +167,9 @@ C...........   Other local variables
         INTEGER       MXNF                       ! tmp no. of 2-d input files
         INTEGER       MXNFIL                     ! max no. of 2-d input files
         INTEGER       MXNFAC                     ! max no. of adjustment factors
-        INTEGER       NADJ                       ! no. of adjustment factors
+        INTEGER       MXNTAG                     ! max no. of tagging species
+        INTEGER    :: NADJ = 0                   ! no. of adjustment factors
+        INTEGER    :: NTAG = 0                   ! no. of tagging species
         INTEGER       NFILE                      ! no. of 2-d input files
         INTEGER       NSTEPS                     ! no. of output time steps
         INTEGER       NVOUT                      ! no. of output variables
@@ -178,7 +191,9 @@ C...........   Other local variables
         CHARACTER(16)  FDESC                     ! tmp file description
         CHARACTER(16)  NAM                       ! tmp file name
         CHARACTER(16)  VNM                       ! tmp variable name
+        CHARACTER(16)  TVNM                      ! tmp2 variable name
         CHARACTER(33)  LFNSPC                    ! tmp spec and file name
+        CHARACTER(48)  LFNSPCTAG                 ! tmp speC, file, and tag name
         CHARACTER(256) LINE                      ! input buffer
         CHARACTER(256) MESG                      ! message field
         CHARACTER(80)  NAME1                     ! tmp file name component
@@ -188,9 +203,9 @@ C...........   Other local variables
         CHARACTER(300) REPFILE                   ! name of report file
         CHARACTER(300) RPTLINE                   ! line of report file
         CHARACTER(16)  SPCTMP                    ! tmp species name
+        CHARACTER(16)  LFNTMP                    ! tmp file name
         CHARACTER(16)  SEGMENT( 5 )              ! line parsing arrays
 
-        LOGICAL    :: HEADER  = .FALSE.   ! header line flag
         LOGICAL    :: EFLAG   = .FALSE.   ! error flag
         LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
         LOGICAL    :: LFLAG   = .FALSE.   ! true iff 3-d file input
@@ -406,86 +421,14 @@ C           of adjustment factors in ADJ_FACS input file.
         ADJ_LFNSPC = ' '
         ADJ_FACTOR = 0.0
 
-        IF( ADEV < 0 ) GOTO 30
-
-C.........  Loop through input files and open them
-        IREC = 0
-        F = 0
-        DO
-        
-C.............  Read file names - exit if read is at end of file
-            READ( ADEV, 93000, END = 30, IOSTAT=IOS ) LINE
-            IREC = IREC + 1
-
-            IF ( IOS .NE. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
-     &              'I/O error', IOS, 
-     &              'reading adustment factor file at line', IREC
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
-
-C.............  Skip blank and comment lines
-            IF ( BLKORCMT( LINE ) ) CYCLE
-
-C.............  Get line
-            CALL PARSLINE( LINE, 3, SEGMENT )
-
-            CALL UPCASE( SEGMENT( 1 ) )   ! species name
-            CALL UPCASE( SEGMENT( 2 ) )   ! logical file name
-
-C.............  Search adjustment factor for the current file
-            NAM = TRIM( SEGMENT( 2 ) )
-            
-            L = INDEX1( NAM, NFILE, FNAME )
-
-            IF( .NOT. CHKREAL( SEGMENT( 3 ) ) ) THEN
-            IF( L <= 0 .AND. .NOT. HEADER ) THEN
-                HEADER = .TRUE.
-                CYCLE
-            END IF
-            END IF
-
-            IF( HEADER ) THEN
-            IF( L <= 0 ) THEN
-                MESG = 'ERROR: The adjustment factor for ' // TRIM(NAM)
-     &              // ' file was not found in the FILELIST.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            ELSE
-                F = F + 1
-
-                ADJ_SPC( F ) = TRIM( SEGMENT( 1 ) )
-                ADJ_LFN( F ) = TRIM( SEGMENT( 2 ) ) 
-                ADJ_LFNSPC( F ) = TRIM( SEGMENT( 1 ) ) // '_' // 
-     &                            TRIM( SEGMENT( 2 ) )
-                ADJ_FACTOR( F ) = STR2REAL( SEGMENT( 3 ) )
-
-                IF( ADJ_FACTOR( F ) < 0 ) THEN
-                    MESG = 'ERROR: Can not apply a negative ' //
-     &                  'adjustment factor for the species ' //
-     &                  TRIM( ADJ_SPC(F) ) // ' from the ' // 
-     &                  TRIM( NAM ) // ' file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-                ELSE IF( ADJ_FACTOR( F ) == 0 ) THEN
-                    MESG = 'WARNING: ' // TRIM( ADJ_SPC(F) ) // 
-     &                  ' emissions from the ' //TRIM(NAM)// ' file' //
-     &                  ' will be zero due to a zero adjustment factor' 
-                    CALL M3MSG2( MESG )
-
-                END IF
-
-            END IF
-            END IF
-
-        END DO
-30      CONTINUE
-
+C.........  Define a number of adjustment factors
         IF( ADEV < 0 ) THEN 
             NADJ = 1
+
         ELSE
-            NADJ = F
+C.............  Store a list of adjustment factors
+            CALL READ_ADJ_FACS( NADJ )
+
         END IF
 
 C.........  Duplicate Check of ADJ_FACS file
@@ -519,6 +462,46 @@ C.........  Allocate arrays that will store sector-specific daily/gridded total 
         BEFORE_ADJ = 0.0
         AFTER_ADJ  = 0.0
 
+C.........  Get environment variable settings for tagging species input file
+        CALL ENVSTR( 'TAG_SPECIES', MESG, ' ', NAME1 , IOS )
+
+C.........  Determine maximum number of input files in file
+        IF( IOS < 0 ) THEN     !  failure to open
+            TDEV = IOS
+            MESG = 'NOTE : No tagging species were available because'//
+     &             ' there is no TAG_SPECIES environment variable defined' 
+            CALL M3MSG2( MESG )
+
+        ELSE
+
+            MESG = 'NOTE : Tagging species based upon TAG_SPECIES file' 
+            CALL M3MSG2( MESG )
+
+C.............  Store a list of tagging species
+            CALL READ_TAG_SPECIES( NTAG )
+
+C............  Write summary of sector specific factor adjustment output
+            GDEV = PROMPTFFILE(
+     &         'Enter logical name for the MRGGRID Tagging REPORT file',
+     &         .FALSE., .TRUE., 'REPMERGE_TAG', PROGNAME )
+
+            MXNF = 0
+            DO         ! head of report file
+                READ( GDEV, 93000, END=444 ) LINE
+                MXNF = MXNF + 1
+            ENDDO
+444         CONTINUE
+
+C.............  Write header line to report     
+            IF( MXNF == 0 ) THEN
+              WRITE( GDEV,93000 ) '#MRGGRID Tagging species Report'
+              WRITE( GDEV,93000 ) '#COLUMN_TYPES=Varchar(16)|' // 
+     &                            'Varchar(16)|Varchar(16)'
+              WRITE( GDEV,93000 ) 'FileName,OriginalSpecies,TaggedSpecies'
+            END IF
+
+        END IF
+
 C.........  Determine I/O API layer storage lower bound
         VLB = LBOUND( VGLVS3D,1 )
 
@@ -549,15 +532,83 @@ C.........  Loop through 2D input files
                     VNAMEA( V,F ) = VNAMESET( V )
                     VUNITA( V,F ) = VUNITSET( V )
                     VDESCA( V,F ) = VDESCSET( V )
+
+                    IF( TDEV > 0 ) THEN
+C.........................  Set tmp variables
+                        VNM = VNAMESET( V )       ! number of layers
+
+C..........................  Search tagged species for the current file
+                        LFNSPC = TRIM( NAM ) // '~' // TRIM( VNM )
+
+                        TAG = INDEX1( LFNSPC, NTAG, TAG_LFNSPC )
+                        ADJ1= INDEX1( LFNSPC, NADJ, ADJ_LFNSPC )
+
+C.........................  Assign tagged species for the current species
+                        IF( TAG > 0 ) THEN
+                            TVNM = TRIM( VNM ) // '_' // 
+     &                             TRIM( TAG_APPEND( TAG ) )
+
+                            MESG = 'NOTE : Appending a tag (' // 
+     &                          TRIM( TAG_APPEND(TAG) ) // ') to the '
+     &                          //'species ' //TRIM( VNM )// ' from the '
+     &                          //TRIM( NAM )// ' file'
+                            CALL M3MSG2( MESG )
+
+C.............................  Replace a species name with a tagged one
+                            VNAMEA( V,F ) = TVNM
+
+C.............................  Error and Warning messages for the tagged species
+C                               before you apply the adjustment factors if necessary
+
+                            LFNSPC = TRIM( NAM ) // '~' // TRIM( TVNM )
+
+                            ADJ2 = INDEX1( LFNSPC, NADJ, ADJ_LFNSPC )
+
+                            IF( ADJ1 > 0 .AND. ADJ2 > 0 ) THEN
+                                MESG = 'ERROR : Can NOT adjust the ' //
+     &                            'factors for the species ' //TRIM(VNM)
+     &                            //' and tagged species ' // 
+     &                              TRIM( TVNM ) // ' from file ' // 
+     &                              TRIM( NAM ) //' at the same time. '
+                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                            ELSE IF( ADJ1 > 0 .AND. ADJ2 < 1 ) THEN
+                                MESG ='WARNING : Adjustment factor ' //
+     &                              ' for the species ' // TRIM( VNM )
+     &                              // ' will be skipped due to ' //
+     &                              'the change of species name to ' //
+     &                              TRIM( TVNM )
+                                CALL M3MSG2( MESG )
+                                
+                            END IF
+
+                         END IF
+                        
+                    END IF
+
                 END DO
+
             END IF
 
 C.............  Search for adj factor species and logical file in the FILELIST
             DO J = 1, NADJ
-                L = INDEX( ADJ_LFNSPC( J ), '_' )
-                LFNSPC = ADJ_LFNSPC( J )( L+1: ) ! retriev logical file from ADJ_FACS
-                IF( LFNSPC == NAM ) THEN
-                    SPCTMP = ADJ_LFNSPC( J )( 1:L-1 )   ! retrieve spcieces name from ADJ_FACS
+
+                LFNTMP = ADJ_LFN( J ) ! retriev logical file from ADJ_FACS
+
+                IF( LFNTMP == NAM ) THEN
+                    SPCTMP = ADJ_SPC( J ) ! retrieve spcieces name from ADJ_FACS
+
+                    IF( TDEV > 0 ) THEN
+
+C..........................  Search tagged species for the current file
+                        LFNSPC = TRIM( LFNTMP ) // '~' // TRIM( SPCTMP )
+                        TAG = INDEX1( LFNSPC, NTAG, TAG_LFNSPCTAG )
+     
+C.........................  Assign adjustment factor for the current species
+                        IF( TAG > 0 ) SPCTMP = TAG_SPC( TAG )
+                        
+                    END IF
+
                     K = INDEX1( SPCTMP, NVARSET, VNAMESET )
                     IF( K <= 0 ) THEN
                         EFLAG = .TRUE.
@@ -566,7 +617,9 @@ C.............  Search for adj factor species and logical file in the FILELIST
      &                  TRIM(NAM) // ' file'
                         CALL M3MSG2( MESG )
                     END IF
+
                 END IF
+
             END DO
 
 C.............  Compare all other time steps back to first file.
@@ -875,10 +928,10 @@ C.....................  Set tmp variables
                     NL  = NLAYSA( F )       ! number of layers
 
 C.....................  Search adjustment factor for the current file
-                    LFNSPC = TRIM( VNM ) // '_' // TRIM( NAM )
-                    ADJ = INDEX1( LFNSPC, NADJ, ADJ_LFNSPC )
+                    LFNSPC = TRIM( NAM ) // '~' // TRIM( VNM )
 
 C.....................  Assign adjustment factor for the current species
+                    ADJ = INDEX1( LFNSPC, NADJ, ADJ_LFNSPC )
                     IF( ADJ > 0 ) THEN
                         FACS = ADJ_FACTOR( ADJ )
 
@@ -891,6 +944,14 @@ C.....................  Assign adjustment factor for the current species
                         
                     END IF
 
+C.....................  Search tagged species for the current file
+                    TAG = INDEX1( LFNSPC, NTAG, TAG_LFNSPCTAG )
+                    IF( TAG > 0 ) THEN
+                        TVNM = TAG_SPC( TAG )
+                    ELSE
+                        TVNM = VNM
+                    END IF
+
 C.....................  If file has species, read (do this for all files)...
                     IF( LVOUTA( V,F ) ) THEN
 
@@ -900,7 +961,7 @@ C.....................  If file has species, read (do this for all files)...
 C.........................  If 2-d input file, read, and add
                         IF( NL .EQ. 1 ) THEN
                             IF( .NOT. 
-     &                           READSET( NAM, VNM, 1, ICNTFIL,
+     &                           READSET( NAM, TVNM, 1, ICNTFIL,
      &                                    RDATE, JTIME, E2D     )) THEN
 
                                 MESG = 'Could not read "' // VNM //
@@ -934,7 +995,7 @@ C.........................  If 3-d input file, allocate memory, read, and add
 
                             DO K = 1, NL
                                 IF( .NOT. 
-     &                               READSET( NAM,VNM,K,ICNTFIL,
+     &                               READSET( NAM,TVNM,K,ICNTFIL,
      &                                        RDATE, JTIME, E2D  )) THEN
 
                                     MESG = 'Could not read "' // VNM //
@@ -1015,12 +1076,11 @@ C.........  Write header line to report
             VNM = ADJ_SPC( F )     ! species name
             NAM = ADJ_LFN( F )     ! logical file name
             FACS   = ADJ_FACTOR( F )   ! adjustment factor
-            LFNSPC = ADJ_LFNSPC( F )
             RATIO = ( AFTER_ADJ( F ) / BEFORE_ADJ( F ) )
 
             IF( BEFORE_ADJ( F ) == 0.0 ) CYCLE
 
-            REPFMT = "(I8,2(',',A),',',F10.3,',',"
+            REPFMT = "(I8,2(',',A),',',F10.6,',',"
 
 C.............  Define the format of real values
             CALL GET_FORMAT( VNM, BEFORE_ADJ( F ), EFMT )
@@ -1028,7 +1088,7 @@ C.............  Define the format of real values
 
             CALL GET_FORMAT( VNM, AFTER_ADJ( F ), EFMT )
             REPFMT = TRIM( REPFMT ) // TRIM( EFMT )
-            REPFMT = TRIM( REPFMT ) // "F10.3)"
+            REPFMT = TRIM( REPFMT ) // "F10.6)"
 
             WRITE( RPTLINE,REPFMT ) SDATE, NAM, VNM, FACS,
      &                            BEFORE_ADJ( F ), AFTER_ADJ( F ), RATIO
@@ -1037,8 +1097,6 @@ C.............  Define the format of real values
                 WRITE( ODEV,93000 ) TRIM( RPTLINE )
             ENDIF
         END DO
-
-c        IF( ADEV > 0 ) CLOSE(ODEV)
 
 C.........  Write header line to overall summary report     
         DO V = 1, NVOUT
@@ -1056,7 +1114,7 @@ C.............  Define the format of real values
 
             CALL GET_FORMAT( VNM, AFTER_SPC( V ), EFMT )
             REPFMT = TRIM( REPFMT ) // TRIM( EFMT )
-            REPFMT = TRIM( REPFMT ) // "F10.3)"
+            REPFMT = TRIM( REPFMT ) // "F10.6)"
 
             WRITE( RPTLINE,REPFMT ) SDATE, VNM, BEFORE_SPC(V),
      &                              AFTER_SPC(V),RATIO
@@ -1065,8 +1123,6 @@ C.............  Define the format of real values
                 WRITE( SDEV,93000 ) TRIM( RPTLINE )
             END IF
         END DO
-
-C        IF( ADEV > 0 ) CLOSE( SDEV )
 
 C......... Normal Completion
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0)
@@ -1145,5 +1201,217 @@ C.............  Value is too large for
 95020       FORMAT( 10( A, :, E12.5, :, 1X ) )
 
             END SUBROUTINE GET_FORMAT
+
+C*****************  INTERNAL SUBPROGRAMS  ******************************
+
+C----------------------------------------------------------------------
+C.............  This internal subprogram determines to store a list of 
+C               adjustment factos  from ADJ_FACS input file.
+            SUBROUTINE READ_ADJ_FACS( F )
+
+C.............  Subroutine arguments
+            INTEGER,     INTENT( OUT ) :: F
+
+            CHARACTER( 16 ) SEGMENT( 6 )          ! line parsing array
+
+C.......................................................................
+
+C.............  Loop through input files and open them
+            IREC = 0
+            F = 0
+            DO
+        
+C.................  Read file names - exit if read is at end of file
+                READ( ADEV, 93000, END = 30, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF ( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94010 ) 
+     &                  'I/O error', IOS, 
+     &                  'reading adustment factor file at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CYCLE
+                END IF
+
+C..................  Skip blank and comment lines
+                IF ( BLKORCMT( LINE ) ) CYCLE
+
+C..................  Get line
+                CALL PARSLINE( LINE, 3, SEGMENT )
+
+                CALL UPCASE( SEGMENT( 1 ) )   ! species name
+                CALL UPCASE( SEGMENT( 2 ) )   ! logical file name
+
+C.................  Search adjustment factor for the current file
+                NAM = TRIM( SEGMENT( 2 ) )
+            
+                L = INDEX1( NAM, NFILE, FNAME )
+
+C.................  Skip EMF-specific header line
+                IF( L <=0 .AND. .NOT. CHKREAL( SEGMENT( 3 ) ) ) CYCLE
+
+                IF( L <= 0 ) THEN
+                    MESG ='ERROR: The logical file '//TRIM(NAM)
+     &                 // ' was not found in the FILELIST.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    F = F + 1
+
+                    ADJ_SPC( F ) = TRIM( SEGMENT( 1 ) )
+                    ADJ_LFN( F ) = TRIM( SEGMENT( 2 ) ) 
+                    ADJ_LFNSPC( F ) = TRIM( SEGMENT( 2 ) ) // '~' // 
+     &                                TRIM( SEGMENT( 1 ) )
+                    ADJ_FACTOR( F ) = STR2REAL( SEGMENT( 3 ) )
+
+                    IF( ADJ_FACTOR( F ) < 0 ) THEN
+                        MESG = 'ERROR: Can not apply a negative ' //
+     &                      'adjustment factor for the species ' //
+     &                      TRIM( ADJ_SPC(F) ) // ' from the ' // 
+     &                      TRIM( NAM ) // ' file'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+                    ELSE IF( ADJ_FACTOR( F ) == 0 ) THEN
+                        MESG = 'WARNING: ' // TRIM( ADJ_SPC(F) ) // 
+     &                   ' emissions from the ' //TRIM(NAM)// ' file' //
+     &                   ' will be zero due to a zero adjustment factor' 
+                        CALL M3MSG2( MESG )
+
+                    END IF
+
+                 END IF
+
+            END DO
+
+30          CONTINUE
+
+            RETURN
+
+93000       FORMAT(  A )
+
+94010       FORMAT( 10( A, :, I7, :, 1X ) )
+
+            END SUBROUTINE READ_ADJ_FACS
+
+C*****************  INTERNAL SUBPROGRAMS  ******************************
+
+C----------------------------------------------------------------------
+C.............  This internal subprogram determines to store a list of 
+C               adjustment factos  from ADJ_FACS input file.
+            SUBROUTINE READ_TAG_SPECIES( F )
+
+C.............  Subroutine arguments
+            INTEGER,     INTENT( OUT ) :: F
+
+            CHARACTER( 16 ) SEGMENT( 6 )          ! line parsing array
+
+C.......................................................................
+
+            MESG = 'Enter logical name for a list of tagging species'
+            TDEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'TAG_SPECIES',PROGNAME )
+            MXNTAG = GETFLINE( TDEV, 'List of tagging species' )
+
+C.............  Allocate memory for arrays that just depend on the maximum number
+C               of adjustment factors in ADJ_FACS input file.
+            ALLOCATE( TAG_LFN( MXNTAG ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TAG_LFN', PROGNAME )
+            ALLOCATE( TAG_SPC( MXNTAG ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TAG_SPC', PROGNAME )
+            ALLOCATE( TAG_LFNSPC( MXNTAG ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TAG_LFNSPC', PROGNAME )
+            ALLOCATE( TAG_APPEND( MXNTAG ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TAG_APPEND', PROGNAME )
+            ALLOCATE( TAG_LFNSPCTAG( MXNTAG ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TAG_LFNSPCTAG', PROGNAME )
+
+            TAG_SPC = ' '
+            TAG_LFN = ' '
+            TAG_LFNSPC = ' '
+            TAG_APPEND = ' '
+            TAG_LFNSPCTAG = ' '
+
+C.............  Loop through input files and open them
+            IREC = 0
+            F = 0
+            DO
+        
+C.................  Read file names - exit if read is at end of file
+                READ( TDEV, 93000, END = 40, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF ( IOS .NE. 0 ) THEN
+                    WRITE( MESG,94010 ) 
+     &                  'I/O error', IOS, 
+     &                  'reading APPEND_TAGS file at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CYCLE
+                END IF
+
+C..................  Skip blank and comment lines
+                IF ( BLKORCMT( LINE ) ) CYCLE
+
+C..................  Get line
+                CALL PARSLINE( LINE, 3, SEGMENT )
+
+                CALL UPCASE( SEGMENT( 1 ) )   ! logical file name
+                CALL UPCASE( SEGMENT( 2 ) )   ! species name
+                CALL UPCASE( SEGMENT( 3 ) )   ! tagging name
+
+C.................  Skip EMF-specific header line
+                IF( TRIM( SEGMENT( 1 ) ) == 'SECTOR' ) THEN
+                IF( TRIM( SEGMENT( 2 ) ) == 'SPECIES' ) THEN
+                IF( TRIM( SEGMENT( 3 ) ) == 'TAG' ) THEN
+                    CYCLE
+                END IF
+                END IF
+                END IF
+
+C.................  Search adjustment factor for the current file
+                NAM = TRIM( SEGMENT( 1 ) )
+
+                N = INDEX1( NAM, NFILE, FNAME )
+
+
+                IF( N <= 0 ) THEN
+                    MESG ='ERROR: The tagged species from ' //
+     &                 TRIM(NAM)//' file was not found in the FILELIST.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    F = F + 1
+
+                    TAG_LFN( F ) = TRIM( SEGMENT( 1 ) ) 
+                    TAG_SPC( F ) = TRIM( SEGMENT( 2 ) )
+                    TAG_LFNSPC( F ) = TRIM( SEGMENT( 1 ) ) // '~' // 
+     &                                TRIM( SEGMENT( 2 ) )
+                    TAG_APPEND( F ) = TRIM( SEGMENT( 3 ) )
+                    TAG_LFNSPCTAG(F)= TRIM( SEGMENT( 1 ) ) // '~' // 
+     &                                TRIM( SEGMENT( 2 ) ) // '_' // 
+     &                                TRIM( SEGMENT( 3 ) )
+
+                    L1 = LEN_TRIM( SEGMENT( 2 ) )
+                    L2 = LEN_TRIM( SEGMENT( 3 ) )
+                    L  = L1 + L2 + 1
+
+                    IF( L > 16 ) THEN
+                        MESG = 'ERROR: Can not append a tag ' //
+     &                      'to the species ' //
+     &                      TRIM( TAG_SPC( F ) ) // ' from the ' // 
+     &                      TRIM( NAM ) // ' file due to exceeding ' //
+     &                      'max size(16-char) of tagged species name.'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+                END IF
+
+            END DO
+
+40          CONTINUE
+
+            RETURN
+
+93000       FORMAT(  A )
+
+94010       FORMAT( 10( A, :, I7, :, 1X ) )
+
+            END SUBROUTINE READ_TAG_SPECIES
 
         END PROGRAM MRGGRID
