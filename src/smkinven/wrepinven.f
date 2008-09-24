@@ -103,6 +103,7 @@ C...........   Local variables
         
         REAL            VALCHECK           ! temp. value check
         REAL            DIFF               ! temp. difference
+        REAL            PDFF               ! temp. percent difference
         REAL            OEMIS              ! temp. original emissions
         REAL            SEMIS              ! temp. summed emissions
 
@@ -195,7 +196,8 @@ C............  If pollutant is not kept then skip
 C............  Check value of factored emissions
           VALCHECK = EMISBYCAS( K ) * ITFACA( J )
           DIFF = VALCHECK - EMISBYPOL( I )
-          IF( ABS( DIFF ) .NE. 0.0 ) THEN
+          PDFF = ( ABS( DIFF ) / EMISBYPOL( I ) ) * 100
+          IF( PDFF >  0.1  ) THEN
             WRITE( MESG, 94020 )
      &         'WARNING: Summed emissions of ', EMISBYPOL( I ),
      &         ' for pollutant, ', ITNAMA( J ),
