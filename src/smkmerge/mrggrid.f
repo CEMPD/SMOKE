@@ -485,20 +485,11 @@ C............  Write summary of sector specific factor adjustment output
      &         'Enter logical name for the MRGGRID Tagging REPORT file',
      &         .FALSE., .TRUE., 'REPMERGE_TAG', PROGNAME )
 
-            MXNF = 0
-            DO         ! head of report file
-                READ( GDEV, 93000, END=444 ) LINE
-                MXNF = MXNF + 1
-            ENDDO
-444         CONTINUE
-
 C.............  Write header line to report     
-            IF( MXNF == 0 ) THEN
-              WRITE( GDEV,93000 ) '#MRGGRID Tagging species Report'
-              WRITE( GDEV,93000 ) '#COLUMN_TYPES=Varchar(16)|' // 
-     &                            'Varchar(16)|Varchar(16)'
-              WRITE( GDEV,93000 ) 'FileName,OriginalSpecies,TaggedSpecies'
-            END IF
+            WRITE( GDEV,93000 ) '#MRGGRID Tagging species Report'
+            WRITE( GDEV,93000 ) '#COLUMN_TYPES=Varchar(16)|' // 
+     &                          'Varchar(16)|Varchar(16)'
+            WRITE( GDEV,93000 ) 'FileName,OriginalSpecies,TaggedSpecies'
 
         END IF
 
@@ -535,7 +526,7 @@ C.........  Loop through 2D input files
 
                     IF( TDEV > 0 ) THEN
 C.........................  Set tmp variables
-                        VNM = VNAMESET( V )       ! number of layers
+                        VNM = VNAMESET( V )
 
 C..........................  Search tagged species for the current file
                         LFNSPC = TRIM( NAM ) // '~' // TRIM( VNM )
@@ -557,6 +548,9 @@ C.........................  Assign tagged species for the current species
 C.............................  Replace a species name with a tagged one
                             VNAMEA( V,F ) = TVNM
 
+C.............................  Write the changes to tagging summary report
+                            WRITE( GDEV, 92000 ) NAM, VNM, TVNM
+
 C.............................  Error and Warning messages for the tagged species
 C                               before you apply the adjustment factors if necessary
 
@@ -564,25 +558,25 @@ C                               before you apply the adjustment factors if neces
 
                             ADJ2 = INDEX1( LFNSPC, NADJ, ADJ_LFNSPC )
 
-                            IF( ADJ1 > 0 .AND. ADJ2 > 0 ) THEN
-                                MESG = 'ERROR : Can NOT adjust the ' //
-     &                            'factors for the species ' //TRIM(VNM)
-     &                            //' and tagged species ' // 
-     &                              TRIM( TVNM ) // ' from file ' // 
-     &                              TRIM( NAM ) //' at the same time. '
-                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-                            ELSE IF( ADJ1 > 0 .AND. ADJ2 < 1 ) THEN
+                            IF( ADJ1 > 0 .AND. ADJ2 < 1 ) THEN
                                 MESG ='WARNING : Adjustment factor ' //
      &                              ' for the species ' // TRIM( VNM )
-     &                              // ' will be skipped due to ' //
+     &                              // ' from file ' // TRIM( NAM ) // 
+     &                             ' will be skipped due to ' //
      &                              'the change of species name to ' //
      &                              TRIM( TVNM )
                                 CALL M3MSG2( MESG )
                                 
                             END IF
 
-                         END IF
+                        ELSE
+
+                            MESG = 'ERROR : Species ' // TRIM( VNM ) //
+     &                          ' you want to tag is not available ' //
+     &                          'from file ' // TRIM( NAM ) 
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        
+                        END IF
                         
                     END IF
 
@@ -945,11 +939,16 @@ C.....................  Assign adjustment factor for the current species
                     END IF
 
 C.....................  Search tagged species for the current file
-                    TAG = INDEX1( LFNSPC, NTAG, TAG_LFNSPCTAG )
-                    IF( TAG > 0 ) THEN
-                        TVNM = TAG_SPC( TAG )
+                    IF( TDEV > 0 ) THEN
+                        TAG = INDEX1( LFNSPC, NTAG, TAG_LFNSPCTAG )
+                        IF( TAG > 0 ) THEN
+                            TVNM = TAG_SPC( TAG )
+                        ELSE
+                            TVNM = VNM
+                        END IF
                     ELSE
                         TVNM = VNM
+
                     END IF
 
 C.....................  If file has species, read (do this for all files)...
@@ -1131,7 +1130,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Informational (LOG) message formats... 92xxx
 
-92000   FORMAT( 5X, A )
+92000   FORMAT( 3A )
  
 C...........   Formatted file I/O formats............ 93xxx
 
