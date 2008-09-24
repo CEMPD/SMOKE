@@ -158,6 +158,8 @@ C.................  Set units and conversion factors for appropriate columns
      &                               TMPUNIT, OUTUNIT, UCNVFAC )
                 CALL UPDATE_OUTUNIT( NDATA, TOSOUT( V,RCNT )%SUMPOL,
      &                               TMPUNIT, OUTUNIT, UCNVFAC )
+                CALL UPDATE_OUTUNIT( NDATA, TOSOUT( V,RCNT )%SUMSPC,
+     &                               TMPUNIT, OUTUNIT, UCNVFAC )
 
             END IF
 
