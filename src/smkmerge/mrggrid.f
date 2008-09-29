@@ -365,7 +365,7 @@ C.........  Determine maximum number of input files in file
 C............  Write summary of sector specific factor adjustment output
             ODEV = PROMPTFFILE(
      &         'Enter logical name for the MRGGRID QA REPORT file',
-     &         .FALSE., .TRUE., 'REPMERGE', PROGNAME )
+     &         .FALSE., .TRUE., 'REPMERGE_ADJ', PROGNAME )
 
             MXNF = 0
             DO         ! head of report file
@@ -569,13 +569,6 @@ C                               before you apply the adjustment factors if neces
                                 
                             END IF
 
-                        ELSE
-
-                            MESG = 'ERROR : Species ' // TRIM( VNM ) //
-     &                          ' you want to tag is not available ' //
-     &                          'from file ' // TRIM( NAM ) 
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                        
                         END IF
                         
                     END IF
@@ -584,7 +577,32 @@ C                               before you apply the adjustment factors if neces
 
             END IF
 
-C.............  Search for adj factor species and logical file in the FILELIST
+C.............  Search for tag species in the logical file 
+            IF( TDEV > 0 ) THEN
+                DO N = 1, NTAG
+                    LFNTMP = TAG_LFN( N )  ! retriev logical file name from TAG_SPECIES
+
+                    IF( LFNTMP == NAM ) THEN
+
+                        SPCTMP = TAG_SPC( J ) ! retrieve spcieces name from TAG_SPECIES 
+
+                        K = INDEX1( SPCTMP, NVARSET, VNAMESET )
+
+                        IF( K <= 0 ) THEN
+                            EFLAG = .TRUE.
+                            MESG = 'ERROR: The species ' //
+     &                          TRIM( TAG_SPC(J) )//' you want to tag '//
+     &                          'is not available from file '//TRIM(NAM)
+                            CALL M3MSG2( MESG )
+                        END IF
+
+                    END IF
+
+                END DO
+
+            END IF
+
+C.............  Search for adj factor species in the logical file
             DO J = 1, NADJ
 
                 LFNTMP = ADJ_LFN( J ) ! retriev logical file from ADJ_FACS
@@ -973,18 +991,18 @@ C.........................  If 2-d input file, read, and add
 C.............................  Logical file specific summary
                             IF( ADJ > 0 ) THEN
                                 BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ ) + 
-     &                                              SUM( E2D(1:NGRID) )
+     &                                          SUM( E2D(1:NGRID) )
 
                                 AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ ) + 
      &                                          SUM( E2D(1:NGRID)*FACS )
-                            END IF
-
-                            BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
-     &                                        SUM( E2D(1:NGRID) )
 
 C.............................  Overall summary by species
-                            AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
-     &                                        SUM( E2D(1:NGRID)*FACS )
+                                BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
+     &                                          SUM( E2D(1:NGRID) )
+
+                                AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
+     &                                          SUM( E2D(1:NGRID)*FACS )
+                            END IF
 
                             EOUT( 1:NGRID,1 ) = EOUT( 1:NGRID,1 ) + 
      &                                          E2D( 1:NGRID) * FACS
@@ -1006,19 +1024,21 @@ C.........................  If 3-d input file, allocate memory, read, and add
 
 C.................................  Logical file specific summary
                                 IF( ADJ > 0 ) THEN
+
                                   BEFORE_ADJ( ADJ ) = BEFORE_ADJ( ADJ )+ 
      &                                              SUM( E2D(1:NGRID) )
 
                                   AFTER_ADJ ( ADJ ) = AFTER_ADJ ( ADJ )+ 
      &                                            SUM(E2D(1:NGRID)*FACS)
-                                END IF
 
 C.................................  Overall summary by species
-                                BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
+                                  BEFORE_SPC( V )  = BEFORE_SPC( V ) + 
      &                                           SUM( E2D(1:NGRID) )
 
-                                AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
-     &                                            SUM(E2D(1:NGRID)*FACS)
+                                  AFTER_SPC ( V ) = AFTER_SPC ( V ) + 
+     &                                           SUM(E2D(1:NGRID)*FACS)
+
+                                END IF
 
                                 EOUT( 1:NGRID,K )= EOUT( 1:NGRID,K ) + 
      &                                             E2D( 1:NGRID )*FACS
@@ -1075,9 +1095,10 @@ C.........  Write header line to report
             VNM = ADJ_SPC( F )     ! species name
             NAM = ADJ_LFN( F )     ! logical file name
             FACS   = ADJ_FACTOR( F )   ! adjustment factor
-            RATIO = ( AFTER_ADJ( F ) / BEFORE_ADJ( F ) )
 
             IF( BEFORE_ADJ( F ) == 0.0 ) CYCLE
+
+            RATIO = ( AFTER_ADJ( F ) / BEFORE_ADJ( F ) )
 
             REPFMT = "(I8,2(',',A),',',F10.6,',',"
 
@@ -1101,9 +1122,10 @@ C.........  Write header line to overall summary report
         DO V = 1, NVOUT
 
             VNM   = VNAME3D( V )     ! species name
-            RATIO = ( AFTER_SPC( V ) / BEFORE_SPC( V ) )
 
             IF( BEFORE_SPC( V ) == 0.0 ) CYCLE
+
+            RATIO = ( AFTER_SPC( V ) / BEFORE_SPC( V ) )
 
             REPFMT = "( I8,',',A,',',"
 
