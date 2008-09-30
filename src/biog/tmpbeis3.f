@@ -23,6 +23,7 @@ C            Tested only on 36km Lambert domain
 C            Summer/winter switch file option not tested
 C      8/04: Incorporated BEIS v3.12 by C. Seppanen
 C      4/06: changed to BEIS3.13 by G. Pouliot
+C      3/08: changed to BEIS3.14 by G. Pouliot
 C                  
 C***********************************************************************
 C
@@ -78,16 +79,16 @@ C           to continue running the program.
 
 C.........  Get the BEIS3 model version to use
         MESG = 'Version of BEIS3 to use'
-        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.13', BEISVER, IOS )
+        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.14', BEISVER, IOS )
         
         SELECT CASE( BEISVER )
         CASE( '3.09' )
             CALL TMPBEIS309( CVSW )
-        CASE( '3.13' )
+        CASE( '3.14' )
             CALL TMPBEIS312( CVSW )
         CASE DEFAULT
             MESG = 'ERROR: Unrecognized BEIS_VERSION setting; valid ' //
-     &             'settings are 3.09 and 3.13'
+     &             'settings are 3.09 and 3.14'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END SELECT
 
