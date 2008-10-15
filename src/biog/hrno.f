@@ -450,7 +450,7 @@ C.....................  Rainfall class type increases (NO emission pulse generat
                 END IF
 
 
-                    IF( SOILCAT <= MAXSTYPES ) THEN
+                    IF( SOILCAT > 0. .and. SOILCAT <= MAXSTYPES ) THEN
                         IF( SOILM >= 
      &                      SAT_THRES * SATURATION( SOILCAT ) ) THEN
                             PRECIP_ADJ_PX = 0.
