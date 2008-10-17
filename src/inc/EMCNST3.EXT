@@ -201,7 +201,7 @@ C.........  Variable dimensioning components, independent
 
 C.........  Maximum settings...
         INTEGER, PARAMETER :: MXIYEAR = 2050  ! reasonable inventory year
-        INTEGER, PARAMETER :: MXINVARR = 20   ! maximum inven vars ever needed
+        INTEGER, PARAMETER :: MXINVARR = 22   ! maximum inven vars ever needed
 
 C.........  Blanks definitions
         CHARACTER(BLRLEN3), PARAMETER:: BLRBLNK3 = ' '
