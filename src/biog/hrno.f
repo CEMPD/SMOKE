@@ -424,7 +424,7 @@ C        4. override adjustment for saturated soils
                 PULSETIME = 0
                 
 
-                IF( SOILCAT <= MAXSTYPES ) THEN
+                IF( SOILCAT > 0 .AND. SOILCAT <= MAXSTYPES ) THEN
                    PRECIP_ADJ_PX = 2.
                 ELSE
                    PRECIP_ADJ_PX = 1.
