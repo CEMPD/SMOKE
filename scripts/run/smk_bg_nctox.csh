@@ -21,7 +21,7 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 setenv SMK_SOURCE    B          # source category to process
 setenv MRG_SOURCE    B          # source category to merge
 
-setenv BEIS_VERSION  3.13       # version of BEIS3 to use (currently 3.09 or 3.13)
+setenv BEIS_VERSION  3.14       # version of BEIS3 to use (currently 3.09 or 3.14)
 
 ## Set programs to run...
 
@@ -49,7 +49,7 @@ setenv TMPR_VAR             TEMP10 # name of temperature variable
 setenv PRES_VAR             PRSFC  # name of surface pressure variable
 #      BEIS_VERSION     already set above
 
-## For Tmpbeis3 with BEIS_VERSION = 3.13
+## For Tmpbeis3 with BEIS_VERSION = 3.14
 setenv OUT_UNITS            2   # molar output units (1 = moles/hr, 2 = moles/s)
 setenv PX_VERSION           Y   # Y indicates that met data is from PX version of MM5
 setenv SOILT_VAR            SOIT1 # name of soil temperature variable if using PX version
