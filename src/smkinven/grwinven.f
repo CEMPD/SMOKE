@@ -492,9 +492,9 @@ C           and/or activities
         CALL CHECKMEM( IOS, 'REFF', PROGNAME )
         ALLOCATE( RPEN( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RPEN', PROGNAME )
-        CEFF( S ) = 0.
-        REFF( S ) = 0.
-        RPEN( S ) = 0.
+        CEFF = 0.
+        REFF = 0.
+        RPEN = 0.
 
 C.........  Read in control matrix variables that are "all".  First, store
 C           position of data in storage array, then read.
@@ -565,7 +565,7 @@ C    n: been implemented
             IVARNAMS( 14 ) = 'CSOURC'
 
         CASE ( 'POINT' )
-            NINVARR = 22
+            NINVARR = 21
             IVARNAMS( 5  ) = 'ISIC'
             IVARNAMS( 6  ) = 'XLOCA'
             IVARNAMS( 7  ) = 'YLOCA'
@@ -583,7 +583,6 @@ C    n: been implemented
             IVARNAMS( 19 ) = 'CSRCTYP'
             IVARNAMS( 20 ) = 'CERPTYP'
             IVARNAMS( 21 ) = 'CNEIUID'
-            IVARNAMS( 22 ) = 'CEXTORL'
 
         END SELECT
 
@@ -592,14 +591,10 @@ C           set flag
         IF( CATEGORY  .EQ. 'AREA' ) THEN
             J = INDEX1( 'XLOCA', NINVARR, IVNAMES )
             IF( J .GT. 0 ) THEN
-                NINVARR = 14
+                NINVARR = 13
                 IVARNAMS( 12 ) = 'XLOCA'
                 IVARNAMS( 13 ) = 'YLOCA'
-                IVARNAMS( 14 ) = 'CEXTORL'
                 LAR2PT = .TRUE.
-            ELSE
-                NINVARR = 12
-                IVARNAMS( 12 ) = 'CEXTORL'
             END IF
         END IF
 
