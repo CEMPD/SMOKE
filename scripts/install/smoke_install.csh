@@ -7,7 +7,7 @@ set tmpfile = .install
 /bin/rm -rf $tmpfile
 
 # Check that downloaded files are available
-set file = smoke.nctox.data.tar.gz
+set file = smoke_v25.nctox.data.tar.gz
 echo "Checking for $file file..."
 
 ls $file > $tmpfile
@@ -17,7 +17,7 @@ if ( $status > 0 ) then
     set exitstat = 1
 endif
 
-set file = smoke.Linux2_x86pg.tar.gz
+set file = smoke_v25.Linux2_x86pg.tar.gz
 echo "Checking for $file file..."
 
 ls $file > $tmpfile
@@ -40,14 +40,14 @@ if ( ! $?SMK_HOME ) then
     exit( 1 )
 endif
 
-echo "SMOKE v2.3.2 will be installed in the following directory:"
+echo "SMOKE v2.5 will be installed in the following directory:"
 echo "      $SMK_HOME"
 echo " "
 
 # Install files
 cd $SMK_HOME
 
-set file = smoke.nctox.data.tar.gz
+set file = smoke_v25.nctox.data.tar.gz
 echo "Unpacking file $file..."
 tar xzvf $here/$file
 if ( $status > 0 ) then
@@ -57,7 +57,7 @@ if ( $status > 0 ) then
    set exitstat = 1
 endif
 
-set file = smoke.Linux2_x86pg.tar.gz
+set file = smoke_v25.Linux2_x86pg.tar.gz
 echo "Unpacking file $file..."
 tar xzvf $here/$file
 if ( $status > 0 ) then
@@ -134,7 +134,7 @@ echo "Installation completed successfully."
 echo " "
 echo "Please follow the instructions in Section 4.4 of the SMOKE User's Manual"
 echo "   to run the nctox test case."
-echo "http://www.cep.unc.edu/empd/products/smoke/version2.2/html/ch04s04.html"
+echo "http://www.smoke-model.org/version2.3.4/html/ch04s04.html"
 echo " "
 
 exit( 0 )
