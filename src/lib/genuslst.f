@@ -445,7 +445,7 @@ C.................  Allocate memory for NAICS lists
                 CALL CHECKMEM( IOS, 'INVNAICS', PROGNAME )
 
 C.................  Create unique NAICS list
-                PMACT = '-9'
+                PNAICS = '-9'
                 J1 = 0
                 DO S = 1, NSRC
                 
