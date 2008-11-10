@@ -144,7 +144,7 @@ C.........  Check setting of NONHAP[VOC|TOG] computation
         NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', ' ', .FALSE., IOS )
 
 C.........  Override NFLAG to treat all the sources as integrated sources.
-        MFLAG = ENVYN ( 'SMK_INTEGRATE_ALL', ' ', .FALSE., IOS )
+        MFLAG = ENVYN ( 'SMK_INTEGRATE_ALL_YN', ' ', .FALSE., IOS )
         IF( MFLAG ) THEN
             NFLAG = .TRUE.
 C.............  Allocate memory for source-based array from MODLISTS

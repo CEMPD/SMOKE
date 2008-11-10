@@ -121,7 +121,7 @@ C.........  Get value of these controls from the environment
 
         MESG = 'treat all the sources as integrated : Do not ' //
      &         'require non-HAP exclusion file'
-        MFLAG = ENVYN ( 'SMK_INTEGRATE_ALL', MESG, .FALSE., IOS )
+        MFLAG = ENVYN ( 'SMK_INTEGRATE_ALL_YN', MESG, .FALSE., IOS )
         
         IF( MFLAG ) NFLAG = .FALSE.   ! override NFLAG setting to skip opening non-HAP exclusion file
 
