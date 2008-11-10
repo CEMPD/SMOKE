@@ -264,7 +264,7 @@ C.............  Process inventory records and store in sorted order
 
 C.............  Integrate criteria and toxic pollutants
             IF( ORLFLG ) THEN
-                CALL SETNONHAP
+                CALL SETNONHAP( NRAWBP )
             END IF
 
 C.............  Determine memory needed for actual pollutants list and actual

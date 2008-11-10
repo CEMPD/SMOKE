@@ -90,6 +90,7 @@ C...........   Other local variables
         LOGICAL    :: HFLAG = .FALSE.  ! true: open hour-specific file
         LOGICAL    :: IFLAG = .FALSE.  ! true: open annual/average inventory
         LOGICAL    :: NFLAG = .FALSE.  ! true: open non-HAP exclusions
+        LOGICAL    :: MFLAG = .FALSE.  ! true: treat all sources as treated
         LOGICAL    :: SFLAG = .FALSE.  ! true: open speeds file
         LOGICAL    :: XFLAG = .FALSE.  ! true: open VMT mix file
 
@@ -117,6 +118,12 @@ C.........  Get value of these controls from the environment
         
         MESG = 'Read and use non-HAP exclusions file'
         NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', MESG, .FALSE., IOS )
+
+        MESG = 'treat all the sources as integrated : Do not ' //
+     &         'require non-HAP exclusion file'
+        MFLAG = ENVYN ( 'SMK_INTEGRATE_ALL', MESG, .FALSE., IOS )
+        
+        IF( MFLAG ) NFLAG = .FALSE.   ! override NFLAG setting to skip opening non-HAP exclusion file
 
         IF ( CATEGORY .EQ. 'AREA' ) THEN
             MESG = 'Read and use area-to-point factors file'
@@ -304,7 +311,7 @@ C.........  Get ORIS descriptions file
      &             .TRUE., .TRUE., 'ORISDESC', PROGNAME )
         END IF
 
-C.........  Get file name for area-to-point factors file
+C.........  Get file name for non-HAP exclusion file
         IF( NFLAG ) THEN
             MESG = 'Enter logical name for NON-HAP EXCLUSIONS file'
             UDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'NHAPEXCLUDE',

@@ -1,5 +1,5 @@
 
-        SUBROUTINE SETNONHAP
+        SUBROUTINE SETNONHAP( NRAWBP )
 
 C**************************************************************************
 C  subroutine body starts at line 
@@ -55,7 +55,8 @@ C.........  This module contains the information about the source category
 
 C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
-        
+        INCLUDE 'PARMS3.EXT'    !  physical and mathematical constants
+ 
 C...........   EXTERNAL FUNCTIONS and their descriptions
         CHARACTER(2)    CRLF
         INTEGER         INDEX1
@@ -69,11 +70,16 @@ C.........  Pollutant names
         CHARACTER(6),       PARAMETER :: NONHAPREFIX = 'NONHAP'
         CHARACTER(4),       PARAMETER :: NOIEND = '_NOI'
 
+C.........   SUBROUTINE ARGUMENTS
+        INTEGER , INTENT (INOUT)      :: NRAWBP  ! no. raw records by pollutant
+
 C.........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: VOCPOS( : )      ! location of VOC or TOG entry in srcs array
+        INTEGER, ALLOCATABLE :: NVOCPOS( : )     ! location of VOC or TOG entry in srcs array for VOC_INV
         INTEGER, ALLOCATABLE :: VNMPOS( : )      ! position of VOC or TOG in poll name array
 
         INTEGER, ALLOCATABLE :: TMPIDX( : )      ! sorting index
+        INTEGER, ALLOCATABLE :: TMPNPCNT( : )    ! number of pol per source
         INTEGER, ALLOCATABLE :: TMPPOSCOD( : )   ! tmp pollutant code array
 
         INTEGER, ALLOCATABLE :: NCRNOTOX( : )    ! number of sources with criteria but no toxics
@@ -82,6 +88,7 @@ C.........   Local allocatable arrays
         REAL,    ALLOCATABLE :: HAPEANN( : )     ! summed annual VOC/TOG HAPs emissions
         REAL,    ALLOCATABLE :: HAPEDAY( : )     ! summed average day VOC/TOG HAPs emissions
 
+        REAL,    ALLOCATABLE :: TMPVAL( : )      ! tmp emissions array
         REAL,    ALLOCATABLE :: TMPPOLVAL( :,: ) ! tmp emissions array
 
         CHARACTER(IOVLEN3),ALLOCATABLE :: NONHAPNAM( : ) ! NONHAPS pol name array
@@ -96,19 +103,23 @@ C.........   Other local variables
         INTEGER  PPOL         ! previous pollutant number
         INTEGER  CPOLRAW      ! pollutant number in raw arrays
         INTEGER  CURRPOS      ! current position in POLVAL and IPOSCOD arrays
+        INTEGER  NEWSRCPOS    ! current position in POLVAL and IPOSCOD arrays with VOC_INV poll
         INTEGER  NHAP         ! number of pollutants that needs NONHAP calculation in src array
         INTEGER  NNONHAP      ! number of pollutants that needs NONHAP calculation
         INTEGER  NONVPOS      ! position of NONHAP[VOC|TOG] in poll name array
+        INTEGER  NVPOS        ! tmp location of VOC or TOG entry in srcs array for VOC_INV
         INTEGER  VPOS         ! tmp location of VOC or TOG entry in srcs array
+        INTEGER  TMPPOS       ! tmp location of VOC or TOG entry in srcs array
         INTEGER  TOXPOS       ! position of NOI toxic in poll name array
         INTEGER  MXWARN       ! maximum number of warnings
         INTEGER  STIDX        ! starting index into pollutant array for current source
         INTEGER  ENDIDX       ! ending index into pollutant array
-        INTEGER :: NWARN = 0   ! current number of warnings
+        INTEGER::NWARN = 0    ! current number of warnings
         
         LOGICAL  FNDPOL       ! true: found toxic pollutant to be processed
         LOGICAL  FNDVOC       ! true: found VOC entry in inventory
         LOGICAL  NFLAG        ! true: start non-HAP calculation
+        LOGICAL  MFLAG        ! true: treat all sources integrated
         LOGICAL  EFLAG        ! true: error occured
         LOGICAL  LASTFLAG     ! true: entry is last for current source
         LOGICAL  NEEDSORT     ! true: need to resort pollutants for current source
@@ -119,6 +130,8 @@ C.........   Other local variables
         CHARACTER(14)      NONHAP   ! name of NONHAP[VOC|TOG]
         CHARACTER(IOVLEN3) POLNAM   ! temporary pollutant name
         CHARACTER(IOVLEN3) CURPOL   ! temporary current pollutant name
+        CHARACTER(IOVLEN3) TMPPOL   ! temporary current pollutant name
+        CHARACTER(IOVLEN3) VOCPOL   ! temporary current pollutant name
         CHARACTER(300)     BUFFER   ! message buffer
         CHARACTER(256)     MESG     ! message buffer 
         
@@ -129,12 +142,22 @@ C   begin body of subroutine SETNONHAP
 
 C.........  Check setting of NONHAP[VOC|TOG] computation
         NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', ' ', .FALSE., IOS )
+
+C.........  Override NFLAG to treat all the sources as integrated sources.
+        MFLAG = ENVYN ( 'SMK_INTEGRATE_ALL', ' ', .FALSE., IOS )
+        IF( MFLAG ) THEN
+            NFLAG = .TRUE.
+C.............  Allocate memory for source-based array from MODLISTS
+            ALLOCATE( LNONHAP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LNONHAP', PROGNAME )
+            LNONHAP = .TRUE.   ! array
+        END IF
+        
         IF( .NOT. NFLAG ) RETURN
 
         CALL ENVSTR( NONHAPCOMP, MESG, ' ', VOC_TOG, IOS )
         MESG ='Processing NONHAP'// VOC_TOG // ' calculation.' 
         CALL M3MSG2( MESG )
-
 
         IF( IOS .NE. 0 ) THEN
             MESG = 'ERROR: NONHAP_TYPE environment variable ' //
@@ -199,6 +222,8 @@ C.........  Determine maximum size for allocating memory
         CALL CHECKMEM( IOS, 'NONHAPMOD', PROGNAME )
         ALLOCATE( VOCPOS( NNONHAP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'VOCPOS', PROGNAME )
+        ALLOCATE( NVOCPOS( NNONHAP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'NVOCPOS', PROGNAME )
         ALLOCATE( HAPEANN( NNONHAP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HAPEANN', PROGNAME )
         ALLOCATE( HAPEDAY( NNONHAP ), STAT=IOS )
@@ -208,15 +233,32 @@ C.........  Determine maximum size for allocating memory
         ALLOCATE( NTOXNOCR( NNONHAP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NTOXNOCR', PROGNAME )
 
-
         VNMPOS = 0
         NONHAPNAM = ' '
         NONHAPMOD = ' '
         NCRNOTOX = 0
         NTOXNOCR = 0 
 
-        NHAP = 0
+C.........  Max number of souces with pol/act including a new species (VOC_INV)
+        NRAWBP = NRAWBP + NSRC
+
+C.........  Allocate memory for sorted inventory data
+        ALLOCATE( TMPNPCNT( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPNPCNT', PROGNAME )
+        ALLOCATE( TMPPOSCOD( NRAWBP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPPOSCOD', PROGNAME )
+        ALLOCATE( TMPPOLVAL( NRAWBP,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPPOLVAL', PROGNAME )
+        ALLOCATE( TMPVAL( NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPVAL', PROGNAME )
+        
+        TMPNPCNT  = 0
+        TMPPOSCOD = 0
+        TMPPOLVAL = BADVAL3
+        TMPVAL    = BADVAL3
+
 C.........  Store the poisiont of pollutants for HAPs and NONHAPs
+        NHAP = 0
         DO I = 1, MXIDAT
 
 C.............  Skip if pol is activity pol as of VMT
@@ -293,19 +335,25 @@ C.........  Check if any toxics pollutants are to be subtracted
         END IF
 
         CURRPOS = 0
+        NEWSRCPOS = 0
 
 C.........  Loop through sources
         DO I = 1, NSRC
 
 C.............  Initialize values for this source
+            TMPPOS = 0
+            TMPPOL = ' '
+            TMPVAL = 0.0
             VOCPOS = 0
-            FNDVOC = .FALSE.
-            
+            NVOCPOS = 0
+            FNDVOC = .FALSE.            
             HAPEANN = 0.
             HAPEDAY = 0.
             
             EFLAG = .FALSE.
             LASTFLAG = .FALSE.
+
+            TMPNPCNT( I ) = NPCNT( I )
 
 C.............  Process source if it is not integrated
             IF( ALLOCATED( LNONHAP ) ) THEN
@@ -316,10 +364,24 @@ C.................  Loop through pollutants for this source
 
 C.....................  Increment current position in arrays            
                     CURRPOS = CURRPOS + 1
+                    NEWSRCPOS = NEWSRCPOS + 1
                     
 C.....................  Store pollutant for this position
                     CPOL = IPOSCOD( CURRPOS )
-                    
+
+C.....................  Store to tmp arrays of IPOSCOD and POLVAL
+                    TMPPOSCOD( NEWSRCPOS )   = IPOSCOD( CURRPOS )
+                    TMPPOLVAL( NEWSRCPOS,: ) = POLVAL ( CURRPOS,: )
+
+C.....................  If current pollutant is VOC(_INV) entry, save position and emissions
+                    DO H = 1, NNONHAP
+                        IF( CPOL == VNMPOS( H ) ) THEN
+                            TMPPOS = CURRPOS
+                            TMPPOL = INVDNAM( CPOL )
+                            TMPVAL( : ) = POLVAL( CURRPOS,: )
+                        END IF
+                    END DO
+
 C.....................  If pollutant is not part of VOC or TOG, cycle
                     IF( INVDVTS( CPOL ) == 'N' ) CYCLE
 
@@ -357,12 +419,12 @@ C.........................  If found, set pollutant for current source to NOI po
                         END IF
                      
                     END IF  ! check if pollutant is model or explicit species
-                    
+
                 END DO  ! loop through pollutants
                 
-C.................  Skip rest of loop since we're done with this source
-                CYCLE
-
+C.................  Skip rest of loop and add new poll VOC_INV since we're done with this source
+                GOTO 999    ! Add new poll VOC_INV
+                
             END IF
             END IF
 
@@ -370,16 +432,25 @@ C.............  Loop through pollutants for this source
             DO J = 1, NPCNT( I )
 
 C.................  Increment current position in arrays            
-                CURRPOS = CURRPOS + 1
+                CURRPOS   = CURRPOS + 1
+                NEWSRCPOS = NEWSRCPOS + 1
 
 C.................  Store pollutant for this position
                 CPOL   = IPOSCOD( CURRPOS )
                 POLNAM = INVDNAM( CPOL )
 
-C.................  If current pollutant is VOC or TOG entry, save position
+C.................  Store to tmp arrays of IPOSCOD and POLVAL
+                TMPPOSCOD( NEWSRCPOS )   = IPOSCOD( CURRPOS )
+                TMPPOLVAL( NEWSRCPOS,: ) = POLVAL ( CURRPOS,: )
+
+C.................  If current pollutant is VOC(_INV) entry, save position and emissions
                 DO H = 1, NNONHAP
                     IF( CPOL == VNMPOS( H ) ) THEN
-                        VOCPOS( H ) = CURRPOS
+                        TMPPOS = CURRPOS
+                        TMPPOL = POLNAM
+                        TMPVAL( : ) = POLVAL( CURRPOS,: )
+                        VOCPOS( H )  = CURRPOS
+                        NVOCPOS( H ) = NEWSRCPOS
                     END IF
                 END DO
 
@@ -399,6 +470,7 @@ C.................  Check emission processing modes
                     M = INDEX1( POLNAM( 1:L-1 ), NNONHAP, NONHAPMOD )
                 ELSE
                     M = INDEX1( ' ', NNONHAP, NONHAPMOD )
+C                    M = 1
                 END IF
 
 C.................  Sum toxic emissions for this source
@@ -432,7 +504,8 @@ C.....................  Skip NONHAP calculation when summed HAPs is zero
                     IF( HAPEDAY( K ) == 0.0 .AND. FNDVOC ) CYCLE
 
 C.....................  Restore position of VOC or TOG pollutants
-                    VPOS = VOCPOS( K )
+                    VPOS   = VOCPOS( K )
+                    NVPOS  = NVOCPOS( K )
                     CURPOL = INVDNAM( VNMPOS( K ) )   ! VOC, EXH__VOC,,,
 
 C....................  Check if this source had no criteria and no toxics
@@ -472,10 +545,9 @@ C.....................  Give warning if source has criteria but no toxics
                         EFLAG = .TRUE.
                     END IF
 
-
 C.....................  Skip rest of loop if an error has occured
                     IF( EFLAG ) CYCLE
-                
+
 C.....................  Subtract toxic emissions from criteria emissions  
                     POLVAL( VPOS,NEM ) = 
      &                      POLVAL( VPOS,NEM ) - HAPEANN( K )
@@ -512,15 +584,71 @@ C....................  Check that average day NONHAP value is not negative
                     END IF
 
 C.....................  Rename VOC to NONHAPVOC
+C.....................  increment a number of poll for NONHAP[VOC|TOG]
                     NONVPOS = INDEX1( NONHAPNAM( K ), MXIDAT, INVDNAM )
-                    IPOSCOD( VPOS ) = NONVPOS
-                    INVSTAT( NONVPOS ) = 2
-                
+                    IPOSCOD  ( VPOS )   = NONVPOS
+                    TMPPOSCOD( NVPOS )  = NONVPOS
+                    TMPPOLVAL( NVPOS,: )= POLVAL( VPOS,: )
+                    INVSTAT  ( NONVPOS )= 2
+
                 END DO  !loop through pollutants that need NONHAP calculation
 
             END DO  ! loop through pollutants
 
+C.............  Add a new poll VOC_INV
+999         IF( TMPPOS > 0 ) THEN
+                TMPNPCNT( I )  = NPCNT( I ) + 1
+                VOCPOL = TRIM( TMPPOL ) // '_INV'
+                NONVPOS = INDEX1( VOCPOL,MXIDAT,INVDNAM )
+
+C.................  Check to see a new pol VOC_INV listed in INVTABLE file
+                IF( NONVPOS < 1 ) THEN
+                     MESG = 'ERROR: Pollutant '//TRIM( VOCPOL )
+     &                       //' is not found in the INVTABLE file.'
+                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+                NEWSRCPOS = NEWSRCPOS + 1
+                TMPPOSCOD( NEWSRCPOS )   = NONVPOS
+                TMPPOLVAL( NEWSRCPOS,: ) = TMPVAL ( : )
+                INVSTAT  ( NONVPOS )     = 2
+
+            END IF
+
         END DO  ! loop through sources
+
+        NRAWBP = NEWSRCPOS
+
+C.........  Update NPCNT, IPOSCOD and POLVAL including VOC_INV to retain org VOC
+        DEALLOCATE( IPOSCOD, POLVAL )
+        
+        ALLOCATE( POLVAL( NRAWBP,NPPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'POLVAL', PROGNAME )
+        ALLOCATE( IPOSCOD( NRAWBP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IPOSCOD', PROGNAME )
+        
+        POLVAL = 0.0
+        IPOSCOD = 0
+
+C.........  Reinitialize arrays with updated arrays including VOC_INV
+        CURRPOS = 0
+        DO S = 1, NSRC
+
+            NPCNT( S )   = TMPNPCNT( S )
+ 
+            DO J = 1, NPCNT( S )
+C................  Increment current position in arrays            
+               CURRPOS   = CURRPOS + 1
+
+C................  Store pollutant for this position
+               IPOSCOD( CURRPOS ) = TMPPOSCOD( CURRPOS )
+               POLVAL( CURRPOS,:) = TMPPOLVAL( CURRPOS,: )
+               POLNAM = INVDNAM( IPOSCOD( CURRPOS) )
+            ENDDO
+
+        ENDDO
+        
+        DEALLOCATE( TMPNPCNT, TMPPOLVAL, TMPPOSCOD )
 
 C.........  Loop through pollutants that need NONHAP calculation
         N = 0
@@ -574,7 +702,7 @@ C.............  Set ending index for this source
 C.............  Initialize sorting index and check if any sorting needs to be done
             PPOL = 0
             NEEDSORT = .FALSE.
-            
+
             DO J = 1, NPCNT( I )
                 CPOL = IPOSCOD( STIDX + J - 1 )
 
