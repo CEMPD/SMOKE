@@ -61,6 +61,7 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS
         CHARACTER(2)  CRLF
+        CHARACTER(14) MMDDYY
         LOGICAL       BLKORCMT
         LOGICAL       ENVYN, GETYN
         INTEGER       GETFLINE, GETEFILE
@@ -75,7 +76,7 @@ C...........   EXTERNAL FUNCTIONS
 
         EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
      &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF,
-     &           BLKORCMT, STR2REAL, CHKREAL
+     &           BLKORCMT, STR2REAL, CHKREAL, MMDDYY
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -190,6 +191,7 @@ C...........   Other local variables
 
         CHARACTER(16)  FDESC                     ! tmp file description
         CHARACTER(16)  NAM                       ! tmp file name
+        CHARACTER(16)  LNAM                      ! tmp previous file name
         CHARACTER(16)  VNM                       ! tmp variable name
         CHARACTER(16)  TVNM                      ! tmp2 variable name
         CHARACTER(33)  LFNSPC                    ! tmp spec and file name
@@ -897,6 +899,42 @@ C.............  Write header line to report
             WRITE( RDEV,93000 ) TRIM( RPTLINE )
         END IF
 
+C.........  Warning missing logical file names from the ADJ_FACS list 
+        LNAM = ' '
+        DO I = 1, NADJ
+             NAM = ADJ_LFN( I )
+             L = INDEX1( NAM, NFILE, FNAME )
+             IF( L <= 0 ) THEN
+                 MESG = 'WARNING: The logical file '//TRIM(NAM) //
+     &               ' in the adjustment file (ADJ_FACS) is not '// 
+     &               'found in the FILELIST on DATE : '//
+     &               MMDDYY(SDATE)
+                 IF( LNAM /= NAM ) THEN
+                     CALL M3MSG2( MESG )
+                     LNAM = NAM
+                 END IF
+              END IF
+        END DO
+
+C.........  Warning missing logical file names from the TAG_SPECIES list 
+        LNAM = ' '
+        IF( TDEV > 0 ) THEN
+            DO I = 1, NTAG
+                NAM = TAG_LFN( I )
+                L = INDEX1( NAM, NFILE, FNAME )
+                IF( L <= 0 ) THEN
+                     MESG = 'WARNING: The logical file '//TRIM(NAM) //
+     &                   ' in the tagging file (TAG_SPECIES) is not '// 
+     &                   'found in the FILELIST on DATE : '//
+     &                   MMDDYY(SDATE)
+                     IF( LNAM /= NAM ) THEN
+                         CALL M3MSG2( MESG )
+                         LNAM = NAM
+                     END IF
+                END IF
+            END DO
+        END IF
+
 C.........  Allocate arrays that will store overall daily/gridded total emissinos by species
         ALLOCATE( BEFORE_SPC( NVOUT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BEFORE_SPC', PROGNAME )
@@ -1167,6 +1205,7 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I7, :, 1X ) )
+94011   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94020   FORMAT( A, :, I3, :, 1X, 10 ( A, :, F8.5, :, 1X ) )
 
@@ -1269,37 +1308,30 @@ C.................  Search adjustment factor for the current file
                 L = INDEX1( NAM, NFILE, FNAME )
 
 C.................  Skip EMF-specific header line
-                IF( L <=0 .AND. .NOT. CHKREAL( SEGMENT( 3 ) ) ) CYCLE
+                IF( L <= 0 .AND. .NOT. CHKREAL( SEGMENT( 3 ) ) ) CYCLE
 
-                IF( L <= 0 ) THEN
-                    MESG ='ERROR: The logical file '//TRIM(NAM)
-     &                 // ' was not found in the FILELIST.'
+                F = F + 1
+
+                ADJ_SPC( F ) = TRIM( SEGMENT( 1 ) )
+                ADJ_LFN( F ) = TRIM( SEGMENT( 2 ) ) 
+                ADJ_LFNSPC( F ) = TRIM( SEGMENT( 2 ) ) // '~' // 
+     &                            TRIM( SEGMENT( 1 ) )
+                ADJ_FACTOR( F ) = STR2REAL( SEGMENT( 3 ) )
+
+                IF( ADJ_FACTOR( F ) < 0 ) THEN
+                    MESG = 'ERROR: Can not apply a negative ' //
+     &                  'adjustment factor for the species ' //
+     &                  TRIM( ADJ_SPC(F) ) // ' from the ' // 
+     &                  TRIM( NAM ) // ' file'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                    F = F + 1
 
-                    ADJ_SPC( F ) = TRIM( SEGMENT( 1 ) )
-                    ADJ_LFN( F ) = TRIM( SEGMENT( 2 ) ) 
-                    ADJ_LFNSPC( F ) = TRIM( SEGMENT( 2 ) ) // '~' // 
-     &                                TRIM( SEGMENT( 1 ) )
-                    ADJ_FACTOR( F ) = STR2REAL( SEGMENT( 3 ) )
+                ELSE IF( ADJ_FACTOR( F ) == 0 ) THEN
+                    MESG = 'WARNING: ' // TRIM( ADJ_SPC(F) ) // 
+     &                 ' emissions from the ' //TRIM(NAM)// ' file' //
+     &                 ' will be zero due to a zero adjustment factor' 
+                    CALL M3MSG2( MESG )
 
-                    IF( ADJ_FACTOR( F ) < 0 ) THEN
-                        MESG = 'ERROR: Can not apply a negative ' //
-     &                      'adjustment factor for the species ' //
-     &                      TRIM( ADJ_SPC(F) ) // ' from the ' // 
-     &                      TRIM( NAM ) // ' file'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-                    ELSE IF( ADJ_FACTOR( F ) == 0 ) THEN
-                        MESG = 'WARNING: ' // TRIM( ADJ_SPC(F) ) // 
-     &                   ' emissions from the ' //TRIM(NAM)// ' file' //
-     &                   ' will be zero due to a zero adjustment factor' 
-                        CALL M3MSG2( MESG )
-
-                    END IF
-
-                 END IF
+                END IF
 
             END DO
 
@@ -1386,41 +1418,28 @@ C.................  Skip EMF-specific header line
                 END IF
                 END IF
 
-C.................  Search adjustment factor for the current file
-                NAM = TRIM( SEGMENT( 1 ) )
+C.................  store tagging species
+                F = F + 1
 
-                N = INDEX1( NAM, NFILE, FNAME )
+                TAG_LFN( F ) = TRIM( SEGMENT( 1 ) ) 
+                TAG_SPC( F ) = TRIM( SEGMENT( 2 ) )
+                TAG_LFNSPC( F ) = TRIM( SEGMENT( 1 ) ) // '~' // 
+     &                            TRIM( SEGMENT( 2 ) )
+                TAG_APPEND( F ) = TRIM( SEGMENT( 3 ) )
+                TAG_LFNSPCTAG(F)= TRIM( SEGMENT( 1 ) ) // '~' // 
+     &                            TRIM( SEGMENT( 2 ) ) // '_' // 
+     &                            TRIM( SEGMENT( 3 ) )
 
+                L1 = LEN_TRIM( SEGMENT( 2 ) )
+                L2 = LEN_TRIM( SEGMENT( 3 ) )
+                L  = L1 + L2 + 1
 
-                IF( N <= 0 ) THEN
-                    MESG ='ERROR: The tagged species from ' //
-     &                 TRIM(NAM)//' file was not found in the FILELIST.'
+                IF( L > 16 ) THEN
+                    MESG = 'ERROR: Can not append a tag to the species '
+     &                  // TRIM( TAG_SPC( F ) ) // ' from the ' // 
+     &                  TRIM( NAM ) // ' file due to exceeding ' //
+     &                  'max size(16-char) of tagged species name.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                    F = F + 1
-
-                    TAG_LFN( F ) = TRIM( SEGMENT( 1 ) ) 
-                    TAG_SPC( F ) = TRIM( SEGMENT( 2 ) )
-                    TAG_LFNSPC( F ) = TRIM( SEGMENT( 1 ) ) // '~' // 
-     &                                TRIM( SEGMENT( 2 ) )
-                    TAG_APPEND( F ) = TRIM( SEGMENT( 3 ) )
-                    TAG_LFNSPCTAG(F)= TRIM( SEGMENT( 1 ) ) // '~' // 
-     &                                TRIM( SEGMENT( 2 ) ) // '_' // 
-     &                                TRIM( SEGMENT( 3 ) )
-
-                    L1 = LEN_TRIM( SEGMENT( 2 ) )
-                    L2 = LEN_TRIM( SEGMENT( 3 ) )
-                    L  = L1 + L2 + 1
-
-                    IF( L > 16 ) THEN
-                        MESG = 'ERROR: Can not append a tag ' //
-     &                      'to the species ' //
-     &                      TRIM( TAG_SPC( F ) ) // ' from the ' // 
-     &                      TRIM( NAM ) // ' file due to exceeding ' //
-     &                      'max size(16-char) of tagged species name.'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
-
                 END IF
 
             END DO
