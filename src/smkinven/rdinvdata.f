@@ -1482,8 +1482,8 @@ C.....................  Convert UTM values to lat-lon
                         XLOCA1 = STR2REAL( LON )
                         YLOCA1 = STR2REAL( LAT )
                         CALL UTM2LL( XLOCA1, YLOCA1, IZONE, XLOC, YLOC )
-                        WRITE( LON,* ) XLOC
-                        WRITE( LAT,* ) YLOC
+                        WRITE( LON,'(F9.5)' ) XLOC
+                        WRITE( LAT,'(F9.5)' ) YLOC
                     END IF
                 END IF
             END IF
