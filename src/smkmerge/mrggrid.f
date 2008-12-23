@@ -586,14 +586,14 @@ C.............  Search for tag species in the logical file
 
                     IF( LFNTMP == NAM ) THEN
 
-                        SPCTMP = TAG_SPC( J ) ! retrieve spcieces name from TAG_SPECIES 
+                        SPCTMP = TAG_SPC( N ) ! retrieve spcieces name from TAG_SPECIES 
 
                         K = INDEX1( SPCTMP, NVARSET, VNAMESET )
 
                         IF( K <= 0 ) THEN
                             EFLAG = .TRUE.
                             MESG = 'ERROR: The species ' //
-     &                          TRIM( TAG_SPC(J) )//' you want to tag '//
+     &                          TRIM( TAG_SPC(N) )//' you want to tag '//
      &                          'is not available from file '//TRIM(NAM)
                             CALL M3MSG2( MESG )
                         END IF
