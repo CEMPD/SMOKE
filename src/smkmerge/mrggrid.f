@@ -1188,11 +1188,9 @@ C......... Normal Completion
     
 C******************  FORMAT  STATEMENTS   ******************************
 
-C...........   Informational (LOG) message formats... 92xxx
-
-92000   FORMAT( 3A )
- 
 C...........   Formatted file I/O formats............ 93xxx
+
+92000   FORMAT(  A,',',A,',',A  )
 
 93000   FORMAT(  A )
 
