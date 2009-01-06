@@ -383,7 +383,7 @@ C              computing HFLUX in PDAY intermediate output file.
             CALL M3MSG2( MESG )
 
 C.............  Open I/O API inventory HEATCONTENT file and store
-            ALLOCATE( HEATCONTENT( NSRC,1 ), STAT=IOS )
+            ALLOCATE( HEATCONTENT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'HEATCONENT', PROGNAME )
             HEATCONTENT = 0.0
 
@@ -908,7 +908,7 @@ C.................  Lookup source/date string in master list to get position
                 ELSE 
 C.....................  Compute Heat Flux value
                     TDAT = DTACBRN( K ) * DTFUELD( K ) * ! computing HFLUX (BTU/day)
-     &                     HEATCONTENT( S,1 ) * TON2LB     ! HEATCONTENT(BTU/lb)=8000
+     &                     HEATCONTENT( S ) * TON2LB     ! HEATCONTENT(BTU/lb)=8000
 
                 END IF
 
