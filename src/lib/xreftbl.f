@@ -1084,7 +1084,7 @@ C.........  Speeds
              CALL ALOCPTBL( N( 1 ) )
              CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
-C.........  non-HAP exclusions file
+C.........  non-HAP inclusions/exclusions file
         ELSE IF( XFLAG ) THEN   
               ! Do nothing, because all that is needed is the CHRT* arrays
 
