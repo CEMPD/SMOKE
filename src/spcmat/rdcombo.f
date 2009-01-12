@@ -53,6 +53,7 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT    (IN) :: ENAM    ! pol/emis type name of interest
 
 C.........  Local parameters
+        INTEGER, PARAMETER :: DEFLTTYP = 0
         INTEGER, PARAMETER :: STATETYP = 1
         INTEGER, PARAMETER :: CNTYTYP  = 2
 
@@ -84,6 +85,7 @@ C.........  Other local variables
         LOGICAL, SAVE :: FIRSTSTA = .TRUE.
 
         CHARACTER(FIPLEN3) CFIP     !  tmp buffer for state/county FIPS code
+        CHARACTER(FIPLEN3) FIPZERO   ! zero Cy/St/Co code
         CHARACTER(STALEN3) CSTA     !  tmp buff for state FIPS code
         CHARACTER(STALEN3) PSTA     !  tmp buff for previous state FIPS code
         CHARACTER(IOVLEN3) CPOL     !  tmp buffer for pollutant code
@@ -112,6 +114,9 @@ C.........   Evaluate environment variables and store in saved variable
         MESG = 'Period to read from GSPRO_COMBO file'
         PERIOD = ENVINT( 'SPCMAT_PERIOD', MESG, 1, IOS )
 
+C.........  Set up zero strings for FIPS code
+        FIPZERO  = REPEAT( '0', FIPLEN3 )
+
 C.........  Allocate public arrays if not already allocated. This just needs to be done
 C           once, since allocating for all FIPS codes (and not dependent on file size)
         IF ( .NOT. ALLOCATED( CMBNP ) ) THEN
@@ -137,7 +142,7 @@ C.........  Initialize public and local arrays to 0
         CMBNP   = 0   ! array
         CMBSPCD = ' ' ! array
         CMBWGHT = 0.  ! array
-        CMBTYP  = 0   ! array
+        CMBTYP  = -1   ! array
 
 C.........  Other initializations
         PSTA = '-9'
@@ -194,11 +199,78 @@ C.............  Get FIPs code and pad with leading zeros, if needed
             CFIP = SEGMENT( 2 )
             CALL PADZERO( CFIP )
 
-C.............  Get tmp value for number of profiles
+C.............  If entry assigns profile to all FIPs codes, then implement it
+            IF ( CFIP == FIPZERO ) THEN
+
+                DO F = 1, NINVIFIP   ! Loop through inventory state/county FIPS codes
+
+C.................  Give error if any state- or county-specific entries already 
+C                   applied in the input file
+                    IF( CMBTYP( F ) >= STATETYP .AND. 
+     &                  ERRCNT(1) <=  MXERR ) THEN
+
+                        IF( CMBTYP(F) == STATETYP ) THEN
+                            WRITE( MESG,94010 ) 'ERROR: Default' //
+     &                        'record at line',IREC,'comes after '//
+     &                        'state-specific record matching same '//
+     &                        'source.'
+                        ELSE IF ( CMBTYP(F) == STATETYP ) THEN
+                            WRITE( MESG,94010 ) 'ERROR: Default ' //
+     &                        'record at line',IREC,'comes after '//
+     &                        'county-specific record matching same '//
+     &                        'source.'
+                        END IF
+
+                        CALL M3MESG( MESG )
+                        ERRCNT(1) = ERRCNT(1) + 1
+                        EFLAG = .TRUE.
+                        CYCLE
+
+                    END IF
+
+C.................  Give error if duplicate (non-zero) entry
+                    IF ( CMBTYP( F ) == DEFLTTYP .AND.
+     &                   ERRCNT(2) <= MXERR        ) THEN
+
+                        WRITE( MESG,94010 )
+     &                    'ERROR: Duplicate default (FIPS=0) '// 
+     &                    'entry found at line',IREC, 
+     &                    'of GSPRO_COMBO file'
+                        CALL M3MESG( MESG )
+                        ERRCNT(2) = ERRCNT(2) + 1
+                        EFLAG = .TRUE.
+                        CYCLE
+
+                    END IF
+
+C.....................  Record  flag for default entry (FIPS=00000)
+                    CMBTYP( F ) = DEFLTTYP
+
+C.....................  Store entry for current FIPs, pollutant, period
+                    CMBNP( F ) = NP
+
+C.....................  Convert fractions from strings to reals
+                    DO N = 1,  NP
+                        CWEIGHT( N ) = STR2REAL(SEGMENT(4+N*2))
+                    END DO
+
+C.....................  Check if profile fractions meet the +/- 0.001 criterion
+C                       and renormalize if needed. Provide a warning if need  
+C                       to renormalize.
+                    CALL CHECK_AND_SET_FRACS
+
+                    DO N = 1, NP
+
+                        CMBSPCD( F,N )= SEGMENT( 3+N*2 )
+                        CMBWGHT( F,N )= CWEIGHT( N )
+
+                    END DO
+
+                END DO  ! loop of inventory FIPs codes
 
 C.............  If state-specific entry (county set to 000), then 
 C               loop through all FIPs codes and apply information.
-            IF ( CFIP(STALEN3+1:FIPLEN3) == '000' ) THEN
+            ELSE IF ( CFIP(STALEN3+1:FIPLEN3) == '000' ) THEN
 
 C.................  Extract state code from state/county FIPS code
                 CSTA = CFIP(1:STALEN3)
@@ -345,7 +417,7 @@ C.........  Record to log how many counties received the COMBO approach
             DO F = 1, NINVIFIP
 
 C.................  Count counties found
-                IF ( CMBTYP( F ) .GT. 0 ) FCNT = FCNT + 1
+                IF ( CMBTYP( F ) .GT. -1 ) FCNT = FCNT + 1
 
             END DO
 
