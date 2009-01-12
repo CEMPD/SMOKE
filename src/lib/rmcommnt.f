@@ -50,10 +50,12 @@ C   begin body of subroutine RMCOMMNT
         J = INDEX( LINE, CMT_DELIM )
 
 C.........  If comment delimeter is found, then remove remainder of line
+C           MRH update 1/2/09: remove the comment field too and allow for
+C           length of comment delimiter greater than 1 character (e.g.,
+C           Smkreport's ## in-line comment delimiter.
         IF( J .GT. 0 ) THEN
 
-            J = J + LEN_TRIM( CMT_DELIM ) - 1
-
+            J = J - 1
             LINE = LINE( 1:J )
 
         END IF
