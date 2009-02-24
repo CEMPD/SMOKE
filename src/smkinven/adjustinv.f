@@ -6,7 +6,7 @@ C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C      This subroutine reads the area-to-point file and processes the
-C      sources as needed. It also reads and assigns the nonHAP exclusions.
+C      sources as needed. It also reads and assigns the non-HAP inclusions/exclusions.
 
 C  PRECONDITIONS REQUIRED:
 C      CSOURC, POLVAL, and NPCNT arrays allocated and populated in sorted order
@@ -48,7 +48,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: NRAWBP  ! no. raw records by pollutant
-        INTEGER , INTENT (IN) :: UDEV    ! unit no. for non-HAP exclusions
+        INTEGER , INTENT (IN) :: UDEV    ! unit no. for non-HAP inclusions/exclusions
         INTEGER , INTENT (IN) :: YDEV    ! unit no. for ar-to-point
         INTEGER , INTENT (IN) :: CDEV    ! SCC descriptions unit no.
         INTEGER , INTENT (IN) :: LDEV    ! log file unit no.
@@ -81,16 +81,16 @@ C.............  Process area-to-point sources
             
         END IF
 
-C..........  If non-HAP exclusions file is present...
+C..........  If non-HAP inclusions/exclusions file is present...
         IF( UDEV .GT. 0 ) THEN
 
-C.............  Read and preprocess NONHAPVOC exclusions x-ref
+C.............  Read and preprocess NONHAPVOC inclusions/exclusions x-ref
 C.............  Only the CHRT* arrays of the MODXREF will be populated,
 C               because we only need to identify the sources, not assign
 C               anything to them.
             CALL RDXCLUDE( UDEV )
 
-C.............   Assign array for non-HAP exclusions
+C.............   Assign array for non-HAP inclusions/exclusions
             CALL ASGNNHAPX
 
         END IF

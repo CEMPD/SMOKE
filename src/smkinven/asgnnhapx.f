@@ -40,10 +40,10 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: CSOURC, CSCC
+        USE MODSOURC, ONLY: CSOURC, CSCC, CINTGR
 
 C...........   This module contains the cross-reference tables
-        USE MODXREF, ONLY: LNONHAP, TXCNT,
+        USE MODXREF, ONLY: NHAP_EXCL, LNONHAP, TXCNT,
      &                     CHRT02A, CHRT02B, CHRT02C,
      &                     CHRT03, CHRT04,
      &                     CHRT05A, CHRT05B, CHRT05C,
@@ -290,6 +290,28 @@ C.............  Try for SCC matches
             END IF
 
         END DO        !  end loop on source x pollutants
+
+C.........  Reverse non-HAP exclusions to inclusions if the header is
+C           defined as '/INCLUDE/' in NHAPEXCLUDE file
+
+        IF( .NOT. NHAP_EXCL ) THEN
+            DO S = 1, NSRC
+                IF( LNONHAP( S ) ) THEN
+                    LNONHAP( S ) = .FALSE.   ! non-HAP exlusions
+                ELSE
+                    LNONHAP( S ) = .TRUE.    ! non-HAP inclusions
+                ENDIF
+            END DO
+        ENDIF
+
+C.........  Store final flag setting to a string variable CINTGR
+        DO S = 1, NSRC
+            IF( LNONHAP( S ) ) THEN
+                CINTGR( S ) = 'Y'   ! non-HAP inclusions
+            ELSE
+                CINTGR( S ) = 'N'   ! non-HAP exclusions
+            ENDIF
+        ENDDO
 
         RETURN
 

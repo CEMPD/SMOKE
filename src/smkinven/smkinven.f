@@ -117,7 +117,7 @@ C.........  File units and logical/physical names
         INTEGER    :: ODEV = 0  !  unit number for ORIS description
         INTEGER    :: PDEV = 0  !  unit number for inventory data table
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
-        INTEGER    :: UDEV = 0  !  unit no. for non-HAP exclusions file
+        INTEGER    :: UDEV = 0  !  unit no. for non-HAP inclusions/exclusions file
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
         INTEGER    :: XDEV = 0  !  unit no. for VMT mix file
         INTEGER    :: YDEV = 0  !  unit no. for area-to-point factors file
@@ -251,7 +251,7 @@ C               sorted order
 
 C.............  Check if ORL inventory and reset NHAPEXCLUDE if needed
             IF( .NOT. ORLFLG .AND. UDEV > 0 ) THEN
-                MESG = 'NOTE: Ignoring SMK_NHAPEXCLUDE_YN setting ' //
+                MESG = 'NOTE: Ignoring SMK_PROCESS_HAPS setting ' //
      &                 'since an ORL inventory is not being processed'
                 CALL M3MSG2( MESG )
                 UDEV = 0

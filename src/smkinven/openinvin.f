@@ -41,6 +41,9 @@ C***************************************************************************
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
 
+C............ This module contains the cross-reference tables
+        USE MODXREF, ONLY: PROC_HAPS 
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -51,12 +54,13 @@ C...........   INCLUDES
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
+        CHARACTER(2)       CRLF
         LOGICAL            ENVYN
         INTEGER            INDEX1
         INTEGER            PROMPTFFILE
         CHARACTER(NAMLEN3) PROMPTMFILE
 
-        EXTERNAL        ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
@@ -71,7 +75,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: ZDEV      ! unit no. for time zones
         INTEGER     , INTENT(OUT) :: CDEV      ! unit no. for SCCs description
         INTEGER     , INTENT(OUT) :: ODEV      ! unit no. for ORIS description
-        INTEGER     , INTENT(OUT) :: UDEV      ! unit no. for non-HAP exclusions
+        INTEGER     , INTENT(OUT) :: UDEV      ! unit no. for non-HAP inclusions/exclusions
         INTEGER     , INTENT(OUT) :: YDEV      ! unit no. for area-to-point
         CHARACTER(*), INTENT(OUT) :: ENAME     ! optional netCDF inven input
         CHARACTER(*), INTENT(OUT) :: INNAME    ! average inventory name
@@ -89,7 +93,7 @@ C...........   Other local variables
         LOGICAL    :: GFLAG = .FALSE.  ! true: open gridded I/O API inventory
         LOGICAL    :: HFLAG = .FALSE.  ! true: open hour-specific file
         LOGICAL    :: IFLAG = .FALSE.  ! true: open annual/average inventory
-        LOGICAL    :: NFLAG = .FALSE.  ! true: open non-HAP exclusions
+        LOGICAL    :: NFLAG = .FALSE.  ! true: open non-HAP inclusions/exclusions
         LOGICAL    :: MFLAG = .FALSE.  ! true: treat all sources as treated
         LOGICAL    :: SFLAG = .FALSE.  ! true: open speeds file
         LOGICAL    :: XFLAG = .FALSE.  ! true: open VMT mix file
@@ -116,15 +120,48 @@ C.........  Get value of these controls from the environment
             HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
         END IF
         
-        MESG = 'Read and use non-HAP exclusions file'
-        NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', MESG, .FALSE., IOS )
+        MESG = 'Define the processing method of combining haradous ' //
+     &         'air pollutants with criteria VOC.'
+        CALL ENVSTR( 'SMK_PROCESS_HAPS', MESG, ' ', PROC_HAPS, IOS )
 
-        MESG = 'treat all the sources as integrated : Do not ' //
-     &         'require non-HAP exclusion file'
-        MFLAG = ENVYN ( 'SMK_INTEGRATE_ALL_YN', MESG, .FALSE., IOS )
+        SELECT CASE( PROC_HAPS )
+        CASE( 'ALL' )
+            MESG = 'Treat all sources as integrate sources to compute'//
+     &             ' NONHAP[VOC|TOG].'
+            NFLAG = .FALSE.
+
+        CASE( 'NONE' )
+            MESG = 'Treat all sources as non-integrate sources.'
+            NFLAG = .FALSE.
+
+        CASE( 'PARTIAL' )
+            MESG = 'Partially treat sources as either integrate or ' //
+     &             'non-integrate sources.'
+            NFLAG = .TRUE.
+
+        CASE DEFAULT
+
+C.............  Check older flag setting to support backward comparability
+            NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', ' ', .FALSE., IOS )
+            IF( NFLAG ) THEN
+                MESG = 'WARNING: SMK_NHAPEXCLUDE_YN is no longer '//
+     &             'supported.'//CRLF()//BLANK10 //'Please use SMK_'//
+     &             'PROCESS_HAPS [ALL|NONE|PARTIAL] instead'
+                PROC_HAPS = 'PARTIAL'
+                NFLAG = .TRUE.
+
+            ELSE
+                MESG = 'No processing of combining criteria VOC with '//
+     &                 'hazardous air pollutants (HAP).'
+                NFLAG = .FALSE.
+
+            END IF
+
+
+        END SELECT
         
-        IF( MFLAG ) NFLAG = .FALSE.   ! override NFLAG setting to skip opening non-HAP exclusion file
-
+        CALL M3MSG2( MESG )
+        
         IF ( CATEGORY .EQ. 'AREA' ) THEN
             MESG = 'Read and use area-to-point factors file'
             CFLAG = ENVYN ( 'SMK_ARTOPNT_YN', MESG, .FALSE., IOS )
@@ -313,7 +350,7 @@ C.........  Get ORIS descriptions file
 
 C.........  Get file name for non-HAP exclusion file
         IF( NFLAG ) THEN
-            MESG = 'Enter logical name for NON-HAP EXCLUSIONS file'
+            MESG = 'Enter logical name for NHAPEXCLUDE file'
             UDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'NHAPEXCLUDE',
      &                          PROGNAME )
         END IF

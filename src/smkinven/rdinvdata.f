@@ -53,7 +53,8 @@ C...........   This module is the inventory arrays
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2,  ! sorted real characteristics
      &                      YLOC2, STKHT, STKDM, STKTK, STKVE, 
      &                      CORIS, CBLRID, CPDESC, CERPTYP,     ! sorted character characteristics
-     &                      CMACT, CNAICS, CSRCTYP, CNEIUID, CEXTORL
+     &                      CMACT, CNAICS, CSRCTYP, CNEIUID, CEXTORL,
+     &                      CINTGR
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NDY, NEF, NCE, NRE, NRP, 
@@ -349,10 +350,13 @@ C.........  Allocate memory for storing inventory data
 
         ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+        ALLOCATE( CINTGR ( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CINTGR', PROGNAME )
         ALLOCATE( CEXTORL ( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
 
-	      CSRCTYP = ' '       ! array
+        CSRCTYP = ' '       ! array
+        CINTGR  = ' '       ! array
         CEXTORL = ' '       ! array
 
         IF( CATEGORY == 'AREA' ) THEN
