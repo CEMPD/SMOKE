@@ -23,6 +23,7 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: ERPLEN3 =  2 ! emission release point type
         INTEGER, PARAMETER :: FIPLEN3 =  6 ! FIPS code
         INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
+        INTEGER, PARAMETER :: INTLEN3 =  1 ! INTEGRATE code
         INTEGER, PARAMETER :: MACLEN3 =  6 ! MACT code
         INTEGER, PARAMETER :: NAILEN3 =  6 ! NAICS code
         INTEGER, PARAMETER :: ORSLEN3 =  6 ! DOE plant ID field
