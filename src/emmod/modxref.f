@@ -65,6 +65,8 @@
 !.........  Per-source array to indicate whether source receives 
 !           NONHAPVOC or NONHAPTOG calculation
         LOGICAL, ALLOCATABLE :: LNONHAP( : )   ! true: NONHAP is computed
+        LOGICAL              :: NHAP_EXCL      ! true: Exclude NONHAP computation
+        CHARACTER(10)        :: PROC_HAPS      ! how-to process HAPs[all,none,partial] 
 
 !.........  Per-source array with speed profile ID (-1 indicates use inventory speed)
         INTEGER, ALLOCATABLE :: SPDPROFID( : )  ! speed profile code number
