@@ -82,6 +82,7 @@
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC:: CPDESC ( : ) ! plant desc
         CHARACTER(ALLLEN3), POINTER,     PUBLIC:: CSOURC ( : ) ! concat src
         CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPE ( : ) ! vehicle type
+        CHARACTER(INTLEN3), POINTER,     PUBLIC:: CINTGR ( : ) ! integrate status 
         CHARACTER(ERPLEN3), ALLOCATABLE, PUBLIC:: CERPTYP( : ) ! emission release point type
         CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
         CHARACTER(NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
