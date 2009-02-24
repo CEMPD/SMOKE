@@ -45,7 +45,7 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: SRGID, CSOURC, IDIU, IWEK, IMON,
      &                      SPPROF, IFIP, STKHT, STKDM, STKTK,
-     &                      STKVE 
+     &                      STKVE, CINTGR
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: NMATX, AFLAG, NREPORT, GFLAG, GSFLAG, 
@@ -226,6 +226,12 @@ C.........  SCC code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYSCC ) ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'CSCC'
+            END IF
+
+C.........  INTEGRATE flag
+            IF( ANY_TRUE( NREPORT, ALLRPT%BYINTGR ) ) THEN
+                NINVARR = NINVARR + 1
+                IVARNAMS( NINVARR ) = 'CINTGR'
             END IF
 
 C.........  MACT code

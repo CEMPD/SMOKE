@@ -42,11 +42,12 @@ C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
      &                      IWEK, IDIU, SPPROF, ISIC, CMACT, CNAICS,
-     &                      CSRCTYP, CORIS
+     &                      CSRCTYP, CORIS, CINTGR
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
-     &                      INVMACT, NINVNAICS, INVNAICS
+     &                      INVMACT, NINVNAICS, INVNAICS, NINVINTGR,
+     &                      INVINTGR
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, AFLAG, ALLRPT, NSPCPOL,
@@ -61,7 +62,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
-     &                      BINORSIDX, BINSTKGRP
+     &                      BINORSIDX, BINSTKGRP, BININTGR
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS
@@ -134,6 +135,7 @@ C...........   Local variables
         CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
         CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC        ! tmp SCC
+        CHARACTER(INTLEN3) INTGR      ! tmp INTEGRATE
         CHARACTER(MACLEN3) MACT       ! tmp MACT
         CHARACTER(NAILEN3) NAICS      ! tmp NAICS
         CHARACTER(ORSLEN3) ORIS       ! tmp ORIS
@@ -163,10 +165,10 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
         WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
-     &                A,I1,A)') 
+     &                A,I1,A,I1,A)') 
      &    '(4I8,A',SCCLEN3,',I',SICLEN3,',5I8,A', SPNLEN3,',A',
      &    PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', 
-     &    STPLEN3, ',I8)'
+     &    STPLEN3, ',I8,A',INTLEN3,')'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -185,6 +187,7 @@ C           report
         SPCID  = ' '
         PLANT  = ' '
         SCC    = ' '
+        INTGR  = 'N'
         MACT   = ' '
         NAICS  = ' '
         ORIS   = ' '
@@ -289,6 +292,18 @@ C.............  If BY ROADCLASS, insert roadclass code
 C.................  If BY SIC, insert full SIC
             IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
  
+C.................  If BY INTEGRATE, insert INTEGRATE flag (Y/N)
+            IF( RPT_%BYINTGR ) THEN
+                IF( .NOT. ASSOCIATED( CINTGR ) ) THEN
+                    MESG = 'ERROR: BY INTEGRATE is requested, but ' //
+     &                     'Integrate flag is not present in ASCII '//
+     &                     'inventory file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    INTGR = CINTGR( OUTSRC( I ) )
+                END IF
+            END IF
+            
 C.................  If BY MACT, insert full MACT
             IF( RPT_%BYMACT ) THEN
                 IF( .NOT. ASSOCIATED( CMACT ) ) THEN
@@ -413,7 +428,7 @@ C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, SIC,
      &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
      &                             SPCID, PLANT, ORIS, RCL, ESTAT, MACT,
-     &                             NAICS, SRCTYP, STKGRP
+     &                             NAICS, SRCTYP, STKGRP, INTGR
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
@@ -449,6 +464,7 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINSMKID  ) ) DEALLOCATE( BINSMKID )
         IF( ALLOCATED( BINSCC    ) ) DEALLOCATE( BINSCC )
         IF( ALLOCATED( BINSIC    ) ) DEALLOCATE( BINSIC )
+        IF( ALLOCATED( BININTGR  ) ) DEALLOCATE( BININTGR )
         IF( ALLOCATED( BINMACT   ) ) DEALLOCATE( BINMACT )
         IF( ALLOCATED( BINMACIDX ) ) DEALLOCATE( BINMACIDX )
         IF( ALLOCATED( BINNAICS  ) ) DEALLOCATE( BINNAICS )
@@ -514,6 +530,11 @@ C.........  Allocate memory for bins
             CALL CHECKMEM( IOS, 'BINSICIDX', PROGNAME )
         ENDIF
                 
+        IF( RPT_%BYINTGR   ) THEN
+            ALLOCATE( BININTGR ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BININTGR', PROGNAME )
+        ENDIF
+
         IF( RPT_%BYMACT   ) THEN
             ALLOCATE( BINMACT   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINMACT', PROGNAME )
@@ -622,7 +643,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
                 READ( BUFFER,FMTBUF ) 
      &                COL, ROW, SRCID, FIP, SCC, SIC, SRGID1, SRGID2, 
      &                MONID, WEKID, DIUID, SPCID, PLANT, ORIS, RCL, 
-     &                ESTAT, MACT, NAICS, SRCTYP, STKGRP
+     &                ESTAT, MACT, NAICS, SRCTYP, STKGRP, INTGR
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -718,6 +739,9 @@ C.................  Store SIC name index
                     K = FIND1( SIC, NINVSIC, INVSIC )
                     BINSICIDX( B ) = K
                 END IF
+
+C.................  Store INTEGRATE 
+                IF( RPT_%BYINTGR ) BININTGR( B ) = INTGR
 
 C.................  Store MACT
                 IF( RPT_%BYMACT ) BINMACT( B ) = MACT

@@ -46,7 +46,8 @@ C...........   This module is the inventory arrays
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, SCCDESC, SCCDLEV, NINVSIC, SICDESC,
-     &                      NINVMACT, MACTDESC, NINVNAICS, NAICSDESC
+     &                      NINVMACT, MACTDESC, NINVNAICS, NAICSDESC,
+     &                      NINVINTGR
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: QAFMTL3, AFLAG, OUTDNAM, RPT_, LREGION,
@@ -66,7 +67,7 @@ C.........  This module contains Smkreport-specific settings
      &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
-     &                      STKGWIDTH, STKGFMT
+     &                      STKGWIDTH, STKGFMT, INTGRWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -75,7 +76,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
-     &                      BINORIS, BINORSIDX, BINSTKGRP
+     &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
@@ -153,7 +154,8 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRMATBN= 40
         INTEGER, PARAMETER :: IHDRORIS = 41
         INTEGER, PARAMETER :: IHDRORNM = 42
-        INTEGER, PARAMETER :: NHEADER  = 42
+        INTEGER, PARAMETER :: IHDRINTGR= 43
+        INTEGER, PARAMETER :: NHEADER  = 43
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -199,7 +201,8 @@ C...........   Local parameters
      &                              'NFDRS            ',
      &                              'MATBURNED        ',
      &                              'ORIS             ',
-     &                              'ORIS Description ' / )
+     &                              'ORIS Description ',
+     &                              'INT_STAT         ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LCTRYUSE ( NCOUNTRY )
@@ -670,6 +673,15 @@ C.........  SIC column
                 WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
                 SICWIDTH = W1 + LV
             END IF
+        END IF
+
+C.........  INTEGRATE column
+        IF( RPT_%BYINTGR ) THEN
+            J = LEN_TRIM( HEADERS( IHDRINTGR ) )
+            J = MAX( INTLEN3, J )
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRINTGR), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+            INTGRWIDTH = J + LV
         END IF
 
 C.........  MACT column

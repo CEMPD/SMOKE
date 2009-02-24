@@ -70,7 +70,7 @@ C.........  This module contains Smkreport-specific settings
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
-     &                      STKGWIDTH, STKGFMT
+     &                      STKGWIDTH, STKGFMT, INTGRWIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -81,7 +81,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
-     &                      BINORIS, BINORSIDX, BINSTKGRP
+     &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC
@@ -370,6 +370,17 @@ C.............  Include SIC code
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
 
+                END IF
+
+C.............  Include INTEGRATE code in string
+                IF( RPT_%BYINTGR ) THEN
+                    L = INTGRWIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    STRING = STRING( 1:LE ) // 
+     &                       BININTGR( I )( 1:MIN(L1,INTLEN3) ) // DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
                 END IF
 
 C.............  Include MACT code in string

@@ -121,6 +121,7 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYRCL      = .FALSE.
         ALLRPT%BYSCC      = .FALSE.
         ALLRPT%BYSIC      = .FALSE.
+        ALLRPT%BYINTGR    = .FALSE.
         ALLRPT%BYMACT     = .FALSE.
         ALLRPT%BYNAICS    = .FALSE.
         ALLRPT%BYORIS     = .FALSE.
