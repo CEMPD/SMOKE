@@ -128,6 +128,7 @@
             LOGICAL       :: BYPLANT       ! true: by plant 
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSIC         ! true: by SIC 
+            LOGICAL       :: BYINTGR       ! true: by INTEGRATE 
             LOGICAL       :: BYMACT        ! true: by MACT
             LOGICAL       :: BYNAICS       ! true: by NAICS
             LOGICAL       :: BYORIS        ! true: by ORIS 
@@ -291,6 +292,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: SDSCWIDTH =0 ! width of SCC description column
         INTEGER      , PUBLIC :: SICWIDTH  =0 ! width of SIC
         INTEGER      , PUBLIC :: SIDSWIDTH =0 ! width of SIC description column
+        INTEGER      , PUBLIC :: INTGRWIDTH=0 ! width of INT_STAT (INTEGRATE) 
         INTEGER      , PUBLIC :: MACTWIDTH =0 ! width of MACT
         INTEGER      , PUBLIC :: MACDSWIDTH=0 ! width of MACT description column
         INTEGER      , PUBLIC :: NAIWIDTH  =0 ! width of NAICS
