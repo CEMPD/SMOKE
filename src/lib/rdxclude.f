@@ -42,7 +42,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, IFIPTA, CSRCTA, CSCCTA
+        USE MODXREF, ONLY: INDXTA, IFIPTA, CSRCTA, CSCCTA, NHAP_EXCL
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
@@ -75,7 +75,7 @@ C...........   Array of point source plant characeristics
         CHARACTER(CHRLEN3) CHARS( 5 )
 
 C...........   Other local variables
-        INTEGER         I, N    !  counters and indices
+        INTEGER         I, N, L0, L1, L2   !  counters and indices
 
         INTEGER         IFIP    !  temporary FIPS code
         INTEGER         IOS     !  i/o status
@@ -83,7 +83,8 @@ C...........   Other local variables
         INTEGER         NLINES  !  number of lines
         INTEGER         NXREF   !  number of valid x-ref entries
 
-        LOGICAL      :: EFLAG = .FALSE.   !  true: error found
+        LOGICAL      :: HDRFLAG = .FALSE.
+        LOGICAL      :: EFLAG  = .FALSE.      !  true: error found
 
         CHARACTER(10)      FIPFMT   ! formt to write co/st/cy to string
         CHARACTER(128)     LINE     !  line buffer
@@ -99,7 +100,7 @@ C***********************************************************************
 C   begin body of subroutine RDXCLUDE
 
 C.........  Get the number of lines in the file
-        NLINES = GETFLINE( FDEV, 'non-HAP exclusions file' )
+        NLINES = GETFLINE( FDEV, 'non-HAP inclusion/exclusions file' )
 
 C.............  Set up formats
         WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) FIPLEN3, FIPLEN3
@@ -122,6 +123,7 @@ C.........  Set up constants for loop.
 
 C.........  Second pass through file: read lines and store unsorted data for
 C           the source category of interest
+        NHAP_EXCL = .TRUE.     ! true: default non-integrate (exclusion)
         IREC   = 0
         N      = 0
         DO I = 1, NLINES
@@ -133,12 +135,29 @@ C           the source category of interest
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 
      &              'I/O error', IOS, 
-     &              'reading non-HAP exclusions file at line', IREC
+     &              'reading non-HAP exclusions/inclusions file at line'
+     &              , IREC
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
 
+C.............  Search for header to define either exclusions or inclusion
+            L0 = INDEX( LINE, '/EXCLUDE/' )
+            L1 = INDEX( LINE, '/INCLUDE/' )
+            L2 = INDEX( LINE, '/END/' )
+            
+            IF( L0 > 0 ) CYCLE         ! process non-HAP exclusions
+ 
+            IF( L1 > 0 ) THEN
+                NHAP_EXCL = .FALSE.    ! process non-HAP inclusions
+                CYCLE
+            ELSE IF( L2 > 0 ) THEN
+                HDRFLAG = .TRUE.
+                CYCLE 
+            END IF
+
 C.............  Skip blank lines
+            IF( HDRFLAG ) CYCLE        ! Skip after /END/
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Depending on source category, transfer line to temporary
@@ -216,25 +235,31 @@ C.........  Reset number of cross-reference entries in case some were dropped
 C.........  Write errors for problems with input
         IF( NXREF .EQ. 0 ) THEN
             EFLAG = .TRUE.
-            MESG = 'ERROR: No valid NHAPEXLCUDE entries!'
+            MESG = 'ERROR: No valid non-HAP inclusions or exclusions entries!'
             CALL M3MSG2( MESG )
 
         ELSEIF( NXREF .GT. NLINES ) THEN
             EFLAG = .TRUE.
             WRITE( MESG,94010 ) 'INTERNAL ERROR: dimension for ' //
-     &             'storing non-HAP exclusions file was', NLINES,
-     &             CRLF() // BLANK10 // 'but actually needed', NXREF
+     &          'storing non-HAP inclusions/exclusions file was',NLINES,
+     &          CRLF() // BLANK10 // 'but actually needed', NXREF
             CALL M3MSG2( MESG )
 
         ENDIF
 
 C.......  Check for errors reading XREF file, and abort
         IF( EFLAG ) THEN
-            MESG = 'Problem reading non-HAP exclusions file.'
+            MESG = 'Problem reading non-HAP exclusions/inclusions file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
 
-        CALL M3MSG2( 'Processing non-HAP exclusions file...' )
+        IF( NHAP_EXCL ) THEN
+            MESG = 'Processing non-HAP exclusions file...'
+        ELSE
+            MESG = 'Processing non-HAP inclusions file...'
+        ENDIF
+
+        CALL M3MSG2( MESG )
 
         CALL SORTIC( NXREF, INDXTA, CSRCTA )
 
@@ -252,7 +277,7 @@ C.........  Rewind file
 C.........  Error message for reaching the end of file too soon
 999     MESG = 'End of file reached unexpectedly. ' //
      &         'Check format of non-HAP' // CRLF() // BLANK5 //
-     &         'exclusions file.'
+     &         'inclusions/exclusions file.'
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
 C******************  FORMAT  STATEMENTS   ******************************

@@ -464,6 +464,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
                         RPT_%BYSCC     = .FALSE.
+                        RPT_%BYINTGR   = .FALSE.
                         RPT_%BYMACT    = .FALSE.
                         RPT_%BYNAICS   = .FALSE.
                         RPT_%BYORIS    = .FALSE.
@@ -942,6 +943,17 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     ELSE
                         WRITE( MESG, 94010 )
      &                     'WARNING: BY MATBURNED instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                        CALL M3MSG2( MESG )
+                    END IF
+
+                CASE( 'INTEGRATE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                        RPT_%BYINTGR  = .TRUE.
+                    ELSE
+                        WRITE( MESG, 94010 )
+     &                     'WARNING: BY INTEGRATE instruction at ' //
      &                     'line', IREC, 'is not allowed with ' //
      &                     'the ASCIIELEV instruction.'
                         CALL M3MSG2( MESG )

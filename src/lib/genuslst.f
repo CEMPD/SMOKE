@@ -38,14 +38,14 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, ISIC, CMACT, 
+        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, ISIC, CINTGR, CMACT, 
      &                      CORIS, CBLRID, CPDESC, CNAICS, CVTYPE
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, NINVSCC, NINVSCL, NINVSIC, 
-     &                      NINVSIC2, NINVMACT, NINVORIS, 
+     &                      NINVSIC2, NINVINTGR, NINVMACT, NINVORIS, 
      &                      INVIFIP, INVCFIP, INVSCC, INVSCL, INVSIC,
-     &                      INVSIC2, INVMACT, INVORIS,
+     &                      INVSIC2, INVINTGR, INVMACT, INVORIS,
      &                      INVORFP, IORSMTCH, INVODSC, ORISBLR,
      &                      OBSRCBG, OBSRCNT, NORISBLR, NOBLRSRC,
      &                      OBSRCNM, ORISFLAG, NINVNAICS, INVNAICS,
@@ -98,7 +98,7 @@ C...........   Other local variables
 
         CHARACTER(10)      FIPFMT        ! format to write FIP to CFIP
         CHARACTER(300)     MESG          ! message buffer
-	CHARACTER(FIPLEN3) CFIP          ! tmp fip for mesage
+        CHARACTER(FIPLEN3) CFIP          ! tmp fip for mesage
         CHARACTER(VTPLEN3) PVTYP         ! previous vehicle type
         CHARACTER(VTPLEN3) TVTYP         ! tmp vehicle type
         CHARACTER(SCCLEN3) PSCC          ! previous iteration SCC
@@ -361,6 +361,20 @@ C.................  Create unique SIC list
 
             END IF   ! End SIC processing
 
+
+C.............  Check if CINTGR is allocated.  
+C.............  If it is, generate unique list of CINTGR codes
+            IF( ASSOCIATED( CINTGR ) ) THEN
+
+C.................  Allocate memory for INTEGRATE lists
+                ALLOCATE( INVINTGR( NINVINTGR ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVINTGR', PROGNAME )
+
+                INVINTGR( 1 ) = 'Y'
+                INVINTGR( 2 ) = 'N'
+                
+            END IF    ! End INTEGRATE processing
+
 C.............  Check if CMACT is allocated.  
 C.............  If it is, generate unique list of MACT codes
             IF( ASSOCIATED( CMACT ) ) THEN
@@ -388,7 +402,7 @@ C.................  Count number of unique MACTs
                     
                 END DO
                 NINVMACT = J1
-
+ 
 C.................  Allocate memory for MACT lists
                 ALLOCATE( INVMACT( NINVMACT ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVMACT', PROGNAME )
@@ -561,7 +575,7 @@ C.................  Unsorted ORIS arrays
                         INVODSCA( NINVORIS ) = PDSC
                     ELSE
                         IF( INVORFPA( J ) /= FIP ) THEN
-			    WRITE( CFIP, '(I5)' ) INVORFPA( J )
+                            WRITE( CFIP, '(I5)' ) INVORFPA( J )
                        	    MESG = 'WARNING: Different FIPS codes ' //
      &                            'found for ORIS ID ' // CORS
      &                            // '.  Will use ' // CFIP //

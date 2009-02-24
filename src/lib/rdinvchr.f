@@ -42,7 +42,8 @@ C...........   This module is the source inventory arrays
      &                      XLOC1, YLOC1, XLOC2, YLOC2, SPEED, STKHT,
      &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
      &                      CLINK, CPDESC, CSOURC, CVTYPE, CMACT,
-     &                      CNAICS, CSRCTYP, CERPTYP, CNEIUID, CEXTORL
+     &                      CNAICS, CSRCTYP, CERPTYP, CNEIUID, CEXTORL,
+     &                      CINTGR
 
         IMPLICIT NONE
 
@@ -94,6 +95,8 @@ C...........   Other local variables
         LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
         LOGICAL       :: EXTIN   = .FALSE.  ! True: additional extended orl vars in input file
         LOGICAL       :: EXTFLAG = .FALSE.  ! True: additional extended orl vars requested
+        LOGICAL       :: ITGIN   = .FALSE.  ! True: INTG(integrate) code in input file
+        LOGICAL       :: ITGFLAG = .FALSE.  ! True: INTG(integrate) code requested
         LOGICAL       :: MCTIN   = .FALSE.  ! True: MACT code in input file
         LOGICAL       :: MACFLAG = .FALSE.  ! True: MACT code requested
         LOGICAL       :: NAIIN   = .FALSE.  ! True: NAICS code in input file
@@ -112,23 +115,24 @@ C...........   Other local variables
         CHARACTER(20)      HEADER( 20 ) ! header fields
         CHARACTER(256)     FILFMT ! ASCII file format after header
         CHARACTER(256)     MESG   ! message buffer
-        CHARACTER(BLRLEN3) CBLR   ! temporary boiler name
-        CHARACTER(FIPLEN3) CFIP   ! temporary character FIPs code
         CHARACTER(CHRLEN3) CHARS( 5 ) ! temporary plant characteristics
-        CHARACTER(LNKLEN3) CLNK   ! temporary link ID
-        CHARACTER(NEILEN3) CNEI   ! NEI unique ID
-        CHARACTER(EXTLEN3) CEXT   ! Extended ORL vars
-        CHARACTER(ORSLEN3) CORS   ! temporary DOE plant ID
-        CHARACTER(DSCLEN3) CPDS   ! temporary plant description
-        CHARACTER(RWTLEN3) CRWT   ! temporary roadway type
-        CHARACTER(SCCLEN3) CS     ! temporary scc
-        CHARACTER(VIDLEN3) CVID   ! temporary vehicle type code
-        CHARACTER(VTPLEN3) CVTP   ! tmp vehicle type
-        CHARACTER(MACLEN3) CMT    ! tmp MACT code
-        CHARACTER(NAILEN3) CNAI   ! tmp NAICS code
-        CHARACTER(STPLEN3) CSTP   ! tmp source type code
-        CHARACTER(ERPLEN3) CERP   ! tmp emission release point code
-        CHARACTER(PLTLEN3) FCID   ! temporary facility code
+        CHARACTER(BLRLEN3) :: CBLR = ' '   ! temporary boiler name
+        CHARACTER(FIPLEN3) :: CFIP = ' '   ! temporary character FIPs code
+        CHARACTER(LNKLEN3) :: CLNK = ' '   ! temporary link ID
+        CHARACTER(NEILEN3) :: CNEI = ' '   ! NEI unique ID
+        CHARACTER(EXTLEN3) :: CEXT = ' '   ! Extended ORL vars
+        CHARACTER(ORSLEN3) :: CORS = ' '   ! temporary DOE plant ID
+        CHARACTER(DSCLEN3) :: CPDS = ' '   ! temporary plant description
+        CHARACTER(RWTLEN3) :: CRWT = ' '   ! temporary roadway type
+        CHARACTER(SCCLEN3) :: CS   = ' '   ! temporary scc
+        CHARACTER(VIDLEN3) :: CVID = ' '   ! temporary vehicle type code
+        CHARACTER(VTPLEN3) :: CVTP = ' '   ! tmp vehicle type
+        CHARACTER(MACLEN3) :: CMT  = ' '   ! tmp MACT code
+        CHARACTER(NAILEN3) :: CNAI = ' '   ! tmp NAICS code
+        CHARACTER(STPLEN3) :: CSTP = ' '   ! tmp source type code
+        CHARACTER(ERPLEN3) :: CERP = ' '   ! tmp emission release point code
+        CHARACTER(INTLEN3) :: CINT = ' '   ! tmp integrate code
+        CHARACTER(PLTLEN3) :: FCID = ' '   ! temporary facility code
         CHARACTER(IOVLEN3) INVAR  ! tmp inventory pollutant name
 
         CHARACTER(16) :: PROGNAME = 'RDINVCHR'   !  program name
@@ -377,7 +381,7 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     SCCFLAG = .TRUE. 
                     ALLOCATE( CSCC( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
-
+                    
                 CASE( 'CORIS' )
                     ORSFLAG = .TRUE.
                     ALLOCATE( CORIS( NSRC ), STAT=IOS )
@@ -407,7 +411,7 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     VTPFLAG = .TRUE. 
                     ALLOCATE( CVTYPE( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CVTYPE', PROGNAME )
-
+                    
                 CASE( 'CMACT' )
                     MACFLAG = .TRUE.
                     ALLOCATE( CMACT( NSRC ), STAT=IOS )
@@ -432,6 +436,11 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     NEIFLAG = .TRUE.
                     ALLOCATE( CNEIUID( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CNEIUID', PROGNAME )
+
+                CASE( 'CINTGR' )
+                    ITGFLAG = .TRUE.
+                    ALLOCATE( CINTGR( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CINTGR', PROGNAME )
 
                 CASE( 'CEXTORL' )
                     EXTFLAG = .TRUE.
@@ -460,7 +469,58 @@ C.............  Read past header
                 READ( FDEV, '(A)' ) HEADER( J )
             ENDDO
 
-CC.............  Depending on source category, read in and store ASCII source
+CC............  Read in and store common ASCII source characteristics 
+C               over all source categories
+
+C..............  Determine if source type code is present
+            J = INDEX1( 'Source type code', NCOL, HEADER )
+            STPIN = ( J > 0 )
+
+C.............  Determine if plant description is present
+            J = INDEX1( 'Integrate flag', NCOL, HEADER )
+            ITGIN = ( J .GT. 0 )
+
+C.............  Determine if plant description is present
+            J = INDEX1( 'Additional extended', NCOL, HEADER )
+            EXTIN = ( J .GT. 0 )
+
+C.............  If source type code not present but has been requested,
+C               deallocate memory for array
+            IF( .NOT. STPIN .AND. STPFLAG ) THEN
+
+                MESG = 'WARNING: Source type code requested, but '//
+     &                 'is not present in ASCII inventory file'
+c                CALL M3MSG2( MESG )
+
+                DEALLOCATE( CSRCTYP )
+                NULLIFY( CSRCTYP )
+            END IF
+
+C.............  If integrate columns not present but has been requested,
+C               deallocate memory for array
+            IF( .NOT. ITGIN .AND. ITGFLAG ) THEN
+
+                MESG = 'WARNING: Integrate flag requested, ' //
+     &                 'but is not present in ASCII inventory file'
+c                CALL M3MSG2( MESG )
+
+                DEALLOCATE( CINTGR )
+                NULLIFY( CINTGR )
+            END IF
+
+C.............  If extended columns not present but has been requested,
+C               deallocate memory for array
+            IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
+
+                MESG = 'WARNING: Additional extended requested, ' //
+     &                 'but is not present in ASCII inventory file'
+c                CALL M3MSG2( MESG )
+
+                DEALLOCATE( CEXTORL )
+                NULLIFY( CEXTORL )
+            END IF
+
+CC............  Depending on source category, read in and store ASCII source
 C               characteristics
 
             SELECT CASE ( CATEGORY )
@@ -474,13 +534,6 @@ C.................  Determine if NAICS code is present
                 J = INDEX1( 'NAICS code', NCOL, HEADER )
                 NAIIN = ( J > 0 )
                 
-C.................  Determine if source type code is present
-                J = INDEX1( 'Source type code', NCOL, HEADER )
-                STPIN = ( J > 0 )
-
-C.................  Determine if plant description is present
-                J = INDEX1( 'Additional extended', NCOL, HEADER )
-                EXTIN = ( J .GT. 0 )
 
 C.................  If MACT not present but has been requested, then 
 C                   internal err
@@ -488,7 +541,7 @@ C                   internal err
 
                     MESG = 'WARNING: MACT requested, but ' //
      &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+c                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CMACT )
                     NULLIFY( CMACT )
@@ -501,58 +554,86 @@ C                   internal err
 
                     MESG = 'WARNING: NAICS requested, but ' //
      &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+c                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CNAICS )
                     NULLIFY( CNAICS )
 
                 END IF
 
-C.................  If source type code not present but has been requested,
-C                   deallocate memory for array
-                IF( .NOT. STPIN .AND. STPFLAG ) THEN
-
-                    MESG = 'WARNING: Source type code requested, but '//
-     &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
-
-                    DEALLOCATE( CSRCTYP )
-                    NULLIFY( CSRCTYP )
-                END IF
-
-C.................  If extended columns not present but has been requested,
-C                   deallocate memory for array
-                IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
-
-                    MESG = 'WARNING: Additional extended requested, ' //
-     &                     'but is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
-
-                    DEALLOCATE( CEXTORL )
-                    NULLIFY( CEXTORL )
-                END IF
-
-                CEXT  = ' '
-
                 DO S = 1, NSRC
 
 C.....................  Read in line of character data
-                    IF( MCTIN .AND. NAIIN .AND. STPIN .AND. EXTIN ) THEN
+                    IF( MCTIN .AND. NAIIN .AND. STPIN .AND. 
+     &                                          EXTIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                        CSTP, CMT, CNAI, CINT, CEXT
+
+                    ELSE IF( MCTIN .AND. NAIIN .AND. STPIN .AND. 
+     &                                    EXTIN .AND. .NOT. ITGIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
      &                        CSTP, CMT, CNAI, CEXT
+
+                    ELSE IF( MCTIN .AND. NAIIN .AND. STPIN .AND. 
+     &                                    .NOT. EXTIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                        CSTP, CMT, CNAI, CINT
+
                     ELSE IF( MCTIN .AND. NAIIN .AND. STPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
      &                        CSTP, CMT, CNAI
-                    ELSE IF( STPIN .AND. .NOT. MCTIN .AND. EXTIN ) THEN
+
+                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN .AND. 
+     &                                          EXTIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
+     &                                                CMT, CINT, CEXT
+
+                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN .AND. 
+     &                                    EXTIN .AND. .NOT. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
+     &                                                CMT, CEXT
+
+                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN .AND. 
+     &                                    .NOT. EXTIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
+     &                                                CMT, CINT
+
+                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
+     &                                                CMT
+
+                    ELSE IF( .NOT. MCTIN .AND. STPIN .AND. 
+     &                                          EXTIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                                                CSTP, CINT, CEXT
+
+                    ELSE IF( .NOT. MCTIN .AND. STPIN .AND. 
+     &                                    EXTIN .AND. .NOT. ITGIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
      &                                                CSTP, CEXT
-                    ELSE IF( STPIN .AND. .NOT. MCTIN ) THEN
+
+                    ELSE IF( .NOT. MCTIN .AND. STPIN .AND. 
+     &                                    .NOT. EXTIN .AND. ITGIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                                                CSTP
-                    ELSE IF( EXTIN ) THEN
+     &                                                CSTP, CINT
+
+                    ELSE IF( .NOT. MCTIN .AND. STPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS, CSTP
+
+
+                    ELSE IF( EXTIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
+     &                                                CINT, CEXT
+
+                    ELSE IF( .NOT. EXTIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS, CINT
+
+                    ELSE IF( EXTIN .AND. .NOT. ITGIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS, CEXT
+
                     ELSE
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
+
                     END IF
 
                     IF( SCCFLAG ) CSCC( S ) = CS
@@ -562,6 +643,8 @@ C.....................  Read in line of character data
                     IF( NAIFLAG .AND. NAIIN ) CNAICS( S ) = CNAI
                     
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
+
+                    IF( ITGFLAG .AND. ITGIN ) CINTGR( S ) = CINT
 
                     IF( EXTFLAG .AND. EXTIN ) CEXTORL( S ) = 
      &                                             ADJUSTL( CEXT )
@@ -577,59 +660,40 @@ C.....................  Read in line of character data
 
             CASE ( 'MOBILE' )
 
-C.................  Determine if source type code is present
-                J = INDEX1( 'Source type code', NCOL, HEADER )
-                STPIN = ( J > 0 )
-
-C.................  Determine if plant description is present
-                J = INDEX1( 'Additional extended', NCOL, HEADER )
-                EXTIN = ( J > 0 )
-
-C.................  If source type code not present but has been requested,
-C                   deallocate memory for array
-                IF( .NOT. STPIN .AND. STPFLAG ) THEN
-
-                    MESG = 'WARNING: Source type code requested, but '//
-     &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
-
-                    DEALLOCATE( CSRCTYP )
-                    NULLIFY( CSRCTYP )
-                END IF
-
-C.................  If extended columns not present but has been requested,
-C                   deallocate memory for array
-                IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
-
-                    MESG = 'WARNING: Additional extended requested, ' //
-     &                     'but is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
-
-                    DEALLOCATE( CEXTORL )
-                    NULLIFY( CEXTORL )
-                END IF
-
-                CEXT  = ' '
-
                 DO S = 1, NSRC
 
-C.....................  Initialize temporary characteristics
-                    CVID  = ' '
-                    CLNK  = ' '
-
 C.....................  Read in line of character data
-                    IF( STPIN .AND. EXTIN ) THEN
+                    IF( STPIN .AND. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
-     &                                    CLNK, CVID, CS, CVTP,CSTP,CEXT
+     &                            CLNK, CVID, CS, CVTP, CSTP, CINT, CEXT
+
+                    ELSE IF( STPIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
+     &                            CLNK, CVID, CS, CVTP, CSTP, CINT
+
+                    ELSE IF( STPIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
+     &                            CLNK, CVID, CS, CVTP, CSTP, CEXT
+
                     ELSE IF( STPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
-     &                                    CLNK, CVID, CS, CVTP,CSTP
-                    ELSE IF( EXTIN ) THEN
+     &                            CLNK, CVID, CS, CVTP, CSTP
+
+                    ELSE IF( .NOT. STPIN .AND. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
-     &                                     CLNK, CVID, CS, CVTP,CEXT
+     &                            CLNK, CVID, CS, CVTP, CINT, CEXT 
+
+                    ELSE IF( .NOT. STPIN .AND. ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
+     &                            CLNK, CVID, CS, CVTP, CINT 
+
+                    ELSE IF( .NOT. STPIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
+     &                            CLNK, CVID, CS, CVTP, CEXT 
+
                     ELSE
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
-     &                                     CLNK, CVID, CS, CVTP
+     &                            CLNK, CVID, CS, CVTP
                     END IF
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
@@ -639,6 +703,8 @@ C.....................  Read in line of character data
                     IF( LNKFLAG ) CLINK ( S ) = CLNK
 
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
+
+                    IF( ITGFLAG .AND. ITGIN ) CINTGR( S ) = CINT
 
                     IF( EXTFLAG .AND. EXTIN ) CEXTORL( S ) = 
      &                                             ADJUSTL( CEXT )
@@ -675,10 +741,6 @@ C.................  Determine if NAICS code is present
                 J = INDEX1( 'NAICS code', NCOL, HEADER )
                 NAIIN = ( J > 0 )
                 
-C.................  Determine if source type code is present
-                J = INDEX1( 'Source type code', NCOL, HEADER )
-                STPIN = ( J > 0 )
-                
 C.................  Determine if emission release code is present
                 J = INDEX1( 'Emission release pt', NCOL, HEADER )
                 ERPIN = ( J > 0 )
@@ -691,17 +753,13 @@ C.................  Determine if plant description is present
                 J = INDEX1( 'NEI unique ID', NCOL, HEADER )
                 NEIIN = ( J .GT. 0 )
 
-C.................  Determine if plant description is present
-                J = INDEX1( 'Additional extended', NCOL, HEADER )
-                EXTIN = ( J .GT. 0 )
-
 C.................  If MACT not present but has been requested, then 
 C                   internal err
                 IF( .NOT. MCTIN .AND. MACFLAG ) THEN
 
                     MESG = 'WARNING: MACT requested, but ' //
      &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+C                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CMACT )
                     NULLIFY( CMACT )
@@ -714,7 +772,7 @@ C                   internal err
 
                     MESG = 'WARNING: NAICS requested, but ' //
      &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+C                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CNAICS )
                     NULLIFY( CNAICS )
@@ -727,7 +785,7 @@ C                   internal err
 
                     MESG = 'WARNING: ORIS ID requested, but ' //
      &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+C                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CORIS )
 
@@ -739,7 +797,7 @@ C                   internal err
 
                     MESG = 'WARNING: Boiler requested, but ' //
      &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+C                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CBLRID )
 
@@ -751,35 +809,10 @@ C                   internal err
 
                     MESG = 'WARNING: NEI unique ID requested, but ' //
      &                     'is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+C                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CNEIUID )
 
-                END IF
-
-C.................  If extended columns not present but has been requested, then 
-C                   internal err
-                IF( .NOT. EXTIN .AND. EXTFLAG ) THEN
-
-                    MESG = 'WARNING: Additional extended requested, ' //
-     &                     'but is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
-
-                    DEALLOCATE( CEXTORL )
-                    NULLIFY( CEXTORL )
-
-                END IF
-
-C.................  If source type code not present but has been requested,
-C                   deallocate memory for array
-                IF( .NOT. STPIN .AND. STPFLAG ) THEN
-
-                    MESG = 'WARNING: Source type code requested, ' //
-     &                     'but is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
-
-                    DEALLOCATE( CSRCTYP )
-                    NULLIFY( CSRCTYP )
                 END IF
 
 C.................  If emission release code not present but has been requested,
@@ -788,7 +821,7 @@ C                   deallocate memory for array
 
                     MESG = 'WARNING: Emission release point requested, '
      &                  // 'but is not present in ASCII inventory file'
-                    CALL M3MSG2( MESG )
+C                    CALL M3MSG2( MESG )
 
                     DEALLOCATE( CERPTYP )
 
@@ -801,12 +834,6 @@ C                   deallocate memory for array
 
                 END IF
                 
-                CORS  = ' '
-                CBLR  = ' '
-                CPDS  = ' '
-                CNEI  = ' '
-                CEXT  = ' '
-
                 DO S = 1, NSRC
 
 C.....................  Initialize temporary characteristics
@@ -816,86 +843,362 @@ C.....................  Read in line of character data
 
                     IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
      &                  MCTIN .AND. NAIIN .AND. STPIN .AND.
-     &                  NEIIN .AND. EXTIN .AND. ERPIN ) THEN
+     &                  NEIIN .AND. ERPIN .AND. EXTIN .AND.
+     &                  ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
+     &                       MCTIN .AND. NAIIN .AND. STPIN .AND.
+     &                       NEIIN .AND. ERPIN .AND. .NOT. EXTIN .AND.
+     &                       ITGIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
+     &                       MCTIN .AND. NAIIN .AND. STPIN .AND.
+     &                       NEIIN .AND. ERPIN .AND. EXTIN .AND.
+     &                       .NOT. ITGIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
      &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
 
                     ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                  MCTIN .AND. NAIIN .AND. STPIN .AND. ERPIN ) THEN
+     &                       MCTIN .AND. NAIIN .AND. STPIN .AND.
+     &                       NEIIN .AND. ERPIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CNEI
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.    ! no NEIUID
+     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
+     &                       ERPIN .AND. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.    
+     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
+     &                       ERPIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
+     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
+     &                       ERPIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CINT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
+     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
+     &                       ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
      &                      CNAI, CSTP, CERP, CPDS
 
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND. 
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.    ! no Boiler ID
      &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       NEIIN .AND. EXTIN ) THEN
+     &                       NEIIN .AND. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
+     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
+     &                       NEIIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
      &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
-     
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND. 
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
+     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
+     &                       NEIIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
+     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
+     &                       NEIIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CNEI
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.     ! no Boiler ID & NEIUID
+     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
+     &                       ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
+     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CEXT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
+     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
+     &                      CNAI, CSTP, CERP, CPDS, CINT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
      &                       NAIIN .AND. STPIN .AND. ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
      &                      CNAI, CSTP, CERP, CPDS
      
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. 
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.  ! no ORIS ID & Boiler ID
      &                       STPIN .AND. ERPIN .AND. NEIIN .AND. 
-     &                       EXTIN ) THEN
+     &                       ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS, CNEI, CINT, CEXT   
+
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
+     &                       STPIN .AND. ERPIN .AND. NEIIN .AND. 
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
      &                      CSTP, CERP, CPDS, CNEI, CEXT   
 
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. 
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
+     &                       STPIN .AND. ERPIN .AND. NEIIN .AND. 
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS, CNEI, CINT   
+
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
+     &                       STPIN .AND. ERPIN .AND. NEIIN  ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS, CNEI 
+
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. ! MACT, NAICS, STP, ERP only
+     &                       STPIN .AND. ERPIN .AND. ITGIN .AND. ! no ORIS ID, Boiler & NEIUID
+     &                       EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS, CINT, CEXT
+
+
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
+     &                       STPIN .AND. ERPIN .AND. .NOT. ITGIN .AND. 
+     &                       EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS, CEXT
+
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
+     &                       STPIN .AND. ERPIN .AND. ITGIN .AND. 
+     &                       .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
+     &                      CSTP, CERP, CPDS, CINT
+
+                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
      &                       STPIN .AND. ERPIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
      &                      CSTP, CERP, CPDS
 
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.       ! ORIS, Boiler, NEIUID only
+     &                       NEIIN .AND. ITGIN .AND. EXTIN ) THEN      ! no source type and release point
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,  ! no MACT & NAICS 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CNEI, CINT, CEXT
+
                     ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
-     &                       NEIIN .AND. EXTIN ) THEN
+     &                       NEIIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
      &                      CPDS, CNEI, CEXT
 
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
+     &                       NEIIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CNEI, CINT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
+     &                       NEIIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CNEI
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.      ! ORIS, Boiler ID only
+     &                       ITGIN .AND. EXTIN ) THEN                 ! no MACT, NAICS, NEIUID
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, ! no source type and release point
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                      CPDS, CINT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
      &                      CPDS
 
-                    ELSE IF( ORSIN .AND. PDSIN .AND. 
-     &                       NEIIN .AND. EXTIN ) THEN
+                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN .AND.    ! with ORIS, NEIUID only
+     &                       ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
+     &                      CNEI, CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN .AND.
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
      &                      CNEI, CEXT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN .AND.
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
+     &                      CNEI, CINT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,CNEI
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND.                 ! ORIS only (description)
+     &                       ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
+     &                      CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND.
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
+     &                      CEXT
+
+                    ELSE IF( ORSIN .AND. PDSIN .AND.
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
+     &                      CINT
 
                     ELSE IF( ORSIN .AND. PDSIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS
 
-                    ELSE IF( ORSIN .AND. BLRIN .AND.
-     &                       NEIIN .AND. EXTIN ) THEN
+                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN .AND.   ! ORIS, Boiler ID, & NEIUID 
+     &                       ITGIN .AND. EXTIN ) THEN              ! no description name
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
+     &                      CNEI, CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN .AND.
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
      &                      CNEI, CEXT
-     
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN .AND.
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
+     &                      CNEI, CINT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND.               ! ORIS, BoilerID only
+     &                       ITGIN .AND. EXTIN ) THEN              ! no description name
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
+     &                      CINT, CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND.
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
+     &                        CEXT
+
+                    ELSE IF( ORSIN .AND. BLRIN .AND.
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
+     &                        CINT
+
                     ELSE IF( ORSIN .AND. BLRIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
 
-                    ELSE IF( PDSIN .AND. NEIIN .AND. EXTIN ) THEN
+                    ELSE IF( PDSIN .AND. NEIIN .AND.              ! NEIUID only
+     &                       ITGIN .AND. EXTIN ) THEN             ! with Description
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI,
+     &                      CINT, CEXT
+
+                    ELSE IF( PDSIN .AND. NEIIN .AND.
+     &                       .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI,
+     &                      CEXT
+
+                    ELSE IF( PDSIN .AND. NEIIN .AND.
+     &                       ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI,
+     &                      CINT
+
+                    ELSE IF( PDSIN .AND. NEIIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI
+
+                    ELSE IF( PDSIN .AND. ITGIN .AND. EXTIN ) THEN    ! Description only
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CINT,
      &                      CEXT      
 
-                    ELSE IF( PDSIN ) THEN
+                    ELSE IF( PDSIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CEXT      
+
+                    ELSE IF( PDSIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
+     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CINT      
+
+                    ELSE IF( PDSIN ) THEN    ! Description only
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
      &                      ( CHARS( J ), J=1, NC ), CS, CPDS      
 
-                    ELSE IF( NEIIN .AND. EXTIN ) THEN
+                    ELSE IF( NEIIN .AND. ITGIN .AND. EXTIN ) THEN  ! NEIUID only
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CNEI, CINT,CEXT
+
+                    ELSE IF( NEIIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
      &                      ( CHARS( J ), J=1, NC ), CS, CNEI, CEXT
+
+                    ELSE IF( NEIIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CNEI, CINT
+
+                    ELSE IF( NEIIN ) THEN
+                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
+     &                      ( CHARS( J ), J=1, NC ), CS, CNEI
 
                     ELSE 
                         READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
@@ -911,7 +1214,10 @@ C.....................  Read in line of character data
 
                     IF( NEIFLAG ) CNEIUID( S )= ADJUSTR( CNEI )
 
-                    IF( EXTFLAG ) CEXTORL( S )= ADJUSTL( CEXT )
+                    IF( ITGFLAG .AND. ITGIN ) CINTGR( S ) = CINT
+
+                    IF( EXTFLAG .AND. EXTIN ) CEXTORL( S ) = 
+     &                                             ADJUSTL( CEXT )
 
                     IF( MACFLAG .AND. MCTIN ) CMACT( S ) = CMT
 
@@ -920,6 +1226,7 @@ C.....................  Read in line of character data
                     IF( STPFLAG .AND. STPIN ) CSRCTYP( S ) = CSTP
 
                     IF( ERPFLAG .AND. ERPIN ) CERPTYP( S ) = CERP
+
 
                     IF( PDSFLAG ) CPDESC( S ) = CPDS
 
