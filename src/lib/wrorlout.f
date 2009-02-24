@@ -283,6 +283,90 @@ C............................................................................
 C.........  For mobile sources...
         CASE ( 'MOBILE' )
 
+            IF ( FIRSTIME ) THEN
+
+C.................  Write initial header
+                WRITE( RDEV, 93000 ) 
+     &              '#ORL',
+     &              '#TYPE     Onroad Inventory',
+     &              '#DESC        (Output from SMOKE)'
+                FIRSTIME = .FALSE.
+
+            END IF
+
+C.............  Write mobile-source characteristics to output file
+            DO C = 1, NREC
+
+                S = SRCID( C )
+
+C.................  Store others in temporary variables
+                COID = IFIP( S ) / 100000
+                FIP  = IFIP( S ) - COID * 100000
+                SIC  = ISIC ( S )
+                YEAR = INVYR( S )
+
+                SCC  = CSCC ( S )
+ 
+                IF( ASSOCIATED( CSRCTYP ) ) THEN
+                    SRCTYPE = CSRCTYP( S )
+                ELSE
+                    SRCTYPE = '-9'
+                END IF
+
+                IF( ASSOCIATED( CEXTORL ) ) THEN
+                    CEXT = ADJUSTL( CEXTORL( S ) )
+                ELSE
+                    CEXT = ''
+                END IF
+
+C.................  Account for missing or default codes
+                IF ( LEN( TRIM( SRCTYPE ) ) .EQ. 0 ) SRCTYPE = '-9'
+                IF ( LEN( TRIM( CEXT ) ) .EQ. 0 ) CEXT = ''
+
+C.................  Retrieve pollutant code from Inventory Table
+C.................  Ensure that only CAS codes where the factor is 1 are used.
+C.................  If there are multiple CAS codes where the factor is 1, use the first one
+C.................     (accomplished since original INVTABLE list order is maintained already)
+                CAS = ' '
+                DO I = 1, NINVTBL
+
+                    IF ( DATNAM .EQ. ITNAMA( I ) .AND. ITFACA( I ) .EQ. 1. ) THEN
+                        CAS = ITCASA( I )
+                        EXIT              ! Exit loop
+                    END IF
+
+                END DO           
+
+                IF ( CAS .EQ. ' ' ) THEN
+                    MESG = 'ERROR: CAS number for pollutant "'// 
+     &                     TRIM( DATNAM ) // '" and factor = 1 in '//
+     &                     'INVTABLE is no found.'
+                    CALL M3MSG2( MESG )
+                    STATUS = 2 
+                    CYCLE
+                END IF
+
+C.................  Get emissions and emissions-dependent values.
+                ANN_EMIS = SRCDAT( C,1 )
+                AVD_EMIS = SRCDAT( C,2 )
+                CEFF = SRCDAT( C,4 ) * 100.
+                REFF = SRCDAT( C,5 ) * 100.
+                RPEN = SRCDAT( C,6 ) * 100.
+
+C.................  Write out header
+                CALL WRITE_ORL_HEADER( RDEV, IOS )
+                IF( IOS .GT. 0 ) CYCLE
+
+C.................  Write out entries for this record
+C.................  Write ORL onroad format
+                WRITE( RDEV,93300 ) FIP, SCC, TRIM(CAS), ANN_EMIS, 
+     &                 AVD_EMIS, SRCTYPE, TRIM(CEXT)
+
+                LCOID = COID
+                LYEAR = YEAR
+
+            END DO  ! loop through sources
+
 C............................................................................
 C.........  For point sources...
         CASE ( 'POINT' )
@@ -431,6 +515,9 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93210   FORMAT( I5.5, ',' A, ',', A, ',' A, ',', A, ',', A, ',',
      &          A, ',', E15.8, ',', E15.8, 3( ',', F6.2 ), A )   ! nonpoint
+
+93300   FORMAT( I5.5, ',', A, ',', A, ',', E15.8, ',', E15.8, 
+     &          ',', A, A )   ! onroad
 
 93600   FORMAT( I5.5, 8( ',"',A, '"'), 4( ',', F10.2), ',', F10.4,
      &          ',', I4, 2( ',"',A, '"'),',', A1, 
