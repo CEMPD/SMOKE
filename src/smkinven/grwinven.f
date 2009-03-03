@@ -312,7 +312,7 @@ C.........  Allocate memory based on number of control/projection matrices
         CALL CHECKMEM( IOS, 'NCPVARS', PROGNAME )
         ALLOCATE( IDXALL( NCMAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXALL', PROGNAME )  
-        ALLOCATE( CPVNAMS( MXVARS3, NCMAT ), STAT=IOS )
+        ALLOCATE( CPVNAMS( MXVARS3*NCMAT, NCMAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CPVNAMS', PROGNAME )
 
 C.........  Allocate memory for storing input inventory year by source
@@ -372,7 +372,7 @@ C.............  Compare number of sources in matrix to NSRC
             CALL CHKSRCNO( CATDESC, MNAME, NROWS3D, NSRC, EFLAG )
 
 C.............  Store number of variables in current matrix
-            NCPVARS( I ) = NVARS3D
+            NCPVARS( I ) = NVARSET
 
 C.............  For projection and control matrices, interpret variable 
 C               names and compare to pollutant list. Determine whether 
@@ -692,7 +692,7 @@ C............  Close output file for this variable
      &                     TRIM( MAPFIL(M) )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-           
+
 C.............  If there was a read error, then go to next variable
             IF( SFLAG ) THEN
                 EFLAG = .TRUE.
@@ -887,7 +887,8 @@ C.............  Write out ORL format for current pollutant
             IF( IOS .GT. 0 ) EFLAG = .TRUE.
 
         END DO  ! End loop on inventory variables
-            
+
+
 C.........  Write out the map-formatted intermediate inven header
         IF( SMKFLAG ) THEN
             WRITE( ODEV, '(A)' ) '/END/'
@@ -907,19 +908,16 @@ C.........  For IDA output
 
             CALL WRIDAOUT( DDEV, VDEV, TDEV, IOS )
 
-            IF( IOS .GT. 0 ) EFLAG = .TRUE.
+            IF( IOS .GT. 0 ) THEN
+                MESG = 'ERROR: Could not read and write all source ' //
+     &                 'characteristics for IDA output.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
         END IF
-      
-        IF( EFLAG ) THEN
-            MESG = 'ERROR: Could not read and write all source ' //
-     &             'characteristics for IDA output.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
 
-C.........  End program successfully
-        MESG = ' '
-        CALL M3EXIT( PROGNAME, 0, 0, MESG, 0 )
+C.........  Exit program with normal completion
+        CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
@@ -934,24 +932,14 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93000   FORMAT( A )
 
-c93500   FORMAT( A248, <NIPOL>(A52) )
-
-
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
-
-94020   FORMAT( A, 1X, I5.5, 1X, A, 1X, I8.8, 1X,
-     &          A, I6, 1X, A, I6, 1X, A, :, I6 )
 
 94040   FORMAT( A, I2.2 )
 
 94060   FORMAT( 10( A, :, E10.3, :, 1X ) )
 
-94080   FORMAT( '************  ', A, I7, ' ,  ' , A, I12 )
- 
 94100   FORMAT( 10( A, :, I3, :, 1X ) )
 
-        END
-
-
+        END PROGRAM GRWINVEN
