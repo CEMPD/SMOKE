@@ -370,14 +370,16 @@ C.............  Give error if reactivity matrix is provided
                 CYCLE
             END IF
 
-C.............  Compare number of sources in matrix to NSRC
-            CALL CHKSRCNO( CATDESC, MNAME, NROWS3D, NSRC, EFLAG )
-
 C............  Give error if a matrix contains more than max no of pollutatns(>500)
             IF( NVARSET > 500 ) THEN
-                MESG = 'ERROR: Can not process more than 500 pollutants'
+                MESG = 'ERROR: Grwinven can not process '// 
+     &                 TRIM( CNAMEA(I) ) // ' file which has '//
+     &                 'more than 500 pollutants'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+
+C.............  Compare number of sources in matrix to NSRC
+            CALL CHKSRCNO( CATDESC, MNAME, NROWS3D, NSRC, EFLAG )
 
 C.............  Store number of variables in current matrix
             NCPVARS( I ) = NVARSET
