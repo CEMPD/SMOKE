@@ -71,7 +71,9 @@ C...........  LOCAL PARAMETERS and their descriptions:
      &  CVSW = '$Name$' ! CVS release tag
 
 C...........  LOCAL VARIABLES and their descriptions:
-
+C...........  Local parameters
+        INTEGER, PARAMETER :: MXVARS = 500     ! max no of pollutants in control/projection matrices
+ 
 C.........  Array that contains the names of the inventory variables needed 
 C           for this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
@@ -312,7 +314,7 @@ C.........  Allocate memory based on number of control/projection matrices
         CALL CHECKMEM( IOS, 'NCPVARS', PROGNAME )
         ALLOCATE( IDXALL( NCMAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXALL', PROGNAME )  
-        ALLOCATE( CPVNAMS( MXVARS3*NCMAT, NCMAT ), STAT=IOS )
+        ALLOCATE( CPVNAMS( MXVARS, NCMAT ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CPVNAMS', PROGNAME )
 
 C.........  Allocate memory for storing input inventory year by source
@@ -370,6 +372,12 @@ C.............  Give error if reactivity matrix is provided
 
 C.............  Compare number of sources in matrix to NSRC
             CALL CHKSRCNO( CATDESC, MNAME, NROWS3D, NSRC, EFLAG )
+
+C............  Give error if a matrix contains more than max no of pollutatns(>500)
+            IF( NVARSET > 500 ) THEN
+                MESG = 'ERROR: Can not process more than 500 pollutants'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
 C.............  Store number of variables in current matrix
             NCPVARS( I ) = NVARSET
