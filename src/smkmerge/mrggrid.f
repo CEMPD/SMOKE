@@ -19,6 +19,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C    Original by M. Houyoux 4/98
+C    Modified by B.H. Baek  4/08
 C
 C***********************************************************************
 C
@@ -73,10 +74,11 @@ C...........   EXTERNAL FUNCTIONS
         INTEGER       SECSDIFF
         REAL          STR2REAL
         LOGICAL       CHKREAL
+        LOGICAL       SETENVVAR
 
         EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
      &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF,
-     &           BLKORCMT, STR2REAL, CHKREAL, MMDDYY
+     &           BLKORCMT, STR2REAL, CHKREAL, MMDDYY, SETENVVAR
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -102,21 +104,22 @@ C...........   Input file descriptors
         INTEGER,       ALLOCATABLE :: STIMEA( : ) ! start time
         INTEGER,       ALLOCATABLE :: NLAYSA( : ) ! number of layers in the file
         INTEGER,       ALLOCATABLE :: NFILES( : ) ! number of files in each fileset
-        CHARACTER(16), ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
+        CHARACTER(16), ALLOCATABLE :: IONAME ( : ) ! IOAPI 16chr 2-d input file names
+        CHARACTER(32), ALLOCATABLE :: FNAME ( : ) ! 2-d input file names
         LOGICAL,       ALLOCATABLE :: USEFIRST(:) ! true: use first time step of file
         LOGICAL,       ALLOCATABLE :: LVOUTA( :,: ) ! iff out var in input file
         CHARACTER(16), ALLOCATABLE :: VNAMEA( :,: ) ! variable names
         CHARACTER(16), ALLOCATABLE :: VUNITA( :,: ) ! variable units
         CHARACTER(80), ALLOCATABLE :: VDESCA( :,: ) ! var descrip
         REAL,          ALLOCATABLE :: ADJ_FACTOR( : ) ! adjustment factors
-        CHARACTER(16), ALLOCATABLE :: ADJ_LFN( : )    ! Species name
-        CHARACTER(16), ALLOCATABLE :: ADJ_SPC( :    ) ! logicalFileName
-        CHARACTER(33), ALLOCATABLE :: ADJ_LFNSPC( : ) ! concatenated {logicalFileName}_{Species}
-        CHARACTER(16), ALLOCATABLE :: TAG_LFN( : )    ! Tagging species name
+        CHARACTER(32), ALLOCATABLE :: ADJ_LFN( : )    ! Species name
+        CHARACTER(16), ALLOCATABLE :: ADJ_SPC( : )    ! logicalFileName
+        CHARACTER(49), ALLOCATABLE :: ADJ_LFNSPC( : ) ! concatenated {logicalFileName}_{Species}
+        CHARACTER(32), ALLOCATABLE :: TAG_LFN( : )    ! Tagging species name
         CHARACTER(16), ALLOCATABLE :: TAG_SPC( :    ) ! Tagging logicalFileName
-        CHARACTER(33), ALLOCATABLE :: TAG_LFNSPC( : ) ! Tagging concatenated {logicalFileName}_{Species}
+        CHARACTER(49), ALLOCATABLE :: TAG_LFNSPC( : ) ! Tagging concatenated {logicalFileName}_{Species}
         CHARACTER(16), ALLOCATABLE :: TAG_APPEND( : )  ! Tagging index
-        CHARACTER(48), ALLOCATABLE :: TAG_LFNSPCTAG( : )  ! Tagging index(logicalfile+species+tag)
+        CHARACTER(66), ALLOCATABLE :: TAG_LFNSPCTAG( : )  ! Tagging index(logicalfile+species+tag)
         CHARACTER(16)                 VNAMEP( MXVARS3 ) ! pt variable names
         CHARACTER(16)                 VUNITP( MXVARS3 ) ! pt variable units
         CHARACTER(80)                 VDESCP( MXVARS3 ) ! pt var descrip
@@ -190,13 +193,15 @@ C...........   Other local variables
         REAL          RATIO                      ! ratio 
 
         CHARACTER(16)  FDESC                     ! tmp file description
-        CHARACTER(16)  NAM                       ! tmp file name
-        CHARACTER(16)  LNAM                      ! tmp previous file name
+        CHARACTER(16)  IO_NAM                    ! tmp 16 chr logical file name
+        CHARACTER(32)  NAM                       ! tmp logical file name
+        CHARACTER(32)  LNAM                      ! tmp previous file name
         CHARACTER(16)  VNM                       ! tmp variable name
         CHARACTER(16)  TVNM                      ! tmp2 variable name
-        CHARACTER(33)  LFNSPC                    ! tmp spec and file name
-        CHARACTER(48)  LFNSPCTAG                 ! tmp speC, file, and tag name
+        CHARACTER(49)  LFNSPC                    ! tmp spec and file name
+        CHARACTER(66)  LFNSPCTAG                 ! tmp speC, file, and tag name
         CHARACTER(256) LINE                      ! input buffer
+        CHARACTER(256) NAMBUF                    ! tmp buffer for logical file name
         CHARACTER(256) MESG                      ! message field
         CHARACTER(80)  NAME1                     ! tmp file name component
         CHARACTER(15)  RPTCOL                    ! single column in report line
@@ -205,11 +210,10 @@ C...........   Other local variables
         CHARACTER(300) REPFILE                   ! name of report file
         CHARACTER(300) RPTLINE                   ! line of report file
         CHARACTER(16)  SPCTMP                    ! tmp species name
-        CHARACTER(16)  LFNTMP                    ! tmp file name
-        CHARACTER(16)  SEGMENT( 5 )              ! line parsing arrays
+        CHARACTER(32)  LFNTMP                    ! tmp file name
 
         LOGICAL    :: EFLAG   = .FALSE.   ! error flag
-        LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
+        LOGICAL    :: FIRST3D = .TRUE.    ! tru/nas/uncch/depts/ese/uae/air_quality/IE-modeling/Emissions/SMOKE24/subsys/smoke/assigns/ASSIGNS.Base07a.cmaq4.6.cb05p25.uae36e: first 3-d file not yet input
         LOGICAL    :: LFLAG   = .FALSE.   ! true iff 3-d file input
         LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
         LOGICAL       MRGDIFF             ! true: merge files from different days
@@ -267,6 +271,8 @@ C           of files
         CALL CHECKMEM( IOS, 'STIMEA', PROGNAME )
         ALLOCATE( FNAME( MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FNAME', PROGNAME )
+        ALLOCATE( IONAME( MXNFIL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'IONAME', PROGNAME )
         ALLOCATE( LVOUTA( MXVARS3,MXNFIL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LVOUTA', PROGNAME )
         ALLOCATE( VNAMEA( MXVARS3,MXNFIL ), STAT=IOS )
@@ -315,7 +321,28 @@ C.............  Skip blank and comment lines
                 LE = LEN_TRIM( LINE )
                 FNAME( F ) = LINE( LB+1:LE )
 
-                IF ( .NOT. OPENSET( FNAME(F), FSREAD3, PROGNAME )) THEN
+C.................  Re-set logical file name
+                IF( LE > 16 ) THEN
+                    CALL GETENV( FNAME( F ), NAMBUF )
+                    
+                    WRITE( IO_NAM,93030 ) FNAME( F )( 1:13 ) // '_', F
+                    
+                    IF( .NOT. SETENVVAR( IO_NAM, NAMBUF ) ) THEN
+                        MESG = 'Could not set logical file name for ' //
+     &                         'file ' // TRIM( NAMBUF )
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+                    IONAME( F ) = IO_NAM
+
+                ELSE
+
+                    IO_NAM = TRIM( FNAME( F ) )
+                    IONAME( F ) = IO_NAM
+
+                ENDIF
+
+                IF ( .NOT. OPENSET( IONAME(F), FSREAD3, PROGNAME )) THEN
  
                     MESG = 'Could not open file "' //
      &                     FNAME( F )( 1:LEN_TRIM( FNAME(F) ) )// '".'
@@ -503,10 +530,12 @@ C.........  Loop through 2D input files
         NLAYS = 1
         DO F = 1, NFILE
 
-            NAM = FNAME( F )
+            NAM    = FNAME( F )
+            IO_NAM = IONAME( F )   ! retrieve 16 char ioapi local file name
+
             ICNTFIL = ALLFILES
             IF( NFILES( F ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
-            IF ( .NOT. DESCSET( NAM, ICNTFIL ) ) THEN
+            IF ( .NOT. DESCSET( IO_NAM, ICNTFIL ) ) THEN
                 MESG = 'Could not get description of file "'  //
      &                  NAM( 1:LEN_TRIM( NAM ) ) // '"'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -829,7 +858,7 @@ C.........  Get grid information
         ICNTFIL = ALLFILES
         IF( NFILES( 1 ) .EQ. 1 ) ICNTFIL = 1   ! send ALLFILES if more than one file, send 1 otherwise
 
-        IF( .NOT. DESCSET( FNAME( 1 ), ICNTFIL ) ) THEN
+        IF( .NOT. DESCSET( IONAME( 1 ), ICNTFIL ) ) THEN
             MESG = 'Could not get description of file "'  //
      &              FNAME( 1 )( 1:LEN_TRIM( FNAME(1) ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -974,7 +1003,9 @@ C.....................  Set read date
                     END IF
 
 C.....................  Set tmp variables
-                    NAM = FNAME ( F )       ! input file name
+                    NAM    = FNAME ( F )   ! input file name
+                    IO_NAM = IONAME( F )   ! retrieve 16 char ioapi input file name
+
                     NL  = NLAYSA( F )       ! number of layers
 
 C.....................  Search adjustment factor for the current file
@@ -1016,7 +1047,7 @@ C.....................  If file has species, read (do this for all files)...
 C.........................  If 2-d input file, read, and add
                         IF( NL .EQ. 1 ) THEN
                             IF( .NOT. 
-     &                           READSET( NAM, TVNM, 1, ICNTFIL,
+     &                           READSET( IO_NAM, TVNM, 1, ICNTFIL,
      &                                    RDATE, JTIME, E2D     )) THEN
 
                                 MESG = 'Could not read "' // VNM //
@@ -1050,7 +1081,7 @@ C.........................  If 3-d input file, allocate memory, read, and add
 
                             DO K = 1, NL
                                 IF( .NOT. 
-     &                               READSET( NAM,TVNM,K,ICNTFIL,
+     &                               READSET( IO_NAM,TVNM,K,ICNTFIL,
      &                                        RDATE, JTIME, E2D  )) THEN
 
                                     MESG = 'Could not read "' // VNM //
@@ -1200,10 +1231,11 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93020   FORMAT( I15 )
 
+93030   FORMAT( A,I2.2 )
+
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I7, :, 1X ) )
-94011   FORMAT( 10( A, :, I8, :, 1X ) )
 
 94020   FORMAT( A, :, I3, :, 1X, 10 ( A, :, F8.5, :, 1X ) )
 
@@ -1270,7 +1302,7 @@ C               adjustment factos  from ADJ_FACS input file.
 C.............  Subroutine arguments
             INTEGER,     INTENT( OUT ) :: F
 
-            CHARACTER( 16 ) SEGMENT( 6 )          ! line parsing array
+            CHARACTER( 32 ) SEGMENT( 6 )          ! line parsing array
 
 C.......................................................................
 
@@ -1353,7 +1385,7 @@ C               adjustment factos  from ADJ_FACS input file.
 C.............  Subroutine arguments
             INTEGER,     INTENT( OUT ) :: F
 
-            CHARACTER( 16 ) SEGMENT( 6 )          ! line parsing array
+            CHARACTER( 32 ) SEGMENT( 6 )          ! line parsing array
 
 C.......................................................................
 
@@ -1402,7 +1434,7 @@ C..................  Skip blank and comment lines
 
 C..................  Get line
                 CALL PARSLINE( LINE, 3, SEGMENT )
-
+/nas/uncch/depts/ese/uae/air_quality/IE-modeling/Emissions/SMOKE24/subsys/smoke/assigns/ASSIGNS.Base07a.cmaq4.6.cb05p25.uae36
                 CALL UPCASE( SEGMENT( 1 ) )   ! logical file name
                 CALL UPCASE( SEGMENT( 2 ) )   ! species name
                 CALL UPCASE( SEGMENT( 3 ) )   ! tagging name
