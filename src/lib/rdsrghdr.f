@@ -50,11 +50,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER        INDEX1
         INTEGER        STR2INT
         REAL           STR2REAL
+        REAL*8         STR2DBLE
         LOGICAL        CHKINT
         LOGICAL        CHKREAL
 
         EXTERNAL       CRLF, DSCM3GRD, INDEX1, STR2INT, STR2REAL, 
-     &                 CHKINT, CHKREAL
+     &                 CHKINT, CHKREAL, STR2DBLE
 
 C...........   Subroutine arguments
         LOGICAL      , INTENT  (IN) :: VFLAG      ! true: using variable grid
@@ -201,20 +202,20 @@ C               be either INTEGER or REAL as expected
             ELSE
 
                 GDNAM3D =            SEGMENT ( 2 )
-                XORIG3D  = STR2REAL( SEGMENT ( 3 ) )
-                YORIG3D  = STR2REAL( SEGMENT ( 4 ) )
-                XCELL3D  = STR2REAL( SEGMENT ( 5 ) )
-                YCELL3D  = STR2REAL( SEGMENT ( 6 ) )
+                XORIG3D  = STR2DBLE( SEGMENT ( 3 ) )
+                YORIG3D  = STR2DBLE( SEGMENT ( 4 ) )
+                XCELL3D  = STR2DBLE( SEGMENT ( 5 ) )
+                YCELL3D  = STR2DBLE( SEGMENT ( 6 ) )
                 NCOLS3D  = STR2INT ( SEGMENT ( 7 ) )
                 NROWS3D  = STR2INT ( SEGMENT ( 8 ) )
                 NTHIK3D  = STR2INT ( SEGMENT ( 9 ) )
                 PROJTYPE =           SEGMENT ( 10 )
                 PROJUNIT =           SEGMENT ( 11 )
-                P_ALP3D  = STR2REAL( SEGMENT ( 12 ) )
-                P_BET3D  = STR2REAL( SEGMENT ( 13 ) )
-                P_GAM3D  = STR2REAL( SEGMENT ( 14 ) )
-                XCENT3D  = STR2REAL( SEGMENT ( 15 ) )
-                YCENT3D  = STR2REAL( SEGMENT ( 16 ) )
+                P_ALP3D  = STR2DBLE( SEGMENT ( 12 ) )
+                P_BET3D  = STR2DBLE( SEGMENT ( 13 ) )
+                P_GAM3D  = STR2DBLE( SEGMENT ( 14 ) )
+                XCENT3D  = STR2DBLE( SEGMENT ( 15 ) )
+                YCENT3D  = STR2DBLE( SEGMENT ( 16 ) )
 
             END IF
 
