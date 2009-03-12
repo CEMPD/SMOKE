@@ -62,8 +62,9 @@ C...........   EXTERNAL FUNCTIONS:
         CHARACTER(2)  CRLF
         EXTERNAL      CRLF
         LOGICAL       BLKORCMT
+        LOGICAL       ENVYN
         
-        EXTERNAL      BLKORCMT
+        EXTERNAL      BLKORCMT, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS:
 C...........   Note: LPTMP and LCTMP needed only because PKTLOOP call needs them.
@@ -522,10 +523,16 @@ C NOTE: It is not this simple, because there might be multiple inventory years
 C      in the input inventory.  Instead of comparing to the base year, compare
 C      to a list of base years generated in GETSINFO.  The projection packet
 C      data tables should then contain the start year.
+C.................  Get type of projection entries: with year or without it (EPS)
+                    YFLAG = ENVYN( 'PROJECTION_YR_SPEC', 
+     &                     'Projection entries in year-specific format',
+     &                     .TRUE., IOS )
+                    IF( YFLAG ) THEN
+                        PKTIDX = -1
+                        RETURN
+                    END IF
 
-                    PKTIDX = -1
-                    YFLAG   = .TRUE.
-                    RETURN
+                    SAVYEAR = OUTYEAR
 
 C.................  Start and end year are the same... (warning)
                 ELSE IF( SYEAR .EQ. OUTYEAR ) THEN

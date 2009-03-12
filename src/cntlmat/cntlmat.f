@@ -132,11 +132,6 @@ C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Get environment variable values...
-C.........  Get type of projection entries: with year or without it (EPS)
-        YFLAG = ENVYN( 'PROJECTION_YR_SPEC', 
-     &                 'Projection entries in year-specific format',
-     &                 .TRUE., IOS )
-
         KFLAG = ENVYN( 'CONTROL_TRACKING', 
      &                 'Use a special file to track specific sources',
      &                 .FALSE., IOS )
