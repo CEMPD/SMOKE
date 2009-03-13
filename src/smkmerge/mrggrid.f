@@ -213,8 +213,8 @@ C...........   Other local variables
         CHARACTER(32)  LFNTMP                    ! tmp file name
 
         LOGICAL    :: EFLAG   = .FALSE.   ! error flag
-        LOGICAL    :: FIRST3D = .TRUE.    ! tru/nas/uncch/depts/ese/uae/air_quality/IE-modeling/Emissions/SMOKE24/subsys/smoke/assigns/ASSIGNS.Base07a.cmaq4.6.cb05p25.uae36e: first 3-d file not yet input
-        LOGICAL    :: LFLAG   = .FALSE.   ! true iff 3-d file input
+        LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
+        LOGICAL    :: LFLAG   = .FALSE.   ! true  if 3-d file input
         LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
         LOGICAL       MRGDIFF             ! true: merge files from different days
 
@@ -406,7 +406,7 @@ C............  Write summary of sector specific factor adjustment output
 C.............  Write header line to report     
             IF( MXNF == 0 ) THEN
               WRITE( ODEV,93000 ) '#MRGGRID logical file QA Report'
-              WRITE( ODEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(16)|' // 
+              WRITE( ODEV,93000 ) '#COLUMN_TYPES=Int(4)|Varchar(32)|' // 
      &                     'Varchar(16)|Real(8)|Real(8)|Real(8)|Real(8)'
               WRITE( ODEV,93000 ) 'DATE,FileName,Species,Factor,'//
      &                          'Before,After,Ratio'
@@ -516,7 +516,7 @@ C............  Write summary of sector specific factor adjustment output
 
 C.............  Write header line to report     
             WRITE( GDEV,93000 ) '#MRGGRID Tagging species Report'
-            WRITE( GDEV,93000 ) '#COLUMN_TYPES=Varchar(16)|' // 
+            WRITE( GDEV,93000 ) '#COLUMN_TYPES=Varchar(32)|' // 
      &                          'Varchar(16)|Varchar(16)'
             WRITE( GDEV,93000 ) 'FileName,OriginalSpecies,TaggedSpecies'
 
@@ -1434,7 +1434,6 @@ C..................  Skip blank and comment lines
 
 C..................  Get line
                 CALL PARSLINE( LINE, 3, SEGMENT )
-/nas/uncch/depts/ese/uae/air_quality/IE-modeling/Emissions/SMOKE24/subsys/smoke/assigns/ASSIGNS.Base07a.cmaq4.6.cb05p25.uae36
                 CALL UPCASE( SEGMENT( 1 ) )   ! logical file name
                 CALL UPCASE( SEGMENT( 2 ) )   ! species name
                 CALL UPCASE( SEGMENT( 3 ) )   ! tagging name
