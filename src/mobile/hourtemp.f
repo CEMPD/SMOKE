@@ -61,7 +61,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS
         CHARACTER(2) CRLF
         INTEGER      ENVINT
-        INTEGER      ISDSTIME
+        LOGICAL      ISDSTIME
 
         EXTERNAL     CRLF, ENVINT, ISDSTIME
                 
