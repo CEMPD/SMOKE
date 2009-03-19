@@ -127,6 +127,7 @@ C...........   Other local variables
         CHARACTER(LNKLEN3) CLNK     !  temporary link code
         CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol/act
         CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(CNYLEN3) CNY      !  tmp county string
         CHARACTER(FIPLEN3) FIPZERO  !  buffer for zero FIPS code
         CHARACTER(SCCLEN3) TSCC     !  temporary SCC
         CHARACTER(SCCLEN3) SCCZERO  !  buffer for zero SCC
@@ -388,7 +389,6 @@ C.................  Make sure SCC is set to SCCZERO if it is missing
 
                 CPOA = SEGMENT( 5 )   ! pollutant/emission type name
                 CFIP = SEGMENT( 6 )   ! country/state/county code
-
                 PLT  = SEGMENT ( 7 )
 
 C.................  Skip all point entries for nonpoint sectors
@@ -404,6 +404,19 @@ C                   with master list.
 
 C.................  Skip lines that are not valid for this inven and src cat
                 IF( SKIPREC ) CYCLE
+
+C.................  Give warning for entries that are plant-specific but not 
+C                   county-specific, since these are not supported (this can
+C                   sometimes happen with Canadian records)
+                CNY = CFIP( STALEN3+1:FIPLEN3 )
+                IF ( CNY == '000' .AND. PLT /= ' ' ) THEN
+                    WRITE( MESG,94010 ) 'WARNING: temporal cross-'//
+     &                 'reference entry has plant specified but no '//
+     &                 CRLF() // BLANK10 // 
+     &                 'county specified at line',IREC,'. Program '//
+     &                 'will treat as a state or state-SCC entry.'
+                    CALL M3MESG( MESG )
+                END IF
 
 C.................  Check for integers for temporal profile numbers
                 IF( .NOT. CHKINT( SEGMENT( 2 ) ) .OR. 
