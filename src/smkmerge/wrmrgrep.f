@@ -120,6 +120,7 @@ C...........   Other local variables
         REAL   , SAVE :: UNITFAC        ! units conversion factor for reports
  
         LOGICAL, SAVE :: FIRSTIME= .TRUE. ! true: first time routine called
+        LOGICAL, SAVE :: WARNON  = .TRUE. ! true: report warning
 
         CHARACTER(3000)    DATFMT     ! format for data
         CHARACTER(3000)    HDRFMT     ! format for header
@@ -316,22 +317,9 @@ C.........  Do not report if this time is not appropriate
         IF( JTIME .NE. REPTIME .AND. 
      &    ( JDATE .NE. EDATE .OR. JTIME .NE. ETIME ) ) RETURN
 
-C.............  If required, create and write state totals
-        IF( LREPSTA ) THEN
-
-C.............  Area sources
-            IF( AFLAG ) THEN
-
-                CALL CREATE_HEADER( 'Area' )
-                CALL CREATE_STATE( NC, NS, ACNT, AEBCNY, AEBSTA )
-                CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AEBSTA)
-
-C.....................  Update state totals
-                IF( XFLAG ) THEN
-                    CALL TOT_UPDATE( NS, ACNT, ANAMES, AEBSTA, TEBSTA)
-                END IF
-
-            END IF
+C.............  If required, create and write state totals, either controlled
+C               or uncontrolled, depending on sector and which are controlled.
+	IF ( LREPSTA ) THEN  
 
 C.............  Controlled area sources
             IF( ( AUFLAG .OR. ARFLAG ) .AND. LREPCTL ) THEN
@@ -342,6 +330,18 @@ C.............  Controlled area sources
 C.................  Update state totals
                 IF( XFLAG ) THEN
                     CALL TOT_UPDATE( NS, ACNT, ANAMES, AECSTA, TECSTA)
+                END IF
+
+C.............  Uncontrolled area sources
+            ELSE IF ( AFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Area' )
+                CALL CREATE_STATE( NC, NS, ACNT, AEBCNY, AEBSTA )
+                CALL WRITE_STA( ARDEV, NS, ACNT, ANAMES, AUNITS, AEBSTA)
+
+C.....................  Update state totals
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, ACNT, ANAMES, AEBSTA, TEBSTA)
                 END IF
 
             END IF
@@ -360,20 +360,6 @@ C.................  Update state totals
 
             END IF
 
-C.............  Mobile sources
-            IF( MFLAG ) THEN
-
-                CALL CREATE_HEADER( 'Mobile' )
-                CALL CREATE_STATE( NC, NS, MCNT, MEBCNY, MEBSTA )
-                CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MEBSTA)
-
-C.................  Update state totals
-                IF( XFLAG ) THEN
-                    CALL TOT_UPDATE( NS, MCNT, MNAMES, MEBSTA, TEBSTA)
-                END IF
-
-            END IF
-
 C.............  Controlled mobile sources
             IF( ( MUFLAG .OR. MRFLAG ) .AND. LREPCTL ) THEN
                 CALL CREATE_HEADER( 'Controlled mobile' )
@@ -385,18 +371,16 @@ C.................  Update state totals
                     CALL TOT_UPDATE( NS, MCNT, MNAMES, MECSTA, TECSTA)
                 END IF
 
-            END IF
+C.............  Uncontrolled mobile sources
+            ELSE IF( MFLAG ) THEN
 
-C.............  Point sources
-            IF( PFLAG ) THEN
-
-                CALL CREATE_HEADER( 'Point' )
-                CALL CREATE_STATE( NC, NS, PCNT, PEBCNY, PEBSTA )
-                CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PEBSTA)
+                CALL CREATE_HEADER( 'Mobile' )
+                CALL CREATE_STATE( NC, NS, MCNT, MEBCNY, MEBSTA )
+                CALL WRITE_STA( MRDEV, NS, MCNT, MNAMES, MUNITS, MEBSTA)
 
 C.................  Update state totals
                 IF( XFLAG ) THEN
-                    CALL TOT_UPDATE( NS, PCNT, PNAMES, PEBSTA, TEBSTA )
+                    CALL TOT_UPDATE( NS, MCNT, MNAMES, MEBSTA, TEBSTA)
                 END IF
 
             END IF
@@ -412,14 +396,17 @@ C.................  Update state totals
                     CALL TOT_UPDATE( NS, PCNT, PNAMES, PECSTA, TECSTA)
                 END IF
 
-            END IF
+C.............  Uncontrolled point sources
+            ELSE IF( PFLAG ) THEN
 
-C.............  Combined sources
-            IF( XFLAG ) THEN
+                CALL CREATE_HEADER( 'Point' )
+                CALL CREATE_STATE( NC, NS, PCNT, PEBCNY, PEBSTA )
+                CALL WRITE_STA( PRDEV, NS, PCNT, PNAMES, PUNITS, PEBSTA)
 
-                CALL CREATE_HEADER( 'Total' )
-                CALL WRITE_STA( TRDEV, NS, TCNT, NAMES, UNITS, TEBSTA )
-
+C.................  Update state totals
+                IF( XFLAG ) THEN
+                    CALL TOT_UPDATE( NS, PCNT, PNAMES, PEBSTA, TEBSTA )
+                END IF
             END IF
 
 C.............  Controlled total sources
@@ -427,12 +414,31 @@ C.............  Controlled total sources
                 CALL CREATE_HEADER( 'Controlled total' )
                 CALL CREATE_STATE( NC, NS, TCNT, TECCNY, TECSTA )
                 CALL WRITE_STA( TRDEV, NS, TCNT, NAMES, UNITS, TECSTA)
+
+C.............  Uncontrolled total sources
+            ELSE IF( XFLAG ) THEN
+
+                CALL CREATE_HEADER( 'Total' )
+                CALL WRITE_STA( TRDEV, NS, TCNT, NAMES, UNITS, TEBSTA )
+
             END IF
 
         END IF
 
 C.........  If required, write county totals
         IF( LREPCNY ) THEN
+
+C.............  Give warning if not already given and if reporting of controlled
+C               emissions was selected
+            IF ( LREPCTL .AND. WARNON ) THEN
+                WARNON = .FALSE.
+
+                MESG = 'WARNING: County reports do not support '//
+     &                 'including controlled emissions, but this '//
+     &                 'combination was requested.'
+                CALL M3MESG( MESG )
+
+            END IF
 
 C.............  Area sources
             IF( AFLAG ) THEN

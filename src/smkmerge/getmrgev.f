@@ -162,7 +162,7 @@ C.........  Retrieve the on/off environment variables
         SPCIOS = IOS
 
         LREPCTL = ENVYN( 'MRG_REPCTL_YN', 'Report controlled ' //
-     &                   'emissions separately or not', .TRUE., IOS )
+     &                   'emissions', .FALSE., IOS )
 
         LREPANY = ( LREPSTA .OR. LREPCNY )
 
@@ -286,6 +286,19 @@ C.........  Cannot have layer merge at the same time as explicit plume rise
      &             'explicit plume rise being used ' //
      &             '(EXPLICIT_PLUMES_YN = Y).'
             CALL M3MSG2( MESG )
+
+        END IF
+
+C.........  If requested controlled reports, but no control matrices
+C           provided, then override setting and give warning.
+        IF( LREPCTL .AND. ( .NOT. AUFLAG .AND. .NOT. ARFLAG .AND.
+     &                      .NOT. MUFLAG .AND. .NOT. MRFLAG .AND.
+     &                      .NOT. PUFLAG .AND. .NOT. PRFLAG      )) THEN
+
+            MESG = 'WARNING: Turning off requested controlled '//
+     &             'emissions reports, since no control matrices '//
+     &             'provided.'
+            CALL M3MESG( MESG )
 
         END IF
 
