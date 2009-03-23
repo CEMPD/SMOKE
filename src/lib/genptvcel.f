@@ -169,8 +169,10 @@ C.............  Find correct column for point
                 IF( XX >= XVALS( J,1 ) .AND. XX <= XVALS( J+1,1 ) ) EXIT
 
             END DO
-            
-            COL = J
+
+            IF( J <= NCOLS ) THEN 
+                COL = J
+            END IF
             
 C.............  Find correct row for point
             DO J = 1, NROWS
@@ -178,8 +180,10 @@ C.............  Find correct row for point
                 IF( YY >= YVALS( 1,J ) .AND. YY <= YVALS( 1,J+1 ) ) EXIT
                 
             END DO
-            
-            ROW = J
+
+            IF( J <= NROWS ) THEN 
+                ROW = J
+            END IF
 
 C.............  Compute grid cell number based on column and row            
             C = COL + NCOLS * ( ROW - 1 )
