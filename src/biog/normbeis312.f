@@ -120,8 +120,6 @@ C.........  LOCAL VARIABLES and their descriptions
         REAL  VEGAREA                              ! Veg. area for 
         REAL  TOTFOR                               ! USGS forest
         REAL  EFTMP                                ! Emission factors
-	
-	REAL AGAREA1, AGAREA2, NAGAREA
 
         DOUBLE PRECISION   PRCNT2KM2               ! Prcnt to km**2
 
@@ -316,7 +314,6 @@ C.........  Allocate memory for emission factor variables
 
         ALLOCATE( EMFAC ( NVEG, NSEF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMFAC', PROGNAME )
-        
 
         ALLOCATE( LAI ( NVEG ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LAI', PROGNAME )
@@ -483,16 +480,9 @@ C.........  Allocate memory for output normalized fluxes
         AVGLAI  = 0.0  !  array
         NOEMIS  = 0.0  !  array
 
-        AGAREA1 = 0.0
-	AGAREA2 = 0.0
-	NAGAREA = 0.0
-
 C.........  Calculate normalized fluxes 
-!        DO I = 1, NCOLS
-!            DO J = 1, NROWS
-
-        DO J = 1, NROWS
-	   DO I = 1, NCOLS
+        DO I = 1, NCOLS
+            DO J = 1, NROWS
 
 C.................  Initialize variables
                 SUMEM = 0.0   ! array
@@ -550,32 +540,24 @@ C                                      during growing season
  
                                         NOEM( 3 ) = NOEM( 3 ) 
      &                                      + VEGAREA * EMFAC(M,N)*0.5
-                                        AGAREA1 = AGAREA1 + VEGAREA*0.5* EMFAC(M,N)
-					NAGAREA = NAGAREA + VEGAREA*0.5* EMFAC(M,N)
                                     ELSE
                                         NOEM( 1 ) = NOEM( 1 )
      &                                      + VEGAREA * EMFAC(M,N)
-                                        AGAREA1 = AGAREA1 + VEGAREA* EMFAC(M,N)
                                     END IF
 
 C.....................................  Compute NO emissions for agriculture regions 
 C                                       outside growing season
                                     NOEM( 2 ) = NOEM( 2 )
      &                                  + VEGAREA * EMFAC(IGRASS,N) 
-                                    IF (IS_HAG (M,IUSCGS,IUSCWD) ) THEN
-                                    AGAREA2 = AGAREA2 + VEGAREA*EMFAC(IGRASS,N) 
-                                    ELSE
-                                    AGAREA2 = AGAREA2 + VEGAREA*EMFAC(IGRASS,N) 				    
-				    ENDIF
+
                                 ELSE
                                 
 C.....................................  Compute NO emissions for Non-Agriculture regions 
                                     NOEM( 3 ) = NOEM( 3 ) 
      &                                  + VEGAREA * EMFAC(M,N)
-                                    NAGAREA = NAGAREA + VEGAREA* EMFAC(M,N)
 
                                 END IF
-				
+
                             END IF
 
                         ELSE
@@ -646,8 +628,8 @@ C.....................  Check for NO emissions
                     END IF
 
                 END DO  ! end loop over emission factors
-            END DO  ! end loop over columns
-        END DO  ! end loop over rows
+            END DO  ! end loop over rows
+        END DO  ! end loop over columns
 
 C.........  Write output file
         I = 0
@@ -720,7 +702,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
-94020   FORMAT( 10 ( A, :, F20.5, :, 2X ) )
+
 C***************** CONTAINS ********************************************
 
         CONTAINS
