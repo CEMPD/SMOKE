@@ -147,7 +147,7 @@ C...........   Other local variables
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
         INTEGER          FIP              ! tmp co/st/cy code
-        INTEGER       :: ICC = 0          ! tmp country code from header
+        INTEGER, SAVE :: ICC = 0          ! tmp country code from header
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
         INTEGER          JDATE            ! tmp Julian date
@@ -385,7 +385,7 @@ C              computing HFLUX in PDAY intermediate output file.
 C.............  Open I/O API inventory HEATCONTENT file and store
             ALLOCATE( HEATCONTENT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'HEATCONENT', PROGNAME )
-            HEATCONTENT = 0.0
+c EPA 4/28/09         HEATCONTENT = 0.0
 
             CALL RDMAPPOL( NSRC, 1, 1, 'HEATCONTENT', HEATCONTENT )
 

@@ -132,10 +132,10 @@ C...........   Other local variables
         INTEGER          ETM     !  tmp end time
         INTEGER          FIP     !  tmp state/county code
         INTEGER          HH      !  tmp hour
-        INTEGER          ICC     !  position of CNTRY in CTRYNAM
+        INTEGER, SAVE :: ICC     !  position of CNTRY in CTRYNAM
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
-        INTEGER          INY     !  tmp emissions year
+        INTEGER, SAVE :: INY     !  tmp emissions year
         INTEGER          JDATE            ! tmp Julian date
         INTEGER          JTIME            ! tmp HHMMSS time
         INTEGER          LDATE            ! previous Julian date

@@ -121,7 +121,7 @@ C...........   Other local variables
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
         INTEGER          FIP              ! tmp co/st/cy code
-        INTEGER       :: ICC = 0          ! tmp country code from header
+        INTEGER, SAVE :: ICC = 0          ! tmp country code from header
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
         INTEGER          JDATE            ! tmp Julian date
