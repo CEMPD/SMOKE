@@ -575,7 +575,7 @@ C    n: been implemented
             IVARNAMS( 14 ) = 'CSOURC'
 
         CASE ( 'POINT' )
-            NINVARR = 21
+            NINVARR = 22
             IVARNAMS( 5  ) = 'ISIC'
             IVARNAMS( 6  ) = 'XLOCA'
             IVARNAMS( 7  ) = 'YLOCA'
@@ -593,6 +593,7 @@ C    n: been implemented
             IVARNAMS( 19 ) = 'CSRCTYP'
             IVARNAMS( 20 ) = 'CERPTYP'
             IVARNAMS( 21 ) = 'CNEIUID'
+            IVARNAMS( 22 ) = 'CEXTORL'
 
         END SELECT
 
