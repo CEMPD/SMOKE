@@ -787,8 +787,6 @@ C                   internal err
      &                     'is not present in ASCII inventory file'
 C                    CALL M3MSG2( MESG )
 
-                    DEALLOCATE( CORIS )
-
                 END IF
 
 C.................  If boiler not present but has been requested, then 
@@ -798,8 +796,6 @@ C                   internal err
                     MESG = 'WARNING: Boiler requested, but ' //
      &                     'is not present in ASCII inventory file'
 C                    CALL M3MSG2( MESG )
-
-                    DEALLOCATE( CBLRID )
 
                 END IF
 
@@ -1212,9 +1208,10 @@ C.....................  Read in line of character data
 
                     IF( BLRFLAG ) CBLRID( S ) = ADJUSTR( CBLR )
 
-                    IF( NEIFLAG ) CNEIUID( S )= ADJUSTR( CNEI )
-
                     IF( ITGFLAG .AND. ITGIN ) CINTGR( S ) = CINT
+
+                    IF( NEIFLAG .AND. NEIIN ) CNEIUID( S ) = 
+     &                                             ADJUSTR( CNEI )
 
                     IF( EXTFLAG .AND. EXTIN ) CEXTORL( S ) = 
      &                                             ADJUSTL( CEXT )
