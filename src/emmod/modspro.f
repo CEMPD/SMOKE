@@ -126,4 +126,9 @@
         REAL,               ALLOCATABLE, PUBLIC :: CMBWGHT( :,: )
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: CMBSPCD( :,: )
 
+!.........  Array of 1-d species names, needed for tagging.
+        INTEGER,                         PUBLIC :: NSPCALL      ! length of SPCLIST
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: SPCLIST( : ) ! 1-d array of all species
+
+
         END MODULE MODSPRO

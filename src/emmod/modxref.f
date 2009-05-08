@@ -397,6 +397,9 @@
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: CSPRNA( : ) ! spec prof #
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCTA( : ) ! SCC
         CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC:: CMACTA( : ) ! MACT
+        CHARACTER(TAGLEN3), ALLOCATABLE, PUBLIC:: CTAGNA( : ) ! Tag labels
+        CHARACTER(IOVLEN3+TAGLEN3+1),
+     &                      ALLOCATABLE, PUBLIC:: CSPCTAGNA( : ) ! Species name - Tag labels
 
         CHARACTER(SSMLEN3+POLLEN3), ALLOCATABLE, PUBLIC:: CSRCTA(:)
                                           ! source chars // SCC // MACT // pollutant
