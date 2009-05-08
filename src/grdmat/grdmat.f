@@ -638,8 +638,18 @@ C           of gridding matrix, and allocate gridding matrix.
        
         CASE( 'AREA' )
 C.............  Determine sizes for allocating area gridding matrix 
-            CALL SIZGMAT( CATEGORY, NSRC, VFLAG, DEFSRGID, FSGFLAG,
-     &                    MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
+            IF( SRGFLAG ) THEN
+                CALL SIZGMAT( CATEGORY, NSRC, VFLAG, DEFSRGID, FSGFLAG,
+     &                        MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
+
+            ELSE   ! processing pregridded IOAPI file
+                MXSCEL = 1
+                MXCSRC = 1
+                MXCCL  = 1
+                NMATX  = NSRC
+                NMATXU = NSRC
+
+            ENDIF
 
 C.............  Allocate memory for mobile source gridding matrix
             ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
@@ -709,9 +719,16 @@ C           is done so the sparse i/o api format can be used.
 
         CASE( 'AREA' )
 
-            CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX, VFLAG,
+            IF( SRGFLAG ) THEN
+                CALL GENAGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX, VFLAG,
      &                     DEFSRGID, FSGFLAG, GMAT( 1 ),GMAT( NGRID+1 ),
      &                     GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
+
+            ELSE     ! processing pregridded IOAPI file
+                CALL GENGGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX,
+     &                        GMAT( 1 ),GMAT( NGRID+1 ),
+     &                        GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
+            ENDIF
 
         CASE( 'MOBILE' )
 

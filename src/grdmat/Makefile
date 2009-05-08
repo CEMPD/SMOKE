@@ -18,7 +18,7 @@ debug: grdmat.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-GRD= asgnsurg.o genagmat.o genmgmat.o genpgmat.o grdmat.o \
+GRD= asgnsurg.o genagmat.o genggmat.o genmgmat.o genpgmat.o grdmat.o \
      lnk2grd.o opengmat.o sizgmat.o setfrac.o rdsrg4grd.o
 #
 grdmat: $(GRD) $(ALLI) $(LIBPATH)
@@ -36,6 +36,7 @@ include $(FS_ROOT)/modmake.inc
 
 asgnsurg.o: $(MODSOURC) $(MODXREF) $(MODSURG) $(MODINFO) 
 genagmat.o: $(MODSOURC) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID) $(MODXREF)
+genggmat.o: $(MODSOURC) $(MODINFO) $(MODGRID) 
 genmgmat.o: $(MODSOURC) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID) $(MODXREF)
 grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODGRID) $(MODFILESET)
 opengmat.o: $(MODINFO)
