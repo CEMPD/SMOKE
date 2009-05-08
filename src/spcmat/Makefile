@@ -18,7 +18,7 @@ debug: spcmat.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-SPC= spcmat.o opensmat.o asgnspro.o chknonhap.o rdcombo.o
+SPC= spcmat.o opensmat.o asgnspro.o asgntag.o rdtag.o chknonhap.o rdcombo.o
      
 #
 spcmat: $(SPC) $(ALLI) $(LIBPATH)
@@ -34,11 +34,13 @@ include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
-asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
 chknonhap.o: $(MODLISTS) $(MODSPRO)
-opensmat.o: $(MODINFO) $(MODFILESET)
-spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC) $(MODFILESET) $(MODLISTS)
+asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
+asgntag.o: $(MODTAG) $(MODSOURC) $(MODINFO)
+opensmat.o: $(MODINFO) $(MODFILESET) $(MODTAG)
 rdcombo.o: $(MODLISTS) $(MODSPRO)
+rdtag.o: $(MODLISTS) $(MODXREF) $(MODSPRO) $(MODINFO) $(MODTAG)
+spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC) $(MODFILESET) $(MODLISTS) $(MODTAG)
 #
 clean:
 	/bin/rm -f *.o

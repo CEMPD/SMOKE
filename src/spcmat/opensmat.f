@@ -1,6 +1,6 @@
 
         SUBROUTINE OPENSMAT( ENAME, SFLAG, LFLAG, NOPOL, MXSPEC, 
-     &                       EALLOUT, EAIDX, SPCNAMES, MOLUNITS, 
+     &                       MXTAG, EALLOUT, EAIDX, SPCNAMES, MOLUNITS, 
      &                       SDEV, SNAME, LNAME, SVNAMES, LVNAMES )
 
 C***********************************************************************
@@ -24,22 +24,25 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATLEN, CRL, NIPPA
+
+C.........  This module contains the tagging arrays
+        USE MODTAG, ONLY: TAGNUM, TAGNAME
 
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
@@ -68,6 +71,7 @@ C.........  SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT (IN) :: LFLAG      ! true: open mole-based file
         INTEGER     , INTENT (IN) :: NOPOL      ! no. output pollutants
         INTEGER     , INTENT (IN) :: MXSPEC     ! max no. of spec per pol
+        INTEGER     , INTENT (IN) :: MXTAG      ! max no. of tags per spec/pol
         CHARACTER(*), INTENT (IN) :: EALLOUT ( NIPPA ) ! output pol/emistypes
         INTEGER     , INTENT (IN) :: EAIDX   ( NIPPA ) ! index to SPCNAMES
         CHARACTER(*), INTENT (IN) :: SPCNAMES( MXSPEC, NOPOL ) ! model spec nams
@@ -75,18 +79,18 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: SDEV            ! suplmt file unit no.
         CHARACTER(*), INTENT(OUT) :: SNAME           ! mass-based spec file name 
         CHARACTER(*), INTENT(OUT) :: LNAME           ! mole-based spec file name
-        CHARACTER(*), INTENT(OUT) :: SVNAMES( MXSPEC, NIPPA )   ! mass out vars
-        CHARACTER(*), INTENT(OUT) :: LVNAMES( MXSPEC, NIPPA )   ! mole out vars
+        CHARACTER(*), INTENT(OUT) :: SVNAMES( 0:MXTAG, MXSPEC, NIPPA )   ! mass out vars
+        CHARACTER(*), INTENT(OUT) :: LVNAMES( 0:MXTAG, MXSPEC, NIPPA )   ! mole out vars
       
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
-     &  CVSW = '$Name$'  ! CVS revision tag
+     &  CVSW = '$Name  $'  ! CVS revision tag
 
 C.........  Count of species per inventory pollutant/emission type
         INTEGER    NSPEC( NIPPA )
 
 C.........  Other local variables
-        INTEGER          I, J, K, V     !  counters and indices
+        INTEGER          I, J, K, V, T     !  counters and indices
         INTEGER          IOS            !  I/O status
 
         INTEGER          FMTLEN   ! length of non-blank CTMP
@@ -125,26 +129,30 @@ C           be easy to make the mass-based and the mole-based ones different.
 
 C.................  End inner loop if species is blank
                 IF( SPCNAMES( J,V ) .EQ. ' ' ) EXIT
-
-C.................  Count total number of output variables
-                ICNT = ICNT + 1
-
-C.................  Create custom format statement for building
-C                   variable names. This is needed when number
-C                   of variables exceeds 999, since the original
-C                   format statement was I3.3 for ICNT. This actually
-C                   happened for some tagging cases at EPA.
-                WRITE( CTMP, '(I12)' ) ICNT
-                CTMP = ADJUSTL( CTMP )
-                FMTLEN = MAX( LEN( TRIM( CTMP ) ), 3 )  ! Max with 3 to replicate previous version's behavior
-                WRITE( NAMFMT, '(A,I2.2,A,I2.2,A)' ) 
-     &                 '(A4,I', FMTLEN, '.', FMTLEN, ')'
-
                 NCNT = NCNT + 1
-                WRITE( SVNAMES( J,K ), NAMFMT ) 'SVAR', ICNT
-                WRITE( LVNAMES( J,K ), NAMFMT ) 'SVAR', ICNT
 
-            END DO
+C.................  Loop through tags for this pol/spec
+                DO T = 0, TAGNUM( J,V )
+
+C.....................  Count total number of output variables
+                    ICNT = ICNT + 1
+
+C.....................  Create custom format statement for building
+C                       variable names. This is needed when number
+C                       of variables exceeds 999, since the original
+C                       format statement was I3.3 for ICNT. This actually
+C                       happened for some tagging cases at EPA.
+                    WRITE( CTMP, '(I12)' ) ICNT
+                    CTMP = ADJUSTL( CTMP )
+                    FMTLEN = MAX( LEN( TRIM( CTMP ) ), 3 )  ! Max with 3 to replicate previous version's behavior
+                    WRITE( NAMFMT, '(A,I2.2,A,I2.2,A)' ) 
+     &                     '(A4,I', FMTLEN, '.', FMTLEN, ')'
+
+                    WRITE( SVNAMES( T,J,K ), NAMFMT ) 'SVAR', ICNT
+                    WRITE( LVNAMES( T,J,K ), NAMFMT ) 'SVAR', ICNT
+
+                END DO  ! end loop on tags
+            END DO      ! end loop on species
 
             NSPEC( K ) = NCNT
 
@@ -197,7 +205,7 @@ C           inventory pollutant and model species names
         VNAMESET = ' '  ! array initialization
         VUNITSET = ' '  ! array initialization
         VDESCSET = ' '  ! array initialization
-
+       
         I = 0
         DO K = 1, NIPPA
 
@@ -205,9 +213,13 @@ C           inventory pollutant and model species names
 
             DO J = 1, NSPEC( K )
 
-                I = I + 1
-                VDESCSET( I ) = EALLOUT( K )// SPJOIN// SPCNAMES( J,V )
-                VTYPESET( I ) = M3REAL
+                DO T = 0, TAGNUM( J,V )
+                    I = I + 1
+                    VDESCSET( I ) = TRIM( EALLOUT( K )// SPJOIN// 
+     &                              TRIM( SPCNAMES( J,V ) ) //
+     &                              TAGNAME( T,J,V ) )
+                    VTYPESET( I ) = M3REAL
+                END DO
 
             END DO
         END DO
@@ -219,11 +231,16 @@ C.........  Set up variables specifically for mass-based file, and open it
 
             I = 0
             DO K = 1, NIPPA
+
+                V = EAIDX( K )
+
                 DO J = 1, NSPEC( K )
 
-                    I = I + 1
-                    VNAMESET( I ) = SVNAMES( J,K ) 
-                    VUNITSET( I ) = SMASUNIT
+                    DO T = 0, TAGNUM( J,V )
+                        I = I + 1
+                        VNAMESET( I ) = SVNAMES( T,J,K ) 
+                        VUNITSET( I ) = SMASUNIT
+                    END DO
 
                 END DO
             END DO
@@ -248,9 +265,11 @@ C.........  Set up variables specifically for mole-based file, and open it
 
                 DO J = 1, NSPEC( K )
 
-                    I = I + 1
-                    VNAMESET( I ) =  LVNAMES( J,K ) 
-                    VUNITSET( I ) = MOLUNITS( J,V )
+                    DO T = 0, TAGNUM( J,V )
+                        I = I + 1
+                        VNAMESET( I ) = LVNAMES( T,J,K ) 
+                        VUNITSET( I ) = MOLUNITS( J,V )
+                    END DO
 
                 END DO
             END DO

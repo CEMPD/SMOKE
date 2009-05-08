@@ -14,31 +14,32 @@ C  REVISION  HISTORY:
 C       Copied from spcpmat.F 1/99 by M. Houyoux
 C
 C***********************************************************************
-C  
+C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
-C  
+C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
-C  
+C
 C Pathname: $Source$
-C Last updated: $Date$ 
-C  
+C Last updated: $Date$
+C
 C************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the speciation profiles
         USE MODSPRO, ONLY: MXSPEC, MXSPFUL, SPCNAMES, INPRF, SPECID,
      &                     MASSFACT, MOLEFACT, MOLUNITS, NSPFUL, 
-     &                     SPROFN, IDXSPRO, NSPECIES, IDXSSPEC, NPOLSPRO
+     &                     SPROFN, IDXSPRO, NSPECIES, IDXSSPEC, 
+     &                     NPOLSPRO, NSPCALL, SPCLIST
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC, ONLY: INPUTHC, OUTPUTHC, EMTNAM, EMTPOL, NEPOL,
@@ -50,6 +51,9 @@ C.........  This module contains the information about the source category
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
+        
+C.........  This module contains the tagging arrays 
+        USE MODTAG, ONLY: TAGNUM, TAGNAME, MXTAG
         
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
@@ -88,6 +92,13 @@ C.........   Speciation matrices:
         REAL, ALLOCATABLE :: MASSMATX( :,: )    !  mass-speciation coefficients
         REAL, ALLOCATABLE :: MOLEMATX( :,: )    !  mole-speciation coefficients
 
+C.........  Local output arrays for mole- and mass-based matrices.
+        REAL, ALLOCATABLE :: MASSARR( : )    !  mass-speciation for write
+        REAL, ALLOCATABLE :: MOLEARR( : )    !  mole-speciation for write
+
+C.........  Local tagging arrays
+        INTEGER, ALLOCATABLE :: SRCTAGS( : ) ! tag number by source
+
 C.........  Inventory pollutants actually in the inventory
         LOGICAL           , ALLOCATABLE :: SPCOUT( : ) ! true: output spcs
         LOGICAL           , ALLOCATABLE :: IDXCHK( : ) ! true: EAIDX value accounted for
@@ -100,11 +111,12 @@ C.........  Activities and pollutants
         CHARACTER(IOVLEN3), ALLOCATABLE :: SANAM ( : ) ! output pollutants
 
 C.........  Names for output variables in mass-based and mole-based files
-        CHARACTER(IOVLEN3), ALLOCATABLE :: MASSONAM( :,: )
-        CHARACTER(IOVLEN3), ALLOCATABLE :: MOLEONAM( :,: )
+        CHARACTER(IOVLEN3), ALLOCATABLE :: MASSONAM( :,:,: )
+        CHARACTER(IOVLEN3), ALLOCATABLE :: MOLEONAM( :,:,: )
 
 C.........  Unit numbers and logical file names
-        INTEGER         IDEV    ! tmp unit number if ENAME is map file
+        INTEGER         GDEV    !  unit number for tagging file
+        INTEGER         IDEV    !  tmp unit number if ENAME is map file
         INTEGER         KDEV    !  unit no. for optional pol to pol conversion
         INTEGER         LDEV    !  unit number for log file
         INTEGER      :: MDEV = 0!  unit number for mobile codes file
@@ -122,7 +134,7 @@ C.........  Unit numbers and logical file names
         CHARACTER(16)   LNAME   !  logical name for mole spec matrix output file
 
 C.........   Other local variables
-        INTEGER          I, J, K, L, L1, L2, L3, L4, LT, N, V !  counters and indices
+        INTEGER          I, J, K, L, L1, L2, L3, L4, LT, N, S, T, V !  counters and indices
 
         INTEGER          IDX               ! tmp index value
         INTEGER          IOS               ! i/o status
@@ -130,11 +142,14 @@ C.........   Other local variables
         INTEGER          NMSPC             ! number of model species
         INTEGER          NOPOL             ! no. pollutants for output
         INTEGER       :: NP    = 0         ! no. all pollutants (size of IINAM)
+        INTEGER          NTAG              ! tmp number of tags
         INTEGER          PIDX              ! previous index value
+        INTEGER          TAGCNT            ! count of sources with tags for a species 
 
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         LOGICAL       :: KFLAG   = .FALSE. !  if pol to pol convert file or not
         LOGICAL       :: MFLAG   = .FALSE. !  true: mobile codes file needed
+        LOGICAL       :: TFLAG   = .FALSE. !  true: tagging file needed
         LOGICAL       :: MASSOUT = .TRUE.  !  true: output mass-based matrix
         LOGICAL       :: MOLEOUT = .TRUE.  !  true: output mole-based matrix
         LOGICAL       :: DEFREPRT= .TRUE.  !  true: report default spc profiles
@@ -165,6 +180,10 @@ C.........  Retrieve the whether to prompt for and use pollutant conversion file
      &                 'Use pollutant-to-pollutant conversion file',
      &                 .FALSE., IOS )
 
+C.........  Retrieve the whether to prompt for and use pollutant conversion file
+        TFLAG = ENVYN( 'SRC_TAGGING', 'Use source tagging file',
+     &                 .FALSE., IOS )
+
 C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
@@ -193,6 +212,11 @@ C.........  Open and read map file
      &  KDEV = PROMPTFFILE( 
      &           'Enter logical name for POLLUTANT CONVERSION file',
      &           .TRUE., .TRUE., 'GSCNV', PROGNAME )
+     
+        IF( TFLAG ) 
+     &  GDEV = PROMPTFFILE( 
+     &           'Enter logical name for TAGGING file',
+     &           .TRUE., .TRUE., 'GSTAG', PROGNAME )
      
         VDEV = PROMPTFFILE( 
      &           'Enter logical name for INVENTORY DATA TABLE file',
@@ -549,6 +573,46 @@ C.........  Make sure at least one pollutant will be speciated
 
         END IF
 
+C.........  Allocate memory for master 1-d array of species
+        NSPCALL = MXSPEC * NIPOL  ! this is reset below
+        ALLOCATE ( SPCLIST( NSPCALL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCLIST', PROGNAME )
+
+        K = 0
+        DO V = 1, NOPOL
+            DO J = 1, MXSPEC
+                IF ( SPCNAMES( J,V ) == ' ' ) CYCLE
+                K = K + 1
+                SPCLIST( K ) = SPCNAMES( J,V )                
+            END DO
+        END DO
+        NSPCALL = K
+
+C.........  Allocate TAGNUM and initialize for all cases (even no tagging)
+C.........  Allocate TAGNAME and initialize for all cases (even no tagging)
+C           Note that the zero position of TAGNAME will always have no tag, 
+C           so that the untagged name will be preserved.  
+        ALLOCATE( TAGNUM( MXSPEC, NOPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TAGNUM', PROGNAME )
+        ALLOCATE( TAGNAME( 0:MXTAG, MXSPEC, NOPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TAGNAME', PROGNAME )
+        TAGNUM = 0      ! array
+        TAGNAME = ' '   ! array
+
+C.........  Read the tagging file and build the arrays needed for tagging
+        IF( TFLAG ) THEN
+
+            CALL RDTAG( GDEV, NOPOL )
+
+C.............  If any tags assigned, then allocate memory for source tags.
+C               Will be initialized by species in ASGNTAG
+            IF( MAXVAL( TAGNUM ) > 0 ) THEN
+                ALLOCATE( SRCTAGS( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'SRCTAGS', PROGNAME )
+            END IF
+
+        END IF
+
 C.........  Determine the number of output species for all pollutants and
 C           emission types. For the case of no emission types, this value
 C           is the same as MXSPEC  
@@ -558,10 +622,14 @@ C           number of species per pollutant, MXSPEC. Also, initialize.
         IF( MASSOUT ) THEN
             ALLOCATE( MASSMATX( NSRC, MXSPEC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MASSMATX', PROGNAME )
+            ALLOCATE( MASSARR( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MASSARR', PROGNAME )
         END IF
         IF( MOLEOUT ) THEN
             ALLOCATE( MOLEMATX( NSRC, MXSPEC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MOLEMATX', PROGNAME )
+            ALLOCATE( MOLEARR( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MOLEARR', PROGNAME )
         END IF
 
 C.........  Allocate memory for arrays of speciation tables and unique lists
@@ -577,17 +645,16 @@ C           MXSPFUL, which is from module MODSPRO
         CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
 
 C.........  Allocate memory for names of output variables
-        ALLOCATE( MASSONAM( MXSPEC, NIPPA  ), STAT=IOS )
+        ALLOCATE( MASSONAM( 0:MXTAG, MXSPEC, NIPPA  ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MASSONAM', PROGNAME )
-        ALLOCATE( MOLEONAM( MXSPEC, NIPPA ), STAT=IOS )
+        ALLOCATE( MOLEONAM( 0:MXTAG, MXSPEC, NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MOLEONAM', PROGNAME )
 
 C.........  Open speciation matrix file(s).  Depending on MASSOUT and MOLEOUT,
 C           the mass-based and/or mole-based files will be set up and opened.
-
-        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, NOPOL, MXSPEC, EANAM, 
-     &                 EAIDX, SPCNAMES, MOLUNITS, UDEV, SNAME, LNAME, 
-     &                 MASSONAM, MOLEONAM )
+        CALL OPENSMAT( ENAME, MASSOUT, MOLEOUT, NOPOL, MXSPEC, MXTAG, 
+     &                 EANAM, EAIDX, SPCNAMES, MOLUNITS, UDEV, SNAME, 
+     &                 LNAME, MASSONAM, MOLEONAM )
 
 C.........  Loop through inventory pollutants to create speciation factors for
 C           each species used for each pollutant. In some cases, a pollutant
@@ -741,83 +808,130 @@ C.................  Deallocate memory for unique profiles arrays
 
 C.............  Write out the speciation matrix for current pollutant
 
-            IF( MASSOUT ) THEN
+            MESG= '     Writing MASS-BASED SPECIATION MATRIX...'
+            IF( MASSOUT ) CALL M3MSG2( MESG )
 
-                MESG= '     Writing MASS-BASED SPECIATION MATRIX...'
-                CALL M3MSG2( MESG )
+            MESG= '     Writing MOLE-BASED SPECIATION MATRIX...'
+            IF( MOLEOUT ) CALL M3MSG2( MESG )
 
-                DO J = 1, NMSPC
+C.............  Loop through species, apply tags where needed, and write 
+C               out matrix arrays for all untagged and tagged species
+            DO J = 1, NMSPC
 
-                    CBUF = MASSONAM( J,K )
-                    SBUF = SPCNAMES( J,V )
-                    L1 = LEN_TRIM( CBUF )
-                    L2 = LEN_TRIM( ENAM )
-                    L3 = LEN_TRIM( SBUF )
-                    L4 = LEN_TRIM( SNAME )
-                    IF( .NOT. 
-     &                  WRITESET( SNAME, CBUF, ALLFILES, 
-     &                            0, 0, MASSMATX(1,J) )) THEN
+                SBUF = SPCNAMES( J,V )
+                NTAG = TAGNUM  ( J,V )
 
-                        EFLAG = .TRUE.
+C.................  If this species has any tags, then assign the tags to 
+C                   the sources
+                IF ( NTAG > 0 ) THEN
+                          
+                    CALL ASGNTAG( SBUF, NSRC, NTAG, 
+     &                            TAGNAME( 1,J,V ), SRCTAGS )
 
-                        MESG = '     Could not write "' // 
-     &                    ENAM( 1:L2 ) // '"-to-"' // SBUF( 1:L3 ) // 
-     &                    '" speciation factor using name "' //
-     &                    CBUF( 1:L1 ) // '" to file "' // 
-     &                    SNAME( 1:L4 ) // '"'
+C.................  If no tags matched, then just use matrices as-is
+                ELSE IF ( NTAG == 0 ) THEN 
+                    IF( MASSOUT ) MASSARR = MASSMATX(1:NSRC,J)  ! array
+                    IF( MOLEOUT ) MOLEARR = MOLEMATX(1:NSRC,J)  ! array
 
-                        CALL M3MSG2( MESG )
-                        CYCLE
+                END IF
 
-                    ELSE
-                        MESG = BLANK10 // ENAM( 1:L2 ) // '-to-' // 
-     &                         SBUF( 1:L3 ) // ' written to ' // 
-     &                         SNAME( 1:L4 ) // ' as variable ' //
-     &                         CBUF( 1:L1 ) 
-                        CALL M3MSG2( MESG )
+C.................  Loop through tags that matches sources for this species
+C.................  Add an extra loop (T=0) for the case of NTAG = 0, so that
+C                   the same loop can be used to write the species and to
+C                   write the untagged sources for a tagged species.
+                DO T = 0, NTAG
+
+C.....................  If tags are actually being used for species J...
+                    IF( NTAG > 0 ) THEN
+
+C.........................  Edit species name (note, length has already been
+C                           checked when reading tags file)
+                        IF( T > 0 ) SBUF= TRIM( SBUF//TAGNAME( T,J,V ) )
+
+C.........................  Initialize mass and mole output arrays
+                        IF( MASSOUT ) MASSARR = 0.  ! array
+                        IF( MOLEOUT ) MOLEARR = 0.  ! array
+
+C.........................  Loop through sources and enter matrices values
+C                           for any sources that match tag index.
+                        TAGCNT = 0
+                        DO S = 1, NSRC
+
+                            IF ( SRCTAGS( S ) == T ) THEN
+                                TAGCNT = TAGCNT + 1
+                                IF( MASSOUT ) MASSARR(S) = MASSMATX(S,J)
+                                IF( MOLEOUT ) MOLEARR(S) = MOLEMATX(S,J)
+                            END IF
+
+                        END DO   ! end loop on sources
+
+                        IF ( TAGCNT == 0 ) THEN
+                            MESG = 'WARNING: No sources matched ' //
+     &                       'tagging criteria in GSTAG for tag "' //
+     &                       TRIM( TAGNAME(T,J,V))// '" and species "'//
+     &                       TRIM( SBUF ) // '"'
+
+                            CALL M3MESG( MESG )
+                        END IF
 
                     END IF
+                    
+C.....................  If writing mass-based matrix, then write it
+                    IF( MASSOUT ) THEN                  
+                        CBUF = MASSONAM( T,J,K )
+                        IF( .NOT. 
+     &                      WRITESET( SNAME, CBUF, ALLFILES, 
+     &                                0, 0, MASSARR )) THEN
 
-                END DO ! End write out of model species
+                            EFLAG = .TRUE.
 
-            END IF    ! End mass-based output
+                            MESG = '     Could not write "' // 
+     &                        TRIM( ENAM ) // '"-to-"' // TRIM( SBUF ) // 
+     &                        '" speciation factor using name "' //
+     &                        TRIM( CBUF ) // '" to file "' // 
+     &                        TRIM( SNAME ) // '"'
 
-            IF( MOLEOUT ) THEN
+                            CALL M3MSG2( MESG )
+                            CYCLE
 
-                MESG= '     Writing MOLE-BASED SPECIATION MATRIX...'
-                CALL M3MSG2( MESG )
+                        END IF
 
-                 DO J = 1, NMSPC
+                    END IF 
 
-                    CBUF = MOLEONAM( J,K )
-                    IF( .NOT. 
-     &                  WRITESET( LNAME, CBUF, ALLFILES, 
-     &                            0, 0, MOLEMATX(1,J) )) THEN
+                    IF( MOLEOUT ) THEN
 
-                        EFLAG = .TRUE.
+                        CBUF = MOLEONAM( T,J,K )
+                        IF( .NOT. 
+     &                      WRITESET( LNAME, CBUF, ALLFILES, 
+     &                                0, 0, MOLEARR )) THEN
 
-                        PNAM = EINAM( V )
-                        SBUF = SPCNAMES( J,V )
-                        L1 = LEN_TRIM( CBUF )
-                        L2 = LEN_TRIM( ENAM )
-                        L3 = LEN_TRIM( SBUF )
-                        L4 = LEN_TRIM( LNAME )
-                        MESG = 'Could not write "' // ENAM( 1:L2 ) // 
-     &                         '"-to-"' // SBUF( 1:L3 ) // 
+                            EFLAG = .TRUE.
+
+                            MESG = 'Could not write "' // TRIM( ENAM ) // 
+     &                         '"-to-"' // TRIM( SBUF ) // 
      &                         '" speciation factor using name "' //
-     &                         CBUF( 1:L1 ) // '" to file "' // 
-     &                         LNAME( 1:L4 ) // '"'
+     &                         TRIM( CBUF ) // '" to file "' // 
+     &                         TRIM( LNAME ) // '"'
 
-                        CALL M3MSG2( MESG )
-                        CYCLE
- 
-                    END IF
+                            CALL M3MSG2( MESG )
+                            CYCLE
 
-                END DO ! End write out of model species
+                        END IF! if not written out
 
-            END IF    ! End mole-based output
+                    END IF    ! End mole-based output
 
-        END DO     ! End loop through inventory pollutants
+C.....................  If get here, then all writes were successful, so write
+C                       message to log file that all is well
+                   CBUF = MASSONAM( T,J,K )
+                   MESG = BLANK10 // TRIM( ENAM ) // '-to-' // 
+     &                     TRIM( SBUF ) // ' written to ' //  
+     &                     TRIM( SNAME )// ' as variable '// TRIM(CBUF) 
+
+                END DO ! End loop over tags (or single iteration T=0 for no tags)
+
+            END DO     ! End write out loop for model species for current pollutant
+
+        END DO         ! End loop through inventory pollutants
 
 C.........  Check error flag for problems and end
         IF( EFLAG ) THEN
