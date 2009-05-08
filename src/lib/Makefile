@@ -39,8 +39,8 @@ FILES_R = \
   rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o
 
 FILES_SVWX = \
-  setscctype.o setsrcdy.o   ungridbv.o   verchar.o    wrchrscc.o   wrdaymsg.o \
-  wridaout.o   wridapol.o   wrorlout.o   xreftbl.o
+  setscctype.o setsrcdy.o   tagtable.o   ungridbv.o   verchar.o    wrchrscc.o \
+  wrdaymsg.o   wridaout.o   wridapol.o   wrorlout.o   xreftbl.o
 
 FILES_TMP = 
 
@@ -139,6 +139,7 @@ rdvmix.o   : $(MODMOBIL) $(MODXREF)
 rdxclude.o : $(MODXREF)
 setscctype.o: $(MODINFO)
 setsrcdy.o : $(MODINFO)
+tagtable.o : $(MODINFO) $(MODTAG) $(MODXREF) $(MODSPRO)
 wrchrscc.o : $(MODLISTS) $(MODINFO)
 wridaout.o : $(MODSOURC) $(MODSTCY) $(MODINFO)
 wrorlout.o : $(MODSOURC) $(MODSTCY) $(MODLISTS) $(MODINFO)
