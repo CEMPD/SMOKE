@@ -129,6 +129,7 @@ C...........   Other local variables
         LOGICAL       SCCFLAG          ! true: SCC type is different from previous
         LOGICAL    :: SFLAG = .FALSE.  ! true: operation type is speciation
         LOGICAL    :: TFLAG = .FALSE.  ! true: operation type is temporal
+        LOGICAL    :: TAGFLAG = .FALSE. ! true: operation type is tagging
         LOGICAL    :: XFLAG = .FALSE.  ! true: operation type is nonhapVOC exclusion
         LOGICAL    :: YFLAG = .FALSE.  ! true: operation type is area-to-point
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subroutine called
@@ -243,6 +244,9 @@ C.........  Check for valid operation type
         CASE( 'SPECIATION' )
             POADFLT = .TRUE.
             SFLAG   = .TRUE.
+        CASE( 'TAGGING' )
+            POADFLT = .FALSE.
+            TAGFLAG = .TRUE.
         CASE( 'TEMPORAL' ) 
             POADFLT = .TRUE.
             TFLAG   = .TRUE.
@@ -483,7 +487,8 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
 
                     END IF
 
-                ELSE IF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN        ! Left SCC
+                ELSE IF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO .AND.
+     &                   .NOT. TAGFLAG ) THEN        ! Left SCC
 
                     NT = 2
                     IF( TSCC .NE. PTSCC( NT ) ) THEN
@@ -644,7 +649,8 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                         NT = 0
                     END IF
 
-                ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN         ! left SCC
+                ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO .AND.
+     &                  .NOT. TAGFLAG ) THEN         ! left SCC
 
                     NT = 5
                     IF( IFIP .NE. PIFIP( NT ) .OR. 
@@ -1040,6 +1046,15 @@ C.....................  Process NT 16 through 11
 
         END DO                           ! End Loop on sorted x-ref entries
 
+C.........  If processing tagging data, call routine to process it and
+C           then skip to the end of the program
+        IF( TAGFLAG ) THEN
+
+            CALL TAGTABLE( N( 1 ), NXREF, XTYPE, XTCNT )
+            GO TO 300
+
+        END IF
+
 C.........  Allocate the memory for the source-characteristics portion of the
 C           grouped cross-reference tables
         CALL ALOCCHRT( N( 1 ) )
@@ -1084,7 +1099,7 @@ C.........  Speeds
              CALL ALOCPTBL( N( 1 ) )
              CALL FILLPTBL( NXREF, N( 1 ), XTYPE, XTCNT( 1 ) )
 
-C.........  non-HAP inclusions/exclusions file
+C.........  non-HAP inclusion/exclusions file
         ELSE IF( XFLAG ) THEN   
               ! Do nothing, because all that is needed is the CHRT* arrays
 
@@ -1107,7 +1122,7 @@ C.........  Store count of records in each group in final variable
         END DO
 
 C.........  Deallocate local memory
-        DEALLOCATE( XTYPE, XTCNT, DEFAULT )
+300     DEALLOCATE( XTYPE, XTCNT, DEFAULT )
 
         RETURN
 

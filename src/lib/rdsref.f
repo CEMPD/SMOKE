@@ -422,7 +422,7 @@ C           subroutines.
         CALL XREFTBL( 'SPECIATION', NXREF )
 
 C.........  Deallocate other temporary unsorted arrays
-        DEALLOCATE( CSCCTA, CSRCTA, CSPRNA, INDXTA )
+        DEALLOCATE( CSCCTA, ISPTA, CMACTA, CSRCTA, CSPRNA, INDXTA )
 
 C.........  Rewind file
         REWIND( FDEV )
