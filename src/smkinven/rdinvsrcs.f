@@ -86,7 +86,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         SETENVVAR
         INTEGER*4       GETPID   
 
-        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, GETPID
+        EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, GETPID,
      &                  GETVMIX, JUNIT, FIND1, FIND1FIRST, FINDC,
      &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR
 
