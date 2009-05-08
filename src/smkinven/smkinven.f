@@ -57,8 +57,8 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, ISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK
-
+        USE MODSOURC, ONLY: IFIP, ISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
+     &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG
 
@@ -370,9 +370,15 @@ C.............  initialize arrays for later
             CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
             ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
+            ALLOCATE( CINTGR( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CINTGR', PROGNAME )
+            ALLOCATE( CEXTORL( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
 
-            ISIC = 0         ! array
+            ISIC = 0            ! array
             CSRCTYP = ' '       ! array
+            CINTGR  = ' '       ! array
+            CEXTORL = ' '       ! array
 
         END IF  ! For gridded I/O API NetCDF inventory
 
