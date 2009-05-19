@@ -182,8 +182,17 @@ C.........  Point-source specific environment variables
 
             MESG = 'Create CMAQ in-line point source outputs or not'
             I = ENVINT( 'SMK_ELEV_METHOD', MESG, .FALSE., IOS )
-            INLINEFLAG = ( I .EQ. 2 )	    
-	    
+            INLINEFLAG = ( I .EQ. 2 )
+
+            MESG = 'Processing CMAQ in-line point source ouptut by '//
+     &             'setting MRG_ELEV_METHOD to 2'
+            IF( INLINEFLAG ) CALL M3MSG2( MESG )	    
+
+            IF( LFLAG .AND. INLINEFLAG ) THEN
+                MESG = 'ERROR: MUST set MRG_LAYERS_YN to N to '//
+     &             'output in-line CMAQ outputs ' // CRLF() // BLANK10
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )		
+            END IF
 
             MESG = 'Create ASCII elevated sources file or not'
             ELEVFLAG = ENVYN( 'SMK_ASCIIELEV_YN', MESG, .FALSE., IOS )
