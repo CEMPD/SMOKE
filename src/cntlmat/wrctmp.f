@@ -55,10 +55,15 @@ C...........   Other local variables
 
         INTEGER   S   ! indices
 
+	LOGICAL, SAVE :: FIRSTTIME = .TRUE.
+
 C***********************************************************************
 C   Begin body of subroutine WRCTMP
 
-        LOUTANY = .FALSE.
+        IF ( FIRSTTIME ) THEN
+            LOUTANY =  .FALSE.
+            FIRSTTIME = .FALSE.
+        ENDIF
 
 C.............. Write indices to control factor packets to a temporary file
 C               for only those pollutants that have controls
