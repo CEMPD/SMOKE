@@ -98,13 +98,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         ENVYN
         LOGICAL         EVALCRIT
         INTEGER         FINDC
+        LOGICAL         INGRID 
         REAL            PLUMRIS
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
         INTEGER         INDEX1        
 
         EXTERNAL        CRLF, DSCM3GRD, ENVINT, ENVREAL, ENVYN, INDEX1,
-     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE, PROMPTMFILE
+     &                  EVALCRIT, FINDC, PLUMRIS, PROMPTFFILE,
+     &                  PROMPTMFILE, INGRID
 
 C...........  LOCAL PARAMETERS and their descriptions:
         CHARACTER(50), PARAMETER :: 
@@ -668,6 +670,10 @@ C           program duration if source is in an inventory group
             S    = GINDEX ( J )
             IGRP = GROUPID( S )
 
+C.............  Exclude sources that are outside of the grid
+            IF( .NOT. INGRID( SRCXL( S ), SRCYL( S ),
+     &                            NCOLS, NROWS, COL, ROW ) ) CYCLE
+
 C.............  For sources in an inventory group...
             IF ( IGRP .GT. 0 ) THEN
 
@@ -695,8 +701,6 @@ C.............  Set temporary values for the current source
             VE   = STKVE  ( S )
             SCC  = CSCC   ( S )
             IF (SCC(9:9) .eq. 'S') SMOLDER(S) = .TRUE.
-
-            
 
 C.............  Set values to be compared in selection formulas for this 
 C               source, depending on whether source is in a group or not...
