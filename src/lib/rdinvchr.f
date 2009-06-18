@@ -534,6 +534,9 @@ C.................  Determine if NAICS code is present
                 J = INDEX1( 'NAICS code', NCOL, HEADER )
                 NAIIN = ( J > 0 )
                 
+C.................  Determine if DOE plant ID is present
+                J = INDEX1( 'DOE plant ID', NCOL, HEADER )
+                ORSIN = ( J .GT. 0 )
 
 C.................  If MACT not present but has been requested, then 
 C                   internal err
@@ -559,6 +562,17 @@ c                    CALL M3MSG2( MESG )
                     DEALLOCATE( CNAICS )
                     NULLIFY( CNAICS )
 
+                END IF
+
+C.................  If DOE plant ID not present but has been requested, then
+C                   internal err
+                IF( .NOT. ORSIN .AND. ORSFLAG ) THEN
+
+                    MESG = 'WARNING: ORIS ID requested, but ' //
+     &                     'is not present in ASCII inventory file'
+C                    CALL M3MSG2( MESG )
+
+                    DEALLOCATE( CORIS )
                 END IF
 
                 DO S = 1, NSRC
