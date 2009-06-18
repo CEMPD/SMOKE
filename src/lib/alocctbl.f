@@ -81,6 +81,7 @@ C.........  First deallocate if these have previously been allocated
             DEALLOCATE( ICTL08A, ICTL08B, ICTL08C )
             DEALLOCATE( ICTL26, ICTL27, ICTL28, ICTL29, ICTL30, ICTL31 )
             DEALLOCATE( ICTL32, ICTL33, ICTL34, ICTL35, ICTL36, ICTL37 )
+            DEALLOCATE( ICTL38 )
 
         END IF
 
