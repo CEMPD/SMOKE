@@ -484,16 +484,21 @@ C.................  Store the surrogate ID list
                             NN = NN + 1
                             SRGLIST( NN ) = DEFSRGID
                             LSSC = DEFSRGID
-
-                        ELSE
-                            NN = NN + 1
-                            SRGLIST( NN ) = SSC
-                            LSSC = SSC
                         END IF
+                        
+                        NN = NN + 1
+                        SRGLIST( NN ) = SSC
+                        LSSC = SSC
 
                     END IF
 
                 END DO
+
+C.................  When default surrogate is greater than any other srgs
+                IF( DEFSRGID > SRGLIST( NN ) ) THEN
+                    NN = NN + 1
+                    SRGLIST( NN ) = DEFSRGID
+                END IF
 
             END IF
 
@@ -510,7 +515,7 @@ C.............  Ensure the grid name from the surrogate description files are co
 
             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
            
-C.................  Prompt for and open I/O API output file(s)...
+C.................  Prompt for and open surrogate file(s)...
                 CALL GETENV( 'SRGPRO_PATH', NAMBUF )
                 WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
 
