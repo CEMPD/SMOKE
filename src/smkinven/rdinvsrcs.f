@@ -106,9 +106,9 @@ C...........   Local parameters
         INTEGER      , PARAMETER :: NSEG   = 70       ! maximum no of segments
         
 C...........   Local arrays
-        CHARACTER(SRCLEN3) TMPCSOURC( MXRECS )   ! source information from inventory file(s)
-        INTEGER            TCSRCIDX ( MXRECS )   ! index for sorting source info
-        INTEGER            FRSNUMS  ( MXRECS,3 ) ! triplets of file, record, and source number
+        CHARACTER(SRCLEN3),ALLOCATABLE :: TMPCSOURC( : )   ! source information from inventory file(s)
+        INTEGER,           ALLOCATABLE :: TCSRCIDX ( : )   ! index for sorting source info
+        INTEGER,           ALLOCATABLE :: FRSNUMS  ( :,: ) ! triplets of file, record, and source number
         CHARACTER(SRCLEN3) SCSEGMENT( NSCSEG )   ! segments from scratch file
         CHARACTER( 40 )    SEGMENT  ( NSEG )     ! segments of line
 
@@ -191,6 +191,18 @@ C   begin body of subroutine RDINVSRCS
 
 C.........  Get log file number for reports
         LDEV = INIT3()
+
+C.........  Allocate tmp arrays for storing source information
+        ALLOCATE( TMPCSOURC( MXRECS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPCSOURC', PROGNAME )
+        ALLOCATE( TCSRCIDX( MXRECS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TCSRCIDX', PROGNAME )
+        ALLOCATE( FRSNUMS( MXRECS,3 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'FRSNUMS', PROGNAME )
+
+        TMPCSOURC = ' ' ! array
+        TCSRCIDX  = 0   ! array
+        FRSNUMS   = 0   ! array
 
 C.........  Get maximum number of warnings
         MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
