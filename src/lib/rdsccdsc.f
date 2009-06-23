@@ -156,8 +156,9 @@ C                   inventory, store the description.
                 END IF
 
             ELSE
-                MESG = 'ERROR: Could not find a header. See more ' //
-     &                 'detail in the SMOKE manual.'
+                MESG = 'ERROR: Missing file format header in the SCC '//
+     &                 'description file. Refer to Chapter 8 of the ' //
+     &                 'SMOKE manual'
                 CALL M3MSG2( MESG )
                 CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
