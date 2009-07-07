@@ -162,9 +162,10 @@ C...........   Other local variables
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
         LOGICAL, SAVE :: NFLAG  = .FALSE. ! true: Special pollutant name field used on that line
+        LOGICAL, SAVE :: WIDE_FORMAT = .FALSE. ! true: hourly data values given with 12 columns instead of 7
 
         CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
-        CHARACTER(300) :: LINE   = ' '    ! line buffer 
+        CHARACTER(512) :: LINE   = ' '    ! line buffer 
         CHARACTER(512) :: MESG   = ' '    ! message buffer
 
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
@@ -197,6 +198,12 @@ C               file when it was opened.
 
 C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET , ' ', 100, I )
+
+C.............  Determine if wideformat is being used for for hourly file
+            IF( .NOT. DAYFLAG ) THEN
+                MESG = 'Use 12-column format for hourly values'
+                WIDE_FORMAT = ENVYN( 'HOURLY_WIDE_FMT', MESG, .FALSE., IOS )
+            END IF
 
 C.............  Give note if file is being read as a daily file
             IF( DAYFLAG .AND. SFLAG ) THEN
@@ -261,7 +268,11 @@ C.............  Set the number of fields, depending on day- or hour-specific
                 NFIELD = 1
                 S1 = 103   ! special pollutant field start position
                 S2 = 118   ! special pollutant field end position
-            ELSE
+            ELSE IF( WIDE_FORMAT ) THEN  ! wide format hourly
+                NFIELD  = 24
+                S1 = 381
+                S2 = 396
+            ELSE              ! standard format hourly
                 NFIELD  = 24
                 S1 = 261
                 S2 = 276
@@ -425,14 +436,17 @@ C.............  Store maximum time step number as compared to reference
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
 C.............  Check pollutant code and set index I
-C.............  First, check special pollutant field to see if it's filled in
             IF( NFLAG ) THEN
-               CDAT = ADJUSTL( LINE( S1:S2 ) )
+                CDAT = LINE( S1:S2 )
 
 C.............  Otherwise, use original pollutant field
             ELSE
-               CDAT = ADJUSTL( LINE( 57:61 ) )
+                CDAT = LINE( 57:61 )
             END IF
+
+C.............  Left justify and convert pollutant name to upper case
+            CDAT = ADJUSTL( CDAT ) 
+            CALL UPCASE( CDAT ) 
 
 C.............  Look up pollutant name in unique sorted array of
 C               Inventory pollutant names
@@ -459,14 +473,12 @@ C                  if it's a SMOKE pollutant name (intermediate name)
 
                     CIDX= INDEX1( CDAT, NIPPA, EANAM )
 
-                    L = LEN_TRIM( CDAT )
-
 C....................  If a SMOKE pollutant name, write out warning message
 C                      accordingly.
                     IF( CIDX .GT. 0 . AND.
      &                  WARNOUT .AND. NWARN( 4 ) .LE. MXWARN ) THEN
                         WRITE( MESG,94010 )
-     &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
+     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
      &                   '" at line', IREC, '- incorrect use of '//
      &                   'Inventory Data Name instead of Inventory '//
      &                   'Pollutant Code.'
@@ -476,7 +488,7 @@ C                      accordingly.
 C....................  Otherwise, if not in any list, write out warning
                     ELSE IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
                        WRITE( MESG,94010 )
-     &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
+     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
      &                   '" at line', IREC, '- not in Inventory Table'
                         CALL M3MESG( MESG )
                         NWARN( 2 ) = NWARN( 2 ) + 1
@@ -577,6 +589,7 @@ C.............  Hourly file
             ELSE
                 L1 = 66 
                 L2 = 72 
+                IF ( WIDE_FORMAT ) L2 = 77
                 WD = 7
             END IF
 
@@ -585,6 +598,8 @@ C.............  Check and set emissions values
 
                 L1 = L1 + WD
                 L2 = L2 + WD
+
+                IF ( WIDE_FORMAT ) WD = 12
 
                 TDAT( J )  = STR2REAL( LINE( L1:L2 ) )
                 IF ( TDAT( J ) .LT. 0.0 )  THEN
@@ -603,13 +618,19 @@ C.............  If daily data, set all TDATs with daily value
 C.............  If available, set total value from hourly file
             TOTAL = 0.
             IF( SFLAG .OR. .NOT. DAYFLAG ) THEN
-                L = 248
-                IF( LINE( L2+1:L ) .NE. ' ' ) THEN
-                    TOTAL = STR2REAL( LINE( L2+1:L ) )
+                L1 = L2 + 1
+                IF( WIDE_FORMAT ) THEN
+                   L2 = L2 + WD
+                ELSE
+                   L2 = L2 + 8 !  note: original hourly format has 8 columns for daily total (but 7 for hourly values)
+                END IF
+
+                IF( LINE( L1:L2 ) .NE. ' ' ) THEN
+                    TOTAL = STR2REAL( LINE( L1:L2 ) )
                     IF( TOTAL .LT. 0.0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'ERROR: Bad line', IREC,
-     &                    ': total value "' // LINE( L2+1:L ) // '"'
+     &                    ': total value "' // LINE(L1:L2) // '"'
                         CALL M3MESG( MESG )
                         CYCLE  ! to head of read loop
                     END IF
@@ -654,7 +675,9 @@ C.............  If SCCs are needed for matching...
             IF ( TFLAG ) THEN
                 IF ( DAYFLAG ) THEN
                     TSCC = ADJUSTL( LINE( 92:101) )
-                ELSE
+                ELSE IF ( WIDE_FORMAT ) THEN
+                    TSCC = ADJUSTL( LINE( 373:380 ) )
+                ELSE ! hourly standard format
                     TSCC = ADJUSTL( LINE( 250:259 ) )
                 END IF
                 IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
@@ -693,6 +716,8 @@ C                   if reading the SCC in helps (needed for IDA format)
 
                     IF ( DAYFLAG ) THEN
                         TSCC = ADJUSTL( LINE( 92:101) )
+                    ELSE IF ( WIDE_FORMAT ) THEN
+                        TSCC = ADJUSTL( LINE( 373:380 ) )
                     ELSE
                         TSCC = ADJUSTL( LINE( 250:259 ) )
                     END IF
