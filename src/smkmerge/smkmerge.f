@@ -48,7 +48,7 @@ C.........  This module contains the major data structure and control flags
      &          AFLAG, BFLAG, MFLAG, PFLAG,                     ! source flags
      &          AUFLAG, MUFLAG, PUFLAG,                         ! mult control flags
      &          ARFLAG, MRFLAG, PRFLAG,                         ! reac control flags
-     &          APRJFLAG, MPRJFLAG, PPRJFLAG,                   ! growth flags
+     &          APRJFLAG, MPRJFLAG, PPRJFLAG, PFACFLAG,         ! growth flags (pfac variable)
      &          AFLAG_BD, MFLAG_BD, PFLAG_BD,                   ! by-day hourly emis flags
      &          TFLAG, SFLAG, LFLAG,                            ! use temporal, spec, layers
      &          PINGFLAG, ELEVFLAG, EXPLFLAG,                   ! ping, elevated, expl. plume
@@ -146,6 +146,7 @@ C...........   Local allocatable arrays for creating list of all explicit srcs
         INTEGER, ALLOCATABLE :: TMPSRC( : )
         INTEGER, ALLOCATABLE :: TMPIDX( : )
         LOGICAL, ALLOCATABLE :: SRCFLG( : )
+        REAL,    ALLOCATABLE :: TCUMATX( : )    ! tmp array to store control/proj matrix
 
 C...........    Local allocatable array for tracking whether species have
 C               already been processed for elevated sources.
@@ -167,7 +168,7 @@ C...........   Logical names and unit numbers (not in MODMERGE)
      
 C...........   Other local variables
     
-        INTEGER          I, J, K, L1, L2, M, N, V, S, T ! counters and indices
+        INTEGER          I, J, K, L1, L2, M, N, NG, V, S, T ! counters and indices
 
         INTEGER          AJDATE        ! area-source Julian date for by-day
         INTEGER          DAY           ! day-of-week index (monday=1)
@@ -190,6 +191,7 @@ C...........   Other local variables
         INTEGER          NMAJOR        ! no. elevated sources
         INTEGER          NPING         ! no. plum-in-grid sources
         INTEGER          NVPGP         ! tmp actual no. variables per group
+        INTEGER          NTSRC         ! tmp actual no. of sources
         INTEGER          OCNT          ! tmp count output variable names
         INTEGER       :: PDAY = 0      ! previous iteration day no.
         INTEGER          PGID          ! previous iteration group ID no.
@@ -442,7 +444,17 @@ C.........   Allocate memory for logical array for whether species set for eleva
         ALLOCATE( ELEV_SPCSET( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ELEV_SPCSET', PROGNAME )
         ELEV_SPCSET = .FALSE.  ! array
-        
+
+C..........  Allocate memory for tmp control/projection array
+        IF( PFACFLAG ) THEN
+            IF( AUFLAG ) NTSRC = NASRC
+            IF( MUFLAG ) NTSRC = NMSRC
+            IF( PUFLAG ) NTSRC = NPSRC
+            ALLOCATE( TCUMATX( NTSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'TCUMATX', PROGNAME )
+            TCUMATX = 0.0
+        END IF
+
 C.........  Loop through processing groups (if speciation, this will be specia-
 C           tion groups, but if no speciation, this will be pollutant groups,  
 C           for purposes of memory usage if many pollutants and/or species)
@@ -462,17 +474,47 @@ C               in the control matrices are stored, and the index that says
 C               which are valid is *U_EXIST and *A_EXIST
             IF( IDVGP( N ) .NE. PGID ) THEN
 
-                IF( AUFLAG )
-     &              CALL RD3MASK( AUNAME, 0, 0, NASRC, AMULSIZ, NVPGP,
+                IF( AUFLAG ) THEN
+                    IF( PFACFLAG ) THEN
+                        CALL RD3MASK( AUNAME,0,0, NASRC, 1, 1, 'pfac',
+     &                                1, TCUMATX )
+                        DO NG = 1, NVPGP
+                            J = AU_EXIST( NG,1 )
+                            ACUMATX( :,J ) = TCUMATX( : )
+                        END DO
+                    ELSE
+                        CALL RD3MASK( AUNAME,0,0, NASRC, AMULSIZ, NVPGP,
      &                      GVNAMES( 1,N ), AU_EXIST( 1,N ), ACUMATX )
+                    ENDIF
+                ENDIF
 
-                IF( MUFLAG )
-     &              CALL RD3MASK( MUNAME, 0, 0, NMSRC, MMULSIZ, NVPGP,
+                IF( MUFLAG ) THEN
+                    IF( PFACFLAG ) THEN
+                        CALL RD3MASK( MUNAME,0,0, NMSRC, 1, 1,'pfac',
+     &                                1, TCUMATX )
+                        DO NG = 1, NVPGP 
+                            J = MU_EXIST( NG,1 )
+                            MCUMATX( :,J ) = TCUMATX( : )
+                        END DO
+                    ELSE
+                        CALL RD3MASK( MUNAME,0,0, NMSRC, MMULSIZ, NVPGP,
      &                      GVNAMES( 1,N ), MU_EXIST( 1,N ), MCUMATX )
+                    ENDIF
+                ENDIF
 
-                IF( PUFLAG )
-     &              CALL RD3MASK( PUNAME, 0, 0, NPSRC, PMULSIZ, NVPGP,
+                IF( PUFLAG )  THEN
+                    IF( PFACFLAG ) THEN
+                        CALL RD3MASK( PUNAME,0,0, NPSRC, 1, 1, 'pfac',
+     &                                1 , TCUMATX )
+                        DO NG = 1, NVPGP 
+                            J = PU_EXIST( NG,1 )
+                            PCUMATX( :,J ) = TCUMATX( : )
+                        END DO
+                    ELSE
+                        CALL RD3MASK( PUNAME,0,0, NPSRC, PMULSIZ, NVPGP,
      &                      GVNAMES( 1,N ), PU_EXIST( 1,N ), PCUMATX )
+                    ENDIF
+                ENDIF
 
                 IF( ARFLAG )
      &              CALL RD3MASK( AENAME, 0, 0, NASRC, APOLSIZ, NVPGP,

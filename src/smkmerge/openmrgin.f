@@ -61,7 +61,7 @@ C.........  This module contains the major data structure and control flags
      &          INLINEFLAG, EDEV,
      &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
-     &          BSVDESC, BFLAG, VARFLAG
+     &          BSVDESC, BFLAG, VARFLAG, PFACFLAG
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
@@ -322,9 +322,20 @@ C               and store control variable names.
                 CALL RETRIEVE_SET_HEADER( AUNAME )
                 CALL CHKSRCNO( 'area', 'ACMAT', NROWS3D, NASRC, EFLAG )
                 ANUMATV = NVARS3D
+
+C.................  Supporting "pfac" to apply matrix to all pollutants (group)
+                IF( VNAME3D( 1 ) == 'pfac' ) ANUMATV = ANMAP
+
                 ALLOCATE( AUVNAMS( ANUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'AUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, ANUMATV, .TRUE., AUVNAMS )
+
+C.................  Store all pollutant namse to AUVNAMS to support "pfac"
+                IF( VNAME3D( 1 ) == 'pfac' ) THEN 
+                    AUVNAMS = AMAPNAM
+                    PFACFLAG = .TRUE.
+                ELSE
+                    CALL STORE_VNAMES( 1, 1, ANUMATV, .TRUE., AUVNAMS )
+                ENDIF
 
             END IF  ! end of multiplicative control open
 
@@ -579,9 +590,20 @@ C               and store control variable names.
                 CALL RETRIEVE_SET_HEADER( MUNAME )
                 CALL CHKSRCNO( 'mobile', 'MCMAT', NROWS3D, NMSRC, EFLAG)
                 MNUMATV = NVARS3D
+
+C.................  Supporting "pfac" to apply matrix to all pollutants (group)
+                IF( VNAME3D( 1 ) == 'pfac' ) MNUMATV = MNMAP
+
                 ALLOCATE( MUVNAMS( MNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, MNUMATV, .TRUE., MUVNAMS )
+
+C.................  Store all pollutant namse to MUVNAMS to support "pfac"
+                IF( VNAME3D( 1 ) == 'pfac' ) THEN 
+                    MUVNAMS = MMAPNAM
+                    PFACFLAG = .TRUE.
+                ELSE
+                    CALL STORE_VNAMES( 1, 1, MNUMATV, .TRUE., MUVNAMS )
+                ENDIF
 
             END IF  ! end of multiplicative control open
 
@@ -762,9 +784,20 @@ C               and store control variable names.
                 CALL RETRIEVE_SET_HEADER( PUNAME )
                 CALL CHKSRCNO( 'point', 'PCMAT', NROWS3D, NPSRC, EFLAG )
                 PNUMATV = NVARS3D
+
+C.................  Supporting "pfac" to apply matrix to all pollutants (group)
+                IF( VNAME3D( 1 ) == 'pfac' ) PNUMATV = PNMAP
+
                 ALLOCATE( PUVNAMS( PNUMATV ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PUVNAMS', PROGNAME )
-                CALL STORE_VNAMES( 1, 1, PNUMATV, .TRUE., PUVNAMS )
+
+C.................  Store all pollutant namse to PUVNAMS to support "pfac"
+                IF( VNAME3D( 1 ) == 'pfac' ) THEN 
+                    PUVNAMS = PMAPNAM
+                    PFACFLAG = .TRUE.
+                ELSE
+                    CALL STORE_VNAMES( 1, 1, PNUMATV, .TRUE., PUVNAMS )
+                ENDIF
 
             END IF  ! end of multiplicative control open
 

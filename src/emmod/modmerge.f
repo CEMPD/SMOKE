@@ -61,6 +61,7 @@
         LOGICAL, PUBLIC :: TRFLAG  ! total
 
 !.........  Flags to indicate inventory emissions are projected or not
+        LOGICAL, PUBLIC :: PFACFLAG = .FALSE.     ! "pfac" variable flag
         LOGICAL, PUBLIC :: APRJFLAG = .FALSE.
         LOGICAL, PUBLIC :: MPRJFLAG = .FALSE.
         LOGICAL, PUBLIC :: PPRJFLAG = .FALSE.
