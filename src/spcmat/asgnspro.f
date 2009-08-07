@@ -270,7 +270,11 @@ C.........  Find index in complete list of pollutants and set length of name
         DO S = 1, NSRCIN
 
 C.............  If emissions are zero for this source, then skip it
-            IF( LVALCHK .AND. LNOZERO .AND. EMISTMP( S ) <= 0 ) CYCLE
+          IF( LVALCHK .AND. LNOZERO .AND. EMISTMP( S ) <= 0 ) THEN
+
+            WRITE( SDEV, '(A)' ) ' Drop'   ! assign "fake" speciation profile
+
+          ELSE      !  if emissions are not zero for this source
 
             CSRC  = CSOURC( S )
             CFIP  = CSRC( 1:FIPLEN3 )
@@ -655,6 +659,8 @@ C               the use of defaults.
                 CALL REPORT_MISSING_DEFAULT
 
             END IF    !  if default profile code is available or not
+
+          END IF
 
         END DO        !  end loop on source, S
 
