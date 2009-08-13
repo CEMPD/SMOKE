@@ -320,17 +320,19 @@ C.............  Local allocatable variables
             INTEGER, ALLOCATABLE, SAVE :: NCNT( : )  ! Count of entries for NONHAP definition
             INTEGER, ALLOCATABLE, SAVE :: NHAPINDX( : ) ! Position of count of NHAP<pol> in list
             LOGICAL, ALLOCATABLE, SAVE :: NHAPFLAG( : ) ! true: flags INVDNAM with NHAP<pol> pollutant
+            CHARACTER(10),ALLOCATABLE,SAVE :: NHAPUSPC( : )  ! a list of unique #NHAP species
 
 C.............   Local arrays
             CHARACTER(64) SEGMENT( 3 )          ! Segments of parsed lines
 
 C.............  Local variables
-            INTEGER    L, J, N, IREC, IOS            
+            INTEGER    L, J, K, N, NH, IREC, IOS            
 
             LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
             LOGICAL :: EFLAG    = .FALSE.  ! true: error found
             LOGICAL :: INHEADER = .FALSE.  ! true: in header section
 
+            CHARACTER(10)   J_K              ! read buffer for a line
             CHARACTER(256)  LINE              ! read buffer for a line
             CHARACTER(256)  MESG              ! text for M3EXIT()
 
@@ -348,6 +350,8 @@ C               for local counters.
                 CALL CHECKMEM( IOS, 'NHAPINDX', PROGNAME )  
                 ALLOCATE( NHAPFLAG( MXIDAT ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'NHAPFLAG', PROGNAME )
+                ALLOCATE( NHAPUSPC( MXIDAT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'NHAPUSPC', PROGNAME )
                 FIRSTIME = .FALSE.
             END IF
 
@@ -355,6 +359,7 @@ C.............  Initialize local counters (each time subprogram called)
             NCNT     = 0        ! array
             NHAPINDX = 0        ! array
             NHAPFLAG = .FALSE.  ! array
+            NHAPUSPC = ' '      ! array
 
 C.............  If status is "SCAN" then Scan for headers, count number 
 C               of headers, and get the maximum number of entries per 
@@ -394,8 +399,9 @@ C.....................  Check for NHAP header line
 C........................  Figure out if this is a new NHAP pollutant or one
 C                          that we've already had in a previous header line
                         J = INDEX1( SEGMENT( 2 ), MXIDAT, INVDNAM )
+                        K = INDEX1( SEGMENT( 3 ), MXIDAT, INVDNAM )
 
-                        IF ( J .LE. 0 .AND. STATUS .EQ. 'SCAN' ) THEN
+                        IF ( J < 1 .AND. K < 1 .AND. STATUS == 'SCAN' ) THEN
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'ERROR: Pollutant "'//
      &                        TRIM( SEGMENT(2) )//'" at line', IREC,
@@ -403,6 +409,17 @@ C                          that we've already had in a previous header line
      &                        'in the Inventory Table.'
                             CALL M3MSG2( MESG )
                             CYCLE
+                        END IF
+
+C.........................  Skip duplicate #NHAP entries
+                        WRITE( J_K, '(2I5)' ) J, K
+                        L = INDEX1( J_K, MXIDAT, NHAPUSPC ) 
+
+                        IF ( L > 0 ) THEN
+                             CYCLE    ! skip duplicate #NHAP entries
+                        ELSE
+                             NH = NH + 1
+                             NHAPUSPC( NH ) = J_K
                         END IF
 
 C.........................  If pollutant previously found, then set counters
