@@ -361,7 +361,7 @@ C.................  Each day of the week diurnal
 
                         CALL READ_TPROF ( DNSKIP( I ), NPROF )
                         CALL STORE_TPROF( NPROF, NFAC, TMPREF, 
-     &                                    HRLFAC( 1,1,I )      )
+     &                                    HRLFAC( 1,1,I-2 )    )
 
                         IF ( DFLAG ) THEN
                             CALL CHECK_PROFCODE( DIURTYPE( I ), NPROF,
