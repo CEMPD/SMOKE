@@ -50,8 +50,9 @@ C.........  EXTERNAL FUNCTIONS and their descriptions
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
         CHARACTER(16)   VERCHAR
+        LOGICAL         ENVYN
 
-        EXTERNAL        GETFLINE, PROMPTFFILE, PROMPTMFILE, VERCHAR
+        EXTERNAL        GETFLINE, PROMPTFFILE, PROMPTMFILE, VERCHAR, ENVYN
 
 C.........  ARGUMENTS and their descriptions
         CHARACTER(50), INTENT(IN) :: CVSW    ! CVS release tag
@@ -66,6 +67,7 @@ C.........  LOCAL VARIABLES and their descriptions
         CHARACTER(16)   ENAME   !  logical name for normalized emissions output
         CHARACTER(16)   GNAME1  !  unit number for gridded land use file
         CHARACTER(16)   GNAME2  !  unit number for gridded land use file
+        CHARACTER(16)   DOTNAME !  logical name for gridded 2D dot file
         CHARACTER(16)   GRDNM   !  grid name
         CHARACTER(16), ALLOCATABLE  :: LUNAMA( : )  ! land use type names
         CHARACTER(16), ALLOCATABLE  :: LUNAMB( : )  ! land use type names
@@ -78,6 +80,8 @@ C.........  LOCAL VARIABLES and their descriptions
         INTEGER, ALLOCATABLE      :: LUINDX( : )   ! index for land use types
         INTEGER         NCOLS   ! no. of grid columns
         INTEGER         NROWS   ! no. of grid rows
+        INTEGER         NCDOT   ! no. of columns in dot file
+        INTEGER         NRDOT   ! no. of rows in dot file
         INTEGER         NVARSA  ! no. of land use types in land use file A
         INTEGER         NVARSB  ! no. of land use types in land use file B
         INTEGER         NVARST  ! total land use types = A + B
@@ -109,6 +113,9 @@ C.........  LOCAL VARIABLES and their descriptions
         INTEGER         ITOBAC  ! Tobacco
         INTEGER         IWHEAT  ! Wheat
 
+        REAL, ALLOCATABLE    :: XVALS ( :, : )     ! x values for grid cell boundaries
+        REAL, ALLOCATABLE    :: YVALS ( :, : )     ! y values for grid cell boundaries
+
         REAL, ALLOCATABLE    :: LUSE ( :, :, :  )  ! BELD3 land use data
         REAL, ALLOCATABLE    :: FIA ( :, : )       ! Forest inventory data
 
@@ -120,16 +127,25 @@ C.........  LOCAL VARIABLES and their descriptions
         REAL  VEGAREA                              ! Veg. area for 
         REAL  TOTFOR                               ! USGS forest
         REAL  EFTMP                                ! Emission factors
+        
+        REAL  XCELL                                ! x cell size
+        REAL  YCELL                                ! y cell size
 
-        DOUBLE PRECISION   PRCNT2KM2               ! Prcnt to km**2
+        DOUBLE PRECISION, ALLOCATABLE :: PRCNT2KM2( :, : ) ! Prcnt to km**2
 
         LOGICAL         USE_SHRUB
+        LOGICAL         VFLAG                      ! variable grid flag
         LOGICAL       :: EFLAG = .FALSE.           ! Error flag
 
         CHARACTER(16) :: PROGNAME = 'NORMBEIS312'  ! Program name
 
 C***********************************************************************
 C   begin body of subroutine NORMBEIS312
+
+C.........  Check for variable grid data
+        VFLAG = ENVYN( 'USE_VARIABLE_GRID',
+     &                 'Use variable grid definition',
+     &                 .FALSE., IOS )
    
 C.........  Get file name; open emission factors file
         FDEV = PROMPTFFILE( 
@@ -149,6 +165,77 @@ C.........  Open gridded landuse files
 
 C.........  Initialize grid definition
         CALL CHKGRID( GNAMET, 'GRID' , 0, EFLAG )
+
+C.........  Grid cell resolution assumed to be in meters
+C           Input land use will be in percentages
+C           Compute conversion factor to go from percentages
+C           to km**2
+        NCOLS = NCOLS3D
+        NROWS = NROWS3D
+        GRDNM = GDNAM3D
+
+        IF ( VFLAG ) THEN
+C.............  Open GRIDDOT2D file
+            DOTNAME = PROMPTMFILE(
+     &                'Enter logical name for DOT-POINT SURFACE GRID file',
+     &                FSREAD3, 'GRID_DOT_2D', PROGNAME )
+
+            If ( .NOT. DESC3( DOTNAME ) ) THEN
+                MESG = 'Could not get description of file "' //
+     &                 TRIM( DOTNAME ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            ENDIF
+
+C.............  Check grid definition
+            CALL CHKGRID( DOTNAME, 'DOT', 0, EFLAG )
+        
+            IF ( EFLAG ) THEN
+                MESG = 'Grid in file "' // TRIM( DOTNAME ) //
+     &                 '" does not match previously set grid.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            NCDOT = NCOLS + 1
+            NRDOT = NROWS + 1
+
+C.............  Allocate memory for grid cell coordinates
+            ALLOCATE( XVALS( NCDOT, NRDOT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XVALS', PROGNAME )
+            ALLOCATE( YVALS( NCDOT, NRDOT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YVALS', PROGNAME )
+
+C.............  Read grid cell coordinates
+            IF( .NOT. READ3( DOTNAME, 'LON', 1, 0, 0, XVALS ) ) THEN
+                MESG = 'Could not read LON from file "' //
+     &                 TRIM( DOTNAME ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF( .NOT. READ3( DOTNAME, 'LAT', 1, 0, 0, YVALS ) ) THEN
+                MESG = 'Could not read LAT from file "' //
+     &                 TRIM( DOTNAME ) // '"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Convert coordinates to map projection units
+            CALL CONVRTXY( NCDOT*NRDOT, GDTYP3D, GRDNM, P_ALP3D, P_BET3D, P_GAM3D,
+     &                     XCENT3D, YCENT3D, XVALS, YVALS )
+
+C.............  Calculate cell size for each cell and conversion factor
+            ALLOCATE( PRCNT2KM2( NCOLS, NROWS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PRCNT2KM2', PROGNAME )
+            DO I = 1, NCOLS
+                DO J = 1, NROWS
+                    XCELL = ABS( XVALS( I + 1, J ) - XVALS( I, J ) )
+                    YCELL = ABS( YVALS( I, J + 1 ) - YVALS( I, J ) )
+                    PRCNT2KM2( I,J ) = XCELL * YCELL * 1E-08
+                END DO
+            END DO
+        ELSE
+            ALLOCATE( PRCNT2KM2( 1, 1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PRCNT2KM2', PROGNAME )
+            PRCNT2KM2( 1, 1 ) = XCELL3D * YCELL3D * 1E-08
+        END IF
 
         GNAME1 = PROMPTMFILE(
      &           'Enter logical name for GRIDDED LANDUSE A file',
@@ -171,16 +258,6 @@ C.........  If grid definition does not match first landuse file then stop
         END IF
 
         NVARSA = NVARS3D
-
-C.........  Grid cell resolution assumed to be in meters
-C           Input land use will be in percentages
-C           Compute conversion factor to go from percentages
-C           to km**2
-        NCOLS = NCOLS3D
-        NROWS = NROWS3D
-        GRDNM = GDNAM3D
- 
-        PRCNT2KM2 = XCELL3D * YCELL3D * 1E-08
 
 C.........  Store landuse variable names from first file
         ALLOCATE( LUNAMA( NVARSA ), STAT=IOS )
@@ -499,7 +576,11 @@ C.................  Sum USGS forest
 
 C.....................  Assuming that land use is in percentages
 C                       Converting to units of area (km**2)
-                    VEGAREA = LUSE ( I, J, M ) * PRCNT2KM2
+                    IF ( VFLAG ) THEN
+                        VEGAREA = LUSE( I, J, M ) * PRCNT2KM2( I, J )
+                    ELSE
+                        VEGAREA = LUSE( I, J, M ) * PRCNT2KM2( 1, 1 )
+                    END IF
 
 C.....................  If FIA and USGS data greater than 0, then use shrubland factors
                     USE_SHRUB = .FALSE.
