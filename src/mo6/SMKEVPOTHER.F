@@ -21,9 +21,8 @@ C  to the database file.
       INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
       
       INTEGER STR2INT
-      INTEGER EFPOSITION
       
-      EXTERNAL STR2INT, EFPOSITION
+      EXTERNAL STR2INT
       
       INTEGER,INTENT(IN) ::  IEVAP         ! evap emission process
       INTEGER,INTENT(IN) ::  IV            ! vehicle type

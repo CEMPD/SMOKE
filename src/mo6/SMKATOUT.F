@@ -26,9 +26,8 @@ C  database file.
       INCLUDE 'M6CNST3.EXT'   !  Mobile6 constants
         
       INTEGER STR2INT
-      INTEGER EFPOSITION
       
-      EXTERNAL STR2INT, EFPOSITION
+      EXTERNAL STR2INT
 
       INTEGER  ::  I        ! loop variable
       INTEGER  ::  ETYPE    ! emission factor type 
