@@ -165,7 +165,7 @@ C...........   Logical names and unit numbers
 
 C...........   Other local variables
 
-        INTEGER         I, II, J, K, L, L1, L2, N, S, T
+        INTEGER         I, II, IS, J, K, L, L1, L2, N, S, T
 
         INTEGER         IOS, IOS1, IOS2, IOS3, IOS4 ! i/o status
         INTEGER         IOS6, IOS7, IOS8, IOS9      ! i/o status
@@ -911,6 +911,10 @@ C                   to not get daylight time conversion.
                     
                     DAYLIT = .TRUE.
                     TZONES = TZONES - 1 * FLTRDAYL   ! arrays
+
+                    DO IS = 1,NSRC
+                        IF( TZONES( IS ) < 0 ) TZONES( IS ) = 23
+                    ENDDO
 
                 ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
                 
