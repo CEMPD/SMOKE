@@ -920,6 +920,10 @@ C                   to not get daylight time conversion.
                 
                     DAYLIT = .FALSE.
                     TZONES = TZONES + 1 * FLTRDAYL   ! arrays
+                   
+                    DO IS = 1,NSRC
+                        IF( TZONES( IS ) < 23 ) TZONES( IS ) = 0 
+                    ENDDO
                 
                 END IF
 
