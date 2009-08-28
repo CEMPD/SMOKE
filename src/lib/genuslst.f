@@ -43,9 +43,9 @@ C.........  This module contains the inventory arrays
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, NINVSCC, NINVSCL, NINVSIC, 
-     &                      NINVSIC2, NINVINTGR, NINVMACT, NINVORIS, 
+     &                      NINVSIC2, NINVMACT, NINVORIS, 
      &                      INVIFIP, INVCFIP, INVSCC, INVSCL, INVSIC,
-     &                      INVSIC2, INVINTGR, INVMACT, INVORIS,
+     &                      INVSIC2, INVMACT, INVORIS,
      &                      INVORFP, IORSMTCH, INVODSC, ORISBLR,
      &                      OBSRCBG, OBSRCNT, NORISBLR, NOBLRSRC,
      &                      OBSRCNM, ORISFLAG, NINVNAICS, INVNAICS,
@@ -360,20 +360,6 @@ C.................  Create unique SIC list
                END DO 
 
             END IF   ! End SIC processing
-
-
-C.............  Check if CINTGR is allocated.  
-C.............  If it is, generate unique list of CINTGR codes
-            IF( ASSOCIATED( CINTGR ) ) THEN
-
-C.................  Allocate memory for INTEGRATE lists
-                ALLOCATE( INVINTGR( NINVINTGR ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'INVINTGR', PROGNAME )
-
-                INVINTGR( 1 ) = 'Y'
-                INVINTGR( 2 ) = 'N'
-                
-            END IF    ! End INTEGRATE processing
 
 C.............  Check if CMACT is allocated.  
 C.............  If it is, generate unique list of MACT codes

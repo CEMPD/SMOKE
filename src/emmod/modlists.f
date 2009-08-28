@@ -51,7 +51,6 @@
         INTEGER, PUBLIC :: NSCCPSIC  ! no. all SCCs for all SICs
         INTEGER, PUBLIC :: NINVIFIP  ! no. unique country/state/county codes
         INTEGER, PUBLIC :: NINVVTYP  ! no. unique vehicle types in inventory
-        INTEGER, PUBLIC :: NINVINTGR ! no. unique INTEGRATE in inventory
         INTEGER, PUBLIC :: NINVMACT  ! no. unique MACTs in inventory
         INTEGER, PUBLIC :: NINVNAICS ! no. unique NAICS in inventory
         INTEGER, PUBLIC :: NINVORIS  ! no. unique ORIS 
@@ -87,9 +86,6 @@
 
 !.........  Vehicle types dimensioned by NINVVTYP
         CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC :: INVVTYP( : )
-
-!.........  INTGR codes dimensioned by NINVINTGR
-        CHARACTER(INTLEN3), ALLOCATABLE, PUBLIC :: INVINTGR( : ) ! INTEGRATE  
 
 !.........  MACT codes dimensioned by NINVMACT
         CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC :: INVMACT( : ) ! MACT codes

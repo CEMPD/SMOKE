@@ -46,8 +46,7 @@ C...........   This module is the inventory arrays
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
-     &                      INVMACT, NINVNAICS, INVNAICS, NINVINTGR,
-     &                      INVINTGR
+     &                      INVMACT, NINVNAICS, INVNAICS
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, AFLAG, ALLRPT, NSPCPOL,
