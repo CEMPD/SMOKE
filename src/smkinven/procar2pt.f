@@ -40,7 +40,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, NPCNT, IPOSCOD, TPFLAG, INVYR,
-     &                      POLVAL, CSOURC, CSCC,
+     &                      POLVAL, CSOURC, CSCC, CINTGR,
      &                      XLOCA, YLOCA, CELLID, CEXTORL,
      &                      ISIC, CSRCTYP, CMACT, CNAICS
 
@@ -84,6 +84,7 @@ C...........   Local pointers
         CHARACTER(NAILEN3), POINTER :: OLDCNAICS ( : )  ! NAICS code
         CHARACTER(STPLEN3), POINTER :: OLDCSRCTYP( : )  ! source type code
         CHARACTER(EXTLEN3), POINTER :: OLDCEXTORL( : )  ! extended orl
+        CHARACTER(INTLEN3), POINTER :: OLDCINTGR ( : )  ! integrate status 
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: REPIDX( : )      ! index for sorting
@@ -188,6 +189,10 @@ C.............  Associate temporary pointers with sorted arrays
                 OLDCNAICS  => CNAICS
             END IF
 
+            IF( ASSOCIATED( CINTGR ) ) THEN
+                OLDCINTGR   => CINTGR
+            END IF
+
             IF( ASSOCIATED( CEXTORL ) ) THEN
                 OLDCEXTORL   => CEXTORL
             END IF
@@ -195,7 +200,7 @@ C.............  Associate temporary pointers with sorted arrays
 C.............  Nullify original sorted arrays
             NULLIFY( IFIP, ISIC, NPCNT, IPOSCOD, TPFLAG, INVYR,
      &               POLVAL, CSOURC, CSCC, CMACT, CSRCTYP, CNAICS,
-     &               CEXTORL )
+     &               CEXTORL, CINTGR )
 
 C.............  Deallocate original X and Y location arrays
 C               Don't need to store old values since they aren't set
@@ -236,6 +241,13 @@ C.............  Allocate memory for larger sorted arrays
                 
                 CMACT   = ' '   ! array
                 CNAICS  = ' '   ! array
+            END IF
+
+            IF( ASSOCIATED( OLDCINTGR ) ) THEN
+                ALLOCATE( CINTGR( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CINTGR', PROGNAME )
+                
+                CINTGR  = ' '   ! array
             END IF
 
             IF( ASSOCIATED( OLDCEXTORL ) ) THEN
@@ -333,6 +345,10 @@ C.........................  Increment source position and copy source info
                             CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
                         END IF
 
+                        IF( ASSOCIATED( OLDCINTGR ) ) THEN
+                            CINTGR( NEWSRCPOS ) = OLDCINTGR( S )
+                        END IF
+
                         IF( ASSOCIATED( OLDCEXTORL ) ) THEN
                             CEXTORL( NEWSRCPOS ) = OLDCEXTORL( S )
                         END IF
@@ -415,6 +431,10 @@ C                   then need to copy information to new arrays
                         CNAICS ( NEWSRCPOS ) = OLDCNAICS ( S )
                     END IF
 
+                    IF( ASSOCIATED( OLDCINTGR ) ) THEN
+                        CINTGR( NEWSRCPOS ) = OLDCINTGR( S )
+                    END IF
+
                     IF( ASSOCIATED( OLDCEXTORL ) ) THEN
                         CEXTORL( NEWSRCPOS ) = OLDCEXTORL( S )
                     END IF
@@ -443,6 +463,10 @@ C.........  Deallocate old source and emissions arrays
      
             IF( ASSOCIATED( OLDCMACT ) ) THEN
                 DEALLOCATE( OLDCMACT, OLDCNAICS )
+            END IF
+
+            IF( ASSOCIATED( OLDCINTGR ) ) THEN
+                DEALLOCATE( OLDCINTGR )
             END IF
 
             IF( ASSOCIATED( OLDCEXTORL ) ) THEN
