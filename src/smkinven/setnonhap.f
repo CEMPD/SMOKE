@@ -150,14 +150,20 @@ C.........  Treat all or partially treat sources as integrate.
             ALLOCATE( LNONHAP( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LNONHAP', PROGNAME )
             LNONHAP = .FALSE.   ! array
-            CINTGR  = 'N'      ! array
+            CINTGR  = 'N'       ! array
             NFLAG = .TRUE.
 
         CASE( 'PARTIAL' )   ! use LNONHAP setting from ASGNNHAP.f
             NFLAG = .TRUE.
+            WHERE( LNONHAP )
+                CINTGR = 'Y'   ! array
+            ELSEWHERE
+                CINTGR = 'N'   ! array
+            ENDWHERE 
 
         CASE DEFAULT
             NFLAG = .FALSE.  ! Don't combine CAP VOC and HAPs.
+            CINTGR = ' '
 
         END SELECT
         IF( .NOT. NFLAG ) RETURN   ! skip combining CAP VOC and HAPs
@@ -217,6 +223,7 @@ C.........  Check that either VOC or TOG is in the inventory
      &             CRLF() // BLANK5 // ':: Skipping ' // NONHAP // 
      &            ' calculation and NHAPEXCLUDE processing steps.'
             CALL M3MSG2( MESG )
+            CINTGR = ' '    ! reset it to blank for wrinvchr.f
             RETURN
         END IF
 
@@ -331,10 +338,11 @@ C.........  Check if any toxics pollutants are to be subtracted
         END DO
 
         IF( .NOT. FNDPOL ) THEN
-            MESG = 'WARNING: No pollutants were selected from ' // 
-     &             'the inventory as being subratactable for ' //
+            MESG = 'WARNING: No toxics were selected from ' // 
+     &             'the inventory as a subtratacter for ' //
      &             'the NHAPEXCLUDE processing.'
             CALL M3MSG2( MESG )
+            CINTGR = ' '    ! reset it to blank for wrinvchr.f
             RETURN
         END IF
 
