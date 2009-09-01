@@ -40,7 +40,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: CSOURC, CSCC, CINTGR
+        USE MODSOURC, ONLY: CSOURC, CSCC
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: NHAP_EXCL, LNONHAP, TXCNT,
@@ -303,15 +303,6 @@ C           defined as '/INCLUDE/' in NHAPEXCLUDE file
                 ENDIF
             END DO
         ENDIF
-
-C.........  Store final flag setting to a string variable CINTGR
-        DO S = 1, NSRC
-            IF( LNONHAP( S ) ) THEN
-                CINTGR( S ) = 'Y'   ! non-HAP inclusions
-            ELSE
-                CINTGR( S ) = 'N'   ! non-HAP exclusions
-            ENDIF
-        ENDDO
 
         RETURN
 
