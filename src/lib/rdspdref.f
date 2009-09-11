@@ -82,7 +82,7 @@ C...........   Other local variables
         CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
         CHARACTER(SCCLEN3) TSCC     !  temporary SCC
 
-        CHARACTER(16) :: PROGNAME = 'RDXCLUDE' ! program name
+        CHARACTER(16) :: PROGNAME = 'RDSPDREF' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDSPDREF
