@@ -326,7 +326,7 @@ C.............   Local arrays
             CHARACTER(64) SEGMENT( 3 )          ! Segments of parsed lines
 
 C.............  Local variables
-            INTEGER    L, J, K, N, NH, IREC, IOS            
+            INTEGER    L, J, K, N, IREC, IOS            
 
             LOGICAL, SAVE :: FIRSTIME = .TRUE.    ! true: first time routine called
             LOGICAL :: EFLAG    = .FALSE.  ! true: error found
@@ -401,7 +401,7 @@ C                          that we've already had in a previous header line
                         J = INDEX1( SEGMENT( 2 ), MXIDAT, INVDNAM )
                         K = INDEX1( SEGMENT( 3 ), MXIDAT, INVDNAM )
 
-                        IF ( J < 1 .AND. K < 1 .AND. STATUS == 'SCAN' ) THEN
+                        IF ( J < 1 .AND. STATUS == 'SCAN' ) THEN
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'ERROR: Pollutant "'//
      &                        TRIM( SEGMENT(2) )//'" at line', IREC,
@@ -418,8 +418,7 @@ C.........................  Skip duplicate #NHAP entries
                         IF ( L > 0 ) THEN
                              CYCLE    ! skip duplicate #NHAP entries
                         ELSE
-                             NH = NH + 1
-                             NHAPUSPC( NH ) = J_K
+                             NHAPUSPC( J ) = J_K
                         END IF
 
 C.........................  If pollutant previously found, then set counters
