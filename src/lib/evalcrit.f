@@ -55,8 +55,7 @@ C...........   ARGUMENTS and their descriptions:
         CHARACTER(*), INTENT (IN) :: CHRS   ( NV )       ! String values
         REAL        , INTENT (IN) :: COMPARE( NORS, MXAND, NV ) ! Formula values
         CHARACTER(*), INTENT (IN) :: COMPCHR( NORS, MXAND, NV ) ! Formula strings
-C....        CHARACTER(6), INTENT (IN) :: TYPES  ( NORS, MXAND, NV ) ! Condition
-        CHARACTER(*), INTENT (IN) :: TYPES  ( NORS, MXAND, NV ) ! Condition
+        CHARACTER(6), INTENT (IN) :: TYPES  ( NORS, MXAND, NV ) ! Condition
         LOGICAL     , INTENT(OUT) :: STATUS ( NORS, MXAND, NV ) ! true: condition met
 
 C...........   OTHER LOCAL VARIABLES and their descriptions:
