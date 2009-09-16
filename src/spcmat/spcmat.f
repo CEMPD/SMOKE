@@ -574,7 +574,7 @@ C.........  Make sure at least one pollutant will be speciated
         END IF
 
 C.........  Allocate memory for master 1-d array of species
-        NSPCALL = MXSPEC * NIPOL  ! this is reset below
+        NSPCALL = MXSPEC * NOPOL  ! this is reset below
         ALLOCATE ( SPCLIST( NSPCALL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCLIST', PROGNAME )
 
