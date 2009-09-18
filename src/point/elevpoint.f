@@ -718,32 +718,32 @@ C               (include emissions TOTAL for group).
 C.............  If cutoff approach is used, compute and store plume rise
             IF( LCUTOFF ) THEN
 
-                IF( HT .LT. 0. .OR. 
-     &              TK .LE. 0. .OR.
-     &              VE .LE. 0. .OR.
-     &              DM .LE. 0.      ) THEN
+C                IF( HT .LT. 0. .OR. 
+C     &              TK .LE. 0. .OR.
+C     &              VE .LE. 0. .OR.
+C     &              DM .LE. 0.      ) THEN
 
-                    EFLAG = .TRUE.
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
+C                    EFLAG = .TRUE.
+C                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
-                    WRITE( MESG,94030 ) HT, DM, TK, VE
+C                    WRITE( MESG,94030 ) HT, DM, TK, VE
 
-                    L = LEN_TRIM( MESG )
-                    MESG = 'ERROR: Invalid stack parameters for:' //
-     &                     CRLF() // BLANK10 // 
-     &                     BUFFER( 1:L2 )// ' with'// CRLF()// BLANK10//
-     &                     MESG( 1:L )                
-                    CALL M3MESG( MESG )
-                    VALS( RISE_IDX ) = 0.
+C                    L = LEN_TRIM( MESG )
+C                    MESG = 'ERROR: Invalid stack parameters for:' //
+C     &                     CRLF() // BLANK10 // 
+C     &                     BUFFER( 1:L2 )// ' with'// CRLF()// BLANK10//
+C     &                     MESG( 1:L )                
+C                    CALL M3MESG( MESG )
+C                    VALS( RISE_IDX ) = 0.
 
 C.................  When stack parameters are okay...
-                ELSE
+C                ELSE
 
 C.....................  Calculate estimated plume rise
                     RISE( S ) = PLUMRIS( HT, TK, VE, DM )
                     VALS( RISE_IDX ) = RISE( S )
 
-                END IF        ! end bad stack parms or not
+C                END IF        ! end bad stack parms or not
 
 C.............  Otherwise, set value of rise to zero
             ELSE
@@ -808,21 +808,19 @@ C               criteria given
 C.................  See if source matches criteria for PinG sources
                 PGSTAT = .FALSE.  ! array
 
-
-
-
                 IF ( FFLAG .AND. SMOLDER( S ) ) THEN
                    LPING(S) = .FALSE.
 
                 ELSE
-                   IF ( EVALCRIT( NEVPVAR, NPNGCRIT, MXPNGCHK, VALS, VALS, 
-     &                         RANK, CHRS, PNGVALS, PNGVALS, PNGTYPES, 
+                   IF ( EVALCRIT( NEVPVAR, NPNGCRIT, MXPNGCHK,VALS,VALS,
+     &                         RANK, CHRS, PNGVALS, PNGVALS, PNGTYPES,
      &                         PGSTAT )  ) THEN
                     NPING = NPING + 1
                     IF ( IGRP .NE. PGRP ) NPINGGRP = NPINGGRP + 1
                     LPING( S ) = .TRUE.
 
                    END IF
+
                 END IF
             END IF     ! End whether PinG approach is to use PELVCONFIG or not
 
