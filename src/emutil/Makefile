@@ -8,11 +8,11 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: aggwndw beld3to2 bluesky2inv cemscan extractida geofac invsplit metcombine metscan pktreduc \
-     smk2emis surgtool uam2ncf 
+all: aggwndw beld3to2 bluesky2inv cemscan extractida geofac invsplit layalloc metcombine metscan \
+     pktreduc smk2emis surgtool uam2ncf 
 
 debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug extractida.debug invsplit.debug \
-       geofac.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
+       geofac.debug layalloc.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
        surgtool.debug uam2ncf.debug  
 
 .f.o:
@@ -90,6 +90,16 @@ invsplit: $(INVS) $(ALLI) $(LIBPATH)
 invsplit.debug: $(INVS) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'INVSPLIT (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(INVS) $(LIBS_DEBUG)
+
+LAYA=layalloc.o
+
+layalloc: $(LAYA) $(ALLI) $(LIBPATH)
+	echo LAYALLOC:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(LAYA) $(LIBS)
+
+layalloc.debug: $(LAYA) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'LAYALLOC (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(LAYA) $(LIBS_DEBUG)
 
 MCMB=metcombine.o
 
