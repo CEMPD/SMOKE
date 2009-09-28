@@ -1022,7 +1022,7 @@ C.....................  Assign adjustment factor for the current species
                         CALL M3MSG2( MESG )
                     ELSE
                         FACS = 1.0
-                        
+                       
                     END IF
 
 C.....................  Search tagged species for the current file
@@ -1349,11 +1349,11 @@ C.................  Skip EMF-specific header line
                 ADJ_FACTOR( F ) = STR2REAL( SEGMENT( 3 ) )
 
                 IF( ADJ_FACTOR( F ) < 0 ) THEN
-                    MESG = 'ERROR: Can not apply a negative ' //
-     &                  'adjustment factor for the species ' //
-     &                  TRIM( ADJ_SPC(F) ) // ' from the ' // 
-     &                  TRIM( NAM ) // ' file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    MESG = 'WARNING: ' // TRIM( ADJ_SPC(F) ) // 
+     &                 ' emissions from the ' //TRIM(NAM)// ' file' //
+     &                 ' will be substracted due to a negative' //
+     &                 ' adjustment factor' 
+                    CALL M3MSG2( MESG )
 
                 ELSE IF( ADJ_FACTOR( F ) == 0 ) THEN
                     MESG = 'WARNING: ' // TRIM( ADJ_SPC(F) ) // 
