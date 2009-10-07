@@ -145,8 +145,8 @@ C...........   Other local variables
         INTEGER         NK        ! Number of gridding coefficients 
         INTEGER         NKU       ! Number of ungridding coefficients
         INTEGER         NINVARR   ! no. of inventory characteristics
-        INTEGER         NMATX     ! no cell-source intersections
-        INTEGER         NMATXU    ! no county-source intrsctns for all sources
+        INTEGER      :: NMATX = 0 ! no cell-source intersections
+        INTEGER      :: NMATXU= 0 ! no county-source intrsctns for all sources
         INTEGER      :: NLINES = 0! number of lines in input file
         INTEGER         NLIST     ! tmp surrogate list 
         INTEGER         NTLINES   ! max no. of line buffers
