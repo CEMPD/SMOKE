@@ -156,6 +156,8 @@ C.............  Create reverse index for special variables
             IF (ALLOCATED (SPIDX2 )) DEALLOCATE (SPIDX2)
             ALLOCATE( SPIDX2( MXSPDAT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPIDX2', PROGNAME )
+            SPIDX2 = 0
+
             DO V = 1, MXSPDAT
                 K = SPIDX( V )
                 IF( K .GT. 0 ) SPIDX2( K ) = V       
