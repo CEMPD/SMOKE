@@ -446,6 +446,7 @@ C.................  If an actual profile data line, skip line
 
 C.................  Keep track of maximum number of entries for any pollutant
                 MXSPLST = MAXVAL( NCNT )
+                NSPDEF  = MAXVAL( NHAPINDX )
 
                 SELECT CASE( STATUS )
 
