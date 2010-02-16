@@ -233,8 +233,6 @@ C...........   Other local variables
         LOGICAL :: SFLAG    = .FALSE. ! true: store group info
         LOGICAL    VFLAG              ! true: use variable grid
         LOGICAL :: LFLAG    = .TRUE.  ! true: write out lat/lon info
-!        LOGICAL :: FFLAG    = .TRUE.  ! true if source sector is a fire source
-        
 
         CHARACTER(10)   SCC
         CHARACTER(80)   GDESC     !  grid description
@@ -1196,6 +1194,23 @@ C.........  Write ASCII file
         MESG = 'Writing ELEVATED POINT SOURCE output file...'
         CALL M3MSG2( MESG )
 
+        COORUN3D = 'METERS '
+        IF ( GDTYP3D .EQ. 1 ) THEN
+            COORD3D = 'LAT-LON '
+            COORUN3D = 'DEGREES '
+        ELSE IF ( GDTYP3D .EQ. 2 ) THEN
+            COORD3D = 'LAMBERT '
+        ELSE IF ( GDTYP3D .EQ. 5 ) THEN
+            COORD3D = 'UTM '
+        ELSE
+            MESG = 'Current projection code is not supported!'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ENDIF
+
+        WRITE( PDEV,94500 ) GDNAM3D,XORIG3D,YORIG3D,XCELL3D,
+     &                YCELL3D,NCOLS,NROWS,NTHIK3D,COORD3D,
+     &                COORUN3D,P_ALP,P_BET,P_GAM,XCENT,YCENT 
+
         DO S = 1, NSRC
 
             IF( LMAJOR( S ) .OR. LPING( S ) ) THEN
@@ -1291,6 +1306,8 @@ C...........   Internal buffering formats............ 94xxx
      &          'T[K]:', 1X, F7.1, 1X, 'V[m/s]:', 1X, F10.1 )
 
 94300   FORMAT( A, I2.2, A, I2.2, A )
+
+94500   FORMAT( '#GRID ', A, 2F15.4, 2F10.0, 3I5, 2(2X,A), 5F10.4 )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
