@@ -136,7 +136,7 @@ C.........  Loop through lines of file until the header line is encountered
              
             IF ( IOS .GT. 0 ) THEN
                 WRITE( MESG, 94010)
-     &            'I/O error', IOS, 'reading gridding surrogates '//
+     &            'I/O error', IOS, 'reading gridding information '//
      &            'file at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
@@ -155,8 +155,8 @@ C.............  Determine if current line is the header
             IF ( I .GT. 0 ) THEN
                 SRGFMT = 'MODELS3'  ! set format to 'MODELS3'
                 IF( IREC .NE. 1 ) THEN   
-                    MESG = 'Line 1 of the spatial surrogates file '//
-     &                     'did not contain the header line.'
+                    MESG = 'First line of the file did not '//
+     &                     'contain the header line.'
                     CALL M3WARN( PROGNAME, 0, 0, MESG )
                 END IF
 
@@ -196,7 +196,7 @@ C               be either INTEGER or REAL as expected
 
                 WRITE( MESG, 94010 )
      &            'Unexpected data type encountered in header of '//
-     &            'spatial surrogates file'
+     &            'the file'
                 CALL M3MESG( MESG )
 
             ELSE
@@ -227,7 +227,7 @@ C.........  Set project code based on projection type
             EFLAG = .TRUE.
             L = LEN_TRIM( PROJTYPE )
             MESG = 'Projection type "' // PROJTYPE( 1:L ) //
-     &             '" is not recognized by the rdsrghdr.f routine.'
+     &             '" is not recognized.'
             CALL M3MSG2( MESG )
 
 C.........  Otherwise, set the grid type code number
@@ -242,7 +242,7 @@ C.........  Initialize grid information based on the surrogates file
 C.........  Abort if an error is found
         IF ( EFLAG ) THEN
 
-            MESG = 'Problem with surrogate file'
+            MESG = 'Problem with processing grid information'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
