@@ -78,6 +78,7 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
 
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
 
+        CHARACTER(32 )  GRDFMT           !  buffer for grid format (MODEL-3) 
         CHARACTER(300)  BUFFER           !  buffer for formatted source chars
         CHARACTER(300)  MESG             !  message buffer
 
@@ -90,6 +91,9 @@ C.........   Get settings from environment variables
 C.........   This variable enables have no "major" sources identified in the
 C            PELV file, and actually not doing plume rise on any sources instead
 C            of the default behaviour, which is to do plume rise on all sources
+
+C.........   Check gridded information is consistent with current grid info
+        CALL RDSRGHDR( .FALSE., FDEV, GRDFMT )   ! CHKGRID may be initialized
 
 C.........  Allocate the MODELEV arrays for identifying major/PinG sources
         ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
