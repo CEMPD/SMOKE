@@ -69,7 +69,6 @@ C...........   Other local variables
         INTEGER       S
 
         REAL          XLOC, XX, YLOC, YY  ! tmp x and y coordinates
-        REAL(4)       XLOC4, YLOC4, XX4, YY4
 
         LOGICAL    :: EFLAG =.FALSE.   ! true: error detected
 
@@ -110,18 +109,18 @@ C   begin body of subroutine CONVRTXY
 
             DO S = 1, NSRC
 
-                XLOC4 = XVALS( S )
-                YLOC4 = YVALS( S )
+                XLOC = XVALS( S )
+                YLOC = YVALS( S )
 
-                IF( XLOC4 .LT. AMISS3 .OR. YLOC4 .LT. AMISS3 ) CYCLE
+                IF( XLOC .LT. AMISS3 .OR. YLOC .LT. AMISS3 ) CYCLE
 
-                IF ( .NOT. LL2LAM( XLOC4, YLOC4, XX4, YY4 ) ) THEN
+                IF ( .NOT. LL2LAM( XLOC, YLOC, XX, YY ) ) THEN
                     EFLAG = .TRUE.
 
                 ELSE
 
-                    XVALS( S ) = XX4
-                    YVALS( S ) = YY4
+                    XVALS( S ) = XX
+                    YVALS( S ) = YY
 
                 END IF
 
@@ -145,18 +144,18 @@ C   begin body of subroutine CONVRTXY
 
             DO S = 1, NSRC
 
-                XLOC4 = XVALS( S )
-                YLOC4 = YVALS( S )
+                XLOC = XVALS( S )
+                YLOC = YVALS( S )
 
-                IF( XLOC4 .LT. AMISS3 .OR. YLOC4 .LT. AMISS3 ) CYCLE
+                IF( XLOC .LT. AMISS3 .OR. YLOC .LT. AMISS3 ) CYCLE
 
-                IF ( .NOT. LL2POL( XLOC4, YLOC4, XX4, YY4 ) ) THEN
+                IF ( .NOT. LL2POL( XLOC, YLOC, XX, YY ) ) THEN
                     EFLAG = .TRUE.
 
                 ELSE
 
-                    XVALS( S ) = XX4
-                    YVALS( S ) = YY4
+                    XVALS( S ) = XX
+                    YVALS( S ) = YY
 
                 END IF
 
