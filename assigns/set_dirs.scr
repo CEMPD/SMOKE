@@ -81,4 +81,5 @@ endif
    setenv UT_SRC   $SMKROOT/src/emutil         # source code for utility prgms
    setenv M5_SRC   $SMKROOT/src/mo5b           # source code for Mobile5b
    setenv M6_SRC   $SMKROOT/src/mo6            # source code for Mobile6.2
+   setenv MV_SRC   $SMKROOT/src/movesmrg       # source code for MOVES merge prgm
    setenv LOGS     $STATIC/logs                # log files
