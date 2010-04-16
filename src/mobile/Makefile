@@ -48,7 +48,7 @@ premobl.debug: $(PRE) $(ALLI) $(LIBPATH_DEBUG)
 EMS=emisfac.o rdm6list.o wrm6input.o rdgrplist.o \
      openscen.o rdspdline.o chkm6scn.o getspdln.o \
      wrspdvmt.o rdhourtemp.o rplctemp.o wrm6header.o \
-     opensef.o wremfacs.o rplcmet.o calcrelhum.o getspdfmt.o
+     opensef.o wremfacs.o rplcmet.o getspdfmt.o
 
 emisfac: $(EMS) $(ALLI) $(LIBPATH)
 	echo 'EMISFAC:'
