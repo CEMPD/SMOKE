@@ -1,5 +1,5 @@
 
-        SUBROUTINE SETSRCDY( NSRC, SDATE, TZONES, LDAYSAV, 
+        SUBROUTINE SETSRCDY( NSRC, SDATE, TZONES, LDAYSAV, MFLAG,
      &                       DAYBEGT, DAYENDT )
 
 C***********************************************************************
@@ -52,6 +52,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: SDATE            ! start julian date in GMT
         INTEGER,      INTENT (IN) :: TZONES  ( NSRC ) ! time zones per source
         LOGICAL,      INTENT (IN) :: LDAYSAV ( NSRC ) ! true: use daylight time
+        LOGICAL,      INTENT (IN) :: MFLAG            ! true: setting for MOVES. false: for MOBILE6
         INTEGER,      INTENT(OUT) :: DAYBEGT( NSRC )  ! start time of SDATE
         INTEGER,      INTENT(OUT) :: DAYENDT( NSRC )  ! end time of SDATE
 
@@ -133,7 +134,7 @@ C               source is affected by daylight savings
             END IF
 
 C.............  Set start time to  6 A.M. local time for MOBILE6 processing
-            IF( CATEGORY == 'MOBILE' ) THEN
+            IF( CATEGORY == 'MOBILE' .AND. .NOT. MFLAG ) THEN
                 CALL NEXTIME( JDATE, STIME, 60000 )
             END IF
 
