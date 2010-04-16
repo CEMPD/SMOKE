@@ -38,13 +38,16 @@
         IMPLICIT NONE
 
 !...........   Setting for range of valid min/max temperatures
-        REAL, PUBLIC :: MINTEMP = 0.   ! minimum temperature
-        REAL, PUBLIC :: MAXTEMP = 0.   ! maximum temperature
+        INTEGER, PUBLIC :: NFUEL = 0      ! no of fuelmonth
+        REAL,    PUBLIC :: MINTEMP = 0.   ! minimum temperature
+        REAL,    PUBLIC :: MAXTEMP = 0.   ! maximum temperature
 
 !...........   Source-based meteorology data (dim: NSRC)
-        REAL, ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! temperature in Kelvin
-        REAL, ALLOCATABLE, PUBLIC :: QVSRC   ( : )   ! water vapor mixing ratio
-        REAL, ALLOCATABLE, PUBLIC :: PRESSRC ( : )   ! pressure in pascals
+        REAL,    ALLOCATABLE, PUBLIC :: TASRC   ( : )   ! temperature in Kelvin
+        REAL,    ALLOCATABLE, PUBLIC :: QVSRC   ( : )   ! water vapor mixing ratio
+        REAL,    ALLOCATABLE, PUBLIC :: PRESSRC ( : )   ! pressure in pascals
+        REAL,    ALLOCATABLE, PUBLIC :: MAXTSRC ( : )   ! max temp per county
+        REAL,    ALLOCATABLE, PUBLIC :: MINTSRC ( : )   ! min temp per county
 
 !...........   Hourly meteorology data
 !...              for Mobile5 processing, index 0 = 12 AM local time
@@ -56,6 +59,16 @@
         REAL,    ALLOCATABLE, PUBLIC :: BPHOUR  ( :,: ) ! barometric pressure by source (Premobl)
                                                         ! barometric pressure by county (Emisfac)
         REAL,    ALLOCATABLE, PUBLIC :: RHHOUR  ( :,: ) ! relative humidity by county per hour
+
+        INTEGER, ALLOCATABLE, PUBLIC :: NDAYSRC ( :,: ) ! no of days to average for each source 
+        INTEGER, ALLOCATABLE, PUBLIC :: FUELIDX ( :,: ) ! monthID for fuelmonth ref county
+        REAL,    ALLOCATABLE, PUBLIC :: RHFUEL  ( :,: ) ! relative humidity by county per fuelmonth
+        REAL,    ALLOCATABLE, PUBLIC :: MAXTFUEL( :,: ) ! max temperature by county per fuelmonth
+        REAL,    ALLOCATABLE, PUBLIC :: MINTFUEL( :,: ) ! min temperature by county per fuelmonth
+        REAL,    ALLOCATABLE, PUBLIC :: TKFUEL  ( :,:,: ) ! temp profile by county per fuelmonth
+
+        REAL,    ALLOCATABLE, PUBLIC :: TPCNTY( : )     ! daily temps by county
+        REAL,    ALLOCATABLE, PUBLIC :: RHCNTY( : )     ! daily RH by county
 
         REAL,    ALLOCATABLE, PUBLIC :: TDYCNTY ( : )   ! daily temps by county
         REAL,    ALLOCATABLE, PUBLIC :: QVDYCNTY( : )   ! daily mixing ratios by county

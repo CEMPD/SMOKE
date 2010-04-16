@@ -43,7 +43,11 @@
         INTEGER, ALLOCATABLE, PUBLIC :: MCREFIDX ( :,: )  ! index into MCREF by ref. county
         
         INTEGER, ALLOCATABLE, PUBLIC :: MVREFSORT ( :,: ) ! sorted MVREF data
+        INTEGER, ALLOCATABLE, PUBLIC :: FMREFSORT ( :,: ) ! sorted FUELMONTH data
+        INTEGER, ALLOCATABLE, PUBLIC :: FMREFLIST ( :,: ) ! sorted FUELMONTH ref county 
         
+        INTEGER, PUBLIC :: NREFF           ! no. of fuel month entries
+        INTEGER, PUBLIC :: NFUELC          ! no. of unique counties in fuelmonth
         INTEGER, PUBLIC :: NREFC           ! no. of reference counties
         INTEGER, PUBLIC :: NINVC           ! no. of unique counties in inventory
         
