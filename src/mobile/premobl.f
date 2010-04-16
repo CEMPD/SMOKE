@@ -1036,7 +1036,7 @@ C.................  Write message for day of week and date
                 CALL M3MSG2( MESG )
 
 C.................  Set start and end hours of day for all sources
-                CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, 
+                CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, .FALSE. ,
      &                         DAYBEGT, DAYENDT )
 
             END IF
