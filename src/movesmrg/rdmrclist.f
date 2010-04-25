@@ -12,6 +12,7 @@ C       county.
 C
 C  PRECONDITIONS REQUIRED:
 C       FDEV must be opened
+C       MCREF file must be read already
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
@@ -73,6 +74,9 @@ C...........   Local allocatable arrays
 
         CHARACTER(100), ALLOCATABLE :: FILESA( : )  ! unsorted files names
         CHARACTER(100), ALLOCATABLE :: FILES( : )   ! sorted file names
+        
+        INTEGER, ALLOCATABLE :: MONTHA( : )      ! unsorted month numbers
+        INTEGER, ALLOCATABLE :: MONTH( : )       ! sorted month numbers
 
 C...........   Local arrays
         CHARACTER(100)  SEGMENT( 3 )          ! parsed input line
@@ -83,9 +87,13 @@ C...........   Other local variables
         INTEGER      :: IREC = 0    ! record counter
         INTEGER         NLINES      ! number of lines
         INTEGER         PFIP        ! previous ref. county FIP
+        INTEGER         PMONTH      ! previous fuel month
+        INTEGER         TMONTH      ! tmp. fuel month
         INTEGER         TDEV        ! tmp. file unit
+        INTEGER         TIDX        ! tmp. index
         
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
+        LOGICAL      :: FOUND = .FALSE.   ! true: found data for reference county
 
         CHARACTER(150)     LINE     ! line buffer
         CHARACTER(200)     FILENAME ! tmp. filename
@@ -101,12 +109,15 @@ C.........  Get the number of lines in the file
         
         ALLOCATE( REFFIPA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'REFFIPA', PROGNAME )
+        ALLOCATE( MONTHA( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MONTHA', PROGNAME )
         ALLOCATE( FILESA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FILESA', PROGNAME )
         ALLOCATE( IDX( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDX', PROGNAME )
         
         REFFIPA = 0
+        MONTHA = 0
         FILESA = ' '
         IDX = 0
         
@@ -131,8 +142,8 @@ C.............  Read line
 C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
-C.............  Parse the line into 2 segments
-            CALL PARSLINE( LINE, 2, SEGMENT )
+C.............  Parse the line into 3 segments
+            CALL PARSLINE( LINE, 3, SEGMENT )
 
 C.............  Convert reference county to integer
             IF( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
@@ -145,7 +156,28 @@ C.............  Convert reference county to integer
             END IF
             
             REFFIPA( I ) = STR2INT( ADJUSTR( SEGMENT( 1 ) ) )
-            FILESA( I ) = SEGMENT( 2 )
+
+C.............  Convert month to integer
+            IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Bad month number ' //
+     &            'at line', IREC, 'of county factors file list.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+            
+            TMONTH = STR2INT( ADJUSTR( SEGMENT( 2 ) ) )
+            
+            IF( TMONTH .LT. 1 .OR. TMONTH .GT. 12 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Invalid fuel month ' //
+     &            'at line', IREC, 'of county factors file list.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+            
+            MONTHA( I ) = TMONTH
+            FILESA( I ) = SEGMENT( 3 )
 
 C.............  Check that file can be opened
             FILENAME = TRIM( MVFILDIR ) // TRIM( FILESA( I ) )
@@ -153,7 +185,7 @@ C.............  Check that file can be opened
             IF( IOS .NE. 0 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Could not open file ' //
-     &            FILESA( I ) // ' at line', IREC, 'of county ' //
+     &            TRIM( FILESA( I ) ) // ' at line', IREC, 'of county ' //
      &            'factors file list.'
                 CALL M3MESG( MESG )
             END IF
@@ -169,37 +201,44 @@ C.........  Check for errors while reading file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Sort list by reference county
-        CALL SORTI1( NLINES, IDX, REFFIPA )
+C.........  Sort list by reference county and fuel month
+        CALL SORTI2( NLINES, IDX, REFFIPA, MONTHA )
 
 C.........  Check for duplicate entries and store sorted filenames
         ALLOCATE( REFFIP( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'REFFIPA', PROGNAME )
+        CALL CHECKMEM( IOS, 'REFFIP', PROGNAME )
+        ALLOCATE( MONTH( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MONTH', PROGNAME )
         ALLOCATE( FILES( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'FILESA', PROGNAME )
+        CALL CHECKMEM( IOS, 'FILES', PROGNAME )
         
         REFFIP = 0
+        MONTH = 0
         FILES = ' '
 
         PFIP = -9
+        PMONTH = -9
         N = 0
         DO I = 1, NLINES
             J = IDX( I )
             
-            IF( REFFIPA( J ) == PFIP ) THEN
+            IF( REFFIPA( J ) == PFIP .AND. MONTHA( J ) == PMONTH ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Duplicate entries in ' //
      &            'reference county factors list for ' // CRLF() //
-     &            BLANK10 // 'reference county', PFIP
+     &            BLANK10 // 'reference county', PFIP, 'and fuel ' //
+     &            'month', PMONTH
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
 
             N = N + 1
             REFFIP( N ) = REFFIPA( J )
+            MONTH( N ) = MONTHA( J )
             FILES( N ) = FILESA( J )
         
             PFIP = REFFIPA( J )
+            PMONTH = MONTHA( J )
             
         END DO
         
@@ -208,16 +247,32 @@ C.........  Check for duplicate entries and store sorted filenames
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        ALLOCATE( MRCLIST( NREFC ), STAT=IOS )
+        ALLOCATE( MRCLIST( NREFC,12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MRCLIST', PROGNAME )
         
         MRCLIST = ' '
 
 C.........  Check that each reference county has a factors file
+        TIDX = 1
         DO I = 1, NREFC
-        
-            J = INDEXINT1( MCREFIDX( I,1 ), NLINES, REFFIP )
-            IF( J <= 0 ) THEN
+
+C.............  Loop through sorted lines in MRCLIST file - the
+C               FIPS codes are sorted in the same order as the 
+C               reference counties in MCREFIDX
+            FOUND = .FALSE.
+            DO
+                IF( REFFIP( TIDX ) == MCREFIDX( I,1 ) ) THEN
+                    FOUND = .TRUE.
+                    MRCLIST( I, MONTH( TIDX ) ) = FILES( TIDX )
+                ELSE
+                    IF( FOUND ) EXIT
+                END IF
+
+                TIDX = TIDX + 1
+                IF( TIDX .GT. NLINES ) EXIT
+            END DO
+
+            IF( .NOT. FOUND ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: No factor file found ' //
      &            'for reference county', MCREFIDX( I,1 ), 'in ' //
@@ -225,8 +280,6 @@ C.........  Check that each reference county has a factors file
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
-            
-            MRCLIST( I ) = FILES( J )
         
         END DO
         
@@ -235,7 +288,7 @@ C.........  Check that each reference county has a factors file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
-        DEALLOCATE( REFFIPA, FILESA, IDX, REFFIP, FILES )
+        DEALLOCATE( REFFIPA, MONTHA, FILESA, IDX, REFFIP, MONTH, FILES )
 
         RETURN
 
