@@ -68,6 +68,7 @@
         REAL   , ALLOCATABLE, PUBLIC:: STKDM ( : )  !  stack diameter (m)
         REAL   , ALLOCATABLE, PUBLIC:: STKTK ( : )  !  exhaust temp   (deg K)
         REAL   , ALLOCATABLE, PUBLIC:: STKVE ( : )  !  exhaust veloc  (m/s)
+        REAL   , ALLOCATABLE, PUBLIC:: VPOP  ( : )  !  vehicle population
         REAL   , ALLOCATABLE, PUBLIC:: VMT   ( : )  !  vehicle miles traveled (miles/day)
         REAL   , ALLOCATABLE, PUBLIC:: HEATCONTENT ( : )  !  heatcontent constant (m/s)
 
