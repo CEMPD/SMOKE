@@ -56,10 +56,6 @@ C.........  Text file unit numbers
         INTEGER, PUBLIC :: MDEV         ! unit no. for county fuel month file
         INTEGER, PUBLIC :: FDEV         ! unit no. for reference county file listing
 
-C.........  Ungridding matrix data        
-        CHARACTER(16), PUBLIC :: MGUNAME         ! logical name
-        INTEGER,       PUBLIC :: MNGUMAT         ! number of ungridding matrix entries
-
 C.........  Source to grid cell lookups
         INTEGER, ALLOCATABLE, PUBLIC :: NSRCCELLS( : )      ! no. cells for each source
         INTEGER, ALLOCATABLE, PUBLIC :: SRCCELLS( :,: )     ! list of cells for each source
@@ -80,7 +76,7 @@ C.........  Emission factors data
         REAL, ALLOCATABLE, PUBLIC :: RPDEMFACS( :,:,:,:,: )  ! rate-per-distance emission factors
                                                              ! SCC, speed bin, temp, process, pollutant
 
-        REAL, ALLOCATABLE, PUBLIC :: RPVEMFACS( :,:,:,:,: )  ! rate-per-vehicle emission factors
-                                                             ! SCC, hour, temp, process, pollutant
+        REAL, ALLOCATABLE, PUBLIC :: RPVEMFACS( :,:,:,:,:,: )  ! rate-per-vehicle emission factors
+                                                               ! day, SCC, hour, temp, process, pollutant
 
         END MODULE MODMVSMRG
