@@ -44,8 +44,8 @@ C.........  This module contains the major data structure and control flags
      &          MFLAG_BD,                          ! by-day hourly emis flags
      &          LREPSTA, LREPANY, LGRDOUT,         ! state report, any reports, gridded output
      &          CDEV,                              ! costcy
-     &          MTNAME, MSNAME, MONAME,            ! input files
-     &          NMSRC,                             ! no. of srcs
+     &          MGNAME, MTNAME, MSNAME, MONAME,    ! input files
+     &          NMSRC, MNGMAT,                     ! no. of srcs, no. gridding matrix entries
      &          MNMSPC, MNIPPA,                    ! no. species, no. pollutants
      &          MEMNAM, EMNAM,                     ! species names and length of EMNAM
      &          TSVDESC,                           ! var names
@@ -58,12 +58,11 @@ C.........  This module contains the major data structure and control flags
      &          EANAM, TONAMES                     ! pol/act names
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, 
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, 
      &          TVARNAME, METNAME,
-     &          MGUNAME, MNGUMAT,
      &          NREFSRCS, REFSRCS, NSRCCELLS, SRCCELLS, SRCCELLFRACS,
      &          EMPROCIDX, EMPOLIDX,
-     &          NEMTEMPS, EMTEMPS, RPDEMFACS
+     &          NEMTEMPS, EMTEMPS, RPDEMFACS, RPVEMFACS
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -79,7 +78,7 @@ C.........  This module is used for reference county information
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
 
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: SPEED, CSCC
+        USE MODSOURC, ONLY: SPEED, CSCC, VPOP
 
         IMPLICIT NONE
 
@@ -119,8 +118,8 @@ C...........   Local arrays for hourly data
 C...........   Local temporary array for input and output variable names
         CHARACTER(IOVLEN3), ALLOCATABLE :: VARNAMES( : )
 
-C...........   Local array for ungridding matrix
-        REAL, ALLOCATABLE :: MUMAT( : )
+C...........   Local array for gridding matrix
+        REAL, ALLOCATABLE :: MGMATX( : )
 
 C...........   Logical names and unit numbers (not in MODMERGE)
         INTEGER         LDEV
@@ -133,7 +132,9 @@ C...........   Other local variables
         INTEGER          CELL          ! current grid cell
         INTEGER          DAY           ! day-of-week index (monday=1)
         INTEGER          DAYMONTH      ! day-of-month
+        INTEGER          DAYIDX        ! current day value index
         INTEGER          FUELMONTH     ! current fuel month
+        INTEGER          HOURIDX       ! current hour of the day
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
         INTEGER          IOS           ! tmp I/O status
         INTEGER          JDATE         ! Julian date (YYYYDDD)
@@ -156,6 +157,7 @@ C...........   Other local variables
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
         REAL             VMTVAL        ! hourly VMT value for current source and hour
+        REAL             VPOPVAL       ! annual vehicle population value for current source
         REAL             SPDFAC        ! speed interpolation factor
         REAL             TEMPFAC       ! temperature interpolation factor
         REAL             EFVAL1, EFVAL2, EFVALA, EFVALB, EFVAL   ! emission factor values
@@ -200,8 +202,8 @@ C.........  Use FIPS list from the inventory for limiting state/county list
         CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
 
 C.........  Allocate memory for fixed-size arrays...        
-        ALLOCATE( MUMAT( NMSRC + 2 * MNGUMAT ), STAT=IOS )    ! contiguous ungridding matrix
-        CALL CHECKMEM( IOS, 'MUMAT', PROGNAME )
+        ALLOCATE( MGMATX( NGRID + 2 * MNGMAT ), STAT=IOS )    ! contiguous gridding matrix
+        CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
 
         ALLOCATE( EMGRD( NGRID, MNMSPC ), STAT=IOS )     ! gridded emissions
         CALL CHECKMEM( IOS, 'EMGRD', PROGNAME )
@@ -226,14 +228,14 @@ C.........  Allocate memory for fixed-size arrays...
         ALLOCATE( TEMPG( NGRID ), STAT=IOS )    ! hourly temperatures
         CALL CHECKMEM( IOS, 'TEMPG', PROGNAME )
 
-C.........  Read ungridding matrix
-        CALL RDUMAT( MGUNAME, NMSRC, MNGUMAT, MNGUMAT,
-     &               MUMAT( 1 ), MUMAT( NMSRC + 1 ),
-     &               MUMAT( NMSRC + MNGUMAT + 1 ) )
+C.........  Read gridding matrix
+        CALL RDGMAT( MGNAME, NGRID, MNGMAT, MNGMAT,
+     &               MGMATX( 1 ), MGMATX( NGRID + 1 ),
+     &               MGMATX( NGRID + MNGMAT + 1 ) )
 
 C.........  Build list of grid cells for each source
-        CALL BLDSRCCELL( NMSRC, MNGUMAT, MUMAT( 1 ), 
-     &                   MUMAT( NMSRC + 1 ), MUMAT( NMSRC + MNGUMAT + 1 ) )
+        CALL BLDSRCCELL( NMSRC, NGRID, MNGMAT, MGMATX( 1 ), 
+     &                   MGMATX( NGRID + 1 ), MGMATX( NGRID + MNGMAT + 1 ) )
 
 C.........  Set up reference county information
         CALL SETREFCNTY
@@ -292,6 +294,13 @@ C.........  Loop through output time steps
 
 C.............  Determine weekday index (Monday is 1)
             DAY = WKDAY( JDATE )
+            IF( DAY .GT. 5 ) THEN
+                DAYIDX = 1
+            ELSE
+                DAYIDX = 2
+            END IF
+            
+            HOURIDX = (JTIME / 10000) + 1
 
 C.............  Determine month
             CALL DAYMON( JDATE, MONTH, DAYMONTH )
@@ -302,7 +311,7 @@ C.............  Write out message for new day.
             END IF
 
 C.............  Write out files that are being used for by-day treatment
-            IF( DAY .NE. PDAY ) THEN
+            IF( RPDFLAG .AND. DAY .NE. PDAY ) THEN
                 IF( MFLAG_BD ) THEN
                     MESG = '   with MTMP file ' // MTNAME( DAY )
                     CALL M3MSG2( MESG )
@@ -370,6 +379,14 @@ C.................  Read emission factors for reference county and month
                 IF( RPDFLAG ) THEN
                     CALL RDRPDEMFACS( I, FUELMONTH )
                 END IF
+                
+                IF( RPVFLAG ) THEN
+                    CALL RDRPVEMFACS( I, FUELMONTH )
+                END IF
+                
+                IF( RPPFLAG ) THEN
+c                    CALL RDRPPEMFACS( I, FUELMONTH )
+                END IF
 
 C.................  Loop over sources in reference county
                 DO S = 1, NREFSRCS( I )
@@ -380,6 +397,11 @@ C.................  Loop over sources in reference county
                         VMTVAL = VMT( SRC )
                         SPEEDVAL = SPEED( SRC )
                     END IF
+                    
+                    IF( RPPFLAG .OR. RPVFLAG ) THEN
+                        VPOPVAL = VPOP( SRC )
+                    END IF
+                    
                     SCC = CSCC( SRC )
 
 C.....................  Determine SCC index for source
@@ -471,20 +493,29 @@ C.............................  Check if emission factors exist for this process
 
 C.............................  Calculate interpolated emission factor if process/pollutant has changed
                             IF( PBUF .NE. LBUF ) THEN
-                                IF( BIN1 .NE. BIN2 ) THEN
-                                    EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX1, PROCIDX, POLIDX )
-                                    EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX1, PROCIDX, POLIDX )
-                                    EFVALA = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
-    
-                                    EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX2, PROCIDX, POLIDX )
-                                    EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX2, PROCIDX, POLIDX )
-                                    EFVALB = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
-                                ELSE
-                                    EFVALA = RPDEMFACS( SCCIDX, BIN1, IDX1, PROCIDX, POLIDX )
-                                    EFVALB = RPDEMFACS( SCCIDX, BIN1, IDX2, PROCIDX, POLIDX )
+                                IF( RPDFLAG ) THEN
+                                    IF( BIN1 .NE. BIN2 ) THEN
+                                        EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX1, PROCIDX, POLIDX )
+                                        EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX1, PROCIDX, POLIDX )
+                                        EFVALA = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
+        
+                                        EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX2, PROCIDX, POLIDX )
+                                        EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX2, PROCIDX, POLIDX )
+                                        EFVALB = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
+                                    ELSE
+                                        EFVALA = RPDEMFACS( SCCIDX, BIN1, IDX1, PROCIDX, POLIDX )
+                                        EFVALB = RPDEMFACS( SCCIDX, BIN1, IDX2, PROCIDX, POLIDX )
+                                    END IF
+                                    
+                                    EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
                                 END IF
                                 
-                                EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
+                                IF( RPVFLAG ) THEN
+                                    EFVALA = RPVEMFACS( DAYIDX, SCCIDX, HOURIDX, IDX1, PROCIDX, POLIDX )
+                                    EFVALB = RPVEMFACS( DAYIDX, SCCIDX, HOURIDX, IDX2, PROCIDX, POLIDX )
+
+                                    EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
+                                END IF
                             END IF
                             
                             LBUF = PBUF
@@ -494,7 +525,14 @@ C.............................  Set units conversion factor
                             F2 = TOTFAC( SPINDEX( V,1 ) )
 
 C.............................  Calculate hourly emissions
-                            EMVAL = VMTVAL * EFVAL * GFRAC * MSMATX( S,V )
+                            IF( RPDFLAG ) THEN
+                                EMVAL = VMTVAL * EFVAL * GFRAC * MSMATX( S,V )
+                            END IF
+                            
+                            IF( RPVFLAG .OR. RPPFLAG ) THEN
+                                EMVAL = VPOPVAL * EFVAL * GFRAC * MSMATX( S,V )
+                            END IF
+
                             EMGRD( CELL,SPINDEX( V,1 ) ) = 
      &                          EMGRD( CELL,SPINDEX( V,1 ) ) + EMVAL * F1
 
