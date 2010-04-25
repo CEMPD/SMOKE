@@ -67,7 +67,7 @@ C.........  Source to grid cell lookups
 C.........  Reference county information
         INTEGER, ALLOCATABLE, PUBLIC :: NREFSRCS( : )       ! no. sources for each ref county
         INTEGER, ALLOCATABLE, PUBLIC :: REFSRCS( :,: )      ! list of srcs for each ref county
-        CHARACTER(100), ALLOCATABLE, PUBLIC :: MRCLIST( : ) ! emfac file for each ref county
+        CHARACTER(100), ALLOCATABLE, PUBLIC :: MRCLIST( :,: ) ! emfac file for each ref county and month
 
 C.........  Emission factors data
         INTEGER, ALLOCATABLE, PUBLIC :: EMPROCIDX( : )    ! index of emission process name
