@@ -103,7 +103,8 @@ C...........   Other local variables
         CHARACTER(3)        PPROC     ! previous process
         
         CHARACTER(500)      LINE          ! line buffer
-        CHARACTER(200)      FILENAME      ! tmp. filename
+        CHARACTER(100)      FILENAME      ! tmp. filename
+        CHARACTER(200)      FULLFILE      ! tmp. filename with path
         CHARACTER(300)      MESG          ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'RDRPDEMFACS'    ! program name
@@ -112,12 +113,25 @@ C***********************************************************************
 C   begin body of subroutine RDRPDEMFACS
 
 C.........  Open emission factors file based on MRCLIST file
-        FILENAME = TRIM( MVFILDIR ) // TRIM( MRCLIST( REFIDX ) )
-        OPEN( TDEV, FILE=FILENAME, STATUS='OLD', IOSTAT=IOS )
+        FILENAME = TRIM( MRCLIST( REFIDX, MONTH ) )
+        
+        IF( FILENAME .EQ. ' ' ) THEN
+            WRITE( MESG, 94010 ) 'ERROR: No emission factors file ' //
+     &        'for reference county', MCREFIDX( REFIDX,1 ), ' and ' //
+     &        'fuel month', MONTH
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        FULLFILE = TRIM( MVFILDIR ) // FILENAME
+        OPEN( TDEV, FILE=FULLFILE, STATUS='OLD', IOSTAT=IOS )
         IF( IOS .NE. 0 ) THEN
             MESG = 'ERROR: Could not open emission factors file ' //
-     &        TRIM( MRCLIST( REFIDX ) )
+     &        FILENAME
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ELSE
+            MESG = 'Reading emission factors file ' //
+     &        FILENAME
+            CALL M3MESG( MESG )
         END IF
         
         NLINES = GETFLINE( TDEV, 'Emission factors file' )
@@ -138,7 +152,7 @@ C.........  Read header line to get list of pollutants in file
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG, 94010 ) 'I/O error', IOS,
      &            'reading emission factors file ' //
-     &            TRIM( MRCLIST( REFIDX ) ) // ' at line', IREC
+     &            FILENAME // ' at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
@@ -242,7 +256,7 @@ C #ScenID RunID yearID monthID countyID SCC processName avgSpeedBinID Temp relHu
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG, 94010 ) 'I/O error', IOS,
      &            'reading emission factors file ' //
-     &            TRIM( MRCLIST( REFIDX ) ) // ' at line', IREC
+     &            FILENAME // ' at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
@@ -265,6 +279,20 @@ C.............  Check that county matches requested county
                 WRITE( MESG, 94010 ) 'ERROR: Reference county ' //
      &            'at line', IREC, 'of emission factors file ' //
      &            'does not match county listed in MRCLIST file.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+C.............  Check that fuel month matches requested month
+            IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
+                WRITE( MESG, 94010 ) 'ERROR: Bad fuel month ' //
+     &            'at line', IREC, 'of emission factors file.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF( STR2INT( ADJUSTR( SEGMENT( 4 ) ) ) .NE. MONTH ) THEN
+                WRITE( MESG, 94010 ) 'ERROR: Fuel month at line',
+     &            IREC, 'of emission factors file does not match ' //
+     &            'fuel month listed in MRCLIST file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
@@ -317,7 +345,7 @@ C.........  Read and store emission factors
             IF( IOS .NE. 0 ) THEN
                 WRITE( MESG, 94010 ) 'I/O error', IOS,
      &            'reading emission factors file ' //
-     &            TRIM( MRCLIST( REFIDX ) ) // ' at line', IREC
+     &            FILENAME // ' at line', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
@@ -407,7 +435,7 @@ C.............  Store emission factors for each pollutant
 
 999     MESG = 'End of file'
         MESG = 'End of file reached unexpectedly. ' //
-     &         'Check format of ' // MRCLIST( REFIDX )
+     &         'Check format of ' // FILENAME
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )   
 
 C******************  FORMAT  STATEMENTS   ******************************
