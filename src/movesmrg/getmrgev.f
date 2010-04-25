@@ -45,7 +45,7 @@ C.........  This module contains the major data structure and control flags
      &                      LREPSTA, LREPANY
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, MVFILDIR, TVARNAME
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME
 
         IMPLICIT NONE
 
@@ -115,22 +115,30 @@ C.........  Check for variable grid
         VARFLAG = ENVYN( 'USE_VARIABLE_GRID', 'Use variable grid ' //
      &                 'definition', .FALSE., IOS )
 
-C.........  Check for rate-per-distance processing or rate-per-vehicle/profile processing
+C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile processing
         RPDFLAG = ENVYN( 'RPD_MODE', 'Calculate rate-per-distance ' //
      &                   'emissions', .TRUE., IOS )
 
-        RPVFLAG = ENVYN( 'RPV_MODE', 'Calculate rate-per-vehicle and '//
-     &                   'rate-per-profile emissions', .FALSE., IOS )
+        RPVFLAG = ENVYN( 'RPV_MODE', 'Calculate rate-per-vehicle ' //
+     &                   'emissions', .FALSE., IOS )
+     
+        RPPFLAG = ENVYN( 'RPP_MODE', 'Calculate rate-per-profile ' //
+     &                   'emissions', .FALSE., IOS )
 
         IF( .NOT. RPDFLAG .AND.
-     &      .NOT. RPVFLAG ) THEN
-            MESG = 'No mode selected!  You must set either RPD_MODE ' //
-     &             'or RPV_MODE to "Y".'
+     &      .NOT. RPVFLAG .AND.
+     &      .NOT. RPPFLAG ) THEN
+            MESG = 'No mode selected!  You must set either RPD_MODE, ' //
+     &             'RPV_MODE, or RPP_MODE to "Y".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-        
-        IF( RPDFLAG .AND. RPVFLAG ) THEN
+
+C.........  Select default processing mode
+        IF( RPDFLAG ) THEN
             RPVFLAG = .FALSE.
+            RPPFLAG = .FALSE.
+        ELSE IF( RPVFLAG ) THEN
+            RPPFLAG = .FALSE.
         END IF
 
 C.........  Get directory where MOVES output files are stored
