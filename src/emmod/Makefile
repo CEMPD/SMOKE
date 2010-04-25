@@ -8,7 +8,7 @@
 FILES =  modsourc.o modmobil.o modxref.o modtmprl.o modspro.o modcntrl.o \
          modlists.o modinfo.o moddayhr.o modsurg.o modemfac.o modstcy.o \
          modmerge.o modelev.o modmet.o modbiog.o modreprt.o modrepbn.o \
-         modmbset.o modbeis3.o modar2pt.o
+         modmbset.o modbeis3.o modar2pt.o modmvsmrg.o
          
 
 INCLUDES = $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT

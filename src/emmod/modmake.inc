@@ -26,13 +26,14 @@ MODREPBN = $(MD_OUT)/modrepbn.o
 MODMBSET = $(MD_OUT)/modmbset.o
 MODAR2PT = $(MD_OUT)/modar2pt.o
 MODTAG   = $(MD_OUT)/modtag.o
+MODMVSMRG= $(MD_OUT)/modmvsmrg.o
 
 #
 MODALL   = $(MODSOURC) $(MODMOBIL) $(MODXREF)  $(MODTMPRL) $(MODSPRO)  \
            $(MODCNTRL) $(MODLISTS) $(MODINFO)  $(MODDAYHR) \
            $(MODMERGE) $(MODSTCY)  $(MODSURG)  $(MODEMFAC) $(MODELEV)  \
            $(MODMET)   $(MODBIOG)  $(MODBEIS3) $(MODREPRT) $(MODREPBN) \
-           $(MODMBSET) $(MODAR2PT) $(MODTAG)
+           $(MODMBSET) $(MODAR2PT) $(MODTAG) $(MODMVSMRG)
 
 MODINC = $(INC)/EMPRVT3.EXT $(INC)/EMSTRG3.EXT
 #
@@ -169,3 +170,9 @@ $(MODTAG): $(MD_SRC)/modtag.f $(MODINC)
 	if ( test -f modtag.mod ) ; then mv modtag.mod $(MD_OUT) ; fi
 	if ( test -f modtag.M   ) ; then mv modtag.M   $(MD_OUT) ; fi
 	if ( test -f MODTAG.mod ) ; then mv MODTAG.mod $(MD_OUT) ; fi
+
+$(MODMVSMRG): $(MD_SRC)/modmvsmrg.f $(MODINC)
+	$(FC) $(FFLAGS) -c -o $@ $<
+	if ( test -f modmvsmrg.mod ) ; then mv modmvsmrg.mod $(MD_OUT) ; fi
+	if ( test -f modmvsmrg.M   ) ; then mv modmvsmrg.M   $(MD_OUT) ; fi
+	if ( test -f MODMVSMRG.mod ) ; then mv MODMVSMRG.mod $(MD_OUT) ; fi
