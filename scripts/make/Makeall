@@ -243,6 +243,11 @@ cd $MB_SRC     # Premobl and Emisfac
 make clean 
 Makeit $argv    
 
+echo "Building Movesmrg..."
+cd $MV_SRC     # Movesmrg
+make clean
+Makeit $argv
+
 echo "Building Elevpoint and Laypoint..."
 cd $PT_SRC     # Elevpoint and Laypoint
 make clean 
