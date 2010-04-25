@@ -44,13 +44,14 @@ C.........  This module contains the major data structure and control flags
      &          NMSRC, MPRJFLAG, MFLAG_BD, MTNAME, MSDATE,
      &          MNIPPA, MEANAM, MOUNITS, MNIPOL, MNIACT,
      &          MSNAME, MNSMATV, MSVDESC, MSVUNIT,
+     &          MGNAME, MNGMAT,
      &          PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
      &          VARFLAG
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, 
-     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MGUNAME, MNGUMAT
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG,
+     &          TVARNAME, METNAME, XDEV, MDEV, FDEV
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NIACT, NSRC, CATEGORY
@@ -196,7 +197,7 @@ C.........  Read speed and vehicle population data from the inventory
             CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
         END IF
         
-        IF( RPVFLAG ) THEN
+        IF( RPVFLAG .OR. RPPFLAG ) THEN
             M = INDEX1( 'VPOP', NMAP, MAPNAM )
             IF( M <= 0 ) THEN
                 MESG = 'Mobile inventory does not include vehicle ' //
@@ -219,23 +220,27 @@ C.........  Get number of sources from MODINFO and store in MODMERGE variable
 C.........  Determine the year and projection status of the inventory
         CALL CHECK_INVYEAR( MENAME, MPRJFLAG, FDESC3D )
 
-C.........  Open all temporal files for either by-day or standard
-C           processing. 
-C.........  Compare headers to make sure files are consistent.
-        CALL OPEN_TMP_FILES( 'MOBILE', MFLAG_BD, MTNAME, MSDATE)
+        IF( RPDFLAG ) THEN
 
-C.........  Determine the year and projection status of the hourly
-        CALL CHECK_INVYEAR( MTNAME( 1 ), MPRJFLAG, FDESC3D )
+C.............  Open all temporal files for either by-day or standard
+C               processing. 
+C.............  Compare headers to make sure files are consistent.
+            CALL OPEN_TMP_FILES( 'MOBILE', MFLAG_BD, MTNAME, MSDATE)
 
-C.........  Open ungridding matrix, compare number of sources, and
+C.............  Determine the year and projection status of the hourly
+            CALL CHECK_INVYEAR( MTNAME( 1 ), MPRJFLAG, FDESC3D )
+
+        END IF
+
+C.........  Open gridding matrix, compare number of sources, and
 C           compare grid information
-        MGUNAME = PROMPTMFILE(
-     &        'Enter logical name for the MOBILE UNGRIDDING MATRIX',
-     &        FSREAD3, 'MUMAT', PROGNAME )
+        MGNAME = PROMPTMFILE(
+     &        'Enter logical name for the MOBILE GRIDDING MATRIX',
+     &        FSREAD3, 'MGMAT', PROGNAME )
      
-        IF( .NOT. DESC3( MGUNAME ) ) THEN
+        IF( .NOT. DESC3( MGNAME ) ) THEN
             MESG = 'Could not get description of file "' //
-     &             TRIM( MGUNAME ) // '" '
+     &             TRIM( MGNAME ) // '" '
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
@@ -243,7 +248,7 @@ C           compare grid information
             DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', .TRUE. )
         END IF
         
-        CALL CHKSRCNO( 'mobile', 'MUMAT', NROWS3D, NMSRC, EFLAG )
+        CALL CHKSRCNO( 'mobile', 'MGMAT', NTHIK3D, NMSRC, EFLAG )
 
 C.........  Check the grid definition; do not allow subgrids if using
 C           a variable grid
@@ -253,7 +258,7 @@ C           a variable grid
             CALL CHKGRID( 'mobile', 'GMAT', 1, EFLAG )
         END IF
         
-        MNGUMAT = NCOLS3D
+        MNGMAT = NCOLS3D
 
 C.........  Open speciation matrix, compare number of sources, store
 C           speciation variable descriptions, and store mass or moles.
