@@ -238,7 +238,6 @@ C               pollutants.
 C.........  Limitations:
 C             If inventory doesn't contain every SCC but emission factors file
 C               does, the program will quit with an error.
-C             Doesn't yet check month column
 C             Program doesn't know if emission factors file is missing values.
 
 C.........  Expected columns:
