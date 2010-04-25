@@ -75,7 +75,8 @@ C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
 
 C.........  This module is used for reference county information
-        USE MODMBSET, ONLY: NREFC, MCREFSORT
+        USE MODMBSET, ONLY: NREFC, MCREFIDX,
+     &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
 
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: SPEED, CSCC
@@ -96,9 +97,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
+        INTEGER         FIND1
+        INTEGER         FIND1FIRST
+        INTEGER         FINDC
         INTEGER         WKDAY
 
-        EXTERNAL    HHMMSS, INDEX1, WKDAY
+        EXTERNAL    HHMMSS, INDEX1, FIND1, FIND1FIRST, FINDC, WKDAY
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -128,6 +132,8 @@ C...........   Other local variables
         INTEGER          BIN1, BIN2    ! speed bins for current source
         INTEGER          CELL          ! current grid cell
         INTEGER          DAY           ! day-of-week index (monday=1)
+        INTEGER          DAYMONTH      ! day-of-month
+        INTEGER          FUELMONTH     ! current fuel month
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
         INTEGER          IOS           ! tmp I/O status
         INTEGER          JDATE         ! Julian date (YYYYDDD)
@@ -137,6 +143,7 @@ C...........   Other local variables
         INTEGER          KM            ! tmp index to src-category species
         INTEGER          LDATE         ! Julian date from previous iteration
         INTEGER          MJDATE        ! mobile-source Julian date for by-day
+        INTEGER          MONTH         ! current month
         INTEGER          OCNT          ! tmp count output variable names
         INTEGER       :: PDAY = 0      ! previous iteration day no.
         INTEGER          POLIDX        ! current pollutant index
@@ -286,6 +293,9 @@ C.........  Loop through output time steps
 C.............  Determine weekday index (Monday is 1)
             DAY = WKDAY( JDATE )
 
+C.............  Determine month
+            CALL DAYMON( JDATE, MONTH, DAYMONTH )
+
 C.............  Write out message for new day.
             IF( JDATE .NE. LDATE ) THEN
                 CALL WRDAYMSG( JDATE, MESG )
@@ -331,10 +341,34 @@ C.............  Read temperatures for current hour
 C.............  Loop over reference counties
             DO I = 1, NREFC
 
+C.................  Determine fuel month for current time step and reference county
+                K = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
+                M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
+                
+                IF( K .LT. 0 .OR. M .LT. 0 ) THEN
+                    WRITE( MESG, 94010 ) 'No fuel month data for ' //
+     &                'reference county', MCREFIDX( I,1 )
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+                
+                FUELMONTH = 0
+                DO J = K, K + FMREFLIST( M,2 )
+                    IF( FMREFSORT( J,3 ) == MONTH ) THEN
+                        FUELMONTH = FMREFSORT( J,2 )
+                        EXIT
+                    END IF
+                END DO
+                
+                IF( FUELMONTH == 0 ) THEN
+                    WRITE( MESG, 94010 ) 'Could not determine ' //
+     &                'fuel month for reference county', MCREFIDX( I,1 ),
+     &                'and episode month', MONTH
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
 C.................  Read emission factors for reference county and month
-CAS - ADD MONTH HANDLING
                 IF( RPDFLAG ) THEN
-                    CALL RDRPDEMFACS( I,7 )
+                    CALL RDRPDEMFACS( I, FUELMONTH )
                 END IF
 
 C.................  Loop over sources in reference county
@@ -349,10 +383,9 @@ C.................  Loop over sources in reference county
                     SCC = CSCC( SRC )
 
 C.....................  Determine SCC index for source
-                    SCCIDX = INDEX1( SCC, NINVSCC, INVSCC )
+                    SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
                     
 C.....................  Determine speed bins for source
-CAS - Maybe this should just use a calculation
                     IF( RPDFLAG ) THEN
                         BIN1 = 0
                         BIN2 = 0

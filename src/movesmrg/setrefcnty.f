@@ -197,6 +197,9 @@ C.........  Get maximum number of sources per reference county
         
         DEALLOCATE( INVCNTY, REFCNTY, SRCREFIDX )
 
+C.........  Read fuel month reference file
+        CALL RDFMREF( MDEV )
+
 C.........  Read emission factors file list
         CALL RDMRCLIST( FDEV )
 
