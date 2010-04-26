@@ -62,7 +62,8 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          TVARNAME, METNAME,
      &          NREFSRCS, REFSRCS, NSRCCELLS, SRCCELLS, SRCCELLFRACS,
      &          EMPROCIDX, EMPOLIDX,
-     &          NEMTEMPS, EMTEMPS, RPDEMFACS, RPVEMFACS
+     &          NEMTEMPS, EMTEMPS, EMXTEMPS, AVGMIN, AVGMAX,
+     &          RPDEMFACS, RPVEMFACS, RPPEMFACS
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -151,6 +152,8 @@ C...........   Other local variables
         INTEGER          PROCIDX       ! current emission process index
         INTEGER          SCCIDX        ! current SCC index
         INTEGER          SRC           ! current source number
+        INTEGER          UUIDX, UOIDX, OUIDX, OOIDX  ! indexes for matching profiles
+        INTEGER          USTART, UEND, OSTART, OEND
 
         REAL             F1, F2, FG0   ! tmp conversion
         REAL             GFRAC         ! grid cell fraction
@@ -160,6 +163,9 @@ C...........   Other local variables
         REAL             VPOPVAL       ! annual vehicle population value for current source
         REAL             SPDFAC        ! speed interpolation factor
         REAL             TEMPFAC       ! temperature interpolation factor
+        REAL             MINVAL, MAXVAL  ! min and max temperature for current source
+        REAL             MINFAC, MAXFAC  ! min and max temp interpolation factors
+        REAL             PDIFF, TDIFF  ! temperature differences
         REAL             EFVAL1, EFVAL2, EFVALA, EFVALB, EFVAL   ! emission factor values
         REAL             EMVAL         ! emissions value
 
@@ -387,7 +393,7 @@ C.................  Read emission factors for reference county and month
                 END IF
                 
                 IF( RPPFLAG ) THEN
-c                    CALL RDRPPEMFACS( I, FUELMONTH )
+                    CALL RDRPPEMFACS( I, FUELMONTH )
                 END IF
 
 C.................  Loop over sources in reference county
@@ -441,42 +447,122 @@ C.........................  Calculate speed interpolation factor
                         END IF
                     END IF
 
+C.....................  Determine profiles for current inventory county
+                    IF( RPPFLAG ) THEN
+                        MINVAL = AVGMIN( MICNY( SRC ) )
+                        MAXVAL = AVGMAX( MICNY( SRC ) )
+                        
+                        UUIDX = 0
+                        UOIDX = 0
+                        OUIDX = 0
+                        OOIDX = 0
+                        
+                        USTART = 0
+                        UEND = 0
+                        OSTART = 0
+                        OEND = 0
+                        
+                        PDIFF = 999
+                        DO K = NEMTEMPS, 1, -1
+                            TDIFF = EMTEMPS( K ) - MINVAL
+
+C.............................  Each time the temperature difference is smaller,
+C                               this could potentially be the ending index
+                            IF( TDIFF .GT. 0 .AND. TDIFF .LT. PDIFF ) THEN
+                                OEND = K
+                            END IF
+                            
+                            IF( PDIFF .GT. 0 .AND. TDIFF .LT. 0 ) THEN
+                                OSTART = K + 1
+                                UEND = K
+                            END IF
+                            
+                            IF( PDIFF .LT. 0 .AND. TDIFF .LT. PDIFF ) THEN
+                                USTART = K + 1
+                                EXIT
+                            END IF
+                            
+                            PDIFF = TDIFF
+                        END DO
+                        
+                        IF( OEND == 0 ) THEN
+                            MESG = 'ERROR: Highest profile minimum ' //
+     &                        'temperature is lower than county ' //
+     &                        'minimum temperature.'
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
+                        
+                        IF( UEND == 0 ) THEN
+                            MESG = 'ERROR: Lowes profile minimum ' //
+     &                        'temperature is higher than county ' //
+     &                        'minimum temperature.'
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
+                        
+                        IF( USTART == 0 ) THEN
+                            USTART = 1
+                        END IF
+                        
+                        DO K = UEND, USTART, -1
+                            IF( EMXTEMPS( K ) > MAXVAL ) CYCLE
+                            
+                            UOIDX = K + 1
+                            UUIDX = K
+                        END DO
+                        
+                        DO K = OEND, OSTART, -1
+                            IF( EMXTEMPS( K ) > MAXVAL ) CYCLE
+                            
+                            OOIDX = K + 1
+                            OUIDX = K
+                        END DO
+                        
+                        MINFAC = ( MINVAL - EMTEMPS( UUIDX ) ) /
+     &                           ( EMTEMPS( OUIDX ) - EMTEMPS( UUIDX ) )
+     
+                        MAXFAC = ( MAXVAL - EMXTEMPS( OUIDX ) ) /
+     &                           ( EMXTEMPS( OOIDX ) - EMXTEMPS( OUIDX ) )
+                    END IF
+
 C.....................  Loop over grid cells for this source
                     DO NG = 1, NSRCCELLS( SRC )
 
                         CELL = SRCCELLS( SRC, NG )
                         GFRAC = SRCCELLFRACS( SRC, NG )
-                        TEMPVAL = ( TEMPG( CELL ) - CTOK ) * CTOF + 32.
-
-C.........................  Determine temperature indexes for cell
-                        IDX1 = 0
-                        IDX2 = 0
-                        DO K = NEMTEMPS, 1, -1
-                            IF( TEMPVAL < EMTEMPS( K ) ) CYCLE
-                            
-                            IF( TEMPVAL == EMTEMPS( K ) ) THEN
-                                IDX1 = K
-                                IDX2 = K
-                            ELSE
-                                IDX1 = K
-                                IDX2 = K + 1
-                            END IF
-                            EXIT
-                        END DO
-
-C.........................  Check that an appropriate temperature was found
-                        IF( IDX1 == 0 .OR. IDX2 > NEMTEMPS ) THEN
-                            WRITE( MESG, 94040 ) 'ERROR: Grid cell ' //
-     &                        'temperature', TEMPVAL, 'out of range ' //
-     &                        'of emission factor data.'
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                        END IF
                         
-                        IF( IDX1 .NE. IDX2 ) THEN
-                            TEMPFAC = ( TEMPVAL - EMTEMPS( IDX1 ) ) /
-     &                                ( EMTEMPS( IDX2 ) - EMTEMPS( IDX1 ) )
-                        ELSE
-                            TEMPFAC = 1.
+                        IF( RPDFLAG .OR. RPVFLAG ) THEN
+                            TEMPVAL = ( TEMPG( CELL ) - CTOK ) * CTOF + 32.
+    
+C.............................  Determine temperature indexes for cell
+                            IDX1 = 0
+                            IDX2 = 0
+                            DO K = NEMTEMPS, 1, -1
+                                IF( TEMPVAL < EMTEMPS( K ) ) CYCLE
+                                
+                                IF( TEMPVAL == EMTEMPS( K ) ) THEN
+                                    IDX1 = K
+                                    IDX2 = K
+                                ELSE
+                                    IDX1 = K
+                                    IDX2 = K + 1
+                                END IF
+                                EXIT
+                            END DO
+    
+C.............................  Check that an appropriate temperature was found
+                            IF( IDX1 == 0 .OR. IDX2 > NEMTEMPS ) THEN
+                                WRITE( MESG, 94040 ) 'ERROR: Grid cell ' //
+     &                            'temperature', TEMPVAL, 'out of range ' //
+     &                            'of emission factor data.'
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+                            
+                            IF( IDX1 .NE. IDX2 ) THEN
+                                TEMPFAC = ( TEMPVAL - EMTEMPS( IDX1 ) ) /
+     &                                    ( EMTEMPS( IDX2 ) - EMTEMPS( IDX1 ) )
+                            ELSE
+                                TEMPFAC = 1.
+                            END IF
                         END IF
 
 C.........................  Loop through pollutant-species combos
@@ -518,6 +604,18 @@ C.............................  Calculate interpolated emission factor if proces
 
                                     EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
                                 END IF
+                                
+                                IF( RPPFLAG ) THEN
+                                    EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UUIDX, PROCIDX, POLIDX )
+                                    EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, PROCIDX, POLIDX )
+                                    EFVALA = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
+                                    
+                                    EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OUIDX, PROCIDX, POLIDX )
+                                    EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OOIDX, PROCIDX, POLIDX )
+                                    EFVALB = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
+                                    
+                                    EFVAL = MINFAC * (EFVALB - EFVALA) + EFVALA
+                                END IF
                             END IF
                             
                             LBUF = PBUF
@@ -528,19 +626,19 @@ C.............................  Set units conversion factor
 
 C.............................  Calculate hourly emissions
                             IF( RPDFLAG ) THEN
-                                EMVAL = VMTVAL * EFVAL * GFRAC * MSMATX( S,V )
+                                EMVAL = VMTVAL * EFVAL * GFRAC * MSMATX( SRC,V )
                             END IF
                             
                             IF( RPVFLAG .OR. RPPFLAG ) THEN
-                                EMVAL = VPOPVAL * EFVAL * GFRAC * MSMATX( S,V )
+                                EMVAL = VPOPVAL * EFVAL * GFRAC * MSMATX( SRC,V )
                             END IF
 
                             EMGRD( CELL,SPINDEX( V,1 ) ) = 
      &                          EMGRD( CELL,SPINDEX( V,1 ) ) + EMVAL * F1
 
 C.............................  Add this cells emissions to county totals
-                            MEBCNY( MICNY( S ),SPINDEX( V,1 ) ) =
-     &                          MEBCNY( MICNY( S ),SPINDEX( V,1 ) ) + EMVAL * F2
+                            MEBCNY( MICNY( SRC ),SPINDEX( V,1 ) ) =
+     &                          MEBCNY( MICNY( SRC ),SPINDEX( V,1 ) ) + EMVAL * F2
 
                         END DO
 
