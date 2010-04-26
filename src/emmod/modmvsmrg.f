@@ -77,11 +77,15 @@ C.........  Emission factors data
 
         INTEGER, PUBLIC :: NEMTEMPS                       ! no. temperatures for current emision factors
         REAL, ALLOCATABLE, PUBLIC :: EMTEMPS( : )         ! list of temps for emission factors
+        REAL, ALLOCATABLE, PUBLIC :: EMXTEMPS( : )        ! list of max. temps in profiles
 
         REAL, ALLOCATABLE, PUBLIC :: RPDEMFACS( :,:,:,:,: )  ! rate-per-distance emission factors
                                                              ! SCC, speed bin, temp, process, pollutant
 
         REAL, ALLOCATABLE, PUBLIC :: RPVEMFACS( :,:,:,:,:,: )  ! rate-per-vehicle emission factors
                                                                ! day, SCC, hour, temp, process, pollutant
+
+        REAL, ALLOCATABLE, PUBLIC :: RPPEMFACS( :,:,:,:,:,: )  ! rate-per-profile emission factors
+                                                               ! day, SCC, hour, temp profile, process, pollutant
 
         END MODULE MODMVSMRG
