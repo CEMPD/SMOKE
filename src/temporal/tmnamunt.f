@@ -201,7 +201,13 @@ C.........  Now loop through pollutants and create units and conversion factors
             IF ( FAC1 .LT. 0. ) FAC1 = 1.
             IF ( FAC2 .LT. 0. ) FAC2 = 1.
 
-            EAUNIT( M ) = 'tons/hr'
+C.............  keep the orig miles/hr for Movesmrg to process MOVES lookup tables.
+            IF( INDEX( CBUF,'miles' ) > 0 ) THEN
+                EAUNIT( M ) = 'miles/hr'
+            ELSE
+                EAUNIT( M ) = 'tons/hr'
+            END IF
+
             EACNV ( M ) = FAC1 / FAC2
 
         END DO

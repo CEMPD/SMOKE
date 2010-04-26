@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENTMPIN( UFLAG, PFLAG, ENAME, ANAME,
+        SUBROUTINE OPENTMPIN( MFLAG, UFLAG, PFLAG, ENAME, ANAME,
      &                        DNAME, HNAME, GNAME, SDEV, XDEV, RDEV,
      &                        CDEV, HDEV, KDEV, TDEV, MDEV, EDEV, PYEAR )
 
@@ -42,7 +42,8 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX, EANAM,
+     &                     EINAM, NIPOL, NPPOL, NPACT 
 
         IMPLICIT NONE
 
@@ -67,8 +68,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  PROMPTFFILE, PROMPTMFILE
 
 C...........   SUBROUTINE ARGUMENTS
-        LOGICAL     , INTENT    (IN) :: UFLAG    ! use uniform temporal profile
-        LOGICAL     , INTENT(IN OUT) :: PFLAG    ! use episode time periods
+        LOGICAL     , INTENT    (IN) :: MFLAG ! true: MOVES, false: MOBILE6 
+        LOGICAL     , INTENT    (IN) :: UFLAG ! use uniform temporal profile
+        LOGICAL     , INTENT(IN OUT) :: PFLAG ! use episode time periods
         CHARACTER(*), INTENT(IN OUT) :: ENAME ! name for I/O API inven input
         CHARACTER(*), INTENT(IN OUT) :: ANAME ! name for ASCII inven input 
         CHARACTER(*), INTENT   (OUT) :: DNAME ! day-spec file
@@ -88,7 +90,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Other local variables
         INTEGER         IDEV        ! tmp unit number if ENAME is map file
         INTEGER         IOS         ! status from environment variables
-        INTEGER         J           ! index
+        INTEGER         I,J           ! index
         INTEGER         L           ! string length
 
         LOGICAL      :: DFLAG = .FALSE.      ! true: day-specific  file available
@@ -176,6 +178,17 @@ C           results are stored in module MODINFO.
 C.........  Set average day emissions flag (INVPIDX)
         IF( OFLAG ) INVPIDX = 1
         CALL GETSINFO( ENAME )
+
+C.........  Reset activity to pollutant to create hourly VMT without running EMISFAC
+        IF( MFLAG ) THEN
+            NIPOL = NIACT
+            NPPOL = 2
+            NIACT = 0
+            NPACT = 0
+            DO I = 1,NIPOL
+               EINAM( I ) = EANAM( I )
+            END DO
+        END IF
 
         PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
 
