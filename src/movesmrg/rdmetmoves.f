@@ -170,7 +170,17 @@ C.............  Check min and max temperature values
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Minimum temperature ' //
      &            'is greater than maximum temperature at line',
-     &            IREC, 'of Met4moves output file.';
+     &            IREC, 'of Met4moves output file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+            
+C.............  Check for duplicate entries
+            IF( AVGMIN( K ) .GT. AMISS3 .OR.
+     &          AVGMAX( K ) .GT. AMISS3 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Duplicate county',
+     &            CNTY, 'at line', IREC, 'of Met4moves output file.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
