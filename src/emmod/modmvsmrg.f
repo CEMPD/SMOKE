@@ -51,10 +51,15 @@ C.........  Meteorology information
         CHARACTER(IOVLEN3), PUBLIC :: TVARNAME  ! name of temperature variable to read
         CHARACTER(16), PUBLIC :: METNAME        ! logical name for meteorology file
 
+C.........  Average min and max temperatures
+        REAL, ALLOCATABLE, PUBLIC :: AVGMIN( : )  ! minimum temperature for each county
+        REAL, ALLOCATABLE, PUBLIC :: AVGMAX( : )  ! maximum temperature for each county
+
 C.........  Text file unit numbers        
         INTEGER, PUBLIC :: XDEV         ! unit no. for county cross-reference file
         INTEGER, PUBLIC :: MDEV         ! unit no. for county fuel month file
         INTEGER, PUBLIC :: FDEV         ! unit no. for reference county file listing
+        INTEGER, PUBLIC :: MMDEV        ! unit no. for Met4moves output file
 
 C.........  Source to grid cell lookups
         INTEGER, ALLOCATABLE, PUBLIC :: NSRCCELLS( : )      ! no. cells for each source

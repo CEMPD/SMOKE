@@ -29,7 +29,8 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 MRG= movesmrg.o bldmrgidx.o bldprocidx.o bldsrccell.o \
      getmrgev.o initstcy.o mrgonams.o mrgunits.o \
      mrgvnams.o openmrgin.o openmrgout.o rdfmref.o \
-     rdmrclist.o rdmxref.o rdrpdemfacs.o rdrpvemfacs.o \
+     rdmetmoves.o rdmrclist.o rdmxref.o \
+     rdrpdemfacs.o rdrpvemfacs.o \
      setrefcnty.o wrmrgrep.o
 
 #
@@ -64,6 +65,7 @@ mrgvnams.o  : $(MODMERGE) $(MODLISTS)
 openmrgin.o : $(MODMERGE) $(MODMVSMRG) $(MODINFO) $(MODSOURC) $(MODEMFAC) $(MODGRID) $(MODFILESET)
 openmrgout.o: $(MODMERGE) $(MODGRID) $(MODFILESET)
 rdfmref.o   : $(MODMBSET)
+rdmetmoves.o: $(MODMVSMRG) $(MODLISTS)
 rdmrclist.o : $(MODMBSET) $(MODMVSMRG)
 rdmxref.o   : $(MODMBSET)
 rdrpdemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)

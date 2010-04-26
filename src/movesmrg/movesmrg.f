@@ -339,12 +339,14 @@ C.............  In RPD mode, read VMT for current hour
                 END IF
             END IF
 
-C.............  Read temperatures for current hour
-            IF( .NOT. READ3( METNAME, TVARNAME, 1, 
-     &                       JDATE, JTIME, TEMPG ) ) THEN
-                MESG = 'Could not read ' // TRIM( TVARNAME ) //
-     &                 ' from ' // TRIM( METNAME )
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+C.............  In RPD and RPV modes, read temperatures for current hour
+            IF( RPDFLAG .OR. RPVFLAG ) THEN
+                IF( .NOT. READ3( METNAME, TVARNAME, 1, 
+     &                           JDATE, JTIME, TEMPG ) ) THEN
+                    MESG = 'Could not read ' // TRIM( TVARNAME ) //
+     &                     ' from ' // TRIM( METNAME )
+                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
             END IF
 
 C.............  Loop over reference counties

@@ -51,7 +51,7 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG,
-     &          TVARNAME, METNAME, XDEV, MDEV, FDEV
+     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MMDEV
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NIACT, NSRC, CATEGORY
@@ -282,32 +282,34 @@ C           speciation variable descriptions, and store mass or moles.
         CALL STORE_VUNITS( 1, 1, MNSMATV, .TRUE., MSVUNIT )
 
 C.........  Open meteorology file
-        METNAME = PROMPTMFILE(
-     &           'Enter logical name for the METCRO2D meteorology file',
-     &           FSREAD3, 'MET_CRO_2D', PROGNAME )
-
-        IF( .NOT. DESC3( METNAME ) ) THEN
-            MESG = 'Could not get description of file "' //
-     &             METNAME( 1:LEN_TRIM( METNAME ) ) // '" '
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-C.........  Check the grid definition
-        IF( VARFLAG ) THEN
-            CALL CHKGRID( 'mobile', 'GRID', 0, EFLAG )
-        ELSE
-            CALL CHKGRID( 'mobile', 'GRID', 1, EFLAG )
-        END IF
-
-C.........  Check the hours in the met file
-        CALL UPDATE_TIME_INFO( METNAME, .FALSE. )
-
-C.........  Make sure met file contains requested temperature variable
-        J = INDEX1( TVARNAME, NVARS3D, VNAME3D )
-        IF( J <= 0 ) THEN
-            MESG = 'ERROR: Could not find "' // TRIM( TVARNAME ) //
-     &             '" in file "' // TRIM( METNAME )
-            CALL M3MESG( MESG )
+        IF( RPDFLAG .OR. RPVFLAG ) THEN
+            METNAME = PROMPTMFILE(
+     &               'Enter logical name for the METCRO2D meteorology file',
+     &               FSREAD3, 'MET_CRO_2D', PROGNAME )
+    
+            IF( .NOT. DESC3( METNAME ) ) THEN
+                MESG = 'Could not get description of file "' //
+     &                 METNAME( 1:LEN_TRIM( METNAME ) ) // '" '
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+    
+C.............  Check the grid definition
+            IF( VARFLAG ) THEN
+                CALL CHKGRID( 'mobile', 'GRID', 0, EFLAG )
+            ELSE
+                CALL CHKGRID( 'mobile', 'GRID', 1, EFLAG )
+            END IF
+    
+C.............  Check the hours in the met file
+            CALL UPDATE_TIME_INFO( METNAME, .FALSE. )
+    
+C.............  Make sure met file contains requested temperature variable
+            J = INDEX1( TVARNAME, NVARS3D, VNAME3D )
+            IF( J <= 0 ) THEN
+                MESG = 'ERROR: Could not find "' // TRIM( TVARNAME ) //
+     &                 '" in file "' // TRIM( METNAME )
+                CALL M3MESG( MESG )
+            END IF
         END IF
 
 C.........  Get file name for inventory pollutants codes/names
@@ -355,6 +357,13 @@ C.........  Get reference county emission factors file list
         FDEV = PROMPTFFILE(
      &           'Enter logical name for reference county file list',
      &           .TRUE., .TRUE., 'MRCLIST', PROGNAME )
+
+C.........  Get Met4moves output file
+        IF( RPPFLAG ) THEN
+            MMDEV = PROMPTFFILE(
+     &           'Enter logical name for Met4moves output file',
+     &           .TRUE., .TRUE., 'METMOVES', PROGNAME )
+        END IF
 
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort
