@@ -14,9 +14,9 @@ LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp
 
 #
 
-all: movesmrg
+all: movesmrg met4moves
 
-debug: movesmrg.debug
+debug: movesmrg.debug met4moves.debug
 
 pvm: movesmrg.pvm
 
@@ -32,7 +32,6 @@ MRG= movesmrg.o bldmrgidx.o bldprocidx.o bldsrccell.o \
      rdmetmoves.o rdmrclist.o rdmxref.o \
      rdrpdemfacs.o rdrppemfacs.o rdrpvemfacs.o \
      setrefcnty.o wrmrgrep.o
-
 #
 movesmrg: $(MRG) $(ALLI) $(LIBPATH)
 	echo MOVESMRG:
@@ -46,6 +45,18 @@ movesmrg.debug: $(MRG) $(ALLI) $(LIBPATH_DEBUG)
 movesmrg.pvm: $(MRG) $(ALLI) $(LIBPATH)
 	echo MOVESMRG \(pvm\):
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS_PVM)
+
+MET=met4moves.o rdmxref.o rdfmref.o grdfips.o avgmet.o hourmet.o \
+      wravgmet.o wrtemprof.o
+
+met4moves: $(MET) $(ALLI) $(LIBPATH)
+	echo 'MET4MOVES:'
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MET) $(LIBS)
+
+met4moves.debug: $(MET) $(ALLI) $(LIBPATH_DEBUG)
+	echo 'MET4MOVES (debug):'
+	$(FC) $(FFLAGS) -o $(@) $(MET) $(LIBS_DEBUG)
+
 #
 ## Module dependencies
 #
@@ -53,11 +64,15 @@ include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
+avermet.o   : $(MODMET)
 bldmrgidx.o : $(MODMERGE)
 bldprocidx.o: $(MODMVSMRG) $(MODMERGE)
 bldsrccell.o: $(MODMVSMRG)
 getmrgev.o  : $(MODINFO) $(MODMERGE) $(MODMVSMRG)
+grdfips.o   : $(MODSURG) $(MODGRID) $(MODMET)
+hourmet.o   : $(MODMET)
 initstcy.o  : $(MODMERGE) $(MODSTCY) $(MODSOURC)
+met4moves.o : $(MODSURG) $(MODSTCY) $(MODMET) $(MODGRID) $(MODMBSET)
 movesmrg.o  : $(MODMERGE) $(MODMVSMRG) $(MODLISTS) $(MODSTCY) $(MODGRID) $(MODMBSET) $(MODSOURC)
 mrgonams.o  : $(MODMERGE)
 mrgunits.o  : $(MODMERGE)
@@ -72,6 +87,8 @@ rdrpdemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrppemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrpvemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 setrefcnty.o: $(MODMVSMRG) $(MODINFO) $(MODSOURC) $(MODLISTS) $(MODMBSET)
+wravgmet.o  : $(MODMBSET) $(MODMET)
+wrtemprof.o : $(MODMBSET) $(MODMET)
 wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID) 
 
 clean:
