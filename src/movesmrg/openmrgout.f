@@ -218,10 +218,6 @@ C               if a write error occurred
             SUBROUTINE SETUP_VARIABLES( NIPPA_L, NMSPC_L, 
      &                                  EANAM_L, EMNAM_L  )
 
-C.............  MODULES for public variables
-C.............  This module contains the major data structure and control flags
-            USE MODMERGE, ONLY: NIPOL, EINAM
-
 C.............  Internal subprogram arguments
             INTEGER     , INTENT (IN) :: NIPPA_L
             INTEGER     , INTENT (IN) :: NMSPC_L
