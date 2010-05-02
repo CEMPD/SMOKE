@@ -304,6 +304,15 @@ C.............  Check temperature value
             
             TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 9 ) ) )
             IF( TMPVAL .NE. PTMP ) THEN
+
+C.................  Check that temperatures are sorted
+                IF( TMPVAL .LT. PTMP ) THEN
+                    WRITE( MESG, 94010 ) 'ERROR: Temperature value ' //
+     &                'at line', IREC, 'of emission factors file is ' //
+     &                'smaller than previous temperature.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+            
                 NEMTEMPS = NEMTEMPS + 1
                 PTMP = TMPVAL
             END IF
