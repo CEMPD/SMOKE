@@ -432,11 +432,11 @@ C.................  Loop over sources in reference county
                         VPOPVAL = VPOP( SRC )
 
 C.........................  Determine hour index based on source's local time
-                        HOURIDX = ( JTIME - DAYBEGT( SRC ) ) / 10000;
+                        HOURIDX = ( JTIME - DAYBEGT( SRC ) ) / 10000
                         IF( HOURIDX < 0 ) THEN
-                            HOURIDX = HOURIDX + 24;
+                            HOURIDX = HOURIDX + 24
                         END IF
-                        HOURIDX = HOURIDX + 1;  ! array index is 1 to 24
+                        HOURIDX = HOURIDX + 1  ! array index is 1 to 24
                     END IF
                     
                     SCC = CSCC( SRC )
