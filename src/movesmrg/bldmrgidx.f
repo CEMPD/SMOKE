@@ -43,10 +43,9 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: MNIPPA, NIPPA,
-     &                      MNSMATV, NSMATV, NMSPC,
-     &                      MEANAM, 
-     &                      MSVDESC, TSVDESC,
+        USE MODMERGE, ONLY: NIPPA,
+     &                      NSMATV, NMSPC,
+     &                      TSVDESC,
      &                      SIINDEX, SPINDEX,
      &                      EMNAM, EANAM
 

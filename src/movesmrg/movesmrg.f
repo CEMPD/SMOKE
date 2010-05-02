@@ -46,8 +46,8 @@ C.........  This module contains the major data structure and control flags
      &          CDEV,                              ! costcy
      &          MGNAME, MTNAME, MSNAME, MONAME,    ! input files
      &          NMSRC, MNGMAT,                     ! no. of srcs, no. gridding matrix entries
-     &          MNMSPC, MNIPPA,                    ! no. species, no. pollutants
-     &          MEMNAM, EMNAM,                     ! species names and length of EMNAM
+     &          MNMSPC,                            ! no. species
+     &          EMNAM,                             ! species names
      &          TSVDESC,                           ! var names
      &          SIINDEX, SPINDEX,                  ! EANAM & EMNAM idx
      &          SDATE, STIME, NSTEPS, TSTEP,       ! episode information
@@ -55,7 +55,7 @@ C.........  This module contains the major data structure and control flags
      &          GRDFAC, TOTFAC,                    ! conversion factors
      &          MSMATX, MNSMATV, NSMATV,           ! speciation matrices
      &          MEBCNY, MEBSTA,                    ! cnty/state total spec emissions
-     &          EANAM, TONAMES                     ! pol/act names
+     &          EANAM                              ! pol/act names
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, 

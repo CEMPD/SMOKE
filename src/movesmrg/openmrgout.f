@@ -41,11 +41,7 @@ C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, TSTEP, BYEAR, PYEAR, 
      &          LGRDOUT,
      &          MNMSPC, NMSPC, MNIPPA, MEANAM, EMNAM, MEMNAM, NSMATV,
-     &          MONAME, EMLAYS,
-     &          NIPPA, EANAM, 
-     &          LREPSTA, LREPCNY, 
-     &          MREPNAME,
-     &          MRDEV, TRDEV,
+     &          MONAME, LREPSTA, LREPCNY, MREPNAME, MRDEV,
      &          SIINDEX, SPINDEX, GRDUNIT, VARFLAG
 
 C.........  This module contains the global variables for the 3-d grid

@@ -39,16 +39,9 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, EDATE, ETIME, TSTEP,
-     &                      MNMSPC, NMSPC, 
-     &                      MEMNAM, NSMATV,
-     &                      MNIPPA, NIPPA, 
-     &                      MEANAM, 
-     &                      MEBCNY, TEBCNY, 
-     &                      MEBSTA, TEBSTA, 
-     &                      MRDEV,  TRDEV, 
-     &                      LREPSTA, LREPCNY, 
-     &                      EMNAM, EANAM, TOTUNIT, 
-     &                      SIINDEX, SPINDEX
+     &                      NMSPC, MEBCNY, MEBSTA,
+     &                      MRDEV, LREPSTA, LREPCNY, 
+     &                      EMNAM, TOTUNIT
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD
