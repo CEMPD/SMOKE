@@ -39,8 +39,7 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, TSTEP, BYEAR, PYEAR, 
-     &          LGRDOUT,
-     &          MNMSPC, NMSPC, MNIPPA, MEANAM, EMNAM, MEMNAM, NSMATV,
+     &          LGRDOUT, NMSPC, EMNAM, NSMATV,
      &          MONAME, LREPSTA, LREPCNY, MREPNAME, MRDEV,
      &          SIINDEX, SPINDEX, GRDUNIT, VARFLAG
 
@@ -151,16 +150,7 @@ C.........  Set up and open I/O API output file
         IF( LGRDOUT ) THEN
           
 C.............  Prompt for and gridded open file(s)
-
-ccs...........  Check if the number of mobile species exceeds the
-ccs             number of total species (can happen if there are 
-ccs             more species in the speciation matrix than desired
-ccs             in the output)
-            IF( MNMSPC > NMSPC ) THEN
-                CALL SETUP_VARIABLES( MNIPPA, NMSPC, MEANAM, EMNAM )
-            ELSE
-                CALL SETUP_VARIABLES( MNIPPA, MNMSPC,MEANAM, MEMNAM)
-            ENDIF
+            CALL SETUP_VARIABLES( NMSPC, EMNAM )
             NLAYS3D = 1
             FDESC3D( 1 ) = 'Mobile source emissions data'
 
@@ -215,13 +205,10 @@ C*****************  INTERNAL SUBPROGRAMS  ******************************
 
 C.............  This internal subprogram uses WRITE3 and exits gracefully
 C               if a write error occurred
-            SUBROUTINE SETUP_VARIABLES( NIPPA_L, NMSPC_L, 
-     &                                  EANAM_L, EMNAM_L  )
+            SUBROUTINE SETUP_VARIABLES( NMSPC_L, EMNAM_L  )
 
 C.............  Internal subprogram arguments
-            INTEGER     , INTENT (IN) :: NIPPA_L
             INTEGER     , INTENT (IN) :: NMSPC_L
-            CHARACTER(*), INTENT (IN) :: EANAM_L( NIPPA_L )
             CHARACTER(*), INTENT (IN) :: EMNAM_L( NMSPC_L )
 
 C.............  Local subprogram varibles
@@ -263,11 +250,7 @@ C.....................  Access global indices
                     J = SPINDEX( V,1 )
                     IF( J .EQ. LJ ) CYCLE    ! Do not repeat species
 
-C.....................  Make sure current species is in local array
                     CBUF = EMNAM( J )
-                    M = INDEX1( CBUF, NMSPC_L, EMNAM_L )
-                    IF( M .LE. 0 ) CYCLE
-
                     DESCBUF= DESCBUF(1:LD)//' Model species '// CBUF
 
                     K = K + 1

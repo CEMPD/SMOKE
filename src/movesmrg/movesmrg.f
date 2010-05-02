@@ -46,7 +46,7 @@ C.........  This module contains the major data structure and control flags
      &          CDEV,                              ! costcy
      &          MGNAME, MTNAME, MSNAME, MONAME,    ! input files
      &          NMSRC, MNGMAT,                     ! no. of srcs, no. gridding matrix entries
-     &          MNMSPC,                            ! no. species
+     &          NMSPC,                             ! no. species
      &          EMNAM,                             ! species names
      &          TSVDESC,                           ! var names
      &          SIINDEX, SPINDEX,                  ! EANAM & EMNAM idx
@@ -228,16 +228,16 @@ C.........  Allocate memory for fixed-size arrays...
         ALLOCATE( MGMATX( NGRID + 2 * MNGMAT ), STAT=IOS )    ! contiguous gridding matrix
         CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
 
-        ALLOCATE( EMGRD( NGRID, MNMSPC ), STAT=IOS )     ! gridded emissions
+        ALLOCATE( EMGRD( NGRID, NMSPC ), STAT=IOS )     ! gridded emissions
         CALL CHECKMEM( IOS, 'EMGRD', PROGNAME )
         EMGRD = 0.  ! array
         
         IF( LREPSTA ) THEN
-            ALLOCATE( MEBSTA( NSTATE, MNMSPC ), STAT=IOS )    ! state totals
+            ALLOCATE( MEBSTA( NSTATE, NMSPC ), STAT=IOS )    ! state totals
             CALL CHECKMEM( IOS, 'MEBSTA', PROGNAME )
         END IF
 
-        ALLOCATE( MEBCNY( NCOUNTY, MNMSPC ), STAT=IOS )    ! county totals
+        ALLOCATE( MEBCNY( NCOUNTY, NMSPC ), STAT=IOS )    ! county totals
         CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
 
         ALLOCATE( MSMATX( NMSRC, MNSMATV ), STAT=IOS )    ! speciation matrix
@@ -678,7 +678,7 @@ C.............................  Add this cells emissions to county totals
             END DO    ! end loop over inventory counties
 
 C.............  Output gridded emissions for all species
-            DO V = 1, MNMSPC
+            DO V = 1, NMSPC
             
                 SBUF = EMNAM( V )
 

@@ -40,16 +40,14 @@ C*************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: PDEV,
-     &                      NIPOL, 
      &                      MNIPPA, NIPPA,
      &                      MEANAM, EINAM,
-     &                      MEMNAM, EMNAM,
+     &                      EMNAM,
      &                      EANAM, EMIDX, SPCUNIT, 
-     &                      TONAMES, 
      &                      MOUNITS, TOUNITS, 
      &                      MNSMATV, NSMATV, 
      &                      MSVDESC, TSVDESC, 
-     &                      MNMSPC, NMSPC, 
+     &                      NMSPC, 
      &                      MSVUNIT
 
 C.........  This module contains the lists of unique inventory information
@@ -79,7 +77,6 @@ C...........   Other local variables
         INTEGER         LJ              ! string length of emis types joiner
         INTEGER         IOS             ! i/o error status
         INTEGER         NCNT            ! counter
-        INTEGER      :: NIACT  = 0      ! actual no activites
 
         LOGICAL      :: EFLAG = .FALSE. ! error flag
 
@@ -115,7 +112,7 @@ C           and update status of entry in master list.
 
         END DO
 
-C.........  If any pollutants/activities from matrices not found in master
+C.........  If any process/pollutant names are not found in master
 C           list, exit
         IF( EFLAG ) THEN
             MESG = 'Make sure that master pollutants and/or ' //
@@ -132,67 +129,49 @@ C           not used
 
         END IF
 
-C.........  Loop through master list count the actual number of total pollutants
-C           and activities
-        NIPOL = 0
-        NIACT = 0
+C.........  Loop through master list count the actual number of 
+C           process/pollutant combinations
+        NIPPA = 0
         DO I = 1, MXIDAT
-            IF( INVSTAT( I ) .GT. 0 ) NIPOL = NIPOL + 1
-            IF( INVSTAT( I ) .LT. 0 ) NIACT = NIACT + 1
+            IF( INVSTAT( I ) .GT. 0 ) NIPPA = NIPPA + 1
         END DO
-        NIPPA = NIPOL + NIACT
 
-C.........  Allocate memory for array of sorted pollutants and activities and
-C           for pollutants only, and for the input variable names and units
+C.........  Allocate memory for array of sorted process/pollutant names and
+C           for pollutants only, and for the input units
         ALLOCATE( EANAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
-        ALLOCATE( EINAM( NIPOL ), STAT=IOS )
+        ALLOCATE( EINAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
-        ALLOCATE( TONAMES( NIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TONAMES', PROGNAME )
         ALLOCATE( TOUNITS( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TOUNITS', PROGNAME )
 
 C.........  Initialize all
         EANAM   = ' '   ! array
         EINAM   = ' '   ! array
-        TONAMES = ' '   ! array
         TOUNITS = ' '   ! array
 
-C.........  Create array of sorted unique pollutants and activities
-C.........  Also determine number of pollutants and store pollutants-only array
+C.........  Create array of process/pollutant names matching order of INVTABLE
+C.........  Also store pollutants-only array
         J1 = 0
-        J2 = 0
         LJ = LEN_TRIM( ETJOIN )
         DO I = 1, MXIDAT
 
-            IF( INVSTAT( I ) .NE. 0 ) THEN
+            IF( INVSTAT( I ) .GT. 0 ) THEN
                 J1 = J1 + 1
                 EANAM( J1 ) = INVDNAM( I )
 
                 K  = INDEX( EANAM( J1 ), ETJOIN )
                 L2 = LEN_TRIM( EANAM( J1 ) )
-                IF( K .GT. 0 ) THEN
-                    CPOL = EANAM( J1 )( K+LJ:L2 )
-                ELSE
-                    CPOL = EANAM( J1 )
-                END IF
-            END IF
-
-            IF( INVSTAT( I ) .GT. 0 ) THEN
-                J2 = J2 + 1
-                EINAM( J2 ) = CPOL
+                EINAM( J1 ) = EANAM( J1 )( K+LJ:L2 )
             END IF
 
         END DO
 
-C.........  Build sorted list of input emissions/activity variable names 
-C           and their units
+C.........  Build sorted list of input units
         DO V = 1, MNIPPA
 
 C.............  Look for variable name in master list
             K = INDEX1( MEANAM( V ), NIPPA, EANAM )
-            TONAMES( K ) = MEANAM( V )
             TOUNITS( K ) = MOUNITS( V )
             
         END DO
@@ -241,24 +220,17 @@ C.........  Allocate memory with the number of variables in the speciation
 C           matrices, which will always be >= needed space
 C.........  Also allocate memory for the index between the master species names
 C           and the master pollutant names
-        ALLOCATE( MEMNAM( MNSMATV ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MEMNAM', PROGNAME )
         ALLOCATE( EMNAM( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMNAM', PROGNAME )
         ALLOCATE( EMIDX( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMIDX', PROGNAME )
         ALLOCATE( SPCUNIT( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SPCUNIT', PROGNAME )
-        MEMNAM  = ' '  ! array
         EMNAM   = ' '  ! array
         SPCUNIT = ' '  ! array
 
 C.........  Call subprogram to store species names in appropriate order
-C           for all source categories and the total.
-        CALL BUILD_SPECIES_ARRAY( MNSMATV, MSVDESC, MNMSPC, MEMNAM )
-        CALL BUILD_SPECIES_ARRAY(  NSMATV, TSVDESC, NMSPC, EMNAM )
-
-CAS - MEMNAM and EMNAM are the same
+        CALL BUILD_SPECIES_ARRAY(  NSMATV, TSVDESC,  NMSPC,  EMNAM )
 
 C.........  Create index between master species names and master inventory names
 C.........  If there are multiple pollutants per species, the last pollutant
@@ -371,7 +343,7 @@ C.................  Extract pollutant name (without emissions type, if applies)
                 L2     = LEN_TRIM( TDESC )
                 SPCNAM = TDESC( L+LS:L2  )     ! extract species name
 
-                K1 = INDEX1( POLNAM, NIPOL, EINAM )  ! find pol in sorted list
+                K1 = INDEX1( POLNAM, NIPPA, EINAM )  ! find pol in sorted list
                 K2 = INDEX1( TDESC, NCNT, TVDESCA )  ! find combo
 
 C.................  Look for species name in temporary list. If found, assign
