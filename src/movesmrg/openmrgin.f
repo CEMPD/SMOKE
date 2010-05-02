@@ -54,7 +54,8 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MMDEV
 
 C...........  This module contains the information about the source category
-        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NIACT, NSRC, CATEGORY
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NIACT, NSRC, CATEGORY,
+     &          ACTVTY
 
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: SPEED, VPOP
@@ -196,6 +197,14 @@ C.........  Read speed and vehicle population data from the inventory
             ALLOCATE( SPEED( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'SPEED', PROGNAME )
             CALL RDMAPPOL( NSRC, 1, 1, 'SPEED', SPEED )
+
+C.............  Make sure inventory has VMT as activity (won't be using this
+C               data but it needs to be there to make emission processes work)
+            M = INDEX1( 'VMT', NMAP, MAPNAM )
+            IF( M <= 0 ) THEN
+                MESG = 'Mobile inventory does not include VMT data'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
         END IF
         
         IF( RPVFLAG .OR. RPPFLAG ) THEN
@@ -332,15 +341,34 @@ C.........  Get emission processes file name
 
         CALL RDEPROC( TDEV )
 
-        MNIPPA = MXETYPE
+C.........  Store process/pollutants combinations for correct activity
+        IF( RPDFLAG ) THEN
+            M = INDEX1( 'VMT', NIACT, ACTVTY )
+        END IF
+        
+        IF( RPVFLAG .OR. RPPFLAG ) THEN
+            M = INDEX1( 'VPOP', NIACT, ACTVTY )
+        END IF
+        
+        IF( M <= 0 ) THEN
+            MESG = 'INTERNAL ERROR: Could not find expected activity'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        MNIPPA = 0
+        DO I = 1, MXETYPE
+            IF( EMTNAM( I,M ) .NE. ' ' ) THEN
+                MNIPPA = MNIPPA + 1
+            END IF
+        END DO
+
         ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
         ALLOCATE( MOUNITS( MNIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MOUNITS', PROGNAME )
 
-CAS - THIS ASSUMES THE FIRST ACTIVITY WHICH WON'T BE RIGHT, units aren't right either
         DO I = 1, MNIPPA
-            MEANAM( I ) = EMTNAM( I, 1 )
+            MEANAM( I ) = EMTNAM( I,M )
             MOUNITS( I ) = 'tons/hr'
         END DO
 
