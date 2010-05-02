@@ -79,7 +79,7 @@ C.........  This module is used for reference county information
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
 
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: SPEED, CSCC, VPOP
+        USE MODSOURC, ONLY: SPEED, CSCC, VPOP, IFIP, TZONES
 
         IMPLICIT NONE
 
@@ -110,6 +110,11 @@ C.........  LOCAL PARAMETERS and their descriptions:
      &  CVSW = '$Name$' ! CVS release tag
 
 C...........   LOCAL VARIABLES and their descriptions:
+
+C...........   Local arrays for per-source information
+        INTEGER, ALLOCATABLE :: DAYBEGT( : )   ! daily start time for each source
+        INTEGER, ALLOCATABLE :: DAYENDT( : )   ! daily end time for each source
+        LOGICAL, ALLOCATABLE :: LDAYSAV( : )   ! true: src uses DST
 
 C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: VMT( : )
@@ -208,6 +213,18 @@ C.........  Use FIPS list from the inventory for limiting state/county list
         CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
 
 C.........  Allocate memory for fixed-size arrays...        
+        ALLOCATE( LDAYSAV( NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LDAYSAV', PROGNAME )
+        LDAYSAV = .FALSE.  ! array
+        
+        ALLOCATE( DAYBEGT( NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'DAYBEGT', PROGNAME )
+        DAYBEGT = 0   ! array
+        
+        ALLOCATE( DAYENDT( NMSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'DAYENDT', PROGNAME )
+        DAYENDT = 0   ! array
+
         ALLOCATE( MGMATX( NGRID + 2 * MNGMAT ), STAT=IOS )    ! contiguous gridding matrix
         CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
 
@@ -233,6 +250,9 @@ C.........  Allocate memory for fixed-size arrays...
         
         ALLOCATE( TEMPG( NGRID ), STAT=IOS )    ! hourly temperatures
         CALL CHECKMEM( IOS, 'TEMPG', PROGNAME )
+
+C.........  Determine sources that observe DST
+        CALL GETDYSAV( NMSRC, IFIP, LDAYSAV )
 
 C.........  Read gridding matrix
         CALL RDGMAT( MGNAME, NGRID, MNGMAT, MNGMAT,
@@ -305,8 +325,6 @@ C.............  Determine weekday index (Monday is 1)
             ELSE
                 DAYIDX = 2
             END IF
-            
-            HOURIDX = (JTIME / 10000) + 1
 
 C.............  Determine month
             CALL DAYMON( JDATE, MONTH, DAYMONTH )
@@ -314,6 +332,10 @@ C.............  Determine month
 C.............  Write out message for new day.
             IF( JDATE .NE. LDATE ) THEN
                 CALL WRDAYMSG( JDATE, MESG )
+
+C.................  Set start hour of day for all sources
+                CALL SETSRCDY( NMSRC, JDATE, TZONES, LDAYSAV, .TRUE.,
+     &                         DAYBEGT, DAYENDT )
             END IF
 
 C.............  Write out files that are being used for by-day treatment
@@ -408,6 +430,13 @@ C.................  Loop over sources in reference county
                     
                     IF( RPPFLAG .OR. RPVFLAG ) THEN
                         VPOPVAL = VPOP( SRC )
+
+C.........................  Determine hour index based on source's local time
+                        HOURIDX = ( JTIME - DAYBEGT( SRC ) ) / 10000;
+                        IF( HOURIDX < 0 ) THEN
+                            HOURIDX = HOURIDX + 24;
+                        END IF
+                        HOURIDX = HOURIDX + 1;  ! array index is 1 to 24
                     END IF
                     
                     SCC = CSCC( SRC )
