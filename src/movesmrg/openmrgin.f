@@ -39,10 +39,10 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: LREPANY, GDEV, 
-     &          LMETCHK, MENAME, MSDEV, 
+        USE MODMERGE, ONLY: 
+     &          MENAME, MSDEV, 
      &          NMSRC, MPRJFLAG, MFLAG_BD, MTNAME, MSDATE,
-     &          MNIPPA, MEANAM, MOUNITS, MNIPOL, MNIACT,
+     &          MNIPPA, MEANAM, MOUNITS, 
      &          MSNAME, MNSMATV, MSVDESC, MSVUNIT,
      &          MGNAME, MNGMAT,
      &          PDEV, CDEV, TZONE, SDATE, 
