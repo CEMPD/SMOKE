@@ -179,7 +179,8 @@ C           file, or else this program does not need to be run
 C.........  Set inventory variables to read
         IVARNAMS( 1 ) = 'IFIP'
         IVARNAMS( 2 ) = 'CSCC'
-        NINVARR = 2 
+        IVARNAMS( 3 ) = 'TZONES'
+        NINVARR = 3
 
 C.........  Allocate memory for and read required inventory characteristics
         CALL RDINVCHR( CATEGORY, MENAME, MSDEV, NSRC, NINVARR, IVARNAMS )
