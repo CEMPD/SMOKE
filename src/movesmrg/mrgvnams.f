@@ -44,7 +44,7 @@ C.........  This module contains the major data structure and control flags
      &                      MEANAM, EINAM,
      &                      EMNAM,
      &                      EANAM, EMIDX, SPCUNIT, 
-     &                      MOUNITS, TOUNITS, 
+     &                      TOUNITS, 
      &                      MNSMATV, NSMATV, 
      &                      MSVDESC, TSVDESC, 
      &                      NMSPC, 
@@ -163,17 +163,10 @@ C.........  Also store pollutants-only array
                 K  = INDEX( EANAM( J1 ), ETJOIN )
                 L2 = LEN_TRIM( EANAM( J1 ) )
                 EINAM( J1 ) = EANAM( J1 )( K+LJ:L2 )
+                
+                TOUNITS( J1 ) = 'g/hr'
             END IF
 
-        END DO
-
-C.........  Build sorted list of input units
-        DO V = 1, MNIPPA
-
-C.............  Look for variable name in master list
-            K = INDEX1( MEANAM( V ), NIPPA, EANAM )
-            TOUNITS( K ) = MOUNITS( V )
-            
         END DO
 
 C.........  Create array of sorted unique pol-to-species, sorted in order of

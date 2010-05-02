@@ -42,7 +42,7 @@ C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: 
      &          MENAME, MSDEV, 
      &          NMSRC, MPRJFLAG, MFLAG_BD, MTNAME, MSDATE,
-     &          MNIPPA, MEANAM, MOUNITS, 
+     &          MNIPPA, MEANAM, 
      &          MSNAME, MNSMATV, MSVDESC, MSVUNIT,
      &          MGNAME, MNGMAT,
      &          PDEV, CDEV, TZONE, SDATE, 
@@ -364,12 +364,9 @@ C.........  Store process/pollutants combinations for correct activity
 
         ALLOCATE( MEANAM( MNIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
-        ALLOCATE( MOUNITS( MNIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MOUNITS', PROGNAME )
 
         DO I = 1, MNIPPA
             MEANAM( I ) = EMTNAM( I,M )
-            MOUNITS( I ) = 'tons/hr'
         END DO
 
 C.........  Get county cross-reference file
