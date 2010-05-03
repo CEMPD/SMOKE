@@ -41,7 +41,9 @@ C.........  This module is used for reference county information
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR,
-     &                       EMPOLIDX, NEMTEMPS, EMTEMPS, RPVEMFACS
+     &                       EMPROCIDX, EMPOLIDX, 
+     &                       NHAP, HAPNAM, 
+     &                       NEMTEMPS, EMTEMPS, RPVEMFACS
 
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NSMATV, TSVDESC
@@ -75,9 +77,10 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays
         CHARACTER(100), ALLOCATABLE :: SEGMENT( : )    ! parsed input line
         CHARACTER(30),  ALLOCATABLE :: POLNAMS( : )    ! pollutant names
+        LOGICAL,        ALLOCATABLE :: ISHAP( :,: )    ! true: process/pollutants is HAP
 
 C...........   Other local variables
-        INTEGER     I, J, LJ, L1, L2, N, P, V  ! counters and indexes
+        INTEGER     I, J, L, LJ, L1, L2, N, P, V  ! counters and indexes
         INTEGER     IOS         ! error status
         INTEGER  :: IREC = 0    ! record counter
         INTEGER     NLINES      ! number of lines
@@ -89,16 +92,19 @@ C...........   Other local variables
         INTEGER     HOUR
         INTEGER     TMPIDX
         INTEGER     PROCIDX
+        INTEGER  :: TOGIDX = 0  ! index of TOG pollutant
         
         REAL        TMPVAL      ! temperature value
         REAL        PTMP        ! previous temperature value
         REAL        EMVAL       ! emission factor value
+        REAL        NONHAPVAL   ! NONHAPTOG value
         
         LOGICAL     FOUND       ! true: header record was found
         LOGICAL     UNKNOWN     ! true: emission process is unknown
         
         CHARACTER(PLSLEN3)  SVBUF     ! tmp speciation name buffer
         CHARACTER(IOVLEN3)  CPOL      ! tmp pollutant buffer
+        CHARACTER(IOVLEN3)  CPROC     ! tmp process/pollutant buffer
         CHARACTER(SCCLEN3)  TSCC      ! current SCC
         CHARACTER(SCCLEN3)  PSCC      ! previous SCC
         CHARACTER(3)        TPROC     ! current process
@@ -177,13 +183,20 @@ C.................  Count number of pollutants
                 
                 END DO
                 
-                ALLOCATE( POLNAMS( NPOL ), STAT=IOS )
+                ALLOCATE( POLNAMS( NPOL + 1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POLNAMS', PROGNAME )
 
 C.................  Store pollutant names                
                 DO J = 1, NPOL
                     POLNAMS( J ) = SEGMENT( J + 9 )
+
+                    IF( SEGMENT( J + 9 ) == 'TOG' ) THEN
+                        TOGIDX = J
+                    END IF
                 END DO
+
+C.................  Add NONHAPTOG to list of pollutants
+                POLNAMS( NPOL + 1 ) = 'NONHAPTOG'
 
                 EXIT
 
@@ -198,6 +211,23 @@ C.................  Store pollutant names
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
+        IF( NPOL == 0 ) THEN
+            MESG = 'ERROR: Emission factors file does not contain ' //
+     &             'any pollutants'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+        
+        IF( TOGIDX == 0 ) THEN
+            MESG = 'ERROR: Emission factors file does not contain ' //
+     &             'data for pollutant TOG'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........  Allocate HAP lookup table
+        ALLOCATE( ISHAP( MXMVSVPROCS, NPOL + 1 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ISHAP', PROGNAME )
+        ISHAP = .FALSE.   ! array
+
 C.........  Build pollutant mapping table
         LJ = LEN_TRIM( ETJOIN )
         DO V = 1, NSMATV
@@ -206,15 +236,23 @@ C.........  Build pollutant mapping table
             L1 = INDEX( SVBUF, ETJOIN )
             L2 = INDEX( SVBUF, SPJOIN )
             CPOL = TRIM( SVBUF( L1+LJ:L2-1 ) )
+            CPROC = TRIM( SVBUF( 1:L2-1 ) )
 
 C.............  Find emission pollutant in list of pollutants
-            J = INDEX1( CPOL, NPOL, POLNAMS )
+            J = INDEX1( CPOL, NPOL + 1, POLNAMS )
             IF( J .LE. 0 ) THEN
                 MESG = 'WARNING: Emission factors file does not ' //
      &            'contain requested pollutant ' // TRIM( CPOL )
 c                CALL M3MESG( MESG )
             ELSE
                 EMPOLIDX( V ) = J
+
+C.................  Check if process/pollutant is HAP
+                L = INDEX1( CPROC, NHAP, HAPNAM )
+                IF( L > 0 ) THEN
+                    ISHAP( EMPROCIDX( V ), EMPOLIDX( V ) ) = .TRUE.
+                END IF
+
             END IF
 
         END DO
@@ -328,7 +366,7 @@ C.........  Allocate memory to store emission factors
         IF( ALLOCATED( RPVEMFACS ) ) THEN
             DEALLOCATE( RPVEMFACS )
         END IF
-        ALLOCATE( RPVEMFACS( 2, NINVSCC, 24, NEMTEMPS, MXMVSVPROCS, NPOL ), STAT=IOS )
+        ALLOCATE( RPVEMFACS( 2, NINVSCC, 24, NEMTEMPS, MXMVSVPROCS, NPOL + 1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RPVEMFACS', PROGNAME )
         RPVEMFACS = 0.  ! array
 
@@ -444,16 +482,32 @@ C.............  Set temperature index for current line
             EMTEMPS( TMPIDX ) = TMPVAL
 
 C.............  Store emission factors for each pollutant            
+            NONHAPVAL = 0.
             DO P = 1, NPOL
             
                 EMVAL = STR2REAL( ADJUSTR( SEGMENT( 9 + P ) ) )
                 RPVEMFACS( DAYIDX, SCCIDX, HOUR, TMPIDX, PROCIDX, P ) = EMVAL
             
+C.................  Check if current process/pollutant combo is part of HAP
+                IF( P == TOGIDX ) THEN
+                    NONHAPVAL = NONHAPVAL + EMVAL
+                END IF
+
+                IF( ISHAP( PROCIDX, P ) ) THEN
+                    NONHAPVAL = NONHAPVAL - EMVAL
+                END IF
+
             END DO
         
+C.............  Store NONHAPTOG emission factor
+            IF( NONHAPVAL < 0. ) NONHAPVAL = 0.
+            RPVEMFACS( DAYIDX, SCCIDX, HOUR, TMPIDX, PROCIDX, NPOL + 1 ) = NONHAPVAL
+
         END DO
         
         CLOSE( TDEV )
+        
+        DEALLOCATE( SEGMENT, POLNAMS, ISHAP )
 
         RETURN
 
