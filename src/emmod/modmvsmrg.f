@@ -71,6 +71,10 @@ C.........  Reference county information
         INTEGER, ALLOCATABLE, PUBLIC :: REFSRCS( :,: )      ! list of srcs for each ref county
         CHARACTER(100), ALLOCATABLE, PUBLIC :: MRCLIST( :,: ) ! emfac file for each ref county and month
 
+C.........  NONHAPTOG calculation information
+        INTEGER, PUBLIC :: NHAP                                ! number of HAPs to subtract
+        CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: HAPNAM( : ) ! list of HAPs
+
 C.........  Emission factors data
         INTEGER, ALLOCATABLE, PUBLIC :: EMPROCIDX( : )    ! index of emission process name
         INTEGER, ALLOCATABLE, PUBLIC :: EMPOLIDX( : )     ! index of emission pollutant name

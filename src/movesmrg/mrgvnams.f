@@ -51,7 +51,10 @@ C.........  This module contains the major data structure and control flags
      &                      MSVUNIT
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT, INVDCOD
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT, INVDCOD, INVDVTS
+
+C.........  This module contains data structures and flags specific to Movesmrg
+        USE MODMVSMRG, ONLY: NHAP, HAPNAM
 
         IMPLICIT NONE
 
@@ -94,6 +97,9 @@ C.........  Read, sort, and store pollutant codes/names file
 
 C.........  Loop through emission process/pollutant combinations 
 C           and update status of entry in master list.
+C           Also count number of pollutants to subtract when calculating
+C           NONHAPTOG
+        NHAP = 0
         DO I = 1, MNIPPA
         
             CPOL = MEANAM( I )
@@ -101,6 +107,11 @@ C           and update status of entry in master list.
             
             IF( J .GT. 0 ) THEN
                 INVSTAT( J ) = INVSTAT( J ) * 2
+                
+                IF( INVDVTS( J ) == 'V' .OR.
+     &              INVDVTS( J ) == 'T' ) THEN
+                    NHAP = NHAP + 1
+                END IF
             ELSE
                 EFLAG = .TRUE.
                 L = LEN_TRIM( CPOL )
@@ -129,11 +140,24 @@ C           not used
 
         END IF
 
+C.........  Allocate memory for list of HAPS
+        ALLOCATE( HAPNAM( NHAP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'HAPNAM', PROGNAME )
+
 C.........  Loop through master list count the actual number of 
 C           process/pollutant combinations
         NIPPA = 0
+        NHAP = 0
         DO I = 1, MXIDAT
-            IF( INVSTAT( I ) .GT. 0 ) NIPPA = NIPPA + 1
+            IF( INVSTAT( I ) .GT. 0 ) THEN
+                NIPPA = NIPPA + 1
+                
+                IF( INVDVTS( I ) == 'V' .OR.
+     &              INVDVTS( I ) == 'T' ) THEN
+                    NHAP = NHAP + 1
+                    HAPNAM( NHAP ) = INVDNAM( I )
+                END IF
+            END IF
         END DO
 
 C.........  Allocate memory for array of sorted process/pollutant names and
