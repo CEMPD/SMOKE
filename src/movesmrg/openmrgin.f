@@ -366,7 +366,14 @@ C.........  Store process/pollutants combinations for correct activity
         CALL CHECKMEM( IOS, 'MEANAM', PROGNAME )
 
         DO I = 1, MNIPPA
-            MEANAM( I ) = EMTNAM( I,M )
+
+C.............  Replace TOG pollutants with NONHAPTOG
+            J = INDEX( EMTNAM( I,M ), 'TOG' )
+            IF( J > 0 ) THEN
+               MEANAM( I ) = EMTNAM( I,M )( 1:J-1 ) // 'NONHAPTOG'
+            ELSE
+               MEANAM( I ) = EMTNAM( I,M )
+            END IF
         END DO
 
 C.........  Get county cross-reference file
