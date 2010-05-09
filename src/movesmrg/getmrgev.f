@@ -156,7 +156,7 @@ C           processing
 
 C.........  Get name of temperature variable to read from meteorology files
         BUFFER = 'Name of temperature variable'
-        CALL ENVSTR( 'TVARNAME', BUFFER, 'TEMPG', TVARNAME, IOS )
+        CALL ENVSTR( 'TVARNAME', BUFFER, 'TEMP2', TVARNAME, IOS )
 
 C.........  Check output flags to ensure at least some output
         IF( .NOT. LGRDOUT .AND.
