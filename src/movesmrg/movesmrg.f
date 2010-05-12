@@ -361,7 +361,7 @@ C.............  Reset the date when by-day processing is being done
 C.............  In RPD mode, read VMT for current hour
             IF( RPDFLAG ) THEN
                 IF( .NOT. READSET( MTNAME( DAY ), 'VMT', 1, ALLFILES,
-     &                             JDATE, JTIME, VMT ) ) THEN
+     &                             MJDATE, JTIME, VMT ) ) THEN
                     MESG = 'Could not read VMT from MTMP file'
                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
