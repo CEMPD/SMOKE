@@ -289,8 +289,8 @@ C.........  Open met list file
 
 C.........  Open mobile county x-ref file to determine representative counties
         XDEV = PROMPTFFILE(
-     &           'Enter logical name for MCREF cross-reference file',
-     &           .TRUE., .TRUE., 'MCREF', PROGNAME )
+     &           'Enter logical name for MCXREF cross-reference file',
+     &           .TRUE., .TRUE., 'MCXREF', PROGNAME )
 
 C.........  Obtain episode settings from the environment...
 C.........  Define averaging method.
@@ -479,13 +479,10 @@ C.........  Read region codes file
 C.........  Read county x-ref file to determine representative counties
         CALL RDMXREF( XDEV, NSRGFIPS, SRGFIPS  )
 
-C.........  Check whether FuelMonth file is available or not
-        CALL ENVSTR( 'FUELMONTH', MESG, ' ', CFNAME, IOS )
-
 C.........  open county-specific fuelmonth input files in file
         MESG = 'Enter logical name for a reference county-' //
      &         'specific FuelMonth input file'
-        ADEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'FUELMONTH', PROGNAME )
+        ADEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'MFMREF', PROGNAME )
 
         CALL RDFMREF( ADEV ) 
 
@@ -1165,6 +1162,10 @@ C.................  If last day of month, process monthly averages
 C.................  Estimate fuelmonth averaged monthly ref county temp and RH
                 IF( TMPMNTH /= MONTH .AND. OTIME == 230000 ) THEN
 
+                    DO K = 1,24
+                        CALL AVGMET( NSRC,K )
+                    ENDDO
+                        
                     CALL AVG_REF_COUNTY_RH_TEMP( MONTH )
 
 C.....................  reinitializing local arrays
@@ -1182,6 +1183,10 @@ C.....................  reinitializing local arrays
 
 C.............  Estimate fuelmonth averaged episodic ref county temp and RH
             IF( T == NSTEPS .AND. .NOT. MONOPEN ) THEN
+                DO K = 1,24
+                    CALL AVGMET( NSRC,K )
+                ENDDO
+
                 CALL AVG_REF_COUNTY_RH_TEMP( MONTH )
             END IF
 
@@ -1234,38 +1239,17 @@ C.................  Store fuelmonth specific values into arrays
                 IF( FUELMONTH /= PRVFMONTH ) THEN
                     IF( N > 0 ) THEN
                         PRNF = NF - N + 1
-                        RHFUEL  ( NR,PRNF:NF ) = RHSUM / N 
-                        TKFUEL  ( NR,NF  ,:  ) = TKREFHR( : ) / N  
+                        RHFUEL  ( NR,PRNF:NF ) = RHSUM / N
+                        TKFUEL  ( NR,NF  ,:  ) = TKREFHR( : ) / N
                         MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
                         MINTFUEL( NR,PRNF:NF ) = MINTEMP
 
-c bbh              print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,'REF1,,,'
+              print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF1,,,'
+              print*,TKFUEL(NR,NF,:)
 
-C.........................  Output RH, T, 24h T since EPISODE dates
-C                           crosses fuel months per ref. county
-C.........................  Set FUELAVER to .TRUE. to output report by fuelmonth
-                        IF( EPIAVER ) THEN
-
-                            FUELAVER = .TRUE.
-                            COMPLETE = .TRUE.
-
-C.......................... Reset averaging method from PERIOD to MONTHLY
-C                           to output invcounty min/max temperatures for every month.
-                            IF( NFMON == NFUEL ) THEN
-                                FUELAVER = .FALSE.
-                                MONAVER = .TRUE.
-                            END IF
-                            
-                            WRITE( MESG,94010 ) 'NOTE: Episode '//
-     &                          'period crosses fuel months of '//
-     &                          'reference county :', REFCOUNTY
-                            CALL M3MESG( MESG )
-
-                            CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE,
-     &                                      REFCOUNTY, TMPMONTH, PPTEMP,
-     &                                      TKFUEL( NR,NF,: ) ) 
-
-                        END IF
+                        CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE,
+     &                                  REFCOUNTY, TMPMONTH, PPTEMP,
+     &                                  TKFUEL( NR,NF,: ) ) 
 
                     END IF
 
@@ -1278,8 +1262,9 @@ C.....................  initialize local variables
 
                 END IF
 
-                N  = N + 1
                 NF = FIND1( CURMONTH, NFUEL, FUELIDX( NR,: ) )
+
+                IF( RHFUEL( NR,NF ) > 0.0 ) N  = N + 1
                 RHSUM = RHSUM + RHFUEL( NR,NF )
                 MAXTEMP = MAX( MAXTEMP, MAXTFUEL( NR,NF ) )
                 MINTEMP = MIN( MINTEMP, MINTFUEL( NR,NF ) )
@@ -1291,7 +1276,7 @@ C.....................  initialize local variables
                 TMPMONTH  = CURMONTH
                 PRVFMONTH = FUELMONTH
 
-c bbh              print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,'INV,,,'
+             print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHFUEL(NR,NF),N,'INV,,,'
 
             END DO
 
@@ -1302,12 +1287,11 @@ C...............  Store last fuelmonth specific values into arrays
             MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
             MINTFUEL( NR,PRNF:NF ) = MINTEMP
 
-c bbh            print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,'REF2,,,'
+            print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF2,,,'
+            print*,TKFUEL(NR,NF,:)
 
-            IF( FUELAVER ) THEN
-                CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE, REFCOUNTY,
-     &                          TMPMONTH, PPTEMP, TKFUEL( NR,NF,: ) )
-            END IF
+            CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE, REFCOUNTY,
+     &                      TMPMONTH, PPTEMP, TKFUEL( NR,NF,: ) )
 
 C..............  Check processing month is listed in the fuelmonth for each ref. county
             IF( NFMON < NFUEL ) THEN
@@ -1320,15 +1304,6 @@ C..............  Check processing month is listed in the fuelmonth for each ref.
 
         END DO   ! end of loop of reference couties
       
-c        print*,MAXTFUEL(1,:),'MAXTFUEL,,,BH'
-c        print*,MAXTFUEL(2,:),'MAXTFUEL,,,BH'
-c        print*,MINTFUEL(1,:),'MINTFUEL,,,BH'
-c        print*,MINTFUEL(2,:),'MINTFUEL,,,BH'
-
-
-c        print*,RHFUEL(1,:),'RHFUEL,,,BH'
-c        print*,RHFUEL(2,:),'RHFUEL,,,BH'
-
 C.........  Exit if there was a problem with the meteorology files
         IF( EFLAG ) THEN
             MESG = 'Problem checking meteorology files'
@@ -1495,9 +1470,7 @@ C.....................  Average temperatures across county group
 
 C.....................  Write averaged daily county temp and RH to file
                     IF( OTIME == 230000 ) THEN
-
-                        CALL WRAVGMET( NSRC, 'DAILY', ODEV1, ODEV2,
-     &                                 DDATE, PPTEMP, COMPLETE )
+                        CALL WRAVGMET( NSRC, 'DAILY', ODEV1, DDATE )
                     END IF
 
                 END IF
@@ -1512,20 +1485,9 @@ C.....................  Average temperatures across county group
                     CALL AVGMET( NSRC, ARRAYPOS )
 
 C.....................  Write averaged monthly county temp and RH to file
-                    IF( OTIME == 230000 ) THEN
-
-                        IF( POS > 24*15 ) THEN
-                            CALL WRAVGMET( NSRC,'MONTHLY', ODEV1, ODEV2,
-     &                                 DDATE, PPTEMP, COMPLETE )
-
-                        ELSE   ! reinitialize arrays
-                            TKHOUR = 0.0
-                            RHHOUR = 0.0
-                            NDAYSRC = 0
-                            MAXTSRC = BADVAL3
-                            MINTSRC = -1*BADVAL3
-                        END IF
-
+C                       only output when more than 15 days are processed for monthly avg
+                    IF( OTIME == 230000 .AND. POS > 15*24 ) THEN
+                        CALL WRAVGMET( NSRC,'MONTHLY', ODEV1, DDATE )
                     END IF
                   
                 END IF
@@ -1535,12 +1497,12 @@ C.....................  Write averaged monthly county temp and RH to file
 C.............  Output episode averaged temperatures
 C.............  Write averaged episodic county temp and RH to file
             IF( T == NSTEPS .AND. EPIAVER ) THEN
+C.................  Average temperatures across county group 
                 DO K = 1, 24
                     CALL AVGMET( NSRC, K )
                 END DO
 
-                CALL WRAVGMET( NSRC, 'EPISODE' , ODEV1, ODEV2, DDATE,
-     &                         PPTEMP, COMPLETE )
+                CALL WRAVGMET( NSRC, 'EPISODE', ODEV1, DDATE )
             END IF
 
 C.............  Increment output time
@@ -1604,15 +1566,16 @@ C.............  Loop over sources
                 RHSUM = 0.0
 C.................  averaging RH per inventory county
                 DO TT = 1,24
-                    IF( RHHOUR( S,TT ) > 0.0 ) N = N + 1
-                    RHSUM = RHSUM + RHHOUR( S,TT ) / NDAYSRC( S,TT )
+                    IF( RHHOUR( S,TT ) == 0.0 ) CYCLE
+                    N = N + 1
+                    RHSUM = RHSUM + RHHOUR( S,TT )
                 END DO
 
                 RHAVG   = RHSUM / N
                 MAXTEMP = MAXTSRC( S )
                 MINTEMP = MINTSRC( S )
 
-c bbh           print*,INVCOUNTY,REFCOUNTY,MAXTEMP,MINTEMP
+c           print*,INVCOUNTY,REFCOUNTY,MAXTEMP,MINTEMP,RHAVG,N,RHSUM,'RHAVG'
 C.................  Calculation monthly max/min temp and avg RH
 C                   per ref. county
 
@@ -1627,7 +1590,7 @@ C.................  Averaging RH for ref. county
                           MAXTFUEL( NR,NF ) = MAXTREF
                           MINTFUEL( NR,NF ) = MINTREF
 
-c bbh               print*,prcounty,NR,NF,MAXTREF,MINTREF,'REF,,'
+c           print*,prcounty,NR,NF,MAXTREF,MINTREF,IC,RHREFSUM/IC,'REF1,,'
                      END IF
                             
                      IC = 0
@@ -1648,7 +1611,7 @@ c bbh               print*,prcounty,NR,NF,MAXTREF,MINTREF,'REF,,'
                 MAXTREF = MAX( MAXTREF, MAXTEMP )
                 MINTREF = MIN( MINTREF, MINTEMP )
 
-c bbh           print*,refcounty,NR,NF,MAXTREF,MINTREF,'INV,,.'
+c         print*,refcounty,NR,NF,MAXTREF,MINTREF,IC,RHAVG,'INV,,.'
                 
                 PRCOUNTY = REFCOUNTY
                         
@@ -1662,7 +1625,7 @@ c bbh           print*,refcounty,NR,NF,MAXTREF,MINTREF,'INV,,.'
             MAXTFUEL( NR,NF ) = MAXTREF
             MINTFUEL( NR,NF ) = MINTREF
        
-c bbh            print*,prcounty,NR,NF,MAXTREF,MINTREF,'REF,,'
+c         print*,prcounty,NR,NF,MAXTREF,MINTREF,IC,RHREFSUM/IC,'REF2,,'
 
             END SUBROUTINE AVG_REF_COUNTY_RH_TEMP
                

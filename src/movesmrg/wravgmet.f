@@ -1,6 +1,5 @@
 
-        SUBROUTINE WRAVGMET( NSRC, AVGTYPE, ODEV1, ODEV2, SDATE,
-     &                       PPTEMP, COMPLETE ) 
+        SUBROUTINE WRAVGMET( NSRC, AVGTYPE, ODEV, SDATE ) 
 
 C***********************************************************************
 C  subroutine body starts at line 78
@@ -45,7 +44,7 @@ C.........  This module is used for MOBILE6 setup information
 C...........   This module is the derived meteorology data for emission factors
         USE MODMET, ONLY: TKHOUR, RHHOUR, MAXTSRC, MINTSRC, MINTEMP,
      &                    MAXTEMP, RHFUEL, MAXTFUEL, MINTFUEL, NFUEL,
-     &                    FUELIDX
+     &                    FUELIDX, NDAYSRC
 
         IMPLICIT NONE
 
@@ -65,11 +64,11 @@ C...........   EXTERNAL FUNCTIONS
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,     INTENT   (IN) :: NSRC      ! no. sources
         CHARACTER(*),INTENT   (IN) :: AVGTYPE   ! temporal resolution
-        INTEGER,     INTENT   (IN) :: ODEV1     ! SMOKE ready output file
-        INTEGER,     INTENT   (IN) :: ODEV2     ! MOVES ready output file 
+        INTEGER,     INTENT   (IN) :: ODEV      ! SMOKE ready output file
+c        INTEGER,     INTENT   (IN) :: ODEV2     ! MOVES ready output file 
         INTEGER,     INTENT   (IN) :: SDATE     ! outpout date  
-        INTEGER,     INTENT   (IN) :: PPTEMP    ! rateperprofile temp increment
-        LOGICAL,     INTENT   (IN) :: COMPLETE  ! true: fuelmonth is already processed for refcounty
+c        INTEGER,     INTENT   (IN) :: PPTEMP    ! rateperprofile temp increment
+c        LOGICAL,     INTENT   (IN) :: COMPLETE  ! true: fuelmonth is already processed for refcounty
 
 C.........  Local array
         REAL   , ALLOCATABLE :: TKPRO( : ) !  24hr temp. profile
@@ -142,6 +141,7 @@ C.........  Loop through all counties
             DO T = 1, 24
                 IF( RHHOUR( S,T ) > 0 ) N = N + 1
                 RHSUM = RHSUM + RHHOUR( S,T )
+           print*,S,T,RHHOUR(S,T),'S,T,RHHOUR'
             END DO
 
 C.............  Calculation hour profiles AND avg RH based on daily total temp.
@@ -167,75 +167,16 @@ C.................  Skip other months
 
             END DO
 
-         print*,INVCOUNTY,month,fuelmonth,RHAVG,MINTEMP,MAXTEMP
+c         print*,INVCOUNTY,month,fuelmonth,RHAVG,MINTEMP,MAXTEMP
 
 C.............  write inventory county min/max and avg RH 
-            WRITE( ODEV1,94040 ) INVCOUNTY, FUELMONTH, MONTH, RHAVG,
+            WRITE( ODEV,94040 ) INVCOUNTY, FUELMONTH, MONTH, RHAVG,
      &                           MINTEMP, MAXTEMP
      
-            IF( COMPLETE ) CYCLE
-
-C.............  map inventory county to ref temperature profiles
-            IF( REFCOUNTY /= PRCOUNTY ) THEN
-                
-                IF( IC > 0 ) THEN
-
-C.....................  estimaste average values
-                    RHREFAVG = RHREFSUM / IC
-
-C.....................  Temp hourly profiles for temp bins
-                    DO T = 1,24
-                        TKREFHR( T ) = TKREFHR( T ) / IC
-                    END DO
-
-C.....................  Ouptut normalized 24hr temperature profiles per temperature bin 
-                    CALL WRTEMPROF( ODEV2, SDATE, HD, PRCOUNTY,
-     &                              MONTH, PPTEMP, TKREFHR )
-
-                END IF   ! Write ref county temp. profiles per temp bin
-
-                IC = 0
-                MAXTREF = BADVAL3
-                MINTREF = -1*BADVAL3
-                
-                RHREFAVG = 0.0
-                RHREFSUM = 0.0
-                TKREFHR  = 0.0
-
-            END IF
-
-            MAXTREF = MAX( MAXTREF, MAXTEMP )
-            MINTREF = MIN( MINTREF, MINTEMP )
-            
-c            print*,MAXTEMP,MAXTREF,MINTEMP,MINTREF
-
-            IC = IC + 1
-            RHREFSUM = RHREFSUM + RHAVG
-
-            DO T = 1, 24
-                TKREFHR( T ) = TKREFHR( T ) + TKHOUR( S,T )
-            END DO
-
-            PRCOUNTY = REFCOUNTY
-
         END DO
 
-C.........  output the last entries
-C.........  estimaste average values
-        RHREFAVG = RHREFSUM / IC
-
-C.........  Temp hourly profiles for temp bins
-        DO T = 1,24
-            TKREFHR( T ) = TKREFHR( T ) / IC
-        END DO
-
-C.........  Ouptut normalized 24hr temperature profiles per temperature bin 
-        IF( .NOT. COMPLETE ) THEN
-            CALL WRTEMPROF( ODEV2, SDATE, HD, PRCOUNTY,
-     &                      MONTH, PPTEMP, TKREFHR )
-        END IF
-        
 C.........  Re-initialize arrays
+        NDAYSRC = 0
         TKHOUR = 0.0
         RHHOUR = 0.0
         MAXTSRC = BADVAL3

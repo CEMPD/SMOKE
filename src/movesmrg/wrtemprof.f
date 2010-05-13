@@ -112,9 +112,7 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine WRTEMPROF
 
-        print*, ODEV, MDATE, HDR, COUNTY, PMONTH, PPTEMP, 'BH11' 
-
-
+c        print*, ODEV, MDATE, HDR, COUNTY, PMONTH, PPTEMP, 'BH11' 
 C.........  Allocate local arrays
         IF( FIRSTIME ) THEN
             ALLOCATE( TKPRO( 24 ), STAT=IOS )
@@ -152,7 +150,7 @@ C.................  Define fuelmonth min/max and RH per ref. county
                 RHREFAVG = RHFUEL  ( NR,NF )
                 MAXTREF  = MAXTFUEL( NR,NF )
                 MINTREF  = MINTFUEL( NR,NF )
-          print*,COUNTY,NR,NF,RHREFAVG,MAXTREF,MINTREF,FUELMONTH,'REF,,,'
+c          print*,COUNTY,NR,NF,RHREFAVG,MAXTREF,MINTREF,FUELMONTH,'REF,,,'
             END IF
 
         END DO
