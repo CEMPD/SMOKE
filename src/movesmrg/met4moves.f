@@ -1173,7 +1173,14 @@ C.....................  Averaging met data over no of days
                     ENDDO
                         
                     CALL AVG_REF_COUNTY_RH_TEMP( MONTH )
-                    
+
+C.....................  reinitializing local arrays for next month averaging
+                    NDAYSRC = 0
+                    TKHOUR = 0.0
+                    RHHOUR = 0.0
+                    MAXTSRC = BADVAL3
+                    MINTSRC = -1*BADVAL3
+
                     MONOPEN = .TRUE.
 
                 END IF
@@ -1627,13 +1634,6 @@ c         print*,refcounty,NR,NF,MAXTREF,MINTREF,IC,RHAVG,'INV,,.'
             MAXTFUEL( NR,NF ) = MAXTREF
             MINTFUEL( NR,NF ) = MINTREF
 
-C.............  reinitializing local arrays
-            NDAYSRC = 0
-            TKHOUR = 0.0
-            RHHOUR = 0.0
-            MAXTSRC = BADVAL3
-            MINTSRC = -1*BADVAL3
-       
 c         print*,prcounty,NR,NF,MAXTREF,MINTREF,IC,RHREFSUM/IC,'REF2,,'
 
             END SUBROUTINE AVG_REF_COUNTY_RH_TEMP
