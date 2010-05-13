@@ -141,7 +141,7 @@ C.........  Loop through all counties
             DO T = 1, 24
                 IF( RHHOUR( S,T ) > 0 ) N = N + 1
                 RHSUM = RHSUM + RHHOUR( S,T )
-           print*,S,T,RHHOUR(S,T),'S,T,RHHOUR'
+c           print*,S,T,RHHOUR(S,T),'S,T,RHHOUR'
             END DO
 
 C.............  Calculation hour profiles AND avg RH based on daily total temp.
