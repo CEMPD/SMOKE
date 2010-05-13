@@ -947,9 +947,12 @@ C           information for SMOKE and MOVES-ready output files
      &       'Enter logical name for SMOKE-ready output files',
      &       .FALSE., .TRUE., 'SMOKE_OUTFILE', PROGNAME )
         
+C.........  Define temporal resolution header
         WRITE( ODEV1,'(A)' )'#DESC SMOKE-ready input file'
-        WRITE( ODEV1,'(A)' )'#DATA FIPS,fuelmonthID,monthID,avgRH,'//
-     &      'MIN_Temp,MAX_Temp'
+        WRITE( ODEV1,94010 )'#AVERAGING_METHOD: ' // TRIM( AVG_TYPE ) //
+     &      '  (', EPI_SDATE, '-', EPI_EDATE, ')'
+        WRITE( ODEV1,'(A)' )'#DATA FIPS,fuelmonthID,monthID,'//
+     &       'JulianDate,avgRH,minimum_Temp,maximum_Temp'
         
 C.........  Open output file
         ODEV2 = PROMPTFFILE(
@@ -957,6 +960,8 @@ C.........  Open output file
      &       .FALSE., .TRUE., 'MOVES_OUTFILE', PROGNAME )
 
         WRITE( ODEV2,'(A)' )'#DESC MOVES-ready input file'
+        WRITE( ODEV2,94010 )'#AVERAGING_METHOD: ' // TRIM( AVG_TYPE ) //
+     &      '  (', EPI_SDATE, '-', EPI_EDATE, ')'
         WRITE( ODEV2,'(A)' )'#DATA FIPS,MonthID,Temperature'//
      &          'ProfileID,RH,temp1(min),temp2(max),,,,,,,,,,,,temp24'
         WRITE( ODEV2,'(A,I5)' ) 'PD_TEMP_INCREMENT ' , PDTEMP
@@ -1162,18 +1167,12 @@ C.................  If last day of month, process monthly averages
 C.................  Estimate fuelmonth averaged monthly ref county temp and RH
                 IF( TMPMNTH /= MONTH .AND. OTIME == 230000 ) THEN
 
+C.....................  Averaging met data over no of days
                     DO K = 1,24
                         CALL AVGMET( NSRC,K )
                     ENDDO
                         
                     CALL AVG_REF_COUNTY_RH_TEMP( MONTH )
-
-C.....................  reinitializing local arrays
-                    TKHOUR = 0.0
-                    RHHOUR = 0.0
-                    NDAYSRC = 0
-                    MAXTSRC = BADVAL3
-                    MINTSRC = -1*BADVAL3
                     
                     MONOPEN = .TRUE.
 
@@ -1183,11 +1182,14 @@ C.....................  reinitializing local arrays
 
 C.............  Estimate fuelmonth averaged episodic ref county temp and RH
             IF( T == NSTEPS .AND. .NOT. MONOPEN ) THEN
+
+C.................  Averaging met data over no of days
                 DO K = 1,24
                     CALL AVGMET( NSRC,K )
                 ENDDO
 
                 CALL AVG_REF_COUNTY_RH_TEMP( MONTH )
+
             END IF
 
 C.............  Increment output time
@@ -1244,8 +1246,8 @@ C.................  Store fuelmonth specific values into arrays
                         MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
                         MINTFUEL( NR,PRNF:NF ) = MINTEMP
 
-              print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF1,,,'
-              print*,TKFUEL(NR,NF,:)
+c              print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF1,,,'
+c              print*,TKFUEL(NR,NF,:)
 
                         CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE,
      &                                  REFCOUNTY, TMPMONTH, PPTEMP,
@@ -1276,7 +1278,7 @@ C.....................  initialize local variables
                 TMPMONTH  = CURMONTH
                 PRVFMONTH = FUELMONTH
 
-             print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHFUEL(NR,NF),N,'INV,,,'
+c             print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHFUEL(NR,NF),N,'INV,,,'
 
             END DO
 
@@ -1287,8 +1289,8 @@ C...............  Store last fuelmonth specific values into arrays
             MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
             MINTFUEL( NR,PRNF:NF ) = MINTEMP
 
-            print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF2,,,'
-            print*,TKFUEL(NR,NF,:)
+c            print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF2,,,'
+c            print*,TKFUEL(NR,NF,:)
 
             CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE, REFCOUNTY,
      &                      TMPMONTH, PPTEMP, TKFUEL( NR,NF,: ) )
@@ -1470,7 +1472,7 @@ C.....................  Average temperatures across county group
 
 C.....................  Write averaged daily county temp and RH to file
                     IF( OTIME == 230000 ) THEN
-                        CALL WRAVGMET( NSRC, 'DAILY', ODEV1, DDATE )
+                        CALL WRAVGMET( NSRC, ODEV1, DDATE )
                     END IF
 
                 END IF
@@ -1487,7 +1489,7 @@ C.....................  Average temperatures across county group
 C.....................  Write averaged monthly county temp and RH to file
 C                       only output when more than 15 days are processed for monthly avg
                     IF( OTIME == 230000 .AND. POS > 15*24 ) THEN
-                        CALL WRAVGMET( NSRC,'MONTHLY', ODEV1, DDATE )
+                        CALL WRAVGMET( NSRC, ODEV1, DDATE )
                     END IF
                   
                 END IF
@@ -1502,7 +1504,7 @@ C.................  Average temperatures across county group
                     CALL AVGMET( NSRC, K )
                 END DO
 
-                CALL WRAVGMET( NSRC, 'EPISODE', ODEV1, DDATE )
+                CALL WRAVGMET( NSRC, ODEV1, DDATE )
             END IF
 
 C.............  Increment output time
@@ -1516,7 +1518,7 @@ C.............  Increment loop time
 
         END DO   !  End loop on hours of temperature files
  
-C......... End program sucessfully
+C......... End program successfully
 
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
  
@@ -1624,6 +1626,13 @@ c         print*,refcounty,NR,NF,MAXTREF,MINTREF,IC,RHAVG,'INV,,.'
             TKFUEL( NR,NF,: ) = TKREFHR( : ) / IC
             MAXTFUEL( NR,NF ) = MAXTREF
             MINTFUEL( NR,NF ) = MINTREF
+
+C.............  reinitializing local arrays
+            NDAYSRC = 0
+            TKHOUR = 0.0
+            RHHOUR = 0.0
+            MAXTSRC = BADVAL3
+            MINTSRC = -1*BADVAL3
        
 c         print*,prcounty,NR,NF,MAXTREF,MINTREF,IC,RHREFSUM/IC,'REF2,,'
 

@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRAVGMET( NSRC, AVGTYPE, ODEV, SDATE ) 
+        SUBROUTINE WRAVGMET( NSRC, ODEV, SDATE ) 
 
 C***********************************************************************
 C  subroutine body starts at line 78
@@ -63,17 +63,9 @@ C...........   EXTERNAL FUNCTIONS
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,     INTENT   (IN) :: NSRC      ! no. sources
-        CHARACTER(*),INTENT   (IN) :: AVGTYPE   ! temporal resolution
         INTEGER,     INTENT   (IN) :: ODEV      ! SMOKE ready output file
-c        INTEGER,     INTENT   (IN) :: ODEV2     ! MOVES ready output file 
         INTEGER,     INTENT   (IN) :: SDATE     ! outpout date  
-c        INTEGER,     INTENT   (IN) :: PPTEMP    ! rateperprofile temp increment
-c        LOGICAL,     INTENT   (IN) :: COMPLETE  ! true: fuelmonth is already processed for refcounty
 
-C.........  Local array
-        REAL   , ALLOCATABLE :: TKPRO( : ) !  24hr temp. profile
-        REAL   , ALLOCATABLE :: TMPRO( : ) !  tmp 24hr temp. profile
-        REAL   , ALLOCATABLE :: TKREFHR( : ) !  24hr temp. profile
 
 C...........   Other local variables
         INTEGER I, IT, J, K, L, LT, N, NR, MX, MN, R, S, T           ! counters and indices                     
@@ -89,42 +81,18 @@ C...........   Other local variables
         INTEGER NMON                      ! no of month per ref. county
         INTEGER FUELMONTH                 ! current fuelmonth for ref. county
         INTEGER CURMONTH                  ! current month
-        INTEGER NF, PRNF                  ! current and prvious county fuelmonths
 
         REAL    RHSUM                     ! sum of RH
         REAL    RHAVG                     ! avg of RH
-        REAL    RHREFSUM                  ! sum of RH for ref county
-        REAL    RHREFAVG                  ! avg of RH for ref county
         REAL    MAXTREF, MINTREF          ! ref county min/max temperatures
-        REAL    TKMAX                     ! tmp max temperatures
-        REAL    TKMIN                     ! tmp min temperatures
-        REAL    TKDIF, DT                 ! tmp DIFF of min/max temperatures
-        REAL    TKMED                     ! tmp median temperatures
         
-        CHARACTER(1)  :: HD = 'M'           ! temporal resolution header
-        CHARACTER(32)    TPROID             ! temporal resolution header
         CHARACTER(300)   MESG               ! message buffer
         CHARACTER(16) :: PROGNAME = 'WRAVGMET' ! program name
 
 C***********************************************************************
 C   begin body of subroutine WRAVGMET
 
-C.........  Allocate local arrays
-        ALLOCATE( TKPRO( 24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKPRO', PROGNAME )
-        ALLOCATE( TMPRO( 24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TMPRO', PROGNAME )
-        ALLOCATE( TKREFHR( 24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKREFHR', PROGNAME )
-        TKPRO = 0.0
-        TMPRO = 0.0
-        TKREFHR = 0.0
-
-C.........  Define temporal resolution header for temperatureProfileID
-        IF( AVGTYPE == 'DAILY' ) HD = 'D'
-        IF( AVGTYPE == 'MONTHLY' ) HD = 'M'
-        IF( AVGTYPE == 'EPISODE' ) HD = 'E'
-        
+C.........  Convert julian date to month and date
         CALL DAYMON( SDATE, MONTH, DAY )
         
 C.........  Loop through all counties
@@ -149,6 +117,7 @@ c               Convert K to F
             RHAVG  = RHSUM / N
             MAXTEMP= MAXTSRC( S )
             MINTEMP= MINTSRC( S )
+c         print*,S,INVCOUNTY,RHSUM,MAXTSRC(S),MINTSRC(S),'S,county,Min.Max'
             
             L = FIND1FIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
             K = FIND1FIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
@@ -167,12 +136,10 @@ C.................  Skip other months
 
             END DO
 
-c         print*,INVCOUNTY,month,fuelmonth,RHAVG,MINTEMP,MAXTEMP
-
 C.............  write inventory county min/max and avg RH 
-            WRITE( ODEV,94040 ) INVCOUNTY, FUELMONTH, MONTH, RHAVG,
-     &                           MINTEMP, MAXTEMP
-     
+            WRITE( ODEV,94010 ) INVCOUNTY, FUELMONTH, MONTH, SDATE, RHAVG,
+     &                          MINTEMP, MAXTEMP
+
         END DO
 
 C.........  Re-initialize arrays
@@ -180,21 +147,15 @@ C.........  Re-initialize arrays
         TKHOUR = 0.0
         RHHOUR = 0.0
         MAXTSRC = BADVAL3
-        MINTSRC = -1*BADVAL3
-       
+        MINTSRC = -1*BADVAL3       
+
         RETURN
 
 C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I6, :, 1X ) )
-
-94020   FORMAT( A, 4( 1X, F8.2, 1X, A ) )
-
-94030   FORMAT( A, I7.7, I3.3 )   
-
-94040   FORMAT( I6.6, I5, 3X, I5, 3F10.2 )   
+94010   FORMAT( I6.6, I5, 3X, I5, I10, 3F10.2 )   
  
  
         END SUBROUTINE WRAVGMET
