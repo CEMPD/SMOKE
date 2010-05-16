@@ -82,6 +82,7 @@ C.........  Emission factors data
         INTEGER, PUBLIC :: NEMTEMPS                       ! no. temperatures for current emision factors
         REAL, ALLOCATABLE, PUBLIC :: EMTEMPS( : )         ! list of temps for emission factors
         REAL, ALLOCATABLE, PUBLIC :: EMXTEMPS( : )        ! list of max. temps in profiles
+        INTEGER, ALLOCATABLE, PUBLIC :: EMTEMPIDX( : )    ! index to sorted temperature profiles
 
         REAL, ALLOCATABLE, PUBLIC :: RPDEMFACS( :,:,:,:,: )  ! rate-per-distance emission factors
                                                              ! SCC, speed bin, temp, process, pollutant
