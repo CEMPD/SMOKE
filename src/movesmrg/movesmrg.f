@@ -513,7 +513,7 @@ C.............................  If current profile min temp is closer to county 
 
 C.........................  Check that appropriate minimum temperatures were found
                         IF( USTART == 0 ) THEN
-                            WRITE( 94010, MESG ) 'ERROR: Lowest profile ' //
+                            WRITE( MESG, 94040 ) 'ERROR: Lowest profile ' //
      &                        'minimum temperature', 
      &                        EMTEMPS( EMTEMPIDX( 1 ) ),
      &                        'is higher than county minimum temperature',
@@ -522,7 +522,7 @@ C.........................  Check that appropriate minimum temperatures were fou
                         END IF
                         
                         IF( OSTART == 0 ) THEN
-                            WRITE( 94010, MESG ) 'ERROR: Highest profile ' //
+                            WRITE( MESG, 94040 ) 'ERROR: Highest profile ' //
      &                        'minimum temperature', 
      &                        EMTEMPS( EMTEMPIDX( NEMTEMPS ) ),
      &                        'is lower than county minimum temperature',
@@ -554,7 +554,7 @@ C.............................  Check that profile minimum temperature hasn't ch
 
 C.........................  Check that appropriate maximum temperatures were found
                         IF( UUIDX .EQ. 0 .AND. UOIDX .NE. 0 ) THEN
-                            WRITE( 94010, MESG ) 'ERROR: Lowest profile ' //
+                            WRITE( MESG, 94040 ) 'ERROR: Lowest profile ' //
      &                        'maximum temperature', UMAX,
      &                        'is higher than county maximum temperature',
      &                        MAXVAL, 'for profile with minimum temperature',
@@ -563,7 +563,7 @@ C.........................  Check that appropriate maximum temperatures were fou
                         END IF
                         
                         IF( UUIDX .EQ. 0 .AND. UOIDX .EQ. 0 ) THEN
-                            WRITE( 94010, MESG ) 'ERROR: Highest profile ' //
+                            WRITE( MESG, 94040 ) 'ERROR: Highest profile ' //
      &                        'maximum temperature', OMAX,
      &                        'is lower than county maximum temperature',
      &                        MAXVAL, 'for profile with minimum temperature',
@@ -594,7 +594,7 @@ C.............................  Check that profile minimum temperature hasn't ch
 
 C.........................  Check that appropriate maximum temperatures were found
                         IF( OUIDX .EQ. 0 .AND. OOIDX .NE. 0 ) THEN
-                            WRITE( 94010, MESG ) 'ERROR: Lowest profile ' //
+                            WRITE( MESG, 94040 ) 'ERROR: Lowest profile ' //
      &                        'maximum temperature', UMAX,
      &                        'is higher than county maximum temperature',
      &                        MAXVAL, 'for profile with minimum temperature',
@@ -603,7 +603,7 @@ C.........................  Check that appropriate maximum temperatures were fou
                         END IF
                         
                         IF( OUIDX .EQ. 0 .AND. OOIDX .EQ. 0 ) THEN
-                            WRITE( 94010, MESG ) 'ERROR: Highest profile ' //
+                            WRITE( MESG, 94040 ) 'ERROR: Highest profile ' //
      &                        'maximum temperature', OMAX,
      &                        'is lower than county maximum temperature',
      &                        MAXVAL, 'for profile with minimum temperature',
