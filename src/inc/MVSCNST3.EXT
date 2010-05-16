@@ -24,7 +24,12 @@ C.........  List of rate-per-distance emission processes
         CHARACTER(3), PARAMETER :: MVSDPROCS( MXMVSDPROCS ) =
      &      ( / 'EXR', 'CXR', 'EVP', 'EFV', 'EFL', 'BRK', 'TIR' / )
 
-C.........  List of rate-per-vehicle/profile emission processes
+C.........  List of rate-per-vehicle emission processes
         INTEGER, PARAMETER :: MXMVSVPROCS = 6
         CHARACTER(3), PARAMETER :: MVSVPROCS( MXMVSVPROCS ) =
-     &      ( / 'EXS', 'CXS', 'EVP', 'EFV', 'EFL', 'CEI' / )
+     &      ( / 'EXS', 'CXS', 'EVP', 'EXT', 'EFL', 'CEI' / )
+
+C.........  List of rate-per-profile emission processes
+        INTEGER, PARAMETER :: MXMVSPPROCS = 1 
+        CHARACTER(3), PARAMETER :: MVSPPROCS( MXMVSPPROCS ) =
+     &      ( / 'EFV' / )
