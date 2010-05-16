@@ -61,18 +61,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
-        INTEGER       GETFLINE
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
 
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, GETFLINE, 
+        EXTERNAL BLKORCMT, CHKINT, CHKREAL, 
      &           INDEX1, STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: REFIDX       ! ref. county index
         INTEGER, INTENT(IN) :: MONTH        ! current processing month
+
+C...........   Local parameters
+        INTEGER, PARAMETER :: NNONPOL = 9   ! number of non-pollutant fields in file
 
 C...........   Local allocatable arrays
         CHARACTER(100), ALLOCATABLE :: SEGMENT( : )    ! parsed input line
@@ -83,7 +85,6 @@ C...........   Other local variables
         INTEGER     I, J, L, LJ, L1, L2, N, P, V  ! counters and indexes
         INTEGER     IOS         ! error status
         INTEGER  :: IREC = 0    ! record counter
-        INTEGER     NLINES      ! number of lines
         INTEGER     NPOL        ! number of pollutants
         INTEGER     TDEV        ! tmp. file unit
         INTEGER     SPDBIN      ! speed bin
@@ -139,8 +140,6 @@ C.........  Open emission factors file based on MRCLIST file
      &        FILENAME
             CALL M3MESG( MESG )
         END IF
-        
-        NLINES = GETFLINE( TDEV, 'Emission factors file' )
 
 C.........  Allocate memory to parse lines
         ALLOCATE( SEGMENT( 100 ), STAT=IOS )
@@ -149,9 +148,9 @@ C.........  Allocate memory to parse lines
 C.........  Read header line to get list of pollutants in file
         FOUND = .FALSE.
         IREC = 0
-        DO I = 1, NLINES
+        DO
         
-            READ( TDEV, 93000, END=999, IOSTAT=IOS ) LINE
+            READ( TDEV, 93000, END=100, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
             
@@ -163,7 +162,7 @@ C.........  Read header line to get list of pollutants in file
             END IF
             
 C.............  Check for header line
-            IF( LINE( 1:7 ) .EQ. '#ScenID' ) THEN
+            IF( LINE( 1:16 ) .EQ. '#MOVESScenarioID' ) THEN
                 FOUND = .TRUE.
 
                 SEGMENT = ' '  ! array
@@ -171,7 +170,7 @@ C.............  Check for header line
 
 C.................  Count number of pollutants
                 NPOL = 0
-                DO J = 11, 100
+                DO J = NNONPOL + 1, 100
                 
                     IF( SEGMENT( J ) .NE. ' ' ) THEN
                         NPOL = NPOL + 1
@@ -186,9 +185,9 @@ C.................  Count number of pollutants
 
 C.................  Store pollutant names                
                 DO J = 1, NPOL
-                    POLNAMS( J ) = SEGMENT( J + 10 )
+                    POLNAMS( J ) = SEGMENT( NNONPOL + J )
                     
-                    IF( SEGMENT( J + 10 ) == 'TOG' ) THEN
+                    IF( SEGMENT( NNONPOL + J ) == 'TOG' ) THEN
                         TOGIDX = J
                     END IF
                 END DO
@@ -201,6 +200,8 @@ C.................  Add NONHAPTOG to list of pollutants
             END IF
 
         END DO
+
+100     CONTINUE
 
         REWIND( TDEV )
         
@@ -257,7 +258,7 @@ C.................  Check if process/pollutant is HAP
 
 C.........  Allocate memory to parse lines
         DEALLOCATE( SEGMENT )
-        ALLOCATE( SEGMENT( 10 + NPOL ), STAT=IOS )
+        ALLOCATE( SEGMENT( NNONPOL + NPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
 
 C.........  Read through file to determine maximum number of temperatures
@@ -279,14 +280,14 @@ C               does, the program will quit with an error.
 C             Program doesn't know if emission factors file is missing values.
 
 C.........  Expected columns:
-C #ScenID RunID yearID monthID countyID SCC processName avgSpeedBinID Temp relHum CO TOG BENZENE ...
+C #MOVESScenarioID,yearID,monthID,FIPS,SCCsmoke,smokeProcID,avgSpeedBinID,temperature,relHumidity,THC,CO ...
 
         IREC = 0
         NEMTEMPS = 0
         PTMP = -999
-        DO I = 1, NLINES
+        DO
         
-            READ( TDEV, 93000, END=999, IOSTAT=IOS ) LINE
+            READ( TDEV, 93000, END=200, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
             
@@ -301,17 +302,17 @@ C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Parse line into segments
-            CALL PARSLINE( LINE, 10 + NPOL, SEGMENT )
+            CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Check that county matches requested county
-            IF( .NOT. CHKINT( SEGMENT( 5 ) ) ) THEN
+            IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Bad reference county ' //
      &            'FIPS code at line', IREC, 'of emission factors ' //
      &            'file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            IF( STR2INT( ADJUSTR( SEGMENT( 5 ) ) ) .NE. 
+            IF( STR2INT( ADJUSTR( SEGMENT( 4 ) ) ) .NE. 
      &          MCREFIDX( REFIDX,1 ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Reference county ' //
      &            'at line', IREC, 'of emission factors file ' //
@@ -320,13 +321,13 @@ C.............  Check that county matches requested county
             END IF
 
 C.............  Check that fuel month matches requested month
-            IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
+            IF( .NOT. CHKINT( SEGMENT( 3 ) ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Bad fuel month ' //
      &            'at line', IREC, 'of emission factors file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF( STR2INT( ADJUSTR( SEGMENT( 4 ) ) ) .NE. MONTH ) THEN
+            IF( STR2INT( ADJUSTR( SEGMENT( 3 ) ) ) .NE. MONTH ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Fuel month at line',
      &            IREC, 'of emission factors file does not match ' //
      &            'fuel month listed in MRCLIST file.'
@@ -334,13 +335,13 @@ C.............  Check that fuel month matches requested month
             END IF
             
 C.............  Check temperature value
-            IF( .NOT. CHKREAL( SEGMENT( 9 ) ) ) THEN
+            IF( .NOT. CHKREAL( SEGMENT( 8 ) ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Bad temperature value ' //
      &            'at line', IREC, 'of emission factors file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 9 ) ) )
+            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 8 ) ) )
             IF( TMPVAL .NE. PTMP ) THEN
 
 C.................  Check that temperatures are sorted
@@ -355,6 +356,8 @@ C.................  Check that temperatures are sorted
                 PTMP = TMPVAL
             END IF
         END DO
+
+200     CONTINUE
         
         REWIND( TDEV )
 
@@ -382,9 +385,9 @@ C.........  Read and store emission factors
         TMPIDX = 0
         PPROC = ' '
         PROCIDX = 0
-        DO I = 1, NLINES
+        DO
         
-            READ( TDEV, 93000, END=999, IOSTAT=IOS ) LINE
+            READ( TDEV, 93000, END=300, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
             
@@ -399,10 +402,10 @@ C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Parse line into segments
-            CALL PARSLINE( LINE, 10 + NPOL, SEGMENT )
+            CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Set SCC index for current line
-            TSCC = TRIM( SEGMENT( 6 ) )
+            TSCC = TRIM( SEGMENT( 5 ) )
             IF( TSCC .NE. PSCC ) THEN
                 SCCIDX = SCCIDX + 1
                 IF( SCCIDX .GT. NINVSCC ) THEN
@@ -420,7 +423,7 @@ C.............  Set SCC index for current line
             END IF
 
 C.............  Find emission process index for current line
-            TPROC = TRIM( SEGMENT( 7 ) )
+            TPROC = TRIM( SEGMENT( 6 ) )
             UNKNOWN = .FALSE.
             IF( TPROC .NE. PPROC ) THEN
                 DO
@@ -448,10 +451,10 @@ C.........................  Set flag to break out of loop
             END IF
 
 C.............  Set speed bin for current line            
-            SPDBIN = STR2INT( ADJUSTR( SEGMENT( 8 ) ) )
+            SPDBIN = STR2INT( ADJUSTR( SEGMENT( 7 ) ) )
 
 C.............  Set temperature index for current line            
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 9 ) ) )
+            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 8 ) ) )
             IF( TMPVAL .NE. PTMP ) THEN
                 TMPIDX = TMPIDX + 1
                 IF( TMPIDX .GT. NEMTEMPS ) THEN
@@ -469,7 +472,7 @@ C.............  Store emission factors for each pollutant
             NONHAPVAL = 0.
             DO P = 1, NPOL
             
-                EMVAL = STR2REAL( ADJUSTR( SEGMENT( 10 + P ) ) )
+                EMVAL = STR2REAL( ADJUSTR( SEGMENT( NNONPOL + P ) ) )
                 RPDEMFACS( SCCIDX, SPDBIN, TMPIDX, PROCIDX, P ) = EMVAL
             
 C.................  Check if current process/pollutant combo is part of HAP
@@ -488,17 +491,14 @@ C.............  Store NONHAPTOG emission factor
             RPDEMFACS( SCCIDX, SPDBIN, TMPIDX, PROCIDX, NPOL + 1 ) = NONHAPVAL
         
         END DO
-        
+
+300     CONTINUE        
+
         CLOSE( TDEV )
         
         DEALLOCATE( SEGMENT, POLNAMS, ISHAP )
 
         RETURN
-
-999     MESG = 'End of file'
-        MESG = 'End of file reached unexpectedly. ' //
-     &         'Check format of ' // FILENAME
-        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )   
 
 C******************  FORMAT  STATEMENTS   ******************************
 

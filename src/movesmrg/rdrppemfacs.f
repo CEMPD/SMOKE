@@ -61,18 +61,20 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
-        INTEGER       GETFLINE
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
 
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, GETFLINE, 
+        EXTERNAL BLKORCMT, CHKINT, CHKREAL, 
      &           INDEX1, STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: REFIDX       ! ref. county index
         INTEGER, INTENT(IN) :: MONTH        ! current processing month
+
+C...........   Local parameters
+        INTEGER, PARAMETER :: NNONPOL = 9   ! number of non-pollutant fields in file
 
 C...........   Local allocatable arrays
         CHARACTER(100), ALLOCATABLE :: SEGMENT( : )    ! parsed input line
@@ -83,7 +85,6 @@ C...........   Other local variables
         INTEGER     I, J, L, LJ, L1, L2, N, P, V  ! counters and indexes
         INTEGER     IOS         ! error status
         INTEGER  :: IREC = 0    ! record counter
-        INTEGER     NLINES      ! number of lines
         INTEGER     NPOL        ! number of pollutants
         INTEGER     TDEV        ! tmp. file unit
         INTEGER     DAY         ! day value
@@ -142,8 +143,6 @@ C.........  Open emission factors file based on MRCLIST file
      &        FILENAME
             CALL M3MESG( MESG )
         END IF
-        
-        NLINES = GETFLINE( TDEV, 'Emission factors file' )
 
 C.........  Allocate memory to parse lines
         ALLOCATE( SEGMENT( 100 ), STAT=IOS )
@@ -152,9 +151,9 @@ C.........  Allocate memory to parse lines
 C.........  Read header line to get list of pollutants in file
         FOUND = .FALSE.
         IREC = 0
-        DO I = 1, NLINES
+        DO
         
-            READ( TDEV, 93000, END=999, IOSTAT=IOS ) LINE
+            READ( TDEV, 93000, END=100, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
             
@@ -174,7 +173,7 @@ C.............  Check for header line
 
 C.................  Count number of pollutants
                 NPOL = 0
-                DO J = 10, 100
+                DO J = NNONPOL + 1, 100
                 
                     IF( SEGMENT( J ) .NE. ' ' ) THEN
                         NPOL = NPOL + 1
@@ -189,9 +188,9 @@ C.................  Count number of pollutants
 
 C.................  Store pollutant names                
                 DO J = 1, NPOL
-                    POLNAMS( J ) = SEGMENT( J + 9 )
+                    POLNAMS( J ) = SEGMENT( NNONPOL + J )
                     
-                    IF( SEGMENT( J + 9 ) == 'TOG' ) THEN
+                    IF( SEGMENT( NNONPOL + J ) == 'TOG' ) THEN
                         TOGIDX = J
                     END IF
                 END DO
@@ -204,6 +203,8 @@ C.................  Add NONHAPTOG to list of pollutants
             END IF
 
         END DO
+
+100     CONTINUE
 
         REWIND( TDEV )
         
@@ -260,7 +261,7 @@ C.................  Check if process/pollutant is HAP
 
 C.........  Allocate memory to parse lines
         DEALLOCATE( SEGMENT )
-        ALLOCATE( SEGMENT( 9 + NPOL ), STAT=IOS )
+        ALLOCATE( SEGMENT( NNONPOL + NPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
 
 C.........  Read through file to determine maximum number of temperatures
@@ -284,14 +285,14 @@ C               does, the program will quit with an error.
 C             Program doesn't know if emission factors file is missing values.
 
 C.........  Expected columns:
-C #MOVESScenarioID yearID monthID dayID hourID countyID SCCsmoke smokeProcID temperature CO TOG ...
+C #MOVESScenarioID,yearID,monthID,dayID,hourID,countyID,SCCsmoke,smokeProcID,temperature,THC,NMHC ...
 
         IREC = 0
         NEMTEMPS = 0
         PPROFID = ' '
-        DO I = 1, NLINES
+        DO
         
-            READ( TDEV, 93000, END=999, IOSTAT=IOS ) LINE
+            READ( TDEV, 93000, END=200, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
             
@@ -306,7 +307,7 @@ C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Parse line into segments
-            CALL PARSLINE( LINE, 9 + NPOL, SEGMENT )
+            CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Check that county matches requested county
             IF( .NOT. CHKINT( SEGMENT( 6 ) ) ) THEN
@@ -352,6 +353,8 @@ C.............  Check if profile ID has changed
                 PPROFID = TPROFID
             END IF
         END DO
+
+200     CONTINUE
         
         REWIND( TDEV )
 
@@ -389,9 +392,9 @@ C.........  Read and store emission factors
         PROFIDX = 0
         PPROC = ' '
         PROCIDX = 0
-        DO I = 1, NLINES
+        DO
         
-            READ( TDEV, 93000, END=999, IOSTAT=IOS ) LINE
+            READ( TDEV, 93000, END=300, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
             
@@ -406,7 +409,7 @@ C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Parse line into segments
-            CALL PARSLINE( LINE, 9 + NPOL, SEGMENT )
+            CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Set day for current line
             DAY = STR2INT( ADJUSTR( SEGMENT( 4 ) ) )
@@ -497,7 +500,7 @@ C.............  Store emission factors for each pollutant
             NONHAPVAL = 0.
             DO P = 1, NPOL
             
-                EMVAL = STR2REAL( ADJUSTR( SEGMENT( 9 + P ) ) )
+                EMVAL = STR2REAL( ADJUSTR( SEGMENT( NNONPOL + P ) ) )
                 RPPEMFACS( DAYIDX, SCCIDX, HOUR, PROFIDX, PROCIDX, P ) = EMVAL
 
 C.................  Check if current process/pollutant combo is part of HAP
@@ -516,17 +519,14 @@ C.............  Store NONHAPTOG emission factor
             RPPEMFACS( DAYIDX, SCCIDX, HOUR, PROFIDX, PROCIDX, NPOL + 1 ) = NONHAPVAL
 
         END DO
-        
+
+300     CONTINUE
+
         CLOSE( TDEV )
         
         DEALLOCATE( SEGMENT, POLNAMS, ISHAP )
 
         RETURN
-
-999     MESG = 'End of file'
-        MESG = 'End of file reached unexpectedly. ' //
-     &         'Check format of ' // FILENAME
-        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )   
 
 C******************  FORMAT  STATEMENTS   ******************************
 
