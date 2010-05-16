@@ -61,12 +61,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
+        INTEGER       FINDC
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
 
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, 
+        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FINDC,
      &           INDEX1, STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
@@ -100,6 +101,7 @@ C...........   Other local variables
         REAL        NONHAPVAL   ! NONHAPTOG value
         
         LOGICAL     FOUND       ! true: header record was found
+        LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
         LOGICAL     UNKNOWN     ! true: emission process is unknown
         
         CHARACTER(PLSLEN3)  SVBUF     ! tmp speciation name buffer
@@ -226,7 +228,7 @@ C.................  Add NONHAPTOG to list of pollutants
         END IF
 
 C.........  Allocate HAP lookup table
-        ALLOCATE( ISHAP( MXMVSVPROCS, NPOL + 1 ), STAT=IOS )
+        ALLOCATE( ISHAP( MXMVSPPROCS, NPOL + 1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ISHAP', PROGNAME )
         ISHAP = .FALSE.   ! array
 
@@ -274,7 +276,7 @@ C             Lines are sorted by:
 C                 temperature profile
 C                 day value
 C                 SCC (matching sorting of INVSCC)
-C                 emission process (matching sorting of MVSVPROCS)
+C                 emission process (matching sorting of MVSPPROCS)
 C                 hour
 C             Each SCC will have data for same set of emission processes, temperatures, and
 C               pollutants.
@@ -362,7 +364,7 @@ C.........  Allocate memory to store emission factors
         IF( ALLOCATED( RPPEMFACS ) ) THEN
             DEALLOCATE( RPPEMFACS )
         END IF
-        ALLOCATE( RPPEMFACS( 2, NINVSCC, 24, NEMTEMPS, MXMVSVPROCS, NPOL + 1 ), STAT=IOS )
+        ALLOCATE( RPPEMFACS( 2, NINVSCC, 24, NEMTEMPS, MXMVSPPROCS, NPOL + 1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RPPEMFACS', PROGNAME )
         RPPEMFACS = 0.  ! array
 
@@ -429,20 +431,41 @@ C.............  Set hour for current line
 C.............  Set SCC index for current line
             TSCC = TRIM( SEGMENT( 7 ) )
             IF( TSCC .NE. PSCC ) THEN
-                SCCIDX = SCCIDX + 1
-                IF( SCCIDX .GT. NINVSCC ) THEN
-                    SCCIDX = 1
-                END IF
+                SKIPSCC = .FALSE.
+            
+C.................  Skip over SCCs that start with 223 since rate-per-profile 
+C                   emissions don't apply
+                DO
+                    SCCIDX = SCCIDX + 1
+                    IF( SCCIDX .GT. NINVSCC ) THEN
+                        SCCIDX = 1
+                    END IF
+                    
+                    IF( INVSCC( SCCIDX )( 1:3 ) .NE. '223' ) EXIT
+                END DO
                 
                 IF( TSCC .NE. INVSCC( SCCIDX ) ) THEN
-                    WRITE( MESG, 94010 ) 'Expected SCC ' // 
-     &                TRIM( INVSCC( SCCIDX ) ) // ' in emission ' //
-     &                'factors file at line', IREC
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.....................  Check if SCC is in the inventory
+                    J = FINDC( TSCC, NINVSCC, INVSCC )
+                    IF( J .LE. 0 ) THEN
+                        SKIPSCC = .TRUE.
+                        SCCIDX = SCCIDX - 1
+                        IF( SCCIDX .LT. 1 ) THEN
+                            SCCIDX = NINVSCC
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 ) 'Expected SCC ' // 
+     &                    TRIM( INVSCC( SCCIDX ) ) // ' in emission ' //
+     &                    'factors file at line', IREC
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
                 END IF
                 
                 PSCC = TSCC
             END IF
+            
+            IF( SKIPSCC ) CYCLE
 
 C.............  Find emission process index for current line
             TPROC = TRIM( SEGMENT( 8 ) )
@@ -450,7 +473,7 @@ C.............  Find emission process index for current line
             IF( TPROC .NE. PPROC ) THEN
                 DO
                     PROCIDX = PROCIDX + 1
-                    IF( PROCIDX .GT. MXMVSVPROCS ) THEN
+                    IF( PROCIDX .GT. MXMVSPPROCS ) THEN
 
 C.........................  Set flag to break out of loop
                         IF( .NOT. UNKNOWN ) THEN
@@ -465,7 +488,7 @@ C.........................  Set flag to break out of loop
                         PROCIDX = 1
                     END IF
                     
-                    IF( TPROC .EQ. MVSVPROCS( PROCIDX ) ) THEN
+                    IF( TPROC .EQ. MVSPPROCS( PROCIDX ) ) THEN
                         EXIT
                     END IF
                 END DO
