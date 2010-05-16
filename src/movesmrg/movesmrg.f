@@ -522,7 +522,7 @@ C                               this could potentially be the ending index
                         END IF
                         
                         IF( UEND == 0 ) THEN
-                            MESG = 'ERROR: Lowes profile minimum ' //
+                            MESG = 'ERROR: Lowest profile minimum ' //
      &                        'temperature is higher than county ' //
      &                        'minimum temperature.'
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
