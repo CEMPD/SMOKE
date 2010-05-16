@@ -69,7 +69,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays
 
 C...........   Local arrays
-        CHARACTER(100)  SEGMENT( 6 )          ! parsed input line
+        CHARACTER(100)  SEGMENT( 7 )          ! parsed input line
 
 C...........   Other local variables
         INTEGER         I, K        ! counters and indexes
@@ -120,8 +120,8 @@ C.........  Read through file and match to FIPS from inventory
 C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
-C.............  Parse the line into 6 segments
-            CALL PARSLINE( LINE, 6, SEGMENT )
+C.............  Parse the line into 7 segments
+            CALL PARSLINE( LINE, 7, SEGMENT )
 
 C.............  Convert county to integer
             IF( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
@@ -145,7 +145,7 @@ C.............  Find county in inventory list
             END IF
             
 C.............  Check min and max temperature values
-            IF( .NOT. CHKREAL( SEGMENT( 5 ) ) ) THEN
+            IF( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Bad minimum ' //
      &            'temperature value at line', IREC, 
@@ -154,7 +154,7 @@ C.............  Check min and max temperature values
                 CYCLE
             END IF
             
-            IF( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
+            IF( .NOT. CHKREAL( SEGMENT( 7 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Bad maximum ' //
      &            'temperature value at line', IREC,
@@ -163,8 +163,8 @@ C.............  Check min and max temperature values
                 CYCLE
             END IF
             
-            MINVAL = STR2REAL( ADJUSTR( SEGMENT( 5 ) ) )
-            MAXVAL = STR2REAL( ADJUSTR( SEGMENT( 6 ) ) )
+            MINVAL = STR2REAL( ADJUSTR( SEGMENT( 6 ) ) )
+            MAXVAL = STR2REAL( ADJUSTR( SEGMENT( 7 ) ) )
             
             IF( MINVAL .GT. MAXVAL ) THEN
                 EFLAG = .TRUE.
