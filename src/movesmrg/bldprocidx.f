@@ -38,7 +38,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, EMPROCIDX, EMPOLIDX
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, EMPROCIDX, EMPOLIDX
 
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NSMATV, TSVDESC
@@ -55,7 +55,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  INDEX1
 
 C.........  Other local variables
-        INTEGER   J, L1, V  ! counters and indexes
+        INTEGER   J, K, L1, V  ! counters and indexes
         INTEGER   IOS       ! error status
 
         CHARACTER(IOVLEN3) :: CPROC ! tmp process buffer
@@ -84,20 +84,27 @@ C.........  Loop through pollutant-species combos
 C.............  Find emission process in master MOVES list
             IF( RPDFLAG ) THEN
                 J = INDEX1( CPROC, MXMVSDPROCS, MVSDPROCS )
-            ELSE
+            ELSE IF( RPVFLAG ) THEN
                 J = INDEX1( CPROC, MXMVSVPROCS, MVSVPROCS )
+            ELSE
+                J = INDEX1( CPROC, MXMVSPPROCS, MVSPPROCS )
             END IF
 
             IF( J .LE. 0 ) THEN
 
-C.................  Check if process is handled by other mode
+C.................  Check if process is handled by other modes
                 IF( RPDFLAG ) THEN
                     J = INDEX1( CPROC, MXMVSVPROCS, MVSVPROCS )
+                    K = INDEX1( CPROC, MXMVSPPROCS, MVSPPROCS )
+                ELSE IF( RPVFLAG ) THEN
+                    J = INDEX1( CPROC, MXMVSDPROCS, MVSDPROCS )
+                    K = INDEX1( CPROC, MXMVSPPROCS, MVSPPROCS )
                 ELSE
                     J = INDEX1( CPROC, MXMVSDPROCS, MVSDPROCS )
+                    K = INDEX1( CPROC, MXMVSVPROCS, MVSVPROCS )
                 END IF
                 
-                IF( J .LE. 0 ) THEN
+                IF( J .LE. 0 .AND. K .LE. 0 ) THEN
                     MESG = 'ERROR: Requested emission process ' // 
      &                TRIM( CPROC ) // ' is not output by MOVES.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
