@@ -43,7 +43,8 @@ C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR,
      &                       EMPROCIDX, EMPOLIDX, 
      &                       NHAP, HAPNAM,
-     &                       NEMTEMPS, EMTEMPS, EMXTEMPS, RPPEMFACS
+     &                       NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
+     &                       RPPEMFACS
 
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NSMATV, TSVDESC
@@ -376,15 +377,23 @@ C.........  Allocate memory to store temperature values
         IF( ALLOCATED( EMXTEMPS ) ) THEN
             DEALLOCATE( EMXTEMPS )
         END IF
+        
+        IF( ALLOCATED( EMTEMPIDX ) ) THEN
+            DEALLOCATE( EMTEMPIDX )
+        END IF
 
         ALLOCATE( EMTEMPS( NEMTEMPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMTEMPS', PROGNAME )
 
         ALLOCATE( EMXTEMPS( NEMTEMPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMXTEMPS', PROGNAME )
+        
+        ALLOCATE( EMTEMPIDX( NEMTEMPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMTEMPIDX', PROGNAME )
 
         EMTEMPS  =  999.  ! array
         EMXTEMPS = -999.  ! array
+        EMTEMPIDX = 0     ! array
 
 C.........  Read and store emission factors
         IREC = 0
@@ -505,6 +514,7 @@ C.............  Set profile index for current line
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
                 
+                EMTEMPIDX( PROFIDX ) = PROFIDX
                 PPROFID = TPROFID
             END IF
 
@@ -546,6 +556,9 @@ C.............  Store NONHAPTOG emission factor
 300     CONTINUE
 
         CLOSE( TDEV )
+
+C.........  Sort temperature profiles by min temps then max temps
+        CALL SORTR2( NEMTEMPS, EMTEMPIDX, EMTEMPS, EMXTEMPS )
         
         DEALLOCATE( SEGMENT, POLNAMS, ISHAP )
 
