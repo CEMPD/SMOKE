@@ -61,12 +61,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
+        INTEGER       FINDC
         INTEGER       INDEX1
         INTEGER       STR2INT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
 
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, 
+        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FINDC,
      &           INDEX1, STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
@@ -99,6 +100,7 @@ C...........   Other local variables
         REAL        NONHAPVAL   ! NONHAPTOG value
         
         LOGICAL     FOUND       ! true: header record was found
+        LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
         LOGICAL     UNKNOWN     ! true: emission process is unknown
         
         CHARACTER(PLSLEN3)  SVBUF     ! tmp speciation name buffer
@@ -275,8 +277,6 @@ C             Each SCC will have data for same set of emission processes, temper
 C               pollutants.
 
 C.........  Limitations:
-C             If inventory doesn't contain every SCC but emission factors file
-C               does, the program will quit with an error.
 C             Program doesn't know if emission factors file is missing values.
 
 C.........  Expected columns:
@@ -407,20 +407,35 @@ C.............  Parse line into segments
 C.............  Set SCC index for current line
             TSCC = TRIM( SEGMENT( 5 ) )
             IF( TSCC .NE. PSCC ) THEN
+                SKIPSCC = .FALSE.
+            
                 SCCIDX = SCCIDX + 1
                 IF( SCCIDX .GT. NINVSCC ) THEN
                     SCCIDX = 1
                 END IF
                 
                 IF( TSCC .NE. INVSCC( SCCIDX ) ) THEN
-                    WRITE( MESG, 94010 ) 'Expected SCC ' // 
-     &                TRIM( INVSCC( SCCIDX ) ) // ' in emission ' //
-     &                'factors file at line', IREC
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.....................  Check if SCC is in the inventory
+                    J = FINDC( TSCC, NINVSCC, INVSCC )
+                    IF( J .LE. 0 ) THEN
+                        SKIPSCC = .TRUE.
+                        SCCIDX = SCCIDX - 1
+                        IF( SCCIDX .LT. 1 ) THEN
+                            SCCIDX = NINVSCC
+                        END IF
+                    ELSE
+                        WRITE( MESG, 94010 ) 'Expected SCC ' // 
+     &                    TRIM( INVSCC( SCCIDX ) ) // ' in emission ' //
+     &                    'factors file at line', IREC
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
                 END IF
                 
                 PSCC = TSCC
             END IF
+            
+            IF( SKIPSCC ) CYCLE
 
 C.............  Find emission process index for current line
             TPROC = TRIM( SEGMENT( 6 ) )
