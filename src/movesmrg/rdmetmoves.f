@@ -44,6 +44,9 @@ C.........  This module contains data structures and flags specific to Movesmrg
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP
 
+C.........  This module is used for reference county information
+        USE MODMBSET, ONLY: NINVC, MCREFSORT
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -197,14 +200,16 @@ C.............  Check for duplicate entries
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
-C.........  Check that every inventory county has a min and max temp
-        DO I = 1, NINVIFIP
+C.........  Check that every county in the domain has a min and max temp
+        DO I = 1, NINVC
+
+            K = FIND1( MCREFSORT( I,1 ), NINVIFIP, INVIFIP )
         
-            IF( AVGMIN( I ) .LT. AMISS3 .OR.
-     &          AVGMAX( I ) .LT. AMISS3 ) THEN
+            IF( AVGMIN( K ) .LT. AMISS3 .OR.
+     &          AVGMAX( K ) .LT. AMISS3 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Missing temperature ' //
-     &            'data for county', INVIFIP( I ), 'in ' //
+     &            'data for county', INVIFIP( K ), 'in ' //
      &            'Met4moves output file.'
                 CALL M3MESG( MESG )
                 CYCLE
