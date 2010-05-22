@@ -44,7 +44,6 @@ C.........  This module contains the major data structure and control flags
      &                      MEANAM, EINAM,
      &                      EMNAM,
      &                      EANAM, EMIDX, SPCUNIT, 
-     &                      TOUNITS, 
      &                      MNSMATV, NSMATV, 
      &                      MSVDESC, TSVDESC, 
      &                      NMSPC, 
@@ -161,18 +160,15 @@ C           process/pollutant combinations
         END DO
 
 C.........  Allocate memory for array of sorted process/pollutant names and
-C           for pollutants only, and for the input units
+C           for pollutants only
         ALLOCATE( EANAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EANAM', PROGNAME )
         ALLOCATE( EINAM( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
-        ALLOCATE( TOUNITS( NIPPA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TOUNITS', PROGNAME )
 
 C.........  Initialize all
         EANAM   = ' '   ! array
         EINAM   = ' '   ! array
-        TOUNITS = ' '   ! array
 
 C.........  Create array of process/pollutant names matching order of INVTABLE
 C.........  Also store pollutants-only array
@@ -187,8 +183,6 @@ C.........  Also store pollutants-only array
                 K  = INDEX( EANAM( J1 ), ETJOIN )
                 L2 = LEN_TRIM( EANAM( J1 ) )
                 EINAM( J1 ) = EANAM( J1 )( K+LJ:L2 )
-                
-                TOUNITS( J1 ) = 'g/hr'
             END IF
 
         END DO

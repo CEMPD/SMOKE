@@ -39,7 +39,7 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: GRDFAC, TOTFAC,
      &                      GRDUNIT, TOTUNIT, 
-     &                      SPCUNIT, TOUNITS, EMIDX,
+     &                      SPCUNIT, EMIDX,
      &                      NIPPA, NMSPC, NUNITS
 
         IMPLICIT NONE
@@ -59,12 +59,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Other local variables
 
         INTEGER         IOS      ! tmp I/O status
-        INTEGER         J, L, V        ! counter
+        INTEGER         L, V        ! counter
 
-        REAL            FAC1, FAC2
+        REAL            EMFAC, FAC1, FAC2
 
         CHARACTER(300)  BUFFER   ! text buffer
         CHARACTER(300)  MESG     ! message buffer
+        
+        CHARACTER(IOULEN3) EMUNIT      ! converted emissions unit
 
         CHARACTER(IOULEN3) GRDUNIT_I   ! initialized gridded outputs units
         CHARACTER(IOULEN3) GDEN_I      ! initialized gridded denominator
@@ -126,16 +128,12 @@ C           a given pollutants speciation factors
 
 C.............  Initialize the output units
             CALL UNITMATCH( SPCUNIT( V ) )
-            
-C.............  Get pollutant position for this species
-C               NOTE: If multiple pollutants contribute to this species, 
-C                     we will only be using the last one in master list; 
-C                     this shouldn't be a problem unless the original 
-C                     pollutants have different units
-            J = EMIDX( V )
-            CALL UNITMATCH( TOUNITS( J ) )
 
-            GRDUNIT_I = MULTUNIT( SPCUNIT( V ), TOUNITS( J ) )
+C.............  Convert emissions units to tons
+            EMUNIT = 'tons/hr'
+            EMFAC = UNITFAC( 'g/hr', EMUNIT, .TRUE. )
+
+            GRDUNIT_I = MULTUNIT( SPCUNIT( V ), EMUNIT )
             TOTUNIT_I = MULTUNIT( GRDUNIT_I, 'hr/day' )
 
 C.............  Set the trial units
@@ -165,7 +163,7 @@ C.............  Get factor for the numerators for the gridded outputs...
             FAC1 = UNITFAC( SPCUNIT( V ), GRDBUF, .TRUE. )  ! speciation
 
 C.............  Get factor for the denominators for the gridded outputs
-            FAC2 = UNITFAC( TOUNITS( J ), GRDBUF, .FALSE. )
+            FAC2 = UNITFAC( EMUNIT, GRDBUF, .FALSE. )
 
 C.............  In case E.V. setting was bogus rebuild output units based
 C               on which factors were valid
@@ -173,6 +171,7 @@ C.............  Also set negative factors (from unknown conversions) to 1.
             CALL CORRECT_UNITS( GNUM_I, GDEN_I, GNUM, GDEN, GRDBUF )
 
 C.............  Set factors for gridded outputs
+            FAC1 = FAC1 * EMFAC
             GRDFAC( V ) = FAC1 / FAC2
 
 C.............  Get conversion factor for the numerators for totals
@@ -188,6 +187,7 @@ C.............  Also set negative factors (from unknown conversions) to 1.
             CALL CORRECT_UNITS( TNUM_I, TDEN_I, TNUM, TDEN, TOTBUF )
 
 C.............  Set factors for totaled outputs
+            FAC1 = FAC1 * EMFAC
             TOTFAC( V ) = FAC1 / FAC2
 
 C.............  Set the output units per pollutant/activity
