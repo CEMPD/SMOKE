@@ -81,6 +81,7 @@ C...........   Other local variables
         INTEGER         NCNT            ! counter
 
         LOGICAL      :: EFLAG = .FALSE. ! error flag
+        LOGICAL      :: FOUND = .FALSE. ! true: found HAP
 
         CHARACTER(IOVLEN3)   CPOL     ! tmp pol/act buffer
         CHARACTER(IOULEN3)   BNUM     ! tmp biogenic units numerator
@@ -93,6 +94,32 @@ C   begin body of subroutine MRGVNAMS
 
 C.........  Read, sort, and store pollutant codes/names file
         CALL RDCODNAM( PDEV )
+
+C.........  Check if list of pollutants from MEPROC file contains
+C           any HAPs
+        DO I = 1, MNIPPA
+        
+            J = INDEX1( MEANAM( I ), MXIDAT, INVDNAM )
+            
+            IF( J .GT. 0 ) THEN
+                IF( INVDVTS( J ) == 'V' .OR.
+     &              INVDVTS( J ) == 'T' ) THEN
+                    FOUND = .TRUE.
+                    EXIT
+                END IF
+            END IF
+
+        END DO
+
+C.........  If any HAP was found, update TOG to NONHAPTOG
+        IF( FOUND ) THEN
+            DO I = 1, MNIPPA
+                J = INDEX( MEANAM( I ), 'TOG' )
+                IF( J > 0 ) THEN
+                    MEANAM( I ) = MEANAM( I )( 1:J-1 ) // 'NONHAPTOG'
+                END IF
+            END DO
+        END IF
 
 C.........  Loop through emission process/pollutant combinations 
 C           and update status of entry in master list.
