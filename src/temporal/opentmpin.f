@@ -43,7 +43,7 @@ C***************************************************************************
 C...........   MODULES for public variables   
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX, EANAM,
-     &                     EINAM, NIPOL, NPPOL, NPACT 
+     &                     EINAM, NIPOL, NPPOL, NPACT, ACTVTY
 
         IMPLICIT NONE
 
@@ -187,6 +187,7 @@ C.........  Reset activity to pollutant to create hourly VMT without running EMI
             NPACT = 0
             DO I = 1,NIPOL
                EINAM( I ) = EANAM( I )
+               ACTVTY( I ) = ''
             END DO
         END IF
 
