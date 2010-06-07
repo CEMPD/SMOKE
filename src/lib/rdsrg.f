@@ -167,7 +167,7 @@ C......... Determine the number surrogate file entries
         END SELECT
 
 C......... Allocate memory for surrogate arrays
-
+        IF( ALLOCATED( IDXSRGA ) ) DEALLOCATE( IDXSRGA )
         ALLOCATE( IDXSRGA( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXSRGA', PROGNAME )
 
@@ -389,6 +389,7 @@ C.........  Allocate memory for derived surrogates tables
         ALLOCATE( SRGFIPS( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRGFIPS', PROGNAME )
 
+        IF( ALLOCATED( SRGLIST ) ) DEALLOCATE( SRGLIST )
         ALLOCATE( SRGLIST( NSRGS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRGLIST', PROGNAME )
 
