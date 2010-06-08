@@ -51,7 +51,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            STR2REAL
         INTEGER         TRIMLEN
 
-        EXTERNAL        CLOSE3, CRLF, DSCGRID, ENVINT, FIND1, FINDC, 
+        EXTERNAL        CRLF, DSCGRID, ENVINT, FIND1, FINDC, 
      &                  GETFLINE, INDEX1, 
      &                  PROMPTFFILE, PROMPTMFILE, STR2INT, STR2REAL,
      &                  TRIMLEN, WKDAY
