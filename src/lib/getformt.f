@@ -125,6 +125,11 @@ C.................  Check if format is provided as a header entry
                     EXIT ! To end read loop
                 END IF
 
+                IF( LINE( 1:3 ) == '#FF' ) THEN
+                    GETFORMT = ORLFMT
+                    EXIT ! To end read loop
+                END IF
+
                 L = INDEX( LINE, 'ORL' )
                 IF( L .GT. 0 ) THEN
                     L = INDEX( LINE, 'NONPOINT' )
