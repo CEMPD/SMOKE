@@ -103,8 +103,6 @@ C...........   Other local variables
         REAL    TKDIF, DT                 ! tmp DIFF of min/max temperatures
         REAL    TKMED                     ! tmp median temperatures
 
-        LOGICAL, SAVE :: FIRSTIME = .TRUE.
-
         CHARACTER(32)    TPROID             ! temporal resolution header
         CHARACTER(300)   MESG               ! message buffer
         CHARACTER(16) :: PROGNAME = 'WRTEMPROF' ! program name
@@ -112,17 +110,17 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine WRTEMPROF
 
-c        print*, ODEV, MDATE, HDR, COUNTY, PMONTH, PPTEMP, 'BH11' 
+c        print*, FIRSTIME, MDATE, HDR, COUNTY, PMONTH, PPTEMP, 'BH11' 
 C.........  Allocate local arrays
-        IF( FIRSTIME ) THEN
-            ALLOCATE( TKPRO( 24 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TKPRO', PROGNAME )
-            ALLOCATE( TMPRO( 24 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TMPRO', PROGNAME )
-            ALLOCATE( TKREFHR( 24 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'TKREFHR', PROGNAME )
-            FIRSTIME = .FALSE.
-        END IF
+        IF( ALLOCATED( TKPRO ) ) DEALLOCATE( TKPRO )
+        IF( ALLOCATED( TMPRO ) ) DEALLOCATE( TMPRO )
+        IF( ALLOCATED( TKREFHR ) ) DEALLOCATE( TKREFHR )
+        ALLOCATE( TKPRO( 24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TKPRO', PROGNAME )
+        ALLOCATE( TMPRO( 24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TMPRO', PROGNAME )
+        ALLOCATE( TKREFHR( 24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TKREFHR', PROGNAME )
         TKPRO = 0.0
         TMPRO = 0.0
         TKREFHR = 0.0
@@ -137,11 +135,11 @@ C.........  Choose month-specific fulemonth county
 C.........  Loop over months per ref. county
         DO J = L, L + NMON - 1
 
-            CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. county
+            CURMONTH  = FMREFSORT( J,3 )  ! processing  current month per ref. county
 
 C.............  Skip other months
             IF( CURMONTH  == PMONTH ) THEN
-                FUELMONTH = FMREFSORT( J,2 )    ! processing fuelmonth/county
+                FUELMONTH = FMREFSORT( J,2 )  ! processing fuelmonth/county
 
 C.................  Define fuelmonth min/max and RH per ref. county
                 NR = FIND1( COUNTY,  NREFC,MCREFIDX (:,1) )
@@ -166,7 +164,7 @@ C.........  Write out last ref. county min/max temp and avg RH
         TKMIN  = MINVAL( THOUR )
         TKDIF  = ABS( TKMAX - TKMIN )
         TKMED  = ( TKMAX + TKMIN ) / 2
-        
+
         TMPRO = 0.0
         DO T = 1, 24
             TMPRO( T ) = ( THOUR( T ) - TKMED ) / TKDIF
