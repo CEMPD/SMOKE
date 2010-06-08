@@ -43,7 +43,7 @@ C***************************************************************************
 C...........   MODULES for public variables   
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX, EANAM,
-     &                     EINAM, NIPOL, NPPOL, NPACT, ACTVTY
+     &                     EINAM, NIPOL, NIPPA, NPPOL, NPACT, ACTVTY
 
         IMPLICIT NONE
 
@@ -181,14 +181,19 @@ C.........  Set average day emissions flag (INVPIDX)
 
 C.........  Reset activity to pollutant to create hourly VMT without running EMISFAC
         IF( MFLAG ) THEN
+
+C.............  Allocate memory for and store pollutant names
+            IF( ALLOCATED( EINAM ) ) DEALLOCATE( EINAM )
+            ALLOCATE( EINAM( NIPPA ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
+
             NIPOL = NIACT
             NPPOL = 2
             NIACT = 0
             NPACT = 0
-            DO I = 1,NIPOL
-               EINAM( I ) = EANAM( I )
-               ACTVTY( I ) = ''
-            END DO
+            EINAM = EANAM
+            ACTVTY = ' '
+
         END IF
 
         PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
