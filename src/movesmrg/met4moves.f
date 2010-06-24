@@ -334,16 +334,16 @@ C.........  Get temperature increments for ratepervehicle lookup table
 
 C.........  Get episode starting date and time and ending date
         MESG = 'Episode start date (YYYYDDD)'
-        EPI_SDATE = ENVINT( 'EPI_STDATE', MESG, 0, IOS )
+        EPI_SDATE = ENVINT( 'STDATE', MESG, 0, IOS )
         
         MESG = 'Episode start time (HHMMSS)'
-        EPI_STIME = ENVINT( 'EPI_STTIME', MESG, 0, IOS )
+        EPI_STIME = ENVINT( 'STTIME', MESG, 0, IOS )
          
         MESG = 'Episode end date (YYYYDDD)'
-        EPI_EDATE = ENVINT( 'EPI_ENDATE', MESG, 0, IOS )
+        EPI_EDATE = ENVINT( 'ENDATE', MESG, 0, IOS )
 
         MESG = 'Episode end time (HHMMSS)'
-        EPI_ETIME = ENVINT( 'EPI_ENDTIME', MESG, 230000, IOS )
+        EPI_ETIME = ENVINT( 'ENDTIME', MESG, 230000, IOS )
 
 C.........  Find the total number of time steps
         EPI_NSTEPS = 1 + 
