@@ -125,7 +125,8 @@ C.................  Check if format is provided as a header entry
                     EXIT ! To end read loop
                 END IF
 
-                IF( LINE( 1:3 ) == '#FF' ) THEN
+                L = INDEX( LINE, 'FORMAT' )
+                IF( L .GT. 0 ) THEN
                     GETFORMT = ORLFMT
                     EXIT ! To end read loop
                 END IF
