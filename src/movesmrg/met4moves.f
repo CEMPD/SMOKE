@@ -294,26 +294,20 @@ C.........  Open mobile county x-ref file to determine representative counties
 
 C.........  Obtain episode settings from the environment...
 C.........  Define averaging method.
-        CALL ENVSTR( 'AVERAGING_METHOD', MESG,' ',AVG_TYPE, IOS )
+        CALL ENVSTR( 'AVERAGING_METHOD', MESG,'MONTHLY',AVG_TYPE, IOS )
 
         MESG ='Define averaging method for meteorology processing'
         CALL M3MSG2( MESG )
 
         CALL UPCASE( AVG_TYPE )
 
-        IF( IOS .NE. 0 ) THEN
-            MESG = 'ERROR: AVERAGE_METHOD environment variable ' //
-     &             ' is not defined for meteorology processing'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
 C.........  Check group file unit numbers to see which types of averaging are needed
-        IF( AVG_TYPE == 'DAILY'   ) THEN
-            DAYAVER  = .TRUE.
+        IF( AVG_TYPE == 'DAILY' .OR. AVG_TYPE == 'EPISODE'  ) THEN
+            MESG = 'ERROR: ' // TRIM( AVG_TYPE ) // 
+     &             ' averaging method is not currently supported.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ELSE IF( AVG_TYPE == 'MONTHLY' ) THEN
             MONAVER  = .TRUE.
-        ELSE IF( AVG_TYPE == 'EPISODE' ) THEN
-            EPIAVER  = .TRUE.
         ELSE
             MESG = 'ERROR: AVERAGE_METHOD environment variable ' //
      &             TRIM( AVG_TYPE ) // 'is not recognized.'
@@ -571,36 +565,10 @@ C.........  Configure the month(s) of modeling period
         DDATE  = EDATE  - SDATE
         DMONTH = EMONTH - SMONTH
 
-        IF( MONAVER ) THEN
-
-            IF( DDATE < 15 ) THEN
-                MESG = 'ERROR: MONTHLY averaging method '//
-     &              'is not applicable (Episode period must > 15 days).'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF( DMONTH == 0 ) THEN
-                MESG = 'ERROR: MONTHLY averaging method '//
-     &              'is not applicable (Must cross the month).'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-            IF( DMONTH == 1 .AND. EDAY > 15 ) THEN
-                WRITE( MESG,94010 ) 'ERROR: MONTHLY averaging method '//
-     &              'is not applicable (MUST cross the month).'//CRLF() 
-     &               //BLANK5//'End date', EDAY,'on month of',  
-     &               EMONTH,' must cross the month'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-            END IF
-        END IF
-
-        IF( EPIAVER ) THEN
-            IF( DDATE < 2 ) THEN
-                MESG = 'ERROR: EPISODE averaging method requires '//
-     &            'more than 2 days for the episode period'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+C.........  Reset monthly default to episode setting for averaging method
+        IF( DMONTH == 0 ) THEN
+            MONAVER = .FALSE.
+            EPIAVER = .TRUE.
         END IF
 
 C.........  Get number of lines in met list file
@@ -811,7 +779,7 @@ C.....................  Check for met data at this step
                         FND_DATA = .FALSE.
 
 C.........................  Loop through previous days in month
-                        DO J = 1, 15
+                        DO J = 1, 30 
                             TDATE = JDATE
                             TTIME = JTIME
 
@@ -843,7 +811,7 @@ C.........................  Skip rest of loop if we've found data
                         IF( FND_DATA ) CYCLE
 
 C.........................  Loop through remaining days in month                    
-                        DO J = 1, 15
+                        DO J = 1, 30 
                             TDATE = JDATE
                             TTIME = JTIME
                         
@@ -949,8 +917,7 @@ C           information for SMOKE and MOVES-ready output files
         
 C.........  Define temporal resolution header
         WRITE( ODEV1,'(A)' )'#DESC SMOKE-ready input file'
-        WRITE( ODEV1,94010 )'#AVERAGING_METHOD: ' // TRIM( AVG_TYPE ) //
-     &      '  (', EPI_SDATE, '-', EPI_EDATE, ')'
+        WRITE( ODEV1,94010 )'#MODELING PERIOD:', EPI_SDATE,'-',EPI_EDATE
         WRITE( ODEV1,'(A)' )'#DATA FIPS,fuelmonthID,monthID,'//
      &       'JulianDate,avgRH,minimum_Temp,maximum_Temp'
         
@@ -960,8 +927,7 @@ C.........  Open output file
      &       .FALSE., .TRUE., 'MOVES_OUTFILE', PROGNAME )
 
         WRITE( ODEV2,'(A)' )'#DESC MOVES-ready input file'
-        WRITE( ODEV2,94010 )'#AVERAGING_METHOD: ' // TRIM( AVG_TYPE ) //
-     &      '  (', EPI_SDATE, '-', EPI_EDATE, ')'
+        WRITE( ODEV2,94010 )'#MODELING PERIOD:', EPI_SDATE,'-',EPI_EDATE
         WRITE( ODEV2,'(A)' )'#DATA FIPS,MonthID,Temperature'//
      &          'ProfileID,RH,temp1(min),temp2(max),,,,,,,,,,,,temp24'
         WRITE( ODEV2,'(A,I5)' ) 'PD_TEMP_INCREMENT ' , PDTEMP
