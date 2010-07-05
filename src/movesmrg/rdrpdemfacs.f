@@ -164,7 +164,7 @@ C.........  Read header line to get list of pollutants in file
             END IF
             
 C.............  Check for header line
-            IF( LINE( 1:16 ) .EQ. '#MOVESScenarioID' ) THEN
+            IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) THEN
                 FOUND = .TRUE.
 
                 SEGMENT = ' '  ! array
@@ -280,7 +280,7 @@ C.........  Limitations:
 C             Program doesn't know if emission factors file is missing values.
 
 C.........  Expected columns:
-C #MOVESScenarioID,yearID,monthID,FIPS,SCCsmoke,smokeProcID,avgSpeedBinID,temperature,relHumidity,THC,CO ...
+C MOVESScenarioID,yearID,monthID,FIPS,SCCsmoke,smokeProcID,avgSpeedBinID,temperature,relHumidity,THC,CO ...
 
         IREC = 0
         NEMTEMPS = 0
@@ -300,6 +300,9 @@ C #MOVESScenarioID,yearID,monthID,FIPS,SCCsmoke,smokeProcID,avgSpeedBinID,temper
 
 C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
+
+C.............  Skip header line
+            IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments
             CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
@@ -400,6 +403,9 @@ C.........  Read and store emission factors
 
 C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
+
+C.............  Skip header line
+            IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments
             CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
