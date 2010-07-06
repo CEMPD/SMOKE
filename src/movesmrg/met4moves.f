@@ -527,9 +527,9 @@ C.........  Make sure the starting time is between 0 and 23
 
 C.........  If the episode start time is earlier than our calculated start time,
 C           we need to set the starting date back one day
-        IF( EPI_STIME < STIME ) THEN
-            CALL NEXTIME( SDATE, STIME, -24*10000 )
-        END IF
+c        IF( EPI_STIME < STIME ) THEN
+c            CALL NEXTIME( SDATE, STIME, -24*10000 )
+c        END IF
         
 C.........  Calculate required ending date and time based on episode settings
         EDATE = EPI_EDATE
@@ -548,9 +548,9 @@ C.........  Make sure the ending time is between 0 and 23
 
 C.........  If the episode ending time is later than calculated end time,
 C           set the ending date forward one day
-        IF( EPI_ETIME > ETIME ) THEN
-            CALL NEXTIME( EDATE, ETIME, 24*10000 )
-        END IF
+c        IF( EPI_ETIME > ETIME ) THEN
+c            CALL NEXTIME( EDATE, ETIME, 24*10000 )
+c        END IF
 
 C.........  Convert start and end dates and times back to GMT
         CALL NEXTIME( SDATE, STIME, TZONE*10000 )
