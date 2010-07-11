@@ -5,8 +5,8 @@ C***********************************************************************
 C  subroutine body starts at line
 C
 C  DESCRIPTION:
-C       Reads the Met4moves output file (minimum and maximum temperatures
-C       for each county). Checks that each inventory county has an entry.
+C       Reads the Met4moves output file (monthly minimum and maximum 
+C       temperatures for each inventory county).
 C
 C  PRECONDITIONS REQUIRED:
 C       FDEV must be opened
@@ -80,6 +80,7 @@ C...........   Other local variables
         INTEGER      :: IREC = 0    ! record counter
         INTEGER         NLINES      ! number of lines
         INTEGER         CNTY        ! current FIPS code
+        INTEGER         MNTH        ! current calendar month
         
         REAL            MINVAL      ! minimum temperature value
         REAL            MAXVAL      ! maximum temperature value
@@ -95,9 +96,9 @@ C***********************************************************************
 C   begin body of subroutine RDMETMOVES
 
 C.........  Allocate memory to store min and max temperatures
-        ALLOCATE( AVGMIN( NINVIFIP ), STAT=IOS )
+        ALLOCATE( AVGMIN( NINVIFIP, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AVGMIN', PROGNAME )
-        ALLOCATE( AVGMAX( NINVIFIP ), STAT=IOS )
+        ALLOCATE( AVGMAX( NINVIFIP, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AVGMAX', PROGNAME )
         AVGMIN = BADVAL3  ! array
         AVGMAX = BADVAL3  ! array
@@ -146,7 +147,25 @@ C.............  Find county in inventory list
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
+
+C.............  Convert calendar month to integer
+            IF( .NOT. CHKINT( SEGMENT( 3 ) ) ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Bad calendar month ' //
+     &            'at line', IREC, 'of Met4moves output file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
             
+            MNTH = STR2INT( ADJUSTR( SEGMENT( 3 ) ) )
+            IF( MNTH .LT. 1 .OR. MNTH .GT. 12 ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Invalid calendar month',
+     &            MNTH, 'at line', IREC, 'of Met4moves output file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
 C.............  Check min and max temperature values
             IF( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
                 EFLAG = .TRUE.
@@ -179,17 +198,18 @@ C.............  Check min and max temperature values
             END IF
             
 C.............  Check for duplicate entries
-            IF( AVGMIN( K ) .GT. AMISS3 .OR.
-     &          AVGMAX( K ) .GT. AMISS3 ) THEN
+            IF( AVGMIN( K, MNTH ) .GT. AMISS3 .OR.
+     &          AVGMAX( K, MNTH ) .GT. AMISS3 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Duplicate county',
-     &            CNTY, 'at line', IREC, 'of Met4moves output file.'
+     &            CNTY, 'and calendar month', MNTH, 'at line', 
+     &            IREC, 'of Met4moves output file.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
             
-            AVGMIN( K ) = MINVAL
-            AVGMAX( K ) = MAXVAL
+            AVGMIN( K, MNTH ) = MINVAL
+            AVGMAX( K, MNTH ) = MAXVAL
 
         END DO
 
@@ -197,28 +217,6 @@ C.............  Check for duplicate entries
         
         IF( EFLAG ) THEN
             MESG = 'Problem found in Met4moves output file.'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-        
-C.........  Check that every county in the domain has a min and max temp
-        DO I = 1, NINVC
-
-            K = FIND1( MCREFSORT( I,1 ), NINVIFIP, INVIFIP )
-        
-            IF( AVGMIN( K ) .LT. AMISS3 .OR.
-     &          AVGMAX( K ) .LT. AMISS3 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'ERROR: Missing temperature ' //
-     &            'data for county', INVIFIP( K ), 'in ' //
-     &            'Met4moves output file.'
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
-        
-        END DO
-        
-        IF( EFLAG ) THEN
-            MESG = 'Missing data in Met4moves output file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 

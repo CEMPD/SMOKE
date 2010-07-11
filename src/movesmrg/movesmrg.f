@@ -485,8 +485,17 @@ C                         UO - min profile temp is under county min, max profile
 C                         OU - min profile temp is over county min, max profile temp is under county max
 C                         OO - both min and max profile temps are over county temps
                     IF( RPPFLAG ) THEN
-                        MINVAL = AVGMIN( MICNY( SRC ) )
-                        MAXVAL = AVGMAX( MICNY( SRC ) )
+                        MINVAL = AVGMIN( MICNY( SRC ), MONTH )
+                        MAXVAL = AVGMAX( MICNY( SRC ), MONTH )
+
+C.........................  Check that min and max county temps were found
+                        IF( MINVAL .LT. AMISS3 .OR.
+     &                      MAXVAL .LT. AMISS3 ) THEN
+                            WRITE( MESG, 94010 ) 'Could not find minimum ' //
+     &                        'and maximum temperatures for county', IFIP( SRC ),
+     &                        'and episode month', MONTH
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
 
 C.........................  Find indexes of bounding minimum temperatures
                         USTART = 0
