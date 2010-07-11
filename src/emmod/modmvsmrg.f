@@ -52,8 +52,8 @@ C.........  Meteorology information
         CHARACTER(16), PUBLIC :: METNAME        ! logical name for meteorology file
 
 C.........  Average min and max temperatures
-        REAL, ALLOCATABLE, PUBLIC :: AVGMIN( : )  ! minimum temperature for each county
-        REAL, ALLOCATABLE, PUBLIC :: AVGMAX( : )  ! maximum temperature for each county
+        REAL, ALLOCATABLE, PUBLIC :: AVGMIN( :,: )  ! minimum monthly temperature for each county
+        REAL, ALLOCATABLE, PUBLIC :: AVGMAX( :,: )  ! maximum monthly temperature for each county
 
 C.........  Text file unit numbers        
         INTEGER, PUBLIC :: XDEV         ! unit no. for county cross-reference file
