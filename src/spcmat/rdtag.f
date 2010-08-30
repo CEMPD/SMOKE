@@ -104,6 +104,7 @@ C...........   Other local variables
         INTEGER         MXWARN  !  max no. warnings of each type
         INTEGER         NLINES  !  number of lines
         INTEGER         NXREF   !  number of valid x-ref entries
+        INTEGER         POS2    !  tmp second position counter
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
         LOGICAL      :: PFLAG = .FALSE.   !  true: species-specific record skipped
@@ -488,11 +489,12 @@ C.........  Count and store the number of tags for each species, SPCTAGCNT(:)
             CSPC = CSPCTAG( 1:K-1 )
             CTAG = CSPCTAG( K+1:L )
 
-            IF( CSPC /= PSPC ) THEN
-                N = INDEX1( CSPC, NSPCALL, SPCLIST )
-                IF( CTAG /= PTAG ) SPCTAGCNT( N ) = SPCTAGCNT( N ) + 1
-                IF( POS1( N ) == 0 ) POS1( N ) = I
-            END IF
+            IF( CSPC /= PSPC ) N = INDEX1( CSPC, NSPCALL, SPCLIST )
+            IF( CTAG /= PTAG ) SPCTAGCNT( N ) = SPCTAGCNT( N ) + 1
+            IF( POS1( N ) == 0 ) POS1( N ) = I
+
+	    PSPC = CSPC
+	    PTAG = CTAG
         END DO
 
 C.........  Get the maximum number of tags for any species, MXTAG
@@ -520,14 +522,30 @@ C.................  If skip to next species if no tags
 
 C.................  Loop through list of spc/tags and populate TAGNAME
                 C = 0
-                DO I = POS1( N ), POS1( N ) + SPCTAGCNT( N ) - 1
+                I = POS1( N )
+                PTAG = ' '
+                DO
+                    
                     J = INDXTA( I )
                     CSPCTAG = CSPCTAGNA( J )
                     K = INDEX( CSPCTAG, '-' )
                     L = LEN_TRIM( CSPCTAG )
 
-                    C = C + 1
-                    TAGNAME( C,P,V ) = CSPCTAG( K+1:L )
+                    CSPC = CSPCTAG( 1:K-1 )
+                    CTAG = CSPCTAG( K+1:L )
+                    IF ( CTAG /= PTAG .OR. CSPC /= PSPC ) THEN
+                        C = C + 1
+                        TAGNAME( C,P,V ) = CTAG
+
+                        PTAG = CTAG
+                	PSPC = CSPC
+                    END IF 
+
+                    I = I + 1
+
+C.....................  Stop trying to collect the tag names if got them all
+                    IF ( C == SPCTAGCNT( N ) ) EXIT
+
                 END DO
 
             END DO
