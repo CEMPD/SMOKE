@@ -13,9 +13,6 @@ C       using barometric pressure and dew point. Tries to
 C       account for missing meteorology data as much as possible.
 C
 C  PRECONDITIONS REQUIRED:
-C       Program Mbsetup has been run
-C
-C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
 C  REVISION  HISTORY:
 C     2/10: Created by B.H. Baek
@@ -88,7 +85,7 @@ c        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
         INTEGER         ENVINT
         REAL            ENVREAL
         INTEGER         INDEX1
-        INTEGER         INTLIST
+        LOGICAL         INTLIST
         INTEGER         FIND1
         INTEGER         FIND1FIRST
         CHARACTER(14)   MMDDYY
