@@ -46,7 +46,7 @@ movesmrg.pvm: $(MRG) $(ALLI) $(LIBPATH)
 	echo MOVESMRG \(pvm\):
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS_PVM)
 
-MET=met4moves.o rdmxref.o rdfmref.o grdfips.o avgmet.o hourmet.o \
+MET=met4moves.o rdmxref.o rdfmref.o avgmet.o hourmet.o \
       wravgmet.o wrtemprof.o
 
 met4moves: $(MET) $(ALLI) $(LIBPATH)
@@ -69,7 +69,6 @@ bldmrgidx.o : $(MODMERGE)
 bldprocidx.o: $(MODMVSMRG) $(MODMERGE)
 bldsrccell.o: $(MODMVSMRG)
 getmrgev.o  : $(MODINFO) $(MODMERGE) $(MODMVSMRG)
-grdfips.o   : $(MODSURG) $(MODGRID) $(MODMET)
 hourmet.o   : $(MODMET)
 initstcy.o  : $(MODMERGE) $(MODSTCY) $(MODSOURC)
 met4moves.o : $(MODSURG) $(MODSTCY) $(MODMET) $(MODGRID) $(MODMBSET)
