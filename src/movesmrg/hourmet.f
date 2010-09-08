@@ -107,7 +107,7 @@ C.........  Loop through sources
         DO S = 1, NSRC
 
 C.............  Calculate time slot in output array for this time step
-C               Appropriate 24 hour time will be day starting time (6 AM in local 
+C               Appropriate 24 hour time will be day starting time (12 AM in local 
 C               time zone ) subtracted from met data time (in GMT)
             TIMESLOT = 1 + ( JTIME - DAYBEGT( S ) ) / 10000 
 
