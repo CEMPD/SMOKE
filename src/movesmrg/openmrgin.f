@@ -51,7 +51,8 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG,
-     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MMDEV
+     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MMDEV,
+     &          SPDFLAG
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NIACT, NSRC, CATEGORY,
@@ -103,6 +104,7 @@ C.........  Other local variables
 
         INTEGER         IDEV          ! tmp unit number if ENAME is map file
         INTEGER         TDEV          ! unit number for MEPROC file
+        INTEGER         SPDEV         ! unit number for SPDPRO file
         INTEGER         IOS           ! tmp I/O status
         INTEGER         ISECS         ! tmp duration in seconds
         INTEGER         NPACT         ! no. variables per activity
@@ -389,6 +391,14 @@ C.........  Get Met4moves output file
             MMDEV = PROMPTFFILE(
      &           'Enter logical name for Met4moves output file',
      &           .TRUE., .TRUE., 'METMOVES', PROGNAME )
+        END IF
+
+C.........  Open and read hourly speed data
+        IF( RPDFLAG .AND. SPDFLAG ) THEN
+            SPDEV = PROMPTFFILE(
+     &              'Enter logical name for speed profiles file',
+     &              .TRUE., .TRUE., 'SPDPRO', PROGNAME )
+            CALL RDSPDPRO( SPDEV )
         END IF
 
 C.........  If there were any errors inputing files or while comparing

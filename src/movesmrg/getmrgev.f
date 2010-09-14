@@ -45,7 +45,8 @@ C.........  This module contains the major data structure and control flags
      &                      LREPSTA, LREPANY
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
+     &                       SPDFLAG
 
         IMPLICIT NONE
 
@@ -139,6 +140,12 @@ C.........  Select default processing mode
             RPPFLAG = .FALSE.
         ELSE IF( RPVFLAG ) THEN
             RPPFLAG = .FALSE.
+        END IF
+
+C.........  Check if hourly speeds should be used
+        IF( RPDFLAG ) THEN
+            SPDFLAG = ENVYN( 'USE_HOURLY_SPEEDS', 'Use hourly ' //
+     &                       'speed data', .FALSE., IOS )
         END IF
 
 C.........  Get directory where MOVES output files are stored

@@ -93,4 +93,8 @@ C.........  Emission factors data
         REAL, ALLOCATABLE, PUBLIC :: RPPEMFACS( :,:,:,:,:,: )  ! rate-per-profile emission factors
                                                                ! day, SCC, hour, temp profile, process, pollutant
 
+C.........  Hourly speed data
+        LOGICAL, PUBLIC :: SPDFLAG                     ! use hourly speed data
+        REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: ) ! indexes: FIP, SCC, weekend/weekday, local hour
+
         END MODULE MODMVSMRG

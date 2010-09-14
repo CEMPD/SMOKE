@@ -63,7 +63,8 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          NREFSRCS, REFSRCS, NSRCCELLS, SRCCELLS, SRCCELLFRACS,
      &          EMPROCIDX, EMPOLIDX,
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX, AVGMIN, AVGMAX,
-     &          RPDEMFACS, RPVEMFACS, RPPEMFACS
+     &          RPDEMFACS, RPVEMFACS, RPPEMFACS,
+     &          SPDFLAG, SPDPRO
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -139,6 +140,7 @@ C...........   Other local variables
         INTEGER          DAY           ! day-of-week index (monday=1)
         INTEGER          DAYMONTH      ! day-of-month
         INTEGER          DAYIDX        ! current day value index
+        INTEGER          FIPIDX        ! current inventory FIP index
         INTEGER          FUELMONTH     ! current fuel month
         INTEGER          HOURIDX       ! current hour of the day
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
@@ -427,27 +429,39 @@ C.................  Loop over sources in reference county
                 
                     IF( RPDFLAG ) THEN
                         VMTVAL = VMT( SRC )
-                        SPEEDVAL = SPEED( SRC )
                     END IF
                     
                     IF( RPPFLAG .OR. RPVFLAG ) THEN
                         VPOPVAL = VPOP( SRC )
-
-C.........................  Determine hour index based on source's local time
-                        HOURIDX = ( JTIME - DAYBEGT( SRC ) ) / 10000
-                        IF( HOURIDX < 0 ) THEN
-                            HOURIDX = HOURIDX + 24
-                        END IF
-                        HOURIDX = HOURIDX + 1  ! array index is 1 to 24
                     END IF
+
+C.....................  Determine hour index based on source's local time
+                    HOURIDX = ( JTIME - DAYBEGT( SRC ) ) / 10000
+                    IF( HOURIDX < 0 ) THEN
+                        HOURIDX = HOURIDX + 24
+                    END IF
+                    HOURIDX = HOURIDX + 1  ! array index is 1 to 24
+
+C.....................  Determine FIP index for source
+                    FIPIDX = FIND1( IFIP( SRC ), NINVIFIP, INVIFIP )
                     
                     SCC = CSCC( SRC )
 
 C.....................  Determine SCC index for source
                     SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
-                    
+
 C.....................  Determine speed bins for source
                     IF( RPDFLAG ) THEN
+                        SPEEDVAL = BADVAL3
+                        IF( SPDFLAG ) THEN
+                            SPEEDVAL = SPDPRO( FIPIDX, SCCIDX, DAYIDX, HOURIDX )
+                        END IF
+
+C.........................  Fall back to inventory speed if hourly speed isn't available
+                        IF( SPEEDVAL .LT. AMISS3 ) THEN
+                            SPEEDVAL = SPEED( SRC )
+                        END IF
+
                         BIN1 = 0
                         BIN2 = 0
                         DO K = MXSPDBINS, 1, -1

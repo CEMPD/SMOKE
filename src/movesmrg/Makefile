@@ -31,7 +31,7 @@ MRG= movesmrg.o bldmrgidx.o bldprocidx.o bldsrccell.o \
      mrgvnams.o openmrgin.o openmrgout.o rdfmref.o \
      rdmetmoves.o rdmrclist.o rdmxref.o \
      rdrpdemfacs.o rdrppemfacs.o rdrpvemfacs.o \
-     setrefcnty.o wrmrgrep.o
+     rdspdpro.o setrefcnty.o wrmrgrep.o
 #
 movesmrg: $(MRG) $(ALLI) $(LIBPATH)
 	echo MOVESMRG:
@@ -85,6 +85,7 @@ rdmxref.o   : $(MODMBSET)
 rdrpdemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrppemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrpvemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
+rdspdpro.o  : $(MODMVSMRG) $(MODLISTS)
 setrefcnty.o: $(MODMVSMRG) $(MODINFO) $(MODSOURC) $(MODLISTS) $(MODMBSET)
 wravgmet.o  : $(MODMBSET) $(MODMET)
 wrtemprof.o : $(MODMBSET) $(MODMET)
