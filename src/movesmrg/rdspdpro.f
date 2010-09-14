@@ -69,15 +69,13 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local allocatable arrays
 
 C...........   Local arrays
-        CHARACTER(20)  SEGMENT( 50 )          ! parsed input line
+        CHARACTER(20)  SEGMENT( 53 )          ! parsed input line
 
 C...........   Other local variables
         INTEGER         I, J        ! counters and indexes
         INTEGER         IOS         ! error status
         INTEGER      :: IREC = 0    ! record counter
-        INTEGER         DAYIDX      ! weekday vs. weekend index
         INTEGER         FIPIDX      ! current FIPS index
-        INTEGER         HOURIDX     ! current hour index
         INTEGER         SCCIDX      ! current SCC index
         INTEGER         NLINES      ! number of lines
         INTEGER         CNTY        ! current FIPS code
@@ -89,6 +87,7 @@ C...........   Other local variables
         CHARACTER(500)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
         CHARACTER(SCCLEN3) SCC      ! current SCC
+        CHARACTER(10)      KEYWORD  ! temperature keyword
 
         CHARACTER(16) :: PROGNAME = 'RDSPDPRO'   ! program name
 
@@ -121,8 +120,8 @@ C.........  Read through file and store hourly data
 C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
-C.............  Parse line into 50 segments
-            CALL PARSLINE( LINE, 50, SEGMENT )
+C.............  Parse line into fields
+            CALL PARSLINE( LINE, 53, SEGMENT )
 
 C.............  Convert FIP to integer
             IF( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
@@ -157,27 +156,56 @@ C.............  Find SCC in inventory list
                 CYCLE
             END IF
 
-C.............  Check temperature values
-            DO J = 1, 48
-                IF( .NOT. CHKREAL( SEGMENT( 2 + J ) ) ) THEN
+C.............  Check weekday keyword
+            KEYWORD = ADJUSTL( SEGMENT( 3 ) )
+            IF( KEYWORD .NE. 'WEEKDAY' ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Missing expected ' //
+     &            'keyword WEEKDAY at line', IREC,
+     &            'of hourly speed file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
+C.............  Check weekday speed values
+            DO J = 1, 24
+                IF( .NOT. CHKREAL( SEGMENT( 3 + J ) ) ) THEN
                     EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'ERROR: Bad hourly ' //
-     &                'speed value at line', IREC,
+                    WRITE( MESG, 94010 ) 'ERROR: Bad weekday ' //
+     &                'hourly speed value at line', IREC,
      &                'of hourly speed file.'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
                 
-                SPDVAL = STR2REAL( ADJUSTR( SEGMENT( 2 + J ) ) )
-                
-                DAYIDX = 2
-                HOURIDX = J
-                IF( J > 24 ) THEN
-                    DAYIDX = 1
-                    HOURIDX = J - 24
+                SPDVAL = STR2REAL( ADJUSTR( SEGMENT( 3 + J ) ) )                
+                SPDPRO( FIPIDX, SCCIDX, 2, J ) = SPDVAL
+            END DO
+
+C.............  Check weekend keyword
+            KEYWORD = ADJUSTL( SEGMENT( 28 ) )
+            IF( KEYWORD .NE. 'WEEKEND' ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Missing expected ' //
+     &            'keyword WEEKEND at line', IREC,
+     &            'of hourly speed file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
+C.............  Check weekend speed values
+            DO J = 1, 24
+                IF( .NOT. CHKREAL( SEGMENT( 28 + J ) ) ) THEN
+                    EFLAG = .TRUE.
+                    WRITE( MESG, 94010 ) 'ERROR: Bad weekend ' //
+     &                'hourly speed value at line', IREC,
+     &                'of hourly speed file.'
+                    CALL M3MESG( MESG )
+                    CYCLE
                 END IF
                 
-                SPDPRO( FIPIDX, SCCIDX, DAYIDX, HOURIDX ) = SPDVAL
+                SPDVAL = STR2REAL( ADJUSTR( SEGMENT( 28 + J ) ) )
+                SPDPRO( FIPIDX, SCCIDX, 1, J ) = SPDVAL
             END DO
             
         END DO
