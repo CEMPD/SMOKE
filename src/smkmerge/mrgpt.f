@@ -40,7 +40,7 @@ C
 C Pathname: $Source$
 C Last updated: $Date$ 
 C
-	   
+       
 C***********************************************************************
  
         IMPLICIT NONE
@@ -66,7 +66,7 @@ C...........   EXTERNAL FUNCTIONS
         LOGICAL       CHKREAL
         REAL          STR2REAL
         CHARACTER(14) MMDDYY
-	
+    
         EXTERNAL CRLF, ENVYN, GETFLINE, GETYN, INDEX1, LBLANK,
      &           PROMPTFFILE, PROMPTMFILE, SEC2TIME, SECSDIFF
      &           BLKORCMT, CHKREAL, STR2REAL, MMDDYY
@@ -81,7 +81,7 @@ C...........   LOCAL VARIABLES and their descriptions:
 C...........   Emissions arrays
         REAL, ALLOCATABLE    :: VAR_R(:,:,:)
         REAL, ALLOCATABLE    :: STACK_PARAM_R_IN ( :,: ,:) 
-	
+    
         INTEGER, ALLOCATABLE :: VAR_I(:,:,:)
         INTEGER, ALLOCATABLE :: STACK_PARAM_I_IN ( :, :, :)
 
@@ -203,7 +203,7 @@ C...........   Other local variables
         INTEGER       STATEFIPS(120,2)             ! State fips 
         INTEGER       FIPS                       ! Temporay State fips
         INTEGER       :: NLIST = 2   ! Number of list files to be read   
-	                           
+                               
         INTEGER       TMAX                       ! max time counter
         
         INTEGER       IDX_FIP, IFIP1
@@ -233,9 +233,7 @@ C...........   Other local variables
         LOGICAL    :: FIRST3D = .TRUE.    ! true: first 3-d file not yet input
         LOGICAL    :: LFLAG   = .FALSE.   ! true iff 3-d file input
         LOGICAL    :: TFLAG   = .FALSE.   ! true: grid didn't match
-        LOGICAL       CREATE_REPORT       ! true: create report by state
-        LOGICAL       MRGDIFF             ! true: merge files from different days
-    	    
+            
    
         CHARACTER(16) :: PROGNAME = 'MRGPT' ! program name
 
@@ -461,12 +459,12 @@ C.............  They must match exactly.
 
          END DO      ! End loop through files
         END DO     ! s_loop
-	
+    
 c.............  Check if the # of recrords (NROWS) are tha same in the Stack group file and the Emmissions file
 
        DO F = 1, NFILE
          IF( NROWSA( F ,1) .NE. NROWSA( F ,2) ) THEN
-	 
+     
             MESG = 'Inconsistent number of sources between:' //CRLF() //
      &              BLANK10 //'stack group file '//TRIM(FNAME( F,1 ))//' '//
      &              'and Emissions file '//TRIM(FNAME( F,2 ))//CRLF() //
@@ -529,7 +527,7 @@ C.........  Duplicate Check of ADJ_FACS file
             DO I = 1, NADJ
                 IF( LFNSPC == ADJ_LFNSPC( I ) ) DD = DD + 1
             END DO
-	    
+        
             IF( DD > 1 ) THEN
                 MESG = 'ERROR: Duplicate entries of '// TRIM(ADJ_SPC(F))
      &               // ' species from the ' // TRIM( ADJ_LFN(F) ) // 
@@ -565,7 +563,7 @@ C.........  Deterimine output date, time, and number of time steps
         STIME = G_STIME
         NSTEPS = G_NSTEPS
         CALL SETOUTDATE( SDATE, STIME, NSTEPS, NFILE, SDATEA(1,2),
-     &                   STIMEA(1,2), DURATA(1,2), FNAME(1,2), MRGDIFF,
+     &                   STIMEA(1,2), DURATA(1,2), FNAME(1,2), .FALSE.,
      &                   USEFIRST )
 
 C.......  Build master output variables list
@@ -607,7 +605,7 @@ C...............  If its not in the output list, add it
                     END IF
 
 C.................  If variable is in the output list, check the units
-                ELSE	
+                ELSE    
                     IF (VNM(2:5) .ne. 'LOCA') THEN
                       ! don't check units on XLOCA and YLOCA
 
@@ -690,7 +688,7 @@ C.........  Sort output variables into alphabetical order
             EMIS_TOTALS_AA(1:MAXSTATES,1:NVOUT(S),1:NFILE) = 0.0
 
          ENDIF
-	
+    
 C.........  Loop through hours
          JDATE  = SDATE
          JTIME  = STIME
@@ -711,7 +709,7 @@ C...........  Loop through species
               DO V = 1, NVOUT( S )
       
                  VNM = OUTNAM( INDXN( V,S ),S ) 
-	   
+       
 C...................  Output array
 !                EOUT = 0.   ! array
                  ICT = 0
@@ -724,7 +722,7 @@ C...................  Output array
                     ALLOCATE(VAR_R  (NCOLSA(F,S),NROWSA(F,S),NLAYSA(F,S)))
                     VAR_R = 0.0
                     VAR_I = 0
-	 
+     
 C.....................  Set read date
                     IF( S .EQ. 1 ) THEN
                         RDATE = SDATEA( F, S )
@@ -747,15 +745,15 @@ C.....................  If file has species, read (do this for all files)...
                               CALL M3EXIT( PROGNAME, RDATE, JTIME, 
      &                                     MESG, 2 )
                          END IF
-	       
+           
                          IF( S .EQ. 1 ) THEN
                             IF ( F .EQ. 1) NVAR_REAL = NVAR_REAL + 1
                             ISTART = ICT + 1
                             IEND   = ISTART + NSRC(S,F) -1
                             STACK_PARAM_R_OUT(ISTART:IEND,NVAR_REAL) = 
-     &                                           VAR_R(1,1:NSRC(S,F),1)	
+     &                                           VAR_R(1,1:NSRC(S,F),1)    
                          END IF
-		  
+          
                          IF ( S .EQ. 2 ) THEN
                             ISTART = ICT + 1
                             IEND   = ISTART + NSRC(S,F) - 1
@@ -813,7 +811,7 @@ C.............................  Assign adjustment factor for the current species
                                 FACS = 1.0
                             END IF
 
-                       ELSE		    
+                       ELSE            
                             FACS = 1.0  
 
                       END IF   !ADEV > 0   
@@ -828,17 +826,17 @@ C..........................  Look for state fips in output list
 C..........................  If its not in the output list, add it
                          IF( K .LE. 0 ) THEN
                              NSTATES(F) = NSTATES(F) + 1
-		                     STATEFIP2( NSTATES(F),F ) = IFIP2		    
+                             STATEFIP2( NSTATES(F),F ) = IFIP2            
                              STATEFIPS( NSTATES(F),F ) = IFIP1
-                         END IF			   
+                         END IF               
 
                          EMIS_TOTALS_BA(IFIP1,V,F) =
      &                        EMIS_TOTALS_BA(IFIP1,V,F) + VAR_R(1,J,1)
                         END DO
 
                         EOUT1(T,ISTART:IEND,V) = VAR_R(1,1:NSRC(S,F),1)*FACS
-			
-		                DO J = 1,NSRC(S,F)
+            
+                        DO J = 1,NSRC(S,F)
                            IFIP1 =STACK_PARAM_I_IN(J,IDX_FIP,F)/1000
                            EMIS_TOTALS_AA(IFIP1,V,F) =
      &                         EMIS_TOTALS_AA(IFIP1,V,F) + VAR_R(1,J,1)*FACS
@@ -853,7 +851,7 @@ C..........................  If its not in the output list, add it
      &                    '" from file "'//NAM( 1:LEN_TRIM( NAM ) )// '".'
                         CALL M3EXIT( PROGNAME, RDATE, JTIME, 
      &                               MESG, 2 )
-                     END IF	  
+                     END IF      
 
                      IF (S .EQ. 1) THEN
                         IF ( F .EQ. 1) NVAR_INT = NVAR_INT + 1
@@ -872,9 +870,9 @@ C..........................  If its not in the output list, add it
                         ENDIF
                      ENDIF
 
-                 END IF ! IF (VTYPE
+                 END IF ! IF VTYPE
               ELSE
-	             IF (T .EQ. 1) THEN	    
+                 IF (T .EQ. 1) THEN        
                     WRITE(*,*)'Variable ...',VNM,' is not in the file ..',NAM
                  END IF   
               END IF !LVOUTA  If Pollutant is in the file 
@@ -886,7 +884,7 @@ C.....................  Build report line if needed
         END DO      ! End loop through Variable
 
 C.............  Write this time step to report
-	    IF(S .EQ.2)  CALL NEXTIME( JDATE, JTIME, TSTEP3D)
+        IF(S .EQ.2)  CALL NEXTIME( JDATE, JTIME, TSTEP3D)
 
        END DO    ! End loop throught T   
 
@@ -960,9 +958,9 @@ C.............  Loop through species
 
 C.................  Output array
                  IF (S .EQ. 2 ) THEN
-		 EOUT(1:NSRC(S,NFILE+1),V) = EOUT1(T,1:NSRC(S,NFILE+1),V)
+         EOUT(1:NSRC(S,NFILE+1),V) = EOUT1(T,1:NSRC(S,NFILE+1),V)
                    IF( .NOT. WRITE3( ONAME_E, VNM, JDATE, JTIME,
-     &               EOUT(1,V) )) THEN		   
+     &               EOUT(1,V) )) THEN           
                      MESG = 'Could not write "'// VNM// '" to file "'// 
      &                      ONAME_E( 1:LEN_TRIM( ONAME_E ) ) // '".'
                      CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
@@ -977,7 +975,7 @@ C.................  Output array
      &                      ONAME_S( 1:LEN_TRIM( ONAME_S ) ) // '".'
      &                        
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-		   END IF
+           END IF
                  END IF
  
                  IF ((S .EQ. 1) .AND. (VTYPE3D(V) .EQ. M3INT)) THEN
@@ -999,92 +997,92 @@ C.............  Write this time step to report
        END DO  ! end of S loop
 
 c.... writing emissions report before adjustemnt
-        MESG = 'Create report for total emissions by state'
-        CREATE_REPORT = ENVYN( 'CREATE_REPORT', MESG, .FALSE., IOS )
-	
+c        MESG = 'Create report for total emissions by state'
+c        CREATE_REPORT = ENVYN( 'CREATE_REPORT', MESG, .FALSE., IOS )
+    
 C.........  Create report file
 
-        IF( CREATE_REPORT ) THEN
-            EDEV = PROMPTFFILE(
-     &             'Enter logical name for the MRGGRID REPORT file',
-     &             .FALSE., .TRUE., 'REPORT_BY_STATE', PROGNAME ) 
+c        IF( CREATE_REPORT ) THEN
+c            EDEV = PROMPTFFILE(
+c     &             'Enter logical name for the MRGGRID REPORT file',
+c     &             .FALSE., .TRUE., 'REPORT_BY_STATE', PROGNAME ) 
      
-	        UNDERLINE = '-----------------'
-		
-	         DO F = 1, NFILE
-		    WRITE(EDEV,93000)'Emissions Before Adjustment'
-		    WRITE(EDEV,*)'Emissions from ......',FNAME(F,2)
-                    WRITE(EDEV,950)'SATET FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))		
+c            UNDERLINE = '-----------------'
+        
+c             DO F = 1, NFILE
+            WRITE(EDEV,93000)'Emissions Before Adjustment'
+            WRITE(EDEV,*)'Emissions from ......',FNAME(F,2)
+                    WRITE(EDEV,950)'SATET FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))        
                     WRITE(EDEV,950)'         ',(VUNITU( INDXN( V,2 ),2 ),V =1,NVOUT(2))
-		    WRITE(EDEV,960)'-----------',(UNDERLINE(K),K=1,NVOUT(2))
-		  DO J = 1,NSTATES(F)
-		    I = STATEFIPS(J,F)
-		    FIPS = STATEFIPS(J,F)*1000
-		    WRITE(FIP_CODE,'(I6)')FIPS
-		      IF (FIPS .LT. 9999) THEN
-		        WRITE(FIP_CODE,'(I4)')FIPS
-			FIP_CODE = '00'//TRIM(FIP_CODE)
-		      ELSE IF (FIPS .GT. 9999 .AND. FIPS .LT. 99999) THEN
-		        WRITE(FIP_CODE,'(I5)')FIPS
-			FIP_CODE = '0'//TRIM(FIP_CODE)
-		      END IF
-		    WRITE(EDEV,900)TRIM(FIP_CODE),(EMIS_TOTALS_BA(I,V,F),V=1,NVOUT(2))
+            WRITE(EDEV,960)'-----------',(UNDERLINE(K),K=1,NVOUT(2))
+          DO J = 1,NSTATES(F)
+            I = STATEFIPS(J,F)
+            FIPS = STATEFIPS(J,F)*1000
+            WRITE(FIP_CODE,'(I6)')FIPS
+              IF (FIPS .LT. 9999) THEN
+                WRITE(FIP_CODE,'(I4)')FIPS
+            FIP_CODE = '00'//TRIM(FIP_CODE)
+              ELSE IF (FIPS .GT. 9999 .AND. FIPS .LT. 99999) THEN
+                WRITE(FIP_CODE,'(I5)')FIPS
+            FIP_CODE = '0'//TRIM(FIP_CODE)
+              END IF
+            WRITE(EDEV,900)TRIM(FIP_CODE),(EMIS_TOTALS_BA(I,V,F),V=1,NVOUT(2))
                   END DO
-		    WRITE(EDEV,93000)'  '
-		 END DO
+            WRITE(EDEV,93000)'  '
+         END DO
 
 c.... writing emissions report after adjustemnt, if there is any
 
                IF(ADEV .GT. 0) THEN
-		    WRITE(EDEV,93000)'  '
-		    WRITE(EDEV,93000)'  '
-		    WRITE(EDEV,93000)'Emissions After Adjustment'
-	  
-		 DO F = 1, NFILE
-		   DO K =  1,NADJ
-		      J1 = 0
+            WRITE(EDEV,93000)'  '
+            WRITE(EDEV,93000)'  '
+            WRITE(EDEV,93000)'Emissions After Adjustment'
+      
+         DO F = 1, NFILE
+           DO K =  1,NADJ
+              J1 = 0
                      IF(ADJ_LFN( K )  == FNAME(F,2) ) THEN
-		       J1 = J1 + 1
+               J1 = J1 + 1
                       WRITE( MESG,93012 )'Adjustment factor',ADJ_FACTOR(K),
      &                   ' applied to the '  // TRIM( ADJ_SPC(K)) //
      &                           ' specie from the '//TRIM(FNAME(F,2)) // ' file'
 cxx                             CALL M3MSG2( MESG )
-		      WRITE(EDEV,93000)MESG
-		     END IF
+              WRITE(EDEV,93000)MESG
+             END IF
                    END DO   !END NADJ
-		     IF(J1 .EQ. 0) THEN
-		     WRITE(EDEV,93000)'No Adjustment factors for '//FNAME(F,2)
-		     END IF
-		    		
-		    WRITE(EDEV,*)'Emissions from ......',FNAME(F,2)
-                    WRITE(EDEV,950)'SATET FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))		
+             IF(J1 .EQ. 0) THEN
+             WRITE(EDEV,93000)'No Adjustment factors for '//FNAME(F,2)
+             END IF
+                    
+            WRITE(EDEV,*)'Emissions from ......',FNAME(F,2)
+                    WRITE(EDEV,950)'SATET FIP',(OUTNAM( INDXN( V,2 ),2 ),V =1,NVOUT(2))        
                     WRITE(EDEV,950)'         ',(VUNITU( INDXN( V,2 ),2 ),V =1,NVOUT(2))
-		    WRITE(EDEV,960)'-----------',(UNDERLINE(K),K=1,NVOUT(2))
-		  DO J = 1,NSTATES(F)
-		    I = STATEFIPS(J,F)
-		    FIPS = STATEFIPS(J,F)*1000
-		    WRITE(FIP_CODE,'(I6)')FIPS
-		      IF (FIPS .LT. 9999) THEN
-		        WRITE(FIP_CODE,'(I4)')FIPS
-			FIP_CODE = '00'//TRIM(FIP_CODE)
-		      ELSE IF (FIPS .GT. 9999 .AND. FIPS .LT. 99999) THEN
-		        WRITE(FIP_CODE,'(I5)')FIPS
-			FIP_CODE = '0'//TRIM(FIP_CODE)
-		      END IF
-		    WRITE(EDEV,900)FIP_CODE,(EMIS_TOTALS_AA(I,V,F),V=1,NVOUT(2))
+            WRITE(EDEV,960)'-----------',(UNDERLINE(K),K=1,NVOUT(2))
+          DO J = 1,NSTATES(F)
+            I = STATEFIPS(J,F)
+            FIPS = STATEFIPS(J,F)*1000
+            WRITE(FIP_CODE,'(I6)')FIPS
+              IF (FIPS .LT. 9999) THEN
+                WRITE(FIP_CODE,'(I4)')FIPS
+            FIP_CODE = '00'//TRIM(FIP_CODE)
+              ELSE IF (FIPS .GT. 9999 .AND. FIPS .LT. 99999) THEN
+                WRITE(FIP_CODE,'(I5)')FIPS
+            FIP_CODE = '0'//TRIM(FIP_CODE)
+              END IF
+            WRITE(EDEV,900)FIP_CODE,(EMIS_TOTALS_AA(I,V,F),V=1,NVOUT(2))
                   END DO
-		    WRITE(EDEV,93000)'  '
-		 END DO
+            WRITE(EDEV,93000)'  '
+         END DO
                ELSE
-		    WRITE(EDEV,93000)'  '
-		    WRITE(EDEV,93000)'  '
-		    WRITE(EDEV,93000)'  No Adjustment Factors were applied'
+            WRITE(EDEV,93000)'  '
+            WRITE(EDEV,93000)'  '
+            WRITE(EDEV,93000)'  No Adjustment Factors were applied'
                END IF
 
         ELSE
-	WRITE(*,*)'########################################'
-	WRITE(*,*)'No Report was created ....'
-	WRITE(*,*)'########################################'
+    WRITE(*,*)'########################################'
+    WRITE(*,*)'No Report was created ....'
+    WRITE(*,*)'########################################'
         END IF
 
 
@@ -1097,10 +1095,6 @@ C...........   Informational (LOG) message formats... 92xxx
 900     FORMAT(A10,'|',100(F16.5,'|'))
 950     FORMAT(A10,'|',100(A16,'|'))
 960     FORMAT(A11,100A17)
-cx901     FORMAT(A4,3I6,3F13.5)
-cx90000   FORMAT(A20,I4,2A16,I10)
-
-92000   FORMAT( 5X, A )
  
 C...........   Formatted file I/O formats............ 93xxx
 
@@ -1118,8 +1112,8 @@ C...........   Internal buffering formats............ 94xxx
 93012   FORMAT(  A, F8.5, A )
 94020   FORMAT( A, :, I3, :, 1X, 10 ( A, :, F8.5, :, 1X ) )
 
-cxx	           END PROGRAM MRGPT
-	   
+cxx               END PROGRAM MRGPT
+       
 C*****************  INTERNAL SUBPROGRAMS  ******************************
         CONTAINS
 C----------------------------------------------------------------------
@@ -1152,9 +1146,7 @@ C.................  Read file names - exit if read is at end of file
                 END IF
 
 C..................  Skip blank and comment lines
-!                IF ( BLKORCMT( LINE ) ) CYCLE
-                 L1 = LEN_TRIM(LINE)             !MO add
-		 IF(L1 .EQ. 0) CYCLE             !MO add
+                IF ( BLKORCMT( LINE ) ) CYCLE
 
 C..................  Get line
                 CALL PARSLINE( LINE, 3, SEGMENT )
@@ -1211,4 +1203,4 @@ C.................  Skip EMF-specific header line
 
 
 
-	           END PROGRAM MRGPT
+               END PROGRAM MRGPT
