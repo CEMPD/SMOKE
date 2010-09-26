@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
+if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
 
    if ( $MRG_GRDOUT_YN == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
 
@@ -33,6 +33,7 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_SMK2EMIS == 'Y' || $RUN_MRGGRID == Y ) then
          endif
 
          if ( $MRG_MOBILE == 'Y' || $SMK_SOURCE == 'M' ) then
+	    setenv MOUT     $M_OUT/mgts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
 	    setenv MGTS_L   $M_OUT/mgts_l.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
 	    setenv MGTS_S   $M_OUT/mgts_s.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
          endif 

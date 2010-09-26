@@ -172,6 +172,16 @@ else
 
 endif
 
+if( $?RUN_MOVESMRG ) then
+   if ( $RUN_MOVESMRG == 'y' ) then
+      setenv RUN_MOVESMRG Y
+   endif
+
+else
+   setenv RUN_MOVESMRG N
+
+endif
+
 if( $?RUN_MRGGRID ) then
    if ( $RUN_MRGGRID == 'y' ) then
       setenv RUN_MRGGRID Y
@@ -320,6 +330,14 @@ if( $?SMKMERGE_CUSTOM_OUTPUT ) then
    endif
 else
    setenv SMKMERGE_CUSTOM_OUTPUT N
+endif
+
+if( $?MOVESMRG_CUSTOM_OUTPUT ) then
+   if( $?MOVESMRG_CUSTOM_OUTPUT == 'y' )  then
+      setenv MOVESMRG_CUSTOM_OUTPUT Y
+   endif
+else
+   setenv MOVESMRG_CUSTOM_OUTPUT N
 endif
 
 # Set default new environment variables
