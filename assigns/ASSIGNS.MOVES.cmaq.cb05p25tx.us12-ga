@@ -109,7 +109,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MCXREF      $GE_DAT/mcref_moves_GA.txt                # ref county cross-reference
    setenv MFMREF      $GE_DAT/fuelmonth_GA.txt                  # ref county fuel-month
    setenv METLIST     $GE_DAT/metlist.met4moves.lst             # List of Meteorology files
-   setenv MGREF       $GE_DAT/amgref_us_can_allmex3_14nov2007_v4.txt # Mobile gridding x-ref 
+   setenv MGREF       $GE_DAT/amgref_us_MOVES_09262010.txt      # Mobile gridding x-ref 
    setenv MTPRO       $GE_DAT/amptpro.m3.default.us+can.txt     # Temporal profiles
    setenv MTREF       $GE_DAT/amptref.m3.us+can.cair.txt        # Mobile temporal x-ref
    setenv GSPRO       $GE_DAT/gspro_cmaq.MOVES.20081114.txt     # Speciation prof 
