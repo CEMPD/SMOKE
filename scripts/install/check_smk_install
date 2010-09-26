@@ -6,12 +6,14 @@ set errfile = $SCRIPTS/install/.err
 set errstat = 0
 
 set repdir = $SMKROOT/doc/checkdemo/reports
+set ncrepdir = $REPORTS/nctox/scenario
 set fyrepdir = $REPORTS/nctox_18/scenario
+set mbrepdir = $REPORTS/MOVES_2009/scenario
 
 # Check stationary area sources
 echo 'Stationary area source differences' > $errfile
 
-diff $REPSCEN/repagts_l.*0710* $repdir/repagts_l.*.nctox.* >> $errfile
+diff $ncrepdir/repagts_l.*0710* $repdir/repagts_l.*.nctox.* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -24,20 +26,7 @@ endif
 # Check biogenic sources
 echo 'Biogenic source differences' >> $errfile
 
-diff $REPSCEN/repb3gts_s.*0710* $repdir/repb3gts_s.*.nctox.* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-# Check mobile sources
-echo 'Mobile source differences' >> $errfile
-
-diff $REPSCEN/repmgts_l.*0710* $repdir/repmgts_l.*.nctox.* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-diff $fyrepdir/repmgts_l.*0710* $repdir/repmgts_l.*.nctox_18.* >> $errfile
+diff $ncrepdir/repb3gts_s.*0710* $repdir/repb3gts_s.*.nctox.* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -45,7 +34,7 @@ endif
 # Check nonroad area sources
 echo 'Nonroad source differences' >> $errfile
 
-diff $REPSCEN/repngts_l.*0710* $repdir/repngts_l.*.nctox.* >> $errfile
+diff $ncrepdir/repngts_l.*0710* $repdir/repngts_l.*.nctox.* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -58,12 +47,36 @@ endif
 # Check point sources
 echo 'Point source differences' >> $errfile
 
-diff $REPSCEN/reppgts_l.*0710* $repdir/reppgts_l.*.nctox.* >> $errfile
+diff $ncrepdir/reppgts_l.*0710* $repdir/reppgts_l.*.nctox.* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
 diff $fyrepdir/reppgts_l.*0710* $repdir/reppgts_l.*.nctox_18.* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check MOVES onroad sources
+echo 'MOVES onroad source differences' >> $errfile
+
+diff $mbrepdir/rep_l_onroad* $repdir/rep_l_onroad* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check MOVES offroad-rpv sources
+echo 'MOVES offroad-rpv source differences' >> $errfile
+
+diff $mbrepdir/rep_l_offroad-rpv* $repdir/rep_l_offroad-rpv* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+# Check MOVES offroad-rpp sources
+echo 'MOVES offroad-rpp source differences' >> $errfile
+
+diff $mbrepdir/rep_l_offroad-rpp* $repdir/rep_l_offroad-rpp* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
