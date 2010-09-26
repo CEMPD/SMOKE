@@ -1,0 +1,18 @@
+<REPCOUNTY>
+FIPS = 13121
+AGE = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\agedistribution_13121.csv
+IM = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\imcoverage_13121.csv
+FUELSUPPLY = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\fuelsupply_13121.csv
+POP = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\population_13121.csv
+HPMSVMT = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\hpmsvtypeyear_13121.csv
+FUELFORM = 
+<ENDREPCOUNTY>
+<REPCOUNTY>
+FIPS = 13217
+AGE = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\agedistribution_13217.csv
+IM = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\imcoverage_13217.csv
+FUELSUPPLY = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\fuelsupply_13217.csv
+POP = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\population_13217.csv
+HPMSVMT = C:\Program Files\MOVES20091214\runspec_files\testmjscript\04192010\hpmsvtypeyear_13217.csv
+FUELFORM =
+<ENDREPCOUNTY>
