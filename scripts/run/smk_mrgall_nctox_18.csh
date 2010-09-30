@@ -22,7 +22,7 @@ setenv FYEAR 2018               # year of future case
 
 ## Set source category
 setenv SMK_SOURCE    E          # source category to process
-setenv MRG_SOURCE    ABMP       # source category to merge
+setenv MRG_SOURCE    ABP       # source category to merge
 setenv MRG_CTLMAT_MULT ' '      # source category to merge multiplicative controls
 setenv MRG_CTLMAT_REAC ' '      # source category to merge reactivity controls
 
@@ -70,7 +70,7 @@ setenv SMK_MAXWARNING       100 # maximum number of warning messages in log file
 setenv SMK_PING_METHOD      1   # 1 processes and outputs PinG sources
 
 ## Script settings
-setenv MRGFILES "AGTS_L NGTS_L B3GTS_L MGTS_L PGTS3D_L" # logical file names to merge
+setenv MRGFILES "AGTS_L NGTS_L B3GTS_L PGTS3D_L" # logical file names to merge
 setenv MRGGRID_MOLE         Y   # Y outputs mole-based file, musy be consistent with MRGFILES
 setenv SRCABBR              abmp.$FYEAR # abbreviation for naming log files
 setenv PROMPTFLAG           N   # Y prompts for user input

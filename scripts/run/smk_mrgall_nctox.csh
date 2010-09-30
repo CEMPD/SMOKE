@@ -19,7 +19,7 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb4p25_wtox.us12-nc
 
 ## Set source category
 setenv SMK_SOURCE    E          # source category to process
-setenv MRG_SOURCE    ABMP       # source category to merge
+setenv MRG_SOURCE    ABP        # source category to merge
 
 ## Set programs to run...
 
@@ -63,7 +63,7 @@ setenv SMK_MAXWARNING       100 # maximum number of warning messages in log file
 setenv SMK_PING_METHOD      1   # 1 processes and outputs PinG sources
 
 ## Script settings
-setenv MRGFILES "AGTS_L NGTS_L B3GTS_L MGTS_L PGTS3D_L" # logical file names to merge
+setenv MRGFILES "AGTS_L NGTS_L B3GTS_L PGTS3D_L" # logical file names to merge
 setenv MRGGRID_MOLE         Y   # Y outputs mole-based file, musy be consistent with MRGFILES
 setenv SRCABBR              abmp # abbreviation for naming log files
 setenv PROMPTFLAG           N   # Y prompts for user input
