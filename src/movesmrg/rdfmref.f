@@ -172,7 +172,7 @@ C.........  Abort if error found while reading settings file
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        CALL SORTI2( NLINES,IDX,FMREFRAW(:,1),FMREFRAW(:,3) )
+        CALL SORTI2( NLINES,IDX,FMREFRAW(:,1),FMREFRAW(:,2) )
 
 C.............  Count no of ref counties
         NR = 0
@@ -246,7 +246,7 @@ C.............  Check that current reference county is in the county cross-refer
                 
             END IF
             
-            PRMONTH  = FUELMONTH
+            PRMONTH  = MONTH
             PRCOUNTY = REFCOUNTY
             
         END DO
