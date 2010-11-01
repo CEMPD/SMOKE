@@ -180,8 +180,10 @@ C...........   Other local variables:
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
         INTEGER    LDATE       ! date from previous loop iteration
         INTEGER    MDATE       ! output date for monthly counties
+        INTEGER    SYEAR       ! year of start date
         INTEGER    SMONTH      ! month of start date
         INTEGER    SDAY        ! date of month (start) 
+        INTEGER    EYEAR       ! year of end date
         INTEGER    EMONTH      ! month of end date
         INTEGER    EDAY        ! date of month (end) 
         INTEGER    TMONTH      ! tmp month of end date
@@ -335,6 +337,10 @@ C.........  Get episode starting date and time and ending date
 
         MESG = 'Episode end time (HHMMSS)'
         EPI_ETIME = ENVINT( 'ENDTIME', MESG, 230000, IOS )
+
+        MESG = 'CRITICAL NOTE: ENDATE MUST cross the month to ' //
+     &         'generate monthly averaged values.'
+        CALL M3MESG( MESG )
 
 C.........  Find the total number of time steps
         EPI_NSTEPS = 1 + 
@@ -545,9 +551,9 @@ C.........  Make sure the ending time is between 0 and 23
 
 C.........  If the episode ending time is later than calculated end time,
 C           set the ending date forward one day
-c        IF( EPI_ETIME > ETIME ) THEN
-c            CALL NEXTIME( EDATE, ETIME, 24*10000 )
-c        END IF
+        IF( EPI_ETIME > ETIME ) THEN
+            CALL NEXTIME( EDATE, ETIME, 24*10000 )
+        END IF
 
 C.........  Convert start and end dates and times back to GMT
         CALL NEXTIME( SDATE, STIME, TZONE*10000 )
@@ -559,14 +565,23 @@ C.........  Find the total number of time steps
 C.........  Configure the month(s) of modeling period
         CALL DAYMON( SDATE, SMONTH, SDAY )
         CALL DAYMON( EDATE, EMONTH, EDAY )
-        DDATE  = EDATE  - SDATE
+        SYEAR = INT( SDATE/1000 )
+        EYEAR = INT( EDATE/1000 )
+
         DMONTH = EMONTH - SMONTH
 
+C.........  Estimate total no of processing months
+        NFUEL = EMONTH - SMONTH + 1
+
 C.........  Reset monthly default to episode setting for averaging method
-        IF( DMONTH == 0 ) THEN
+        IF( DMONTH == 0 .AND. SYEAR == EYEAR ) THEN
             MONAVER = .FALSE.
             EPIAVER = .TRUE.
-        END IF
+
+        ELSE IF( SYEAR /= EYEAR ) THEN
+            NFUEL = EMONTH + 12 - SMONTH
+
+       END IF
 
 C.........  Get number of lines in met list file
         NLINES = GETFLINE( TDEV, 'METLIST file' )
@@ -997,9 +1012,6 @@ C.........  Loop through days/hours of meteorology files
 C.........  Process max/min temperatures and avg RH for county-specific
 C           fuelmonth
 
-C...........  Define max no of fuelmonth
-        NFUEL = ( EMONTH - SMONTH ) + 1
-
 C...........  Allocate fuelmonth arrays
         ALLOCATE( FUELIDX( NREFC,NFUEL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FUELIDX', PROGNAME )
@@ -1021,7 +1033,7 @@ C...........  Allocate fuelmonth arrays
 
         N = 0
         DO I = 1,NFUEL
-            FUELIDX( :,I ) = SMONTH + N
+            FUELIDX ( :,I ) = SMONTH + N
             N = N + 1
         END DO
 
@@ -1196,14 +1208,18 @@ C.............  Loop over months per ref. county
             NFMON = 0
             TMPMONTH = 0    ! prv tmp processing month 
             PRVFMONTH = 0   ! prv tmp fuelmonth 
+
             DO J = L, L + NMON - 1
 
                 FUELMONTH = FMREFSORT( J,2 )    ! processing fuelmonth/county
-                CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. county
+                CURMONTH  = FMREFSORT( J,3 )    ! processing current month per ref. county
 
-C.................  Skip other months
-                IF( CURMONTH <  SMONTH ) CYCLE
-                IF( CURMONTH >  EMONTH ) CYCLE
+                IF( SYEAR /= EYEAR ) THEN
+                    IF( CURMONTH<SMONTH .AND. CURMONTH>EMONTH ) CYCLE
+                ELSE
+                    IF( CURMONTH < SMONTH ) CYCLE
+                    IF( CURMONTH > EMONTH ) CYCLE
+                END IF
 
                 NFMON = NFMON + 1    ! county no of fuelmonth per refcouty for QA check
 
@@ -1215,9 +1231,6 @@ C.................  Store fuelmonth specific values into arrays
                         TKFUEL  ( NR,NF  ,:  ) = TKREFHR( : ) / N
                         MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
                         MINTFUEL( NR,PRNF:NF ) = MINTEMP
-
-c              print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF1,,,'
-c              print*,TKFUEL(NR,NF,:)
 
                         CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE,
      &                                  REFCOUNTY, TMPMONTH, PPTEMP,
@@ -1236,7 +1249,8 @@ C.....................  initialize local variables
 
                 NF = FIND1( CURMONTH, NFUEL, FUELIDX( NR,: ) )
 
-                IF( RHFUEL( NR,NF ) > 0.0 ) N  = N + 1
+                IF( RHFUEL( NR,NF ) > 0.0 ) N = N + 1
+
                 RHSUM = RHSUM + RHFUEL( NR,NF )
                 MAXTEMP = MAX( MAXTEMP, MAXTFUEL( NR,NF ) )
                 MINTEMP = MIN( MINTEMP, MINTFUEL( NR,NF ) )
@@ -1248,8 +1262,6 @@ C.....................  initialize local variables
                 TMPMONTH  = CURMONTH
                 PRVFMONTH = FUELMONTH
 
-c             print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHFUEL(NR,NF),N,'INV,,,'
-
             END DO
 
 C...............  Store last fuelmonth specific values into arrays
@@ -1258,9 +1270,6 @@ C...............  Store last fuelmonth specific values into arrays
             TKFUEL  ( NR,NF  ,:  ) = TKREFHR( : ) / N  
             MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
             MINTFUEL( NR,PRNF:NF ) = MINTEMP
-
-c            print*,PRVFMONTH,NR,NF,PRNF,MAXTEMP,RHSUM/N,N,'REF2,,,'
-c            print*,TKFUEL(NR,NF,:)
 
             CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE, REFCOUNTY,
      &                      TMPMONTH, PPTEMP, TKFUEL( NR,NF,: ) )
@@ -1457,8 +1466,7 @@ C.....................  Average temperatures across county group
                     CALL AVGMET( NSRC, ARRAYPOS )
 
 C.....................  Write averaged monthly county temp and RH to file
-C                       only output when more than 15 days are processed for monthly avg
-                    IF( OTIME == 230000 .AND. POS > 15*24 ) THEN
+                    IF( OTIME == 230000 ) THEN
                         CALL WRAVGMET( NSRC, ODEV1, DDATE )
                     END IF
                   
@@ -1547,7 +1555,6 @@ C.................  averaging RH per inventory county
                 MAXTEMP = MAXTSRC( S )
                 MINTEMP = MINTSRC( S )
 
-c           print*,INVCOUNTY,REFCOUNTY,MAXTEMP,MINTEMP,RHAVG,N,RHSUM,'RHAVG'
 C.................  Calculation monthly max/min temp and avg RH
 C                   per ref. county
 
@@ -1561,8 +1568,6 @@ C.................  Averaging RH for ref. county
                           TKFUEL( NR,NF,: ) = TKREFHR( : ) / IC
                           MAXTFUEL( NR,NF ) = MAXTREF
                           MINTFUEL( NR,NF ) = MINTREF
-
-c           print*,prcounty,NR,NF,MAXTREF,MINTREF,IC,RHREFSUM/IC,'REF1,,'
                      END IF
                             
                      IC = 0
@@ -1583,8 +1588,6 @@ c           print*,prcounty,NR,NF,MAXTREF,MINTREF,IC,RHREFSUM/IC,'REF1,,'
                 MAXTREF = MAX( MAXTREF, MAXTEMP )
                 MINTREF = MIN( MINTREF, MINTEMP )
 
-c         print*,refcounty,NR,NF,MAXTREF,MINTREF,IC,RHAVG,'INV,,.'
-                
                 PRCOUNTY = REFCOUNTY
                         
             END DO
@@ -1596,8 +1599,6 @@ c         print*,refcounty,NR,NF,MAXTREF,MINTREF,IC,RHAVG,'INV,,.'
             TKFUEL( NR,NF,: ) = TKREFHR( : ) / IC
             MAXTFUEL( NR,NF ) = MAXTREF
             MINTFUEL( NR,NF ) = MINTREF
-
-c         print*,prcounty,NR,NF,MAXTREF,MINTREF,IC,RHREFSUM/IC,'REF2,,'
 
             END SUBROUTINE AVG_REF_COUNTY_RH_TEMP
                
