@@ -190,7 +190,7 @@ C...........   Other local variables:
         INTEGER    TDAY        ! tmp date of month (end) 
         INTEGER    MONTH       ! tmp month
         INTEGER    CURMONTH    ! current month
-        INTEGER    TMPMONTH    ! previous month
+        INTEGER    PRVCMONTH   ! previous month
         INTEGER    FUELMONTH   ! current fuelmonth
         INTEGER    PRVFMONTH   ! previous fuelmonth
         INTEGER    METNGRID    ! no. grid cells in met data
@@ -198,7 +198,6 @@ C...........   Other local variables:
         INTEGER    NSRC        ! no. source (=counties)
         INTEGER    NVARS       ! no. surrogates
         INTEGER    NF          ! current and prvious county fuelmonths
-        INTEGER    PRNF        ! prvious county fuelmonths
         INTEGER    NMON        ! no of fuelmonth per refcounty
         INTEGER    NFMON       ! tmp no of fuelmonths per refcounty
         INTEGER    NSTEPS      ! number of time steps to process temperature data
@@ -1042,6 +1041,13 @@ C...........  loop over hours
 
 C.............  When new day...
             IF ( JDATE /= LDATE ) THEN
+
+C.................  Write message for day of week and date
+                DAY = WKDAY( JDATE )
+                MESG = 'Processing ' // DAYS( DAY ) // ' ' // 
+     &                 MMDDYY( JDATE )
+                CALL M3MSG2( MESG )
+
 C.................  Set start and end hours of day for all sources
                 CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, .TRUE.,
      &                         DAYBEGT, DAYENDT )
@@ -1125,6 +1131,12 @@ C.................  Apply ungridding matrix
 C.................  Create hourly meteorology arrays by source
                 CALL HOURMET( NSRC, AVG_TYPE, JDATE, JTIME, DAYBEGT,
      &             ALT_DATA, LDAYSAV, RH_STRHR, RH_ENDHR )
+            ELSE
+                IF( OTIME == 230000 ) THEN
+                    MESG = 'NOTE: Missing meteorology file on '//
+     &                      MMDDYY( JDATE )
+                    CALL M3MSG2( MESG )
+                END IF
 
             END IF  ! check for using alternate data or day averaging
 
@@ -1147,7 +1159,7 @@ C.....................  Averaging met data over no of days
                         CALL AVGMET( NSRC,K )
                     ENDDO
                         
-                    CALL AVG_REF_COUNTY_RH_TEMP( MONTH )
+                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE,  MONTH )
 
 C.....................  reinitializing local arrays for next month averaging
                     NDAYSRC = 0
@@ -1170,7 +1182,7 @@ C.................  Averaging met data over no of days
                     CALL AVGMET( NSRC,K )
                 ENDDO
 
-                CALL AVG_REF_COUNTY_RH_TEMP( MONTH )
+                CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE, MONTH )
 
             END IF
 
@@ -1206,7 +1218,7 @@ C.............  Choose month-specific fulemonth county
 C.............  Loop over months per ref. county
             N = 0
             NFMON = 0
-            TMPMONTH = 0    ! prv tmp processing month 
+            PRVCMONTH = 0   ! prv tmp processing month 
             PRVFMONTH = 0   ! prv tmp fuelmonth 
 
             DO J = L, L + NMON - 1
@@ -1226,15 +1238,13 @@ C.............  Loop over months per ref. county
 C.................  Store fuelmonth specific values into arrays
                 IF( FUELMONTH /= PRVFMONTH ) THEN
                     IF( N > 0 ) THEN
-                        PRNF = NF - N + 1
-                        RHFUEL  ( NR,PRNF:NF ) = RHSUM / N
-                        TKFUEL  ( NR,NF  ,:  ) = TKREFHR( : ) / N
-                        MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
-                        MINTFUEL( NR,PRNF:NF ) = MINTEMP
 
-                        CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE,
-     &                                  REFCOUNTY, TMPMONTH, PPTEMP,
-     &                                  TKFUEL( NR,NF,: ) ) 
+                        RHAVG = RHSUM / N
+                        TKREFHR = TKREFHR / N
+
+                        CALL WRTEMPROF( ODEV2, SYEAR, AVG_TYPE, 
+     &                       REFCOUNTY, PRVFMONTH, PPTEMP, RHAVG,
+     &                       TKREFHR, MAXTEMP, MINTEMP ) 
 
                     END IF
 
@@ -1258,21 +1268,18 @@ C.....................  initialize local variables
                 DO TT = 1,24
                     TKREFHR( TT ) = TKREFHR( TT ) + TKFUEL( NR,NF,TT )
                 END DO
-                
-                TMPMONTH  = CURMONTH
+
+                PRVCMONTH = CURMONTH
                 PRVFMONTH = FUELMONTH
 
             END DO
 
 C...............  Store last fuelmonth specific values into arrays
-            PRNF = NF - N + 1
-            RHFUEL  ( NR,PRNF:NF ) = RHSUM / N
-            TKFUEL  ( NR,NF  ,:  ) = TKREFHR( : ) / N  
-            MAXTFUEL( NR,PRNF:NF ) = MAXTEMP
-            MINTFUEL( NR,PRNF:NF ) = MINTEMP
+             RHAVG = RHSUM / N
+             TKREFHR = TKREFHR / N
 
-            CALL WRTEMPROF( ODEV2, SDATE, AVG_TYPE, REFCOUNTY,
-     &                      TMPMONTH, PPTEMP, TKFUEL( NR,NF,: ) )
+             CALL WRTEMPROF( ODEV2, SYEAR, AVG_TYPE, REFCOUNTY,
+     &           PRVFMONTH, PPTEMP, RHAVG, TKREFHR, MAXTEMP, MINTEMP )
 
 C..............  Check processing month is listed in the fuelmonth for each ref. county
             IF( NFMON < NFUEL ) THEN
@@ -1287,214 +1294,9 @@ C..............  Check processing month is listed in the fuelmonth for each ref.
       
 C.........  Exit if there was a problem with the meteorology files
         IF( EFLAG ) THEN
-            MESG = 'Problem checking meteorology files'
+            MESG = 'Problem processing meteorology files'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-
-C.........  Initializing arrays
-C.........  Allocate memory for storing meteorology profiles
-        TKHOUR = 0.0
-        RHHOUR = 0.0
-        NDAYSRC = 0
-        MAXTSRC = BADVAL3
-        MINTSRC = -1*BADVAL3
-
-        PREVFILE = ' '
-        FILEOPEN = .TRUE.
-
-C.........  Loop through days/hours of meteorology files
-        DDATE = SDATE
-        OTIME = 0
-        WDATE = SDATE
-        MDATE = SDATE
-        
-        JDATE = SDATE
-        JTIME = STIME
-        LDATE = -9
-        
-        DO T = 1, NSTEPS
-
-C.............  When new day...
-            IF ( JDATE /= LDATE ) THEN
-
-C.................  Write message for day of week and date
-                DAY = WKDAY( JDATE )
-                MESG = 'Processing ' // DAYS( DAY ) // ' ' // 
-     &                 MMDDYY( JDATE )
-                CALL M3MSG2( MESG )
-
-C.................  Set start and end hours of day for all sources for MOVES model
-                CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, .TRUE.,
-     &                         DAYBEGT, DAYENDT )
-
-            END IF
-
-C.............  Determine input file for this hour
-            POS = T
-            
-C.............  Get file number for current iteration
-            FILENUM = METDAYS( POS )
-
-            IF( FILENUM <= 0 ) THEN
-                ALT_DATA = .TRUE.
-            ELSE
-                ALT_DATA = .FALSE.
-            END IF
-
-C.............  Skip file opening when not doing day averaging and using alternate data
-            IF( .NOT. ALT_DATA .OR. DAYAVER ) THEN
-            
-C.................  Get file name
-                METFILE = METLIST( ABS( FILENUM ) )
-
-C.................  Close previous file if needed
-                IF( METFILE .NE. PREVFILE ) THEN
-                    IF( FILEOPEN ) THEN
-                        IF( .NOT. CLOSE3( METNAME ) ) THEN
-                            MESG = 'Could not close meteorology ' //
-     &                             'file ' // TRIM( PREVFILE )
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                        ELSE
-                            FILEOPEN = .FALSE.
-                        END IF
-                    END IF
-
-                    PREVFILE = METFILE
-
-                END IF
-
-C.................  Set logical file name
-                IF( .NOT. SETENVVAR( METNAME, METFILE ) ) THEN
-                    MESG = 'Could not set logical file name for ' //
-     &                     'file ' // TRIM( METFILE )
-                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Open the meteorology data file
-                IF ( .NOT. OPEN3( METNAME, FSREAD3, PROGNAME ) ) THEN
-                    MESG = 'Could not open meteorology file ' // 
-     &                     TRIM( METFILE )
-                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                ELSE
-                    FILEOPEN = .TRUE.
-                END IF
-
-C.................  Reset read date when using alternate data while processing daily (no averaging)
-                IF( ALT_DATA ) THEN
-                    IF( .NOT. DESC3( METNAME ) ) THEN
-                        MESG = 'Could not get description of ' //
-     &                         'meteorology file ' // TRIM( METFILE )
-                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    ELSE
-                        IF( SDATE3D < JDATE ) THEN
-                            RDATE = JDATE - 1
-                        ELSE
-                            RDATE = JDATE + 1
-                        END IF
-                    END IF
-
-                ELSE
-                    RDATE = JDATE
-                END IF
-            
-C.................  Read current meteorology file
-                IF ( .NOT. READ3( METNAME, TVARNAME, 1, 
-     &                            RDATE, JTIME, TA ) ) THEN
-                    MESG = 'Could not read ' // TRIM( TVARNAME ) //
-     &                     ' from ' // TRIM( METFILE ) 
-                    CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
-                END IF
-                IF ( .NOT. READ3( METNAME, MIXNAME, 1,
-     &                            RDATE, JTIME, QV ) ) THEN
-                    MESG = 'Could not read ' // TRIM( MIXNAME ) //
-     &                     ' from ' // TRIM( METFILE )
-                    CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
-                END IF
-
-                IF ( .NOT. READ3( METNAME, PRESNAME, 1,
-     &                            RDATE, JTIME, PRES ) ) THEN
-                    MESG = 'Could not read ' // TRIM( PRESNAME ) //
-     &                     ' from ' // TRIM( METFILE )
-                    CALL M3EXIT( PROGNAME, RDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Apply ungridding matrix 
-                CALL GRDFIPS( NSRC, CNTYSRC, TA, TASRC, .TRUE. )
-                CALL GRDFIPS( NSRC, CNTYSRC, QV, QVSRC, .FALSE. )
-                CALL GRDFIPS( NSRC, CNTYSRC, PRES, PRESSRC, .FALSE. )
-
-C.................  Create hourly meteorology arrays by source
-                CALL HOURMET( NSRC, AVG_TYPE, JDATE, JTIME, DAYBEGT,
-     &             ALT_DATA, LDAYSAV, RH_STRHR, RH_ENDHR )
-
-            ELSE
-                IF( OTIME == 230000 ) THEN
-                    MESG = 'NOTE: Missing meteorology file on '//
-     &                      MMDDYY( JDATE )
-                    CALL M3MSG2( MESG )
-                END IF
-
-            END IF  ! check for using alternate data or day averaging
-
-C.............  Make sure we've waited long enough to catch all time zones
-            IF( POS > TSPREAD ) THEN
-
-C.................  Adjust time step for 24-hour arrays
-                ARRAYPOS = MOD( POS - TSPREAD, 24 )
-                IF( ARRAYPOS == 0 ) ARRAYPOS = 24
-
-C.................  Process daily averages
-                IF( DAYAVER ) THEN
-
-C.....................  Average temperatures across county group                
-                    CALL AVGMET( NSRC, ARRAYPOS )
-
-C.....................  Write averaged daily county temp and RH to file
-                    IF( OTIME == 230000 ) THEN
-                        CALL WRAVGMET( NSRC, ODEV1, DDATE )
-                    END IF
-
-                END IF
-
-C.................  If last day of month, process monthly averages
-                CALL DAYMON( DDATE, MONTH, DAY )
-                CALL DAYMON( DDATE + 1, TMPMNTH, DAY )
-            
-                IF( MONAVER .AND. TMPMNTH /= MONTH ) THEN
-
-C.....................  Average temperatures across county group 
-                    CALL AVGMET( NSRC, ARRAYPOS )
-
-C.....................  Write averaged monthly county temp and RH to file
-                    IF( OTIME == 230000 ) THEN
-                        CALL WRAVGMET( NSRC, ODEV1, DDATE )
-                    END IF
-                  
-                END IF
-
-            END IF    ! time zone check
-
-C.............  Output episode averaged temperatures
-C.............  Write averaged episodic county temp and RH to file
-            IF( T == NSTEPS .AND. EPIAVER ) THEN
-C.................  Average temperatures across county group 
-                DO K = 1, 24
-                    CALL AVGMET( NSRC, K )
-                END DO
-
-                CALL WRAVGMET( NSRC, ODEV1, DDATE )
-            END IF
-
-C.............  Increment output time
-            IF( POS > TSPREAD ) THEN
-                CALL NEXTIME( DDATE, OTIME, 10000 )
-            END IF
-
-C.............  Increment loop time
-            LDATE = JDATE
-            CALL NEXTIME( JDATE, JTIME, 10000 )
-
-        END DO   !  End loop on hours of temperature files
  
 C......... End program successfully
 
@@ -1518,7 +1320,7 @@ C...........   Internal buffering fosrmats............ 94xxx
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
-     
+
 94070   FORMAT( A, F5.1, A )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
@@ -1528,10 +1330,17 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C.............  This internal subprogram estimates ref. county level 
 C               averaged RH and min/max Temperatures over fuelmonth
 
-            SUBROUTINE AVG_REF_COUNTY_RH_TEMP( MONTH )
+          SUBROUTINE AVG_REF_COUNTY_RH_TEMP( ODEV1, SDATE, MONTH )
 
 C.............  local argument
+            INTEGER, INTENT( IN ) :: ODEV1    ! SMOKE-ready output file
+            INTEGER, INTENT( IN ) :: SDATE
             INTEGER, INTENT( IN ) :: MONTH
+
+C...........   Other local variables
+c            INTEGER NMON                     ! no of month per ref. county
+c            INTEGER CURMONTH                 ! processing calendar month
+c            INTEGER FUELMONTH                ! processing fuelmonth
 
 C---------------------------------------------------------------------- 
 C.............  Loop over sources
@@ -1554,6 +1363,21 @@ C.................  averaging RH per inventory county
                 RHAVG   = RHSUM / N
                 MAXTEMP = MAXTSRC( S )
                 MINTEMP = MINTSRC( S )
+
+                L = FIND1FIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
+                K = FIND1FIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
+                NMON = FMREFLIST( K, 2 )   ! no month of ref county
+
+C.................  Loop over months per ref. county
+                FUELMONTH = 0
+                DO J = L, L + NMON - 1
+                    CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. county
+                    IF( CURMONTH == MONTH ) FUELMONTH = FMREFSORT( J,2 )  ! processing fuelmonth/county
+                END DO
+
+C.................  write inventory county min/max and avg RH
+                WRITE( ODEV1,94060 ) INVCOUNTY, FUELMONTH, MONTH, SDATE,
+     &                 RHAVG, MINTEMP, MAXTEMP
 
 C.................  Calculation monthly max/min temp and avg RH
 C                   per ref. county
@@ -1600,6 +1424,10 @@ C.................  Averaging RH for ref. county
             MAXTFUEL( NR,NF ) = MAXTREF
             MINTFUEL( NR,NF ) = MINTREF
 
-            END SUBROUTINE AVG_REF_COUNTY_RH_TEMP
+C******************  FORMAT  STATEMENTS   ******************************
+C...........   Internal buffering formats............ 94xxx
+94060       FORMAT( I6.6, I5, 3X, I5, I10, 3F10.2 )
+
+          END SUBROUTINE AVG_REF_COUNTY_RH_TEMP
                
         END PROGRAM MET4MOVES

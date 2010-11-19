@@ -1,6 +1,6 @@
 
-        SUBROUTINE WRTEMPROF( ODEV, MDATE, HDR, COUNTY, PMONTH, 
-     &                        PPTEMP, THOUR ) 
+        SUBROUTINE WRTEMPROF( ODEV, MYEAR, HDR, COUNTY, PMONTH,
+     &                        PPTEMP, RHAVG, THOUR, MAXTEMP, MINTEMP ) 
 
 C***********************************************************************
 C  subroutine body starts at line 78
@@ -36,17 +36,6 @@ C Last updated: $Date$
 C
 C***********************************************************************
 
-C...........   MODULES for public variables
-C.........  This module is used for MOBILE6 setup information                
-        USE MODMBSET, ONLY: NINVC, NREFC, MCREFSORT, MCREFIDX,
-     &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
-
- 
-C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TKHOUR, RHHOUR, MAXTSRC, MINTSRC, MINTEMP,
-     &                    MAXTEMP, RHFUEL, MAXTFUEL, MINTFUEL, NFUEL,
-     &                    FUELIDX
-
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -56,48 +45,34 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER(2)    CRLF
-        INTEGER         FIND1
-        INTEGER         FIND1FIRST
         CHARACTER(14)   MMDDYY
 
-        EXTERNAL     CRLF, FIND1, FIND1FIRST, MMDDYY
+        EXTERNAL     CRLF, MMDDYY
 
 C...........   SUBROUTINE ARGUMENTS
 C.............  Subroutine arguments
         INTEGER  , INTENT(IN)  ::  ODEV
-        INTEGER  , INTENT(IN)  ::  MDATE
+        INTEGER  , INTENT(IN)  ::  MYEAR
         CHARACTER, INTENT(IN)  ::  HDR
         INTEGER  , INTENT(IN)  ::  COUNTY
         INTEGER  , INTENT(IN)  ::  PMONTH
         INTEGER  , INTENT(IN)  ::  PPTEMP
+        REAL     , INTENT(IN)  ::  RHAVG
         REAL     , INTENT(IN)  ::  THOUR( 24 )
+        REAL     , INTENT(IN)  ::  MAXTEMP 
+        REAL     , INTENT(IN)  ::  MINTEMP
 
 C.........  Local array
-        REAL   , ALLOCATABLE :: TKPRO( : ) !  24hr temp. profile
-        REAL   , ALLOCATABLE :: TMPRO( : ) !  tmp 24hr temp. profile
-        REAL   , ALLOCATABLE :: TKREFHR( : ) !  24hr temp. profile
+        REAL   :: TKPRO( 24 ) = 0.0 !  24hr temp. profile
+        REAL   :: TMPRO( 24 ) = 0.0 !  tmp 24hr temp. profile
 
 C...........   Other local variables
         INTEGER I, IT, J, K, L, LT, N, NR, MX, MN, R, S, T           ! counters and indices                     
         
         INTEGER IOS                       ! I/O status
-        INTEGER IC                        ! number of inven cnty per ref cnty
-        INTEGER REFCOUNTY                 ! ref. county FIPS code
-        INTEGER INVCOUNTY                 ! inv. county FIPS code
-        INTEGER PRCOUNTY                  ! previous ref. county
         INTEGER IMAXT, IMINT              ! current integer min/max temp.
         INTEGER MAXT , MINT               ! tmp remainder of max/min
-        INTEGER MONTH, DAY                ! processing month and day
-        INTEGER NMON                      ! no of month per ref. county
-        INTEGER FUELMONTH                 ! current fuelmonth for ref. county
-        INTEGER CURMONTH                  ! current month
-        INTEGER NF                        ! current county fuelmonths
 
-        REAL    RHSUM                     ! sum of RH
-        REAL    RHAVG                     ! avg of RH
-        REAL    RHREFSUM                  ! sum of RH for ref county
-        REAL    RHREFAVG                  ! avg of RH for ref county
-        REAL    MAXTREF, MINTREF          ! ref county min/max temperatures
         REAL    TKMAX                     ! tmp max temperatures
         REAL    TKMIN                     ! tmp min temperatures
         REAL    TKDIF, DT                 ! tmp DIFF of min/max temperatures
@@ -110,55 +85,22 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine WRTEMPROF
 
-c        print*, FIRSTIME, MDATE, HDR, COUNTY, PMONTH, PPTEMP, 'BH11' 
 C.........  Allocate local arrays
-        IF( ALLOCATED( TKPRO ) ) DEALLOCATE( TKPRO )
-        IF( ALLOCATED( TMPRO ) ) DEALLOCATE( TMPRO )
-        IF( ALLOCATED( TKREFHR ) ) DEALLOCATE( TKREFHR )
-        ALLOCATE( TKPRO( 24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKPRO', PROGNAME )
-        ALLOCATE( TMPRO( 24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TMPRO', PROGNAME )
-        ALLOCATE( TKREFHR( 24 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'TKREFHR', PROGNAME )
-        TKPRO = 0.0
-        TMPRO = 0.0
-        TKREFHR = 0.0
-
-C.........  Replace ref county min/max and RH with fuelmonth min/max and RH
-C.........  Choose month-specific fulemonth county
-        L = FIND1FIRST( COUNTY, NREFF, FMREFSORT( :,1 ) )
-        K = FIND1FIRST( COUNTY, NFUELC,FMREFLIST( :,1 ) )
-
-        NMON = FMREFLIST( K, 2 )   ! no month of ref county
-        FUELMONTH = 0
-C.........  Loop over months per ref. county
-        DO J = L, L + NMON - 1
-
-            CURMONTH  = FMREFSORT( J,3 )  ! processing  current month per ref. county
-
-C.............  Skip other months
-            IF( CURMONTH  == PMONTH ) THEN
-                FUELMONTH = FMREFSORT( J,2 )  ! processing fuelmonth/county
-
-C.................  Define fuelmonth min/max and RH per ref. county
-                NR = FIND1( COUNTY,  NREFC,MCREFIDX (:,1) )
-                NF = FIND1( CURMONTH,NFUEL,FUELIDX (NR,:) )
-
-                RHREFAVG = RHFUEL  ( NR,NF )
-                MAXTREF  = MAXTFUEL( NR,NF )
-                MINTREF  = MINTFUEL( NR,NF )
-c          print*,COUNTY,NR,NF,RHREFAVG,MAXTREF,MINTREF,FUELMONTH,'REF,,,'
-            END IF
-
-        END DO
+c        IF( ALLOCATED( TKPRO ) ) DEALLOCATE( TKPRO )
+c        IF( ALLOCATED( TMPRO ) ) DEALLOCATE( TMPRO )
+c        ALLOCATE( TKPRO( 24 ), STAT=IOS )
+c        CALL CHECKMEM( IOS, 'TKPRO', PROGNAME )
+c        ALLOCATE( TMPRO( 24 ), STAT=IOS )
+c        CALL CHECKMEM( IOS, 'TMPRO', PROGNAME )
+c        TKPRO = 0.0
+c        TMPRO = 0.0
 
 C.........  Write out last ref. county min/max temp and avg RH
-        WRITE( ODEV,94040 ) COUNTY, FUELMONTH, 'min_max',
-     &                      RHREFAVG, MINTREF, MAXTREF
+        WRITE( ODEV,94040 ) COUNTY, PMONTH, 'min_max',
+     &                      RHAVG, MINTEMP, MAXTEMP
 
-        IMAXT = INT( MAXTREF )
-        IMINT = INT( MINTREF )
+        IMAXT = INT( MAXTEMP )
+        IMINT = INT( MINTEMP )
 
         TKMAX  = MAXVAL( THOUR )
         TKMIN  = MINVAL( THOUR )
@@ -173,7 +115,8 @@ C.........  Write out last ref. county min/max temp and avg RH
 C.........  Calculate temp profiles based on a combination of temp bins
         MAXT = IMAXT + ( PPTEMP - MOD( IMAXT,PPTEMP ) )
         MINT = IMINT - MOD( IMINT,PPTEMP )
-
+        IF( MINT <= 0 .AND. MINTEMP < 0  ) MINT = MINT - PPTEMP
+        
         IT = 0
 C.........  Determine temperature bins based on PPTEMP
         DO MX = MAXT,MINT,-PPTEMP
@@ -182,7 +125,7 @@ C.........  Determine temperature bins based on PPTEMP
 
                 IT = IT + 1
                 DT = MX - MN
-                WRITE( TPROID,94030 ) HDR, MDATE, IT
+                WRITE( TPROID,94030 ) HDR, MYEAR, PMONTH, IT
 
                 TKPRO = 0.0
 C.................  Create 24 hr temp profile per temp bin
@@ -191,8 +134,8 @@ C.................  Create 24 hr temp profile per temp bin
                 END DO
                     
 C.................  Output for SMOKE ready input file
-                WRITE( ODEV,94050 ) COUNTY, FUELMONTH, 
-     &                 TRIM(TPROID), RHREFAVG, (TKPRO( T ), T=1,24)
+                WRITE( ODEV,94050 ) COUNTY, PMONTH, 
+     &                 TRIM(TPROID), RHAVG, (TKPRO( T ), T=1,24)
 
             END DO
 
@@ -208,7 +151,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT( A, 4( 1X, F8.2, 1X, A ) )
 
-94030   FORMAT( A, I7.7, I3.3 )   
+94030   FORMAT( A, I4.4, I2.2, I4.4 )   
 
 94040   FORMAT( I6.6, I5, 3X, A, 3F10.2 )   
 

@@ -222,10 +222,10 @@ C.............  Check that current reference county is in the county cross-refer
             K = FIND1( REFCOUNTY, NREFC, MCREFIDX( :,1 ) )
 
             IF( K < 0 ) THEN
-                WRITE( MESG,94010 ) 'ERROR: Could not find the ' //
-     &             'fuel month settings for reference county', REFCOUNTY
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    
+c                WRITE( MESG,94010 ) 'ERROR: Could not find the ' //
+c     &             'fuel month settings for reference county', REFCOUNTY
+c                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                CYCLE                    
             ELSE    
                 N = N + 1
  
