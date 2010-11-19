@@ -464,8 +464,8 @@ C.................  Check to see if data name is in list of special names
 C.................  Store status of special data and flag code with
 C                   special integer so can ID these records later.
                 IF( CIDX .GT. 0 ) THEN
-                    SPSTAT( COD ) = .TRUE.
-                    COD = CODFLAG3 + COD
+                    SPSTAT( CIDX ) = .TRUE.
+                    COD = CODFLAG3 + CIDX
 
 C................  If not in list of special names, check to see
 C                  if it's a SMOKE pollutant name (intermediate name)
