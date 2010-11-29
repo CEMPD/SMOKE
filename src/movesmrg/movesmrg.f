@@ -42,7 +42,7 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: 
      &          MFLAG_BD,                          ! by-day hourly emis flags
-     &          LREPSTA, LREPANY, LGRDOUT,         ! state report, any reports, gridded output
+     &          LREPSTA, LREPCNY, LREPSCC, LGRDOUT,! report flags, gridded output
      &          CDEV,                              ! costcy
      &          MGNAME, MTNAME, MSNAME, MONAME,    ! input files
      &          NMSRC, MNGMAT,                     ! no. of srcs, no. gridding matrix entries
@@ -54,7 +54,8 @@ C.........  This module contains the major data structure and control flags
      &          MSDATE,                            ! dates for by-day hrly emis
      &          GRDFAC, TOTFAC,                    ! conversion factors
      &          MSMATX, MNSMATV, NSMATV,           ! speciation matrices
-     &          MEBCNY, MEBSTA,                    ! cnty/state total spec emissions
+     &          MEBCNY, MEBSTA, MEBSRC,            ! cnty/state/src total spec emissions
+     &          MEBSCC, MEBSTC,                    ! scc total spec emissions
      &          EANAM                              ! pol/act names
 
 C.........  This module contains data structures and flags specific to Movesmrg
@@ -64,7 +65,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          EMPROCIDX, EMPOLIDX,
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX, AVGMIN, AVGMAX,
      &          RPDEMFACS, RPVEMFACS, RPPEMFACS,
-     &          SPDFLAG, SPDPRO
+     &          SPDFLAG, SPDPRO, MISCC
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -235,13 +236,28 @@ C.........  Allocate memory for fixed-size arrays...
         CALL CHECKMEM( IOS, 'EMGRD', PROGNAME )
         EMGRD = 0.  ! array
         
+        IF( LREPSCC ) THEN
+            ALLOCATE( MEBSCC( NINVSCC, NMSPC ), STAT=IOS )    ! SCC totals
+            CALL CHECKMEM( IOS, 'MEBSCC', PROGNAME )
+        END IF
+        
         IF( LREPSTA ) THEN
             ALLOCATE( MEBSTA( NSTATE, NMSPC ), STAT=IOS )    ! state totals
             CALL CHECKMEM( IOS, 'MEBSTA', PROGNAME )
+            
+            IF( LREPSCC ) THEN
+                ALLOCATE( MEBSTC( NSTATE, NINVSCC, NMSPC ), STAT=IOS )     ! state-scc totals
+                CALL CHECKMEM( IOS, 'MEBSTC', PROGNAME )
+            END IF
         END IF
 
-        ALLOCATE( MEBCNY( NCOUNTY, NMSPC ), STAT=IOS )    ! county totals
-        CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
+        IF( LREPCNY ) THEN
+            ALLOCATE( MEBCNY( NCOUNTY, NMSPC ), STAT=IOS )    ! county totals
+            CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
+        END IF
+        
+        ALLOCATE( MEBSRC( NMSRC, NMSPC ), STAT=IOS )    ! source totals
+        CALL CHECKMEM( IOS, 'MEBSRC', PROGNAME )
 
         ALLOCATE( MSMATX( NMSRC, MNSMATV ), STAT=IOS )    ! speciation matrix
         CALL CHECKMEM( IOS, 'MSMATX', PROGNAME )
@@ -441,10 +457,8 @@ C.....................  Determine hour index based on source's local time
                     END IF
                     HOURIDX = HOURIDX + 1  ! array index is 1 to 24
 
-                    SCC = CSCC( SRC )
-
 C.....................  Determine SCC index for source
-                    SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
+                    SCCIDX = MISCC( SRC )
 
 C.....................  Determine speed bins for source
                     IF( RPDFLAG ) THEN
@@ -757,9 +771,9 @@ C.............................  Calculate hourly emissions
                             EMGRD( CELL,SPINDEX( V,1 ) ) = 
      &                          EMGRD( CELL,SPINDEX( V,1 ) ) + EMVAL * F1
 
-C.............................  Add this cells emissions to county totals
-                            MEBCNY( MICNY( SRC ),SPINDEX( V,1 ) ) =
-     &                          MEBCNY( MICNY( SRC ),SPINDEX( V,1 ) ) + EMVAL * F2
+C.............................  Add this cell's emissions to source totals
+                            MEBSRC( SRC,SPINDEX( V,1 ) ) =
+     &                          MEBSRC( SRC,SPINDEX( V,1 ) ) + EMVAL * F2
 
                         END DO
 
@@ -788,10 +802,10 @@ C.................  Write out gridded data
 C.............  Initialize gridded emissions
             EMGRD = 0.   ! array
 
-C.............  Write country, state, and county emissions (all that apply) 
+C.............  Write state, county, and SCC emissions (all that apply) 
 C.............  The subroutine will only write for certain hours and 
 C               will reinitialize the totals after output
-            IF( LREPANY ) THEN
+            IF( LREPSTA .OR. LREPCNY .OR. LREPSCC ) THEN
                 CALL WRMRGREP( JDATE, JTIME )
             END IF
 

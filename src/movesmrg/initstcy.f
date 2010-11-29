@@ -41,14 +41,25 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NMSRC,            ! no. of sources by category
      &                      LREPSTA,          ! output state total emissions flag
+     &                      LREPCNY,          ! output county total emissions flag
+     &                      LREPSCC,          ! output SCC total emissions flag
      &                      MEBSTA, ! state total speciated emissions
-     &                      MEBCNY  ! county total speciated emissions
+     &                      MEBCNY, ! county total speciated emissions
+     &                      MEBSRC, ! source total speciated emissions
+     &                      MEBSCC, ! SCC total speciated emissions
+     &                      MEBSTC  ! state-SCC total speciated emissions
      
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: MICNY, NCOUNTY, CNTYCOD
 
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: IFIP
+        USE MODSOURC, ONLY: IFIP, CSCC
+
+C.........  This module contains data structures and flags specific to Movesmrg
+        USE MODMVSMRG, ONLY: MISCC
+
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS, ONLY: NINVSCC, INVSCC
 
         IMPLICIT NONE
 
@@ -59,8 +70,9 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         INTEGER         FIND1  
+        INTEGER         FINDC
 
-        EXTERNAL   FIND1
+        EXTERNAL   FIND1, FINDC
 
 C...........   Other local variables
 
@@ -83,8 +95,12 @@ C   begin body of subroutine INITSTCY
 C.............  Allocate memory for indices from Co/st/cy codes to counties
             ALLOCATE( MICNY( NMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MICNY', PROGNAME )
+
+C.............  Allocate memory for index from master list of SCCs to source SCC
+            ALLOCATE( MISCC( NMSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MISCC', PROGNAME )
     
-C.............  Create indices to counties from Co/st/cy codes
+C.............  Create indices to counties from Co/st/cy codes and for SCCs
             PFIP = -9
             DO S = 1, NMSRC
             
@@ -99,6 +115,8 @@ C.............  Create indices to counties from Co/st/cy codes
                 
                 MICNY( S ) = J
                 
+                MISCC( S ) = MAX( FINDC( CSCC( S ), NINVSCC, INVSCC ), 0 )
+                
             END DO
             
             FIRSTIME = .FALSE.
@@ -106,13 +124,26 @@ C.............  Create indices to counties from Co/st/cy codes
         END IF
 
 C.........  Initialize totals to zero...
+C.........  SCC totals...
+        IF( LREPSCC ) THEN
+            MEBSCC = 0.
+        END IF
+
 C.........  State totals...
         IF( LREPSTA ) THEN
             MEBSTA = 0.
+            IF( LREPSCC ) THEN
+                MEBSTC = 0.
+            END IF
         END IF
 
 C.........  County totals...
-        MEBCNY = 0.
+        IF( LREPCNY ) THEN
+            MEBCNY = 0.
+        END IF
+
+C.........  Source totals...
+        MEBSRC = 0.
 
         RETURN
 

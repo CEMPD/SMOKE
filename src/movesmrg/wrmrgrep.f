@@ -39,12 +39,19 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, EDATE, ETIME, TSTEP,
-     &                      NMSPC, MEBCNY, MEBSTA,
-     &                      MRDEV, LREPSTA, LREPCNY, 
-     &                      EMNAM, TOTUNIT
+     &                      NMSPC, MEBCNY, MEBSTA, MEBSRC,
+     &                      MEBSCC, MEBSTC,
+     &                      MRDEV, LREPSTA, LREPCNY, LREPSCC,
+     &                      EMNAM, TOTUNIT, NMSRC
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD
+        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD, MICNY
+
+C.........  This module contains data structures and flags specific to Movesmrg
+        USE MODMVSMRG, ONLY: MISCC
+
+C.........  This module contains the lists of unique source characteristics
+        USE MODLISTS, ONLY: NINVSCC, INVSCC
 
         IMPLICIT NONE
 
@@ -74,11 +81,13 @@ C...........   Local allocatable arrays
 C...........   Other local variables
 
         INTEGER          C, F, I, J, K, L, L2, N, V  ! counters and indices
+        INTEGER          SRC, STAIDX, CNTYIDX, SCCIDX
         INTEGER          IOS            ! i/o status
         INTEGER          PSTATE         ! previous state
         INTEGER          STATE          ! current state
         INTEGER, SAVE :: MAXCYWID       ! max width of county names
         INTEGER, SAVE :: MAXSTWID       ! max width of state names
+        INTEGER, SAVE :: MAXSCCWID      ! max width of SCCs
         INTEGER, SAVE :: NC             ! tmp no. counties in domain
         INTEGER, SAVE :: NS             ! tmp no. states in domain
         INTEGER, SAVE :: PDATE          ! date for computing PTIME
@@ -86,6 +95,7 @@ C...........   Other local variables
         INTEGER, SAVE :: REPTIME        ! report time
 
         REAL   , SAVE :: UNITFAC        ! units conversion factor for reports
+        REAL          :: VAL            ! current emissions value
  
         LOGICAL, SAVE :: FIRSTIME= .TRUE. ! true: first time routine called
 
@@ -127,6 +137,8 @@ C.............  Get the maximum width for the county names
                 L = LEN_TRIM( CNTYNAM( I ) )
                 MAXCYWID = MAX( MAXCYWID, L )
             END DO
+            
+            MAXSCCWID = 10
 
             PDATE = SDATE
             PTIME = STIME
@@ -161,28 +173,62 @@ C.........  Do not report if this time is not appropriate
         IF( JTIME .NE. REPTIME .AND. 
      &    ( JDATE .NE. EDATE .OR. JTIME .NE. ETIME ) ) RETURN
 
-C.............  If required, create and write state totals
+C.............  Create totals as needed
+        PSTATE = -9
+        STAIDX = 0
+        DO SRC = 1, NMSRC
+        
+            CNTYIDX = MICNY( SRC )
+            SCCIDX  = MISCC( SRC )
+        
+            STATE = CNTYCOD( CNTYIDX ) / 1000
+            IF( STATE .NE. PSTATE ) THEN
+                STAIDX = STAIDX + 1
+                PSTATE = STATE
+            END IF
+            
+            DO J = 1, NMSPC
+                VAL = MEBSRC( SRC,J )
+                
+                IF( LREPSCC ) THEN
+                    MEBSCC( SCCIDX,J ) = MEBSCC( SCCIDX,J ) + VAL
+                END IF
+
+                IF( LREPCNY ) THEN
+                    MEBCNY( CNTYIDX,J ) = MEBCNY( CNTYIDX,J ) + VAL
+                END IF
+                
+                IF( LREPSTA ) THEN
+                    MEBSTA( STAIDX,J ) = MEBSTA( STAIDX,J ) + VAL
+                    IF( LREPSCC ) THEN
+                        MEBSTC( STAIDX,SCCIDX,J ) = 
+     &                  MEBSTC( STAIDX,SCCIDX,J ) + VAL
+                    END IF
+                END IF
+            END DO
+        
+        END DO
+
+C.............  If required, write SCC totals
+        IF ( LREPSCC ) THEN
+        
+            CALL CREATE_HEADER( 'Mobile' )
+            CALL WRITE_SCC( MRDEV, NINVSCC, NMSPC, MNAMES, MUNITS, MEBSCC )
+        
+        END IF
+
+C.............  If required, write state totals
         IF ( LREPSTA ) THEN  
 
             CALL CREATE_HEADER( 'Mobile' )
-            
-            PSTATE = -9
-            N = 0
-            DO I = 1, NC
-            
-                STATE = CNTYCOD( I ) / 1000
-                IF( STATE .NE. PSTATE ) THEN
-                    N = N + 1
-                    PSTATE = STATE
-                END IF
-                
-                DO J = 1, NMSPC
-                    MEBSTA( N,J ) = MEBSTA( N,J ) + MEBCNY( I,J )
-                END DO
-            
-            END DO
-            
             CALL WRITE_STA( MRDEV, NS, NMSPC, MNAMES, MUNITS, MEBSTA)
+
+            IF ( LREPSCC ) THEN
+
+                CALL CREATE_HEADER( 'Mobile' )
+                CALL WRITE_STASCC( MRDEV, NS, NINVSCC, NMSPC, MNAMES, MUNITS, MEBSTC )
+
+            END IF
 
         END IF
 
@@ -191,6 +237,13 @@ C.........  If required, write county totals
 
             CALL CREATE_HEADER( 'Mobile' )
             CALL WRITE_CNY( MRDEV, NC, NMSPC, MNAMES, MUNITS, MEBCNY)
+
+            IF ( LREPSCC ) THEN
+        
+                CALL CREATE_HEADER( 'Mobile' )
+                CALL WRITE_CNYSCC( MRDEV, NMSRC, NMSPC, MNAMES, MUNITS, MEBSRC )
+
+            END IF
 
         END IF
 
@@ -358,6 +411,81 @@ C.............  Create format statement for output of emissions
 C-----------------------------------------------------------------------------
 C-----------------------------------------------------------------------------
 
+            SUBROUTINE WRITE_SCC( FDEV, NSCC, NDIM, VNAMES, INUNIT,
+     &                            SCC_EMIS )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN) :: FDEV
+            INTEGER     , INTENT (IN) :: NSCC
+            INTEGER     , INTENT (IN) :: NDIM
+            CHARACTER(*), INTENT (IN) :: VNAMES ( NDIM )
+            CHARACTER(*), INTENT (IN) :: INUNIT ( NDIM )
+            REAL        , INTENT (IN) :: SCC_EMIS( NSCC, NDIM )
+
+C.............  Arrays allocated by subprogram argument
+            INTEGER            MAXWID ( 0:NDIM )
+            CHARACTER(IOVLEN3) OUTNAMS( NDIM )
+            CHARACTER(IOULEN3) OUTUNIT( NDIM )
+
+C.............  Local variables
+            INTEGER       I, J, L, L2
+
+            REAL          VAL
+
+            CHARACTER(10) :: HDRBUF  = '#'
+            CHARACTER(10) :: STLABEL = '# SCC'
+            CHARACTER(30)    BUFFER
+
+C..............................................................................
+
+C.............  Get maximum width of numbers and 
+            DO J = 1, NDIM
+
+                VAL = MAXVAL( SCC_EMIS( 1:NSCC, J ) )
+                WRITE( BUFFER, '(F30.1)' ) VAL
+                BUFFER = ADJUSTL( BUFFER )
+                MAXWID( J ) = LEN_TRIM( BUFFER )
+
+            END DO
+
+C.............  Rearrange labels and units to be in order of master list, which
+C               is the order that the emission values themselves will be in
+
+C.............  Get column labels and formats
+            CALL CREATE_FORMATS( NDIM, 6+MAXSCCWID, VNAMES, INUNIT,
+     &                           MAXWID, OUTNAMS, OUTUNIT )
+
+C.............  Write header for SCC totals
+            WRITE( FDEV, '(A)' ) '# '
+            WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
+
+C.............  Write units for columns
+            WRITE( FDEV, HDRFMT ) ADJUSTL( HDRBUF), 
+     &                            ( OUTUNIT(J), J=1,NDIM )
+
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                          ( OUTNAMS( J ), J=1, NDIM )
+
+C.............  Write SCC total emissions
+            DO I = 1, NSCC
+
+C.................  Build output format depending on data values
+                CALL DYNAMIC_FORMATS( NSCC, NDIM, I, SCC_EMIS,
+     &                                MAXWID(1), DATFMT )
+
+C.................  Write out SCC and converted emissions
+                WRITE( FDEV, DATFMT ) INVSCC( I ), 
+     &                                ( SCC_EMIS( I,J ), J=1, NDIM )
+            END DO
+
+            RETURN
+
+            END SUBROUTINE WRITE_SCC
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
             SUBROUTINE WRITE_STA( FDEV, NS, NDIM, VNAMES, INUNIT,
      &                            ST_EMIS )
 
@@ -422,10 +550,10 @@ C.............  Write column labels
      &                          ( OUTNAMS( J ), J=1, NDIM )
 
 C.............  Write state total emissions
-            DO I = 1, NSTATE
+            DO I = 1, NS
 
 C.................  Build output format depending on data values
-                CALL DYNAMIC_FORMATS( NSTATE, NDIM, I, ST_EMIS,
+                CALL DYNAMIC_FORMATS( NS, NDIM, I, ST_EMIS,
      &                                MAXWID(1), DATFMT )
 
 C.................  Write out state name and converted emissions
@@ -436,6 +564,87 @@ C.................  Write out state name and converted emissions
             RETURN
 
             END SUBROUTINE WRITE_STA
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE WRITE_STASCC( FDEV, NSTA, NSCC, NDIM, VNAMES, INUNIT,
+     &                               STSCC_EMIS )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN) :: FDEV
+            INTEGER     , INTENT (IN) :: NSTA
+            INTEGER     , INTENT (IN) :: NSCC
+            INTEGER     , INTENT (IN) :: NDIM
+            CHARACTER(*), INTENT (IN) :: VNAMES ( NDIM )
+            CHARACTER(*), INTENT (IN) :: INUNIT ( NDIM )
+            REAL        , INTENT (IN) :: STSCC_EMIS( NSTA, NSCC, NDIM )
+
+C.............  Arrays allocated by subprogram argument
+            INTEGER            MAXWID ( 0:NDIM )
+            CHARACTER(IOVLEN3) OUTNAMS( NDIM )
+            CHARACTER(IOULEN3) OUTUNIT( NDIM )
+
+C.............  Local variables
+            INTEGER       I, J, L, L2
+
+            REAL          VAL
+
+            CHARACTER(20) :: HDRBUF  = '#'
+            CHARACTER(20) :: STLABEL = '# State / SCC'
+            CHARACTER(30)    BUFFER
+
+C..............................................................................
+
+C.............  Get maximum width of numbers and 
+            DO J = 1, NDIM
+
+                VAL = MAXVAL( STSCC_EMIS( 1:NSTA, 1:NSCC, J ) )
+                WRITE( BUFFER, '(F30.1)' ) VAL
+                BUFFER = ADJUSTL( BUFFER )
+                MAXWID( J ) = LEN_TRIM( BUFFER )
+
+            END DO
+
+C.............  Rearrange labels and units to be in order of master list, which
+C               is the order that the emission values themselves will be in
+
+C.............  Get column labels and formats
+            CALL CREATE_FORMATS( NDIM, 6+MAXSTWID+MAXSCCWID, VNAMES, INUNIT,
+     &                           MAXWID, OUTNAMS, OUTUNIT )
+
+C.............  Write header for state/SCC totals
+            WRITE( FDEV, '(A)' ) '# '
+            WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
+
+C.............  Write units for columns
+            WRITE( FDEV, HDRFMT ) ADJUSTL( HDRBUF), 
+     &                            ( OUTUNIT(J), J=1,NDIM )
+
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                          ( OUTNAMS( J ), J=1, NDIM )
+
+C.............  Write state/SCC total emissions
+            DO I = 1, NSTA
+
+                DO J = 1, NSCC
+
+C.....................  Build output format depending on data values
+                    CALL DYNAMIC_FORMATS2( NSTA, NSCC, NDIM, I, J, STSCC_EMIS,
+     &                                MAXWID(1), DATFMT )
+
+C.....................  Write out state name and converted emissions
+                    WRITE( FDEV, DATFMT ) STATNAM( I ) // ' ' // INVSCC( J ), 
+     &                                ( STSCC_EMIS( I,J,K ), K=1, NDIM )
+
+                END DO
+
+            END DO
+
+            RETURN
+
+            END SUBROUTINE WRITE_STASCC
 
 C-----------------------------------------------------------------------------
 C-----------------------------------------------------------------------------
@@ -533,6 +742,92 @@ C.................  Build output format depending on data values
 C-----------------------------------------------------------------------------
 C-----------------------------------------------------------------------------
 
+            SUBROUTINE WRITE_CNYSCC( FDEV, NSRC, NDIM, VNAMES, INUNIT,
+     &                            SRC_EMIS )
+
+C.............  Subprogram arguments
+            INTEGER     , INTENT (IN) :: FDEV
+            INTEGER     , INTENT (IN) :: NSRC
+            INTEGER     , INTENT (IN) :: NDIM
+            CHARACTER(*), INTENT (IN) :: VNAMES ( NDIM )
+            CHARACTER(*), INTENT (IN) :: INUNIT ( NDIM )
+            REAL        , INTENT (IN) :: SRC_EMIS( NSRC, NDIM )
+
+C.............  Arrays allocated by subprogram argument
+            INTEGER            MAXWID ( 0:NDIM )
+            CHARACTER(IOVLEN3) OUTNAMS( NDIM )
+            CHARACTER(IOULEN3) OUTUNIT( NDIM )
+
+C.............  Local variables
+            INTEGER       I, J, L, L1, L2, N
+            INTEGER       PSTA, STA
+
+            REAL          VAL
+
+            CHARACTER(FIPLEN3+8) CDATFIP
+            CHARACTER(60) :: HDRBUF  = '#'
+            CHARACTER(60) :: STLABEL = '# County / SCC'
+            CHARACTER(30)    BUFFER
+
+C..............................................................................
+
+C.............  Get maximum width of numbers
+            DO J = 1, NDIM
+
+                VAL = MAXVAL( SRC_EMIS( 1:NSRC, J ) )
+                WRITE( BUFFER, '(F30.1)' ) VAL
+                BUFFER = ADJUSTL( BUFFER )
+                MAXWID( J ) = LEN_TRIM( BUFFER )
+
+            END DO
+
+C.............  Get column labels and formats
+            CALL CREATE_FORMATS( NDIM, 26+MAXSTWID+MAXCYWID, VNAMES,
+     &                           INUNIT, MAXWID, OUTNAMS, OUTUNIT )
+
+C.............  Write header for county totals
+            WRITE( FDEV, '(A)' ) '# '
+            WRITE( FDEV, '(A)' ) HEADER( 1:LEN_TRIM( HEADER ) )
+
+C.............  Write units for columns
+            WRITE( FDEV, HDRFMT ) ADJUSTL( HDRBUF), 
+     &                            ( OUTUNIT(J), J=1,NDIM )
+
+C.............  Write column labels
+            WRITE( FDEV, HDRFMT ) ADJUSTL( STLABEL ),
+     &                            ( OUTNAMS( J ), J=1, NDIM )
+
+C.............  Write county total emissions
+            PSTA = -9
+            N = 0
+            DO I = 1, NSRC
+
+                STA = CNTYCOD( MICNY( I ) ) / 1000
+                IF( STA .NE. PSTA ) THEN
+                    N = N + 1
+                    PSTA = STA
+                END IF
+
+C.................  Write out county name and converted emissions
+                WRITE( CDATFIP, '(I7.7,1X,I6.6)' ) JDATE, CNTYCOD( MICNY( I ) )
+
+C.................  Build output format depending on data values
+                CALL DYNAMIC_FORMATS( NSRC, NDIM, I, SRC_EMIS,
+     &                                MAXWID(1), DATFMT )
+
+                WRITE( FDEV,DATFMT ) CDATFIP // ' '// STATNAM(N) // 
+     &                               CNTYNAM(MICNY(I)) // ' ' // INVSCC(MISCC(I)), 
+     &                               ( SRC_EMIS( I,J ), J=1, NDIM )
+
+            END DO
+
+            RETURN
+
+            END SUBROUTINE WRITE_CNYSCC
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
             SUBROUTINE DYNAMIC_FORMATS( N1, N2, STCNT, EMIS, 
      &                                  WIDTH, DATFMT )
 
@@ -586,6 +881,65 @@ C              with 4 decimal places
             RETURN
 
             END SUBROUTINE DYNAMIC_FORMATS
+
+C-----------------------------------------------------------------------------
+C-----------------------------------------------------------------------------
+
+            SUBROUTINE DYNAMIC_FORMATS2( N1, N2, N3, STCNT, SCCCNT, EMIS, 
+     &                                  WIDTH, DATFMT )
+
+            INTEGER     , INTENT (IN)  :: N1
+            INTEGER     , INTENT (IN)  :: N2
+            INTEGER     , INTENT (IN)  :: N3
+            INTEGER     , INTENT (IN)  :: STCNT      ! counter for state/county index
+            INTEGER     , INTENT (IN)  :: SCCCNT     ! counter for SCC index
+            REAL        , INTENT (IN)  :: EMIS( N1, N2, N3 )  ! state/count emission
+            INTEGER     , INTENT (IN)  :: WIDTH( N3 )
+            CHARACTER(*), INTENT (OUT) :: DATFMT
+
+C.............  Local variables
+            INTEGER  I
+            CHARACTER(5) :: FMT
+
+C..............................................................................
+
+C.............  Initialize format array
+            DATFMT = '(A'
+
+C............. Determine significant figures that we want to report. 
+C............. Use a minimum of 5 significant figures, and a minimum
+C              of 1 decimal place.  If value is < 0.1, then use exponential
+C              with 4 decimal places
+            DO I = 1, N3
+
+                IF ( EMIS( STCNT,SCCCNT,I ) .EQ. 0. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.0'
+
+                ELSE IF( EMIS( STCNT,SCCCNT,I ) .GE. 1000. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.1'
+
+                ELSE IF ( EMIS( STCNT,SCCCNT,I ) .GE. 100. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.2'
+
+                ELSE IF ( EMIS( STCNT,SCCCNT,I ) .GE. 10. ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.3'
+
+                ELSE IF ( EMIS( STCNT,SCCCNT,I ) .GE. 0.1 ) THEN
+                   WRITE( FMT, '(A,I2.2,A)' ) 'F',WIDTH(I),'.4'
+
+                ELSE IF ( EMIS( STCNT,SCCCNT,I ) .LT. 0.1 ) THEN 
+                   WRITE( FMT, '(A,I2.2,A)' ) 'E',WIDTH(I),'.4'
+                END IF
+
+                DATFMT = TRIM( DATFMT ) // ',"; "' // FMT
+
+            END DO
+
+            DATFMT = TRIM( DATFMT ) // ')'
+
+            RETURN
+
+            END SUBROUTINE DYNAMIC_FORMATS2
 
         END SUBROUTINE WRMRGREP
 

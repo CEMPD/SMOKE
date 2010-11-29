@@ -70,7 +70,7 @@ bldprocidx.o: $(MODMVSMRG) $(MODMERGE)
 bldsrccell.o: $(MODMVSMRG)
 getmrgev.o  : $(MODINFO) $(MODMERGE) $(MODMVSMRG)
 hourmet.o   : $(MODMET)
-initstcy.o  : $(MODMERGE) $(MODSTCY) $(MODSOURC)
+initstcy.o  : $(MODMERGE) $(MODSTCY) $(MODSOURC) $(MODMVSMRG) $(MODLISTS)
 met4moves.o : $(MODSURG) $(MODSTCY) $(MODMET) $(MODGRID) $(MODMBSET)
 movesmrg.o  : $(MODMERGE) $(MODMVSMRG) $(MODLISTS) $(MODSTCY) $(MODGRID) $(MODMBSET) $(MODSOURC)
 mrgonams.o  : $(MODMERGE)
@@ -88,7 +88,7 @@ rdrpvemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdspdpro.o  : $(MODMVSMRG) $(MODLISTS)
 setrefcnty.o: $(MODMVSMRG) $(MODINFO) $(MODSOURC) $(MODLISTS) $(MODMBSET)
 wrtemprof.o : $(MODMBSET) $(MODMET)
-wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID) 
+wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODMVSMRG) $(MODLISTS)
 
 clean:
 	/bin/rm -f *.o

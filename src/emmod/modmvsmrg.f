@@ -97,4 +97,7 @@ C.........  Hourly speed data
         LOGICAL, PUBLIC :: SPDFLAG                     ! use hourly speed data
         REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: ) ! indexes: FIP, SCC, weekend/weekday, local hour
 
+C.........  Index from per-source inventory array to INVSCC array (based on MICNY in MODSTCY)
+        INTEGER, ALLOCATABLE, PUBLIC :: MISCC( : )     ! dim NMSRC
+
         END MODULE MODMVSMRG

@@ -86,6 +86,7 @@
         LOGICAL, PUBLIC :: LGRDOUT ! output gridded I/O API NetCDF file(s)
         LOGICAL, PUBLIC :: LREPSTA ! output state-total emissions in report(s)
         LOGICAL, PUBLIC :: LREPCNY ! output county-total emissions in report(s)
+        LOGICAL, PUBLIC :: LREPSCC ! output SCC-total emissions in report(s) (Movesmrg only)
         LOGICAL, PUBLIC :: LREPANY ! true: LREPSTA = T or LREPCNY = T
         LOGICAL, PUBLIC :: LREPINV ! include inventory emissions in report(s)
         LOGICAL, PUBLIC :: LREPSPC ! include speciated emissions in report(s)
@@ -450,5 +451,10 @@
         REAL   , ALLOCATABLE, PUBLIC :: MECCNY( :,: ) ! mobile, dim ncny, ndim
         REAL   , ALLOCATABLE, PUBLIC :: PECCNY( :,: ) ! point , dim ncny, ndim
         REAL   , ALLOCATABLE, PUBLIC :: TECCNY( :,: ) ! all   , dim ncny, ndim
+
+!.........  Source and SCC total speciated emissions (Movesmrg only)
+        REAL   , ALLOCATABLE, PUBLIC :: MEBSRC( :,: ) ! mobile, dim nsrc, ndim
+        REAL   , ALLOCATABLE, PUBLIC :: MEBSCC( :,: ) ! mobile, dim nscc, ndim
+        REAL   , ALLOCATABLE, PUBLIC :: MEBSTC( :,:,: ) ! mobile, dim nsta, nscc, ndim
 
         END MODULE MODMERGE
