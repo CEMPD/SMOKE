@@ -140,7 +140,6 @@ C...........   Other local variables
         INTEGER          DAY           ! day-of-week index (monday=1)
         INTEGER          DAYMONTH      ! day-of-month
         INTEGER          DAYIDX        ! current day value index
-        INTEGER          FIPIDX        ! current inventory FIP index
         INTEGER          FUELMONTH     ! current fuel month
         INTEGER          HOURIDX       ! current hour of the day
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
@@ -442,9 +441,6 @@ C.....................  Determine hour index based on source's local time
                     END IF
                     HOURIDX = HOURIDX + 1  ! array index is 1 to 24
 
-C.....................  Determine FIP index for source
-                    FIPIDX = FIND1( IFIP( SRC ), NINVIFIP, INVIFIP )
-                    
                     SCC = CSCC( SRC )
 
 C.....................  Determine SCC index for source
@@ -454,7 +450,7 @@ C.....................  Determine speed bins for source
                     IF( RPDFLAG ) THEN
                         SPEEDVAL = BADVAL3
                         IF( SPDFLAG ) THEN
-                            SPEEDVAL = SPDPRO( FIPIDX, SCCIDX, DAYIDX, HOURIDX )
+                            SPEEDVAL = SPDPRO( MICNY( SRC ), SCCIDX, DAYIDX, HOURIDX )
                         END IF
 
 C.........................  Fall back to inventory speed if hourly speed isn't available
