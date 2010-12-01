@@ -432,8 +432,9 @@ C.............  Local variables
 
             REAL          VAL
 
-            CHARACTER(10) :: HDRBUF  = '#'
-            CHARACTER(10) :: STLABEL = '# SCC'
+            CHARACTER(7)  :: CDATE
+            CHARACTER(18) :: HDRBUF  = '#'
+            CHARACTER(18) :: STLABEL = '# Date ; SCC'
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -469,13 +470,15 @@ C.............  Write column labels
 
 C.............  Write SCC total emissions
             DO I = 1, NSCC
+            
+                WRITE( CDATE, '(I7.7)' ) JDATE
 
 C.................  Build output format depending on data values
                 CALL DYNAMIC_FORMATS( NSCC, NDIM, I, SCC_EMIS,
      &                                MAXWID(1), DATFMT )
 
 C.................  Write out SCC and converted emissions
-                WRITE( FDEV, DATFMT ) INVSCC( I ), 
+                WRITE( FDEV, DATFMT ) CDATE // ';' // INVSCC( I ), 
      &                                ( SCC_EMIS( I,J ), J=1, NDIM )
             END DO
 
@@ -507,8 +510,9 @@ C.............  Local variables
 
             REAL          VAL
 
+            CHARACTER(7)  :: CDATE
             CHARACTER(20) :: HDRBUF  = '#'
-            CHARACTER(20) :: STLABEL = '# State'
+            CHARACTER(20) :: STLABEL = '# Date ; State'
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -551,13 +555,15 @@ C.............  Write column labels
 
 C.............  Write state total emissions
             DO I = 1, NS
+            
+                WRITE( CDATE, '(I7.7)' ) JDATE
 
 C.................  Build output format depending on data values
                 CALL DYNAMIC_FORMATS( NS, NDIM, I, ST_EMIS,
      &                                MAXWID(1), DATFMT )
 
 C.................  Write out state name and converted emissions
-                WRITE( FDEV, DATFMT ) STATNAM( I ), 
+                WRITE( FDEV, DATFMT ) CDATE // ';' // STATNAM( I ), 
      &                                ( ST_EMIS( I,J ), J=1, NDIM )
             END DO
 
@@ -590,8 +596,9 @@ C.............  Local variables
 
             REAL          VAL
 
+            CHARACTER(7)  :: CDATE
             CHARACTER(20) :: HDRBUF  = '#'
-            CHARACTER(20) :: STLABEL = '# State / SCC'
+            CHARACTER(20) :: STLABEL = '# Date ; State ; SCC'
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -629,13 +636,16 @@ C.............  Write state/SCC total emissions
             DO I = 1, NSTA
 
                 DO J = 1, NSCC
+                
+                    WRITE( CDATE, '(I7.7)' ) JDATE
 
 C.....................  Build output format depending on data values
                     CALL DYNAMIC_FORMATS2( NSTA, NSCC, NDIM, I, J, STSCC_EMIS,
      &                                MAXWID(1), DATFMT )
 
 C.....................  Write out state name and converted emissions
-                    WRITE( FDEV, DATFMT ) STATNAM( I ) // ' ' // INVSCC( J ), 
+                    WRITE( FDEV, DATFMT ) CDATE // ';' // STATNAM( I ) // 
+     &                               ';' // INVSCC( J ), 
      &                                ( STSCC_EMIS( I,J,K ), K=1, NDIM )
 
                 END DO
@@ -673,7 +683,7 @@ C.............  Local variables
 
             CHARACTER(FIPLEN3+8) CDATFIP
             CHARACTER(60) :: HDRBUF  = '#'
-            CHARACTER(60) :: STLABEL = '# County'
+            CHARACTER(60) :: STLABEL = '# Date ; FIPS ; State ; County'
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -723,14 +733,14 @@ C.............  Write county total emissions
                 END IF
 
 C.................  Write out county name and converted emissions
-                WRITE( CDATFIP, '(I7.7,1X,I6.6)' ) JDATE, CNTYCOD( I )
+                WRITE( CDATFIP, '(I7.7,";",I6.6)' ) JDATE, CNTYCOD( I )
 
 C.................  Build output format depending on data values
                 CALL DYNAMIC_FORMATS( NC, NDIM, I, CY_EMIS,
      &                                MAXWID(1), DATFMT )
 
-                WRITE( FDEV,DATFMT ) CDATFIP // ' '// STATNAM(N) // 
-     &                               CNTYNAM(I), 
+                WRITE( FDEV,DATFMT ) CDATFIP // ';' // STATNAM(N) // 
+     &                               ';' // CNTYNAM(I), 
      &                               ( CY_EMIS( I,J ), J=1, NDIM )
 
             END DO
@@ -766,7 +776,7 @@ C.............  Local variables
 
             CHARACTER(FIPLEN3+8) CDATFIP
             CHARACTER(60) :: HDRBUF  = '#'
-            CHARACTER(60) :: STLABEL = '# County / SCC'
+            CHARACTER(60) :: STLABEL = '# Date ; FIPS ; State ; County ; SCC'
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -809,14 +819,15 @@ C.............  Write county total emissions
                 END IF
 
 C.................  Write out county name and converted emissions
-                WRITE( CDATFIP, '(I7.7,1X,I6.6)' ) JDATE, CNTYCOD( MICNY( I ) )
+                WRITE( CDATFIP, '(I7.7,";",I6.6)' ) JDATE, CNTYCOD( MICNY( I ) )
 
 C.................  Build output format depending on data values
                 CALL DYNAMIC_FORMATS( NSRC, NDIM, I, SRC_EMIS,
      &                                MAXWID(1), DATFMT )
 
-                WRITE( FDEV,DATFMT ) CDATFIP // ' '// STATNAM(N) // 
-     &                               CNTYNAM(MICNY(I)) // ' ' // INVSCC(MISCC(I)), 
+                WRITE( FDEV,DATFMT ) CDATFIP // ';' // STATNAM(N) // 
+     &                               ';' // CNTYNAM(MICNY(I)) // 
+     &                               ';' // INVSCC(MISCC(I)), 
      &                               ( SRC_EMIS( I,J ), J=1, NDIM )
 
             END DO
