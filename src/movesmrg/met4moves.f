@@ -567,19 +567,21 @@ C.........  Configure the month(s) of modeling period
         SYEAR = INT( SDATE/1000 )
         EYEAR = INT( EDATE/1000 )
 
-        DMONTH = EMONTH - SMONTH
+        IF( SYEAR < EYEAR ) EMONTH = EMONTH + 12 
 
 C.........  Estimate total no of processing months
-        NFUEL = EMONTH - SMONTH + 1
+        NFUEL = EMONTH - SMONTH
+        IF( NFUEL < 1 ) THEN
+            MESG = 'ERROR: MUST cross the last day of the ending '//
+     &             'month (ENDATE) considering local time shift'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Reset monthly default to episode setting for averaging method
+        DMONTH = EMONTH - SMONTH
         IF( DMONTH == 0 .AND. SYEAR == EYEAR ) THEN
             MONAVER = .FALSE.
             EPIAVER = .TRUE.
-
-        ELSE IF( SYEAR /= EYEAR ) THEN
-            NFUEL = EMONTH + 12 - SMONTH
-
        END IF
 
 C.........  Get number of lines in met list file
@@ -1226,12 +1228,8 @@ C.............  Loop over months per ref. county
                 FUELMONTH = FMREFSORT( J,2 )    ! processing fuelmonth/county
                 CURMONTH  = FMREFSORT( J,3 )    ! processing current month per ref. county
 
-                IF( SYEAR /= EYEAR ) THEN
-                    IF( CURMONTH<SMONTH .AND. CURMONTH>EMONTH ) CYCLE
-                ELSE
-                    IF( CURMONTH < SMONTH ) CYCLE
-                    IF( CURMONTH > EMONTH ) CYCLE
-                END IF
+                IF( CURMONTH <  SMONTH ) CYCLE
+                IF( CURMONTH >= EMONTH ) CYCLE
 
                 NFMON = NFMON + 1    ! county no of fuelmonth per refcouty for QA check
 
