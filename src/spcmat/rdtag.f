@@ -485,11 +485,13 @@ C.........  Count and store the number of tags for each species, SPCTAGCNT(:)
             CSPCTAG = CSPCTAGNA( J ) 
             K = INDEX( CSPCTAG, '-' )
             L = LEN_TRIM( CSPCTAG )
- 
             CSPC = CSPCTAG( 1:K-1 )
             CTAG = CSPCTAG( K+1:L )
 
-            IF( CSPC /= PSPC ) N = INDEX1( CSPC, NSPCALL, SPCLIST )
+            IF( CSPC /= PSPC ) THEN
+                 N = INDEX1( CSPC, NSPCALL, SPCLIST )
+                 PTAG = ' '
+            END IF
             IF( CTAG /= PTAG ) SPCTAGCNT( N ) = SPCTAGCNT( N ) + 1
             IF( POS1( N ) == 0 ) POS1( N ) = I
 
@@ -525,12 +527,10 @@ C.................  Loop through list of spc/tags and populate TAGNAME
                 I = POS1( N )
                 PTAG = ' '
                 DO
-                    
                     J = INDXTA( I )
                     CSPCTAG = CSPCTAGNA( J )
                     K = INDEX( CSPCTAG, '-' )
                     L = LEN_TRIM( CSPCTAG )
-
                     CSPC = CSPCTAG( 1:K-1 )
                     CTAG = CSPCTAG( K+1:L )
                     IF ( CTAG /= PTAG .OR. CSPC /= PSPC ) THEN
