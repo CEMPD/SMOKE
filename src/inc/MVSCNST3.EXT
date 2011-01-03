@@ -20,16 +20,16 @@ C.........  Average speed per bin
      &          40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0 / )
 
 C.........  List of rate-per-distance emission processes
-        INTEGER, PARAMETER :: MXMVSDPROCS = 7
+        INTEGER, PARAMETER :: MXMVSDPROCS = 9
         CHARACTER(3), PARAMETER :: MVSDPROCS( MXMVSDPROCS ) =
-     &      ( / 'EXR', 'CXR', 'EVP', 'EFV', 'EFL', 'BRK', 'TIR' / )
+     &      ( / 'EXR', 'CXR', 'EPM', 'EFV', 'EFL', 'BRK', 'TIR', 'EXH', 'EVP' / )
 
 C.........  List of rate-per-vehicle emission processes
-        INTEGER, PARAMETER :: MXMVSVPROCS = 6
+        INTEGER, PARAMETER :: MXMVSVPROCS = 8
         CHARACTER(3), PARAMETER :: MVSVPROCS( MXMVSVPROCS ) =
-     &      ( / 'EXS', 'CXS', 'EVP', 'EXT', 'EFL', 'CEI' / )
+     &      ( / 'EXS', 'CXS', 'EPM', 'EXT', 'EFL', 'CEI', 'EXH', 'EVP' / )
 
 C.........  List of rate-per-profile emission processes
-        INTEGER, PARAMETER :: MXMVSPPROCS = 1 
+        INTEGER, PARAMETER :: MXMVSPPROCS = 2
         CHARACTER(3), PARAMETER :: MVSPPROCS( MXMVSPPROCS ) =
-     &      ( / 'EFV' / )
+     &      ( / 'EFV', 'EVP' / )
