@@ -115,7 +115,7 @@ C...........   Other local variables
         CHARACTER(50)       TPROFID   ! current profile ID
         CHARACTER(50)       PPROFID   ! previous profile ID
         
-        CHARACTER(500)      LINE          ! line buffer
+        CHARACTER(2000)     LINE          ! line buffer
         CHARACTER(100)      FILENAME      ! tmp. filename
         CHARACTER(200)      FULLFILE      ! tmp. filename with path
         CHARACTER(300)      MESG          ! message buffer

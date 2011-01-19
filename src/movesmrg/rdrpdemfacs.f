@@ -111,7 +111,7 @@ C...........   Other local variables
         CHARACTER(3)        TPROC     ! current process
         CHARACTER(3)        PPROC     ! previous process
         
-        CHARACTER(500)      LINE          ! line buffer
+        CHARACTER(2000)     LINE          ! line buffer
         CHARACTER(100)      FILENAME      ! tmp. filename
         CHARACTER(200)      FULLFILE      ! tmp. filename with path
         CHARACTER(300)      MESG          ! message buffer
