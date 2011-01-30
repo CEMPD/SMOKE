@@ -44,7 +44,7 @@ C.........  This module contains the major data structure and control flags
      &          MFLAG_BD,                          ! by-day hourly emis flags
      &          LREPSTA, LREPCNY, LREPSCC, LGRDOUT,! report flags, gridded output
      &          CDEV,                              ! costcy
-     &          MGNAME, MTNAME, MSNAME, MONAME,    ! input files
+     &          MGNAME, MTNAME, MONAME,    ! input files
      &          NMSRC, MNGMAT,                     ! no. of srcs, no. gridding matrix entries
      &          NMSPC,                             ! no. species
      &          EMNAM,                             ! species names
@@ -53,7 +53,7 @@ C.........  This module contains the major data structure and control flags
      &          SDATE, STIME, NSTEPS, TSTEP,       ! episode information
      &          MSDATE,                            ! dates for by-day hrly emis
      &          GRDFAC, TOTFAC,                    ! conversion factors
-     &          MSMATX, MNSMATV, NSMATV,           ! speciation matrices
+     &          NSMATV,           ! speciation matrices
      &          MEBCNY, MEBSTA, MEBSRC,            ! cnty/state/src total spec emissions
      &          MEBSCC, MEBSTC,                    ! scc total spec emissions
      &          EANAM                              ! pol/act names
@@ -65,7 +65,9 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          EMPROCIDX, EMPOLIDX,
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX, AVGMIN, AVGMAX,
      &          RPDEMFACS, RPVEMFACS, RPPEMFACS,
-     &          SPDFLAG, SPDPRO, MISCC
+     &          SPDFLAG, SPDPRO, MISCC, 
+     &          MSNAME_L, MSMATX_L, MNSMATV_L, 
+     &          MSNAME_S, MSMATX_S, MNSMATV_S
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -259,8 +261,11 @@ C.........  Allocate memory for fixed-size arrays...
         ALLOCATE( MEBSRC( NMSRC, NMSPC ), STAT=IOS )    ! source totals
         CALL CHECKMEM( IOS, 'MEBSRC', PROGNAME )
 
-        ALLOCATE( MSMATX( NMSRC, MNSMATV ), STAT=IOS )    ! speciation matrix
-        CALL CHECKMEM( IOS, 'MSMATX', PROGNAME )
+        ALLOCATE( MSMATX_L( NMSRC, MNSMATV_L ), STAT=IOS )    ! mole speciation matrix
+        CALL CHECKMEM( IOS, 'MSMATX_L', PROGNAME )
+
+        ALLOCATE( MSMATX_S( NMSRC, MNSMATV_S ), STAT=IOS )    ! mass speciation matrix
+        CALL CHECKMEM( IOS, 'MSMATX_S', PROGNAME )
         
         IF( RPDFLAG ) THEN
             ALLOCATE( VMT( NMSRC ), STAT=IOS )     ! hourly VMT
@@ -320,8 +325,9 @@ C.............  Update list of output species names for message
                 LBUF = SBUF
             END IF
 
-C.............  Read speciation matrix for current variable
-            CALL RDSMAT( MSNAME, VBUF, MSMATX( 1,V ) )
+C.............  Read speciation matrices for current variable
+            CALL RDSMAT( MSNAME_L, VBUF, MSMATX_L( 1,V ) )
+            CALL RDSMAT( MSNAME_S, VBUF, MSMATX_S( 1,V ) )
 
         END DO
 
@@ -759,21 +765,23 @@ C.............................  Set units conversion factor
                             F1 = GRDFAC( SPINDEX( V,1 ) )
                             F2 = TOTFAC( SPINDEX( V,1 ) )
 
-C.............................  Calculate hourly emissions
+C.............................  Calculate gridded, hourly emissions
                             IF( RPDFLAG ) THEN
-                                EMVAL = VMTVAL * EFVAL * GFRAC * MSMATX( SRC,V )
+                                EMVAL = VMTVAL * EFVAL * GFRAC
                             END IF
                             
                             IF( RPVFLAG .OR. RPPFLAG ) THEN
-                                EMVAL = VPOPVAL * EFVAL * GFRAC * MSMATX( SRC,V )
+                                EMVAL = VPOPVAL * EFVAL * GFRAC
                             END IF
 
                             EMGRD( CELL,SPINDEX( V,1 ) ) = 
-     &                          EMGRD( CELL,SPINDEX( V,1 ) ) + EMVAL * F1
+     &                          EMGRD( CELL,SPINDEX( V,1 ) ) + 
+     &                          EMVAL * MSMATX_L( SRC,V ) * F1
 
 C.............................  Add this cell's emissions to source totals
                             MEBSRC( SRC,SPINDEX( V,1 ) ) =
-     &                          MEBSRC( SRC,SPINDEX( V,1 ) ) + EMVAL * F2
+     &                          MEBSRC( SRC,SPINDEX( V,1 ) ) + 
+     &                          EMVAL * MSMATX_S( SRC,V ) * F2
 
                         END DO
 

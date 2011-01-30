@@ -43,7 +43,6 @@ C.........  This module contains the major data structure and control flags
      &          MENAME, MSDEV, 
      &          NMSRC, MPRJFLAG, MFLAG_BD, MTNAME, MSDATE,
      &          MNIPPA, MEANAM, 
-     &          MSNAME, MNSMATV, MSVDESC, MSVUNIT,
      &          MGNAME, MNGMAT,
      &          PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
@@ -52,7 +51,8 @@ C.........  This module contains the major data structure and control flags
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG,
      &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MMDEV,
-     &          SPDFLAG
+     &          SPDFLAG, MSNAME_L, MSNAME_S, MNSMATV_L, MNSMATV_S,
+     &          MSVDESC_L, MSVDESC_S, MSVUNIT_L, MSVUNIT_S
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NIACT, NSRC, CATEGORY,
@@ -272,26 +272,65 @@ C           a variable grid
         
         MNGMAT = NCOLS3D
 
-C.........  Open speciation matrix, compare number of sources, store
-C           speciation variable descriptions, and store mass or moles.
-        MSNAME = PROMPTSET( 
-     &           'Enter logical name for the MOBILE SPECIATION MATRIX',
-     &           FSREAD3, 'MSMAT', PROGNAME )
+C.........  Open mole-based speciation matrix, compare number of sources, and store
+C           speciation variable descriptions.
+        MSNAME_L = PROMPTSET( 
+     &           'Enter logical name for the MOLE-BASED SPECIATION MATRIX',
+     &           FSREAD3, 'MSMAT_L', PROGNAME )
 
-        IF ( .NOT. DESCSET( MSNAME, ALLFILES ) ) THEN
+        IF ( .NOT. DESCSET( MSNAME_L, ALLFILES ) ) THEN
             MESG = 'Could not get description of file set "' //
-     &             MSNAME( 1:LEN_TRIM( MSNAME ) ) // '"'
+     &             MSNAME_L( 1:LEN_TRIM( MSNAME_L ) ) // '"'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
 
-        CALL CHKSRCNO( 'mobile', 'MSMAT', NROWS3D, NMSRC, EFLAG)
-        MNSMATV = NVARSET
-        ALLOCATE( MSVDESC( MNSMATV ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MSVDESC', PROGNAME )
-        ALLOCATE( MSVUNIT( MNSMATV ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MSVUNIT', PROGNAME )
-        CALL STORE_VDESCS( 1, 1, MNSMATV, .TRUE., MSVDESC )
-        CALL STORE_VUNITS( 1, 1, MNSMATV, .TRUE., MSVUNIT )
+        CALL CHKSRCNO( 'mobile', 'MSMAT_L', NROWS3D, NMSRC, EFLAG)
+        MNSMATV_L = NVARSET
+        ALLOCATE( MSVDESC_L( MNSMATV_L ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MSVDESC_L', PROGNAME )
+        ALLOCATE( MSVUNIT_L( MNSMATV_L ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MSVUNIT_L', PROGNAME )
+        CALL STORE_VDESCS( 1, 1, MNSMATV_L, .TRUE., MSVDESC_L )
+        CALL STORE_VUNITS( 1, 1, MNSMATV_L, .TRUE., MSVUNIT_L )
+
+C.........  Open mass-based speciation matrix, compare number of sources, and store
+C           speciation variable descriptions.
+        MSNAME_S = PROMPTSET( 
+     &           'Enter logical name for the MASS-BASED SPECIATION MATRIX',
+     &           FSREAD3, 'MSMAT_S', PROGNAME )
+
+        IF ( .NOT. DESCSET( MSNAME_S, ALLFILES ) ) THEN
+            MESG = 'Could not get description of file set "' //
+     &             MSNAME_S( 1:LEN_TRIM( MSNAME_S ) ) // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ENDIF
+
+        CALL CHKSRCNO( 'mobile', 'MSMAT_S', NROWS3D, NMSRC, EFLAG)
+        MNSMATV_S = NVARSET
+        ALLOCATE( MSVDESC_S( MNSMATV_S ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MSVDESC_S', PROGNAME )
+        ALLOCATE( MSVUNIT_S( MNSMATV_S ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MSVUNIT_S', PROGNAME )
+        CALL STORE_VDESCS( 1, 1, MNSMATV_S, .TRUE., MSVDESC_S )
+        CALL STORE_VUNITS( 1, 1, MNSMATV_S, .TRUE., MSVUNIT_S )
+
+C.........  Check that variables in mole and mass speciation matrices match
+        IF( MNSMATV_L .NE. MNSMATV_S ) THEN
+            WRITE( MESG,94010 )
+     &         'ERROR: Mole-based speciation matrix contains ', 
+     &         MNSMATV_L, 'variables but mass-based speciation ' // 
+     &         'matrix contains ', MNSMATV_S, 'variables.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+        
+        DO I = 1, MNSMATV_L
+            IF( MSVDESC_L( I ) .NE. MSVDESC_S( I ) ) THEN
+                MESG = 'ERROR: Variable descriptions are not ' //
+     &            'consistent between mole- and mass-based ' //
+     &            'speciation matrices.'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END DO
 
 C.........  Open meteorology file
         IF( RPDFLAG .OR. RPVFLAG ) THEN

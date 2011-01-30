@@ -100,4 +100,18 @@ C.........  Hourly speed data
 C.........  Index from per-source inventory array to INVSCC array (based on MICNY in MODSTCY)
         INTEGER, ALLOCATABLE, PUBLIC :: MISCC( : )     ! dim NMSRC
 
+C.........  Speciation matrixes (mole- and mass-based)
+        CHARACTER(16), PUBLIC :: MSNAME_L
+        CHARACTER(16), PUBLIC :: MSNAME_S
+        INTEGER, PUBLIC :: MNSMATV_L = 0  ! number of pol-to-species combinations
+        INTEGER, PUBLIC :: MNSMATV_S = 0
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC_L( : )  ! pollutant-to-species names
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC_S( : )
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVUNIT_L( : )  ! pollutant-to-species units
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVUNIT_S( : )
+        REAL, ALLOCATABLE, PUBLIC :: MSMATX_L( :,: )  ! speciation matrix, dim nmsrc
+        REAL, ALLOCATABLE, PUBLIC :: MSMATX_S( :,: )
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT_L( : ) ! speciation units
+        CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT_S( : )
+
         END MODULE MODMVSMRG

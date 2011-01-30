@@ -43,17 +43,17 @@ C.........  This module contains the major data structure and control flags
      &                      MNIPPA, NIPPA,
      &                      MEANAM, EINAM,
      &                      EMNAM,
-     &                      EANAM, EMIDX, SPCUNIT, 
-     &                      MNSMATV, NSMATV, 
-     &                      MSVDESC, TSVDESC, 
-     &                      NMSPC, 
-     &                      MSVUNIT
+     &                      EANAM, EMIDX, 
+     &                      NSMATV, 
+     &                      TSVDESC, 
+     &                      NMSPC
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT, INVDCOD, INVDVTS
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: NHAP, HAPNAM
+        USE MODMVSMRG, ONLY: NHAP, HAPNAM, MNSMATV_L, MSVDESC_L,
+     &                       MSVUNIT_L, MSVUNIT_S, SPCUNIT_L, SPCUNIT_S
 
         IMPLICIT NONE
 
@@ -217,18 +217,18 @@ C.........  Also store pollutants-only array
 C.........  Create array of sorted unique pol-to-species, sorted in order of
 C           pollutants, and then in alphabetical order by species...
 
-        ALLOCATE( INDXA( MNSMATV ), STAT=IOS )
+        ALLOCATE( INDXA( MNSMATV_L ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXA', PROGNAME )
-        ALLOCATE( TVSORTA( MNSMATV ), STAT=IOS )
+        ALLOCATE( TVSORTA( MNSMATV_L ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TVSORTA', PROGNAME )
-        ALLOCATE( TVDESCA( MNSMATV ), STAT=IOS )
+        ALLOCATE( TVDESCA( MNSMATV_L ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TVDESCA', PROGNAME )
 
 C.........  Loop through variable descriptions, find position of
 C           of pollutant for output, and store concatenated position with
 C           species name.  Make sure the same name is not stored twice.
         NCNT = 0
-        CALL BUILD_VDESC_UNSORT( NCNT, MNSMATV, MSVDESC )
+        CALL BUILD_VDESC_UNSORT( NCNT, MNSMATV_L, MSVDESC_L )
 
         NSMATV = NCNT 
 
@@ -262,10 +262,13 @@ C           and the master pollutant names
         CALL CHECKMEM( IOS, 'EMNAM', PROGNAME )
         ALLOCATE( EMIDX( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMIDX', PROGNAME )
-        ALLOCATE( SPCUNIT( NSMATV ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SPCUNIT', PROGNAME )
-        EMNAM   = ' '  ! array
-        SPCUNIT = ' '  ! array
+        ALLOCATE( SPCUNIT_L( NSMATV ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCUNIT_L', PROGNAME )
+        ALLOCATE( SPCUNIT_S( NSMATV ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SPCUNIT_S', PROGNAME )
+        EMNAM     = ' '  ! array
+        SPCUNIT_L = ' '  ! array
+        SPCUNIT_S = ' '  ! array
 
 C.........  Call subprogram to store species names in appropriate order
         CALL BUILD_SPECIES_ARRAY(  NSMATV, TSVDESC,  NMSPC,  EMNAM )
@@ -287,10 +290,13 @@ C.............  Store position of pollutant for each species
 
 C.............  Find speciation name in one of the speciation matrices and
 C               set units accordingly.  Set it based on the first one found.
-            IF( SPCUNIT( K ) .EQ. ' ' ) THEN
+            IF( SPCUNIT_L( K ) .EQ. ' ' ) THEN
 
-                M = INDEX1( TSVDESC( I ), MNSMATV, MSVDESC )
-                IF( M .GT. 0 ) SPCUNIT( K ) = MSVUNIT( M )
+                M = INDEX1( TSVDESC( I ), MNSMATV_L, MSVDESC_L )
+                IF( M .GT. 0 ) THEN
+                    SPCUNIT_L( K ) = MSVUNIT_L( M )
+                    SPCUNIT_S( K ) = MSVUNIT_S( M )
+                END IF
 
             END IF
 

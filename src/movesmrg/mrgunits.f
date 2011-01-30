@@ -39,8 +39,10 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: GRDFAC, TOTFAC,
      &                      GRDUNIT, TOTUNIT, 
-     &                      SPCUNIT, EMIDX,
-     &                      NIPPA, NMSPC, NUNITS
+     &                      NMSPC, NUNITS
+
+C.........  This module contains data structures and flags specific to Movesmrg
+        USE MODMVSMRG, ONLY: SPCUNIT_L, SPCUNIT_S
 
         IMPLICIT NONE
 
@@ -127,14 +129,15 @@ C           a given pollutants speciation factors
         DO V = 1, NUNITS
 
 C.............  Initialize the output units
-            CALL UNITMATCH( SPCUNIT( V ) )
+            CALL UNITMATCH( SPCUNIT_L( V ) )
+            CALL UNITMATCH( SPCUNIT_S( V ) )
 
-C.............  Convert emissions units to tons
+C.............  Convert emissions units (g/hr) to tons/hr
             EMUNIT = 'tons/hr'
             EMFAC = UNITFAC( 'g/hr', EMUNIT, .TRUE. )
 
-            GRDUNIT_I = MULTUNIT( SPCUNIT( V ), EMUNIT )
-            TOTUNIT_I = MULTUNIT( GRDUNIT_I, 'hr/day' )
+            GRDUNIT_I = MULTUNIT( SPCUNIT_L( V ), EMUNIT )
+            TOTUNIT_I = MULTUNIT( MULTUNIT( SPCUNIT_S( V ), EMUNIT ), 'hr/day' )
 
 C.............  Set the trial units
             GRDBUF = GRDUNIT_I
@@ -160,7 +163,7 @@ C.............  Set the numerators and denominators
             TDEN = ADJUSTL( TOTBUF( L+1:IOULEN3 ) )
 
 C.............  Get factor for the numerators for the gridded outputs...
-            FAC1 = UNITFAC( SPCUNIT( V ), GRDBUF, .TRUE. )  ! speciation
+            FAC1 = UNITFAC( SPCUNIT_L( V ), GRDBUF, .TRUE. )  ! speciation
 
 C.............  Get factor for the denominators for the gridded outputs
             FAC2 = UNITFAC( EMUNIT, GRDBUF, .FALSE. )
@@ -175,7 +178,7 @@ C.............  Set factors for gridded outputs
             GRDFAC( V ) = FAC1 / FAC2
 
 C.............  Get conversion factor for the numerators for totals
-            FAC1 = UNITFAC( SPCUNIT( V ), TOTBUF, .TRUE. )  ! speciation
+            FAC1 = UNITFAC( SPCUNIT_S( V ), TOTBUF, .TRUE. )  ! speciation
 
 C.............  Get factors for the denominators for the totals.  Note that
 C               the hourly data are output as daily totals.
