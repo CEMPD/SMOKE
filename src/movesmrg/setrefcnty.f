@@ -83,7 +83,7 @@ C.........  Other local variables
         INTEGER   REFIDX      ! current reference county index
         INTEGER   IOS         ! error status
 
-        LOGICAL :: EFLAG = .FALSE.   ! true: error found
+        LOGICAL :: SKIPFIP = .FALSE.   ! true: county is not in cross-reference
 
         CHARACTER(300)     MESG    ! message buffer
 
@@ -148,14 +148,16 @@ C           Start by counting number of sources for each reference county
             IF( NSRCCELLS( S ) == 0 ) CYCLE
         
             IF( IFIP( S ) .NE. PFIP ) THEN
+                SKIPFIP = .FALSE.
                 PFIP = IFIP( S )
 
                 J = INDEXINT1( IFIP( S ), NINVC, INVCNTY )
                 IF( J <= 0 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'ERROR: Inventory county ',
-     &                IFIP( S ), 'not listed in county cross-reference '
-     &                // 'file'
+                    SKIPFIP = .TRUE.
+                    WRITE( MESG, 94010 ) 'WARNING: No emissions will '//
+     &                'be calculated for inventory county ', IFIP( S ),
+     &                'because it is not listed in the county '//
+     &                'cross-reference file'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -173,7 +175,7 @@ C           Start by counting number of sources for each reference county
                 END IF
             END IF
             
-            IF( .NOT. EFLAG ) THEN
+            IF( .NOT. SKIPFIP ) THEN
 
                 NREFSRCS( REFIDX ) = NREFSRCS( REFIDX ) + 1
 
@@ -182,11 +184,6 @@ C           Start by counting number of sources for each reference county
             END IF
 
         END DO
-        
-        IF( EFLAG ) THEN
-            MESG = 'Problem found with reference county data'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
 
 C.........  Get maximum number of sources per reference county
         MXNREFSRCS = 0
@@ -207,6 +204,8 @@ C.........  Get maximum number of sources per reference county
             IF( NSRCCELLS( S ) == 0 ) CYCLE
         
             REFIDX = SRCREFIDX( S )
+            IF( REFIDX == 0 ) CYCLE
+            
             K = NREFSRCS( REFIDX ) + 1
             REFSRCS( REFIDX, K ) = S
             NREFSRCS( REFIDX ) = K
