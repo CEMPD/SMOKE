@@ -42,7 +42,7 @@ C.........  This module contains the major data structure and control flags
      &                      NMSPC, MEBCNY, MEBSTA, MEBSRC,
      &                      MEBSCC, MEBSTC,
      &                      MRDEV, LREPSTA, LREPCNY, LREPSCC,
-     &                      EMNAM, TOTUNIT, NMSRC
+     &                      EMNAM, EANAM, TOTUNIT, NMSRC, NIPPA
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD, MICNY
@@ -144,9 +144,9 @@ C.............  Get the maximum width for the county names
             PTIME = STIME
 
 C.............  Allocate memory for the units and names
-            ALLOCATE( MNAMES( NMSPC ), STAT=IOS )
+            ALLOCATE( MNAMES( NMSPC+NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MNAMES', PROGNAME )
-            ALLOCATE( MUNITS( NMSPC ), STAT=IOS )
+            ALLOCATE( MUNITS( NMSPC+NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MUNITS', PROGNAME )
 
 C.............  Initialize units and names
@@ -162,6 +162,18 @@ C.................  Set names and units for output
     
                 MNAMES( V ) = EMNAM( V )
                 MUNITS( V ) = CBUF
+    
+            END DO
+
+C.............  Create units labels from pollutants
+            DO V = 1, NIPPA
+    
+C.................  Set names and units for output
+                L = LEN_TRIM( TOTUNIT( NMSPC+V ) )
+                CBUF = '[' // TOTUNIT( NMSPC+V )( 1:L ) // ']'
+    
+                MNAMES( NMSPC+V ) = EANAM( V )
+                MUNITS( NMSPC+V ) = CBUF
     
             END DO
 
@@ -187,7 +199,7 @@ C.............  Create totals as needed
                 PSTATE = STATE
             END IF
             
-            DO J = 1, NMSPC
+            DO J = 1, NMSPC+NIPPA
                 VAL = MEBSRC( SRC,J )
                 
                 IF( LREPSCC ) THEN
@@ -213,7 +225,7 @@ C.............  If required, write SCC totals
         IF ( LREPSCC ) THEN
         
             CALL CREATE_HEADER( 'Mobile' )
-            CALL WRITE_SCC( MRDEV, NINVSCC, NMSPC, MNAMES, MUNITS, MEBSCC )
+            CALL WRITE_SCC( MRDEV, NINVSCC, NMSPC+NIPPA, MNAMES, MUNITS, MEBSCC )
         
         END IF
 
@@ -221,12 +233,12 @@ C.............  If required, write state totals
         IF ( LREPSTA ) THEN  
 
             CALL CREATE_HEADER( 'Mobile' )
-            CALL WRITE_STA( MRDEV, NS, NMSPC, MNAMES, MUNITS, MEBSTA)
+            CALL WRITE_STA( MRDEV, NS, NMSPC+NIPPA, MNAMES, MUNITS, MEBSTA)
 
             IF ( LREPSCC ) THEN
 
                 CALL CREATE_HEADER( 'Mobile' )
-                CALL WRITE_STASCC( MRDEV, NS, NINVSCC, NMSPC, MNAMES, MUNITS, MEBSTC )
+                CALL WRITE_STASCC( MRDEV, NS, NINVSCC, NMSPC+NIPPA, MNAMES, MUNITS, MEBSTC )
 
             END IF
 
@@ -236,12 +248,12 @@ C.........  If required, write county totals
         IF( LREPCNY ) THEN
 
             CALL CREATE_HEADER( 'Mobile' )
-            CALL WRITE_CNY( MRDEV, NC, NMSPC, MNAMES, MUNITS, MEBCNY)
+            CALL WRITE_CNY( MRDEV, NC, NMSPC+NIPPA, MNAMES, MUNITS, MEBCNY)
 
             IF ( LREPSCC ) THEN
         
                 CALL CREATE_HEADER( 'Mobile' )
-                CALL WRITE_CNYSCC( MRDEV, NMSRC, NMSPC, MNAMES, MUNITS, MEBSRC )
+                CALL WRITE_CNYSCC( MRDEV, NMSRC, NMSPC+NIPPA, MNAMES, MUNITS, MEBSRC )
 
             END IF
 

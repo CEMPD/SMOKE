@@ -56,7 +56,7 @@ C.........  This module contains the major data structure and control flags
      &          NSMATV,           ! speciation matrices
      &          MEBCNY, MEBSTA, MEBSRC,            ! cnty/state/src total spec emissions
      &          MEBSCC, MEBSTC,                    ! scc total spec emissions
-     &          EANAM                              ! pol/act names
+     &          EANAM, NIPPA                       ! pol/act names
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, 
@@ -67,7 +67,8 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          RPDEMFACS, RPVEMFACS, RPPEMFACS,
      &          SPDFLAG, SPDPRO, MISCC, 
      &          MSNAME_L, MSMATX_L, MNSMATV_L, 
-     &          MSNAME_S, MSMATX_S, MNSMATV_S
+     &          MSNAME_S, MSMATX_S, MNSMATV_S,
+     &          EANAMREP
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -239,26 +240,26 @@ C.........  Allocate memory for fixed-size arrays...
         EMGRD = 0.  ! array
         
         IF( LREPSCC ) THEN
-            ALLOCATE( MEBSCC( NINVSCC, NMSPC ), STAT=IOS )    ! SCC totals
+            ALLOCATE( MEBSCC( NINVSCC, NMSPC+NIPPA ), STAT=IOS )    ! SCC totals
             CALL CHECKMEM( IOS, 'MEBSCC', PROGNAME )
         END IF
         
         IF( LREPSTA ) THEN
-            ALLOCATE( MEBSTA( NSTATE, NMSPC ), STAT=IOS )    ! state totals
+            ALLOCATE( MEBSTA( NSTATE, NMSPC+NIPPA ), STAT=IOS )    ! state totals
             CALL CHECKMEM( IOS, 'MEBSTA', PROGNAME )
             
             IF( LREPSCC ) THEN
-                ALLOCATE( MEBSTC( NSTATE, NINVSCC, NMSPC ), STAT=IOS )     ! state-scc totals
+                ALLOCATE( MEBSTC( NSTATE, NINVSCC, NMSPC+NIPPA ), STAT=IOS )     ! state-scc totals
                 CALL CHECKMEM( IOS, 'MEBSTC', PROGNAME )
             END IF
         END IF
 
         IF( LREPCNY ) THEN
-            ALLOCATE( MEBCNY( NCOUNTY, NMSPC ), STAT=IOS )    ! county totals
+            ALLOCATE( MEBCNY( NCOUNTY, NMSPC+NIPPA ), STAT=IOS )    ! county totals
             CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
         END IF
         
-        ALLOCATE( MEBSRC( NMSRC, NMSPC ), STAT=IOS )    ! source totals
+        ALLOCATE( MEBSRC( NMSRC, NMSPC+NIPPA ), STAT=IOS )    ! source totals
         CALL CHECKMEM( IOS, 'MEBSRC', PROGNAME )
 
         ALLOCATE( MSMATX_L( NMSRC, MNSMATV_L ), STAT=IOS )    ! mole speciation matrix
@@ -782,8 +783,15 @@ C.............................  Add this cell's emissions to source totals
                             MEBSRC( SRC,SPINDEX( V,1 ) ) =
      &                          MEBSRC( SRC,SPINDEX( V,1 ) ) + 
      &                          EMVAL * MSMATX_S( SRC,V ) * F2
+                            
+                            IF( EANAMREP( V ) ) THEN
+                                F2 = TOTFAC( NMSPC+SIINDEX( V,1 ) )
+                                MEBSRC( SRC,NMSPC+SIINDEX( V,1 ) ) =
+     &                              MEBSRC( SRC,NMSPC+SIINDEX( V,1 ) ) +
+     &                              EMVAL * F2
+                            END IF
 
-                        END DO
+                        END DO    ! end loop over pollutant-species combos
 
                     END DO    ! end loop over grid cells for source
                 

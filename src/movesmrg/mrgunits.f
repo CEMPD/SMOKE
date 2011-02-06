@@ -39,7 +39,7 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: GRDFAC, TOTFAC,
      &                      GRDUNIT, TOTUNIT, 
-     &                      NMSPC, NUNITS
+     &                      NMSPC, NIPPA, NUNITS
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: SPCUNIT_L, SPCUNIT_S
@@ -102,11 +102,11 @@ C           ALD2 from VOC must have the same units as ALD2 from ACETALD
         
         ALLOCATE( GRDFAC( NUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRDFAC', PROGNAME )
-        ALLOCATE( TOTFAC( NUNITS ), STAT=IOS )
+        ALLOCATE( TOTFAC( NUNITS+NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TOTFAC', PROGNAME )
         ALLOCATE( GRDUNIT( NUNITS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRDUNIT', PROGNAME )
-        ALLOCATE( TOTUNIT( NUNITS ), STAT=IOS )
+        ALLOCATE( TOTUNIT( NUNITS+NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TOTUNIT', PROGNAME )
 
 C.........  Initialize all
@@ -197,6 +197,15 @@ C.............  Set the output units per pollutant/activity
             GRDUNIT( V ) = GRDBUF
             TOTUNIT( V ) = TOTBUF
 
+        END DO
+
+C.........  Set up units for non-speciated emissions report (tons/day for now)
+        EMFAC = UNITFAC( 'g/hr', 'tons/day', .TRUE. )
+        DO V = 1, NIPPA
+            
+            TOTFAC ( NUNITS+V ) = EMFAC
+            TOTUNIT( NUNITS+V ) = 'tons/day'
+        
         END DO
 
         RETURN
