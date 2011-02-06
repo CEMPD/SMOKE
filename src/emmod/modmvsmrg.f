@@ -114,4 +114,7 @@ C.........  Speciation matrixes (mole- and mass-based)
         CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT_L( : ) ! speciation units
         CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT_S( : )
 
+C.........  Non-speciated emissions reporting
+        LOGICAL, ALLOCATABLE, PUBLIC :: EANAMREP( : )  ! indicates when non-speciation emissions should be saved
+
         END MODULE MODMVSMRG

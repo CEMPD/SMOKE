@@ -49,6 +49,9 @@ C.........  This module contains the major data structure and control flags
      &                      SIINDEX, SPINDEX,
      &                      EMNAM, EANAM
 
+C.........  This module contains data structures and flags specific to Movesmrg
+        USE MODMVSMRG, ONLY: EANAMREP
+
         IMPLICIT NONE
 
 C...........   INCLUDES:
@@ -64,6 +67,9 @@ C...........   Call allocated arrays
 C...........   Group index counter for each source-category-specific list of 
 C              pollutants and activities.
         INTEGER  KM( NIPPA )    !  mobile
+
+C...........   Allocatable arrays
+        INTEGER, ALLOCATABLE :: EANAMIDX( : )  ! index from EANAM to TSVDESC
 
 C...........   Other local variables
         INTEGER         J, K, L1, L2, V    !  counters and indices
@@ -87,6 +93,14 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine BLDMRGIDX
+
+C.........  Allocate memory for building reporting flag array
+        ALLOCATE( EANAMIDX( NIPPA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EANAMIDX', PROGNAME )
+        ALLOCATE( EANAMREP( NSMATV ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EANAMREP', PROGNAME )
+        EANAMIDX = 0
+        EANAMREP = .FALSE.
 
 C.........  Allocate memory for variable to pollutant and variable to species
 C           indexes.
@@ -116,9 +130,21 @@ C.............  Store pol/act and species indices
             SIINDEX( V, 1 ) = K             ! store pol/act index
             SPINDEX( V, 1 ) = J             ! store species index
 
+C.............  Save index into TSVDESC array from EANAM
+            IF( EANAMIDX( K ) .EQ. 0 ) THEN
+                EANAMIDX( K ) = V
+            END IF
+
             PSPC  = CSPC
 
         END DO
+
+C.........  Build array to indicate when report values should be saved
+        DO V = 1, NIPPA
+            EANAMREP( EANAMIDX( V ) ) = .TRUE.
+        END DO
+        
+        DEALLOCATE( EANAMIDX )
 
         RETURN
 
