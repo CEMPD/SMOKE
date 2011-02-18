@@ -93,7 +93,7 @@ C            PELV file, and actually not doing plume rise on any sources instead
 C            of the default behaviour, which is to do plume rise on all sources
 
 C.........   Check gridded information is consistent with current grid info
-        CALL RDSRGHDR( .FALSE., FDEV, GRDFMT )   ! CHKGRID may be initialized
+        IF( FDEV > 0 ) CALL RDSRGHDR( .FALSE., FDEV, GRDFMT )   ! CHKGRID may be initialized
 
 C.........  Allocate the MODELEV arrays for identifying major/PinG sources
         ALLOCATE( LMAJOR( NSRC ), STAT=IOS )
