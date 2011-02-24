@@ -140,7 +140,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: HFLAG              ! true: hour-specific data
         LOGICAL, SAVE :: OUTMSG = .TRUE.    ! true: output message for new day
         LOGICAL       :: RDFLAG = .TRUE.    ! true: read dy data for this iter
-        LOGICAL       :: FIREFLAG=.FALSE.   ! true: read wildfires only
+        LOGICAL, SAVE :: FIREFLAG=.FALSE.   ! true: read wildfires only
         LOGICAL       :: RHFLAG = .TRUE.    ! true: read hr data for this iter
         LOGICAL, SAVE :: TMATCALC           ! true: need to calculate new TMAT
         LOGICAL, SAVE :: UFLAG  = .FALSE.   ! true: use src-spec hr profiles
@@ -215,20 +215,10 @@ C.............  Allocate memories for BEGHOUR and ENDHOUR
             EDHOUR = 0.0
 
 C.............  Define whether processing wildfire or not
-            IF( .NOT. READ3( DNAME, 'BEGHOUR', ALLAYS3,
-     &                        JDATE, JTIME, STHOUR      ) ) THEN
-                MESG = 'WARNING: Processing non-wildfire sources '
-                CALL M3MSG2( MESG )
-
-                FIREFLAG = .FALSE.
-            ELSE
-                MESG = 'WARNING: Processing Wildfire emissions....'
-                CALL M3MSG2( MESG )
-                FIREFLAG = .TRUE.
-
-            END IF      !  if read3() failed on dname
-
-            STHOUR = 0.0   ! array
+            IF( INDEX1( 'ACRESBURNED',NIPPA,EAREAD2D ) > 0 ) THEN
+                FIREFLAG = .TRUE. 
+                CALL M3MSG2( 'Processing Wildfire Emissions....' )
+            END IF
 
         END IF  ! End of first time section
 
@@ -436,7 +426,6 @@ C.............  Apply hourly factors to all sources for current pollutant or
 C               activity. Also apply units conversion.
             DO S = 1, NSRC
                 EMIST( S,V ) = UFAC * EMACV( S,V ) * TMAT( S,V,HOUR )
-
             END DO
 
 C.............  If day-specific data are available for current pollutant
@@ -470,10 +459,11 @@ C                       emissions and hourly profile adjustments
 C.....................  Re-normalizing hourly temporal factors for wildfires only
                     IF( FIREFLAG ) THEN
 
-                        EPSBEG = 1 + MOD( INT( STHOUR( I ) )/10000, 24 )
-                        EPSEND = 1 + MOD( INT( EDHOUR( I ) )/10000, 24 )
-                        K1 = 1 + MOD( EPSBEG + HCORR - TZONES( S ), 24 )
-                        K2 = 1 + MOD( EPSEND + HCORR - TZONES( S ), 24 )
+C.........................  Convert local hours to output time zone
+                        EPSBEG = INT( STHOUR( I ) )/10000
+                        EPSEND = INT( EDHOUR( I ) )/10000
+                        K1 = 1 + MOD( EPSBEG + HCORR, 24 )
+                        K2 = 1 + MOD( EPSEND + HCORR, 24 )
 
                         TOTHRLFAC = 0.0
                         SUMHRLFAC = 0.0
