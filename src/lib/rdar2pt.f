@@ -148,7 +148,7 @@ C.........  Allocate memory for unsorted input tables
         ALLOCATE( AR2PTSCC( MXSCC, NTABLA2P ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AR2PTSCC', PROGNAME )
         ALLOCATE( NUMSCC( NTABLA2P ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'AR2PTSCC', PROGNAME )
+        CALL CHECKMEM( IOS, 'NUMSCC', PROGNAME )
         IDXA2P = 0                ! array
         UNSRTA2P%FIP   = 0        ! array
         UNSRTA2P%LAT   = BADVAL3  ! array
