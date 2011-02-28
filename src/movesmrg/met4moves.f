@@ -165,7 +165,6 @@ C...........   Other local variables:
         INTEGER    EPI_EDATE      ! episode ending date based on ERUNLEN
         INTEGER    EPI_ETIME      ! episode ending time based on ERUNLEN
         
-        INTEGER    ARRAYPOS    ! position in 24-hour arrays
         INTEGER    CURCNTY     ! tmp current processing county
         INTEGER    DAY         ! tmp day of week number
         INTEGER    DDATE       ! output date for daily counties or date difference
@@ -1145,36 +1144,31 @@ C.................  Create hourly meteorology arrays by source
 C.............  Make sure we've waited long enough to catch all time zones
             IF( POS > TSPREAD ) THEN
 
-C.................  Adjust time step for 24-hour arrays
-                ARRAYPOS = MOD( POS - TSPREAD, 24 )
-                IF( ARRAYPOS == 0 ) ARRAYPOS = 24
-
 C.................  If last day of month, process monthly averages
                 CALL DAYMON( DDATE, MONTH, DAY )
                 CALL DAYMON( DDATE + 1, TMPMNTH, DAY )
 
 C.................  Estimate fuelmonth averaged monthly ref county temp and RH
-                IF( TMPMNTH /= MONTH ) THEN
+                IF( TMPMNTH /= MONTH .AND. OTIME == 230000 ) THEN
 
 C.....................  Averaging met data over no of days
-                    CALL AVGMET( NSRC,ARRAYPOS )
-                        
-                    IF( OTIME == 230000 ) THEN
- 
-                        CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE,  MONTH )
+                    DO K = 1,24
+                        CALL AVGMET( NSRC,K )
+                    ENDDO
 
-C.........................  reinitializing local arrays for next month averaging
-                        NDAYSRC = 0
-                        TKHOUR = 0.0
-                        RHHOUR = 0.0
-                        MAXTSRC = BADVAL3
-                        MINTSRC = -1*BADVAL3
+                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE,  MONTH )
 
-                        MONOPEN = .TRUE.
+C.....................  reinitializing local arrays for next month averaging
+                    NDAYSRC = 0
+                    TKHOUR = 0.0
+                    RHHOUR = 0.0
+                    MAXTSRC = BADVAL3
+                    MINTSRC = -1*BADVAL3
 
-                    END IF
+                    MONOPEN = .TRUE.
+
                 END IF
-                
+
             END IF    ! time zone check
 
 C.............  Estimate fuelmonth averaged episodic ref county temp and RH
