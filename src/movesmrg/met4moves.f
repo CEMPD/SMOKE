@@ -1154,24 +1154,25 @@ C.................  If last day of month, process monthly averages
                 CALL DAYMON( DDATE + 1, TMPMNTH, DAY )
 
 C.................  Estimate fuelmonth averaged monthly ref county temp and RH
-                IF( TMPMNTH /= MONTH .AND. OTIME == 230000 ) THEN
+                IF( TMPMNTH /= MONTH ) THEN
 
 C.....................  Averaging met data over no of days
-                    DO K = 1,24
-                        CALL AVGMET( NSRC,K )
-                    ENDDO
+                    CALL AVGMET( NSRC,ARRAYPOS )
                         
-                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE,  MONTH )
+                    IF( OTIME == 230000 ) THEN
+ 
+                        CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE,  MONTH )
 
-C.....................  reinitializing local arrays for next month averaging
-                    NDAYSRC = 0
-                    TKHOUR = 0.0
-                    RHHOUR = 0.0
-                    MAXTSRC = BADVAL3
-                    MINTSRC = -1*BADVAL3
+C.........................  reinitializing local arrays for next month averaging
+                        NDAYSRC = 0
+                        TKHOUR = 0.0
+                        RHHOUR = 0.0
+                        MAXTSRC = BADVAL3
+                        MINTSRC = -1*BADVAL3
 
-                    MONOPEN = .TRUE.
+                        MONOPEN = .TRUE.
 
+                    END IF
                 END IF
                 
             END IF    ! time zone check
