@@ -214,7 +214,7 @@ C                   applied in the input file
      &                        'record at line',IREC,'comes after '//
      &                        'state-specific record matching same '//
      &                        'source.'
-                        ELSE IF ( CMBTYP(F) == STATETYP ) THEN
+                        ELSE IF ( CMBTYP(F) == CNTYTYP ) THEN
                             WRITE( MESG,94010 ) 'ERROR: Default ' //
      &                        'record at line',IREC,'comes after '//
      &                        'county-specific record matching same '//
