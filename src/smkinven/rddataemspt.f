@@ -77,7 +77,8 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine RDDATAEMSPT
-
+        HDRFLAG = .FALSE.
+        EFLAG   = .FALSE.
 C.........  Use the file format definition to parse the line into
 C           the various data fields
         READPOL ( 1 ) = ADJUSTL( LINE( 57:61 ) )

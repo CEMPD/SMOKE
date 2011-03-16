@@ -76,7 +76,8 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine RDSRCEMSPT
-
+        HDRFLAG = .FALSE.
+        EFLAG   = .FALSE.
 C.........  Use the file format definition to parse the line into
 C           the various data fields
         CFIP( 1:1 ) = '0'                    ! country code of FIPS
