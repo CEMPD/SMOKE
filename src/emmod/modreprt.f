@@ -96,9 +96,7 @@
 
 !.........  Define types needed for module
         TYPE :: EACHRPT
-
             SEQUENCE
-
             INTEGER       :: BEGSUMHR      ! start hour for summing
             INTEGER       :: ELEVSTAT      ! elev/no-elev/all status
             INTEGER       :: OUTTIME       ! end hour for summing
@@ -112,7 +110,6 @@
             INTEGER       :: RSTARTLIN     ! rpt packet start line
             INTEGER       :: SCCRES        ! SCC resolution
             INTEGER       :: SRGRES        ! surrogate resolution (1st or 2nd)
-
             LOGICAL       :: BYCELL        ! true: by cell
             LOGICAL       :: BYCNRY        ! true: by country code
             LOGICAL       :: BYCNTY        ! true: by county code
@@ -164,7 +161,6 @@
             LOGICAL       :: USEPRMAT      ! true: use projection matrix
             LOGICAL       :: USESLMAT      ! true: use mole spec
             LOGICAL       :: USESSMAT      ! true: use mass spec
-
             CHARACTER          :: DELIM         ! output delimeter
             CHARACTER(20)      :: DATAFMT       ! data format
             CHARACTER(LENLAB3) :: LABEL         ! user-defined label
@@ -172,7 +168,6 @@
             CHARACTER(IOVLEN3) :: SPCPOL        ! pollutant for BYSPC
             CHARACTER(LENLAB3) :: SUBGNAM       ! subgrid names
             CHARACTER(300)     :: OFILENAM      ! output names
-
         END TYPE
 
 !.........  Input file characteristics not available in MODINFO

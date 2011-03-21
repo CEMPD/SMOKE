@@ -48,24 +48,18 @@
 
 !.........  Define types needed for module
         TYPE :: BYETYPE
-
             SEQUENCE
-
             INTEGER            :: ETP        ! output index for emission types
             INTEGER            :: DAT        ! output index for pol/act
             INTEGER            :: AGG        ! output for either
-
             LOGICAL            :: SPCYN      ! true: speciation applies
             LOGICAL            :: PRYN       ! true: projection applies
             LOGICAL            :: CUYN       ! true: mult control applies
             LOGICAL            :: CRYN       ! true: react control applies
-
         END TYPE
 
         TYPE :: BYSPVAR
-
             SEQUENCE
-
             INTEGER            :: SPC        ! output index for species
             INTEGER            :: ETPSPC     ! output index for emis type || spc
             INTEGER            :: PRCSPC     ! output index for process || spc
@@ -73,7 +67,6 @@
             INTEGER            :: SUMPOL     ! output index for summed to pol
             INTEGER            :: SUMSPC     ! output index for summed to species
             INTEGER            :: AGG        ! output for any
-
         END TYPE
 
 !.........  Output records to be summed into bins

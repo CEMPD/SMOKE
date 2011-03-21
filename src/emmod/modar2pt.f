@@ -41,15 +41,12 @@
 
 !.........  Define types needed for module
         TYPE :: AR2PT
-
             SEQUENCE
-
             INTEGER       FIP   ! country, state, and county code
             REAL          LAT   ! latitude
             REAL          LON   ! longitude
             REAL          ALLOC ! allocation factor
             CHARACTER(25) NAME  ! airport name
-
         END TYPE
 
         TYPE :: A2PREPTYPE
