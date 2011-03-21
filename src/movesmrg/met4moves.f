@@ -15,7 +15,8 @@ C
 C  PRECONDITIONS REQUIRED:
 C
 C  REVISION  HISTORY:
-C     2/10: Created by B.H. Baek
+C     1/10: Copied from Premobl.f
+C     4/10: Created by B.H. Baek
 C
 C***********************************************************************
 C
