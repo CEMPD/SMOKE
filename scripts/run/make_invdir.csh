@@ -17,19 +17,8 @@
       breaksw
 
       case M:
-         if ( $SRCABBR == 'onroad' ) then
-            setenv INVNAME1 onroad
-            setenv INVNAME2 onroadsrc
-         else if ( $SRCABBR == 'offroad-rpv' ) then
-            setenv INVNAME1 offroad-rpv 
-            setenv INVNAME2 offroad-rpvsrc
-         else if ( $SRCABBR == 'offroad-rpp' ) then
-            setenv INVNAME1 offroad-rpp 
-            setenv INVNAME2 offroad-rppsrc
-         else
-            setenv INVNAME1 mobl
-            setenv INVNAME2 msrc
-         endif
+         setenv INVNAME1 ${SRCABBR}
+         setenv INVNAME2 ${SRCABBR}src
       breaksw
 
       case P:

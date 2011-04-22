@@ -25,7 +25,7 @@ setenv PROMPTFLAG N                  # Y prompts for input
 
 # Source category
 setenv SMK_SOURCE M                  # M : mobile sources
-setenv SRCABBR    offroad-rpv
+setenv SRCABBR   rateperprofile 
 
 # Metcombine settings
 setenv SRG_LIST  "100, 240"          # list of surrogates to retrieve a list of counties

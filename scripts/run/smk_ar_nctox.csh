@@ -33,7 +33,7 @@ setenv RUN_TEMPORAL  Y          # run temporal allocation program
 setenv RUN_SMKMERGE  Y          # run merge program
 
 ## Quality assurance
-setenv RUN_SMKREPORT Y          # run emissions reporting program
+setenv RUN_SMKREPORT Y         # run emissions reporting program
 
 ## Program-specific controls...
 
