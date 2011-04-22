@@ -44,7 +44,7 @@ C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS, YOFF, XDIFF, XOFF
 
 C.........  This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: MINTSRC, MAXTSRC
+        USE MODMET, ONLY: MINTSRC, MAXTSRC, MAXTDAY, MINTDAY
  
         IMPLICIT NONE
 
@@ -107,8 +107,12 @@ C bbh           C = (ROW-1)*NCOLS + COL   ! org cell equations using row,col
 C.................  Convert K to F
                 IF( TFLAG ) THEN
                     TEMPVAL = 1.8 * VAL( C ) - 459.67
+
                     MAXTSRC( S ) = MAX( TEMPVAL, MAXTSRC( S ) )
                     MINTSRC( S ) = MIN( TEMPVAL, MINTSRC( S ) )
+
+                    MAXTDAY( S ) = MAX( TEMPVAL, MAXTDAY( S ) ) 
+                    MINTDAY( S ) = MIN( TEMPVAL, MINTDAY( S ) ) 
                 END IF
 
                 CNTOT = CNTOT + VAL( C )
