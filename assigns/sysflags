@@ -22,13 +22,6 @@ if( ! -e $MD_SRC/$SMOKE_EXE ) mkdir -p $MD_SRC/$SMOKE_EXE
 if( ! -e $IOAPIDIR ) mkdir -p $IOAPIDIR
 if( ! -e $NETCDFDIR ) mkdir -p $NETCDFDIR
 
-if ( $?M6_FFLAGS ) then
-else
-   echo "ERROR: The platform file in SMKHOME/scripts has not been"
-   echo "       updated to include the M6_FFLAGS compiler variable"
-   exit( 1 )
-endif
-
 setenv LIBS_COMPILE " "
 switch ( $SMOKE_EXE )
   case IRIXn32f90:
@@ -80,6 +73,14 @@ case Linux2_x86ifc:
     setenv LIBS_DEBUG_SYS "-lsmoke.debug -lfileset.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
     setenv LIBS_COMPILE ""
     breaksw
+case  Linux2_x86_64ifort:
+    setenv FFLAGS   "$FFLAG -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT} -I${MD_SRC}/${SMOKE_EXE} -I${ETDSRC}/${SMOKE_EXE} -I${FS_BIN}"
+    setenv DBGFLAGS "$DBGFLAG -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT} -I${MD_SRC}/${SMOKE_EXE} -I${ETDSRC}/${SMOKE_EXE} -I${FS_BIN}"
+    setenv LDIRS    "-static -L${SMK_BIN} -L${TOOLS_BIN} -L${FS_BIN} -L${IOAPIDIR} -L${NETCDFDIR}"
+    setenv LIBS_SYS     "-lsmoke -lfileset -ledsstools -lioapi -lnetcdf"
+    setenv LIBS_DEBUG_SYS "-lsmoke.debug -lfileset.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
+    setenv LIBS_COMPILE ""
+    breaksw
 case  Linux2_x86pg:
     setenv FFLAGS   "$FFLAG  -module ${MD_SRC}/${SMOKE_EXE} -module ${ETDSRC}/${SMOKE_EXE} -module ${FS_BIN} -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${SMOKE_EXE} -I${ETDSRC}/${SMOKE_EXE} -I${FS_ROOT} -I${FS_BIN}"
     setenv DBGFLAGS "$DBGFLAG  -module ${MD_SRC}/${SMOKE_EXE} -module ${ETDSRC}/${SMOKE_EXE} -module ${FS_BIN} -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${SMOKE_EXE} -I${ETDSRC}/${SMOKE_EXE} -I${FS_ROOT} -I${FS_BIN}"
@@ -93,14 +94,6 @@ default:
     echo "Pleae edit the sysflags file and add this exectuable format and the"
     echo "    appropriate compiler settings."
     exit( 2 )
-endsw
-
-switch ( $SMOKE_EXE )
-case Linux2_x86ifc:
-    setenv M6_FFLAGS "$M6_FFLAG -I${ETINC} -I${IOINC} -I${INC} -I${FS_ROOT} -I${MD_SRC}/${SMOKE_EXE}"
-    breaksw
-default:
-    setenv M6_FFLAGS "$FFLAGS"
 endsw
 
 echo " "

@@ -72,36 +72,6 @@ else
 
 endif
 
-if( $?RUN_MBSETUP ) then
-   if ( $RUN_MBSETUP == 'y' ) then
-      setenv RUN_MBSETUP Y
-   endif
-
-else
-   setenv RUN_MBSETUP N
-
-endif
-
-if( $?RUN_PREMOBL ) then
-   if ( $RUN_PREMOBL == 'y' ) then
-      setenv RUN_PREMOBL Y
-   endif
-
-else
-   setenv RUN_PREMOBL N
-
-endif
-
-if( $?RUN_EMISFAC ) then
-   if ( $RUN_EMISFAC == 'y' ) then
-      setenv RUN_EMISFAC Y
-   endif
-
-else
-   setenv RUN_EMISFAC N
-
-endif
-
 if( $?RUN_CNTLMAT ) then
    if ( $RUN_CNTLMAT == 'y' ) then
       setenv RUN_CNTLMAT Y

@@ -52,10 +52,6 @@ endif
    setenv BASDIR   $SMKDAT/run_$INVEN/static   # Episode-specific static data
 #
    setenv SMK_TMPDIR   $STATIC/tmp
-   setenv SMK_METPATH  $STATIC/m6met
-   setenv SMK_SPDPATH  $STATIC/m6spd
-   setenv SMK_M6PATH   $STATIC/m6
-   setenv SMK_EMISPATH $STATIC/m6emfac
 #
    setenv A_OUT    $SMKDAT/run_$ASCEN/output/$A_SPC   # Area output
    setenv N_OUT    $SMKDAT/run_$ASCEN/output/$N_SPC   # Nonroad output
@@ -71,7 +67,6 @@ endif
    setenv EL_SRC   $SMKROOT/src/lib            # source code for lib routines
    setenv GD_SRC   $SMKROOT/src/grdmat         # source code for gridding
    setenv IV_SRC   $SMKROOT/src/smkinven       # source code for inven import
-   setenv MB_SRC   $SMKROOT/src/mobile         # source code for mobile
    setenv MD_SRC   $SMKROOT/src/emmod          # source code for modules
    setenv MG_SRC   $SMKROOT/src/smkmerge       # source code for merge prgms
    setenv PT_SRC   $SMKROOT/src/point          # source code for point
@@ -79,7 +74,5 @@ endif
    setenv SP_SRC   $SMKROOT/src/spcmat         # source code for speciation
    setenv TM_SRC   $SMKROOT/src/temporal       # source code for temporal  
    setenv UT_SRC   $SMKROOT/src/emutil         # source code for utility prgms
-   setenv M5_SRC   $SMKROOT/src/mo5b           # source code for Mobile5b
-   setenv M6_SRC   $SMKROOT/src/mo6            # source code for Mobile6.2
    setenv MV_SRC   $SMKROOT/src/movesmrg       # source code for MOVES merge prgm
    setenv LOGS     $STATIC/logs                # log files

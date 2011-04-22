@@ -100,27 +100,27 @@ source $ASSIGNS/check_settings.scr
 ## Mobile source input files
 if ( $SMK_SOURCE == 'M' ) then
    setenv MBINV       $INVDIR/$SRCABBR/mbinv.$SRCABBR.$INVOP.lst # mobile emissions
-   setenv MEPROC      $INVDIR/$SRCABBR/meproc.$SRCABBR.txt      # Mobile emission processes
-   setenv MCREF       $INVDIR/$SRCABBR/mcref_MOVES.txt          # County cross-reference file
-   setenv SPDREF      $INVDIR/$SRCABBR/spdref.MOVES.txt         # Speed cross-reference file
-   setenv SPDPRO      $INVDIR/$SRCABBR/spdpro.MOVES.txt         # Speed profiles file
-   setenv MRCLIST     $INVDIR/$SRCABBR/mrclist.${SRCABBR}.lst   # List of MOVES lookup tables
-   setenv MCODES      $GE_DAT/mcodes.txt                        # mobile codes
-   setenv MCXREF      $GE_DAT/mcref_moves_GA.txt                # ref county cross-reference
-   setenv MFMREF      $GE_DAT/fuelmonth_GA.txt                  # ref county fuel-month
-   setenv METLIST     $GE_DAT/metlist.met4moves.lst             # List of Meteorology files
-   setenv MGREF       $GE_DAT/amgref_us_MOVES_09262010.txt      # Mobile gridding x-ref 
-   setenv MTPRO       $GE_DAT/amptpro.m3.default.us+can.txt     # Temporal profiles
-   setenv MTREF       $GE_DAT/amptref.m3.us+can.cair.txt        # Mobile temporal x-ref
-   setenv GSPRO       $GE_DAT/gspro_cmaq.MOVES.20081114.txt     # Speciation prof 
-   setenv GSPRO_COMBO $GE_DAT/gspro_combo.MOVES.20100420.txt    # Speciation Combo prof
-   setenv GSREF       $GE_DAT/gsref.cmaq.MOVES.20100427.txt     # Speciation x-ref
-   setenv SMK_MVSPATH $GE_DAT/MOVES_lookuptables/               # Dir for MOVES lookup tables
-   setenv METMOVES    $METDAT/$METSCEN/SMOKE_${GRID}_2009091-2009120.txt # Met4moves output
+   setenv MCREF       $INVDIR/$SRCABBR/mcref_MOVES.txt           # County cross-reference file
+   setenv SPDREF      $INVDIR/$SRCABBR/spdref.MOVES.txt          # Speed cross-reference file
+   setenv SPDPRO      $INVDIR/$SRCABBR/spdpro.MOVES.txt          # Speed profiles file
+   setenv MCODES      $GE_DAT/mcodes.txt                         # mobile codes
+   setenv MCXREF      $GE_DAT/mcref_moves_GA.txt                 # ref county cross-reference
+   setenv MFMREF      $GE_DAT/fuelmonth_GA.txt                   # ref county fuel-month
+   setenv METLIST     $GE_DAT/metlist.met4moves.lst              # List of Meteorology files
+   setenv MGREF       $GE_DAT/amgref_us_MOVES_09262010.txt       # Mobile gridding x-ref 
+   setenv MTPRO       $GE_DAT/amptpro.m3.default.us+can.txt      # Temporal profiles
+   setenv MTREF       $GE_DAT/amptref.m3.us+can.cair.txt         # Mobile temporal x-ref
+   setenv MEPROC      $GE_DAT/meproc.$SRCABBR.caponly.txt        # Mobile emission processes
+   setenv GSPRO       $GE_DAT/gspro_cmaq_cb05_soa_MOVES_14Mar2011.txt     # Speciation prof 
+   setenv GSPRO_COMBO $GE_DAT/gspro_combo_2005_MOVES_14Mar2011.txt        # Speciation Combo prof
+   setenv GSREF       $GE_DAT/gsref_cmaq_cb05_soa_MOVES_14Mar2011.txt     # Speciation x-ref
+   setenv SMK_MVSPATH $GE_DAT/MOVES_lookuptables/                         # Dir for MOVES lookup tables
+   setenv METMOVES    $METDAT/$METSCEN/SMOKE_${GRID}_2009091-2009120.txt  # Met4moves output
+   setenv MRCLIST     $GE_DAT/MOVES_lookuptables/mrclist.${SRCABBR}.summed.lst   # List of MOVES lookup tables
 endif
 #
 ## Shared input files
-   setenv INVTABLE    $INVDIR/other/invtable_w_bafm_MOVES_23Apr2010.txt
+   setenv INVTABLE    $INVDIR/other/invtable_hapcapintegate_cb05soa_nomp_MOVES_14Mar2011.txt
    setenv GRIDDESC    $GE_DAT/GRIDDESC             # Grid descriptions.
    setenv COSTCY      $GE_DAT/costcy.txt           # country/state/county info
    setenv HOLIDAYS    $GE_DAT/holidays.txt         # holidays for day change
@@ -194,7 +194,7 @@ if ( $SMK_SOURCE == M || $RUN_SMKMERGE == Y && $MRG_MOBILE == Y ) then
 endif
 
 # Cumstomized Movesmrg output file names when merging all souce sectors
-   if ( $MOVESMRG_CUSTOM_OUTPUT == Y && $RUN_MOVESMRG == Y ) then 
+   if ( $MOVESMRG_CUSTOM_OUTPUT == Y ) then 
       setenv EOUT  $OUTPUT/egts_l.$ESDATE.$NDAYS.$SPC.$GRID.$ESCEN.ncf 
       setenv MOUT  $M_OUT/mgts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
       setenv REPMG $REPSCEN/rep_${MM}_${SRCABBR}_${ESDATE}_${GRID}_${SPC}.txt
