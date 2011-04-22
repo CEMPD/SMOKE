@@ -8,7 +8,6 @@
 setenv FILESET_MAKE_LIB  Y   # [ Y | N ]  # For FileSetAPI library
 setenv ETOOLS_MAKE_LIB   Y   # [ Y | N ]  # For edss_tools library
 setenv SMK_MAKE_LIB      Y   # [ Y | N ]  # For SMOKE library
-setenv SMK_MAKE_MOBLIB   N   # [ Y | N ]  # For MOBILE6 library
 setenv SMK_MAKE          Y   # [ Y | N ]  # For SMOKE programs
 #
 ## Set the directory for the SMOKE installation
@@ -90,7 +89,7 @@ endif
 #
 ## Set up for SMOKE compiling
 #
-if ( $SMK_MAKE_LIB == Y || $SMK_MAKE_MOBLIB == Y || $SMK_MAKE == Y ) then
+if ( $SMK_MAKE_LIB == Y ||  $SMK_MAKE == Y ) then
    if ( ! -e $SMKROOT ) then
       echo "ERROR: SMOKE root directory not found. It was set to:"
       echo "       $SMKROOT"
@@ -103,7 +102,6 @@ endif
 ## Make SMOKE library
 #
 if ( $?SMK_MAKE_LIB ) then
-
    if ( $SMK_MAKE_LIB == 'Y' ) then
       echo "Building SMOKE library..."
       cd $EL_SRC
@@ -113,19 +111,6 @@ if ( $?SMK_MAKE_LIB ) then
 
 endif
 
-#
-## Make Mobile5b library, if requested
-#
-if ( $?SMK_MAKE_MOBLIB ) then
-
-   if ( $SMK_MAKE_MOBLIB == 'Y' ) then
-      echo "Building MOBILE6 library..."
-      cd $M6_SRC 
-      make clean
-      Makeit $argv
-   endif
-
-endif
 
 if ( $SMK_MAKE == Y ) then
 
@@ -237,11 +222,6 @@ echo "Building Rawbio, Tmpbio, Tmpbeis3, and Normbeis3..."
 cd $BG_SRC    # Rawbio and Tmpbio
 make clean 
 Makeit $argv
-
-echo "Building Premobl and Emisfac..."
-cd $MB_SRC     # Premobl and Emisfac
-make clean 
-Makeit $argv    
 
 echo "Building Movesmrg..."
 cd $MV_SRC     # Movesmrg and Met4moves
