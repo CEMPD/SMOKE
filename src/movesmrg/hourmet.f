@@ -1,5 +1,5 @@
 
-        SUBROUTINE HOURMET( NSRC, AVGTYPE, JDATE, JTIME, DAYBEGT,   
+        SUBROUTINE HOURMET( NSRC, JDATE, JTIME, DAYBEGT,   
      &              SKIPDATA, LDAYSAV, RH_STRHR, RH_ENDHR )
 
 C***********************************************************************
@@ -40,7 +40,8 @@ C****************************************************************************
 C...........   MODULES for public variables
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TASRC, QVSRC, PRESSRC, TKHOUR, RHHOUR, NDAYSRC
+        USE MODMET, ONLY: TASRC, QVSRC, PRESSRC, TKHOUR, RHHOUR, RHDAY,
+     &                    NDAYSRC
         
         IMPLICIT NONE
 
@@ -59,7 +60,6 @@ C...........   EXTERNAL FUNCTIONS
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT    (IN) :: NSRC                  ! no. sources
-        CHARACTER(*), INTENT    (IN) :: AVGTYPE               ! avg type
         INTEGER,      INTENT    (IN) :: JDATE                 ! YYYYDDD
         INTEGER,      INTENT    (IN) :: JTIME                 ! HHMMSS
         INTEGER,      INTENT    (IN) :: DAYBEGT ( NSRC )      ! begin. time for day
@@ -141,21 +141,19 @@ C.............  Convert K to F degree for temperature
             IF( TEMPVAL > AMISS3 )THEN
 
 C.................  Store values in hourly arrays                
-                IF( AVGTYPE == 'DAILY' ) THEN
-                    TKHOUR ( S,TIMESLOT ) = TEMPVAL
-                    RHHOUR ( S,TIMESLOT ) = RHVAL
-                    NDAYSRC( S,TIMESLOT ) = 1
-                ELSE
-                    IF( .NOT. SKIPDATA ) THEN
-                        TKHOUR( S,TIMESLOT ) =
-     &                                    TKHOUR( S,TIMESLOT ) + TEMPVAL
+                IF( .NOT. SKIPDATA ) THEN
+                    TKHOUR( S,TIMESLOT ) =
+     &                                TKHOUR( S,TIMESLOT ) + TEMPVAL
 
-                        RHHOUR( S,TIMESLOT ) = 
-     &                                    RHHOUR( S,TIMESLOT ) + RHVAL
+                    RHHOUR( S,TIMESLOT ) = 
+     &                                RHHOUR( S,TIMESLOT ) + RHVAL
 
-                        NDAYSRC( S,TIMESLOT ) = 
-     &                                    NDAYSRC( S,TIMESLOT ) + 1
-                    END IF
+C.....................  Store daily RH values for daily SMOKE-ready output
+                    RHDAY( S,TIMESLOT ) =
+     &                                RHDAY( S,TIMESLOT ) + RHVAL 
+
+                    NDAYSRC( S,TIMESLOT ) = 
+     &                                NDAYSRC( S,TIMESLOT ) + 1
                 END IF
 c        print*,s,timeslot,TEMPVAL,RHVAL,NDAYSRC(S,TIMESLOT),'S TimeSlot BH'
 

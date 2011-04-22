@@ -59,6 +59,9 @@
         REAL,    ALLOCATABLE, PUBLIC :: BPHOUR  ( :,: ) ! barometric pressure by source (Premobl)
                                                         ! barometric pressure by county (Emisfac)
         REAL,    ALLOCATABLE, PUBLIC :: RHHOUR  ( :,: ) ! relative humidity by county per hour
+        REAL,    ALLOCATABLE, PUBLIC :: RHDAY   ( :,: ) ! relative humidity by county per day
+        REAL,    ALLOCATABLE, PUBLIC :: MAXTDAY ( : )   ! max temp per county per day
+        REAL,    ALLOCATABLE, PUBLIC :: MINTDAY ( : )   ! min temp per county per day
 
         INTEGER, ALLOCATABLE, PUBLIC :: NDAYSRC ( :,: ) ! no of days to average for each source 
         INTEGER, ALLOCATABLE, PUBLIC :: FUELIDX ( :,: ) ! monthID for fuelmonth ref county

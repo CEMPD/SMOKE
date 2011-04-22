@@ -15,7 +15,6 @@ C
 C  PRECONDITIONS REQUIRED:
 C
 C  REVISION  HISTORY:
-C     1/10: Copied from Premobl.f
 C     4/10: Created by B.H. Baek
 C
 C***********************************************************************
@@ -39,7 +38,6 @@ C
 C***********************************************************************
 
 C...........   MODULES for public variables
-C.........  This module is used for MOBILE6 setup information                
         USE MODMBSET, ONLY: NINVC, NREFC, MCREFSORT, MCREFIDX,
      &                      DAILY, WEEKLY, MONTHLY, EPISLEN,
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
@@ -66,7 +64,7 @@ C...........   This module is the derived meteorology data for emission factors
         USE MODMET, ONLY: MINTEMP, MAXTEMP, TASRC, QVSRC, PRESSRC,
      &                    TKHOUR, RHHOUR, NDAYSRC, MAXTSRC, MINTSRC,
      &                    MAXTFUEL, MINTFUEL, RHFUEL, TKFUEL, FUELIDX,
-     &                    NFUEL
+     &                    NFUEL, MAXTDAY, MINTDAY, RHDAY
      
         IMPLICIT NONE
         
@@ -300,12 +298,14 @@ C.........  Define averaging method.
         CALL UPCASE( AVG_TYPE )
 
 C.........  Check group file unit numbers to see which types of averaging are needed
-        IF( AVG_TYPE == 'DAILY' .OR. AVG_TYPE == 'EPISODE'  ) THEN
+        IF( AVG_TYPE == 'EPISODE'  ) THEN
             MESG = 'ERROR: ' // TRIM( AVG_TYPE ) // 
      &             ' averaging method is not currently supported.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ELSE IF( AVG_TYPE == 'MONTHLY' ) THEN
             MONAVER  = .TRUE.
+        ELSE IF( AVG_TYPE == 'DAILY' ) THEN
+            DAYAVER  = .TRUE.
         ELSE
             MESG = 'ERROR: AVERAGE_METHOD environment variable ' //
      &             TRIM( AVG_TYPE ) // 'is not recognized.'
@@ -930,6 +930,7 @@ C           information for SMOKE and MOVES-ready output files
         
 C.........  Define temporal resolution header
         WRITE( ODEV1,'(A)' )'#DESC SMOKE-ready input file'
+        WRITE( ODEV1,'(A)' )'#AVERAGING_METHOD ' // TRIM( AVG_TYPE )
         WRITE( ODEV1,94010 )'#MODELING PERIOD:', EPI_SDATE,'-',EPI_EDATE
         WRITE( ODEV1,'(A)' )'#DATA FIPS,fuelmonthID,monthID,'//
      &       'JulianDate,avgRH,minimum_Temp,maximum_Temp'
@@ -940,6 +941,7 @@ C.........  Open output file
      &       .FALSE., .TRUE., 'MOVES_OUTFILE', PROGNAME )
 
         WRITE( ODEV2,'(A)' )'#DESC MOVES-ready input file'
+        WRITE( ODEV2,'(A)' )'#AVERAGING_METHOD ' // TRIM( AVG_TYPE )
         WRITE( ODEV2,94010 )'#MODELING PERIOD:', EPI_SDATE,'-',EPI_EDATE
         WRITE( ODEV2,'(A)' )'#DATA FIPS,MonthID,Temperature'//
      &          'ProfileID,RH,temp1(min),temp2(max),,,,,,,,,,,,temp24'
@@ -972,6 +974,10 @@ C.........  Source met variable arrays
         CALL CHECKMEM( IOS, 'MAXTSRC', PROGNAME )
         ALLOCATE( MINTSRC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MINTSRC', PROGNAME )
+        ALLOCATE( MAXTDAY( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MAXTDAY', PROGNAME )
+        ALLOCATE( MINTDAY( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MINTDAY', PROGNAME )
         ALLOCATE( TASRC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TASRC', PROGNAME )
         ALLOCATE( QVSRC( NSRC ), STAT=IOS )
@@ -980,12 +986,16 @@ C.........  Source met variable arrays
         CALL CHECKMEM( IOS, 'PRESSRC', PROGNAME )
         MAXTSRC = BADVAL3
         MINTSRC = -1*BADVAL3
+        MAXTDAY = BADVAL3
+        MINTDAY = -1*BADVAL3
 
 C.........  Allocate memory for storing meteorology profiles
         ALLOCATE( TKHOUR( NSRC, 24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TKHOUR', PROGNAME )
         ALLOCATE( RHHOUR( NSRC, 24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RHHOUR', PROGNAME )
+        ALLOCATE( RHDAY( NSRC, 24 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RHDAY', PROGNAME )
         ALLOCATE( NDAYSRC( NSRC,24 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NDAYSRC', PROGNAME )
         TKHOUR = 0.0
@@ -1131,8 +1141,8 @@ C.................  Apply ungridding matrix
                 CALL GRDFIPS( NSRC, CNTYSRC, PRES, PRESSRC, .FALSE. )
 
 C.................  Create hourly meteorology arrays by source
-                CALL HOURMET( NSRC, AVG_TYPE, JDATE, JTIME, DAYBEGT,
-     &             ALT_DATA, LDAYSAV, RH_STRHR, RH_ENDHR )
+                CALL HOURMET( NSRC, JDATE, JTIME, DAYBEGT, ALT_DATA,
+     &                        LDAYSAV, RH_STRHR, RH_ENDHR )
             ELSE
                 IF( OTIME == 230000 ) THEN
                     MESG = 'NOTE: Missing meteorology file on '//
@@ -1144,6 +1154,54 @@ C.................  Create hourly meteorology arrays by source
 
 C.............  Make sure we've waited long enough to catch all time zones
             IF( POS > TSPREAD ) THEN
+
+C.................  Processing daily SMOKE-ready output
+                IF( DAYAVER .AND. OTIME == 230000 ) THEN
+
+                    DO S = 1, NSRC
+                        
+                        INVCOUNTY = MCREFSORT( S,1 )
+                        REFCOUNTY = MCREFSORT( S,2 )
+
+                        N = 0
+                        RHSUM = 0.0 
+                        RHAVG = 0.0 
+C.................  averaging RH per inventory county
+                        DO TT = 1,24
+                            IF( RHDAY( S,TT ) == 0.0 ) CYCLE
+                            N = N + 1
+                            RHSUM = RHSUM + RHDAY( S,TT )
+                        END DO
+
+                        RHAVG   = RHSUM / N
+                        MAXTEMP = MAXTDAY( S )
+                        MINTEMP = MINTDAY( S )
+
+                        L = FIND1FIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
+                        K = FIND1FIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
+                        NMON = FMREFLIST( K, 2 )   ! no month of ref county
+
+C.................  Loop over months per ref. county
+                        FUELMONTH = 0
+                        DO J = L, L + NMON - 1
+                            CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. county
+                            IF( CURMONTH == MONTH ) THEN
+                                FUELMONTH = FMREFSORT( J,2 )  ! processing fuelmonth/county
+                            END IF
+                        END DO
+
+C.....................  write inventory county min/max and avg RH
+                        WRITE( ODEV1,94060 ) INVCOUNTY, FUELMONTH, MONTH,
+     &                      DDATE, RHAVG, MINTEMP, MAXTEMP
+                   
+                    END DO
+
+                    RHDAY = 0.0
+                    MAXTDAY = BADVAL3
+                    MINTDAY = -BADVAL3
+
+                END IF
+
 
 C.................  If last day of month, process monthly averages
                 CALL DAYMON( DDATE, MONTH, DAY )
@@ -1157,12 +1215,12 @@ C.....................  Averaging met data over no of days
                         CALL AVGMET( NSRC,K )
                     ENDDO
 
-                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE,  MONTH )
+                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, DDATE, MONTH )
 
 C.....................  reinitializing local arrays for next month averaging
-                    NDAYSRC = 0
                     TKHOUR = 0.0
                     RHHOUR = 0.0
+                    NDAYSRC = 0
                     MAXTSRC = BADVAL3
                     MINTSRC = -1*BADVAL3
 
@@ -1180,7 +1238,7 @@ C.................  Averaging met data over no of days
                     CALL AVGMET( NSRC,K )
                 ENDDO
 
-                CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, DDATE, MONTH )
+                CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, DDATE, MONTH )
 
             END IF
 
@@ -1315,6 +1373,8 @@ C...........   Internal buffering fosrmats............ 94xxx
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
 
+94060   FORMAT( I6.6, I5, 3X, I5, I10, 3F10.2 )
+
 94070   FORMAT( A, F5.1, A )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
@@ -1324,10 +1384,11 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C.............  This internal subprogram estimates ref. county level 
 C               averaged RH and min/max Temperatures over fuelmonth
 
-          SUBROUTINE AVG_REF_COUNTY_RH_TEMP( ODEV1, SDATE, MONTH )
+          SUBROUTINE AVG_REF_COUNTY_RH_TEMP( ODEV1, AVGFLAG, SDATE, MONTH )
 
 C.............  local argument
             INTEGER, INTENT( IN ) :: ODEV1    ! SMOKE-ready output file
+            LOGICAL, INTENT( IN ) :: AVGFLAG 
             INTEGER, INTENT( IN ) :: SDATE
             INTEGER, INTENT( IN ) :: MONTH
 
@@ -1370,8 +1431,10 @@ C.................  Loop over months per ref. county
                 END DO
 
 C.................  write inventory county min/max and avg RH
-                WRITE( ODEV1,94060 ) INVCOUNTY, FUELMONTH, MONTH, SDATE,
-     &                 RHAVG, MINTEMP, MAXTEMP
+                IF( AVGFLAG ) THEN
+                    WRITE( ODEV1,94060 ) INVCOUNTY, FUELMONTH, MONTH,
+     &                 SDATE, RHAVG, MINTEMP, MAXTEMP
+                END IF
 
 C.................  Calculation monthly max/min temp and avg RH
 C                   per ref. county

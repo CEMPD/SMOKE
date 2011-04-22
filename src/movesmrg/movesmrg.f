@@ -516,8 +516,8 @@ C                         UO - min profile temp is under county min, max profile
 C                         OU - min profile temp is over county min, max profile temp is under county max
 C                         OO - both min and max profile temps are over county temps
                     IF( RPPFLAG ) THEN
-                        MINVAL = AVGMIN( MICNY( SRC ), MONTH )
-                        MAXVAL = AVGMAX( MICNY( SRC ), MONTH )
+                        MINVAL = AVGMIN( MICNY( SRC ), MONTH, DAYMONTH )
+                        MAXVAL = AVGMAX( MICNY( SRC ), MONTH, DAYMONTH )
 
 C.........................  Check that min and max county temps were found
                         IF( MINVAL .LT. AMISS3 .OR.

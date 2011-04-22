@@ -12,7 +12,7 @@ C  PRECONDITIONS REQUIRED:
 C       FDEV must be opened
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:  none
-C
+C 
 C  REVISION  HISTORY:
 C     04/10: Created by C. Seppanen
 C
@@ -81,11 +81,16 @@ C...........   Other local variables
         INTEGER         NLINES      ! number of lines
         INTEGER         CNTY        ! current FIPS code
         INTEGER         MNTH        ! current calendar month
+        INTEGER         JDATE       ! current Julian date
+        INTEGER         MONTH       ! current calendar month
+        INTEGER         DAY        ! current calendar date
         
         REAL            MINVAL      ! minimum temperature value
         REAL            MAXVAL      ! maximum temperature value
 
-        LOGICAL      :: EFLAG = .FALSE.   ! true: error found
+        LOGICAL      :: DAYFLAG = .FALSE.   ! true: Daily input
+        LOGICAL      :: MONFLAG = .FALSE.   ! true: Monthly input
+        LOGICAL      :: EFLAG   = .FALSE.   ! true: error found
 
         CHARACTER(150)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
@@ -96,9 +101,9 @@ C***********************************************************************
 C   begin body of subroutine RDMETMOVES
 
 C.........  Allocate memory to store min and max temperatures
-        ALLOCATE( AVGMIN( NINVIFIP, 12 ), STAT=IOS )
+        ALLOCATE( AVGMIN( NINVIFIP, 12, 31 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AVGMIN', PROGNAME )
-        ALLOCATE( AVGMAX( NINVIFIP, 12 ), STAT=IOS )
+        ALLOCATE( AVGMAX( NINVIFIP, 12, 31 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AVGMAX', PROGNAME )
         AVGMIN = BADVAL3  ! array
         AVGMAX = BADVAL3  ! array
@@ -121,8 +126,24 @@ C.........  Read through file and match to FIPS from inventory
                 CYCLE
             END IF
 
+C.............  Determine whether monthly or daily temperatures
+            IF( INDEX( LINE, '#AVERAGING_METHOD' ) > 0 ) THEN
+                IF( INDEX( LINE, 'MONTHLY' ) > 0 ) THEN
+                    MONFLAG = .TRUE.
+                ELSE
+                    DAYFLAG = .TRUE.
+                END IF
+            END IF
+
 C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
+
+C.............  Chekc header line for temporal resolution (#AVERAGING_METHOD)
+            IF( .NOT. DAYFLAG .AND. .NOT. MONFLAG ) THEN
+                MESG = 'ERROR: #AVERAGING_METHOD header line '//
+     &                 'is missing'
+                CALL M3EXIT(  PROGNAME, 0, 0, MESG, 2 )
+            END IF
 
 C.............  Parse the line into 7 segments
             CALL PARSLINE( LINE, 7, SEGMENT )
@@ -156,12 +177,36 @@ C.............  Convert calendar month to integer
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
-            
+
+C.............  Determine month and date
             MNTH = STR2INT( ADJUSTR( SEGMENT( 3 ) ) )
+
             IF( MNTH .LT. 1 .OR. MNTH .GT. 12 ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'ERROR: Invalid calendar month',
+                WRITE( MESG, 94010 ) 'ERROR: Invalid calendar month ',
      &            MNTH, 'at line', IREC, 'of Met4moves output file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
+
+C.............  Convert calendar month and date to integer
+            IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Bad calendar date ' //
+     &            'at line', IREC, 'of Met4moves output file.'
+                CALL M3MESG( MESG )
+                CYCLE
+            END IF
+
+C.............  Determine month and date
+            JDATE = STR2INT( ADJUSTR( SEGMENT( 4 ) ) )
+            CALL DAYMON( JDATE, MONTH, DAY )
+
+            IF( MNTH /= MONTH ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: MonthID and JulianDate '
+     &             // 'at line', IREC, ' are not consistent.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -198,18 +243,26 @@ C.............  Check min and max temperature values
             END IF
             
 C.............  Check for duplicate entries
-            IF( AVGMIN( K, MNTH ) .GT. AMISS3 .OR.
-     &          AVGMAX( K, MNTH ) .GT. AMISS3 ) THEN
+            IF( AVGMIN( K, MONTH, DAY ) .GT. AMISS3 .OR.
+     &          AVGMAX( K, MONTH, DAY ) .GT. AMISS3 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Duplicate county',
-     &            CNTY, 'and calendar month', MNTH, 'at line', 
+     &            CNTY, 'and calendar month', MONTH, 'at line', 
      &            IREC, 'of Met4moves output file.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
             
-            AVGMIN( K, MNTH ) = MINVAL
-            AVGMAX( K, MNTH ) = MAXVAL
+C.............  Processing daily min/max temperatures
+            IF( DAYFLAG ) THEN
+                AVGMIN( K, MONTH, DAY ) = MINVAL
+                AVGMAX( K, MONTH, DAY ) = MAXVAL
+
+C.............  Processing monthly min/max temperatures
+            ELSE
+                AVGMIN( K, MONTH, : ) = MINVAL
+                AVGMAX( K, MONTH, : ) = MAXVAL
+            END IF
 
         END DO
 
