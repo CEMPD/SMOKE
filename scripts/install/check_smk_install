@@ -57,26 +57,26 @@ if ( $status > 0 ) then
     set errstat = 1
 endif
 
-# Check MOVES onroad sources
-echo 'MOVES onroad source differences' >> $errfile
+# Check MOVES mobile sources
+echo 'MOVES rateperdistance source differences' >> $errfile
 
-diff $mbrepdir/rep_l_onroad* $repdir/rep_l_onroad* >> $errfile
+diff $mbrepdir/rep_l_rateperdistance* $repdir/rep_l_rateperdistance* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-# Check MOVES offroad-rpv sources
-echo 'MOVES offroad-rpv source differences' >> $errfile
+# Check MOVES ratepervehicle sources
+echo 'MOVES ratepervehicle source differences' >> $errfile
 
-diff $mbrepdir/rep_l_offroad-rpv* $repdir/rep_l_offroad-rpv* >> $errfile
+diff $mbrepdir/rep_l_ratepervehicle* $repdir/rep_l_ratepervehicle* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-# Check MOVES offroad-rpp sources
-echo 'MOVES offroad-rpp source differences' >> $errfile
+# Check MOVES rateperprofile sources
+echo 'MOVES rateperprofile source differences' >> $errfile
 
-diff $mbrepdir/rep_l_offroad-rpp* $repdir/rep_l_offroad-rpp* >> $errfile
+diff $mbrepdir/rep_l_rateperprofile* $repdir/rep_l_rateperprofile* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
