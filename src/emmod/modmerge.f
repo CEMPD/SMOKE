@@ -87,6 +87,7 @@
         LOGICAL, PUBLIC :: LREPSTA ! output state-total emissions in report(s)
         LOGICAL, PUBLIC :: LREPCNY ! output county-total emissions in report(s)
         LOGICAL, PUBLIC :: LREPSCC ! output SCC-total emissions in report(s) (Movesmrg only)
+        LOGICAL, PUBLIC :: LREPSRC ! output source-level emissions in report(s) (Movesmrg only)
         LOGICAL, PUBLIC :: LREPANY ! true: LREPSTA = T or LREPCNY = T
         LOGICAL, PUBLIC :: LREPINV ! include inventory emissions in report(s)
         LOGICAL, PUBLIC :: LREPSPC ! include speciated emissions in report(s)
@@ -453,8 +454,9 @@
         REAL   , ALLOCATABLE, PUBLIC :: TECCNY( :,: ) ! all   , dim ncny, ndim
 
 !.........  Source and SCC total speciated emissions (Movesmrg only)
-        REAL   , ALLOCATABLE, PUBLIC :: MEBSRC( :,: ) ! mobile, dim nsrc, ndim
         REAL   , ALLOCATABLE, PUBLIC :: MEBSCC( :,: ) ! mobile, dim nscc, ndim
+        REAL   , ALLOCATABLE, PUBLIC :: MEBSUM( :,: ) ! mobile, dim nscc, ndim
+        REAL   , ALLOCATABLE, PUBLIC :: MEBSRC( :,:,: ) ! mobile, dim nsrc, ndim by hour
         REAL   , ALLOCATABLE, PUBLIC :: MEBSTC( :,:,: ) ! mobile, dim nsta, nscc, ndim
 
         END MODULE MODMERGE
