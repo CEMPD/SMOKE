@@ -39,9 +39,9 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, EDATE, ETIME, TSTEP,
-     &                      NMSPC, MEBCNY, MEBSTA, MEBSRC,
+     &                      NMSPC, MEBCNY, MEBSTA, MEBSUM,
      &                      MEBSCC, MEBSTC,
-     &                      MRDEV, LREPSTA, LREPCNY, LREPSCC,
+     &                      MRDEV, LREPSTA, LREPCNY, LREPSCC, LREPSRC,
      &                      EMNAM, EANAM, TOTUNIT, NMSRC, NIPPA
 
 C.........  This module contains the arrays for state and county summaries
@@ -182,8 +182,7 @@ C.................  Set names and units for output
         END IF
 
 C.........  Do not report if this time is not appropriate
-        IF( JTIME .NE. REPTIME .AND. 
-     &    ( JDATE .NE. EDATE .OR. JTIME .NE. ETIME ) ) RETURN
+        IF( JTIME .NE. REPTIME ) RETURN 
 
 C.............  Create totals as needed
         PSTATE = -9
@@ -200,7 +199,7 @@ C.............  Create totals as needed
             END IF
             
             DO J = 1, NMSPC+NIPPA
-                VAL = MEBSRC( SRC,J )
+                VAL = MEBSUM( SRC,J )
                 
                 IF( LREPSCC ) THEN
                     MEBSCC( SCCIDX,J ) = MEBSCC( SCCIDX,J ) + VAL
@@ -253,9 +252,16 @@ C.........  If required, write county totals
             IF ( LREPSCC ) THEN
         
                 CALL CREATE_HEADER( 'Mobile' )
-                CALL WRITE_CNYSCC( MRDEV, NMSRC, NMSPC+NIPPA, MNAMES, MUNITS, MEBSRC )
+                CALL WRITE_CNYSCC( MRDEV, NMSRC, NMSPC+NIPPA, MNAMES, MUNITS, MEBSUM )
 
             END IF
+
+        END IF
+
+        IF ( LREPSRC ) THEN
+        
+            CALL CREATE_HEADER( 'Mobile' )
+            CALL WRITE_CNYSCC( MRDEV, NMSRC, NMSPC+NIPPA, MNAMES, MUNITS, MEBSUM )
 
         END IF
 

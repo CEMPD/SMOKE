@@ -45,7 +45,8 @@ C.........  This module contains the major data structure and control flags
      &                      LREPSCC,          ! output SCC total emissions flag
      &                      MEBSTA, ! state total speciated emissions
      &                      MEBCNY, ! county total speciated emissions
-     &                      MEBSRC, ! source total speciated emissions
+     &                      MEBSUM, ! source total speciated emissions total
+     &                      MEBSRC, ! source total speciated emissions by hour
      &                      MEBSCC, ! SCC total speciated emissions
      &                      MEBSTC  ! state-SCC total speciated emissions
      
@@ -143,7 +144,7 @@ C.........  County totals...
         END IF
 
 C.........  Source totals...
-        MEBSRC = 0.
+        MEBSUM = 0.
 
         RETURN
 

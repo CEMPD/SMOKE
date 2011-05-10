@@ -155,7 +155,6 @@ C.....................  Store daily RH values for daily SMOKE-ready output
                     NDAYSRC( S,TIMESLOT ) = 
      &                                NDAYSRC( S,TIMESLOT ) + 1
                 END IF
-c        print*,s,timeslot,TEMPVAL,RHVAL,NDAYSRC(S,TIMESLOT),'S TimeSlot BH'
 
             END IF
 

@@ -13,6 +13,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
 C  REVISION  HISTORY:
 C     04/10: Created by C. Seppanen
+C     04/11: Modified by B.H. Baek
 C
 C***********************************************************************
 C
@@ -152,6 +153,7 @@ C.........  Allocate memory to parse lines
 C.........  Read header line to get list of pollutants in file
         FOUND = .FALSE.
         IREC = 0
+        NEMTEMPS = 0
         DO
         
             READ( TDEV, 93000, END=100, IOSTAT=IOS ) LINE
@@ -166,7 +168,11 @@ C.........  Read header line to get list of pollutants in file
             END IF
             
 C.............  Check for header line
-            IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) THEN
+            IF( LINE( 1:12 ) .EQ. 'NUM_TEMP_BIN' ) THEN
+                LJ = LEN_TRIM( LINE )
+                NEMTEMPS = STR2INT( LINE( 13:LJ ) )
+
+            ELSE IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) THEN
                 FOUND = .TRUE.
 
                 SEGMENT = ' '  ! array
@@ -286,10 +292,11 @@ C             Program doesn't know if emission factors file is missing values.
 C.........  Expected columns:
 C MOVESScenarioID,yearID,monthID,dayID,hourID,FIPS,SCCsmoke,smokeProcID,temperature,THC,CO ...
 
-        IREC = 0
-        NEMTEMPS = 0
-        PTMP = -999
-        DO
+        IF( NEMTEMPS .EQ. 0 ) THEN
+          IREC = 0
+          NEMTEMPS = 0
+          PTMP = -999
+          DO
         
             READ( TDEV, 93000, END=200, IOSTAT=IOS ) LINE
             
@@ -306,6 +313,7 @@ C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Skip header line
+            IF( LINE( 1:12 ) .EQ. 'NUM_TEMP_BIN' ) CYCLE
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments
@@ -362,11 +370,14 @@ C.................  Check that temperatures are sorted
                 NEMTEMPS = NEMTEMPS + 1
                 PTMP = TMPVAL
             END IF
-        END DO
 
-200     CONTINUE
+          END DO
 
-        REWIND( TDEV )
+200       CONTINUE
+
+          REWIND( TDEV )
+
+        END IF
 
 C.........  Allocate memory to store emission factors
         IF( ALLOCATED( RPVEMFACS ) ) THEN
@@ -409,6 +420,7 @@ C.............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
 
 C.............  Skip header line
+            IF( LINE( 1:12 ) .EQ. 'NUM_TEMP_BIN' ) CYCLE
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments

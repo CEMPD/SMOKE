@@ -40,8 +40,8 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, TSTEP, BYEAR, PYEAR, 
      &          LGRDOUT, NMSPC, EMNAM, NSMATV,
-     &          MONAME, LREPSTA, LREPCNY, LREPSCC, MREPNAME, MRDEV,
-     &          SIINDEX, SPINDEX, GRDUNIT, VARFLAG
+     &          MONAME, LREPSTA, LREPCNY, LREPSCC, LREPSRC, MREPNAME,
+     &          MRDEV, SIINDEX, SPINDEX, GRDUNIT, VARFLAG
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, P_ALP, P_BET, P_GAM, 
@@ -162,7 +162,7 @@ C.............  Open by logical name or physical name
 
 C.........  Open report file(s)
 
-        IF( LREPSTA .OR. LREPCNY .OR. LREPSCC ) THEN
+        IF( LREPSTA .OR. LREPCNY .OR. LREPSCC .OR. LREPSRC ) THEN
 
             IF( LREPSTA .AND. LREPCNY ) THEN
                 RTYPNAM = 'STATE AND COUNTY'
@@ -172,6 +172,8 @@ C.........  Open report file(s)
                 RTYPNAM = 'COUNTY'
             ELSE IF ( LREPSCC ) THEN
                 RTYPNAM = 'SCC'
+            ELSE IF ( LREPSRC ) THEN
+                RTYPNAM = 'SOURCE'
             END IF
 
             L = LEN_TRIM( RTYPNAM )

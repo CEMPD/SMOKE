@@ -42,7 +42,7 @@ C.........  This module contains the information about the source category
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: MFLAG_BD, VARFLAG,
      &                      LMETCHK, LGRDOUT, LREPCNY,
-     &                      LREPSTA, LREPSCC
+     &                      LREPSTA, LREPSCC, LREPSRC
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
@@ -113,6 +113,18 @@ C.........  Retrieve the on/off environment variables
         LREPSCC = ENVYN( 'MRG_REPSCC_YN', 'Output SCC total ' //
      &                   'ASCII reports or not', .FALSE., IOS )
 
+        LREPSRC = ENVYN( 'MRG_REPSRC_YN', 'Output source total ' //
+     &                   'ASCII reports or not', .FALSE., IOS )
+
+        IF( LREPSRC ) THEN
+            LREPCNY = .FALSE.
+            LREPSTA = .FALSE.
+            LREPSCC = .FALSE.
+            MESG = 'WARNING: Reset MRG_REPSCC_YN, MRG_REPCNY, and ' //
+     &           'MRG_REPSTA_YN to N since MRG_REPSRC_YN is set to Y '
+            CALL M3MESG( MESG )
+        END IF
+
 C.........  Check for variable grid
         VARFLAG = ENVYN( 'USE_VARIABLE_GRID', 'Use variable grid ' //
      &                 'definition', .FALSE., IOS )
@@ -170,12 +182,13 @@ C.........  Check output flags to ensure at least some output
         IF( .NOT. LGRDOUT .AND.
      &      .NOT. LREPSTA .AND.
      &      .NOT. LREPCNY .AND.
+     &      .NOT. LREPSRC .AND.
      &      .NOT. LREPSCC       ) THEN
             MESG = 'No output flags are set!  You must set at least ' //
      &             'one of the' // CRLF() // BLANK10 //
      &             'following to "Y": '//
-     &             'MRG_GRDOUT_YN, MRG_REPSTA_YN, MRG_REPCNY_YN, or ' //
-     &             'MRG_REPSCC_YN.'
+     &             'MRG_GRDOUT_YN, MRG_REPSTA_YN, MRG_REPCNY_YN, ' //
+     &             'MRG_REPSCC_YN, or MRG_REPSRC_YN.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
         END IF
