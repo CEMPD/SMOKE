@@ -205,10 +205,10 @@ C.............   Count total line buffers to define memory size of TMPLINE
             DO I = 1, NTSRGDSC  ! Open all surrogate files using the same srg code
        
 C..................  Prompt for and open I/O API output file(s)...
+                IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
+
                 CALL GETENV( 'SRGPRO_PATH', NAMBUF )
                 WRITE( NAMBUFT, '( 2A )' ) TRIM( NAMBUF ), SRGFNAM( I )
-
-                IF( TGTSRG .NE. SRGFCOD( I ) ) CYCLE
        
                 IF( NAMBUFT .NE. TSRGFNAM  ) THEN
                     CALL OPEN_SRGFILE
@@ -295,9 +295,8 @@ C.............  Write the status of reading surrogate files.
 C.............  Warning message when there are no surrogate available.
             IF( NTL .EQ. 0 ) THEN
                 WRITE( MESG,94010 ) 'ERROR: The surrogate', TGTSRG,
-     &              ' file does not exist in the $GE_DAT/SRGDESC'
+     &             ' file does not exist in the surrogate description file'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
             END IF
 
 C.............  Allocate memory for indices to surrogates tables for each source
