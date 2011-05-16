@@ -395,7 +395,7 @@ C.............  Default surrogate code 100 is population
             IF( ISDEF .LT. 1 ) THEN
                 WRITE( MESG, 93000 ) 'ERROR: Default surrogate code' //
      &              ' is not available in your surrogate description '//
-     &               CRLF()//BLANK10 ': User MUST choose a population'//
+     &               CRLF()//BLANK10//': User MUST choose a population'//
      &              ' surrogate code (i.e.,100) as default for a proper'//
      &              ' processing'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
