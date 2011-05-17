@@ -54,6 +54,14 @@ C.......   (The *TPRFAC's should all be distinct primes)
         INTEGER, PARAMETER :: WTPRFAC = 2  ! use day-of-week tmp-prof w/ full 
                                            !    week normalizer
  
+        CHARACTER(9), PARAMETER :: MON_NAME( 12 ) = 
+     &         ( / 'January  ', 'February ', 'March    ', 'April    ',
+     &             'May      ', 'June     ', 'July     ', 'August   ',
+     &             'September', 'October  ', 'November ', 'December '/ )
+
+        INTEGER     , PARAMETER :: MON_DAYS( 12 ) =
+     &         ( / 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 / )
+
         CHARACTER(9), PARAMETER :: DAYS( 7 ) = 
      &         ( / 'Monday   ', 'Tuesday  ', 'Wednesday', 'Thursday ',
      &             'Friday   ', 'Saturday ', 'Sunday   '             / )
