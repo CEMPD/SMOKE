@@ -147,6 +147,10 @@ C.............  Check older flag setting to support backward comparability
                 MESG = 'WARNING: SMK_NHAPEXCLUDE_YN is no longer '//
      &             'supported.'//CRLF()//BLANK10 //'Please use SMK_'//
      &             'PROCESS_HAPS [ALL|NONE|PARTIAL] instead'
+                CALL M3MSG2( MESG )
+
+                MESG = 'Partially treat sources as either integrate '//
+     &                 'or non-integrate sources.'
                 PROC_HAPS = 'PARTIAL'
                 NFLAG = .TRUE.
 
@@ -156,7 +160,6 @@ C.............  Check older flag setting to support backward comparability
                 NFLAG = .FALSE.
 
             END IF
-
 
         END SELECT
         
