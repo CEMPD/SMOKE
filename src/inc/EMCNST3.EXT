@@ -60,7 +60,7 @@ C.......   (The *TPRFAC's should all be distinct primes)
      &             'September', 'October  ', 'November ', 'December '/ )
 
         INTEGER     , PARAMETER :: MON_DAYS( 12 ) =
-     &         ( / 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 / )
+     &         ( / 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/ )
 
         CHARACTER(9), PARAMETER :: DAYS( 7 ) = 
      &         ( / 'Monday   ', 'Tuesday  ', 'Wednesday', 'Thursday ',
