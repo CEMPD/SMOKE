@@ -63,7 +63,7 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX,
+        USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX, INV_MON,
      &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC   
 
         IMPLICIT NONE
@@ -192,6 +192,18 @@ C.........  Set source category based on environment variable setting
 
 C.........  Output time zone
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
+
+C.........  Output time zone
+        MESG = 'Define inventory month user wants to process'
+        INV_MON = ENVINT( 'SMKINVEN_MONTH', MESG, 0, IOS )
+
+        IF( INV_MON == 0 ) THEN
+            MESG = 'Processing Annual inventory....'
+            CALL M3MSG2( MESG )
+        ELSE
+            MESG = 'Processsing ' // MON_NAME( INV_MON ) // ' inventory'
+            CALL M3MSG2( MESG ) 
+        END IF
 
 C.........  Get names of input files
         CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
