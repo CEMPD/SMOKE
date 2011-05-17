@@ -45,6 +45,7 @@
 !.........  Source-category-specific variables
 
         INTEGER    , PUBLIC :: BYEAR    ! base inventory year
+        INTEGER    , PUBLIC :: INV_MON  ! base inventory month 
         INTEGER    , PUBLIC :: CATLEN   ! length of CATEGORY string
         INTEGER    , PUBLIC :: JSCC  =0 ! position in source chars of SCC (or 0)
         INTEGER    , PUBLIC :: JSTACK=0 ! position in source chars of stack
