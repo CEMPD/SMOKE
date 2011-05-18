@@ -871,8 +871,6 @@ C.................  Summing MEBSRC array over hours
                     END DO
                 END DO
 
-                DEALLOCATE( MEBSRC, TMPEMGRD, EMGRD )
-
 C.................  Write out county/state/scc/source reports
                 CALL WRMRGREP( JDATE, JTIME )
 
