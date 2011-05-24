@@ -353,17 +353,12 @@ C           re-assigned zero fraction surrogate
             TGTSRG = SRGLIST( II )
             ISDEF  = FIND1( DEFSRGID, NSRGS, SRGLIST )
             KK = II
-            
+
             IF( FSGFLAG ) THEN
 
-                IF( II < ISDEF ) THEN
-                    TGTSRG = SRGLIST( II - 1 )
-                    KK = II - 1
-                
 C.................  default fallback surrogate will run at last after
 C                   re-assigned zero fraction surrogate
-                ELSE IF( II >= ISDEF ) THEN
-
+                IF( II >= ISDEF ) THEN
                     IF( II == NSRGS ) THEN
                         TGTSRG = DEFSRGID
                         KK = ISDEF
@@ -372,8 +367,9 @@ C                   re-assigned zero fraction surrogate
                         KK = II + 1
                     END IF
                 END IF
+
             END IF
-            
+
             NTL    = NTLINES( KK )
 
 C.............  Warning message when there are no surrogate available due to out of domain
