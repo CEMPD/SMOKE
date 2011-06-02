@@ -133,6 +133,8 @@ C.............  Determine whether monthly or daily temperatures
                 ELSE
                     DAYFLAG = .TRUE.
                 END IF
+            ELSE
+                MONFLAG = .TRUE.
             END IF
 
 C.............  Skip blank or comment lines
