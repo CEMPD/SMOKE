@@ -618,24 +618,25 @@ C           convert point source coordinates from lat-lon to output grid
         END IF
 
 C.........  Determine if ungridding matrix is needed
-        I = INDEX1( 'VMT', NIPPA, EANAM )
-        IF( I .GT. 0 ) THEN
+C baek MOBILE6 is no longer supported as of v2.7.5 on 26May2011
+C         I = INDEX1( 'VMT', NIPPA, EANAM )
+C        IF( I .GT. 0 ) THEN
         
 C.............  Make sure we're not using a variable grid
-            IF( VFLAG ) THEN
-                MESG = 'Cannot create ungridding matrix ' //
-     &                 'when using a variable grid.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-            
-            UFLAG = .TRUE.
-            MESG = 'NOTE: VMT detected in inventory, ungridding matrix '
-     &             //'will be created'
-        ELSE
-            MESG = 'NOTE: VMT not detected in inventory, ungridding ' //
-     &             'matrix will NOT be created'
-        END IF
-        CALL M3MSG2( MESG )
+C           IF( VFLAG ) THEN
+C               MESG = 'Cannot create ungridding matrix ' //
+C    &                 'when using a variable grid.'
+C               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C           END IF
+C           
+C           UFLAG = .TRUE.
+C           MESG = 'NOTE: VMT detected in inventory, ungridding matrix '
+C    &             //'will be created'
+C       ELSE
+C           MESG = 'NOTE: VMT not detected in inventory, ungridding ' //
+C    &             'matrix will NOT be created'
+C       END IF
+C       CALL M3MSG2( MESG )
 
 C.........  Depending on source category, convert coordinates, determine size
 C           of gridding matrix, and allocate gridding matrix.
