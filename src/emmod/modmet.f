@@ -65,6 +65,7 @@
 
         INTEGER, ALLOCATABLE, PUBLIC :: NDAYSRC ( :,: ) ! no of days to average for each source 
         INTEGER, ALLOCATABLE, PUBLIC :: FUELIDX ( :,: ) ! monthID for fuelmonth ref county
+        INTEGER, ALLOCATABLE, PUBLIC :: FUELCNTY( :,: ) ! no of county per ref county per fulemonth
         REAL,    ALLOCATABLE, PUBLIC :: RHFUEL  ( :,: ) ! relative humidity by county per fuelmonth
         REAL,    ALLOCATABLE, PUBLIC :: MAXTFUEL( :,: ) ! max temperature by county per fuelmonth
         REAL,    ALLOCATABLE, PUBLIC :: MINTFUEL( :,: ) ! min temperature by county per fuelmonth
