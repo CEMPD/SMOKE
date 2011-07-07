@@ -68,7 +68,7 @@ C...........   This module contains the temporal profile tables
         
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, NCHARS, JSCC, NIPPA, EANAM, LSCCEND,
-     &                     CATEGORY
+     &                     CATEGORY, MCODEFLAG
 
         IMPLICIT NONE
 
@@ -261,31 +261,32 @@ C.................  Set category-specific source characteristic combinations
                 CASE ( 'AREA' )   ! Already set above
 
                 CASE ( 'MOBILE' )
-C CHANGED DUE TO IRIX BUG
-c                    WRITE( CRWT, RWTFMT ) IRCLAS( S )
-c                    WRITE( CVID, VIDFMT ) IVTYPE( S )
-                    WRITE( CRWT, '(I3.3)' ) IRCLAS( S )
-                    WRITE( CVID, '(I4.4)' ) IVTYPE( S )
 
-                    TSCC = CRWT // CVID
-                    CALL PADZERO( TSCC )
-                    TSCCL= TSCC( 1:LSCCEND )
+c....................  Change mobile-source SCC to facilitate correct hierarchy.
+                    IF( MCODEFLAG ) THEN
+                        WRITE( CRWT, '(I3.3)' ) IRCLAS( S )
+                        WRITE( CVID, '(I4.4)' ) IVTYPE( S )
 
-                    CHKVID = RWTZERO // CVID
-                    CALL PADZERO( CHKVID )
+                        TSCC = CRWT // CVID
+                        CALL PADZERO( TSCC )
+                        TSCCL= TSCC( 1:LSCCEND )
 
-                    CHKRWT = CRWT // VIDZERO
-                    CALL PADZERO( CHKRWT )
+                        CHKVID = RWTZERO // CVID
+                        CALL PADZERO( CHKVID )
 
-                    CHK13  = CSRC( 1:MBENDL3(4) )// TSCC   ! Cnty//RWT//LNK//VTP
-                    CHK12  = CSRC( 1:MBENDL3(3) )// CHKRWT    ! Cnty// RWT// LNK
-                    CHK09  = CFIP // TSCC                   ! County// RWT// VTP
-                    CHK08  = CFIP // TSCCL                        ! County// RWT
-                    CHK08B = CFIP // CHKVID                       ! County// VTP
-                    CHK06  = CSTA // TSCC                   ! State // RWT// VTP
-                    CHK05  = CSTA // TSCCL                  ! State // road type
-                    CHK05B = CSTA // CHKVID                  ! State // veh type
-                    CHK02B = CHKVID                               ! Vehicle type
+                        CHKRWT = CRWT // VIDZERO
+                        CALL PADZERO( CHKRWT )
+
+                        CHK13  = CSRC( 1:MBENDL3(4) )// TSCC   ! Cnty//RWT//LNK//VTP
+                        CHK12  = CSRC( 1:MBENDL3(3) )// CHKRWT    ! Cnty// RWT// LNK
+                        CHK09  = CFIP // TSCC                   ! County// RWT// VTP
+                        CHK08  = CFIP // TSCCL                        ! County// RWT
+                        CHK08B = CFIP // CHKVID                       ! County// VTP
+                        CHK06  = CSTA // TSCC                   ! State // RWT// VTP
+                        CHK05  = CSTA // TSCCL                  ! State // road type
+                        CHK05B = CSTA // CHKVID                  ! State // veh type
+                        CHK02B = CHKVID                               ! Vehicle type
+                    END IF
 
                 CASE ( 'POINT' )
                     CHK16   = CSRC( 1:PTENDL3( 7 ) ) // TSCC
@@ -504,7 +505,7 @@ C                  temporal profile based on  a vehicle type and no road class
 C                  comes after the road class only match (or TSCCL in CHRT08,
 C                  for example) but the match uses the full TSCC (or CHRT09, for
 C                  example).
-                IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                IF( CATEGORY .EQ. 'MOBILE' .AND. MCODEFLAG ) THEN
                     F4B = FINDC( CHK08B, TXCNT( 9 ), CHRT09 )
                     F2B = FINDC( CHK05B, TXCNT( 6 ), CHRT06 )
                     F0B = FINDC( CHK02B, TXCNT( 3 ), CHRT03 )
@@ -523,7 +524,7 @@ C                   specific cases
                 IF( F0 .GT. 0 ) STAT(8)= (DPRT02(F0,V) .GE. ADDPS)
 
 C.................  Evaluate mobile-specific cases
-                IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                IF( CATEGORY .EQ. 'MOBILE' .AND. MCODEFLAG ) THEN
                     IF( F4B .GT. 0 ) STAT(3)= (DPRT09(F4B,V) .GE. ADDPS)
                     IF( F2B .GT. 0 ) STAT(6)= (DPRT06(F2B,V) .GE. ADDPS)
                     IF( F0B .GT. 0 ) STAT(9)= (DPRT03(F0B,V) .GE. ADDPS)
@@ -604,7 +605,7 @@ C.................  Evaluate remainder of x-ref cases
                 IF( F0 .GT. 0 ) STAT(8)= (DPRT02(F0,V) .NE. IMISS3)
 
 C.................  Remainder of mobile-specific evaluations
-                IF( CATEGORY .EQ. 'MOBILE' ) THEN
+                IF( CATEGORY .EQ. 'MOBILE' .AND. MCODEFLAG ) THEN
                     IF( F4B .GT. 0 ) STAT(3)=(DPRT09(F4B,V) .NE. IMISS3)
                     IF( F2B .GT. 0 ) STAT(6)=(DPRT06(F2B,V) .NE. IMISS3)
                     IF( F0B .GT. 0 ) STAT(9)=(DPRT03(F0B,V) .NE. IMISS3)

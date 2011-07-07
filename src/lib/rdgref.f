@@ -44,7 +44,7 @@ C.........  This module is for cross reference tables
         USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISRGCDA
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_ENDP
+        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_ENDP, MCODEFLAG
 
         IMPLICIT NONE
 
@@ -54,7 +54,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
-        LOGICAL         BLKORCMT
+        LOGICAL         BLKORCMT, ENVYN
         CHARACTER(2)    CRLF
         INTEGER         FIND1
         INTEGER         FINDC
@@ -63,7 +63,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
 
         EXTERNAL  CHKINT, CRLF, FIND1, FINDC, GETFLINE, INDEX1, STR2INT,
-     &            BLKORCMT
+     &            BLKORCMT, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! cross-reference file unit no.
@@ -131,6 +131,14 @@ C           current source category or not.
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 ) 
 
         ENDIF
+
+C.........  Check to see whether to use MCODE file (road/vehicle) to construct
+C           internal SCC (combination of road/vhicle types)
+        IF( CATEGORY == 'MOBILE' ) THEN
+            MESG = 'Construct internal SCC using road and vehicle types '//
+     &          CRLF() // BLANK10 // 'for mobile sources or not'
+            MCODEFLAG = ENVYN( 'USE_MCODE_SCC_YN', MESG, .TRUE., IOS )
+        END IF
 
 C.........  Create the zero SCC
         SCCZERO = REPEAT( '0', SCCLEN3 )
@@ -221,7 +229,9 @@ C.................  Ignore SCCs that are not on-road mobile
                 END IF
                 
 C.................  Convert TSCC to internal value
-                CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
+                IF( MCODEFLAG ) THEN
+                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
+                END IF
 
             END SELECT
 

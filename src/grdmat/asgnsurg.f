@@ -56,7 +56,7 @@ C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NSRGS, SRGLIST
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, LSCCEND, NCHARS, NSRC
+        USE MODINFO, ONLY: CATEGORY, LSCCEND, NCHARS, NSRC, MCODEFLAG
 
         IMPLICIT NONE
 
@@ -154,22 +154,24 @@ c note: insert here when needed
 
             CASE ( 'MOBILE' )
 
-                FIP     = IFIP  ( S )
-                CSRC    = CSOURC( S )
-                CFIP    = CSRC( 1:FIPLEN3 )
-                CLNK    = CLINK ( S )
-                CSTA    = CFIP  ( 1:STALEN3 )
+                IF( MCODEFLAG ) THEN
+                    FIP     = IFIP  ( S )
+                    CSRC    = CSOURC( S )
+                    CFIP    = CSRC( 1:FIPLEN3 )
+                    CLNK    = CLINK ( S )
+                    CSTA    = CFIP  ( 1:STALEN3 )
 
-                WRITE( CRWT, RWTFMT ) IRCLAS( S )
-                WRITE( CVID, VIDFMT ) IVTYPE( S )
-                TSCC = CRWT // CVID
-                CALL PADZERO( TSCC )
+                    WRITE( CRWT, RWTFMT ) IRCLAS( S )
+                    WRITE( CVID, VIDFMT ) IVTYPE( S )
+                    TSCC = CRWT // CVID
+                    CALL PADZERO( TSCC )
 
-                TSCCL   = TSCC( 1:LSCCEND )
-                CFIPSCC = CFIP // TSCC
-                CFIPSL  = CFIP // TSCCL
-                CSTASCC = CSTA // TSCC
-                CSTASL  = CSTA // TSCCL
+                    TSCCL   = TSCC( 1:LSCCEND )
+                    CFIPSCC = CFIP // TSCC
+                    CFIPSL  = CFIP // TSCCL
+                    CSTASCC = CSTA // TSCC
+                    CSTASL  = CSTA // TSCCL
+                END IF
 
             END SELECT
 

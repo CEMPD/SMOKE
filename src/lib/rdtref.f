@@ -45,7 +45,7 @@ C...........   This module is for cross reference tables
      &                     MPRNA, WPRNA, DPRNA
         
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM
+        USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, MCODEFLAG
 
         IMPLICIT NONE
 
@@ -55,7 +55,7 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         CHKINT
-        LOGICAL         BLKORCMT
+        LOGICAL         BLKORCMT, ENVYN
         CHARACTER(2)    CRLF
         INTEGER         FINDC
         INTEGER         GETNLIST
@@ -64,7 +64,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
 
         EXTERNAL  CHKINT, CRLF, FINDC, GETNLIST, GETFLINE, INDEX1, 
-     &            STR2INT, BLKORCMT
+     &            STR2INT, BLKORCMT, ENVYN
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV              ! x-ref file unit no.
@@ -152,6 +152,14 @@ C.........  Ensure that the CATEGORY is valid
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 ) 
 
         ENDIF
+
+C.........  Check to see whether to use MCODE file (road/vehicle) to construct
+C           internal SCC (combination of road/vhicle types)
+        IF( CATEGORY == 'MOBILE' ) THEN
+            MESG = 'Construct internal SCC using road and vehicle types '//
+     &          CRLF() // BLANK10 // 'for mobile sources or not'
+            MCODEFLAG = ENVYN ( 'USE_MCODE_SCC_YN', MESG, .TRUE., IOS )
+        END IF
 
 C.........  Set up zero strings for FIPS code of zero and SCC code of zero
         FIPZERO = REPEAT( '0', FIPLEN3 )
@@ -472,16 +480,19 @@ C.................  For point sources, retrieve plant + characteristics
 
                 CASE( 'MOBILE' )
 
-C.....................  Convert TSCC to internal value
-                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
+                    IF( MCODEFLAG ) THEN
+C..........................  Convert TSCC to internal value
+                        CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
     
-                    CLNK = SEGMENT( 7 )
-                    CALL FLTRNEG( CLNK )
+                        CLNK = SEGMENT( 7 )
+                        CALL FLTRNEG( CLNK )
 
 
-C.....................  Reset road class to blank if no link.  Road class is
-C                       now stored as part of SCC
-                    IF( CLNK .EQ. ' ' ) CRWT = ' '
+C.........................  Reset road class to blank if no link.  Road class is
+C                           now stored as part of SCC
+                        IF( CLNK .EQ. ' ' ) CRWT = ' '
+
+                    END IF
 
 C M Houyoux note: TSCC has been put in here instead of road type
 C     and link has been removed.  These were breaking the county-SCC specific
