@@ -46,7 +46,7 @@ movesmrg.pvm: $(MRG) $(ALLI) $(LIBPATH)
 	echo MOVESMRG \(pvm\):
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MRG) $(LIBS_PVM)
 
-MET=met4moves.o rdmxref.o rdfmref.o avgmet.o hourmet.o \
+MET=met4moves.o rdmxref.o rdfmref.o hourmet.o \
     wrtemprof.o
 
 met4moves: $(MET) $(ALLI) $(LIBPATH)

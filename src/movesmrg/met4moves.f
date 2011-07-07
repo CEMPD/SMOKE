@@ -64,7 +64,7 @@ C...........   This module is the derived meteorology data for emission factors
         USE MODMET, ONLY: MINTEMP, MAXTEMP, TASRC, QVSRC, PRESSRC,
      &                    TKHOUR, RHHOUR, NDAYSRC, MAXTSRC, MINTSRC,
      &                    MAXTFUEL, MINTFUEL, RHFUEL, TKFUEL, FUELIDX,
-     &                    NFUEL, MAXTDAY, MINTDAY, RHDAY
+     &                    NFUEL, MAXTDAY, MINTDAY, RHDAY, FUELCNTY
      
         IMPLICIT NONE
         
@@ -85,6 +85,7 @@ c        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
         REAL            ENVREAL
         INTEGER         INDEX1
         LOGICAL         INTLIST
+        LOGICAL         ISDSTIME 
         INTEGER         FIND1
         INTEGER         FIND1FIRST
         CHARACTER(14)   MMDDYY
@@ -96,7 +97,7 @@ c        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
         
         EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FIND1
      &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
-     &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST,
+     &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, ISDSTIME,
      &               FIND1FIRST
         
 C...........   LOCAL PARAMETERS
@@ -166,7 +167,6 @@ C...........   Other local variables:
         
         INTEGER    CURCNTY     ! tmp current processing county
         INTEGER    DAY         ! tmp day of week number
-        INTEGER    DDATE       ! output date for daily counties or date difference
         INTEGER    DMONTH      ! month difference 
         INTEGER    DUMMYTIME   ! dummy time variable to use in calls to NEXTIME
         INTEGER    EDATE       ! ending input date counter (YYYYDDD) in GMT
@@ -174,10 +174,12 @@ C...........   Other local variables:
         INTEGER    FIP         ! tmp inventory county
         INTEGER    FILENUM     ! file number of current meteorology file
         INTEGER    IOS         ! temporary I/O status
+        INTEGER    HOURIDX     ! current hour of the day
         INTEGER    JDATE       ! input date counter (YYYYDDD) in GMT
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
         INTEGER    LDATE       ! date from previous loop iteration
-        INTEGER    MDATE       ! output date for monthly counties
+        INTEGER    ODATE       ! output date for counties
+        INTEGER    OTIME       ! output time
         INTEGER    SYEAR       ! year of start date
         INTEGER    SMONTH      ! month of start date
         INTEGER    SDAY        ! date of month (start) 
@@ -199,7 +201,6 @@ C...........   Other local variables:
         INTEGER    NMON        ! no of fuelmonth per refcounty
         INTEGER    NFMON       ! tmp no of fuelmonths per refcounty
         INTEGER    NSTEPS      ! number of time steps to process temperature data
-        INTEGER    OTIME       ! output time in local time
         INTEGER    POS         ! position in time step loop
         INTEGER    PDTEMP      ! temp increment for rateperdistance lookup table
         INTEGER    PVTEMP      ! temp increment for ratepervehicle lookup table
@@ -557,6 +558,7 @@ C           set the ending date forward one day
 C.........  Convert start and end dates and times back to GMT
         CALL NEXTIME( SDATE, STIME, TZONE*10000 )
         CALL NEXTIME( EDATE, ETIME, TZONE*10000 )
+c       print*,TZMIN,TZMAX,TZONE,TSPREAD,SDATE,STIME,EDATE,ETIME,'TZMIN,TZMAX,TZONE,TSPREAD'
 
 C.........  Find the total number of time steps
         NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
@@ -1008,12 +1010,9 @@ C.........  Process meteorology data...
      &         ', ' // TRIM( PRESNAME ) // '...'
         CALL M3MSG2( MESG )
 
-C.........  Loop through days/hours of meteorology files
-        DDATE = SDATE
+C.........  Loop through days/hours of meteorology files        
+        ODATE = SDATE
         OTIME = 0
-        WDATE = SDATE
-        MDATE = SDATE
-        
         JDATE = SDATE
         JTIME = STIME
         LDATE = -9
@@ -1026,6 +1025,8 @@ C           fuelmonth
 C...........  Allocate fuelmonth arrays
         ALLOCATE( FUELIDX( NREFC,NFUEL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FUELIDX', PROGNAME )
+        ALLOCATE( FUELCNTY( NREFC,NFUEL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'FUELCNTY', PROGNAME )
         ALLOCATE( RHFUEL( NREFC,NFUEL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RHFUEL', PROGNAME )
         ALLOCATE( TKFUEL( NREFC,NFUEL,24 ), STAT=IOS )
@@ -1036,6 +1037,8 @@ C...........  Allocate fuelmonth arrays
         CALL CHECKMEM( IOS, 'MAXTFUEL', PROGNAME )
         ALLOCATE( MINTFUEL( NREFC,NFUEL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MINTFUEL', PROGNAME )
+        FUELIDX  = 0
+        FUELCNTY = 0
         RHFUEL   = 0.0
         TKFUEL   = 0.0
         TKREFHR  = 0.0
@@ -1144,7 +1147,7 @@ C.................  Create hourly meteorology arrays by source
                 CALL HOURMET( NSRC, JDATE, JTIME, DAYBEGT, ALT_DATA,
      &                        LDAYSAV, RH_STRHR, RH_ENDHR )
             ELSE
-                IF( OTIME == 230000 ) THEN
+                IF( JTIME == 230000 ) THEN
                     MESG = 'NOTE: Missing meteorology file on '//
      &                      MMDDYY( JDATE )
                     CALL M3MSG2( MESG )
@@ -1155,18 +1158,36 @@ C.................  Create hourly meteorology arrays by source
 C.............  Make sure we've waited long enough to catch all time zones
             IF( POS > TSPREAD ) THEN
 
-C.................  Processing daily SMOKE-ready output
-                IF( DAYAVER .AND. OTIME == 230000 ) THEN
+C.................  If last day of month, process monthly averages
+                CALL DAYMON( ODATE + 1, TMPMNTH, DAY )
+                CALL DAYMON( ODATE, MONTH, DAY )
+
+C.............  Processing daily SMOKE-ready output
+                IF( DAYAVER ) THEN
 
                     DO S = 1, NSRC
-                        
+
+C.........................  compute local time
+                        HOURIDX = 1 + (JTIME - DAYBEGT( S ) ) / 10000
+                        IF( ISDSTIME( JDATE ) .AND. LDAYSAV( S ) ) THEN
+                            HOURIDX = HOURIDX -1
+                        END IF
+                        IF( HOURIDX <= 0 ) HOURIDX = HOURIDX + 24
+
+c      if(s==1) write(*,'(a,12i9)')'Hourly::',T,jdate,JTIME,MONTH,day,HOURIDX,ODATE,OTIME
+
+C.........................  output when local time is 24hr. if not, skip
+                        IF( HOURIDX /= 24 ) CYCLE
+c       if(s==1) print*,'Daily::',JDATE,JTIME,ODATE,OTIME,MONTH,DAY
+
+C.........................  retreive inv/ref counties
                         INVCOUNTY = MCREFSORT( S,1 )
                         REFCOUNTY = MCREFSORT( S,2 )
 
+C.........................  averaging RH per inventory county
                         N = 0
                         RHSUM = 0.0 
                         RHAVG = 0.0 
-C.................  averaging RH per inventory county
                         DO TT = 1,24
                             IF( RHDAY( S,TT ) == 0.0 ) CYCLE
                             N = N + 1
@@ -1181,7 +1202,7 @@ C.................  averaging RH per inventory county
                         K = FIND1FIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
                         NMON = FMREFLIST( K, 2 )   ! no month of ref county
 
-C.................  Loop over months per ref. county
+C.........................  Loop over months per ref. county
                         FUELMONTH = 0
                         DO J = L, L + NMON - 1
                             CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. county
@@ -1190,61 +1211,34 @@ C.................  Loop over months per ref. county
                             END IF
                         END DO
 
-C.....................  write inventory county min/max and avg RH
+C.........................  write inventory county min/max and avg RH
                         WRITE( ODEV1,94060 ) INVCOUNTY, FUELMONTH, MONTH,
-     &                      DDATE, RHAVG, MINTEMP, MAXTEMP
-                   
+     &                         ODATE, RHAVG, MINTEMP, MAXTEMP
+
+C.........................  initializing county-specific arrays
+                        RHDAY( S,: ) = 0.0
+                        MAXTDAY( S ) = BADVAL3
+                        MINTDAY( S ) = -1.*BADVAL3 
+
                     END DO
 
-                    RHDAY = 0.0
-                    MAXTDAY = BADVAL3
-                    MINTDAY = -BADVAL3
-
                 END IF
-
-
-C.................  If last day of month, process monthly averages
-                CALL DAYMON( DDATE, MONTH, DAY )
-                CALL DAYMON( DDATE + 1, TMPMNTH, DAY )
 
 C.................  Estimate fuelmonth averaged monthly ref county temp and RH
-                IF( TMPMNTH /= MONTH .AND. OTIME == 230000 ) THEN
-
-C.....................  Averaging met data over no of days
-                    DO K = 1,24
-                        CALL AVGMET( NSRC,K )
-                    ENDDO
-
-                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, DDATE, MONTH )
-
-C.....................  reinitializing local arrays for next month averaging
-                    TKHOUR = 0.0
-                    RHHOUR = 0.0
-                    NDAYSRC = 0
-                    MAXTSRC = BADVAL3
-                    MINTSRC = -1*BADVAL3
-
+                IF( TMPMNTH /= MONTH ) THEN
+                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, JDATE, JTIME, ODATE, MONTH )
                     MONOPEN = .TRUE.
-
                 END IF
 
-            END IF    ! time zone check
-
-C.............  Estimate fuelmonth averaged episodic ref county temp and RH
-            IF( T == NSTEPS .AND. .NOT. MONOPEN ) THEN
-
-C.................  Averaging met data over no of days
-                DO K = 1,24
-                    CALL AVGMET( NSRC,K )
-                ENDDO
-
-                CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, DDATE, MONTH )
+C.................  Estimate fuelmonth averaged episodic ref county temp and RH
+                IF( T == NSTEPS .AND. .NOT. MONOPEN ) THEN
+                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, JDATE, JTIME, ODATE, MONTH )
+                END IF
 
             END IF
-
-C.............  Increment output time
+            
             IF( POS > TSPREAD ) THEN
-                CALL NEXTIME( DDATE, OTIME, 10000 )
+                CALL NEXTIME( ODATE, OTIME, 10000 )
             END IF
 
 C.............  Increment loop time
@@ -1310,6 +1304,8 @@ C.....................  initialize local variables
                 END IF
 
                 NF = FIND1( CURMONTH, NFUEL, FUELIDX( NR,: ) )
+                
+                RHFUEL( NR,NF ) = RHFUEL( NR,NF ) / FUELCNTY( NR,NF )
 
                 IF( RHFUEL( NR,NF ) > 0.0 ) N = N + 1
 
@@ -1319,6 +1315,7 @@ C.....................  initialize local variables
 
                 DO TT = 1,24
                     TKREFHR( TT ) = TKREFHR( TT ) + TKFUEL( NR,NF,TT )
+     &                              / FUELCNTY( NR,NF )
                 END DO
 
                 PRVCMONTH = CURMONTH
@@ -1384,13 +1381,15 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C.............  This internal subprogram estimates ref. county level 
 C               averaged RH and min/max Temperatures over fuelmonth
 
-          SUBROUTINE AVG_REF_COUNTY_RH_TEMP( ODEV1, AVGFLAG, SDATE, MONTH )
+          SUBROUTINE AVG_REF_COUNTY_RH_TEMP( ODEV1, AVGFLAG, JDATE, JTIME, ODATE, MONTH )
 
 C.............  local argument
             INTEGER, INTENT( IN ) :: ODEV1    ! SMOKE-ready output file
             LOGICAL, INTENT( IN ) :: AVGFLAG 
-            INTEGER, INTENT( IN ) :: SDATE
-            INTEGER, INTENT( IN ) :: MONTH
+            INTEGER, INTENT( IN ) :: JDATE    ! met data date
+            INTEGER, INTENT( IN ) :: JTIME    ! met data time
+            INTEGER, INTENT( IN ) :: ODATE    ! processing date
+            INTEGER, INTENT( IN ) :: MONTH    ! processing month
 
 C...........   Other local variables
 c            INTEGER NMON                     ! no of month per ref. county
@@ -1402,17 +1401,38 @@ C.............  Loop over sources
             IC = 0
             PRCOUNTY = 0
             DO S = 1, NSRC
-                        
+
+C.................  compute local time
+                HOURIDX = 1 + (JTIME - DAYBEGT( S ) ) / 10000
+                IF( ISDSTIME( JDATE ) .AND. LDAYSAV( S ) ) THEN
+                    HOURIDX = HOURIDX -1
+                END IF
+                IF( HOURIDX <= 0 ) HOURIDX = HOURIDX + 24
+
+C.................  output when local time is 24hr. if not, skip
+                IF( HOURIDX /= 24 ) CYCLE
+c       if(s==1) print*,'Monthly::',JDATE,JTIME,ODATE,OTIME,MONTH,DAY
+
+C.................  retreive inv/ref counties                        
                 INVCOUNTY = MCREFSORT( S,1 )
                 REFCOUNTY = MCREFSORT( S,2 )
 
                 N = 0
                 RHSUM = 0.0
-C.................  averaging RH per inventory county
+C.................  averaging RH & Temp per inventory county
                 DO TT = 1,24
+
+C.....................  Skip sources with no days; this can happen when the
+C                       gridding surrogates do not contain data for all counties
+                    IF( NDAYSRC( S,TT ) == 0 ) CYCLE
+
+                    TKHOUR( S,TT ) = TKHOUR( S,TT ) / NDAYSRC( S,TT )
+                    RHHOUR( S,TT ) = RHHOUR( S,TT ) / NDAYSRC( S,TT )
+
                     IF( RHHOUR( S,TT ) == 0.0 ) CYCLE
                     N = N + 1
                     RHSUM = RHSUM + RHHOUR( S,TT )
+
                 END DO
 
                 RHAVG   = RHSUM / N
@@ -1433,53 +1453,28 @@ C.................  Loop over months per ref. county
 C.................  write inventory county min/max and avg RH
                 IF( AVGFLAG ) THEN
                     WRITE( ODEV1,94060 ) INVCOUNTY, FUELMONTH, MONTH,
-     &                 SDATE, RHAVG, MINTEMP, MAXTEMP
+     &                 ODATE, RHAVG, MINTEMP, MAXTEMP
                 END IF
 
-C.................  Calculation monthly max/min temp and avg RH
+C.................  Calculation monthly fuel month max/min temp and avg RH
 C                   per ref. county
+                NR = FIND1( REFCOUNTY,NREFC, MCREFIDX( :,1 ) )
+                NF = FIND1( MONTH, NFUEL, FUELIDX( NR,: ) )
 
-C.................  Averaging RH for ref. county
-                IF( PRCOUNTY /= REFCOUNTY ) THEN
-                     IF( IC > 0 ) THEN
-                          NR = FIND1( PRCOUNTY,NREFC, MCREFIDX( :,1 ) )
-                          NF = FIND1( MONTH, NFUEL, FUELIDX( NR,: ) )
-
-                          RHFUEL( NR,NF )   = RHREFSUM / IC
-                          TKFUEL( NR,NF,: ) = TKREFHR( : ) / IC
-                          MAXTFUEL( NR,NF ) = MAXTREF
-                          MINTFUEL( NR,NF ) = MINTREF
-                     END IF
+                FUELCNTY( NR,NF ) = FUELCNTY( NR,NF ) + 1
+                RHFUEL( NR,NF )   = RHFUEL( NR,NF ) + RHAVG
+                TKFUEL( NR,NF,: ) = TKFUEL( NR,NF,: ) + TKHOUR( S,: )
+                MAXTFUEL( NR,NF ) = MAX( MAXTFUEL( NR,NF ), MAXTEMP )
+                MINTFUEL( NR,NF ) = MIN( MINTFUEL( NR,NF ), MINTEMP )
                             
-                     IC = 0
-                     MAXTREF = BADVAL3
-                     MINTREF = -1*BADVAL3
-                     RHREFSUM = 0.0
-                     TKREFHR  = 0.0
-
-                END IF
-                        
-                IC = IC + 1
-                RHREFSUM = RHREFSUM + RHAVG
-
-                DO TT = 1, 24
-                    TKREFHR( TT ) = TKREFHR( TT ) + TKHOUR( S,TT )
-                END DO
-
-                MAXTREF = MAX( MAXTREF, MAXTEMP )
-                MINTREF = MIN( MINTREF, MINTEMP )
-
-                PRCOUNTY = REFCOUNTY
+C.................  reinitializing local arrays for next month averaging
+                TKHOUR ( S,: ) = 0.0
+                RHHOUR ( S,: ) = 0.0
+                NDAYSRC( S,: ) = 0
+                MAXTSRC( S ) = BADVAL3
+                MINTSRC( S ) = -1.0*BADVAL3
                         
             END DO
-
-            NR = FIND1( PRCOUNTY,NREFC, MCREFIDX( :,1 ) )
-            NF = FIND1( MONTH, NFUEL, FUELIDX( NR,: ) )
-
-            RHFUEL( NR,NF )   = RHREFSUM / IC
-            TKFUEL( NR,NF,: ) = TKREFHR( : ) / IC
-            MAXTFUEL( NR,NF ) = MAXTREF
-            MINTFUEL( NR,NF ) = MINTREF
 
 C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx

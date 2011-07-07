@@ -85,16 +85,6 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine WRTEMPROF
 
-C.........  Allocate local arrays
-c        IF( ALLOCATED( TKPRO ) ) DEALLOCATE( TKPRO )
-c        IF( ALLOCATED( TMPRO ) ) DEALLOCATE( TMPRO )
-c        ALLOCATE( TKPRO( 24 ), STAT=IOS )
-c        CALL CHECKMEM( IOS, 'TKPRO', PROGNAME )
-c        ALLOCATE( TMPRO( 24 ), STAT=IOS )
-c        CALL CHECKMEM( IOS, 'TMPRO', PROGNAME )
-c        TKPRO = 0.0
-c        TMPRO = 0.0
-
 C.........  Write out last ref. county min/max temp and avg RH
         WRITE( ODEV,94040 ) COUNTY, PMONTH, 'min_max',
      &                      RHAVG, MINTEMP, MAXTEMP
