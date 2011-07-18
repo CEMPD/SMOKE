@@ -45,7 +45,10 @@ C.........  This module contains the major data structure and control flags
      &                      PINGFLAG, ELEVFLAG, EXPLFLAG, VARFLAG,
      &                      LMETCHK, LMKTPON, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPINV, LREPSPC, LREPCTL, 
-     &                      LREPANY, LAVEDAY, INVPIDX, INLINEFLAG
+     &                      LREPANY, LAVEDAY, INLINEFLAG
+
+C...........  This module contains the information about the source category
+        USE MODINFO, ONLY:   INVPIDX
 
         IMPLICIT NONE
 

@@ -41,7 +41,7 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: LREPANY, GDEV, AFLAG, AENAME, ASDEV, ANMAP, 
      &          AMAPNAM, AMAPFIL, NASRC, APRJFLAG, TFLAG, AFLAG_BD, 
-     &          ATNAME, ASDATE, ANIPOL, AEINAM, INVPIDX, AONAMES, 
+     &          ATNAME, ASDATE, ANIPOL, AEINAM, AONAMES, 
      &          AOUNITS, AGNAME, ANGMAT, SFLAG, ASNAME, ANSMATV, 
      &          ASVDESC, ASVUNIT, AUFLAG, AUNAME, ANUMATV, AUVNAMS, 
      &          ARFLAG, ARNAME, ANRMATV, ANSREAC, ARVDESC, ARNMSPC,
@@ -64,7 +64,7 @@ C.........  This module contains the major data structure and control flags
      &          BSVDESC, BFLAG, VARFLAG, PFACFLAG
 
 C...........  This module contains the information about the source category
-        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, INVPIDX
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP, NHRSRC
