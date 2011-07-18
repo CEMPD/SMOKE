@@ -340,7 +340,7 @@
         INTEGER, PUBLIC :: PSDATE( 7 )    ! Julian start dates of each ptmp file
 
 !.........  Units conversions information
-        INTEGER               , PUBLIC :: INVPIDX = 1    ! annual/average day idx
+        INTEGER          , PUBLIC :: INVPIDX = 1 ! annual/average day idx
 
         REAL             , PUBLIC :: BIOGFAC     ! conv fac for gridded bio
         REAL             , PUBLIC :: BIOTFAC     ! conv fac for bio totals
