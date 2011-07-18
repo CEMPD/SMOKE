@@ -120,13 +120,9 @@ C.........  Get environment variables that control program behavior
         END IF
 
 C.........  Waring message for imcompatiblity of FILL_ANNUAL setting from Smkinven
+C.........  Set average day emissions flag (INVPIDX)
         OFLAG = ENVYN( 'SMK_AVEDAY_YN', MESG, .FALSE., IOS )
-        IF( OFLAG ) THEN
-            MESG = 'WARNING: If FILL_ANNUAL was set to Y in previous '//
-     &             'SMKINVEN run, ' // CRLF() // BLANK10 // 
-     &             'SMK_AVEDAY_YN should be set to N in TEMPORAL run.'
-            CALL M3MSG2( MESG )
-        END IF            
+        IF( OFLAG ) INVPIDX = 1
 
 C.........  Prompt for and open inventory file
         INAME = ENAME 
@@ -175,8 +171,6 @@ C.........  Store source-category-specific header information,
 C           including the inventory pollutants in the file (if any).  Note that 
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
-C.........  Set average day emissions flag (INVPIDX)
-        IF( OFLAG ) INVPIDX = 1
         CALL GETSINFO( ENAME )
 
 C.........  Reset activity to pollutant to create hourly VMT without running EMISFAC
