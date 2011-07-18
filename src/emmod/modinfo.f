@@ -112,7 +112,6 @@
         CHARACTER(PHYLEN3), ALLOCATABLE, PUBLIC :: MAPFIL( : )
 
 !.........  Units conversions information
-        INTEGER,           PUBLIC :: INVPIDX = 0    ! annual/average day idx
         REAL, ALLOCATABLE, PUBLIC :: EACNV( : )     ! units conv factors
 
 !.........  Arrays for reading inventory file headers
