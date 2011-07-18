@@ -301,13 +301,7 @@ C           the weekly profiles
 C.........  Get annual data setting from environment
         MESG = 'Fill in 0. annual data based on average day data.'
         FFLAG = ENVYN( 'FILL_ANNUAL', MESG, .FALSE., IOS )
-        IF( FFLAG ) THEN
-            MESG = 'NOTE: Once FILL_ANNUAL is set to Y in SMKINVEN ' //
-     &             'run, SMK_AVEDAY_YN should be set to N '//
-     &             CRLF() // BLANK10 // 'in other SMOKE programs.'
-            CALL M3MSG2( MESG )
-        END IF
-           
+
 C.........  Get point specific settings
         IF( CATEGORY == 'POINT' ) THEN
             MESG = 'Flag for recalculating velocity'
@@ -1224,20 +1218,22 @@ C                   Only do this if current pollutant is not an activity, flag i
 C                   annual data is less than or equal to zero and average day
 C                   data is greater than zero
                 IF( .NOT. ACTFLAG .AND. 
-     &                      FFLAG .AND. 
      &                 EANN <= 0. .AND. 
      &                 EDAY >  0.       ) THEN
 
-                    IF( FWCOUNT < MXWARN ) THEN
-                       WRITE(MESG,94010) 'WARNING: Using average day '//
-     &                   'emissions to fill in annual emissions' //
-     &                   CRLF()// BLANK10// 'for ' //TRIM( POLNAM ) //
-     &                   ' at line', IREC
-                       CALL M3MESG( MESG )
-                       FWCOUNT = FWCOUNT + 1
-                    END IF
+C.....................  Fill annual inventory using average day inventory
+                    IF( FFLAG ) THEN
+                        EANN = EDAY * DAY2YR  ! fill annual inv (aveday*365)
 
-                    EANN = EDAY * DAY2YR
+                        IF( FWCOUNT < MXWARN ) THEN
+                           WRITE(MESG,94010) 'WARNING: Using average day '//
+     &                       'emissions to fill in annual emissions' //
+     &                       CRLF()// BLANK10// 'for ' //TRIM( POLNAM ) //
+     &                       ' at line', IREC
+                           CALL M3MESG( MESG )
+                           FWCOUNT = FWCOUNT + 1
+                        END IF
+                    END IF
 
 C.....................  Remove monthly factors for this source
                     TPF = WKSET
