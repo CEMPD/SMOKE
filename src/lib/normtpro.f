@@ -77,6 +77,10 @@ C.........  Get information from the environment about renormalization
         MESG = 'Renormalize temporal profiles'
         RENORM = ENVYN ( 'RENORM_TPROF', MESG, .TRUE., IOS )
 
+C.........  all temporal profiles will be renormalized by default
+C           updated by BH Baek (7/21/2011)
+        RENORM = .TRUE.
+
 C.........  Allocate memory for weekday-normalized weekly emissions
         ALLOCATE( XWKFAC( 7,NWEK ), STAT=IOS )
         CALL CHECKMEM( IOS, 'XWKFAC', PROGNAME )
