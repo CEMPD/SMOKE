@@ -75,7 +75,7 @@ C...........   Other local variables
 
         REAL    TKMAX                     ! tmp max temperatures
         REAL    TKMIN                     ! tmp min temperatures
-        REAL    TKDIF, DT                 ! tmp DIFF of min/max temperatures
+        REAL    TKDIF, DT, ST             ! tmp DIFF of min/max temperatures
         REAL    TKMED                     ! tmp median temperatures
 
         CHARACTER(32)    TPROID             ! temporal resolution header
@@ -103,9 +103,12 @@ C.........  Write out last ref. county min/max temp and avg RH
         END DO
 
 C.........  Calculate temp profiles based on a combination of temp bins
-        MAXT = IMAXT + ( PPTEMP - MOD( IMAXT,PPTEMP ) )
-        MINT = IMINT - MOD( IMINT,PPTEMP )
-        IF( MINT <= 0 .AND. MINTEMP < 0  ) MINT = MINT - PPTEMP
+        MAXT = IMAXT + ( PPTEMP - ABS( MOD( IMAXT,PPTEMP ) ) )
+        MINT = IMINT - ABS( MOD( IMINT,PPTEMP ) )
+
+        IF( MINT <= 0 .AND. MINTEMP < 0  ) THEN
+            MINT = IMINT - ( PPTEMP - ABS( MOD( IMINT,PPTEMP ) ) )
+        END IF
         
         IT = 0
 C.........  Determine temperature bins based on PPTEMP
@@ -115,14 +118,15 @@ C.........  Determine temperature bins based on PPTEMP
 
                 IT = IT + 1
                 DT = MX - MN
+                ST = MX + MN
                 WRITE( TPROID,94030 ) HDR, MYEAR, PMONTH, IT
 
                 TKPRO = 0.0
 C.................  Create 24 hr temp profile per temp bin
                 DO T = 1,24
-                    TKPRO( T ) = TMPRO( T ) * DT + (MX+MN)/2
+                    TKPRO( T ) = TMPRO( T ) * DT + ST/2.0
                 END DO
-                    
+
 C.................  Output for SMOKE ready input file
                 WRITE( ODEV,94050 ) COUNTY, PMONTH, 
      &                 TRIM(TPROID), RHAVG, (TKPRO( T ), T=1,24)

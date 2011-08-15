@@ -558,7 +558,7 @@ C           set the ending date forward one day
 C.........  Convert start and end dates and times back to GMT
         CALL NEXTIME( SDATE, STIME, TZONE*10000 )
         CALL NEXTIME( EDATE, ETIME, TZONE*10000 )
-c       print*,TZMIN,TZMAX,TZONE,TSPREAD,SDATE,STIME,EDATE,ETIME,'TZMIN,TZMAX,TZONE,TSPREAD'
+       print*,TZMIN,TZMAX,TZONE,TSPREAD,SDATE,STIME,EDATE,ETIME,'TZMIN,TZMAX,TZONE,TSPREAD'
 
 C.........  Find the total number of time steps
         NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
