@@ -41,7 +41,7 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  For temporal profiles
         USE MODTMPRL, ONLY: HRLFAC, WEKFAC, MONFAC,
-     &                      HRLREF, WEKREF, MONREF
+     &                      HRLREF, WEKREF, MONREF, METPRFFLAG
 
         IMPLICIT NONE
 
@@ -554,7 +554,6 @@ C.................  Loop until non-blank or comment line
                         EFLAG = .TRUE.
                         WRITE( MESG,94010 ) 'I/O error', IOS, 
      &                    'reading TEMPORAL PROFILE file at line', IREC
-
                         CALL M3MESG( MESG )
                         CYCLE
                     END IF
@@ -564,6 +563,16 @@ C.................  Loop until non-blank or comment line
 
                 CODEA( I ) = STR2INT( LINE( 1:5 ) )
                 INDXA( I ) = I
+
+C.................  Check for bad cross-reference code
+                IF( .NOT. METPRFFLAG .AND. CODEA( I ) == 99999 ) THEN
+                    WRITE( MESG, 94010 )
+     &                  'ERROR: CAN NOT USE temporal profile code ',
+     &                  CODEA(I), ' at line ', IREC,
+     &                  'while processing Met-based profiles' // 
+     &                  CRLF() // BLANK16 // 'MUST be less than 99999'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
 C.................  Convert columns from ASCII to integer in groups of 4
                 J    = 6
@@ -587,7 +596,6 @@ C.................  Final field is 1-character wider than others
                 DO N = 1, NFAC
                     PFACA( N,I ) = DIV * FLOAT( WT( N ) )
                 END DO
-
             END DO
 
             REWIND( FDEV )

@@ -47,7 +47,7 @@ C.........  This module contains the temporal cross-reference tables
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NMON, NWEK, NHRL, STDATE, STTIME, RUNLEN,
-     &                      ITDATE
+     &                      ITDATE, METPRFFLAG, METPRFTYPE
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, INPUTHC, OUTPUTHC, EMTNAM, EMTPOL,
@@ -65,7 +65,7 @@ C.........  This module contains the lists of unique source characteristics
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, BYEAR, NIPPA, EANAM, NSRC, 
-     &                     NIACT, INVPIDX, NIPOL, EAREAD, EINAM, ACTVTY
+     &                     INVPIDX, NIACT, NIPOL, EAREAD, EINAM, ACTVTY
 
 C.........  This module is used for MOBILE6 setup information 
         USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN
@@ -161,6 +161,7 @@ C...........   Logical names and unit numbers
         CHARACTER(16) :: ENAME = ' '    !  logical name for I/O API inven input
         CHARACTER(16) :: FNAME = ' '    !  emission factors file
         CHARACTER(16) :: HNAME = 'NONE' !  hour-specific input file, or "NONE"
+        CHARACTER(16) :: PNAME = 'NONE' !  hour-specific profile input file, or "NONE"
         CHARACTER(16) :: TNAME = ' '    !  timestepped (low-level) output file
 
 C...........   Other local variables
@@ -591,6 +592,9 @@ C           weekday diurnal, and weekend diurnal)
         NWEK = RDTPROF( RDEV, 'WEEKLY' , NFLAG )
         NHRL = RDTPROF( RDEV, 'DIURNAL', NFLAG )
 
+C.........  Read Met-based temporal-profiles file 
+        IF( METPRFFLAG ) CALL RDMETPROF( PNAME )
+
 C.........  Adjust temporal profiles for use in generating temporal emissions
 C.........  NOTE - All variables are passed by modules.
         CALL NORMTPRO
@@ -937,8 +941,8 @@ C............  Create array of emission factors by source
        
 C.................  Generate hourly emissions for current hour
                 CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
-     &                         ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D, 
-     &                         EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
+     &                  PNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D, 
+     &                  EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
 
 
 C.................  Loop through pollutants/emission-types in this group

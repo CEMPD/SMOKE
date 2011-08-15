@@ -98,6 +98,9 @@ C.........  Allocate local temporary variables
         CALL CHECKMEM( IOS, 'WEKPROF', PROGNAME )
         ALLOCATE( HRLPROF( NVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HRLPROF', PROGNAME )
+        MONPROF = 0
+        WEKPROF = 0
+        HRLPROF = 0
 
 C.........  Write header with current variables
         L1 = LEN_TRIM( VARNAM( 1 ) )
@@ -137,6 +140,12 @@ C.............  Retrieve profile numbers for all pollutants
                 WEKPROF( V ) = WEKREF( WDEX( S,V ) )
                 HRLPROF( V ) = HRLREF( DDEX( S,V ) )
 
+C.................  Met-based profiles should have 99999 profile IDs.
+C                   need to reset the value to 99999
+                IF( MDEX( S,V ) == 99999 ) MONPROF( V ) = 99999
+                IF( WDEX( S,V ) == 99999 ) WEKPROF( V ) = 99999
+                IF( DDEX( S,V ) == 99999 ) HRLPROF( V ) = 99999
+
                 IF( V .NE. 1 .AND.  
      &              MONPROF( V ) .NE. PMON ) MFLAG = .FALSE.
                 IF( V .NE. 1 .AND.
@@ -147,7 +156,7 @@ C.............  Retrieve profile numbers for all pollutants
                 PMON = MONPROF( V )
                 PWEK = WEKPROF( V )
                 PHRL = HRLPROF( V )
-
+           
 C.................  If source and pollutant is hour-specific, change hourly 
 C                   profile to negative
 c note: to do this, will need to have a list of all sources that are hour-specific
@@ -163,9 +172,7 @@ c note: same note as above.
 C.............  If source does not use monthly profile, change monthly 
 C               profile to negative
             IF( MOD( TPFLAG( S ), MTPRFAC ) .NE. 0      ) THEN
-
                 MONPROF = -MONPROF    ! array
-
             END IF
 
 C.............  Write profile information by pollutant

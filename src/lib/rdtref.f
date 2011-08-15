@@ -47,6 +47,8 @@ C...........   This module is for cross reference tables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, MCODEFLAG
 
+        USE MODTMPRL, ONLY: METPRFFLAG, METPRFTYPE
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -74,7 +76,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: AREATYP  = 1
         INTEGER, PARAMETER :: MOBILTYP = 2
         INTEGER, PARAMETER :: POINTTYP = 3
-        INTEGER, PARAMETER :: MXTCOL   = 12
+        INTEGER, PARAMETER :: MXTCOL   = 15
 
         CHARACTER(6), PARAMETER :: LOCCATS( 3 ) = 
      &                         ( / 'AREA  ', 'MOBILE', 'POINT ' / )
@@ -110,6 +112,9 @@ C...........   Other local variables
         INTEGER         NREF    !  number of x-ref entries before filtering
         INTEGER         NXREF   !  number of valid x-ref entries
         INTEGER         RDT     !  temporary road class code
+        INTEGER         TMON    !  temporary met-based monthly profile code
+        INTEGER         TDAY    !  temporary met-based daily profile code
+        INTEGER         THRS    !  temporary met-based hourly profile code
         INTEGER         VTYPE   !  temporary vehicle type number
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error occurred
@@ -443,6 +448,9 @@ C.................  Convert temporal profile numbers
                     IMON = STR2INT( SEGMENT( 2 ) )
                     IWEK = STR2INT( SEGMENT( 3 ) )
                     IDIU = STR2INT( SEGMENT( 4 ) )
+                    TMON = STR2INT( SEGMENT( 13 ) )    ! met-based monthly profile numbers
+                    TDAY = STR2INT( SEGMENT( 14 ) )    ! met-based daily profile numbers
+                    THRS = STR2INT( SEGMENT( 15 ) )    ! met-based hourly profile numbers
 
 C.....................  Check for bad cross-reference code
                     IF( IMON .LE. 0 .OR. IWEK .LE. 0 .OR.
@@ -508,7 +516,7 @@ C     link-specific assignments from the documentation for Spcmat.
                 CASE( 'POINT' )
 
 C.....................  Store string source characteristics 
-                    CHARS( 1:5 ) = SEGMENT( 8:MXTCOL )
+                    CHARS( 1:5 ) = SEGMENT( 8:12 )
 
                     CALL BLDCSRC( CFIP, PLT, CHARS(1),
      &                            CHARS(2), CHARS(3), CHARS(4),
@@ -526,6 +534,25 @@ C.................  Store case-indpendent fields
                 MPRNA ( N ) = IMON
                 WPRNA ( N ) = IWEK
                 DPRNA ( N ) = IDIU
+
+C.................  Reset org profID to met-based profile ID
+                IF( TMON > 0 ) THEN
+                    MPRNA( N ) = 99999
+                    METPRFFLAG = .TRUE.
+                    METPRFTYPE = 'MONTHLY'
+                END IF
+                
+                IF( TDAY > 0 ) THEN
+                    WPRNA( N ) = 99999
+                    METPRFFLAG = .TRUE.
+                    METPRFTYPE = 'DAILY'
+                END IF
+                    
+                IF( THRS > 0 ) THEN
+                    DPRNA( N ) = 99999
+                    METPRFFLAG = .TRUE.
+                    METPRFTYPE = 'HOURLY'
+                END IF
 
             END IF  !  This line matches source category of interest
 

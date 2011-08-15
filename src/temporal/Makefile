@@ -18,7 +18,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
 TMP= asgntpro.o chkemfac.o genhemis.o mktmat.o opentmp.o opentmpin.o \
-     rdemfac.o setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o 
+     rdmetprof.o rdemfac.o setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o 
      
 
 #
@@ -43,6 +43,7 @@ mktmat.o: $(MODTMPRL)
 opentmp.o: $(MODEMFAC) $(MODINFO) $(MODFILESET)
 opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
 rdemfac.o: $(MODSOURC) $(MODINFO) $(MODMBSEP)
+rdmetpro.o: $(MODXREF)
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR) $(MODLISTS) $(MODGRID) $(MODMBSET)

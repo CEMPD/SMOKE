@@ -1,7 +1,7 @@
 
         SUBROUTINE GENHEMIS( NPLE, JDATE, JTIME, TZONE, DNAME, HNAME,
-     &                       NAMIN, NAMOUT, EAREAD2D, EMAC, EMFAC,
-     &                       EMACV, TMAT, EMIST, LDATE )  
+     &                       PNAME, NAMIN, NAMOUT, EAREAD2D, EMAC,
+     &                       EMFAC, EMACV, TMAT, EMIST, LDATE )  
 
 C***********************************************************************
 C  subroutine body starts at line 173
@@ -51,7 +51,8 @@ C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: MDEX, WDEX, DDEX
 
 C...........   This module contains the temporal profile tables
-        USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC
+        USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC,
+     &                      METPRFFLAG, METPRFTYPE, METPROF, METFACS
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: INDXD, INDXH, EMACD, EMACH, NDYSRC, NHRSRC,
@@ -86,6 +87,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN)    :: TZONE     ! Output time zone (typcly 0)
         CHARACTER(*), INTENT (IN)    :: DNAME     ! day-spec file name or NONE
         CHARACTER(*), INTENT (IN)    :: HNAME     ! hour-spec file name or NONE
+        CHARACTER(*), INTENT (IN)    :: PNAME     ! met-profile file name or NONE
         CHARACTER(*), INTENT (IN)    :: NAMIN ( NPLE )      ! inv pol names
         CHARACTER(*), INTENT (IN)    :: NAMOUT( NPLE )      ! inv pol names
         CHARACTER(*), INTENT (IN)    :: EAREAD2D( NIPPA )   ! tmp inv pol names
@@ -282,7 +284,7 @@ C                       setting of holidays.
 C.............  Set day of week based on output day
             DAY = WKDAY( JDATE )
 c           DAYADJ = EMWKDAY( JDATE )
-cSTOPPED HERE:
+
 c note: Need to create EMWKDAY and update WRDAYMSG also to use it.
 C.............  Write message for day of week and date
             CALL WRDAYMSG( JDATE, MESG )
@@ -346,8 +348,8 @@ C.........  Construct TMAT -- array of effective composite profile coefficients
         IF( TMATCALC ) THEN
 
 C.............  Build temporal allocation matrix
-            CALL MKTMAT( NSRC, NPLE, JDATE, TZONE, TZONES, TPFLAG,
-     &                   MDEX, WDEX, DDEX, MONTH, DAYOW, TMAT )
+            CALL MKTMAT( NSRC, NPLE, JDATE, JTIME, TZONE, TZONES,
+     &            TPFLAG, MDEX, WDEX, DDEX, MONTH, DAYOW, PNAME, TMAT )
 
         END IF         ! if TMAT is to be calculated
 

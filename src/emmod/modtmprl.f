@@ -54,9 +54,15 @@
         INTEGER, ALLOCATABLE, PUBLIC :: HOLALTDY( : ) ! alternative day of week
 
 !.........  Sorted temporal profiles
+        INTEGER,              PUBLIC :: NMETPROF                ! number of Met-based temp profiles
+        LOGICAL,              PUBLIC :: METPRFFLAG = .FALSE.    ! flag for Met-based temp profiles
+        CHARACTER( 8 ),       PUBLIC :: METPRFTYPE = ' '        ! type of Met-based temp profiles
+
         INTEGER, PUBLIC :: NMON   ! number of monthly profiles
         INTEGER, PUBLIC :: NWEK   ! number of weekly profiles
         INTEGER, PUBLIC :: NHRL   ! number of diurnal profiles 
+
+        INTEGER, ALLOCATABLE, PUBLIC :: METPROF( : )  ! Met-based temporal profile codes
 
         INTEGER, ALLOCATABLE, PUBLIC :: MONREF( : )   ! Monthly codes
         INTEGER, ALLOCATABLE, PUBLIC :: WEKREF( : )   ! Weekly codes 
@@ -71,5 +77,6 @@
         REAL   , ALLOCATABLE, PUBLIC :: WEKFAC( :,: ) ! Weekly facs (week-norm)
         REAL   , ALLOCATABLE, PUBLIC :: XWKFAC( :,: ) ! Weekly facs (wkday-norm)
         REAL   , ALLOCATABLE, PUBLIC :: HRLFAC( :,:,: ) ! Hourly factors
+        REAL   , ALLOCATABLE, PUBLIC :: METFACS( :,:,: ) ! Met-based temporal profiles
 
         END MODULE MODTMPRL
