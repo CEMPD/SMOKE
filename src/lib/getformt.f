@@ -93,7 +93,6 @@ C.............  Skip blank lines
 C.............  Check for header lines
             L1 = INDEX( LINE, CINVHDR )
             IF( L1 .EQ. 1 ) THEN
-            
 C.................  Check if format is provided as a header entry
                 L = INDEX( LINE, 'LIST' )
                 IF( L .GT. 0 ) THEN
@@ -125,9 +124,9 @@ C.................  Check if format is provided as a header entry
                     EXIT ! To end read loop
                 END IF
 
-                L = INDEX( LINE, 'FORMAT' )
+                L = INDEX( LINE, 'FF10' )
                 IF( L .GT. 0 ) THEN
-                    GETFORMT = ORLFMT
+                    GETFORMT = FF10FMT
                     EXIT ! To end read loop
                 END IF
 
@@ -149,10 +148,10 @@ C.................  Check if format is provided as a header entry
                         END IF
 
                     END IF
-                    
-                    EXIT ! To end read loop
-                END IF
+                    EXIT   ! To end read loop
 
+                END IF
+               
 C.............  Otherwise, this is not a blank line, but also not a 
 C               header line, so we're into the main body of the inventory
             ELSE
