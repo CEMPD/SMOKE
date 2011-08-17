@@ -660,6 +660,29 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                HDRFLAG, EFLAG )
                 END SELECT
 
+            CASE( FF10FMT )
+                SELECT CASE( CATEGORY )
+                CASE( 'AREA' )
+                    CALL RDDATAFF10AR( LINE, READDATA, READPOL, INVYEAR,
+     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
+                    NPOLPERLN = 1   ! have to set fake value to force reporting
+
+                CASE( 'MOBILE' )
+                    CALL RDDATAFF10MB( LINE, READDATA, READPOL, INVYEAR,
+     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
+                    NPOLPERLN = 1
+                    LNKFLAG = .FALSE.
+
+C                CASE( 'POINT' )
+C                    CALL RDDATAFF10PT( LINE, READDATA, READPOL,
+C     &                                INVYEAR, DESC, ERPTYP, SRCTYP,
+C     &                                HT, DM, TK, FL, VL, SIC, MACT,
+C     &                                NAICS, CTYPE, LAT, LON, ZONE,
+C     &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
+C     &                                EFLAG )
+                    NPOLPERLN = 1
+                END SELECT
+
             CASE( ORLFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
@@ -848,6 +871,7 @@ C                   great than zero. reset it to a missing value '-9.0' if not.
                 
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT .AND.
      &            CURFMT /= ORLFIREFMT ) .OR. CURFMT == ORLNPFMT ) THEN
+
                 IF( .NOT. CHKINT( SIC ) ) THEN
                     IF( NWARN < MXWARN ) THEN
                         WRITE( MESG,94010 ) 'WARNING: SIC code is ' //
@@ -869,7 +893,7 @@ C                   great than zero. reset it to a missing value '-9.0' if not.
                 END IF
                 
 C.................  Check ORL specific values
-                IF( CURFMT == ORLFMT ) THEN
+                IF( CURFMT == ORLFMT .OR. CURFMT == FF10FMT ) THEN
                                         
                     IF( CTYPE /= 'U' .AND. CTYPE /= 'L' ) THEN
                         EFLAG = .TRUE.
@@ -959,12 +983,14 @@ C                   that most values will not be populated intentionally.
                 DO J = 1, NPPOL
                     IF( .NOT. CHKREAL( READDATA( I,J ) ) ) THEN
                         EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: Emission data, ' //
-     &                     'control percentages, and/or emission ' //
-     &                     CRLF() // BLANK10 // 'factor for ' //
-     &                     TRIM( POLNAM ) // ' are not a number ' //
-     &                     'or have bad formatting at line', IREC
-                        CALL M3MESG( MESG )
+                        IF( NWARN < MXWARN ) THEN
+                            WRITE( MESG,94010 ) 'ERROR: Emission data, ' //
+     &                         'control percentages, and/or emission ' //
+     &                         CRLF() // BLANK10 // 'factor for ' //
+     &                         TRIM( POLNAM ) // ' are not a number ' //
+     &                         'or have bad formatting at line', IREC
+                            CALL M3MESG( MESG )
+                        END IF
                         EXIT
                     END IF
                 END DO  ! end loop over data values
@@ -989,7 +1015,8 @@ C.............  Skip rest of loop if an error has occured
             IF( EFLAG ) CYCLE
 
 C.............  Get current CAS number position and check that it is valid
-            IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
+            IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
+     &          CURFMT == FF10FMT ) THEN
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
@@ -1058,7 +1085,7 @@ C.................  If format is not ORL or ORL Fires, find code corresponding
 C                   to current pollutant
                 ACTFLAG = .FALSE.
                 IF( CURFMT /= ORLFMT .AND. CURFMT /= ORLNPFMT .AND.
-     &              CURFMT /= ORLFIREFMT ) THEN
+     &              CURFMT /= ORLFIREFMT .AND. CURFMT /= FF10FMT ) THEN
                     POLCOD = INDEX1( POLNAM, MXIDAT, INVDNAM )
 
                     IF( POLCOD == 0 ) THEN
@@ -1251,7 +1278,8 @@ C                   zero or negative
 
 C.................  If current format is ORL, check if current CAS number
 C                   is split
-                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
+                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
+     &              CURFMT == FF10FMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
@@ -1269,7 +1297,8 @@ C.....................  Store emissions by CAS number for reporting
                 DO J = 0, NPOLPERCAS - 1
 
 C.....................  If ORL format, set current pollutant
-                    IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT ) THEN
+                    IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
+     &                  CURFMT == FF10FMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 
@@ -1452,10 +1481,12 @@ C.................  Skip rest of loop
             TPFLAG( CURSRC ) = TPF
 
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= EMSFMT ) .OR.
-     &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFMT ) THEN
+     &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFMT .OR.
+     &          CURFMT == FF10FMT ) THEN
 
                  IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
-     &                 .OR. CURFMT == ORLNPFMT               ) THEN
+     &               .OR. (CATEGORY == 'POINT' .AND. CURFMT == FF10FMT)
+     &               .OR. CURFMT == ORLNPFMT               ) THEN
                      ISIC( CURSRC ) = STR2INT( SIC )
                      IF( MACT == '-9' ) MACT = ' '
                      IF( NAICS == '-9' ) NAICS = ' '
@@ -1465,7 +1496,7 @@ C.................  Skip rest of loop
                      CNAICS ( CURSRC ) = NAICS
                      CEXTORL( CURSRC ) = ADJUSTL( EXTORL )
                  END IF
-                
+
                  IF( CURFMT /= IDAFMT ) THEN
                      CALL PADZERO( SRCTYP )
                      CSRCTYP( CURSRC ) = SRCTYP

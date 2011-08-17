@@ -557,7 +557,7 @@ C.....................  Otherwise, not a list file, so exit
 
 C.................  Skip blank lines
                 IF( LINE == ' ' ) CYCLE
-              
+
 C.................  Process line depending on file format and source category
                 SELECT CASE( CURFMT )
                 CASE( IDAFMT )
@@ -593,6 +593,22 @@ C.................  Process line depending on file format and source category
      &                                   PRID, NPOLPERLN, 
      &                                   HDRFLAG, EFLAG )
                         TSCC = ' '   ! set fake SCC code
+                    END SELECT
+
+                CASE( FF10FMT )
+                    ORLFLG = .TRUE.
+
+                    SELECT CASE( CATEGORY )
+                    CASE( 'AREA' )   ! used for nonroad only
+                        CALL RDSRCFF10AR( LINE, CFIP, TSCC, NPOLPERLN,
+     &                                   HDRFLAG, EFLAG )
+                    CASE( 'MOBILE' )
+                        CALL RDSRCFF10MB( LINE, CFIP, CLNK, TSCC,
+     &                                   NPOLPERLN, HDRFLAG, EFLAG )
+c                    CASE( 'POINT' )
+c                        CALL RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID,
+c     &                                   SGID, TSCC, NPOLPERLN,
+c     &                                   HDRFLAG, EFLAG )
                     END SELECT
 
                 CASE( ORLFMT )
@@ -699,7 +715,8 @@ C.....................  Make sure SCC is at least 8 characters long
                 
                 IF( CATEGORY == 'MOBILE' ) THEN
 
-                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT ) THEN
+                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT .OR.
+     &                  CURFMT == FF10FMT ) THEN
 
 C.........................  Check if SCC has proper length
                         IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
@@ -764,7 +781,7 @@ C.....................  Ensure that road class is valid and convert from road cl
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
                     IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT .OR.
-     &                  CURFMT == ORLFIREFMT ) THEN
+     &                  CURFMT == ORLFIREFMT .OR. CURFMT == FF10FMT ) THEN
 
 C.........................  Make sure SCC is at least 8 characters long
                         IF( LEN_TRIM( TSCC ) < 8 ) THEN
@@ -917,22 +934,15 @@ C.............................  Update total number of sources with pollutants
                 CASE( 'POINT' )
                     CALL PADZERO( TSCC )
                 
-                    SELECT CASE( CURFMT )
-                    CASE( IDAFMT, ORLFMT )
-                        CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
-     &                                TSCC, CHRBLNK3, CHRBLNK3, 
-     &                                TCSOURC )
-                    CASE( EMSFMT )
+                    IF( CURFMT == EMSFMT ) THEN
                         CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
      &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                                TCSOURC )
-
-                    CASE( ORLFIREFMT )
-                        CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID,  
+                    ELSE
+                        CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
      &                                TSCC, CHRBLNK3, CHRBLNK3, 
      &                                TCSOURC )
-                    END SELECT
-
+                    END IF
                 END SELECT
                 
                 CSRC_LEN = LEN_TRIM( TCSOURC )

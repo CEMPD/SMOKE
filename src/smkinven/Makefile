@@ -39,6 +39,7 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
         srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
         setnonhap.o rdsrcidaar.o rdsrcntiar.o rddataidaar.o rdinvdata.o rddatantiar.o \
         procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
+        rdsrcff10ar.o rddataff10ar.o rdsrcff10mb.o rddataff10mb.o \
         rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
         rddataemsar.o rdsrcemspt.o rddataemspt.o procemspt.o \
         rddevemspt.o rdfacemspt.o rdprocemspt.o rdstkemspt.o rdsrcntifr.o\
@@ -82,7 +83,9 @@ rddataidaar.o: $(MODINFO)
 rddataidamb.o: $(MODINFO)
 rddataidapt.o: $(MODINFO)
 rddatantiar.o: $(MODINFO)
+rddataff10ar.o: $(MODINFO)
 rddatantimb.o: $(MODINFO)
+rddataff10mb.o: $(MODINFO)
 rddatantinp.o: $(MODINFO)
 rddatantipt.o: $(MODINFO)
 rddatantifr.o: $(MODINFO)
@@ -103,7 +106,9 @@ rdsrcidaar.o:
 rdsrcidamb.o: $(MODINFO)
 rdsrcidapt.o:
 rdsrcntiar.o: $(MODLISTS)
+rdsrcff10ar.o: $(MODLISTS)
 rdsrcntimb.o: $(MODLISTS)
+rdsrcff10mb.o: $(MODLISTS)
 rdsrcntifr.o: $(MODINFO)
 rdsrcntinp.o: $(MODLISTS)
 rdsrcntipt.o: $(MODLISTS)

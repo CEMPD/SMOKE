@@ -144,7 +144,7 @@ C                   emissions
 
 C.............  Check for country name
             ELSE IF ( BUFFER(2:8) .EQ. 'COUNTRY' ) THEN 
-                CNTRY = ADJUSTL( LINE( 9:L2 ) )
+                CNTRY = ADJUSTL( LINE( 10:L2 ) )
                 I   = INDEX1( CNTRY, NCOUNTRY, CTRYNAM )             
 
                 IF( NCOUNTRY .LE. 0 ) THEN
@@ -168,7 +168,7 @@ C.............  Check for country name
 C.............  Check for inventory year
             ELSE IF ( BUFFER(2:5) .EQ. 'YEAR' ) THEN 
 
-                INY = STR2INT( BUFFER( 6:L2 ) )
+                INY = STR2INT( BUFFER( 7:L2 ) )
 
                 IF ( INY .LT. 1971 .OR. INY .GT. MXIYEAR ) THEN
                     WRITE( MESG, 94010 ) 'WARNING: Inventory year', INY,

@@ -93,7 +93,7 @@ C           This section will be executed every time the routine is called
         CASE( 'POINT' )
 
             SELECT CASE( FILFMT )
-            CASE( IDAFMT, ORLFMT, ORLFIREFMT )
+            CASE( IDAFMT, FF10FMT, ORLFMT, ORLFIREFMT )
                 NCHARS = 6
                 JSCC   = 6
                 JSTACK = 4
