@@ -110,14 +110,12 @@ C***********************************************************************
 C   begin body of subroutine OPENTMPIN
 
 C.........  Get environment variables that control program behavior
-        IF ( CATEGORY .EQ. 'POINT' ) THEN
-            DFLAG = ENVYN( 'DAY_SPECIFIC_YN', 'Use day-specific data',
-     &                      .FALSE., IOS )
+        DFLAG = ENVYN( 'DAY_SPECIFIC_YN', 'Use day-specific data',
+     &                 .FALSE., IOS )
 
-            HFLAG = ENVYN( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
-     &                     .FALSE., IOS )
+        HFLAG = ENVYN( 'HOUR_SPECIFIC_YN', 'Use hour-specific data',
+     &                 .FALSE., IOS )
 
-        END IF
 
 C.........  Waring message for imcompatiblity of FILL_ANNUAL setting from Smkinven
 C.........  Set average day emissions flag (INVPIDX)
