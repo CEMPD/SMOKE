@@ -81,7 +81,7 @@ C...........   Local allocatable arrays
         CHARACTER(IOULEN3), ALLOCATABLE :: UNITS( : )
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, L2, V  ! counters and indices
+        INTEGER         I, J, K, L, L1, L2, V  ! counters and indices
 
         INTEGER         COD       !  tmp data variable position in valid list
         INTEGER         IOS       !  i/o status
@@ -125,7 +125,7 @@ C.........  Initialize i/o status
 
 C.............  Scan for header lines
         IF( LINE( 1:1 ) .EQ. CINVHDR ) THEN
-
+            L1 = INDEX( LINE, '=' ) 
             L2 = LEN_TRIM( LINE )
 
 C.............  Convert to upper case
@@ -144,7 +144,10 @@ C                   emissions
 
 C.............  Check for country name
             ELSE IF ( BUFFER(2:8) .EQ. 'COUNTRY' ) THEN 
-                CNTRY = ADJUSTL( LINE( 10:L2 ) )
+
+                IF( L1 < 1 ) L1 = 8 
+
+                CNTRY = ADJUSTL( LINE( L1+1:L2 ) )
                 I   = INDEX1( CNTRY, NCOUNTRY, CTRYNAM )             
 
                 IF( NCOUNTRY .LE. 0 ) THEN
@@ -168,7 +171,9 @@ C.............  Check for country name
 C.............  Check for inventory year
             ELSE IF ( BUFFER(2:5) .EQ. 'YEAR' ) THEN 
 
-                INY = STR2INT( BUFFER( 7:L2 ) )
+                IF( L1 < 1 ) L1 = 5
+
+                INY = STR2INT( BUFFER( L1+1:L2 ) )
 
                 IF ( INY .LT. 1971 .OR. INY .GT. MXIYEAR ) THEN
                     WRITE( MESG, 94010 ) 'WARNING: Inventory year', INY,

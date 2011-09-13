@@ -44,6 +44,9 @@ C...........  This module contains the information about the source category
 C............ This module contains the cross-reference tables
         USE MODXREF, ONLY: PROC_HAPS 
 
+C.........  This module contains data for day- and hour-specific data
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG 
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -112,14 +115,14 @@ C.........  Get value of these controls from the environment
         MESG = 'Import average inventory data'
         IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', MESG, .TRUE., IOS )
 
-        IF ( CATEGORY .EQ. 'POINT' ) THEN
-            MESG = 'Import day-specific data'
-            DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', MESG, .FALSE., IOS )
+        MESG = 'Import day-specific data'
+        DFLAG = ENVYN ( 'DAY_SPECIFIC_YN', MESG, .FALSE., IOS )
+        DAYINVFLAG = DFLAG
 
-            MESG = 'Import hour-specific data'
-            HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
-        END IF
-        
+        MESG = 'Import hour-specific data'
+        HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
+        HRLINVFLAG = HFLAG
+ 
         MESG = 'Define the processing method of combining haradous ' //
      &         'air pollutants with criteria VOC.'
         CALL ENVSTR( 'SMK_PROCESS_HAPS', MESG, ' ', PROC_HAPS, IOS )
@@ -289,20 +292,16 @@ C.........  Get file name and open daily input inventory file
 
 C.........  Get VMT Mix file
         IF( XFLAG ) THEN
-
             MESG = 'Enter logical name for VMT MIX file'
             XDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'VMTMIX', 
      &                          PROGNAME )
-
        END IF
 
 C.........  Get speeds file
         IF( SFLAG ) THEN
-
             MESG = 'Enter logical name for MOBILE SPEEDS file'
             EDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MSPEEDS', 
      &                          PROGNAME )
-
         END IF
 
         IF( IFLAG ) THEN

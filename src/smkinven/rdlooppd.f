@@ -242,6 +242,12 @@ C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME, 
      &                        EDATE, ETIME, EASTAT, SPSTAT )
 
+            ELSE IF( FILFMT( IFIL ) .EQ. FF10FMT ) THEN
+
+                CALL RDFF10PD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG,
+     &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME,
+     &                        EDATE, ETIME, EASTAT, SPSTAT )
+
             ELSE IF( FILFMT( IFIL ) .EQ. EPSFMT ) THEN
 
                 CALL RDEPSPD( IDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 

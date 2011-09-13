@@ -41,7 +41,7 @@ RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
         procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
         rdsrcff10ar.o rddataff10ar.o rdsrcff10mb.o rddataff10mb.o \
         rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
-        rddataemsar.o rdsrcemspt.o rddataemspt.o procemspt.o \
+        rddataemsar.o rdsrcemspt.o rddataemspt.o procemspt.o rdff10pd.o \
         rddevemspt.o rdfacemspt.o rdprocemspt.o rdstkemspt.o rdsrcntifr.o\
         rdsrcntipt.o rdsrcntinp.o rddatantipt.o rddatantinp.o rddatantifr.o rdcemsum.o
 #
@@ -91,6 +91,7 @@ rddatantipt.o: $(MODINFO)
 rddatantifr.o: $(MODINFO)
 rddevemspt.o: $(MODINFO) $(MODSOURC)
 rdemspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
+rdff10pd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
 rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO) $(MODDAYHR)
 rdfacemspt.o: $(MODINFO) $(MODSOURC)
 rdgrdapi.o: $(MODSOURC) $(MODINFO)

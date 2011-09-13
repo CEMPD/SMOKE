@@ -60,11 +60,14 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, ISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
      &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG
+        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, FF10FLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX, INV_MON,
      &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC   
+
+C.........  This module contains data for day- and hour-specific data
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG
 
         IMPLICIT NONE
 
@@ -161,9 +164,7 @@ C...........   Other local variables
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
         LOGICAL         A2PFLAG          ! true: using area-to-point processing
-        LOGICAL         DFLAG            ! true: day-specific inputs used
         LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
-        LOGICAL         HFLAG            ! true: hour-specific inputs used
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL         NONPOINT         ! true: importing nonpoint inventory
         LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
@@ -211,10 +212,9 @@ C.........  Get names of input files
      &                  ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
-        DFLAG = ( DDEV .NE. 0 )
-        HFLAG = ( HDEV .NE. 0 )
         IFLAG = ( IDEV .NE. 0 )
-        GFLAG = ( .NOT. IFLAG .AND. .NOT. DFLAG .AND. .NOT. HFLAG )
+        GFLAG = ( .NOT. IFLAG .AND. .NOT. DAYINVFLAG .AND. .NOT.
+     &            HRLINVFLAG )
         A2PFLAG = ( YDEV .NE. 0 )
 
 C.........  Set gridded input file name, if available
@@ -455,9 +455,10 @@ C               to see if HFLUX is present. If so, FIREFLAG = .true.
         END IF !   End processing of average annual import or not
 
 C.........  Read in daily emission values and output to a SMOKE file
-        IF( DFLAG ) THEN
+        IF( DAYINVFLAG ) THEN
 
             INSTEP  = 240000
+            IF( FF10FLAG ) INSTEP = 31 * 240000    ! only for FF10_DAILY formats
             OUTSTEP = 10000
             TYPNAM  = 'day'
 
@@ -475,7 +476,7 @@ C.............  Read and output day-specific data
         END IF
 
 C.........  Read in hourly emission values and output to a SMOKE file
-        IF( HFLAG ) THEN
+        IF( HRLINVFLAG ) THEN
 
             INSTEP  = 10000
             OUTSTEP = 10000

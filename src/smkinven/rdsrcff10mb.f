@@ -49,8 +49,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FINDC, INDEX1
+        LOGICAL         CHKINT
         
-        EXTERNAL   CRLF, FINDC, INDEX1
+        EXTERNAL   CRLF, FINDC, INDEX1, CHKINT
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -112,6 +113,12 @@ C.........  If a header line was encountered, set flag and return
 
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
+
+C......... Return if the first line is a header line
+        IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+            HDRFLAG = .TRUE.
+            RETURN
+        END IF
         
 C.........  Use the file format definition to parse the line into
 C           the various data fields

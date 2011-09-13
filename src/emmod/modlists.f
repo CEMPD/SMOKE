@@ -64,8 +64,9 @@
         INTEGER,        ALLOCATABLE :: FILFMT( : )  ! format of inventory file(s)
         CHARACTER(300), ALLOCATABLE :: LSTSTR( : )  ! contents of list-fmt inventory file
 
-!.........  Wildfire Point Source ORLFIREFMT flag
+!.........  Inventory format flags
         LOGICAL, PUBLIC :: FIREFLAG  ! true: ORL FIRE format inventory
+        LOGICAL, PUBLIC :: FF10FLAG  ! true: FF10 format inventories
 
 !.........  Unique lists of source characteristics and associated arrays...
 

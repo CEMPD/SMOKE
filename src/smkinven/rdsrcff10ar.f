@@ -40,6 +40,9 @@ C***************************************************************************
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS
+
+C.........  This module contains data for day- and hour-specific data
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG 
         
         IMPLICIT NONE
 
@@ -49,8 +52,9 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FINDC
+        LOGICAL         CHKINT
 
-        EXTERNAL    CRLF, FINDC
+        EXTERNAL    CRLF, FINDC, CHKINT
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -65,7 +69,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: NSEG = 60      ! number of segments in line
 
 C...........   Other local variables
-        INTEGER         I        ! counters and indices
+        INTEGER         I, L1, L2        ! counters and indices
 
         INTEGER, SAVE:: ICC      !  position of CNTRY in CTRYNAM
         INTEGER, SAVE:: INY      !  inventory year
@@ -103,6 +107,31 @@ C.........  Interpret error status
 
 C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
+
+C.............  Determine whether processing daily/hourly inventories or not 
+            CALL UPCASE( LINE )
+
+            L1 = INDEX( LINE, 'FF10_DAILY_NONPOINT' )
+            L2 = INDEX( LINE, 'FF10_HOURLY_NONPOINT' )
+
+            IF( INDEX( LINE, '_POINT'  ) > 0 ) THEN 
+                MESG = 'ERROR: Can not process POINT inventory '//
+     &                 'as AREA inventory'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN 
+                MESG = 'ERROR: MUST set HOUR_SPECIFIC_YN to Y '//
+     &               'to process daily FF10_DAILY_NONPOINT inventory'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            IF( .NOT. HRLINVFLAG .AND. L2 > 0 ) THEN
+                MESG = 'ERROR: MUST set HOUR_SPECIFIC_YN to Y '//
+     &               'to process hourly FF10_HOURLY_NONPOINT inventory'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
             HDRFLAG = .TRUE.
             RETURN
         ELSE
@@ -111,6 +140,12 @@ C.........  If a header line was encountered, set flag and return
 
 C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
+
+C......... Return if the first line is a header line
+        IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+            HDRFLAG = .TRUE.
+            RETURN
+        END IF
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
@@ -121,11 +156,16 @@ C.........  Replace blanks with zeros
         DO I = 1,FIPLEN3
             IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
         END DO
-        
-        TSCC = SEGMENT( 6 )                           ! SCC code
-
+       
 C.........  Determine number of pollutants for this line based on CAS number
-        TCAS = ADJUSTL( SEGMENT( 8 ) )
+        IF( HRLINVFLAG .OR. DAYINVFLAG ) THEN
+            TSCC = SEGMENT( 8 )                           ! SCC code
+            TCAS = ADJUSTL( SEGMENT( 9 ) )
+        ELSE 
+            TSCC = SEGMENT( 6 )                           ! SCC code
+            TCAS = ADJUSTL( SEGMENT( 8 ) )
+        END IF
+
         I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
         IF( I < 1 ) THEN
             NPOLPERLN = 0

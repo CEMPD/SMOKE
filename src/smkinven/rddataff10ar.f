@@ -40,7 +40,10 @@ C***************************************************************************
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NRP, INV_MON
-        
+
+C.........  This module contains data for day- and hour-specific data
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -50,9 +53,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FINDC, STR2INT
         REAL            YR2DAY, STR2REAL
-        LOGICAL         CHKREAL
+        LOGICAL         CHKINT
 
-        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, YR2DAY, CHKREAL
+        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, YR2DAY, CHKINT
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
@@ -66,7 +69,7 @@ C...........   SUBROUTINE ARGUMENTS
         
 C...........   Local parameters
         INTEGER, PARAMETER :: MXDATFIL = 60  ! arbitrary max no. data variables
-        INTEGER, PARAMETER :: NSEG = 50      ! number of segments in line
+        INTEGER, PARAMETER :: NSEG = 60      ! number of segments in line
 
 C...........   Other local variables
         INTEGER         I        ! counters and indices
@@ -124,14 +127,14 @@ C.........  Separate line into segments
         CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C......... Return if the first line is a header line
-        IF( .NOT. CHKREAL( SEGMENT( 2 ) ) ) THEN
+        IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
             HDRFLAG = .TRUE.
             RETURN
         END IF 
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        READPOL ( 1     ) = SEGMENT( 8 )
+        READPOL ( 1     ) = ADJUSTL( SEGMENT( 8 ) )
         READDATA( 1,NEM ) = SEGMENT( 9 )
         READDATA( 1,NDY ) = '-9'
         READDATA( 1,NEF ) = '-9'
@@ -155,12 +158,18 @@ C.........  Compute annual total based on monthly total
 
             MDAYS = MON_DAYS( INV_MON )    ! day of months
 
-            LYEAR = 1 / YR2DAY ( INY ) ! convert year to days
+            LYEAR = INT( 1 / YR2DAY ( INY ) ) ! convert year to days
             IF( LYEAR > 365 .AND. INV_MON == 2 ) MDAYS = 29  ! leap year (feb = 29days)
 
             ANNTOT = ( STR2REAL( READDATA(1,NEM) ) / MDAYS ) * LYEAR
             WRITE( READDATA( 1,NEM ), '( E15.10 )' ) ANNTOT
 
+        END IF
+
+C.........  Reset annual total inventory to zero for daily/hourly FF10 processing
+        IF( DAYINVFLAG .OR. HRLINVFLAG ) THEN
+            READPOL ( 1     ) = SEGMENT( 9 )
+            READDATA( 1,NEM ) = '0.0'
         END IF
 
 C.........  Make sure routine knows it's been called already

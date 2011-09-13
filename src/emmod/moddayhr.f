@@ -39,6 +39,9 @@
         IMPLICIT NONE
 
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
+!.........  Determine processing hourly/daily inventories
+        LOGICAL, PUBLIC :: DAYINVFLAG = .FALSE.      ! processing daily inventory
+        LOGICAL, PUBLIC :: HRLINVFLAG = .FALSE.      ! processing hourly inventory
 
 !.........  Sparsely stored day-specific or hour-specific emissions array
 !           for writing data

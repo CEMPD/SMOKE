@@ -46,7 +46,7 @@ C...........   This module is the inventory arrays
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDUNT, FIREFLAG, NINVTBL,
-     &                      ITNAMA, ITCASA
+     &                      ITNAMA, ITCASA, FF10FLAG
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, NMAP,
@@ -173,9 +173,9 @@ C..........  Get environment variables
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  If processing fires, then must write out zero values, since
-C           zero is used to fill in the annual data
-        IF ( FIREFLAG ) THEN
+C.........  If processing fires or FF10 formats, then must write out zero values, since
+C           zero annual will be filled with daliy/hourly fire/F10 inventories 
+        IF ( FIREFLAG .OR. FF10FLAG ) THEN
             ZFLAG = .TRUE.
 
 C.........  Otherwise, check environment to see if user wants to output

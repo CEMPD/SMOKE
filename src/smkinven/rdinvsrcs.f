@@ -53,7 +53,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, CATEGORY, NEMSFILE
         
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: FILFMT, LSTSTR, FIREFLAG
+        USE MODLISTS, ONLY: FILFMT, LSTSTR, FIREFLAG, FF10FLAG
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, NRCLAS, IVTIDLST, CVTYPLST, 
@@ -597,6 +597,7 @@ C.................  Process line depending on file format and source category
 
                 CASE( FF10FMT )
                     ORLFLG = .TRUE.
+                    FF10FLAG = .TRUE.
 
                     SELECT CASE( CATEGORY )
                     CASE( 'AREA' )   ! used for nonroad only
