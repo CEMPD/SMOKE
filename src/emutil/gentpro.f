@@ -127,7 +127,7 @@ C.....  Define temporal profile type constants for enumeration
         INTEGER, PARAMETER :: MXVAR  = 20
         INTEGER, PARAMETER :: MXSEG  = 16
         INTEGER, PARAMETER :: NMONTH = 12
-        INTEGER, PARAMETER :: NDAYS  = 366
+        INTEGER, PARAMETER :: MXDAYS  = 366
 
 C...........   real arrays
         REAL   , ALLOCATABLE :: TA( : )            !  one layer of temperature
@@ -152,7 +152,7 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: DAYENDT ( : )      ! daily end time HHMMSS
         INTEGER, ALLOCATABLE :: TZONES  ( : )      ! county-specific time zones
         INTEGER, ALLOCATABLE :: METDAYS ( : )      ! dimension: nsteps in episode,
-        INTEGER, ALLOCATABLE :: PROCHOUR( : )      ! no of processing hours 
+        INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours 
         INTEGER, ALLOCATABLE :: SRGIDS  ( : )      ! list of surrogates
 
 C...........  logical arrays
@@ -217,6 +217,7 @@ C...........   Other local variables:
         INTEGER    METNGRID    ! no. grid cells in met data
         INTEGER    NLINES      ! no. lines in met list file
         INTEGER    NDAY        ! no. processing days 
+        INTEGER    NMON        ! no. processing month 
         INTEGER    NVAR        ! no. met variables
         INTEGER    NSRG        ! no. surrogates
         INTEGER    NSCC        ! no. processing SCCs
@@ -249,7 +250,6 @@ C...........   Other local variables:
         LOGICAL :: GRID_ERR = .FALSE.  !  true: error found in grid settings
         LOGICAL :: MATCHED  = .FALSE.  !  true: found matched FIPS/SCC xref entry
         LOGICAL :: NH3FLAG  = .FALSE.  !  true: processing NH3 profile method
-        LOGICAL :: NEW_DAY  = .FALSE.  !  true: Star new day
         LOGICAL :: MONAVER  = .FALSE.  !  true: monthly averaging
         LOGICAL :: DAYAVER  = .FALSE.  !  true: weekly averaging
         LOGICAL :: HOURAVER = .FALSE.  !  true: hourly averaging
@@ -868,11 +868,11 @@ C           set the ending date forward one day
 C.........  Convert start and end dates and times back to GMT
         CALL NEXTIME( SDATE, STIME, TZONE*10000 )
         CALL NEXTIME( EDATE, ETIME, TZONE*10000 )
-!       print*,TZMIN,TZMAX,TZONE,TSPREAD,SDATE,STIME,EDATE,ETIME,'TZMIN,TZMAX,TZONE,TSPREAD'
+!       print*,TZMIN,TZMAX,TZONE,TSPREAD,SDATE,EDATE,NSTEPS,'TZMIN,TZMAX,TZONE,TSPREAD'
 
 C.........  Find the total number of time steps
         NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
-!        print*,NSTEPS
+
 C.........  Get number of lines in met list file
         NLINES = GETFLINE( TDEV, 'METLIST file' )
 
@@ -1052,7 +1052,7 @@ C.........  Source met variable arrays
 C.........  Allocate memory for storing hourly/annual meteorology profiles
         ALLOCATE( HRLSRC( NSRGFIPS,NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HRLSRC', PROGNAME )
-        ALLOCATE( DAYSRC( NSRGFIPS,NDAYS ), STAT=IOS )
+        ALLOCATE( DAYSRC( NSRGFIPS,MXDAYS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYSRC', PROGNAME )
         ALLOCATE( MONSRC( NSRGFIPS,NMONTH ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MONSRC', PROGNAME )
@@ -1087,9 +1087,9 @@ C.........  dates/daylight saving arrays
         CALL CHECKMEM( IOS, 'DAYENDT', PROGNAME )
         ALLOCATE( LDAYSAV( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'LDAYSAV', PROGNAME )
-        ALLOCATE( PROCHOUR( NSRGFIPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PROCHOUR', PROGNAME )
-        PROCHOUR = 0
+        ALLOCATE( PROCDAYS( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PROCDAYS', PROGNAME )
+        PROCDAYS = 0
 
 C.........  Create array of which sources are affected by daylight savings
         CALL GETDYSAV( NSRGFIPS, SRGFIPS, LDAYSAV )
@@ -1102,7 +1102,6 @@ C.........  Process meteorology data...
         JDATE = SDATE
         JTIME = STIME
         LDATE = -9
-        NDAY = -1 
 
 C.....  Loop through days/hours (timesteps) of meteorology files
         DO T = 1, NSTEPS
@@ -1115,8 +1114,6 @@ C.................  Write message for day of week and date
                 MESG = 'Processing ' // DAYS( DAY ) // ' ' //
      &                 MMDDYY( JDATE )
                 CALL M3MSG2( MESG )
-
-                NDAY = NDAY + 1
 
 C.................  Set start and end hours of day for all sources
                 CALL SETSRCDY( NSRGFIPS, JDATE, TZONES, LDAYSAV, .TRUE.,
@@ -1209,16 +1206,9 @@ C                   surrogate. Results are stored in WSSRC.
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
             END IF  ! check for using alternate data or day averaging
 
-C.............  Make sure we've waited long enough to catch all time zones
-c            IF( POS <= TSPREAD ) THEN
-c                LDATE = JDATE
-c                CALL NEXTIME( JDATE, JTIME, 10000 )
-c                CYCLE
-c            END IF
-
 C.............  If last day of month, process monthly averages
-            CALL DAYMON( JDATE-1, TMPMNTH, TDAY )   ! next day of processing date
-            CALL DAYMON( JDATE, MONTH, DAY )       ! processing month and date
+            CALL DAYMON( JDATE, TMPMNTH, TDAY )   ! next day of processing date
+            CALL DAYMON( JDATE-1, MONTH, DAY )       ! processing month and date
 
 C.............  Processing profile methods (RWC, AGNH3 or MET)
 C.............  Loop over source (S) to estimate hourly values and temporal sums
@@ -1226,20 +1216,12 @@ C.............  Loop over source (S) to estimate hourly values and temporal sums
 
 C.................  Convert GMT to local time
                 HOURIDX = ( JTIME-DAYBEGT( S ) ) / 10000
-                NEW_DAY = .FALSE.
-                IF( HOURIDX < 0 ) THEN
-                    HOURIDX = HOURIDX + 24
-                    NEW_DAY = .TRUE.
-                END IF
+                IF( HOURIDX < 0 ) HOURIDX = HOURIDX + 24
                 HOURIDX = HOURIDX + 1
 
 C.................  Skip if begining/ending hours are out of range
                 IF( T <= TSPREAD .AND. HOURIDX > TSPREAD ) CYCLE
                 IF( T > EPI_NSTEPS .AND. HOURIDX < TSPREAD ) CYCLE
-!      if(s==159) write(*,'(a,12i9)') 'hourly::',T,jdate,JTIME,MONTH,day,NDAY,daybegt(S),HOURIDX,TSPREAD
-
-C.................  count no of hours
-                PROCHOUR( S ) = PROCHOUR( S ) + 1
 
 C.................  Skip if data is missing
                 IF( TASRC( S ) == 0.0 ) THEN  ! temp in Kevin 
@@ -1303,8 +1285,12 @@ C                        temporal profiles.
 
 C.................  Calculate tmp daily total from hourly values
                 TMPDSRC( S ) = TMPDSRC( S ) + HRLSRC( S,T )
+!      if(s==159) write(*,'(a,12i9)') 'hourly::',jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH
+                IF( HOURIDX == 24 ) THEN
 
-                IF( HOURIDX == 24 .AND. NDAY > 0 ) THEN
+C.....................  County-specific procesing days
+                    PROCDAYS( S ) = PROCDAYS( S ) + 1
+                    NDAY = PROCDAYS( S )
 
 C.....................  Sum hourly to daily total in local time
                     DAYSRC( S,NDAY ) = TMPDSRC( S )
@@ -1314,7 +1300,7 @@ C.....................  Sum hourly to daily total in local time
 C.....................  Sum daily to monthly total in local time
                     TMPMSRC( S ) = TMPMSRC( S ) + DAYSRC( S,NDAY )
 
-!       if(s==159) print*,'Daily::',JDATE,JTIME,MONTH,DAY,NDAY,DAYSRC(S,NDAY)
+!       if(s==159) print*,'Daily::',JDATE,JTIME,MONTH,NDAY,MONTH,DAYSRC(S,NDAY)
                     IF( MONTH /= TMPMNTH ) THEN
 
 C......,,,,...............  Sum daily to monthly total in local time
@@ -1322,7 +1308,7 @@ C......,,,,...............  Sum daily to monthly total in local time
 
 C.........................  Sum Monthly to Annual total in local time
                         ANNSRC( S ) = ANNSRC( S ) + MONSRC( S,MONTH )
-!       if(s==159) print*,'Monthly::',JDATE,JTIME,MONTH,DAY,NDAY,MONSRC(S,MONTH)
+!       if(s==159) print*,'Monthly::',JDATE,JTIME,MONTH,NDAY,MONTH,MONSRC(S,MONTH)
 
                         TMPMSRC( S ) = 0.0    ! reset tmp monthly total array
 
@@ -1337,9 +1323,7 @@ C.............  Increment loop time
             CALL NEXTIME( JDATE, JTIME, 10000 )
 
         END DO   ! End T-loop on hours of met files
-        do s = 1,NSRGFIPS
-!         print*,S,PROCHOUR(S),'S,prochour,,m,,bh'
-        END DO
+
 C.........  Deallocate arrays no-longer needed.
         DEALLOCATE( TMPDSRC, TMPMSRC )
 
@@ -1363,22 +1347,23 @@ c               print*,PROF_MON(1,MM),MONSRC(1,MM),ANNSRC(1)
 C......... Output daily temporal profiles
 C.........  Compute day of year temporal profiles
         IF( DAYAVER ) THEN
+            DO S = 1, NSRGFIPS 
+                DO DD = 1, PROCDAYS( S ) 
 
-            DO DD = 1, NDAY
+                    JDATE = INT( SDATE/1000 ) * 1000 + DD
+                    CALL DAYMON( JDATE + 1, TMPMNTH, TDAY )
+                    CALL DAYMON( JDATE, MONTH, DAY )
 
-                JDATE = INT( SDATE/1000 ) * 1000 + DD
-                CALL DAYMON( JDATE + 1, TMPMNTH, TDAY )
-                CALL DAYMON( JDATE, MONTH, DAY )
-
-                PROF_DAY( :,DAY ) = DAYSRC( :,DD ) / ANNSRC( : )
+                    PROF_DAY( S,DAY ) = DAYSRC( S,DD ) / ANNSRC( S )
 c       print*,DD,JDATE,MONTH,DAY,TMPMNTH,TDAY
 c       print*,DD,JDATE,PROF_DAY(1,DAY),DAYSRC(1,DD),ANNSRC(1)
 
-                IF( MONTH /= TMPMNTH ) THEN
-                    CALL WRITE_PROFILE( DODEV, 'DAILY', PREFIX, MONTH,
+                    IF( MONTH /= TMPMNTH ) THEN
+                        CALL WRITE_PROFILE( DODEV, 'DAILY', PREFIX, MONTH,
      &                                  NSRGFIPS, DAY, PROF_DAY )
-                END IF
+                    END IF
 
+                END DO
             END DO
 
         END IF
@@ -1470,21 +1455,35 @@ C.............  Output hour of year and hour of month temporal profiles
             JDATE = SDATE
             JTIME = STIME
             LDATE = -9
-            NDAY  = 0
+            PROCDAYS = 1
+            NMON = 1
 
             DO T = 1, NSTEPS
-C.................  increment day 
-                IF( JDATE /= LDATE ) THEN 
-                    NDAY = NDAY + 1
-                END IF
 
-                CALL DAYMON( JDATE, MONTH, DAY )
+C.............  If last day of month, process monthly averages
+                CALL DAYMON( JDATE, MONTH, DAY )       ! processing month and date
 
 C.................  Processing profile methods (RWC, AGNH3 or MET)
 C.................  Loop over source (S) to estimate hourly fractions based
 C                   on monthly total.
                 DO S = 1, NSRGFIPS
 
+C.....................  Convert GMT to local time
+                    HOURIDX = ( JTIME-DAYBEGT( S ) ) / 10000
+                    IF( HOURIDX < 0 ) HOURIDX = HOURIDX + 24
+                    HOURIDX = HOURIDX + 1
+
+C.....................  Skip if begining/ending hours are out of range
+                    IF( T <= TSPREAD .AND. HOURIDX > TSPREAD ) CYCLE
+                    IF( T > EPI_NSTEPS .AND. HOURIDX < TSPREAD ) CYCLE
+
+                    NDAY = PROCDAYS( S )
+
+C.....................  Skip if begining/ending hours are out of range
+                    IF( T <= TSPREAD .AND. HOURIDX > TSPREAD ) CYCLE
+                    IF( T > EPI_NSTEPS .AND. HOURIDX < TSPREAD ) CYCLE
+
+!       if(S==159) write(*,'(8I8)')T,JDATE,JTIME,NDAY,MONTH,HOURIDX
 C.....................  Estimate hourly month fractions when profile method is not AGNH3
 C                       Equation (2) in design document.
                     IF( MONSRC( S,MONTH ) /= 0. ) THEN
@@ -1507,6 +1506,11 @@ C.........................  Calculate hour of day profiles
                         END IF
                     END IF
 
+C.....................  current processing month per county
+                    IF( HOURIDX == 24 ) THEN
+                        PROCDAYS( S ) = PROCDAYS( S ) + 1
+                    END IF
+
                 END DO   ! Source S loop
 
 C.................  Write county specific hourly factors when Avg_method is AGNH3
@@ -1522,7 +1526,7 @@ C.....................  Write county codes to file
 
 C.....................  Write county-specific hourly NH3 profile value to file
                     IF( .NOT. WRITE3( HNAME, 'NH3_PROF', JDATE, JTIME,
-     &                        HRLSRC( :,T ) ) ) THEN
+     &                        PROF_DAY( :,T ) ) ) THEN
                          MESG = 'Could not write hour of month profile '
      &                          // 'to "' // TRIM( HNAME ) //  '".'
                          CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
