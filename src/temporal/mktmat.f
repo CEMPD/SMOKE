@@ -125,8 +125,6 @@ C.............  Skip record in case of NGRP > 1 and all fields not used
 
                 L = DDEX( S,V )
 
-C         print*,MOD(TPF(S),MTPRFAC),MOD(TPF(S),WTPRFAC),TPF(S),MTPRFAC,WTPRFAC
-
 C.................  Adjust for annual data, which should always use an
 C                   average-day factor (if the emissions are an annual total,
 C                   then don't want to base day-of-week adjustment on weekday
@@ -140,7 +138,6 @@ C.....................  update TMAT with met-based profiles (METFACS)
      &                  WDEX( S,V ) == 99999 .OR.
      &                  DDEX( S,V ) == 99999 ) THEN
 
-c         print*,S,V,MDEX(S,V),WDEX(S,V),DDEX(S,v),METPRFTYPE,'annual'
                         CALL UPDATE_TMAT_METFACS( METPRFTYPE, .TRUE. )
 
                     ELSE
