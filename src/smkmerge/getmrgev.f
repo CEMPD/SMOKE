@@ -202,7 +202,7 @@ C.........  Point-source specific environment variables
 
             IF( ELEVFLAG .AND. INLINEFLAG ) THEN
                 MESG = 'ERROR: ASCII elevated output cannot be switched on'//
-     &                 'with in-line CMAQ outputs ' // CRLF() // BLANK10
+     &                 ' with in-line CMAQ outputs ' // CRLF() // BLANK10
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )		
             END IF
 	    
