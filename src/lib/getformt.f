@@ -178,7 +178,7 @@ C.........  If format has not been set, print error about missing header
      &             'format due to missing or bad header ' //
      &             'information. ' // CRLF() // BLANK16 //
      &             'Valid headers are: ' // CRLF() // BLANK16 //
-     &             '#LIST, #IDA, #EMS-95, #ORL, ' //
+     &             '#LIST, #IDA, #EMS-95, #FF10, ' //
      &             '#ORL NONPOINT, or #CEM'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
