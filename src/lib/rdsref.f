@@ -150,7 +150,7 @@ C           internal SCC (combination of road/vhicle types)
         IF( CATEGORY == 'MOBILE' ) THEN
             MESG = 'Construct internal SCC using road and vehicle types '//
      &          CRLF() // BLANK10 // 'for mobile sources or not'
-            MCODEFLAG = ENVYN( 'USE_MCODE_SCC_YN', MESG, .TRUE., IOS )
+            MCODEFLAG = ENVYN( 'USE_MCODES_SCC_YN', MESG, .TRUE., IOS )
         END IF
 
 C.........  Set up zero strings for FIPS code, SCC code, and SIC code
