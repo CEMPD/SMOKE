@@ -8,11 +8,11 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: aggwndw beld3to2 bluesky2inv cemscan extractida geofac gentpro invsplit layalloc metcombine metscan \
+all: aggwndw beld3to2 bluesky2inv cemscan extractida geofac invsplit layalloc metcombine metscan \
      pktreduc smk2emis surgtool uam2ncf 
 
 debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug extractida.debug invsplit.debug \
-       gentpro.debug geofac.debug layalloc.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
+       geofac.debug layalloc.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
        surgtool.debug uam2ncf.debug  
 
 .f.o:
@@ -70,15 +70,6 @@ extractida: $(EXTI) $(ALLI) $(LIBPATH)
 extractida.debug: $(EXTI) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'EXTRACTIDA (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
-
-GTPR=gentpro.o
-
-gentpro: $(GTPR) $(ALLI) $(LIBPATH)
-	echo GENTPRO:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GTPR) $(LIBS)
-
-gentpro.debug: $(GTPR) $(ALLI) $(LIBPATH_DEBUG)
-	$(FC) $(DBGFLAGS) -o $(@) $(GTPR) $(LIBS_DEBUG)
 
 GEOF=geofac.o
 
@@ -174,9 +165,6 @@ uam2ncf.debug: $(UAMC) $(ALLI) $(LIBPATH_DEBUG)
 include $(MD_SRC)/modmake.inc
 include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
-
-gentpro.o : $(MODINFO) $(MODSURG) $(MODSTCY) $(MODMET) $(MODGRID) $(MODMBSET)
-	$(FC) $(FFLAGS) -c -o $@ gentpro.f
 
 invsplit.o : $(MODINFO) 
 	$(FC) $(FFLAGS) -c -o $@ invsplit.f
