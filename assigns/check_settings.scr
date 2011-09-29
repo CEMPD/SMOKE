@@ -333,8 +333,8 @@ setenv MRG_MULTI_CNTL  N
 setenv MM              l
 
 # Determine if MM should be mole or mass based on script settings
-if ( $?MRG_GRDOUT_UNIT ) then
-   set check = `echo $MRG_GRDOUT_UNIT | grep mole`
+if ( $?MRG_TOTOUT_UNIT ) then
+   set check = `echo $MRG_TOTOUT_UNIT | grep mole`
    if ( $status == 1 ) then
        setenv MM s
    endif

@@ -42,8 +42,8 @@ endif
 #
    setenv BGDAT    $INVDIR/biog                # Raw biogenics inputs
    setenv ARDAT    $INVDIR/area                # area data path
+   setenv MBDAT    $INVDIR/rateperdistance     # mobile data path
    setenv NRDAT    $INVDIR/nonroad             # nonroad mobile data path
-   setenv MBDAT    $INVDIR/mobile              # on-road mobile data path
    setenv PTDAT    $INVDIR/point               # point data path
 #
    setenv SCENARIO $SMKDAT/run_$ESCEN/scenario # Scen-spec daily data
