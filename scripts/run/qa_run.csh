@@ -162,23 +162,17 @@ switch ( $QA_TYPE )
             set qa_type = none
          endif
       endif
-      if ( $?RUN_PART4 ) then
-         if ( $RUN_PART4 == Y && $SMK_SOURCE == P ) then
-            set qa_type = laypoint
-            breaksw
-         else
-            set qa_type = none
-         endif
-      endif
+#      if ( $?RUN_PART4 ) then
+#         if ( $RUN_PART4 == Y && $SMK_SOURCE == P ) then
+#            set qa_type = laypiont
+#            breaksw
+#         else
+#            set qa_type = none
+#         endif
+#      endif
       breaksw
 
 endsw
-
-# Make sure NONROAD is always set
-if ( $?NONROAD ) then
-else
-   setenv NONROAD N
-endif
 
 # Set up input file for Smkreport depending on settings
 
@@ -189,45 +183,35 @@ case inventory:
    switch ( $SMK_SOURCE )
    case A:
 
-      if ( $NONROAD == Y ) then
-         setenv REPCONFIG $INVDIR/other/repconfig.nr.inv.txt
-         setenv REPORT1 $REPSTAT/n.state.$ilabl.rpt
-         setenv REPORT2 $REPSTAT/n.county.$ilabl.rpt
-         setenv REPORT3 $REPSTAT/n.scc.$ilabl.rpt
-         setenv REPORT4 $REPSTAT/n.state_scc.$ilabl.rpt
-         setenv REPORT5 $REPSTAT/ng.state.$GRID.$ilabl.rpt
-         setenv REPORT6 $REPSTAT/ng.scc.$GRID.$ilabl.rpt
-      else
-         setenv REPCONFIG $INVDIR/other/repconfig.ar.inv.txt
-         setenv REPORT1 $REPSTAT/a.state.$ilabl.rpt
-         setenv REPORT2 $REPSTAT/a.county.$ilabl.rpt
-         setenv REPORT3 $REPSTAT/a.scc.$ilabl.rpt
-         setenv REPORT4 $REPSTAT/a.state_scc.$ilabl.rpt
-         setenv REPORT5 $REPSTAT/ag.state.$GRID.$ilabl.rpt
-         setenv REPORT6 $REPSTAT/ag.scc.$GRID.$ilabl.rpt
-      endif
+      setenv REPCONFIG $INVDIR/other/repconfig.$SRCABBR.inv.txt
+      setenv REPORT1 $REPSTAT/$SRCABBR.state.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/$SRCABBR.county.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/$SRCABBR.scc.$ilabl.rpt
+      setenv REPORT4 $REPSTAT/$SRCABBR.state_scc.$ilabl.rpt
+      setenv REPORT5 $REPSTAT/${SRCABBR}g.state.$GRID.$ilabl.rpt
+      setenv REPORT6 $REPSTAT/${SRCABBR}g.scc.$GRID.$ilabl.rpt
       breaksw
       
    case M:
-      setenv REPCONFIG $INVDIR/other/repconfig.mb.inv.txt
-      setenv REPORT1 $REPSTAT/m.state.$ilabl.rpt
-      setenv REPORT2 $REPSTAT/m.county.$ilabl.rpt
-      setenv REPORT3 $REPSTAT/m.scc.$ilabl.rpt
-      setenv REPORT4 $REPSTAT/m.state_scc.$ilabl.rpt
-      setenv REPORT5 $REPSTAT/m.state_rclas.$ilabl.rpt
-      setenv REPORT6 $REPSTAT/mg.state.$GRID.$ilabl.rpt
-      setenv REPORT7 $REPSTAT/mg.scc.$GRID.$ilabl.rpt
+      setenv REPCONFIG $INVDIR/other/repconfig.$SRCABBR.inv.txt
+      setenv REPORT1 $REPSTAT/$SRCABBR.state.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/$SRCABBR.county.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/$SRCABBR.scc.$ilabl.rpt
+      setenv REPORT4 $REPSTAT/$SRCABBR.state_scc.$ilabl.rpt
+      setenv REPORT5 $REPSTAT/$SRCABBR.state_rclas.$ilabl.rpt
+      setenv REPORT6 $REPSTAT/${SRCABBR}g.state.$GRID.$ilabl.rpt
+      setenv REPORT7 $REPSTAT/${SRCABBR}g.scc.$GRID.$ilabl.rpt
       breaksw
       
    case P:
-      setenv REPCONFIG $INVDIR/other/repconfig.pt.inv.txt
-      setenv REPORT1 $REPSTAT/p.state.$ilabl.rpt
-      setenv REPORT2 $REPSTAT/p.county.$ilabl.rpt
-      setenv REPORT3 $REPSTAT/p.scc.$ilabl.rpt
-      setenv REPORT4 $REPSTAT/p.stackparm.$ilabl.rpt
-      setenv REPORT5 $REPSTAT/p.state_scc.$ilabl.rpt
-      setenv REPORT6 $REPSTAT/pg.state.$GRID.$ilabl.rpt
-      setenv REPORT7 $REPSTAT/pg.scc.$GRID.$ilabl.rpt
+      setenv REPCONFIG $INVDIR/other/repconfig.${SRCABBR}.inv.txt
+      setenv REPORT1 $REPSTAT/${SRCABBR}.state.$ilabl.rpt
+      setenv REPORT2 $REPSTAT/${SRCABBR}.county.$ilabl.rpt
+      setenv REPORT3 $REPSTAT/${SRCABBR}.scc.$ilabl.rpt
+      setenv REPORT4 $REPSTAT/${SRCABBR}.stackparm.$ilabl.rpt
+      setenv REPORT5 $REPSTAT/${SRCABBR}.state_scc.$ilabl.rpt
+      setenv REPORT6 $REPSTAT/${SRCABBR}g.state.$GRID.$ilabl.rpt
+      setenv REPORT7 $REPSTAT/${SRCABBR}g.scc.$GRID.$ilabl.rpt
       breaksw
       
    endsw
@@ -240,54 +224,42 @@ case temporal:
 
    switch ( $SMK_SOURCE )
    case A:
-      if ( $NONROAD == Y ) then
-         setenv REPCONFIG $INVDIR/other/repconfig.nr.temporal.txt
-         setenv REPORT1  $REPSCEN/nt.state.$slabl.rpt
-         setenv REPORT2  $REPSCEN/nt.county.$slabl.rpt
-         setenv REPORT3  $REPSCEN/nt.scc.$slabl.rpt
-         setenv REPORT4  $REPSCEN/nt.state_scc.$slabl.rpt
-         setenv REPORT5  $REPSCEN/nt.hour_scc.$slabl.rpt
-         setenv REPORT6  $REPSCEN/ngt.state.$GRID.$slabl.rpt
-         setenv REPORT7  $REPSCEN/nts.scc.$slabl.rpt
-         setenv REPORT8  $REPSCEN/nts.state_scc.$slabl.rpt
-      else
-         setenv REPCONFIG $INVDIR/other/repconfig.ar.temporal.txt
-         setenv REPORT1  $REPSCEN/at.state.$slabl.rpt
-         setenv REPORT2  $REPSCEN/at.county.$slabl.rpt
-         setenv REPORT3  $REPSCEN/at.scc.$slabl.rpt
-         setenv REPORT4  $REPSCEN/at.state_scc.$slabl.rpt
-         setenv REPORT5  $REPSCEN/at.hour_scc.$slabl.rpt
-         setenv REPORT6  $REPSCEN/agt.state.$GRID.$slabl.rpt
-         setenv REPORT7  $REPSCEN/ats.scc.$slabl.rpt
-         setenv REPORT8  $REPSCEN/ats.state_scc.$slabl.rpt
-      endif
+      setenv REPCONFIG $INVDIR/other/repconfig.${SRCABBR}.temporal.txt
+      setenv REPORT1  $REPSCEN/${SRCABBR}t.state.$slabl.rpt
+      setenv REPORT2  $REPSCEN/${SRCABBR}t.county.$slabl.rpt
+      setenv REPORT3  $REPSCEN/${SRCABBR}t.scc.$slabl.rpt
+      setenv REPORT4  $REPSCEN/${SRCABBR}t.state_scc.$slabl.rpt
+      setenv REPORT5  $REPSCEN/${SRCABBR}t.hour_scc.$slabl.rpt
+      setenv REPORT6  $REPSCEN/${SRCABBR}gt.state.$GRID.$slabl.rpt
+      setenv REPORT7  $REPSCEN/${SRCABBR}ts.scc.$slabl.rpt
+      setenv REPORT8  $REPSCEN/${SRCABBR}ts.state_scc.$slabl.rpt
       breaksw
       
    case M:
-      setenv REPCONFIG $INVDIR/other/repconfig.mb.temporal.txt
-      setenv REPORT1  $REPSCEN/mt.state.$slabl.rpt
-      setenv REPORT2  $REPSCEN/mt.county.$slabl.rpt
-      setenv REPORT3  $REPSCEN/mt.scc.$slabl.rpt
-      setenv REPORT4  $REPSCEN/mt.state_scc.$slabl.rpt
-      setenv REPORT5  $REPSCEN/mt.hour_scc.$slabl.rpt
-      setenv REPORT6  $REPSCEN/mt.state_rclas.$slabl.rpt
-      setenv REPORT7  $REPSCEN/mt.county_rclas.$slabl.rpt
-      setenv REPORT8  $REPSCEN/mgt.state.$GRID.$slabl.rpt
-      setenv REPORT9  $REPSCEN/mts.scc.$slabl.rpt
-      setenv REPORT10 $REPSCEN/mts.state_scc.$slabl.rpt
+      setenv REPCONFIG $INVDIR/other/repconfig.${SRCABBR}.temporal.txt
+      setenv REPORT1  $REPSCEN/${SRCABBR}t.state.$slabl.rpt
+      setenv REPORT2  $REPSCEN/${SRCABBR}t.county.$slabl.rpt
+      setenv REPORT3  $REPSCEN/${SRCABBR}t.scc.$slabl.rpt
+      setenv REPORT4  $REPSCEN/${SRCABBR}t.state_scc.$slabl.rpt
+      setenv REPORT5  $REPSCEN/${SRCABBR}t.hour_scc.$slabl.rpt
+      setenv REPORT6  $REPSCEN/${SRCABBR}t.state_rclas.$slabl.rpt
+      setenv REPORT7  $REPSCEN/${SRCABBR}t.county_rclas.$slabl.rpt
+      setenv REPORT8  $REPSCEN/${SRCABBR}gt.state.$GRID.$slabl.rpt
+      setenv REPORT9  $REPSCEN/${SRCABBR}ts.scc.$slabl.rpt
+      setenv REPORT10 $REPSCEN/${SRCABBR}ts.state_scc.$slabl.rpt
       breaksw
       
    case P:
-      setenv REPCONFIG $INVDIR/other/repconfig.pt.temporal.txt
-      setenv REPORT1  $REPSCEN/pt.state.$slabl.rpt
-      setenv REPORT2  $REPSCEN/pt.county.$slabl.rpt
-      setenv REPORT3  $REPSCEN/pt.scc.$slabl.rpt
-      setenv REPORT4  $REPSCEN/pt.state_scc.$slabl.rpt
-      setenv REPORT5  $REPSCEN/pt.hour_scc.$slabl.rpt
-      setenv REPORT6  $REPSCEN/pgt.state.$GRID.$slabl.rpt
-      setenv REPORT7  $REPSCEN/pgt.source.$GRID.$slabl.rpt
-      setenv REPORT8  $REPSCEN/pts.scc.$slabl.rpt
-      setenv REPORT9  $REPSCEN/pts.state_scc.$slabl.rpt
+      setenv REPCONFIG $INVDIR/other/repconfig.${SRCABBR}.temporal.txt
+      setenv REPORT1  $REPSCEN/${SRCABBR}t.state.$slabl.rpt
+      setenv REPORT2  $REPSCEN/${SRCABBR}t.county.$slabl.rpt
+      setenv REPORT3  $REPSCEN/${SRCABBR}t.scc.$slabl.rpt
+      setenv REPORT4  $REPSCEN/${SRCABBR}t.state_scc.$slabl.rpt
+      setenv REPORT5  $REPSCEN/${SRCABBR}t.hour_scc.$slabl.rpt
+      setenv REPORT6  $REPSCEN/${SRCABBR}gt.state.$GRID.$slabl.rpt
+      setenv REPORT7  $REPSCEN/${SRCABBR}gt.source.$GRID.$slabl.rpt
+      setenv REPORT8  $REPSCEN/${SRCABBR}ts.scc.$slabl.rpt
+      setenv REPORT9  $REPSCEN/${SRCABBR}ts.state_scc.$slabl.rpt
       breaksw
       
    endsw
@@ -297,16 +269,16 @@ case temporal:
    breaksw
 
 case elevpoint:
-   setenv REPCONFIG $INVDIR/other/repconfig.pt.elev.txt
-   setenv REPORT1  $REPSTAT/p.src_elev.$ilabl.rpt
+   setenv REPCONFIG $INVDIR/other/repconfig.$SRCABBR.elev.txt
+   setenv REPORT1  $REPSTAT/$SRCABBR.src_elev.$ilabl.rpt
 
    set logabbr = elevpoint.$slabl
    
    breaksw
 
 case laypoint:
-   setenv REPCONFIG $INVDIR/other/repconfig.pt.lfrac.txt
-   setenv REPORT1   $REPSCEN/pt.state_layers.$ilabl.rpt
+   setenv REPCONFIG $INVDIR/other/repconfig.$SRCABBR.lfrac.txt
+   setenv REPORT1   $REPSCEN/${SRCABBR}t.state_layers.$ilabl.rpt
 
    set logabbr = laypoint.$slabl
    
