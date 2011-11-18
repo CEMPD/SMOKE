@@ -168,7 +168,7 @@ C.........  Treat all or partially treat sources as integrate.
         END SELECT
         IF( .NOT. NFLAG ) RETURN   ! skip combining CAP VOC and HAPs
 
-        CALL ENVSTR( NONHAPCOMP, MESG, ' ', VOC_TOG, IOS )
+        CALL ENVSTR( NONHAPCOMP, MESG, 'VOC', VOC_TOG, IOS )
         MESG ='Processing NONHAP'// VOC_TOG // ' calculation.' 
         CALL M3MSG2( MESG )
 
