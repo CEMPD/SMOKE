@@ -606,10 +606,10 @@ C.................  Process line depending on file format and source category
                     CASE( 'MOBILE' )
                         CALL RDSRCFF10MB( LINE, CFIP, CLNK, TSCC,
      &                                   NPOLPERLN, HDRFLAG, EFLAG )
-c                    CASE( 'POINT' )
-c                        CALL RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID,
-c     &                                   SGID, TSCC, NPOLPERLN,
-c     &                                   HDRFLAG, EFLAG )
+                    CASE( 'POINT' )
+                        CALL RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID,
+     &                                   SGID, TSCC, NPOLPERLN,
+     &                                   HDRFLAG, EFLAG )
                     END SELECT
 
                 CASE( ORLFMT )

@@ -673,13 +673,13 @@ C.....................  Need to read source information to match with VMTMIX fil
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
 
-C                CASE( 'POINT' )
-C                    CALL RDDATAFF10PT( LINE, READDATA, READPOL,
-C     &                                INVYEAR, DESC, ERPTYP, SRCTYP,
-C     &                                HT, DM, TK, FL, VL, SIC, MACT,
-C     &                                NAICS, CTYPE, LAT, LON, ZONE,
-C     &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
-C     &                                EFLAG )
+                CASE( 'POINT' )
+                    CALL RDDATAFF10PT( LINE, READDATA, READPOL,
+     &                                INVYEAR, DESC, ERPTYP, SRCTYP,
+     &                                HT, DM, TK, FL, VL, SIC, MACT,
+     &                                NAICS, CTYPE, LAT, LON, ZONE,
+     &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
+     &                                EFLAG )
                     NPOLPERLN = 1
                 END SELECT
 
@@ -893,7 +893,7 @@ C                   great than zero. reset it to a missing value '-9.0' if not.
                 END IF
                 
 C.................  Check ORL specific values
-                IF( CURFMT == ORLFMT .OR. CURFMT == FF10FMT ) THEN
+                IF( CURFMT == ORLFMT ) THEN
                                         
                     IF( CTYPE /= 'U' .AND. CTYPE /= 'L' ) THEN
                         EFLAG = .TRUE.
