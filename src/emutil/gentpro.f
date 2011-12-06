@@ -1,3 +1,4 @@
+
         PROGRAM GENTPRO
 
 C***********************************************************************
@@ -154,6 +155,9 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: METDAYS ( : )      ! dimension: nsteps in episode,
         INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours 
         INTEGER, ALLOCATABLE :: SRGIDS  ( : )      ! list of surrogates
+        INTEGER, ALLOCATABLE :: SRGSTA  ( : )      ! list of state in surrogates
+        INTEGER, ALLOCATABLE :: INDXREF ( :,: )    ! Index of matched xref entries 
+        INTEGER, ALLOCATABLE :: MATCHED ( :,:,: )  ! FIPS/SCC/POL matched source
 
 C...........  logical arrays
         LOGICAL, ALLOCATABLE :: LDAYSAV ( : )      ! true: src uses daylight time
@@ -161,7 +165,6 @@ C...........  logical arrays
 C...........  character arrays
         CHARACTER(16)                  SEGMENT( MXSEG )
         CHARACTER(256), ALLOCATABLE :: METLIST( : )       ! listing of met file names
-        CHARACTER(16) , ALLOCATABLE :: VARLIST( : )       ! listing of met variables
         CHARACTER(10) , ALLOCATABLE :: SCCLIST( : )       ! listing of SCCs
         CHARACTER(256), ALLOCATABLE :: CSCCFIP( : )       ! tmp FIPS/SCC x-ref entries
         
@@ -190,7 +193,7 @@ C...........   File units and logical names:
 
 C...........   Other local variables:
         INTEGER    DD, I, IC, J, K, LL, L, L0, L1, L2, L3   ! Counters and pointers
-        INTEGER    MM, N, NX, NRH, NR, S, T, TT, T2, V  ! Counters and pointers
+        INTEGER    MM, N, NP, NX, NRH, NR, NS, S, T, TT, T2, V  ! Counters and pointers
 
         INTEGER    EPI_SDATE   ! episode start date from E.V. (YYYYDDD)
         INTEGER    EPI_STIME   ! episode start time from E.V. (HHMMSS)
@@ -221,8 +224,11 @@ C...........   Other local variables:
         INTEGER    NVAR        ! no. met variables
         INTEGER    NSRG        ! no. surrogates
         INTEGER    NSCC        ! no. processing SCCs
-        INTEGER    NXREF       ! no. temporal x-ref input file
+        INTEGER    ISTA        ! current state number
+        INTEGER    PSTA        ! previous State number
+        INTEGER    NSTA        ! no. of unique State number
         INTEGER    NMATCH      ! no. of matched temporal x-ref input file by FIPS/SCC
+        INTEGER    MXTREF      ! no. matched temporal x-ref entries 
         INTEGER    MXLINE      ! no. temporal x-ref input file
         INTEGER    NSTEPS      ! number of time steps to process temperature data
         INTEGER    POS         ! position in time step loop
@@ -240,6 +246,7 @@ C...........   Other local variables:
         INTEGER    TZONE       ! zone to determine output days
         INTEGER    TZMIN       ! minimum time zone in inventory
         INTEGER    TZMAX       ! maximum time zone in inventory
+        INTEGER    MXWARN      ! maximum no of warning messgaes
 
         REAL       TEMPVAL             ! tmp variable value
         REAL       SLOPE               ! RWC linear euqation slope 
@@ -248,7 +255,6 @@ C...........   Other local variables:
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
         LOGICAL :: COMPLETE = .FALSE.  !  true: program successful complete
         LOGICAL :: GRID_ERR = .FALSE.  !  true: error found in grid settings
-        LOGICAL :: MATCHED  = .FALSE.  !  true: found matched FIPS/SCC xref entry
         LOGICAL :: NH3FLAG  = .FALSE.  !  true: processing NH3 profile method
         LOGICAL :: MONAVER  = .FALSE.  !  true: monthly averaging
         LOGICAL :: DAYAVER  = .FALSE.  !  true: weekly averaging
@@ -271,7 +277,6 @@ C...........   Other local variables:
         CHARACTER(512)     METFILE     !  tmp physical file name
         CHARACTER(512)     PREVFILE    !  previous physical file name
         CHARACTER(IOVLEN3) PROF_METHOD !  Profile method name
-        CHARACTER(1)       PREFIX      ! Profile prefix for x-ref files
         CHARACTER(IOVLEN3) TPRO_TYPE   !  Temproal profile type name
         CHARACTER(IOVLEN3) TVARNAME    !  temperature variable name
         CHARACTER(IOVLEN3) WSPDNAME    !  wind speed variable name
@@ -290,12 +295,6 @@ C           to continue running the program.
         CALL INITEM( LDEV, CVSW, PROGNAME )
 
 C.........  Obtain parameter settings from the environment...
-
-C.........  Specifies the prefix for Temporal profiles
-C        MESG = 'Specifies the 1 digit integr prefix for Temporal profile IDs'
-C        CALL ENVSTR( 'TPRO_PREFIX', MESG, ' ', PREFIX, IOS )
-        PREFIX = ' '
-
 C.........  Get file name for country, state, and county file, with time zones
         CDEV = PROMPTFFILE(
      &         'Enter logical name for Country/State/County file', 
@@ -321,11 +320,8 @@ C.........  Allocate arrays
         CALL CHECKMEM( IOS, 'SCCLIST', PROGNAME )
         ALLOCATE( SRGIDS( MXVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRGIDS', PROGNAME )
-        ALLOCATE( VARLIST( MXVAR ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'VARLIST', PROGNAME )
         SCCLIST = ' '
         SRGIDS  = 0
-        VARLIST = ' '
 
 C.........  Get a list of SCCs for meteorology processing.
         MESG = 'Specifies a list of SCCs'
@@ -348,28 +344,38 @@ C.........  Obtain profile generation method: 'RWC', 'AGNH3', or 'MET'
 
 C.........  Get the type of temporal profiles to produce from the environment
         MESG = 'Specifies the type of temporal profiles to produce'
-        CALL ENVSTR( 'TPRO_OUTPUT', MESG, 'ALL', TPRO_TYPE, IOS )
+        CALL ENVSTR( 'TPRO_OUTPUT', MESG, ' ', TPRO_TYPE, IOS )
         CALL UPCASE( TPRO_TYPE )
 
+        MESG = 'ERROR: MUST define TPRO_OUTPUT'
+        IF( TPRO_TYPE == ' ' ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
 C.........  Get the name of the temperature variable.
-        MESG = 'Specifies meteorological variable for ' //
+        MESG = 'Specifies meteorological variable name for ' //
      &         TRIM( PROF_METHOD ) // ' profile method'
-        IF( .NOT. STRLIST( 'MET_VARS',MESG,MXVAR,NVAR,VARLIST ) ) THEN
-            MESG = 'Could not read list of met variables'
+        CALL ENVSTR( 'TEMP_VAR', MESG, ' ',TVARNAME, IOS )
+        CALL UPCASE( TVARNAME )
+
+        IF( TVARNAME == ' ' ) THEN
+            MESG = 'ERROR: MUST specifies meteorological variable ' //
+     &          'name "TEMP_VAR" for '//TRIM( PROF_METHOD )//
+     &          ' profile method'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        CALL UPCASE( VARLIST )
-
-        TVARNAME = VARLIST( 1 )     ! chosen temperature variable name
-        WSPDNAME = VARLIST( 2 )
+C.........  Get the name of the wind speed variable.
+        MESG = 'Specifies wind speed variable name for ' //
+     &         TRIM( PROF_METHOD ) // ' profile method'
+        CALL ENVSTR( 'WSPEED_VAR', MESG, ' ',WSPDNAME, IOS )
+        CALL UPCASE( WSPDNAME )
 
 C.........  Set default names for additional variables
         IF( PROF_METHOD == 'AGNH3' ) THEN
            NH3FLAG  = .TRUE.
            IF( WSPDNAME == ' ' ) THEN
                MESG = 'ERROR: MUST specifies wind speed variable ' //
-     &             'name for '//TRIM( PROF_METHOD )//' profile method'
+     &             'name "WSPEED_VAR" for '//TRIM( PROF_METHOD )//
+     &             ' profile method'
                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
            ELSE
                MESG = 'NOTE: Wind speed variable ('//TRIM( WSPDNAME )//
@@ -377,6 +383,9 @@ C.........  Set default names for additional variables
      &            '" profile method'
                CALL M3MESG( MESG )
            END IF
+       ELSE
+           WSPDNAME = '' 
+
         END IF
 
 C.........  Defines output types based on profile method
@@ -388,39 +397,26 @@ C.........  Defines output types based on profile method
             DAYAVER  = .TRUE.
             HOURAVER = .TRUE.
         END IF
-
 C.........  Determine optional linear equation for RWC profile calculation
         IF( PROF_METHOD == 'RWC' ) THEN
            SLOPE = ENVREAL( 'SLOPE', 'Enter A for RWC equation: y = Ax + B', 0.79, IOS )
            CONST = ENVREAL( 'CONSTANT', 'Enter B for RWC equation: y = Ax + B',42.12, IOS )
         END IF
 
-C.........  reset if hourly output setting for RWC profile method.
-        IF( PROF_METHOD == 'RWC' .AND. HOURAVER ) THEN
-            IF( .NOT. DAYAVER .AND. .NOT. MONAVER ) THEN
-                MESG = 'ERROR: Profile Method "'// TRIM( PROF_METHOD ) 
-     &          //'" does not process HOURLY temporal profiles.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+C.........  Error if hourly output setting for RWC profile method.
+        IF( PROF_METHOD == 'RWC' ) THEN
+            MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not' 
+     &          // ' process "'//TRIM(TPRO_TYPE)//'" temporal output option'
+            IF( TPRO_TYPE == 'HOURLY' ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-            MESG = 'WARNING: Profile Method "' // TRIM( PROF_METHOD ) 
-     &          //'" does not compute HOURLY but DAILY/MONTHLY temporal profiles'
-     &          //CRLF()//BLANK10//':: Resetting TPRO_OUTPUT to DAILY & MONTHLY' 
-            CALL M3MSG2( MESG )
+            HOURAVER = .FALSE.   ! override the setting
 
-            HOURAVER = .FALSE.
-
-C.........  Reset if daily or monthly output setting for AGNH3 profile method.
+C.........  Error if daily or monthly output setting for AGNH3 profile method.
         ELSE IF( NH3FLAG ) THEN
-            IF ( DAYAVER .OR. MONAVER ) THEN
-                MESG = 'WARNING: Profile Method "'//TRIM( PROF_METHOD ) 
-     &              // '" only computes HOURLY temporal profiles'
-     &             //CRLF()//BLANK10//':: Resetting TPRO_OUTPUT to HOURLY' 
-                CALL M3MSG2( MESG )
-            END IF
-            DAYAVER  = .FALSE.
-            MONAVER  = .FALSE.
-            HOURAVER = .TRUE.
+            MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not' 
+     &          // ' process "'//TRIM(TPRO_TYPE)//'" temporal output option'
+     &         //CRLF()//BLANK10//':: Set TPRO_OUTPUT to HOURLY'
+            IF ( DAYAVER .OR. MONAVER ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
 
         END IF
 
@@ -569,6 +565,33 @@ C.........  Assign time zone to inventory counties
             END IF
         END DO
 
+C.........  count no of states in modeling modain
+        NSTA = 0
+        PSTA = 0
+        DO I = 1, NSRGFIPS
+            ISTA = INT( SRGFIPS( I ) / 1000 ) * 1000
+            IF( ISTA /= PSTA ) THEN
+                NSTA = NSTA + 1
+                PSTA = ISTA
+            END IF
+        END DO
+
+C.........  Allocate array
+        ALLOCATE( SRGSTA( NSTA ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SRGSTA', PROGNAME )
+        SRGSTA = 0
+
+        NS = 0
+        PSTA = 0
+        DO I = 1, NSRGFIPS
+            ISTA = INT( SRGFIPS( I ) / 1000 ) * 1000
+            IF( ISTA /= PSTA ) THEN
+                NS = NS + 1
+                SRGSTA( NS ) = ISTA
+                PSTA = ISTA
+            END IF
+        END DO
+
 C.........  Define total number of sources (FIPS * SCC)
         NSRC = NSRGFIPS * NSCC
 
@@ -618,15 +641,23 @@ C.........  Output temporal x-ref output header for TREF_OUT file
 C.........  Read data from temporal x-ref input file.
 C           Only retain lines that contain both SCC and FIPS information.
 C.........  Get number of lines in x-ref input file
-        MXLINE = GETFLINE( XIDEV, 'Temporal x-ref input file' )
+        MXLINE=GETFLINE( XIDEV, 'Temporal x-ref input file [TREF_IN]' )
+
+        CALL M3MSG2( 'Reading Temporal x-ref input file' )
 
 C.........  Allocate local arrays
-        ALLOCATE( CSCCFIP( MXLINE ), STAT=IOS )
+        MXTREF = NSCC * ( NSRGFIPS + NSTA + 1 ) * 2
+        ALLOCATE( CSCCFIP( MXTREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSCCFIP', PROGNAME )
+        ALLOCATE( INDXREF( MXTREF,2 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDXREF', PROGNAME )
+        ALLOCATE( MATCHED( NSCC,NSRGFIPS+NSTA+1,2 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MATCHED', PROGNAME )
         CSCCFIP = ''
+        INDXREF = 0
+        MATCHED = 0
 
 C.........  Count a list of x-ref entries in TREF
-        NXREF = 0
         NMATCH = 0
         DO I = 1, MXLINE
 
@@ -647,113 +678,150 @@ C............  Skip blank or comment lines
             CSCC = TRIM   ( SEGMENT( 1 ) )
             FIPS = STR2INT( SEGMENT( 6 ) )
             CPOL = TRIM   ( SEGMENT( 5 ) )
-            IF( TRIM( SEGMENT( 5 ) ) == '' ) CPOL = '-9'
+            IF( FIPS < 1 ) FIPS = -9
+            IF( CPOL == '' .OR. CPOL == '0' ) CPOL = '-9'
 
-            LL = 0 
             L0 = INDEX1( CSCC, NSCC, SCCLIST )
             L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
+            L2 = 1 
+            LL = 0
 
-C.............  check pollutant-specific x-ref entries while processing AGNH3 mothod
-            IF( L0 > 0 .AND. L1 > 0 ) THEN
-                IF( CPOL == '-9' ) THEN
-                    LL = 1
-                ELSE
-                    LL = 0
+C.............  find matched entries
+            IF( L0 > 0 ) THEN
+                IF( L1 < 1 ) THEN
+                    NS = FIND1( FIPS, NSTA, SRGSTA )
+                    IF( NS   > 0 ) L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
+                    IF( FIPS < 1 ) L1 = NSRGFIPS + NSTA + 1   ! SCC-specific ultimate default (No FIPS)
                 END IF
-                IF( NH3FLAG .AND. CPOL == 'NH3' ) LL = 1
+
+                LL = 1 
+
+                WRITE( MESG, 94010 ) 'ERROR: pollutant-specific '//
+     &                'entry for SCC: ' // CSCC // ' at line', I, 
+     &                ' is NOT applicable'
+                IF( NH3FLAG ) THEN
+                    IF( CPOL == 'NH3' ) L2 = 2
+                    IF( CPOL /= '-9' .AND. CPOL /= 'NH3' )
+     &                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE 
+                    IF( CPOL /= '-9' ) 
+     &                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
             END IF
 
-            IF( LL < 1 ) THEN
-                NXREF = NXREF + 1    ! no 0f non-matched sources
-            ELSE
+C.............  check pollutant-specific x-ref entries while processing AGNH3 mothod
+            IF( LL > 0 ) THEN
+
 C.................  Concatenate all segments into a string
                 LINE = ''
                 DO J = 1, 12
                     LINE = TRIM( LINE ) //  TRIM( SEGMENT( J ) ) // ';'
                 END DO
 C.....................  Store all TREF entries including new ones
-                L2 = INDEX1( LINE, MXLINE, CSCCFIP )
-                IF( L2 > 0 ) CYCLE
+                LL = INDEX1( LINE, MXTREF, CSCCFIP )
+                IF( LL > 0 ) CYCLE
                 NMATCH = NMATCH + 1
-                CSCCFIP( NMATCH ) = TRIM( LINE )
-
+                INDXREF( NMATCH,1 ) = I
+                MATCHED( L0,L1,L2 ) = NMATCH
+                CSCCFIP( NMATCH )   = TRIM( LINE )
             END IF
 
         END DO
         
-        NXREF = NXREF + ( NSRGFIPS * NSCC )
-
         REWIND( XIDEV )
- 
+
 C.........  Concatenate org x-ref entries and add new FIPS if necessary
-C.........  Store a list of sources that matches with processing FIPS/SCC
-
+C.........  Store a list of entries that matches with processing FIPS/SCC
 C.........  Find ultimate FIPS/SCC x-ref when no matched in TREF
-        NXREF = 0
+        CALL M3MSG2('Processing Temporal x-ref input file..........')
 
+        MXWARN = 0
         DO I = 1, NSCC
-            
-            TSCC = SCCLIST( I )
             
             DO J = 1, NSRGFIPS
 
+                LL = 0
+
+                CSCC = SCCLIST( I )
+                FIPS = SRGFIPS( J )
+                ISTA = INT( FIPS/1000 ) * 1000
                 WRITE( CFIPS,'(I6.6)' ) SRGFIPS( J )
 
-                MATCHED = .FALSE.
-                DO K = 1, NMATCH
+                L0 = INDEX1( CSCC, NSCC, SCCLIST )
+                L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
 
-                    SEGMENT = ''
-                    CALL PARSLINE ( CSCCFIP( K ), MXSEG, SEGMENT )
+C.................  Check first SCC/FIPS/NH3 specific entrie for AGNH3 method
+                IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
 
-                    CSCC = TRIM   ( SEGMENT( 1 ) )
-                    FIPS = STR2INT( SEGMENT( 6 ) )
-                    CPOL = TRIM   ( SEGMENT( 5 ) )
+C.................  Check secondly SCC/FIPS specific entrie
+                IF( LL < 1 )  THEN
+                    LL = MATCHED( L0,L1,1 )
+                    IF( NH3FLAG .AND. LL > 0 ) INDXREF( LL,2 ) = 11111 ! Add non-pollutant-specific entries into TREF_OUT for other pollutants
+                END IF
+ 
+C.................  Check a list of state-specific entry first before using default profiles
+                IF( LL < 1 ) THEN
+                    NS = FIND1 ( ISTA, NSTA, SRGSTA )
+                    L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
+                    IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
+                    IF( LL < 1 )  LL = MATCHED( L0,L1,1 )
+                    IF( NH3FLAG .AND. LL > 0 ) INDXREF( LL,2 ) = 11111 ! Add non-pollutant-specific entries into TREF_OUT for other pollutants
+                END IF
 
-C.....................  if SCC is matched
-                    IF( TSCC == CSCC .AND. SRGFIPS( J ) == FIPS ) THEN
-                        MATCHED = .TRUE.     ! found the matched entry
-                        EXIT    ! skip if SCC/FIPS are matched.
-                    END IF
-
-                END DO
+C.................  Check a list of SCC-specific entry first before using default profiles
+                IF( LL < 1 ) THEN
+                    L1 = NSRGFIPS + NSTA + 1   ! SCC-specific ultimate default (No FIPS)
+                    IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
+                    IF( LL < 1 )  LL = MATCHED( L0,L1,1 )
+                    IF( NH3FLAG .AND. LL > 0 ) INDXREF( LL,2 ) = 11111 ! Add non-pollutant-specific entries into TREF_OUT for other pollutants
+                END IF
 
 C.................  Use default profiles when there no matched xref entry
                 LINE = ''
-                IF( .NOT. MATCHED ) THEN
+                IF( LL < 1 ) THEN
 
                     IF( NH3FLAG ) THEN
-                        WRITE( LINE,93000 ) TSCC // ';262;7;24;NH3;' //
+                        WRITE( LINE,93000 ) CSCC // ';262;7;24;NH3;' //
      &                                 CFIPS // ';;;;;;;'
                     ELSE
-                        WRITE( LINE,93000 ) TSCC // ';262;7;24;-9;' //
+                        WRITE( LINE,93000 ) CSCC // ';262;7;24;-9;' //
      &                                 CFIPS // ';;;;;;;'
                     END IF
 
                     WRITE( MESG,93000 ) 'WARNING: Could not find ' //
-     &                  'x-ref entries for SCC: ' // TSCC // 
+     &                  'x-ref entries for SCC: ' // CSCC // 
      &                  ' and FIPS: '// CFIPS // CRLF() // BLANK10
      &                   //'New x-ref entries for these SCC and FIPS '//
      &                   'are added to TREF_OUT output file'
-                    CALL M3MSG2( MESG )
-                ELSE
+                    MXWARN = MXWARN + 1
+                    IF( MXWARN < 100 ) CALL M3MSG2( MESG )
+
 C.................  Concatenate all segments into a string
+                ELSE
+
+C.....................  Do not remove non-pollutant specific xref entries during AGNH3 method
+                    IF( INDXREF( LL,2 ) /= 11111 ) THEN 
+                        INDXREF( LL,2 ) = 99999  ! indicator of used xref entries
+                    END IF
+
                     DO L = 1, 12
-                        SEGMENT( 1 ) = TSCC
+                        SEGMENT = ''
+                        CALL PARSLINE ( CSCCFIP( LL ), MXSEG, SEGMENT )
+
+                        SEGMENT( 1 ) = CSCC
                         SEGMENT( 6 ) = CFIPS
                         IF( NH3FLAG ) SEGMENT( 5 ) = 'NH3'
                         LINE = TRIM( LINE )//TRIM( SEGMENT( L ) ) // ';'
                     END DO
+
                 END IF
 
 C.................  Add new temporal x-ref and output them to XREF_OUT file
 C                   Create new speciation profile ID string
                 TPROFID = ''
-                IF( PREFIX == ' ' ) THEN
-                    WRITE( TPROFID,'( I5.5 )' ) SRGFIPS( J )
-                ELSE
-                    WRITE( TPROFID,'(A,I4.4)' ) PREFIX, NXREF
-                ENDIF
-
+                WRITE( TPROFID,'( I5.5 )' ) SRGFIPS( J )
+                
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
                 IF( MONAVER ) THEN
                     LINE = TRIM( LINE )//TRIM( TPROFID )//';'
@@ -781,6 +849,8 @@ C.................  output other x-ref entries to TREF_OUT file
 C.........  Store the rest of unmatched original x-ref entries        
         DO I = 1, MXLINE
 
+            LL = 0 
+
             READ( XIDEV, '(A)', IOSTAT=IOS ) LINE
 
 C............  Parse line into substrings (segments)
@@ -789,27 +859,14 @@ C............  Parse line into substrings (segments)
                
             CALL PARSLINE ( LINE, MXSEG, SEGMENT )
 
-            CSCC = TRIM   ( SEGMENT( 1 ) )
-            CPOL = TRIM   ( SEGMENT( 5 ) )
-            FIPS = STR2INT( SEGMENT( 6 ) )
-            IF( TRIM( SEGMENT( 5 ) ) == '' ) CPOL = '-9'
+C.............  Skip all matched org x-ref entries
+            DO J = 1, MXTREF
+                IF( I == INDXREF( J,1 ) ) LL = J 
+            END DO
+            IF( INDXREF( LL,2 ) == 99999 ) CYCLE
 
-            LL = 0
-            L0 = INDEX1( CSCC, NSCC, SCCLIST )
-            L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
-
-C.............  check pollutant-specific x-ref entries while processing AGNH3 mothod
-            IF( L0 > 0 .AND. L1 > 0 ) THEN
-                IF( CPOL == '-9' ) THEN
-                    LL = 1
-                ELSE
-                    LL = 0
-                END IF
-                IF( NH3FLAG .AND. CPOL == 'NH3' ) LL = 1 
-            END IF
-
-C.....................  Store all TREF entries including new ones
-            IF( LL < 1 ) WRITE( XODEV,93000 ) TRIM( LINE )
+C.............  Ouput all unmatched Xref entries
+            WRITE( XODEV,93000 ) TRIM( LINE )
 
         END DO
 
@@ -868,7 +925,6 @@ C           set the ending date forward one day
 C.........  Convert start and end dates and times back to GMT
         CALL NEXTIME( SDATE, STIME, TZONE*10000 )
         CALL NEXTIME( EDATE, ETIME, TZONE*10000 )
-!       print*,TZMIN,TZMAX,TZONE,TSPREAD,SDATE,EDATE,NSTEPS,'TZMIN,TZMAX,TZONE,TSPREAD'
 
 C.........  Find the total number of time steps
         NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
@@ -1013,9 +1069,8 @@ C.........  Write HDRer to month-of-year temporal profile output file
             WRITE( MODEV,94040 ) '#YEAR=', INT( EPI_SDATE/1000 )
             WRITE( MODEV,93000 ) '#GRDNAME=' // GDNAM3D // COORD
             WRITE( MODEV,94010 ) '#PERIOD=', EPI_SDATE ,'-', EPI_EDATE
-            WRITE( MODEV,93000 ) '#DESC: Month of year profiles ' //
-     &          'generated by GenTPRO program for profile method :: ' //
-     &          TRIM( PROF_METHOD )
+            WRITE( MODEV,93000 ) '#DESC: Month of year profiles from '//
+     &          'GenTPRO using profile method :: '//TRIM(PROF_METHOD)
             WRITE( MODEV,93000 ) '#PROFID,JAN,FEB,MAR,APR,MAY,,,,DEC'
         END IF
 
@@ -1026,9 +1081,8 @@ C.........  Write HDRer to day-of-year temporal profile output file
             WRITE( DODEV,94040 ) '#YEAR=', INT( EPI_SDATE/1000 )
             WRITE( DODEV,93000 ) '#GRDNAME=' // GDNAM3D // COORD
             WRITE( DODEV,94010 ) '#PERIOD=', EPI_SDATE ,'-', EPI_EDATE
-            WRITE( DODEV,93000 ) '#DESC: Day of year profiles ' //
-     &          'generated by GenTPRO program for profile method :: '//
-     &          TRIM( PROF_METHOD )
+            WRITE( DODEV,93000 ) '#DESC: Day of year profiles from'//
+     &          'GenTPRO using profile method :: '//TRIM(PROF_METHOD)
             WRITE( DODEV,93000 ) '#PROFID,MON,DAY1,DAY2,DAY3,...,DAY31'
         END IF
 
@@ -1068,17 +1122,6 @@ C.........  Allocate memory for storing hourly/annual meteorology profiles
         ANNSRC = 0.
         TMPDSRC = 0.
         TMPMSRC = 0.
-
-C.........  Allocate memory for temporal profile data
-        ALLOCATE( PROF_MON( NSRGFIPS,NMONTH ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PROF_MON', PROGNAME )
-        ALLOCATE( PROF_DAY( NSRGFIPS,31 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PROF_DAY', PROGNAME )
-        ALLOCATE( PROF_HRL( NSRGFIPS,NSTEPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PROF_HRL', PROGNAME )
-        PROF_MON = 0.
-        PROF_DAY = 0.
-        PROF_HRL = 0.
 
 C.........  dates/daylight saving arrays
         ALLOCATE( DAYBEGT( NSRGFIPS ), STAT=IOS )
@@ -1285,7 +1328,7 @@ C                        temporal profiles.
 
 C.................  Calculate tmp daily total from hourly values
                 TMPDSRC( S ) = TMPDSRC( S ) + HRLSRC( S,T )
-!      if(s==159) write(*,'(a,12i9)') 'hourly::',jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH
+!      if(s==1) write(*,'(a,7i9,f12.3)') 'Hourly::',T,jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH,HRLSRC(1,T)
                 IF( HOURIDX == 24 ) THEN
 
 C.....................  County-specific procesing days
@@ -1300,7 +1343,7 @@ C.....................  Sum hourly to daily total in local time
 C.....................  Sum daily to monthly total in local time
                     TMPMSRC( S ) = TMPMSRC( S ) + DAYSRC( S,NDAY )
 
-!       if(s==159) print*,'Daily::',JDATE,JTIME,MONTH,NDAY,MONTH,DAYSRC(S,NDAY)
+!      if(s==1) write(*,'(a,7i9,f12.3)') 'Daily ::',T,jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH,DAYSRC(1,NDAY)
                     IF( MONTH /= TMPMNTH ) THEN
 
 C......,,,,...............  Sum daily to monthly total in local time
@@ -1308,7 +1351,7 @@ C......,,,,...............  Sum daily to monthly total in local time
 
 C.........................  Sum Monthly to Annual total in local time
                         ANNSRC( S ) = ANNSRC( S ) + MONSRC( S,MONTH )
-!       if(s==159) print*,'Monthly::',JDATE,JTIME,MONTH,NDAY,MONTH,MONSRC(S,MONTH)
+!      if(s==1) write(*,'(a,7i9,f12.3)') 'Month ::',T,jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH,MONSRC(1,MONTH)
 
                         TMPMSRC( S ) = 0.0    ! reset tmp monthly total array
 
@@ -1324,11 +1367,38 @@ C.............  Increment loop time
 
         END DO   ! End T-loop on hours of met files
 
+C.........  Reset annual total to 1.0 if it is zero
+        DO S = 1, NSRGFIPS 
+            IF( ANNSRC( S ) == 0.0 ) THEN
+                ANNSRC( S ) = 1.0
+                DO I = 1, NSCC
+                    WRITE( MESG,94010 ) 'CRITICAL WARNING: All temporal'//
+     &               ' profiles are ZERO for county: ', SRGFIPS( S ), 
+     &               ' and SCC: ' // SCCLIST( I )
+                    CALL M3MSG2( MESG ) 
+                END DO
+                MESG = ':: It will result in zeroing out inventory '//
+     &                 'if you use these temporal profiles'
+                CALL M3MSG2( MESG )
+            END IF
+        END DO
+
 C.........  Deallocate arrays no-longer needed.
         DEALLOCATE( TMPDSRC, TMPMSRC )
 
 C.........  Output Temporal profiles and new/updated x-ref entries
 C.........  Compute daily/monthly temporal profile fractions and generate output
+
+C.........  Allocate memory for temporal profile data
+        ALLOCATE( PROF_MON( NSRGFIPS,NMONTH ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PROF_MON', PROGNAME )
+        ALLOCATE( PROF_DAY( NSRGFIPS,31 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PROF_DAY', PROGNAME )
+        ALLOCATE( PROF_HRL( NSRGFIPS,NSTEPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PROF_HRL', PROGNAME )
+        PROF_MON = 0.
+        PROF_DAY = 0.
+        PROF_HRL = 0.
 
 C......... Output monthly temporal profiles
 C.........  Compute month of year temporal profiles
@@ -1336,40 +1406,53 @@ C.........  Compute month of year temporal profiles
 
             DO MM = 1, NMONTH
                 PROF_MON( :,MM ) = MONSRC( :,MM ) / ANNSRC( : )
-c               print*,PROF_MON(1,MM),MONSRC(1,MM),ANNSRC(1)
             END DO
 
-            CALL WRITE_PROFILE( MODEV, 'MONTHLY', PREFIX, MONTH,
-     &                          NSRGFIPS, NMONTH, PROF_MON )
+C.............  Output monthly profiles by county
+            DO S = 1, NSRGFIPS
+                WRITE( MODEV, "(I5.5, 12(A,E10.3))" ) SRGFIPS( S ),
+     &              ((',', PROF_MON( S,NP )), NP = 1,12 )
+            END DO
 
         END IF
+
+C.........  Deallocate local arrays        
+        DEALLOCATE( PROF_MON )
 
 C......... Output daily temporal profiles
 C.........  Compute day of year temporal profiles
         IF( DAYAVER ) THEN
-            DO S = 1, NSRGFIPS 
-                DO DD = 1, PROCDAYS( S ) 
 
-                    JDATE = INT( SDATE/1000 ) * 1000 + DD
-                    CALL DAYMON( JDATE + 1, TMPMNTH, TDAY )
-                    CALL DAYMON( JDATE, MONTH, DAY )
+            DO DD = 1, MAXVAL( PROCDAYS )
 
-                    PROF_DAY( S,DAY ) = DAYSRC( S,DD ) / ANNSRC( S )
-c       print*,DD,JDATE,MONTH,DAY,TMPMNTH,TDAY
-c       print*,DD,JDATE,PROF_DAY(1,DAY),DAYSRC(1,DD),ANNSRC(1)
+                JDATE = INT( SDATE/1000 ) * 1000 + DD
+                CALL DAYMON( JDATE+1, TMPMNTH, TDAY )
+                CALL DAYMON( JDATE  , MONTH  , DAY  )
 
-                    IF( MONTH /= TMPMNTH ) THEN
-                        CALL WRITE_PROFILE( DODEV, 'DAILY', PREFIX, MONTH,
-     &                                  NSRGFIPS, DAY, PROF_DAY )
-                    END IF
+                PROF_DAY( :,DAY ) = DAYSRC( :,DD ) / ANNSRC( : )
 
-                END DO
+C.................  Output daily profiles by county
+                IF( MONTH /= TMPMNTH ) THEN
+
+                    DO S = 1, NSRGFIPS
+                        WRITE( DODEV, "(I5.5,A,I2.2,31(A,E10.3))" )
+     &                      SRGFIPS( S ), ',', MONTH,
+     &                      ( (',', PROF_DAY( S,NP ) ), NP = 1,31 )
+                    END DO
+
+                    PROF_DAY = 0.0    ! re-initializing 
+
+                END IF
+!       write(*,'(3I8,4F12.3,A)') JDATE,MONTH,DAY,PROF_DAY(1,day),DAYSRC(1,DD),MONSRC(1,MONTH),ANNSRC(1)
+
             END DO
 
         END IF
             
 C.........  Deallocate local arrays        
-        DEALLOCATE( PROF_DAY, PROF_MON )
+        DEALLOCATE( PROF_DAY )
+        
+C.......... Reallocate local arrays
         ALLOCATE( PROF_DAY( NSRGFIPS,NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PROF_DAY', PROGNAME )
         ALLOCATE( PROF_MON( NSRGFIPS,NSTEPS ), STAT=IOS )
@@ -1408,7 +1491,6 @@ C.............  Set header values that cannot be default
             STIME3D = JTIME
             TSTEP3D = 10000
             NVARS3D = 4
-            IF( NH3FLAG ) NVARS3D = 2
             NROWS3D = NSRGFIPS
             NLAYS3D = 1
 
@@ -1418,31 +1500,23 @@ C.............  Set header values that cannot be default
             VDESC3D( J ) = 'County FIPS code'
             VTYPE3D( J ) = M3INT
 
-            IF( NH3FLAG ) THEN
-                J = 2
-                VNAME3D( J ) = 'NH3_PROF'
-                UNITS3D( J ) = 'n/a'
-                VDESC3D( J ) = 'Hourly NH3 factor by county'
-                VTYPE3D( J ) = M3REAL
-            ELSE
-                J = 2
-                VNAME3D( J ) = 'HR_YEAR'
-                UNITS3D( J ) = 'n/a'
-                VDESC3D( J ) = 'Hour of year profiles by county'
-                VTYPE3D( J ) = M3REAL
+            J = 2
+            VNAME3D( J ) = 'HR_YEAR'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Hour of year profiles by county'
+            VTYPE3D( J ) = M3REAL
 
-                J = 3
-                VNAME3D( J ) = 'HR_MONTH'
-                UNITS3D( J ) = 'n/a'
-                VDESC3D( J ) = 'Hour of month profiles by county'
-                VTYPE3D( J ) = M3REAL
+            J = 3
+            VNAME3D( J ) = 'HR_MONTH'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Hour of month profiles by county'
+            VTYPE3D( J ) = M3REAL
   
-                J = 4
-                VNAME3D( J ) = 'HR_DAY'
-                UNITS3D( J ) = 'n/a'
-                VDESC3D( J ) = 'Hour of day profiles by county'
-                VTYPE3D( J ) = M3REAL
-            END IF
+            J = 4
+            VNAME3D( J ) = 'HR_DAY'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Hour of day profiles by county'
+            VTYPE3D( J ) = M3REAL
 
 C.............  Open new file
             IF( .NOT. OPEN3( HNAME, FSUNKN3, PROGNAME ) ) THEN
@@ -1483,7 +1557,8 @@ C.....................  Skip if begining/ending hours are out of range
                     IF( T <= TSPREAD .AND. HOURIDX > TSPREAD ) CYCLE
                     IF( T > EPI_NSTEPS .AND. HOURIDX < TSPREAD ) CYCLE
 
-!       if(S==159) write(*,'(8I8)')T,JDATE,JTIME,NDAY,MONTH,HOURIDX
+C       if(s==1) write(*,'(A,6I8,2F12.3)') 'NCF:',T,JDATE,month,day,houridx,nday,daysrc(s,nday),monsrc(s,month)
+
 C.....................  Estimate hourly month fractions when profile method is not AGNH3
 C                       Equation (2) in design document.
                     IF( MONSRC( S,MONTH ) /= 0. ) THEN
@@ -1499,6 +1574,7 @@ C.........................  Calculate hour of month profiles
 C.........................  Calculate hour of day profiles
                         PROF_DAY( S,T ) = HRLSRC( S,T )
      &                                         / DAYSRC( S,NDAY )
+c       if(s==1) write(*,'(A,6I8,3F12.3)') 'NCF:',T,JDATE,month,day,houridx,nday,hrlsrc(s,t),daysrc(s,nday),prof_day(s,t)
                     ELSE
                         MESG = 'ERROR: Monthly/annual total is zero'
                         IF( .NOT. NH3FLAG ) THEN
@@ -1513,60 +1589,36 @@ C.....................  current processing month per county
 
                 END DO   ! Source S loop
 
-C.................  Write county specific hourly factors when Avg_method is AGNH3
-                IF( NH3FLAG ) THEN
-                
-C.....................  Write county codes to file
-                    IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
-     &                        SRGFIPS ) ) THEN
-                         MESG = 'Could not write county codes to "' //
-     &                          TRIM( HNAME ) // '".'
-                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
+C.................  Write county codes to file
+                IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
+     &                    SRGFIPS ) ) THEN
+                     MESG = 'Could not write county codes to "' //
+     &                      TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
 
-C.....................  Write county-specific hourly NH3 profile value to file
-                    IF( .NOT. WRITE3( HNAME, 'NH3_PROF', JDATE, JTIME,
-     &                        PROF_DAY( :,T ) ) ) THEN
-                         MESG = 'Could not write hour of month profile '
-     &                          // 'to "' // TRIM( HNAME ) //  '".'
-                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
-                
-C.................  Write county specific hourly factors when Avg_method is MET
-                ELSE
+C.................  Write one hour of month profile value to file
+                IF( .NOT. WRITE3( HNAME, 'HR_YEAR', JDATE, JTIME,
+     &                    PROF_HRL( :,T ) ) ) THEN
+                     MESG = 'Could not write hour of month profile '
+     &                      // 'to "' // TRIM( HNAME ) //  '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
 
-C.....................  Write county codes to file
-                    IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
-     &                        SRGFIPS ) ) THEN
-                         MESG = 'Could not write county codes to "' //
-     &                          TRIM( HNAME ) // '".'
-                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
+C.................  Write one hour of month profile value to file
+                IF( .NOT. WRITE3( HNAME, 'HR_MONTH', JDATE, JTIME,
+     &                    PROF_MON( :,T ) ) ) THEN
+                     MESG = 'Could not write hour of year profile '//
+     &                      'data to "' // TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
 
-C.....................  Write one hour of month profile value to file
-                    IF( .NOT. WRITE3( HNAME, 'HR_YEAR', JDATE, JTIME,
-     &                        PROF_HRL( :,T ) ) ) THEN
-                         MESG = 'Could not write hour of month profile '
-     &                          // 'to "' // TRIM( HNAME ) //  '".'
-                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
-
-C.....................  Write one hour of month profile value to file
-                    IF( .NOT. WRITE3( HNAME, 'HR_MONTH', JDATE, JTIME,
-     &                        PROF_MON( :,T ) ) ) THEN
-                         MESG = 'Could not write hour of year profile '//
-     &                          'data to "' // TRIM( HNAME ) // '".'
-                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
-
-C.....................  Write one hour of day profile value to file
-                    IF( .NOT. WRITE3( HNAME, 'HR_DAY', JDATE, JTIME,
-     &                        PROF_DAY( :,T ) ) ) THEN
-                         MESG = 'Could not write hour of year profile '//
-     &                          'data to "' // TRIM( HNAME ) // '".'
-                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
-
+C.................  Write one hour of day profile value to file
+                IF( .NOT. WRITE3( HNAME, 'HR_DAY', JDATE, JTIME,
+     &                    PROF_DAY( :,T ) ) ) THEN
+                     MESG = 'Could not write hour of year profile '//
+     &                      'data to "' // TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
 
 C.................  Increment loop time
@@ -1603,79 +1655,5 @@ C...........   Internal buffering fosrmats............ 94xxx
 
 94070   FORMAT( A, F5.1, A )
 
-C******************  INTERNAL SUBPROGRAMS  *****************************
-
-        CONTAINS
-
-C-----------------------------------------------------------------------
-
-C......... Reads SCC and FIPS from a temporal cross-reference file.
-
-            SUBROUTINE WRITE_PROFILE( UNIT, AVG_METHOD, PREFIX,
-     &                            MONTH, NSRGFIPS, NUM_FRAC, PROF_DAT )
-
-C.........  Input profile variables
-            INTEGER,      INTENT( IN ) :: UNIT         ! Logical unit of output file
-            CHARACTER(*), INTENT( IN ) :: AVG_METHOD   ! averging method name
-            CHARACTER(*), INTENT( IN ) :: PREFIX       ! Numeric profile prefix (1 char)
-            INTEGER,      INTENT( IN ) :: MONTH        ! Processing month
-            INTEGER,      INTENT( IN ) :: NSRGFIPS     ! Number of profiles to write
-            INTEGER,      INTENT( IN ) :: NUM_FRAC     ! Number of fractional data values in each profile:
-            REAL   ,      INTENT( IN ) :: PROF_DAT(NSRGFIPS,NUM_FRAC)   ! Array of profile fractional data values
-
-C............  Local variables
-            INTEGER    N, NF, NP    ! Loop counters
-
-C-----------------------------------------------------------------------
-C   begin body of subroutine WRITE_PROFILE
-
-            SELECT CASE( AVG_METHOD )
-
-C................  Monthly temporal profile: 12 fractional values
-            CASE( 'MONTHLY' )
-
-C...............  Include numeric profile prefix
-                IF( PREFIX == '' ) THEN
-                    DO NP = 1, NSRGFIPS
-                        WRITE( UNIT, "(I5.5, 12(A,E10.3))" ) SRGFIPS(NP),
-     &                      ((',', PROF_DAT(NP,NF)), NF = 1, NUM_FRAC)
-                    END DO
-C..................  Do not include numeric profile prefix
-                ELSE
-                    DO NP = 1, NSRGFIPS
-                        WRITE( UNIT, "(A,I4.4,12(A,E10.3))" ) PREFIX, NP,
-     &                        ((',', PROF_DAT(NP,NF)), NF = 1,NUM_FRAC)
-                    END DO
-                END IF
-
-C.............  Daily temporal profile: 31 fractional values
-            CASE( 'DAILY' )
-
-C.................  Include numeric profile prefix
-                IF( PREFIX == '' ) THEN
-                    DO NP = 1, NSRGFIPS
-                        WRITE( UNIT, "(I5.5,A,I2.2,31(A,E10.3))" )
-     &                       SRGFIPS( NP ), ',', MONTH,
-     &                       ((',', PROF_DAT(NP,NF)), NF = 1, NUM_FRAC)
-                    END DO
-C.................  Do not include numeric profile prefix
-                ELSE
-                    DO NP = 1, NSRGFIPS
-                        WRITE( UNIT, "(A,I4.4,A,I2.2,31(A,E10.3))" )
-     &                       PREFIX, NP, ',', MONTH,
-     &                       ((',', PROF_DAT(NP,NF)), NF = 1,NUM_FRAC)
-                    END DO
-                END IF
-
-            END SELECT
-
-            RETURN
-
-C.............   Formatted file I/O formats............ 93xxx
-93000       FORMAT( A )
-94010       FORMAT( 10( A, :, I8, :, 1X ) )
-94040       FORMAT( A, I4 )
-
-            END SUBROUTINE WRITE_PROFILE
 
         END PROGRAM GENTPRO
