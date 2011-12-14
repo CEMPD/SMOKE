@@ -125,7 +125,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C.....  Define temporal profile type constants for enumeration
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
 
-        INTEGER, PARAMETER :: MXVAR  = 20
+        INTEGER, PARAMETER :: MXVAR  = 100
         INTEGER, PARAMETER :: MXSEG  = 16
         INTEGER, PARAMETER :: NMONTH = 12
         INTEGER, PARAMETER :: MXDAYS  = 366
@@ -142,11 +142,8 @@ C...........   real arrays
         REAL   , ALLOCATABLE :: TMPDSRC( : )       !  tmp daily total
         REAL   , ALLOCATABLE :: TMPMSRC( : )       !  tmp monthly total
         REAL   , ALLOCATABLE :: MINTEMP ( : )      !  min temp values by source (FIPS)
-
-        REAL   , ALLOCATABLE :: PROF_MON(:,:)  ! Array of monthly profile fractional data values
-        REAL   , ALLOCATABLE :: PROF_DAY(:,:)  ! Array of daily profile fractional data values
-        REAL   , ALLOCATABLE :: PROF_HRL(:,:)  ! Array of hourly profile fractional data values
-
+        REAL   , ALLOCATABLE :: PROF_MON(:,:)      ! Array of monthly profile fractional data values
+        REAL   , ALLOCATABLE :: PROF_DAY(:,:)      ! Array of daily profile fractional data values
 
 C...........   integer arrays
         INTEGER, ALLOCATABLE :: DAYBEGT ( : )      ! daily start time HHMMSS
@@ -158,9 +155,6 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: SRGSTA  ( : )      ! list of state in surrogates
         INTEGER, ALLOCATABLE :: INDXREF ( :,: )    ! Index of matched xref entries 
         INTEGER, ALLOCATABLE :: MATCHED ( :,:,: )  ! FIPS/SCC/POL matched source
-
-C...........  logical arrays
-        LOGICAL, ALLOCATABLE :: LDAYSAV ( : )      ! true: src uses daylight time
 
 C...........  character arrays
         CHARACTER(16)                  SEGMENT( MXSEG )
@@ -188,7 +182,7 @@ C...........   File units and logical names:
         INTEGER      DODEV ! unit number for met-based daily   temporal profile output file
         INTEGER      HODEV ! unit number for met-based hourly  temporal profile output file
 
-        CHARACTER(16) METNAME  ! logical name for meteorology files
+        CHARACTER(16)    METNAME  ! logical name for meteorology files
         CHARACTER(16) :: HNAME= 'TPRO_HOUR'   ! logical name for hourly output in ncf format
 
 C...........   Other local variables:
@@ -265,6 +259,7 @@ C...........   Other local variables:
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
 
         CHARACTER(10)      CSCC        !  SCC code
+        CHARACTER(1000)    CSCCLIST    !  tmp SCC list line buffer 
         CHARACTER(16)      CPOL        !  Pollutant code 
         CHARACTER(10)      TSCC        !  tmp SCC code
         CHARACTER(6)       CFIPS       !  FIPS code
@@ -325,10 +320,19 @@ C.........  Allocate arrays
 
 C.........  Get a list of SCCs for meteorology processing.
         MESG = 'Specifies a list of SCCs'
-        IF( .NOT. STRLIST( 'SCC_LIST',MESG,MXVAR,NSCC,SCCLIST ) ) THEN
-            MESG = 'Could not read list of SCCs'
+        CALL ENVSTR( 'SCC_LIST', MESG, '', CSCCLIST, IOS )
+        CALL PARSLINE( CSCCLIST, MXVAR, SCCLIST )
+
+        IF( CSCCLIST == ' ' ) THEN
+            MESG = 'ERROR: MUST define a list of SCCs [SCC_LIST]'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+
+        NSCC = 0
+        DO I = 1, MXVAR
+           IF( SCCLIST( I ) /= ' ' ) NSCC = NSCC + 1
+        END DO
+
 
 C.........  Get name of surrogate IDs to use
         MESG = 'Specifies a list of spatial surrogate IDs'
@@ -407,7 +411,8 @@ C.........  Error if hourly output setting for RWC profile method.
         IF( PROF_METHOD == 'RWC' ) THEN
             MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not' 
      &          // ' process "'//TRIM(TPRO_TYPE)//'" temporal output option'
-            IF( TPRO_TYPE == 'HOURLY' ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            IF( TPRO_TYPE == 'HOURLY' .OR. TPRO_TYPE == 'ALL' ) 
+     &          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
             HOURAVER = .FALSE.   ! override the setting
 
@@ -416,6 +421,7 @@ C.........  Error if daily or monthly output setting for AGNH3 profile method.
             MESG = 'ERROR: Profile Method "'//TRIM( PROF_METHOD )//'" can not' 
      &          // ' process "'//TRIM(TPRO_TYPE)//'" temporal output option'
      &         //CRLF()//BLANK10//':: Set TPRO_OUTPUT to HOURLY'
+            IF ( TPRO_TYPE == 'ALL' )   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
             IF ( DAYAVER .OR. MONAVER ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
 
         END IF
@@ -823,14 +829,14 @@ C                   Create new speciation profile ID string
                 WRITE( TPROFID,'( I5.5 )' ) SRGFIPS( J )
                 
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
-                IF( MONAVER ) THEN
+                IF( .NOT. HOURAVER .AND. MONAVER ) THEN
                     LINE = TRIM( LINE )//TRIM( TPROFID )//';'
                 ELSE
                     LINE = TRIM( LINE )//';'
                 END IF
 
 C.................  Append new DAILY temporal profile ID to new/existing x-ref entry
-                IF( DAYAVER ) THEN
+                IF( .NOT. HOURAVER .AND. DAYAVER ) THEN
                     LINE = TRIM( LINE )//TRIM( TPROFID )//';'
                 ELSE
                     LINE = TRIM( LINE )//';'
@@ -1086,6 +1092,59 @@ C.........  Write HDRer to day-of-year temporal profile output file
             WRITE( DODEV,93000 ) '#PROFID,MON,DAY1,DAY2,DAY3,...,DAY31'
         END IF
 
+
+C.........  Open output file for hourly temporal profiles
+        IF( HOURAVER ) THEN
+
+C.............  Initialize I/O API output file headers
+            CALL HDRMISS3
+
+            FDESC3D( 1 ) = 'GENTPRO-based meteorology profiles file'
+            FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
+            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
+            WRITE( FDESC3D( 4 ), 93000 ) '/PROFILE_METHOD/ ' // PROF_METHOD
+            WRITE( FDESC3D( 5 ), 93000 ) '/TPRO_OUTPUT/ '// ' HOURLY'
+            WRITE( FDESC3D( 6 ), 93000 ) '/T_UNITS/ "deg K"'
+            FDESC3D( 7 ) = '/T_VNAME/ ' // TVARNAME
+            FDESC3D( 8 ) = '/NOTE/ Time 000000 in file represents ' //
+     &                     '0 hour in output time zone'
+            WRITE( FDESC3D( 9 ), 94010 ) '/END DATE/ ', EDATE
+
+            FDESC3D( 21 ) = '/INVEN FROM/ ' // 'N/A'
+            FDESC3D( 22 ) = '/INVEN VERSION/ ' // 'N/A'
+
+C.............  Set header values that cannot be default
+            JDATE = SDATE
+            JTIME = 0000
+
+            SDATE3D = JDATE
+            STIME3D = JTIME
+            TSTEP3D = 10000
+            NROWS3D = NSRGFIPS
+            NLAYS3D = 1
+            NVARS3D = 2
+
+            J = 1
+            VNAME3D( J ) = 'COUNTIES'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'County FIPS code'
+            VTYPE3D( J ) = M3INT
+
+            J = 2
+            VNAME3D( J ) = 'HRL_BY_SRC'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Hourly values by source'
+            VTYPE3D( J ) = M3REAL
+
+C.............  Open new file
+            IF( .NOT. OPEN3( HNAME, FSUNKN3, PROGNAME ) ) THEN
+                 MESG = 'Could not create new output file ' //
+     &                 TRIM( HNAME )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+        END IF
+
 C.........  Allocate met variable arrays
         ALLOCATE( TA( METNGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TA', PROGNAME )
@@ -1128,14 +1187,9 @@ C.........  dates/daylight saving arrays
         CALL CHECKMEM( IOS, 'DAYBEGT', PROGNAME )
         ALLOCATE( DAYENDT( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYENDT', PROGNAME )
-        ALLOCATE( LDAYSAV( NSRGFIPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LDAYSAV', PROGNAME )
         ALLOCATE( PROCDAYS( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PROCDAYS', PROGNAME )
         PROCDAYS = 0
-
-C.........  Create array of which sources are affected by daylight savings
-        CALL GETDYSAV( NSRGFIPS, SRGFIPS, LDAYSAV )
 
 C.........  Process meteorology data...
         MESG = 'Processing meteorology data using variables ' //
@@ -1159,7 +1213,7 @@ C.................  Write message for day of week and date
                 CALL M3MSG2( MESG )
 
 C.................  Set start and end hours of day for all sources
-                CALL SETSRCDY( NSRGFIPS, JDATE, TZONES, LDAYSAV, .TRUE.,
+                CALL SETSRCDY( NSRGFIPS, JDATE, TZONES, USEDAYLT, .TRUE.,
      &                         DAYBEGT, DAYENDT )
             END IF
 
@@ -1328,7 +1382,7 @@ C                        temporal profiles.
 
 C.................  Calculate tmp daily total from hourly values
                 TMPDSRC( S ) = TMPDSRC( S ) + HRLSRC( S,T )
-!      if(s==1) write(*,'(a,7i9,f12.3)') 'Hourly::',T,jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH,HRLSRC(1,T)
+
                 IF( HOURIDX == 24 ) THEN
 
 C.....................  County-specific procesing days
@@ -1343,7 +1397,6 @@ C.....................  Sum hourly to daily total in local time
 C.....................  Sum daily to monthly total in local time
                     TMPMSRC( S ) = TMPMSRC( S ) + DAYSRC( S,NDAY )
 
-!      if(s==1) write(*,'(a,7i9,f12.3)') 'Daily ::',T,jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH,DAYSRC(1,NDAY)
                     IF( MONTH /= TMPMNTH ) THEN
 
 C......,,,,...............  Sum daily to monthly total in local time
@@ -1351,7 +1404,6 @@ C......,,,,...............  Sum daily to monthly total in local time
 
 C.........................  Sum Monthly to Annual total in local time
                         ANNSRC( S ) = ANNSRC( S ) + MONSRC( S,MONTH )
-!      if(s==1) write(*,'(a,7i9,f12.3)') 'Month ::',T,jdate,JTIME,MONTH,NDAY,HOURIDX,TMPMNTH,MONSRC(1,MONTH)
 
                         TMPMSRC( S ) = 0.0    ! reset tmp monthly total array
 
@@ -1360,6 +1412,28 @@ C.........................  Sum Monthly to Annual total in local time
                 END IF
 
             END DO   ! source loop: S = 1, NSRGFIPS
+
+C.............  Output hourly value by source to TPRO_HOUR file
+            IF( HOURAVER ) THEN
+
+C.................  Write county codes to file
+                IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
+     &                    SRGFIPS ) ) THEN
+                     MESG = 'Could not write county codes to "' //
+     &                      TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+C.................  Write one hour of day profile value to file
+                IF( .NOT. WRITE3( HNAME, 'HRL_BY_SRC', JDATE, JTIME,
+     &                   HRLSRC( :,T ) ) ) THEN
+                     MESG = 'Could not write hourly values by sources'//
+     &                      ' data to "' // TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+            END IF
+
 
 C.............  Increment loop time
             LDATE = JDATE
@@ -1394,11 +1468,8 @@ C.........  Allocate memory for temporal profile data
         CALL CHECKMEM( IOS, 'PROF_MON', PROGNAME )
         ALLOCATE( PROF_DAY( NSRGFIPS,31 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PROF_DAY', PROGNAME )
-        ALLOCATE( PROF_HRL( NSRGFIPS,NSTEPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PROF_HRL', PROGNAME )
         PROF_MON = 0.
         PROF_DAY = 0.
-        PROF_HRL = 0.
 
 C......... Output monthly temporal profiles
 C.........  Compute month of year temporal profiles
@@ -1443,7 +1514,6 @@ C.................  Output daily profiles by county
                     PROF_DAY = 0.0    ! re-initializing 
 
                 END IF
-!       write(*,'(3I8,4F12.3,A)') JDATE,MONTH,DAY,PROF_DAY(1,day),DAYSRC(1,DD),MONSRC(1,MONTH),ANNSRC(1)
 
             END DO
 
@@ -1451,183 +1521,6 @@ C.................  Output daily profiles by county
             
 C.........  Deallocate local arrays        
         DEALLOCATE( PROF_DAY )
-        
-C.......... Reallocate local arrays
-        ALLOCATE( PROF_DAY( NSRGFIPS,NSTEPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PROF_DAY', PROGNAME )
-        ALLOCATE( PROF_MON( NSRGFIPS,NSTEPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PROF_MON', PROGNAME )
-        PROF_DAY = 0.0
-        PROF_MON = 0.0
-
-C.........  Loop through hours of meteorology files
-C.........  Compute hourly temporal profile fractions and generate output
-
-C.........  Open output file for hourly temporal profiles
-        IF( HOURAVER ) THEN
-
-C.............  Initialize I/O API output file headers
-            CALL HDRMISS3
-
-            FDESC3D( 1 ) = 'GENTPRO-based meteorology profiles file'
-            FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
-            WRITE( FDESC3D( 4 ), 93000 ) '/PROFILE_METHOD/ ' // PROF_METHOD
-            WRITE( FDESC3D( 5 ), 93000 ) '/TPRO_OUTPUT/ '// ' HOURLY'
-            WRITE( FDESC3D( 6 ), 93000 ) '/T_UNITS/ "deg K"'
-            FDESC3D( 7 ) = '/T_VNAME/ ' // TVARNAME
-            FDESC3D( 8 ) = '/NOTE/ Time 000000 in file represents ' //
-     &                     '0 hour in output time zone'
-            WRITE( FDESC3D( 9 ), 94010 ) '/END DATE/ ', EDATE
-
-            FDESC3D( 21 ) = '/INVEN FROM/ ' // 'N/A'
-            FDESC3D( 22 ) = '/INVEN VERSION/ ' // 'N/A'
-
-C.............  Set header values that cannot be default
-            JDATE = SDATE
-            JTIME = 0000
-
-            SDATE3D = JDATE
-            STIME3D = JTIME
-            TSTEP3D = 10000
-            NVARS3D = 4
-            NROWS3D = NSRGFIPS
-            NLAYS3D = 1
-
-            J = 1
-            VNAME3D( J ) = 'COUNTIES'
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'County FIPS code'
-            VTYPE3D( J ) = M3INT
-
-            J = 2
-            VNAME3D( J ) = 'HR_YEAR'
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Hour of year profiles by county'
-            VTYPE3D( J ) = M3REAL
-
-            J = 3
-            VNAME3D( J ) = 'HR_MONTH'
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Hour of month profiles by county'
-            VTYPE3D( J ) = M3REAL
-  
-            J = 4
-            VNAME3D( J ) = 'HR_DAY'
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Hour of day profiles by county'
-            VTYPE3D( J ) = M3REAL
-
-C.............  Open new file
-            IF( .NOT. OPEN3( HNAME, FSUNKN3, PROGNAME ) ) THEN
-                 MESG = 'Could not create new output file ' //
-     &                 TRIM( HNAME )
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Output hour of year and hour of month temporal profiles
-            JDATE = SDATE
-            JTIME = STIME
-            LDATE = -9
-            PROCDAYS = 1
-            NMON = 1
-
-            DO T = 1, NSTEPS
-
-C.............  If last day of month, process monthly averages
-                CALL DAYMON( JDATE, MONTH, DAY )       ! processing month and date
-
-C.................  Processing profile methods (RWC, AGNH3 or MET)
-C.................  Loop over source (S) to estimate hourly fractions based
-C                   on monthly total.
-                DO S = 1, NSRGFIPS
-
-C.....................  Convert GMT to local time
-                    HOURIDX = ( JTIME-DAYBEGT( S ) ) / 10000
-                    IF( HOURIDX < 0 ) HOURIDX = HOURIDX + 24
-                    HOURIDX = HOURIDX + 1
-
-C.....................  Skip if begining/ending hours are out of range
-                    IF( T <= TSPREAD .AND. HOURIDX > TSPREAD ) CYCLE
-                    IF( T > EPI_NSTEPS .AND. HOURIDX < TSPREAD ) CYCLE
-
-                    NDAY = PROCDAYS( S )
-
-C.....................  Skip if begining/ending hours are out of range
-                    IF( T <= TSPREAD .AND. HOURIDX > TSPREAD ) CYCLE
-                    IF( T > EPI_NSTEPS .AND. HOURIDX < TSPREAD ) CYCLE
-
-C       if(s==1) write(*,'(A,6I8,2F12.3)') 'NCF:',T,JDATE,month,day,houridx,nday,daysrc(s,nday),monsrc(s,month)
-
-C.....................  Estimate hourly month fractions when profile method is not AGNH3
-C                       Equation (2) in design document.
-                    IF( MONSRC( S,MONTH ) /= 0. ) THEN
-
-C.........................  Calculate hour of year profiles
-                        PROF_HRL( S,T ) = HRLSRC( S,T )
-     &                                         / ANNSRC( S )
-
-C.........................  Calculate hour of month profiles
-                        PROF_MON( S,T ) = HRLSRC( S,T )
-     &                                         / MONSRC( S,MONTH )
-
-C.........................  Calculate hour of day profiles
-                        PROF_DAY( S,T ) = HRLSRC( S,T )
-     &                                         / DAYSRC( S,NDAY )
-c       if(s==1) write(*,'(A,6I8,3F12.3)') 'NCF:',T,JDATE,month,day,houridx,nday,hrlsrc(s,t),daysrc(s,nday),prof_day(s,t)
-                    ELSE
-                        MESG = 'ERROR: Monthly/annual total is zero'
-                        IF( .NOT. NH3FLAG ) THEN
-                            CALL M3EXIT( PROGNAME,JDATE,JTIME,MESG,2 )
-                        END IF
-                    END IF
-
-C.....................  current processing month per county
-                    IF( HOURIDX == 24 ) THEN
-                        PROCDAYS( S ) = PROCDAYS( S ) + 1
-                    END IF
-
-                END DO   ! Source S loop
-
-C.................  Write county codes to file
-                IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
-     &                    SRGFIPS ) ) THEN
-                     MESG = 'Could not write county codes to "' //
-     &                      TRIM( HNAME ) // '".'
-                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Write one hour of month profile value to file
-                IF( .NOT. WRITE3( HNAME, 'HR_YEAR', JDATE, JTIME,
-     &                    PROF_HRL( :,T ) ) ) THEN
-                     MESG = 'Could not write hour of month profile '
-     &                      // 'to "' // TRIM( HNAME ) //  '".'
-                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Write one hour of month profile value to file
-                IF( .NOT. WRITE3( HNAME, 'HR_MONTH', JDATE, JTIME,
-     &                    PROF_MON( :,T ) ) ) THEN
-                     MESG = 'Could not write hour of year profile '//
-     &                      'data to "' // TRIM( HNAME ) // '".'
-                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Write one hour of day profile value to file
-                IF( .NOT. WRITE3( HNAME, 'HR_DAY', JDATE, JTIME,
-     &                    PROF_DAY( :,T ) ) ) THEN
-                     MESG = 'Could not write hour of year profile '//
-     &                      'data to "' // TRIM( HNAME ) // '".'
-                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Increment loop time
-                LDATE = JDATE
-                CALL NEXTIME( JDATE, JTIME, 10000 )
-
-            END DO   ! End T-loop on hours of met files
-
-        END IF   ! complete processing and output hour-year, hour-month profiles to TPRO_HOUR ncf file.
 
 C......... End program successfully
 
