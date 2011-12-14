@@ -47,7 +47,7 @@ C.........  This module contains the temporal cross-reference tables
 
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NMON, NWEK, NHRL, STDATE, STTIME, RUNLEN,
-     &                      ITDATE, METPRFFLAG, METPRFTYPE
+     &                      ITDATE, METPROFLAG, METPROTYPE
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC, ONLY: NEFS, INPUTHC, OUTPUTHC, EMTNAM, EMTPOL,
@@ -593,7 +593,7 @@ C           weekday diurnal, and weekend diurnal)
         NHRL = RDTPROF( RDEV, 'DIURNAL', NFLAG )
 
 C.........  Read Met-based temporal-profiles file 
-        IF( METPRFFLAG ) CALL RDMETPROF( PNAME )
+        IF( METPROFLAG ) CALL RDMETPROF( PNAME )
 
 C.........  Adjust temporal profiles for use in generating temporal emissions
 C.........  NOTE - All variables are passed by modules.
@@ -898,9 +898,6 @@ C               file (or all data).
             JDATE = SDATE
             JTIME = STIME
 
-C.............  Write supplemental temporal profiles file
-            CALL WRTSUP( PDEV, NSRC, NGSZ, EANAM2D( 1,N ) )
-
 C.............  Loop through time steps for current pollutant group
             DO T = 1, NSTEPS
 
@@ -944,7 +941,6 @@ C.................  Generate hourly emissions for current hour
      &                  PNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D, 
      &                  EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
 
-
 C.................  Loop through pollutants/emission-types in this group
                 DO I = 1, NGSZ
 
@@ -974,6 +970,9 @@ c               CALL QATMPR( LDEV, NGSZ, T, JDATE, JTIME, WFLAG,
 c    &                       EANAM2D( 1,N ), EMAC )
 
             END DO      ! End loop on time steps T
+
+C.............  Write supplemental temporal profiles file
+            CALL WRTSUP( PDEV, NSRC, NGSZ, EANAM2D( 1,N ) )
 
          END DO          ! End loop on pollutant groups N
 
