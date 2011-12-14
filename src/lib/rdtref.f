@@ -47,7 +47,7 @@ C...........   This module is for cross reference tables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, MCODEFLAG
 
-        USE MODTMPRL, ONLY: METPRFFLAG, METPRFTYPE
+        USE MODTMPRL, ONLY: METPROFLAG, METPROTYPE
 
         IMPLICIT NONE
 
@@ -538,20 +538,20 @@ C.................  Store case-indpendent fields
 C.................  Reset org profID to met-based profile ID
                 IF( TMON > 0 ) THEN
                     MPRNA( N ) = 99999
-                    METPRFFLAG = .TRUE.
-                    METPRFTYPE = 'MONTHLY'
+                    METPROFLAG = .TRUE.
+                    METPROTYPE = 'MONTHLY'
                 END IF
                 
                 IF( TDAY > 0 ) THEN
                     WPRNA( N ) = 99999
-                    METPRFFLAG = .TRUE.
-                    METPRFTYPE = 'DAILY'
+                    METPROFLAG = .TRUE.
+                    METPROTYPE = 'DAILY'
                 END IF
                     
                 IF( THRS > 0 ) THEN
                     DPRNA( N ) = 99999
-                    METPRFFLAG = .TRUE.
-                    METPRFTYPE = 'HOURLY'
+                    METPROFLAG = .TRUE.
+                    METPROTYPE = 'HOURLY'
                 END IF
 
             END IF  !  This line matches source category of interest

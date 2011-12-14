@@ -52,7 +52,7 @@ C...........   This module contains the cross-reference tables
 
 C...........   This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC,
-     &                      METPRFFLAG, METPRFTYPE, METPROF, METFACS
+     &                      METPROFLAG, METPROTYPE, METPROF, METFACS
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: INDXD, INDXH, EMACD, EMACH, NDYSRC, NHRSRC,
