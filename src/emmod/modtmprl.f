@@ -55,8 +55,9 @@
 
 !.........  Sorted temporal profiles
         INTEGER,              PUBLIC :: NMETPROF                ! number of Met-based temp profiles
-        LOGICAL,              PUBLIC :: METPRFFLAG = .FALSE.    ! flag for Met-based temp profiles
-        CHARACTER( 8 ),       PUBLIC :: METPRFTYPE = ' '        ! type of Met-based temp profiles
+        LOGICAL,              PUBLIC :: METPROFLAG = .FALSE.    ! flag for Met-based temp profiles
+        CHARACTER( 8 ),       PUBLIC :: METPROTYPE = ' '        ! type of Met-based temp profiles
+        CHARACTER( 8 ),       PUBLIC :: HOUR_TPROF = ' '        ! hour of day, hour of month, hour of year 
 
         INTEGER, PUBLIC :: NMON   ! number of monthly profiles
         INTEGER, PUBLIC :: NWEK   ! number of weekly profiles
@@ -73,6 +74,7 @@
         INTEGER, ALLOCATABLE, PUBLIC :: RUNLEN( : )   ! Run hours
         INTEGER, ALLOCATABLE, PUBLIC :: ITDATE( : )   ! Start julian date
 
+        REAL   , ALLOCATABLE, PUBLIC :: MONFAC_ORG( :,: ) ! Org monthly factors before monthly adjustment
         REAL   , ALLOCATABLE, PUBLIC :: MONFAC( :,: ) ! Monthly factors
         REAL   , ALLOCATABLE, PUBLIC :: WEKFAC( :,: ) ! Weekly facs (week-norm)
         REAL   , ALLOCATABLE, PUBLIC :: XWKFAC( :,: ) ! Weekly facs (wkday-norm)
