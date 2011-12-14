@@ -39,7 +39,8 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  For temporal profiles
-        USE MODTMPRL, ONLY: METFACS, NMETPROF, METPROF, METPRFFLAG, METPRFTYPE
+        USE MODTMPRL, ONLY: METFACS, NMETPROF, METPROF, METPROFLAG, METPROTYPE,
+     &                      HOUR_TPROF
 
         IMPLICIT NONE
 
@@ -91,7 +92,7 @@ C***********************************************************************
 C   begin body of subroutine  RDTPROF
 
 C.........  Determine Met-based temporal profile resolution
-        PROFTYPE = METPRFTYPE 
+        PROFTYPE = METPROTYPE 
 
 C.........  If profile type is monthly,
         IF( PROFTYPE .EQ. 'MONTHLY' ) THEN
@@ -111,7 +112,21 @@ C.............  Open and read Met-based Temporal profiles
 
 C.........  If profile type is HOURLY, return
         ELSE IF( PROFTYPE .EQ. 'HOURLY' ) THEN
-  
+ 
+C.............  Determine which hourly profiles to apply
+           MESG = 'Specifies the basis of hourly profiles: [YEAR|MONTH|DAY]'
+           CALL ENVSTR( 'HOURLY_TPROF_BASE', MESG, ' ',HOUR_TPROF, IOS )
+           CALL UPCASE( HOUR_TPROF )
+
+            IF( .NOT. ( HOUR_TPROF == 'DAY' .OR. HOUR_TPROF == 'MONTH' .OR. 
+     &          HOUR_TPROF == 'YEAR' ) ) THEN
+                MESG = 'ERROR: MUST define the basis of hourly profiles '//
+     &                 'for a correct hourly conversion.'
+     &                 //CRLF()//BLANK10//':: Define HOURLY_TPROF_BASE to '//
+     &                 '[YEAR|MONTH|DAY]'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
 C.............  Open and read met-based hourly temporal profiles
             PNAME = PROMPTMFILE(
      &               'Enter logical name for Met-based HOURLY temporal profile file',
