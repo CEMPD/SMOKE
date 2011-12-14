@@ -40,7 +40,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  For temporal profiles
-        USE MODTMPRL, ONLY: HRLFAC, XWKFAC, WEKFAC, MONFAC,
+        USE MODTMPRL, ONLY: HRLFAC, XWKFAC, WEKFAC, MONFAC, MONFAC_ORG,
      &                      NHRL, NWEK, NMON
 
         IMPLICIT NONE
@@ -64,7 +64,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         REAL            FAC           !  scratch factor
         REAL            TOT           !  scratch total
 
-        LOGICAL         RENORM   ! true temporal profiles are to be renormalized
+        LOGICAL       :: RENORM = .TRUE.  ! true temporal profiles are to be renormalized
 
         CHARACTER(300)  MESG    !  message buffer
 
@@ -74,12 +74,8 @@ C***********************************************************************
 C   begin body of subroutine  NORMTPRO
 
 C.........  Get information from the environment about renormalization
-        MESG = 'Renormalize temporal profiles'
-        RENORM = ENVYN ( 'RENORM_TPROF', MESG, .TRUE., IOS )
-
-C.........  all temporal profiles will be renormalized by default
-C           updated by BH Baek (7/21/2011)
-        RENORM = .TRUE.
+C        MESG = 'Renormalize temporal profiles'
+C        RENORM = ENVYN ( 'RENORM_TPROF', MESG, .TRUE., IOS )
 
 C.........  Allocate memory for weekday-normalized weekly emissions
         ALLOCATE( XWKFAC( 7,NWEK ), STAT=IOS )
@@ -152,6 +148,9 @@ C.........  Renormalize temporal profiles, if needed
             END DO
 
         END IF
+
+C.........  Backup original MONFAC to MONFAC_ORG before applying monthly adjustment
+        MONFAC_ORG = MONFAC
 
 C.........  Weight monthly profiles by the number of days in a month
         DO I = 1, NMON
