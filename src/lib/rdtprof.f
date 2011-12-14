@@ -40,8 +40,8 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  For temporal profiles
-        USE MODTMPRL, ONLY: HRLFAC, WEKFAC, MONFAC,
-     &                      HRLREF, WEKREF, MONREF, METPRFFLAG
+        USE MODTMPRL, ONLY: HRLFAC, WEKFAC, MONFAC, MONFAC_ORG,
+     &                      HRLREF, WEKREF, MONREF, METPROFLAG
 
         IMPLICIT NONE
 
@@ -247,7 +247,9 @@ C.........  Initialize factors to 1.0
             CALL CHECKMEM( IOS, 'MONREF', PROGNAME )
             ALLOCATE( MONFAC( NFAC,NPROF ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MONFAC', PROGNAME )
-
+            ALLOCATE( MONFAC_ORG( NFAC,NPROF ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MONFAC_ORG', PROGNAME )
+            MONFAC_ORG = 1.0
             MONFAC = 1.0
 
         CASE DEFAULT
@@ -565,7 +567,7 @@ C.................  Loop until non-blank or comment line
                 INDXA( I ) = I
 
 C.................  Check for bad cross-reference code
-                IF( .NOT. METPRFFLAG .AND. CODEA( I ) == 99999 ) THEN
+                IF( .NOT. METPROFLAG .AND. CODEA( I ) == 99999 ) THEN
                     WRITE( MESG, 94010 )
      &                  'ERROR: CAN NOT USE temporal profile code ',
      &                  CODEA(I), ' at line ', IREC,
