@@ -807,13 +807,12 @@ C----------------------------------------------------------------------
 
             MDEX( S,J ) = MAX( FIND1( MREF, NMON, MONREF ), 0 )
 
-C.............  Asign fake '99999' met-based profileID to sources
+C.............  Assign fake '99999' met-based profileID to sources
 C               This will trigger to apply met-based profiles instead of temp profiles
             IF( MREF == 99999 ) THEN  ! Met-based profile IDs
                 MDEX( S,J ) = 99999
 
             ELSE IF( MDEX( S,J ) .EQ. 0 ) THEN
-
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                 EFLAG = .TRUE.
@@ -828,23 +827,23 @@ C               This will trigger to apply met-based profiles instead of temp pr
 
             WDEX( S,J ) = MAX( FIND1( WREF, NWEK, WEKREF ), 0 )
 
-C.............  Asign fake '99999' met-based profileID to sources
+C.............  Assign fake '99999' met-based profileID to sources
 C               This will trigger to apply met-based profiles instead of temp profiles
             IF( WREF == 99999 ) THEN
                 WDEX( S,J ) = 99999 
 
             ELSE IF( WDEX( S,J ) .EQ. 0 ) THEN
-
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
-               EFLAG = .TRUE.
-               WRITE( MESG,94010 ) 
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 
      &                     'ERROR: Weekly profile', WREF, 
      &                     'is not in profiles, but was assigned' //
      &                     CRLF() // BLANK5 // 'to source:' //
      &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-               CALL M3MESG( MESG )
+                CALL M3MESG( MESG )
             END IF
+
 
             DDEX( S,J ) = MAX( FIND1( DREF, NHRL, HRLREF ), 0 )
 
@@ -854,7 +853,6 @@ C               This will trigger to apply met-based profiles instead of temp pr
                 DDEX( S,J ) = 99999 
 
             ELSE IF( DDEX( S,J ) .EQ. 0 ) THEN
-
                 CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
 
                 EFLAG = .TRUE.
