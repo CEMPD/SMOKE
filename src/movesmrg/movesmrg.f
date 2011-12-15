@@ -55,7 +55,7 @@ C.........  This module contains the major data structure and control flags
      &          MSDATE,                            ! dates for by-day hrly emis
      &          GRDFAC, TOTFAC,                    ! conversion factors
      &          NSMATV,                            ! speciation matrices
-     &          MEBCNY, MEBSTA, MEBSRC, MEBSUM,    ! cnty/state/src total spec emissions
+     &          MEBCNY, MEBSTA, MEBSUM,            ! cnty/state/src total spec emissions
      &          MEBSCC, MEBSTC,                    ! scc total spec emissions
      &          EANAM, NIPPA                       ! pol/act names
 
@@ -125,7 +125,7 @@ C...........   Local arrays for per-source information
 C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: VMT( : )
         REAL, ALLOCATABLE :: TEMPG( : )
-        REAL, ALLOCATABLE :: EMGRD( :,:,: )   ! emissions for each grid cell and species
+        REAL, ALLOCATABLE :: EMGRD( :,: )     ! emissions for each grid cell and species
         REAL, ALLOCATABLE :: TMPEMGRD( :,: )  ! tmp emissions for each grid cell and species
 
 C...........   Local temporary array for input and output variable names
@@ -184,6 +184,8 @@ C...........   Other local variables
         REAL             EMVAL         ! emissions value
 
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
+        LOGICAL       :: LAST_CNTY  = .FALSE.   ! true: reach the last county
+        LOGICAL       :: SKIPSUM    = .FALSE.   ! true: skip MEBSUM calculation
 
         CHARACTER(300)     MESG    ! message buffer
         CHARACTER(IOVLEN3) LBUF    ! previous species or pollutant name
@@ -239,12 +241,10 @@ C.........  Allocate memory for fixed-size arrays...
         ALLOCATE( MGMATX( NGRID + 2 * MNGMAT ), STAT=IOS )    ! contiguous gridding matrix
         CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
 
-        ALLOCATE( EMGRD( NGRID, NMSPC, NSTEPS ), STAT=IOS )     ! gridded emissions
+        ALLOCATE( EMGRD( NGRID, NMSPC ), STAT=IOS )     ! gridded emissions
         CALL CHECKMEM( IOS, 'EMGRD', PROGNAME )
         ALLOCATE( TMPEMGRD( NGRID, NMSPC ), STAT=IOS )     ! gridded emissions
         CALL CHECKMEM( IOS, 'TMPEMGRD', PROGNAME )
-        EMGRD = 0.  ! array
-        TMPEMGRD = 0.  ! array
         
         IF( LREPSCC ) THEN
             ALLOCATE( MEBSCC( NINVSCC, NMSPC+NIPPA ), STAT=IOS )    ! SCC totals
@@ -266,9 +266,6 @@ C.........  Allocate memory for fixed-size arrays...
             CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
         END IF
         
-        ALLOCATE( MEBSRC( NMSRC, NMSPC+NIPPA, NSTEPS ), STAT=IOS )    ! source totals by hour
-        CALL CHECKMEM( IOS, 'MEBSRC', PROGNAME )
-
         ALLOCATE( MEBSUM( NMSRC, NMSPC+NIPPA ), STAT=IOS )    ! source totals
         CALL CHECKMEM( IOS, 'MEBSUM', PROGNAME )
 
@@ -348,6 +345,11 @@ C.........  Write out message with list of species
 C.........  Loop over reference counties
         DO I = 1, NREFC
 
+C.................  Determine Last county
+            If ( I .EQ. NREFC ) THEN
+               LAST_CNTY = .TRUE.
+            END IF
+
 C.............  Determine fuel month for current time step and reference county
             K = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
             M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
@@ -402,6 +404,8 @@ C.............  Initializations before main time loop
 
 C.............  Loop through output time steps
             DO T = 1, NSTEPS
+                EMGRD = 0.  ! array
+                TMPEMGRD = 0.  ! array
 
 C.................  Determine weekday index (Monday is 1)
                 DAY = WKDAY( JDATE )
@@ -801,20 +805,24 @@ C.............................  Calculate gridded, hourly emissions
                                 EMVAL = VPOPVAL * EFVAL * GFRAC
                             END IF
 
-                            EMGRD( CELL,SPINDEX( V,1 ),T ) = 
-     &                          EMGRD( CELL,SPINDEX( V,1 ),T ) + 
+                            EMGRD( CELL,SPINDEX( V,1 ) ) = 
+     &                          EMGRD( CELL,SPINDEX( V,1 ) ) + 
      &                          EMVAL * MSMATX_L( SRC,V ) * F1
 
 C.............................  Add this cell's emissions to source totals
-                            MEBSRC( SRC,SPINDEX( V,1 ),T ) =
-     &                          MEBSRC( SRC,SPINDEX( V,1 ),T ) + 
-     &                          EMVAL * MSMATX_S( SRC,V ) * F2
+                            IF( LREPSTA .OR. LREPCNY .OR. LREPSCC .OR. LREPSRC ) THEN
+                                IF( .NOT. SKIPSUM ) THEN
+                                    MEBSUM( SRC,SPINDEX( V,1 )) =
+     &                                  MEBSUM( SRC,SPINDEX( V,1 )) + 
+     &                                  EMVAL * MSMATX_S( SRC,V ) * F2
                             
-                            IF( EANAMREP( V ) ) THEN
-                                F2 = TOTFAC( NMSPC+SIINDEX( V,1 ) )
-                                MEBSRC( SRC,NMSPC+SIINDEX( V,1 ),T ) =
-     &                              MEBSRC( SRC,NMSPC+SIINDEX( V,1 ),T ) +
-     &                              EMVAL * F2
+                                    IF( EANAMREP( V ) ) THEN
+                                       F2 = TOTFAC( NMSPC+SIINDEX( V,1 ) )
+                                        MEBSUM( SRC,NMSPC+SIINDEX( V,1 ) ) =
+     &                                      MEBSUM( SRC,NMSPC+SIINDEX( V,1 ) ) +
+     &                                      EMVAL * F2
+                                    END IF
+                                END IF
                             END IF
 
                         END DO    ! end loop over pollutant-species combos
@@ -822,6 +830,39 @@ C.............................  Add this cell's emissions to source totals
                     END DO    ! end loop over grid cells for source
                 
                 END DO    ! end loop over sources in inv. county
+                DO V = 1, NMSPC 
+                    SBUF = EMNAM( V )
+C.................  Read out old data if not first county
+                    IF ( I > 1 ) THEN
+  		        IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
+     &                            JDATE, JTIME, TMPEMGRD( 1,V ) ) )THEN
+                             MESG = 'Could not read "' // SBUF // '" ' //
+     &                         'from file "' // MONAME // '"'
+                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
+C.................  sum old county data with new county
+                        EMGRD( :,V ) = EMGRD( :,V ) + TMPEMGRD( :,V )
+                    END IF
+
+                    IF( LGRDOUT ) THEN
+                        IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
+     &                              JDATE, JTIME, EMGRD( 1,V ) ) ) THEN
+                            MESG = 'Could not write "' // SBUF // '" ' //
+     &                       'to file "' // MONAME // '"'
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
+                    END IF
+                END DO
+           
+C.............  Write state, county, and SCC emissions (all that apply) 
+C.............  The subroutine will only write for certain hours and 
+C               will reinitialize the totals after output
+                If ( LAST_CNTY) THEN
+                    CALL WRMRGREP( JDATE, JTIME )
+                END IF
+C...............Do not count the hour after 230000
+                SKIPSUM = .FALSE. 
+                IF( JTIME .EQ. 230000 ) SKIPSUM = .TRUE.
 
                 LDATE = JDATE
 
@@ -831,56 +872,14 @@ C.............................  Add this cell's emissions to source totals
 
         END DO   ! end loop over inventory counties
 
-C.........  Output gridded emissions for all species
-C.........  Initializations before main time loop 
-        JDATE  = SDATE
-        JTIME  = STIME
-        LDATE  = 0
+C.........  Close output file
+        IF( .NOT. CLOSESET( MONAME ) ) THEN
+            MESG = 'Could not close file:"'// MONAME // '"'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
-        DO T = 1, NSTEPS        
-
-            DO V = 1, NMSPC
-            
-                SBUF = EMNAM( V )
-
-                TMPEMGRD( :,V ) = EMGRD( :,V,T )
-
-C.................  Write out gridded data
-                IF( LGRDOUT ) THEN
-                    IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
-     &                                  JDATE, JTIME, TMPEMGRD( 1,V ) ) ) THEN
-                        MESG = 'Could not write "' // SBUF // '" ' //
-     &                    'to file "' // MONAME // '"'
-                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
-                END IF
-            END DO
-
-C.............  Initialize gridded emissions
-            TMPEMGRD = 0.   ! array
-
-C.............  Write state, county, and SCC emissions (all that apply) 
-C.............  The subroutine will only write for certain hours and 
-C               will reinitialize the totals after output
-            IF( LREPSTA .OR. LREPCNY .OR. LREPSCC .OR. LREPSRC ) THEN
-
-C.................  Summing MEBSRC array over hours
-                DO SRC = 1, NMSRC
-                    DO J = 1, NMSPC+NIPPA
-                        MEBSUM( SRC,J ) = MEBSUM( SRC,J ) + MEBSRC( SRC,J,T )
-                    END DO
-                END DO
-
-C.................  Write out county/state/scc/source reports
-                CALL WRMRGREP( JDATE, JTIME )
-
-            END IF
-
-            LDATE = JDATE
-
-            CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
-
-        END DO   ! End loop on time steps
+        DEALLOCATE( DAYBEGT, DAYENDT, LDAYSAV )
+        DEALLOCATE( TEMPG, EMGRD, TMPEMGRD, VARNAMES, MGMATX )
 
 C.........  Successful completion of program
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
