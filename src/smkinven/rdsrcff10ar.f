@@ -121,7 +121,7 @@ C.............  Determine whether processing daily/hourly inventories or not
             END IF
 
             IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN 
-                MESG = 'ERROR: MUST set HOUR_SPECIFIC_YN to Y '//
+                MESG = 'ERROR: MUST set DAY_SPECIFIC_YN to Y '//
      &               'to process daily FF10_DAILY_NONPOINT inventory'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
