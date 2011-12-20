@@ -558,7 +558,6 @@ C           set the ending date forward one day
 C.........  Convert start and end dates and times back to GMT
         CALL NEXTIME( SDATE, STIME, TZONE*10000 )
         CALL NEXTIME( EDATE, ETIME, TZONE*10000 )
-       print*,TZMIN,TZMAX,TZONE,TSPREAD,SDATE,STIME,EDATE,ETIME,'TZMIN,TZMAX,TZONE,TSPREAD'
 
 C.........  Find the total number of time steps
         NSTEPS = 1 + SECSDIFF( SDATE, STIME, EDATE, ETIME ) / 3600
@@ -740,25 +739,11 @@ C.....................  Double check episode bounds
 C.....................  If no met data for current step, try to find data
                     IF( METDAYS( K ) == 0 ) THEN
 
-C.........................  Try 24 hours back
-                        IF( K - 24 > 0 ) THEN
-                            IF( METDAYS( K - 24 ) > 0 ) THEN
-                                METDAYS( K ) = - METDAYS( K - 24 )
-                                CYCLE
-                            END IF
-
-C.........................  Try 12 hours forward
-                        ELSE IF( K + 24 < NSTEPS ) THEN
-                            IF( METDAYS( K + 24 ) > 0 ) THEN
-                                METDAYS( K ) = - METDAYS( K + 24 )
-                                CYCLE
-                            END IF
-                        END IF
-
 C.........................  No data available, exit with error                    
-                        MESG = 'Meteorology data does not cover ' //
-     &                         'requested episode.'
+                        MESG = 'ERROR: Missing meteorology data during '
+     &                      // 'requested episode.'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
                     END IF
                 
                 END DO   ! end loop over hours in day
@@ -794,7 +779,7 @@ C.....................  Check for met data at this step
                         FND_DATA = .FALSE.
 
 C.........................  Loop through previous days in month
-                        DO J = 1, 30 
+                        DO J = 1, 28 
                             TDATE = JDATE
                             TTIME = JTIME
 
@@ -826,7 +811,7 @@ C.........................  Skip rest of loop if we've found data
                         IF( FND_DATA ) CYCLE
 
 C.........................  Loop through remaining days in month                    
-                        DO J = 1, 30 
+                        DO J = 1, 28 
                             TDATE = JDATE
                             TTIME = JTIME
                         
@@ -856,8 +841,8 @@ C.............................  Otherwise, it's too far forward, exit
                         IF( FND_DATA ) CYCLE
 
 C.....................  Still no data, exit with error                         
-                        MESG = 'Meteorology data does not cover ' //
-     &                         'requested episode.'
+                        MESG = 'ERRROR: Meteorology data does not ' //
+     &                         'cover requested episode.'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
                 
@@ -904,7 +889,7 @@ C.........................  If found data, go on to next hour
                     IF( FND_DATA ) CYCLE
 
 C.....................  Still no data, exit with error                
-                    MESG = 'Meteorology data does not cover ' //
+                    MESG = 'ERROR: Meteorology data does not cover ' //
      &                     'requested episode.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
@@ -1147,10 +1132,11 @@ C.................  Create hourly meteorology arrays by source
                 CALL HOURMET( NSRC, JDATE, JTIME, DAYBEGT, ALT_DATA,
      &                        LDAYSAV, RH_STRHR, RH_ENDHR )
             ELSE
+
                 IF( JTIME == 230000 ) THEN
-                    MESG = 'NOTE: Missing meteorology file on '//
+                    MESG = 'ERROR: Missing meteorology file on '//
      &                      MMDDYY( JDATE )
-                    CALL M3MSG2( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
             END IF  ! check for using alternate data or day averaging
@@ -1169,20 +1155,14 @@ C.............  Processing daily SMOKE-ready output
 
 C.........................  compute local time
                         HOURIDX = 1 + (JTIME - DAYBEGT( S ) ) / 10000
-                        IF( ISDSTIME( JDATE ) .AND. LDAYSAV( S ) ) THEN
-                            HOURIDX = HOURIDX -1
-                        END IF
                         IF( HOURIDX <= 0 ) HOURIDX = HOURIDX + 24
-
-c      if(s==1) write(*,'(a,12i9)')'Hourly::',T,jdate,JTIME,MONTH,day,HOURIDX,ODATE,OTIME
-
-C.........................  output when local time is 24hr. if not, skip
-                        IF( HOURIDX /= 24 ) CYCLE
-c       if(s==1) print*,'Daily::',JDATE,JTIME,ODATE,OTIME,MONTH,DAY
 
 C.........................  retreive inv/ref counties
                         INVCOUNTY = MCREFSORT( S,1 )
                         REFCOUNTY = MCREFSORT( S,2 )
+
+C.........................  output when local time is 24hr. if not, skip
+                        IF( HOURIDX /= 24 ) CYCLE
 
 C.........................  averaging RH per inventory county
                         N = 0
@@ -1302,9 +1282,9 @@ C.....................  initialize local variables
                     MINTEMP = -1*BADVAL3
 
                 END IF
-
+               
                 NF = FIND1( CURMONTH, NFUEL, FUELIDX( NR,: ) )
-                
+
                 RHFUEL( NR,NF ) = RHFUEL( NR,NF ) / FUELCNTY( NR,NF )
 
                 IF( RHFUEL( NR,NF ) > 0.0 ) N = N + 1
@@ -1324,16 +1304,17 @@ C.....................  initialize local variables
             END DO
 
 C...............  Store last fuelmonth specific values into arrays
-             RHAVG = RHSUM / N
-             TKREFHR = TKREFHR / N
+            IF( N == 0 ) CYCLE
+            RHAVG = RHSUM / N
+            TKREFHR = TKREFHR / N
 
-             CALL WRTEMPROF( ODEV2, SYEAR, AVG_TYPE, REFCOUNTY,
+            CALL WRTEMPROF( ODEV2, SYEAR, AVG_TYPE, REFCOUNTY,
      &           PRVFMONTH, PPTEMP, RHAVG, TKREFHR, MAXTEMP, MINTEMP )
 
 C..............  Check processing month is listed in the fuelmonth for each ref. county
             IF( NFMON < NFUEL ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Could not find the '//
+                WRITE( MESG,94010 ) 'ERROR: Could not find '//
      &              'modeling month(s) for reference county ',REFCOUNTY, 
      &              'in fuel month input file'
                 CALL M3MSG2( MESG )
@@ -1381,11 +1362,11 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 C.............  This internal subprogram estimates ref. county level 
 C               averaged RH and min/max Temperatures over fuelmonth
 
-          SUBROUTINE AVG_REF_COUNTY_RH_TEMP( ODEV1, AVGFLAG, JDATE, JTIME, ODATE, MONTH )
+          SUBROUTINE AVG_REF_COUNTY_RH_TEMP( ODEV1, MONFLAG, JDATE, JTIME, ODATE, MONTH )
 
 C.............  local argument
             INTEGER, INTENT( IN ) :: ODEV1    ! SMOKE-ready output file
-            LOGICAL, INTENT( IN ) :: AVGFLAG 
+            LOGICAL, INTENT( IN ) :: MONFLAG  ! monthly output
             INTEGER, INTENT( IN ) :: JDATE    ! met data date
             INTEGER, INTENT( IN ) :: JTIME    ! met data time
             INTEGER, INTENT( IN ) :: ODATE    ! processing date
@@ -1404,14 +1385,10 @@ C.............  Loop over sources
 
 C.................  compute local time
                 HOURIDX = 1 + (JTIME - DAYBEGT( S ) ) / 10000
-                IF( ISDSTIME( JDATE ) .AND. LDAYSAV( S ) ) THEN
-                    HOURIDX = HOURIDX -1
-                END IF
                 IF( HOURIDX <= 0 ) HOURIDX = HOURIDX + 24
 
 C.................  output when local time is 24hr. if not, skip
                 IF( HOURIDX /= 24 ) CYCLE
-c       if(s==1) print*,'Monthly::',JDATE,JTIME,ODATE,OTIME,MONTH,DAY
 
 C.................  retreive inv/ref counties                        
                 INVCOUNTY = MCREFSORT( S,1 )
@@ -1450,8 +1427,14 @@ C.................  Loop over months per ref. county
                     IF( CURMONTH == MONTH ) FUELMONTH = FMREFSORT( J,2 )  ! processing fuelmonth/county
                 END DO
 
+                IF( FUELMONTH == 0 ) THEN
+                    WRITE( MESG,94010 ) 'ERROR: Could not find a '//
+     &                  'fuel month for reference county ',REFCOUNTY
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ENDIF
+
 C.................  write inventory county min/max and avg RH
-                IF( AVGFLAG ) THEN
+                IF( MONFLAG ) THEN
                     WRITE( ODEV1,94060 ) INVCOUNTY, FUELMONTH, MONTH,
      &                 ODATE, RHAVG, MINTEMP, MAXTEMP
                 END IF
@@ -1478,6 +1461,8 @@ C.................  reinitializing local arrays for next month averaging
 
 C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
+94010       FORMAT( 10( A, :, I8, :, 1X ) )
+
 94060       FORMAT( I6.6, I5, 3X, I5, I10, 3F10.2 )
 
           END SUBROUTINE AVG_REF_COUNTY_RH_TEMP
