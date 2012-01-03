@@ -260,7 +260,7 @@ C.............  Loop through variables
                 TMPBUF = 0.0    ! array
                 VNM = VNAME3D( K )
 
-                IF( .NOT. READ3( CNAME, VNM, 1, MDATE, MTIME,
+                IF( .NOT. READ3( CNAME, VNM, 1, JDATE, JTIME,
      &              TMPBUF ) ) THEN
                      MESG = 'ERROR : Could not read ' //VNAME3D( K ) //
      &                      ' from file ' // CNAME( 1:TRIMLEN( CNAME ) )
