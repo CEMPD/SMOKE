@@ -76,6 +76,8 @@ C.........  NONHAPTOG calculation information
         CHARACTER(IOVLEN3), ALLOCATABLE, PUBLIC :: HAPNAM( : ) ! list of HAPs
 
 C.........  Emission factors data
+        REAL,                 PUBLIC :: TEMPBIN           ! temperature buffer for max/min profiles
+
         INTEGER, ALLOCATABLE, PUBLIC :: EMPROCIDX( : )    ! index of emission process name
         INTEGER, ALLOCATABLE, PUBLIC :: EMPOLIDX( : )     ! index of emission pollutant name
 
