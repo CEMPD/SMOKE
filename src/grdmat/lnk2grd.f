@@ -335,16 +335,24 @@ C.........  based on orientation of link.
         NX    = CCC
         START = XBEG
         ENDS  = XEND
-        XINC = 1
-        XB   = IX
-        XE   = NX - 1
+
+        IF ( COL .LT. CCC ) THEN
+            XINC = 1
+            XB   = IX
+            XE   = NX - 1
+        ELSE
+            XINC = -1
+            XB   = IX - 1
+            XE   = NX
+        END IF
 
         J         = 0         !  cell counter
         XFAC( J ) = 9.0E36    !  sentinel on front end-of-list
 
 C.........  Initialize for all cells (inside domain) intersecting link
         FF = DXLNK * XCELL
-        DO  111  IC = IX, NX, XINC
+
+        DO  IC = IX, NX, XINC
 
 C.............  First X-cell of link is inside domain
             IF( IC .EQ. IX .AND. START .GE. XORIG .AND.
@@ -378,7 +386,7 @@ C.............  Set fractions for interior of domain and non-end of link
 
             ENDIF
 
-111     CONTINUE
+        END DO
 
         NX           = J         !  total number of columns intersected
         XFAC( NX+1 ) = 9.0E36    !  sentinel on tail end-of-list
@@ -419,7 +427,8 @@ C.........  stepping through loop _AND_ for changing sign in the YFAC calc
 
 C.........  Calculate fractions for cells (inside domain) intersecting link
         FF = DYLNK * YCELL
-        DO  222  IR = IY, NY, YINC
+
+        DO  IR = IY, NY, YINC
 
 C.............  First Y-cell of link is inside domain
             IF( IR .EQ. IY .AND. START .GE. YORIG .AND.
@@ -453,7 +462,7 @@ C.............  Set fractions for interior of domain and non-end of link
 
             ENDIF
 
-222     CONTINUE
+        END DO
 
         NY           = J         !  total number of columns intersected
         YFAC( NY+1 ) = 9.0E36    !  sentinel on tail end-of-list
