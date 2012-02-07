@@ -36,9 +36,6 @@ C Last updated: $Date$
 C
 C***********************************************************************
 
-C...........   MODULES for public variables
-        USE MODMVSMRG,ONLY: TEMPBIN
-
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -94,10 +91,6 @@ C.........  Write out last ref. county min/max temp and avg RH
 
         IMAXT = INT( MAXTEMP )
         IMINT = INT( MINTEMP )
-
-C.........  Apply temperature buffer bin in unit of degree
-        MAXT = MAXT + TEMPBIN
-        MINT = MINT - TEMPBIN
 
         TKMAX  = MAXVAL( THOUR )
         TKMIN  = MINVAL( THOUR )
