@@ -38,6 +38,8 @@ C
 C***********************************************************************
 
 C...........   MODULES for public variables
+        USE MODMVSMRG,ONLY: TEMPBIN
+
         USE MODMBSET, ONLY: NINVC, NREFC, MCREFSORT, MCREFIDX,
      &                      DAILY, WEEKLY, MONTHLY, EPISLEN,
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
@@ -238,7 +240,6 @@ C...........   Other local variables:
         LOGICAL :: EPIAVER  = .FALSE.  !  true: episode averaging
         LOGICAL :: FUELAVER = .FALSE.  !  true: fuelmonth averaging
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
-        LOGICAL :: MONOPEN  = .FALSE.  !  true: monthly fuelmonth is processed
         LOGICAL :: FILEOPEN = .FALSE.  !  true: met file is open
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
@@ -324,6 +325,10 @@ C.........  Get temperature increments for ratepervehicle lookup table
 C.........  Get temperature increments for ratepervehicle lookup table
         MESG = 'Temperature increment for rateperprofile'
         PPTEMP = ENVINT( 'PP_TEMP_INCREMENT', MESG, 10, IOS )
+
+C.........  Get episode starting date and time and ending date
+        MESG = 'Temperature buffer bin'
+        TEMPBIN = ENVINT( 'TEMP_BUFFER_BIN', MESG, 0, IOS )
 
 C.........  Get episode starting date and time and ending date
         MESG = 'Episode start date (YYYYDDD)'
@@ -571,18 +576,19 @@ C.........  Configure the month(s) of modeling period
         IF( SYEAR < EYEAR ) EMONTH = EMONTH + 12 
 
 C.........  Estimate total no of processing months
-        NFUEL = EMONTH - SMONTH
-        IF( NFUEL < 1 ) THEN
-            MESG = 'ERROR: MUST cross the last day of the ending '//
-     &             'month (ENDATE) considering local time shift'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
+        NFUEL = ( EMONTH - SMONTH ) + 1
+c        IF( NFUEL < 2 ) THEN
+c            MESG = 'ERROR: MUST cross the last day of the ending '//
+c     &             'month (ENDATE) considering local time shift'
+c            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+c        END IF
 
 C.........  Reset monthly default to episode setting for averaging method
         DMONTH = EMONTH - SMONTH
         IF( DMONTH == 0 .AND. SYEAR == EYEAR ) THEN
-            MONAVER = .FALSE.
-            EPIAVER = .TRUE.
+            MESG = 'ERROR: MUST cross the last day of the ending '//
+     &             'month (ENDATE) considering local time shift'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
        END IF
 
 C.........  Get number of lines in met list file
@@ -907,7 +913,6 @@ C.........  Get the info of counties
 C.........  Assign inventory counties to new array
         CNTYSRC( : ) = MCREFSORT( :, 1 )
 
-
 C.........  Open and write out the header 
 C           information for SMOKE and MOVES-ready output files
 
@@ -1134,9 +1139,9 @@ C.................  Create hourly meteorology arrays by source
             ELSE
 
                 IF( JTIME == 230000 ) THEN
-                    MESG = 'ERROR: Missing meteorology file on '//
+                    MESG = 'WARNING: Missing meteorology file on '//
      &                      MMDDYY( JDATE )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    CALL M3MSG2( MESG )
                 END IF
 
             END IF  ! check for using alternate data or day averaging
@@ -1201,18 +1206,19 @@ C.........................  initializing county-specific arrays
                         MINTDAY( S ) = -1.*BADVAL3 
 
                     END DO
-
+ 
                 END IF
 
 C.................  Estimate fuelmonth averaged monthly ref county temp and RH
                 IF( TMPMNTH /= MONTH ) THEN
-                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, JDATE, JTIME, ODATE, MONTH )
-                    MONOPEN = .TRUE.
-                END IF
+                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, JDATE,
+     &                   JTIME, ODATE, MONTH )
 
 C.................  Estimate fuelmonth averaged episodic ref county temp and RH
-                IF( T == NSTEPS .AND. .NOT. MONOPEN ) THEN
-                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, JDATE, JTIME, ODATE, MONTH )
+                ELSE IF( T > NSTEPS - 23 ) THEN
+                    CALL AVG_REF_COUNTY_RH_TEMP( ODEV1, MONAVER, JDATE,
+     &                   JTIME, ODATE, MONTH )
+
                 END IF
 
             END IF
@@ -1257,7 +1263,7 @@ C.............  Loop over months per ref. county
                 CURMONTH  = FMREFSORT( J,3 )    ! processing current month per ref. county
 
                 IF( CURMONTH <  SMONTH ) CYCLE
-                IF( CURMONTH >= EMONTH ) CYCLE
+                IF( CURMONTH >  EMONTH ) CYCLE
 
                 NFMON = NFMON + 1    ! county no of fuelmonth per refcouty for QA check
 
@@ -1292,7 +1298,6 @@ C.....................  initialize local variables
                 RHSUM = RHSUM + RHFUEL( NR,NF )
                 MAXTEMP = MAX( MAXTEMP, MAXTFUEL( NR,NF ) )
                 MINTEMP = MIN( MINTEMP, MINTFUEL( NR,NF ) )
-
                 DO TT = 1,24
                     TKREFHR( TT ) = TKREFHR( TT ) + TKFUEL( NR,NF,TT )
      &                              / FUELCNTY( NR,NF )
