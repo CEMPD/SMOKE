@@ -1273,6 +1273,8 @@ C.................  Store fuelmonth specific values into arrays
 
                         RHAVG = RHSUM / N
                         TKREFHR = TKREFHR / N
+                        MAXTEMP = MAXTEMP + TEMPBIN
+                        MINTEMP = MINTEMP - TEMPBIN
 
                         CALL WRTEMPROF( ODEV2, SYEAR, AVG_TYPE, 
      &                       REFCOUNTY, PRVFMONTH, PPTEMP, RHAVG,
@@ -1312,6 +1314,8 @@ C...............  Store last fuelmonth specific values into arrays
             IF( N == 0 ) CYCLE
             RHAVG = RHSUM / N
             TKREFHR = TKREFHR / N
+            MAXTEMP = MAXTEMP + TEMPBIN
+            MINTEMP = MINTEMP - TEMPBIN
 
             CALL WRTEMPROF( ODEV2, SYEAR, AVG_TYPE, REFCOUNTY,
      &           PRVFMONTH, PPTEMP, RHAVG, TKREFHR, MAXTEMP, MINTEMP )
