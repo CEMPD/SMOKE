@@ -169,7 +169,6 @@ C...........   Other local variables:
         
         INTEGER    CURCNTY     ! tmp current processing county
         INTEGER    DAY         ! tmp day of week number
-        INTEGER    DMONTH      ! month difference 
         INTEGER    DUMMYTIME   ! dummy time variable to use in calls to NEXTIME
         INTEGER    EDATE       ! ending input date counter (YYYYDDD) in GMT
         INTEGER    ETIME       ! ending input time counter (HHMMSS)  in GMT
@@ -343,9 +342,9 @@ C.........  Get episode starting date and time and ending date
         MESG = 'Episode end time (HHMMSS)'
         EPI_ETIME = ENVINT( 'ENDTIME', MESG, 230000, IOS )
 
-        MESG = 'CRITICAL NOTE: ENDATE MUST cross the month to ' //
-     &         'generate monthly averaged values.'
-        CALL M3MESG( MESG )
+c        MESG = 'CRITICAL NOTE: ENDATE MUST cross the month to ' //
+c     &         'generate monthly averaged values.'
+c        CALL M3MESG( MESG )
 
 C.........  Find the total number of time steps
         EPI_NSTEPS = 1 + 
@@ -577,19 +576,6 @@ C.........  Configure the month(s) of modeling period
 
 C.........  Estimate total no of processing months
         NFUEL = ( EMONTH - SMONTH ) + 1
-c        IF( NFUEL < 2 ) THEN
-c            MESG = 'ERROR: MUST cross the last day of the ending '//
-c     &             'month (ENDATE) considering local time shift'
-c            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-c        END IF
-
-C.........  Reset monthly default to episode setting for averaging method
-        DMONTH = EMONTH - SMONTH
-        IF( DMONTH == 0 .AND. SYEAR == EYEAR ) THEN
-            MESG = 'ERROR: MUST cross the last day of the ending '//
-     &             'month (ENDATE) considering local time shift'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-       END IF
 
 C.........  Get number of lines in met list file
         NLINES = GETFLINE( TDEV, 'METLIST file' )
@@ -1321,7 +1307,7 @@ C...............  Store last fuelmonth specific values into arrays
      &           PRVFMONTH, PPTEMP, RHAVG, TKREFHR, MAXTEMP, MINTEMP )
 
 C..............  Check processing month is listed in the fuelmonth for each ref. county
-            IF( NFMON < NFUEL ) THEN
+            IF( NFMON < NFUEL-1 ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Could not find '//
      &              'modeling month(s) for reference county ',REFCOUNTY, 
