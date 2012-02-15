@@ -141,7 +141,7 @@ C           the various data fields
         EXTORL = ' '        ! extended orl column (N/A)
 
         IF( INV_MON > 0 ) THEN
-            READDATA( 1,NEM ) = SEGMENT( 12 + INV_MON )
+            READDATA( 1,NEM ) = SEGMENT( 13 + INV_MON )
 
             IF( READDATA( 1,NEM ) == '' ) THEN
                MESG = 'ERROR: Missing ' // MON_NAME( INV_MON ) //
