@@ -323,6 +323,7 @@ C.............  Read start and ending hour(ENDHOUR) for wildfire processing
      &                 '"BEGHOUR" from file "'// TRIM( DNAME )//'", at',
      &                 JDATE, ':', JTIME
                     CALL M3MESG( MESG )
+                    FIREFLAG = .FALSE.
                 END IF      !  if read3() failed on dname
 
                 IF( .NOT. READ3( DNAME, 'ENDHOUR', ALLAYS3,
@@ -331,6 +332,7 @@ C.............  Read start and ending hour(ENDHOUR) for wildfire processing
      &                 '"ENDHOUR" from file "'// TRIM( DNAME )//'", at',
      &                 JDATE, ':', JTIME
                     CALL M3MESG( MESG )
+                    FIREFLAG = .FALSE.
                 END IF      !  ifread3() failed on dname
             END IF
 
