@@ -355,6 +355,7 @@ C.............  Store unsorted variables
                 ITCODA   ( NDAT ) = STR2INT( SEGMENT( 4 ) )
                 ITREAA   ( NDAT ) = STR2INT( SEGMENT( 5 ) )
                 ITKEEPA  ( NDAT ) = ( SEGMENT( 6 ) .EQ. 'Y' )
+                IF( SEGMENT( 7 ) == '' ) SEGMENT( 7 ) = '1.0'
                 ITFACA   ( NDAT ) = STR2REAL( SEGMENT( 7 ) )
                 ITVTSA   ( NDAT ) = TRIM( SEGMENT( 8 ) )
                 ITMSPC   ( NDAT ) = ( SEGMENT( 9 ) .EQ. 'Y' )
