@@ -19,7 +19,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
 GRD= asgnsurg.o genagmat.o genggmat.o genmgmat.o genpgmat.o grdmat.o \
-     lnk2grd.o opengmat.o sizgmat.o setfrac.o rdsrg4grd.o
+     opengmat.o sizgmat.o setfrac.o rdsrg4grd.o
 #
 grdmat: $(GRD) $(ALLI) $(LIBPATH)
 	echo GRDMAT
