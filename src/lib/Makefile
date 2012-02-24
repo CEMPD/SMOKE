@@ -26,7 +26,7 @@ FILES_FGIMNP = \
   genptcel.o   genptvcel.o  genuslst.o   getbasyr.o   getctgry.o   getdysav.o \
   getformt.o   getidasz.o   getiname.o   getinvyr.o   getntisz.o   getrfdsc.o \
   getsinfo.o   gettzone.o   getvmix.o    grd2cnty.o   grdfips.o    ingrid.o     initem.o   \
-  mbsccadj.o   normtpro.o   parscsrc.o   pdsetup.o    prclinrc.o   procspro.o \
+  lnk2grd.o    mbsccadj.o   normtpro.o   parscsrc.o   pdsetup.o    prclinrc.o   procspro.o \
   progdesc.o
 
 FILES_R = \
@@ -103,6 +103,7 @@ gettzone.o : $(MODSTCY)
 getvmix.o  : $(MODXREF) $(MODINFO)
 grdfips.o  : $(MODSURG) $(MODGRID) $(MODMET)
 grd2cnty.o : $(MODSTCY) $(MODSURG) $(MODGRID)
+lnk2grd.o  : $(MODGRID)
 mbsccadj.o : $(MODMOBIL)
 normtpro.o : $(MODTMPRL)
 prclinrc.o : $(MODREPRT) $(MODINFO)
