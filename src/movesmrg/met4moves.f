@@ -38,8 +38,6 @@ C
 C***********************************************************************
 
 C...........   MODULES for public variables
-        USE MODMVSMRG,ONLY: TEMPBIN
-
         USE MODMBSET, ONLY: NINVC, NREFC, MCREFSORT, MCREFIDX,
      &                      DAILY, WEEKLY, MONTHLY, EPISLEN,
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
@@ -229,6 +227,7 @@ C...........   Other local variables:
         REAL       RHAVG               ! avg of RH
         REAL       RHREFSUM            ! sum of RH for ref county
         REAL       RHREFAVG            ! avg of RH for ref county
+        REAL       TEMPBIN             ! temperature buffer bin
         REAL       MAXTREF, MINTREF    ! ref county min/max temperatures
 
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
@@ -249,6 +248,8 @@ C...........   Other local variables:
         CHARACTER(16)      SRG_CNTRY   !  surrogate country
         CHARACTER(256)     LINE        !  line buffer
         CHARACTER(256)     FULLNAME    !  full file name
+        CHARACTER(512)     CMCXREF     !  tmp physical file name of MCXREF
+        CHARACTER(512)     CMFMREF     !  tmp physical file name of MFMREF
         CHARACTER(512)     METFILE     !  tmp physical file name
         CHARACTER(512)     PREVFILE    !  previous physical file name
         CHARACTER(IOVLEN3) AVG_TYPE    !  averaging method name
@@ -288,7 +289,8 @@ C.........  Open mobile county x-ref file to determine representative counties
         XDEV = PROMPTFFILE(
      &           'Enter logical name for MCXREF cross-reference file',
      &           .TRUE., .TRUE., 'MCXREF', PROGNAME )
-
+        CALL ENVSTR( 'MCXREF', MESG, ' ', CMCXREF, IOS )
+  
 C.........  Obtain episode settings from the environment...
 C.........  Define averaging method.
         CALL ENVSTR( 'AVERAGING_METHOD', MESG,'MONTHLY',AVG_TYPE, IOS )
@@ -327,7 +329,7 @@ C.........  Get temperature increments for ratepervehicle lookup table
 
 C.........  Get episode starting date and time and ending date
         MESG = 'Temperature buffer bin'
-        TEMPBIN = ENVINT( 'TEMP_BUFFER_BIN', MESG, 0, IOS )
+        TEMPBIN = ENVREAL( 'TEMP_BUFFER_BIN', MESG, 0, IOS )
 
 C.........  Get episode starting date and time and ending date
         MESG = 'Episode start date (YYYYDDD)'
@@ -484,6 +486,7 @@ C.........  open county-specific fuelmonth input files in file
         MESG = 'Enter logical name for a reference county-' //
      &         'specific FuelMonth input file'
         ADEV = PROMPTFFILE( MESG,.TRUE.,.TRUE.,'MFMREF', PROGNAME )
+        CALL ENVSTR( 'MFMREF', MESG, ' ', CMFMREF, IOS )
 
         CALL RDFMREF( ADEV ) 
 
@@ -908,8 +911,12 @@ C           information for SMOKE and MOVES-ready output files
         
 C.........  Define temporal resolution header
         WRITE( ODEV1,'(A)' )'#DESC SMOKE-ready input file'
-        WRITE( ODEV1,'(A)' )'#AVERAGING_METHOD ' // TRIM( AVG_TYPE )
-        WRITE( ODEV1,94010 )'#MODELING PERIOD:', EPI_SDATE,'-',EPI_EDATE
+        WRITE( ODEV1,'(A)' )'#GRDNAME: ' // GDNAM3D // COORD
+        WRITE( ODEV1,'(A)' )'#MCXREF : ' // TRIM( CMCXREF )
+        WRITE( ODEV1,'(A)' )'#MFMREF : ' // TRIM( CMFMREF )
+        WRITE( ODEV1,'(A)' )'#AVERAGING_METHOD:  ' // TRIM( AVG_TYPE )
+        WRITE( ODEV1,94010 )'#MODELING PERIOD : ', EPI_SDATE,'-',EPI_EDATE
+        WRITE( ODEV1,94020 )'#TEMP_BUFFER_BIN : ', TEMPBIN 
         WRITE( ODEV1,'(A)' )'#DATA FIPS,fuelmonthID,monthID,'//
      &       'JulianDate,avgRH,minimum_Temp,maximum_Temp'
         
@@ -919,8 +926,12 @@ C.........  Open output file
      &       .FALSE., .TRUE., 'MOVES_OUTFILE', PROGNAME )
 
         WRITE( ODEV2,'(A)' )'#DESC MOVES-ready input file'
-        WRITE( ODEV2,'(A)' )'#AVERAGING_METHOD ' // TRIM( AVG_TYPE )
-        WRITE( ODEV2,94010 )'#MODELING PERIOD:', EPI_SDATE,'-',EPI_EDATE
+        WRITE( ODEV2,'(A)' )'#GRDNAME: ' // GDNAM3D // COORD
+        WRITE( ODEV2,'(A)' )'#MCXREF : ' // TRIM( CMCXREF )
+        WRITE( ODEV2,'(A)' )'#MFMREF : ' // TRIM( CMFMREF )
+        WRITE( ODEV2,'(A)' )'#AVERAGING_METHOD:  ' // TRIM( AVG_TYPE )
+        WRITE( ODEV2,94010 )'#MODELING PERIOD : ', EPI_SDATE,'-',EPI_EDATE
+        WRITE( ODEV2,94020 )'#TEMP_BUFFER_BIN : ', TEMPBIN 
         WRITE( ODEV2,'(A)' )'#DATA FIPS,MonthID,Temperature'//
      &          'ProfileID,RH,temp1(min),temp2(max),,,,,,,,,,,,temp24'
         WRITE( ODEV2,'(A,I5)' ) 'PD_TEMP_INCREMENT ' , PDTEMP
@@ -1339,7 +1350,7 @@ C...........   Internal buffering fosrmats............ 94xxx
  
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-94020   FORMAT( A, :, 2( I7.7, :, A ) )
+94020   FORMAT( A, F8.2  )
 
 94030   FORMAT( A, I5 )
 
