@@ -136,15 +136,26 @@ C.............  Retrieve profile numbers for all pollutants
             PWEK = 0
             PHRL = 0
             DO V = 1, NVAR
-                MONPROF( V ) = MONREF( MDEX( S,V ) )
-                WEKPROF( V ) = WEKREF( WDEX( S,V ) )
-                HRLPROF( V ) = HRLREF( DDEX( S,V ) )
 
 C.................  Met-based profiles should have 99999 profile IDs.
 C                   need to reset the value to 99999
-                IF( MDEX( S,V ) == 99999 ) MONPROF( V ) = 99999
-                IF( WDEX( S,V ) == 99999 ) WEKPROF( V ) = 99999
-                IF( DDEX( S,V ) == 99999 ) HRLPROF( V ) = 99999
+                IF( MDEX( S,V ) == 99999 ) THEN
+                    MONPROF( V ) = 99999
+                ELSE
+                    MONPROF( V ) = MONREF( MDEX( S,V ) )
+                END IF
+
+                IF( WDEX( S,V ) == 99999 ) THEN
+                    WEKPROF( V ) = 99999
+                ELSE
+                    WEKPROF( V ) = WEKREF( WDEX( S,V ) )
+                END IF
+
+                IF( DDEX( S,V ) == 99999 ) THEN
+                    HRLPROF( V ) = 99999
+                ELSE
+                    HRLPROF( V ) = HRLREF( DDEX( S,V ) )
+                END IF
 
                 IF( V .NE. 1 .AND.  
      &              MONPROF( V ) .NE. PMON ) MFLAG = .FALSE.
