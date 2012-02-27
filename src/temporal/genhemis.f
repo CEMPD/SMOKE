@@ -482,18 +482,11 @@ C                           to tmp hourly factors array
                         END DO
 
 C.........................  Sum of hourly temporal factors b/n BENHR and ENDHR
-                        IF( K1 .GE. K2 ) THEN
-                            DO II = K1, 24
-                               SUMHRLFAC = SUMHRLFAC + TMPHRLFAC( II )
-                            END DO
+                        IF( K1 > K2 ) THEN
 
-                            DO II = 1, K2
-                               SUMHRLFAC = SUMHRLFAC + TMPHRLFAC( II )
-                            END DO
-
-                            DO II = K2+1, K1-1
-                               TMPHRLFAC( II ) = 0.0   ! resetting to zero
-                            END DO
+                            WRITE( MESG,94010 )'ERROR: Fire end hour:', K2,
+     &                           ' can not be earlier than begin hour:', K1
+                            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
                         ELSE   ! when end hour is greater than start hour
 
@@ -501,13 +494,17 @@ C.........................  Sum of hourly temporal factors b/n BENHR and ENDHR
                                SUMHRLFAC = SUMHRLFAC + TMPHRLFAC( II )
                             END DO
 
-                            DO II = 1, K1-1
-                               TMPHRLFAC( II ) = 0.0   ! resetting to zero
-                            END DO
+                            IF( K1 == 1 .AND. K2 == 1 ) THEN
+                                TMPHRLFAC( 2:24 ) = 0.0
+                           
+                            ELSE IF( K1 == 24 .AND. K2 == 24 ) THEN
+                                TMPHRLFAC( 1:23 ) = 0.0
 
-                            DO II = K2+1, 24
-                               TMPHRLFAC( II ) = 0.0   ! resetting to zero
-                            END DO
+                            ELSE
+                               TMPHRLFAC( 1   :K1-1 ) = 0.0   ! resetting to zero
+                               TMPHRLFAC( K2+1:  24 ) = 0.0   ! resetting to zero
+
+                            END IF
 
                         END IF
 
