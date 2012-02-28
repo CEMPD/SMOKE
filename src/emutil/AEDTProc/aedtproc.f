@@ -166,7 +166,6 @@ C.........  Other local variables
         INTEGER         MON                 ! current month
         INTEGER         YEAR                ! current modeling year
         INTEGER      :: DYEAR = -1           ! Year diff = Overyear-Modelyear (2005-2006)
-        INTEGER      :: OVER_YEAR = 0       ! overriding year
 
         INTEGER         JDATE, TDATE        ! Processing date
         INTEGER         JTIME               ! Processing time
@@ -237,7 +236,7 @@ C           to continue running the program.
 C.........  Get logical value from the environment
         MESG = 'Enter year difference between MCIP modeling year ' //
      &          'and AEDT modeling year [MCIP_YEAR-AEDT_YEAR]'
-        DYEAR = ENVINT( 'YEAR_DIFF', MESG,-1, IOS )
+        DYEAR = ENVINT( 'YEAR_DIFF', MESG, 0, IOS )
         
 C........  Open unit numbers of input files
         MESG = 'Enter logical name for aircraft flight information file list'
