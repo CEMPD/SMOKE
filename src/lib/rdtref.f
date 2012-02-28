@@ -118,7 +118,6 @@ C...........   Other local variables
         INTEGER         VTYPE   !  temporary vehicle type number
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error occurred
-        LOGICAL      :: HFLAG = .FALSE.   !  true: pt defn header encountered
         LOGICAL      :: PFLAG = .FALSE.   !  true: pol/act-spec entries skipped
         LOGICAL      :: SKIPREC = .FALSE. !  true: skip this x-ref entry
 
@@ -203,6 +202,8 @@ C            we know how much memory to allocate for the unsorted, unprocessed
 C            arrays.
         IREC = 0
         NREF = 0
+        NCP    = 6        ! ORL and IDA default (4+2)
+        JS     = 6        ! ORL and IDA default (4+2)
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -227,7 +228,6 @@ C.............  Skip blank or comment lines
 C.............  Auto check for LIST or EPS2.0 formated temporal x-ref...
 C.............  If header is found, read point source header information
             ELSE IF( INDEX( LINE, PDEFPCKT ) .GT. 0 ) THEN
-                HFLAG = .TRUE.
 
                 IF( L .GT. LPCK ) THEN
                     READ( LINE( LPCK:L ), * ) NCP, JS
@@ -244,9 +244,6 @@ C.................  Adjust for FIPS code and Plant ID, which are always there
                 NCP = NCP + 2
                 IF( JS .GT. 0 ) JS = JS + 2
 
-C.................  Compare point source definition from header to inventory
-                IF ( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
-
                 CYCLE
 
 C.............  The source-formatted will have only 3 columns                
@@ -257,6 +254,10 @@ C.............  The source-formatted will have only 3 columns
                 EXIT              ! Exit from read loop
 
             ELSE
+
+C.................  Compare point source definition from header to inventory
+                IF( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
+
                 FFORMAT = 'STANDARD'
 
                 CALL PARSLINE( LINE, MXTCOL, SEGMENT )
@@ -279,19 +280,7 @@ C                   with master list.
 C.................  Skip lines that are not valid for this inven and src cat
                 IF( SKIPREC ) CYCLE
 
-C.................  Ensure that header is present for point sources and
-                IF( CATEGORY .EQ. 'POINT' .AND. .NOT. HFLAG ) THEN
-                    EFLAG = .TRUE.
-                    HFLAG = .TRUE.  ! To turn off error message
-                    MESG = 'ERROR: ' // PDEFPCKT( 1:LPCK ) // 
-     &                     ' header is not present before first ' //
-     &                     'point source line.'
-                    CALL M3MSG2( MESG )
-
-                ELSE
-                    NREF = NREF + 1
-
-                END IF
+                NREF = NREF + 1
 
             END IF     ! End format of temporal x-ref file
 

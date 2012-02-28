@@ -94,7 +94,7 @@ C...........   Other local variables
         INTEGER         IOS     !  i/o status
         INTEGER         IWEK    !  temporary weekly profile code
         INTEGER         IREC    !  record counter
-        INTEGER         JS      !  position of SCC in source chars in x-ref file
+        INTEGER      :: JS = 0  !  position of SCC in source chars in x-ref file
         INTEGER         JSPC    !  tmp index to master pollutant/etype list
         INTEGER         LPCK    !  length of point definition packet
         INTEGER      :: NCP = 0 !  input point source header parm
@@ -104,7 +104,6 @@ C...........   Other local variables
         INTEGER         VTYPE   !  temporary vehicle type number
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
-        LOGICAL      :: HFLAG = .FALSE.   !  true: header found
         LOGICAL      :: PFLAG = .FALSE.   !  true: tmp pol-spec rec skipped
         LOGICAL      :: SKIPPOL = .FALSE. !  true: pol-spec rec skipped in x-ref
         LOGICAL      :: SKIPREC = .FALSE. !  true: record skipped in x-ref file
@@ -207,8 +206,8 @@ C.........  Read lines and store unsorted data for the source category of
 C           interest
         IREC   = 0
         N      = 0
-        NCP    = 3       ! IDA default
-        JS     = 0       ! IDA default (although, not consistent w/ other files)
+        NCP    = 6        ! ORL and IDA default (4+2)
+        JS     = 6        ! ORL and IDA default (4+2)
         DLEN   = SICLEN3 + LEN( SICNOTE )      
         DO I = 1, NLINES
 
@@ -248,15 +247,15 @@ C.................  Adjust for FIPS code and Plant ID, which are always there
                 NCP = NCP + 2
                 IF( JS .GT. 0 ) JS = JS + 2
 
-C.................  Compare point source definition from header to inventory
-                IF ( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
-
                 CYCLE
 
 C.............  If not a header line, then it's a regular line.  The records
 C               that don't apply to this source category or to the current
 C               inventory will be filtered out by FLTRXREF
-            ELSE 
+            ELSE
+            
+C.................  Compare point source definition from header to inventory
+                IF( CATEGORY .EQ. 'POINT' ) CALL CHKPTDEF( NCP, JS )
 
                 CALL PARSLINE( LINE, MXCOL, SEGMENT )
 
