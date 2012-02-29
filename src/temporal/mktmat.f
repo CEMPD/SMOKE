@@ -49,7 +49,7 @@ C.........  MODULES for public variables
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: MONFAC, WEKFAC, HRLFAC, XWKFAC, HOUR_TPROF,
      &                      METPROTYPE, METPROF, NMETPROF, METFACS,
-     &                      MONFAC_ORG
+     &                      MONFAC_ORG 
      
         USE MODSOURC, ONLY: IFIP
 
@@ -138,7 +138,6 @@ C.....................  update TMAT with met-based profiles (METFACS)
      &                  WDEX( S,V ) == 99999 .OR.
      &                  DDEX( S,V ) == 99999 ) THEN
 
-C           print*,S,IFIP(S),V,MDEX(S,V),WDEX(S,V),DDEX(S,V)
                         CALL UPDATE_TMAT_METFACS( METPROTYPE,.TRUE. )
 
                     ELSE
@@ -151,7 +150,7 @@ C           print*,S,IFIP(S),V,MDEX(S,V),WDEX(S,V),DDEX(S,V)
      &                            WEKFAC( DAY,WDEX( S,V ) )
                             K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
                             TMAT( S,V,H ) = FAC * HRLFAC( K, L, DAY )
-c        write(*,'(A,2I8,4F10.5)') 'Standard',V,H,FAC,MONFAC(MON,MDEX(S,V)),WEKFAC(DAY,WDEX(S,V)),HRLFAC(K,L,DAY)
+
                         END DO
 
                     END IF
@@ -166,7 +165,6 @@ C.....................  update TMAT with met-based profiles (METFACS)
                     IF( WDEX( S,V ) == 99999 .OR.
      &                  DDEX( S,V ) == 99999 ) THEN
  
-C          print*,S,IFIP(S),V,L,MDEX(S,V),WDEX(S,V),DDEX(S,V),'avg'
                         CALL UPDATE_TMAT_METFACS( METPROTYPE, .FALSE. )
 
                     ELSE
@@ -245,13 +243,9 @@ C.............. Subroutine arguments
 C.............  Local variables
             INTEGER  H, I, J, K, L, NP, IOS 
             INTEGER  IYEAR, IDATE, MYEAR, MDAY, MHOUR
-            INTEGER, SAVE  :: TMPMON = 0 
-            INTEGER, SAVE  :: TMPYEAR = 0 
 
             REAL     METFAC, TOT, DIV, FAC
-
-            REAL, ALLOCATABLE :: TOTFAC( : ) 
-
+    
             CHARACTER(300) MESG
             CHARACTER(16)  TVARNAME
             
@@ -287,7 +281,7 @@ C.................  Renormalize METFACS using days of month
                     L = DDEX( S,V )
                     K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
                     TMAT( S,V,H ) = FAC * HRLFAC( K, L, DAY )
-c         write(*,'(a,6I8,4F15.5)')'MONTHLY',IFIP(S),v,JDATE,MON,MDAY,DAY,K,L,HRLFAC(K,L,day)
+
                 END DO
             
             CASE( 'DAILY' )
@@ -304,7 +298,7 @@ C.................  For Met-based daily profiles, renormalization is not needed.
                     L = DDEX( S,V )
                     K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
                     TMAT( S,V,H ) = FAC * HRLFAC( K, L, DAY )
-c         write(*,'(a,5I8,2F15.5)'),'DAILY',IFIP(S),v,JDATE,MON,MDAY,FAC,HRLFAC(K,L,DAY)
+
                 END DO
 
             CASE( 'HOURLY' )
@@ -316,90 +310,73 @@ C.................  Get header description of hour-specific temporal profile inp
      &                   // PNAME( 1:LEN_TRIM( PNAME ) ) // '"', 2 )
                 END IF
 
-                IF( .NOT. READ3( PNAME, 'COUNTIES', 1, JDATE, JTIME,
-     &                           METPROF ) ) THEN
-                    MESG = 'Could not read ' // 'COUNTIES' //
-     &                     ' from ' // TRIM( PNAME )
-                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Allocate local array to store total of day/month/year
-                ALLOCATE( TOTFAC( NROWS3D ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'TOTFAC', PROGNAME )
-
-                NP = FIND1( IFIP( S ), NROWS3D, METPROF )
- 
 C.................  Check that requested variables are in the file
                 MYEAR = INT( 1/YRFAC )
                 IYEAR = INT( JDATE/1000 )
                 TVARNAME = 'HRL_BY_SRC'
-                
-                IF( MON /= TMPMON .AND. IYEAR /=TMPYEAR ) THEN
 
-C.....................  Compute total hours of day/month/year to compute
-C                       total of day/month/year for later hourly profiles
-                    IF( HOUR_TPROF == 'MONTH' ) THEN
-                        MDAY = MWFAC( MON )
-                        IF( MYEAR > 365 .AND. MON == 2 ) MDAY = 29
-                        MHOUR = MDAY * 24
-                        IDATE = JULIAN( IYEAR, MON, 1 )
+C.................  Compute total hours of day/month/year to compute
+C                   total of day/month/year for later hourly profiles
+                IF( HOUR_TPROF == 'MONTH' ) THEN
+                    MDAY = MWFAC( MON )
+                    IF( MYEAR > 365 .AND. MON == 2 ) MDAY = 29
+                    MHOUR = MDAY * 24
+                    IDATE = JULIAN( IYEAR, MON, 1 )
 
-                        TDATE = IYEAR * 1000 + IDATE
+                    TDATE = IYEAR * 1000 + IDATE
 
-                        TMPMON  = MON
-                        TMPYEAR = 0
+                ELSE IF( HOUR_TPROF == 'YEAR' ) THEN
+                    MHOUR = 365 * 24
+                    IF( MYEAR > 365 ) MDAY = 366 * 24
 
-                    ELSE IF( HOUR_TPROF == 'YEAR' ) THEN
-                        MHOUR = 365 * 24
-                        IF( MYEAR > 365 ) MDAY = 366 * 24
+                    TDATE = IYEAR * 1000 + 1
 
-                        TDATE = IYEAR * 1000 + 1
+                ELSE
+                    TDATE = JDATE
+                    MHOUR   = 24
 
-                        TMPMON  = 0
-                        TMPYEAR = IYEAR
+                END IF
 
-                    ELSE
-                        TDATE = JDATE
-                        MHOUR   = 24
+C.................  Convert timezone (w daylight saving) to read 
+C                   correct county-specific hr profiles
+                TTIME = JTIME + ZONES( S ) * 10000
+                IF( TTIME > 230000 ) TTIME = TTIME - 240000
 
-                        TMPMON  = 0
-                        TMPYEAR = 0
+C.................  Read profileIDs and hourly factors
+                IF( .NOT. READ3( PNAME, 'COUNTIES', 1, TDATE, TTIME,
+     &                           METPROF ) ) THEN
+                    MESG = 'Could not read ' // 'COUNTIES' //
+     &                     ' from ' // TRIM( PNAME )
+                    CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
+                END IF
 
+                NP = FIND1( IFIP( S ), NROWS3D, METPROF )
+
+                TOT = 0.0
+                DO H = 1, MHOUR
+
+                    IF( .NOT. READ3( PNAME, TVARNAME, 1, TDATE, TTIME,
+     &                   METFACS( :,1,1 ) ) ) THEN
+                        MESG = 'Could not read ' // TRIM(TVARNAME) //
+     &                         'from ' // TRIM( PNAME )
+                        CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
                     END IF
 
-C.....................  Convert timezone (w daylight saving) to read 
-C                       correct county-specific hr profiles
-                    TTIME = JTIME + ZONES( S ) * 10000
-                    IF( TTIME > 230000 ) TTIME = TTIME - 240000
+                    TOT = TOT + METFACS( NP,1,1 )
 
-                    TOTFAC = 0.0
-                    DO H = 1, MHOUR
-                    
-                        IF( .NOT. READ3( PNAME, TVARNAME, 1, TDATE,
-     &                        TTIME, METFACS( :,1,1 ) ) ) THEN
-                            MESG = 'Could not read ' // TRIM(TVARNAME) //
-     &                             'from ' // TRIM( PNAME )
-                            CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
-                        END IF
+                    CALL NEXTIME( TDATE, TTIME, 10000 )
 
-                        TOTFAC( NP ) = TOTFAC( NP ) + METFACS( NP,1,1 )
-
-c      write(*,'(4I8,2F15.5)') NP,H,TDATE,TTIME,METFACS(NP,1,1),TotFAC(NP)
-
-                        CALL NEXTIME( TDATE, TTIME, 10000 )
-                    END DO
-                    
-                END IF
+                END DO
 
 C.................  Convert timezone (w daylight saving) to read correct county-specific hr profiles
                 TDATE = JDATE
                 TTIME = JTIME + ZONES( S ) * 10000
                 IF( TTIME > 230000 ) TTIME = TTIME - 240000
 
-                DO H = 1, 24
-
 C.....................  Convert ann/avgday NH3 inventory to hourly NH3 before multiplying
 C                       adjustment factor computed by Gentpro
+                DO H = 1, 24
+
                     IF( HOUR_TPROF == 'DAY' ) THEN
 
                         IF( IFLAG ) THEN   ! processing annual inventory for NH3`
@@ -438,12 +415,8 @@ C.........................  Update temporal profile IDs to met-based temp profil
                         CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
                     END IF
 
-                    METFAC = METFACS( NP,1,1 ) / TOTFAC( NP )
-
+                    METFAC = METFACS( NP,1,1 ) / TOT
                     TMAT( S,V,H ) = FAC * METFAC
-c      write(*,'(A,4I8,3F15.5)')TVARNAME,K,H,TDATE,TTIME,METFAC
-
-c      write(*,'(A,4I8,3F15.5)')TVARNAME,K,H,TDATE,TTIME,MONFAC(MON,MDEX(S,V)),WEKFAC(DAY,WDEX(S,V)),METFAC
 
                     CALL NEXTIME( TDATE, TTIME, 10000 ) 
 
