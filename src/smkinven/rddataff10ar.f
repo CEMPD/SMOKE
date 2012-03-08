@@ -42,7 +42,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NRP, INV_MON
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG 
 
         IMPLICIT NONE
 
@@ -55,7 +55,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         REAL            YR2DAY, STR2REAL
         LOGICAL         CHKINT
 
-        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, YR2DAY, CHKINT
+        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, CHKINT, YR2DAY
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
@@ -78,10 +78,9 @@ C...........   Other local variables
         INTEGER, SAVE:: INY      !  inventory year
         INTEGER         IOS      !  i/o status
         INTEGER, SAVE:: NPOA     !  number of pollutants in file
-        INTEGER      :: LYEAR    !  Leap year (366 days per year)
         INTEGER      :: MDAYS    !  days of modeling inventory month
-
-        REAL         :: ANNTOT   !  annual total estimate from monthly total VMT
+        INTEGER      :: LYEAR    !  Leap year (366 days per year)
+        REAL         :: AVEINV   !  annual total estimate from monthly total VMT
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
         LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
@@ -136,7 +135,7 @@ C.........  Use the file format definition to parse the line into
 C           the various data fields
         READPOL ( 1     ) = ADJUSTL( SEGMENT( 8 ) )
         READDATA( 1,NEM ) = SEGMENT( 9 )
-        READDATA( 1,NDY ) = '-9'
+        READDATA( 1,NDY ) = ''
         READDATA( 1,NEF ) = '-9'
         READDATA( 1,NCE ) = '-9'
         READDATA( 1,NRE ) = '-9'
@@ -148,28 +147,49 @@ C           the various data fields
 C.........  Compute annual total based on monthly total
         IF( INV_MON > 0 ) THEN
 
-            READDATA( 1,NEM ) = SEGMENT( 20 + INV_MON )
+            READDATA( 1,NEM ) = '' 
+            READDATA( 1,NDY ) = SEGMENT( 20 + INV_MON )
 
-            IF( READDATA( 1,NEM ) == '' ) THEN
-                MESG = 'ERROR: Missing ' // MON_NAME( INV_MON ) //
-     &                 'monthly invenotry'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            IF( READDATA( 1,NDY ) == '' ) THEN
 
-            MDAYS = MON_DAYS( INV_MON )    ! day of months
+                READDATA( 1,NEM ) = SEGMENT( 9 )   ! reset original ann total back
 
-            LYEAR = INT( 1 / YR2DAY ( INY ) ) ! convert year to days
-            IF( LYEAR > 365 .AND. INV_MON == 2 ) MDAYS = 29  ! leap year (feb = 29days)
+                IF( READDATA( 1,NEM ) == '' ) THEN
+                    MESG = 'ERROR: Missing '//MON_NAME( INV_MON )
+     &                  // 'monthly and annual invenotries'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ELSE
+                    MESG = 'WARNING: Monthly inventory is '//
+     &                   'missing: Annual inventory will be used'
+                    CALL M3MESG( MESG )
+                END IF
 
-            ANNTOT = ( STR2REAL( READDATA(1,NEM) ) / MDAYS ) * LYEAR
-            WRITE( READDATA( 1,NEM ), '( E15.10 )' ) ANNTOT
+            ELSE 
+
+                MDAYS = MON_DAYS( INV_MON )    ! day of months
+
+                LYEAR = INT( 1 / YR2DAY ( INY ) )                ! convert year to days
+                IF( LYEAR > 365 .AND. INV_MON == 2 ) MDAYS = 29  ! leap year (feb = 29days)
+
+                AVEINV = STR2REAL( READDATA(1,NDY) ) / MDAYS
+                WRITE( READDATA( 1,NDY ), '( E15.10 )' ) AVEINV
+
+                IF( AVEINV < 0.0 ) THEN
+                    MESG = 'ERROR: Can not process negative value'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+             END IF
 
         END IF
 
 C.........  Reset annual total inventory to zero for daily/hourly FF10 processing
+        IF( FF10INVFLAG ) THEN
         IF( DAYINVFLAG .OR. HRLINVFLAG ) THEN
             READPOL ( 1     ) = SEGMENT( 9 )
-            READDATA( 1,NEM ) = '0.0'
+            READDATA( 1,NEM ) = ''
+            READDATA( 1,NDY ) = ''
+        END IF
         END IF
 
 C.........  Make sure routine knows it's been called already
