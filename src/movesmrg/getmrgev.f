@@ -46,7 +46,7 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
-     &                       SPDFLAG
+     &                       SPDFLAG, TEMPBIN, MOPTIMIZE
 
         IMPLICIT NONE
 
@@ -57,10 +57,10 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER(2)    CRLF
-        INTEGER         ENVINT
+        REAL            ENVREAL
         LOGICAL         ENVYN  
 
-        EXTERNAL CRLF, ENVINT, ENVYN
+        EXTERNAL CRLF, ENVREAL, ENVYN
 
 C...........   Other local variables
 
@@ -116,6 +116,9 @@ C.........  Retrieve the on/off environment variables
         LREPSRC = ENVYN( 'MRG_REPSRC_YN', 'Output source total ' //
      &                   'ASCII reports or not', .FALSE., IOS )
 
+        TEMPBIN = ENVREAL( 'TEMP_BUFFER_BIN', 'Buffer for ' //
+     &                   ' min/max temperature ', 0., IOS )
+                                            
         IF( LREPSRC ) THEN
             LREPCNY = .FALSE.
             LREPSTA = .FALSE.
@@ -131,13 +134,16 @@ C.........  Check for variable grid
 
 C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile processing
         RPDFLAG = ENVYN( 'RPD_MODE', 'Calculate rate-per-distance ' //
-     &                   'emissions', .TRUE., IOS )
+     &                   'emissions', .FALSE., IOS )
 
         RPVFLAG = ENVYN( 'RPV_MODE', 'Calculate rate-per-vehicle ' //
      &                   'emissions', .FALSE., IOS )
      
         RPPFLAG = ENVYN( 'RPP_MODE', 'Calculate rate-per-profile ' //
      &                   'emissions', .FALSE., IOS )
+
+        MOPTIMIZE = ENVYN( 'MEMORY_OPTIMIZE_YN', 'Optimize Memory usage' //
+     &                    " ", .TRUE., IOS )
 
         IF( .NOT. RPDFLAG .AND.
      &      .NOT. RPVFLAG .AND.

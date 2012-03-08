@@ -60,7 +60,7 @@ C.........  This module contains the major data structure and control flags
      &          EANAM, NIPPA                       ! pol/act names
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, 
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MOPTIMIZE,
      &          TVARNAME, METNAME,
      &          NREFSRCS, REFSRCS, NSRCCELLS, SRCCELLS, SRCCELLFRACS,
      &          EMPROCIDX, EMPOLIDX,
@@ -69,7 +69,8 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          SPDFLAG, SPDPRO, MISCC, 
      &          MSNAME_L, MSMATX_L, MNSMATV_L, 
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
-     &          EANAMREP
+     &          EANAMREP, 
+     &          TEMPBIN
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -102,13 +103,15 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER(10)   HHMMSS
+        CHARACTER(2)    CRLF
         INTEGER         INDEX1
         INTEGER         FIND1
         INTEGER         FIND1FIRST
         INTEGER         FINDC
         INTEGER         WKDAY
+        INTEGER         ENVINT
 
-        EXTERNAL    HHMMSS, INDEX1, FIND1, FIND1FIRST, FINDC, WKDAY
+        EXTERNAL    HHMMSS, INDEX1, FIND1, FIND1FIRST, FINDC, WKDAY, ENVINT, CRLF
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -126,6 +129,7 @@ C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: VMT( : )
         REAL, ALLOCATABLE :: TEMPG( : )
         REAL, ALLOCATABLE :: EMGRD( :,: )     ! emissions for each grid cell and species
+        REAL, ALLOCATABLE :: TEMGRD( :,:,:)    ! emissions for each grid cell, species, and time steps
         REAL, ALLOCATABLE :: TMPEMGRD( :,: )  ! tmp emissions for each grid cell and species
 
 C...........   Local temporary array for input and output variable names
@@ -147,6 +151,7 @@ C...........   Other local variables
         INTEGER          DAYMONTH      ! day-of-month
         INTEGER          DAYIDX        ! current day value index
         INTEGER          FUELMONTH     ! current fuel month
+        INTEGER          LFUELMONTH    ! last fuel month
         INTEGER          HOURIDX       ! current hour of the day
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
         INTEGER          IOS           ! tmp I/O status
@@ -158,6 +163,7 @@ C...........   Other local variables
         INTEGER          LDATE         ! Julian date from previous iteration
         INTEGER          MJDATE        ! mobile-source Julian date for by-day
         INTEGER          MONTH         ! current month
+        INTEGER          LMONTH        ! month from previous iteration
         INTEGER          OCNT          ! tmp count output variable names
         INTEGER       :: PDAY = 0      ! previous iteration day no.
         INTEGER          POLIDX        ! current pollutant index
@@ -166,6 +172,8 @@ C...........   Other local variables
         INTEGER          SRC           ! current source number
         INTEGER          UUIDX, UOIDX, OUIDX, OOIDX  ! indexes for matching profiles
         INTEGER          USTART, UEND, OSTART, OEND
+        INTEGER         MXWARN      !  maximum number of warnings
+        INTEGER      :: NWARN = 0   !  current number of warnings
 
         REAL             F1, F2, FG0   ! tmp conversion
         REAL             GFRAC         ! grid cell fraction
@@ -241,8 +249,16 @@ C.........  Allocate memory for fixed-size arrays...
         ALLOCATE( MGMATX( NGRID + 2 * MNGMAT ), STAT=IOS )    ! contiguous gridding matrix
         CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
 
-        ALLOCATE( EMGRD( NGRID, NMSPC ), STAT=IOS )     ! gridded emissions
-        CALL CHECKMEM( IOS, 'EMGRD', PROGNAME )
+C........ when not optimize memory 
+        IF ( MOPTIMIZE ) THEN
+            ALLOCATE( EMGRD( NGRID, NMSPC ), STAT=IOS )     ! gridded emissions
+            CALL CHECKMEM( IOS, 'EMGRD', PROGNAME )
+        ELSE
+ 	    ALLOCATE( TEMGRD( NGRID, NMSPC, NSTEPS ), STAT=IOS )     ! gridded emissions
+            CALL CHECKMEM( IOS, 'TEMGRD', PROGNAME )
+            TEMGRD = 0.  ! array
+        END IF
+
         ALLOCATE( TMPEMGRD( NGRID, NMSPC ), STAT=IOS )     ! gridded emissions
         CALL CHECKMEM( IOS, 'TMPEMGRD', PROGNAME )
         
@@ -294,6 +310,9 @@ C.........  Read gridding matrix
 C.........  Build list of grid cells for each source
         CALL BLDSRCCELL( NMSRC, NGRID, MNGMAT, MGMATX( 1 ), 
      &                   MGMATX( NGRID + 1 ), MGMATX( NGRID + MNGMAT + 1 ) )
+
+C.........  Get maximum number of warnings
+        MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
 
 C.........  Set up reference county information
         CALL SETREFCNTY
@@ -351,60 +370,28 @@ C.................  Determine Last county
             END IF
 
 C.............  Determine fuel month for current time step and reference county
-            K = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
+            N = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
             M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
-
 C.................  Determine month
             CALL DAYMON( SDATE, MONTH, DAYMONTH )
-                
-            IF( K .LT. 0 .OR. M .LT. 0 ) THEN
+            IF( N .LT. 0 .OR. M .LT. 0 ) THEN
                 WRITE( MESG, 94010 ) 'No fuel month data for ' //
      &            'reference county', MCREFIDX( I,1 )
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
             END IF
                 
-            FUELMONTH = 0
-            DO J = K, K + FMREFLIST( M,2 )
-                IF( FMREFSORT( J,3 ) == MONTH ) THEN
-                    FUELMONTH = FMREFSORT( J,2 )
-                    EXIT
-                END IF
-            END DO
-                
-            IF( FUELMONTH == 0 ) THEN
-                WRITE( MESG, 94010 ) 'Could not determine ' //
-     &            'fuel month for reference county', MCREFIDX( I,1 ),
-     &            'and episode month', MONTH
-                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-            END IF
-
-C.............  Read emission factors for reference county and month
-            WRITE( MESG,94010 ) 'Processing MOVES lookup ' //
-     &           'tables for reference county', MCREFIDX( I,1 ),  
-     &           ' of fuel month:', FUELMONTH 
-            CALL M3MSG2( MESG )
- 
-            IF( RPDFLAG ) THEN
-                CALL RDRPDEMFACS( I, FUELMONTH )
-            END IF
-             
-            IF( RPVFLAG ) THEN
-                CALL RDRPVEMFACS( I, FUELMONTH )
-            END IF
-                
-            IF( RPPFLAG ) THEN
-                CALL RDRPPEMFACS( I, FUELMONTH )
-            END IF
-
 C.............  Initializations before main time loop 
-            JDATE  = SDATE
-            JTIME  = STIME
-            LDATE  = 0
-            DAY    = 1
+            JDATE   = SDATE
+            JTIME   = STIME
+            LDATE   = 0
+            LMONTH  = 0
+            DAY     = 1
+            FUELMONTH = 0
+            LFUELMONTH  = 0
 
 C.............  Loop through output time steps
             DO T = 1, NSTEPS
-                EMGRD = 0.  ! array
+                IF ( MOPTIMIZE ) EMGRD = 0.  ! array
                 TMPEMGRD = 0.  ! array
 
 C.................  Determine weekday index (Monday is 1)
@@ -417,6 +404,47 @@ C.................  Determine weekday index (Monday is 1)
 
 C.................  Determine month
                 CALL DAYMON( JDATE, MONTH, DAYMONTH )
+
+                IF ( MONTH .NE. LMONTH ) THEN
+                    FUELMONTH = 0
+                    DO J = N, N + FMREFLIST( M,2 )
+                        IF( FMREFSORT( J,3 ) == MONTH ) THEN
+                            FUELMONTH = FMREFSORT( J,2 )
+                            EXIT
+                        END IF
+                    END DO
+                
+                    IF( FUELMONTH == 0 ) THEN
+                        WRITE( MESG, 94010 ) 'Could not determine ' //
+     &                    'fuel month for reference county', MCREFIDX( I,1 ),
+     &                    'and episode month', MONTH
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+
+C.............  Read emission factors for reference county and month
+C.............  Reload emission factors in case the last hour of a day belong to a new fuel month
+
+                    IF ( LFUELMONTH .NE. FUELMONTH ) THEN
+                        WRITE( MESG,94010 ) 'Processing MOVES lookup ' //
+     &                      'tables for reference county', MCREFIDX( I,1 ),  
+     &                      ' of fuel month:', FUELMONTH 
+                        CALL M3MSG2( MESG )
+ 
+                        IF( RPDFLAG ) THEN
+                            CALL RDRPDEMFACS( I, FUELMONTH )
+                        END IF
+             
+                        IF( RPVFLAG ) THEN
+                            CALL RDRPVEMFACS( I, FUELMONTH )
+                        END IF
+                
+                        IF( RPPFLAG ) THEN
+                            CALL RDRPPEMFACS( I, FUELMONTH )
+                        END IF
+                        LFUELMONTH = FUELMONTH
+                    END IF
+                    LMONTH = MONTH
+                END IF
 
 C.................  Write out message for new day.
                 IF( JDATE .NE. LDATE ) THEN
@@ -540,6 +568,34 @@ C                         OO - both min and max profile temps are over county te
                         MINVAL = AVGMIN( MICNY( SRC ), MONTH, DAYMONTH )
                         MAXVAL = AVGMAX( MICNY( SRC ), MONTH, DAYMONTH )
 
+C.....................  Make minimum and maxmum values within the index
+                        IF ( (MINVAL .LT. EMTEMPS( EMTEMPIDX( 1 ) ) )  
+     &                      .AND. (MINVAL .GE. (EMTEMPS( EMTEMPIDX( 1 ) ) - TEMPBIN )) ) THEN
+                            IF( NWARN < MXWARN ) THEN
+                            WRITE( MESG, 94040 ) 'Lowest profile ' //
+     &                      'minimum temperature ', EMTEMPS( EMTEMPIDX( 1 )) ,
+     &                       ' is higher than county minimum temperature:', MINVAL,
+     &                       CRLF() // BLANK10 // 'minimum value will be set to ',
+     &                       EMTEMPS( EMTEMPIDX( 1 )), 'based on temperature buffer bin ', TEMPBIN
+                            CALL M3WARN(PROGNAME, JDATE, JTIME, MESG )
+                            NWARN = NWARN + 1
+                            END IF 
+                            MINVAL = EMTEMPS( EMTEMPIDX( 1 ) )
+                        END IF
+                        IF ( (MAXVAL .GT. EMXTEMPS( EMTEMPIDX( NEMTEMPS ) ))
+     &                      .AND. ( MAXVAL .LE. (EMXTEMPS( EMTEMPIDX( NEMTEMPS ) ) + TEMPBIN) ) ) THEN
+                            IF( NWARN < MXWARN ) THEN
+                            	 WRITE( MESG, 94040 ) 'Highest profile ' // 
+     &                        	'maximum temperature ', EMXTEMPS( EMTEMPIDX( NEMTEMPS )) ,
+     &                       	' is lower than county maximum temperature:',  MAXVAL,
+     &                          CRLF() // BLANK10 // 'maximum value will be set to ',
+     &                          EMTEMPS( EMTEMPIDX( NEMTEMPS )), 'based on temperature buffer bin ', TEMPBIN
+                                CALL M3WARN(PROGNAME, JDATE, JTIME, MESG )
+                                NWARN = NWARN + 1
+                            END IF
+                            MAXVAL = EMXTEMPS( EMTEMPIDX( NEMTEMPS ))
+                        END IF
+                            
 C.........................  Check that min and max county temps were found
                         IF( MINVAL .LT. AMISS3 .OR.
      &                      MAXVAL .LT. AMISS3 ) THEN
@@ -579,17 +635,21 @@ C.........................  Check that appropriate minimum temperatures were fou
      &                        'minimum temperature', 
      &                        EMTEMPS( EMTEMPIDX( 1 ) ),
      &                        'is higher than county minimum temperature',
-     &                        MINVAL
+     &                        MINVAL 
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                         END IF
                         
                         IF( OSTART == 0 ) THEN
-                            WRITE( MESG, 94040 ) 'ERROR: Highest profile ' //
-     &                        'minimum temperature', 
-     &                        EMTEMPS( EMTEMPIDX( NEMTEMPS ) ),
-     &                        'is lower than county minimum temperature',
-     &                        MINVAL
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            IF ( MINVAL .EQ. EMTEMPS( EMTEMPIDX( NEMTEMPS ) ) ) THEN
+                                OSTART = NEMTEMPS 
+                            ELSE
+                                WRITE( MESG, 94040 ) 'ERROR: Highest profile ' //
+     &                         'minimum temperature', 
+     &                         EMTEMPS( EMTEMPIDX( NEMTEMPS ) ),
+     &                         'is lower than county minimum temperature',
+     &                         MINVAL 
+                              CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
                         END IF
 
 C.........................  Find indexes of bounding maximum temperatures
@@ -604,6 +664,11 @@ C.............................  Check that profile minimum temperature hasn't ch
                             END IF
                             
                             OMAX = EMXTEMPS( EMTEMPIDX( K ) )
+                            IF( OMAX .EQ. MAXVAL ) THEN
+                                UOIDX = EMTEMPIDX( K )
+                                UUIDX = EMTEMPIDX( K )
+                                EXIT
+                            END IF
                         
                             IF( OMAX > MAXVAL ) THEN
                                 UOIDX = EMTEMPIDX( K )
@@ -613,6 +678,7 @@ C.............................  Check that profile minimum temperature hasn't ch
                                 EXIT
                             END IF
                         END DO
+
 C.........................  Check that appropriate maximum temperatures were found
                         IF( UUIDX .EQ. 0 .AND. UOIDX .NE. 0 ) THEN
                             WRITE( MESG, 94040 ) 'ERROR: Lowest profile of ' //
@@ -622,7 +688,7 @@ C.........................  Check that appropriate maximum temperatures were fou
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                         END IF
                         
-                        IF( UUIDX .EQ. 0 .AND. UOIDX .EQ. 0 ) THEN
+                        IF ( UUIDX .EQ. 0 .AND. UOIDX .EQ. 0 ) THEN
                             WRITE( MESG, 94040 ) 'ERROR: Highest profile of ' //
      &                        'max temperature', OMAX,'- min temperature',UMIN, 
      &                        ' is lower than county maximum temperature',
@@ -641,6 +707,13 @@ C.............................  Check that profile minimum temperature hasn't ch
                             END IF
                             
                             OMAX = EMXTEMPS( EMTEMPIDX( K ) )
+C...........................  If MAXVAL equal to maximum value
+                            IF( OMAX .EQ. MAXVAL ) THEN
+                                OOIDX = EMTEMPIDX( K )
+                                OUIDX = EMTEMPIDX( K )
+                                EXIT
+                            END IF
+
                         
                             IF( OMAX > MAXVAL ) THEN
                                 OOIDX = EMTEMPIDX( K )
@@ -677,21 +750,28 @@ C.........................  Check that maximum temperatures of profiles match
      &                      EMXTEMPS( UOIDX ) .NE. EMXTEMPS( OOIDX ) ) THEN
                             MESG = 'ERROR: Inconsistent temperature ' //
      &                        'profiles.'
-C                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                            CALL M3MESG( MESG )
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                           END IF
-                        
-                          MINFAC = ( MINVAL - EMTEMPS( UUIDX ) ) /
-     &                           ( EMTEMPS( OUIDX ) - EMTEMPS( UUIDX ) )
 
-                          MAXFAC = ( MAXVAL - EMXTEMPS( OUIDX ) ) /
+                          IF ( EMTEMPS( OUIDX ) .EQ. EMTEMPS( UUIDX ) ) THEN
+                              MAXFAC = 1.
+                          ELSE
+                              MINFAC = ( MINVAL - EMTEMPS( UUIDX ) ) /
+     &                           ( EMTEMPS( OUIDX ) - EMTEMPS( UUIDX ) )
+                          END IF
+                                                                           
+                          IF ( EMXTEMPS( OOIDX ) .EQ. EMXTEMPS( OUIDX ) ) THEN
+                              MAXFAC = 1.
+                          ELSE
+                              MAXFAC = ( MAXVAL - EMXTEMPS( OUIDX ) ) /
      &                           ( EMXTEMPS( OOIDX ) - EMXTEMPS( OUIDX ) )
+                          END IF
 
                       END IF
-
                     END IF
 
 C.....................  Loop over grid cells for this source
+
                     DO NG = 1, NSRCCELLS( SRC )
 
                         CELL = SRCCELLS( SRC, NG )
@@ -699,7 +779,7 @@ C.....................  Loop over grid cells for this source
                         
                         IF( RPDFLAG .OR. RPVFLAG ) THEN
                             TEMPVAL = ( TEMPG( CELL ) - CTOK ) * CTOF + 32.
-    
+
 C.............................  Determine temperature indexes for cell
                             IDX1 = 0
                             IDX2 = 0
@@ -717,11 +797,48 @@ C.............................  Determine temperature indexes for cell
                             END DO
     
 C.............................  Check that an appropriate temperature was found
-                            IF( IDX1 == 0 .OR. IDX2 > NEMTEMPS ) THEN
-                                WRITE( MESG, 94040 ) 'ERROR: Grid cell ' //
-     &                            'temperature', TEMPVAL, 'out of range ' //
-     &                            'of emission factor data.'
-                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            IF( IDX1 == 0 ) THEN
+                                IF( TEMPVAL >= (EMTEMPS( 1 ) - TEMPBIN) ) THEN
+                                    IDX1 =1
+                                    IDX2 =1
+                                    IF( NWARN < MXWARN ) THEN
+                                    WRITE( MESG, 94040 ) 'Grid cell ' //
+     &                               'temperature', TEMPVAL, 'out of lowest limit ' //
+     &                               'of emission factor data',  EMTEMPS( 1 ),
+     &                               CRLF() // BLANK10 //'Lowest profile emission factor ' //
+     &                               'is used based on temperature buffer bin', TEMPBIN 
+                                    CALL M3WARN( PROGNAME, JDATE, JTIME, MESG )
+                                    NWARN = NWARN + 1
+                                    END IF
+
+                                ELSE
+                                    WRITE( MESG, 94040 ) 'ERROR: Grid cell ' //
+     &                             'temperature', TEMPVAL, 'out of range ' //
+     &                             'of minimum emission factor data', EMTEMPS( 1 )
+                                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                               END IF
+                            END IF
+
+                            IF( IDX2 > NEMTEMPS ) THEN
+                                IF( TEMPVAL <= (EMTEMPS( NEMTEMPS ) + TEMPBIN) ) THEN
+                                    IDX1 = NEMTEMPS
+                                    IDX2 = NEMTEMPS
+                                    IF( NWARN < MXWARN ) THEN
+                                    WRITE( MESG, 94040 ) 'Grid cell ' //
+     &                               'temperature', TEMPVAL, 'out of highest limit ' //
+     &                               'of emission factor data',  EMTEMPS( NEMTEMPS ),
+     &                               CRLF()//BLANK10 //'Highest profile emission factor '//
+     &                               'is used based on temperature buffer bin', TEMPBIN 
+                                    CALL M3WARN( PROGNAME, JDATE, JTIME, MESG )
+                                    NWARN = NWARN + 1
+                                    ENDIF
+                                ELSE
+                                    WRITE( MESG, 94040 ) 'ERROR: Grid cell ' //
+     &                             'temperature', TEMPVAL, 'out of range ' //
+     &                             'of maximum emission factor data', EMTEMPS( NEMTEMPS )
+                                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                               END IF
+
                             END IF
                             
                             IF( IDX1 .NE. IDX2 ) THEN
@@ -805,9 +922,19 @@ C.............................  Calculate gridded, hourly emissions
                                 EMVAL = VPOPVAL * EFVAL * GFRAC
                             END IF
 
-                            EMGRD( CELL,SPINDEX( V,1 ) ) = 
+                            ! If use memory optimize
+                            IF ( MOPTIMIZE ) THEN
+                                EMGRD( CELL,SPINDEX( V,1 ) ) = 
      &                          EMGRD( CELL,SPINDEX( V,1 ) ) + 
      &                          EMVAL * MSMATX_L( SRC,V ) * F1
+
+                            ! If not use memory optimize
+                            ELSE                      
+                                TEMGRD( CELL,SPINDEX( V,1 ),T ) =
+     &                          TEMGRD( CELL,SPINDEX( V,1 ),T ) +
+     &                          EMVAL * MSMATX_L( SRC,V ) * F1
+                            END IF
+
 
 C.............................  Add this cell's emissions to source totals
                             IF( LREPSTA .OR. LREPCNY .OR. LREPSCC .OR. LREPSRC ) THEN
@@ -830,33 +957,37 @@ C.............................  Add this cell's emissions to source totals
                     END DO    ! end loop over grid cells for source
                 
                 END DO    ! end loop over sources in inv. county
-                DO V = 1, NMSPC 
-                    SBUF = EMNAM( V )
-C.................  Read out old data if not first county
-                    IF ( I > 1 ) THEN
-  		        IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
-     &                            JDATE, JTIME, TMPEMGRD( 1,V ) ) )THEN
-                             MESG = 'Could not read "' // SBUF // '" ' //
-     &                         'from file "' // MONAME // '"'
-                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                        END IF
-C.................  sum old county data with new county
-                        EMGRD( :,V ) = EMGRD( :,V ) + TMPEMGRD( :,V )
-                    END IF
 
-                    IF( LGRDOUT ) THEN
-                        IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
-     &                              JDATE, JTIME, EMGRD( 1,V ) ) ) THEN
-                            MESG = 'Could not write "' // SBUF // '" ' //
-     &                       'to file "' // MONAME // '"'
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                IF ( MOPTIMIZE ) THEN
+                    DO V = 1, NMSPC 
+                        SBUF = EMNAM( V )
+C.................  Read out old data if not first county
+                        IF ( I > 1 ) THEN
+  		            IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
+     &                                JDATE, JTIME, TMPEMGRD( 1,V ) ) )THEN
+                                 MESG = 'Could not read "' // SBUF // '" ' //
+     &                         'from file "' // MONAME // '"'
+                                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+C.................  sum old county data with new county
+                            EMGRD( :,V ) = EMGRD( :,V ) + TMPEMGRD( :,V )
                         END IF
-                    END IF
-                END DO
+
+                        IF( LGRDOUT ) THEN
+                            IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
+     &                              JDATE, JTIME, EMGRD( 1,V ) ) ) THEN
+                                MESG = 'Could not write "' // SBUF // '" ' //
+     &                           'to file "' // MONAME // '"'
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+                        END IF
+                    END DO
+                END IF   ! end memory optimize
            
 C.............  Write state, county, and SCC emissions (all that apply) 
 C.............  The subroutine will only write for certain hours and 
 C               will reinitialize the totals after output
+                
                 If ( LAST_CNTY) THEN
                     CALL WRMRGREP( JDATE, JTIME )
                 END IF
@@ -871,6 +1002,38 @@ C...............Do not count the hour after 230000
             END DO   ! End loop on time steps
 
         END DO   ! end loop over inventory counties
+ 
+        IF ( .NOT. MOPTIMIZE ) THEN
+            JDATE  = SDATE
+            JTIME  = STIME
+            LDATE  = 0
+
+            DO T = 1, NSTEPS    
+
+            DO V = 1, NMSPC
+
+                SBUF = EMNAM( V )
+
+                TMPEMGRD( :,V ) = TEMGRD( :,V,T )
+
+C.................  Write out gridded data
+                IF( LGRDOUT ) THEN
+                    IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
+     &                                  JDATE, JTIME, TMPEMGRD( 1,V ) ) ) THEN
+                       MESG = 'Could not write "' // SBUF // '" ' //
+     &                    'to file "' // MONAME // '"'
+                       CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+                 END IF
+             END DO
+
+             LDATE = JDATE
+
+             CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
+
+             END DO   ! End loop on time steps
+
+         END IF
 
 C.........  Close output file
         IF( .NOT. CLOSESET( MONAME ) ) THEN
@@ -879,7 +1042,11 @@ C.........  Close output file
         END IF
 
         DEALLOCATE( DAYBEGT, DAYENDT, LDAYSAV )
-        DEALLOCATE( TEMPG, EMGRD, TMPEMGRD, VARNAMES, MGMATX )
+        IF ( MOPTIMIZE ) THEN
+            DEALLOCATE( TEMPG, EMGRD, TMPEMGRD, VARNAMES, MGMATX )
+        ELSE
+            DEALLOCATE( TEMPG, TEMGRD, TMPEMGRD, VARNAMES, MGMATX )
+        END IF
 
 C.........  Successful completion of program
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
