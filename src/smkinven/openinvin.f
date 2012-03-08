@@ -45,7 +45,7 @@ C............ This module contains the cross-reference tables
         USE MODXREF, ONLY: PROC_HAPS 
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG 
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG 
 
         IMPLICIT NONE
 
@@ -122,7 +122,12 @@ C.........  Get value of these controls from the environment
         MESG = 'Import hour-specific data'
         HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
         HRLINVFLAG = HFLAG
- 
+
+        IF( DAYINVFLAG .OR. HRLINVFLAG ) THEN
+            MESG = 'Use a daily FF10 inventory data as an annual FF10 invenotry'
+            FF10INVFLAG = ENVYN ( 'FF10_AVEDAY_ANNINV_YN', MESG, .FALSE., IOS )
+        END IF
+
         MESG = 'Define the processing method of combining haradous ' //
      &         'air pollutants with criteria VOC.'
         CALL ENVSTR( 'SMK_PROCESS_HAPS', MESG, ' ', PROC_HAPS, IOS )
