@@ -68,14 +68,14 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       INGRID
         LOGICAL       DSCM3GRD
 
-        REAL          STR2REAL
+        REAL          STR2REAL, ENVREAL
 
         CHARACTER(2)  CRLF
         CHARACTER(16) PROMPTMFILE
 
         EXTERNAL      CRLF,  CHKREAL, FIND1, FINDC, INDEX1, GETFLINE, 
      &                JULIAN, INGRID, STR2INT, STR2REAL, BLKORCMT, 
-     &                PROMPTFFILE, PROMPTMFILE, DSCM3GRD, ENVINT
+     &                PROMPTFFILE, PROMPTMFILE, DSCM3GRD, ENVINT, ENVREAL
 
 C.........  LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: 
@@ -141,7 +141,7 @@ C.........  File units and logical names
         
 C.........  Other local variables
         INTEGER         C, F, I, IC, J, K, L 
-        INTEGER         N, NC, NE, NF, NL, NP, NS, T, V, NV    ! counters and indices
+        INTEGER         N, NA, NC, ND, NF, NL, NP, NS, T, V, NV    ! counters and indices
         INTEGER         IOS                 ! i/o status
         INTEGER         IREC                ! line counter
         
@@ -150,6 +150,7 @@ C.........  Other local variables
         INTEGER      :: N_SEG = 0           ! number of flight segments
 
         INTEGER         SEGID               ! segment id 
+        INTEGER         MODID               ! flight mode id (LTO from departure and to arrival)
         INTEGER         NCEL                ! tmp number of cells
         INTEGER         ORG_CELLID          ! origin cell id
         INTEGER         END_CELLID          ! ending cell id
@@ -174,6 +175,8 @@ C.........  Other local variables
         INTEGER         STIME, ETIME        ! Modeling time
         INTEGER         LTOP, LBOT, DDP     ! layer# for top/bottom cells
 
+        INTEGER         STRID, ENDID, INCID ! start/end grid cells and increment
+
         INTEGER         NAPRT_ELEV          ! A number of airports
 
         INTEGER         NFAC                ! A number of conversion factors
@@ -187,8 +190,11 @@ C.........  Other local variables
         INTEGER         NFLFILES            ! Max number of FLIGHT_FILELIST input files
         INTEGER         NSGFILES            ! Max number of SEGMENT_FILELIST input files
 
-
         REAL            CO, NOX, NO, NO2, HONO, SO2, POC, PEC, PSO4, TOG
+
+        REAL         :: LTOALT = 0.0        ! LTO operations altitude (ft)
+        REAL         :: CUTOFF = 0.0        ! cutoff altitude (ft) for modeling
+        REAL         :: AVGELEV= 0.0        ! average of depart/arrival airport elevations
 
         REAL         :: FAC    = 0.0        ! tmp factor value 
         REAL         :: ALEN   = 0.0        ! link length
@@ -201,7 +207,7 @@ C.........  Other local variables
         REAL         :: DELTAZ = 0.0        ! delta altitude
         REAL         :: SEG_TIME = 0.0      ! segment flight duratoin
         REAL         :: SEG_DIST = 0.0      ! segment flight distance
-        REAL            FUELBURN            ! fuel burn
+        REAL         :: FUELBURN = 0.0      ! fuel burn
         
         REAL            Z, Zo, Zh, ZBOT, ZTOP, PDIFF
         REAL            ZFRAC, PFRAC, VGTOP, LTOT
@@ -215,7 +221,8 @@ C.........  Other local variables
         CHARACTER(500)  SEG_BUF             ! segment input line buffer
         CHARACTER(256)  MESG                ! message buffer
         CHARACTER(16)   POLNAM              ! tmp pollutant name
-        CHARACTER(16)   APRTID              ! tmp airport code
+        CHARACTER(16)   DPRTID              ! tmp departure airport code
+        CHARACTER(16)   ARRVID              ! tmp arriving airport code
         CHARACTER(16)   FLGID               ! aircraft flight identifier
         CHARACTER(3)    TZONE               ! time zone
         CHARACTER(16)   COORUNIT            !  coordinate system projection units
@@ -237,6 +244,12 @@ C.........  Get logical value from the environment
         MESG = 'Enter year difference between MCIP modeling year ' //
      &          'and AEDT modeling year [MCIP_YEAR-AEDT_YEAR]'
         DYEAR = ENVINT( 'YEAR_DIFF', MESG, 0, IOS )
+
+        MESG = 'Determine the max altitude (feet) for LTO operations [default: 10,000]'
+        LTOALT = ENVREAL( 'LTO_ALTITUDE', MESG, 10000.0, IOS )
+
+        MESG = 'Determine the cutoff altitude (feet) for modeling [default: 50,000]'
+        CUTOFF = ENVREAL( 'CUTOFF_ALTITUDE', MESG, 50000.0, IOS )
         
 C........  Open unit numbers of input files
         MESG = 'Enter logical name for aircraft flight information file list'
@@ -611,6 +624,7 @@ C.................  Read data from LINE
 C.................  Skip when it is out of range of episode dates
                 FLGID = TRIM( SEGMENT( 1 ) )       ! Flight ID
                 SEGID = STR2INT( SEGMENT( 2 ) )    ! segment ID for flight
+                MODID = STR2INT( SEGMENT( 12 ) )    ! segment ID for flight
                 
                 MON   = STR2INT( SEGMENT( 6 ) )    ! integer current month
                 DAY   = STR2INT( SEGMENT( 7 ) )    ! integer current hour
@@ -683,9 +697,6 @@ C.................  Make sure that there was enough storage
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
                 
-C.................  Skip if org/end of link is out of domain
-c                IF( ORG_CELLID < 1 .AND. END_CELLID < 1 ) CYCLE
-
 C.................  Skip if there is no intersected grid cell
                 IF( NCEL == 0 ) CYCLE
 
@@ -715,20 +726,39 @@ C                   Subtract airport elevation when altitude is below 3000ft (LT
 C                   Subtract terrain height when altitude is higher than 3000ft
 C                   Over 3000ff, calculate sigma level using surface pressure and 
 C                   estimated pressure based on calculated altitude
-C                   3000ft * 0.3048 = 914.4meter
-                F = INDEX1( FLGID, N_FLG, FLIGHT_ENG( :,1 ) )  ! Flight ID
-                APRTID = FLIGHT_ENG( F,2 )                     ! Airport ID
-                    
-                NE = INDEX1( APRTID, NAPRT_ELEV, APRT_CODE )
+C                   1000ft * 0.3048 = 3048 meter
 
-                IF( Zo <= 914.4 ) THEN
-                    Zo = Zo - APRT_ELEV( NE )
+                F = INDEX1( FLGID, N_FLG, FLIGHT_ENG( :,1 ) )  ! Flight ID
+                DPRTID = FLIGHT_ENG( F,2 )                     ! Departure Airport ID
+                ARRVID = FLIGHT_ENG( F,3 )                     ! Departure Airport ID
+                    
+                ND = INDEX1( DPRTID, NAPRT_ELEV, APRT_CODE )
+                NA = INDEX1( ARRVID, NAPRT_ELEV, APRT_CODE )
+
+                IF( Zo <= LTOALT * FT2M ) THEN
+
+                    IF( MODID < 4 ) THEN
+                        Zo = Zo - APRT_ELEV( ND )   ! departure airport elev
+                    ELSE IF( MODID > 7 ) THEN
+                        Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
+                    ELSE
+                        AVGELEV=( APRT_ELEV(ND) + APRT_ELEV(NA) ) / 2.0  !avg elev
+                        Zo = Zo - AVGELEV
+                    ENDIF
+
                 ELSE
                     Zo = Zo - TERRAIN( ORG_CELLID )
                 END IF
 
-                IF( Zh <= 914.4 ) THEN
-                    Zh = Zh - APRT_ELEV( NE )
+                IF( Zh <= LTOALT * FT2M ) THEN
+                    IF( MODID < 4 ) THEN
+                        Zh = Zh - APRT_ELEV( ND )   ! departure airport elev
+                    ELSE IF( MODID > 7 ) THEN
+                        Zh = Zh - APRT_ELEV( NA )   ! arrival airport elev
+                    ELSE
+                        AVGELEV=( APRT_ELEV(ND) + APRT_ELEV(NA) ) / 2.0  !avg elev
+                        Zh = Zh - AVGELEV
+                    ENDIF
                 ELSE
                     Zh = Zh - TERRAIN( END_CELLID )
                 END IF
@@ -740,7 +770,19 @@ C                   3000ft * 0.3048 = 914.4meter
 
                 DELTAZ = Zh - Zo   ! delta z (<0:langind, >0:climbing)
 
-                DO NC = 1, NCEL
+C.................  Sort the order of grid cell processing. Starting from org_cellid....
+                IF( ACEL( 1 ) /= ORG_CELLID ) THEN
+                    STRID = NCEL
+                    ENDID = 1
+                    INCID = -1
+                ELSE
+                    STRID = 1
+                    ENDID = NCEL
+                    INCID = 1
+                END IF
+
+
+                DO NC = STRID, ENDID, INCID
 
                     LFRAC = 0.0         ! Gridded x-y link vertical fractions 
 
@@ -788,12 +830,14 @@ C.....................  Looping through layers to determine associated layer for
                         PFRAC = 1.0
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = LBOT
+c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LBOT,pfrac,' onelayer'
 
                     ELSE IF( LBOT == NLAYS ) THEN    ! plume above top layer
  
                         PFRAC = 1.0
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = NLAYS
+c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LTOP,pfrac,' toplayer'
                 
                     ELSE                               ! plume crosses layers
  
@@ -814,7 +858,7 @@ C.........................  Calculate a fraction for the bottom layer
                         PFRAC = ( ( ZZF( C,LBOT ) - ZBOT )
      &                              / PDIFF )
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
-c                print*,LBOT,LTOP,'new',col,row,pfrac
+c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LBOT,pfrac
                     
 C.........................  Calculate a fraction for the top layer
                         PFRAC = ( ( ZTOP - ZZF( C,LTOP-1 ) )
@@ -822,7 +866,6 @@ C.........................  Calculate a fraction for the top layer
                         LFRAC( LTOP ) = LFRAC( LTOP ) + PFRAC
 
                         DDP = LTOP - LBOT
-c                print*,LBOT,LTOP,DDP,col,row,pfrac
 
                         IF( DDP >= 2 ) THEN
 
@@ -830,11 +873,12 @@ c                print*,LBOT,LTOP,DDP,col,row,pfrac
                             
                                 PFRAC = ( ( ZZF(C,L) -ZZF(C,L-1) )
      &                                      / PDIFF )
-c                print*,LBOT,LTOP,L,col,row,pfrac
+c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,L,pfrac
                                 LFRAC( L ) = LFRAC( L ) + PFRAC
                             END DO
 
                         ENDIF
+c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LTOP,lfrac(ltop)
                     
                     END IF
 c       write(*,'(a,7I8,3F15.8)')trim(FLGID),SEGID,c,col,row,nc,lbot,ltop,zbot,ztop,zfrac
@@ -864,7 +908,7 @@ C..................... Before applying layer fractions make sure that they add t
 
 C.....................  Loop over allocated layers by link
                     DO L = LBOT, LTOP
-
+c         write(*,'(4i5,f10.7)')segid,col,row,L,LFRAC(l)
 C.........................  SPECIATION PROCESSING
 C.........................  Store emission factors by pollutant
                         CO   = STR2REAL( SEGMENT( 22 ) ) / SEG_TIME
@@ -897,7 +941,7 @@ C.........................  Apply 3D gridded link factors to pollutants for spec
                         TMP3D( C,L,1,T ) = TMP3D( C,L,1,T ) + CO               ! CO in mole/s
                         TMP3D( C,L,2,T ) = TMP3D( C,L,2,T ) + SO2              ! SO2 in mole/s
 
-                        IF( HEIGHT <= 914.4 ) THEN
+                        IF( HEIGHT <= LTOALT * FT2M ) THEN
                             TMP3D( C,L,3,T ) = TMP3D( C,L,3,T ) + 0.76 * NOX   ! NO in mole/s
                             TMP3D( C,L,4,T ) = TMP3D( C,L,4,T ) + 0.23 * NOX   ! NO2 in mole/s
                             TMP3D( C,L,5,T ) = TMP3D( C,L,5,T ) + 0.01 * NOX   ! HONO in mole/s
@@ -920,8 +964,8 @@ C.........................  Determine whether engine is piston or turbine
                         F = INDEX1( FLGID, N_FLG, FLIGHT_ENG( :,1 ) )
 
 C.........................  Only two piston engine out of entire engine types available
-                        IF( FLIGHT_ENG( F,3 ) == 'IO360' .OR.
-     &                      FLIGHT_ENG( F,3 ) == 'R1820'       ) THEN
+                        IF( FLIGHT_ENG( F,4 ) == 'IO360' .OR.
+     &                      FLIGHT_ENG( F,4 ) == 'R1820'       ) THEN
 
 C.............................  Estimate Model species using speciation profile factors from TOG
                             DO NS = 1, NSPC_PISTON
@@ -1140,7 +1184,7 @@ C.............  Skip blank and comment lines
 C...........  Determine number of lines in filelist; this will be the maximum
 C             number of airport sources
          IF( ALLOCATED( FLIGHT_ENG ) ) DEALLOCATE( FLIGHT_ENG )
-         ALLOCATE( FLIGHT_ENG( N_FLG,3 ), STAT=IOS )
+         ALLOCATE( FLIGHT_ENG( N_FLG,4 ), STAT=IOS )
          CALL CHECKMEM( IOS, 'FLIGHT_ENG', PROGNAME )
          FLIGHT_ENG = ' '
 
@@ -1172,8 +1216,9 @@ C.............  Get line
 
              N_FLG = N_FLG + 1
              FLIGHT_ENG( N_FLG,1 ) =  ADJUSTL( SEGMENT( 1 ) )  ! flight IDs
-             FLIGHT_ENG( N_FLG,2 ) =  ADJUSTL( SEGMENT( 4 ) )  ! Airport IDs
-             FLIGHT_ENG( N_FLG,3 ) =  ADJUSTL( SEGMENT( 8 ) )  ! Engine types
+             FLIGHT_ENG( N_FLG,2 ) =  ADJUSTL( SEGMENT( 2 ) )  ! Airport IDs
+             FLIGHT_ENG( N_FLG,3 ) =  ADJUSTL( SEGMENT( 4 ) )  ! Airport IDs
+             FLIGHT_ENG( N_FLG,4 ) =  ADJUSTL( SEGMENT( 8 ) )  ! Engine types
 
          END DO    ! end of loop
 
@@ -1245,7 +1290,7 @@ C.............  Get line
 
              N = N + 1
              APRT_CODE( N ) = SEGMENT( 1 )
-             APRT_ELEV( N ) = STR2REAL( SEGMENT( 3 ) )
+             APRT_ELEV( N ) = STR2REAL( SEGMENT( 3 ) )  * FT2M
 
          END DO    ! end of loop
 
