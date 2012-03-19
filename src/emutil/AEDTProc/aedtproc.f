@@ -211,6 +211,7 @@ C.........  Other local variables
         
         REAL            Z, Zo, Zh, ZBOT, ZTOP, PDIFF
         REAL            ZFRAC, PFRAC, VGTOP, LTOT
+        REAL            DX, DY, DFRAC
         REAL            TMPVAL
 
         LOGICAL      :: EFLAG = .FALSE.     ! true: ERROR
@@ -250,6 +251,7 @@ C.........  Get logical value from the environment
 
         MESG = 'Determine the cutoff altitude (feet) for modeling [default: 50,000]'
         CUTOFF = ENVREAL( 'CUTOFF_ALTITUDE', MESG, 50000.0, IOS )
+        CUTOFF = CUTOFF * FT2M
         
 C........  Open unit numbers of input files
         MESG = 'Enter logical name for aircraft flight information file list'
@@ -345,7 +347,7 @@ C.........  Determine beginning processing date
         ELSE
             BDATE = SDATE - 1
         END IF
-       print*,BDATE,SDATE,EDATE,YEAR,'B,S,Edate'
+
 C.........  Allocate arrays
         ALLOCATE( SFCHGT( NGRID ), STAT= IOS)
         CALL CHECKMEM( IOS, 'SFCHGT', PROGNAME )
@@ -644,7 +646,7 @@ C.................  store lat/lon coordinates (starting point)
                 LONVAL = STR2REAL( SEGMENT( 4 ) )
                 HEIGHT = FT2M * STR2REAL( SEGMENT( 5 ) )   ! altitude in unit of feet
 
-C.................  Convert mobile source coordinates from lat-lon to output grid
+C.................  Convert source coordinates from lat-lon to output grid
                 CALL CONVRTXY( 1, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
      &                         XCENT, YCENT, LONVAL, LATVAL )
 
@@ -657,6 +659,24 @@ C.................  define start/end coordinates for each link
 
                 Zo     = PRVHGT                ! origin height
                 Zh     = HEIGHT                ! end height
+
+C.................  Apply CUTOFF method (i.e., 10K ft)
+C                   if previous height > CUTOFF, skip processing
+                IF( Zo >= CUTOFF ) THEN
+                    CYCLE
+
+C.................  Reset top height to CUTOFF height and recompute X,Y coordinates
+C                   based on the ratio of cutoff height
+                ELSE IF( Zo < CUTOFF .AND. Zh >= CUTOFF ) THEN
+                    DFRAC = ( CUTOFF - Zo ) / ( Zh - Zo )
+
+                    DX = ( PRVLON - LONVAL ) * DFRAC
+                    DY = ( PRVLAT - LATVAL ) * DFRAC
+                    
+                    LONVAL = PRVLON + DX
+                    LATVAL = PRVLAT + DY
+                    
+                END IF
 
 C.................  If source is in the domain, get cell number and store
                 ORG_CELLID = 0
@@ -781,7 +801,7 @@ C.................  Sort the order of grid cell processing. Starting from org_ce
                     INCID = 1
                 END IF
 
-
+C.................  loop over assigned grid cells
                 DO NC = STRID, ENDID, INCID
 
                     LFRAC = 0.0         ! Gridded x-y link vertical fractions 
