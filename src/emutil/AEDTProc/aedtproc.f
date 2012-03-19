@@ -55,7 +55,7 @@ C.........  INCLUDES
         INCLUDE 'EMCNST3.EXT'   ! emissions constant parameters
         
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        LOGICAL       ENVINT
+        INTEGER       ENVINT
         INTEGER       FIND1
         INTEGER       FINDC
         INTEGER       GETFLINE
@@ -67,6 +67,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       CHKREAL
         LOGICAL       INGRID
         LOGICAL       DSCM3GRD
+        LOGICAL       ENVYN
 
         REAL          STR2REAL, ENVREAL
 
@@ -74,7 +75,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(16) PROMPTMFILE
 
         EXTERNAL      CRLF,  CHKREAL, FIND1, FINDC, INDEX1, GETFLINE, 
-     &                JULIAN, INGRID, STR2INT, STR2REAL, BLKORCMT, 
+     &                JULIAN, INGRID, STR2INT, STR2REAL, BLKORCMT, ENVYN,
      &                PROMPTFFILE, PROMPTMFILE, DSCM3GRD, ENVINT, ENVREAL
 
 C.........  LOCAL PARAMETERS
@@ -214,6 +215,7 @@ C.........  Other local variables
         REAL            DX, DY, DFRAC
         REAL            TMPVAL
 
+        LOGICAL      :: SIGMAFLAG = .FALSE. ! true: use heights for vertical allocation above LTO height
         LOGICAL      :: EFLAG = .FALSE.     ! true: ERROR
 
         CHARACTER(32)   TMPCHAR             
@@ -251,7 +253,11 @@ C.........  Get logical value from the environment
 
         MESG = 'Determine the cutoff altitude (feet) for modeling [default: 50,000]'
         CUTOFF = ENVREAL( 'CUTOFF_ALTITUDE', MESG, 50000.0, IOS )
-        CUTOFF = CUTOFF * FT2M
+        CUTOFF = CUTOFF * FT2M    ! convert feet to meter
+
+        MESG = 'Use sigma level for vertical allocation [default:N]'
+        SIGMAFLAG = ENVYN( 'SIGMA_VERT_ALLOC_YN', MESG, .FALSE., IOS )
+
         
 C........  Open unit numbers of input files
         MESG = 'Enter logical name for aircraft flight information file list'
