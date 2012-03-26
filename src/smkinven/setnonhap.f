@@ -391,9 +391,6 @@ C.....................  If current pollutant is VOC(_INV) entry, store position 
 
                         IF( CPOL == VNMPOS( H ) ) THEN
 
-C.........................  Add a new poll VOC_INV
-                            TMPNPCNT( I )  = TMPNPCNT( I ) + 1
-
 C.............................  Check to see a new pol VOC_INV listed in INVTABLE file
                             VOCPOL = TRIM( INVDNAM( CPOL ) ) // '_INV'
                             NONVPOS = INDEX1( VOCPOL, MXIDAT, INVDNAM )
@@ -403,12 +400,6 @@ C.............................  Check to see a new pol VOC_INV listed in INVTABL
      &                           //' is not found in the INVTABLE file.'
                                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                             END IF
-
-C.............................  Increment current new position in arrays            
-                            NEWSRCPOS = NEWSRCPOS + 1
-                            TMPPOSCOD( NEWSRCPOS )  =NONVPOS
-                            TMPPOLVAL( NEWSRCPOS,: )=POLVAL( CURRPOS,: )
-                            INVSTAT  ( NONVPOS )    =2
 
                         END IF
 
@@ -490,9 +481,6 @@ C.........................  Store original and new locations
                         VOCPOS ( H ) = CURRPOS     ! store org VOC location
                         NVOCPOS( H ) = NEWSRCPOS   ! store new VOC location
 
-C.........................  Add a new poll VOC_INV
-                        TMPNPCNT( I )  = TMPNPCNT( I ) + 1
-
 C.........................  Check to see a new pol VOC_INV listed in INVTABLE file
                         VOCPOL = TRIM( POLNAM ) // '_INV'
                         NONVPOS = INDEX1( VOCPOL, MXIDAT, INVDNAM )
@@ -502,12 +490,6 @@ C.........................  Check to see a new pol VOC_INV listed in INVTABLE fi
      &                           //' is not found in the INVTABLE file.'
                             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                         END IF
-
-C.......................  Increment current new position in arrays            
-                        NEWSRCPOS = NEWSRCPOS + 1
-                        TMPPOSCOD( NEWSRCPOS )   = NONVPOS
-                        TMPPOLVAL( NEWSRCPOS,: ) = POLVAL( CURRPOS,: )
-                        INVSTAT  ( NONVPOS )     = 2
 
                     END IF
 
