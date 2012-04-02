@@ -42,6 +42,7 @@
 !.........  Determine processing hourly/daily inventories
         LOGICAL, PUBLIC :: DAYINVFLAG = .FALSE.      ! processing daily inventory
         LOGICAL, PUBLIC :: HRLINVFLAG = .FALSE.      ! processing hourly inventory
+        LOGICAL, PUBLIC :: FF10INVFLAG= .FALSE.      ! true: use FF10 daily as an annual
 
 !.........  Sparsely stored day-specific or hour-specific emissions array
 !           for writing data
