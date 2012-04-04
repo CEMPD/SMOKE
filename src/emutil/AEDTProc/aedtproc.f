@@ -97,13 +97,14 @@ C.........  Static arrays
 C.........  Allocatable arrays
         REAL,          ALLOCATABLE :: LFRAC ( : )       ! model layer fractions
         REAL,          ALLOCATABLE :: TERRAIN( : )      ! terrain height (m)
-        REAL,          ALLOCATABLE :: ZZF   ( :,: )     ! layer's full height (m)
+        REAL,          ALLOCATABLE :: PRSFC  ( : )      ! surface pressure (pscal)
         REAL,          ALLOCATABLE :: SFCHGT( : )       ! surface height (m)
         REAL,          ALLOCATABLE :: VGLVLS( : )       ! gridded mask values to be output
         REAL,          ALLOCATABLE :: CVHAPT( :,: ) 
         REAL,          ALLOCATABLE :: CVHAPP( :,: )
         REAL,          ALLOCATABLE :: CVSPCT( :,: ) 
         REAL,          ALLOCATABLE :: CVSPCP( :,: )
+        REAL,          ALLOCATABLE :: ZZF   ( :,: )     ! layer's full height (m)
         REAL,          ALLOCATABLE :: TMP3D ( :,:,:,: ) ! tmp emissions
 
         REAL,          ALLOCATABLE :: APRT_ELEV( : )
@@ -137,11 +138,12 @@ C.........  File units and logical names
         INTEGER      :: RDEV = 0            ! report file
 
         CHARACTER*16    GNAME               ! grid-point layered met file
+        CHARACTER*16    PNAME               ! cross-point met file for surface pressure values
         CHARACTER*16    XNAME               ! cross-point layered met file
         CHARACTER*16    ONAME               ! CMAQ-ready gridded emissions file
         
 C.........  Other local variables
-        INTEGER         C, F, I, IC, J, K, L 
+        INTEGER         C, DH, F, I, IC, J, K, L 
         INTEGER         N, NA, NC, ND, NF, NL, NP, NS, T, V, NV    ! counters and indices
         INTEGER         IOS                 ! i/o status
         INTEGER         IREC                ! line counter
@@ -205,17 +207,21 @@ C.........  Other local variables
         REAL         :: PRVLON = 0.0        ! previous absolute longitude
         REAL         :: PRVHGT = 0.0        ! previous altitude
         REAL         :: HEIGHT = 0.0        ! altitude
+        REAL         :: CURPRES= 0.0        ! current pressure
+        REAL         :: PRVPRES= 0.0        ! previous pressure
         REAL         :: DELTAZ = 0.0        ! delta altitude
         REAL         :: SEG_TIME = 0.0      ! segment flight duratoin
         REAL         :: SEG_DIST = 0.0      ! segment flight distance
         REAL         :: FUELBURN = 0.0      ! fuel burn
         
-        REAL            Z, Zo, Zh, ZBOT, ZTOP, PDIFF
+        REAL            Po, Ph, Z, Zo, Zh, Zpo, Zph, ZBOT, ZTOP, PDIFF
         REAL            ZFRAC, PFRAC, VGTOP, LTOT
         REAL            DX, DY, DFRAC
-        REAL            TMPVAL
+        REAL            TMPVAL, PRESSURE
 
+        LOGICAL      :: FIRSTIME  = .TRUE.  ! true: first time
         LOGICAL      :: SIGMAFLAG = .FALSE. ! true: use heights for vertical allocation above LTO height
+        LOGICAL      :: PRESFLAG  = .FALSE. ! true: use heights for vertical allocation above LTO height
         LOGICAL      :: EFLAG = .FALSE.     ! true: ERROR
 
         CHARACTER(32)   TMPCHAR             
@@ -257,7 +263,6 @@ C.........  Get logical value from the environment
 
         MESG = 'Use sigma level for vertical allocation [default:N]'
         SIGMAFLAG = ENVYN( 'SIGMA_VERT_ALLOC_YN', MESG, .FALSE., IOS )
-
         
 C........  Open unit numbers of input files
         MESG = 'Enter logical name for aircraft flight information file list'
@@ -300,6 +305,11 @@ C.........  Open Met input files
 
         MESG = 'Enter name for CROSS-POINT LAYERED MET file'
         XNAME = PROMPTMFILE( MESG, FSREAD3, 'MET_CRO_3D', PROGNAME )
+        
+        IF( SIGMAFLAG ) THEN
+            MESG = 'Enter name for 2D CROSS-POINT MET file'
+            PNAME = PROMPTMFILE( MESG, FSREAD3, 'MET_CRO_2D', PROGNAME )
+        END IF
 
 
 C.........  Get grid name from the environment and read grid parameters
@@ -321,6 +331,15 @@ C.........   Check grid information
         END IF
 
 C.........  Read description of 3d file for defining layer structure
+        IF( SIGMAFLAG ) THEN
+            IF( .NOT. DESC3( PNAME ) ) THEN
+                 MESG = 'Could not get description of file "' //
+     &                   TRIM( PNAME ) // '"'
+                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            ENDIF
+        ENDIF
+
+C.........  Read description of 3d file for defining layer structure
         IF( .NOT. DESC3( XNAME ) ) THEN
              MESG = 'Could not get description of file "' //
      &               TRIM( XNAME ) // '"'
@@ -339,7 +358,7 @@ C.........  Store local layer info
         NLAYS  = NLAYS3D
         VGTYP  = VGTYP3D
         VGTOP  = VGTOP3D
-        VGLVLS = VGLVS3D   ! array
+        VGLVLS = 1.0 - VGLVS3D   ! array
         
         DO T = 1,NSTEPS - 1
             CALL NEXTIME( EDATE, ETIME, 10000 )
@@ -359,6 +378,8 @@ C.........  Allocate arrays
         CALL CHECKMEM( IOS, 'SFCHGT', PROGNAME )
         ALLOCATE( TERRAIN( NGRID ), STAT= IOS)
         CALL CHECKMEM( IOS, 'TERRAIN', PROGNAME )
+        ALLOCATE( PRSFC( NGRID ), STAT= IOS)
+        CALL CHECKMEM( IOS, 'PRSFC', PROGNAME )
         ALLOCATE( ZZF( NGRID,NLAYS ), STAT= IOS)
         CALL CHECKMEM( IOS, 'ZZF', PROGNAME )
         ALLOCATE( TMP3D( NGRID,NLAYS,NVARS,NSTEPS ), STAT= IOS)
@@ -371,6 +392,7 @@ C.........  Allocate arrays
         CALL CHECKMEM( IOS, 'AFAC', PROGNAME )
         ACEL   = 0
         AFAC   = 0.0
+        PRSFC  = 0.0
         SFCHGT = 0.0
         TERRAIN= 0.0
         ZZF    = 0.0
@@ -608,6 +630,8 @@ C.............  Initialize values before reading file
             PRVLAT = 0.0
             PRVLON = 0.0
             PRVHGT = 0.0
+            CURPRES= 0.0
+            PRVPRES= 0.0
 
 C.............  Read through input file          
             DO
@@ -641,7 +665,6 @@ C.................  Skip when it is out of range of episode dates
 
                 YEAR = YEAR + DYEAR  ! Override modeling year by user
                 
-                T = HOUR + 1                       ! starting from 1 to 23
                 JDATE = YEAR * 1000 + JULIAN( YEAR, MON, DAY )  ! segment julian date
                 JTIME = HOUR * 10000
 
@@ -650,6 +673,7 @@ C.................  Skip when it is out of range of episode dates
 C.................  store lat/lon coordinates (starting point)
                 LATVAL = STR2REAL( SEGMENT( 3 ) )
                 LONVAL = STR2REAL( SEGMENT( 4 ) )
+                CURPRES= STR2REAL( SEGMENT( 14 ) )         ! pressure in unit of pascal
                 HEIGHT = FT2M * STR2REAL( SEGMENT( 5 ) )   ! altitude in unit of feet
 
 C.................  Convert source coordinates from lat-lon to output grid
@@ -661,27 +685,63 @@ C.................  define start/end coordinates for each link
                     PRVLAT = LATVAL
                     PRVLON = LONVAL
                     PRVHGT = HEIGHT
+                    PRVPRES= CURPRES
                 END IF
 
-                Zo     = PRVHGT                ! origin height
-                Zh     = HEIGHT                ! end height
+                Zo = PRVHGT                ! origin height
+                Zh = HEIGHT                ! end height
+
+C.................  Compute altitude using polynomial fit equation as a
+C                   function of pressure.
+                PRESSURE = PRVPRES/100.
+
+                Zpo =  -4.384385E-013*PRESSURE**5 + 
+     &                  1.368174E-009*PRESSURE**4 +
+     &                 -1.650600E-006*PRESSURE**3 + 
+     &                  9.902038E-004*PRESSURE**2 +
+     &                 -3.488077E-001*PRESSURE + 7.99345E+001
+
+                Zpo = Zpo * 1000. * FT2M
+
+                PRESSURE = CURPRES/100.
+
+                Zph =  -4.384385E-013*PRESSURE**5 + 
+     &                  1.368174E-009*PRESSURE**4 +
+     &                 -1.650600E-006*PRESSURE**3 + 
+     &                  9.902038E-004*PRESSURE**2 +
+     &                 -3.488077E-001*PRESSURE + 7.99345E+001
+
+                Zph = Zph * 1000. * FT2M
 
 C.................  Apply CUTOFF method (i.e., 10K ft)
 C                   if previous height > CUTOFF, skip processing
-                IF( Zo >= CUTOFF ) THEN
+                IF( Zpo >= CUTOFF .AND. Zph >= CUTOFF ) THEN
+                    PRVLAT = LATVAL  ! store previous lat coordinate
+                    PRVLON = LONVAL  ! store previous lon coordinate
+                    PRVHGT = HEIGHT  ! store previous height
+                    PRVPRES= CURPRES ! store previous pressure
                     CYCLE
 
 C.................  Reset top height to CUTOFF height and recompute X,Y coordinates
 C                   based on the ratio of cutoff height
-                ELSE IF( Zo < CUTOFF .AND. Zh >= CUTOFF ) THEN
-                    DFRAC = ( CUTOFF - Zo ) / ( Zh - Zo )
+c                ELSE IF(  Zpo < CUTOFF .AND. Zph >= CUTOFF ) THEN    ! climbing 
+c                    DFRAC = ( CUTOFF - Zpo ) / ( Zph - Zpo )
 
-                    DX = ( PRVLON - LONVAL ) * DFRAC
-                    DY = ( PRVLAT - LATVAL ) * DFRAC
+c                    DX = ( PRVLON - LONVAL ) * DFRAC
+c                    DY = ( PRVLAT - LATVAL ) * DFRAC
                     
-                    LONVAL = PRVLON + DX
-                    LATVAL = PRVLAT + DY
-                    
+c                    LONVAL = PRVLON + DX
+c                    LATVAL = PRVLAT + DY
+
+c                ELSE IF(  Zph < CUTOFF .AND. Zpo >= CUTOFF ) THEN    ! landing 
+c                    DFRAC = ( CUTOFF - Zph ) / ( Zpo - Zph )
+
+c                    DX = ( PRVLON - LONVAL ) * DFRAC
+c                    DY = ( PRVLAT - LATVAL ) * DFRAC
+
+c                    LONVAL = PRVLON + DX
+c                    LATVAL = PRVLAT + DY
+
                 END IF
 
 C.................  If source is in the domain, get cell number and store
@@ -701,6 +761,7 @@ C.................  Skip non-processing dates
                     PRVLAT = LATVAL  ! store previous lat coordinate
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
+                    PRVPRES= CURPRES ! store previous pressure
                     CYCLE
                 END IF
 
@@ -711,11 +772,6 @@ C.................  If link source, determine the number of cells for this sourc
                 CALL LNK2GRD( NGRID, PRVLON, PRVLAT, LONVAL, LATVAL,
      &                        NCEL, ACEL, AFAC, ALEN, EFLAG)
 
-C.................   previous values needed to be updated before the source gets skipped
-                PRVLAT = LATVAL  ! store previous lat coordinate
-                PRVLON = LONVAL  ! store previous lon coordinate
-                PRVHGT = HEIGHT  ! store previous height
-
 C.................  Make sure that there was enough storage
                 IF( EFLAG ) THEN
                     WRITE( MESG,94010 )
@@ -724,12 +780,35 @@ C.................  Make sure that there was enough storage
                 END IF
                 
 C.................  Skip if there is no intersected grid cell
-                IF( NCEL == 0 ) CYCLE
+                IF( NCEL == 0 ) THEN
+                    PRVLAT = LATVAL  ! store previous lat coordinate
+                    PRVLON = LONVAL  ! store previous lon coordinate
+                    PRVHGT = HEIGHT  ! store previous height
+                    PRVPRES= CURPRES ! store previous pressure
+                    CYCLE
+                END IF
+
+C.................  Calculate processing hour (T)
+                DH = ( JDATE - SDATE ) * 24   ! delta hours
+                T = DH + HOUR + 1 
+C                print*,SDATE,JDATE,DH,HOUR,T
 
 C.................  Vertical allocation within gridded x-y cell(s)
 C                   Need to compute each gridded x-y cell actual bottom and top heights
 C                   and then vertically allocate gridded x-y link into x-z layers 
 C                   using ZF layer full heights
+
+C.................  Read surface and layered ambient pressures (pascal)
+                IF( SIGMAFLAG ) THEN
+
+                    IF( .NOT. READ3( PNAME, 'PRSFC', -1,
+     &                               JDATE, JTIME, PRSFC ) ) THEN
+                        MESG = 'ERROR : Could not read PRSFC from file '
+     &                         // TRIM( PNAME )
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
+
+                END IF
 
 C.................  Read layers top height (meter)
                 IF( .NOT. READ3( XNAME, 'ZF', -1,
@@ -768,34 +847,46 @@ C                   1000ft * 0.3048 = 3048 meter
                     ELSE IF( MODID > 7 ) THEN
                         Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
                     ELSE
-                        AVGELEV=( APRT_ELEV(ND) + APRT_ELEV(NA) ) / 2.0  !avg elev
-                        Zo = Zo - AVGELEV
+                        Zo = Zo - TERRAIN( ORG_CELLID )
                     ENDIF
 
                 ELSE
-                    Zo = Zo - TERRAIN( ORG_CELLID )
+C.....................  Use pressure values as Zo and Zh for sigma level vertical allocation
+                    IF( SIGMAFLAG ) THEN
+                        PRESFLAG = .TRUE.
+                    ELSE
+                        Zo = Zo - TERRAIN( ORG_CELLID )
+                    END IF
+
                 END IF
 
                 IF( Zh <= LTOALT * FT2M ) THEN
+
                     IF( MODID < 4 ) THEN
                         Zh = Zh - APRT_ELEV( ND )   ! departure airport elev
                     ELSE IF( MODID > 7 ) THEN
                         Zh = Zh - APRT_ELEV( NA )   ! arrival airport elev
                     ELSE
-                        AVGELEV=( APRT_ELEV(ND) + APRT_ELEV(NA) ) / 2.0  !avg elev
-                        Zh = Zh - AVGELEV
+                        Zh = Zh - TERRAIN( END_CELLID )
                     ENDIF
+
                 ELSE
-                    Zh = Zh - TERRAIN( END_CELLID )
+                    IF( SIGMAFLAG .AND. PRESFLAG ) THEN
+                        PRESFLAG = .TRUE.
+                    ELSE IF( SIGMAFLAG .AND. .NOT. PRESFLAG ) THEN
+                        PRESFLAG = .FALSE.
+                    ELSE
+                        Zh = Zh - TERRAIN( END_CELLID )
+                    END IF
+
                 END IF
 
                 IF( Zo < 0.0 ) Zo = 0.0
                 IF( Zh < 0.0 ) Zh = 0.0
 
                 ZBOT = Zo
-
                 DELTAZ = Zh - Zo   ! delta z (<0:langind, >0:climbing)
-
+                    
 C.................  Sort the order of grid cell processing. Starting from org_cellid....
                 IF( ACEL( 1 ) /= ORG_CELLID ) THEN
                     STRID = NCEL
@@ -806,6 +897,8 @@ C.................  Sort the order of grid cell processing. Starting from org_ce
                     ENDID = NCEL
                     INCID = 1
                 END IF
+
+                FIRSTIME = .TRUE.
 
 C.................  loop over assigned grid cells
                 DO NC = STRID, ENDID, INCID
@@ -821,9 +914,28 @@ C.................  loop over assigned grid cells
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     ENDIF
 
-                    Z = ZFRAC * DELTAZ  ! actual vertical length within single x-y cell
+C.....................  retrieve col/row from cellid using C=(ROW-1)*NCOLS+COL
+                    ROW = C / NCOLS
+                    IF( MOD( C, NCOLS ) .GT. 0. ) ROW = ROW + 1
+                    COL = C - ( ROW-1 ) * NCOLS
+
+C.....................  Convert pressure to reversed sigma level (0:ground,1:top)
+                    IF( PRESFLAG ) THEN
+                        IF( FIRSTIME ) THEN
+                            Po = 1.0 - ( ( PRVPRES-VGTOP ) / ( PRSFC(C)-VGTOP ) )  ! origin sigma level
+                            Ph = 1.0 - ( ( CURPRES-VGTOP ) / ( PRSFC(C)-VGTOP ) )  ! ending sigma level
+                            ZBOT = Po
+                            DELTAZ = Ph - Po
+                            FIRSTIME = .FALSE.
+                        END IF
+
+                        ZZF( C,1:NLAYS ) = VGLVLS( 1:NLAYS )
+
+                    END IF 
 
 C.....................  Update bottom and top layers
+                    Z = ZFRAC * DELTAZ
+
                     IF( DELTAZ < 0 ) THEN   ! aircraft landing mode
                         ZTOP = ZBOT 
                         ZBOT = ZTOP + Z
@@ -831,13 +943,9 @@ C.....................  Update bottom and top layers
                         ZBOT = ZBOT
                         ZTOP = ZBOT + Z
                     END IF
+c             write(*,'(i8,7F15.5)')segid,po,ph,deltaz,zfrac,z,zbot,ztop
 
-C.....................  retrieve col/row from cellid using C=(ROW-1)*NCOLS+COL
-                    ROW = C / NCOLS
-                    IF( MOD( C, NCOLS ) .GT. 0. ) ROW = ROW + 1
-                    COL = C - ( ROW-1 ) * NCOLS
-
-C.....................  Looping through layers to determine associated layer for each link
+C.........................  Looping through layers to determine associated layer for each link
                     DO L = 1, NLAYS - 1
 
                         IF ( ZBOT <= ZZF( C,L ) ) THEN
@@ -856,14 +964,14 @@ C.....................  Looping through layers to determine associated layer for
                         PFRAC = 1.0
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = LBOT
-c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LBOT,pfrac,' onelayer'
+c                write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LBOT,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,' one layer'
 
                     ELSE IF( LBOT == NLAYS ) THEN    ! plume above top layer
  
                         PFRAC = 1.0
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = NLAYS
-c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LTOP,pfrac,' toplayer'
+c                write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LTOP,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,' top layer'
                 
                     ELSE                               ! plume crosses layers
  
@@ -874,17 +982,17 @@ c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,L
                             END IF
                         END DO
                         LTOP = NLAYS
-
+ 
 222                     CONTINUE
  
 C.........................  Calculate between layer 
                         PDIFF = ZTOP - ZBOT
                     
-C.........................  Calculate a fraction for the bottom layer
+C..........................  Calculate a fraction for the bottom layer
                         PFRAC = ( ( ZZF( C,LBOT ) - ZBOT )
      &                              / PDIFF )
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
-c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LBOT,pfrac
+c               write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LBOT,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,'# layer'
                     
 C.........................  Calculate a fraction for the top layer
                         PFRAC = ( ( ZTOP - ZZF( C,LTOP-1 ) )
@@ -899,17 +1007,16 @@ C.........................  Calculate a fraction for the top layer
                             
                                 PFRAC = ( ( ZZF(C,L) -ZZF(C,L-1) )
      &                                      / PDIFF )
-c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,L,pfrac
+c               write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,L,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,' # layer'
                                 LFRAC( L ) = LFRAC( L ) + PFRAC
                             END DO
 
                         ENDIF
-c                write(*,'(9i8,f15.7,a)')segid,c,org_cellid,end_cellid,col,row,LBOT,LTOP,LTOP,lfrac(ltop)
+c               write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LTOP,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,lfrac(ltop),' # layer'
                     
                     END IF
-c       write(*,'(a,7I8,3F15.8)')trim(FLGID),SEGID,c,col,row,nc,lbot,ltop,zbot,ztop,zfrac
-c       print*,zbot,ztop,height+deltaz,height,deltaz
 
+C.....................  initialize pressure-based vertical allocation by link
                     IF( DELTAZ > 0 ) THEN
                         ZBOT = ZTOP   ! landing mode: ZBOT needs to be updated with ZTOP
                     ELSE
@@ -934,7 +1041,7 @@ C..................... Before applying layer fractions make sure that they add t
 
 C.....................  Loop over allocated layers by link
                     DO L = LBOT, LTOP
-c         write(*,'(4i5,f10.7)')segid,col,row,L,LFRAC(l)
+
 C.........................  SPECIATION PROCESSING
 C.........................  Store emission factors by pollutant
                         CO   = STR2REAL( SEGMENT( 22 ) ) / SEG_TIME
@@ -1085,8 +1192,15 @@ C.............................  Estimate HAPs using HAP's profile factors from T
                         END IF
                     END DO
                     END DO
-
                 END DO      ! end of link loop
+
+C.................   previous values needed to be updated before the source gets skipped
+                PRVLAT = LATVAL  ! store previous lat coordinate
+                PRVLON = LONVAL  ! store previous lon coordinate
+                PRVHGT = HEIGHT  ! store previous height
+                PRVPRES= CURPRES ! store previous pressure
+
+                PRESFLAG = .FALSE.
 
             ENDDO       ! end of flight loop
 
