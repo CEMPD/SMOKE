@@ -135,6 +135,7 @@ C...........   real arrays
         REAL   , ALLOCATABLE :: WS( : )            !  one layer of wind speed
         REAL   , ALLOCATABLE :: TASRC( : )         !  averaged gridded temperature by FIPS(source)
         REAL   , ALLOCATABLE :: WSSRC( : )         !  averaged gridded wind speed  by FIPS(source)
+        REAL   , ALLOCATABLE :: TOTSRC( :,:,: )    !  hourly daily/month total
         REAL   , ALLOCATABLE :: HRLSRC( :,: )      !  hourly values
         REAL   , ALLOCATABLE :: DAYSRC( :,: )      !  daily values
         REAL   , ALLOCATABLE :: MONSRC( :,: )      !  monthly total
@@ -146,8 +147,12 @@ C...........   real arrays
         REAL   , ALLOCATABLE :: PROF_DAY(:,:)      ! Array of daily profile fractional data values
 
 C...........   integer arrays
-        INTEGER, ALLOCATABLE :: DAYBEGT ( : )      ! daily start time HHMMSS
-        INTEGER, ALLOCATABLE :: DAYENDT ( : )      ! daily end time HHMMSS
+        INTEGER, ALLOCATABLE :: DT      ( : )      ! daily total starting hour
+        INTEGER, ALLOCATABLE :: MT      ( : )      ! monthly total starting hour
+        INTEGER, ALLOCATABLE :: DAYBEGT ( : )      ! current daily start time HHMMSS
+        INTEGER, ALLOCATABLE :: DAYENDT ( : )      ! current daily end time HHMMSS
+        INTEGER, ALLOCATABLE :: PRVBEGT ( : )      ! previous day start time HHMMSS
+        INTEGER, ALLOCATABLE :: PRVENDT ( : )      ! previous day end time HHMMSS
         INTEGER, ALLOCATABLE :: TZONES  ( : )      ! county-specific time zones
         INTEGER, ALLOCATABLE :: METDAYS ( : )      ! dimension: nsteps in episode,
         INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours 
@@ -187,7 +192,7 @@ C...........   File units and logical names:
 
 C...........   Other local variables:
         INTEGER    DD, I, IC, J, K, LL, L, L0, L1, L2, L3   ! Counters and pointers
-        INTEGER    MM, N, NP, NX, NRH, NR, NS, S, T, TT, T2, V  ! Counters and pointers
+        INTEGER    MM, N, NP, NX, NRH, NR, NS, S, PT, T, TT, T2, V  ! Counters and pointers
 
         INTEGER    EPI_SDATE   ! episode start date from E.V. (YYYYDDD)
         INTEGER    EPI_STIME   ! episode start time from E.V. (HHMMSS)
@@ -197,6 +202,7 @@ C...........   Other local variables:
         INTEGER    EPI_ETIME   ! episode ending time based on ERUNLEN
 
         INTEGER    DAY         ! tmp day of week number
+        INTEGER    DST         ! tmp daylight saving time
         INTEGER    EDATE       ! ending input date counter (YYYYDDD) in GMT
         INTEGER    ETIME       ! ending input time counter (HHMMSS)  in GMT
         INTEGER    FIPS        ! tmp inventory county
@@ -1092,59 +1098,6 @@ C.........  Write HDRer to day-of-year temporal profile output file
             WRITE( DODEV,93000 ) '#PROFID,MON,DAY1,DAY2,DAY3,...,DAY31'
         END IF
 
-
-C.........  Open output file for hourly temporal profiles
-        IF( HOURAVER ) THEN
-
-C.............  Initialize I/O API output file headers
-            CALL HDRMISS3
-
-            FDESC3D( 1 ) = 'GENTPRO-based meteorology profiles file'
-            FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
-            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
-            WRITE( FDESC3D( 4 ), 93000 ) '/PROFILE_METHOD/ ' // PROF_METHOD
-            WRITE( FDESC3D( 5 ), 93000 ) '/TPRO_OUTPUT/ '// ' HOURLY'
-            WRITE( FDESC3D( 6 ), 93000 ) '/T_UNITS/ "deg K"'
-            FDESC3D( 7 ) = '/T_VNAME/ ' // TVARNAME
-            FDESC3D( 8 ) = '/NOTE/ Time 000000 in file represents ' //
-     &                     '0 hour in output time zone'
-            WRITE( FDESC3D( 9 ), 94010 ) '/END DATE/ ', EDATE
-
-            FDESC3D( 21 ) = '/INVEN FROM/ ' // 'N/A'
-            FDESC3D( 22 ) = '/INVEN VERSION/ ' // 'N/A'
-
-C.............  Set header values that cannot be default
-            JDATE = SDATE
-            JTIME = 0000
-
-            SDATE3D = JDATE
-            STIME3D = JTIME
-            TSTEP3D = 10000
-            NROWS3D = NSRGFIPS
-            NLAYS3D = 1
-            NVARS3D = 2
-
-            J = 1
-            VNAME3D( J ) = 'COUNTIES'
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'County FIPS code'
-            VTYPE3D( J ) = M3INT
-
-            J = 2
-            VNAME3D( J ) = 'HRL_BY_SRC'
-            UNITS3D( J ) = 'n/a'
-            VDESC3D( J ) = 'Hourly values by source'
-            VTYPE3D( J ) = M3REAL
-
-C.............  Open new file
-            IF( .NOT. OPEN3( HNAME, FSUNKN3, PROGNAME ) ) THEN
-                 MESG = 'Could not create new output file ' //
-     &                 TRIM( HNAME )
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-        END IF
-
 C.........  Allocate met variable arrays
         ALLOCATE( TA( METNGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TA', PROGNAME )
@@ -1165,6 +1118,8 @@ C.........  Source met variable arrays
 C.........  Allocate memory for storing hourly/annual meteorology profiles
         ALLOCATE( HRLSRC( NSRGFIPS,NSTEPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HRLSRC', PROGNAME )
+        ALLOCATE( TOTSRC( NSRGFIPS,NSTEPS,2 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'TOTSRC', PROGNAME )
         ALLOCATE( DAYSRC( NSRGFIPS,MXDAYS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYSRC', PROGNAME )
         ALLOCATE( MONSRC( NSRGFIPS,NMONTH ), STAT=IOS )
@@ -1175,6 +1130,7 @@ C.........  Allocate memory for storing hourly/annual meteorology profiles
         CALL CHECKMEM( IOS, 'TMPDSRC', PROGNAME )
         ALLOCATE( TMPMSRC( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TMPMSRC', PROGNAME )
+        TOTSRC = 0.
         HRLSRC = 0.
         DAYSRC = 0.
         MONSRC = 0.
@@ -1187,9 +1143,23 @@ C.........  dates/daylight saving arrays
         CALL CHECKMEM( IOS, 'DAYBEGT', PROGNAME )
         ALLOCATE( DAYENDT( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'DAYENDT', PROGNAME )
+        ALLOCATE( PRVBEGT( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PRVBEGT', PROGNAME )
+        ALLOCATE( PRVENDT( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PRVENDT', PROGNAME )
         ALLOCATE( PROCDAYS( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PROCDAYS', PROGNAME )
+        ALLOCATE( DT( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'DT', PROGNAME )
+        ALLOCATE( MT( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'MT', PROGNAME )
+        PRVBEGT  = 0
+        PRVENDT  = 0
+        DAYBEGT  = 0
+        DAYENDT  = 0
         PROCDAYS = 0
+        DT       = 0
+        MT       = 0
 
 C.........  Process meteorology data...
         MESG = 'Processing meteorology data using variables ' //
@@ -1212,9 +1182,20 @@ C.................  Write message for day of week and date
      &                 MMDDYY( JDATE )
                 CALL M3MSG2( MESG )
 
-C.................  Set start and end hours of day for all sources
+C.................  Set start and end hours of previous day for all sources
+                CALL SETSRCDY( NSRGFIPS, LDATE, TZONES, USEDAYLT, .TRUE.,
+     &                         PRVBEGT, PRVENDT )
+
+C.................  Set start and end hours of current day for all sources
                 CALL SETSRCDY( NSRGFIPS, JDATE, TZONES, USEDAYLT, .TRUE.,
      &                         DAYBEGT, DAYENDT )
+
+                DO S = 1, NSRGFIPS
+                    IF( USEDAYLT( S ) ) THEN
+                        DST = DAYBEGT( S ) - PRVBEGT( S )   ! -1 roll-back one hour for a proper
+                        EXIT
+                    END IF
+                END DO
             END IF
 
 C.............  Determine input file for this hour
@@ -1383,6 +1364,25 @@ C                        temporal profiles.
 C.................  Calculate tmp daily total from hourly values
                 TMPDSRC( S ) = TMPDSRC( S ) + HRLSRC( S,T )
 
+C..................  add first hour=1 value to previous daily total as 
+C                    DST adjustment for a proper Temporal processing. 
+                 IF( HOURIDX == 1 .AND. DST == -10000 ) THEN
+                     DAYSRC( S,NDAY ) = DAYSRC( S,NDAY ) + HRLSRC( S,T )
+                     PT = DT( S ) - 23
+                     TOTSRC( S,PT:T-1,1 ) = DAYSRC( S,NDAY )
+C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t-1,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
+C     &    HOURIDX,DAYSRC(S,NDAY),'BH DAY DST Adding....'
+                END IF
+
+                IF( HOURIDX == 24 .AND. DST ==  10000 ) THEN
+                    TMPDSRC( S ) = TMPDSRC( S ) - HRLSRC( S,T )  ! skip one hour value
+C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
+C     &     HOURIDX,HRLSRC(S,T),'BH HOUR DST Skipping....'
+                ELSE
+C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
+C     &     HOURIDX,HRLSRC(S,T),'BH HOUR'
+                END IF
+
                 IF( HOURIDX == 24 ) THEN
 
 C.....................  County-specific procesing days
@@ -1391,49 +1391,48 @@ C.....................  County-specific procesing days
 
 C.....................  Sum hourly to daily total in local time
                     DAYSRC( S,NDAY ) = TMPDSRC( S )
+                    
+C.....................  Store daily total to TOTSRC array for ncf output file
+                    IF( DT( S ) == 0 ) THEN
+                        DT( S ) = T - 23
+                        MT( S ) = T - 23
+                    END IF
+
+                    PT = DT( S )
+                    TOTSRC( S,PT:T,1 ) = DAYSRC( S,NDAY )
+                    DT( S ) = T + 1                             ! store starting time step for next day total
 
                     TMPDSRC( S ) = 0.0   ! reset tmp daily total array
 
 C.....................  Sum daily to monthly total in local time
                     TMPMSRC( S ) = TMPMSRC( S ) + DAYSRC( S,NDAY )
+C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
+C     &    HOURIDX,DAYSRC(S,NDAY),'BH DAY'
+
 
                     IF( MONTH /= TMPMNTH ) THEN
 
 C......,,,,...............  Sum daily to monthly total in local time
                         MONSRC( S,MONTH ) = TMPMSRC( S )
 
+C.........................  Store daily total to TOTSRC array for ncf output file
+                        PT = MT( S )
+                        TOTSRC( S,PT:T,2 ) = MONSRC( S,MONTH )
+                        MT( S ) = T + 1                           ! store starting time step for next day total
+
 C.........................  Sum Monthly to Annual total in local time
                         ANNSRC( S ) = ANNSRC( S ) + MONSRC( S,MONTH )
 
                         TMPMSRC( S ) = 0.0    ! reset tmp monthly total array
+C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
+C     &    HOURIDX,MONSRC(S,MONTH),'BH MONTH'
+
 
                     END IF
 
                 END IF
 
             END DO   ! source loop: S = 1, NSRGFIPS
-
-C.............  Output hourly value by source to TPRO_HOUR file
-            IF( HOURAVER ) THEN
-
-C.................  Write county codes to file
-                IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
-     &                    SRGFIPS ) ) THEN
-                     MESG = 'Could not write county codes to "' //
-     &                      TRIM( HNAME ) // '".'
-                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-C.................  Write one hour of day profile value to file
-                IF( .NOT. WRITE3( HNAME, 'HRL_BY_SRC', JDATE, JTIME,
-     &                   HRLSRC( :,T ) ) ) THEN
-                     MESG = 'Could not write hourly values by sources'//
-     &                      ' data to "' // TRIM( HNAME ) // '".'
-                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-            END IF
-
 
 C.............  Increment loop time
             LDATE = JDATE
@@ -1518,9 +1517,135 @@ C.................  Output daily profiles by county
             END DO
 
         END IF
-            
+
+
 C.........  Deallocate local arrays        
         DEALLOCATE( PROF_DAY )
+
+C.........  Output daily/monthly/annual total values for Temporal to compute
+C           hour-of-day, hour-of-month, hour-of-year hourly profiles as an option
+
+C.........  Open output file for hourly temporal profiles
+        IF( HOURAVER ) THEN
+
+C.............  Initialize I/O API output file headers
+            CALL HDRMISS3
+
+            FDESC3D( 1 ) = 'GENTPRO-based meteorology profiles file'
+            FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
+            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
+            WRITE( FDESC3D( 4 ), 93000 ) '/PROFILE_METHOD/ ' // PROF_METHOD
+            WRITE( FDESC3D( 5 ), 93000 ) '/TPRO_OUTPUT/ '// ' HOURLY'
+            WRITE( FDESC3D( 6 ), 93000 ) '/T_UNITS/ "deg K"'
+            FDESC3D( 7 ) = '/T_VNAME/ ' // TVARNAME
+            FDESC3D( 8 ) = '/NOTE/ Time 000000 in file represents ' //
+     &                     '0 hour in output time zone'
+            WRITE( FDESC3D( 9 ), 94010 ) '/END DATE/ ', EDATE
+
+            FDESC3D( 21 ) = '/INVEN FROM/ ' // 'N/A'
+            FDESC3D( 22 ) = '/INVEN VERSION/ ' // 'N/A'
+
+C.............  Set header values that cannot be default
+            JDATE = SDATE
+            JTIME = 0000
+
+            SDATE3D = JDATE
+            STIME3D = JTIME
+            TSTEP3D = 10000
+            NROWS3D = NSRGFIPS
+            NLAYS3D = 1
+            NVARS3D = 5
+
+            J = 1
+            VNAME3D( J ) = 'COUNTIES'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'County FIPS code'
+            VTYPE3D( J ) = M3INT
+
+            J = 2
+            VNAME3D( J ) = 'HRLSRC'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Hourly total by source'
+            VTYPE3D( J ) = M3REAL
+
+            J = 3
+            VNAME3D( J ) = 'DAYTOT'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Daily total by source'
+            VTYPE3D( J ) = M3REAL
+
+            J = 4
+            VNAME3D( J ) = 'MONTOT'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Monthly total by source'
+            VTYPE3D( J ) = M3REAL
+
+            J = 5
+            VNAME3D( J ) = 'ANNTOT'
+            UNITS3D( J ) = 'n/a'
+            VDESC3D( J ) = 'Annual total by source'
+            VTYPE3D( J ) = M3REAL
+
+C.............  Open new file
+            IF( .NOT. OPEN3( HNAME, FSUNKN3, PROGNAME ) ) THEN
+                 MESG = 'Could not create new output file ' //
+     &                 TRIM( HNAME )
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
+            JDATE = SDATE
+            JTIME = STIME
+
+            DO T = 1, NSTEPS
+
+C.................  Write county codes to file
+                IF( .NOT. WRITE3( HNAME, 'COUNTIES', JDATE, JTIME,
+     &                    SRGFIPS ) ) THEN
+                     MESG = 'Could not write county codes to "' //
+     &                      TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+C.................  Write daily total by source to file
+                IF( .NOT. WRITE3( HNAME, 'HRLSRC', JDATE, JTIME,
+     &                   HRLSRC( :,T ) ) ) THEN
+                     MESG = 'Could not write hourly total by sources'//
+     &                      ' data to "' // TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+C.................  Write daily total by source to file
+                IF( .NOT. WRITE3( HNAME, 'DAYTOT', JDATE, JTIME,
+     &                   TOTSRC( :,T,1 ) ) ) THEN
+                     MESG = 'Could not write daily total by sources'//
+     &                      ' data to "' // TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+C.................  Write monthly total by source to file
+                IF( .NOT. WRITE3( HNAME, 'MONTOT', JDATE, JTIME,
+     &                   TOTSRC( :,T,2 ) ) ) THEN
+                     MESG = 'Could not write daily total by sources'//
+     &                      ' data to "' // TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+C.................  Write monthly total by source to file
+                IF( .NOT. WRITE3( HNAME, 'ANNTOT', JDATE, JTIME,
+     &                   ANNSRC ) ) THEN
+                     MESG = 'Could not write daily total by sources'//
+     &                      ' data to "' // TRIM( HNAME ) // '".'
+                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                END IF
+
+
+C.................  Increment loop time
+                CALL NEXTIME( JDATE, JTIME, 10000 )
+
+            END DO    ! loop over time
+
+        END IF
+
 
 C......... End program successfully
 
