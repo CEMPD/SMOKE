@@ -141,16 +141,16 @@ C           the various data fields
 
         IF( INV_MON > 0 ) THEN
 
-            READDATA( 1,NEM ) = '' 
+            READDATA( 1,NEM ) = '0.0' 
             READDATA( 1,NDY ) = SEGMENT( 13 + INV_MON )
 
             IF( READPOL( 1 ) == 'VMT' ) THEN
 
-                IF( READDATA( 1,NDY ) == '' ) THEN
+                IF( READDATA( 1,NDY )=='' .OR. READDATA( 1,NDY )=='-9'   ) THEN
 
                     READDATA( 1,NEM ) = SEGMENT( 10 )   ! reset original ann total back 
                 
-                    IF( READDATA( 1,NEM ) == '' ) THEN
+                    IF( READDATA( 1,NEM )=='' .OR. READDATA( 1,NEM )=='-9' ) THEN
                         MESG = 'ERROR: Missing '//MON_NAME( INV_MON )
      &                      // 'monthly and annual invenotries'
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
