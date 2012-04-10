@@ -192,7 +192,7 @@ C.........  Compute annual total based on monthly total
             READDATA( 1,NEM ) = '0.0'
             READDATA( 1,NDY ) = SEGMENT( 52 + INV_MON )
 
-            IF( READDATA( 1,NDY )=='' .OR. DATADATA( 1,NDY )=='-9' ) THEN
+            IF( READDATA( 1,NDY )=='' .OR. READDATA( 1,NDY )=='-9' ) THEN
 
                 READDATA( 1,NEM ) = SEGMENT( 14 )   ! reset original ann total back 
                 
