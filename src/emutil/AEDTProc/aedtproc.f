@@ -169,7 +169,7 @@ C.........  Other local variables
         INTEGER         DAY                 ! current day
         INTEGER         MON                 ! current month
         INTEGER         YEAR                ! current modeling year
-        INTEGER      :: DYEAR = -1           ! Year diff = Overyear-Modelyear (2005-2006)
+        INTEGER      :: DYEAR = 0           ! Year diff = Overyear-Modelyear (2005-2006)
 
         INTEGER         JDATE, TDATE        ! Processing date
         INTEGER         JTIME               ! Processing time
@@ -311,7 +311,6 @@ C.........  Open Met input files
             PNAME = PROMPTMFILE( MESG, FSREAD3, 'MET_CRO_2D', PROGNAME )
         END IF
 
-
 C.........  Get grid name from the environment and read grid parameters
         IF ( .NOT. DSCM3GRD( GDNAM3D, GDESC, COORD, GDTYP3D,
      &       COORUNIT, P_ALP3D, P_BET3D, P_GAM3D, XCENT3D,
@@ -382,7 +381,7 @@ C.........  Allocate arrays
         CALL CHECKMEM( IOS, 'PRSFC', PROGNAME )
         ALLOCATE( ZZF( NGRID,NLAYS ), STAT= IOS)
         CALL CHECKMEM( IOS, 'ZZF', PROGNAME )
-        ALLOCATE( TMP3D( NGRID,NLAYS,NVARS,NSTEPS ), STAT= IOS)
+        ALLOCATE( TMP3D( NGRID,NLAYS,50,NSTEPS ), STAT= IOS)
         CALL CHECKMEM( IOS, 'TMP3D', PROGNAME )
         ALLOCATE( LFRAC( NLAYS ), STAT= IOS)
         CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
@@ -505,7 +504,7 @@ c        FDESC3D( 22 ) = '/INVEN VERSION/ ' // 'FAA-AEDT'
         VNAME3D( 40 ) = 'MTHYLNAP2       '
         VDESC3D( 40 ) = 'Model species MTHYLNAP2'
         VNAME3D( 41 ) = 'BENZALD         '
-        VDESC3D( 41) = 'Model species BENZALD'
+        VDESC3D( 41 ) = 'Model species BENZALD'
         VNAME3D( 42 ) = 'ETHYLENE        '
         VDESC3D( 42 ) = 'Model species ETHYLENE'
         VNAME3D( 43 ) = 'TOG_ORG         '
@@ -590,8 +589,6 @@ C.............  Open AEDT flight info input file
 
 C.............  Store AEDT flight information (flightID and Engine types)
             CALL READ_FLIGHT_ENGINE( FLDEV )
-            
-            CLOSE( FLDEV )
 
 C............. parse line to compute julian date          
             CALL PARSLINE( SEG_BUF, 4, INP_SEG )
@@ -622,8 +619,6 @@ C.............  Open actual Segment input file
             MESG = 'Successfully opened AEDT Flight Emission input file:'//
      &             CRLF() // BLANK5 // TRIM( SEG_BUF )
             CALL M3MSG2( MESG )
-
-c            N_SEG = GETFLINE( SGDEV, 'Flight Emissions input file' )
 
 C.............  Initialize values before reading file
             IREC  = 0
@@ -790,8 +785,7 @@ C.................  Skip if there is no intersected grid cell
 
 C.................  Calculate processing hour (T)
                 DH = ( JDATE - SDATE ) * 24   ! delta hours
-                T = DH + HOUR + 1 
-C                print*,SDATE,JDATE,DH,HOUR,T
+                T = DH + HOUR + 1
 
 C.................  Vertical allocation within gridded x-y cell(s)
 C                   Need to compute each gridded x-y cell actual bottom and top heights
@@ -834,17 +828,39 @@ C                   estimated pressure based on calculated altitude
 C                   1000ft * 0.3048 = 3048 meter
 
                 F = INDEX1( FLGID, N_FLG, FLIGHT_ENG( :,1 ) )  ! Flight ID
+
                 DPRTID = FLIGHT_ENG( F,2 )                     ! Departure Airport ID
                 ARRVID = FLIGHT_ENG( F,3 )                     ! Departure Airport ID
-                    
+
+                IF( F < 1 ) THEN
+                    MESG = 'ERROR: Could not find a matched ' //
+     &                     'flight ID ( '// TRIM(FLGID) // ' ) from'//
+     &                     'FLIGHT_FILELIST input file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+      
                 ND = INDEX1( DPRTID, NAPRT_ELEV, APRT_CODE )
                 NA = INDEX1( ARRVID, NAPRT_ELEV, APRT_CODE )
+
+                IF( ND < 1 ) THEN
+                    MESG = 'WARNING: Could not find a matched ' //
+     &                     'departure airport ID ( '// TRIM(DPRTID) //
+     &                     ' ) from AIRPORT_ELEVATION input file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+                IF( NA < 1 ) THEN
+                    MESG ='WARNING: Could not find a matched ' //
+     &                    'arrival airport ID ( ' // TRIM(ARRVID) //
+     &                    ' ) from AIRPORT_ELEVATION input file'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
                 IF( Zo <= LTOALT * FT2M ) THEN
 
                     IF( MODID < 4 ) THEN
                         Zo = Zo - APRT_ELEV( ND )   ! departure airport elev
-                    ELSE IF( MODID > 7 ) THEN
+                    ELSE IF( MODID > 6 ) THEN
                         Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
                     ELSE
                         Zo = Zo - TERRAIN( ORG_CELLID )
@@ -864,7 +880,7 @@ C.....................  Use pressure values as Zo and Zh for sigma level vertica
 
                     IF( MODID < 4 ) THEN
                         Zh = Zh - APRT_ELEV( ND )   ! departure airport elev
-                    ELSE IF( MODID > 7 ) THEN
+                    ELSE IF( MODID > 6 ) THEN
                         Zh = Zh - APRT_ELEV( NA )   ! arrival airport elev
                     ELSE
                         Zh = Zh - TERRAIN( END_CELLID )
@@ -943,7 +959,6 @@ C.....................  Update bottom and top layers
                         ZBOT = ZBOT
                         ZTOP = ZBOT + Z
                     END IF
-c             write(*,'(i8,7F15.5)')segid,po,ph,deltaz,zfrac,z,zbot,ztop
 
 C.........................  Looping through layers to determine associated layer for each link
                     DO L = 1, NLAYS - 1
@@ -964,14 +979,12 @@ C.........................  Looping through layers to determine associated layer
                         PFRAC = 1.0
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = LBOT
-c                write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LBOT,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,' one layer'
 
                     ELSE IF( LBOT == NLAYS ) THEN    ! plume above top layer
  
                         PFRAC = 1.0
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = NLAYS
-c                write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LTOP,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,' top layer'
                 
                     ELSE                               ! plume crosses layers
  
@@ -992,7 +1005,6 @@ C..........................  Calculate a fraction for the bottom layer
                         PFRAC = ( ( ZZF( C,LBOT ) - ZBOT )
      &                              / PDIFF )
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
-c               write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LBOT,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,'# layer'
                     
 C.........................  Calculate a fraction for the top layer
                         PFRAC = ( ( ZTOP - ZZF( C,LTOP-1 ) )
@@ -1007,12 +1019,10 @@ C.........................  Calculate a fraction for the top layer
                             
                                 PFRAC = ( ( ZZF(C,L) -ZZF(C,L-1) )
      &                                      / PDIFF )
-c               write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,L,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,pfrac,' # layer'
                                 LFRAC( L ) = LFRAC( L ) + PFRAC
                             END DO
 
                         ENDIF
-c               write(*,'(7i8,5f15.7,a)')segid,c,col,row,LBOT,LTOP,LTOP,zzf(c,LBOT),ZZF(c,LTOP),ZBOT,ZTOP,lfrac(ltop),' # layer'
                     
                     END IF
 
@@ -1109,8 +1119,7 @@ C.............................  Estimate Model species using speciation profile 
 
                                 IF( NV < 1 ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                                  ' is not a model species:: ' //
-     &                                  'PLEASE check the name of species'
+     &                               ' is not listed in PISTON_SPC file'
                                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                                 END IF
 
@@ -1128,8 +1137,7 @@ C.............................  Estimate HAPs using HAP's profile factors from T
 
                                 IF( NV < 1 ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                                  ' is not a model species:: ' //
-     &                                  'PLEASE check the name of species'
+     &                               ' is not listed in PISTON_HAP file'
                                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                                 END IF
                                 
@@ -1150,8 +1158,7 @@ C.............................  Estimate Model species using speciation profile 
 
                                 IF( NV < 1 ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                                  ' is not a model species:: ' //
-     &                                  'PLEASE check the name of species'
+     &                               ' is not listed in TURBINE_SPC file'
                                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                                 END IF
 
@@ -1170,8 +1177,7 @@ C.............................  Estimate HAPs using HAP's profile factors from T
 
                                 IF( NV < 1 ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                                  ' is not a model species:: ' //
-     &                                  'PLEASE check the name of species'
+     &                               ' is not listed in TURBINE_HAP file'
                                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                                 END IF
 
@@ -1206,7 +1212,14 @@ C.................   previous values needed to be updated before the source gets
 
 299         CONTINUE ! Exit from read loop
 
+C.............  close flight and segment input files
+            CLOSE( SGDEV )
             CLOSE( FLDEV )
+
+C............. Deallocate local variable
+            DEALLOCATE( FLIGHT_ENG )
+
+C............. Error message
             IF( EFLAG ) THEN 
                 WRITE( MESG,94010 ) 'I/O error', IOS,
      &               'reading input file at line', IREC
@@ -1323,7 +1336,6 @@ C.............  Skip blank and comment lines
 
 C...........  Determine number of lines in filelist; this will be the maximum
 C             number of airport sources
-         IF( ALLOCATED( FLIGHT_ENG ) ) DEALLOCATE( FLIGHT_ENG )
          ALLOCATE( FLIGHT_ENG( N_FLG,4 ), STAT=IOS )
          CALL CHECKMEM( IOS, 'FLIGHT_ENG', PROGNAME )
          FLIGHT_ENG = ' '
@@ -1677,7 +1689,7 @@ C.............  Get line
              CALL PARSLINE( LINE, 3, SEGMENT )
 
              N = N + 1
-              NSSPCT( N ) = SEGMENT( 1 )
+             NSSPCT( N ) = SEGMENT( 1 )
              CVSPCT( N,1 ) = STR2REAL( SEGMENT( 2 ) )
              CVSPCT( N,2 ) = STR2REAL( SEGMENT( 3 ) )
 
@@ -1760,7 +1772,7 @@ C.............  Get line
              CALL PARSLINE( LINE, 3, SEGMENT )
 
              N = N + 1
-              NSSPCP( N ) = SEGMENT( 1 )
+             NSSPCP( N ) = SEGMENT( 1 )
              CVSPCP( N,1 ) = STR2REAL( SEGMENT( 2 ) )
              CVSPCP( N,2 ) = STR2REAL( SEGMENT( 3 ) )
 
