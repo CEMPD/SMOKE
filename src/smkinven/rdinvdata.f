@@ -262,10 +262,15 @@ C           environment. Default is false for non-EMS-95 and true for EMS-95
 C           inventory inputs.
         DFLAG = .FALSE.
         
-        IF( EMSFLAG ) THEN
-            DFLAG = .TRUE.
-            MESG = 'Use weekdays only to normalize weekly profiles'
-            DFLAG = ENVYN( 'WKDAY_NORMALIZE', MESG, DFLAG, IOS )
+        IF( EMSFLAG ) DFLAG = .TRUE.
+
+        MESG = 'Use weekdays only to normalize weekly profiles'
+        DFLAG = ENVYN( 'WKDAY_NORMALIZE', MESG, DFLAG, IOS )
+
+        IF( DFLAG .AND. .NOT. EMSFLAG ) THEN
+            MESG = 'ERROR: WKDAY_NORMALIZE is only applicable '//
+     &             'for EMS-95 fomrat'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Set weekly profile interpretation flag...
