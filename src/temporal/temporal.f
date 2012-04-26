@@ -214,7 +214,6 @@ C...........   Other local variables
         LOGICAL      :: EFLAG2= .FALSE.     !  error-flag (2)
         LOGICAL         ENDFLAG             !  true: couldn't find file end date
         LOGICAL      :: FNDOUTPUT = .FALSE. ! true: found output hydrocarbon
-        LOGICAL      :: EMFLAG = .FALSE.    ! true: processing MOVES, false: MOBILE6 
         LOGICAL         HFLAG               !  true: hour-specific file available
         LOGICAL         MFLAG               !  true: mobile codes file available
         LOGICAL         NFLAG               !  true: use all uniform temporal profiles
@@ -262,7 +261,6 @@ C.........  Get the name of the emission factor model to use for one run
         IF ( CATEGORY .EQ. 'MOBILE' ) THEN
             MESG = 'Emission factor model'
             CALL ENVSTR( 'SMK_EF_MODEL', MESG, '', MODELNAM, IOS)
-            IF( MODELNAM == 'MOVES' ) EMFLAG = .TRUE.
         ELSE
             MODELNAM = ' '
         END IF
@@ -273,7 +271,7 @@ C.........  Get inventory file names given source category
 C.........  Prompt for and open input files
 C.........  Also, store source-category specific information in the MODINFO 
 C           module.
-        CALL OPENTMPIN( EMFLAG, NFLAG, PFLAG, ENAME, ANAME, DNAME,
+        CALL OPENTMPIN( NFLAG, PFLAG, ENAME, ANAME, DNAME,
      &                  HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, HDEV,
      &                  KDEV, TDEV, MDEV, EDEV, PYEAR )
 

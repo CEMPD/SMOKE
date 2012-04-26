@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENTMPIN( MFLAG, UFLAG, PFLAG, ENAME, ANAME,
+        SUBROUTINE OPENTMPIN( UFLAG, PFLAG, ENAME, ANAME,
      &                        DNAME, HNAME, GNAME, SDEV, XDEV, RDEV,
      &                        CDEV, HDEV, KDEV, TDEV, MDEV, EDEV, PYEAR )
 
@@ -68,7 +68,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  PROMPTFFILE, PROMPTMFILE
 
 C...........   SUBROUTINE ARGUMENTS
-        LOGICAL     , INTENT    (IN) :: MFLAG ! true: MOVES, false: MOBILE6 
         LOGICAL     , INTENT    (IN) :: UFLAG ! use uniform temporal profile
         LOGICAL     , INTENT(IN OUT) :: PFLAG ! use episode time periods
         CHARACTER(*), INTENT(IN OUT) :: ENAME ! name for I/O API inven input
@@ -172,7 +171,7 @@ C           results are stored in module MODINFO.
         CALL GETSINFO( ENAME )
 
 C.........  Reset activity to pollutant to create hourly VMT without running EMISFAC
-        IF( MFLAG ) THEN
+        IF( NIACT > 0 ) THEN
 
 C.............  Allocate memory for and store pollutant names
             IF( ALLOCATED( EINAM ) ) DEALLOCATE( EINAM )
