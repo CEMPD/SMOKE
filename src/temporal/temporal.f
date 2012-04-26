@@ -261,7 +261,7 @@ C.........  Set source category based on environment variable setting
 C.........  Get the name of the emission factor model to use for one run
         IF ( CATEGORY .EQ. 'MOBILE' ) THEN
             MESG = 'Emission factor model'
-            CALL ENVSTR( 'SMK_EF_MODEL', MESG, 'MOVES', MODELNAM, IOS)
+            CALL ENVSTR( 'SMK_EF_MODEL', MESG, '', MODELNAM, IOS)
             IF( MODELNAM == 'MOVES' ) EMFLAG = .TRUE.
         ELSE
             MODELNAM = ' '
