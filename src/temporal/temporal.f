@@ -258,12 +258,12 @@ C.........  Set source category based on environment variable setting
         CALL GETCTGRY
 
 C.........  Get the name of the emission factor model to use for one run
-        IF ( CATEGORY .EQ. 'MOBILE' ) THEN
-            MESG = 'Emission factor model'
-            CALL ENVSTR( 'SMK_EF_MODEL', MESG, '', MODELNAM, IOS)
-        ELSE
-            MODELNAM = ' '
-        END IF
+C        IF ( CATEGORY .EQ. 'MOBILE' ) THEN
+C            MESG = 'Emission factor model'
+C            CALL ENVSTR( 'SMK_EF_MODEL', MESG, '', MODELNAM, IOS)
+C        ELSE
+C            MODELNAM = ' '
+C        END IF
 
 C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
