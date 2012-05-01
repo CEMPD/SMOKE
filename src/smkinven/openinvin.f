@@ -124,7 +124,7 @@ C.........  Get value of these controls from the environment
         HRLINVFLAG = HFLAG
 
         IF( DAYINVFLAG .OR. HRLINVFLAG ) THEN
-            MESG = 'Use a daily FF10 inventory data as an annual FF10 invenotry'
+            MESG = 'Use a daily FF10 inventory data as an annual FF10 inventory'
             FF10INVFLAG = ENVYN ( 'FF10_AVEDAY_ANNINV_YN', MESG, .FALSE., IOS )
         END IF
 
