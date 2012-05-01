@@ -235,7 +235,7 @@ C.............  Open files, and report status
      &             NAMTMP( 1:LEN_TRIM( NAMTMP ) )
             CALL M3MSG2( MESG )
 
-C.............  Read EMS-95 day-specific or hour-specific file for EMS-95 format
+C.............  Read day-specific or hour-specific file
             IF( FILFMT( IFIL ) .EQ. EMSFMT ) THEN
 
                 CALL RDEMSPD( IDEV, TZONE, OUTSTEP, MXPDSRC, DFLAG, 
