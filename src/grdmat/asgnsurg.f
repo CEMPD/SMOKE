@@ -171,6 +171,21 @@ c note: insert here when needed
                     CFIPSL  = CFIP // TSCCL
                     CSTASCC = CSTA // TSCC
                     CSTASL  = CSTA // TSCCL
+                ELSE
+                    FIP     = IFIP  ( S )
+                    CSRC    = CSOURC( S )
+                    CFIP    = CSRC( 1:FIPLEN3 )
+                    CSTA    = CFIP( 1:STALEN3 )
+                    TSCC    = CSCC( S )
+
+C.................  Set type of SCC                
+                    SCCFLAG = SETSCCTYPE ( TSCC )
+                    TSCCL   = TSCC( 1:LSCCEND )
+
+                    CFIPSCC = CFIP // TSCC
+                    CFIPSL  = CFIP // TSCCL
+                    CSTASCC = CSTA // TSCC
+                    CSTASL  = CSTA // TSCCL
                 END IF
 
             END SELECT
