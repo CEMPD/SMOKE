@@ -84,7 +84,7 @@ C...........   Other local variables
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
 
-        CHARACTER(500)     LINE     ! line buffer
+        CHARACTER(1060)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
         CHARACTER(SCCLEN3) SCC      ! current SCC
         CHARACTER(10)      KEYWORD  ! temperature keyword
