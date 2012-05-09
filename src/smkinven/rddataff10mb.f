@@ -141,10 +141,34 @@ C           the various data fields
 
         IF( INV_MON > 0 ) THEN
 
-            READDATA( 1,NEM ) = '0.0' 
-            READDATA( 1,NDY ) = SEGMENT( 13 + INV_MON )
+C.............  Speed activity data needs treatment to avoid 
+C               any temporal allocation since the unit is miles/hr
+C               average-day is not allowed for SPEED activity data
+            IF( READPOL( 1 ) == 'SPEED' ) THEN
 
-            IF( READPOL( 1 ) == 'VMT' ) THEN
+                READDATA( 1,NEM ) = SEGMENT( 13 + INV_MON )
+                READDATA( 1,NDY ) = ''
+
+                IF( READDATA( 1,NEM )=='' .OR. READDATA( 1,NEM )=='-9'   ) THEN
+
+                    READDATA( 1,NEM ) = SEGMENT( 10 )   ! reset original ann total back 
+
+                    IF( READDATA( 1,NEM )=='' .OR. READDATA( 1,NEM )=='-9' ) THEN
+                        MESG = 'ERROR: Missing '//MON_NAME( INV_MON )
+     &                      // 'monthly and annual SPEED invenotries'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ELSE
+                        MESG = 'WARNING: Monthly inventory is '//
+     &                       'missing: Annual inventory will be used'
+                        CALL M3MESG( MESG )
+                    END IF
+                END IF
+
+C.............  Process non-SPEED activity data
+            ELSE
+
+                READDATA( 1,NEM ) = '0.0'    ! reset annual value to zero and look for monthly total
+                READDATA( 1,NDY ) = SEGMENT( 13 + INV_MON )
 
                 IF( READDATA( 1,NDY )=='' .OR. READDATA( 1,NDY )=='-9'   ) THEN
 
