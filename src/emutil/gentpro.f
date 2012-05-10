@@ -94,33 +94,35 @@ C...........   INCLUDES:
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
-        LOGICAL         DSCM3GRD
+        CHARACTER(14)   MMDDYY
+        CHARACTER(16)   PROMPTMFILE
+        CHARACTER(16)   VERCHAR
         INTEGER         ENVINT
-        REAL            ENVREAL
         INTEGER         FIND1
         INTEGER         FIND1FIRST
         INTEGER         GETIFDSC
         INTEGER         GETFLINE
         INTEGER         GETEFILE
         INTEGER         INDEX1
-        LOGICAL         INTLIST
-        CHARACTER(14)   MMDDYY
         INTEGER         PROMPTFFILE
-        CHARACTER(16)   PROMPTMFILE
         INTEGER         SECSDIFF
-        LOGICAL         SETENVVAR
-        LOGICAL         STRLIST
         INTEGER         STR2INT
         INTEGER         WKDAY
-        LOGICAL         BLKORCMT
-        CHARACTER(16)   VERCHAR
+        REAL            ENVREAL
         REAL            YR2DAY
+        REAL            STR2REAL
+        LOGICAL         BLKORCMT
+        LOGICAL         ENVYN
+        LOGICAL         DSCM3GRD
+        LOGICAL         INTLIST
+        LOGICAL         SETENVVAR
+        LOGICAL         STRLIST
 
         EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FIND1
      &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE,
      &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, 
      &               FIND1FIRST, STRLIST, STR2INT, BLKORCMT, VERCHAR,
-     &               YR2DAY
+     &               YR2DAY, ENVYN, STR2REAL
 
 C.....  Define temporal profile type constants for enumeration
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -143,6 +145,7 @@ C...........   real arrays
         REAL   , ALLOCATABLE :: TMPDSRC( : )       !  tmp daily total
         REAL   , ALLOCATABLE :: TMPMSRC( : )       !  tmp monthly total
         REAL   , ALLOCATABLE :: MINTEMP ( : )      !  min temp values by source (FIPS)
+        REAL   , ALLOCATABLE :: RWC_TEMP( : )      !  county-min temp values for RWC
         REAL   , ALLOCATABLE :: PROF_MON(:,:)      ! Array of monthly profile fractional data values
         REAL   , ALLOCATABLE :: PROF_DAY(:,:)      ! Array of daily profile fractional data values
 
@@ -156,6 +159,7 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: TZONES  ( : )      ! county-specific time zones
         INTEGER, ALLOCATABLE :: METDAYS ( : )      ! dimension: nsteps in episode,
         INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours 
+        INTEGER, ALLOCATABLE :: RWC_CNTY( : )      ! RWC-counties
         INTEGER, ALLOCATABLE :: SRGIDS  ( : )      ! list of surrogates
         INTEGER, ALLOCATABLE :: SRGSTA  ( : )      ! list of state in surrogates
         INTEGER, ALLOCATABLE :: INDXREF ( :,: )    ! Index of matched xref entries 
@@ -177,6 +181,7 @@ C...........   File units and logical names:
         INTEGER      MDEV  ! unit number for monthly group file
         INTEGER      PDEV  ! unit number for speeds summary file (SPDSUM)
         INTEGER      QDEV  ! unit number for surrogate(s) file
+        INTEGER      RDEV  ! unit number for county-specific temp file for RWC
         INTEGER      SDEV  ! unit number for surrogate(s) file
         INTEGER      TDEV  ! unit number for meteorology list file
         INTEGER      WDEV  ! unit number for weekly group file
@@ -192,7 +197,7 @@ C...........   File units and logical names:
 
 C...........   Other local variables:
         INTEGER    DD, I, IC, J, K, LL, L, L0, L1, L2, L3   ! Counters and pointers
-        INTEGER    MM, N, NP, NX, NRH, NR, NS, S, PT, T, TT, T2, V  ! Counters and pointers
+        INTEGER    MM, N, NP, NX, NRH, NR, NS, S, T, NT, PT, TT, T2, V  ! Counters and pointers
 
         INTEGER    EPI_SDATE   ! episode start date from E.V. (YYYYDDD)
         INTEGER    EPI_STIME   ! episode start time from E.V. (HHMMSS)
@@ -208,6 +213,7 @@ C...........   Other local variables:
         INTEGER    FIPS        ! tmp inventory county
         INTEGER    FILENUM     ! file number of current meteorology file
         INTEGER    IOS         ! temporary I/O status
+        INTEGER    IREC        ! temporary input line number
         INTEGER    HOURIDX     ! current hour of the day
         INTEGER    JDATE       ! input date counter (YYYYDDD) in GMT
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
@@ -227,6 +233,7 @@ C...........   Other local variables:
         INTEGER    ISTA        ! current state number
         INTEGER    PSTA        ! previous State number
         INTEGER    NSTA        ! no. of unique State number
+        INTEGER    NCNTY       ! no. of counties for RWC method
         INTEGER    NMATCH      ! no. of matched temporal x-ref input file by FIPS/SCC
         INTEGER    MXTREF      ! no. matched temporal x-ref entries 
         INTEGER    MXLINE      ! no. temporal x-ref input file
@@ -255,6 +262,7 @@ C...........   Other local variables:
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
         LOGICAL :: COMPLETE = .FALSE.  !  true: program successful complete
         LOGICAL :: GRID_ERR = .FALSE.  !  true: error found in grid settings
+        LOGICAL :: CFLAG    = .FALSE.  !  true: Use county-specific min temp setting for RWC eq
         LOGICAL :: NH3FLAG  = .FALSE.  !  true: processing NH3 profile method
         LOGICAL :: MONAVER  = .FALSE.  !  true: monthly averaging
         LOGICAL :: DAYAVER  = .FALSE.  !  true: weekly averaging
@@ -339,7 +347,6 @@ C.........  Get a list of SCCs for meteorology processing.
            IF( SCCLIST( I ) /= ' ' ) NSCC = NSCC + 1
         END DO
 
-
 C.........  Get name of surrogate IDs to use
         MESG = 'Specifies a list of spatial surrogate IDs'
         IF( .NOT. INTLIST( 'SRG_LIST',MESG,MXVAR,NSRG,SRGIDS ) ) THEN
@@ -393,7 +400,8 @@ C.........  Set default names for additional variables
      &            '" profile method'
                CALL M3MESG( MESG )
            END IF
-       ELSE
+
+        ELSE
            WSPDNAME = '' 
 
         END IF
@@ -409,8 +417,92 @@ C.........  Defines output types based on profile method
         END IF
 C.........  Determine optional linear equation for RWC profile calculation
         IF( PROF_METHOD == 'RWC' ) THEN
-           SLOPE = ENVREAL( 'SLOPE', 'Enter A for RWC equation: y = Ax + B', 0.79, IOS )
-           CONST = ENVREAL( 'CONSTANT', 'Enter B for RWC equation: y = Ax + B',42.12, IOS )
+
+            MESG = 'Enter A for RWC equation: y = Ax + B'
+            SLOPE = ENVREAL( 'SLOPE', MESG, 0.79, IOS )
+            MESG = 'Enter B for RWC equation: y = Ax + B'
+            CONST = ENVREAL( 'CONSTANT', MESG ,42.12, IOS )
+
+            MESG = 'Use county-specific min temperature for RWC'
+            CFLAG = ENVYN( 'COUNTY_TEMP_YN', MESG, .FALSE., IOS )
+
+        END IF
+
+C.............  Open county-specific Temperature setting for RWC
+        IF( CFLAG ) THEN
+
+            MESG='Enter logical name for County-specific Temperature '//
+     &           'Input file for RWC method'
+            RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,'COUNTY_TEMP_RWC',
+     &             PROGNAME )
+
+            NLINES= GETFLINE( RDEV,'County-specific Temperatures file' )
+            
+            IREC = 0
+            NCNTY = 0
+            DO I = 1, NLINES
+
+                READ( RDEV, 93000, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF ( IOS .GT. 0 ) THEN
+                    WRITE( MESG, 94010)
+     &                 'I/O error', IOS, 'reading COUNTY_TEMP_RWC '//
+     &                 'file at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C.................  Skip blank and comment lines
+                IF( BLKORCMT( LINE ) ) CYCLE
+
+                NCNTY = NCNTY + 1
+
+            END DO    ! end of loop
+
+             IF( N == 0 ) THEN
+                 MESG = 'ERROR: No entries in COUNTY_TEMP_RWC file'
+                 CALL M3MSG2( MESG )
+             END IF
+         
+             REWIND( RDEV )
+
+C..............  Allocate arrays for county-specific temperature settings for RWC
+             ALLOCATE( RWC_CNTY( NCNTY ), STAT=IOS )
+             CALL CHECKMEM( IOS, 'RWC_CNTY', PROGNAME )
+             ALLOCATE( RWC_TEMP( NCNTY ), STAT=IOS )
+             CALL CHECKMEM( IOS, 'RWC_TEMP', PROGNAME )
+             RWC_CNTY = 0
+             RWC_TEMP = 0.0
+
+C..............  Store county-specific temperatures
+            IREC = 0
+            NCNTY = 0
+            DO I = 1, NLINES
+
+                READ( RDEV, 93000, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF ( IOS .GT. 0 ) THEN
+                    WRITE( MESG, 94010)
+     &                 'I/O error', IOS, 'reading COUNTY_TEMP_RWC '//
+     &                 'file at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C.................  Skip blank and comment lines
+                IF( BLKORCMT( LINE ) ) CYCLE
+
+C.................  Sparse line
+                CALL PARSLINE( LINE, 2, SEGMENT )
+
+                NCNTY = NCNTY + 1
+                RWC_CNTY( NCNTY ) = STR2INT ( SEGMENT( 1 ) )     ! FIPS id
+                RWC_TEMP( NCNTY ) = STR2REAL( SEGMENT( 2 ) )     ! min temp set for RWC eq
+
+            END DO    ! end of loop
+            
+            CLOSE( RDEV )
+
         END IF
 
 C.........  Error if hourly output setting for RWC profile method.
@@ -914,7 +1006,7 @@ C.........  Make sure the starting time is between 0 and 23
         STIME = STIME*10000
 
 C.........  Calculate required ending date and time based on episode settings
-        EDATE = EPI_EDATE
+        EDATE = EPI_EDATE + 1
         ETIME = EPI_ETIME
 
 C.........  For MOVES model, latest time required will be 11 p.m. in time zone farthest from GMT
@@ -1299,7 +1391,13 @@ C.................  Convert GMT to local time
 
 C.................  Skip if begining/ending hours are out of range
                 IF( T <= TSPREAD .AND. HOURIDX > TSPREAD ) CYCLE
-                IF( T > EPI_NSTEPS .AND. HOURIDX < TSPREAD ) CYCLE
+                IF( ( T > EPI_NSTEPS .AND. HOURIDX <= TSPREAD ) .OR.
+     &                T > EPI_NSTEPS + TSPREAD ) THEN
+                    NT = T - EPI_NSTEPS
+                    HRLSRC( S,T )   = HRLSRC( S,NT )
+                    TOTSRC( S,T,: ) = TOTSRC( S,NT,: )
+                    CYCLE
+                END IF
 
 C.................  Skip if data is missing
                 IF( TASRC( S ) == 0.0 ) THEN  ! temp in Kevin 
@@ -1426,7 +1524,6 @@ C.........................  Sum Monthly to Annual total in local time
                         TMPMSRC( S ) = 0.0    ! reset tmp monthly total array
 C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
 C     &    HOURIDX,MONSRC(S,MONTH),'BH MONTH'
-
 
                     END IF
 
@@ -1637,7 +1734,6 @@ C.................  Write monthly total by source to file
      &                      ' data to "' // TRIM( HNAME ) // '".'
                      CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                 END IF
-
 
 C.................  Increment loop time
                 CALL NEXTIME( JDATE, JTIME, 10000 )
