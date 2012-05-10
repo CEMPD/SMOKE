@@ -255,6 +255,7 @@ C...........   Other local variables:
         INTEGER    TZMAX       ! maximum time zone in inventory
         INTEGER    MXWARN      ! maximum no of warning messgaes
 
+        REAL       DTEMP               ! RWC default temp (=50.0) 
         REAL       TEMPVAL             ! tmp variable value
         REAL       SLOPE               ! RWC linear euqation slope 
         REAL       CONST               ! RWC linear equation constant 
@@ -422,6 +423,9 @@ C.........  Determine optional linear equation for RWC profile calculation
             SLOPE = ENVREAL( 'SLOPE', MESG, 0.79, IOS )
             MESG = 'Enter B for RWC equation: y = Ax + B'
             CONST = ENVREAL( 'CONSTANT', MESG ,42.12, IOS )
+
+            MESG = 'Enter default minimum temp for RWC method'
+            DTEMP= ENVREAL( 'DEFAULT_TEMP_RWC', MESG ,50.0, IOS )
 
             MESG = 'Use county-specific min temperature for RWC'
             CFLAG = ENVYN( 'COUNTY_TEMP_YN', MESG, .FALSE., IOS )
@@ -1428,7 +1432,7 @@ C                             Values for the other hours are 0.
 
                         HRLSRC( S,T ) = CONST - ( SLOPE *  MINTEMP( S ) )
 
-                        IF( MINTEMP( S ) > 50.0 ) HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
+                        IF( MINTEMP( S ) > DTEMP ) HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
 
                         MINTEMP( S ) = -1 * BADVAL3   ! Reset MIN(temp) back to flag value
 
