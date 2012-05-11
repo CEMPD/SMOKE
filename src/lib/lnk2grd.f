@@ -149,7 +149,7 @@ C...........   Initializations
 
 C...........  Initialize the number of cells to zero
         NCEL = 0
-
+        
 C...............   Check for 0-D, 1-D cases, using tolerance of
 C...............   1.0E-5 * cellsize (on the order of 0.5-10.0 meters).
 C...............   Within a cell case:
@@ -158,7 +158,7 @@ C...............   Within a cell case:
 
 C.............  Make sure 1-cell link is inside domain
             IF ( COL .GE. 1  .AND.  COL .LE. NCOLS .AND.
-     &           ROW .GE. 1  .AND.  ROW .LE. NCOLS      ) THEN
+     &           ROW .GE. 1  .AND.  ROW .LE. NROWS      ) THEN
 
                 NCEL = 1
                 ACEL ( 1 ) = COL + NCOLS * ( ROW - 1 )
