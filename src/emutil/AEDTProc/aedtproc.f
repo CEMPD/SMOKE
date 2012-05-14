@@ -64,7 +64,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER       PROMPTFFILE
         INTEGER       STR2INT
         LOGICAL       BLKORCMT
-        LOGICAL       CHKREAL
+        LOGICAL       CHKREAL, CHKINT
         LOGICAL       INGRID
         LOGICAL       DSCM3GRD
         LOGICAL       ENVYN
@@ -74,7 +74,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)  CRLF
         CHARACTER(16) PROMPTMFILE
 
-        EXTERNAL      CRLF,  CHKREAL, FIND1, FINDC, INDEX1, GETFLINE, 
+        EXTERNAL      CRLF,  CHKREAL, CHKINT, FIND1, FINDC, INDEX1, GETFLINE, 
      &                JULIAN, INGRID, STR2INT, STR2REAL, BLKORCMT, ENVYN,
      &                PROMPTFFILE, PROMPTMFILE, DSCM3GRD, ENVINT, ENVREAL
 
@@ -124,6 +124,11 @@ C            is not worth going to extra trouble for since it is not realistic
         INTEGER,       ALLOCATABLE :: ACEL( : )    ! number of cell intersections per src
         REAL,          ALLOCATABLE :: AFAC( : )    ! fraction of link in cell
 
+        CHARACTER(16), ALLOCATABLE :: VARNAME( : )  ! stores the namne for each variable
+        CHARACTER(16), ALLOCATABLE :: VARUNIT( : )  ! stores the units for each variable
+        CHARACTER(80), ALLOCATABLE :: VARDESC( : )  ! stores the description for each variable
+        INTEGER,       ALLOCATABLE :: VARTYPE( : )  ! stores the type of each variable
+
 C.........  File units and logical names
         INTEGER      :: APDEV= 0            ! a list of of airport elevations input file
         INTEGER      :: FDEV = 0            ! a list of of AEDT flight information/emissions files
@@ -158,7 +163,7 @@ C.........  Other local variables
         INTEGER         ORG_CELLID          ! origin cell id
         INTEGER         END_CELLID          ! ending cell id
 
-        INTEGER         NFILES
+        INTEGER         NFILES, NLINES
         INTEGER         NSTEPS
 
         INTEGER         ROW, COL 
@@ -258,7 +263,7 @@ C.........  Get logical value from the environment
         LTOALT = ENVREAL( 'LTO_ALTITUDE', MESG, 10000.0, IOS )
 
         MESG = 'Determine the cutoff altitude (feet) for modeling [default: 50,000]'
-        CUTOFF = ENVREAL( 'CUTOFF_ALTITUDE', MESG, 50000.0, IOS )
+        CUTOFF = ENVREAL( 'CUTOFF_ALTITUDE', MESG, 70000.0, IOS )
         CUTOFF = CUTOFF * FT2M    ! convert feet to meter
 
         MESG = 'Use sigma level for vertical allocation [default:N]'
@@ -381,7 +386,7 @@ C.........  Allocate arrays
         CALL CHECKMEM( IOS, 'PRSFC', PROGNAME )
         ALLOCATE( ZZF( NGRID,NLAYS ), STAT= IOS)
         CALL CHECKMEM( IOS, 'ZZF', PROGNAME )
-        ALLOCATE( TMP3D( NGRID,NLAYS,50,NSTEPS ), STAT= IOS)
+        ALLOCATE( TMP3D( NGRID,NLAYS,NVARS,NSTEPS ), STAT= IOS)
         CALL CHECKMEM( IOS, 'TMP3D', PROGNAME )
         ALLOCATE( LFRAC( NLAYS ), STAT= IOS)
         CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
@@ -398,123 +403,141 @@ C.........  Allocate arrays
         LFRAC  = 0.0
         TMP3D  = 0.0
 
-C.............  Initialize I/O API output file headers
-c        CALL HDRMISS3
-
+C.........  output header information
         FDESC3D = ' '
-
         FDESC3D( 1 ) = 'AEDT aircraft emissions file'
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ AEDT from FAA'
-        FDESC3D( 4 ) = '/Output file from AEDTPROC ' //
-     &      'Program that creates 3D CMAQ-ready emissions using AEDT '//
-     &      '3D Chorded emissions'
+        FDESC3D( 4 ) = '/Output file from AEDTPROC program that ' //
+     &      'creates CMAQ input using AEDT emissions'
 c        FDESC3D( 21 ) = '/INVEN FROM/ ' // 'AEDT'
 c        FDESC3D( 22 ) = '/INVEN VERSION/ ' // 'FAA-AEDT'
+
+C.........  Allocate memory for storing variable information
+        ALLOCATE( VARNAME( NVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VARNAME', PROGNAME )
+        ALLOCATE( VARUNIT( NVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VARUNIT', PROGNAME )
+        ALLOCATE( VARDESC( NVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VARDESC', PROGNAME )
+        ALLOCATE( VARTYPE( NVARS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VARTYPE', PROGNAME )
+
+        VARNAME = ' '
+        VARUNIT = ' '
+        VARDESC = ' '
+        VARTYPE = M3REAL
+
+        VARUNIT = 'moles/s'
+        VARUNIT( 6  )  = 'g/s'    ! POC in g/s
+        VARUNIT( 7  )  = 'g/s'    ! PEC in g/s
+        VARUNIT( 8  )  = 'g/s'    ! PSO4 in g/s
+        VARUNIT( 43 )  = 'g/s'    ! TOG in original g/s (no MW is available for a proper conversion to mole
+        
+        VARNAME( 1  ) = 'CO              '
+        VARDESC( 1  ) = 'Model species CO'
+        VARNAME( 2  ) = 'SO2             '
+        VARDESC( 2  ) = 'Model species SO2'
+        VARNAME( 3  ) = 'NO              '
+        VARDESC( 3  ) = 'Model species NO'
+        VARNAME( 4  ) = 'NO2             '
+        VARDESC( 4  ) = 'Model species NO2'
+        VARNAME( 5  ) = 'HONO            '
+        VARDESC( 5  ) = 'Model species HONO'
+        VARNAME( 6  ) = 'POC             '
+        VARDESC( 6  ) = 'Model species POC'
+        VARNAME( 7  ) = 'PEC             '
+        VARDESC( 7  ) = 'Model species PEC'
+        VARNAME( 8  ) = 'PSO4            '
+        VARDESC( 8  ) = 'Model species PSO4'
+        VARNAME( 9  ) = 'ALD2            '
+        VARDESC( 9  ) = 'Model species ALD2'
+        VARNAME( 10 ) = 'ALDX            '
+        VARDESC( 10 ) = 'Model species ALDX'
+        VARNAME( 11 ) = 'CH4             '
+        VARDESC( 11 ) = 'Model species CH4'
+        VARNAME( 12 ) = 'ETH             '
+        VARDESC( 12 ) = 'Model species ETH'
+        VARNAME( 13 ) = 'ETHA            '
+        VARDESC( 13 ) = 'Model species ETHA'
+        VARNAME( 14 ) = 'ETOH            '
+        VARDESC( 14 ) = 'Model species ETOH'
+        VARNAME( 15 ) = 'FORM            '
+        VARDESC( 15 ) = 'Model species FORM'
+        VARNAME( 16 ) = 'IOLE            '
+        VARDESC( 16 ) = 'Model species IOLE'
+        VARNAME( 17 ) = 'MEOH            '
+        VARDESC( 17 ) = 'Model species MEOH'
+        VARNAME( 18 ) = 'OLE             '
+        VARDESC( 18 ) = 'Model species OLE'
+        VARNAME( 19 ) = 'PAR             '
+        VARDESC( 19 ) = 'Model species PAR'
+        VARNAME( 20 ) = 'TOL             '
+        VARDESC( 20 ) = 'Model species TOL'
+        VARNAME( 21 ) = 'UNR             '
+        VARDESC( 21 ) = 'Model species UNR'
+        VARNAME( 22 ) = 'XYL             '
+        VARDESC( 22 ) = 'Model species XYL'
+        VARNAME( 23 ) = 'FORM_PRIMARY    '
+        VARDESC( 23 ) = 'Model species FORM_PRIMARY'
+        VARNAME( 24 ) = 'ALD2_PRIMARY    '
+        VARDESC( 24 ) = 'Model species ALD2_PRIMARY'
+        VARNAME( 25 ) = 'BENZENE         '
+        VARDESC( 25 ) = 'Model species BENZENE'
+        VARNAME( 26 ) = 'TOLUENE         '
+        VARDESC( 26 ) = 'Model species TOLUENE'
+        VARNAME( 27 ) = 'ACROLEIN        '
+        VARDESC( 27 ) = 'Model species ACROLEIN'
+        VARNAME( 28 ) = 'ACROLEIN_PRIMARY'
+        VARDESC( 28 ) = 'Model species ACROLEIN_PRIMARY'
+        VARNAME( 29 ) = 'BUTADIENE13     '
+        VARDESC( 29 ) = 'Model species BUTADIENE13'
+        VARNAME( 30 ) = 'PXYL            '
+        VARDESC( 30 ) = 'Model species PXYL'
+        VARNAME( 31 ) = 'OXYL            '
+        VARDESC( 31 ) = 'Model species OXYL'
+        VARNAME( 32 ) = 'MXYL            '
+        VARDESC( 32 ) = 'Model species MXYL'
+        VARNAME( 33 ) = 'NAPHTHALENE       '
+        VARDESC( 33 ) = 'Model species NAPHTHALENE'
+        VARNAME( 34 ) = 'PROPIONAL       '
+        VARDESC( 34 ) = 'Model species PROPIONAL'
+        VARNAME( 35 ) = 'ETHYLBENZ       '
+        VARDESC( 35 ) = 'Model species ETHYBENZ'
+        VARNAME( 36 ) = 'STYRENE         '
+        VARDESC( 36 ) = 'Model species STRYENE'
+        VARNAME( 37 ) = 'PHENOL          '
+        VARDESC( 37 ) = 'Model species PHENOL'
+        VARNAME( 38 ) = 'METHANOL        '
+        VARDESC( 38 ) = 'Model species METHANOL'
+        VARNAME( 39 ) = 'CUMENE          '
+        VARDESC( 39 ) = 'Model species CUMEME'
+        VARNAME( 40 ) = 'MTHYLNAP2       '
+        VARDESC( 40 ) = 'Model species MTHYLNAP2'
+        VARNAME( 41 ) = 'BENZALD         '
+        VARDESC( 41 ) = 'Model species BENZALD'
+        VARNAME( 42 ) = 'ETHYLENE        '
+        VARDESC( 42 ) = 'Model species ETHYLENE'
+        VARNAME( 43 ) = 'TOG_ORG         '
+        VARDESC( 43 ) = 'Model species TOG Original'
 
         SDATE3D = SDATE
         STIME3D = STIME
         NVARS3D = NVARS
         VTYPE3D = M3REAL
-        UNITS3D = 'moles/s'
 
-        UNITS3D( 6  )  = 'g/s'    ! POC in g/s
-        UNITS3D( 7  )  = 'g/s'    ! PEC in g/s
-        UNITS3D( 8  )  = 'g/s'    ! PSO4 in g/s
-        UNITS3D( 43 )  = 'g/s'    ! TOG in original g/s (no MW is available for a proper conversion to mole
-        
-        VNAME3D( 1  ) = 'CO              '
-        VDESC3D( 1  ) = 'Model species CO'
-        VNAME3D( 2  ) = 'SO2             '
-        VDESC3D( 2  ) = 'Model species SO2'
-        VNAME3D( 3  ) = 'NO              '
-        VDESC3D( 3  ) = 'Model species NO'
-        VNAME3D( 4  ) = 'NO2             '
-        VDESC3D( 4  ) = 'Model species NO2'
-        VNAME3D( 5  ) = 'HONO            '
-        VDESC3D( 5  ) = 'Model species HONO'
-        VNAME3D( 6  ) = 'POC             '
-        VDESC3D( 6  ) = 'Model species POC'
-        VNAME3D( 7  ) = 'PEC             '
-        VDESC3D( 7  ) = 'Model species PEC'
-        VNAME3D( 8  ) = 'PSO4            '
-        VDESC3D( 8  ) = 'Model species PSO4'
-        VNAME3D( 9  ) = 'ALD2            '
-        VDESC3D( 9  ) = 'Model species ALD2'
-        VNAME3D( 10 ) = 'ALDX            '
-        VDESC3D( 10 ) = 'Model species ALDX'
-        VNAME3D( 11 ) = 'CH4             '
-        VDESC3D( 11 ) = 'Model species CH4'
-        VNAME3D( 12 ) = 'ETH             '
-        VDESC3D( 12 ) = 'Model species ETH'
-        VNAME3D( 13 ) = 'ETHA            '
-        VDESC3D( 13 ) = 'Model species ETHA'
-        VNAME3D( 14 ) = 'ETOH            '
-        VDESC3D( 14 ) = 'Model species ETOH'
-        VNAME3D( 15 ) = 'FORM            '
-        VDESC3D( 15 ) = 'Model species FORM'
-        VNAME3D( 16 ) = 'IOLE            '
-        VDESC3D( 16 ) = 'Model species IOLE'
-        VNAME3D( 17 ) = 'MEOH            '
-        VDESC3D( 17 ) = 'Model species MEOH'
-        VNAME3D( 18 ) = 'OLE             '
-        VDESC3D( 18 ) = 'Model species OLE'
-        VNAME3D( 19 ) = 'PAR             '
-        VDESC3D( 19 ) = 'Model species PAR'
-        VNAME3D( 20 ) = 'TOL             '
-        VDESC3D( 20 ) = 'Model species TOL'
-        VNAME3D( 21 ) = 'UNR             '
-        VDESC3D( 21 ) = 'Model species UNR'
-        VNAME3D( 22 ) = 'XYL             '
-        VDESC3D( 22 ) = 'Model species XYL'
-        VNAME3D( 23 ) = 'FORM_PRIMARY    '
-        VDESC3D( 23 ) = 'Model species FORM_PRIMARY'
-        VNAME3D( 24 ) = 'ALD2_PRIMARY    '
-        VDESC3D( 24 ) = 'Model species ALD2_PRIMARY'
-        VNAME3D( 25 ) = 'BENZENE         '
-        VDESC3D( 25 ) = 'Model species BENZENE'
-        VNAME3D( 26 ) = 'TOLUENE         '
-        VDESC3D( 26 ) = 'Model species TOLUENE'
-        VNAME3D( 27 ) = 'ACROLEIN        '
-        VDESC3D( 27 ) = 'Model species ACROLEIN'
-        VNAME3D( 28 ) = 'ACROLEIN_PRIMARY'
-        VDESC3D( 28 ) = 'Model species ACROLEIN_PRIMARY'
-        VNAME3D( 29 ) = 'BUTADIENE13     '
-        VDESC3D( 29 ) = 'Model species BUTADIENE13'
-        VNAME3D( 30 ) = 'PXYL            '
-        VDESC3D( 30 ) = 'Model species PXYL'
-        VNAME3D( 31 ) = 'OXYL            '
-        VDESC3D( 31 ) = 'Model species OXYL'
-        VNAME3D( 32 ) = 'MXYL            '
-        VDESC3D( 32 ) = 'Model species MXYL'
-        VNAME3D( 33 ) = 'NAPHTHALENE       '
-        VDESC3D( 33 ) = 'Model species NAPHTHALENE'
-        VNAME3D( 34 ) = 'PROPIONAL       '
-        VDESC3D( 34 ) = 'Model species PROPIONAL'
-        VNAME3D( 35 ) = 'ETHYLBENZ       '
-        VDESC3D( 35 ) = 'Model species ETHYBENZ'
-        VNAME3D( 36 ) = 'STYRENE         '
-        VDESC3D( 36 ) = 'Model species STRYENE'
-        VNAME3D( 37 ) = 'PHENOL          '
-        VDESC3D( 37 ) = 'Model species PHENOL'
-        VNAME3D( 38 ) = 'METHANOL        '
-        VDESC3D( 38 ) = 'Model species METHANOL'
-        VNAME3D( 39 ) = 'CUMENE          '
-        VDESC3D( 39 ) = 'Model species CUMEME'
-        VNAME3D( 40 ) = 'MTHYLNAP2       '
-        VDESC3D( 40 ) = 'Model species MTHYLNAP2'
-        VNAME3D( 41 ) = 'BENZALD         '
-        VDESC3D( 41 ) = 'Model species BENZALD'
-        VNAME3D( 42 ) = 'ETHYLENE        '
-        VDESC3D( 42 ) = 'Model species ETHYLENE'
-        VNAME3D( 43 ) = 'TOG_ORG         '
-        VDESC3D( 43 ) = 'Model species TOG Original'
+        DO I = 1, NVARS
+            VNAME3D( I ) = VARNAME( I )
+            UNITS3D( I ) = VARUNIT( I )
+            VDESC3D( I ) = VARDESC( I )
+            VTYPE3D( I ) = VARTYPE( I )
+        END DO
 
         MESG = 'Enter logical name for output file'
         ONAME = PROMPTMFILE( MESG, FSUNKN3, 'OUTPUT', PROGNAME )
 
 C.............  Open new file
-        IF( .NOT. OPEN3( 'OUTPUT', FSUNKN3, PROGNAME ) ) THEN
+        IF( .NOT. OPEN3( ONAME, FSUNKN3, PROGNAME ) ) THEN
             MESG = 'Could not create new output file OUTPUT'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
@@ -583,14 +606,79 @@ C.............  Open AEDT flight info input file
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            MESG = 'Successfully opened AEDT Flight information input file:' //
+            MESG = 'Successfully opened AEDT Flight input file:' //
      &             CRLF() // BLANK5 // TRIM( FLG_BUF )
             CALL M3MSG2( MESG )
 
-C.............  Store AEDT flight information (flightID and Engine types)
-            CALL READ_FLIGHT_ENGINE( FLDEV )
+C.............  Open and Store AEDT flight information (flightID and Engine types)
+C.............  Get the number of lines
+            NLINES = GETFLINE( FLDEV, 'AEDT Flight input file' )
 
-C............. parse line to compute julian date          
+C.............  Count a list of unique AEDT Engine types
+            N_FLG = 0
+            IREC  = 0  
+            DO I = 1, NLINES
+
+                READ ( FLDEV, 93000, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF ( IOS .GT. 0 ) THEN
+                    WRITE( MESG, 94010)
+     &                 'I/O error', IOS, 'reading FLIGHT_FILELIST '//
+     &                 'input file at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C.................  Skip blank and comment lines
+                IF( BLKORCMT( LINE ) ) CYCLE
+
+C.................  parse the lines
+                CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+                IF( .NOT. CHKINT( SEGMENT(1) ) ) CYCLE
+
+                N_FLG = N_FLG + 1 
+ 
+            END DO    ! end of loop
+
+            IF( N_FLG == 0 ) THEN
+                MESG = 'ERROR: No valid entries for AEDT Engine types'
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+            END IF
+
+            REWIND( FLDEV )
+
+C..............  Determine number of lines in filelist; this will be the maximum
+C                number of airport sources  
+            ALLOCATE( FLIGHT_ENG( N_FLG,4 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'FLIGHT_ENG', PROGNAME )
+            FLIGHT_ENG = ''
+
+C.............  Read the AEDT Engine type file and find 
+            N_FLG = 0
+            IREC  = 0
+            DO I = 1, NLINES
+
+                READ ( FLDEV, 93000, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+C.................  Skip blank and comment lines
+                IF( BLKORCMT( LINE ) ) CYCLE
+
+C.................  parse the line
+                CALL PARSLINE( LINE, MXSEG, SEGMENT )
+
+                IF( .NOT. CHKINT( SEGMENT(1) ) ) CYCLE
+
+                N_FLG = N_FLG + 1
+                FLIGHT_ENG( N_FLG,1 ) =  ADJUSTL( SEGMENT( 1 ) )  ! flight IDs
+                FLIGHT_ENG( N_FLG,2 ) =  ADJUSTL( SEGMENT( 2 ) )  ! Departure Airport IDs
+                FLIGHT_ENG( N_FLG,3 ) =  ADJUSTL( SEGMENT( 4 ) )  ! Arrival Airport IDs
+                FLIGHT_ENG( N_FLG,4 ) =  ADJUSTL( SEGMENT( 8 ) )  ! Engine types
+
+            END DO    ! end of loop
+
+C............. parse line to compute julian date from SEGMENT_FILELIST file         
             CALL PARSLINE( SEG_BUF, 4, INP_SEG )
 
             MON = STR2INT( TRIM( INP_SEG( 1 ) ) )
@@ -616,7 +704,7 @@ C.............  Open actual Segment input file
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            MESG = 'Successfully opened AEDT Flight Emission input file:'//
+            MESG = 'Successfully opened AEDT SEGMENT input file:'//
      &             CRLF() // BLANK5 // TRIM( SEG_BUF )
             CALL M3MSG2( MESG )
 
@@ -664,6 +752,10 @@ C.................  Skip when it is out of range of episode dates
                 JTIME = HOUR * 10000
 
                 SEG_TIME =  3600.0                 ! one hours duration (seconds)
+
+C.................  Calculate processing hour (T)
+                DH = ( JDATE - SDATE ) * 24   ! delta hours
+                T = DH + HOUR + 1
 
 C.................  store lat/lon coordinates (starting point)
                 LATVAL = STR2REAL( SEGMENT( 3 ) )
@@ -783,10 +875,6 @@ C.................  Skip if there is no intersected grid cell
                     CYCLE
                 END IF
 
-C.................  Calculate processing hour (T)
-                DH = ( JDATE - SDATE ) * 24   ! delta hours
-                T = DH + HOUR + 1
-
 C.................  Vertical allocation within gridded x-y cell(s)
 C                   Need to compute each gridded x-y cell actual bottom and top heights
 C                   and then vertically allocate gridded x-y link into x-z layers 
@@ -829,15 +917,15 @@ C                   1000ft * 0.3048 = 3048 meter
 
                 F = INDEX1( FLGID, N_FLG, FLIGHT_ENG( :,1 ) )  ! Flight ID
 
-                DPRTID = FLIGHT_ENG( F,2 )                     ! Departure Airport ID
-                ARRVID = FLIGHT_ENG( F,3 )                     ! Departure Airport ID
-
                 IF( F < 1 ) THEN
                     MESG = 'ERROR: Could not find a matched ' //
-     &                     'flight ID ( '// TRIM(FLGID) // ' ) from'//
+     &                     'flight ID ( '// TRIM(FLGID) // ' ) from '//
      &                     'FLIGHT_FILELIST input file'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
+
+                DPRTID = FLIGHT_ENG( F,2 )                     ! Departure Airport ID
+                ARRVID = FLIGHT_ENG( F,3 )                     ! Arrival Airport ID
       
                 ND = INDEX1( DPRTID, NAPRT_ELEV, APRT_CODE )
                 NA = INDEX1( ARRVID, NAPRT_ELEV, APRT_CODE )
@@ -863,7 +951,7 @@ C                   1000ft * 0.3048 = 3048 meter
                     ELSE IF( MODID > 6 ) THEN
                         Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
                     ELSE
-                        Zo = Zo - TERRAIN( ORG_CELLID )
+                        IF( ORG_CELLID>0 ) Zo = Zo - TERRAIN(ORG_CELLID)
                     ENDIF
 
                 ELSE
@@ -871,7 +959,7 @@ C.....................  Use pressure values as Zo and Zh for sigma level vertica
                     IF( SIGMAFLAG ) THEN
                         PRESFLAG = .TRUE.
                     ELSE
-                        Zo = Zo - TERRAIN( ORG_CELLID )
+                        IF( ORG_CELLID>0 ) Zo = Zo - TERRAIN(ORG_CELLID)
                     END IF
 
                 END IF
@@ -883,7 +971,7 @@ C.....................  Use pressure values as Zo and Zh for sigma level vertica
                     ELSE IF( MODID > 6 ) THEN
                         Zh = Zh - APRT_ELEV( NA )   ! arrival airport elev
                     ELSE
-                        Zh = Zh - TERRAIN( END_CELLID )
+                        IF( END_CELLID>0 ) Zh = Zh - TERRAIN(END_CELLID)
                     ENDIF
 
                 ELSE
@@ -892,7 +980,7 @@ C.....................  Use pressure values as Zo and Zh for sigma level vertica
                     ELSE IF( SIGMAFLAG .AND. .NOT. PRESFLAG ) THEN
                         PRESFLAG = .FALSE.
                     ELSE
-                        Zh = Zh - TERRAIN( END_CELLID )
+                        IF( END_CELLID>0 ) Zh = Zh - TERRAIN(END_CELLID)
                     END IF
 
                 END IF
@@ -924,6 +1012,11 @@ C.................  loop over assigned grid cells
                     C     = ACEL( NC )  ! cell id
                     ZFRAC = AFAC( NC )  ! cell-fraction value
 
+                    IF( C > NGRID ) THEN
+                        MESG='ERROR: Incorrect link to grid conversion'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ENDIF
+                  
                     IF( ZFRAC < 0.0 ) THEN
                         MESG = 'ERROR: Can not process negative x-y '//
      &                      'link fraction'
@@ -938,8 +1031,8 @@ C.....................  retrieve col/row from cellid using C=(ROW-1)*NCOLS+COL
 C.....................  Convert pressure to reversed sigma level (0:ground,1:top)
                     IF( PRESFLAG ) THEN
                         IF( FIRSTIME ) THEN
-                            Po = 1.0 - ( ( PRVPRES-VGTOP ) / ( PRSFC(C)-VGTOP ) )  ! origin sigma level
-                            Ph = 1.0 - ( ( CURPRES-VGTOP ) / ( PRSFC(C)-VGTOP ) )  ! ending sigma level
+                            Po=1.0-( (PRVPRES-VGTOP)/(PRSFC(C)-VGTOP) )  ! origin sigma level
+                            Ph=1.0-( (CURPRES-VGTOP)/(PRSFC(C)-VGTOP) )  ! ending sigma level
                             ZBOT = Po
                             DELTAZ = Ph - Po
                             FIRSTIME = .FALSE.
@@ -1042,11 +1135,11 @@ C..................... Before applying layer fractions make sure that they add t
                     IF ( LTOT < 0.999 ) THEN
                         MESG = 'ERROR: Total of layer fractions '//
      &                         'are less than 1.0.'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )                  
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     ELSE IF ( LTOT > 1.001 ) THEN
                         MESG = 'ERROR: Total of layer fractions '//
      &                         'are greater than 1.0.'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )                  
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     ENDIF
 
 C.....................  Loop over allocated layers by link
@@ -1113,17 +1206,17 @@ C.........................  Only two piston engine out of entire engine types av
 C.............................  Estimate Model species using speciation profile factors from TOG
                             DO NS = 1, NSPC_PISTON
 
-                                POLNAM =  NSSPCP( NS )
+                                POLNAM = NSSPCP( NS )
+                                TMPVAL = CVSPCP( NS,1 ) / CVSPCP( NS,2 ) * TOG
 
-                                NV = INDEX1( POLNAM, NVARS, VNAME3D )
-
-                                IF( NV < 1 ) THEN
+                                NV = INDEX1( POLNAM, NVARS, VARNAME )
+                                IF( NV < 1  ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                               ' is not listed in PISTON_SPC file'
-                                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+     &                               ' from PISTON_SPC file is not a'//
+     &                               ' part of modeling species'
+                                    CALL M3EXIT( PROGNAME,0,0,MESG,2 )
                                 END IF
 
-                                TMPVAL = CVSPCP( NS,1 ) / CVSPCP( NS,2 ) * TOG
                                 TMP3D( C,L,NV,T ) = TMP3D( C,L,NV,T ) + TMPVAL
 
                             END DO    ! end of loop
@@ -1132,16 +1225,16 @@ C.............................  Estimate HAPs using HAP's profile factors from T
                             DO NP = 1, NFAC_PISTON
 
                                 POLNAM = NPHAPP( NP )
+                                TMPVAL = CVHAPP( NP,1 ) / CVHAPP( NP,2 ) * TOG
 
-                                NV = INDEX1( POLNAM, NVARS, VNAME3D )
-
+                                NV = INDEX1( POLNAM, NVARS, VARNAME )
                                 IF( NV < 1 ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                               ' is not listed in PISTON_HAP file'
-                                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+     &                               ' from PISTON_HAP file is not a'//
+     &                               ' part of modeling species'
+                                    CALL M3EXIT( PROGNAME,0,0,MESG,2 )
                                 END IF
                                 
-                                TMPVAL = CVHAPP( NP,1 ) / CVHAPP( NP,2 ) * TOG
                                 TMP3D( C,L,NV,T ) = TMP3D( C,L,NV,T ) + TMPVAL
 
                             END DO    ! end of loop
@@ -1152,17 +1245,17 @@ C..........................  processing turbine engine types for TOG speciation
 C.............................  Estimate Model species using speciation profile factors from TOG
                             DO NS = 1, NSPC_TURBINE
 
-                                POLNAM =  NSSPCT( NS )
+                                POLNAM = NSSPCT( NS )
+                                TMPVAL = CVSPCT( NS,1 ) / CVSPCT( NS,2 ) * TOG
 
-                                NV = INDEX1( POLNAM, NVARS, VNAME3D )
-
+                                NV = INDEX1( POLNAM, NVARS, VARNAME )
                                 IF( NV < 1 ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                               ' is not listed in TURBINE_SPC file'
-                                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+     &                               ' from TURBINE_SPC file is not a'//
+     &                               ' part of modeling species'
+                                    CALL M3EXIT( PROGNAME,0,0,MESG,2 )
                                 END IF
 
-                                TMPVAL = CVSPCT( NS,1 ) / CVSPCT( NS,2 ) * TOG
                                 TMP3D( C,L,NV,T ) = TMP3D( C,L,NV,T ) + TMPVAL
 
                             END DO    ! end of loop
@@ -1172,16 +1265,16 @@ C.............................  Estimate HAPs using HAP's profile factors from T
                             DO NP = 1, NFAC_TURBINE
                             
                                 POLNAM = NPHAPT( NP )
+                                TMPVAL = CVHAPT( NP,1 ) / CVHAPT( NP,2 ) * TOG
 
-                                NV = INDEX1( POLNAM, NVARS, VNAME3D )
-
+                                NV = INDEX1( POLNAM, NVARS, VARNAME )
                                 IF( NV < 1 ) THEN
                                     MESG = 'ERROR: ' // POLNAM //
-     &                               ' is not listed in TURBINE_HAP file'
-                                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+     &                               ' from TURBINE_HAP file is not a'//
+     &                               ' part of modeling species'
+                                    CALL M3EXIT( PROGNAME,0,0,MESG,2 )
                                 END IF
 
-                                TMPVAL = CVHAPT( NP,1 ) / CVHAPT( NP,2 ) * TOG
                                 TMP3D( C,L,NV,T ) = TMP3D( C,L,NV,T ) + TMPVAL
 
                             END DO    ! end of loop
@@ -1194,10 +1287,12 @@ C.............................  Estimate HAPs using HAP's profile factors from T
                     DO L = 1, NLAYS
                         WRITE( TMPCHAR,'(F32.16)') TMP3D(C,L,V,T)
                         IF( .NOT. CHKREAL( TMPCHAR ) ) THEN
-                            TMP3D( C,L,V,T ) = 0.0
+                            MESG='ERROR: Due to corrupted data:'//TMPCHAR
+                            CALL M3EXIT( PROGNAME,0,0,TMPCHAR,2 )
                         END IF
                     END DO
                     END DO
+
                 END DO      ! end of link loop
 
 C.................   previous values needed to be updated before the source gets skipped
@@ -1229,8 +1324,8 @@ C............. Error message
         END DO     ! end of flight segment input files.
 
         IF( NF == 0 ) THEN
-            MESG = 'ERROR: No flight emission files are processed :: '
-     &          // 'CHECK FLIGHT_FILELIST and SEGMENT_FILELIST input files'
+            MESG = 'ERROR: No flight emission files are processed::'
+     &          // 'CHECK FLIGHT and SEGMENT_FILELIST input files'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
@@ -1242,7 +1337,7 @@ C.........  Define top layer for output file
         
             DO V = 1, NVARS
 
-                POLNAM = VNAME3D( V )
+                POLNAM = VARNAME( V )
             
                 IF ( .NOT. WRITE3( ONAME, POLNAM, JDATE, JTIME, 
      &                            TMP3D( :,:,V,T ) ) ) THEN
@@ -1284,110 +1379,6 @@ C******************  INTERNAL SUBPROGRAMS  *****************************
 
        CONTAINS
 
-C      This subroutine stores a list of unique engine types
-
-       SUBROUTINE READ_FLIGHT_ENGINE( ADEV )
-
-C..........  Subroutine arguments
-         INTEGER, INTENT ( IN ) :: ADEV
-
-C..........   Local variables
-         INTEGER         I, N                  ! indices and counters
-
-         INTEGER      :: NLINES = 0            ! number of lines in input file
-
-         CHARACTER(256)  LINE                  ! Read buffer for a line
-         CHARACTER(300)  MESG                  ! Message buffer
-         CHARACTER(60)   SEGMENT( MXSEG )      ! line parsing array
-
-C......................................................................
-
-C...........  Get the number of lines
-         NLINES = GETFLINE( ADEV, 'AEDT Flight information input file' )
-
-C..........  Count a list of unique AEDT Engine types 
-         N_FLG = 0
-         IREC  = 0
-         DO I = 1, NLINES
-
-             READ ( ADEV, 93000, IOSTAT=IOS ) LINE
-             IREC = IREC + 1
-
-             IF ( IOS .GT. 0 ) THEN
-                 WRITE( MESG, 94010)
-     &                 'I/O error', IOS, 'reading ICAO_FIPS '//
-     &                 'description file at line', IREC
-                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-             END IF
-
-C.............  Skip blank and comment lines
-             IF( LINE( 1:19 ) == 'FLIGHT_ID' ) CYCLE
-
-             N_FLG = N_FLG + 1
-
-         END DO    ! end of loop
-
-         IF( N_FLG == 0 ) THEN 
-             MESG = 'ERROR: No valid entries for AEDT Engine types'
-             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-         END IF
-
-         REWIND( ADEV )
-
-C...........  Determine number of lines in filelist; this will be the maximum
-C             number of airport sources
-         ALLOCATE( FLIGHT_ENG( N_FLG,4 ), STAT=IOS )
-         CALL CHECKMEM( IOS, 'FLIGHT_ENG', PROGNAME )
-         FLIGHT_ENG = ' '
-
-C.........  Read the AEDT Engine type file and find 
-
-         N_FLG = 0
-         IREC  = 0
-        
-         DO I = 1, NLINES
-
-             READ ( ADEV, 93000, IOSTAT=IOS ) LINE
-             IREC = IREC + 1
-
-             IF ( IOS .GT. 0 ) THEN
-                 WRITE( MESG, 94010)
-     &                'I/O error', IOS, 'reading ICAO_FIPS '//
-     &                'description file at line', IREC
-                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-             END IF
-
-C.............  Left adjust line
-             LINE = TRIM( LINE )
-
-C.............  Skip blank and comment lines
-             IF( BLKORCMT( LINE ) ) CYCLE
-
-C.............  Get line
-             CALL PARSLINE( LINE, MXSEG, SEGMENT )
-
-             N_FLG = N_FLG + 1
-             FLIGHT_ENG( N_FLG,1 ) =  ADJUSTL( SEGMENT( 1 ) )  ! flight IDs
-             FLIGHT_ENG( N_FLG,2 ) =  ADJUSTL( SEGMENT( 2 ) )  ! Airport IDs
-             FLIGHT_ENG( N_FLG,3 ) =  ADJUSTL( SEGMENT( 4 ) )  ! Airport IDs
-             FLIGHT_ENG( N_FLG,4 ) =  ADJUSTL( SEGMENT( 8 ) )  ! Engine types
-
-         END DO    ! end of loop
-
-         RETURN
-        
-C...................  FORMAT  STATEMENTS   ............................
-
-C.......  Formatted file I/O formats...... 93xxx
-93000    FORMAT( A )
-
-C.......  Internal buffering formats...... 94xxx
-94010    FORMAT( 10 ( A, :, I8, :, 2X  ) )
-
-       END SUBROUTINE READ_FLIGHT_ENGINE
-
-C******************  INTERNAL SUBPROGRAMS  *****************************
-
 C  Read and store airport elevations to compute AGL of below 3000ft LTO sources
 
        SUBROUTINE READ_AIRPORT_ELEVATION
@@ -1403,14 +1394,48 @@ C..........   Local variables
 
 C......................................................................
 
-C.........  Get the number of lines
+C..........  Get the number of lines
          NLINES = GETFLINE( APDEV, 'Airport elevation input file' )
+
+C..........  Count no of sources       
+         N = 0
+         IREC  = 0
+
+         DO I = 1, NLINES
+
+             READ ( APDEV, 93000, IOSTAT=IOS ) LINE
+             IREC = IREC + 1
+
+             IF ( IOS .GT. 0 ) THEN
+                 WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading APRT_ELEVATION '//
+     &                'description file at line', IREC
+                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+             END IF
+
+C.............  Left adjust line
+             LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+             IF( BLKORCMT( LINE ) ) CYCLE
+
+             N = N + 1
+         END DO    ! end of loop
+
+         IF( N == 0 ) THEN 
+             MESG = 'ERROR: No entries of APRT_ELEVATION'
+             CALL M3MSG2( MESG )
+         END IF
+
+         NAPRT_ELEV = N
+
+         REWIND( APDEV )
 
 C...........  Determine number of lines in filelist; this will be the maximum
 C             number of airport sources
-         ALLOCATE( APRT_CODE( NLINES ), STAT=IOS )
+         ALLOCATE( APRT_CODE( NAPRT_ELEV ), STAT=IOS )
          CALL CHECKMEM( IOS, 'APRT_CODE', PROGNAME )
-         ALLOCATE( APRT_ELEV( NLINES ), STAT=IOS )
+         ALLOCATE( APRT_ELEV( NAPRT_ELEV ), STAT=IOS )
          CALL CHECKMEM( IOS, 'APRT_ELEV', PROGNAME )
 
          APRT_CODE = ' '
@@ -1446,11 +1471,6 @@ C.............  Get line
 
          END DO    ! end of loop
 
-         IF( N == 0 ) THEN 
-             MESG = 'ERROR: No entries of APRT_ELEVATION'
-             CALL M3MSG2( MESG )
-         END IF
-
          NAPRT_ELEV = N
 
          CLOSE( APDEV )
@@ -1485,14 +1505,50 @@ C..........   Local variables
 
 C......................................................................
 
-C.........  Get the number of lines
+C..........  Get the number of lines
          NLINES = GETFLINE( TDEV, 'TURBINE_HAP input file' )
+
+C..........  Count no of valid sources
+         N = 0
+         IREC  = 0
+
+         DO I = 1, NLINES
+
+             READ ( TDEV, 93000, IOSTAT=IOS ) LINE
+             IREC = IREC + 1
+
+             IF ( IOS .GT. 0 ) THEN
+                 WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading HAP_FACTOR '//
+     &                'description file at line', IREC
+                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+             END IF
+
+C.............  Left adjust line
+             LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+             IF( BLKORCMT( LINE ) ) CYCLE
+
+             N = N + 1
+
+         END DO    ! end of loop
+
+         IF( N == 0 ) THEN 
+             MESG = 'ERROR: No entries of TURBINE HAPs'
+             CALL M3MSG2( MESG )
+         END IF
+
+         NFAC_TURBINE = N
+         
+         REWIND( TDEV )
+
 
 C...........  Determine number of lines in filelist; this will be the maximum
 C             number of airport sources
-         ALLOCATE( CVHAPT( NLINES,2 ), STAT=IOS )
+         ALLOCATE( CVHAPT( NFAC_TURBINE,2 ), STAT=IOS )
          CALL CHECKMEM( IOS, 'CVHAPT', PROGNAME )
-         ALLOCATE( NPHAPT( NLINES ), STAT=IOS )
+         ALLOCATE( NPHAPT( NFAC_TURBINE ), STAT=IOS )
          CALL CHECKMEM( IOS, 'NPHAPT', PROGNAME )
 
          NPHAPT = ' '
@@ -1528,11 +1584,6 @@ C.............  Get line
              CVHAPT( N,2 ) = STR2REAL( SEGMENT( 3 ) )
 
          END DO    ! end of loop
-
-         IF( N == 0 ) THEN 
-             MESG = 'ERROR: No entries of TURBINE HAPs'
-             CALL M3MSG2( MESG )
-         END IF
 
          NFAC_TURBINE = N
 
@@ -1571,11 +1622,46 @@ C......................................................................
 C.........  Get the number of lines
          NLINES = GETFLINE( PDEV, 'PISTON_HAP input file' )
 
+C..........  Count no of valid sources
+         N = 0
+         IREC  = 0
+
+         DO I = 1, NLINES
+
+             READ ( PDEV, 93000, IOSTAT=IOS ) LINE
+             IREC = IREC + 1
+
+             IF ( IOS .GT. 0 ) THEN
+                 WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading HAP_FACTOR '//
+     &                'description file at line', IREC
+                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+             END IF
+
+C.............  Left adjust line
+             LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+             IF( BLKORCMT( LINE ) ) CYCLE
+
+             N = N + 1
+
+         END DO    ! end of loop
+
+         IF( N == 0 ) THEN 
+             MESG = 'ERROR: No entries of PISTON HAPs'
+             CALL M3MSG2( MESG )
+         END IF
+
+         NFAC_PISTON = N
+
+         REWIND( PDEV )
+
 C...........  Determine number of lines in filelist; this will be the maximum
 C             number of airport sources
-         ALLOCATE( CVHAPP( NLINES,2 ), STAT=IOS )
+         ALLOCATE( CVHAPP( NFAC_PISTON,2 ), STAT=IOS )
          CALL CHECKMEM( IOS, 'CVHAPP', PROGNAME )
-         ALLOCATE( NPHAPP( NLINES ), STAT=IOS )
+         ALLOCATE( NPHAPP( NFAC_PISTON ), STAT=IOS )
          CALL CHECKMEM( IOS, 'NPHAPP', PROGNAME )
 
          NPHAPP = ' '
@@ -1611,11 +1697,6 @@ C.............  Get line
              CVHAPP( N,2 ) = STR2REAL( SEGMENT( 3 ) )
 
          END DO    ! end of loop
-
-         IF( N == 0 ) THEN 
-             MESG = 'ERROR: No entries of PISTON HAPs'
-             CALL M3MSG2( MESG )
-         END IF
 
          NFAC_PISTON = N
 
@@ -1654,14 +1735,49 @@ C......................................................................
 C.........  Get the number of lines
          NLINES = GETFLINE( TSDEV, 'TURBINE_SPC input file' )
 
+C...........  count no of valid sources
+         N = 0
+         IREC  = 0
+
+         DO I = 1, NLINES
+
+             READ ( TSDEV, 93000, IOSTAT=IOS ) LINE
+             IREC = IREC + 1
+
+             IF ( IOS .GT. 0 ) THEN
+                 WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading TURBINE_SPC '//
+     &                'description file at line', IREC
+                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+             END IF
+
+C.............  Left adjust line
+             LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+             IF( BLKORCMT( LINE ) ) CYCLE
+
+             N = N + 1
+
+         END DO    ! end of loop
+
+         IF( N == 0 ) THEN 
+             MESG = 'ERROR: No entries of TURBINE Speciations'
+             CALL M3MSG2( MESG )
+         END IF
+
+         NSPC_TURBINE = N
+         
+         REWIND( TSDEV )
+
 C...........  Determine number of lines in filelist; this will be the maximum
 C             number of airport sources
-         ALLOCATE( CVSPCT( NLINES,2 ), STAT=IOS )
+         ALLOCATE( CVSPCT( NSPC_TURBINE,2 ), STAT=IOS )
          CALL CHECKMEM( IOS, 'CVSPCT', PROGNAME )
-         ALLOCATE(  NSSPCT( NLINES ), STAT=IOS )
+         ALLOCATE(  NSSPCT( NSPC_TURBINE ), STAT=IOS )
          CALL CHECKMEM( IOS, ' NSSPCT', PROGNAME )
 
-          NSSPCT = ' '
+         NSSPCT = ' '
          CVSPCT = 0.0
         
          N = 0
@@ -1694,11 +1810,6 @@ C.............  Get line
              CVSPCT( N,2 ) = STR2REAL( SEGMENT( 3 ) )
 
          END DO    ! end of loop
-
-         IF( N == 0 ) THEN 
-             MESG = 'ERROR: No entries of TURBINE Speciations'
-             CALL M3MSG2( MESG )
-         END IF
 
          NSPC_TURBINE = N
          
@@ -1737,14 +1848,49 @@ C......................................................................
 C.........  Get the number of lines
          NLINES = GETFLINE( PSDEV, 'PISTON_SPC input file' )
 
+C...........  Count no of valid sources
+         N = 0
+         IREC  = 0
+
+         DO I = 1, NLINES
+
+             READ ( PSDEV, 93000, IOSTAT=IOS ) LINE
+             IREC = IREC + 1
+
+             IF ( IOS .GT. 0 ) THEN
+                 WRITE( MESG, 94010)
+     &                'I/O error', IOS, 'reading PISTON_SPC '//
+     &                'description file at line', IREC
+                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+             END IF
+
+C.............  Left adjust line
+             LINE = TRIM( LINE )
+
+C.............  Skip blank and comment lines
+             IF( BLKORCMT( LINE ) ) CYCLE
+
+             N = N + 1
+
+         END DO    ! end of loop
+
+         IF( N == 0 ) THEN 
+             MESG = 'ERROR: No entries of PISTON Speciations'
+             CALL M3MSG2( MESG )
+         END IF
+
+         NSPC_PISTON = N
+         
+         REWIND( PSDEV )
+
 C...........  Determine number of lines in filelist; this will be the maximum
 C             number of airport sources
-         ALLOCATE( CVSPCP( NLINES,2 ), STAT=IOS )
+         ALLOCATE( CVSPCP( NSPC_PISTON,2 ), STAT=IOS )
          CALL CHECKMEM( IOS, 'CVSPCP', PROGNAME )
-         ALLOCATE(  NSSPCP( NLINES ), STAT=IOS )
+         ALLOCATE(  NSSPCP( NSPC_PISTON ), STAT=IOS )
          CALL CHECKMEM( IOS, ' NSSPCP', PROGNAME )
 
-          NSSPCP = ' '
+         NSSPCP = ' '
          CVSPCP = 0.0
         
          N = 0
@@ -1777,11 +1923,6 @@ C.............  Get line
              CVSPCP( N,2 ) = STR2REAL( SEGMENT( 3 ) )
 
          END DO    ! end of loop
-
-         IF( N == 0 ) THEN 
-             MESG = 'ERROR: No entries of PISTON Speciations'
-             CALL M3MSG2( MESG )
-         END IF
 
          NSPC_PISTON = N
          
