@@ -110,7 +110,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: MXSEG = 60     ! max no of segments
 
 C...........   Local segment arrays
-        CHARACTER( 16 )    :: SEGMENT( MXSEG ) = ' '  ! temporary line segments
+        CHARACTER( 30 )    :: SEGMENT( MXSEG ) = ' '  ! temporary line segments
 
 C...........   Local list of FIPS start/end positions to facilitate
 C              faster lookups
@@ -173,7 +173,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
 
         CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
-        CHARACTER(512) :: LINE   = ' '    ! line buffer 
+        CHARACTER(1920):: LINE   = ' '    ! line buffer 
         CHARACTER(512) :: MESG   = ' '    ! message buffer
 
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
@@ -419,7 +419,7 @@ C.............  Store maximum time step number as compared to reference
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
 C.............  Check pollutant code and set index I
-            CDAT = SEGMENT( 9 )     ! pollutant name
+            CDAT = TRIM( SEGMENT( 9 ) )     ! pollutant name
 
 C.............  Left justify and convert pollutant name to upper case
             CDAT = ADJUSTL( CDAT ) 
