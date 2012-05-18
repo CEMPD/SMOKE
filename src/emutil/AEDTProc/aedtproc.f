@@ -266,7 +266,7 @@ C.........  Get logical value from the environment
         CUTOFF = ENVREAL( 'CUTOFF_ALTITUDE', MESG, 70000.0, IOS )
         CUTOFF = CUTOFF * FT2M    ! convert feet to meter
 
-        MESG = 'Use sigma level for vertical allocation [default:N]'
+        MESG = 'Use sigma level for vertical allocation above 10,000 ft height [default:N]'
         SIGMAFLAG = ENVYN( 'SIGMA_VERT_ALLOC_YN', MESG, .FALSE., IOS )
         
 C........  Open unit numbers of input files
@@ -918,10 +918,14 @@ C                   1000ft * 0.3048 = 3048 meter
                 F = INDEX1( FLGID, N_FLG, FLIGHT_ENG( :,1 ) )  ! Flight ID
 
                 IF( F < 1 ) THEN
-                    MESG = 'ERROR: Could not find a matched ' //
-     &                     'flight ID ( '// TRIM(FLGID) // ' ) from '//
-     &                     'FLIGHT_FILELIST input file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    MESG = 'WARNING: Skip processing ' //
+     &                     'non-found flight ID : '// TRIM(FLGID)
+                    CALL M3MESG( MESG )
+                    PRVLAT = LATVAL  ! store previous lat coordinate
+                    PRVLON = LONVAL  ! store previous lon coordinate
+                    PRVHGT = HEIGHT  ! store previous height
+                    PRVPRES= CURPRES ! store previous pressure
+                    CYCLE
                 END IF
 
                 DPRTID = FLIGHT_ENG( F,2 )                     ! Departure Airport ID
@@ -944,7 +948,9 @@ C                   1000ft * 0.3048 = 3048 meter
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
-                IF( Zo <= LTOALT * FT2M ) THEN
+C org               IF( Zo <= LTOALT * FT2M ) THEN
+C.................  hard corded to switch vertical allocation method between sigma and pressure
+                IF( Zo <= 10000.0 * FT2M ) THEN
 
                     IF( MODID < 4 ) THEN
                         Zo = Zo - APRT_ELEV( ND )   ! departure airport elev
@@ -964,7 +970,9 @@ C.....................  Use pressure values as Zo and Zh for sigma level vertica
 
                 END IF
 
-                IF( Zh <= LTOALT * FT2M ) THEN
+C org               IF( Zh <= LTOALT * FT2M ) THEN
+C.................  hard corded to switch vertical allocation method between sigma and pressure
+                IF( Zh <= 10000.0 * FT2M ) THEN
 
                     IF( MODID < 4 ) THEN
                         Zh = Zh - APRT_ELEV( ND )   ! departure airport elev
@@ -1065,6 +1073,7 @@ C.........................  Looping through layers to determine associated layer
 
                     LBOT = NLAYS           !  fallback
 
+C.................  hard corded to switch vertical allocation method between sigma and pressure
 111                 CONTINUE                !  loop exit:  bottom found at LBOT
  
                     IF ( ZTOP <= ZZF( C,LBOT ) ) THEN  !  plume in this layer
