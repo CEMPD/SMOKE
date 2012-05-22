@@ -219,14 +219,14 @@ C.........  Other local variables
         REAL         :: SEG_DIST = 0.0      ! segment flight distance
         REAL         :: FUELBURN = 0.0      ! fuel burn
         
-        REAL            Po, Ph, Z, Zo, Zh, Zpo, Zph, ZBOT, ZTOP, PDIFF
+        REAL            Po, Ph, Z, Zo, Zh, ZBOT, ZTOP, PDIFF
         REAL            ZFRAC, PFRAC, VGTOP, LTOT
         REAL            DX, DY, DFRAC
         REAL            TMPVAL, PRESSURE
 
         LOGICAL      :: FIRSTIME  = .TRUE.  ! true: first time
-        LOGICAL      :: SIGMAFLAG = .FALSE. ! true: use heights for vertical allocation above LTO height
-        LOGICAL      :: PRESFLAG  = .FALSE. ! true: use heights for vertical allocation above LTO height
+        LOGICAL      :: SIGMAFLAG = .FALSE. ! true: use sigma-level for vertical allocation above LTO height
+        LOGICAL      :: PRESFLAG  = .FALSE. ! true: use sigma-level for vertical allocation above LTO height
         LOGICAL      :: EFLAG = .FALSE.     ! true: ERROR
 
         CHARACTER(32)   TMPCHAR             
@@ -761,7 +761,29 @@ C.................  store lat/lon coordinates (starting point)
                 LATVAL = STR2REAL( SEGMENT( 3 ) )
                 LONVAL = STR2REAL( SEGMENT( 4 ) )
                 CURPRES= STR2REAL( SEGMENT( 14 ) )         ! pressure in unit of pascal
-                HEIGHT = FT2M * STR2REAL( SEGMENT( 5 ) )   ! altitude in unit of feet
+C org                HEIGHT = FT2M * STR2REAL( SEGMENT( 5 ) )   ! altitude in unit of feet
+                IF( SEGID == 0 ) PRVPRES = CURPRES
+
+C.................  Compute altitude using polynomial fit equation as a
+C                   function of pressure.
+                PRESSURE = PRVPRES/100.
+                PRVHGT =  -4.384385E-013*PRESSURE**5 + 
+     &                     1.368174E-009*PRESSURE**4 +
+     &                    -1.650600E-006*PRESSURE**3 + 
+     &                     9.902038E-004*PRESSURE**2 +
+     &                    -3.488077E-001*PRESSURE + 7.99345E+001
+                PRVHGT = PRVHGT * 1000. * FT2M
+
+                PRESSURE = CURPRES/100.
+                HEIGHT =  -4.384385E-013*PRESSURE**5 + 
+     &                     1.368174E-009*PRESSURE**4 +
+     &                    -1.650600E-006*PRESSURE**3 + 
+     &                     9.902038E-004*PRESSURE**2 +
+     &                    -3.488077E-001*PRESSURE + 7.99345E+001
+                HEIGHT = HEIGHT * 1000. * FT2M
+
+C.................  initializing sigma-level vert allocation flag
+                PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
 
 C.................  Convert source coordinates from lat-lon to output grid
                 CALL CONVRTXY( 1, GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
@@ -772,64 +794,12 @@ C.................  define start/end coordinates for each link
                     PRVLAT = LATVAL
                     PRVLON = LONVAL
                     PRVHGT = HEIGHT
-                    PRVPRES= CURPRES
+                    PRVPRES = CURPRES
+                    PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                 END IF
 
                 Zo = PRVHGT                ! origin height
                 Zh = HEIGHT                ! end height
-
-C.................  Compute altitude using polynomial fit equation as a
-C                   function of pressure.
-                PRESSURE = PRVPRES/100.
-
-                Zpo =  -4.384385E-013*PRESSURE**5 + 
-     &                  1.368174E-009*PRESSURE**4 +
-     &                 -1.650600E-006*PRESSURE**3 + 
-     &                  9.902038E-004*PRESSURE**2 +
-     &                 -3.488077E-001*PRESSURE + 7.99345E+001
-
-                Zpo = Zpo * 1000. * FT2M
-
-                PRESSURE = CURPRES/100.
-
-                Zph =  -4.384385E-013*PRESSURE**5 + 
-     &                  1.368174E-009*PRESSURE**4 +
-     &                 -1.650600E-006*PRESSURE**3 + 
-     &                  9.902038E-004*PRESSURE**2 +
-     &                 -3.488077E-001*PRESSURE + 7.99345E+001
-
-                Zph = Zph * 1000. * FT2M
-
-C.................  Apply CUTOFF method (i.e., 10K ft)
-C                   if previous height > CUTOFF, skip processing
-                IF( Zpo >= CUTOFF .AND. Zph >= CUTOFF ) THEN
-                    PRVLAT = LATVAL  ! store previous lat coordinate
-                    PRVLON = LONVAL  ! store previous lon coordinate
-                    PRVHGT = HEIGHT  ! store previous height
-                    PRVPRES= CURPRES ! store previous pressure
-                    CYCLE
-
-C.................  Reset top height to CUTOFF height and recompute X,Y coordinates
-C                   based on the ratio of cutoff height
-c                ELSE IF(  Zpo < CUTOFF .AND. Zph >= CUTOFF ) THEN    ! climbing 
-c                    DFRAC = ( CUTOFF - Zpo ) / ( Zph - Zpo )
-
-c                    DX = ( PRVLON - LONVAL ) * DFRAC
-c                    DY = ( PRVLAT - LATVAL ) * DFRAC
-                    
-c                    LONVAL = PRVLON + DX
-c                    LATVAL = PRVLAT + DY
-
-c                ELSE IF(  Zph < CUTOFF .AND. Zpo >= CUTOFF ) THEN    ! landing 
-c                    DFRAC = ( CUTOFF - Zph ) / ( Zpo - Zph )
-
-c                    DX = ( PRVLON - LONVAL ) * DFRAC
-c                    DY = ( PRVLAT - LATVAL ) * DFRAC
-
-c                    LONVAL = PRVLON + DX
-c                    LATVAL = PRVLAT + DY
-
-                END IF
 
 C.................  If source is in the domain, get cell number and store
                 ORG_CELLID = 0
@@ -849,6 +819,7 @@ C.................  Skip non-processing dates
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
                     PRVPRES= CURPRES ! store previous pressure
+                    PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                     CYCLE
                 END IF
 
@@ -872,6 +843,7 @@ C.................  Skip if there is no intersected grid cell
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
                     PRVPRES= CURPRES ! store previous pressure
+                    PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                     CYCLE
                 END IF
 
@@ -925,6 +897,7 @@ C                   1000ft * 0.3048 = 3048 meter
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
                     PRVPRES= CURPRES ! store previous pressure
+                    PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                     CYCLE
                 END IF
 
@@ -948,53 +921,49 @@ C                   1000ft * 0.3048 = 3048 meter
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
-C org               IF( Zo <= LTOALT * FT2M ) THEN
-C.................  hard corded to switch vertical allocation method between sigma and pressure
-                IF( Zo <= 10000.0 * FT2M ) THEN
-
-                    IF( MODID < 4 ) THEN
-                        Zo = Zo - APRT_ELEV( ND )   ! departure airport elev
-                    ELSE IF( MODID > 6 ) THEN
-                        Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
-                    ELSE
-                        IF( ORG_CELLID>0 ) Zo = Zo - TERRAIN(ORG_CELLID)
-                    ENDIF
-
+C.................  Adjust altitudes for climbing/landing flight trajectory
+                IF( MODID < 4 ) THEN
+                    Zo = Zo - APRT_ELEV( ND )   ! departure airport elev
+                    Zh = Zh - APRT_ELEV( ND )   ! departure airport elev
+                ELSE IF( MODID > 6 ) THEN
+                    Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
+                    Zh = Zh - APRT_ELEV( NA )   ! arrival airport elev
                 ELSE
-C.....................  Use pressure values as Zo and Zh for sigma level vertical allocation
-                    IF( SIGMAFLAG ) THEN
-                        PRESFLAG = .TRUE.
-                    ELSE
-                        IF( ORG_CELLID>0 ) Zo = Zo - TERRAIN(ORG_CELLID)
-                    END IF
+                    IF( ORG_CELLID>0 ) Zo = Zo - TERRAIN(ORG_CELLID)
+                    IF( END_CELLID>0 ) Zh = Zh - TERRAIN(END_CELLID)
+                ENDIF
 
+                IF( Zo < 0.0 ) Zo = 0.0
+                IF( Zh < 0.0 ) Zh = 0.0
+
+C.................  hard corded to switch vertical allocation method between sigma and pressure
+C.....................  Use pressure values as Zo and Zh for sigma level vertical allocation
+                PRESFLAG = .FALSE.
+                IF( Zo > 10000.0 * FT2M ) THEN
+                    IF( SIGMAFLAG ) PRESFLAG = .TRUE.
                 END IF
 
-C org               IF( Zh <= LTOALT * FT2M ) THEN
 C.................  hard corded to switch vertical allocation method between sigma and pressure
                 IF( Zh <= 10000.0 * FT2M ) THEN
-
-                    IF( MODID < 4 ) THEN
-                        Zh = Zh - APRT_ELEV( ND )   ! departure airport elev
-                    ELSE IF( MODID > 6 ) THEN
-                        Zh = Zh - APRT_ELEV( NA )   ! arrival airport elev
-                    ELSE
-                        IF( END_CELLID>0 ) Zh = Zh - TERRAIN(END_CELLID)
-                    ENDIF
-
+                    IF( PRESFLAG ) PRESFLAG = .FALSE.
                 ELSE
                     IF( SIGMAFLAG .AND. PRESFLAG ) THEN
                         PRESFLAG = .TRUE.
                     ELSE IF( SIGMAFLAG .AND. .NOT. PRESFLAG ) THEN
                         PRESFLAG = .FALSE.
-                    ELSE
-                        IF( END_CELLID>0 ) Zh = Zh - TERRAIN(END_CELLID)
                     END IF
-
                 END IF
 
-                IF( Zo < 0.0 ) Zo = 0.0
-                IF( Zh < 0.0 ) Zh = 0.0
+C.................  Apply CUTOFF method (i.e., 10K ft)
+C                   if previous height > CUTOFF, skip processing
+                IF( Zh >= CUTOFF .AND. Zo >= CUTOFF ) THEN
+                    PRVLAT = LATVAL  ! store previous lat coordinate
+                    PRVLON = LONVAL  ! store previous lon coordinate
+                    PRVHGT = HEIGHT  ! store previous height
+                    PRVPRES= CURPRES ! store previous pressure
+                    PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
+                    CYCLE
+                END IF
 
                 ZBOT = Zo
                 DELTAZ = Zh - Zo   ! delta z (<0:langind, >0:climbing)
@@ -1046,14 +1015,14 @@ C.....................  Convert pressure to reversed sigma level (0:ground,1:top
                             FIRSTIME = .FALSE.
                         END IF
 
-                        ZZF( C,1:NLAYS ) = VGLVLS( 1:NLAYS )
+                        ZZF( C,1:NLAYS ) = VGLVLS( 1:NLAYS )  ! reversed sigma level (ground:0 top:1)
 
                     END IF 
 
 C.....................  Update bottom and top layers
                     Z = ZFRAC * DELTAZ
 
-                    IF( DELTAZ < 0 ) THEN   ! aircraft landing mode
+                    IF( DELTAZ < 0.0 ) THEN   ! aircraft landing mode
                         ZTOP = ZBOT 
                         ZBOT = ZTOP + Z
                     ELSE                    ! aircraft climbing mode
@@ -1129,11 +1098,7 @@ C.........................  Calculate a fraction for the top layer
                     END IF
 
 C.....................  initialize pressure-based vertical allocation by link
-                    IF( DELTAZ > 0 ) THEN
-                        ZBOT = ZTOP   ! landing mode: ZBOT needs to be updated with ZTOP
-                    ELSE
-                        ZTOP = ZBOT
-                    END IF
+                    IF( DELTAZ >= 0.0 ) ZBOT = ZTOP   ! climbing mode: 
 
 C..................... Before applying layer fractions make sure that they add to 1.0
                     LTOT = 0.0
@@ -1292,16 +1257,6 @@ C.............................  Estimate HAPs using HAP's profile factors from T
 
                     END DO     ! end of layer loop per link
 
-                    DO V = 1, NVARS
-                    DO L = 1, NLAYS
-                        WRITE( TMPCHAR,'(F32.16)') TMP3D(C,L,V,T)
-                        IF( .NOT. CHKREAL( TMPCHAR ) ) THEN
-                            MESG='ERROR: Due to corrupted data:'//TMPCHAR
-                            CALL M3EXIT( PROGNAME,0,0,TMPCHAR,2 )
-                        END IF
-                    END DO
-                    END DO
-
                 END DO      ! end of link loop
 
 C.................   previous values needed to be updated before the source gets skipped
@@ -1309,8 +1264,7 @@ C.................   previous values needed to be updated before the source gets
                 PRVLON = LONVAL  ! store previous lon coordinate
                 PRVHGT = HEIGHT  ! store previous height
                 PRVPRES= CURPRES ! store previous pressure
-
-                PRESFLAG = .FALSE.
+                PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
 
             ENDDO       ! end of flight loop
 
