@@ -86,6 +86,17 @@
         CHARACTER(6), PUBLIC :: CATEGORY = ' ' ! 'AREA', 'MOBILE', or 'POINT'
         CHARACTER(6), PUBLIC :: CATDESC  = ' ' ! 'Area', 'Mobile', or 'Point'
 
+!.........  Allocatable/local variables for formulas
+        CHARACTER(512),     PUBLIC      :: VAR_FORMULA = ' ' ! SMKINVEN_FORMULA
+        INTEGER,            PUBLIC      :: NCOMP = 0 ! no of Smkinven formuals  
+        LOGICAL,            ALLOCATABLE :: CHKPLUS ( : ) ! true: formula uses a + sign
+        LOGICAL,            ALLOCATABLE :: CHKMINUS( : ) ! true: formula uses a - sign
+        CHARACTER(128),     ALLOCATABLE :: FORMULAS( : ) ! formulas for emissions
+        CHARACTER(IOVLEN3), ALLOCATABLE :: VIN_A( : )    ! first variable in equation
+        CHARACTER(IOVLEN3), ALLOCATABLE :: VIN_B( : )    ! second variable in equation
+        CHARACTER(IOVLEN3), ALLOCATABLE :: VNAME( : )    ! computed variable name
+        PUBLIC CHKPLUS, CHKMINUS, FORMULAS, VIN_A, VIN_B, VNAME
+
 !.........  Arrays of positions for source characteristics in full string of
 !           source characteristics (dimension NCHARS)
         INTEGER    , ALLOCATABLE, PUBLIC :: SC_BEGP( : )
