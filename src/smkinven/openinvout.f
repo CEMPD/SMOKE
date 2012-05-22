@@ -1,6 +1,6 @@
 
         SUBROUTINE OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, IDEV, 
-     &                        SDEV, ADEV, VARPATH, VAR_FORMULA )
+     &                        SDEV, ADEV, VARPATH )
 
 C*************************************************************************
 C  subroutine body starts at line 119
@@ -45,7 +45,7 @@ C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, BYEAR,
      &                     NIPOL, NPPOL, NIACT, NPACT, NCHARS,
-     &                     JSCC, JSTACK
+     &                     JSCC, JSTACK, NCOMP, VAR_FORMULA
 
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
@@ -78,7 +78,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT) :: SDEV     ! ascii output inven file unit no.
         INTEGER     , INTENT(OUT) :: ADEV     ! REPINVEN output file unit no.
         CHARACTER(PHYLEN3), INTENT( OUT ) :: VARPATH ! path for pol/act output files
-        CHARACTER(*), INTENT(OUT) :: VAR_FORMULA  ! formula string
 
 C...........   LOCAL PARAMETERS
         CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
@@ -97,7 +96,6 @@ C...........   Other local variables
         INTEGER       LMNS      ! position of '-' in formula
         INTEGER       LPLS      ! position of '+' in formula
         INTEGER       NIOVARS   ! Number of I/O API file non-emis variables
-        INTEGER       NCOMP     ! no. of computed variables
         INTEGER       NDATMAX   ! Max no of pols+activitys, based on I/O API
         INTEGER       NNPVAR    ! No. non-pollutant inventory variables
         INTEGER       YEAR      ! predominant year of inventory

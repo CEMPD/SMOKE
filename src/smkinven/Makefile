@@ -32,7 +32,7 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
 
 RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
-        gethdr.o getpdinfo.o initinfo.o \
+        gethdr.o getpdinfo.o initinfo.o formlist.o \
         openinvin.o openinvout.o openpdout.o procinven.o procinvsrcs.o rdcempd.o \
         rdemspd.o rdorlfr.o rdepspd.o rdgrdapi.o \
         rdinvsrcs.o rdlooppd.o smkinven.o \
@@ -62,6 +62,7 @@ include $(FS_ROOT)/modmake.inc
 asgnar2pt.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 asgnnhapx.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 fixstk.o: $(MODSOURC)
+formlist.o: $(MODINFO) $(MODLISTS)
 genpdout.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY)
 gethdr.o: $(MODLISTS) $(MODSTCY) $(MODINFO)
 getpdinfo.o: $(MODINFO) $(MODDAYHR)

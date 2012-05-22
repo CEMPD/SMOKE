@@ -434,7 +434,7 @@ C.............  Store minimum time step number as compared to reference
 
 C.............  Store maximum time step number as compared to reference
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
-         write(*,'(9I9)')PTR,JDATE,JTIME,SDATE,STIME,EDATE,ETIME,RDATE,RTIME
+
 C.............  Check pollutant code and set index I
             IF( NFLAG ) THEN
                 CDAT = LINE( S1:S2 )

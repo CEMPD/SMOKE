@@ -39,7 +39,7 @@ C Last updated: $Date$
 C
 C***************************************************************************
 C...........  This module contains the information about the source category
-        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NCOMP, VAR_FORMULA
 
 C............ This module contains the cross-reference tables
         USE MODXREF, ONLY: PROC_HAPS 
@@ -88,7 +88,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Other local variables
         INTEGER       IDEV   ! tmp unit number if ENAME is map file
         INTEGER       IOS    ! i/o status
-        INTEGER       J      ! counter and indices
+        INTEGER       I,J,L    ! counter and indices
         INTEGER       LCAT   ! length of CATEGORY string
 
         LOGICAL    :: CFLAG = .FALSE.  ! true: open area-to-point file
@@ -112,6 +112,20 @@ C***********************************************************************
 C   begin body of subroutine OPENINVIN
 
 C.........  Get value of these controls from the environment
+
+C.........  Get setup up for later processing of a formula for adding a variable
+        MESG = 'Define a formula to compute new pollutant(s)'
+        CALL ENVSTR( 'SMKINVEN_FORMULA', MESG, ' ', VAR_FORMULA, IOS )
+        L = LEN_TRIM( VAR_FORMULA )
+        IF( L .GT. 0 ) THEN
+C.............  Figure out how many variables there are based on the
+C               number of commas found in the string.
+            NCOMP = 1
+            DO I = 1, L
+                IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
+            ENDDO
+        END IF
+
         MESG = 'Import average inventory data'
         IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', MESG, .TRUE., IOS )
 

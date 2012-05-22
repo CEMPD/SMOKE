@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRINVEMIS( IDEV, DATPATH, VAR_FORMULA )
+        SUBROUTINE WRINVEMIS( IDEV, DATPATH )
 
 C***********************************************************************
 C  subroutine body starts at line 135
@@ -52,7 +52,9 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CATDESC, NSRC, NMAP,
      &                     NIPOL, NIACT, NIPPA, NPPOL, EANAM, ACTVTY,
      &                     MAPNAM, MAPFIL, EINAM, EIIDX, NPACT, AVIDX,
-     &                     NDY, NC1, NC2, NCE, NRE, NRP
+     &                     NDY, NC1, NC2, NCE, NRE, NRP, VAR_FORMULA,
+     &                     NCOMP, CHKPLUS, CHKMINUS, FORMULAS, VIN_A,
+     &                     VIN_B, VNAME
 
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
@@ -77,7 +79,6 @@ C.........  EXTERNAL FUNCTIONS
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: IDEV          ! unit number for map file
         CHARACTER(PHYLEN3), INTENT (IN) :: DATPATH ! path for pol/act files
-        CHARACTER(*), INTENT (IN) :: VAR_FORMULA   ! formula string
 
 C...........   LOCAL PARAMETERS
         CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
@@ -98,36 +99,22 @@ C              as NPPOL > NPACT, which is expected to always be the case
         CHARACTER(IOULEN3), ALLOCATABLE :: EOUNITS( :,: ) ! Units  
         CHARACTER(IODLEN3), ALLOCATABLE :: EODESCS( :,: ) ! Dscriptions  
 
-C............   Allocatable arrays for formulas
-        LOGICAL, ALLOCATABLE            :: CHKPLUS ( : ) ! true: formula uses a + sign
-        LOGICAL, ALLOCATABLE            :: CHKMINUS( : ) ! true: formula uses a - sign
-        CHARACTER(128), ALLOCATABLE     :: FORMULAS( : ) ! formulas for emissions
-        CHARACTER(IOVLEN3), ALLOCATABLE :: VIN_A( : ) ! first variable in equation
-        CHARACTER(IOVLEN3), ALLOCATABLE :: VIN_B( : ) ! second variable in equation
-        CHARACTER(IOVLEN3), ALLOCATABLE :: VNAME( : ) ! computed variable name
-
 C...........   Other local allocatable arrays
         CHARACTER(IOVLEN3), ALLOCATABLE :: SAVEANAM( : ) ! tmp variables
 
 C...........   Other local variables
-        INTEGER         F, I, J, S, L, L2, N, V1, V2, VA, VB     ! counters and indices
+        INTEGER         F, I, J, S, L, L2, N     ! counters and indices
 
         INTEGER         IOS       ! i/o status
-        INTEGER         LEQU      ! position of '=' in formula
-        INTEGER         LDIV      ! position of '-' or '+' in formula
-        INTEGER         LMNS      ! position of '-' in formula
-        INTEGER         LPLS      ! position of '+' in formula
 
         INTEGER         MCNT      ! count of actual mapped pol/act files
         INTEGER         MXWARN    ! maximum number of warnings of each type to write
-        INTEGER      :: NCOMP = 0 ! no. computed variables
 
         INTEGER         RIMISS3          ! real value of integer missing
 
         LOGICAL      :: EFLAG    = .FALSE. ! true: error found
         LOGICAL      :: FFLAG    = .FALSE. ! true: formula in use
         LOGICAL      :: NEGOK    = .FALSE. ! true: okay to output negative emission values
-        LOGICAL      :: TFLAG    = .FALSE. ! true: current formula has error
         LOGICAL         ZFLAG              ! true: write zeros to output file
 
         CHARACTER(80)   NAME1            ! tmp file name component
@@ -193,149 +180,11 @@ C.........  Set maximum number of map variables for map-formatted outputs
         MCNT = 0              ! initialize actual pol/act file count for later
 
 C.........  If there is one or more computed output variable, get set up
-        L = LEN_TRIM( VAR_FORMULA )
-        IF( L .GT. 0 ) THEN
-
-C.............  Figure out how many variables there are based on the
-C               number of commas found in the string.
-            NCOMP = 1
-            DO I = 1, L
-                IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
-            ENDDO
-
+        IF( LEN_TRIM( VAR_FORMULA ) .GT. 0 ) THEN
+            CALL FORMLIST
             FFLAG = .TRUE.
             NMAP = NMAP + NCOMP  ! NCOMP more variable(s) to map
-
-C.............  Allocate array to store formulas
-            ALLOCATE( CHKPLUS( NCOMP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CHKPLUS', PROGNAME )
-            ALLOCATE( CHKMINUS( NCOMP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'CHKMINUS', PROGNAME )
-            ALLOCATE( FORMULAS( NCOMP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'FORMULAS', PROGNAME )
-            ALLOCATE( VIN_A( NCOMP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'VIN_A', PROGNAME )
-            ALLOCATE( VIN_B( NCOMP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'VIN_B', PROGNAME )
-            ALLOCATE( VNAME( NCOMP ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'VNAME', PROGNAME )
-
-C.............  Split out formulas in string to array
-            CALL PARSLINE( VAR_FORMULA, NCOMP, FORMULAS )
-
-C.............  Loop through formulas
-            DO F = 1, NCOMP
-
-C.................  Make sure formula makes sense
-                LEQU = INDEX( FORMULAS( F ), '=' )
-                LPLS = INDEX( FORMULAS( F ), '+' )
-                LMNS = INDEX( FORMULAS( F ), '-' )
-
-                CHKPLUS( F )  = ( LPLS .GT. 0 )
-                CHKMINUS( F ) = ( LMNS .GT. 0 )
-
-                LDIV = LPLS
-                IF( CHKMINUS( F ) ) LDIV = LMNS
-
-                IF( LEQU .LE. 0 .OR. 
-     &            ( .NOT. CHKPLUS(F) .AND. .NOT. CHKMINUS(F) ) ) THEN
-
-                    L = LEN_TRIM( FORMEVNM )
-                    MESG = 'Could not interpret formula for extra ' //
-     &                     'pollutant from environment variable ' //
-     &                     CRLF() // BLANK10 // '"' // FORMEVNM( 1:L ) //
-     &                     '": ' // TRIM( FORMULAS( F ) )
-                    TFLAG = .TRUE.
-                END IF
-
-C.................  Extract formula variable names
-                L      = LEN_TRIM( FORMULAS( F ) )
-                VNAME( F )= ADJUSTL( FORMULAS( F )(      1:LEQU-1 ) )
-                VIN_A( F )= ADJUSTL( FORMULAS( F )( LEQU+1:LDIV-1 ) )
-                VIN_B( F )= ADJUSTL( FORMULAS( F )( LDIV+1:L      ) )
-
-C.................  Find formula inputs in existing variable list
-                J = INDEX1( VIN_A( F ), NINVTBL, ITCASA )
-                IF( J < 1 ) THEN
-                    L = LEN_TRIM( VIN_A( F ) )
-                    MESG = 'Variable "'// VIN_A( F )( 1:L ) // 
-     &                 '" from formula was not found in inventory ' //
-     &                 'pollutant code (CAS nubmer)'
-                    CALL M3MSG2( MESG )
-
-                ELSE
-                    VIN_A( F ) = ITNAMA( J )
-
-                END IF
-
-                J = INDEX1( VIN_B( F ), NINVTBL, ITCASA )
-                IF( J < 1 ) THEN
-                    L = LEN_TRIM( VIN_B( F ) )
-                    MESG = 'Variable "'// VIN_B( F )( 1:L ) // 
-     &                 '" from formula was not found in inventory ' //
-     &                 'pollutant code (CAS nubmer)'
-                    CALL M3MSG2( MESG )
-
-                ELSE
-                    VIN_B( F ) = ITNAMA( J )
-
-                END IF
-
-                VA = INDEX1( VIN_A( F ), NIPPA, EANAM )
-                VB = INDEX1( VIN_B( F ), NIPPA, EANAM )
-
-                IF( VA .LE. 0 ) THEN
-                    TFLAG = .TRUE.
-                    L = LEN_TRIM( VIN_A( F ) )
-                    MESG = 'Variable "'// VIN_A( F )( 1:L ) // 
-     &                     '" from formula was not found in inventory.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-                IF( VB .LE. 0 ) THEN
-                    TFLAG = .TRUE.
-                    L = LEN_TRIM( VIN_B( F ) )
-                    MESG = 'Variable "'// VIN_B( F )( 1:L ) // 
-     &                     '" from formula was not found in inventory.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-                V1 = INDEX1( VIN_A( F ), NIACT, ACTVTY )
-                V2 = INDEX1( VIN_B( F ), NIACT, ACTVTY )
-
-                IF( V1 .GT. 0 ) THEN
-                    TFLAG = .TRUE.
-                    L = LEN_TRIM( VIN_A( F ) )
-                    MESG='ERROR: Variable "'//VIN_A(F)(1:L)//'" is an'//
-     &                    'activity, which is not allowed in a formula.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-                IF( V2 .GT. 0 ) THEN
-                    TFLAG = .TRUE.
-                    L = LEN_TRIM( VIN_B( F ) )
-                    MESG='ERROR: Variable "'//VIN_B(F)(1:L)//'" is an'//
-     &                   'activity, which is not allowed in a formula.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-                IF( TFLAG ) THEN
-                    WRITE( MESG,94010 ) 'ERROR: Problem processing '//
-     &                     'formula', F, ': "'//TRIM(FORMULAS(F)) // '"'
-                    CALL M3MSG2( MESG )
-                END IF
-
-                IF ( TFLAG ) EFLAG = .TRUE.
-
-            END DO
-
-            IF ( EFLAG ) THEN
-                MESG = 'Problem processing formulas. ' //
-     &                 'See previous error messages.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-        END IF  ! if any formulas
+        END IF
 
 C.........  Allocate memory for map file arrays
         ALLOCATE( MAPNAM( NMAP ), STAT=IOS )

@@ -64,7 +64,7 @@ C.........  This module contains the lists of unique inventory information
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX, INV_MON,
-     &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC   
+     &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG
@@ -172,7 +172,6 @@ C...........   Other local variables
         LOGICAL         STKFLG           ! true: check stack parameters
 
         CHARACTER(5)          TYPNAM      !  'day' or 'hour' for import
-        CHARACTER(512)        VAR_FORMULA !  formula string
         CHARACTER(256)        MESG        !  message buffer
         CHARACTER(IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
         CHARACTER(PHYLEN3) :: VARPATH = './' ! path for pol/act files
@@ -193,18 +192,6 @@ C.........  Set source category based on environment variable setting
 
 C.........  Output time zone
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
-
-C.........  Output time zone
-        MESG = 'Define inventory month user wants to process'
-        INV_MON = ENVINT( 'SMKINVEN_MONTH', MESG, 0, IOS )
-
-        IF( INV_MON == 0 ) THEN
-            MESG = 'Processing Annual inventory....'
-            CALL M3MSG2( MESG )
-        ELSE
-            MESG = 'Processsing ' // MON_NAME( INV_MON ) // ' inventory'
-            CALL M3MSG2( MESG ) 
-        END IF
 
 C.........  Get names of input files
         CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
@@ -245,6 +232,18 @@ C.............  Read the source information from the raw inventory files,
 C               store in unsorted order, and determine source IDs
 C.............  The arrays that are populated by this subroutine call
 C               are contained in the module MODSOURC
+            MESG = 'Define inventory month to process'
+            INV_MON = ENVINT( 'SMKINVEN_MONTH', MESG, 0, IOS )
+
+            IF( INV_MON == 0 ) THEN
+                MESG = 'Processing Annual inventory....'
+                CALL M3MSG2( MESG )
+            ELSE
+                MESG = 'Processsing ' // MON_NAME( INV_MON ) // 
+     &                 ' inventory'
+                CALL M3MSG2( MESG )
+            END IF
+
             CALL M3MSG2( 'Reading inventory sources...' )
 
             CALL RDINVSRCS( IDEV, XDEV, EDEV, INAME,
@@ -401,7 +400,7 @@ C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
 
             CALL OPENINVOUT( A2PFLAG, GRDNM, ENAME, ANAME, MDEV, SDEV,
-     &                       ADEV, VARPATH, VAR_FORMULA )
+     &                       ADEV, VARPATH )
 
             MESG = 'Writing SMOKE ' // TRIM( CATEGORY ) // 
      &             ' SOURCE INVENTORY file...'
@@ -417,7 +416,7 @@ C.............  Deallocate sorted inventory info arrays, except CSOURC
 
 C.............  Write out average inventory data values
 C.............  Compute inventory data values, if needed
-            CALL WRINVEMIS( MDEV, VARPATH, VAR_FORMULA )
+            CALL WRINVEMIS( MDEV, VARPATH )
 
 C.............  Deallocate sorted inventory info arrays
             CALL SRCMEM( CATEGORY, 'SORTED', .FALSE., .TRUE., 1, 1, 1 )

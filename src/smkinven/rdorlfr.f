@@ -49,7 +49,8 @@ C.........  This module contains the lists of unique inventory information
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NSRC, EANAM, NCHARS, NMAP, MAPNAM,
-     &                     MAPFIL
+     &                     MAPFIL, NCOMP, VAR_FORMULA, VIN_A, VIN_B,
+     &                     VNAME, CHKPLUS
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT, LPDSRC, NPDPT, NPDPTP, IDXSRC, 
@@ -163,7 +164,6 @@ C...........   Other local variables
         INTEGER, SAVE :: MXWARN           !  maximum number of warnings
         INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
-        INTEGER, SAVE :: NCOMP = 0        ! no. of formulas
         INTEGER, SAVE :: NACRBND = 0      ! no. of acres burned var
         INTEGER, SAVE :: NFUELD  = 0      ! no. of fuel loading var
         INTEGER       :: NPOA    = 0      ! unused header number of pol/act
@@ -182,7 +182,6 @@ C...........   Other local variables
 
         REAL             TDAT             ! temporary data values
 
-        LOGICAL, SAVE :: CHKMINUS 
         LOGICAL, SAVE :: VFLAG  = .FALSE. ! true: first variables in formula available
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
         LOGICAL, SAVE :: FFLAG  = .FALSE. ! true: using formula to compute new poll
@@ -222,7 +221,6 @@ C.........  Temporary local character variables
         CHARACTER(ALLLEN3) TSRC      ! tmp source string
         CHARACTER( 8 )     DATE      ! tmp date string
         CHARACTER(IOVLEN3) PNAME     ! logical file name for data files
-        CHARACTER(512)     VAR_FORMULA !  formula string
 
         CHARACTER(16) :: PROGNAME = 'RDORLFR' !  program name
 
@@ -235,100 +233,27 @@ C.........  First time routine called
 C.............  Get value of these controls from the environment
             IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', ' ', .TRUE., IOS )
 
-            MESG = 'Inventory formula'
-            CALL ENVSTR( FORMEVNM, MESG, ' ', VAR_FORMULA, IOS )
-
 C.............  Figure out how many variables there are based on the
 C               number of commas found in the string.
-            L  = LEN_TRIM( VAR_FORMULA )
-            IF( L > 0 ) THEN
-                FFLAG = .TRUE.
-                NCOMP = 1
-                DO I = 1, L
-                    IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
-                ENDDO
+            IF( LEN_TRIM( VAR_FORMULA ) > 0 ) THEN
+
+C.................  Call Smkinven formula subroutine
+                CALL FORMLIST
 
 C.................  Only one formula is allowed
                 IF ( NCOMP > 1 ) THEN
                     WRITE( MESG,94010 ) 'Only one formula (not the',
-     &                  NCOMP, 'given) are allowed when running day-'//
-     &                 'specific fires.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C.................  Obtain names for formula variables and whether formula is minus or plus
-                L1 = INDEX( VAR_FORMULA, '=' )
-                L2 = INDEX( VAR_FORMULA, '+' )
-                L3 = INDEX( VAR_FORMULA, '-' )
-
-                CHKMINUS = .FALSE.
-                CHKMINUS = ( L3 .GT. 0 )
-
-                IF( L1 .LE. 0 .OR. ( L2 .LE. 0 .AND. L3 .LE. 0 ) ) THEN
-                    MESG = 'Could not interpret formula for extra ' //
-     &                  'pollutant from environment variable ' //
-     &                  CRLF() // BLANK10 // '"' // TRIM( FORMEVNM ) //
-     &                  '": ' // TRIM( VAR_FORMULA )
+     &                  NCOMP, 'given) are allowed when processing '//
+     &                 'day-specific fires.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
 C.................  Extract formula variable names
-                L4 = L2
-                IF( CHKMINUS ) L4 = L3
+                FVAR = VNAME( 1 )
+                VAR1 = VIN_A( 1 )
+                VAR2 = VIN_B( 1 )
 
-                FVAR = ADJUSTL( VAR_FORMULA(    1:L1-1 ) )
-                VAR1 = ADJUSTL( VAR_FORMULA( L1+1:L4-1 ) )
-                VAR2 = ADJUSTL( VAR_FORMULA( L4+1:L    ) )
-
-C.................  Check Pollutant Code Numbers for formula pollutant #1
-                I = INDEX1( VAR1, NINVTBL, ITCASA )
-                IF( I < 1 ) THEN
-                    L = LEN_TRIM( VAR1 )
-                    MESG = 'Variable "'// VAR1( 1:L ) // 
-     &                 '" from formula was not found in inventory ' //
-     &                 'pollutant code (CAS nubmer)'
-                    CALL M3MSG2( MESG )
-
-                ELSE
-                    VAR1 = ITNAMA( I )
-
-                END IF
-
-                V1 = INDEX1( VAR1, NIPPA, EANAM )
-                IF( V1 .LE. 0 ) THEN
-                    TFLAG = .TRUE.
-                    MESG = 'WARNING: Variable "'// TRIM( VAR1 ) // 
-     &                     '" from formula was not found in inventory.'
-                    CALL M3MSG2( MESG )
-                END IF
-
-C.................  Check Pollutant Code Numbers for formula pollutant #2
-                I = INDEX1( VAR2, NINVTBL, ITCASA )
-                IF( I < 1 ) THEN
-                    L = LEN_TRIM( VAR2 )
-                    MESG = 'Variable "'// VAR2( 1:L ) // 
-     &                 '" from formula was not found in inventory ' //
-     &                 'pollutant code (CAS nubmer)'
-                    CALL M3MSG2( MESG )
-
-                ELSE
-                    VAR2 = ITNAMA( I )
-
-                END IF
-
-                V2 = INDEX1( VAR2, NIPPA, EANAM )
-                IF( V2 .LE. 0 ) THEN
-                    TFLAG = .TRUE.
-                    MESG = 'WARNING: Variable "'// TRIM( VAR2 ) // 
-     &                     '" from formula was not found in inventory.'
-                    CALL M3MSG2( MESG )
-                END IF
-                
-                IF( V1 .LE. 0 .OR. V2 .LE. 0 ) THEN
-                    MESG='ERROR: Problem processing formula " ' //
-     &                    TRIM( VAR_FORMULA ) // ' "'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
+                FFLAG = .TRUE.
 
             END IF
             
@@ -943,10 +868,10 @@ C.....................  If VAR2 value is missing, then assume zero
                 END IF
 
 C.................  Compute formula value
-                IF( CHKMINUS ) THEN
-                    TDAT = DTVAR1( K ) - DTVAR2( K )  ! computing formula result
-                ELSE
+                IF( CHKPLUS( 1 ) ) THEN
                     TDAT = DTVAR1( K ) + DTVAR2( K )  ! computing formula result
+                ELSE
+                    TDAT = DTVAR1( K ) - DTVAR2( K )  ! computing formula result
                 END IF
 
 C................  Warning msg when new computed value is negative
