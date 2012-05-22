@@ -5,7 +5,7 @@ C**************************************************************************
 C  subroutine body starts at line
 C
 C  DESCRIPTION:
-C      This subroutine allocates memory for and reads the time periods.
+C      This subroutine is designed to read SMKINVEN_FORMULA and determine how many formulas and list of variables 
 C
 C  PRECONDITIONS REQUIRED:
 C
