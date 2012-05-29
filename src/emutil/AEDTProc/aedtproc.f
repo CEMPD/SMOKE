@@ -761,26 +761,30 @@ C.................  store lat/lon coordinates (starting point)
                 LATVAL = STR2REAL( SEGMENT( 3 ) )
                 LONVAL = STR2REAL( SEGMENT( 4 ) )
                 CURPRES= STR2REAL( SEGMENT( 14 ) )         ! pressure in unit of pascal
-C org                HEIGHT = FT2M * STR2REAL( SEGMENT( 5 ) )   ! altitude in unit of feet
-                IF( SEGID == 0 ) PRVPRES = CURPRES
+                HEIGHT = FT2M * STR2REAL( SEGMENT( 5 ) )   ! altitude in unit of feet
 
 C.................  Compute altitude using polynomial fit equation as a
 C                   function of pressure.
-                PRESSURE = PRVPRES/100.
-                PRVHGT =  -4.384385E-013*PRESSURE**5 + 
-     &                     1.368174E-009*PRESSURE**4 +
-     &                    -1.650600E-006*PRESSURE**3 + 
-     &                     9.902038E-004*PRESSURE**2 +
-     &                    -3.488077E-001*PRESSURE + 7.99345E+001
-                PRVHGT = PRVHGT * 1000. * FT2M
+                IF( HEIGHT > 10000.0*FT2M ) THEN
 
-                PRESSURE = CURPRES/100.
-                HEIGHT =  -4.384385E-013*PRESSURE**5 + 
+                    IF( SEGID == 0 ) PRVPRES = CURPRES
+                    PRESSURE = PRVPRES/100.
+                    PRVHGT =  -4.384385E-013*PRESSURE**5 + 
      &                     1.368174E-009*PRESSURE**4 +
      &                    -1.650600E-006*PRESSURE**3 + 
      &                     9.902038E-004*PRESSURE**2 +
      &                    -3.488077E-001*PRESSURE + 7.99345E+001
-                HEIGHT = HEIGHT * 1000. * FT2M
+                    PRVHGT = PRVHGT * 1000. * FT2M
+
+                    PRESSURE = CURPRES/100.
+                    HEIGHT =  -4.384385E-013*PRESSURE**5 + 
+     &                     1.368174E-009*PRESSURE**4 +
+     &                    -1.650600E-006*PRESSURE**3 + 
+     &                     9.902038E-004*PRESSURE**2 +
+     &                    -3.488077E-001*PRESSURE + 7.99345E+001
+                    HEIGHT = HEIGHT * 1000. * FT2M
+I
+                END IF
 
 C.................  initializing sigma-level vert allocation flag
                 PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
