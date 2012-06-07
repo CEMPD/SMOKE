@@ -95,6 +95,7 @@ C...........   Other local variables
         INTEGER          MXDATALL!  maximum input data for memory allocation
         INTEGER          NDATA   !  tmp number of data variables per report
         INTEGER          NDATALL !  no. of all input data
+        INTEGER          NPOL    !  no. of pollutants
 
         LOGICAL       :: SKIP    = .FALSE. !  true: skipping selecting output species 
         LOGICAL       :: ANYOUT  = .FALSE. !  true: data select will be output
@@ -223,7 +224,6 @@ C    N: added in during the loop.
             IF( K .GT. 0 ) THEN         ! Store emission type and pol from it
                 L2 = LEN_TRIM( EBUF )
                 ETPNAM( N ) = EBUF
-                DATNAM( N ) = EBUF( K+LT:L2 )
 
 C..............  See if pollutant projection is being checked and add
 C                for all pollutants (since that's how it's implemented
@@ -231,11 +231,9 @@ C                in Cntlmat)
                 IF( PRRPTFLG ) THEN
                     N = N + 1
                     ETPNAM( N ) = RPRTPRE // EBUF
-                    DATNAM( N ) = RPRTPRE // EBUF( K+LT:L2 )
 
                     N = N + 1
                     ETPNAM( N ) = DIFFPRE // EBUF
-                    DATNAM( N ) = DIFFPRE // EBUF( K+LT:L2 )
                 ENDIF
 
             ELSE                        ! Store pollutant only
@@ -431,14 +429,14 @@ C.................  Data variable is emission type
                     ETPSPCNAM( V )= EBUF
                     PRCSPCNAM( V )= 'S-'// VBUF( 1:J-1 )// ETJOIN// SBUF
                     SUMETPNAM( V )= 'S-'// EBUF
-                    SUMPOLNAM( V )= 'S-'// VBUF( J+LT:K-1 )
+                    SUMPOLNAM( V )= 'I-'// VBUF( J+LT:K-1 )
                     SUMSPCNAM( V )= 'S-'// TRIM( SBUF )
 
 C.................  No emission type
                 ELSE
 
                     SPCNAM   ( V ) = SBUF
-                    SUMPOLNAM( V ) = 'S-' // EBUF
+                    SUMPOLNAM( V ) = 'I-' // EBUF
                     SUMSPCNAM( V ) = 'S-' // TRIM( SBUF )
 
                 END IF
@@ -526,9 +524,11 @@ C               behavior of the reports.
 C.................  Set the default output data depending on hourly inputs or not
                 IF( RPT_%USEHOUR ) THEN
                     J = NTPDAT
+                    NPOL = NTPDAT
                     OUTDNAM( 1:NTPDAT,N ) = TPNAME( 1:NTPDAT )
                 ELSE
                     J = NIPPA
+                    NPOL = NIPPA
                     OUTDNAM( 1:NIPPA,N ) = EANAM( 1:NIPPA )
                 END IF
 
@@ -545,6 +545,18 @@ C.................  If species is same as pollutant, then add prefix
 
                         IF( K .GT. 0 ) THEN
                             OUTDNAM( J,N ) = 'S-' // SBUF
+                            DATNAM( K ) = 'I-' // SBUF
+                            DO I1 = 1, NPOL
+                               I2 = INDEX1( SBUF, NPOL, OUTDNAM( 1:NPOL,N )) 
+                               IF ( I2 .GT. 0) THEN
+                                  OUTDNAM( I2,N ) =  'I-' // SBUF
+                                  IF( RPT_%USEHOUR ) THEN
+                                     TPNAME( I2 ) = 'I-' // SBUF
+                                  ELSE
+                                     EANAM( I2 ) = 'I-' // SBUF
+                                  END IF
+                               END IF
+                            END DO
                         ELSE
                             OUTDNAM( J,N ) = SBUF
                         END IF
