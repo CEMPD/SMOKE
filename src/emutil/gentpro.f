@@ -159,7 +159,6 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: TZONES  ( : )      ! county-specific time zones
         INTEGER, ALLOCATABLE :: METDAYS ( : )      ! dimension: nsteps in episode,
         INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours 
-        INTEGER, ALLOCATABLE :: RWC_CNTY( : )      ! RWC-counties
         INTEGER, ALLOCATABLE :: SRGIDS  ( : )      ! list of surrogates
         INTEGER, ALLOCATABLE :: SRGSTA  ( : )      ! list of state in surrogates
         INTEGER, ALLOCATABLE :: INDXREF ( :,: )    ! Index of matched xref entries 
@@ -214,6 +213,7 @@ C...........   Other local variables:
         INTEGER    FILENUM     ! file number of current meteorology file
         INTEGER    IOS         ! temporary I/O status
         INTEGER    IREC        ! temporary input line number
+        INTEGER    IFIP        ! temporary FIPS code
         INTEGER    HOURIDX     ! current hour of the day
         INTEGER    JDATE       ! input date counter (YYYYDDD) in GMT
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
@@ -428,84 +428,7 @@ C.........  Determine optional linear equation for RWC profile calculation
             DTEMP= ENVREAL( 'DEFAULT_TEMP_RWC', MESG ,50.0, IOS )
 
             MESG = 'Use county-specific min temperature for RWC'
-            CFLAG = ENVYN( 'COUNTY_TEMP_YN', MESG, .FALSE., IOS )
-
-        END IF
-
-C.............  Open county-specific Temperature setting for RWC
-        IF( CFLAG ) THEN
-
-            MESG='Enter logical name for County-specific Temperature '//
-     &           'Input file for RWC method'
-            RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,'COUNTY_TEMP_RWC',
-     &             PROGNAME )
-
-            NLINES= GETFLINE( RDEV,'County-specific Temperatures file' )
-            
-            IREC = 0
-            NCNTY = 0
-            DO I = 1, NLINES
-
-                READ( RDEV, 93000, IOSTAT=IOS ) LINE
-                IREC = IREC + 1
-
-                IF ( IOS .GT. 0 ) THEN
-                    WRITE( MESG, 94010)
-     &                 'I/O error', IOS, 'reading COUNTY_TEMP_RWC '//
-     &                 'file at line', IREC
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C.................  Skip blank and comment lines
-                IF( BLKORCMT( LINE ) ) CYCLE
-
-                NCNTY = NCNTY + 1
-
-            END DO    ! end of loop
-
-             IF( N == 0 ) THEN
-                 MESG = 'ERROR: No entries in COUNTY_TEMP_RWC file'
-                 CALL M3MSG2( MESG )
-             END IF
-         
-             REWIND( RDEV )
-
-C..............  Allocate arrays for county-specific temperature settings for RWC
-             ALLOCATE( RWC_CNTY( NCNTY ), STAT=IOS )
-             CALL CHECKMEM( IOS, 'RWC_CNTY', PROGNAME )
-             ALLOCATE( RWC_TEMP( NCNTY ), STAT=IOS )
-             CALL CHECKMEM( IOS, 'RWC_TEMP', PROGNAME )
-             RWC_CNTY = 0
-             RWC_TEMP = 0.0
-
-C..............  Store county-specific temperatures
-            IREC = 0
-            NCNTY = 0
-            DO I = 1, NLINES
-
-                READ( RDEV, 93000, IOSTAT=IOS ) LINE
-                IREC = IREC + 1
-
-                IF ( IOS .GT. 0 ) THEN
-                    WRITE( MESG, 94010)
-     &                 'I/O error', IOS, 'reading COUNTY_TEMP_RWC '//
-     &                 'file at line', IREC
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C.................  Skip blank and comment lines
-                IF( BLKORCMT( LINE ) ) CYCLE
-
-C.................  Sparse line
-                CALL PARSLINE( LINE, 2, SEGMENT )
-
-                NCNTY = NCNTY + 1
-                RWC_CNTY( NCNTY ) = STR2INT ( SEGMENT( 1 ) )     ! FIPS id
-                RWC_TEMP( NCNTY ) = STR2REAL( SEGMENT( 2 ) )     ! min temp set for RWC eq
-
-            END DO    ! end of loop
-            
-            CLOSE( RDEV )
+            CFLAG = ENVYN( 'RWC_COUNTY_TEMP_YN', MESG, .FALSE., IOS )
 
         END IF
 
@@ -702,6 +625,66 @@ C.........  Allocate array
 
 C.........  Define total number of sources (FIPS * SCC)
         NSRC = NSRGFIPS * NSCC
+
+C.........  Allocate arrays for county-specific temperature settings for RWC
+        ALLOCATE( RWC_TEMP( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RWC_TEMP', PROGNAME )
+        RWC_TEMP = DTEMP
+
+C.........  Open county-specific Temperature setting for RWC
+        IF( CFLAG ) THEN
+
+            MESG='Enter logical name for County-specific Temperature '//
+     &           'Input file for RWC method'
+            RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE.,'RWC_COUNTY_TEMP',
+     &             PROGNAME )
+
+            NLINES= GETFLINE( RDEV,'County-specific Temperatures file' )
+             
+C..............  Store county-specific temperatures
+            IREC = 0
+            NCNTY = 0
+            DO I = 1, NLINES
+
+                READ( RDEV, 93000, IOSTAT=IOS ) LINE
+                IREC = IREC + 1
+
+                IF ( IOS .GT. 0 ) THEN
+                    WRITE( MESG, 94010)
+     &                 'I/O error', IOS, 'reading COUNTY_TEMP_RWC '//
+     &                 'file at line', IREC
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
+C.................  Skip blank and comment lines
+                IF( BLKORCMT( LINE ) ) CYCLE
+
+C.................  Sparse line
+                CALL PARSLINE( LINE, 2, SEGMENT )
+                
+                IFIP  = STR2INT ( SEGMENT( 1 ) )     ! FIP ID
+                DTEMP = STR2REAL( SEGMENT( 2 ) )     ! min temp set for RWC eq
+
+                DO S = 1, NSRGFIPS
+
+                    ISTA = INT( SRGFIPS( S ) / 1000 ) * 1000
+
+                    IF( IFIP == ISTA .OR. IFIP == SRGFIPS( S ) ) THEN
+                        RWC_TEMP( S ) = DTEMP
+                    END IF
+
+                END DO
+
+            END DO    ! end of loop
+
+             IF( N == 0 ) THEN
+                 MESG = 'ERROR: No entries in COUNTY_TEMP_RWC file'
+                 CALL M3MSG2( MESG )
+             END IF
+            
+            CLOSE( RDEV )
+
+        END IF
 
 C.........  Get episode starting date and time and ending date
         MESG = 'Episode start date (YYYYDDD)'
@@ -1431,8 +1414,10 @@ C                             array, it is only calculated once per day.
 C                             Values for the other hours are 0.
 
                         HRLSRC( S,T ) = CONST - ( SLOPE *  MINTEMP( S ) )
-
-                        IF( MINTEMP( S ) > DTEMP ) HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
+                        
+                        IF( MINTEMP( S ) > RWC_TEMP( S ) ) THEN
+                            HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
+                        END IF
 
                         MINTEMP( S ) = -1 * BADVAL3   ! Reset MIN(temp) back to flag value
 
