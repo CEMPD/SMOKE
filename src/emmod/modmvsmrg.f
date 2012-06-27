@@ -96,9 +96,11 @@ C.........  Emission factors data
         REAL, ALLOCATABLE, PUBLIC :: RPPEMFACS( :,:,:,:,:,: )  ! rate-per-profile emission factors
                                                                ! day, SCC, hour, temp profile, process, pollutant
 
-C.........  Hourly speed data
+C.........  Hourly speed data and control factor data
         LOGICAL, PUBLIC :: SPDFLAG                     ! use hourly speed data
         REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: ) ! indexes: FIP, SCC, weekend/weekday, local hour
+        LOGICAL, PUBLIC :: CFFLAG                     ! use control factor data
+        REAL, ALLOCATABLE, PUBLIC :: CFPRO( :,:,:,: ) ! indexes: FIP, SCC, pollutant,month
 
 C.........  Index from per-source inventory array to INVSCC array (based on MICNY in MODSTCY)
         INTEGER, ALLOCATABLE, PUBLIC :: MISCC( : )     ! dim NMSRC

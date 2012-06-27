@@ -104,6 +104,7 @@
         INTEGER     , PUBLIC :: MSDEV  ! mobile ASCII inventory input
         INTEGER     , PUBLIC :: PDEV  = 0  ! inventory table
         INTEGER     , PUBLIC :: PSDEV  ! point ASCII inventory input
+        INTEGER     , PUBLIC :: CFDEV  ! control factor input file
 
 !.........  Output file unit numbers
         INTEGER     , PUBLIC :: ARDEV  ! area ASCII report output
