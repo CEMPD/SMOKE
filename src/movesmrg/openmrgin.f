@@ -443,7 +443,7 @@ C.........  Open and read hourly speed data
 C.........  Get control factor file 
         IF( CFFLAG ) THEN
             CFDEV = PROMPTFFILE(
-        &           'Enter logical name for control factor file',
+     &              'Enter logical name for control factor file',
      &              .TRUE., .TRUE., 'CFPRO', PROGNAME )
         END IF
 
