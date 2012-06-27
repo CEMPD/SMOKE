@@ -134,14 +134,15 @@ C.............  Save index into TSVDESC array from EANAM
             IF( EANAMIDX( K ) .EQ. 0 ) THEN
                 EANAMIDX( K ) = V
             END IF
-
             PSPC  = CSPC
 
         END DO
 
 C.........  Build array to indicate when report values should be saved
         DO V = 1, NIPPA
-            EANAMREP( EANAMIDX( V ) ) = .TRUE.
+            IF ( EANAMIDX( V ) > 0 ) THEN
+                EANAMREP( EANAMIDX( V ) ) = .TRUE.
+            END IF
         END DO
         
         DEALLOCATE( EANAMIDX )

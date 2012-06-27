@@ -108,7 +108,6 @@ C.........  Allocate arrays that use NLINES as dimension (unsorted arrays and in
         
 C.........  Initialize arrays
         MCREFRAW = 0.
-        MCREFSORT = 0.
         PICOUNTY = 0
         N = 0
                 
@@ -189,6 +188,7 @@ C.............  Check that current county is inside the grid (and in the invento
 C.........  Allocate arrays that use NINVC as dimension (sorted arrays and index)       
         ALLOCATE( MCREFSORT ( NINVC,2 ), STAT=IOS ) 
         CALL CHECKMEM( IOS, 'MCREFSORT', PROGNAME )
+        MCREFSORT = 0.
 
 C.........  Close MCREF file
         CLOSE( MDEV )

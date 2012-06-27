@@ -57,7 +57,8 @@ C.........  This module contains the major data structure and control flags
      &          NSMATV,                            ! speciation matrices
      &          MEBCNY, MEBSTA, MEBSUM,            ! cnty/state/src total spec emissions
      &          MEBSCC, MEBSTC,                    ! scc total spec emissions
-     &          EANAM, NIPPA                       ! pol/act names
+     &          EANAM, NIPPA,                      ! pol/act names
+     &          CFDEV                              ! control factor file
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MOPTIMIZE,
@@ -69,7 +70,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          SPDFLAG, SPDPRO, MISCC, 
      &          MSNAME_L, MSMATX_L, MNSMATV_L, 
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
-     &          EANAMREP, 
+     &          EANAMREP, CFPRO, CFFLAG,
      &          TEMPBIN
 
 C.........  This module contains the lists of unique source characteristics
@@ -190,6 +191,7 @@ C...........   Other local variables
         REAL             PDIFF, TDIFF  ! temperature differences
         REAL             EFVAL1, EFVAL2, EFVALA, EFVALB, EFVAL   ! emission factor values
         REAL             EMVAL         ! emissions value
+        REAL             CFFAC         ! control factor
 
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
         LOGICAL       :: LAST_CNTY  = .FALSE.   ! true: reach the last county
@@ -328,6 +330,9 @@ C.........  Open NetCDF output files, open ASCII report files, and write headers
 
 C.........  Intialize state/county summed emissions to zero
         CALL INITSTCY
+
+C.........  Intialize state/county summed emissions to zero
+        IF ( CFFLAG ) CALL RDCFPRO( CFDEV )
 
 C.........  Allocate memory for temporary list of species and pollutant names
         ALLOCATE( VARNAMES( NSMATV ), STAT=IOS )
@@ -568,7 +573,7 @@ C                         OO - both min and max profile temps are over county te
                         MINVAL = AVGMIN( MICNY( SRC ), MONTH, DAYMONTH )
                         MAXVAL = AVGMAX( MICNY( SRC ), MONTH, DAYMONTH )
 
-C.....................  Make minimum and maxmum values within the index
+C.....................  MaCNY(SRC),  and maxmum values within the index
                         IF ( (MINVAL .LT. EMTEMPS( EMTEMPIDX( 1 ) ) )  
      &                      .AND. (MINVAL .GE. (EMTEMPS( EMTEMPIDX( 1 ) ) - TEMPBIN )) ) THEN
                             IF( NWARN < MXWARN ) THEN
@@ -863,6 +868,10 @@ C.............................  Check if emission factors exist for this process
                                 CYCLE
                             END IF
 
+C.............................  get control factor
+                           IF ( CFFLAG ) THEN
+                               CFFAC = CFPRO(MICNY(SRC), SCCIDX, SIINDEX( V,1 ), MONTH )
+                           END IF
 C.............................  Calculate interpolated emission factor if process/pollutant has changed
                             IF( PBUF .NE. LBUF ) THEN
                                 IF( RPDFLAG ) THEN
@@ -904,6 +913,8 @@ C.............................  Calculate interpolated emission factor if proces
                                         EFVAL = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, PROCIDX, POLIDX )
                                     ENDIF
                                 END IF
+
+                                IF ( CFFLAG ) EFVAL = EFVAL*CFFAC 
 
                             END IF
                             

@@ -40,7 +40,7 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: 
-     &          MENAME, MSDEV, 
+     &          MENAME, MSDEV, CFDEV,
      &          NMSRC, MPRJFLAG, MFLAG_BD, MTNAME, MSDATE,
      &          MNIPPA, MEANAM, 
      &          MGNAME, MNGMAT,
@@ -49,7 +49,7 @@ C.........  This module contains the major data structure and control flags
      &          VARFLAG
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG,
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, CFFLAG,
      &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MMDEV,
      &          SPDFLAG, MSNAME_L, MSNAME_S, MNSMATV_L, MNSMATV_S,
      &          MSVDESC_L, MSVDESC_S, MSVUNIT_L, MSVUNIT_S
@@ -335,7 +335,7 @@ C.........  Check that variables in mole and mass speciation matrices match
 C.........  Open meteorology file
         IF( RPDFLAG .OR. RPVFLAG ) THEN
             METNAME = PROMPTMFILE(
-     &               'Enter logical name for the METCRO2D meteorology file',
+     &               'Enter logical name for the METCRO2D meteorology file', 
      &               FSREAD3, 'MET_CRO_2D', PROGNAME )
     
             IF( .NOT. DESC3( METNAME ) ) THEN
@@ -438,6 +438,13 @@ C.........  Open and read hourly speed data
      &              'Enter logical name for speed profiles file',
      &              .TRUE., .TRUE., 'SPDPRO', PROGNAME )
             CALL RDSPDPRO( SPDEV )
+        END IF
+
+C.........  Get control factor file 
+        IF( CFFLAG ) THEN
+            CFDEV = PROMPTFFILE(
+        &           'Enter logical name for control factor file',
+     &              .TRUE., .TRUE., 'CFPRO', PROGNAME )
         END IF
 
 C.........  If there were any errors inputing files or while comparing
