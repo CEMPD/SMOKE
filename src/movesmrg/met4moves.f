@@ -77,6 +77,7 @@ c        INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables
 c        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
 
         CHARACTER(2)    CRLF
+        LOGICAL         BLKORCMT 
         LOGICAL         DSCM3GRD
         INTEGER         GETIFDSC
         INTEGER         GETFLINE
@@ -94,18 +95,20 @@ c        INCLUDE 'CONST3.EXT'    !  physical and mathematical constants
         INTEGER         SECSDIFF
         LOGICAL         SETENVVAR
         INTEGER         WKDAY
+        INTEGER         STR2INT 
         
         EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FIND1
      &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
      &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, ISDSTIME,
-     &               FIND1FIRST
+     &               FIND1FIRST, STR2INT, BLKORCMT
         
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
         INTEGER, PARAMETER :: MXVAR = 20
 
 C...........   LOCAL VARIABLES and their descriptions:
-        
+        CHARACTER(20)  SEGMENT( 20 )          ! parsed input line
+ 
 C...........   Gridded meteorology data (dim: NGRID)
         REAL   , ALLOCATABLE :: TA( : )   !  one layer of temperature
         REAL   , ALLOCATABLE :: QV( : )   !  water vapor mixing ratio
@@ -424,7 +427,15 @@ C.........  Get the number of lines in the surrogate description file desription
             NLINES = GETFLINE( GDEV, 'Surrogate file' )
             DO J = 1, NLINES
                 READ(  GDEV,'(A)', END=999, IOSTAT=IOS ) LINE
-                WRITE( ODEV,'(A)' ) TRIM( LINE )
+                IF( LINE( 1:5 ) =='#GRID' ) THEN
+                    WRITE( ODEV,'(A)' ) TRIM( LINE )
+                ELSE 
+                    IF( BLKORCMT( LINE ) ) CYCLE
+                    CALL PARSLINE( LINE, 20, SEGMENT )
+                    IF( SRGIDS( I ) == STR2INT( SEGMENT( 1 ) ) ) THEN
+                        WRITE( ODEV,'(A)' ) TRIM( LINE )
+                    END IF
+                END IF
 999         END DO
 
             CLOSE( GDEV )
