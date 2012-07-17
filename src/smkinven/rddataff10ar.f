@@ -83,6 +83,7 @@ C...........   Other local variables
         REAL         :: AVEINV   !  annual total estimate from monthly total VMT
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
+        LOGICAL, SAVE:: MISSFLAG = .TRUE.  ! true: first time missing value is found 
         LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
  
         CHARACTER(25)      SEGMENT( NSEG ) ! segments of line
@@ -161,7 +162,8 @@ C.........  Compute annual total based on monthly total
                 ELSE
                     MESG = 'WARNING: Monthly inventory is '//
      &                   'missing: Annual inventory will be used'
-                    CALL M3MESG( MESG )
+                    IF( MISSFLAG ) CALL M3MESG( MESG )
+                    MISSFLAG = .FALSE.
                 END IF
 
             ELSE 
