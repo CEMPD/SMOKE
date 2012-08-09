@@ -62,11 +62,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER       FIND1
         INTEGER       FINDC
         INTEGER       STR2INT
+        INTEGER       ENVINT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
         
         EXTERNAL BLKORCMT, CHKINT, CHKREAL, FIND1, GETFLINE, 
-     &           STR2INT, STR2REAL, CRLF, INDEX1
+     &           STR2INT, STR2REAL, CRLF, INDEX1, ENVINT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: CFDEV             ! CFPRO file unit no.
@@ -87,11 +88,14 @@ C...........   Other local variables
         INTEGER         POLIDX      ! current POL index
         INTEGER         SCCIDX      ! current POL index
         INTEGER         NLINES      ! number of lines
-C       CHARACTER(7)        STR         ! temp FIPS code
-        INTEGER             CNTY        ! current FIPS code
-        INTEGER             MON         ! current Month
+        INTEGER         CNTY        ! current FIPS code
+        INTEGER         MON         ! current Month
+        INTEGER         MXWARN      !  maximum number of warnings
+        INTEGER      :: NWARN = 0   !  current number of warnings
+
         
         REAL            CFVAL       ! control factor value
+        REAL            OLDVAL      ! duplicate control factor value
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
 
@@ -112,6 +116,9 @@ C       CHARACTER(7)        STR         ! temp FIPS code
 C***********************************************************************
 C   begin body of subroutine RDCFPRO
 
+C.........  Get maximum number of warnings
+        MXWARN = ENVINT( WARNSET, ' ', 100, IOS );
+
 C.........  Allocate storage based on number of FIPs and SCCs in inventory
         ALLOCATE( CFPRO( NINVIFIP, NINVSCC, NIPPA, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFPRO', PROGNAME )
@@ -122,6 +129,10 @@ C.........  Get the number of lines in the file
 
 C.........  Read through file and store hourly data
         DO I = 1, NLINES
+            NFIPS = 0
+            NSCCS = 0
+            NPOLS = 0
+            NMONS = 0
         
             READ( CFDEV, 93000, END=999, IOSTAT=IOS ) LINE
             
@@ -143,20 +154,20 @@ C.............  Parse line into fields
 
 C.............  Convert FIP to integer
             K = 0
-            IF( SEGMENT( 1 ) == ' ' ) THEN 
+            IF( STR2INT( SEGMENT( 1 ) == 0  ) THEN 
                 NFIPS = NINVIFIP
                 DO J = 1, NINVIFIP
                     NLFIPS(J) = J
                 END DO
             ELSE IF ( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'ERROR: Bad FIPS code ', SEGMENT( 1 ) //
-     &            'at line', IREC, 'of control factor file.'
+                WRITE( MESG, 94020 ) 'ERROR: Bad FIPS code ', TRIM(SEGMENT( 1 )) //
+     &            ' at line ', IREC, ' of control factor file.'
                 CALL M3MESG( MESG )
                 CYCLE
             ELSE         ! FIPS is integer value 
                 L2 = LEN_TRIM(SEGMENT( 1 ))
-                CNTY = STR2INT( ADJUSTR( SEGMENT( 1 ) ) )
+                CNTY = STR2INT( SEGMENT( 1 ) )
                 L1 = FIND1( CNTY, NINVIFIP, INVIFIP )
                 IF( L1 > 0 ) THEN 
                     NFIPS = 1
@@ -164,7 +175,6 @@ C.............  Convert FIP to integer
                 ELSE     ! FIPS is country/state  
                     CNTY = CNTY/1000
                     DO J =1, NINVIFIP 
-C                       WRITE( STR, '(I7)' ) INVIFIP(J)
                         IF ( CNTY == INVIFIP(J)/1000 ) THEN
                             K = K+1
                             NLFIPS(K) = J
@@ -175,17 +185,12 @@ C                       WRITE( STR, '(I7)' ) INVIFIP(J)
             END IF
 
             IF( NFIPS == 0 ) THEN
-                WRITE( MESG, 94010 ) 'NOTE: Skipping line', 
-     &            IREC, 'of control factor file because FIPS code', 
-     &            CNTY, 'is not in the inventory.'
-                CALL M3MESG( MESG )
+                WRITE( MESG, 94010 ) 'WARNING: Skipping line', 
+     &            IREC, ' of control factor file because FIPS code', 
+     &            TRIM(SEGMENT( 1 )), ' is not in the inventory.'
+                CALL M3WARN(PROGNAME, 0, 0, MESG )
                 CYCLE
             END IF
-
-C.............  Find county in inventory list
-            Print*, "seg 4 ", SEGMENT( 4 )," end"
-            Print*, "seg 5 ", SEGMENT( 5 )," end"
-            Print*, "Line", LINE," end"
 
 C.............  Find SCC in inventory list
             K = 0 
@@ -198,10 +203,10 @@ C.............  Find SCC in inventory list
                 SCC = ADJUSTL( SEGMENT( 2 ) )
                 SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
                 IF( SCCIDX .LE. 0 ) THEN
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
-     &                "line ", IREC, 'of control factor file because SCC '//
-     &                 'is not in the inventory.'
-                    CALL M3MESG( MESG )
+                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+     &                "line ", IREC, ' of control factor file because SCC ', 
+     &                 SCC, ' is not in the inventory.'
+                    CALL M3WARN(PROGNAME, 0, 0, MESG )
                     CYCLE
                 END IF
                 NSCCS =1
@@ -226,8 +231,14 @@ C.............  Check pollutant name and mode
                     END IF
                 END DO
                 NPOLS = K
+                IF (  NPOLS .EQ. 0 ) THEN 
+                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+     &                "line ", IREC, ' of control factor file because ',
+     &                TRIM(MODNAME), ' is not in the mode list.'
+                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+                    CYCLE
+                END IF
             ELSE IF( SEGMENT( 4 ) .EQ. ' ' ) THEN
-C               L2 = LEN_TRIM(SEGMENT( 3 ))
                 DO J = 1, NIPPA
                     L1 = INDEX(EANAM(J), ETJOIN)
                     IF ( POLNAME == EANAM(J)(L1+2:) ) THEN
@@ -236,6 +247,13 @@ C               L2 = LEN_TRIM(SEGMENT( 3 ))
                     END IF
                 END DO
                 NPOLS = K
+                IF (  NPOLS .EQ. 0 ) THEN 
+                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+     &                "line ", IREC, ' of control factor file because ',
+     &                TRIM(POLNAME), ' is not in the pollutant list.'
+                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+                    CYCLE
+                END IF
             ELSE 
                 L1 =  LEN_TRIM(POLNAME)
                 L2 =  LEN_TRIM(MODNAME)
@@ -245,36 +263,35 @@ C               L2 = LEN_TRIM(SEGMENT( 3 ))
                     NPOLS = 1
                     NLPOLS(1) = POLIDX
                 END IF
+                IF (  NPOLS .EQ. 0 ) THEN 
+                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+     &                "line ", IREC, ' of control factor file because ',
+     &                EPOLNAM, ' is not in the pollutant list.'
+                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+                    CYCLE
+                END IF
+            END IF
 
-            END IF
- 
-            IF (  NPOLS == 0 ) THEN 
-                WRITE( MESG, 94010 ) 'NOTE:  Skipping ' //
-     &            "line ", IREC, 'of control factor file because ',
-     &            EPOLNAM, 'is not in pollutant list.'
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
 
 C.............  Check month values
             NMONS = 0
-            IF( SEGMENT( 5 ) == ' ' ) THEN 
+            IF( STR2INT( SEGMENT( 5 ) ) ) THEN 
                 NMONS = 12
                 DO J = 1, NMONS
                     NLMONS(J) = J
                 END DO
             ELSE IF ( .NOT. CHKINT( SEGMENT( 6 ) ) ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'ERROR: Bad month code ' //
-     &            'at line', IREC, 'of control factor file.'
+                WRITE( MESG, 94020 ) 'ERROR: Bad month code ', TRIM(SEGMENT( 5 ))//
+     &            ' at line', IREC, ' of control factor file.'
                 CALL M3MESG( MESG )
                 CYCLE
             ELSE         ! month is integer value 
-                MON = STR2INT( ADJUSTR( SEGMENT( 5 ) ) )
+                MON = STR2INT( SEGMENT( 5 ) )
                 IF( MON < 0  .OR. MON > 12 ) THEN 
                     EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'NOTE: Bad month code ' //
-     &                'at line', IREC, 'of control factor file.'
+                    WRITE( MESG, 94020 ) 'ERROR: Bad month code ', TRIM(SEGMENT( 5 ))//
+     &                ' at line', IREC, ' of control factor file.'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -291,12 +308,24 @@ C.............  check and get up control factor values
                 CYCLE
             END IF
  
-            CFVAL = STR2REAL( ADJUSTR( SEGMENT( 6 ) ) )                
+            CFVAL = STR2REAL( SEGMENT( 6 ) )                
             DO L = 1, NFIPS
             DO J = 1, NSCCS
             DO K = 1, NPOLS
             DO M = 1, NMONS
-                CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = CFVAL 
+                OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
+                IF ( OLDVAL < 1.0 ) THEN
+                IF( NWARN < MXWARN ) THEN
+                    WRITE( MESG, 94050 ) 'WARNING: Duplicate entry: Overwriting '//
+     &                  'factor from ', OLDVAL, ' to ', CFVAL,
+     &                  CRLF() // BLANK10 // ' FIPS:', INVIFIP(NLFIPS(L)), 
+     &                  ', SCC: ', INVSCC(NLSCCS(J)), ', POLL: ', EANAM(NLPOLS(K)),
+     &                  ', MONTH: ', NLMONS(M)
+                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+                    NWARN = NWARN + 1
+               END IF
+               END IF
+               CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = CFVAL
             END DO
             END DO
             END DO
@@ -329,7 +358,9 @@ C...........   Formatted file I/O formats............ 93xxx
       
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
+94010   FORMAT( 10( A, I8, 1X, A, A,: ) )
+94020   FORMAT( 10( 2A, 1X, I8, A ,:) )
+94050   FORMAT(  A,:,F5.2,:,A,:,F5.2,:,A,:,I6,5A,A,A, I2 )
         
         END SUBROUTINE RDCFPRO
 
