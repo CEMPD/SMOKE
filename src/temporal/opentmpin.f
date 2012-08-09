@@ -171,6 +171,8 @@ C           results are stored in module MODINFO.
         CALL GETSINFO( ENAME )
 
 C.........  Reset activity to pollutant to create hourly VMT without running EMISFAC
+C           To support MOVES-SMOKE integratoin tool approach.
+C           Only no-SPEED activity data (i.e. VMT) will be treated like pollutant for later Temporal program
         IF( NIACT > 0 ) THEN
 
 C.............  Allocate memory for and store pollutant names
