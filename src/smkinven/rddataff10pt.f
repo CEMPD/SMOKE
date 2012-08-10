@@ -190,25 +190,25 @@ C           the various data fields
 C.........  Compute annual total based on monthly total
         IF( INV_MON > 0 ) THEN
 
-            READDATA( 1,NEM ) = '0.0'
-            READDATA( 1,NDY ) = SEGMENT( 52 + INV_MON )
+            AVEINV = 0.0
+            MISSFLAG = .FALSE.
+            DO I = 1, 12
+               AVEINV = AVEINV + STR2REAL( SEGMENT( 52+I ) )
+            END DO
 
-            IF( READDATA( 1,NDY )=='' .OR. READDATA( 1,NDY )=='-9' ) THEN
+            IF( AVEINV <= 0.0 ) MISSFLAG = .TRUE.
 
-                READDATA( 1,NEM ) = SEGMENT( 14 )   ! reset original ann total back 
-                
-                IF( READDATA( 1,NEM )=='' .OR. READDATA( 1,NEM )=='-9' ) THEN
-                    MESG = 'ERROR: Missing '//MON_NAME( INV_MON )
+            IF( MISSFLAG ) THEN
+
+                IF( STR2REAL( READDATA( 1,NEM ) ) <= 0.0 ) THEN
+                    MESG = 'ERROR: Missing both '//MON_NAME( INV_MON )
      &                  // 'monthly and annual invenotries'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                    MESG = 'WARNING: Monthly inventory is '//
-     &                   'missing: Annual inventory will be used'
-                    IF( MISSFLAG ) CALL M3MESG( MESG )
-                    MISSFLAG = .FALSE.
                 END IF
 
             ELSE 
+                READDATA( 1,NEM ) = '0.0'
+                READDATA( 1,NDY ) = SEGMENT( 52 + INV_MON )
 
                 MDAYS = MON_DAYS( INV_MON )    ! day of months
 

@@ -58,7 +58,7 @@ C...........   This module is the inventory arrays
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NEM, NDY, NEF, NCE, NRE, NRP, 
-     &                     NC1, NC2, NPPOL, NSRC, NPACT
+     &                     NC1, NC2, NPPOL, NSRC, NPACT, INV_MON
         
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: FILFMT, LSTSTR, MXIDAT, INVDCNV, INVDNAM,
@@ -1141,20 +1141,24 @@ C.................  Convert data to real numbers and check for missing values
                     EANN = BADVAL3
                 END IF
 
-                IF( .NOT. ACTFLAG ) THEN
-                    EDAY = STR2REAL( READDATA( I,NDY ) )
+                EDAY = STR2REAL( READDATA( I,NDY ) )
 
-                    IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
-                        IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
-                            WRITE( MESG,94010 ) 'WARNING: ' //
-     &                          'Missing average day emissions for ' //
+                IF( EDAY < AMISS3 .OR. EDAY == -9 ) THEN
+                    IF( NWARN < MXWARN .AND. .NOT. FIREFLAG ) THEN
+                        IF( ACTFLAG ) THEN
+                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
+     &                          'average day inventory data for ' //
      &                          TRIM( POLNAM ) // ' at line', IREC
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
+                        ELSE
+                            WRITE( MESG,94010 ) 'WARNING: Missing ' //
+     &                          'average day emissions for ' //
+     &                          TRIM( POLNAM ) // ' at line', IREC
                         END IF
-                        
-                        EDAY = BADVAL3
+                        CALL M3MESG( MESG )
+                        NWARN = NWARN + 1
                     END IF
+                     
+                    EDAY = BADVAL3
                 END IF
 
 C.................  For area and point, convert control percentages
@@ -1163,7 +1167,7 @@ C.................  For area and point, convert control percentages
 
 C.....................  MRH removed emission factors warning on 6/6/07 because
 C                       SMOKE doesn't need emission factor, so why create warning?         
-                    IF( EMFC < AMISS3 .OR. EMFC == -9 ) THEN                     
+                    IF( EMFC < AMISS3 .OR. EMFC == -9 ) THEN 
                         EMFC = BADVAL3
                     END IF
                 
@@ -1280,6 +1284,14 @@ C                   zero or negative
      &                 EANN >  0. .AND. 
      &                 EDAY <  0.       ) THEN
                      EDAY = EANN * YEAR2DAY
+                END IF
+
+C.................  Treat monthly activity (VMT,SPEED) data in FF10_ACTIVITY format
+C                   as averday inv data for a proper temporal allocatoin
+C                   when SMKINVEN_MONTH > 0
+                IF(  CATEGORY == 'MOBILE' .AND. CURFMT == FF10FMT .AND.
+     &               ACTFLAG .AND. INV_MON > 0 ) THEN
+                        TPF = WKSET       ! WKSET = MTPRFAC (=2)
                 END IF
 
 C.................  If current format is ORL, check if current CAS number
@@ -1400,15 +1412,13 @@ C                               pollutants are processed
                               POLVLA( SP,NEM ) = POLANN
                             END IF
                             
-                            IF( .NOT. ACTFLAG ) THEN
-                                IF( EDAY > 0. ) THEN
-                                    POLVLA( SP,NDY ) = EDAY * POLFAC
-                                ELSE
-                                    POLVLA( SP,NDY ) = EDAY
-                                END IF
-
-                                IF( FIREFLAG ) POLVLA( SP,NDY )=BADVAL3
+                            IF( EDAY > 0. ) THEN
+                                POLVLA( SP,NDY ) = EDAY * POLFAC
+                            ELSE
+                                POLVLA( SP,NDY ) = EDAY
                             END IF
+
+                            IF( FIREFLAG ) POLVLA( SP,NDY )=BADVAL3
 
                             IF( CATEGORY == 'AREA' .OR. 
      &                          CATEGORY == 'POINT'    ) THEN
