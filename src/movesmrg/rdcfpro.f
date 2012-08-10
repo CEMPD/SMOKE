@@ -154,7 +154,7 @@ C.............  Parse line into fields
 
 C.............  Convert FIP to integer
             K = 0
-            IF( STR2INT( SEGMENT( 1 ) == 0  ) THEN 
+            IF( STR2INT( SEGMENT( 1 ) ) == 0  ) THEN 
                 NFIPS = NINVIFIP
                 DO J = 1, NINVIFIP
                     NLFIPS(J) = J
