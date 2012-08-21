@@ -269,6 +269,7 @@ C...........   Other local variables:
         LOGICAL :: DAYAVER  = .FALSE.  !  true: weekly averaging
         LOGICAL :: HOURAVER = .FALSE.  !  true: hourly averaging
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
+        LOGICAL :: ZFLAG    = .FALSE.  !  true: use AZ's new equations
         LOGICAL :: FILEOPEN = .FALSE.  !  true: met file is open
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
@@ -429,6 +430,9 @@ C.........  Determine optional linear equation for RWC profile calculation
 
             MESG = 'Use county-specific min temperature for RWC'
             CFLAG = ENVYN( 'RWC_COUNTY_TEMP_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Use the alternative RWC equation'
+            ZFLAG = ENVYN( 'RWC_ALT_EQ_YN', MESG, .TRUE., IOS )
 
         END IF
 
@@ -1413,7 +1417,34 @@ C                       Note: Even though this is labeled as an hourly
 C                             array, it is only calculated once per day.
 C                             Values for the other hours are 0.
 
-                        HRLSRC( S,T ) = CONST - ( SLOPE *  MINTEMP( S ) )
+C 1. original equation with cap T:
+C    if Td <= 50: use equation 42.12 - 0.79*Td
+C    if Td > Tt: 0
+C    if 50 < Td < Tt: use equation 42.12 - 0.79*50
+
+C    - adv:  preserves shape of profile below 50 degrees
+C 	   still based on original regression equation
+
+C    - disadv:  puts only a very small % of profile in Td > 50
+
+C 2. new equation
+C    if Td >= Tt: 0
+C    if Td < Tt: use equation 0.79*(Tt -Td)
+
+C    - adv:  works for any Tt w/o an additional if clause
+C 	   places significant % of profile in Td > 50
+
+C    - disadv: departs from the origial regression equation
+C 	     maybe overly flattens the profile for Tt > 50
+
+                        IF( ZFLAG ) THEN
+                            HRLSRC( S,T ) = SLOPE * ( RWC_TEMP(S) - MINTEMP(S) )
+                        ELSE
+                            IF( MINTEMP(S) > 50.0 .AND. MINTEMP(S) <= RWC_TEMP(S) ) THEN
+                                MINTEMP( S ) = 50.0
+                            END IF
+                            HRLSRC( S,T ) = CONST - ( SLOPE *  MINTEMP( S ) )
+                        END IF
                         
                         IF( MINTEMP( S ) > RWC_TEMP( S ) ) THEN
                             HRLSRC( S,T ) = 0.0   ! set it to zero when mintemp > 50F
