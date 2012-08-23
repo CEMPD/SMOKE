@@ -43,7 +43,9 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, NCHARS, EANAM
+        USE MODINFO, ONLY: NSRC, NCHARS, EANAM, NCOMP, VAR_FORMULA,
+     &                     CHKPLUS, CHKMINUS, 
+     &                     VIN_A, VIN_B, VNAME
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: PDTOTL, NPDPT, IDXSRC, SPDIDA, CODEA,
@@ -93,9 +95,15 @@ C...........   Local allocatable arrays
 
 C...........   Local arrays
         INTEGER, ALLOCATABLE, SAVE :: SPIDX2( : )
+        INTEGER, ALLOCATABLE       :: SIDX( : )      ! start index of a source
+        INTEGER, ALLOCATABLE       :: EIDX( : )      ! end index of a source
+
+C...........   LOCAL PARAMETERS
+        CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
 
 C...........   Other local variables
         INTEGER          I, J, K, L2, LN, LS, N, S, V, V2
+        INTEGER          II, JJ, VV, F, CK
 
         INTEGER          IOS                  ! i/o status
         INTEGER, SAVE :: NWARN = 0            ! warning count
@@ -116,10 +124,29 @@ C...........   Other local variables
         CHARACTER(CASLEN3) IDNAM          ! tmp Inventory Data Name
         CHARACTER(IOVLEN3) SMKNAM         ! tmp SMOKE name
 
+        INTEGER       IDXA      ! position of first variable in source index
+        INTEGER       IDXB      ! position of second in iable in source index
+        INTEGER       IDXVNAM   ! position of calculated variable in source index
+        INTEGER       WARNCNT   ! number of times warnings
+ 
         CHARACTER(16) :: PROGNAME = 'WRPDEMIS' !  program name
 
 C***********************************************************************
 C   begin body of program WRPDEMIS
+
+C.........  If there is one or more computed output variable, get set up
+C.........Allocate memory for source index 
+
+        IF( NCOMP .GT. 0 ) THEN
+            IF ( ALLOCATED( SIDX ) ) DEALLOCATE (SIDX)
+            IF ( ALLOCATED( EIDX ) ) DEALLOCATE (EIDX)
+            ALLOCATE( SIDX( NPDSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'SIDX', PROGNAME )
+            ALLOCATE( EIDX( NPDSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EIDX', PROGNAME )
+            SIDX = 0 
+            EIDX = 0 
+        END IF
 
 C.........  Reset FIRSTIME flag for either day-spec or hour-spec
         IF( .NOT. FIRSTIME .AND. .NOT. DAYFLAG ) FIRSTIME = .TRUE.
@@ -185,6 +212,7 @@ C           Want to prevent false duplicates caused by Inventory Table renaming
 C           multiple Inventory Data Code (i.e., CAS numbers) to the same
 C           SMOKE name.  These are not really duplicates and should be
 C           ignored by the warning messages below.
+
         CALL SORTI2( NPDPT( TIDX ), IDXSRC( 1,TIDX ), 
      &               SPDIDA( 1,TIDX ), CIDXA( 1,TIDX ) )
 
@@ -225,12 +253,99 @@ C.............  Initialize duplicates flag
             DUPFLAG = .FALSE.
 
 C.............  If current source is not equal to previous source
-            IF( S .NE. LS ) THEN
-                K = K + 1
-                PDIDX( K ) = S
-                LS         = S
+            IF( S .NE. LS  .OR. I .EQ.  NPDPT( TIDX )) THEN
+                IF( S .NE. LS ) THEN
+                    K = K + 1
+                    PDIDX( K ) = S
+                    LS         = S
+                END IF 
 
-C.............  If source is the same, look for duplicate data variables
+C...............Calculate formula if needed  
+C...............Get the location of start and end index 
+                IF ( NCOMP > 0 ) THEN
+                    IF ( I .EQ. 1 ) THEN 
+                        SIDX( K ) = I
+                    ELSE IF ( I .GT. 1 .AND. I .LT. NPDPT( TIDX )) THEN 
+                        SIDX( K ) = I
+                        EIDX( K-1 ) = I - 1
+                        CK = K-1
+C...............Only specify the end index for last source 
+                    ELSE IF ( I .EQ.  NPDPT( TIDX )) THEN
+                        CK = K
+                        EIDX( K ) = I
+                    END IF 
+
+                    IF ( I .GT. 1 ) THEN 
+                      DO F = 1, NCOMP
+                        IDXA = 0
+                        IDXB = 0
+                        IDXVNAM = 0
+                        DO II = SIDX(CK), EIDX(CK)    
+                            JJ = IDXSRC( II,TIDX )
+                            VV = CODEA ( JJ,TIDX )
+                            IF ( EANAM(VV) .EQ. VIN_A(F) ) THEN
+                                IDXA = JJ
+                            ELSE IF ( EANAM(VV) .EQ. VIN_B(F) ) THEN
+                                IDXB = JJ
+                            END IF
+                            IDXVNAM = NVASP - NCOMP + F 
+                        END DO    ! end of variable search loop
+
+C...............Calculate formula variables
+                        IF ( IDXA .GT. 0 .AND. IDXB .GT. 0 
+     &                       .AND. IDXVNAM .GT. 0 ) THEN
+                            IF ( CHKPLUS(F) )  THEN 
+                                 IF ( PDDATA( CK,IDXVNAM ) .GT. 0 ) THEN
+                                 PDDATA( CK,IDXVNAM ) =  PDDATA( CK,IDXVNAM ) +
+     &                              EMISVA( IDXA, TIDX ) + EMISVA( IDXB, TIDX ) 
+                                 ELSE
+                                     PDDATA( CK,IDXVNAM ) =
+     &                                  EMISVA( IDXA, TIDX ) + EMISVA( IDXB, TIDX ) 
+                                 END IF
+                            END IF
+                            IF ( CHKMINUS(F) )  THEN 
+                                IF ( PDDATA( CK,IDXVNAM ) .GT. 0 ) THEN
+                                    PDDATA( CK,IDXVNAM ) = PDDATA( CK,IDXVNAM )+
+     &                                  EMISVA( IDXA, TIDX ) - EMISVA( IDXB, TIDX ) 
+                                ELSE
+                                    PDDATA( CK,IDXVNAM ) =
+     &                                  EMISVA( IDXA, TIDX ) - EMISVA( IDXB, TIDX ) 
+                                END IF
+                            END IF
+
+C..........................  Check for negative values for daily value
+                            IF( PDDATA( CK,IDXVNAM ) .LT. 0 )  THEN
+                                WARNCNT = WARNCNT + 1
+                                PDDATA( CK,IDXVNAM ) = 0.0
+
+                                IF ( WARNCNT .LE. MXWARN ) THEN
+                                    CALL FMTCSRC( CSOURC( S ), 7, BUFFER, L2 )
+                                    WRITE( MESG,94020 ) 'WARNING: '//
+     &                               'Resetting negative value of "'//
+     &                               'average-day "'//TRIM(VNAME(F))// 
+     &                               '" from',PDDATA( CK,IDXVNAM ),'to 0. for '//
+     &                              'source:'//CRLF()//BLANK10//BUFFER(1:L2)
+                                    MXWARN = MXWARN + 1
+                                END IF 
+                                CALL M3MESG( MESG )
+                            END IF 
+
+                        ELSE IF ( WARNCNT .LE. MXWARN ) THEN
+                            CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
+                            EFLAG = .TRUE.
+                            MESG = 'ERROR: no sources for calculating ' //
+     &                         'variable "'//TRIM(VNAME(F))//'" J '//
+     &                          CRLF() // BLANK10 // BUFFER( 1:L2 )
+                            CALL M3MSG2( MESG )
+                            WARNCNT = WARNCNT + 1
+                            CYCLE
+                        END IF
+                       
+                      END DO    ! end of formula loop
+                    END IF
+                END IF   ! end of formula calculation
+
+C............. If source is the same, look for duplicate data variables
             ELSE IF ( N .EQ. LN ) THEN
                 DUPFLAG = .TRUE.      !  This iteration has a duplicate
             END IF
@@ -397,6 +512,8 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
+94020   FORMAT( 10( A, :, E10.2, :, 1X ) )
+
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 

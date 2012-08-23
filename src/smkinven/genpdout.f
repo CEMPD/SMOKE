@@ -49,7 +49,8 @@ C.........  This module contains the lists of unique inventory information
      &                      IORSMTCH, SCCDESC, INVODSC, INVORFP,FIREFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NIPPA, NCHARS, SC_BEGP, SC_ENDP, NSRC
+        USE MODINFO, ONLY: NIPPA, NCHARS, SC_BEGP, SC_ENDP, NSRC,
+     &                     NCOMP, VAR_FORMULA
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT, NPDPT, NPDPTP, CODEA, CIDXA, IDXSRC,
@@ -87,7 +88,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: INSTEP    ! expected data time step HHMMSS
         INTEGER     , INTENT (IN) :: OUTSTEP   ! output time step HHMMSS
         INTEGER     , INTENT (IN) :: NVAR      ! no. period-specific variables
-        INTEGER     , INTENT (IN) :: NVSP      ! no. period-spec special vars
+        INTEGER     , INTENT (IN OUT) :: NVSP  ! no. period-spec special vars
         INTEGER     , INTENT (IN) :: MXPDSRC   ! maximum period-specific sources
         CHARACTER(*), INTENT (IN) :: TYPNAM    ! 'day' or 'hour'
         CHARACTER(*), INTENT (IN) :: FNAME     ! logical file name
@@ -139,7 +140,8 @@ C...........   Other local variables
         CHARACTER(ORSLEN3) CORS          ! tmp ORIS ID
         CHARACTER(DSCLEN3) PDSC          ! tmp plant DSC
         CHARACTER(DSCLEN3) ODSC          ! tmp ORIS plant DSC
-
+         
+        CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
         CHARACTER(16) :: PROGNAME = 'GENPDOUT' !  program name
 
 C***********************************************************************
@@ -163,6 +165,11 @@ C               hourly data
                 CALL M3MSG2( MESG )
                 PFLAG = .FALSE.
 
+            END IF
+
+            CALL ENVSTR( FORMEVNM, MESG, ' ', VAR_FORMULA, IOS )
+            IF( LEN_TRIM( VAR_FORMULA ) .GT. 0 ) THEN
+                CALL FORMLIST
             END IF
 
             FIRSTIME = .FALSE.
@@ -275,20 +282,22 @@ C           not exceed the maximum number of sources over all hours
 
         END IF
 
-C.........  Allocate memory for daily or hourly output arrays.  Allocate 
-C           memory as one block which will be separated into an integer section
-C           and a real section when WRPDEMIS is called.  This permits
-C           writing with a single WRITE3 statement.
-        ALLOCATE( PDEMOUT( NPDSRC,NVSP+1 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PDEMOUT', PROGNAME )
-        ALLOCATE( PDTOTL( NPDSRC,NVSP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'PDTOTL', PROGNAME )
-
 C.........  Open day-specific or hour-specific output file, depending on value
 C           of TYPNAM
         CALL OPENPDOUT( NPDSRC, NVAR, TZONE, SDATE, STIME, OUTSTEP, 
      &                  INVFMT, TYPNAM, OFLAG, EAIDX, SPSTAT, 
      &                  ONAME, RDEV )
+
+C.........  Allocate memory for daily or hourly output arrays.  Allocate 
+C           memory as one block which will be separated into an integer section
+C           and a real section when WRPDEMIS is called.  This permits
+C           writing with a single WRITE3 statement.
+        IF ( NCOMP > 0 )  NVSP = NVSP + NCOMP
+        ALLOCATE( PDEMOUT( NPDSRC,NVSP+1 ), STAT=IOS )
+
+        CALL CHECKMEM( IOS, 'PDEMOUT', PROGNAME )
+        ALLOCATE( PDTOTL( NPDSRC,NVSP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'PDTOTL', PROGNAME )
 
 C.........  Loop through time steps and output emissions and other data
 

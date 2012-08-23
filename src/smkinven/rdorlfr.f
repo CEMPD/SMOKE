@@ -233,30 +233,6 @@ C.........  First time routine called
 C.............  Get value of these controls from the environment
             IFLAG = ENVYN ( 'IMPORT_AVEINV_YN', ' ', .TRUE., IOS )
 
-C.............  Figure out how many variables there are based on the
-C               number of commas found in the string.
-            IF( LEN_TRIM( VAR_FORMULA ) > 0 ) THEN
-
-C.................  Call Smkinven formula subroutine
-                CALL FORMLIST
-
-C.................  Only one formula is allowed
-                IF ( NCOMP > 1 ) THEN
-                    WRITE( MESG,94010 ) 'Only one formula (not the',
-     &                  NCOMP, 'given) are allowed when processing '//
-     &                 'day-specific fires.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C.................  Extract formula variable names
-                FVAR = VNAME( 1 )
-                VAR1 = VIN_A( 1 )
-                VAR2 = VIN_B( 1 )
-
-                FFLAG = .TRUE.
-
-            END IF
-            
 C.............  Allocate memory for storing counting number of sources per day/pollutant
             ALLOCATE( NSRCPDDAT( 366,NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'NSRCPDDAT', PROGNAME )
