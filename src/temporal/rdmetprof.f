@@ -118,12 +118,11 @@ C.............  Determine which hourly profiles to apply
            CALL ENVSTR( 'HOURLY_TPROF_BASE', MESG, ' ',HOUR_TPROF, IOS )
            CALL UPCASE( HOUR_TPROF )
 
-            IF( .NOT. ( HOUR_TPROF == 'DAY' .OR. HOUR_TPROF == 'MONTH' .OR. 
-     &          HOUR_TPROF == 'YEAR' ) ) THEN
+            IF( .NOT. ( HOUR_TPROF=='MONTH' .OR. HOUR_TPROF=='YEAR' ) ) THEN
                 MESG = 'ERROR: MUST define the basis of hourly profiles '//
      &                 'for a correct hourly conversion.'
      &                 //CRLF()//BLANK10//':: Define HOURLY_TPROF_BASE to '//
-     &                 '[YEAR|MONTH|DAY]'
+     &                 '[YEAR or MONTH]'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
