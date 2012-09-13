@@ -160,7 +160,6 @@ C                   day emissions by multiplying it by 365.  Have to undo that
 C                   here.
 C.................  Adjust for week-normal data assuming whole week normalizer
                 ELSE IF ( MOD( TPF( S ), WTPRFAC ) .EQ. 0 ) THEN
-
 C.....................  update TMAT with met-based profiles (METFACS)
                     IF( WDEX( S,V ) == 99999 .OR.
      &                  DDEX( S,V ) == 99999 ) THEN
@@ -282,8 +281,16 @@ C.................  Renormalize METFACS using days of month
             CASE( 'DAILY' )
 
 C.................  For Met-based daily profiles, renormalization is not needed. 
-                METFAC = METFACS( NP,MON,MDAY )
+C  CRITICAL::       Average day inventory (TPF=2[WTPRFAC]) is not applicable in this case.
+C  NOTE::           it requires Gentpro updates to compute day of month temporal profiles 
+C                   to process monthly inventories through Temporal
+                IF( .NOT. IFLAG ) THEN
+                    MESG = 'ERROR: Can not apply day-of-year temporal profiles from ' //
+     &                     'Genptro program to monthly inventory: NOT SUPPORTED YET'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
 
+                METFAC = METFACS( NP,MON,MDAY )
                 DO H = 1, 24
 
                     MON = MONTH( H, ZONES( S ) )
@@ -321,46 +328,47 @@ C.................  Read profileIDs and hourly factors
 
                 NP = FIND1( IFIP( S ), NROWS3D, METPROF )
 
-                IF( HOUR_TPROF == 'DAY'   ) TVARNAME = 'DAYTOT'
-                IF( HOUR_TPROF == 'MONTH' ) TVARNAME = 'MONTOT'
-                IF( HOUR_TPROF == 'YEAR'  ) TVARNAME = 'ANNTOT'
-
 C.....................  Convert ann/avgday NH3 inventory to hourly NH3 before multiplying
 C                       adjustment factor computed by Gentpro
                 DO H = 1, 24
 
-                    IF( HOUR_TPROF == 'DAY' ) THEN
+C.....................  Update temporal profile IDs to met-based temp profile IDs
+C                       depending on whether inventory is monthly or annual
+C                       APPLY hour-of-year profiles to annual inventory
+C                       APPLY hour-of-month profiles to monthly inventory
 
-                        IF( IFLAG ) THEN   ! processing annual inventory for NH3`
+                    IF( IFLAG ) THEN  !  annual total inventory
+
+                        IF( HOUR_TPROF == 'YEAR' ) THEN
+                            FAC         = 1.0
+                            TVARNAME    = 'ANNTOT'
+                            MDEX( S,V ) = 99999
+                            WDEX( S,V ) = 99999
+
+                        ELSE      ! convert annual to monthly before apply hour-of-month profiles from Gentpro
                             MON = MONTH( H, ZONES( S ) )
-                            DAY = DAYOW( H, ZONES( S ) )
-                            FAC = MONFAC( MON,MDEX( S,V ) ) *
-     &                            WEKFAC( DAY,WDEX( S,V ) )     ! FAC = annual to hourly conversion factors
-
-                        ELSE    ! processing avgday inventory for NH3
-                            DAY = DAYOW( H, ZONES( S ) )
-                            FAC = YRFAC * WEKFAC( DAY,WDEX( S,V ) )  ! FAC = avgday to hourly conversion factors
-
+                            FAC = MONFAC_ORG( MON,MDEX( S,V ) )
+                            TVARNAME    = 'MONTOT'
+                            WDEX( S,V ) = 99999
+                           
                         END IF
 
-                    ELSE IF( HOUR_TPROF == 'MONTH' ) THEN
-
+                    ELSE              !  monthly average day inventory
+                        IF( HOUR_TPROF == 'YEAR' ) THEN
+                            MESG = 'ERROR: Can not apply day-of-year '//
+     &                          'temporal profiles from Genptro program to '//
+     &                          'monthly inventory: Change HOURLY_TPROF_BASE to MONTH'
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                        END IF
                         MON = MONTH( H, ZONES( S ) )
-                        FAC = MONFAC_ORG( MON,MDEX( S,V ) )
-
-C.........................  Update temporal profile IDs to met-based temp profile IDs
-                        WDEX( S,V ) = 99999
-
-                    ELSE IF( HOUR_TPROF == 'YEAR' ) THEN
-
-                        FAC = 1.0     ! Non-AGNH3 profile methods
-
-                        MDEX( S,V ) = 99999
+                        FAC = YRFAC * MON_DAYS( MON )
+                        TVARNAME    = 'MONTOT'
                         WDEX( S,V ) = 99999
 
                     END IF
+
                     IF( .NOT. READ3( PNAME, TVARNAME, 1, TDATE, TTIME,
-     &                        METFACS( :,1,1 ) ) ) THEN
+     &                        METFACS( :,1,1 ) ) ) THEN 
                          MESG = 'Could not read ' // TRIM(TVARNAME) //
      &                          'from ' // TRIM( PNAME )
                          CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
@@ -374,8 +382,8 @@ C.........................  Update temporal profile IDs to met-based temp profil
                         CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
                     END IF
 
-                    METFAC = METFACS( NP,1,1 ) / TOT
-                    TMAT( S,V,H ) = FAC * METFAC
+                    
+                    TMAT( S,V,H ) = FAC * METFACS( NP,1,1 ) / TOT
 
                     CALL NEXTIME( TDATE, TTIME, 10000 ) 
 
