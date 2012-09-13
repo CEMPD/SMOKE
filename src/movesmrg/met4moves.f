@@ -296,7 +296,7 @@ C.........  Open mobile county x-ref file to determine representative counties
   
 C.........  Obtain episode settings from the environment...
 C.........  Define averaging method.
-        CALL ENVSTR( 'AVERAGING_METHOD', MESG,'MONTHLY',AVG_TYPE, IOS )
+        CALL ENVSTR( 'AVERAGING_METHOD', MESG,'DAILY',AVG_TYPE, IOS )
 
         MESG ='Define averaging method for meteorology processing'
         CALL M3MSG2( MESG )
