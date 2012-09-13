@@ -1274,6 +1274,19 @@ C.....................  Fill annual inventory using average day inventory
 
 C.....................  Remove monthly factors for this source
                     TPF = WKSET
+
+                END IF
+
+C.................  Missing both annual/aveday inventories.
+                IF( EANN <= 0.0 .AND. EDAY <= 0.0 ) THEN
+                    IF( FWCOUNT < MXWARN ) THEN
+                       WRITE(MESG,94010) 'WARNING: Both annual and '//
+     &                    'average day emissions are missing' //
+     &                    CRLF()// BLANK10// 'for ' //TRIM( POLNAM ) //
+     &                    ' at line', IREC
+                       CALL M3MESG( MESG )
+                       FWCOUNT = FWCOUNT + 1
+                    END IF                    
                 END IF
 
 C.................  Calculate average day emissions from annual data if needed
@@ -1286,12 +1299,12 @@ C                   zero or negative
                      EDAY = EANN * YEAR2DAY
                 END IF
 
-C.................  Treat monthly activity (VMT,SPEED) data in FF10_ACTIVITY format
-C                   as averday inv data for a proper temporal allocatoin
-C                   when SMKINVEN_MONTH > 0
-                IF(  CATEGORY == 'MOBILE' .AND. CURFMT == FF10FMT .AND.
-     &               ACTFLAG .AND. INV_MON > 0 ) THEN
-                        TPF = WKSET       ! WKSET = MTPRFAC (=2)
+C.................  Treat FF10 monthly inventory as averday inventory by setting
+C                   TPF = WKSET (=2) when SMKINVEN_MONTH > 0
+                IF( CURFMT == FF10FMT .AND.
+     &              EANN <= 0.0 .AND. INV_MON > 0 ) THEN
+                    IF( FFLAG ) EANN = EDAY * DAY2YR    ! fill annual inv (aveday*365)
+                    TPF = WKSET        !   WKSET = MTPRFAC (=2)
                 END IF
 
 C.................  If current format is ORL, check if current CAS number

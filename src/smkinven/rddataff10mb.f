@@ -40,7 +40,9 @@ C***************************************************************************
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NEM, NDY, INV_MON
-        
+
+
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -48,12 +50,14 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
+        INTEGER         INDEX1 
         INTEGER         FINDC
         INTEGER         STR2INT
         REAL            YR2DAY, STR2REAL
         LOGICAL         CHKINT
 
-        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, CHKINT, YR2DAY
+        EXTERNAL    CRLF, FINDC, STR2INT, STR2REAL, CHKINT, YR2DAY,
+     &              INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
@@ -78,7 +82,8 @@ C...........   Other local variables
         INTEGER      :: MDAYS    !  days of modeling inventory month
         INTEGER         IOS      !  i/o status
         INTEGER, SAVE:: NPOA     !  number of pollutants in file
-        
+        INTEGER         POLCOD   !  pollutant code
+
         REAL         :: AVEINV   !  annual total estimate from monthly total VMT
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
@@ -140,53 +145,42 @@ C           the various data fields
         SRCTYP = ' '        ! source type code = blank (N/A for activity)
         EXTORL = ' '        ! extended orl column (N/A)
 
+        POLCOD = INDEX1( READPOL( 1 ), MXIDAT, INVDNAM )
+        IF( INVSTAT( POLCOD ) >= 0 ) THEN
+            MESG = 'ERROR: CAN NOT PROCESS pollutant :'//READPOL( 1 )
+     &           //CRLF()//BLANK10// 'ONLY Process activity invenotry' 
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+C.........   Monthly total activity data processing
         IF( INV_MON > 0 ) THEN
 
-C.............  Speed activity data needs treatment to avoid 
-C               any temporal allocation since the unit is miles/hr
-C               average-day is not allowed for SPEED activity data
-            IF( READPOL( 1 ) == 'SPEED' ) THEN
-
-                READDATA( 1,NEM ) = SEGMENT( 13 + INV_MON )
-                READDATA( 1,NDY ) = ''
-
-                IF( READDATA( 1,NEM )=='' .OR. READDATA( 1,NEM )=='-9'   ) THEN
-
-                    READDATA( 1,NEM ) = SEGMENT( 10 )   ! reset original ann total back 
-
-                    IF( READDATA( 1,NEM )=='' .OR. READDATA( 1,NEM )=='-9' ) THEN
-                        MESG = 'ERROR: Missing '//MON_NAME( INV_MON )
-     &                      // 'monthly and annual SPEED invenotries'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    ELSE
-                        MESG = 'WARNING: Monthly inventory is '//
-     &                       'missing: Annual inventory will be used'
-                        IF( MISSFLAG ) CALL M3MESG( MESG )
-                        MISSFLAG = .FALSE.
-                    END IF
+            AVEINV = 0.0
+            MISSFLAG = .FALSE.
+            DO I = 1, 12
+                IF( LEN_TRIM( SEGMENT( 13+I ) ) < 1 ) THEN
+                    SEGMENT( 13+I ) = '0.0'
                 END IF
+                AVEINV = AVEINV + STR2REAL( SEGMENT( 13+I ) )
+            END DO
 
-C.............  Process non-SPEED activity data
-            ELSE
+            IF( AVEINV <= 0.0 ) MISSFLAG = .TRUE.
 
-                READDATA( 1,NEM ) = '0.0'    ! reset annual value to zero and look for monthly total
-                READDATA( 1,NDY ) = SEGMENT( 13 + INV_MON )
+            IF( .NOT. MISSFLAG ) THEN
+C.................  Speed activity data needs treatment to avoid 
+C                   any temporal allocation since the unit is miles/hr
+C                   average-day is not allowed for SPEED activity data
+                IF( READPOL( 1 ) == 'SPEED' ) THEN
 
-                IF( READDATA( 1,NDY )=='' .OR. READDATA( 1,NDY )=='-9'   ) THEN
+                    READDATA( 1,NEM ) = SEGMENT( 13 + INV_MON )
+                    READDATA( 1,NDY ) = ''
+                    AVEINV = STR2REAL( READDATA( 1,NEM ) )
 
-                    READDATA( 1,NEM ) = SEGMENT( 10 )   ! reset original ann total back 
-                
-                    IF( READDATA( 1,NEM )=='' .OR. READDATA( 1,NEM )=='-9' ) THEN
-                        MESG = 'ERROR: Missing '//MON_NAME( INV_MON )
-     &                      // 'monthly and annual invenotries'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    ELSE
-                        MESG = 'WARNING: Monthly inventory is '//
-     &                       'missing: Annual inventory will be used'
-                        CALL M3MESG( MESG )
-                    END IF
+C.................  Process non-SPEED activity data
+                ELSE
 
-                ELSE 
+                    READDATA( 1,NEM ) = '0.0'    ! reset annual value to zero and look for monthly total
+                    READDATA( 1,NDY ) = SEGMENT( 13 + INV_MON )
 
                     MDAYS = MON_DAYS( INV_MON )                      ! day of months
 
@@ -196,11 +190,11 @@ C.............  Process non-SPEED activity data
                     AVEINV = STR2REAL( READDATA(1,NDY) ) / MDAYS     ! compute annual total (miles/year)
                     WRITE( READDATA( 1,NDY ), '( E15.10 )' ) AVEINV
 
-                    IF( AVEINV < 0.0 ) THEN
-                        MESG = 'ERROR: Can not process negative value'
-                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                    END IF
+                END IF
 
+                IF( AVEINV < 0.0 ) THEN
+                    MESG = 'ERROR: Can not process negative value'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
             END IF
