@@ -151,20 +151,16 @@ C.........  Compute annual total based on monthly total
             AVEINV = 0.0
             MISSFLAG = .FALSE.
             DO I = 1, 12
-               AVEINV = AVEINV + STR2REAL( SEGMENT( 20+I ) )
+                IF( LEN_TRIM( SEGMENT( 20+I ) ) < 1 ) THEN
+                    SEGMENT( 20+I ) = '0.0'
+                END IF
+                AVEINV = AVEINV + STR2REAL( SEGMENT( 20+I ) )
             END DO
 
             IF( AVEINV <= 0.0 ) MISSFLAG = .TRUE.
 
-            IF( MISSFLAG ) THEN
+            IF( .NOT. MISSFLAG ) THEN
 
-                IF( STR2REAL( READDATA( 1,NEM ) ) <= 0.0 ) THEN
-                    MESG = 'ERROR: Missing both '//MON_NAME( INV_MON )
-     &                  // 'monthly and annual invenotries'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-            ELSE 
                 READDATA( 1,NEM ) = '0.0'
                 READDATA( 1,NDY ) = SEGMENT( 20 + INV_MON )
 
