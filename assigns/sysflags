@@ -81,7 +81,7 @@ case  Linux2_x86_64ifort:
     setenv LIBS_DEBUG_SYS "-lsmoke.debug -lfileset.debug -ledsstools.debug -lioapi.debug -lnetcdf.debug"
     setenv LIBS_COMPILE ""
     breaksw
-case  Linux2_x86pg:
+case  Linux2_x86_64pg:
     setenv FFLAGS   "$FFLAG  -module ${MD_SRC}/${SMOKE_EXE} -module ${ETDSRC}/${SMOKE_EXE} -module ${FS_BIN} -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${SMOKE_EXE} -I${ETDSRC}/${SMOKE_EXE} -I${FS_ROOT} -I${FS_BIN}"
     setenv DBGFLAGS "$DBGFLAG  -module ${MD_SRC}/${SMOKE_EXE} -module ${ETDSRC}/${SMOKE_EXE} -module ${FS_BIN} -I${ETINC} -I${IOINC} -I${INC} -I${MD_SRC}/${SMOKE_EXE} -I${ETDSRC}/${SMOKE_EXE} -I${FS_ROOT} -I${FS_BIN}"
     setenv LDIRS    "-L${SMK_BIN} -L${TOOLS_BIN} -L${FS_BIN} -L${IOAPIDIR} -L${NETCDFDIR}"
