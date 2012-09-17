@@ -151,6 +151,7 @@ else
    echo ' '
    echo 'No differences found between your SMOKE report files and the comparison files.'
    echo 'Your installation and example SMOKE run have completed successfully\!'
+   echo 'YOU DO NOT NEED TO COMPILE SMOKE source codes but USE the precompiled executables located at $SMK_BIN'
    echo ' '
    rm -rf $errfile
 endif
