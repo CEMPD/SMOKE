@@ -44,8 +44,10 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' || $RUN_SMK2EMIS == 'Y' || $RU
             setenv BGTS_L   $SMKDAT/run_$ESCEN/output/$SPC/b3gts_l.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
             setenv MGTS_L   $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.nonroad.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
             setenv PGTS_L   $SMKDAT/run_$ESCEN/output/$SPC/pgts_l.point.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
-            setenv RPDGTS_L $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.rateperdistance.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
-            setenv RPVGTS_L $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.ratepervehicle.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+            setenv RPDGTS_L $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.rateperdistance_noRFL.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+            setenv RPDRFLGTS_L $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.rateperdistance_RFLonly.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+            setenv RPVGTS_L $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.ratepervehicle_noRFL.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
+            setenv RPVRFLGTS_L $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.ratepervehicle_RFLonly.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
             setenv RPPGTS_L $SMKDAT/run_$ESCEN/output/$SPC/mgts_l.rateperprofile.$ESDATE.$NDAYS.$GRID.$MSCEN.ncf
         endif
 
