@@ -7,18 +7,16 @@ set errstat = 0
 
 set repdir = $SMKROOT/doc/checkdemo/reports
 set ncrepdir = $REPORTS/nctox/scenario
-set fyrepdir = $REPORTS/nctox_18/scenario
-set mbrepdir = $REPORTS/MOVES_2009/scenario
 
 # Check stationary area sources
 echo 'Stationary area source differences' > $errfile
 
-diff $ncrepdir/repagts_l.*0710* $repdir/repagts_l.*.nctox.* >> $errfile
+diff $ncrepdir/repagts_l.area.*0710* $repdir/repagts_l.area.*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $fyrepdir/repagts_l.*0710* $repdir/repagts_l.*.nctox_18.* >> $errfile
+diff $ncrepdir/repagts_l.area.*0711* $repdir/repagts_l.area.*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -26,20 +24,27 @@ endif
 # Check biogenic sources
 echo 'Biogenic source differences' >> $errfile
 
-diff $ncrepdir/repb3gts_s.*0710* $repdir/repb3gts_s.*.nctox.* >> $errfile
+diff $ncrepdir/repb3gts_s.*0710* $repdir/repb3gts_s.*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
+
+diff $ncrepdir/repb3gts_s.*0711* $repdir/repb3gts_s.*0711* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+
 
 # Check nonroad area sources
 echo 'Nonroad source differences' >> $errfile
 
-diff $ncrepdir/repngts_l.*0710* $repdir/repngts_l.*.nctox.* >> $errfile
+diff $ncrepdir/repagts_l.nonroad.*0710* $repdir/repagts_l.nonroad.*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $fyrepdir/repngts_l.*0710* $repdir/repngts_l.*.nctox_18.* >> $errfile
+diff $ncrepdir/repagts_l.nonroad.*0711* $repdir/repagts_l.nonroad.*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -47,28 +52,65 @@ endif
 # Check point sources
 echo 'Point source differences' >> $errfile
 
-diff $ncrepdir/reppgts_l.*0710* $repdir/reppgts_l.*.nctox.* >> $errfile
+diff $ncrepdir/reppgts_l.point.*0710* $repdir/reppgts_l.point.*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $fyrepdir/reppgts_l.*0710* $repdir/reppgts_l.*.nctox_18.* >> $errfile
+diff $ncrepdir/reppgts_l.point.*0711* $repdir/reppgts_l.point.*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
+
 
 # Check MOVES mobile sources
-echo 'MOVES rateperdistance source differences' >> $errfile
+echo 'MOVES rateperdistance (no refueling) source differences' >> $errfile
 
-diff $mbrepdir/rep_l_rateperdistance* $repdir/rep_l_rateperdistance* >> $errfile
+diff $ncrepdir/repmgts_l.rateperdistance_noRFL.*0710* $repdir/repmgts_l.rateperdistance_noRFL.*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-# Check MOVES ratepervehicle sources
-echo 'MOVES ratepervehicle source differences' >> $errfile
+diff $ncrepdir/repmgts_l.rateperdistance_noRFL.*0711* $repdir/repmgts_l.rateperdistance_noRFL.*0711* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
 
-diff $mbrepdir/rep_l_ratepervehicle* $repdir/rep_l_ratepervehicle* >> $errfile
+echo 'MOVES rateperdistance refuleing source differences' >> $errfile
+
+diff $ncrepdir/repmgts_l.rateperdistance_RFLonly.*0710* $repdir/repmgts_l.rateperdistance_RFLonly.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $ncrepdir/repmgts_l.rateperdistance_RFLonly.*0711* $repdir/repmgts_l.rateperdistance_RFLonly.*0711* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+
+# Check MOVES ratepervehicle sources
+echo 'MOVES ratepervehicle (no refueling) source differences' >> $errfile
+
+diff $ncrepdir/repmgts_l.ratepervehicle_noRFL.*0710* $repdir/repmgts_l.ratepervehicle_noRFL.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $ncrepdir/repmgts_l.ratepervehicle_noRFL.*0711* $repdir/repmgts_l.ratepervehicle_noRFL.*0711* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+
+echo 'MOVES ratepervehicle refueling source differences' >> $errfile
+
+diff $ncrepdir/repmgts_l.ratepervehicle_RFLonly.*0710* $repdir/repmgts_l.ratepervehicle_RFLonly.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $ncrepdir/repmgts_l.ratepervehicle_RFLonly.*0711* $repdir/repmgts_l.ratepervehicle_RFLonly.*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
@@ -76,7 +118,12 @@ endif
 # Check MOVES rateperprofile sources
 echo 'MOVES rateperprofile source differences' >> $errfile
 
-diff $mbrepdir/rep_l_rateperprofile* $repdir/rep_l_rateperprofile* >> $errfile
+diff $ncrepdir/repmgts_l.rateperprofile.*0710* $repdir/repmgts_l.rateperprofile.*0710* >> $errfile
+if ( $status > 0 ) then
+    set errstat = 1
+endif
+
+diff $ncrepdir/repmgts_l.rateperprofile.*0711* $repdir/repmgts_l.rateperprofile.*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
