@@ -464,8 +464,8 @@ C.....................  Re-normalizing hourly temporal factors for wildfires onl
                     IF( FIREFLAG ) THEN
 
 C.........................  Convert local hours to output time zone
-                        EPSBEG = INT( STHOUR( I ) )/10000
-                        EPSEND = INT( EDHOUR( I ) )/10000
+                        EPSBEG = 1 + INT( STHOUR( I ) )/10000
+                        EPSEND = 1 + INT( EDHOUR( I ) )/10000
                         K1 = 1 + MOD( EPSBEG + HCORR, 24 )
                         K2 = 1 + MOD( EPSEND + HCORR, 24 )
 
@@ -486,8 +486,8 @@ C.........................  Sum of hourly temporal factors b/n BENHR and ENDHR
 
                             WRITE( MESG,94010 )'ERROR: Fire end hour:', K2,
      &                           ' can not be earlier than begin hour:', K1
-                            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
+                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+          
                         ELSE   ! when end hour is greater than start hour
 
                             DO II = K1, K2
