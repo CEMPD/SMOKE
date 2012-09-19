@@ -86,19 +86,19 @@ if ( $exitstat > 0 ) then
 endif
 
 # Make necessary symbolic links
-echo "Creating symbolic links..."
-cd $SMKROOT/src
-foreach dir ( biog cntlmat emmod emqa emutil grdmat inc lib \
-              point smkinven smkmerge movesmrg spcmat temporal )
-    cd $dir
-    ln -s ../../scripts/make/Makeit ./
-    if ( $status > 0 ) then
-       echo "ERROR: Could not create a symbolic link in directory $dir"
-       echo "       Please contact the CMAS Help Desk at http://www.cmascenter.org"
-       set exitstat = 1
-    endif
-    cd ..
-end
+#echo "Creating symbolic links..."
+#cd $SMKROOT/src
+#foreach dir ( biog cntlmat emmod emqa emutil grdmat inc lib \
+#              point smkinven smkmerge movesmrg spcmat temporal )
+#    cd $dir
+#    ln -s ../../scripts/make/Makeit ./
+#    if ( $status > 0 ) then
+#       echo "ERROR: Could not create a symbolic link in directory $dir"
+#       echo "       Please contact the CMAS Help Desk at http://www.cmascenter.org"
+#       set exitstat = 1
+#    endif
+#    cd ..
+#end
 
 if ( $exitstat > 0 ) then
    exit( $exitstat )
