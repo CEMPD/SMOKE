@@ -3,7 +3,7 @@
      &                          ERPTYP, SRCTYP, HT, DM, TK, FL, VL, SIC, 
      &                          MACT, NAICS, CTYPE, LAT, LON, UTMZ, 
      &                          NEID, CORS, BLID, EXTORL, HDRFLAG,
-     &                          EFLAG )
+     &                          AVEFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -86,6 +86,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(BLRLEN3), INTENT (OUT) :: BLID                  ! boiler ID
         CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
+        LOGICAL,            INTENT (OUT) :: AVEFLAG               ! true: Aveday inv is processed
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
 
 C...........   Local parameters, indpendent
@@ -105,7 +106,6 @@ C...........   Other local variables
         REAL         :: AVEINV  !  annual total estimate from monthly total VMT
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
-        LOGICAL, SAVE:: MISSFLAG = .TRUE.  ! true: first time missing value is found 
         LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
  
         CHARACTER(40)      TMPSEG          ! tmp segments of line
@@ -188,10 +188,10 @@ C           the various data fields
         EXTORL = ' '   ! extended orl (N/A)
 
 C.........  Compute annual total based on monthly total
+        AVEINV = 0.0
+        AVEFLAG = .FALSE.
         IF( INV_MON > 0 ) THEN
 
-            AVEINV = 0.0
-            MISSFLAG = .FALSE.
             DO I = 1, 12
                 IF( LEN_TRIM( SEGMENT( 52+I ) ) < 1 ) THEN
                     SEGMENT( 52+I ) = '0.0'
@@ -199,9 +199,9 @@ C.........  Compute annual total based on monthly total
                AVEINV = AVEINV + STR2REAL( SEGMENT( 52+I ) )
             END DO
 
-            IF( AVEINV <= 0.0 ) MISSFLAG = .TRUE.
+            IF( AVEINV > 0.0 ) AVEFLAG = .TRUE.
 
-            IF( .NOT. MISSFLAG ) THEN
+            IF( AVEFLAG ) THEN
 
                 READDATA( 1,NEM ) = '0.0'
                 READDATA( 1,NDY ) = SEGMENT( 52 + INV_MON )

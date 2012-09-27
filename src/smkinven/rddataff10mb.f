@@ -1,6 +1,6 @@
 
         SUBROUTINE RDDATAFF10MB( LINE, READDATA, READPOL, IYEAR, 
-     &                          SRCTYP, EXTORL, HDRFLAG, EFLAG )
+     &                  SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -67,6 +67,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
         CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars 
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
+        LOGICAL,            INTENT (OUT) :: AVEFLAG               ! true: Aveday inv is processed
         LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
         
 C...........   Local parameters
@@ -87,7 +88,6 @@ C...........   Other local variables
         REAL         :: AVEINV   !  annual total estimate from monthly total VMT
 
         LOGICAL, SAVE:: FIRSTIME = .TRUE.  ! true: first time routine is called
-        LOGICAL, SAVE:: MISSFLAG = .TRUE.  ! true: first time missing value is found 
         LOGICAL      :: BLKFLAG  = .TRUE.  ! true when it is blank
  
         CHARACTER(25)      SEGMENT( NSEG ) ! segments of line
@@ -153,10 +153,10 @@ C           the various data fields
         END IF
 
 C.........   Monthly total activity data processing
+        AVEINV = 0.0
+        AVEFLAG = .FALSE.
         IF( INV_MON > 0 ) THEN
 
-            AVEINV = 0.0
-            MISSFLAG = .FALSE.
             DO I = 1, 12
                 IF( LEN_TRIM( SEGMENT( 13+I ) ) < 1 ) THEN
                     SEGMENT( 13+I ) = '0.0'
@@ -164,9 +164,9 @@ C.........   Monthly total activity data processing
                 AVEINV = AVEINV + STR2REAL( SEGMENT( 13+I ) )
             END DO
 
-            IF( AVEINV <= 0.0 ) MISSFLAG = .TRUE.
+            IF( AVEINV > 0.0 ) AVEFLAG = .TRUE.
 
-            IF( .NOT. MISSFLAG ) THEN
+            IF( AVEFLAG ) THEN
 C.................  Speed activity data needs treatment to avoid 
 C                   any temporal allocation since the unit is miles/hr
 C                   average-day is not allowed for SPEED activity data

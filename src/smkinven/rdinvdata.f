@@ -175,6 +175,7 @@ C...........   Other local variables
         LOGICAL      :: DFLAG   = .FALSE. ! true: weekday (not full week) nrmlizr 
         LOGICAL      :: FFLAG   = .FALSE. ! true: fill annual data with average day data 
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
+        LOGICAL      :: AVEFLAG = .FALSE. ! true: Aveday inv is processed
         LOGICAL      :: PMCFLG  = .FALSE. ! true: add additional PMC var
         LOGICAL      :: LNKFLAG = .FALSE. ! true: current line has link information
         LOGICAL      :: LSTFLG  = .FALSE. ! true: using list-fmt inventory file
@@ -670,12 +671,12 @@ C.....................  Need to read source information to match with VMTMIX fil
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
                     CALL RDDATAFF10AR( LINE, READDATA, READPOL, INVYEAR,
-     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
+     &                        SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
                     NPOLPERLN = 1   ! have to set fake value to force reporting
 
                 CASE( 'MOBILE' )
                     CALL RDDATAFF10MB( LINE, READDATA, READPOL, INVYEAR,
-     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
+     &                        SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
 
@@ -685,7 +686,7 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                HT, DM, TK, FL, VL, SIC, MACT,
      &                                NAICS, CTYPE, LAT, LON, ZONE,
      &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
-     &                                EFLAG )
+     &                                AVEFLAG, EFLAG )
                     NPOLPERLN = 1
                 END SELECT
 
@@ -1277,34 +1278,17 @@ C.....................  Remove monthly factors for this source
 
                 END IF
 
-C.................  Missing both annual/aveday inventories.
-                IF( EANN <= 0.0 .AND. EDAY <= 0.0 ) THEN
-                    IF( FWCOUNT < MXWARN ) THEN
-                       WRITE(MESG,94010) 'WARNING: Both annual and '//
-     &                    'average day emissions are missing' //
-     &                    CRLF()// BLANK10// 'for ' //TRIM( POLNAM ) //
-     &                    ' at line', IREC
-                       CALL M3MESG( MESG )
-                       FWCOUNT = FWCOUNT + 1
-                    END IF                    
-                END IF
+C.................  Set if averday inv is processed in FF10 fomrat (no-activity inv)
+                IF( .NOT. ACTFLAG .AND. AVEFLAG ) TPF = WKSET
 
 C.................  Calculate average day emissions from annual data if needed
 C                   Only do this if current pollutant is not an activity,
 C                   annual data is greater than zero, and average day data is
 C                   zero or negative
                 IF( .NOT. ACTFLAG .AND. 
-     &                 EANN >  0. .AND. 
+     &                 EANN >=  0. .AND. 
      &                 EDAY <  0.       ) THEN
                      EDAY = EANN * YEAR2DAY
-                END IF
-
-C.................  Treat FF10 monthly inventory as averday inventory by setting
-C                   TPF = WKSET (=2) when SMKINVEN_MONTH > 0
-                IF( CURFMT == FF10FMT .AND.
-     &              EANN <= 0.0 .AND. INV_MON > 0 ) THEN
-                    IF( FFLAG ) EANN = EDAY * DAY2YR    ! fill annual inv (aveday*365)
-                    TPF = WKSET        !   WKSET = MTPRFAC (=2)
                 END IF
 
 C.................  If current format is ORL, check if current CAS number
