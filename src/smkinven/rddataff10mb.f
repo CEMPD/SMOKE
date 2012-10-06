@@ -42,7 +42,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NEM, NDY, INV_MON
 
 
-        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT
+        USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVSTAT, NINVTBL, ITCASA
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -145,7 +145,8 @@ C           the various data fields
         SRCTYP = ' '        ! source type code = blank (N/A for activity)
         EXTORL = ' '        ! extended orl column (N/A)
 
-        POLCOD = INDEX1( READPOL( 1 ), MXIDAT, INVDNAM )
+        POLCOD = INDEX1( READPOL( 1 ), MXIDAT, INVDNAM ) 
+        IF( POLCOD == 0 )  POLCOD = INDEX1( READPOL( 1 ), NINVTBL, ITCASA )
         IF( INVSTAT( POLCOD ) >= 0 ) THEN
             MESG = 'ERROR: CAN NOT PROCESS pollutant :'//READPOL( 1 )
      &           //CRLF()//BLANK10// 'ONLY Process activity invenotry' 
