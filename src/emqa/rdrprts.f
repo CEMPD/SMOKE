@@ -294,7 +294,7 @@ C.................  Error if not found
 
                     L = LEN_TRIM( CBUF )
                     WRITE( MESG,94010 ) 'WARNING: Pollutant "'//
-     &                     CBUF( 1:L ) // 'for report', N,
+     &                     CBUF( 1:L ) // '" for report', N,
      &                     'not found in inventory ' // CRLF()//
      &                     BLANK10// 'pollutant list.  Ignoring '//
      &                     'instruction for speciation codes.'

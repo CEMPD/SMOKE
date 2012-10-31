@@ -207,7 +207,6 @@ C.........  Speciation variable arrays
 C.........  Set the length of the emission type joiner
         LT = LEN_TRIM( ETJOIN )
         LS = LEN_TRIM( SPJOIN )
-
 C.........  Populate the emission type list and the pollutant list from the
 C           reporting bins module
 C.........  Will add variables when a CHECK instruction is included
@@ -481,7 +480,9 @@ C.............  If species name in SPCNAM is the same as a pollutant name,
 C               then set it to blank
             DO V = 1, NSVARS
                 K = INDEX1( SPCNAM( V ), NIPPA, EANAM )
-                IF( K .GT. 0 ) SPCNAM( V ) = ' '
+                IF( K .GT. 0 )  THEN
+                    SPCNAM( V ) = ' '
+                END IF
             END DO  ! End creating list of unique species
 
         END IF      ! End if speciation
@@ -545,18 +546,10 @@ C.................  If species is same as pollutant, then add prefix
 
                         IF( K .GT. 0 ) THEN
                             OUTDNAM( J,N ) = 'S-' // SBUF
-                            DATNAM( K ) = 'I-' // SBUF
-                            DO I1 = 1, NPOL
-                               I2 = INDEX1( SBUF, NPOL, OUTDNAM( 1:NPOL,N )) 
-                               IF ( I2 .GT. 0) THEN
-                                  OUTDNAM( I2,N ) =  'I-' // SBUF
-                                  IF( RPT_%USEHOUR ) THEN
-                                     TPNAME( I2 ) = 'I-' // SBUF
-                                  ELSE
-                                     EANAM( I2 ) = 'I-' // SBUF
-                                  END IF
-                               END IF
-                            END DO
+                            I2 = INDEX1( SBUF, NPOL, OUTDNAM( 1:NPOL,N )) 
+                            IF ( I2 .GT. 0) THEN
+                                OUTDNAM( I2,N ) =  'I-' // SBUF
+                            END IF
                         ELSE
                             OUTDNAM( J,N ) = SBUF
                         END IF
@@ -599,7 +592,8 @@ C.....................  Only when emission type is not based on activity
                     END IF
 
 C.....................  To pollutant/activity column
-                    IF( OUTDNAM( I,N ) .EQ. DATNAM( E ) ) THEN
+                    IF( OUTDNAM( I,N ) .EQ. DATNAM( E ) .OR.  
+     &                      OUTDNAM( I,N ) .EQ. ('I-'//DATNAM( E ) )) THEN
                         TODOUT( E,N )%DAT = I
                         TODOUT( E,N )%AGG = 1
                         ANYOUT = .TRUE.
