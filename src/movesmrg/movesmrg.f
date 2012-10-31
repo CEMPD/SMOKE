@@ -377,7 +377,7 @@ C.................  Determine Last county
 C.............  Determine fuel month for current time step and reference county
             N = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
             M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
-C.................  Determine month
+C.............  Determine month
             CALL DAYMON( SDATE, MONTH, DAYMONTH )
             IF( N .LT. 0 .OR. M .LT. 0 ) THEN
                 WRITE( MESG, 94010 ) 'No fuel month data for ' //
@@ -426,8 +426,9 @@ C.................  Determine month
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
 
-C.............  Read emission factors for reference county and month
-C.............  Reload emission factors in case the last hour of a day belong to a new fuel month
+C.....................  Read emission factors for reference county and month
+C.....................  Update emission factors when there is a change of the fuel month
+C                       at the last hour of the last day in fuel month to process the first day of next fuel month.
 
                     IF ( LFUELMONTH .NE. FUELMONTH ) THEN
                         WRITE( MESG,94010 ) 'Processing MOVES lookup ' //
@@ -452,10 +453,10 @@ C.............  Reload emission factors in case the last hour of a day belong to
                 END IF
 
 C.................  Write out message for new day.
+C.................  Set start hour of day for all sources
                 IF( JDATE .NE. LDATE ) THEN
-c                    CALL WRDAYMSG( JDATE, MESG )
+                    CALL WRDAYMSG( JDATE, MESG )
 
-C.....................  Set start hour of day for all sources
                     CALL SETSRCDY( NMSRC, JDATE, TZONES, LDAYSAV, .TRUE.,
      &                             DAYBEGT, DAYENDT )
                 END IF
@@ -471,7 +472,7 @@ C.................  Write out files that are being used for by-day treatment
 
 C.................  For new hour...
 C.................  Write to screen because WRITE3 only writes to LDEV
-c                WRITE( *, 93020 ) HHMMSS( JTIME )
+                WRITE( *, 93020 ) HHMMSS( JTIME )
 
 C.................  Initialize current date
                 MJDATE = JDATE
@@ -573,7 +574,7 @@ C                         OO - both min and max profile temps are over county te
                         MINVAL = AVGMIN( MICNY( SRC ), MONTH, DAYMONTH )
                         MAXVAL = AVGMAX( MICNY( SRC ), MONTH, DAYMONTH )
 
-C.....................  MaCNY(SRC),  and maxmum values within the index
+C.....................  MICNY(SRC) and maxmum values within the index
                         IF ( (MINVAL .LT. EMTEMPS( EMTEMPIDX( 1 ) ) )  
      &                      .AND. (MINVAL .GE. (EMTEMPS( EMTEMPIDX( 1 ) ) - TEMPBIN )) ) THEN
                             IF( NWARN < MXWARN ) THEN
@@ -750,7 +751,7 @@ C.........................  Check that appropriate maximum temperatures were fou
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                           END IF
 
-C.........................  Check that maximum temperatures of profiles match
+C...........................  Check that maximum temperatures of profiles match
                           IF( EMXTEMPS( UUIDX ) .NE. EMXTEMPS( OUIDX ) .OR.
      &                      EMXTEMPS( UOIDX ) .NE. EMXTEMPS( OOIDX ) ) THEN
                             MESG = 'ERROR: Inconsistent temperature ' //
@@ -776,7 +777,6 @@ C.........................  Check that maximum temperatures of profiles match
                     END IF
 
 C.....................  Loop over grid cells for this source
-
                     DO NG = 1, NSRCCELLS( SRC )
 
                         CELL = SRCCELLS( SRC, NG )
@@ -869,9 +869,9 @@ C.............................  Check if emission factors exist for this process
                             END IF
 
 C.............................  get control factor
-                           IF ( CFFLAG ) THEN
-                               CFFAC = CFPRO(MICNY(SRC), SCCIDX, SIINDEX( V,1 ), MONTH )
-                           END IF
+                            IF ( CFFLAG ) THEN
+                                CFFAC = CFPRO(MICNY(SRC), SCCIDX, SIINDEX( V,1 ), MONTH )
+                            END IF
 C.............................  Calculate interpolated emission factor if process/pollutant has changed
                             IF( PBUF .NE. LBUF ) THEN
                                 IF( RPDFLAG ) THEN
@@ -933,13 +933,13 @@ C.............................  Calculate gridded, hourly emissions
                                 EMVAL = VPOPVAL * EFVAL * GFRAC
                             END IF
 
-                            ! If use memory optimize
+C.............................  If use memory optimize
                             IF ( MOPTIMIZE ) THEN
                                 EMGRD( CELL,SPINDEX( V,1 ) ) = 
      &                          EMGRD( CELL,SPINDEX( V,1 ) ) + 
      &                          EMVAL * MSMATX_L( SRC,V ) * F1
 
-                            ! If not use memory optimize
+C.............................  If not use memory optimize
                             ELSE                      
                                 TEMGRD( CELL,SPINDEX( V,1 ),T ) =
      &                          TEMGRD( CELL,SPINDEX( V,1 ),T ) +
@@ -969,10 +969,12 @@ C.............................  Add this cell's emissions to source totals
                 
                 END DO    ! end loop over sources in inv. county
 
+C.................  Read out old data if not first county
                 IF ( MOPTIMIZE ) THEN
                     DO V = 1, NMSPC 
                         SBUF = EMNAM( V )
-C.................  Read out old data if not first county
+
+C.........................  sum old county data with new county
                         IF ( I > 1 ) THEN
   		            IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
      &                                JDATE, JTIME, TMPEMGRD( 1,V ) ) )THEN
@@ -980,8 +982,9 @@ C.................  Read out old data if not first county
      &                         'from file "' // MONAME // '"'
                                  CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
-C.................  sum old county data with new county
+
                             EMGRD( :,V ) = EMGRD( :,V ) + TMPEMGRD( :,V )
+
                         END IF
 
                         IF( LGRDOUT ) THEN
@@ -995,14 +998,14 @@ C.................  sum old county data with new county
                     END DO
                 END IF   ! end memory optimize
            
-C.............  Write state, county, and SCC emissions (all that apply) 
-C.............  The subroutine will only write for certain hours and 
-C               will reinitialize the totals after output
-                
+C.................  Write state, county, and SCC emissions (all that apply) 
+C.................  The subroutine will only write for certain hours and 
+C                   will reinitialize the totals after output
                 If ( LAST_CNTY) THEN
                     CALL WRMRGREP( JDATE, JTIME )
                 END IF
-C...............Do not count the hour after 230000
+
+C.................  Do not count the hour after 230000
                 SKIPSUM = .FALSE. 
                 IF( JTIME .EQ. 230000 ) SKIPSUM = .TRUE.
 
@@ -1021,7 +1024,7 @@ C...............Do not count the hour after 230000
 
             DO T = 1, NSTEPS    
 
-            DO V = 1, NMSPC
+              DO V = 1, NMSPC
 
                 SBUF = EMNAM( V )
 
@@ -1036,11 +1039,12 @@ C.................  Write out gridded data
                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
                  END IF
-             END DO
 
-             LDATE = JDATE
+               END DO
 
-             CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
+               LDATE = JDATE
+
+               CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
 
              END DO   ! End loop on time steps
 
