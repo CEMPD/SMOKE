@@ -1307,7 +1307,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94300   FORMAT( A, I2.2, A, I2.2, A )
 
-94500   FORMAT( '#GRID ', A, 2F15.4, 2F10.0, 3I5, 2(2X,A), 5F10.4 )
+94500   FORMAT( '#GRID ', A, 4F15.4, 3I5, 2(2X,A), 5F10.4 )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
