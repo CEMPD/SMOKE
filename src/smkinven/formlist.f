@@ -75,6 +75,7 @@ C   Begin body of subroutine FORMULAS
 C.........  Figure out how many variables there are based on the
 C           number of commas found in the string.
         NCOMP = 1
+        L = LEN_TRIM( VAR_FORMULA )
         DO I = 1, L
             IF( VAR_FORMULA( I:I ) == ',' ) NCOMP = NCOMP + 1
         ENDDO
