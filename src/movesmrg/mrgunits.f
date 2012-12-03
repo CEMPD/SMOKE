@@ -42,7 +42,7 @@ C.........  This module contains the major data structure and control flags
      &                      NMSPC, NIPPA, NUNITS
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: SPCUNIT_L, SPCUNIT_S
+        USE MODMVSMRG, ONLY: SPCUNIT_L, SPCUNIT_S, GRDENV, TOTENV
 
         IMPLICIT NONE
 
@@ -76,7 +76,6 @@ C...........   Other local variables
         CHARACTER(IOULEN3) GDEN        ! work gridded denominator
         CHARACTER(IOULEN3) GNUM        ! work gridded numerator
         CHARACTER(IOULEN3) GRDBUF      ! work gridded output units
-        CHARACTER(IOULEN3) GRDENV      ! gridded output units from envrmt
 
         CHARACTER(IOULEN3) TOTUNIT_I   ! initialized output totals units
         CHARACTER(IOULEN3) TDEN_I      ! initialized totals denominator
@@ -84,7 +83,6 @@ C...........   Other local variables
         CHARACTER(IOULEN3) TDEN        ! work totals denominator
         CHARACTER(IOULEN3) TNUM        ! work totals numerator
         CHARACTER(IOULEN3) TOTBUF      ! work output totals  units
-        CHARACTER(IOULEN3) TOTENV      ! output totals units from envrmt
 
         CHARACTER(16) :: PROGNAME = 'MRGUNITS' ! program name
 
@@ -114,14 +112,6 @@ C.........  Initialize all
         TOTFAC  = 1.   ! array
         GRDUNIT = ' '  ! array
         TOTUNIT = ' '  ! array
-
-C.........  Retrieve variables for setting the output units for gridded and
-C           country/state/county total data
-        BUFFER = 'Units for output gridded emissions'
-        CALL ENVSTR( 'MRG_GRDOUT_UNIT', BUFFER, ' ', GRDENV, IOS)
-
-        BUFFER = 'Units for output state/county total emissions'
-        CALL ENVSTR( 'MRG_TOTOUT_UNIT', BUFFER, ' ', TOTENV, IOS)
 
 C.........  Loop through pollutants, and create output units accordingly
 C.........  For speciation, use the first unit for the speciation units from
@@ -196,7 +186,6 @@ C.............  Set factors for totaled outputs
 C.............  Set the output units per pollutant/activity
             GRDUNIT( V ) = GRDBUF
             TOTUNIT( V ) = TOTBUF
-
         END DO
 
 C.........  Set up units for non-speciated emissions report (tons/day for now)
@@ -205,7 +194,6 @@ C.........  Set up units for non-speciated emissions report (tons/day for now)
             
             TOTFAC ( NUNITS+V ) = EMFAC
             TOTUNIT( NUNITS+V ) = 'tons/day'
-        
         END DO
 
         RETURN

@@ -46,7 +46,8 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
-     &                       SPDFLAG, CFFLAG, TEMPBIN, MOPTIMIZE
+     &                       SPDFLAG, CFFLAG, TEMPBIN, MOPTIMIZE,
+     &                       GRDENV, TOTENV
 
         IMPLICIT NONE
 
@@ -119,6 +120,14 @@ C.........  Retrieve the on/off environment variables
         TEMPBIN = ENVREAL( 'TEMP_BUFFER_BIN', 'Buffer for ' //
      &                   ' min/max temperature ', 0., IOS )
                                             
+C.........  Retrieve variables for setting the output units for gridded and
+C           country/state/county total data
+        BUFFER = 'Units for output gridded emissions'
+        CALL ENVSTR( 'MRG_GRDOUT_UNIT', BUFFER, ' ', GRDENV, IOS)
+
+        BUFFER = 'Units for output state/county total emissions'
+        CALL ENVSTR( 'MRG_TOTOUT_UNIT', BUFFER, ' ', TOTENV, IOS)
+
         IF( LREPSRC ) THEN
             LREPCNY = .FALSE.
             LREPSTA = .FALSE.
@@ -144,6 +153,7 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
 
         MOPTIMIZE = ENVYN( 'MEMORY_OPTIMIZE_YN', 'Optimize Memory usage' //
      &                    " ", .TRUE., IOS )
+
         CFFLAG = ENVYN( 'USE_CONTROL_FACTORS', 'Use control factor data' //
      &                    " ", .FALSE., IOS )
 

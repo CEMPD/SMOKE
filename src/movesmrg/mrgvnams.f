@@ -53,7 +53,8 @@ C.........  This module contains the lists of unique inventory information
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: NHAP, HAPNAM, MNSMATV_L, MSVDESC_L,
-     &                       MSVUNIT_L, MSVUNIT_S, SPCUNIT_L, SPCUNIT_S
+     &                       MSVUNIT_L, MSVUNIT_S, SPCUNIT_L, SPCUNIT_S,
+     &                       GRDENV, TOTENV
 
         IMPLICIT NONE
 
@@ -301,6 +302,12 @@ C               set units accordingly.  Set it based on the first one found.
             END IF
 
         END DO
+
+C.........  Switch speciation matrix between moles and mass based on
+C           the setting of  MRG_GRDOUT_UNIT and MRG_TOTOUT_UNIT 
+        IF( INDEX( GRDENV, 'mole' ) < 1 ) THEN
+            SPCUNIT_L = SPCUNIT_S
+        END IF
 
 C.........  Deallocate temporary arrays
         DEALLOCATE( INDXA, TVSORTA, TVDESCA, INVDCOD, INVDNAM, INVSTAT )

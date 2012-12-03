@@ -108,6 +108,8 @@ C.........  Index from per-source inventory array to INVSCC array (based on MICN
 C.........  Speciation matrixes (mole- and mass-based)
         CHARACTER(16), PUBLIC :: MSNAME_L
         CHARACTER(16), PUBLIC :: MSNAME_S
+        CHARACTER(16), PUBLIC :: GRDENV
+        CHARACTER(16), PUBLIC :: TOTENV
         INTEGER, PUBLIC :: MNSMATV_L = 0  ! number of pol-to-species combinations
         INTEGER, PUBLIC :: MNSMATV_S = 0
         CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC_L( : )  ! pollutant-to-species names

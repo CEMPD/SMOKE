@@ -68,7 +68,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX, AVGMIN, AVGMAX,
      &          RPDEMFACS, RPVEMFACS, RPPEMFACS,
      &          SPDFLAG, SPDPRO, MISCC, 
-     &          MSNAME_L, MSMATX_L, MNSMATV_L, 
+     &          MSNAME_L, MSMATX_L, MNSMATV_L, GRDENV,
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
      &          EANAMREP, CFPRO, CFFLAG,
      &          TEMPBIN
@@ -361,6 +361,11 @@ C.............  Read speciation matrices for current variable
             CALL RDSMAT( MSNAME_L, VBUF, MSMATX_L( 1,V ) )
             CALL RDSMAT( MSNAME_S, VBUF, MSMATX_S( 1,V ) )
 
+C.............  Switch SPC matrix (mole/mass) based on MRG_GRDOUT_UNIT, MRG_TOTOUT_UNIT
+            IF( INDEX( GRDENV, 'mole' ) < 1 ) THEN
+                MSMATX_L( 1,V ) = MSMATX_S( 1,V )
+            END IF
+
         END DO
 
 C.........  Write out message with list of species
@@ -370,13 +375,12 @@ C.........  Loop over reference counties
         DO I = 1, NREFC
 
 C.................  Determine Last county
-            If ( I .EQ. NREFC ) THEN
-               LAST_CNTY = .TRUE.
-            END IF
+            If ( I .EQ. NREFC ) LAST_CNTY = .TRUE.
 
 C.............  Determine fuel month for current time step and reference county
             N = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
             M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
+
 C.............  Determine month
             CALL DAYMON( SDATE, MONTH, DAYMONTH )
             IF( N .LT. 0 .OR. M .LT. 0 ) THEN
@@ -396,6 +400,7 @@ C.............  Initializations before main time loop
 
 C.............  Loop through output time steps
             DO T = 1, NSTEPS
+
                 IF ( MOPTIMIZE ) EMGRD = 0.  ! array
                 TMPEMGRD = 0.  ! array
 
