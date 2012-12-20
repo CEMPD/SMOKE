@@ -1263,7 +1263,7 @@ C.....................  Fill annual inventory using average day inventory
                     IF( FFLAG ) THEN
                         EANN = EDAY * DAY2YR  ! fill annual inv (aveday*365)
 
-                        IF( FWCOUNT < MXWARN ) THEN
+                        IF( FWCOUNT < MXWARN .AND. CURFMT /= FF10FMT ) THEN
                            WRITE(MESG,94010) 'WARNING: Using average day '//
      &                       'emissions to fill in annual emissions' //
      &                       CRLF()// BLANK10// 'for ' //TRIM( POLNAM ) //
