@@ -50,6 +50,7 @@ C.........  Program settings
 
 C.........  Meteorology information
         CHARACTER(IOVLEN3), PUBLIC :: TVARNAME  ! name of temperature variable to read
+        CHARACTER(IOVLEN3), PUBLIC :: DATANAME  ! name of activity data name from Temporal
         CHARACTER(16), PUBLIC :: METNAME        ! logical name for meteorology file
 
 C.........  Average min and max temperatures
@@ -100,24 +101,35 @@ C.........  Hourly speed data and control factor data
         LOGICAL, PUBLIC :: SPDFLAG                     ! use hourly speed data
         REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: ) ! indexes: FIP, SCC, weekend/weekday, local hour
         LOGICAL, PUBLIC :: CFFLAG                     ! use control factor data
-        REAL, ALLOCATABLE, PUBLIC :: CFPRO( :,:,:,: ) ! indexes: FIP, SCC, pollutant,month
+        REAL, ALLOCATABLE, PUBLIC :: CFPRO( :,:,:,: ) ! factor indexes: FIP, SCC, pollutant,month
+        REAL, ALLOCATABLE, PUBLIC :: CFITC( :,:,:,: ) ! intercept indexes: FIP, SCC, pollutant,month
 
 C.........  Index from per-source inventory array to INVSCC array (based on MICNY in MODSTCY)
         INTEGER, ALLOCATABLE, PUBLIC :: MISCC( : )     ! dim NMSRC
 
 C.........  Speciation matrixes (mole- and mass-based)
         CHARACTER(16), PUBLIC :: MSNAME_L
+        CHARACTER(16), PUBLIC :: PSNAME_L
         CHARACTER(16), PUBLIC :: MSNAME_S
+        CHARACTER(16), PUBLIC :: PSNAME_S
         CHARACTER(16), PUBLIC :: GRDENV
         CHARACTER(16), PUBLIC :: TOTENV
         INTEGER, PUBLIC :: MNSMATV_L = 0  ! number of pol-to-species combinations
+        INTEGER, PUBLIC :: PNSMATV_L = 0  ! number of pol-to-species combinations
         INTEGER, PUBLIC :: MNSMATV_S = 0
+        INTEGER, PUBLIC :: PNSMATV_S = 0
         CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC_L( : )  ! pollutant-to-species names
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: PSVDESC_L( : )  ! pollutant-to-species names
         CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVDESC_S( : )
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: PSVDESC_S( : )
         CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVUNIT_L( : )  ! pollutant-to-species units
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: PSVUNIT_L( : )  ! pollutant-to-species units
         CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: MSVUNIT_S( : )
+        CHARACTER(PLSLEN3), ALLOCATABLE, PUBLIC :: PSVUNIT_S( : )
         REAL, ALLOCATABLE, PUBLIC :: MSMATX_L( :,: )  ! speciation matrix, dim nmsrc
+        REAL, ALLOCATABLE, PUBLIC :: PSMATX_L( :,: )  ! speciation matrix, dim nmsrc
         REAL, ALLOCATABLE, PUBLIC :: MSMATX_S( :,: )
+        REAL, ALLOCATABLE, PUBLIC :: PSMATX_S( :,: )
         CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT_L( : ) ! speciation units
         CHARACTER(IOULEN3), ALLOCATABLE, PUBLIC :: SPCUNIT_S( : )
 

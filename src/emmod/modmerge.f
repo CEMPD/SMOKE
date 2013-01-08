@@ -452,10 +452,15 @@
         REAL   , ALLOCATABLE, PUBLIC :: PECCNY( :,: ) ! point , dim ncny, ndim
         REAL   , ALLOCATABLE, PUBLIC :: TECCNY( :,: ) ! all   , dim ncny, ndim
 
-!.........  Source and SCC total speciated emissions (Movesmrg only)
+!.........  Source and SCC total speciated emissions
         REAL   , ALLOCATABLE, PUBLIC :: MEBSCC( :,: ) ! mobile, dim nscc, ndim
         REAL   , ALLOCATABLE, PUBLIC :: MEBSUM( :,: ) ! mobile, dim nscc, ndim
         REAL   , ALLOCATABLE, PUBLIC :: MEBSRC( :,:,: ) ! mobile, dim nsrc, ndim by hour
         REAL   , ALLOCATABLE, PUBLIC :: MEBSTC( :,:,: ) ! mobile, dim nsta, nscc, ndim
+
+        REAL   , ALLOCATABLE, PUBLIC :: PEBSCC( :,: ) ! point, dim nscc, ndim
+        REAL   , ALLOCATABLE, PUBLIC :: PEBSUM( :,: ) ! point, dim nscc, ndim
+        REAL   , ALLOCATABLE, PUBLIC :: PEBSRC( :,:,: ) ! point, dim nsrc, ndim by hour
+        REAL   , ALLOCATABLE, PUBLIC :: PEBSTC( :,:,: ) !  point, dim nsta, nscc, ndim
 
         END MODULE MODMERGE
