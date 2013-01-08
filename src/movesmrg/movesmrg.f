@@ -42,7 +42,7 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: 
-     &          MFLAG_BD,                          ! by-day hourly emis flags
+     &          MFLAG_BD, LREPANY,                          ! by-day hourly emis flags
      &          LREPSTA, LREPCNY, LREPSCC, LREPSRC, LGRDOUT,! report flags, gridded output
      &          CDEV,                              ! costcy
      &          MGNAME, MTNAME, MONAME,    ! input files
@@ -158,6 +158,8 @@ C...........   Other local variables
         INTEGER          IOS           ! tmp I/O status
         INTEGER          JDATE         ! Julian date (YYYYDDD)
         INTEGER          JTIME         ! time (HHMMSS)
+        INTEGER          RDATE         ! last reporting Julian date (YYYYDDD)
+        INTEGER          RTIME         ! last reporting time (HHMMSS)
         INTEGER       :: K1 = 0        ! tmp index
         INTEGER       :: K5 = 0        ! tmp index
         INTEGER          KM            ! tmp index to src-category species
@@ -194,8 +196,6 @@ C...........   Other local variables
         REAL             CFFAC         ! control factor
 
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
-        LOGICAL       :: LAST_CNTY  = .FALSE.   ! true: reach the last county
-        LOGICAL       :: SKIPSUM    = .FALSE.   ! true: skip MEBSUM calculation
 
         CHARACTER(300)     MESG    ! message buffer
         CHARACTER(IOVLEN3) LBUF    ! previous species or pollutant name
@@ -374,9 +374,6 @@ C.........  Write out message with list of species
 C.........  Loop over reference counties
         DO I = 1, NREFC
 
-C.................  Determine Last county
-            If ( I .EQ. NREFC ) LAST_CNTY = .TRUE.
-
 C.............  Determine fuel month for current time step and reference county
             N = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
             M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
@@ -384,7 +381,7 @@ C.............  Determine fuel month for current time step and reference county
 C.............  Determine month
             CALL DAYMON( SDATE, MONTH, DAYMONTH )
             IF( N .LT. 0 .OR. M .LT. 0 ) THEN
-                WRITE( MESG, 94010 ) 'No fuel month data for ' //
+                WRITE( MESG, 94010 )'ERROR: No fuel month data for ' //
      &            'reference county', MCREFIDX( I,1 )
                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
             END IF
@@ -425,7 +422,7 @@ C.................  Determine month
                     END DO
                 
                     IF( FUELMONTH == 0 ) THEN
-                        WRITE( MESG, 94010 ) 'Could not determine ' //
+                        WRITE( MESG, 94010 )'ERROR: Could not determine ' //
      &                    'fuel month for reference county', MCREFIDX( I,1 ),
      &                    'and episode month', MONTH
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
@@ -460,8 +457,6 @@ C                       at the last hour of the last day in fuel month to proces
 C.................  Write out message for new day.
 C.................  Set start hour of day for all sources
                 IF( JDATE .NE. LDATE ) THEN
-                    CALL WRDAYMSG( JDATE, MESG )
-
                     CALL SETSRCDY( NMSRC, JDATE, TZONES, LDAYSAV, .TRUE.,
      &                             DAYBEGT, DAYENDT )
                 END IF
@@ -476,9 +471,6 @@ C.................  Write out files that are being used for by-day treatment
                 END IF
 
 C.................  For new hour...
-C.................  Write to screen because WRITE3 only writes to LDEV
-                WRITE( *, 93020 ) HHMMSS( JTIME )
-
 C.................  Initialize current date
                 MJDATE = JDATE
 
@@ -953,8 +945,8 @@ C.............................  If not use memory optimize
 
 
 C.............................  Add this cell's emissions to source totals
-                            IF( LREPSTA .OR. LREPCNY .OR. LREPSCC .OR. LREPSRC ) THEN
-                                IF( .NOT. SKIPSUM ) THEN
+                            IF( LREPANY ) THEN
+                                IF( .NOT. (T == NSTEPS .AND. JTIME == 0) ) THEN
                                     MEBSUM( SRC,SPINDEX( V,1 )) =
      &                                  MEBSUM( SRC,SPINDEX( V,1 )) + 
      &                                  EMVAL * MSMATX_S( SRC,V ) * F2
@@ -965,6 +957,8 @@ C.............................  Add this cell's emissions to source totals
      &                                      MEBSUM( SRC,NMSPC+SIINDEX( V,1 ) ) +
      &                                      EMVAL * F2
                                     END IF
+                                    RDATE = JDATE     ! last reporting date
+                                    RTIME = JTIME     ! last reporting hour
                                 END IF
                             END IF
 
@@ -981,10 +975,10 @@ C.................  Read out old data if not first county
 
 C.........................  sum old county data with new county
                         IF ( I > 1 ) THEN
-  		            IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
+  		                    IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
      &                                JDATE, JTIME, TMPEMGRD( 1,V ) ) )THEN
                                  MESG = 'Could not read "' // SBUF // '" ' //
-     &                         'from file "' // MONAME // '"'
+     &                             'from file "' // MONAME // '"'
                                  CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
 
@@ -1003,24 +997,17 @@ C.........................  sum old county data with new county
                     END DO
                 END IF   ! end memory optimize
            
-C.................  Write state, county, and SCC emissions (all that apply) 
-C.................  The subroutine will only write for certain hours and 
-C                   will reinitialize the totals after output
-                If ( LAST_CNTY) THEN
-                    CALL WRMRGREP( JDATE, JTIME )
-                END IF
-
-C.................  Do not count the hour after 230000
-                SKIPSUM = .FALSE. 
-                IF( JTIME .EQ. 230000 ) SKIPSUM = .TRUE.
-
                 LDATE = JDATE
-
                 CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
 
             END DO   ! End loop on time steps
 
         END DO   ! end loop over inventory counties
+
+C.........  Write state, county, and SCC emissions (all that apply) 
+C.........  The subroutine will only write for certain hours and 
+C           will reinitialize the totals after output
+        IF( LREPANY ) CALL WRMRGREP( RDATE, RTIME )
  
         IF ( .NOT. MOPTIMIZE ) THEN
             JDATE  = SDATE

@@ -306,10 +306,9 @@ C..............................................................................
             HEADER = '# ' // CATNAME // ' source'
             L  = LEN_TRIM( HEADER )
 
-            DATANAM = ' average'
+            DATANAM = ' summary'
             LD1 = LEN_TRIM( DATANAM )
      
-            TYPENAM = ' inventory'
             TYPENAM = ' speciated'
 
             HEADER = HEADER( 1:L ) // DATANAM( 1:LD1 ) //

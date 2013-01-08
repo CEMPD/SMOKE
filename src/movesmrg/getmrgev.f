@@ -40,7 +40,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
 
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: MFLAG_BD, VARFLAG,
+        USE MODMERGE, ONLY: MFLAG_BD, VARFLAG, LREPANY,
      &                      LMETCHK, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPSCC, LREPSRC
 
@@ -119,6 +119,8 @@ C.........  Retrieve the on/off environment variables
 
         TEMPBIN = ENVREAL( 'TEMP_BUFFER_BIN', 'Buffer for ' //
      &                   ' min/max temperature ', 0., IOS )
+
+        LREPANY = ( LREPSTA .OR. LREPCNY .OR. LREPSCC .OR. LREPSRC )
                                             
 C.........  Retrieve variables for setting the output units for gridded and
 C           country/state/county total data
