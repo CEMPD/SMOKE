@@ -499,7 +499,7 @@ C.............  Check for plume top and plume bottom
                 ALLOCATE( PLMBOT( NHRSRC ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'PLMBOT', PROGNAME )
                 ALLOCATE( PLMTOP( NHRSRC ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'PTOP', PROGNAME )
+                CALL CHECKMEM( IOS, 'PLMTOP', PROGNAME )
 
             END IF
 
