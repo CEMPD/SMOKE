@@ -45,7 +45,7 @@ C.........  Width of other global character strings
         INTEGER, PARAMETER :: IODLEN3 = 80  ! length of I/O API var descrption
         INTEGER, PARAMETER :: IOULEN3 = 16  ! length of I/O API units
         INTEGER, PARAMETER :: SDSLEN3 = 200 ! SCC description field
-        INTEGER, PARAMETER :: SPNLEN3 =  5  ! Speciation profile code
+        INTEGER, PARAMETER :: SPNLEN3 = 10  ! Speciation profile code
         INTEGER, PARAMETER :: PLSLEN3 = IOVLEN3 * 2 + 1  ! Speciation vdesc3d
         INTEGER, PARAMETER :: SPDLEN3 = 7   ! Speed code length
 
