@@ -731,7 +731,7 @@ C               Its main jobs are to read in the GSREF_COMBO file, find the
 C               combination profile in the dataset, and to setup the number 
 C               of profiles in a combination profile.
 
-            IF ( SPCODE .EQ. 'COMBO' ) THEN
+            IF ( SPCODE .EQ. '     COMBO' ) THEN
 
 C................. For the first combo profile encountered, open the GSPRO_COMBO
 C                  file. Arrays are passed back via the MODSPRO module
