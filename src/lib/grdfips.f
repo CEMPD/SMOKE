@@ -41,7 +41,7 @@ C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NSRGFIPS, SRGFIPS, NCELLS, FIPCELL
      
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: NCOLS, YOFF, XDIFF, XOFF
+        USE MODGRID, ONLY: NCOLS
 
 C.........  This module is the derived meteorology data for emission factors
         USE MODMET, ONLY: MINTSRC, MAXTSRC, MAXTDAY, MINTDAY
@@ -67,8 +67,6 @@ C...........   Other local variables
         INTEGER     COL            ! subgrid column number
         INTEGER     ROW            ! subgrid row number
 
-        REAL        CNMAX          ! conty max value 
-        REAL        CNMIN          ! conty min value 
         REAL        CNTOT          ! tmp value for summing over cells
         REAL        TEMPVAL        ! temperature value in Farenheight
 
