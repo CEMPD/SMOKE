@@ -50,20 +50,17 @@
         REAL,    ALLOCATABLE, PUBLIC :: MINTSRC ( : )   ! min temp per county
 
 !...........   Hourly meteorology data
-!...              for Mobile5 processing, index 0 = 12 AM local time
-!...              for Mobile6 processing, index 0 = 6 AM local time
-        REAL,    ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour (Premobl)
-                                                        ! temps by county per hour (Emisfac)
-        REAL,    ALLOCATABLE, PUBLIC :: QVHOUR  ( :,: ) ! mixing ratios by source per hour (Premobl)
-                                                        ! mixing ratios by county per hour (Emisfac)
-        REAL,    ALLOCATABLE, PUBLIC :: BPHOUR  ( :,: ) ! barometric pressure by source (Premobl)
-                                                        ! barometric pressure by county (Emisfac)
-        REAL,    ALLOCATABLE, PUBLIC :: RHHOUR  ( :,: ) ! relative humidity by county per hour
+        REAL,    ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour
+        INTEGER, ALLOCATABLE, PUBLIC :: NTKHOUR ( :,: ) ! no of hours for monthly average for each source 
+        REAL,    ALLOCATABLE, PUBLIC :: RHHOUR  ( :,: ) ! RH by source per hour
+        INTEGER, ALLOCATABLE, PUBLIC :: NRHHOUR ( :,: ) ! no of hours for monthly average for each source 
         REAL,    ALLOCATABLE, PUBLIC :: RHDAY   ( :,: ) ! relative humidity by county per day
         REAL,    ALLOCATABLE, PUBLIC :: MAXTDAY ( : )   ! max temp per county per day
         REAL,    ALLOCATABLE, PUBLIC :: MINTDAY ( : )   ! min temp per county per day
 
-        INTEGER, ALLOCATABLE, PUBLIC :: NDAYSRC ( :,: ) ! no of days to average for each source 
+        REAL,    ALLOCATABLE, PUBLIC :: RHTBIN  ( :,:,: ) ! relative humidity by temp bins 
+        INTEGER, ALLOCATABLE, PUBLIC :: NRHTBIN ( :,:,: ) ! no of hours by tempe bins 
+
         INTEGER, ALLOCATABLE, PUBLIC :: FUELIDX ( :,: ) ! monthID for fuelmonth ref county
         INTEGER, ALLOCATABLE, PUBLIC :: FUELCNTY( :,: ) ! no of county per ref county per fulemonth
         REAL,    ALLOCATABLE, PUBLIC :: RHFUEL  ( :,: ) ! relative humidity by county per fuelmonth
