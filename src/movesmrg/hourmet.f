@@ -1,6 +1,6 @@
 
-        SUBROUTINE HOURMET( NSRC, JDATE, JTIME, DAYBEGT,   
-     &              SKIPDATA, LDAYSAV, RH_STRHR, RH_ENDHR )
+        SUBROUTINE HOURMET( NSRC, CNTYSRC, TA, QV, PRES, JDATE, JTIME, 
+     &                      DAYBEGT, LDAYSAV, PDTEMP, HFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 92
@@ -38,11 +38,17 @@ C
 C****************************************************************************
 
 C...........   MODULES for public variables
+        USE MODMBSET, ONLY: NREFC, MCREFSORT, MCREFIDX,
+     &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TASRC, QVSRC, PRESSRC, TKHOUR, RHHOUR, RHDAY,
-     &                    NDAYSRC
-        
+        USE MODMET, ONLY: TKHOUR, RHHOUR, RHDAY,
+     &                    NTKHOUR, NRHHOUR, RHTBIN, NRHTBIN, NFUEL,
+     &                    FUELIDX, MINTSRC, MAXTSRC, MAXTDAY, MINTDAY
+
+C...........   This module contains the gridding surrogates tables
+        USE MODSURG, ONLY: NSRGFIPS, SRGFIPS, NCELLS, FIPCELL
+     
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -55,31 +61,41 @@ C...........   EXTERNAL FUNCTIONS
         INTEGER      ENVINT
         LOGICAL      ISDSTIME
         REAL         CALCRELHUM
+        INTEGER      FIND1
+        INTEGER      FIND1FIRST
 
-        EXTERNAL     CRLF, ENVINT, ISDSTIME, CALCRELHUM
+        EXTERNAL     CRLF, ENVINT, ISDSTIME, CALCRELHUM, FIND1, FIND1FIRST
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT    (IN) :: NSRC                  ! no. sources
+        INTEGER,      INTENT    (IN) :: CNTYSRC( NSRC )       ! no. counties
+        REAL   ,      INTENT    (IN) :: TA( * )               ! gridded temp data
+        REAL   ,      INTENT    (IN) :: QV( * )               ! gridded mixing ratio data
+        REAL   ,      INTENT    (IN) :: PRES( * )             ! gridded pressure data
         INTEGER,      INTENT    (IN) :: JDATE                 ! YYYYDDD
         INTEGER,      INTENT    (IN) :: JTIME                 ! HHMMSS
         INTEGER,      INTENT    (IN) :: DAYBEGT ( NSRC )      ! begin. time for day
-        LOGICAL,      INTENT    (IN) :: SKIPDATA              ! skip data for non-day averaging
         LOGICAL,      INTENT    (IN) :: LDAYSAV ( NSRC )      ! true: use daylight time
-        INTEGER,      INTENT    (IN) :: RH_STRHR              ! HHMMSS
-        INTEGER,      INTENT    (IN) :: RH_ENDHR              ! HHMMSS
+        INTEGER,      INTENT    (IN) :: PDTEMP                ! RPP temperature increment
+        LOGICAL,      INTENT    (IN) :: HFLAG                 ! true: use specific humidity (no RH)
 
 C...........   Other local variables
-        INTEGER     L, S        ! counters and indices
+        INTEGER     C, K, L, LL, N, S, I, J, NR, NF, NT, T       ! counters and indices
         INTEGER     IOS         ! I/O status
+        INTEGER     MONTH,DAY   ! processing month and date
+        INTEGER     REFCOUNTY   ! ref. county FIPS code
         INTEGER     TIMESLOT    ! array location
+        INTEGER     CURMONTH, NMON
         
         INTEGER, SAVE :: MXWARN ! maximum number of warnings
         INTEGER, SAVE :: NWARN  ! total number of warnings printed
 
+        REAL        MINTMP      ! min temperature value in Farenheight
+        REAL        MAXTMP      ! max temperature value in Farenheight
         REAL        TEMPVAL     ! temperature value in Farenheight
-        REAL        MIXVAL      ! mixing ratio value
-        REAL        PRESVAL     ! pressure value
+        REAL        TEMPTMP     ! tmp temperature value in Farenheight
         REAL        RHVAL       ! RH value
+        REAL        RHTMP       ! tmp RH value
 
         LOGICAL       :: DAYLIT  = .FALSE.  ! true: date is daylight savings
         LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time
@@ -103,8 +119,88 @@ C.............  Get maximum number of warnings
             
             INITIAL = .FALSE.
         END IF
+
+C.........  If last day of month, process monthly averages
+        CALL DAYMON( JDATE, MONTH, DAY )
+
 C.........  Loop through sources
         DO S = 1, NSRC
+
+C.........  Apply ungridding matrix from a (possible) subgrid to data on base 
+C           grid.  If no subgrid, then XOFF and YOFF will be 1 and no problem.
+            LL = FIND1( CNTYSRC( S ), NSRGFIPS, SRGFIPS )
+
+            IF( LL < 1 ) CYCLE
+
+            IF( NCELLS( LL ) > 0 ) THEN
+                RHVAL = 0.0
+                TEMPVAL = 0.0
+            ELSE
+		RHVAL = BADVAL3
+                TEMPVAL = BADVAL3
+            END IF
+
+            N = 0
+            DO I = 1, NCELLS( LL )
+
+C.................  Count no of cell used in county-level averaging
+                N = N + 1
+
+C.................  Get column and row from subgrid
+                C = FIPCELL( I,LL )
+
+C.................  Convert K to F
+                TEMPTMP = 1.8 * TA( C ) - 459.67
+
+                MAXTSRC( S ) = MAX( TEMPTMP, MAXTSRC( S ) )
+                MINTSRC( S ) = MIN( TEMPTMP, MINTSRC( S ) )
+
+                MAXTDAY( S ) = MAX( TEMPTMP, MAXTDAY( S ) )
+                MINTDAY( S ) = MIN( TEMPTMP, MINTDAY( S ) )
+
+C.................  Calculate RH using Temp. Pressure and mixing ratio values
+                IF( HFLAG ) THEN
+                    RHTMP = QV( C ) / ( QV( C ) + 1 )     ! Specifici Humidity
+                ELSE
+                    RHTMP = CALCRELHUM( TA( C ), PRES( C ), QV( C ) ) ! relative humidity
+                END IF
+
+C.................  Store RH into temperature bins
+                NT = 0
+                DO T = -150, 150-PDTEMP, PDTEMP
+                    NT = NT + 1
+                    MINTMP = REAL( T )
+                    MAXTMP = MINTMP + REAL( PDTEMP )
+
+                    IF ( MINTMP < TEMPTMP .AND. TEMPTMP <= MAXTMP ) THEN
+
+                        REFCOUNTY = MCREFSORT( S,2 )
+                        NR = FIND1( REFCOUNTY,NREFC, MCREFIDX( :,1 ) )
+
+                        L = FIND1FIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
+                        K = FIND1FIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
+                        NMON = FMREFLIST( K, 2 )   ! no month of ref county
+
+C.........................  Loop over months per ref. county
+                        DO J = L, L + NMON - 1
+                           CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. cou
+                           IF( CURMONTH == MONTH ) NF = FMREFSORT( J,2 )  ! processing fuelmonth/co
+                        END DO
+
+                        RHTBIN ( NR,NF,NT ) = RHTBIN ( NR,NF,NT )  + RHTMP
+                        NRHTBIN( NR,NF,NT ) = NRHTBIN( NR,NF,NT ) + 1
+
+                    END IF
+
+                END DO
+
+                RHVAL = RHVAL + RHTMP
+                TEMPVAL = TEMPVAL + TEMPTMP
+
+            END DO
+
+            TEMPVAL = TEMPVAL / N    ! averaged Temp by source
+            RHVAL   = RHVAL   / N    ! averaged RH by srouce
 
 C.............  Calculate time slot in output array for this time step
 C               Appropriate 24 hour time will be day starting time (12 AM in local 
@@ -124,37 +220,17 @@ C               one running one day)
                 TIMESLOT = TIMESLOT + 24
             END IF
 
-            TEMPVAL = TASRC( S )   ! unit in Kelvin
-            MIXVAL  = QVSRC( S )
-            PRESVAL = PRESSRC( S )
+            IF( TEMPVAL > AMISS3 .AND. RHVAL > 0.0 )THEN
 
-C.............  only estimate RH based on user-defined averaging start/end hour
-            IF( TIMESLOT >= RH_STRHR .AND. TIMESLOT <= RH_ENDHR ) THEN
-                RHVAL = CALCRELHUM( TEMPVAL, PRESVAL, MIXVAL )
-            ELSE
-                RHVAL = 0.0
-            END IF
+C.................  Store daily RH values for daily SMOKE-ready output
+                RHDAY( S,TIMESLOT ) = RHDAY( S,TIMESLOT ) + RHVAL
 
-C.............  Convert K to F degree for temperature
-            TEMPVAL = 1.8 * TEMPVAL - 459.67
+C.................  Store values in hourly arrays for mothly SMOKE-ready output               
+                TKHOUR( S,TIMESLOT )  = TKHOUR( S,TIMESLOT ) + TEMPVAL
+                NTKHOUR( S,TIMESLOT ) = NTKHOUR( S,TIMESLOT ) + 1
 
-            IF( TEMPVAL > AMISS3 )THEN
-
-C.................  Store values in hourly arrays                
-                IF( .NOT. SKIPDATA ) THEN
-                    TKHOUR( S,TIMESLOT ) =
-     &                                TKHOUR( S,TIMESLOT ) + TEMPVAL
-
-                    RHHOUR( S,TIMESLOT ) = 
-     &                                RHHOUR( S,TIMESLOT ) + RHVAL
-
-C.....................  Store daily RH values for daily SMOKE-ready output
-                    RHDAY( S,TIMESLOT ) =
-     &                                RHDAY( S,TIMESLOT ) + RHVAL 
-
-                    NDAYSRC( S,TIMESLOT ) = 
-     &                                NDAYSRC( S,TIMESLOT ) + 1
-                END IF
+                RHHOUR( S,TIMESLOT )  = RHHOUR( S,TIMESLOT ) + RHVAL
+                NRHHOUR( S,TIMESLOT ) = NRHHOUR( S,TIMESLOT ) + 1
 
             END IF
 
