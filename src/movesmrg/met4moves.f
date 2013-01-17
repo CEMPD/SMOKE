@@ -962,10 +962,10 @@ C.........  Open output file
         WRITE( ODEV3,'(A)' )'#AVERAGING_METHOD: MONTHLY '
         WRITE( ODEV3,94010 )'#MODELING PERIOD : ', EPI_SDATE,'-',EPI_EDATE
         WRITE( ODEV3,94020 )'#TEMP_BUFFER_BIN : ', TEMPBIN 
-        WRITE( ODEV3,'(A)' )'#DATA RefCounty,FuelMonth,min_max,avgRH,'
+        WRITE( ODEV3,'(A,I5)' ) '#PD_TEMP_INCREMENT ' , PDTEMP
+        WRITE( ODEV3,'(A,I5)' ) '#PV_TEMP_INCREMENT ' , PVTEMP
+        WRITE( ODEV3,'(A)' )'RefCounty,FuelMonth,avgRH,'
      &                    //'min_temp,max_temp,lowTemp,highTemp'
-        WRITE( ODEV3,'(A,I5)' ) 'PD_TEMP_INCREMENT ' , PDTEMP
-        WRITE( ODEV3,'(A,I5)' ) 'PV_TEMP_INCREMENT ' , PVTEMP
 
 C.......................................................................
 C.........  Allocate met variable arrays
