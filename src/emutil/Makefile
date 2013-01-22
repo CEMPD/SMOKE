@@ -8,7 +8,7 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: gentpro aggwndw beld3to2 bluesky2inv cemscan extractida geofac invsplit layalloc metcombine metscan \
+all: aggwndw beld3to2 bluesky2inv cemscan extractida geofac gentpro invsplit layalloc metcombine metscan \
      pktreduc smk2emis surgtool uam2ncf 
 
 debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug extractida.debug invsplit.debug \
@@ -82,9 +82,11 @@ geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(GEOF) $(LIBS_DEBUG)
 
 GTPR=gentpro.o
+
 gentpro: $(GTPR) $(ALLI) $(LIBPATH)
 	echo GENTPRO:
 	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GTPR) $(LIBS)
+
 gentpro.debug: $(GTPR) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'GENTPRO (debug):'
 	$(FC) $(DBGFLAGS) -o $(@) $(GTPR) $(LIBS_DEBUG)
