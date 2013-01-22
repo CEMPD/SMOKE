@@ -19,8 +19,8 @@ C       More specifically, GenTPRO creates county-based temporal
 C       profiles using RWC (residential wood combustion) algorithms,
 C       NH3 (agricultural ammonia) equations, and MET (meteorological)
 C       variables based on meteorological variables from gridded
-C       meteorology data. Temperatures and wind speed can be averaged
-C       across counties and over different time periods.
+C       meteorology data. Temperatures and wind speed (or aerodynamic resistance)
+C       can be averaged across counties and over different time periods.
 C
 C       GenTPRO produces two CSV files for input to SMOKE. The temporal
 C       profile file contains scalars that allocate emission inventory
@@ -134,9 +134,9 @@ C.....  Define temporal profile type constants for enumeration
 
 C...........   real arrays
         REAL   , ALLOCATABLE :: TA( : )            !  one layer of temperature
-        REAL   , ALLOCATABLE :: WS( : )            !  one layer of wind speed
+        REAL   , ALLOCATABLE :: VARTMP( : )        !  one layer of 2nd variable for NH3 profile method
         REAL   , ALLOCATABLE :: TASRC( : )         !  averaged gridded temperature by FIPS(source)
-        REAL   , ALLOCATABLE :: WSSRC( : )         !  averaged gridded wind speed  by FIPS(source)
+        REAL   , ALLOCATABLE :: VARSRC( : )        !  averaged gridded 2nd variable by FIPS(source)
         REAL   , ALLOCATABLE :: TOTSRC( :,:,: )    !  hourly daily/month total
         REAL   , ALLOCATABLE :: HRLSRC( :,: )      !  hourly values
         REAL   , ALLOCATABLE :: DAYSRC( :,: )      !  daily values
@@ -260,6 +260,7 @@ C...........   Other local variables:
         REAL       SLOPE               ! RWC linear euqation slope 
         REAL       CONST               ! RWC linear equation constant 
 
+        LOGICAL :: BASHFLAG = .FALSE.  !  true: processing NH3 option using Bash Equation
         LOGICAL :: EFLAG    = .FALSE.  !  true: error found
         LOGICAL :: COMPLETE = .FALSE.  !  true: program successful complete
         LOGICAL :: GRID_ERR = .FALSE.  !  true: error found in grid settings
@@ -290,7 +291,7 @@ C...........   Other local variables:
         CHARACTER(IOVLEN3) PROF_METHOD !  Profile method name
         CHARACTER(IOVLEN3) TPRO_TYPE   !  Temproal profile type name
         CHARACTER(IOVLEN3) TVARNAME    !  temperature variable name
-        CHARACTER(IOVLEN3) WSPDNAME    !  wind speed variable name
+        CHARACTER(IOVLEN3) VAR_NAME    !  NH3 2nd variable name
         CHARACTER(200)     TEMPDIR     !  directory for output files
         CHARACTER(300)     MESG        !  message buffer
 
@@ -356,11 +357,6 @@ C.........  Get name of surrogate IDs to use
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Obtain profile generation method: 'RWC', 'AGNH3', or 'MET'
-        MESG ='Specifies profile method for meteorology processing'
-        CALL ENVSTR( 'PROFILE_METHOD', MESG, 'MET', PROF_METHOD, IOS )
-        CALL UPCASE( PROF_METHOD )
-
 C.........  Get the type of temporal profiles to produce from the environment
         MESG = 'Specifies the type of temporal profiles to produce'
         CALL ENVSTR( 'TPRO_OUTPUT', MESG, ' ', TPRO_TYPE, IOS )
@@ -368,6 +364,18 @@ C.........  Get the type of temporal profiles to produce from the environment
 
         MESG = 'ERROR: MUST define TPRO_OUTPUT'
         IF( TPRO_TYPE == ' ' ) CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+C.........  Obtain profile generation method: 'RWC', 'RC_NH3', 'BASH_NH3', or 'MET'
+        MESG ='Specifies profile method for meteorology processing'
+        CALL ENVSTR( 'PROFILE_METHOD', MESG, 'MET', PROF_METHOD, IOS )
+        CALL UPCASE( PROF_METHOD )
+
+        MESG = 'ERROR: ' // TRIM( PROF_METHOD ) // ' profile method'
+     &         // ' you defined is not applicable' 
+        IF( .NOT. ( PROF_METHOD == 'RC_NH3' .OR. PROF_METHOD == 'BASH_NH3' .OR.
+     &      PROF_METHOD == 'MET' .OR. PROF_METHOD == 'RWC' ) ) THEN
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Get the name of the temperature variable.
         MESG = 'Specifies meteorological variable name for ' //
@@ -382,29 +390,61 @@ C.........  Get the name of the temperature variable.
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-C.........  Get the name of the wind speed variable.
-        MESG = 'Specifies wind speed variable name for ' //
-     &         TRIM( PROF_METHOD ) // ' profile method'
-        CALL ENVSTR( 'WSPEED_VAR', MESG, ' ',WSPDNAME, IOS )
-        CALL UPCASE( WSPDNAME )
-
 C.........  Set default names for additional variables
-        IF( PROF_METHOD == 'AGNH3' ) THEN
-           NH3FLAG  = .TRUE.
-           IF( WSPDNAME == ' ' ) THEN
+        IF( PROF_METHOD == 'RC_NH3' ) THEN
+
+            NH3FLAG  = .TRUE.
+
+C.............  Get the name of the wind speed variable.
+            MESG = 'Specifies wind speed variable name for ' //
+     &             TRIM( PROF_METHOD ) // ' profile method'
+            CALL ENVSTR( 'WSPEED_VAR', MESG, ' ',VAR_NAME, IOS )
+            CALL UPCASE( VAR_NAME )
+
+           IF( VAR_NAME == ' ' ) THEN
                MESG = 'ERROR: MUST specifies wind speed variable ' //
      &             'name "WSPEED_VAR" for '//TRIM( PROF_METHOD )//
      &             ' profile method'
                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
            ELSE
-               MESG = 'NOTE: Wind speed variable ('//TRIM( WSPDNAME )//
+               MESG = 'NOTE: Wind speed variable ('//TRIM( VAR_NAME )//
      &            ') is chosen for "' // TRIM( PROF_METHOD ) //
      &            '" profile method'
                CALL M3MESG( MESG )
            END IF
 
+        ELSE IF( PROF_METHOD == 'BASH_NH3' ) THEN
+
+            NH3FLAG  = .TRUE.
+            BASHFLAG = .TRUE.
+
+C.............  Check name of temperature variable
+            IF( TVARNAME /= 'TEMPG' ) THEN
+                MESG = 'WARNING: Bash Equation is based on surface ' //
+     &              'temperature variable.'
+                CALL M3MESG( MESG )
+            END IF
+
+C.............  Get the name of the aerodynamic resistance  variable.
+            MESG = 'Specifies aerodynamic resistance variable name for ' //
+     &             TRIM( PROF_METHOD ) // ' profile method'
+            CALL ENVSTR( 'AERO_RESISTANCE_VAR', MESG, ' ',VAR_NAME, IOS )
+            CALL UPCASE( VAR_NAME )
+
+           IF( VAR_NAME == ' ' ) THEN
+               MESG = 'ERROR: MUST specifies aerodynamic resistance ' //
+     &             'variable name "AERO_RESISTANCE_VAR" for '//
+     &             TRIM( PROF_METHOD )// ' profile method'
+               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+           ELSE
+               MESG = 'NOTE: Aerodynamic resistance variable ('
+     &             // TRIM( VAR_NAME ) // ') is chosen for "' 
+     &             // TRIM( PROF_METHOD ) // '" profile method'
+               CALL M3MESG( MESG )
+           END IF
+
         ELSE
-           WSPDNAME = '' 
+           VAR_NAME = '' 
 
         END IF
 
@@ -1100,19 +1140,25 @@ C.............  Check that requested variables are in the file
             END IF
 
             IF( NH3FLAG ) THEN
-                J = INDEX1( WSPDNAME, NVARS3D, VNAME3D )
+                J = INDEX1( VAR_NAME, NVARS3D, VNAME3D )
                 IF( J <= 0 ) THEN
-                    EFLAG = .TRUE.
-                    MESG = 'ERROR: Could not find ' //TRIM( WSPDNAME )//
+                    MESG = 'ERROR: Could not find ' //TRIM( VAR_NAME )//
      &                     ' in file ' // TRIM( METFILE )
                     CALL M3MESG( MESG )
 
-                    MESG = 'NOTE: Both temperature variable and wind '//
-     &                     'speed variables need to be in file ' //
-     &                     TRIM(METFILE) // CRLF() // BLANK10 //
+                    IF( BASHFLAG ) THEN
+                        MESG = 'NOTE: Both ground temperature and '
+     &                      // 'aerodynamic resistance variables need '
+     &                      // 'to be in the smae MET file'
+                    ELSE
+                        MESG = 'NOTE: Both temperature and wind speed ' //
+     &                     'variables need to be in the same MET file ' //
+     &                     CRLF() // BLANK10 //
      &                     'NOTE: User may need to use Metcombine '//
      &                     'SMOKE utility program to combine met '//
      &                     'variables from MET_CRO_2D and MET_CRO_3D'
+                    END IF
+
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                  END IF
             END IF
@@ -1184,18 +1230,18 @@ C.........  Write HDRer to day-of-year temporal profile output file
 C.........  Allocate met variable arrays
         ALLOCATE( TA( METNGRID ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TA', PROGNAME )
-        ALLOCATE( WS( METNGRID ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'WS', PROGNAME )
+        ALLOCATE( VARTMP( METNGRID ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VARTMP', PROGNAME )
 
 C.........  Source met variable arrays
         ALLOCATE( TASRC( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TASRC', PROGNAME )
-        ALLOCATE( WSSRC( NSRGFIPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'WSSRC', PROGNAME )
+        ALLOCATE( VARSRC( NSRGFIPS ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'VARSRC', PROGNAME )
         ALLOCATE( MINTEMP( NSRGFIPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MINTEMP', PROGNAME )
         TASRC = 0.0
-        WSSRC = 0.0
+        VARSRC = 0.0
         MINTEMP = -1 * BADVAL3
 
 C.........  Allocate memory for storing hourly/annual meteorology profiles
@@ -1246,7 +1292,7 @@ C.........  dates/daylight saving arrays
 
 C.........  Process meteorology data...
         MESG = 'Processing meteorology data using variables ' //
-     &         TRIM( TVARNAME ) // ', ' // TRIM( WSPDNAME ) // '...'
+     &         TRIM( TVARNAME ) // ', ' // TRIM( VAR_NAME ) // '...'
         CALL M3MSG2( MESG )
         
         JDATE = SDATE
@@ -1345,19 +1391,19 @@ C                   surrogate. Results are stored in TASRC.
 C                   Equation (1) in design document.
                 CALL GRDFIPS( NSRGFIPS, SRGFIPS, TA, TASRC, .FALSE. )
 
-C.................  Read current wind speed for AGNH3 profile method processing
+C.................  Read current 2nd variable for AGNH3 profile method processing
                 IF( NH3FLAG ) THEN
-                    IF( .NOT. READ3( METNAME, WSPDNAME, 1,
-     &                                JDATE, JTIME, WS ) ) THEN
-                        MESG = 'Could not read ' // TRIM( WSPDNAME ) //
+                    IF( .NOT. READ3( METNAME, VAR_NAME, 1,
+     &                                JDATE, JTIME, VARTMP ) ) THEN
+                        MESG = 'Could not read ' // TRIM( VAR_NAME ) //
      &                     ' from ' // TRIM( METFILE )
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
 
-C.....................  Apply ungridding matrix to average the wind speeds
+C.....................  Apply ungridding matrix to average the 2nd variable
 C                   of the grid cells that intersect with the selected
-C                   surrogate. Results are stored in WSSRC.
-                    CALL GRDFIPS( NSRGFIPS, SRGFIPS, WS, WSSRC, .FALSE. )
+C                   surrogate. Results are stored in VARSRC.
+                    CALL GRDFIPS( NSRGFIPS, SRGFIPS, VARTMP, VARSRC, .FALSE. )
 
                 END IF   ! ( NH3FLAG )
 
@@ -1463,13 +1509,23 @@ C                       in the day for the RWC regression equation.
                     END IF   ! IF  (new day)
 
                 ELSE IF( NH3FLAG ) THEN
-C.................  AGNH3: Use Russell and Cass (1986) algorithm for
-C                          predicting diurnal NH3 emission variations
-C                          to calculate temporal profiles for
-C                          agricultural ammonia sources using Temp(C) and WS(m/s).
 
-                    TEMPVAL = TASRC( S ) - 273.15
-                    HRLSRC( S,T ) = 2.36**(TEMPVAL/10.) * WSSRC( S )
+                    IF( .NOT. BASHFLAG ) THEN        ! Russell and Cass Equation for Agricultural NH3
+
+C.....................  AGNH3: Use Russell and Cass (1986) algorithm for
+C                              predicting diurnal NH3 emission variations
+C                              to calculate temporal profiles for
+C                              agricultural ammonia sources using Temp(C) and WS(m/s).
+                        TEMPVAL = TASRC( S ) - 273.15
+                        HRLSRC( S,T ) = 2.36**(TEMPVAL/10.) * VARSRC( S )
+
+                    ELSE           ! Bash Equation for Livestock NH3
+
+                        TEMPVAL = 161500./TASRC(S) * EXP( -1*10380./TASRC(S) ) ! Henry's equilibrium  
+                        HRLSRC( S,T ) = TEMPVAL * VARSRC( S )   ! H(t) / Ra (aerodynamic resistance)
+                    
+                    END IF
+
 
                 ELSE
 C.................  MET: Use the time series of the selected
@@ -1488,17 +1544,10 @@ C                    DST adjustment for a proper Temporal processing.
                      DAYSRC( S,NDAY ) = DAYSRC( S,NDAY ) + HRLSRC( S,T )
                      PT = DT( S ) - 23
                      TOTSRC( S,PT:T-1,1 ) = DAYSRC( S,NDAY )
-C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t-1,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
-C     &    HOURIDX,DAYSRC(S,NDAY),'BH DAY DST Adding....'
                 END IF
 
                 IF( HOURIDX == 24 .AND. DST ==  10000 ) THEN
                     TMPDSRC( S ) = TMPDSRC( S ) - HRLSRC( S,T )  ! skip one hour value
-C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
-C     &     HOURIDX,HRLSRC(S,T),'BH HOUR DST Skipping....'
-                ELSE
-C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
-C     &     HOURIDX,HRLSRC(S,T),'BH HOUR'
                 END IF
 
                 IF( HOURIDX == 24 ) THEN
@@ -1524,9 +1573,6 @@ C.....................  Store daily total to TOTSRC array for ncf output file
 
 C.....................  Sum daily to monthly total in local time
                     TMPMSRC( S ) = TMPMSRC( S ) + DAYSRC( S,NDAY )
-C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
-C     &    HOURIDX,DAYSRC(S,NDAY),'BH DAY'
-
 
                     IF( MONTH /= TMPMNTH ) THEN
 
@@ -1542,8 +1588,6 @@ C.........................  Sum Monthly to Annual total in local time
                         ANNSRC( S ) = ANNSRC( S ) + MONSRC( S,MONTH )
 
                         TMPMSRC( S ) = 0.0    ! reset tmp monthly total array
-C           if(SRGFIPS(s)==037013) write(*,'(8I8,F15.5,A)')pt,t,JDATE,JTIME,TZONES(S),PRVBEGT(S),DAYBEGT(S),
-C     &    HOURIDX,MONSRC(S,MONTH),'BH MONTH'
 
                     END IF
 
