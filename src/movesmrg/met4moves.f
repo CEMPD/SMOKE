@@ -965,7 +965,7 @@ C.........  Open output file
         WRITE( ODEV3,'(A,I5)' ) '#PD_TEMP_INCREMENT ' , PDTEMP
         WRITE( ODEV3,'(A,I5)' ) '#PV_TEMP_INCREMENT ' , PVTEMP
         WRITE( ODEV3,'(A)' )'RefCounty,FuelMonth,avgRH,'
-     &                    //'min_temp,max_temp,lowTemp,highTemp'
+     &                    //'min_temp,max_temp,tempBin'
 
 C.......................................................................
 C.........  Allocate met variable arrays

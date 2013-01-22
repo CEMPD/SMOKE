@@ -162,17 +162,18 @@ C.........  Calculate max/min temp bins based on RPD_TEMP_INCREMENT
         NT = 0
         DO T = -150, 150, PDTEMP
              NT = NT + 1
-             IF( MINT <= T .AND. T < MAXT ) THEN
+             IF( MINT <= T .AND. T <= MAXT ) THEN
 
                   IF( NRHTBIN( NR,NF,NT ) < 1 ) THEN 
                       NTB = NT + INT( TEMPBIN/PDTEMP )
                       IMINT = MINT + INT( TEMPBIN )
-                      IF( MINT <= T .AND. T < IMINT ) THEN
-                          RHTBIN( NR,NF,NT:NTB-1 ) = RHTBIN( NR,NF,NTB ) 
-                          NRHTBIN( NR,NF,NT:NTB-1 ) = NRHTBIN( NR,NF,NTB ) 
+                      IF( T <= IMINT ) THEN
+                          IF( NRHTBIN( NR,NF,NTB ) < 1 ) NTB = NTB + 1 
+                          RHTBIN( NR,NF,1:NTB-1 ) = RHTBIN( NR,NF,NTB ) 
+                          NRHTBIN( NR,NF,1:NTB-1 ) = NRHTBIN( NR,NF,NTB ) 
                       ELSE
-                          RHTBIN( NR,NF,NT:NTB ) = RHTBIN( NR,NF,NT-1 ) 
-                          NRHTBIN( NR,NF,NT:NTB ) = NRHTBIN( NR,NF,NT-1 ) 
+                          RHTBIN( NR,NF,NT: ) = RHTBIN( NR,NF,NT-1 ) 
+                          NRHTBIN( NR,NF,NT: ) = NRHTBIN( NR,NF,NT-1 ) 
                       END IF
                   END IF
 
@@ -180,7 +181,7 @@ C.........  Calculate max/min temp bins based on RPD_TEMP_INCREMENT
 
 C...................  Write out refcounty min/max temp and avg RH by temperature bin for RPD/RPV
                   WRITE( ODEV2,94060 ) COUNTY, PMONTH, RHVAL, MINTEMP,
-     &                                 MAXTEMP, T, T+PDTEMP
+     &                                 MAXTEMP, T
 
              END IF
         END DO
@@ -201,6 +202,6 @@ C...........   Internal buffering formats............ 94xxx
 
 94050   FORMAT( I6.6, I5, 3X, A, 25F10.2 )   
 
-94060   FORMAT( I6.6,',',I5,',',F12.6,',',F10.2,',',F10.2,',',I5,',',I5 )   
+94060   FORMAT( I6.6,',',I5,',',F12.6,',',F10.2,',',F10.2,',',I5 )   
  
         END SUBROUTINE WRTEMPROF

@@ -169,7 +169,7 @@ C.................  Store RH into temperature bins
                 NT = 0
                 DO T = -150, 150-PDTEMP, PDTEMP
                     NT = NT + 1
-                    MINTMP = REAL( T )
+                    MINTMP = REAL( T ) - ( REAL( PDTEMP ) / 2.0 )
                     MAXTMP = MINTMP + REAL( PDTEMP )
 
                     IF ( MINTMP < TEMPTMP .AND. TEMPTMP <= MAXTMP ) THEN
