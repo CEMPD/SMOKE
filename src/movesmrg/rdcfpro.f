@@ -98,6 +98,8 @@ C...........   Other local variables
         REAL            OLDVAL      ! duplicate control factor value
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
+        LOGICAL      :: DUFLAG = .FALSE.   ! true: Duplicate found 
+        LOGICAL, ALLOCATABLE :: CFLAG( :,:,:,: )    ! true: duplicate found
 
         CHARACTER(500)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
@@ -122,8 +124,11 @@ C.........  Get maximum number of warnings
 C.........  Allocate storage based on number of FIPs and SCCs in inventory
         ALLOCATE( CFPRO( NINVIFIP, NINVSCC, NIPPA, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFPRO', PROGNAME )
+        ALLOCATE( CFLAG( NINVIFIP, NINVSCC, NIPPA, 12 ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CFLAG', PROGNAME )
         CFPRO = 1.0   ! array
-        
+        CFLAG = .FALSE.   ! array
+ 
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( CFDEV, 'CFPRO file' )
 
@@ -159,12 +164,6 @@ C.............  Convert FIP to integer
                 DO J = 1, NINVIFIP
                     NLFIPS(J) = J
                 END DO
-            ELSE IF ( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Bad FIPS code ', TRIM(SEGMENT( 1 )) //
-     &            ' at line ', IREC, ' of control factor file.'
-                CALL M3MESG( MESG )
-                CYCLE
             ELSE         ! FIPS is integer value 
                 L2 = LEN_TRIM(SEGMENT( 1 ))
                 CNTY = STR2INT( SEGMENT( 1 ) )
@@ -185,16 +184,18 @@ C.............  Convert FIP to integer
             END IF
 
             IF( NFIPS == 0 ) THEN
-                WRITE( MESG, 94010 ) 'WARNING: Skipping line', 
+                WRITE( MESG, 94010 ) 'NOTE: Skipping line', 
      &            IREC, ' of control factor file because FIPS code', 
      &            TRIM(SEGMENT( 1 )), ' is not in the inventory.'
-                CALL M3WARN(PROGNAME, 0, 0, MESG )
+                CALL M3MESG( MESG )
                 CYCLE
             END IF
 
 C.............  Find SCC in inventory list
             K = 0 
-            IF ( SEGMENT( 2 ) == ' ' ) THEN 
+
+            IF( SEGMENT( 2 ) == ' ' .OR. 
+     &          SEGMENT( 2 ) == '0000000000' ) THEN 
                 NSCCS = NINVSCC
                 DO J = 1, NINVSCC
                     NLSCCS(J) = J
@@ -203,10 +204,10 @@ C.............  Find SCC in inventory list
                 SCC = ADJUSTL( SEGMENT( 2 ) )
                 SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
                 IF( SCCIDX .LE. 0 ) THEN
-                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
      &                "line ", IREC, ' of control factor file because SCC ', 
      &                 SCC, ' is not in the inventory.'
-                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+                    CALL M3MESG( MESG )
                     CYCLE
                 END IF
                 NSCCS =1
@@ -231,11 +232,11 @@ C.............  Check pollutant name and mode
                     END IF
                 END DO
                 NPOLS = K
-                IF (  NPOLS .EQ. 0 ) THEN 
-                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+                IF (  NPOLS < 1 ) THEN 
+                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
      &                "line ", IREC, ' of control factor file because ',
      &                TRIM(MODNAME), ' is not in the mode list.'
-                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+                    CALL M3MESG( MESG )
                     CYCLE
                 END IF
             ELSE IF( SEGMENT( 4 ) .EQ. ' ' ) THEN
@@ -247,11 +248,11 @@ C.............  Check pollutant name and mode
                     END IF
                 END DO
                 NPOLS = K
-                IF (  NPOLS .EQ. 0 ) THEN 
-                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+                IF (  NPOLS < 1 ) THEN 
+                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
      &                "line ", IREC, ' of control factor file because ',
      &                TRIM(POLNAME), ' is not in the pollutant list.'
-                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+                    CALL M3MESG( MESG )
                     CYCLE
                 END IF
             ELSE 
@@ -264,39 +265,31 @@ C.............  Check pollutant name and mode
                     NLPOLS(1) = POLIDX
                 END IF
                 IF (  NPOLS .EQ. 0 ) THEN 
-                    WRITE( MESG, 94010 ) 'WARNING: Skipping ' //
+                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
      &                "line ", IREC, ' of control factor file because ',
-     &                EPOLNAM, ' is not in the pollutant list.'
-                    CALL M3WARN(PROGNAME, 0, 0, MESG )
+     &                TRIM(EPOLNAM), ' is not in the pollutant list.'
+                    CALL M3MESG( MESG )
                     CYCLE
                 END IF
             END IF
 
-
 C.............  Check month values
-            NMONS = 0
             IF( STR2INT( SEGMENT( 5 ) ) ) THEN 
                 NMONS = 12
                 DO J = 1, NMONS
-                    NLMONS(J) = J
+                    NLMONS( J ) = J
                 END DO
-            ELSE IF ( .NOT. CHKINT( SEGMENT( 6 ) ) ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Bad month code ', TRIM(SEGMENT( 5 ))//
-     &            ' at line', IREC, ' of control factor file.'
-                CALL M3MESG( MESG )
-                CYCLE
             ELSE         ! month is integer value 
                 MON = STR2INT( SEGMENT( 5 ) )
                 IF( MON < 0  .OR. MON > 12 ) THEN 
                     EFLAG = .TRUE.
-                    WRITE( MESG, 94020 ) 'ERROR: Bad month code ', TRIM(SEGMENT( 5 ))//
-     &                ' at line', IREC, ' of control factor file.'
+                    WRITE( MESG, 94010 ) 'ERROR: Can not process month '
+     &                   //TRIM(SEGMENT(5))// ' at line', IREC
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
                 NMONS = 1
-                NLMONS(1) = MON
+                NLMONS( 1 ) = MON
             END IF
                 
 C.............  check and get up control factor values
@@ -313,19 +306,17 @@ C.............  check and get up control factor values
             DO J = 1, NSCCS
             DO K = 1, NPOLS
             DO M = 1, NMONS
-                OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
-                IF ( OLDVAL < 1.0 ) THEN
-                IF( NWARN < MXWARN ) THEN
-                    WRITE( MESG, 94050 ) 'WARNING: Duplicate entry: Overwriting '//
-     &                  'factor from ', OLDVAL, ' to ', CFVAL,
+                DUFLAG = CFLAG(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
+                IF( DUFLAG ) THEN
+                    WRITE( MESG, 94050 ) 'WARNING: Duplicate entry at line',
+     &                  IREC,': Overwriting factor from ', OLDVAL, ' to ', CFVAL,
      &                  CRLF() // BLANK10 // ' FIPS:', INVIFIP(NLFIPS(L)), 
-     &                  ', SCC: ', INVSCC(NLSCCS(J)), ', POLL: ', EANAM(NLPOLS(K)),
-     &                  ', MONTH: ', NLMONS(M)
-                    CALL M3WARN(PROGNAME, 0, 0, MESG )
-                    NWARN = NWARN + 1
-               END IF
+     &                  ', SCC: ', INVSCC(NLSCCS(J)), ', POLL: ',
+     &                  TRIM( EANAM(NLPOLS(K))), ', MONTH: ', NLMONS(M)
+                    CALL M3MESG( MESG )
                END IF
                CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = CFVAL
+               CFLAG(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = .TRUE.
             END DO
             END DO
             END DO
@@ -339,8 +330,6 @@ C.............  check and get up control factor values
             MESG = 'Problem found in control factor file.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-C       MESG = "test read control factor file "
-C       CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         
         RETURN
 
@@ -359,8 +348,7 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, I8, 1X, A, A,: ) )
-94020   FORMAT( 10( 2A, 1X, I8, A ,:) )
-94050   FORMAT(  A,:,F5.2,:,A,:,F5.2,:,A,:,I6,5A,A,A, I2 )
+94050   FORMAT(  A,I8,A,F5.2,A,F5.2,A,I6.6,5A,I2 )
         
         END SUBROUTINE RDCFPRO
 
