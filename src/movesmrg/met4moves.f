@@ -1020,7 +1020,7 @@ C.........  Allocate memory for storing meteorology profiles
 C.........  Estimate possible max no of temp bins
 C           Lowest ambient temperature ever measured (-128F)
 C           Highest ambient temperature ever measured (138F)
-        MXTBIN = INT( 300 / PDTEMP )
+        MXTBIN = INT( 350 / PDTEMP )     ! Temp range from -150F to 200F
         NFUEL = 12
         ALLOCATE( RHTBIN( NREFC,NFUEL,MXTBIN ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RHTBIN', PROGNAME )

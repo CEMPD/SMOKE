@@ -167,7 +167,7 @@ C.................  Calculate RH using Temp. Pressure and mixing ratio values
 
 C.................  Store RH into temperature bins
                 NT = 0
-                DO T = -150, 150-PDTEMP, PDTEMP
+                DO T = -150, 200-PDTEMP, PDTEMP
                     NT = NT + 1
                     MINTMP = REAL( T ) - ( REAL( PDTEMP ) / 2.0 )
                     MAXTMP = MINTMP + REAL( PDTEMP )

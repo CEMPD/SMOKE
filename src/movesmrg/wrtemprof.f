@@ -160,7 +160,7 @@ C.........  Calculate max/min temp bins based on RPD_TEMP_INCREMENT
         NR = FIND1( COUNTY,NREFC, MCREFIDX( :,1 ) )
         NF = PMONTH
         NT = 0
-        DO T = -150, 150, PDTEMP
+        DO T = -150, 200, PDTEMP
              NT = NT + 1
              IF( MINT <= T .AND. T <= MAXT ) THEN
 
