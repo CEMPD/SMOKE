@@ -344,7 +344,7 @@ C.........  Get temperature increments for ratepervehicle lookup table
 
 C.........  Get episode starting date and time and ending date
         MESG = 'Temperature buffer bin'
-        TEMPBIN = ENVREAL( 'TEMP_BUFFER_BIN', MESG, 0, IOS )
+        TEMPBIN = ENVREAL( 'TEMP_BUFFER_BIN', MESG, 10.0, IOS )
 
 C.........  Define type of humidity (RH or Specific Humidity)
         MESG = 'Use Specific Humidity ouput or not.'
