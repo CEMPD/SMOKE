@@ -185,8 +185,8 @@ C.............  Convert FIP to integer
 
             IF( NFIPS == 0 ) THEN
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line', 
-     &            IREC, ' of control factor file because FIPS code', 
-     &            TRIM(SEGMENT( 1 )), ' is not in the inventory.'
+     &            IREC, ' of control factor file because FIPS code '
+     &            //TRIM(SEGMENT( 1 ))//' is not in the inventory.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -205,8 +205,8 @@ C.............  Find SCC in inventory list
                 SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
                 IF( SCCIDX .LE. 0 ) THEN
                     WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
-     &                "line ", IREC, ' of control factor file because SCC ', 
-     &                 SCC, ' is not in the inventory.'
+     &                "line ", IREC, ' of control factor file because SCC ' 
+     &                //SCC// ' is not in the inventory.'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -233,9 +233,9 @@ C.............  Check pollutant name and mode
                 END DO
                 NPOLS = K
                 IF (  NPOLS < 1 ) THEN 
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
-     &                "line ", IREC, ' of control factor file because ',
-     &                TRIM(MODNAME), ' is not in the mode list.'
+                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
+     &                IREC, ' of control factor file because '
+     &                //TRIM(MODNAME)// ' is not in the mode list'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -249,9 +249,9 @@ C.............  Check pollutant name and mode
                 END DO
                 NPOLS = K
                 IF (  NPOLS < 1 ) THEN 
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
-     &                "line ", IREC, ' of control factor file because ',
-     &                TRIM(POLNAME), ' is not in the pollutant list.'
+                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
+     &                IREC, ' of control factor file because ' //
+     &                TRIM(POLNAME)//' is not in the pollutant list'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -264,24 +264,31 @@ C.............  Check pollutant name and mode
                     NPOLS = 1
                     NLPOLS(1) = POLIDX
                 END IF
-                IF (  NPOLS .EQ. 0 ) THEN 
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
-     &                "line ", IREC, ' of control factor file because ',
-     &                TRIM(EPOLNAM), ' is not in the pollutant list.'
+                IF (  NPOLS .EQ. 0 ) THEN
+                   WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
+     &                IREC, ' of control factor file because ' //
+     &                TRIM(EPOLNAM)// ' is not in the pollutant list.'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
             END IF
 
 C.............  Check month values
-            IF( STR2INT( SEGMENT( 5 ) ) ) THEN 
+            NMONS = 0
+            IF( STR2INT( SEGMENT( 5 ) ) == 0 ) THEN 
                 NMONS = 12
                 DO J = 1, NMONS
                     NLMONS( J ) = J
                 END DO
+            ELSE IF ( .NOT. CHKINT( SEGMENT( 5 ) ) ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG, 94010 ) 'ERROR: Bad month format '
+     &               //TRIM(SEGMENT(5))// ' at line', IREC
+                CALL M3MESG( MESG )
+                CYCLE
             ELSE         ! month is integer value 
                 MON = STR2INT( SEGMENT( 5 ) )
-                IF( MON < 0  .OR. MON > 12 ) THEN 
+                IF( MON < 1  .OR. MON > 12 ) THEN 
                     EFLAG = .TRUE.
                     WRITE( MESG, 94010 ) 'ERROR: Can not process month '
      &                   //TRIM(SEGMENT(5))// ' at line', IREC
@@ -295,8 +302,8 @@ C.............  Check month values
 C.............  check and get up control factor values
             IF ( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'ERROR: Bad contol factor value ' //
-     &            'at line', IREC, 'of control factor file.'
+                WRITE( MESG, 94010 ) 'ERROR: Bad contol factor value'//
+     &            ' at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -347,7 +354,7 @@ C...........   Formatted file I/O formats............ 93xxx
       
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, I8, 1X, A, A,: ) )
+94010   FORMAT( 10( A, :, I8, :, 1X ) )
 94050   FORMAT(  A,I8,A,F5.2,A,F5.2,A,I6.6,5A,I2 )
         
         END SUBROUTINE RDCFPRO
