@@ -52,9 +52,6 @@
 !...........   Hourly meteorology data
         REAL,    ALLOCATABLE, PUBLIC :: TKHOUR  ( :,: ) ! temps by source per hour
         INTEGER, ALLOCATABLE, PUBLIC :: NTKHOUR ( :,: ) ! no of hours for monthly average for each source 
-        REAL,    ALLOCATABLE, PUBLIC :: RHHOUR  ( :,: ) ! RH by source per hour
-        INTEGER, ALLOCATABLE, PUBLIC :: NRHHOUR ( :,: ) ! no of hours for monthly average for each source 
-        REAL,    ALLOCATABLE, PUBLIC :: RHDAY   ( :,: ) ! relative humidity by county per day
         REAL,    ALLOCATABLE, PUBLIC :: MAXTDAY ( : )   ! max temp per county per day
         REAL,    ALLOCATABLE, PUBLIC :: MINTDAY ( : )   ! min temp per county per day
 

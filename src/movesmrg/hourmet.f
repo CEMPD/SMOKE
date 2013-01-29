@@ -42,8 +42,7 @@ C...........   MODULES for public variables
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
 
 C...........   This module is the derived meteorology data for emission factors
-        USE MODMET, ONLY: TKHOUR, RHHOUR, RHDAY,
-     &                    NTKHOUR, NRHHOUR, RHTBIN, NRHTBIN, NFUEL,
+        USE MODMET, ONLY: TKHOUR, NTKHOUR, RHTBIN, NRHTBIN, NFUEL,
      &                    FUELIDX, MINTSRC, MAXTSRC, MAXTDAY, MINTDAY
 
 C...........   This module contains the gridding surrogates tables
@@ -95,7 +94,6 @@ C...........   Other local variables
         REAL        TEMPVAL     ! temperature value in Farenheight
         REAL        TEMPTMP     ! tmp temperature value in Farenheight
         REAL        RHVAL       ! RH value
-        REAL        RHTMP       ! tmp RH value
 
         LOGICAL       :: DAYLIT  = .FALSE.  ! true: date is daylight savings
         LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time
@@ -111,7 +109,6 @@ C   begin body of subroutine HOURTEMP
 C.........  For the first time, initialize all entries to zero
         IF( INITIAL ) THEN
             TKHOUR = 0.  ! array
-            RHHOUR = 0.
             
 C.............  Get maximum number of warnings
             MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
@@ -136,7 +133,7 @@ C           grid.  If no subgrid, then XOFF and YOFF will be 1 and no problem.
                 RHVAL = 0.0
                 TEMPVAL = 0.0
             ELSE
-		RHVAL = BADVAL3
+                RHVAL = BADVAL3
                 TEMPVAL = BADVAL3
             END IF
 
@@ -152,17 +149,19 @@ C.................  Get column and row from subgrid
 C.................  Convert K to F
                 TEMPTMP = 1.8 * TA( C ) - 459.67
 
+C.................  Store min/max by source for fuelmonth output
                 MAXTSRC( S ) = MAX( TEMPTMP, MAXTSRC( S ) )
                 MINTSRC( S ) = MIN( TEMPTMP, MINTSRC( S ) )
 
-                MAXTDAY( S ) = MAX( TEMPTMP, MAXTDAY( S ) )
-                MINTDAY( S ) = MIN( TEMPTMP, MINTDAY( S ) )
+C.................  Store min/max by cell for daily output for SMOKE RPP processing
+                MAXTDAY( C ) = MAX( TEMPTMP, MAXTDAY( C ) )
+                MINTDAY( C ) = MIN( TEMPTMP, MINTDAY( C ) )
 
 C.................  Calculate RH using Temp. Pressure and mixing ratio values
                 IF( HFLAG ) THEN
-                    RHTMP = QV( C ) / ( QV( C ) + 1 )     ! Specifici Humidity
+                    RHVAL = QV( C ) / ( QV( C ) + 1 )     ! Specific Humidity
                 ELSE
-                    RHTMP = CALCRELHUM( TA( C ), PRES( C ), QV( C ) ) ! relative humidity
+                    RHVAL = CALCRELHUM( TA( C ), PRES( C ), QV( C ) ) ! relative humidity
                 END IF
 
 C.................  Store RH into temperature bins
@@ -187,20 +186,18 @@ C.........................  Loop over months per ref. county
                            IF( CURMONTH == MONTH ) NF = FMREFSORT( J,2 )  ! processing fuelmonth/co
                         END DO
 
-                        RHTBIN ( NR,NF,NT ) = RHTBIN ( NR,NF,NT )  + RHTMP
+                        RHTBIN ( NR,NF,NT ) = RHTBIN ( NR,NF,NT )  + RHVAL
                         NRHTBIN( NR,NF,NT ) = NRHTBIN( NR,NF,NT ) + 1
 
                     END IF
 
                 END DO
 
-                RHVAL = RHVAL + RHTMP
                 TEMPVAL = TEMPVAL + TEMPTMP
 
             END DO
 
             TEMPVAL = TEMPVAL / N    ! averaged Temp by source
-            RHVAL   = RHVAL   / N    ! averaged RH by srouce
 
 C.............  Calculate time slot in output array for this time step
 C               Appropriate 24 hour time will be day starting time (12 AM in local 
@@ -220,17 +217,11 @@ C               one running one day)
                 TIMESLOT = TIMESLOT + 24
             END IF
 
-            IF( TEMPVAL > AMISS3 .AND. RHVAL > 0.0 )THEN
-
-C.................  Store daily RH values for daily SMOKE-ready output
-                RHDAY( S,TIMESLOT ) = RHDAY( S,TIMESLOT ) + RHVAL
+            IF( TEMPVAL > AMISS3 )THEN
 
 C.................  Store values in hourly arrays for mothly SMOKE-ready output               
                 TKHOUR( S,TIMESLOT )  = TKHOUR( S,TIMESLOT ) + TEMPVAL
                 NTKHOUR( S,TIMESLOT ) = NTKHOUR( S,TIMESLOT ) + 1
-
-                RHHOUR( S,TIMESLOT )  = RHHOUR( S,TIMESLOT ) + RHVAL
-                NRHHOUR( S,TIMESLOT ) = NRHHOUR( S,TIMESLOT ) + 1
 
             END IF
 

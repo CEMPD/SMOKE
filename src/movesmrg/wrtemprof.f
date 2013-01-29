@@ -1,6 +1,6 @@
 
-        SUBROUTINE WRTEMPROF( ODEV1, ODEV2, MYEAR, HDR, COUNTY, PMONTH,
-     &                        PDTEMP, PPTEMP, RHAVG, THOUR, MAXTEMP,
+        SUBROUTINE WRTEMPROF( ODEV1, ODEV2, MYEAR, COUNTY, PMONTH,
+     &                        PDTEMP, PPTEMP, THOUR, MAXTEMP,
      &                        MINTEMP, TEMPBIN )
 
 C***********************************************************************
@@ -62,12 +62,10 @@ C.............  Subroutine arguments
         INTEGER  , INTENT(IN)  ::  ODEV1           ! MOVES RPP output file
         INTEGER  , INTENT(IN)  ::  ODEV2           ! MOVES RPD/RPV output file
         INTEGER  , INTENT(IN)  ::  MYEAR           ! modeling year
-        CHARACTER, INTENT(IN)  ::  HDR             ! Averaging type for RPP output file
         INTEGER  , INTENT(IN)  ::  COUNTY          ! refCounty
         INTEGER  , INTENT(IN)  ::  PMONTH          ! fuel month
         INTEGER  , INTENT(IN)  ::  PDTEMP          ! RPP/RPV temperature increment
         INTEGER  , INTENT(IN)  ::  PPTEMP          ! RPP temperature increment
-        REAL     , INTENT(IN)  ::  RHAVG           ! avg RH for refcounty/fuelmonth
         REAL     , INTENT(IN)  ::  THOUR( 24 )     ! avg temp 24-hr profiles for refcounty/fuelmonth
         REAL     , INTENT(IN)  ::  MAXTEMP         ! max temp for refcounty/fuelmonth
         REAL     , INTENT(IN)  ::  MINTEMP         ! min temp for refcounty/fuelmonth
@@ -88,7 +86,7 @@ C...........   Other local variables
         REAL    TKMIN                     ! tmp min temperatures
         REAL    TKDIF, DT, ST             ! tmp DIFF of min/max temperatures
         REAL    TKMED                     ! tmp median temperatures
-        REAL    RHVAL                     ! tmp relative humidity
+        REAL    RHSUM, NRHSUM, RHAVG      ! tmp relative humidity
 
         CHARACTER(32)    TPROID             ! temporal resolution header
         CHARACTER(300)   MESG               ! message buffer
@@ -96,6 +94,15 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine WRTEMPROF
+        NR = FIND1( COUNTY,NREFC, MCREFIDX( :,1 ) )
+        NF = PMONTH
+        NT = 0 
+        DO T = -150, 200, PDTEMP
+             NT = NT + 1
+             RHSUM = RHSUM + RHTBIN( NR,NF,NT )
+             NRHSUM = NRHSUM + NRHTBIN( NR,NF,NT )
+        END DO
+        RHAVG = RHSUM / NRHSUM
 
 C.........  Write out last ref. county min/max temp and avg RH
         WRITE( ODEV1,94040 ) COUNTY, PMONTH, 'min_max',
@@ -131,7 +138,7 @@ C.........  Determine temperature bins based on PPTEMP
                 IT = IT + 1
                 DT = MX - MN
                 ST = MX + MN
-                WRITE( TPROID,94030 ) HDR, MYEAR, PMONTH, IT
+                WRITE( TPROID,94030 ) 'M', MYEAR, PMONTH, IT
 
                 TKPRO = 0.0
 C.................  Create 24 hr temp profile per temp bin
@@ -177,10 +184,10 @@ C.........  Calculate max/min temp bins based on RPD_TEMP_INCREMENT
                       END IF
                   END IF
 
-                  RHVAL = RHTBIN(NR,NF,NT) / NRHTBIN(NR,NF,NT)
+                  RHAVG = RHTBIN(NR,NF,NT) / NRHTBIN(NR,NF,NT)
 
 C...................  Write out refcounty min/max temp and avg RH by temperature bin for RPD/RPV
-                  WRITE( ODEV2,94060 ) COUNTY, PMONTH, RHVAL, MINTEMP,
+                  WRITE( ODEV2,94060 ) COUNTY, PMONTH, RHAVG, MINTEMP,
      &                                 MAXTEMP, T
 
              END IF
