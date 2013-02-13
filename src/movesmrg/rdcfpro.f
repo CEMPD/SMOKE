@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDCFPRO( CFDEV )
+        SUBROUTINE RDCFPRO( CFDEV, RFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -46,6 +46,9 @@ C.........  This module contains data structures and flags specific to Movesmrg
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
 
+C.........  This module is used for reference county information
+        USE MODMBSET, ONLY: NREFC, MCREFIDX, NINVC, MCREFSORT
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -71,6 +74,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: CFDEV             ! CFPRO file unit no.
+        LOGICAL, INTENT (IN) :: RFLAG             ! true: Reference county CFPRO
 
 C...........   Local allocatable arrays
 
@@ -160,18 +164,58 @@ C.............  Parse line into fields
 C.............  Convert FIP to integer
             K = 0
             IF( STR2INT( SEGMENT( 1 ) ) == 0  ) THEN 
+C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
+                IF( RFLAG ) THEN
+                    EFLAG = .FALSE.
+                    WRITE( MESG, 94010 )'ERROR: Can NOT process non-'//
+     &                  'reference county control factor at line', IREC 
+                    CALL M3MESG( MESG )
+                END IF
+
                 NFIPS = NINVIFIP
                 DO J = 1, NINVIFIP
                     NLFIPS(J) = J
                 END DO
             ELSE         ! FIPS is integer value 
-                L2 = LEN_TRIM(SEGMENT( 1 ))
                 CNTY = STR2INT( SEGMENT( 1 ) )
                 L1 = FIND1( CNTY, NINVIFIP, INVIFIP )
                 IF( L1 > 0 ) THEN 
                     NFIPS = 1
                     NLFIPS(1) = L1
+
+C.....................  Propagate reference-county-specific control factor to inventory counties.
+                    IF( RFLAG ) THEN
+                        L2 = FIND1( CNTY, NREFC, MCREFIDX( :,1 ) )
+                        IF( L2 < 1 ) THEN
+                            EFLAG = .TRUE.
+                            WRITE( MESG, 94010 ) 'ERROR: Can process '//
+     &                             'reference county ONLY: ', CNTY,
+     &                             ' is not a reference county'
+                            CALL M3MESG( MESG )
+                        END IF
+
+C.........................  find ref county and apply CF to ref-inventory counties
+                        DO J =1, NINVC
+                            IF( CNTY == MCREFSORT( J,2 ) ) THEN  ! found matched ref county
+                                K = K + 1
+                                L1 = FIND1( MCREFSORT( J,1 ), NINVIFIP, INVIFIP )
+                                NLFIPS( K ) = L1
+                            END IF
+                        END DO
+                        NFIPS = K
+
+                    END IF
+
                 ELSE     ! FIPS is country/state  
+
+C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
+                    IF( RFLAG ) THEN
+                        EFLAG = .FALSE.
+                        WRITE( MESG, 94010 )'ERROR: Can NOT process non-'//
+     &                     'reference county control factor at line', IREC 
+                        CALL M3MESG( MESG )
+                    END IF
+
                     CNTY = CNTY/1000
                     DO J =1, NINVIFIP 
                         IF ( CNTY == INVIFIP(J)/1000 ) THEN

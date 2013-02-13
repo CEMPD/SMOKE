@@ -70,7 +70,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          SPDFLAG, SPDPRO, MISCC, 
      &          MSNAME_L, MSMATX_L, MNSMATV_L, GRDENV,
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
-     &          EANAMREP, CFPRO, CFFLAG,
+     &          EANAMREP, CFPRO, CFFLAG, REFCFFLAG,
      &          TEMPBIN
 
 C.........  This module contains the lists of unique source characteristics
@@ -332,7 +332,7 @@ C.........  Intialize state/county summed emissions to zero
         CALL INITSTCY
 
 C.........  Intialize state/county summed emissions to zero
-        IF ( CFFLAG ) CALL RDCFPRO( CFDEV )
+        IF ( CFFLAG ) CALL RDCFPRO( CFDEV, REFCFFLAG )
 
 C.........  Allocate memory for temporary list of species and pollutant names
         ALLOCATE( VARNAMES( NSMATV ), STAT=IOS )
@@ -975,7 +975,7 @@ C.................  Read out old data if not first county
 
 C.........................  sum old county data with new county
                         IF ( I > 1 ) THEN
-  		                    IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
+                            IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
      &                                JDATE, JTIME, TMPEMGRD( 1,V ) ) )THEN
                                  MESG = 'Could not read "' // SBUF // '" ' //
      &                             'from file "' // MONAME // '"'
