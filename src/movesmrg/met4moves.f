@@ -197,6 +197,7 @@ C...........   Other local variables:
         INTEGER    FUELMONTH   ! current fuelmonth
         INTEGER    PRVFMONTH   ! previous fuelmonth
         INTEGER    METNGRID    ! no. grid cells in met data
+        INTEGER    MINNORH     ! min no of RH datapoints for averaging RH by tempbin
         INTEGER    NLINES      ! no. lines in met list file
         INTEGER    NSRC        ! no. source (=counties)
         INTEGER    NVARS       ! no. surrogates
@@ -308,6 +309,10 @@ C.........  Get temperature increments for ratepervehicle lookup table
 C.........  Get episode starting date and time and ending date
         MESG = 'Temperature buffer bin'
         TEMPBIN = ENVREAL( 'TEMP_BUFFER_BIN', MESG, 10.0, IOS )
+
+C.........  Define minimum no of data point for calculating avg RH by tempbin
+        MESG = 'Minimum no of data points for averaging RH by temperature bin'
+        MINNORH = ENVINT( 'MIN_NO_RH_BY_TEMPBIN', MESG, 1, IOS )
 
 C.........  Define type of humidity (RH or Specific Humidity)
         MESG = 'Use Specific Humidity ouput or not.'
@@ -772,9 +777,9 @@ C.........  Open output file for MOVES model
         WRITE( ODEV1,'(A)' )'#MFMREF : ' // TRIM( CMFMREF )
         WRITE( ODEV1,94010 )'#MODELING PERIOD : ', EPI_SDATE,'-',EPI_EDATE
         WRITE( ODEV1,94020 )'#TEMP_BUFFER_BIN : ', TEMPBIN 
-        WRITE( ODEV1,'(A)' )'#DATA RefCounty,FuelMonth,Temperature'//
-     &          'ProfileID,RH,temp1,temp2,,,,,,,,,,,,temp24'
-        WRITE( ODEV1,'(A,I5)' ) 'PP_TEMP_INCREMENT ' , PPTEMP
+        WRITE( ODEV1,'(A,I5)' ) '#PP_TEMP_INCREMENT ' , PPTEMP
+        WRITE( ODEV1,'(A)' )'RefCounty,FuelMonth,Temperature'//
+     &       'ProfileID,RefMinT,RefMaxT,Temp1,Temp2,,,,,,,,,,,,Temp24'
 
 C.........  Open output file
         ODEV2 = PROMPTFFILE(
@@ -1117,7 +1122,7 @@ C.................  Store fuelmonth specific values into arrays
 
                         CALL WRTEMPROF( ODEV1, ODEV2, SYEAR, 
      &                       REFCOUNTY, PRVFMONTH, PDTEMP, PPTEMP,
-     &                       TKREFHR, MAXTEMP, MINTEMP, TEMPBIN )
+     &                       TKREFHR, MAXTEMP, MINTEMP, TEMPBIN, MINNORH )
 
                     END IF
 
@@ -1152,7 +1157,7 @@ C...............  Store last fuelmonth specific values into arrays
 
             CALL WRTEMPROF( ODEV1, ODEV2, SYEAR, REFCOUNTY,
      &           PRVFMONTH, PDTEMP, PPTEMP, TKREFHR, MAXTEMP,
-     &           MINTEMP, TEMPBIN )
+     &           MINTEMP, TEMPBIN, MINNORH )
 
         END DO   ! end of loop of reference couties
       

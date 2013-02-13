@@ -1,7 +1,7 @@
 
         SUBROUTINE WRTEMPROF( ODEV1, ODEV2, MYEAR, COUNTY, PMONTH,
      &                        PDTEMP, PPTEMP, THOUR, MAXTEMP,
-     &                        MINTEMP, TEMPBIN )
+     &                        MINTEMP, TEMPBIN, MINNORH )
 
 C***********************************************************************
 C  subroutine body starts at line 78
@@ -70,6 +70,7 @@ C.............  Subroutine arguments
         REAL     , INTENT(IN)  ::  MAXTEMP         ! max temp for refcounty/fuelmonth
         REAL     , INTENT(IN)  ::  MINTEMP         ! min temp for refcounty/fuelmonth
         REAL     , INTENT(IN)  ::  TEMPBIN         ! temp buffer
+        INTEGER  , INTENT(IN)  ::  MINNORH         ! min no of data points for avg RH by tempbin
 
 C.........  Local array
         REAL   :: TKPRO( 24 ) = 0.0 !  24hr temp. profile
@@ -152,7 +153,7 @@ C.........  Fill empty temperature bins for RPD/RPV modes
         NTB = 0
         DO T = -150, 200-PDTEMP, PDTEMP
             NT = NT + 1
-            IF( NRHTBIN( NR,NF,NT ) < 10 ) THEN
+            IF( NRHTBIN( NR,NF,NT ) < MINNORH ) THEN
                 RHTBIN ( NR,NF,NT ) = 0.0
                 NRHTBIN( NR,NF,NT ) = 0
             END IF
