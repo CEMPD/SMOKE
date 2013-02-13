@@ -86,7 +86,9 @@ C...........   Other local variables
         REAL    TKMIN                     ! tmp min temperatures
         REAL    TKDIF, DT, ST             ! tmp DIFF of min/max temperatures
         REAL    TKMED                     ! tmp median temperatures
-        REAL    RHSUM, NRHSUM, RHAVG      ! tmp relative humidity
+        REAL    RHAVG                     ! tmp relative humidity
+
+        LOGICAL FIRSTIME 
 
         CHARACTER(32)    TPROID             ! temporal resolution header
         CHARACTER(300)   MESG               ! message buffer
@@ -94,20 +96,8 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine WRTEMPROF
-        NR = FIND1( COUNTY,NREFC, MCREFIDX( :,1 ) )
-        NF = PMONTH
-        NT = 0 
-        DO T = -150, 200, PDTEMP
-             NT = NT + 1
-             RHSUM = RHSUM + RHTBIN( NR,NF,NT )
-             NRHSUM = NRHSUM + NRHTBIN( NR,NF,NT )
-        END DO
-        RHAVG = RHSUM / NRHSUM
 
 C.........  Write out last ref. county min/max temp and avg RH
-        WRITE( ODEV1,94040 ) COUNTY, PMONTH, 'min_max',
-     &                      RHAVG, MINTEMP, MAXTEMP
-
         IMAXT = INT( MAXTEMP )
         IMINT = INT( MINTEMP )
 
@@ -148,14 +138,47 @@ C.................  Create 24 hr temp profile per temp bin
 
 C.................  Output for SMOKE ready input file
                 WRITE( ODEV1,94050 ) COUNTY, PMONTH, 
-     &                 TRIM(TPROID), RHAVG, (TKPRO( T ), T=1,24)
+     &              TRIM(TPROID), MINTEMP, MAXTEMP, (TKPRO( T ), T=1,24)
 
             END DO
 
         END DO
 
 C.........  Output avg RH by temperature bins for RPD/RPV modes
+C.........  Fill empty temperature bins for RPD/RPV modes
+        NR = FIND1( COUNTY,NREFC, MCREFIDX( :,1 ) )
+        NF = PMONTH
+        NT  = 0
+        NTB = 0
+        DO T = -150, 200-PDTEMP, PDTEMP
+            NT = NT + 1
+            IF( NRHTBIN( NR,NF,NT ) < 10 ) THEN
+                RHTBIN ( NR,NF,NT ) = 0.0
+                NRHTBIN( NR,NF,NT ) = 0
+            END IF
+        END DO
+        
+        NT = 0
+        FIRSTIME = .TRUE.
+        DO T = -150, 200-PDTEMP, PDTEMP
+            NT = NT + 1
+            IF( FIRSTIME .AND. NRHTBIN( NR,NF,NT ) == 0 ) THEN
+                NTB = NT
+                FIRSTIME = .FALSE.
+                CYCLE
+            ELSE IF( RHTBIN( NR,NF,NT ) > 0.0 ) THEN
+                RHTBIN ( NR,NF,NTB:NT ) = RHTBIN ( NR,NF,NT )
+                NRHTBIN( NR,NF,NTB:NT ) = NRHTBIN( NR,NF,NT )
+                NTB = NT + 1
+                FIRSTIME = .TRUE.
+                CYCLE
+            ELSE IF( T == 200-PDTEMP ) THEN
+                RHTBIN ( NR,NF,NTB:NT ) = RHTBIN ( NR,NF,NTB-1 )
+                NRHTBIN( NR,NF,NTB:NT ) = NRHTBIN( NR,NF,NTB-1 )
+            END IF
+        END DO
 
+C.........  Write out refcounty min/max temp and avg RH by temperature bin for RPD/RPV
 C.........  Calculate max/min temp bins based on RPD_TEMP_INCREMENT 
         MAXT = IMAXT + ( PDTEMP - ABS( MOD( IMAXT,PDTEMP ) ) )
         MINT = IMINT - ABS( MOD( IMINT,PDTEMP ) )
@@ -164,33 +187,17 @@ C.........  Calculate max/min temp bins based on RPD_TEMP_INCREMENT
             MINT = IMINT - ( PDTEMP - ABS( MOD( IMINT,PDTEMP ) ) )
         END IF
 
-        NR = FIND1( COUNTY,NREFC, MCREFIDX( :,1 ) )
-        NF = PMONTH
         NT = 0
-        DO T = -150, 200, PDTEMP
-             NT = NT + 1
-             IF( MINT <= T .AND. T <= MAXT ) THEN
+        DO T = -150, 200-PDTEMP, PDTEMP
+            NT = NT + 1
+            IF( MINT <= T .AND. T <= MAXT ) THEN
+            
+                RHAVG = RHTBIN(NR,NF,NT) / NRHTBIN(NR,NF,NT)
 
-                  IF( NRHTBIN( NR,NF,NT ) < 1 ) THEN 
-                      NTB = NT + INT( TEMPBIN/PDTEMP )
-                      IMINT = MINT + INT( TEMPBIN )
-                      IF( T <= IMINT ) THEN
-                          IF( NRHTBIN( NR,NF,NTB ) < 1 ) NTB = NTB + 1 
-                          RHTBIN( NR,NF,1:NTB-1 ) = RHTBIN( NR,NF,NTB ) 
-                          NRHTBIN( NR,NF,1:NTB-1 ) = NRHTBIN( NR,NF,NTB ) 
-                      ELSE
-                          RHTBIN( NR,NF,NT: ) = RHTBIN( NR,NF,NT-1 ) 
-                          NRHTBIN( NR,NF,NT: ) = NRHTBIN( NR,NF,NT-1 ) 
-                      END IF
-                  END IF
+                WRITE( ODEV2,94060 ) COUNTY, PMONTH, RHAVG, MINTEMP,
+     &                 MAXTEMP, T
 
-                  RHAVG = RHTBIN(NR,NF,NT) / NRHTBIN(NR,NF,NT)
-
-C...................  Write out refcounty min/max temp and avg RH by temperature bin for RPD/RPV
-                  WRITE( ODEV2,94060 ) COUNTY, PMONTH, RHAVG, MINTEMP,
-     &                                 MAXTEMP, T
-
-             END IF
+           END IF
         END DO
         
         RETURN
@@ -207,7 +214,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94040   FORMAT( I6.6, I5, 3X, A, 3F10.2 )   
 
-94050   FORMAT( I6.6, I5, 3X, A, 25F10.2 )   
+94050   FORMAT( I6.6,',', I5,',', 3X, A, 26(',',F10.2) )   
 
 94060   FORMAT( I6.6,',',I5,',',F12.6,',',F10.2,',',F10.2,',',I5 )   
  
