@@ -65,7 +65,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          TVARNAME, METNAME,
      &          NREFSRCS, REFSRCS, NSRCCELLS, SRCCELLS, SRCCELLFRACS,
      &          EMPROCIDX, EMPOLIDX,
-     &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX, AVGMIN, AVGMAX,
+     &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
      &          RPDEMFACS, RPVEMFACS, RPPEMFACS,
      &          SPDFLAG, SPDPRO, MISCC, 
      &          MSNAME_L, MSMATX_L, MNSMATV_L, GRDENV,
@@ -128,7 +128,9 @@ C...........   Local arrays for per-source information
 
 C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: VMT( : )
-        REAL, ALLOCATABLE :: TEMPG( : )
+        REAL, ALLOCATABLE :: TEMPG( : )    ! Temp array for RPD and RPV
+        REAL, ALLOCATABLE :: MAXTEMP( : )     ! max temp array for RPP
+        REAL, ALLOCATABLE :: MINTEMP( : )     ! min temp array for RPP
         REAL, ALLOCATABLE :: EMGRD( :,: )     ! emissions for each grid cell and species
         REAL, ALLOCATABLE :: TEMGRD( :,:,:)    ! emissions for each grid cell, species, and time steps
         REAL, ALLOCATABLE :: TMPEMGRD( :,: )  ! tmp emissions for each grid cell and species
@@ -298,8 +300,15 @@ C........ when not optimize memory
             CALL CHECKMEM( IOS, 'VMT', PROGNAME )
         END IF
         
-        ALLOCATE( TEMPG( NGRID ), STAT=IOS )    ! hourly temperatures
-        CALL CHECKMEM( IOS, 'TEMPG', PROGNAME )
+        IF( RPDFLAG .OR. RPVFLAG ) THEN
+            ALLOCATE( TEMPG( NGRID ), STAT=IOS )    ! hourly temperatures
+            CALL CHECKMEM( IOS, 'TEMPG', PROGNAME )
+        ELSE
+            ALLOCATE( MAXTEMP( NGRID ), STAT=IOS )    ! hourly temperatures
+            CALL CHECKMEM( IOS, 'MAXTEMP', PROGNAME )
+            ALLOCATE( MINTEMP( NGRID ), STAT=IOS )    ! hourly temperatures
+            CALL CHECKMEM( IOS, 'MINTEMP', PROGNAME )
+        END IF
 
 C.........  Determine sources that observe DST
         CALL GETDYSAV( NMSRC, IFIP, LDAYSAV )
@@ -494,6 +503,21 @@ C.................  In RPD and RPV modes, read temperatures for current hour
      &                         ' from ' // TRIM( METNAME )
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
+
+                ELSE   ! RPP MODE
+                    IF( .NOT. READ3( METNAME, 'MAXTEMP', 1, 
+     &                               JDATE, 0, MAXTEMP ) ) THEN
+                        MESG = 'Could not read MAXTEMP'//
+     &                         ' from ' // TRIM( METNAME )
+                        CALL M3EXIT( PROGNAME, JDATE, 0, MESG, 2 )
+                    END IF
+
+                    IF( .NOT. READ3( METNAME, 'MINTEMP', 1, 
+     &                               JDATE, 0, MINTEMP ) ) THEN
+                        MESG = 'Could not read MINTEMP' //
+     &                         ' from ' // TRIM( METNAME )
+                        CALL M3EXIT( PROGNAME, JDATE, 0, MESG, 2 )
+                    END IF
                 END IF
 
 C.................  Loop over sources in reference county
@@ -561,228 +585,17 @@ C.........................  Calculate speed interpolation factor
                         END IF
                     END IF
 
-C.....................  Determine profiles for current inventory county
-C                       There will be 4 profiles used in total:
-C                         UU - both min and max profile temps are under county temps
-C                         UO - min profile temp is under county min, max profile temp is over county max
-C                         OU - min profile temp is over county min, max profile temp is under county max
-C                         OO - both min and max profile temps are over county temps
-                    IF( RPPFLAG ) THEN
-                        MINVAL = AVGMIN( MICNY( SRC ), MONTH, DAYMONTH )
-                        MAXVAL = AVGMAX( MICNY( SRC ), MONTH, DAYMONTH )
-
-C.....................  MICNY(SRC) and maxmum values within the index
-                        IF ( (MINVAL .LT. EMTEMPS( EMTEMPIDX( 1 ) ) )  
-     &                      .AND. (MINVAL .GE. (EMTEMPS( EMTEMPIDX( 1 ) ) - TEMPBIN )) ) THEN
-                            IF( NWARN < MXWARN ) THEN
-                            WRITE( MESG, 94040 ) 'Lowest profile ' //
-     &                      'minimum temperature ', EMTEMPS( EMTEMPIDX( 1 )) ,
-     &                       ' is higher than county minimum temperature:', MINVAL,
-     &                       CRLF() // BLANK10 // 'minimum value will be set to ',
-     &                       EMTEMPS( EMTEMPIDX( 1 )), 'based on temperature buffer bin ', TEMPBIN
-                            CALL M3WARN(PROGNAME, JDATE, JTIME, MESG )
-                            NWARN = NWARN + 1
-                            END IF 
-                            MINVAL = EMTEMPS( EMTEMPIDX( 1 ) )
-                        END IF
-                        IF ( (MAXVAL .GT. EMXTEMPS( EMTEMPIDX( NEMTEMPS ) ))
-     &                      .AND. ( MAXVAL .LE. (EMXTEMPS( EMTEMPIDX( NEMTEMPS ) ) + TEMPBIN) ) ) THEN
-                            IF( NWARN < MXWARN ) THEN
-                            	 WRITE( MESG, 94040 ) 'Highest profile ' // 
-     &                        	'maximum temperature ', EMXTEMPS( EMTEMPIDX( NEMTEMPS )) ,
-     &                       	' is lower than county maximum temperature:',  MAXVAL,
-     &                          CRLF() // BLANK10 // 'maximum value will be set to ',
-     &                          EMTEMPS( EMTEMPIDX( NEMTEMPS )), 'based on temperature buffer bin ', TEMPBIN
-                                CALL M3WARN(PROGNAME, JDATE, JTIME, MESG )
-                                NWARN = NWARN + 1
-                            END IF
-                            MAXVAL = EMXTEMPS( EMTEMPIDX( NEMTEMPS ))
-                        END IF
-                            
-C.........................  Check that min and max county temps were found
-                        IF( MINVAL .LT. AMISS3 .OR.
-     &                      MAXVAL .LT. AMISS3 ) THEN
-                            WRITE( MESG, 94010 ) 'Could not find minimum ' //
-     &                        'and maximum temperatures for county', IFIP( SRC ),
-     &                        'and episode month', MONTH
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                        END IF
-
-C.........................  Find indexes of bounding minimum temperatures
-                        USTART = 0
-                        OSTART = 0
-                        PDIFF = 999
-                        NO_INTRPLT = .FALSE.     ! no interpolation flag
-                        DO K = 1, NEMTEMPS
-                            TDIFF = MINVAL - EMTEMPS( EMTEMPIDX( K ) )
-
-C.............................  Once profile min temp is greater than county temp, this loop is done                            
-                            IF( TDIFF .LT. 0 ) THEN
-                                OSTART = K
-                                OMIN = EMTEMPS( EMTEMPIDX( K ) )
-                                EXIT
-                            END IF
-
-C.............................  If current profile min temp is closer to county temp, store index                            
-                            IF( TDIFF .LT. PDIFF ) THEN
-                                USTART = K
-                                UMIN = EMTEMPS( EMTEMPIDX( K ) )
-                            END IF
-                        
-                            PDIFF = TDIFF
-                        END DO
-
-C.........................  Check that appropriate minimum temperatures were found
-                        IF( USTART == 0 ) THEN
-                            WRITE( MESG, 94040 ) 'ERROR: Lowest profile ' //
-     &                        'minimum temperature', 
-     &                        EMTEMPS( EMTEMPIDX( 1 ) ),
-     &                        'is higher than county minimum temperature',
-     &                        MINVAL 
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                        END IF
-                        
-                        IF( OSTART == 0 ) THEN
-                            IF ( MINVAL .EQ. EMTEMPS( EMTEMPIDX( NEMTEMPS ) ) ) THEN
-                                OSTART = NEMTEMPS 
-                            ELSE
-                                WRITE( MESG, 94040 ) 'ERROR: Highest profile ' //
-     &                         'minimum temperature', 
-     &                         EMTEMPS( EMTEMPIDX( NEMTEMPS ) ),
-     &                         'is lower than county minimum temperature',
-     &                         MINVAL 
-                              CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                            END IF
-                        END IF
-
-C.........................  Find indexes of bounding maximum temperatures
-                        UUIDX = 0
-                        UOIDX = 0
-                        UMAX = EMXTEMPS( EMTEMPIDX( USTART ) )
-                        DO K = USTART, NEMTEMPS
-
-C.............................  Check that profile minimum temperature hasn't changed
-                            IF( EMTEMPS( EMTEMPIDX( K ) ) .NE. UMIN ) THEN
-                                EXIT
-                            END IF
-                            
-                            OMAX = EMXTEMPS( EMTEMPIDX( K ) )
-                            IF( OMAX .EQ. MAXVAL ) THEN
-                                UOIDX = EMTEMPIDX( K )
-                                UUIDX = EMTEMPIDX( K )
-                                EXIT
-                            END IF
-                        
-                            IF( OMAX > MAXVAL ) THEN
-                                UOIDX = EMTEMPIDX( K )
-                                IF( K > USTART ) THEN
-                                    UUIDX = EMTEMPIDX( K - 1 )
-                                END IF
-                                EXIT
-                            END IF
-                        END DO
-
-C.........................  Check that appropriate maximum temperatures were found
-                        IF( UUIDX .EQ. 0 .AND. UOIDX .NE. 0 ) THEN
-                            WRITE( MESG, 94040 ) 'ERROR: Lowest profile of ' //
-     &                        'max temperature', UMAX,'- min temperature',UMIN,
-     &                        ' is higher than county maximum temperature:',
-     &                        MAXVAL
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                        END IF
-                        
-                        IF ( UUIDX .EQ. 0 .AND. UOIDX .EQ. 0 ) THEN
-                            WRITE( MESG, 94040 ) 'ERROR: Highest profile of ' //
-     &                        'max temperature', OMAX,'- min temperature',UMIN, 
-     &                        ' is lower than county maximum temperature',
-     &                        MAXVAL
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                        END IF
-
-                        OUIDX = 0
-                        OOIDX = 0
-                        UMAX = EMXTEMPS( EMTEMPIDX( OSTART ) )
-                        DO K = OSTART, NEMTEMPS
-
-C.............................  Check that profile minimum temperature hasn't changed
-                            IF( EMTEMPS( EMTEMPIDX( K ) ) .NE. OMIN ) THEN
-                                EXIT
-                            END IF
-                            
-                            OMAX = EMXTEMPS( EMTEMPIDX( K ) )
-C...........................  If MAXVAL equal to maximum value
-                            IF( OMAX .EQ. MAXVAL ) THEN
-                                OOIDX = EMTEMPIDX( K )
-                                OUIDX = EMTEMPIDX( K )
-                                EXIT
-                            END IF
-
-                        
-                            IF( OMAX > MAXVAL ) THEN
-                                OOIDX = EMTEMPIDX( K )
-                                IF( K > OSTART ) THEN
-                                    OUIDX = EMTEMPIDX( K - 1 )
-                                END IF
-                                EXIT
-                            END IF
-                        END DO
-
-C.........................  Determine whether min/max temp within one temp bin
-                        IF( OMAX .EQ. OMIN ) NO_INTRPLT = .TRUE.
-
-C.........................  Check that appropriate maximum temperatures were found
-                        IF( .NOT. NO_INTRPLT ) THEN
-                          IF( OUIDX .EQ. 0 .AND. OOIDX .NE. 0 ) THEN
-                            WRITE( MESG, 94040 ) 'ERROR: Lowest profile of ' //
-     &                        'max temperature', UMAX,'- min temperature',OMIN,
-     &                        ' is higher than county maximum temperature:',
-     &                        MAXVAL
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                          END IF
-
-                          IF( OUIDX .EQ. 0 .AND. OOIDX .EQ. 0 ) THEN
-                            WRITE( MESG, 94040 ) 'ERROR: Highest profile of ' //
-     &                        'max temperature', OMAX,'- min temperature',OMIN,
-     &                        ' is lower than county maximum temperature',
-     &                        MAXVAL
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                          END IF
-
-C...........................  Check that maximum temperatures of profiles match
-                          IF( EMXTEMPS( UUIDX ) .NE. EMXTEMPS( OUIDX ) .OR.
-     &                      EMXTEMPS( UOIDX ) .NE. EMXTEMPS( OOIDX ) ) THEN
-                            MESG = 'ERROR: Inconsistent temperature ' //
-     &                        'profiles.'
-                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                          END IF
-
-                          IF ( EMTEMPS( OUIDX ) .EQ. EMTEMPS( UUIDX ) ) THEN
-                              MAXFAC = 1.
-                          ELSE
-                              MINFAC = ( MINVAL - EMTEMPS( UUIDX ) ) /
-     &                           ( EMTEMPS( OUIDX ) - EMTEMPS( UUIDX ) )
-                          END IF
-                                                                           
-                          IF ( EMXTEMPS( OOIDX ) .EQ. EMXTEMPS( OUIDX ) ) THEN
-                              MAXFAC = 1.
-                          ELSE
-                              MAXFAC = ( MAXVAL - EMXTEMPS( OUIDX ) ) /
-     &                           ( EMXTEMPS( OOIDX ) - EMXTEMPS( OUIDX ) )
-                          END IF
-
-                      END IF
-                    END IF
-
 C.....................  Loop over grid cells for this source
                     DO NG = 1, NSRCCELLS( SRC )
 
                         CELL = SRCCELLS( SRC, NG )
                         GFRAC = SRCCELLFRACS( SRC, NG )
-                        
-                        IF( RPDFLAG .OR. RPVFLAG ) THEN
-                            TEMPVAL = ( TEMPG( CELL ) - CTOK ) * CTOF + 32.
 
 C.............................  Determine temperature indexes for cell
+                        IF( RPDFLAG .OR. RPVFLAG ) THEN
+
+                            TEMPVAL = ( TEMPG( CELL ) - CTOK ) * CTOF + 32.
+
                             IDX1 = 0
                             IDX2 = 0
                             DO K = NEMTEMPS, 1, -1
@@ -849,6 +662,217 @@ C.............................  Check that an appropriate temperature was found
                             ELSE
                                 TEMPFAC = 1.
                             END IF
+
+                        ELSE
+C.........................  Determine profiles for current inventory county for RPP mode
+C                           There will be 4 profiles used in total:
+C                             UU - both min and max profile temps are under county temps
+C                             UO - min profile temp is under county min, max profile temp is over county max
+C                             OU - min profile temp is over county min, max profile temp is under county max
+C                             OO - both min and max profile temps are over county temps
+                            MINVAL = MINTEMP( CELL )
+                            MAXVAL = MAXTEMP( CELL )
+
+C.............................  MICNY(SRC) and maxmum values within the index
+                            IF ( (MINVAL .LT. EMTEMPS( EMTEMPIDX( 1 ) ) )  
+     &                          .AND. (MINVAL .GE. (EMTEMPS( EMTEMPIDX( 1 ) ) - TEMPBIN )) ) THEN
+                                IF( NWARN < MXWARN ) THEN
+                                    WRITE( MESG, 94040 ) 'Lowest profile ' //
+     &                               'minimum temperature ', EMTEMPS( EMTEMPIDX( 1 )) ,
+     &                               ' is higher than county minimum temperature:', MINVAL,
+     &                               CRLF() // BLANK10 // 'minimum value will be set to ',
+     &                               EMTEMPS( EMTEMPIDX( 1 )), 'based on temperature buffer bin ', TEMPBIN
+                                    CALL M3WARN(PROGNAME, JDATE, JTIME, MESG )
+                                    NWARN = NWARN + 1
+                                END IF 
+                                MINVAL = EMTEMPS( EMTEMPIDX( 1 ) )
+                            END IF
+                            IF ( (MAXVAL .GT. EMXTEMPS( EMTEMPIDX( NEMTEMPS ) ))
+     &                          .AND. ( MAXVAL .LE. (EMXTEMPS( EMTEMPIDX( NEMTEMPS ) ) + TEMPBIN) ) ) THEN
+                                IF( NWARN < MXWARN ) THEN
+                                     WRITE( MESG, 94040 ) 'Highest profile ' // 
+     &                                  'maximum temperature ', EMXTEMPS( EMTEMPIDX( NEMTEMPS )) ,
+     &                                  ' is lower than county maximum temperature:',  MAXVAL,
+     &                                  CRLF() // BLANK10 // 'maximum value will be set to ',
+     &                                  EMTEMPS( EMTEMPIDX( NEMTEMPS )), 'based on temperature buffer bin ', TEMPBIN
+                                     CALL M3WARN(PROGNAME, JDATE, JTIME, MESG )
+                                     NWARN = NWARN + 1
+                                END IF
+                                MAXVAL = EMXTEMPS( EMTEMPIDX( NEMTEMPS ))
+                            END IF
+                            
+C.............................  Check that min and max county temps were found
+                            IF( MINVAL .LT. AMISS3 .OR. MAXVAL .LT. AMISS3 ) THEN
+                                WRITE( MESG, 94010 ) 'Could not find minimum ' //
+     &                            'and maximum temperatures for county', IFIP( SRC ),
+     &                            'and episode month', MONTH
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+
+C.............................  Find indexes of bounding minimum temperatures
+                            USTART = 0
+                            OSTART = 0
+                            PDIFF = 999
+                            NO_INTRPLT = .FALSE.     ! no interpolation flag
+                            DO K = 1, NEMTEMPS
+
+                                TDIFF = MINVAL - EMTEMPS( EMTEMPIDX( K ) )
+
+C.................................  Once profile min temp is greater than county temp, this loop is done                            
+                                IF( TDIFF .LT. 0 ) THEN
+                                    OSTART = K
+                                    OMIN = EMTEMPS( EMTEMPIDX( K ) )
+                                    EXIT
+                                END IF
+
+C.................................  If current profile min temp is closer to county temp, store index                            
+                                IF( TDIFF .LT. PDIFF ) THEN
+                                    USTART = K
+                                    UMIN = EMTEMPS( EMTEMPIDX( K ) )
+                                END IF
+                        
+                                PDIFF = TDIFF
+                            END DO
+
+C.............................  Check that appropriate minimum temperatures were found
+                            IF( USTART == 0 ) THEN
+                                WRITE( MESG, 94040 ) 'ERROR: Lowest profile ' //
+     &                            'minimum temperature', 
+     &                            EMTEMPS( EMTEMPIDX( 1 ) ),
+     &                            'is higher than county minimum temperature',
+     &                            MINVAL 
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+                        
+                            IF( OSTART == 0 ) THEN
+                                IF ( MINVAL .EQ. EMTEMPS( EMTEMPIDX( NEMTEMPS ) ) ) THEN
+                                    OSTART = NEMTEMPS 
+                                ELSE
+                                    WRITE( MESG, 94040 ) 'ERROR: Highest ' //
+     &                                 'profile minimum temperature', 
+     &                                 EMTEMPS( EMTEMPIDX( NEMTEMPS ) ),
+     &                                 'is lower than county minimum temperature',
+     &                                 MINVAL 
+                                   CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                                END IF
+                            END IF
+
+C.............................  Find indexes of bounding maximum temperatures
+                            UUIDX = 0
+                            UOIDX = 0
+                            UMAX = EMXTEMPS( EMTEMPIDX( USTART ) )
+                            DO K = USTART, NEMTEMPS
+
+C.................................  Check that profile minimum temperature hasn't changed
+                                IF( EMTEMPS( EMTEMPIDX( K ) ) .NE. UMIN ) THEN
+                                    EXIT
+                                END IF
+
+                                OMAX = EMXTEMPS( EMTEMPIDX( K ) )
+                                IF( OMAX .EQ. MAXVAL ) THEN
+                                    UOIDX = EMTEMPIDX( K )
+                                    UUIDX = EMTEMPIDX( K )
+                                    EXIT
+                                END IF
+
+                                IF( OMAX > MAXVAL ) THEN
+                                    UOIDX = EMTEMPIDX( K )
+                                    IF( K > USTART ) THEN
+                                        UUIDX = EMTEMPIDX( K - 1 )
+                                    END IF
+                                    EXIT
+                                END IF
+                            END DO
+
+C.............................  Check that appropriate maximum temperatures were found
+                            IF( UUIDX .EQ. 0 .AND. UOIDX .NE. 0 ) THEN
+                                WRITE( MESG, 94040 ) 'ERROR: Lowest profile of ' //
+     &                            'max temperature', UMAX,'- min temperature',UMIN,
+     &                            ' is higher than county maximum temperature:',
+     &                            MAXVAL
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+
+                            IF ( UUIDX .EQ. 0 .AND. UOIDX .EQ. 0 ) THEN
+                                WRITE( MESG, 94040 ) 'ERROR: Highest profile of ' //
+     &                            'max temperature', OMAX,'- min temperature',UMIN, 
+     &                            ' is lower than county maximum temperature',
+     &                            MAXVAL
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                            END IF
+
+                            OUIDX = 0
+                            OOIDX = 0
+                            UMAX = EMXTEMPS( EMTEMPIDX( OSTART ) )
+                            DO K = OSTART, NEMTEMPS
+
+C.................................  Check that profile minimum temperature hasn't changed
+                                IF( EMTEMPS( EMTEMPIDX( K ) ) .NE. OMIN ) THEN
+                                    EXIT
+                                END IF
+
+                                OMAX = EMXTEMPS( EMTEMPIDX( K ) )
+C...............................  If MAXVAL equal to maximum value
+                                IF( OMAX .EQ. MAXVAL ) THEN
+                                    OOIDX = EMTEMPIDX( K )
+                                    OUIDX = EMTEMPIDX( K )
+                                    EXIT
+                                END IF
+
+                                IF( OMAX > MAXVAL ) THEN
+                                    OOIDX = EMTEMPIDX( K )
+                                    IF( K > OSTART ) THEN
+                                        OUIDX = EMTEMPIDX( K - 1 )
+                                    END IF
+                                    EXIT
+                                END IF
+                            END DO
+
+C.............................  Determine whether min/max temp within one temp bin
+                            IF( OMAX .EQ. OMIN ) NO_INTRPLT = .TRUE.
+
+C.............................  Check that appropriate maximum temperatures were found
+                            IF( .NOT. NO_INTRPLT ) THEN
+                              IF( OUIDX .EQ. 0 .AND. OOIDX .NE. 0 ) THEN
+                                WRITE( MESG, 94040 ) 'ERROR: Lowest profile of ' //
+     &                            'max temperature', UMAX,'- min temperature',OMIN,
+     &                            ' is higher than county maximum temperature:',
+     &                            MAXVAL
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                              END IF
+
+                              IF( OUIDX .EQ. 0 .AND. OOIDX .EQ. 0 ) THEN
+                                WRITE( MESG, 94040 ) 'ERROR: Highest profile of ' //
+     &                            'max temperature', OMAX,'- min temperature',OMIN,
+     &                            ' is lower than county maximum temperature',
+     &                            MAXVAL
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                              END IF
+
+C...............................  Check that maximum temperatures of profiles match
+                              IF( EMXTEMPS( UUIDX ) .NE. EMXTEMPS( OUIDX ) .OR.
+     &                          EMXTEMPS( UOIDX ) .NE. EMXTEMPS( OOIDX ) ) THEN
+                                MESG = 'ERROR: Inconsistent temperature ' //
+     &                            'profiles.'
+                                CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                              END IF
+
+                              IF ( EMTEMPS( OUIDX ) .EQ. EMTEMPS( UUIDX ) ) THEN
+                                  MAXFAC = 1.
+                              ELSE
+                                  MINFAC = ( MINVAL - EMTEMPS( UUIDX ) ) /
+     &                               ( EMTEMPS( OUIDX ) - EMTEMPS( UUIDX ) )
+                              END IF
+                                                 
+                              IF ( EMXTEMPS( OOIDX ) .EQ. EMXTEMPS( OUIDX ) ) THEN
+                                  MAXFAC = 1.
+                              ELSE
+                                  MAXFAC = ( MAXVAL - EMXTEMPS( OUIDX ) ) /
+     &                               ( EMXTEMPS( OOIDX ) - EMXTEMPS( OUIDX ) )
+                              END IF
+
+                          END IF
+
                         END IF
 
 C.........................  Loop through pollutant-species combos
@@ -869,6 +893,7 @@ C.............................  get control factor
                             IF ( CFFLAG ) THEN
                                 CFFAC = CFPRO(MICNY(SRC), SCCIDX, SIINDEX( V,1 ), MONTH )
                             END IF
+
 C.............................  Calculate interpolated emission factor if process/pollutant has changed
                             IF( PBUF .NE. LBUF ) THEN
                                 IF( RPDFLAG ) THEN
@@ -911,7 +936,7 @@ C.............................  Calculate interpolated emission factor if proces
                                     ENDIF
                                 END IF
 
-                                IF ( CFFLAG ) EFVAL = EFVAL*CFFAC 
+                                IF( CFFLAG ) EFVAL = EFVAL*CFFAC 
 
                             END IF
                             
@@ -942,7 +967,6 @@ C.............................  If not use memory optimize
      &                          TEMGRD( CELL,SPINDEX( V,1 ),T ) +
      &                          EMVAL * MSMATX_L( SRC,V ) * F1
                             END IF
-
 
 C.............................  Add this cell's emissions to source totals
                             IF( LREPANY ) THEN
@@ -1016,31 +1040,31 @@ C           will reinitialize the totals after output
 
             DO T = 1, NSTEPS    
 
-              DO V = 1, NMSPC
+                DO V = 1, NMSPC
 
-                SBUF = EMNAM( V )
+                    SBUF = EMNAM( V )
 
-                TMPEMGRD( :,V ) = TEMGRD( :,V,T )
+                    TMPEMGRD( :,V ) = TEMGRD( :,V,T )
 
-C.................  Write out gridded data
-                IF( LGRDOUT ) THEN
-                    IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
-     &                                  JDATE, JTIME, TMPEMGRD( 1,V ) ) ) THEN
-                       MESG = 'Could not write "' // SBUF // '" ' //
-     &                    'to file "' // MONAME // '"'
-                       CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+C.....................  Write out gridded data
+                    IF( LGRDOUT ) THEN
+                        IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
+     &                            JDATE, JTIME, TMPEMGRD( 1,V ) ) ) THEN
+                            MESG = 'Could not write "' // SBUF //'" '//
+     &                      'to file "' // MONAME // '"'
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
                     END IF
-                 END IF
 
-               END DO
+                END DO
 
-               LDATE = JDATE
+                LDATE = JDATE
 
-               CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
+                CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
 
-             END DO   ! End loop on time steps
+            END DO   ! End loop on time steps
 
-         END IF
+        END IF
 
 C.........  Close output file
         IF( .NOT. CLOSESET( MONAME ) ) THEN
@@ -1049,10 +1073,11 @@ C.........  Close output file
         END IF
 
         DEALLOCATE( DAYBEGT, DAYENDT, LDAYSAV )
+
         IF ( MOPTIMIZE ) THEN
-            DEALLOCATE( TEMPG, EMGRD, TMPEMGRD, VARNAMES, MGMATX )
+            DEALLOCATE( EMGRD, TMPEMGRD, VARNAMES, MGMATX )
         ELSE
-            DEALLOCATE( TEMPG, TEMGRD, TMPEMGRD, VARNAMES, MGMATX )
+            DEALLOCATE( TEMGRD, TMPEMGRD, VARNAMES, MGMATX )
         END IF
 
 C.........  Successful completion of program

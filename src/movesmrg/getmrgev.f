@@ -154,7 +154,7 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
      &                   'emissions', .FALSE., IOS )
 
         MOPTIMIZE = ENVYN( 'MEMORY_OPTIMIZE_YN', 'Optimize Memory usage' //
-     &                    " ", .TRUE., IOS )
+     &                    " ", .FALSE., IOS )
 
         CFFLAG = ENVYN( 'USE_CONTROL_FACTORS', 'Use control factor data' //
      &                    " ", .FALSE., IOS )

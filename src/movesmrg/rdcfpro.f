@@ -163,7 +163,9 @@ C.............  Parse line into fields
 
 C.............  Convert FIP to integer
             K = 0
+            IF( SEGMENT( 1 ) == '' ) SEGMENT( 1 ) = '0'
             IF( STR2INT( SEGMENT( 1 ) ) == 0  ) THEN 
+
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
                 IF( RFLAG ) THEN
                     EFLAG = .FALSE.
@@ -171,11 +173,16 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
      &                  'reference county control factor at line', IREC 
                     CALL M3MESG( MESG )
                 END IF
+                   
+                WRITE( MESG, 94010 )'WARNING: All counties will be '//
+     &              'controlled by zero or blank FIPS entry at line', IREC 
+                CALL M3MESG( MESG )
 
                 NFIPS = NINVIFIP
                 DO J = 1, NINVIFIP
                     NLFIPS(J) = J
                 END DO
+
             ELSE         ! FIPS is integer value 
                 CNTY = STR2INT( SEGMENT( 1 ) )
                 L1 = FIND1( CNTY, NINVIFIP, INVIFIP )

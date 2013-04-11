@@ -50,7 +50,7 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, CFFLAG,
-     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, MMDEV,
+     &          TVARNAME, METNAME, XDEV, MDEV, FDEV,
      &          SPDFLAG, MSNAME_L, MSNAME_S, MNSMATV_L, MNSMATV_S,
      &          MSVDESC_L, MSVDESC_S, MSVUNIT_L, MSVUNIT_S
 
@@ -335,25 +335,31 @@ C.........  Check that variables in mole and mass speciation matrices match
 C.........  Open meteorology file
         IF( RPDFLAG .OR. RPVFLAG ) THEN
             METNAME = PROMPTMFILE(
-     &               'Enter logical name for the METCRO2D meteorology file', 
-     &               FSREAD3, 'MET_CRO_2D', PROGNAME )
+     &           'Enter logical name for the METCRO2D meteorology file', 
+     &           FSREAD3, 'MET_CRO_2D', PROGNAME )
+        ELSE
+            METNAME = PROMPTMFILE(
+     &           'Enter logical name for the METMOVES meteorology file', 
+     &           FSREAD3, 'METMOVES', PROGNAME )
+        END IF
+ 
+        IF( .NOT. DESC3( METNAME ) ) THEN
+            MESG = 'Could not get description of file "' //
+     &             METNAME( 1:LEN_TRIM( METNAME ) ) // '" '
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
     
-            IF( .NOT. DESC3( METNAME ) ) THEN
-                MESG = 'Could not get description of file "' //
-     &                 METNAME( 1:LEN_TRIM( METNAME ) ) // '" '
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+C.........  Check the grid definition
+        IF( VARFLAG ) THEN
+            CALL CHKGRID( 'mobile', 'GRID', 0, EFLAG )
+        ELSE
+            CALL CHKGRID( 'mobile', 'GRID', 1, EFLAG )
+        END IF
     
-C.............  Check the grid definition
-            IF( VARFLAG ) THEN
-                CALL CHKGRID( 'mobile', 'GRID', 0, EFLAG )
-            ELSE
-                CALL CHKGRID( 'mobile', 'GRID', 1, EFLAG )
-            END IF
-    
-C.............  Check the hours in the met file
+C.........  Check the hours in the met file
+        IF( RPDFLAG .OR. RPVFLAG ) THEN
             CALL UPDATE_TIME_INFO( METNAME, .FALSE. )
-    
+
 C.............  Make sure met file contains requested temperature variable
             J = INDEX1( TVARNAME, NVARS3D, VNAME3D )
             IF( J <= 0 ) THEN
@@ -424,13 +430,6 @@ C.........  Get reference county emission factors file list
         FDEV = PROMPTFFILE(
      &           'Enter logical name for reference county file list',
      &           .TRUE., .TRUE., 'MRCLIST', PROGNAME )
-
-C.........  Get Met4moves output file
-        IF( RPPFLAG ) THEN
-            MMDEV = PROMPTFFILE(
-     &           'Enter logical name for Met4moves output file',
-     &           .TRUE., .TRUE., 'METMOVES', PROGNAME )
-        END IF
 
 C.........  Open and read hourly speed data
         IF( RPDFLAG .AND. SPDFLAG ) THEN

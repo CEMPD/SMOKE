@@ -40,8 +40,7 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: XDEV, MDEV, FDEV, NSRCCELLS, 
-     &                       NREFSRCS, REFSRCS,
-     &                       RPPFLAG, MMDEV
+     &                       NREFSRCS, REFSRCS
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC
@@ -219,9 +218,6 @@ C.........  Read fuel month reference file
 
 C.........  Read emission factors file list
         CALL RDMRCLIST( FDEV )
-
-C.........  Read Met4moves output file
-        IF( RPPFLAG ) CALL RDMETMOVES( MMDEV )
 
 C******************  FORMAT  STATEMENTS   ******************************
 

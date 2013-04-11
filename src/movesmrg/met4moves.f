@@ -43,8 +43,7 @@ C...........   MODULES for public variables
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NGRID, NCOLS, NROWS, COORD, GDTYP,
-     &                     P_ALP, P_BET, P_GAM, XCENT, YCENT, NGRID,
-     &                     OFFLAG
+     &                     P_ALP, P_BET, P_GAM, XCENT, YCENT, OFFLAG
 
         USE MODSURG, ONLY: NSRGREC, IDXSRGA, SFIPSA, SCELLA, SSRGIDA,
      &                     IDXSRGB, NSRGFIPS, NSRGS, SRGFIPS, SRGLIST,
