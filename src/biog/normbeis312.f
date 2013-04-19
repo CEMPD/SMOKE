@@ -346,6 +346,7 @@ C.................  Handle types except NO
                 VNAME3D( I ) = 'LAI_' // TRIM( BTMP ) // SEASON( M )
                 VDESC3D( I ) = 'normalized emissions'
                 UNITS3D( I ) = 'index'
+                VTYPE3D( I ) = M3REAL
             END DO
         END DO
 
