@@ -99,8 +99,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT)  :: EDATE          ! Julian ending date in TZONE
         INTEGER, INTENT(OUT)  :: ETIME          ! ending time of data in TZONE
-        LOGICAL, INTENT(OUT)  :: EASTAT( NIPPA )   ! true: pol/act appears in data
-        LOGICAL, INTENT(OUT)  :: SPSTAT( MXSPDAT ) ! true: special in data
+        INTEGER, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        INTEGER, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
 
 C...........   Local list of bad sources to prevent duplicate writing of error
 C              messages
@@ -145,7 +145,7 @@ C...........   Other local variables
         INTEGER          MONTH            ! tmp month number
         INTEGER, SAVE :: MXWARN       	  ! max no. warnings
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
-        INTEGER, SAVE :: NFIELD = 0       ! number of data fields
+        INTEGER, SAVE :: NFIELD = 1       ! number of data fields
         INTEGER       :: NPOA   = 0       ! unused header number of pol/act
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
         INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
@@ -165,6 +165,7 @@ C...........   Other local variables
         REAL             CONVFAC          ! tmp conversion factor from Inventory Table
         REAL             TOTAL            ! tmp daily total of hourly file
 
+        LOGICAL, SAVE :: DFLAG = .FALSE.  ! true: dates set by data
         LOGICAL       :: EFLAG = .FALSE.  ! TRUE iff ERROR
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
@@ -266,8 +267,8 @@ C.............  Set time step divisor
 
 C.............  If dates have been set by the data, set the number of steps
 C               steps
-            IF( DAYFLAG ) THEN
-                NSTEPS = 1+ SECSDIFF( SDATE,STIME,EDATE,ETIME )/ TDIVIDE
+            IF( DFLAG ) THEN
+                NSTEPS = 1+ SECSDIFF( SDATE,STIME,EDATE,ETIME ) / TDIVIDE
                 SDATESAV = SDATE
                 STIMESAV = STIME
             END IF
@@ -349,9 +350,9 @@ C.............  Set Julian day from MMDDYY8 SAS format
                 MONTH = STR2INT( SEGMENT( 13 ) )
                 DAY   = 1
             ELSE
-                YEAR  = STR2INT( SEGMENT( 13 )( 1:4 ) )
-                MONTH = STR2INT( SEGMENT( 13 )( 5:7 ) )
-                DAY   = STR2INT( SEGMENT( 13 )( 8:9 ) )
+                YEAR  = STR2INT( TRIM( SEGMENT(13)( 1:4 ) ) )
+                MONTH = STR2INT( TRIM( SEGMENT(13)( 5:6 ) ) )
+                DAY   = STR2INT( TRIM( SEGMENT(13)( 7:8 ) ) )
             END IF
 
             JDATE = 1000 * YEAR + JULIAN( YEAR, MONTH, DAY )
@@ -362,14 +363,10 @@ C.............  Set the number of fields, depending on day- or hour-specific
                 NFIELD = MON_DAYS( MONTH )
                 LYEAR =  INT( 1 / YR2DAY( YEAR ) )   ! convert year to days
                 IF( LYEAR > 365 .AND. MONTH == 2 ) NFIELD = 29
-            ELSE              ! standard format hourly
-                NFIELD  = 24
             END IF
 
 C.............  Search for time zone for current county
-            FIP  = ICC * 100000 +
-     &             1000 * STR2INT( SEGMENT( 2 )( 1:2 ) ) +
-     &                    STR2INT( SEGMENT( 2 )( 3:5 ) )
+            FIP  = ICC * 100000 + STR2INT( SEGMENT( 2 ) ) 
             WRITE( CFIP,94020 ) FIP
 
             I = FIND1( FIP, NCOUNTY, CNTYCOD )
@@ -403,17 +400,10 @@ C.............  Convert date and time to output time zone.
             CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
 
 C.............  Determine time step pointer based on reference time
-            PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1
-
+            PTR = SECSDIFF( RDATE, RTIME, JDATE+NFIELD-1, JTIME ) / TDIVIDE + 1
+            
 C.............  Store minimum time step number as compared to reference
             IF( PTR .LT. MINPTR ) MINPTR = PTR
-
-C.............  Determine time step pointer based on reference time for daily inventory
-C               add no of days for current processing month for correct reference time calculation
-            IF( DAYFLAG ) THEN
-                PTR = SECSDIFF( RDATE, RTIME, JDATE+NFIELD, JTIME )
-     &                 / TDIVIDE + 1
-            END IF
 
 C.............  Store maximum time step number as compared to reference
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
@@ -441,7 +431,7 @@ C.................  Check to see if data name is in list of special names
 C.................  Store status of special data and flag code with
 C                   special integer so can ID these records later.
                 IF( CIDX .GT. 0 ) THEN
-                    SPSTAT( CIDX ) = .TRUE.
+                    SPSTAT( CIDX ) = CIDX 
                     COD = CODFLAG3 + CIDX
 
 C................  If not in list of special names, check to see
@@ -526,7 +516,7 @@ C                  inventory.  If not, write warning message and cycle.
 
 C................  If it's found, then record that this pollutant was found
                ELSE
-                   EASTAT( COD ) = .TRUE.
+                   EASTAT( COD ) = CIDX 
                END IF
 
             END IF  ! if cidx le 0 or not
@@ -536,7 +526,7 @@ C               to next loop iteration
             IF( GETSIZES ) CYCLE
 
 C.............  Determine time step pointer based on actual start time
-            PTR = SECSDIFF( SDATESAV,STIMESAV,JDATE,JTIME )/ TDIVIDE + 1
+            PTR = SECSDIFF( SDATESAV,STIMESAV,JDATE,JTIME ) / TDIVIDE + 1
 
 C.............  Skip record if it is out of range of output file
 C.............  NOTE - this is only useful if reading only part of data
@@ -555,13 +545,15 @@ C.............  Check and set emissions values
 
             S1 = 15   ! pollutant field start position
 
-            DO J = 1, NFIELD
-                IF( DAYFLAG ) THEN
+            IF( DAYFLAG ) THEN
+                DO J = 1, NFIELD
                     TDAT( J,: )  = STR2REAL( SEGMENT( S1-1+J ) )
-                ELSE
+                END DO
+            ELSE
+                DO J = 1, 24
                     TDAT( :,J )  = STR2REAL( SEGMENT( S1-1+J ) )
-                ENDIF 
-            END DO
+                END DO
+            ENDIF 
 
 C.............  If available, set total value from hourly file
             TOTAL = 0.
@@ -626,7 +618,6 @@ C.................  Build source characteristics field for searching inventory
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                            CHRBLNK3, CSRC )
                 END IF
-
                 
 C.................  Search for this record in sources
                 J = FINDC( CSRC, NS, CSOURC( SS ) )
@@ -758,6 +749,7 @@ C.........  Abort if error found while reading file
         END IF
 
 C.........  Update output starting date/time and ending date/time
+        DFLAG = .TRUE.
         SDATE = RDATE
         STIME = RTIME
         DO I = 1, MINPTR - 1

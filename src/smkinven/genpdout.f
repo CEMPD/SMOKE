@@ -1,7 +1,7 @@
 
         SUBROUTINE GENPDOUT( FDEV, CDEV, ODEV, RDEV,TZONE, SDATE, STIME, 
      &                       NSTEPS, INSTEP, OUTSTEP, NVAR, NVSP, 
-     &                       MXPDSRC, TYPNAM, FNAME, EAIDX, SPIDX )
+     &                       MXPDSRC, TYPNAM, FNAME, EAIDX, SPIDX, CFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -94,13 +94,14 @@ C.........  SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME     ! logical file name
         INTEGER     , INTENT (IN) :: EAIDX( NIPPA ) ! index to EANAM
         INTEGER     , INTENT (IN) :: SPIDX( MXSPDAT ) ! index to SPDATNAM
+        LOGICAL     , INTENT (IN) :: CFLAG     ! CEM processing
 
 C.........  Local allocatable arrays
-        LOGICAL, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
+        INTEGER, ALLOCATABLE :: EASTAT( : )    ! true: act/pol present in data
         CHARACTER(SCCLEN3), ALLOCATABLE :: ELECSCC( : )
 
 C.........  Local arrays
-        LOGICAL         SPSTAT( MXSPDAT )     ! true: special data variable used
+        INTEGER         SPSTAT( MXSPDAT )     ! true: special data variable used
         LOGICAL         LFG( 9 )          ! true: source characteristic is valid
 
         CHARACTER(15)   CHRHDRS( NCHARS )     ! Source characteristics headers
@@ -141,7 +142,6 @@ C...........   Other local variables
         CHARACTER(DSCLEN3) PDSC          ! tmp plant DSC
         CHARACTER(DSCLEN3) ODSC          ! tmp ORIS plant DSC
          
-        CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
         CHARACTER(16) :: PROGNAME = 'GENPDOUT' !  program name
 
 C***********************************************************************
@@ -165,11 +165,6 @@ C               hourly data
                 CALL M3MSG2( MESG )
                 PFLAG = .FALSE.
 
-            END IF
-
-            CALL ENVSTR( FORMEVNM, MESG, ' ', VAR_FORMULA, IOS )
-            IF( LEN_TRIM( VAR_FORMULA ) .GT. 0 ) THEN
-                CALL FORMLIST
             END IF
 
             FIRSTIME = .FALSE.
@@ -197,7 +192,7 @@ C           it does not need to be set because EAIDX has already been
 C           determined.
         ALLOCATE( EASTAT( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EASTAT', PROGNAME )
-        EASTAT = .FALSE.  ! array
+        EASTAT = 0  ! array
 
 C.........  Allocate memory for reading data
         ALLOCATE( MXPDPT( NSTEPS ), STAT=IOS )
@@ -292,9 +287,7 @@ C.........  Allocate memory for daily or hourly output arrays.  Allocate
 C           memory as one block which will be separated into an integer section
 C           and a real section when WRPDEMIS is called.  This permits
 C           writing with a single WRITE3 statement.
-        IF ( NCOMP > 0 )  NVSP = NVSP + NCOMP
         ALLOCATE( PDEMOUT( NPDSRC,NVSP+1 ), STAT=IOS )
-
         CALL CHECKMEM( IOS, 'PDEMOUT', PROGNAME )
         ALLOCATE( PDTOTL( NPDSRC,NVSP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PDTOTL', PROGNAME )
@@ -307,7 +300,7 @@ C.........  Loop through time steps and output emissions and other data
         
             LASTSTEP = ( T .EQ. NSTEPS ) 
             CALL WRPDEMIS( DFLAG, JDATE, JTIME, T, NPDSRC, NVAR, NVSP, 
-     &                     ONAME, OFLAG, EAIDX, SPIDX, LASTSTEP,
+     &                     ONAME, OFLAG, CFLAG, EAIDX, SPIDX, LASTSTEP,
      &                     PDEMOUT( 1,1 ), PDEMOUT( 1,2 ), EFLAG )
 
             CALL NEXTIME( JDATE, JTIME, OUTSTEP )

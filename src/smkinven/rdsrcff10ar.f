@@ -42,7 +42,7 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG 
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG
         
         IMPLICIT NONE
 
@@ -111,8 +111,8 @@ C.........  If a header line was encountered, set flag and return
 C.............  Determine whether processing daily/hourly inventories or not 
             CALL UPCASE( LINE )
 
-            L1 = INDEX( LINE, 'FF10_DAILY_NONPOINT' )
-            L2 = INDEX( LINE, 'FF10_HOURLY_NONPOINT' )
+            L1 = INDEX( LINE, 'FF10_DAILY_' )
+            L2 = INDEX( LINE, 'FF10_HOURLY_' )
 
             IF( INDEX( LINE, '_POINT'  ) > 0 ) THEN 
                 MESG = 'ERROR: Can not process POINT inventory '//
@@ -120,16 +120,19 @@ C.............  Determine whether processing daily/hourly inventories or not
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN 
+            IF( FF10INVFLAG ) THEN
+              IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN 
                 MESG = 'ERROR: MUST set DAY_SPECIFIC_YN to Y '//
-     &               'to process daily FF10_DAILY_NONPOINT inventory'
+     &               'to process daily FF10_DAILY inventory'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+              END IF
 
-            IF( .NOT. HRLINVFLAG .AND. L2 > 0 ) THEN
+              IF( .NOT. HRLINVFLAG .AND. L2 > 0 ) THEN
                 MESG = 'ERROR: MUST set HOUR_SPECIFIC_YN to Y '//
-     &               'to process hourly FF10_HOURLY_NONPOINT inventory'
+     &               'to process hourly FF10_HOURLY inventory'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+
+              END IF
             END IF
 
             HDRFLAG = .TRUE.
@@ -158,7 +161,7 @@ C.........  Replace blanks with zeros
         END DO
        
 C.........  Determine number of pollutants for this line based on CAS number
-        IF( HRLINVFLAG .OR. DAYINVFLAG ) THEN
+        IF( FF10INVFLAG ) THEN
             TSCC = SEGMENT( 8 )                           ! SCC code
             TCAS = ADJUSTL( SEGMENT( 9 ) )
         ELSE 
@@ -172,7 +175,7 @@ C.........  Determine number of pollutants for this line based on CAS number
         ELSE
             NPOLPERLN = UCASNKEP( I )
         END IF
-        
+
 C.........  Make sure routine knows it's been called already
         FIRSTIME = .FALSE.
 

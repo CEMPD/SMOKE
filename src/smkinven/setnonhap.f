@@ -82,9 +82,6 @@ C.........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: TMPNPCNT( : )    ! number of pol per source
         INTEGER, ALLOCATABLE :: TMPPOSCOD( : )   ! tmp pollutant code array
 
-        INTEGER, ALLOCATABLE :: NCRNOTOX( : )    ! number of sources with criteria but no toxics
-        INTEGER, ALLOCATABLE :: NTOXNOCR( : )    ! number of sources with toxics but no criteria
-
         REAL,    ALLOCATABLE :: HAPEANN( : )     ! summed annual VOC/TOG HAPs emissions
         REAL,    ALLOCATABLE :: HAPEDAY( : )     ! summed average day VOC/TOG HAPs emissions
 
@@ -117,7 +114,7 @@ C.........   Other local variables
         LOGICAL  FNDPOL       ! true: found toxic pollutant to be processed
         LOGICAL  FNDVOC       ! true: found VOC entry in inventory
         LOGICAL  MFLAG        ! true: treat all sources integrated
-        LOGICAL  WFLAG        ! true: warning occured
+        LOGICAL  EFLAG        ! true: error occured
         LOGICAL  LASTFLAG     ! true: entry is last for current source
         LOGICAL  NEEDSORT     ! true: need to resort pollutants for current source
         LOGICAL  NFLAG        ! true: start non-HAP calculation
@@ -242,16 +239,9 @@ C.........  Determine maximum size for allocating memory
         CALL CHECKMEM( IOS, 'HAPEANN', PROGNAME )
         ALLOCATE( HAPEDAY( NNONHAP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'HAPEDAY', PROGNAME )
-        ALLOCATE( NCRNOTOX( NNONHAP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'NCRNOTOX', PROGNAME )
-        ALLOCATE( NTOXNOCR( NNONHAP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'NTOXNOCR', PROGNAME )
-
         VNMPOS = 0
         NONHAPNAM = ' '
         NONHAPMOD = ' '
-        NCRNOTOX = 0
-        NTOXNOCR = 0 
 
 C.........  Max number of souces with pol/act including a new species (VOC_INV)
         NRAWBP = NRAWBP + ( NNONHAP * NSRC )
@@ -358,8 +348,8 @@ C.............  Initialize values for this source
             HAPEANN = 0.
             HAPEDAY = 0.
             
-            WFLAG = .FALSE.
             FNDVOC = .FALSE.            
+            FNDPOL = .FALSE.            
             LASTFLAG = .FALSE.
 
 c.............  store org number of pollunt to tmp array
@@ -465,6 +455,8 @@ C.................  Store pollutant for this position
                 CPOL   = IPOSCOD( CURRPOS )
                 POLNAM = INVDNAM( CPOL )
 
+                IF( VOC_TOG == TRIM( POLNAM ) ) FNDVOC = .TRUE.
+
 C.....................  Increment current new position in arrays            
                 NEWSRCPOS = NEWSRCPOS + 1
 
@@ -519,13 +511,13 @@ C                   INVDVTS = 'T' => part of TOG only
                 IF( PROCVOC .AND. INVDVTS( CPOL ) == 'V' ) THEN
                     HAPEANN( M ) = HAPEANN( M ) + POLVAL( CURRPOS,NEM )
                     HAPEDAY( M ) = HAPEDAY( M ) + POLVAL( CURRPOS,NDY )
-                    FNDVOC = .TRUE.
+                    FNDPOL = .TRUE.
                 END IF
 
                 IF( PROCTOG ) THEN
                     HAPEANN( M ) = HAPEANN( M ) + POLVAL( CURRPOS,NEM )
                     HAPEDAY( M ) = HAPEDAY( M ) + POLVAL( CURRPOS,NDY )
-                    FNDVOC = .TRUE.
+                    FNDPOL = .TRUE.
 
                 END IF
 
@@ -534,7 +526,33 @@ C                   Otherwise, check conditions and subtract toxic
 C                   emissions from criteria values
                 IF( .NOT. LASTFLAG ) CYCLE
 
-                LASTFLAG = .FALSE.
+C.................  Format information for this source
+                CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
+
+C.................  Check the status of VOC and HAPs prior to NONHAPVOC calculation
+                IF( .NOT. FNDVOC .AND. .NOT. FNDPOL ) THEN
+                    MESG = 'ERROR: Both ' // VOC_TOG // 
+     &                  ' and toxics are NOT found for the source:' // 
+     &                  CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+
+                IF( FNDVOC .AND. .NOT. FNDPOL ) THEN
+                    MESG = 'ERROR: Found ' // VOC_TOG // 
+     &                  ' but no toxics found for the source:' // 
+     &                  CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
+
+                IF( .NOT. FNDVOC .AND. FNDPOL ) THEN
+                    MESG = 'ERROR: Found toxics but no ' // VOC_TOG // 
+     &                  ' found for the source:' // 
+     &                  CRLF() // BLANK5 // BUFFER( 1:L2 )
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                END IF
 
 C.................  Loop through pollutants that need NONHAP calculation
                 DO K = 1, NNONHAP
@@ -544,60 +562,11 @@ C.....................  Restore position of VOC or TOG pollutants
                     NVPOS  = NVOCPOS( K )
                     CURPOL = INVDNAM( VNMPOS( K ) )   ! VOC, EXH__VOC,,,
 
-C.....................  Skip NONHAP calculation when summed HAPs is zero
-                    IF( HAPEANN( K ) == 0.0 .AND. FNDVOC ) CYCLE
-                    IF( HAPEDAY( K ) == 0.0 .AND. FNDVOC ) CYCLE
-
-C.....................  Format information for this source
-                    CALL FMTCSRC( CSOURC( I ), NCHARS, BUFFER, L2 )
-
 C....................  Check if this source had no criteria and no toxics
 C                      This happens for activity only sources
-                    IF( VPOS == 0 .AND. .NOT. FNDVOC ) THEN
-                        IF( NWARN <= MXWARN ) THEN
-                            MESG = 'WARNING: No toxics or '
-     &                             // TRIM( CURPOL )//
-     &                             ' emissions found for source:' // 
-     &                             CRLF() // BLANK5 // BUFFER( 1:L2 )
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-                        WFLAG = .TRUE.
-
-                    END IF
-
-C.....................  Give warning if source has toxics but no criteria
-                    IF( VPOS == 0 .AND. FNDVOC ) THEN
-                        IF( NWARN <= MXWARN ) THEN
-                            MESG = 'WARNING: Found toxics ' //
-     &                             'but no ' // TRIM( CURPOL ) //
-     &                             ' emissions for source:' // 
-     &                             CRLF() // BLANK5 // BUFFER( 1:L2 )
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-
-                        NTOXNOCR( K ) = NTOXNOCR( K ) + 1
-                        WFLAG = .TRUE.
-                    END IF
-
-C.....................  Give warning if source has criteria but no toxics
-                    IF( VPOS /= 0 .AND. .NOT. FNDVOC ) THEN
-                        IF( NWARN <= MXWARN ) THEN
-                            MESG = 'WARNING: Found ' // TRIM( CURPOL )// 
-     &                             ' emissions but no toxics '//
-     &                             'found for source:' // 
-     &                            CRLF() // BLANK5 // BUFFER( 1:L2 )
-                            CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
-                        END IF
-
-                        NCRNOTOX( K ) = NCRNOTOX( K ) + 1
-                        WFLAG = .TRUE.
-                    END IF
-
-C.....................  Skip rest of loop if an error has occured
-                    IF( WFLAG ) CYCLE
+                    IF( VPOS == 0 .AND. FNDPOL ) CYCLE
+                    IF( VPOS == 0 .AND. .NOT. FNDPOL ) CYCLE
+                    IF( VPOS /= 0 .AND. .NOT. FNDPOL ) CYCLE
 
 C.....................  Subtract toxic emissions from criteria emissions  
                     POLVAL( VPOS,NEM ) = 
@@ -643,10 +612,16 @@ C.....................  increment a number of poll for NONHAP[VOC|TOG]
                     INVSTAT  ( NONVPOS )= 2
 
                 END DO  !loop through pollutants that need NONHAP calculation
-                
+
             END DO  ! loop through pollutants
 
         END DO  ! loop through sources
+
+C........   Error message
+        IF( EFLAG ) THEN
+            MESG = 'ERROR: There is a problem during combining VOC and HAPs'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
         NRAWBP = NEWSRCPOS
 
@@ -681,35 +656,6 @@ C................  Store pollutant for this position
         
         DEALLOCATE( TMPNPCNT, TMPPOLVAL, TMPPOSCOD )
         
-C.........  Loop through pollutants that need NONHAP calculation
-        N = 0
-        DO K = 1, NNONHAP
-            IF( NCRNOTOX( K ) > 0 .OR. NTOXNOCR( K ) > 0 ) THEN
-                N = N + 1
-                MESG = 'During processing, the following number ' //
-     &                 'of sources were encountered: '
-                IF( N == 1 ) CALL M3MESG( MESG )
-
-                CURPOL = INVDNAM( VNMPOS( K ) )   ! VOC, EXH__VOC,,,
-
-                IF( NCRNOTOX( K ) > 0 ) THEN
-                    WRITE( MESG,94010 ) BLANK5 // 'Sources with ' // 
-     &                  TRIM( CURPOL ) // ' emissions but no toxic ' //
-     &                  'emissions: ', NCRNOTOX( K )
-                    CALL M3MESG( MESG )
-                END IF
-
-                IF( NTOXNOCR( K ) > 0 ) THEN
-                    WRITE( MESG,94010 ) BLANK5 // 'Sources with toxic'//
-     &                  ' emissions but no ' // TRIM( CURPOL ) //
-     &                  ' emissions: ', NTOXNOCR( K )
-                    CALL M3MESG( MESG )
-                END IF
-
-            END IF
-
-        END DO
-
 C.........  Sort POLVAL and IPOSCOD to put new pollutants (NONHAP and NOI) in correct order
 
 C.........  Determine maximum size for sorting index, then allocate memory

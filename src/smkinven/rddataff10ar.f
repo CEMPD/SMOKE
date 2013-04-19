@@ -42,7 +42,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NEM, NDY, NEF, NCE, NRE, NRP, INV_MON
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG 
+        USE MODDAYHR, ONLY: FF10INVFLAG 
 
         IMPLICIT NONE
 
@@ -183,11 +183,9 @@ C.........  Compute annual total based on monthly total
 
 C.........  Reset annual total inventory to zero for daily/hourly FF10 processing
         IF( FF10INVFLAG ) THEN
-        IF( DAYINVFLAG .OR. HRLINVFLAG ) THEN
             READPOL ( 1     ) = SEGMENT( 9 )
             READDATA( 1,NEM ) = ''
             READDATA( 1,NDY ) = ''
-        END IF
         END IF
 
 C.........  Make sure routine knows it's been called already

@@ -635,7 +635,7 @@ C.................  Process line depending on file format and source category
      &                               HDRFLAG, EFLAG )
 
                 CASE( ORLFIREFMT )
-                    ORLFLG   = .FALSE.
+                    ORLFLG   = .TRUE.
                     FIREFLAG = .TRUE.
 
                     CALL RDSRCORLFR( LINE, CFIP, FCID, PTID, SKID,
@@ -1071,7 +1071,7 @@ C.............  Check if this is last time
 
 C.........  Rewind scratch file        
         REWIND( CDEV )
-        
+
 C.........  Allocate memory to read complete scratch file
         ALLOCATE( CSRCIDX( TOTSRCS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )

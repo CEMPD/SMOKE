@@ -99,7 +99,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER,INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT) :: EDATE          ! Julian ending date in TZONE
         INTEGER, INTENT(OUT) :: ETIME          ! ending time of data in TZONE
-        LOGICAL, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        INTEGER, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
 
 C.........  Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: SRTDCOD( : )
@@ -360,7 +360,7 @@ C.............  Check pollutant code for being in inventory files
                 CYCLE      !  to head of loop
             END IF
 
-            EASTAT( COD ) = .TRUE.
+            EASTAT( COD ) = COD 
 
 C.............  Check state/county codes, error for missing
             IF( .NOT. CHKINT( LINE( 12:16 ) ) .OR.

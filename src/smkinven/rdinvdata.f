@@ -688,6 +688,7 @@ C.....................  Need to read source information to match with VMTMIX fil
      &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
      &                                AVEFLAG, EFLAG )
                     NPOLPERLN = 1
+
                 END SELECT
 
             CASE( ORLFMT )
@@ -1401,7 +1402,7 @@ C                               pollutants are processed
                             INDEXA  ( SP ) = SP        ! index for sorting POLVLA
                             IPOSCODA( SP ) = POLCOD    ! pollutant code
                             ICASCODA( SP ) = UCASPOS   ! CAS number (set to 0 for non-ORL sources)
-                       
+
                             IF( POLANN > 0. ) THEN 
                               POLVLA( SP,NEM ) = INVDCNV( POLCOD ) * 
      &                                           POLANN

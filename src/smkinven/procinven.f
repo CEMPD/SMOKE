@@ -214,7 +214,7 @@ C.............  Reset emissions values to zero, if it's negative
             IF ( POLVLA( J, NEM ) < 0 .AND.
      &           POLVLA( J, NEM ) > AMISS3 ) THEN
 
-    	    	    IF( .NOT. NEGOK ) POLVLA( J, NEM ) = 0.
+    	        IF( .NOT. NEGOK ) POLVLA( J, NEM ) = 0.
 
                 IF ( NWARN < MXWARN .AND. POLCOD /= PIPCOD ) THEN
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )

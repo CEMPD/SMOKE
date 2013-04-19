@@ -41,6 +41,9 @@ C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS
 
+C.........  This module contains data for day- and hour-specific data
+        USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -108,6 +111,26 @@ C.........  Interpret error status
 
 C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
+C.............  Determine whether processing daily/hourly inventories or not
+            CALL UPCASE( LINE )
+
+            IF( FF10INVFLAG ) THEN
+              L1 = INDEX( LINE, 'FF10_DAILY_POINT' )
+              L2 = INDEX( LINE, 'FF10_HOURLY_POINT' )
+
+              IF( .NOT. DAYINVFLAG .AND. L1  > 0 ) THEN
+                MESG = 'ERROR: MUST set DAY_SPECIFIC_YN to Y '//
+     &               'to process daily FF10_DAILY_POINT inventory'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              END IF
+
+              IF( .NOT. HRLINVFLAG .AND. L2 > 0 ) THEN
+                MESG = 'ERROR: MUST set HOUR_SPECIFIC_YN to Y '//
+     &               'to process hourly FF10_HOURLY_POINT inventory'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              END IF
+            END IF
+
             HDRFLAG = .TRUE.
             RETURN
         ELSE
@@ -131,10 +154,16 @@ C.........  Replace blanks with zeros
         PTID = ADJUSTL( SEGMENT( 5 ) ) ! point ID
         SKID = ADJUSTL( SEGMENT( 6 ) ) ! stack ID
         SGID = ADJUSTL( SEGMENT( 7 ) ) ! segment ID
-        TSCC = ADJUSTL( SEGMENT( 12 ) ) ! scc code
 
 C.........  Determine number of pollutants for this line based on CAS number
-        TCAS = ADJUSTL( SEGMENT( 13 ) )
+        IF( FF10INVFLAG ) THEN
+            TSCC = ADJUSTL( SEGMENT( 8 ) )                           ! SCC code
+            TCAS = ADJUSTL( SEGMENT( 9 ) )
+        ELSE
+            TSCC = ADJUSTL( SEGMENT( 12 ) )                          ! SCC code
+            TCAS = ADJUSTL( SEGMENT( 13 ) )
+        END IF
+
         I = FINDC( TCAS, NUNIQCAS, UNIQCAS )
         IF( I < 1 ) THEN
             NPOLPERLN = 0

@@ -60,7 +60,7 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, ISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
      &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, FF10FLAG
+        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, FF10FLAG,INVDCOD 
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX, INV_MON,
@@ -164,6 +164,7 @@ C...........   Other local variables
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
         LOGICAL         A2PFLAG          ! true: using area-to-point processing
+        LOGICAL      :: CFLAG = .FALSE.  ! true: CEM processing
         LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL         NONPOINT         ! true: importing nonpoint inventory
@@ -326,7 +327,7 @@ C.............  These are for opening output file and processing output data
                    ACTVTY( J2 ) = INVDNAM( I )
                    EANAM ( J1 ) = INVDNAM( I )
                END IF
-
+            
             END DO
 
 C.............   Fix stack parameters for point sources
@@ -443,9 +444,10 @@ C               to see if HFLUX is present. If so, FIREFLAG = .true.
             IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
             IVARNAMS( 4 ) = 'CPDESC'  ! In case CEM input
             IF ( .NOT. FIREFLAG ) THEN
-                NINVARR = 6
+                NINVARR = 7
                 IVARNAMS( 5 ) = 'CORIS'   ! In case CEM input
                 IVARNAMS( 6 ) = 'CBLRID'  ! In case CEM input
+                IVARNAMS( 7 ) = 'CINTGR'  ! for VOC + HAPs integration
             END IF
 
             CALL RDINVCHR( CATEGORY, ENAME, SDEV, NSRC, NINVARR,
@@ -465,12 +467,12 @@ C.............  Preprocess day-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
             CALL GETPDINFO( DDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, DNAME, 
      &                      DSDATE, DSTIME, DNSTEP, NVARDY, NVSPDY, 
-     &                      MXSRCDY, DEAIDX, DSPIDX )
+     &                      MXSRCDY, DEAIDX, DSPIDX, CFLAG )
 
 C.............  Read and output day-specific data
             CALL GENPDOUT( DDEV, CDEV, ODEV, ADEV, TZONE, DSDATE,DSTIME, 
      &                     DNSTEP, INSTEP, OUTSTEP, NVARDY, NVSPDY, 
-     &                     MXSRCDY, TYPNAM, DNAME, DEAIDX, DSPIDX )
+     &                     MXSRCDY, TYPNAM, DNAME, DEAIDX, DSPIDX, CFLAG )
 
         END IF
 
@@ -485,12 +487,12 @@ C.............  Preprocess hour-specific file(s) to determine memory needs.
 C               Also determine maximum and minimum dates for output file.
             CALL GETPDINFO( HDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, HNAME, 
      &                      HSDATE, HSTIME, HNSTEP, NVARHR, NVSPHR, 
-     &                      MXSRCHR, HEAIDX, HSPIDX )
+     &                      MXSRCHR, HEAIDX, HSPIDX, CFLAG )
 
 C.............  Read and output hour-specific data
             CALL GENPDOUT( HDEV, CDEV, ODEV, ADEV,TZONE, HSDATE,HSTIME,
      &                     HNSTEP, INSTEP, OUTSTEP, NVARHR, NVSPHR,  
-     &                     MXSRCHR, TYPNAM, HNAME, HEAIDX, HSPIDX )
+     &                     MXSRCHR, TYPNAM, HNAME, HEAIDX, HSPIDX, CFLAG )
 
         END IF
 

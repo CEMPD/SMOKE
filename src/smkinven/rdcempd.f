@@ -93,8 +93,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER,INTENT(INOUT):: EDATE          ! Julian ending date in TZONE
         INTEGER,INTENT(INOUT):: ETIME          ! ending time of data in TZONE
-        LOGICAL, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
-        LOGICAL, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
+        INTEGER, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        INTEGER, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in daa
 
 C...........   Local parameters
         INTEGER, PARAMETER :: NCEMPOL  = 2   ! number of pollutants in CEM data
@@ -264,9 +264,9 @@ C.............  Read emissions from inventory file
         END IF
 
 C.........  Set variable status
-        EASTAT = .TRUE.
+        EASTAT = 1 
         IF( FLOWFAC > 0. ) THEN
-            SPSTAT( MXSPDAT ) = .TRUE.
+            SPSTAT( MXSPDAT ) = 1 
         END IF
 
 C.............  Allocate memory for bad ORIS IDs
@@ -787,7 +787,7 @@ C----------------------------------------------------------------------
             NPDPT ( PTR ) = NPDPT( PTR ) + 1
             
             HRSRC = NPDPT( PTR )
-            
+
             IF( HRSRC <= MXPDSRC ) THEN
             
                 IDXSRC( HRSRC,PTR ) = HRSRC

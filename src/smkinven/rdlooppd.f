@@ -74,8 +74,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,     INTENT(INOUT):: STIME          ! data start time in TZONE
         INTEGER,      INTENT(OUT) :: NSTEPS         ! no. time steps
         INTEGER,      INTENT(OUT) :: FMTOUT         ! file format code
-        LOGICAL,      INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act in data
-        LOGICAL,      INTENT(OUT) :: SPSTAT( MXSPDAT )! true: special in data
+        INTEGER,      INTENT(OUT) :: EASTAT( NIPPA )! true: pol/act in data
+        INTEGER,      INTENT(OUT) :: SPSTAT( MXSPDAT )! true: special in data
 
 C...........   Local file formats
         INTEGER, ALLOCATABLE, SAVE :: FILFMT( : )  ! file format code

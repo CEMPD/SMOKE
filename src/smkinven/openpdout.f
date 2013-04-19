@@ -41,7 +41,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATDESC, CRL, BYEAR, NIPOL, NIACT,
-     &                     EANAM, NCOMP, VNAME, VIN_A, VIN_B
+     &                     EANAM
      
         IMPLICIT NONE
 
@@ -55,9 +55,8 @@ C...........   EXTERNAL FUNCTIONS and their descriptions
         INTEGER            PROMPTFFILE
         CHARACTER(NAMLEN3) PROMPTMFILE
         CHARACTER(16)      VERCHAR
-        INTEGER            INDEX1
 
-        EXTERNAL        PROMPTFFILE, PROMPTMFILE, VERCHAR, INDEX1
+        EXTERNAL        PROMPTFFILE, PROMPTMFILE, VERCHAR
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NPDSRC    ! no. period-specific sources
@@ -70,7 +69,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: TYPNAM    ! 'day' or 'hour'
         LOGICAL     , INTENT (IN) :: PFLAG     ! true: creating profiles
         INTEGER     , INTENT (IN) :: EAIDX( NVAR ) ! pol/act index
-        LOGICAL     , INTENT (IN) :: SPSTAT( MXSPDAT ) ! true: special val exists
+        INTEGER     , INTENT (IN) :: SPSTAT( MXSPDAT ) ! true: special val exists
         CHARACTER(*), INTENT(OUT) :: FNAME     ! logical file name
         INTEGER     , INTENT(IN OUT) :: RDEV   ! report unit number
 
@@ -80,14 +79,12 @@ C...........   LOCAL PARAMETERS
 
 C...........   Other local variables
 
-        INTEGER       J, K, L, L2, V, VV   ! counter and indices
+        INTEGER       J, K, L, L2, V   ! counter and indices
 
-        INTEGER            TNCOMP      ! temp counter for formula variables
         CHARACTER(5)       CTZONE      ! string of time zone
         CHARACTER(NAMLEN3) VARNAM      ! name for integer index
         CHARACTER(IOVLEN3) VBUF        ! tmp buffer for variable names
         CHARACTER(300)     MESG        ! message buffer 
-        LOGICAL            KEEPV(NCOMP)
 
         CHARACTER(16) :: PROGNAME = 'OPENPDOUT' ! program name
 
@@ -129,7 +126,6 @@ C.........  Define hour-specific emissions, if any
         DO V = 1, NVAR 
             VBUF = EANAM( EAIDX( V ) )
             L = LEN_TRIM( VBUF )
-
             J = J + 1
             VNAME3D( J ) = VBUF
             VTYPE3D( J ) = M3REAL
@@ -152,7 +148,7 @@ C............. If outputs are data values...
 C.........  Define hour-specific special data values, if any
         K = 0
         DO V = 1, MXSPDAT
-            IF( SPSTAT( V ) ) THEN
+            IF( SPSTAT( V ) > 0 ) THEN
                 K = K + 1
                 J = J + 1
                 VNAME3D( J ) = SPDATNAM( V )
@@ -167,48 +163,7 @@ C.........  Define hour-specific special data values, if any
         END DO
         NVARS3D = J
 
-C.........  Check if formula variable is already calculated
-        TNCOMP = NCOMP
-        KEEPV = .TRUE.
-        IF ( NCOMP > 0 ) THEN
-        DO V = 1, NCOMP
-            L = LEN_TRIM( VNAME( V ) )
-            L2 = -1
-            L2 = INDEX1( VNAME( V )( 1:L ), NVARS3D+1, VNAME3D )
-            IF ( L2 .GT. 0 )  THEN
-                TNCOMP = TNCOMP -1
-                KEEPV(V) = .FALSE. 
-            END IF    
-        END DO
-        END IF
-
-C.........  only calculate variables that are not in EANAM
-        IF ( TNCOMP .LT. NCOMP .AND. TNCOMP .GT. 0) THEN
-            VV = 0
-            DO V = 1, NCOMP
-                IF ( KEEPV(V) ) THEN
-                    VV = VV + 1
-                    VIN_A(VV) = VIN_A(V) 
-                    VIN_B(VV) = VIN_B(V) 
-                END IF
-            END DO
-        END IF
-        NCOMP = TNCOMP
-
-C.........  Add formula variables to output file list
-        IF ( NCOMP > 0 ) THEN
-        DO V = 1, NCOMP
-            J = J + 1
-            L = LEN_TRIM( VNAME( V ) )
-            VNAME3D( J ) = VNAME ( V )
-            VTYPE3D( J ) = M3REAL
-            UNITS3D( J ) = 'ton/' // TYPNAM
-            VDESC3D( J ) = TYPNAM // '-specific ' //
-     &                     VNAME( V )( 1:L ) // ' data'
-        END DO
-        END IF
-        NVARS3D = J
-
+C.........  Define general description info
         L2 = LEN_TRIM( TYPNAM )
         FDESC3D( 1 ) = CATDESC // TYPNAM( 1:L2 ) //
      &                '-specific source inventory'

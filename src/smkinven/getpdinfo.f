@@ -1,7 +1,7 @@
 
         SUBROUTINE GETPDINFO( FDEV, TZONE, INSTEP, OUTSTEP, TYPNAM, 
      &                        FNAME, SDATE, STIME, NSTEPS, NPDVAR, 
-     &                        NPDVSP, MXPDSRC, EAIDX, SPIDX )
+     &                        NPDVSP, MXPDSRC, EAIDX, SPIDX, CFLAG )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -41,11 +41,19 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
+C...........   This module is the inventory arrays
+        USE MODSOURC, ONLY: CINTGR
+
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NIPPA, NSPDAT
+        USE MODINFO, ONLY: NIPPA, NSPDAT, EANAM, NCOMP, VAR_FORMULA,
+     &                     VNAME
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT
+
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: NUNIQCAS, UCASNKEP, UNIQCAS, UCASIDX, ITNAMA,
+     &                      SCASIDX
 
         IMPLICIT NONE
 
@@ -61,8 +69,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         GETFORMT
+        INTEGER         FINDC
+        INTEGER         FIND1
+        INTEGER         INDEX1 
 
-        EXTERNAL        CRLF, GETFLINE, GETFORMT
+        EXTERNAL        CRLF, GETFLINE, GETFORMT, FIND1, FINDC, INDEX1
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN):: FDEV          ! file unit no.
@@ -79,23 +90,32 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT(OUT):: MXPDSRC       ! max. no. srcs over all times
         INTEGER     , INTENT(OUT):: EAIDX( NIPPA )! index to EANAM
         INTEGER     , INTENT(OUT):: SPIDX( MXSPDAT )! index to SPDATNAM
+        LOGICAL     , INTENT(OUT):: CFLAG         ! true: CEM data processing
+
+C.........  Local parameters
+        CHARACTER(16), PARAMETER :: FORMEVNM = 'SMKINVEN_FORMULA'
 
 C.........  Local allocatable arrays...
-        LOGICAL, ALLOCATABLE :: EASTAT( : )   ! true: act/pol present in data
+        INTEGER, ALLOCATABLE :: EASTAT( : )   ! true: act/pol present in data
 
 C.........  Local arrats
-        LOGICAL         SPSTAT( MXSPDAT )     ! true: special data variable used
+        INTEGER         SPSTAT( MXSPDAT )     ! true: special data variable used
 
 C.........  Other local variables
-        INTEGER         N, V             ! counters and indices
+        INTEGER         I, J, N, V, NV, IV, L, LL          ! counters and indices
+        INTEGER         COD, NCOD        ! tmp data index
         INTEGER         FILFMT           ! format code of files in list
         INTEGER         INVFMT           ! inventory format code
         INTEGER         IOS              ! i/o status
         INTEGER         NLINE            ! number of lines
+        INTEGER         NPPCAS           !  no. of pollutants per CAS number
+        
+        LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific processing
+        LOGICAL       :: NHAPFLAG = .FALSE.  ! true: VOC + HAPs processing
 
-        LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific
-
-        CHARACTER(300)  MESG    !  message buffer
+        CHARACTER(IOVLEN3) INVNAM   ! temporary pollutant name
+        CHARACTER(IOVLEN3) POLNAM   ! temporary pollutant name
+        CHARACTER(300)  MESG        !  message buffer
 
         CHARACTER(16) :: PROGNAME = 'GETPDINFO' !  program name
 
@@ -106,13 +126,17 @@ C.........  Allocate memory for logical status array for pol/act
         ALLOCATE( EASTAT( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EASTAT', PROGNAME )
 
-        EASTAT = .FALSE.  ! array
-        SPSTAT = .FALSE.  ! array
+        EASTAT = 0  ! array
+        SPSTAT = 0  ! array
 
         MESG = 'Determining number of time steps for ' // TYPNAM //
      &         '-specific files...'
         CALL M3MSG2( MESG )
-        
+
+C.........  Check no of new calculated pollutants        
+        CALL ENVSTR( FORMEVNM, MESG, ' ', VAR_FORMULA, IOS )
+        IF( LEN_TRIM( VAR_FORMULA ) > 0 ) CALL FORMLIST
+
 C.........  Perform case-specific settings
         SELECT CASE( TYPNAM )
         CASE( 'day' ) 
@@ -156,23 +180,100 @@ C           records per time step
         MESG = 'Determining number of sources for ' // TYPNAM //
      &         '-specific files...'
         CALL M3MSG2( MESG )
-
+    
 C.........  Get the maximum number of records per time step - i.e., populate
 C           MXPDSRC
         CALL RDLOOPPD( FDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, DFLAG, 
      &                 FNAME, SDATE, STIME, NSTEPS, FILFMT, 
      &                 EASTAT, SPSTAT )
 
-C.........  Create index to pollutant/activity names for current data files
+C.........  Determine whether combining VOC and HAPs together or not 
+        DO V = 1, NIPPA
+            IF( INDEX( EANAM(V),'_NOI'  ) > 0 ) NHAPFLAG = .TRUE. 
+            IF( INDEX( EANAM(V),'NONHAP') > 0 ) NHAPFLAG = .TRUE. 
+        END DO
+
+C.........  Check whether processing CEM dataset or not
+        NV = 0
+        DO V = 1, NIPPA
+            NV = NV + EASTAT( V )
+        END DO 
+        IF( NV == NIPPA ) CFLAG = .TRUE.
+
         N = 0
         DO V = 1, NIPPA
 
-            IF( EASTAT( V ) ) THEN
+C.............  Processing CEM data
+            IF( CFLAG ) THEN
                 N = N + 1
                 EAIDX( N ) = V
+                CYCLE
+            END IF
+
+C.............  Add multiple inventory pollutant(s) with same CAS name
+C               Find code corresponding to current pollutant before you add
+            IF( EASTAT( V ) > 0 ) THEN
+                COD    = EASTAT( V )
+                NPPCAS = UCASNKEP( COD )
+
+                DO J = 0, NPPCAS - 1
+                    NCOD   = UCASIDX( COD ) + J
+                    POLNAM = ITNAMA( SCASIDX( NCOD ) )
+                    NV = INDEX1( POLNAM, NIPPA, EANAM )
+
+                    IF( NV > 0 ) THEN
+                        N = N + 1
+                        EAIDX( N ) = NV
+                    END IF 
+
+C.....................  Add new NOI pollutant for non-integration
+                    INVNAM = TRIM( POLNAM ) // '_NOI'
+                    NV = INDEX1( INVNAM, NIPPA, EANAM )
+                    IV = FIND1( NV, NIPPA, EAIDX )
+                    IF( NV > 0 .AND. IV < 1 ) THEN
+                        N = N + 1 
+                        EAIDX( N ) = NV
+                    END IF
+C.....................  Add new NONHAPVOC for integration
+                    L  = INDEX( POLNAM, ETJOIN )
+                    LL = LEN_TRIM( POLNAM )
+                    INVNAM = TRIM( POLNAM )
+                    IF( L > 0  ) INVNAM = TRIM( POLNAM(L+2:LL) )
+
+                    IF( INVNAM == 'VOC' .OR. INVNAM == 'TOG' ) THEN
+                        IF( L > 0 ) THEN 
+                             INVNAM = POLNAM(1:L+1) // 'NONHAP'
+     &                                // POLNAM(L+2:LL)
+                        ELSE
+                             INVNAM = 'NONHAP' // TRIM( POLNAM )
+                        END IF
+                        NV = INDEX1( INVNAM, NIPPA, EANAM )
+                        IV = FIND1( NV, NIPPA, EAIDX )
+                        IF( NV > 0 .AND. IV < 1 ) THEN
+                            N = N + 1
+                            EAIDX( N ) = NV
+                        END IF
+                    END IF
+
+                END DO
+
             END IF
 
         END DO
+
+C............  Add new computed pollutants
+        IF( NCOMP > 0 ) THEN
+            DO I = 1, NCOMP
+                POLNAM = VNAME( I )
+                NV = INDEX1( POLNAM, NIPPA, EANAM )
+                IV = FIND1( NV, NIPPA, EAIDX )
+                IF( IV < 1 ) THEN      ! only add if it doesn't exit in PDAY output inv pol list
+                    N = N + 1
+                    EAIDX( N ) = NV
+                END IF
+            END DO
+        END IF
+
         NPDVAR = N
 
 C.........  Create index to special data variable names for current data files
@@ -181,13 +282,14 @@ C           differently intentionally.
         N = 0
         DO V = 1, MXSPDAT
 
-            IF( SPSTAT( V ) ) THEN
+            IF( SPSTAT( V ) > 0 ) THEN
                 N = N + 1
                 SPIDX( V ) = N
             END IF
 
         END DO
         NSPDAT = N
+
         NPDVSP = NPDVAR + NSPDAT
 
 C.........  Compute the maximum number of sources per time step

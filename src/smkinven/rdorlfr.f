@@ -45,7 +45,8 @@ C.........  This module is the inventory arrays
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, UCASNKEP, NUNIQCAS,
-     &                      UNIQCAS, NINVTBL, ITNAMA, ITCASA, FIREFLAG
+     &                      UNIQCAS, NINVTBL, ITNAMA, ITCASA, FIREFLAG,
+     &                      UCASIDX, SCASIDX
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NSRC, EANAM, NCHARS, NMAP, MAPNAM,
@@ -54,7 +55,7 @@ C.........  This module contains the information about the source category
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT, LPDSRC, NPDPT, NPDPTP, IDXSRC, 
-     &                      SPDIDA, CODEA, EMISVA, DYTOTA
+     &                      SPDIDA, CODEA, CIDXA, EMISVA, DYTOTA
 
         IMPLICIT NONE
 
@@ -82,7 +83,6 @@ C.........  EXTERNAL FUNCTIONS
         INTEGER      GETTZONE
         LOGICAL      SETENVVAR
 
-
         EXTERNAL     BLKORCMT, CRLF, ENVYN, FIND1, FINDC, INDEX1, 
      &               JULIAN, SECSDIFF, STR2INT, STR2REAL, YEAR4,
      &               GETTZONE, SETENVVAR, ENVINT
@@ -100,8 +100,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT) :: EDATE          ! Julian ending date in TZONE
         INTEGER, INTENT(OUT) :: ETIME          ! ending time of data in TZONE
-        LOGICAL, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
-        LOGICAL, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
+        INTEGER, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        INTEGER, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
 
 C...........   SUBROUTINE PARAMETERS
         INTEGER      , PARAMETER :: NSEG = 9        ! number of fields for ORL FIREDATA input format
@@ -123,7 +123,11 @@ C...........   Local list of FIPS start/end positions to facilitate
 C              faster lookups
         INTEGER, ALLOCATABLE, SAVE :: STARTSRC( : )
         INTEGER, ALLOCATABLE, SAVE :: ENDSRC( : )
-        
+
+C...........   Local list of arrays for warning handling
+        LOGICAL, ALLOCATABLE, SAVE :: WARNKEEP( : ) ! true: write warning for Keep = N
+        LOGICAL, ALLOCATABLE, SAVE :: WARNMULT( : ) ! true: write warning for Multiple pollutants from a single pollutant
+
 C...........   Temporary read arrays
         CHARACTER(40)      SEGMENT( NSEG ) ! segments of line
 
@@ -145,6 +149,7 @@ C...........   Other local variables
 
         INTEGER          D, SD, N1, N2, N3, N4
 
+        INTEGER          CIDX             ! CAS data index
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
         INTEGER          FIP              ! tmp co/st/cy code
@@ -162,7 +167,7 @@ C...........   Other local variables
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
         INTEGER          MONTH            ! tmp month number
         INTEGER, SAVE :: MXWARN           !  maximum number of warnings
-        INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
+        INTEGER, SAVE :: NWARN( 6 )       ! warnings counter
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NACRBND = 0      ! no. of acres burned var
         INTEGER, SAVE :: NFUELD  = 0      ! no. of fuel loading var
@@ -209,7 +214,8 @@ C.........  Saved local character variables
 
 C.........  Temporary local character variables
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
-        CHARACTER(IOVLEN3) CDAT      ! tmp data name (*16)
+        CHARACTER(CASLEN3) CDAT      ! tmp data name (*16)
+        CHARACTER(IOVLEN3) CNAM      ! tmp SMOKE name
         CHARACTER(IOVLEN3) CTMP      ! tmp data name (*16)
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID (*15)
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID (*15) = LocID
@@ -323,6 +329,15 @@ C               this means it is the first call or daily or hourly)
             IF( GETSIZES ) LOOPNO = 0
             LOOPNO = LOOPNO + 1
             WARNOUT = ( LOOPNO .EQ. 1 )
+
+C.............  Deallocate warning arrays
+            IF( ALLOCATED( WARNKEEP ) ) DEALLOCATE( WARNKEEP, WARNMULT )
+            ALLOCATE( WARNKEEP( NUNIQCAS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'WARNKEEP', PROGNAME )
+            ALLOCATE( WARNMULT( NUNIQCAS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'WARNMULT', PROGNAME )
+            WARNKEEP = .TRUE.
+            WARNMULT = .TRUE.
 
         END IF
 
@@ -580,47 +595,112 @@ C.............  Store minimum time step number as compared to reference
 C.............  Store maximum time step number as compared to rference
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
+C.............  Look up pollutant name in unique sorted array of
+C               Inventory pollutant names
+            CDAT  = SEGMENT( 5 )
+            CIDX  = FINDC( CDAT, NUNIQCAS, UNIQCAS )
+
 C.............  Check pollutant code and set index I
             COD  = INDEX1( CDAT, NIPPA, EANAM )
 
-C.............  Check to see if data name is in inventory list
-            IF ( COD .LE. 0 ) THEN
-
-C.................  Error msg if "HFLUX" is not listed in inventory list
-                IF( CDAT == 'HFLUX' ) THEN
-                    MESG = 'ERROR: Please add " HFLUX " variable ' //
-     &                     'in the inventory table file (INVTABLE).'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
+C.............  If pollutant name is not in Inventory Table list
+            IF ( CIDX .LE. 0 ) THEN
 
 C.................  Check to see if data name is in list of special names
-                COD = INDEX1( CDAT, MXSPDAT, SPDATNAM )
+                CIDX= INDEX1( CDAT, MXSPDAT, SPDATNAM )
 
-                IF ( COD .LE. 0 ) THEN
+C.................  Store status of special data and flag code with
+C                   special integer so can ID these records later.
+                IF( CIDX .GT. 0 ) THEN
+                    SPSTAT( CIDX ) = CIDX
+                    COD = CODFLAG3 + CIDX
 
-                    IF( WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
-                        L = LEN_TRIM( CDAT )
-                        WRITE( MESG,94010 ) 
-     &                   'WARNING: Skipping pollutant "'// CDAT( 1:L )//
-     &                   '" at line', IREC, '- not in inventory'
+C................  If not in list of special names, check to see
+C                  if it's a SMOKE pollutant name (intermediate name)
+                ELSE IF ( CIDX .LE. 0 ) THEN
+
+                    CIDX= INDEX1( CDAT, NIPPA, EANAM )
+
+C....................  If a SMOKE pollutant name, write out warning message
+C                      accordingly.
+                    IF( CIDX .GT. 0 . AND.
+     &                  WARNOUT .AND. NWARN( 2 ) .LE. MXWARN ) THEN
+                        WRITE( MESG,94010 )
+     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
+     &                   '" at line', IREC, '- incorrect use of '//
+     &                   'Inventory Data Name instead of Inventory '//
+     &                   'Pollutant Code.'
                         CALL M3MESG( MESG )
                         NWARN( 2 ) = NWARN( 2 ) + 1
+
+C....................  Otherwise, if not in any list, write out warning
+                    ELSE IF( WARNOUT .AND. NWARN( 3 ) .LE. MXWARN ) THEN
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping pollutant "'// TRIM(CDAT)//
+     &                   '" at line', IREC, '- not in Inventory Table'
+                        CALL M3MESG( MESG )
+                        NWARN( 3 ) = NWARN( 3 ) + 1
                     END IF
                     CYCLE      !  to head of loop
 
-C.................  Otherwise, store status of special data and flag code with
-C                   special integer so can ID these records later.
-                ELSE
-                    SPSTAT( COD ) = .TRUE.
-                    COD = CODFLAG3 + COD
-
                 END IF
 
-C.............  If it is, store status of inventory data
-            ELSE 
-                EASTAT( COD ) = .TRUE.
+C.............  Otherwise, pollutant is in list of Inventory Data Names
+            ELSE
 
-            END IF
+C.................  Write warning if pollutant is not kept.  Write only
+C                   one time.
+               IF( UCASNKEP(CIDX) .LE. 0 .AND. WARNKEEP(CIDX) ) THEN
+                   WARNKEEP( CIDX ) = .FALSE.
+                   IF( GETSIZES ) THEN
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping all lines for pollutant "'//
+     &                   TRIM( CDAT )// '" because pollutant is not '//
+     &                   'kept by Inventory Table.'
+                       CALL M3MESG( MESG )
+                   END IF
+                   CYCLE
+               ELSE IF ( UCASNKEP(CIDX) .GT. 1 .AND.
+     &                   WARNMULT(CIDX)              ) THEN
+                   WARNMULT( CIDX ) = .FALSE.
+                   IF( GETSIZES ) THEN
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping all lines for pollutant "'//
+     &                   TRIM( CDAT )// '" because Inventory Table '//
+     &                   'splits it into',UCASNKEP(CIDX),'pollutants.'//
+     &                   CRLF()//BLANK10//'The SMOKE code needs to '//
+     &                   'be enhanced to support this approach for '//
+     &                   'day- and hour-specific data.'
+                       CALL M3MESG( MESG )
+                   END IF
+                   CYCLE
+               END IF
+
+C................  Get Inventory Data SMOKE name from Inventory Table arrays/indices
+               CNAM = ITNAMA( SCASIDX( UCASIDX( CIDX ) ) )
+
+C................  Look up SMOKE name in list of annual EI pollutants
+               COD = INDEX1( CNAM, NIPPA, EANAM )
+
+C................  Check to ensure that the SMOKE intermediate name
+C                  set by the Inventory Table is actually in the annual
+C                  inventory.  If not, write warning message and cycle.
+               IF( COD .LE. 0 ) THEN
+                   IF( WARNOUT .AND. NWARN( 4 ) .LE. MXWARN ) THEN
+                       WRITE( MESG,94010 )
+     &                   'WARNING: Skipping pollutant "'// TRIM(CNAM)//
+     &                   '" at line', IREC, '- not in annual inventory.'
+                       CALL M3MESG( MESG )
+                       NWARN( 4 ) = NWARN( 4 ) + 1
+                   END IF
+                   CYCLE
+
+C................  If it's found, then record that this pollutant was found
+               ELSE
+                   EASTAT( COD ) = CIDX
+               END IF
+
+            END IF  ! if cidx le 0 or not
 
 C.............  Count the number of sources per day & pollutant/variable
 C.............  This will give us how many source/date combos there are for 
@@ -766,12 +846,12 @@ C                   invoked once.
                     BADSRC( NBADSRC ) = CSRC
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                    IF( NWARN( 3 ) .LE. MXWARN ) THEN
+                    IF( NWARN( 5 ) .LE. MXWARN ) THEN
                         MESG = 'WARNING: Period-specific record does '//
      &                         'not match inventory sources: '//
      &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
-                        NWARN( 3 ) = NWARN( 3 ) + 1
+                        NWARN( 5 ) = NWARN( 5 ) + 1
                     END IF
 
                 END IF
@@ -837,8 +917,8 @@ C.....................  If VAR2 value is missing, then assume zero
      &                     TRIM( VAR2 ) // ' to 0. for source:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) // 
      &                     ' on date ' // CSRCD( LL-7: LL )
-                    IF( NWARN(4) <= MXWARN ) CALL M3MSG2( MESG )
-                    NWARN( 4 ) = NWARN( 4 ) + 1
+                    IF( NWARN( 6 ) <= MXWARN ) CALL M3MSG2( MESG )
+                    NWARN( 6 ) = NWARN( 6 ) + 1
                     DTVAR2( K ) = 0.0
 
                 END IF
@@ -860,8 +940,8 @@ C................  Warning msg when new computed value is negative
      &                     ' to 0. for source:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) // 
      &                     ' on date ' // CSRCD( LL-7: LL )
-                    IF( NWARN(5) <= MXWARN ) CALL M3MSG2( MESG )
-                    NWARN( 5 ) = NWARN( 5 ) + 1
+                    IF( NWARN( 7 ) <= MXWARN ) CALL M3MSG2( MESG )
+                    NWARN( 7 ) = NWARN( 7 ) + 1
 
                     TDAT = 0.0
 
@@ -887,6 +967,7 @@ C.............  Record needed data for this source and time step
                     IDXSRC( HS,T ) = HS
                     SPDIDA( HS,T ) = S
                     CODEA ( HS,T ) = COD
+                    CIDXA ( HS,T ) = CIDX
                     EMISVA( HS,T ) = TDAT  ! Store data in emissions
                     DYTOTA( HS,T ) = TDAT
 

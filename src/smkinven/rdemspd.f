@@ -94,8 +94,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT) :: EDATE          ! Julian ending date in TZONE
         INTEGER, INTENT(OUT) :: ETIME          ! ending time of data in TZONE
-        LOGICAL, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
-        LOGICAL, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
+        INTEGER, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        INTEGER, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
 
 C...........   Local list of bad sources to prevent duplicate writing of error
 C              messages
@@ -114,7 +114,7 @@ C...........   Temporary read arrays
         REAL            TDAT( 24 )       ! temporary data values
 
 C...........   Other local variables
-        INTEGER          H, HS, I, J, L, L1, L2, S, T    ! counters and indices
+        INTEGER          H, HS, I, J, L, LL, L1, L2, S, T    ! counters and indices
         INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
         INTEGER          CIDX             ! tmp data index
@@ -171,6 +171,7 @@ C...........   Other local variables
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
         CHARACTER(CASLEN3) CDAT      ! tmp Inventory data (input) name
         CHARACTER(IOVLEN3) CNAM      ! tmp SMOKE name
+        CHARACTER(IOVLEN3) PNAM      ! tmp SMOKE name
         CHARACTER(CHRLEN3) CHAR4     ! tmp characteristic 4
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID
@@ -464,7 +465,7 @@ C.................  Check to see if data name is in list of special names
 C.................  Store status of special data and flag code with
 C                   special integer so can ID these records later.
                 IF( CIDX .GT. 0 ) THEN
-                    SPSTAT( CIDX ) = .TRUE.
+                    SPSTAT( CIDX ) = CIDX
                     COD = CODFLAG3 + CIDX
 
 C................  If not in list of special names, check to see
@@ -532,7 +533,29 @@ C................  Get Inventory Data SMOKE name from Inventory Table arrays/ind
                CNAM = ITNAMA( SCASIDX( UCASIDX( CIDX ) ) )
 
 C................  Look up SMOKE name in list of annual EI pollutants
-               COD = INDEX1( CNAM, NIPPA, EANAM )
+               COD  = INDEX1( CNAM, NIPPA, EANAM )
+
+C................  Check to ensure that it handles NOI and NONHAP pollutants
+C                  while combining VOC + HAPs
+               IF( COD .LE. 0 ) THEN
+                   PNAM = TRIM( CNAM ) // '_NOI'
+                   COD = INDEX1( PNAM, NIPPA, EANAM )
+                   IF( COD .LE. 0 ) THEN
+                       L = INDEX( CNAM, ETJOIN )
+                       LL= LEN_TRIM( CNAM )
+                       IF( L > 0 ) PNAM = CNAM( L+2:LL )
+                       IF( PNAM == 'VOC' .OR. PNAM == 'TOG' ) THEN
+                           IF( L > 0 ) THEN
+                               PNAM = CNAM(1:L+1) // 'NONHAP' //
+     &                                CNAM(L+2:LL)
+                           ELSE
+                               PNAM = 'NONHAP' // TRIM( CNAM )
+                           END IF
+                       END IF
+                       COD   = INDEX1( PNAM, NIPPA, EANAM )
+                       CIDX  = FINDC( CDAT, NUNIQCAS, UNIQCAS )    ! search for NONHAP
+                   END IF
+               END IF
 
 C................  Check to ensure that the SMOKE intermediate name
 C                  set by the Inventory Table is actually in the annual
@@ -549,7 +572,7 @@ C                  inventory.  If not, write warning message and cycle.
 
 C................  If it's found, then record that this pollutant was found
                ELSE
-                   EASTAT( COD ) = .TRUE.
+                   EASTAT( COD ) = CIDX 
                END IF
 
             END IF  ! if cidx le 0 or not

@@ -162,26 +162,9 @@ C               number of commas found in the string.
             NFLAG = .TRUE.
 
         CASE DEFAULT
-
-C.............  Check older flag setting to support backward comparability
-            NFLAG = ENVYN ( 'SMK_NHAPEXCLUDE_YN', ' ', .FALSE., IOS )
-            IF( NFLAG ) THEN
-                MESG = 'WARNING: SMK_NHAPEXCLUDE_YN is no longer '//
-     &             'supported.'//CRLF()//BLANK10 //'Please use SMK_'//
-     &             'PROCESS_HAPS [ALL|NONE|PARTIAL] instead'
-                CALL M3MSG2( MESG )
-
-                MESG = 'Partially treat sources as either integrate '//
-     &                 'or non-integrate sources.'
-                PROC_HAPS = 'PARTIAL'
-                NFLAG = .TRUE.
-
-            ELSE
-                MESG = 'No processing of combining criteria VOC with '//
-     &                 'hazardous air pollutants (HAP).'
-                NFLAG = .FALSE.
-
-            END IF
+            MESG = 'No processing of combining criteria VOC with '//
+     &             'hazardous air pollutants (HAP).'
+            NFLAG = .FALSE.
 
         END SELECT
         
