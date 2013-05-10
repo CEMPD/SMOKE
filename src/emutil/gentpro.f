@@ -1001,6 +1001,10 @@ C.............  Skip all matched org x-ref entries
             IF( INDXREF( LL,2 ) == 99999 ) CYCLE
 
 C.............  Ouput all unmatched Xref entries
+            LINE = ''
+            DO J = 1, 14
+                LINE = TRIM( LINE ) // TRIM( SEGMENT( J ) ) // ';'
+            END DO
             WRITE( XODEV,93000 ) TRIM( LINE )
 
         END DO
