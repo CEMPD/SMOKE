@@ -315,7 +315,7 @@ C.................  Get header description of hour-specific temporal profile inp
 C.................  Convert timezone (w daylight saving) to read 
 C                   correct county-specific hr profiles
                 TDATE = JDATE
-                TTIME = JTIME + ZONES( S ) * 10000
+                TTIME = JTIME
                 IF( TTIME > 230000 ) TTIME = TTIME - 240000
 
 C.................  Read profileIDs and hourly factors
