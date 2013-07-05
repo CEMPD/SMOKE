@@ -46,11 +46,12 @@ C.........  This module contains the major data structure and control flags
      &          MONAME, EMLAYS,
      &          PFLAG, PNIPOL, PNMSPC, PEINAM, PEMNAM, PONAME,
      &          XFLAG, NIPPA, EANAM, TONAME, PINGFLAG, 
-     &          INLINEFLAG, PINGNAME,INLINENAME,
+     &          INLINEFLAG, PINGNAME, INLINENAME,
      &          ELEVFLAG, EVDEV, PELVNAME, LREPSTA, LREPCNY, 
      &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
      &          ARDEV, BRDEV, MRDEV, PRDEV, TRDEV,
-     &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT, VARFLAG
+     &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT, VARFLAG,
+     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP
@@ -76,12 +77,13 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         JUNIT
         CHARACTER(16)   MULTUNIT
-        INTEGER         PROMPTFFILE  
+        INTEGER         PROMPTFFILE
         LOGICAL         SETENVVAR
         CHARACTER(16)   VERCHAR
+        CHARACTER(16)   PROMPTMFILE
 
         EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
-     &            SETENVVAR, VERHCAR
+     &            SETENVVAR, VERCHAR, PROMPTMFILE
 
 C...........  SUBROUTINE ARGUMENTS
        INTEGER, INTENT (IN) :: NGRP     ! Actual number of groups
@@ -309,6 +311,100 @@ C.........  Open plume-in-grid output
      &              'Enter name for ASCII ELEVATED SOURCES file', 
      &              .FALSE., .TRUE., PELVNAME, PROGNAME )
 
+        END IF
+        
+C.........  Open source apportionment output files
+        IF( SRCGRPFLAG ) THEN
+
+C.............  Override gridded file settings
+            NCOLS3D = 1
+            NROWS3D = NSGOUTPUT
+            NLAYS3D = 1
+            GDTYP3D = GDTYP
+            VGTYP3D = IMISS3
+            VGTOP3D = BADVAL3
+            
+            FDESC3D = ' '   ! array
+
+C.............  Build list of variables for stack groups file
+            J = 1
+            VNAME3D( J ) = 'ISTACK'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Stack group number'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKDM'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm'
+            VDESC3D( J ) = 'Inside stack diameter'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKHT'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm'
+            VDESC3D( J ) = 'Stack height above ground surface'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKTK'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees K'
+            VDESC3D( J ) = 'Stack exit temperature'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKVE'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm/s'
+            VDESC3D( J ) = 'Stack exit velocity'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKFLW'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm**3/s'
+            VDESC3D( J ) = 'Stack exit flow rate'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKCNT'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Number of stacks in group'
+
+            J = J + 1
+            VNAME3D( J ) = 'ROW'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Grid row number'
+
+            J = J + 1
+            VNAME3D( J ) = 'COL'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Grid column number'
+
+            J = J + 1
+            VNAME3D( J ) = 'XLOCA'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = ''
+            VDESC3D( J ) = 'Projection x coordinate'
+
+            J = J + 1
+            VNAME3D( J ) = 'YLOCA'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = ''
+            VDESC3D( J ) = 'Projection y coordinate'
+
+            NVARS3D = J
+            
+            SRCGRPNAME = PROMPTMFILE(
+     &                     'Enter name for STACK GROUPS file',
+     &                     FSUNKN3, 'STACK_GROUPS', PROGNAME )
+
+C.............  Set up variables for emissions output file
+            CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )
+            
+            INLINENAME = PROMPTSET(
+     &                     'Enter name for INLINE EMISSIONS OUTPUT file',
+     &                     FSUNKN3, INLINENAME, PROGNAME )
         END IF
 
 C.........  Open report file(s)

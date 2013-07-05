@@ -44,7 +44,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NPSRC, ELEVFLAG, ELEVADJ, LFRAC, PINGFLAG,
-     &       INLINEFLAG
+     &       INLINEFLAG, SRCGRPFLAG, IFIPGRP, EMGGRD
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVFLTR
@@ -88,7 +88,8 @@ C.........  SUBROUTINE ARGUMENTS
 
 C.........  Other local variables
         INTEGER         C, J, K, L, S   ! counters and indicies
-        INTEGER         IDX             ! index to list of counties in grid   
+        INTEGER         IDX             ! index to list of counties in grid 
+        INTEGER         GIDX            ! index to source group
         REAL            GFAC            ! tmp gridding factor
         REAL            FG0             ! gridding conv fac div. totals conv fac
         REAL(8)         SUM1            ! sum for GOUT1   
@@ -154,7 +155,12 @@ C............. If multiplicative controls & speciation
                         VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
-
+                        
+                        IF( SRCGRPFLAG ) THEN
+                            GIDX = IFIPGRP( IDX )
+                            EMGGRD( C,GIDX ) = 
+     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                        END IF
                     END DO
 
                     GOUT1( C,1 ) = SUM1
@@ -189,7 +195,12 @@ C............. If multiplicative controls only
                         VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
-
+                        
+                        IF( SRCGRPFLAG ) THEN
+                            GIDX = IFIPGRP( IDX )
+                            EMGGRD( C,GIDX ) = 
+     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                        END IF
                     END DO
 
                     GOUT1( C,1 ) = SUM1
@@ -225,6 +236,12 @@ C.............  If speciation only
                         VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
+                        
+                        IF( SRCGRPFLAG ) THEN
+                            GIDX = IFIPGRP( IDX )
+                            EMGGRD( C,GIDX ) = 
+     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                        END IF
                     END DO
 
                     GOUT1( C,1 ) = SUM1
@@ -254,6 +271,12 @@ C.............  If inventory pollutant only
                         VAL  = VAL * ( 1.-ELEVADJ( S ) )
                         SUM1 = SUM1 + VAL * FG0
                         SUM2 = SUM2 + VAL * FG0
+                        
+                        IF( SRCGRPFLAG ) THEN
+                            GIDX = IFIPGRP( IDX )
+                            EMGGRD( C,GIDX ) = 
+     &                          EMGGRD( C,GIDX ) + VAL * FG0
+                        END IF
                     END DO
 
                     GOUT1( C,1 ) = SUM1

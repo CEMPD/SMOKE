@@ -45,7 +45,7 @@ C.........  This module contains the major data structure and control flags
      &                      PINGFLAG, ELEVFLAG, EXPLFLAG, VARFLAG,
      &                      LMETCHK, LMKTPON, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPINV, LREPSPC, LREPCTL, 
-     &                      LREPANY, LAVEDAY, INLINEFLAG
+     &                      LREPANY, LAVEDAY, INLINEFLAG, SRCGRPFLAG
 
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY:   INVPIDX
@@ -172,6 +172,10 @@ C.........  Retrieve the on/off environment variables
 C.........  Check for variable grid
         VARFLAG = ENVYN( 'USE_VARIABLE_GRID', 'Use variable grid ' //
      &                 'definition', .FALSE., IOS )
+
+C.........  Check if source grouping should be used
+        SRCGRPFLAG = ENVYN( 'SMK_SRCGROUP_OUTPUT_YN', 'Use source ' //
+     &                      'grouping', .FALSE., IOS )
 
 C.........  Point-source specific environment variables
         IF ( PFLAG ) THEN

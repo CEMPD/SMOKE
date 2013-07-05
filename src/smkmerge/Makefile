@@ -28,7 +28,8 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 #
 MRG= smkmerge.o allocmrg.o bldmrgidx.o getmrgev.o mrgmult.o mrgonams.o \
      mrgvnams.o openmrgin.o openmrgout.o wmrgemis.o wrmrgrep.o initstcy.o \
-     rdmrginv.o mrgelev.o mrgunits.o mrgbio.o wmrgelev.o
+     rdmrginv.o mrgelev.o mrgunits.o mrgbio.o wmrgelev.o rdsrcgrps.o \
+     srcgrpcnt.o wrsrcgrps.o
 #
 smkmerge: $(MRG) $(ALLI) $(LIBPATH)
 	echo SMKMERGE:
@@ -81,11 +82,14 @@ mrgunits.o  : $(MODMERGE)
 mrgvnams.o  : $(MODMERGE)
 openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) $(MODFILESET) $(MODINFO)
 openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) 
-rdmrginv.o: $(MODMERGE)
+rdmrginv.o  : $(MODMERGE)
+rdsrcgrps.o : $(MODMERGE) $(MODLISTS) $(MODSTCY) $(MODGRID)
 smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) $(MODLISTS)
+srcgrpcnt.o : $(MODMERGE) $(MODGRID)
 wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV) $(MODGRID) 
 wmrgemis.o  : $(MODMERGE) $(MODELEV)
 wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID) 
+wrsrcgrps.o : $(MODMERGE) $(MODGRID)
 
 clean:
 	/bin/rm -f *.o

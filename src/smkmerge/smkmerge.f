@@ -52,7 +52,7 @@ C.........  This module contains the major data structure and control flags
      &          AFLAG_BD, MFLAG_BD, PFLAG_BD,                   ! by-day hourly emis flags
      &          TFLAG, SFLAG, LFLAG,                            ! use temporal, spec, layers
      &          PINGFLAG, ELEVFLAG, EXPLFLAG,                   ! ping, elevated, expl. plume
-     &          INLINEFLAG,
+     &          INLINEFLAG, SRCGRPFLAG, SGDEV,                  ! inline, source groups
      &          LMKTPON, LREPANY,                               ! mkt penetration, any reports
      &          CDEV, EDEV, GDEV,                               ! costcy, elev/ping, grid surg
      &          AENAME, ATNAME, AGNAME, ASNAME, ARNAME, AUNAME, ! area files
@@ -88,7 +88,8 @@ C.........  This module contains the major data structure and control flags
      &          AEUCNY, MEUCNY, PEUCNY,                         ! cnty total mult control emis
      &          AERCNY, MERCNY, PERCNY,                         ! cnty total reac control emis
      &          AECCNY, MECCNY, PECCNY,                         ! cnty total all-control emis
-     &          LFRAC, EANAM, TONAMES                           ! layer frac, pol/act names
+     &          LFRAC, EANAM, TONAMES,                          ! layer frac, pol/act names
+     &          EMGGRD                                          ! emis by grid cell and src group
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN,
@@ -420,6 +421,14 @@ C           needing contiguous allocation for integer and reals)
 C.........  Build indicies for pollutant/species groups
         CALL BLDMRGIDX( MXGRP, MXVARPGP, NGRP )
 
+C.........  Intialize state/county summed emissions to zero
+        CALL INITSTCY
+
+C.........  Read source group cross-reference file and assign sources to groups
+        IF( SRCGRPFLAG ) THEN
+            CALL RDSRCGRPS( SGDEV )
+        END IF
+
 C.........  Open NetCDF output files, open ASCII report files, and write headers
         CALL OPENMRGOUT( NGRP )
 
@@ -430,9 +439,6 @@ C           more conditionals in the matrix multiplication step.
         IF( AFLAG ) ARINFO = 0.  ! array
         IF( MFLAG ) MRINFO = 0.  ! array
         IF( PFLAG ) PRINFO = 0.  ! array
-
-C.........  Intialize state/county summed emissions to zero
-        CALL INITSTCY
 
 C.........  Allocate memory for temporary list of species and pollutant names
         ALLOCATE( VARNAMES( MXVARPGP ), STAT=IOS )
@@ -935,6 +941,10 @@ C.........................  Write out ASCII elevated sources file
                             CALL WMRGELEV( SBUF, NPSRC, NMAJOR, 
      &                                     JDATE, JTIME        )
                         END IF
+                        
+                        IF( SRCGRPFLAG ) THEN
+                            CALL WRSRCGRPS( SBUF, JDATE, JTIME )
+                        END IF
 
 C.........................  Initialize gridded arrays
                         IF( AFLAG ) THEN
@@ -950,6 +960,10 @@ C.........................  Initialize gridded arrays
                         ENDIF
 
                         TEMGRD = 0.      ! array
+                        
+                        IF( SRCGRPFLAG ) THEN
+                            EMGGRD = 0.  ! array
+                        END IF
                     END IF 
 
                 END DO      ! End loop on variables in group

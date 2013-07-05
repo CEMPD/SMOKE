@@ -58,7 +58,7 @@ C.........  This module contains the major data structure and control flags
      &          PSVUNIT, PUFLAG, PUNAME, PNUMATV, PUVNAMS, PRFLAG,
      &          PRNAME, PNRMATV, PNSREAC, PRVDESC, PRNMSPC, LFLAG,
      &          PLNAME, EXPLFLAG, PHNAME, EMLAYS, PINGFLAG,
-     &          INLINEFLAG, EDEV,
+     &          INLINEFLAG, SRCGRPFLAG, SGDEV, EDEV,
      &          PVNAME, PVSDATE, PVSTIME, PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
      &          BSVDESC, BFLAG, VARFLAG, PFACFLAG
@@ -947,6 +947,13 @@ C           when they aren't going to be output
         CDEV = PROMPTFFILE( 
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+
+C.........  Open source groups file if needed
+        IF( SRCGRPFLAG ) THEN
+            MESG = 'Enter logical name for SOURCE GROUPS file'
+            SGDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
+     &                           'SMKMERGE_GROUPS', PROGNAME )
+        END IF
 
 C.........  If there were any errors inputing files or while comparing
 C           with one another, then abort
