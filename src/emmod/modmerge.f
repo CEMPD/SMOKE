@@ -80,6 +80,7 @@
         LOGICAL, PUBLIC :: INLINEFLAG ! create in-line ptsource file
         LOGICAL, PUBLIC :: ELEVFLAG! create ASCII elevated sources file
         LOGICAL, PUBLIC :: EXPLFLAG! use PHOUR file to get explicit plume rise
+        LOGICAL, PUBLIC :: SRCGRPFLAG ! use source grouping
         LOGICAL, PUBLIC :: VARFLAG ! use variable grid definition
         LOGICAL, PUBLIC :: LMETCHK ! compare met information in headers
         LOGICAL, PUBLIC :: LMKTPON ! true: use market penetration
@@ -105,6 +106,7 @@
         INTEGER     , PUBLIC :: PDEV  = 0  ! inventory table
         INTEGER     , PUBLIC :: PSDEV  ! point ASCII inventory input
         INTEGER     , PUBLIC :: CFDEV  ! control factor input file
+        INTEGER     , PUBLIC :: SGDEV  ! source grouping input file
 
 !.........  Output file unit numbers
         INTEGER     , PUBLIC :: ARDEV  ! area ASCII report output
@@ -462,5 +464,14 @@
         REAL   , ALLOCATABLE, PUBLIC :: PEBSUM( :,: ) ! point, dim nscc, ndim
         REAL   , ALLOCATABLE, PUBLIC :: PEBSRC( :,:,: ) ! point, dim nsrc, ndim by hour
         REAL   , ALLOCATABLE, PUBLIC :: PEBSTC( :,:,: ) !  point, dim nsta, nscc, ndim
+
+!.........  Source apportionment storage
+        INTEGER,              PUBLIC :: NSRCGRP       ! total number of source groups
+        INTEGER, ALLOCATABLE, PUBLIC :: IGRPNUM( : )  ! list of source group numbers, dim: nsrcgrp
+        INTEGER, ALLOCATABLE, PUBLIC :: IFIPGRP( : )  ! source group idx for each unique inv. FIPS
+        REAL,    ALLOCATABLE, PUBLIC :: EMGGRD( :,: ) ! emissions by grid cell and source group
+        INTEGER,              PUBLIC :: NSGOUTPUT     ! number of output records
+        INTEGER, ALLOCATABLE, PUBLIC :: GRPCNT( :,: ) ! num srcs matching grid cell and group
+        CHARACTER(16),        PUBLIC :: SRCGRPNAME    ! source group output file name (stack groups)
 
         END MODULE MODMERGE
