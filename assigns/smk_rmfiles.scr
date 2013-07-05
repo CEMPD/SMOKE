@@ -90,7 +90,7 @@ if ( ( ( $RUN_SMKINVEN == Y && $import_aveinv != N ) || $RUN_GRWINVEN == Y ) && 
           if ( $line[1] == '/DATMAP/' ) then
              set dataflag = y
              end
-	  endif
+          endif
           if ( $line[1] == '/END/' ) then
              set dataflag = n
           endif
@@ -232,108 +232,108 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' && $RUN_PART4 == 'Y' ) then
       if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
 
          if ( $MRG_AREA == 'Y' || $SMK_SOURCE == 'A' ) then
-	    /bin/rm -f $AGTS_L
-	    /bin/rm -f $AGTS_S
+            /bin/rm -f $AGTS_L
+            /bin/rm -f $AGTS_S
          endif 
 
          if ( $MRG_MOBILE == 'Y' || $SMK_SOURCE == 'M' ) then
-	    /bin/rm -f $MGTS_L
-	    /bin/rm -f $MGTS_S
+            /bin/rm -f $MGTS_L
+            /bin/rm -f $MGTS_S
          endif 
 
          if ( $MRG_POINT == 'Y' || $SMK_SOURCE == 'P' ) then
-	    /bin/rm -f $PGTS_L   
-	    /bin/rm -f $PGTS_S   
-	    /bin/rm -f $PGTS3D_L 
-	    /bin/rm -f $PGTS3D_S 
+            /bin/rm -f $PGTS_L   
+            /bin/rm -f $PGTS_S   
+            /bin/rm -f $PGTS3D_L 
+            /bin/rm -f $PGTS3D_S 
          endif 
 
          if ( $MRG_MULTI == 'Y' || $SMK_SOURCE == 'E' ) then
-	    /bin/rm -f $EGTS_L   
-	    /bin/rm -f $EGTS_S   
-	    /bin/rm -f $EGTS3D_L 
-	    /bin/rm -f $EGTS3D_S 
+            /bin/rm -f $EGTS_L   
+            /bin/rm -f $EGTS_S   
+            /bin/rm -f $EGTS3D_L 
+            /bin/rm -f $EGTS3D_S 
          endif 
 
          if ( $MRG_AREA_CNTL == 'Y' ) then
-	    /bin/rm -f $AGTSC_L   
-	    /bin/rm -f $AGTSC_S   
+            /bin/rm -f $AGTSC_L   
+            /bin/rm -f $AGTSC_S   
          endif 
 
          if ( $MRG_MOBILE_CNTL == 'Y' ) then
-	    /bin/rm -f $MGTSC_L   
-	    /bin/rm -f $MGTSC_S   
+            /bin/rm -f $MGTSC_L   
+            /bin/rm -f $MGTSC_S   
          endif 
 
          if ( $MRG_POINT_CNTL == 'Y' ) then
-	    /bin/rm -f $PGTSC_L   
-	    /bin/rm -f $PGTSC_S   
-	    /bin/rm -f $PGTSC3D_L 
-	    /bin/rm -f $PGTSC3D_S 
+            /bin/rm -f $PGTSC_L   
+            /bin/rm -f $PGTSC_S   
+            /bin/rm -f $PGTSC3D_L 
+            /bin/rm -f $PGTSC3D_S 
          endif 
 
          if ( $MRG_MULTI_CNTL == 'Y' ) then
-	    /bin/rm -f $EGTSC_L   
-	    /bin/rm -f $EGTSC_S   
-	    /bin/rm -f $EGTSC3D_L 
-	    /bin/rm -f $EGTSC3D_S 
+            /bin/rm -f $EGTSC_L   
+            /bin/rm -f $EGTSC_S   
+            /bin/rm -f $EGTSC3D_L 
+            /bin/rm -f $EGTSC3D_S 
          endif 
       endif
 
       if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
-	 /bin/rm -f $AGS_S    
-	 /bin/rm -f $MGS_S    
-	 /bin/rm -f $PGS_S    
-	 /bin/rm -f $PGS3D_S  
-	 /bin/rm -f $EGS_S    
-	 /bin/rm -f $EGS3D_S  
+         /bin/rm -f $AGS_S    
+         /bin/rm -f $MGS_S    
+         /bin/rm -f $PGS_S    
+         /bin/rm -f $PGS3D_S  
+         /bin/rm -f $EGS_S    
+         /bin/rm -f $EGS3D_S  
 
-	 /bin/rm -f $AGSC_S   
-	 /bin/rm -f $MGSC_S   
-	 /bin/rm -f $PGSC_S   
-	 /bin/rm -f $PGSC3D_S 
-	 /bin/rm -f $EGSC_S   
-	 /bin/rm -f $EGSC3D_S 
+         /bin/rm -f $AGSC_S   
+         /bin/rm -f $MGSC_S   
+         /bin/rm -f $PGSC_S   
+         /bin/rm -f $PGSC3D_S 
+         /bin/rm -f $EGSC_S   
+         /bin/rm -f $EGSC3D_S 
 
-	 /bin/rm -f $AGS_L    
-	 /bin/rm -f $MGS_L    
-	 /bin/rm -f $PGS_L    
-	 /bin/rm -f $PGS3D_L  
-	 /bin/rm -f $EGS_L    
-	 /bin/rm -f $EGS3D_L  
+         /bin/rm -f $AGS_L    
+         /bin/rm -f $MGS_L    
+         /bin/rm -f $PGS_L    
+         /bin/rm -f $PGS3D_L  
+         /bin/rm -f $EGS_L    
+         /bin/rm -f $EGS3D_L  
 
-	 /bin/rm -f $AGSC_L   
-	 /bin/rm -f $MGSC_L   
-	 /bin/rm -f $PGSC_L   
-	 /bin/rm -f $PGSC3D_L 
-	 /bin/rm -f $EGSC_L   
-	 /bin/rm -f $EGSC3D_L 
+         /bin/rm -f $AGSC_L   
+         /bin/rm -f $MGSC_L   
+         /bin/rm -f $PGSC_L   
+         /bin/rm -f $PGSC3D_L 
+         /bin/rm -f $EGSC_L   
+         /bin/rm -f $EGSC3D_L 
       endif
 
       if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
-	 /bin/rm -f $AGT    
-	 /bin/rm -f $MGT    
-	 /bin/rm -f $PGT    
-	 /bin/rm -f $PGT3D  
-	 /bin/rm -f $EGT    
-	 /bin/rm -f $EGT3D  
-	 /bin/rm -f $AGTC   
-	 /bin/rm -f $MGTC   
-	 /bin/rm -f $PGTC   
-	 /bin/rm -f $PGTC3D 
-	 /bin/rm -f $EGTC   
-	 /bin/rm -f $EGTC3D 
+         /bin/rm -f $AGT    
+         /bin/rm -f $MGT    
+         /bin/rm -f $PGT    
+         /bin/rm -f $PGT3D  
+         /bin/rm -f $EGT    
+         /bin/rm -f $EGT3D  
+         /bin/rm -f $AGTC   
+         /bin/rm -f $MGTC   
+         /bin/rm -f $PGTC   
+         /bin/rm -f $PGTC3D 
+         /bin/rm -f $EGTC   
+         /bin/rm -f $EGTC3D 
       endif
 
       if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
          /bin/rm -f $AG   
          /bin/rm -f $MG   
-	 /bin/rm -f $PG   
-	 /bin/rm -f $EG   
+         /bin/rm -f $PG   
+         /bin/rm -f $EG   
          /bin/rm -f $AGC  
          /bin/rm -f $MGC  
-	 /bin/rm -f $PGC  
-	 /bin/rm -f $EGC  
+         /bin/rm -f $PGC  
+         /bin/rm -f $EGC  
       endif
 
    endif
