@@ -46,7 +46,8 @@ C.........  This module contains the major data structure and control flags
      &                      IGRPNUM, INLINENAME, SRCGRPNAME
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: NGRID, NCOLS, NROWS
+        USE MODGRID, ONLY: NGRID, NCOLS, NROWS, 
+     &                     XORIG, YORIG, XCELL, YCELL
         
         IMPLICIT NONE
 
@@ -65,6 +66,8 @@ C...........   Local allocatable arrays
         INTEGER,      ALLOCATABLE :: STKCNT ( : ) ! num. srcs per group
         INTEGER,      ALLOCATABLE :: ROW    ( : ) ! row number
         INTEGER,      ALLOCATABLE :: COL    ( : ) ! column number
+        REAL,         ALLOCATABLE :: XLOCA  ( : ) ! x-location at center of grid cell
+        REAL,         ALLOCATABLE :: YLOCA  ( : ) ! y-location at center of grid cell
         REAL,         ALLOCATABLE :: OUTEMIS( : ) ! output emissions
 
 C...........   Other local variables
@@ -72,6 +75,9 @@ C...........   Other local variables
         INTEGER          IOS           ! i/o status
         INTEGER          ROWNUM        ! grid cell row
         INTEGER          COLNUM        ! grid cell column
+        
+        REAL             XLOCACELL     ! x-location for grid cell
+        REAL             YLOCACELL     ! y-location for grid cell
 
         LOGICAL, SAVE :: FIRSTTIME = .TRUE. ! true: first time routine called
 
@@ -93,13 +99,29 @@ C.............  Output stack groups file
             CALL CHECKMEM( IOS, 'ROW', PROGNAME )
             ALLOCATE( COL( NSGOUTPUT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'COL', PROGNAME )
+            ALLOCATE( XLOCA( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
+            ALLOCATE( YLOCA( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
             ISTACK = 0  ! array
             STKCNT = 0
             ROW = 0
             COL = 0
+            XLOCA = BADVAL3
+            YLOCA = BADVAL3
             
             K = 0
             DO C = 1, NGRID
+
+C.................  Determine row and column for current grid cell
+                ROWNUM = C / NCOLS   ! integer math
+                IF( MOD( C, NCOLS ) .GT. 0 ) ROWNUM = ROWNUM + 1
+                COLNUM = C - ( ROWNUM-1 ) * NCOLS
+
+C.................  Calculate x and y-position at center of grid cell
+                XLOCACELL = XORIG + ( COLNUM-1 ) * XCELL + 0.5 * XCELL
+                YLOCACELL = YORIG + ( ROWNUM-1 ) * YCELL + 0.5 * YCELL
+
                 DO G = 1, NSRCGRP
 
 C.....................  Skip missing values
@@ -108,13 +130,10 @@ C.....................  Skip missing values
                     K = K + 1
                     ISTACK( K ) = IGRPNUM( G )
                     STKCNT( K ) = GRPCNT( C, G )
-                    
-                    ROWNUM = C / NCOLS   ! integer math
-                    IF( MOD( C, NCOLS ) .GT. 0 ) ROWNUM = ROWNUM + 1
-                    COLNUM = C - ( ROWNUM-1 ) * NCOLS
-
-                    ROW( K ) = ROWNUM
-                    COL( K ) = COLNUM
+                    ROW   ( K ) = ROWNUM
+                    COL   ( K ) = COLNUM
+                    XLOCA ( K ) = XLOCACELL
+                    YLOCA ( K ) = YLOCACELL
                 END DO
             END DO
 
@@ -135,8 +154,16 @@ C.....................  Skip missing values
             IF( .NOT. WRITE3( SRCGRPNAME, 'COL', JDATE, JTIME, COL )) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+        
+            IF( .NOT. WRITE3( SRCGRPNAME, 'XLOCA', JDATE, JTIME, XLOCA )) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            IF( .NOT. WRITE3( SRCGRPNAME, 'YLOCA', JDATE, JTIME, YLOCA )) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
             
-            DEALLOCATE( ISTACK, STKCNT, ROW, COL )
+            DEALLOCATE( ISTACK, STKCNT, ROW, COL, XLOCA, YLOCA )
 
 C.............  Allocate space for output emissions
             ALLOCATE( OUTEMIS( NSGOUTPUT ), STAT=IOS )
