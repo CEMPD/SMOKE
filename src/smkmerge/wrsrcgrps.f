@@ -56,6 +56,11 @@ C.........  INCLUDES:
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
+C.........  EXTERNAL FUNCTIONS and their descriptions:
+        REAL     ENVREAL
+        
+        EXTERNAL ENVREAL
+
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: VNAME   ! variable name to output
         INTEGER     , INTENT (IN) :: JDATE   ! Julian date to output (YYYYDDD)
@@ -68,6 +73,11 @@ C...........   Local allocatable arrays
         INTEGER,      ALLOCATABLE :: COL    ( : ) ! column number
         REAL,         ALLOCATABLE :: XLOCA  ( : ) ! x-location at center of grid cell
         REAL,         ALLOCATABLE :: YLOCA  ( : ) ! y-location at center of grid cell
+        REAL,         ALLOCATABLE :: STKDM  ( : ) ! inside stack diameter
+        REAL,         ALLOCATABLE :: STKHT  ( : ) ! stack height
+        REAL,         ALLOCATABLE :: STKTK  ( : ) ! stack exit temperature
+        REAL,         ALLOCATABLE :: STKVE  ( : ) ! stack exit velocity
+        REAL,         ALLOCATABLE :: STKFLW ( : ) ! stack exit flow rate
         REAL,         ALLOCATABLE :: OUTEMIS( : ) ! output emissions
 
 C...........   Other local variables
@@ -103,12 +113,29 @@ C.............  Output stack groups file
             CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
             ALLOCATE( YLOCA( NSGOUTPUT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
+            ALLOCATE( STKDM( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
+            ALLOCATE( STKHT( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKHT', PROGNAME )
+            ALLOCATE( STKTK( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKTK', PROGNAME )
+            ALLOCATE( STKVE( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKVE', PROGNAME )
+            ALLOCATE( STKFLW( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'STKFLW', PROGNAME )
             ISTACK = 0  ! array
             STKCNT = 0
             ROW = 0
             COL = 0
             XLOCA = BADVAL3
             YLOCA = BADVAL3
+
+C.............  Set dummy stack parameter arrays based on environment settings
+            STKDM  = ENVREAL( 'SRCGRP_STKDM',  'Stack diameter', 0., IOS )
+            STKHT  = ENVREAL( 'SRCGRP_STKHT',  'Stack height', 0., IOS )
+            STKTK  = ENVREAL( 'SRCGRP_STKTK',  'Stack exit temperature', 0., IOS )
+            STKVE  = ENVREAL( 'SRCGRP_STKVE',  'Stack exit velocity', 0., IOS )
+            STKFLW = ENVREAL( 'SRCGRP_STKFLW', 'Stack exit flow rate', 0., IOS )
             
             K = 0
             DO C = 1, NGRID
@@ -160,6 +187,26 @@ C.....................  Skip missing values
             END IF
         
             IF( .NOT. WRITE3( SRCGRPNAME, 'YLOCA', JDATE, JTIME, YLOCA )) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            IF( .NOT. WRITE3( SRCGRPNAME, 'STKDM', JDATE, JTIME, STKDM )) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            IF( .NOT. WRITE3( SRCGRPNAME, 'STKHT', JDATE, JTIME, STKHT )) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            IF( .NOT. WRITE3( SRCGRPNAME, 'STKTK', JDATE, JTIME, STKTK )) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            IF( .NOT. WRITE3( SRCGRPNAME, 'STKVE', JDATE, JTIME, STKVE )) THEN
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        
+            IF( .NOT. WRITE3( SRCGRPNAME, 'STKFLW', JDATE, JTIME, STKFLW )) THEN
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
