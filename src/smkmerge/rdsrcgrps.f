@@ -73,7 +73,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: SGDEV           ! file unit number
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: MXCOL = 3
+        INTEGER, PARAMETER :: MXCOL = 4
 
 C...........   Array for parsing list-formatted inputs
         CHARACTER(50)          SEGMENT( MXCOL )
@@ -98,6 +98,7 @@ C...........   Other local variables
 
         CHARACTER(FIPLEN3) CFIP     !  character FIPS code
         CHARACTER(FIPLEN3) CSTA     !  state code
+        CHARACTER(FIPLEN3) PREVFIP  !  previous FIPS code from sorted list
         CHARACTER(512)     LINE     !  line buffer
         CHARACTER(512)     MESG     !  message buffer
 
@@ -166,7 +167,14 @@ C.................  Reserve group number zero
             END IF
 
 C.............  Check FIPS code
-            IF( CHKINT( SEGMENT( 2 ) ) ) THEN
+            IF( SEGMENT( 2 ) == ' ' ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Missing FIPS code at line',
+     &                 IREC, 'of source grouping file.'
+                CALL M3MESG( MESG )
+                CYCLE
+
+            ELSE IF( CHKINT( SEGMENT( 2 ) ) ) THEN
                 CFIP = SEGMENT( 2 )
                 IFIP = STR2INT( CFIP )
 
@@ -233,13 +241,33 @@ C.........  Allocate memory for sorted groups
 C.........  Sort source groups by FIPS code
         CALL SORTIC( N, INDEXA, CGRPFIPA )
 
+        PREVFIP = ' '
         DO I = 1, N
 
             J = INDEXA( I )
+            
+C.............  Check for duplicate FIPS codes
+            CFIP = CGRPFIPA( J )
+            IF( CFIP .EQ. PREVFIP ) THEN
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Duplicate FIPS code "' // CFIP // 
+     &                 '" in source grouping file.'
+                CALL M3MSG2( MESG )
+                CYCLE
+            END IF
+
             IGRPNUM( I ) = IGRPNUMA( J )
-            CGRPFIP( I ) = CGRPFIPA( J )
+            CGRPFIP( I ) = CFIP
+            
+            PREVFIP = CFIP
 
         END DO
+
+C.........  Check for sorting errors
+        IF( EFLAG ) THEN
+            MESG = 'Problem with source groups file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
         
         IGRPNUM( NSRCGRP ) = 0
 
