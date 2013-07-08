@@ -83,13 +83,13 @@ mrgvnams.o  : $(MODMERGE)
 openmrgin.o : $(MODMERGE) $(MODELEV) $(MODGRID) $(MODFILESET) $(MODINFO)
 openmrgout.o: $(MODMERGE) $(MODELEV) $(MODGRID) 
 rdmrginv.o  : $(MODMERGE)
-rdsrcgrps.o : $(MODMERGE) $(MODLISTS) $(MODSTCY) $(MODGRID)
+rdsrcgrps.o : $(MODMERGE) $(MODLISTS) $(MODSTCY) $(MODGRID) $(MODELEV)
 smkmerge.o  : $(MODMERGE) $(MODCNTRL) $(MODSTCY) $(MODSURG) $(MODELEV) $(MODGRID) $(MODLISTS)
-srcgrpcnt.o : $(MODMERGE) $(MODGRID)
+srcgrpcnt.o : $(MODMERGE) $(MODGRID) $(MODELEV)
 wmrgelev.o  : $(MODMERGE) $(MODSOURC) $(MODELEV) $(MODGRID) 
 wmrgemis.o  : $(MODMERGE) $(MODELEV)
 wrmrgrep.o  : $(MODMERGE) $(MODSTCY) $(MODGRID) 
-wrsrcgrps.o : $(MODMERGE) $(MODGRID)
+wrsrcgrps.o : $(MODMERGE) $(MODLISTS) $(MODGRID) $(MODELEV)
 
 clean:
 	/bin/rm -f *.o

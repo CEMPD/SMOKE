@@ -53,6 +53,9 @@ C.........  This module contains the arrays for state and county summaries
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
+
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV, ONLY: NGROUP
         
         IMPLICIT NONE
 
@@ -323,6 +326,10 @@ C.........  TODO: add biogenic handling
         IF( PFLAG ) THEN
             CALL SRCGRPCNT( NPSRC, NPSRC, PGMATX( 1 ), 
      &                      PGMATX( NGRID+1 ), PICNY )
+
+C.............  Increment number of output records to account
+C               for elevated sources
+            NSGOUTPUT = NSGOUTPUT + NGROUP
         END IF
 
 C.........  Allocate memory for emissions data

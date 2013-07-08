@@ -38,10 +38,13 @@ C
 C**************************************************************************
 
 C.........  MODULES for public variables
-        USE MODMERGE, ONLY: IFIPGRP, NSGOUTPUT, GRPCNT
+        USE MODMERGE, ONLY: IFIPGRP, NSGOUTPUT, GRPCNT, PFLAG
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
+
+C.........  This module contains arrays for plume-in-grid and major sources
+        USE MODELEV, ONLY: LMAJOR
         
         IMPLICIT NONE
 
@@ -63,6 +66,12 @@ C   begin body of subroutine SRCGRPCNT
             DO J = 1, NX( C )
                 K = K + 1
                 SRC = IX( K )
+
+C.................  Skip elevated sources
+                IF( PFLAG ) THEN
+                    IF( LMAJOR( SRC ) ) CYCLE
+                END IF
+
                 GIDX = IFIPGRP( ICNY( SRC ) )
                 CNT = GRPCNT( C, GIDX )
                 IF( CNT == 0 ) THEN
