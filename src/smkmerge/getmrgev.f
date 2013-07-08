@@ -176,6 +176,12 @@ C.........  Check for variable grid
 C.........  Check if source grouping should be used
         SRCGRPFLAG = ENVYN( 'SMK_SRCGROUP_OUTPUT_YN', 'Use source ' //
      &                      'grouping', .FALSE., IOS )
+     
+        IF( SRCGRPFLAG .AND. XFLAG ) THEN
+            MESG = 'Source grouping cannot be used with multiple ' //
+     &             'source categories.'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Point-source specific environment variables
         IF ( PFLAG ) THEN
