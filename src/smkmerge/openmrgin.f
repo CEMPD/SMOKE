@@ -143,7 +143,7 @@ C   begin body of subroutine OPENMRGIN
 
 C.........  If reporting state and/or county emissions, and processing for
 C           biogenic sources, get gridding surrogates
-        IF( LREPANY .AND. BFLAG ) THEN
+        IF( ( LREPANY .OR. SRCGRPFLAG ) .AND. BFLAG ) THEN
         
             IF( VARFLAG ) THEN
                 MESG = 'Cannot report biogenic emissions when ' //

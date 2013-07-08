@@ -89,7 +89,7 @@ C.........  This module contains the major data structure and control flags
      &          AERCNY, MERCNY, PERCNY,                         ! cnty total reac control emis
      &          AECCNY, MECCNY, PECCNY,                         ! cnty total all-control emis
      &          LFRAC, EANAM, TONAMES,                          ! layer frac, pol/act names
-     &          EMGGRD                                          ! emis by grid cell and src group
+     &          IFIPGRP, EMGGRD                                 ! emis by grid cell and src group
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN,
@@ -232,8 +232,9 @@ C           flags. Use a local module to pass the control flags.
 C.........  Open input files and retrieve episode information
         CALL OPENMRGIN( SRGNROWS, SRGNCOLS, SRGGRDNM, SRGFMT )
 
-C.........  Do setup for biogenic state and county reporting
-        IF( BFLAG .AND. LREPANY ) THEN
+C.........  Do setup for biogenic state and county reporting or source
+C           apportionment
+        IF( BFLAG .AND. ( LREPANY .OR. SRCGRPFLAG ) ) THEN
 
 C.............  Read gridding surrogates
             CALL RDSRG( .FALSE., GDEV, SRGFMT, SRGNROWS, SRGNCOLS )
@@ -287,7 +288,7 @@ C.........  Allocate memory for fixed-size arrays by source category...
 
 C.........  Read in elevated sources and plume-in-grid information, if needed
 C.........  Reset flag for PinG if none in the input file
-        IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG .OR. INLINEFLAG) ) THEN
+        IF( PFLAG .AND. ( ELEVFLAG .OR. PINGFLAG .OR. INLINEFLAG ) ) THEN
 
             CALL RDPELV( EDEV, NPSRC, ELEVFLAG, NMAJOR, NPING )
 
@@ -830,10 +831,12 @@ C                       add to totals and store
 C.............................  Update country, state, & county totals  
 C.............................  Also convert the units from the gridded output
 C                               units to the totals output units
-                            IF( LREPANY ) THEN
+                            IF( LREPANY .OR. SRCGRPFLAG ) THEN
                                 FB = BIOTFAC / BIOGFAC
                                 CALL GRD2CNTY( 0, KB, NCOUNTY, 
-     &                                         FB, BEMGRD, BEBCNY )
+     &                                         FB, BEMGRD, BEBCNY,
+     &                                         SRCGRPFLAG, BIOGFAC, 
+     &                                         IFIPGRP, EMGGRD )
 
                             END IF
                         END IF

@@ -56,6 +56,9 @@ C.........  This module contains the global variables for the 3-d grid
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP
+
+C...........   This module contains the gridding surrogates tables
+        USE MODSURG, ONLY: NSRGFIPS, SRGFIPS, NCELLS, FIPCELL
         
         IMPLICIT NONE
 
@@ -88,7 +91,7 @@ C...........   Local allocatable arrays
         CHARACTER(FIPLEN3), ALLOCATABLE :: CGRPFIP ( : ) ! sorted FIPS
 
 C...........   Other local variables
-        INTEGER         I, J, N, INDX   !  counters and indices
+        INTEGER         I, J, N, INDX, C, F, GIDX, CNT   !  counters and indices
         INTEGER         MXERR   !  max no. errors of each type
         INTEGER         MXWARN  !  max no. warnings of each type
         INTEGER         NLINES  !  number of lines
@@ -96,6 +99,7 @@ C...........   Other local variables
         INTEGER         IFIP    !  integer FIPS code
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
+        INTEGER         NFIP    !  number of FIPS in inventory or surrogates
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
 
@@ -185,9 +189,15 @@ C.................  Standardize character version of FIPS code
                 CALL FLTRNEG( CFIP )
                 CALL PADZERO( CFIP )
 
-C.................  Check if FIPS code matches inventory
+C.................  Check if FIPS code matches inventory or 
+C                   surrogates (for biogenics)
                 IF( CFIP( 4:6 ) /= '000' ) THEN
-                    J = FIND1( IFIP, NINVIFIP, INVIFIP )
+                    IF( BFLAG ) THEN
+                        J = FIND1( IFIP, NSRGFIPS, SRGFIPS )
+                    ELSE
+                        J = FIND1( IFIP, NINVIFIP, INVIFIP )
+                    END IF
+
                     IF( J .LE. 0 ) THEN
                         WRITE( MESG,94010 ) 
      &                    'WARNING: State/county FIPS code "' // CFIP //
@@ -274,13 +284,24 @@ C.........  Check for sorting errors
         
         IGRPNUM( NSRCGRP ) = 0
 
-C.........  Assign FIPS from inventory to source groups
-        ALLOCATE( IFIPGRP( NINVIFIP ), STAT=IOS )
+C.........  Assign FIPS from inventory/surrogates to source groups
+        IF( BFLAG ) THEN
+            NFIP = NSRGFIPS
+        ELSE
+            NFIP = NINVIFIP
+        END IF
+
+        ALLOCATE( IFIPGRP( NFIP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IFIPGRP', PROGNAME )
 
-        DO I = 1, NINVIFIP
+        DO I = 1, NFIP
         
-            IFIP = INVIFIP( I )
+            IF( BFLAG ) THEN
+                IFIP = SRGFIPS( I )
+            ELSE
+                IFIP = INVIFIP( I )
+            END IF
+
             WRITE( CFIP, '(I5.5)' ) IFIP
             CALL PADZERO( CFIP )  ! pad with zeros
             CSTA = CFIP( 1:STALEN3 ) // '000'
@@ -315,7 +336,27 @@ C.........  Determine number of source group / grid cell interactions
         END IF
         
         IF( BFLAG ) THEN
-C.........  TODO: add biogenic handling
+
+C.............  Loop through FIPS codes from surrogates
+            DO F = 1, NSRGFIPS
+
+                GIDX = IFIPGRP( F )
+
+C.................  Loop through grid cells for FIPS code
+                DO N = 1, NCELLS( F )
+
+                    C = FIPCELL( N,F )
+
+                    CNT = GRPCNT( C, GIDX )
+                    IF( CNT == 0 ) THEN
+                        NSGOUTPUT = NSGOUTPUT + 1
+                    END IF
+                    GRPCNT( C, GIDX ) = CNT + 1
+
+                END DO  ! end loop over grid cells for FIPS
+
+            END DO  ! end loop over FIPS codes
+
         END IF
         
         IF( MFLAG ) THEN
