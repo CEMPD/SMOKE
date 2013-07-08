@@ -1,13 +1,15 @@
 
         SUBROUTINE GRD2CNTY( IDXINV, IDXSPC, NCNTY, CNVFAC,
-     &                       GRDDAT, CNYDAT )
+     &                       GRDDAT, CNYDAT, SGFLAG, SGFAC, 
+     &                       FIPTOSG, SGDAT )
 
 C************************************************************************
 C  subroutine GRD2CNTY body starts at line
 C
 C  DESCRIPTION:
 C      The purpose of this subroutine is to convert gridded values to county-
-C      total values for reporting purposes
+C      total values for reporting purposes. It can also save totals for
+C      source apportionment.
 C
 C  PRECONDITIONS REQUIRED:  
 C
@@ -15,6 +17,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C       Created 8/99 by M. Houyoux
+C       Added source apportionment handling 07/13 by C. Seppanen
 C
 C************************************************************************
 C
@@ -68,6 +71,10 @@ C...........   Subroutine arguments
         REAL   , INTENT (IN) :: CNVFAC
         REAL   , INTENT (IN) :: GRDDAT( NGRID )
         REAL   , INTENT(OUT) :: CNYDAT( NCNTY,* )
+        LOGICAL, INTENT (IN) :: SGFLAG           ! true: store totals for source apportionment
+        REAL   , INTENT (IN) :: SGFAC            ! conversion factor for gridded emissions
+        INTEGER, INTENT (IN) :: FIPTOSG( NCNTY ) ! source group for each FIPS code
+        REAL   , INTENT(OUT) :: SGDAT( NGRID,* )
 
 C...........   Local allocatable arrays
         REAL, ALLOCATABLE :: SRGSUM( : )  ! dim: ngrid - sum of surrogate fracs
@@ -79,8 +86,10 @@ C...........   Other local variables
         INTEGER          IOS               ! i/o status
         INTEGER          SSC               ! 
         INTEGER, SAVE :: SRGID             ! surrogate ID for area surrogate
+        INTEGER          GIDX              ! source group index
 
         REAL             FRAC              ! tmp surrogate fraction
+        REAL             VAL               ! tmp data value
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first timwe routine called
 
@@ -148,7 +157,7 @@ C.............  Divide surrogate value by sum on cell
                 END DO  ! End loop on cells in county
             END DO      ! End loop on counties in domain
 
-    	    DEALLOCATE( SRGSUM )
+            DEALLOCATE( SRGSUM )
 
             FIRSTIME = .FALSE.
 
@@ -183,8 +192,17 @@ C.............  Otherwise, loop through cells in county and get total
                 C    = FIPCELL( N,F )        ! Retrieve cell number
                 FRAC = SRGFRAC( SRGID,N,F )
 
-                CNYDAT( J,IDX ) = CNYDAT( J,IDX ) + 
-     &                            CNVFAC * GRDDAT( C ) * FRAC
+                VAL = GRDDAT( C ) * FRAC
+
+                CNYDAT( J,IDX ) = CNYDAT( J,IDX ) +
+     &                            CNVFAC * VAL
+
+C.................  Store source apportionment data
+                IF( SGFLAG ) THEN
+                    GIDX = FIPTOSG( F )
+                    SGDAT( C,GIDX ) = SGDAT( C,GIDX ) + 
+     &                                SGFAC * VAL
+                END IF
 
             END DO  ! End loop on cells in county
 
