@@ -473,5 +473,6 @@
         INTEGER,              PUBLIC :: NSGOUTPUT     ! number of output records
         INTEGER, ALLOCATABLE, PUBLIC :: GRPCNT( :,: ) ! num srcs matching grid cell and group
         CHARACTER(16),        PUBLIC :: SRCGRPNAME    ! source group output file name (stack groups)
+        CHARACTER(16),        PUBLIC :: SGINLNNAME    ! in-line src grp emissions file name
 
         END MODULE MODMERGE

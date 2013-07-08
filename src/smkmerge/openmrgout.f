@@ -51,7 +51,7 @@ C.........  This module contains the major data structure and control flags
      &          AREPNAME, BREPNAME, MREPNAME, PREPNAME, TREPNAME,
      &          ARDEV, BRDEV, MRDEV, PRDEV, TRDEV,
      &          VGRPCNT, SIINDEX, SPINDEX, GRDUNIT, VARFLAG,
-     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME
+     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP
@@ -396,15 +396,15 @@ C.............  Build list of variables for stack groups file
             NVARS3D = J
             
             SRCGRPNAME = PROMPTMFILE(
-     &                     'Enter name for STACK GROUPS file',
-     &                     FSUNKN3, 'STACK_GROUPS', PROGNAME )
+     &                     'Enter name for OUTPUT STACK GROUPS file',
+     &                     FSUNKN3, 'STACK_GROUPS_OUT', PROGNAME )
 
 C.............  Set up variables for emissions output file
             CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )
             
-            INLINENAME = PROMPTSET(
+            SGINLNNAME = PROMPTSET(
      &                     'Enter name for INLINE EMISSIONS OUTPUT file',
-     &                     FSUNKN3, INLINENAME, PROGNAME )
+     &                     FSUNKN3, SGINLNNAME, PROGNAME )
         END IF
 
 C.........  Open report file(s)
