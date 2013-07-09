@@ -79,6 +79,8 @@ C...........   Local allocatable arrays
         INTEGER,      ALLOCATABLE :: STKCNT ( : ) ! num. srcs per group
         INTEGER,      ALLOCATABLE :: ROW    ( : ) ! row number
         INTEGER,      ALLOCATABLE :: COL    ( : ) ! column number
+        INTEGER,      ALLOCATABLE :: LMAJOR ( : ) ! major source flag
+        INTEGER,      ALLOCATABLE :: LPING  ( : ) ! PinG source flag
         INTEGER,      ALLOCATABLE :: INTDATA( : ) ! generic integer data
         REAL,         ALLOCATABLE :: XLOCA  ( : ) ! x-location at center of grid cell
         REAL,         ALLOCATABLE :: YLOCA  ( : ) ! y-location at center of grid cell
@@ -120,6 +122,10 @@ C.............  Output stack groups file
             CALL CHECKMEM( IOS, 'ROW', PROGNAME )
             ALLOCATE( COL( NSGOUTPUT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'COL', PROGNAME )
+            ALLOCATE( LMAJOR( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LMAJOR', PROGNAME )
+            ALLOCATE( LPING( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'LPING', PROGNAME )
             ALLOCATE( XLOCA( NSGOUTPUT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
             ALLOCATE( YLOCA( NSGOUTPUT ), STAT=IOS )
@@ -138,6 +144,8 @@ C.............  Output stack groups file
             STKCNT = 0
             ROW = 0
             COL = 0
+            LMAJOR = 0
+            LPING = 0
             XLOCA = BADVAL3
             YLOCA = BADVAL3
 
@@ -202,6 +210,10 @@ C.....................  Set group ID based on FIPS code
                 ROW( ELEVIDX:NSGOUTPUT ) = INTDATA
                 CALL INT_READ3( PVNAME, 'COL', 1, JDATE, JTIME, INTDATA )
                 COL( ELEVIDX:NSGOUTPUT ) = INTDATA
+                CALL INT_READ3( PVNAME, 'LMAJOR', 1, JDATE, JTIME, INTDATA )
+                LMAJOR( ELEVIDX:NSGOUTPUT ) = INTDATA
+                CALL INT_READ3( PVNAME, 'LPING', 1, JDATE, JTIME, INTDATA )
+                LPING( ELEVIDX:NSGOUTPUT ) = INTDATA
                 
                 DEALLOCATE( INTDATA )
                 
@@ -230,6 +242,8 @@ C.....................  Set group ID based on FIPS code
             CALL INT_WRITE3( SRCGRPNAME, 'STKCNT', JDATE, JTIME, STKCNT )
             CALL INT_WRITE3( SRCGRPNAME, 'ROW', JDATE, JTIME, ROW )
             CALL INT_WRITE3( SRCGRPNAME, 'COL', JDATE, JTIME, COL )
+            CALL INT_WRITE3( SRCGRPNAME, 'LMAJOR', JDATE, JTIME, LMAJOR )
+            CALL INT_WRITE3( SRCGRPNAME, 'LPING', JDATE, JTIME, LPING )
             
             CALL REAL_WRITE3( SRCGRPNAME, 'XLOCA', JDATE, JTIME, XLOCA )
             CALL REAL_WRITE3( SRCGRPNAME, 'YLOCA', JDATE, JTIME, YLOCA )

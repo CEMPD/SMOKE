@@ -392,6 +392,18 @@ C.............  Build list of variables for stack groups file
             VTYPE3D( J ) = M3REAL
             UNITS3D( J ) = ''
             VDESC3D( J ) = 'Projection y coordinate'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LMAJOR'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = '1= MAJOR SOURCE in domain, 0=otherwise'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LPING'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = '1=PING SOURCE in domain, 0=otherwise'
 
             NVARS3D = J
             
