@@ -44,7 +44,7 @@ C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: LMAJOR
+        USE MODELEV, ONLY: LMAJOR, LPING
         
         IMPLICIT NONE
 
@@ -69,7 +69,7 @@ C   begin body of subroutine SRCGRPCNT
 
 C.................  Skip elevated sources
                 IF( PFLAG ) THEN
-                    IF( LMAJOR( SRC ) ) CYCLE
+                    IF( LMAJOR( SRC ) .OR. LPING( SRC ) ) CYCLE
                 END IF
 
                 GIDX = IFIPGRP( ICNY( SRC ) )
