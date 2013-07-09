@@ -17,7 +17,7 @@ FILES_ABCDE = \
   alocatbl.o   alocchrt.o   alocctbl.o   alocetbl.o   alocgtbl.o   alocmtbl.o \
   alocptbl.o   alocstbl.o   alocttbl.o   applreac.o   applumat.o   bldcsrc.o  \
   bldenams.o   blkorcmt.o   calcrelhum.o chkcpvar.o   chkemepi.o   chkisiz.o \
-  chkmetem.o   chkptdef.o   chksrcno.o   convrtxy.o   cvtrdtype.o  cvtvehtype.o \
+  chkmetem.o   chkptdef.o   chksrcno.o   convrtll.o   convrtxy.o   cvtrdtype.o  cvtvehtype.o \
   dscsprof.o   efsetup.o    evalcrit.o
 
 FILES_FGIMNP = \
