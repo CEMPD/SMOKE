@@ -198,7 +198,7 @@ C.........  Point-source specific environment variables
             INLINEFLAG = ( I .EQ. 2 )
 
             MESG = 'Processing CMAQ in-line point source ouptut by '//
-     &             'setting MRG_ELEV_METHOD to 2'
+     &             'setting SMK_ELEV_METHOD to 2'
             IF( INLINEFLAG ) CALL M3MSG2( MESG )	    
 
             IF( LFLAG .AND. INLINEFLAG ) THEN
@@ -230,6 +230,21 @@ C.............  Must be running for UAM-style processing to use explicit...
      &                 'consitent with ' // CRLF() // BLANK10//
      &                 'EXPLICIT_PLUMES_YN = Y setting.'
                 CALL M3MSG2( MESG )
+            END IF
+
+C.............  Check source group restrictions
+            IF ( SRCGRPFLAG ) THEN
+                IF ( LFLAG ) THEN
+                    MESG = 'Source grouping cannot be used with layer ' //
+     &                     'fractions.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+                
+                IF ( .NOT. INLINEFLAG ) THEN
+                    MESG = 'Source grouping must be used with in-line ' //
+     &                     'CMAQ outputs.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
             END IF
 
         END IF
