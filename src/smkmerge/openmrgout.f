@@ -332,6 +332,18 @@ C.............  Build list of variables for stack groups file
             VTYPE3D( J ) = M3INT
             UNITS3D( J ) = 'none'
             VDESC3D( J ) = 'Stack group number'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LATITUDE'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Latitude'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LONGITUDE'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Longitude'
 
             J = J + 1
             VNAME3D( J ) = 'STKDM'

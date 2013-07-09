@@ -51,7 +51,8 @@ C.........  This module contains the lists of unique source characteristics
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, NCOLS, NROWS, 
-     &                     XORIG, YORIG, XCELL, YCELL
+     &                     GDTYP, GRDNM, P_ALP, P_BET, P_GAM,
+     &                     XCENT, YCENT, XORIG, YORIG, XCELL, YCELL
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP, GRPGID, ELEVEMIS
@@ -84,6 +85,8 @@ C...........   Local allocatable arrays
         INTEGER,      ALLOCATABLE :: INTDATA( : ) ! generic integer data
         REAL,         ALLOCATABLE :: XLOCA  ( : ) ! x-location at center of grid cell
         REAL,         ALLOCATABLE :: YLOCA  ( : ) ! y-location at center of grid cell
+        REAL,         ALLOCATABLE :: LAT    ( : ) ! latitude of YLOCA
+        REAL,         ALLOCATABLE :: LONG   ( : ) ! longitude of XLOCA
         REAL,         ALLOCATABLE :: STKDM  ( : ) ! inside stack diameter
         REAL,         ALLOCATABLE :: STKHT  ( : ) ! stack height
         REAL,         ALLOCATABLE :: STKTK  ( : ) ! stack exit temperature
@@ -130,6 +133,10 @@ C.............  Output stack groups file
             CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
             ALLOCATE( YLOCA( NSGOUTPUT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
+            ALLOCATE( LAT( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'XLOCA', PROGNAME )
+            ALLOCATE( LONG( NSGOUTPUT ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'YLOCA', PROGNAME )
             ALLOCATE( STKDM( NSGOUTPUT ), STAT=IOS )
             CALL CHECKMEM( IOS, 'STKDM', PROGNAME )
             ALLOCATE( STKHT( NSGOUTPUT ), STAT=IOS )
@@ -148,6 +155,8 @@ C.............  Output stack groups file
             LPING = 0
             XLOCA = BADVAL3
             YLOCA = BADVAL3
+            LAT = BADVAL3
+            LONG = BADVAL3
 
 C.............  Set dummy stack parameter arrays based on environment settings
             STKDM  = ENVREAL( 'SRCGRP_STKDM',  'Stack diameter', 0., IOS )
@@ -182,6 +191,13 @@ C.....................  Skip missing values
                     YLOCA ( K ) = YLOCACELL
                 END DO
             END DO
+
+C.............  Convert x and y grid cell locations to lat/lon            
+            LAT = YLOCA
+            LONG = XLOCA
+            CALL CONVRTLL( K, GDTYP, GRDNM, 
+     &                     P_ALP, P_BET, P_GAM, 
+     &                     XCENT, YCENT, LONG, LAT )
 
 C.............  Append data for elevated source groups
             IF( PFLAG ) THEN
@@ -234,6 +250,26 @@ C.....................  Set group ID based on FIPS code
                 STKVE( ELEVIDX:NSGOUTPUT ) = REALDATA
                 CALL REAL_READ3( PVNAME, 'STKFLW', 1, JDATE, JTIME, REALDATA )
                 STKFLW( ELEVIDX:NSGOUTPUT ) = REALDATA
+
+C.................  If lat/lon is in existing stack groups file, append it
+                IF( READ3( PVNAME, 'LATITUDE', 1, JDATE, JTIME, REALDATA ) ) THEN
+
+                    LAT( ELEVIDX:NSGOUTPUT ) = REALDATA
+
+C.....................  Assume longitude is available if latitude was
+                    CALL REAL_READ3( PVNAME, 'LONGITUDE', 1, JDATE, JTIME, REALDATA )
+                    LONG( ELEVIDX:NSGOUTPUT ) = REALDATA
+
+                ELSE
+
+C.....................  Otherwise, convert x and y grid cell locations
+                    LAT( ELEVIDX:NSGOUTPUT ) = YLOCA( ELEVIDX:NSGOUTPUT )
+                    LONG( ELEVIDX:NSGOUTPUT ) = XLOCA( ELEVIDX:NSGOUTPUT )
+                    CALL CONVRTLL( NSGOUTPUT-ELEVIDX, GDTYP, GRDNM,
+     &                             P_ALP, P_BET, P_GAM, XCENT, YCENT,
+     &                             LONG( ELEVIDX ), LAT( ELEVIDX ) )
+
+                END IF
                 
                 DEALLOCATE( REALDATA )
             END IF
@@ -247,6 +283,8 @@ C.....................  Set group ID based on FIPS code
             
             CALL REAL_WRITE3( SRCGRPNAME, 'XLOCA', JDATE, JTIME, XLOCA )
             CALL REAL_WRITE3( SRCGRPNAME, 'YLOCA', JDATE, JTIME, YLOCA )
+            CALL REAL_WRITE3( SRCGRPNAME, 'LATITUDE', JDATE, JTIME, LAT )
+            CALL REAL_WRITE3( SRCGRPNAME, 'LONGITUDE', JDATE, JTIME, LONG )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKDM', JDATE, JTIME, STKDM )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKHT', JDATE, JTIME, STKHT )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKTK', JDATE, JTIME, STKTK )
