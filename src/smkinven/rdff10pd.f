@@ -58,7 +58,7 @@ C.........  This module contains data for day- and hour-specific data
      &                      CODEA, EMISVA, DYTOTA, CIDXA
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, CNTYTZON
+        USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, USEDAYLT
 
         IMPLICIT NONE
 
@@ -82,9 +82,12 @@ C.........  EXTERNAL FUNCTIONS
         REAL         STR2REAL
         REAL         YR2DAY
         INTEGER      YEAR4
+        INTEGER      GETTZONE
+        LOGICAL      ISDSTIME
 
         EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
-     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT
+     &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
+     &               GETTZONE, ISDSTIME
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN)  :: FDEV           ! file unit no.
@@ -165,8 +168,9 @@ C...........   Other local variables
         REAL             CONVFAC          ! tmp conversion factor from Inventory Table
         REAL             TOTAL            ! tmp daily total of hourly file
 
-        LOGICAL, SAVE :: DFLAG = .FALSE.  ! true: dates set by data
-        LOGICAL       :: EFLAG = .FALSE.  ! TRUE iff ERROR
+C       LOGICAL       :: DAYLIT = .FALSE.  ! true: date in daylight time
+        LOGICAL, SAVE :: DFLAG  = .FALSE.  ! true: dates set by data
+        LOGICAL       :: EFLAG  = .FALSE.  ! TRUE iff ERROR
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: SFLAG            ! true: use daily total from hourly
@@ -191,7 +195,6 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of program RDFF10PD
-
 C.........  First time routine called
         IF( FIRSTIME ) THEN
 
@@ -381,7 +384,7 @@ C.............  If time zone name is not found, thenoutput error
             END IF
 
 C.............  Set time zone number
-            ZONE = CNTYTZON( I )
+            ZONE = GETTZONE( FIP )
  
 C.............  If daily emissions are not in the output time zone, print 
 C               warning
@@ -394,6 +397,12 @@ C               warning
                 CALL M3MESG( MESG )
                 NWARN( 1 ) = NWARN( 1 ) + 1
 
+            END IF
+C.............  Check if date is in daylight time, if local zone has
+C               already been converted, and if this FIPS code is
+C               exempt from daylight time or not.
+            IF( ISDSTIME( JDATE ) .AND. USEDAYLT( I ) ) THEN
+                ZONE = ZONE - 1
             END IF
 
 C.............  Convert date and time to output time zone.
@@ -758,6 +767,7 @@ C.........  Update output starting date/time and ending date/time
 
         EDATE = RDATE
         ETIME = RTIME
+        
         DO I = 1, MAXPTR - 1
             CALL NEXTIME( EDATE, ETIME, TSTEP )
         END DO
