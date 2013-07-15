@@ -111,8 +111,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         FINDC
         INTEGER         WKDAY
         INTEGER         ENVINT
+        INTEGER         STR2INT
 
-        EXTERNAL    HHMMSS, INDEX1, FIND1, FIND1FIRST, FINDC, WKDAY, ENVINT, CRLF
+        EXTERNAL    HHMMSS, INDEX1, FIND1, FIND1FIRST, FINDC, WKDAY, 
+     &              STR2INT, ENVINT, CRLF
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -153,16 +155,16 @@ C...........   Other local variables
         INTEGER          DAY           ! day-of-week index (monday=1)
         INTEGER          DAYMONTH      ! day-of-month
         INTEGER          DAYIDX        ! current day value index
-        INTEGER          DTZONES       ! delta time b/n min/max time zones in inventory
         INTEGER          FUELMONTH     ! current fuel month
         INTEGER          LFUELMONTH    ! last fuel month
         INTEGER          HOURIDX       ! current hour of the day
         INTEGER          IDX1, IDX2    ! temperature indexes for current cell
         INTEGER          IOS           ! tmp I/O status
+        INTEGER          PDATE         ! Julian date (YYYYDDD) for RPP mode
         INTEGER          JDATE         ! Julian date (YYYYDDD)
         INTEGER          JTIME         ! time (HHMMSS)
-        INTEGER          RDATE, TDATE  ! last reporting Julian date (YYYYDDD)
-        INTEGER          RTIME, TTIME  ! last reporting time (HHMMSS)
+        INTEGER          RDATE         ! last reporting Julian date (YYYYDDD)
+        INTEGER          RTIME         ! last reporting time (HHMMSS)
         INTEGER       :: K1 = 0        ! tmp index
         INTEGER       :: K5 = 0        ! tmp index
         INTEGER          KM            ! tmp index to src-category species
@@ -201,6 +203,8 @@ C...........   Other local variables
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
 
         CHARACTER(300)     MESG    ! message buffer
+        CHARACTER( 4 )     YEAR    ! modelin year
+        CHARACTER( 7 )     TDATE   ! tmp julinan date
         CHARACTER(IOVLEN3) LBUF    ! previous species or pollutant name
         CHARACTER(IOVLEN3) PBUF    ! tmp pollutant or emission type name
         CHARACTER(IOVLEN3) SBUF    ! tmp species or pollutant name
@@ -381,6 +385,10 @@ C.............  Switch SPC matrix (mole/mass) based on MRG_GRDOUT_UNIT, MRG_TOTO
 C.........  Write out message with list of species
         CALL POLMESG( OCNT, VARNAMES )
 
+C.........  Year of SDATE  
+        WRITE( TDATE, '(I7)' ) SDATE
+        YEAR = TDATE( 1:4 ) 
+
 C.........  Loop over reference counties
         DO I = 1, NREFC
 
@@ -403,9 +411,6 @@ C.............  Initializations before main time loop
             DAY     = 1
             FUELMONTH = 0
             LFUELMONTH  = 0
-
-C.............  Define the min/max time zones in the inventory
-            DTZONES = MAXVAL( TZONES ) - MINVAL( TZONES )
 
 C.............  Loop through output time steps
             DO T = 1, NSTEPS
@@ -508,22 +513,20 @@ C.................  In RPD and RPV modes, read temperatures for current hour
                     END IF
 
                 ELSE   ! RPP MODE
-                    TDATE = JDATE
-                    TTIME = JTIME
-                    CALL NEXTIME( TDATE, TTIME, -DTZONES*10000 )
-
+                    WRITE( TDATE, '(I7)' ) JDATE
+                    PDATE = STR2INT( YEAR // TDATE( 5:7 ) )
                     IF( .NOT. READ3( METNAME, 'MAXTEMP', 1, 
-     &                               TDATE, 0, MAXTEMP ) ) THEN
+     &                               PDATE, 0, MAXTEMP ) ) THEN
                         MESG = 'Could not read MAXTEMP'//
      &                         ' from ' // TRIM( METNAME )
-                        CALL M3EXIT( PROGNAME, TDATE, 0, MESG, 2 )
+                        CALL M3EXIT( PROGNAME, PDATE, 0, MESG, 2 )
                     END IF
 
                     IF( .NOT. READ3( METNAME, 'MINTEMP', 1, 
-     &                               TDATE, 0, MINTEMP ) ) THEN
+     &                               PDATE, 0, MINTEMP ) ) THEN
                         MESG = 'Could not read MINTEMP' //
      &                         ' from ' // TRIM( METNAME )
-                        CALL M3EXIT( PROGNAME, TDATE, 0, MESG, 2 )
+                        CALL M3EXIT( PROGNAME, PDATE, 0, MESG, 2 )
                     END IF
                 END IF
 
