@@ -346,4 +346,33 @@ if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' && $RUN_PART4 == 'Y' ) then
       /bin/rm -f $PINGTS_S
    endif
 
+#
+## Source apportionment
+#
+   if ( $?SMK_SRCGROUP_OUTPUT_YN ) then
+      if ( $SMK_SRCGROUP_OUTPUT_YN == 'Y' ) then
+
+         /bin/rm -f $STACK_GROUPS_OUT
+         
+         if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+            /bin/rm -f $SGINLNTS_L
+            /bin/rm -f $SGINLNTS_S
+         endif
+         
+         if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+            /bin/rm -f $SGINLNS_L
+            /bin/rm -f $SGINLNS_S
+         endif
+         
+         if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+            /bin/rm -f $SGINLNT
+         endif
+         
+         if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+            /bin/rm -f $SGINLN
+         endif
+
+      endif
+   endif
+
 endif
