@@ -113,12 +113,12 @@ C.............  Bounds check
             END IF
 
 C.............  Find variable to read in map list of available vars
-            K = INDEX1( INVARS( I ), NMAPVAR, MAPVARS )
+            K = INDEX1( VBUF, NMAPVAR, MAPVARS )
 
 C.............  If variable is invalid, give error and go to get iteration
             IF( K .LE. 0 ) THEN
                 EFLAG = .TRUE.
-                MESG = 'ERROR: Variable "' // TRIM( INVARS( I ) ) // 
+                MESG = 'ERROR: Variable "' // TRIM( VBUF ) // 
      &                 '" requested by program but not found in ' //
      &                 'map-formatted inventory.'
                 CALL M3MSG2( MESG )
