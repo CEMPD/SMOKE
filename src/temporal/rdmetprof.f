@@ -68,7 +68,7 @@ C...........   Local parameters
         INTEGER, PARAMETER :: MXCOL = 35
         
 C.........  Local, sorted temporal profile codes
-        CHARACTER( 15 )         SEGMENT( MXCOL )
+        CHARACTER( 32 )         SEGMENT( MXCOL )
 
 C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         INTEGER         I, J, K, L, N    !  counters and indices
@@ -82,7 +82,7 @@ C...........   SCRATCH LOCAL VARIABLES and their descriptions:
         
         LOGICAL      :: EFLAG  = .FALSE.  !  input error flag
 
-        CHARACTER(525)     LINE        !  line buffer
+        CHARACTER(1120)     LINE        !  line buffer
         CHARACTER(300)     MESG        !  message buffer
         CHARACTER(8)       PROFTYPE    !  'MONTHLY', 'DAILY', 'HOURLY'
 
