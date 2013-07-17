@@ -531,11 +531,10 @@ C.................  Format information for this source
 
 C.................  Check the status of VOC and HAPs prior to NONHAPVOC calculation
                 IF( .NOT. FNDVOC .AND. .NOT. FNDPOL ) THEN
-                    MESG = 'ERROR: Both ' // VOC_TOG // 
+                    MESG = 'WARNING: Both ' // VOC_TOG // 
      &                  ' and toxics are NOT found for the source:' // 
      &                  CRLF() // BLANK5 // BUFFER( 1:L2 )
                     CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
                 END IF
 
                 IF( FNDVOC .AND. .NOT. FNDPOL ) THEN
