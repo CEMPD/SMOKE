@@ -159,11 +159,11 @@ C.............  Output stack groups file
             LONG = BADVAL3
 
 C.............  Set dummy stack parameter arrays based on environment settings
-            STKDM  = ENVREAL( 'SRCGRP_STKDM',  'Stack diameter', 0., IOS )
-            STKHT  = ENVREAL( 'SRCGRP_STKHT',  'Stack height', 0., IOS )
-            STKTK  = ENVREAL( 'SRCGRP_STKTK',  'Stack exit temperature', 0., IOS )
-            STKVE  = ENVREAL( 'SRCGRP_STKVE',  'Stack exit velocity', 0., IOS )
-            STKFLW = ENVREAL( 'SRCGRP_STKFLW', 'Stack exit flow rate', 0., IOS )
+            STKDM  = ENVREAL( 'SRCGRP_STKDM',  'Stack diameter', 0.1, IOS )
+            STKHT  = ENVREAL( 'SRCGRP_STKHT',  'Stack height', 0.1, IOS )
+            STKTK  = ENVREAL( 'SRCGRP_STKTK',  'Stack exit temperature', 273.0, IOS )
+            STKVE  = ENVREAL( 'SRCGRP_STKVE',  'Stack exit velocity', 0.1, IOS )
+            STKFLW = ENVREAL( 'SRCGRP_STKFLW', 'Stack exit flow rate', 0.1, IOS )
             
             K = 0
             DO C = 1, NGRID
