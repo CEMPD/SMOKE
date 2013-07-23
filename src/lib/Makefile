@@ -36,11 +36,13 @@ FILES_R = \
   rdrmat.o     rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o\
   rdspdref.o   rdsprof.o    rdsref.o     rdsrgdesc.o  rdsrghdr.o   rdsrg.o    \
   rdstcy.o     rdtprof.o    rdtref.o     rdtzone.o    rdumat.o     rdvmix.o   \
-  rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o
+  rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o  \
+  rdsrcgrps.o
 
 FILES_SVWX = \
-  setscctype.o setsrcdy.o   tagtable.o   ungridbv.o   verchar.o    wrchrscc.o \
-  wrdaymsg.o   wridaout.o   wridapol.o   wrorlout.o   xreftbl.o
+  setscctype.o setsrcdy.o   tagtable.o   ungridbv.o   verchar.o    wrchrscc.o  \
+  wrdaymsg.o   wridaout.o   wridapol.o   wrorlout.o   xreftbl.o    srcgrpcnt.o \
+  wrsrcgrps.o
 
 FILES_TMP = 
 
@@ -131,6 +133,7 @@ rdsmat.o   : $(MODFILESET)
 rdspdprof.o: $(MODMOBIL)
 rdspdref.o : $(MODXREF)
 rdsprof.o  : $(MODSPRO)
+rdsrcgrps.o: $(MODMERGE) $(MODLISTS) $(MODSTCY) $(MODGRID) $(MODELEV) $(MODSURG)
 rdsref.o   : $(MODXREF) $(MODINFO)
 rdsrg.o    : $(MODSURG) $(MODGRID)
 rdsrgdesc.o: $(MODSURG)
@@ -141,10 +144,12 @@ rdvmix.o   : $(MODMOBIL) $(MODXREF)
 rdxclude.o : $(MODXREF)
 setscctype.o: $(MODINFO)
 setsrcdy.o : $(MODINFO)
+srcgrpcnt.o: $(MODMERGE) $(MODGRID) $(MODELEV)
 tagtable.o : $(MODINFO) $(MODTAG) $(MODXREF) $(MODSPRO)
 wrchrscc.o : $(MODLISTS) $(MODINFO)
 wridaout.o : $(MODSOURC) $(MODSTCY) $(MODINFO)
 wrorlout.o : $(MODSOURC) $(MODSTCY) $(MODLISTS) $(MODINFO)
+wrsrcgrps.o: $(MODMERGE) $(MODLISTS) $(MODGRID) $(MODELEV)
 xreftbl.o  : $(MODXREF) $(MODINFO)
 
 clean:
