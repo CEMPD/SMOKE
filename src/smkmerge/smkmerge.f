@@ -427,7 +427,7 @@ C.........  Intialize state/county summed emissions to zero
 
 C.........  Read source group cross-reference file and assign sources to groups
         IF( SRCGRPFLAG ) THEN
-            CALL RDSRCGRPS( SGDEV )
+            CALL RDSRCGRPS( SGDEV, .FALSE., .FALSE. )
         END IF
 
 C.........  Open NetCDF output files, open ASCII report files, and write headers
@@ -946,7 +946,7 @@ C.........................  Write out ASCII elevated sources file
                         END IF
                         
                         IF( SRCGRPFLAG ) THEN
-                            CALL WRSRCGRPS( SBUF, JDATE, JTIME )
+                            CALL WRSRCGRPS( SBUF, JDATE, JTIME, .FALSE., 0 )
                         END IF
 
 C.........................  Initialize gridded arrays
