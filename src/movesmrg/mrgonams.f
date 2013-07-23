@@ -39,7 +39,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: MREPNAME, MONAME,
+        USE MODMERGE, ONLY: MREPNAME, MONAME, SGINLNNAME,
      &                      NUNITS, GRDUNIT
 
         IMPLICIT NONE
@@ -76,17 +76,21 @@ C.........  Initialize - everything will be gridded
 
             MREPNAME = 'REPMG'
             MONAME = 'MOUT'
+            SGINLNNAME = 'SGINLN'
 
         ELSE
 
             MREPNAME = 'REPMG'
             MONAME = 'MG'
+            SGINLNNAME = 'SGINLN'
     
             CALL TRIM_AND_CONCAT( MREPNAME, 'T' )
             CALL TRIM_AND_CONCAT( MONAME, 'T' )
+            CALL TRIM_AND_CONCAT( SGINLNNAME, 'T' )
     
             CALL TRIM_AND_CONCAT( MREPNAME, 'S' )
             CALL TRIM_AND_CONCAT( MONAME, 'S' )
+            CALL TRIM_AND_CONCAT( SGINLNNAME, 'S' )
     
 C.............  Now append mass or mole for I/O API files, depending on which
 C               inputs were used
@@ -107,11 +111,13 @@ C.............  Get output file names depending on if there are moles in units
     
                 CALL TRIM_AND_CONCAT( MREPNAME, '_L' )
                 CALL TRIM_AND_CONCAT( MONAME, '_L' )
+                CALL TRIM_AND_CONCAT( SGINLNNAME, '_L' )
     
             ELSE 
     
                 CALL TRIM_AND_CONCAT( MREPNAME, '_S' )
                 CALL TRIM_AND_CONCAT( MONAME, '_S' )
+                CALL TRIM_AND_CONCAT( SGINLNNAME, '_S' )
     
             END IF
 

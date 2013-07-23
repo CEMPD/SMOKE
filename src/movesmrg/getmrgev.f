@@ -40,9 +40,11 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
 
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: MFLAG_BD, VARFLAG, LREPANY,
+        USE MODMERGE, ONLY: AFLAG, BFLAG, MFLAG, PFLAG,
+     &                      MFLAG_BD, VARFLAG, LREPANY,
      &                      LMETCHK, LGRDOUT, LREPCNY,
-     &                      LREPSTA, LREPSCC, LREPSRC
+     &                      LREPSTA, LREPSCC, LREPSRC,
+     &                      SRCGRPFLAG
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
@@ -97,6 +99,13 @@ C           the environment variable(s), nothing will happen with the program
      &           'by-day processing'
         CALL ENVSTR( 'MRG_BYDAY', BUFFER, ' ', TMPBYDAY, IOS  )
 
+C.........  Set merge source category flags (impacts library routines shared
+C           between Movesmrg and Smkmerge)
+        AFLAG = .FALSE.
+        BFLAG = .FALSE.
+        MFLAG = .TRUE.
+        PFLAG = .FALSE.
+
 C.........  Retrieve the on/off environment variables 
 
         LMETCHK = ENVYN( 'MRG_METCHK_YN', 'Check consistency ' //
@@ -142,6 +151,10 @@ C           country/state/county total data
 C.........  Check for variable grid
         VARFLAG = ENVYN( 'USE_VARIABLE_GRID', 'Use variable grid ' //
      &                 'definition', .FALSE., IOS )
+
+C.........  Check if source grouping should be used
+        SRCGRPFLAG = ENVYN( 'SMK_SRCGROUP_OUTPUT_YN', 'Use source ' //
+     &                      'grouping', .FALSE., IOS )
 
 C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile processing
         RPDFLAG = ENVYN( 'RPD_MODE', 'Calculate rate-per-distance ' //

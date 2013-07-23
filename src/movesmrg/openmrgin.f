@@ -46,7 +46,7 @@ C.........  This module contains the major data structure and control flags
      &          MGNAME, MNGMAT,
      &          PDEV, CDEV, TZONE, SDATE, 
      &          STIME, TSTEP, NSTEPS, EDATE, ETIME, BYEAR, PYEAR,
-     &          VARFLAG
+     &          VARFLAG, SRCGRPFLAG, SGDEV
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, CFFLAG,
@@ -380,6 +380,13 @@ C           when they aren't going to be output
         CDEV = PROMPTFFILE( 
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+
+C.........  Open source groups file if needed
+        IF( SRCGRPFLAG ) THEN
+            MESG = 'Enter logical name for SOURCE GROUPS file'
+            SGDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
+     &                           'SMKMERGE_GROUPS', PROGNAME )
+        END IF
 
 C.........  Get emission processes file name
         TDEV = PROMPTFFILE( 

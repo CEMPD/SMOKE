@@ -41,7 +41,8 @@ C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, TSTEP, BYEAR, PYEAR, 
      &          LGRDOUT, NMSPC, EMNAM, NSMATV,
      &          MONAME, LREPSTA, LREPCNY, LREPSCC, LREPSRC, MREPNAME,
-     &          MRDEV, SIINDEX, SPINDEX, GRDUNIT, VARFLAG
+     &          MRDEV, SIINDEX, SPINDEX, GRDUNIT, VARFLAG,
+     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, P_ALP, P_BET, P_GAM, 
@@ -64,12 +65,13 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         INDEX1
         INTEGER         JUNIT
         CHARACTER(16)   MULTUNIT
-        INTEGER         PROMPTFFILE  
+        INTEGER         PROMPTFFILE
+        CHARACTER(16)   PROMPTMFILE
         LOGICAL         SETENVVAR
         CHARACTER(16)   VERCHAR
 
         EXTERNAL  CRLF, INDEX1, JUNIT, MULTUNIT, PROMPTFFILE, 
-     &            SETENVVAR, VERHCAR, PROMPTSET
+     &            SETENVVAR, VERHCAR, PROMPTSET, PROMPTMFILE
 
 C...........  Local parameters
         CHARACTER(50), PARAMETER :: 
@@ -159,6 +161,124 @@ C.............  Open by logical name or physical name
             CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',MONAME,I ) 
 
         END IF  ! End of gridded output
+
+C.........  Open source apportionment output files
+        IF( SRCGRPFLAG ) THEN
+
+C.............  Override gridded file settings
+            NCOLS3D = 1
+            NROWS3D = NSGOUTPUT
+            NLAYS3D = 1
+            GDTYP3D = GDTYP
+            VGTYP3D = IMISS3
+            VGTOP3D = BADVAL3
+            
+            FDESC3D = ' '   ! array
+
+C.............  Build list of variables for stack groups file
+            J = 1
+            VNAME3D( J ) = 'ISTACK'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Stack group number'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LATITUDE'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Latitude'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LONGITUDE'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees'
+            VDESC3D( J ) = 'Longitude'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKDM'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm'
+            VDESC3D( J ) = 'Inside stack diameter'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKHT'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm'
+            VDESC3D( J ) = 'Stack height above ground surface'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKTK'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'degrees K'
+            VDESC3D( J ) = 'Stack exit temperature'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKVE'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm/s'
+            VDESC3D( J ) = 'Stack exit velocity'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKFLW'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = 'm**3/s'
+            VDESC3D( J ) = 'Stack exit flow rate'
+
+            J = J + 1
+            VNAME3D( J ) = 'STKCNT'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Number of stacks in group'
+
+            J = J + 1
+            VNAME3D( J ) = 'ROW'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Grid row number'
+
+            J = J + 1
+            VNAME3D( J ) = 'COL'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = 'Grid column number'
+
+            J = J + 1
+            VNAME3D( J ) = 'XLOCA'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = ''
+            VDESC3D( J ) = 'Projection x coordinate'
+
+            J = J + 1
+            VNAME3D( J ) = 'YLOCA'
+            VTYPE3D( J ) = M3REAL
+            UNITS3D( J ) = ''
+            VDESC3D( J ) = 'Projection y coordinate'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LMAJOR'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = '1= MAJOR SOURCE in domain, 0=otherwise'
+            
+            J = J + 1
+            VNAME3D( J ) = 'LPING'
+            VTYPE3D( J ) = M3INT
+            UNITS3D( J ) = 'none'
+            VDESC3D( J ) = '1=PING SOURCE in domain, 0=otherwise'
+
+            NVARS3D = J
+            
+            SRCGRPNAME = PROMPTMFILE(
+     &                     'Enter name for OUTPUT STACK GROUPS file',
+     &                     FSUNKN3, 'STACK_GROUPS_OUT', PROGNAME )
+
+C.............  Set up variables for emissions output file
+            CALL SETUP_VARIABLES( NMSPC, EMNAM )
+            
+            SGINLNNAME = PROMPTSET(
+     &                     'Enter name for INLINE EMISSIONS OUTPUT file',
+     &                     FSUNKN3, SGINLNNAME, PROGNAME )
+        END IF
 
 C.........  Open report file(s)
 

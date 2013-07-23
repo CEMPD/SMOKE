@@ -45,8 +45,8 @@ C.........  This module contains the major data structure and control flags
      &          MFLAG_BD, LREPANY,                          ! by-day hourly emis flags
      &          LREPSTA, LREPCNY, LREPSCC, LREPSRC, LGRDOUT,! report flags, gridded output
      &          CDEV,                              ! costcy
-     &          MGNAME, MTNAME, MONAME,    ! input files
-     &          NMSRC, MNGMAT,                     ! no. of srcs, no. gridding matrix entries
+     &          MGNAME, MTNAME, MONAME,            ! input files
+     &          NMSRC, MNGMAT, MGMATX,             ! no. of srcs, no. gridding matrix entries
      &          NMSPC,                             ! no. species
      &          EMNAM,                             ! species names
      &          TSVDESC,                           ! var names
@@ -58,7 +58,10 @@ C.........  This module contains the major data structure and control flags
      &          MEBCNY, MEBSTA, MEBSUM,            ! cnty/state/src total spec emissions
      &          MEBSCC, MEBSTC,                    ! scc total spec emissions
      &          EANAM, NIPPA,                      ! pol/act names
-     &          CFDEV                              ! control factor file
+     &          CFDEV,                             ! control factor file
+     &          SRCGRPFLAG, SGDEV, IFIPGRP,        ! source groups
+     &          EMGGRD, EMGGRDSPC, EMGGRDSPCT,     ! emissions by source group
+     &          SGINLNNAME, NSGOUTPUT              ! source group emissions output file
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MOPTIMIZE,
@@ -134,14 +137,12 @@ C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: MAXTEMP( : )     ! max temp array for RPP
         REAL, ALLOCATABLE :: MINTEMP( : )     ! min temp array for RPP
         REAL, ALLOCATABLE :: EMGRD( :,: )     ! emissions for each grid cell and species
-        REAL, ALLOCATABLE :: TEMGRD( :,:,:)    ! emissions for each grid cell, species, and time steps
+        REAL, ALLOCATABLE :: TEMGRD( :,:,:)   ! emissions for each grid cell, species, and time steps
         REAL, ALLOCATABLE :: TMPEMGRD( :,: )  ! tmp emissions for each grid cell and species
+        REAL, ALLOCATABLE :: TMPEMGGRD( : )   ! tmp emissions for output source groups
 
 C...........   Local temporary array for input and output variable names
         CHARACTER(IOVLEN3), ALLOCATABLE :: VARNAMES( : )
-
-C...........   Local array for gridding matrix
-        REAL, ALLOCATABLE :: MGMATX( : )
 
 C...........   Logical names and unit numbers (not in MODMERGE)
         INTEGER         LDEV
@@ -182,6 +183,7 @@ C...........   Other local variables
         INTEGER          USTART, UEND, OSTART, OEND
         INTEGER         MXWARN      !  maximum number of warnings
         INTEGER      :: NWARN = 0   !  current number of warnings
+        INTEGER          GIDX          ! index to source group
 
         REAL             F1, F2, FG0   ! tmp conversion
         REAL             GFRAC         ! grid cell fraction
@@ -198,6 +200,7 @@ C...........   Other local variables
         REAL             PDIFF, TDIFF  ! temperature differences
         REAL             EFVAL1, EFVAL2, EFVALA, EFVALB, EFVAL   ! emission factor values
         REAL             EMVAL         ! emissions value
+        REAL             EMVALSPC      ! speciated emissions value
         REAL             CFFAC         ! control factor
 
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
@@ -263,7 +266,7 @@ C........ when not optimize memory
             ALLOCATE( EMGRD( NGRID, NMSPC ), STAT=IOS )     ! gridded emissions
             CALL CHECKMEM( IOS, 'EMGRD', PROGNAME )
         ELSE
- 	    ALLOCATE( TEMGRD( NGRID, NMSPC, NSTEPS ), STAT=IOS )     ! gridded emissions
+            ALLOCATE( TEMGRD( NGRID, NMSPC, NSTEPS ), STAT=IOS )     ! gridded emissions
             CALL CHECKMEM( IOS, 'TEMGRD', PROGNAME )
             TEMGRD = 0.  ! array
         END IF
@@ -339,13 +342,23 @@ C.........  Build emission process mapping
 C.........  Build indicies for pollutant/species groups
         CALL BLDMRGIDX
 
-C.........  Open NetCDF output files, open ASCII report files, and write headers
-        CALL OPENMRGOUT
-
 C.........  Intialize state/county summed emissions to zero
         CALL INITSTCY
 
-C.........  Intialize state/county summed emissions to zero
+C.........  Read source group cross-reference file and assign sources to groups
+        IF ( SRCGRPFLAG ) THEN
+            CALL RDSRCGRPS( SGDEV, .TRUE., .NOT. MOPTIMIZE )
+
+            IF ( MOPTIMIZE ) THEN
+                ALLOCATE( TMPEMGGRD( NSGOUTPUT ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'TMPEMGGRD', PROGNAME )
+            END IF
+        END IF
+
+C.........  Open NetCDF output files, open ASCII report files, and write headers
+        CALL OPENMRGOUT
+
+C.........  Read control factor data
         IF ( CFFLAG ) CALL RDCFPRO( CFDEV, REFCFFLAG )
 
 C.........  Allocate memory for temporary list of species and pollutant names
@@ -415,7 +428,12 @@ C.............  Initializations before main time loop
 C.............  Loop through output time steps
             DO T = 1, NSTEPS
 
-                IF ( MOPTIMIZE ) EMGRD = 0.  ! array
+                IF ( MOPTIMIZE ) THEN
+                    EMGRD = 0.  ! array
+                    IF ( SRCGRPFLAG ) THEN
+                        EMGGRDSPC = 0.  ! array
+                    END IF
+                END IF
                 TMPEMGRD = 0.  ! array
 
 C.................  Determine weekday index (Monday is 1)
@@ -964,18 +982,31 @@ C.............................  Calculate gridded, hourly emissions
                             IF( RPVFLAG .OR. RPPFLAG ) THEN
                                 EMVAL = VPOPVAL * EFVAL * GFRAC
                             END IF
+                            
+                            EMVALSPC = EMVAL * MSMATX_L( SRC,V ) * F1
 
 C.............................  If use memory optimize
                             IF ( MOPTIMIZE ) THEN
                                 EMGRD( CELL,SPINDEX( V,1 ) ) = 
-     &                          EMGRD( CELL,SPINDEX( V,1 ) ) + 
-     &                          EMVAL * MSMATX_L( SRC,V ) * F1
+     &                            EMGRD( CELL,SPINDEX( V,1 ) ) + EMVALSPC
+     
+                                IF ( SRCGRPFLAG ) THEN
+                                    GIDX = IFIPGRP( MICNY( SRC ) )
+                                    EMGGRDSPC( CELL,GIDX,SPINDEX( V,1 ) ) =
+     &                                EMGGRDSPC( CELL,GIDX,SPINDEX( V,1 ) ) + EMVALSPC
+                                END IF
 
 C.............................  If not use memory optimize
                             ELSE                      
                                 TEMGRD( CELL,SPINDEX( V,1 ),T ) =
-     &                          TEMGRD( CELL,SPINDEX( V,1 ),T ) +
-     &                          EMVAL * MSMATX_L( SRC,V ) * F1
+     &                            TEMGRD( CELL,SPINDEX( V,1 ),T ) + EMVALSPC
+     
+                                IF ( SRCGRPFLAG ) THEN
+                                    GIDX = IFIPGRP( MICNY( SRC ) )
+                                    EMGGRDSPCT( CELL,GIDX,SPINDEX( V,1 ),T ) =
+     &                                EMGGRDSPCT( CELL,GIDX,SPINDEX( V,1 ),T ) + EMVALSPC
+                                END IF
+
                             END IF
 
 C.............................  Add this cell's emissions to source totals
@@ -1028,6 +1059,23 @@ C.........................  sum old county data with new county
                                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
                         END IF
+                        
+                        IF( SRCGRPFLAG ) THEN
+                            EMGGRD( :,: ) = EMGGRDSPC( :,:,V )
+                            IF( I > 1 ) THEN
+                                TMPEMGGRD = 0.  ! array
+                                IF( .NOT. READ3( SGINLNNAME, SBUF, 1, 
+     &                                           JDATE, JTIME, TMPEMGGRD ) ) THEN
+                                    MESG = 'Could not read "' // SBUF // '" ' //
+     &                                     'from file "' // SGINLNNAME // '"'
+                                    CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                                END IF
+                                
+                                CALL WRSRCGRPS( SBUF, JDATE, JTIME, .TRUE., TMPEMGGRD )
+                            ELSE
+                                CALL WRSRCGRPS( SBUF, JDATE, JTIME, .FALSE., 0 )
+                            END IF
+                        END IF
                     END DO
                 END IF   ! end memory optimize
            
@@ -1065,6 +1113,11 @@ C.....................  Write out gridded data
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                         END IF
                     END IF
+                    
+                    IF( SRCGRPFLAG ) THEN
+                        EMGGRD( :,: ) = EMGGRDSPCT( :,:,V,T )
+                        CALL WRSRCGRPS( SBUF, JDATE, JTIME, .FALSE., 0 )
+                    END IF
 
                 END DO
 
@@ -1085,7 +1138,7 @@ C.........  Close output file
         DEALLOCATE( DAYBEGT, DAYENDT, LDAYSAV )
 
         IF ( MOPTIMIZE ) THEN
-            DEALLOCATE( EMGRD, TMPEMGRD, VARNAMES, MGMATX )
+            DEALLOCATE( EMGRD, TMPEMGRD, VARNAMES, MGMATX, TMPEMGGRD )
         ELSE
             DEALLOCATE( TEMGRD, TMPEMGRD, VARNAMES, MGMATX )
         END IF
