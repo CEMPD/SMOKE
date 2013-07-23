@@ -42,19 +42,20 @@ C***************************************************************************
 
 C...........   INCLUDES
 
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
 
 C.........  SUBROUTINE ARGUMENTS
-        INTEGER,      INTENT    (IN) :: NSRC          !  actual source count
-        INTEGER,      INTENT    (IN) :: CTYPE         !  coord sys type
-        CHARACTER(*), INTENT    (IN) :: GDNAM         !  grid name
-        REAL(8),      INTENT    (IN) :: P_ALP         !  first, second, third map
-        REAL(8),      INTENT    (IN) :: P_BET         !  projection descriptive
-        REAL(8),      INTENT    (IN) :: P_GAM         !  parameters
-        REAL(8),      INTENT    (IN) :: XCENT         !  lon for coord-system X=0
-        REAL(8),      INTENT    (IN) :: YCENT         !  lat for coord-system Y=0
-        REAL,         INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input grid coord)
-        REAL,         INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input grid coord)
+        INTEGER,            INTENT (IN) :: NSRC          !  actual source count
+        INTEGER,            INTENT (IN) :: CTYPE         !  coord sys type
+        CHARACTER(IOVLEN3), INTENT (IN) :: GDNAM         !  grid name
+        REAL(8),            INTENT (IN) :: P_ALP         !  first, second, third map
+        REAL(8),            INTENT (IN) :: P_BET         !  projection descriptive
+        REAL(8),            INTENT (IN) :: P_GAM         !  parameters
+        REAL(8),            INTENT (IN) :: XCENT         !  lon for coord-system X=0
+        REAL(8),            INTENT (IN) :: YCENT         !  lat for coord-system Y=0
+        REAL,               INTENT(IN OUT) :: XVALS( NSRC ) !  x location (input grid coord)
+        REAL,               INTENT(IN OUT) :: YVALS( NSRC ) !  y location (input grid coord)
 
 C...........   EXTERNAL FUNCTIONS
         LOGICAL       LAMBERT
@@ -72,12 +73,17 @@ C...........   Other local variables
 
         LOGICAL    :: EFLAG =.FALSE.   ! true: error detected
 
-        CHARACTER(256) MESG                !  message buffer
+        CHARACTER(IOVLEN3) TMPGDNAM        ! temporary grid name
+        CHARACTER(256)     MESG            ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'CONVRTLL' ! program name
 
 C***********************************************************************
 C   begin body of subroutine CONVRTLL
+
+C.........  Copy input grid name to temporary variable since I/O API
+C           routines may change it to the coordinate system name
+        TMPGDNAM = GDNAM
 
         IF ( CTYPE .EQ. LATGRD3 ) THEN
             RETURN
@@ -101,7 +107,7 @@ C   begin body of subroutine CONVRTLL
 
         ELSE IF ( CTYPE .EQ. LAMGRD3 ) THEN
 
-            IF( .NOT. LAMBERT( GDNAM, P_ALP, P_BET, P_GAM, 
+            IF( .NOT. LAMBERT( TMPGDNAM, P_ALP, P_BET, P_GAM, 
      &                         XCENT, YCENT )) THEN
                 MESG = 'ERROR: Could not initialize Lambert grid.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -135,7 +141,7 @@ C   begin body of subroutine CONVRTLL
 
         ELSE IF ( CTYPE .EQ. POLGRD3 ) THEN
 
-            IF( .NOT. POLSTE( GDNAM, P_ALP, P_BET, P_GAM, 
+            IF( .NOT. POLSTE( TMPGDNAM, P_ALP, P_BET, P_GAM, 
      &                        XCENT, YCENT ) ) THEN
                 MESG = 'ERROR: Could not initialize Polar ' //
      &                 'Stereographic grid.'
