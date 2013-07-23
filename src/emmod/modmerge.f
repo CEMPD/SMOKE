@@ -470,6 +470,8 @@
         INTEGER, ALLOCATABLE, PUBLIC :: IGRPNUM( : )  ! list of source group numbers, dim: nsrcgrp
         INTEGER, ALLOCATABLE, PUBLIC :: IFIPGRP( : )  ! source group idx for each unique inv. FIPS
         REAL,    ALLOCATABLE, PUBLIC :: EMGGRD( :,: ) ! emissions by grid cell and source group
+        REAL,    ALLOCATABLE, PUBLIC :: EMGGRDSPC( :,:,: )    ! EMGGRD + species
+        REAL,    ALLOCATABLE, PUBLIC :: EMGGRDSPCT( :,:,:,: ) ! EMGGRDSPC + time step
         INTEGER,              PUBLIC :: NSGOUTPUT     ! number of output records
         INTEGER, ALLOCATABLE, PUBLIC :: GRPCNT( :,: ) ! num srcs matching grid cell and group
         CHARACTER(16),        PUBLIC :: SRCGRPNAME    ! source group output file name (stack groups)
