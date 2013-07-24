@@ -377,8 +377,8 @@ C.............  Search for time zone for current county
 C.............  If time zone name is not found, thenoutput error
             IF( I .LE. 0 ) THEN
                 EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Could not find time zone '//
-     &               'for county :', FIP, ' from COSTCY file'
+                MESG = 'ERROR: Could not find time zone for county: '//
+     &                 CFIP // ' from COSTCY file'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
