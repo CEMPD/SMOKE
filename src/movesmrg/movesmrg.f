@@ -949,19 +949,22 @@ C.............................  Calculate interpolated emission factor if proces
                                 END IF
                                 
                                 IF( RPPFLAG ) THEN
-                                    EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UUIDX, PROCIDX, POLIDX )
-                                    EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, PROCIDX, POLIDX )
-                                    EFVALA = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
-                                    
-                                    EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OUIDX, PROCIDX, POLIDX )
-                                    EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OOIDX, PROCIDX, POLIDX )
-                                    EFVALB = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
-
-                                    EFVAL = MINFAC * (EFVALB - EFVALA) + EFVALA
-                                    
                                     IF( NO_INTRPLT ) THEN
                                         EFVAL = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, PROCIDX, POLIDX )
-                                    ENDIF
+
+                                    ELSE
+
+                                        EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UUIDX, PROCIDX, POLIDX )
+                                        EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, PROCIDX, POLIDX )
+                                        EFVALA = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
+                                        
+                                        EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OUIDX, PROCIDX, POLIDX )
+                                        EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OOIDX, PROCIDX, POLIDX )
+                                        EFVALB = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
+    
+                                        EFVAL = MINFAC * (EFVALB - EFVALA) + EFVALA
+                                    
+                                    END IF
                                 END IF
 
                                 IF( CFFLAG ) EFVAL = EFVAL*CFFAC 
