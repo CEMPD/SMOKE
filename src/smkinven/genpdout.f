@@ -258,19 +258,18 @@ C           source index that changes as needed for each time step)
 
 C.........  Make sure that that actual number of sources over all sources does
 C           not exceed the maximum number of sources over all hours
-        IF( NPDSRC .GT. MXPDSRC .AND. .NOT. FIREFLAG ) THEN
+C        IF( NPDSRC .GT. MXPDSRC .AND. .NOT. FIREFLAG ) THEN
+C            WRITE( MESG,94010 ) 'INTERNAL ERROR: Actual number of ' //
+C     &             TYPNAM // 'sources, NPDSRC=', NPDSRC, CRLF() // 
+C     &             BLANK10 // 'dimensioned number, MXPDSRC =', MXPDSRC,
+C     &             '. Fix by ensuring ALL period-specific' // CRLF() //
+C     &             BLANK10 // 'sources in file for ANY day or hour ' //
+C     &             'have at least one entry ' // CRLF() // BLANK10 //
+C     &             'for the SAME day or hour.'
+C            CALL M3MSG2( MESG )
+C            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
-            WRITE( MESG,94010 ) 'INTERNAL ERROR: Actual number of ' //
-     &             TYPNAM // 'sources, NPDSRC=', NPDSRC, CRLF() // 
-     &             BLANK10 // 'dimensioned number, MXPDSRC =', MXPDSRC,
-     &             '. Fix by ensuring ALL period-specific' // CRLF() //
-     &             BLANK10 // 'sources in file for ANY day or hour ' //
-     &             'have at least one entry ' // CRLF() // BLANK10 //
-     &             'for the SAME day or hour.'
-            CALL M3MSG2( MESG )
-            CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-
-        ELSE IF( NPDSRC .EQ. 0 ) THEN
+        IF( NPDSRC .EQ. 0 ) THEN
 
             MESG = 'No period-specific sources found in input file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
