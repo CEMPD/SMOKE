@@ -82,6 +82,7 @@ C...........   Local allocatable arrays
         CHARACTER(100), ALLOCATABLE :: SEGMENT( : )    ! parsed input line
         CHARACTER(30),  ALLOCATABLE :: POLNAMS( : )    ! pollutant names
         LOGICAL,        ALLOCATABLE :: ISHAP( :,: )    ! true: process/pollutants is HAP
+        LOGICAL,        ALLOCATABLE :: LINVSCC( : )    ! check inv SCC availability in lookup table
 
 C...........   Other local variables
         INTEGER     I, J, L, LJ, L1, L2, N, P, V  ! counters and indexes
@@ -105,7 +106,8 @@ C...........   Other local variables
         LOGICAL     FOUND       ! true: header record was found
         LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
         LOGICAL     UNKNOWN     ! true: emission process is unknown
-        
+        LOGICAL  :: EFLAG = .FALSE.
+
         CHARACTER(PLSLEN3)  SVBUF     ! tmp speciation name buffer
         CHARACTER(IOVLEN3)  CPOL      ! tmp pollutant buffer
         CHARACTER(IOVLEN3)  CPROC     ! tmp process/pollutant buffer
@@ -393,7 +395,10 @@ C.........  Allocate memory to store temperature values
         END IF
         ALLOCATE( EMTEMPS( NEMTEMPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMTEMPS', PROGNAME )
+        ALLOCATE( LINVSCC( NINVSCC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LINVSCC', PROGNAME )
         EMTEMPS = 0.  ! array
+        LINVSCC = .FALSE.
 
 C.........  Read and store emission factors
         IREC = 0
@@ -451,9 +456,8 @@ C.............  Set SCC index for current line
                     SCCIDX = 1
                 END IF
                 
+C.................  Check if SCC is in the inventory
                 IF( TSCC .NE. INVSCC( SCCIDX ) ) THEN
-
-C.....................  Check if SCC is in the inventory
                     J = FINDC( TSCC, NINVSCC, INVSCC )
                     IF( J .LE. 0 ) THEN
                         SKIPSCC = .TRUE.
@@ -467,6 +471,11 @@ C.....................  Check if SCC is in the inventory
      &                    'factors file at line', IREC
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
+
+                ELSE    ! found inv SCC in the lookup table
+                    J = FINDC( TSCC, NINVSCC, INVSCC )
+                    LINVSCC( J ) = .TRUE.
+
                 END IF
                 
                 PSCC = TSCC
@@ -542,6 +551,17 @@ C.............  Store NONHAPTOG emission factor
         END DO
 
 300     CONTINUE
+
+C.........  Error message when inventory SCC is missing in the lookup table
+        DO I = 1, NINVSCC
+            IF( .NOT. LINVSCC( I ) ) THEN
+                MESG = 'ERROR: Following SCC "' // INVSCC( I ) //
+     &              '" is missing in this emission factors file'
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+            END IF
+        END DO
+        IF( EFLAG ) CALL M3EXIT( PROGNAME, 0, 0, '', 2 )
 
         CLOSE( TDEV )
         
