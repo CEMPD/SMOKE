@@ -153,6 +153,7 @@ C.........  Allocatable, temporary per-layer variables from 1:EMLAYS
         REAL   , ALLOCATABLE :: WSPD ( : )    !  wind speed (m/s)
         REAL   , ALLOCATABLE :: DTHDZ( : )    !  gradient of THETV
         REAL   , ALLOCATABLE :: TFRAC( : )    !  Temporary LFRAC
+        REAL   , ALLOCATABLE :: PFRAC( : )    !  Previous LFRAC
 
 C.........  Allocatable, temporary per-layer variables from 0:EMLAYS
         REAL   , ALLOCATABLE :: PRESF( : )    !  pressure at full-levels
@@ -248,14 +249,15 @@ C...........   Other local variables
         REAL             YBEG, YEND, YL  ! tmp y-coords
         REAL             FAC       !  tmp factor for renormalizing
         REAL             PSFC      !  surface pressure (Pa)
+        REAL             PBL       !  PBL height (m)
         REAL             SURFACE   !  tmp weight at surface
         REAL             TDIFF     !  tmp layer frac diff for renormalizing
         REAL             TSTK      !  temperature at top of stack (K)
         REAL             TSUM      !  tmp layer frac sum for renormalizing
         REAL             WSTK      !  wind speed  at top of stack (m/s)
         REAL             ZZ0, ZZ1, ZF0, ZF1
-        REAL             ZBOT      !  plume bottom elevation (m)
-        REAL             ZTOP      !  plume top    elevation (m)
+        REAL             ZBOT,TBOT !  plume bottom elevation (m)
+        REAL             ZTOP,TTOP !  plume top    elevation (m)
         REAL             ZPLM      !  plume centerline height above stack (m)
         REAL             USTMP     !  tmp storage for ustar (m/s)
         REAL             TMPBFLX   !  tmp Briggs bouyancy (m^4/s^4)
@@ -893,6 +895,8 @@ C           hour-specific source if it is explicit
             CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
             ALLOCATE( TFRAC( EMLAYS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TFRAC', PROGNAME )
+            LFRAC = 0.0
+            TFRAC = 0.0
 
 C.........  If computing plume rise...
         ELSE
@@ -900,6 +904,7 @@ C.........  If computing plume rise...
 C.............  Layer fractions for all sources
             ALLOCATE( LFRAC( NSRC,EMLAYS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'LFRAC', PROGNAME )
+            LFRAC = 0.0
 
 C.............  Allocate ungridding arrays
             ALLOCATE( ND( 4,NSRC ), STAT=IOS )
@@ -918,6 +923,10 @@ C.............  Allocate per-layer arrays from 1:EMLAYS
             CALL CHECKMEM( IOS, 'DTHDZ', PROGNAME )
             ALLOCATE( TFRAC( EMLAYS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TFRAC', PROGNAME )
+            ALLOCATE( PFRAC( EMLAYS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'PFRAC', PROGNAME )
+            TFRAC = 0.0
+            PFRAC = 0.0
 
 C.............  Allocate per-layer arrays from 0:EMLAYS
             ALLOCATE( PRESF( 0:EMLAYS ), STAT=IOS )
@@ -1170,7 +1179,7 @@ C                   of the day
      &                        JDATE, JTIME, DAY_INDEX ) ) THEN
                        MESG = 'Could not read "INDXD" from file "' //
      &                     TRIM( DAYNAME ) // '".'
-                       CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )        
+                       CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
 
                 END IF
@@ -1503,21 +1512,18 @@ C                       hydrostatic assumption) from bottom to top.
                 END IF  ! if computing plume rise
 
 C.................  Check plume rise for nonsense values
+                CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                 IF( ZTOP .LT. STKHT( S ) .AND. K .LE. 0 ) THEN
-
-                    CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
-
                     WRITE( MESG,94010 ) 
      &                     'WARNING: Top of plume found to be ' //
      &                     'less than top of stack for:'//
      &                     CRLF() // BLANK10 // BUFFER( 1:L2 )
-
                     CALL M3MESG( MESG )
-
                 END IF
 
 C.................  Allocate plume to layers
                 IF( FIREFLAG ) THEN
+
                     IF( HOURFIRE ) THEN
 
                       MY_INDEX = -1
@@ -1555,31 +1561,73 @@ C.................  Allocate plume to layers
      &                                 LFULLHT, TEMPS, LHALFHT, TMPACRE,
      &                                 SFRACT, LTOP, TFRAC )
 
-                ELSE
-                    CALL POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, 
-     &                            LFULLHT, TEMPS, LHALFHT, LTOP, TFRAC )
-                END IF
+                ELSE IF( LFLAG .AND. K .GT. 0)  THEN
 
-C.................  If hourly layer-1 fraction is present, reset this and re-
-C                   normalize
-C.................  Must account for the case where LAY1F value is 
-C                   missing
-                IF( LFLAG .AND. K .GT. 0 ) THEN
-                    IF( LAY1F( K ) .GT. 0. .AND.
-     &                  TFRAC( 1 ) .LT. 1.       ) THEN
-                        TSUM = SUM( TFRAC( 2:EMLAYS ) )
-                        TDIFF = TSUM + TFRAC( 1 ) - LAY1F( K )
-                        FAC = TDIFF / TSUM
+C.....................  Calculate layer fraction
+C                       First, layer fractions for LAY1F under PBL
+C                       Second, the rest of (1-LAY1F) gets distributed to above PBL
+                    IF( LAY1F( K ) .GT. 0. ) THEN
+                        TFRAC = 0.0
+                        PFRAC = 0.0
+                        PBL = HMIX( S )
+                        IF( PBL  .LE. 100.0 ) PBL = 100.0    ! reset PBL if < 100.
+                        IF( ZTOP .LE. ZBOT ) THEN           ! Error: ZTOP < ZBOT 
+                            WRITE( MESG,94010 ) 
+     &                         'ERROR: PTOP can not be lower than PBOT'//
+     &                          CRLF() // BLANK10 // BUFFER( 1:L2 )
+                            CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                        END IF
 
-                        TFRAC( 1 ) = LAY1F( K )
-                        TFRAC( 2:EMLAYS ) = TFRAC( 2:EMLAYS ) * FAC
+C.........................  Calculate layer fraction below PBL height
+C                           Renormalize layer fractions based on LAY1F
+                        TBOT = 0.0                ! Zbot is groud
+                        TTOP = PBL                ! Ztop is PBL height
+
+                        CALL POSTPLM( EMLAYS, S, TBOT, TTOP, PRESF,
+     &                      LFULLHT, TEMPS, LHALFHT, LBOT, LTOP, PFRAC )
+
+                        PFRAC( LBOT:LTOP ) = PFRAC( LBOT:LTOP ) * LAY1F( K )
+                        TFRAC = TFRAC + PFRAC
+
+C.........................  Calculate layer fraction above PBL height
+C                           Renormalize layer fractions based on 1-LAY1F
+                        IF( ZBOT < PBL .AND. ZTOP < PBL ) THEN
+                            TBOT = ZBOT
+                            TTOP = PBL
+                        ELSE IF( ZBOT < PBL .AND. ZTOP > PBL ) THEN 
+                            TBOT = ZBOT
+                            TTOP = ZTOP
+                        ELSE IF( ZBOT > PBL .AND. ZTOP > PBL ) THEN
+                            TBOT = PBL
+                            TTOP = ZTOP
+                        ELSE
+                            TBOT = ZBOT 
+                            TTOP = ZTOP
+                        END IF
+
+                        CALL POSTPLM( EMLAYS, S, TBOT, TTOP, PRESF, 
+     &                      LFULLHT, TEMPS, LHALFHT, LBOT, LTOP, PFRAC )
+
+                        TDIFF = 1.0 - LAY1F( K )
+                        PFRAC( LBOT:LTOP ) = PFRAC( LBOT:LTOP ) * TDIFF
+                        TFRAC = TFRAC + PFRAC
+                    ELSE
+                        MESG = 'ERROR: LAY1F value can not be zero '//
+     &                       CRLF() // BLANK10 // BUFFER( 1:L2 )
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+
                     END IF
+
+                ELSE
+                    CALL POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF,
+     &                  LFULLHT, TEMPS, LHALFHT, LBOT, LTOP, TFRAC )
+
                 END IF
 
 C.................  Check if layer fractions are negative and reset
 C                   to output in the first layer if they are.
                 X = MINVAL( TFRAC( 1:EMLAYS ) )
-                IF( X .LT. 0 ) THEN
+                IF( X .LT. 0.0 ) THEN
 
                     CALL FMTCSRC( CSOURC( S ), NCHARS, BUFFER, L2 )
                     WRITE( MESG,94010 ) 

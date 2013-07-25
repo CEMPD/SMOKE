@@ -1,6 +1,6 @@
 
         SUBROUTINE POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF, ZZF, TA, ZH, 
-     &                      LTOP, LFRAC )
+     &                      LBOT, LTOP, LFRAC )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -67,14 +67,13 @@ C...........   SUBROUTINE ARGUMENTS
         REAL   , INTENT (IN) :: ZZF  ( 0:EMLAYS )! elevation at full-levels (m)
         REAL   , INTENT (IN) :: TA   ( 1:EMLAYS )! temperature at half-levels (K)
         REAL   , INTENT (IN) :: ZH   ( 1:EMLAYS )! layer center  height (m)
+        INTEGER, INTENT(OUT) :: LBOT             ! plume bottom layer
         INTEGER, INTENT(OUT) :: LTOP             ! plume top layer
         REAL   , INTENT(OUT) :: LFRAC( EMLAYS )  ! layer fractions for source
 
 C...........   Local variables
 
         INTEGER       L
-
-        INTEGER       LBOT 
 
         DOUBLE PRECISION    DDP
         DOUBLE PRECISION    PDIFF
