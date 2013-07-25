@@ -456,10 +456,20 @@ C.............  Set SCC index for current line
                     SCCIDX = 1
                 END IF
                 
-C.................  Check if SCC is in the inventory
-                IF( TSCC .NE. INVSCC( SCCIDX ) ) THEN
+C.................  Make sure the SCC at this line is what we expect
+                IF( TSCC .EQ. INVSCC( SCCIDX ) ) THEN
+                    LINVSCC( SCCIDX ) = .TRUE.
+
+                ELSE
+C.....................  If the SCC is in the inventory, it means that the 
+C                       emissions factors are out of order and that's a
+C                       problem; otherwise, for SCCs in the emission 
+C                       factors file that aren't in the inventory, we
+C                       can skip this line
                     J = FINDC( TSCC, NINVSCC, INVSCC )
                     IF( J .LE. 0 ) THEN
+                    
+C.........................  Emission factor SCC is not in the inventory
                         SKIPSCC = .TRUE.
                         SCCIDX = SCCIDX - 1
                         IF( SCCIDX .LT. 1 ) THEN
@@ -471,10 +481,6 @@ C.................  Check if SCC is in the inventory
      &                    'factors file at line', IREC
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
-
-                ELSE    ! found inv SCC in the lookup table
-                    J = FINDC( TSCC, NINVSCC, INVSCC )
-                    LINVSCC( J ) = .TRUE.
 
                 END IF
                 
@@ -555,10 +561,9 @@ C.............  Store NONHAPTOG emission factor
 C.........  Error message when inventory SCC is missing in the lookup table
         DO I = 1, NINVSCC
             IF( .NOT. LINVSCC( I ) ) THEN
-                MESG = 'ERROR: Following SCC "' // INVSCC( I ) //
+                MESG = 'WARNING: Following SCC "' // INVSCC( I ) //
      &              '" is missing in this emission factors file'
                 CALL M3MESG( MESG )
-                EFLAG = .TRUE.
             END IF
         END DO
         IF( EFLAG ) CALL M3EXIT( PROGNAME, 0, 0, '', 2 )
