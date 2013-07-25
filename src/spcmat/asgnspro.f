@@ -66,7 +66,7 @@ C...........   This module contains the speciation profile tables
         USE MODSPRO, ONLY: MXSPEC, CNVRT01, CNVRT02, CNVRT03, CNVRT04,
      &                     NCNV1, NCNV2, NCNV3, NCNV4, NSPROF, SPROFN,
      &                     CNVFC00, CNVFC01, CNVFC02, CNVFC03, CNVFC04,
-     &                     IDXSPRO, IDXSSPEC, NSPECIES,
+     &                     IDXSPRO, IDXSSPEC, NSPECIES, CNVFLAG,
      &                     MASSFACT, MOLEFACT, CMBNP, CMBSPCD, CMBWGHT, 
      &                     CMBMAX
 
@@ -875,6 +875,16 @@ C                       there is no need for error checking
                     ELSE
                         CNVFAC = CNVFC00( V )
 
+                        CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
+                        IF( CNVFAC == 1.0 .AND. CNVFLAG( V ) ) THEN
+                            MESG='WARNING: Default pollutant conversion'//
+     &                          ' factor (=1.0) was applied to source:' //
+     &                          CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                          ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+                            IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
+                        END IF
+
                     END IF
 
 C.................  Screen for pollutant-to-pollutant conversion factors by checking
@@ -921,6 +931,15 @@ C.....................  CNVFC00( V ) will equal 1.0 if it has not been set, so
 C                       there is no need for error checking
                     ELSE
                         CNVFAC = CNVFC00( V )
+                        CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
+                        IF( CNVFAC == 1.0 .AND. CNVFLAG( V ) ) THEN
+                            MESG='WARNING: Default pollutant conversion'//
+     &                          ' factor (=1.0) was applied to source:' //
+     &                          CRLF() // BLANK10 // BUFFER( 1:L2 ) //
+     &                          ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
+                            IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
+                        END IF
 
                     END IF
 

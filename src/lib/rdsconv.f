@@ -47,7 +47,7 @@ C.........  This module contains the lists of unique source characteristics
 
 C...........   This module contains the speciation profile tables
         USE MODSPRO, ONLY: CNVFC00, CNVFC01, CNVFC02, CNVFC03, CNVFC04,
-     &                     CNVRT01, CNVRT02, CNVRT03, CNVRT04,
+     &                     CNVRT01, CNVRT02, CNVRT03, CNVRT04, CNVFLAG,
      &                     NCNV1, NCNV2, NCNV3, NCNV4
 
 C.........  This module contains the information about the source category
@@ -438,6 +438,10 @@ C.........  Sort records from pollutant conversion file
         CALL SORTIC( NCONV, INDX, PCVA )
          
 C.........  Allocate memory for pollutant conversion and initialize to 1.0
+        ALLOCATE( CNVFLAG( NNAM ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CNVFLAG', PROGNAME )
+        CNVFLAG = .FALSE. 
+
         ALLOCATE( CNVFC00( NNAM ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNVFC00', PROGNAME )
         CNVFC00 = 1.0
@@ -494,6 +498,9 @@ C.........  Store pollutant conversion factors in sorted tables
             V    = ISPA( J )
             PCV  = PCVA( J )
             FAC  = FACA( J ) 
+
+C.............  Check a list of targeted pollutants 
+            CNVFLAG( V ) = .TRUE.
 
 C.............  For Profile-based format
             IF( T .EQ. 4 ) THEN
