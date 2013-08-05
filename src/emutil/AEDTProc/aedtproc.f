@@ -1,10 +1,10 @@
       PROGRAM AEDTPROC
 
 C***********************************************************************
-C  program body starts at line  
+C  program body starts at line
 C
 C  DESCRIPTION:
-C       This program processes hourly high resolution AEDT data into 
+C       This program processes hourly high resolution AEDT data into
 C       CMAQ-ready hourly emissions for aircraft assessment studies.
 C
 C  PRECONDITIONS REQUIRED:
@@ -14,7 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C       Created 11/2006 by B.H. Baek
-C                  
+C
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -23,16 +23,16 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***********************************************************************
 C.........  MODULES
@@ -100,6 +100,7 @@ C.........  Allocatable arrays
         REAL,          ALLOCATABLE :: PRSFC  ( : )      ! surface pressure (pscal)
         REAL,          ALLOCATABLE :: SFCHGT( : )       ! surface height (m)
         REAL,          ALLOCATABLE :: VGLVLS( : )       ! gridded mask values to be output
+        REAL,          ALLOCATABLE :: VGLVSXG( : )      ! gridded mask values to be output
         REAL,          ALLOCATABLE :: CVHAPT( :,: ) 
         REAL,          ALLOCATABLE :: CVHAPP( :,: )
         REAL,          ALLOCATABLE :: CVSPCT( :,: ) 
@@ -158,7 +159,7 @@ C.........  Other local variables
         INTEGER      :: N_SEG = 0           ! number of flight segments
 
         INTEGER         SEGID               ! segment id 
-        INTEGER         MODID               ! flight mode id (LTO from departure and to arrival)
+        INTEGER         MODID, PMODID       ! flight mode id (LTO from departure and to arrival)
         INTEGER         NCEL                ! tmp number of cells
         INTEGER         ORG_CELLID          ! origin cell id
         INTEGER         END_CELLID          ! ending cell id
@@ -166,8 +167,8 @@ C.........  Other local variables
         INTEGER         NFILES, NLINES
         INTEGER         NSTEPS
 
-        INTEGER         ROW, COL 
-
+        INTEGER         ROW, COL
+        INTEGER         EMLAYS, MXLAYS
         INTEGER         VGTYP
 
         INTEGER         HOUR                ! current hour 
@@ -225,6 +226,7 @@ C.........  Other local variables
         REAL            TMPVAL, PRESSURE
 
         LOGICAL      :: FIRSTIME  = .TRUE.  ! true: first time
+        LOGICAL      :: NSFLAG = .FALSE.    ! true: exclude any non-consecutive segment in a flight
         LOGICAL      :: SIGMAFLAG = .FALSE. ! true: use sigma-level for vertical allocation above LTO height
         LOGICAL      :: PRESFLAG  = .FALSE. ! true: use sigma-level for vertical allocation above LTO height
         LOGICAL      :: EFLAG = .FALSE.     ! true: ERROR
@@ -266,9 +268,15 @@ C.........  Get logical value from the environment
         CUTOFF = ENVREAL( 'CUTOFF_ALTITUDE', MESG, 70000.0, IOS )
         CUTOFF = CUTOFF * FT2M    ! convert feet to meter
 
+        MESG = 'Exclude any non-consecutive segments within a flight [default:N]'
+        NSFLAG = ENVYN( 'EXCLUDE_NON_CONT_SEG_YN', MESG, .FALSE., IOS )
+
         MESG = 'Use sigma level for vertical allocation above 10,000 ft height [default:N]'
         SIGMAFLAG = ENVYN( 'SIGMA_VERT_ALLOC_YN', MESG, .FALSE., IOS )
-        
+
+        MESG = 'Determine the max output modeling layers'
+        EMLAYS = ENVINT( 'MAX_EMLAYS', MESG, 0, IOS )
+
 C........  Open unit numbers of input files
         MESG = 'Enter logical name for aircraft flight information file list'
         FDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'FLIGHT_FILELIST', PROGNAME )
@@ -350,9 +358,15 @@ C.........  Read description of 3d file for defining layer structure
              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         ENDIF
 
+C.........  Define the max modeling output layer'
+        MESG = 'Determine the max output modeling layers'
+        EMLAYS = ENVINT( 'MAX_EMLAYS', MESG, NLAYS3D, IOS )
+
 C.........  Store local layer info
         ALLOCATE( VGLVLS( 0:MXLAYS3 ), STAT= IOS)
         CALL CHECKMEM( IOS, 'VGLVLS', PROGNAME )
+        ALLOCATE( VGLVSXG( 0:MXLAYS3 ), STAT= IOS)
+        CALL CHECKMEM( IOS, 'VGLVSXG', PROGNAME )
 
         SDATE  = SDATE3D
         EDATE  = SDATE3D
@@ -363,6 +377,14 @@ C.........  Store local layer info
         VGTYP  = VGTYP3D
         VGTOP  = VGTOP3D
         VGLVLS = 1.0 - VGLVS3D   ! array
+
+C.........  Store local layer information
+        J = LBOUND( VGLVS3D, 1 )
+        VGLVSXG( 0 ) = VGLVS3D( J )
+        DO I = 1, NLAYS
+            J = J + 1
+            VGLVSXG( I ) = VGLVS3D( J )
+        END DO
         
         DO T = 1,NSTEPS - 1
             CALL NEXTIME( EDATE, ETIME, 10000 )
@@ -533,15 +555,6 @@ C.........  Allocate memory for storing variable information
             VTYPE3D( I ) = VARTYPE( I )
         END DO
 
-        MESG = 'Enter logical name for output file'
-        ONAME = PROMPTMFILE( MESG, FSUNKN3, 'OUTPUT', PROGNAME )
-
-C.............  Open new file
-        IF( .NOT. OPEN3( ONAME, FSUNKN3, PROGNAME ) ) THEN
-            MESG = 'Could not create new output file OUTPUT'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
 C.........  Reading a input list file
         NFLFILES = GETFLINE( FDEV, 'FLIGHT_FILELIST input file' )
         NSGFILES = GETFLINE( SDEV, 'SEGMENT_FILELIST input file' )
@@ -710,6 +723,7 @@ C.............  Open actual Segment input file
 
 C.............  Initialize values before reading file
             IREC  = 0
+            PMODID = 0
             PRVLAT = 0.0
             PRVLON = 0.0
             PRVHGT = 0.0
@@ -783,7 +797,6 @@ C                   function of pressure.
      &                     9.902038E-004*PRESSURE**2 +
      &                    -3.488077E-001*PRESSURE + 7.99345E+001
                     HEIGHT = HEIGHT * 1000. * FT2M
-I
                 END IF
 
 C.................  initializing sigma-level vert allocation flag
@@ -798,6 +811,7 @@ C.................  define start/end coordinates for each link
                     PRVLAT = LATVAL
                     PRVLON = LONVAL
                     PRVHGT = HEIGHT
+                    PMODID = MODID   ! store previous mod ID
                     PRVPRES = CURPRES
                     PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                 END IF
@@ -822,6 +836,7 @@ C.................  Skip non-processing dates
                     PRVLAT = LATVAL  ! store previous lat coordinate
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
+                    PMODID = MODID   ! store previous mod ID
                     PRVPRES= CURPRES ! store previous pressure
                     PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                     CYCLE
@@ -846,6 +861,7 @@ C.................  Skip if there is no intersected grid cell
                     PRVLAT = LATVAL  ! store previous lat coordinate
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
+                    PMODID = MODID   ! store previous mod ID
                     PRVPRES= CURPRES ! store previous pressure
                     PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                     CYCLE
@@ -900,6 +916,7 @@ C                   1000ft * 0.3048 = 3048 meter
                     PRVLAT = LATVAL  ! store previous lat coordinate
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
+                    PMODID = MODID   ! store previous mod ID
                     PRVPRES= CURPRES ! store previous pressure
                     PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                     CYCLE
@@ -926,16 +943,21 @@ C                   1000ft * 0.3048 = 3048 meter
                 END IF
 
 C.................  Adjust altitudes for climbing/landing flight trajectory
-                IF( MODID < 4 ) THEN
-                    Zo = Zo - APRT_ELEV( ND )   ! departure airport elev
+                IF( MODID  < 4 ) THEN
                     Zh = Zh - APRT_ELEV( ND )   ! departure airport elev
-                ELSE IF( MODID > 6 ) THEN
-                    Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
+                ELSE IF( MODID  > 6 ) THEN
                     Zh = Zh - APRT_ELEV( NA )   ! arrival airport elev
                 ELSE
-                    IF( ORG_CELLID>0 ) Zo = Zo - TERRAIN(ORG_CELLID)
                     IF( END_CELLID>0 ) Zh = Zh - TERRAIN(END_CELLID)
                 ENDIF
+
+                IF( PMODID < 4 ) THEN
+                    Zo = Zo - APRT_ELEV( ND )   ! departure airport elev
+                ELSE IF( PMODID > 6 ) THEN
+                    Zo = Zo - APRT_ELEV( NA )   ! arrival airport elev
+                ELSE
+                    IF( ORG_CELLID>0 ) Zo = Zo - TERRAIN(ORG_CELLID)
+                END IF
 
                 IF( Zo < 0.0 ) Zo = 0.0
                 IF( Zh < 0.0 ) Zh = 0.0
@@ -964,6 +986,18 @@ C                   if previous height > CUTOFF, skip processing
                     PRVLAT = LATVAL  ! store previous lat coordinate
                     PRVLON = LONVAL  ! store previous lon coordinate
                     PRVHGT = HEIGHT  ! store previous height
+                    PMODID = MODID   ! store previous mod ID
+                    PRVPRES= CURPRES ! store previous pressure
+                    PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
+                    CYCLE
+                END IF
+
+C.................  Exclude any non-consecutive segments within a flight
+                IF( NSFLAG .AND. ABS(MODID-PMODID) > 2 ) THEN
+                    PRVLAT = LATVAL  ! store previous lat coordinate
+                    PRVLON = LONVAL  ! store previous lon coordinate
+                    PRVHGT = HEIGHT  ! store previous height
+                    PMODID = MODID   ! store previous mod ID
                     PRVPRES= CURPRES ! store previous pressure
                     PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
                     CYCLE
@@ -1025,7 +1059,6 @@ C.....................  Convert pressure to reversed sigma level (0:ground,1:top
 
 C.....................  Update bottom and top layers
                     Z = ZFRAC * DELTAZ
-
                     IF( DELTAZ < 0.0 ) THEN   ! aircraft landing mode
                         ZTOP = ZBOT 
                         ZBOT = ZTOP + Z
@@ -1034,6 +1067,7 @@ C.....................  Update bottom and top layers
                         ZTOP = ZBOT + Z
                     END IF
 
+c          write(*,'(a,3i8,6f10.3)')flgid,segid,pmodid,modid,zo,zbot,zh,ztop,height
 C.........................  Looping through layers to determine associated layer for each link
                     DO L = 1, NLAYS - 1
 
@@ -1055,11 +1089,14 @@ C.................  hard corded to switch vertical allocation method between sig
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = LBOT
 
+c        write(*,'(a,i8,2F10.3,5i8,f15.7,a)')flgid,segid,zbot,ztop,col,row,LBOT,LTOP,LBOT,pfrac,' onelayer'
+
                     ELSE IF( LBOT == NLAYS ) THEN    ! plume above top layer
  
                         PFRAC = 1.0
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
                         LTOP = NLAYS
+c        write(*,'(a,i8,2F10.3,5i8,f15.7,a)')flgid,segid,zbot,ztop,col,row,LBOT,LTOP,LTOP,pfrac,' toplayer'
                 
                     ELSE                               ! plume crosses layers
  
@@ -1080,7 +1117,7 @@ C..........................  Calculate a fraction for the bottom layer
                         PFRAC = ( ( ZZF( C,LBOT ) - ZBOT )
      &                              / PDIFF )
                         LFRAC( LBOT ) = LFRAC( LBOT ) + PFRAC
-                    
+C            write(*,'(a,i8,2F10.3,5i8,f15.7)')flgid,segid,zbot,ztop,col,row,LBOT,LTOP,LBOT,pfrac
 C.........................  Calculate a fraction for the top layer
                         PFRAC = ( ( ZTOP - ZZF( C,LTOP-1 ) )
      &                             / PDIFF )
@@ -1094,11 +1131,13 @@ C.........................  Calculate a fraction for the top layer
                             
                                 PFRAC = ( ( ZZF(C,L) -ZZF(C,L-1) )
      &                                      / PDIFF )
+C            write(*,'(a,i8,2F10.3,5i8,f15.7)')flgid,segid,zbot,ztop,col,row,LBOT,LTOP,L,pfrac
                                 LFRAC( L ) = LFRAC( L ) + PFRAC
                             END DO
 
                         ENDIF
                     
+C            write(*,'(a,i8,2F10.3,5i8,f15.7)')flgid,segid,zbot,ztop,col,row,LBOT,LTOP,LTOP,lfrac(ltop)
                     END IF
 
 C.....................  initialize pressure-based vertical allocation by link
@@ -1261,12 +1300,15 @@ C.............................  Estimate HAPs using HAP's profile factors from T
 
                     END DO     ! end of layer loop per link
 
+                    MXLAYS = MAX( LTOP, MXLAYS )     ! define max layer #
+
                 END DO      ! end of link loop
 
 C.................   previous values needed to be updated before the source gets skipped
                 PRVLAT = LATVAL  ! store previous lat coordinate
                 PRVLON = LONVAL  ! store previous lon coordinate
                 PRVHGT = HEIGHT  ! store previous height
+                PMODID = MODID   ! store previous mod ID
                 PRVPRES= CURPRES ! store previous pressure
                 PRESFLAG = .FALSE.  ! true: sigma-level vertical allocation
 
@@ -1297,6 +1339,25 @@ C............. Error message
         END IF
 
 C.........  Get output file name using environment variable
+        IF( MXLAYS > EMLAYS ) THEN
+            WRITE( MESG,94010 ) 'ERROR: Highest modeling layer',
+     &          MXLAYS, ' is exceeding the maximum output layer',
+     &          EMLAYS
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+        NLAYS3D = EMLAYS
+
+        J = LBOUND( VGLVS3D, 1 )
+        VGLVS3D( J:J+EMLAYS ) = VGLVSXG( 0:EMLAYS )  ! array
+
+C.............  Open new file
+        MESG = 'Enter logical name for output file'
+        ONAME = PROMPTMFILE( MESG, FSUNKN3, 'OUTPUT', PROGNAME )
+        IF( .NOT. OPEN3( ONAME, FSUNKN3, PROGNAME ) ) THEN
+            MESG = 'Could not create new output file OUTPUT'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+ 
 C.........  Define top layer for output file
         JDATE = SDATE
         JTIME = STIME
@@ -1307,7 +1368,7 @@ C.........  Define top layer for output file
                 POLNAM = VARNAME( V )
             
                 IF ( .NOT. WRITE3( ONAME, POLNAM, JDATE, JTIME, 
-     &                            TMP3D( :,:,V,T ) ) ) THEN
+     &                            TMP3D( :,1:EMLAYS,V,T ) ) ) THEN
                     WRITE( MESG, 93000 ) 'Could not write to "'
      &                    // TRIM( ONAME ) // '".'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
