@@ -493,28 +493,26 @@ C.............  Get number of inventory sources for this ORIS/boiler
 
             ALLZERO = .FALSE.
 
-C.............  Check if NOx emissions are valid; if not, set all values to 0.
-            IF( CEMEMIS( NOXIDX ) <= 0. ) ALLZERO = .TRUE.
+C.............  Check if NOx emissions are valid
+            IF( CEMEMIS( NOXIDX ) <= 0. ) CEMEMIS( NOXIDX ) = 0.0 
 
 C.............  Compute factor for calculate hourly emissions; check that
 C               hourly value is valid
-            IF( .NOT. ALLZERO ) THEN
-                IF( ANNHEAT( MASOBPOS ) > 0. .AND. HTINPUT > 0. ) THEN
-                    ANNFAC = HTINPUT / ANNHEAT( MASOBPOS )
-                ELSE IF( ANNSLOAD( MASOBPOS ) > 0. .AND. SLOAD > 0. ) THEN
-                    ANNFAC = SLOAD / ANNSLOAD( MASOBPOS )
-                ELSE IF( ANNGLOAD( MASOBPOS ) > 0. .AND. GLOAD > 0. ) THEN
-                    ANNFAC = GLOAD / ANNGLOAD( MASOBPOS )
-                ELSE
-                    ALLZERO = .TRUE.
-                    WRITE( MESG,94010 ) 
-     &              'WARNING: All emissions set to 0. for ORIS: ' //
-     &              CORS // ' Boiler: ' // BLID // CRLF() // BLANK10 //
-     &              'for date: ', YYMMDD, 'and hour: ', HH,
-     &              'since hourly heat input,' // CRLF() // BLANK10 //
-     &              'gross load, and steam load are missing'
-                    CALL M3MESG( MESG )
-                END IF
+            IF( ANNHEAT( MASOBPOS ) > 0. .AND. HTINPUT > 0. ) THEN
+                ANNFAC = HTINPUT / ANNHEAT( MASOBPOS )
+            ELSE IF( ANNSLOAD( MASOBPOS ) > 0. .AND. SLOAD > 0. ) THEN
+                ANNFAC = SLOAD / ANNSLOAD( MASOBPOS )
+            ELSE IF( ANNGLOAD( MASOBPOS ) > 0. .AND. GLOAD > 0. ) THEN
+                ANNFAC = GLOAD / ANNGLOAD( MASOBPOS )
+            ELSE
+                ALLZERO = .TRUE.
+                WRITE( MESG,94010 ) 
+     &          'WARNING: All emissions set to 0. for ORIS: ' //
+     &          CORS // ' Boiler: ' // BLID // CRLF() // BLANK10 //
+     &          'for date: ', YYMMDD, 'and hour: ', HH,
+     &          'since hourly heat input,' // CRLF() // BLANK10 //
+     &          'gross load, and steam load are missing'
+                CALL M3MESG( MESG )
             END IF
 
             IF( ALLZERO ) THEN
@@ -537,7 +535,6 @@ C               hourly value is valid
             END IF
 
 C.............  Compute emissions from rate and heat input and adjust
-C               units from pounds to short tons
             CEMEMIS( NOXIDX ) = CEMEMIS( NOXIDX ) * LB2TON
             CEMEMIS( SO2IDX ) = CEMEMIS( SO2IDX ) * LB2TON
 

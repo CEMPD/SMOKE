@@ -381,8 +381,8 @@ C.........  Write output and report file
             IDX   = UNITIDX ( I )
             
             OUT = 'Y'
-            IF( NOXEMIS  ( IDX ) <= 0. ) OUT = 'N'
-            IF( HEATINPUT( IDX ) <= 0. .AND.
+            IF( NOXEMIS  ( IDX ) <= 0. .AND. 
+     &          HEATINPUT( IDX ) <= 0. .AND.
      &          SLOADSUM ( IDX ) <= 0. .AND.
      &          GLOADSUM ( IDX ) <= 0.       ) OUT = 'N'
             
