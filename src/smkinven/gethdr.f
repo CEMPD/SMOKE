@@ -275,7 +275,7 @@ C.....................  Store current values of conversion factor
                 UNITFLAG = .TRUE.
 
             ELSE IF ( BUFFER(2:6) .EQ. 'POLID' .OR.
-     &                BUFFER(2:5) .EQ. 'DATA'       ) THEN ! read in data names
+     &                BUFFER(2:6) .EQ. 'DATA '       ) THEN ! read in data names
 
 C..................... Deallocate names for pollutant, if must
                 IF( ALLOCATED( TMPNAM ) ) DEALLOCATE( TMPNAM,DATPOS )
