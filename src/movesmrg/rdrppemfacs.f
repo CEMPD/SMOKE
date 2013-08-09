@@ -605,7 +605,7 @@ C.........  Error message when inventory SCC is missing in the lookup table
 C.........  Sort temperature profiles by min temps then max temps
         CALL SORTR2( NEMTEMPS, EMTEMPIDX, EMTEMPS, EMXTEMPS )
         
-        DEALLOCATE( SEGMENT, POLNAMS, ISHAP )
+        DEALLOCATE( SEGMENT, POLNAMS, ISHAP, LINVSCC )
 
         RETURN
 

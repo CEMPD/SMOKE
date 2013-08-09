@@ -570,7 +570,7 @@ C.........  Error message when inventory SCC is missing in the lookup table
 
         CLOSE( TDEV )
         
-        DEALLOCATE( SEGMENT, POLNAMS, ISHAP )
+        DEALLOCATE( SEGMENT, POLNAMS, ISHAP, LINVSCC )
 
         RETURN
 
