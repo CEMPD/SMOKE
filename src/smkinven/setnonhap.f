@@ -464,6 +464,15 @@ C.................  Store to tmp arrays of IPOSCOD and POLVAL
                 TMPPOSCOD( NEWSRCPOS )   = IPOSCOD( CURRPOS )
                 TMPPOLVAL( NEWSRCPOS,: ) = POLVAL ( CURRPOS,: )
 
+C.................  Check VOC or TOG existence
+                L = INDEX( POLNAM, ETJOIN )
+                IF( L > 0 ) THEN
+                    LL = LEN( POLNAM )
+                    IF( VOC_TOG == TRIM( POLNAM( L+2:LL ) ) ) FNDVOC = .TRUE.
+                ELSE
+                    IF( VOC_TOG == TRIM( POLNAM ) ) FNDVOC = .TRUE.
+                END IF
+   
 C.................  If current pollutant is VOC(_INV) entry, save position and emissions
                 DO H = 1, NNONHAP
 
@@ -498,12 +507,12 @@ C.................  Otherwise, if not part of VOC or TOG, skip rest of loop
                 END IF
 
 C.................  Check emission processing modes
-                L = INDEX( POLNAM , ETJOIN )
                 IF( L > 0 ) THEN
                     M = INDEX1( POLNAM( 1:L-1 ), NNONHAP, NONHAPMOD )
                 ELSE
                     M = INDEX1( ' ', NNONHAP, NONHAPMOD )
                 END IF
+
 
 C.................  Sum toxic emissions for this source
 C                   INVDVTS = 'V' => part of VOC and TOG
