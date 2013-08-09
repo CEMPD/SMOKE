@@ -93,6 +93,7 @@
 !.........  Sorted groups of pollutant to pollutant conversion factors
 
 !.........  Default FIPS code=0, SCC=0 (for all pollutants)
+        LOGICAL               , ALLOCATABLE, PUBLIC :: CNVFLAG( : )
         REAL                  , ALLOCATABLE, PUBLIC :: CNVFC00( : )
 
 !.........  FIPS code=0, SCC=all (for all pollutants)
