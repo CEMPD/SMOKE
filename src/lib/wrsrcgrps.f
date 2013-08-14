@@ -44,7 +44,7 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: EMGGRD, NSRCGRP, NSGOUTPUT, GRPCNT,
      &                      IGRPNUM, SGINLNNAME, SRCGRPNAME,
-     &                      PFLAG, PVNAME, IFIPGRP
+     &                      PFLAG, PVNAME, PVSDATE, PVSTIME, IFIPGRP
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP
@@ -208,7 +208,7 @@ C.............  Append data for elevated source groups
                 ALLOCATE( INTDATA( NGROUP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INTDATA', PROGNAME )
 
-                CALL INT_READ3( PVNAME, 'IFIP', 1, JDATE, JTIME, INTDATA )
+                CALL INT_READ3( PVNAME, 'IFIP', 1, PVSDATE, PVSTIME, INTDATA )
                 DO G = 1, NGROUP
                 
                     K = K + 1
@@ -222,15 +222,15 @@ C.....................  Set group ID based on FIPS code
                 
                 END DO
                 
-                CALL INT_READ3( PVNAME, 'STKCNT', 1, JDATE, JTIME, INTDATA )
+                CALL INT_READ3( PVNAME, 'STKCNT', 1, PVSDATE, PVSTIME, INTDATA )
                 STKCNT( ELEVIDX:NSGOUTPUT ) = INTDATA
-                CALL INT_READ3( PVNAME, 'ROW', 1, JDATE, JTIME, INTDATA )
+                CALL INT_READ3( PVNAME, 'ROW', 1, PVSDATE, PVSTIME, INTDATA )
                 ROW( ELEVIDX:NSGOUTPUT ) = INTDATA
-                CALL INT_READ3( PVNAME, 'COL', 1, JDATE, JTIME, INTDATA )
+                CALL INT_READ3( PVNAME, 'COL', 1, PVSDATE, PVSTIME, INTDATA )
                 COL( ELEVIDX:NSGOUTPUT ) = INTDATA
-                CALL INT_READ3( PVNAME, 'LMAJOR', 1, JDATE, JTIME, INTDATA )
+                CALL INT_READ3( PVNAME, 'LMAJOR', 1, PVSDATE, PVSTIME, INTDATA )
                 LMAJOR( ELEVIDX:NSGOUTPUT ) = INTDATA
-                CALL INT_READ3( PVNAME, 'LPING', 1, JDATE, JTIME, INTDATA )
+                CALL INT_READ3( PVNAME, 'LPING', 1, PVSDATE, PVSTIME, INTDATA )
                 LPING( ELEVIDX:NSGOUTPUT ) = INTDATA
                 
                 DEALLOCATE( INTDATA )
@@ -238,28 +238,28 @@ C.....................  Set group ID based on FIPS code
                 ALLOCATE( REALDATA( NGROUP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'REALDATA', PROGNAME )
                 
-                CALL REAL_READ3( PVNAME, 'XLOCA', 1, JDATE, JTIME, REALDATA )
+                CALL REAL_READ3( PVNAME, 'XLOCA', 1, PVSDATE, PVSTIME, REALDATA )
                 XLOCA( ELEVIDX:NSGOUTPUT ) = REALDATA
-                CALL REAL_READ3( PVNAME, 'YLOCA', 1, JDATE, JTIME, REALDATA )
+                CALL REAL_READ3( PVNAME, 'YLOCA', 1, PVSDATE, PVSTIME, REALDATA )
                 YLOCA( ELEVIDX:NSGOUTPUT ) = REALDATA
-                CALL REAL_READ3( PVNAME, 'STKDM', 1, JDATE, JTIME, REALDATA )
+                CALL REAL_READ3( PVNAME, 'STKDM', 1, PVSDATE, PVSTIME, REALDATA )
                 STKDM( ELEVIDX:NSGOUTPUT ) = REALDATA
-                CALL REAL_READ3( PVNAME, 'STKHT', 1, JDATE, JTIME, REALDATA )
+                CALL REAL_READ3( PVNAME, 'STKHT', 1, PVSDATE, PVSTIME, REALDATA )
                 STKHT( ELEVIDX:NSGOUTPUT ) = REALDATA
-                CALL REAL_READ3( PVNAME, 'STKTK', 1, JDATE, JTIME, REALDATA )
+                CALL REAL_READ3( PVNAME, 'STKTK', 1, PVSDATE, PVSTIME, REALDATA )
                 STKTK( ELEVIDX:NSGOUTPUT ) = REALDATA
-                CALL REAL_READ3( PVNAME, 'STKVE', 1, JDATE, JTIME, REALDATA )
+                CALL REAL_READ3( PVNAME, 'STKVE', 1, PVSDATE, PVSTIME, REALDATA )
                 STKVE( ELEVIDX:NSGOUTPUT ) = REALDATA
-                CALL REAL_READ3( PVNAME, 'STKFLW', 1, JDATE, JTIME, REALDATA )
+                CALL REAL_READ3( PVNAME, 'STKFLW', 1, PVSDATE, PVSTIME, REALDATA )
                 STKFLW( ELEVIDX:NSGOUTPUT ) = REALDATA
 
 C.................  If lat/lon is in existing stack groups file, append it
-                IF( READ3( PVNAME, 'LATITUDE', 1, JDATE, JTIME, REALDATA ) ) THEN
+                IF( READ3( PVNAME, 'LATITUDE', 1, PVSDATE, PVSTIME, REALDATA ) ) THEN
 
                     LAT( ELEVIDX:NSGOUTPUT ) = REALDATA
 
 C.....................  Assume longitude is available if latitude was
-                    CALL REAL_READ3( PVNAME, 'LONGITUDE', 1, JDATE, JTIME, REALDATA )
+                    CALL REAL_READ3( PVNAME, 'LONGITUDE', 1, PVSDATE, PVSTIME, REALDATA )
                     LONG( ELEVIDX:NSGOUTPUT ) = REALDATA
 
                 ELSE
