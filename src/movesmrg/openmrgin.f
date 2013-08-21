@@ -126,9 +126,10 @@ C.........  Other local variables
         CHARACTER(50)   METTMP       ! temporary buffer for met info
         CHARACTER(80)   GDESC        ! grid description
         CHARACTER(256)  MESG         ! message buffer
-        CHARACTER(IOVLEN3) COORD3D    ! coordinate system name 
-        CHARACTER(IOVLEN3) COORUN3D   ! coordinate system projection units
-        CHARACTER(IOVLEN3) PROJTYPE   ! projection type
+        CHARACTER(IOVLEN3) COORD3D   ! coordinate system name 
+        CHARACTER(IOVLEN3) COORUN3D  ! coordinate system projection units
+        CHARACTER(IOVLEN3) PROJTYPE  ! projection type
+        CHARACTER(IOVLEN3) OUTGRDNM  ! output grid name
 
         CHARACTER(16) :: PROGNAME = 'OPENMRGIN' ! program name
 
@@ -144,6 +145,7 @@ C.........  Initialize gridded information with grid description file
             MESG = 'Could not get Models-3 grid description.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
+        OUTGRDNM = GDNAM3D
 
 C.........  Check or initialize the grid; do not allow subgrids 
 C           when using a variable grid
@@ -486,6 +488,9 @@ C.........  Give a note if running for a projected year
             CALL M3MSG2( MESG )
 
         END IF
+
+C.........  Reset output grid name in case meteorology files use different name
+        GRDNM = OUTGRDNM
 
 C.........  Write message stating grid name and description
         N = LEN_TRIM( GRDNM )
