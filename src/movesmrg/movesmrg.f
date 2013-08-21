@@ -59,7 +59,7 @@ C.........  This module contains the major data structure and control flags
      &          MEBSCC, MEBSTC,                    ! scc total spec emissions
      &          EANAM, NIPPA,                      ! pol/act names
      &          CFDEV,                             ! control factor file
-     &          SRCGRPFLAG, SGDEV, IFIPGRP,        ! source groups
+     &          SRCGRPFLAG, SGDEV, ISRCGRP,        ! source groups
      &          EMGGRD, EMGGRDSPC, EMGGRDSPCT,     ! emissions by source group
      &          SGINLNNAME, NSGOUTPUT              ! source group emissions output file
 
@@ -994,7 +994,7 @@ C.............................  If use memory optimize
      &                            EMGRD( CELL,SPINDEX( V,1 ) ) + EMVALSPC
      
                                 IF ( SRCGRPFLAG ) THEN
-                                    GIDX = IFIPGRP( MICNY( SRC ) )
+                                    GIDX = ISRCGRP( SRC )
                                     EMGGRDSPC( CELL,GIDX,SPINDEX( V,1 ) ) =
      &                                EMGGRDSPC( CELL,GIDX,SPINDEX( V,1 ) ) + EMVALSPC
                                 END IF
@@ -1005,7 +1005,7 @@ C.............................  If not use memory optimize
      &                            TEMGRD( CELL,SPINDEX( V,1 ),T ) + EMVALSPC
      
                                 IF ( SRCGRPFLAG ) THEN
-                                    GIDX = IFIPGRP( MICNY( SRC ) )
+                                    GIDX = ISRCGRP( SRC )
                                     EMGGRDSPCT( CELL,GIDX,SPINDEX( V,1 ),T ) =
      &                                EMGGRDSPCT( CELL,GIDX,SPINDEX( V,1 ),T ) + EMVALSPC
                                 END IF

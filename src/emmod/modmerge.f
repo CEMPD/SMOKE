@@ -468,7 +468,7 @@
 !.........  Source apportionment storage
         INTEGER,              PUBLIC :: NSRCGRP       ! total number of source groups
         INTEGER, ALLOCATABLE, PUBLIC :: IGRPNUM( : )  ! list of source group numbers, dim: nsrcgrp
-        INTEGER, ALLOCATABLE, PUBLIC :: IFIPGRP( : )  ! source group idx for each unique inv. FIPS
+        INTEGER, ALLOCATABLE, PUBLIC :: ISRCGRP( : )  ! source group idx for each source
         REAL,    ALLOCATABLE, PUBLIC :: EMGGRD( :,: ) ! emissions by grid cell and source group
         REAL,    ALLOCATABLE, PUBLIC :: EMGGRDSPC( :,:,: )    ! EMGGRD + species
         REAL,    ALLOCATABLE, PUBLIC :: EMGGRDSPCT( :,:,:,: ) ! EMGGRDSPC + time step

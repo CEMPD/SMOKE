@@ -45,14 +45,16 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: ELEVFLAG, PEMSRC, PSMATX, PRINFO,INLINEFLAG
+        USE MODMERGE, ONLY: ELEVFLAG, PEMSRC, PSMATX, PRINFO, INLINEFLAG,
+     &                      SRCGRPFLAG
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: PCUMATX
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: ELEVSIDX, PINGGIDX, NGROUP, GRPGID, PGRPEMIS,
-     &                     ELEVEMIS, LMAJOR, LPING, GROUPID
+     &                     ELEVEMIS, LMAJOR, LPING, GROUPID,
+     &                     ELEVGRPID, EMELEVGRP
 
         IMPLICIT NONE
 
@@ -170,6 +172,7 @@ C           that this is a new species being processed.
         IF ( LINIT ) THEN
             PGRPEMIS = 0  ! array
             ELEVEMIS = 0  ! array
+            IF( SRCGRPFLAG ) EMELEVGRP = 0.
         END IF
 
 C.........  Check if this is a valid inventory pollutant for this call
@@ -200,6 +203,11 @@ C                        of reactivity matrix.
                     IF( IDX .GT. 0 )
      &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
 
+                    IF( SRCGRPFLAG ) THEN
+                        IDX = ELEVGRPID( S )
+                        EMELEVGRP( IDX ) = EMELEVGRP( IDX ) + VAL * CNV
+                    END IF
+
                 END DO
 
 C............. If multiplicative controls only
@@ -219,6 +227,11 @@ C............. If multiplicative controls only
                     IDX = ELEVSIDX( S )
                     IF( IDX .GT. 0 )
      &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
+
+                    IF( SRCGRPFLAG ) THEN
+                        IDX = ELEVGRPID( S )
+                        EMELEVGRP( IDX ) = EMELEVGRP( IDX ) + VAL * CNV
+                    END IF
 
                 END DO
 
@@ -242,6 +255,11 @@ C.............  If speciation only
                     IF( IDX .GT. 0 )
      &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
 
+                    IF( SRCGRPFLAG ) THEN
+                        IDX = ELEVGRPID( S )
+                        EMELEVGRP( IDX ) = EMELEVGRP( IDX ) + VAL * CNV
+                    END IF
+
                 END DO
 
 C.............  If inventory pollutant only
@@ -261,6 +279,11 @@ C.............  If inventory pollutant only
                     IDX = ELEVSIDX( S )
                     IF( IDX .GT. 0 )
      &                  ELEVEMIS( IDX ) = ELEVEMIS( IDX ) + VAL * CNV
+
+                    IF( SRCGRPFLAG ) THEN
+                        IDX = ELEVGRPID( S )
+                        EMELEVGRP( IDX ) = EMELEVGRP( IDX ) + VAL * CNV
+                    END IF
 
                 END DO
 

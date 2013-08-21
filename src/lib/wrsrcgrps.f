@@ -44,7 +44,7 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: EMGGRD, NSRCGRP, NSGOUTPUT, GRPCNT,
      &                      IGRPNUM, SGINLNNAME, SRCGRPNAME,
-     &                      PFLAG, PVNAME, PVSDATE, PVSTIME, IFIPGRP
+     &                      PFLAG, PVNAME, PVSDATE, PVSTIME, ISRCGRP
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP
@@ -55,7 +55,8 @@ C.........  This module contains the global variables for the 3-d grid
      &                     XCENT, YCENT, XORIG, YORIG, XCELL, YCELL
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: NGROUP, GRPGID, ELEVEMIS
+        USE MODELEV, ONLY: NGROUP, NELEVGRPS, EMELEVGRP, 
+     &                     ELEVSTKGRP, ELEVSRCGRP, ELEVSTKCNT
         
         IMPLICIT NONE
 
@@ -204,34 +205,40 @@ C.............  Convert x and y grid cell locations to lat/lon
 C.............  Append data for elevated source groups
             IF( PFLAG ) THEN
                 ELEVIDX = K + 1
+                
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    ISTACK( IDX ) = IGRPNUM( ELEVSRCGRP( G ) )
+                END DO
+                
+                STKCNT( ELEVIDX:NSGOUTPUT ) = ELEVSTKCNT
             
                 ALLOCATE( INTDATA( NGROUP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INTDATA', PROGNAME )
-
-                CALL INT_READ3( PVNAME, 'IFIP', 1, PVSDATE, PVSTIME, INTDATA )
-                DO G = 1, NGROUP
                 
-                    K = K + 1
-
-C.....................  Find FIPS code from stack groups file in
-C                       list of FIPS codes from inventory
-                    IDX = FIND1( INTDATA( G ), NINVIFIP, INVIFIP )
-
-C.....................  Set group ID based on FIPS code
-                    ISTACK( K ) = IGRPNUM( IFIPGRP( IDX ) )
-                
+                CALL INT_READ3( PVNAME, 'ROW', 1, PVSDATE, PVSTIME, INTDATA )
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    ROW( IDX ) = INTDATA( ELEVSTKGRP( G ) )
                 END DO
                 
-                CALL INT_READ3( PVNAME, 'STKCNT', 1, PVSDATE, PVSTIME, INTDATA )
-                STKCNT( ELEVIDX:NSGOUTPUT ) = INTDATA
-                CALL INT_READ3( PVNAME, 'ROW', 1, PVSDATE, PVSTIME, INTDATA )
-                ROW( ELEVIDX:NSGOUTPUT ) = INTDATA
                 CALL INT_READ3( PVNAME, 'COL', 1, PVSDATE, PVSTIME, INTDATA )
-                COL( ELEVIDX:NSGOUTPUT ) = INTDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    COL( IDX ) = INTDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL INT_READ3( PVNAME, 'LMAJOR', 1, PVSDATE, PVSTIME, INTDATA )
-                LMAJOR( ELEVIDX:NSGOUTPUT ) = INTDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    LMAJOR( IDX ) = INTDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL INT_READ3( PVNAME, 'LPING', 1, PVSDATE, PVSTIME, INTDATA )
-                LPING( ELEVIDX:NSGOUTPUT ) = INTDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    LPING( IDX ) = INTDATA( ELEVSTKGRP( G ) )
+                END DO
                 
                 DEALLOCATE( INTDATA )
                 
@@ -239,28 +246,61 @@ C.....................  Set group ID based on FIPS code
                 CALL CHECKMEM( IOS, 'REALDATA', PROGNAME )
                 
                 CALL REAL_READ3( PVNAME, 'XLOCA', 1, PVSDATE, PVSTIME, REALDATA )
-                XLOCA( ELEVIDX:NSGOUTPUT ) = REALDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    XLOCA( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL REAL_READ3( PVNAME, 'YLOCA', 1, PVSDATE, PVSTIME, REALDATA )
-                YLOCA( ELEVIDX:NSGOUTPUT ) = REALDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    YLOCA( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL REAL_READ3( PVNAME, 'STKDM', 1, PVSDATE, PVSTIME, REALDATA )
-                STKDM( ELEVIDX:NSGOUTPUT ) = REALDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    STKDM( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL REAL_READ3( PVNAME, 'STKHT', 1, PVSDATE, PVSTIME, REALDATA )
-                STKHT( ELEVIDX:NSGOUTPUT ) = REALDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    STKHT( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL REAL_READ3( PVNAME, 'STKTK', 1, PVSDATE, PVSTIME, REALDATA )
-                STKTK( ELEVIDX:NSGOUTPUT ) = REALDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    STKTK( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL REAL_READ3( PVNAME, 'STKVE', 1, PVSDATE, PVSTIME, REALDATA )
-                STKVE( ELEVIDX:NSGOUTPUT ) = REALDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    STKVE( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                END DO
+                
                 CALL REAL_READ3( PVNAME, 'STKFLW', 1, PVSDATE, PVSTIME, REALDATA )
-                STKFLW( ELEVIDX:NSGOUTPUT ) = REALDATA
+                DO G = 1, NELEVGRPS
+                    IDX = ELEVIDX + G - 1
+                    STKFLW( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                END DO
 
 C.................  If lat/lon is in existing stack groups file, append it
                 IF( READ3( PVNAME, 'LATITUDE', 1, PVSDATE, PVSTIME, REALDATA ) ) THEN
-
-                    LAT( ELEVIDX:NSGOUTPUT ) = REALDATA
+    
+                    DO G = 1, NELEVGRPS
+                        IDX = ELEVIDX + G - 1
+                        LAT( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                    END DO
 
 C.....................  Assume longitude is available if latitude was
                     CALL REAL_READ3( PVNAME, 'LONGITUDE', 1, PVSDATE, PVSTIME, REALDATA )
-                    LONG( ELEVIDX:NSGOUTPUT ) = REALDATA
+                    DO G = 1, NELEVGRPS
+                        IDX = ELEVIDX + G - 1
+                        LONG( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                    END DO
 
                 ELSE
 
@@ -322,10 +362,10 @@ C.................  Skip missing values
 
 C.........  Append emissions for elevated source groups
         IF( PFLAG ) THEN
-            DO G = 1, NGROUP
+            DO G = 1, NELEVGRPS
     
                 K = K + 1
-                OUTEMIS( K ) = ELEVEMIS( G )
+                OUTEMIS( K ) = EMELEVGRP( G )
     
             END DO
         END IF

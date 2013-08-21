@@ -1,5 +1,5 @@
 
-        SUBROUTINE SRCGRPCNT( NSRC, NMAT1, NX, IX, ICNY )
+        SUBROUTINE SRCGRPCNT( NSRC, NMAT1, NX, IX )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -38,7 +38,7 @@ C
 C**************************************************************************
 
 C.........  MODULES for public variables
-        USE MODMERGE, ONLY: IFIPGRP, NSGOUTPUT, GRPCNT, PFLAG
+        USE MODMERGE, ONLY: ISRCGRP, NSGOUTPUT, GRPCNT, PFLAG
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
@@ -53,7 +53,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: NMAT1        ! dim 1 for gridding matrix
         INTEGER, INTENT(IN) :: NX( NGRID )  ! no. of sources per cell
         INTEGER, INTENT(IN) :: IX( NMAT1 )  ! list of sources per cell
-        INTEGER, INTENT(IN) :: ICNY( NSRC ) ! county index by source
 
 C...........   Other local variables
         INTEGER C, J, K, SRC, GIDX, CNT   ! counters and indices
@@ -72,7 +71,7 @@ C.................  Skip elevated sources
                     IF( LMAJOR( SRC ) .OR. LPING( SRC ) ) CYCLE
                 END IF
 
-                GIDX = IFIPGRP( ICNY( SRC ) )
+                GIDX = ISRCGRP( SRC )
                 CNT = GRPCNT( C, GIDX )
                 IF( CNT == 0 ) THEN
                     NSGOUTPUT = NSGOUTPUT + 1

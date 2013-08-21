@@ -39,28 +39,31 @@ C
 C**************************************************************************
 
 C.........  MODULES for public variables
-        USE MODMERGE, ONLY: NSRCGRP, IGRPNUM, IFIPGRP, 
+        USE MODMERGE, ONLY: NSRCGRP, IGRPNUM, ISRCGRP,
      &                      EMGGRD, EMGGRDSPC, EMGGRDSPCT, NSGOUTPUT,
      &                      GRPCNT,
      &                      AFLAG, BFLAG, MFLAG, PFLAG,
      &                      NASRC, NMSRC, NPSRC,
      &                      ANGMAT, AGMATX, MNGMAT, MGMATX, PGMATX,
-     &                      NMSPC, NSTEPS
+     &                      NMSPC, NSTEPS,
+     &                      AENAME, ASDEV, MENAME, MSDEV, 
+     &                      PENAME, PSDEV
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
-
-C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: AICNY, MICNY, PICNY
+        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: NGROUP
+        USE MODELEV, ONLY: NGROUP, GROUPID, NELEVGRPS, ELEVGRPID,
+     &                     ELEVSTKGRP, ELEVSRCGRP, ELEVSTKCNT, EMELEVGRP
 
 C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NSRGFIPS, SRGFIPS, NCELLS, FIPCELL
+
+C...........   This module contains the inventory arrays
+        USE MODSOURC, ONLY: IFIP, CSCC, CSOURC
         
         IMPLICIT NONE
 
@@ -70,12 +73,12 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
-        INTEGER         STR2INT, FIND1, FINDC
+        INTEGER         STR2INT, FIND1, FINDC, INDEX1
         INTEGER         ENVINT
         LOGICAL         BLKORCMT, CHKINT
  
         EXTERNAL  GETFLINE, STR2INT, FIND1, ENVINT, BLKORCMT, FINDC,
-     &            CHKINT
+     &            CHKINT, INDEX1
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: SGDEV           ! file unit number
@@ -83,33 +86,45 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL, INTENT (IN) :: TSFLAG          ! include timesteps in emissions array
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: MXCOL = 4
+        INTEGER, PARAMETER :: MXCOL = 5
+        INTEGER, PARAMETER :: SRCLEN = FIPLEN3+SCCLEN3+PLTLEN3+CHRLEN3
 
 C...........   Array for parsing list-formatted inputs
         CHARACTER(50)          SEGMENT( MXCOL )
 
+C.........  Array that contains the names of the inventory variables to read
+        CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
+
 C...........   Local allocatable arrays
         INTEGER,            ALLOCATABLE :: INDEXA  ( : ) ! sorting index
         INTEGER,            ALLOCATABLE :: IGRPNUMA( : ) ! unsorted group number
-        CHARACTER(FIPLEN3), ALLOCATABLE :: CGRPFIPA( : ) ! unsorted FIPS
-        CHARACTER(FIPLEN3), ALLOCATABLE :: CGRPFIP ( : ) ! sorted FIPS
+        CHARACTER(SRCLEN),  ALLOCATABLE :: CGRPSRCA( : ) ! unsorted group characteristics
+        CHARACTER(SRCLEN),  ALLOCATABLE :: CGRPSRC ( : ) ! sorted group characteristics
+        CHARACTER(16),      ALLOCATABLE :: COMBOGRPS(: ) ! combo groups by source
 
 C...........   Other local variables
-        INTEGER         I, J, N, INDX, C, F, GIDX, CNT   !  counters and indices
+        INTEGER         I, J, K, N, INDX, C, F, GIDX, CNT   !  counters and indices
         INTEGER         MXERR   !  max no. errors of each type
         INTEGER         MXWARN  !  max no. warnings of each type
         INTEGER         NLINES  !  number of lines
         INTEGER         INUM    !  source group number
-        INTEGER         IFIP    !  integer FIPS code
+        INTEGER         IFIPT   !  integer FIPS code
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
-        INTEGER         NFIP    !  number of FIPS in inventory or surrogates
+        INTEGER         NSRC    !  number of sources or (for biogenics) FIPS
+        INTEGER         NINVARR ! number inventory variables to read
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
 
         CHARACTER(FIPLEN3) CFIP     !  character FIPS code
         CHARACTER(FIPLEN3) CSTA     !  state code
-        CHARACTER(FIPLEN3) PREVFIP  !  previous FIPS code from sorted list
+        CHARACTER(SCCLEN3) TSCC     !  SCC code
+        CHARACTER(SCCLEN3) PSCC     !  previous SCC code
+        CHARACTER(PLTLEN3) CPLTID   !  facility / plant ID code
+        CHARACTER(CHRLEN3) CPNTID   !  unit / point ID code
+        CHARACTER(SRCLEN)  CSRC     !  source characteristics
+        CHARACTER(SRCLEN)  PREVCSRC !  previous source info from sorted list
+        CHARACTER(16)      COMBOGRP !  stack group ID + source group index
         CHARACTER(512)     LINE     !  line buffer
         CHARACTER(512)     MESG     !  message buffer
 
@@ -117,6 +132,83 @@ C...........   Other local variables
 
 ***********************************************************************
 C   begin body of subroutine RDSRCGRPS
+        
+C.........  Read source characteristics needed for matching from inventory
+
+C.........  Check if Movesmrg has already loaded the data it needs
+        IF( MFLAG .AND. ALLOCATED( CSCC ) ) THEN
+            NSRC = NMSRC
+
+        ELSE
+            IVARNAMS( 1 ) = 'IFIP'
+            IVARNAMS( 2 ) = 'CSCC'
+            NINVARR = 2
+            IF( AFLAG ) THEN
+                NSRC = NASRC
+                CALL RDINVCHR( 'AREA', AENAME, ASDEV, NSRC, NINVARR, IVARNAMS )
+            
+            ELSE IF( BFLAG ) THEN
+                NSRC = NSRGFIPS
+    
+            ELSE IF( MFLAG ) THEN
+                NSRC = NMSRC
+                CALL RDINVCHR( 'MOBILE', MENAME, MSDEV, NSRC, NINVARR, IVARNAMS )
+                
+            ELSE IF( PFLAG ) THEN
+                NSRC = NPSRC
+                IVARNAMS( 3 ) = 'CSOURC'
+                NINVARR = 3
+                CALL RDINVCHR( 'POINT', PENAME, PSDEV, NSRC, NINVARR, IVARNAMS )
+                
+            END IF
+
+C.............  Build list of unique SCCs
+            IF( .NOT. BFLAG ) THEN
+
+C.................  Create sorting index
+                ALLOCATE( INDEXA( NSRC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
+        
+                DO I = 1, NSRC
+                    INDEXA( I ) = I
+                END DO
+
+C.................  Sort SCCs        
+                CALL SORTIC( NSRC, INDEXA, CSCC )
+
+C.................  Count number of unique SCCs
+                NINVSCC = 0
+                PSCC = ' '
+                DO I = 1, NSRC
+                
+                    TSCC = CSCC( INDEXA( I ) )
+                    IF( TSCC .NE. PSCC ) NINVSCC = NINVSCC + 1
+                    PSCC = TSCC
+        
+                END DO
+
+C.................  Build list of unique SCCs        
+                ALLOCATE( INVSCC( NINVSCC ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'INVSCC', PROGNAME )
+        
+                NINVSCC = 0
+                PSCC = ' '
+                DO I = 1, NSRC
+                
+                    TSCC = CSCC( INDEXA( I ) )
+                    IF( TSCC .NE. PSCC ) THEN
+                        NINVSCC = NINVSCC + 1
+                        INVSCC( NINVSCC ) = TSCC
+                    END IF
+                    PSCC = TSCC
+                
+                END DO
+                
+                DEALLOCATE( INDEXA )
+            
+            END IF  ! build SCC list if not biogenics
+        
+        END IF  ! need to load inventory data
 
 C.........  Write status message
         MESG = 'Reading source groups file...'
@@ -130,8 +222,8 @@ C.........  Allocate memory for unsorted data
         CALL CHECKMEM( IOS, 'INDEXA', PROGNAME )
         ALLOCATE( IGRPNUMA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IGRPNUMA', PROGNAME )
-        ALLOCATE( CGRPFIPA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CGRPFIPA', PROGNAME )
+        ALLOCATE( CGRPSRCA( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CGRPSRCA', PROGNAME )
 
 C.........  Read lines and store unsorted data
         IREC   = 0
@@ -156,6 +248,24 @@ C.............  Skip blank lines or comments
 
             CALL PARSLINE( LINE, MXCOL, SEGMENT )
 
+            TSCC = SEGMENT( 3 )
+            CALL FLTRNEG( TSCC )
+
+            CPLTID = SEGMENT( 4 )
+            CALL FLTRNEG( CPLTID )
+
+            CPNTID = SEGMENT( 5 )
+            CALL FLTRNEG( CPNTID )
+
+C.............  Skip records that don't apply to current category
+            IF( BFLAG .AND. 
+     &          ( TSCC /= ' ' .OR. 
+     &            CPLTID /= ' ' .OR.
+     &            CPNTID /= ' ' ) ) CYCLE
+            IF( ( AFLAG .OR. MFLAG ) .AND.
+     &          ( CPLTID /= ' ' .OR.
+     &            CPNTID /= ' ' ) ) CYCLE
+
 C.............  Check group number
             IF( CHKINT( SEGMENT( 1 ) ) ) THEN
                 INUM = STR2INT( SEGMENT( 1 ) )
@@ -178,16 +288,9 @@ C.................  Reserve group number zero
             END IF
 
 C.............  Check FIPS code
-            IF( SEGMENT( 2 ) == ' ' ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Missing FIPS code at line',
-     &                 IREC, 'of source grouping file.'
-                CALL M3MESG( MESG )
-                CYCLE
-
-            ELSE IF( CHKINT( SEGMENT( 2 ) ) ) THEN
+            IF( CHKINT( SEGMENT( 2 ) ) ) THEN
                 CFIP = SEGMENT( 2 )
-                IFIP = STR2INT( CFIP )
+                IFIPT = STR2INT( CFIP )
 
 C.................  Standardize character version of FIPS code                
                 CALL FLTRNEG( CFIP )
@@ -197,9 +300,9 @@ C.................  Check if FIPS code matches inventory or
 C                   surrogates (for biogenics)
                 IF( CFIP( 4:6 ) /= '000' ) THEN
                     IF( BFLAG ) THEN
-                        J = FIND1( IFIP, NSRGFIPS, SRGFIPS )
+                        J = FIND1( IFIPT, NSRGFIPS, SRGFIPS )
                     ELSE
-                        J = FIND1( IFIP, NINVIFIP, INVIFIP )
+                        J = FIND1( IFIPT, NINVIFIP, INVIFIP )
                     END IF
 
                     IF( J .LE. 0 ) THEN
@@ -219,6 +322,27 @@ C                   surrogates (for biogenics)
                 CYCLE
             END IF
 
+C.............  Check SCC code
+            IF( .NOT. BFLAG ) THEN
+
+C.................  Standardize SCC code
+                CALL PADZERO( TSCC )
+
+C.................  Check if SCC matches inventory
+                IF( TSCC .NE. REPEAT( '0', SCCLEN3 ) ) THEN
+                    J = FINDC( TSCC, NINVSCC, INVSCC )
+                    
+                    IF( J .LE. 0 ) THEN
+                        WRITE( MESG,94010 )
+     &                    'WARNING: SCC "' // TSCC // '" at line',
+     &                    IREC, 'does not match inventory.'
+                        CALL M3MSG2( MESG )
+                        CYCLE
+                    END IF
+                END IF
+
+            END IF
+
 C.............  Increment count of valid lines and check it
             N = N + 1
             IF( N .GT. NLINES ) CYCLE  ! Ensure no overflow
@@ -226,7 +350,8 @@ C.............  Increment count of valid lines and check it
 C.............  Store fields from source groups file
             INDEXA  ( N ) = N
             IGRPNUMA( N ) = INUM
-            CGRPFIPA( N ) = CFIP
+            CGRPSRCA( N ) = CFIP // TSCC // 
+     &                      ADJUSTR( CPLTID ) // ADJUSTR( CPNTID )
 
         END DO      ! End of loop on I for reading in source groups file
 
@@ -252,31 +377,31 @@ C           for default group
 C.........  Allocate memory for sorted groups
         ALLOCATE( IGRPNUM( NSRCGRP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IGRPNUM', PROGNAME )
-        ALLOCATE( CGRPFIP( N ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CGRPFIP', PROGNAME )
+        ALLOCATE( CGRPSRC( N ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CGRPSRC', PROGNAME )
 
 C.........  Sort source groups by FIPS code
-        CALL SORTIC( N, INDEXA, CGRPFIPA )
+        CALL SORTIC( N, INDEXA, CGRPSRCA )
 
-        PREVFIP = ' '
+        PREVCSRC = ' '
         DO I = 1, N
 
             J = INDEXA( I )
-            
-C.............  Check for duplicate FIPS codes
-            CFIP = CGRPFIPA( J )
-            IF( CFIP .EQ. PREVFIP ) THEN
+
+C.............  Check for duplicate group info
+            CSRC = CGRPSRCA( J )
+            IF( CSRC .EQ. PREVCSRC ) THEN
                 EFLAG = .TRUE.
-                MESG = 'ERROR: Duplicate FIPS code "' // CFIP // 
+                MESG = 'ERROR: Duplicate source group "' // TRIM( CSRC ) //
      &                 '" in source grouping file.'
                 CALL M3MSG2( MESG )
                 CYCLE
             END IF
 
             IGRPNUM( I ) = IGRPNUMA( J )
-            CGRPFIP( I ) = CFIP
+            CGRPSRC( I ) = CSRC
             
-            PREVFIP = CFIP
+            PREVCSRC = CSRC
 
         END DO
 
@@ -285,47 +410,181 @@ C.........  Check for sorting errors
             MESG = 'Problem with source groups file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-        
+
+C.........  Set default source group        
         IGRPNUM( NSRCGRP ) = 0
 
-C.........  Assign FIPS from inventory/surrogates to source groups
-        IF( BFLAG ) THEN
-            NFIP = NSRGFIPS
-        ELSE
-            NFIP = NINVIFIP
-        END IF
-
-        ALLOCATE( IFIPGRP( NFIP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIPGRP', PROGNAME )
-
-        DO I = 1, NFIP
+C.........  Assign sources to source groups
+        ALLOCATE( ISRCGRP( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ISRCGRP', PROGNAME )
         
+        DO I = 1, NSRC
+            
             IF( BFLAG ) THEN
-                IFIP = SRGFIPS( I )
+                IFIPT = SRGFIPS( I )
             ELSE
-                IFIP = INVIFIP( I )
+                IFIPT = IFIP( I )
             END IF
 
-            WRITE( CFIP, '(I5.5)' ) IFIP
+            WRITE( CFIP, '(I5.5)' ) IFIPT
             CALL PADZERO( CFIP )  ! pad with zeros
             CSTA = CFIP( 1:STALEN3 ) // '000'
             
-            INDX = FINDC( CFIP, N, CGRPFIP )
+            INDX = 0
+            CSRC = ' '
+            
+            IF( PFLAG ) THEN
 
-C.............  If county-level FIPS isn't found, check state level
-            IF( INDX .LT. 0 ) THEN
-                INDX = FINDC( CSTA, N, CGRPFIP )
+C.................  Match plant characteristics
+                TSCC = CSCC( I )
+                CALL PADZERO( TSCC )
+                
+                CPLTID = CSOURC( I )( PLTPOS3:PLTPOS3+PLTLEN3 )
+                CPNTID = CSOURC( I )( CH1POS3:CH1POS3+CHRLEN3 )
+
+C.................  full FIPS, SCC, plant, point
+                CSRC = CFIP // TSCC // CPLTID // CPNTID
+                INDX = FINDC( CSRC, N, CGRPSRC )
+                
+C.................  full FIPS, SCC, plant
+                IF( INDX .LT. 0 ) THEN
+                    CSRC = CFIP // TSCC // CPLTID
+                    INDX = FINDC( CSRC, N, CGRPSRC )
+                END IF
+                
+C.................  full FIPS, blank SCC, plant, point
+                TSCC = REPEAT( '0', SCCLEN3 )
+                IF( INDX .LT. 0 ) THEN
+                    CSRC = CFIP // TSCC // CPLTID // CPNTID
+                    INDX = FINDC( CSRC, N, CGRPSRC )
+                END IF
+                
+C.................  full FIPS, blank SCC, plant
+                IF( INDX .LT. 0 ) THEN
+                    CSRC = CFIP // TSCC // CPLTID
+                    INDX = FINDC( CSRC, N, CGRPSRC )
+                END IF
+
+            END IF
+            
+            IF( INDX .LE. 0 .AND. .NOT. BFLAG ) THEN
+
+C.................  Match SCC
+                TSCC = CSCC( I )
+                CALL PADZERO( TSCC )
+                
+C.................  full FIPS, SCC
+                CSRC = CFIP // TSCC
+                INDX = FINDC( CSRC, N, CGRPSRC )
+                
+C.................  state, SCC
+                IF( INDX .LT. 0 ) THEN
+                    CSRC = CSTA // TSCC
+                    INDX = FINDC( CSRC, N, CGRPSRC )
+                END IF
+                
+C.................  blank FIPS, SCC
+                IF( INDX .LT. 0 ) THEN
+                    CSRC = REPEAT( '0', FIPLEN3 ) // TSCC
+                    INDX = FINDC( CSRC, N, CGRPSRC )
+                END IF
+                
+            END IF
+            
+            IF( INDX .LE. 0 ) THEN
+
+C.................  full FIPS
+                CSRC = CFIP // REPEAT( '0', SCCLEN3 )
+                INDX = FINDC( CSRC, N, CGRPSRC )
+                
+C.................  state
+                IF( INDX .LT. 0 ) THEN
+                    CSRC = CSTA // REPEAT( '0', SCCLEN3 )
+                    INDX = FINDC( CSRC, N, CGRPSRC )
+                END IF
+                
             END IF
             
             IF( INDX .GT. 0 ) THEN
-                IFIPGRP( I ) = INDX
+                ISRCGRP( I ) = INDX
             ELSE
 
-C.................  If no state or county match, assign to default group
-                IFIPGRP( I ) = NSRCGRP
+C.................  If no match, assign to default group
+                ISRCGRP( I ) = NSRCGRP
             END IF
         
         END DO
+
+C.........  Reassign elevated stack groups
+        IF( PFLAG .AND. NGROUP .NE. 0 ) THEN
+
+            ALLOCATE( ELEVGRPID( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ELEVGRPID', PROGNAME )
+            ALLOCATE( COMBOGRPS( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'COMBOGRPS', PROGNAME )
+
+            ELEVGRPID = 0
+
+            K = 0
+            DO I = 1, NSRC
+
+C.................  Skip sources that aren't elevated
+                IF( GROUPID( I ) == 0 ) CYCLE
+            
+C.................  Build combo group ID using stack group number and 
+C                   source group index for current source
+                WRITE( COMBOGRP, '(I8.8, I8.8)' ) GROUPID( I ), ISRCGRP( I )
+
+C.................  Check if combo group has already been assigned
+                INDX = INDEX1( COMBOGRP, K, COMBOGRPS )
+                IF( INDX > 0 ) THEN
+
+C.....................  Assign source to existing group
+                    ELEVGRPID( I ) = INDX
+                
+                ELSE
+
+C.....................  Create new combo group
+                    K = K + 1
+                    COMBOGRPS( K ) = COMBOGRP
+                    ELEVGRPID( I ) = K
+
+                END IF
+            
+            END DO
+
+            NELEVGRPS = K
+            
+            DEALLOCATE( COMBOGRPS )
+
+C.............  Build lists mapping new elevated groups to original stack groups
+C               and source groups
+            ALLOCATE( ELEVSTKGRP( NELEVGRPS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ELEVSTKID', PROGNAME )
+            ALLOCATE( ELEVSRCGRP( NELEVGRPS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ELEVSRCGRP', PROGNAME )
+            ALLOCATE( ELEVSTKCNT( NELEVGRPS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ELEVSTKCNT', PROGNAME )
+            ELEVSTKCNT = 0
+            
+            DO I = 1, NSRC
+
+C.................  Skip sources that aren't elevated
+                IF( GROUPID( I ) == 0 ) CYCLE
+            
+                INDX = ELEVGRPID( I )
+                ELEVSTKGRP( INDX ) = GROUPID( I )
+                ELEVSRCGRP( INDX ) = ISRCGRP( I )
+                ELEVSTKCNT( INDX ) = ELEVSTKCNT( INDX ) + 1
+            
+            END DO
+
+C.............  Allocate storage for summed emissions per group            
+            ALLOCATE( EMELEVGRP( NELEVGRPS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'EMELEVGRP', PROGNAME )
+            EMELEVGRP = 0.
+
+        END IF
 
 C.........  Determine number of source group / grid cell interactions
         NSGOUTPUT = 0
@@ -335,8 +594,8 @@ C.........  Determine number of source group / grid cell interactions
         GRPCNT = 0  ! array
 
         IF( AFLAG ) THEN
-            CALL SRCGRPCNT( NASRC, ANGMAT, AGMATX( 1 ), 
-     &                      AGMATX( NGRID+1 ), AICNY )
+            CALL SRCGRPCNT( NSRC, ANGMAT, AGMATX( 1 ), 
+     &                      AGMATX( NGRID+1 ) )
         END IF
         
         IF( BFLAG ) THEN
@@ -344,7 +603,7 @@ C.........  Determine number of source group / grid cell interactions
 C.............  Loop through FIPS codes from surrogates
             DO F = 1, NSRGFIPS
 
-                GIDX = IFIPGRP( F )
+                GIDX = ISRCGRP( F )
 
 C.................  Loop through grid cells for FIPS code
                 DO N = 1, NCELLS( F )
@@ -364,17 +623,17 @@ C.................  Loop through grid cells for FIPS code
         END IF
         
         IF( MFLAG ) THEN
-            CALL SRCGRPCNT( NMSRC, MNGMAT, MGMATX( 1 ), 
-     &                      MGMATX( NGRID+1 ), MICNY )
+            CALL SRCGRPCNT( NSRC, MNGMAT, MGMATX( 1 ), 
+     &                      MGMATX( NGRID+1 ) )
         END IF
         
         IF( PFLAG ) THEN
-            CALL SRCGRPCNT( NPSRC, NPSRC, PGMATX( 1 ), 
-     &                      PGMATX( NGRID+1 ), PICNY )
+            CALL SRCGRPCNT( NSRC, NSRC, PGMATX( 1 ), 
+     &                      PGMATX( NGRID+1 ) )
 
 C.............  Increment number of output records to account
 C               for elevated sources
-            NSGOUTPUT = NSGOUTPUT + NGROUP
+            NSGOUTPUT = NSGOUTPUT + NELEVGRPS
         END IF
 
 C.........  Allocate memory for emissions data
@@ -396,7 +655,7 @@ C.........  Allocate additional arrays for Movesmrg processing
         END IF
 
 C.........  Deallocate local memory
-        DEALLOCATE( INDEXA, IGRPNUMA, CGRPFIPA, CGRPFIP )
+        DEALLOCATE( INDEXA, IGRPNUMA, CGRPSRCA, CGRPSRC )
 
         RETURN
 

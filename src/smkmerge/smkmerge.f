@@ -89,7 +89,7 @@ C.........  This module contains the major data structure and control flags
      &          AERCNY, MERCNY, PERCNY,                         ! cnty total reac control emis
      &          AECCNY, MECCNY, PECCNY,                         ! cnty total all-control emis
      &          LFRAC, EANAM, TONAMES,                          ! layer frac, pol/act names
-     &          IFIPGRP, EMGGRD                                 ! emis by grid cell and src group
+     &          ISRCGRP, EMGGRD                                 ! emis by grid cell and src group
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: ACRIDX, ACRREPEM, ACRPRJFC, ACRMKTPN,
@@ -836,7 +836,7 @@ C                               units to the totals output units
                                 CALL GRD2CNTY( 0, KB, NCOUNTY, 
      &                                         FB, BEMGRD, BEBCNY,
      &                                         SRCGRPFLAG, BIOGFAC, 
-     &                                         IFIPGRP, EMGGRD )
+     &                                         ISRCGRP, EMGGRD )
 
                             END IF
                         END IF

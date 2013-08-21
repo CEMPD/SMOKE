@@ -145,4 +145,12 @@
         REAL   , ALLOCATABLE, PUBLIC :: ACRES(:)
         LOGICAL, PUBLIC :: FFLAG    = .TRUE.  ! true if source sector is a fire source
 
+!.........  Source apportionment revised groups
+        INTEGER,              PUBLIC :: NELEVGRPS       ! number of revised stack groups
+        INTEGER, ALLOCATABLE, PUBLIC :: ELEVGRPID( : )  ! revised stack group ID per src
+        INTEGER, ALLOCATABLE, PUBLIC :: ELEVSTKGRP( : ) ! mapping to orig. stack group
+        INTEGER, ALLOCATABLE, PUBLIC :: ELEVSRCGRP( : ) ! mapping to orig. src group
+        INTEGER, ALLOCATABLE, PUBLIC :: ELEVSTKCNT( : ) ! stack count per group
+        REAL,    ALLOCATABLE, PUBLIC :: EMELEVGRP( : )  ! summed group emissions
+
         END MODULE MODELEV
