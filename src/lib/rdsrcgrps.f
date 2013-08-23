@@ -322,11 +322,11 @@ C                   surrogates (for biogenics)
                 CYCLE
             END IF
 
+C.............  Standardize SCC code
+            CALL PADZERO( TSCC )
+
 C.............  Check SCC code
             IF( .NOT. BFLAG ) THEN
-
-C.................  Standardize SCC code
-                CALL PADZERO( TSCC )
 
 C.................  Check if SCC matches inventory
                 IF( TSCC .NE. REPEAT( '0', SCCLEN3 ) ) THEN
