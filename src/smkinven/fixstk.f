@@ -676,6 +676,8 @@ C.........  This is in a separate loop to permit better reporting
 
             IF( DFLAG( S ) ) THEN
 
+                CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
+
 C.................  Error msg when there are no default x-reference available
                 IF( HT0 < 0.0 .AND. DM0 < 0.0 .AND.
      &              TK0 < 0.0 .AND. VE0 < 0.0       ) THEN
@@ -688,8 +690,6 @@ C.................  Error msg when there are no default x-reference available
 
                 END IF
                 
-                CALL FMTCSRC( CSOURC(S), 7, BUFFER, L2 )
-
                 NWARN = NWARN + 1
                 WRITE( MESG,94010 ) 
      &                 BUFFER( 1:L2 ) // ' SCC: ' // TSCC //
