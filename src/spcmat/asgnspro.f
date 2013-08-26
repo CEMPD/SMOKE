@@ -877,8 +877,9 @@ C                       there is no need for error checking
 
                         CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
                         IF( CNVFAC == 1.0 .AND. CNVFLAG( V ) ) THEN
-                            MESG='WARNING: Default pollutant conversion'//
-     &                          ' factor (=1.0) was applied to source:' //
+                            MESG='WARNING: Missing speciation profile "'//
+     &                          CCODE(NP)//'" : Default pollutant '//
+     &                          'conversion factor (1.0) is applied'// 
      &                          CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                          ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
                             IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
