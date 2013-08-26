@@ -125,6 +125,7 @@ C...........   Local variables
         INTEGER         SRGID2            ! tmp fallback surrogate ID
         INTEGER         STKGRP            ! tmp stack group ID
         INTEGER         WEKID             ! tmp weekly profile number
+        INTEGER         MXOUTREC          ! max output rec (NOUTREC*BUFLEN)
 
         CHARACTER              ESTAT      ! tmp elevated status
         CHARACTER(60)          FMTBUF     ! format buffer
@@ -152,7 +153,14 @@ C.........  Set report-specific local settings
         NDATA   = ALLRPT( RCNT )%NUMDATA
         RPT_    = ALLRPT( RCNT )
         LREGION = ( RPT_%BYCNTY .OR. RPT_%BYSTAT .OR. RPT_%BYCNRY )
+        MXOUTREC = NOUTREC * BUFLEN
 
+C.........  Memory check
+        IF( MXOUTREC < 1 ) THEN
+            MESG = 'ERROR: Problem processing the size of inventory'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+ 
 C.........  Allocate (and deallocate) memory for sorting arrays
         IF( ALLOCATED( SORTIDX ) ) DEALLOCATE( SORTIDX, SORTBUF )
 
@@ -160,6 +168,8 @@ C.........  Allocate (and deallocate) memory for sorting arrays
         CALL CHECKMEM( IOS, 'SORTIDX', PROGNAME )
         ALLOCATE( SORTBUF( NOUTREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SORTBUF', PROGNAME )
+        SORTIDX = 0
+        SORTBUF = ' '
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
