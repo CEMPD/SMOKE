@@ -168,15 +168,15 @@ C.............  Convert FIP to integer
 
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
                 IF( RFLAG ) THEN
-                    EFLAG = .FALSE.
-                    WRITE( MESG, 94010 )'ERROR: Can NOT process non-'//
-     &                  'reference county control factor at line', IREC 
+                    WRITE( MESG, 94010 ) 'WARNING: Skipping line',
+     &                  IREC, ' of control factor file bacause FIPS code '//
+     &                  TRIM( SEGMENT(1) ) // ' is not a reference county'
+                    CALL M3MESG( MESG )
+                ELSE 
+                    WRITE( MESG, 94010 )'WARNING: All counties will be '//
+     &                  'controlled by zero or blank FIPS entry at line', IREC 
                     CALL M3MESG( MESG )
                 END IF
-                   
-                WRITE( MESG, 94010 )'WARNING: All counties will be '//
-     &              'controlled by zero or blank FIPS entry at line', IREC 
-                CALL M3MESG( MESG )
 
                 NFIPS = NINVIFIP
                 DO J = 1, NINVIFIP
@@ -186,6 +186,7 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
             ELSE         ! FIPS is integer value 
                 CNTY = STR2INT( SEGMENT( 1 ) )
                 L1 = FIND1( CNTY, NINVIFIP, INVIFIP )
+
                 IF( L1 > 0 ) THEN 
                     NFIPS = 1
                     NLFIPS(1) = L1
@@ -194,50 +195,54 @@ C.....................  Propagate reference-county-specific control factor to in
                     IF( RFLAG ) THEN
                         L2 = FIND1( CNTY, NREFC, MCREFIDX( :,1 ) )
                         IF( L2 < 1 ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG, 94010 ) 'ERROR: Can process '//
-     &                             'reference county ONLY: ', CNTY,
-     &                             ' is not a reference county'
+                            WRITE( MESG, 94010 ) 'WARNING: Skipping line',
+     &                          IREC, ' of control factor file bacause FIPS code ',
+     &                          CNTY, ' is not a reference county'
                             CALL M3MESG( MESG )
+                            CYCLE
                         END IF
 
 C.........................  find ref county and apply CF to ref-inventory counties
-                        DO J =1, NINVC
+                        DO J = 1, NINVC
                             IF( CNTY == MCREFSORT( J,2 ) ) THEN  ! found matched ref county
-                                K = K + 1
                                 L1 = FIND1( MCREFSORT( J,1 ), NINVIFIP, INVIFIP )
-                                NLFIPS( K ) = L1
+                                IF( L1 > 0 ) THEN
+                                    K = K + 1
+                                    NLFIPS( K ) = L1
+                                END IF
                             END IF
                         END DO
                         NFIPS = K
 
                     END IF
-
                 ELSE     ! FIPS is country/state  
 
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
-                    IF( RFLAG ) THEN
-                        EFLAG = .FALSE.
-                        WRITE( MESG, 94010 )'ERROR: Can NOT process non-'//
-     &                     'reference county control factor at line', IREC 
+                    IF( MOD( CNTY,1000 ) /= 0 ) THEN
+                        WRITE( MESG, 94010 ) 'NOTE: Skipping line',
+     &                  IREC, ' of control factor file because FIPS code '
+     &                   //TRIM(SEGMENT(1))//' is not listed in the inventory'
                         CALL M3MESG( MESG )
+                        CYCLE
                     END IF
 
-                    CNTY = CNTY/1000
-                    DO J =1, NINVIFIP 
-                        IF ( CNTY == INVIFIP(J)/1000 ) THEN
+                    CNTY = CNTY/1000     ! Convert to State ID
+                    DO J = 1, NINVIFIP 
+                        IF( CNTY == INVIFIP(J)/1000 ) THEN
                             K = K+1
                             NLFIPS(K) = J
                         END IF
                     END DO
                     NFIPS = K
+
                 END IF
+
             END IF
 
             IF( NFIPS == 0 ) THEN
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line', 
      &            IREC, ' of control factor file because FIPS code '
-     &            //TRIM(SEGMENT( 1 ))//' is not in the inventory.'
+     &            //TRIM(SEGMENT(1))//' is not listed in the inventory'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -257,7 +262,7 @@ C.............  Find SCC in inventory list
                 IF( SCCIDX .LE. 0 ) THEN
                     WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
      &                "line ", IREC, ' of control factor file because SCC ' 
-     &                //SCC// ' is not in the inventory.'
+     &                //SCC// ' is not listed in the inventory.'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -274,7 +279,7 @@ C.............  Check pollutant name and mode
                 DO J = 1, NIPPA
                     NLPOLS(J) =  J
                 END DO
-            ELSE IF( SEGMENT( 3 ) == ' ' ) THEN
+            ELSE IF( SEGMENT( 3 ) == ' ' .AND. SEGMENT( 4 ) /= ' ') THEN
                 L1 = LEN_TRIM(SEGMENT( 4 ))
                 DO J = 1, NIPPA
                     IF ( MODNAME == EANAM(J)(1:L1) ) THEN
@@ -290,7 +295,7 @@ C.............  Check pollutant name and mode
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
-            ELSE IF( SEGMENT( 4 ) .EQ. ' ' ) THEN
+            ELSE IF( SEGMENT( 3 ) /= ' ' .AND. SEGMENT( 4 ) == ' ' ) THEN
                 DO J = 1, NIPPA
                     L1 = INDEX(EANAM(J), ETJOIN)
                     IF ( POLNAME == EANAM(J)(L1+2:) ) THEN
@@ -315,7 +320,7 @@ C.............  Check pollutant name and mode
                     NPOLS = 1
                     NLPOLS(1) = POLIDX
                 END IF
-                IF (  NPOLS .EQ. 0 ) THEN
+                IF (  NPOLS < 1 ) THEN
                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
      &                IREC, ' of control factor file because ' //
      &                TRIM(EPOLNAM)// ' is not in the pollutant list.'
@@ -326,6 +331,7 @@ C.............  Check pollutant name and mode
 
 C.............  Check month values
             NMONS = 0
+            IF( SEGMENT( 5 ) == ' ' ) SEGMENT( 5 ) = '0'
             IF( STR2INT( SEGMENT( 5 ) ) == 0 ) THEN 
                 NMONS = 12
                 DO J = 1, NMONS
@@ -349,6 +355,9 @@ C.............  Check month values
                 NMONS = 1
                 NLMONS( 1 ) = MON
             END IF
+
+C.............  check no of fips/scc/poll/mon
+            IF( NFIPS < 1 .OR. NSCCS < 1 .OR. NPOLS < 1 .OR. NMONS < 1 )  CYCLE
                 
 C.............  check and get up control factor values
             IF ( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
@@ -360,12 +369,14 @@ C.............  check and get up control factor values
             END IF
  
             CFVAL = STR2REAL( SEGMENT( 6 ) )                
+
             DO L = 1, NFIPS
             DO J = 1, NSCCS
             DO K = 1, NPOLS
             DO M = 1, NMONS
                 DUFLAG = CFLAG(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
                 IF( DUFLAG ) THEN
+                    OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
                     WRITE( MESG, 94050 ) 'WARNING: Duplicate entry at line',
      &                  IREC,': Overwriting factor from ', OLDVAL, ' to ', CFVAL,
      &                  CRLF() // BLANK10 // ' FIPS:', INVIFIP(NLFIPS(L)), 
