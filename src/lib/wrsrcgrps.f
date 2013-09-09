@@ -95,7 +95,7 @@ C...........   Local allocatable arrays
         REAL,         ALLOCATABLE :: STKTK  ( : ) ! stack exit temperature
         REAL,         ALLOCATABLE :: STKVE  ( : ) ! stack exit velocity
         REAL,         ALLOCATABLE :: STKFLW ( : ) ! stack exit flow rate
-        REAL,         ALLOCATABLE :: OUTEMIS( : ) ! output emissions
+        REAL, SAVE,   ALLOCATABLE :: OUTEMIS( : ) ! output emissions
         REAL,         ALLOCATABLE :: REALDATA( : )! generic real data
 
 C...........   Other local variables
