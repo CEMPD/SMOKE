@@ -278,6 +278,7 @@ if ( $SMK_SOURCE == A || $RUN_SMKMERGE == Y && $MRG_AREA == Y ) then
    setenv AGMAT    $SMKDAT/run_$ABASE/static/agmat.$SRCABBR.$GRID.$ABASE.ncf
    setenv APMAT    $SMKDAT/run_$ASCEN/static/apmat.$SRCABBR.$ASCEN.ncf
    setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$ASCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$ASCEN.txt
 endif
 
 ## Biogenic source intermediate and output files
@@ -300,6 +301,7 @@ if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
    setenv B3GTS_L_O $B_OUT/b3gts_l_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
    setenv B3GTS_S_O $B_OUT/b3gts_s_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
    setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$BSCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$BSCEN.txt
 endif
 
 # Mobile source intermediate and output files 
@@ -338,6 +340,7 @@ if ( $SMK_SOURCE == M || $RUN_SMKMERGE == Y && $MRG_MOBILE == Y ) then
    setenv MGMAT    $SMKDAT/run_$MBASE/static/mgmat.$SRCABBR.$GRID.$MBASE.ncf
    setenv MPMAT    $SMKDAT/run_$MSCEN/static/mpmat.$SRCABBR.$MSCEN.ncf
    setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$MSCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$MSCEN.txt
 endif
 
 ## Point source intermediate and output files
@@ -376,6 +379,7 @@ if ( $SMK_SOURCE == P || $RUN_SMKMERGE == Y && $MRG_POINT == Y ) then
    setenv PPMAT    $SMKDAT/run_$PSCEN/static/ppmat.$SRCABBR.$PSCEN.ncf
    setenv STACK_GROUPS $OUTPUT/stack_groups.$SRCABBR.$GRID.$PBASE.ncf
    setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$PSCEN.ncf
+   setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$PSCEN.txt
    setenv INLNTS_L $OUTPUT/inlnts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
    setenv PLAY     $SMKDAT/run_$PBASE/scenario/play.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
    setenv PLAY_EX  $SMKDAT/run_$PBASE/scenario/play_ex.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
