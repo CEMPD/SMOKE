@@ -67,7 +67,7 @@ C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, INVPIDX
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: NGROUP, NHRSRC
+        USE MODELEV, ONLY: NGROUP, NHRSRC, SGFIREFLAG
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, VGTYP, VGTOP, VGLVS
@@ -909,6 +909,14 @@ C.................  Open stack groups file output from Elevpoint
                 PVNAME = PROMPTMFILE( MESG, FSREAD3, 'STACK_GROUPS', 
      &                   PROGNAME )
                 CALL RETRIEVE_IOAPI_HEADER( PVNAME )
+
+C.................  Check if stack groups file has fire data
+                DO I = 1, NVARS3D
+                    IF( VNAME3D( I ) .EQ. 'ACRESBURNED' ) THEN
+                        SGFIREFLAG = .TRUE.
+                        EXIT
+                    END IF
+                END DO
                   
                 IF( VARFLAG ) THEN
                     DUMNAME = GETCFDSC( FDESC3D, '/VARIABLE GRID/', 

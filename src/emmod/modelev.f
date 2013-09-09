@@ -152,5 +152,6 @@
         INTEGER, ALLOCATABLE, PUBLIC :: ELEVSRCGRP( : ) ! mapping to orig. src group
         INTEGER, ALLOCATABLE, PUBLIC :: ELEVSTKCNT( : ) ! stack count per group
         REAL,    ALLOCATABLE, PUBLIC :: EMELEVGRP( : )  ! summed group emissions
+        LOGICAL, PUBLIC :: SGFIREFLAG = .FALSE. ! true if stack groups has fire data
 
         END MODULE MODELEV

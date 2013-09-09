@@ -56,7 +56,7 @@ C.........  This module contains the global variables for the 3-d grid
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NGROUP, NELEVGRPS, EMELEVGRP, 
-     &                     ELEVSTKGRP, ELEVSRCGRP, ELEVSTKCNT
+     &                     ELEVSTKGRP, ELEVSRCGRP, ELEVSTKCNT, SGFIREFLAG
         
         IMPLICIT NONE
 
@@ -95,6 +95,7 @@ C...........   Local allocatable arrays
         REAL,         ALLOCATABLE :: STKTK  ( : ) ! stack exit temperature
         REAL,         ALLOCATABLE :: STKVE  ( : ) ! stack exit velocity
         REAL,         ALLOCATABLE :: STKFLW ( : ) ! stack exit flow rate
+        REAL,         ALLOCATABLE :: ACRES  ( : ) ! acres burned for a fire
         REAL, SAVE,   ALLOCATABLE :: OUTEMIS( : ) ! output emissions
         REAL,         ALLOCATABLE :: REALDATA( : )! generic real data
 
@@ -312,6 +313,21 @@ C.....................  Otherwise, convert x and y grid cell locations
      &                             LONG( ELEVIDX ), LAT( ELEVIDX ) )
 
                 END IF
+
+C.................  If acres burned is in existing stack groups file, add to output
+                IF( SGFIREFLAG ) THEN
+
+                    ALLOCATE( ACRES( NSGOUTPUT ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'ACRES', PROGNAME )
+                    ACRES = 0.
+
+                    CALL REAL_READ3( PVNAME, 'ACRESBURNED', 1, PVSDATE, PVSTIME, REALDATA )
+                    DO G = 1, NELEVGRPS
+                        IDX = ELEVIDX + G - 1
+                        ACRES( IDX ) = REALDATA( ELEVSTKGRP( G ) )
+                    END DO
+                
+                END IF
                 
                 DEALLOCATE( REALDATA )
             END IF
@@ -332,8 +348,17 @@ C.....................  Otherwise, convert x and y grid cell locations
             CALL REAL_WRITE3( SRCGRPNAME, 'STKTK', JDATE, JTIME, STKTK )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKVE', JDATE, JTIME, STKVE )
             CALL REAL_WRITE3( SRCGRPNAME, 'STKFLW', JDATE, JTIME, STKFLW )
-            
-            DEALLOCATE( ISTACK, STKCNT, ROW, COL, XLOCA, YLOCA )
+
+            IF( SGFIREFLAG ) THEN
+
+                CALL REAL_WRITE3( SRCGRPNAME, 'ACRESBURNED', JDATE, JTIME, ACRES )
+                DEALLOCATE( ACRES )
+
+            END IF
+
+            DEALLOCATE( ISTACK, STKCNT, ROW, COL, LMAJOR, LPING )
+            DEALLOCATE( XLOCA, YLOCA, LAT, LONG )
+            DEALLOCATE( STKDM, STKHT, STKTK, STKVE, STKFLW )
 
 C.............  Allocate space for output emissions
             ALLOCATE( OUTEMIS( NSGOUTPUT ), STAT=IOS )

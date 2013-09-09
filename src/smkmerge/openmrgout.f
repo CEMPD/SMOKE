@@ -54,7 +54,7 @@ C.........  This module contains the major data structure and control flags
      &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME
 
 C.........  This module contains arrays for plume-in-grid and major sources
-        USE MODELEV, ONLY: NGROUP
+        USE MODELEV, ONLY: NGROUP, SGFIREFLAG
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, P_ALP, P_BET, P_GAM, 
@@ -416,6 +416,14 @@ C.............  Build list of variables for stack groups file
             VTYPE3D( J ) = M3INT
             UNITS3D( J ) = 'none'
             VDESC3D( J ) = '1=PING SOURCE in domain, 0=otherwise'
+
+            IF( SGFIREFLAG ) THEN
+                J = J + 1
+                VNAME3D( J ) = 'ACRESBURNED'
+                VTYPE3D( J ) = M3REAL
+                UNITS3D( J ) = 'acres/day'
+                VDESC3D( J ) = 'number of acres burned for a fire in one day'
+            END IF
 
             NVARS3D = J
             
