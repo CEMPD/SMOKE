@@ -76,9 +76,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT, FIND1, FINDC, INDEX1
         INTEGER         ENVINT
         LOGICAL         BLKORCMT, CHKINT
+        INTEGER         PROMPTFFILE
  
         EXTERNAL  GETFLINE, STR2INT, FIND1, ENVINT, BLKORCMT, FINDC,
-     &            CHKINT, INDEX1
+     &            CHKINT, INDEX1, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: SGDEV           ! file unit number
@@ -112,7 +113,9 @@ C...........   Other local variables
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
         INTEGER         NSRC    !  number of sources or (for biogenics) FIPS
-        INTEGER         NINVARR ! number inventory variables to read
+        INTEGER         NINVARR !  number inventory variables to read
+        INTEGER         RDEV    !  report output file
+        INTEGER         SRCNUM  !  source number for report
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
 
@@ -136,7 +139,7 @@ C   begin body of subroutine RDSRCGRPS
 C.........  Read source characteristics needed for matching from inventory
 
 C.........  Check if Movesmrg has already loaded the data it needs
-        IF( MFLAG .AND. ALLOCATED( CSCC ) ) THEN
+        IF( MFLAG .AND. ASSOCIATED( CSCC ) ) THEN
             NSRC = NMSRC
 
         ELSE
@@ -414,6 +417,11 @@ C.........  Check for sorting errors
 C.........  Set default source group        
         IGRPNUM( NSRCGRP ) = 0
 
+C.........  Output source groups report
+        RDEV = PROMPTFFILE(
+     &           'Enter name for SOURCE GROUPS REPORT file', 
+     &           .FALSE., .TRUE., 'SRCGRP_REPORT', PROGNAME )
+
 C.........  Assign sources to source groups
         ALLOCATE( ISRCGRP( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ISRCGRP', PROGNAME )
@@ -512,6 +520,12 @@ C.................  state
 C.................  If no match, assign to default group
                 ISRCGRP( I ) = NSRCGRP
             END IF
+
+C.............  Add source to report file
+            SRCNUM = I
+            IF( BFLAG ) SRCNUM = SRGFIPS( I )
+
+            WRITE( RDEV,'(I8,1X,I8)' ) SRCNUM, IGRPNUM( ISRCGRP( I ) )
         
         END DO
 
