@@ -174,6 +174,11 @@ C.............  Override gridded file settings
             VGTOP3D = BADVAL3
             
             FDESC3D = ' '   ! array
+            FDESC3D( 1 ) = 'Mobile source groups file'
+            FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
+            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
+            WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS
+            WRITE( FDESC3D(6), 94010 ) '/NROWS3D/ ', NROWS
 
 C.............  Build list of variables for stack groups file
             J = 1

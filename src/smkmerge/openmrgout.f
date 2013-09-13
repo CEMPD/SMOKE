@@ -325,6 +325,19 @@ C.............  Override gridded file settings
             VGTOP3D = BADVAL3
             
             FDESC3D = ' '   ! array
+            IF( AFLAG ) THEN
+                FDESC3D( 1 ) = 'Area source groups file'
+            ELSE IF( BFLAG ) THEN
+                FDESC3D( 1 ) = 'Biogenic source groups file'
+            ELSE IF( MFLAG ) THEN
+                FDESC3D( 1 ) = 'Mobile source groups file'
+            ELSE IF( PFLAG ) THEN
+                FDESC3D( 1 ) = 'Point source groups file'
+            END IF
+            FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
+            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
+            WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS
+            WRITE( FDESC3D(6), 94010 ) '/NROWS3D/ ', NROWS
 
 C.............  Build list of variables for stack groups file
             J = 1
