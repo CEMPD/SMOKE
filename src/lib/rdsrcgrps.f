@@ -115,7 +115,7 @@ C...........   Other local variables
         INTEGER         NSRC    !  number of sources or (for biogenics) FIPS
         INTEGER         NINVARR !  number inventory variables to read
         INTEGER         RDEV    !  report output file
-        INTEGER         SRCNUM  !  source number for report
+        INTEGER         GRPNUM  !  group number for report
 
         LOGICAL      :: EFLAG = .FALSE.   !  true: error found
 
@@ -510,6 +510,12 @@ C.................  state
                     CSRC = CSTA // REPEAT( '0', SCCLEN3 )
                     INDX = FINDC( CSRC, N, CGRPSRC )
                 END IF
+
+C.................  user-assigned default group
+                IF( INDX .LT. 0 ) THEN
+                    CSRC = REPEAT( '0', FIPLEN3) // REPEAT( '0', SCCLEN3 )
+                    INDX = FINDC( CSRC, N, CGRPSRC )
+                END IF
                 
             END IF
             
@@ -522,10 +528,26 @@ C.................  If no match, assign to default group
             END IF
 
 C.............  Add source to report file
-            SRCNUM = I
-            IF( BFLAG ) SRCNUM = SRGFIPS( I )
+            GRPNUM = IGRPNUM( ISRCGRP( I ) )
 
-            WRITE( RDEV,'(I8,1X,I8)' ) SRCNUM, IGRPNUM( ISRCGRP( I ) )
+            IF( AFLAG .OR. MFLAG ) THEN
+
+                WRITE( RDEV,'(I8,1X,I8,1X,A,1X,I8)' ) 
+     &            I, IFIP( I ), CSCC( I ), GRPNUM
+                
+            ELSE IF( BFLAG ) THEN
+            
+                WRITE( RDEV,'(I8,1X,I8)' ) SRGFIPS( I ), GRPNUM
+            
+            ELSE IF( PFLAG ) THEN
+            
+                CPLTID = CSOURC( I )( PLTPOS3:PLTPOS3+PLTLEN3 )
+                CPNTID = CSOURC( I )( CH1POS3:CH1POS3+CHRLEN3 )
+
+                WRITE( RDEV,'(I8,1X,I8,1X,A,1X,A,1X,A,1X,I8)' ) 
+     &            I, IFIP( I ), CSCC( I ), CPLTID, CPNTID, GRPNUM
+
+            END IF
         
         END DO
 
