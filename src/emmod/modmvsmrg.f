@@ -44,6 +44,7 @@ C.........  Program settings
         LOGICAL, PUBLIC :: RPDFLAG  ! mode is rate-per-distance
         LOGICAL, PUBLIC :: RPVFLAG  ! mode is rate-per-vehicle
         LOGICAL, PUBLIC :: RPPFLAG  ! mode is rate-per-profile
+        LOGICAL, PUBLIC :: MTMP_OUT ! output temporal intermediate MTMP files
         LOGICAL, PUBLIC :: MOPTIMIZE ! memory optimize option
         
         CHARACTER(300), PUBLIC :: MVFILDIR  ! directory for MOVES output files

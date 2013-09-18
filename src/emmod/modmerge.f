@@ -138,6 +138,7 @@
         CHARACTER(16), PUBLIC :: MUNAME ! mobile multiplicative cntl matrix input
         CHARACTER(16), PUBLIC :: MONAME ! mobile output gridded file
         CHARACTER(16), PUBLIC :: MREPNAME ! mobile report file name
+        CHARACTER(16), PUBLIC :: MTMPNAME ! Movesmrg mtmp intmediate output file name
 
         CHARACTER(16), PUBLIC :: PENAME ! point inventory input
         CHARACTER(16), PUBLIC :: PTNAME( 7 ) ! point temporal input
