@@ -39,15 +39,18 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, TSTEP, BYEAR, PYEAR, 
-     &          LGRDOUT, NMSPC, EMNAM, NSMATV,
+     &          LGRDOUT, NMSRC, NIPPA, EANAM, NMSPC, EMNAM, NSMATV, 
      &          MONAME, LREPSTA, LREPCNY, LREPSCC, LREPSRC, MREPNAME,
      &          MRDEV, SIINDEX, SPINDEX, GRDUNIT, VARFLAG,
-     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME
+     &          SRCGRPFLAG, NSGOUTPUT, SRCGRPNAME, SGINLNNAME, MTMPNAME
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, P_ALP, P_BET, P_GAM, 
      &                     XCENT, YCENT, XORIG, YORIG, XCELL, YCELL,
      &                     GDTYP, VGTYP, VGTOP, VGLVS
+
+C.........  This module contain the global variables for Movesmrg
+        USE MODMVSMRG, ONLY: MTMP_OUT
 
         USE MODFILESET
 
@@ -83,7 +86,7 @@ C.........  Other local variables
 
         INTEGER         I, J, K, L, L1, L2, L3, L4, LD, LJ, V
 
-        INTEGER         IOS1, IOS2        ! i/o ENVSTR statuses
+        INTEGER         IOS, IOS1, IOS2   ! i/o ENVSTR statuses
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error is found
 
@@ -95,6 +98,7 @@ C.........  Other local variables
         CHARACTER(256)  MESG         ! message buffer
         CHARACTER(256)  BUFFER       ! tmp buffer
         CHARACTER(256)  OUTDIR       ! output path
+        CHARACTER(IOVLEN3) CBUF
         CHARACTER(IODLEN3) DESCBUF ! variable description buffer
 
         CHARACTER(16) :: PROGNAME = 'OPENMRGOUT' ! program name
@@ -161,6 +165,46 @@ C.............  Open by logical name or physical name
             CALL OPEN_LNAME_OR_PNAME( FILEDESC,'NETCDF',MONAME,I ) 
 
         END IF  ! End of gridded output
+
+C.........  Open hourly temporal intermediate output file
+        IF( MTMP_OUT ) THEN
+
+C.............  Override gridded file settings
+            NCOLS3D = 1
+            NROWS3D = NMSRC
+            NVARS3D = NIPPA
+            NLAYS3D = 1
+            GDTYP3D = GDTYP
+            VGTYP3D = IMISS3
+            VGTOP3D = BADVAL3
+
+            FDESC3D = ' '   ! array
+            FDESC3D( 1 ) = 'Mobile source temporal hourly emission data'
+            FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
+            FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
+            FDESC3D( 4 ) = '/TZONE/ 00'
+            WRITE( FDESC3D( 5 ),94010 ) '/BASE YEAR/ ', BYEAR
+            IF( PYEAR .NE. BYEAR ) 
+     &          WRITE( FDESC3D( 6 ),94010 ) '/PROJECTED YEAR/ ', PYEAR
+            FDESC3D( 7 ) = '/NUMBER OF FILES/   1' 
+            FDESC3D( 8 ) = '/FILE POSITION/   1' 
+            FDESC3D( 9 ) = '/AVERAGE DAY/   0' 
+            WRITE( FDESC3D( 10 ),94010 ) '/NUMBER OF VARIABLES/ ', NIPPA
+
+C.............  Loop through global species index
+            DO V = 1, NIPPA
+
+                VNAME3D( V ) = EANAM( V )
+                UNITS3D( V ) = 'tons/hr'
+                VDESC3D( V ) = 'Annual Emissions' 
+                VTYPE3D( V ) = M3REAL
+            END DO
+
+            MTMPNAME = PROMPTMFILE(
+     &                 'Enter name for OUTPUT hourly emissions file',
+     &                 FSUNKN3, 'MTMP_INV', PROGNAME )
+
+        END IF
 
 C.........  Open source apportionment output files
         IF( SRCGRPFLAG ) THEN
@@ -440,7 +484,7 @@ C              and set environment variable
      &                     '.' // OUTSCEN( 1:L4 ) // '.ncf'
 
                 MESG = 'NOTE: Opening "' // LNAME( 1:L ) //
-     &                 '" file using Smkmerge-defined physical ' //
+     &                 '" file using Movesmrg-defined physical ' //
      &                 'file name.'
                 CALL M3MSG2( MESG )
 
