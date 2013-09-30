@@ -152,7 +152,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MEPROC      $GE_DAT/meproc.$SRCABBR.txt                # Mobile emission processes
    setenv SMK_MVSPATH $GE_DAT/MOVES_lookuptables/                # Dir for MOVES lookup tab
    setenv MRCLIST     $SMK_MVSPATH/mrclist.${SRCABBR}.summed.lst # List of MOVES lookup table list file
-   setenv METMOVES    $SMKDAT/met/run_$METSCEN/SMOKE_DAILY_${IOAPI_GRIDNAME_1}.txt # Met4moves output
+   setenv METMOVES    $SMKDAT/met/run_$METSCEN/SMOKE_DAILY_${IOAPI_GRIDNAME_1}.ncf  # Met4moves output
 
    if( $SRCABBR == 'rateperdistance_noRFL' |  $SRCABBR == 'ratepervehicle_noRFL'| $SRCABBR == 'rateperprofile' ) then
        setenv MGREF       $GE_DAT/mgref_us_MOVES_noRFL.txt           # Mobile gridding x-ref for all modes except for RFL
