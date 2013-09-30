@@ -322,7 +322,7 @@ if ( $?RUN_SMKREPORT ) then
 
       if( $?MTMP_OUTPUT_YN ) then
           setenv MTMP_OUTPUT_YN N
-      end if
+      endif
 
       if( $SMK_SOURCE == M && $MTMP_OUTPUT_YN == Y ) then
           unsetenv MTMP
