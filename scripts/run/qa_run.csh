@@ -320,6 +320,11 @@ setenv TMPLOG   $OUTLOG/smkreport.$SRCABBR.$logabbr.log
 if ( $?RUN_SMKREPORT ) then
    if ( $RUN_SMKREPORT == Y ) then
 
+      if( $MTMP_OUTPUT_YN == Y ) then
+          unsetenv MTMP
+          setenv MTMP $MTMP_INV
+      endif
+
       if ( -e $TMPLOG ) then
 	 source $SCRIPTS/run/movelog.csh
       endif
