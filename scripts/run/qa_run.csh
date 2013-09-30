@@ -321,6 +321,7 @@ if ( $?RUN_SMKREPORT ) then
    if ( $RUN_SMKREPORT == Y ) then
 
       if( $?MTMP_OUTPUT_YN ) then
+      else
           setenv MTMP_OUTPUT_YN N
       endif
 
