@@ -32,7 +32,8 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: POLLEN3 =  5 ! pol position field 
         INTEGER, PARAMETER :: PRCLEN3 =  3 ! mv emissions process
         INTEGER, PARAMETER :: RWTLEN3 =  3 ! roadway type 
-        INTEGER, PARAMETER :: SCCLEN3 = 10 ! SCC
+        INTEGER, PARAMETER :: SCCEXPLEN3 = 10 ! SCC expansion
+        INTEGER, PARAMETER :: SCCLEN3 = 10 + SCCEXPLEN3 ! SCC
         INTEGER, PARAMETER :: SICLEN3 =  4 ! SIC 
         INTEGER, PARAMETER :: STPLEN3 =  2 ! source type code (used for toxics)
         INTEGER, PARAMETER :: TAGLEN3 =  8 ! tag labels
