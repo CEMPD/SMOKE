@@ -248,12 +248,6 @@ C.............  Read day-specific or hour-specific file
      &                        NFLAG, NEWLOOP, DAYFLAG, SDATE, STIME,
      &                        EDATE, ETIME, EASTAT, SPSTAT )
 
-            ELSE IF( FILFMT( IFIL ) .EQ. EPSFMT ) THEN
-
-                CALL RDEPSPD( IDEV, TZONE, INSTEP, OUTSTEP, MXPDSRC, 
-     &                        DFLAG, NFLAG, NEWLOOP, DAYFLAG, 
-     &                        SDATE, STIME, EDATE, ETIME, EASTAT )
-
             ELSE IF ( FILFMT( IFIL ) .EQ. CEMFMT ) THEN
 
                 CALL RDCEMPD( IDEV, TZONE, INSTEP, MXPDSRC, DFLAG,
