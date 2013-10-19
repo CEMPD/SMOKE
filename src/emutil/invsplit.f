@@ -262,18 +262,9 @@ C.............  Skip header lines and write them to the output file
 
 C.............  Convert state code to integer
             SELECT CASE ( IFMT )
-            CASE ( IDAFMT )
-                STA = STR2INT( LINE( 1:2 ) )
 
             CASE ( ORLFMT, ORLNPFMT )
                 READ( LINE, * ) STA
-
-            CASE ( EMSFMT )
-                STA = STR2INT( LINE( 1:2 ) )
-
-            CASE ( EPSFMT )
-                IF( CRL .EQ. 'A' ) STA = STR2INT( LINE( 9:10 ) )
-                IF( CRL .EQ. 'P' ) STA = STR2INT( LINE( 12:13 ) )
 
             CASE DEFAULT
                 WRITE( MESG,94010 ) 'Cannot split file with ' // 
