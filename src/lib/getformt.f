@@ -100,21 +100,9 @@ C.................  Check if format is provided as a header entry
                     EXIT ! To end of read loop
                 END IF
 
-                L = INDEX( LINE, 'IDA' )
-                IF( L .GT. 0 ) THEN
-                    GETFORMT = IDAFMT
-                    EXIT ! To end read loop
-                END IF
-
                 L = INDEX( LINE, 'EMS-95' )
                 IF( L .GT. 0 ) THEN
                     GETFORMT = EMSFMT
-                    EXIT ! To end read loop
-                END IF
-
-                L = INDEX( LINE, 'EPS2' )
-                IF( L .GT. 0 ) THEN
-                    GETFORMT = EPSFMT
                     EXIT ! To end read loop
                 END IF
 
@@ -178,7 +166,7 @@ C.........  If format has not been set, print error about missing header
      &             'format due to missing or bad header ' //
      &             'information. ' // CRLF() // BLANK16 //
      &             'Valid headers are: ' // CRLF() // BLANK16 //
-     &             '#LIST, #IDA, #EMS-95, #FF10, ' //
+     &             '#LIST, #EMS-95, #FF10, ' //
      &             '#ORL NONPOINT, or #CEM'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
