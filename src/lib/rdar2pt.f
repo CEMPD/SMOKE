@@ -394,7 +394,7 @@ C.........  Write header of report
         CALL M3MESG( MESG )
         WRITE( LDEV, 94010 ) ' '
 
-        MESG = 'SCC        Section   SCC Description'
+        MESG = 'SCC                  Section   SCC Description'
         WRITE( LDEV, 94010 ) BLANK10 // TRIM( MESG )
         WRITE( LDEV, 94010 ) BLANK10 // REPEAT( '-', 70 )
 
@@ -426,7 +426,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT(  A, 1X, I6.6, 1X, A, 1X, F10.7, 1X, A )
 
-94675   FORMAT( 10X, A10, 4X, I2.2, 5X, A )
+94675   FORMAT( 10X, A20, 4X, I2.2, 5X, A )
 
 C******************  INTERNAL SUBPROGRAMS  *****************************
 
@@ -471,6 +471,8 @@ C.............  Local variables
             REAL             ALLOC      ! tmp allocation factor
             REAL             LAT        ! tmp latitude
             REAL             LON        ! tmp longitude
+            
+            CHARACTER(SCCLEN3) SEGSCC   ! segment SCC
 
             LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
             LOGICAL       :: PREVPKT  = .FALSE. ! true: previous line was a packet
@@ -592,7 +594,9 @@ C....................  If header line, store SCCs and count
                                 CYCLE
                             END IF
 
-                            AR2PTSCC( NS,NTBL ) = TRIM( SEGMENT( N ) )
+                            SEGSCC = TRIM( SEGMENT( N ) )
+                            CALL PADZERO( SEGSCC )
+                            AR2PTSCC( NS,NTBL ) = SEGSCC
 
                         END DO
 
