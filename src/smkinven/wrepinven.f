@@ -80,7 +80,7 @@ C...........   SUBROUTINE ARGUMENTS
 C...........   Local variables
 
         CHARACTER       KEEP               ! determines if CAS number is kept
-        CHARACTER(26)   TSCCPOLL           ! temp. SCC/pollutant combination
+        CHARACTER(36)   TSCCPOLL           ! temp. SCC/pollutant combination
         CHARACTER(DDSLEN3)  DESC       ! temp. SCC description
         CHARACTER(SCCLEN3)  SCC        ! temp. SCC code
         CHARACTER(IOVLEN3)  DNAME      ! temp. data name
@@ -89,7 +89,7 @@ C...........   Local variables
         CHARACTER(SCCLEN3)  TSCC       ! temp. SCC code
         CHARACTER(IOVLEN3)  TDNAME     ! temp. data name
 
-        CHARACTER(26), ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
+        CHARACTER(36), ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
         
         INTEGER         I, J, K, L, S, IOS ! counters and indicies
         INTEGER         STATE              ! temp. state code
@@ -359,6 +359,7 @@ C............  Find SCC in master list of SCC codes
      &             'SCC code, ', SCC, ' ,was not '//
      &             'found in master list of SCC codes.'
               CALL M3WARN( PROGNAME, 0, 0, MESG )
+              CYCLE
             END IF
             
             CBUF = SCCDESC( K )
@@ -396,7 +397,7 @@ C............  Allocate and initialize arrays
           
 C............  Initialize previous FIPS and SCC codes
           PFIP = 99999
-          PSCC = '9999999999'
+          PSCC = REPEAT( '9', SCCLEN3 )
           
 C............  Loop through sources
           DO S = 1, NSRC
@@ -463,29 +464,29 @@ C...........   Formatted file I/O formats............ 93xxx
 93060   FORMAT( 1X, A16, 4X, E16.10, 3X, F6.4, 2X, A16, 4X, E16.10,
      &          4X, A40, 4X, A40 )
      
-93070   FORMAT( 1X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
+93070   FORMAT( 1X, A8, 15X, A9, 6X, A10, 4X, A16, 4X, A15,
      &          4X, A16 )
      
-93080   FORMAT( 43X, A11, 9X, A11 )
+93080   FORMAT( 53X, A11, 9X, A11 )
 
-93090   FORMAT( 1X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
+93090   FORMAT( 1X, A20, 4X, A16,4X, I6, 4X, E16.10, 4X,
      &          E16.10, 4X, A )
      
-93100   FORMAT( 1X, A5, 2X, A8, 5X, A9, 6X, A10, 4X, A16, 4X, A15,
+93100   FORMAT( 1X, A5, 2X, A8, 15X, A9, 6X, A10, 4X, A16, 4X, A15,
      &          4X, A16 )
      
-93110   FORMAT( 50X, A11, 9X, A11 )
+93110   FORMAT( 60X, A11, 9X, A11 )
 
-93120   FORMAT( 1X, I2.2, 4X, A10, 4X, A16,4X, I6, 4X, E16.10, 4X,
+93120   FORMAT( 1X, I2.2, 4X, A20, 4X, A16,4X, I6, 4X, E16.10, 4X,
      &          E16.10, 4X, A )
      
-93130   FORMAT( 1X, A10 )
+93130   FORMAT( 1X, A20 )
 
-93140   FORMAT( 20X, A10 )
+93140   FORMAT( 30X, A10 )
 
-93150   FORMAT( 1X, A8, 4X, A8, 2X, A10, 4X, A15 )
+93150   FORMAT( 1X, A8, 14X, A8, 2X, A10, 4X, A15 )
 
-93160   FORMAT( 1X, A10, I10, 2X, I10, 4X, A )
+93160   FORMAT( 1X, A20, I10, 2X, I10, 4X, A )
      
 94010   FORMAT( 10( A, :, A16, :, 1X ) )
 
