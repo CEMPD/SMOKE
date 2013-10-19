@@ -68,7 +68,7 @@ C...........   Other local variables
         INTEGER      IOS                 !  I/O status
 
         LOGICAL   :: EMSFLAG   = .FALSE. !  true: at least one file is EMS format
-        LOGICAL   :: IDAORORL  = .FALSE. !  true: at least one file is IDA or ORL format
+        LOGICAL   :: ORLFLAG  = .FALSE.  !  true: at least one file is ORL format
 
         CHARACTER(300)  INFILE      !  input file line buffer
         CHARACTER(500)  MESG        !  message buffer
@@ -79,7 +79,7 @@ C***********************************************************************
 C   begin body of subroutine CHKLSTFL
 
         EMSFLAG  = .FALSE.   ! Need to reset for each each subroutine call
-        IDAORORL = .FALSE.
+        ORLFLAG  = .FALSE.
         EXTFORMAT = -1
         
 C.........  Loop through lines of list-formatted file to check the formats
@@ -109,11 +109,8 @@ C.............  Check for #LIST entry
             I = INDEX( INFILE, '#LIST' )
             IF( I .GT. 0 ) THEN
                 FILFMT( J ) = -1
-                
-                IF( INDEX( INFILE, 'IDA' ) > 0 ) THEN
-                    EXTFORMAT = IDAFMT
                     
-                ELSE IF( INDEX( INFILE, 'EMS-95' ) > 0 ) THEN
+                IF( INDEX( INFILE, 'EMS-95' ) > 0 ) THEN
                     EXTFORMAT = EMSFMT
                     
                 ELSE IF( INDEX( INFILE, 'CEM' ) > 0 ) THEN
@@ -168,12 +165,11 @@ C.............  Determine format of INFILE
 
 C.............  Set flag based on format
             IF( FILFMT( J ) == EMSFMT ) EMSFLAG = .TRUE.
-            IF( FILFMT( J ) == IDAFMT     .OR. 
-     &          FILFMT( J ) == FF10FMT    .OR.
+            IF( FILFMT( J ) == FF10FMT    .OR.
      &          FILFMT( J ) == ORLFMT     .OR.
      &          FILFMT( J ) == ORLNPFMT   .OR.
      &          FILFMT( J ) == ORLFIREFMT .OR.
-     &          FILFMT( J ) == ORLDYFRFMT     ) IDAORORL = .TRUE.
+     &          FILFMT( J ) == ORLDYFRFMT     ) ORLFLAG = .TRUE.
 
 C.............  Check that file formats are consistent
             IF( EMSFLAG .AND. FILFMT( J ) /= EMSFMT ) THEN
@@ -187,9 +183,8 @@ C.............  Check that file formats are consistent
      &                 'also be in EMS-95 format.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-            
-            IF( IDAORORL                  .AND. 
-     &          FILFMT( J ) /= IDAFMT     .AND. 
+
+            IF( ORLFLAG                   .AND. 
      &          FILFMT( J ) /= FF10FMT    .AND.
      &          FILFMT( J ) /= ORLFMT     .AND.
      &          FILFMT( J ) /= ORLNPFMT   .AND.
@@ -198,12 +193,12 @@ C.............  Check that file formats are consistent
                 WRITE( MESG,94010 )
      &                 'ERROR: In SMOKE list-formatted inventory file, '
      &                 // TRIM( FNAME ) // ', at least one file is ' //
-     &                 CRLF() // BLANK10 // 'IDA or ORL ' //
-     &                 'format while another is neither IDA nor ' //
+     &                 CRLF() // BLANK10 // 'ORL ' //
+     &                 'format while another is not ' //
      &                 'ORL format.' // CRLF() // BLANK10 //
-     &                 'When using IDA or ORL formatted ' //
+     &                 'When using ORL formatted ' //
      &                 'inventories, all other inventories ' // 
-     &                 CRLF() // BLANK10 // 'must also be IDA or ORL '
+     &                 CRLF() // BLANK10 // 'must also be ORL '
      &                 // 'format.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
