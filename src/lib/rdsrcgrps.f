@@ -251,6 +251,8 @@ C.............  Skip blank lines or comments
 
             CALL PARSLINE( LINE, MXCOL, SEGMENT )
 
+            IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) CYCLE  ! skip header lines
+
             TSCC = SEGMENT( 3 )
             CALL FLTRNEG( TSCC )
 
