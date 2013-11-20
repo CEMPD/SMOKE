@@ -409,12 +409,15 @@ C.............  Convert date and time to output time zone.
             CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
 
 C.............  Determine time step pointer based on reference time
-            PTR = SECSDIFF( RDATE, RTIME, JDATE+NFIELD-1, JTIME ) / TDIVIDE + 1
+            PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1
             
 C.............  Store minimum time step number as compared to reference
             IF( PTR .LT. MINPTR ) MINPTR = PTR
 
 C.............  Store maximum time step number as compared to reference
+            IF( DAYFLAG ) THEN
+                PTR = SECSDIFF( RDATE, RTIME, JDATE+NFIELD-1, JTIME ) / TDIVIDE + 1
+            END IF
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
 C.............  Check pollutant code and set index I
