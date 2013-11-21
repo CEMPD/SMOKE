@@ -92,6 +92,9 @@ C...........   Local variables
 C***********************************************************************
 C   begin body of subroutine POSTPLM
 
+        PBOT = 0.
+        PTOP = 0.
+
 C...........   Check if area is zero or missing
         IF (ACRES .LE. 0.) THEN
             LFRAC = 0.0       ! array
