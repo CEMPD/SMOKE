@@ -184,6 +184,7 @@ endif
    setenv COSTCY      $GE_DAT/costcy.txt                         # country/state/county info
    setenv HOLIDAYS    $GE_DAT/holidays.txt                       # holidays for day change
    setenv SCCDESC     $GE_DAT/scc_desc.txt                       # SCC descriptions
+   setenv SICDESC     $GE_DAT/sic_desc.txt                       # SIC descriptions
    setenv SRGDESC     $GE_DAT/SRGDESC                            # surrogate descriptions
    setenv SRGPRO_PATH $GE_DAT/Surrogates_12km/                   # surrogate files path
    setenv ORISDESC    $GE_DAT/oris_info.txt                      # ORIS ID descriptions
@@ -191,7 +192,7 @@ endif
    setenv NAICSDESC   $GE_DAT/naics_desc.txt                     # NAICS descriptions
    setenv GSCNV       $GE_DAT/gscnv.$SPC.txt                     # ROG to TOG conversion facs
 #   setenv PROCDATES   $GE_DAT/procdates.txt                      # time periods that Temporal should process
-   setenv SMKMERGE_GROUPS $INVDIR/other/source_groups.nc.txt     # Source apportionment groups
+   setenv SOURCE_GROUPS $INVDIR/other/source_groups.nc.txt       # Source apportionment groups
 
 #
 ## Override shared inputs
@@ -277,7 +278,7 @@ if ( $SMK_SOURCE == A || $RUN_SMKMERGE == Y && $MRG_AREA == Y ) then
    setenv ACMAT    $SMKDAT/run_$ASCEN/static/acmat.$SRCABBR.$ASCEN.ncf          
    setenv AGMAT    $SMKDAT/run_$ABASE/static/agmat.$SRCABBR.$GRID.$ABASE.ncf
    setenv APMAT    $SMKDAT/run_$ASCEN/static/apmat.$SRCABBR.$ASCEN.ncf
-   setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$ASCEN.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$ASCEN.ncf
    setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$ASCEN.txt
 endif
 
@@ -300,7 +301,7 @@ if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
    setenv BGTS_S_O  $B_OUT/bgts_s_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
    setenv B3GTS_L_O $B_OUT/b3gts_l_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
    setenv B3GTS_S_O $B_OUT/b3gts_s_o.$ESDATE.$NDAYS.$GRID.$BSCEN.ncf
-   setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$BSCEN.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$BSCEN.ncf
    setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$BSCEN.txt
 endif
 
@@ -339,7 +340,7 @@ if ( $SMK_SOURCE == M || $RUN_SMKMERGE == Y && $MRG_MOBILE == Y ) then
    setenv MUMAT    $SMKDAT/run_$MBASE/static/mumat.$SRCABBR.$GRID.$MBASE.ncf
    setenv MGMAT    $SMKDAT/run_$MBASE/static/mgmat.$SRCABBR.$GRID.$MBASE.ncf
    setenv MPMAT    $SMKDAT/run_$MSCEN/static/mpmat.$SRCABBR.$MSCEN.ncf
-   setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$MSCEN.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$MSCEN.ncf
    setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$MSCEN.txt
 endif
 
@@ -378,7 +379,7 @@ if ( $SMK_SOURCE == P || $RUN_SMKMERGE == Y && $MRG_POINT == Y ) then
    setenv PGMAT    $SMKDAT/run_$PBASE/static/pgmat.$SRCABBR.$GRID.$PBASE.ncf
    setenv PPMAT    $SMKDAT/run_$PSCEN/static/ppmat.$SRCABBR.$PSCEN.ncf
    setenv STACK_GROUPS $OUTPUT/stack_groups.$SRCABBR.$GRID.$PBASE.ncf
-   setenv STACK_GROUPS_OUT $OUTPUT/stack_groups_out.$SRCABBR.$GRID.$PSCEN.ncf
+   setenv SRCGROUPS_OUT $OUTPUT/source_groups_out.$SRCABBR.$GRID.$PSCEN.ncf
    setenv SRCGRP_REPORT $REPSTAT/srcgroups.$SRCABBR.$PSCEN.txt
    setenv INLNTS_L $OUTPUT/inlnts_l.$SRCABBR.$ESDATE.$NDAYS.$GRID.$PSCEN.ncf
    setenv PLAY     $SMKDAT/run_$PBASE/scenario/play.$SRCABBR.$ESDATE.$NDAYS.$GRID.$MSPBAS.ncf
