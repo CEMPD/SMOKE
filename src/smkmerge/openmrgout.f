@@ -341,10 +341,10 @@ C.............  Override gridded file settings
 
 C.............  Build list of variables for stack groups file
             J = 1
-            VNAME3D( J ) = 'ISTACK'
+            VNAME3D( J ) = 'IGROUP'
             VTYPE3D( J ) = M3INT
             UNITS3D( J ) = 'none'
-            VDESC3D( J ) = 'Stack group number'
+            VDESC3D( J ) = 'Source group number'
             
             J = J + 1
             VNAME3D( J ) = 'LATITUDE'
@@ -389,10 +389,10 @@ C.............  Build list of variables for stack groups file
             VDESC3D( J ) = 'Stack exit flow rate'
 
             J = J + 1
-            VNAME3D( J ) = 'STKCNT'
+            VNAME3D( J ) = 'GRPCNT'
             VTYPE3D( J ) = M3INT
             UNITS3D( J ) = 'none'
-            VDESC3D( J ) = 'Number of stacks in group'
+            VDESC3D( J ) = 'Number of sources in group'
 
             J = J + 1
             VNAME3D( J ) = 'ROW'
@@ -441,8 +441,8 @@ C.............  Build list of variables for stack groups file
             NVARS3D = J
             
             SRCGRPNAME = PROMPTMFILE(
-     &                     'Enter name for OUTPUT STACK GROUPS file',
-     &                     FSUNKN3, 'STACK_GROUPS_OUT', PROGNAME )
+     &                     'Enter name for OUTPUT SOURCE GROUPS file',
+     &                     FSUNKN3, 'SOURCE_GROUPS_OUT', PROGNAME )
 
 C.............  Set up variables for emissions output file
             CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )

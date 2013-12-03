@@ -332,8 +332,8 @@ C.................  If acres burned is in existing stack groups file, add to out
                 DEALLOCATE( REALDATA )
             END IF
         
-            CALL INT_WRITE3( SRCGRPNAME, 'ISTACK', JDATE, JTIME, ISTACK )
-            CALL INT_WRITE3( SRCGRPNAME, 'STKCNT', JDATE, JTIME, STKCNT )
+            CALL INT_WRITE3( SRCGRPNAME, 'IGROUP', JDATE, JTIME, ISTACK )
+            CALL INT_WRITE3( SRCGRPNAME, 'GRPCNT', JDATE, JTIME, STKCNT )
             CALL INT_WRITE3( SRCGRPNAME, 'ROW', JDATE, JTIME, ROW )
             CALL INT_WRITE3( SRCGRPNAME, 'COL', JDATE, JTIME, COL )
             CALL INT_WRITE3( SRCGRPNAME, 'LMAJOR', JDATE, JTIME, LMAJOR )
