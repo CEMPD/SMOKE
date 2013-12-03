@@ -442,7 +442,7 @@ C.............  Build list of variables for stack groups file
             
             SRCGRPNAME = PROMPTMFILE(
      &                     'Enter name for OUTPUT SOURCE GROUPS file',
-     &                     FSUNKN3, 'SOURCE_GROUPS_OUT', PROGNAME )
+     &                     FSUNKN3, 'SRCGROUPS_OUT', PROGNAME )
 
 C.............  Set up variables for emissions output file
             CALL SETUP_VARIABLES( NIPPA, NMSPC, EANAM, EMNAM )

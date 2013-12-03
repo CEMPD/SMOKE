@@ -277,7 +277,7 @@ C.............  Build list of variables for stack groups file
             VNAME3D( J ) = 'GRPCNT'
             VTYPE3D( J ) = M3INT
             UNITS3D( J ) = 'none'
-            VDESC3D( J ) = 'Number of sources n group'
+            VDESC3D( J ) = 'Number of sources in group'
 
             J = J + 1
             VNAME3D( J ) = 'ROW'
@@ -319,7 +319,7 @@ C.............  Build list of variables for stack groups file
             
             SRCGRPNAME = PROMPTMFILE(
      &                     'Enter name for OUTPUT SOURCE GROUPS file',
-     &                     FSUNKN3, 'SOURCE_GROUPS_OUT', PROGNAME )
+     &                     FSUNKN3, 'SRCGROUPS_OUT', PROGNAME )
 
 C.............  Set up variables for emissions output file
             CALL SETUP_VARIABLES( NMSPC, EMNAM )
