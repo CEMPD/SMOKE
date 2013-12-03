@@ -40,11 +40,11 @@ C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, TZONES, TPFLAG, INVYR, 
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
-     &                      CELLID, ISIC, IRCLAS, IVTYPE, 
+     &                      CELLID, IRCLAS, IVTYPE, 
      &                      STKHT, STKDM, STKTK, STKVE,
      &                      CMACT, CNAICS, CSRCTYP, CERPTYP,
      &                      CVTYPE, CSCC, CORIS, CBLRID, CPDESC,
-     &                      CNEIUID, CINTGR, CEXTORL
+     &                      CNEIUID, CINTGR, CEXTORL, CISIC
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NCHARS, MXCHRS, 
@@ -71,11 +71,11 @@ C.........  SUBROUTINE ARGUMENTS and their descriptions:
         LOGICAL     , INTENT (IN) :: NONPOINT! true: processing nonpoint inventory
 
 C.........  Arrays for column formatting
-        INTEGER       COLWID( MXCHRS+11 ) !  width of source info columns
+        INTEGER       COLWID( MXCHRS+12 ) !  width of source info columns
 
-        LOGICAL       LF    ( MXCHRS+11 ) !  true if column should be output
+        LOGICAL       LF    ( MXCHRS+12 ) !  true if column should be output
 
-        CHARACTER(500) CHARS( MXCHRS+11 ) !  source fields for output
+        CHARACTER(500) CHARS( MXCHRS+12 ) !  source fields for output
 
 C.........  Source-specific header arrays
         CHARACTER(20) :: ARHEADRS( MXARCHR3+2 ) = 
@@ -97,7 +97,7 @@ C.........  Source-specific header arrays
      &                                        'Integrate flag      ', 
      &                                        'Additional extended ' / )
 
-        CHARACTER(20) :: PTHEADRS( MXPTCHR3+12 ) = 
+        CHARACTER(20) :: PTHEADRS( MXPTCHR3+13 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co FIPS    ',
      &                                        'Plant code          ', 
@@ -116,9 +116,10 @@ C.........  Source-specific header arrays
      &                                        'Facility description',
      &                                        'NEI unique ID       ',
      &                                        'Integrate flag      ', 
+     &                                        'SIC                 ', 
      &                                        'Additional extended ' / )
 
-        CHARACTER(20) :: FRHEADRS( MXPTCHR3+12 ) = 
+        CHARACTER(20) :: FRHEADRS( MXPTCHR3+13 ) = 
      &                                    ( / 'SMOKE Source ID     ',  
      &                                        'Cntry/St/Co         ',
      &                                        'Plant code = FireID ', 
@@ -137,6 +138,7 @@ C.........  Source-specific header arrays
      &                                        'Facility description',
      &                                        'NEI unique ID       ',
      &                                        'Integrate flag      ', 
+     &                                        'SIC                 ', 
      &                                        'Additional extended ' / )
 
 C.........  Allocatable header arrays
@@ -149,7 +151,7 @@ C.........  Other local variables
         INTEGER       IOS              !  memory allocation status
         INTEGER       L1, L2, NL       !  counters and indices
         INTEGER       M1, M2, M3, M4   !  positions after src characteristics
-        INTEGER       M5, M6, M7, M8, M9, M10, M11
+        INTEGER       M5, M6, M7, M8, M9, M10, M11, M12
         INTEGER       NASCII           !  number of possible output fields
         INTEGER       NC               !  number of output fields
 
@@ -206,11 +208,6 @@ C.........  Write the I/O API file, one variable at a time
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF ( .NOT. WRITESET( ENAME, 'ISIC', ALLFILES, 
-     &                           0, 0, ISIC ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
         CASE( 'MOBILE' )
 
             IF ( .NOT. WRITESET( ENAME, 'IRCLAS', ALLFILES, 
@@ -244,11 +241,6 @@ C.........  Write the I/O API file, one variable at a time
             END IF
 
         CASE( 'POINT' )
-
-            IF ( .NOT. WRITESET( ENAME, 'ISIC', ALLFILES, 
-     &                           0, 0, ISIC ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
 
             IF ( .NOT. WRITESET( ENAME, 'XLOCA', ALLFILES, 
      &                           0, 0, XLOCA ) ) THEN
@@ -288,12 +280,12 @@ C.........  End subroutine if ASCII file is not to be written
 C.........  Set the number of potential ASCII columns in SDEV output file
         SELECT CASE( CATEGORY )
         CASE( 'AREA' )
-            NASCII = MXARCHR3 + 3
+            NASCII = MXARCHR3 + 4
             IF( NONPOINT ) NASCII = NASCII + 2
         CASE( 'MOBILE' )
             NASCII = MXMBCHR3 + 4
         CASE( 'POINT' )
-            NASCII = MXPTCHR3 + 11
+            NASCII = MXPTCHR3 + 12
         END SELECT
 
 C.........  Allocate memory for and populate the output header fields from
@@ -308,7 +300,8 @@ C           the source-specific fields
                 HDRFLDS( 6 ) = 'MACT code           '
                 HDRFLDS( 7 )   = 'NAICS code          '
             END IF
-            HDRFLDS( NASCII )   = 'Integrate flag      '
+            HDRFLDS( NASCII-1 ) = 'Integrate flag      '
+            HDRFLDS( NASCII )   = 'SIC                 '
             HDRFLDS( NASCII+1 ) = 'Additional extended '
         CASE( 'MOBILE' )
             HDRFLDS = MBHEADRS  ! array
@@ -330,6 +323,7 @@ C           characteristics fields
         M9 = MXCHRS + 9
         M10 = MXCHRS + 10
         M11 = MXCHRS + 11
+        M12 = MXCHRS + 12
 
 C.........  Get the maximum column width for each of the columns in ASCII file
         COLWID = 0    ! array
@@ -346,10 +340,11 @@ C.........  Get the maximum column width for each of the columns in ASCII file
 
             SELECT CASE ( CATEGORY )
             CASE( 'AREA' )
+                J = LEN_TRIM( CSRCTYP( S ) )
+                IF( CSRCTYP( S ) /= ' ' .AND.
+     &              J > COLWID( M1 ) ) COLWID( M1 ) = J
+
                 IF( NONPOINT ) THEN
-                    J = LEN_TRIM( CSRCTYP( S ) )
-                    IF( CSRCTYP( S ) /= ' ' .AND.
-     &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
 
                     J = LEN_TRIM( CMACT( S ) )
                     IF( CMACT( S ) /= ' ' .AND.
@@ -363,23 +358,27 @@ C.........  Get the maximum column width for each of the columns in ASCII file
                     IF( CINTGR( S ) .NE. ' ' .AND.
      &                  J > COLWID( M4 ) ) COLWID( M4 ) = J
 
-                    J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
-                    IF( CEXTORL( S ) .NE. ' ' .AND.
+                    J = LEN_TRIM( CISIC( S ) )
+                    IF( CISIC( S ) .NE. ' ' .AND.
      &                  J > COLWID( M5 ) ) COLWID( M5 ) = J
 
-                ELSE
+                    J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
+                    IF( CEXTORL( S ) .NE. ' ' .AND.
+     &                  J > COLWID( M6 ) ) COLWID( M6 ) = J
 
-                    J = LEN_TRIM( CSRCTYP( S ) )
-                    IF( CSRCTYP( S ) /= ' ' .AND. 
-     &                  J > COLWID( M1 ) ) COLWID( M1 ) = J
+                ELSE
 
                     J = LEN_TRIM( CINTGR( S ) )                 ! could be blank
                     IF( CINTGR( S ) .NE. ' ' .AND.
      &                  J > COLWID( M2 ) ) COLWID( M2 ) = J
 
+                    J = LEN_TRIM( CISIC( S ) )
+                    IF( CISIC( S ) .NE. ' ' .AND.
+     &                  J > COLWID( M3 ) ) COLWID( M3 ) = J
+
                     J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
                     IF( CEXTORL( S ) .NE. ' ' .AND.
-     &                  J > COLWID( M3 ) ) COLWID( M3 ) = J
+     &                  J > COLWID( M4 ) ) COLWID( M4 ) = J
 
                 END IF
 
@@ -443,9 +442,13 @@ C.........  Get the maximum column width for each of the columns in ASCII file
                 IF( CINTGR( S ) .NE. ' ' .AND.
      &              J > COLWID( M10 ) ) COLWID( M10 ) = J
 
+                J = LEN_TRIM( CISIC( S ) )
+                IF( CISIC( S ) .NE. ' ' .AND.
+     &              J > COLWID( M11 ) ) COLWID( M11 ) = J
+
                 J = LEN_TRIM( CEXTORL( S ) )                 ! could be blank
                 IF( CEXTORL( S ) .NE. ' ' .AND.
-     &              J > COLWID( M11 ) ) COLWID( M11 ) = J
+     &              J > COLWID( M12 ) ) COLWID( M12 ) = J
 
             END SELECT
 
@@ -515,11 +518,13 @@ C.............  Split source characteristics into separate fields (CHARS)
 C.............  Store remaining source attributes in separate fields (CHARS)
             SELECT CASE ( CATEGORY )
             CASE( 'AREA' )
+
+                IF( LF( M1 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CSRCTYP( S )
+                END IF
+
                 IF( NONPOINT ) THEN
-                    IF( LF( M1 ) ) THEN
-                        NC = NC + 1
-                        CHARS( NC ) = CSRCTYP( S )
-                    END IF
 
                     IF( LF( M2 ) ) THEN
                         NC = NC + 1
@@ -538,15 +543,15 @@ C.............  Store remaining source attributes in separate fields (CHARS)
 
                     IF( LF( M5 ) ) THEN
                         NC = NC + 1
+                        CHARS( NC ) = CISIC( S )
+                    END IF
+
+                    IF( LF( M6 ) ) THEN
+                        NC = NC + 1
                         CHARS( NC ) = CEXTORL( S )
                     END IF
 
                 ELSE         
-
-                    IF( LF( M1 ) ) THEN
-                        NC = NC + 1
-                        CHARS( NC ) = CSRCTYP( S )
-                    END IF
 
                     IF( LF( M2 ) ) THEN
                         NC = NC + 1
@@ -554,6 +559,11 @@ C.............  Store remaining source attributes in separate fields (CHARS)
                     END IF
 
                     IF( LF( M3 ) ) THEN
+                        NC = NC + 1
+                        CHARS( NC ) = CISIC( S )
+                    END IF
+
+                    IF( LF( M4 ) ) THEN
                         NC = NC + 1
                         CHARS( NC ) = CEXTORL( S )
                     END IF
@@ -633,6 +643,11 @@ C.............  Store remaining source attributes in separate fields (CHARS)
                 END IF
 
                 IF( LF( M11 ) ) THEN
+                    NC = NC + 1
+                    CHARS( NC ) = CISIC( S )
+                END IF
+
+                IF( LF( M12 ) ) THEN
                     NC = NC + 1
                     CHARS( NC ) = CEXTORL( S )
                 END IF

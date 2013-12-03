@@ -219,7 +219,7 @@ C.........  Road class code
 C.........  SIC code
             IF( ANY_TRUE( NREPORT, ALLRPT%BYSIC ) ) THEN
                 NINVARR = NINVARR + 1
-                IVARNAMS( NINVARR ) = 'ISIC'
+                IVARNAMS( NINVARR ) = 'CISIC'
             END IF
 
 C.........  SCC code

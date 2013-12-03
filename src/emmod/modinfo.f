@@ -53,7 +53,6 @@
         INTEGER    , PUBLIC :: LSCCEND  ! end of left-SCC
         INTEGER    , PUBLIC :: MXCHRS   ! max no. of source characteristics
         INTEGER    , PUBLIC :: NCHARS   ! actual no. of source characteristics
-        INTEGER    , PUBLIC :: NEMSFILE ! no. EMS-95 files
         INTEGER    , PUBLIC :: NIACT =0 ! no. unique activities in inventory
         INTEGER    , PUBLIC :: NIPOL =0 ! no. unique pollutants in inventory
         INTEGER    , PUBLIC :: NIPPA =0 ! NIACT + NIPOL

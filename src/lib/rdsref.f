@@ -41,7 +41,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, CSPRNA, ISPTA
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, CISICA, CSPRNA, ISPTA
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, LSCCEND, MCODEFLAG
@@ -86,7 +86,6 @@ C...........   Array for parsing list-formatted inputs
 C...........   Other local variables
         INTEGER         I, J, J1, J2, K, L, N    !  counters and indices
 
-        INTEGER         DLEN    !  tmp length for SIC processing
         INTEGER         FIP     !  temporary FIPS code
         INTEGER         IDIU    !  temporary diurnal profile code     
         INTEGER         IDUM    !  dummy integer
@@ -188,6 +187,8 @@ C.........  Allocate memory for unsorted data used in all source categories
         CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
         ALLOCATE( CMACTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CMACTA', PROGNAME )
+        ALLOCATE( CISICA( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CISICA', PROGNAME )
         ALLOCATE( INDXTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
 
@@ -208,7 +209,6 @@ C           interest
         N      = 0
         NCP    = 6        ! ORL and IDA default (4+2)
         JS     = 6        ! ORL and IDA default (4+2)
-        DLEN   = SICLEN3 + LEN( SICNOTE )      
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -320,10 +320,7 @@ C                   with SIC value and special identifier
      &                     BLANK10 // 'Only the SCC will be used ' //
      &                     'for this cross-reference entry.'
                     CALL M3MSG2( MESG )
-
-                ELSE IF( CSIC /= SICZERO ) THEN
-                    TSCC = SICNOTE // CSIC // 
-     &                     REPEAT( '0', SCCLEN3 - DLEN )
+                    CSIC = SICZERO
 
                 END IF
 
@@ -341,7 +338,7 @@ C.................  Store case-specific fields from cross reference
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                            CHRBLNK3, POLBLNK3, CSRCALL   )
 
-                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CPOS
+                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CSIC // CPOS
 
                 CASE( 'MOBILE' )
 
@@ -360,7 +357,7 @@ C     link-specific assignments from the documentation for Spcmat.
      &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                            POLBLNK3, CSRCALL )
 
-                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CPOS
+                    CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CSIC // CPOS
 
                 CASE( 'POINT' )
 
@@ -370,7 +367,7 @@ C.....................  Store sorting criteria as right-justified in fields
      &                            CHARS(5), POLBLNK3, CSRCALL   )
 
                     CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // 
-     &                            CMCT // CPOS
+     &                            CMCT // CSIC // CPOS
 
                 END SELECT
 
@@ -379,6 +376,7 @@ C.................  Store case-indpendent fields from cross-reference
                 ISPTA ( N ) = JSPC    ! Save index to EANAM or zero
                 CSCCTA( N ) = TSCC
                 CMACTA( N ) = CMCT
+                CISICA( N ) = CSIC
                 CSPRNA( N ) = SPCODE
 
             END IF  !  This line matches source category of interest
@@ -430,7 +428,7 @@ C           subroutines.
         CALL XREFTBL( 'SPECIATION', NXREF )
 
 C.........  Deallocate other temporary unsorted arrays
-        DEALLOCATE( CSCCTA, ISPTA, CMACTA, CSRCTA, CSPRNA, INDXTA )
+        DEALLOCATE( CSCCTA, ISPTA, CMACTA, CISICA, CSRCTA, CSPRNA, INDXTA )
 
 C.........  Rewind file
         REWIND( FDEV )

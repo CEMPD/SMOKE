@@ -61,7 +61,7 @@ C.........  This module contains Smkreport-specific settings
      &                      SPCWIDTH, ELEVWIDTH, SDSCWIDTH, UNITWIDTH,
      &                      MINC, LENELV3, SDATE, STIME, EDATE, ETIME,
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
-     &                      ALLRPT, LOC_BEGP, LOC_ENDP, SICFMT,
+     &                      ALLRPT, LOC_BEGP, LOC_ENDP,
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
      &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
@@ -655,22 +655,20 @@ C.........  SIC column
         IF( RPT_%BYSIC ) THEN
             IF( MATFLAG ) THEN
                 J = LEN_TRIM( HEADERS( IHDRMATBN ) )
-                W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSIC )
-                W1 = MAX( W1, J )  
-                CALL ADD_TO_HEADER( W1, HEADERS(IHDRMATBN), LH, HDRBUF )
-                CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+                J = MAX( SICLEN3, J )
+                
+                CALL ADD_TO_HEADER( J, HEADERS(IHDRMATBN), LH, HDRBUF )
+                CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
-                WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
-                SICWIDTH = W1 + LV
+                SICWIDTH = J + LV
             ELSE
                 J = LEN_TRIM( HEADERS( IHDRSIC ) )
-                W1 = INTEGER_COL_WIDTH( NOUTBINS, BINSIC )
-                W1 = MAX( W1, J )  
-                CALL ADD_TO_HEADER( W1, HEADERS(IHDRSIC), LH, HDRBUF )
-                CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+                J = MAX( SICLEN3, J )
+                
+                CALL ADD_TO_HEADER( J, HEADERS(IHDRSIC), LH, HDRBUF )
+                CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
-                WRITE( SICFMT, 94650 ) W1, RPT_%DELIM
-                SICWIDTH = W1 + LV
+                SICWIDTH = J + LV
             END IF
         END IF
 

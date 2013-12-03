@@ -324,12 +324,6 @@ C.........  Define source characteristic variables that are not strings
             VUNITSET( J ) = 'n/a'
             VDESCSET( J ) = 'Cell number'
             J = J + 1
-
-            VNAMESET( J ) = 'ISIC'
-            VTYPESET( J ) = M3INT
-            VUNITSET( J ) = 'n/a'
-            VDESCSET( J ) = 'Source Industrial Code'
-            J = J + 1
             
         CASE( 'MOBILE' )
 
@@ -370,12 +364,6 @@ C.........  Define source characteristic variables that are not strings
             J = J + 1
 
         CASE( 'POINT' )
-
-            VNAMESET( J ) = 'ISIC'
-            VTYPESET( J ) = M3INT
-            VUNITSET( J ) = 'n/a'
-            VDESCSET( J ) = 'Source Industrial Code'
-            J = J + 1
 
             VNAMESET( J ) = 'XLOCA'
             VTYPESET( J ) = M3REAL

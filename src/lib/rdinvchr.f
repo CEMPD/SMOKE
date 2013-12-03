@@ -37,13 +37,13 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: IFIP, IRCLAS, ISIC, IVTYPE, CELLID, TZONES,
+        USE MODSOURC, ONLY: IFIP, IRCLAS, IVTYPE, CELLID, TZONES,
      &                      TPFLAG, INVYR, IDIU, IWEK, XLOCA, YLOCA, 
      &                      XLOC1, YLOC1, XLOC2, YLOC2, SPEED, STKHT,
      &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
      &                      CLINK, CPDESC, CSOURC, CVTYPE, CMACT,
      &                      CNAICS, CSRCTYP, CERPTYP, CNEIUID, CEXTORL,
-     &                      CINTGR
+     &                      CINTGR, CISIC
 
         IMPLICIT NONE
 
@@ -108,6 +108,8 @@ C...........   Other local variables
         LOGICAL       :: PDSIN   = .FALSE.  ! True: plant desc in input file
         LOGICAL       :: PDSFLAG = .FALSE.  ! True: plant description requested
         LOGICAL       :: SCCFLAG = .FALSE.  ! True: SCC requested
+        LOGICAL       :: SICFLAG = .FALSE.  ! True: SIC requested
+        LOGICAL       :: SICIN   = .FALSE.  ! True: SIC code in input file
         LOGICAL       :: STPIN   = .FALSE.  ! True: source type code in input file
         LOGICAL       :: STPFLAG = .FALSE.  ! True: source type code requested
         LOGICAL       :: VTPFLAG = .FALSE.  ! True: vehicle type requested
@@ -125,6 +127,7 @@ C...........   Other local variables
         CHARACTER(DSCLEN3) :: CPDS = ' '   ! temporary plant description
         CHARACTER(RWTLEN3) :: CRWT = ' '   ! temporary roadway type
         CHARACTER(SCCLEN3) :: CS   = ' '   ! temporary scc
+        CHARACTER(SICLEN3) :: CSIC = ' '   ! temporary SIC
         CHARACTER(VIDLEN3) :: CVID = ' '   ! temporary vehicle type code
         CHARACTER(VTPLEN3) :: CVTP = ' '   ! tmp vehicle type
         CHARACTER(MACLEN3) :: CMT  = ' '   ! tmp MACT code
@@ -134,6 +137,12 @@ C...........   Other local variables
         CHARACTER(INTLEN3) :: CINT = ' '   ! tmp integrate code
         CHARACTER(PLTLEN3) :: FCID = ' '   ! temporary facility code
         CHARACTER(IOVLEN3) INVAR  ! tmp inventory pollutant name
+
+C.........  File format handling
+        INTEGER :: MXITEMS = 40
+        INTEGER FMTITEM
+        CHARACTER(8)  FMTSEGS( MXITEMS )
+        CHARACTER(10) FMTSEG
 
         CHARACTER(16) :: PROGNAME = 'RDINVCHR'   !  program name
 
@@ -168,14 +177,6 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
 
               IF(.NOT. READSET(INFILE,'IRCLAS',ALLAYS3,1,0,0,IRCLAS)) 
      &            THEN
-                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-              ENDIF
-
-            CASE( 'ISIC' )
-              ALLOCATE( ISIC( NSRC ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
-
-              IF( .NOT. READSET(INFILE,'ISIC',ALLAYS3,1,0,0,ISIC )) THEN
                   CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
               ENDIF
 
@@ -381,6 +382,11 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                     SCCFLAG = .TRUE. 
                     ALLOCATE( CSCC( NSRC ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
+                
+                CASE( 'CISIC' )
+                    SICFLAG = .TRUE.
+                    ALLOCATE( CISIC( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CISIC', PROGNAME )
                     
                 CASE( 'CORIS' )
                     ORSFLAG = .TRUE.
@@ -461,8 +467,9 @@ C.............  Allocate memory for the data that are needed from the ASCII file
 
 C.............  Read in and store data from ASCII file...
 
-C.............  Read in number of header lines
+C.............  Read in number of header lines and file format
             READ( FDEV, * ) NCOL, FILFMT
+            CALL PARSLINE( FILFMT( 2:LEN_TRIM( FILFMT )-1 ), MXITEMS, FMTSEGS )
 
 C.............  Read past header
             DO J = 1, NCOL
@@ -538,6 +545,10 @@ C.................  Determine if DOE plant ID is present
                 J = INDEX1( 'DOE plant ID', NCOL, HEADER )
                 ORSIN = ( J .GT. 0 )
 
+C.................  Determine if SIC code is present
+                J = INDEX1( 'SIC', NCOL, HEADER )
+                SICIN = ( J > 0 )
+
 C.................  If MACT not present but has been requested, then 
 C                   internal err
                 IF( .NOT. MCTIN .AND. MACFLAG ) THEN
@@ -575,80 +586,37 @@ C                    CALL M3MSG2( MESG )
                     DEALLOCATE( CORIS )
                 END IF
 
+C.................  If SIC not present but has been requested, then
+C                   internal err
+                IF( .NOT. SICIN .AND. SICFLAG ) THEN
+
+                    MESG = 'WARNING: SIC requested, but ' //
+     &                     'is not present in ASCII inventory file'
+C                    CALL M3MSG2( MESG )
+
+                    DEALLOCATE( CISIC )
+                    NULLIFY( CISIC )
+
+                END IF
+
                 DO S = 1, NSRC
 
-C.....................  Read in line of character data
-                    IF( MCTIN .AND. NAIIN .AND. STPIN .AND. 
-     &                                          EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                        CSTP, CMT, CNAI, CINT, CEXT
+C.....................  Read source information from record of inventory file
+                    FMTITEM = 1
+                    CALL BUILD_FMTSEG( FMTSEGS( FMTITEM ) )
+                    READ( FDEV, FMTSEG, ADVANCE='NO', END=999 ) ID
 
-                    ELSE IF( MCTIN .AND. NAIIN .AND. STPIN .AND. 
-     &                                    EXTIN .AND. .NOT. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                        CSTP, CMT, CNAI, CEXT
+                    CALL READ_NEXT_VAL( CFIP )
+                    CALL READ_NEXT_VAL( CS )
+                    IF( STPIN ) CALL READ_NEXT_VAL( CSTP )
+                    IF( MCTIN ) CALL READ_NEXT_VAL( CMT )
+                    IF( NAIIN ) CALL READ_NEXT_VAL( CNAI )
+                    IF( ITGIN ) CALL READ_NEXT_VAL( CINT )
+                    IF( SICIN ) CALL READ_NEXT_VAL( CSIC )
+                    IF( EXTIN ) CALL READ_NEXT_VAL( CEXT )
 
-                    ELSE IF( MCTIN .AND. NAIIN .AND. STPIN .AND. 
-     &                                    .NOT. EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                        CSTP, CMT, CNAI, CINT
-
-                    ELSE IF( MCTIN .AND. NAIIN .AND. STPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                        CSTP, CMT, CNAI
-
-                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN .AND. 
-     &                                          EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
-     &                                                CMT, CINT, CEXT
-
-                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN .AND. 
-     &                                    EXTIN .AND. .NOT. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
-     &                                                CMT, CEXT
-
-                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN .AND. 
-     &                                    .NOT. EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
-     &                                                CMT, CINT
-
-                    ELSE IF( MCTIN .AND. .NOT. NAIIN .AND. STPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,CSTP,
-     &                                                CMT
-
-                    ELSE IF( .NOT. MCTIN .AND. STPIN .AND. 
-     &                                          EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                                                CSTP, CINT, CEXT
-
-                    ELSE IF( .NOT. MCTIN .AND. STPIN .AND. 
-     &                                    EXTIN .AND. .NOT. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                                                CSTP, CEXT
-
-                    ELSE IF( .NOT. MCTIN .AND. STPIN .AND. 
-     &                                    .NOT. EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                                                CSTP, CINT
-
-                    ELSE IF( .NOT. MCTIN .AND. STPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS, CSTP
-
-
-                    ELSE IF( EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS,
-     &                                                CINT, CEXT
-
-                    ELSE IF( .NOT. EXTIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS, CINT
-
-                    ELSE IF( EXTIN .AND. .NOT. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS, CEXT
-
-                    ELSE
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CS
-
-                    END IF
+C.....................  Advance to next line
+                    READ( FDEV, *, END=999 )
 
                     IF( SCCFLAG ) CSCC( S ) = CS
 
@@ -663,6 +631,8 @@ C.....................  Read in line of character data
                     IF( EXTFLAG .AND. EXTIN ) CEXTORL( S ) = 
      &                                             ADJUSTL( CEXT )
 
+                    IF( SICFLAG .AND. SICIN ) CISIC( S ) = CSIC
+
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, CS, CHRBLNK3, CHRBLNK3,
      &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
@@ -676,39 +646,23 @@ C.....................  Read in line of character data
 
                 DO S = 1, NSRC
 
-C.....................  Read in line of character data
-                    IF( STPIN .AND. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
-     &                            CLNK, CVID, CS, CVTP, CSTP, CINT, CEXT
+C.....................  Read source information from record of inventory file
+                    FMTITEM = 1
+                    CALL BUILD_FMTSEG( FMTSEGS( FMTITEM ) )
+                    READ( FDEV, FMTSEG, ADVANCE='NO', END=999 ) ID
+                    
+                    CALL READ_NEXT_VAL( CFIP )
+                    CALL READ_NEXT_VAL( CRWT )
+                    CALL READ_NEXT_VAL( CLNK )
+                    CALL READ_NEXT_VAL( CVID )
+                    CALL READ_NEXT_VAL( CS )
+                    CALL READ_NEXT_VAL( CVTP )
+                    IF( STPIN ) CALL READ_NEXT_VAL( CSTP )
+                    IF( ITGIN ) CALL READ_NEXT_VAL( CINT )
+                    IF( EXTIN ) CALL READ_NEXT_VAL( CEXT )
 
-                    ELSE IF( STPIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
-     &                            CLNK, CVID, CS, CVTP, CSTP, CINT
-
-                    ELSE IF( STPIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
-     &                            CLNK, CVID, CS, CVTP, CSTP, CEXT
-
-                    ELSE IF( STPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT,
-     &                            CLNK, CVID, CS, CVTP, CSTP
-
-                    ELSE IF( .NOT. STPIN .AND. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
-     &                            CLNK, CVID, CS, CVTP, CINT, CEXT 
-
-                    ELSE IF( .NOT. STPIN .AND. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
-     &                            CLNK, CVID, CS, CVTP, CINT 
-
-                    ELSE IF( .NOT. STPIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
-     &                            CLNK, CVID, CS, CVTP, CEXT 
-
-                    ELSE
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, CRWT, 
-     &                            CLNK, CVID, CS, CVTP
-                    END IF
+C.....................  Advance to next line
+                    READ( FDEV, *, END=999 )
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
@@ -766,6 +720,10 @@ C.................  Determine if plant description is present
 C.................  Determine if plant description is present
                 J = INDEX1( 'NEI unique ID', NCOL, HEADER )
                 NEIIN = ( J .GT. 0 )
+
+C.................  Determine if SIC code is present
+                J = INDEX1( 'SIC', NCOL, HEADER )
+                SICIN = ( J > 0 )
 
 C.................  If MACT not present but has been requested, then 
 C                   internal err
@@ -836,6 +794,19 @@ C                    CALL M3MSG2( MESG )
                     DEALLOCATE( CERPTYP )
 
                 END IF
+
+C.................  If SIC not present but has been requested, then 
+C                   internal err
+                IF( .NOT. SICIN .AND. SICFLAG ) THEN
+
+                    MESG = 'WARNING: SIC requested, but ' //
+     &                     'is not present in ASCII inventory file'
+C                    CALL M3MSG2( MESG )
+
+                    DEALLOCATE( CISIC )
+                    NULLIFY( CISIC )
+
+                END IF
                 
                 IF( EFLAG ) THEN
 
@@ -849,378 +820,37 @@ C                    CALL M3MSG2( MESG )
 C.....................  Initialize temporary characteristics
                     CHARS = ' '  ! array
 
-C.....................  Read in line of character data
+C.....................  Read source information from record of inventory file
+                    FMTITEM = 1
+                    CALL BUILD_FMTSEG( FMTSEGS( FMTITEM ) )
+                    READ( FDEV, FMTSEG, ADVANCE='NO', END=999 ) ID
+                    
+                    CALL READ_NEXT_VAL( CFIP )
+                    CALL READ_NEXT_VAL( FCID )
+                    DO J = 1, NC
+                        CALL READ_NEXT_VAL( CHARS( J ) )
+                    END DO
+                    CALL READ_NEXT_VAL( CS )
+                    IF( ORSIN ) CALL READ_NEXT_VAL( CORS )
+                    IF( BLRIN ) CALL READ_NEXT_VAL( CBLR )
+                    IF( MCTIN ) CALL READ_NEXT_VAL( CMT )
+                    IF( NAIIN ) CALL READ_NEXT_VAL( CNAI )
+                    IF( STPIN ) CALL READ_NEXT_VAL( CSTP )
+                    IF( ERPIN ) CALL READ_NEXT_VAL( CERP )
+                    IF( PDSIN ) CALL READ_NEXT_VAL( CPDS )
+                    IF( NEIIN ) CALL READ_NEXT_VAL( CNEI )
+                    IF( ITGIN ) CALL READ_NEXT_VAL( CINT )
+                    IF( SICIN ) CALL READ_NEXT_VAL( CSIC )
+                    IF( EXTIN ) CALL READ_NEXT_VAL( CEXT )
 
-                    IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                  MCTIN .AND. NAIIN .AND. STPIN .AND.
-     &                  NEIIN .AND. ERPIN .AND. EXTIN .AND.
-     &                  ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                       MCTIN .AND. NAIIN .AND. STPIN .AND.
-     &                       NEIIN .AND. ERPIN .AND. .NOT. EXTIN .AND.
-     &                       ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                       MCTIN .AND. NAIIN .AND. STPIN .AND.
-     &                       NEIIN .AND. ERPIN .AND. EXTIN .AND.
-     &                       .NOT. ITGIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                       MCTIN .AND. NAIIN .AND. STPIN .AND.
-     &                       NEIIN .AND. ERPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.    ! no NEIUID
-     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
-     &                       ERPIN .AND. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.    
-     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
-     &                       ERPIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
-     &                       ERPIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CINT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND. 
-     &                       MCTIN .AND. NAIIN .AND. STPIN .AND. 
-     &                       ERPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, CMT,
-     &                      CNAI, CSTP, CERP, CPDS
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.    ! no Boiler ID
-     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       NEIIN .AND. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
-     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       NEIIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI, CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
-     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       NEIIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI, CINT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
-     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       NEIIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CNEI
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.     ! no Boiler ID & NEIUID
-     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
-     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
-     &                       NAIIN .AND. STPIN .AND. ERPIN .AND.
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS, CINT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. MCTIN .AND.
-     &                       NAIIN .AND. STPIN .AND. ERPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CMT,
-     &                      CNAI, CSTP, CERP, CPDS
-     
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.  ! no ORIS ID & Boiler ID
-     &                       STPIN .AND. ERPIN .AND. NEIIN .AND. 
-     &                       ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS, CNEI, CINT, CEXT   
-
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
-     &                       STPIN .AND. ERPIN .AND. NEIIN .AND. 
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS, CNEI, CEXT   
-
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
-     &                       STPIN .AND. ERPIN .AND. NEIIN .AND. 
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS, CNEI, CINT   
-
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
-     &                       STPIN .AND. ERPIN .AND. NEIIN  ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS, CNEI 
-
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND. ! MACT, NAICS, STP, ERP only
-     &                       STPIN .AND. ERPIN .AND. ITGIN .AND. ! no ORIS ID, Boiler & NEIUID
-     &                       EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS, CINT, CEXT
-
-
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
-     &                       STPIN .AND. ERPIN .AND. .NOT. ITGIN .AND. 
-     &                       EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS, CEXT
-
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
-     &                       STPIN .AND. ERPIN .AND. ITGIN .AND. 
-     &                       .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS, CINT
-
-                    ELSE IF( PDSIN .AND. MCTIN .AND. NAIIN .AND.
-     &                       STPIN .AND. ERPIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CMT, CNAI,
-     &                      CSTP, CERP, CPDS
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.       ! ORIS, Boiler, NEIUID only
-     &                       NEIIN .AND. ITGIN .AND. EXTIN ) THEN      ! no source type and release point
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,  ! no MACT & NAICS 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CNEI, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
-     &                       NEIIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CNEI, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
-     &                       NEIIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CNEI, CINT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
-     &                       NEIIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CNEI
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.      ! ORIS, Boiler ID only
-     &                       ITGIN .AND. EXTIN ) THEN                 ! no MACT, NAICS, NEIUID
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, ! no source type and release point
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN .AND.
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS, CINT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. PDSIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                      CPDS
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN .AND.    ! with ORIS, NEIUID only
-     &                       ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
-     &                      CNEI, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN .AND.
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
-     &                      CNEI, CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN .AND.
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
-     &                      CNEI, CINT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND. NEIIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,CNEI
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND.                 ! ORIS only (description)
-     &                       ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
-     &                      CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND.
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
-     &                      CEXT
-
-                    ELSE IF( ORSIN .AND. PDSIN .AND.
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS,
-     &                      CINT
-
-                    ELSE IF( ORSIN .AND. PDSIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CORS, CPDS
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN .AND.   ! ORIS, Boiler ID, & NEIUID 
-     &                       ITGIN .AND. EXTIN ) THEN              ! no description name
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
-     &                      CNEI, CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN .AND.
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
-     &                      CNEI, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN .AND.
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
-     &                      CNEI, CINT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND. NEIIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND.               ! ORIS, BoilerID only
-     &                       ITGIN .AND. EXTIN ) THEN              ! no description name
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
-     &                      CINT, CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND.
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR,
-     &                        CEXT
-
-                    ELSE IF( ORSIN .AND. BLRIN .AND.
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR, 
-     &                        CINT
-
-                    ELSE IF( ORSIN .AND. BLRIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1,NC ), CS, CORS, CBLR
-
-                    ELSE IF( PDSIN .AND. NEIIN .AND.              ! NEIUID only
-     &                       ITGIN .AND. EXTIN ) THEN             ! with Description
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI,
-     &                      CINT, CEXT
-
-                    ELSE IF( PDSIN .AND. NEIIN .AND.
-     &                       .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI,
-     &                      CEXT
-
-                    ELSE IF( PDSIN .AND. NEIIN .AND.
-     &                       ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI,
-     &                      CINT
-
-                    ELSE IF( PDSIN .AND. NEIIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CNEI
-
-                    ELSE IF( PDSIN .AND. ITGIN .AND. EXTIN ) THEN    ! Description only
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CINT,
-     &                      CEXT      
-
-                    ELSE IF( PDSIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CEXT      
-
-                    ELSE IF( PDSIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS, CINT      
-
-                    ELSE IF( PDSIN ) THEN    ! Description only
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID,
-     &                      ( CHARS( J ), J=1, NC ), CS, CPDS      
-
-                    ELSE IF( NEIIN .AND. ITGIN .AND. EXTIN ) THEN  ! NEIUID only
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CNEI, CINT,CEXT
-
-                    ELSE IF( NEIIN .AND. .NOT. ITGIN .AND. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CNEI, CEXT
-
-                    ELSE IF( NEIIN .AND. ITGIN .AND. .NOT. EXTIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CNEI, CINT
-
-                    ELSE IF( NEIIN ) THEN
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS, CNEI
-
-                    ELSE 
-                        READ( FDEV, FILFMT, END=999 ) ID, CFIP, FCID, 
-     &                      ( CHARS( J ), J=1, NC ), CS
-
-                    ENDIF
+C.....................  Advance to next line
+                    READ( FDEV, *, END=999 )
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
-                    IF( ORSFLAG ) CORIS ( S ) = ADJUSTR( CORS )
+                    IF( ORSFLAG .AND. ORSIN ) CORIS ( S ) = ADJUSTR( CORS )
 
-                    IF( BLRFLAG ) CBLRID( S ) = ADJUSTR( CBLR )
+                    IF( BLRFLAG .AND. BLRIN ) CBLRID( S ) = ADJUSTR( CBLR )
 
                     IF( ITGFLAG .AND. ITGIN ) CINTGR( S ) = CINT
 
@@ -1238,14 +868,15 @@ C.....................  Read in line of character data
 
                     IF( ERPFLAG .AND. ERPIN ) CERPTYP( S ) = CERP
 
+                    IF( PDSFLAG .AND. PDSIN ) CPDESC( S ) = CPDS
 
-                    IF( PDSFLAG ) CPDESC( S ) = CPDS
-
+                    IF( SICFLAG .AND. SICIN ) CISIC( S ) = CSIC
 
                     IF( CSRFLAG ) 
      &                  CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
      &                                CHARS(3), CHARS(4), CHARS(5),
      &                                POLBLNK3, CSOURC( S ) )
+
                     CALL CHECK_CORRUPTED
 
                 END DO  ! End loop on sources
@@ -1299,6 +930,50 @@ C...........   Internal buffering formats............ 94xxx
             END SUBROUTINE CHECK_CORRUPTED
 
 C----------------------------------------------------------------------
+
+C.............  This internal subprogram build a format specification string
+C               from the given format fragment
+            SUBROUTINE BUILD_FMTSEG( FMTFRAGMENT )
+
+C.................  Subprogram arguments
+                CHARACTER(*) FMTFRAGMENT
+
+C......................................................................
+
+                WRITE( FMTSEG, '(A1, A, A1)' ) '(', TRIM( FMTFRAGMENT ), ')'
+            
+            END SUBROUTINE BUILD_FMTSEG
+
+C----------------------------------------------------------------------
+
+C.............  This internal subprogram reads the next string value from
+C               the current record in the inventory file
+            SUBROUTINE READ_NEXT_VAL( VARIABLE )
+
+C.................  Subprogram arguments
+                CHARACTER(*) VARIABLE
+
+C......................................................................
+
+C.................  Skip blank space
+                FMTITEM = FMTITEM + 1
+                CALL BUILD_FMTSEG( FMTSEGS( FMTITEM ) )
+                READ( FDEV, FMTSEG, ADVANCE='NO', END=998 )
+
+C.................  Extract string format and read variable            
+                FMTITEM = FMTITEM + 1
+                CALL BUILD_FMTSEG( FMTSEGS( FMTITEM ) )
+                READ( FDEV, FMTSEG, ADVANCE='NO', END=998 ) VARIABLE
+                
+                RETURN
+
+998             MESG = 'End of file reached unexpectedly. ' //
+     &                 'Check format of ASCII' // CRLF() // BLANK5 //
+     &                 'inventory file.'
+
+        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            
+            END SUBROUTINE READ_NEXT_VAL
 
         END SUBROUTINE RDINVCHR
 

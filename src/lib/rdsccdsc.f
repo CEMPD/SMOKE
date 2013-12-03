@@ -144,7 +144,7 @@ C                   inventory, store the description.
                 END IF
    
             ELSE IF( FFLAG ) THEN
-                TSCC = LINE( 1:SCCLEN3 )
+                TSCC = LINE( 1:SCCLEN3-SCCEXPLEN3 )
                 CALL PADZERO( TSCC )
 
 C.................  Find SCC in inventory list, and if it's in the
@@ -152,7 +152,7 @@ C                   inventory, store the description.
                 J = FINDC( TSCC, NINVSCC, INVSCC )
 
                 IF ( J .GT. 0 ) THEN
-                    SCCDESC( J ) = ADJUSTL( LINE( SCCLEN3+1:ENDLEN ) )
+                    SCCDESC( J ) = ADJUSTL( LINE( SCCLEN3-SCCEXPLEN3+1:ENDLEN ) )
                 END IF
 
             ELSE

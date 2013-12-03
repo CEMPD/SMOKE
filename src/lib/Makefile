@@ -16,16 +16,16 @@ include $(FS_ROOT)/modmake.inc
 FILES_ABCDE = \
   alocatbl.o   alocchrt.o   alocctbl.o   alocetbl.o   alocgtbl.o   alocmtbl.o \
   alocptbl.o   alocstbl.o   alocttbl.o   applreac.o   applumat.o   bldcsrc.o  \
-  bldenams.o   blkorcmt.o   calcrelhum.o chkcpvar.o   chkemepi.o   chkisiz.o \
-  chkmetem.o   chkptdef.o   chksrcno.o   convrtll.o   convrtxy.o   cvtrdtype.o  cvtvehtype.o \
-  dscsprof.o   efsetup.o    evalcrit.o
+  bldenams.o   blkorcmt.o   calcrelhum.o chkcpvar.o   chkemepi.o   chkexpscc.o \
+  chkexpsic.o  chkisiz.o    chkmetem.o   chkptdef.o   chksrcno.o   convrtll.o   convrtxy.o \
+  cvtrdtype.o  cvtvehtype.o dscsprof.o   efsetup.o    evalcrit.o
 
 FILES_FGIMNP = \
   fillatbl.o   fillchrt.o   fillctbl.o   filletbl.o   fillgtbl.o   fillmtbl.o \
   fillptbl.o   fillstbl.o   fillttbl.o   find1first.o fltrxref.o   fmtcsrc.o  \
   genptcel.o   genptvcel.o  genuslst.o   getbasyr.o   getctgry.o   getdysav.o \
   getformt.o   getidasz.o   getiname.o   getinvyr.o   getntisz.o   getrfdsc.o \
-  getsinfo.o   gettzone.o   getvmix.o    grd2cnty.o   grdfips.o    ingrid.o     initem.o   \
+  getsinfo.o   gettzone.o   grd2cnty.o   grdfips.o    ingrid.o     initem.o   \
   lnk2grd.o    mbsccadj.o   normtpro.o   parscsrc.o   pdsetup.o    prclinrc.o   procspro.o \
   progdesc.o
 
@@ -101,7 +101,6 @@ getctgry.o : $(MODINFO)
 getntisz.o : $(MODLISTS)
 getsinfo.o : $(MODFILESET) $(MODINFO)
 gettzone.o : $(MODSTCY)
-getvmix.o  : $(MODXREF) $(MODINFO)
 grdfips.o  : $(MODSURG) $(MODGRID) $(MODMET)
 grd2cnty.o : $(MODSTCY) $(MODSURG) $(MODGRID)
 lnk2grd.o  : $(MODGRID)

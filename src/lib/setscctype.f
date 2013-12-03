@@ -44,6 +44,9 @@ C.........  This module contains the information about the source category
      &                     SCCLEV3, CATEGORY
             
         IMPLICIT NONE
+
+C...........   INCLUDES:
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
        
 C........  Function arguments
         CHARACTER(*), INTENT (IN) :: TSCC   ! SCC code
@@ -61,25 +64,25 @@ C.........  Don't change any parameters if category is mobile
         IF( CATEGORY == 'MOBILE' ) RETURN
 
 C.........  Check if first two digits of SCC are zero
-        IF( TSCC( 1:2 ) == '00' ) THEN
+        IF( TSCC( SCCEXPLEN3+1:SCCEXPLEN3+2 ) == '00' ) THEN
 
 C.............  Only set new values if needed and set flag
-            IF( LSCCEND /= 5 ) THEN
+            IF( LSCCEND /= SCCEXPLEN3 + 5 ) THEN
                 SETSCCTYPE = .TRUE.  ! flag indicates that values have been changed
-                LSCCEND = 5
-                RSCCBEG = 6
-                SCCLEV1 = 3
-                SCCLEV2 = 5
-                SCCLEV3 = 8
+                LSCCEND = SCCEXPLEN3 + 5
+                RSCCBEG = SCCEXPLEN3 + 6
+                SCCLEV1 = SCCEXPLEN3 + 3
+                SCCLEV2 = SCCEXPLEN3 + 5
+                SCCLEV3 = SCCEXPLEN3 + 8
             END IF
         ELSE
-            IF( LSCCEND /= 7 ) THEN
+            IF( LSCCEND /= SCCEXPLEN3 + 7 ) THEN
                 SETSCCTYPE = .TRUE.
-                LSCCEND = 7
-                RSCCBEG = 8
-                SCCLEV1 = 2
-                SCCLEV2 = 4
-                SCCLEV3 = 7
+                LSCCEND = SCCEXPLEN3 + 7
+                RSCCBEG = SCCEXPLEN3 + 8
+                SCCLEV1 = SCCEXPLEN3 + 2
+                SCCLEV2 = SCCEXPLEN3 + 4
+                SCCLEV3 = SCCEXPLEN3 + 7
             END IF
         END IF
 

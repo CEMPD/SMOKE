@@ -37,9 +37,9 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, ISIC, INVYR, XLOCA, YLOCA,
+        USE MODSOURC, ONLY: IFIP, INVYR, XLOCA, YLOCA,
      &                      CORIS, STKHT, STKDM, STKTK, STKVE,
-     &                      CSCC, CSOURC, CPDESC, CLINK, CBLRID
+     &                      CSCC, CSOURC, CPDESC, CLINK, CBLRID, CISIC
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, CTRYNAM
@@ -80,6 +80,7 @@ C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: SEGMTLEN = 2  ! IDA fmt segment ID length
         INTEGER, PARAMETER :: PDESCLEN = 40 ! IDA fmt plant description length
         INTEGER, PARAMETER :: SCCLEN   = 10 ! IDA fmt SCC field length
+        INTEGER, PARAMETER :: SICLEN   = 4  ! IDA fmt SIC field length
 
 C.........  Parameters for output IDA formats
         INTEGER    , PARAMETER :: AROLEN ( 7 ) = ( /10,10,11,7,3,6,0/ )
@@ -114,7 +115,7 @@ C...........   Local fixed arrays
 C...........   IDA output variables (names same as IDA format description)
 
         INTEGER         STID, CYID, BEGYR, ENDYR, HOURS, START, NDAY
-        INTEGER         WEEKS, SIC
+        INTEGER         WEEKS
 
         REAL            STKHGT, STKDIAM, STKTEMP, STKFLOW, STKVEL
         REAL            BOILCAP, WINTHRU, SPRTHRU, SUMTHRU, FALTHRU
@@ -131,6 +132,7 @@ C...........   IDA output variables (names same as IDA format description)
         CHARACTER(ORSLEN3)  ORISID
         CHARACTER(PDESCLEN) PLNTDESC
         CHARACTER(SCCLEN)   SCC
+        CHARACTER(SICLEN)   SIC
 
 C...........   Other local variables
 
@@ -446,7 +448,7 @@ C.................  Store others in temporary variables
                 STID = FIP / 1000 
                 CYID = FIP - STID * 1000
 
-                SIC    = ISIC ( S )                
+                SIC    = CISIC( S )                
                 YEAR   = INVYR( S )                
                 LATC   = YLOCA( S )                
                 LONC   = XLOCA( S )                

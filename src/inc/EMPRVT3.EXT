@@ -38,6 +38,7 @@ C.........  Width of source information strings (ABC order)
         PRIVATE :: SCCLEN3
         PRIVATE :: SCCEXPLEN3
         PRIVATE :: SICLEN3
+        PRIVATE :: SICEXPLEN3
         PRIVATE :: STPLEN3
         PRIVATE :: TAGLEN3
         PRIVATE :: VIDLEN3

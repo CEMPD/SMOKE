@@ -1,6 +1,6 @@
 
         SUBROUTINE RDINVSRCS( FDEV, VDEV, SDEV, FNAME, 
-     &                        NRAWBP, NRAWSRCS, TFLAG, ORLFLG )
+     &                        NRAWBP, NRAWSRCS, ORLFLG )
 
 C***********************************************************************
 C  subroutine body starts at line 133
@@ -50,7 +50,7 @@ C...........   This module is the inventory arrays
      &                      NSTRECS, SRCSBYREC, RECIDX
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, CATEGORY, NEMSFILE
+        USE MODINFO, ONLY: NSRC, CATEGORY
         
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: FILFMT, LSTSTR, FIREFLAG, FF10FLAG
@@ -74,7 +74,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         GETFORMT
         INTEGER         GETINVYR
-        INTEGER         GETVMIX
         INTEGER         JUNIT
         INTEGER         FIND1
         INTEGER         FIND1FIRST
@@ -87,7 +86,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER*4       GETPID   
 
         EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, GETPID,
-     &                  GETVMIX, JUNIT, FIND1, FIND1FIRST, FINDC,
+     &                  JUNIT, FIND1, FIND1FIRST, FINDC,
      &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR
 
 C...........   SUBROUTINE ARGUMENTS
@@ -97,7 +96,6 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: FNAME        ! logical name of file
         INTEGER,      INTENT(OUT) :: NRAWBP       ! no. of sources with pols/acts
         INTEGER,      INTENT(OUT) :: NRAWSRCs     ! no. of raw sources
-        LOGICAL,      INTENT(OUT) :: TFLAG        ! true: PTREF output
         LOGICAL,      INTENT(OUT) :: ORLFLG       ! true: read ORL inventory
 
 C...........   Local parameters
@@ -115,7 +113,6 @@ C...........   Local arrays
         INTEGER,            ALLOCATABLE:: CSRCIDX  ( : )    ! index for sorting CSOURCA
 
 C...........   File units and logical/physical names
-        INTEGER         EDEV( 5 )   !  up to 5 EMS-95 emissions files
         INTEGER         CDEV        !  scratch file
 
 C...........   Other local variables
@@ -132,7 +129,6 @@ C...........   Other local variables
         INTEGER         IVT          !  vehicle type code
         INTEGER         LDEV         !  device no. for log file
         INTEGER         MXWARN       !  maximum number of warnings
-        INTEGER         NINVFILES    !  number of EMS-95 inventory files
         INTEGER         NLINE        !  number of lines in list format file
         INTEGER         NPOLPERLN    !  no. of pollutants per line of inventory file
         INTEGER         NRECPERLN    !  no. of records per line
@@ -146,7 +142,6 @@ C...........   Other local variables
         INTEGER      :: TOTRECS = 0  !  total number of records
         
         LOGICAL      :: EFLAG   = .FALSE. ! true: error occured
-        LOGICAL      :: EMSFLAG = .FALSE. ! true: at least one file is EMS-95 format
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
         LOGICAL      :: FIRSTIME = .TRUE. ! true: first time through 
@@ -305,65 +300,10 @@ C           by the IDA and EPS formats, including NPPOL
             END IF
         END DO
 
-C.........  Check if any files are EMS-95 format
-        DO I = 1, NLINE
-            IF( FILFMT( I ) == EMSFMT ) THEN
-                EMSFLAG = .TRUE.
-                EXIT
-            END IF
-        END DO
-
-C.........  If EMS-95 point source inventory, check for correct number of files
-        IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-            NINVFILES = 0
-            DO I = 1, NLINE
-                CURFMT = FILFMT( I )
-C.................  Skip any non-file lines (INVYEAR, #LIST, etc.)
-                IF( CURFMT < 0 ) CYCLE
-                                
-C.................  Make sure all files are EMS format
-                IF( CURFMT /= EMSFMT ) THEN
-                    MESG = 'Cannot use EMS-95 with other formats ' //
-     &                     'for point source inventory'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-
-C.................  Make sure file opens properly                
-                INFILE = LSTSTR( I )
-                OPEN( FDEV, FILE=INFILE, STATUS='OLD', IOSTAT=IOS )
-                IF( IOS /= 0 ) THEN
-                    WRITE( MESG,94010 ) 'Problem at line ', I, 'of ' //
-     &                     TRIM( FNAME ) // '. Could not open file:' //
-     &                     CRLF() // BLANK5 // TRIM( INFILE )
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-                CLOSE( FDEV )
-                
-                NINVFILES = NINVFILES + 1
-            END DO
-            
-            IF( MOD( NINVFILES, NEMSFILE ) /= 0 ) THEN
-                MESG = 'EMS-95 point source files must be in groups ' //
-     &                 'of five.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-        END IF
-
 C.........  Read vehicle mix, if it is available
 C.........  The tables are passed through MODMOBIL and MODXREF
         IF( VDEV .GT. 0 ) THEN
             CALL RDVMIX( VDEV )
-        ELSE
-
-C.............  Check if VMT mix is required
-            IF( CATEGORY == 'MOBILE' .AND. EMSFLAG ) THEN
-                MESG = 'Mobile VMT mix data are required ' //
-     &                 'for import of EMS-95 mobile format' //
-     &                 CRLF() // BLANK10 //
-     &                 'Set the IMPORT_VMTMIX_YN environment' //
-     &                 ' variable to Y and try again.'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
         END IF
 
         CURFIL = 1
@@ -382,17 +322,6 @@ C.............  Skip #LIST lines (must be first)
 C.............  Check for inventory year packet
             IF( GETINVYR( LINE ) > 0 ) THEN
                 CURFIL = CURFIL + 1  ! move to next file in list
-            ELSE
-                IF( EMSFLAG ) THEN
-                    MESG = 'Must set inventory year using ' //
-     &                     'INVYEAR packet for EMS-95 input.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-            END IF
-
-C.............  If EMS point inventory, advance to emission file
-            IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN              
-                CURFIL = CURFIL + 1
             END IF
 
 C.............  Make sure there are more files
@@ -478,12 +407,8 @@ C.........................  Close current file and reset counter
                         CLOSE( FDEV )
                         IREC = 0
 
-C.........................  Advance to next file
-                        IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-                            CURFIL = CURFIL + 4
-                        ELSE                    
-                            CURFIL = CURFIL + 1
-                        END IF
+C.........................  Advance to next file                 
+                        CURFIL = CURFIL + 1
 
 C.........................  Check if there are more files to read
                         IF( CURFIL <= NLINE ) THEN 
@@ -497,11 +422,6 @@ C.............................  Check for #LIST line
 C.............................  Make sure current line is not INVYEAR packet                    
                             IF( GETINVYR( LINE ) > 0 ) THEN
                                 CURFIL = CURFIL + 1  ! move to next file in list
-                            END IF
-                            
-C.............................  If EMS point inventory, skip ahead to emission file
-                            IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-                                CURFIL = CURFIL + 1
                             END IF
 
 C.............................  Make sure there are still files to read                            
@@ -560,40 +480,6 @@ C.................  Skip blank lines
 
 C.................  Process line depending on file format and source category
                 SELECT CASE( CURFMT )
-                CASE( IDAFMT )
-                    SELECT CASE( CATEGORY )
-                    CASE( 'AREA' )
-                        CALL RDSRCIDAAR( LINE, CFIP, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    CASE( 'MOBILE' )
-                        CALL RDSRCIDAMB( LINE, CFIP, CLNK, TSCC, 
-     &                                   NPOLPERLN, HDRFLAG, EFLAG )
-                    CASE( 'POINT' )
-                        CALL RDSRCIDAPT( LINE, CFIP, FCID, PTID, SKID,
-     &                                   SGID, TSCC, NPOLPERLN, 
-     &                                   HDRFLAG, EFLAG )
-                    END SELECT
-
-                CASE( EPSFMT )
-                    MESG = 'EPS 2.0 format is not currently supported'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-
-                CASE( EMSFMT )
-                    SELECT CASE( CATEGORY )
-                    CASE( 'AREA' )
-                        CALL RDSRCEMSAR( LINE, CFIP, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    CASE( 'MOBILE' )
-                        CALL RDSRCEMSMB( LINE, CFIP, CROAD, CLNK,
-     &                                   NPOLPERLN, HDRFLAG, EFLAG )
-                        TSCC = ' '   ! set fake SCC code
-                    CASE( 'POINT' )
-                        TFLAG = .TRUE. 
-                        CALL RDSRCEMSPT( LINE, CFIP, FCID, SKID, DVID, 
-     &                                   PRID, NPOLPERLN, 
-     &                                   HDRFLAG, EFLAG )
-                        TSCC = ' '   ! set fake SCC code
-                    END SELECT
 
                 CASE( FF10FMT )
                     ORLFLG = .TRUE.
@@ -716,7 +602,7 @@ C.....................  Make sure SCC is at least 8 characters long
                 
                 IF( CATEGORY == 'MOBILE' ) THEN
 
-                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT .OR.
+                    IF( CURFMT == ORLFMT .OR.
      &                  CURFMT == FF10FMT ) THEN
 
 C.........................  Check if SCC has proper length
@@ -745,26 +631,6 @@ C.........................  Ensure that vehicle type is valid
                             CALL M3MESG( MESG )
                         END IF
                     END IF
-
-                    IF( CURFMT == EMSFMT ) THEN
-C.........................  Match FIP, road, and link with vehicle mix table
-C                           Error messages are written out in GETVMIX
-                        K1 = GETVMIX( CFIP, CROAD, CLNK )
-                        IF( K1 <= 0 ) THEN
-                            EFLAG = .TRUE.
-                            CYCLE
-                        END IF
-                        
-C.........................  Check that road class is an integer
-                        IF( .NOT. CHKINT( CROAD ) ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 'ERROR: Road class ' //
-     &                         'is not an integer at line', IREC
-                            CALL M3MESG( MESG )
-                        END IF
-                        
-                        ROAD = STR2INT( CROAD )
-                    END IF
                     
 C.....................  Ensure that road class is valid and convert from road class
                     J = FIND1( ROAD, NRCLAS, AMSRDCLS )
@@ -781,7 +647,7 @@ C.....................  Ensure that road class is valid and convert from road cl
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
-                    IF( CURFMT == IDAFMT .OR. CURFMT == ORLFMT .OR.
+                    IF( CURFMT == ORLFMT .OR.
      &                  CURFMT == ORLFIREFMT .OR. CURFMT == FF10FMT ) THEN
 
 C.........................  Make sure SCC is at least 8 characters long
@@ -809,53 +675,11 @@ C.........................  Make sure we have a facility/plant ID
                         END IF
 
                     END IF
-                    
-!                    IF( CURFMT == EMSFMT ) THEN
-
-C.........................  Check for facility, stack, device, and process IDs
-!                        IF( FCID == ' ' ) THEN
-!                            EFLAG = .TRUE.
-!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-!     &                          'facility ID code at line', IREC
-!                            CALL M3MESG( MESG )
-!                        END IF
-!                        
-!                        IF( SKID == ' ' ) THEN
-!                            EFLAG = .TRUE.
-!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-!     &                          'stack ID code at line', IREC
-!                            CALL M3MESG( MESG )
-!                        END IF
-!                        
-!                        IF( DVID == ' ' ) THEN
-!                            EFLAG = .TRUE.
-!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-!     &                          'device ID code at line', IREC
-!                            CALL M3MESG( MESG )
-!                        END IF
-!                        
-!                        IF( PRID == ' ' ) THEN
-!                            EFLAG = .TRUE.
-!                            WRITE( MESG,94010 ) 'ERROR: Missing ' //
-!     &                          'process ID code at line', IREC
-!                            CALL M3MESG( MESG )
-!                        END IF
-                    
-!                    END IF
                 
                 END IF
 
 C.................  Skip rest of loop if an error has occured
                 IF( EFLAG ) CYCLE
-
-C.................  If file format is mobile, EMS-95, make sure adding
-C                   sources won't go over ISTREC limit
-                IF( CATEGORY == 'MOBILE' .AND. CURFMT == EMSFMT ) THEN
-                    IF( ISTREC + NVTYPE > MXRECS ) THEN
-                        BACKSPACE( FDEV )
-                        EXIT
-                    END IF
-                END IF
 
 C.................  Build concatenated source information
                 SELECT CASE( CATEGORY )
@@ -869,81 +693,18 @@ C.................  Build concatenated source information
                 CASE( 'MOBILE' )
                     CALL FLTRNEG( CLNK )
                     WRITE( CRWT,RWTFMT ) RWT
-                    
-                    IF( CURFMT == EMSFMT ) THEN
+                    WRITE( CIVT,VIDFMT ) IVT
 
-C.........................  Loop through vehicle types
-                        DO J = 1, NVTYPE
-                            IVT   = IVTIDLST( J )
-                            VTYPE = CVTYPLST( J )
-                            WRITE( CIVT,VIDFMT ) IVT
-
-C.............................  Search for and assign SCC                            
-                            CRVC = CROAD // VTYPE
-                            K2 = FINDC( CRVC, NSCCTBL, SCCRVC )
-                            
-                            IF( K2 <= 0 ) THEN
-                                EFLAG = .TRUE.
-                                MESG = 'ERROR: Could not find SCC ' //
-     &                              'for ' // CRLF() // BLANK10 //
-     &                              'Road Type: ' // CRWT // 
-     &                              'Vehicle Type: ' // VTYPE
-                                CALL M3MESG( MESG )
-                                CYCLE
-                            ELSE
-                                TSCC = SCCTBL( K2 )
-                            END IF
-                            
-                            CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT,
-     &                                    TSCC, CHRBLNK3, CHRBLNK3,
-     &                                    CHRBLNK3, TCSOURC )
-                            CSRC_LEN = LEN_TRIM( TCSOURC )
-
-C.............................  Store source info on first time through
-                            IF( S == 0 ) THEN
-                                S = S + 1
-                                TCSRCIDX ( S ) = S
-                                TMPCSOURC( S ) = TCSOURC
-                            END IF
-
-C.............................  On subsequent passes, only store source info 
-C                               if it does not match previous source
-                            IF( TCSOURC /= TMPCSOURC( S ) ) THEN
-                                S = S + 1
-                                TCSRCIDX ( S ) = S
-                                TMPCSOURC( S ) = TCSOURC
-                            END IF
-
-C.............................  Store current source number for this record
-                            ISTREC = ISTREC + 1
-                            FRSNUMS( ISTREC,1 ) = CURFIL
-                            FRSNUMS( ISTREC,2 ) = IREC
-                            FRSNUMS( ISTREC,3 ) = S
-
-C.............................  Update total number of sources with pollutants
-                            NRAWBP = NRAWBP + NPOLPERLN
-                        END DO
-                        CYCLE
-     
-                    ELSE
-                        WRITE( CIVT,VIDFMT ) IVT
-                        CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, 
-     &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
-     &                                TCSOURC )
-                    END IF
+                    CALL BLDCSRC( CFIP, CRWT, CLNK, CIVT, TSCC, 
+     &                            CHRBLNK3, CHRBLNK3, CHRBLNK3, 
+     &                            TCSOURC )
 
                 CASE( 'POINT' )
                     CALL PADZERO( TSCC )
                 
-                    IF( CURFMT == EMSFMT ) THEN
-                        CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
-     &                                CHRBLNK3, CHRBLNK3, CHRBLNK3,
-     &                                TCSOURC )
-                    ELSE
-                        CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
-     &                                TSCC, CHRBLNK3, CHRBLNK3, 
-     &                                TCSOURC )
-                    END IF
+                    CALL BLDCSRC( CFIP, FCID, PTID, SKID, SGID, 
+     &                            TSCC, CHRBLNK3, CHRBLNK3, 
+     &                            TCSOURC )
                 END SELECT
                 
                 CSRC_LEN = LEN_TRIM( TCSOURC )
@@ -1146,16 +907,8 @@ C.................  Store file number
 C.........  Sort sources by record array by file number then record number
         CALL M3MESG( 'Sorting sources by file and line number...' )
 
-C.........  If processing mobile EMS-95 format, add third dimension to sort
-C           since there will be multiple sources with the same file and 
-C           record number
-        IF( CATEGORY == 'MOBILE' .AND. EMSFLAG ) THEN
-            CALL SORTI3( NSTRECS, RECIDX, SRCSBYREC( :,1 ), 
-     &                   SRCSBYREC( :,2 ), SRCSBYREC( :,3 ) )
-        ELSE
-            CALL SORTI2( NSTRECS, RECIDX, SRCSBYREC( :,1 ),
-     &                   SRCSBYREC( :,2 ) )
-        END IF
+        CALL SORTI2( NSTRECS, RECIDX, SRCSBYREC( :,1 ),
+     &               SRCSBYREC( :,2 ) )
      
 C.........  Sort inventory sources if needed (only if have more than MXRECS values)
         IF( NSTRECS > MXRECS ) THEN

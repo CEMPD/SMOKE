@@ -41,7 +41,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
-     &                      IWEK, IDIU, SPPROF, ISIC, CMACT, CNAICS,
+     &                      IWEK, IDIU, SPPROF, CISIC, CMACT, CNAICS,
      &                      CSRCTYP, CORIS, CINTGR
 
 C.........  This module contains the lists of unique source characteristics
@@ -119,7 +119,6 @@ C...........   Local variables
         INTEGER         PREVSRCID         ! previous source ID
         INTEGER         RCL               ! tmp road class code
         INTEGER         ROW               ! tmp row number
-        INTEGER         SIC               ! tmp SIC
         INTEGER         SRCID             ! tmp source ID
         INTEGER         SRGID1            ! tmp primary surrogate ID
         INTEGER         SRGID2            ! tmp fallback surrogate ID
@@ -135,6 +134,7 @@ C...........   Local variables
         CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
         CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC        ! tmp SCC
+        CHARACTER(SICLEN3) SIC        ! tmp SIC
         CHARACTER(INTLEN3) INTGR      ! tmp INTEGRATE
         CHARACTER(MACLEN3) MACT       ! tmp MACT
         CHARACTER(NAILEN3) NAICS      ! tmp NAICS
@@ -173,9 +173,9 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
+        WRITE( FMTBUF,'(A,I2.2,A,I2,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
      &                A,I1,A,I1,A)') 
-     &    '(4I8,A',SCCLEN3,',I',SICLEN3,',5I8,A', SPNLEN3,',A',
+     &    '(4I8,A',SCCLEN3,',A',SICLEN3,',5I8,A', SPNLEN3,',A',
      &    PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', 
      &    STPLEN3, ',I8,A',INTLEN3,')'
 
@@ -186,7 +186,6 @@ C           report
         SRCID  = 0
         FIP    = 0
         RCL    = 0
-        SIC    = 0
         SRGID1 = 0
         SRGID2 = 0
         STKGRP = 0
@@ -196,6 +195,7 @@ C           report
         SPCID  = ' '
         PLANT  = ' '
         SCC    = ' '
+        SIC    = ' '
         INTGR  = 'N'
         MACT   = ' '
         NAICS  = ' '
@@ -224,7 +224,7 @@ C.............  If BY SOURCE, then nothing else needed
                 FIP   = IFIP( SRCID )
                 IF( .NOT. AFLAG ) THEN
                     SCC   = CSCC( SRCID )
-                    IF( RPT_%BYSIC ) SIC = ISIC( SRCID )
+                    IF( RPT_%BYSIC ) SIC = CISIC( SRCID )
                 END IF
 
             ELSE
@@ -256,7 +256,7 @@ C.................  If BY SCC, insert SCC based on SCCRES (resolution) set in in
                     SCC = CSCC( OUTSRC( I ) )
 
 C.....................  Get rid of leading zeros
-                    IF( SCC( 1:2 ) == '00' ) SCC = SCC(3:SCCLEN3) // '  '
+c                    IF( SCC( 1:2 ) == '00' ) SCC = SCC(3:SCCLEN3) // '  '
 
                     IF( RPT_%SCCRES < 4 ) THEN
 
@@ -299,7 +299,7 @@ C.............  If BY ROADCLASS, insert roadclass code
             END IF  ! End by source or by roadclass
 
 C.................  If BY SIC, insert full SIC
-            IF( RPT_%BYSIC ) SIC = ISIC( OUTSRC( I ) )
+            IF( RPT_%BYSIC ) SIC = CISIC( OUTSRC( I ) )
  
 C.................  If BY INTEGRATE, insert INTEGRATE flag (Y/N)
             IF( RPT_%BYINTGR ) THEN
@@ -745,7 +745,7 @@ C.................  Store SIC
 
 C.................  Store SIC name index
                 IF( RPT_%SICNAM ) THEN
-                    K = FIND1( SIC, NINVSIC, INVSIC )
+                    K = FINDC( SIC, NINVSIC, INVSIC )
                     BINSICIDX( B ) = K
                 END IF
 

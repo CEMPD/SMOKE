@@ -314,7 +314,6 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(50),  PUBLIC :: LTLNFMT     ! format string for lat/lons
         CHARACTER(50),  PUBLIC :: LAYRFMT     ! format string for layer column
         CHARACTER(50),  PUBLIC :: REGNFMT     ! format string for region column
-        CHARACTER(50),  PUBLIC :: SICFMT      ! format string for SIC
         CHARACTER(50),  PUBLIC :: STKGFMT     ! format string for stack group IDs 
         CHARACTER(50),  PUBLIC :: SRCFMT      ! format string for source IDs
         CHARACTER(50),  PUBLIC :: SRG1FMT     ! format string for primary surg

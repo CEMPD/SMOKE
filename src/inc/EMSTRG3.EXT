@@ -34,7 +34,8 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: RWTLEN3 =  3 ! roadway type 
         INTEGER, PARAMETER :: SCCEXPLEN3 = 10 ! SCC expansion
         INTEGER, PARAMETER :: SCCLEN3 = 10 + SCCEXPLEN3 ! SCC
-        INTEGER, PARAMETER :: SICLEN3 =  4 ! SIC 
+        INTEGER, PARAMETER :: SICEXPLEN3 = 16 ! SIC expansion
+        INTEGER, PARAMETER :: SICLEN3 =  4 + SICEXPLEN3 ! SIC 
         INTEGER, PARAMETER :: STPLEN3 =  2 ! source type code (used for toxics)
         INTEGER, PARAMETER :: TAGLEN3 =  8 ! tag labels
         INTEGER, PARAMETER :: VIDLEN3 =  4 ! vehicle type ID
@@ -66,7 +67,7 @@ C.........  Starts and ends of each field in point source definition
         INTEGER, PARAMETER :: CH2POS3 = CH1POS3 + CHRLEN3 ! char2
         INTEGER, PARAMETER :: CH3POS3 = CH2POS3 + CHRLEN3 ! char3
         INTEGER, PARAMETER :: CH4POS3 = CH3POS3 + CHRLEN3 ! char4
-        INTEGER, PARAMETER :: CH5POS3 = CH4POS3 + CHRLEN3 ! char5
+        INTEGER, PARAMETER :: CH5POS3 = CH4POS3 + SCCLEN3 ! char5
         INTEGER, PARAMETER :: POLPOS3 = CH5POS3 + CHRLEN3 ! pol idx
         INTEGER, DIMENSION( MXPTCHR3 + 1 ),  
      &           PARAMETER :: PTBEGL3 =               ! array of starts
@@ -133,4 +134,4 @@ C.........  Widths that depend on other widths
         INTEGER, PARAMETER :: SS4LEN3 = CH5POS3-1 + SCCLEN3 ! -> Char4 // SCC
         INTEGER, PARAMETER :: SS5LEN3 = POLPOS3-1 + SCCLEN3 ! -> Char5 // SCC
         
-        INTEGER, PARAMETER :: SSMLEN3 = SS5LEN3 + MACLEN3  ! -> Char5 // SCC // MACT
+        INTEGER, PARAMETER :: SSMLEN3 = SS5LEN3 + MACLEN3 + SICLEN3 ! -> Char5 // SCC // MACT // SIC

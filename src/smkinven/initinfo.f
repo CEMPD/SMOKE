@@ -38,7 +38,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NEMSFILE, NCHARS, JSCC, JSTACK,
+        USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, JSTACK,
      &                     NPACT, NPPOL, MXCHRS, LSCCEND, RSCCBEG,
      &                     PLTIDX, SCCLEV1, SCCLEV2, SCCLEV3, SCCLEV4,
      &                     NEM, NDY, NCE, NRE, NRP, NEF, NC1, NC2,
@@ -72,45 +72,6 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine INITINFO
 
-C.........  Set source information that depends on file format
-C           This section will be executed every time the routine is called
-        SELECT CASE( CATEGORY )
-        
-        CASE ( 'AREA' )
-
-            SELECT CASE( FILFMT )
-            CASE( EMSFMT )
-                NEMSFILE = 1    ! Number of required EMS-95 file types
-            END SELECT
-            
-        CASE ( 'MOBILE' )
-
-            SELECT CASE( FILFMT )
-            CASE( EMSFMT )
-                NEMSFILE = 1    ! Number of required EMS-95 file types
-            END SELECT     
-            
-        CASE( 'POINT' )
-
-            SELECT CASE( FILFMT )
-            CASE( IDAFMT, FF10FMT, ORLFMT, ORLFIREFMT )
-                NCHARS = 6
-                JSCC   = 6
-                JSTACK = 4
-
-            CASE( EPSFMT )
-                NCHARS = 6
-                JSCC   = 6
-                JSTACK = 3
-
-            CASE( EMSFMT )
-                NCHARS   = 5
-                JSTACK   = 3
-                NEMSFILE = 5   ! Number of required EMS-95 file types
-           END SELECT
-           
-        END SELECT
-
 C.........  Skip the rest of the routine if it has been called before           
         IF( .NOT. FIRST ) RETURN
            
@@ -127,14 +88,14 @@ C.........  For area sources ...
             MXCHRS = MXARCHR3
             NCHARS = MXCHRS
             JSCC   = 2
-            LSCCEND  = 7         ! first 7
-            RSCCBEG  = 8         ! last 3
+            LSCCEND  = SCCEXPLEN3 + 7         ! first 7
+            RSCCBEG  = SCCEXPLEN3 + 8         ! last 3
             PLTIDX   = MXARCHR3  ! needed for ar-to-point
         
-            SCCLEV1 = 2
-            SCCLEV2 = 4
-            SCCLEV3 = 7
-            SCCLEV4 = 10
+            SCCLEV1 = SCCEXPLEN3 + 2
+            SCCLEV2 = SCCEXPLEN3 + 4
+            SCCLEV3 = SCCEXPLEN3 + 7
+            SCCLEV4 = SCCEXPLEN3 + 10
 
 C.........  For mobile sources ...
         CASE ( 'MOBILE' ) 
@@ -143,25 +104,29 @@ C.........  For mobile sources ...
             MXCHRS = MXMBCHR3
             NCHARS = MXCHRS  ! FIPS / SCC (veh type &/or road class) / veh type / lnk
             JSCC   = 0
-            LSCCEND  = 7
-            RSCCBEG  = 8
+            LSCCEND  = SCCEXPLEN3 + 7
+            RSCCBEG  = SCCEXPLEN3 + 8
 
-            SCCLEV1 = 2
-            SCCLEV2 = 4
-            SCCLEV3 = 7
-            SCCLEV4 = 10
+            SCCLEV1 = SCCEXPLEN3 + 2
+            SCCLEV2 = SCCEXPLEN3 + 4
+            SCCLEV3 = SCCEXPLEN3 + 7
+            SCCLEV4 = SCCEXPLEN3 + 10
 
 C.........  For point sources ...
         CASE ( 'POINT' )
-            MXCHRS = MXPTCHR3
-            NPPOL  = NPTPPOL3
-            LSCCEND  = 5
-            RSCCBEG  = 6
 
-            SCCLEV1 = 3   ! Assumes right-justified 10-digit w/ first 2 zero
-            SCCLEV2 = 5
-            SCCLEV3 = 8
-            SCCLEV4 = 10
+            NPPOL  = NPTPPOL3
+            MXCHRS = MXPTCHR3
+            NCHARS = 6
+            JSCC   = 6
+            JSTACK = 4
+            LSCCEND  = SCCEXPLEN3 + 5
+            RSCCBEG  = SCCEXPLEN3 + 6
+
+            SCCLEV1 = SCCEXPLEN3 + 3   ! Assumes right-justified 10-digit w/ first 2 zero
+            SCCLEV2 = SCCEXPLEN3 + 5
+            SCCLEV3 = SCCEXPLEN3 + 8
+            SCCLEV4 = SCCEXPLEN3 + 10
           
         END SELECT
 

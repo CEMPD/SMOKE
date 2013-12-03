@@ -251,7 +251,7 @@ C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
             NINVARR = 5
             IVARNAMS( 3 ) = 'CMACT'
-            IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 4 ) = 'CISIC'
             IVARNAMS( 5 ) = 'IFIP'
 
         ELSE IF( CATEGORY .EQ. 'MOBILE' ) THEN
@@ -264,7 +264,7 @@ C.........  Set inventory variables to read for specific source categories
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
             NINVARR = 5
             IVARNAMS( 3 ) = 'CMACT'
-            IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 4 ) = 'CISIC'
             IVARNAMS( 5 ) = 'IFIP'
         END IF
 

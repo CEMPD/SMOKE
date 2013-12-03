@@ -66,7 +66,7 @@ C.........  This module contains Smkreport-specific settings
      &                      STKPFMT, STKPWIDTH, ELEVWIDTH,
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
-     &                      ALLRPT, SICFMT, SICWIDTH, SIDSWIDTH,
+     &                      ALLRPT, SICWIDTH, SIDSWIDTH,
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
@@ -353,7 +353,7 @@ C.............  Include SCC code in string
                     L = SCCWIDTH
                     L1 = L - LV - 1                        ! 1 for space
                     TSCC = BINSCC( I )
-                    IF( TSCC(1:2) .EQ. '00' ) TSCC='  '//TSCC(3:SCCLEN3)
+c                    IF( TSCC(1:2) .EQ. '00' ) TSCC='  '//TSCC(3:SCCLEN3)
                     STRING = STRING( 1:LE ) // 
      &                       TSCC( 1:L1 ) // DELIM
                     MXLE = MXLE + L + LX
@@ -363,13 +363,13 @@ C.............  Include SCC code in string
 
 C.............  Include SIC code
                 IF( RPT_%BYSIC ) THEN
-                    BUFFER = ' '
-                    WRITE( BUFFER, SICFMT ) BINSIC( I )    ! Integer
-                    STRING = STRING( 1:LE ) // BUFFER
-                    MXLE = MXLE + SICWIDTH + LX
+                    L = SICWIDTH
+                    L1 = L - LV - 1
+                    STRING = STRING( 1:LE ) // 
+     &                       BINSIC( I )( 1:MIN(L1,SICLEN3) ) // DELIM
+                    MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
-
                 END IF
 
 C.............  Include INTEGRATE code in string
@@ -637,9 +637,8 @@ C.............  This is knowingly including extra blanks before final quote
 
 C.....................  Write warning msg when the description is unavailable
                     N = INDEX( SICDESC( J ), 'Description unavailable' )
-                    WRITE( BUFFER, SICFMT ) BINSIC( I )    ! Integer
                     MESG = 'WARNING: Description of SIC ' // 
-     &                      TRIM( BUFFER ) // ' is not available'
+     &                      BINSIC( I ) // ' is not available'
                     IF ( N .GT. 0 ) CALL M3MESG( MESG )
 
                 END IF

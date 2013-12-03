@@ -46,7 +46,7 @@ C.........  This module is for cross reference tables
      &          CHRT08A, CHRT08B, CHRT08C,
      &          CHRT26, CHRT27, CHRT28, CHRT29, CHRT30, CHRT31,
      &          CHRT32, CHRT33, CHRT34, CHRT35, CHRT36, CHRT37, CHRT38,
-     &          INDXTA, CSRCTA, CSCCTA, CMACTA 
+     &          INDXTA, CSRCTA, CSCCTA, CMACTA, CISICA 
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, LSCCEND, SCCLEV1, SCCLEV2, SCCLEV3
@@ -85,8 +85,8 @@ C...........   Other local variables
         CHARACTER(SRCLEN3) CSRC    ! temporary source char string
         CHARACTER(SCCLEN3) TSCC    ! temporary SCC
         CHARACTER(SCCLEN3) SCCZERO ! buffer for zero SCC
+        CHARACTER(SICLEN3) SICZERO ! buffer for zero SIC
         CHARACTER(SICLEN3) CSIC    ! buffer for SIC
-        CHARACTER(SICLEN3) CSICL   ! buffer for left 2-digit SIC
         CHARACTER(MACLEN3) CMCT    ! buffer for MACT code
 
         CHARACTER(16) :: PROGNAME = 'FILLCHRT' ! program name
@@ -94,8 +94,9 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine FILLCHRT
 
-C.........  Set up zero string for SCC code of zero
+C.........  Set up strings for SCC and SIC codes of zero
         SCCZERO = REPEAT( '0', SCCLEN3 )
+        SICZERO = REPEAT( '0', SICLEN3 )
 
 C.........  Set the local field position array based on the source category
         SELECT CASE ( CATEGORY )
@@ -132,21 +133,22 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
             ELSE
                 CMCT = ' '
             END IF
+            
+            IF( ALLOCATED( CISICA ) ) THEN
+                CSIC = CISICA( J )
+            ELSE
+                CSIC = ' '
+            END IF
 
 C.............  Set up partial strings for country/state/county
             CFIP   = CSRC( 1:FIPLEN3 ) 
             CSTA   = CSRC( 1:STALEN3 )
 
-C.............  Determine whether SIC is imbedded in SCC field
-            K = INDEX( TSCC, SICNOTE )
-
-C.............  If SIC imbedded, setup SIC fields
-            CSIC = ' '
-            IF( K .GT. 0 ) THEN
-                L = K + LEN( SICNOTE )
-                CSIC  = TSCC( L : L + SICLEN3 - 1 )
+C.............  If SIC given, setup SIC fields
+            IF( CSIC /= ' ' .AND. CSIC /= SICZERO ) THEN
                 TSCC  = SCCZERO
-                CSICL = CSIC( 1:2 )
+            ELSE
+                CSIC = ' '
             END IF
 
 C.............  Set up partial SCC strings for saving

@@ -48,7 +48,6 @@
         INTEGER, PUBLIC :: NINVSIC2  ! no. unique 2-digit SICs in inventory
         INTEGER, PUBLIC :: NINVSCC   ! no. unique SCCs in inventory
         INTEGER, PUBLIC :: NINVSCL   ! no. unique left SCCs in inventory
-        INTEGER, PUBLIC :: NSCCPSIC  ! no. all SCCs for all SICs
         INTEGER, PUBLIC :: NINVIFIP  ! no. unique country/state/county codes
         INTEGER, PUBLIC :: NINVVTYP  ! no. unique vehicle types in inventory
         INTEGER, PUBLIC :: NINVMACT  ! no. unique MACTs in inventory
@@ -71,8 +70,8 @@
 !.........  Unique lists of source characteristics and associated arrays...
 
 !.........  SIC arrays dimensioned by NINVSIC
-        INTEGER, ALLOCATABLE, PUBLIC :: INVSIC ( : ) ! SICs
-        INTEGER, ALLOCATABLE, PUBLIC :: INVSIC2( : ) ! 2-digit SICs
+        CHARACTER(SICLEN3), ALLOCATABLE, PUBLIC :: INVSIC ( : ) ! SICs
+        CHARACTER(SICLEN3), ALLOCATABLE, PUBLIC :: INVSIC2( : ) ! 2-digit SICs
         CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: SICDESC( : ) ! descrptn
 
 !.........  SCC arrays dimensioned by NINVSCC

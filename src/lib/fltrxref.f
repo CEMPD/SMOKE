@@ -42,11 +42,11 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module contains the source arrays
-        USE MODSOURC, ONLY: ISIC, CMACT
+        USE MODSOURC, ONLY: CISIC, CMACT
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: INVSCC, INVSCL, INVSIC, INVSIC2, INVMACT,
-     &                      NINVSCC, NINVSCL, NINVSIC, NINVSIC2, 
+     &                      NINVSCC, NINVSCL, NINVSIC, NINVSIC2,
      &                      NINVMACT
 
 C.........  This module contains the information about the source category
@@ -62,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS:
         INTEGER       FINDC
         INTEGER       INDEX1
         INTEGER       STR2INT
-        LOGICAL       SETSCCTYPE
+        LOGICAL       SETSCCTYPE, CHKEXPSCC, CHKEXPSIC
 
         EXTERNAL      FIND1, FINDC, INDEX1, STR2INT, SETSCCTYPE
 
@@ -83,8 +83,6 @@ C...........   Other local variables
 
         INTEGER          IXACT   ! index to master activity names array
         INTEGER          L       ! tmp string length
-        INTEGER          SIC     ! tmp standard industrial code
-        INTEGER          SIC2    ! tmp standard industrial code
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: 1st time subroutine called 
         LOGICAL, SAVE :: PFLAG    = .FALSE.  ! true: point or area sources
@@ -94,8 +92,10 @@ C...........   Other local variables
         CHARACTER(300)     MESG         ! message buffer
         CHARACTER(SCCLEN3) SCCL         ! left part of SCC
         CHARACTER(SCCLEN3) SCCR         ! right part of SCC
+        CHARACTER(SICLEN3) CSIC2        ! 2-digit SIC
         CHARACTER(SCCLEN3), SAVE :: SCRZERO  ! zero right digits of TSCC
         CHARACTER(SCCLEN3), SAVE :: SCCZERO  ! zero SCC
+        CHARACTER(SICLEN3), SAVE :: SICZERO  ! zero SIC
 
         CHARACTER(16) :: PROGNAME = 'FLTRXREF' ! program name
 
@@ -115,7 +115,7 @@ C               was already generated.
             END IF
 
 C.............  Set flags indicating which source category is being processed
-            PFLAG = ASSOCIATED( ISIC )
+            PFLAG = ASSOCIATED( CISIC )
             MFLAG = ASSOCIATED( CMACT )
 
 C.............  Check length of SCC string
@@ -131,6 +131,7 @@ C.............  Check length of SCC string
 C.............  Set up zero strings for FIPS code of zero and SCC code of zero
             SCCZERO = REPEAT( '0', SCCLEN3 )
             SCRZERO = REPEAT( '0', SCCLEN3 - LSCCEND )
+            SICZERO = REPEAT( '0', SICLEN3 )
 
             FIRSTIME = .FALSE.
 
@@ -153,7 +154,6 @@ C.........  Smart interpretation of pollutant/activity name
 C.........  Smart interpretation of SIC
         CALL FLTRNEG( CSIC )     ! Filter 0 and -9 to blank
         CALL PADZERO( CSIC )     ! Pad with zeros
-        SIC = STR2INT( CSIC )    ! Convert to integer
 
 C.........  Smart interpretation of SCC
         CALL FLTRNEG( TSCC )     ! Filter 0 and -9 to blank
@@ -173,12 +173,10 @@ C.........  Set left and right portions of SCC
         SCCL = TSCC(       1:LSCCEND )
         SCCR = TSCC( RSCCBEG:SCCLEN3 )
 
-C......... Convert character SCC field to integer SCC number while
-C          allowing for case that SCC is blank.  If non-blank, compare
-C          with master SCC list.
+C......... If SCC is non-blank, compare with master SCC list.
         IF( TSCC .NE. SCCZERO ) THEN
 
-            IF( SCCR .EQ. SCRZERO ) THEN
+            IF( .NOT. CHKEXPSCC( TSCC ) .AND. SCCR .EQ. SCRZERO ) THEN
                 IXSCC = FINDC( SCCL, NINVSCL, INVSCL )
 
             ELSE
@@ -190,8 +188,8 @@ C.................  Mobile sources can have zeros for vehicle types and not
 C                   road classes, so check to make sure that this isn't the
 C                   case.
             IF( CATEGORY    .EQ. 'MOBILE' .AND.
-     &          TSCC( 1:2 ) .EQ. '22'     .AND.
-     &          TSCC( 3:6 ) .EQ. '0000'         ) THEN
+     &          TSCC( SCCEXPLEN3+1:SCCEXPLEN3+2 ) .EQ. '22'     .AND.
+     &          TSCC( SCCEXPLEN3+3:SCCEXPLEN3+6 ) .EQ. '0000'         ) THEN
 
                 SKIPREC = .FALSE.
 
@@ -205,15 +203,16 @@ C                   case.
 
 C.........  Check SIC with inventory SIC list.  The record might not match
 C           based on SCC, but maybe by SIC.
-        SIC2 = SIC/100
         IF( ( TSCC == SCCZERO .OR. SKIPREC ) .AND. 
-     &        PFLAG .AND. SIC .NE. 0               ) THEN
+     &        PFLAG .AND. CSIC .NE. SICZERO ) THEN
 
-            IF( MOD( SIC,100 ) .EQ. 0 ) THEN
-                IXSIC = FIND1( SIC2, NINVSIC2, INVSIC2 )
+            IF( .NOT. CHKEXPSIC( CSIC ) .AND. 
+     &          CSIC( SICLEN3-1:SICLEN3 ) == '00' ) THEN
+                CSIC2 = CSIC( 1:SICLEN3-2 )
+                IXSIC = FINDC( CSIC2, NINVSIC2, INVSIC2 )
 
             ELSE
-                IXSIC = FIND1( SIC, NINVSIC, INVSIC )
+                IXSIC = FINDC( CSIC, NINVSIC, INVSIC )
 
             END IF
 

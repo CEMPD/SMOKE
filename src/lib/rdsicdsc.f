@@ -46,12 +46,11 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-        INTEGER        FIND1 
+        INTEGER        FINDC 
         INTEGER        GETFLINE
-        INTEGER        STR2INT
         LOGICAL        BLKORCMT
 
-        EXTERNAL       FIND1, GETFLINE, STR2INT, BLKORCMT
+        EXTERNAL       FINDC, GETFLINE, BLKORCMT
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV          ! file unit number
@@ -69,7 +68,6 @@ C...........   Local variables
         INTEGER         IOS                   ! i/o status
         INTEGER      :: IREC = 0              ! record number
         INTEGER      :: NLINES = 0            ! number of lines in input file
-        INTEGER         SIC                   ! tmp SIC
 
         LOGICAL      :: DFLAG = .FALSE.       ! true: processing delimited format
         LOGICAL      :: FFLAG = .FALSE.       ! true: processing fixed format
@@ -77,6 +75,8 @@ C...........   Local variables
 
         CHARACTER(256)  LINE                  ! Read buffer for a line
         CHARACTER(300)  MESG                  ! Message buffer
+        
+        CHARACTER(SICLEN3) CSIC               ! tmp SIC
 
         CHARACTER(16) :: PROGNAME = 'RDSICDSC'    !  program name
 
@@ -88,12 +88,12 @@ C   Begin body of subroutine RDSICDSC
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'SIC Descriptions' )
 
-C.........  Allocate memory for the SCC descriptions and initialize
+C.........  Allocate memory for the SIC descriptions and initialize
         ALLOCATE( SICDESC( NINVSIC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SICDESC', PROGNAME )
         SICDESC = 'Description unavailable'          ! array
 
-C.........  Read the SCC descriptions, and store with SCC
+C.........  Read the SIC descriptions, and store with SIC
         ENDLEN = SICLEN3 + SDSLEN3
         DO N = 1, NLINES
 
@@ -125,25 +125,27 @@ C.............  Left adjust line
 C.............  Get SIC line
             IF( DFLAG ) THEN
                 CALL PARSLINE( LINE, 2, SEGMENT )
-                SIC = STR2INT( SEGMENT( 1 )( 1:SICLEN3 ) )
+                CSIC = SEGMENT( 1 )( 1:SICLEN3 )
+                CALL PADZERO( CSIC )
 
 C.................  Find SIC in inventory list, and if it's in the
 C                   inventory, store the description.
-                J = FIND1( SIC, NINVSIC, INVSIC )
+                J = FINDC( CSIC, NINVSIC, INVSIC )
 
                 IF ( J .GT. 0 ) THEN
                     SICDESC( J ) = ADJUSTL( SEGMENT( 2 ) )
                 END IF
    
             ELSE IF( FFLAG ) THEN
-                SIC = STR2INT( LINE( 1:SICLEN3 ) )
+                CSIC = LINE( 1:SICLEN3-SICEXPLEN3 )
+                CALL PADZERO( CSIC )
 
 C.................  Find SIC in inventory list, and if it's in the
 C                   inventory, store the description.
-                J = FIND1( SIC, NINVSIC, INVSIC )
+                J = FINDC( CSIC, NINVSIC, INVSIC )
 
                 IF ( J .GT. 0 ) THEN
-                    SICDESC( J ) = ADJUSTL( LINE( SICLEN3+1:ENDLEN ) )
+                    SICDESC( J ) = ADJUSTL( LINE( SICLEN3-SICEXPLEN3+1:ENDLEN ) )
                 END IF
 
             ELSE
@@ -176,9 +178,5 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
-
-94020   FORMAT( A, 1X, I8, 1X, A, 1X, F10.6, 1X, A )
-
-94030   FORMAT( A, 1X, I6.6, A, 100( ' SSC(', I2.2, '):', F10.6, : ) )
 
         END SUBROUTINE RDSICDSC

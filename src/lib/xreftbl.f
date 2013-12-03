@@ -43,7 +43,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISPTA, CMACTA,
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISPTA, CMACTA, CISICA,
      &                     TXCNT, NXTYPES
 
 C.........  This module contains the information about the source category
@@ -62,7 +62,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         STR2INT
-        LOGICAL         SETSCCTYPE
+        LOGICAL         SETSCCTYPE, CHKEXPSCC, CHKEXPSIC
 
         EXTERNAL   CRLF, ENVYN, STR2INT, SETSCCTYPE
 
@@ -311,6 +311,12 @@ C.........  For CSRC, don't include pollutant for grouping.
             ELSE
                 CMCT = MCTZERO
             END IF
+            
+            IF( ALLOCATED( CISICA ) ) THEN
+                CSIC = CISICA( J )
+            ELSE
+                CSIC = SICZERO
+            END IF
 
             DO J = 1, NCHARS
                 CHARS( J ) = CSRC( SC_BEGP( J ):SC_ENDP( J ) )
@@ -340,20 +346,14 @@ C.............  Set up partial strings for checking country/state/county
                 CNFIP = ' '
             END IF
 
-C.............  Determine whether SIC is imbedded in SCC field
-            K = INDEX( TSCC, SICNOTE )
-
-C.............  If SIC imbedded, setup SIC fields
-            IF( K .GT. 0 ) THEN
-                L = K + LEN( SICNOTE )
-                CSIC  = TSCC( L : L + SICLEN3 - 1 )
+C.............  If SIC given, setup SIC fields
+            IF( CSIC /= SICZERO ) THEN
                 TSCC  = SCCZERO
-                CSICL = CSIC( 1:2 )
-                CSICR = CSIC( 3:SICLEN3 )
+                CSICL = CSIC( 1:SICLEN3-2 )
+                CSICR = CSIC( SICLEN3-3:SICLEN3 )
 
-C.............  If SIC *not* imbedded, setup SCC fields
+C.............  If SIC *not* included, setup SCC fields
             ELSE
-                CSIC  = SICZERO
                 CSICR = SICRZERO
 
 C.................  Set type of SCC                
@@ -421,7 +421,8 @@ C               these characteristics will appear earlier in the sorted list
 C.....................  Set SCC to zero to avoid lower level SCC checks
                     TSCC = REPEAT( '0', SCCLEN3 )
 
-                ELSE IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+                ELSE IF( CSICR .NE. SICRZERO .OR.                 ! Full SIC defined
+     &                   ( CSIC .NE. SICZERO .AND. CHKEXPSIC( CSIC ) ) ) THEN
 
                     NT = 27
                     IF( CSIC .NE. PCSIC( NT ) ) THEN
@@ -488,7 +489,7 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                     END IF
 
                 ELSE IF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO .AND.
-     &                   .NOT. TAGFLAG ) THEN        ! Left SCC
+     &                   .NOT. TAGFLAG .AND. .NOT. CHKEXPSCC( TSCC ) ) THEN        ! Left SCC
 
                     NT = 2
                     IF( TSCC .NE. PTSCC( NT ) ) THEN
@@ -522,7 +523,7 @@ C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
                 IF ( .NOT. FULLSCC .AND. OFLAG .AND. NT .NE. 1 .AND. 
-     &                TSCC .NE. SCCZERO )THEN
+     &                TSCC .NE. SCCZERO .AND. .NOT. CHKEXPSCC( TSCC ) )THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  Level-1 SCC
 
@@ -609,7 +610,8 @@ C                   as the old Right-left method is still needed.
 C.....................  Set SCC to zero to avoid lower level SCC checks
                     TSCC = REPEAT( '0', SCCLEN3 )
                     
-                ELSE IF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+                ELSE IF( CSICR .NE. SICRZERO .OR.                 ! Full SIC defined
+     &                   ( CSIC .NE. SICZERO .AND. CHKEXPSIC( CSIC ) ) ) THEN
 
                     NT = 29
                     IF( IFIP .NE. PIFIP( NT ) .OR.
@@ -650,7 +652,7 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                     END IF
 
                 ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO .AND.
-     &                  .NOT. TAGFLAG ) THEN         ! left SCC
+     &                  .NOT. TAGFLAG .AND. .NOT. CHKEXPSCC( TSCC ) ) THEN         ! left SCC
 
                     NT = 5
                     IF( IFIP .NE. PIFIP( NT ) .OR. 
@@ -690,7 +692,7 @@ C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
                 IF ( .NOT. FULLSCC .AND. OFLAG .AND. NT .NE. 4 .AND. 
-     &                TSCC .NE. SCCZERO ) THEN
+     &                TSCC .NE. SCCZERO .AND. .NOT. CHKEXPSCC( TSCC ) ) THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  State/Level-1 SCC
 
@@ -784,7 +786,8 @@ C                   as the old Right-left method is still needed.
 C.....................  Set SCC to zero to avoid lower level SCC checks
                     TSCC = REPEAT( '0', SCCLEN3 )
 
-                ELSEIF( CSICR .NE. SICRZERO ) THEN               ! Full SIC defined
+                ELSEIF( CSICR .NE. SICRZERO .OR.                 ! Full SIC defined
+     &                  ( CSIC .NE. SICZERO .AND. CHKEXPSIC( CSIC ) ) ) THEN
 
                     NT = 31
                     IF( IFIP .NE. PIFIP( NT ) .OR.
@@ -824,7 +827,8 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                         NT = 0
                     END IF
 
-                ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN        ! Left SCC
+                ELSEIF( .NOT. FULLSCC .AND. .NOT. CHKEXPSCC( TSCC) .AND. 
+     &                  SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 
                     NT = 8
                     IF( IFIP .NE. PIFIP( NT ) .OR. 
@@ -864,7 +868,7 @@ C.................  Section for special SCC levels for controls. This is not an
 C                   efficient way to implement this, but it's needed so long
 C                   as the old Right-left method is still needed.
                 IF ( .NOT. FULLSCC .AND. OFLAG .AND. NT .NE. 7 .AND. 
-     &               TSCC .NE. SCCZERO ) THEN
+     &               TSCC .NE. SCCZERO .AND. .NOT. CHKEXPSCC( TSCC ) ) THEN
 
                     IF( SCCR_A .EQ. SCCZ_A ) THEN         !  FIPS/Level-1 SCC
 
@@ -984,7 +988,8 @@ C.........................  Give warning and skip if other fields besides plant 
 
                     END IF
 
-                ELSEIF( .NOT. FULLSCC .AND. SCCR .EQ. SCRZERO ) THEN         ! Left SCC
+                ELSEIF( .NOT. FULLSCC .AND. .NOT. CHKEXPSCC( TSCC ) .AND.
+     &                  SCCR .EQ. SCRZERO ) THEN         ! Left SCC
 
                     MESG = 'Partial SCC "' // TSCC // '" is given ' //
      &                     'instead of full SCC'

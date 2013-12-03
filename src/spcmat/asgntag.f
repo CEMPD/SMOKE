@@ -37,7 +37,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source arrays
-        USE MODSOURC, ONLY: CSOURC, CSCC, ISIC, CMACT
+        USE MODSOURC, ONLY: CSOURC, CSCC, CISIC, CMACT
 
 C...........   This module contains the cross-reference tables for tagging
         USE MODTAG, ONLY: TAGXCNT, TAGCHRT03, TAGCHRT04, TAGCHRT06, 
@@ -93,7 +93,6 @@ C.........  Other local variables
         LOGICAL, SAVE :: LNOZERO  = .FALSE. ! true: skip speication for zero emission
         LOGICAL, SAVE :: SICFLAG  = .FALSE. ! true: SIC available in inventory
 
-        CHARACTER(10), SAVE :: SICFMT  ! format to write SIC code to string
         CHARACTER(300)       BUFFER  ! source fields buffer
         CHARACTER(300)       MESG    ! message buffer
         CHARACTER(FIPLEN3)   CFIP    ! tmp (character) FIPS code
@@ -127,11 +126,8 @@ C   begin body of subroutine ASGNTAG
 C.........  For first time routine is called in all cases,
         IF( FIRSTIME ) THEN
 
-C.............  Set up format for writing roadway type, vehicle ID, and SIC to strings
-            WRITE( SICFMT, 94300 ) '(I', SICLEN3, '.', SICLEN3, ')'
-
 C.............  Figure out if SIC and/or MACT codes are available
-            IF ( ASSOCIATED ( ISIC  ) ) SICFLAG  = .TRUE.
+            IF ( ASSOCIATED ( CISIC ) ) SICFLAG  = .TRUE.
             IF ( ASSOCIATED ( CMACT ) ) MACTFLAG = .TRUE.
          
             FIRSTIME = .FALSE.
@@ -156,8 +152,8 @@ C.............  Set type of SCC
             CHK06 = CSTA // TSCC
             
             IF( SICFLAG ) THEN
-                WRITE( CSIC, SICFMT ) ISIC( S )
-                CSICL = CSIC( 1:2 )
+                CSIC = CISIC( S )
+                CSICL = CSIC( SICEXPLEN3+1:SICEXPLEN3+2 )
                 CHK28 = CSTA // CSICL
                 CHK29 = CSTA // CSIC
                 CHK30 = CFIP // CSICL

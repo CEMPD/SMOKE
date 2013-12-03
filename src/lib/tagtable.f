@@ -29,7 +29,7 @@ C
 C***************************************************************************
 
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, ISPTA, 
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, CISICA, ISPTA, 
      &                     CTAGNA, NXTYPES
 
 C.........  This module contains the speciation profiles
@@ -84,6 +84,7 @@ C...........   Other local variables
         CHARACTER(SRCLEN3) CSRC    ! temporary source char string
         CHARACTER(SCCLEN3) TSCC    ! temporary SCC
         CHARACTER(SCCLEN3) SCCZERO ! buffer for zero SCC
+        CHARACTER(SICLEN3) SICZERO ! buffer for zero SCC
         CHARACTER(SICLEN3) CSIC    ! buffer for SIC
         CHARACTER(SICLEN3) CSICL   ! buffer for left 2-digit SIC
         CHARACTER(MACLEN3) CMCT    ! buffer for MACT code
@@ -105,8 +106,9 @@ C.........  First deallocate if these have previously been allocated
 
         END IF
 
-C.........  Set up zero string for SCC code of zero
+C.........  Set up zero strings for SCC and SIC codes of zero
         SCCZERO = REPEAT( '0', SCCLEN3 )
+        SICZERO = REPEAT( '0', SICLEN3 )
 
 C.........  Set the local field position array based on the source category
         SELECT CASE ( CATEGORY )
@@ -287,21 +289,21 @@ C.........  Loop through sorted tagging cross-reference table populate tables
             ELSE
                 CMCT = ' '
             END IF
+            
+            IF( ALLOCATED( CISICA ) ) THEN
+                CSIC = CISICA( J )
+            ELSE
+                CSIC = SICZERO
+            END IF
 
 C.............  Set up partial strings for country/state/county
             CFIP   = CSRC( 1:FIPLEN3 )
             CSTA   = CSRC( 1:STALEN3 )
 
-C.............  Determine whether SIC is imbedded in SCC field
-            K = INDEX( TSCC, SICNOTE )
-
-C.............  If SIC imbedded, setup SIC fields
-            CSIC = ' '
-            IF( K .GT. 0 ) THEN
-                L = K + LEN( SICNOTE )
-                CSIC  = TSCC( L : L + SICLEN3 - 1 )
+C.............  If SIC given, setup SIC fields
+            IF( CSIC /= SICZERO ) THEN
                 TSCC  = SCCZERO
-                CSICL = CSIC( 1:2 )
+                CSICL = CSIC( 1:SICLEN3-2 )
             END IF
 
             T      = XTYPE ( I )  ! extract what group this entry is in
@@ -331,19 +333,19 @@ C.............  If SIC imbedded, setup SIC fields
                 TAGCHRT11( K ) = CSRC( 1:ENDLEN( 2 ) ) // TSCC
                 TAGT11( K,V ) = CTAG
             CASE( 26 )
-                TAGCHRT26( K ) = CSIC( 1:2 )
+                TAGCHRT26( K ) = CSICL
                 TAGT26( K,V ) = CTAG
             CASE( 27 )
                 TAGCHRT27( K ) = CSIC
                 TAGT27( K,V ) = CTAG
             CASE( 28 )
-                TAGCHRT28( K ) = CSTA // CSIC( 1:2 )
+                TAGCHRT28( K ) = CSTA //CSICL
                 TAGT28( K,V ) = CTAG
             CASE( 29 )
                 TAGCHRT29( K ) = CSTA // CSIC
                 TAGT29( K,V ) = CTAG
             CASE( 30 )
-                TAGCHRT30( K ) = CFIP // CSIC( 1:2 )
+                TAGCHRT30( K ) = CFIP // CSICL
                 TAGT30( K,V ) = CTAG
             CASE( 31 )
                 TAGCHRT31( K ) = CFIP // CSIC

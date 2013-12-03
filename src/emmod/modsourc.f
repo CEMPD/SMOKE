@@ -42,7 +42,6 @@
 
 !.........  Sorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
-        INTEGER, POINTER,     PUBLIC:: ISIC  ( : )  !  source SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: CELLID( : )  !  Cell ID
@@ -88,13 +87,13 @@
         CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
         CHARACTER(NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
         CHARACTER(STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
+        CHARACTER(SICLEN3), POINTER,     PUBLIC:: CISIC  ( : ) ! SIC
        
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
         INTEGER, POINTER,     PUBLIC:: IFIPA ( : ) !  raw state/county FIPS code
-        INTEGER, ALLOCATABLE, PUBLIC:: ISICA ( : ) !  raw SIC
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLASA( : )!  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPEA( : )!  vehicle type code
         INTEGER, POINTER,     PUBLIC:: IPOSCODA(:) !  positn of pol in INVPCOD

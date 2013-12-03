@@ -114,8 +114,8 @@ C.........  Set source-category-specific information
 
         CASE( 'AREA' )
 
-            LSCCEND  = 7
-            RSCCBEG  = 8
+            LSCCEND  = SCCEXPLEN3 + 7
+            RSCCBEG  = SCCEXPLEN3 + 8
             NPPOL    = NARPPOL3
             PLTIDX   = MXARCHR3
             MXCHRS   = MXARCHR3
@@ -125,10 +125,10 @@ C.........  Set source-category-specific information
                 SC_ENDP( I ) = ARENDL3( I )
             END DO
 
-            SCCLEV1 = 2
-            SCCLEV2 = 4
-            SCCLEV3 = 7
-            SCCLEV4 = 10
+            SCCLEV1 = SCCEXPLEN3 + 2
+            SCCLEV2 = SCCEXPLEN3 + 4
+            SCCLEV3 = SCCEXPLEN3 + 7
+            SCCLEV4 = SCCEXPLEN3 + 10
 
         CASE( 'MOBILE' )
 
@@ -143,15 +143,15 @@ C.........  Set source-category-specific information
                 SC_ENDP( I ) = MBENDL3( I )
             END DO
 
-            SCCLEV1 = 2
-            SCCLEV2 = 4
-            SCCLEV3 = 7
-            SCCLEV4 = 10
+            SCCLEV1 = SCCEXPLEN3 + 2
+            SCCLEV2 = SCCEXPLEN3 + 4
+            SCCLEV3 = SCCEXPLEN3 + 7
+            SCCLEV4 = SCCEXPLEN3 + 10
             
         CASE( 'POINT' )
 
-            LSCCEND  = 5
-            RSCCBEG  = 6
+            LSCCEND  = SCCEXPLEN3 + 5
+            RSCCBEG  = SCCEXPLEN3 + 6
             PLTIDX   = 2
             NPPOL    = NPTPPOL3
             MXCHRS   = MXPTCHR3
@@ -161,10 +161,10 @@ C.........  Set source-category-specific information
                 SC_ENDP( I ) = PTENDL3( I )
             END DO
             
-            SCCLEV1 = 3   ! Assumes right-justified 10-digit w/ first 2 zero
-            SCCLEV2 = 5
-            SCCLEV3 = 8
-            SCCLEV4 = 10
+            SCCLEV1 = SCCEXPLEN3 + 3   ! Assumes right-justified 10-digit w/ first 2 zero
+            SCCLEV2 = SCCEXPLEN3 + 5
+            SCCLEV3 = SCCEXPLEN3 + 8
+            SCCLEV4 = SCCEXPLEN3 + 10
             
         CASE DEFAULT
             MESG = 'Category ' // CATEGORY // ' not known in program.'

@@ -32,7 +32,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
         USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, ISPTA, 
-     &                     CTAGNA, CSPCTAGNA
+     &                     CTAGNA, CSPCTAGNA, CISICA
 
 C.........  This module contains the speciation profiles
         USE MODSPRO, ONLY: SPCLIST, NSPCALL, MXSPEC, SPCNAMES
@@ -94,7 +94,6 @@ C...........   Array for parsing list-formatted inputs
 C...........   Other local variables
         INTEGER         C, I, J, K, L, N, P, V    !  counters and indices
 
-        INTEGER         DLEN    !  tmp length for SIC processing
         INTEGER         IDUM    !  dummy integer
         INTEGER         IFIP    !  i/o status
         INTEGER         IOS     !  i/o status
@@ -164,6 +163,8 @@ C.........  Allocate memory for unsorted data used in all source categories
         CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
         ALLOCATE( CMACTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CMACTA', PROGNAME )
+        ALLOCATE( CISICA( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CISICA', PROGNAME )
         ALLOCATE( INDXTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
         CTAGNA    = ' ' ! array
@@ -171,6 +172,7 @@ C.........  Allocate memory for unsorted data used in all source categories
         CSCCTA    = ' ' ! array
         CSRCTA    = ' ' ! array
         CMACTA    = ' ' ! array
+        CISICA    = ' ' ! array
         ISPTA     = 0   ! array
         INDXTA    = 0   ! array
 
@@ -190,7 +192,6 @@ C.........  Read lines and store unsorted data for the source category of
 C           interest
         IREC   = 0
         N      = 0
-        DLEN   = SICLEN3 + LEN( SICNOTE )      
         DO I = 1, NLINES
 
             READ( FDEV, 93000, END=999, IOSTAT=IOS ) LINE
@@ -353,10 +354,7 @@ C               with SIC value and special identifier
                     CALL M3MSG2( MESG )
                     IWRN(3) = IWRN(3) + 1
                 END IF
-
-            ELSE IF( CSIC /= SICZERO ) THEN
-                TSCC = SICNOTE // CSIC // 
-     &                 REPEAT( '0', SCCLEN3 - DLEN )
+                CSIC = SICZERO
 
             END IF
 
@@ -377,7 +375,7 @@ C.................  Store case-specific fields from tagging file
      &                        CHRBLNK3, CHRBLNK3, CHRBLNK3,
      &                        CHRBLNK3, POLBLNK3, CSRCALL   )
 
-                CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // SPOS
+                CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CSIC // SPOS
 
             CASE( 'MOBILE' )
 
@@ -385,7 +383,7 @@ C.................  Store case-specific fields from tagging file
      &                        CHRBLNK3, CHRBLNK3, CHRBLNK3, 
      &                        POLBLNK3, CSRCALL )
 
-                CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // SPOS
+                CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CSIC // SPOS
 
             CASE( 'POINT' )
 
@@ -395,7 +393,7 @@ C.................  Store sorting criteria as right-justified in fields
      &                        CHRBLNK3, POLBLNK3, CSRCALL   )
 
                 CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // TSCC // 
-     &                        CMCT // SPOS
+     &                        CMCT // CSIC // SPOS
 
             END SELECT
 
@@ -404,6 +402,7 @@ C.................  Store case-indpendent fields from tagging file
             ISPTA ( N )   = JSPC    ! Save index to master species list
             CSCCTA( N )   = TSCC
             CMACTA( N )   = CMCT
+            CISICA( N )   = CSIC
             CTAGNA( N )   = CTAG
             CSPCTAGNA( N )= TRIM(CSPC)//'-'//CTAG  ! join using dash because it has been filtered out of species and tag names since it's invalid for I/O API
 

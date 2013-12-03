@@ -179,7 +179,7 @@ C.........  Set up column starts and ends
         CS1 = 1
         CE1 = FIPLEN3
         CS2 = CE1 + 2
-        CE2 = CS2 + SCCLEN3 - 1
+        CE2 = CS2 + SCCLEN3 - SCCEXPLEN3 - 1
         CS3 = CE2 + 2
         CE3 = CS3 + 4
         

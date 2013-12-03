@@ -57,7 +57,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, ISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
+        USE MODSOURC, ONLY: IFIP, CISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
      &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, FF10FLAG,INVDCOD 
@@ -168,7 +168,6 @@ C...........   Other local variables
         LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL         NONPOINT         ! true: importing nonpoint inventory
-        LOGICAL      :: TFLAG = .FALSE.  ! TRUE if temporal x-ref output
         LOGICAL         ORLFLG           ! true: ORL format inventory
         LOGICAL         STKFLG           ! true: check stack parameters
 
@@ -248,7 +247,7 @@ C               are contained in the module MODSOURC
             CALL M3MSG2( 'Reading inventory sources...' )
 
             CALL RDINVSRCS( IDEV, XDEV, EDEV, INAME,
-     &                      NRAWBP, NRAWSRCS, TFLAG, ORLFLG )
+     &                      NRAWBP, NRAWSRCS, ORLFLG )
 
 C.............  Process source information and store in sorted order
             CALL M3MSG2( 'Processing inventory sources...' )
@@ -365,11 +364,6 @@ C               lengthy inventory import does not need to be redone...
 C.............  Write out SCC file
             CALL WRCHRSCC( CSCC )
 
-C.............  Write out temporal x-ref file. (TFLAG is true for EMS-95 format
-C               for point sources only)
-C.............  NOTE - Monthly not currently supported
-            IF( TFLAG ) CALL WRPTREF( NSRC, IDIU, IWEK, IWEK ) 
-
         END IF  ! For ASCII annual/ave-day inputs
 
 C.........  Input gridded I/O API inventory data
@@ -378,8 +372,8 @@ C.........  Input gridded I/O API inventory data
             CALL RDGRDAPI( GNAME, GRDNM ) 
 
 C.............  initialize arrays for later 
-            ALLOCATE( ISIC  ( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'ISIC', PROGNAME )
+            ALLOCATE( CISIC ( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CISIC', PROGNAME )
             ALLOCATE( CSRCTYP( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSRCTYP', PROGNAME )
             ALLOCATE( CINTGR( NSRC ), STAT=IOS )
@@ -387,7 +381,7 @@ C.............  initialize arrays for later
             ALLOCATE( CEXTORL( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CEXTORL', PROGNAME )
 
-            ISIC = 0            ! array
+            CISIC   = ' '       ! array
             CSRCTYP = ' '       ! array
             CINTGR  = ' '       ! array
             CEXTORL = ' '       ! array

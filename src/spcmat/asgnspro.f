@@ -45,7 +45,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source arrays
-        USE MODSOURC, ONLY: CSOURC, CSCC, IRCLAS, IVTYPE, ISIC, CMACT
+        USE MODSOURC, ONLY: CSOURC, CSCC, IRCLAS, IVTYPE, CISIC, CMACT
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP
@@ -138,7 +138,6 @@ C.........  Other local variables
 
         CHARACTER(10), SAVE :: RWTFMT  ! fmt to write roadway type to string
         CHARACTER(10), SAVE :: VIDFMT  ! format to write veh ID to string
-        CHARACTER(10), SAVE :: SICFMT  ! format to write SIC code to string
         CHARACTER(300)       BUFFER  ! source fields buffer
         CHARACTER(300)       MESG    ! message buffer
         CHARACTER(FIPLEN3)   CFIP    ! tmp (character) FIPS code
@@ -206,13 +205,12 @@ C.............  Retrieve skipping speciation profile flags for zero emissions
             MESG = 'Setting for assigning profile for zero emissions'
             LNOZERO = ENVYN ( 'NO_SPC_ZERO_EMIS', MESG, .FALSE., IOS )
 
-C.............  Set up format for writing roadway type, vehicle ID, and SIC to strings
+C.............  Set up format for writing roadway type and vehicle ID to strings
             WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
             WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
-            WRITE( SICFMT, 94300 ) '(I', SICLEN3, '.', SICLEN3, ')'
 
 C.............  Figure out if SIC and/or MACT codes are available
-            IF ( ASSOCIATED ( ISIC  ) ) SICFLAG  = .TRUE.
+            IF ( ASSOCIATED ( CISIC ) ) SICFLAG  = .TRUE.
             IF ( ASSOCIATED ( CMACT ) ) MACTFLAG = .TRUE.
 
 C.............  Allocate local memory for reading emissions
@@ -292,8 +290,8 @@ C.............  Set type of SCC
             CHK05 = CSTA // TSCCL 
             
             IF( SICFLAG ) THEN
-                WRITE( CSIC, SICFMT ) ISIC( S )
-                CSICL = CSIC( 1:2 )
+                CSIC = CISIC( S )
+                CSICL = CSIC( 1:SICEXPLEN3+2 )
                 CHK28 = CSTA // CSICL
                 CHK29 = CSTA // CSIC
                 CHK30 = CFIP // CSICL
