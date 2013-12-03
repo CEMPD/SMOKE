@@ -312,11 +312,11 @@ C.........  Reset flag for PinG if none in the input file
             END IF
 
 C.............  Read stack group IDs
-            IF ( .NOT. READ3( PVNAME, 'IGROUP', 1,
+            IF ( .NOT. READ3( PVNAME, 'ISTACK', 1,
      &                        PVSDATE, PVSTIME, GRPGID ) ) THEN
 
                 L2 = LEN_TRIM( PVNAME )
-                MESG = 'Could not read "IGROUP" from file "' //
+                MESG = 'Could not read "ISTACK" from file "' //
      &                 PVNAME( 1:L2 ) // '"'
                 CALL M3EXIT( PROGNAME, SDATE, 0, MESG, 2 )
 
