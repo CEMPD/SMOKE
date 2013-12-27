@@ -32,13 +32,13 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
 
 RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
-        gethdr.o getpdinfo.o initinfo.o formlist.o \
+        gethdr.o getpdinfo.o initinfo.o formlist.o rdmedsinfo.o genmedsout.o \
         openinvin.o openinvout.o openpdout.o procinven.o procinvsrcs.o rdcempd.o \
-        rdemspd.o rdorlfr.o rdepspd.o rdgrdapi.o \
+        rdemspd.o rdorlfr.o rdepspd.o rdgrdapi.o rdmedspd.o \
         rdinvsrcs.o rdlooppd.o smkinven.o \
         srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
         setnonhap.o rdsrcidaar.o rdsrcntiar.o rddataidaar.o rdinvdata.o rddatantiar.o \
-        procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o \
+        procar2pt.o rdsrcidamb.o rdsrcntimb.o rddataidamb.o rddatantimb.o rdsrcmedspt.o rddatamedspt.o \
         rdsrcff10ar.o rddataff10ar.o rdsrcff10mb.o rddataff10mb.o rdsrcff10pt.o rddataff10pt.o\
         rdsrcidapt.o rddataidapt.o rdsrcemsmb.o rddataemsmb.o rdsrcemsar.o \
         rddataemsar.o rdsrcemspt.o rddataemspt.o procemspt.o rdff10pd.o \
@@ -64,6 +64,7 @@ asgnnhapx.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 fixstk.o: $(MODSOURC)
 formlist.o: $(MODINFO) $(MODLISTS)
 genpdout.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY)
+genmedsout.o: $(MODINFO) $(MODDAYHR)
 gethdr.o: $(MODLISTS) $(MODSTCY) $(MODINFO)
 getpdinfo.o: $(MODINFO) $(MODDAYHR)
 grwinven.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
@@ -77,9 +78,11 @@ procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 procinvsrcs.o: $(MODSOURC) $(MODINFO) $(MODMOBIL)
 rdcempd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
 rdcemsum.o: $(MODLISTS) $(MODDAYHR)
+rdmedsinfo.o: $(MODSOURC)
 rddataemsar.o: $(MODINFO) $(MODLISTS)
 rddataemsmb.o: $(MODINFO)
 rddataemspt.o: $(MODINFO) $(MODLISTS)
+rddatamedspt.o: $(MODINFO) $(MODSOURC)
 rddataidaar.o: $(MODINFO)
 rddataidamb.o: $(MODINFO)
 rddataidapt.o: $(MODINFO)
@@ -93,7 +96,8 @@ rddataff10pt.o: $(MODINFO)
 rddatantifr.o: $(MODINFO)
 rddevemspt.o: $(MODINFO) $(MODSOURC)
 rdemspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
-rdff10pd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
+rdff10pd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY)
+rdmedspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY) 
 rdepspd.o: $(MODSOURC) $(MODLISTS) $(MODSTCY) $(MODINFO) $(MODDAYHR)
 rdfacemspt.o: $(MODINFO) $(MODSOURC)
 rdgrdapi.o: $(MODSOURC) $(MODINFO)
@@ -105,6 +109,7 @@ rdprocemspt.o: $(MODINFO) $(MODSOURC)
 rdsrcemsar.o: $(MODLISTS)
 rdsrcemsmb.o: $(MODINFO)
 rdsrcemspt.o: $(MODLISTS)
+rdsrcmedspt.o: $(MODSOURC)
 rdsrcidaar.o:
 rdsrcidamb.o: $(MODINFO)
 rdsrcidapt.o:

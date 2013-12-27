@@ -60,8 +60,8 @@ C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: IFIP, ISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
      &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, FF10FLAG,INVDCOD 
-
+        USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, INVDCOD, 
+     &                      FF10FLAG, MEDSFLAG
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX, INV_MON,
      &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC
@@ -122,6 +122,7 @@ C.........  File units and logical/physical names
         INTEGER    :: RDEV = 0  !  unit no. for def stack pars or mobile codes
         INTEGER    :: UDEV = 0  !  unit no. for non-HAP inclusions/exclusions file
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
+        INTEGER    :: TDEV = 0  !  unit no. for MEDS daily/hourly inventory file
         INTEGER    :: XDEV = 0  !  unit no. for VMT mix file
         INTEGER    :: YDEV = 0  !  unit no. for area-to-point factors file
         INTEGER    :: ZDEV = 0  !  unit no. for time zone file
@@ -132,6 +133,7 @@ C.........  File units and logical/physical names
         CHARACTER(NAMLEN3) :: GNAME = ' '! gridded I/O API input logical
         CHARACTER(NAMLEN3) :: HNAME = ' '! hour-specific input logical name
         CHARACTER(NAMLEN3) :: INAME = ' '! inven input logical name
+        CHARACTER(NAMLEN3) :: TNAME = ' '! tmp day- or hour-specific input logical name
 
 C...........   Other local variables
                                 
@@ -226,6 +228,9 @@ C.............  The tables are passed through MODMOBIL
 
         END IF
 
+C.........  Read/store informatino for MEDS inv processing
+        IF( MEDSFLAG ) CALL RDMEDSINFO  ! read GAI_LOOKUP_TABLE (col/row to lat/lon) for MEDS format inv
+
 C.........  Process for ASCII average day or annual inventory
         IF( IFLAG ) THEN
 
@@ -264,7 +269,7 @@ C               sorted order
 C.............  Check if ORL inventory and reset NHAPEXCLUDE if needed
             IF( .NOT. ORLFLG .AND. UDEV > 0 ) THEN
                 MESG = 'NOTE: Ignoring SMK_PROCESS_HAPS setting ' //
-     &                 'since an ORL inventory is not being processed'
+     &                 'since an ORL or FF10 inventory is not being processed'
                 CALL M3MSG2( MESG )
                 UDEV = 0
             END IF
@@ -455,11 +460,28 @@ C               to see if HFLUX is present. If so, FIREFLAG = .true.
 
         END IF !   End processing of average annual import or not
 
+C.........  Read in daily or hourly MEDS emission values and output to a SMOKE inter output file
+        IF( MEDSFLAG ) THEN
+
+            IF( DAYINVFLAG ) THEN
+                TYPNAM = 'day'
+                TDEV   = DDEV
+            ELSE
+                TYPNAM = 'hour'
+                TDEV   = HDEV
+            END IF
+
+C.............  Read and output day-specific data
+            CALL GENMEDSOUT( TDEV, TNAME, TZONE, TYPNAM ) 
+
+            GOTO 999
+
+        END IF
+
 C.........  Read in daily emission values and output to a SMOKE file
         IF( DAYINVFLAG ) THEN
 
             INSTEP  = 240000
-            IF( FF10FLAG ) INSTEP = 31 * 240000    ! only for FF10_DAILY formats
             OUTSTEP = 10000
             TYPNAM  = 'day'
 
@@ -501,7 +523,7 @@ C.............  Write inventory report file
         CALL WREPINVEN( ADEV, CDEV )
 
 C.........  End program successfully
-        MESG = ' '
+999     MESG = ' '
         CALL M3EXIT( PROGNAME, 0, 0, MESG, 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************

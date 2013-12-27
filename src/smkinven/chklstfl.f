@@ -122,6 +122,9 @@ C.............  Check for #LIST entry
                 ELSE IF( INDEX( INFILE, 'FF10' ) > 0 ) THEN
                     EXTFORMAT = FF10FMT 
 
+                ELSE IF( INDEX( INFILE, 'MEDS' ) > 0 ) THEN
+                    EXTFORMAT = MEDSFMT
+
                 ELSE IF( INDEX( INFILE, 'ORL' ) > 0 ) THEN
 
                     IF( INDEX( INFILE, 'NONPOINT' ) > 0 ) THEN
@@ -170,6 +173,7 @@ C.............  Set flag based on format
             IF( FILFMT( J ) == EMSFMT ) EMSFLAG = .TRUE.
             IF( FILFMT( J ) == IDAFMT     .OR. 
      &          FILFMT( J ) == FF10FMT    .OR.
+     &          FILFMT( J ) == MEDSFMT    .OR.
      &          FILFMT( J ) == ORLFMT     .OR.
      &          FILFMT( J ) == ORLNPFMT   .OR.
      &          FILFMT( J ) == ORLFIREFMT .OR.
@@ -191,6 +195,7 @@ C.............  Check that file formats are consistent
             IF( IDAORORL                  .AND. 
      &          FILFMT( J ) /= IDAFMT     .AND. 
      &          FILFMT( J ) /= FF10FMT    .AND.
+     &          FILFMT( J ) /= MEDSFMT    .AND.
      &          FILFMT( J ) /= ORLFMT     .AND.
      &          FILFMT( J ) /= ORLNPFMT   .AND.
      &          FILFMT( J ) /= ORLFIREFMT .AND.

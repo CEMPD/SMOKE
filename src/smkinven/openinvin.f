@@ -41,6 +41,9 @@ C***************************************************************************
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NCOMP, VAR_FORMULA
 
+C.........  This module contains the lists of unique inventory information
+        USE MODLISTS, ONLY: MEDSFLAG
+
 C............ This module contains the cross-reference tables
         USE MODXREF, ONLY: PROC_HAPS 
 
@@ -136,6 +139,18 @@ C               number of commas found in the string.
         MESG = 'Import hour-specific data'
         HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
         HRLINVFLAG = HFLAG
+
+        IF ( CATEGORY .EQ. 'POINT' ) THEN
+            MESG = 'Import gridded MEDS-formatted inventory file'
+            MEDSFLAG = ENVYN ( 'IMPORT_MEDS_YN', MESG, .FALSE., IOS )
+
+            IF( MEDSFLAG ) THEN
+                MESG = 'WARNING: MUST process daily or hourly MEDS inventory'
+                IF( .NOT. DAYINVFLAG .AND. .NOT. HRLINVFLAG ) THEN
+                    CALL M3MESG( MESG )  
+                END IF
+            END IF
+        END IF
 
         IF( DAYINVFLAG .OR. HRLINVFLAG ) THEN
             MESG = 'Use a daily FF10 inventory data as an annual FF10 inventory'

@@ -128,6 +128,13 @@
         CHARACTER(ALLCAS3), POINTER,     PUBLIC:: CSOURCA( : ) ! concat src
         CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC:: CVTYPEA( : ) ! vehicle type
 
+!.........  MEDS-gridded inventory related arrays
+        INTEGER,              PUBLIC:: NMEDGRD
+        INTEGER,              PUBLIC:: NMEDGAI
+
+        CHARACTER(CHRLEN3), ALLOCATABLE, PUBLIC:: CMEDGRD( :,: )   ! MEDS grid row/col coord
+        CHARACTER(CHRLEN3), ALLOCATABLE, PUBLIC:: COABDST( :,: )   ! MEDS GAI CO-ABS-DIST code
+
 !.........  Unsorted list of file numbers and records by source
         INTEGER, PUBLIC :: NSTRECS                      ! size of SRCSBYREC
         INTEGER, ALLOCATABLE, PUBLIC:: SRCSBYREC( :,: ) ! file number, record number, and

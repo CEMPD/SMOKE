@@ -67,6 +67,7 @@
 !.........  Inventory format flags
         LOGICAL, PUBLIC :: FIREFLAG  ! true: ORL FIRE format inventory
         LOGICAL, PUBLIC :: FF10FLAG  ! true: FF10 format inventories
+        LOGICAL, PUBLIC :: MEDSFLAG  ! true: Pregridded FF10 format inventories
 
 !.........  Unique lists of source characteristics and associated arrays...
 
