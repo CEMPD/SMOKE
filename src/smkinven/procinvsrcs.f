@@ -37,7 +37,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: SRCIDA, CSOURCA, CSOURC, IFIP,
+        USE MODSOURC, ONLY: SRCIDA, CSOURCA, CSOURC, CIFIP,
      &                      CSCC, XLOCA, YLOCA, CELLID, IRCLAS,
      &                      IVTYPE, CLINK, CVTYPE
 
@@ -71,8 +71,8 @@ C***********************************************************************
 C   begin body of subroutine PROCINVSRCS
 
 C.........  Allocate memory for sorted inventory arrays
-        ALLOCATE( IFIP( NSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+        ALLOCATE( CIFIP( NSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CIFIP', PROGNAME )
         ALLOCATE( CSCC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSCC', PROGNAME )
         ALLOCATE( CSOURC( NSRC ), STAT=IOS )
@@ -109,7 +109,7 @@ C.........  Keep case statement outside the loops to speed processing
                  S = SRCIDA( I )
                  TSRC = CSOURCA( I )
                 
-                 IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
+                 CIFIP( S ) = TSRC( 1:FIPLEN3 )
                  CSCC( S ) = TSRC( SCCPOS3:SCCPOS3+SCCLEN3-1 )
                  CSOURC( S ) = TSRC
 
@@ -126,7 +126,7 @@ C.........  Keep case statement outside the loops to speed processing
                 S = SRCIDA( I )
                 TSRC = CSOURCA( I )
                 
-                IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
+                CIFIP( S ) = TSRC( 1:FIPLEN3 )
                 IRCLAS( S ) = 
      &              STR2INT( TSRC( RWTPOS3:RWTPOS3+RWTLEN3-1 ) )
                 IVTYPE( S ) = 
@@ -151,7 +151,7 @@ C.................  Set vehicle type based on vehicle ID
                 S = SRCIDA( I )
                 TSRC = CSOURCA( I )
                 
-                IFIP( S ) = STR2INT( TSRC( 1:FIPLEN3 ) )
+                CIFIP( S ) = TSRC( 1:FIPLEN3 )
                 CSCC( S ) = TSRC( CH4POS3:CH4POS3+SCCLEN3-1 )
                 
                 CSOURC( S ) = TSRC

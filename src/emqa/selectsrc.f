@@ -43,7 +43,7 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: INDEXA, IFIP 
+        USE MODSOURC, ONLY: INDEXA, CIFIP 
 
 C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, NREGNGRP, REGNNAM,
@@ -67,9 +67,9 @@ C...........   INCLUDES
 C...........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         INTEGER      INDEX1
-        INTEGER      FIND1
+        INTEGER      FINDC
 
-        EXTERNAL    CRLF, INDEX1, FIND1
+        EXTERNAL    CRLF, INDEX1, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: RCNT    ! current report number
@@ -77,13 +77,13 @@ C...........   SUBROUTINE ARGUMENTS
 C...........  Local variables
         INTEGER         J, L, S    ! counters and indices
 
-        INTEGER         FIP        ! tmp country/state/county code
         INTEGER         IOS        ! i/o status
         INTEGER         REGNIDX    ! index to list of region groups for this rpt 
 
 
         LOGICAL      :: EFLAG = .FALSE.  ! True: error has been detected
 
+        CHARACTER(FIPLEN3) CFIP                ! tmp country/state/county code
         CHARACTER(256)  MESG                   ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'SELECTSRC' ! program name
@@ -150,8 +150,8 @@ C.........  the ones not to output
 
 C.................  If using a region group, search for FIPS code in list
                 IF( LREGION ) THEN
-                    FIP = IFIP( S )
-                    J = FIND1( FIP, NREGREC( REGNIDX ), 
+                    CFIP = CIFIP( S )
+                    J = FINDC( CFIP, NREGREC( REGNIDX ), 
      &                         EXCLDRGN ( 1,REGNIDX )   )
 
                     IF ( J .GT. 0 ) INDEXA( S ) = 0

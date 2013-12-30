@@ -62,8 +62,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         INTEGER            INDEX1
         INTEGER            PROMPTFFILE
         CHARACTER(NAMLEN3) PROMPTMFILE
+        LOGICAL            USEEXPGEO
 
-        EXTERNAL        CRLF, ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE
+        EXTERNAL        CRLF, ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE,
+     &                  USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
@@ -332,7 +334,7 @@ C.................  Get file name for input replacement stack parameters file
 
 C.........  Get file name for country, state, and county file, with time 
 C           zones
-        IF( .NOT. GFLAG ) THEN
+        IF( .NOT. GFLAG .AND. .NOT. USEEXPGEO ) THEN
             ZDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )

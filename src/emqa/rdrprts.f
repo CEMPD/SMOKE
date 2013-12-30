@@ -114,6 +114,8 @@ C.........  Allocate and initialize report arrays
         ALLRPT%BYDIU      = .FALSE.
         ALLRPT%BYELEV     = .FALSE.
         ALLRPT%ELVSTKGRP  = .FALSE.
+        ALLRPT%BYGEO1     = .FALSE.
+        ALLRPT%BYGEO1NAM  = .FALSE.
         ALLRPT%BYHOUR     = .FALSE.
         ALLRPT%BYLAYER    = .FALSE.
         ALLRPT%BYMON      = .FALSE.

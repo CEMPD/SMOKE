@@ -36,6 +36,8 @@
 !****************************************************************************
 
         IMPLICIT NONE
+        
+        INCLUDE 'EMPRVT3.EXT'
 
 !...........   Setting for range of valid min/max temperatures
         INTEGER, PUBLIC :: NFUEL = 0      ! no of fuelmonth
@@ -71,22 +73,22 @@
         REAL,    ALLOCATABLE, PUBLIC :: TDYCNTY ( : )   ! daily temps by county
         REAL,    ALLOCATABLE, PUBLIC :: QVDYCNTY( : )   ! daily mixing ratios by county
         REAL,    ALLOCATABLE, PUBLIC :: BPDYCNTY( : )   ! daily barometric pressure by county
-        INTEGER, ALLOCATABLE, PUBLIC :: DYCODES ( : )   ! FIPS codes for daily counties
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: DYCODES ( : ) ! FIPS codes for daily counties
 
         REAL,    ALLOCATABLE, PUBLIC :: TWKCNTY ( : )   ! weekly temps by county
         REAL,    ALLOCATABLE, PUBLIC :: QVWKCNTY( : )   ! weekly mixing ratios by county
         REAL,    ALLOCATABLE, PUBLIC :: BPWKCNTY( : )   ! weekly barometric pressure by county
-        INTEGER, ALLOCATABLE, PUBLIC :: WKCODES ( : )   ! FIPS codes for weekly counties
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: WKCODES ( : ) ! FIPS codes for weekly counties
 
         REAL,    ALLOCATABLE, PUBLIC :: TMNCNTY ( : )   ! monthly temps by county
         REAL,    ALLOCATABLE, PUBLIC :: QVMNCNTY( : )   ! monthly mixing ratios by county
         REAL,    ALLOCATABLE, PUBLIC :: BPMNCNTY( : )   ! monthly barometric pressure by county
-        INTEGER, ALLOCATABLE, PUBLIC :: MNCODES ( : )   ! FIPS codes for monthly counties
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: MNCODES ( : ) ! FIPS codes for monthly counties
 
         REAL,    ALLOCATABLE, PUBLIC :: TEPCNTY ( : )   ! episode temps by county
         REAL,    ALLOCATABLE, PUBLIC :: QVEPCNTY( : )   ! episode mixing ratios by county
         REAL,    ALLOCATABLE, PUBLIC :: BPEPCNTY( : )   ! episode barometric pressure by county
-        INTEGER, ALLOCATABLE, PUBLIC :: EPCODES ( : )   ! FIPS codes for episode counties
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: EPCODES ( : ) ! FIPS codes for episode counties
 
 !...........   Daily meteorology data
         REAL,    ALLOCATABLE, PUBLIC :: BPDAY( : )      ! average daily barometric pressure by county

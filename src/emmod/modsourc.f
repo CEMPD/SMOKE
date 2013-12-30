@@ -41,7 +41,6 @@
         INCLUDE 'EMPRVT3.EXT'   !  emissions private parameters
 
 !.........  Sorted list of point sources for SMOKE inventory file
-        INTEGER, POINTER,     PUBLIC:: IFIP  ( : )  !  source FIPS (county) ID
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLAS( : )  !  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPE( : )  !  vehicle type code
         INTEGER, ALLOCATABLE, PUBLIC:: CELLID( : )  !  Cell ID
@@ -73,6 +72,7 @@
 
         REAL   , POINTER,     PUBLIC:: POLVAL( :,: )!  pol-spec values by pol
 
+        CHARACTER(FIPLEN3), POINTER,     PUBLIC:: CIFIP  ( : ) ! FIPS code
         CHARACTER(SCCLEN3), POINTER,     PUBLIC:: CSCC   ( : ) ! SCC
         CHARACTER(EXTLEN3), POINTER,     PUBLIC:: CEXTORL( : ) ! Additional Extended ORL vars
         CHARACTER(NEILEN3), ALLOCATABLE, PUBLIC:: CNEIUID( : ) ! NEI Unique ID
@@ -93,7 +93,6 @@
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: INDEXA( : ) !  subscript table for SORTIC
-        INTEGER, POINTER,     PUBLIC:: IFIPA ( : ) !  raw state/county FIPS code
         INTEGER, ALLOCATABLE, PUBLIC:: IRCLASA( : )!  road class number
         INTEGER, ALLOCATABLE, PUBLIC:: IVTYPEA( : )!  vehicle type code
         INTEGER, POINTER,     PUBLIC:: IPOSCODA(:) !  positn of pol in INVPCOD

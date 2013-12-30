@@ -43,7 +43,7 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: CSOURC, IFIP, STKHT, STKDM, STKTK, STKVE,
+        USE MODSOURC, ONLY: CSOURC, CIFIP, STKHT, STKDM, STKTK, STKVE,
      &                      XLOCA, YLOCA
 
 C.........  This module contains arrays for plume-in-grid and major sources
@@ -109,13 +109,11 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
 
         INTEGER     G, I, J, L2, S, S2      ! counters and indices
 
-        INTEGER     FIP              ! tmp FIPS code
         INTEGER     GLM              ! local G max value
         INTEGER     IOS              ! i/o status
         INTEGER     LOCG             ! local G
         INTEGER  :: MXGCNT = 0           ! max of all GCNT entries
         INTEGER  :: NLOCGRP = 1      ! number of local (facility) groups
-        INTEGER     PFIP             ! previous FIPS code
         INTEGER     PRVG             ! G for previous interation
         INTEGER, SAVE :: NWARN = 0   ! warning count
         INTEGER, SAVE :: MXWARN      ! max no. warnings
@@ -132,6 +130,8 @@ C...........   OTHER LOCAL VARIABLES and their descriptions:
         LOGICAL :: LGRPALL = .FALSE.  ! true: group found for previous facility
         LOGICAL :: STATUS  = .FALSE.  ! true: tmp evaluation status
 
+        CHARACTER(FIPLEN3) CFIP      ! tmp FIPS code
+        CHARACTER(FIPLEN3) PFIP      ! previous FIPS code
         CHARACTER(300)  BUFFER       ! src description buffers
         CHARACTER(300)  MESG         ! msg buffer
 
@@ -186,11 +186,11 @@ C.........  Allocate temporary arrays for interpreting formulas
 
 C.........  Loop through sources to establish groups
         G    = 0
-        PFIP = 0
+        PFIP = ' '
         PPLT = ' '
         DO S = 1, NSRC
 
-            FIP = IFIP  ( S )
+            CFIP= CIFIP ( S )
             PLT = CSOURC( S )( SC_BEGP( 2 ):SC_ENDP( 2 ) )
             HT  = STKHT ( S )
             DM  = STKDM ( S )
@@ -202,7 +202,7 @@ C.........  Loop through sources to establish groups
 
 C.............  For a new facility, assume that a group will form, but store
 C               source ID to reset group if none materialized.
-            IF( FIP .NE. PFIP .OR. PLT .NE. PPLT ) THEN
+            IF( CFIP .NE. PFIP .OR. PLT .NE. PPLT ) THEN
 
 C.................  If there was one or more groups for the previous facility,
 C                   compute the group numbers and store info by source
@@ -241,7 +241,7 @@ C                       to reset the groups so that there aren't any holes.
                 END IF
 
 C.................  Initialize info for possible current group
-                PFIP    = FIP
+                PFIP    = CFIP
                 PPLT    = PLT
                 LGRPALL = .FALSE.
                 NLOCGRP = 1
@@ -428,7 +428,7 @@ C.........  Allocate memory for group information and populate group arrays
         GRPVE   = BADVAL3
         GRPFL   = BADVAL3
         GRPCNT  = 0
-        GRPFIP  = 0
+        GRPFIP  = ' '
 
 C.........  Store the group information more succinctly
         PRVG = 0
@@ -450,7 +450,7 @@ C.............  Store. Location will be from first source encountered in group
                 GRPVE ( G ) = TGRPVE ( I )
                 GRPFL ( G ) = TGRPFL ( I )
                 GRPCNT( G ) = TGRPCNT( I )
-                GRPFIP( G ) = IFIP   ( I )
+                GRPFIP( G ) = CIFIP  ( I )
 C.............  Otherwise, give warnings if stacks in the same group do not have
 C               the same stack locations.
             ELSE 

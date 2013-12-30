@@ -84,11 +84,11 @@
 
 !.........  Grouped output information and data values
         INTEGER, ALLOCATABLE, PUBLIC :: BINBAD   ( : )   ! code number if something wrong
+        INTEGER, ALLOCATABLE, PUBLIC :: BINGEO1IDX( : )  ! index to geocode level 1 name
         INTEGER, ALLOCATABLE, PUBLIC :: BINCOIDX ( : )   ! index to country name
         INTEGER, ALLOCATABLE, PUBLIC :: BINCYIDX ( : )   ! index to county name
         INTEGER, ALLOCATABLE, PUBLIC :: BINDIUID ( : )   ! index to diurnal prof
         INTEGER, ALLOCATABLE, PUBLIC :: BINMONID ( : )   ! index to monthly prof
-        INTEGER, ALLOCATABLE, PUBLIC :: BINREGN  ( : )   ! region code
         INTEGER, ALLOCATABLE, PUBLIC :: BINRCL   ( : )   ! roadclass code
         INTEGER, ALLOCATABLE, PUBLIC :: BINSMKID ( : )   ! SMOKE source ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSNMIDX( : )   ! SCC name index
@@ -108,6 +108,7 @@
         REAL   , ALLOCATABLE, PUBLIC :: BINDATA  ( :,: ) ! output data values
 
         CHARACTER, ALLOCATABLE, PUBLIC :: BINELEV( : )! elevated flag
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: BINREGN  ( : ) ! region code
         CHARACTER(PLTLEN3), ALLOCATABLE, PUBLIC :: BINPLANT ( : ) ! Plant ID
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: BINSCC   ( : ) ! SCC
         CHARACTER(SICLEN3), ALLOCATABLE, PUBLIC :: BINSIC   ( : ) ! SIC

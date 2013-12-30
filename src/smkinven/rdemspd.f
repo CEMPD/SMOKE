@@ -42,10 +42,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, CSOURC
+        USE MODSOURC, ONLY: CIFIP, CSOURC
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVTBL, ITFACA, ITNAMA,
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVTBL, ITFACA, ITNAMA,
      &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS,
      &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
 
@@ -239,7 +239,7 @@ C.............  Build helper arrays for making searching faster
                 DO
                     S = S + 1
                     IF ( S .GT. NSRC ) EXIT
-                    IF( IFIP( S ) .EQ. INVIFIP( I ) ) THEN
+                    IF( CIFIP( S ) .EQ. INVCFIP( I ) ) THEN
                         IF( STARTSRC( I ) .EQ. 0 ) STARTSRC( I ) = S
                         ENDSRC( I ) = S
                     ELSE
@@ -679,7 +679,7 @@ C.............  Set key for searching sources
 C.............  If FIPS code is not the same as last time, then
 C               look it up and get indidies
             IF( FIP .NE. LFIP ) THEN
-                J = FIND1( FIP, NINVIFIP, INVIFIP )
+                J = FINDC( FIP, NINVIFIP, INVCFIP )
                 IF( J .LE. 0 ) THEN
                     WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
      &                     'find FIPS code', FIP, 'in internal list.'

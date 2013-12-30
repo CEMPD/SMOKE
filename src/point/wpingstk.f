@@ -53,7 +53,9 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER(2)    CRLF
-        EXTERNAL        CRLF
+        INTEGER         STR2INT
+
+        EXTERNAL        CRLF, STR2INT
 
 C..........    Subroutine arguments and their descriptions
         CHARACTER(*), INTENT (IN) :: FNAME   ! i/o api inventory file
@@ -154,7 +156,7 @@ C.........  Store sorted information
             LOCVE ( I ) = GRPVE ( J )
             LOCXL ( I ) = GRPXL ( J )
             LOCYL ( I ) = GRPYL ( J )
-            LOCFIP( I ) = GRPFIP( J )
+            LOCFIP( I ) = STR2INT( GRPFIP( J ) )
             LOCLMAJOR( I ) = GRPLMAJOR( J )
             LOCLPING( I ) = GRPLPING( J )
 	    IF (FFLAG) LOCACRES( I ) = GRPACRES( J)

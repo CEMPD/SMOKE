@@ -39,12 +39,12 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: INDEXA, IFIPA, TPFLGA, INVYRA, CSCCA,
+        USE MODSOURC, ONLY: INDEXA, TPFLGA, INVYRA, CSCCA,
      &                      IPOSCOD, CSOURCA, POLVLA, IRCLASA, IVTYPEA,
      &                      CVTYPEA, CLINKA, XLOC1A, YLOC1A, XLOC2A,
      &                      YLOC2A, IDIUA, IWEKA, XLOCAA, YLOCAA,
      &                      STKHTA, STKDMA, STKTKA, STKVEA, CORISA,
-     &                      CBLRIDA, CPDESCA, IFIP, TPFLAG, INVYR,
+     &                      CBLRIDA, CPDESCA, CIFIP, TPFLAG, INVYR,
      &                      TZONES, NPCNT, CSCC, CSOURC, POLVAL, XLOCA,
      &                      YLOCA, CELLID, IRCLAS, IVTYPE, CVTYPE,
      &                      XLOC1, YLOC1, XLOC2, YLOC2, CISIC, IDIU,
@@ -88,11 +88,6 @@ C.............  Allocate variables irrespective of PFLAG
             END IF
 
 C.............  Allocate for any source category
-            IF( UFLAG .AND. .NOT. ASSOCIATED( IFIPA ) ) THEN
-                ALLOCATE( IFIPA( NDIM1 ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IFIPA', PROGNAME )
-            END IF
-
             IF( UFLAG .AND. .NOT. ASSOCIATED( TPFLGA ) ) THEN
                 ALLOCATE( TPFLGA( NDIM1 ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'TPFLGA', PROGNAME )
@@ -131,7 +126,6 @@ C.............  Allocate for any source category
 
 C.............  Deallocate for any source category
             IF( .NOT. AFLAG .AND. .NOT. PFLAG ) THEN
-                IF( ASSOCIATED( IFIPA )   ) DEALLOCATE( IFIPA )
                 IF( ASSOCIATED( TPFLGA )  ) DEALLOCATE( TPFLGA )
                 IF( ASSOCIATED( INVYRA )  ) DEALLOCATE( INVYRA )
                 IF( ASSOCIATED( CSCCA )   ) DEALLOCATE( CSCCA )
@@ -269,9 +263,9 @@ C.............  Allocate specifically based on source category
 C.........  Sorted ...
         CASE( 'SORTED' )
 
-            IF( UFLAG .AND. .NOT. ASSOCIATED( IFIP ) ) THEN
-                ALLOCATE( IFIP( NDIM1 ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+            IF( UFLAG .AND. .NOT. ASSOCIATED( CIFIP ) ) THEN
+                ALLOCATE( CIFIP( NDIM1 ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CIFIP', PROGNAME )
             END IF
 
             IF( UFLAG .AND. .NOT. ASSOCIATED( TPFLAG ) ) THEN

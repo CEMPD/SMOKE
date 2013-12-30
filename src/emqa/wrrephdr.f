@@ -66,7 +66,7 @@ C.........  This module contains Smkreport-specific settings
      &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
-     &                      STKGWIDTH, STKGFMT, INTGRWIDTH
+     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
@@ -75,11 +75,13 @@ C.........  This module contains report arrays for each output bin
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
-     &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR
+     &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
+     &                      BINGEO1IDX
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, NSTATE, NCOUNTY, STCYPOPYR,
-     &                     CTRYNAM, STATNAM, CNTYNAM, ORISDSC, NORIS
+     &                     CTRYNAM, STATNAM, CNTYNAM, ORISDSC, NORIS,
+     &                     NGEOLEV1, GEOLEV1NAM
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: GRDNM
@@ -98,8 +100,9 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
+        LOGICAL         USEEXPGEO
 
-        EXTERNAL   CRLF, STR2INT, MMDDYY, WKDAY
+        EXTERNAL   CRLF, STR2INT, MMDDYY, WKDAY, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV       ! output file unit number
@@ -154,7 +157,11 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRORIS = 41
         INTEGER, PARAMETER :: IHDRORNM = 42
         INTEGER, PARAMETER :: IHDRINTGR= 43
-        INTEGER, PARAMETER :: NHEADER  = 43
+        INTEGER, PARAMETER :: IHDRGEO1 = 44
+        INTEGER, PARAMETER :: IHDRGEO2 = 45
+        INTEGER, PARAMETER :: IHDRGEO3 = 46
+        INTEGER, PARAMETER :: IHDRGEO4 = 47
+        INTEGER, PARAMETER :: NHEADER  = 47
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -201,9 +208,14 @@ C...........   Local parameters
      &                              'MATBURNED        ',
      &                              'ORIS             ',
      &                              'ORIS Description ',
-     &                              'INT_STAT         ' / )
+     &                              'INT_STAT         ',
+     &                              'Geo Regn Level 1 ',
+     &                              'Geo Regn Level 2 ',
+     &                              'Geo Regn Level 3 ',
+     &                              'Geo Regn Level 4 ' / )
 
 C...........   Local variables that depend on module variables
+        LOGICAL    LGEO1USE ( NGEOLEV1 )
         LOGICAL    LCTRYUSE ( NCOUNTRY )
         LOGICAL    LSTATUSE ( NSTATE )
         LOGICAL    LCNTYUSE ( NCOUNTY )
@@ -221,6 +233,7 @@ C...........   Other local arrays
 C...........   Other local variables
         INTEGER     I, J, K, K1, K2, L, L1, L2, S, V, IOS
 
+        INTEGER     IHDRIDX         ! tmp header index
         INTEGER     LN              ! length of single units entry
         INTEGER     LU              ! cumulative width of units header
         INTEGER     LV              ! width of delimiter
@@ -236,6 +249,7 @@ C...........   Other local variables
         REAL        VAL             ! tmp data value
         REAL        PREVAL          ! tmp previous data value
 
+        LOGICAL  :: GEO1MISS              ! true: missing geo level 1 name
         LOGICAL  :: CNRYMISS              ! true: >=1 missing country name
         LOGICAL  :: CNTYMISS              ! true: >=1 missing county name
         LOGICAL  :: DATFLOAT              ! true: use float output format
@@ -267,6 +281,7 @@ C.........  Initialize output subroutine arguments
         OUTFMT = ' '
 
 C.........  Initialize local variables for current report
+        GEO1MISS = .FALSE.
         CNRYMISS = .FALSE.
         STATMISS = .FALSE.
         CNTYMISS = .FALSE.
@@ -276,6 +291,7 @@ C.........  Initialize local variables for current report
         NAICSMISS= .FALSE.
         ORISMISS = .FALSE.
 
+        LGEO1USE = .FALSE.    ! array
         LCTRYUSE = .FALSE.    ! array
         LSTATUSE = .FALSE.    ! array
         LCNTYUSE = .FALSE.    ! array
@@ -302,7 +318,8 @@ C.........  Initialize local variables for current report
 C.........  Initialize report-specific settings
         RPT_ = ALLRPT( RCNT )  ! many-values
 
-        LREGION = ( RPT_%BYCNRY .OR. RPT_%BYSTAT .OR. RPT_%BYCNTY )
+        LREGION = ( RPT_%BYGEO1 .OR. RPT_%BYCNRY .OR. 
+     &              RPT_%BYSTAT .OR. RPT_%BYCNTY )
 
 C.........  Define source-category specific header
 C.........  NOTE that (1) will not be used and none will be for area sources
@@ -341,6 +358,13 @@ C           which ones are being used by the selected sources.
 C............................................................................
         PDSCWIDTH = 1
         DO I = 1, NOUTBINS
+
+C.............  Include geo code level 1 name in string
+            IF( RPT_%BYGEO1NAM ) THEN
+                J = BINGEO1IDX( I )
+                IF( J .GT. 0 ) LGEO1USE( J ) = .TRUE.
+                IF( J .LE. 0 ) GEO1MISS = .TRUE.
+            END IF
 
 C.............  Include country name in string
             IF( RPT_%BYCONAM ) THEN
@@ -542,7 +566,10 @@ C.........  Source ID column
 C.........  Region code column
         IF( LREGION ) THEN
             J  = LEN_TRIM( HEADERS( IHDRREGN ) )
-            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINREGN )
+            W1 = 0
+            DO I = 1, NOUTBINS
+                W1 = MAX( W1, LEN_TRIM( BINREGN( I ) ) )
+            END DO
             W1  = MAX( W1, J )
 
             CALL ADD_TO_HEADER( W1, HEADERS(IHDRREGN), LH, HDRBUF)
@@ -556,6 +583,31 @@ C.........  Set widths and build formats for country, state, and county names.
 C           These are done on loops of unique lists of these names
 C           so that the LEN_TRIMs can be done on the shortest possible list
 C           of entries instead of on all entries in the bins list.
+
+C.........  Geo code level 1 names
+        IF( RPT_%BYGEO1NAM ) THEN
+
+C.............  For regions in the inventory, get max name width
+            NWIDTH = 0
+            DO I = 1, NGEOLEV1
+                IF( LGEO1USE( I ) ) THEN
+                    NWIDTH = MAX( NWIDTH, LEN_TRIM( GEOLEV1NAM( I ) ) )
+                END IF
+            END DO
+
+C.............  If any missing region names, check widths
+            IF( GEO1MISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
+
+C.............  Set geo code name column width 
+            J = LEN_TRIM( HEADERS( IHDRGEO1 ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRGEO1), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            GEO1WIDTH = J + LV
+
+        END IF
 
 C.........  Country names
         IF( RPT_%BYCONAM ) THEN
@@ -572,10 +624,12 @@ C.............  If any missing country names, check widths
             IF( CNRYMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
 
 C.............  Set country name column width 
-            J = LEN_TRIM( HEADERS( IHDRCNRY ) )
+            IHDRIDX = IHDRCNRY
+            IF( USEEXPGEO ) IHDRIDX = IHDRGEO2
+            J = LEN_TRIM( HEADERS( IHDRIDX ) )
             J = MAX( NWIDTH, J )
 
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRCNRY), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRIDX), LH, HDRBUF )
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             COWIDTH = J + LV
@@ -596,11 +650,13 @@ C.............  For states in the inventory, get max name width
 C.............  If any missing state names, check widths
             IF( STATMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
 
-C.............  Set country name column width 
-            J = LEN_TRIM( HEADERS( IHDRSTAT ) )
+C.............  Set state name column width 
+            IHDRIDX = IHDRSTAT
+            IF( USEEXPGEO ) IHDRIDX = IHDRGEO3
+            J = LEN_TRIM( HEADERS( IHDRIDX ) )
             J = MAX( NWIDTH, J )
 
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRSTAT), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRIDX), LH, HDRBUF )
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             STWIDTH = J + LV
@@ -610,7 +666,7 @@ C.............  Set country name column width
 C.........  County names
         IF( RPT_%BYCYNAM ) THEN
 
-C.............  For countries in the inventory, get max name width
+C.............  For counties in the inventory, get max name width
             NWIDTH = 0
             DO I = 1, NCOUNTY
                 IF( LCNTYUSE( I ) ) THEN
@@ -618,14 +674,16 @@ C.............  For countries in the inventory, get max name width
                 END IF
             END DO
 
-C.............  If any missing country names, check widths
+C.............  If any missing county names, check widths
             IF( CNTYMISS ) NWIDTH = MAX( NWIDTH, LEN_TRIM( MISSNAME ) )
 
-C.............  Set country name column width 
-            J = LEN_TRIM( HEADERS( IHDRCNTY ) )
+C.............  Set county name column width 
+            IHDRIDX = IHDRCNTY
+            IF( USEEXPGEO ) IHDRIDX = IHDRGEO4
+            J = LEN_TRIM( HEADERS( IHDRIDX ) )
             J = MAX( NWIDTH, J )
 
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRCNTY), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRIDX), LH, HDRBUF )
             CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
 
             CYWIDTH = J + LV
@@ -886,25 +944,25 @@ C.........  Stack parameters.  +3 for decimal and 2 significant figures
             PWIDTH( 1 ) = MAX( PWIDTH( 1 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 1 ), HEADERS( IHDRHT ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 1 ), ATTRUNIT( 8 ), LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 1 ), ATTRUNIT( 6 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRDM ) )
             PWIDTH( 2 ) = MAX( PWIDTH( 2 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 2 ), HEADERS( IHDRDM ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 2 ), ATTRUNIT( 9 ), LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 2 ), ATTRUNIT( 7 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRTK ) )
             PWIDTH( 3 ) = MAX( PWIDTH( 3 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 3 ), HEADERS( IHDRTK ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 3 ), ATTRUNIT(10), LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 3 ), ATTRUNIT( 8 ), LU, UNTBUF )
 
             J = LEN_TRIM( HEADERS( IHDRVE ) )
             PWIDTH( 4 ) = MAX( PWIDTH( 4 ) + 3, J )
             CALL ADD_TO_HEADER( PWIDTH( 4 ), HEADERS( IHDRVE ), 
      &                          LH, HDRBUF )
-            CALL ADD_TO_HEADER( PWIDTH( 4 ), ATTRUNIT(11), LU, UNTBUF )
+            CALL ADD_TO_HEADER( PWIDTH( 4 ), ATTRUNIT( 9 ), LU, UNTBUF )
 
             WRITE( STKPFMT, 94640 ) PWIDTH( 1 ), RPT_%DELIM,
      &                              PWIDTH( 2 ), RPT_%DELIM,

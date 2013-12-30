@@ -35,13 +35,15 @@
 !****************************************************************************
 
         IMPLICIT NONE
+        
+        INCLUDE 'EMPRVT3.EXT'
 
         INTEGER, PUBLIC :: NSRGREC      ! Number of surrogate file entries
 
         INTEGER, ALLOCATABLE, PUBLIC :: IDXSRGA( : )   ! Sorting index
         INTEGER, ALLOCATABLE, PUBLIC :: IDXSRGB( : )   ! Sorting index 
         INTEGER, ALLOCATABLE, PUBLIC :: SCELLA ( : )   ! Surrogate cell numbers
-        INTEGER, ALLOCATABLE, PUBLIC :: SFIPSA ( : )   ! Surrogate Country/
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: SFIPSA ( : )   ! Surrogate Country/
                                                        ! State/County codes
         INTEGER, ALLOCATABLE, PUBLIC :: SSRGIDA( : )   ! Surrogate ID codes
         REAL   , ALLOCATABLE, PUBLIC :: SFRACA ( : )   ! Surrogate fractions
@@ -57,7 +59,7 @@ C...........   Surrogate-cell::FIPS table
 
         INTEGER, ALLOCATABLE, PUBLIC :: NTLINES( : )       ! no. line buffer for each surrogate
         INTEGER, ALLOCATABLE, PUBLIC :: NCELLS ( : )       ! no. cells per county code
-        INTEGER, ALLOCATABLE, PUBLIC :: SRGFIPS( : )       ! list of cnty codes
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: SRGFIPS( : ) ! list of cnty codes
         INTEGER, ALLOCATABLE, PUBLIC :: SRGLIST( : )       ! list of surrgate codes
         INTEGER, ALLOCATABLE, PUBLIC :: FIPCELL( :, : )    ! cell numbers
         REAL   , ALLOCATABLE, PUBLIC :: SRGFRAC( :, :, : ) ! surrogate fractions

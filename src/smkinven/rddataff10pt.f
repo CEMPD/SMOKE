@@ -164,7 +164,7 @@ C           the various data fields
         TK     = SEGMENT( 20 )             ! exit temperature
         FL     = SEGMENT( 21 )             ! flow rate
         VL     = SEGMENT( 22 )             ! exit velocity
-        SIC    = "0"                       ! SIC (retired in FF10)
+        SIC    = ADJUSTL( SEGMENT( 30 ) )  ! SIC (optional in regulatory code field)
         MACT   = ""                        ! MACT (retired in FF10) 
         NAICS  = ADJUSTL( SEGMENT( 23 ) )  ! NAICS code
         CTYPE  = "L"                       ! coordinate type (default:lat/lon in FF10)

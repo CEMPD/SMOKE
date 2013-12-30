@@ -67,9 +67,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER(2)    CRLF
         LOGICAL         ENVYN
-        INTEGER         FIND1  
+        INTEGER         FINDC  
 
-        EXTERNAL   CRLF, ENVYN, FIND1
+        EXTERNAL   CRLF, ENVYN, FINDC
 
 C...........   Other local variables
 
@@ -246,29 +246,30 @@ C******************  INTERNAL SUBPROGRAMS   ******************************
         CONTAINS
 
 C.............  This subroutine creates the county to src FIPs index
-            SUBROUTINE SET_COUNTY_INDEX( NSRC, IFIP, ICNY )
+            SUBROUTINE SET_COUNTY_INDEX( NSRC, CIFIP, ICNY )
 
 C.............  Subprogram arguments
-            INTEGER, INTENT (IN) :: NSRC
-            INTEGER, INTENT (IN) :: IFIP( NSRC )
-            INTEGER, INTENT(OUT) :: ICNY( NSRC )
+            INTEGER,            INTENT (IN) :: NSRC
+            CHARACTER(FIPLEN3), INTENT (IN) :: CIFIP( NSRC )
+            INTEGER,            INTENT(OUT) :: ICNY( NSRC )
 
 C.............  Local variables
             INTEGER     J, S     ! counters and indices
-            INTEGER     FIP      ! tmp cy/st/co code
-            INTEGER     PFIP     ! previous cy/st/co code
+
+            CHARACTER(FIPLEN3) CFIP      ! tmp cy/st/co code
+            CHARACTER(FIPLEN3) PFIP      ! previous cy/st/co code
 
 C----------------------------------------------------------------------------
 
-            PFIP = -9
+            PFIP = ' '
             DO S = 1, NSRC
 
-                FIP = IFIP( S )
+                CFIP = CIFIP( S )
 
-                IF( FIP .NE. PFIP ) THEN
+                IF( CFIP .NE. PFIP ) THEN
 
-                    J = MAX( FIND1( FIP, NCOUNTY, CNTYCOD ), 0 )
-                    PFIP = FIP
+                    J = MAX( FINDC( CFIP, NCOUNTY, CNTYCOD ), 0 )
+                    PFIP = CFIP
 
                 END IF
 

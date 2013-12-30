@@ -57,18 +57,19 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2) CRLF
         INTEGER      ENVINT
         INTEGER      FIND1
+        INTEGER      FINDC
         INTEGER      INDEX1
         INTEGER      GETFLINE
         INTEGER      STR2INT 
         REAL         STR2REAL
 
-        EXTERNAL  CHKINT, CRLF, ENVINT, FIND1, INDEX1, GETFLINE, 
+        EXTERNAL  CHKINT, CRLF, ENVINT, FINDC, FIND1, INDEX1, GETFLINE, 
      &            STR2INT, STR2REAL
 
 C...........   Subroutine arguments
-        INTEGER, INTENT (IN):: FDEV            ! county file unit no.
-        INTEGER, INTENT (IN):: NDIM            ! dim. for arrays or zero
-        INTEGER, INTENT (IN):: INCNTYS( NDIM ) ! input county codes or empty
+        INTEGER,            INTENT (IN):: FDEV            ! county file unit no.
+        INTEGER,            INTENT (IN):: NDIM            ! dim. for arrays or zero
+        CHARACTER(FIPLEN3), INTENT (IN):: INCNTYS( NDIM ) ! input county codes or empty
 
 C...........   Local parameters
         CHARACTER(16), PARAMETER :: CNTYPKT = '/COUNTY/'
@@ -117,6 +118,9 @@ C...........   Other local variables
         LOGICAL      :: FOUNDSTA = .FALSE. ! true: state packet found
         LOGICAL      :: FOUNDCNY = .FALSE. ! true: county packet found
 
+        CHARACTER(FIPLEN3) CFIP  ! tmp character FIPS code
+        CHARACTER(FIPLEN3) CSTA  ! tmp character state code
+        CHARACTER(FIPLEN3) CCOU  ! tmp character country code
         CHARACTER       DLCHR    ! tmp daylight time exemptions flag
         CHARACTER(3)    TZN      ! tmp time zone
         CHARACTER(300)  LINE     ! line read buffer
@@ -305,7 +309,7 @@ C.............  First count the number of states
             N    = 0
             DO I = 1, NDIM
 
-                STA = INCNTYS( I ) / 1000
+                STA = STR2INT( INCNTYS( I ) ) / 1000
                 IF( STA .NE. LSTA ) THEN
                     N = N + 1
                     LSTA = STA
@@ -321,7 +325,7 @@ C.............  First count the number of states
             N    = 0
             DO I = 1, NDIM
 
-                STA = INCNTYS( I ) / 1000
+                STA = STR2INT( INCNTYS( I ) ) / 1000
                 IF( STA .NE. LSTA ) THEN
                     N = N + 1
                     INSTATE( N ) = STA
@@ -359,9 +363,9 @@ C.........  Allocate memory for data arrays from MODSTCY module
         CALL CHECKMEM( IOS, 'USEDAYLT', PROGNAME )
 
 C.........  Initialize
-        CTRYCOD  = -9
-        STATCOD  = -9
-        CNTYCOD  = -9
+        CTRYCOD  = ' '
+        STATCOD  = ' '
+        CNTYCOD  = ' '
         CNTYTZON = -9    ! array
         CTRYNAM  = ' '
         STATNAM  = ' '
@@ -402,7 +406,8 @@ C.........  Loop through and read country data
                 CALL M3MESG( MESG )
             END IF
 
-            CTRYCOD( N ) = COU * 100000
+            CTRYCOD( N ) = REPEAT( '0', FIPLEN3 )
+            CTRYCOD( N )( FIPEXPLEN3+1:FIPEXPLEN3+1 ) = LINE( 1:1 )
             CTRYNAM( N ) = ADJUSTL( LINE( 3:22 ) )
 
             LCOU = COU
@@ -450,7 +455,9 @@ C.............  Find state code in valid list
             END IF
 
             K = K + 1
-            STATCOD( K ) = COU * 100000 + STA * 1000
+            STATCOD( K ) = REPEAT( '0', FIPLEN3 )
+            WRITE( STATCOD( K )( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) COU
+            WRITE( STATCOD( K )( FIPEXPLEN3+2:FIPEXPLEN3+3 ), '(I2.2)' ) STA
             STATNAM( K ) = ADJUSTL( LINE( 7:26 ) )
 
             LCOUST = COUST
@@ -465,7 +472,7 @@ C.........  Check if input states all have information in state codes file
 C.................  Loop through input states and report missing
                 DO N = 1, NDIMST
                     STA = INSTATE( N ) * 1000
-                    J = FIND1( STA, K, STATCOD )
+                    J = FINDC( STA, K, STATCOD )
                     IF( J .LE. 0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,'(A,1X,I3.3,A)' )
@@ -512,12 +519,13 @@ C.........  Loop through and read county data
             POP = MAX( 0., POP )               ! Remove missing values
 
             FIP = COU * 100000 + STA * 1000 + CNY
+            WRITE( CFIP, '(I12.12)' ) FIP
 
 C.............  If input codes have been provided, find current code in the 
 C               list, or skip to next iteration
             IF( FILTER ) THEN
 
-                J = FIND1( FIP, NDIM, INCNTYS )
+                J = FINDC( CFIP, NDIM, INCNTYS )
 
                 IF( J .LE. 0 ) CYCLE    ! to next iteration
 
@@ -545,7 +553,7 @@ C.............  Store the county-specific information
             IF( K .LE. NDIMCY ) THEN 
 
 C.................  Store region code and name
-                CNTYCOD( K ) = FIP
+                CNTYCOD( K ) = CFIP
                 CNTYNAM( K ) = ADJUSTL( LINE( 5:24 ) )
 
 C.................  Store population data, if included
@@ -593,8 +601,8 @@ C           by the calling program.
             CALL M3MSG2( MESG )
 
             DO J = 1, NDIM
-                FIP = INCNTYS( J )
-                I = FIND1( FIP, K, CNTYCOD )
+                CFIP = INCNTYS( J )
+                I = FINDC( CFIP, K, CNTYCOD )
 
                 IF( I .LE. 0 ) THEN
                     WRITE( MESG,94010 ) BLANK10 // 'Code:', FIP
@@ -618,33 +626,33 @@ C.........  Store state and country populations
             CTRYPOPL = 0.  ! array
             STATPOPL = 0.  ! array
 
-            LCOU = -9
-            LSTA = -9
             DO J = 1, NCOUNTY
 
-                FIP = CNTYCOD( J )
-                COU = ( FIP / 100000 ) * 100000
-                STA = ( FIP / 1000 ) * 1000
+                CFIP = CNTYCOD( J )
+                CCOU = CFIP
+                CCOU( FIPEXPLEN3+2:FIPLEN3 ) = REPEAT( '0', FIPLEN3-FIPEXPLEN3+2 )
+                CSTA = CFIP
+                CSTA( STALEN3+1:FIPLEN3 ) = REPEAT( '0', FIPLEN3-STALEN3+1 )
 
 C.................  Add to country population
-                F = FIND1( COU, NCOUNTRY, CTRYCOD )
+                F = FINDC( CCOU, NCOUNTRY, CTRYCOD )
                 IF ( F .GT. 0 ) THEN
                     CTRYPOPL( F ) = CTRYPOPL( F ) + CNTYPOPL( J )
                 ELSE
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
-     &                     'find country', COU/100000, 'in list while ' 
+                    MESG = 'INTERNAL ERROR: Could not '//
+     &                     'find country ' // CCOU // ' in list while ' 
      &                     //'computing country population.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
                 END IF
 
 C.................  Add to state population
-                F = FIND1( STA, NSTATE, STATCOD )
+                F = FINDC( CSTA, NSTATE, STATCOD )
                 IF ( F .GT. 0 ) THEN
                     STATPOPL( F ) = STATPOPL( F ) + CNTYPOPL( J )
                 ELSE
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
-     &                     'find state', STA, 'in list while ' //
+                    MESG = 'INTERNAL ERROR: Could not '//
+     &                     'find state ' // CSTA // ' in list while ' //
      &                     'computing state population.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )

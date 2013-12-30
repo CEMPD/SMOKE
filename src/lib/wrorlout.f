@@ -35,7 +35,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, INVYR, XLOCA, YLOCA,
+        USE MODSOURC, ONLY: CIFIP, INVYR, XLOCA, YLOCA,
      &                      CORIS, STKHT, STKDM, STKTK, STKVE,
      &                      CSCC, CSOURC, CPDESC, CLINK, CBLRID,
      &                      CERPTYP, CMACT, CNAICS, CSRCTYP, CNEIUID,
@@ -67,8 +67,9 @@ C...........   EXTERNAL FUNCTIONS:
         LOGICAL         ENVYN
         INTEGER         FIND1
         INTEGER         INDEX1
+        INTEGER         STR2INT
 
-        EXTERNAL        CRLF, ENVYN, FIND1, INDEX1
+        EXTERNAL        CRLF, ENVYN, FIND1, INDEX1, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT (IN) :: RDEV           ! emissions unit no.
@@ -186,8 +187,8 @@ C.............  Write area-source characteristics to output file
                 S = SRCID( C )
 
 C.................  Store others in temporary variables
-                COID = IFIP( S ) / 100000
-                FIP  = IFIP( S ) - COID * 100000
+                COID = STR2INT( CIFIP( S ) ) / 100000
+                FIP  = STR2INT( CIFIP( S ) ) - COID * 100000
                 SIC  = CISIC( S )
                 YEAR = INVYR( S )
 
@@ -299,8 +300,8 @@ C.............  Write mobile-source characteristics to output file
                 S = SRCID( C )
 
 C.................  Store others in temporary variables
-                COID = IFIP( S ) / 100000
-                FIP  = IFIP( S ) - COID * 100000
+                COID = STR2INT( CIFIP( S ) ) / 100000
+                FIP  = STR2INT( CIFIP( S ) ) - COID * 100000
                 SIC  = CISIC( S )
                 YEAR = INVYR( S )
 
@@ -399,8 +400,8 @@ C.................  Truncate character string variables
                 SCC      = CHARS( 6 )
 
 C.................  Store others in temporary variables
-                COID   = IFIP( S ) / 100000
-                FIP    = IFIP( S ) - COID * 100000
+                COID   = STR2INT( CIFIP( S ) ) / 100000
+                FIP    = STR2INT( CIFIP( S ) ) - COID * 100000
                 SIC    = CISIC( S )                
                 YEAR   = INVYR( S )
                 CORS   = CORIS( S )

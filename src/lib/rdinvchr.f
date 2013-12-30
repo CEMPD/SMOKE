@@ -37,7 +37,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: IFIP, IRCLAS, IVTYPE, CELLID, TZONES,
+        USE MODSOURC, ONLY: CIFIP, IRCLAS, IVTYPE, CELLID, TZONES,
      &                      TPFLAG, INVYR, IDIU, IWEK, XLOCA, YLOCA, 
      &                      XLOC1, YLOC1, XLOC2, YLOC2, SPEED, STKHT,
      &                      STKDM, STKTK, STKVE, CSCC, CORIS, CBLRID,
@@ -92,6 +92,7 @@ C...........   Other local variables
         LOGICAL       :: BLRFLAG = .FALSE.  ! True: boilers requested
         LOGICAL       :: ERPIN   = .FALSE.  ! True: emission release type in input file
         LOGICAL       :: ERPFLAG = .FALSE.  ! True: emission release point type requested
+        LOGICAL       :: FIPFLAG = .FALSE.  ! True: geographic code requested
         LOGICAL       :: LNKFLAG = .FALSE.  ! True: link ID requested
         LOGICAL       :: EXTIN   = .FALSE.  ! True: additional extended orl vars in input file
         LOGICAL       :: EXTFLAG = .FALSE.  ! True: additional extended orl vars requested
@@ -163,13 +164,6 @@ C.........  Allocate memory and read the ones that are needed from I/O API file
             MESG = PART1 // INVAR( 1:LEN_TRIM( INVAR ) ) // PART3
 
             SELECT CASE( INVAR )
-
-            CASE( 'IFIP' )
-              ALLOCATE( IFIP( NSRC ), STAT=IOS )
-              CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
-              IF(.NOT. READSET(INFILE,'IFIP',ALLAYS3,1,0,0,IFIP)) THEN
-                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-              ENDIF
 
             CASE( 'IRCLAS' )
               ALLOCATE( IRCLAS( NSRC ), STAT=IOS )
@@ -377,6 +371,11 @@ C.............  Allocate memory for the data that are needed from the ASCII file
                 INVAR = VNAMES( N )
 
                 SELECT CASE( INVAR )
+                
+                CASE( 'CIFIP' )
+                    FIPFLAG = .TRUE.
+                    ALLOCATE( CIFIP( NSRC ), STAT=IOS )
+                    CALL CHECKMEM( IOS, 'CIFIP', PROGNAME )
 
                 CASE( 'CSCC' )
                     SCCFLAG = .TRUE. 
@@ -618,6 +617,8 @@ C.....................  Read source information from record of inventory file
 C.....................  Advance to next line
                     READ( FDEV, *, END=999 )
 
+                    IF( FIPFLAG ) CIFIP( S ) = CFIP
+
                     IF( SCCFLAG ) CSCC( S ) = CS
 
                     IF( MACFLAG .AND. MCTIN ) CMACT( S ) = CMT
@@ -663,6 +664,8 @@ C.....................  Read source information from record of inventory file
 
 C.....................  Advance to next line
                     READ( FDEV, *, END=999 )
+                    
+                    IF( FIPFLAG ) CIFIP ( S ) = CFIP
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 
@@ -845,6 +848,8 @@ C.....................  Read source information from record of inventory file
 
 C.....................  Advance to next line
                     READ( FDEV, *, END=999 )
+
+                    IF( FIPFLAG ) CIFIP ( S ) = CFIP
 
                     IF( SCCFLAG ) CSCC  ( S ) = CS
 

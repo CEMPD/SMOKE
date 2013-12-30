@@ -457,6 +457,8 @@ C.........................  Reset report settings to defaults
                         RPT_%BYDATE    = .FALSE.
                         RPT_%BYDIU     = .FALSE.
                         RPT_%BYELEV    = .FALSE.
+                        RPT_%BYGEO1    = .FALSE.
+                        RPT_%BYGEO1NAM = .FALSE.
                         RPT_%BYHOUR    = .FALSE.
                         RPT_%BYLAYER   = .FALSE.
                         RPT_%BYMON     = .FALSE.
@@ -805,18 +807,23 @@ C.............  BY options affecting inputs needed
                     END IF
 
                     RPT_%BYCELL = .TRUE.
+                
+                CASE( 'GEOCODE1' )
+                    YFLAG = .TRUE.
+                    RPT_%BYGEO1 = .TRUE.
+                    IF( SEGMENT( 3 ) .EQ. 'NAME' ) RPT_%BYGEO1NAM = .TRUE.
 
-                CASE( 'COUNTRY' )
+                CASE( 'COUNTRY', 'GEOCODE2' )
                     YFLAG      = .TRUE.
                     RPT_%BYCNRY = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) RPT_%BYCONAM = .TRUE.
 
-                CASE( 'STATE' )
+                CASE( 'STATE', 'GEOCODE3' )
                     YFLAG = .TRUE.
                     RPT_%BYSTAT = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) RPT_%BYSTNAM = .TRUE.
 
-                CASE( 'COUNTY' )
+                CASE( 'COUNTY', 'GEOCODE4' )
                     YFLAG = .TRUE.
                     RPT_%BYCNTY = .TRUE.
                     IF( SEGMENT( 3 ) .EQ. 'NAME' ) RPT_%BYCYNAM = .TRUE.

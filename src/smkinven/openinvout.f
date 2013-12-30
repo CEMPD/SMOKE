@@ -277,12 +277,6 @@ C               number of commas found in the string.
 C.........  Define source characteristic variables that are not strings
 
         J = 1
-        VNAMESET( J ) = 'IFIP'
-        VTYPESET( J ) = M3INT
-        VUNITSET( J ) = 'n/a'
-        VDESCSET( J ) = 'State and county FIPS code'
-        J = J + 1
-
         VNAMESET( J ) = 'TZONES'
         VTYPESET( J ) = M3INT
         VUNITSET( J ) = 'n/a'

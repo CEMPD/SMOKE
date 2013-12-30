@@ -63,9 +63,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER            INDEX1
         INTEGER            PROMPTFFILE
         CHARACTER(NAMLEN3) PROMPTMFILE
+        LOGICAL            USEEXPGEO
 
         EXTERNAL        CRLF, ENVYN, GETIFDSC, GETCFDSC, INDEX1, 
-     &                  PROMPTFFILE, PROMPTMFILE
+     &                  PROMPTFFILE, PROMPTMFILE, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         LOGICAL     , INTENT    (IN) :: UFLAG ! use uniform temporal profile
@@ -202,9 +203,11 @@ C.............  Store non-category-specific header information
         NSRC = NROWS3D
 
 C.........  Open region codes file for determining daylight savings time status
-        CDEV = PROMPTFFILE(
+        IF( .NOT. USEEXPGEO ) THEN
+            CDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+        END IF
         
 C.........  Open holidays file for determining holidays by region
         HDEV = PROMPTFFILE(

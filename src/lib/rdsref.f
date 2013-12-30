@@ -86,7 +86,6 @@ C...........   Array for parsing list-formatted inputs
 C...........   Other local variables
         INTEGER         I, J, J1, J2, K, L, N    !  counters and indices
 
-        INTEGER         FIP     !  temporary FIPS code
         INTEGER         IDIU    !  temporary diurnal profile code     
         INTEGER         IDUM    !  dummy integer
         INTEGER         IMON    !  temporary monthly profile code     

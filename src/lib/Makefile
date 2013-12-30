@@ -30,7 +30,7 @@ FILES_FGIMNP = \
   progdesc.o
 
 FILES_R = \
-  rdar2pt.o    rdascc.o     rdchrscc.o   rdcodnam.o   rddates.o    rdeproc.o  \
+  rdar2pt.o    rdascc.o     rdchrscc.o   rdcodnam.o   rddates.o    rdeproc.o    rdgeocodes.o \
   rdgmat.o     rdgref.o     rdhdays.o    rdinvchr.o   rdinvmap.o   rdinvpol.o \
   rdlines.o    rdmapmask.o  rdmappol.o   rdmvinfo.o   rdorsdsc.o   rdpelv.o   \
   rdrmat.o     rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o\
@@ -40,7 +40,7 @@ FILES_R = \
   rdsrcgrps.o
 
 FILES_SVWX = \
-  setscctype.o setsrcdy.o   tagtable.o   ungridbv.o   verchar.o    wrchrscc.o  \
+  setscctype.o setsrcdy.o   tagtable.o   ungridbv.o   useexpgeo.o  verchar.o    wrchrscc.o  \
   wrdaymsg.o   wridaout.o   wridapol.o   wrorlout.o   xreftbl.o    srcgrpcnt.o \
   wrsrcgrps.o
 
@@ -112,6 +112,7 @@ rdar2pt.o  : $(MODXREF) $(MODLISTS) $(MODAR2PT)
 rdcodnam.o : $(MODLISTS)
 rddates.o  : $(MODTMPRL)
 rdeproc.o  : $(MODEMFAC) $(MODINFO)
+rdgeocodes.o : $(MODSTCY)
 rdgref.o   : $(MODXREF) $(MODINFO)
 rdhdays.o  : $(MODTMPRL)
 rdinvchr.o : $(MODSOURC)
@@ -131,7 +132,7 @@ rdsmat.o   : $(MODFILESET)
 rdspdprof.o: $(MODMOBIL)
 rdspdref.o : $(MODXREF)
 rdsprof.o  : $(MODSPRO)
-rdsrcgrps.o: $(MODMERGE) $(MODLISTS) $(MODSTCY) $(MODGRID) $(MODELEV) $(MODSURG)
+rdsrcgrps.o: $(MODMERGE) $(MODLISTS) $(MODGRID) $(MODELEV) $(MODSURG) $(MODSOURC)
 rdsref.o   : $(MODXREF) $(MODINFO)
 rdsrg.o    : $(MODSURG) $(MODGRID)
 rdsrgdesc.o: $(MODSURG)
@@ -139,7 +140,7 @@ rdstcy.o   : $(MODSTCY)
 rdtprof.o  : $(MODTMPRL)
 rdtref.o   : $(MODXREF) $(MODINFO)
 rdvmix.o   : $(MODMOBIL) $(MODXREF)
-rdxclude.o : $(MODXREF)
+rdxclude.o : $(MODXREF) $(MODINFO)
 setscctype.o: $(MODINFO)
 setsrcdy.o : $(MODINFO)
 srcgrpcnt.o: $(MODMERGE) $(MODGRID) $(MODELEV)
@@ -147,7 +148,7 @@ tagtable.o : $(MODINFO) $(MODTAG) $(MODXREF) $(MODSPRO)
 wrchrscc.o : $(MODLISTS) $(MODINFO)
 wridaout.o : $(MODSOURC) $(MODSTCY) $(MODINFO)
 wrorlout.o : $(MODSOURC) $(MODSTCY) $(MODLISTS) $(MODINFO)
-wrsrcgrps.o: $(MODMERGE) $(MODLISTS) $(MODGRID) $(MODELEV)
+wrsrcgrps.o: $(MODMERGE) $(MODGRID) $(MODELEV)
 xreftbl.o  : $(MODXREF) $(MODINFO)
 
 clean:

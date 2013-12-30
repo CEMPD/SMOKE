@@ -40,11 +40,15 @@ C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: AFLAG,  MFLAG,  PFLAG,      ! source flags by category
      &                      AENAME, MENAME, PENAME,     ! inventory file names
+     &                      ASDEV,  MSDEV,  PSDEV,      ! inventory file names
      &                      AIFIP,  MIFIP,  PIFIP,      ! country/state/county codes
      &                      NASRC,  NMSRC,  NPSRC       ! no. of sources
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
+
+C...........   This module contains the source arrays
+        USE MODSOURC, ONLY: CIFIP
 
         IMPLICIT NONE
 
@@ -57,10 +61,10 @@ C...........   INCLUDES:
         INCLUDE 'SETDECL.EXT'   !  FileSetAPI variables and functions
 
 C.........  Local allocatable parameters
-        INTEGER, ALLOCATABLE :: AFIPS ( : )  ! area source co/st/cy codes
-        INTEGER, ALLOCATABLE :: MFIPS ( : )  ! mobile source co/st/cy codes
-        INTEGER, ALLOCATABLE :: PFIPS ( : )  ! point source co/st/cy codes
-        INTEGER, ALLOCATABLE :: TMPFIP( : )  ! all unsort source co/st/cy codes
+        CHARACTER(FIPLEN3), ALLOCATABLE :: AFIPS ( : )  ! area source co/st/cy codes
+        CHARACTER(FIPLEN3), ALLOCATABLE :: MFIPS ( : )  ! mobile source co/st/cy codes
+        CHARACTER(FIPLEN3), ALLOCATABLE :: PFIPS ( : )  ! point source co/st/cy codes
+        CHARACTER(FIPLEN3), ALLOCATABLE :: TMPFIP( : )  ! all unsort source co/st/cy codes
         INTEGER, ALLOCATABLE :: SIDX  ( : )  ! sorting index
 
 C.........  Local parameters
@@ -68,13 +72,15 @@ C.........  Local parameters
 
         INTEGER       IOS          ! i/o status
         INTEGER       MXNFIP       ! max no. FIPS codes
+
         INTEGER    :: NAFIP = 0
         INTEGER    :: NMFIP = 0
         INTEGER    :: NPFIP = 0
-        INTEGER       PFIP         ! tmp fip from previous iteration
+        
+        CHARACTER(FIPLEN3)    PFIP         ! tmp fip from previous iteration
 
         CHARACTER(33), PARAMETER :: PART1 = 
-     &                             'Error reading variable IFIP from '
+     &                             'Error reading variable CIFIP from '
         CHARACTER(15), PARAMETER :: PART3 = ' INVENTORY file'
 
 C...........   Other local variables
@@ -92,11 +98,8 @@ C.........  Read in area source country, state, county code
             ALLOCATE( AIFIP( NASRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'AIFIP', PROGNAME )
 
-            IF( .NOT. READSET( AENAME,'IFIP',ALLAYS3,ALLFILES,
-     &                         0,0,AIFIP ) ) THEN
-                MESG = PART1 // 'AREA' // PART3
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RDINVCHR( 'AREA', AENAME, ASDEV, NASRC, 1, 'CIFIP' )
+            AIFIP = CIFIP
 
 C.............  Count area source country, state, and county codes
             CALL COUNT_FIPS( NASRC, AIFIP, NAFIP )
@@ -116,11 +119,8 @@ C.........  Read in mobile source country, state, county code
             ALLOCATE( MIFIP( NMSRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'MIFIP', PROGNAME )
 
-            IF( .NOT. READSET( MENAME,'IFIP',ALLAYS3,ALLFILES,
-     &                         0,0,MIFIP ) ) THEN
-                MESG = PART1 // 'MOBILE' // PART3
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RDINVCHR( 'MOBILE', MENAME, MSDEV, NMSRC, 1, 'CIFIP' )
+            MIFIP = CIFIP
 
 C.............  Count mobile source country, state, and county codes
             CALL COUNT_FIPS( NMSRC, MIFIP, NMFIP )
@@ -140,11 +140,8 @@ C.........  Read in point source country, state, county code
             ALLOCATE( PIFIP( NPSRC ), STAT=IOS )   ! country/state/county codes
             CALL CHECKMEM( IOS, 'PIFIP', PROGNAME )
 
-            IF( .NOT. READSET( PENAME,'IFIP',ALLAYS3,ALLFILES,
-     &                         0,0,PIFIP ) ) THEN
-                MESG = PART1 // 'POINT' // PART3
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
+            CALL RDINVCHR( 'POINT', PENAME, PSDEV, NPSRC, 1, 'CIFIP' )
+            PIFIP = CIFIP
 
 C.............  Count point source country, state, and county codes
             CALL COUNT_FIPS( NPSRC, PIFIP, NPFIP )
@@ -163,8 +160,8 @@ C           reading state and counties file
         MXNFIP = NAFIP + NMFIP + NPFIP
         ALLOCATE( TMPFIP( MXNFIP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'TMPFIP', PROGNAME )
-        ALLOCATE( INVIFIP( MXNFIP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INVIFIP', PROGNAME )
+        ALLOCATE( INVCFIP( MXNFIP ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INVCFIP', PROGNAME )
         ALLOCATE( SIDX( MXNFIP ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SIDX', PROGNAME )
 
@@ -193,17 +190,17 @@ C.........  Add point sources to complete FIPS list
         MXNFIP = N
 
 C.........  Sort all FIPS codes
-        CALL SORTI1( MXNFIP, SIDX, TMPFIP )
+        CALL SORTIC( MXNFIP, SIDX, TMPFIP )
 
 C.........  Store unique list across all source categories
         N = 0
-        PFIP =  -9
+        PFIP = ' '
         DO K = 1, MXNFIP
 
             J = SIDX( K )
             IF( TMPFIP( J ) .NE. PFIP ) THEN
                 N = N + 1
-                INVIFIP( N ) = TMPFIP( J )
+                INVCFIP( N ) = TMPFIP( J )
             END IF
 
             PFIP = TMPFIP( J )
@@ -233,25 +230,26 @@ C*****************  INTERNAL SUBPROGRAMS  ******************************
 
 C.............  This subprogram counts the FIPS codes in the sorted 
 C               input array of codes
-            SUBROUTINE COUNT_FIPS( NSRC, IFIP, NFIP )
+            SUBROUTINE COUNT_FIPS( NSRC, CIFIP, NFIP )
 
 C.............  Subprogram arguments
-            INTEGER, INTENT (IN) :: NSRC
-            INTEGER, INTENT (IN) :: IFIP( NSRC )
-            INTEGER, INTENT(OUT) :: NFIP
+            INTEGER,            INTENT (IN) :: NSRC
+            CHARACTER(FIPLEN3), INTENT (IN) :: CIFIP( NSRC )
+            INTEGER,            INTENT(OUT) :: NFIP
 
 C.............  Local variables
             INTEGER  K
-            INTEGER  PFIP   ! from previous iteration
+
+            CHARACTER(FIPLEN3) PFIP   ! from previous iteration
 
 C----------------------------------------------------------------------
 
             K = 0
-            PFIP = -9
+            PFIP = ' '
             DO S = 1, NSRC
 
-               IF( IFIP( S ) .NE. PFIP ) K = K + 1
-               PFIP = IFIP( S )
+               IF( CIFIP( S ) .NE. PFIP ) K = K + 1
+               PFIP = CIFIP( S )
 
             END DO
             NFIP = K
@@ -263,30 +261,31 @@ C....................................................................
 
 C.............  This subprogram creates a list of unique FIPS codes
 C               from the sorted input list
-            SUBROUTINE CREATE_FIPS( NSRC, NFIP, IFIP, FIPS )
+            SUBROUTINE CREATE_FIPS( NSRC, NFIP, CIFIP, CFIPS )
 
 C.............  Subprogram arguments
-            INTEGER, INTENT (IN) :: NSRC
-            INTEGER, INTENT (IN) :: NFIP
-            INTEGER, INTENT (IN) :: IFIP( NSRC )
-            INTEGER, INTENT(OUT) :: FIPS( NFIP )
+            INTEGER,            INTENT (IN) :: NSRC
+            INTEGER,            INTENT (IN) :: NFIP
+            CHARACTER(FIPLEN3), INTENT (IN) :: CIFIP( NSRC )
+            CHARACTER(FIPLEN3), INTENT(OUT) :: CFIPS( NFIP )
 
 C.............  Local variables
             INTEGER  K
-            INTEGER  PFIP   ! from previous iteration
+
+            CHARACTER(FIPLEN3)  PFIP   ! from previous iteration
 
 C----------------------------------------------------------------------
 
             K = 0
-            PFIP = -9
+            PFIP = ' '
             DO S = 1, NSRC
 
-               IF( IFIP( S ) .NE. PFIP ) THEN
+               IF( CIFIP( S ) .NE. PFIP ) THEN
                    K = K + 1
-                   FIPS( K ) = IFIP( S )
+                   CFIPS( K ) = CIFIP( S )
                END IF
 
-               PFIP = IFIP( S )
+               PFIP = CIFIP( S )
 
             END DO
 

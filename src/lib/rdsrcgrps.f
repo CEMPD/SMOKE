@@ -50,7 +50,7 @@ C.........  MODULES for public variables
      &                      PENAME, PSDEV
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVSCC, INVSCC
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
@@ -63,8 +63,8 @@ C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NSRGFIPS, SRGFIPS, NCELLS, FIPCELL
 
 C...........   This module contains the inventory arrays
-        USE MODSOURC, ONLY: IFIP, CSCC, CSOURC
-        
+        USE MODSOURC, ONLY: CIFIP, CSCC, CSOURC
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -77,9 +77,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT
         LOGICAL         BLKORCMT, CHKINT
         INTEGER         PROMPTFFILE
+        LOGICAL         USEEXPGEO
  
         EXTERNAL  GETFLINE, STR2INT, FIND1, ENVINT, BLKORCMT, FINDC,
-     &            CHKINT, INDEX1, PROMPTFFILE
+     &            CHKINT, INDEX1, PROMPTFFILE, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: SGDEV           ! file unit number
@@ -109,7 +110,6 @@ C...........   Other local variables
         INTEGER         MXWARN  !  max no. warnings of each type
         INTEGER         NLINES  !  number of lines
         INTEGER         INUM    !  source group number
-        INTEGER         IFIPT   !  integer FIPS code
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
         INTEGER         NSRC    !  number of sources or (for biogenics) FIPS
@@ -143,7 +143,7 @@ C.........  Check if Movesmrg has already loaded the data it needs
             NSRC = NMSRC
 
         ELSE
-            IVARNAMS( 1 ) = 'IFIP'
+            IVARNAMS( 1 ) = 'CIFIP'
             IVARNAMS( 2 ) = 'CSCC'
             NINVARR = 2
             IF( AFLAG ) THEN
@@ -291,9 +291,16 @@ C.................  Reserve group number zero
             END IF
 
 C.............  Check FIPS code
-            IF( CHKINT( SEGMENT( 2 ) ) ) THEN
+            IF( .NOT. USEEXPGEO .AND.
+     &          .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+                EFLAG = .TRUE.
+                WRITE( MESG,94010 ) 'ERROR: Bad FIPS code at line',
+     &                 IREC, 'of source grouping file.'
+                CALL M3MESG( MESG )
+                CYCLE
+                        
+            ELSE
                 CFIP = SEGMENT( 2 )
-                IFIPT = STR2INT( CFIP )
 
 C.................  Standardize character version of FIPS code                
                 CALL FLTRNEG( CFIP )
@@ -301,11 +308,11 @@ C.................  Standardize character version of FIPS code
 
 C.................  Check if FIPS code matches inventory or 
 C                   surrogates (for biogenics)
-                IF( CFIP( 4:6 ) /= '000' ) THEN
+                IF( USEEXPGEO .OR. CFIP( FIPEXPLEN3+4:FIPEXPLEN3+6 ) /= '000' ) THEN
                     IF( BFLAG ) THEN
-                        J = FIND1( IFIPT, NSRGFIPS, SRGFIPS )
+                        J = FINDC( CFIP, NSRGFIPS, SRGFIPS )
                     ELSE
-                        J = FIND1( IFIPT, NINVIFIP, INVIFIP )
+                        J = FINDC( CFIP, NINVIFIP, INVCFIP )
                     END IF
 
                     IF( J .LE. 0 ) THEN
@@ -316,13 +323,6 @@ C                   surrogates (for biogenics)
                         CYCLE
                     END IF
                 END IF
-                        
-            ELSE
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'ERROR: Bad FIPS code at line',
-     &                 IREC, 'of source grouping file.'
-                CALL M3MESG( MESG )
-                CYCLE
             END IF
 
 C.............  Standardize SCC code
@@ -429,13 +429,11 @@ C.........  Assign sources to source groups
         DO I = 1, NSRC
             
             IF( BFLAG ) THEN
-                IFIPT = SRGFIPS( I )
+                CFIP = SRGFIPS( I )
             ELSE
-                IFIPT = IFIP( I )
+                CFIP = CIFIP( I )
             END IF
 
-            WRITE( CFIP, '(I5.5)' ) IFIPT
-            CALL PADZERO( CFIP )  ! pad with zeros
             CSTA = CFIP( 1:STALEN3 ) // '000'
             
             INDX = 0
@@ -486,7 +484,7 @@ C.................  full FIPS, SCC
                 INDX = FINDC( CSRC, N, CGRPSRC )
                 
 C.................  state, SCC
-                IF( INDX .LT. 0 ) THEN
+                IF( INDX .LT. 0 .AND. .NOT. USEEXPGEO ) THEN
                     CSRC = CSTA // TSCC
                     INDX = FINDC( CSRC, N, CGRPSRC )
                 END IF
@@ -506,7 +504,7 @@ C.................  full FIPS
                 INDX = FINDC( CSRC, N, CGRPSRC )
                 
 C.................  state
-                IF( INDX .LT. 0 ) THEN
+                IF( INDX .LT. 0 .AND. .NOT. USEEXPGEO ) THEN
                     CSRC = CSTA // REPEAT( '0', SCCLEN3 )
                     INDX = FINDC( CSRC, N, CGRPSRC )
                 END IF
@@ -532,20 +530,20 @@ C.............  Add source to report file
 
             IF( AFLAG .OR. MFLAG ) THEN
 
-                WRITE( RDEV,'(I8,1X,I8,1X,A,1X,I8)' ) 
-     &            I, IFIP( I ), CSCC( I ), GRPNUM
+                WRITE( RDEV,'(I8,1X,A,1X,A,1X,I8)' ) 
+     &            I, CIFIP( I ), CSCC( I ), GRPNUM
                 
             ELSE IF( BFLAG ) THEN
             
-                WRITE( RDEV,'(I8,1X,I8)' ) SRGFIPS( I ), GRPNUM
+                WRITE( RDEV,'(A,1X,I8)' ) SRGFIPS( I ), GRPNUM
             
             ELSE IF( PFLAG ) THEN
             
                 CPLTID = CSOURC( I )( PLTPOS3:PLTPOS3+PLTLEN3 )
                 CPNTID = CSOURC( I )( CH1POS3:CH1POS3+CHRLEN3 )
 
-                WRITE( RDEV,'(I8,1X,I8,1X,A,1X,A,1X,A,1X,I8)' ) 
-     &            I, IFIP( I ), CSCC( I ), CPLTID, CPNTID, GRPNUM
+                WRITE( RDEV,'(I8,1X,A,1X,A,1X,A,1X,A,1X,I8)' ) 
+     &            I, CIFIP( I ), CSCC( I ), CPLTID, CPNTID, GRPNUM
 
             END IF
         

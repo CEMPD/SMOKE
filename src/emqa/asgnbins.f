@@ -40,7 +40,7 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
+        USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, IMON,
      &                      IWEK, IDIU, SPPROF, CISIC, CMACT, CNAICS,
      &                      CSRCTYP, CORIS, CINTGR
 
@@ -61,7 +61,7 @@ C.........  This module contains report arrays for each output bin
      &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
-     &                      BINORSIDX, BINSTKGRP, BININTGR
+     &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS
@@ -72,7 +72,7 @@ C.........  This module contains arrays for plume-in-grid and major sources
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, NSTATE, STATCOD, NCOUNTY,
      &                     CNTYCOD, CTRYPOPL, STATPOPL, CNTYPOPL,
-     &                     NORIS, ORISLST
+     &                     NORIS, ORISLST, NGEOLEV1, GEOLEV1COD
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
@@ -86,8 +86,9 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER    INDEX1
         INTEGER    FIND1
         INTEGER    FINDC
+        LOGICAL    USEEXPGEO
 
-        EXTERNAL   INDEX1, FIND1, FINDC
+        EXTERNAL   INDEX1, FIND1, FINDC, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT    ! current report number
@@ -111,11 +112,9 @@ C...........   Local variables
 
         INTEGER         COL               ! tmp column number
         INTEGER         DIUID             ! tmp diurnal profile number
-        INTEGER         FIP               ! tmp country/state/county
         INTEGER         IOS               ! i/o status
         INTEGER         MONID             ! tmp monthly profile number
         INTEGER         NDATA             ! no. output data columns for current
-        INTEGER         PREVFIP           ! previous FIPs code
         INTEGER         PREVSRCID         ! previous source ID
         INTEGER         RCL               ! tmp road class code
         INTEGER         ROW               ! tmp row number
@@ -143,6 +142,10 @@ C...........   Local variables
         CHARACTER(SPNLEN3) SPCID      ! tmp speciation profile
         CHARACTER(PLTLEN3) PLANT      ! tmp plant ID
         CHARACTER(PLTLEN3) PREVPLT    ! previous plant ID
+        CHARACTER(FIPLEN3) CFIP       ! tmp country/state/county
+        CHARACTER(FIPLEN3) CCNTRY     ! tmp country
+        CHARACTER(FIPLEN3) CSTA       ! tmp country/state
+        CHARACTER(FIPLEN3) PREVFIP    ! previous FIPs code
 
         CHARACTER(16) :: PROGNAME = 'ASGNBINS' ! program name
 
@@ -152,7 +155,7 @@ C   begin body of subroutine ASGNBINS
 C.........  Set report-specific local settings
         NDATA   = ALLRPT( RCNT )%NUMDATA
         RPT_    = ALLRPT( RCNT )
-        LREGION = ( RPT_%BYCNTY .OR. RPT_%BYSTAT .OR. RPT_%BYCNRY )
+        LREGION = ( RPT_%BYGEO1 .OR. RPT_%BYCNTY .OR. RPT_%BYSTAT .OR. RPT_%BYCNRY )
         MXOUTREC = NOUTREC * BUFLEN
 
 C.........  Memory check
@@ -173,9 +176,9 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF,'(A,I2.2,A,I2,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
+        WRITE( FMTBUF,'(A,I2.2,A,I2.2,A,I2,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
      &                A,I1,A,I1,A)') 
-     &    '(4I8,A',SCCLEN3,',A',SICLEN3,',5I8,A', SPNLEN3,',A',
+     &    '(3I8,A',FIPLEN3,'A',SCCLEN3,',A',SICLEN3,',5I8,A', SPNLEN3,',A',
      &    PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', 
      &    STPLEN3, ',I8,A',INTLEN3,')'
 
@@ -184,7 +187,7 @@ C           report
         COL    = 0
         ROW    = 0
         SRCID  = 0
-        FIP    = 0
+        CFIP   = ' '
         RCL    = 0
         SRGID1 = 0
         SRGID2 = 0
@@ -221,7 +224,7 @@ C.............  If BY CELL, insert X-cell and then Y-cell
 C.............  If BY SOURCE, then nothing else needed
             IF( RPT_%BYSRC ) THEN
                 SRCID = OUTSRC( I )
-                FIP   = IFIP( SRCID )
+                CFIP  = CIFIP( SRCID )
                 IF( .NOT. AFLAG ) THEN
                     SCC   = CSCC( SRCID )
                     IF( RPT_%BYSIC ) SIC = CISIC( SRCID )
@@ -233,20 +236,27 @@ C.................  If BY COUNTY insert region code (state and country not
 C                   needed)
                 IF( RPT_%BYCNTY ) THEN
 
-                    FIP = IFIP( OUTSRC( I ) )
+                    CFIP = CIFIP( OUTSRC( I ) )
 
 C.................  If BY STATE, insert region code with trailing zeros 
 C                   (country not needed)
                 ELSE IF( RPT_%BYSTAT ) THEN
-
-                    FIP = IFIP( OUTSRC( I ) )
-                    FIP = ( FIP / 1000 ) * 1000    ! integer math
+                
+                    CFIP = CIFIP( OUTSRC( I ) )( 1:STALEN3 ) // '000'
 
 C.................  If BY COUNTRY, insert region code with trailing zeros
                 ELSE IF( RPT_%BYCNRY ) THEN
 
-                    FIP = IFIP( OUTSRC( I ) )
-                    FIP = ( FIP / 100000 ) * 100000    ! integer math
+                    IF( USEEXPGEO ) THEN
+                        CFIP = CIFIP( OUTSRC( I ) )( 1:FIPEXPLEN3 ) // '000000'
+                    ELSE
+                        CFIP = CIFIP( OUTSRC( I ) )( 1:FIPEXPLEN3+1 ) // '00000'
+                    END IF
+
+C.................  If BY GEOCODE1, insert level 1 code with trailing zeros
+                ELSE IF( RPT_%BYGEO1 ) THEN
+
+                    CFIP = CIFIP( OUTSRC( I ) )( 1:3 ) // '000000000'
 
                 END IF  ! End by county, state, or country
 
@@ -403,15 +413,15 @@ C                   number until plant changes
 
 C...............  If this is the same plant, then set the old source
 C                 ID so that the bins will still be "by plant"
-                IF ( IFIP( S ) .EQ. PREVFIP .AND. 
-     &               PLANT     .EQ. PREVPLT       ) THEN
+                IF ( CIFIP( S ) .EQ. PREVFIP .AND. 
+     &               PLANT      .EQ. PREVPLT       ) THEN
                     SRCID = PREVSRCID
 
 C...............  If this is a different plant, the reset SRCID to
 C                 be the first source for the current plant
                 ELSE
                     SRCID = S
-                    PREVFIP   = IFIP( S )
+                    PREVFIP   = CIFIP( S )
                     PREVPLT   = PLANT
                     PREVSRCID = S
                 END IF
@@ -434,7 +444,7 @@ C.................  If BY ELEVSTAT, insert elevated status code
             END IF  ! End by elevated status
             
 C.............  Store sorting information for current record
-            WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, SIC,
+            WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, CFIP, SCC, SIC,
      &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
      &                             SPCID, PLANT, ORIS, RCL, ESTAT, MACT,
      &                             NAICS, SRCTYP, STKGRP, INTGR
@@ -466,6 +476,7 @@ C.........  Assign bins to output records based on sorting array
 
 C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINBAD    ) ) DEALLOCATE( BINBAD )
+        IF( ALLOCATED( BINGEO1IDX) ) DEALLOCATE( BINGEO1IDX )
         IF( ALLOCATED( BINCOIDX  ) ) DEALLOCATE( BINCOIDX )
         IF( ALLOCATED( BINSTIDX  ) ) DEALLOCATE( BINSTIDX )
         IF( ALLOCATED( BINCYIDX  ) ) DEALLOCATE( BINCYIDX )
@@ -502,6 +513,10 @@ C.........  Allocate memory for bins
         CALL CHECKMEM( IOS, 'BINBAD', PROGNAME )
         BINBAD = 0    ! array
 
+        IF( RPT_%BYGEO1NAM ) THEN
+            ALLOCATE( BINGEO1IDX ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINGEO1IDX', PROGNAME )
+        ENDIF
         IF( RPT_%BYCONAM ) THEN
             ALLOCATE( BINCOIDX ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINCOIDX', PROGNAME )
@@ -650,18 +665,29 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( B .NE. LB ) THEN
 
                 READ( BUFFER,FMTBUF ) 
-     &                COL, ROW, SRCID, FIP, SCC, SIC, SRGID1, SRGID2, 
+     &                COL, ROW, SRCID, CFIP, SCC, SIC, SRGID1, SRGID2, 
      &                MONID, WEKID, DIUID, SPCID, PLANT, ORIS, RCL, 
      &                ESTAT, MACT, NAICS, SRCTYP, STKGRP, INTGR
 
 C.................  Store region code
-                IF( LREGION ) BINREGN( B ) = FIP
+                IF( LREGION ) BINREGN( B ) = CFIP
+
+C.................  Store geocode level 1 index.
+                IF( RPT_%BYGEO1NAM ) THEN
+                    K = FINDC( CFIP( 1:3 ) // '000000000', NGEOLEV1, GEOLEV1COD )
+                    BINGEO1IDX( B ) = K
+
+                ENDIF
 
 C.................  Store country name index. Note for population that some
 C                   form of "by region is required"
                 IF( RPT_%BYCONAM ) THEN
-                    F = ( FIP / 100000 ) * 100000
-                    K = FIND1( F, NCOUNTRY, CTRYCOD )
+                    IF( USEEXPGEO ) THEN
+                        CCNTRY = CFIP( 1:FIPEXPLEN3 ) // '000000'
+                    ELSE
+                        CCNTRY = CFIP( 1:FIPEXPLEN3+1 ) // '00000'
+                    END IF
+                    K = FINDC( CCNTRY, NCOUNTRY, CTRYCOD )
                     BINCOIDX( B ) = K
 
 C.....................  If using population normalization, initialize with 
@@ -683,8 +709,8 @@ C                           that will not be able to have normalization by pop.
 C.................  Store state name index. Note for population that some
 C                   form of "by region is required"
                 IF( RPT_%BYSTNAM ) THEN
-                    F = ( FIP / 1000 ) * 1000        ! In case by-county also
-                    K = FIND1( F, NSTATE, STATCOD )
+                    CSTA = CFIP( 1:STALEN3 ) // '000'
+                    K = FINDC( CSTA, NSTATE, STATCOD )
                     BINSTIDX( B ) = K
 
 C.....................  If using population normalization, reset with 
@@ -705,7 +731,7 @@ C                           that will not be able to have normalization by pop.
 C.................  Store county name index. Note for population that some
 C                   form of "by region is required"
                 IF( RPT_%BYCYNAM ) THEN
-                    K = FIND1( FIP, NCOUNTY, CNTYCOD )
+                    K = FINDC( CFIP, NCOUNTY, CNTYCOD )
                     BINCYIDX( B ) = K
 
 C.....................  If using population normalization, reset with 

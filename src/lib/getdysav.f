@@ -1,5 +1,5 @@
 
-        SUBROUTINE GETDYSAV( NSRC, IFIP, LDAYSAV )
+        SUBROUTINE GETDYSAV( NSRC, CIFIP, LDAYSAV )
 
 C***********************************************************************
 C  subroutine GETDYSAV body starts at line < >
@@ -43,19 +43,19 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER(2)  CRLF
         LOGICAL      ENVYN
-        INTEGER      FIND1
+        INTEGER      FINDC
         INTEGER      GETFLINE
         INTEGER      PROMPTFFILE
 
-        EXTERNAL     CRLF, ENVYN, GETFLINE, FIND1, PROMPTFFILE
+        EXTERNAL     CRLF, ENVYN, GETFLINE, FINDC, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: NSRC             ! no. sources
-        INTEGER     , INTENT (IN) :: IFIP   ( NSRC )  ! country/state/co codes
-        LOGICAL     , INTENT(OUT) :: LDAYSAV( NSRC )  ! true: source gets DLS
+        INTEGER           , INTENT (IN) :: NSRC             ! no. sources
+        CHARACTER(FIPLEN3), INTENT (IN) :: CIFIP( NSRC )    ! country/state/co codes
+        LOGICAL           , INTENT(OUT) :: LDAYSAV( NSRC )  ! true: source gets DLS
 
 C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: EXMPTCSC( : )
+        CHARACTER(FIPLEN3), ALLOCATABLE :: EXMPTCSC( : )
 
 C...........   Logical names and unit numbers
         INTEGER       FDEV   ! unit no. for daylight savings exemption file
@@ -63,17 +63,17 @@ C...........   Logical names and unit numbers
 C...........   Other local variables
         INTEGER       K, N, S       ! counters and indices
 
-        INTEGER       CNY           ! tmp country code
-        INTEGER       CSC           ! tmp country/state/county code
         INTEGER       IOS           ! i/o status
         INTEGER       IREC          ! record counter
         INTEGER       NEXEMPT       ! no. entries in the exemptions file
         INTEGER       NLINES        ! no. lines in input file
-        INTEGER       STA           ! tmp country/state code
 
         LOGICAL    :: EFLAG = .TRUE. ! true: error found 
         LOGICAL    :: FFLAG = .TRUE. ! true: use daylight time exemption file 
 
+        CHARACTER(FIPLEN3) CSC       ! tmp country/state/county code
+        CHARACTER(FIPLEN3) STA       ! tmp country/state code
+        CHARACTER(FIPLEN3) CNY       ! tmp country code
         CHARACTER(300) TRAILER       ! ending part of output log message
         CHARACTER(300) MESG          ! message buffer
 
@@ -134,47 +134,49 @@ C.........  Loop through file and read it
 
         NEXEMPT = N
 
-        TRAILER = 'exempted from daylight savings time'
+        TRAILER = ' exempted from daylight savings time'
 
 C.........  Loop through sources and see if any of the countries, states, or
 C           counties do not use daylight time
         DO S = 1, NSRC
 
-            CSC =  IFIP( S )
+            CSC =  CIFIP( S )
 
 C.............  Search for county
-            K = FIND1( CSC,  NEXEMPT, EXMPTCSC )
+            K = FINDC( CSC,  NEXEMPT, EXMPTCSC )
 
             IF( K .GT. 0 ) THEN
 
                 LDAYSAV( S ) = .FALSE.
-                WRITE( MESG,94010 ) 'County', CSC, TRAILER
+                MESG = 'County ' // CSC // TRAILER
                 CALL M3MESG( MESG )
                 CYCLE
 
             END IF
 
 C.............  Search for state
-            STA = 1000* ( CSC / 1000 )
-            K = FIND1( STA,  NEXEMPT, EXMPTCSC )
+            STA = CSC
+            STA( STALEN3+1:FIPLEN3 ) = REPEAT( '0', FIPLEN3-STALEN3+1 )
+            K = FINDC( STA,  NEXEMPT, EXMPTCSC )
 
             IF( K .GT. 0 ) THEN
 
                 LDAYSAV( S ) = .FALSE.
-                WRITE( MESG,94010 ) 'State', STA, TRAILER
+                MESG = 'State ' // STA // TRAILER
                 CALL M3MESG( MESG )
                 CYCLE
 
             END IF
 
 C.............  Search for country
-            CNY = 100000 * ( CSC / 100000 )
-            K = FIND1( CNY, NEXEMPT, EXMPTCSC )
+            CNY = CSC
+            CNY( FIPEXPLEN3+2:FIPLEN3 ) = REPEAT( '0', FIPLEN3-FIPEXPLEN3+2 )
+            K = FINDC( CNY, NEXEMPT, EXMPTCSC )
 
             IF( K .GT. 0 ) THEN
 
                 LDAYSAV( S ) = .FALSE.
-                WRITE( MESG,94010 ) 'Country', CNY, TRAILER
+                MESG = 'Country ' // CNY // TRAILER
                 CALL M3MESG( MESG )
                 CYCLE
 

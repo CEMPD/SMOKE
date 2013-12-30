@@ -127,7 +127,6 @@ C...........   Other local variables
 
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
-        INTEGER          FIP              ! tmp co/st/cy code
         INTEGER, SAVE :: FLOWPOS          ! position of hourly flow rate variable
         INTEGER          HH               ! 2-digit hour (0-23) from CEM data
         INTEGER          INVOBPOS         ! position in inventory ORIS/boiler list
@@ -461,8 +460,8 @@ C.............  Convert from times 0 through 23 to HHMMSS
             JTIME = HH * 10000
 
 C.............  Convert date and time to output time zone
-            FIP  = INVORFP ( INVORPOS )
-            ZONE = GETTZONE( FIP )
+            CFIP = INVORFP ( INVORPOS )
+            ZONE = GETTZONE( CFIP )
             CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
 
 C.............  Determine time step pointer based on reference time

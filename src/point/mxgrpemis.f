@@ -38,7 +38,7 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: IFIP, TZONES
+        USE MODSOURC, ONLY: CIFIP, TZONES
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: LELVRNK, LPNGRNK, GROUPID, NEVPEMV, MXEMIS,
@@ -474,7 +474,7 @@ C.................  Write message for day of week and date
 
 C.................  Create array of which sources are affected by daylight 
 C                  savings
-                CALL GETDYSAV( NSRC, IFIP, LDAYSAV )
+                CALL GETDYSAV( NSRC, CIFIP, LDAYSAV )
 
 C.................  Set start and end hours of day for all sources
                 CALL SETSRCDY( NSRC, JDATE, TZONES, LDAYSAV, .FALSE., 

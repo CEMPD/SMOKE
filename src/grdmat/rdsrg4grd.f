@@ -70,6 +70,8 @@ C...........   Subroutine arguments
 C...........   Local parameters
 
         INTEGER, PARAMETER :: MXSEG = 5           ! # of potential line segments
+        
+        CHARACTER(200), ALLOCATABLE :: SORTBUF( : ) ! concatenated info for sorting
 
 C...........   Other arrays
 
@@ -82,10 +84,8 @@ C...........   Local variables
         INTEGER         CELCNT                ! cell counter
         INTEGER         CNTCHK                ! check for message overflow count
         INTEGER         COL                   ! Temp grid column number (x-axis)
-        INTEGER         FIP                   ! tmp country/state/county code
         INTEGER         IOS                   ! i/o status
         INTEGER         LCEL                  ! cell ID from previous iteration
-        INTEGER         LFIP                  ! county code from prev iteration
         INTEGER         NSRGALL               ! No. entries in surrgoates file
         INTEGER         ROW                   ! Tmp grid row number (y-axis)
         INTEGER         SSC                   ! Tmp spatial surrogate code
@@ -100,6 +100,8 @@ C...........   Local variables
         LOGICAL      :: OFLAG = .FALSE.       ! true: overall warning flag
         LOGICAL         WFLAG                 ! true: per iteration warning flag
 
+        CHARACTER(FIPLEN3) CFIP               ! tmp country/state/county code
+        CHARACTER(FIPLEN3) LFIP               ! county code from prev iteration
         CHARACTER(80)   LINE                  ! Read buffer for a line
         CHARACTER(300)  MESG                  ! Message buffer
 
@@ -129,6 +131,9 @@ C......... Allocate memory for surrogate arrays
 
         ALLOCATE( IDXSRGB( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXSRGB', PROGNAME )
+        
+        ALLOCATE( SORTBUF( NSRGREC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SORTBUF', PROGNAME )
 
         ALLOCATE( SCELLA( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCELLA', PROGNAME )
@@ -146,7 +151,7 @@ C.........  Initialize arrays
         IDXSRGA = 0  ! array
         IDXSRGB = 0  ! array
         SCELLA  = 0  ! array
-        SFIPSA  = 0. ! array
+        SFIPSA  = ' '! array
         SSRGIDA = 0. ! array
         SFRACA  = 0. ! array
 
@@ -171,7 +176,8 @@ C                  quotes around the text strings
                 CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
                 SSC    = STR2INT ( SEGMENT( 1 ) )
-                FIP    = STR2INT ( SEGMENT( 2 ) )
+                CFIP   = SEGMENT( 2 )
+                CALL PADZERO( CFIP )
                 COL    = STR2INT ( SEGMENT( 3 ) )
                 ROW    = STR2INT ( SEGMENT( 4 ) )
                 RATIO  = STR2REAL( SEGMENT( 5 ) )
@@ -190,7 +196,7 @@ C.................  Check the value of the ratio value
                 IF( RATIO .GT. 1. .AND. CFLAG ) THEN
                     WRITE( MESG,94020 )
      &                 'WARNING: resetting surrogates ratio ' //
-     &                 ' of Co/St/Ct (FIPS):', FIP, 'and surrogate :',
+     &                 ' of Co/St/Ct (FIPS): ' // CFIP // ' and surrogate :',
      &                 SSC, ' from', RATIO, 'to 1.0'
                     CALL M3MESG( MESG )
 
@@ -205,9 +211,10 @@ C.................  Skip entry if rows and columns are out of range
                 IDXSRGA( J ) = J
                 IDXSRGB( J ) = J
                 SCELLA ( J ) = (ROW-1)*NCOLS + COL
-                SFIPSA ( J ) = FIP
+                SFIPSA ( J ) = CFIP
                 SSRGIDA( J ) = SSC
                 SFRACA ( J ) = RATIO
+                WRITE( SORTBUF( J ), '(A,I8,I8)' ) SFIPSA( J ), SCELLA( J ), SSRGIDA( J )
 
 
             END DO
@@ -233,28 +240,28 @@ C.............  Write out final warning for row/col out of range
 C.........  Now create the derived surrogates tables from the original data...
 
 C.........  Sort surrogates by county code & cell & surrogate code
-        CALL SORTI3( NSRGALL, IDXSRGA, SFIPSA, SCELLA, SSRGIDA )
+        CALL SORTIC( NSRGALL, IDXSRGA, SORTBUF )
 
 C.........  Count county codes in surrogates file and maximum number of cells
 C       per cy/st/co code.
-        LFIP     = -1
+        LFIP     = ' '
         LCEL     = -1
         MXCFIP   = 0
         NSRGFIPS = 0
         CELCNT   = 0
         DO I = 1, NSRGALL
       
-            J   = IDXSRGA( I )
-            FIP = SFIPSA ( J )
-            C   = SCELLA ( J )
+            J    = IDXSRGA( I )
+            CFIP = SFIPSA ( J )
+            C    = SCELLA ( J )
       
-            IF( FIP .NE. LFIP ) THEN
+            IF( CFIP .NE. LFIP ) THEN
       
                 IF( CELCNT .GT. MXCFIP ) MXCFIP = CELCNT
       
                 NSRGFIPS = NSRGFIPS + 1  ! incrmt cntr for county in srg file
                 CELCNT   = 0             ! init cell counter per county
-                LFIP     = FIP
+                LFIP     = CFIP
       
            END IF
       
@@ -287,13 +294,13 @@ C.........  Allocate memory for derived surrogates tables
 
 C.........  Initialize arrays
         NCELLS  = 0  ! array
-        SRGFIPS = 0  ! array
+        SRGFIPS = ' '! array
         FIPCELL = 0  ! array
         SRGFRAC = 0. ! array
         SRGCSUM = 0. ! array
       
 C........  Store the surrogate fractions, FIPS codes, and cell numbers...
-        LFIP     = -1
+        LFIP     = ' '
         LCEL     = -1
         LCC      = -1
         LRATIO   = -1.
@@ -301,24 +308,24 @@ C........  Store the surrogate fractions, FIPS codes, and cell numbers...
         DO I = 1, NSRGALL
 
             J     = IDXSRGA( I )
-            FIP   = SFIPSA ( J )
+            CFIP  = SFIPSA ( J )
             C     = SCELLA ( J )
             SSC   = SSRGIDA( J )
             RATIO = SFRACA ( J )
       
-            IF( FIP .NE. LFIP ) THEN
+            IF( CFIP .NE. LFIP ) THEN
       
                 NSRGFIPS = NSRGFIPS + 1  ! incrmt cntr for county in srg file
-                SRGFIPS( NSRGFIPS ) = FIP
+                SRGFIPS( NSRGFIPS ) = CFIP
                 CELCNT   = 0             ! init cell counter per county
-                LFIP     = FIP
+                LFIP     = CFIP
                 LRATIO = -1.
                 LCC    = -1
 
             ELSE
                 IF( LCC .EQ. C .AND. LRATIO .EQ. RATIO .AND. CFLAG) THEN
                     WRITE( MESG,94011 ) 'ERROR: Duplicate entries' //
-     &                   ' with same FIPS', FIP, 'surrogate ', SSC,
+     &                   ' with same FIPS' // CFIP // 'surrogate ', SSC,
      &                   ' and fraction value', RATIO
                     CALL M3MSG2( MESG )                    
                     EFLAG = .TRUE.
@@ -326,7 +333,7 @@ C........  Store the surrogate fractions, FIPS codes, and cell numbers...
 
                 IF( LCC .EQ. C .AND. LRATIO .NE. RATIO .AND. CFLAG) THEN
                     WRITE( MESG,94012 ) 'WARNING: Duplicate entries' //
-     &                   ' with same FIPS', FIP, 'and surrogate ', SSC,
+     &                   ' with same FIPS' // CFIP // 'and surrogate ', SSC,
      &                   ' with different fraction values', RATIO,
      &                   ' and ', LRATIO
                     CALL M3MSG2( MESG )                    
@@ -369,8 +376,8 @@ C           less than or equal to 1.
 C.................  Check if county total surrogates greater than 1
                 IF( SRGCSUM( K,I ) .GT. 1.0 ) THEN
                     WRITE( MESG,94030 ) 'WARNING: Re-normalizing ' //
-     &                 'county total surrogate fractions of Co/St/Ct: ',
-     &                 SRGFIPS( I ), ' :: Surrogate:', SSC ,
+     &                 'county total surrogate fractions of Co/St/Ct: ' //
+     &                 SRGFIPS( I ) // ' :: Surrogate:', SSC ,
      &                  ' greater than 1 :: ', SRGCSUM( K,I )
                     CALL M3MESG( MESG )
 
@@ -387,7 +394,7 @@ C.................  Renormalize all surrogates with totals > 1
         END IF
 
 C.........  Deallocate local variables
-        DEALLOCATE( IDXSRGA, IDXSRGB, SCELLA, SFIPSA, SSRGIDA, SFRACA )
+        DEALLOCATE( IDXSRGA, IDXSRGB, SORTBUF, SCELLA, SFIPSA, SSRGIDA, SFRACA )
 
         IF( EFLAG ) THEN
             MESG = ' Problem with defining the size of gridding matrix.'
@@ -407,13 +414,13 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-94011   FORMAT( A, I8, 1X, A, I5, 1X, A, F8.4 )
+94011   FORMAT( A, I5, 1X, A, F8.4 )
 
-94012   FORMAT( A, I8, 1X, A, I5, 1X, A, F8.4, A, F8.4 )
+94012   FORMAT( A, I5, 1X, A, F8.4, A, F8.4 )
 
-94020   FORMAT( A, 1X, I6.6, 1X, A, 1X, I3.3, 1X, A, 1X, F11.8, 1X, A )
+94020   FORMAT( A, 1X, I3.3, 1X, A, 1X, F11.8, 1X, A )
 
-94030   FORMAT( A, 1X, I6.6, A, 1X, I3.3, A, 1X, F11.8 )
+94030   FORMAT( A, 1X, I3.3, A, 1X, F11.8 )
 
         END SUBROUTINE RDSRG4GRD
   

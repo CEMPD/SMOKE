@@ -62,9 +62,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         LOGICAL         ENVYN
         INTEGER         STR2INT
-        LOGICAL         SETSCCTYPE, CHKEXPSCC, CHKEXPSIC
+        LOGICAL         SETSCCTYPE, CHKEXPSCC, CHKEXPSIC, USEEXPGEO
 
-        EXTERNAL   CRLF, ENVYN, STR2INT, SETSCCTYPE
+        EXTERNAL   CRLF, ENVYN, STR2INT, SETSCCTYPE, CHKEXPSCC, CHKEXPSIC, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: OPTYPE ! operation type (tmprl,spec,ctg...)
@@ -88,8 +88,8 @@ C             of the counting. Note that although all arrays below are
 C             available for each degree of matching, only the array elements 
 C             that are appropriate for a given degree are actually populated. 
         INTEGER            N     ( 0:NXTYPES ) ! cnt for degree of matching
-        INTEGER            PIFIP (   NXTYPES ) ! previous co/st/cy code
 
+        CHARACTER(FIPLEN3) PCFIP ( NXTYPES )  ! previous co/st/cy code
         CHARACTER(SCCLEN3) PTSCC ( NXTYPES )  ! previous SCC
         CHARACTER(SICLEN3) PCSIC ( NXTYPES )  ! previous SIC
         CHARACTER(SRCLEN3) PCSRC ( NXTYPES )  ! previous CSRC
@@ -102,9 +102,7 @@ C...........   Array of source characeristics
 C...........   Other local variables
         INTEGER       I, J, J1, J2, K, L  ! counter and indices
 
-        INTEGER       ICYID            ! temporary county code
         INTEGER       IDUM             ! dummy integer
-        INTEGER       IFIP             ! temporary FIPS code
         INTEGER       IOS              ! i/o status
         INTEGER       ISP              ! temporary pollutant position in EANAM
         INTEGER       LOPT             ! length of OPTYPE
@@ -139,7 +137,6 @@ C...........   Other local variables
         CHARACTER(256)     BUFFER        ! source definition buffer
         CHARACTER(256)     MESG          ! message buffer
 
-        CHARACTER(STALEN3) CSTA          ! temporary (character) state code
         CHARACTER(SCCLEN3) SCCL          ! left digits of TSCC
         CHARACTER(SCCLEN3) SCCR          ! RHS digits of TSCC (old method)
         CHARACTER(SCCLEN3) SCCR_A        ! RHS for level 1 of SCC
@@ -282,7 +279,7 @@ C.........  Initialize default array
 C.........  Initialize arrays for counting number of x-ref records in each
 C           degree of matching
         N      = 0    ! arrays
-        PIFIP  = 0
+        PCFIP  = ' '
         PCSRC  = ' '
         PCSSC  = ' '
         PTSCC  = ' '
@@ -336,9 +333,6 @@ C               in tables (i.e., use CSRC)
 
 C.............  Set up partial strings for checking country/state/county
             CFIP    = CHARS( 1 )
-            IFIP    = STR2INT( CFIP )         ! For checking previous
-            CSTA    = CFIP( 1:STALEN3 )
-            ICYID   = IFIP - STR2INT( CSTA ) * 1000
             CFPL   = CSRC( SC_BEGP( 1 ):SC_ENDP( PLTIDX ) )
             IF( PLTIDX /= 0 .AND. PLTIDX <= NCHARS ) THEN
                 CNFIP = CSRC( SC_BEGP( PLTIDX ):SC_ENDP( NCHARS ) )
@@ -386,7 +380,7 @@ C.............  Select cases
 C.............  Note that since these are sorted in order of increasing FIPS
 C               code, SCC, pollutant index, etc., that the entries with zero for
 C               these characteristics will appear earlier in the sorted list
-            IF( IFIP .EQ. 0 ) THEN                       ! FIPS code is default
+            IF( CFIP .EQ. FIPZERO ) THEN                       ! FIPS code is default
 
                 IF( CMCT .NE. MCTZERO ) THEN                   ! have valid MACT code
                 
@@ -571,17 +565,18 @@ C                   as the old Right-left method is still needed.
 
                 END IF 
 
-            ELSEIF( ICYID .EQ. 0 ) THEN            ! County code is default
+            ELSEIF( .NOT. USEEXPGEO .AND. 
+     &              CFIP( STALEN3+1:FIPLEN3 ) == '000' ) THEN            ! County code is default
 
                 IF( CMCT .NE. MCTZERO ) THEN                   ! have valid MACT code
                 
                     IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
                     
                         NT = 34
-                        IF( IFIP .NE. PIFIP( NT ) .OR.
+                        IF( CFIP .NE. PCFIP( NT ) .OR.
      &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                            PCFIP( NT ) = CFIP
                             PCMCT( NT ) = CMCT
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -592,11 +587,11 @@ C                   as the old Right-left method is still needed.
                     ELSE                                         ! Complete SCC
                     
                         NT = 35
-                        IF( IFIP .NE. PIFIP( NT ) .OR.
+                        IF( CFIP .NE. PCFIP( NT ) .OR.
      &                      TSCC .NE. PTSCC( NT ) .OR.
      &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                            PCFIP( NT ) = CFIP
                             PTSCC( NT ) = TSCC
                             PCMCT( NT ) = CMCT
                             
@@ -614,10 +609,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
      &                   ( CSIC .NE. SICZERO .AND. CHKEXPSIC( CSIC ) ) ) THEN
 
                     NT = 29
-                    IF( IFIP .NE. PIFIP( NT ) .OR.
+                    IF( CFIP .NE. PCFIP( NT ) .OR.
      &                  CSIC .NE. PCSIC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP( NT ) = IFIP
+                        PCFIP( NT ) = CFIP
                         PCSIC( NT ) = CSIC
 
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -628,10 +623,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                 ELSE IF( CSIC .NE. SICZERO ) THEN            ! Left SIC defined
 
                     NT = 28
-                    IF( IFIP  .NE. PIFIP( NT ) .OR.
+                    IF( CFIP  .NE. PCFIP( NT ) .OR.
      &                  CSICL .NE. PCSIC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP( NT ) = IFIP
+                        PCFIP( NT ) = CFIP
                         PCSIC( NT ) = CSICL
 
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -642,9 +637,9 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                 ELSE IF( TSCC .EQ. SCCZERO ) THEN         ! SCC code is default
 
                     NT = 4
-                    IF( IFIP .NE. PIFIP( NT ) ) THEN
+                    IF( CFIP .NE. PCFIP( NT ) ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP( NT ) = IFIP
+                        PCFIP( NT ) = CFIP
 
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
@@ -655,10 +650,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
      &                  .NOT. TAGFLAG .AND. .NOT. CHKEXPSCC( TSCC ) ) THEN         ! left SCC
 
                     NT = 5
-                    IF( IFIP .NE. PIFIP( NT ) .OR. 
+                    IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                  TSCC .NE. PTSCC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP ( NT ) = IFIP
+                        PCFIP ( NT ) = CFIP
                         PTSCC( NT ) = TSCC
                        
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -672,10 +667,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                 ELSE                                     ! Complete SCC
 
                     NT = 6
-                    IF( IFIP .NE. PIFIP( NT ) .OR. 
+                    IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                  TSCC .NE. PTSCC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP ( NT ) = IFIP
+                        PCFIP ( NT ) = CFIP
                         PTSCC( NT ) = TSCC
 
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -699,10 +694,10 @@ C                   as the old Right-left method is still needed.
                         IF( .NOT. SAMEFLAG )
      &                      N( NT ) = N( NT ) - 1
                         NT = 20
-                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+                        IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP ( NT ) = IFIP
+                            PCFIP ( NT ) = CFIP
                             PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -715,10 +710,10 @@ C                   as the old Right-left method is still needed.
                         IF( .NOT. SAMEFLAG )
      &                      N( NT ) = N( NT ) - 1
                         NT = 21
-                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+                        IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP ( NT ) = IFIP
+                            PCFIP ( NT ) = CFIP
                             PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -731,10 +726,10 @@ C                   as the old Right-left method is still needed.
                         IF( .NOT. SAMEFLAG )
      &                      N( NT ) = N( NT ) - 1
                         NT = 22
-                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+                        IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP ( NT ) = IFIP
+                            PCFIP ( NT ) = CFIP
                             PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -754,10 +749,10 @@ C                   as the old Right-left method is still needed.
                     IF( TSCC .EQ. SCCZERO ) THEN                  ! SCC is default
                     
                         NT = 36
-                        IF( IFIP .NE. PIFIP( NT ) .OR.
+                        IF( CFIP .NE. PCFIP( NT ) .OR.
      &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                            PCFIP( NT ) = CFIP
                             PCMCT( NT ) = CMCT
                             
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -768,11 +763,11 @@ C                   as the old Right-left method is still needed.
                     ELSE                                         ! Complete SCC
                     
                         NT = 37
-                        IF( IFIP .NE. PIFIP( NT ) .OR.
+                        IF( CFIP .NE. PCFIP( NT ) .OR.
      &                      TSCC .NE. PTSCC( NT ) .OR.
      &                      CMCT .NE. PCMCT( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP( NT ) = IFIP
+                            PCFIP( NT ) = CFIP
                             PTSCC( NT ) = TSCC
                             PCMCT( NT ) = CMCT
                             
@@ -790,10 +785,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
      &                  ( CSIC .NE. SICZERO .AND. CHKEXPSIC( CSIC ) ) ) THEN
 
                     NT = 31
-                    IF( IFIP .NE. PIFIP( NT ) .OR.
+                    IF( CFIP .NE. PCFIP( NT ) .OR.
      &                  CSIC .NE. PCSIC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP ( NT ) = IFIP
+                        PCFIP ( NT ) = CFIP
                         PCSIC( NT ) = CSIC
 
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -804,10 +799,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                 ELSE IF( CSIC .NE. SICZERO ) THEN            ! Left SIC defined
 
                     NT = 30
-                    IF( IFIP  .NE. PIFIP( NT ) .OR.
+                    IF( CFIP  .NE. PCFIP( NT ) .OR.
      &                  CSICL .NE. PCSIC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP ( NT ) = IFIP
+                        PCFIP ( NT ) = CFIP
                         PCSIC( NT ) = CSICL
 
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -818,9 +813,9 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                 ELSE IF( TSCC .EQ. SCCZERO ) THEN         ! SCC code is default
 
                     NT = 7
-                    IF( IFIP .NE. PIFIP( NT ) ) THEN
+                    IF( CFIP .NE. PCFIP( NT ) ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP( NT ) = IFIP
+                        PCFIP( NT ) = CFIP
 
                     ELSEIF( ISP .EQ. PISP ) THEN
                         CALL REPORT_DUP_XREF
@@ -831,10 +826,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
      &                  SCCR .EQ. SCRZERO ) THEN        ! Left SCC
 
                     NT = 8
-                    IF( IFIP .NE. PIFIP( NT ) .OR. 
+                    IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                  TSCC .NE. PTSCC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP ( NT ) = IFIP
+                        PCFIP ( NT ) = CFIP
                         PTSCC( NT ) = TSCC
 
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -848,10 +843,10 @@ C.....................  Set SCC to zero to avoid lower level SCC checks
                 ELSE                                         ! Complete SCC
 
                     NT = 9
-                    IF( IFIP .NE. PIFIP( NT ) .OR. 
+                    IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                  TSCC .NE. PTSCC( NT )      ) THEN
                         N( NT ) = N( NT ) + 1
-                        PIFIP ( NT ) = IFIP
+                        PCFIP ( NT ) = CFIP
                         PTSCC( NT ) = TSCC
 
                     ELSEIF( ISP .EQ. PISP ) THEN
@@ -875,10 +870,10 @@ C                   as the old Right-left method is still needed.
                         IF( .NOT. SAMEFLAG )
      &                      N( NT ) = N( NT ) - 1
                         NT = 23
-                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+                        IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP ( NT ) = IFIP
+                            PCFIP ( NT ) = CFIP
                             PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -891,10 +886,10 @@ C                   as the old Right-left method is still needed.
                         IF( .NOT. SAMEFLAG )
      &                      N( NT ) = N( NT ) - 1
                         NT = 24
-                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+                        IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP ( NT ) = IFIP
+                            PCFIP ( NT ) = CFIP
                             PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -907,10 +902,10 @@ C                   as the old Right-left method is still needed.
                         IF( .NOT. SAMEFLAG )
      &                      N( NT ) = N( NT ) - 1
                         NT = 25
-                        IF( IFIP .NE. PIFIP( NT ) .OR. 
+                        IF( CFIP .NE. PCFIP( NT ) .OR. 
      &                      TSCC .NE. PTSCC( NT )      ) THEN
                             N( NT ) = N( NT ) + 1
-                            PIFIP ( NT ) = IFIP
+                            PCFIP ( NT ) = CFIP
                             PTSCC ( NT ) = TSCC
 
                         ELSEIF( ISP .EQ. PISP ) THEN
@@ -972,11 +967,11 @@ C.........................  Give warning and skip if other fields besides plant 
                         ELSE
 
                             NT = 38
-                            IF( IFIP .NE. PIFIP( NT ) .OR.
+                            IF( CFIP .NE. PCFIP( NT ) .OR.
      &                          CFPL .NE. PCSRC( NT ) .OR.
      &                          CMCT .NE. PCMCT( NT )      ) THEN
                                 N( NT ) = N( NT ) + 1
-                                PIFIP( NT ) = IFIP
+                                PCFIP( NT ) = CFIP
                                 PCSRC( NT ) = CFPL
                                 PCMCT( NT ) = CMCT
 

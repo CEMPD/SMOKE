@@ -1,5 +1,5 @@
 
-        INTEGER FUNCTION GETTZONE( FIP )
+        INTEGER FUNCTION GETTZONE( CFIP )
 
 C***********************************************************************
 C  function body starts at line 76
@@ -45,15 +45,19 @@ C.........  This module contains the arrays for state and county summaries
 
         IMPLICIT NONE
 
+C...........   INCLUDES:
+
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
         INTEGER      ENVINT
-        INTEGER      FIND1   !  returns -1 for failure
-        EXTERNAL     ENVINT, FIND1
+        INTEGER      FINDC   !  returns -1 for failure
+        EXTERNAL     ENVINT, FINDC
 
 C...........   ARGUMENTS and their descriptions:
 
-        INTEGER, INTENT (IN) :: FIP !  input FIPS code to assign zone
+        CHARACTER(FIPLEN3), INTENT (IN) :: CFIP !  input FIPS code to assign zone
 
 C...........   LOCAL VARIABLES their descriptions:
 
@@ -82,7 +86,7 @@ C           time zone from the environment (or use the ultimate default of 5)
         END IF
 
 C.........  Search for FIPS code in county-specific table
-        K = FIND1( FIP, NCOUNTY, CNTYCOD )
+        K = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
         IF ( K .GT. 0 ) THEN
             GETTZONE = CNTYTZON( K )
@@ -93,7 +97,7 @@ C.........  Apply default
 
             WRITE( MESG,94040 ) 
      &                'WARNING: Applying default time zone of', TZONE0,
-     &                'to country, state, and county code', FIP
+     &                'to country, state, and county code ' // CFIP
             CALL M3MESG( MESG )
 
         END IF
@@ -104,6 +108,6 @@ C******************  FORMAT  STATEMENTS   ******************************C.......
  
 C...........   Internal buffering formats............ 94xxx
 
-94040   FORMAT( A, 1X, I2.2, 1X, A, 1X, I6.6 )
+94040   FORMAT( A, 1X, I2.2, 1X, A )
 
         END

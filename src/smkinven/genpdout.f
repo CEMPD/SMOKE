@@ -112,7 +112,6 @@ C...........   Other local variables
         INTEGER          I, J, K, L, N, S, T
 
         INTEGER          INVFMT               ! format code of files in list
-        INTEGER          FIP                  ! tmp co/st/cy code
         INTEGER          IOS                  ! i/o status
         INTEGER          JDATE                ! tmp Julian date
         INTEGER          JTIME                ! tmp time HHMMSS
@@ -135,6 +134,7 @@ C...........   Other local variables
         CHARACTER(256) :: FMTBUF = ' '       ! format buffer
         CHARACTER(256) :: FMTBUFB = ' '      ! format buffer B
 
+        CHARACTER(FIPLEN3) CFIP          ! tmp co/st/cy code
         CHARACTER(SDSLEN3) BUFFER        ! tmp SCC description
         CHARACTER(NAMLEN3) ONAME         ! output file name
         CHARACTER(SCCLEN3) TSCC          ! tmp SCC value
@@ -354,15 +354,15 @@ C.........  Create header:
         WRITE( RDEV, FMTBUF ) REPEAT( '-', WID ), LABEL(1), LABEL(2)
 
 C.........  Create content
-        WRITE( FMTBUF, '(A,I1,A,I2.2,A,I2.2,A,I3.3,A,I3.3,A)' ) 
-     &         '(A', MAX(7,ORSLEN3), ',"; ", I', FIPLEN3, '.', 
-     &         FIPLEN3, ', "; ", A', PWID, ', "; ", A', OWID, ')'
+        WRITE( FMTBUF, '(A,I1,A,I2.2,A,I3.3,A,I3.3,A)' ) 
+     &         '(A', MAX(7,ORSLEN3), ',"; ", A', FIPLEN3, 
+     &         ', "; ", A', PWID, ', "; ", A', OWID, ')'
 
         DO I = 1, NINVORIS
 
             IF( IORSMTCH( I ) ) THEN
                 CORS = INVORIS( I )
-                FIP  = INVORFP( I )
+                CFIP = INVORFP( I )
                 PDSC = INVODSC( I )
                 J = INDEX1( CORS, NORIS, ORISLST )
                 IF ( J .GT. 0 ) THEN
@@ -371,7 +371,7 @@ C.........  Create content
                     ODSC = 'NOT AVAILABLE'
                 END IF
 
-                WRITE( RDEV,FMTBUF ) CORS, FIP, PDSC, ODSC
+                WRITE( RDEV,FMTBUF ) CORS, CFIP, PDSC, ODSC
             END IF
 
         END DO
@@ -389,12 +389,12 @@ C.........  Create header:
         WRITE( RDEV, FMTBUF ) REPEAT( '-', WID ), LABEL(1)
 
 C.........  Create content
-        WRITE( FMTBUF, '(A,I1,A,I2.2,A,I2.2,A,I3.3,A)' ) 
-     &         '(A', MAX(7,ORSLEN3), ',"; ", I', FIPLEN3, '.', 
-     &         FIPLEN3, ', "; ", A', OWID, ')'
+        WRITE( FMTBUF, '(A,I1,A,I2.2,A,I3.3,A)' ) 
+     &         '(A', MAX(7,ORSLEN3), ',"; ", A', FIPLEN3, 
+     &         ', "; ", A', OWID, ')'
 
         WRITE( FMTBUFB, '(A,I1,A,I2.2,A,I3.3,A)' ) 
-     &         '(A', MAX(7,ORSLEN3), ',"; ", I', FIPLEN3,  
+     &         '(A', MAX(7,ORSLEN3), ',"; ", A', FIPLEN3,  
      &         ', "; ", A', OWID, ')'
 
         DO I = 1, NUNFDORS 
@@ -404,13 +404,13 @@ C.........  Create content
             J = INDEX1( CORS, NORIS, ORISLST )
 
             IF ( J .GT. 0 ) THEN
-                FIP  = ORISFIP( J )
+                CFIP = ORISFIP( J )
                 ODSC = ORISDSC( J )
-                WRITE( RDEV, FMTBUF ) CORS, FIP, ODSC
+                WRITE( RDEV, FMTBUF ) CORS, CFIP, ODSC
             ELSE
-                FIP = -9
+                CFIP = ' '
                 ODSC = 'NOT AVAILABLE'
-                WRITE( RDEV, FMTBUFB ) CORS, FIP, ODSC
+                WRITE( RDEV, FMTBUFB ) CORS, CFIP, ODSC
             END IF
 
         END DO

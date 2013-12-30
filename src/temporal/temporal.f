@@ -61,7 +61,7 @@ C.........  This module contains data for day- and hour-specific data
      &                      INDXD, EMACD, INDXH, EMACH
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, MXIDAT, INVDNAM, INVDVTS
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, MXIDAT, INVDNAM, INVDVTS
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, BYEAR, NIPPA, EANAM, NSRC, 
@@ -97,10 +97,11 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         RDTPROF
         INTEGER         SECSDIFF
         INTEGER         STR2INT
+        LOGICAL         USEEXPGEO
 
         EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, JULIAN,
      &              GETDATE, GETFLINE, GETNUM, INDEX1, ISDSTIME, MMDDYY,
-     &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT
+     &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT, USEEXPGEO
                         
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -284,7 +285,7 @@ C.........  Get length of inventory file name
         ENLEN = LEN_TRIM( ENAME )
 
 C.........  Set inventory variables to read for all source categories
-        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 1 ) = 'CIFIP'
         IVARNAMS( 2 ) = 'TZONES'
         IVARNAMS( 3 ) = 'TPFLAG'
         IVARNAMS( 4 ) = 'CSCC'
@@ -480,7 +481,11 @@ C.........  NHRSRC is initialized to 0 in case HFLAG is false
 C.........  Read special files...
 
 C.........  Read region codes file
-        CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
+        IF( USEEXPGEO ) THEN
+            CALL RDGEOCODES( NINVIFIP, INVCFIP )
+        ELSE
+            CALL RDSTCY( CDEV, NINVIFIP, INVCFIP )
+        END IF
 
 C.........  Populate filter for sources that use daylight time
         CALL SETDAYLT

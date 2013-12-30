@@ -41,7 +41,7 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
 
 C.........  This module contains the tagging arrays 
         USE MODTAG, ONLY: MXTAG, NTAGSALL, TAGSPECIES, TAGNUM, TAGNAME
@@ -57,14 +57,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         ENVINT
         LOGICAL         ENVYN
-        INTEGER         FIND1
         INTEGER         FINDC
         INTEGER         GETFLINE
         INTEGER         INDEX1
         INTEGER         STR2INT
+        LOGICAL         USEEXPGEO
 
-        EXTERNAL  BLKORCMT, CRLF, ENVINT, ENVYN, FIND1, FINDC, GETFLINE,
-     &             INDEX1,STR2INT
+        EXTERNAL  BLKORCMT, CRLF, ENVINT, ENVYN, FINDC, GETFLINE,
+     &            INDEX1, STR2INT, USEEXPGEO
 
 
 C...........   SUBROUTINE ARGUMENTS
@@ -95,7 +95,6 @@ C...........   Other local variables
         INTEGER         C, I, J, K, L, N, P, V    !  counters and indices
 
         INTEGER         IDUM    !  dummy integer
-        INTEGER         IFIP    !  i/o status
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
         INTEGER         JSPC    !  position of CSPC in SPCLIST
@@ -219,9 +218,6 @@ C.............  Skip blank lines or comments
             CSIC   = SEGMENT( 6 )
             PLT    = SEGMENT( 7 )
 
-C.............  Convert FIPS code to integer
-            IFIP = STR2INT( CFIP )
-
 C.............  Check that tag name is <= TAGLEN3 (8 character limit)
             L = LEN( TRIM( SEGMENT( 4 ) ) ) 
             IF ( L > TAGLEN3 ) THEN
@@ -295,8 +291,9 @@ C.................  Filter the case where the species code is not present
 
 C.............  Check to see if FIPS code matches inventory.  If no match,
 C               then give a warning and skip the record from processing.
-            IF ( CFIP(4:6) /= '000' ) THEN
-                J = FIND1( IFIP, NINVIFIP, INVIFIP )
+            IF ( USEEXPGEO .OR. 
+     &           CFIP( FIPEXPLEN3+4:FIPEXPLEN3+6) /= '000' ) THEN
+                J = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF ( J .LE. 0 ) THEN
                     IF( IWRN(1) .LE. MXWARN ) THEN 
                         WRITE( MESG, 94010 ) 

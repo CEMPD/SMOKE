@@ -74,6 +74,8 @@ C...........   Local parameters
 C...........   Other arrays
 
         CHARACTER(20) SEGMENT( MXSEG )             ! Segments of parsed lines
+        
+        CHARACTER(200), ALLOCATABLE :: SORTBUF( : ) ! concatenated info for sorting
 
 C...........   Local variables
         INTEGER         I, J, K, L            ! indices and counters
@@ -82,12 +84,10 @@ C...........   Local variables
         INTEGER         CELCNT                ! cell counter
         INTEGER         CNTCHK                ! check for message overflow count
         INTEGER         COL                   ! Temp grid column number (x-axis)
-        INTEGER         FIP                   ! tmp country/state/county code
         INTEGER         IOS                   ! i/o status
         INTEGER         IREC                  ! Record counter
         INTEGER         LC, LR                ! length of COLRANGE & ROWRANGE
         INTEGER         LCEL                  ! cell ID from previous iteration
-        INTEGER         LFIP                  ! county code from prev iteration
         INTEGER         LSSC                  ! srg ID from previous iteration
         INTEGER         NSRGALL               ! No. entries in surrgoates file
         INTEGER         MXCFIP                ! Max cells per county code
@@ -102,6 +102,8 @@ C...........   Local variables
         LOGICAL      :: RFLAG = .FALSE.       ! true: renormalized surrogates
         LOGICAL         WFLAG                 ! true: per iteration warning flag
 
+        CHARACTER(FIPLEN3) CFIP               ! tmp country/state/county code
+        CHARACTER(FIPLEN3) LFIP               ! county code from prev iteration
         CHARACTER(20)   COLRANGE              ! buffer w/ column range
         CHARACTER(20)   ROWRANGE              ! buffer w/ row range
         CHARACTER(80)   LINE                  ! Read buffer for a line
@@ -173,6 +175,9 @@ C......... Allocate memory for surrogate arrays
 
         ALLOCATE( IDXSRGB( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IDXSRGB', PROGNAME )
+        
+        ALLOCATE( SORTBUF( NSRGREC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'SORTBUF', PROGNAME )
 
         ALLOCATE( SCELLA( NSRGREC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCELLA', PROGNAME )
@@ -243,7 +248,8 @@ C                   quotes around the text strings
                 CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
                 SSC    = STR2INT ( SEGMENT( 1 ) )
-                FIP    = STR2INT ( SEGMENT( 2 ) )
+                CFIP   = SEGMENT( 2 )
+                CALL PADZERO( CFIP )
                 COL    = STR2INT ( SEGMENT( 3 ) )
                 ROW    = STR2INT ( SEGMENT( 4 ) )
                 RATIO  = STR2REAL( SEGMENT( 5 ) )
@@ -303,9 +309,10 @@ C.................  Skip entry if rows and columns are out of range
                 IDXSRGA( J ) = J
                 IDXSRGB( J ) = J
                 SCELLA ( J ) = (ROW-1)*NCOLS + COL
-                SFIPSA ( J ) = FIP
+                SFIPSA ( J ) = CFIP
                 SSRGIDA( J ) = SSC
                 SFRACA ( J ) = RATIO     
+                WRITE( SORTBUF, '(A,I8,I8)' ) SFIPSA( J ), SCELLA( J ), SSRGIDA( J )
 
             END DO
 
@@ -330,31 +337,31 @@ C.............  Write out final warning for row/col out of range
 C.........  Now create the derived surrogates tables from the original data...
 
 C.........  Sort surrogates by county code & cell & surrogate code
-        CALL SORTI3( NSRGALL, IDXSRGA, SFIPSA, SCELLA, SSRGIDA )
+        CALL SORTIC( NSRGALL, IDXSRGA, SORTBUF )
 
 C.........  Sort surrogates by surrogate code
         CALL SORTI1( NSRGALL, IDXSRGB, SSRGIDA )
 
 C.........  Count county codes in surrogates file and maximum number of cells
 C           per cy/st/co code.
-        LFIP     = -1
+        LFIP     = ' '
         LCEL     = -1
         MXCFIP   = 0
         NSRGFIPS = 0
         CELCNT   = 0
         DO I = 1, NSRGALL
 
-            J   = IDXSRGA( I )
-            FIP = SFIPSA ( J )
-            C   = SCELLA ( J )
+            J    = IDXSRGA( I )
+            CFIP = SFIPSA ( J )
+            C    = SCELLA ( J )
 
-            IF( FIP .NE. LFIP ) THEN
+            IF( CFIP .NE. LFIP ) THEN
 
                 IF( CELCNT .GT. MXCFIP ) MXCFIP = CELCNT
 
                 NSRGFIPS = NSRGFIPS + 1  ! incrmt cntr for county in srg file
                 CELCNT   = 0             ! init cell counter per county
-                LFIP     = FIP
+                LFIP     = CFIP
               
             END IF
 
@@ -404,7 +411,7 @@ C.........  Allocate memory for derived surrogates tables
 
 C.........  Initialize arrays
         NCELLS  = 0  ! array
-        SRGFIPS = 0  ! array
+        SRGFIPS = ' '! array
         SRGLIST = 0  ! array
         FIPCELL = 0  ! array
         SRGFRAC = 0. ! array
@@ -433,23 +440,23 @@ C.........  Initialize arrays that might not be totally populated
         SRGFRAC = 0   ! array
 
 C.........  Store the surrogate fractions, FIPS codes, and cell numbers...
-        LFIP     = -1
+        LFIP     = ' '
         LCEL     = -1
         NSRGFIPS = 0
         DO I = 1, NSRGALL
 
             J     = IDXSRGA( I )
-            FIP   = SFIPSA ( J )
+            CFIP  = SFIPSA ( J )
             C     = SCELLA ( J )
             SSC   = SSRGIDA( J )
             RATIO = SFRACA ( J )
 
-            IF( FIP .NE. LFIP ) THEN
+            IF( CFIP .NE. LFIP ) THEN
 
                 NSRGFIPS = NSRGFIPS + 1  ! incrmt cntr for county in srg file
-                SRGFIPS( NSRGFIPS ) = FIP
+                SRGFIPS( NSRGFIPS ) = CFIP
                 CELCNT   = 0             ! init cell counter per county
-                LFIP     = FIP
+                LFIP     = CFIP
               
             END IF
 
@@ -490,7 +497,7 @@ C.....................  If first problem on this line
                     IF( .NOT. GFLAG ) THEN
                         WRITE( MESG,94030 ) 'WARNING: County ' //
      &                    'surrogate total greater than 1. for '//
-     &                    'county' // CRLF() // BLANK10, SRGFIPS( I ), 
+     &                    'county' // CRLF() // BLANK10 // SRGFIPS( I ) // 
      &                    ', SSC(', SRGLIST( K ), '):', SRGCSUM( K,I )
                         GFLAG = .TRUE.
                         CNTCHK = CNTCHK + 1
@@ -550,7 +557,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94020   FORMAT( A, 1X, I8, 1X, A, 1X, F10.6, 1X, A )
 
-94030   FORMAT( A, 1X, I6.6, A, I3.2, A, F8.4 )
+94030   FORMAT( A, I3.2, A, F8.4 )
 
 94031   FORMAT( A, 1X, I3.2, A, F8.4 )
 

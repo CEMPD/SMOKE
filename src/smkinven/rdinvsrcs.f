@@ -84,10 +84,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL         BLKORCMT
         LOGICAL         SETENVVAR
         INTEGER*4       GETPID   
+        LOGICAL         USEEXPGEO
 
         EXTERNAL        CRLF, ENVINT, GETFLINE, GETFORMT, GETINVYR, GETPID,
      &                  JUNIT, FIND1, FIND1FIRST, FINDC,
-     &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR
+     &                  CHKINT, STR2INT, INDEX1, BLKORCMT, SETENVVAR,
+     &                  USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -478,6 +480,13 @@ C.....................  Otherwise, not a list file, so exit
 C.................  Skip blank lines
                 IF( LINE == ' ' ) CYCLE
 
+C.................  Check if format works with expanded geographic codes
+                IF( USEEXPGEO .AND. CURFMT /= FF10FMT ) THEN
+                    MESG = 'ERROR: Expanded geographic codes are only ' //
+     &                     'supported for inventories in FF10 format.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+
 C.................  Process line depending on file format and source category
                 SELECT CASE( CURFMT )
 
@@ -570,7 +579,7 @@ C.................  Make sure some emissions are kept for this source
                     CYCLE
                 END IF
 
-                IF( .NOT. CHKINT( CFIP ) ) THEN
+                IF( .NOT. USEEXPGEO .AND. .NOT. CHKINT( CFIP ) ) THEN
                     EFLAG = .TRUE.
                     WRITE( MESG,94010 ) 'ERROR: State and/or ' //
      &                     'county code is non-integer at line', IREC
@@ -578,8 +587,9 @@ C.................  Make sure some emissions are kept for this source
                     NWARN1 = NWARN1 + 1
                 END IF
 
-                IF( CFIP( 2:3 ) == '00' .OR.
-     &              CFIP( 4:6 ) == '000'     ) THEN
+                IF( .NOT. USEEXPGEO .AND.
+     &              ( CFIP( FIPEXPLEN3+2:FIPEXPLEN3+3 ) == '00' .OR.
+     &                CFIP( FIPEXPLEN3+4:FIPEXPLEN3+6 ) == '000'     ) ) THEN
                     WRITE( MESG,94010 ) 'WARNING: State and/or ' //
      &                     'county code is zero (missing) at line', IREC
                     IF( NWARN1 < MXWARN ) CALL M3MESG( MESG )
@@ -684,7 +694,6 @@ C.................  Skip rest of loop if an error has occured
 C.................  Build concatenated source information
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
-                    CALL PADZERO( CFIP )
                     CALL PADZERO( TSCC )
                 
                     CALL BLDCSRC( CFIP, TSCC, CHRBLNK3, CHRBLNK3, 

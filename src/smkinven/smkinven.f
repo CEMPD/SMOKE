@@ -57,7 +57,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, CISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
+        USE MODSOURC, ONLY: CIFIP, CISIC, CSRCTYP, TZONES, CSCC, IDIU, IWEK,
      &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, FF10FLAG,INVDCOD 
@@ -87,9 +87,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER       GETFLINE
         INTEGER       GETTZONE
         INTEGER       STR2INT
+        LOGICAL       USEEXPGEO
 
         EXTERNAL      CRLF, ENVINT, ENVYN, INDEX1, GETFLINE, GETTZONE, 
-     &                STR2INT
+     &                STR2INT, USEEXPGEO
 
 C...........  LOCAL PARAMETERS and their descriptions:
 
@@ -141,7 +142,6 @@ C...........   Other local variables
         INTEGER      :: DSDATE = 0 ! day-specific data start date
         INTEGER      :: DSTIME = 0 ! day-specific data start time
 
-        INTEGER         FIP        ! Temporary FIPS code
         INTEGER      :: HNSTEP = 0 ! day-specific data time step number
         INTEGER      :: HSDATE = 0 ! day-specific data start date
         INTEGER      :: HSTIME = 0 ! day-specific data start time
@@ -151,7 +151,6 @@ C...........   Other local variables
         INTEGER      :: MXSRCDY= 0 ! max no. day-specific sources
         INTEGER      :: MXSRCHR= 0 ! max no. hour-specific sources
         INTEGER      :: NDAT = 0   ! tmp no. actual pols & activities
-        INTEGER      :: NFIPLIN = 0! number of lines in ZDEV
         INTEGER      :: NINVARR = 0! no. inventory variables to read
         INTEGER      :: NRAWBP = 0 ! number of sources with pollutants
         INTEGER      :: NRAWSRCS= 0! number of unique sources
@@ -160,7 +159,6 @@ C...........   Other local variables
         INTEGER      :: NVARHR = 0 ! no. hour-specific variables
         INTEGER      :: NVSPHR = 0 ! no. hour-specific special variables
         INTEGER         OUTSTEP    ! output time step HHMMSS for day/hour data
-        INTEGER         PFIP       ! previous FIPS code
         INTEGER         TZONE      ! output time zone for day- & hour-specific
 
         LOGICAL         A2PFLAG          ! true: using area-to-point processing
@@ -175,6 +173,8 @@ C...........   Other local variables
         CHARACTER(256)        MESG        !  message buffer
         CHARACTER(IOVLEN3) :: GRDNM = ' ' !  I/O API input file grid name
         CHARACTER(PHYLEN3) :: VARPATH = './' ! path for pol/act files
+        CHARACTER(FIPLEN3)    CFIP        ! temporary FIPS code
+        CHARACTER(FIPLEN3)    PCFIP       ! previous FIPS code
 
         CHARACTER(16) :: PROGNAME = 'SMKINVEN'   !  program name
 
@@ -211,7 +211,11 @@ C.........  Set gridded input file name, if available
         CALL M3MSG2( MESG )
 
 C.........  Read country, state, and county file for time zones
-        IF( ZDEV .GT. 0 ) CALL RDSTCY( ZDEV, 1, I )   !  "I" used as a dummy
+        IF( USEEXPGEO ) THEN
+            CALL RDGEOCODES( 1, I )
+        ELSE IF( ZDEV .GT. 0 ) THEN
+            CALL RDSTCY( ZDEV, 1, I )   !  "I" used as a dummy
+        END IF
 
 C.........  Read, sort, and store inventory data table file
         CALL RDCODNAM( PDEV )
@@ -345,13 +349,13 @@ C               this is not perfectly accurate for all counties.
             ALLOCATE( TZONES( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'TZONES', PROGNAME )
 
-            PFIP = 0
+            PCFIP = ''
             DO S = 1, NSRC
-                FIP   = IFIP( S )
+                CFIP = CIFIP( S )
  
-                IF( FIP /= PFIP ) THEN
-                    TZONES( S ) = GETTZONE( FIP )
-                    PFIP = FIP
+                IF( CFIP /= PCFIP ) THEN
+                    TZONES( S ) = GETTZONE( CFIP )
+                    PCFIP = CFIP
                 ELSE
                     TZONES( S ) = TZONES( S - 1 )
                 END IF

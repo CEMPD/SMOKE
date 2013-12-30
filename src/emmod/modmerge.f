@@ -355,9 +355,9 @@
 
 !.........  INPUT ARRAYS ...
 !.........  Country/State/County codes
-        INTEGER, ALLOCATABLE, PUBLIC :: AIFIP( : )    ! area codes, dim: nasrc
-        INTEGER, ALLOCATABLE, PUBLIC :: MIFIP( : )    ! mobile codes, dim: nmsrc
-        INTEGER, ALLOCATABLE, PUBLIC :: PIFIP( : )    ! point codes, dim: npsrc
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: AIFIP( : ) ! area codes, dim: nasrc
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: MIFIP( : ) ! mobile codes, dim: nmsrc
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: PIFIP( : ) ! point codes, dim: npsrc
 
 !.........  Emissions (either inventory or hourly)
         REAL   , ALLOCATABLE, PUBLIC :: AEMSRC( :,: ) ! area: nasrc, mxpolpgp

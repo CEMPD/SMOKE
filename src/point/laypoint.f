@@ -41,7 +41,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, STKDM, STKHT, STKTK, STKVE,
-     &                      CSOURC, IFIP, CSCC
+     &                      CSOURC, CIFIP, CSCC
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: NHRSRC, HRSTKTK, HRSTKVE, HRSTKFL, LMAJOR,
@@ -104,7 +104,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
 C.........  Indicator for which public inventory arrays need to be read
         INTEGER,            PARAMETER :: NINVARR = 9  
         CHARACTER(IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
-     &                                 ( / 'IFIP           '
+     &                                 ( / 'CIFIP          '
      &                                   , 'XLOCA          '
      &                                   , 'YLOCA          '
      &                                   , 'STKHT          '
@@ -1541,7 +1541,7 @@ C.................  Allocate plume to layers
                             WRITE( MESG,94010 )'NOTE: Fire Has Zero ' //
      &                      'Acres: all emissions assigned to layer 1'//
      &                      CRLF() // BLANK10 // 'SOURCE NUMBER = ', S,
-     &                      ' : ' // 'FIPS CODE = ', IFIP( S ), ' ' //
+     &                      ' : ' // 'FIPS CODE = ' // CIFIP( S ) // ' ' //
      &                     CRLF()//BLANK10//BUFFER( 1:L2 )
                            CALL M3MSG2( MESG )
 
@@ -1659,7 +1659,7 @@ C.................    if REP_LAYR env var has been set b/c default is -1
      &                             SC_ENDP, LFG, I, CHARS )
 
                     WRITE( OUTFMT, 93042 ) PLTLEN3, NCHARS-2, CHRLEN3
-                    WRITE( RDEV,OUTFMT ) S, IFIP( S ),
+                    WRITE( RDEV,OUTFMT ) S, CIFIP( S ),
      &                   ( CHARS( I ), I = 2,NCHARS ), STKHT( S ), 
      &                     STKVE ( S ), STKTK( S ), TSTK, 
      &                     WSTK, LPBL, LTOP 
@@ -1715,7 +1715,7 @@ C...........   Formatted file I/O formats............ 93xxx
      &          'Src ID, ', A, ', H[m], ', 'V[m/s], ', 'Ts[K], ', 
      &          'Ta[K], ', 'U[m/s], ', 'LPBL, ', 'LTOP' )
 
-93042   FORMAT( '( I6, ",", I6.6, ",", A', I2.2, ', ","', I2.2, '(A', 
+93042   FORMAT( '( I6, ",", A, ",", A', I2.2, ', ","', I2.2, '(A', 
      &          I2.2, ',", ") , F6.1, ", ", F6.2, ", ", F6.1, ", ",', 
      &          'F5.1, ", ", F6.2, ", ", I3, ", ", I3 )' )
 

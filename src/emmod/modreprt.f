@@ -111,14 +111,16 @@
             INTEGER       :: SCCRES        ! SCC resolution
             INTEGER       :: SRGRES        ! surrogate resolution (1st or 2nd)
             LOGICAL       :: BYCELL        ! true: by cell
-            LOGICAL       :: BYCNRY        ! true: by country code
-            LOGICAL       :: BYCNTY        ! true: by county code
+            LOGICAL       :: BYCNRY        ! true: by country code (geocode 2)
+            LOGICAL       :: BYCNTY        ! true: by county code (geocode 4)
             LOGICAL       :: BYCONAM       ! true: by country name
             LOGICAL       :: BYCYNAM       ! true: by county name
             LOGICAL       :: BYDATE        ! true: by date
             LOGICAL       :: BYDIU         ! true: by diurnal temporal code
             LOGICAL       :: BYELEV        ! true: by elev status
             LOGICAL       :: ELVSTKGRP     ! true: stack gourp ID by elev status
+            LOGICAL       :: BYGEO1        ! true: by geocode 1
+            LOGICAL       :: BYGEO1NAM     ! true: by geocode 1 name
             LOGICAL       :: BYHOUR        ! true: by hour
             LOGICAL       :: BYLAYER       ! true: by layer
             LOGICAL       :: BYMON         ! true: by monthly temporal code
@@ -133,7 +135,7 @@
             LOGICAL       :: BYSPC         ! true: by speciation codes 
             LOGICAL       :: BYSRC         ! true: by source 
             LOGICAL       :: BYSTACK       ! true: by stack
-            LOGICAL       :: BYSTAT        ! true: by state code
+            LOGICAL       :: BYSTAT        ! true: by state code (geocode 3)
             LOGICAL       :: BYSTNAM       ! true: by state name
             LOGICAL       :: BYSRG         ! true: by surrogate codes
             LOGICAL       :: BYRCL         ! true: by road class (mb)
@@ -241,7 +243,7 @@
         INTEGER, ALLOCATABLE, PUBLIC :: NREGREC ( : )     ! no. recs per region grp
 c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgrid
         INTEGER, ALLOCATABLE, PUBLIC :: VALIDCEL( :,: )   ! valid cell numbers
-        INTEGER, ALLOCATABLE, PUBLIC :: EXCLDRGN( :,: )   ! excluded region numbers
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: EXCLDRGN( :,: )   ! excluded region codes
 
 !.........  Group label arrays
         CHARACTER(LENLAB3), ALLOCATABLE, PUBLIC :: REGNNAM( : ) ! region group names
@@ -276,6 +278,7 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: DATEWIDTH =0 ! width of date column
         INTEGER      , PUBLIC :: DIUWIDTH  =0 ! width of diurnal profile label
         INTEGER      , PUBLIC :: ELEVWIDTH =0 ! width of elevated srcs flag col
+        INTEGER      , PUBLIC :: GEO1WIDTH =0 ! width of geo level 1 name column
         INTEGER      , PUBLIC :: HOURWIDTH =0 ! width of hour column
         INTEGER      , PUBLIC :: LTLNWIDTH =0 ! width of lat/lon columns
         INTEGER      , PUBLIC :: LABELWIDTH=0 ! width of user-defined label

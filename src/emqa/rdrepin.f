@@ -44,7 +44,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: SRGID, CSOURC, IDIU, IWEK, IMON,
-     &                      SPPROF, IFIP, STKHT, STKDM, STKTK,
+     &                      SPPROF, CIFIP, STKHT, STKDM, STKTK,
      &                      STKVE, CINTGR
 
 C.........  This module contains Smkreport-specific settings
@@ -68,7 +68,7 @@ C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: LMAJOR, LPING, GROUPID
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID
@@ -96,9 +96,10 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     GETNLIST
         INTEGER     INDEX1
         REAL        STR2REAL
+        LOGICAL     USEEXPGEO
 
         EXTERNAL    CHKINT, CHKREAL, CRLF, FINDC, GETFLINE, GETNLIST, 
-     &              INDEX1, STR2REAL
+     &              INDEX1, STR2REAL, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSLIN  ! no. mass spec input vars
@@ -196,7 +197,8 @@ C   begin body of subroutine RDREPIN
 C.........  If not using the ASCII elevated file
         IF( .NOT. AFLAG ) THEN
 C.........  Set local variables for determining input inventory variables
-            LRDREGN = ( ANY_TRUE( NREPORT, ALLRPT%BYCNRY ) .OR.
+            LRDREGN = ( ANY_TRUE( NREPORT, ALLRPT%BYGEO1 ) .OR.
+     &                  ANY_TRUE( NREPORT, ALLRPT%BYCNRY ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYSTAT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYCNTY ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
@@ -207,7 +209,7 @@ C.........  Build array of inventory variable names based on report settings
 C.........  Region code
             IF( LRDREGN ) THEN
                 NINVARR = NINVARR + 1
-                IVARNAMS( NINVARR ) = 'IFIP'
+                IVARNAMS( NINVARR ) = 'CIFIP'
             END IF
 
 C.........  Road class code
@@ -298,14 +300,14 @@ C.........  Allocate memory for and read in required inventory characteristics
         ELSE
 
 C.........  Read ASCII elevated file
-            ALLOCATE( ATTRUNIT( 11 ), STAT=IOS )
+            ALLOCATE( ATTRUNIT( 9 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'ATTRUNIT', PROGNAME )
             ATTRUNIT = ''
 
-            ATTRUNIT( 8 ) = 'm'
-            ATTRUNIT( 9 ) = 'm'
-            ATTRUNIT( 10 ) = 'deg K'
-            ATTRUNIT( 11 ) = 'm/s'
+            ATTRUNIT( 6 ) = 'm'
+            ATTRUNIT( 7 ) = 'm'
+            ATTRUNIT( 8 ) = 'deg K'
+            ATTRUNIT( 9 ) = 'm/s'
 
             DO I = 1, 3
                 ASCREC = ASCREC + 1
@@ -326,8 +328,8 @@ C..............  Read in point source characteristics
                 READ( ADEV, '(A)' ) LINE
             END DO
 
-            ALLOCATE( IFIP( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IFIP', PROGNAME )
+            ALLOCATE( CIFIP( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CIFIP', PROGNAME )
             ALLOCATE( CSOURC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CSOURC', PROGNAME )
             ALLOCATE( STKHT( NSRC ), STAT=IOS )
@@ -358,11 +360,9 @@ C..............  Read in point source characteristics
 
                 ASCREC = ASCREC + 1
                 READ( ADEV, 93010 ) N, XL, YL, FCID,
-     &                      CHARS( 1 ), IFIP( I )
+     &                      CHARS( 1 ), CIFIP( I )
 
-                WRITE( CFIP, '(I5.5)' ) IFIP( I )
-
-                CALL BLDCSRC( CFIP, FCID, CHARS(1), CHARS(2),
+                CALL BLDCSRC( CIFIP( I ), FCID, CHARS(1), CHARS(2),
      &                        CHARS(3), CHARS(4), CHARS(5),
      &                        POLBLNK3, CSOURC( I ) )
 
@@ -817,7 +817,11 @@ c                   note: this is not supported yet in Temporal
 
 C.........  If needed, read in country, state, county file
         IF( YFLAG ) THEN
-            CALL RDSTCY( YDEV, NINVIFIP, INVIFIP )
+            IF( USEEXPGEO ) THEN
+                CALL RDGEOCODES( NINVIFIP, INVCFIP )
+            ELSE
+                CALL RDSTCY( YDEV, NINVIFIP, INVCFIP )
+            END IF
         END IF
 
 C.........  If needed, read in elevated source indentification file

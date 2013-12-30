@@ -94,9 +94,10 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(16)   PROMPTMFILE  
         INTEGER         SECSDIFF  
         LOGICAL         SETENVVAR
+        LOGICAL         USEEXPGEO
 
         EXTERNAL  CRLF, ENVYN, GETCFDSC, GETIFDSC, PROMPTFFILE, 
-     &            PROMPTMFILE, SECSDIFF, SETENVVAR
+     &            PROMPTMFILE, SECSDIFF, SETENVVAR, USEEXPGEO
 
 C...........   Subroutine arguments
 
@@ -952,9 +953,11 @@ C.........  Get file name for inventory pollutants codes/names
 C.........  Get country, state, and county names no matter what, because it is
 C           needed to allocate memory for the state and county totals, even
 C           when they aren't going to be output
-        CDEV = PROMPTFFILE( 
+        IF( .NOT. USEEXPGEO ) THEN
+            CDEV = PROMPTFFILE( 
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
+        END IF
 
 C.........  Open source groups file if needed
         IF( SRCGRPFLAG ) THEN

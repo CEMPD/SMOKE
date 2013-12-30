@@ -46,7 +46,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, IFIPTA, CSCCTA, CSRCTA, IARPTA
+        USE MODXREF, ONLY: INDXTA, CFIPTA, CSCCTA, CSRCTA, IARPTA
 
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: NINVSCC, INVSCC, SCCDESC  ! Note - needed for reporting only
@@ -64,7 +64,8 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)   CRLF
         LOGICAL        ENVYN
-        EXTERNAL       CRLF, ENVYN
+        LOGICAL        USEEXPGEO
+        EXTERNAL       CRLF, ENVYN, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER , INTENT (IN) :: FDEV   ! area-to-point factors unit no.
@@ -83,9 +84,9 @@ C.............  Parameters
 C...........   Local allocatable arrays...
 C...........   For processing:
         INTEGER      , ALLOCATABLE :: IDXA2P  ( :,: )   ! sorting index
-        INTEGER      , ALLOCATABLE :: LOCFIP  ( : )     ! tmp FIPS codes
         INTEGER      , ALLOCATABLE :: NUMSCC  ( : )     ! no. SCCs per table
         TYPE( AR2PT ), ALLOCATABLE :: UNSRTA2P( :,: )   ! unsorted tables
+        CHARACTER(FIPLEN3), ALLOCATABLE :: LOCFIP  ( : )   ! tmp FIPS codes
         CHARACTER(SCCLEN3), ALLOCATABLE :: AR2PTSCC( :,: ) ! SCCs per table
 
 C...........   For reporting:
@@ -101,10 +102,8 @@ C...........   Other local variables
         INTEGER         I, J, K, L, N     ! counters and indices
 
         INTEGER      :: CNT            ! tmp record counter 
-        INTEGER      :: FIP            ! tmp co/st/cy FIPS code 
         INTEGER      :: FIPCNT         ! counter for no. entries per SCC/FIPs
         INTEGER         IOS            ! i/o status
-        INTEGER      :: LFIP           ! previous co/st/cy FIPS code 
         INTEGER      :: MXSCC          ! max no. of SCCs per table 
         INTEGER      :: NXREF          ! number of cross-ref entries 
 
@@ -113,10 +112,10 @@ C...........   Other local variables
         LOGICAL      :: EFLAG  = .FALSE.  ! true: error found
         LOGICAL      :: WFLAG             ! true: convert lat-lons to Western hemisphere
 
-        CHARACTER(10)         FIPFMT  !  format to write co/st/cy to string
         CHARACTER(256)        MESG    !  message buffer
         CHARACTER(512)     :: LINE    !  input line
         CHARACTER(FIPLEN3) :: CFIP    !  tmp char co/st/cy code
+        CHARACTER(FIPLEN3) :: LFIP    !  previous co/st/cy FIPS code 
         CHARACTER(SCCLEN3) :: TSCC    !  tmp SCC code
 
         CHARACTER(16) :: PROGNAME = 'RDAR2PT' ! program name
@@ -131,9 +130,6 @@ C.........  Rewind area-to-point file
             MESG = 'Area-to-point factors file is not opened!'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-
-C.........  Set up formats
-        WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) FIPLEN3, FIPLEN3
 
 C.........  Loop through the input file to determine how many header
 C           lines there are and the maximum number of entries in 
@@ -150,7 +146,7 @@ C.........  Allocate memory for unsorted input tables
         ALLOCATE( NUMSCC( NTABLA2P ), STAT=IOS )
         CALL CHECKMEM( IOS, 'NUMSCC', PROGNAME )
         IDXA2P = 0                ! array
-        UNSRTA2P%FIP   = 0        ! array
+        UNSRTA2P%FIP   = ' '      ! array
         UNSRTA2P%LAT   = BADVAL3  ! array
         UNSRTA2P%LON   = BADVAL3  ! array
         UNSRTA2P%ALLOC = 1.       ! array
@@ -166,7 +162,7 @@ C.........  Allocate memory for sorted input tables
         ALLOCATE( AR2PTABL( MXROWA2P, NTABLA2P ), STAT=IOS )
         CALL CHECKMEM( IOS, 'AR2PTABL', PROGNAME )
         NAR2PT         = 0        ! array
-        AR2PTABL%FIP   = 0        ! array
+        AR2PTABL%FIP   = ' '      ! array
         AR2PTABL%LAT   = BADVAL3  ! array
         AR2PTABL%LON   = BADVAL3  ! array
         AR2PTABL%ALLOC = 1.       ! array
@@ -191,17 +187,17 @@ C.............  Transfer FIPS codes to local array
             LOCFIP = UNSRTA2P(:,N)%FIP    ! array
 
 C.............  Sort for current table
-            CALL SORTI1( NAR2PT(N), IDXA2P(1,N), LOCFIP )
+            CALL SORTIC( NAR2PT(N), IDXA2P(1,N), LOCFIP )
 
 C.............  Compute maximum expected x-ref entries
-            LFIP = -9
+            LFIP = ' '
             DO I = 1, NAR2PT( N )
                 J = IDXA2P( I,N )
-                FIP = UNSRTA2P( J,N )%FIP
-                IF( LFIP .NE. FIP ) THEN
+                CFIP = UNSRTA2P( J,N )%FIP
+                IF( LFIP .NE. CFIP ) THEN
                     NXREF = NXREF + NUMSCC( N )
                 END IF
-                LFIP = FIP
+                LFIP = CFIP
             END DO          ! end loop through rows in table
 
         END DO              ! end loop through tables
@@ -209,8 +205,8 @@ C.............  Compute maximum expected x-ref entries
 C........  Allocate memory for cross-reference arrays
         ALLOCATE( INDXTA( NXREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
-        ALLOCATE( IFIPTA( NXREF ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIPTA', PROGNAME )
+        ALLOCATE( CFIPTA( NXREF ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CFIPTA', PROGNAME )
         ALLOCATE( CSCCTA( NXREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
         ALLOCATE( CSRCTA( NXREF ), STAT=IOS )
@@ -218,7 +214,7 @@ C........  Allocate memory for cross-reference arrays
         ALLOCATE( IARPTA( NXREF,3 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'IARPTA', PROGNAME )
         INDXTA = 0   ! array
-        IFIPTA = 0   ! array
+        CFIPTA = ' ' ! array
         CSCCTA = ' ' ! array
         CSRCTA = ' ' ! array
         IARPTA = 0   ! array
@@ -241,27 +237,25 @@ C             and create cross-referencing arrays
             DO K = 1, NUMSCC( N )
 
 C...............  Reset number of entries per FIPS code
-                LFIP = -9
+                LFIP = ' '
 
 C...............  Loop through rows for this section of the file
                 DO I = 1, NAR2PT( N )
 
-                    FIP  = AR2PTABL( I,N )%FIP
+                    CFIP = AR2PTABL( I,N )%FIP
                     TSCC = AR2PTSCC( K,N )
 
 C..................  If this row is a new FIPS code
-                    IF( FIP .NE. LFIP ) THEN
+                    IF( CFIP .NE. LFIP ) THEN
                         CNT = CNT + 1  ! count of cross-reference entries
 
 C.......................  If count of entries is w/i dimensioned array
                         IF( CNT .LE. NXREF ) THEN
                             INDXTA( CNT )   = CNT
-                            IFIPTA( CNT )   = FIP
+                            CFIPTA( CNT )   = CFIP
                             CSCCTA( CNT )   = TSCC
                             IARPTA( CNT,1 ) = N
                             IARPTA( CNT,2 ) = I
-
-                            WRITE( CFIP,FIPFMT ) FIP
                             CSRCTA( CNT )   = CFIP // TSCC
                         END IF
 
@@ -277,7 +271,7 @@ C....................  Store the number of entries for this FIPS/SCC
                     IF( CNT .LE. NXREF ) IARPTA( CNT,3 ) = FIPCNT
 
 C....................  Store previous FIPS code for next iteration
-                    LFIP = FIP
+                    LFIP = CFIP
 
                 END DO   ! end loop through rows of current table
             END DO       ! end loop through SCCs of current table
@@ -298,7 +292,7 @@ C.........  Check that fractions for each FIPS/SCC combo sums to 1.
         DO I = 1, NXREF
 
             J    = INDXTA( I )
-            FIP  = IFIPTA( J )
+            CFIP = CFIPTA( J )
             TSCC = CSCCTA( J ) 
 
 C............  Loop through entries for current FIPS/SCC and compute
@@ -318,7 +312,7 @@ C              range, then write error
     
                 EFLAG = .TRUE.
                 WRITE( MESG, 94020 ) 'ERROR: Sum of factors for '//
-     &                 'Co/St/Cy=', FIP, 'and SCC= '// TSCC//
+     &                 'Co/St/Cy= '// CFIP//'and SCC= '// TSCC//
      &                 CRLF()// BLANK10 // 'is not equal to 1. '//
      &                 'Value is ', SUMTEST, '.'
                 CALL M3MSG2( MESG )
@@ -414,7 +408,7 @@ C.........  Deallocate local memory
         DEALLOCATE( SCCIDX, INVSCCA, SCCSECTN )
 
 C.........  Deallocate cross-reference sorting arrays
-        DEALLOCATE( INDXTA, IFIPTA, CSCCTA, CSRCTA, IARPTA )
+        DEALLOCATE( INDXTA, CFIPTA, CSCCTA, CSRCTA, IARPTA )
 
         RETURN
 
@@ -424,7 +418,7 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-94020   FORMAT(  A, 1X, I6.6, 1X, A, 1X, F10.7, 1X, A )
+94020   FORMAT(  A, 1X, F10.7, 1X, A )
 
 94675   FORMAT( 10X, A20, 4X, I2.2, 5X, A )
 
@@ -459,7 +453,6 @@ C.............  Local variables
             INTEGER          CNT        ! table record counter
             INTEGER          CNY        ! tmp county code
             INTEGER          COU        ! tmp country code
-            INTEGER          FIP        ! tmp co/st/cy FIPS code
             INTEGER          IOS        ! i/o status
             INTEGER          IREC       ! record number
             INTEGER       :: LINSCC = 0 ! number of SCCs on current header line
@@ -472,6 +465,7 @@ C.............  Local variables
             REAL             LAT        ! tmp latitude
             REAL             LON        ! tmp longitude
             
+            CHARACTER(FIPLEN3) CFIP     ! tmp co/st/cy FIPS code
             CHARACTER(SCCLEN3) SEGSCC   ! segment SCC
 
             LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
@@ -608,7 +602,8 @@ C....................  Otherwise, parse and store table
                         END DO
 
 C........................  Check that FIPS code is an integer
-                        IF( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
+                        IF( .NOT. USEEXPGEO .AND. 
+     &                      .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'ERROR: Country/state'//
      &                             '/county code is not an integer '//
@@ -643,14 +638,15 @@ C........................  Store total count of packet for this table
                         NAR2PT( NTBL ) = CNT
 
 C........................  Store contents of this row
-                        FIP   = STR2INT ( SEGMENT( 1 ) )
+                        CFIP  = SEGMENT( 1 )
+                        CALL PADZERO( CFIP )
                         LON   = STR2REAL( SEGMENT( 8 ) )
                         IF( WFLAG .AND. LON > 0 ) LON = -LON  ! convert to western hemisphere
                         LAT   = STR2REAL( SEGMENT( 9 ) )
                         ALLOC = STR2REAL( SEGMENT( 10 ) )
 
                         IDXA2P        ( CNT,NTBL ) = CNT
-                        UNSRTA2P( CNT,NTBL )%FIP   = FIP
+                        UNSRTA2P( CNT,NTBL )%FIP   = CFIP
                         UNSRTA2P( CNT,NTBL )%LAT   = LAT
                         UNSRTA2P( CNT,NTBL )%LON   = LON
                         UNSRTA2P( CNT,NTBL )%ALLOC = ALLOC

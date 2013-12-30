@@ -560,6 +560,8 @@ C.................  Otherwise, not a list file, so exit
 C.............  Skip blank lines
             IF( LINE == ' ' ) CYCLE
             EXTORL = ' '
+            SIC = ' '
+
 C.............  Process line depending on file format and source category
             SELECT CASE( CURFMT )
 
@@ -567,7 +569,7 @@ C.............  Process line depending on file format and source category
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
                     CALL RDDATAFF10AR( LINE, READDATA, READPOL, INVYEAR,
-     &                        SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
+     &                        SRCTYP, SIC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
                     NPOLPERLN = 1   ! have to set fake value to force reporting
 
                 CASE( 'MOBILE' )
@@ -758,26 +760,6 @@ C                   great than zero. reset it to a missing value '-9.0' if not.
             END IF
                 
             IF( ( CATEGORY == 'POINT' .AND. CURFMT /= ORLFIREFMT ) .OR. CURFMT == ORLNPFMT ) THEN
-
-                IF( .NOT. CHKINT( SIC ) ) THEN
-                    IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: SIC code is ' //
-     &                     'non-integer at line', IREC, '. Default ' //
-     &                     '0000 will be used.'
-                        CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
-                    END IF
-                    SIC = '0000'
-                ELSE IF( SIC == ' ' ) THEN
-                    IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Missing SIC ' //
-     &                         'code at line', IREC, '. Default ' //
-     &                         '0000 will be used.'
-                        CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
-                    END IF
-                    SIC = '0000'
-                END IF
                 
 C.................  Check ORL specific values
                 IF( CURFMT == ORLFMT ) THEN
@@ -819,26 +801,6 @@ C.................  Check ORL FIRE specific values
                     WRITE( MESG,94010 ) 'ERROR: Latitude and/or ' //
      &                     'longitude are missing at line', IREC
                     CALL M3MSG2( MESG )
-                END IF
-
-                IF( .NOT. CHKINT( SIC ) ) THEN
-                    IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Material-' //
-     &                     'burned code is non-integer at line', 
-     &                     IREC, '. Default of 0 will be used.'
-                        CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
-                    END IF
-                    SIC = '0'
-                ELSE IF( SIC == ' ' ) THEN
-                    IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Missing ' //
-     &                         'material-burned code at line', IREC, 
-     &                         '. Default of 0 will be used.'
-                        CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
-                    END IF
-                    SIC = '0'
                 END IF
 
                 IF( MACT == ' ' ) THEN
@@ -1272,6 +1234,12 @@ C.............  Skip rest of loop if no pollutants are kept
             INVYR ( CURSRC ) = INVYEAR
             TPFLAG( CURSRC ) = TPF
 
+C.............  Store SIC if not blank
+            IF ( ALLOCATED( CISIC ) .AND. SIC /= ' ' ) THEN
+                CALL PADZERO( SIC )
+                CISIC( CURSRC ) = SIC
+            END IF
+
             IF( CATEGORY == 'POINT' .OR.
      &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFMT .OR.
      &          CURFMT == FF10FMT ) THEN
@@ -1279,8 +1247,6 @@ C.............  Skip rest of loop if no pollutants are kept
                  IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
      &               .OR. (CATEGORY == 'POINT' .AND. CURFMT == FF10FMT)
      &               .OR. CURFMT == ORLNPFMT               ) THEN
-                     CALL PADZERO( SIC )
-                     CISIC( CURSRC ) = SIC
                      IF( MACT == '-9' ) MACT = ' '
                      IF( NAICS == '-9' ) NAICS = ' '
                      CALL PADZERO( MACT )
@@ -1368,9 +1334,7 @@ C.................  Correct hemisphere for stack longitude
                 CALL PADZERO( ERPTYP )
                 CALL PADZERO( MACT )
                 CALL PADZERO( NAICS )
-                CALL PADZERO( SIC )
 
-                CISIC  ( CURSRC ) = SIC
                 CSRCTYP( CURSRC ) = SRCTYP
                 CERPTYP( CURSRC ) = ERPTYP
                 CMACT  ( CURSRC ) = MACT

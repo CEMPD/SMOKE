@@ -59,7 +59,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: GRPCOL( : ) ! col number
         INTEGER, ALLOCATABLE, PUBLIC:: GRPROW( : ) ! row number
         INTEGER, ALLOCATABLE, PUBLIC:: GRPIDX( : ) ! sorting index for GRPGIDA
-        INTEGER, ALLOCATABLE, PUBLIC:: GRPFIP( : ) ! fips code of stack        
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC:: GRPFIP( : ) ! fips code of stack        
 
         REAL   , ALLOCATABLE, PUBLIC:: GRPDM ( : ) ! group intl stack diam [m]
         REAL   , ALLOCATABLE, PUBLIC:: GRPFL ( : ) ! group exit flw rate [m^3/s]

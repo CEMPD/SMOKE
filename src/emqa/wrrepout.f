@@ -70,7 +70,7 @@ C.........  This module contains Smkreport-specific settings
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
-     &                      STKGWIDTH, STKGFMT, INTGRWIDTH
+     &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH
 
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
@@ -81,10 +81,12 @@ C.........  This module contains report arrays for each output bin
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
      &                      BINNAIIDX, BINSRCTYP, BINORIS, BINORSIDX,
-     &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR
+     &                      BINORIS, BINORSIDX, BINSTKGRP, BININTGR,
+     &                      BINGEO1IDX
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC
+        USE MODSTCY, ONLY: CTRYNAM, STATNAM, CNTYNAM, NORIS, ORISDSC,
+     &                     GEOLEV1NAM
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: MXCHRS, NCHARS
@@ -290,14 +292,29 @@ C.............  Include source number in string
 
 C.............  Include country/state/county code in string
                 IF( LREGION ) THEN
-                    BUFFER = ' '
-                    WRITE( BUFFER, REGNFMT ) BINREGN( I )  ! Integer
-                    STRING = STRING( 1:LE ) // BUFFER
+                    STRING = STRING( 1:LE ) // BINREGN( I ) // DELIM
                     MXLE = MXLE + REGNWIDTH + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF
 
+
+C.............  Include region level 1 name in string
+                IF( RPT_%BYGEO1NAM ) THEN
+                    J = BINGEO1IDX( I )
+                    L = GEO1WIDTH
+                    L1 = L - LV - 1                        ! 1 for space
+                    IF( J .LE. 0 ) THEN
+                        STRING = STRING( 1:LE ) // 
+     &                           BADRGNM( 1:L1 ) // DELIM
+                    ELSE
+                        STRING = STRING( 1:LE ) // 
+     &                           GEOLEV1NAM( J )( 1:L1 ) // DELIM
+                    END IF
+
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
+                END IF
 
 C.............  Include country name in string
                 IF( RPT_%BYCONAM ) THEN

@@ -103,7 +103,7 @@ C.........  This module contains arrays for plume-in-grid and major sources
      &                     GROUPID
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTY, AICNY, MICNY, PICNY
@@ -129,8 +129,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(10)   HHMMSS
         INTEGER         INDEX1
         INTEGER         WKDAY
+        LOGICAL         USEEXPGEO
 
-        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY
+        EXTERNAL    CRLF, HHMMSS, INDEX1, WKDAY, USEEXPGEO
 
 C.........  LOCAL PARAMETERS and their descriptions:
 
@@ -272,12 +273,20 @@ C           states and counties in the grid
 C.........  For anthropogenic source categories, use FIPS list
 C           from the inventory for limiting state/county list
         IF( AFLAG .OR. MFLAG .OR. PFLAG ) THEN
-            CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
+            IF( USEEXPGEO ) THEN
+                CALL RDGEOCODES( NINVIFIP, INVCFIP )
+            ELSE
+                CALL RDSTCY( CDEV, NINVIFIP, INVCFIP )
+            END IF
 
 C.........  Otherwise, for biogenic merge only, use list of codes from the 
 C           surrogates file needed for state and county totals
         ELSE
-            CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
+            IF( USEEXPGEO ) THEN
+                CALL RDGEOCODES( NINVIFIP, INVCFIP )
+            ELSE
+                CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
+            END IF
 
         END IF
 

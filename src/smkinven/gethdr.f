@@ -166,7 +166,7 @@ C.............  Check for country name
 
                 END IF
 
-                ICC   = CTRYCOD( I ) / 100000
+                ICC   = STR2INT( CTRYCOD( I ) ) / 100000
 
 C.............  Check for inventory year
             ELSE IF ( BUFFER(2:5) .EQ. 'YEAR' ) THEN 

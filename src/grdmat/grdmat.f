@@ -38,7 +38,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
-     &                      CELLID, IFIP   
+     &                      CELLID, CIFIP   
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: ASRGID, SRGFIPIDX
@@ -138,7 +138,6 @@ C...........   Other local variables
         INTEGER         CMAX      ! max number srcs per cell
         INTEGER         CMIN      ! min number srcs per cell
         INTEGER         ENLEN     ! length of the emissions inven name
-        INTEGER         FIP       ! tmp country/state/county code
         INTEGER         LSSC      ! previous tmp surrogate codes
         INTEGER         IOS       ! i/o status
         INTEGER         IREC      ! Record counter
@@ -250,7 +249,7 @@ C.............  Store source specific information based on header
         INVGRDNM = GETCFDSC( FDESC3D, '/GRIDNAME/', .FALSE. )
 
 C.........  Set inventory variables to read for all source categories
-        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 1 ) = 'CIFIP'
 
         SELECT CASE ( CATEGORY )
 

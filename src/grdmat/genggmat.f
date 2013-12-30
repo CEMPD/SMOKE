@@ -33,7 +33,7 @@ C************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: XLOCA, YLOCA, IFIP, CELLID, CSOURC
+        USE MODSOURC, ONLY: XLOCA, YLOCA, CIFIP, CELLID, CSOURC
 
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, NCOLS, NROWS
@@ -90,13 +90,11 @@ C...........   Other local variables
         INTEGER         C, F, I, J, K, N, S !  indices and counters.
 
         INTEGER         COL     ! tmp column
-        INTEGER         FIP     ! tmp country/state/county code
         INTEGER         ID1,ID2 ! tmp primary and secondary surg codes
         INTEGER         IOS     ! i/o status
         INTEGER         ISIDX   ! tmp surrogate ID code index
         INTEGER         JMAX    ! counter for storing correct max dimensions
         INTEGER         L2      ! string length
-        INTEGER         LFIP    ! cy/st/co code from previous iteration
         INTEGER         NCEL    ! tmp number of cells 
         INTEGER         NNOSRG  ! no. of cy/st/co codes with no surrogates
         INTEGER         ROW     ! tmp row
@@ -107,6 +105,8 @@ C...........   Other local variables
         LOGICAL      :: LFLAG = .FALSE.  !  true: location data available
         LOGICAL      :: XYSET = .FALSE. ! true: X/Y available for src
 
+        CHARACTER(FIPLEN3) CFIP   !  tmp country/state/county code
+        CHARACTER(FIPLEN3) LFIP   !  cy/st/co code from previous iteration
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  MESG      !  message buffer 
@@ -149,13 +149,13 @@ C.......       sixth case:   fallback default
         MESG = 'Computing gridding matrix and statistics...'
         CALL M3MSG2( MESG )
 
-        LFIP  = 0
+        LFIP  = ' '
         NNOSRG   = 0
         JMAX  = -1
 
         DO S = 1, NSRC
             
-            FIP  = IFIP  ( S )
+            CFIP = CIFIP ( S )
             C    = CELLID( S )
             CSRC = CSOURC( S )
 

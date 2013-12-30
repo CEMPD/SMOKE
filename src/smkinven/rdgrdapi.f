@@ -38,7 +38,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: POLVAL, TZONES, IFIP, CELLID, TPFLAG, INVYR,
+        USE MODSOURC, ONLY: POLVAL, TZONES, CIFIP, CELLID, TPFLAG, INVYR,
      &                      NPCNT, CSCC, IPOSCOD, CSOURC
 
 C.........  This module contains the information about the source category
@@ -72,7 +72,6 @@ C...........   Local allocatable arrays
 C...........   Other local variables
         INTEGER         C, ES, J, K, L, S, V     !  counters and indices
 
-        INTEGER         FIP         !  tmp region code
         INTEGER         FLEN        !  file name length
         INTEGER         IDX         !  emissions array index (ann or ave day)
         INTEGER      :: INY = 0     !  tmp inventory year
@@ -275,7 +274,6 @@ C.........  Initialize emissions data
         POLVAL = BADVAL3    ! array
 
 C.........  Initialize tmp source characteristics
-        FIP     = 0
         CFIP    = REPEAT( '0', FIPLEN3 )
         SCCZERO = REPEAT( '0', SCCLEN3 )
         CCOD    = ' '
@@ -284,7 +282,7 @@ C.........  Loop through cells (same as sources) and store data as sources
         ES  = 0
         DO S = 1, NSRC
 
-            IFIP  ( S ) = FIP
+            CIFIP ( S ) = CFIP
             CELLID( S ) = S
             TPFLAG( S ) = TPF
             INVYR ( S ) = INY

@@ -45,14 +45,17 @@
         INTEGER, ALLOCATABLE, PUBLIC :: PICNY( : )  ! dim NPSRC
 
 !.........  Codes, names, and their dimensions
+        INTEGER, PUBLIC :: NGEOLEV1    ! Number of level 1 entries
         INTEGER, PUBLIC :: NCOUNTRY    ! Number of counties
         INTEGER, PUBLIC :: NSTATE      ! Number of countries/states
         INTEGER, PUBLIC :: NCOUNTY     ! Number of countries/states/counties
 
-        INTEGER, ALLOCATABLE, PUBLIC :: CTRYCOD( : ) ! country codes
-        INTEGER, ALLOCATABLE, PUBLIC :: STATCOD( : ) ! country/state codes
-        INTEGER, ALLOCATABLE, PUBLIC :: CNTYCOD( : ) ! country/state/county code
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: GEOLEV1COD( : ) ! level 1 codes
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: CTRYCOD( : ) ! country codes [level 2]
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: STATCOD( : ) ! country/state codes [level 3]
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: CNTYCOD( : ) ! country/state/county code [level 4]
 
+        CHARACTER(20), ALLOCATABLE, PUBLIC :: GEOLEV1NAM( : ) ! level 1 names
         CHARACTER(20), ALLOCATABLE, PUBLIC :: CTRYNAM( : ) ! Country names
         CHARACTER(20), ALLOCATABLE, PUBLIC :: STATNAM( : ) ! State names
         CHARACTER(20), ALLOCATABLE, PUBLIC :: CNTYNAM( : ) ! County names
@@ -72,7 +75,7 @@
 !.........  ORIS list with state and county codes
         INTEGER, PUBLIC :: NORIS     ! Number of all ORIS codes
 
-        INTEGER, ALLOCATABLE, PUBLIC :: ORISFIP( : ) ! country/state/county code
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: ORISFIP( : ) ! country/state/county code
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: ORISLST( : ) ! ORIS codes
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC :: ORISDSC( : ) ! ORIS desc
         

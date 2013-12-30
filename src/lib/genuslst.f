@@ -38,13 +38,13 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, CISIC, CINTGR, CMACT, 
+        USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, CISIC, CINTGR, CMACT, 
      &                      CORIS, CBLRID, CPDESC, CNAICS, CVTYPE
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, NINVSCC, NINVSCL, NINVSIC, 
      &                      NINVSIC2, NINVMACT, NINVORIS, 
-     &                      INVIFIP, INVCFIP, INVSCC, INVSCL, INVSIC,
+     &                      INVCFIP, INVSCC, INVSCL, INVSIC,
      &                      INVSIC2, INVMACT, INVORIS,
      &                      INVORFP, IORSMTCH, INVODSC, ORISBLR,
      &                      OBSRCBG, OBSRCNT, NORISBLR, NOBLRSRC,
@@ -74,27 +74,25 @@ C...........   Sorting index
 C...........   Local allocateable arrays for ORIS lists
         INTEGER, ALLOCATABLE :: FOIDXA  ( : )  ! sorting index for oris
         INTEGER, ALLOCATABLE :: OBIDXA  ( : )  ! sorting index for oris//blr
-        INTEGER, ALLOCATABLE :: INVORFPA( : )  ! FIPS code for ORIS IDs
         INTEGER, ALLOCATABLE :: OBSRCNTA( : )  ! unsrtd src count per ORIS/boiler
 
         CHARACTER(ORSLEN3), ALLOCATABLE :: INVORISA( : )  ! ORIS
+        CHARACTER(FIPLEN3), ALLOCATABLE :: INVORFPA( : )  ! FIPS code for ORIS IDs
         CHARACTER(OBRLEN3), ALLOCATABLE :: ORISBLRA( : )  ! ORIS // boiler
         CHARACTER(DSCLEN3), ALLOCATABLE :: INVODSCA( : ) ! plant description from inventory
 
 C...........   Other local variables
         INTEGER          I, J, J1, J2, L1, L2, N, NS, S
         INTEGER          IOS                 ! allocate i/o status
-        INTEGER          FIP                 ! current cntry/st/co code
-        INTEGER          PFIP                ! previous iteration cntry/st/co 
 
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error has occurred
         LOGICAL, SAVE :: FIRSTIME = .TRUE.   ! true: first call to subroutine
         LOGICAL, SAVE :: FIRSTORS = .TRUE.   ! true: first run of ORIS arrays
         LOGICAL          SCCFLAG             ! true: SCC type is different from previous
 
-        CHARACTER(10)      FIPFMT        ! format to write FIP to CFIP
         CHARACTER(300)     MESG          ! message buffer
-        CHARACTER(FIPLEN3) CFIP          ! tmp fip for mesage
+        CHARACTER(FIPLEN3) CFIP          ! current cntry/st/co code
+        CHARACTER(FIPLEN3) PCFIP        ! previous iteration cntry/st/co
         CHARACTER(VTPLEN3) PVTYP         ! previous vehicle type
         CHARACTER(VTPLEN3) TVTYP         ! tmp vehicle type
         CHARACTER(SCCLEN3) PSCC          ! previous iteration SCC
@@ -134,49 +132,41 @@ C.............  Allocate memory for sorting index
             ALLOCATE( INDX( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'INDX', PROGNAME )
 
-C.............  Check if IFIP is allocated.  
+C.............  Check if CIFIP is allocated.  
 C.............  If it is, generate unique list of country/state/county codes
-            IF( ASSOCIATED( IFIP ) ) THEN
-
-C.................  Create the FIP code format string
-                WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) 
-     &                 FIPLEN3, FIPLEN3
+            IF( ASSOCIATED( CIFIP ) ) THEN
 
 C.................  Count number of unique codes
-                PFIP = IMISS3
+                PCFIP = ' '
                 J1 = 0
                 DO S = 1, NSRC
  
-                    FIP = IFIP( S )
-                    IF( FIP .NE. PFIP ) J1 = J1 + 1
-                    PFIP = FIP
+                    CFIP = CIFIP( S )
+                    IF( CFIP .NE. PCFIP ) J1 = J1 + 1
+                    PCFIP = CFIP
 
                 END DO
                 NINVIFIP = J1
 
 C.................  Allocate memory for country/state/county lists
-                ALLOCATE( INVIFIP( NINVIFIP ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'INVIFIP', PROGNAME )
                 ALLOCATE( INVCFIP( NINVIFIP ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'INVCFIP', PROGNAME )
 
 C.................  Create unique country/state/county codes list
-                PFIP = IMISS3
+                PCFIP = ' '
                 J1 = 0
                 DO S = 1, NSRC
  
-                    FIP = IFIP( S )
-                    WRITE( CFIP,FIPFMT ) FIP
-                    IF( FIP .NE. PFIP ) THEN
+                    CFIP = CIFIP( S )
+                    IF( CFIP .NE. PCFIP ) THEN
                         J1 = J1 + 1
-                        INVIFIP( J1 ) = FIP
                         INVCFIP( J1 ) = CFIP
-                        PFIP = FIP
+                        PCFIP = CFIP
                     END IF
 
                 END DO
 
-            END IF   ! End of IFIP allocated or not
+            END IF   ! End of CIFIP allocated or not
 
 C.............  Check if CVTYPE is allocated
 C.............  If it is, generate unique list of vehicle types
@@ -538,7 +528,7 @@ C.............  Store arrays
             PBLID    = ' '
             DO S = 1, NSRC
 
-                FIP  = IFIP  ( S )
+                CFIP = CIFIP ( S )
                 CORS = CORIS ( S )
                 BLID = CBLRID( S )
                 PDSC = CPDESC( S )
@@ -554,11 +544,10 @@ C.................  Unsorted ORIS arrays
                         NINVORIS = NINVORIS + 1
                         FOIDXA  ( NINVORIS ) = NINVORIS
                         INVORISA( NINVORIS ) = CORS
-                        INVORFPA( NINVORIS ) = FIP
+                        INVORFPA( NINVORIS ) = CFIP
                         INVODSCA( NINVORIS ) = PDSC
                     ELSE
-                        IF( INVORFPA( J ) /= FIP ) THEN
-                            WRITE( CFIP, '(I5)' ) INVORFPA( J )
+                        IF( INVORFPA( J ) /= CFIP ) THEN
                        	    MESG = 'WARNING: Different FIPS codes ' //
      &                            'found for ORIS ID ' // CORS
      &                            // '.  Will use ' // CFIP //

@@ -21,7 +21,8 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: DDSLEN3 = 40 ! inventory data description
         INTEGER, PARAMETER :: DSCLEN3 = 40 ! plant description
         INTEGER, PARAMETER :: ERPLEN3 =  2 ! emission release point type
-        INTEGER, PARAMETER :: FIPLEN3 =  6 ! FIPS code
+        INTEGER, PARAMETER :: FIPEXPLEN3 = 6 ! geographic code expansion
+        INTEGER, PARAMETER :: FIPLEN3 = 6 + FIPEXPLEN3 ! FIPS code
         INTEGER, PARAMETER :: LNKLEN3 = 15 ! link ID field
         INTEGER, PARAMETER :: INTLEN3 =  1 ! INTEGRATE code
         INTEGER, PARAMETER :: MACLEN3 =  6 ! MACT code

@@ -41,7 +41,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, CSCC, XLOCA, YLOCA
+        USE MODSOURC, ONLY: CIFIP, CSCC, XLOCA, YLOCA
         
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC, NIPOL
@@ -88,6 +88,7 @@ C...........   Local variables
         CHARACTER(SCCLEN3)  PSCC       ! previous SCC code
         CHARACTER(SCCLEN3)  TSCC       ! temp. SCC code
         CHARACTER(IOVLEN3)  TDNAME     ! temp. data name
+        CHARACTER(FIPLEN3)  PFIP       ! previous FIPS code
 
         CHARACTER(36), ALLOCATABLE :: SCCPOLL( : ) ! SCC/pollutant combination
         
@@ -96,7 +97,6 @@ C...........   Local variables
         INTEGER         NFIPS              ! temp. number of FIPS codes
         INTEGER         NSCCPOLL           ! total number of SCC // pollutant combinations
         INTEGER         POLL               ! temp. pollutant
-        INTEGER         PFIP               ! previous FIPS code
         
         INTEGER, ALLOCATABLE :: ASSIGNED( : ) ! number of FIPS codes assigned
         INTEGER, ALLOCATABLE :: UNASSIGN( : ) ! number of FIPS codes unassigned
@@ -396,14 +396,14 @@ C............  Allocate and initialize arrays
           UNASSIGN = 0
           
 C............  Initialize previous FIPS and SCC codes
-          PFIP = 99999
+          PFIP = ' '
           PSCC = REPEAT( '9', SCCLEN3 )
           
 C............  Loop through sources
           DO S = 1, NSRC
         
 C............  If FIPS and SCC codes are equal to previous, cycle  
-            IF( IFIP( S ) .EQ. PFIP .AND. CSCC( S ) .EQ. PSCC ) CYCLE
+            IF( CIFIP( S ) .EQ. PFIP .AND. CSCC( S ) .EQ. PSCC ) CYCLE
 
 C............  If SCC is in the area-to-point SCC list then determine
 C              if it is assigned or unassigned     
@@ -421,7 +421,7 @@ C              if it is assigned or unassigned
             END IF
      
 C............  Reset previous FIPS and SCC codes to current ones       
-            PFIP = IFIP( S )
+            PFIP = CIFIP( S )
             PSCC = CSCC( S )
             
           END DO

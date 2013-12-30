@@ -40,7 +40,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: FLTRDAYL, IFIP
+        USE MODSOURC, ONLY: FLTRDAYL, CIFIP
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTY, CNTYCOD, USEDAYLT
@@ -55,19 +55,19 @@ C...........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constat parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER         FIND1
+        INTEGER         FINDC
 
-        EXTERNAL        FIND1
+        EXTERNAL        FINDC
 
 C...........   Other local variables
 
         INTEGER         J, S        ! counters and indices
 
-        INTEGER         FIP         ! tmp region code
         INTEGER         FLTR        ! tmp filter value
         INTEGER         IOS         ! i/o status
-        INTEGER         PFIP        ! region code from previous iteration
 
+        CHARACTER(FIPLEN3) CFIP     ! tmp region code
+        CHARACTER(FIPLEN3) PFIP     ! region code from previous iteration
         CHARACTER(300)  MESG        ! message buffer 
 
         CHARACTER(16) :: PROGNAME = 'SETDAYLT' ! program name
@@ -86,14 +86,14 @@ C.........  Use region codes daylight time assignment information (from MODSTCY)
 C           to set sources that do not use daylight time
 C.........  No error if region code is not found in list, because if it is
 C           not in the list, then the daylight status can remain in use
-        PFIP = 0
+        PFIP = ' '
         DO S = 1, NSRC
 
-            FIP = IFIP( S )
+            CFIP = CIFIP( S )
             
-            IF( FIP .NE. PFIP ) THEN
+            IF( CFIP .NE. PFIP ) THEN
 
-                J = FIND1( FIP, NCOUNTY, CNTYCOD )
+                J = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
                 FLTR = 1
                 IF( J .GT. 0 ) THEN
@@ -102,7 +102,7 @@ C           not in the list, then the daylight status can remain in use
 
                 END IF
 
-                PFIP = FIP
+                PFIP = CFIP
 
             END IF
 

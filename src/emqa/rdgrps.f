@@ -74,7 +74,7 @@ C...........   Local allocatable arrays...
 
 C...........   Region group input allocatable arrays
         INTEGER, ALLOCATABLE :: REGNREC ( : )    ! no. records per group
-        INTEGER, ALLOCATABLE :: REGRAW  ( :,: )  ! raw codes from input file
+        CHARACTER(FIPLEN3), ALLOCATABLE :: REGRAW  ( :,: )  ! raw codes from input file
         INTEGER, ALLOCATABLE :: REGTYPE ( :,: )  ! 0=bad,1=country,2=st,3=county
         LOGICAL, ALLOCATABLE :: REGSTAT ( :,: )  ! raw status (true=include)
 
@@ -106,12 +106,11 @@ C...........   Other local variables
         INTEGER         LEVEL               ! match level for region groups
         INTEGER      :: NINCL = 0           ! tmp number of included cells
 
-        REAL            FAC                 ! tmp conversion factor
-
         LOGICAL      :: EFLAG = .FALSE.     ! true: error found
 
         CHARACTER(200)  BUFFER   ! tmp label buffer
         CHARACTER(300)  MESG     ! tmp message buffer
+        CHARACTER(FIPLEN3) CREGN ! tmp partial region code
 
         CHARACTER(16) :: PROGNAME = 'RDGRPS' ! program name
 
@@ -194,10 +193,10 @@ C           the inline labels as well.
 
             REGNNAM  = ' '     ! array
             REGNREC  = 0       ! array
-            REGRAW   = 0       ! array
+            REGRAW   = ' '     ! array
             REGSTAT  = .TRUE.  ! array (default is include)
             REGTYPE  = 0       ! array (default is record invalid)
-            EXCLDRGN = 0       ! array 
+            EXCLDRGN = ' '     ! array 
 
         END IF
 
@@ -247,29 +246,27 @@ C.................  Loop through records in each packet or in-line region group
                 DO I = 1, REGNREC( N )
 
 C.....................  Depending on type of the record (country, state, or
-C                       county), set divisor factor
+C                       county), set comparison length
                     SELECT CASE( REGTYPE( I,N ) )
                     CASE( 1 )                     ! country
-                        FAC = 1. / 100000.
+                        IC = FIPEXPLEN3 + 1
                     CASE( 2 )                     ! state
-                        FAC = 1. / 1000.
+                        IC = STALEN3
                     CASE( 3 )                     ! county
-                        FAC = 1.           
+                        IC = FIPLEN3
                     CASE DEFAULT
                         CYCLE
 
                     END SELECT
-
-C.....................  Convert raw value to comparison value
-                    IC = INT( REAL( REGRAW( I,N ) ) * FAC )
+                    
+                    CREGN = REGRAW( I,N )( 1:IC )
 
 C..................... Loop through counties and determine which ones 
                     DO J = 1, NCOUNTY
-
-                        K = INT( REAL( CNTYCOD( J ) ) * FAC )
-                        IF( K .EQ. IC ) 
-     &                      LRGN( J ) = REGSTAT( I,N )
-                        IF( K .GT. IC ) EXIT
+                    
+                        IF( CNTYCOD( J )( 1:IC ) == CREGN ) THEN
+                            LRGN( J ) = REGSTAT( I,N )
+                        END IF
 
                     END DO  ! End loop on counties
 
@@ -399,11 +396,11 @@ C.............  Subprogram local arrays
 C.............  Local variables
             INTEGER       I, J, L, N       ! counters and indices
 
-            INTEGER       FIP      ! tmp region code
             INTEGER       IOS      ! i/o status
             INTEGER    :: NS = 1   ! no. segments in line
             INTEGER       RCNT     ! record count
 
+            CHARACTER(FIPLEN3) CFIP ! tmp region code
             CHARACTER(300) BUFFER   ! tmp line buffer as uppercase
             CHARACTER(300) LINE     ! tmp line buffer
             CHARACTER(300) MESG     ! mesg buffer
@@ -512,14 +509,14 @@ C                           to a region code and compare with the inventory.
                         IF( J .LE. 0 ) THEN
 
 C.............................  Check if label is an integer
-                            IF( CHKINT( RPT_%REGNNAM ) ) THEN
+                            IF( .TRUE. .OR. CHKINT( RPT_%REGNNAM ) ) THEN
 
 C.................................  Convert label to region code
-                                FIP = STR2INT( RPT_%REGNNAM )
+                                CFIP = RPT_%REGNNAM
 
 C.................................  Check if label is a valid region code
 C.................................  REGNTMP is a dummy argument at this stage
-                                CALL CHECK_REGIONS( FIP, LEVEL, IOS )
+                                CALL CHECK_REGIONS( CFIP, LEVEL, IOS )
                             
 C.................................  If code is valid, store line number of
 C                                   record
@@ -647,15 +644,15 @@ C.........................  Store region
                         CASE( REG_IDX )
 
 C.............................  Make sure region code is an integer
-                            IF( CHKINT( SEGMENT( 1 ) ) ) THEN
-                                FIP = STR2INT( SEGMENT(1) )
+                            IF( .TRUE. .OR. CHKINT( SEGMENT( 1 ) ) ) THEN
+                                CFIP = SEGMENT(1)
 
-                                CALL CHECK_REGIONS( FIP, LEVEL, IOS )
+                                CALL CHECK_REGIONS( CFIP, LEVEL, IOS )
 
                                 IF( IOS .EQ. 0 ) THEN
 
                                     REGNREC( RCNT )  = N
-                                    REGRAW ( N,RCNT )= FIP
+                                    REGRAW ( N,RCNT )= CFIP
                                     REGSTAT( N,RCNT )= GRP_INCLSTAT
                                     REGTYPE( N,RCNT )= LEVEL
 
@@ -699,9 +696,9 @@ C                       store it.
                     ELSE IF( LINECODE( IREC ) .EQ. 1 ) THEN
 
 C.........................  Convert in-line code to region code and rename it.
-                        FIP = STR2INT( RPT_%REGNNAM )
-                        CALL CHECK_REGIONS( FIP, LEVEL, IOS )
-                        CALL RENAME_REGION( RPT_%REGNNAM, FIP )
+                        CFIP = RPT_%REGNNAM
+                        CALL CHECK_REGIONS( CFIP, LEVEL, IOS )
+                        CALL RENAME_REGION( RPT_%REGNNAM, CFIP )
 
 C.........................  Get report number
                         N = PKTCOUNT( RPT_IDX )
@@ -720,7 +717,7 @@ C                           only if code has already been through CHECK_REGIONS
                             PKTCOUNT( REG_IDX ) = RCNT
 
                             REGNREC( RCNT )   = 1
-                            REGRAW ( 1,RCNT ) = FIP
+                            REGRAW ( 1,RCNT ) = CFIP
                             REGSTAT( 1,RCNT ) = .TRUE.
                             REGTYPE( 1,RCNT ) = LEVEL
                         END IF
@@ -796,11 +793,11 @@ C               logical array aligning with the CNTYCOD array
             SUBROUTINE CHECK_REGIONS( REGN, LEVEL, STATUS )
 
 C.............  Exernal subroutines
-            INTEGER    FIND1
-            EXTERNAL   FIND1
+            INTEGER    FINDC
+            EXTERNAL   FINDC
 
 C.............  Subprogram arguments
-            INTEGER, INTENT (IN) :: REGN        ! region code
+            CHARACTER(FIPLEN3), INTENT (IN) :: REGN        ! region code
             INTEGER, INTENT (OUT):: LEVEL       ! sub-region level code
             INTEGER, INTENT (OUT):: STATUS      ! exit status
 
@@ -818,20 +815,20 @@ C.............  Initialize output variables
             LEVEL  = 0
 
 C.............  Find in country list                      
-            IF( MOD( REGN,100000 ) .EQ. 0 ) THEN
-                K = FIND1( REGN, NCOUNTRY, CTRYCOD )
+            IF( REGN( FIPEXPLEN3+2:FIPLEN3 ) == '00000' ) THEN
+                K = FINDC( REGN, NCOUNTRY, CTRYCOD )
                 STATUS = 0
                 LEVEL = 1
 
 C.............  Find in state list
-            ELSE IF( MOD( REGN,1000 ) .EQ. 0 ) THEN
-                K = FIND1( REGN, NSTATE, STATCOD )
+            ELSE IF( REGN( STALEN3:FIPLEN3 ) == '000' ) THEN
+                K = FINDC( REGN, NSTATE, STATCOD )
                 STATUS = 0
                 LEVEL = 2
 
 C.............  Find in county list                      
             ELSE
-                K = FIND1( REGN, NCOUNTY, CNTYCOD )
+                K = FINDC( REGN, NCOUNTY, CNTYCOD )
                 STATUS = 0
                 LEVEL = 3
                             
@@ -1130,14 +1127,14 @@ C----------------------------------------------------------------------
 C----------------------------------------------------------------------
 
 C.............  This subprogram renames internal region names
-            SUBROUTINE RENAME_REGION( NAM, FIP )
+            SUBROUTINE RENAME_REGION( NAM, CFIP )
 
             CHARACTER(*), INTENT (IN OUT) :: NAM
-            INTEGER,      INTENT (IN    ) :: FIP
+            CHARACTER(FIPLEN3), INTENT (IN    ) :: CFIP
 
 C----------------------------------------------------------------------
 
-            WRITE( NAM, '(A,I6.6)' ) 'In-line region ', FIP
+            WRITE( NAM, '(A,I12.12)' ) 'In-line region ', CFIP
 
             END SUBROUTINE RENAME_REGION
 

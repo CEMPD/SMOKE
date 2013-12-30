@@ -51,8 +51,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL        CHKINT
         INTEGER        GETFLINE
         INTEGER        STR2INT
+        LOGICAL        USEEXPGEO
 
-        EXTERNAL       BLKORCMT, CHKINT, GETFLINE, STR2INT
+        EXTERNAL       BLKORCMT, CHKINT, GETFLINE, STR2INT, USEEXPGEO
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: FDEV          ! file unit number
@@ -128,7 +129,8 @@ C.............  Set tmp ASCII fields into arrays of the correct length
             PDSC = ADJUSTL( SEGMENT( 5 ) )
 
 C.............  Check for integer field for FIPS code
-            IF ( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
+            IF ( .NOT. USEEXPGEO .AND.
+     &           .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: FIPS code not an ' //
      &                 'integer at line', IREC
@@ -138,7 +140,7 @@ C.............  Check for integer field for FIPS code
 
 C.............  Store entry
             I = I + 1
-            ORISFIP( I ) = STR2INT( SEGMENT( 2 ) )
+            ORISFIP( I ) = SEGMENT( 2 )
             ORISLST( I ) = CORS
             ORISDSC( I ) = PDSC
 

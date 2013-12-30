@@ -39,7 +39,7 @@ asgnspro.o: $(MODSOURC) $(MODXREF) $(MODSPRO) $(MODINFO)
 asgntag.o: $(MODTAG) $(MODSOURC) $(MODINFO)
 opensmat.o: $(MODINFO) $(MODFILESET) $(MODTAG)
 rdcombo.o: $(MODLISTS) $(MODSPRO)
-rdtag.o: $(MODLISTS) $(MODXREF) $(MODSPRO) $(MODINFO) $(MODTAG)
+rdtag.o: $(MODLISTS) $(MODXREF) $(MODSPRO) $(MODTAG) $(MODINFO)
 spcmat.o: $(MODSOURC) $(MODSPRO) $(MODINFO) $(MODEMFAC) $(MODFILESET) $(MODLISTS) $(MODTAG)
 #
 clean:

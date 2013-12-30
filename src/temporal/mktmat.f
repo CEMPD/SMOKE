@@ -51,7 +51,7 @@ C.........  This module contains the temporal profile tables
      &                      METPROTYPE, METPROF, NMETPROF, METFACS,
      &                      MONFAC_ORG 
      
-        USE MODSOURC, ONLY: IFIP
+        USE MODSOURC, ONLY: CIFIP
 
         IMPLICIT NONE
 
@@ -81,11 +81,11 @@ C...........   SUBROUTINE ARGUMENTS:
 
 C...........   EXTERNAL FUNCTIONS:
 
-        INTEGER         FIND1, INDEX1, JULIAN
+        INTEGER         FINDC, INDEX1, JULIAN
         LOGICAL         ISDSTIME       !  true iff daylight savings time( date)
         REAL            YR2DAY
 
-        EXTERNAL        FIND1, INDEX1, ISDSTIME, YR2DAY, JULIAN
+        EXTERNAL        FINDC, INDEX1, ISDSTIME, YR2DAY, JULIAN
 
 C...........   Other Local variables:
 
@@ -249,7 +249,7 @@ C............. Compute month and day of month using JDATE
             CALL DAYMON( JDATE, MON, MDAY )
 
 C............. Search index of FIPS from METFACS
-            NP = FIND1( IFIP( S ), NMETPROF, METPROF )
+            NP = FINDC( CIFIP( S ), NMETPROF, METPROF )
 
             SELECT CASE( PRFTYPE )
 
@@ -326,7 +326,7 @@ C.................  Read profileIDs and hourly factors
                     CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
                 END IF
 
-                NP = FIND1( IFIP( S ), NROWS3D, METPROF )
+                NP = FINDC( CIFIP( S ), NROWS3D, METPROF )
 
 C.....................  Convert ann/avgday NH3 inventory to hourly NH3 before multiplying
 C                       adjustment factor computed by Gentpro

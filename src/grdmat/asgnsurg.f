@@ -43,7 +43,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: IFIP, CSOURC, CSCC, CLINK, IRCLAS, IVTYPE
+        USE MODSOURC, ONLY: CIFIP, CSOURC, CSCC, CLINK, IRCLAS, IVTYPE
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: CHRT02, CHRT03, CHRT04, CHRT05, 
@@ -77,7 +77,6 @@ C.........  Other local variables
         INTEGER          I, II, J, L2, S    !  counters and indices
 
         INTEGER          F0, F1, F2, F3, F4, F5  ! tmp find indices
-        INTEGER          FIP     !  tmp country/state/county code
         INTEGER          ISRG    !  tmp surrogate code
 
         LOGICAL       :: EFLAG    = .FALSE.
@@ -85,7 +84,6 @@ C.........  Other local variables
         LOGICAL, SAVE :: REPDEFLT = .TRUE.
         LOGICAL          SCCFLAG           ! true: SCC type is different from previous
 
-        CHARACTER(8)          FMTFIP   ! format for writing FIPS code
         CHARACTER(10)         RWTFMT   ! formt to write rdway type to string
         CHARACTER(10)         VIDFMT   ! format to write veh ID to string
         CHARACTER(300)        BUFFER   ! source fields buffer
@@ -133,7 +131,6 @@ C.............  Create selection
             SELECT CASE ( CATEGORY )
 
             CASE ( 'AREA' )
-                FIP     = IFIP  ( S )
                 CSRC    = CSOURC( S )
                 CFIP    = CSRC( 1:FIPLEN3 )
                 CSTA    = CFIP( 1:STALEN3 )
@@ -155,7 +152,6 @@ c note: insert here when needed
             CASE ( 'MOBILE' )
 
                 IF( MCODEFLAG ) THEN
-                    FIP     = IFIP  ( S )
                     CSRC    = CSOURC( S )
                     CFIP    = CSRC( 1:FIPLEN3 )
                     CLNK    = CLINK ( S )
@@ -172,7 +168,6 @@ c note: insert here when needed
                     CSTASCC = CSTA // TSCC
                     CSTASL  = CSTA // TSCCL
                 ELSE
-                    FIP     = IFIP  ( S )
                     CSRC    = CSOURC( S )
                     CFIP    = CSRC( 1:FIPLEN3 )
                     CSTA    = CFIP( 1:STALEN3 )

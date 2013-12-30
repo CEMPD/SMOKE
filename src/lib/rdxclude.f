@@ -42,7 +42,7 @@ C***************************************************************************
 C.........  MODULES for public variables
 
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, IFIPTA, CSRCTA, CSCCTA, NHAP_EXCL
+        USE MODXREF, ONLY: INDXTA, CFIPTA, CSRCTA, CSCCTA, NHAP_EXCL
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
@@ -59,8 +59,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         GETFLINE
         INTEGER         STR2INT
+        LOGICAL         USEEXPGEO
 
-        EXTERNAL        BLKORCMT, CHKINT, CRLF, GETFLINE, STR2INT
+        EXTERNAL        BLKORCMT, CHKINT, CRLF, GETFLINE, STR2INT,
+     &                  USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV   ! NHAPEXCLUDE file unit no.
@@ -77,7 +79,6 @@ C...........   Array of point source plant characeristics
 C...........   Other local variables
         INTEGER         I, N, L0, L1, L2   !  counters and indices
 
-        INTEGER         IFIP    !  temporary FIPS code
         INTEGER         IOS     !  i/o status
         INTEGER         IREC    !  record counter
         INTEGER         NLINES  !  number of lines
@@ -86,10 +87,9 @@ C...........   Other local variables
         LOGICAL      :: HDRFLAG = .FALSE.
         LOGICAL      :: EFLAG  = .FALSE.      !  true: error found
 
-        CHARACTER(10)      FIPFMT   ! formt to write co/st/cy to string
         CHARACTER(128)     LINE     !  line buffer
         CHARACTER(256)     MESG     !  message buffer
-        CHARACTER(FIPLEN3) CFIP     !  buffer for CFIPS code
+        CHARACTER(FIPLEN3) CFIP     !  buffer for FIPS code
         CHARACTER(PLTLEN3) PLT      !  temporary plant ID
         CHARACTER(SCCLEN3) TSCC     !  temporary SCC
         CHARACTER(ALLLEN3) CSRCALL  !  buffer for source char, incl pol
@@ -102,20 +102,17 @@ C   begin body of subroutine RDXCLUDE
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'non-HAP inclusion/exclusions file' )
 
-C.............  Set up formats
-        WRITE( FIPFMT, '("(I",I2.2,".",I2.2,")")' ) FIPLEN3, FIPLEN3
-
 C.........  Allocate memory for unsorted data used in all source categories 
         ALLOCATE( INDXTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXTA', PROGNAME )
-        ALLOCATE( IFIPTA( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IFIPTA', PROGNAME )
+        ALLOCATE( CFIPTA( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CFIPTA', PROGNAME )
         ALLOCATE( CSCCTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
         ALLOCATE( CSRCTA( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
         INDXTA = 0   ! array
-        IFIPTA = 0   ! array
+        CFIPTA = ' ' ! array
         CSCCTA = ' ' ! array
         CSRCTA = ' ' ! array
 
@@ -173,7 +170,8 @@ C.............  Smart interpretation of SCC
             CALL PADZERO( TSCC )     ! Pad with zeros
 
 C.............  Make sure that the co/st/cy code is an integer
-            IF( .NOT. CHKINT( CFIP ) ) THEN
+            IF( .NOT. USEEXPGEO .AND.
+     &          .NOT. CHKINT( CFIP ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Country/state/county ' //
      &                 'code is not an integer at line', IREC
@@ -183,20 +181,16 @@ C.............  Make sure that the co/st/cy code is an integer
 C.............  If this record is in error, go to next iteration
             IF( EFLAG ) CYCLE
 
-C.............  Convert co/st/cy code to an integer
-            CFIP = SEGMENT( 1 )
-            IFIP = STR2INT( CFIP )
-
-C.............  Convert integer co/st/cy code back to string, including
-C               leading zeros
-            WRITE( CFIP ,FIPFMT ) IFIP
+C.............  Adjust co/st/cy code
+            CFIP = ADJUSTR( CFIP )
+            CALL PADZERO( CFIP )
 
             N = N + 1
             IF( N .GT. NLINES ) CYCLE  ! Ensure no overflow
 
 C.............  Store case-indpendent fields
             INDXTA ( N ) = N
-            IFIPTA ( N ) = IFIP
+            CFIPTA ( N ) = CFIP
             CSCCTA ( N ) = TSCC
             
 C.............  Store sorting criteria for source.
@@ -267,7 +261,7 @@ C.........  Group cross-reference data into tables for different groups
         CALL XREFTBL( 'NONHAP', NXREF )
 
 C.........  Deallocate cross-reference sorting arrays
-        DEALLOCATE( INDXTA, IFIPTA, CSCCTA, CSRCTA )
+        DEALLOCATE( INDXTA, CFIPTA, CSCCTA, CSRCTA )
 
 C.........  Rewind file
         REWIND( FDEV )

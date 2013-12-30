@@ -70,10 +70,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT  
         INTEGER         INDEX1  
         CHARACTER(14)   MMDDYY
+        INTEGER         STR2INT
         INTEGER         WKDAY
         REAL            YR2DAY
 
-        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY
+        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, STR2INT, WKDAY, YR2DAY
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
@@ -541,7 +542,7 @@ C..............................................................................
             N = 0
             DO I = 1, NC
 
-                STA = CNTYCOD( I ) / 1000
+                STA = STR2INT( CNTYCOD( I ) ) / 1000
                 IF( STA .NE. PSTA ) THEN
                     N = N + 1
                     PSTA = STA
@@ -854,14 +855,14 @@ C.............  Write county total emissions
             N = 0
             DO I = 1, NC
 
-                STA = CNTYCOD( I ) / 1000
+                STA = STR2INT( CNTYCOD( I ) ) / 1000
                 IF( STA .NE. PSTA ) THEN
                     N = N + 1
                     PSTA = STA
                 END IF
 
 C.................  Write out county name and converted emissions
-                WRITE( CDATFIP, '(I7.7,1X,I6.6)' ) JDATE, CNTYCOD( I )
+                WRITE( CDATFIP, '(I7.7,1X,A)' ) JDATE, CNTYCOD( I )
 
 C.................  Build output format depending on data values
                 CALL DYNAMIC_FORMATS( NC, NDIM, I, CY_EMIS,

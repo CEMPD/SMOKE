@@ -115,8 +115,9 @@ C.........  Separate line into segments
         
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS
-        CFIP( 2:6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
+        CFIP = REPEAT( '0', FIPLEN3 )
+        WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS
+        CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 1 )( 1:5 ) )  ! state/county code
         CLNK = ' '                        ! link ID
         TSCC = SEGMENT( 2 )               ! scc code
 

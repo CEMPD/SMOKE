@@ -84,9 +84,10 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         PROMPTFFILE  
         CHARACTER(16)   PROMPTMFILE  
         INTEGER         SECSDIFF  
+        LOGICAL         USEEXPGEO
 
         EXTERNAL  CRLF, GETCFDSC, GETIFDSC, PROMPTFFILE, 
-     &            PROMPTMFILE, SECSDIFF
+     &            PROMPTMFILE, SECSDIFF, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: ENAME  ! name for I/O API inven input
@@ -511,7 +512,7 @@ C.............  Open elevated/plume-in-grid file
         END IF
 
 C.........  Get country, state, and county names, if needed
-        IF( YFLAG ) THEN
+        IF( YFLAG .AND. .NOT. USEEXPGEO ) THEN
 
             MESG = 'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file'

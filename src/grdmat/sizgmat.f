@@ -38,7 +38,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: XLOCA, YLOCA, IFIP, CELLID, CLINK,
+        USE MODSOURC, ONLY: XLOCA, YLOCA, CIFIP, CELLID, CLINK,
      &                      XLOC1, YLOC1, XLOC2, YLOC2
 
 C...........   This module contains the cross-reference tables
@@ -63,6 +63,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         FIND1
+        INTEGER         FINDC
         LOGICAL         INGRID
         LOGICAL         BLKORCMT
         LOGICAL         SETENVVAR
@@ -70,7 +71,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         GETFLINE
         INTEGER         GETEFILE
 
-        EXTERNAL        CRLF, FIND1, INGRID, BLKORCMT, SETENVVAR,
+        EXTERNAL        CRLF, FIND1, FINDC, INGRID, BLKORCMT, SETENVVAR,
      &                  STR2INT, GETFLINE, ENVINT, GETEFILE
 
 
@@ -101,8 +102,6 @@ C...........   Other local variables
         INTEGER      :: CELLSRC = 0      ! cell number as source char
         INTEGER         COL              ! tmp column
         INTEGER         TCOL             ! tmp column
-        INTEGER         FIP              ! country/state/county code
-        INTEGER         LFIP             ! tmp country/state/county code
         INTEGER         GDEV             !  for surrogate coeff file
         INTEGER         ID1, ID2         ! primary and 2ndary surg codes
         INTEGER         LC, LR           ! length of COLRANGE & ROWRANGE
@@ -133,6 +132,8 @@ C...........   Other arrays
         LOGICAL      :: CFLAG = .TRUE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
         LOGICAL      :: WFLAG = .FALSE. ! true: per iteration warning flag
 
+        CHARACTER(FIPLEN3)  CFIP             ! country/state/county code
+        CHARACTER(FIPLEN3)  LFIP             ! tmp country/state/county code
         CHARACTER(60)       LINE             ! Read buffer for a line
         CHARACTER(300)      MESG             !  message buffer
         CHARACTER(256)      NAMBUF           !  surrogate file name buffer
@@ -240,8 +241,8 @@ C..........................  Check the value of the column number
                             WFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'WARNING: Column value',
      &                             TCOL, 'is outside range ' //
-     &                             COLRANGE( 1:LC ) // ' from FIPS ',
-     &                             FIP, 'and surrogate', SSC
+     &                             COLRANGE( 1:LC ) // ' from FIPS ' //
+     &                             CFIP // ' and surrogate', SSC
                             CALL M3MESG( MESG )
                         END IF
 
@@ -251,8 +252,8 @@ C..........................  Check the value of the row number
                             WFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'WARNING: Row value ', 
      &                             TROW, 'is outside range ' // 
-     &                             ROWRANGE( 1:LR ) // ' from FIPS ',
-     &                             FIP, 'and surrogate', SSC
+     &                             ROWRANGE( 1:LR ) // ' from FIPS ' //
+     &                             CFIP // ' and surrogate', SSC
                             CALL M3MESG( MESG )                    
 
 C..........................  Special treatment for cell (0,0) (skip for now)
@@ -381,13 +382,13 @@ C........................  Skip entry if SSC is not in the assigned SRGLIST by s
 
             DEALLOCATE( TMPLINE )
             
-            LFIP = 0
+            LFIP = ' '
             NWARN = 0
 
 C.............  Loop over sources per each assigned surrogate
             DO S = 1, NSRC
 
-                FIP = IFIP( S )
+                CFIP = CIFIP( S )
                 SSC  = ASRGID( S )
                 IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
                 IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
@@ -427,7 +428,7 @@ C................  If area/non-link source...
             
 C.....................  Retrieve the index to the surrogates cy/st/co list
                     ISIDX = 1
-                    F     = FIND1( FIP, NSRGFIPS, SRGFIPS )
+                    F     = FINDC( CFIP, NSRGFIPS, SRGFIPS )
 
 C.....................  Retrieve the cell intersection info from the
 C                       surrogates tables from MODSURG
@@ -458,14 +459,14 @@ C.....................  Otherwise, skip this source because it's outside the gri
 
 C..........................  Critical warning message about zeroing emission 
 C                            due to no surrogates for this co/st/cy
-                        IF( LFIP .NE. FIP ) THEN
+                        IF( LFIP .NE. CFIP ) THEN
                             WRITE( MESG,94010 ) 'WARNING: Causing ' //
      &                         'zeroing emissions due to missing '//
-     &                         'surrogate', TGTSRG, ' for co/st/cy ::',
-     &                         FIP
+     &                         'surrogate', TGTSRG, ' for co/st/cy :: '//
+     &                         CFIP
                             NWARN = NWARN + 1
                             IF( NWARN < 100 ) CALL M3MESG( MESG )
-                            LFIP = FIP
+                            LFIP = CFIP
                         END IF
 
                         CYCLE
@@ -540,7 +541,7 @@ C..........................................................
 C...... Loop over sources per each assigned surrogate
         DO S = 1, NSRC
 
-            FIP = IFIP( S )
+            CFIP = CIFIP( S )
             SSC  = ASRGID( S )
             IF( CATEGORY .EQ. 'AREA' ) CELLSRC = CELLID( S )
             IF( CATEGORY .EQ. 'MOBILE' ) CLNK = CLINK( S )
@@ -578,7 +579,7 @@ C............  If area/non-link source...
        
 C.................  Retrieve the index to the surrogates cy/st/co list
                 ISIDX = 1
-                F     = FIND1( FIP, NSRGFIPS, SRGFIPS )
+                F     = FINDC( CFIP, NSRGFIPS, SRGFIPS )
 
 C.............  Retrieve the cell intersection info from the
 C               surrogates tables from MODSURG

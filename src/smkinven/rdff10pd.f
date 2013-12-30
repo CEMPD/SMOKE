@@ -43,10 +43,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, CSOURC
+        USE MODSOURC, ONLY: CIFIP, CSOURC
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVTBL, ITFACA, ITNAMA,
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVTBL, ITFACA, ITNAMA,
      &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS,
      &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
 
@@ -243,7 +243,7 @@ C.............  Build helper arrays for making searching faster
                 DO
                     S = S + 1
                     IF ( S .GT. NSRC ) EXIT
-                    IF( IFIP( S ) .EQ. INVIFIP( I ) ) THEN
+                    IF( CIFIP( S ) .EQ. INVCFIP( I ) ) THEN
                         IF( STARTSRC( I ) .EQ. 0 ) STARTSRC( I ) = S
                         ENDSRC( I ) = S
                     ELSE
@@ -372,7 +372,7 @@ C.............  Search for time zone for current county
             FIP  = ICC * 100000 + STR2INT( SEGMENT( 2 ) ) 
             WRITE( CFIP,94020 ) FIP
 
-            I = FIND1( FIP, NCOUNTY, CNTYCOD )
+            I = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
 C.............  If time zone name is not found, thenoutput error
             IF( I .LE. 0 ) THEN
@@ -384,7 +384,7 @@ C.............  If time zone name is not found, thenoutput error
             END IF
 
 C.............  Set time zone number
-            ZONE = GETTZONE( FIP )
+            ZONE = GETTZONE( CFIP )
  
 C.............  If daily emissions are not in the output time zone, print 
 C               warning
@@ -593,10 +593,10 @@ C.............  Set key for searching sources
 C.............  If FIPS code is not the same as last time, then
 C               look it up and get indidies
             IF( FIP .NE. LFIP ) THEN
-                J = FIND1( FIP, NINVIFIP, INVIFIP )
+                J = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF( J .LE. 0 ) THEN
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
-     &                     'find FIPS code', FIP, 'in internal list.'
+                    WRITE( MESG,93000 ) 'INTERNAL ERROR: Could not '//
+     &                     'find FIPS code' // CFIP // 'in internal list.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
                 END IF

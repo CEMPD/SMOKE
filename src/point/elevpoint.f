@@ -55,7 +55,7 @@ C***********************************************************************
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, STKDM, STKHT, STKTK, STKVE,
-     &                      CSOURC, IFIP, CPDESC, CSCC
+     &                      CSOURC, CIFIP, CPDESC, CSCC
 
 C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: LMAJOR, LPING, LCUTOFF, GROUPID, GINDEX,
@@ -120,7 +120,7 @@ C...........  LOCAL PARAMETERS and their descriptions:
 C...........   Indicator for which public inventory arrays need to be read
         INTEGER,            PARAMETER :: NINVARR = 11
         CHARACTER(IOVLEN3), PARAMETER :: IVARNAMS( NINVARR ) = 
-     &                                 ( / 'IFIP           '
+     &                                 ( / 'CIFIP          '
      &                                   , 'TZONES         ' 
      &                                   , 'XLOCA          '
      &                                   , 'YLOCA          '
@@ -187,7 +187,6 @@ C...........   Other local variables
 
         INTEGER         COL           ! tmp column number
         INTEGER      :: ELEVTYPE = 0  ! code for elevated source approach
-        INTEGER         FIP           ! tmp country/st/county code
         INTEGER         IGRP          ! tmp group ID
         INTEGER         IOS           ! i/o status
         INTEGER         IOSCUT        ! i/o status for cutoff E.V.
@@ -234,7 +233,8 @@ C...........   Other local variables
         LOGICAL    VFLAG              ! true: use variable grid
         LOGICAL :: LFLAG    = .TRUE.  ! true: write out lat/lon info
 
-        CHARACTER(10)   SCC
+        CHARACTER(FIPLEN3) CFIP       ! tmp country/st/county code
+        CHARACTER(SCCLEN3) SCC
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER
         CHARACTER(256)  MESG
@@ -540,7 +540,7 @@ C           exactly
            CALL CHECKMEM( IOS, 'GRPFL', PROGNAME )
 
            ALLOCATE( GRPFIP( NINVGRP ), STAT=IOS )
-          CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
+           CALL CHECKMEM( IOS, 'GRPFIP', PROGNAME )
            ALLOCATE( GRPACRES( NINVGRP ), STAT=IOS )
            CALL CHECKMEM( IOS, 'GRPACRES', PROGNAME )
 
@@ -682,7 +682,7 @@ C.................  Update stack parameters, if needed
                 STKHT( S ) = GRPHT ( IGRP )
                 STKTK( S ) = GRPTK ( IGRP )
                 STKVE( S ) = GRPVE ( IGRP )
-                IFIP ( S ) = GRPFIP( IGRP )
+                CIFIP( S ) = GRPFIP( IGRP )
 
             END IF
 
@@ -690,7 +690,7 @@ C.............  Store reordered group IDs
             SRCGROUP( S ) = IGRP
 
 C.............  Set temporary values for the current source
-            FIP  = IFIP   ( S )
+            CFIP = CIFIP  ( S )
             CSRC = CSOURC ( S )
             PLT  = CSRC   ( PLTPOS3:PLTEND )
             HT   = STKHT  ( S )
@@ -710,7 +710,7 @@ C               (include emissions TOTAL for group).
             VALS( VE_IDX ) = VE
             VALS( FL_IDX ) = 0.25 * PI * DM * DM * VE
             VALS( SRC_IDX )= S
-            VALS( FIP_IDX )= FIP
+            !VALS( FIP_IDX )= CFIP
             CHRS( PLT_IDX )= ADJUSTL( PLT )
 
 C.............  If cutoff approach is used, compute and store plume rise
@@ -922,7 +922,7 @@ C           unsorted.  The WPINGSTK routine uses this index
         GRPTK   = BADVAL3
         GRPVE   = BADVAL3
         GRPFL   = BADVAL3
-        GRPFIP  = 0
+        GRPFIP  = ' '
         GRPCNT  = 0
         GRPCOL  = 0
         GRPROW  = 0
@@ -1010,7 +1010,7 @@ C.................  Store the rest of the group settings in output arrays
                     GRPTK ( G ) = STKTK ( S )
                     GRPVE ( G ) = STKVE ( S )
                     GRPFL ( G ) = 0.25 * PI * GRPDM(G)*GRPDM(G)*GRPVE(G)
-                    GRPFIP( G ) = IFIP (S )
+                    GRPFIP( G ) = CIFIP ( S )
                     IF (FFLAG) GRPACRES( G ) = ACRES( S)
                     IF (LMAJOR(S)) GRPLMAJOR( G ) = 1
                     IF (LPING(S)) GRPLPING ( G ) = 1
@@ -1027,7 +1027,7 @@ C.................  Get setup for another call to EVALCRIT to get STATUS
                 VALS( FL_IDX ) = GRPFL ( OUTG )
                 IF( LCUTOFF ) VALS( RISE_IDX ) = RISE( S )
                 VALS( SRC_IDX )= S
-                VALS( FIP_IDX )= IFIP( S )
+                !VALS( FIP_IDX )= CIFIP( S )
 
                 PLT = CSOURC( S )( PLTPOS3:PLTEND )
                 CHRS( PLT_IDX )= ADJUSTL( PLT )
@@ -1228,7 +1228,7 @@ C.........  Write ASCII file
                     CSRC = CSOURC( S )
                     PLT = CSRC( PTBEGL3( 2 ):PTENDL3( 2 ) )
                     STK = CSRC( PTBEGL3( JSTACK ):PTENDL3( JSTACK ) )
-                    WRITE( PDEV, 93630 ) MS, PS, IGRP, IFIP( S ), 
+                    WRITE( PDEV, 93630 ) MS, PS, IGRP, CIFIP( S ), 
      &                  PLT, STK, MXEMIS( S,1 )
                 ELSE
                     WRITE( PDEV, 93620 ) MS, PS, IGRP
@@ -1294,7 +1294,7 @@ C...........   Formatted file I/O formats............ 93xxx
 
 93620   FORMAT( 3(I8,1X) )
 
-93630   FORMAT( 3(I8,1X), I6.5, 1X, 2(A15,1X), F10.3 )
+93630   FORMAT( 3(I8,1X), A, 1X, 2(A15,1X), F10.3 )
 
 C...........   Internal buffering formats............ 94xxx
 
@@ -1559,7 +1559,7 @@ C.............  Write buffer to report file
 
 C---------------------  FORMAT  STATEMENTS  -------------------------
 
-94790       FORMAT( '(I7,";",A', I1, ',";"', 10(',A', I2.2,',";"') )
+94790       FORMAT( '(I7,";",A', I2.2, ',";"', 10(',A', I2.2,',";"') )
 
 94791       FORMAT( A, 1X, A1, '; ', I6, ';', 5( F10.2, ';' ) )
 

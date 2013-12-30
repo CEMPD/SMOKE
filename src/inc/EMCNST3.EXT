@@ -210,11 +210,11 @@ C.........  Variable dimensioning components, independent
 
         PARAMETER   ( CPRTLEN3 = 3
      &              , NARPPOL3 = 6
-     &              , NARVAR3  = 5 
-     &              , NMBVAR3  = 10
+     &              , NARVAR3  = 4 
+     &              , NMBVAR3  = 9
      &              , NMBPPOL3 = 2   
      &              , NPTPPOL3 = 7
-     &              , NPTVAR3  = 10
+     &              , NPTVAR3  = 9
      &              )
 
 C.........  Maximum settings...

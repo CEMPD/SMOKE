@@ -38,7 +38,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, IFIP, TZONES, TPFLAG, INVYR, 
+        USE MODSOURC, ONLY: CSOURC, TZONES, TPFLAG, INVYR, 
      &                      XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
      &                      CELLID, IRCLAS, IVTYPE, 
      &                      STKHT, STKDM, STKTK, STKVE,
@@ -169,10 +169,6 @@ C.........  Write the I/O API file, one variable at a time
         L1 = LEN_TRIM( ENAME )
         MESG = 'Error writing output file "' // ENAME(1:L1) // '"'
 
-        IF ( .NOT. WRITESET( ENAME, 'IFIP', ALLFILES, 
-     &                       0, 0, IFIP ) ) THEN
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
         IF ( .NOT. WRITESET( ENAME, 'TZONES', ALLFILES, 
      &                       0, 0, TZONES ) ) THEN
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )

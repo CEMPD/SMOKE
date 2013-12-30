@@ -39,7 +39,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: VMT, XLOCA, YLOCA, IFIP, CSOURC, CLINK,
+        USE MODSOURC, ONLY: VMT, XLOCA, YLOCA, CIFIP, CSOURC, CLINK,
      &                      IRCLAS, XLOC1, YLOC1, XLOC2, YLOC2   
 
 C.........  This module contains the global variables for the 3-d grid
@@ -72,6 +72,7 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FIND1
+        INTEGER         FINDC
         LOGICAL         INGRID
         LOGICAL         DSCM3GRD
         INTEGER         GETFLINE
@@ -80,7 +81,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         INTEGER         GETEFILE
 
-        EXTERNAL        CRLF, FIND1, INGRID, DSCM3GRD, GETFLINE,
+        EXTERNAL        CRLF, FIND1, FINDC, INGRID, DSCM3GRD, GETFLINE,
      &                  BLKORCMT, SETENVVAR, STR2INT, GETEFILE
 
 C...........   SUBROUTINE ARGUMENTS
@@ -135,7 +136,7 @@ C...........   Scratch Ungridding Matrix information
         INTEGER, ALLOCATABLE :: VMT_CELL( :,: ) ! cell numbers for county or link
         REAL   , ALLOCATABLE :: VMT_FRAC( :,: ) ! VMT fraction for cell/county or cell/link
         REAL   , ALLOCATABLE :: VMT_CL_INV( : ) ! inverse of VMT by county or link
-        INTEGER, ALLOCATABLE :: vmt_label ( : ) ! FIPS codes 
+        CHARACTER(FIPLEN3), ALLOCATABLE :: vmt_label ( : ) ! FIPS codes 
 
 C...........   Temporary array for flagging sources that are outside the
 C              domain
@@ -148,7 +149,7 @@ C              is not worth going to extra trouble for.
         INTEGER, ALLOCATABLE :: ACEL( : )    ! number of cell intersctns per src
         REAL   , ALLOCATABLE :: AFAC( : )    ! fraction of link in cell
 
-        INTEGER, ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
+        CHARACTER(FIPLEN3), ALLOCATABLE :: FIPNOSRG( : )  ! cy/st/co codes w/o surrogates
         CHARACTER(SRCLEN3), ALLOCATABLE :: LKOGRD( : ) ! link srcs outside
                                                            !    the grid
 C...........   Temporary arrays for storing surrogate codes to use
@@ -164,15 +165,12 @@ C...........   Other local variables
         INTEGER         CNTMAX    !  counter for storing correct max dimensions
         INTEGER         COL       !  tmp column
         INTEGER         TCOL      ! tmp column
-        INTEGER         FIP       !  tmp country/state/county code
         INTEGER         ID1, ID2  !  tmp primary and secondary surg codes
         INTEGER         IOS       !  i/o status
         INTEGER         ISIDX     !  surrogate ID code index
         INTEGER         NFIP      !  no of FIPS list from sources
         INTEGER         ISDEF     !  default surrogate ID code index
         INTEGER         L2        !  string length
-        INTEGER         LFIP      !  cy/st/co code from previous iteration
-        INTEGER         LLFIP     !  cy/st/co code from previous iteration
         INTEGER         LNKEND    !  width of sourc info to end of link ID
         INTEGER         NCEL      !  tmp number of cells 
         INTEGER         NCOULNK   !  number of counties and links
@@ -201,7 +199,10 @@ C...........   Other local variables
         LOGICAL      :: CFLAG   = .FALSE.  ! true: called by sizgmat, false: called by gen[a|m]gmat
         LOGICAL         WFLAG              ! true: per iteration warning flag
 
-        CHARACTER(100)   LINE      ! Read buffer for a line
+        CHARACTER(FIPLEN3) CFIP   !  tmp country/state/county code
+        CHARACTER(FIPLEN3) LFIP   !  cy/st/co code from previous iteration
+        CHARACTER(FIPLEN3) LLFIP  !  cy/st/co code from previous iteration
+        CHARACTER(100)  LINE      !  Read buffer for a line
         CHARACTER(16)   COORUNIT  !  coordinate system projection units
         CHARACTER(80)   GDESC     !  grid description
         CHARACTER(256)  BUFFER    !  source fields buffer
@@ -289,35 +290,35 @@ C.........  Allocate memory for temporary gridding matrix and other
         NNCL =0
         CS  = 0.
         CSJ = 0.
-        FIPNOSRG = 0
+        FIPNOSRG = ' '
         SURGID1 = 0   ! array
         SURGID2 = 0   ! array
         
         LLNK    = ' '
-        LLFIP   = 0
-        LFIP    = 0
+        LLFIP   = ' '
+        LFIP    = ' '
         N       = 0
 
 C.........  Store the number and values of unfound cy/st/co codes
 C.........  Keep track of sources that are outside the domain
         DO I = 1, NSRC
 
-            FIP  = IFIP( I )
+            CFIP = CIFIP( I )
             CLNK = CLINK ( I )
 
 C.............  Count and store the number of county and links
-            IF ( FIP .NE. LLFIP .OR. CLNK .NE. LLNK ) N = N + 1
+            IF ( CFIP .NE. LLFIP .OR. CLNK .NE. LLNK ) N = N + 1
             NNCL( I ) = N
 
 C.............  storing st/cy/ct index within a domain
-            F = FIND1( FIP, NSRGFIPS, SRGFIPS )
+            F = FINDC( CFIP, NSRGFIPS, SRGFIPS )
 
             IF ( F .LE. 0 ) THEN
 
-                IF( FIP .NE. LFIP ) THEN
+                IF( CFIP .NE. LFIP ) THEN
                     NNOSRG = NNOSRG + 1
-                    FIPNOSRG( NNOSRG ) = FIP
-                    LFIP = FIP
+                    FIPNOSRG( NNOSRG ) = CFIP
+                    LFIP = CFIP
                 END IF
 
                 INDOMAIN( I ) = .FALSE.
@@ -325,7 +326,7 @@ C.............  storing st/cy/ct index within a domain
 
             END IF
             
-            LLFIP = FIP
+            LLFIP = CFIP
             LLNK  = CLNK
 
         END DO
@@ -337,7 +338,7 @@ C.........  Set flag to indicate that XLOCA/YLOCA are available
         CALL M3MSG2( MESG )
 
         J       = 0
-        LFIP    = 0
+        LFIP    = ' '
         LLNK    = ' '
         LNKEND  = VIDPOS3 - 1
         NNOSRG  = 0
@@ -486,7 +487,7 @@ C.......       sixth case:   fallback default
 
             DO S = 1, NSRC
 
-                FIP  = IFIP  ( S )
+                CFIP = CIFIP ( S )
                 RWT  = IRCLAS( S )
                 CLNK = CLINK ( S )
                 CSRC = CSOURC( S )
@@ -680,7 +681,7 @@ C.................  Process for non-link, non-grid-by-link sources...
             
 C.................  Retrieve the indices to the surrogates tables
                 ISIDX = 1
-                F    = FIND1( FIP, NSRGFIPS, SRGFIPS )
+                F    = FINDC( CFIP, NSRGFIPS, SRGFIPS )
 
 C.................  Store the number and values of unfound cy/st/co codes
 C.................  Keep track of sources that are outside the domain
@@ -750,7 +751,7 @@ C                           is okay
             
                 END DO    !  end of loop on cells K for this FIP
             
-                LFIP = FIP
+                LFIP = CFIP
                 LLNK = CLNK
             
             END DO        !  end loop on sources S, computing gridding matrix.
@@ -881,7 +882,7 @@ C.............  Allocate memory for county/link VMT within grid
             VMT_CELL    = 0    ! array
             VMT_FRAC    = 0.   ! array
             VMT_CL_INV  = 0.   ! array
-            vmt_label = 0
+            vmt_label = ' '
 
 C.............  Compute county/link VMT total within grid
             DO K = 1, NCOEF
@@ -892,9 +893,9 @@ C.............  Compute county/link VMT total within grid
 
 C...............  County and/or link total VMT
                 if ( s .gt. 0 ) then
-                    vmt_label( n ) = ifip( s )
+                    vmt_label( n ) = cifip( s )
                 else
-                    vmt_label( n ) = 0
+                    vmt_label( n ) = ' '
                 endif
                 VMT_CL_INV( N ) = VMT_CL_INV( N ) + VMT(S) * CS(J)
 

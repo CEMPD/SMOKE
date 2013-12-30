@@ -81,7 +81,6 @@
         CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: SCCDESC( : ) ! descrptn
 
 !.........  Country/state/county codes dimensioned by NINVIFIP
-        INTEGER, ALLOCATABLE, PUBLIC :: INVIFIP( : )
         CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: INVCFIP( : )
 
 !.........  Vehicle types dimensioned by NINVVTYP
@@ -96,12 +95,12 @@
         CHARACTER(SDSLEN3), ALLOCATABLE, PUBLIC :: NAICSDESC( : ) ! descrptn
 
 !.........  ORIS arrays
-        INTEGER,            ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
         INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCBG( : ) ! 1st source per ORIS/boiler
         INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCNT( : ) ! source count per ORIS/boiler
         INTEGER,            ALLOCATABLE, PUBLIC :: OBSRCNM( : ) ! src numbers matching ORIS/boiler
         LOGICAL,            ALLOCATABLE, PUBLIC :: IORSMTCH( : ) ! true: inventory ORIS matched to CEM
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: INVORIS( : ) ! unique ORIS
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: INVORFP( : ) ! FIPS for ORIS in inventory
         CHARACTER(DSCLEN3), ALLOCATABLE, PUBLIC :: INVODSC( : ) ! plant description from inventory
         CHARACTER(OBRLEN3), ALLOCATABLE, PUBLIC :: ORISBLR( : ) ! ORIS // boiler
 

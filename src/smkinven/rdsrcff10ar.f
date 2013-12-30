@@ -53,8 +53,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         FINDC
         LOGICAL         CHKINT
+        LOGICAL         USEEXPGEO
 
-        EXTERNAL    CRLF, FINDC, CHKINT
+        EXTERNAL    CRLF, FINDC, CHKINT, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT (IN) :: LINE      ! input line
@@ -89,7 +90,7 @@ C   begin body of subroutine RDSRCFF10AR
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly (country and year required)
-        CALL GETHDR( MXDATFIL, .TRUE., .TRUE., .FALSE., 
+        CALL GETHDR( MXDATFIL, .NOT. USEEXPGEO, .TRUE., .FALSE., 
      &               LINE, ICC, INY, NPOA, IOS )
 
 C.........  Interpret error status
@@ -152,8 +153,14 @@ C......... Return if the first line is a header line
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
-        WRITE( CFIP( 1:1 ), '(I1)' ) ICC  ! country code of FIPS        
-        CFIP( 2:6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
+        IF( USEEXPGEO ) THEN
+            CFIP(  1: 3 ) = ADJUSTR( SEGMENT( 1 )( 1:3 ) )
+            CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
+            CFIP( 10:12 ) = ADJUSTR( SEGMENT( 3 )( 1:3 ) )
+        ELSE
+            WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS        
+            CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
+        END IF
 
 C.........  Replace blanks with zeros        
         DO I = 1,FIPLEN3

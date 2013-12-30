@@ -46,9 +46,6 @@ C.........  This module contains the major data structure and control flags
      &                      IGRPNUM, SGINLNNAME, SRCGRPNAME,
      &                      PFLAG, PVNAME, PVSDATE, PVSTIME, ISRCGRP
 
-C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
-
 C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NGRID, NCOLS, NROWS, 
      &                     GDTYP, GRDNM, P_ALP, P_BET, P_GAM,

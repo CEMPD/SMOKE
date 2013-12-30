@@ -37,7 +37,7 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, INVYR, XLOCA, YLOCA,
+        USE MODSOURC, ONLY: CIFIP, INVYR, XLOCA, YLOCA,
      &                      CORIS, STKHT, STKDM, STKTK, STKVE,
      &                      CSCC, CSOURC, CPDESC, CLINK, CBLRID, CISIC
 
@@ -63,8 +63,9 @@ C...........   EXTERNAL FUNCTIONS:
         INTEGER         FIND1
         INTEGER         GETIFDSC
         INTEGER         INDEX1
+        INTEGER         STR2INT
 
-        EXTERNAL        FIND1, GETIFDSC, INDEX1
+        EXTERNAL        FIND1, GETIFDSC, INDEX1, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT (IN) :: DDEV           ! emissions unit no.
@@ -246,8 +247,8 @@ C.............  Write area-source characteristics to output file
             DO S = 1, NSRC
 
 C.................  Store others in temporary variables
-                COID = IFIP( S ) / 100000
-                FIP  = IFIP( S ) - COID * 100000
+                COID = STR2INT( CIFIP( S ) ) / 100000
+                FIP  = STR2INT( CIFIP( S ) ) - COID * 100000
                 STID = FIP / 1000 
                 CYID = FIP - STID * 1000
                 SCC  = CSCC ( S )
@@ -310,8 +311,8 @@ C.............  Write mobile-source characteristics to output file
             DO S = 1, NSRC
 
 C.................  Store others in temporary variables
-                COID  = IFIP( S ) / 100000
-                FIP   = IFIP( S ) - COID * 100000
+                COID  = STR2INT( CIFIP( S ) ) / 100000
+                FIP   = STR2INT( CIFIP( S ) ) - COID * 100000
                 STID  = FIP / 1000 
                 CYID  = FIP - STID * 1000
                 CLNK  = CLINK( S )
@@ -443,8 +444,8 @@ C.................  Convert units of stack parameters
                 STKFLOW = STKVEL * 0.25 * PI * STKDIAM * STKDIAM
 
 C.................  Store others in temporary variables
-                COID = IFIP( S ) / 100000
-                FIP  = IFIP( S ) - COID * 100000
+                COID = STR2INT( CIFIP( S ) ) / 100000
+                FIP  = STR2INT( CIFIP( S ) ) - COID * 100000
                 STID = FIP / 1000 
                 CYID = FIP - STID * 1000
 

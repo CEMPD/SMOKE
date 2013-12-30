@@ -383,7 +383,6 @@
 
 !.........  Unsorted, unprocessed cross-reference arrays
         INTEGER, ALLOCATABLE, PUBLIC:: INDXTA ( : ) !  sorting index
-        INTEGER, ALLOCATABLE, PUBLIC:: IFIPTA ( : ) !  co/st/cy FIPS codes
         INTEGER, ALLOCATABLE, PUBLIC:: ISPTA  ( : ) !  pollutant index to EINAM
         INTEGER, ALLOCATABLE, PUBLIC:: ISRGCDA( : ) !  spatial surrogate codes
         INTEGER, ALLOCATABLE, PUBLIC:: SRGIDAA( : ) !  assigned spatial surrogate codes
@@ -394,6 +393,7 @@
         INTEGER, ALLOCATABLE, PUBLIC:: IARPTA( :,: )!  tbl num, row, & count
         INTEGER, ALLOCATABLE, PUBLIC:: ISPDCDA( : ) !  speed profile codes
 
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC:: CFIPTA( : ) ! FIPS codes
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: CSPRNA( : ) ! spec prof #
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC:: CSCCTA( : ) ! SCC
         CHARACTER(MACLEN3), ALLOCATABLE, PUBLIC:: CMACTA( : ) ! MACT
