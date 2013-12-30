@@ -57,7 +57,7 @@ C.........  This module contains the major data structure and control flags
      &          NSMATV,                            ! speciation matrices
      &          MEBCNY, MEBSTA, MEBSUM,            ! cnty/state/src total spec emissions
      &          MEBSCC, MEBSTC,                    ! scc total spec emissions
-     &          EANAM, NIPPA,                      ! pol/act names
+     &          EANAM, NIPPA, MTMPNAME,            ! pol/act names
      &          CFDEV,                             ! control factor file
      &          SRCGRPFLAG, SGDEV, ISRCGRP,        ! source groups
      &          EMGGRD, EMGGRDSPC, EMGGRDSPCT,     ! emissions by source group
@@ -74,7 +74,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          MSNAME_L, MSMATX_L, MNSMATV_L, GRDENV,
      &          MSNAME_S, MSMATX_S, MNSMATV_S,
      &          EANAMREP, CFPRO, CFFLAG, REFCFFLAG,
-     &          TEMPBIN
+     &          TEMPBIN, MTMP_OUT
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -136,6 +136,7 @@ C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: TEMPG( : )    ! Temp array for RPD and RPV
         REAL, ALLOCATABLE :: MAXTEMP( : )     ! max temp array for RPP
         REAL, ALLOCATABLE :: MINTEMP( : )     ! min temp array for RPP
+        REAL, ALLOCATABLE :: MTMP_INVT( :,:,: )  ! tmp hourly emissoin for output temporal int output file
         REAL, ALLOCATABLE :: EMGRD( :,: )     ! emissions for each grid cell and species
         REAL, ALLOCATABLE :: TEMGRD( :,:,:)   ! emissions for each grid cell, species, and time steps
         REAL, ALLOCATABLE :: TMPEMGRD( :,: )  ! tmp emissions for each grid cell and species
@@ -149,7 +150,7 @@ C...........   Logical names and unit numbers (not in MODMERGE)
      
 C...........   Other local variables
     
-        INTEGER          I, J, K, L1, L2, M, N, NG, V, S, T ! counters and indices
+        INTEGER          I, J, K, L1, L2, M, N, NG, V, NV, S, T ! counters and indices
 
         INTEGER          BIN1, BIN2    ! speed bins for current source
         INTEGER          CELL          ! current grid cell
@@ -185,7 +186,7 @@ C...........   Other local variables
         INTEGER      :: NWARN = 0   !  current number of warnings
         INTEGER          GIDX          ! index to source group
 
-        REAL             F1, F2, FG0   ! tmp conversion
+        REAL             F1, F2, F3    ! tmp conversion
         REAL             GFRAC         ! grid cell fraction
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
@@ -293,9 +294,18 @@ C........ when not optimize memory
             ALLOCATE( MEBCNY( NCOUNTY, NMSPC+NIPPA ), STAT=IOS )    ! county totals
             CALL CHECKMEM( IOS, 'MEBCNY', PROGNAME )
         END IF
-        
-        ALLOCATE( MEBSUM( NMSRC, NMSPC+NIPPA ), STAT=IOS )    ! source totals
-        CALL CHECKMEM( IOS, 'MEBSUM', PROGNAME )
+
+        IF( LREPANY ) THEN        
+            ALLOCATE( MEBSUM( NMSRC, NMSPC+NIPPA ), STAT=IOS )    ! source totals
+            CALL CHECKMEM( IOS, 'MEBSUM', PROGNAME )
+        END IF
+
+        IF( MTMP_OUT ) THEN
+            ALLOCATE( MTMP_INVT( NMSRC, NIPPA, NSTEPS ), STAT=IOS )    ! source totals
+            CALL CHECKMEM( IOS, 'MTMP_INVT', PROGNAME )
+            MTMP_INVT = 0.0
+        END IF
+
 
         ALLOCATE( MSMATX_L( NMSRC, MNSMATV_L ), STAT=IOS )    ! mole speciation matrix
         CALL CHECKMEM( IOS, 'MSMATX_L', PROGNAME )
@@ -977,7 +987,7 @@ C.............................  Set units conversion factor
                             F1 = GRDFAC( SPINDEX( V,1 ) )
                             F2 = TOTFAC( SPINDEX( V,1 ) )
 
-C.............................  Calculate gridded, hourly emissions
+C.............................  Calculate gridded, hourly emissions (g/hr/cell)
                             IF( RPDFLAG ) THEN
                                 EMVAL = VMTVAL * EFVAL * GFRAC
                             END IF
@@ -1012,6 +1022,17 @@ C.............................  If not use memory optimize
 
                             END IF
 
+C.............................  Store Temporal intermediate hourly emissions
+                            IF( MTMP_OUT ) THEN
+
+                                IF( EANAMREP( V ) ) THEN
+                                    MTMP_INVT( SRC,SIINDEX(V,1),T ) =
+     &                                   MTMP_INVT( SRC,SIINDEX(V,1),T ) +
+     &                                   EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
+                               END IF
+
+                            END IF
+
 C.............................  Add this cell's emissions to source totals
                             IF( LREPANY ) THEN
                                 IF( .NOT. (T == NSTEPS .AND. JTIME == 0) ) THEN
@@ -1020,10 +1041,10 @@ C.............................  Add this cell's emissions to source totals
      &                                  EMVAL * MSMATX_S( SRC,V ) * F2
                             
                                     IF( EANAMREP( V ) ) THEN
-                                       F2 = TOTFAC( NMSPC+SIINDEX( V,1 ) )
+                                       F3 = TOTFAC( NMSPC+SIINDEX( V,1 ) )
                                         MEBSUM( SRC,NMSPC+SIINDEX( V,1 ) ) =
      &                                      MEBSUM( SRC,NMSPC+SIINDEX( V,1 ) ) +
-     &                                      EMVAL * F2
+     &                                      EMVAL * F3
                                     END IF
                                     RDATE = JDATE     ! last reporting date
                                     RTIME = JTIME     ! last reporting hour
@@ -1093,12 +1114,36 @@ C.........  Write state, county, and SCC emissions (all that apply)
 C.........  The subroutine will only write for certain hours and 
 C           will reinitialize the totals after output
         IF( LREPANY ) CALL WRMRGREP( RDATE, RTIME )
- 
-        IF ( .NOT. MOPTIMIZE ) THEN
+
+        IF( MTMP_OUT ) THEN
             JDATE  = SDATE
             JTIME  = STIME
-            LDATE  = 0
+            DO T = 1, NSTEPS
 
+                DO V = 1, NSMATV 
+
+                    IF( .NOT. EANAMREP( V ) ) CYCLE
+                    NV = SIINDEX( V,1 )
+                    SBUF = EANAM( NV )  ! process/pollutant
+
+                    IF( .NOT. WRITE3( MTMPNAME, SBUF, JDATE, JTIME,
+     &                                MTMP_INVT( :,NV,T ) )         ) THEN
+                        MESG = 'Could not write '//  TRIM( SBUF ) //
+     &                         ' from ' // TRIM( MTMPNAME )
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+
+                END DO
+
+                CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
+
+            END DO
+
+        END IF
+ 
+        IF( .NOT. MOPTIMIZE ) THEN
+            JDATE  = SDATE
+            JTIME  = STIME
             DO T = 1, NSTEPS    
 
                 DO V = 1, NMSPC
@@ -1123,8 +1168,6 @@ C.....................  Write out gridded data
                     END IF
 
                 END DO
-
-                LDATE = JDATE
 
                 CALL NEXTIME( JDATE, JTIME, TSTEP )     !  update model clock
 

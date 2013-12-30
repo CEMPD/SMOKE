@@ -387,7 +387,7 @@ C.........  Open source groups file if needed
         IF( SRCGRPFLAG ) THEN
             MESG = 'Enter logical name for SOURCE GROUPS file'
             SGDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 
-     &                           'SMKMERGE_GROUPS', PROGNAME )
+     &                           'SOURCE_GROUPS', PROGNAME )
         END IF
 
 C.........  Get emission processes file name

@@ -65,7 +65,7 @@ C.........  This module contains the lists of unique inventory information
      &                      NUNIQCAS, UNIQCAS, UCASNKEP, ITNAMA, 
      &                      SCASIDX, UCASIDX, UCASNPOL, ITKEEPA, ITFACA,
      &                      EMISBYCAS, RECSBYCAS, EMISBYPOL, INVSTAT,
-     &                      FIREFLAG, NINVTBL, ITCASA
+     &                      NINVTBL, ITCASA, FIREFLAG
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, VMTMIXA
@@ -589,6 +589,15 @@ C.............  Process line depending on file format and source category
 
                 END SELECT
 
+            CASE( MEDSFMT )
+                SELECT CASE( CATEGORY )
+                CASE( 'POINT' )
+                    CALL RDDATAMEDSPT( LINE, READDATA, READPOL,
+     &                                NPOLPERLN, INVYEAR, CORS, BLID,
+     &                                DESC, HT, DM, TK, FL, VL, SIC,
+     &                                LAT, LON, HDRFLAG, EFLAG )
+                END SELECT
+
             CASE( ORLFMT )
                 SELECT CASE( CATEGORY )
                 CASE( 'AREA' )
@@ -628,7 +637,9 @@ C.............  Check for header lines
 
 C.................  Reallocate emissions memory with
 C                   proper number of pollutants per line
-                IF( CURFMT == ORLFIREFMT .AND. NPOLPERLN .NE. SAVNVAR ) THEN
+                IF( ( CURFMT == MEDSFMT .OR.
+     &                CURFMT == ORLFIREFMT )
+     &                .AND. NPOLPERLN .NE. SAVNVAR ) THEN
                     DEALLOCATE( READDATA, READPOL )
                     ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
                     CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
@@ -1242,7 +1253,7 @@ C.............  Store SIC if not blank
 
             IF( CATEGORY == 'POINT' .OR.
      &          CURFMT == ORLNPFMT .OR. CURFMT == ORLFMT .OR.
-     &          CURFMT == FF10FMT ) THEN
+     &          CURFMT == FF10FMT .OR. CURFMT /= MEDSFMT ) THEN
 
                  IF( ( CATEGORY == 'POINT' .AND. CURFMT == ORLFMT )
      &               .OR. (CATEGORY == 'POINT' .AND. CURFMT == FF10FMT)
@@ -1256,11 +1267,13 @@ C.............  Store SIC if not blank
                      CEXTORL( CURSRC ) = ADJUSTL( EXTORL )
                  END IF
 
-                 CALL PADZERO( SRCTYP )
-                 CSRCTYP( CURSRC ) = SRCTYP
-                 CEXTORL( CURSRC ) = ADJUSTL( EXTORL )
+                 IF( CURFMT /= MEDSFMT ) THEN
+                     CALL PADZERO( SRCTYP )
+                     CSRCTYP( CURSRC ) = SRCTYP
+                     CEXTORL( CURSRC ) = ADJUSTL( EXTORL )
+                 END IF
                 
-                IF( CATEGORY == 'POINT' ) THEN
+                IF( CATEGORY == 'POINT' .AND. CURFMT /= MEDSFMT ) THEN
                     CALL PADZERO( ERPTYP )
                     CERPTYP( CURSRC ) = ERPTYP
                     

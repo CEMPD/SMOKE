@@ -1,7 +1,7 @@
 
         SUBROUTINE WRPDEMIS( DAYFLAG, JDATE, JTIME, TIDX, NPDSRC, NVAR,
      &                       NVASP, FNAME, PFLAG, CFLAG, EAIDX, SPIDX, 
-     &                       LASTSTEP, PDIDX, PDDATA, EFLAG )
+     &                       LASTSTEP, PDIDX, PDDATA, EFLAG, MXPDSRC )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -93,6 +93,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (OUT) :: PDIDX ( NPDSRC )     ! sparse src index
         REAL        , INTENT (OUT) :: PDDATA( NPDSRC,NVASP)! sparse data storage
         LOGICAL     , INTENT (OUT) :: EFLAG                ! true: error found
+        INTEGER     , INTENT  (IN) :: MXPDSRC              ! maximum period-specific sources
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE, SAVE :: EAIDX2( : )    ! reverse index for EAIDX
@@ -242,7 +243,7 @@ C.........  Store sorted records for this hour
         LS = 0  ! previous source
         LN = -9 ! previous Inventory Data Code position in UNIQCAS
         K  = 0
-        DO I = 1, NPDPT( TIDX )
+        DO I = 1, MIN( NPDPT( TIDX ), MXPDSRC )
 
           J = IDXSRC( I,TIDX )
           S = SPDIDA( J,TIDX )

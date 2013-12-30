@@ -80,8 +80,9 @@ C.........  Input file format constants
         INTEGER, PARAMETER  :: ORLFIREFMT = 9  ! ORL FIRE format
         INTEGER, PARAMETER  :: ORLDYFRFMT = 10 ! ORL FIREEMIS format
         INTEGER, PARAMETER  :: FF10FMT    = 11 ! FF10 format
+        INTEGER, PARAMETER  :: MEDSFMT    = 12 ! MEDS format
 
-        CHARACTER(12), PARAMETER :: FMTNAMES( 0:11 ) = 
+        CHARACTER(12), PARAMETER :: FMTNAMES( 0:12 ) = 
      &                        ( / 'list        ', 
      &                            'EMS-95      ', 
      &                            'EPS         ', 
@@ -93,7 +94,8 @@ C.........  Input file format constants
      &                            'ORL nonpoint',
      &                            'ORL FIRE    ',
      &                            'ORL FIREEMIS',
-     &                            'FF10        ' / )
+     &                            'FF10        ',
+     &                            'MEDS        ' / )
 
 C.........  Indicator for inventory header fields
         CHARACTER, PARAMETER :: CINVHDR = '#'

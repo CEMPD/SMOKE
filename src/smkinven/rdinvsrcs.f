@@ -146,8 +146,6 @@ C...........   Other local variables
         LOGICAL      :: EFLAG   = .FALSE. ! true: error occured
         LOGICAL      :: HDRFLAG           ! true: current line is part of header
         LOGICAL      :: LSTTIME = .FALSE. ! true: last time through 
-        LOGICAL      :: FIRSTIME = .TRUE. ! true: first time through 
-c        LOGICAL      :: BKSPFLAG = .FALSE. ! true: back up one line
 
         CHARACTER(FIPLEN3) CFIP    ! fips code
         CHARACTER(LNKLEN3) CLNK    ! link ID
@@ -490,6 +488,14 @@ C.................  Check if format works with expanded geographic codes
 C.................  Process line depending on file format and source category
                 SELECT CASE( CURFMT )
 
+                CASE( MEDSFMT )
+                    SELECT CASE( CATEGORY )
+                    CASE( 'POINT' )   ! used for pregridded MEDS format inv
+                        CALL RDSRCMEDSPT( LINE, CFIP, FCID, PTID, SKID,
+     &                                   SGID, TSCC, NPOLPERLN, HDRFLAG, 
+     &                                   EFLAG )
+                    END SELECT
+
                 CASE( FF10FMT )
                     ORLFLG = .TRUE.
                     FF10FLAG = .TRUE.
@@ -657,7 +663,7 @@ C.....................  Ensure that road class is valid and convert from road cl
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
-                    IF( CURFMT == ORLFMT .OR.
+                    IF( CURFMT == ORLFMT .OR. CURFMT == MEDSFMT .OR.
      &                  CURFMT == ORLFIREFMT .OR. CURFMT == FF10FMT ) THEN
 
 C.........................  Make sure SCC is at least 8 characters long

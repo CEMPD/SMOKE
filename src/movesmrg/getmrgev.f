@@ -49,7 +49,7 @@ C.........  This module contains the major data structure and control flags
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
      &                       SPDFLAG, CFFLAG, REFCFFLAG, TEMPBIN, MOPTIMIZE,
-     &                       GRDENV, TOTENV
+     &                       GRDENV, TOTENV, MTMP_OUT
 
         IMPLICIT NONE
 
@@ -167,6 +167,9 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
      &                   'emissions', .FALSE., IOS )
 
         MOPTIMIZE = ENVYN( 'MEMORY_OPTIMIZE_YN', 'Optimize Memory usage' //
+     &                    " ", .FALSE., IOS )
+
+        MTMP_OUT = ENVYN( 'MTMP_OUTPUT_YN', 'Output mobile hourly emissions' //
      &                    " ", .FALSE., IOS )
 
         CFFLAG = ENVYN( 'USE_CONTROL_FACTORS', 'Use control factor data' //

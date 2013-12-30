@@ -409,12 +409,15 @@ C.............  Convert date and time to output time zone.
             CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
 
 C.............  Determine time step pointer based on reference time
-            PTR = SECSDIFF( RDATE, RTIME, JDATE+NFIELD-1, JTIME ) / TDIVIDE + 1
+            PTR = SECSDIFF( RDATE, RTIME, JDATE, JTIME ) / TDIVIDE + 1
             
 C.............  Store minimum time step number as compared to reference
             IF( PTR .LT. MINPTR ) MINPTR = PTR
 
 C.............  Store maximum time step number as compared to reference
+            IF( DAYFLAG ) THEN
+                PTR = SECSDIFF( RDATE, RTIME, JDATE+NFIELD-1, JTIME ) / TDIVIDE + 1
+            END IF
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
 C.............  Check pollutant code and set index I
@@ -478,29 +481,15 @@ C.............  Otherwise, pollutant is in list of Inventory Data Names
 
 C.................  Write warning if pollutant is not kept.  Write only
 C                   one time.
-               IF( UCASNKEP(CIDX) .LE. 0 .AND. WARNKEEP(CIDX) ) THEN
-                   WARNKEEP( CIDX ) = .FALSE.
-                   IF( GETSIZES ) THEN 
+               IF( UCASNKEP(CIDX) .LE. 0 ) THEN
+                   IF( GETSIZES .AND. WARNKEEP(CIDX) ) THEN 
                        WRITE( MESG,94010 )
      &                   'WARNING: Skipping all lines for pollutant "'//
      &                   TRIM( CDAT )// '" because pollutant is not '//
      &                   'kept by Inventory Table.'
                        CALL M3MESG( MESG )
                    END IF 
-                   CYCLE
-               ELSE IF ( UCASNKEP(CIDX) .GT. 1 .AND. 
-     &                   WARNMULT(CIDX)              ) THEN
-                   WARNMULT( CIDX ) = .FALSE.
-                   IF( GETSIZES ) THEN 
-                       WRITE( MESG,94010 )
-     &                   'WARNING: Skipping all lines for pollutant "'//
-     &                   TRIM( CDAT )// '" because Inventory Table '//
-     &                   'splits it into',UCASNKEP(CIDX),'pollutants.'//
-     &                   CRLF()//BLANK10//'The SMOKE code needs to '//
-     &                   'be enhanced to support this approach for '//
-     &                   'day- and hour-specific data.'
-                       CALL M3MESG( MESG )
-                   END IF
+                   WARNKEEP( CIDX ) = .FALSE.
                    CYCLE
                END IF
 

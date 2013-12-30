@@ -300,7 +300,7 @@ C.........  Loop through time steps and output emissions and other data
             LASTSTEP = ( T .EQ. NSTEPS ) 
             CALL WRPDEMIS( DFLAG, JDATE, JTIME, T, NPDSRC, NVAR, NVSP, 
      &                     ONAME, OFLAG, CFLAG, EAIDX, SPIDX, LASTSTEP,
-     &                     PDEMOUT( 1,1 ), PDEMOUT( 1,2 ), EFLAG )
+     &                     PDEMOUT( 1,1 ), PDEMOUT( 1,2 ), EFLAG, MXPDSRC )
 
             CALL NEXTIME( JDATE, JTIME, OUTSTEP )
 

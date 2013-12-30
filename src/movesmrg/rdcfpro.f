@@ -169,7 +169,7 @@ C.............  Convert FIP to integer
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
                 IF( RFLAG ) THEN
                     WRITE( MESG, 94010 ) 'WARNING: Skipping line',
-     &                  IREC, ' of control factor file bacause FIPS code '//
+     &                  IREC, ' of control factor file because FIPS code '//
      &                  TRIM( SEGMENT(1) ) // ' is not a reference county'
                     CALL M3MESG( MESG )
                 ELSE 
@@ -196,7 +196,7 @@ C.....................  Propagate reference-county-specific control factor to in
                         L2 = FIND1( CNTY, NREFC, MCREFIDX( :,1 ) )
                         IF( L2 < 1 ) THEN
                             WRITE( MESG, 94010 ) 'WARNING: Skipping line',
-     &                          IREC, ' of control factor file bacause FIPS code ',
+     &                          IREC, ' of control factor file because FIPS code ',
      &                          CNTY, ' is not a reference county'
                             CALL M3MESG( MESG )
                             CYCLE

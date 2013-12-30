@@ -32,13 +32,13 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 	$(FC) $(FFLAGS) -o $(@) $(GRW) $(LIBS_DEBUG)
 
 RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
-        gethdr.o getpdinfo.o initinfo.o formlist.o \
+        gethdr.o getpdinfo.o initinfo.o formlist.o rdmedsinfo.o genmedsout.o \
         openinvin.o openinvout.o openpdout.o procinven.o procinvsrcs.o rdcempd.o \
-        rdemspd.o rdorlfr.o rdgrdapi.o \
+        rdemspd.o rdorlfr.o rdgrdapi.o rdmedspd.o \
         rdinvsrcs.o rdlooppd.o smkinven.o \
         srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
         setnonhap.o rdsrcntiar.o rdinvdata.o rddatantiar.o \
-        procar2pt.o rdsrcntimb.o rddatantimb.o \
+        procar2pt.o rdsrcntimb.o rddatantimb.o rdsrcmedspt.o rddatamedspt.o \
         rdsrcff10ar.o rddataff10ar.o rdsrcff10mb.o rddataff10mb.o rdsrcff10pt.o rddataff10pt.o\
         rdff10pd.o \
         rdsrcntifr.o\
@@ -63,6 +63,7 @@ asgnnhapx.o: $(MODSOURC) $(MODXREF) $(MODINFO)
 fixstk.o: $(MODSOURC)
 formlist.o: $(MODINFO) $(MODLISTS)
 genpdout.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY)
+genmedsout.o: $(MODINFO) $(MODDAYHR)
 gethdr.o: $(MODLISTS) $(MODSTCY) $(MODINFO)
 getpdinfo.o: $(MODINFO) $(MODDAYHR)
 grwinven.o: $(MODSOURC) $(MODINFO) $(MODFILESET)
@@ -75,6 +76,8 @@ procinven.o: $(MODSOURC) $(MODLISTS) $(MODINFO)
 procinvsrcs.o: $(MODSOURC) $(MODINFO) $(MODMOBIL)
 rdcempd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR)
 rdcemsum.o: $(MODLISTS) $(MODDAYHR)
+rdmedsinfo.o: $(MODSOURC)
+rddatamedspt.o: $(MODINFO) $(MODSOURC)
 rddatantiar.o: $(MODINFO)
 rddataff10ar.o: $(MODINFO)
 rddatantimb.o: $(MODINFO)
@@ -84,12 +87,14 @@ rddatantipt.o: $(MODINFO)
 rddataff10pt.o: $(MODINFO)
 rddatantifr.o: $(MODINFO)
 rdemspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
-rdff10pd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
+rdff10pd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY) 
+rdmedspd.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) $(MODSTCY) 
 rdgrdapi.o: $(MODSOURC) $(MODINFO)
 rdinvdata.o: $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMOBIL)
 rdinvsrcs.o: $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMOBIL)
 rdlooppd.o: $(MODINFO)
 rdorlfr.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
+rdsrcmedspt.o: $(MODSOURC)
 rdsrcntiar.o: $(MODLISTS)
 rdsrcff10ar.o: $(MODLISTS) $(MODDAYHR)
 rdsrcntimb.o: $(MODLISTS)
