@@ -248,7 +248,7 @@ C               are contained in the module MODSOURC
                 MESG = 'Processing Annual inventory....'
                 CALL M3MSG2( MESG )
             ELSE
-                MESG = 'Processsing ' // MON_NAME( INV_MON ) // 
+                MESG = 'Processing ' // TRIM( MON_NAME( INV_MON ) ) // 
      &                 ' inventory'
                 CALL M3MSG2( MESG )
             END IF
