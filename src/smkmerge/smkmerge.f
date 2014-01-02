@@ -283,7 +283,7 @@ C.........  Otherwise, for biogenic merge only, use list of codes from the
 C           surrogates file needed for state and county totals
         ELSE
             IF( USEEXPGEO ) THEN
-                CALL RDGEOCODES( NINVIFIP, INVCFIP )
+                CALL RDGEOCODES( NSRGFIPS, SRGFIPS )
             ELSE
                 CALL RDSTCY( CDEV, NSRGFIPS, SRGFIPS )
             END IF

@@ -312,7 +312,7 @@ C.................  Skip entry if rows and columns are out of range
                 SFIPSA ( J ) = CFIP
                 SSRGIDA( J ) = SSC
                 SFRACA ( J ) = RATIO     
-                WRITE( SORTBUF, '(A,I8,I8)' ) SFIPSA( J ), SCELLA( J ), SSRGIDA( J )
+                WRITE( SORTBUF( J ), '(A,I8,I8)' ) SFIPSA( J ), SCELLA( J ), SSRGIDA( J )
 
             END DO
 
