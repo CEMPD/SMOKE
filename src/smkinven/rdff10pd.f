@@ -84,10 +84,11 @@ C.........  EXTERNAL FUNCTIONS
         INTEGER      YEAR4
         INTEGER      GETTZONE
         LOGICAL      ISDSTIME
+        LOGICAL      USEEXPGEO
 
         EXTERNAL     CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, JULIAN, 
      &               SECSDIFF, STR2INT, STR2REAL, YEAR4, YR2DAY, CHKINT,
-     &               GETTZONE, ISDSTIME
+     &               GETTZONE, ISDSTIME, USEEXPGEO
 
 C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN)  :: FDEV           ! file unit no.
@@ -134,14 +135,12 @@ C...........   Other local variables
         INTEGER          CIDX             ! tmp data index
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
-        INTEGER          FIP              ! tmp co/st/cy code
         INTEGER, SAVE :: ICC = 0          ! tmp country code from header
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
         INTEGER          JDATE            ! tmp Julian date
         INTEGER          JTIME            ! tmp HHMMSS time
         INTEGER          LYEAR            ! leap year
-        INTEGER          LFIP             ! previous st/co FIPS code
         INTEGER, SAVE :: LOOPNO = 0       ! no. of loops
         INTEGER, SAVE :: MAXPTR           ! maximum time step reference pointer
         INTEGER, SAVE :: MINPTR           ! minimum time step reference pointer
@@ -182,6 +181,7 @@ C       LOGICAL       :: DAYLIT = .FALSE.  ! true: date in daylight time
         CHARACTER(512) :: MESG   = ' '    ! message buffer
 
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
+        CHARACTER(FIPLEN3) LFIP      ! previous st/co FIPS code
         CHARACTER(CASLEN3) CDAT      ! tmp Inventory data (input) name
         CHARACTER(IOVLEN3) CNAM      ! tmp SMOKE name
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID
@@ -368,10 +368,18 @@ C.............  Set the number of fields, depending on day- or hour-specific
                 IF( LYEAR > 365 .AND. MONTH == 2 ) NFIELD = 29
             END IF
 
-C.............  Search for time zone for current county
-            FIP  = ICC * 100000 + STR2INT( SEGMENT( 2 ) ) 
-            WRITE( CFIP,94020 ) FIP
+C.............  Read FIPS code
+            CFIP = REPEAT( '0', FIPLEN3 )
+            IF( USEEXPGEO ) THEN
+                CFIP(  1: 3 ) = ADJUSTR( SEGMENT( 1 )( 1:3 ) )
+                CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
+                CFIP( 10:12 ) = ADJUSTR( SEGMENT( 3 )( 1:3 ) )
+            ELSE
+                WRITE( CFIP( FIPEXPLEN3+1:FIPEXPLEN3+1 ), '(I1)' ) ICC  ! country code of FIPS        
+                CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
+            END IF
 
+C.............  Search for time zone for current county
             I = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
 C.............  If time zone name is not found, thenoutput error
@@ -581,7 +589,7 @@ C.............  Set key for searching sources
 
 C.............  If FIPS code is not the same as last time, then
 C               look it up and get indidies
-            IF( FIP .NE. LFIP ) THEN
+            IF( CFIP .NE. LFIP ) THEN
                 J = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF( J .LE. 0 ) THEN
                     WRITE( MESG,93000 ) 'INTERNAL ERROR: Could not '//
@@ -593,7 +601,7 @@ C               look it up and get indidies
                 SS = STARTSRC( J )
                 ES = ENDSRC( J )
                 NS = ES - SS + 1
-                LFIP = FIP
+                LFIP = CFIP
 
             END IF
 
