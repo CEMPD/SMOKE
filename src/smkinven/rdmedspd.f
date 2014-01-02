@@ -40,10 +40,10 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is the inventory arrays
-        USE MODSOURC, ONLY: IFIP, CSOURC, NMEDGAI, COABDST
+        USE MODSOURC, ONLY: CIFIP, CSOURC, NMEDGAI, COABDST
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, ITFACA, SCASIDX,
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, ITFACA, SCASIDX,
      &                      ITKEEPA, SORTCAS, SCASIDX, NUNIQCAS,
      &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
 
@@ -122,7 +122,6 @@ C...........   Other local variables
         INTEGER          CIDX             ! tmp data index
         INTEGER          COD              ! data index
         INTEGER          DAY              ! tmp day of month
-        INTEGER          FIP              ! tmp co/st/cy code
         INTEGER, SAVE :: ICC = 0          ! tmp country code from header
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
@@ -131,7 +130,6 @@ C...........   Other local variables
         INTEGER          JTIME            ! tmp HHMMSS time
         INTEGER, SAVE :: SDATE = 0        ! tmp starting Julian date
         INTEGER, SAVE :: STIME = 0        ! tmp starting HHMMSS time
-        INTEGER          LFIP             ! previous st/co FIPS code
         INTEGER          OUTSTEP          ! output time step
         INTEGER, SAVE :: MXWARN       	  ! max no. warnings
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
@@ -159,6 +157,7 @@ C...........   Other local variables
         CHARACTER(512) :: MESG   = ' '    ! message buffer
  
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
+        CHARACTER(FIPLEN3) LFIP      ! previous st/co FIPS code
         CHARACTER(CASLEN3) CDAT      ! tmp Inventory data (input) name
         CHARACTER(IOVLEN3) CNAM      ! tmp SMOKE name
         CHARACTER(PLTLEN3) FCID      ! tmp facility ID
@@ -202,7 +201,7 @@ C.............  Build helper arrays for making searching faster
                 DO
                     S = S + 1
                     IF ( S .GT. NSRC ) EXIT
-                    IF( IFIP( S ) .EQ. INVIFIP( I ) ) THEN
+                    IF( CIFIP( S ) .EQ. INVCFIP( I ) ) THEN
                         IF( STARTSRC( I ) .EQ. 0 ) STARTSRC( I ) = S
                         ENDSRC( I ) = S
                     ELSE
@@ -304,8 +303,7 @@ C.............  Search for time zone for current county
             END IF
 
             CFIP = COABDST( I,2 )( 4:9 )      ! FIPS code
-            FIP  = STR2INT( CFIP )
-            I = FIND1( FIP, NCOUNTY, CNTYCOD )
+            I = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
 C.............  If time zone name is not found, thenoutput error
             IF( I .LE. 0 ) THEN
@@ -317,7 +315,7 @@ C.............  If time zone name is not found, thenoutput error
             END IF
 
 C.............  Set time zone number
-            ZONE = GETTZONE( FIP )
+            ZONE = GETTZONE( CFIP )
  
 C.............  If daily emissions are not in the output time zone, print 
 C               warning
@@ -351,11 +349,11 @@ C.............  Set key for searching sources
 
 C.............  If FIPS code is not the same as last time, then
 C               look it up and get indidies
-            IF( FIP .NE. LFIP ) THEN
-                J = FIND1( FIP, NINVIFIP, INVIFIP )
+            IF( CFIP .NE. LFIP ) THEN
+                J = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF( J .LE. 0 ) THEN
-                    WRITE( MESG,94010 ) 'INTERNAL ERROR: Could not '//
-     &                     'find FIPS code', FIP, 'in internal list.'
+                    MESG = 'INTERNAL ERROR: Could not find FIPS code ' // 
+     &                     CFIP // ' in internal list.'
                     CALL M3MSG2( MESG )
                     CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
                 END IF
@@ -363,7 +361,7 @@ C               look it up and get indidies
                 SS = STARTSRC( J )
                 ES = ENDSRC( J )
                 NS = ES - SS + 1
-                LFIP = FIP
+                LFIP = CFIP
 
             END IF
 
