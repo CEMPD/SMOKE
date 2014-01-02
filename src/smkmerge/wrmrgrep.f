@@ -70,11 +70,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         ENVINT  
         INTEGER         INDEX1  
         CHARACTER(14)   MMDDYY
-        INTEGER         STR2INT
         INTEGER         WKDAY
         REAL            YR2DAY
 
-        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, STR2INT, WKDAY, YR2DAY
+        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
@@ -320,7 +319,7 @@ C.........  Do not report if this time is not appropriate
 
 C.............  If required, create and write state totals, either controlled
 C               or uncontrolled, depending on sector and which are controlled.
-	IF ( LREPSTA ) THEN  
+        IF ( LREPSTA ) THEN  
 
 C.............  Controlled area sources
             IF( ( AUFLAG .OR. ARFLAG ) .AND. LREPCTL ) THEN
@@ -534,15 +533,18 @@ C.............  Subprogram arguments
 
 C.............  Local variables
             INTEGER  I, J, N
-            INTEGER  PSTA, STA
+            
+            CHARACTER(FIPLEN3) PSTA, STA
 
 C..............................................................................
 
-            PSTA = -9
+            PSTA = ' '
             N = 0
             DO I = 1, NC
 
-                STA = STR2INT( CNTYCOD( I ) ) / 1000
+
+                STA = CNTYCOD( I )
+                STA( FIPLEN3-2:FIPLEN3 ) = '000'
                 IF( STA .NE. PSTA ) THEN
                     N = N + 1
                     PSTA = STA
@@ -806,11 +808,11 @@ C.............  Arrays allocated by subprogram argument
 
 C.............  Local variables
             INTEGER       I, J, L, L1, L2, N
-            INTEGER       PSTA, STA
 
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
+            CHARACTER(FIPLEN3) PSTA, STA
             CHARACTER(60) :: HDRBUF  = '#'
             CHARACTER(60) :: STLABEL = '# County'
             CHARACTER(30)    BUFFER
@@ -851,11 +853,12 @@ C.............  Write line
 c            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
 C.............  Write county total emissions
-            PSTA = -9
+            PSTA = ' '
             N = 0
             DO I = 1, NC
 
-                STA = STR2INT( CNTYCOD( I ) ) / 1000
+                STA = CNTYCOD( I )
+                STA( FIPLEN3-2:FIPLEN3 ) = '000'
                 IF( STA .NE. PSTA ) THEN
                     N = N + 1
                     PSTA = STA
