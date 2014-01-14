@@ -110,6 +110,8 @@ C.........  Local allocatable arrays
 C.........  Other local arrays
         CHARACTER( SPNLEN3 ) :: CCODE  ( CMBMAX )
         REAL                 :: CWEIGHT( CMBMAX )
+        INTEGER, SAVE        :: ERRCNT( 8 )
+        INTEGER, SAVE        :: WARNCNT( 2 )
 
 C.........  Other local variables
         INTEGER         K, L, L2, LV, NP, S, V    !  counters and indices
@@ -122,8 +124,8 @@ C.........  Other local variables
         INTEGER          NCHKCHR      ! position of last non-SCC src char
         INTEGER          NCOUT        ! no. output source chars for mesgs
         INTEGER          NPCOMBO      ! tmp no. of profiles in combination profile
-        INTEGER       :: NWARN=0      ! current number of warnings of each type to write
         INTEGER, SAVE :: MXWARN       ! maximum number of warnings of each type to write
+        INTEGER, SAVE :: MXERR        ! maximum number of errors of each type to write
 
         REAL             CNVFAC       ! tmp pol-to-pol conversion factor
 
@@ -195,8 +197,11 @@ C   begin body of subroutine ASGNSPRO
 C.........  For first time routine is called in all cases,
         IF( FIRSTIME ) THEN
 
-C.............  Get maximum number of warnings 
+C.............  Get maximum number of warnings/errors
+            MXERR  = ENVINT( ERRSET , ' ', 100, IOS ) 
             MXWARN = ENVINT( WARNSET, ' ', 100, IOS )
+            ERRCNT  = 0   ! array
+            WARNCNT = 0   ! array
 
 C.............  Retrieve environment variables
             MESG = 'Switch for reporting default speciation profiles'
@@ -645,9 +650,7 @@ C               the use of defaults.
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 CRLF() // BLANK10 // 
      &                 'SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-                IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
-
-                NWARN  = NWARN + 1    
+                CALL M3MESG( MESG )
 
                 CALL SETSOURCE_SMATS
 
@@ -658,7 +661,8 @@ C               the use of defaults.
             ELSE
 
                 EFLAG = .TRUE.
-                CALL REPORT_MISSING_DEFAULT
+                IF( ERRCNT(1) < MXERR ) CALL REPORT_MISSING_DEFAULT
+                ERRCNT(1) = ERRCNT(1) + 1
 
             END IF    !  if default profile code is available or not
 
@@ -763,7 +767,8 @@ C                   arrays are supposed to be built from inventory list of FIPs 
                     MESG = 'INTERNAL ERROR: FIPS code not found '//
      &                     'in INVCFIP array from MODLISTS for:'//
      &                     CRLF() // BLANK10 // 'FIP: '// TRIM( CFIP )
-                    CALL M3MESG( MESG )
+                    IF( ERRCNT(2) < MXERR ) CALL M3MESG( MESG )
+                    ERRCNT(2) = ERRCNT(2) + 1
                     EFLAG = .TRUE.
 
 C.................  Otherwise, store information from combination data, if found                
@@ -788,7 +793,8 @@ C                          to be skipped
      &                         CRLF() // BLANK10 // 
      &                         'FIP: '// TRIM(CFIP) // ' and'//
      &                         'pollutant "'// TRIM( ENAM ) //'"'
-                        CALL M3MESG( MESG )
+                        IF( ERRCNT(3) < MXERR ) CALL M3MESG( MESG )
+                        ERRCNT(3) = ERRCNT(3) + 1
                         EFLAG = .TRUE.
 
                     END IF
@@ -825,8 +831,8 @@ C                   the default for this pollutant (as long as it's not a combo)
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
 
-                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
-                    NWARN = NWARN + 1
+                    IF( WARNCNT(1) <= MXWARN ) CALL M3MESG( MESG )
+                    WARNCNT(1) = WARNCNT(1) + 1
 
                     K = MAX( FINDC( CSPT01( V ), NSPROF, SPROFN ), 0 )
 
@@ -838,8 +844,8 @@ C                   the default for this pollutant (as long as it's not a combo)
                     ELSE 
                         EFLAG = .TRUE.
                         VALID = .FALSE.
-                        CALL REPORT_MISSING_DEFAULT
-                    
+                        IF( ERRCNT(4) < MXERR ) CALL REPORT_MISSING_DEFAULT
+                        ERRCNT(4) = ERRCNT(4) + 1
                     END IF
 
 C.................  Profile is not found for a combination profile, give a 
@@ -853,9 +859,8 @@ C                   different error (and don't look for the default)
      &                 CRLF() // BLANK10 // 'as COMBO to source:' //
      &                 CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                 ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-
-                    IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
-                    NWARN = NWARN + 1
+                    IF( ERRCNT(5) <= MXERR ) CALL M3MESG( MESG )
+                    ERRCNT(5) = ERRCNT(5) + 1
                     EFLAG = .TRUE.
                     CYCLE
 
@@ -877,13 +882,13 @@ C                       there is no need for error checking
 
                         CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
                         IF( CNVFAC == 1.0 .AND. CNVFLAG( V ) ) THEN
-                            MESG='WARNING: Missing speciation profile "'//
-     &                          CCODE(NP)//'" : Default pollutant '//
-     &                          'conversion factor (1.0) is applied'// 
+                            MESG='ERROR: Missing assigned speciation profile "'//
+     &                          CCODE(NP)//'" from GSCNV input file'//
      &                          CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                          ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-                            IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
+                            IF( ERRCNT(6) <= MXERR ) CALL M3MESG( MESG )
+                            ERRCNT(6) = ERRCNT(6) + 1
+                            EFLAG = .TRUE.
                         END IF
 
                     END IF
@@ -928,18 +933,18 @@ C                           pollutant-specific vehicle type match
                     ELSE IF( F1 .GT. 0 )THEN
                         CNVFAC = CNVFC01( F1,V )
 
-C.....................  CNVFC00( V ) will equal 1.0 if it has not been set, so 
-C                       there is no need for error checking
+C.....................  Error check there is no conversion fac found
                     ELSE
                         CNVFAC = CNVFC00( V )
                         CALL FMTCSRC( CSRC, NCOUT, BUFFER, L2 )
                         IF( CNVFAC == 1.0 .AND. CNVFLAG( V ) ) THEN
-                            MESG='WARNING: Default pollutant conversion'//
-     &                          ' factor (=1.0) was applied to source:' //
+                            MESG='ERROR: Missing pollutant conversion'//
+     &                          ' factor for source:' //
      &                          CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                          ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-                            IF( NWARN <= MXWARN ) CALL M3MESG( MESG )
-                            NWARN = NWARN + 1
+                            IF( ERRCNT(7) <= MXERR ) CALL M3MESG( MESG )
+                            ERRCNT(7) = ERRCNT(7) + 1
+                            EFLAG = .TRUE.
                         END IF
 
                     END IF
