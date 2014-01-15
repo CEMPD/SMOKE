@@ -67,24 +67,15 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         INTEGER         ENVINT
+        REAL            ENVREAL
 
         EXTERNAL        BLKORCMT, CRLF, FINDC, GETFLINE, STR2REAL,
-     &                  STR2INT
+     &                  STR2INT, ENVINT, ENVREAL
 
 C...........   ARGUMENTS and their descriptions:
 
         INTEGER, INTENT( IN ) :: FDEV      ! unit no. for stack parameter file PSTK
         INTEGER, INTENT( IN ) :: NSRC      ! actual number of sources
-
-C...........   LOCAL PARAMETERS and their descriptions:
-        REAL   , PARAMETER :: MINHT =    0.5    ! Min stack height (m)
-        REAL   , PARAMETER :: MINDM =    0.01   ! Min stack diameter (m)
-        REAL   , PARAMETER :: MINTK =  260.0    ! Min stack exit temperature (K)
-        REAL   , PARAMETER :: MINVE =    0.0001 ! Min stack exit velocity (m/s)
-        REAL   , PARAMETER :: MAXHT = 5100.0    ! Max stack height (m)
-        REAL   , PARAMETER :: MAXDM =  100.0    ! Max stack diameter (m)
-        REAL   , PARAMETER :: MAXTK = 2000.0    ! Max stack exit temperature (K)
-        REAL   , PARAMETER :: MAXVE =  500.0    ! Max stack exit velocity (m/s)
 
 C...........    LOCAL VARIABLES and their descriptions:
 C...........   SUBROUTINE PARAMETERS
@@ -94,7 +85,6 @@ C...........   Temporary read arrays
         CHARACTER(10)      SEGMENT( NSEG ) ! segments of line
 
 C.........  Unsorted arrays from stack replacements file
-
         INTEGER           , ALLOCATABLE :: INDXA( : ) ! sorting index
         REAL              , ALLOCATABLE :: SHTA ( : ) ! stack height 
         REAL              , ALLOCATABLE :: SDMA ( : ) ! stack diameter
@@ -143,6 +133,10 @@ C.........  Other local variables
         REAL            DM      !  temporary diameter
         REAL            TK      !  temporary exit temperature
         REAL            VE      !  temporary velocity
+        REAL   MINHT, MAXHT      ! min/max stack heights
+        REAL   MINDM, MAXDM      ! min/max stack diameter
+        REAL   MINTK, MAXTK      !  min/max stack exit temperature
+        REAL   MINVE, MAXVE      !  min/max stack velocity
 
         LOGICAL      :: EFLAG = .FALSE.  !  error flag
         LOGICAL         DFLAG( NSRC )    ! true if source getting default parms
@@ -173,9 +167,34 @@ C            add too many spaces for some messages)
         LDEV = INIT3()
 
 C.........   Get maximum number of warnings
-        MXWARN = ENVINT( WARNSET , ' ', 100, I )
+        MXWARN = ENVINT( WARNSET , ' ', 100, IOS )
 
         CALL M3MSG2( 'Reading default stack parameters...' )
+
+C.........  Define min/max ranges of stack parameters
+        MESG = 'Define minimum stack height in unit of meter'
+        MINHT = ENVREAL( 'MIN_STK_HEIGHT', MESG, 0.5, IOS )
+
+        MESG = 'Define maximum stack height in unit of meter'
+        MAXHT = ENVREAL( 'MAX_STK_HEIGHT', MESG, 5100.0, IOS )
+
+        MESG = 'Define minimum stack diameter in unit of meter'
+        MINDM = ENVREAL( 'MIN_STK_DIAMETER', MESG, 0.01, IOS )
+
+        MESG = 'Define maximum stack diameter in unit of meter'
+        MAXDM = ENVREAL( 'MAX_STK_DIAMETER', MESG, 100.0, IOS )
+
+        MESG = 'Define minimum stack exit temperature in unit of Kelvin'
+        MINTK = ENVREAL( 'MIN_STK_TEMPERATURE', MESG, 260.0, IOS )
+
+        MESG = 'Define maximum stack exit temperature in unit of Kelvin'
+        MAXTK = ENVREAL( 'MAX_STK_TEMPERATURE', MESG, 2000.0, IOS )
+
+        MESG = 'Define minimum stack exit velocity in unit of m/sec'
+        MINVE = ENVREAL( 'MIN_STK_VELOCITY', MESG, 0.0001, IOS )
+
+        MESG = 'Define maximum stack exit velocity in unit of m/sec'
+        MAXVE = ENVREAL( 'MAX_STK_VELOCITY', MESG, 500.0, IOS )
 
 C.........  Get dimensions of input file
         NLINE = GETFLINE( FDEV, 'Stack replacement file')
