@@ -131,7 +131,7 @@
         INTEGER,              PUBLIC:: NMEDGAI
 
         CHARACTER(CHRLEN3), ALLOCATABLE, PUBLIC:: CMEDGRD( :,: )   ! MEDS grid row/col coord
-        CHARACTER(CHRLEN3), ALLOCATABLE, PUBLIC:: COABDST( :,: )   ! MEDS GAI CO-ABS-DIST code
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC:: COABDST( :,: )   ! MEDS GAI CO-ABS-DIST code
 
 !.........  Unsorted list of file numbers and records by source
         INTEGER, PUBLIC :: NSTRECS                      ! size of SRCSBYREC
