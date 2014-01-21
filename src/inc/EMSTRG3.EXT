@@ -16,7 +16,7 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: BVGLEN3 =  4 ! biogenic veg ID
         INTEGER, PARAMETER :: CASLEN3 = 16 ! CAS code length
         INTEGER, PARAMETER :: CELLEN3 =  8 ! cell number
-        INTEGER, PARAMETER :: CHRLEN3 = 15 ! 5 plant characteristics
+        INTEGER, PARAMETER :: CHRLEN3 = 20 ! 5 plant characteristics
         INTEGER, PARAMETER :: CNYLEN3 =  3 ! county code
         INTEGER, PARAMETER :: DDSLEN3 = 40 ! inventory data description
         INTEGER, PARAMETER :: DSCLEN3 = 40 ! plant description
