@@ -48,7 +48,7 @@ C.........  This module contains the lists of unique inventory information
      &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NIPPA, NSRC, EANAM, NCHARS, TMPNAM
+        USE MODINFO, ONLY: CATEGORY, NIPPA, NSRC, EANAM, NCHARS
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT, LPDSRC, IDXSRC, PDEMOUT
@@ -134,10 +134,10 @@ C...........   Other local variables
         INTEGER, SAVE :: MXWARN       	  ! max no. warnings
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NFIELD = 1       ! number of data fields
-        INTEGER       :: NPOA   = 0       ! unused header number of pol/act
+        INTEGER, SAVE :: NPOA   = 6       ! no of pol in MEDS
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
         INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
-        INTEGER       :: YR4 = 0          ! unused header year
+        INTEGER, SAVE :: YR4 = 2000       ! MEDS inv year
         INTEGER          ZONE             ! source time zones
         INTEGER       :: RDEV = 0         !  unit no. for REPINVEN file
 
@@ -164,10 +164,12 @@ C...........   Other local variables
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID
         CHARACTER(CHRLEN3) DVID      ! tmp device ID
         CHARACTER(CHRLEN3) PRID      ! tmp process ID
-        CHARACTER(SCCLEN3) TSCC      ! tmp source category code
+        CHARACTER(CHRLEN3) TSCC      ! tmp source category code
         CHARACTER(ALLLEN3) CSRC      ! tmp source string
         CHARACTER(NAMLEN3) OUTIDX    ! name for integer source index
         CHARACTER(NAMLEN3) ONAME     ! output logical filename
+ 
+        CHARACTER(IOVLEN3) POLNAM( 6 )
 
         CHARACTER(16) :: PROGNAME = 'RDMEDSPD' !  program name
 
@@ -185,6 +187,14 @@ C.............  Get maximum number of warnings
 C.............  Allocate memory for bad source storage
             ALLOCATE( BADSRC( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BADSRC', PROGNAME )
+
+C.............  list of MEDS pol names
+            POLNAM( 1 ) = 'CO'
+            POLNAM( 2 ) = 'NOX'
+            POLNAM( 3 ) = 'SOX'
+            POLNAM( 4 ) = 'TOG'
+            POLNAM( 5 ) = 'PM'
+            POLNAM( 6 ) = 'NH3'
 
 C.............  Create unique list of FIPS codes and other things
             CALL GENUSLST
@@ -238,17 +248,7 @@ C.............  Read first line of file
 C.............  Skip blank lines 
             IF( L .EQ. 0 ) CYCLE
 
-C.............  Scan for header lines and check to ensure all are set
-C               properly
-            CALL GETHDR( 53, .FALSE., .TRUE., .TRUE.,
-     &                   LINE, ICC, YR4, NPOA, IOS )
-            NIPPA = NPOA
-
-C.............  Interpret error status
-            IF( IOS .GT. 0 ) EFLAG = .TRUE. 
-
-C.............  If a header line was encountered, go to next line
-            IF( IOS .GE. 0 ) CYCLE
+            NIPPA = NPOA   ! same no of poll (6) in MEDS (CO,NOX,SOX,TOG,PM,NH3)
 
 C.............  Determine if file is day- or hour-specific by the length of the
 C               lines. Make sure day- and hour-specific data are not in the
@@ -280,7 +280,7 @@ C.............  Set Julian day from MMDDYY8 SAS format
                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            JDATE = STR2INT( ADJUSTL( LINE( 61:63 ) ) )
+            JDATE = STR2INT( ADJUSTL( LINE( 59:63 ) ) )
             JDATE = YR4 * 1000 + JDATE
 
             JTIME = 00000
@@ -302,7 +302,7 @@ C.............  Search for time zone for current county
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            CFIP = COABDST( I,2 )( 4:9 )      ! FIPS code
+            CFIP = COABDST( I,2 )      ! FIPS code
             I = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
 C.............  If time zone name is not found, thenoutput error
@@ -340,12 +340,13 @@ C.............  Convert date and time to output time zone.
             CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
 
 C.............  Set key for searching sources
-            FCID = ADJUSTL( LINE( 43:51 ) )  ! platn/facility ID (=FCID)
+            FCID = ADJUSTl( LINE( 43:51 ) )  ! platn/facility ID (=FCID)
             SKID = ADJUSTL( LINE( 37:39 ) )  ! Column ID (=pointID, SKID)
             DVID = ADJUSTL( LINE( 52:56 ) )  ! stack ID (=DeviceID), DVID)
             PRID = ADJUSTL( LINE( 40:42 ) )  ! Row ID (=ProcessID, PRID)
 
-            TSCC = ADJUSTL( LINE(  9:22 ) )  ! SCC from MEDS format
+            TSCC = TRIM( LINE(  9:22 ) )     ! SCC from MEDS format
+            CALL PADZERO( TSCC )
 
 C.............  If FIPS code is not the same as last time, then
 C               look it up and get indidies
@@ -362,28 +363,12 @@ C               look it up and get indidies
                 ES = ENDSRC( J )
                 NS = ES - SS + 1
                 LFIP = CFIP
-
             END IF
-
-C.............  Make sure SCC is at least 8 character long
-            IF( LEN_TRIM( TSCC ) < 8 ) THEN
-                DO I = LEN_TRIM( TSCC ) + 1, 8
-                    TSCC( I:I ) = '0'
-                END DO
-            END IF
-                
-            IF( TSCC .NE. ' ' ) CALL PADZERO( TSCC )
 
 C.............  Build source characteristics field for searching inventory
-            IF( CATEGORY == 'POINT' .AND. .NOT. IFLAG ) THEN
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
-     &                   '     '//TSCC, CHRBLNK3, POLBLNK3, CSRC )
-                    
-            ELSE IF( CATEGORY == 'POINT' .AND. IFLAG ) THEN
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
-     &                        TSCC, CHRBLNK3, POLBLNK3, CSRC )
-            END IF
-                
+            CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID,
+     &                    TSCC, CHRBLNK3, POLBLNK3, CSRC )
+ 
 C.............  Search for this record in sources
             J = FINDC( CSRC, NS, CSOURC( SS ) )
 
@@ -404,8 +389,8 @@ C                   invoked once.
 
                     CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
                     IF( NWARN( 3 ) .LE. MXWARN ) THEN
-                        MESG = 'WARNING: Period-specific record does '//
-     &                         'not match inventory sources: '//
+                        WRITE( MESG,94010 ) 'WARNING: Period-specific record at line',
+     &                       IREC, ' does not match inventory sources: '//
      &                         CRLF() // BLANK10 // BUFFER( 1:L2 )
                         CALL M3MESG( MESG )
                         NWARN( 3 ) = NWARN( 3 ) + 1
@@ -426,9 +411,9 @@ C.............  Otherwise, update master list of sources in the inventory
 
 C.............  Loop over no of pollutant for the source
             DO NP = 1, NPOA
-
+          
 C.............  Check pollutant code and set index I
-                CDAT = TMPNAM( NP )         ! CO, NOX, SOX, TOG, PM, and NH3 (in order)
+                CDAT = POLNAM( NP )         ! CO, NOX, SOX, TOG, PM, and NH3 (in order)
                 CDAT = ADJUSTL( CDAT ) 
                 CALL UPCASE( CDAT ) 
 
@@ -487,7 +472,7 @@ C.................   Output daily or hour emissions to PDAY output file
                 END IF
 
                 DO V = 1, NPOA 
-                    IF ( .NOT. WRITE3( ONAME, TMPNAM( V ), JDATE, JTIME, PDEMOUT( :,V ) ) ) THEN
+                    IF ( .NOT. WRITE3( ONAME, POLNAM( V ), JDATE, JTIME, PDEMOUT( :,V ) ) ) THEN
                          L2   = LEN_TRIM( ONAME )
                          MESG= 'Error writing output file "' // ONAME(1:L2) // '"'
                          CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )

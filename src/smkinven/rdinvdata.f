@@ -444,9 +444,12 @@ C.........  Otherwise, rewind individual file
 
 C.........  Allocate memory to store emissions and pollutant from a single line
 C.........  For now, set number of pollutants per line to 1
-        ALLOCATE( READDATA( 1,NPPOL ), STAT=IOS )
+        CURFMT = FILFMT( CURFIL )
+        NPOLPERLN = 1
+        IF( CURFMT == MEDSFMT ) NPOLPERLN = 6
+        ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
-        ALLOCATE( READPOL( 1 ), STAT=IOS )
+        ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
         CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
 
         CURFMT = FILFMT( CURFIL )
@@ -533,10 +536,12 @@ C.........................  Set default inventory characteristics that depend on
                         CURFMT = FILFMT( CURFIL )
 
 C.........................  Reallocate memory to store emissions from a single line
+                        NPOLPERLN = 1
+                        IF( CURFMT == MEDSFMT ) NPOLPERLN = 6
                         DEALLOCATE( READDATA, READPOL )
-                        ALLOCATE( READDATA( 1,NPPOL ), STAT=IOS )
+                        ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
                         CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
-                        ALLOCATE( READPOL( 1 ), STAT=IOS )
+                        ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
                         CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
                         SAVNVAR = 1
 
@@ -637,8 +642,7 @@ C.............  Check for header lines
 
 C.................  Reallocate emissions memory with
 C                   proper number of pollutants per line
-                IF( ( CURFMT == MEDSFMT .OR.
-     &                CURFMT == ORLFIREFMT )
+                IF( ( CURFMT == ORLFIREFMT )
      &                .AND. NPOLPERLN .NE. SAVNVAR ) THEN
                     DEALLOCATE( READDATA, READPOL )
                     ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )

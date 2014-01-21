@@ -86,13 +86,8 @@ C...........   Other local variables
         INTEGER         I,J,N     ! counters and indices
 
         INTEGER         ROW, COL ! tmp grid row and col index
-        INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
-        INTEGER, SAVE:: INY     !  inventory year
-        INTEGER         IOS     !  i/o status
-        INTEGER, SAVE:: NPOL    !  number of pollutants in file
-        INTEGER, SAVE:: STARTDATE = -1  !  start date
-
-        LOGICAL, SAVE:: FIRSTIME = .TRUE. ! true: first time routine is called
+        INTEGER         INY      !  inventory year
+        INTEGER         IOS      !  i/o status
 
         CHARACTER(300)      MESG                 !  message buffer
         CHARACTER(CHRLEN3)  ROWCOL           !  Row/Col & GAI lookup variables
@@ -102,36 +97,19 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine RDDATAMEDSPT
 
-C.........  Scan for header lines and check to ensure all are set 
-C           properly
-        CALL GETHDR( MXPOLFIL, .FALSE., .TRUE., .TRUE., 
-     &               LINE, ICC, INY, NPOL, IOS )
+        HDRFLAG = .FALSE.
+        NPOLPERLN = 6
 
-C.........  Interpret error status
-        IF( IOS == 4 ) THEN
-            WRITE( MESG,94010 ) 
-     &             'Maximum allowed data variables ' //
-     &             '(MXPOLFIL=', MXPOLFIL, CRLF() // BLANK10 //
-     &             ') exceeded in input file'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        READPOL( 1 ) = 'CO'
+        READPOL( 2 ) = 'NOX'
+        READPOL( 3 ) = 'SOX'
+        READPOL( 4 ) = 'TOG'
+        READPOL( 5 ) = 'PM'
+        READPOL( 6 ) = 'NH3'
 
-        ELSE IF( IOS > 0 ) THEN
-            EFLAG = .TRUE.
-
-        END IF
-
-C.........  If a header line was encountered, set flag and return
-        IF( IOS >= 0 ) THEN
-            HDRFLAG = .TRUE.
-            NPOLPERLN = NPOL
-            IYEAR = INY
-            RETURN
-        ELSE
-            HDRFLAG = .FALSE.
-        END IF
-
-C.........  Set pollutants for this line
-        READPOL = TMPNAM
+C.........  set year
+C        INY = STR2INT( LINE( 59:60 ) )
+C        IYEAR = 2000 + INY
 
 C.........  Read source data
         CORS = ''  ! DOE plant ID
@@ -155,9 +133,6 @@ C.........  Read source data
 
 C.........  Set all MEDS annual/avg to zero since all are daily/hourly inv
         READDATA = '0.0'
-
-C.........  Make sure routine knows it's been called already
-        FIRSTIME = .FALSE.
 
 C.........  Return from subroutine 
         RETURN

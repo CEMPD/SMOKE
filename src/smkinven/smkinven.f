@@ -442,7 +442,7 @@ C               to see if HFLUX is present. If so, FIREFLAG = .true.
             IF ( INDEX1( 'HFLUX',NIPPA,EANAM ) .GT. 0 ) FIREFLAG= .TRUE.
 
             NINVARR = 4
-            IVARNAMS( 1 ) = 'IFIP'    ! In case CEM input
+            IVARNAMS( 1 ) = 'CIFIP'   ! In case CEM input
             IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
             IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
             IVARNAMS( 4 ) = 'CPDESC'  ! In case CEM input
@@ -460,24 +460,23 @@ C               to see if HFLUX is present. If so, FIREFLAG = .true.
 
 C.........  Read in daily or hourly MEDS emission values and output to a SMOKE inter output file
         IF( MEDSFLAG ) THEN
-
+C.............  Read and output day-specific data
             IF( DAYINVFLAG ) THEN
                 TYPNAM = 'day'
                 TDEV   = DDEV
-            ELSE
+                CALL GENMEDSOUT( TDEV, TNAME, TZONE, TYPNAM ) 
+
+            ELSE IF( HRLINVFLAG ) THEN
                 TYPNAM = 'hour'
                 TDEV   = HDEV
+                CALL GENMEDSOUT( TDEV, TNAME, TZONE, TYPNAM ) 
+
             END IF
-
-C.............  Read and output day-specific data
-            CALL GENMEDSOUT( TDEV, TNAME, TZONE, TYPNAM ) 
-
-            GOTO 999
 
         END IF
 
 C.........  Read in daily emission values and output to a SMOKE file
-        IF( DAYINVFLAG ) THEN
+        IF( DAYINVFLAG .AND. .NOT. MEDSFLAG ) THEN
 
             INSTEP  = 240000
             OUTSTEP = 10000
@@ -497,7 +496,7 @@ C.............  Read and output day-specific data
         END IF
 
 C.........  Read in hourly emission values and output to a SMOKE file
-        IF( HRLINVFLAG ) THEN
+        IF( HRLINVFLAG .AND. .NOT. MEDSFLAG ) THEN
 
             INSTEP  = 10000
             OUTSTEP = 10000
@@ -518,7 +517,7 @@ C.............  Read and output hour-specific data
 
 C.............  Write inventory report file
         CALL M3MSG2( 'Writing inventory report file...' )
-        CALL WREPINVEN( ADEV, CDEV )
+        IF( .NOT. MEDSFLAG ) CALL WREPINVEN( ADEV, CDEV )
 
 C.........  End program successfully
 999     MESG = ' '

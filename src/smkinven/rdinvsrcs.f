@@ -479,10 +479,12 @@ C.................  Skip blank lines
                 IF( LINE == ' ' ) CYCLE
 
 C.................  Check if format works with expanded geographic codes
-                IF( USEEXPGEO .AND. CURFMT /= FF10FMT ) THEN
+                IF( USEEXPGEO ) THEN
+                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR. CURFMT == ORLFIREFMT ) THEN
                     MESG = 'ERROR: Expanded geographic codes are only ' //
      &                     'supported for inventories in FF10 format.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
                 END IF
 
 C.................  Process line depending on file format and source category
@@ -663,7 +665,7 @@ C.....................  Ensure that road class is valid and convert from road cl
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
-                    IF( CURFMT == ORLFMT .OR. CURFMT == MEDSFMT .OR.
+                    IF( CURFMT == ORLFMT .OR.
      &                  CURFMT == ORLFIREFMT .OR. CURFMT == FF10FMT ) THEN
 
 C.........................  Make sure SCC is at least 8 characters long
