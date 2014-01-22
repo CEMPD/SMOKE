@@ -76,6 +76,8 @@ C...........   Other local variables
         INTEGER, SAVE:: NPOL    !  number of pollutants in file
         INTEGER         ROW, COL  ! tmp row and col
 
+        CHARACTER( 3 )    :: STA = '006'   ! State code for CA (006)
+        CHARACTER( 3 )       ARBN, CNTY
         CHARACTER(300)       MESG    !  message buffer
         CHARACTER(CHRLEN3)   GAI     !  GAI lookup code
 
@@ -100,12 +102,14 @@ C           the various data fields
 
         I = INDEX1( GAI, NMEDGAI, COABDST( :,1 ) )
         IF( I < 1 ) THEN
-            MESG = 'ERROR: Can not find GAI code ' // GAI //
-     &             ' from GAI_LOOKUP_TABLE input file'
-           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
+            ARBN = ADJUSTR( LINE( 68:70 ) )
+            CALL PADZERO( ARBN )
+            WRITE( CNTY, '(I3.3)' ) STR2INT( LINE( 57:58 ) )
+            CFIP = ARBN // STA // CNTY // '000'
+        ELSE
+            CFIP = TRIM( COABDST( I,2 ) )    ! FIPS code
+        ENDIF
 
-        CFIP = TRIM( COABDST( I,2 ) )    ! FIPS code
         FCID = ADJUSTL( LINE( 43:51 ) )  ! platn/facility ID
         SKID = ADJUSTL( LINE( 52:56 ) )  ! stack ID
         PTID = ADJUSTL( LINE( 37:39 ) )  ! Column ID

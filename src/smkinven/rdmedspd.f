@@ -137,7 +137,7 @@ C...........   Other local variables
         INTEGER, SAVE :: NPOA   = 6       ! no of pol in MEDS
         INTEGER, SAVE :: NSTEPS = 0       ! number of time steps
         INTEGER, SAVE :: NWARN( 5 )       ! warnings counter
-        INTEGER, SAVE :: YR4 = 2000       ! MEDS inv year
+        INTEGER          YR4              ! MEDS inv year
         INTEGER          ZONE             ! source time zones
         INTEGER       :: RDEV = 0         !  unit no. for REPINVEN file
 
@@ -151,11 +151,13 @@ C...........   Other local variables
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
 
-        CHARACTER(CHRLEN3) ::GAI = ' '    !  GAI lookup code
+        CHARACTER( 3 ) :: STA = '006'     ! state code for CA (=006)
         CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(1920):: LINE   = ' '    ! line buffer 
         CHARACTER(512) :: MESG   = ' '    ! message buffer
+        CHARACTER(CHRLEN3) ::GAI = ' '    ! GAI lookup code
  
+        CHARACTER( 3 )    ARBN, CNTY
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
         CHARACTER(FIPLEN3) LFIP      ! previous st/co FIPS code
         CHARACTER(CASLEN3) CDAT      ! tmp Inventory data (input) name
@@ -261,7 +263,7 @@ C.............  Set Julian day from MMDDYY8 SAS format
                 DAYFLAG = .TRUE.
                 OUTIDX  = 'INDXD'
                 OUTSTEP = 240000
-                IF( STR2INT( LINE( 64:64 ) ) /= -1 ) THEN
+                IF( LINE( 64:64 ) /= '-' ) THEN
                     MESG = 'ERROR: CAN NOT process Hourly MEDS inventories '//
      &                     'when DAY_SPECIFIC_YN is set to Y'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -280,7 +282,8 @@ C.............  Set Julian day from MMDDYY8 SAS format
                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            JDATE = STR2INT( ADJUSTL( LINE( 59:63 ) ) )
+            YR4 = 2000 + STR2INT( LINE( 59:60 ) )
+            JDATE = STR2INT( ADJUSTL( LINE( 61:63 ) ) )
             JDATE = YR4 * 1000 + JDATE
 
             JTIME = 00000
@@ -297,19 +300,21 @@ C.............  Search for time zone for current county
 
             I = INDEX1( GAI, NMEDGAI, COABDST( :,1 ) )
             IF( I < 1 ) THEN
-                MESG = 'ERROR: Can not find GAI code from '
-     &              // 'GAI_LOOKUP_TABLE input file'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                ARBN = ADJUSTR( LINE( 68:70 ) )
+                CALL PADZERO( ARBN )
+                WRITE( CNTY, '(I3.3)' ) STR2INT( LINE( 57:58 ) )
+                CFIP = ARBN // STA // CNTY // '000'
+            ELSE 
+                CFIP = COABDST( I,2 )      ! FIPS code
             END IF
 
-            CFIP = COABDST( I,2 )      ! FIPS code
             I = FINDC( CFIP, NCOUNTY, CNTYCOD )
 
 C.............  If time zone name is not found, thenoutput error
             IF( I .LE. 0 ) THEN
                 EFLAG = .TRUE.
                 MESG = 'ERROR: Could not find time zone for county: '//
-     &                 CFIP // ' from COSTCY file'
+     &                 CFIP // ' from GEOCODE4 file'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
