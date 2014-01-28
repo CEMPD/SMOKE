@@ -66,7 +66,7 @@ C.........  This module contains Smkreport-specific settings
      &                      STKPFMT, STKPWIDTH, ELEVWIDTH,
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
-     &                      ALLRPT, SICWIDTH, SIDSWIDTH,
+     &                      ALLRPT, SICWIDTH, SIDSWIDTH, UNITWIDTH,
      &                      MACTWIDTH, MACDSWIDTH, NAIWIDTH,
      &                      NAIDSWIDTH, STYPWIDTH, LTLNFMT,
      &                      LTLNWIDTH, DLFLAG, ORSWIDTH, ORSDSWIDTH,
@@ -89,8 +89,8 @@ C.........  This module contains the arrays for state and county summaries
      &                     GEOLEV1NAM
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: MXCHRS, NCHARS
-
+        USE MODINFO, ONLY: MXCHRS, NCHARS, BYEAR
+        
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -98,7 +98,9 @@ C...........   INCLUDES
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)  CRLF
-        EXTERNAL   CRLF
+        INTEGER       WKDAY
+        
+        EXTERNAL   CRLF, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: FDEV
@@ -123,7 +125,7 @@ C...........   Arrays for source characteristics output formatting
 C...........   Other local variables
         INTEGER     I, J, K, L, L1, N, S, V           ! counters and indices
 
-        INTEGER     DAY                       ! day of month
+        INTEGER     DAY, JDAY, WDAY           ! day of month, julian day, Weekday
         INTEGER     IOS                       ! i/o status
         INTEGER     LE                        ! output string accum. length
         INTEGER     LV                        ! width of delimiter
@@ -141,13 +143,16 @@ C...........   Other local variables
         LOGICAL, SAVE :: FIRSTIME  = .TRUE.   ! true: first time routine called
 
         REAL        ECHECK                    ! tmp sum of emissions in a bin
-
+        
+        CHARACTER(1)        AGT               ! tmp aggregation type for CARB QADEF report
+        CHARACTER(17)       OUTCARB           !  output date string for CARB QADEF report
         CHARACTER(12)       OUTDATE           !  output date string
         CHARACTER(100)   :: BADRGNM = 'Name unknown'
         CHARACTER(100)      BUFFER            !  string building buffer
         CHARACTER(300)      MESG              !  message buffer
         CHARACTER(STRLEN)   STRING            !  output string
         CHARACTER(SCCLEN3)  TSCC              ! tmp SCC string
+        CHARACTER(FIPLEN3)  TFIPS             ! tmp FIPS string
 
         CHARACTER(16) :: PROGNAME = 'WRREPOUT' ! program name
 
@@ -206,18 +211,6 @@ c               is determined by the report settings.
                 LE     = 1
                 LX     = 1
 
-C.............  Include variable in string
-                IF( RPT_%RPTMODE .EQ. 3 ) THEN
-
-                    L = VARWIDTH
-                    L1 = L - LV
-                    STRING = STRING( 1:LE ) //
-     &                       OUTDNAM( V, RCNT )( 1:L1 ) // DELIM
-                    MXLE = MXLE + L
-                    LE = MIN( MXLE, STRLEN )
-
-                END IF
-
 C..............  Include user-defined label in string
                 IF( RPT_%USELABEL ) THEN
 
@@ -228,8 +221,44 @@ C..............  Include user-defined label in string
 
                 END IF
 
+C.............  Include date in string for CARB QADEF report
+                IF( RPT_%CARB ) THEN
+
+C.................  Temporal resolution (A:Annual, D:Daily, H:Hourly)
+                    IF( RPT_%BYDATE .AND. .NOT. RPT_%BYHOUR ) THEN
+                        AGT = 'D'
+                    ELSE IF( RPT_%BYHOUR ) THEN
+                        AGT = 'H'
+                    ELSE
+                        AGT = 'A'
+                    ENDIF
+
+
+C.................  Compute year, month, julidan day, day of week (1,,,,,,7)
+                    YEAR = JDATE / 1000
+                    IF( AGT == 'A' ) THEN
+                        MONTH = 0
+                        WDAY = 0
+                        JDAY = 0
+                    ELSE
+                        CALL DAYMON( JDATE, MONTH, DAY )
+                        WDAY = WKDAY( JDATE )
+                        JDAY = JDATE - ( YEAR * 1000 )
+                    ENDIF
+
+C.................  Add date field to header
+                    OUTCARB = ' '
+                    WRITE( OUTCARB, DATEFMT ) AGT, YEAR, MONTH, JDAY, WDAY
+
+                    STRING = STRING( 1:LE ) // OUTCARB
+                    MXLE = MXLE + DATEWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+
+                END IF
+
 C.............  Include date in string
-                IF( RPT_%BYDATE ) THEN
+                IF( RPT_%BYDATE .AND. .NOT. RPT_%CARB ) THEN
 
 C.................  Get month and day from Julian date
                     CALL DAYMON( JDATE, MONTH, DAY )
@@ -258,6 +287,18 @@ C.............  Include hour in string
                         LE = MIN( MXLE, STRLEN )
                         LX = 0
                     END IF
+
+                ELSE IF( .NOT. RPT_%BYHOUR .AND. RPT_%CARB ) THEN
+                    IF( .NOT. DLFLAG ) THEN
+                        BUFFER = ' '
+                        OUTHOUR = 0
+                        WRITE( BUFFER, HOURFMT ) OUTHOUR  ! Integer
+                        STRING = STRING( 1:LE ) // BUFFER
+                        MXLE = MXLE + HOURWIDTH + LX
+                        LE = MIN( MXLE, STRLEN )
+                        LX = 0
+                    END IF
+
                 END IF
 
 C.............  Include layer in string
@@ -278,6 +319,13 @@ C.............  Include cell numbers in string
                     MXLE = MXLE + CELLWIDTH + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
+                ELSE IF( .NOT. RPT_%BYCELL .AND. RPT_%CARB ) THEN
+                    BUFFER = ' '
+                    WRITE( BUFFER, CELLFMT ) 0,0 ! Integers
+                    STRING = STRING( 1:LE ) // BUFFER
+                    MXLE = MXLE + CELLWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
                 END IF
 
 C.............  Include source number in string
@@ -292,12 +340,23 @@ C.............  Include source number in string
 
 C.............  Include country/state/county code in string
                 IF( LREGION ) THEN
-                    STRING = STRING( 1:LE ) // BINREGN( I ) // DELIM
+
+                    IF( RPT_%CARB ) THEN
+                        TFIPS = BINREGN(I)(1:3)//','//BINREGN(I)(10:12)//','//BINREGN(I)(7:9)
+                    ELSE
+                        TFIPS = BINREGN( I )
+                    ENDIF
+
+                    STRING = STRING( 1:LE ) // TFIPS // DELIM
+                    MXLE = MXLE + REGNWIDTH + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                ELSE IF( .NOT. LREGION .AND. RPT_%CARB ) THEN
+                    STRING = STRING( 1:LE ) // '      ' // DELIM
                     MXLE = MXLE + REGNWIDTH + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF
-
 
 C.............  Include region level 1 name in string
                 IF( RPT_%BYGEO1NAM ) THEN
@@ -698,6 +757,25 @@ C.....................  Write warning msg when the description is unavailable
 
                 END IF
 
+C.............  Include variable in string
+                IF( RPT_%RPTMODE .EQ. 3 ) THEN
+
+                    L = VARWIDTH
+                    L1 = L - LV
+                    STRING = STRING( 1:LE ) //
+     &                       OUTDNAM( V, RCNT )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
+
+                    L = UNITWIDTH
+                    L1 = L - LV
+                    STRING = STRING( 1:LE ) //
+     &                       OUTUNIT( V )( 1:L1 ) // DELIM
+                    MXLE = MXLE + L
+                    LE = MIN( MXLE, STRLEN )
+
+                END IF
+
 C.............  Remove leading spaces and get new length
                 STRING = STRING( 2:LE )
                 LE = LE - 1
@@ -785,8 +863,7 @@ C.............  Write out this record
 
                 ELSE
 
-                    WRITE( FDEV, OUTFMT ) STRING( 1:LE ), BINDATA(I,V),
-     &                                DELIM, OUTUNIT( V )
+                    WRITE( FDEV, OUTFMT ) STRING( 1:LE ), BINDATA(I,V)
 
                 END IF
 

@@ -95,7 +95,7 @@ C.........  Deallocate SCCDLEV if it was allocated
 C.........  Allocate memory for the SCC descriptions and initialize
         ALLOCATE( SCCDESC( NINVSCC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCCDESC', PROGNAME )
-        ALLOCATE( SCCDLEV( NINVSCC, NSCCLV3 ), STAT=IOS )
+        ALLOCATE( SCCDLEV( NINVSCC, NSCCLV3-1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCCDLEV', PROGNAME )
 
         SCCDESC = 'Description unavailable'          ! array
@@ -179,9 +179,9 @@ C                   the parts of the SCCs for the different levels
 
 C.....................  Get out of loop after 2nd-to-last - all other semi-colons
 C                       are included in final section of name
-                    IF( P == NSCCLV3-1 ) EXIT
+                    IF( P == NSCCLV3-2 ) EXIT
                 END DO
-                SCCDLEV( J,NSCCLV3 ) = L
+                SCCDLEV( J,NSCCLV3-1 ) = L
             END IF
 
         END DO

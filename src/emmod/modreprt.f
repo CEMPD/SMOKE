@@ -140,6 +140,7 @@
             LOGICAL       :: BYSRG         ! true: by surrogate codes
             LOGICAL       :: BYRCL         ! true: by road class (mb)
             LOGICAL       :: BYWEK         ! true: by weekly temporal code
+            LOGICAL       :: CARB          ! true: output CARB summary QA report
             LOGICAL       :: CHKPROJ       ! true: check projctns vs. rpt
             LOGICAL       :: CHKCNTL       ! true: check controls vs. rpt
             LOGICAL       :: LATLON        ! true: output stack coordinates

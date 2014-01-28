@@ -63,7 +63,7 @@ C.........  This module contains Smkreport-specific settings
      &                      PYEAR, PRBYR, PRPYR, OUTUNIT, TITLES,
      &                      ALLRPT, LOC_BEGP, LOC_ENDP,
      &                      SICWIDTH, SIDSWIDTH, MACTWIDTH, MACDSWIDTH,
-     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH,
+     &                      NAIWIDTH, NAIDSWIDTH, STYPWIDTH, UNITWIDTH,
      &                      LTLNFMT, LTLNWIDTH, LABELWIDTH, DLFLAG,
      &                      NFDFLAG, MATFLAG, ORSWIDTH, ORSDSWIDTH,
      &                      STKGWIDTH, STKGFMT, INTGRWIDTH, GEO1WIDTH
@@ -161,7 +161,9 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRGEO2 = 45
         INTEGER, PARAMETER :: IHDRGEO3 = 46
         INTEGER, PARAMETER :: IHDRGEO4 = 47
-        INTEGER, PARAMETER :: NHEADER  = 47
+        INTEGER, PARAMETER :: IHDRCARB = 48
+        INTEGER, PARAMETER :: IHDRCADT = 49
+        INTEGER, PARAMETER :: NHEADER  = 49
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -212,7 +214,9 @@ C...........   Local parameters
      &                              'Geo Regn Level 1 ',
      &                              'Geo Regn Level 2 ',
      &                              'Geo Regn Level 3 ',
-     &                              'Geo Regn Level 4 ' / )
+     &                              'Geo Regn Level 4 ',
+     &                              'T,Yr,Mon,Jday,Dow',
+     &                              'Basin,Dist,Cnty  ' / )
 
 C...........   Local variables that depend on module variables
         LOGICAL    LGEO1USE ( NGEOLEV1 )
@@ -461,22 +465,6 @@ C............................................................................
 C.........  The extra length for each variable is 1 space and 1 delimiter width
         LV = LEN_TRIM( RPT_%DELIM ) + 1
 
-C.........  Variable column
-        IF( RPT_%RPTMODE .EQ. 3 ) THEN
-            NWIDTH = 0
-            DO I = 1, RPT_%NUMDATA
-                NWIDTH = MAX( NWIDTH, LEN_TRIM( OUTDNAM( I, RCNT ) ) )
-            END DO
-
-            J = LEN_TRIM( HEADERS( IHDRVAR ) )
-            J = MAX( NWIDTH, J )
-
-            CALL ADD_TO_HEADER( J, HEADERS(IHDRVAR), LH, HDRBUF )
-
-            VARWIDTH = J + LV
-
-        END IF
-
 C.........  User-defined label
         IF( RPT_%USELABEL ) THEN
             J = MAX( LEN_TRIM( RPT_%LABEL ), 
@@ -489,7 +477,18 @@ C.........  User-defined label
         END IF
 
 C.........  Date column
-        IF( RPT_%BYDATE ) THEN
+        IF( RPT_%CARB ) THEN
+            J = 17  ! header width is AGTYPE,YEAR,MM,JDAY,DOW
+            WRITE( DATEFMT, 94220 ) RPT_%DELIM  ! leading zeros
+            DATEWIDTH = J + LV
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRCARB), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+        END IF
+
+C.........  Date column
+        IF( RPT_%BYDATE .AND. .NOT. RPT_%CARB ) THEN
             J = 10  ! header width is MM/DD/YYYY
             WRITE( DATEFMT, 94620 ) RPT_%DELIM  ! leading zeros
             DATEWIDTH = J + LV
@@ -501,6 +500,17 @@ C.........  Date column
 
 C.........  Hour column
         IF( RPT_%BYHOUR ) THEN
+            IF( .NOT. DLFLAG ) THEN
+                J = LEN_TRIM( HEADERS( IHDRHOUR ) )  ! header width
+                WRITE( HOURFMT, 94630 ) J, 2, RPT_%DELIM  ! leading zeros
+                J = MAX( 2, J )
+                HOURWIDTH = J + LV
+
+                CALL ADD_TO_HEADER( J, HEADERS(IHDRHOUR), LH, HDRBUF )
+                CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            END IF
+        ELSE IF( .NOT. RPT_%BYHOUR .AND. RPT_%CARB ) THEN
             IF( .NOT. DLFLAG ) THEN
                 J = LEN_TRIM( HEADERS( IHDRHOUR ) )  ! header width
                 WRITE( HOURFMT, 94630 ) J, 2, RPT_%DELIM  ! leading zeros
@@ -546,6 +556,25 @@ C.............  Y-cell
 C.............  Write format to include both x-cell and y-cell
             WRITE( CELLFMT, 94635 ) W1, RPT_%DELIM, W2, RPT_%DELIM
             CELLWIDTH = W1 + W2 + 2*LV
+
+        ELSE IF( .NOT. RPT_%BYCELL .AND. RPT_%CARB ) THEN
+
+C.............  X-cell
+            J = LEN_TRIM( HEADERS( IHDRCOL ) )
+            W1 = J
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRCOL), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+C.............  Y-cell
+            J = LEN_TRIM( HEADERS( IHDRROW ) )
+            W2 = J
+            CALL ADD_TO_HEADER( W2, HEADERS(IHDRROW), LH, HDRBUF )
+            CALL ADD_TO_HEADER( W2, ' ', LU, UNTBUF )
+
+C.............  Write format to include both x-cell and y-cell
+            WRITE( CELLFMT, 94635 ) W1, RPT_%DELIM, W2, RPT_%DELIM
+            CELLWIDTH = W1 + W2 + 2*LV
+
         END IF
 
 C.........  Source ID column
@@ -565,18 +594,37 @@ C.........  Source ID column
 
 C.........  Region code column
         IF( LREGION ) THEN
-            J  = LEN_TRIM( HEADERS( IHDRREGN ) )
+            IF( RPT_%CARB ) THEN
+                J  = LEN_TRIM( HEADERS( IHDRCADT ) )
+            ELSE
+                J  = LEN_TRIM( HEADERS( IHDRREGN ) )
+            ENDIF
             W1 = 0
             DO I = 1, NOUTBINS
                 W1 = MAX( W1, LEN_TRIM( BINREGN( I ) ) )
             END DO
             W1  = MAX( W1, J )
 
-            CALL ADD_TO_HEADER( W1, HEADERS(IHDRREGN), LH, HDRBUF)
+            IF( RPT_%CARB ) THEN
+                CALL ADD_TO_HEADER( W1, HEADERS(IHDRCADT), LH, HDRBUF)
+            ELSE
+                CALL ADD_TO_HEADER( W1, HEADERS(IHDRREGN), LH, HDRBUF)
+            ENDIF
             CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
 
             WRITE( REGNFMT, 94630 ) W1, FIPLEN3, RPT_%DELIM     ! leading zeros
             REGNWIDTH = W1 + LV
+
+        ELSE IF( .NOT. LREGION .AND. RPT_%CARB ) THEN
+            J  = LEN_TRIM( HEADERS( IHDRCADT ) )
+            W1 = J
+
+            CALL ADD_TO_HEADER( W1, HEADERS(IHDRCADT), LH, HDRBUF)
+            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+
+            WRITE( REGNFMT, 94630 ) W1, FIPLEN3, RPT_%DELIM     ! leading zeros
+            REGNWIDTH = W1 + LV
+
         END IF
 
 C.........  Set widths and build formats for country, state, and county names.
@@ -693,10 +741,10 @@ C.............  Set county name column width
 C.........  SCC column
         IF( RPT_%BYSCC ) THEN
             J = LEN_TRIM( HEADERS( IHDRSCC ) )
-            IF( RPT_%SCCRES < NSCCLV3 ) J = J + 7  ! Plus " Tier #"
+            IF( RPT_%SCCRES < NSCCLV3-1 ) J = J + 7  ! Plus " Tier #"
             J = MAX( SCCLEN3, J )
    
-            IF( RPT_%SCCRES < NSCCLV3 ) THEN
+            IF( RPT_%SCCRES < NSCCLV3-1 ) THEN
                 WRITE( BUFFER, '(A,I1)' ) TRIM( HEADERS(IHDRSCC) ) // 
      &                                    ' Tier ', RPT_%SCCRES
             ELSE
@@ -1165,6 +1213,35 @@ C.............  Set NAICS name column width
 
         END IF
 
+C.........  Variable column
+        IF( RPT_%RPTMODE .EQ. 3 ) THEN
+            NWIDTH = 0
+            DO I = 1, RPT_%NUMDATA
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( OUTDNAM( I, RCNT ) ) )
+            END DO
+
+            J = LEN_TRIM( HEADERS( IHDRVAR ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRVAR), LH, HDRBUF )
+
+            VARWIDTH = J + LV
+
+C.............  Units
+            NWIDTH = 0
+            DO I = 1, RPT_%NUMDATA
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( OUTUNIT( I ) ) )
+            END DO
+
+            J = LEN_TRIM( HEADERS( IHDRUNIT ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRUNIT), LH, HDRBUF )
+
+            UNITWIDTH = J + LV
+
+        END IF
+
 C.........  Determine the format type requested (if any) - either float or
 C           scientific. Also determine the number of decimal places 
 C           requested.
@@ -1352,7 +1429,8 @@ C                   add the ending parenthese
                     IF( L1 .LT. QAFMTL3-1 ) THEN      
                         IF( TMPFMT( L1:L1 ) .EQ. ',' ) L1 = L1 - 1
                         IF( RPT_%RPTMODE .EQ. 3 ) THEN
-                            OUTFMT = TMPFMT( 1:L1 ) // ',A,1X,A)'
+C                            OUTFMT = TMPFMT( 1:L1 ) // ',A,1X,A)'
+                            OUTFMT = TMPFMT( 1:L1 ) // ')'
                         ELSE
                             OUTFMT = TMPFMT( 1:L1 ) // ')'
                         END IF
@@ -1378,23 +1456,6 @@ C.................  Add next entry to units line buffer
                 CALL ADD_TO_HEADER( W1, TMPUNIT, LU, UNTBUF )
 
             END DO
-
-C.............  Units
-            IF( RPT_%RPTMODE .EQ. 3 ) THEN
-
-                NWIDTH = 0
-                DO I = 1, RPT_%NUMDATA
-                    NWIDTH = MAX( NWIDTH, LEN_TRIM( OUTUNIT( I ) ) )
-                END DO
-
-                J = LEN_TRIM( HEADERS( IHDRUNIT ) )
-                J = MAX( NWIDTH, J )
-
-                CALL ADD_TO_HEADER( J, HEADERS(IHDRUNIT), LH, HDRBUF )
-
-                UNITWIDTH = J + LV
-
-            END IF
 
         END IF     ! End if any data to output or not
 
@@ -1602,6 +1663,8 @@ C...........   Internal buffering formats............ 94xxx
 94010   FORMAT( 10( A, :, I10, :, 1X ) )
 
 94020   FORMAT( 10( A, :, I3, :, 1X ) )
+
+94220   FORMAT( '(1X,A,",",I4.4,",",I2.2,",",I3.3,",",I1,"', A, '")' )
 
 94620   FORMAT( '(1X,I2.2,"/",I2.2,"/",I4.4,"', A, '")' )
 

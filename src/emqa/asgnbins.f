@@ -98,9 +98,9 @@ C...........   Local parameters
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
      &                                     + ORSLEN3
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) =
-     &                        ( / 1, 3, 6, 8 / )
+     &                        ( / 1, 3, 6, 8, 9 / )
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) =
-     &                        ( / 2, 4, 7, 10 / )
+     &                        ( / 2, 4, 7, 10, 9 / )
      
 C...........   Sorting arrays
         INTEGER          , ALLOCATABLE :: SORTIDX( : )
@@ -268,7 +268,7 @@ C.................  If BY SCC, insert SCC based on SCCRES (resolution) set in in
 C.....................  Get rid of leading zeros
 c                    IF( SCC( 1:2 ) == '00' ) SCC = SCC(3:SCCLEN3) // '  '
 
-                    IF( RPT_%SCCRES < 4 ) THEN
+                    IF( RPT_%SCCRES .NE. 4 ) THEN
 
                         L = LEN( TRIM( SCC ) )
                         SELECT CASE( L )

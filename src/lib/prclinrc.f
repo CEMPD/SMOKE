@@ -88,7 +88,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local parameters
         CHARACTER(1), PARAMETER :: SCCLEV( NSCCLV3 ) =
-     &                             (/ '1', '2', '3', '4' /)
+     &                             (/ '1', '2', '3', '4', '5' /)
 
 C...........   Other local variables
         INTEGER          I, J, K, L, L2      ! counters and indices
@@ -481,6 +481,7 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSTAT    = .FALSE.
                         RPT_%BYSTNAM   = .FALSE.
                         RPT_%BYWEK     = .FALSE.
+                        RPT_%CARB      = .FALSE.
                         RPT_%CHKPROJ   = .FALSE.
                         RPT_%CHKCNTL   = .FALSE.
                         RPT_%ELVSTKGRP = .FALSE.
@@ -806,8 +807,13 @@ C.............  BY options affecting inputs needed
                         RPT_%USEGMAT  = .TRUE.
                     END IF
 
+                    IF( RPT_%CARB ) THEN
+                        YFLAG = .FALSE.       ! geocode level summary report
+                        RPT_%BYCNTY = .FALSE. ! disable county-level report
+                    END IF
+
                     RPT_%BYCELL = .TRUE.
-                
+
                 CASE( 'GEOCODE1' )
                     YFLAG = .TRUE.
                     RPT_%BYGEO1 = .TRUE.
@@ -1194,6 +1200,37 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE
 
                 END SELECT
+
+C.............  Setting for the QA extract data format for CARB
+C               Fixed setting coditions
+C               BY EIC and BY COABDIST (if not gridding)
+C               BY DAY is default and BY HOUR (optional)
+C
+            CASE( 'CARB_QADEF' )
+
+                RPT_%CARB       = .TRUE.  ! true: generating CARB QA extract table
+                RPT_%RPTMODE    = 3       ! ARRANGE DATABASE output option. ORL-CARB format
+                RPT_%USEASCELEV = .FALSE.
+
+                RPT_%BYSCC  = .TRUE.      ! 20-digit EIC code report
+                RPT_%SCCRES = 5           ! EIC3 support
+
+                IF( RPT_%USEGMAT .OR. RPT_%BYCELL ) THEN
+
+                    RPT_%USEGMAT = .TRUE.
+                    RPT_%BYCELL  = .TRUE.      ! by cell is default when gridding is applied
+                    YFLAG        = .FALSE.     ! geocode level summary report
+                    RPT_%BYCNTY  = .FALSE.     ! default is full 12-digit coabdist code (county-level)
+                    RPT_%USEHOUR = .FALSE.     ! hourly report is disabled when gridding is applied
+
+                ELSE
+
+                    RPT_%USEGMAT = .FALSE.
+                    RPT_%BYCELL  = .FALSE.     ! by cell is default when gridding is applied
+                    YFLAG        = .TRUE.      ! geocode level summary report
+                    RPT_%BYCNTY  = .TRUE.      ! default is full 12-digit coabdist code (county-level)
+
+                END IF
 
 C.............  Setting for the use of layer fractions
             CASE( 'LAYFRAC' )

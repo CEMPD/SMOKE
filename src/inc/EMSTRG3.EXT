@@ -58,7 +58,7 @@ C.........  Position within SCC of mobile roadway type and vehicle type ID
         INTEGER, PARAMETER :: SVS = 3
         INTEGER, PARAMETER :: SVE = 6 
 
-        INTEGER, PARAMETER :: NSCCLV3 = 4  ! number of SCC levels
+        INTEGER, PARAMETER :: NSCCLV3 = 5  ! number of SCC levels
 
 C.........  Variable dimensioning components and parameters, dependent...
 
