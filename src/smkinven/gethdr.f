@@ -62,8 +62,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER                INDEX1
         INTEGER                STR2INT
         REAL                   UNITFAC 
+        LOGICAL                USEEXPGEO
 
-        EXTERNAL    CRLF, GETNLIST, INDEX1, STR2INT, UNITFAC
+        EXTERNAL    CRLF, GETNLIST, INDEX1, STR2INT, UNITFAC, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
 C...........   NOTE that NDROP and EDROP are not used at present
@@ -144,6 +145,9 @@ C                   emissions
 
 C.............  Check for country name
             ELSE IF ( BUFFER(2:8) .EQ. 'COUNTRY' ) THEN 
+
+C.................  Skip country header if using expanded geographic codes
+                IF ( USEEXPGEO ) RETURN
 
                 IF( L1 < 1 ) L1 = 8 
 
