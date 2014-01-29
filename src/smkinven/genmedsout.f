@@ -83,6 +83,7 @@ C...........   Other local variables
         INTEGER          IDEV                 ! input file unit no.
 
 
+        LOGICAL       :: LASTFLAG = .FALSE.  ! true: process last inv file
         LOGICAL       :: DFLAG    = .FALSE.  ! true: day-specific
         LOGICAL       :: EFLAG    = .FALSE.  ! true: error found
 
@@ -148,7 +149,8 @@ C.............  Open files, and report status
             CALL M3MSG2( MESG )
 
 C.............  Read day-orhour-specific MEDS files
-            CALL RDMEDSPD( IDEV, TZONE, TYPNAM )
+            IF( IFIL == NFILE ) LASTFLAG = .TRUE.
+            CALL RDMEDSPD( IDEV, TZONE, TYPNAM, LASTFLAG )
 
             CLOSE( IDEV )
 

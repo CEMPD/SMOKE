@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDMEDSPD( FDEV, TZONE, TYPNAM  )
+        SUBROUTINE RDMEDSPD( FDEV, TZONE, TYPNAM, LASTFLAG )
 
 C***************************************************************************
 C  subroutine body starts at line 
@@ -89,6 +89,7 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN)  :: FDEV           ! file unit no.
         INTEGER,      INTENT (IN)  :: TZONE          ! output time zone
         CHARACTER(*), INTENT (IN)  :: TYPNAM         ! 'day' or 'hour'
+        LOGICAL,      INTENT (IN)  :: LASTFLAG       ! process last inv input file
 
 C...........   Local list of bad sources to prevent duplicate writing of error
 C              messages
@@ -126,11 +127,12 @@ C...........   Other local variables
         INTEGER          IOS              ! i/o status
         INTEGER          IREC             ! record counter
         INTEGER       :: INVFMT = 12      ! MEDS fomrat index
-        INTEGER          JDATE            ! tmp Julian date
-        INTEGER          JTIME            ! tmp HHMMSS time
+        INTEGER          JDATE, TDATE     ! tmp Julian date
+        INTEGER          JTIME, TTIME     ! tmp HHMMSS time
+        INTEGER       :: NHOUR = 1        ! processing hr (day=24, hr=1)
         INTEGER, SAVE :: SDATE = 0        ! tmp starting Julian date
         INTEGER, SAVE :: STIME = 0        ! tmp starting HHMMSS time
-        INTEGER          OUTSTEP          ! output time step
+        INTEGER       :: OUTSTEP = 10000  ! output time step
         INTEGER, SAVE :: MXWARN       	  ! max no. warnings
         INTEGER, SAVE :: NBADSRC = 0      ! no. bad sources
         INTEGER, SAVE :: NFIELD = 1       ! number of data fields
@@ -146,6 +148,7 @@ C...........   Other local variables
         LOGICAL       :: EFLAG  = .FALSE. ! TRUE iff ERROR
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
         LOGICAL, SAVE :: DAYFLAG = .FALSE.! true: processing day-specific inv
+        LOGICAL, SAVE :: INITIAL  = .TRUE.! true: initialize sdate/stime for one time
         LOGICAL, SAVE :: ONETIME  = .TRUE.! true: one time routine called
         LOGICAL, SAVE :: FIRSTIME = .TRUE.! true: first time routine called
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
@@ -262,7 +265,6 @@ C.............  Set Julian day from MMDDYY8 SAS format
             IF ( TYPNAM == 'DAY' .OR. TYPNAM == 'day' ) THEN
                 DAYFLAG = .TRUE.
                 OUTIDX  = 'INDXD'
-                OUTSTEP = 240000
                 IF( LINE( 64:64 ) /= '-' ) THEN
                     MESG = 'ERROR: CAN NOT process Hourly MEDS inventories '//
      &                     'when DAY_SPECIFIC_YN is set to Y'
@@ -271,7 +273,6 @@ C.............  Set Julian day from MMDDYY8 SAS format
             ELSE IF( TYPNAM == 'HOUR' .OR. TYPNAM == 'hour' ) THEN
                 DAYFLAG = .FALSE.
                 OUTIDX  = 'INDXH'
-                OUTSTEP = 10000
                 IF( STR2INT( LINE( 64:65 ) ) < 0 ) THEN
                     MESG = 'ERROR: CAN NOT process Daily MEDS inventories '//
      &                     'when HOUR_SPECIFIC_YN is set to Y'
@@ -343,6 +344,51 @@ C               exempt from daylight time or not.
 
 C.............  Convert date and time to output time zone.
             CALL NEXTIME( JDATE, JTIME, ( ZONE - TZONE ) * 10000 )
+
+C.............  Intialize SDATE and STIME for one time
+            IF( INITIAL ) THEN
+                SDATE = JDATE
+                STIME = JTIME
+                INITIAL = .FALSE.
+            END IF
+
+C.............  Write emissions for this time step
+            IF( SDATE .NE. JDATE .OR. STIME .NE. JTIME ) THEN
+
+                TDATE = SDATE
+                TTIME = STIME
+                IF( DAYFLAG ) NHOUR = 24
+
+                DO T = 1, NHOUR
+
+C.....................  Open day-specific or hour-specific output file
+                    IF( ONETIME ) THEN
+                        CALL OPENPDOUT( NSRC, NPOA, TZONE, TDATE, TTIME, OUTSTEP,
+     &                              INVFMT, TYPNAM, .FALSE., EAIDX, SPSTAT,
+     &                              ONAME, RDEV )
+                        ONETIME = .FALSE.
+                    END IF
+
+C.....................   Output daily or hour emissions to PDAY output file
+                    IF ( .NOT. WRITE3( ONAME, OUTIDX, TDATE, TTIME, IDXSRC ) ) THEN
+                         L2   = LEN_TRIM( ONAME )
+                         MESG= 'Error writing output file "' // ONAME(1:L2) // '"'
+                         CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
+                    END IF
+
+                    DO V = 1, NPOA 
+                        IF ( .NOT. WRITE3( ONAME, POLNAM( V ), TDATE, TTIME, PDEMOUT( :,V ) ) ) THEN
+                             L2   = LEN_TRIM( ONAME )
+                             MESG= 'Error writing output file "' // ONAME(1:L2) // '"'
+                             CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
+                        END IF
+                    END DO
+
+                    IF( DAYFLAG )  CALL NEXTIME( TDATE, TTIME, 10000 )
+
+                END DO
+
+            END IF
 
 C.............  Set key for searching sources
             FCID = ADJUSTl( LINE( 43:51 ) )  ! platn/facility ID (=FCID)
@@ -449,8 +495,8 @@ C.................  Set conversion factor from Inventory Table. Default is 1.0
                 CONVFAC = ITFACA( SCASIDX( UCASIDX( CIDX ) ) )
                 
                 EC = SC + 9
-
-                TDAT = CONVFAC * STR2REAL( LINE( SC:EC ) )
+C.................  Convert kg to tons unit
+                TDAT = CONVFAC * STR2REAL( LINE( SC:EC ) ) * 1000.0 * GM2TON
 
                 PDEMOUT( S,NP ) = PDEMOUT( S,NP ) + TDAT
 
@@ -458,40 +504,50 @@ C.................  Set conversion factor from Inventory Table. Default is 1.0
 
             END DO
 
-C.............  Write emissions for this time step
-            IF( SDATE .NE. JDATE .OR. STIME .NE. JTIME ) THEN
-
-C.................  Open day-specific or hour-specific output file
-                IF( ONETIME ) THEN
-                    CALL OPENPDOUT( NSRC, NPOA, TZONE, JDATE, JTIME, OUTSTEP,
-     &                              INVFMT, TYPNAM, .FALSE., EAIDX, SPSTAT,
-     &                              ONAME, RDEV )
-                    ONETIME = .FALSE.
-                END IF
-
-C.................   Output daily or hour emissions to PDAY output file
-                IF ( .NOT. WRITE3( ONAME, OUTIDX, JDATE, JTIME, IDXSRC ) ) THEN
-                     L2   = LEN_TRIM( ONAME )
-                     MESG= 'Error writing output file "' // ONAME(1:L2) // '"'
-                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                END IF
-
-                DO V = 1, NPOA 
-                    IF ( .NOT. WRITE3( ONAME, POLNAM( V ), JDATE, JTIME, PDEMOUT( :,V ) ) ) THEN
-                         L2   = LEN_TRIM( ONAME )
-                         MESG= 'Error writing output file "' // ONAME(1:L2) // '"'
-                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
-                    END IF
-                END DO
-
-            END IF
-
             SDATE = JDATE
             STIME = JTIME
 
         END DO
 
 299     CONTINUE   ! Exit from read loop
+
+C.........  Write emissions for last date/hour input file
+        IF( LASTFLAG ) THEN
+
+            TDATE = SDATE
+            TTIME = STIME
+            IF( DAYFLAG ) NHOUR = 24
+
+            DO T = 1, NHOUR
+
+C.................  Open day-specific or hour-specific output file
+                IF( ONETIME ) THEN
+                    CALL OPENPDOUT( NSRC, NPOA, TZONE, TDATE, TTIME, OUTSTEP,
+     &                              INVFMT, TYPNAM, .FALSE., EAIDX, SPSTAT,
+     &                              ONAME, RDEV )
+                    ONETIME = .FALSE.
+                END IF
+
+C.................   Output daily or hour emissions to PDAY output file
+                IF ( .NOT. WRITE3( ONAME, OUTIDX, TDATE, TTIME, IDXSRC ) ) THEN
+                     L2   = LEN_TRIM( ONAME )
+                     MESG= 'Error writing output file "' // ONAME(1:L2) // '"'
+                     CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
+                END IF
+
+                DO V = 1, NPOA 
+                    IF ( .NOT. WRITE3( ONAME, POLNAM( V ), TDATE, TTIME, PDEMOUT( :,V ) ) ) THEN
+                         L2   = LEN_TRIM( ONAME )
+                         MESG= 'Error writing output file "' // ONAME(1:L2) // '"'
+                         CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
+                    END IF
+                END DO
+
+                IF( DAYFLAG )  CALL NEXTIME( TDATE, TTIME, 10000 )
+
+            END DO
+
+        END IF
 
 C.........  Abort if error found while reading file
         IF( EFLAG ) THEN
