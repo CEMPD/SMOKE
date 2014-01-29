@@ -143,8 +143,8 @@ C.............  Store data
             ROW = STR2INT( SEGMENT( 2 ) )
 
             WRITE( CMEDGRD( N,1 ),'( 2I3.3 )' ) COL, ROW   ! store col_row
-            CMEDGRD( N,2 ) = ADJUSTL( SEGMENT( 3 ) )       ! store latitude
-            CMEDGRD( N,3 ) = ADJUSTL( SEGMENT( 4 ) )       ! store longitude
+            CMEDGRD( N,2 ) = ADJUSTL( SEGMENT( 3 ) )       ! store longitude
+            CMEDGRD( N,3 ) = ADJUSTL( SEGMENT( 4 ) )       ! store latitude
 
         END DO
         

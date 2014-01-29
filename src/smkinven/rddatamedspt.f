@@ -128,8 +128,8 @@ C.........  Read source data
         WRITE( ROWCOL,'( 2I3.3 )' ) COL, ROW
         N = INDEX1( ROWCOL, NMEDGRD, CMEDGRD( :,1 ) )
 
-        LAT  = ADJUSTL( CMEDGRD( N,2 ) )  ! grid cell latitude
-        LON  = ADJUSTL( CMEDGRD( N,3 ) )  ! grid cell longitude
+        LON  = ADJUSTL( CMEDGRD( N,2 ) )  ! grid cell longitude
+        LAT  = ADJUSTL( CMEDGRD( N,3 ) )  ! grid cell latitude
 
 C.........  Set all MEDS annual/avg to zero since all are daily/hourly inv
         READDATA = '0.0'
