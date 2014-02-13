@@ -808,7 +808,6 @@ C.............  BY options affecting inputs needed
                     END IF
 
                     IF( RPT_%CARB ) THEN
-                        YFLAG = .FALSE.       ! geocode level summary report
                         RPT_%BYCNTY = .FALSE. ! disable county-level report
                     END IF
 
@@ -1219,7 +1218,6 @@ C
 
                     RPT_%USEGMAT = .TRUE.
                     RPT_%BYCELL  = .TRUE.      ! by cell is default when gridding is applied
-                    YFLAG        = .FALSE.     ! geocode level summary report
                     RPT_%BYCNTY  = .FALSE.     ! default is full 12-digit coabdist code (county-level)
                     RPT_%USEHOUR = .FALSE.     ! hourly report is disabled when gridding is applied
 
