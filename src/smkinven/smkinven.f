@@ -466,9 +466,11 @@ C.........  Read in daily or hourly MEDS emission values and output to a SMOKE i
             IF( DAYINVFLAG ) THEN
                 TYPNAM = 'day'
                 TDEV   = DDEV
-            ELSE
+            ELSE IF( HRLINVFLAG ) THEN
                 TYPNAM = 'hour'
                 TDEV   = HDEV
+            ELSE
+                GOTO 999
             END IF
 
 C.............  Read and output day-specific data
