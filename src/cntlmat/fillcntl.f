@@ -39,7 +39,8 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, ISPTA, CSCCTA, CSRCTA, MPRNA, CMACTA
+        USE MODXREF, ONLY: INDXTA, ISPTA, CSCCTA, CSRCTA, MPRNA, CMACTA,
+     &                     CISICA
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
@@ -80,6 +81,9 @@ C.........  Increment data table counter
 
 C.........  Store packet information in temporary variables
         TMPSCC = PKTINFO%TSCC
+        IF( PKTINFO%CSIC /= REPEAT( '0', SICLEN3 ) ) THEN
+            TMPSCC = PKTINFO%CSIC
+        END IF
 
         JX = JX + 1
 
@@ -92,8 +96,9 @@ C.........  Store unsorted x-ref table entries
 C.........  Parse the line of data into segments based on the rules
 C.........  Ensure that pollutant is in master list of pollutants or
 C               skip the pollutant-specific entry
-        CSCCTA( JX ) = TMPSCC
+        CSCCTA( JX ) = PKTINFO%TSCC
         CMACTA( JX ) = PKTINFO%CMCT
+        CISICA( JX ) = PKTINFO%CSIC
         MPRNA ( JX ) = JT   ! Position in data table
 
 C.........  Store sorting criteria as right-justified in fields

@@ -38,7 +38,7 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, ISIC, CMACT
+        USE MODSOURC, ONLY: CSOURC, CISIC, CMACT
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: POLSFLAG, NVPROJ, FACTOR, RPTDEV,
@@ -209,8 +209,8 @@ C....................  Format source characteristic information
 
 C.................  Write out projection information for all sources
 C                   that are getting projected
-                    IF( ASSOCIATED( ISIC ) ) THEN
-                        WRITE( CSIC, '(I4)' ) ISIC( S )
+                    IF( ASSOCIATED( CISIC ) ) THEN
+                        CSIC = CISIC( S )
                     ELSE
                         CSIC = ''
                     END IF

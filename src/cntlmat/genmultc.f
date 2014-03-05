@@ -1,7 +1,7 @@
 
         SUBROUTINE GENMULTC( CDEV, GDEV, LDEV, MDEV, NCPE, PYEAR,
      &                       ENAME, MNAME, CFLAG, GFLAG, LFLAG, 
-     &                       SFLAG, MFLAG )
+     &                       MFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 
@@ -45,16 +45,14 @@ C.........  This module contains the inventory arrays
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: FACCEFF, FACREFF, FACRLPN,
-     &                      BASCEFF, BASREFF, BASRLPN,
-     &                      EMSCEFF, EMSREFF, EMSRLPN,
      &                      NVCMULT, PNAMMULT, FACTOR,
      &                      DATVAL, BACKOUT, GRPINDX, GRPFLAG,
      &                      GRPINEM, GRPOUTEM, RPTDEV, PCTLFLAG,
-     &                      EMSTOTL, CUTCTG, FACCTG, FACMACT, 
+     &                      CUTCTG, FACCTG, FACMACT, 
      &                      FACRACT, EMCAPALW, EMREPALW, GRPSTIDX,
-     &                      GRPCHAR, EMSPTCF, MACEXEFF, MACNWEFF,
+     &                      GRPCHAR, MACEXEFF, MACNWEFF,
      &                      MACNWFRC, CTLRPLC, CTGCOMT, CTLCOMT, ALWCOMT, 
-     &                      REACOMT, PRJCOMT, EMSCOMT, MACCOMT
+     &                      REACOMT, PRJCOMT, MACCOMT
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC, NEM, NDY, NCE, NRE, NRP, 
@@ -96,7 +94,6 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL,       INTENT (IN) :: CFLAG  ! true = apply CTL controls
         LOGICAL,       INTENT (IN) :: GFLAG  ! true = apply CTG controls
         LOGICAL,       INTENT (IN) :: LFLAG  ! true = apply ALW controls
-        LOGICAL,       INTENT (IN) :: SFLAG  ! true = apply EMS_CTL controls
         LOGICAL,       INTENT (IN) :: MFLAG  ! true = apply MACT controls
 
 C...........   Local allocatable arrays
@@ -359,15 +356,6 @@ C...........  Fractionalize control-packet information
             FACRLPN = FACRLPN*0.01  ! array
         END IF
 
-        IF( SFLAG ) THEN
-            BASCEFF = BASCEFF*0.01  ! array
-            BASREFF = BASREFF*0.01  ! array
-            BASRLPN = BASRLPN*0.01  ! array
-            EMSCEFF = EMSCEFF*0.01  ! array
-            EMSREFF = EMSREFF*0.01  ! array
-            EMSRLPN = EMSRLPN*0.01  ! array
-        END IF
-
 C...........  Set emissions index depending on average day or not
         E = NEM
         IF( LAVEDAY ) E = NDY
@@ -445,22 +433,6 @@ C..................  Perform division by zero check.
                     END IF
 
                 END DO ! end source loop
-
-C...........  If EMS-95 CONTROL packet is present:
-           ELSE IF ( SFLAG ) THEN
-
-C..................  Perform division by zero check. 
-              DO J = 1, NCPE
-
-                 DENOM = ( 1.0 - BASCEFF(J)*BASREFF(J)*BASRLPN(J) )
-
-                 IF ( FLTERR( DENOM, 0.0 ) ) THEN
-                    BACKOUT( J ) = 1.0/DENOM
-                 ELSE
-                    BACKOUT( J ) = 0.0
-                 END IF
-
-              END DO ! end source loop
 
            END IF
 
@@ -732,64 +704,6 @@ C..................  Overwrite temporary file line with new info
            END IF
 
 C.............................................................................
-C...........  Apply /EMSCONTROL/ packet controls if present for the current 
-C             pollutant
-C.............................................................................
-C...........  NOTE - SFLAG and CFLAG cannot both be true
-           IF ( SFLAG .AND. PCTLFLAG( I, 1 ) ) THEN
-
-              DO S = 1, NSRC
-
-                 E1  = DATVAL( S,E ) * FACTOR( S )
-                 FAC = 1.
-
-C................  Read temporary input file indices
-                 READ( CDEV,* ) CTLINDX
-
-C................  EMS CONTROL packet applies to this source, compute factor
-                 IF ( CTLINDX .GT. 0 ) THEN
-                    IF( EMSTOTL( CTLINDX ) .NE. 0. ) THEN
-                       FAC = EMSTOTL( CTLINDX )
-
-                    ELSE
-                       CTLEFF = EMSCEFF( CTLINDX )
-                       RULEFF = EMSREFF( CTLINDX )
-                       RULPEN = EMSRLPN( CTLINDX )
-                       FAC = BACKOUT(CTLINDX)*EMSPTCF(CTLINDX)* 
-     &                       (1.- CTLEFF*RULEFF*RULPEN)
-
-                    END IF
-
-C..................  Write output temporary file line with new info
-                    E2 = E1 * FAC
-                    FACTOR( S ) = FACTOR( S ) * FAC
-                    
-                    WRITE( ODEV(1),93300 ) 1, PNAM, E1, E2, FAC
-                    APPLFLAG = .TRUE.
-
-                    IF( FAC .GT. 1. ) THEN
-                        CSRC = CSOURC( S )
-                        CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-                        WRITE( MESG,94110 ) 'WARNING: EMS_CONTROL '//
-     &                         'packet record number', CTLINDX, 
-     &                         'is increasing ' // CRLF()// BLANK10//
-     &                         'emissions by factor', FAC, 'for:'
-     &                         //CRLF()// BLANK10//
-     &                         BUFFER( 1:L2 ) // ' POL:' // PNAM
-                        CALL M3MESG( MESG )
-                    END IF
-
-C..................  Write output temporary file line with placeholder info
-                 ELSE
-                    WRITE( ODEV(1),93300 ) 0, 'D', 0., 0., 0.
-
-                 END IF
-
-              END DO ! end source loop
-
-           END IF
-
-C.............................................................................
 C............  Apply /CTG/ packet
 C.............................................................................
            IF ( GFLAG .AND. PCTLFLAG( I, 2 ) ) THEN
@@ -1028,8 +942,6 @@ C.........  Write out controlled facilities report for point sources
      &                  'Controls applied with /MACT/ packet'
             IF( CFLAG ) WRITE( RDEV, 93000 ) 
      &                  'Controls applied with /CONTROL/ packet'
-            IF( SFLAG ) WRITE( RDEV, 93000 ) 
-     &                  'Controls applied with /EMS_CONTROL/ packet'
             IF( GFLAG ) WRITE( RDEV, 93000 ) 
      &                  'Controls applied with /CTG/ packet'
             IF( LFLAG ) WRITE( RDEV, 93000 ) 

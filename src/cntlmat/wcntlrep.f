@@ -138,7 +138,7 @@ C.................  If MACT packet applies for this pollutant
      
                 END IF
 
-C.................  If CONTROL or EMS CONTROL packet applies for this pollutant
+C.................  If CONTROL packet applies for this pollutant
                 IF( PCTLFLAG( V, 1 ) ) THEN
 
                     READ( CDEV,* ) CIDX, PNAM, E_IN, E_OUT, FAC

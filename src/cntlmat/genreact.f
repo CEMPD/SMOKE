@@ -37,13 +37,13 @@ C*************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, CSCC, IFIP, ISIC, CLINK
+        USE MODSOURC, ONLY: CSOURC, CSCC, CIFIP, CISIC, CLINK
 
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: RMTXMASS, RMTXMOLE, PCRIDX, PCRREPEM,
      &                      PCRPRJFC, PCRMKTPN, PCRCSCC, PCRSPROF,
      &                      RPTDEV, EMREPREA, CSPFREA, PRJFCREA,
-     &                      MKTPNREA, CSCCREA, IREASIC
+     &                      MKTPNREA, CSCCREA
 
 C.........  This module contains the speciation profiles
         USE MODSPRO, ONLY: NSPFUL, NSPROF, SPROFN, SPECID, MOLEFACT,
@@ -127,7 +127,6 @@ C...........   Other local variables
 
         INTEGER          IDUM        ! dummy integer
         INTEGER          IOS         ! i/o error status
-        INTEGER          SIC         ! tmp SIC code for report
         INTEGER          ITBL        ! position in full table of current profile
         INTEGER          NC          ! tmp number of src chars
         INTEGER          NCOLS       ! no. of output columns in report
@@ -209,7 +208,7 @@ C               MXSPFUL, which is from module MODSPRO
             CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
 
 C...........  Determine if source category is point sources, or other
-            PFLAG = ASSOCIATED( ISIC )
+            PFLAG = ASSOCIATED( CISIC )
 
 C...........  Allocate memory for source-based arrays and initialize
             ALLOCATE( ISREA( NSRC ), STAT=IOS )
@@ -550,8 +549,6 @@ C                       and indices retrieved for SPCODE
 
                 END IF  ! End check for overflow
 
-                SIC = IREASIC( K ) ! (use for report)
-
 C.................  Format source characteristic information for report
                 CALL PARSCSRC( CSOURC( S ), MXCHRS, SC_BEGP, SC_ENDP, 
      &                         LF, NC, CHARS )
@@ -662,7 +659,7 @@ C.............  Generate point source part of message
 C.............  Generate area or mobile source part of message
             ELSE
 
-                WRITE( CFIP, '(I6.6)' ) IFIP( S )
+                CFIP = CIFIP( S )
 
                 BUFFER = 'FIP: ' // CFIP // ' SCC: ' // TSCC // 
      &                   ' POL: ' // RPOL

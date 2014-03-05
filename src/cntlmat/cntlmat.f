@@ -114,7 +114,6 @@ C...........   Other local variables
         LOGICAL      :: LPTMP   = .FALSE.  ! true: tmp projection file written
         LOGICAL      :: MFLAG   = .FALSE.  ! true: mact cntls is use
         LOGICAL      :: RFLAG   = .FALSE.  ! true: reactivty cntls in use
-        LOGICAL      :: SFLAG   = .FALSE.  ! true: EMS-95 fmt controls
         LOGICAL      :: YFLAG   = .FALSE.  ! true: projection entries have years
 
         CHARACTER(7)    ACTION             ! buffer for PKTLOOP action
@@ -188,7 +187,7 @@ C.........  Set inventory variables to read for all source categories
 C.........  Set inventory variables to read for specific source categories
         IF( CATEGORY .EQ. 'AREA' ) THEN
             NINVARR = 6
-            IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 4 ) = 'CISIC'
             IVARNAMS( 5 ) = 'CMACT'
             IVARNAMS( 6 ) = 'CSRCTYP'
 
@@ -198,7 +197,7 @@ C.........  Set inventory variables to read for specific source categories
 
         ELSE IF( CATEGORY .EQ. 'POINT' ) THEN
             NINVARR = 6
-            IVARNAMS( 4 ) = 'ISIC'
+            IVARNAMS( 4 ) = 'CISIC'
             IVARNAMS( 5 ) = 'CMACT'
             IVARNAMS( 6 ) = 'CSRCTYP'
 
@@ -225,15 +224,7 @@ C.........  Set the flags that indicate which packets are valid
         LFLAG = ( PKTCNT( 3 ) .GT. 0 )
         RFLAG = ( PKTCNT( 5 ) .GT. 0 )
         JFLAG = ( PKTCNT( 6 ) .GT. 0 )
-        SFLAG = ( PKTCNT( 7 ) .GT. 0 )
-        MFLAG = ( PKTCNT( 8 ) .GT. 0 )
-
-C.........  Cannot have CONTROL and EMS_CONTROL packet in same inputs
-        IF( CFLAG .AND. SFLAG ) THEN
-           MESG = 'CONTROL and EMS_CONTROL packets cannot be ' //
-     &            'in the same input file'
-           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
+        MFLAG = ( PKTCNT( 7 ) .GT. 0 )
 
 C.........  Cannot have projection packet and invalid projection year
         IF( JFLAG .AND. CPYEAR .LT. 1900 ) THEN
@@ -272,15 +263,14 @@ C.........  Process control matrices that depend on pollutants...
 
 C.........  Multiplicative matrix
         IF( LCTMP .AND.
-     &    ( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG .OR. MFLAG ) ) THEN
+     &    ( CFLAG .OR. GFLAG .OR. LFLAG .OR. MFLAG ) ) THEN
 
 C.............  Write-out control matrix
             NCPE = MAX( PKTCNT( 2 ), PKTCNT( 7 ) )
             CALL GENMULTC( CTMPDEV, GTMPDEV, LTMPDEV, MTMPDEV, 
      &                     NCPE, PYEAR, ENAME, MNAME, CFLAG, GFLAG,
-     &                     LFLAG, SFLAG, MFLAG )
-        ELSE IF ( CFLAG .OR. GFLAG .OR. LFLAG .OR. SFLAG .OR. 
-     &            MFLAG ) THEN
+     &                     LFLAG, MFLAG )
+        ELSE IF ( CFLAG .OR. GFLAG .OR. LFLAG .OR. MFLAG ) THEN
             MESG = 'WARNING: No records from any control packet '//
      &             'matched the inventory.'
             CALL M3MSG2( MESG )

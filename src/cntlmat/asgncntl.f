@@ -44,7 +44,7 @@ C*************************************************************************
 
 C...........   MODULES for public variables   
 C...........   This module contains the source ararys
-        USE MODSOURC, ONLY: CSOURC, CSCC, CMACT, ISIC, CSRCTYP
+        USE MODSOURC, ONLY: CSOURC, CSCC, CMACT, CISIC, CSRCTYP
 
 C.........  This module is for cross reference tables
         USE MODXREF, ONLY: ADDPS, TXCNT,
@@ -108,7 +108,6 @@ C.........  Other local variables
         LOGICAL          SCCFLAG            ! true: SCC type is different from previous
 
         CHARACTER(8), SAVE :: FMTFIP   ! format for writing FIPS code
-        CHARACTER(8), SAVE :: FMTSIC   ! format for writing SIC code
         CHARACTER(256)     BUFFER   ! source fields buffer
         CHARACTER(256)     MESG     ! message buffer
         CHARACTER(STALEN3) CSTA     ! tmp Country/state code
@@ -174,11 +173,8 @@ C.............  Set up format for creating character FIPS code for non-point
                 WRITE( FMTFIP, 94300 ) '(I', FIPLEN3, '.', FIPLEN3, ')'
             ENDIF
 
-C.............  Set up format for creating character SIC code 
-            WRITE( FMTSIC, 94300 ) '(I', SICLEN3, '.', SICLEN3, ')'
-
 C.............  Figure out if SIC and/or MACT and src type codes are available
-            IF ( ASSOCIATED ( ISIC  ) ) SICFLAG  = .TRUE.
+            IF ( ASSOCIATED ( CISIC ) ) SICFLAG  = .TRUE.
             IF ( ASSOCIATED ( CMACT ) ) MACTFLAG = .TRUE.
 
             FIRSTIME = .FALSE.
@@ -241,8 +237,8 @@ C.................  Set type of SCC
                 CSTAS_D = CSTA // TSCC_D
 
                 IF( SICFLAG ) THEN
-                    WRITE( CSIC, FMTSIC ) ISIC( S )
-                    CSICL    = CSIC( 1:2 )
+                    CSIC = CISIC( S )
+                    CSICL    = CSIC( 1:SICEXPLEN3+2 )
                     CSTASICL = CSTA // CSICL
                     CSTASIC  = CSTA // CSIC
                     CFIPSICL = CFIP // CSICL

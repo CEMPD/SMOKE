@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDPACKET( FDEV, PKTTYP, FIXEDFMT, USEPOL, IREC, 
+        SUBROUTINE RDPACKET( FDEV, PKTTYP, USEPOL, IREC, 
      &                       PKTINFO, CFLAG, EFLAG )
 
 C***********************************************************************
@@ -60,7 +60,6 @@ C...........   EXTERNAL FUNCTIONS:
 C...........   SUBROUTINE ARGUMENTS:
         INTEGER        , INTENT (IN) :: FDEV      ! in file unit number
         CHARACTER(*)   , INTENT (IN) :: PKTTYP    ! packet type
-        LOGICAL        , INTENT (IN) :: FIXEDFMT  ! true: packet has fixed fmt
         LOGICAL     , INTENT(IN OUT) :: USEPOL( NIPPA ) ! true: use pollutant
         INTEGER     , INTENT(IN OUT) :: IREC      ! file line number
         TYPE( CPACKET ), INTENT(OUT) :: PKTINFO   ! packet information
@@ -83,7 +82,6 @@ C...........   Other local variables
 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
 
-        CHARACTER(8), SAVE :: FMTFIP     ! format for writing FIPS codeSS
         CHARACTER(300)        LINE       ! line reading buffer
         CHARACTER(300)        MESG       ! message buffer
 
@@ -91,11 +89,6 @@ C...........   Other local variables
 
 C***********************************************************************
 C   Begin body of subroutine RDPACKET
-
-        IF( FIRSTIME ) THEN
-            WRITE( FMTFIP, 94300 ) '(I', FIPLEN3, '.', FIPLEN3, ')'
-            FIRSTIME = .FALSE.
-        END IF
 
         READ( FDEV, 93000, END = 999, IOSTAT=IOS ) LINE
         IREC = IREC + 1
@@ -117,23 +110,17 @@ C.........  Check for comment and blank lines
             RETURN
         END IF
 
-C.........  When packet has a free format...
-        IF( .NOT. FIXEDFMT ) THEN
+C.........  Parse the line of data into segments based on the rules
+C           for "list-formatted" in fortran, but not requiring 
+C           quotes around the text strings
+        CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
-C.............  Parse the line of data into segments based on the rules
-C               for "list-formatted" in fortran, but not requiring 
-C               quotes around the text strings
-            CALL PARSLINE( LINE, MXSEG, SEGMENT )
+        LC = INDEX( LINE, '!' )
+        IF ( LC .LE. 0 ) LC = 0
+        LN = LEN( LINE )
 
-            LC = INDEX( LINE, '!' )
-            IF ( LC .LE. 0 ) LC = 0
-            LN = LEN( LINE )
-
-            PKTINFO%COMMENT = " "
-            IF ( LC .GT. 0 ) PKTINFO%COMMENT = LINE( LC+1:LN )
-
-        END IF
-
+        PKTINFO%COMMENT = " "
+        IF ( LC .GT. 0 ) PKTINFO%COMMENT = LINE( LC+1:LN )
 
 C.........  Process the line of data, depending on packet type
         SELECT CASE( PKTTYP )
@@ -251,74 +238,6 @@ C           a warning.
             PKTINFO%CHAR3 =           SEGMENT( 10)
             PKTINFO%CHAR4 =           SEGMENT( 11)
             PKTINFO%CHAR5 =           SEGMENT( 12)
-
-        CASE( 'EMS_CONTROL' )
-            STID = STR2INT( LINE( 1:2 ) )
-            CYID = STR2INT( LINE( 3:5 ) )
-            FIP  = STID * 1000 + CYID
-            WRITE( PKTINFO%CFIP, FMTFIP ) FIP
-            PKTINFO%TSCC = ADJUSTL ( LINE(  10:17  ) )
-            PKTINFO%CPOL = ADJUSTL ( LINE(  18:22  ) )
-            PKTINFO%FAC1 = STR2REAL( LINE(  82:85  ) )
-            PKTINFO%FAC2 = STR2REAL( LINE(  86:89  ) )
-            PKTINFO%FAC3 = STR2REAL( LINE(  90:93  ) )
-            PKTINFO%FAC4 = STR2REAL( LINE(  94:97  ) ) * 100
-            PKTINFO%FAC5 = STR2REAL( LINE(  98:101 ) ) * 100
-            PKTINFO%FAC6 = STR2REAL( LINE( 102:105 ) ) * 100
-            PKTINFO%FAC7 = STR2REAL( LINE( 106:110 ) )
-            PKTINFO%FAC8 = STR2REAL( LINE( 151:154 ) )
-            PKTINFO%CSIC = ADJUSTL ( LINE(   6:9   ) )
-            PKTINFO%CMCT = ' '
-            PKTINFO%PLT  = ADJUSTL ( LINE(  23:37  ) )
-            PKTINFO%CHAR1= ADJUSTL ( LINE(  50:61  ) )
-            PKTINFO%CHAR2= ADJUSTL ( LINE(  38:49  ) )
-            PKTINFO%CHAR3= ADJUSTL ( LINE(  62:73  ) )
-            PKTINFO%CHAR4= ' '
-            PKTINFO%CHAR5= ' '
-            PKTINFO%NSCC = ADJUSTL ( LINE(  74:81  ) ) 
-
-C.........  Check to see if any of the factors are negative
-            IF ( PKTINFO%FAC1 .LT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Base year control '//
-     &                 'efficiency misformatted at line', IREC
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF ( PKTINFO%FAC2 .LT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Base year rule '//
-     &                 'effectiveness misformatted at line', IREC
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF ( PKTINFO%FAC3 .LT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Base year rule '//
-     &                 'penetration misformatted at line', IREC
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF ( PKTINFO%FAC4 .LT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Future year control '//
-     &                 'efficiency misformatted at line', IREC
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF ( PKTINFO%FAC5 .LT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Future year rule '//
-     &                 'effectiveness misformatted at line', IREC
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF ( PKTINFO%FAC6 .LT. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94020 ) 'ERROR: Future year rule '//
-     &                 'penetration misformatted at line', IREC
-                CALL M3MSG2( MESG )
-            END IF
             
         CASE( 'MACT' )
             PKTINFO%CFIP    = ' '

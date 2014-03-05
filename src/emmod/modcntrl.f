@@ -50,7 +50,7 @@
 
 !.........  CONTROL-packet-specific data tables
         INTEGER, ALLOCATABLE, PUBLIC:: ICTLEQUP( : )  ! prim. ctl equipment code
-        INTEGER, ALLOCATABLE, PUBLIC:: ICTLSIC ( : )  ! SIC code
+        CHARACTER(SICLEN3), ALLOCATABLE, PUBLIC:: CCTLSIC ( : ) ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: FACCEFF ( : )  ! control effcncy (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: FACREFF ( : )  ! rule effectvnss (0-100)
         REAL   , ALLOCATABLE, PUBLIC:: FACRLPN ( : )  ! rule penetrtion (0-100)
@@ -59,14 +59,14 @@
         CHARACTER(120), ALLOCATABLE, PUBLIC:: CTLCOMT( : ) ! packet comment
 
 !.........  ALLOWABLE-packet-specific data tables
-        INTEGER, ALLOCATABLE, PUBLIC:: IALWSIC ( : )  ! SIC code
+        CHARACTER(SICLEN3), ALLOCATABLE, PUBLIC:: CALWSIC ( : ) ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: FACALW  ( : )  ! allowable control factor
         REAL   , ALLOCATABLE, PUBLIC:: EMCAPALW( : )  ! emissions cap
         REAL   , ALLOCATABLE, PUBLIC:: EMREPALW( : )  ! replacement emissions
         CHARACTER(120), ALLOCATABLE, PUBLIC:: ALWCOMT( : ) ! packet comment
 
 !.........  REACTIVITY-packet-specific data tables
-        INTEGER, ALLOCATABLE, PUBLIC:: IREASIC ( : )  ! SIC code
+        CHARACTER(SICLEN3), ALLOCATABLE, PUBLIC:: CREASIC ( : ) ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: EMREPREA( : )  ! replacement emissions
         REAL   , ALLOCATABLE, PUBLIC:: PRJFCREA( : )  ! projection factor
         REAL   , ALLOCATABLE, PUBLIC:: MKTPNREA( : )  ! market pen rt [frac/yr]
@@ -75,21 +75,9 @@
         CHARACTER(120), ALLOCATABLE, PUBLIC:: REACOMT( : ) ! packet comment
 
 !.........  PROJECT PTS/AMS-packet-specific data tables
-        INTEGER, ALLOCATABLE, PUBLIC:: IPRJSIC ( : )  ! SIC code
+        CHARACTER(SICLEN3), ALLOCATABLE, PUBLIC:: CPRJSIC ( : ) ! SIC code
         REAL   , ALLOCATABLE, PUBLIC:: PRJFC   ( : )  ! projection factor
         CHARACTER(120), ALLOCATABLE, PUBLIC:: PRJCOMT( : ) ! packet comment
-
-!.........  EMS_CONTROL-packet-specific data tables
-        INTEGER, ALLOCATABLE, PUBLIC:: IEMSSIC ( : )  ! SIC code
-        REAL   , ALLOCATABLE, PUBLIC:: BASCEFF ( : )  ! base yr CE (0-100)
-        REAL   , ALLOCATABLE, PUBLIC:: BASREFF ( : )  ! base yr RE (0-100)
-        REAL   , ALLOCATABLE, PUBLIC:: BASRLPN ( : )  ! base yr RP (0-100)
-        REAL   , ALLOCATABLE, PUBLIC:: EMSCEFF ( : )  ! control effcncy (0-100)
-        REAL   , ALLOCATABLE, PUBLIC:: EMSREFF ( : )  ! rule effectvnss (0-100)
-        REAL   , ALLOCATABLE, PUBLIC:: EMSRLPN ( : )  ! rule penetrtion (0-100)
-        REAL   , ALLOCATABLE, PUBLIC:: EMSPTCF ( : )  ! pt src conversion fac
-        REAL   , ALLOCATABLE, PUBLIC:: EMSTOTL ( : )  ! aggregated factor
-        CHARACTER(120), ALLOCATABLE, PUBLIC:: EMSCOMT( : ) ! packet comment
 
 !.........  MACT-packet-specific data tables
         CHARACTER(STPLEN3), ALLOCATABLE, PUBLIC:: CMACSRCTYP( : )  ! source code type

@@ -42,7 +42,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module is for cross reference tables
-        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, ISPTA,
+        USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, CISICA, ISPTA,
      &                     MPRNA
 
 C.........  This module contains the information about the source category
@@ -85,7 +85,6 @@ C...........   Derived type local variables
 C...........   Other local variables
         INTEGER         I, J, K, L      ! counters and indices
 
-        INTEGER         DLEN      ! tmp length for SIC processing
         INTEGER         IOS       ! i/o error status
         INTEGER         IREC      ! line number
         INTEGER         IXSIC     ! index of SIC in master SIC list
@@ -144,7 +143,7 @@ C               unsorted x-ref data
 C.................  Deallocate memory for ungrouped cross-reference information
                 IF( ALLOCATED( INDXTA ) ) THEN
                     DEALLOCATE( INDXTA, ISPTA, MPRNA, CSCCTA, CMACTA, 
-     &                          CSRCTA )
+     &                          CISICA, CSRCTA )
                 END IF
 
 C.................  Allocate memory for ungrouped cross-reference information
@@ -158,6 +157,8 @@ C.................  Allocate memory for ungrouped cross-reference information
                 CALL CHECKMEM( IOS, 'CSCCTA', PROGNAME )
                 ALLOCATE( CMACTA( J ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CMACTA', PROGNAME )
+                ALLOCATE( CISICA( J ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'CISICA', PROGNAME )
                 ALLOCATE( CSRCTA( J ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'CSRCTA', PROGNAME )
 
@@ -182,7 +183,6 @@ C.............  Initialize various counters before following loop
             JX   = 0            ! control x-ref table counter
             JT   = 0            ! control packet table counter
             IREC = PKTBEG( K )
-            DLEN = SICLEN3 + LEN( SICNOTE )
    
 C.............  Loop through lines of current packet to read them
             I = 0
@@ -192,7 +192,7 @@ C.................  Exit if we've read all the lines in this packet
                 IF( I == PKTCNT( K ) ) EXIT
             
 C.................  Read packet information (populates CPKTDAT.EXT common)
-                CALL RDPACKET( FDEV, PKTLIST( K ), PKTFIXED( K ), 
+                CALL RDPACKET( FDEV, PKTLIST( K ), 
      &                         USEPOL, IREC, PKTINFO, CFLAG, EFLAG )
 
 C.................  Skip comment lines
@@ -204,7 +204,7 @@ C                   SICs provided as 2-digits get left-justified.
                 CALL FLTRNEG( PKTINFO%CSIC )     ! Filter 0 and -9 to blank
                 CSIC = ADJUSTL( PKTINFO%CSIC )
                 IF ( CSIC( 2:4 ) .EQ. '   ' ) THEN
-                    PKTINFO%CSIC = CSIC( 1:1 ) // '00'
+                    PKTINFO%CSIC = CSIC( 1:1 ) // '000'
                 ELSE IF ( CSIC( 3:4 ) .EQ. '  ' ) THEN
                     PKTINFO%CSIC = CSIC( 1:2 ) // '00'
                 END IF
@@ -263,8 +263,7 @@ C                   partial-SCCs would not get filtered out.
                 CALL FLTRNEG( PKTINFO%TSCC )     ! Filter 0 and -9 to blank
                 CALL PADZERO( PKTINFO%TSCC )     ! Pad LHS with zeros
 
-C.................  If SIC is defined, make sure SCC is not defined and fill
-C                   in SCC temporarily with SIC value and special identifier.
+C.................  If SIC is defined, make sure SCC is not defined
                 IF( PKTINFO%CSIC .NE. SICZERO .AND. 
      &              PKTINFO%TSCC .NE. SCCZERO       ) THEN
                     WRITE( MESG,94010 ) 'WARNING: Both SCC and SIC ' //
@@ -273,11 +272,7 @@ C                   in SCC temporarily with SIC value and special identifier.
      &                     '" packet. Only the SCC will be used for ' //
      &                     'this cross-reference entry.'
                     CALL M3MSG2( MESG )
-
-C.................   If only SIC is given, then change SCC value.
-                ELSE IF ( PKTINFO%CSIC .NE. SICZERO ) THEN
-                    PKTINFO%TSCC = SICNOTE // PKTINFO%CSIC // 
-     &                             REPEAT( '0', SCCLEN3 - DLEN )
+                    PKTINFO%CSIC = ' '
                 END IF
 
                 XCNT = XCNT + 1

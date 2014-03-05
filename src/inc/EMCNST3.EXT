@@ -106,9 +106,6 @@ C.........  Separator for speciation "variables" (stored in description field)
 C.........  Separator for emission type names
         CHARACTER(2), PARAMETER :: ETJOIN = '__'
 
-C.........  Separator for SIC imbedded in SCC field
-        CHARACTER(5), PARAMETER :: SICNOTE = '--SIC'
-
 C.........  Units for speciation matrice
         CHARACTER(16), PARAMETER :: SMASUNIT = 'g/ton'
         CHARACTER(16), PARAMETER :: SMOLUNIT = 'moles/ton'
@@ -142,7 +139,7 @@ C.........  Time zones
      &                            'BST' / )
 
 C.........  Packet information
-        INTEGER,       PARAMETER :: NPACKET = 8
+        INTEGER,       PARAMETER :: NPACKET = 7
         CHARACTER(20), PARAMETER :: PKTLIST( NPACKET ) = 
      &                          (  / 'CTG                 ',
      &                               'CONTROL             ',
@@ -150,13 +147,7 @@ C.........  Packet information
      &                               'ADD                 ',
      &                               'REACTIVITY          ',
      &                               'PROJECTION          ',
-     &                               'EMS_CONTROL         ',
      &                               'MACT                '  / )
-
-        LOGICAL, PARAMETER :: PKTFIXED( NPACKET ) =
-     &                     (  / .FALSE., .FALSE., .FALSE., 
-     &                          .FALSE., .FALSE., .FALSE.,
-     &                          .TRUE.,  .FALSE. / )
 
 C.........  Control and projection matrix codes (in order of precedence)
         INTEGER, PARAMETER :: CTYPPROJ = 1   ! for projection matrix

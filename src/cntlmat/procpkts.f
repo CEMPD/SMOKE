@@ -389,7 +389,7 @@ C......................  Generate projection matrix
 
                     SFLAG = .TRUE.
 
-                CASE( 'CONTROL', 'EMS_CONTROL' )
+                CASE( 'CONTROL' )
 
 C...................  Skip activities because they
 C                     do not have the base-year control effectiveness

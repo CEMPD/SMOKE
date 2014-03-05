@@ -40,15 +40,13 @@ C***************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the control packet data and control matrices
         USE MODCNTRL, ONLY: CUTCTG, FACCTG, FACMACT, FACRACT, 
-     &                      ICTLEQUP, ICTLSIC, FACCEFF, FACREFF, 
-     &                      FACRLPN, IALWSIC, FACALW, EMCAPALW,
-     &                      EMREPALW, IREASIC, EMREPREA, PRJFCREA,
-     &                      MKTPNREA, CSCCREA, CSPFREA, IPRJSIC,
-     &                      PRJFC, IEMSSIC, BASCEFF, BASREFF, BASRLPN, 
-     &                      EMSCEFF, EMSREFF, EMSRLPN, EMSPTCF, EMSTOTL,
-     &                      CTLRPLC, MACEXEFF, MACNWEFF, MACNWFRC,
+     &                      ICTLEQUP, CCTLSIC, FACCEFF, FACREFF, 
+     &                      FACRLPN, CALWSIC, FACALW, EMCAPALW,
+     &                      EMREPALW, CREASIC, EMREPREA, PRJFCREA,
+     &                      MKTPNREA, CSCCREA, CSPFREA, CPRJSIC,
+     &                      PRJFC, CTLRPLC, MACEXEFF, MACNWEFF, MACNWFRC,
      &                      CMACSRCTYP, CTGCOMT, CTLCOMT, ALWCOMT, 
-     &                      REACOMT, PRJCOMT, EMSCOMT, MACCOMT
+     &                      REACOMT, PRJCOMT, MACCOMT
 
         IMPLICIT NONE
         
@@ -278,8 +276,8 @@ C.........  CONTROL packet
         J = PKTCNT( 2 ) 
         ALLOCATE( ICTLEQUP( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'ICTLEQUP', PROGNAME )
-        ALLOCATE( ICTLSIC( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ICTLSIC', PROGNAME )
+        ALLOCATE( CCTLSIC( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CCTLSIC', PROGNAME )
         ALLOCATE( FACCEFF( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FACCEFF', PROGNAME )
         ALLOCATE( FACREFF( J ), STAT=IOS )
@@ -291,7 +289,7 @@ C.........  CONTROL packet
         ALLOCATE( CTLCOMT( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
         ICTLEQUP = 0   ! array
-        ICTLSIC  = 0   ! array
+        CCTLSIC  = ' ' ! array
         FACCEFF  = 0.  ! array
         FACREFF  = 0.  ! array
         FACRLPN  = 0.  ! array
@@ -300,8 +298,8 @@ C.........  CONTROL packet
 
 C.........  ALLOWABLE packet
         J = PKTCNT( 3 ) 
-        ALLOCATE( IALWSIC( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IALWSIC', PROGNAME )
+        ALLOCATE( CALWSIC( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CALWSIC', PROGNAME )
         ALLOCATE( FACALW( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FACALW', PROGNAME )
         ALLOCATE( EMCAPALW( J ), STAT=IOS )
@@ -310,7 +308,7 @@ C.........  ALLOWABLE packet
         CALL CHECKMEM( IOS, 'EMREPALW', PROGNAME )
         ALLOCATE( ALWCOMT( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
-        IALWSIC  = 0  ! array
+        CALWSIC = ' ' ! array
         FACALW   = 0. ! array
         EMCAPALW = 0. ! array
         EMREPALW = 0. ! array
@@ -318,8 +316,8 @@ C.........  ALLOWABLE packet
 
 C.........  REACTIVITY packet
         J = PKTCNT( 5 ) 
-        ALLOCATE( IREASIC( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IREASIC', PROGNAME )
+        ALLOCATE( CREASIC( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CREASIC', PROGNAME )
         ALLOCATE( EMREPREA( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMREPREA', PROGNAME )
         ALLOCATE( PRJFCREA( J ), STAT=IOS )
@@ -332,7 +330,7 @@ C.........  REACTIVITY packet
         CALL CHECKMEM( IOS, 'CSPFREA', PROGNAME )
         ALLOCATE( REACOMT( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
-        IREASIC  = 0   ! array
+        CREASIC  = ' ' ! array
         EMREPREA = 0.  ! array
         PRJFCREA = 0.  ! array
         MKTPNREA = 0.  ! array
@@ -342,49 +340,18 @@ C.........  REACTIVITY packet
 
 C.........  PROJECTION packet
         J = PKTCNT( 6 )
-        ALLOCATE( IPRJSIC( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'IPRJSIC', PROGNAME )
+        ALLOCATE( CPRJSIC( J ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'CPRJSIC', PROGNAME )
         ALLOCATE( PRJFC( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'PRJFC', PROGNAME )
         ALLOCATE( PRJCOMT( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
-        IPRJSIC = 0   ! array
+        CPRJSIC = ' ' ! array
         PRJFC   = 0.  ! array
         PRJCOMT = " " ! array
 
-C.........  EMS-95 CONTROL packet
-        J = PKTCNT( 7 ) 
-        ALLOCATE( IEMSSIC( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ICTLSIC', PROGNAME )
-        ALLOCATE( BASCEFF( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'BASCEFF', PROGNAME )
-        ALLOCATE( BASREFF( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'BASREFF', PROGNAME )
-        ALLOCATE( BASRLPN( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'BASRLPN', PROGNAME )
-        ALLOCATE( EMSCEFF( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMSCEFF', PROGNAME )
-        ALLOCATE( EMSREFF( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMSREFF', PROGNAME )
-        ALLOCATE( EMSRLPN( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMSRLPN', PROGNAME )
-        ALLOCATE( EMSPTCF( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMSPTCF', PROGNAME )
-        ALLOCATE( EMSTOTL( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMSTOTL', PROGNAME )
-        ALLOCATE( EMSCOMT( J ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'CTGCOMT', PROGNAME )
-        IEMSSIC  = 0    ! array
-        BASCEFF  = 0.   ! array
-        BASRLPN  = 100. ! array
-        EMSCEFF  = 0.   ! array
-        EMSRLPN  = 100. ! array
-        EMSPTCF  = 1.   ! array - initialize because it will be used
-        EMSTOTL  = 0.   ! array - initialize because it will be checked
-        EMSCOMT = " " ! array
-
 C.........  MACT packet
-        J = PKTCNT( 8 )
+        J = PKTCNT( 7 )
         ALLOCATE( CMACSRCTYP( J ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CMACSRCTYP', PROGNAME )
         ALLOCATE( MACEXEFF( J ), STAT=IOS )
