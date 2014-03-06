@@ -521,8 +521,8 @@ C.............  Read and output hour-specific data
         END IF
 
 C.............  Write inventory report file
-        CALL M3MSG2( 'Writing inventory report file...' )
-        CALL WREPINVEN( ADEV, CDEV )
+C        CALL M3MSG2( 'Writing inventory report file...' )
+C        CALL WREPINVEN( ADEV, CDEV )
 
 C.........  End program successfully
 999     MESG = ' '
