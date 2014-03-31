@@ -47,7 +47,7 @@ C.........  This module contains emission factor tables and related
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, NIPPA, NIPOL,
-     &                     EANAM, EINAM
+     &                     EANAM, EINAM, MCODEFLAG
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
@@ -237,9 +237,16 @@ C.........   Open files that depend on inventory characteristics
         END IF
 
         IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            MDEV = PROMPTFFILE( 
-     &             'Enter logical name for MOBILE CODES file',
-     &             .TRUE., .TRUE., 'MCODES', PROGNAME )
+
+            MESG = 'Construct internal SCC using road and vehicle types '//
+     &          CRLF() // BLANK10 // 'for mobile sources or not'
+            MCODEFLAG = ENVYN ( 'USE_MCODES_SCC_YN', MESG, .TRUE., IOS )
+
+            IF( MCODEFLAG ) THEN
+                MDEV = PROMPTFFILE( 
+     &                'Enter logical name for MOBILE CODES file',
+     &                .TRUE., .TRUE., 'MCODES', PROGNAME )
+           END IF
 
         END IF
 
@@ -343,11 +350,8 @@ C.............  If output was not found, set name to blank
 C.............  Rename emission factors if necessary
             IF( OUTPUTHC /= ' ' ) THEN
                 DO I = 1, SIZE( EMTNAM,1 )
-                    L = INDEX( EMTNAM( I,1 ), ETJOIN )
-                    L2 = LEN_TRIM( ETJOIN )
-                    
-                    IF( EMTNAM( I,1 )( L+L2:IOVLEN3 ) == INPUTHC ) THEN
-                        EMTNAM( I,1 )( L+L2:IOVLEN3 ) = OUTPUTHC
+                    IF( EMTNAM( I,1 ) == INPUTHC ) THEN
+                        EMTNAM( I,1 ) = OUTPUTHC
                     END IF
                 END DO
             END IF
@@ -397,10 +401,6 @@ C.........  Initialize arrays
         IDXCHK = .FALSE.  ! array
 
 C.........  Create array of pollutant names from emission types and pollutants
-C.........  Put the pollutants from the emission types first so that the
-C           index from the emisson type names (EMTIDX) will be valid with 
-C           SINAM and EMTPOL.
-C.........  Also, restructure the index.  First, for emission types...
         J  = 0
         NP = 0
         DO I = 1, NIACT
@@ -413,9 +413,7 @@ C               in order of appearance
                 ENAM = EMTNAM( K,I )
                 EANAM( J ) = ENAM
 
-                L1 = INDEX( ENAM, ETJOIN )
-                L2 = LEN_TRIM( ENAM )
-                IF( L1 .GT. 0 ) PNAM = ENAM( L1+2:L2 )
+                PNAM = ENAM
 
 C.................  If it does not already appear in list, store pollutant name
                 N = INDEX1( PNAM, NP, IINAM )
