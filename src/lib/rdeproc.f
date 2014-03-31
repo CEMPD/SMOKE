@@ -2,7 +2,6 @@
         SUBROUTINE RDEPROC( FDEV )
 
 C***********************************************************************
-C  subroutine body starts at line 103
 C
 C  DESCRIPTION:
 C     This subroutine reads the emission processes file, which contains columns
@@ -19,6 +18,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C     Created 10/99 by M. Houyoux
+C     Modified  3/14 by B.H. Baek
 C
 C****************************************************************************/
 C
@@ -43,9 +43,7 @@ C***************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: INPUTHC, OUTPUTHC, NSUBPOL, SUBPOLS, 
-     &                      EMTNAM, EMTIDX, NETYPE, MXETYPE, NEPOL, 
-     &                      EMTPOL
+        USE MODEMFAC, ONLY: EMTNAM, EMTIDX, NETYPE, MXETYPE, NEPOL, EMTPOL
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIACT, ACTVTY
@@ -71,8 +69,6 @@ C...........   Local allocatable arrays
         CHARACTER(IOVLEN3), ALLOCATABLE :: SEGMENT( : )  ! line segments
         CHARACTER(IOVLEN3), ALLOCATABLE :: POLNAM ( : )  ! pol names
         CHARACTER(IOVLEN3), ALLOCATABLE :: POLA   ( : )  ! all unsorted pols
-        CHARACTER(IOULEN3), ALLOCATABLE :: RAWSUBS( :,: ) ! raw subtract pollutant list
-        CHARACTER(IOULEN3), ALLOCATABlE :: SUBHCS ( :,: ) ! hydrocarbon names from packet
 
 C...........   Local parametes
         CHARACTER, PARAMETER :: CONTCHAR = '\'  ! line continuation character
@@ -85,18 +81,12 @@ C...........   Other local variables
         INTEGER         LJ      !  string length for emis type joiner
         INTEGER         MXCOLS  !  maximum number of columns in the file
         INTEGER         MXPOL   !  maximum number of pollutants per process
-        INTEGER         MXSUBPOL!  maximum number of pollutants in subtract packet
         INTEGER         NCOLS   !  no. columns in a row
         INTEGER         NLINES  !  number of lines in file
         INTEGER         NPOL    !  no. pollutants in a row
         INTEGER         NPUNSRT !  no. pols 
-        INTEGER         NPCKTS  !  no. packets
-        INTEGER         NSUBS   !  no. pols in subtract packet
-        INTEGER         USEPCKT !  no. of packet to use
-        INTEGER         HCIDX   !  index of hydrocarbon pollutant
         INTEGER         NTLINES !  no. of lines taking into account continuation lines 
 
-        LOGICAL      :: INPACKET = .FALSE.   ! true: inside packet
         LOGICAL      :: FNDPOL   = .FALSE.   ! true: found pollutant on master list
         LOGICAL      :: NEWLINE  = .TRUE.    ! true: current line is new (not continued)
         LOGICAL      :: EFLAG    = .FALSE.   ! true: error found
@@ -106,18 +96,11 @@ C...........   Other local variables
         CHARACTER(IOVLEN3) ACT      !  tmp activity name
         CHARACTER(IOVLEN3) CPOL     !  tmp pollutant name
         CHARACTER(IOVLEN3) LPOL     !  tmp pollutant name from previous iter
-        CHARACTER(IOVLEN3) PRC      !  tmp process name
-        CHARACTER(IOVLEN3) SUBLINE( 4 ) ! pieces of subtract packet
 
         CHARACTER(16) :: PROGNAME = 'RDEPROC' ! program name
 
 C***********************************************************************
 C   begin body of subroutine RDEPROC
-
-C.........  Set input and output hydrocarbon names to default, 
-C           in case there are no packets
-        INPUTHC  = ' ' 
-        OUTPUTHC = ' '
 
 C.........  Get the number of lines for the file and allocate array so that
 C           the type of the line can be stored
@@ -127,9 +110,6 @@ C           the type of the line can be stored
 C.........  Read through file to determine the maximum no. of columns and
 C           check packet information
         MXCOLS   = 0
-        MXSUBPOL = 0
-        NPCKTS   = 0
-        NSUBS    = 0
         
         DO I = 1, NLINES
 
@@ -153,51 +133,6 @@ C.............  Skip any blank and comment lines
             LINE = ADJUSTL( LINE )
             L1 = LEN_TRIM( LINE )
             
-C.............  Check if this line is a packet
-            IF( LINE( 1:1 ) == '/' ) THEN
-                NTLINES = NTLINES - 1
-            
-C.................  Make sure packet ends correctly
-                IF( INDEX( LINE( 2:L1 ), '/' ) <= 0 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: Packet at line', I,
-     &                     'started but not finished.'
-                    CALL M3MSG2( MESG )
-                    CYCLE
-                END IF
-                
-C.................  Check if this is an ending packet
-                IF( LINE( 1:5 ) == '/END/' ) THEN
-                    NSUBS = 0
-                    INPACKET = .FALSE.
-                    CYCLE
-                END IF
-                
-C.................  Make sure we're not already in a packet
-                IF( INPACKET ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: No end packet found' //
-     &                     'before starting new packet at line', 
-     &                     I, '.'
-                    CALL M3MSG2( MESG )
-                    CYCLE
-                END IF
-                
-                NPCKTS = NPCKTS + 1
-                INPACKET = .TRUE.
-                CYCLE
-            END IF  
-
-C.............  Check if inside a packet
-            IF( INPACKET ) THEN
-                NTLINES = NTLINES - 1
-                NSUBS = NSUBS + 1
-                IF( NSUBS > MXSUBPOL ) THEN
-                    MXSUBPOL = NSUBS
-                END IF
-                CYCLE
-            END IF
-
 C.............  If previous line was continued, add this lines columns to number
 C               from previous line; otherwise, count columns in just this line
             IF( .NOT. NEWLINE ) THEN
@@ -227,24 +162,13 @@ C.........  Check for errors so far
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        MXPOL = MXCOLS - 2
+        MXPOL = MXCOLS - 1
 
 C.........  Allocate memory for parsing line segements and storing pollutants
         ALLOCATE( SEGMENT( MXCOLS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
         ALLOCATE( POLNAM( MXPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'POLNAM', PROGNAME )
-
-C.........  Allocate memory for toxic pollutants
-        IF( NPCKTS > 0 ) THEN
-            ALLOCATE( RAWSUBS( MXSUBPOL,NPCKTS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'RAWSUBS', PROGNAME )
-            ALLOCATE( SUBHCS( NPCKTS,2 ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'SUBHCS', PROGNAME )
-            
-            RAWSUBS = ' '  ! array
-            SUBHCS = ' '   ! array
-        END IF
 
 C.........  Allocate memory for emission types and count for each per activity
         ALLOCATE( EMTNAM( NTLINES*MXPOL, NIACT ), STAT=IOS )
@@ -261,7 +185,6 @@ C.........  Allocate memory for emission types and count for each per activity
 C.........  Rewind file
         REWIND( FDEV )
 
-        INPACKET = .FALSE.
         NEWLINE  = .TRUE.
 
 C.........  Store contents of emissions processes file in output order
@@ -277,50 +200,20 @@ C.............  Skip blank and comment lines
 
             LINE = ADJUSTL( LINE )
             L1 = LEN_TRIM( LINE )
-            
-C.............  Check for packet
-            IF( LINE( 1:1 ) == '/' ) THEN
-
-C.................  Check if this is an ending packet
-                IF( LINE( 1:5 ) == '/END/' ) THEN
-                    L = 0
-                    INPACKET = .FALSE.
-                    CYCLE
-                END IF
-
-                M = M + 1
-                
-C.................  Separate line into segments
-                CALL PARSLINE( LINE, 4, SUBLINE )
-
-C.................  Store hydrocarbon information
-                SUBHCS( M,1 ) = SUBLINE( 2 )
-                SUBHCS( M,2 ) = SUBLINE( 4 )
-                
-                INPACKET = .TRUE.
-                CYCLE
-            END IF
            
-            IF( INPACKET ) THEN
-                L = L + 1
-                RAWSUBS( L,M ) = LINE( 1:L1 )
-                CYCLE
-            END IF
-                        
 C.............  Separate line into segments
             NCOLS = GETNLIST( L1, LINE )
             CALL PARSLINE( LINE, NCOLS, SEGMENT )
 
             IF( NEWLINE ) THEN
                 ACT = SEGMENT( 1 )
-                PRC = SEGMENT( 2 )
 
                 IF( SEGMENT( NCOLS ) == CONTCHAR ) THEN
-                    NPOL = NCOLS - 3
-                    POLNAM( 1:NPOL ) = SEGMENT( 3:NCOLS-1 )
-                ELSE
                     NPOL = NCOLS - 2
-                    POLNAM( 1:NPOL ) = SEGMENT( 3:NCOLS )
+                    POLNAM( 1:NPOL ) = SEGMENT( 2:NCOLS-1 )
+                ELSE
+                    NPOL = NCOLS - 1
+                    POLNAM( 1:NPOL ) = SEGMENT( 2:NCOLS )
                 END IF
             ELSE
                 IF( SEGMENT( NCOLS ) == CONTCHAR ) THEN
@@ -340,10 +233,7 @@ C.............  Store emission processes and associated pollutants
 
                 DO V = 1, NPOL
                     J = J + 1
-                    L1 = LEN_TRIM( PRC )
-                    L2 = LEN_TRIM( POLNAM( V ) )
-                    EMTNAM( J,K ) = PRC( 1:L1 ) // ETJOIN // 
-     &                              POLNAM( V )( 1:L2 )
+                    EMTNAM( J,K ) = POLNAM( V )
                 END DO
 
                 NETYPE( K ) = NETYPE( K ) + NPOL
@@ -372,18 +262,12 @@ C.........  Allocate memory for unsorted pollutants list
 
 C.........  Create unsorted pollutants list
         J = 0
-        LJ = LEN_TRIM( ETJOIN )
         DO I = 1, NIACT
 
             DO K = 1, NETYPE( I )
                 J = J + 1
-
-                L = INDEX( EMTNAM( K,I ), ETJOIN )
-                L2 = LEN_TRIM( EMTNAM( K,I ) )
-
-                POLA( J ) = EMTNAM( K,I )( L+LJ:L2 )
+                POLA( J ) = EMTNAM( K,I )
                 INDX( J ) = J
-
             END DO
 
         END DO
@@ -435,10 +319,7 @@ C           list of unique pollutants
 
             DO K = 1, NETYPE( I )
 
-                L = INDEX( EMTNAM( K,I ), ETJOIN )
-                L2 = LEN_TRIM( EMTNAM( K,I ) )
-
-                CPOL = EMTNAM( K,I )( L+LJ:L2 )
+                CPOL = EMTNAM( K,I )
                 J = INDEX1( CPOL, NEPOL, EMTPOL )
                 EMTIDX( K,I ) = J
 
@@ -446,109 +327,11 @@ C           list of unique pollutants
 
         END DO
 
-C.........  If we have subtraction packets, determine which set to use
-        IF( NPCKTS > 0 ) THEN
-            USEPCKT = 0
-
-C.............  Loop through packets to find matching hydrocarbon type            
-            DO I = 1, NPCKTS
-                DO J = 1, NEPOL
-                    IF( SUBHCS( I,1 ) == EMTPOL( J ) ) THEN
-                        HCIDX = J
-                        USEPCKT = I
-                        EXIT
-                    END IF
-                END DO
-                
-                IF( USEPCKT > 0 ) EXIT
-            END DO
-            
-            IF( USEPCKT == 0 ) THEN
-                MESG = 'ERROR: No match found between /SUBTRACT/ ' //
-     &                 'packets and pollutants in emission ' //
-     &                 'processes file.'
-                CALL M3MSG2( MESG )
-            END IF
-
-C.............  Store input and output hydrocarbon names
-            INPUTHC  = SUBHCS( USEPCKT,1 )
-            OUTPUTHC = SUBHCS( USEPCKT,2 )
-            EMTPOL( HCIDX ) = OUTPUTHC
-            
-            DO I = 1, NIACT
-                DO K = 1, NETYPE( I )
-                    IF( EMTIDX( K,I ) == HCIDX ) THEN
-                        J = INDEX( EMTNAM( K,I ), TRIM( INPUTHC ) )
-                        L = LEN( EMTNAM( K,I ) )
-                        EMTNAM( K,I )( J:L ) = OUTPUTHC
-                    END IF
-                END DO
-            END DO
-
-C.............  Determine total number of pollutants for this packet
-            NSUBS = 0
-            DO I = 1, MXSUBPOL
-                IF( RAWSUBS( I,USEPCKT ) /= ' ' ) THEN
-
-                    FNDPOL = .FALSE.
-C.....................  Check that pollutant is in master pollutant list
-                    DO J = 1, NEPOL
-                        IF( RAWSUBS( I,USEPCKT ) == EMTPOL( J ) ) THEN
-                            FNDPOL = .TRUE.
-                            EXIT
-                        END IF
-                    END DO
-                    
-                    IF( FNDPOL ) THEN
-                        NSUBS = NSUBS + 1
-                    ELSE
-                        MESG = 'WARNING: Skipping pollutant ' //
-     &                         TRIM( RAWSUBS( I,USEPCKT ) ) // ' in ' //
-     &                         '/SUBTRACT/ packet since it is not ' //
-     &                         'listed in the emission processes file.'
-                        CALL M3MSG2( MESG )
-                    END IF
-                END IF
-            END DO
-
-C.............  Save total number of pollutants
-            NSUBPOL = NSUBS
-
-            IF( NSUBS > 0 ) THEN
-                ALLOCATE( SUBPOLS( NSUBS ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'SUBPOLS', PROGNAME )
-
-C.................  Store names of pollutants            
-                L = 0
-                DO I = 1, MXSUBPOL
-                    IF( RAWSUBS( I,USEPCKT ) /= ' ' ) THEN
-                        FNDPOL = .FALSE.
- 
-                        DO J = 1, NEPOL
-                            IF( RAWSUBS(I,USEPCKT) == EMTPOL( J ) ) THEN
-                                FNDPOL = .TRUE.
-                                EXIT
-                            END IF
-                        END DO
- 
-                        IF( FNDPOL ) THEN
-                            L = L + 1
-                            SUBPOLS( L ) = RAWSUBS( I,USEPCKT )
-                        END IF
-                    END IF
-                END DO
-            END IF
- 
-        END IF
-
 C.........  Rewind file
         REWIND( FDEV )
 
 C.........  Deallocate memory for local arrays
         DEALLOCATE( SEGMENT, POLNAM, POLA, INDX )
-        IF( ALLOCATED( RAWSUBS ) ) THEN
-            DEALLOCATE( RAWSUBS, SUBHCS )
-        END IF
 
         RETURN
 
