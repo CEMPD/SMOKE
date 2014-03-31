@@ -43,7 +43,7 @@ C***************************************************************************
 C...........   MODULES for public variables   
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX, EANAM,
-     &                     EINAM, NIPOL, NIPPA, NPPOL, NPACT, ACTVTY
+     &                     EINAM, NIPOL, NIPPA, NPPOL, NPACT, ACTVTY, MCODEFLAG
 
         IMPLICIT NONE
 
@@ -181,8 +181,6 @@ C.........  Reset activity to pollutant to create hourly VMT without running EMI
 C           To support MOVES-SMOKE integratoin tool approach.
 C           Only no-SPEED activity data (i.e. VMT) will be treated like pollutant for later Temporal program
         IF( NIACT > 0 ) THEN
-
-C.............  Allocate memory for and store pollutant names
             IF( ALLOCATED( EINAM ) ) DEALLOCATE( EINAM )
             ALLOCATE( EINAM( NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
@@ -193,7 +191,6 @@ C.............  Allocate memory for and store pollutant names
             NPACT = 0
             EINAM = EANAM
             ACTVTY = ' '
-
         END IF
 
         PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
@@ -210,44 +207,20 @@ C.........  Open holidays file for determining holidays by region
         HDEV = PROMPTFFILE(
      &             'Enter logical name for HOLIDAYS file',
      &             .TRUE., .TRUE., 'HOLIDAYS', PROGNAME )
-     
-C.........  Open additional files for when activity data are in the inventory.
-C.........  NOTE - this structure currently assumes that all of the
-C           files needed for using MOBILE5 emission factors would be needed
-C           in all cases.  For driving other emission factor models, other
-C           logic would need to be used that evaluates the emission factor
-C           model assigned to each activity, and opens files depending on the
-C           emission factor model.
-C.........  Use NAMBUF for the HP
-        IF( NIACT .GT. 0 ) THEN
-
-            NAMBUF= PROMPTMFILE( 
-     &              'Enter logical name for UNGRIDDING MATRIX file',
-     &              FSREAD3, CRL // 'UMAT', PROGNAME )
-            GNAME = NAMBUF
  
-C.............  Get the header description from the ungridding matrix file
-            CALL RETRIEVE_IOAPI_HEADER( GNAME )
-
-C.............  Check the number of sources in the ungridding matrix
-            CALL CHKSRCNO( 'mobile', 'MUMAT', NROWS3D, NSRC, EFLAG )
-            
-            TDEV = PROMPTFFILE( 
-     &             'Enter logical name for EMISSION PROCESSES file',
-     &             .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
-     
-            EDEV = PROMPTFFILE(
-     &             'Enter logical name for EMISSION FACTORS LIST file',
-     &             .TRUE., .TRUE., CRL // 'EFLIST', PROGNAME )
-     
-        END IF
-
-C.........  Open files that are specific to mobile sources
+C.........  Check to see whether to use MCODE file (road/vehicle) to construct
+C           internal SCC (combination of road/vhicle types)
         IF( CATEGORY .EQ. 'MOBILE' ) THEN
 
-            MDEV = PROMPTFFILE( 
-     &             'Enter logical name for MOBILE CODES file',
-     &             .TRUE., .TRUE., 'MCODES', PROGNAME )
+            MESG = 'Construct internal SCC using road and vehicle types '//
+     &          CRLF() // BLANK10 // 'for mobile sources or not'
+            MCODEFLAG = ENVYN ( 'USE_MCODES_SCC_YN', MESG, .TRUE., IOS )
+
+            IF( MCODEFLAG ) THEN
+                MDEV = PROMPTFFILE( 
+     &                 'Enter logical name for MOBILE CODES file',
+     &                 .TRUE., .TRUE., 'MCODES', PROGNAME )
+            END IF
 
         END IF
 

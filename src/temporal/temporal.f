@@ -50,9 +50,7 @@ C.........  This module contains the temporal profile tables
      &                      ITDATE, METPROFLAG, METPROTYPE
 
 C.........  This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: NEFS, INPUTHC, OUTPUTHC, EMTNAM, EMTPOL,
-     &                      NEPOL, NETYPE, EFDAYS, EFIDX, EFLIST,
-     &                      EFLOGS, EFTYPE, TEMPEF, USETIME
+        USE MODEMFAC, ONLY: EMTPOL, NEPOL, TEMPEF, USETIME
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DYPNAM, DYPDSC, NDYPOA, NDYSRC, 
@@ -65,7 +63,7 @@ C.........  This module contains the lists of unique source characteristics
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, BYEAR, NIPPA, EANAM, NSRC, 
-     &                     INVPIDX, NIACT, NIPOL, EAREAD, EINAM, ACTVTY
+     &                     INVPIDX, NIPOL, EAREAD, EINAM, ACTVTY
 
 C.........  This module is used for MOBILE6 setup information 
         USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN
@@ -491,25 +489,14 @@ C.........  Read holidays file
 C.........  When mobile codes file is being used read mobile codes file
         IF( MFLAG ) CALL RDMVINFO( MDEV )
 
-C.........  Perform steps needed for using activities and emission factors
-        IF( NIACT .GT. 0 ) THEN
-            CALL CHKEMFAC( GNAME, TDEV, EDEV, NTPERIOD, PFLAG, MODELNAM,
-     &                     TZONE, TDMAX )
-        END IF
-
 C.........  Determine all of the variables to be output based on the 
 C           activities and input pollutants.  
-C.........  NOTE - Uses NETYPE, EMTACTV, and EMTNAM, and sets units, and units
-C           conversion factors for all pollutants and activities
         CALL TMNAMUNT
         
 C.........  Reset the number of all output variables as the number of pollutants
 C           and emission types, instead of the number of pollutants and 
 C           activities
         NIPPA = NIPOL
-        DO I = 1, NIACT
-            NIPPA = NIPPA + NETYPE( I )
-        END DO
 
 C.........  Allocate memory for I/O pol names, activities, & emission types
 C.........  Will be resetting EANAM to include the emission types instead
@@ -553,22 +540,6 @@ C               pollutant is also part of the inventory pollutants
             N = N + 1
             ALLIN( N ) = EAREAD( I )
             EANAM( N ) = EINAM ( I )
-
-        END DO
-
-C.........  Add activities, & emission types to read and output lists
-        J = NIPOL
-        DO I = 1, NIACT
-
-            K = NETYPE( I )  ! Number of emission types
-
-C.............  If any emissions types associated with this activity, store them
-            IF ( K .GT. 0 ) THEN
-                ALLIN( J+1:J+K ) = ACTVTY( I )
-                EANAM( N+1:N+K ) = EMTNAM( 1:K, I )
-                N = N + K
-            END IF
-            J = J + K
 
         END DO
 
@@ -828,8 +799,6 @@ C               pollutant/emission-type group
             EMACV = 0.
             EMIST = 0.
 
-            IF( NIACT .GT. 0 ) EMFAC = IMISS3
-
 C.............  Assign temporal profiles by source and pollutant
             CALL M3MSG2( 'Assigning temporal profiles to sources...' )
 
@@ -925,15 +894,6 @@ C                   to not get daylight time conversion.
                 
                 END IF
 
-C............  Create array of emission factors by source
-                IF( NIACT .GT. 0 ) THEN
-
-                    CALL RDEMFAC( II, N, NSRC, NGRP, NGSZ, EARLYDATE,
-     &                            JDATE, JTIME, NDAYS, TZMAX, TZMIN,
-     &                            TZONE, EMFAC, EANAM2D ) 
-
-                END IF
-       
 C.................  Generate hourly emissions for current hour
                 CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
      &                  PNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D, 
@@ -961,11 +921,6 @@ C.....................  Write hourly emissions to I/O API NetCDF file
 
 C.................  Advance the output date/time by one time step
                 CALL NEXTIME( JDATE, JTIME, TSTEP )
-
-C.................  Call QA report routine
-c               WFLAG = ( T .EQ. NSTEPS )
-c               CALL QATMPR( LDEV, NGSZ, T, JDATE, JTIME, WFLAG, 
-c    &                       EANAM2D( 1,N ), EMAC )
 
             END DO      ! End loop on time steps T
 

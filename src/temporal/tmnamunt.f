@@ -38,14 +38,8 @@ C
 C***************************************************************************
 
 C.........  MODULES for public variables
-C.........  This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: NEFS, EFSNAM, EFSDSC, EFSUNT, EMTNAM, 
-     &                      EMTUNT, EMTDSC, INPUTHC, OUTPUTHC, MXETYPE,
-     &                      NETYPE
-
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NIPPA, NIACT, NIPOL, EANAM, EACNV, EAUNIT,
-     &                     ACTVTY, EINAM
+        USE MODINFO, ONLY: NIPPA, NIPOL, EANAM, EACNV, EAUNIT, EINAM
 
         IMPLICIT NONE
 
@@ -80,114 +74,12 @@ C...........   Other local variables
 C***********************************************************************
 C   begin body of subroutine TMNAMUNT
 
-C.........  Allocate memory for the names of the emission types and associated
-C           arrays for all activities in the inventory
-        ALLOCATE( EMTUNT( MXETYPE, NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMTUNT', PROGNAME )
-        ALLOCATE( EMTDSC( MXETYPE, NIACT ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMTDSC', PROGNAME )
-
 C.........  Allocate memory for units conversions for inventory pollutants and
 C           activities (stored in MODINFO)
         ALLOCATE( EACNV( NIPPA ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EACNV', PROGNAME )
 
-C.........  Initialize arrays
-        EMTUNT = ' '  ! array
-        EMTDSC = ' '  ! array
         EACNV  = 1.   ! array
-
-C.........  Loop through the emission types for each activity and determine 
-C           their associated emission factors and units for emission factors
-C.........  Also, for each pollutant or activity, store the output units and
-C           conversion factor to ton/hr (required output units from Temporal)
-C.........  The hours adjustment is part of the temporal allocation, which
-C           assumes that the input data are annual data. So, if not, add the
-C           conversion to annual data here.
-        DO I = 1, NIACT
-
-            M = INDEX1( ACTVTY( I ), NIPPA, EANAM )
-
-            DO K = 1, NETYPE( I )
-
-                CURRVNAME = EMTNAM( K,I )
-
-                FIXDESC = .FALSE.
-C.................  Check if pollutant is output hydrocarbon
-                IF( OUTPUTHC /= ' ' ) THEN
-                    J = INDEX( CURRVNAME, TRIM( OUTPUTHC ) )
-                    IF( J > 0 ) THEN
-                        FIXDESC = .TRUE.
-                        CURRVNAME = CURRVNAME( 1:J-1 ) // INPUTHC
-                    END IF
-                END IF
-
-C.................  Search for emission type in emission factors
-                J = INDEX1( CURRVNAME, NEFS, EFSNAM )
-
-C.................  Store info if this emissions type is found
-C.................  For the units, multiply the emission factor units with the
-C                   activity units
-                IF( J .GT. 0 ) THEN
-
-C.....................  Ensure that emission factor units are consistent
-                    CALL UNITMATCH( EFSUNT( J ) )
-
-                    L  = INDEX( EFSDSC( J ), 'for' )
-                    L2 = LEN_TRIM( EFSDSC( J ) )
-
-C.....................  Store for emission types
-                    EMTUNT( K,I ) = MULTUNIT( EFSUNT( J ), EAUNIT( M ) )
-                    EMTDSC( K,I ) = EFSDSC( J )( L+3:L2 )
-                    IF( FIXDESC ) THEN
-                        EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) // 
-     &                                  ' (minus HAPS)'
-                    END IF
-                    EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) // 
-     &                              ' from ' // ACTVTY( I )
-
-                ELSE
-
-C.....................  Otherwise, build info for user-defined HAPS
-                    CURRUNIT = M6UNIT
-                    CALL UNITMATCH( CURRUNIT )
-                    
-                    EMTUNT( K,I ) = MULTUNIT( CURRUNIT, EAUNIT( M ) )
-                    
-                    EMTDSC( K,I ) = CURRVNAME
-                    EMTDSC( K,I ) = TRIM( EMTDSC( K,I ) ) //
-     &                              ' from ' // ACTVTY( I )
-                END IF
-
-C.................  If emission type has not been associated with an emission
-C                   factor, then error
-                IF( EMTDSC( K,I ) .EQ. ' ' ) THEN
-
-                    EFLAG = .TRUE.
-                    L = LEN_TRIM( EMTNAM( K,I ) )
-                    MESG = 'ERROR: Emission type "' // 
-     &                     EMTNAM( K,I )( 1:L ) // '" could not be '//
-     &                     'associated with an emission factor!'
-                    CALL M3MSG2( MESG )
-
-                END IF
-
-            END DO     ! End of loop through emission types
-
-C.............  Store units and convversion factors for activities and output
-C.............  NOTE - this assumes that the units of all emission types
-C               from one activity are the same.
-            CBUF = EMTUNT( 1,I )
-            FAC1 = UNITFAC( CBUF, 'tons', .TRUE. )
-            FAC2 = UNITFAC( EAUNIT( M ), '1/yr', .FALSE. )
-
-            IF ( FAC1 .LT. 0. ) FAC1 = 1.
-            IF ( FAC2 .LT. 0. ) FAC2 = 1.
-
-            EAUNIT( M ) = 'tons/hr'
-            EACNV ( M ) = FAC1 / FAC2
-
-        END DO         ! End of loop through activities
 
 C.........  Now loop through pollutants and create units and conversion factors
         DO I = 1, NIPOL
