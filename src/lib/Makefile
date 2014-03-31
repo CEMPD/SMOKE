@@ -18,7 +18,7 @@ FILES_ABCDE = \
   alocptbl.o   alocstbl.o   alocttbl.o   applreac.o   applumat.o   bldcsrc.o  \
   bldenams.o   blkorcmt.o   calcrelhum.o chkcpvar.o   chkemepi.o   chkisiz.o \
   chkmetem.o   chkptdef.o   chksrcno.o   convrtll.o   convrtxy.o   cvtrdtype.o  cvtvehtype.o \
-  dscsprof.o   efsetup.o    evalcrit.o
+  dscsprof.o   evalcrit.o
 
 FILES_FGIMNP = \
   fillatbl.o   fillchrt.o   fillctbl.o   filletbl.o   fillgtbl.o   fillmtbl.o \
@@ -83,7 +83,6 @@ applumat.o : $(MODGRID)
 bldenams.o : $(MODLISTS)
 chkptdef.o : $(MODINFO)
 dscsprof.o : $(MODSPRO)
-efsetup.o  : $(MODEMFAC)
 fillatbl.o : $(MODXREF)
 fillchrt.o : $(MODXREF) $(MODINFO)
 fillctbl.o : $(MODXREF) 
