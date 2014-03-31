@@ -132,14 +132,6 @@ C           current source category or not.
 
         ENDIF
 
-C.........  Check to see whether to use MCODES file (road/vehicle) to construct
-C           internal SCC (combination of road/vhicle types)
-        IF( CATEGORY == 'MOBILE' ) THEN
-            MESG = 'Construct internal SCC using road and vehicle types '//
-     &          CRLF() // BLANK10 // 'for mobile sources or not'
-            MCODEFLAG = ENVYN( 'USE_MCODES_SCC_YN', MESG, .TRUE., IOS )
-        END IF
-
 C.........  Create the zero SCC
         SCCZERO = REPEAT( '0', SCCLEN3 )
 
