@@ -8,18 +8,26 @@ LIBPATH       = $(SMK_BIN)/libsmoke.a
 LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
 ##
 
-all: aggwndw beld3to2 bluesky2inv cemscan extractida geofac gentpro invsplit layalloc metcombine metscan \
+all: aggwndw beld3to2 bluesky2inv cemscan extractida gcntl4carb geofac gentpro invsplit layalloc metcombine metscan \
      pktreduc smk2emis surgtool uam2ncf 
 
 debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug extractida.debug invsplit.debug \
-       gentpro.debug geofac.debug layalloc.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
+       gcntl4carb.debug gentpro.debug geofac.debug layalloc.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
        surgtool.debug uam2ncf.debug  
 
 .f.o:
 	$(FC) $(FFLAGS) -c -o $@ $<	
 
-
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
+
+GCNTL=gcntl4carb.o
+gcntl4carb: $(GCNTL) $(ALLI) $(LIBPATH)
+	echo GCNTL4CARB:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS)
+
+gcntl4carbi.debug: $(GCNTL) $(ALLI) $(LIBPATH)
+	echo GCNTL4CARB:
+	$(FC) $(DBGFFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS_DEBUG)
 
 AGGW=aggwndw.o
 
@@ -70,6 +78,16 @@ extractida: $(EXTI) $(ALLI) $(LIBPATH)
 extractida.debug: $(EXTI) $(ALLI) $(LIBPATH_DEBUG)
 	echo 'EXTRACTIDA (debug):'
 	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
+
+GCNTL=gcntl4carb.o
+
+gcntl4carb: $(GCNTL) $(ALLI) $(LIBPATH)
+	echo GCNTL4CARB:
+	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS)
+
+gcntl4carbi.debug: $(GCNTL) $(ALLI) $(LIBPATH)
+	echo GCNTL4CARB:
+	$(FC) $(DBGFFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS_DEBUG)
 
 GEOF=geofac.o
 
