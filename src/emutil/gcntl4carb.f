@@ -308,7 +308,7 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
-94050   FORMAT( 3(A,','), F10.6, A )
+94050   FORMAT( 3(A,','),',', F10.6, A )
 
       END PROGRAM GCNTL4CARB
 
