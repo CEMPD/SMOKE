@@ -20,15 +20,6 @@ debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug extractida.d
 
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
-GCNTL=gcntl4carb.o
-gcntl4carb: $(GCNTL) $(ALLI) $(LIBPATH)
-	echo GCNTL4CARB:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS)
-
-gcntl4carbi.debug: $(GCNTL) $(ALLI) $(LIBPATH)
-	echo GCNTL4CARB:
-	$(FC) $(DBGFFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS_DEBUG)
-
 AGGW=aggwndw.o
 
 aggwndw: $(AGGW) $(ALLI) $(LIBPATH)
