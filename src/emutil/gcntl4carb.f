@@ -112,7 +112,7 @@ C           to continue running the program.
 
 C.........  Prompt for name of input files
         MESG = 'Enter logical name of the CO-AB-DIS description input file' 
-        FDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'COABDIS_DESC', PROGNAME )
+        FDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'COABDIS', PROGNAME )
 
 C.........  Open CARB control factors input file
         MESG = 'Enter logical name of the control adjustment input file'
@@ -217,7 +217,8 @@ C           numbers
 
             EIC = TRIM( SEGMENT( 9 ) )
             POL = TRIM( SEGMENT( 10 ) )
-            FACS = STR2REAL( SEGMENT( 14 ) )
+            FACS = STR2REAL( SEGMENT( 14 ) ) * 100.0
+            IF( FACS < 100.0 ) FACS = ( 100.0 - FACS )
 
 C.............  Define regional flag
             REGID = STR2INT( SEGMENT( 4 ) )   ! 2=full co/ab/dis, 4=co-specific, 5=ab-specific, 6=dis-specific
@@ -308,7 +309,7 @@ C...........   Formatted file I/O formats............ 93xxx
 C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10 ( A, :, I5, :, 2X ) )
-94050   FORMAT( 3(A,','),',', F10.6, A )
+94050   FORMAT( 3(A,','),',', F10.5, A )
 
       END PROGRAM GCNTL4CARB
 
