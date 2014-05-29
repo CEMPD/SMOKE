@@ -58,7 +58,7 @@ C.........  This module contains the lists of unique inventory information
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, NRCLAS, IVTIDLST, CVTYPLST, 
      &                      AMSRDCLS, RDWAYTYP, NSCCTBL, SCCTBL,
-     &                      SCCRVC
+     &                      SCCRVC, SCCMAPFLAG, NSCCMAP, SCCMAPLIST
 
         IMPLICIT NONE
 
@@ -119,7 +119,7 @@ C...........   File units and logical/physical names
         INTEGER         CDEV        !  scratch file
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, K2, L, NP, S !  counters and indices
+        INTEGER         I, J, JJ, K, KK, K1, K2, L, NP, S !  counters and indices
         INTEGER         L0, L1, L2, L3, L4, L5, L6, L7, L8, L9
 
         INTEGER         CSRC_LEN     !  length of source characteristics
@@ -131,6 +131,7 @@ C...........   Other local variables
         INTEGER         ISTREC       !  no. of records stored
         INTEGER         IVT          !  vehicle type code
         INTEGER         LDEV         !  device no. for log file
+        INTEGER         NSCC         !  tmp no of reference SCCs
         INTEGER         MXWARN       !  maximum number of warnings
         INTEGER         NINVFILES    !  number of EMS-95 inventory files
         INTEGER         NLINE        !  number of lines in list format file
@@ -661,6 +662,20 @@ C.................  Check for header lines
                     CYCLE
                 END IF
 
+C.................  SCC mapping loop : Mobile activity inventory use only.
+                KK = 0
+                NSCC = 0
+                IF( SCCMAPFLAG ) THEN
+                    KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
+                    IF( KK > 0 ) NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+                END IF
+
+C.................  loop over mapped SCC
+              DO JJ = 0, NSCC
+
+                IF( JJ > 0 .AND. KK > 0 ) IREC = IREC + 1     ! increment no of records by reference SCCs
+                IF( SCCMAPFLAG .AND. KK > 0 ) TSCC = SCCMAPLIST( KK+JJ,2 )
+
 C.................  Write first ten lines of inventory to log file
                 IF( NWRLINE < 10 .AND. .NOT. FIREFLAG ) THEN
                     NWRLINE = NWRLINE + 1
@@ -977,6 +992,8 @@ C.................  Store current source number for this record
 
 C.................  Update total number of sources with pollutants
                 NRAWBP = NRAWBP + NPOLPERLN
+
+              END DO  ! loop through SCCMAPLIST (NSCC)
 
             END DO  ! loop through MXRECS lines
 

@@ -60,6 +60,11 @@
         CHARACTER(VTPLEN3+RWTLEN3),ALLOCATABLE, PUBLIC:: SCCRVC( : )
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: SCCTBL ( : )
 
+!.........  Aggregated SCC to full SCCs for mobile sources
+        INTEGER,                         PUBLIC :: NSCCMAP
+        LOGICAL,                         PUBLIC :: SCCMAPFLAG
+        CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: SCCMAPLIST ( :,: )
+
 !.........  Sorted speed profiles
         INTEGER                                 :: NSPDPROF        ! no. speed profiles
         INTEGER,            ALLOCATABLE, PUBLIC :: SPDNUMS ( : )   ! profile numbers

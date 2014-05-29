@@ -50,6 +50,9 @@ C............ This module contains the cross-reference tables
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG 
 
+C.........  This module is for mobile-specific data
+        USE MODMOBIL, ONLY: SCCMAPFLAG, SCCMAPLIST
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -89,6 +92,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: IHNAME    ! hour-specific inventory name 
 
 C...........   Other local variables
+        INTEGER       MDEV   ! tmp unit number if SCC reference map file is needed
         INTEGER       IDEV   ! tmp unit number if ENAME is map file
         INTEGER       IOS    ! i/o status
         INTEGER       I,J,L    ! counter and indices
@@ -139,6 +143,18 @@ C               number of commas found in the string.
         MESG = 'Import hour-specific data'
         HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
         HRLINVFLAG = HFLAG
+
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            MESG = 'Use referenced SCC activity inventory file'
+            SCCMAPFLAG = ENVYN ( 'USE_REF_SCC_YN', MESG, .FALSE., IOS )
+
+            IF( SCCMAPFLAG ) THEN
+                MESG = 'Enter logical name for reference SCC input file'
+                MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SCCXREF',
+     &                          PROGNAME )
+                CALL RDSCCMAP( MDEV ) 
+            END IF
+        END IF
 
         IF ( CATEGORY .EQ. 'POINT' ) THEN
             MESG = 'Import gridded MEDS-formatted inventory file'

@@ -68,7 +68,8 @@ C.........  This module contains the lists of unique inventory information
      &                      NINVTBL, ITCASA, FIREFLAG
 
 C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: NVTYPE, VMTMIXA
+        USE MODMOBIL, ONLY: NVTYPE, VMTMIXA, SCCMAPFLAG, SCCMAPLIST,
+     &                      NSCCMAP
 
         IMPLICIT NONE
 
@@ -93,10 +94,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         REAL            YR2DAY
+        INTEGER         FIND1FIRST
 
         EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC, 
      &                  GETINVYR, GETVMIX, INDEX1, STR2INT, STR2REAL, 
-     &                  YR2DAY, GETFLINE, BLKORCMT
+     &                  YR2DAY, GETFLINE, BLKORCMT, FIND1FIRST
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -120,7 +122,7 @@ C...........   Output from individual reader routines
         CHARACTER(IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, L, NP, SP !  counters and indices
+        INTEGER         I, J, JJ, K, KK, K1, L, NP, SP !  counters and indices
         INTEGER         L1, L2, L3, L4, L5, L6, L7, L8, L9
 
         INTEGER         CURFIL      !  current file from list formatted inventory
@@ -133,6 +135,7 @@ C...........   Other local variables
         INTEGER         ISTREC      !  no. of records stored
         INTEGER         IZONE       !  UTM zone
         INTEGER      :: LSTYR = 0   !  inventory year from list file
+        INTEGER         NSCC        !  tmp no of reference SCCs
         INTEGER         MXWARN      !  maximum number of warnings
         INTEGER         NLINE       !  no. of lines in list file
         INTEGER         NPOLPERCAS  !  no. of pollutants per CAS number
@@ -210,6 +213,7 @@ C...........   Other local variables
         CHARACTER(MACLEN3)  MACT      ! MACT code
         CHARACTER(NAILEN3) :: NAICS = ' '  ! NAICS code
         CHARACTER(STPLEN3) :: SRCTYP = ' ' ! source type code
+        CHARACTER(SCCLEN3)  TSCC      ! tmp SCC
         CHARACTER           CTYPE     ! coordinate type
         CHARACTER(9)        LAT       ! stack latitude
         CHARACTER(9)        LON       ! stack longitude
@@ -676,7 +680,7 @@ C.....................  Need to read source information to match with VMTMIX fil
 
                 CASE( 'MOBILE' )
                     CALL RDDATAFF10MB( LINE, READDATA, READPOL, INVYEAR,
-     &                        SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
+     &                    SRCTYP, TSCC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
 
@@ -709,7 +713,7 @@ C.....................  Need to read source information to match with VMTMIX fil
 
                 CASE( 'MOBILE' )
                     CALL RDDATAORLMB( LINE, READDATA, READPOL, INVYEAR,
-     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
+     &                           SRCTYP, TSCC, EXTORL, HDRFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
 
@@ -782,6 +786,20 @@ C.............  Make sure some emissions are kept for this source
             IF( NPOLPERLN == 0 ) THEN
                 CYCLE
             END IF
+
+C.............  SCC mapping loop : Mobile activity inventory use only.
+            KK = 0
+            NSCC = 0
+            IF( SCCMAPFLAG ) THEN
+                KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
+                IF( KK > 0 ) NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+            END IF
+
+C.............  loop over mapped SCC
+          DO JJ = 0, NSCC
+
+            IF( JJ > 0 .AND. KK > 0 ) IREC = IREC + 1     ! increment no of records by reference SCCs
+            IF( SCCMAPFLAG .AND. KK > 0 ) TSCC = SCCMAPLIST( KK+JJ,2 )
 
 C.............  Check that EMS-95 time period is correct
             IF( CURFMT == EMSFMT ) THEN
@@ -1624,11 +1642,13 @@ C.................  Correct hemisphere for stack longitude
 
             END IF
 
+          END DO  ! end loop through reference SCC if applicable
+
         END DO  ! end loop through records array
 
 C.........  Deallocate local memory, if its allocated
-       IF( ALLOCATED( READDATA ) ) DEALLOCATE( READDATA ) 
-       IF( ALLOCATED( READPOL  ) ) DEALLOCATE( READPOL ) 
+        IF( ALLOCATED( READDATA ) ) DEALLOCATE( READDATA ) 
+        IF( ALLOCATED( READPOL  ) ) DEALLOCATE( READPOL ) 
 
 C.........  Abort if there was an error
         IF( EFLAG ) THEN
