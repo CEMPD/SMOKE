@@ -1200,8 +1200,14 @@ C.........  Write ASCII file
             COORUN3D = 'DEGREES '
         ELSE IF ( GDTYP3D .EQ. 2 ) THEN
             COORD3D = 'LAMBERT '
+        ELSE IF ( GDTYP3D .EQ. 3 ) THEN
+            COORD3D = 'MERCATOR '
+        ELSE IF ( GDTYP3D .EQ. 4 ) THEN
+            COORD3D = 'STEREOGRAPHIC '
         ELSE IF ( GDTYP3D .EQ. 5 ) THEN
             COORD3D = 'UTM '
+        ELSE IF ( GDTYP3D .EQ. 6 ) THEN
+            COORD3D = 'POLAR '
         ELSE
             MESG = 'Current projection code is not supported!'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
