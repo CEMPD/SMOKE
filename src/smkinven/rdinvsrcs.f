@@ -758,12 +758,7 @@ C.........................  Ensure that vehicle type is valid
                         END DO
                         
                         IF( J > NVTYPE ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 
-     &                         'ERROR: Vehicle type "' //
-     &                         TSCC( 3:6 ) // '" at line ', IREC,
-     &                         ' was not found in list of valid types'
-                            CALL M3MESG( MESG )
+                             CVTYPLST( J ) = 'MOVES'
                         END IF
                     END IF
 
@@ -791,11 +786,7 @@ C.....................  Ensure that road class is valid and convert from road cl
                     J = FIND1( ROAD, NRCLAS, AMSRDCLS )
                     
                     IF( J <= 0 ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: Road class "' //
-     &                         CROAD // '" at line', IREC,
-     &                         ' was not found in list of valid classes'
-                        CALL M3MESG( MESG )
+                        RWT = 0
                     ELSE
                         RWT = RDWAYTYP( J )
                     END IF
