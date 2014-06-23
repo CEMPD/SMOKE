@@ -641,6 +641,8 @@ C           MXSPFUL, which is from module MODSPRO
         CALL CHECKMEM( IOS, 'MOLEFACT', PROGNAME )
         ALLOCATE( MASSFACT( MXSPFUL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
+        MOLEFACT = 0.0
+        MASSFACT = 0.0
 
 C.........  Allocate memory for names of output variables
         ALLOCATE( MASSONAM( 0:MXTAG, MXSPEC, NIPPA  ), STAT=IOS )
