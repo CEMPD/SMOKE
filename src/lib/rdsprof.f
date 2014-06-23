@@ -259,7 +259,7 @@ C...........  Count profiles used in this call of subroutine
         END IF
         
         IF( ZFLAG ) THEN
-            MESG = 'ERROR: At least one of the divisors was zero ' //
+            MESG = 'WARNING: At least one of the divisors was zero ' //
      &             'in the speciation profiles.' // CRLF()// BLANK10 // 
      &             'Correct column 5 of input file and try again.'
             CALL M3MSG2( MESG )
