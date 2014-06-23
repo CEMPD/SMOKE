@@ -117,10 +117,6 @@ C.........  Array that contains the names of the inventory variables needed for
 C           this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
-C.........  Actual-SCC  table
-        INTEGER                            NSCC
-        CHARACTER(SCCLEN3), ALLOCATABLE :: SCCLIST( : )
-
 C.........  Day-specific, hour-specific data, and elevated sources data. 
 C.........  These need only to allow enough dimensions for one read per 
 C           pollutant per time step.
