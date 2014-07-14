@@ -345,7 +345,7 @@ C.........  Get mobile-specific files
 
             MESG = 'Construct internal SCC using road and vehicle types '//
      &          CRLF() // BLANK10 // 'for mobile sources or not'
-            MCODEFLAG = ENVYN ( 'USE_MCODES_SCC_YN', MESG, .TRUE., IOS )
+            MCODEFLAG = ENVYN ( 'USE_MCODES_SCC_YN', MESG, .FALSE., IOS )
 
             IF( MCODEFLAG ) THEN
                 MESG = 'Enter logical name for MOBILE CODES file'
