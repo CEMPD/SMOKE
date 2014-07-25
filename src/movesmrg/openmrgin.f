@@ -49,8 +49,8 @@ C.........  This module contains the major data structure and control flags
      &          VARFLAG, SRCGRPFLAG, SGDEV
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, CFFLAG,
-     &          TVARNAME, METNAME, XDEV, MDEV, FDEV,
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, RPHFLAG,
+     &          TVARNAME, METNAME, XDEV, MDEV, FDEV, CFFLAG,
      &          SPDFLAG, MSNAME_L, MSNAME_S, MNSMATV_L, MNSMATV_S,
      &          MSVDESC_L, MSVDESC_S, MSVUNIT_L, MSVUNIT_S
 
@@ -65,7 +65,7 @@ C...........   This module contains emission factor information
         USE MODEMFAC, ONLY: MXETYPE, EMTNAM
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, VGTYP, VGTOP, VGLVS
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, VGTYP, VGTOP, VGLVS, XCENT,YCENT,P_ALP,OFFLAG
 
 C.........  This module is required for the FileSetAPI
         USE MODFILESET
@@ -210,6 +210,15 @@ C               data but it needs to be there to make emission processes work)
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
         END IF
+
+C.........  Read hotelling data from the inventory
+        IF( RPHFLAG ) THEN
+            M = INDEX1( 'HOTELLING', NMAP, MAPNAM )
+            IF( M <= 0 ) THEN
+                MESG = 'Mobile inventory does not include hotelling data'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+        END IF
         
         IF( RPVFLAG .OR. RPPFLAG ) THEN
             M = INDEX1( 'VPOP', NMAP, MAPNAM )
@@ -234,7 +243,7 @@ C.........  Get number of sources from MODINFO and store in MODMERGE variable
 C.........  Determine the year and projection status of the inventory
         CALL CHECK_INVYEAR( MENAME, MPRJFLAG, FDESC3D )
 
-        IF( RPDFLAG ) THEN
+        IF( RPDFLAG .OR. RPHFLAG ) THEN
 
 C.............  Open all temporal files for either by-day or standard
 C               processing. 
@@ -335,7 +344,7 @@ C.........  Check that variables in mole and mass speciation matrices match
         END DO
 
 C.........  Open meteorology file
-        IF( RPDFLAG .OR. RPVFLAG ) THEN
+        IF( RPDFLAG .OR. RPVFLAG .OR. RPHFLAG ) THEN
             METNAME = PROMPTMFILE(
      &           'Enter logical name for the METCRO2D meteorology file', 
      &           FSREAD3, 'MET_CRO_2D', PROGNAME )
@@ -350,16 +359,12 @@ C.........  Open meteorology file
      &             METNAME( 1:LEN_TRIM( METNAME ) ) // '" '
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-    
+
 C.........  Check the grid definition
-        IF( VARFLAG ) THEN
-            CALL CHKGRID( 'mobile', 'GRID', 0, EFLAG )
-        ELSE
-            CALL CHKGRID( 'mobile', 'GRID', 1, EFLAG )
-        END IF
+        CALL CHKGRID( 'mobile', 'GRID', 0, EFLAG )
     
 C.........  Check the hours in the met file
-        IF( RPDFLAG .OR. RPVFLAG ) THEN
+        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
             CALL UPDATE_TIME_INFO( METNAME, .FALSE. )
 
 C.............  Make sure met file contains requested temperature variable
@@ -400,6 +405,10 @@ C.........  Get emission processes file name
 C.........  Store process/pollutants combinations for correct activity
         IF( RPDFLAG ) THEN
             M = INDEX1( 'VMT', NIACT, ACTVTY )
+        END IF
+
+        IF( RPHFLAG ) THEN
+            M = INDEX1( 'HOTELLING', NIACT, ACTVTY )
         END IF
         
         IF( RPVFLAG .OR. RPPFLAG ) THEN
@@ -497,7 +506,6 @@ C.........  Write message stating grid name and description
         MESG = 'NOTE: Output grid "' // GRDNM( 1:N ) // 
      &         '" set; described as' // CRLF() // BLANK10 // GDESC
         CALL M3MSG2( MESG )
-
 
         RETURN
 

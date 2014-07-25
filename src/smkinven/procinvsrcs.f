@@ -140,7 +140,7 @@ C.................  Set vehicle type based on vehicle ID
                     IF( IVTYPE( S ) == IVTIDLST( J ) ) EXIT
                 END DO
                 
-                CVTYPE( S ) = CVTYPLST( J )
+                CVTYPE( S ) = 'MOVES'
                 
             END DO
 

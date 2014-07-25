@@ -124,8 +124,6 @@ C.............  Initialize the output units
 
 C.............  Convert emissions units (g/hr) to tons/hr
             EMUNIT = 'tons/hr'
-            EMFAC = UNITFAC( 'g/hr', EMUNIT, .TRUE. )
-
             GRDUNIT_I = MULTUNIT( SPCUNIT_L( V ), EMUNIT )
             TOTUNIT_I = MULTUNIT( MULTUNIT( SPCUNIT_S( V ), EMUNIT ), 'hr/day' )
 
@@ -157,14 +155,12 @@ C.............  Get factor for the numerators for the gridded outputs...
 
 C.............  Get factor for the denominators for the gridded outputs
             FAC2 = UNITFAC( EMUNIT, GRDBUF, .FALSE. )
-
 C.............  In case E.V. setting was bogus rebuild output units based
 C               on which factors were valid
 C.............  Also set negative factors (from unknown conversions) to 1.
             CALL CORRECT_UNITS( GNUM_I, GDEN_I, GNUM, GDEN, GRDBUF )
 
 C.............  Set factors for gridded outputs
-            FAC1 = FAC1 * EMFAC
             GRDFAC( V ) = FAC1 / FAC2
 
 C.............  Get conversion factor for the numerators for totals
@@ -180,18 +176,17 @@ C.............  Also set negative factors (from unknown conversions) to 1.
             CALL CORRECT_UNITS( TNUM_I, TDEN_I, TNUM, TDEN, TOTBUF )
 
 C.............  Set factors for totaled outputs
-            FAC1 = FAC1 * EMFAC
             TOTFAC( V ) = FAC1 / FAC2
 
 C.............  Set the output units per pollutant/activity
             GRDUNIT( V ) = GRDBUF
             TOTUNIT( V ) = TOTBUF
+
         END DO
 
 C.........  Set up units for non-speciated emissions report (tons/day for now)
         EMFAC = UNITFAC( 'g/hr', 'tons/day', .TRUE. )
         DO V = 1, NIPPA
-            
             TOTFAC ( NUNITS+V ) = EMFAC
             TOTUNIT( NUNITS+V ) = 'tons/day'
         END DO

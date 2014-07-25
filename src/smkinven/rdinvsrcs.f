@@ -753,13 +753,12 @@ C.........................  Set vehicle type and road class
                         ROAD = STR2INT( TSCC( 8:10 ) )
                                                 
 C.........................  Ensure that vehicle type is valid
-                        DO J = 1, NVTYPE
-                            IF( IVT == IVTIDLST( J ) ) EXIT
-                        END DO
-                        
-                        IF( J > NVTYPE ) THEN
-                             CVTYPLST( J ) = 'MOVES'
-                        END IF
+C                        DO J = 1, NVTYPE
+C                            IF( IVT == IVTIDLST( J ) ) EXIT
+C                        END DO
+C                        IF( J > NVTYPE ) THEN
+C                             CVTYPLST( J ) = 'MOVES'
+C                        END IF
                     END IF
 
                     IF( CURFMT == EMSFMT ) THEN

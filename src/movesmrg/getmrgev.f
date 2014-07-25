@@ -47,7 +47,7 @@ C.........  This module contains the major data structure and control flags
      &                      SRCGRPFLAG
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
+        USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
      &                       SPDFLAG, CFFLAG, REFCFFLAG, TEMPBIN, MOPTIMIZE,
      &                       GRDENV, TOTENV, MTMP_OUT
 
@@ -160,6 +160,9 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
         RPDFLAG = ENVYN( 'RPD_MODE', 'Calculate rate-per-distance ' //
      &                   'emissions', .FALSE., IOS )
 
+        RPHFLAG = ENVYN( 'RPH_MODE', 'Calculate rate-per-hour ' //
+     &                   'emissions', .FALSE., IOS )
+
         RPVFLAG = ENVYN( 'RPV_MODE', 'Calculate rate-per-vehicle ' //
      &                   'emissions', .FALSE., IOS )
      
@@ -179,19 +182,24 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
      &                    '-specific control factor', .FALSE., IOS )
 
         IF( .NOT. RPDFLAG .AND.
+     &      .NOT. RPHFLAG .AND.
      &      .NOT. RPVFLAG .AND.
      &      .NOT. RPPFLAG ) THEN
             MESG = 'No mode selected!  You must set either RPD_MODE, ' //
-     &             'RPV_MODE, or RPP_MODE to "Y".'
+     &             'RPH_MODE, RPV_MODE, or RPP_MODE to "Y".'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  Select default processing mode
         IF( RPDFLAG ) THEN
+            RPHFLAG = .FALSE.
             RPVFLAG = .FALSE.
             RPPFLAG = .FALSE.
         ELSE IF( RPVFLAG ) THEN
+            RPHFLAG = .FALSE.
             RPPFLAG = .FALSE.
+        ELSE IF( RPPFLAG ) THEN
+            RPVFLAG = .FALSE.
         END IF
 
 C.........  Check if hourly speeds should be used

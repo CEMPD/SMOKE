@@ -64,16 +64,14 @@ C.........  This module contains the major data structure and control flags
      &          SGINLNNAME, NSGOUTPUT              ! source group emissions output file
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, RPPFLAG, MOPTIMIZE,
+        USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MOPTIMIZE,
      &          TVARNAME, METNAME,
      &          NREFSRCS, REFSRCS, NSRCCELLS, SRCCELLS, SRCCELLFRACS,
-     &          EMPROCIDX, EMPOLIDX,
+     &          EMPOLIDX,
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
-     &          RPDEMFACS, RPVEMFACS, RPPEMFACS,
+     &          RPDEMFACS, RPHEMFACS, RPVEMFACS, RPPEMFACS,
      &          SPDFLAG, SPDPRO, MISCC, 
-     &          MSNAME_L, MSMATX_L, MNSMATV_L, GRDENV,
-     &          MSNAME_S, MSMATX_S, MNSMATV_S,
-     &          EANAMREP, CFPRO, CFFLAG, REFCFFLAG,
+     &          CFPRO, CFFLAG, REFCFFLAG,
      &          TEMPBIN, MTMP_OUT
 
 C.........  This module contains the lists of unique source characteristics
@@ -133,6 +131,7 @@ C...........   Local arrays for per-source information
 
 C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: VMT( : )
+        REAL, ALLOCATABLE :: HOTEL( : )
         REAL, ALLOCATABLE :: TEMPG( : )    ! Temp array for RPD and RPV
         REAL, ALLOCATABLE :: MAXTEMP( : )     ! max temp array for RPP
         REAL, ALLOCATABLE :: MINTEMP( : )     ! min temp array for RPP
@@ -141,9 +140,6 @@ C...........   Local arrays for hourly data
         REAL, ALLOCATABLE :: TEMGRD( :,:,:)   ! emissions for each grid cell, species, and time steps
         REAL, ALLOCATABLE :: TMPEMGRD( :,: )  ! tmp emissions for each grid cell and species
         REAL, ALLOCATABLE :: TMPEMGGRD( : )   ! tmp emissions for output source groups
-
-C...........   Local temporary array for input and output variable names
-        CHARACTER(IOVLEN3), ALLOCATABLE :: VARNAMES( : )
 
 C...........   Logical names and unit numbers (not in MODMERGE)
         INTEGER         LDEV
@@ -174,10 +170,10 @@ C...........   Other local variables
         INTEGER          MJDATE        ! mobile-source Julian date for by-day
         INTEGER          MONTH         ! current month
         INTEGER          LMONTH        ! month from previous iteration
-        INTEGER          OCNT          ! tmp count output variable names
         INTEGER       :: PDAY = 0      ! previous iteration day no.
+        INTEGER          SIIDX         ! tmp pollutant idx
+        INTEGER          SPIDX         ! tmp species idx
         INTEGER          POLIDX        ! current pollutant index
-        INTEGER          PROCIDX       ! current emission process index
         INTEGER          SCCIDX        ! current SCC index
         INTEGER          SRC           ! current source number
         INTEGER          UUIDX, UOIDX, OUIDX, OOIDX  ! indexes for matching profiles
@@ -186,10 +182,11 @@ C...........   Other local variables
         INTEGER      :: NWARN = 0   !  current number of warnings
         INTEGER          GIDX          ! index to source group
 
-        REAL             F1, F2, F3    ! tmp conversion
+        REAL             F1, F2        ! tmp conversion
         REAL             GFRAC         ! grid cell fraction
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
+        REAL             HOTELVAL      ! hourly hotelling value for current source and hour
         REAL             VMTVAL        ! hourly VMT value for current source and hour
         REAL             VPOPVAL       ! annual vehicle population value for current source
         REAL             SPDFAC        ! speed interpolation factor
@@ -202,17 +199,16 @@ C...........   Other local variables
         REAL             EFVAL1, EFVAL2, EFVALA, EFVALB, EFVAL   ! emission factor values
         REAL             EMVAL         ! emissions value
         REAL             EMVALSPC      ! speciated emissions value
-        REAL             CFFAC         ! control factor
+        REAL          :: CFFAC = 1.0   ! control factor
 
         LOGICAL       :: NO_INTRPLT = .FALSE.   ! true: single interploation, false: bi-interpolation
 
         CHARACTER(300)     MESG    ! message buffer
         CHARACTER( 4 )     YEAR    ! modelin year
         CHARACTER( 7 )     TDATE   ! tmp julinan date
-        CHARACTER(IOVLEN3) LBUF    ! previous species or pollutant name
-        CHARACTER(IOVLEN3) PBUF    ! tmp pollutant or emission type name
-        CHARACTER(IOVLEN3) SBUF    ! tmp species or pollutant name
-        CHARACTER(PLSLEN3) VBUF    ! pol to species or pol description buffer
+        CHARACTER(IOVLEN3) CPOL    ! tmp pollutant or emission type name
+        CHARACTER(IOVLEN3) CSPC    ! tmp species name
+        CHARACTER(IOVLEN3) LSPC    ! previous tmp species name
         CHARACTER(SCCLEN3) SCC     ! current source SCC
 
         CHARACTER(16) :: PROGNAME = 'MOVESMRG' ! program name
@@ -306,19 +302,21 @@ C........ when not optimize memory
             MTMP_INVT = 0.0
         END IF
 
+        ALLOCATE( EMPOLIDX( NIPPA + NMSPC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMPOLIDX', PROGNAME )
+        EMPOLIDX = 0   ! array
 
-        ALLOCATE( MSMATX_L( NMSRC, MNSMATV_L ), STAT=IOS )    ! mole speciation matrix
-        CALL CHECKMEM( IOS, 'MSMATX_L', PROGNAME )
-
-        ALLOCATE( MSMATX_S( NMSRC, MNSMATV_S ), STAT=IOS )    ! mass speciation matrix
-        CALL CHECKMEM( IOS, 'MSMATX_S', PROGNAME )
-        
         IF( RPDFLAG ) THEN
             ALLOCATE( VMT( NMSRC ), STAT=IOS )     ! hourly VMT
             CALL CHECKMEM( IOS, 'VMT', PROGNAME )
         END IF
+
+        IF( RPHFLAG ) THEN
+            ALLOCATE( HOTEL( NMSRC ), STAT=IOS )     ! hourly hotelling 
+            CALL CHECKMEM( IOS, 'HOTEL', PROGNAME )
+        END IF
         
-        IF( RPDFLAG .OR. RPVFLAG ) THEN
+        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
             ALLOCATE( TEMPG( NGRID ), STAT=IOS )    ! hourly temperatures
             CALL CHECKMEM( IOS, 'TEMPG', PROGNAME )
         ELSE
@@ -346,9 +344,6 @@ C.........  Get maximum number of warnings
 C.........  Set up reference county information
         CALL SETREFCNTY
 
-C.........  Build emission process mapping
-        CALL BLDPROCIDX
-
 C.........  Build indicies for pollutant/species groups
         CALL BLDMRGIDX
 
@@ -371,42 +366,8 @@ C.........  Open NetCDF output files, open ASCII report files, and write headers
 C.........  Read control factor data
         IF ( CFFLAG ) CALL RDCFPRO( CFDEV, REFCFFLAG )
 
-C.........  Allocate memory for temporary list of species and pollutant names
-        ALLOCATE( VARNAMES( NSMATV ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'VARNAMES', PROGNAME )
-
-C.........  Loop through pollutant-species combos and read speciation matrix
-        OCNT = 0
-        LBUF = ' '
-        VARNAMES = ' '  ! array
-        DO V = 1, NSMATV
-
-C.............  Extract name of variable
-            VBUF = TSVDESC( V )
-
-C.............  Update list of output species names for message
-            SBUF = EMNAM( SPINDEX( V,1 ) )
-            M = INDEX1( SBUF, OCNT, VARNAMES )
-
-            IF( M .LE. 0 .AND. SBUF .NE. LBUF ) THEN
-                OCNT = OCNT + 1                            
-                VARNAMES( OCNT ) = SBUF
-                LBUF = SBUF
-            END IF
-
-C.............  Read speciation matrices for current variable
-            CALL RDSMAT( MSNAME_L, VBUF, MSMATX_L( 1,V ) )
-            CALL RDSMAT( MSNAME_S, VBUF, MSMATX_S( 1,V ) )
-
-C.............  Switch SPC matrix (mole/mass) based on MRG_GRDOUT_UNIT, MRG_TOTOUT_UNIT
-            IF( INDEX( GRDENV, 'mole' ) < 1 ) THEN
-                MSMATX_L( 1,V ) = MSMATX_S( 1,V )
-            END IF
-
-        END DO
-
 C.........  Write out message with list of species
-        CALL POLMESG( OCNT, VARNAMES )
+        CALL POLMESG( NMSPC, EMNAM )
 
 C.........  Year of SDATE  
         WRITE( TDATE, '(I7)' ) SDATE
@@ -486,6 +447,10 @@ C                       at the last hour of the last day in fuel month to proces
                         IF( RPDFLAG ) THEN
                             CALL RDRPDEMFACS( I, FUELMONTH )
                         END IF
+
+                        IF( RPHFLAG ) THEN
+                            CALL RDRPHEMFACS( I, FUELMONTH )
+                        END IF
              
                         IF( RPVFLAG ) THEN
                             CALL RDRPVEMFACS( I, FUELMONTH )
@@ -507,7 +472,7 @@ C.................  Set start hour of day for all sources
                 END IF
 
 C.................  Write out files that are being used for by-day treatment
-                IF( RPDFLAG .AND. DAY .NE. PDAY ) THEN
+                IF( RPDFLAG .OR. RPHFLAG .AND. DAY .NE. PDAY ) THEN
                     IF( MFLAG_BD ) THEN
                         MESG = '   with MTMP file ' // MTNAME( DAY )
                         CALL M3MSG2( MESG )
@@ -531,8 +496,17 @@ C.................  In RPD mode, read VMT for current hour
                     END IF
                 END IF
 
+C.................  In RPH mode, read HOTELLING for current hour
+                IF( RPHFLAG ) THEN
+                    IF( .NOT. READSET( MTNAME( DAY ), 'HOTELLING', 1, ALLFILES,
+     &                                 MJDATE, JTIME, HOTEL ) ) THEN
+                        MESG = 'Could not read HOTELLING from MTMP file'
+                        CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
+                    END IF
+                END IF
+
 C.................  In RPD and RPV modes, read temperatures for current hour
-                IF( RPDFLAG .OR. RPVFLAG ) THEN
+                IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
                     IF( .NOT. READ3( METNAME, TVARNAME, 1, 
      &                               JDATE, JTIME, TEMPG ) ) THEN
                         MESG = 'Could not read ' // TRIM( TVARNAME ) //
@@ -565,6 +539,10 @@ C.................  Loop over sources in reference county
                 
                     IF( RPDFLAG ) THEN
                         VMTVAL = VMT( SRC )
+                    END IF
+
+                    IF( RPHFLAG ) THEN
+                        HOTELVAL = HOTEL( SRC )
                     END IF
                     
                     IF( RPPFLAG .OR. RPVFLAG ) THEN
@@ -630,7 +608,7 @@ C.....................  Loop over grid cells for this source
                         GFRAC = SRCCELLFRACS( SRC, NG )
 
 C.............................  Determine temperature indexes for cell
-                        IF( RPDFLAG .OR. RPVFLAG ) THEN
+                        IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
 
                             TEMPVAL = ( TEMPG( CELL ) - CTOK ) * CTOF + 32.
 
@@ -914,137 +892,137 @@ C...............................  Check that maximum temperatures of profiles ma
                         END IF
 
 C.........................  Loop through pollutant-species combos
-                        LBUF = ' '
-                        DO V = 1, NSMATV
-                        
-                            PBUF = EANAM( SIINDEX( V,1 ) )  ! process/pollutant
+                        DO V = 1, NIPPA + NMSPC
 
-                            PROCIDX = EMPROCIDX( V )
+C.............................  Lookup poll/species index from MOVES lookup EF                        
+                            SIIDX = 0
+                            SPIDX = 0
                             POLIDX = EMPOLIDX( V )
+                            IF( V <= NIPPA ) THEN
+                                CPOL  = EANAM( V )  ! pollutant
+                                CSPC  = ''
+                                SIIDX = INDEX1( CPOL, NIPPA, EANAM )
+                                IF( CFFLAG ) CFFAC = CFPRO(MICNY(SRC), SCCIDX, SIIDX, MONTH )
+                            ELSE
+                                CPOL  = ''
+                                CSPC  = EMNAM( V - NIPPA )  ! pollutant
+                                SPIDX = INDEX1( CSPC, NMSPC, EMNAM )
+                            END IF
 
 C.............................  Check if emission factors exist for this process/pollutant
-                            IF( PROCIDX .EQ. 0 .OR. POLIDX .EQ. 0 ) THEN
-                                CYCLE
-                            END IF
-
-C.............................  get control factor
-                            IF ( CFFLAG ) THEN
-                                CFFAC = CFPRO(MICNY(SRC), SCCIDX, SIINDEX( V,1 ), MONTH )
-                            END IF
+                            IF( POLIDX .EQ. 0 ) CYCLE
 
 C.............................  Calculate interpolated emission factor if process/pollutant has changed
-                            IF( PBUF .NE. LBUF ) THEN
-                                IF( RPDFLAG ) THEN
-                                    IF( BIN1 .NE. BIN2 ) THEN
-                                        EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX1, PROCIDX, POLIDX )
-                                        EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX1, PROCIDX, POLIDX )
-                                        EFVALA = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
+                            IF( RPDFLAG ) THEN
+                                IF( BIN1 .NE. BIN2 ) THEN
+                                    EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX1, POLIDX )
+                                    EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX1, POLIDX )
+                                    EFVALA = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
         
-                                        EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX2, PROCIDX, POLIDX )
-                                        EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX2, PROCIDX, POLIDX )
-                                        EFVALB = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
-                                    ELSE
-                                        EFVALA = RPDEMFACS( SCCIDX, BIN1, IDX1, PROCIDX, POLIDX )
-                                        EFVALB = RPDEMFACS( SCCIDX, BIN1, IDX2, PROCIDX, POLIDX )
-                                    END IF
-                                    
-                                    EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
+                                    EFVAL1 = RPDEMFACS( SCCIDX, BIN1, IDX2, POLIDX )
+                                    EFVAL2 = RPDEMFACS( SCCIDX, BIN2, IDX2, POLIDX )
+                                    EFVALB = SPDFAC * (EFVAL2 - EFVAL1) + EFVAL1
+                                ELSE
+                                    EFVALA = RPDEMFACS( SCCIDX, BIN1, IDX1, POLIDX )
+                                    EFVALB = RPDEMFACS( SCCIDX, BIN1, IDX2, POLIDX )
                                 END IF
-                                
-                                IF( RPVFLAG ) THEN
-                                    EFVALA = RPVEMFACS( DAYIDX, SCCIDX, HOURIDX, IDX1, PROCIDX, POLIDX )
-                                    EFVALB = RPVEMFACS( DAYIDX, SCCIDX, HOURIDX, IDX2, PROCIDX, POLIDX )
-
-                                    EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
-                                END IF
-                                
-                                IF( RPPFLAG ) THEN
-                                    IF( NO_INTRPLT ) THEN
-                                        EFVAL = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, PROCIDX, POLIDX )
-
-                                    ELSE
-
-                                        EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UUIDX, PROCIDX, POLIDX )
-                                        EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, PROCIDX, POLIDX )
-                                        EFVALA = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
-                                        
-                                        EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OUIDX, PROCIDX, POLIDX )
-                                        EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OOIDX, PROCIDX, POLIDX )
-                                        EFVALB = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
-    
-                                        EFVAL = MINFAC * (EFVALB - EFVALA) + EFVALA
-                                    
-                                    END IF
-                                END IF
-
-                                IF( CFFLAG ) EFVAL = EFVAL*CFFAC 
-
+                                EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
                             END IF
-                            
-                            LBUF = PBUF
 
-C.............................  Set units conversion factor
-                            F1 = GRDFAC( SPINDEX( V,1 ) )
-                            F2 = TOTFAC( SPINDEX( V,1 ) )
+                            IF( RPHFLAG ) THEN
+                                EFVALA = RPHEMFACS( SCCIDX, IDX1, POLIDX )
+                                EFVALB = RPHEMFACS( SCCIDX, IDX2, POLIDX )
+                                EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
+                            END IF
+                                
+                            IF( RPVFLAG ) THEN
+                                EFVALA = RPVEMFACS( DAYIDX, SCCIDX, HOURIDX, IDX1, POLIDX )
+                                EFVALB = RPVEMFACS( DAYIDX, SCCIDX, HOURIDX, IDX2, POLIDX )
+
+                                EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
+                            END IF
+                                
+                            IF( RPPFLAG ) THEN
+                                IF( NO_INTRPLT ) THEN
+                                    EFVAL = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, POLIDX )
+                                ELSE
+                                    EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UUIDX, POLIDX )
+                                    EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, UOIDX, POLIDX )
+                                    EFVALA = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
+                                        
+                                    EFVAL1 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OUIDX, POLIDX )
+                                    EFVAL2 = RPPEMFACS( DAYIDX, SCCIDX, HOURIDX, OOIDX, POLIDX )
+                                    EFVALB = MAXFAC * (EFVAL2 - EFVAL1) + EFVAL1
+    
+                                    EFVAL = MINFAC * (EFVALB - EFVALA) + EFVALA
+                                    
+                                END IF
+                            END IF
+
+                            IF( CFFLAG ) EFVAL = EFVAL * CFFAC 
 
 C.............................  Calculate gridded, hourly emissions (g/hr/cell)
                             IF( RPDFLAG ) THEN
                                 EMVAL = VMTVAL * EFVAL * GFRAC
                             END IF
+
+                            IF( RPHFLAG ) THEN
+                                EMVAL = HOTELVAL * EFVAL * GFRAC
+                            END IF
                             
                             IF( RPVFLAG .OR. RPPFLAG ) THEN
                                 EMVAL = VPOPVAL * EFVAL * GFRAC
                             END IF
-                            
-                            EMVALSPC = EMVAL * MSMATX_L( SRC,V ) * F1
 
 C.............................  If use memory optimize
-                            IF ( MOPTIMIZE ) THEN
-                                EMGRD( CELL,SPINDEX( V,1 ) ) = 
-     &                            EMGRD( CELL,SPINDEX( V,1 ) ) + EMVALSPC
+                            IF( SPIDX > 0 ) THEN
+
+C................................  Set units conversion factor
+                              F1 = GRDFAC( SPIDX )
+                              EMVALSPC = EMVAL * F1
+
+                              IF( MOPTIMIZE ) THEN
+                                EMGRD( CELL,SPIDX ) = 
+     &                            EMGRD( CELL,SPIDX ) + EMVALSPC
      
                                 IF ( SRCGRPFLAG ) THEN
                                     GIDX = ISRCGRP( SRC )
-                                    EMGGRDSPC( CELL,GIDX,SPINDEX( V,1 ) ) =
-     &                                EMGGRDSPC( CELL,GIDX,SPINDEX( V,1 ) ) + EMVALSPC
+                                    EMGGRDSPC( CELL,GIDX,SPIDX ) =
+     &                                EMGGRDSPC( CELL,GIDX,SPIDX ) + EMVALSPC
                                 END IF
 
-C.............................  If not use memory optimize
-                            ELSE                      
-                                TEMGRD( CELL,SPINDEX( V,1 ),T ) =
-     &                            TEMGRD( CELL,SPINDEX( V,1 ),T ) + EMVALSPC
+C...............................  If not use memory optimize
+                              ELSE                      
+                                TEMGRD( CELL,SPIDX,T ) =
+     &                            TEMGRD( CELL,SPIDX,T ) + EMVALSPC
      
                                 IF ( SRCGRPFLAG ) THEN
                                     GIDX = ISRCGRP( SRC )
-                                    EMGGRDSPCT( CELL,GIDX,SPINDEX( V,1 ),T ) =
-     &                                EMGGRDSPCT( CELL,GIDX,SPINDEX( V,1 ),T ) + EMVALSPC
+                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
+     &                                EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
                                 END IF
 
+                              END IF
                             END IF
 
 C.............................  Store Temporal intermediate hourly emissions
-                            IF( MTMP_OUT ) THEN
-
-                                IF( EANAMREP( V ) ) THEN
-                                    MTMP_INVT( SRC,SIINDEX(V,1),T ) =
-     &                                   MTMP_INVT( SRC,SIINDEX(V,1),T ) +
-     &                                   EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
-                               END IF
-
+                            IF( MTMP_OUT .AND. SIIDX > 0 ) THEN
+                                MTMP_INVT( SRC,SIIDX,T ) =
+     &                               MTMP_INVT( SRC,SIIDX,T ) +
+     &                               EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
                             END IF
 
-C.............................  Add this cell's emissions to source totals
+C.............................  Add this cell's emissions to source totals in unit of moles/hr (instead of moles/s)
+C                               not by applying 1/3600 factor (hr to sec)
                             IF( LREPANY ) THEN
                                 IF( .NOT. (T == NSTEPS .AND. JTIME == 0) ) THEN
-                                    MEBSUM( SRC,SPINDEX( V,1 )) =
-     &                                  MEBSUM( SRC,SPINDEX( V,1 )) + 
-     &                                  EMVAL * MSMATX_S( SRC,V ) * F2
-                            
-                                    IF( EANAMREP( V ) ) THEN
-                                       F3 = TOTFAC( NMSPC+SIINDEX( V,1 ) )
-                                        MEBSUM( SRC,NMSPC+SIINDEX( V,1 ) ) =
-     &                                      MEBSUM( SRC,NMSPC+SIINDEX( V,1 ) ) +
-     &                                      EMVAL * F3
+                                    IF( SPIDX > 0 ) THEN
+                                       MEBSUM( SRC,SPIDX ) = MEBSUM( SRC,SPIDX ) + 
+     &                                                       EMVAL
+                                    ELSE
+                                       F2 = TOTFAC( NMSPC+SIIDX )
+                                       MEBSUM( SRC,NMSPC+SIIDX ) =
+     &                                      MEBSUM( SRC,NMSPC+SIIDX ) + EMVAL * F2 
                                     END IF
                                     RDATE = JDATE     ! last reporting date
                                     RTIME = JTIME     ! last reporting hour
@@ -1060,13 +1038,13 @@ C.............................  Add this cell's emissions to source totals
 C.................  Read out old data if not first county
                 IF ( MOPTIMIZE ) THEN
                     DO V = 1, NMSPC 
-                        SBUF = EMNAM( V )
+                        CSPC = EMNAM( V )
 
 C.........................  sum old county data with new county
                         IF ( I > 1 ) THEN
-                            IF(.NOT. READSET( MONAME, SBUF, 1,  ALLFILES,
+                            IF(.NOT. READSET( MONAME, CSPC, 1,  ALLFILES,
      &                                JDATE, JTIME, TMPEMGRD( 1,V ) ) )THEN
-                                 MESG = 'Could not read "' // SBUF // '" ' //
+                                 MESG = 'Could not read "' // CSPC // '" ' //
      &                             'from file "' // MONAME // '"'
                                  CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
@@ -1076,9 +1054,9 @@ C.........................  sum old county data with new county
                         END IF
 
                         IF( LGRDOUT ) THEN
-                            IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
+                            IF( .NOT. WRITESET( MONAME, CSPC, ALLFILES,
      &                              JDATE, JTIME, EMGRD( 1,V ) ) ) THEN
-                                MESG = 'Could not write "' // SBUF // '" ' //
+                                MESG = 'Could not write "' // CSPC // '" ' //
      &                           'to file "' // MONAME // '"'
                                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
@@ -1088,16 +1066,16 @@ C.........................  sum old county data with new county
                             EMGGRD( :,: ) = EMGGRDSPC( :,:,V )
                             IF( I > 1 ) THEN
                                 TMPEMGGRD = 0.  ! array
-                                IF( .NOT. READ3( SGINLNNAME, SBUF, 1, 
+                                IF( .NOT. READ3( SGINLNNAME, CSPC, 1, 
      &                                           JDATE, JTIME, TMPEMGGRD ) ) THEN
-                                    MESG = 'Could not read "' // SBUF // '" ' //
+                                    MESG = 'Could not read "' // CSPC // '" ' //
      &                                     'from file "' // SGINLNNAME // '"'
                                     CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                                 END IF
                                 
-                                CALL WRSRCGRPS( SBUF, JDATE, JTIME, .TRUE., TMPEMGGRD )
+                                CALL WRSRCGRPS( CSPC, JDATE, JTIME, .TRUE., TMPEMGGRD )
                             ELSE
-                                CALL WRSRCGRPS( SBUF, JDATE, JTIME, .FALSE., 0 )
+                                CALL WRSRCGRPS( CSPC, JDATE, JTIME, .FALSE., 0 )
                             END IF
                         END IF
                     END DO
@@ -1110,25 +1088,24 @@ C.........................  sum old county data with new county
 
         END DO   ! end loop over inventory counties
 
-C.........  Write state, county, and SCC emissions (all that apply) 
-C.........  The subroutine will only write for certain hours and 
+C.........  Write state, county, and SCC emissions (all that apply)
+C.........  The subroutine will only write for certain hours and
 C           will reinitialize the totals after output
         IF( LREPANY ) CALL WRMRGREP( RDATE, RTIME )
 
+C.........  Output optional hourly emissions for inventory pollutants for Temporal program
         IF( MTMP_OUT ) THEN
             JDATE  = SDATE
             JTIME  = STIME
             DO T = 1, NSTEPS
 
-                DO V = 1, NSMATV 
+                DO V = 1, NIPPA 
 
-                    IF( .NOT. EANAMREP( V ) ) CYCLE
-                    NV = SIINDEX( V,1 )
-                    SBUF = EANAM( NV )  ! process/pollutant
+                    CPOL = EANAM( V )  ! Pollutant
 
-                    IF( .NOT. WRITE3( MTMPNAME, SBUF, JDATE, JTIME,
-     &                                MTMP_INVT( :,NV,T ) )         ) THEN
-                        MESG = 'Could not write '//  TRIM( SBUF ) //
+                    IF( .NOT. WRITE3( MTMPNAME, CPOL, JDATE, JTIME,
+     &                                MTMP_INVT( :,V,T ) )         ) THEN
+                        MESG = 'Could not write '//  TRIM( CPOL ) //
      &                         ' from ' // TRIM( MTMPNAME )
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
@@ -1140,7 +1117,8 @@ C           will reinitialize the totals after output
             END DO
 
         END IF
- 
+
+C.........  Output gridded houlry emissions 
         IF( .NOT. MOPTIMIZE ) THEN
             JDATE  = SDATE
             JTIME  = STIME
@@ -1148,15 +1126,15 @@ C           will reinitialize the totals after output
 
                 DO V = 1, NMSPC
 
-                    SBUF = EMNAM( V )
+                    CSPC = EMNAM( V )
 
                     TMPEMGRD( :,V ) = TEMGRD( :,V,T )
 
 C.....................  Write out gridded data
                     IF( LGRDOUT ) THEN
-                        IF( .NOT. WRITESET( MONAME, SBUF, ALLFILES,
+                        IF( .NOT. WRITESET( MONAME, CSPC, ALLFILES,
      &                            JDATE, JTIME, TMPEMGRD( 1,V ) ) ) THEN
-                            MESG = 'Could not write "' // SBUF //'" '//
+                            MESG = 'Could not write "' // CSPC //'" '//
      &                      'to file "' // MONAME // '"'
                             CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                         END IF
@@ -1164,7 +1142,7 @@ C.....................  Write out gridded data
                     
                     IF( SRCGRPFLAG ) THEN
                         EMGGRD( :,: ) = EMGGRDSPCT( :,:,V,T )
-                        CALL WRSRCGRPS( SBUF, JDATE, JTIME, .FALSE., 0 )
+                        CALL WRSRCGRPS( CSPC, JDATE, JTIME, .FALSE., 0 )
                     END IF
 
                 END DO
@@ -1184,14 +1162,13 @@ C.........  Close output file
         DEALLOCATE( DAYBEGT, DAYENDT, LDAYSAV )
 
         IF ( MOPTIMIZE ) THEN
-            DEALLOCATE( EMGRD, TMPEMGRD, VARNAMES, MGMATX, TMPEMGGRD )
+            DEALLOCATE( EMGRD, TMPEMGRD, MGMATX, TMPEMGGRD )
         ELSE
-            DEALLOCATE( TEMGRD, TMPEMGRD, VARNAMES, MGMATX )
+            DEALLOCATE( TEMGRD, TMPEMGRD, MGMATX )
         END IF
 
 C.........  Successful completion of program
         CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
-
 
 C******************  FORMAT  STATEMENTS   ******************************
 

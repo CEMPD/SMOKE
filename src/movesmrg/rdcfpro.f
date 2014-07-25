@@ -109,8 +109,6 @@ C...........   Other local variables
         CHARACTER(300)     MESG     ! message buffer
         CHARACTER(SCCLEN3) SCC      ! current SCC
         CHARACTER(IOVLEN3) POLNAME  ! current pollutant name 
-        CHARACTER(IOVLEN3) EPOLNAM  ! current mode+pollutant name 
-        CHARACTER(3)       MODNAME  ! current mode name
 
         INTEGER     NLFIPS(NINVIFIP)      ! FIPS matched
         INTEGER     NLSCCS(NINVSCC)       ! SCC matched
@@ -272,58 +270,22 @@ C.............  Find SCC in inventory list
 
 C.............  Check pollutant name and mode
             POLNAME = ADJUSTL( SEGMENT( 3 ) )
-            MODNAME = ADJUSTL( SEGMENT( 4 ) )
             K = 0
-            IF( SEGMENT( 3 ) == ' ' .AND. SEGMENT( 4 ) == ' ' ) THEN
+            IF( SEGMENT( 3 ) == ' ' ) THEN
                 NPOLS  = NIPPA
                 DO J = 1, NIPPA
                     NLPOLS(J) =  J
                 END DO
-            ELSE IF( SEGMENT( 3 ) == ' ' .AND. SEGMENT( 4 ) /= ' ') THEN
-                L1 = LEN_TRIM(SEGMENT( 4 ))
-                DO J = 1, NIPPA
-                    IF ( MODNAME == EANAM(J)(1:L1) ) THEN
-                        K = K +1
-                        NLPOLS(K) = J
-                    END IF
-                END DO
-                NPOLS = K
-                IF (  NPOLS < 1 ) THEN 
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
-     &                IREC, ' of control factor file because '
-     &                //TRIM(MODNAME)// ' is not in the mode list'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-            ELSE IF( SEGMENT( 3 ) /= ' ' .AND. SEGMENT( 4 ) == ' ' ) THEN
-                DO J = 1, NIPPA
-                    L1 = INDEX(EANAM(J), ETJOIN)
-                    IF ( POLNAME == EANAM(J)(L1+2:) ) THEN
-                         K = K +1
-                         NLPOLS(K) = J
-                    END IF
-                END DO
-                NPOLS = K
-                IF (  NPOLS < 1 ) THEN 
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
-     &                IREC, ' of control factor file because ' //
-     &                TRIM(POLNAME)//' is not in the pollutant list'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
             ELSE 
                 L1 =  LEN_TRIM(POLNAME)
-                L2 =  LEN_TRIM(MODNAME)
-                EPOLNAM = MODNAME(1:L2)//ETJOIN//POLNAME(1:L1)
-                POLIDX =  INDEX1( EPOLNAM, NIPPA, EANAM )
+                POLIDX =  INDEX1( POLNAME, NIPPA, EANAM )
                 IF ( POLIDX > 0) THEN
                     NPOLS = 1
                     NLPOLS(1) = POLIDX
-                END IF
-                IF (  NPOLS < 1 ) THEN
+                ELSE 
                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
      &                IREC, ' of control factor file because ' //
-     &                TRIM(EPOLNAM)// ' is not in the pollutant list.'
+     &                TRIM(POLNAME)// ' is not in the pollutant list.'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -331,24 +293,24 @@ C.............  Check pollutant name and mode
 
 C.............  Check month values
             NMONS = 0
-            IF( SEGMENT( 5 ) == ' ' ) SEGMENT( 5 ) = '0'
-            IF( STR2INT( SEGMENT( 5 ) ) == 0 ) THEN 
+            IF( SEGMENT( 4 ) == ' ' ) SEGMENT( 4 ) = '0'
+            IF( STR2INT( SEGMENT( 4 ) ) == 0 ) THEN 
                 NMONS = 12
                 DO J = 1, NMONS
                     NLMONS( J ) = J
                 END DO
-            ELSE IF ( .NOT. CHKINT( SEGMENT( 5 ) ) ) THEN
+            ELSE IF ( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Bad month format '
-     &               //TRIM(SEGMENT(5))// ' at line', IREC
+     &               //TRIM(SEGMENT(4))// ' at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
             ELSE         ! month is integer value 
-                MON = STR2INT( SEGMENT( 5 ) )
+                MON = STR2INT( SEGMENT( 4 ) )
                 IF( MON < 1  .OR. MON > 12 ) THEN 
                     EFLAG = .TRUE.
                     WRITE( MESG, 94010 ) 'ERROR: Can not process month '
-     &                   //TRIM(SEGMENT(5))// ' at line', IREC
+     &                   //TRIM(SEGMENT(4))// ' at line', IREC
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -360,7 +322,7 @@ C.............  check no of fips/scc/poll/mon
             IF( NFIPS < 1 .OR. NSCCS < 1 .OR. NPOLS < 1 .OR. NMONS < 1 )  CYCLE
                 
 C.............  check and get up control factor values
-            IF ( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
+            IF ( .NOT. CHKREAL( SEGMENT( 5 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Bad contol factor value'//
      &            ' at line', IREC
@@ -368,7 +330,7 @@ C.............  check and get up control factor values
                 CYCLE
             END IF
  
-            CFVAL = STR2REAL( SEGMENT( 6 ) )                
+            CFVAL = STR2REAL( SEGMENT( 5 ) )                
 
             DO L = 1, NFIPS
             DO J = 1, NSCCS

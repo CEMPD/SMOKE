@@ -41,13 +41,11 @@ C.........  This module is used for reference county information
         USE MODMBSET, ONLY: MCREFIDX
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR,
-     &                       EMPROCIDX, EMPOLIDX, 
-     &                       NHAP, HAPNAM,
+        USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR, EMPOLIDX,
      &                       NEMTEMPS, EMTEMPS, RPDEMFACS
 
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: NSMATV, TSVDESC
+        USE MODMERGE, ONLY: NSMATV, TSVDESC, NMSPC, NIPPA, EMNAM, EANAM
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC
@@ -76,16 +74,15 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: MONTH        ! current processing month
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: NNONPOL = 9   ! number of non-pollutant fields in file
+        INTEGER, PARAMETER :: NNONPOL = 8   ! number of non-pollutant fields in file
 
 C...........   Local allocatable arrays
         CHARACTER(100), ALLOCATABLE :: SEGMENT( : )    ! parsed input line
         CHARACTER(30),  ALLOCATABLE :: POLNAMS( : )    ! pollutant names
-        LOGICAL,        ALLOCATABLE :: ISHAP( :,: )    ! true: process/pollutants is HAP
         LOGICAL,        ALLOCATABLE :: LINVSCC( : )    ! check inv SCC availability in lookup table
 
 C...........   Other local variables
-        INTEGER     I, J, L, LJ, L1, L2, N, P, V  ! counters and indexes
+        INTEGER     I, J, L, LJ, L1, N, P, V  ! counters and indexes
         INTEGER     IOS         ! error status
         INTEGER  :: IREC = 0    ! record counter
         INTEGER     NPOL        ! number of pollutants
@@ -93,26 +90,21 @@ C...........   Other local variables
         INTEGER     SPDBIN      ! speed bin
         INTEGER     SCCIDX
         INTEGER     TMPIDX
-        INTEGER     PROCIDX
-        INTEGER  :: TOGIDX = 0  ! index of TOG pollutant
-        
+        INTEGER     NSCC        ! no of processing SCCs
+
         REAL        TMPVAL      ! temperature value
         REAL        PTMP        ! previous temperature value
         REAL        EMVAL       ! emission factor value
-        REAL        NONHAPVAL   ! NONHAPTOG value
 
         LOGICAL     FOUND       ! true: header record was found
         LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
-        LOGICAL     UNKNOWN     ! true: emission process is unknown
         LOGICAL  :: EFLAG = .FALSE.
  
         CHARACTER(PLSLEN3)  SVBUF     ! tmp speciation name buffer
         CHARACTER(IOVLEN3)  CPOL      ! tmp pollutant buffer
-        CHARACTER(IOVLEN3)  CPROC     ! tmp process/pollutant buffer
+        CHARACTER(IOVLEN3)  CSPC      ! tmp species buffer
         CHARACTER(SCCLEN3)  TSCC      ! current SCC
         CHARACTER(SCCLEN3)  PSCC      ! previous SCC
-        CHARACTER(3)        TPROC     ! current process
-        CHARACTER(3)        PPROC     ! previous process
         
         CHARACTER(2000)     LINE          ! line buffer
         CHARACTER(100)      FILENAME      ! tmp. filename
@@ -190,20 +182,14 @@ C.................  Count number of pollutants
                 
                 END DO
                 
-                ALLOCATE( POLNAMS( NPOL + 1 ), STAT=IOS )
+                ALLOCATE( POLNAMS( NPOL ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'POLNAMS', PROGNAME )
+                POLNAMS = ''
 
 C.................  Store pollutant names                
                 DO J = 1, NPOL
                     POLNAMS( J ) = SEGMENT( NNONPOL + J )
-                    
-                    IF( SEGMENT( NNONPOL + J ) == 'TOG' ) THEN
-                        TOGIDX = J
-                    END IF
                 END DO
-
-C.................  Add NONHAPTOG to list of pollutants
-                POLNAMS( NPOL + 1 ) = 'NONHAPTOG'
 
                 EXIT
 
@@ -226,45 +212,46 @@ C.................  Add NONHAPTOG to list of pollutants
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
-        IF( TOGIDX == 0 ) THEN
-            MESG = 'ERROR: Emission factors file does not contain ' //
-     &             'data for pollutant TOG'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF
-
-C.........  Allocate HAP lookup table
-        ALLOCATE( ISHAP( MXMVSDPROCS, NPOL + 1 ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ISHAP', PROGNAME )
-        ISHAP = .FALSE.   ! array
-
 C.........  Build pollutant mapping table
-        LJ = LEN_TRIM( ETJOIN )
-        DO V = 1, NSMATV
-        
-            SVBUF = TSVDESC( V )
-            L1 = INDEX( SVBUF, ETJOIN )
-            L2 = INDEX( SVBUF, SPJOIN )
-            CPOL = TRIM( SVBUF( L1+LJ:L2-1 ) )
-            CPROC = TRIM( SVBUF( 1:L2-1 ) )
+C.........  Find emission pollutant in list of pollutants
+        DO V = 1, NIPPA 
 
-C.............  Find emission pollutant in list of pollutants
-            J = INDEX1( CPOL, NPOL + 1, POLNAMS )
+            CPOL = TRIM( EANAM( V ) )
+
+            J = INDEX1( CPOL, NPOL, POLNAMS )
             IF( J .LE. 0 ) THEN
-                MESG = 'WARNING: Emission factors file does not ' //
-     &            'contain requested pollutant ' // TRIM( CPOL )
-c                CALL M3MESG( MESG )
+                MESG = 'ERROR: Emission factors file does not ' //
+     &            'contain requested inventory pollutant '//TRIM( CPOL )
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
             ELSE
                 EMPOLIDX( V ) = J
-
-C.................  Check if process/pollutant is HAP
-                L = INDEX1( CPROC, NHAP, HAPNAM )
-                IF( L > 0 ) THEN
-                    ISHAP( EMPROCIDX( V ), EMPOLIDX( V ) ) = .TRUE.
-                END IF
 
             END IF
 
         END DO
+
+C.............  Find model species in list of pollutants
+        DO V = 1, NMSPC
+
+            CSPC = EMNAM( V )
+            J = INDEX1( CSPC, NPOL, POLNAMS )
+            IF( J .LE. 0 ) THEN
+                MESG = 'ERROR: Emission factors file does not ' //
+     &            'contain requested model species ' // TRIM( CSPC )
+                CALL M3MESG( MESG )
+                EFLAG = .TRUE.
+            ELSE
+                EMPOLIDX( NIPPA + V ) = J
+            END IF
+
+        END DO
+
+C.........  Error message
+        IF( EFLAG ) THEN
+            MESG = 'Error occurred while reading emission factors file'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Allocate memory to parse lines
         DEALLOCATE( SEGMENT )
@@ -279,9 +266,8 @@ C               all 16 speed bins.
 C             Lines are sorted by:
 C                 temperature
 C                 SCC (matching sorting of INVSCC)
-C                 emission process (matching sorting of MVSDPROCS)
 C                 speed bin
-C             Each SCC will have data for same set of emission processes, temperatures, and
+C             Each SCC will have data for same set of emission temperatures, and
 C               pollutants.
 
 C.........  Limitations:
@@ -349,13 +335,13 @@ C.............  Check that fuel month matches requested month
             END IF
             
 C.............  Check temperature value
-            IF( .NOT. CHKREAL( SEGMENT( 8 ) ) ) THEN
+            IF( .NOT. CHKREAL( SEGMENT( 7 ) ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Bad temperature value ' //
      &            'at line', IREC, 'of emission factors file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 8 ) ) )
+            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 7 ) ) )
             IF( TMPVAL .NE. PTMP ) THEN
 
 C.................  Check that temperatures are sorted
@@ -381,7 +367,7 @@ C.........  Allocate memory to store emission factors
         IF( ALLOCATED( RPDEMFACS ) ) THEN
             DEALLOCATE( RPDEMFACS )
         END IF
-        ALLOCATE( RPDEMFACS( NINVSCC, 16, NEMTEMPS, MXMVSDPROCS, NPOL + 1 ), STAT=IOS )
+        ALLOCATE( RPDEMFACS( NINVSCC, 16, NEMTEMPS, NPOL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RPDEMFACS', PROGNAME )
         RPDEMFACS = 0.  ! array
 
@@ -402,10 +388,8 @@ C.........  Read and store emission factors
         SCCIDX = 0
         PTMP = -999
         TMPIDX = 0
-        PPROC = ' '
-        PROCIDX = 0
+        NSCC = 0
         DO
-        
             READ( TDEV, 93000, END=300, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
@@ -469,40 +453,13 @@ C.........................  Emission factor SCC is not in the inventory
             END IF
             
             IF( SKIPSCC ) CYCLE
-
-C.............  Find emission process index for current line
-            TPROC = TRIM( SEGMENT( 6 ) )
-            UNKNOWN = .FALSE.
-            IF( TPROC .NE. PPROC ) THEN
-                DO
-                    PROCIDX = PROCIDX + 1
-                    IF( PROCIDX .GT. MXMVSDPROCS ) THEN
-
-C.........................  Set flag to break out of loop
-                        IF( .NOT. UNKNOWN ) THEN
-                            UNKNOWN = .TRUE.
-                        ELSE
-                            WRITE( MESG, 94010 ) 'Unknown emission process ' //
-     &                        TRIM( TPROC ) // ' in emission ' //
-     &                        'factors file at line', IREC
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                        END IF
-
-                        PROCIDX = 1
-                    END IF
-                    
-                    IF( TPROC .EQ. MVSDPROCS( PROCIDX ) ) THEN
-                        EXIT
-                    END IF
-                END DO
-                PPROC = TPROC
-            END IF
+            NSCC = NSCC + 1
 
 C.............  Set speed bin for current line            
-            SPDBIN = STR2INT( ADJUSTR( SEGMENT( 7 ) ) )
+            SPDBIN = STR2INT( ADJUSTR( SEGMENT( 6 ) ) )
 
 C.............  Set temperature index for current line            
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 8 ) ) )
+            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 7 ) ) )
             IF( TMPVAL .NE. PTMP ) THEN
                 TMPIDX = TMPIDX + 1
                 IF( TMPIDX .GT. NEMTEMPS ) THEN
@@ -517,27 +474,13 @@ C.............  Set temperature index for current line
             EMTEMPS( TMPIDX ) = TMPVAL
 
 C.............  Store emission factors for each pollutant            
-            NONHAPVAL = 0.
             DO P = 1, NPOL
-            
-                EMVAL = STR2REAL( ADJUSTR( SEGMENT( NNONPOL + P ) ) )
-                RPDEMFACS( SCCIDX, SPDBIN, TMPIDX, PROCIDX, P ) = EMVAL
-            
-C.................  Check if current process/pollutant combo is part of HAP
-                IF( P == TOGIDX ) THEN
-                    NONHAPVAL = NONHAPVAL + EMVAL
-                END IF
 
-                IF( ISHAP( PROCIDX, P ) ) THEN
-                    NONHAPVAL = NONHAPVAL - EMVAL
-                END IF
+                EMVAL = STR2REAL( ADJUSTR( SEGMENT( NNONPOL + P ) ) )
+                RPDEMFACS( SCCIDX, SPDBIN, TMPIDX, P ) = EMVAL
 
             END DO
 
-C.............  Store NONHAPTOG emission factor
-            IF( NONHAPVAL < 0. ) NONHAPVAL = 0.
-            RPDEMFACS( SCCIDX, SPDBIN, TMPIDX, PROCIDX, NPOL + 1 ) = NONHAPVAL
-        
         END DO
 
 300     CONTINUE        
@@ -550,11 +493,18 @@ C.........  Error message when inventory SCC is missing in the lookup table
                 CALL M3MESG( MESG )
             END IF
         END DO
+
+        IF( NSCC < 1 ) THEN
+            EFLAG = .TRUE.
+            MESG = 'ERROR: No inventory SCC is found in emission factors file'
+            CALL M3MSG2( MESG )
+        END IF
+
         IF( EFLAG )  CALL M3EXIT( PROGNAME, 0, 0, '', 2 )
 
         CLOSE( TDEV )
         
-        DEALLOCATE( SEGMENT, POLNAMS, ISHAP, LINVSCC )
+        DEALLOCATE( SEGMENT, POLNAMS, LINVSCC )
 
         RETURN
 

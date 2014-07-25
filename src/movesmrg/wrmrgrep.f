@@ -42,7 +42,7 @@ C.........  This module contains the major data structure and control flags
      &                      NMSPC, MEBCNY, MEBSTA, MEBSUM,
      &                      MEBSCC, MEBSTC,
      &                      MRDEV, LREPSTA, LREPCNY, LREPSCC, LREPSRC,
-     &                      EMNAM, EANAM, TOTUNIT, NMSRC, NIPPA
+     &                      EMNAM, EANAM, TOTUNIT, GRDUNIT, NMSRC, NIPPA
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD, MICNY
@@ -67,8 +67,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
         REAL            YR2DAY
+        CHARACTER(16)   MULTUNIT
 
-        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY
+        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY,
+     &              MULTUNIT
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
@@ -155,10 +157,11 @@ C.............  Initialize units and names
     
 C.............  Create units labels from species
             DO V = 1, NMSPC
+                GRDUNIT(V) = MULTUNIT( GRDUNIT( V ), 's/day' )
     
 C.................  Set names and units for output
-                L = LEN_TRIM( TOTUNIT( V ) )
-                CBUF = '[' // TOTUNIT( V )( 1:L ) // ']'
+                L = LEN_TRIM( GRDUNIT( V ) )
+                CBUF = '[' // GRDUNIT( V )( 1:L ) // ']'
     
                 MNAMES( V ) = EMNAM( V )
                 MUNITS( V ) = CBUF
@@ -451,7 +454,7 @@ C.............  Local variables
 
             CHARACTER(7)  :: CDATE
             CHARACTER(18) :: HDRBUF  = '#'
-            CHARACTER(18) :: STLABEL = '# Date ; SCC'
+            CHARACTER(18) :: STLABEL = '# Date ; SCC      '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -528,8 +531,8 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(7)  :: CDATE
-            CHARACTER(20) :: HDRBUF  = '#'
-            CHARACTER(20) :: STLABEL = '# Date ; State'
+            CHARACTER(28) :: HDRBUF  = '#'
+            CHARACTER(28) :: STLABEL = '# Date ; State              '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -614,8 +617,9 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(7)  :: CDATE
-            CHARACTER(20) :: HDRBUF  = '#'
-            CHARACTER(20) :: STLABEL = '# Date ; State ; SCC'
+            CHARACTER(39) :: HDRBUF  = '#'
+            CHARACTER(39) :: STLABEL='# Date ; State              '
+     &                           //'; SCC      '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -699,8 +703,9 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
-            CHARACTER(60) :: HDRBUF  = '#'
-            CHARACTER(60) :: STLABEL = '# Date ; FIPS ; State ; County'
+            CHARACTER(56) :: HDRBUF  = '#'
+            CHARACTER(56) :: STLABEL = '# Date ; FIPS ; State              '
+     &                           //'; County              '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -792,8 +797,9 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
-            CHARACTER(60) :: HDRBUF  = '#'
-            CHARACTER(60) :: STLABEL = '# Date ; FIPS ; State ; County ; SCC'
+            CHARACTER(67) :: HDRBUF  = '#'
+            CHARACTER(67) :: STLABEL = '# Date ; FIPS ; State              '
+     &                           //'; County             ; SCC      '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
