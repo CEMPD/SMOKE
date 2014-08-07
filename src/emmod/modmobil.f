@@ -63,6 +63,7 @@
 !.........  Aggregated SCC to full SCCs for mobile sources
         INTEGER,                         PUBLIC :: NSCCMAP
         LOGICAL,                         PUBLIC :: SCCMAPFLAG
+        LOGICAL,                         PUBLIC :: EXCLSCCFLAG
         CHARACTER(SCCLEN3), ALLOCATABLE, PUBLIC :: SCCMAPLIST ( :,: )
 
 !.........  Sorted speed profiles

@@ -51,7 +51,7 @@ C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG 
 
 C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: SCCMAPFLAG, SCCMAPLIST
+        USE MODMOBIL, ONLY: SCCMAPFLAG, SCCMAPLIST, EXCLSCCFLAG
 
         IMPLICIT NONE
 
@@ -153,6 +153,10 @@ C               number of commas found in the string.
                 MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SCCXREF',
      &                          PROGNAME )
                 CALL RDSCCMAP( MDEV ) 
+
+                MESG = 'Exclude SCCs not found in SCCXREF input file'
+                EXCLSCCFLAG = ENVYN ( 'EXCLUDE_REF_SCC_YN', MESG, .TRUE., IOS )
+
             END IF
         END IF
 

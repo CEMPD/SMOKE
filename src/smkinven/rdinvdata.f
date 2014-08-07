@@ -69,7 +69,7 @@ C.........  This module contains the lists of unique inventory information
 
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, VMTMIXA, SCCMAPFLAG, SCCMAPLIST,
-     &                      NSCCMAP
+     &                      NSCCMAP, EXCLSCCFLAG
 
         IMPLICIT NONE
 
@@ -791,8 +791,15 @@ C.............  SCC mapping loop : Mobile activity inventory use only.
             KK = 0
             NSCC = 0
             IF( SCCMAPFLAG ) THEN
+
                 KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
-                IF( KK > 0 ) NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+
+                IF( KK > 0 ) THEN
+                    NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+                ELSE
+                    IF( EXCLSCCFLAG ) CYCLE    ! drop SCCs not listed in SCCXREF file
+                END IF
+
             END IF
 
 C.............  loop over mapped SCC
