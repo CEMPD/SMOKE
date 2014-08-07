@@ -222,10 +222,9 @@ C.........  Find emission pollutant in list of pollutants
 
             J = INDEX1( CPOL, NPOL, POLNAMS )
             IF( J .LE. 0 ) THEN
-                MESG = 'ERROR: Emission factors file does not ' //
+                MESG = 'WARNING: Emission factors file does not ' //
      &            'contain requested inventory pollutant '//TRIM( CPOL )
                 CALL M3MESG( MESG )
-                EFLAG = .TRUE.
             ELSE
                 EMPOLIDX( V ) = J
 
@@ -239,10 +238,9 @@ C.............  Find model species in list of pollutants
             CSPC = EMNAM( V )
             J = INDEX1( CSPC, NPOL, POLNAMS )
             IF( J .LE. 0 ) THEN
-                MESG = 'ERROR: Emission factors file does not ' //
+                MESG = 'WARNING: Emission factors file does not ' //
      &            'contain requested model species ' // TRIM( CSPC )
                 CALL M3MESG( MESG )
-                EFLAG = .TRUE.
             ELSE
                 EMPOLIDX( NIPPA + V ) = J
             END IF
