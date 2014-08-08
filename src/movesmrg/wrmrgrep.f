@@ -203,7 +203,7 @@ C.............  Create totals as needed
                 STAIDX = MAX( FIND1( STATE, NSTATE, STATCOD ), 0 )
                 PSTATE = STATE
             END IF
-           print*,SRC,STATE,CNTYCOD(CNTYIDX),NSTATE,STAIDX,STATCOD(1)
+
             DO J = 1, NMSPC+NIPPA
                 VAL = MEBSUM( SRC,J )
                 
