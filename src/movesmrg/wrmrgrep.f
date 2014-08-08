@@ -45,7 +45,8 @@ C.........  This module contains the major data structure and control flags
      &                      EMNAM, EANAM, TOTUNIT, GRDUNIT, NMSRC, NIPPA
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD, MICNY
+        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, STATCOD, 
+     &                     CNTYNAM, CNTYCOD, MICNY
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MISCC
@@ -64,13 +65,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         ENVINT  
         INTEGER         INDEX1  
+        INTEGER         FIND1  
         CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
         REAL            YR2DAY
         CHARACTER(16)   MULTUNIT
 
         EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY,
-     &              MULTUNIT
+     &              MULTUNIT, FIND1
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
@@ -196,11 +198,12 @@ C.............  Create totals as needed
             SCCIDX  = MISCC( SRC )
         
             STATE = CNTYCOD( CNTYIDX ) / 1000
+            STATE = STATE * 1000
             IF( STATE .NE. PSTATE ) THEN
-                STAIDX = STAIDX + 1
+                STAIDX = MAX( FIND1( STATE, NSTATE, STATCOD ), 0 )
                 PSTATE = STATE
             END IF
-            
+           print*,SRC,STATE,CNTYCOD(CNTYIDX),NSTATE,STAIDX,STATCOD(1)
             DO J = 1, NMSPC+NIPPA
                 VAL = MEBSUM( SRC,J )
                 
@@ -749,8 +752,9 @@ C.............  Write county total emissions
             DO I = 1, NC
 
                 STA = CNTYCOD( I ) / 1000
+                STA = STA * 1000
                 IF( STA .NE. PSTA ) THEN
-                    N = N + 1
+                    N = MAX( FIND1( STA, NSTATE, STATCOD ), 0 ) 
                     PSTA = STA
                 END IF
 
