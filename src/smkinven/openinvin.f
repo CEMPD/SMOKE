@@ -155,7 +155,7 @@ C               number of commas found in the string.
                 CALL RDSCCMAP( MDEV ) 
 
                 MESG = 'Exclude SCCs not found in SCCXREF input file'
-                EXCLSCCFLAG = ENVYN ( 'EXCLUDE_REF_SCC_YN', MESG, .TRUE., IOS )
+                EXCLSCCFLAG = ENVYN ( 'EXCLUDE_REF_SCC_YN', MESG, .FALSE., IOS )
 
             END IF
         END IF
