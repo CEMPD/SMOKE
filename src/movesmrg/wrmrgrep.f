@@ -660,7 +660,6 @@ C.............  Write state/SCC total emissions
             DO I = 1, NSTA
 
                 DO J = 1, NSCC
-                
                     WRITE( CDATE, '(I7.7)' ) JDATE
 
 C.....................  Build output format depending on data values
@@ -840,8 +839,9 @@ C.............  Write county total emissions
             DO I = 1, NSRC
 
                 STA = CNTYCOD( MICNY( I ) ) / 1000
+                STA = STA * 1000
                 IF( STA .NE. PSTA ) THEN
-                    N = N + 1
+                    N = MAX( FIND1( STA, NSTATE, STATCOD ),0 )
                     PSTA = STA
                 END IF
 
