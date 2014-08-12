@@ -39,7 +39,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: NMSRC,            ! no. of sources by category
+        USE MODMERGE, ONLY: NMSRC, MIFIP,     ! no. of sources by category
      &                      LREPSTA,          ! output state total emissions flag
      &                      LREPCNY,          ! output county total emissions flag
      &                      LREPSCC,          ! output SCC total emissions flag
@@ -60,7 +60,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MISCC
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVSCC, INVSCC
+        USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVIFIP, INVIFIP
 
         IMPLICIT NONE
 
@@ -78,7 +78,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 C...........   Other local variables
 
         INTEGER          IOS      ! i/o status
-        INTEGER          J, S     ! counter
+        INTEGER          J, K, S  ! counter
         INTEGER          FIP      ! tmp cy/st/co code
         INTEGER          PFIP     ! previous cy/st/co code
         
@@ -100,6 +100,8 @@ C.............  Allocate memory for indices from Co/st/cy codes to counties
 C.............  Allocate memory for index from master list of SCCs to source SCC
             ALLOCATE( MISCC( NMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MISCC', PROGNAME )
+            ALLOCATE( MIFIP( NMSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MIFIP', PROGNAME )
     
 C.............  Create indices to counties from Co/st/cy codes and for SCCs
             PFIP = -9
@@ -110,12 +112,13 @@ C.............  Create indices to counties from Co/st/cy codes and for SCCs
                 IF( FIP .NE. PFIP ) THEN
                 
                     J = MAX( FIND1( FIP, NCOUNTY, CNTYCOD ), 0 )
+                    K = MAX( FIND1( FIP, NINVIFIP,INVIFIP ), 0 )
                     PFIP = FIP
                     
                 END IF
                 
                 MICNY( S ) = J
-                
+                MIFIP( S ) = K 
                 MISCC( S ) = MAX( FINDC( CSCC( S ), NINVSCC, INVSCC ), 0 )
                 
             END DO

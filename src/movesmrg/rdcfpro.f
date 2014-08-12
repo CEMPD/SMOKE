@@ -38,7 +38,8 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY:  NIPPA, EANAM
+        USE MODMERGE, ONLY:  NIPPA, EANAM, NMSPC, EMNAM, NSMATV,
+     &                       TSVDESC
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: CFPRO
@@ -90,7 +91,8 @@ C...........   Other local variables
         INTEGER         NPOLS       ! total matched POL 
         INTEGER         NMONS       ! total matched POL 
         INTEGER         POLIDX      ! current POL index
-        INTEGER         SCCIDX      ! current POL index
+        INTEGER         SPCIDX      ! current species index
+        INTEGER         SCCIDX      ! current scc index
         INTEGER         NLINES      ! number of lines
         INTEGER         CNTY        ! current FIPS code
         INTEGER         MON         ! current Month
@@ -108,11 +110,11 @@ C...........   Other local variables
         CHARACTER(500)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
         CHARACTER(SCCLEN3) SCC      ! current SCC
-        CHARACTER(IOVLEN3) POLNAME  ! current pollutant name 
+        CHARACTER(IOVLEN3) POLNAM, SPCNAM  ! current pollutant-species name 
 
         INTEGER     NLFIPS(NINVIFIP)      ! FIPS matched
         INTEGER     NLSCCS(NINVSCC)       ! SCC matched
-        INTEGER     NLPOLS(NIPPA)        ! POL matched
+        INTEGER     NLPOLS(NIPPA+NMSPC)        ! POL matched
         INTEGER     NLMONS(12)        ! POL matched
 
         CHARACTER(16) :: PROGNAME = 'RDCFPRO'   ! program name
@@ -124,9 +126,9 @@ C.........  Get maximum number of warnings
         MXWARN = ENVINT( WARNSET, ' ', 100, IOS );
 
 C.........  Allocate storage based on number of FIPs and SCCs in inventory
-        ALLOCATE( CFPRO( NINVIFIP, NINVSCC, NIPPA, 12 ), STAT=IOS )
+        ALLOCATE( CFPRO( NINVIFIP, NINVSCC, NIPPA+NMSPC, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFPRO', PROGNAME )
-        ALLOCATE( CFLAG( NINVIFIP, NINVSCC, NIPPA, 12 ), STAT=IOS )
+        ALLOCATE( CFLAG( NINVIFIP, NINVSCC, NIPPA+NMSPC, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFLAG', PROGNAME )
         CFPRO = 1.0   ! array
         CFLAG = .FALSE.   ! array
@@ -269,23 +271,33 @@ C.............  Find SCC in inventory list
             END IF
 
 C.............  Check pollutant name and mode
-            POLNAME = ADJUSTL( SEGMENT( 3 ) )
+            POLNAM = ADJUSTL( SEGMENT( 3 ) )
             K = 0
             IF( SEGMENT( 3 ) == ' ' ) THEN
-                NPOLS  = NIPPA
-                DO J = 1, NIPPA
-                    NLPOLS(J) =  J
+                NPOLS  = NIPPA+NMSPC
+                DO J = 1, NPOLS
+                    NLPOLS( J ) =  J
                 END DO
             ELSE 
-                L1 =  LEN_TRIM(POLNAME)
-                POLIDX =  INDEX1( POLNAME, NIPPA, EANAM )
+                NPOLS = 0
+                POLIDX =  INDEX1( POLNAM, NIPPA, EANAM )
                 IF ( POLIDX > 0) THEN
-                    NPOLS = 1
-                    NLPOLS(1) = POLIDX
+                    NPOLS = NPOLS + 1 
+                    NLPOLS( NPOLS ) = POLIDX
+                    DO J = 1, NSMATV
+                        L1 = INDEX( TSVDESC( J ), SPJOIN )
+                        L2 = LEN_TRIM( TSVDESC( J ) )
+                        IF( POLNAM == TSVDESC( J )( 1:L1-1 ) ) THEN
+                            SPCNAM = TSVDESC( J )( L1+1:L2 )
+                            SPCIDX  = INDEX1( SPCNAM, NMSPC, EMNAM )
+                            NPOLS = NPOLS + 1
+                            NLPOLS( NPOLS ) = NIPPA + SPCIDX
+                        END IF
+                    END DO   ! end of poll-species loop
                 ELSE 
                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
      &                IREC, ' of control factor file because ' //
-     &                TRIM(POLNAME)// ' is not in the pollutant list.'
+     &                TRIM(POLNAM)// ' is not in the pollutant list.'
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -337,14 +349,15 @@ C.............  check and get up control factor values
             DO K = 1, NPOLS
             DO M = 1, NMONS
                 DUFLAG = CFLAG(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
-                IF( DUFLAG ) THEN
+                OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
+                IF( DUFLAG .AND. OLDVAL .NE. CFVAL ) THEN
                     OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
-                    WRITE( MESG, 94050 ) 'WARNING: Duplicate entry at line',
-     &                  IREC,': Overwriting factor from ', OLDVAL, ' to ', CFVAL,
+                    WRITE( MESG, 94050 ) 'ERROR: Duplicate entry at line',
+     &                  IREC,': Previous factor:', OLDVAL, ' vs New factor:', CFVAL,
      &                  CRLF() // BLANK10 // ' FIPS:', INVIFIP(NLFIPS(L)), 
      &                  ', SCC: ', INVSCC(NLSCCS(J)), ', POLL: ',
      &                  TRIM( EANAM(NLPOLS(K))), ', MONTH: ', NLMONS(M)
-                    CALL M3MESG( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
                END IF
                CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = CFVAL
                CFLAG(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = .TRUE.

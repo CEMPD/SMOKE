@@ -47,7 +47,7 @@ C.........  This module contains the major data structure and control flags
      &          CDEV,                              ! costcy
      &          MGNAME, MTNAME, MONAME,            ! input files
      &          NMSRC, MNGMAT, MGMATX,             ! no. of srcs, no. gridding matrix entries
-     &          NMSPC,                             ! no. species
+     &          NMSPC, MIFIP,                      ! no. species
      &          EMNAM,                             ! species names
      &          TSVDESC,                           ! var names
      &          SIINDEX, SPINDEX,                  ! EANAM & EMNAM idx
@@ -563,7 +563,7 @@ C.....................  Determine speed bins for source
                     IF( RPDFLAG ) THEN
                         SPEEDVAL = BADVAL3
                         IF( SPDFLAG ) THEN
-                            SPEEDVAL = SPDPRO( MICNY( SRC ), SCCIDX, DAYIDX, HOURIDX )
+                            SPEEDVAL = SPDPRO( MIFIP( SRC ), SCCIDX, DAYIDX, HOURIDX )
                         END IF
 
 C.........................  Fall back to inventory speed if hourly speed isn't available
@@ -689,7 +689,7 @@ C                             OO - both min and max profile temps are over count
                             MINTVAL = MINTEMP( CELL )
                             MAXTVAL = MAXTEMP( CELL )
 
-C.............................  MICNY(SRC) and maxmum values within the index
+C.............................  MIFIP(SRC) and maxmum values within the index
                             IF ( (MINTVAL .LT. EMTEMPS( EMTEMPIDX( 1 ) ) )  
      &                          .AND. (MINTVAL .GE. (EMTEMPS( EMTEMPIDX( 1 ) ) - TEMPBIN )) ) THEN
                                 IF( NWARN < MXWARN ) THEN
@@ -902,11 +902,12 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                                 CPOL  = EANAM( V )  ! pollutant
                                 CSPC  = ''
                                 SIIDX = INDEX1( CPOL, NIPPA, EANAM )
-                                IF( CFFLAG ) CFFAC = CFPRO(MICNY(SRC), SCCIDX, SIIDX, MONTH )
+                                IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, SIIDX, MONTH )
                             ELSE
                                 CPOL  = ''
                                 CSPC  = EMNAM( V - NIPPA )  ! pollutant
                                 SPIDX = INDEX1( CSPC, NMSPC, EMNAM )
+                                IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, NIPPA+SPIDX, MONTH )
                             END IF
 
 C.............................  Check if emission factors exist for this process/pollutant
@@ -1019,7 +1020,7 @@ C                               not by applying 1/3600 factor (hr to sec)
                                     IF( SPIDX > 0 ) THEN
                                        MEBSUM( SRC,SPIDX ) = MEBSUM( SRC,SPIDX ) + 
      &                                                       EMVAL
-                                    ELSE
+                                    ELSE   ! sum of inv emission in unit of tons/hr 
                                        F2 = TOTFAC( NMSPC+SIIDX )
                                        MEBSUM( SRC,NMSPC+SIIDX ) =
      &                                      MEBSUM( SRC,NMSPC+SIIDX ) + EMVAL * F2 
