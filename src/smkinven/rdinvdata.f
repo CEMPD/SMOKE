@@ -521,286 +521,282 @@ C           (will change if format is IDA or mobile EMS)
 C.........  Loop through inventory files and read data
         DO
         
-            READ( FDEV, 93000, IOSTAT=IOS ) LINE
+          READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
-            IREC = IREC + 1
+          IREC = IREC + 1
             
-            IF( IOS > 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'I/O error', IOS,
-     &             'reading inventory file at line', IREC
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
+          IF( IOS > 0 ) THEN
+              EFLAG = .TRUE.
+              WRITE( MESG,94010 ) 'I/O error', IOS,
+     &           'reading inventory file at line', IREC
+              CALL M3MESG( MESG )
+              CYCLE
+          END IF
             
-C.............  Check if we've reached the end of the file            
-            IF( IOS < 0 ) THEN
+C...........  Check if we've reached the end of the file            
+          IF( IOS < 0 ) THEN
 
-C.................  If list format, try to open next file
-                IF( LSTFLG ) THEN
+C...............  If list format, try to open next file
+              IF( LSTFLG ) THEN
 
-C.....................  Close current file and reset counter
-                    CLOSE( FDEV )
-                    IREC = 0
+C...................  Close current file and reset counter
+                  CLOSE( FDEV )
+                  IREC = 0
 
-C.....................  Advance to next file
-                    IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-                        CURFIL = CURFIL + 4
-                    ELSE                    
-                        CURFIL = CURFIL + 1
-                    END IF
+C...................  Advance to next file
+                  IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
+                      CURFIL = CURFIL + 4
+                  ELSE                    
+                      CURFIL = CURFIL + 1
+                  END IF
 
-C.....................  Check if there are more files to read
-                    IF( CURFIL <= NLINE ) THEN 
-                        LINE = LSTSTR( CURFIL )
+C...................  Check if there are more files to read
+                  IF( CURFIL <= NLINE ) THEN 
+                      LINE = LSTSTR( CURFIL )
 
-C.........................  Check for #LIST line
-                        IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
-                            CURFIL = CURFIL + 1  ! move to next file in list
-                            LINE = LSTSTR( CURFIL )
-                        END IF
+C.......................  Check for #LIST line
+                      IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
+                          CURFIL = CURFIL + 1  ! move to next file in list
+                          LINE = LSTSTR( CURFIL )
+                      END IF
 
-C.........................  Check for INVYEAR packet                
-                        IF( GETINVYR( LINE ) > 0 ) THEN
-                            LSTYR = GETINVYR( LINE )
-                            CURFIL = CURFIL + 1  ! more to next file in list
-                        END IF
+C.......................  Check for INVYEAR packet                
+                      IF( GETINVYR( LINE ) > 0 ) THEN
+                          LSTYR = GETINVYR( LINE )
+                          CURFIL = CURFIL + 1  ! more to next file in list
+                      END IF
 
-C.........................  Advance to emission file for EMS point
-                        IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-                            CURFIL = CURFIL + 1
-                        END IF
+C.......................  Advance to emission file for EMS point
+                      IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
+                          CURFIL = CURFIL + 1
+                      END IF
 
-C.........................  Make sure there are still files to read                            
-                        IF( CURFIL > NLINE ) THEN
-                            LSTTIME = .TRUE.
-                            EXIT
-                        END IF
+C.......................  Make sure there are still files to read                            
+                      IF( CURFIL > NLINE ) THEN
+                          LSTTIME = .TRUE.
+                          EXIT
+                      END IF
                          
-                        INFILE = LSTSTR( CURFIL )
+                      INFILE = LSTSTR( CURFIL )
             
-                        OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
-     &                        IOSTAT=IOS )
+                      OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
+     &                      IOSTAT=IOS )
                 
-C.........................  Check for errors while opening file
-                        IF( IOS /= 0 ) THEN
-                    
-                            WRITE( MESG,94010 ) 'Problem at line ', 
-     &                         CURFIL, 'of ' // TRIM( FNAME ) // 
-     &                         '.' // ' Could not open file:' //
-     &                         CRLF() // BLANK5 // TRIM( INFILE ) 
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.......................  Check for errors while opening file
+                      IF( IOS /= 0 ) THEN
+                          WRITE( MESG,94010 ) 'Problem at line ', 
+     &                       CURFIL, 'of ' // TRIM( FNAME ) // 
+     &                       '.' // ' Could not open file:' //
+     &                       CRLF() // BLANK5 // TRIM( INFILE ) 
+                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             
-                        ELSE
-                            WRITE( MESG,94010 ) 
-     &                        'Successful OPEN for ' //
-     &                        'inventory file(s):' // CRLF() // 
-     &                        BLANK5 // TRIM( INFILE )
-                            CALL M3MSG2( MESG ) 
+                      ELSE
+                          WRITE( MESG,94010 ) 
+     &                      'Successful OPEN for ' //
+     &                      'inventory file(s):' // CRLF() // 
+     &                      BLANK5 // TRIM( INFILE )
+                          CALL M3MSG2( MESG ) 
             
-                        END IF
+                      END IF
 
-C.........................  Set default inventory characteristics that depend on file format
-                        CALL INITINFO( FILFMT( CURFIL ) )
-                        CURFMT = FILFMT( CURFIL )
+C.......................  Set default inventory characteristics that depend on file format
+                      CALL INITINFO( FILFMT( CURFIL ) )
+                      CURFMT = FILFMT( CURFIL )
 
-C.........................  Reallocate memory to store emissions from a single line
-                        DEALLOCATE( READDATA, READPOL )
-                        ALLOCATE( READDATA( 1,NPPOL ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
-                        ALLOCATE( READPOL( 1 ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
-                        SAVNVAR = 1
+C.......................  Reallocate memory to store emissions from a single line
+                      DEALLOCATE( READDATA, READPOL )
+                      ALLOCATE( READDATA( 1,NPPOL ), STAT=IOS )
+                      CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
+                      ALLOCATE( READPOL( 1 ), STAT=IOS )
+                      CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
+                      SAVNVAR = 1
 
-C.........................  Skip back to the beginning of the loop
-                        CYCLE
+C.......................  Skip back to the beginning of the loop
+                      CYCLE
               
-C.....................  Otherwise, no more files to read, so exit
-                    ELSE
-                        LSTTIME = .TRUE.
-                        EXIT
-                    END IF
+C...................  Otherwise, no more files to read, so exit
+                  ELSE
+                      LSTTIME = .TRUE.
+                      EXIT
+                  END IF
 
-C.................  Otherwise, not a list file, so exit
-                ELSE
-                    LSTTIME = .TRUE.
-                    EXIT
-                END IF
+C...............  Otherwise, not a list file, so exit
+              ELSE
+                  LSTTIME = .TRUE.
+                  EXIT
+              END IF
              
-            END IF   ! end check for end of file
+          END IF   ! end check for end of file
 
-C.............  Skip blank lines
-            IF( LINE == ' ' ) CYCLE
-            EXTORL = ' '
-C.............  Process line depending on file format and source category
-            SELECT CASE( CURFMT )
-            CASE( IDAFMT )
-                SELECT CASE( CATEGORY )
-                CASE( 'AREA' )
-                    CALL RDDATAIDAAR( LINE, READDATA, READPOL, 
-     &                                NPOLPERLN, INVYEAR, HDRFLAG, 
-     &                                EFLAG )
-                CASE( 'MOBILE' )
-                    CALL RDDATAIDAMB( LINE, READDATA, READPOL,
-     &                                NPOLPERLN, INVYEAR, HDRFLAG,
-     &                                EFLAG )
-                    LNKFLAG = .FALSE.   ! no links in IDA format
-                CASE( 'POINT' )
-                    CALL RDDATAIDAPT( LINE, READDATA, READPOL, 
-     &                                NPOLPERLN, INVYEAR, CORS, BLID, 
-     &                                DESC, HT, DM, TK, FL, VL, SIC,
-     &                                LAT, LON, HDRFLAG, EFLAG )
-                END SELECT
+C...........  Skip blank lines
+          IF( LINE == ' ' ) CYCLE
+          EXTORL = ' '
+C...........  Process line depending on file format and source category
+          SELECT CASE( CURFMT )
+          CASE( IDAFMT )
+              SELECT CASE( CATEGORY )
+              CASE( 'AREA' )
+                  CALL RDDATAIDAAR( LINE, READDATA, READPOL, 
+     &                              NPOLPERLN, INVYEAR, HDRFLAG, 
+     &                              EFLAG )
+              CASE( 'MOBILE' )
+                  CALL RDDATAIDAMB( LINE, READDATA, READPOL,
+     &                              NPOLPERLN, INVYEAR, HDRFLAG,
+     &                              EFLAG )
+                  LNKFLAG = .FALSE.   ! no links in IDA format
+              CASE( 'POINT' )
+                  CALL RDDATAIDAPT( LINE, READDATA, READPOL, 
+     &                              NPOLPERLN, INVYEAR, CORS, BLID, 
+     &                              DESC, HT, DM, TK, FL, VL, SIC,
+     &                              LAT, LON, HDRFLAG, EFLAG )
+              END SELECT
 
-            CASE( EMSFMT )
-                SELECT CASE( CATEGORY )
-                CASE( 'AREA' )
-                    CALL RDDATAEMSAR( LINE, READDATA, READPOL,
-     &                                NPOLPERLN, INVYEAR, TIMEPERIOD, 
-     &                                HDRFLAG, EFLAG )
-                CASE( 'MOBILE' )
-C.....................  Need to read source information to match with VMTMIX file
-                    CALL RDDATAEMSMB( LINE, READDATA, READPOL,
-     &                                NPOLPERLN, INVYEAR, X1, Y1,
-     &                                X2, Y2, ZONE, LNKFLAG, CFIP,
-     &                                CROAD, CLNK, HDRFLAG, EFLAG )
-                    TIMEPERIOD = 'AD'   ! all mobile data is average annual weekday
-                CASE( 'POINT' )
-                    CALL RDDATAEMSPT( LINE, READDATA, READPOL,
-     &                                NPOLPERLN, TIMEPERIOD, 
-     &                                HDRFLAG, EFLAG )
-                END SELECT
+          CASE( EMSFMT )
+              SELECT CASE( CATEGORY )
+              CASE( 'AREA' )
+                  CALL RDDATAEMSAR( LINE, READDATA, READPOL,
+     &                              NPOLPERLN, INVYEAR, TIMEPERIOD, 
+     &                              HDRFLAG, EFLAG )
+              CASE( 'MOBILE' )
+C...................  Need to read source information to match with VMTMIX file
+                  CALL RDDATAEMSMB( LINE, READDATA, READPOL,
+     &                              NPOLPERLN, INVYEAR, X1, Y1,
+     &                              X2, Y2, ZONE, LNKFLAG, CFIP,
+     &                              CROAD, CLNK, HDRFLAG, EFLAG )
+                  TIMEPERIOD = 'AD'   ! all mobile data is average annual weekday
+              CASE( 'POINT' )
+                  CALL RDDATAEMSPT( LINE, READDATA, READPOL,
+     &                              NPOLPERLN, TIMEPERIOD, 
+     &                              HDRFLAG, EFLAG )
+              END SELECT
 
-            CASE( FF10FMT )
-                SELECT CASE( CATEGORY )
-                CASE( 'AREA' )
-                    CALL RDDATAFF10AR( LINE, READDATA, READPOL, INVYEAR,
-     &                        SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
-                    NPOLPERLN = 1   ! have to set fake value to force reporting
+          CASE( FF10FMT )
+              SELECT CASE( CATEGORY )
+              CASE( 'AREA' )
+                  CALL RDDATAFF10AR( LINE, READDATA, READPOL, INVYEAR,
+     &                      SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
+                  NPOLPERLN = 1   ! have to set fake value to force reporting
 
-                CASE( 'MOBILE' )
-                    CALL RDDATAFF10MB( LINE, READDATA, READPOL, INVYEAR,
-     &                    SRCTYP, TSCC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
-                    NPOLPERLN = 1
-                    LNKFLAG = .FALSE.
+              CASE( 'MOBILE' )
+                  CALL RDDATAFF10MB( LINE, READDATA, READPOL, INVYEAR,
+     &                  SRCTYP, TSCC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
+                  NPOLPERLN = 1
+                  LNKFLAG = .FALSE.
 
-                CASE( 'POINT' )
-                    CALL RDDATAFF10PT( LINE, READDATA, READPOL,
-     &                                INVYEAR, DESC, ERPTYP, SRCTYP,
-     &                                HT, DM, TK, FL, VL, SIC, MACT,
-     &                                NAICS, CTYPE, LAT, LON, ZONE,
-     &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
-     &                                AVEFLAG, EFLAG )
-                    NPOLPERLN = 1
+              CASE( 'POINT' )
+                  CALL RDDATAFF10PT( LINE, READDATA, READPOL,
+     &                               INVYEAR, DESC, ERPTYP, SRCTYP,
+     &                               HT, DM, TK, FL, VL, SIC, MACT,
+     &                               NAICS, CTYPE, LAT, LON, ZONE,
+     &                               NEID, CORS, BLID, EXTORL, HDRFLAG,
+     &                               AVEFLAG, EFLAG )
+                  NPOLPERLN = 1
 
-                END SELECT
+              END SELECT
 
-            CASE( MEDSFMT )
-                SELECT CASE( CATEGORY )
-                CASE( 'POINT' )
-                    CALL RDDATAMEDSPT( LINE, READDATA, READPOL,
-     &                                NPOLPERLN, INVYEAR, CORS, BLID,
-     &                                DESC, HT, DM, TK, FL, VL, SIC,
-     &                                LAT, LON, HDRFLAG, EFLAG )
-                END SELECT
+          CASE( MEDSFMT )
+              SELECT CASE( CATEGORY )
+              CASE( 'POINT' )
+                  CALL RDDATAMEDSPT( LINE, READDATA, READPOL,
+     &                              NPOLPERLN, INVYEAR, CORS, BLID,
+     &                              DESC, HT, DM, TK, FL, VL, SIC,
+     &                              LAT, LON, HDRFLAG, EFLAG )
+              END SELECT
 
-            CASE( ORLFMT )
-                SELECT CASE( CATEGORY )
-                CASE( 'AREA' )
-                    CALL RDDATAORLAR( LINE, READDATA, READPOL, INVYEAR,
-     &                                SRCTYP, EXTORL, HDRFLAG, EFLAG )
-                    NPOLPERLN = 1   ! have to set fake value to force reporting
+          CASE( ORLFMT )
+              SELECT CASE( CATEGORY )
+              CASE( 'AREA' )
+                  CALL RDDATAORLAR( LINE, READDATA, READPOL, INVYEAR,
+     &                              SRCTYP, EXTORL, HDRFLAG, EFLAG )
+                  NPOLPERLN = 1   ! have to set fake value to force reporting
 
-                CASE( 'MOBILE' )
-                    CALL RDDATAORLMB( LINE, READDATA, READPOL, INVYEAR,
-     &                           SRCTYP, TSCC, EXTORL, HDRFLAG, EFLAG )
-                    NPOLPERLN = 1
-                    LNKFLAG = .FALSE.
+              CASE( 'MOBILE' )
+                  CALL RDDATAORLMB( LINE, READDATA, READPOL, INVYEAR,
+     &                         SRCTYP, TSCC, EXTORL, HDRFLAG, EFLAG )
+                  NPOLPERLN = 1
+                  LNKFLAG = .FALSE.
 
-                CASE( 'POINT' )
-                    CALL RDDATAORLPT( LINE, READDATA, READPOL,
-     &                                INVYEAR, DESC, ERPTYP, SRCTYP, 
-     &                                HT, DM, TK, FL, VL, SIC, MACT, 
-     &                                NAICS, CTYPE, LAT, LON, ZONE,
-     &                                NEID, CORS, BLID, EXTORL, HDRFLAG,
-     &                                EFLAG )
-                    NPOLPERLN = 1
-                END SELECT
+              CASE( 'POINT' )
+                  CALL RDDATAORLPT( LINE, READDATA, READPOL,
+     &                              INVYEAR, DESC, ERPTYP, SRCTYP, 
+     &                              HT, DM, TK, FL, VL, SIC, MACT, 
+     &                              NAICS, CTYPE, LAT, LON, ZONE,
+     &                              NEID, CORS, BLID, EXTORL, HDRFLAG,
+     &                              EFLAG )
+                  NPOLPERLN = 1
+              END SELECT
 
-            CASE( ORLNPFMT )
-                CALL RDDATAORLNP( LINE, READDATA, READPOL, INVYEAR,
-     &                            SIC, MACT, SRCTYP, NAICS, EXTORL, 
-     &                            HDRFLAG, EFLAG )
+          CASE( ORLNPFMT )
+              CALL RDDATAORLNP( LINE, READDATA, READPOL, INVYEAR,
+     &                          SIC, MACT, SRCTYP, NAICS, EXTORL, 
+     &                          HDRFLAG, EFLAG )
 
-            CASE( ORLFIREFMT )
-                CALL RDDATAORLFR( LINE, READDATA, READPOL, 
-     &                            NPOLPERLN, INVYEAR, DESC, SIC, MACT,
-     &                            CTYPE, LAT, LON, HDRFLAG, EFLAG)
-            END SELECT
+          CASE( ORLFIREFMT )
+              CALL RDDATAORLFR( LINE, READDATA, READPOL, 
+     &                          NPOLPERLN, INVYEAR, DESC, SIC, MACT,
+     &                          CTYPE, LAT, LON, HDRFLAG, EFLAG)
+          END SELECT
             
-C.............  Check for header lines
-            IF( HDRFLAG ) THEN 
+C...........  Check for header lines
+          IF( HDRFLAG ) THEN 
 
-C.................  If IDA or mobile EMS format, reallocate emissions memory with
-C                   proper number of pollutants per line
-                IF( ( CURFMT == IDAFMT .OR. CURFMT == MEDSFMT .OR.
-     &              ( CURFMT == EMSFMT .AND. CATEGORY == 'MOBILE' ) .OR.
-     &                CURFMT == ORLFIREFMT )
-     &                .AND. NPOLPERLN .NE. SAVNVAR ) THEN
-                    DEALLOCATE( READDATA, READPOL )
-                    ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
-                    ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
-                    SAVNVAR = NPOLPERLN
-                END IF
+C...............  If IDA or mobile EMS format, reallocate emissions memory with
+C                 proper number of pollutants per line
+              IF( ( CURFMT == IDAFMT .OR. CURFMT == MEDSFMT .OR.
+     &            ( CURFMT == EMSFMT .AND. CATEGORY == 'MOBILE' ) .OR.
+     &              CURFMT == ORLFIREFMT )
+     &              .AND. NPOLPERLN .NE. SAVNVAR ) THEN
+                  DEALLOCATE( READDATA, READPOL )
+                  ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
+                  CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
+                  ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
+                  CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
+                  SAVNVAR = NPOLPERLN
+              END IF
 
-C.................  Calculate day to year conversion factor
-                IF( INVYEAR /= 0 ) THEN
-                    IF( LSTYR > 0 .AND. INVYEAR /= LSTYR ) THEN
-                        WRITE( MESG,94010 ) 'NOTE: Using year', LSTYR,
-     &                         'from list file, and not year', INVYEAR,
-     &                         'from inventory file.'
-                        CALL M3MSG2( MESG )
+C...............  Calculate day to year conversion factor
+              IF( INVYEAR /= 0 ) THEN
+                  IF( LSTYR > 0 .AND. INVYEAR /= LSTYR ) THEN
+                      WRITE( MESG,94010 ) 'NOTE: Using year', LSTYR,
+     &                       'from list file, and not year', INVYEAR,
+     &                       'from inventory file.'
+                      CALL M3MSG2( MESG )
                         
-                        INVYEAR = LSTYR
-                    END IF
+                      INVYEAR = LSTYR
+                  END IF
                     
-                    YEAR2DAY = YR2DAY( INVYEAR )
-                    DAY2YR = 1. / YEAR2DAY
-                END IF
+                  YEAR2DAY = YR2DAY( INVYEAR )
+                  DAY2YR = 1. / YEAR2DAY
+              END IF
                 
-                CYCLE
-            END IF
+              CYCLE
+          END IF
 
-C.............  Set inventory year in case there are no header lines
-            IF( INVYEAR == 0 .OR.
-     &        ( LSTYR > 0 .AND. INVYEAR /= LSTYR ) ) THEN
-                INVYEAR = LSTYR
+C...........  Set inventory year in case there are no header lines
+          IF( INVYEAR == 0 .OR.
+     &      ( LSTYR > 0 .AND. INVYEAR /= LSTYR ) ) THEN
+              INVYEAR = LSTYR
                 
-                YEAR2DAY = YR2DAY( INVYEAR )
-                DAY2YR = 1. / YEAR2DAY
-            END IF
+              YEAR2DAY = YR2DAY( INVYEAR )
+              DAY2YR = 1. / YEAR2DAY
+          END IF
 
-C.............  Make sure some emissions are kept for this source
-            IF( NPOLPERLN == 0 ) THEN
-                CYCLE
-            END IF
+C...........  Make sure some emissions are kept for this source
+          IF( NPOLPERLN == 0 ) THEN
+              CYCLE
+          END IF
 
-C.............  SCC mapping loop : Mobile activity inventory use only.
-            KK = 0
-            NSCC = 0
-            IF( SCCMAPFLAG ) THEN
-
-                KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
-
-                IF( KK > 0 ) THEN
-                    NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
-                ELSE
-                    IF( EXCLSCCFLAG ) CYCLE    ! drop SCCs not listed in SCCXREF file
-                END IF
-
-            END IF
+C...........  SCC mapping loop : Mobile activity inventory use only.
+          KK = 0
+          NSCC = 0
+          IF( SCCMAPFLAG ) THEN
+              KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
+              IF( KK > 0 ) THEN
+                  NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+              ELSE
+                  IF( EXCLSCCFLAG ) CYCLE    ! drop SCCs not listed in SCCXREF file
+              END IF
+          END IF
 
 C.............  loop over mapped SCC
           DO JJ = 0, NSCC

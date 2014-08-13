@@ -449,240 +449,237 @@ C.........  Open scratch file for writing record numbers
 C.........  Loop over files and multiples of MXRECS
         DO
 
-C.............  Reset counters        
-            S = 0       ! source number
-            ISTREC= 0   ! number of records stored
+C...........  Reset counters        
+          S = 0       ! source number
+          ISTREC= 0   ! number of records stored
 
-C.............  Loop through records in current file
-            DO
-                IF( ISTREC == MXRECS ) EXIT
+C...........  Loop through records in current file
+          DO
+              IF( ISTREC == MXRECS ) EXIT
               
-                READ( FDEV, 93000, IOSTAT=IOS ) LINE
+              READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
-                IREC = IREC + 1          
-                IF( IOS > 0 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'I/O error', IOS,
-     &                 'reading inventory file at line', IREC
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
+              IREC = IREC + 1          
+              IF( IOS > 0 ) THEN
+                  EFLAG = .TRUE.
+                  WRITE( MESG, 94010 ) 'I/O error', IOS,
+     &               'reading inventory file at line', IREC
+                  CALL M3MESG( MESG )
+                  CYCLE
+              END IF
 
-C.................  Check if we've reached the end of the file            
-                IF( IOS < 0 ) THEN
+C...............  Check if we've reached the end of the file            
+              IF( IOS < 0 ) THEN
 
-C.....................  If list format, try to open next file
-                    IF( INVFMT == LSTFMT ) THEN
+C...................  If list format, try to open next file
+                  IF( INVFMT == LSTFMT ) THEN
 
-C.........................  Close current file and reset counter
-                        CLOSE( FDEV )
-                        IREC = 0
+C.......................  Close current file and reset counter
+                      CLOSE( FDEV )
+                      IREC = 0
 
-C.........................  Advance to next file
-                        IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-                            CURFIL = CURFIL + 4
-                        ELSE                    
-                            CURFIL = CURFIL + 1
-                        END IF
+C.......................  Advance to next file
+                      IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
+                          CURFIL = CURFIL + 4
+                      ELSE                    
+                          CURFIL = CURFIL + 1
+                      END IF
 
-C.........................  Check if there are more files to read
-                        IF( CURFIL <= NLINE ) THEN 
-                            LINE = LSTSTR( CURFIL )
+C.......................  Check if there are more files to read
+                      IF( CURFIL <= NLINE ) THEN 
+                          LINE = LSTSTR( CURFIL )
 
-C.............................  Check for #LIST line
-                            IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
-                                CURFIL = CURFIL + 1  ! move to next file in list
-                            END IF
+C...........................  Check for #LIST line
+                          IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
+                              CURFIL = CURFIL + 1  ! move to next file in list
+                          END IF
 
-C.............................  Make sure current line is not INVYEAR packet                    
-                            IF( GETINVYR( LINE ) > 0 ) THEN
-                                CURFIL = CURFIL + 1  ! move to next file in list
-                            END IF
+C...........................  Make sure current line is not INVYEAR packet                    
+                          IF( GETINVYR( LINE ) > 0 ) THEN
+                              CURFIL = CURFIL + 1  ! move to next file in list
+                          END IF
                             
-C.............................  If EMS point inventory, skip ahead to emission file
-                            IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
-                                CURFIL = CURFIL + 1
-                            END IF
+C...........................  If EMS point inventory, skip ahead to emission file
+                          IF( EMSFLAG .AND. CATEGORY == 'POINT' ) THEN
+                              CURFIL = CURFIL + 1
+                          END IF
 
-C.............................  Make sure there are still files to read                            
-                            IF( CURFIL > NLINE ) THEN
-                                LSTTIME = .TRUE.
-                                EXIT
-                            END IF
+C...........................  Make sure there are still files to read                            
+                          IF( CURFIL > NLINE ) THEN
+                              LSTTIME = .TRUE.
+                              EXIT
+                          END IF
                              
-                            INFILE = LSTSTR( CURFIL )
+                          INFILE = LSTSTR( CURFIL )
                                         
-                            OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
-     &                            IOSTAT=IOS )
+                          OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
+     &                          IOSTAT=IOS )
 
-C.............................  Check for errors while opening file
-                            IF( IOS /= 0 ) THEN
+C...........................  Check for errors while opening file
+                          IF( IOS /= 0 ) THEN
                         
-                                WRITE( MESG,94010 ) 'Problem at line ', 
-     &                             CURFIL, 'of ' // TRIM( FNAME ) // 
-     &                             '.' // ' Could not open file:' //
-     &                             CRLF() // BLANK5 // TRIM( INFILE ) 
-                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                              WRITE( MESG,94010 ) 'Problem at line ', 
+     &                           CURFIL, 'of ' // TRIM( FNAME ) // 
+     &                           '.' // ' Could not open file:' //
+     &                           CRLF() // BLANK5 // TRIM( INFILE ) 
+                              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+          
+                          ELSE
+                              WRITE( MESG,94010 ) 
+     &                          'Successful OPEN for ' //
+     &                          'inventory file(s):' // CRLF() // 
+     &                          BLANK5 // TRIM( INFILE )
+                              CALL M3MSG2( MESG ) 
             
-                            ELSE
-                                WRITE( MESG,94010 ) 
-     &                            'Successful OPEN for ' //
-     &                            'inventory file(s):' // CRLF() // 
-     &                            BLANK5 // TRIM( INFILE )
-                                CALL M3MSG2( MESG ) 
-            
-                            END IF
+                          END IF
 
-C.............................  Set default inventory characteristics that depend on file format
-                            CALL INITINFO( FILFMT( CURFIL ) )
-                            CURFMT = FILFMT( CURFIL )
-                            NWRLINE = 0
+C...........................  Set default inventory characteristics that depend on file format
+                          CALL INITINFO( FILFMT( CURFIL ) )
+                          CURFMT = FILFMT( CURFIL )
+                          NWRLINE = 0
                   
-C.............................  Skip back to the beginning of the loop
-                            CYCLE
+C...........................  Skip back to the beginning of the loop
+                          CYCLE
                   
-C.........................  Otherwise, no more files to read, so exit
-                        ELSE
-                            LSTTIME = .TRUE.
-                            EXIT
-                        END IF
+C.......................  Otherwise, no more files to read, so exit
+                      ELSE
+                          LSTTIME = .TRUE.
+                          EXIT
+                      END IF
 
-C.....................  Otherwise, not a list file, so exit
-                    ELSE
-                        LSTTIME = .TRUE.
-                        EXIT
-                    END IF
+C...................  Otherwise, not a list file, so exit
+                  ELSE
+                      LSTTIME = .TRUE.
+                      EXIT
+                  END IF
                  
-                END IF   ! end check for end of file
+              END IF   ! end check for end of file
 
-C.................  Skip blank lines
-                IF( LINE == ' ' ) CYCLE
+C...............  Skip blank lines
+              IF( LINE == ' ' ) CYCLE
 
-C.................  Process line depending on file format and source category
-                SELECT CASE( CURFMT )
-                CASE( IDAFMT )
-                    SELECT CASE( CATEGORY )
-                    CASE( 'AREA' )
-                        CALL RDSRCIDAAR( LINE, CFIP, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    CASE( 'MOBILE' )
-                        CALL RDSRCIDAMB( LINE, CFIP, CLNK, TSCC, 
-     &                                   NPOLPERLN, HDRFLAG, EFLAG )
-                    CASE( 'POINT' )
-                        CALL RDSRCIDAPT( LINE, CFIP, FCID, PTID, SKID,
-     &                                   SGID, TSCC, NPOLPERLN, 
-     &                                   HDRFLAG, EFLAG )
-                    END SELECT
+C...............  Process line depending on file format and source category
+              SELECT CASE( CURFMT )
+              CASE( IDAFMT )
+                  SELECT CASE( CATEGORY )
+                  CASE( 'AREA' )
+                      CALL RDSRCIDAAR( LINE, CFIP, TSCC, NPOLPERLN,
+     &                                 HDRFLAG, EFLAG )
+                  CASE( 'MOBILE' )
+                      CALL RDSRCIDAMB( LINE, CFIP, CLNK, TSCC, 
+     &                                 NPOLPERLN, HDRFLAG, EFLAG )
+                  CASE( 'POINT' )
+                      CALL RDSRCIDAPT( LINE, CFIP, FCID, PTID, SKID,
+     &                                 SGID, TSCC, NPOLPERLN, 
+     &                                 HDRFLAG, EFLAG )
+                  END SELECT
 
-                CASE( EPSFMT )
-                    MESG = 'EPS 2.0 format is not currently supported'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              CASE( EPSFMT )
+                  MESG = 'EPS 2.0 format is not currently supported'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                CASE( EMSFMT )
-                    SELECT CASE( CATEGORY )
-                    CASE( 'AREA' )
-                        CALL RDSRCEMSAR( LINE, CFIP, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    CASE( 'MOBILE' )
-                        CALL RDSRCEMSMB( LINE, CFIP, CROAD, CLNK,
-     &                                   NPOLPERLN, HDRFLAG, EFLAG )
-                        TSCC = ' '   ! set fake SCC code
-                    CASE( 'POINT' )
-                        TFLAG = .TRUE. 
-                        CALL RDSRCEMSPT( LINE, CFIP, FCID, SKID, DVID, 
-     &                                   PRID, NPOLPERLN, 
-     &                                   HDRFLAG, EFLAG )
-                        TSCC = ' '   ! set fake SCC code
-                    END SELECT
+              CASE( EMSFMT )
+                  SELECT CASE( CATEGORY )
+                  CASE( 'AREA' )
+                      CALL RDSRCEMSAR( LINE, CFIP, TSCC, NPOLPERLN,
+     &                                 HDRFLAG, EFLAG )
+                  CASE( 'MOBILE' )
+                      CALL RDSRCEMSMB( LINE, CFIP, CROAD, CLNK,
+     &                                 NPOLPERLN, HDRFLAG, EFLAG )
+                      TSCC = ' '   ! set fake SCC code
+                  CASE( 'POINT' )
+                      TFLAG = .TRUE. 
+                      CALL RDSRCEMSPT( LINE, CFIP, FCID, SKID, DVID, 
+     &                                 PRID, NPOLPERLN, 
+     &                                 HDRFLAG, EFLAG )
+                      TSCC = ' '   ! set fake SCC code
+                  END SELECT
 
-                CASE( MEDSFMT )
-                    SELECT CASE( CATEGORY )
-                    CASE( 'POINT' )   ! used for pregridded MEDS format inv
-                        CALL RDSRCMEDSPT( LINE, CFIP, FCID, PTID, SKID,
-     &                                   SGID, TSCC, NPOLPERLN, HDRFLAG, 
-     &                                   EFLAG )
-                    END SELECT
+              CASE( MEDSFMT )
+                  SELECT CASE( CATEGORY )
+                  CASE( 'POINT' )   ! used for pregridded MEDS format inv
+                      CALL RDSRCMEDSPT( LINE, CFIP, FCID, PTID, SKID,
+     &                                  SGID, TSCC, NPOLPERLN, HDRFLAG, 
+     &                                  EFLAG )
+                  END SELECT
 
-                CASE( FF10FMT )
-                    ORLFLG = .TRUE.
-                    FF10FLAG = .TRUE.
+              CASE( FF10FMT )
+                  ORLFLG = .TRUE.
+                  FF10FLAG = .TRUE.
 
-                    SELECT CASE( CATEGORY )
-                    CASE( 'AREA' )   ! used for nonroad only
-                        CALL RDSRCFF10AR( LINE, CFIP, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    CASE( 'MOBILE' )
-                        CALL RDSRCFF10MB( LINE, CFIP, CLNK, TSCC,
-     &                                   NPOLPERLN, HDRFLAG, EFLAG )
-                    CASE( 'POINT' )
-                        CALL RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID,
-     &                                   SGID, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    END SELECT
+                  SELECT CASE( CATEGORY )
+                  CASE( 'AREA' )   ! used for nonroad only
+                      CALL RDSRCFF10AR( LINE, CFIP, TSCC, NPOLPERLN,
+     &                                 HDRFLAG, EFLAG )
+                  CASE( 'MOBILE' )
+                      CALL RDSRCFF10MB( LINE, CFIP, CLNK, TSCC,
+     &                                 NPOLPERLN, HDRFLAG, EFLAG )
+                  CASE( 'POINT' )
+                      CALL RDSRCFF10PT( LINE, CFIP, FCID, PTID, SKID,
+     &                                  SGID, TSCC, NPOLPERLN,
+     &                                  HDRFLAG, EFLAG )
+                  END SELECT
 
-                CASE( ORLFMT )
-                    ORLFLG = .TRUE.
+              CASE( ORLFMT )
+                  ORLFLG = .TRUE.
                     
-                    SELECT CASE( CATEGORY )
-                    CASE( 'AREA' )   ! used for nonroad only
-                        CALL RDSRCORLAR( LINE, CFIP, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    CASE( 'MOBILE' )
-                        CALL RDSRCORLMB( LINE, CFIP, CLNK, TSCC,
-     &                                   NPOLPERLN, HDRFLAG, EFLAG )
-                    CASE( 'POINT' )
-                        CALL RDSRCORLPT( LINE, CFIP, FCID, PTID, SKID,
-     &                                   SGID, TSCC, NPOLPERLN,
-     &                                   HDRFLAG, EFLAG )
-                    END SELECT
+                  SELECT CASE( CATEGORY )
+                  CASE( 'AREA' )   ! used for nonroad only
+                      CALL RDSRCORLAR( LINE, CFIP, TSCC, NPOLPERLN,
+     &                                 HDRFLAG, EFLAG )
+                  CASE( 'MOBILE' )
+                      CALL RDSRCORLMB( LINE, CFIP, CLNK, TSCC,
+     &                                 NPOLPERLN, HDRFLAG, EFLAG )
+                  CASE( 'POINT' )
+                      CALL RDSRCORLPT( LINE, CFIP, FCID, PTID, SKID,
+     &                                 SGID, TSCC, NPOLPERLN,
+     &                                 HDRFLAG, EFLAG )
+                  END SELECT
 
-                CASE( ORLNPFMT )
-                    ORLFLG = .TRUE.
-                   
-                    CALL RDSRCORLNP( LINE, CFIP, TSCC, NPOLPERLN,
-     &                               HDRFLAG, EFLAG )
+              CASE( ORLNPFMT )
+                  ORLFLG = .TRUE.
+                 
+                  CALL RDSRCORLNP( LINE, CFIP, TSCC, NPOLPERLN,
+     &                             HDRFLAG, EFLAG )
 
-                CASE( ORLFIREFMT )
-                    ORLFLG   = .TRUE.
-                    FIREFLAG = .TRUE.
+              CASE( ORLFIREFMT )
+                  ORLFLG   = .TRUE.
+                  FIREFLAG = .TRUE.
 
-                    CALL RDSRCORLFR( LINE, CFIP, FCID, PTID, SKID,
-     &                               SGID, TSCC, NPOLPERLN, HDRFLAG, 
-     &                               EFLAG )
+                  CALL RDSRCORLFR( LINE, CFIP, FCID, PTID, SKID,
+     &                             SGID, TSCC, NPOLPERLN, HDRFLAG, 
+     &                             EFLAG )
 
-                CASE DEFAULT
-                    WRITE( MESG, 94010 ) 'Routine rdinvsrc.f not '//
-     &                     'expecting to read file of format code', 
-     &                      CURFMT
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              CASE DEFAULT
+                  WRITE( MESG, 94010 ) 'Routine rdinvsrc.f not '//
+     &                   'expecting to read file of format code', 
+     &                    CURFMT
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                END SELECT
+              END SELECT
 
-C.................  Check for header lines
-                IF( HDRFLAG ) THEN
-                    CYCLE
-                END IF
+C...............  Check for header lines
+              IF( HDRFLAG ) THEN
+                  CYCLE
+              END IF
 
-C.................  SCC mapping loop : Mobile activity inventory use only.
-                KK = 0
-                NSCC = 0
-                IF( SCCMAPFLAG ) THEN
-
-                    KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
- 
-                    IF( KK > 0 ) THEN
-                        NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
-                    ELSE
-                        IF( EXCLSCCFLAG ) THEN
-                            MESG = 'WARNING: Dropping SCC "' //
-     &                           TRIM( TSCC ) //
-     &                          '" not listed in SCCXREF file'
-                            CALL M3MESG( MESG )
-                            CYCLE  ! skip SCC not found in SCCXREF file
-                        END IF
-                    END IF
-
-                END IF
+C...............  SCC mapping loop : Mobile activity inventory use only.
+              KK = 0
+              NSCC = 0
+              IF( SCCMAPFLAG ) THEN
+                  KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
+                  IF( KK > 0 ) THEN
+                      NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+                  ELSE
+                      IF( EXCLSCCFLAG ) THEN
+                          MESG = 'WARNING: Dropping SCC "' //
+     &                         TRIM( TSCC ) //
+     &                        '" not listed in SCCXREF file'
+                          CALL M3MESG( MESG )
+                          CYCLE  ! skip SCC not found in SCCXREF file
+                      END IF
+                  END IF
+              END IF
 
 C.................  loop over mapped SCC
               DO JJ = 0, NSCC
