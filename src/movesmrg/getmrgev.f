@@ -48,8 +48,8 @@ C.........  This module contains the major data structure and control flags
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
-     &                       SPDFLAG, CFFLAG, REFCFFLAG, TEMPBIN, MOPTIMIZE,
-     &                       GRDENV, TOTENV, MTMP_OUT
+     &                       SPDFLAG, CFFLAG, EXPCFFLAG, REFCFFLAG, TEMPBIN,
+     &                       MOPTIMIZE, GRDENV, TOTENV, MTMP_OUT
 
         IMPLICIT NONE
 
@@ -175,11 +175,16 @@ C.........  Check for rate-per-distance, rate-per-vehicle, or rate-per-profile p
         MTMP_OUT = ENVYN( 'MTMP_OUTPUT_YN', 'Output mobile hourly emissions' //
      &                    " ", .FALSE., IOS )
 
-        CFFLAG = ENVYN( 'USE_CONTROL_FACTORS', 'Use control factor data' //
-     &                    " ", .FALSE., IOS )
+        MESG = 'Apply control factors to emissions'
+        CFFLAG = ENVYN( 'USE_CONTROL_FACTORS', MESG, .FALSE., IOS )
 
-        REFCFFLAG = ENVYN( 'USE_REF_CONTROL_FAC_YN', 'Use reference county' //
-     &                    '-specific control factor', .FALSE., IOS )
+        IF( CFFLAG ) THEN
+            MESG = 'Use pollutant/species-specific control factor'
+            EXPCFFLAG = ENVYN( 'USE_EXP_CONTROL_FAC_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Use reference county-specific control factor'
+            REFCFFLAG = ENVYN( 'USE_REF_CONTROL_FAC_YN', MESG, .FALSE., IOS )
+        END IF
 
         IF( .NOT. RPDFLAG .AND.
      &      .NOT. RPHFLAG .AND.

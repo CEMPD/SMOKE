@@ -71,7 +71,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
      &          RPDEMFACS, RPHEMFACS, RPVEMFACS, RPPEMFACS,
      &          SPDFLAG, SPDPRO, MISCC, 
-     &          CFPRO, CFFLAG, REFCFFLAG,
+     &          CFPRO, CFFLAG,
      &          TEMPBIN, MTMP_OUT
 
 C.........  This module contains the lists of unique source characteristics
@@ -186,18 +186,15 @@ C...........   Other local variables
         REAL             GFRAC         ! grid cell fraction
         REAL             SPEEDVAL      ! average speed value for current source
         REAL             TEMPVAL       ! temperature value for current grid cell
-        REAL             HOTELVAL      ! hourly hotelling value for current source and hour
-        REAL             VMTVAL        ! hourly VMT value for current source and hour
-        REAL             VPOPVAL       ! annual vehicle population value for current source
         REAL             SPDFAC        ! speed interpolation factor
         REAL             TEMPFAC       ! temperature interpolation factor
         REAL             MINTVAL, MAXTVAL  ! min and max temperature for current source
-        REAL             UMIN, OMIN      ! bounding minimum temperature profile values
-        REAL             UMAX, OMAX      ! bounding maximum temperature profile values
-        REAL             MINFAC, MAXFAC  ! min and max temp interpolation factors
+        REAL             UMIN, OMIN    ! bounding minimum temperature profile values
+        REAL             UMAX, OMAX    ! bounding maximum temperature profile values
+        REAL             MINFAC, MAXFAC    ! min and max temp interpolation factors
         REAL             PDIFF, TDIFF  ! temperature differences
         REAL             EFVAL1, EFVAL2, EFVALA, EFVALB, EFVAL   ! emission factor values
-        REAL             EMVAL         ! emissions value
+        REAL             EMVAL, EMFAC  ! emissions value
         REAL             EMVALSPC      ! speciated emissions value
         REAL          :: CFFAC = 1.0   ! control factor
 
@@ -364,7 +361,7 @@ C.........  Open NetCDF output files, open ASCII report files, and write headers
         CALL OPENMRGOUT
 
 C.........  Read control factor data
-        IF ( CFFLAG ) CALL RDCFPRO( CFDEV, REFCFFLAG )
+        IF ( CFFLAG ) CALL RDCFPRO( CFDEV )
 
 C.........  Write out message with list of species
         CALL POLMESG( NMSPC, EMNAM )
@@ -537,18 +534,6 @@ C.................  Loop over sources in reference county
                 
                     SRC = REFSRCS( I,S )
                 
-                    IF( RPDFLAG ) THEN
-                        VMTVAL = VMT( SRC )
-                    END IF
-
-                    IF( RPHFLAG ) THEN
-                        HOTELVAL = HOTEL( SRC )
-                    END IF
-                    
-                    IF( RPPFLAG .OR. RPVFLAG ) THEN
-                        VPOPVAL = VPOP( SRC )
-                    END IF
-
 C.....................  Determine hour index based on source's local time
                     HOURIDX = ( JTIME - DAYBEGT( SRC ) ) / 10000
                     IF( HOURIDX < 0 ) THEN
@@ -604,8 +589,14 @@ C.........................  Calculate speed interpolation factor
 C.....................  Loop over grid cells for this source
                     DO NG = 1, NSRCCELLS( SRC )
 
-                        CELL = SRCCELLS( SRC, NG )
-                        GFRAC = SRCCELLFRACS( SRC, NG )
+                        CELL = SRCCELLS( NG, SRC )
+                        GFRAC = SRCCELLFRACS( NG, SRC )
+
+                        IF( RPDFLAG ) EMFAC = VMT( SRC ) * GFRAC
+                        IF( RPHFLAG ) EMFAC = HOTEL( SRC ) * GFRAC
+                        IF( RPVFLAG .OR. RPPFLAG ) THEN
+                            EMFAC = VPOP( SRC ) * GFRAC
+                        END IF
 
 C.............................  Determine temperature indexes for cell
                         IF( RPDFLAG .OR. RPHFLAG .OR. RPVFLAG ) THEN
@@ -894,7 +885,7 @@ C...............................  Check that maximum temperatures of profiles ma
 C.........................  Loop through pollutant-species combos
                         DO V = 1, NIPPA + NMSPC
 
-C.............................  Lookup poll/species index from MOVES lookup EF                        
+C.............................  Lookup poll/species index from MOVES lookup EF 
                             SIIDX = 0
                             SPIDX = 0
                             POLIDX = EMPOLIDX( V )
@@ -902,12 +893,16 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                                 CPOL  = EANAM( V )  ! pollutant
                                 CSPC  = ''
                                 SIIDX = INDEX1( CPOL, NIPPA, EANAM )
-                                IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, SIIDX, MONTH )
+                                IF( CFFLAG ) THEN
+                                    CFFAC = CFPRO(MIFIP(SRC), SCCIDX, SIIDX, MONTH )
+                                END IF
                             ELSE
                                 CPOL  = ''
                                 CSPC  = EMNAM( V - NIPPA )  ! pollutant
                                 SPIDX = INDEX1( CSPC, NMSPC, EMNAM )
-                                IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, NIPPA+SPIDX, MONTH )
+                                IF( CFFLAG ) THEN
+                                    CFFAC = CFPRO(MIFIP(SRC), SCCIDX, NIPPA+SPIDX, MONTH )
+                                END IF
                             END IF
 
 C.............................  Check if emission factors exist for this process/pollutant
@@ -963,36 +958,24 @@ C.............................  Calculate interpolated emission factor if proces
                             IF( CFFLAG ) EFVAL = EFVAL * CFFAC 
 
 C.............................  Calculate gridded, hourly emissions (g/hr/cell)
-                            IF( RPDFLAG ) THEN
-                                EMVAL = VMTVAL * EFVAL * GFRAC
-                            END IF
+                            EMVAL = EFVAL * EMFAC
 
-                            IF( RPHFLAG ) THEN
-                                EMVAL = HOTELVAL * EFVAL * GFRAC
-                            END IF
-                            
-                            IF( RPVFLAG .OR. RPPFLAG ) THEN
-                                EMVAL = VPOPVAL * EFVAL * GFRAC
-                            END IF
-
-C.............................  If use memory optimize
+C.............................  Set units conversion factor
                             IF( SPIDX > 0 ) THEN
+                                F1 = GRDFAC( SPIDX )
+                                EMVALSPC = EMVAL * F1
 
-C................................  Set units conversion factor
-                              F1 = GRDFAC( SPIDX )
-                              EMVALSPC = EMVAL * F1
-
-                              IF( MOPTIMIZE ) THEN
-                                EMGRD( CELL,SPIDX ) = 
-     &                            EMGRD( CELL,SPIDX ) + EMVALSPC
+                                IF( MOPTIMIZE ) THEN
+                                    EMGRD( CELL,SPIDX ) = 
+     &                                  EMGRD( CELL,SPIDX ) + EMVALSPC
      
-                                IF ( SRCGRPFLAG ) THEN
-                                    GIDX = ISRCGRP( SRC )
-                                    EMGGRDSPC( CELL,GIDX,SPIDX ) =
-     &                                EMGGRDSPC( CELL,GIDX,SPIDX ) + EMVALSPC
-                                END IF
+                                    IF( SRCGRPFLAG ) THEN
+                                        GIDX = ISRCGRP( SRC )
+                                        EMGGRDSPC( CELL,GIDX,SPIDX ) =
+     &                                     EMGGRDSPC( CELL,GIDX,SPIDX ) + EMVALSPC
+                                    END IF
 
-C...............................  If not use memory optimize
+C...................................  If not use memory optimize
                               ELSE                      
                                 TEMGRD( CELL,SPIDX,T ) =
      &                            TEMGRD( CELL,SPIDX,T ) + EMVALSPC
