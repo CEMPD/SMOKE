@@ -104,10 +104,11 @@ C.........  Emission factors data
 C.........  Hourly speed data and control factor data
         LOGICAL, PUBLIC :: SPDFLAG                     ! use hourly speed data
         REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: ) ! indexes: FIP, SCC, weekend/weekday, local hour
-        LOGICAL, PUBLIC :: CFFLAG                     ! use control factor data
-        LOGICAL, PUBLIC :: REFCFFLAG                  ! use reference county-specific control factor data
-        REAL, ALLOCATABLE, PUBLIC :: CFPRO( :,:,:,: ) ! factor indexes: FIP, SCC, pollutant,month
-        REAL, ALLOCATABLE, PUBLIC :: CFITC( :,:,:,: ) ! intercept indexes: FIP, SCC, pollutant,month
+        LOGICAL, PUBLIC :: CFFLAG                      ! use control factor data
+        LOGICAL, PUBLIC :: EXPCFFLAG                   ! use explicit poll/species specific control factor data
+        LOGICAL, PUBLIC :: REFCFFLAG                   ! use reference county-specific control factor data
+        REAL, ALLOCATABLE, PUBLIC :: CFPRO( :,:,:,: )  ! factor indexes: FIP, SCC, pollutant,month
+        REAL, ALLOCATABLE, PUBLIC :: CFITC( :,:,:,: )  ! intercept indexes: FIP, SCC, pollutant,month
 
 C.........  Index from per-source inventory array to INVSCC array (based on MICNY in MODSTCY)
         INTEGER, ALLOCATABLE, PUBLIC :: MISCC( : )     ! dim NMSRC
