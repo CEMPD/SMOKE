@@ -313,7 +313,7 @@ C.............  Check that county matches requested county
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            IF( STR2INT( ADJUSTR( SEGMENT( 6 ) ) ) .NE. 
+            IF( STR2INT( SEGMENT( 6 ) ) .NE. 
      &          MCREFIDX( REFIDX,1 ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Reference county ' //
      &            'at line', IREC, 'of emission factors file ' //
@@ -328,7 +328,7 @@ C.............  Check that fuel month matches requested month
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF( STR2INT( ADJUSTR( SEGMENT( 3 ) ) ) .NE. MONTH ) THEN
+            IF( STR2INT( SEGMENT( 3 ) ) .NE. MONTH ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Fuel month at line',
      &            IREC, 'of emission factors file does not match ' //
      &            'fuel month listed in MRCLIST file.'
@@ -342,7 +342,7 @@ C.............  Check temperature value
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 8 ) ) )
+            TMPVAL = STR2REAL( SEGMENT( 8 ) )
             IF( TMPVAL .NE. PTMP ) THEN
 
 C.................  Check that temperatures are sorted
@@ -415,7 +415,7 @@ C.............  Parse line into segments
             CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Set day for current line
-            DAY = STR2INT( ADJUSTR( SEGMENT( 4 ) ) )
+            DAY = STR2INT( SEGMENT( 4 ) )
             IF( DAY == 2 ) THEN
                 DAYIDX = 1
             ELSE IF( DAY == 5 ) THEN
@@ -427,7 +427,7 @@ C.............  Set day for current line
             END IF
 
 C.............  Set hour for current line            
-            HOUR = STR2INT( ADJUSTR( SEGMENT( 5 ) ) )
+            HOUR = STR2INT( SEGMENT( 5 ) )
 
 C.............  Set SCC index for current line
             TSCC = TRIM( SEGMENT( 7 ) )
@@ -474,7 +474,7 @@ C.........................  Emission factor SCC is not in the inventory
             NSCC = NSCC + 1
 
 C.............  Set temperature index for current line            
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 8 ) ) )
+            TMPVAL = STR2REAL( SEGMENT( 8 ) )
             IF( TMPVAL .NE. PTMP ) THEN
                 TMPIDX = TMPIDX + 1
                 IF( TMPIDX .GT. NEMTEMPS ) THEN
@@ -491,7 +491,7 @@ C.............  Set temperature index for current line
 C.............  Store emission factors for each pollutant            
             DO P = 1, NPOL
             
-                EMVAL = STR2REAL( ADJUSTR( SEGMENT( NNONPOL + P ) ) )
+                EMVAL = STR2REAL( SEGMENT( NNONPOL + P ) )
                 RPVEMFACS( DAYIDX, SCCIDX, HOUR, TMPIDX, P ) = EMVAL
             
             END DO

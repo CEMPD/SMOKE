@@ -890,20 +890,12 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                             SPIDX = 0
                             POLIDX = EMPOLIDX( V )
                             IF( V <= NIPPA ) THEN
-                                CPOL  = EANAM( V )  ! pollutant
-                                CSPC  = ''
-                                SIIDX = INDEX1( CPOL, NIPPA, EANAM )
-                                IF( CFFLAG ) THEN
-                                    CFFAC = CFPRO(MIFIP(SRC), SCCIDX, SIIDX, MONTH )
-                                END IF
+                                SIIDX = V 
                             ELSE
-                                CPOL  = ''
-                                CSPC  = EMNAM( V - NIPPA )  ! pollutant
-                                SPIDX = INDEX1( CSPC, NMSPC, EMNAM )
-                                IF( CFFLAG ) THEN
-                                    CFFAC = CFPRO(MIFIP(SRC), SCCIDX, NIPPA+SPIDX, MONTH )
-                                END IF
+                                SPIDX = V - NIPPA
                             END IF
+
+                            IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, V, MONTH )
 
 C.............................  Check if emission factors exist for this process/pollutant
                             IF( POLIDX .EQ. 0 ) CYCLE

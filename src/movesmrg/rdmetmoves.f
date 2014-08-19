@@ -160,7 +160,7 @@ C.............  Convert county to integer
             END IF
 
 C.............  Find county in inventory list
-            CNTY = STR2INT( ADJUSTR( SEGMENT( 1 ) ) )
+            CNTY = STR2INT( SEGMENT( 1 ) )
             K = FIND1( CNTY, NINVIFIP, INVIFIP )
             
             IF( K .LE. 0 ) THEN
@@ -181,7 +181,7 @@ C.............  Convert calendar month to integer
             END IF
 
 C.............  Determine month and date
-            MNTH = STR2INT( ADJUSTR( SEGMENT( 3 ) ) )
+            MNTH = STR2INT( SEGMENT( 3 ) )
 
             IF( MNTH .LT. 1 .OR. MNTH .GT. 12 ) THEN
                 EFLAG = .TRUE.
@@ -202,7 +202,7 @@ C.............  Convert calendar month and date to integer
             END IF
 
 C.............  Determine month and date
-            JDATE = STR2INT( ADJUSTR( SEGMENT( 4 ) ) )
+            JDATE = STR2INT( SEGMENT( 4 ) )
             CALL DAYMON( JDATE, MONTH, DAY )
 
             IF( MNTH /= MONTH ) THEN
@@ -232,8 +232,8 @@ C.............  Check min and max temperature values
                 CYCLE
             END IF
             
-            MINVAL = STR2REAL( ADJUSTR( SEGMENT( 6 ) ) )
-            MAXVAL = STR2REAL( ADJUSTR( SEGMENT( 7 ) ) )
+            MINVAL = STR2REAL( SEGMENT( 6 ) )
+            MAXVAL = STR2REAL( SEGMENT( 7 ) )
             
             IF( MINVAL .GT. MAXVAL ) THEN
                 EFLAG = .TRUE.

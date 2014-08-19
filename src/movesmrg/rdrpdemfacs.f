@@ -310,7 +310,7 @@ C.............  Check that county matches requested county
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            IF( STR2INT( ADJUSTR( SEGMENT( 4 ) ) ) .NE. 
+            IF( STR2INT( SEGMENT( 4 ) ) .NE. 
      &          MCREFIDX( REFIDX,1 ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Reference county ' //
      &            'at line', IREC, 'of emission factors file ' //
@@ -325,7 +325,7 @@ C.............  Check that fuel month matches requested month
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-            IF( STR2INT( ADJUSTR( SEGMENT( 3 ) ) ) .NE. MONTH ) THEN
+            IF( STR2INT( SEGMENT( 3 ) ) .NE. MONTH ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Fuel month at line',
      &            IREC, 'of emission factors file does not match ' //
      &            'fuel month listed in MRCLIST file.'
@@ -339,7 +339,7 @@ C.............  Check temperature value
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 7 ) ) )
+            TMPVAL = STR2REAL( SEGMENT( 7 ) )
             IF( TMPVAL .NE. PTMP ) THEN
 
 C.................  Check that temperatures are sorted
@@ -454,10 +454,10 @@ C.........................  Emission factor SCC is not in the inventory
             NSCC = NSCC + 1
 
 C.............  Set speed bin for current line            
-            SPDBIN = STR2INT( ADJUSTR( SEGMENT( 6 ) ) )
+            SPDBIN = STR2INT( SEGMENT( 6 ) )
 
 C.............  Set temperature index for current line            
-            TMPVAL = STR2REAL( ADJUSTR( SEGMENT( 7 ) ) )
+            TMPVAL = STR2REAL( SEGMENT( 7 ) )
             IF( TMPVAL .NE. PTMP ) THEN
                 TMPIDX = TMPIDX + 1
                 IF( TMPIDX .GT. NEMTEMPS ) THEN
@@ -474,7 +474,7 @@ C.............  Set temperature index for current line
 C.............  Store emission factors for each pollutant            
             DO P = 1, NPOL
 
-                EMVAL = STR2REAL( ADJUSTR( SEGMENT( NNONPOL + P ) ) )
+                EMVAL = STR2REAL( SEGMENT( NNONPOL + P ) )
                 RPDEMFACS( SCCIDX, SPDBIN, TMPIDX, P ) = EMVAL
 
             END DO

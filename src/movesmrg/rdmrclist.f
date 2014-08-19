@@ -155,7 +155,7 @@ C.............  Convert reference county to integer
                 CYCLE
             END IF
             
-            REFFIPA( I ) = STR2INT( ADJUSTR( SEGMENT( 1 ) ) )
+            REFFIPA( I ) = STR2INT( SEGMENT( 1 ) )
 
 C.............  Convert month to integer
             IF( .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
@@ -166,7 +166,7 @@ C.............  Convert month to integer
                 CYCLE
             END IF
             
-            TMONTH = STR2INT( ADJUSTR( SEGMENT( 2 ) ) )
+            TMONTH = STR2INT( SEGMENT( 2 ) )
             
             IF( TMONTH .LT. 1 .OR. TMONTH .GT. 12 ) THEN
                 EFLAG = .TRUE.
