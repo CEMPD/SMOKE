@@ -17,8 +17,8 @@ debug: temporal.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o \
-     rdmetprof.o setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o 
+TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o proctpro.o \
+     setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o 
      
 
 #
@@ -41,7 +41,7 @@ genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) 
 mktmat.o: $(MODTMPRL) 
 opentmp.o: $(MODEMFAC) $(MODINFO) $(MODFILESET)
 opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
-rdmetpro.o: $(MODXREF)
+proctpro.o: $(MODINFO) $(MODSOURC) $(MODTMPRL)
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR) $(MODLISTS) $(MODGRID) $(MODMBSET)

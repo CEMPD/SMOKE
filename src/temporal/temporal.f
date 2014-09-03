@@ -2,20 +2,23 @@
         PROGRAM TEMPORAL
 
 C***********************************************************************
-C  program body starts at line 214
 C
 C  DESCRIPTION:
-C    This program computes the hourly emissions data from inventory emissions 
+C    This program computes the hourly emissions data from inventoryg emissions
 C    and/or activity and emission factor data. It can read average-inventory,
 C    day-specific and hour-specific emissions and activity data.
 C
-C  PRECONDITIONS REQUIRED:  
+C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
 C    copied by: M. Houyoux 01/99
 C    origin: tmppoint.F 4.3
+C
+C     Created by Marc Houyoux
+C
+C     Revised 07/2014 by C.Coats for  new GENTPRO CSV profiles and cross-references
 C
 C***********************************************************************
 C
@@ -25,16 +28,16 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C*************************************************************************
 
@@ -42,18 +45,15 @@ C.........  MODULES for public variables
 C.........  This module contains the inventory arrays
         USE MODSOURC, ONLY: TZONES, TPFLAG, FLTRDAYL
 
-C.........  This module contains the temporal cross-reference tables
-        USE MODXREF, ONLY: MDEX, WDEX, DDEX
-
 C.........  This module contains the temporal profile tables
         USE MODTMPRL, ONLY: NMON, NWEK, NHRL, STDATE, STTIME, RUNLEN,
-     &                      ITDATE, METPROFLAG, METPROTYPE
+     &                      ITDATE, METPROFLAG, METPROTYPE, IPOL2D
 
 C.........  This module contains emission factor tables and related
         USE MODEMFAC, ONLY: EMTPOL, NEPOL, TEMPEF, USETIME
 
 C.........  This module contains data for day- and hour-specific data
-        USE MODDAYHR, ONLY: DYPNAM, DYPDSC, NDYPOA, NDYSRC, 
+        USE MODDAYHR, ONLY: DYPNAM, DYPDSC, NDYPOA, NDYSRC,
      &                      HRPNAM, HRPDSC, NHRPOA, NHRSRC,
      &                      LDSPOA, LHSPOA, LHPROF,
      &                      INDXD, EMACD, INDXH, EMACH
@@ -62,14 +62,14 @@ C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, MXIDAT, INVDNAM, INVDVTS
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, BYEAR, NIPPA, EANAM, NSRC, 
+        USE MODINFO, ONLY: CATEGORY, BYEAR, NIPPA, EANAM, NSRC,
      &                     INVPIDX, NIPOL, EAREAD, EINAM, ACTVTY
 
-C.........  This module is used for MOBILE6 setup information 
+C.........  This module is used for MOBILE setup information
         USE MODMBSET, ONLY: DAILY, WEEKLY, MONTHLY, EPISLEN
 
         IMPLICIT NONE
- 
+
 C.........  INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  i/o api parameters
@@ -99,7 +99,7 @@ C..........  EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL    CHKINT, CRLF, ENVINT, ENVYN, FINDC, JULIAN,
      &              GETDATE, GETFLINE, GETNUM, INDEX1, ISDSTIME, MMDDYY,
      &              PROMPTFFILE, RDTPROF, SECSDIFF, STR2INT
-                        
+
 C.........  LOCAL PARAMETERS and their descriptions:
 
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
@@ -110,15 +110,15 @@ C.........  Emission arrays
         REAL   , ALLOCATABLE :: EMIST( :,: ) !  timestepped output emssions
         REAL   , ALLOCATABLE :: EMFAC( :,: ) !  mobile emission factors by source
 
-C.........  Temporal allocation Matrix.  
+C.........  Temporal allocation Matrix.
         REAL, ALLOCATABLE :: TMAT( :, :, : ) ! temporal allocation factors
 
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
-C.........  Day-specific, hour-specific data, and elevated sources data. 
-C.........  These need only to allow enough dimensions for one read per 
+C.........  Day-specific, hour-specific data, and elevated sources data.
+C.........  These need only to allow enough dimensions for one read per
 C           pollutant per time step.
 
         INTEGER                 NPELV        ! optional elevated source-count
@@ -126,14 +126,14 @@ C           pollutant per time step.
         REAL   , ALLOCATABLE :: EMISE( : )   ! elevated source emissions
 
 C.........  Names of pollutants and activities associated with output variables
-        CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN( : ) 
+        CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN( : )
 
 C.........  Reshaped input variables and output variables
-        INTEGER         NGRP                ! no. of pol/emis-types groups 
-        INTEGER         NGSZ                ! no. of pols/emis-types per group 
-        CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN2D( :,: ) 
-        CHARACTER(IOVLEN3), ALLOCATABLE:: EANAM2D( :,: ) 
-        CHARACTER(IOVLEN3), ALLOCATABLE:: EAREAD2D( : ) 
+        INTEGER         NGRP                ! no. of pol/emis-types groups
+        INTEGER         NGSZ                ! no. of pols/emis-types per group
+        CHARACTER(IOVLEN3), ALLOCATABLE:: ALLIN2D( :,: )
+        CHARACTER(IOVLEN3), ALLOCATABLE:: EANAM2D( :,: )
+        CHARACTER(IOVLEN3), ALLOCATABLE:: EAREAD2D( : )
 
 C...........   Logical names and unit numbers
 
@@ -149,7 +149,7 @@ C...........   Logical names and unit numbers
         INTEGER         TDEV    !  unit number for emission processes file
         INTEGER         XDEV    !  unit no. for cross-reference file
 
-        CHARACTER(16) :: ANAME = ' '    !  logical name for ASCII inven input 
+        CHARACTER(16) :: ANAME = ' '    !  logical name for ASCII inven input
         CHARACTER(16) :: GNAME = ' '    !  ungridding matrix
         CHARACTER(16) :: DNAME = 'NONE' !  day-specific  input file, or "NONE"
         CHARACTER(16) :: ENAME = ' '    !  logical name for I/O API inven input
@@ -192,10 +192,9 @@ C...........   Other local variables
         INTEGER      :: PYEAR = 0           ! projected year
         INTEGER         SDATE, STIME        ! starting Julian date and time
         INTEGER         STPOS               ! starting position in ef day array
-        INTEGER         TNLEN               ! length of TNAME string
         INTEGER         TSTEP               ! output time step
         INTEGER         TZONE               ! output-file time zone
-        INTEGER         TZMIN               ! minimum time zone in inventory      
+        INTEGER         TZMIN               ! minimum time zone in inventory
         INTEGER         TZMAX               ! maximum time zone in inventory
         INTEGER      :: TDMAX = 0           ! maximum episode days
         INTEGER         LDATE               ! date used in previous subroutine call
@@ -223,8 +222,8 @@ C...........   Other local variables
         CHARACTER(16)        CURLNM    ! current ef logical file name
         CHARACTER(IOVLEN3)   VOLNAM    ! volatile pollutant name
         CHARACTER(300)       MESG      ! buffer for M3EXIT() messages
-        CHARACTER(IOVLEN3)   CBUF      ! pollutant name temporary buffer 
-        CHARACTER(IOVLEN3)   EBUF      ! pollutant name temporary buffer 
+        CHARACTER(IOVLEN3)   CBUF      ! pollutant name temporary buffer
+        CHARACTER(IOVLEN3)   EBUF      ! pollutant name temporary buffer
         CHARACTER(20)        SEARCHSTR ! string used in search
         CHARACTER(MXDLEN3)   TEMPLINE  ! line from file description
 
@@ -244,8 +243,8 @@ C.........  Obtain settings from the environment...
 C.........  Get the time zone for output of the emissions
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
-C.........  Get environment variable that overrides temporal profiles and 
-C               uses only uniform profiles. 
+C.........  Get environment variable that overrides temporal profiles and
+C               uses only uniform profiles.
         NFLAG = ENVYN( 'UNIFORM_TPROF_YN', MESG, .FALSE., IOS )
 
 C.........  Set source category based on environment variable setting
@@ -263,7 +262,7 @@ C.........  Get inventory file names given source category
         CALL GETINAME( CATEGORY, ENAME, ANAME )
 
 C.........  Prompt for and open input files
-C.........  Also, store source-category specific information in the MODINFO 
+C.........  Also, store source-category specific information in the MODINFO
 C           module.
         CALL OPENTMPIN( NFLAG, PFLAG, ENAME, ANAME, DNAME,
      &                  HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, HDEV,
@@ -272,7 +271,7 @@ C           module.
 C.........  Determine status of some files for program control purposes
         DFLAG = ( DNAME .NE. 'NONE' )  ! Day-specific emissions
         HFLAG = ( HNAME .NE. 'NONE' )  ! Hour-specific emissions
-        MFLAG = ( MDEV .NE. 0 )        ! Use mobile codes file
+        MFLAG = ( MDEV  .NE. 0 )       ! Use mobile codes file
 
 C.........  Get length of inventory file name
         ENLEN = LEN_TRIM( ENAME )
@@ -324,153 +323,6 @@ C.........  Adjust TZMIN and TZMAX for possibility of daylight savings
         TZMIN = MAX( TZMIN - 1, 0 )
         TZMAX = MIN( TZMAX + 1, 23 )
 
-C.........  Read episode time period lists from PROCDATES.txt
-        IF( PFLAG ) CALL RDDATES( KDEV, NTPERIOD )
-        IF( .NOT. PFLAG ) NTPERIOD = 1
-       
-C.........  Allocate memory for imaginary temporary julian date
-        ALLOCATE( ITDATE( NTPERIOD ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ITDATE', PROGNAME )
-        
-        DO II = 1, NTPERIOD
-        
-            NDAYS = 0
-
-C.............  Get episode settings from episode time periods file
-            IF( PFLAG ) THEN
-        
-                WRITE( SCDATE,'(I8)' ) STDATE( II )
-                JYEAR = STR2INT( SCDATE( 1:4 ) )
-                JMNTH = STR2INT( SCDATE( 5:6 ) )
-                JDAYS = STR2INT( SCDATE( 7:  ) )
-                SDATE = JULIAN( JYEAR, JMNTH, JDAYS )
-                ITDATE( II ) = JYEAR*1000 + SDATE
-                
-                SDATE = ITDATE( II )
-                STIME = STTIME( II )
-                TSTEP  = 10000  ! Only 1-hour time steps supported
-                NSTEPS = RUNLEN ( II ) / TSTEP
-             ELSE
-        
-C...............  Get episode settings from the Models-3 environment variables
-C             when $GE_DAT/procdates.txt is not available for episode time periods
-                SDATE  = 0
-                STIME  = 0
-                NSTEPS = 1
-                CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
-                TSTEP  = 10000  ! Only 1-hour time steps supported
-             END IF
-             
-C............  Determine number of days in episode
-             IF( II == 1 ) THEN
-                 EARLST = SDATE
-                 LATEST = SDATE
-             END IF
-
-C............  Earliest day is start time in maximum time zone
-             EARLYDATE = SDATE
-             EARLYTIME = STIME
-             CALL NEXTIME( EARLYDATE, EARLYTIME, 
-     &                    -( TZMAX - TZONE )*10000 )
-             
-C............  If time is before 6 am, need previous day also
-             IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
-             
-C............  Latest day is end time in minimum time zone
-C............  Calculate the ending date and time
-             EDATE = SDATE
-             ETIME = STIME
-             CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
-             
-             LATEDATE = EDATE
-             LATETIME = ETIME
-             CALL NEXTIME( LATEDATE, LATETIME, 
-     &                    -( TZMIN - TZONE )*10000 )
-         
-C............  If time is before 6 am, don't need last day
-             IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
-         
-             NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
-             NDAYS = NDAYS + 1
-             IF( NDAYS > TDMAX ) TDMAX = NDAYS
-
-C..............  Check earliest and latest dates during episode
-             IF( SDATE < EARLST ) EARLST = SDATE
-             IF( SDATE > LATEST ) LATEST = SDATE
-
-        END DO ! end of entire time episode periodes loops
-
-C.........  Check requested episode against available emission factors
-
-C.........  For day-specific data input...
-        IF( DFLAG ) THEN
-
-C.............  Get header description of day-specific input file
-            IF( .NOT. DESC3( DNAME ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, 
-     &                       'Could not get description of file "' 
-     &                       // DNAME( 1:LEN_TRIM( DNAME ) ) // '"', 2 )
-            END IF
-
-C.............  Allocate memory for pollutant pointer
-            ALLOCATE( DYPNAM( NVARS3D ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'DYPNAM', PROGNAME )
-            ALLOCATE( DYPDSC( NVARS3D ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'DYPDSC', PROGNAME )
-            DYPNAM = ' '  ! array
-            DYPDSC = ' '  ! array
-
-CC.............  Set day-specific file dates, check dates, and report problems
-            CALL PDSETUP( DNAME, EARLST, STIME, LATEST, ETIME, TZONE,  
-     &                    NIPPA, EANAM, NDYPOA, NDYSRC, EFLAG, DYPNAM,
-     &                    DYPDSC )
-      
-        ENDIF
-      
-C.........  Allocate memory for reading day-specific emissions data
-C.........  NDYSRC is initialized to zero in case DFLAG is false
-        ALLOCATE( INDXD( NDYSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INDXD', PROGNAME )
-        ALLOCATE( EMACD( NDYSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMACD', PROGNAME )
-      
-C.........  For hour-specific data input...
-        IF( HFLAG ) THEN
-
-C............. Get header description of hour-specific input file
-            IF( .NOT. DESC3( HNAME ) ) THEN
-                CALL M3EXIT( PROGNAME, 0, 0, 
-     &                       'Could not get description of file "' 
-     &                       // HNAME( 1:LEN_TRIM( HNAME ) ) // '"', 2 )
-            ENDIF
-
-C.............  Allocate memory for pollutant pointer
-            ALLOCATE( HRPNAM( NVARS3D ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'HRPNAM', PROGNAME )
-            ALLOCATE( HRPDSC( NVARS3D ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'HRPDSC', PROGNAME )
-            HRPNAM = ' '  ! array
-            HRPDSC = ' '  ! array
-
-C.............  Set day-specific file dates, check dates, and report problems
-            CALL PDSETUP( HNAME, EARLST, STIME, LATEST, ETIME, TZONE,  
-     &                    NIPPA, EANAM, NHRPOA, NHRSRC, EFLAG2, HRPNAM,
-     &                    HRPDSC )
-
-        ENDIF
-      
-C.........  Allocate memory for reading hour-specific emissions data
-C.........  NHRSRC is initialized to 0 in case HFLAG is false
-        ALLOCATE( INDXH( NHRSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'INDXH', PROGNAME )
-        ALLOCATE( EMACH( NHRSRC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMACH', PROGNAME )
-        
-        IF( EFLAG .OR. EFLAG2 ) THEN
-            MESG = 'Problem with day- or hour-specific inputs'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ENDIF
-
 C.........  Read special files...
 
 C.........  Read region codes file
@@ -485,12 +337,12 @@ C.........  Read holidays file
 C.........  When mobile codes file is being used read mobile codes file
         IF( MFLAG ) CALL RDMVINFO( MDEV )
 
-C.........  Determine all of the variables to be output based on the 
-C           activities and input pollutants.  
+C.........  Determine all of the variables to be output based on the
+C           activities and input pollutants.
         CALL TMNAMUNT
-        
+
 C.........  Reset the number of all output variables as the number of pollutants
-C           and emission types, instead of the number of pollutants and 
+C           and emission types, instead of the number of pollutants and
 C           activities
         NIPPA = NIPOL
 
@@ -540,33 +392,177 @@ C               pollutant is also part of the inventory pollutants
         END DO
 
 C.........  Reset number of pollutants and emission types based on those used
+
         NIPPA = N
 
-        TNLEN = LEN_TRIM( TNAME )
+C.........  Read episode time period lists from PROCDATES.txt
+C.........  or set NTPERIOD=1 and allocate RUNLEN(:)
+C.........  Get episode settings from the Models-3 environment variables
+C.........  when $GE_DAT/procdates.txt is not available for episode time periods
 
-C.........  Read temporal-profile cross-reference file and put into tables
+        CALL RDDATES( PFLAG, KDEV, NTPERIOD )
+
+        IF ( .NOT.PFLAG ) THEN
+            SDATE  = 0
+            STIME  = 0
+            NSTEPS = 1
+            CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
+
+            TSTEP = 10000           ! Only 1-hour time steps supported
+            JYEAR = SDATE / 1000
+            CALL DAYMON( SDATE, JMNTH, JDAYS )
+            STDATE(1) = JDAYS + 100*( JMNTH + 100*JYEAR )
+            STTIME(1) = STIME
+            RUNLEN(1) = NSTEPS
+            ITDATE(1) = SDATE
+        END IF
+
+        DO II = 1, NTPERIOD
+
+            NDAYS = 0
+
+C.............  Get episode settings from episode time periods file
+            IF( PFLAG ) THEN
+
+                WRITE( SCDATE,'(I8)' ) STDATE( II )
+                JYEAR = STR2INT( SCDATE( 1:4 ) )
+                JMNTH = STR2INT( SCDATE( 5:6 ) )
+                JDAYS = STR2INT( SCDATE( 7:  ) )
+                SDATE = JULIAN( JYEAR, JMNTH, JDAYS )
+                ITDATE( II ) = JYEAR*1000 + SDATE
+
+                SDATE = ITDATE( II )
+                STIME = STTIME( II )
+                TSTEP  = 10000  ! Only 1-hour time steps supported
+                NSTEPS = RUNLEN ( II ) / TSTEP
+             END IF
+
+C............  Determine number of days in episode
+             IF( II == 1 ) THEN
+                 EARLST = SDATE
+                 LATEST = SDATE
+             END IF
+
+C............  Earliest day is start time in maximum time zone
+             EARLYDATE = SDATE
+             EARLYTIME = STIME
+             CALL NEXTIME( EARLYDATE, EARLYTIME,
+     &                    -( TZMAX - TZONE )*10000 )
+
+C............  If time is before 6 am, need previous day also
+             IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
+
+C............  Latest day is end time in minimum time zone
+C............  Calculate the ending date and time
+             EDATE = SDATE
+             ETIME = STIME
+             CALL NEXTIME( EDATE, ETIME, NSTEPS * 10000 )
+
+             LATEDATE = EDATE
+             LATETIME = ETIME
+             CALL NEXTIME( LATEDATE, LATETIME,
+     &                    -( TZMIN - TZONE )*10000 )
+
+C............  If time is before 6 am, don't need last day
+             IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
+
+             NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
+             NDAYS = NDAYS + 1
+             IF( NDAYS > TDMAX ) TDMAX = NDAYS
+
+C..............  Check earliest and latest dates during episode
+             IF( SDATE < EARLST ) EARLST = SDATE
+             IF( SDATE > LATEST ) LATEST = SDATE
+
+        END DO ! end of entire time episode periodes loops
+
+
+C.........  Read temporal-profile cross-reference file and profiles, and
+C.........  put into tables
 C.........  Only read entries for pollutants that are in the inventory.
 C.........  Only read if not using uniform temporal profiles
-        IF( .NOT. NFLAG ) CALL RDTREF( XDEV, TREFFMT )
+C.........  Assign temporal profiles to sources.
 
-C.........  Read temporal-profiles file:  4 parts (monthly, weekly, 
-C           weekday diurnal, and weekend diurnal)
-        CALL M3MSG2( 'Reading temporal profiles file...' )
+        CALL PROCTPRO( NFLAG, METPROFLAG, PNAME )
 
-        NMON = RDTPROF( RDEV, 'MONTHLY', NFLAG )
-        NWEK = RDTPROF( RDEV, 'WEEKLY' , NFLAG )
-        NHRL = RDTPROF( RDEV, 'DIURNAL', NFLAG )
+        IF ( .NOT.NFLAG ) CALL ASGNTPRO()
 
-C.........  Read Met-based temporal-profiles file 
-        IF( METPROFLAG ) CALL RDMETPROF( PNAME )
 
-C.........  Adjust temporal profiles for use in generating temporal emissions
-C.........  NOTE - All variables are passed by modules.
-        CALL NORMTPRO
+C.........  Check requested episode against available emission factors
+
+C.........  For day-specific data input...
+        IF( DFLAG ) THEN
+
+C.............  Get header description of day-specific input file
+            IF( .NOT. DESC3( DNAME ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0,
+     &                       'Could not get description of file "'
+     &                       // DNAME( 1:LEN_TRIM( DNAME ) ) // '"', 2 )
+            END IF
+
+C.............  Allocate memory for pollutant pointer
+            ALLOCATE( DYPNAM( NVARS3D ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DYPNAM', PROGNAME )
+            ALLOCATE( DYPDSC( NVARS3D ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'DYPDSC', PROGNAME )
+            DYPNAM = ' '  ! array
+            DYPDSC = ' '  ! array
+
+CC.............  Set day-specific file dates, check dates, and report problems
+            CALL PDSETUP( DNAME, EARLST, STIME, LATEST, ETIME, TZONE,
+     &                    NIPPA, EANAM, NDYPOA, NDYSRC, EFLAG, DYPNAM,
+     &                    DYPDSC )
+
+        ENDIF
+
+C.........  Allocate memory for reading day-specific emissions data
+C.........  NDYSRC is initialized to zero in case DFLAG is false
+        ALLOCATE( INDXD( NDYSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDXD', PROGNAME )
+        ALLOCATE( EMACD( NDYSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMACD', PROGNAME )
+
+C.........  For hour-specific data input...
+        IF( HFLAG ) THEN
+
+C............. Get header description of hour-specific input file
+            IF( .NOT. DESC3( HNAME ) ) THEN
+                CALL M3EXIT( PROGNAME, 0, 0,
+     &                       'Could not get description of file "'
+     &                       // HNAME( 1:LEN_TRIM( HNAME ) ) // '"', 2 )
+            ENDIF
+
+C.............  Allocate memory for pollutant pointer
+            ALLOCATE( HRPNAM( NVARS3D ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'HRPNAM', PROGNAME )
+            ALLOCATE( HRPDSC( NVARS3D ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'HRPDSC', PROGNAME )
+            HRPNAM = ' '  ! array
+            HRPDSC = ' '  ! array
+
+C.............  Set day-specific file dates, check dates, and report problems
+            CALL PDSETUP( HNAME, EARLST, STIME, LATEST, ETIME, TZONE,
+     &                    NIPPA, EANAM, NHRPOA, NHRSRC, EFLAG2, HRPNAM,
+     &                    HRPDSC )
+
+        ENDIF
+
+C.........  Allocate memory for reading hour-specific emissions data
+C.........  NHRSRC is initialized to 0 in case HFLAG is false
+        ALLOCATE( INDXH( NHRSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'INDXH', PROGNAME )
+        ALLOCATE( EMACH( NHRSRC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'EMACH', PROGNAME )
+
+        IF( EFLAG .OR. EFLAG2 ) THEN
+            MESG = 'Problem with day- or hour-specific inputs'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ENDIF
 
 C......  Get episode settings from episode time periods file
+
       DO II = 1, NTPERIOD
-      
+
         LDATE = -1     ! initializing previous date
 
 C.........  Initialize EAREAD2D every processing date
@@ -574,7 +570,7 @@ C.........  Initialize EAREAD2D every processing date
             EAREAD2D( I ) = EAREAD( I )
         END DO
 
-C.........  It is important that all major arrays must be allocated by this 
+C.........  It is important that all major arrays must be allocated by this
 C           point because the next memory allocation step is going to pick a
 C           data structure that will fit within the limits of the host.
 
@@ -601,24 +597,19 @@ C.........  Make sure total array size is not larger than maximum
 
         DO
 
-            ALLOCATE( TMAT ( NSRC, NGSZ, 24 ), STAT=IOS1 )
-            ALLOCATE( MDEX ( NSRC, NGSZ )    , STAT=IOS2 )
-            ALLOCATE( WDEX ( NSRC, NGSZ )    , STAT=IOS3 )
-            ALLOCATE( DDEX ( NSRC, NGSZ )    , STAT=IOS4 )
-            ALLOCATE( EMAC ( NSRC, NGSZ )    , STAT=IOS6 )
-            ALLOCATE( EMACV( NSRC, NGSZ )    , STAT=IOS7 )
-            ALLOCATE( EMIST( NSRC, NGSZ )    , STAT=IOS8 )
-            ALLOCATE( EMFAC( NSRC, NGSZ )    , STAT=IOS9 )
-            
-            IF( IOS1 .GT. 0 .OR. IOS2 .GT. 0 .OR. IOS3 .GT. 0 .OR.
-     &          IOS4 .GT. 0 .OR. IOS6 .GT. 0 .OR.
-     &          IOS7 .GT. 0 .OR. IOS8 .GT. 0 .OR. IOS9 .GT. 0 ) THEN
+            ALLOCATE( TMAT ( NSRC, NGSZ, 24 ),
+     &                EMAC ( NSRC, NGSZ )    ,
+     &                EMACV( NSRC, NGSZ )    ,
+     &                EMIST( NSRC, NGSZ )    ,
+     &                EMFAC( NSRC, NGSZ )    , STAT=IOS9 )
+
+            IF( IOS9 .GT. 0 ) THEN
 
                 IF( NGSZ .EQ. 1 ) THEN
                     J = 8 * NSRC * 31    ! Assume 8-byte reals
-                    WRITE( MESG,94010 ) 
+                    WRITE( MESG,94010 )
      &                'Insufficient memory to run program.' //
-     &                CRLF() // BLANK5 // 'Could not allocate ' // 
+     &                CRLF() // BLANK5 // 'Could not allocate ' //
      &                'pollutant-dependent block of', J, 'bytes.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
@@ -627,9 +618,6 @@ C.........  Make sure total array size is not larger than maximum
                 NGSZ = ( NIPPA + NGRP - 1 ) / NGRP
 
                 IF( ALLOCATED( TMAT  ) ) DEALLOCATE( TMAT )
-                IF( ALLOCATED( MDEX  ) ) DEALLOCATE( MDEX )
-                IF( ALLOCATED( WDEX  ) ) DEALLOCATE( WDEX )
-                IF( ALLOCATED( DDEX  ) ) DEALLOCATE( DDEX )
                 IF( ALLOCATED( EMAC  ) ) DEALLOCATE( EMAC )
                 IF( ALLOCATED( EMACV ) ) DEALLOCATE( EMACV )
                 IF( ALLOCATED( EMIST ) ) DEALLOCATE( EMIST )
@@ -641,67 +629,65 @@ C.........  Make sure total array size is not larger than maximum
             END IF
 
         END DO
-        
+
+        WRITE( MESG, '( 2( A, I4, 2X ) )' )
+     &     'Processing', NGRP, 'pollutant groups of size', NGSZ
+        CALL M3MESG( MESG )
+
 C.........  Allocate a few small arrays based on the size of the groups
 C.........  NOTE that this has a small potential for a problem if these little
 C           arrays exceed the total memory limit.
         IF( ALLOCATED( ALLIN2D ) ) DEALLOCATE( ALLIN2D )
         IF( ALLOCATED( EANAM2D ) ) DEALLOCATE( EANAM2D )
+        IF( ALLOCATED( IPOL2D  ) ) DEALLOCATE( IPOL2D  )
         IF( ALLOCATED( LDSPOA  ) ) DEALLOCATE( LDSPOA  )
         IF( ALLOCATED( LHSPOA  ) ) DEALLOCATE( LHSPOA  )
         IF( ALLOCATED( LHPROF  ) ) DEALLOCATE( LHPROF  )
 
-        ALLOCATE( ALLIN2D( NGSZ, NGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'ALLIN2D', PROGNAME )
-        ALLOCATE( EANAM2D( NGSZ, NGRP ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EANAM2D', PROGNAME )
-        ALLOCATE( LDSPOA( NGSZ ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LDSPOA', PROGNAME )
-        ALLOCATE( LHSPOA( NGSZ ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LHSPOA', PROGNAME )
-        ALLOCATE( LHPROF( NGSZ ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LHPROF', PROGNAME )
+        ALLOCATE( ALLIN2D( NGSZ, NGRP ),
+     &            EANAM2D( NGSZ, NGRP ),
+     &             IPOL2D( NGSZ, NGRP ),
+     &             LDSPOA( NGSZ ),
+     &             LHSPOA( NGSZ ),
+     &             LHPROF( NGSZ ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ALLIN2D...LHPROF', PROGNAME )
 
-C.........  Create 2-d arrays of I/O pol names, activities, & emission types 
-        ALLIN2D = ' '
-        EANAM2D = ' '
+C.........  Create 2-d arrays of I/O pol names, activities, & emission types
+
         I = 0
-        DO N = 1, NGRP 
-            DO J = 1, NGSZ
-                I = I + 1
-                IF ( I .LE. NIPPA ) THEN
-                    EANAM2D( J,N ) = EANAM( I )
-                    ALLIN2D( J,N ) = ALLIN( I )
-                END IF
-            END DO
+        DO N = 1, NGRP
+        DO J = 1, NGSZ
+            I = I + 1
+            IF ( I .LE. NIPPA ) THEN
+                IPOL2D ( J,N ) = I
+                EANAM2D( J,N ) = EANAM( I )
+                ALLIN2D( J,N ) = ALLIN( I )
+            ELSE
+                IPOL2D ( J,N ) = 0
+                EANAM2D( J,N ) = ' '
+                ALLIN2D( J,N ) = ' '
+            END IF
+        END DO
         END DO
 
 C......  Determine number of days in episode
+
         IF( PFLAG ) THEN
-           SDATE = ITDATE( II )
-           STIME = STTIME( II )
+           SDATE  = ITDATE( II )
+           STIME  = STTIME( II )
            TSTEP  = 10000  ! Only 1-hour time steps supported
            NSTEPS = RUNLEN ( II ) / TSTEP
-        ELSE
-
-C.....  Get episode settings from the Models-3 environment variables
-C       when $GE_DAT/procdates.txt is not available for episode time periods
-           SDATE  = 0
-           STIME  = 0
-           NSTEPS = 1
-           CALL GETM3EPI( TZONE, SDATE, STIME, TSTEP, NSTEPS )
-           TSTEP  = 10000  ! Only 1-hour time steps supported
         END IF
 
 C.........  Earliest day is start time in maximum time zone
         EARLYDATE = SDATE
         EARLYTIME = STIME
-        CALL NEXTIME( EARLYDATE, EARLYTIME, 
+        CALL NEXTIME( EARLYDATE, EARLYTIME,
      &               -( TZMAX - TZONE )*10000 )
-            
+
 C.........  If time is before 6 am, need previous day also
         IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
-        
+
 C.........  Latest day is end time in minimum time zone
         EDATE = SDATE
         ETIME = STIME
@@ -709,7 +695,7 @@ C.........  Latest day is end time in minimum time zone
 
         LATEDATE = EDATE
         LATETIME = ETIME
-        CALL NEXTIME( LATEDATE, LATETIME, 
+        CALL NEXTIME( LATEDATE, LATETIME,
      &               -( TZMIN - TZONE )*10000 )
 C.........  If time is before 6 am, don't need last day
         IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
@@ -727,7 +713,7 @@ C.....  Allocate memory for emission factor arrays
 C.........  Compare base year with episode and warn if not consistent
         IF( SDATE / 1000 .NE. BYEAR ) THEN
 
-            WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR, 
+            WRITE( MESG,94010 ) 'WARNING: Inventory base year ', BYEAR,
      &             'is inconsistent with year ' // CRLF() // BLANK10 //
      &             'of episode start date', SDATE/1000
             CALL M3MSG2( MESG )
@@ -755,7 +741,7 @@ C               number of variables, so reset based on total number
             IF( N == NGRP ) THEN
                 NGSZ = NIPPA - ( NGRP - 1 )*NGSZ
             END IF
-            
+
 C.............  Skip group if the first pollutant in group is blank (this
 C               shouldn't happen, but it is happening, and it's easier to
 C               make this fix).
@@ -786,33 +772,16 @@ C               are actually diurnal profiles instead of emissions
             END DO
 
 C.............  Initialize emissions, activities, and other arrays for this
-C               pollutant/emission-type group
+C.............  pollutant/emission-type group
+
             TMAT  = 0.
-            MDEX  = IMISS3
-            WDEX  = IMISS3
-            DDEX  = IMISS3
             EMAC  = 0.
             EMACV = 0.
             EMIST = 0.
 
-C.............  Assign temporal profiles by source and pollutant
-            CALL M3MSG2( 'Assigning temporal profiles to sources...' )
-
-C.............  If using uniform profiles, set all temporal profile number
-C               to 1; otherwise, assign profiles with cross-reference info
-
-            IF( NFLAG ) THEN
-                MDEX = 1
-                WDEX = 1
-                DDEX = 1
-
-            ELSE
-                CALL ASGNTPRO( NGSZ, EANAM2D( 1,N ), TREFFMT )
-
-            END IF
-
-C.............  Read in pollutant emissions or activities from inventory for 
+C.............  Read in pollutant emissions or activities from inventory for
 C               current group
+
             DO I = 1, NGSZ
 
                 EBUF = EANAM2D( I,N )
@@ -832,7 +801,7 @@ C                 error to avoid problems in genhemis routine
                 IF( RTMP .LT. 0 ) THEN
                     EFLAG = .TRUE.
                     MESG = 'ERROR: Missing or negative emission '//
-     &                     'value(s) in inventory for "' // 
+     &                     'value(s) in inventory for "' //
      &                     CBUF( 1:L1 ) // '".'
                     CALL M3MSG2( MESG )
                 END IF
@@ -855,23 +824,27 @@ C.............  Abort if error found
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
 
-C.............  For each time step and pollutant or emission type in current 
+C.............  For each time step and pollutant or emission type in current
 C               group, generate hourly emissions, and write layer-1 emissions
 C               file (or all data).
             JDATE = SDATE
             JTIME = STIME
 
-C.............  Loop through time steps for current pollutant group
-            DO T = 1, NSTEPS
+            DO T = 1, NSTEPS        !!  Loop through time steps for current pollutant group
 
-C.................  Adjust sources' time zones to account for daylight time...
-C.................  Subtract 1 if date is daylight time and TZONES is not already
-C                   converted.  Add 1 if date is standard and TZONES has been
-C                   converted.
-C.................  FLTRDAYL is a source-array of 0s and 1s to permit sources
-C                   to not get daylight time conversion.
+                WRITE( MESG, '( A, I4, 2X, A, I9.7, A, I6.6 )' ) 
+     &                'Processing pol-group', N, 'for', JDATE, ':', JTIME
+                CALL M3MESG( MESG )
+
+                !!...  Adjust sources' time zones to account for daylight time...
+                !!...  Subtract 1 if date is daylight time and TZONES is not already
+                !!...  converted.  Add 1 if date is standard and TZONES has been
+                !!...  converted.
+                !!...  FLTRDAYL is a source-array of 0s and 1s to permit sources
+                !!...  to not get daylight time conversion.
+
                 IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
-                    
+
                     DAYLIT = .TRUE.
                     TZONES = TZONES - 1 * FLTRDAYL   ! arrays
 
@@ -880,62 +853,59 @@ C                   to not get daylight time conversion.
                     ENDDO
 
                 ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
-                
+
                     DAYLIT = .FALSE.
                     TZONES = TZONES + 1 * FLTRDAYL   ! arrays
-                   
+
                     DO IS = 1,NSRC
-                        IF( TZONES( IS ) > 23 ) TZONES( IS ) = 0 
+                        IF( TZONES( IS ) > 23 ) TZONES( IS ) = 0
                     ENDDO
-                
+
                 END IF
 
-C.................  Generate hourly emissions for current hour
-                CALL GENHEMIS( NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME, 
-     &                  PNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D, 
+                !!...  Generate and write hourly emissions for current hour
+
+                CALL GENHEMIS( N, NGRP, NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME,
+     &                  PNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D,
      &                  EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
 
-C.................  Loop through pollutants/emission-types in this group
-                DO I = 1, NGSZ
-
+                DO I = 1, NGSZ      !!  Loop through pollutants/emission-types in this group
+                                    !!  Skip blanks that can occur when NGRP > 1
                     CBUF = EANAM2D( I,N )
-
-C.....................  Skip blanks that can occur when NGRP > 1
                     IF ( CBUF .EQ. ' ' ) CYCLE
 
-C.....................  Write hourly emissions to I/O API NetCDF file
                     IF( .NOT. WRITESET( TNAME, CBUF, ALLFILES, JDATE,
      &                                  JTIME, EMIST( 1,I ) )    ) THEN
-                        L = LEN_TRIM( CBUF )
-                        MESG = 'Could not write "' // CBUF( 1:L ) // 
-     &                         '" to file "' // TNAME( 1:TNLEN ) // '."'
+                        MESG = 'Could not write "' // TRIM( CBUF ) //
+     &                         '" to file "' // TRIM( TNAME ) // '"'
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
                     END IF
 
-                END DO  ! End loop on pollutants/emission-types I in this group
+                END DO  !! End loop on pollutants/emission-types I in this group
 
 C.................  Advance the output date/time by one time step
+
                 CALL NEXTIME( JDATE, JTIME, TSTEP )
 
             END DO      ! End loop on time steps T
 
-C.............  Write supplemental temporal profiles file
-            CALL WRTSUP( PDEV, NSRC, NGSZ, EANAM2D( 1,N ) )
+         END DO         ! End loop on pollutant groups N
 
-         END DO          ! End loop on pollutant groups N
+C.............  Write supplemental temporal profiles file
+
+         CALL WRTSUP( PDEV, NSRC, 1, EANAM )
 
          IF( .NOT. CLOSESET( TNAME ) ) THEN
              MESG = 'Could not close file "' // TRIM( TNAME ) // '".'
              CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
          END IF
 
-         DEALLOCATE( TMAT, MDEX, WDEX, DDEX, EMAC, EMACV, EMIST, EMFAC )
+         DEALLOCATE( TMAT, EMAC, EMACV, EMIST, EMFAC )
 
        END DO            ! End loop on time period II
 
-C.........  Exit program with normal completion
-        CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
+        CALL M3EXIT( PROGNAME, 0, 0, 'Normal completion', 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 
@@ -945,6 +915,6 @@ C...........   Internal buffering formats.............94xxx
 
 94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
      &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
-     
+
         END PROGRAM TEMPORAL
 

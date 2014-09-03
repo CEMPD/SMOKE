@@ -1,26 +1,31 @@
 
-        SUBROUTINE ASGNTPRO( NGSZ, ANAM, TREFFMT )
+        SUBROUTINE ASGNTPRO
 
 C***********************************************************************
 C  subroutine body starts at line 145
 C
 C  DESCRIPTION:
-C      For each source and pollutant or emission type, find the most specific 
-C      temporal profile that applies to that source. Do this using the 
-C      grouped tables of temporal cross references from RDTREF. The hierarchical   
-C      order is defined in this subroutine, and can be determined from the 
-C      in-source comments below. Once a profile code has been identified, 
-C      search for this code in the temporal profile tables (from RDTPROF) and 
+C      For each source and pollutant or emission type, find the most specific
+C      temporal profile that applies to that source. Do this using the
+C      grouped tables of temporal cross references from RDTREF. The hierarchical
+C      order is defined in this subroutine, and can be determined from the
+C      in-source comments below. Once a profile code has been identified,
+C      search for this code in the temporal profile tables (from RDTPROF) and
 C      save the index to these tables for each source and pollutant.
 C
 C  PRECONDITIONS REQUIRED:
-C     Expects tables to have IMISS3 where they are undefined
+C     Call PROCTPRO() first
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C     Created 1/99 by M. Houyoux
+C       Created 1/1999 by M. Houyoux
 C
+C       Revised ??/???? by ??
+C
+C       Version 07/2014 by C.Coats for  new GENTPRO CSV profiles and cross-references
+C       Does source-to-profile mapping for all sources,species.
+C       Note that met-based profiles are managed in PROCTPRO()
 C****************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -29,850 +34,1174 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
 
-C...........   MODULES for public variables   
-C...........   This module contains the source ararys
+C.........   MODULES for public variables
+C.........   MODSOURC contains the source ararys
+C.........   MODTMPRL contains the temporal profile tables
+C.........   MODINFO contains the information about the source category
+
         USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG, IRCLAS, IVTYPE
 
-C...........   This module contains the cross-reference tables
-        USE MODXREF, ONLY: CHRT02, CHRT03, CHRT04, CHRT05, CHRT06,
-     &                     CHRT07, CHRT08, CHRT09, CHRT10, CHRT11,
-     &                     CHRT12, CHRT13, CHRT14, CHRT15, CHRT16,
-     &                     DPRT01, DPRT02, DPRT03, DPRT04, DPRT05,
-     &                     DPRT06, DPRT07, DPRT08, DPRT09, DPRT10,
-     &                     DPRT11, DPRT12, DPRT13, DPRT14, DPRT15, 
-     &                     DPRT16, DPRNA, DDEX,
-     &                     WPRT01, WPRT02, WPRT03, WPRT04, WPRT05,
-     &                     WPRT06, WPRT07, WPRT08, WPRT09, WPRT10,
-     &                     WPRT11, WPRT12, WPRT13, WPRT14, WPRT15, 
-     &                     WPRT16, WPRNA, WDEX,
-     &                     MPRT01, MPRT02, MPRT03, MPRT04, MPRT05,
-     &                     MPRT06, MPRT07, MPRT08, MPRT09, MPRT10,
-     &                     MPRT11, MPRT12, MPRT13, MPRT14, MPRT15, 
-     &                     MPRT16, MPRNA, MDEX, ADDPS, TXCNT
+        USE MODTMPRL, ONLY: NMON, NWEK, NHRL, NDOM, METPROF,
+     &                      MTHPROF, WEKPROF, DOMPROF, HRLPROF,
+     &                      MTHCOUNT, WEKCOUNT, DOMCOUNT,
+     &                      MONCOUNT, TUECOUNT, WEDCOUNT, THUCOUNT,
+     &                      FRICOUNT, SATCOUNT, SUNCOUNT, METCOUNT,
+     &                      MTHPDEX, WEKPDEX, DOMPDEX,
+     &                      MONPDEX, TUEPDEX, WEDPDEX, THUPDEX,
+     &                      FRIPDEX, SATPDEX, SUNPDEX,
+     &                      MTHKEYS, WEKKEYS, DOMKEYS,
+     &                      MONKEYS, TUEKEYS, WEDKEYS, THUKEYS,
+     &                      FRIKEYS, SATKEYS, SUNKEYS, METKEYS,
+     &                      DAYFLAG, POLREFFLAG, METREFFLAG
 
-C...........   This module contains the temporal profile tables
-        USE MODTMPRL, ONLY: NMON, MONREF, NWEK, WEKREF, NHRL, HRLREF
-        
-C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: NSRC, NCHARS, JSCC, NIPPA, EANAM, LSCCEND,
-     &                     CATEGORY, MCODEFLAG
+        USE MODINFO, ONLY: NSRC, NIPPA, EANAM, LSCCEND, CATEGORY
 
         IMPLICIT NONE
 
-C...........   INCLUDES
+C.........  INCLUDES
+
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
-C...........   EXTERNAL FUNCTIONS and their descriptions:
-        CHARACTER(2)    CRLF
-        INTEGER         ENVINT
-        LOGICAL         ENVYN
-        INTEGER         FIND1
-        INTEGER         FINDC
-        INTEGER         INDEX1
-        LOGICAL         SETSCCTYPE
+C.........  EXTERNAL FUNCTIONS and their descriptions:
 
-        EXTERNAL CRLF, ENVINT, ENVYN, FIND1, FINDC, INDEX1, SETSCCTYPE
+        CHARACTER(2), EXTERNAL :: CRLF
+        INTEGER     , EXTERNAL :: ENVINT
+        LOGICAL     , EXTERNAL :: ENVYN
+        INTEGER     , EXTERNAL :: FIND1
+        INTEGER     , EXTERNAL :: FINDC
+        INTEGER     , EXTERNAL :: INDEX1
+        LOGICAL     , EXTERNAL :: SETSCCTYPE
 
-C.........  SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN):: NGSZ          ! no. pols/emis-types in group
-        CHARACTER(*), INTENT (IN):: ANAM( NGSZ )  ! group pol names
-        CHARACTER(*), INTENT (IN):: TREFFMT       ! temporal x-ref format
+C.........  Local parameters
 
-C.........  Arrays for evaluating x-ref cases
-        LOGICAL          STAT  ( 14 )  ! matching and pollutant status
+        CHARACTER(9), PARAMETER :: DAYNAME( 7 ) =  
+     &      (/  'MONDAY   ', 'TUESDAY  ', 'WEDNESDAY', 'THURSDAY ',
+     &          'FRIDAY   ', 'SATURDAY ', 'SUNDAY   '   /)
+
+        CHARACTER( 1),      PARAMETER :: BLANK   = ' '
+        CHARACTER(24),      PARAMETER :: ZEROS   = '000000000000000000000000'
+        CHARACTER(24),      PARAMETER :: BADSTR  = '????????????????????????'
+        CHARACTER(RWTLEN3), PARAMETER :: RWTZERO = ZEROS    !  "  zero roadway type
+        CHARACTER(VIDLEN3), PARAMETER :: VIDZERO = ZEROS    !  "  zero vehicle type
+
+        CHARACTER(16),      PARAMETER :: PNAME   = 'ASGNTPRO' ! program name
 
 C.........  Other local variables
-        INTEGER          I, J, L2, S, V    !  counters and indices
+
+        INTEGER         I, J, L2, S, V      !  counters and indices
+        INTEGER         ISTAT
+        INTEGER         IPROF
 
         INTEGER          ERRCNT  !  count of errors
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
-        INTEGER       :: F0B = 0 ! extra find index for mobile
-        INTEGER       :: F2B = 0 ! extra find index for mobile
-        INTEGER       :: F4B = 0 ! extra find index for mobile
-        INTEGER          MREF    !  tmp monthly profile code
-        INTEGER          WREF    !  tmp weekly  profile code
-        INTEGER          DREF    !  tmp diurnal profile code
-        INTEGER          NCHKCHR ! position of last non-SCC src char
-        INTEGER          MXERR   !  max error messages to output
-        INTEGER          MXWARN  !  max warning messages to output
-        INTEGER          WRNCNT  !  count of warnings
+        INTEGER          F0B     ! extra find index for mobile
+        INTEGER          F2B     ! extra find index for mobile
+        INTEGER          F4B     ! extra find index for mobile
 
-        LOGICAL       :: EFLAG    = .FALSE. ! true: error found
-        LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time routine called
-        LOGICAL          MFLAG              ! true: use monthly profiles
-        LOGICAL          WFLAG              ! true: use weekly  profiles
-        LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report default x-ref applied
-        LOGICAL          SCCFLAG           ! true: SCC type is different from previous
+        LOGICAL          EFLAG
+        LOGICAL          MFLAG              !  true: use monthly profiles
+        LOGICAL          WFLAG              !  true: use weekly  profiles
+        LOGICAL          SCCFLAG            !  true: SCC type is different from previous
 
-        CHARACTER(10)        RWTFMT   ! fmt to write roadway type to string
-        CHARACTER(10)        VIDFMT   ! format to write veh ID to string
-        CHARACTER(300)       BUFFER   ! source fields buffer
-        CHARACTER(300)       MESG     ! message buffer
-        CHARACTER(SRCLEN3)   CSRC     ! tmp source chars string
-        CHARACTER(FIPLEN3)   CFIP     ! tmp (character) FIPS code
-        CHARACTER(STALEN3)   CSTA     ! tmp Country/state code
-        CHARACTER(SCCLEN3)   TSCC     ! tmp 10-digit SCC
-        CHARACTER(SCCLEN3)   TSCCL    ! tmp left digits of TSCC
-        CHARACTER(SCCLEN3)   TSCCSAV  ! TSCC saved for msg (mb: resets TSCC)
-        CHARACTER(SCCLEN3)   CHKRWT   ! tmp roadway type only SCC
-        CHARACTER(SCCLEN3)   CHKVID   ! tmp vehicle-type only SCC
-        CHARACTER(SS5LEN3):: CSRC5=' '! tmp source chars through char5
-        CHARACTER(SS4LEN3):: CSRC4=' '! tmp source chars through char4
-        CHARACTER(SS3LEN3):: CSRC3=' '! tmp source chars through char3
-        CHARACTER(SS2LEN3):: CSRC2=' '! tmp source chars through char2
-        CHARACTER(SS1LEN3):: CSRC1=' '! tmp source chars through char1
-        CHARACTER(SS5LEN3):: CHK16=' '! tmp source chars through char5// SCC
-        CHARACTER(SS4LEN3):: CHK15=' '! tmp source chars through char4// SCC
-        CHARACTER(SS3LEN3):: CHK14=' '! tmp source chars through char3// SCC
-        CHARACTER(SS2LEN3):: CHK13=' '! tmp source chars through char2// SCC
-        CHARACTER(SS1LEN3):: CHK12=' '! tmp source chars through char1// SCC
-        CHARACTER(SS0LEN3):: CHK11=' '! tmp FIPS // Plant // SCC
-        CHARACTER(FPLLEN3):: CHK10=' '! tmp FIPS code // plant id
-        CHARACTER(FPSLEN3):: CHK09=' '! tmp FIPS code // SCC
-        CHARACTER(FPSLEN3):: CHK08=' '! tmp FIPS code // left SCC
-        CHARACTER(FPSLEN3):: CHK08B=' '! tmp FIPS code // veh ID SCC
-        CHARACTER(STSLEN3):: CHK06=' '! tmp Country/state code // SCC
-        CHARACTER(STSLEN3):: CHK05=' '! tmp Country/state code // left SCC
-        CHARACTER(STSLEN3):: CHK05B=' '! tmp Country/state code// veh ID SCC
-        CHARACTER(SCCLEN3):: CHK02B=' '! tmp veh ID SCC
-        CHARACTER(RWTLEN3)   CRWT     ! tmp char roadway type
-        CHARACTER(RWTLEN3)   RWTZERO  ! zero roadway type
-        CHARACTER(VIDLEN3)   CVID     ! tmp vehicle type
-        CHARACTER(VIDLEN3)   VIDZERO  ! zero vehicle type
+        INTEGER, SAVE :: MXERR              !  max error messages to output
+        LOGICAL, SAVE :: FIRSTIME = .TRUE.  !  true: first time routine called
+        LOGICAL, SAVE :: FULLSCC  = .FALSE. ! true: use only full SCC entries
 
-        CHARACTER(16) :: PROGNAME = 'ASGNTPRO' ! program name
+        CHARACTER(5)        CPOS( 0:NIPPA ) !  string for sorted position of pol/act
+
+        CHARACTER(10)       RWTFMT          !  fmt to write roadway type to string
+        CHARACTER(10)       VIDFMT          !  format to write veh ID to string
+        CHARACTER(300)      BUFFER          !  source fields buffer
+        CHARACTER(300)      MESG            !  message buffer
+        CHARACTER(SRCLEN3)  CSRC            !  tmp source chars string
+        CHARACTER(FIPLEN3)  CFIP            !  tmp (character) FIPS code
+        CHARACTER(FIPLEN3)  CFIPL           !  tmp Country/state code
+        CHARACTER(FIPLEN3)  CFIPZ           !  blank Country/state code
+        CHARACTER(SCCLEN3)  TSCC            !  tmp 10-digit SCC
+        CHARACTER(SCCLEN3)  TSCCL           !  tmp left digits of TSCC
+        CHARACTER(SCCLEN3)  TSCC5           !  tmp left digits of TSCC
+        CHARACTER(SCCLEN3)  TSCCZ           !  blank TSCC
+        CHARACTER(SCCLEN3)  TSCCSAV         !  TSCC saved for msg (mb: resets TSCC)
+        CHARACTER(SCCLEN3)  CHKRWT          !  tmp roadway type only SCC
+        CHARACTER(SCCLEN3)  CHKVID          !  tmp vehicle-type only SCC
+        CHARACTER(RWTLEN3)  CRWT            !  tmp char roadway type
+        CHARACTER(VIDLEN3)  CVID            !  tmp vehicle type
+        CHARACTER(IOVLEN3)  CPOA            !  temporary pollutant/emission type
+        CHARACTER(CHRLEN3)  CPLT            !  tmp plant ID
+        CHARACTER(CHRLEN3)  CPLTB           !  tmp plant ID
+        CHARACTER(CHRLEN3)  CPNT            !  tmp point ID
+        CHARACTER(CHRLEN3)  CSTK            !  tmp stack ID
+        CHARACTER(CHRLEN3)  CSEG            !  tmp segment ID
+        CHARACTER(CHRLEN3)  CPL5            !  tmp plt char 5
+        CHARACTER(CHRLEN3)  CBLNK           !  tmp blank
+
+
+C.........  CSRCALL from BLDSRC(), listed in order of the search hierarchy
+C           See SMOKE documentation, section 6.17:
+C           https://www.cmascenter.org/smoke/documentation/3.5/html/ch06s17.html
+C           Note that "no pollutant specified" initializes *PDEX arrays where possible;
+C           then V=1,...,NIPPA override it
+C           BADSTR initialization is retained for non-full-SCC entries
+C           whenever FULLSCC is set.  (The logic is considerably simpler
+C           to do all the searches, and use BADSTR to force the irrelevant
+C           ones to fail.)
+
+        CHARACTER(ALLLEN3) :: CSRC01 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC02 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC03 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC04 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC05 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC06 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC07 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC08 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC09 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC10 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC11 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC12 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC13 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC14 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC15 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC16 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC17 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC18 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC19 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC20 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC21 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC22 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC23 = BADSTR
 
 C***********************************************************************
 C   begin body of subroutine ASGNTPRO
 
-C.........  For list-formatted temporal cross-reference (one entry per source)
-C           from EMS-95 files, the profiles are not applied per pollutant.  So,
-C           we can set these for the first group of pollutants used when
-C           calling this subroutine and then use them for all pollutants.
-        IF( FIRSTIME .AND. TREFFMT .EQ. 'SOURCE' ) THEN
-
-C.............  Set for first pollutant in group  
-            J = 1
-            DO S = 1, NSRC
-
-C.................  Set MFLAG to true for using monthly temporal adjustments
-                MFLAG = ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 )
-
-C.................  Set WFLAG to trur for using weekly temporal adjustments
-                WFLAG = ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 .OR.
-     &                    MOD( TPFLAG( S ), WDTPFAC ) .EQ. 0      )
-
-                MREF = MPRNA( S )
-                WREF = WPRNA( S )
-                DREF = DPRNA( S )
-                
-                CSRC = CSOURC( S )
-                CALL SETSOURCE_TPROFS  ! Sets MDEX, WDEX, DDEX
-
-            ENDDO
-
-C.............  Set for remaining pollutants in group  
-            DO J = 2, NGSZ
-                MDEX( :,J ) = MDEX( :,1 )
-                WDEX( :,J ) = WDEX( :,1 )
-                DDEX( :,J ) = DDEX( :,1 )
-            ENDDO
-
-       ENDIF
+        EFLAG = .FALSE.
 
 C.........  For first time routine is called in all cases,
+
         IF( FIRSTIME ) THEN
 
 C.............  Retrieve environment variables
-            MESG = 'Switch for reporting default temporal profiles'
-            REPDEFLT = ENVYN ( 'REPORT_DEFAULTS', MESG, .TRUE., I )
+
+            MESG = 'Use only full SCC matches'
+            FULLSCC = ENVYN ( 'FULLSCC_ONLY', MESG, .FALSE., I )
 
 C.............  Get error and warning limits from the environment
+
             MXERR  = ENVINT( ERRSET , ' ', 100, I )
-            MXWARN = ENVINT( WARNSET, ' ', 100, I )
+
+            ALLOCATE( MTHPROF( NSRC,  NIPPA ),
+     &                WEKPROF( NSRC,  NIPPA ),
+     &                DOMPROF( NSRC,  NIPPA ),
+     &                HRLPROF( NSRC,7,NIPPA ), STAT=ISTAT )
+
+            IF ( ISTAT .NE. 0 ) THEN
+                WRITE( MESG, '( A, I10 )' )
+     &             'ERROR:  allocation failure.  STAT=', ISTAT
+                CALL M3EXIT( PNAME, 0,0, MESG, 2 )
+            END IF
+
+            MTHPROF = IMISS3
+            WEKPROF = IMISS3
+            DOMPROF = IMISS3
+            HRLPROF = IMISS3
 
             FIRSTIME = .FALSE.
 
         ENDIF
 
-C.........  Set up roadway type format
-C REMOVED DUE TO IRIX BUG
-c        WRITE( RWTFMT, '("(I",I2.2,".",I2.2,")")' ) RWTLEN3, RWTLEN3
-c        WRITE( VIDFMT, '("(I",I2.2,".",I2.2,")")' ) VIDLEN3, VIDLEN3
+        CALL M3MSG2( 'Assigning temporal profiles to sources...' )
 
-C.........  Set up roadway type and vehicle types with all zeros
-        RWTZERO = REPEAT( '0', RWTLEN3 )
-        VIDZERO = REPEAT( '0', VIDLEN3 )
-
-C.........  Exit subroutine for list-formatted temporal x-ref because we
-C           do not have a heirarchial application of temporal profiles
-C           to worry about.
-        IF( TREFFMT .EQ. 'SOURCE' ) RETURN
-
-C.........  Initialize index check
-        NCHKCHR = NCHARS
-        IF( JSCC .GT. 0 ) NCHKCHR = NCHARS - 1
+        CFIPZ = ZEROS
+        TSCCZ = ZEROS
+        CBLNK = BLANK
 
         ERRCNT = 0
-        WRNCNT = 0
-        DO J = 1, NGSZ
 
-C.............  Skip blanks that can occur when NGRP > 1
-            IF ( ANAM ( J ) .EQ. ' ' ) CYCLE
+        DO V = 0, NIPPA                 !  loop on pollutants: construct ASCII code 
+            WRITE( CPOS(V), '(I5.5)' ) V
+        END DO
+        
+C.........  [Met-based profiles are managed in PROCTPRO()]
 
-C.............  Find index in complete list of pollutants
-            V = INDEX1( ANAM( J ), NIPPA, EANAM )
+C.........  Set category-specific source characteristic combinations
+
+        SELECT CASE ( CATEGORY )
+
+            CASE ( 'AREA' )   ! Already set above
+            
+                DO S = 1, NSRC              !  loop on area sources
+
+                    CSRC    = CSOURC( S )
+                    TSCC    = CSCC( S )
+                    TSCCL   = TSCC( 1:LSCCEND ) // ZEROS
+
+                    CFIP    = CSRC( 1:FIPLEN3 )
+                    CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
+                    
+C.....................  First, set all pollutants for pollutant independent part of hierarchy:
+
+                    CALL BLDCSRC( CFIP,  TSCC,    BLANK,
+     &                            BLANK, BLANK,   BLANK,
+     &                            BLANK, CPOS(0), CSRC07 )
+                    CALL BLDCSRC( CFIPL, TSCC,    BLANK,
+     &                            BLANK, BLANK,   BLANK,
+     &                            BLANK, CPOS(0), CSRC09 )
+                    CALL BLDCSRC( CFIPZ, TSCC,    BLANK,
+     &                            BLANK, BLANK,   BLANK,
+     &                            BLANK, CPOS(0), CSRC11 )
+
+                    IF ( .NOT.FULLSCC ) THEN
+                        CALL BLDCSRC( CFIP,  TSCCL,   BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(0), CSRC08 )
+                        CALL BLDCSRC( CFIPL, TSCCL,   BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(0), CSRC10 )
+                        CALL BLDCSRC( CFIPZ, TSCCL,   BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(0), CSRC12 )
+                        CALL BLDCSRC( CFIP,  TSCCZ,   BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(0), CSRC13 )
+                        CALL BLDCSRC( CFIPL, TSCCZ,   BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(0), CSRC14 )
+                        CALL BLDCSRC( CFIPZ, TSCCZ,   BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(0), CSRC15 )
+                    END IF
+
+C.....................  Find month-of-year profile:
+
+                    IPROF =                     FINDC( CSRC07, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .GT. 0 ) MTHPROF( S,: ) = MTHPDEX( IPROF )
+
+C.....................  Find day-of-month profile:
+
+                    IPROF =                     FINDC( CSRC07, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .GT. 0 ) DOMPROF( S,: ) = DOMPDEX( IPROF )
+
+C.....................  Find day-of-week profile:
+
+                    IPROF =                     FINDC( CSRC07, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .GT. 0 ) WEKPROF( S,: ) = WEKPDEX( IPROF )
+
+C.....................  Find hour-of-day profile for each day of the week:
+
+                    IPROF =                     FINDC( CSRC07, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,1,: ) = MONPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC07, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,2,: ) = TUEPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC07, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,3,: ) = WEDPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC07, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,4,: ) = THUPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC07, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,5,: ) = FRIPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC07, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,6,: ) = SATPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC07, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,7,: ) = SUNPDEX( IPROF )
+                    
+C.....................  Now, overrides for pollutant dependent part of hierarchy:
+                    
+                    DO V = 1, NIPPA         !  loop on pollutants
+
+                        IF ( .NOT.POLREFFLAG( V ) )  CYCLE
+
+                        CALL BLDCSRC( CFIP,  TSCC,    BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(V), CSRC01 )
+                        CALL BLDCSRC( CFIPL, TSCC,    BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(V), CSRC03 )
+                        CALL BLDCSRC( CFIPZ, TSCC,    BLANK,
+     &                                BLANK, BLANK,   BLANK,
+     &                                BLANK, CPOS(V), CSRC05 )
+
+                        IF ( .NOT.FULLSCC ) THEN
+                            CALL BLDCSRC( CFIP,  TSCCL,   BLANK,
+     &                                    BLANK, BLANK,   BLANK,
+     &                                    BLANK, CPOS(V), CSRC02 )
+                            CALL BLDCSRC( CFIPL, TSCCL,   BLANK,
+     &                                    BLANK, BLANK,   BLANK,
+     &                                    BLANK, CPOS(V), CSRC04 )
+                            CALL BLDCSRC( CFIPZ, TSCCL,   BLANK,
+     &                                    BLANK, BLANK,   BLANK,
+     &                                    BLANK, CPOS(V), CSRC06 )
+                        END IF
+
+C.........................  Find month-of-year profile:
+
+                        IPROF =                     FINDC( CSRC01, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .GT. 0 ) MTHPROF( S,V ) = MTHPDEX( IPROF )
+
+C.........................  Find day-of-month profile:
+
+                        IPROF =                     FINDC( CSRC01, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .GT. 0 ) DOMPROF( S,V ) = DOMPDEX( IPROF )
+
+C.........................  Find day-of-week profile:
+
+                        IPROF =                     FINDC( CSRC01, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .GT. 0 ) WEKPROF( S,V ) = WEKPDEX( IPROF )
+
+C.........................  Find hour-of-day profile for each day of the week:
+
+                        IPROF =                     FINDC( CSRC01, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,1,V ) = MONPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,2,V ) = TUEPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,3,V ) = WEDPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,4,V ) = THUPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,5,V ) = FRIPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,6,V ) = SATPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,7,V ) = SUNPDEX( IPROF )
+                    
+                    END DO                  !  end loop on pollutants
+
+                END DO                      !  end loop- on area sources
+
+            CASE ( 'MOBILE' )
+            
+                DO S = 1, NSRC              !  loop on mobile sources
+
+                    CSRC    = CSOURC( S )
+                    TSCC    = CSCC( S )
+                    TSCCL   = TSCC( 1:LSCCEND ) // ZEROS
+
+                    CFIP    = CSRC( 1:FIPLEN3 )
+                    CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
+                    
+C.....................  First, set all pollutants for pollutant independent part of hierarchy:
+
+                    CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
+     &                            CBLNK, CBLNK, CBLNK, CPOS(0), CSRC10 )
+                    CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
+     &                            CBLNK, CBLNK, CBLNK, CPOS(0), CSRC13 )
+                    CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
+     &                            CBLNK, CBLNK, CBLNK, CPOS(0), CSRC15 )
+
+                    IF ( .NOT. FULLSCC ) THEN
+                        CALL BLDCSRC( CFIP,  TSCCL, CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC11 )
+                        CALL BLDCSRC( CFIPL, TSCCL, CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC14 )
+                        CALL BLDCSRC( CFIPZ, TSCCL, CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC16 )
+                        CALL BLDCSRC( CFIP,  TSCCZ, CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC19 )
+                        CALL BLDCSRC( CFIPL, TSCCZ, CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC20 )
+                        CALL BLDCSRC( CFIPZ, TSCCZ, CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC21 )
+                    END IF
+
+C.....................  Find month-of-year profile:
+
+                    IPROF =                     FINDC( CSRC10, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MTHCOUNT,  MTHKEYS )
+                    IF ( IPROF .GT. 0 ) MTHPROF( S,: ) = MTHPDEX( IPROF )
+
+C.....................  Find day-of-month profile:
+
+                    IPROF =                     FINDC( CSRC10, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, DOMCOUNT,  DOMKEYS )
+                    IF ( IPROF .GT. 0 ) DOMPROF( S,: ) = DOMPDEX( IPROF )
+
+C.....................  Find day-of-week profile:
+
+                    IPROF =                     FINDC( CSRC10, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEKCOUNT,  WEKKEYS )
+                    IF ( IPROF .GT. 0 ) WEKPROF( S,: ) = WEKPDEX( IPROF )
+
+C.....................  Find hour-of-day profile for each day of the week:
+
+                    IPROF =                     FINDC( CSRC10, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MONCOUNT,  MONKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,1,: ) = MONPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC10, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, TUECOUNT,  TUEKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,2,: ) = TUEPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC10, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEDCOUNT,  WEDKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,3,: ) = WEDPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC10, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, THUCOUNT,  THUKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,4,: ) = THUPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC10, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, FRICOUNT,  FRIKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,5,: ) = FRIPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC10, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SATCOUNT,  SATKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,6,: ) = SATPDEX( IPROF )
+
+                    IPROF =                     FINDC( CSRC10, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SUNCOUNT,  SUNKEYS )
+                    IF ( IPROF .GT. 0 ) HRLPROF( S,7,: ) = SUNPDEX( IPROF )
+                    
+C.....................  Now, overrides for pollutant dependent part of hierarchy:
+                    
+                    DO V = 1, NIPPA         !  loop on pollutants
+
+                        IF ( .NOT.POLREFFLAG( V ) )  CYCLE
+
+                        CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC01 )
+                        CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC05 )
+                        CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC07 )
+
+                        IF ( .NOT. FULLSCC ) THEN
+                            CALL BLDCSRC( CFIP,  TSCCL, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC02 )
+                            CALL BLDCSRC( CFIPL, TSCCL, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC06 )
+                            CALL BLDCSRC( CFIPZ, TSCCL, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC08 ) 
+                        END IF
+
+C.........................  Find month-of-year profile:
+
+                        IPROF =                     FINDC( CSRC01, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .GT. 0 ) MTHPROF( S,V ) = MTHPDEX( IPROF )
+
+C.........................  Find day-of-month profile:
+
+                        IPROF =                     FINDC( CSRC01, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .GT. 0 ) DOMPROF( S,V ) = DOMPDEX( IPROF )
+
+C.........................   Find day-of-week profile:
+
+                        IPROF =                     FINDC( CSRC01, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .GT. 0 ) WEKPROF( S,V ) = WEKPDEX( IPROF )
+
+C.........................  Find hour-of-day profile for each day of the week:
+
+                        IPROF =                     FINDC( CSRC01, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,1,V ) = MONPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,2,V ) = TUEPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,3,V ) = WEDPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,4,V ) = THUPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,5,V ) = FRIPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,6,V ) = SATPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,7,V ) = SUNPDEX( IPROF )
+                    
+                    END DO                  !  end loop on pollutants
+
+                END DO                      !  end loop on mobile sources
+
+            CASE ( 'POINT' )
+            
+                DO S = 1, NSRC              !  loop on point sources
+
+                    CSRC    = CSOURC( S )
+                    TSCC    = CSCC( S )
+                    TSCCL   = TSCC( 1:LSCCEND ) // ZEROS
+                    TSCC5   = TSCC( 1:5 ) // ZEROS
+
+                    CFIP    = CSRC( 1:FIPLEN3 )
+                    CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
+
+                    CPLT = CSRC( PTBEGL3(2):PTENDL3(2) )
+                    CPNT = CSRC( PTBEGL3(3):PTENDL3(3) )
+                    CSTK = CSRC( PTBEGL3(4):PTENDL3(4) )
+                    CSEG = CSRC( PTBEGL3(5):PTENDL3(5) )
+                    CPL5 = CSRC( PTBEGL3(6):PTENDL3(6) )
+                    
+C.....................  Note that pollutant dependent and pollutant independent
+C                       parts of the point soucre heirarchy are tangled together:
+                    
+                    DO V = 1, NIPPA         !  loop on pollutants
+
+                        IF ( .NOT.POLREFFLAG( V ) )  CYCLE
+
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
+     &                                CSTK,  CSEG,  CPL5,  CPOS(V), CSRC01 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
+     &                                CSTK,  CSEG,  CBLNK, CPOS(V), CSRC02 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
+     &                                CSTK,  CBLNK, CBLNK, CPOS(V), CSRC03 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC04 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
+     &                                CSTK,  CSEG,  CBLNK, CPOS(0), CSRC05 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
+     &                                CSTK,  CBLNK, CBLNK, CPOS(0), CSRC06 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC07 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC08 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC09 )
+                        CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC11 )
+                        CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC13 )
+                        CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC15 )
+                        CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC17 )
+                        CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
+     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC19 )
+
+                        IF ( .NOT. FULLSCC ) THEN
+                            CALL BLDCSRC( CFIP,  TSCC5, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC10 )
+                            CALL BLDCSRC( CFIPL, TSCC5, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC12 )
+                            CALL BLDCSRC( CFIPZ, TSCC5, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC14 )
+                            CALL BLDCSRC( CFIP,  TSCC5, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(0), CSRC16 )
+                            CALL BLDCSRC( CFIPL, TSCC5, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(0), CSRC18 )
+                            CALL BLDCSRC( CFIPZ, TSCC5, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(0), CSRC20 )
+                            CALL BLDCSRC( CFIP,  TSCCZ, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC21 )
+                            CALL BLDCSRC( CFIPL, TSCCZ, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC22 )
+                            CALL BLDCSRC( CFIPZ, TSCCZ, CBLNK, CBLNK,
+     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC23 )
+                        END IF
+
+C.........................  Find month-of-year profile:
+
+                        IPROF =                     FINDC( CSRC01, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .GT. 0 ) MTHPROF( S,V ) = MTHPDEX( IPROF )
+
+C.........................  Find day-of-month profile:
+
+                        IPROF =                     FINDC( CSRC01, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .GT. 0 ) DOMPROF( S,V ) = DOMPDEX( IPROF )
+
+C......................... Find day-of-week profile:
+
+                        IPROF =                     FINDC( CSRC01, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .GT. 0 ) WEKPROF( S,V ) = WEKPDEX( IPROF )
+
+C.........................  Find hour-of-day profiles for each day of the week:
+
+                        IPROF =                     FINDC( CSRC01, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,1,V ) = MONPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,2,V ) = TUEPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,3,V ) = WEDPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,4,V ) = THUPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,5,V ) = FRIPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,6,V ) = SATPDEX( IPROF )
+
+                        IPROF =                     FINDC( CSRC01, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .GT. 0 ) HRLPROF( S,7,V ) = SUNPDEX( IPROF )
+                    
+                    END DO                  !  end loop on pollutants
+
+                END DO                      !  end loop on point sources
+
+            CASE DEFAULT
+            
+                MESG = 'ERROR:  unrecognized category "' // TRIM( CATEGORY ) // '"'
+                CALL M3EXIT( PNAME, 0,0, MESG, 2 )
+            
+        END SELECT
+
+
+C.........  Check that all sources, pollutants have assigned profiles:
+
+        DO V = 1, NIPPA
 
             DO S = 1, NSRC
 
-C.................  Retrieve local variables for source characteristics
-                CSRC    = CSOURC( S )
-                TSCC    = CSCC( S )
-                
-C.................  Set type of SCC                
-                SCCFLAG = SETSCCTYPE ( TSCC )
-                TSCCL   = TSCC( 1:LSCCEND )
-                
-                CFIP    = CSRC( 1:FIPLEN3 )
-                CSTA    = CFIP( 1:STALEN3 )
-                TSCCSAV = TSCC
-                CHK09   = CFIP // TSCC                       ! County // SCC
-                CHK08   = CFIP // TSCCL                 ! County // left SCC
-                CHK06   = CSTA // TSCC                ! Country/state // SCC
-                CHK05   = CSTA // TSCCL          ! Country/state // left SCC
-
-C.................  Set category-specific source characteristic combinations
-                SELECT CASE ( CATEGORY )
-
-                CASE ( 'AREA' )   ! Already set above
-
-                CASE ( 'MOBILE' )
-
-c....................  Change mobile-source SCC to facilitate correct hierarchy.
-                    IF( MCODEFLAG ) THEN
-                        WRITE( CRWT, '(I3.3)' ) IRCLAS( S )
-                        WRITE( CVID, '(I4.4)' ) IVTYPE( S )
-
-                        TSCC = CRWT // CVID
-                        CALL PADZERO( TSCC )
-                        TSCCL= TSCC( 1:LSCCEND )
-
-                        CHKVID = RWTZERO // CVID
-                        CALL PADZERO( CHKVID )
-
-                        CHKRWT = CRWT // VIDZERO
-                        CALL PADZERO( CHKRWT )
-
-                        CHK13  = CSRC( 1:MBENDL3(4) )// TSCC   ! Cnty//RWT//LNK//VTP
-                        CHK12  = CSRC( 1:MBENDL3(3) )// CHKRWT    ! Cnty// RWT// LNK
-                        CHK09  = CFIP // TSCC                   ! County// RWT// VTP
-                        CHK08  = CFIP // TSCCL                        ! County// RWT
-                        CHK08B = CFIP // CHKVID                       ! County// VTP
-                        CHK06  = CSTA // TSCC                   ! State // RWT// VTP
-                        CHK05  = CSTA // TSCCL                  ! State // road type
-                        CHK05B = CSTA // CHKVID                  ! State // veh type
-                        CHK02B = CHKVID                               ! Vehicle type
-                    END IF
-
-                CASE ( 'POINT' )
-                    CHK16   = CSRC( 1:PTENDL3( 7 ) ) // TSCC
-                    CHK15   = CSRC( 1:PTENDL3( 6 ) ) // TSCC
-                    CHK14   = CSRC( 1:PTENDL3( 5 ) ) // TSCC
-                    CHK13   = CSRC( 1:PTENDL3( 4 ) ) // TSCC
-                    CHK12   = CSRC( 1:PTENDL3( 3 ) ) // TSCC
-                    CHK11   = CSRC( 1:PTENDL3( 2 ) ) // TSCC
-                    CHK10   = CSRC( 1:PTENDL3( 2 ) )
-
-                    CSRC5   = CSRC( 1:PTENDL3( 7 ) ) 
-                    CSRC4   = CSRC( 1:PTENDL3( 6 ) ) 
-                    CSRC3   = CSRC( 1:PTENDL3( 5 ) ) 
-                    CSRC2   = CSRC( 1:PTENDL3( 4 ) ) 
-                    CSRC1   = CSRC( 1:PTENDL3( 3 ) ) 
-                    
-                CASE DEFAULT
-
-                END SELECT
-
-C.................   Initialize indices
-                F6 = 0
-                F5 = 0
-                F4 = 0
-                F3 = 0
-                F2 = 0
-                F1 = 0
-                F0 = 0
-
-C.................  In the tables used in the following heirarchy, a pollutant-
-C                   specific cross-reference entry has not been use as the
-C                   default for all pollutants.  So the diurnal profile number
-C                   tables (DPRT*) are checked to ensure the pollutant has
-C                   been defined for a level of matching of interest.  This is
-C                   why DPRT* arrays are compared to IMISS3
-
-C.................  Try to find source characteristic combinations for the
-C                   first seven types of matches.  These depend on source
-C                   category.
-
-                F6 = 0
-                F5 = 0
-                F4 = 0
-                F3 = 0
-                F2 = 0
-                SELECT CASE( NCHKCHR )
-                CASE( 7 )
-                    F6 = FINDC( CHK16, TXCNT( 16 ), CHRT16 )
-                CASE( 6 )
-                    F5 = FINDC( CHK15, TXCNT( 15 ), CHRT15 )
-                CASE( 5 )
-                    F4 = FINDC( CHK14, TXCNT( 14 ), CHRT14 )
-                CASE( 4 )
-                    F3 = FINDC( CHK13, TXCNT( 13 ), CHRT13 )
-                CASE( 3 )
-                    F2 = FINDC( CHK12, TXCNT( 12 ), CHRT12 )
-                END SELECT
-
-                IF( F6 .LE. 0 ) F6 = FINDC( CSRC5, TXCNT( 16 ), CHRT16 )
-                IF( F5 .LE. 0 ) F5 = FINDC( CSRC4, TXCNT( 15 ), CHRT15 ) 
-                IF( F4 .LE. 0 ) F4 = FINDC( CSRC3, TXCNT( 14 ), CHRT14 ) 
-                IF( F3 .LE. 0 ) F3 = FINDC( CSRC2, TXCNT( 13 ), CHRT13 ) 
-                IF( F2 .LE. 0 ) F2 = FINDC( CSRC1, TXCNT( 12 ), CHRT12 ) 
-                F1 = FINDC( CHK11, TXCNT( 11 ), CHRT11 ) 
-                F0 = FINDC( CHK10, TXCNT( 10 ), CHRT10 )
-
-C.................  Initialize status for all comparisons in first group
-                STAT = .FALSE.    ! array
-
-C.................  Evaluate x-ref cases for pollutant/emistype-specific
-                IF( F6 .GT. 0 ) STAT(1)= (DPRT16(F6,V) .GE. ADDPS)
-                IF( F5 .GT. 0 ) STAT(2)= (DPRT15(F5,V) .GE. ADDPS)
-                IF( F4 .GT. 0 ) STAT(3)= (DPRT14(F4,V) .GE. ADDPS)
-                IF( F3 .GT. 0 ) STAT(4)= (DPRT13(F3,V) .GE. ADDPS)
-                IF( F2 .GT. 0 ) STAT(5)= (DPRT12(F2,V) .GE. ADDPS)
-                IF( F1 .GT. 0 ) STAT(6)= (DPRT11(F1,V) .GE. ADDPS)
-                IF( F0 .GT. 0 ) STAT(7)= (DPRT10(F0,V) .GE. ADDPS)
-
-C.................  Based on evaluation of cases, store reference information
-C                   for pollutant-specific
-                IF( STAT( 1 ) ) THEN
-                    MREF = MPRT16( F6,V )
-                    WREF = WPRT16( F6,V )
-                    DREF = DPRT16( F6,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 2 ) ) THEN
-                    MREF = MPRT15( F5,V )
-                    WREF = WPRT15( F5,V )
-                    DREF = DPRT15( F5,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 3 ) ) THEN
-                    MREF = MPRT14( F4,V )
-                    WREF = WPRT14( F4,V )
-                    DREF = DPRT14( F4,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 4 ) ) THEN
-                    MREF = MPRT13( F3,V )
-                    WREF = WPRT13( F3,V )
-                    DREF = DPRT13( F3,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 5 ) ) THEN
-                    MREF = MPRT12( F2,V )
-                    WREF = WPRT12( F2,V )
-                    DREF = DPRT12( F2,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 6 ) ) THEN
-                    MREF = MPRT11( F1,V )
-                    WREF = WPRT11( F1,V )
-                    DREF = DPRT11( F1,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 7 ) ) THEN
-                    MREF = MPRT10( F0,V )
-                    WREF = WPRT10( F0,V )
-                    DREF = DPRT10( F0,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                END IF
-
-C.................  Look at the same x-ref cases for no pollutant/emistype
-                IF( F6 .GT. 0 ) STAT(1)= (DPRT16(F6,V) .NE. IMISS3)
-                IF( F5 .GT. 0 ) STAT(2)= (DPRT15(F5,V) .NE. IMISS3)
-                IF( F4 .GT. 0 ) STAT(3)= (DPRT14(F4,V) .NE. IMISS3)
-                IF( F3 .GT. 0 ) STAT(4)= (DPRT13(F3,V) .NE. IMISS3)
-                IF( F2 .GT. 0 ) STAT(5)= (DPRT12(F2,V) .NE. IMISS3)
-                IF( F1 .GT. 0 ) STAT(6)= (DPRT11(F1,V) .NE. IMISS3)
-                IF( F0 .GT. 0 ) STAT(7)= (DPRT10(F0,V) .NE. IMISS3)
-
-C.................  Continue to evaluate cases and store reference information
-                IF( STAT( 1 ) ) THEN
-                    MREF = MPRT16( F6,V )
-                    WREF = WPRT16( F6,V )
-                    DREF = DPRT16( F6,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 2 ) ) THEN
-                    MREF = MPRT15( F5,V )
-                    WREF = WPRT15( F5,V )
-                    DREF = DPRT15( F5,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 3 ) ) THEN
-                    MREF = MPRT14( F4,V )
-                    WREF = WPRT14( F4,V )
-                    DREF = DPRT14( F4,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 4 ) ) THEN
-                    MREF = MPRT13( F3,V )
-                    WREF = WPRT13( F3,V )
-                    DREF = DPRT13( F3,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 5 ) ) THEN
-                    MREF = MPRT12( F2,V )
-                    WREF = WPRT12( F2,V )
-                    DREF = DPRT12( F2,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 6 ) ) THEN
-                    MREF = MPRT11( F1,V )
-                    WREF = WPRT11( F1,V )
-                    DREF = DPRT11( F1,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 7 ) ) THEN
-                    MREF = MPRT10( F0,V )
-                    WREF = WPRT10( F0,V )
-                    DREF = DPRT10( F0,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                END IF
-
-C.................   Reset indices
-                F5 = 0
-                F4 = 0
-                F4B= 0
-                F3 = 0
-                F2 = 0
-                F2B= 0
-                F1 = 0
-                F0 = 0
-                F0B= 0
-
-C.................  Try to find source characteristic combinations for the
-C                   next six types of matches.
-                F5 = FINDC( CHK09, TXCNT( 9 ), CHRT09 ) 
-                F4 = FINDC( CHK08, TXCNT( 8 ), CHRT08 ) 
-                F3 = FINDC( CHK06, TXCNT( 6 ), CHRT06 ) 
-                F2 = FINDC( CHK05, TXCNT( 5 ), CHRT05 ) 
-                F1 = FINDC( TSCC , TXCNT( 3 ), CHRT03 ) 
-                F0 = FINDC( TSCCL, TXCNT( 2 ), CHRT02 )
-
-C................. Check for mobile-specific matches that use a TSCC with
-C                  road class of zero and vehicle type. The assignment of
-C                  temporal profile based on  a vehicle type and no road class
-C                  comes after the road class only match (or TSCCL in CHRT08,
-C                  for example) but the match uses the full TSCC (or CHRT09, for
-C                  example).
-                IF( CATEGORY .EQ. 'MOBILE' .AND. MCODEFLAG ) THEN
-                    F4B = FINDC( CHK08B, TXCNT( 9 ), CHRT09 )
-                    F2B = FINDC( CHK05B, TXCNT( 6 ), CHRT06 )
-                    F0B = FINDC( CHK02B, TXCNT( 3 ), CHRT03 )
-                END IF
-
-C.................  Initialize status for all comparisons in second group
-                STAT = .FALSE.    ! array
-
-C.................  Make second round of comparisons for pollutant/emistype
-C                   specific cases
-                IF( F5 .GT. 0 ) STAT(1)= (DPRT09(F5,V) .GE. ADDPS)
-                IF( F4 .GT. 0 ) STAT(2)= (DPRT08(F4,V) .GE. ADDPS)
-                IF( F3 .GT. 0 ) STAT(4)= (DPRT06(F3,V) .GE. ADDPS)
-                IF( F2 .GT. 0 ) STAT(5)= (DPRT05(F2,V) .GE. ADDPS)
-                IF( F1 .GT. 0 ) STAT(7)= (DPRT03(F1,V) .GE. ADDPS)
-                IF( F0 .GT. 0 ) STAT(8)= (DPRT02(F0,V) .GE. ADDPS)
-
-C.................  Evaluate mobile-specific cases
-                IF( CATEGORY .EQ. 'MOBILE' .AND. MCODEFLAG ) THEN
-                    IF( F4B .GT. 0 ) STAT(3)= (DPRT09(F4B,V) .GE. ADDPS)
-                    IF( F2B .GT. 0 ) STAT(6)= (DPRT06(F2B,V) .GE. ADDPS)
-                    IF( F0B .GT. 0 ) STAT(9)= (DPRT03(F0B,V) .GE. ADDPS)
-                END IF
-
-C.................  Continue to evaluate cases and store reference information
-                IF( STAT( 1 ) ) THEN
-                    MREF = MPRT09( F5,V )
-                    WREF = WPRT09( F5,V )
-                    DREF = DPRT09( F5,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 2 ) ) THEN
-                    MREF = MPRT08( F4,V )
-                    WREF = WPRT08( F4,V )
-                    DREF = DPRT08( F4,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 3 ) ) THEN
-                    MREF = MPRT09( F4B,V )
-                    WREF = WPRT09( F4B,V )
-                    DREF = DPRT09( F4B,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 4 ) ) THEN
-                    MREF = MPRT06( F3,V )
-                    WREF = WPRT06( F3,V )
-                    DREF = DPRT06( F3,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 5 ) ) THEN
-                    MREF = MPRT05( F2,V )
-                    WREF = WPRT05( F2,V )
-                    DREF = DPRT05( F2,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 6 ) ) THEN
-                    MREF = MPRT06( F2B,V )
-                    WREF = WPRT06( F2B,V )
-                    DREF = DPRT06( F2B,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 7 ) ) THEN
-                    MREF = MPRT03( F1,V )
-                    WREF = WPRT03( F1,V )
-                    DREF = DPRT03( F1,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 8 ) ) THEN
-                    MREF = MPRT02( F0,V )
-                    WREF = WPRT02( F0,V )
-                    DREF = DPRT02( F0,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 9 ) ) THEN
-                    MREF = MPRT03( F0B,V )
-                    WREF = WPRT03( F0B,V )
-                    DREF = DPRT03( F0B,V ) - ADDPS
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                END IF
-
-C.................  Evaluate remainder of x-ref cases
-                IF( F5 .GT. 0 ) STAT(1)= (DPRT09(F5,V) .NE. IMISS3)
-                IF( F4 .GT. 0 ) STAT(2)= (DPRT08(F4,V) .NE. IMISS3)
-                IF( F3 .GT. 0 ) STAT(4)= (DPRT06(F3,V) .NE. IMISS3)
-                IF( F2 .GT. 0 ) STAT(5)= (DPRT05(F2,V) .NE. IMISS3)
-                IF( F1 .GT. 0 ) STAT(7)= (DPRT03(F1,V) .NE. IMISS3)
-                IF( F0 .GT. 0 ) STAT(8)= (DPRT02(F0,V) .NE. IMISS3)
-
-C.................  Remainder of mobile-specific evaluations
-                IF( CATEGORY .EQ. 'MOBILE' .AND. MCODEFLAG ) THEN
-                    IF( F4B .GT. 0 ) STAT(3)=(DPRT09(F4B,V) .NE. IMISS3)
-                    IF( F2B .GT. 0 ) STAT(6)=(DPRT06(F2B,V) .NE. IMISS3)
-                    IF( F0B .GT. 0 ) STAT(9)=(DPRT03(F0B,V) .NE. IMISS3)
-                END IF
-
-C.................  Continue to evaluate cases and store reference information
-C                   for non-pollutant/emission-type specific
-C.................  No "ADDPS" used here, because it is 0 in all cases
-                IF( STAT( 1 ) ) THEN
-                    MREF = MPRT09( F5,V ) 
-                    WREF = WPRT09( F5,V )
-                    DREF = DPRT09( F5,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 2 ) ) THEN
-                    MREF = MPRT08( F4,V ) 
-                    WREF = WPRT08( F4,V )
-                    DREF = DPRT08( F4,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 3 ) ) THEN
-                    MREF = MPRT09( F4B,V )
-                    WREF = WPRT09( F4B,V )
-                    DREF = DPRT09( F4B,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 4 ) ) THEN
-                    MREF = MPRT06( F3,V ) 
-                    WREF = WPRT06( F3,V )
-                    DREF = DPRT06( F3,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 5 ) ) THEN
-                    MREF = MPRT05( F2,V ) 
-                    WREF = WPRT05( F2,V )
-                    DREF = DPRT05( F2,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 6 ) ) THEN
-                    MREF = MPRT06( F2B,V )
-                    WREF = WPRT06( F2B,V )
-                    DREF = DPRT06( F2B,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 7 ) ) THEN
-                    MREF = MPRT03( F1,V ) 
-                    WREF = WPRT03( F1,V )
-                    DREF = DPRT03( F1,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 8 ) ) THEN
-                    MREF = MPRT02( F0,V ) 
-                    WREF = WPRT02( F0,V )
-                    DREF = DPRT02( F0,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                ELSEIF( STAT( 9 ) ) THEN
-                    MREF = MPRT03( F0B,V )
-                    WREF = WPRT03( F0B,V )
-                    DREF = DPRT03( F0B,V )
-                    CALL SETSOURCE_TPROFS
-                    CYCLE                       !  to end of sources-loop
-
-                END IF
-
-C.................  Try for county or state match
-C.................  NOTE - there is no longer a reason to have this as an
-C                   internal subprogram, but no need to change it back either
-                CALL COUNTY_OR_STATE
-                IF( F0 .GT. 0 ) CYCLE
-
-C.................  Check for and apply ultimate defaults
-                IF( MPRT01( V ) .NE. IMISS3 .AND. REPDEFLT .AND.
-     &              WRNCNT      .LE. MXWARN                      ) THEN
-
-                    WRNCNT = WRNCNT + 1
-                    MREF = MPRT01( V )
-                    WREF = WPRT01( V )
-                    IF( DPRT01( V ) .GE. ADDPS ) DPRT01( V ) = 
-     &                  DPRT01( V ) - ADDPS
-
-                    DREF = DPRT01( V )
-                    
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                    WRITE( MESG,94010 )
-     &                     'NOTE: Using default temporal profile for:'//
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 ) //
-     &                     CRLF() // BLANK10 // 
-     &                     ' SCC: ' // TSCCSAV // ' POL: ' // ANAM( V )
-                    CALL M3MESG( MESG )
-
-                    CALL SETSOURCE_TPROFS
-
-                ELSEIF( MPRT01( V ) .NE. IMISS3 ) THEN
-                    MREF = MPRT01( V )
-                    WREF = WPRT01( V )
-                    IF( DPRT01( V ) .GE. ADDPS ) DPRT01( V ) = 
-     &                  DPRT01( V ) - ADDPS
-
-                    DREF = DPRT01( V )
-                    CALL SETSOURCE_TPROFS
-
-                ELSE IF( ERRCNT .LE. MXERR ) THEN
-                    EFLAG = .TRUE.
+                IF ( MTHPROF( S,V ) .LE. 0 ) THEN
                     ERRCNT = ERRCNT + 1
-
-                    CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                    WRITE( MESG,94010 )
-     &                     'ERROR: No temporal cross-reference ' //
-     &                     'available (and no default) for:' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-
+                    WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                'ERROR:  No month-of-year profile for source', S,
+     &                'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CSOURC(S) )
                     CALL M3MESG( MESG )
+                END IF
 
-                END IF    !  if default profile code is available or not
+                IF ( ( WEKPROF( S,V ) .LE. 0 ) .AND.
+     &               ( DOMPROF( S,V ) .LE. 0 ) ) THEN
+                    ERRCNT = ERRCNT + 1
+                    WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                'ERROR:  No day-of-month nor day-of-week profile for source', S,
+     &                'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CSOURC(S) )
+                    CALL M3MESG( MESG )
+                END IF
 
-            END DO        !  end loop on source, S
+                DO I = 1, 7
+                    IF ( DAYFLAG(I) .AND. HRLPROF( S,I,V ) .LE. 0 ) THEN
+                        ERRCNT = ERRCNT + 1
+                        WRITE( MESG, '( A, I8, 6( 1X, A ) )' )
+     &                'ERROR:  No hour-of-day profile for source', S,
+     &                'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CSOURC(S) ), 
+     &                'day', DAYNAME(I)
+                        CALL M3MESG( MESG )
+                    END IF
+                END DO
 
-        END DO            !  end loop on pollutant, V
+                IF ( ERRCNT .GT. MXERR ) EXIT
 
-        IF( EFLAG ) THEN
+            END DO      !  end loop on sources, S
+
+            IF ( ERRCNT .GT. MXERR ) EXIT
+
+        END DO          !  end loop on pollutants, V
+
+        IF( ERRCNT .GT. 0 ) THEN
             MESG = 'Problem assigning temporal profiles to sources'
-            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        END IF 
+            CALL M3EXIT( PNAME, 0, 0, MESG, 2 )
+        END IF
+        
+        DEALLOCATE( MTHPDEX,
+     &              WEKPDEX,
+     &              DOMPDEX,
+     &              MONPDEX,
+     &              TUEPDEX,
+     &              WEDPDEX,
+     &              THUPDEX,
+     &              FRIPDEX,
+     &              SATPDEX,
+     &              SUNPDEX,
+     &              MTHKEYS,
+     &              WEKKEYS,
+     &              DOMKEYS,
+     &              MONKEYS,
+     &              TUEKEYS,
+     &              WEDKEYS,
+     &              THUKEYS,
+     &              FRIKEYS,
+     &              SATKEYS,
+     &              SUNKEYS )
 
         RETURN
-
-C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Internal buffering formats............ 94xxx
-
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
-
-94300   FORMAT( A, I2.2, A, I2.2, A )
-
-C******************  INTERNAL SUBPROGRAMS  *****************************
-
-        CONTAINS
-
-C.............  This internal subprogram checks charts 04 and 07 for county
-C               and state matches 
-            SUBROUTINE COUNTY_OR_STATE
-
-C----------------------------------------------------------------------
-
-C.................  Try for any FIPS code match
-                F0 = 0
-                F0 = FINDC( CFIP, TXCNT( 7 ), CHRT07 ) 
-
-                IF( F0 .GT. 0 ) THEN
-                    MREF = MPRT07( F0,V ) 
-                    WREF = WPRT07( F0,V )
-
-                    IF( DPRT07( F0,V ) .GE. ADDPS ) DPRT07( F0,V ) = 
-     &                  DPRT07( F0,V ) - ADDPS
-                    DREF = DPRT07( F0,V )
-
-                    CALL SETSOURCE_TPROFS
-                    RETURN                       !  to end of sources-loop
-                END IF
-
-C.................  Try for any country/state code match
-                F0 = FINDC( CSTA, TXCNT( 4 ), CHRT04 ) 
-
-                IF( F0 .GT. 0 ) THEN
-                    MREF = MPRT04( F0,V ) 
-                    WREF = WPRT04( F0,V )
-
-
-                    IF( DPRT04( F0,V ) .GE. ADDPS ) DPRT04( F0,V ) = 
-     &                  DPRT04( F0,V ) - ADDPS
-                    DREF = DPRT04( F0,V )
-
-                    CALL SETSOURCE_TPROFS
-                    RETURN                       !  to end of sources-loop
-                END IF
-
-            END SUBROUTINE COUNTY_OR_STATE
-
-C----------------------------------------------------------------------
-C----------------------------------------------------------------------
-
-C.............  This internal subprogram stores the index of the temporal 
-C               profile codes in the temporal profile tables for each source.
-C.............  All variables are defined through host association.
-            SUBROUTINE SETSOURCE_TPROFS
-
-C----------------------------------------------------------------------
-
-            MDEX( S,J ) = MAX( FIND1( MREF, NMON, MONREF ), 0 )
-
-C.............  Assign fake '99999' met-based profileID to sources
-C               This will trigger to apply met-based profiles instead of temp profiles
-            IF( MREF == 99999 ) THEN  ! Met-based profile IDs
-                MDEX( S,J ) = 99999
-
-            ELSE IF( MDEX( S,J ) .EQ. 0 ) THEN
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
-     &                     'ERROR: Monthly profile', MREF, 
-     &                     'is not in profiles, but was assigned' //
-     &                     CRLF() // BLANK5 // 'to source:' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                CALL M3MESG( MESG )
-
-            END IF
-
-            WDEX( S,J ) = MAX( FIND1( WREF, NWEK, WEKREF ), 0 )
-
-C.............  Assign fake '99999' met-based profileID to sources
-C               This will trigger to apply met-based profiles instead of temp profiles
-            IF( WREF == 99999 ) THEN
-                WDEX( S,J ) = 99999 
-
-            ELSE IF( WDEX( S,J ) .EQ. 0 ) THEN
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
-     &                     'ERROR: Weekly profile', WREF, 
-     &                     'is not in profiles, but was assigned' //
-     &                     CRLF() // BLANK5 // 'to source:' //
-     &                     CRLF() // BLANK5 // BUFFER( 1:L2 )
-                CALL M3MESG( MESG )
-            END IF
-
-
-            DDEX( S,J ) = MAX( FIND1( DREF, NHRL, HRLREF ), 0 )
-
-C.............  Asign fake '99999' met-based profileID to sources
-C               This will trigger to apply met-based profiles instead of temp profiles
-            IF( DREF == 99999 ) THEN
-                DDEX( S,J ) = 99999 
-
-            ELSE IF( DDEX( S,J ) .EQ. 0 ) THEN
-                CALL FMTCSRC( CSRC, NCHARS, BUFFER, L2 )
-
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 
-     &                 'ERROR: Weekday diurnal profile', DREF, 
-     &                 'is not in profiles, but was assigned' //
-     &                 CRLF() // BLANK5 // 'to source:' //
-     &                 CRLF() // BLANK5 // BUFFER( 1:L2 )
-                CALL M3MESG( MESG )
-
-            END IF
-
-            RETURN
-
-C------------------- SUBPROGRAM FORMAT STATEMENTS ----------------------
-
-C...........   Internal buffering formats............ 94xxx
-
-94010       FORMAT( 10( A, :, I8, :, 1X ) )
-
-            END SUBROUTINE SETSOURCE_TPROFS
 
         END SUBROUTINE ASGNTPRO
