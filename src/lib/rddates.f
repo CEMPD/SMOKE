@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDDATES( FDEV, NTPERIOD )
+        SUBROUTINE RDDATES( PFLAG, FDEV, NTPERIOD )
 
 C**************************************************************************
 C  subroutine body starts at line
@@ -37,7 +37,8 @@ C**************************************************************************
 
 C...........   Modules for public variables
 C...........   This module contains the lists of unique source characteristics
-        USE MODTMPRL, ONLY: STDATE, STTIME, RUNLEN
+
+        USE MODTMPRL, ONLY: STDATE, STTIME, RUNLEN, ITDATE
 
         IMPLICIT NONE
 
@@ -50,11 +51,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL       BLKORCMT, GETFLINE, STR2INT
 
 C...........   Subroutine arguments
-        INTEGER, INTENT ( IN )  :: FDEV       ! file unit number
-        INTEGER, INTENT ( OUT ) :: NTPERIOD   ! No of time periods
+
+        LOGICAL, INTENT(IN   ) :: PFLAG
+        INTEGER, INTENT(IN   ) :: FDEV       ! file unit number
+        INTEGER, INTENT(  OUT) :: NTPERIOD   ! No of time periods
 
 C...........   Local variables
         INTEGER         I, N                  ! indices and counters
+        INTEGER         TSTEP
 
         INTEGER         ENDLEN                ! end length for reading descriptn
         INTEGER         IOS                   ! i/o status
@@ -70,18 +74,29 @@ C...........   Local variables
 C***********************************************************************
 C   Begin body of subroutine RDDATES
         
+        IF ( .NOT. PFLAG ) THEN
+            NTPERIOD = 1
+            ALLOCATE( ITDATE( 1 ),
+     &                STDATE( 1 ),
+     &                STTIME( 1 ),
+     &                RUNLEN( 1 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'ITDATE,STDATE,STTIME,RUNLEN', PROGNAME )
+            RETURN
+        END IF
+        
+        
         REWIND( FDEV )  ! In case of multiple calls
 
 C.........  Get the number of lines in the PROCDATES file
+
         NLINES = GETFLINE( FDEV, 'PROCDATES Descriptions' )
 
 C.........  Allocate memory for the PROCDATES descriptions and initialize
-        ALLOCATE( STDATE( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STDATE', PROGNAME )
-        ALLOCATE( STTIME( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'STTIME', PROGNAME )
-        ALLOCATE( RUNLEN( NLINES ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RUNLEN', PROGNAME )
+        ALLOCATE( ITDATE( NLINES ),
+     &            STDATE( NLINES ),
+     &            STTIME( NLINES ),
+     &            RUNLEN( NLINES ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'ITDATE,STDATE,STTIME,RUNLEN', PROGNAME )
 
 C.........  Read the PROCDATE file and store STDATE, ETDATE, and RUNLEN
 

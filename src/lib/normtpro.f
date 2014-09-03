@@ -15,7 +15,9 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C       Created M Houyoux 1/99
+C     Created M Houyoux 1/99
+C
+C     Version 07/2014 by C.Coats for  new GENTPRO CSV profiles and cross-references
 C
 C***********************************************************************
 C
@@ -39,130 +41,134 @@ C
 C****************************************************************************
 
 C.........  MODULES for public variables
-C.........  For temporal profiles
+C           For temporal profiles
+
         USE MODTMPRL, ONLY: HRLFAC, XWKFAC, WEKFAC, MONFAC, MONFAC_ORG,
-     &                      NHRL, NWEK, NMON
+     &                      DOMFAC, NHRL, NWEK, NMON, NDOM
 
         IMPLICIT NONE
 
-C...........   EXTERNAL FUNCTIONS:
-        LOGICAL   ENVYN
-        EXTERNAL  ENVYN
+C.........  INCLUDES
 
-C...........   Local parameters:
-        REAL, PARAMETER :: MWFAC( 12 ) =
-     &                   ( / 31.0, 28.0, 31.0, 30.0, 31.0, 30.0, 
-     &                       31.0, 31.0, 30.0, 31.0, 30.0, 31.0 / )
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
-C...........   SCRATCH LOCAL VARIABLES and their descriptions:
+C.........   EXTERNAL FUNCTIONS:
 
-        INTEGER         D, I, K          !  counters and indices
+        LOGICAL, EXTERNAL :: ENVYN
 
-        INTEGER         IOS           !  i/o status
+C.........   Local parameters:
 
-        REAL            DIV           !  scratch divisor
-        REAL            FAC           !  scratch factor
-        REAL            TOT           !  scratch total
+        REAL, PARAMETER :: MWFAC( 12 ) = FLOAT( MON_DAYS )
 
-        LOGICAL       :: RENORM = .TRUE.  ! true temporal profiles are to be renormalized
+        CHARACTER(16), PARAMETER :: PROGNAME = 'NORMTPRO'  ! program name
+
+C.........   SCRATCH LOCAL VARIABLES and their descriptions:
+
+        INTEGER         I, J, K  !  counters and indices
+        INTEGER         IOS         !  i/o status
+
+        REAL            DIV         !  scratch divisor
+        REAL(8)         FAC         !  scratch factor
+        REAL(8)         TOT         !  scratch total
+
+        LOGICAL       :: RENORM = .FALSE.  ! true temporal profiles are to be renormalized
 
         CHARACTER(300)  MESG    !  message buffer
-
-        CHARACTER(16) :: PROGNAME = 'NORMTPRO'  ! program name
 
 C***********************************************************************
 C   begin body of subroutine  NORMTPRO
 
 C.........  Get information from the environment about renormalization
-C        MESG = 'Renormalize temporal profiles'
-C        RENORM = ENVYN ( 'RENORM_TPROF', MESG, .TRUE., IOS )
+        MESG = 'Renormalize temporal profiles'
+        RENORM = ENVYN ( 'RENORM_TPROF', MESG, .TRUE., IOS )
 
 C.........  Allocate memory for weekday-normalized weekly emissions
-        ALLOCATE( XWKFAC( 7,NWEK ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'XWKFAC', PROGNAME )
+
+        ALLOCATE( XWKFAC(  7,NWEK ), 
+     &        MONFAC_ORG( 12,NMON ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'XWKFAC,MONFAC_ORIG', PROGNAME )
 
         XWKFAC = 1.0  ! Array
  
 C.........  Renormalize temporal profiles, if needed
+
         IF( RENORM ) THEN
 
             DO I = 1, NMON   ! Monthly
 
-                TOT = 0.0
+                TOT = 0.0D0
                 DO K = 1, 12
                     TOT = TOT + MONFAC( K,I )
                 END DO
 
-                IF( TOT .GT. 0. ) THEN
-                    DIV = 1.0 / TOT
+                IF( TOT .GT. 0.0D0 ) THEN
+                    DIV = 1.0D0 / TOT
                 ELSE
-                    DIV = 0.
+                    DIV = 0.0
                 END IF
 
                 DO K = 1, 12
                     MONFAC( K,I ) = DIV * MONFAC( K,I )
                 END DO
 
-            END DO
+            END DO          !  end loop on month-profiles I
 
             DO I = 1, NWEK   ! Weekly
 
-                TOT = 0.0
+                TOT = 0.0D0
                 DO K = 1, 7
                     TOT = TOT + WEKFAC( K,I )
                 END DO
 
-                IF( TOT .GT. 0. ) THEN
-                    DIV = 1.0 / TOT
+                IF( TOT .GT. 0.0D0 ) THEN
+                    DIV = 1.0D0 / TOT
                 ELSE
-                    DIV = 0.
+                    DIV = 0.0D0
                 END IF
 
                 DO K = 1, 7
                     WEKFAC( K,I ) = DIV * WEKFAC( K,I )
                 END DO
 
-            END DO
+            END DO          !  end loop on week-profiless I
 
-            DO D = 1, 7
+            DO I = 1, NHRL   ! Diurnal
 
-                DO I = 1, NHRL   ! Diurnal
-
-                    TOT = 0.0
-                    DO K = 1, 24
-                        TOT = TOT + HRLFAC( K,I,D )
-                    END DO
-
-                    IF( TOT .GT. 0. ) THEN
-                        DIV = 1.0 / TOT
-                    ELSE
-                        DIV = 0.
-                    END IF
-
-                    DO K = 1, 24
-                        HRLFAC( K,I,D ) = DIV * HRLFAC( K,I,D )
-                    END DO
-
+                TOT = 0.0D0
+                DO K = 1, 24
+                    TOT = TOT + HRLFAC( K,I )
                 END DO
 
-            END DO
+                IF( TOT .GT. 0. ) THEN
+                    DIV = 1.0 / TOT
+                ELSE
+                    DIV = 0.0
+                END IF
+
+                DO K = 1, 24
+                    HRLFAC( K,I ) = DIV * HRLFAC( K,I )
+                END DO
+
+            END DO          !  end loop on diurnal profiles I
 
         END IF
 
 C.........  Backup original MONFAC to MONFAC_ORG before applying monthly adjustment
-        MONFAC_ORG = MONFAC
+
+        IF ( NMON .GT. 0 )   MONFAC_ORG = MONFAC
 
 C.........  Weight monthly profiles by the number of days in a month
+
         DO I = 1, NMON
 
-            FAC = 0.0
-            TOT = 0.0
+            FAC = 0.0D0
+            TOT = 0.0D0
             DO K = 1, 12
                 TOT = TOT + MONFAC( K,I )
                 FAC = FAC + MWFAC( K ) * MONFAC( K,I )
             END DO
 
-            IF( FAC .GT. 0 ) FAC = TOT / FAC
+            IF( FAC .GT. 0.0D0 ) FAC = TOT / FAC
 
             DO K = 1, 12
                 MONFAC( K,I ) = FAC * MONFAC( K,I )
@@ -171,6 +177,7 @@ C.........  Weight monthly profiles by the number of days in a month
         END DO    !  end loop normalizing month-codes
 
 C.........  Weight weekly profiles for weekly and day-of-week adjustments
+
         DO I = 1, NWEK
 
             FAC  = WEKFAC( 1,I ) + WEKFAC( 2,I ) + WEKFAC( 3,I ) +
@@ -197,6 +204,35 @@ C.........  Weight weekly profiles for weekly and day-of-week adjustments
             END DO
 
         END DO            !  end loop normalizing day-of-week code
+
+C.........  Normalize day-of-month profiles:
+        
+        DO I = 1, NDOM
+
+            DO J = 1, 12
+
+                FAC = 0.0D0
+                DO K = 1, MON_DAYS(J)
+                    FAC = FAC + DOMFAC( K,J,I )
+                END DO
+
+                IF ( FAC .GT. 0.0D0 ) THEN      !  profile available
+                    DIV = 1.0D0 / FAC
+                ELSE                            !  profile was missing:  zero it out
+                    DIV = 0.0
+                END IF
+
+                DO K = 1, MON_DAYS(J)
+                    DOMFAC( K,J,I ) = DIV * DOMFAC( K,J,I )
+                END DO
+
+            END DO      !  end loop on months J
+            
+            !  Hack for February:
+            
+            DOMFAC( 29,2,I ) = DOMFAC( 28,2,I )
+
+        END DO      !  end loop on day-of-month profiles I
 
         RETURN
 
