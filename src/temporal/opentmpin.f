@@ -47,7 +47,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX, EANAM,
-     &                     EINAM, NIPOL, NIPPA, NPPOL, NPACT, ACTVTY, MCODEFLAG
+     &                     EINAM, NIPOL, NIPPA, NPPOL, NPACT, ACTVTY
 
         IMPLICIT NONE
 
@@ -207,9 +207,6 @@ C.........  Open holidays file for determining holidays by region
         HDEV = PROMPTFFILE(
      &             'Enter logical name for HOLIDAYS file',
      &             .TRUE., .TRUE., 'HOLIDAYS', PROGNAME )
-
-        MCODEFLAG = .FALSE.
-        MDEV      = 0            !  MCODES disabled
 
 C.........  Abort if error was found
         IF ( EFLAG ) THEN
