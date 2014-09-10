@@ -74,10 +74,11 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT(IN) :: MONTH        ! current processing month
 
 C...........   Local parameters
+        INTEGER, PARAMETER :: NSEG = 200    ! number of segments
         INTEGER, PARAMETER :: NNONPOL = 8   ! number of non-pollutant fields in file
 
 C...........   Local allocatable arrays
-        CHARACTER(100), ALLOCATABLE :: SEGMENT( : )    ! parsed input line
+        CHARACTER(50),  ALLOCATABLE :: SEGMENT( : )    ! parsed input line
         CHARACTER(30),  ALLOCATABLE :: POLNAMS( : )    ! pollutant names
         LOGICAL,        ALLOCATABLE :: LINVSCC( : )    ! check inv SCC availability in lookup table
 
@@ -106,7 +107,7 @@ C...........   Other local variables
         CHARACTER(SCCLEN3)  TSCC      ! current SCC
         CHARACTER(SCCLEN3)  PSCC      ! previous SCC
         
-        CHARACTER(2000)     LINE          ! line buffer
+        CHARACTER(10000)    LINE          ! line buffer
         CHARACTER(100)      FILENAME      ! tmp. filename
         CHARACTER(200)      FULLFILE      ! tmp. filename with path
         CHARACTER(300)      MESG          ! message buffer
@@ -139,7 +140,7 @@ C.........  Open emission factors file based on MRCLIST file
         END IF
 
 C.........  Allocate memory to parse lines
-        ALLOCATE( SEGMENT( 100 ), STAT=IOS )
+        ALLOCATE( SEGMENT( NSEG ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
 
 C.........  Read header line to get list of pollutants in file
@@ -168,11 +169,11 @@ C.............  Check for header line
                 FOUND = .TRUE.
 
                 SEGMENT = ' '  ! array
-                CALL PARSLINE( LINE, 100, SEGMENT )
+                CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C.................  Count number of pollutants
                 NPOL = 0
-                DO J = NNONPOL + 1, 100
+                DO J = NNONPOL + 1, NSEG 
                 
                     IF( SEGMENT( J ) .NE. ' ' ) THEN
                         NPOL = NPOL + 1
@@ -407,6 +408,7 @@ C.............  Skip header line
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments
+          print*,trim(line),':::reading at line####',irec,NEMTEMPS,NINVSCC,NPOL,NNONPOL
             CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Set SCC index for current line
