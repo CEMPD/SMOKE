@@ -320,8 +320,8 @@ C.........  Define the minimum and maximum time zones in the inventory
         TZMAX = MAXVAL( TZONES )
 
 C.........  Adjust TZMIN and TZMAX for possibility of daylight savings
-        TZMIN = MAX( TZMIN - 1, 0 )
-        TZMAX = MIN( TZMAX + 1, 23 )
+        TZMIN = TZMIN - 1
+        TZMAX = TZMAX + 1
 
 C.........  Read special files...
 
@@ -450,7 +450,7 @@ C............  Earliest day is start time in maximum time zone
      &                    -( TZMAX - TZONE )*10000 )
 
 C............  If time is before 6 am, need previous day also
-             IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
+C bbh             IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
 
 C............  Latest day is end time in minimum time zone
 C............  Calculate the ending date and time
@@ -464,15 +464,15 @@ C............  Calculate the ending date and time
      &                    -( TZMIN - TZONE )*10000 )
 
 C............  If time is before 6 am, don't need last day
-             IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
+C bbh             IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
 
              NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
              NDAYS = NDAYS + 1
              IF( NDAYS > TDMAX ) TDMAX = NDAYS
 
 C..............  Check earliest and latest dates during episode
-             IF( SDATE < EARLST ) EARLST = SDATE
-             IF( SDATE > LATEST ) LATEST = SDATE
+             IF( EARLYDATE < EARLST ) EARLST = EARLYDATE
+             IF( LATEDATE  > LATEST ) LATEST = LATEDATE
 
         END DO ! end of entire time episode periodes loops
 
@@ -686,7 +686,7 @@ C.........  Earliest day is start time in maximum time zone
      &               -( TZMAX - TZONE )*10000 )
 
 C.........  If time is before 6 am, need previous day also
-        IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
+C bbh        IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
 
 C.........  Latest day is end time in minimum time zone
         EDATE = SDATE
@@ -698,7 +698,7 @@ C.........  Latest day is end time in minimum time zone
         CALL NEXTIME( LATEDATE, LATETIME,
      &               -( TZMIN - TZONE )*10000 )
 C.........  If time is before 6 am, don't need last day
-        IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
+C bbh        IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
 
         NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
         NDAYS = NDAYS + 1
@@ -830,47 +830,46 @@ C               file (or all data).
             JDATE = SDATE
             JTIME = STIME
 
-            DO T = 1, NSTEPS        !!  Loop through time steps for current pollutant group
+            DO T = 1, NSTEPS        !  Loop through time steps for current pollutant group
 
                 WRITE( MESG, '( A, I4, 2X, A, I9.7, A, I6.6 )' ) 
      &                'Processing pol-group', N, 'for', JDATE, ':', JTIME
                 CALL M3MESG( MESG )
 
-                !!...  Adjust sources' time zones to account for daylight time...
-                !!...  Subtract 1 if date is daylight time and TZONES is not already
-                !!...  converted.  Add 1 if date is standard and TZONES has been
-                !!...  converted.
-                !!...  FLTRDAYL is a source-array of 0s and 1s to permit sources
-                !!...  to not get daylight time conversion.
+C.................  Adjust sources' time zones to account for daylight time...
+C                   Subtract 1 if date is daylight time and TZONES is not already
+C                   converted.  Add 1 if date is standard and TZONES has been converted.
+C                   FLTRDAYL is a source-array of 0s and 1s to permit sources
+C                   to not get daylight time conversion.
 
                 IF( ISDSTIME( JDATE ) .AND. .NOT. DAYLIT ) THEN
 
                     DAYLIT = .TRUE.
                     TZONES = TZONES - 1 * FLTRDAYL   ! arrays
 
-                    DO IS = 1,NSRC
-                        IF( TZONES( IS ) < 0 ) TZONES( IS ) = 23
-                    ENDDO
+C bbh                    DO IS = 1,NSRC
+C bbh                        IF( TZONES( IS ) < 0 ) TZONES( IS ) = 23
+C bbh                    ENDDO
 
                 ELSE IF( .NOT. ISDSTIME( JDATE ) .AND. DAYLIT ) THEN
 
                     DAYLIT = .FALSE.
                     TZONES = TZONES + 1 * FLTRDAYL   ! arrays
 
-                    DO IS = 1,NSRC
-                        IF( TZONES( IS ) > 23 ) TZONES( IS ) = 0
-                    ENDDO
+C bbh                    DO IS = 1,NSRC
+C bbh                        IF( TZONES( IS ) > 23 ) TZONES( IS ) = 0
+C bbh                    ENDDO
 
                 END IF
 
-                !!...  Generate and write hourly emissions for current hour
+C.................  Generate and write hourly emissions for current hour
 
                 CALL GENHEMIS( N, NGRP, NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME,
      &                  PNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D,
      &                  EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
 
-                DO I = 1, NGSZ      !!  Loop through pollutants/emission-types in this group
-                                    !!  Skip blanks that can occur when NGRP > 1
+                DO I = 1, NGSZ      !  Loop through pollutants/emission-types in this group
+                                    !  Skip blanks that can occur when NGRP > 1
                     CBUF = EANAM2D( I,N )
                     IF ( CBUF .EQ. ' ' ) CYCLE
 
@@ -882,7 +881,7 @@ C               file (or all data).
 
                     END IF
 
-                END DO  !! End loop on pollutants/emission-types I in this group
+                END DO  ! End loop on pollutants/emission-types I in this group
 
 C.................  Advance the output date/time by one time step
 

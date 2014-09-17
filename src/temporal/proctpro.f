@@ -1,24 +1,25 @@
 
       SUBROUTINE PROCTPRO( NFLAG, METFLAG, METNAME )
 
-C***********************************************************************
+C*******************************************************************************
 C    DESCRIPTION
 C      Processes (read/sort/filter) GENTPRO-style (ASCII CSV)
 C      cross-references and profiles and MET-based profiles.
 C
 C    PRECONDITIONS REQUIRED:
-C      setenv  TREF            <path for GENTPRO cross-reference file>
-C      setenv  TPRO_MONTHLY    <path for GENTPRO month-of-year profiles file>
-C      setenv  TPRO_WEEKLY     <path for GENTPRO day-of-week   profiles file>
-C      setenv  TPRO_DAILY      <path for GENTPRO day-of-month  profiles file>
+C      setenv  TREF            <path for cross-reference file>
+C      setenv  TPRO_MONTHLY    <path for month-of-year profiles file>
+C      setenv  TPRO_WEEKLY     <path for day-of-week   profiles file>
+C      setenv  TPRO_DAILY      <path for day-of-month  profiles file>
 C      setenv  TPRO_HOUR       <path for M3IO met based        profiles file>
-
+C
 C    INTERNAL SUBROUTINES AND FUNCTIONS:
 C      TIMEFLAGS() sets active month/day-of-week flags and SDATE:EDATE
 C      for the set of episodes being run
-
+C
 C      CSVPROF() opens and counts CSV-profile files, allocates arguments,
 C      and filters and sorts the input table
+C
 C      CSVDOMP() opens and counts TPRO_DAILY day-of-month CSV-profile files,
 C      allocates arguments, and filters and sorts the input table
 C
@@ -39,7 +40,7 @@ C        and cross-references
 C*****************************************************************************/
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE)
-C               Modeling System
+C                Modeling System
 C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004-2014, Environmental Modeling for Policy Development
@@ -95,9 +96,9 @@ C.........   INCLUDES
 
 C.........   Arguments:
 
-        LOGICAL,       INTENT(IN   ) :: NFLAG       !!  no xref:  constant profiles
-        LOGICAL,       INTENT(  OUT) :: METFLAG     !!  use hour-specific met-based profiles
-        CHARACTER(16), INTENT(  OUT) :: METNAME     !!  logical name for hour-specific file
+        LOGICAL,       INTENT(IN   ) :: NFLAG       !  no xref:  constant profiles
+        LOGICAL,       INTENT(  OUT) :: METFLAG     !  use hour-specific met-based profiles
+        CHARACTER(16), INTENT(  OUT) :: METNAME     !  logical name for hour-specific file
 
 C.........   EXTERNAL FUNCTIONS and their descriptions:
 
@@ -121,15 +122,13 @@ C.........   Local parameters
         INTEGER, PARAMETER :: AREATYP  =  1
         INTEGER, PARAMETER :: MOBILTYP =  2
         INTEGER, PARAMETER :: POINTTYP =  3
-        INTEGER, PARAMETER :: MXTCOL   =  9
+        INTEGER, PARAMETER :: MXTCOL   = 15
 
         CHARACTER( 1),      PARAMETER :: BLANK   = ' '
         CHARACTER( 1),      PARAMETER :: COMMA   = ','
-        CHARACTER( 1),      PARAMETER :: QUOT2   = '"'
-        CHARACTER( 1),      PARAMETER :: QUOT1   = "'"
-        CHARACTER(16),      PARAMETER :: PNAME   = 'PROCTPRO'                  !!  subroutine name
-        CHARACTER(24),      PARAMETER :: ZEROS   = '000000000000000000000000'   !!  "all-zeros"
-        CHARACTER(24),      PARAMETER :: CMISS   = '????????????????????????'   !!  "not a legal string-entry"
+        CHARACTER(16),      PARAMETER :: PNAME   = 'PROCTPRO'                   !  subroutine name
+        CHARACTER(24),      PARAMETER :: ZEROS   = '000000000000000000000000'   !  "all-zeros"
+        CHARACTER(24),      PARAMETER :: CMISS   = '????????????????????????'   !  "not a legal string-entry"
 
         CHARACTER( 6), PARAMETER :: LOCCATS( 3 ) = ( / 'AREA  ', 'MOBILE', 'POINT ' / )
 
@@ -137,8 +136,8 @@ C.........   Local variables
 
         INTEGER     F, I, J, J1, J2, J3, J4, J5, JJ, K, L, M, N, NN, S, V, W    !  counters and indices
         INTEGER     ISTAT
-        INTEGER     SDATE, STIME, EDATE !!  starting, ending date for this set of episodes
-        INTEGER     NLINES, NDATA       !!  from CSVOPEN()
+        INTEGER     SDATE, STIME, EDATE !  starting, ending date for this set of episodes
+        INTEGER     NLINES, NDATA       !  from CSVOPEN()
 
         INTEGER     ICAT    !  category subscript in LOCCATS
 
@@ -185,7 +184,7 @@ C.........  for better memory alignment
 
         INTEGER     DAYCOUNT
 
-        CHARACTER(16), ALLOCATABLE :: MTHIDU( : )       !!  unsorted
+        CHARACTER(16), ALLOCATABLE :: MTHIDU( : )       !  unsorted
         CHARACTER(16), ALLOCATABLE :: WEKIDU( : )
         CHARACTER(16), ALLOCATABLE :: DOMIDU( : )
         CHARACTER(16), ALLOCATABLE :: MONIDU( : )
@@ -197,7 +196,7 @@ C.........  for better memory alignment
         CHARACTER(16), ALLOCATABLE :: SUNIDU( : )
         CHARACTER(16), ALLOCATABLE :: METIDU( : )
 
-        CHARACTER(16), ALLOCATABLE :: MTHIDS( : )       !!  sorted
+        CHARACTER(16), ALLOCATABLE :: MTHIDS( : )       !  sorted
         CHARACTER(16), ALLOCATABLE :: WEKIDS( : )
         CHARACTER(16), ALLOCATABLE :: DOMIDS( : )
         CHARACTER(16), ALLOCATABLE :: MONIDS( : )
@@ -209,7 +208,7 @@ C.........  for better memory alignment
         CHARACTER(16), ALLOCATABLE :: SUNIDS( : )
         CHARACTER(16), ALLOCATABLE :: METIDS( : )
 
-        CHARACTER(ALLLEN3), ALLOCATABLE :: MTHKEYU( : )     !!  unsorted cross-reference keys
+        CHARACTER(ALLLEN3), ALLOCATABLE :: MTHKEYU( : )     !  unsorted cross-reference keys
         CHARACTER(ALLLEN3), ALLOCATABLE :: WEKKEYU( : )
         CHARACTER(ALLLEN3), ALLOCATABLE :: DOMKEYU( : )
         CHARACTER(ALLLEN3), ALLOCATABLE :: MONKEYU( : )
@@ -236,9 +235,12 @@ C.........  for better memory alignment
         CHARACTER(LNKLEN3)  CLNK        !  temporary link code
         CHARACTER(ALLLEN3)  CSRCALL     !  buffer for source char, incl pol/act
         CHARACTER(FIPLEN3)  CFIP        !  buffer for CFIPS code
-        CHARACTER(CNYLEN3)  CNY         !  tmp county string
         CHARACTER(SCCLEN3)  TSCC        !  temporary SCC
         CHARACTER(PLTLEN3)  CPLT        !  tmp plant ID
+        CHARACTER(CHRLEN3)  CPNT        !  tmp point ID
+        CHARACTER(CHRLEN3)  CSTK        !  tmp stack ID
+        CHARACTER(CHRLEN3)  CSEG        !  tmp segment ID
+        CHARACTER(CHRLEN3)  CPL5        !  tmp plt char 5
         CHARACTER(IOVLEN3)  CPOA        !  temporary pollutant/emission type
         CHARACTER(RWTLEN3)  CRWT        !  roadway type no.
         CHARACTER(VIDLEN3)  CVID        !  vehicle type ID no.
@@ -260,12 +262,11 @@ C......... NOTE:  FLTRXREF() does *not* filter by FIP!
         CHARACTER(256)      MESG
         CHARACTER(512)      LINE
 
-        INTEGER, SAVE :: MXWARN = -9999     !!  from env vble SMK_MAXWARNING
+        INTEGER, SAVE :: MXWARN = -9999     !  from env vble SMK_MAXWARNING
 
-C**************************************************************************************
-C   Begin body of subroutin
+C...........   body   ......................................................
 
-        IF ( NFLAG ) THEN       !!  no time-dependence in emissions profiles
+        IF ( NFLAG ) THEN       !  no time-dependence in emissions profiles
 
             ALLOCATE( METPROF( NSRC,  NIPPA ),
      &                MTHPROF( NSRC,  NIPPA ),
@@ -280,7 +281,7 @@ C   Begin body of subroutin
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
 
-C.............  array assignments for uniform profiles:
+            !  array assignments for uniform profiles:
 
             METPROF = IMISS3
             MTHPROF = 1
@@ -295,7 +296,7 @@ C.............  array assignments for uniform profiles:
 
             RETURN
 
-        END IF      !!  if nflag:  no time-dependence in emissions profiles
+        END IF      !  if nflag:  no time-dependence in emissions profiles
 
 
         IF ( MXWARN .LT. 0 ) THEN
@@ -321,12 +322,12 @@ C.........  Sort the FIPS codes and defaults, and store them for use in
 C.........  filtering the XREF file:
 
         N = 1
-        INDXKEY( N ) = N        !!  ultimate default
+        INDXKEY( N ) = N        !  ultimate default
         FIPKEYU( N ) = 0
         DO I = 1, NSRC
             N = N + 1
             INDXKEY( N ) = N
-            FIPKEYU( N ) = 1000 * ( IFIP( I )/1000 )       !!  state only (default value)
+            FIPKEYU( N ) = 1000 * ( IFIP( I )/1000 )       !  state only (default value)
             N = N + 1
             INDXKEY( N ) = N
             FIPKEYU( N ) = IFIP( I )
@@ -334,7 +335,7 @@ C.........  filtering the XREF file:
 
         CALL SORTI1( N, INDXKEY, FIPKEYU )
 
-        L = IMISS3       !!  now construct duplicate-free sorted list:
+        L = IMISS3       !  now construct duplicate-free sorted list:
         M = 0
         DO I = 1, N
             K = INDXKEY( I )
@@ -395,7 +396,7 @@ C.........  Allocate/initialize scratch data structures
      &           SUNKEYU( NDATA ),
      &           METKEYU( NDATA ),
      &        METREFFLAG( NIPPA ),
-     &        POLREFFLAG( NIPPA ), 
+     &        POLREFFLAG( NIPPA ),
      &      METPROF( NSRC,NIPPA ),STAT = IOS )
         IF ( IOS .NE. 0 ) THEN
             WRITE( MESG, '( A, I10 )' ) 'ERROR:  xref allocation failure.  STAT=', IOS
@@ -432,41 +433,13 @@ C.........  Read and process the TREF file
             ELSE IF ( BLKORCMT( LINE ) ) THEN
                 CYCLE
             END IF
+            
+            CALL PARSLINE( LINE, MXTCOL, FIELD )    !  does adjustl() on all fields
 
-            J1 = 0
-            DO F = 1, 8
-                JJ = INDEX( LINE( J1+1: ), COMMA )
-                IF ( JJ .LE. 0 ) THEN
-                    WRITE( MESG, '( 3A, I10, 2X, A, I3 )' )
-     &                  'ERROR:  Bad xref in "TREF" at line', L,
-     &                  'for field', F
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                    W     = W + 1
-                    IF ( W .GT. MXWARN ) EXIT
-                    CYCLE
-                END IF
-                J2 = J1 + JJ
-                FIELD( F ) = ADJUSTL( LINE( J1+1:J2-1 ) )
-                J1 = J2
-            END DO
-
-C.............   field 9 may have an optional trailing comment, or not...
-
-            J2 = LEN(LINE) + 1
-            JJ = INDEX( LINE( J1+1: ), COMMA )
-            IF ( JJ .GT. 0 )  J2 = MIN( J1 + JJ, J2 )
-            JJ = INDEX( LINE( J1+1: ), QUOT1 )
-            IF ( JJ .GT. 0 )  J2 = MIN( J2, J1 + JJ )
-            JJ = INDEX( LINE( J1+1: ), QUOT2 )
-            IF ( JJ .GT. 0 )  J2 = MIN( J2, J1 + JJ )
-
-            FIELD( 9 ) = ADJUSTL( LINE( J1+1:J2-1 ) )
-
-            IF ( FIELD( 9 ) .EQ. BLANK ) THEN
+            IF ( FIELD(9) .EQ. BLANK ) THEN
                 WRITE( MESG, '( 3A, I10, 2X, A )' )
      &              'ERROR:  Bad xref in "TREF" at line', L,
-     &              'for field 9 (proflie-ID)'
+     &              'for field 9 (profile-ID)'
                 CALL M3MESG( MESG )
                 EFLAG = .TRUE.
                 W     = W + 1
@@ -486,11 +459,11 @@ C.............  Skip lines that are not valid for this FIP
             IF ( JJ .LE. 0 )  CYCLE
 
 C.............  Post-process x-ref information to scan for '-9',
-C               pad with zeros, compare SCC version master list,
-C               compare SIC version to master list, and compare
-C               pol/act name with master list.
-C               NOTE:  FLTRXREF() does *not* filter by FIP,
-C               and does LINEAR searches for pollutant!
+C.............  pad with zeros, compare SCC version master list,
+C.............  compare SIC version to master list, and compare
+C.............  pol/act name with master list.
+C.............  NOTE:  FLTRXREF() does *not* filter by FIP,
+C.............  and does LINEAR searches for pollutant!
 
             CALL FLTRXREF( CFIP, CDUM, TSCC, CPOA, CDUM2,
      &                     IDUM, IDUM, JSPC, PFLAG, SKIPREC )
@@ -502,9 +475,9 @@ C.............  Skip lines that are not valid for this inven and src cat
 C.............  Write pol/act position to a character string
 
             IF ( JSPC .EQ. 0 ) THEN
-                CPOS            = ZEROS
+                CPOS = ZEROS
             ELSE
-                WRITE( CPOS, '(I5.5)' ) JSPC      !! species index into EANAM, from FLTRXREF
+                WRITE( CPOS, '(I5.5)' ) JSPC      ! species index into EANAM, from FLTRXREF
                 POLREFFLAG( JSPC ) = .TRUE.
             END IF
 
@@ -517,24 +490,21 @@ C.............  Write pol/act position to a character string
 
             ELSE IF ( ICAT .EQ. POINTTYP ) THEN
 
-                CPLT       = FIELD(3)
-                CHARS( 1 ) = FIELD(1)
-                CHARS( 2 ) = FIELD(4)
-                CHARS( 3 ) = FIELD(5)
-                CHARS( 4 ) = FIELD(6)
-                CHARS( 5 ) = FIELD(7)
-                CALL BLDCSRC( CFIP, CPLT, CHARS(1),
-     &                        CHARS(2), CHARS(3), CHARS(4),
-     &                        CHARS(5), CPOS, CSRCALL )
+                CPLT = FIELD(3)
+                CPNT = FIELD(4)
+                CSTK = FIELD(5)
+                CSEG = FIELD(6)
+                CPL5 = TSCC                     !  padded from length=10 to length=15
+                CALL BLDCSRC( CFIP, CPLT, CPNT, CSTK, CSEG, CPL5, TSCC, CPOS, CSRCALL )
 
             ELSE IF ( ICAT .EQ. MOBILTYP ) THEN
 
-C.............   M Houyoux note: TSCC has been put in here instead of road type
-C.............  and link has been removed.  These were breaking the county-SCC specific
-C.............  assignments by setting CNFIP in xreftbl.f to be non-blank and not the SCC.
-C.............  However, this change breaks link-specific profile assignments, which
-C.............  are not likely to be used anyway.  I suggest that we just remove
-C.............  link-specific assignments from the documentation for Spcmat.
+C.................   M Houyoux note: TSCC has been put in here instead of road type
+C.................  and link has been removed.  These were breaking the county-SCC specific
+C.................  assignments by setting CNFIP in xreftbl.f to be non-blank and not the SCC.
+C.................  However, this change breaks link-specific profile assignments, which
+C.................  are not likely to be used anyway.  I suggest that we just remove
+C.................  link-specific assignments from the documentation for Spcmat.
 
                 CALL BLDCSRC( CFIP, TSCC, BLANK,
      &                        BLANK, BLANK, BLANK,
@@ -544,6 +514,10 @@ C.............  link-specific assignments from the documentation for Spcmat.
 
 
             SELECT CASE( FIELD(8) )
+
+                CASE( BLANK )
+
+                    CYCLE
 
                 CASE( 'MONTHLY' )
 
@@ -660,7 +634,7 @@ C.............  link-specific assignments from the documentation for Spcmat.
                         FRIKEYU( FRICOUNT ) = CSRCALL
                     END IF
 
-                CASE( 'ALLDAYS' )
+                CASE( 'ALLDAY' )
 
                     IF ( DAYFLAG( 1 ) ) THEN
                         MONCOUNT = MONCOUNT + 1
@@ -706,7 +680,7 @@ C.............  link-specific assignments from the documentation for Spcmat.
 
                 CASE( 'HOURLY' )
 
-                    IF ( .NOT.METFLAG )  CYCLE
+                    IF ( .NOT. METFLAG )  CYCLE
 
                     METCOUNT = METCOUNT + 1
                     METIDU ( METCOUNT ) = FIELD(9)
@@ -718,14 +692,26 @@ C.............  link-specific assignments from the documentation for Spcmat.
                         LASTMET    = METPROTYPE
                     ELSE IF ( LASTMET .NE. METPROTYPE ) THEN
                         EFLAG = .TRUE.
-                        WRITE( MESG, '( A,I10 )' )
-     &                      'ERROR:  inconsistent MET PROF TYPE at line', L
+                        WRITE( MESG, '( A,I10 )' ) 'ERROR:  inconsistent MET PROF TYPE at line', L
                         CALL M3MESG( MESG )
                     END IF
 
+                CASE DEFAULT
+
+                    WRITE( MESG, '( 3A,I10 )' ) 'ERROR:  unknown XREFTYPE="', TRIM( FIELD(8) ), '" at line', L
+                    CALL M3MESG( MESG )
+                    EFLAG = .TRUE.
+                    W     = W + 1
+                    IF ( W .GT. MXWARN ) EXIT
+
             END SELECT
 
-        END DO      !!  end loop reading and processing TREF file
+        END DO      !  end loop reading and processing TREF file
+
+        IF ( W .GT. MXWARN ) THEN
+            CALL M3MESG( 'Maximum number of errors exceeded' )
+        END IF
+        
 
         DAYCOUNT = MONCOUNT + TUECOUNT + WEDCOUNT + THUCOUNT +
      &             FRICOUNT + SATCOUNT + SUNCOUNT
@@ -743,59 +729,59 @@ C.............  link-specific assignments from the documentation for Spcmat.
 
 C.........   Now sort all these tables and check for duplicates:
 
-        IF ( .NOT. SORTREF( 'MONTH-of-YEAR', MTHCOUNT, MTHCOUNT, MTHIDU, MTHKEYU, MTHIDS, MTHKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'MONTH-of-YEAR ', MTHCOUNT, MTHCOUNT, MTHIDU, MTHKEYU, MTHIDS, MTHKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing MONTHLY XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'DAY-of-WEEK', WEKCOUNT, WEKCOUNT, WEKIDU, WEKKEYU, WEKIDS, WEKKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'DAY-of-WEEK   ', WEKCOUNT, WEKCOUNT, WEKIDU, WEKKEYU, WEKIDS, WEKKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing WEEKLY XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'DAY-of-MONTH', DOMCOUNT, DOMCOUNT, DOMIDU, DOMKEYU, DOMIDS, DOMKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'DAY-of-MONTH  ', DOMCOUNT, DOMCOUNT, DOMIDU, DOMKEYU, DOMIDS, DOMKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing DAILY XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'MONDAY', MONCOUNT, DAYCOUNT, MONIDU, MONKEYU, MONIDS, MONKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'MONDAY        ', MONCOUNT, DAYCOUNT, MONIDU, MONKEYU, MONIDS, MONKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing MONDAY DIURNAL XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'TUESDAY', TUECOUNT, TUECOUNT, TUEIDU, TUEKEYU, TUEIDS, TUEKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'TUESDAY       ', TUECOUNT, TUECOUNT, TUEIDU, TUEKEYU, TUEIDS, TUEKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing TUESDAY DIURNAL XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'WEDNESDAY', WEDCOUNT, WEDCOUNT, WEDIDU, WEDKEYU, WEDIDS, WEDKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'WEDNESDAY     ', WEDCOUNT, WEDCOUNT, WEDIDU, WEDKEYU, WEDIDS, WEDKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing WEDNESDAY DIURNAL XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'THURSDAY', THUCOUNT, THUCOUNT, THUIDU, THUKEYU, THUIDS, THUKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'THURSDAY      ', THUCOUNT, THUCOUNT, THUIDU, THUKEYU, THUIDS, THUKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing THURSDAY DIURNAL XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'FRIDAY', FRICOUNT, FRICOUNT, FRIIDU, FRIKEYU, FRIIDS, FRIKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'FRIDAY        ', FRICOUNT, FRICOUNT, FRIIDU, FRIKEYU, FRIIDS, FRIKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing FRIDAY DIURNAL XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'SATURDAY', SATCOUNT, SATCOUNT, SATIDU, SATKEYU, SATIDS, SATKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'SATURDAY      ', SATCOUNT, SATCOUNT, SATIDU, SATKEYU, SATIDS, SATKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing SATURDAY DIURNAL XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'SUNDAY', SUNCOUNT, SUNCOUNT, SUNIDU, SUNKEYU, SUNIDS, SUNKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'SUNDAY        ', SUNCOUNT, SUNCOUNT, SUNIDU, SUNKEYU, SUNIDS, SUNKEYS ) ) THEN
             EFLAG = .TRUE.
             CALL M3MESG( 'ERROR:  processing SUNDAY DIURNAL XREFs' )
         END IF
 
-        IF ( .NOT. SORTREF( 'MET-BASED', METCOUNT, METCOUNT, METIDU, METKEYU, METIDS, METKEYS ) ) THEN
+        IF ( .NOT. SORTREF( 'MET-BASED     ', METCOUNT, METCOUNT, METIDU, METKEYU, METIDS, METKEYS ) ) THEN
             EFLAG = .TRUE.
-            CALL M3MESG( 'ERROR:  processing HOURLY XREFs' )
+            CALL M3MESG( 'ERROR:  processing MET-BASED HOURLY XREFs' )
         END IF
 
         IF ( EFLAG ) THEN
@@ -827,31 +813,31 @@ C.........   Now sort all these tables and check for duplicates:
 
 C.........   Read in the relevant profile-tables:
 
-        IF ( MTHCOUNT .GT. 0 ) THEN         !!  month-of-year
+        IF ( MTHCOUNT .GT. 0 ) THEN         !  month-of-year
 
             ANAME = CATEGORY(1:1) //  'TPRO_MONTHLY'
             NMON  = CSVPROF( ANAME, 12,
      &                       MTHIDP, MONFAC,
      &                       MTHCOUNT, MTHIDS  )
 
-        END IF      !!  if mthcount > 0
+        END IF      !  if mthcount > 0
 
 
-        IF ( WEKCOUNT .GT. 0 ) THEN         !!  day-of-week
+        IF ( WEKCOUNT .GT. 0 ) THEN         !  day-of-week
 
             ANAME = CATEGORY(1:1) //  'TPRO_WEEKLY'
             NWEK  = CSVPROF( ANAME, 7,
      &                       WEKIDP, WEKFAC,
      &                       WEKCOUNT, WEKIDS  )
 
-        END IF      !!  if wekcount > 0
+        END IF      !  if wekcount > 0
 
 
 C.........  hour-of-day:  all these use TPROF_HOURLY:
 
         IF ( DAYCOUNT .GT. 0 ) THEN
 
-C..............  Accumulate all these IDs into MONIDS(:)
+            !....  Accumulate all these IDs into MONIDS(:)
 
             N = MONCOUNT
             DO I = 1, TUECOUNT
@@ -884,22 +870,22 @@ C..............  Accumulate all these IDs into MONIDS(:)
      &                       HRLIDP, HRLFAC,
      &                       DAYCOUNT, MONIDS  )
 
-        END IF      !!  if DAYCOUNT > 0
+        END IF      !  if DAYCOUNT > 0
 
 
-        IF ( DOMCOUNT .GT. 0 ) THEN         !!  day-of-month
+        IF ( DOMCOUNT .GT. 0 ) THEN         !  day-of-month
 
             ANAME = CATEGORY(1:1) //  'TPRO_DAILY'
             NDOM  = CSVDOMP( ANAME, SDATE, EDATE,
      &                       DOMIDP, DOMFAC,
      &                       DOMCOUNT, DOMIDS  )
 
-        END IF      !!  if domcount > 0
+        END IF      !  if domcount > 0
 
 
-        IF ( METCOUNT .GT. 0 ) THEN       !!  met based
+        IF ( METCOUNT .GT. 0 ) THEN       !  met based
 
-            METNAME = CATEGORY(1:1) //  'TPRO_HOUR'
+            METNAME = CATEGORY(1:1) //  'TPRO_HOURLY_NCF'
             CALL ENVSTR( METNAME, 'MET-Profile file, or "NONE"', 'NONE', LINE, IOS )
 
             METFLAG = ( LINE .NE. 'NONE' )
@@ -933,7 +919,7 @@ C..............  Accumulate all these IDs into MONIDS(:)
                     CALL M3EXIT( PNAME,SDATE,STIME, MESG, 2 )
                 END IF
 
-C.................  sort counties into METFIPS(:)
+                !  sort counties into METFIPS(:)
 
                 DO N = 1, NMETPROF
                     METNDEX( N ) = N
@@ -959,28 +945,28 @@ C.................  sort counties into METFIPS(:)
      &                                BLANK, CPOS, CSRCALL )
 
 C.........................  If this source in XREF and this FIP in METFIPS
-C                           use subscript into (unsorted) COUNTIES:
+C.........................  use subscript into (unsorted) COUNTIES:
 
-                        I = FINDC( CSRCALL, METCOUNT, METKEYS )         !!  index in sorted XREF, or 0
+                        I = FINDC( CSRCALL, METCOUNT, METKEYS )         !  index in sorted XREF, or 0
                         IF ( I .GT. 0 )  THEN
-                            K = FIND1( IFIP( S ), NMETPROF, METFIPS )   !!  index into sorted list,   or 0
-                            METPROF( S,V ) = METNDEX( K )               !!  index into unsorted list, or 0
+                            K = FIND1( IFIP( S ), NMETPROF, METFIPS )   !  index into sorted list,   or 0
+                            METPROF( S,V ) = METNDEX( K )               !  index into unsorted list, or 0
                         END IF
 
-                    END DO      !!  end loop on sources S
+                    END DO      !  end loop on sources S
 
-                END DO          !!  end loop on pollutants V
+                END DO          !  end loop on pollutants V
 
                 DEALLOCATE( COUNTIES, METFIPS, METNDEX, METKEYS )
 
-            END IF              !!  if not open3(); else if not desc3(); else...
+            END IF              !  if not open3(); else if not desc3(); else...
 
         ELSE
 
             NMETPROF = 0
             METNAME  = CMISS
 
-        END IF      !! if met xrefs and profiles used
+        END IF      ! if met xrefs and profiles used
 
 
 C.........  Map cross references into profile-subscripts:
@@ -1099,17 +1085,16 @@ C.........  Normalize profiles:
 
         CALL NORMTPRO()
 
+C******************  INTERNAL SUBPROGRAMS  *****************************
 
-      CONTAINS  !!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+      CONTAINS
 
 
         SUBROUTINE TIMEFLAGS()
 
-C !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-C  Set active-month/active day-of-week flags for the time period
-C  SDATE:EDATE.
-C  Compute SDATE, EDATE for this set of episodes.
-C !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+C Set active-month/active day-of-week flags for the time period
+C SDATE:EDATE.
+C Compute SDATE, EDATE for this set of episodes.
 
             INTEGER, EXTERNAL :: JSTEP3, WKDAY
 
@@ -1119,8 +1104,7 @@ C !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             INTEGER     MAXZONE
 
-C****************************************************************************
-C   Begin body  .....................
+C.................  begin body  .....................
 
             SDATE = ITDATE( 1 )
             EDATE = ITDATE( 1 )
@@ -1128,20 +1112,20 @@ C   Begin body  .....................
 C.............  Find time zone min, max
 
             MAXZONE = MAXVAL( TZONES )
-
+            
 C.............  Initialize flag-arrays:
 
             MONFLAG = .FALSE.
             DAYFLAG = .FALSE.
 
-            DO IT = 1, SIZE( ITDATE )        !!  loop over episodes for this run
+            DO IT = 1, SIZE( ITDATE )        !  loop over episodes for this run
 
-C.............  because of local-time corrections may need one day on each side
-C               of run-start, run-end:
+C.................  because of local-time corrections may need one day on each side
+C                   of run-start, run-end:
 
                 JDATE = ITDATE( IT )
                 JTIME = 0
-                CALL NEXTIME( JDATE, JTIME, -MAXZONE*10000 )    !!  earliest local starting date for this episode
+                CALL NEXTIME( JDATE, JTIME, -MAXZONE*10000 )    !  earliest local starting date for this episode
                 STIME = JTIME
 
                 DO D = 0, RUNLEN( IT ) + 23, 24
@@ -1158,7 +1142,7 @@ C               of run-start, run-end:
 
                 END DO
 
-            END DO                          !!  end loop over episodes M
+            END DO                          !  end loop over episodes M
 
             WKDFLAG =  (    DAYFLAG(1) .OR. DAYFLAG(2) .OR. DAYFLAG(3)
      &                 .OR. DAYFLAG(4) .OR. DAYFLAG(5) )
@@ -1169,23 +1153,21 @@ C               of run-start, run-end:
 
         END SUBROUTINE TIMEFLAGS
 
-
-C*********************************************************************************
+C***********************************************************************************
 
         INTEGER FUNCTION  CSVPROF( FNAME, NFIELDS, IDSTR, TFAC,
      &                             IDCNT, IDLIST )
 
-C***********************************************************************
 C  Open and count the CSV-profile file FNAME.
 C  Allocate  both arguments and local arrays.
 C  Read FNAME, and sort data onto output arguments,
 C  filtering out data only for ID's in IDLIST
-C 
-C  Lines must be ASCII CSV of the form
-C    <character-string ID>, TFAC(1), ..., TFAC(NFIELDS) [comment...]
-C***********************************************************************
 
-C............  Arguments:
+C  Lines must be ASCII CSV of the form
+C      <character-string ID>, TFAC(1), ..., TFAC(NFIELDS) [comment...]
+C----------------------------------------------------------------------------------------------
+
+C.............  Arguments:
 
             CHARACTER(*) ,              INTENT(IN   ) :: FNAME
             INTEGER      ,              INTENT(IN   ) :: NFIELDS
@@ -1215,9 +1197,8 @@ C.............  Local variables:
             INTEGER      , ALLOCATABLE :: INDX( : )
             REAL         , ALLOCATABLE :: FACS( :,: )
 
-C*******************************************************************************
-C  Begine body of function CSVPROF()  .....................
-C........  Create sorted-unique list of input IDs:
+C.............  body of function CSVPROF()  .....................
+C.............  Create sorted-unique list of input IDs:
 
             DO N = 1, IDCNT
                 IDINDX( N ) = N
@@ -1237,7 +1218,7 @@ C........  Create sorted-unique list of input IDs:
             END DO
 
 
-C............  Open and count FNAME
+C.............  Open and count FNAME
 
             FDEV = CSVOPEN( FNAME, NLINES, NDATA )
 
@@ -1284,7 +1265,7 @@ C.............  Read file:  CKEY and FACS
                 END IF
 
                 AKEY = ADJUSTL( LINE( 1:J-1 ) )
-                IF ( FINDC( AKEY, NSORT, IDSORT ) .LE. 0 ) CYCLE        !! ID does not show up in XREF
+                IF ( FINDC( AKEY, NSORT, IDSORT ) .LE. 0 ) CYCLE        ! ID does not show up in XREF
 
                 M = M + 1
                 CKEY( M ) = AKEY
@@ -1304,7 +1285,7 @@ C.............  Read file:  CKEY and FACS
 
             END DO
 
-99          CLOSE( FDEV )       !!  completed input of this file
+99          CLOSE( FDEV )       !  completed input of this file
 
             IF ( EFLAG ) THEN
                 MESG = 'ERROR:  Fatal error(s) reading ' // FNAME
@@ -1324,12 +1305,11 @@ C.............  Read file:  CKEY and FACS
 
         END  FUNCTION  CSVPROF
 
-C-------------------------------------------------------------------------------
+C----------------------------------------------------------------------------------------------
 
         INTEGER FUNCTION  CSVDOMP( FNAME, SDATE, EDATE, IDSTR, DMFAC,
      &                             IDCNT, IDLIST )
 
-C*******************************************************************************
 C  Open and count the CSV-day-profile file FNAME.
 C  Allocate  both arguments and local arrays.
 C  Read FNAME, and sort data onto output arguments,
@@ -1340,14 +1320,14 @@ C      <character-string ID>, MONTH, TFAC(1), ..., TFAC(MON_DAYS(MONTH)) [commen
 C
 C  Output ID's in IDSTR are TRIM(ID)//MM where MM is the 2-digit month
 C  for the indicated profile-line
-C-------------------------------------------------------------------------------
+C----------------------------------------------------------------------------------------------
 
 C.............  Arguments:
 
             CHARACTER(*) ,              INTENT(IN   ) :: FNAME
             INTEGER      ,              INTENT(IN   ) :: SDATE, EDATE
-            CHARACTER(16), ALLOCATABLE, INTENT(  OUT) :: IDSTR( : )         !!  profile IDs
-            REAL         , ALLOCATABLE, INTENT(  OUT) :: DMFAC( :,:,: )     !!  (31,12,NDOM)
+            CHARACTER(16), ALLOCATABLE, INTENT(  OUT) :: IDSTR( : )         !  profile IDs
+            REAL         , ALLOCATABLE, INTENT(  OUT) :: DMFAC( :,:,: )     !  (31,12,NDOM)
             INTEGER      ,              INTENT(IN   ) :: IDCNT
             CHARACTER(16),              INTENT(IN   ) :: IDLIST( IDCNT )
 
@@ -1374,7 +1354,7 @@ C.............  Local variables:
             CHARACTER(16), ALLOCATABLE :: CIDU( : )
             REAL         , ALLOCATABLE :: FACS( :,:,: )
 
-C.............  body of function CSVDOMP()  .....................
+C..................  body of function CSVDOMP()  .....................
 C.............  Create sorted-unique list of input IDs:
 
             DO N = 1, IDCNT
@@ -1441,7 +1421,7 @@ C.............  Open and count FNAME
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
 
-            FACS  = -9999.9      !!  array assignments
+            FACS  = -9999.9      !  array assignments
             IDSTR = BLANK
 
 C.............  Read file:  CKEY = ID//MONTH, and FACS
@@ -1474,7 +1454,7 @@ C.............  Read file:  CKEY = ID//MONTH, and FACS
 
                 AKEY = ADJUSTL( LINE( 1:J ) )
                 N    = FINDC( AKEY, NSORT, IDSORT )
-                IF ( N .LE. 0 ) CYCLE        !! ID does not show up in XREF
+                IF ( N .LE. 0 ) CYCLE        ! ID does not show up in XREF
 
                 CIDU( N  ) = AKEY
 
@@ -1507,9 +1487,9 @@ C.............  Read file:  CKEY = ID//MONTH, and FACS
                 IF ( IMON .NE. 2 ) THEN
                     NN = MON_DAYS( I )
                 ELSE IF ( LEAPYEAR ) THEN
-                    NN = 29     !! = MON_DAYS( I ) + 1
+                    NN = 29     ! = MON_DAYS( I ) + 1
                 ELSE
-                    NN = 28     !! = MON_DAYS( I )         !! = 28 for normal february
+                    NN = 28     ! = MON_DAYS( I )         ! = 28 for normal february
                 END IF
 
                 M = M + 1
@@ -1530,15 +1510,14 @@ C.............  Read file:  CKEY = ID//MONTH, and FACS
 
             END DO
 
-99          CLOSE( FDEV )       !!  completed input of this file
+99          CLOSE( FDEV )       !  completed input of this file
 
             IF ( EFLAG ) THEN
                 MESG = 'ERROR:  Fatal error(s) reading ' // FNAME
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
 
-C.............  Sort/process IDs:
-C.............  Count actually-occurring IDs:
+C.............  Sort/process IDs: Count actually-occurring IDs:
 
             M = 0
             DO I = 1, NSORT
@@ -1581,16 +1560,15 @@ C*******************************************************************************
 
         INTEGER FUNCTION  CSVOPEN( FNAME, NLINES, NDATA )
 
-C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 C  Open, and count lines and data-lines in the CSV-profile file FNAME.
 C  Rewind after completion.
-C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+C----------------------------------------------------------------------------------------------
 
 C.............  Arguments:
 
-            CHARACTER(*), INTENT(IN   ) :: FNAME        !!  logical file name
-            INTEGER     , INTENT(  OUT) :: NLINES       !!  total number of lines
-            INTEGER     , INTENT(  OUT) :: NDATA        !!  number of non-comment lines
+            CHARACTER(*), INTENT(IN   ) :: FNAME        !  logical file name
+            INTEGER     , INTENT(  OUT) :: NLINES       !  total number of lines
+            INTEGER     , INTENT(  OUT) :: NDATA        !  number of non-comment lines
 
 C.............  Externals and Parameters:
 
@@ -1607,9 +1585,8 @@ C.............  Local variables:
 
             CHARACTER(  1) :: CBUF
             CHARACTER(256) :: LINE, MESG
-C-----------------------------------------------------------------------
 
-C..............  body of function CSVOPEN()  .....................
+C..................  body of function CSVOPEN()  .....................
 
             CALL NAMEVAL(  FNAME, LINE )
             CALL UPCASE( LINE )
@@ -1628,7 +1605,7 @@ C..............  body of function CSVOPEN()  .....................
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
 
-C.............  Count entries in FDEV
+C.................  Count entries in FDEV
 
             EFLAG = .FALSE.
             L     = 0
@@ -1671,29 +1648,27 @@ C.............  Count entries in FDEV
 
         END  FUNCTION  CSVOPEN
 
-
-C---------------------------------------------------------------------
+C**********************************************************************************************
 
         SUBROUTINE  SORTPRO( NROWS, NFIELDS, CKEY, FACS, CSRT, FSRT )
 
-C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 C  Sort profile data into output data-structures
-C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+C----------------------------------------------------------------------------------------------
 
 C.............  Arguments:
 
             INTEGER     , INTENT(IN   ) :: NROWS, NFIELDS
-            CHARACTER(*), INTENT(IN   ) ::  CKEY( NROWS )           !!  input IDs
-            REAL        , INTENT(IN   ) ::  FACS( NFIELDS, NROWS )  !!  input coeffs
-            CHARACTER(*), INTENT(  OUT) ::  CSRT( NROWS )           !!  sorted IDs
-            REAL        , INTENT(  OUT) ::  FSRT( NFIELDS, NROWS )  !!  output coeffs
+            CHARACTER(*), INTENT(IN   ) ::  CKEY( NROWS )           !  input IDs
+            REAL        , INTENT(IN   ) ::  FACS( NFIELDS, NROWS )  !  input coeffs
+            CHARACTER(*), INTENT(  OUT) ::  CSRT( NROWS )           !  sorted IDs
+            REAL        , INTENT(  OUT) ::  FSRT( NFIELDS, NROWS )  !  output coeffs
 
 C.............  Local variables:
 
             INTEGER     I, J, K, L, M, N, W
             INTEGER     INDX( NROWS )
 
-C.............  body of function SORTPRO()  .....................
+C..................  body of function SORTPRO()  .....................
 
             DO L = 1, NROWS
                 INDX( L ) = L
@@ -1709,17 +1684,16 @@ C.............  body of function SORTPRO()  .....................
 
         END  SUBROUTINE  SORTPRO
 
-C---------------------------------------------------------------------
+C**********************************************************************************************
 
         LOGICAL FUNCTION  SORTREF( TYPE, COUNT, NDIM, IDLIST, KEYLIST, IDSORT, KEYSORT )
 
-C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 C  Sort XREF data into output data-structures
-C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+C----------------------------------------------------------------------------------------------
 
             CHARACTER(*),                    INTENT(IN   ) :: TYPE
             INTEGER,                         INTENT(IN   ) :: COUNT
-            INTEGER,                         INTENT(IN   ) :: NDIM      !! usually same as COUNT
+            INTEGER,                         INTENT(IN   ) :: NDIM      ! usually same as COUNT
             CHARACTER(16),                   INTENT(IN   ) ::  IDLIST( COUNT )
             CHARACTER(ALLLEN3),              INTENT(IN   ) :: KEYLIST( COUNT )
             CHARACTER(16),      ALLOCATABLE, INTENT(  OUT) ::  IDSORT( : )
@@ -1731,12 +1705,10 @@ C!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             CHARACTER(ALLLEN3)  LASTKEY
             CHARACTER(256)      MESG
 
-C---------------------------------------------------------------------
-
-C.............  Always need to allocate tables, even if size is zero:
+C..............  Always need to allocate tables, even if size is zero:
 
             WRITE( MESG, '( 3A, I9 )' )
-     &            'PROCTPRO:  TREF type "', TRIM( TYPE ),
+     &            'PROCTPRO:  TREF type "', TYPE,
      &            '" active reference count=', COUNT
             CALL M3MESG( MESG )
 
@@ -1782,10 +1754,11 @@ C.............  Always need to allocate tables, even if size is zero:
 
         END  FUNCTION  SORTREF
 
-
-C*****************************************************************************************
+C*****************************************************************
 
         LOGICAL FUNCTION  ISLEAP( JDATE )
+
+C............  begin body  ........................
 
             INTEGER, INTENT(IN   ) :: JDATE
 
@@ -1793,13 +1766,13 @@ C*******************************************************************************
 
             YEAR = JDATE / 1000
 
-            IF ( MOD( YEAR,4 ) .NE. 0 ) THEN            !!  2001,2002, etc... normal years
+            IF ( MOD( YEAR,4 ) .NE. 0 ) THEN            !  2001,2002, etc... normal years
                 ISLEAP = .FALSE.
-            ELSE IF ( MOD( YEAR,100 ) .NE. 0 ) THEN     !!  "normal" leap-years
+            ELSE IF ( MOD( YEAR,100 ) .NE. 0 ) THEN     !  "normal" leap-years
                 ISLEAP = .TRUE.
-            ELSE IF ( MOD( YEAR,400 ) .NE. 0 ) THEN     !!  1800,1900,2100 ... century nonleap years by Gregory's rule
+            ELSE IF ( MOD( YEAR,400 ) .NE. 0 ) THEN     !  1800,1900,2100 ... century nonleap years by Gregory's rule
                 ISLEAP = .FALSE.
-            ELSE                                        !!  1600,2000,2400 ... century leap years by Gregory's rule
+            ELSE                                        !  1600,2000,2400 ... century leap years by Gregory's rule
                 ISLEAP = .TRUE.
             END IF
 

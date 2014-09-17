@@ -17,8 +17,7 @@ C      Functions: I/O API functions
 C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 10/2001
-!
-!     Version 07/2014 by C.Coats for new GENTPRO CSV profiles and cross-references
+C      Modified by C. Coats 07/2014 
 C
 C***********************************************************************
 C
@@ -89,19 +88,19 @@ C.........  Local varables
         INTEGER       I, S, V, D        ! indices and counters
         INTEGER       ICAT
         INTEGER       PMTH              ! monthly profile from previous iteration
-        INTEGER       PWEK              ! weekly profile from previous iteration
-        INTEGER       PDOM              ! weekly profile from previous iteration
-        INTEGER       PMON              ! hourly profile from previous iteration
-        INTEGER       PTUE              ! hourly profile from previous iteration
-        INTEGER       PWED              ! hourly profile from previous iteration
-        INTEGER       PTHU              ! hourly profile from previous iteration
-        INTEGER       PFRI              ! hourly profile from previous iteration
-        INTEGER       PSAT              ! hourly profile from previous iteration
-        INTEGER       PSUN              ! hourly profile from previous iteration
+        INTEGER       PWEK              ! weekly  profile from previous iteration
+        INTEGER       PDOM              ! weekly  profile from previous iteration
+        INTEGER       PMON              ! hourly  profile from previous iteration
+        INTEGER       PTUE              ! hourly  profile from previous iteration
+        INTEGER       PWED              ! hourly  profile from previous iteration
+        INTEGER       PTHU              ! hourly  profile from previous iteration
+        INTEGER       PFRI              ! hourly  profile from previous iteration
+        INTEGER       PSAT              ! hourly  profile from previous iteration
+        INTEGER       PSUN              ! hourly  profile from previous iteration
 
-        LOGICAL       MTHFLAG           ! true: monthly same for all pols
-        LOGICAL       WEKFLAG           ! true: weekly same for all pols
-        LOGICAL       DOMFLAG           ! true: day-of-month same for all pols
+        LOGICAL       MTHFLAG           ! true: monthly       same for all pols
+        LOGICAL       WEKFLAG           ! true: weekly        same for all pols
+        LOGICAL       DOMFLAG           ! true: day-of-month  same for all pols
         LOGICAL       MONFLAG           ! true: Monday hourly same for all pols
         LOGICAL       TUEFLAG           ! true: Monday hourly same for all pols
         LOGICAL       WEDFLAG           ! true: Monday hourly same for all pols
@@ -118,7 +117,7 @@ C.........  Local varables
 C***********************************************************************
 C   begin body of subroutine WRTSUP
 
-C.........  Ensure that the CATEGORY is valid
+C.............  Ensure that the CATEGORY is valid
 
         ICAT = INDEX1( CATEGORY, 3, LOCCATS )
 
@@ -143,55 +142,81 @@ C.........  Create CSV output format
 
 C.........  Loop through sources to output temporal profile info
 
+        MTHFLAG = ( MTHCOUNT .GT. 0 )
+        WEKFLAG = ( WEKCOUNT .GT. 0 )
+        DOMFLAG = ( DOMCOUNT .GT. 0 )
+        MONFLAG = ( MONCOUNT .GT. 0 )
+        TUEFLAG = ( TUECOUNT .GT. 0 )
+        WEDFLAG = ( WEDCOUNT .GT. 0 )
+        THUFLAG = ( THUCOUNT .GT. 0 )
+        FRIFLAG = ( FRICOUNT .GT. 0 )
+        SATFLAG = ( SATCOUNT .GT. 0 )
+        SUNFLAG = ( SUNCOUNT .GT. 0 )
+
         DO S = 1, NSRC
 
 C.............  Retrieve profile numbers for all pollutants
 
-            MTHFLAG = ( MTHCOUNT .GT. 0 )
-            WEKFLAG = ( WEKCOUNT .GT. 0 )
-            DOMFLAG = ( DOMCOUNT .GT. 0 )
-            MONFLAG = ( MONCOUNT .GT. 0 )
-            TUEFLAG = ( TUECOUNT .GT. 0 )
-            WEDFLAG = ( WEDCOUNT .GT. 0 )
-            THUFLAG = ( THUCOUNT .GT. 0 )
-            FRIFLAG = ( FRICOUNT .GT. 0 )
-            SATFLAG = ( SATCOUNT .GT. 0 )
-            SUNFLAG = ( SUNCOUNT .GT. 0 )
-
-            PMTH = MTHPROF( 1,V )
-            PWEK = WEKPROF( 1,V )
-            PDOM = DOMPROF( 1,V )
-            PMON = HRLPROF( 1,1,V )
-            PTUE = HRLPROF( 1,2,V )
-            PWED = HRLPROF( 1,3,V )
-            PTHU = HRLPROF( 1,4,V )
-            PFRI = HRLPROF( 1,5,V )
-            PSAT = HRLPROF( 1,6,V )
-            PSUN = HRLPROF( 1,7,V )
-
-            DO V = 2, NVAR
-
-                IF( MTHPROF( S,V )   .NE. PMTH ) MTHFLAG = .FALSE.
-                IF( WEKPROF( S,V )   .NE. PWEK ) WEKFLAG = .FALSE.
-                IF( HRLPROF( S,1,V ) .NE. PMON ) MONFLAG = .FALSE.
-                IF( HRLPROF( S,2,V ) .NE. PTUE ) TUEFLAG = .FALSE.
-                IF( HRLPROF( S,3,V ) .NE. PWED ) WEDFLAG = .FALSE.
-                IF( HRLPROF( S,4,V ) .NE. PTHU ) THUFLAG = .FALSE.
-                IF( HRLPROF( S,5,V ) .NE. PFRI ) FRIFLAG = .FALSE.
-                IF( HRLPROF( S,6,V ) .NE. PSAT ) SATFLAG = .FALSE.
-                IF( HRLPROF( S,7,V ) .NE. PSUN ) SUNFLAG = .FALSE.
-
-                PMTH = MTHPROF( S,V )
-                PWEK = WEKPROF( S,V )
-                PMON = HRLPROF( S,1,V )
-                PTUE = HRLPROF( S,2,V )
-                PWED = HRLPROF( S,3,V )
-                PTHU = HRLPROF( S,4,V )
-                PFRI = HRLPROF( S,5,V )
-                PSAT = HRLPROF( S,6,V )
-                PSUN = HRLPROF( S,7,V )
-
-            END DO
+            IF ( MTHFLAG )  THEN
+                PMTH = MTHPROF( 1,1 )
+                DO V = 2, NVAR
+                    IF( MTHPROF( S,V )   .NE. PMTH ) MTHFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( WEKFLAG )  THEN
+                PWEK = WEKPROF( 1,1 )
+                DO V = 2, NVAR
+                    IF( WEKPROF( S,V )   .NE. PWEK ) WEKFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( DOMFLAG )  THEN
+                PDOM = DOMPROF( 1,1 )
+                DO V = 2, NVAR
+                    IF( DOMPROF( S,V )   .NE. PDOM ) DOMFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( MONFLAG )  THEN
+                PMON = HRLPROF( 1,1,1 )
+                DO V = 2, NVAR
+                    IF( HRLPROF( S,1,V ) .NE. PMON ) MONFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( TUEFLAG )  THEN
+                PTUE = HRLPROF( 1,2,1 )
+                DO V = 2, NVAR
+                    IF( HRLPROF( S,2,V ) .NE. PTUE ) TUEFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( WEDFLAG )  THEN
+                PWED = HRLPROF( 1,3,1 )
+                DO V = 2, NVAR
+                    IF( HRLPROF( S,3,V ) .NE. PWED ) WEDFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( THUFLAG )  THEN
+                PTHU = HRLPROF( 1,4,1 )
+                DO V = 2, NVAR
+                    IF( HRLPROF( S,4,V ) .NE. PTHU ) THUFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( FRIFLAG )  THEN
+                PFRI = HRLPROF( 1,5,1 )
+                DO V = 2, NVAR
+                    IF( HRLPROF( S,5,V ) .NE. PFRI ) FRIFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( SATFLAG )  THEN
+                PSAT = HRLPROF( 1,6,1 )
+                DO V = 2, NVAR
+                    IF( HRLPROF( S,6,V ) .NE. PSAT ) SATFLAG = .FALSE.
+                END DO
+            END IF
+            IF ( SUNFLAG )  THEN
+                PSUN = HRLPROF( 1,7,1 )
+                DO V = 2, NVAR
+                    IF( HRLPROF( S,7,V ) .NE. PSUN ) SUNFLAG = .FALSE.
+                END DO
+            END IF
 
 C.............  Write profile information by pollutant
 
@@ -283,18 +308,15 @@ C.............  Write profile information by pollutant
 
         CLOSE( FDEV )
 
+C******************  INTERNAL SUBPROGRAMS  *****************************
 
-C******************  INTERNAL SUBPROGRAMS   ******************************
+      CONTAINS
 
-        CONTAINS
 
-C.........  Build source characteristics
         SUBROUTINE MKSOURCE( ICAT, SRC, SOURCE )
 
             INTEGER,          INTENT(IN   ) :: ICAT, SRC
             CHARACTER(LEN=*), INTENT(  OUT) :: SOURCE
-
-C-------------------------------------------------------------------------
 
             CHARACTER(1), PARAMETER :: QUOTES = '"'
             CHARACTER(1), PARAMETER :: SLASH  = '/'

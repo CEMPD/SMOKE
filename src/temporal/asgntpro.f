@@ -3,7 +3,7 @@
 
 C***********************************************************************
 C  subroutine body starts at line 145
-C
+Cc
 C  DESCRIPTION:
 C      For each source and pollutant or emission type, find the most specific
 C      temporal profile that applies to that source. Do this using the
@@ -44,7 +44,7 @@ C smoke@unc.edu
 C
 C Pathname: $Source$
 C Last updated: $Date$
-C
+Ct
 C***************************************************************************
 
 C.........   MODULES for public variables
@@ -67,16 +67,16 @@ C.........   MODINFO contains the information about the source category
      &                      FRIKEYS, SATKEYS, SUNKEYS, METKEYS,
      &                      DAYFLAG, POLREFFLAG, METREFFLAG
 
-        USE MODINFO, ONLY: NSRC, NIPPA, EANAM, LSCCEND, CATEGORY
+        USE MODINFO, ONLY: NSRC, NCHARS, NIPPA, EANAM, LSCCEND, CATEGORY
 
         IMPLICIT NONE
 
-C.........  INCLUDES
+C.........   INCLUDES
 
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
         INCLUDE 'PARMS3.EXT'    !  i/o api constant parameters
 
-C.........  EXTERNAL FUNCTIONS and their descriptions:
+C.........   EXTERNAL FUNCTIONS and their descriptions:
 
         CHARACTER(2), EXTERNAL :: CRLF
         INTEGER     , EXTERNAL :: ENVINT
@@ -86,17 +86,20 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     , EXTERNAL :: INDEX1
         LOGICAL     , EXTERNAL :: SETSCCTYPE
 
-C.........  Local parameters
+C..........   Local parameters
 
-        CHARACTER(9), PARAMETER :: DAYNAME( 7 ) =  
+        CHARACTER(9), PARAMETER :: DAYNAME( 7 ) =
      &      (/  'MONDAY   ', 'TUESDAY  ', 'WEDNESDAY', 'THURSDAY ',
      &          'FRIDAY   ', 'SATURDAY ', 'SUNDAY   '   /)
 
         CHARACTER( 1),      PARAMETER :: BLANK   = ' '
         CHARACTER(24),      PARAMETER :: ZEROS   = '000000000000000000000000'
         CHARACTER(24),      PARAMETER :: BADSTR  = '????????????????????????'
-        CHARACTER(RWTLEN3), PARAMETER :: RWTZERO = ZEROS    !  "  zero roadway type
-        CHARACTER(VIDLEN3), PARAMETER :: VIDZERO = ZEROS    !  "  zero vehicle type
+        CHARACTER(RWTLEN3), PARAMETER :: RWTZERO = ZEROS    !  zero roadway type
+        CHARACTER(VIDLEN3), PARAMETER :: VIDZERO = ZEROS    !  zero vehicle type
+        CHARACTER(FIPLEN3), PARAMETER :: CFIPZ   = ZEROS    !  zero Country/state code
+        CHARACTER(SCCLEN3), PARAMETER :: TSCCZ   = ZEROS    !  zero TSCC
+        CHARACTER(CHRLEN3), PARAMETER :: BLNK    = BLANK    !  tmp blank
 
         CHARACTER(16),      PARAMETER :: PNAME   = 'ASGNTPRO' ! program name
 
@@ -106,7 +109,7 @@ C.........  Other local variables
         INTEGER         ISTAT
         INTEGER         IPROF
 
-        INTEGER          ERRCNT  !  count of errors
+        INTEGER          ICOUNT, ERRCNT  !  count of errors
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
         INTEGER          F0B     ! extra find index for mobile
         INTEGER          F2B     ! extra find index for mobile
@@ -123,42 +126,37 @@ C.........  Other local variables
 
         CHARACTER(5)        CPOS( 0:NIPPA ) !  string for sorted position of pol/act
 
-        CHARACTER(10)       RWTFMT          !  fmt to write roadway type to string
-        CHARACTER(10)       VIDFMT          !  format to write veh ID to string
-        CHARACTER(300)      BUFFER          !  source fields buffer
         CHARACTER(300)      MESG            !  message buffer
+        CHARACTER(300)      CBUF            !  CSRC line buffer
         CHARACTER(SRCLEN3)  CSRC            !  tmp source chars string
         CHARACTER(FIPLEN3)  CFIP            !  tmp (character) FIPS code
         CHARACTER(FIPLEN3)  CFIPL           !  tmp Country/state code
-        CHARACTER(FIPLEN3)  CFIPZ           !  blank Country/state code
         CHARACTER(SCCLEN3)  TSCC            !  tmp 10-digit SCC
         CHARACTER(SCCLEN3)  TSCCL           !  tmp left digits of TSCC
         CHARACTER(SCCLEN3)  TSCC5           !  tmp left digits of TSCC
-        CHARACTER(SCCLEN3)  TSCCZ           !  blank TSCC
-        CHARACTER(SCCLEN3)  TSCCSAV         !  TSCC saved for msg (mb: resets TSCC)
         CHARACTER(SCCLEN3)  CHKRWT          !  tmp roadway type only SCC
         CHARACTER(SCCLEN3)  CHKVID          !  tmp vehicle-type only SCC
         CHARACTER(RWTLEN3)  CRWT            !  tmp char roadway type
         CHARACTER(VIDLEN3)  CVID            !  tmp vehicle type
         CHARACTER(IOVLEN3)  CPOA            !  temporary pollutant/emission type
-        CHARACTER(CHRLEN3)  CPLT            !  tmp plant ID
-        CHARACTER(CHRLEN3)  CPLTB           !  tmp plant ID
+        CHARACTER(PLTLEN3)  CPLT            !  tmp plant ID
         CHARACTER(CHRLEN3)  CPNT            !  tmp point ID
         CHARACTER(CHRLEN3)  CSTK            !  tmp stack ID
         CHARACTER(CHRLEN3)  CSEG            !  tmp segment ID
-        CHARACTER(CHRLEN3)  CPL5            !  tmp plt char 5
-        CHARACTER(CHRLEN3)  CBLNK           !  tmp blank
+        CHARACTER(CHRLEN3)  CPL5            !  tmp plt char 5 (==SCC)
+        CHARACTER(CHRLEN3)  CPLL            !  tmp plt char 5 (==SCC)
+        CHARACTER(CHRLEN3)  CPLZ            !  tmp plt char 5 (==SCC)
 
 
 C.........  CSRCALL from BLDSRC(), listed in order of the search hierarchy
-C           See SMOKE documentation, section 6.17:
-C           https://www.cmascenter.org/smoke/documentation/3.5/html/ch06s17.html
-C           Note that "no pollutant specified" initializes *PDEX arrays where possible;
-C           then V=1,...,NIPPA override it
-C           BADSTR initialization is retained for non-full-SCC entries
-C           whenever FULLSCC is set.  (The logic is considerably simpler
-C           to do all the searches, and use BADSTR to force the irrelevant
-C           ones to fail.)
+C.........  See SMOKE documentation, section 6.17:
+C.........  https://www.cmascenter.org/smoke/documentation/3.5/html/ch06s17.html
+C.........  Note that "no pollutant specified" initializes *PDEX arrays where possible;
+C.........  then V=1,...,NIPPA override it
+C.........  BADSTR initialization is retained for non-full-SCC entries
+C.........  whenever FULLSCC is set.  (The logic is considerably simpler
+C.........  to do all the searches, and use BADSTR to force the irrelevant
+C.........  ones to fail.)
 
         CHARACTER(ALLLEN3) :: CSRC01 = BADSTR
         CHARACTER(ALLLEN3) :: CSRC02 = BADSTR
@@ -189,7 +187,7 @@ C   begin body of subroutine ASGNTPRO
 
         EFLAG = .FALSE.
 
-C.........  For first time routine is called in all cases,
+C............  For first time routine is called in all cases,
 
         IF( FIRSTIME ) THEN
 
@@ -224,16 +222,12 @@ C.............  Get error and warning limits from the environment
 
         CALL M3MSG2( 'Assigning temporal profiles to sources...' )
 
-        CFIPZ = ZEROS
-        TSCCZ = ZEROS
-        CBLNK = BLANK
-
         ERRCNT = 0
 
-        DO V = 0, NIPPA                 !  loop on pollutants: construct ASCII code 
+        DO V = 0, NIPPA                 !  loop on pollutants: construct ASCII code
             WRITE( CPOS(V), '(I5.5)' ) V
         END DO
-        
+
 C.........  [Met-based profiles are managed in PROCTPRO()]
 
 C.........  Set category-specific source characteristic combinations
@@ -241,7 +235,7 @@ C.........  Set category-specific source characteristic combinations
         SELECT CASE ( CATEGORY )
 
             CASE ( 'AREA' )   ! Already set above
-            
+
                 DO S = 1, NSRC              !  loop on area sources
 
                     CSRC    = CSOURC( S )
@@ -250,38 +244,20 @@ C.........  Set category-specific source characteristic combinations
 
                     CFIP    = CSRC( 1:FIPLEN3 )
                     CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
-                    
+
 C.....................  First, set all pollutants for pollutant independent part of hierarchy:
 
-                    CALL BLDCSRC( CFIP,  TSCC,    BLANK,
-     &                            BLANK, BLANK,   BLANK,
-     &                            BLANK, CPOS(0), CSRC07 )
-                    CALL BLDCSRC( CFIPL, TSCC,    BLANK,
-     &                            BLANK, BLANK,   BLANK,
-     &                            BLANK, CPOS(0), CSRC09 )
-                    CALL BLDCSRC( CFIPZ, TSCC,    BLANK,
-     &                            BLANK, BLANK,   BLANK,
-     &                            BLANK, CPOS(0), CSRC11 )
+                    CALL BLDCSRC( CFIP,  TSCC,  BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC07 )
+                    CALL BLDCSRC( CFIPL, TSCC,  BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC09 )
+                    CALL BLDCSRC( CFIPZ, TSCC,  BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC11 )
+                    CALL BLDCSRC( CFIPZ, TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC15 )    !  ultimate fallback
 
                     IF ( .NOT.FULLSCC ) THEN
-                        CALL BLDCSRC( CFIP,  TSCCL,   BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(0), CSRC08 )
-                        CALL BLDCSRC( CFIPL, TSCCL,   BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(0), CSRC10 )
-                        CALL BLDCSRC( CFIPZ, TSCCL,   BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(0), CSRC12 )
-                        CALL BLDCSRC( CFIP,  TSCCZ,   BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(0), CSRC13 )
-                        CALL BLDCSRC( CFIPL, TSCCZ,   BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(0), CSRC14 )
-                        CALL BLDCSRC( CFIPZ, TSCCZ,   BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(0), CSRC15 )
+                        CALL BLDCSRC( CFIP,  TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC08 )
+                        CALL BLDCSRC( CFIPL, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC10 )
+                        CALL BLDCSRC( CFIPZ, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC12 )
+                        CALL BLDCSRC( CFIP,  TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC13 )
+                        CALL BLDCSRC( CFIPL, TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC14 )
                     END IF
 
 C.....................  Find month-of-year profile:
@@ -401,33 +377,21 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .GT. 0 ) HRLPROF( S,7,: ) = SUNPDEX( IPROF )
-                    
+
 C.....................  Now, overrides for pollutant dependent part of hierarchy:
-                    
+
                     DO V = 1, NIPPA         !  loop on pollutants
 
                         IF ( .NOT.POLREFFLAG( V ) )  CYCLE
 
-                        CALL BLDCSRC( CFIP,  TSCC,    BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(V), CSRC01 )
-                        CALL BLDCSRC( CFIPL, TSCC,    BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(V), CSRC03 )
-                        CALL BLDCSRC( CFIPZ, TSCC,    BLANK,
-     &                                BLANK, BLANK,   BLANK,
-     &                                BLANK, CPOS(V), CSRC05 )
+                        CALL BLDCSRC( CFIP,  TSCC, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC01 )
+                        CALL BLDCSRC( CFIPL, TSCC, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC03 )
+                        CALL BLDCSRC( CFIPZ, TSCC, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC05 )
 
                         IF ( .NOT.FULLSCC ) THEN
-                            CALL BLDCSRC( CFIP,  TSCCL,   BLANK,
-     &                                    BLANK, BLANK,   BLANK,
-     &                                    BLANK, CPOS(V), CSRC02 )
-                            CALL BLDCSRC( CFIPL, TSCCL,   BLANK,
-     &                                    BLANK, BLANK,   BLANK,
-     &                                    BLANK, CPOS(V), CSRC04 )
-                            CALL BLDCSRC( CFIPZ, TSCCL,   BLANK,
-     &                                    BLANK, BLANK,   BLANK,
-     &                                    BLANK, CPOS(V), CSRC06 )
+                            CALL BLDCSRC( CFIP,  TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC02 )
+                            CALL BLDCSRC( CFIPL, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC04 )
+                            CALL BLDCSRC( CFIPZ, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC06 )
                         END IF
 
 C.........................  Find month-of-year profile:
@@ -517,13 +481,13 @@ C.........................  Find hour-of-day profile for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .GT. 0 ) HRLPROF( S,7,V ) = SUNPDEX( IPROF )
-                    
+
                     END DO                  !  end loop on pollutants
 
                 END DO                      !  end loop- on area sources
 
             CASE ( 'MOBILE' )
-            
+
                 DO S = 1, NSRC              !  loop on mobile sources
 
                     CSRC    = CSOURC( S )
@@ -532,29 +496,20 @@ C.........................  Find hour-of-day profile for each day of the week:
 
                     CFIP    = CSRC( 1:FIPLEN3 )
                     CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
-                    
+
 C.....................  First, set all pollutants for pollutant independent part of hierarchy:
 
-                    CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
-     &                            CBLNK, CBLNK, CBLNK, CPOS(0), CSRC10 )
-                    CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
-     &                            CBLNK, CBLNK, CBLNK, CPOS(0), CSRC13 )
-                    CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
-     &                            CBLNK, CBLNK, CBLNK, CPOS(0), CSRC15 )
+                    CALL BLDCSRC( CFIP,  TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC10 )
+                    CALL BLDCSRC( CFIPL, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC13 )
+                    CALL BLDCSRC( CFIPZ, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC15 )
+                    CALL BLDCSRC( CFIPZ, TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC21 )    !  ultimate fallback
 
                     IF ( .NOT. FULLSCC ) THEN
-                        CALL BLDCSRC( CFIP,  TSCCL, CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC11 )
-                        CALL BLDCSRC( CFIPL, TSCCL, CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC14 )
-                        CALL BLDCSRC( CFIPZ, TSCCL, CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC16 )
-                        CALL BLDCSRC( CFIP,  TSCCZ, CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC19 )
-                        CALL BLDCSRC( CFIPL, TSCCZ, CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC20 )
-                        CALL BLDCSRC( CFIPZ, TSCCZ, CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC21 )
+                        CALL BLDCSRC( CFIP,  TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC11 )
+                        CALL BLDCSRC( CFIPL, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC14 )
+                        CALL BLDCSRC( CFIPZ, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC16 )
+                        CALL BLDCSRC( CFIP,  TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC19 )
+                        CALL BLDCSRC( CFIPL, TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC20 )
                     END IF
 
 C.....................  Find month-of-year profile:
@@ -674,27 +629,21 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .GT. 0 ) HRLPROF( S,7,: ) = SUNPDEX( IPROF )
-                    
+
 C.....................  Now, overrides for pollutant dependent part of hierarchy:
-                    
+
                     DO V = 1, NIPPA         !  loop on pollutants
 
                         IF ( .NOT.POLREFFLAG( V ) )  CYCLE
 
-                        CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC01 )
-                        CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC05 )
-                        CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC07 )
+                        CALL BLDCSRC( CFIP,  TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC01 )
+                        CALL BLDCSRC( CFIPL, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC05 )
+                        CALL BLDCSRC( CFIPZ, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC07 )
 
                         IF ( .NOT. FULLSCC ) THEN
-                            CALL BLDCSRC( CFIP,  TSCCL, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC02 )
-                            CALL BLDCSRC( CFIPL, TSCCL, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC06 )
-                            CALL BLDCSRC( CFIPZ, TSCCL, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC08 ) 
+                            CALL BLDCSRC( CFIP,  TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC02 )
+                            CALL BLDCSRC( CFIPL, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC06 )
+                            CALL BLDCSRC( CFIPZ, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC08 )
                         END IF
 
 C.........................  Find month-of-year profile:
@@ -717,7 +666,7 @@ C.........................  Find day-of-month profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .GT. 0 ) DOMPROF( S,V ) = DOMPDEX( IPROF )
 
-C.........................   Find day-of-week profile:
+C.........................  Find day-of-week profile:
 
                         IPROF =                     FINDC( CSRC01, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEKCOUNT,  WEKKEYS )
@@ -784,84 +733,67 @@ C.........................  Find hour-of-day profile for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .GT. 0 ) HRLPROF( S,7,V ) = SUNPDEX( IPROF )
-                    
+
                     END DO                  !  end loop on pollutants
 
                 END DO                      !  end loop on mobile sources
 
             CASE ( 'POINT' )
-            
+
                 DO S = 1, NSRC              !  loop on point sources
 
                     CSRC    = CSOURC( S )
                     TSCC    = CSCC( S )
-                    TSCCL   = TSCC( 1:LSCCEND ) // ZEROS
                     TSCC5   = TSCC( 1:5 ) // ZEROS
 
                     CFIP    = CSRC( 1:FIPLEN3 )
                     CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
 
-                    CPLT = CSRC( PTBEGL3(2):PTENDL3(2) )
-                    CPNT = CSRC( PTBEGL3(3):PTENDL3(3) )
-                    CSTK = CSRC( PTBEGL3(4):PTENDL3(4) )
-                    CSEG = CSRC( PTBEGL3(5):PTENDL3(5) )
-                    CPL5 = CSRC( PTBEGL3(6):PTENDL3(6) )
-                    
+                    CPLT = ADJUSTL( CSRC( PTBEGL3(2):PTENDL3(2) ) )
+                    CPNT = ADJUSTL( CSRC( PTBEGL3(3):PTENDL3(3) ) )
+                    CSTK = ADJUSTL( CSRC( PTBEGL3(4):PTENDL3(4) ) )
+                    CSEG = ADJUSTL( CSRC( PTBEGL3(5):PTENDL3(5) ) )
+                    CPL5 = ADJUSTL( CSRC( PTBEGL3(6):PTENDL3(6) ) )
+                    CPLL = TSCC5                          ! zero scc as a plant-characteristic
+                    CPLZ = TSCCZ                          ! zero scc as a plant-characteristic
+
+C.....................  pollutant-independent search targets:
+
+                    CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, CSEG, CPL5, TSCC,  CPOS(0), CSRC05 )
+                    CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, BLNK, CPL5, TSCC,  CPOS(0), CSRC06 )
+                    CALL BLDCSRC( CFIP,  CPLT, CPNT, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC07 )
+                    CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC08 )
+                    CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC15 )
+                    CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC17 )
+                    CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC19 )
+                    CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC23 )    !  ultimate fallback
+
+                    IF ( .NOT. FULLSCC ) THEN
+                        
+                        CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC16 )
+                        CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC18 )
+                        CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC20 )
+                        CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC21 )
+                        CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC22 )
+                    END IF
+
 C.....................  Note that pollutant dependent and pollutant independent
-C                       parts of the point soucre heirarchy are tangled together:
-                    
+C.....................  parts of the point source heirarchy search are tangled together:
+
                     DO V = 1, NIPPA         !  loop on pollutants
 
-                        IF ( .NOT.POLREFFLAG( V ) )  CYCLE
-
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
-     &                                CSTK,  CSEG,  CPL5,  CPOS(V), CSRC01 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
-     &                                CSTK,  CSEG,  CBLNK, CPOS(V), CSRC02 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
-     &                                CSTK,  CBLNK, CBLNK, CPOS(V), CSRC03 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC04 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
-     &                                CSTK,  CSEG,  CBLNK, CPOS(0), CSRC05 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
-     &                                CSTK,  CBLNK, CBLNK, CPOS(0), CSRC06 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CPNT,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC07 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CPLT,  CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC08 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC09 )
-                        CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC11 )
-                        CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(V), CSRC13 )
-                        CALL BLDCSRC( CFIP,  TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC15 )
-                        CALL BLDCSRC( CFIPL, TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC17 )
-                        CALL BLDCSRC( CFIPZ, TSCC,  CBLNK, CBLNK,
-     &                                CBLNK, CBLNK, CBLNK, CPOS(0), CSRC19 )
+                        CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, CSEG, CPL5, TSCC, CPOS(V), CSRC01 )
+                        CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, BLNK, CPL5, TSCC, CPOS(V), CSRC02 )
+                        CALL BLDCSRC( CFIP,  CPLT, CPNT, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC03 )
+                        CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC04 )
+                        CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC09 )
+                        CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC11 )
+                        CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC13 )
 
                         IF ( .NOT. FULLSCC ) THEN
-                            CALL BLDCSRC( CFIP,  TSCC5, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC10 )
-                            CALL BLDCSRC( CFIPL, TSCC5, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC12 )
-                            CALL BLDCSRC( CFIPZ, TSCC5, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC14 )
-                            CALL BLDCSRC( CFIP,  TSCC5, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(0), CSRC16 )
-                            CALL BLDCSRC( CFIPL, TSCC5, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(0), CSRC18 )
-                            CALL BLDCSRC( CFIPZ, TSCC5, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(0), CSRC20 )
-                            CALL BLDCSRC( CFIP,  TSCCZ, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC21 )
-                            CALL BLDCSRC( CFIPL, TSCCZ, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC22 )
-                            CALL BLDCSRC( CFIPZ, TSCCZ, CBLNK, CBLNK,
-     &                                    CBLNK, CBLNK, CBLNK, CPOS(V), CSRC23 )
+                            CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC10 )
+                            CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC12 )
+                            CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC14 )
                         END IF
 
 C.........................  Find month-of-year profile:
@@ -918,7 +850,7 @@ C.........................  Find day-of-month profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .GT. 0 ) DOMPROF( S,V ) = DOMPDEX( IPROF )
 
-C......................... Find day-of-week profile:
+C.........................  Find day-of-week profile:
 
                         IPROF =                     FINDC( CSRC01, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEKCOUNT,  WEKKEYS )
@@ -1072,29 +1004,29 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .GT. 0 ) HRLPROF( S,5,V ) = FRIPDEX( IPROF )
 
-                        IPROF =                     FINDC( CSRC01, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, MTHCOUNT,  MTHKEYS )
+                        IPROF =                     FINDC( CSRC01, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC03, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC04, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC05, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC12, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC16, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC17, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC18, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, SATCOUNT,  SATKEYS )
                         IF ( IPROF .GT. 0 ) HRLPROF( S,6,V ) = SATPDEX( IPROF )
 
                         IPROF =                     FINDC( CSRC01, SUNCOUNT,  SUNKEYS )
@@ -1121,66 +1053,142 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .GT. 0 ) HRLPROF( S,7,V ) = SUNPDEX( IPROF )
-                    
+
                     END DO                  !  end loop on pollutants
 
                 END DO                      !  end loop on point sources
 
             CASE DEFAULT
-            
+
                 MESG = 'ERROR:  unrecognized category "' // TRIM( CATEGORY ) // '"'
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
-            
+
         END SELECT
 
-
 C.........  Check that all sources, pollutants have assigned profiles:
+        DO S = 1, NSRC
 
-        DO V = 1, NIPPA
-
-            DO S = 1, NSRC
-
+            ICOUNT = 0
+            DO V = 1, NIPPA
                 IF ( MTHPROF( S,V ) .LE. 0 ) THEN
-                    ERRCNT = ERRCNT + 1
-                    WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
-     &                'ERROR:  No month-of-year profile for source', S,
-     &                'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CSOURC(S) )
-                    CALL M3MESG( MESG )
+                    ICOUNT = ICOUNT + 1
                 END IF
+            END DO          !!  end loop on pollutants, V
 
-                IF ( ( WEKPROF( S,V ) .LE. 0 ) .AND.
-     &               ( DOMPROF( S,V ) .LE. 0 ) ) THEN
-                    ERRCNT = ERRCNT + 1
-                    WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
-     &                'ERROR:  No day-of-month nor day-of-week profile for source', S,
-     &                'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CSOURC(S) )
+            IF ( ICOUNT .EQ. NIPPA ) THEN
+                ERRCNT = ERRCNT + 1
+                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
+     &                'ERROR:  No month-of-year profile found for source', S,':  ', TRIM( CBUF )
                     CALL M3MESG( MESG )
-                END IF
-
-                DO I = 1, 7
-                    IF ( DAYFLAG(I) .AND. HRLPROF( S,I,V ) .LE. 0 ) THEN
-                        ERRCNT = ERRCNT + 1
-                        WRITE( MESG, '( A, I8, 6( 1X, A ) )' )
-     &                'ERROR:  No hour-of-day profile for source', S,
-     &                'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CSOURC(S) ), 
-     &                'day', DAYNAME(I)
+            ELSE IF ( ICOUNT .GT. 0 ) THEN
+                ERRCNT = ERRCNT + 1
+                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                DO V = 1, NIPPA
+                    IF ( MTHPROF( S,V ) .LE. 0 ) THEN
+                        WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                    'ERROR:  No month-of-year profile found for source', S,
+     &                    'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
                         CALL M3MESG( MESG )
                     END IF
                 END DO
+            END IF
 
-                IF ( ERRCNT .GT. MXERR ) EXIT
+            ICOUNT = 0
+            DO V = 1, NIPPA
+                IF ( ( WEKPROF( S,V ) .LE. 0 ) .AND.
+     &               ( DOMPROF( S,V ) .LE. 0 ) ) THEN
+                    ICOUNT = ICOUNT + 1
+                END IF
+            END DO          !!  end loop on pollutants, V
 
-            END DO      !  end loop on sources, S
+            IF ( ICOUNT .EQ. NIPPA ) THEN
+                ERRCNT = ERRCNT + 1
+                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
+     &                'ERROR:  No day-of-month nor day-of-week for source', S,':  ', TRIM( CBUF )
+                    CALL M3MESG( MESG )
+            ELSE IF ( ICOUNT .GT. 0 ) THEN
+                ERRCNT = ERRCNT + 1
+                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                DO V = 1, NIPPA
+                    IF ( WEKPROF( S,V ) .LE. 0 ) THEN
+                        WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                    'ERROR:  No month-of-year profile found for source', S,
+     &                    'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
+                        CALL M3MESG( MESG )
+                    END IF
+                END DO
+            END IF
 
-            IF ( ERRCNT .GT. MXERR ) EXIT
+            IF ( ICOUNT .EQ. NIPPA ) THEN
+                ERRCNT = ERRCNT + 1
+                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
+     &                'ERROR:  No day-of-month nor day-of-week profile found for source', S,':  ', TRIM( CBUF )
+                    CALL M3MESG( MESG )
+            ELSE IF ( ICOUNT .GT. 0 ) THEN
+                ERRCNT = ERRCNT + 1
+                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                DO V = 1, NIPPA
+                    IF ( MTHPROF( S,V ) .LE. 0 ) THEN
+                        WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                    'ERROR:  No month-of-year profile found for source', S,
+     &                    'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
+                        CALL M3MESG( MESG )
+                    END IF
+                END DO
+            END IF
 
-        END DO          !  end loop on pollutants, V
+            DO I = 1, 7
+
+                IF ( DAYFLAG(I)  ) THEN
+
+                    ICOUNT = 0
+                    DO V = 1, NIPPA
+                        IF ( HRLPROF( S,I,V ) .LE. 0 ) THEN
+                            ICOUNT = ICOUNT + 1
+                        END IF
+                    END DO          !!  end loop on pollutants, V
+
+                    IF ( ICOUNT .EQ. NIPPA ) THEN
+                        ERRCNT = ERRCNT + 1
+                        CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                        WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                        'ERROR:  No hour-of-day profile profile found for source', S,
+     &                        ':  ', TRIM( CBUF ), 'day', DAYNAME(I)
+                            CALL M3MESG( MESG )
+                    ELSE IF ( ICOUNT .GT. 0 ) THEN
+                        ERRCNT = ERRCNT + 1
+                        CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                        DO V = 1, NIPPA
+                            IF ( MTHPROF( S,V ) .LE. 0 ) THEN
+                                WRITE( MESG, '( A, I8, 6( 1X, A ) )' )
+     &                            'ERROR:  No hour-of-day profile profile found for source', S,
+     &                            'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF ),
+     &                            'day', DAYNAME(I)
+                                CALL M3MESG( MESG )
+                            END IF
+                        END DO
+                    END IF
+
+                END IF      !!  if dayflag
+
+            END DO      !!  end loop on days
+
+            IF ( ERRCNT .GT. MXERR ) THEN
+                CALL M3MESG( ' ' )
+                CALL M3MESG( 'ASGNTPRO:  Maximum number of errors exceeded.' )
+                EXIT
+            END IF
+
+        END DO      !!  end loop on sources, S
 
         IF( ERRCNT .GT. 0 ) THEN
             MESG = 'Problem assigning temporal profiles to sources'
             CALL M3EXIT( PNAME, 0, 0, MESG, 2 )
         END IF
-        
+
         DEALLOCATE( MTHPDEX,
      &              WEKPDEX,
      &              DOMPDEX,
