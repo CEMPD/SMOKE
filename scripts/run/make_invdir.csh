@@ -5,25 +5,18 @@
 
       switch( $SMK_SOURCE )
       case A:
-         setenv INVNAME1 area
-         setenv INVNAME2 asrc
-
-         if ( $?NONROAD ) then
-            if ( $NONROAD == Y ) then
-               setenv INVNAME1 nroad
-               setenv INVNAME2 nrsrc
-            endif
-         endif
+         setenv INVNAME1 ${SRCABBR}.${ASCEN}
+         setenv INVNAME2 ${SRCABBR}src.${ASCEN}
       breaksw
 
       case M:
-         setenv INVNAME1 ${SRCABBR}
-         setenv INVNAME2 ${SRCABBR}src
+         setenv INVNAME1 ${SRCABBR}.${MSCEN}
+         setenv INVNAME2 ${SRCABBR}src.${MSCEN}
       breaksw
 
       case P:
-         setenv INVNAME1 pnts
-         setenv INVNAME2 psrc
+         setenv INVNAME1 ${SRCABBR}.${PSCEN}
+         setenv INVNAME2 ${SRCABBR}src.${PSCEN}
       breaksw
 
       default:
