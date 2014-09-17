@@ -21,7 +21,7 @@ setenv ASSIGNS_FILE $SMKROOT/assigns/ASSIGNS.nctox.cmaq.cb05_soa.us12-nc
 setenv SMK_SOURCE    B          # source category to process
 setenv MRG_SOURCE    B          # source category to merge
 
-setenv BEIS_VERSION  3.14       # version of BEIS3 to use (currently 3.09 or 3.14)
+setenv BEIS_VERSION  3.60       # version of BEIS3 to use (currently 3.14 or 3.60)
 
 ## Set programs to run...
 
@@ -37,27 +37,35 @@ setenv RUN_SMKMERGE  Y          # run merge program
 ## For Normbeis3
 #      BEIS_VERSION     already set above
 
-## For Tmpbeis3
+## For Tmpbeis3.60 and 3.14
 setenv BG_CLOUD_TYPE        1     # method used to calculate PAR
 setenv BIOG_SPRO            B10C5 # speciation profile code to use for biogenics
-setenv BIOMET_SAME          Y     # Y indicates temperature and radiation data in same file   
-setenv BIOSW_YN             N     # Y uses BIOSEASON file to set winter or summer factors
-setenv SUMMER_YN            Y     # Y assumes summer factors
+setenv BIOMET_SAME          Y     # Y indicates temperature and radiation data in same file
+setenv BIOSW_YN             N     # Y uses BIOSEASON file to set winter or summer factors (for annual simulations)
+setenv SUMMER_YN            Y     # Y assumes summer factors (for short episodic simulations)
 setenv OUTZONE              0     # time zone of output emissions
-setenv RAD_VAR              RGRND # name of radiation/cloud variable
 setenv TMPR_VAR             TEMP2 # name of temperature variable
 setenv PRES_VAR             PRSFC # name of surface pressure variable
-#      BEIS_VERSION     already set above
-
-## For Tmpbeis3 with BEIS_VERSION = 3.14
-setenv OUT_UNITS            2   # molar output units (1 = moles/hr, 2 = moles/s)
-setenv PX_VERSION           Y   # Y indicates that met data is from PX version of MM5
+setenv OUT_UNITS            2     # molar output units (1 = moles/hr, 2 = moles/s)
+setenv PX_VERSION           Y     # Y indicates that met data is from PX version of MM5 or WRF
 setenv SOILT_VAR            SOIT1 # name of soil temperature variable if using PX version
 setenv ISLTYP_VAR           SLTYP # name of soil type variable if using PX version
 setenv SOILM_VAR            SOIM1 # name of soil moisture variable if using PX version
-setenv RN_VAR               RN  # name of non-convective rainfall variable
-setenv RC_VAR               RC  # name of convective rainfall variable
-setenv INITIAL_RUN          Y   # Y: running first day of scenario, N for subsequent days
+setenv RN_VAR               RN    # name of non-convective rainfall variable
+setenv RC_VAR               RC    # name of convective rainfall variable
+setenv INITIAL_RUN          Y     # Y: running first day of scenario, N for subsequent days
+
+## For BEIS3.60 only
+setenv RGRND_VAR           RGRND  # solar radiation reaching the surface variable (WATTS/M**2)
+setenv RADYNI_VAR          RADYNI # aerodynamic resistance variable     (s/m)
+setenv LAI_VAR             LAI    # leaf area index variable from met model (non dimensional)
+setenv Q2_VAR              Q2     # 2 meter water vapor mixing ratio variable  (kg/kg)
+setenv RSTOMI_VAR          RSTOMI # inverse of the stomatal resistance variable (M/S)
+setenv USTAR_VAR           USTAR  # surface friction velocity variable  (M/S)
+setenv TEMPG_VAR           TEMPG  # skin temperature at ground variable (K)
+
+## For BEIS3.14 only
+setenv RAD_VAR              RGRND # name of radiation/cloud variable for BEI3.14 (see RGRND_VAR for BEIS 3.60)
 
 ## For Smkmerge
 #      NOTE: Smkmerge run to create state and county emission total reports
