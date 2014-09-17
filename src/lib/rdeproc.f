@@ -91,7 +91,7 @@ C...........   Other local variables
         LOGICAL      :: NEWLINE  = .TRUE.    ! true: current line is new (not continued)
         LOGICAL      :: EFLAG    = .FALSE.   ! true: error found
 
-        CHARACTER(300)     LINE     !  line buffer
+        CHARACTER(3000)    LINE     !  line buffer
         CHARACTER(300)     MESG     !  message buffer
         CHARACTER(IOVLEN3) ACT      !  tmp activity name
         CHARACTER(IOVLEN3) CPOL     !  tmp pollutant name
