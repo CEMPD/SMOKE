@@ -40,7 +40,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS, MXIDAT, INVSTAT,
-     &                      INVDNAM
+     &                      INVDNAM, NINVTBL, ITCASA, ITNAMA
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -136,7 +136,8 @@ C.........  Replace blanks with zeros
         END DO
 
 C.........  Determine whether activity data or not
-        I = INDEX1( TCAS, MXIDAT, INVDNAM )
+        I = INDEX1( TCAS, NINVTBL, ITCASA )
+        I = INDEX1( ITNAMA( I ), MXIDAT, INVDNAM )
         IF( INVSTAT( I ) > 0 ) THEN
             MESG='ERROR: MUST process activity data for FF10_ACTIVITY '
      &          // 'format.' // CRLF() // BLANK10 // TRIM( TCAS ) //
