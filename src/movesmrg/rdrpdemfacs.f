@@ -408,7 +408,6 @@ C.............  Skip header line
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments
-          print*,trim(line),':::reading at line####',irec,NEMTEMPS,NINVSCC,NPOL,NNONPOL
             CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Set SCC index for current line
