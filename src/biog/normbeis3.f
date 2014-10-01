@@ -68,7 +68,7 @@ C           to continue running the program.
 
 C.........  Get the BEIS3 model version to use
         MESG = 'Version of BEIS3 to use'
-        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.14', BEISVER, IOS )
+        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.60', BEISVER, IOS )
         
         SELECT CASE( BEISVER )
         CASE( '3.60' )
