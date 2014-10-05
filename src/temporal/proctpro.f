@@ -437,7 +437,7 @@ C.........  Read and process the TREF file
             CALL PARSLINE( LINE, MXTCOL, FIELD )    !  does adjustl() on all fields
 
             IF ( FIELD(9) .EQ. BLANK ) THEN
-                WRITE( MESG, '( 3A, I10, 2X, A )' )
+                WRITE( MESG, '( A, I10, 2X, A )' )
      &              'ERROR:  Bad xref in "TREF" at line', L,
      &              'for field 9 (profile-ID)'
                 CALL M3MESG( MESG )
