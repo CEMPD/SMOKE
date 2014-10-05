@@ -224,7 +224,7 @@ C.........  Read mobile-source files
 
 C.............  Fill tables for translating mobile road classes & vehicle types
 C.............  The tables are passed through MODMOBIL
-            CALL RDMVINFO( RDEV )
+C            CALL RDMVINFO( RDEV )
 
         END IF
 

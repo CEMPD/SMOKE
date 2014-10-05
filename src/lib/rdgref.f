@@ -44,7 +44,7 @@ C.........  This module is for cross reference tables
         USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISRGCDA
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_ENDP, MCODEFLAG
+        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_ENDP
 
         IMPLICIT NONE
 
@@ -220,11 +220,6 @@ C.................  Ignore SCCs that are not on-road mobile
                     END IF
                 END IF
                 
-C.................  Convert TSCC to internal value
-                IF( MCODEFLAG ) THEN
-                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
-                END IF
-
             END SELECT
 
 C.............  Make sure that the spatial surrogates code is an integer

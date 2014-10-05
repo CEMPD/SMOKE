@@ -72,7 +72,7 @@ C...........   This module contains the speciation profile tables
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NCHARS, JSCC, NIPPA, EANAM, 
-     &                     LSCCEND, MCODEFLAG
+     &                     LSCCEND
 
         IMPLICIT NONE
 
@@ -323,30 +323,6 @@ C.............  Create selection
 
             CASE ( 'MOBILE' )
 
-c.................  Change mobile-source SCC to facilitate correct hierarchy.
-                IF( MCODEFLAG ) THEN
-                    WRITE( CRWT, RWTFMT ) IRCLAS( S )
-                    WRITE( CVID, VIDFMT ) IVTYPE( S )
-
-                    TSCC = CRWT // CVID
-                    CALL PADZERO( TSCC )
-                    TSCCL= TSCC( 1:LSCCEND )
-
-                    CHKVID = RWTZERO // CVID
-                    CALL PADZERO( CHKVID )
-
-                    CHKRWT = CRWT // VIDZERO
-                    CALL PADZERO( CHKRWT )
-
-                    CHK09  = CFIP // TSCC                   ! County// RWT// VTP
-                    CHK08  = CFIP // TSCCL                        ! County// RWT
-                    CHK08B = CFIP // CHKVID                       ! County// VTP
-                    CHK06  = CSTA // TSCC                   ! State // RWT// VTP
-                    CHK05  = CSTA // TSCCL                  ! State // road type
-                    CHK05B = CSTA // CHKVID                  ! State // veh type
-                    CHK02B = CHKVID                               ! Vehicle type
-                END IF
-
             CASE ( 'POINT' )
 
                 CHK16   = CSRC( 1:PTENDL3( 7 ) ) // TSCC
@@ -565,11 +541,6 @@ C              temporal profile based on  a vehicle type and no road class
 C              comes after the road class only match (or TSCCL in CHRT08,
 C              for example) but the match uses the full TSCC (or CHRT09, for
 C              example).
-            IF( CATEGORY == 'MOBILE' .AND. MCODEFLAG ) THEN
-                F4B = FINDC( CHK08B, TXCNT( 9 ), CHRT09 )
-                F2B = FINDC( CHK05B, TXCNT( 6 ), CHRT06 )
-                F0B = FINDC( CHK02B, TXCNT( 3 ), CHRT03 )
-            END IF
 
             IF( F5 .GT. 0 .AND. CSPT09(F5,V) .NE. EMCMISS3 ) THEN
                 SPCODE = CSPT09( F5,V ) 

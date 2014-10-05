@@ -69,8 +69,6 @@
         INTEGER    , PUBLIC :: SCCLEV3  ! right-most position of level-3 of SCC
         INTEGER    , PUBLIC :: SCCLEV4  ! right-most position of level-4 of SCC
 
-        LOGICAL     , PUBLIC :: MCODEFLAG =.TRUE. ! true: construct internal SCC using road/vhicle
-
 !.........  Positions of pollutant-specific inventory data in storage array
         INTEGER :: NC1 = 0 !  pos in 2nd dim of POLVLA of primary control code
         INTEGER :: NC2 = 0 !  pos in 2nd dim of POLVLA of secondary cntrl code

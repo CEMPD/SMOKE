@@ -47,7 +47,7 @@ C.........  This module contains emission factor tables and related
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, NIPPA, NIPOL,
-     &                     EANAM, EINAM, MCODEFLAG
+     &                     EANAM, EINAM
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: MXIDAT, INVDNAM, INVDVTS
@@ -236,20 +236,6 @@ C.........   Open files that depend on inventory characteristics
 
         END IF
 
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-
-            MESG = 'Construct internal SCC using road and vehicle types '//
-     &          CRLF() // BLANK10 // 'for mobile sources or not'
-            MCODEFLAG = ENVYN ( 'USE_MCODES_SCC_YN', MESG, .TRUE., IOS )
-
-            IF( MCODEFLAG ) THEN
-                MDEV = PROMPTFFILE( 
-     &                'Enter logical name for MOBILE CODES file',
-     &                .TRUE., .TRUE., 'MCODES', PROGNAME )
-           END IF
-
-        END IF
-
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'CSCC'
         IVARNAMS( 2 ) = 'CSOURC'
@@ -282,7 +268,7 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
 C.........  When mobile codes file is being used read mobile codes file
-        IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
+C        IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
 
 C.........  Read inventory table (used for NONHAP checks)
         CALL RDCODNAM( VDEV )

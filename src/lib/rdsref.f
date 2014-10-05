@@ -44,7 +44,7 @@ C.........  This module is for cross reference tables
         USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, CMACTA, CSPRNA, ISPTA
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, LSCCEND, MCODEFLAG
+        USE MODINFO, ONLY: CATEGORY, NIPPA, EANAM, LSCCEND
 
         IMPLICIT NONE
 
@@ -337,11 +337,6 @@ C.................  Store case-specific fields from cross reference
                     CSRCTA( N ) = CSRCALL( 1:SRCLEN3 ) // CMCT // CPOS
 
                 CASE( 'MOBILE' )
-
-C.....................  Convert TSCC to internal value
-                    IF( MCODEFLAG ) THEN
-                        CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
-                    END IF
 
 C M Houyoux note: TSCC has been put in here instead of road type
 C     and link has been removed.  These were breaking the county-SCC specific

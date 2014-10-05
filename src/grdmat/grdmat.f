@@ -49,7 +49,7 @@ C.........  This module contains the global variables for the 3-d grid
      &                     OFFLAG
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIPPA, EANAM, MCODEFLAG
+        USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIPPA, EANAM
 
 C.........  This module is required by the FileSetAPI
         USE MODFILESET
@@ -343,16 +343,6 @@ C.........  Get gridding surrogates and x-ref file, if needed
 C.........  Get mobile-specific files
         IF( CATEGORY .EQ. 'MOBILE' ) THEN
 
-            MESG = 'Construct internal SCC using road and vehicle types '//
-     &          CRLF() // BLANK10 // 'for mobile sources or not'
-            MCODEFLAG = ENVYN ( 'USE_MCODES_SCC_YN', MESG, .FALSE., IOS )
-
-            IF( MCODEFLAG ) THEN
-                MESG = 'Enter logical name for MOBILE CODES file'
-                MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES',
-     &                          PROGNAME )
-            END IF
-
             IF( DFLAG ) KDEV = PROMPTFFILE( 
      &               'Enter logical name for LINK DEFINITIONS file',
      &               .TRUE., .TRUE., CRL // 'GLNK', PROGNAME )
@@ -369,7 +359,7 @@ C               from the inventory arrays
             CALL GENUSLST
 
 C..............  For mobile sources, read the mobile codes
-            IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
+C            IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
             CALL M3MSG2( 'Reading gridding cross-reference file...' )
 
 C.............  Read the gridding cross-reference

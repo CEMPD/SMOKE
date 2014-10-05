@@ -345,14 +345,6 @@ C.........  Get speeds file
 
 C.............  Open category-specific inputs
             SELECT CASE( CATEGORY )
-            CASE( 'MOBILE' ) 
-
-C.................  Get file name for converting road-class to road type & 
-C                   vehicle type name to vehicle type number.
-                MESG = 'Enter logical name for MOBILE CODES file'
-                RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES', 
-     &                              PROGNAME )
-
             CASE( 'POINT' )
 
 C.................  Get file name for input replacement stack parameters file
