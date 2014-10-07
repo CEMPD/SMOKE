@@ -248,7 +248,7 @@ C.........  for better memory alignment
 
         CHARACTER(16)       ANAME
         CHARACTER(16)       THISID, LASTID
-        CHARACTER(16)       FIELD( MXTCOL )   !  Array for reading temporal x-ref fields
+        CHARACTER(20)       FIELD( MXTCOL )   !  Array for reading temporal x-ref fields
 
 C......... Data structures for filtering XREF file by actually-occurring
 C......... and default FIPS and pollutants.
@@ -1191,6 +1191,7 @@ C.............  Local variables:
             CHARACTER(  1) :: CBUF
             CHARACTER( 16) :: THISID, LASTID, AKEY
             CHARACTER( 16) :: IDSORT( IDCNT )
+            CHARACTER( 20) :: FIELDS( NFIELDS+2 )
             CHARACTER(512) :: LINE, MESG
 
             CHARACTER(20), ALLOCATABLE :: CKEY( : )
@@ -1254,24 +1255,18 @@ C.............  Read file:  CKEY and FACS
                     CYCLE
                 END IF
 
-                J = INDEX( LINE, COMMA )
-                IF ( J .LE. 1 ) THEN
-                    WRITE( MESG, '( A,I10 )' ) 'Bad ID field at line', L
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                    W     = W + 1
-                    IF ( W .GT. MXWARN ) EXIT
-                    CYCLE
-                END IF
+                CALL PARSLINE( LINE, NFIELDS+2, FIELDS )
+                AKEY = FIELDS( 1 )
 
-                AKEY = ADJUSTL( LINE( 1:J-1 ) )
                 IF ( FINDC( AKEY, NSORT, IDSORT ) .LE. 0 ) CYCLE        ! ID does not show up in XREF
 
                 M = M + 1
                 CKEY( M ) = AKEY
 
-                READ( LINE( J+1: ), *, END=99, IOSTAT=ISTAT )
-     &              ( FACS( J,M ), J = 1, NFIELDS )
+                DO J = 1, NFIELDS
+                    READ( FIELDS( J+1 ), *, IOSTAT=ISTAT ) FACS( J,M )
+                END DO
+
                 IF ( ISTAT .NE. 0 ) THEN
                     WRITE( MESG, '( 3 A, I10, 1X, A, I10 )' )
      &                'ERROR:: reading FACTORS from"', TRIM( FNAME ),
@@ -1349,6 +1344,7 @@ C.............  Local variables:
             CHARACTER(  1) :: CBUF
             CHARACTER( 16) :: THISID, LASTID, AKEY
             CHARACTER( 16) :: IDSORT( IDCNT )
+            CHARACTER( 20) :: FIELDS( 33 )
             CHARACTER(256) :: LINE, MESG
 
             CHARACTER(16), ALLOCATABLE :: CIDU( : )
@@ -1442,26 +1438,15 @@ C.............  Read file:  CKEY = ID//MONTH, and FACS
                     CYCLE
                 END IF
 
-                J = INDEX( LINE, COMMA )
-                IF ( J .LE. 1 ) THEN
-                    WRITE( MESG, '( A,I10 )' ) 'Bad ID field at line', L
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                    W     = W + 1
-                    IF ( W .GT. MXWARN ) EXIT
-                    CYCLE
-                END IF
+                CALL PARSLINE( LINE, 33, FIELDS )
+                AKEY = FIELDS( 1 )
 
-                AKEY = ADJUSTL( LINE( 1:J ) )
                 N    = FINDC( AKEY, NSORT, IDSORT )
                 IF ( N .LE. 0 ) CYCLE        ! ID does not show up in XREF
 
                 CIDU( N  ) = AKEY
 
-                K  = INDEX( LINE( J+1: ), COMMA )
-                JJ = J + K
-
-                READ( LINE( J+1:JJ ), *, IOSTAT=ISTAT ) IMON
+                READ( FIELDS( 2 ), *, IOSTAT=ISTAT ) IMON
                 IF ( ISTAT .NE. 0 ) THEN
                     WRITE( MESG, '( 3 A, I10, 1X, A, I10 )' )
      &                'ERROR: reading MONTH from"', TRIM( FNAME ),
@@ -1494,8 +1479,9 @@ C.............  Read file:  CKEY = ID//MONTH, and FACS
 
                 M = M + 1
 
-                READ( LINE( JJ+1: ), *, IOSTAT=ISTAT )
-     &              ( FACS( J,I,N ), J = 1, NN )
+                DO J = 1, NN
+                    READ( FIELDS( J+2 ), *, IOSTAT=ISTAT ) FACS( J,I,M )
+                END DO
 
                 IF ( ISTAT .NE. 0 ) THEN
                     WRITE( MESG, '( 3 A, I10, 1X, A, I10 )' )
