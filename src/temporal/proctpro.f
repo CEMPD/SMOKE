@@ -125,7 +125,6 @@ C.........   Local parameters
         INTEGER, PARAMETER :: MXTCOL   = 15
 
         CHARACTER( 1),      PARAMETER :: BLANK   = ' '
-        CHARACTER( 1),      PARAMETER :: COMMA   = ','
         CHARACTER(16),      PARAMETER :: PNAME   = 'PROCTPRO'                   !  subroutine name
         CHARACTER(24),      PARAMETER :: ZEROS   = '000000000000000000000000'   !  "all-zeros"
         CHARACTER(24),      PARAMETER :: CMISS   = '????????????????????????'   !  "not a legal string-entry"
@@ -228,7 +227,7 @@ C.........  for better memory alignment
         CHARACTER(2)        MBUF        !  2-digit month "MM"
         CHARACTER(1)        SCC1        !  1st character of SCC
         CHARACTER(5)        CPOS        !  tmp sorted position of pol/act
-        CHARACTER(8)        LASTMET
+        CHARACTER(8)        LASTMET, MISSMET
 
         CHARACTER(SICLEN3)  CDUM        !  dummy character field for SIC
         CHARACTER(MACLEN3)  CDUM2       !  dummy charecter field for MACT
@@ -245,6 +244,8 @@ C.........  for better memory alignment
         CHARACTER(RWTLEN3)  CRWT        !  roadway type no.
         CHARACTER(VIDLEN3)  CVID        !  vehicle type ID no.
         CHARACTER(CHRLEN3)  CHARS( 5 )  !  temporary plant characteristics
+
+        CHARACTER(16)       MTHNAME, WEKNAME, DOMNAME, DIUNAME
 
         CHARACTER(16)       ANAME
         CHARACTER(16)       THISID, LASTID
@@ -265,6 +266,9 @@ C......... NOTE:  FLTRXREF() does *not* filter by FIP!
         INTEGER, SAVE :: MXWARN = -9999     !  from env vble SMK_MAXWARNING
 
 C...........   body   ......................................................
+
+        MESG = 'Processing temporal XREFS and PROFs for '//CATEGORY
+        CALL M3MESG( MESG )
 
         IF ( NFLAG ) THEN       !  no time-dependence in emissions profiles
 
@@ -412,6 +416,7 @@ C.........  Allocate/initialize scratch data structures
 C.........  Read and process the TREF file
 
         LASTMET = CMISS
+        MISSMET = LASTMET
         CDUM    = BLANK
         CDUM2   = BLANK
         IDUM    = 0
@@ -587,7 +592,7 @@ C.................  link-specific assignments from the documentation for Spcmat.
                     SUNKEYU( SUNCOUNT ) = CSRCALL
 
                 CASE( 'WEEKEND' )
-                    IF ( .NOT. ( WKEFLAG ) ) CYCLE
+                    IF ( .NOT.WKEFLAG ) CYCLE
 
                     IF ( DAYFLAG( 6 ) ) THEN
                         SATCOUNT = SATCOUNT + 1
@@ -602,7 +607,8 @@ C.................  link-specific assignments from the documentation for Spcmat.
                     END IF
 
                 CASE( 'WEEKDAY' )
-                    IF ( .NOT. ( WKDFLAG ) ) CYCLE
+
+                    IF ( .NOT. WKDFLAG ) CYCLE
 
                     IF ( DAYFLAG( 1 ) ) THEN
                         MONCOUNT = MONCOUNT + 1
@@ -680,14 +686,12 @@ C.................  link-specific assignments from the documentation for Spcmat.
 
                 CASE( 'HOURLY' )
 
-                    IF ( .NOT. METFLAG )  CYCLE
-
                     METCOUNT = METCOUNT + 1
                     METIDU ( METCOUNT ) = FIELD(9)
                     METKEYU( METCOUNT ) = CSRCALL
                     METREFFLAG( JSPC )  = .TRUE.
 
-                    IF ( LASTMET .EQ. CMISS ) THEN
+                    IF ( LASTMET .EQ. MISSMET ) THEN
                         METPROTYPE = FIELD( 9 )
                         LASTMET    = METPROTYPE
                     ELSE IF ( LASTMET .NE. METPROTYPE ) THEN
@@ -815,8 +819,8 @@ C.........   Read in the relevant profile-tables:
 
         IF ( MTHCOUNT .GT. 0 ) THEN         !  month-of-year
 
-            ANAME = CATEGORY(1:1) //  'TPRO_MONTHLY'
-            NMON  = CSVPROF( ANAME, 12,
+            MTHNAME = CATEGORY(1:1) //  'TPRO_MONTHLY'
+            NMON  = CSVPROF( MTHNAME, 12,
      &                       MTHIDP, MONFAC,
      &                       MTHCOUNT, MTHIDS  )
 
@@ -825,8 +829,8 @@ C.........   Read in the relevant profile-tables:
 
         IF ( WEKCOUNT .GT. 0 ) THEN         !  day-of-week
 
-            ANAME = CATEGORY(1:1) //  'TPRO_WEEKLY'
-            NWEK  = CSVPROF( ANAME, 7,
+            WEKNAME = CATEGORY(1:1) //  'TPRO_WEEKLY'
+            NWEK  = CSVPROF( WEKNAME, 7,
      &                       WEKIDP, WEKFAC,
      &                       WEKCOUNT, WEKIDS  )
 
@@ -865,8 +869,8 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
                 MONIDS( N ) = SUNIDS( I )
             END DO
 
-            ANAME = CATEGORY(1:1) //  'TPRO_HOURLY'
-            NHRL  = CSVPROF( ANAME, 24,
+            DIUNAME = CATEGORY(1:1) //  'TPRO_HOURLY'
+            NHRL  = CSVPROF( DIUNAME, 24,
      &                       HRLIDP, HRLFAC,
      &                       DAYCOUNT, MONIDS  )
 
@@ -875,8 +879,8 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
 
         IF ( DOMCOUNT .GT. 0 ) THEN         !  day-of-month
 
-            ANAME = CATEGORY(1:1) //  'TPRO_DAILY'
-            NDOM  = CSVDOMP( ANAME, SDATE, EDATE,
+            DOMNAME = CATEGORY(1:1) //  'TPRO_DAILY'
+            NDOM  = CSVDOMP( DOMNAME, SDATE, EDATE,
      &                       DOMIDP, DOMFAC,
      &                       DOMCOUNT, DOMIDS  )
 
@@ -885,16 +889,10 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
 
         IF ( METCOUNT .GT. 0 ) THEN       !  met based
 
+            METFLAG = .TRUE.
             METNAME = CATEGORY(1:1) //  'TPRO_HOURLY_NCF'
-            CALL ENVSTR( METNAME, 'MET-Profile file, or "NONE"', 'NONE', LINE, IOS )
 
-            METFLAG = ( LINE .NE. 'NONE' )
-
-            IF ( IOS .GT. 0 ) THEN
-                CALL M3EXIT( PNAME, 0,0, MESG, 2 )
-            ELSE IF ( .NOT.METFLAG ) THEN
-                METNAME = 'NONE'
-            ELSE IF ( .NOT.OPEN3( METNAME, FSREAD3, PNAME ) ) THEN
+            IF ( .NOT.OPEN3( METNAME, FSREAD3, PNAME ) ) THEN
                 MESG = 'Could not open "' // TRIM( METNAME ) // '"'
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             ELSE  IF( .NOT. DESC3( METNAME ) ) THEN
@@ -965,6 +963,7 @@ C.........................  use subscript into (unsorted) COUNTIES:
 
             NMETPROF = 0
             METNAME  = CMISS
+            METFLAG  = .FALSE.
 
         END IF      ! if met xrefs and profiles used
 
@@ -1116,7 +1115,7 @@ C.............  Find time zone min, max
 C.............  Initialize flag-arrays:
 
             MONFLAG = .FALSE.
-            DAYFLAG = .FALSE.
+            DAYFLAG = .TRUE.
 
             DO IT = 1, SIZE( ITDATE )        !  loop over episodes for this run
 
@@ -1127,11 +1126,10 @@ C                   of run-start, run-end:
                 JTIME = 0
                 CALL NEXTIME( JDATE, JTIME, -MAXZONE*10000 )    !  earliest local starting date for this episode
                 STIME = JTIME
+                N = RUNLEN( IT ) / 10000        ! hours
+                N = 1 + (N+23) / 24             ! days [ (N+23)/24 "rounds up" the days for runlen]
 
-                DO D = 0, RUNLEN( IT ) + 23, 24
-
-                    J = WKDAY( JDATE )
-                    DAYFLAG( J ) = .TRUE.
+                DO D = 0, N
 
                     CALL DAYMON( JDATE, I, J )
                     MONFLAG( I ) = .TRUE.
@@ -1188,11 +1186,11 @@ C.............  Local variables:
 
             LOGICAL     EFLAG
 
-            CHARACTER(  1) :: CBUF
-            CHARACTER( 16) :: THISID, LASTID, AKEY
-            CHARACTER( 16) :: IDSORT( IDCNT )
-            CHARACTER( 20) :: FIELDS( NFIELDS+2 )
-            CHARACTER(512) :: LINE, MESG
+            CHARACTER(  16) :: THISID, LASTID, AKEY
+            CHARACTER(  16) :: IDSORT( IDCNT )
+            CHARACTER(  20) :: FIELDS( NFIELDS+2 )
+            CHARACTER( 256) :: MESG
+            CHARACTER(1024) :: LINE
 
             CHARACTER(20), ALLOCATABLE :: CKEY( : )
             INTEGER      , ALLOCATABLE :: INDX( : )
@@ -1265,18 +1263,17 @@ C.............  Read file:  CKEY and FACS
 
                 DO J = 1, NFIELDS
                     READ( FIELDS( J+1 ), *, IOSTAT=ISTAT ) FACS( J,M )
-                END DO
-
-                IF ( ISTAT .NE. 0 ) THEN
-                    WRITE( MESG, '( 3 A, I10, 1X, A, I10 )' )
-     &                'ERROR:: reading FACTORS from"', TRIM( FNAME ),
+                    IF ( ISTAT .NE. 0 ) THEN
+                        WRITE( MESG, '( 3 A, I10, 1X, A, I10 )' )
+     &                  'ERROR:: reading FACTORS from"', TRIM( FNAME ),
      &                 '" at line', L,  '"--IOSTAT=', ISTAT
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                    W     = W + 1
-                    IF ( W .GT. MXWARN ) EXIT
-                    CYCLE
-                END IF
+                        CALL M3MESG( MESG )
+                        EFLAG = .TRUE.
+                        W     = W + 1
+                        IF ( W .GT. MXWARN ) EXIT
+                        CYCLE
+                    END IF
+                END DO
 
             END DO
 
@@ -1291,7 +1288,7 @@ C.............  Read file:  CKEY and FACS
 
             WRITE( MESG, '( 4 A, I10, 2X, A, I4, 2X, A )' )
      &        PNAME, ':  file "', TRIM( FNAME ),
-     &        '" processed:', M, ' data-rows', NFIELDS, 'fields'
+     &        '" processed:', M, ' active data-rows', NFIELDS, 'fields'
             CALL M3MESG( MESG )
             DEALLOCATE( CKEY, FACS )
 
@@ -1341,11 +1338,11 @@ C.............  Local variables:
             INTEGER     JDATE, JTIME, NRECS
             LOGICAL     LEAPYEAR, EFLAG
 
-            CHARACTER(  1) :: CBUF
-            CHARACTER( 16) :: THISID, LASTID, AKEY
-            CHARACTER( 16) :: IDSORT( IDCNT )
-            CHARACTER( 20) :: FIELDS( 33 )
-            CHARACTER(256) :: LINE, MESG
+            CHARACTER(  16) :: THISID, LASTID, AKEY, MISS
+            CHARACTER(  16) :: IDSORT( IDCNT )
+            CHARACTER(  20) :: FIELDS( 33 )
+            CHARACTER( 256) :: MESG
+            CHARACTER(1024) :: LINE
 
             CHARACTER(16), ALLOCATABLE :: CIDU( : )
             REAL         , ALLOCATABLE :: FACS( :,:,: )
@@ -1362,7 +1359,7 @@ C.............  Create sorted-unique list of input IDs:
             NSORT  = 0
             LASTID = CMISS
             DO I = 1, IDCNT
-                THISID = IDLIST( IDINDX( K ) )
+                THISID = IDLIST( IDINDX( I ) )
                 IF ( THISID .NE. LASTID ) THEN
                     NSORT           = NSORT + 1
                     IDSORT( NSORT ) = THISID
@@ -1418,10 +1415,10 @@ C.............  Open and count FNAME
             END IF
 
             FACS  = -9999.9      !  array assignments
-            IDSTR = BLANK
 
 C.............  Read file:  CKEY = ID//MONTH, and FACS
 
+            W = 0
             DO L = 1, NLINES
 
                 READ( FDEV, '( A )', END=99, IOSTAT=ISTAT ) LINE
@@ -1465,34 +1462,31 @@ C.............  Read file:  CKEY = ID//MONTH, and FACS
                     W     = W + 1
                     IF ( W .GT. MXWARN ) EXIT
                     CYCLE
-                ELSE IF ( .NOT.MONFLAG( I ) ) THEN
+                ELSE IF ( .NOT.MONFLAG( IMON ) ) THEN
                     CYCLE
                 END IF
 
                 IF ( IMON .NE. 2 ) THEN
-                    NN = MON_DAYS( I )
+                    NN = MON_DAYS( IMON )
                 ELSE IF ( LEAPYEAR ) THEN
-                    NN = 29     ! = MON_DAYS( I ) + 1
+                    NN = 29     ! = MON_DAYS( IMON ) + 1
                 ELSE
-                    NN = 28     ! = MON_DAYS( I )         ! = 28 for normal february
+                    NN = 28     ! = MON_DAYS( IMON )         ! = 28 for normal february
                 END IF
-
-                M = M + 1
 
                 DO J = 1, NN
-                    READ( FIELDS( J+2 ), *, IOSTAT=ISTAT ) FACS( J,I,M )
+                    READ( FIELDS( J+2 ), *, IOSTAT=ISTAT ) FACS( J,IMON,N )
+                    IF ( ISTAT .NE. 0 ) THEN
+                        WRITE( MESG, '( 3 A, I10, 1X, A, I4, 1X, A, I10 )' )
+     &                  'ERROR:: reading FACTORS from"', TRIM( FNAME ),
+     &                  '" at line', L,  'field', J+2,  '"--IOSTAT=', ISTAT
+                        CALL M3MESG( MESG )
+                        EFLAG = .TRUE.
+                        W     = W + 1
+                        IF ( W .GT. MXWARN ) EXIT
+                        CYCLE
+                    END IF
                 END DO
-
-                IF ( ISTAT .NE. 0 ) THEN
-                    WRITE( MESG, '( 3 A, I10, 1X, A, I10 )' )
-     &                'ERROR: reading FACTORS from"', TRIM( FNAME ),
-     &                 '" at line', L,  '"--IOSTAT=', ISTAT
-                    CALL M3MESG( MESG )
-                    EFLAG = .TRUE.
-                    W     = W + 1
-                    IF ( W .GT. MXWARN ) EXIT
-                    CYCLE
-                END IF
 
             END DO
 
@@ -1507,8 +1501,8 @@ C.............  Sort/process IDs: Count actually-occurring IDs:
 
             M = 0
             DO I = 1, NSORT
-                IF ( CIDU( N ) .NE. CMISS )  M = M + 1
-                IDINDX( N ) = N
+                IF ( CIDU( I ) .NE. MISS )  M = M + 1
+                IDINDX( I ) = I
             END DO
 
             CALL SORTIC( NSORT, IDINDX, CIDU )
@@ -1522,6 +1516,7 @@ C.............  Sort/process IDs: Count actually-occurring IDs:
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
 
+            IDSTR = BLANK
             N      = 0
             LASTID = CMISS
             DO I = 1, NSORT
@@ -1531,7 +1526,7 @@ C.............  Sort/process IDs: Count actually-occurring IDs:
                     N = N + 1
                     LASTID     = CIDU( K )
                     IDSTR( N ) = CIDU( K )
-                    DMFAC( :,:,N ) = FACS( :,:,J )
+                    DMFAC( :,:,N ) = FACS( :,:,K )
                 END IF
             END DO
 
