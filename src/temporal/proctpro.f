@@ -1186,7 +1186,7 @@ C.............  Local variables:
 
             LOGICAL     EFLAG
 
-            CHARACTER(  16) :: THISID, LASTID, AKEY
+            CHARACTER(  16) :: THISID, LASTID, AKEY, MISS
             CHARACTER(  16) :: IDSORT( IDCNT )
             CHARACTER(  32) :: FIELDS( NFIELDS+2 )
             CHARACTER( 256) :: MESG
