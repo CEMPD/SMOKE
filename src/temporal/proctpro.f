@@ -1188,7 +1188,7 @@ C.............  Local variables:
 
             CHARACTER(  16) :: THISID, LASTID, AKEY
             CHARACTER(  16) :: IDSORT( IDCNT )
-            CHARACTER(  20) :: FIELDS( NFIELDS+2 )
+            CHARACTER(  32) :: FIELDS( NFIELDS+2 )
             CHARACTER( 256) :: MESG
             CHARACTER(1024) :: LINE
 
@@ -1198,6 +1198,8 @@ C.............  Local variables:
 
 C.............  body of function CSVPROF()  .....................
 C.............  Create sorted-unique list of input IDs:
+
+            MISS = CMISS
 
             DO N = 1, IDCNT
                 IDINDX( N ) = N
@@ -1340,9 +1342,9 @@ C.............  Local variables:
 
             CHARACTER(  16) :: THISID, LASTID, AKEY, MISS
             CHARACTER(  16) :: IDSORT( IDCNT )
-            CHARACTER(  20) :: FIELDS( 33 )
+            CHARACTER(  32) :: FIELDS( 33 )
             CHARACTER( 256) :: MESG
-            CHARACTER(1024) :: LINE
+            CHARACTER(1136) :: LINE
 
             CHARACTER(16), ALLOCATABLE :: CIDU( : )
             REAL         , ALLOCATABLE :: FACS( :,:,: )

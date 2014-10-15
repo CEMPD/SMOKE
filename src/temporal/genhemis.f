@@ -123,7 +123,7 @@ C...........   Other local variables
         INTEGER, SAVE :: TZMIN   ! minimum time zone in inventory
         INTEGER, SAVE :: TZMAX   ! maximum time zone in inventory
 
-        INTEGER          DAY        ! tmp emissions day of month
+        INTEGER          MDAY       ! tmp emissions day of month
         INTEGER          WDAY       ! tmp emissions day of week (1=monday)
         INTEGER          HCORR      ! hour correction factor
         INTEGER          HOUR       ! hour of day (1 ... 24)
@@ -260,17 +260,15 @@ C.....................  When using time zones to set monthly and weekly profiles
 C.....................  NOTE - this is more correct
                     IF( ZONE4WM ) THEN
 
-                        CALL DAYMON( TDATE, MON, DAY ) ! month & scratch day
+                        CALL DAYMON( TDATE, MON, MDAY )   ! get month & day-of-month
                         WDAY   = WKDAY( TDATE )           ! get day-of-week
-c                       DAYADJ = EMWKDAY( TDATE )
 
 C.....................  When not using time zones as in previous emissions
 C                       systems
                     ELSE
-                        CALL DAYMON( JDATE, MON, DAY )
+                        CALL DAYMON( JDATE, MON, MDAY )
                         WDAY  = WKDAY( JDATE )
                         TDATE = JDATE                  ! set for holiday check
-c                       DAYADJ = EMWKDAY( TDATE )
                     END IF
 
 C.....................  Check if the date is a holiday.  If so, reset the
@@ -278,21 +276,17 @@ C                       day based on the holiday arrays settings.
 C.....................  NOTE - this approach will not work for region-specific
 C                       setting of holidays.
                     J = FIND1( TDATE, NHOLIDAY, HOLJDATE )
-                    IF( J .GT. 0 ) DAY = HOLALTDY( J )
+                    IF( J .GT. 0 ) WDAY = HOLALTDY( J )
 
                     MONTH( H,I ) = MON
                     DAYOW( H,I ) = WDAY
-                    DAYOM( H,I ) = DAY
+                    DAYOM( H,I ) = MDAY
 
                     CALL NEXTIME( TDATE, TTIME, 10000 )
 
                 END DO
 
             END DO
-
-C.............  Set day of week based on output day
-            DAY = WKDAY( JDATE )
-c           DAYADJ = EMWKDAY( JDATE )
 
 c note: Need to create EMWKDAY and update WRDAYMSG also to use it.
 C.............  Write message for day of week and date
@@ -464,7 +458,6 @@ C.................  Loop through day-specific sources
 C.....................  Override annual adjusted emissions with day-specific
 C                       emissions and hourly profile adjustments
 
-                    DAY = DAYOW( HOUR, TZONES( S ) )
                     K   = 1 + MOD( HOUR + HCORR - TZONES( S ), 24 )
 
 C.....................  Re-normalizing hourly temporal factors for wildfires only

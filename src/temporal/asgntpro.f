@@ -108,6 +108,7 @@ C.........  Other local variables
         INTEGER         I, J, L2, S, V      !  counters and indices
         INTEGER         ISTAT
         INTEGER         IPROF
+        INTEGER         HCOUNT
 
         INTEGER          ICOUNT, ERRCNT  !  count of errors
         INTEGER          F0, F1, F2, F3, F4, F5, F6  ! tmp find indices
@@ -1066,6 +1067,20 @@ C.........................  Find hour-of-day profiles for each day of the week:
         END SELECT
 
 C.........  Check that all sources, pollutants have assigned profiles:
+
+        IF ( MTHCOUNT .EQ. 0 ) THEN
+            CALL M3MESG( 'ASGNTPRO:  Not using Month-of-Year profiles' )
+        END IF
+
+        IF ( WEKCOUNT + DOMCOUNT .EQ. 0 ) THEN
+            CALL M3MESG( 'ASGNTPRO:  Not using Day-of-Month nor Day-of-Week profiles' )
+        END IF
+
+        HCOUNT = METCOUNT + MONCOUNT + TUECOUNT + WEDCOUNT + THUCOUNT + FRICOUNT + SATCOUNT + SUNCOUNT
+        IF ( HCOUNT .EQ. 0 ) THEN
+            CALL M3MESG( 'ASGNTPRO:  Not using Hour-of-Day nor Met Based profiles' )
+        END IF
+
         DO S = 1, NSRC
 
             ICOUNT = 0
@@ -1075,7 +1090,9 @@ C.........  Check that all sources, pollutants have assigned profiles:
                 END IF
             END DO          !!  end loop on pollutants, V
 
-            IF ( ICOUNT .EQ. NIPPA ) THEN
+            IF ( MTHCOUNT .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF ( ICOUNT .EQ. NIPPA ) THEN
                 ERRCNT = ERRCNT + 1
                 CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
                 WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
@@ -1102,7 +1119,9 @@ C.........  Check that all sources, pollutants have assigned profiles:
                 END IF
             END DO          !!  end loop on pollutants, V
 
-            IF ( ICOUNT .EQ. NIPPA ) THEN
+            IF ( WEKCOUNT + DOMCOUNT .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF ( ICOUNT .EQ. NIPPA ) THEN
                 ERRCNT = ERRCNT + 1
                 CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
                 WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
@@ -1112,28 +1131,10 @@ C.........  Check that all sources, pollutants have assigned profiles:
                 ERRCNT = ERRCNT + 1
                 CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
                 DO V = 1, NIPPA
-                    IF ( WEKPROF( S,V ) .LE. 0 ) THEN
+                    IF ( WEKPROF( S,V ) .LE. 0.AND.
+     &                   DOMPROF( S,V ) .LE. 0 ) THEN
                         WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
-     &                    'ERROR:  No month-of-year profile found for source', S,
-     &                    'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
-                        CALL M3MESG( MESG )
-                    END IF
-                END DO
-            END IF
-
-            IF ( ICOUNT .EQ. NIPPA ) THEN
-                ERRCNT = ERRCNT + 1
-                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
-                WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
-     &                'ERROR:  No day-of-month nor day-of-week profile found for source', S,':  ', TRIM( CBUF )
-                    CALL M3MESG( MESG )
-            ELSE IF ( ICOUNT .GT. 0 ) THEN
-                ERRCNT = ERRCNT + 1
-                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
-                DO V = 1, NIPPA
-                    IF ( MTHPROF( S,V ) .LE. 0 ) THEN
-                        WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
-     &                    'ERROR:  No month-of-year profile found for source', S,
+     &                    'ERROR:  No day-of-month nor day-of-week profile found for source', S,
      &                    'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
                         CALL M3MESG( MESG )
                     END IF
@@ -1146,25 +1147,29 @@ C.........  Check that all sources, pollutants have assigned profiles:
 
                     ICOUNT = 0
                     DO V = 1, NIPPA
-                        IF ( HRLPROF( S,I,V ) .LE. 0 ) THEN
+                        IF ( HRLPROF( S,I,V ) .LE. 0  .AND.
+     &                       METPROF( S,V )   .LE. 0 ) THEN
                             ICOUNT = ICOUNT + 1
                         END IF
                     END DO          !!  end loop on pollutants, V
 
-                    IF ( ICOUNT .EQ. NIPPA ) THEN
+                    IF ( HCOUNT .EQ. 0 ) THEN
+                        CONTINUE
+                    ELSE IF ( ICOUNT .EQ. NIPPA ) THEN
                         ERRCNT = ERRCNT + 1
                         CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
                         WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
-     &                        'ERROR:  No hour-of-day profile profile found for source', S,
+     &                        'ERROR:  No hour-of-day nor Met based profile profile found for source', S,
      &                        ':  ', TRIM( CBUF ), 'day', DAYNAME(I)
                             CALL M3MESG( MESG )
                     ELSE IF ( ICOUNT .GT. 0 ) THEN
                         ERRCNT = ERRCNT + 1
                         CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
                         DO V = 1, NIPPA
-                            IF ( MTHPROF( S,V ) .LE. 0 ) THEN
+                            IF ( HRLPROF( S,I,V ) .LE. 0  .AND.
+     &                           METPROF( S,V )   .LE. 0 ) THEN
                                 WRITE( MESG, '( A, I8, 6( 1X, A ) )' )
-     &                            'ERROR:  No hour-of-day profile profile found for source', S,
+     &                            'ERROR:  No hour-of-day nor Met based profile profile found for source', S,
      &                            'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF ),
      &                            'day', DAYNAME(I)
                                 CALL M3MESG( MESG )
