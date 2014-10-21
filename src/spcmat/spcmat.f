@@ -335,11 +335,13 @@ C.............  If output was not found, set name to blank
 
 C.............  Rename emission factors if necessary
             IF( OUTPUTHC /= ' ' ) THEN
+              DO J = 1, NIACT
                 DO I = 1, SIZE( EMTNAM,1 )
-                    IF( EMTNAM( I,1 ) == INPUTHC ) THEN
-                        EMTNAM( I,1 ) = OUTPUTHC
+                    IF( EMTNAM( I,J ) == INPUTHC ) THEN
+                        EMTNAM( I,J ) = OUTPUTHC
                     END IF
                 END DO
+              END DO
             END IF
 
         END IF
