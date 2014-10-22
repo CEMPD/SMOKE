@@ -17,7 +17,9 @@ C
 C  REVISION  HISTORY:
 C     Created M Houyoux 1/99
 C
-C     Version 07/2014 by C.Coats for  new GENTPRO CSV profiles and cross-references
+C     Version 07/2014 by C.Coats for  new GENTPRO CSV profiles and
+C     cross-references.  Be sure to normalize "profile-zero" case
+C     used to handle the "profile-not-supplied" cases.
 C
 C***********************************************************************
 C
@@ -84,7 +86,7 @@ C.........  Get information from the environment about renormalization
 
 C.........  Allocate memory for weekday-normalized weekly emissions
 
-        ALLOCATE( XWKFAC(  7,NWEK ), 
+        ALLOCATE( XWKFAC(  7,0:NWEK ), 
      &        MONFAC_ORG( 12,NMON ), STAT=IOS )
         CALL CHECKMEM( IOS, 'XWKFAC,MONFAC_ORIG', PROGNAME )
 
@@ -94,7 +96,7 @@ C.........  Renormalize temporal profiles, if needed
 
         IF( RENORM ) THEN
 
-            DO I = 1, NMON   ! Monthly
+            DO I = 0, NMON   ! Monthly
 
                 TOT = 0.0D0
                 DO K = 1, 12
@@ -113,7 +115,7 @@ C.........  Renormalize temporal profiles, if needed
 
             END DO          !  end loop on month-profiles I
 
-            DO I = 1, NWEK   ! Weekly
+            DO I = 0, NWEK   ! Weekly
 
                 TOT = 0.0D0
                 DO K = 1, 7
@@ -132,7 +134,7 @@ C.........  Renormalize temporal profiles, if needed
 
             END DO          !  end loop on week-profiless I
 
-            DO I = 1, NHRL   ! Diurnal
+            DO I = 0, NHRL   ! Diurnal
 
                 TOT = 0.0D0
                 DO K = 1, 24
@@ -159,7 +161,7 @@ C.........  Backup original MONFAC to MONFAC_ORG before applying monthly adjustm
 
 C.........  Weight monthly profiles by the number of days in a month
 
-        DO I = 1, NMON
+        DO I = 0, NMON
 
             FAC = 0.0D0
             TOT = 0.0D0
@@ -178,7 +180,7 @@ C.........  Weight monthly profiles by the number of days in a month
 
 C.........  Weight weekly profiles for weekly and day-of-week adjustments
 
-        DO I = 1, NWEK
+        DO I = 0, NWEK
 
             FAC  = WEKFAC( 1,I ) + WEKFAC( 2,I ) + WEKFAC( 3,I ) +
      &             WEKFAC( 4,I ) + WEKFAC( 5,I )
@@ -207,7 +209,7 @@ C.........  Weight weekly profiles for weekly and day-of-week adjustments
 
 C.........  Normalize day-of-month profiles:
         
-        DO I = 1, NDOM
+        DO I = 0, NDOM
 
             DO J = 1, 12
 

@@ -893,7 +893,7 @@ C.................  Advance the output date/time by one time step
 
 C.............  Write supplemental temporal profiles file
 
-         CALL WRTSUP( PDEV, NSRC, 1, EANAM )
+         CALL WRTSUP( PDEV, NSRC, NIPPA, EANAM )
 
          IF( .NOT. CLOSESET( TNAME ) ) THEN
              MESG = 'Could not close file "' // TRIM( TNAME ) // '".'

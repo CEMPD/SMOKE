@@ -25,7 +25,10 @@ C       Revised ??/???? by ??
 C
 C       Version 07/2014 by C.Coats for  new GENTPRO CSV profiles and cross-references
 C       Does source-to-profile mapping for all sources,species.
-C       Note that met-based profiles are managed in PROCTPRO()
+C       NOTES:
+C       1) Met-based profiles are managed in PROCTPRO()
+C       2) Uses profile-zero and xref-zero entries as sentinels for
+C          the "profile/xref not supplied" cases.
 C****************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -167,6 +170,7 @@ C.........  ones to fail.)
         CHARACTER(ALLLEN3) :: CSRC06 = BADSTR
         CHARACTER(ALLLEN3) :: CSRC07 = BADSTR
         CHARACTER(ALLLEN3) :: CSRC08 = BADSTR
+        CHARACTER(ALLLEN3) :: CSRC085= BADSTR
         CHARACTER(ALLLEN3) :: CSRC09 = BADSTR
         CHARACTER(ALLLEN3) :: CSRC10 = BADSTR
         CHARACTER(ALLLEN3) :: CSRC11 = BADSTR
@@ -232,6 +236,7 @@ C.............  Get error and warning limits from the environment
 C.........  [Met-based profiles are managed in PROCTPRO()]
 
 C.........  Set category-specific source characteristic combinations
+C.........  Recall that profile-zero is the profile for the "none exist" case
 
         SELECT CASE ( CATEGORY )
 
@@ -272,7 +277,7 @@ C.....................  Find month-of-year profile:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MTHCOUNT,  MTHKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MTHCOUNT,  MTHKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MTHCOUNT,  MTHKEYS )
-                    IF ( IPROF .GT. 0 ) MTHPROF( S,: ) = MTHPDEX( IPROF )
+                    MTHPROF( S,: ) = MTHPDEX( MAX( IPROF,0 ) )
 
 C.....................  Find day-of-month profile:
 
@@ -285,7 +290,7 @@ C.....................  Find day-of-month profile:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, DOMCOUNT,  DOMKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, DOMCOUNT,  DOMKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, DOMCOUNT,  DOMKEYS )
-                    IF ( IPROF .GT. 0 ) DOMPROF( S,: ) = DOMPDEX( IPROF )
+                    DOMPROF( S,: ) = DOMPDEX( MAX( IPROF,0 ) )
 
 C.....................  Find day-of-week profile:
 
@@ -298,7 +303,7 @@ C.....................  Find day-of-week profile:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEKCOUNT,  WEKKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEKCOUNT,  WEKKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEKCOUNT,  WEKKEYS )
-                    IF ( IPROF .GT. 0 ) WEKPROF( S,: ) = WEKPDEX( IPROF )
+                    WEKPROF( S,: ) = WEKPDEX( MAX( IPROF,0 ) )
 
 C.....................  Find hour-of-day profile for each day of the week:
 
@@ -311,7 +316,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, MONCOUNT,  MONKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, MONCOUNT,  MONKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, MONCOUNT,  MONKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,1,: ) = MONPDEX( IPROF )
+                    HRLPROF( S,1,: ) = MONPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC07, TUECOUNT,  TUEKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, TUECOUNT,  TUEKEYS )
@@ -322,7 +327,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, TUECOUNT,  TUEKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, TUECOUNT,  TUEKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, TUECOUNT,  TUEKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,2,: ) = TUEPDEX( IPROF )
+                    HRLPROF( S,2,: ) = TUEPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC07, WEDCOUNT,  WEDKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEDCOUNT,  WEDKEYS )
@@ -333,7 +338,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, WEDCOUNT,  WEDKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, WEDCOUNT,  WEDKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, WEDCOUNT,  WEDKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,3,: ) = WEDPDEX( IPROF )
+                    HRLPROF( S,3,: ) = WEDPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC07, THUCOUNT,  THUKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, THUCOUNT,  THUKEYS )
@@ -344,7 +349,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, THUCOUNT,  THUKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, THUCOUNT,  THUKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, THUCOUNT,  THUKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,4,: ) = THUPDEX( IPROF )
+                    HRLPROF( S,4,: ) = THUPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC07, FRICOUNT,  FRIKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, FRICOUNT,  FRIKEYS )
@@ -355,7 +360,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, FRICOUNT,  FRIKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, FRICOUNT,  FRIKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, FRICOUNT,  FRIKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,5,: ) = FRIPDEX( IPROF )
+                    HRLPROF( S,5,: ) = FRIPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC07, SATCOUNT,  SATKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SATCOUNT,  SATKEYS )
@@ -366,7 +371,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SATCOUNT,  SATKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SATCOUNT,  SATKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SATCOUNT,  SATKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,6,: ) = SATPDEX( IPROF )
+                    HRLPROF( S,6,: ) = SATPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC07, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SUNCOUNT,  SUNKEYS )
@@ -377,7 +382,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC13, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC14, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC15, SUNCOUNT,  SUNKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,7,: ) = SUNPDEX( IPROF )
+                    HRLPROF( S,7,: ) = SUNPDEX( MAX( IPROF,0 ) )
 
 C.....................  Now, overrides for pollutant dependent part of hierarchy:
 
@@ -524,7 +529,7 @@ C.....................  Find month-of-year profile:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MTHCOUNT,  MTHKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MTHCOUNT,  MTHKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MTHCOUNT,  MTHKEYS )
-                    IF ( IPROF .GT. 0 ) MTHPROF( S,: ) = MTHPDEX( IPROF )
+                    MTHPROF( S,: ) = MTHPDEX( MAX( IPROF,0 ) )
 
 C.....................  Find day-of-month profile:
 
@@ -537,7 +542,7 @@ C.....................  Find day-of-month profile:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, DOMCOUNT,  DOMKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, DOMCOUNT,  DOMKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, DOMCOUNT,  DOMKEYS )
-                    IF ( IPROF .GT. 0 ) DOMPROF( S,: ) = DOMPDEX( IPROF )
+                    DOMPROF( S,: ) = DOMPDEX( MAX( IPROF,0 ) )
 
 C.....................  Find day-of-week profile:
 
@@ -550,7 +555,7 @@ C.....................  Find day-of-week profile:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, WEKCOUNT,  WEKKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, WEKCOUNT,  WEKKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEKCOUNT,  WEKKEYS )
-                    IF ( IPROF .GT. 0 ) WEKPROF( S,: ) = WEKPDEX( IPROF )
+                    WEKPROF( S,: ) = WEKPDEX( MAX( IPROF,0 ) )
 
 C.....................  Find hour-of-day profile for each day of the week:
 
@@ -563,7 +568,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, MONCOUNT,  MONKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, MONCOUNT,  MONKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MONCOUNT,  MONKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,1,: ) = MONPDEX( IPROF )
+                    HRLPROF( S,1,: ) = MONPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC10, TUECOUNT,  TUEKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, TUECOUNT,  TUEKEYS )
@@ -574,7 +579,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, TUECOUNT,  TUEKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, TUECOUNT,  TUEKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, TUECOUNT,  TUEKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,2,: ) = TUEPDEX( IPROF )
+                    HRLPROF( S,2,: ) = TUEPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC10, WEDCOUNT,  WEDKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEDCOUNT,  WEDKEYS )
@@ -585,7 +590,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, WEDCOUNT,  WEDKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, WEDCOUNT,  WEDKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEDCOUNT,  WEDKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,3,: ) = WEDPDEX( IPROF )
+                    HRLPROF( S,3,: ) = WEDPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC10, THUCOUNT,  THUKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, THUCOUNT,  THUKEYS )
@@ -596,7 +601,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, THUCOUNT,  THUKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, THUCOUNT,  THUKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, THUCOUNT,  THUKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,4,: ) = THUPDEX( IPROF )
+                    HRLPROF( S,4,: ) = THUPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC10, FRICOUNT,  FRIKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, FRICOUNT,  FRIKEYS )
@@ -607,7 +612,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, FRICOUNT,  FRIKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, FRICOUNT,  FRIKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, FRICOUNT,  FRIKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,5,: ) = FRIPDEX( IPROF )
+                    HRLPROF( S,5,: ) = FRIPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC10, SATCOUNT,  SATKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SATCOUNT,  SATKEYS )
@@ -618,7 +623,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, SATCOUNT,  SATKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, SATCOUNT,  SATKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SATCOUNT,  SATKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,6,: ) = SATPDEX( IPROF )
+                    HRLPROF( S,6,: ) = SATPDEX( MAX( IPROF,0 ) )
 
                     IPROF =                     FINDC( CSRC10, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SUNCOUNT,  SUNKEYS )
@@ -629,7 +634,7 @@ C.....................  Find hour-of-day profile for each day of the week:
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC19, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC20, SUNCOUNT,  SUNKEYS )
                     IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SUNCOUNT,  SUNKEYS )
-                    IF ( IPROF .GT. 0 ) HRLPROF( S,7,: ) = SUNPDEX( IPROF )
+                    HRLPROF( S,7,: ) = SUNPDEX( MAX( IPROF,0 ) )
 
 C.....................  Now, overrides for pollutant dependent part of hierarchy:
 
@@ -770,7 +775,8 @@ C.....................  pollutant-independent search targets:
                     CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC23 )    !  ultimate fallback
 
                     IF ( .NOT. FULLSCC ) THEN
-                        
+
+                        CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC085 )
                         CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC16 )
                         CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC18 )
                         CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC20 )
@@ -807,6 +813,7 @@ C.........................  Find month-of-year profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MTHCOUNT,  MTHKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MTHCOUNT,  MTHKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MTHCOUNT,  MTHKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,MTHCOUNT,  MTHKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MTHCOUNT,  MTHKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MTHCOUNT,  MTHKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MTHCOUNT,  MTHKEYS )
@@ -822,7 +829,7 @@ C.........................  Find month-of-year profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MTHCOUNT,  MTHKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, MTHCOUNT,  MTHKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, MTHCOUNT,  MTHKEYS )
-                        IF ( IPROF .GT. 0 ) MTHPROF( S,V ) = MTHPDEX( IPROF )
+                        MTHPROF( S,V ) = MTHPDEX( MAX( IPROF,0 ) )
 
 C.........................  Find day-of-month profile:
 
@@ -834,6 +841,7 @@ C.........................  Find day-of-month profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, DOMCOUNT,  DOMKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, DOMCOUNT,  DOMKEYS )
@@ -849,7 +857,7 @@ C.........................  Find day-of-month profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, DOMCOUNT,  DOMKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, DOMCOUNT,  DOMKEYS )
-                        IF ( IPROF .GT. 0 ) DOMPROF( S,V ) = DOMPDEX( IPROF )
+                        DOMPROF( S,V ) = DOMPDEX( MAX( IPROF,0 ) )
 
 C.........................  Find day-of-week profile:
 
@@ -861,6 +869,7 @@ C.........................  Find day-of-week profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEKCOUNT,  WEKKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEKCOUNT,  WEKKEYS )
@@ -876,7 +885,7 @@ C.........................  Find day-of-week profile:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, WEKCOUNT,  WEKKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, WEKCOUNT,  WEKKEYS )
-                        IF ( IPROF .GT. 0 ) WEKPROF( S,V ) = WEKPDEX( IPROF )
+                        WEKPROF( S,V ) = WEKPDEX( MAX( IPROF,0 ) )
 
 C.........................  Find hour-of-day profiles for each day of the week:
 
@@ -888,6 +897,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, MONCOUNT,  MONKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, MONCOUNT,  MONKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, MONCOUNT,  MONKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,MONCOUNT,  MONKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, MONCOUNT,  MONKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, MONCOUNT,  MONKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, MONCOUNT,  MONKEYS )
@@ -903,7 +913,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, MONCOUNT,  MONKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, MONCOUNT,  MONKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, MONCOUNT,  MONKEYS )
-                        IF ( IPROF .GT. 0 ) HRLPROF( S,1,V ) = MONPDEX( IPROF )
+                        HRLPROF( S,1,V ) = MONPDEX( MAX( IPROF,0 ) )
 
                         IPROF =                     FINDC( CSRC01, TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, TUECOUNT,  TUEKEYS )
@@ -913,6 +923,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, TUECOUNT,  TUEKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, TUECOUNT,  TUEKEYS )
@@ -928,7 +939,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, TUECOUNT,  TUEKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, TUECOUNT,  TUEKEYS )
-                        IF ( IPROF .GT. 0 ) HRLPROF( S,2,V ) = TUEPDEX( IPROF )
+                        HRLPROF( S,2,V ) = TUEPDEX( MAX( IPROF,0 ) )
 
                         IPROF =                     FINDC( CSRC01, WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, WEDCOUNT,  WEDKEYS )
@@ -938,6 +949,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, WEDCOUNT,  WEDKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, WEDCOUNT,  WEDKEYS )
@@ -953,7 +965,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, WEDCOUNT,  WEDKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, WEDCOUNT,  WEDKEYS )
-                        IF ( IPROF .GT. 0 ) HRLPROF( S,3,V ) = WEDPDEX( IPROF )
+                        HRLPROF( S,3,V ) = WEDPDEX( MAX( IPROF,0 ) )
 
                         IPROF =                     FINDC( CSRC01, THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, THUCOUNT,  THUKEYS )
@@ -963,6 +975,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, THUCOUNT,  THUKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, THUCOUNT,  THUKEYS )
@@ -978,7 +991,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, THUCOUNT,  THUKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, THUCOUNT,  THUKEYS )
-                        IF ( IPROF .GT. 0 ) HRLPROF( S,4,V ) = THUPDEX( IPROF )
+                        HRLPROF( S,4,V ) = THUPDEX( MAX( IPROF,0 ) )
 
                         IPROF =                     FINDC( CSRC01, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, FRICOUNT,  FRIKEYS )
@@ -988,6 +1001,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, FRICOUNT,  FRIKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, FRICOUNT,  FRIKEYS )
@@ -1003,7 +1017,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, FRICOUNT,  FRIKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, FRICOUNT,  FRIKEYS )
-                        IF ( IPROF .GT. 0 ) HRLPROF( S,5,V ) = FRIPDEX( IPROF )
+                        HRLPROF( S,5,V ) = FRIPDEX( MAX( IPROF,0 ) )
 
                         IPROF =                     FINDC( CSRC01, SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SATCOUNT,  SATKEYS )
@@ -1013,6 +1027,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SATCOUNT,  SATKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SATCOUNT,  SATKEYS )
@@ -1028,7 +1043,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, SATCOUNT,  SATKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, SATCOUNT,  SATKEYS )
-                        IF ( IPROF .GT. 0 ) HRLPROF( S,6,V ) = SATPDEX( IPROF )
+                        HRLPROF( S,6,V ) = SATPDEX( MAX( IPROF,0 ) )
 
                         IPROF =                     FINDC( CSRC01, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC02, SUNCOUNT,  SUNKEYS )
@@ -1038,6 +1053,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC06, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC07, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC08, SUNCOUNT,  SUNKEYS )
+                        IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC085,SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC09, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC10, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC11, SUNCOUNT,  SUNKEYS )
@@ -1053,7 +1069,7 @@ C.........................  Find hour-of-day profiles for each day of the week:
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC21, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC22, SUNCOUNT,  SUNKEYS )
                         IF ( IPROF .LE. 0 ) IPROF = FINDC( CSRC23, SUNCOUNT,  SUNKEYS )
-                        IF ( IPROF .GT. 0 ) HRLPROF( S,7,V ) = SUNPDEX( IPROF )
+                        HRLPROF( S,7,V ) = SUNPDEX( MAX( IPROF,0 ) )
 
                     END DO                  !  end loop on pollutants
 
@@ -1083,63 +1099,71 @@ C.........  Check that all sources, pollutants have assigned profiles:
 
         DO S = 1, NSRC
 
-            ICOUNT = 0
-            DO V = 1, NIPPA
-                IF ( MTHPROF( S,V ) .LE. 0 ) THEN
-                    ICOUNT = ICOUNT + 1
-                END IF
-            END DO          !!  end loop on pollutants, V
+            IF ( MOD( TPFLAG(S), MTPRFAC ) .EQ. 0 ) THEN
 
-            IF ( MTHCOUNT .EQ. 0 ) THEN
-                CONTINUE
-            ELSE IF ( ICOUNT .EQ. NIPPA ) THEN
-                ERRCNT = ERRCNT + 1
-                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
-                WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
-     &                'ERROR:  No month-of-year profile found for source', S,':  ', TRIM( CBUF )
-                    CALL M3MESG( MESG )
-            ELSE IF ( ICOUNT .GT. 0 ) THEN
-                ERRCNT = ERRCNT + 1
-                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                ICOUNT = 0
                 DO V = 1, NIPPA
                     IF ( MTHPROF( S,V ) .LE. 0 ) THEN
-                        WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+                        ICOUNT = ICOUNT + 1
+                    END IF
+                END DO          !  end loop on pollutants, V
+
+                IF ( ICOUNT .EQ. NIPPA ) THEN
+                    ERRCNT = ERRCNT + 1
+                    CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                    WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
      &                    'ERROR:  No month-of-year profile found for source', S,
-     &                    'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
+     &                    ':  ', TRIM( CBUF )
                         CALL M3MESG( MESG )
-                    END IF
-                END DO
-            END IF
-
-            ICOUNT = 0
-            DO V = 1, NIPPA
-                IF ( ( WEKPROF( S,V ) .LE. 0 ) .AND.
-     &               ( DOMPROF( S,V ) .LE. 0 ) ) THEN
-                    ICOUNT = ICOUNT + 1
+                ELSE IF ( ICOUNT .GT. 0 ) THEN
+                    ERRCNT = ERRCNT + 1
+                    CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                    DO V = 1, NIPPA
+                        IF ( MTHPROF( S,V ) .LE. 0 ) THEN
+                            WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                        'ERROR:  No month-of-year profile found for source', S,
+     &                        'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
+                            CALL M3MESG( MESG )
+                        END IF
+                    END DO
                 END IF
-            END DO          !!  end loop on pollutants, V
 
-            IF ( WEKCOUNT + DOMCOUNT .EQ. 0 ) THEN
-                CONTINUE
-            ELSE IF ( ICOUNT .EQ. NIPPA ) THEN
-                ERRCNT = ERRCNT + 1
-                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
-                WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
-     &                'ERROR:  No day-of-month nor day-of-week for source', S,':  ', TRIM( CBUF )
-                    CALL M3MESG( MESG )
-            ELSE IF ( ICOUNT .GT. 0 ) THEN
-                ERRCNT = ERRCNT + 1
-                CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+            END IF      !  if monthly profiles needed
+
+
+            IF ( MOD( TPFLAG(S), WDTPFAC ) .EQ. 0 .OR.
+     &           MOD( TPFLAG(S), WTPRFAC ) .EQ. 0 ) THEN
+
+                ICOUNT = 0
                 DO V = 1, NIPPA
-                    IF ( WEKPROF( S,V ) .LE. 0.AND.
-     &                   DOMPROF( S,V ) .LE. 0 ) THEN
-                        WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
-     &                    'ERROR:  No day-of-month nor day-of-week profile found for source', S,
-     &                    'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
-                        CALL M3MESG( MESG )
+                    IF ( ( WEKPROF( S,V ) .LE. 0 ) .AND.
+     &                   ( DOMPROF( S,V ) .LE. 0 ) ) THEN
+                        ICOUNT = ICOUNT + 1
                     END IF
-                END DO
-            END IF
+                END DO          !  end loop on pollutants, V
+
+                IF ( ICOUNT .EQ. NIPPA ) THEN
+                    ERRCNT = ERRCNT + 1
+                    CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                    WRITE( MESG, '( A, I8, 3( 1X, A ) )' )
+     &                  'ERROR:  No day-of-month nor day-of-week for source', S,
+     &                  ':  ', TRIM( CBUF )
+                        CALL M3MESG( MESG )
+                ELSE IF ( ICOUNT .GT. 0 ) THEN
+                    ERRCNT = ERRCNT + 1
+                    CALL FMTCSRC( CSOURC(S), NCHARS, CBUF, L2 )
+                    DO V = 1, NIPPA
+                        IF ( WEKPROF( S,V ) .LE. 0.AND.
+     &                       DOMPROF( S,V ) .LE. 0 ) THEN
+                            WRITE( MESG, '( A, I8, 4( 1X, A ) )' )
+     &                        'ERROR:  No day-of-month nor day-of-week profile found for source', S,
+     &                        'pollutant', TRIM( EANAM(V) ), 'source', TRIM( CBUF )
+                            CALL M3MESG( MESG )
+                        END IF
+                    END DO
+                END IF
+
+            END IF      !  if weekly profiles needed
 
             DO I = 1, 7
 
@@ -1151,7 +1175,7 @@ C.........  Check that all sources, pollutants have assigned profiles:
      &                       METPROF( S,V )   .LE. 0 ) THEN
                             ICOUNT = ICOUNT + 1
                         END IF
-                    END DO          !!  end loop on pollutants, V
+                    END DO          !  end loop on pollutants, V
 
                     IF ( HCOUNT .EQ. 0 ) THEN
                         CONTINUE
@@ -1177,9 +1201,9 @@ C.........  Check that all sources, pollutants have assigned profiles:
                         END DO
                     END IF
 
-                END IF      !!  if dayflag
+                END IF      !  if dayflag
 
-            END DO      !!  end loop on days
+            END DO      !  end loop on days
 
             IF ( ERRCNT .GT. MXERR ) THEN
                 CALL M3MESG( ' ' )
@@ -1187,7 +1211,7 @@ C.........  Check that all sources, pollutants have assigned profiles:
                 EXIT
             END IF
 
-        END DO      !!  end loop on sources, S
+        END DO      !  end loop on sources, S
 
         IF( ERRCNT .GT. 0 ) THEN
             MESG = 'Problem assigning temporal profiles to sources'

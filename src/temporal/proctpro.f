@@ -10,7 +10,7 @@ C    PRECONDITIONS REQUIRED:
 C      setenv  TREF            <path for cross-reference file>
 C      setenv  TPRO_MONTHLY    <path for month-of-year profiles file>
 C      setenv  TPRO_WEEKLY     <path for day-of-week   profiles file>
-C      setenv  TPRO_DAILY      <path for day-of-month  profiles file>
+C      setenv  TPRO_DAILY      <path for day-of-month  pfrofiles file>
 C      setenv  TPRO_HOUR       <path for M3IO met based        profiles file>
 C
 C    INTERNAL SUBROUTINES AND FUNCTIONS:
@@ -65,7 +65,7 @@ C.........  MODTMPRL contains the temporal profile tables
 
         USE MODINFO,  ONLY: CATEGORY, NIPPA, EANAM, NSRC
 
-        USE MODSOURC, ONLY: IFIP, TZONES
+        USE MODSOURC, ONLY: IFIP, CSCC, TZONES
 
         USE MODTMPRL, ONLY: NMON,   NWEK,   NHRL,   NDOM,
      &                      MONFAC, WEKFAC, HRLFAC, DOMFAC,
@@ -277,9 +277,9 @@ C...........   body   ......................................................
      &                WEKPROF( NSRC,  NIPPA ),
      &                DOMPROF( NSRC,  NIPPA ),
      &                HRLPROF( NSRC,7,NIPPA ),
-     &                 MONFAC( 12,1 ),
-     &                 WEKFAC(  7,1 ),
-     &                 HRLFAC( 24,1 ), STAT = IOS )
+     &                 MONFAC( 12,0:1 ),
+     &                 WEKFAC(  7,0:1 ),
+     &                 HRLFAC( 24,0:1 ), STAT = IOS )
             IF ( IOS .NE. 0 ) THEN
                 WRITE( MESG, '( A, I10 )' ) 'ERROR:  allocation failure.  STAT=', IOS
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
@@ -346,7 +346,8 @@ C.........  filtering the XREF file:
             IF ( FIPKEYU( K ) .NE. L ) THEN
                 M = M + 1
                 L = FIPKEYU( K )
-                WRITE( FIPKEYS( M ), '(I6.6)' ) FIPKEYU( K )
+                WRITE( FIPKEYS( M ), '(I6)' ) FIPKEYU( K )
+                CALL PADZERO( FIPKEYS( M ) )
             END IF
         END DO
         NFIPKEY = M
@@ -438,7 +439,7 @@ C.........  Read and process the TREF file
             ELSE IF ( BLKORCMT( LINE ) ) THEN
                 CYCLE
             END IF
-            
+
             CALL PARSLINE( LINE, MXTCOL, FIELD )    !  does adjustl() on all fields
 
             IF ( FIELD(9) .EQ. BLANK ) THEN
@@ -715,7 +716,7 @@ C.................  link-specific assignments from the documentation for Spcmat.
         IF ( W .GT. MXWARN ) THEN
             CALL M3MESG( 'Maximum number of errors exceeded' )
         END IF
-        
+
 
         DAYCOUNT = MONCOUNT + TUECOUNT + WEDCOUNT + THUCOUNT +
      &             FRICOUNT + SATCOUNT + SUNCOUNT
@@ -824,6 +825,10 @@ C.........   Read in the relevant profile-tables:
      &                       MTHIDP, MONFAC,
      &                       MTHCOUNT, MTHIDS  )
 
+        ELSE
+
+            NMON  = NULLPROF( 12, MTHIDP, MONFAC )
+
         END IF      !  if mthcount > 0
 
 
@@ -833,6 +838,10 @@ C.........   Read in the relevant profile-tables:
             NWEK  = CSVPROF( WEKNAME, 7,
      &                       WEKIDP, WEKFAC,
      &                       WEKCOUNT, WEKIDS  )
+
+        ELSE
+
+            NWEK  = NULLPROF( 7, WEKIDP, WEKFAC )
 
         END IF      !  if wekcount > 0
 
@@ -874,6 +883,10 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
      &                       HRLIDP, HRLFAC,
      &                       DAYCOUNT, MONIDS  )
 
+        ELSE
+
+            NHRL  = NULLPROF( 24, HRLIDP, HRLFAC )
+
         END IF      !  if DAYCOUNT > 0
 
 
@@ -883,6 +896,10 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
             NDOM  = CSVDOMP( DOMNAME, SDATE, EDATE,
      &                       DOMIDP, DOMFAC,
      &                       DOMCOUNT, DOMIDS  )
+
+        ELSE
+
+            NDOM = NULLDOMP( DOMIDP, DOMFAC )
 
         END IF      !  if domcount > 0
 
@@ -934,10 +951,14 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
                     IF ( .NOT.METREFFLAG( V ) )  CYCLE
 
                     WRITE( CPOS, '(I5)' ) V
+                    CALL PADZERO( CPOS )
 
                     DO S = 1, NSRC
 
                         WRITE( CFIP, '(I6)' ) IFIP( S )
+                        TSCC = CSCC( S )
+                        CALL PADZERO( CFIP )
+                        CALL PADZERO( TSCC )
                         CALL BLDCSRC( CFIP, TSCC, BLANK,
      &                                BLANK, BLANK, BLANK,
      &                                BLANK, CPOS, CSRCALL )
@@ -969,25 +990,41 @@ C.........................  use subscript into (unsorted) COUNTIES:
 
 
 C.........  Map cross references into profile-subscripts:
+C.........  Use zero-subscript as a sentinel-value for "none exist"
 
-        ALLOCATE( MTHPDEX( MTHCOUNT ),
-     &            WEKPDEX( WEKCOUNT ),
-     &            DOMPDEX( DOMCOUNT ),
-     &            MONPDEX( MONCOUNT ),
-     &            TUEPDEX( TUECOUNT ),
-     &            WEDPDEX( WEDCOUNT ),
-     &            THUPDEX( THUCOUNT ),
-     &            FRIPDEX( FRICOUNT ),
-     &            SATPDEX( SATCOUNT ),
-     &            SUNPDEX( SUNCOUNT ), STAT = IOS )
+        ALLOCATE( MTHPDEX( 0:MTHCOUNT ),
+     &            WEKPDEX( 0:WEKCOUNT ),
+     &            DOMPDEX( 0:DOMCOUNT ),
+     &            MONPDEX( 0:MONCOUNT ),
+     &            TUEPDEX( 0:TUECOUNT ),
+     &            WEDPDEX( 0:WEDCOUNT ),
+     &            THUPDEX( 0:THUCOUNT ),
+     &            FRIPDEX( 0:FRICOUNT ),
+     &            SATPDEX( 0:SATCOUNT ),
+     &            SUNPDEX( 0:SUNCOUNT ), STAT = IOS )
         IF ( IOS .NE. 0 ) THEN
             WRITE( MESG, '( A, I10 )' )
      &           'ERROR:  prof-index allocation failure.  STAT=', IOS
             CALL M3EXIT( PNAME, 0,0, MESG, 2 )
         END IF
 
+        MTHPDEX( 0 ) = 0
+        WEKPDEX( 0 ) = 0
+        DOMPDEX( 0 ) = 0
+        MONPDEX( 0 ) = 0
+        TUEPDEX( 0 ) = 0
+        WEDPDEX( 0 ) = 0
+        THUPDEX( 0 ) = 0
+        FRIPDEX( 0 ) = 0
+        SATPDEX( 0 ) = 0
+        SUNPDEX( 0 ) = 0
+
+
+C.........  NOTE:  must search N+1 elements of zero-based arrays *IDP(0:N)
+C.........         and then adjust by (-1) to skip element 0
+
         DO N = 1, MTHCOUNT
-            MTHPDEX( N ) = FINDC( MTHIDS( N ), NMON, MTHIDP )
+            MTHPDEX( N ) = FINDC( MTHIDS( N ), NMON+1, MTHIDP ) - 1
             IF ( MTHPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for month-of-year XREF profile-ID '// MTHIDS( N )
                 CALL M3MESG( MESG )
@@ -996,7 +1033,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, WEKCOUNT
-            WEKPDEX( N ) = FINDC( WEKIDS( N ), NWEK, WEKIDP )
+            WEKPDEX( N ) = FINDC( WEKIDS( N ), NWEK+1, WEKIDP ) - 1
             IF ( WEKPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for day-of-week XREF profile-ID '// WEKIDS( N )
                 CALL M3MESG( MESG )
@@ -1005,7 +1042,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, DOMCOUNT
-            DOMPDEX( N ) = FINDC( DOMIDS( N ), NDOM, DOMIDP )
+            DOMPDEX( N ) = FINDC( DOMIDS( N ), NDOM+1, DOMIDP ) - 1
             IF ( DOMPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for day-of-month XREF profile-ID '// DOMIDS( N )
                 CALL M3MESG( MESG )
@@ -1014,7 +1051,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, MONCOUNT
-            MONPDEX( N ) = FINDC( MONIDS( N ), NHRL, HRLIDP )
+            MONPDEX( N ) = FINDC( MONIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( MONPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for Monday hour-of-day XREF profile-ID '// MONIDS( N )
                 CALL M3MESG( MESG )
@@ -1023,7 +1060,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, TUECOUNT
-            TUEPDEX( N ) = FINDC( TUEIDS( N ), NHRL, HRLIDP )
+            TUEPDEX( N ) = FINDC( TUEIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( TUEPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for Tuesday hour-of-day XREF profile-ID '// TUEIDS( N )
                 CALL M3MESG( MESG )
@@ -1032,7 +1069,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, WEDCOUNT
-            WEDPDEX( N ) = FINDC( WEDIDS( N ), NHRL, HRLIDP )
+            WEDPDEX( N ) = FINDC( WEDIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( WEDPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for Wednesday hour-of-day XREF profile-ID '// MTHIDS( N )
                 CALL M3MESG( MESG )
@@ -1041,7 +1078,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, THUCOUNT
-            THUPDEX( N ) = FINDC( THUIDS( N ), NHRL, HRLIDP )
+            THUPDEX( N ) = FINDC( THUIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( THUPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for Thursday hour-of-day XREF profile-ID '// THUIDS( N )
                 CALL M3MESG( MESG )
@@ -1050,7 +1087,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, FRICOUNT
-            FRIPDEX( N ) = FINDC( FRIIDS( N ), NHRL, HRLIDP )
+            FRIPDEX( N ) = FINDC( FRIIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( FRIPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for Friday hour-of-day XREF profile-ID '// FRIIDS( N )
                 CALL M3MESG( MESG )
@@ -1059,7 +1096,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, SATCOUNT
-            SATPDEX( N ) = FINDC( SATIDS( N ), NHRL, HRLIDP )
+            SATPDEX( N ) = FINDC( SATIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( SATPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for Saturday hour-of-day XREF profile-ID '// SATIDS( N )
                 CALL M3MESG( MESG )
@@ -1068,7 +1105,7 @@ C.........  Map cross references into profile-subscripts:
         END DO
 
         DO N = 1, SUNCOUNT
-            SUNPDEX( N ) = FINDC( SUNIDS( N ), NHRL, HRLIDP )
+            SUNPDEX( N ) = FINDC( SUNIDS( N ), NHRL+1, HRLIDP ) - 1
             IF ( SUNPDEX( N ) .LE. 0 ) THEN
                 MESG = 'No profile for Sunday hour-of-day XREF profile-ID '// SATIDS( N )
                 CALL M3MESG( MESG )
@@ -1084,15 +1121,16 @@ C.........  Normalize profiles:
 
         CALL NORMTPRO()
 
+
 C******************  INTERNAL SUBPROGRAMS  *****************************
+
 
       CONTAINS
 
 
         SUBROUTINE TIMEFLAGS()
 
-C Set active-month/active day-of-week flags for the time period
-C SDATE:EDATE.
+C Set active-month/active day-of-week flags for the time period SDATE:EDATE.
 C Compute SDATE, EDATE for this set of episodes.
 
             INTEGER, EXTERNAL :: JSTEP3, WKDAY
@@ -1111,7 +1149,7 @@ C.................  begin body  .....................
 C.............  Find time zone min, max
 
             MAXZONE = MAXVAL( TZONES )
-            
+
 C.............  Initialize flag-arrays:
 
             MONFLAG = .FALSE.
@@ -1151,7 +1189,47 @@ C                   of run-start, run-end:
 
         END SUBROUTINE TIMEFLAGS
 
-C***********************************************************************************
+
+C-----------------------------------------------------------------------------------
+C   Generate "null" profile TFAC( NFIELDS, 0:0 )
+C-----------------------------------------------------------------------------------
+
+        INTEGER FUNCTION  NULLPROF( NFIELDS, IDSTR, TFAC  )
+
+C.............  Arguments:
+
+            INTEGER      ,              INTENT(IN   ) :: NFIELDS
+            CHARACTER(16), ALLOCATABLE, INTENT(  OUT) :: IDSTR( : )         !  profile IDs
+            REAL         , ALLOCATABLE, INTENT(  OUT) :: TFAC ( :,: )       !  factors in profile
+
+            CHARACTER(24), PARAMETER :: PNAME = 'PROCTPRO/NULLPROF'
+
+C.............  Local variables:
+
+            INTEGER     ISTAT
+
+            !.............  body of function NULLPROF()  .....................
+
+            ALLOCATE(  IDSTR( 0:0 ),
+     &          TFAC( NFIELDS,0:0 ), STAT = ISTAT )
+
+            IF ( ISTAT .NE. 0 ) THEN
+                WRITE( MESG, '( A, I10 )' )
+     &            'ERROR:  Allocation failure:  STAT=', ISTAT
+                CALL M3EXIT( PNAME, 0,0, MESG, 2 )
+            END IF
+
+            TFAC( NFIELDS,0 ) = 1.0
+            IDSTR( 0 )        =  '0'
+            NULLPROF          =   0
+
+            RETURN
+
+        END  FUNCTION  NULLPROF
+
+
+C-----------------------------------------------------------------------------------
+
 
         INTEGER FUNCTION  CSVPROF( FNAME, NFIELDS, IDSTR, TFAC,
      &                             IDCNT, IDLIST )
@@ -1160,10 +1238,10 @@ C  Open and count the CSV-profile file FNAME.
 C  Allocate  both arguments and local arrays.
 C  Read FNAME, and sort data onto output arguments,
 C  filtering out data only for ID's in IDLIST
-
+C
 C  Lines must be ASCII CSV of the form
 C      <character-string ID>, TFAC(1), ..., TFAC(NFIELDS) [comment...]
-C----------------------------------------------------------------------------------------------
+C------------------------------------------------------------------------------
 
 C.............  Arguments:
 
@@ -1186,7 +1264,7 @@ C.............  Local variables:
 
             LOGICAL     EFLAG
 
-            CHARACTER(  16) :: THISID, LASTID, AKEY, MISS
+            CHARACTER(  16) :: THISID, LASTID, AKEY
             CHARACTER(  16) :: IDSORT( IDCNT )
             CHARACTER(  32) :: FIELDS( NFIELDS+2 )
             CHARACTER( 256) :: MESG
@@ -1198,8 +1276,6 @@ C.............  Local variables:
 
 C.............  body of function CSVPROF()  .....................
 C.............  Create sorted-unique list of input IDs:
-
-            MISS = CMISS
 
             DO N = 1, IDCNT
                 IDINDX( N ) = N
@@ -1223,16 +1299,19 @@ C.............  Open and count FNAME
 
             FDEV = CSVOPEN( FNAME, NLINES, NDATA )
 
-            ALLOCATE(  CKEY( NDATA ),
-     &                IDSTR( NDATA ),
-     &         FACS( NFIELDS,NDATA ),
-     &         TFAC( NFIELDS,NDATA ), STAT = ISTAT )
+            ALLOCATE(    CKEY( NDATA ),
+     &         FACS( NFIELDS,  NDATA ),
+     &                IDSTR( 0:NDATA ),
+     &         TFAC( NFIELDS,0:NDATA ), STAT = ISTAT )
 
             IF ( ISTAT .NE. 0 ) THEN
                 WRITE( MESG, '( A, I10 )' )
      &            'ERROR:  Allocation failure:  STAT=', ISTAT
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
+
+            IDSTR( 0 )        =  '0'
+            TFAC( NFIELDS,0 ) = 1.0
 
 C.............  Read file:  CKEY and FACS
 
@@ -1299,7 +1378,44 @@ C.............  Read file:  CKEY and FACS
 
         END  FUNCTION  CSVPROF
 
-C----------------------------------------------------------------------------------------------
+
+C------------------------------------------------------------------------------
+C   Generate "null" profile DMFAC( 31,12,0:0 )
+C-----------------------------------------------------------------------------------
+
+        INTEGER FUNCTION  NULLDOMP( IDSTR, DMFAC )
+
+C.............  Arguments:
+
+            CHARACTER(16), ALLOCATABLE, INTENT(  OUT) :: IDSTR( : )         !  profile IDs
+            REAL,          ALLOCATABLE, INTENT(  OUT) :: DMFAC( :,:,: )     !  (31,12,0:NDOM==0)
+
+C.............  Local variables:
+
+            INTEGER     ISTAT
+
+            !.............  body of function NULLDOMP()  .....................
+
+            ALLOCATE(       IDSTR( 0:0 ),
+     &                DMFAC( 31,12,0:0 ), STAT = ISTAT )
+
+            IF ( ISTAT .NE. 0 ) THEN
+                WRITE( MESG, '( A, I10 )' )
+     &            'ERROR:  sorted-profile allocation failure:  STAT=', ISTAT
+                CALL M3EXIT( PNAME, 0,0, MESG, 2 )
+            END IF
+
+            IDSTR( 0 )     =  '0'
+            DMFAC( :,:,0 ) = 1.0
+            NULLDOMP       =   0
+
+            RETURN
+
+        END  FUNCTION  NULLDOMP
+
+
+C------------------------------------------------------------------------------
+
 
         INTEGER FUNCTION  CSVDOMP( FNAME, SDATE, EDATE, IDSTR, DMFAC,
      &                             IDCNT, IDLIST )
@@ -1314,7 +1430,7 @@ C      <character-string ID>, MONTH, TFAC(1), ..., TFAC(MON_DAYS(MONTH)) [commen
 C
 C  Output ID's in IDSTR are TRIM(ID)//MM where MM is the 2-digit month
 C  for the indicated profile-line
-C----------------------------------------------------------------------------------------------
+C------------------------------------------------------------------------------
 
 C.............  Arguments:
 
@@ -1351,6 +1467,8 @@ C.............  Local variables:
 
 C..................  body of function CSVDOMP()  .....................
 C.............  Create sorted-unique list of input IDs:
+
+            MISS = CMISS        !  truncated to same length as AKEY
 
             DO N = 1, IDCNT
                 IDINDX( N ) = N
@@ -1407,8 +1525,8 @@ C.............  Open and count FNAME
 
             FDEV = CSVOPEN( FNAME, NLINES, NDATA )
 
-            ALLOCATE(     CIDU( NSORT ),
-     &              FACS( 31,12,NSORT ), STAT = ISTAT )
+            ALLOCATE(       CIDU( NSORT ),
+     &              FACS( 31,12,0:NSORT ), STAT = ISTAT )
 
             IF ( ISTAT .NE. 0 ) THEN
                 WRITE( MESG, '( A, I10 )' )
@@ -1417,6 +1535,7 @@ C.............  Open and count FNAME
             END IF
 
             FACS  = -9999.9      !  array assignments
+            FACS( :,:,0 ) = 1.0
 
 C.............  Read file:  CKEY = ID//MONTH, and FACS
 
@@ -1509,14 +1628,17 @@ C.............  Sort/process IDs: Count actually-occurring IDs:
 
             CALL SORTIC( NSORT, IDINDX, CIDU )
 
-            ALLOCATE( IDSTR( M ),
-     &                DMFAC( 31,12,M ), STAT = ISTAT )
+            ALLOCATE( IDSTR( 0:M ),
+     &                DMFAC( 31,12,0:M ), STAT = ISTAT )
 
             IF ( ISTAT .NE. 0 ) THEN
                 WRITE( MESG, '( A, I10 )' )
      &            'ERROR:  sorted-profile allocation failure:  STAT=', ISTAT
                 CALL M3EXIT( PNAME, 0,0, MESG, 2 )
             END IF
+
+            IDSTR( 0 )     = '0'
+            DMFAC( :,:,0 ) = 1.0
 
             IDSTR = BLANK
             N      = 0
@@ -1539,13 +1661,15 @@ C.............  Sort/process IDs: Count actually-occurring IDs:
 
         END  FUNCTION  CSVDOMP
 
-C**********************************************************************************
+
+C------------------------------------------------------------------------------
+
 
         INTEGER FUNCTION  CSVOPEN( FNAME, NLINES, NDATA )
 
 C  Open, and count lines and data-lines in the CSV-profile file FNAME.
 C  Rewind after completion.
-C----------------------------------------------------------------------------------------------
+C------------------------------------------------------------------------------
 
 C.............  Arguments:
 
@@ -1631,20 +1755,21 @@ C.................  Count entries in FDEV
 
         END  FUNCTION  CSVOPEN
 
-C**********************************************************************************************
+
+C------------------------------------------------------------------------------
+C  Sort profile data into output data-structures
+C------------------------------------------------------------------------------
+
 
         SUBROUTINE  SORTPRO( NROWS, NFIELDS, CKEY, FACS, CSRT, FSRT )
-
-C  Sort profile data into output data-structures
-C----------------------------------------------------------------------------------------------
 
 C.............  Arguments:
 
             INTEGER     , INTENT(IN   ) :: NROWS, NFIELDS
             CHARACTER(*), INTENT(IN   ) ::  CKEY( NROWS )           !  input IDs
-            REAL        , INTENT(IN   ) ::  FACS( NFIELDS, NROWS )  !  input coeffs
-            CHARACTER(*), INTENT(  OUT) ::  CSRT( NROWS )           !  sorted IDs
-            REAL        , INTENT(  OUT) ::  FSRT( NFIELDS, NROWS )  !  output coeffs
+            REAL        , INTENT(IN   ) ::  FACS( NFIELDS,  NROWS ) !  input coeffs
+            CHARACTER(*), INTENT(  OUT) ::  CSRT( 0:NROWS )         !  sorted IDs
+            REAL        , INTENT(INOUT) ::  FSRT( NFIELDS,0:NROWS ) !  output coeffs
 
 C.............  Local variables:
 
@@ -1667,12 +1792,12 @@ C..................  body of function SORTPRO()  .....................
 
         END  SUBROUTINE  SORTPRO
 
-C**********************************************************************************************
+
+C------------------------------------------------------------------------------
+C  Sort XREF data into output data-structures
+C------------------------------------------------------------------------------
 
         LOGICAL FUNCTION  SORTREF( TYPE, COUNT, NDIM, IDLIST, KEYLIST, IDSORT, KEYSORT )
-
-C  Sort XREF data into output data-structures
-C----------------------------------------------------------------------------------------------
 
             CHARACTER(*),                    INTENT(IN   ) :: TYPE
             INTEGER,                         INTENT(IN   ) :: COUNT
@@ -1737,7 +1862,9 @@ C..............  Always need to allocate tables, even if size is zero:
 
         END  FUNCTION  SORTREF
 
-C*****************************************************************
+
+C------------------------------------------------------------------------------
+
 
         LOGICAL FUNCTION  ISLEAP( JDATE )
 
