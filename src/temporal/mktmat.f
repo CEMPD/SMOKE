@@ -156,7 +156,7 @@ C.....................  update TMAT with met-based profiles (METFACS)
                             DOM  = DAYOM( H, ZONES( S ) )
                             DAY  = DAYOW( H, ZONES( S ) )
                             IHR = HRLPROF( S,DAY,V )
-                            FAC = MONFAC( MON,IMTH ) *
+                            FAC = MONFAC_ORG( MON,IMTH ) *
      &                            DOMFAC( DOM,MON,IDOM )
                             K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
                             TMAT( S,VV,H ) = FAC * HRLFAC( K,IHR )
