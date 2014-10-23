@@ -87,7 +87,7 @@ C.........  Get information from the environment about renormalization
 C.........  Allocate memory for weekday-normalized weekly emissions
 
         ALLOCATE( XWKFAC(  7,0:NWEK ), 
-     &        MONFAC_ORG( 12,NMON ), STAT=IOS )
+     &        MONFAC_ORG( 12,0:NMON ), STAT=IOS )
         CALL CHECKMEM( IOS, 'XWKFAC,MONFAC_ORIG', PROGNAME )
 
         XWKFAC = 1.0  ! Array
