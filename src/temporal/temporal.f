@@ -757,14 +757,14 @@ C               are actually diurnal profiles instead of emissions
             LDSPOA = .FALSE.   ! array
             DO I = 1, NDYPOA
                 J = INDEX1( DYPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
-                LDSPOA( J ) = .TRUE.
+                IF ( J /= 0 ) LDSPOA( J ) = .TRUE.
             END DO
 
             LHSPOA = .FALSE.   ! array
             LHPROF = .FALSE.   ! array
             DO I = 1, NHRPOA
                 J = INDEX1( HRPNAM( I ), NGSZ,  EANAM2D( 1,N ) )
-                LHSPOA( J ) = .TRUE.
+                IF ( J /= 0 ) LHSPOA( J ) = .TRUE.
 
                 CALL UPCASE( HRPDSC( I ) )
                 K = INDEX( HRPDSC( I ), 'PROFILE' )

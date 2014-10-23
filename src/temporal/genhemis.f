@@ -57,7 +57,7 @@ C.........  MODINFO contains the information about the source category
 
         USE MODXREF, ONLY: MDEX, WDEX, DDEX
 
-        USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC,
+        USE MODTMPRL, ONLY: NHOLIDAY, HOLJDATE, HOLALTDY, HRLFAC, HRLPROF,
      &                      METPROFLAG, METPROTYPE, METPROF, METFACS
 
         USE MODDAYHR, ONLY: INDXD, INDXH, EMACD, EMACH, NDYSRC, NHRSRC,
@@ -119,6 +119,7 @@ C...........   TMAT update variables
 C...........   Other local variables
 
         INTEGER          C, H, I, II, J, K, K1, K2, KK, L, M, S, V !  indices and counters
+        INTEGER          IHR
 
         INTEGER, SAVE :: TZMIN   ! minimum time zone in inventory
         INTEGER, SAVE :: TZMAX   ! maximum time zone in inventory
@@ -459,6 +460,7 @@ C.....................  Override annual adjusted emissions with day-specific
 C                       emissions and hourly profile adjustments
 
                     K   = 1 + MOD( HOUR + HCORR - TZONES( S ), 24 )
+                    IHR = HRLPROF( S, DAYOW( HOUR, TZONES( S ) ), PIDX )
 
 C.....................  Re-normalizing hourly temporal factors for wildfires only
                     IF( FIREFLAG ) THEN
@@ -473,7 +475,7 @@ C.........................  Convert local hours to output time zone
                         SUMHRLFAC = 0.0
                         TMPHRLFAC = 0.0
 
-                        TMPHRLFAC( 1:24 ) = HRLFAC( 1:24,S )
+                        TMPHRLFAC( 1:24 ) = HRLFAC( 1:24,IHR )
 
 C.........................  Sum of 24 hourly temporal factors and store org hourly factors
 C                           to tmp hourly factors array
@@ -519,7 +521,7 @@ C.........................  Re-normalizing hourly temporal factors
 
                    ELSE       ! end of computing wildfires hourly emission factors
 
-                        EMIST( S,V ) = UFAC * EMACD( I ) * HRLFAC( K,S )
+                        EMIST( S,V ) = UFAC * EMACD( I ) * HRLFAC( K,IHR )
 
                    END IF
 
