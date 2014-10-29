@@ -79,6 +79,13 @@
 
         REAL   , ALLOCATABLE, PUBLIC :: OUTGFAC( : )  ! gridding factor or 1.
 
+!.........  Sparse bin-aggregation matrix:
+!.........  uses zero-based, cumulative-count NBINS
+
+        INTEGER, ALLOCATABLE, PUBLIC :: NBINS( : )  ! ( 0:NOUTBINS ): cumulative record-counts for BINDATA calculation
+        INTEGER, ALLOCATABLE, PUBLIC :: ISRCB( : )  ! ( NOUTREC )   : sources for      "
+        REAL   , ALLOCATABLE, PUBLIC :: GFACB( : )  ! ( NOUTREC )   : grid-factors for "
+
 !.........  Scalar values for data bins
         INTEGER, PUBLIC :: NOUTBINS = 0  ! no. of output bins
 
