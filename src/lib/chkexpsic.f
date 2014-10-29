@@ -37,7 +37,7 @@ C...........   INCLUDES:
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER CHKINT
+        LOGICAL, EXTERNAL :: CHKINT
 
 C........  Function arguments
         CHARACTER(SICLEN3), INTENT(IN) :: CSIC   ! SIC code

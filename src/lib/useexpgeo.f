@@ -1,5 +1,5 @@
 
-        LOGICAL FUNCTION USEEXPGEO
+        LOGICAL FUNCTION USEEXPGEO()
 
 C***********************************************************************
 C  function USEEXPGEO body starts at line 50

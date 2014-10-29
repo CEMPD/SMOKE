@@ -275,7 +275,7 @@ C.............  Check for duplicates and store sorted codes
             END IF
 
 C.............  Deallocate local arrays
-            DEALLOCATE( INDEXA, CODEA, NAMEA, TZONEA, TZNAMA )
+            DEALLOCATE( INDEXA, CODEA, NAMEA, TZONEA, TZNAMA, USEDYA )
         
             CLOSE( LDEV )
             

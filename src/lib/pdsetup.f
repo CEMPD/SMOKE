@@ -56,19 +56,19 @@ C...........   EXTERNAL FUNCTIONS:
         EXTERNAL        CRLF, GETIFDSC, HHMMSS, INDEX1, MMDDYY, SECSDIFF
 
 C...........   SUBROUTINE ARGUMENTS
-        CHARACTER(*), INTENT (IN) :: INFILE ! name of day- or hour-spec file
-        INTEGER     , INTENT (IN) :: ESDATE ! episode starting date
-        INTEGER     , INTENT (IN) :: ESTIME ! episode starting time
-        INTEGER     , INTENT (IN) :: EEDATE ! episode ending date
-        INTEGER     , INTENT (IN) :: EETIME ! episode ending time
-        INTEGER     , INTENT (IN) :: TZONE  ! output time zone
-        INTEGER     , INTENT (IN) :: NIPPA  ! number of inventory pols/acts
-        CHARACTER(*), INTENT (IN) :: EANAM( NIPPA ) ! names of pols/acts
-        INTEGER     , INTENT(OUT) :: NPOA   ! no. pols/acts
-        INTEGER     , INTENT(OUT) :: NENTRY ! no. entries in file
-        LOGICAL     , INTENT(OUT) :: EFLAG  ! True if error occurred in routine
-        CHARACTER(*), INTENT(OUT) :: PNAME( * ) ! names of time-spec pol/acts
-        CHARACTER(*), INTENT(OUT) :: PDESC( * ) ! descriptions of pol/acts
+        CHARACTER(*), INTENT(IN   ) :: INFILE ! name of day- or hour-spec file
+        INTEGER     , INTENT(IN   ) :: ESDATE ! episode starting date
+        INTEGER     , INTENT(IN   ) :: ESTIME ! episode starting time
+        INTEGER     , INTENT(IN   ) :: EEDATE ! episode ending date
+        INTEGER     , INTENT(IN   ) :: EETIME ! episode ending time
+        INTEGER     , INTENT(IN   ) :: TZONE  ! output time zone
+        INTEGER     , INTENT(IN   ) :: NIPPA  ! number of inventory pols/acts
+        CHARACTER(*), INTENT(IN   ) :: EANAM( NIPPA ) ! names of pols/acts
+        INTEGER     , INTENT(  OUT) :: NPOA   ! no. pols/acts
+        INTEGER     , INTENT(  OUT) :: NENTRY ! no. entries in file
+        LOGICAL     , INTENT(INOUT) :: EFLAG  ! True if error occurred in routine
+        CHARACTER(*), INTENT(  OUT) :: PNAME( * ) ! names of time-spec pol/acts
+        CHARACTER(*), INTENT(  OUT) :: PDESC( * ) ! descriptions of pol/acts
 
 C...........   Other local variables
         INTEGER         I, J, LD, L2, N      !  counters and indices
