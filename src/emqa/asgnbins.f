@@ -2,7 +2,7 @@
         SUBROUTINE ASGNBINS( RCNT )
 
 C***********************************************************************
-C  subroutine body starts at line 
+C  subroutine body starts at line
 C
 C  DESCRIPTION:
 C       The ASGNBINS routine is responsible for assigning a bin number to each
@@ -17,137 +17,149 @@ C
 C  REVISION  HISTORY:
 C     Created 7/2000 by M Houyoux
 C
+C     Version 9/2014 by C Coats:  promote MXOUTREC to INTEGER*8 for CARB;
+C     OpenMP parallel; incremental construction of SORTBUF; use SORTINC8();
+C     major cleanup of post-sort data reorganization; construction of
+C     binning matrices MODREPBN:<NBINS,ISRCB,GFACB>
 C***********************************************************************
-C  
+C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
 C                System
 C File: @(#)$Id$
-C  
+C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
-C  
+C
 C Pathname: $Source$
-C Last updated: $Date$ 
-C  
+C Last updated: $Date$
+C
 C***********************************************************************
+C.......   MODULES for public variables:
+C...........   MODSOURC contains the inventory arrays
+C............  MODLISTS contains the lists of unique source characteristics
+C............  MODREPRT contains Smkreport-specific settings
+C............  MODREPBN contains report arrays for each output bin
+C............  MODGRID contains the global variables for the 3-d grid
+C............  MODELEV contains arrays for plume-in-grid and major sources
+C............  MODSTCY contains the arrays for state and county summaries
+C............  MODINFO contains the information about the source category
 
-C...........   MODULES for public variables
-C...........   This module is the inventory arrays
         USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, IMON,
      &                      IWEK, IDIU, SPPROF, CISIC, CMACT, CNAICS,
      &                      CSRCTYP, CORIS, CINTGR
 
-C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
 
-C.........  This module contains Smkreport-specific settings
         USE MODREPRT, ONLY: RPT_, LREGION, AFLAG, ALLRPT, NSPCPOL,
      &                      SPCPOL, STKX, STKY, LOC_BEGP, LOC_ENDP
 
-C.........  This module contains report arrays for each output bin
-        USE MODREPBN, ONLY: NOUTREC, NOUTBINS, BINBAD, BINCOIDX,
+        USE MODREPBN, ONLY: NOUTREC, NOUTBINS, NBINS, ISRCB, GFACB,
+     &                      OUTGFAC, BINBAD, BINCOIDX,
      &                      BINSTIDX, BINCYIDX, BINREGN, BINSMKID,
      &                      BINSCC, BINSRGID1, BINSRGID2, BINSNMIDX,
      &                      BINRCL, BINMONID, BINWEKID, BINDIUID,
      &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
-     &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL,OUTSRC,
+     &                      BINPOPDIV, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
      &                      BINNAICS, BINNAIIDX, BINSRCTYP, BINORIS,
      &                      BINORSIDX, BINSTKGRP, BININTGR, BINGEO1IDX
 
-C.........  This module contains the global variables for the 3-d grid
         USE MODGRID, ONLY: NCOLS
 
-C.........  This module contains arrays for plume-in-grid and major sources
         USE MODELEV, ONLY: LPING, LMAJOR, GROUPID
 
-C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: NCOUNTRY, CTRYCOD, NSTATE, STATCOD, NCOUNTY,
      &                     CNTYCOD, CTRYPOPL, STATPOPL, CNTYPOPL,
      &                     NORIS, ORISLST, NGEOLEV1, GEOLEV1COD
 
-C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY
-        
+
         IMPLICIT NONE
 
-C...........   INCLUDES
+C...........   SUBROUTINE ARGUMENTS
+
+        INTEGER, INTENT (IN) :: RCNT    ! current report number
+
+C...........   INCLUDE Files:
+
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........  EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER    INDEX1
-        INTEGER    FIND1
-        INTEGER    FINDC
-        LOGICAL    USEEXPGEO
 
-        EXTERNAL   INDEX1, FIND1, FINDC, USEEXPGEO
+        INTEGER, EXTERNAL :: INDEX1
+        INTEGER, EXTERNAL :: FIND1
+        INTEGER, EXTERNAL :: FINDC
+        LOGICAL, EXTERNAL :: USEEXPGEO
 
-C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: RCNT    ! current report number
+C...........   Local parameters:
 
-C...........   Local parameters
         INTEGER, PARAMETER :: BUFLEN = 109 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
      &                                     + ORSLEN3
-        INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) =
-     &                        ( / 1, 3, 6, 8, 9 / )
-        INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) =
-     &                        ( / 2, 4, 7, 10, 9 / )
-     
-C...........   Sorting arrays
-        INTEGER          , ALLOCATABLE :: SORTIDX( : )
+        INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) = (/ 1, 3, 6,  8, 9 /)
+        INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) = (/ 2, 4, 7, 10, 9 /)
 
+        CHARACTER(1),  PARAMETER :: BLANK = ' '
+        CHARACTER(16), PARAMETER :: PROGNAME = 'ASGNBINS' ! program name
+
+C...........   Sorting arrays
+
+        INTEGER          , ALLOCATABLE :: BOUTIDX( : )
+        INTEGER(8)       , ALLOCATABLE :: SORTIDX( : )
         CHARACTER(BUFLEN), ALLOCATABLE :: SORTBUF( : )
 
 C...........   Local variables
-        INTEGER         B, C, F, I, J, K, L, LB, S
 
-        INTEGER         COL               ! tmp column number
-        INTEGER         DIUID             ! tmp diurnal profile number
-        INTEGER         IOS               ! i/o status
-        INTEGER         MONID             ! tmp monthly profile number
-        INTEGER         NDATA             ! no. output data columns for current
-        INTEGER         PREVSRCID         ! previous source ID
-        INTEGER         RCL               ! tmp road class code
-        INTEGER         ROW               ! tmp row number
-        INTEGER         SRCID             ! tmp source ID
-        INTEGER         SRGID1            ! tmp primary surrogate ID
-        INTEGER         SRGID2            ! tmp fallback surrogate ID
-        INTEGER         STKGRP            ! tmp stack group ID
-        INTEGER         WEKID             ! tmp weekly profile number
-        INTEGER         MXOUTREC          ! max output rec (NOUTREC*BUFLEN)
+        INTEGER         B, C, F, I, II, IJ, IS, J, K, L, LB, S
 
-        CHARACTER              ESTAT      ! tmp elevated status
-        CHARACTER(60)          FMTBUF     ! format buffer
-        CHARACTER(300)         MESG       ! message buffer
+        INTEGER         COL             ! tmp column number
+        INTEGER         DIUID           ! tmp diurnal profile number
+        INTEGER         IOS             ! i/o status
+        INTEGER         MONID           ! tmp monthly profile number
+        INTEGER         NDATA           ! no. output data columns for current
+        INTEGER         PREVSRCID       ! previous source ID
+        INTEGER         RCL             ! tmp road class code
+        INTEGER         ROW             ! tmp row number
+        INTEGER         SRCID           ! tmp source ID
+        INTEGER         SRGID1          ! tmp primary surrogate ID
+        INTEGER         SRGID2          ! tmp fallback surrogate ID
+        INTEGER         STKGRP          ! tmp stack group ID
+        INTEGER         WEKID           ! tmp weekly profile number
 
-        CHARACTER(5)       SCCTYPE    ! tmp determination of SCC type
-        CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
-        CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
-        CHARACTER(SCCLEN3) SCC        ! tmp SCC
-        CHARACTER(SICLEN3) SIC        ! tmp SIC
-        CHARACTER(INTLEN3) INTGR      ! tmp INTEGRATE
-        CHARACTER(MACLEN3) MACT       ! tmp MACT
-        CHARACTER(NAILEN3) NAICS      ! tmp NAICS
-        CHARACTER(ORSLEN3) ORIS       ! tmp ORIS
-        CHARACTER(STPLEN3) SRCTYP     ! tmp SRCTYP
-        CHARACTER(SPNLEN3) SPCID      ! tmp speciation profile
-        CHARACTER(PLTLEN3) PLANT      ! tmp plant ID
-        CHARACTER(PLTLEN3) PREVPLT    ! previous plant ID
-        CHARACTER(FIPLEN3) CFIP       ! tmp country/state/county
-        CHARACTER(FIPLEN3) CCNTRY     ! tmp country
-        CHARACTER(FIPLEN3) CSTA       ! tmp country/state
-        CHARACTER(FIPLEN3) PREVFIP    ! previous FIPs code
+        INTEGER(8)      M               ! format-length as INTEGER*8 for SORTINC8()
+        INTEGER(8)      N               ! NOUTREC as INTEGER*8 for SORTINC8()
+        INTEGER(8)      MXOUTREC        ! max output rec (NOUTREC*BUFLEN)
 
-        CHARACTER(16) :: PROGNAME = 'ASGNBINS' ! program name
+        LOGICAL         EFLAG
+
+        CHARACTER       ESTAT           ! tmp elevated status
+        CHARACTER(300)  MESG            ! message buffer
+
+        CHARACTER(5)       SCCTYPE      ! tmp determination of SCC type
+        CHARACTER(BUFLEN)  BUFFER       ! sorting info buffer
+        CHARACTER(BUFLEN)  LBUF         ! previous sorting info buffer
+        CHARACTER(SCCLEN3) SCC          ! tmp SCC
+        CHARACTER(SICLEN3) SIC          ! tmp SIC
+        CHARACTER(INTLEN3) INTGR        ! tmp INTEGRATE
+        CHARACTER(MACLEN3) MACT         ! tmp MACT
+        CHARACTER(NAILEN3) NAICS        ! tmp NAICS
+        CHARACTER(ORSLEN3) ORIS         ! tmp ORIS
+        CHARACTER(STPLEN3) SRCTYP       ! tmp SRCTYP
+        CHARACTER(SPNLEN3) SPCID        ! tmp speciation profile
+        CHARACTER(PLTLEN3) PLANT        ! tmp plant ID
+        CHARACTER(PLTLEN3) PREVPLT      ! previous plant ID
+        CHARACTER(FIPLEN3) CFIP         ! tmp country/state/county
+        CHARACTER(FIPLEN3) CCNTRY       ! tmp country
+        CHARACTER(FIPLEN3) CSTA         ! tmp country/state
+        CHARACTER(FIPLEN3) PREVFIP      ! previous FIPs code
 
 C***********************************************************************
 C   begin body of subroutine ASGNBINS
@@ -156,325 +168,426 @@ C.........  Set report-specific local settings
         NDATA   = ALLRPT( RCNT )%NUMDATA
         RPT_    = ALLRPT( RCNT )
         LREGION = ( RPT_%BYGEO1 .OR. RPT_%BYCNTY .OR. RPT_%BYSTAT .OR. RPT_%BYCNRY )
-        MXOUTREC = NOUTREC * BUFLEN
+        N        = NOUTREC          !!  force INT*8 arithmetic
+        MXOUTREC = N * BUFLEN
+        B        = 0
 
 C.........  Memory check
+
         IF( MXOUTREC < 1 ) THEN
             MESG = 'ERROR: Problem processing the size of inventory'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        ELSE
+            WRITE( MESG, '( A, I3, A, I10 )' )
+     &            'ASGNBINS:  report', RCNT, ' NOUTREC=', NOUTREC
+            CALL M3MESG( MESG )
         END IF
- 
+
+
+C.........  Consistency checking:  inventory vs report
+
+        EFLAG = .FALSE.
+
+        IF( RPT_%BYSPC ) THEN
+            IS = INDEX1( RPT_%SPCPOL, NSPCPOL, SPCPOL )
+            IF ( IS .LE. 0 ) THEN
+                MESG = 'INTERNAL ERROR: Pollutant "'// RPT_%SPCPOL//
+     &                     'not found in list created from REPCONFIG.'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            END IF
+        END IF
+
+        IF ( RPT_%BYORIS .AND. .NOT. ALLOCATED( CORIS ) ) THEN
+            MESG = 'ERROR: BY ORIS is requested, but ' //
+     &             'ORIS is not present in ASCII inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
+
+        IF( RPT_%BYMACT .AND. .NOT. ASSOCIATED( CMACT ) ) THEN
+            MESG = 'ERROR: BY MACT is requested, but ' //
+     &             'MACT is not present in ASCII inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
+
+        IF( RPT_%BYNAICS .AND. .NOT. ASSOCIATED( CNAICS ) ) THEN
+            MESG = 'ERROR: BY NAICS is requested, but ' //
+     &                'NAICS is not present in ASCII inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
+
+        IF( RPT_%BYSRCTYP .AND. .NOT. ASSOCIATED( CSRCTYP ) ) THEN
+            MESG = 'ERROR: BY SRCTYP is requested, but ' //
+     &      'SRCTYP code is not present in ASCII  inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
+
+        IF( RPT_%BYINTGR  .AND. .NOT. ASSOCIATED( CINTGR ) ) THEN
+            MESG = 'ERROR: BY INTEGRATE is requested, but ' //
+     &             'Integrate flag is not present in ASCII '//
+     &             'inventory file'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+        END IF
+
+        IF( RPT_%BYSPC ) THEN
+            IS = INDEX1( RPT_%SPCPOL, NSPCPOL, SPCPOL )
+            IF ( IS .LE. 0 ) THEN
+                MESG = 'INTERNAL ERROR: Pollutant "'// RPT_%SPCPOL//
+     &                     'not found in list created from REPCONFIG.'
+                CALL M3MSG2( MESG )
+                EFLAG = .TRUE.
+            END IF
+        END IF
+        IF ( EFLAG ) THEN
+            MESG = 'Inconsistent INVENTORY-vs-REPORT specification(s)'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
 C.........  Allocate (and deallocate) memory for sorting arrays
-        IF( ALLOCATED( SORTIDX ) ) DEALLOCATE( SORTIDX, SORTBUF )
 
-        ALLOCATE( SORTIDX( NOUTREC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SORTIDX', PROGNAME )
-        ALLOCATE( SORTBUF( NOUTREC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'SORTBUF', PROGNAME )
-        SORTIDX = 0
-        SORTBUF = ' '
+        IF( ALLOCATED( NBINS ) ) DEALLOCATE( NBINS )
+        IF( ALLOCATED( ISRCB ) ) DEALLOCATE( ISRCB )
+        IF( ALLOCATED( GFACB ) ) DEALLOCATE( GFACB )
 
-C.........  Build format statement for writing the sorting buffer
-C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF,'(A,I2.2,A,I2.2,A,I2,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
-     &                A,I1,A,I1,A)') 
-     &    '(3I8,A',FIPLEN3,'A',SCCLEN3,',A',SICLEN3,',5I8,A', SPNLEN3,',A',
-     &    PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', 
-     &    STPLEN3, ',I8,A',INTLEN3,')'
+        ALLOCATE( BOUTIDX( NOUTREC ),
+     &            SORTIDX( NOUTREC ),
+     &            SORTBUF( NOUTREC ),
+     &            NBINS( 0:NOUTREC ),       !!  zero-based cumulative counts
+     &              ISRCB( NOUTREC ),
+     &              GFACB( NOUTREC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'BOUTIDX...GFACB', PROGNAME )
 
-C.........  Initialize local variables for building sorting array for this 
-C           report
-        COL    = 0
-        ROW    = 0
-        SRCID  = 0
-        CFIP   = ' '
-        RCL    = 0
-        SRGID1 = 0
-        SRGID2 = 0
-        STKGRP = 0
-        MONID  = 0
-        WEKID  = 0
-        DIUID  = 0
-        SPCID  = ' '
-        PLANT  = ' '
-        SCC    = ' '
-        SIC    = ' '
-        INTGR  = 'N'
-        MACT   = ' '
-        NAICS  = ' '
-        ORIS   = ' '
-        SRCTYP = ' '
-        ESTAT  = ' '
 
-C.........  Create a sorting array for all output records
+
+C.........  Create sorting arrays SORTIDX & SORTBUF for all output records
+C.........  Add fields to SORTBUF in sorting-order
+C.........  [Really wish this could be one parallel loop 1...NOUTREC
+C.........  but the previous-plant dependency prevents this. 
+C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
+
+!$OMP   PARALLEL DO DEFAULT( SHARED ),
+!$OMP&              PRIVATE( I, L, ROW, COL, SRCID, CFIP, SCC, SIC, 
+!$OMP&                       SRGID1, SRGID2, SPCID ), 
+!$OMP&          LASTPRIVATE( II, IJ, IS )
+
         DO I = 1, NOUTREC
 
-C.............  If BY CELL, insert X-cell and then Y-cell 
+            SORTIDX( I ) = I
+
             IF( RPT_%BYCELL ) THEN
+
                 IF( .NOT. AFLAG ) THEN
-                    C = OUTCELL( I )
-                    ROW = 1 + INT( (C-1) / NCOLS )
-                    COL = C - NCOLS * ( ROW-1 )
+                    WRITE( SORTBUF( I )( 1:8 ) , '( I8 )' ) OUTCELL( I )
+                    II = 9          !!  start of next field
+                    IS = 9          !!  start of SRCID field
                 ELSE
                     ROW = STKY( I )
                     COL = STKX( I )
-                END IF
-            END IF
-
-C.............  If BY SOURCE, then nothing else needed
-            IF( RPT_%BYSRC ) THEN
-                SRCID = OUTSRC( I )
-                CFIP  = CIFIP( SRCID )
-                IF( .NOT. AFLAG ) THEN
-                    SCC   = CSCC( SRCID )
-                    IF( RPT_%BYSIC ) SIC = CISIC( SRCID )
+                    WRITE( SORTBUF( I )( 1:16 ) , '( 2 I8 )' ) COL, ROW
+                    II = 17         !!  start of next field
+                    IS = 17         !!  start of SRCID field
                 END IF
 
             ELSE
 
-C.................  If BY COUNTY insert region code (state and country not 
-C                   needed)
+                II = 1          !!  start of next field
+                IS = 1          !!  start of SRCID field
+
+            END IF              !!  if report-by-cell or not
+
+
+            IF( RPT_%BYSRC ) THEN
+
+                IF ( AFLAG ) THEN
+                    IJ = II + 7 + FIPLEN3
+                    SRCID = OUTSRC( I )
+                    CFIP  = CIFIP( SRCID )
+                    WRITE( SORTBUF( I )( II:IJ ), '( I8.8, A )' ) SRCID, CFIP
+                    II = IJ + 1
+                ELSE IF ( .NOT. RPT_%BYSIC ) THEN
+                    IJ = II + 7 + FIPLEN3 + SCCLEN3
+                    SRCID = OUTSRC( I )
+                    CFIP  = CIFIP( SRCID )
+                    SCC   = CSCC( SRCID )
+                    WRITE( SORTBUF( I )( II:IJ ), '( I8.8, 2 A )' ) SRCID, CFIP, SCC
+                    II = IJ + 1
+                ELSE
+                    IJ = II + 7 + FIPLEN3 + SCCLEN3 + SICLEN3
+                    SRCID = OUTSRC( I )
+                    CFIP  = CIFIP( SRCID )
+                    SCC   =  CSCC( SRCID )
+                    SIC   = CISIC( SRCID )
+                    WRITE( SORTBUF( I )( II:IJ ), '( I8.8, 3 A )' ) SRCID, CFIP, SCC, SIC
+                END IF
+
+            ELSE
+
                 IF( RPT_%BYCNTY ) THEN
-
-                    CFIP = CIFIP( OUTSRC( I ) )
-
-C.................  If BY STATE, insert region code with trailing zeros 
-C                   (country not needed)
+                    IJ = II + FIPLEN3 - 1
+                    CFIP  = CIFIP( OUTSRC( I ) )
+                    SORTBUF( I )( II:IJ ) = CFIP
+                    II = IJ + 1
                 ELSE IF( RPT_%BYSTAT ) THEN
-                
-                    CFIP = CIFIP( OUTSRC( I ) )( 1:STALEN3 ) // '000'
-
-C.................  If BY COUNTRY, insert region code with trailing zeros
+                    IJ = II + FIPLEN3 - 1
+                    CFIP  = CIFIP( OUTSRC( I ) ) ( 1:STALEN3 ) // '000'
+                    SORTBUF( I )( II:IJ ) = CFIP
+                    II = IJ + 1
                 ELSE IF( RPT_%BYCNRY ) THEN
-
-                    IF( USEEXPGEO ) THEN
-                        CFIP = CIFIP( OUTSRC( I ) )( 1:FIPEXPLEN3 ) // '000000'
+                    IJ = II + FIPLEN3 - 1
+                    IF( USEEXPGEO() ) THEN
+                        CFIP  = CIFIP( OUTSRC( I ) )( 1:FIPEXPLEN3 ) // '000000'
+                        SORTBUF( I )( II:IJ ) = CFIP
                     ELSE
-                        CFIP = CIFIP( OUTSRC( I ) )( 1:FIPEXPLEN3+1 ) // '00000'
+                        CFIP  = CIFIP( OUTSRC( I ) )( 1:FIPEXPLEN3+1 ) // '00000'
+                        SORTBUF( I )( II:IJ ) = CFIP
                     END IF
-
-C.................  If BY GEOCODE1, insert level 1 code with trailing zeros
+                    II = IJ + 1
                 ELSE IF( RPT_%BYGEO1 ) THEN
-
-                    CFIP = CIFIP( OUTSRC( I ) )( 1:3 ) // '000000000'
-
+                    IJ = II + FIPLEN3 - 1
+                    CFIP  = CIFIP( OUTSRC( I ) )( 1:3 ) // '000000000'
+                    SORTBUF( I )( II:IJ ) = CFIP
+                    II = IJ + 1
                 END IF  ! End by county, state, or country
 
-C.................  If BY SCC, insert SCC based on SCCRES (resolution) set in input file
-                IF( RPT_%BYSCC ) THEN
+                IF( RPT_%BYSCC .AND. RPT_%SCCRES .NE. 4 ) THEN
 
+                    IJ = II + SCCLEN3 - 1
                     SCC = CSCC( OUTSRC( I ) )
-
-C.....................  Get rid of leading zeros
-c                    IF( SCC( 1:2 ) == '00' ) SCC = SCC(3:SCCLEN3) // '  '
-
-                    IF( RPT_%SCCRES .NE. 4 ) THEN
-
-                        L = LEN( TRIM( SCC ) )
-                        SELECT CASE( L )
-
-C.........................  If 10 characters long, then nonpoint SCC
-                        CASE( 10 )
-                            SCCTYPE = 'AREA'
-
-C.........................  If 8 characters long, then point SCC
-                        CASE( 8 )
-                            SCCTYPE = 'POINT'
-
-C.........................  If SCC length less than full SCC, then assume based on category
-                        CASE DEFAULT
-                            SCCTYPE = CATEGORY
-
-                        END SELECT
-
-C.........................  Set SCC to use for bins based on level from REPCONFIG
-                        IF( SCCTYPE == 'POINT' ) THEN
-                            SCC = SCC( 1:PTSCCLEV( RPT_%SCCRES ) )
-
-                        ELSE IF( SCCTYPE == 'AREA' .OR.
-     &                           SCCTYPE == 'MOBILE'    ) THEN
-                            SCC = SCC( 1:ARSCCLEV( RPT_%SCCRES ) )
-
-                        END IF
+                    IF( SCC( 1:2 ) == '00' ) SCC = SCC(3:SCCLEN3) // '  '
+                    L   = LEN_TRIM( SCC )
+                    IF ( L .EQ. 10 ) THEN           !!  area
+                        SCC = SCC( 1:ARSCCLEV( RPT_%SCCRES ) )
+                    ELSE IF ( L .EQ. 8 ) THEN       !!  point
+                        SCC = SCC( 1:PTSCCLEV( RPT_%SCCRES ) )
+                    ELSE IF ( CATEGORY .EQ. 'POINT' ) THEN
+                        SCC = SCC( 1:PTSCCLEV( RPT_%SCCRES ) )
+                    ELSE IF ( CATEGORY .EQ. 'AREA' ) THEN
+                        SCC = SCC( 1:ARSCCLEV( RPT_%SCCRES ) )
+                    ELSE IF ( CATEGORY .EQ. 'MOBILE' ) THEN
+                        SCC = SCC( 1:ARSCCLEV( RPT_%SCCRES ) )
                     END IF
-                END IF  ! end if by SCC
-            END IF  ! end if by source
+                    SORTBUF( I )( II:IJ ) = SCC
+                    II = IJ + 1
 
-C.............  If BY ROADCLASS, insert roadclass code        
+                ELSE  IF( RPT_%BYSCC ) THEN
 
-            IF( RPT_%BYRCL ) THEN
+                    IJ = II + SCCLEN3 - 1
+                    SORTBUF( I )( II:IJ ) = CSCC( OUTSRC( I ) )
+                    II = IJ + 1
 
-                RCL = IRCLAS( OUTSRC( I ) )
-
-            END IF  ! End by source or by roadclass
-
-C.................  If BY SIC, insert full SIC
-            IF( RPT_%BYSIC ) SIC = CISIC( OUTSRC( I ) )
- 
-C.................  If BY INTEGRATE, insert INTEGRATE flag (Y/N)
-            IF( RPT_%BYINTGR ) THEN
-                IF( .NOT. ASSOCIATED( CINTGR ) ) THEN
-                    MESG = 'ERROR: BY INTEGRATE is requested, but ' //
-     &                     'Integrate flag is not present in ASCII '//
-     &                     'inventory file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                    INTGR = CINTGR( OUTSRC( I ) )
                 END IF
-            END IF
-            
-C.................  If BY MACT, insert full MACT
-            IF( RPT_%BYMACT ) THEN
-                IF( .NOT. ASSOCIATED( CMACT ) ) THEN
-                    MESG = 'ERROR: BY MACT is requested, but ' //
-     &                    'MACT is not present in ASCII inventory file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                    MACT = CMACT( OUTSRC( I ) )
-                END IF
-            END IF
 
-C.................  If BY NAICS, insert full NAICS
-            IF( RPT_%BYNAICS ) THEN
-                IF( .NOT. ASSOCIATED( CNAICS ) ) THEN
-                    MESG = 'ERROR: BY NAICS is requested, but ' //
-     &                    'NAICS is not present in ASCII inventory file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                   NAICS = CNAICS( OUTSRC( I ) )
-                END IF
-            END IF
+            END IF          !!  if report-by-source, or not
 
-C.................  If BY ORIS, insert full ORIS
-            IF( RPT_%BYORIS ) THEN
-                IF( .NOT. ALLOCATED( CORIS ) ) THEN
-                    MESG = 'ERROR: BY ORIS is requested, but ' //
-     &                    'ORIS is not present in ASCII inventory file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                   ORIS = CORIS( OUTSRC( I ) )
-                END IF
-            END IF
 
-C.................  If BY SRCTYP, insert full Source type
-            IF( RPT_%BYSRCTYP ) THEN
-                IF( .NOT. ASSOCIATED( CSRCTYP ) ) THEN
-                    MESG = 'ERROR: BY SRCTYP is requested, but ' //
-     &                    'source type code is not present in ASCII ' //
-     &                    'inventory file'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE
-                    SRCTYP = CSRCTYP( OUTSRC( I ) )
-                END IF
-            END IF
-
-C.................  If by surrogates IDs, insert them depending on resolution
-            IF( RPT_%BYSRG ) THEN
-
+            IF( RPT_%BYSRG .AND. RPT_%SRGRES .EQ. 1 ) THEN
+                IJ = II + 15
+                SRGID1 = SRGID( OUTSRC( I ), 1 )
                 SRGID2 = SRGID( OUTSRC( I ), 2 )
-                IF( RPT_%SRGRES .EQ. 1 ) THEN
-                    SRGID1 = SRGID( OUTSRC( I ), 1 )
-                END IF
+                WRITE( SORTBUF( I )( II:IJ ), '( 2 I8 )' ) SRGID1, SRGID2
+                II = IJ + 1
+            ELSE IF( RPT_%BYSRG ) THEN
+                IJ = II + 7
+                SRGID2 = SRGID( OUTSRC( I ), 2 )
+                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) SRGID2
+                II = IJ + 1
+            END IF          !!  if report-by-surrogate
 
-            END IF  ! End by surrogate IDs
 
-C.................  If by monthly temporal profile, insert them
-            IF( RPT_%BYMON ) MONID = IMON( OUTSRC( I ) )
+            IF( RPT_%BYMON ) THEN
+                IJ = II + 7
+                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IMON( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-month
 
-C.................  If by weekly temporal profile, insert them
-            IF( RPT_%BYWEK ) WEKID = IWEK( OUTSRC( I ) )
 
-C.................  If by diurnal temporal profile, insert them
-            IF( RPT_%BYDIU ) DIUID = IDIU( OUTSRC( I ) )
+            IF( RPT_%BYWEK ) THEN
+                IJ = II + 7
+                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IWEK( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-week
 
-C.................  If by speciation profile, insert them based on the pollutant
-C                   specified
+
+            IF( RPT_%BYDIU ) THEN
+                IJ = II + 7
+                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IDIU( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-week
+
+
             IF( RPT_%BYSPC ) THEN
-                J = INDEX1( RPT_%SPCPOL, NSPCPOL, SPCPOL )
+                II = II + SPNLEN3 - 1
+                SPCID = SPPROF( OUTSRC(I),J )
+                SORTBUF( I )( II:IJ ) = SPPROF( OUTSRC(I),J )
+                II = IJ + 1
+            END IF          !!  if report-by-species
 
-C.................  Unless coding error, RPT_%SPCPOL should be found
-                IF ( J .LE. 0 ) THEN
+        END DO      !!  end first parallel loop constructing SORTIDX and SORTBUF
 
-                    MESG = 'INTERNAL ERROR: Pollutant "'// RPT_%SPCPOL//
-     &                     'not found in list created from REPCONFIG.'
-                    CALL M3MSG2( MESG )
-                    CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 
-                ELSE
-                    SPCID = SPPROF( OUTSRC(I),J )                    
-                END IF
-            END IF
+        IF( RPT_%BYPLANT ) THEN
 
-C.................  If BY PLANT, get plant ID and set same source
-C                   number until plant changes
-            IF( RPT_%BYPLANT ) THEN
-                S = OUTSRC( I )
+            PREVPLT   = '????????'
+            PREVFIP   = '????????'
+            PREVSRCID = -9999
+            IJ = II + PLTLEN3 - 1
+
+            DO I = 1, NOUTREC
+                S     = OUTSRC( I )
                 PLANT = CSOURC( S ) (LOC_BEGP(2):LOC_ENDP(2))
-
-C...............  If this is the same plant, then set the old source
-C                 ID so that the bins will still be "by plant"
-                IF ( CIFIP( S ) .EQ. PREVFIP .AND. 
+                IF ( CIFIP( S ) .EQ. PREVFIP .AND.
      &               PLANT      .EQ. PREVPLT       ) THEN
                     SRCID = PREVSRCID
-
-C...............  If this is a different plant, the reset SRCID to
-C                 be the first source for the current plant
+                    WRITE( SORTBUF( I )( IS:IS+7 ), '( I8.8 )' ) PREVSRCID
                 ELSE
-                    SRCID = S
+                    SRCID     = S
                     PREVFIP   = CIFIP( S )
                     PREVPLT   = PLANT
                     PREVSRCID = S
                 END IF
+                SORTBUF( I )( II:IJ ) = PLANT
+            END DO
+            II = II + PLTLEN3
 
-            END IF
+        END IF          !!  if report-by-plant
 
-C.................  If BY ELEVSTAT, insert elevated status code
-            IF( RPT_%BYELEV ) THEN
 
-                IF( RPT_%ELVSTKGRP ) STKGRP = GROUPID( OUTSRC( I ) )
+!$OMP   PARALLEL DO DEFAULT( SHARED ),
+!$OMP&              PRIVATE( I, ESTAT ),
+!$OMP&         FIRSTPRIVATE( II, IJ, IS )
 
-                IF( LPING( OUTSRC( I ) ) ) THEN       ! PinG
+        DO I = 1, NOUTREC       !!  second parallel loop constructing SORTBUF
+        
+
+            IF ( RPT_%BYORIS ) THEN
+                IJ = II + ORSLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CORIS( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-oris
+
+
+            IF( RPT_%BYRCL ) THEN
+                IJ = II + 7
+                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IRCLAS( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-roadclass
+
+
+            IF ( RPT_%BYELEV ) THEN
+                IF( LPING( OUTSRC( I ) ) ) THEN         !!  PinG
                     ESTAT = 'P'
-                ELSE IF( LMAJOR( OUTSRC( I ) ) ) THEN ! Elevated
+                ELSE IF( LMAJOR( OUTSRC( I ) ) ) THEN   !!  Elevated
                     ESTAT = 'E'
-                ELSE                                      ! Low-level
+                ELSE                                    !!  Low-level
                     ESTAT = 'L'
                 END IF
+                SORTBUF( I )( II:II ) = ESTAT
+                II = II + 1
+            END IF          !!  if report-by-elevstat
 
-            END IF  ! End by elevated status
-            
-C.............  Store sorting information for current record
-            WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, CFIP, SCC, SIC,
-     &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
-     &                             SPCID, PLANT, ORIS, RCL, ESTAT, MACT,
-     &                             NAICS, SRCTYP, STKGRP, INTGR
 
-            SORTIDX( I ) = I
-            SORTBUF( I ) = BUFFER
+            IF ( RPT_%BYMACT ) THEN
+                IJ = II + MACLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CMACT( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-mact
 
-        END DO   ! End loop I over output records
 
-C.........  Sort sorting array
-        CALL SORTIC( NOUTREC, SORTIDX, SORTBUF )
+            IF( RPT_%BYNAICS ) THEN
+                IJ = II + NAILEN3 - 1
+                SORTBUF( I )( II:IJ ) =  CNAICS( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !!  if report-by-naics
 
-C.........  Assign bins to output records based on sorting array
-        LBUF = ' '
-        B = 0
-        DO I = 1, NOUTREC
 
-            J = SORTIDX( I )
-            IF( SORTBUF( J ) .NE. LBUF ) THEN
-                B = B + 1
-                LBUF = SORTBUF( J )
+            IF ( RPT_%BYSRCTYP ) THEN
+                IJ = II + STPLEN3 - 1
+                SORTBUF( I )( II:IJ ) =  CSRCTYP( OUTSRC( I ) )
+                II = II + STPLEN3
+            END IF          !!  if report-by-sourcetype
+
+
+            IF ( RPT_%BYELEV .AND. RPT_%ELVSTKGRP ) THEN
+                II = II + 7
+                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) GROUPID( OUTSRC( I ) )
+                II = IJ + 1
             END IF
 
-            OUTBIN( J ) = B
 
-        END DO
+            IF ( RPT_%BYINTGR ) THEN
+                IJ = II + INTLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CINTGR( OUTSRC( I ) )
+                II = II + INTLEN3
+            END IF          !!  if report-by-integrate
+
+            SORTBUF( I )( II: ) = ' '
+
+        END DO                  !!  end second parallel loop constructing SORTBUF
+ 
+
+C.........  Sort sorting array
+
+        WRITE( MESG, '( A, I3, A, I10 )' )
+     &         'ASGNBINS:  SORTINC8() started for REPORT', RCNT, ' NOUTBINS =', B
+        CALL M3MESG( MESG )
+
+        N = NOUTREC     !!  INTEGER*8 arguments...
+        M = II
+        CALL SORTINC8( N, M, SORTIDX, SORTBUF )
+        CALL M3MESG( 'ASGNBINS:  SORTINC8() complete' )
+
+C.........  Assign bins to output records based on sorting array
+C.........  NOTE:  sequential dependency for B
+
+        NBINS( 0 ) = 0
+        LBUF = BLANK
+        B    = 0
+
+        IF( RPT_%USEGMAT ) THEN     !!  construct cumulative-count incidence matrices:
+
+            DO I = 1, NOUTREC
+
+                J = SORTIDX( I )
+                IF( SORTBUF( J ) .NE. LBUF ) THEN
+                    B = B + 1
+                    LBUF = SORTBUF( J )
+                    BOUTIDX( B ) = J
+                END IF
+                NBINS( B )  = I
+                ISRCB( I )  =  OUTSRC( J )
+                GFACB( I )  = OUTGFAC( J )
+                OUTBIN( J ) = B
+
+            END DO
+
+        ELSE        !!  not usegmat
+
+            DO I = 1, NOUTREC
+
+                J = SORTIDX( I )
+                IF( SORTBUF( J ) .NE. LBUF ) THEN
+                    B = B + 1
+                    LBUF = SORTBUF( J )
+                    BOUTIDX( B ) = J
+                END IF
+                NBINS( B )  = I
+                ISRCB( I )  = OUTSRC( J )
+                OUTBIN( J ) = B
+
+            END DO
+
+        END IF      !!  if usegmat, or not
 
         NOUTBINS = B
+        DEALLOCATE( SORTIDX, SORTBUF )
 
 C.........  If memory is allocated for bin arrays, then deallocate
+
         IF( ALLOCATED( BINBAD    ) ) DEALLOCATE( BINBAD )
         IF( ALLOCATED( BINGEO1IDX) ) DEALLOCATE( BINGEO1IDX )
         IF( ALLOCATED( BINCOIDX  ) ) DEALLOCATE( BINCOIDX )
@@ -506,9 +619,9 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINELEV   ) ) DEALLOCATE( BINELEV )
         IF( ALLOCATED( BINSTKGRP ) ) DEALLOCATE( BINSTKGRP )
         IF( ALLOCATED( BINPOPDIV ) ) DEALLOCATE( BINPOPDIV )
-        IF( ALLOCATED( BINDATA   ) ) DEALLOCATE( BINDATA )
 
 C.........  Allocate memory for bins
+
         ALLOCATE( BINBAD( NOUTBINS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BINBAD', PROGNAME )
         BINBAD = 0    ! array
@@ -553,7 +666,7 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSICIDX( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSICIDX', PROGNAME )
         ENDIF
-                
+
         IF( RPT_%BYINTGR   ) THEN
             ALLOCATE( BININTGR ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BININTGR', PROGNAME )
@@ -563,12 +676,12 @@ C.........  Allocate memory for bins
             ALLOCATE( BINMACT   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINMACT', PROGNAME )
         ENDIF
-        
+
         IF( RPT_%MACTNAM   ) THEN
             ALLOCATE( BINMACIDX( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINMACIDX', PROGNAME )
         ENDIF
-        
+
         IF( RPT_%BYNAICS   ) THEN
             ALLOCATE( BINNAICS   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINNAICS', PROGNAME )
@@ -593,7 +706,7 @@ C.........  Allocate memory for bins
             ALLOCATE( BINSRCTYP   ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSRCTYP', PROGNAME )
         ENDIF
-        
+
         IF( RPT_%SRGRES .EQ. 1 ) THEN
             ALLOCATE( BINSRGID1( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSRGID1', PROGNAME )
@@ -647,208 +760,190 @@ C.........  Allocate memory for bins
 
         ALLOCATE( BINPOPDIV( NOUTBINS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'BINPOPDIV', PROGNAME )
-        BINPOPDIV = 1.    ! array
-
-        ALLOCATE( BINDATA( NOUTBINS, NDATA ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'BINDATA', PROGNAME )
-        IF( NDATA .GT. 0 ) BINDATA = 0  ! array
 
 C.........  Populate the bin characteristic arrays (not the data array)
 
-        LB = 0
-        DO I = 1, NOUTREC
+!$OMP   PARALLEL DO DEFAULT( SHARED ),
+!$OMP&              PRIVATE( B, J, C, K, ROW, COL, S, CFIP, SCC,
+!$OMP&                       CCNTRY, CSTA )
 
-            J = SORTIDX( I )
-            B = OUTBIN( J )
-            BUFFER = SORTBUF( J )
+        DO B = 1, NOUTBINS
 
-            IF( B .NE. LB ) THEN
+            BINPOPDIV( B )  = 1.0
 
-                READ( BUFFER,FMTBUF ) 
-     &                COL, ROW, SRCID, CFIP, SCC, SIC, SRGID1, SRGID2, 
-     &                MONID, WEKID, DIUID, SPCID, PLANT, ORIS, RCL, 
-     &                ESTAT, MACT, NAICS, SRCTYP, STKGRP, INTGR
+            J = BOUTIDX( B )
 
-C.................  Store region code
-                IF( LREGION ) BINREGN( B ) = CFIP
+            IF( RPT_%BYCELL .AND. .NOT.AFLAG ) THEN
+                C = OUTCELL( J ) - 1
+                ROW = 1 + INT( C / NCOLS )
+                COL = 1 + MOD( C , NCOLS )
+            ELSE IF( RPT_%BYCELL ) THEN
+                ROW = STKY( J )
+                COL = STKX( J )
+            END IF
+
+            S    = OUTSRC( J )
+            CFIP = CIFIP( S )
+            SCC  =  CSCC( S )
+
+            IF( RPT_%BYSRC )     BINSMKID( B ) = S
+            IF( RPT_%BYSCC )       BINSCC( B ) = SCC
+            IF( RPT_%BYSIC )       BINSIC( B ) =   CISIC( S )
+            IF( RPT_%BYINTGR )   BININTGR( B ) =  CINTGR( S )
+            IF( RPT_%BYMACT  )    BINMACT( B ) =   CMACT( S )
+            IF( RPT_%BYNAICS )   BINNAICS( B ) =  CNAICS( S )
+            IF( RPT_%BYORIS  )    BINORIS( B ) =   CORIS( S )
+            IF( RPT_%BYSRCTYP ) BINSRCTYP( B ) = CSRCTYP( S )
+            IF( RPT_%BYMON )     BINMONID( B ) =    IMON( S )
+            IF( RPT_%BYWEK )     BINWEKID( B ) =    IWEK( S )
+            IF( RPT_%BYDIU )     BINDIUID( B ) =    IDIU( S )
+            IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IS )
+            IF( LREGION )         BINREGN( B ) = CFIP
+
+            IF( RPT_%BYSRG .AND. RPT_%SRGRES .EQ. 1 ) THEN
+                BINSRGID1( B ) = SRGID( S, 1 )
+                BINSRGID2( B ) = SRGID( S, 2 )
+            ELSE IF( RPT_%BYSRG ) THEN
+                BINSRGID2( B ) = SRGID( S, 2 )
+            END IF
 
 C.................  Store geocode level 1 index.
-                IF( RPT_%BYGEO1NAM ) THEN
-                    K = FINDC( CFIP( 1:3 ) // '000000000', NGEOLEV1, GEOLEV1COD )
-                    BINGEO1IDX( B ) = K
 
-                ENDIF
+            IF( RPT_%BYGEO1NAM ) THEN
+                K = FINDC( CFIP( 1:3 ) // '000000000', NGEOLEV1, GEOLEV1COD )
+                BINGEO1IDX( B ) = K
+            ENDIF
 
 C.................  Store country name index. Note for population that some
 C                   form of "by region is required"
-                IF( RPT_%BYCONAM ) THEN
-                    IF( USEEXPGEO ) THEN
-                        CCNTRY = CFIP( 1:FIPEXPLEN3 ) // '000000'
-                    ELSE
-                        CCNTRY = CFIP( 1:FIPEXPLEN3+1 ) // '00000'
-                    END IF
-                    K = FINDC( CCNTRY, NCOUNTRY, CTRYCOD )
-                    BINCOIDX( B ) = K
 
-C.....................  If using population normalization, initialize with 
+            IF( RPT_%BYCONAM ) THEN
+                IF( USEEXPGEO() ) THEN
+                    CCNTRY = CFIP( 1:FIPEXPLEN3 ) // '000000'
+                ELSE
+                    CCNTRY = CFIP( 1:FIPEXPLEN3+1 ) // '00000'
+                END IF
+                K = FINDC( CCNTRY, NCOUNTRY, CTRYCOD )
+                BINCOIDX( B ) = K
+
+C.....................  If using population normalization, initialize with
 C                       country population
-                    IF ( RPT_%NORMPOP ) THEN
-                        IF( CTRYPOPL( K ) . GT. 0. ) THEN
-                            BINPOPDIV( B ) = 1. / CTRYPOPL(K)
+
+                IF ( RPT_%NORMPOP ) THEN
+                    IF( CTRYPOPL( K ) . GT. 0. ) THEN
+                        BINPOPDIV( B ) = 1. / CTRYPOPL(K)
 
 C.........................  If population data unavailable, then flags bins
 C                           that will not be able to have normalization by pop.
-                        ELSE
-                            BINBAD   ( B ) = 100  ! cpde for bad pop
-                            BINPOPDIV( B ) = 1.
-                        END IF
+                    ELSE
+                        BINBAD   ( B ) = 100  ! cpde for bad pop
+                        BINPOPDIV( B ) = 1.
                     END IF
-                
-                END IF
-
-C.................  Store state name index. Note for population that some
-C                   form of "by region is required"
-                IF( RPT_%BYSTNAM ) THEN
-                    CSTA = CFIP( 1:STALEN3 ) // '000'
-                    K = FINDC( CSTA, NSTATE, STATCOD )
-                    BINSTIDX( B ) = K
-
-C.....................  If using population normalization, reset with 
-C                       state population
-                    IF ( RPT_%NORMPOP ) THEN
-                        IF( STATPOPL( K ) . GT. 0. ) THEN
-                            BINPOPDIV( B )= 1. / STATPOPL(K)
-C.........................  If population data unavailable, then flags bins
-C                           that will not be able to have normalization by pop.
-                        ELSE
-                            BINBAD   ( B ) = 100  ! code for bad pop
-                            BINPOPDIV( B ) = 1.
-                        END IF
-                    END IF
-
-                END IF
-
-C.................  Store county name index. Note for population that some
-C                   form of "by region is required"
-                IF( RPT_%BYCYNAM ) THEN
-                    K = FINDC( CFIP, NCOUNTY, CNTYCOD )
-                    BINCYIDX( B ) = K
-
-C.....................  If using population normalization, reset with 
-C                       county population
-                    IF ( RPT_%NORMPOP ) THEN
-                        IF( CNTYPOPL( K ) . GT. 0. ) THEN
-                            BINPOPDIV( B )= 1. / CNTYPOPL(K)
-C.........................  If population data unavailable, then flags bins
-C                           that will not be able to have normalization by pop.
-                        ELSE
-                            BINBAD   ( B ) = 100  ! code for bad pop
-                            BINPOPDIV( B ) = 1.
-                        END IF
-                    END IF
-
-                END IF
-
-C.................  Store road class
-                IF( RPT_%BYRCL ) BINRCL( B ) = RCL
-
-C.................  Store SMOKE ID
-                IF( RPT_%BYSRC ) BINSMKID( B ) = SRCID
-
-C.................  Store SCC
-                IF( RPT_%BYSCC ) BINSCC( B ) = SCC
-
-C.................  Store SCC name index (for full name, regardless of SCC truncation.
-C                   Note: have confirmed that using the OUTSRC(J) index with CSCC maps
-C                   to SCC from BUFFER properly
-                IF( RPT_%SCCNAM ) THEN
-                    K = FINDC( CSCC( OUTSRC(J) ), NINVSCC, INVSCC )
-                    BINSNMIDX( B ) = K
-                END IF
-
-C.................  Store SIC
-                IF( RPT_%BYSIC ) BINSIC( B ) = SIC
-
-C.................  Store SIC name index
-                IF( RPT_%SICNAM ) THEN
-                    K = FINDC( SIC, NINVSIC, INVSIC )
-                    BINSICIDX( B ) = K
-                END IF
-
-C.................  Store INTEGRATE 
-                IF( RPT_%BYINTGR ) BININTGR( B ) = INTGR
-
-C.................  Store MACT
-                IF( RPT_%BYMACT ) BINMACT( B ) = MACT
-
-C.................  Store MACT name index
-                IF( RPT_%MACTNAM ) THEN
-                    K = FINDC( MACT, NINVMACT, INVMACT )
-                    BINMACIDX( B ) = K
-                END IF
-
-C.................  Store NAICS
-                IF( RPT_%BYNAICS ) BINNAICS( B ) = NAICS
-
-C.................  Store NAICS name index
-                IF( RPT_%NAICSNAM ) THEN
-                    K = FINDC( NAICS, NINVNAICS, INVNAICS )
-                    BINNAIIDX( B ) = K
-                END IF
-
-C.................  Store ORIS
-                IF( RPT_%BYORIS ) BINORIS( B ) = ORIS
-
-C.................  Store ORIS name index
-                IF( RPT_%ORISNAM ) THEN
-                    K = FINDC( ORIS, NORIS, ORISLST )
-                    BINORSIDX( B ) = K
-                END IF
-
-C.................  Store SRCTYP
-                IF( RPT_%BYSRCTYP ) BINSRCTYP( B ) = SRCTYP
-
-C.................  Store surrogate codes
-                IF( RPT_%SRGRES .EQ. 1 ) BINSRGID1( B ) = SRGID1
-                IF( RPT_%SRGRES .GE. 1 ) BINSRGID2( B ) = SRGID2
-
-C.................  Store temporal profiles
-                IF( RPT_%BYMON ) BINMONID( B ) = MONID
-                IF( RPT_%BYWEK ) BINWEKID( B ) = WEKID
-                IF( RPT_%BYDIU ) BINDIUID( B ) = DIUID
-
-C.................  Store speciation profiles
-                IF( RPT_%BYSPC ) BINSPCID( B ) = SPCID
-
-C.................  Store plant ID code
-                IF( RPT_%BYPLANT ) THEN
-                    BINPLANT( B ) = PLANT
-                    BINSMKID( B ) = SRCID   ! Needed for plant names
-                END IF
-
-C.................  Store x-cell and y-cell
-                IF( RPT_%BYCELL ) BINX( B ) = COL
-                IF( RPT_%BYCELL ) BINY( B ) = ROW
-
-C.................  Store Elevated status
-                IF( RPT_%BYELEV ) BINELEV( B ) = ESTAT
-
-C.................  Store Elevated stack group IDs
-                IF( RPT_%ELVSTKGRP ) THEN
-                    BINSTKGRP( B ) = STKGRP
                 END IF
 
             END IF
 
+C.................  Store state name index. Note for population that some
+C                   form of "by region is required"
+
+            IF( RPT_%BYSTNAM ) THEN
+                CSTA = CFIP( 1:STALEN3 ) // '000'
+                K    = FINDC( CSTA, NSTATE, STATCOD )
+                BINSTIDX( B ) = K
+
+C.....................  If using population normalization, reset with state population
+
+                IF ( RPT_%NORMPOP ) THEN
+                    IF( STATPOPL( K ) . GT. 0. ) THEN
+                        BINPOPDIV( B )= 1. / STATPOPL(K)
+C.........................  If population data unavailable, then flags bins
+C                           that will not be able to have normalization by pop.
+                    ELSE
+                        BINBAD   ( B ) = 100  ! code for bad pop
+                        BINPOPDIV( B ) = 1.
+                    END IF
+                END IF
+
+            END IF
+
+C.................  Store county name index. Note for population that some
+C                   form of "by region is required"
+
+            IF( RPT_%BYCYNAM ) THEN
+                K = FINDC( CFIP, NCOUNTY, CNTYCOD )
+                BINCYIDX( B ) = K
+
+C.....................  If using population normalization, reset with
+C                       county population
+
+                IF ( RPT_%NORMPOP ) THEN
+                    IF( CNTYPOPL( K ) . GT. 0. ) THEN
+                        BINPOPDIV( B )= 1. / CNTYPOPL(K)
+C.........................  If population data unavailable, then flags bins
+C                           that will not be able to have normalization by pop.
+                    ELSE
+                        BINBAD   ( B ) = 100  ! code for bad pop
+                        BINPOPDIV( B ) = 1.
+                    END IF
+                END IF
+
+            END IF
+
+C.................  Store SCC, SIC, MACT, NAICS, ORIS name index
+C.................  (for full name, regardless of SCC truncation.
+C.................  Note: have confirmed that using the OUTSRC(J)
+C.................  index with CSCC maps to SCC from BUFFER properly)
+
+            IF( RPT_%SCCNAM ) THEN
+                K = FINDC( CSCC( S ), NINVSCC, INVSCC )
+                BINSNMIDX( B ) = K
+            END IF
+
+            IF( RPT_%SICNAM ) THEN
+                K = FINDC( BINSIC( B ), NINVSIC, INVSIC )
+                BINSICIDX( B ) = K
+            END IF
+
+            IF( RPT_%MACTNAM ) THEN
+                K = FINDC( BINMACT( B ), NINVMACT, INVMACT )
+                BINMACIDX( B ) = K
+            END IF
+
+            IF( RPT_%NAICSNAM ) THEN
+                K = FINDC( BINNAICS( B ), NINVNAICS, INVNAICS )
+                BINNAIIDX( B ) = K
+            END IF
+
+            IF( RPT_%ORISNAM ) THEN
+                K = FINDC( BINORIS( B ), NORIS, ORISLST )
+                BINORSIDX( B ) = K
+            END IF
+
+C.................  Store plant ID code
+
+            IF( RPT_%BYPLANT ) THEN
+                BINPLANT( B ) = CSOURC( S )( LOC_BEGP(2) : LOC_ENDP(2) )
+                BINSMKID( B ) = S           !! Needed for plant names
+            END IF
+
+C.................  Store Elevated status
+
+            IF( RPT_%BYELEV ) THEN
+                IF( LPING( S ) ) THEN       ! PinG
+                    BINELEV( B ) = 'P'
+                ELSE IF( LMAJOR( S ) ) THEN ! Elevated
+                    BINELEV( B ) = 'E'
+                ELSE                                  ! Low-level
+                    BINELEV( B ) = 'L'
+                END IF
+                IF( RPT_%ELVSTKGRP ) BINSTKGRP( B ) = GROUPID( S )
+            END IF
+
         END DO   ! End loop I over output records
+
+        DEALLOCATE( BOUTIDX )
 
         RETURN
 
-C******************  FORMAT  STATEMENTS   ******************************
-
-C...........   Internal buffering formats............ 94xxx
-
-94010   FORMAT( 10( A, :, I10, :, 1X ) )
-
         END SUBROUTINE ASGNBINS
- 
+

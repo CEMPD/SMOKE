@@ -103,16 +103,16 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL   CRLF, WKDAY
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER     , INTENT (IN) :: FDEV
-        INTEGER     , INTENT (IN) :: RCNT
-        INTEGER     , INTENT (IN) :: NDATA
-        INTEGER     , INTENT (IN) :: JDATE
-        INTEGER     , INTENT (IN) :: JTIME
-        INTEGER     , INTENT (IN) :: LAYER    ! layer number for output
-        CHARACTER(*), INTENT (IN) :: DELIM
-        CHARACTER(*), INTENT (IN) :: OUTFMT
-        LOGICAL     , INTENT (IN) :: ZEROFLAG
-        LOGICAL     , INTENT(OUT) :: EFLAG
+        INTEGER     , INTENT(IN   ) :: FDEV
+        INTEGER     , INTENT(IN   ) :: RCNT
+        INTEGER     , INTENT(IN   ) :: NDATA
+        INTEGER     , INTENT(IN   ) :: JDATE
+        INTEGER     , INTENT(IN   ) :: JTIME
+        INTEGER     , INTENT(IN   ) :: LAYER    ! layer number for output
+        CHARACTER(*), INTENT(IN   ) :: DELIM
+        CHARACTER(*), INTENT(IN   ) :: OUTFMT
+        LOGICAL     , INTENT(IN   ) :: ZEROFLAG
+        LOGICAL     , INTENT(INOUT) :: EFLAG
 
 C...........   Local parameters
         INTEGER, PARAMETER :: STRLEN = 10000   ! Maximum info string length
@@ -162,6 +162,9 @@ C   begin body of subroutine WRREPOUT
 C.........  Create hour for output
         OUTHOUR = JTIME / 10000 + 1
 
+C.............  Width of delimeter
+        LV = LEN_TRIM( DELIM )
+
 C.........  When a new report is starting...
         IF( RCNT .NE. PRCNT ) THEN
 
@@ -178,9 +181,6 @@ C.............  Allocate memory for LF if not available already
 
 C.............  Initialize output status of source characteristics
             LF = .FALSE.    ! array
-
-C.............  Width of delimeter
-            LV = LEN_TRIM( DELIM )
 
 C.............  Update logical source-characteristics fields
 C.............  In future, there can be different cases here for "BY STACK", for
