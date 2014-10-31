@@ -1667,25 +1667,28 @@ C.........  Compute day of month temporal profiles
                 CALL DAYMON( JDATE+1, TMPMNTH, TDAY )
                 CALL DAYMON( JDATE  , MONTH  , DAY  )
 
-                PROF_DAY( :,DAY ) = DAYSRC( :,DD ) / MONSRC( :,MONTH )
+                DO S = 1, NSRGFIPS
+
+                    IF( MONSRC( S,MONTH ) /= 0.0 ) THEN
+                        PROF_DAY( S,DAY ) = DAYSRC( S,DD ) / MONSRC( S,MONTH )
+                    ELSE
+                        PROF_DAY( S,DAY ) = 0.0 
+                    END IF
 
 C.................  Output daily profiles by county
-                IF( MONTH /= TMPMNTH ) THEN
-
-                    DO S = 1, NSRGFIPS
+                    IF( MONTH /= TMPMNTH ) THEN
                         WRITE( DODEV, "(I5.5,A,I2.2,31(A,E10.3))" )
      &                      SRGFIPS( S ), ',', MONTH,
      &                      ( (',', PROF_DAY( S,NP ) ), NP = 1,31 )
-                    END DO
+                    END IF
 
-                    PROF_DAY = 0.0    ! re-initializing 
+                END DO
 
-                END IF
+                PROF_DAY = 0.0    ! re-initializing 
 
             END DO
 
         END IF
-
 
 C.........  Deallocate local arrays        
         DEALLOCATE( PROF_DAY )
