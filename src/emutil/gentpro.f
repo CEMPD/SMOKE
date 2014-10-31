@@ -267,7 +267,7 @@ C...........   Other local variables:
         LOGICAL :: CFLAG    = .FALSE.  !  true: Use county-specific min temp setting for RWC eq
         LOGICAL :: NH3FLAG  = .FALSE.  !  true: processing NH3 profile method
         LOGICAL :: MONAVER  = .FALSE.  !  true: monthly averaging
-        LOGICAL :: DAYAVER  = .FALSE.  !  true: weekly averaging
+        LOGICAL :: DAYAVER  = .FALSE.  !  true: daily averaging
         LOGICAL :: HOURAVER = .FALSE.  !  true: hourly averaging
         LOGICAL :: OFLAG    = .FALSE.  !  true: ungridding is 0 for some srcs
         LOGICAL :: ZFLAG    = .FALSE.  !  true: use AZ's new equations
@@ -450,8 +450,11 @@ C.............  Get the name of the aerodynamic resistance  variable.
 
 C.........  Defines output types based on profile method
         IF( TPRO_TYPE == 'MONTHLY' ) MONAVER  = .TRUE.
-        IF( TPRO_TYPE == 'DAILY'   ) DAYAVER  = .TRUE.
         IF( TPRO_TYPE == 'HOURLY'  ) HOURAVER = .TRUE.
+        IF( TPRO_TYPE == 'DAILY'   ) THEN
+            MONAVER  = .TRUE.
+            DAYAVER  = .TRUE.
+        END IF
         IF( TPRO_TYPE == 'ALL' ) THEN
             MONAVER  = .TRUE.
             DAYAVER  = .TRUE.
@@ -1219,14 +1222,14 @@ C.........  Write HDRer to month-of-year temporal profile output file
             WRITE( MODEV,93000 ) '#PROFID,JAN,FEB,MAR,APR,MAY,,,,DEC'
         END IF
 
-C.........  Write HDRer to day-of-year temporal profile output file
+C.........  Write HDRer to day-of-month temporal profile output file
         IF( DAYAVER ) THEN
             WRITE( DODEV,93000 ) '#FORMAT=TPRO_DAY'
             WRITE( DODEV,94040 ) '#NUM_PROFILES = ', NSRGFIPS
             WRITE( DODEV,94040 ) '#YEAR=', INT( EPI_SDATE/1000 )
             WRITE( DODEV,93000 ) '#GRDNAME=' // GDNAM3D // COORD
             WRITE( DODEV,94010 ) '#PERIOD=', EPI_SDATE ,'-', EPI_EDATE
-            WRITE( DODEV,93000 ) '#DESC: Day of year profiles from'//
+            WRITE( DODEV,93000 ) '#DESC: Day of month profiles from'//
      &          'GenTPRO using profile method :: '//TRIM(PROF_METHOD)
             WRITE( DODEV,93000 ) '#PROFID,MON,DAY1,DAY2,DAY3,...,DAY31'
         END IF
@@ -1655,7 +1658,7 @@ C.........  Deallocate local arrays
         DEALLOCATE( PROF_MON )
 
 C......... Output daily temporal profiles
-C.........  Compute day of year temporal profiles
+C.........  Compute day of month temporal profiles
         IF( DAYAVER ) THEN
 
             DO DD = 1, MAXVAL( PROCDAYS )
@@ -1664,7 +1667,7 @@ C.........  Compute day of year temporal profiles
                 CALL DAYMON( JDATE+1, TMPMNTH, TDAY )
                 CALL DAYMON( JDATE  , MONTH  , DAY  )
 
-                PROF_DAY( :,DAY ) = DAYSRC( :,DD ) / ANNSRC( : )
+                PROF_DAY( :,DAY ) = DAYSRC( :,DD ) / MONSRC( :,MONTH )
 
 C.................  Output daily profiles by county
                 IF( MONTH /= TMPMNTH ) THEN
