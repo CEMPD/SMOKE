@@ -232,7 +232,7 @@ C.........  Normalize day-of-month profiles:
             
             !  Hack for February:
             
-            DOMFAC( 29,2,I ) = DOMFAC( 28,2,I )
+            IF( DOMFAC( 29,2,I ) .LE. 0.0 ) DOMFAC( 29,2,I ) = DOMFAC( 28,2,I )
 
         END DO      !  end loop on day-of-month profiles I
 
