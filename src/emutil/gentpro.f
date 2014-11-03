@@ -813,6 +813,18 @@ C............  Skip blank or comment lines
 
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
+C.............  temporary limit for supporting older TREF format (v3.5.1 or earlier)
+            IF( SEGMENT( 8 ) == 'HOURLY'  .OR. SEGMENT( 8 ) == 'MONTHLY'  .OR.
+     &          SEGMENT( 8 ) == 'DAILY'   .OR. SEGMENT( 8 ) == 'WEEKLY'   .OR.
+     &          SEGMENT( 8 ) == 'WEEKDAY' .OR. SEGMENT( 8 ) == 'WEEKEND'  .OR.
+     &          SEGMENT( 8 ) == 'ALLDAYS' .OR. SEGMENT( 8 ) == 'MONDAY'   .OR.
+     &          SEGMENT( 8 ) == 'TUESDAY' .OR. SEGMENT( 8 ) == 'WENDESDAY'.OR.
+     &          SEGMENT( 8 ) == 'THURSDAY'.OR. SEGMENT( 8 ) == 'FRIDAY'   .OR.
+     &          SEGMENT( 8 ) == 'SATURDAY'.OR. SEGMENT( 8 ) == 'SUNDAY' ) THEN
+                MESG = 'ERROR: Newer version of TREF_IN is not currently supported'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
+
             CSCC = TRIM   ( SEGMENT( 1 ) )
             FIPS = STR2INT( SEGMENT( 6 ) )
             CPOL = TRIM   ( SEGMENT( 5 ) )
