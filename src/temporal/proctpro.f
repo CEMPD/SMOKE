@@ -456,6 +456,9 @@ C.........  Read and process the TREF file
             TSCC = FIELD(1)
             CFIP = FIELD(2)
             CPOA = FIELD(7)
+
+            CALL FLTRNEG( TSCC )     ! Filter 0 and -9 to blank
+            CALL PADZERO( TSCC )     ! Pad with zeros
             CALL FLTRNEG( CFIP )     ! Filter 0 and -9 to blank
             CALL PADZERO( CFIP )     ! Pad with zeros
 
@@ -693,7 +696,7 @@ C.................  link-specific assignments from the documentation for Spcmat.
                     METREFFLAG( JSPC )  = .TRUE.
 
                     IF ( LASTMET .EQ. MISSMET ) THEN
-                        METPROTYPE = FIELD( 9 )
+                        METPROTYPE = FIELD( 8 )
                         LASTMET    = METPROTYPE
                     ELSE IF ( LASTMET .NE. METPROTYPE ) THEN
                         EFLAG = .TRUE.
@@ -918,33 +921,13 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
             ELSE
 
                 NMETPROF = NROWS3D
-                ALLOCATE( COUNTIES( NMETPROF ),
-     &                     METFIPS( NMETPROF ),
-     &                     METNDEX( NMETPROF ), STAT = IOS )
-                IF ( IOS .NE. 0 ) THEN
-                    WRITE( MESG, '( A, I10 )' )
-     &                   'ERROR:  COUNTIES,METFIPS,METNDX alloc failure.  STAT=', IOS
-                    CALL M3EXIT( PNAME, 0,0, MESG, 2 )
-                END IF
-
-                METPROF = 0
+                ALLOCATE( COUNTIES( NMETPROF ), STAT = IOS )
+                CALL CHECKMEM( IOS, 'COUNTIES', 'PROCTPRO' )
 
                 IF ( .NOT.READ3( METNAME, 'COUNTIES', 1, SDATE, STIME, COUNTIES ) ) THEN
                     MESG = 'Could not READ3("TPRO_HOUR","COUNTIES",...)'
                     CALL M3EXIT( PNAME,SDATE,STIME, MESG, 2 )
                 END IF
-
-                !  sort counties into METFIPS(:)
-
-                DO N = 1, NMETPROF
-                    METNDEX( N ) = N
-                END DO
-
-                CALL SORTI1( NMETPROF, METNDEX, COUNTIES )
-
-                DO N = 1, NMETPROF
-                    METFIPS( N ) = COUNTIES( METNDEX( N ) )
-                END DO
 
                 DO V = 1, NIPPA
 
@@ -968,15 +951,15 @@ C.........................  use subscript into (unsorted) COUNTIES:
 
                         I = FINDC( CSRCALL, METCOUNT, METKEYS )         !  index in sorted XREF, or 0
                         IF ( I .GT. 0 )  THEN
-                            K = FIND1( IFIP( S ), NMETPROF, METFIPS )   !  index into sorted list,   or 0
-                            METPROF( S,V ) = METNDEX( K )               !  index into unsorted list, or 0
+                            K = FIND1( IFIP( S ), NMETPROF, COUNTIES )  !  index into sorted list,   or 0
+                            METPROF( S,V ) = K                          !  index into unsorted list, or 0
                         END IF
 
                     END DO      !  end loop on sources S
 
                 END DO          !  end loop on pollutants V
 
-                DEALLOCATE( COUNTIES, METFIPS, METNDEX, METKEYS )
+                DEALLOCATE( COUNTIES, METKEYS )
 
             END IF              !  if not open3(); else if not desc3(); else...
 
