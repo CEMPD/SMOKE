@@ -1680,23 +1680,25 @@ C.........  Compute day of month temporal profiles
                 CALL DAYMON( JDATE  , MONTH  , DAY  )
 
                 DO S = 1, NSRGFIPS
-
                     IF( MONSRC( S,MONTH ) /= 0.0 ) THEN
                         PROF_DAY( S,DAY ) = DAYSRC( S,DD ) / MONSRC( S,MONTH )
                     ELSE
                         PROF_DAY( S,DAY ) = 0.0 
                     END IF
+                END DO
 
 C.................  Output daily profiles by county
-                    IF( MONTH /= TMPMNTH ) THEN
+                IF( MONTH /= TMPMNTH ) THEN
+
+                    DO S = 1, NSRGFIPS
                         WRITE( DODEV, "(I5.5,A,I2.2,31(A,E10.3))" )
      &                      SRGFIPS( S ), ',', MONTH,
      &                      ( (',', PROF_DAY( S,NP ) ), NP = 1,31 )
-                    END IF
+                    END DO
 
-                END DO
+                    PROF_DAY = 0.0    ! re-initializing 
 
-                PROF_DAY = 0.0    ! re-initializing 
+                END IF
 
             END DO
 
