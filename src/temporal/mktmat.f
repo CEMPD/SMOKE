@@ -290,7 +290,7 @@ C               correct county-specific hr profiles
             TDATE = JDATE
             TTIME = JTIME
             IF( TTIME > 230000 ) TTIME = TTIME - 240000
-            print*,JDATE,JTIME,TTIME,ZONES(S)
+
 C.............  Convert ann/avgday NH3 inventory to hourly NH3 before multiplying
 C               adjustment factor computed by Gentpro
             DO H = 1, 24
@@ -305,6 +305,7 @@ C                   APPLY hour-of-month profiles to monthly inventory
                     IF( HOUR_TPROF == 'YEAR' ) THEN  ! year to hour profiles for annual total inventory
                         FAC = 1.0
                     ELSE IF( HOUR_TPROF == 'MONTH' ) THEN  ! convert annual to monthly before apply hour-of-month profiles from Gentpro
+                        TVARNAME = 'MONTOT'                ! Change ANNTOT to MONTOT to correctly convert month-to-hour
                         MON = MONTH( H, ZONES( S ) )
                         FAC = MONFAC_ORG( MON,IMTH )
                     ELSE
