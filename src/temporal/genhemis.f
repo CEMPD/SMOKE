@@ -199,8 +199,8 @@ C.............  Define the minimum and maximum time zones in the inventory
             TZMAX = MAXVAL( TZONES )
 
 C.............  Adjust TZMIN and TZMAX for possibility of daylight savings
-            TZMIN = MAX( TZMIN - 1, 0 )
-            TZMAX = MIN( TZMAX + 1, 23 )
+            TZMIN = TZMIN - 1
+            TZMAX = TZMAX + 1
 
 C.............  Determine hours of output day in GMT for updating TMAT
             NHRCALC = TZMAX - TZMIN + 1
