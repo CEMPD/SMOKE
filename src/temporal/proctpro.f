@@ -70,7 +70,7 @@ C.........  MODTMPRL contains the temporal profile tables
         USE MODTMPRL, ONLY: NMON,   NWEK,   NHRL,   NDOM,
      &                      MONFAC, WEKFAC, HRLFAC, DOMFAC,
      &                      MONREF, WEKREF, HRLREF, DAYREF,
-     &                      METPROTYPE, METREFFLAG,
+     &                      METPROTYPE, METREFFLAG, HOUR_TPROF,
      &                      MONFLAG, DAYFLAG, WKDFLAG, WKEFLAG,
      &                      ITDATE, RUNLEN, POLREFFLAG,
      &                      MTHIDP, WEKIDP, DOMIDP, HRLIDP,
@@ -908,6 +908,19 @@ C.........  hour-of-day:  all these use TPROF_HOURLY:
 
 
         IF ( METCOUNT .GT. 0 ) THEN       !  met based
+
+C.............  Determine which hourly profiles to apply
+           MESG = 'Specifies the basis of hourly profiles: [YEAR|MONTH]'
+           CALL ENVSTR( 'HOURLY_TPROF_BASE', MESG, ' ',HOUR_TPROF, IOS )
+           CALL UPCASE( HOUR_TPROF )
+
+            IF( .NOT. ( HOUR_TPROF=='MONTH' .OR. HOUR_TPROF=='YEAR' ) ) THEN
+                MESG = 'ERROR: MUST define the basis of hourly profiles '//
+     &                 'for a correct hourly conversion.'
+     &                 //CRLF()//BLANK10//':: Define HOURLY_TPROF_BASE to '//
+     &                 '[YEAR or MONTH]'
+                CALL M3EXIT( PNAME, 0, 0, MESG, 2 )
+            END IF
 
             METFLAG = .TRUE.
             METNAME = CATEGORY(1:1) //  'TPRO_HOURLY_NCF'

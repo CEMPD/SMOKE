@@ -288,9 +288,9 @@ C.............  Allocate local array
 C.............  Convert timezone (w daylight saving) to read
 C               correct county-specific hr profiles
             TDATE = JDATE
-            TTIME = JTIME + ZONES( S ) * 10000
+            TTIME = JTIME
             IF( TTIME > 230000 ) TTIME = TTIME - 240000
-                
+            print*,JDATE,JTIME,TTIME,ZONES(S)
 C.............  Convert ann/avgday NH3 inventory to hourly NH3 before multiplying
 C               adjustment factor computed by Gentpro
             DO H = 1, 24
@@ -300,12 +300,34 @@ C                   depending on whether inventory is monthly or annual
 C                   APPLY hour-of-year profiles to annual inventory
 C                   APPLY hour-of-month profiles to monthly inventory
 
-                IF( TVARNAME == 'ANNTOT' ) THEN     ! year to hour profiles for annual total inventory
-                    FAC = 1.0
+                IF( TVARNAME == 'ANNTOT' ) THEN
+
+                    IF( HOUR_TPROF == 'YEAR' ) THEN  ! year to hour profiles for annual total inventory
+                        FAC = 1.0
+                    ELSE IF( HOUR_TPROF == 'MONTH' ) THEN  ! convert annual to monthly before apply hour-of-month profiles from Gentpro
+                        MON = MONTH( H, ZONES( S ) )
+                        FAC = MONFAC_ORG( MON,IMTH )
+                    ELSE
+                        MESG = 'ERROR: MUST define HOURLY_TPRO_BASE to YEAR or MONTH '//
+     &                         'to compute hourly emissions'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
 
                 ELSE  IF( TVARNAME == 'MONTOT' ) THEN    ! month to hour profiles for monthly/avg inventory
-                    MON = MONTH( H, ZONES( S ) )
-                    FAC = YRFAC * MON_DAYS( MON )
+
+                    IF( HOUR_TPROF == 'YEAR' ) THEN
+                        MESG = 'ERROR: Can not apply year to hour hourly temporal '//
+     &                      'profiles from Genptro program to average day '//
+     &                      'inventory: Change HOURLY_TPROF_BASE to MONTH'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    ELSE IF( HOUR_TPROF == 'MONTH' ) THEN  ! convert annual to monthly before apply hour-of-month profiles from Gentpro
+                        MON = MONTH( H, ZONES( S ) )
+                        FAC = YRFAC * MON_DAYS( MON )
+                    ELSE
+                        MESG = 'ERROR: MUST define HOURLY_TPRO_BASE to MONTH '//
+     &                         'to compute hourly emissions'
+                        CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                    END IF
 
                 END IF
 
