@@ -64,53 +64,39 @@ endif
 
 
 # Check MOVES mobile sources
-echo 'MOVES rateperdistance (no refueling) source differences' >> $errfile
+echo 'MOVES rateperdistance source differences' >> $errfile
 
-diff $ncrepdir/repmgts_l.rateperdistance_noRFL.*0710* $repdir/repmgts_l.rateperdistance_noRFL.*0710* >> $errfile
+diff $ncrepdir/repmgts_l.rateperdistance*0710* $repdir/repmgts_l.rateperdistance*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/repmgts_l.rateperdistance_noRFL.*0711* $repdir/repmgts_l.rateperdistance_noRFL.*0711* >> $errfile
+diff $ncrepdir/repmgts_l.rateperdistance*0711* $repdir/repmgts_l.rateperdistance*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-echo 'MOVES rateperdistance refuleing source differences' >> $errfile
+echo 'MOVES rateperhour source differences' >> $errfile
 
-diff $ncrepdir/repmgts_l.rateperdistance_RFLonly.*0710* $repdir/repmgts_l.rateperdistance_RFLonly.*0710* >> $errfile
+diff $ncrepdir/repmgts_l.rateperhour*0710* $repdir/repmgts_l.rateperhour*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/repmgts_l.rateperdistance_RFLonly.*0711* $repdir/repmgts_l.rateperdistance_RFLonly.*0711* >> $errfile
+diff $ncrepdir/repmgts_l.rateperhour*0711* $repdir/repmgts_l.rateperhour*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
-
 
 # Check MOVES ratepervehicle sources
-echo 'MOVES ratepervehicle (no refueling) source differences' >> $errfile
+echo 'MOVES ratepervehicle source differences' >> $errfile
 
-diff $ncrepdir/repmgts_l.ratepervehicle_noRFL.*0710* $repdir/repmgts_l.ratepervehicle_noRFL.*0710* >> $errfile
+diff $ncrepdir/repmgts_l.ratepervehicle*0710* $repdir/repmgts_l.ratepervehicle*0710* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif
 
-diff $ncrepdir/repmgts_l.ratepervehicle_noRFL.*0711* $repdir/repmgts_l.ratepervehicle_noRFL.*0711* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-
-echo 'MOVES ratepervehicle refueling source differences' >> $errfile
-
-diff $ncrepdir/repmgts_l.ratepervehicle_RFLonly.*0710* $repdir/repmgts_l.ratepervehicle_RFLonly.*0710* >> $errfile
-if ( $status > 0 ) then
-    set errstat = 1
-endif
-
-diff $ncrepdir/repmgts_l.ratepervehicle_RFLonly.*0711* $repdir/repmgts_l.ratepervehicle_RFLonly.*0711* >> $errfile
+diff $ncrepdir/repmgts_l.ratepervehicle*0711* $repdir/repmgts_l.ratepervehicle*0711* >> $errfile
 if ( $status > 0 ) then
     set errstat = 1
 endif

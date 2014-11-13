@@ -34,7 +34,7 @@
    setenv METSCEN      12km             # Met scenario name
    setenv GRID         us12-nc          # Gridding root for naming
    setenv IOAPI_GRIDNAME_1 US12NC_66X52 # Grid selected from GRIDDESC file
-   setenv IOAPI_ISPH   19               # Specifies spheroid type associated with grid
+   setenv IOAPI_ISPH   20               # Specifies spheroid type associated with grid
    setenv SPC          cmaq_cb05_soa     # Speciation type
 
 ## Mobile episode variables
@@ -59,7 +59,8 @@
        set date = $G_STDATE
        @ date = $date + $G_STDATE_ADVANCE
        setenv G_STDATE $date 
-       setenv ESDATE `$IOAPIDIR/datshift $G_STDATE 0`
+# org       setenv ESDATE `$IOAPIDIR/datshift $G_STDATE 0`
+       setenv ESDATE `$IOAPIDIR/jul2greg $G_STDATE`
    endif
 
 ## User-defined I/O directory settings
@@ -104,8 +105,10 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv REPCONFIG $INVDIR/$SRCABBR/REPCONFIG.area.txt          # Default report configurations
    setenv ARTOPNT   $INVDIR/other/ar2pt_14OCT03_1999.txt         # area-to-point assignments
    setenv AGREF     $GE_DAT/amgref_us_051704.txt                 # Area gridding x-ref 
-   setenv ATPRO     $GE_DAT/amptpro.m3.default.us+can.txt        # Temporal profiles
-   setenv ATREF     $GE_DAT/amptref.m3.us+can.cair.txt           # Area temporal x-ref
+   setenv ATPRO_MONTHLY   $GE_DAT/amptpro_monthly.csv            # Monthly Temporal profiles
+   setenv ATPRO_WEEKLY    $GE_DAT/amptpro_weekly.csv             # Weekly Temporal profiles
+   setenv ATPRO_HOURLY    $GE_DAT/amptpro_hourly.csv             # Hourly Temporal profiles
+   setenv ATREF     $GE_DAT/amptref_tref.csv                   # Temporal x-ref
    setenv GSREF     $GE_DAT/gsref.$SPC.txt                       # Speciation x-ref
    setenv GSPRO     $GE_DAT/gspro.$SPC.txt                       # Speciation profiles
    setenv GSPRO_COMBO $GE_DAT/gspro_combo.$SPC.txt               # Speciation Combo prof
@@ -113,20 +116,14 @@ endif
 #
 ## Biogenic input files
 if ( $SMK_SOURCE == 'B' ) then
-   setenv BGUSE     $SMKDAT/inventory/beld2/beld.5.us36.txt       # Gridded landuse
-   setenv METLIST   $INVDIR/biog/metlist.tmpbio.txt              # Meteorology file list for temperatures
-   setenv RADLIST   $INVDIR/biog/radlist.tmpbio.txt              # Meteorology file list for solar radiation
-   setenv BFAC      $GE_DAT/bfac.summer.txt                      # Default biogenic emission factors
-   setenv S_BFAC    $GE_DAT/bfac.summer.txt                      # Summer biogenic emission factors
-   setenv W_BFAC    $GE_DAT/bfac.winter.txt                      # Winter biogenic emission factors
-   setenv BCUSE     $GE_DAT/landuse.dat                          # County landuse
-   setenv B3FAC     $GE_DAT/b3fac.beis3_efac_v0.98.txt
-   setenv B3XRF     $GE_DAT/b3tob2B.xrf                          # Beld3 to Beld2 cross-reference
-   setenv BELD3_TOT $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_tot.ncf
-   setenv BELD3_A   $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_a.ncf
-   setenv BELD3_B   $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_b.ncf
-   setenv SOILINP   $STATIC/soil.beis312.$GRID.$SPC.ncf          # NO soil input file
-   setenv GSPRO     $GE_DAT/gspro.$SPC.txt                       # Speciation profiles
+   setenv B3FAC     $GE_DAT/b3fac.beis3_efac_v0.98.txt                       # BEIS3.14 emission factors input file
+   setenv B360FAC   $GE_DAT/b360fac_beld4_csv_nlcd2006.txt                   # BEIS3.6 emission factors input file
+   setenv BELD4     $INVDIR/biog/beld4.${IOAPI_GRIDNAME_1}.ncf               # BEIS3.6 BELD4 land-use input file
+   setenv BELD3_TOT $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_tot.ncf    # BELD3 for BEIS3.14
+   setenv BELD3_A   $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_a.ncf      # BELD3 for BEIS3.14
+   setenv BELD3_B   $INVDIR/biog/beld3.${IOAPI_GRIDNAME_1}.output_b.ncf      # BELD3 for BEIS3.14
+   setenv SOILINP   $STATIC/soil.beis312.$GRID.$SPC.ncf                      # NO soil input file
+   setenv GSPRO     $GE_DAT/gspro.$SPC.txt                                   # Speciation profiles
 endif
 
 if ( $SMK_SOURCE == 'B' || $MRG_BIOG == 'Y' ) then
@@ -139,27 +136,22 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MBINV       $INVDIR/$SRCABBR/mbinv.$SRCABBR.lst        # mobile emissions
    setenv SPDREF      $INVDIR/$SRCABBR/spdref.MOVES.txt          # Speed cross-reference file
    setenv SPDPRO      $INVDIR/$SRCABBR/spdpro.MOVES.txt          # Speed profiles file
-   setenv MCODES      $GE_DAT/mcodes.txt                         # mobile codes to build internal SCC 
+   setenv SCCXREF     $GE_DAT/SCCXREF_$SRCABBR.csv               # SCC8-SCC10 mapping input file
    setenv MCXREF      $GE_DAT/mcxref_nc.txt                      # ref county cross-reference
    setenv MFMREF      $GE_DAT/mfmref_nc.txt                      # ref county fuel-month
    setenv METLIST     $GE_DAT/metlist.met4moves.lst              # List of Meteorology files
-   setenv MGREF       $GE_DAT/mgref_us_MOVES_noRFL.txt           # Mobile gridding x-ref for all modes except for RFL
-   setenv MTPRO       $GE_DAT/amptpro.m3.default.us+can.txt      # Temporal profiles
-   setenv MTREF       $GE_DAT/amptref.m3.us+can.cair.txt         # Mobile temporal x-ref
-   setenv GSREF       $GE_DAT/gsref.$SPC.moves.txt               # Speciation x-ref
-   setenv GSPRO       $GE_DAT/gspro.$SPC.moves.txt               # Speciation profiles
+   setenv MGREF       $GE_DAT/mgref_nc_moves2014.txt             # Mobile gridding x-ref
+   setenv MTPRO_MONTHLY   $GE_DAT/amptpro_monthly.csv            # Monthly Temporal profiles
+   setenv MTPRO_WEEKLY    $GE_DAT/amptpro_weekly.csv             # Weekly Temporal profiles
+   setenv MTPRO_HOURLY    $GE_DAT/amptpro_hourly.csv             # Hourly Temporal profiles
+   setenv MTREF       $GE_DAT/amptref_tref.csv                   # Temporal x-ref
+   setenv GSREF       $GE_DAT/gsref.$SPC.moves2014.txt               # Speciation x-ref
+   setenv GSPRO       $GE_DAT/gspro.$SPC.moves2014.txt               # Speciation profiles
    setenv GSPRO_COMBO $GE_DAT/gspro_combo.$SPC.moves.txt         # Speciation Combo prof
    setenv MEPROC      $GE_DAT/meproc.$SRCABBR.txt                # Mobile emission processes
    setenv SMK_MVSPATH $GE_DAT/MOVES_lookuptables/                # Dir for MOVES lookup tab
-   setenv MRCLIST     $SMK_MVSPATH/mrclist.${SRCABBR}.summed.lst # List of MOVES lookup table list file
+   setenv MRCLIST     $SMK_MVSPATH/mrclist.${SRCABBR}.lst # List of MOVES lookup table list file
    setenv METMOVES    $SMKDAT/met/run_$METSCEN/SMOKE_DAILY_${IOAPI_GRIDNAME_1}.ncf  # Met4moves output
-
-   if( $SRCABBR == 'rateperdistance_noRFL' |  $SRCABBR == 'ratepervehicle_noRFL'| $SRCABBR == 'rateperprofile' ) then
-       setenv MGREF       $GE_DAT/mgref_us_MOVES_noRFL.txt           # Mobile gridding x-ref for all modes except for RFL
-   else
-       setenv MGREF       $GE_DAT/mgref_us_MOVES_RFLonly.txt         # Mobile gridding x-ref only RFL mode
-   endif
-
 endif
 #
 ## Point source input files
@@ -170,8 +162,10 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv PELVCONFIG  $INVDIR/$SRCABBR/pelvconfig.inline.txt     # elevated source selection
    setenv REPCONFIG   $INVDIR/$SRCABBR/repconfig.point.txt       # Default report configurations
    #      PTMPLIST                                               # Set automatically by script
-   setenv PTPRO       $GE_DAT/amptpro.m3.default.us+can.txt      # Temporal profiles
-   setenv PTREF       $GE_DAT/amptref.m3.us+can.cair.txt         # Point temporal x-ref
+   setenv PTPRO_MONTHLY   $GE_DAT/amptpro_monthly.csv            # Monthly Temporal profiles
+   setenv PTPRO_WEEKLY    $GE_DAT/amptpro_weekly.csv             # Weekly Temporal profiles
+   setenv PTPRO_HOURLY    $GE_DAT/amptpro_hourly.csv             # Hourly Temporal profiles
+   setenv PTREF       $GE_DAT/amptref_tref.csv                   # Temporal x-ref
    setenv PSTK        $GE_DAT/pstk.m3.txt                        # Replacement stack params
    setenv GSPRO       $GE_DAT/gspro.$SPC.txt                     # Speciation profiles
    setenv GSREF       $GE_DAT/gsref.$SPC.txt                     # Speciation x-ref
