@@ -1449,7 +1449,7 @@ C.............  Local variables:
             INTEGER     I, J, K, L, M, N, W, ISTAT, IMON
             INTEGER     IDINDX( IDCNT )
             INTEGER     NSORT, NLINES, NDATA, FDEV
-            INTEGER     JDATE, JTIME, NRECS
+            INTEGER     JDATE, JTIME, NRECS, MON, MDAY
             LOGICAL     LEAPYEAR, EFLAG
 
             CHARACTER(  16) :: THISID, LASTID, AKEY, MISS
@@ -1484,38 +1484,19 @@ C.............  Create sorted-unique list of input IDs:
             END DO
 
 
-C.............  Check leapyear status:  must be consistent
-C.............  for the entire run if TPRO_DAILY is used
-
-            EFLAG = .FALSE.
-
-            LEAPYEAR = ISLEAP( SDATE )
+C.............  Check if run is impacted by leap year
+            LEAPYEAR = .FALSE.
             JTIME = 0
-            NRECS = JSTEP3( EDATE, JTIME, SDATE, JTIME, DAYSTEP )
             JDATE = SDATE
-            IF ( LEAPYEAR ) THEN
-                DO I = 2, NRECS
-                    CALL NEXTIME( JDATE, JTIME, DAYSTEP )
-                    IF ( .NOT.ISLEAP( JDATE ) ) THEN
-                        EFLAG = .TRUE.
-                    END IF
-                END DO
-            ELSE
-                DO I = 2, NRECS
-                    CALL NEXTIME( JDATE, JTIME, DAYSTEP )
-                    IF ( ISLEAP( JDATE ) ) THEN
-                        EFLAG = .TRUE.
-                    END IF
-                END DO
-            END IF
-            IF ( EFLAG ) THEN
-                CALL M3MESG( MESG )
-                WRITE( MESG, '( A, I9.7, A, I7.7 )' )
-     &              'Requested period', SDATE, ':', EDATE
-                CALL M3MESG( MESG )
-                MESG = 'ERROR:  inconsistent LEAPYEAR for TPRO_DAILY'
-                CALL M3EXIT( PNAME, 0,0, MESG, 2 )
-            END IF
+            NRECS = JSTEP3( EDATE, JTIME, SDATE, JTIME, DAYSTEP )
+            DO I = 1, NRECS
+                CALL DAYMON( JDATE, MON, MDAY )
+                IF ( MON == 2 .AND. ISLEAP( JDATE ) ) THEN
+                    LEAPYEAR = .TRUE.
+                    EXIT
+                END IF
+                CALL NEXTIME( JDATE, JTIME, DAYSTEP )
+            END DO
 
 C.............  Open and count FNAME
 
