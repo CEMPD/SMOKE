@@ -236,13 +236,6 @@ C.........   Open files that depend on inventory characteristics
 
         END IF
 
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            MDEV = PROMPTFFILE( 
-     &             'Enter logical name for MOBILE CODES file',
-     &             .TRUE., .TRUE., 'MCODES', PROGNAME )
-
-        END IF
-
 C.........  Set inventory variables to read for all source categories
         IVARNAMS( 1 ) = 'CSCC'
         IVARNAMS( 2 ) = 'CSOURC'
@@ -275,7 +268,7 @@ C.........  Build unique lists of SCCs per SIC from the inventory arrays
         CALL GENUSLST
 
 C.........  When mobile codes file is being used read mobile codes file
-        IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
+C        IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
 
 C.........  Read inventory table (used for NONHAP checks)
         CALL RDCODNAM( VDEV )
@@ -342,14 +335,13 @@ C.............  If output was not found, set name to blank
 
 C.............  Rename emission factors if necessary
             IF( OUTPUTHC /= ' ' ) THEN
+              DO J = 1, NIACT
                 DO I = 1, SIZE( EMTNAM,1 )
-                    L = INDEX( EMTNAM( I,1 ), ETJOIN )
-                    L2 = LEN_TRIM( ETJOIN )
-                    
-                    IF( EMTNAM( I,1 )( L+L2:IOVLEN3 ) == INPUTHC ) THEN
-                        EMTNAM( I,1 )( L+L2:IOVLEN3 ) = OUTPUTHC
+                    IF( EMTNAM( I,J ) == INPUTHC ) THEN
+                        EMTNAM( I,J ) = OUTPUTHC
                     END IF
                 END DO
+              END DO
             END IF
 
         END IF
@@ -397,10 +389,6 @@ C.........  Initialize arrays
         IDXCHK = .FALSE.  ! array
 
 C.........  Create array of pollutant names from emission types and pollutants
-C.........  Put the pollutants from the emission types first so that the
-C           index from the emisson type names (EMTIDX) will be valid with 
-C           SINAM and EMTPOL.
-C.........  Also, restructure the index.  First, for emission types...
         J  = 0
         NP = 0
         DO I = 1, NIACT
@@ -413,9 +401,7 @@ C               in order of appearance
                 ENAM = EMTNAM( K,I )
                 EANAM( J ) = ENAM
 
-                L1 = INDEX( ENAM, ETJOIN )
-                L2 = LEN_TRIM( ENAM )
-                IF( L1 .GT. 0 ) PNAM = ENAM( L1+2:L2 )
+                PNAM = ENAM
 
 C.................  If it does not already appear in list, store pollutant name
                 N = INDEX1( PNAM, NP, IINAM )
@@ -643,6 +629,8 @@ C           MXSPFUL, which is from module MODSPRO
         CALL CHECKMEM( IOS, 'MOLEFACT', PROGNAME )
         ALLOCATE( MASSFACT( MXSPFUL ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MASSFACT', PROGNAME )
+        MOLEFACT = 0.0
+        MASSFACT = 0.0
 
 C.........  Allocate memory for names of output variables
         ALLOCATE( MASSONAM( 0:MXTAG, MXSPEC, NIPPA  ), STAT=IOS )

@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDCFPRO( CFDEV, RFLAG )
+        SUBROUTINE RDCFPRO( CFDEV )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -38,10 +38,11 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY:  NIPPA, EANAM
+        USE MODMERGE, ONLY:  NIPPA, EANAM, NMSPC, EMNAM, NSMATV,
+     &                       TSVDESC
 
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: CFPRO
+        USE MODMVSMRG, ONLY: CFPRO, EXPCFFLAG, REFCFFLAG
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
@@ -74,7 +75,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: CFDEV             ! CFPRO file unit no.
-        LOGICAL, INTENT (IN) :: RFLAG             ! true: Reference county CFPRO
 
 C...........   Local allocatable arrays
 
@@ -90,7 +90,8 @@ C...........   Other local variables
         INTEGER         NPOLS       ! total matched POL 
         INTEGER         NMONS       ! total matched POL 
         INTEGER         POLIDX      ! current POL index
-        INTEGER         SCCIDX      ! current POL index
+        INTEGER         SPCIDX      ! current species index
+        INTEGER         SCCIDX      ! current scc index
         INTEGER         NLINES      ! number of lines
         INTEGER         CNTY        ! current FIPS code
         INTEGER         MON         ! current Month
@@ -108,13 +109,11 @@ C...........   Other local variables
         CHARACTER(500)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
         CHARACTER(SCCLEN3) SCC      ! current SCC
-        CHARACTER(IOVLEN3) POLNAME  ! current pollutant name 
-        CHARACTER(IOVLEN3) EPOLNAM  ! current mode+pollutant name 
-        CHARACTER(3)       MODNAME  ! current mode name
+        CHARACTER(IOVLEN3) POLNAM, SPCNAM  ! current pollutant-species name 
 
         INTEGER     NLFIPS(NINVIFIP)      ! FIPS matched
         INTEGER     NLSCCS(NINVSCC)       ! SCC matched
-        INTEGER     NLPOLS(NIPPA)        ! POL matched
+        INTEGER     NLPOLS(NIPPA+NMSPC)        ! POL matched
         INTEGER     NLMONS(12)        ! POL matched
 
         CHARACTER(16) :: PROGNAME = 'RDCFPRO'   ! program name
@@ -126,9 +125,9 @@ C.........  Get maximum number of warnings
         MXWARN = ENVINT( WARNSET, ' ', 100, IOS );
 
 C.........  Allocate storage based on number of FIPs and SCCs in inventory
-        ALLOCATE( CFPRO( NINVIFIP, NINVSCC, NIPPA, 12 ), STAT=IOS )
+        ALLOCATE( CFPRO( NINVIFIP, NINVSCC, NIPPA+NMSPC, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFPRO', PROGNAME )
-        ALLOCATE( CFLAG( NINVIFIP, NINVSCC, NIPPA, 12 ), STAT=IOS )
+        ALLOCATE( CFLAG( NINVIFIP, NINVSCC, NIPPA+NMSPC, 12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CFLAG', PROGNAME )
         CFPRO = 1.0   ! array
         CFLAG = .FALSE.   ! array
@@ -167,7 +166,7 @@ C.............  Convert FIP to integer
             IF( STR2INT( SEGMENT( 1 ) ) == 0  ) THEN 
 
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
-                IF( RFLAG ) THEN
+                IF( REFCFFLAG ) THEN
                     WRITE( MESG, 94010 ) 'WARNING: Skipping line',
      &                  IREC, ' of control factor file because FIPS code '//
      &                  TRIM( SEGMENT(1) ) // ' is not a reference county'
@@ -192,7 +191,7 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
                     NLFIPS(1) = L1
 
 C.....................  Propagate reference-county-specific control factor to inventory counties.
-                    IF( RFLAG ) THEN
+                    IF( REFCFFLAG ) THEN
                         L2 = FIND1( CNTY, NREFC, MCREFIDX( :,1 ) )
                         IF( L2 < 1 ) THEN
                             WRITE( MESG, 94010 ) 'WARNING: Skipping line',
@@ -213,7 +212,6 @@ C.........................  find ref county and apply CF to ref-inventory counti
                             END IF
                         END DO
                         NFIPS = K
-
                     END IF
                 ELSE     ! FIPS is country/state  
 
@@ -271,84 +269,75 @@ C.............  Find SCC in inventory list
             END IF
 
 C.............  Check pollutant name and mode
-            POLNAME = ADJUSTL( SEGMENT( 3 ) )
-            MODNAME = ADJUSTL( SEGMENT( 4 ) )
+            POLNAM = ADJUSTL( SEGMENT( 3 ) )
             K = 0
-            IF( SEGMENT( 3 ) == ' ' .AND. SEGMENT( 4 ) == ' ' ) THEN
-                NPOLS  = NIPPA
-                DO J = 1, NIPPA
-                    NLPOLS(J) =  J
+            IF( SEGMENT( 3 ) == ' ' ) THEN
+                NPOLS  = NIPPA+NMSPC
+                DO J = 1, NPOLS
+                    NLPOLS( J ) =  J
                 END DO
-            ELSE IF( SEGMENT( 3 ) == ' ' .AND. SEGMENT( 4 ) /= ' ') THEN
-                L1 = LEN_TRIM(SEGMENT( 4 ))
-                DO J = 1, NIPPA
-                    IF ( MODNAME == EANAM(J)(1:L1) ) THEN
-                        K = K +1
-                        NLPOLS(K) = J
-                    END IF
-                END DO
-                NPOLS = K
-                IF (  NPOLS < 1 ) THEN 
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
-     &                IREC, ' of control factor file because '
-     &                //TRIM(MODNAME)// ' is not in the mode list'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
-            ELSE IF( SEGMENT( 3 ) /= ' ' .AND. SEGMENT( 4 ) == ' ' ) THEN
-                DO J = 1, NIPPA
-                    L1 = INDEX(EANAM(J), ETJOIN)
-                    IF ( POLNAME == EANAM(J)(L1+2:) ) THEN
-                         K = K +1
-                         NLPOLS(K) = J
-                    END IF
-                END DO
-                NPOLS = K
-                IF (  NPOLS < 1 ) THEN 
-                    WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
-     &                IREC, ' of control factor file because ' //
-     &                TRIM(POLNAME)//' is not in the pollutant list'
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
             ELSE 
-                L1 =  LEN_TRIM(POLNAME)
-                L2 =  LEN_TRIM(MODNAME)
-                EPOLNAM = MODNAME(1:L2)//ETJOIN//POLNAME(1:L1)
-                POLIDX =  INDEX1( EPOLNAM, NIPPA, EANAM )
-                IF ( POLIDX > 0) THEN
-                    NPOLS = 1
-                    NLPOLS(1) = POLIDX
-                END IF
-                IF (  NPOLS < 1 ) THEN
-                   WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
-     &                IREC, ' of control factor file because ' //
-     &                TRIM(EPOLNAM)// ' is not in the pollutant list.'
-                    CALL M3MESG( MESG )
-                    CYCLE
+                NPOLS = 0
+                IF ( EXPCFFLAG ) THEN
+                    POLIDX = INDEX1( POLNAM, NIPPA, EANAM )
+                    SPCIDX = INDEX1( POLNAM, NMSPC, EMNAM )
+                    NPOLS =1
+                    IF( POLIDX > 0 ) THEN
+                        NLPOLS( NPOLS ) = POLIDX
+                    ELSE IF( SPCIDX > 0 ) THEN
+                        NLPOLS( NPOLS ) = NIPPA + SPCIDX
+                    ELSE
+                        WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
+     &                    IREC, ' of control factor file because ' //
+     &                    TRIM(POLNAM)// ' is not in the pollutant/species list.'
+                        CALL M3MESG( MESG )
+                        CYCLE
+                    END IF
+                ELSE        ! inv poll-specific control factors application
+                    POLIDX = INDEX1( POLNAM, NIPPA, EANAM )
+                    IF ( POLIDX > 0) THEN
+                        NPOLS = NPOLS + 1 
+                        NLPOLS( NPOLS ) = POLIDX
+                        DO J = 1, NSMATV
+                           L1 = INDEX( TSVDESC( J ), SPJOIN )
+                           L2 = LEN_TRIM( TSVDESC( J ) )
+                           IF( POLNAM == TSVDESC( J )( 1:L1-1 ) ) THEN
+                               SPCNAM = TSVDESC( J )( L1+1:L2 )
+                               SPCIDX = INDEX1( SPCNAM, NMSPC, EMNAM )
+                               NPOLS = NPOLS + 1
+                               NLPOLS( NPOLS ) = NIPPA + SPCIDX
+                           END IF
+                        END DO
+                    ELSE
+                        WRITE( MESG, 94010 ) 'NOTE: Skipping line at',
+     &                    IREC, ' of control factor file because ' //
+     &                    TRIM(POLNAM)// ' is not in the pollutant list.'
+                        CALL M3MESG( MESG )
+                        CYCLE
+                    END IF
                 END IF
             END IF
 
 C.............  Check month values
             NMONS = 0
-            IF( SEGMENT( 5 ) == ' ' ) SEGMENT( 5 ) = '0'
-            IF( STR2INT( SEGMENT( 5 ) ) == 0 ) THEN 
+            IF( SEGMENT( 4 ) == ' ' ) SEGMENT( 4 ) = '0'
+            IF( STR2INT( SEGMENT( 4 ) ) == 0 ) THEN 
                 NMONS = 12
                 DO J = 1, NMONS
                     NLMONS( J ) = J
                 END DO
-            ELSE IF ( .NOT. CHKINT( SEGMENT( 5 ) ) ) THEN
+            ELSE IF ( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Bad month format '
-     &               //TRIM(SEGMENT(5))// ' at line', IREC
+     &               //TRIM(SEGMENT(4))// ' at line', IREC
                 CALL M3MESG( MESG )
                 CYCLE
             ELSE         ! month is integer value 
-                MON = STR2INT( SEGMENT( 5 ) )
+                MON = STR2INT( SEGMENT( 4 ) )
                 IF( MON < 1  .OR. MON > 12 ) THEN 
                     EFLAG = .TRUE.
                     WRITE( MESG, 94010 ) 'ERROR: Can not process month '
-     &                   //TRIM(SEGMENT(5))// ' at line', IREC
+     &                   //TRIM(SEGMENT(4))// ' at line', IREC
                     CALL M3MESG( MESG )
                     CYCLE
                 END IF
@@ -360,7 +349,7 @@ C.............  check no of fips/scc/poll/mon
             IF( NFIPS < 1 .OR. NSCCS < 1 .OR. NPOLS < 1 .OR. NMONS < 1 )  CYCLE
                 
 C.............  check and get up control factor values
-            IF ( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
+            IF ( .NOT. CHKREAL( SEGMENT( 5 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: Bad contol factor value'//
      &            ' at line', IREC
@@ -368,21 +357,22 @@ C.............  check and get up control factor values
                 CYCLE
             END IF
  
-            CFVAL = STR2REAL( SEGMENT( 6 ) )                
+            CFVAL = STR2REAL( SEGMENT( 5 ) )                
 
             DO L = 1, NFIPS
             DO J = 1, NSCCS
             DO K = 1, NPOLS
             DO M = 1, NMONS
                 DUFLAG = CFLAG(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
-                IF( DUFLAG ) THEN
+                OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
+                IF( DUFLAG .AND. OLDVAL .NE. CFVAL ) THEN
                     OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
-                    WRITE( MESG, 94050 ) 'WARNING: Duplicate entry at line',
-     &                  IREC,': Overwriting factor from ', OLDVAL, ' to ', CFVAL,
+                    WRITE( MESG, 94050 ) 'ERROR: Duplicate entry at line',
+     &                  IREC,': Previous factor:', OLDVAL, ' vs New factor:', CFVAL,
      &                  CRLF() // BLANK10 // ' FIPS:', INVIFIP(NLFIPS(L)), 
      &                  ', SCC: ', INVSCC(NLSCCS(J)), ', POLL: ',
      &                  TRIM( EANAM(NLPOLS(K))), ', MONTH: ', NLMONS(M)
-                    CALL M3MESG( MESG )
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 
                END IF
                CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = CFVAL
                CFLAG(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M)) = .TRUE.

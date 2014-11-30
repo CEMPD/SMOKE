@@ -14,7 +14,6 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C       Created 2/99 by M. Houyoux
 C
 C***********************************************************************
 C
@@ -99,7 +98,6 @@ C.........  Read, sort, and store pollutant codes/names file
 C.........  Check if list of pollutants from MEPROC file contains
 C           any HAPs
         DO I = 1, MNIPPA
-        
             J = INDEX1( MEANAM( I ), MXIDAT, INVDNAM )
             
             IF( J .GT. 0 ) THEN
@@ -115,9 +113,8 @@ C           any HAPs
 C.........  If any HAP was found, update TOG to NONHAPTOG
         IF( FOUND ) THEN
             DO I = 1, MNIPPA
-                J = INDEX( MEANAM( I ), 'TOG' )
-                IF( J > 0 ) THEN
-                    MEANAM( I ) = MEANAM( I )( 1:J-1 ) // 'NONHAPTOG'
+                IF( MEANAM( I ) == 'TOG' ) THEN
+                    MEANAM( I ) = 'NONHAP'//MEANAM( I )
                 END IF
             END DO
         END IF
@@ -131,7 +128,6 @@ C           NONHAPTOG
         
             CPOL = MEANAM( I )
             J = INDEX1( CPOL, MXIDAT, INVDNAM )
-            
             IF( J .GT. 0 ) THEN
                 INVSTAT( J ) = INVSTAT( J ) * 2
                 
@@ -201,16 +197,12 @@ C.........  Initialize all
 C.........  Create array of process/pollutant names matching order of INVTABLE
 C.........  Also store pollutants-only array
         J1 = 0
-        LJ = LEN_TRIM( ETJOIN )
         DO I = 1, MXIDAT
 
             IF( INVSTAT( I ) .GT. 0 ) THEN
                 J1 = J1 + 1
                 EANAM( J1 ) = INVDNAM( I )
-
-                K  = INDEX( EANAM( J1 ), ETJOIN )
-                L2 = LEN_TRIM( EANAM( J1 ) )
-                EINAM( J1 ) = EANAM( J1 )( K+LJ:L2 )
+                EINAM( J1 ) = EANAM( J1 )
             END IF
 
         END DO
@@ -370,7 +362,6 @@ C.............  Allocate local memory
                 EMLIST = ' '
             END IF
 
-            LJ = LEN_TRIM( ETJOIN )
             LS = LEN_TRIM( SPJOIN )
             DO I = 1, NVARS
 
@@ -382,14 +373,7 @@ C.............  Allocate local memory
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
-                L2     = INDEX( TDESC, ETJOIN )  ! find emission type separator
-
-C.................  Extract pollutant name (without emissions type, if applies)
-                IF( L2 .GT. 0 ) THEN
-                    POLNAM = TDESC( L2+LJ:L-1 )
-                ELSE
-                    POLNAM = TDESC( 1:L-1 )
-                END IF
+                POLNAM = TDESC( 1:L-1 )
                 
                 L2     = LEN_TRIM( TDESC )
                 SPCNAM = TDESC( L+LS:L2  )     ! extract species name
@@ -401,6 +385,7 @@ C.................  Look for species name in temporary list. If found, assign
 C                   pollutant bin number, if not, initialize pollutant bin 
 C                   number.                
                 K3 = INDEX1( SPCNAM, EMCNT, EMLIST )
+
                 IF( K3 .GT. 0 ) THEN
                     K3 = EMBIN( K3 )
                     
@@ -479,7 +464,6 @@ C               arguments, and if the species hasn't been added yet, then add it
 C.................  Check if master pol-to-species is in local list. If not cycle
                 J = INDEX1( TSVDESC( I ), LSMATV, LOCDESC )
                 IF( J .LE. 0 ) CYCLE
-
                 N = NSMATV - I
 
 C.................  Search remaining list of pollutants-to-species for current

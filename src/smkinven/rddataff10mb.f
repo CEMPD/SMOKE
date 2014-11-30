@@ -1,6 +1,6 @@
 
         SUBROUTINE RDDATAFF10MB( LINE, READDATA, READPOL, IYEAR, 
-     &                  SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
+     &                  SRCTYP, TSCC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -65,6 +65,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( 1 )          ! pollutant name
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(STPLEN3), INTENT (OUT) :: SRCTYP                ! source type code
+        CHARACTER(SCCLEN3), INTENT (OUT) :: TSCC                  ! scc code
         CHARACTER(EXTLEN3), INTENT (OUT) :: EXTORL                ! additional ext vars 
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
         LOGICAL,            INTENT (OUT) :: AVEFLAG               ! true: Aveday inv is processed
@@ -142,6 +143,7 @@ C           the various data fields
         READDATA( 1,NEM ) = SEGMENT( 10 )
         READDATA( 1,NDY ) = ''
 
+        TSCC = SEGMENT( 6 ) ! scc code
         SRCTYP = ' '        ! source type code = blank (N/A for activity)
         EXTORL = ' '        ! extended orl column (N/A)
 

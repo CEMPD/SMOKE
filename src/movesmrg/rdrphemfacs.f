@@ -1,5 +1,5 @@
 
-        SUBROUTINE RDRPPEMFACS( REFIDX, MONTH )
+        SUBROUTINE RDRPHEMFACS( REFIDX, MONTH )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -12,8 +12,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
 C  REVISION  HISTORY:
-C     04/10: Created by C. Seppanen
-C     04/11: Modified by B.H. Baek
+C     06/14: Created by B.H. Baek 
 C
 C***********************************************************************
 C
@@ -42,8 +41,7 @@ C.........  This module is used for reference county information
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR, EMPOLIDX,
-     &                       NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
-     &                       RPPEMFACS
+     &                       NEMTEMPS, EMTEMPS, RPHEMFACS
 
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NSMATV, TSVDESC, NMSPC, NIPPA, EMNAM, EANAM
@@ -76,7 +74,7 @@ C...........   SUBROUTINE ARGUMENTS
 
 C...........   Local parameters
         INTEGER, PARAMETER :: NSEG = 200    ! number of segments
-        INTEGER, PARAMETER :: NNONPOL = 8   ! number of non-pollutant fields in file
+        INTEGER, PARAMETER :: NNONPOL = 6   ! number of non-pollutant fields in file
 
 C...........   Local allocatable arrays
         CHARACTER(50),  ALLOCATABLE :: SEGMENT( : )    ! parsed input line
@@ -89,38 +87,33 @@ C...........   Other local variables
         INTEGER  :: IREC = 0    ! record counter
         INTEGER     NPOL        ! number of pollutants
         INTEGER     TDEV        ! tmp. file unit
-        INTEGER     DAY         ! day value
-        INTEGER     DAYIDX
         INTEGER     SCCIDX
-        INTEGER     HOUR
-        INTEGER     PROFIDX
+        INTEGER     TMPIDX
         INTEGER     NSCC        ! no of processing SCCs
- 
-        REAL        TMPVAL      ! temperature value
-        REAL        EMVAL       ! emission factor value
         
+        REAL        TMPVAL      ! temperature value
+        REAL        PTMP        ! previous temperature value
+        REAL        EMVAL       ! emission factor value
+
         LOGICAL     FOUND       ! true: header record was found
         LOGICAL     SKIPSCC     ! true: current SCC is not in inventory
-        LOGICAL     UNKNOWN     ! true: emission process is unknown
         LOGICAL  :: EFLAG = .FALSE.
-
+ 
         CHARACTER(PLSLEN3)  SVBUF     ! tmp speciation name buffer
         CHARACTER(IOVLEN3)  CPOL      ! tmp pollutant buffer
         CHARACTER(IOVLEN3)  CSPC      ! tmp species buffer
         CHARACTER(SCCLEN3)  TSCC      ! current SCC
         CHARACTER(SCCLEN3)  PSCC      ! previous SCC
-        CHARACTER(50)       TPROFID   ! current profile ID
-        CHARACTER(50)       PPROFID   ! previous profile ID
         
         CHARACTER(10000)    LINE          ! line buffer
         CHARACTER(100)      FILENAME      ! tmp. filename
         CHARACTER(200)      FULLFILE      ! tmp. filename with path
         CHARACTER(300)      MESG          ! message buffer
 
-        CHARACTER(16) :: PROGNAME = 'RDRPPEMFACS'    ! program name
+        CHARACTER(16) :: PROGNAME = 'RDRPHEMFACS'    ! program name
 
 C***********************************************************************
-C   begin body of subroutine RDRPPEMFACS
+C   begin body of subroutine RDRPHEMFACS
 
 C.........  Open emission factors file based on MRCLIST file
         FILENAME = TRIM( MRCLIST( REFIDX, MONTH ) )
@@ -178,7 +171,7 @@ C.............  Check for header line
 
 C.................  Count number of pollutants
                 NPOL = 0
-                DO J = NNONPOL + 1, NSEG 
+                DO J = NNONPOL + 1, NSEG
                 
                     IF( SEGMENT( J ) .NE. ' ' ) THEN
                         NPOL = NPOL + 1
@@ -206,12 +199,12 @@ C.................  Store pollutant names
 100     CONTINUE
 
         REWIND( TDEV )
-        
+
         IF( .NOT. FOUND ) THEN
             MESG = 'ERROR: Missing header line in emission factors file'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
-        
+
         IF( NPOL == 0 ) THEN
             MESG = 'ERROR: Emission factors file does not contain ' //
      &             'any pollutants'
@@ -220,7 +213,7 @@ C.................  Store pollutant names
         
 C.........  Build pollutant mapping table
 C.........  Find emission pollutant in list of pollutants
-        DO V = 1, NIPPA
+        DO V = 1, NIPPA 
 
             CPOL = TRIM( EANAM( V ) )
 
@@ -265,31 +258,24 @@ C.........  Allocate memory to parse lines
 C.........  Read through file to determine maximum number of temperatures
 
 C.........  Assumptions:
-C             File will contain data for all SCCs in the inventory, 
-C               both day values (2 and 5), and all 24 hours.
-C             Inventory will only have SCCs without road types.
+C             File will contain data for all SCCs in the inventory.
 C             Lines are sorted by:
-C                 temperature profile
-C                 day value
+C                 temperature
 C                 SCC (matching sorting of INVSCC)
-C                 emission process (matching sorting of MVSPPROCS)
-C                 hour
-C             Each SCC will have data for same set of emission processes, temperatures, and
+C             Each SCC will have data for same set of emission temperatures, and
 C               pollutants.
 
 C.........  Limitations:
-C             If inventory doesn't contain every SCC but emission factors file
-C               does, the program will quit with an error.
 C             Program doesn't know if emission factors file is missing values.
 
 C.........  Expected columns:
-C MOVESScenarioID,yearID,monthID,dayID,hourID,countyID,SCCsmoke,smokeProcID,temperature,THC,NMHC ...
+C MOVESScenarioID,yearID,monthID,FIPS,SCCsmoke,smokeProcID,avgSpeedBinID,temperature,relHumidity,THC,CO ...
 
         IF( NEMTEMPS .EQ. 0 ) THEN
-
+        
           IREC = 0
           NEMTEMPS = 0
-          PPROFID = ' '
+          PTMP = -999
           DO
         
             READ( TDEV, 93000, END=200, IOSTAT=IOS ) LINE
@@ -314,14 +300,14 @@ C.............  Parse line into segments
             CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
 C.............  Check that county matches requested county
-            IF( .NOT. CHKINT( SEGMENT( 6 ) ) ) THEN
+            IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Bad reference county ' //
      &            'FIPS code at line', IREC, 'of emission factors ' //
      &            'file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
             
-            IF( STR2INT( SEGMENT( 6 ) ) .NE. 
+            IF( STR2INT( SEGMENT( 4 ) ) .NE. 
      &          MCREFIDX( REFIDX,1 ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Reference county ' //
      &            'at line', IREC, 'of emission factors file ' //
@@ -344,17 +330,25 @@ C.............  Check that fuel month matches requested month
             END IF
             
 C.............  Check temperature value
-            IF( .NOT. CHKREAL( SEGMENT( 8 ) ) ) THEN
+            IF( .NOT. CHKREAL( SEGMENT( 6 ) ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Bad temperature value ' //
      &            'at line', IREC, 'of emission factors file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
+            
+            TMPVAL = STR2REAL( SEGMENT( 6 ) )
+            IF( TMPVAL .NE. PTMP ) THEN
 
-C.............  Check if profile ID has changed
-            TPROFID = TRIM( SEGMENT( 1 ) )
-            IF( TPROFID .NE. PPROFID ) THEN
+C.................  Check that temperatures are sorted
+                IF( TMPVAL .LT. PTMP ) THEN
+                    WRITE( MESG, 94010 ) 'ERROR: Temperature value ' //
+     &                'at line', IREC, 'of emission factors file is ' //
+     &                'smaller than previous temperature.'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                END IF
+            
                 NEMTEMPS = NEMTEMPS + 1
-                PPROFID = TPROFID
+                PTMP = TMPVAL
             END IF
 
           END DO
@@ -362,56 +356,35 @@ C.............  Check if profile ID has changed
 200       CONTINUE
         
           REWIND( TDEV )
-
         END IF
-
+ 
 C.........  Allocate memory to store emission factors
-        IF( ALLOCATED( RPPEMFACS ) ) THEN
-            DEALLOCATE( RPPEMFACS )
+        IF( ALLOCATED( RPHEMFACS ) ) THEN
+            DEALLOCATE( RPHEMFACS )
         END IF
-        ALLOCATE( RPPEMFACS( 2, NINVSCC, 24, NEMTEMPS, NPOL ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'RPPEMFACS', PROGNAME )
-        RPPEMFACS = 0.  ! array
+        ALLOCATE( RPHEMFACS( NINVSCC, NEMTEMPS, NPOL ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'RPHEMFACS', PROGNAME )
+        RPHEMFACS = 0.  ! array
 
 C.........  Allocate memory to store temperature values
-        ALLOCATE( LINVSCC( NINVSCC ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'LINVSCC', PROGNAME )
-        LINVSCC = .FALSE.
-
         IF( ALLOCATED( EMTEMPS ) ) THEN
             DEALLOCATE( EMTEMPS )
         END IF
-
-        IF( ALLOCATED( EMXTEMPS ) ) THEN
-            DEALLOCATE( EMXTEMPS )
-        END IF
-        
-        IF( ALLOCATED( EMTEMPIDX ) ) THEN
-            DEALLOCATE( EMTEMPIDX )
-        END IF
-
         ALLOCATE( EMTEMPS( NEMTEMPS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMTEMPS', PROGNAME )
-
-        ALLOCATE( EMXTEMPS( NEMTEMPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMXTEMPS', PROGNAME )
-        
-        ALLOCATE( EMTEMPIDX( NEMTEMPS ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMTEMPIDX', PROGNAME )
-
-        EMTEMPS  =  999.  ! array
-        EMXTEMPS = -999.  ! array
-        EMTEMPIDX = 0     ! array
+        ALLOCATE( LINVSCC( NINVSCC ), STAT=IOS )
+        CALL CHECKMEM( IOS, 'LINVSCC', PROGNAME )
+        EMTEMPS = 0.  ! array
+        LINVSCC = .FALSE.
 
 C.........  Read and store emission factors
         IREC = 0
         PSCC = ' '
         SCCIDX = 0
-        PPROFID = ' '
-        PROFIDX = 0
+        PTMP = -999
+        TMPIDX = 0
         NSCC = 0
         DO
-        
             READ( TDEV, 93000, END=300, IOSTAT=IOS ) LINE
             
             IREC = IREC + 1
@@ -433,41 +406,20 @@ C.............  Skip header line
 C.............  Parse line into segments
             CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
 
-C.............  Set day for current line
-            DAY = STR2INT( SEGMENT( 4 ) )
-            IF( DAY == 2 ) THEN
-                DAYIDX = 1
-            ELSE IF( DAY == 5 ) THEN
-                DAYIDX = 2
-            ELSE
-                WRITE( MESG, 94010 ) 'Unknown day ID value ' //
-     &            'in emission factors file at line', IREC
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
-C.............  Set hour for current line            
-            HOUR = STR2INT( SEGMENT( 5 ) )
-
 C.............  Set SCC index for current line
-            TSCC = TRIM( SEGMENT( 7 ) )
+            TSCC = TRIM( SEGMENT( 5 ) )
             IF( TSCC .NE. PSCC ) THEN
                 SKIPSCC = .FALSE.
             
-C.................  Skip over SCCs that start with 223 since rate-per-profile 
-C                   emissions don't apply
-                DO
-                    SCCIDX = SCCIDX + 1
-                    IF( SCCIDX .GT. NINVSCC ) THEN
-                        SCCIDX = 1
-                    END IF
-                    
-                    IF( INVSCC( SCCIDX )( 1:3 ) .NE. '223' ) EXIT
-                END DO
+                SCCIDX = SCCIDX + 1
+                IF( SCCIDX .GT. NINVSCC ) THEN
+                    SCCIDX = 1
+                END IF
                 
 C.................  Make sure the SCC at this line is what we expect
                 IF( TSCC .EQ. INVSCC( SCCIDX ) ) THEN
                     LINVSCC( SCCIDX ) = .TRUE.
-                
+
                 ELSE
 C.....................  If the SCC is in the inventory, it means that the 
 C                       emissions factors are out of order and that's a
@@ -498,42 +450,32 @@ C.........................  Emission factor SCC is not in the inventory
             IF( SKIPSCC ) CYCLE
             NSCC = NSCC + 1
 
-C.............  Set profile index for current line
-            TPROFID = TRIM( SEGMENT( 1 ) )
-            IF( TPROFID .NE. PPROFID ) THEN
-                PROFIDX = PROFIDX + 1
-                IF( PROFIDX .GT. NEMTEMPS ) THEN
-                    WRITE( MESG, 94010 ) 'Unexpected profile ID ' //
+C.............  Set temperature index for current line            
+            TMPVAL = STR2REAL( SEGMENT( 6 ) )
+            IF( TMPVAL .NE. PTMP ) THEN
+                TMPIDX = TMPIDX + 1
+                IF( TMPIDX .GT. NEMTEMPS ) THEN
+                    WRITE( MESG, 94010 ) 'Unexpected temperature value ' //
      &                'in emission factors file at line', IREC
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
                 
-                EMTEMPIDX( PROFIDX ) = PROFIDX
-                PPROFID = TPROFID
-            END IF
-
-C.............  Check min and max temperatures for profile
-            TMPVAL = STR2REAL( SEGMENT( 8 ) )
-
-            IF( TMPVAL .LT. EMTEMPS( PROFIDX ) ) THEN
-                EMTEMPS( PROFIDX ) = TMPVAL
+                PTMP = TMPVAL
             END IF
             
-            IF( TMPVAL .GT. EMXTEMPS( PROFIDX ) ) THEN
-                EMXTEMPS( PROFIDX ) = TMPVAL
-            END IF
-
+            EMTEMPS( TMPIDX ) = TMPVAL
+ 
 C.............  Store emission factors for each pollutant            
             DO P = 1, NPOL
-            
+
                 EMVAL = STR2REAL( SEGMENT( NNONPOL + P ) )
-                RPPEMFACS( DAYIDX, SCCIDX, HOUR, PROFIDX, P ) = EMVAL
+                RPHEMFACS( SCCIDX, TMPIDX, P ) = EMVAL
 
             END DO
 
         END DO
 
-300     CONTINUE
+300     CONTINUE        
 
 C.........  Error message when inventory SCC is missing in the lookup table
         DO I = 1, NINVSCC
@@ -550,12 +492,9 @@ C.........  Error message when inventory SCC is missing in the lookup table
             CALL M3MSG2( MESG )
         END IF
 
-        IF( EFLAG ) CALL M3EXIT( PROGNAME, 0, 0, '', 2 )
+        IF( EFLAG )  CALL M3EXIT( PROGNAME, 0, 0, '', 2 )
 
         CLOSE( TDEV )
-
-C.........  Sort temperature profiles by min temps then max temps
-        CALL SORTR2( NEMTEMPS, EMTEMPIDX, EMTEMPS, EMXTEMPS )
         
         DEALLOCATE( SEGMENT, POLNAMS, LINVSCC )
 
@@ -571,4 +510,4 @@ C...........   Internal buffering formats............ 94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
         
-        END SUBROUTINE RDRPPEMFACS
+        END SUBROUTINE RDRPHEMFACS

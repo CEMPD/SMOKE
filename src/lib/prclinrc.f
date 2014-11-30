@@ -1160,40 +1160,37 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
      &                  RPT_%LATLON = .TRUE.
 
                 CASE( 'MONCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
-                        TSFLAG = .TRUE.
-                        RPT_%BYMON = .TRUE.
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY MONCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
-                    END IF
+C                    IF( .NOT. RPT_%USEASCELEV ) THEN
+C                       TSFLAG = .TRUE.
+C                       RPT_%BYMON = .TRUE.
+C                   ELSE
+                    WRITE( MESG, 94010 )
+     &                  'WARNING: BY MONCODE instruction at ' //
+     &                  'line', IREC, 'is no longer supported'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C                   END IF
 
                 CASE( 'WEKCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
-                        TSFLAG = .TRUE.
-                        RPT_%BYWEK = .TRUE.
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY WEKCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
-                    END IF
+C                    IF( .NOT. RPT_%USEASCELEV ) THEN
+C                        TSFLAG = .TRUE.
+C                        RPT_%BYWEK = .TRUE.
+C                    ELSE
+                    WRITE( MESG, 94010 )
+     &                  'ERROR: BY WEKCODE instruction at ' //
+     &                  'line', IREC, 'is no longer supported'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C                    END IF
 
                 CASE( 'DIUCODE' )
-                    IF( .NOT. RPT_%USEASCELEV ) THEN
-                        TSFLAG = .TRUE.
-                        RPT_%BYDIU = .TRUE.
-                    ELSE
-                        WRITE( MESG, 94010 )
-     &                     'WARNING: BY DIUCODE instruction at ' //
-     &                     'line', IREC, 'is not allowed with ' //
-     &                     'the ASCIIELEV instruction.'
-                        CALL M3MSG2( MESG )
-                    END IF
+C                    IF( .NOT. RPT_%USEASCELEV ) THEN
+C                        TSFLAG = .TRUE.
+C                        RPT_%BYDIU = .TRUE.
+C                    ELSE
+                    WRITE( MESG, 94010 )
+     &                  'WARNING: BY DIUCODE instruction at ' //
+     &                  'line', IREC, 'is no longer supported'
+                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C                    END IF
 
                 CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE

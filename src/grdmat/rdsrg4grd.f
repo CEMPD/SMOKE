@@ -418,9 +418,9 @@ C...........   Internal buffering formats............ 94xxx
 
 94012   FORMAT( A, I5, 1X, A, F8.4, A, F8.4 )
 
-94020   FORMAT( A, 1X, I3.3, 1X, A, 1X, F11.8, 1X, A )
+94020   FORMAT( A, 1X, I5.5, 1X, A, 1X, F11.8, 1X, A )
 
-94030   FORMAT( A, 1X, I3.3, A, 1X, F11.8 )
+94030   FORMAT( A, 1X, I5.5, A, 1X, F11.8 )
 
         END SUBROUTINE RDSRG4GRD
   

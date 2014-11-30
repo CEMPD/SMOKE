@@ -133,7 +133,7 @@ C.............  Convert FIP to integer
             END IF
 
 C.............  Find county in inventory list
-            CNTY = STR2INT( ADJUSTR( SEGMENT( 1 ) ) )
+            CNTY = STR2INT( SEGMENT( 1 ) )
             FIPIDX = FIND1( CNTY, NINVIFIP, INVIFIP )
             
             IF( FIPIDX .LE. 0 ) THEN
@@ -178,7 +178,7 @@ C.............  Check weekday speed values
                     CYCLE
                 END IF
                 
-                SPDVAL = STR2REAL( ADJUSTR( SEGMENT( 3 + J ) ) )                
+                SPDVAL = STR2REAL( SEGMENT( 3 + J ) )                
                 SPDPRO( FIPIDX, SCCIDX, 2, J ) = SPDVAL
             END DO
 
@@ -204,7 +204,7 @@ C.............  Check weekend speed values
                     CYCLE
                 END IF
                 
-                SPDVAL = STR2REAL( ADJUSTR( SEGMENT( 28 + J ) ) )
+                SPDVAL = STR2REAL( SEGMENT( 28 + J ) )
                 SPDPRO( FIPIDX, SCCIDX, 1, J ) = SPDVAL
             END DO
             

@@ -56,7 +56,7 @@ C...........   This module contains the gridding surrogates tables
         USE MODSURG, ONLY: NSRGS, SRGLIST
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, LSCCEND, NCHARS, NSRC, MCODEFLAG
+        USE MODINFO, ONLY: CATEGORY, LSCCEND, NCHARS, NSRC
 
         IMPLICIT NONE
 
@@ -151,37 +151,19 @@ c note: insert here when needed
 
             CASE ( 'MOBILE' )
 
-                IF( MCODEFLAG ) THEN
-                    CSRC    = CSOURC( S )
-                    CFIP    = CSRC( 1:FIPLEN3 )
-                    CLNK    = CLINK ( S )
-                    CSTA    = CFIP  ( 1:STALEN3 )
-
-                    WRITE( CRWT, RWTFMT ) IRCLAS( S )
-                    WRITE( CVID, VIDFMT ) IVTYPE( S )
-                    TSCC = CRWT // CVID
-                    CALL PADZERO( TSCC )
-
-                    TSCCL   = TSCC( 1:LSCCEND )
-                    CFIPSCC = CFIP // TSCC
-                    CFIPSL  = CFIP // TSCCL
-                    CSTASCC = CSTA // TSCC
-                    CSTASL  = CSTA // TSCCL
-                ELSE
-                    CSRC    = CSOURC( S )
-                    CFIP    = CSRC( 1:FIPLEN3 )
-                    CSTA    = CFIP( 1:STALEN3 )
-                    TSCC    = CSCC( S )
+                CSRC    = CSOURC( S )
+                CFIP    = CSRC( 1:FIPLEN3 )
+                CSTA    = CFIP( 1:STALEN3 )
+                TSCC    = CSCC( S )
 
 C.................  Set type of SCC                
-                    SCCFLAG = SETSCCTYPE ( TSCC )
-                    TSCCL   = TSCC( 1:LSCCEND )
+                SCCFLAG = SETSCCTYPE ( TSCC )
+                TSCCL   = TSCC( 1:LSCCEND )
 
-                    CFIPSCC = CFIP // TSCC
-                    CFIPSL  = CFIP // TSCCL
-                    CSTASCC = CSTA // TSCC
-                    CSTASL  = CSTA // TSCCL
-                END IF
+                CFIPSCC = CFIP // TSCC
+                CFIPSL  = CFIP // TSCCL
+                CSTASCC = CSTA // TSCC
+                CSTASL  = CSTA // TSCCL
 
             END SELECT
 

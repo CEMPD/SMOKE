@@ -295,9 +295,9 @@ C.............  Write the status of reading surrogate files.
 
 C.............  Warning message when there are no surrogate available.
             IF( NTL .EQ. 0 ) THEN
-                WRITE( MESG,94010 ) 'ERROR: The surrogate', TGTSRG,
-     &             ' file does not exist in the surrogate description file'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                WRITE( MESG,94010 ) 'WARNING: The surrogate', TGTSRG,
+     &             ' does not exist within a modeling domain'
+                CALL M3MESG( MESG )
             END IF
 
 C.............  Allocate memory for indices to surrogates tables for each source

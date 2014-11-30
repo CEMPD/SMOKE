@@ -42,6 +42,7 @@
 
 C.........  Program settings
         LOGICAL, PUBLIC :: RPDFLAG  ! mode is rate-per-distance
+        LOGICAL, PUBLIC :: RPHFLAG  ! mode is rate-per-hour for extended idle
         LOGICAL, PUBLIC :: RPVFLAG  ! mode is rate-per-vehicle
         LOGICAL, PUBLIC :: RPPFLAG  ! mode is rate-per-profile
         LOGICAL, PUBLIC :: MTMP_OUT ! output temporal intermediate MTMP files
@@ -81,7 +82,6 @@ C.........  NONHAPTOG calculation information
 C.........  Emission factors data
         REAL,                 PUBLIC :: TEMPBIN           ! temperature buffer for max/min profiles
 
-        INTEGER, ALLOCATABLE, PUBLIC :: EMPROCIDX( : )    ! index of emission process name
         INTEGER, ALLOCATABLE, PUBLIC :: EMPOLIDX( : )     ! index of emission pollutant name
 
         INTEGER, PUBLIC :: NEMTEMPS                       ! no. temperatures for current emision factors
@@ -89,22 +89,26 @@ C.........  Emission factors data
         REAL, ALLOCATABLE, PUBLIC :: EMXTEMPS( : )        ! list of max. temps in profiles
         INTEGER, ALLOCATABLE, PUBLIC :: EMTEMPIDX( : )    ! index to sorted temperature profiles
 
-        REAL, ALLOCATABLE, PUBLIC :: RPDEMFACS( :,:,:,:,: )  ! rate-per-distance emission factors
-                                                             ! SCC, speed bin, temp, process, pollutant
+        REAL, ALLOCATABLE, PUBLIC :: RPDEMFACS( :,:,:,: )  ! rate-per-distance emission factors
+                                                           ! SCC, speed bin, temp, process, pollutant
 
-        REAL, ALLOCATABLE, PUBLIC :: RPVEMFACS( :,:,:,:,:,: )  ! rate-per-vehicle emission factors
-                                                               ! day, SCC, hour, temp, process, pollutant
+        REAL, ALLOCATABLE, PUBLIC :: RPHEMFACS( :,:,: )    ! rate-per-hour emission factors
+                                                           ! SCC, temp, process, pollutant
 
-        REAL, ALLOCATABLE, PUBLIC :: RPPEMFACS( :,:,:,:,:,: )  ! rate-per-profile emission factors
-                                                               ! day, SCC, hour, temp profile, process, pollutant
+        REAL, ALLOCATABLE, PUBLIC :: RPVEMFACS( :,:,:,:,: )  ! rate-per-vehicle emission factors
+                                                             ! day, SCC, hour, temp, process, pollutant
+
+        REAL, ALLOCATABLE, PUBLIC :: RPPEMFACS( :,:,:,:,: )  ! rate-per-profile emission factors
+                                                             ! day, SCC, hour, temp profile, process, pollutant
 
 C.........  Hourly speed data and control factor data
         LOGICAL, PUBLIC :: SPDFLAG                     ! use hourly speed data
         REAL, ALLOCATABLE, PUBLIC :: SPDPRO( :,:,:,: ) ! indexes: FIP, SCC, weekend/weekday, local hour
-        LOGICAL, PUBLIC :: CFFLAG                     ! use control factor data
-        LOGICAL, PUBLIC :: REFCFFLAG                  ! use reference county-specific control factor data
-        REAL, ALLOCATABLE, PUBLIC :: CFPRO( :,:,:,: ) ! factor indexes: FIP, SCC, pollutant,month
-        REAL, ALLOCATABLE, PUBLIC :: CFITC( :,:,:,: ) ! intercept indexes: FIP, SCC, pollutant,month
+        LOGICAL, PUBLIC :: CFFLAG                      ! use control factor data
+        LOGICAL, PUBLIC :: EXPCFFLAG                   ! use explicit poll/species specific control factor data
+        LOGICAL, PUBLIC :: REFCFFLAG                   ! use reference county-specific control factor data
+        REAL, ALLOCATABLE, PUBLIC :: CFPRO( :,:,:,: )  ! factor indexes: FIP, SCC, pollutant,month
+        REAL, ALLOCATABLE, PUBLIC :: CFITC( :,:,:,: )  ! intercept indexes: FIP, SCC, pollutant,month
 
 C.........  Index from per-source inventory array to INVSCC array (based on MICNY in MODSTCY)
         INTEGER, ALLOCATABLE, PUBLIC :: MISCC( : )     ! dim NMSRC

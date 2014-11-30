@@ -17,8 +17,8 @@ debug: temporal.debug
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-TMP= asgntpro.o chkemfac.o genhemis.o mktmat.o opentmp.o opentmpin.o \
-     rdmetprof.o rdemfac.o setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o 
+TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o proctpro.o \
+     setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o 
      
 
 #
@@ -36,14 +36,12 @@ include $(ETDSRC)/modmake.inc
 include $(FS_ROOT)/modmake.inc
 
 asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
-chkemfac.o: $(MODEMFAC) $(MODINFO) $(MODLISTS) $(MODMBSET)
 genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR)
 mktmat.o: $(MODTMPRL) 
 opentmp.o: $(MODEMFAC) $(MODINFO) $(MODFILESET)
 opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
-rdemfac.o: $(MODSOURC) $(MODINFO) $(MODMBSEP)
-rdmetpro.o: $(MODXREF)
+proctpro.o: $(MODINFO) $(MODSOURC) $(MODTMPRL)
 setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
 temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
             $(MODDAYHR) $(MODLISTS) $(MODGRID) $(MODMBSET)

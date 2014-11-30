@@ -26,11 +26,11 @@ pvm: movesmrg.pvm
 ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
-MRG= movesmrg.o bldmrgidx.o bldprocidx.o bldsrccell.o \
+MRG= movesmrg.o bldmrgidx.o bldsrccell.o \
      getmrgev.o initstcy.o mrgonams.o mrgunits.o \
      mrgvnams.o openmrgin.o openmrgout.o rdfmref.o \
      rdmrclist.o rdmxref.o \
-     rdrpdemfacs.o rdrppemfacs.o rdrpvemfacs.o \
+     rdrpdemfacs.o rdrphemfacs.o rdrppemfacs.o rdrpvemfacs.o \
      rdspdpro.o rdcfpro.o setrefcnty.o wrmrgrep.o
 #
 movesmrg: $(MRG) $(ALLI) $(LIBPATH)
@@ -66,7 +66,6 @@ include $(FS_ROOT)/modmake.inc
 
 avermet.o   : $(MODMET)
 bldmrgidx.o : $(MODMERGE)
-bldprocidx.o: $(MODMVSMRG) $(MODMERGE)
 bldsrccell.o: $(MODMVSMRG)
 getmrgev.o  : $(MODINFO) $(MODMERGE) $(MODMVSMRG)
 hourmet.o   : $(MODMET) $(MODMBSET) $(MODSURG)
@@ -82,6 +81,7 @@ rdfmref.o   : $(MODMBSET)
 rdmrclist.o : $(MODMBSET) $(MODMVSMRG)
 rdmxref.o   : $(MODMBSET)
 rdrpdemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
+rdrphemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrppemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdrpvemfacs.o: $(MODMBSET) $(MODMVSMRG) $(MODMERGE) $(MODLISTS)
 rdspdpro.o  : $(MODMVSMRG) $(MODLISTS)

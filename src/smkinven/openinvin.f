@@ -50,6 +50,9 @@ C............ This module contains the cross-reference tables
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DAYINVFLAG, HRLINVFLAG, FF10INVFLAG 
 
+C.........  This module is for mobile-specific data
+        USE MODMOBIL, ONLY: SCCMAPFLAG, SCCMAPLIST, EXCLSCCFLAG
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -91,6 +94,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT(OUT) :: IHNAME    ! hour-specific inventory name 
 
 C...........   Other local variables
+        INTEGER       MDEV   ! tmp unit number if SCC reference map file is needed
         INTEGER       IDEV   ! tmp unit number if ENAME is map file
         INTEGER       IOS    ! i/o status
         INTEGER       I,J,L    ! counter and indices
@@ -141,6 +145,22 @@ C               number of commas found in the string.
         MESG = 'Import hour-specific data'
         HFLAG = ENVYN ( 'HOUR_SPECIFIC_YN', MESG, .FALSE., IOS )
         HRLINVFLAG = HFLAG
+
+        IF( CATEGORY .EQ. 'MOBILE' ) THEN
+            MESG = 'Use referenced SCC activity inventory file'
+            SCCMAPFLAG = ENVYN ( 'USE_REF_SCC_YN', MESG, .FALSE., IOS )
+
+            IF( SCCMAPFLAG ) THEN
+                MESG = 'Enter logical name for reference SCC input file'
+                MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SCCXREF',
+     &                          PROGNAME )
+                CALL RDSCCMAP( MDEV ) 
+
+                MESG = 'Exclude SCCs not found in SCCXREF input file'
+                EXCLSCCFLAG = ENVYN ( 'EXCLUDE_REF_SCC_YN', MESG, .FALSE., IOS )
+
+            END IF
+        END IF
 
         IF ( CATEGORY .EQ. 'POINT' ) THEN
             MESG = 'Import gridded MEDS-formatted inventory file'
@@ -327,14 +347,6 @@ C.........  Get speeds file
 
 C.............  Open category-specific inputs
             SELECT CASE( CATEGORY )
-            CASE( 'MOBILE' ) 
-
-C.................  Get file name for converting road-class to road type & 
-C                   vehicle type name to vehicle type number.
-                MESG = 'Enter logical name for MOBILE CODES file'
-                RDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES', 
-     &                              PROGNAME )
-
             CASE( 'POINT' )
 
 C.................  Get file name for input replacement stack parameters file
