@@ -18,7 +18,7 @@ FILES_ABCDE = \
   alocptbl.o   alocstbl.o   alocttbl.o   applreac.o   applumat.o   bldcsrc.o  \
   bldenams.o   blkorcmt.o   calcrelhum.o chkcpvar.o   chkemepi.o   chkexpscc.o \
   chkexpsic.o  chkisiz.o    chkmetem.o   chkptdef.o   chksrcno.o   convrtll.o   convrtxy.o \
-  cvtrdtype.o  cvtvehtype.o dscsprof.o   efsetup.o    evalcrit.o
+  cvtrdtype.o  cvtvehtype.o dscsprof.o   evalcrit.o
 
 FILES_FGIMNP = \
   fillatbl.o   fillchrt.o   fillctbl.o   filletbl.o   fillgtbl.o   fillmtbl.o \
@@ -35,7 +35,7 @@ FILES_R = \
   rdlines.o    rdmapmask.o  rdmappol.o   rdmvinfo.o   rdorsdsc.o   rdpelv.o   \
   rdrmat.o     rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o\
   rdspdref.o   rdsprof.o    rdsref.o     rdsrgdesc.o  rdsrghdr.o   rdsrg.o    \
-  rdstcy.o     rdtprof.o    rdtref.o     rdtzone.o    rdumat.o     rdvmix.o   \
+  rdstcy.o     rdtzone.o    rdumat.o     rdvmix.o   \
   rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o  \
   rdsrcgrps.o
 
@@ -83,7 +83,6 @@ applumat.o : $(MODGRID)
 bldenams.o : $(MODLISTS)
 chkptdef.o : $(MODINFO)
 dscsprof.o : $(MODSPRO)
-efsetup.o  : $(MODEMFAC)
 fillatbl.o : $(MODXREF)
 fillchrt.o : $(MODXREF) $(MODINFO)
 fillctbl.o : $(MODXREF) 
@@ -137,8 +136,6 @@ rdsref.o   : $(MODXREF) $(MODINFO)
 rdsrg.o    : $(MODSURG) $(MODGRID)
 rdsrgdesc.o: $(MODSURG)
 rdstcy.o   : $(MODSTCY) 
-rdtprof.o  : $(MODTMPRL)
-rdtref.o   : $(MODXREF) $(MODINFO)
 rdvmix.o   : $(MODMOBIL) $(MODXREF)
 rdxclude.o : $(MODXREF) $(MODINFO)
 setscctype.o: $(MODINFO)

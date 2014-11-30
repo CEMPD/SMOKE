@@ -227,7 +227,7 @@ C.........  Read mobile-source files
 
 C.............  Fill tables for translating mobile road classes & vehicle types
 C.............  The tables are passed through MODMOBIL
-            CALL RDMVINFO( RDEV )
+C            CALL RDMVINFO( RDEV )
 
         END IF
 
@@ -516,8 +516,8 @@ C.............  Read and output hour-specific data
         END IF
 
 C.............  Write inventory report file
-        CALL M3MSG2( 'Writing inventory report file...' )
-        IF( .NOT. MEDSFLAG ) CALL WREPINVEN( ADEV, CDEV )
+C        CALL M3MSG2( 'Writing inventory report file...' )
+C        IF( .NOT. MEDSFLAG ) CALL WREPINVEN( ADEV, CDEV )
 
 C.........  End program successfully
 999     MESG = ' '

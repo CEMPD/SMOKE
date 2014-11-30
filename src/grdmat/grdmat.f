@@ -341,9 +341,6 @@ C.........  Get gridding surrogates and x-ref file, if needed
 
 C.........  Get mobile-specific files
         IF( CATEGORY .EQ. 'MOBILE' ) THEN
-            MESG = 'Enter logical name for MOBILE CODES file'
-            MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'MCODES',
-     &                          PROGNAME )
 
             IF( DFLAG ) KDEV = PROMPTFFILE( 
      &               'Enter logical name for LINK DEFINITIONS file',
@@ -361,7 +358,7 @@ C               from the inventory arrays
             CALL GENUSLST
 
 C..............  For mobile sources, read the mobile codes
-            IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
+C            IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
             CALL M3MSG2( 'Reading gridding cross-reference file...' )
 
 C.............  Read the gridding cross-reference

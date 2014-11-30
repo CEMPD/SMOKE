@@ -90,13 +90,13 @@ C.............  Loop over sources for current grid cell
         END DO
 
 C.........  Store list of cells and fractions for each source        
-        ALLOCATE( SRCCELLS( NSRC, MXNSRCCELLS ), STAT=IOS )
+        ALLOCATE( SRCCELLS( MXNSRCCELLS, NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCCELLS', PROGNAME )
-        ALLOCATE( SRCCELLFRACS( NSRC, MXNSRCCELLS ), STAT=IOS )
+        ALLOCATE( SRCCELLFRACS( MXNSRCCELLS, NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SRCCELLFRACS', PROGNAME )
-        SRCCELLS = 0     ! array
-        SRCCELLFRACS = 0 ! array
-        NSRCCELLS = 0    ! array
+        NSRCCELLS = 0       ! array
+        SRCCELLS = 0        ! array
+        SRCCELLFRACS = 0.0  ! array
 
         INDX = 0
         DO NG = 1, NGRID
@@ -108,8 +108,8 @@ C.........  Store list of cells and fractions for each source
                 NSRCCELLS( SRC ) = NSRCCELLS( SRC ) + 1
                 
                 CELL = NSRCCELLS( SRC )
-                SRCCELLS    ( SRC, CELL ) = NG
-                SRCCELLFRACS( SRC, CELL ) = CX( INDX )
+                SRCCELLS    ( CELL, SRC ) = NG
+                SRCCELLFRACS( CELL, SRC ) = CX( INDX )
             
             END DO
         

@@ -37,10 +37,7 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-C...........   MODULES for public variables
-C.........  This module contains emission factor tables and related
-        USE MODEMFAC, ONLY: EMTDSC, EMTNAM, NETYPE
-
+C........   MODULES for public variables
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: ACTVTY, BYEAR, CATDESC, CRL, EANAM, EADESC, 
      &                     EAREAD, EAUNIT, EINAM, INVPIDX, NIACT, 
@@ -190,39 +187,8 @@ C.........  Check file size and adjust number of files to avoid 2 GB limit
      &            NVARSET - ( NVARFILE*( NFILESET - 1 ) )
         END IF
 
-C.........  Set variable names and characteristics from the emission types
-        K = 0
-        DO J = 1, NIACT
-
-C.............  Double check that pollutant is in the inventory file
-C.............  Use EAREAD, because for mobile sources, EANAM has been
-C               expanded to contain the emission types
-            I = INDEX1( ACTVTY( J ), NIACT + NIPOL, EAREAD )
-            IF( I .LE. 0 ) THEN
-                MESG='INTERNAL ERROR: inventory file variables changed!'
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-            END IF
-
-            DO V = 1, NETYPE( I-NIPOL )
-
-            K = K + 1
-                IF( K .GT. NVARSET ) THEN
-                    MESG = 'INTERNAL ERROR: Memory overflow building '//
-     &                     'I/O API output variables'
-                    CALL M3MSG2( MESG )
-                    CYCLE
-                END IF
-
-            VNAMESET( K ) = EMTNAM( V,J )
-            VUNITSET( K ) = EAUNIT( I )   
-            VDESCSET( K ) = EMTDSC( V,J )
-            VTYPESET( K ) = M3REAL
-
-            END DO  ! End loop on emission types for output
-        END DO      ! End loop on activities output
-
 C.........  Set variable names and characteristics from the pollutants
+        K = 0
         DO V = 1, NIPOL
 
 C.............  Double check that pollutant is in the inventory file

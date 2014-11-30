@@ -220,7 +220,6 @@ C               Find code corresponding to current pollutant before you add
                     NCOD   = UCASIDX( COD ) + J
                     POLNAM = ITNAMA( SCASIDX( NCOD ) )
                     NV = INDEX1( POLNAM, NIPPA, EANAM )
-
                     IF( NV > 0 ) THEN
                         N = N + 1
                         EAIDX( N ) = NV
@@ -229,7 +228,7 @@ C               Find code corresponding to current pollutant before you add
 C.....................  Add new NOI pollutant for non-integration
                     INVNAM = TRIM( POLNAM ) // '_NOI'
                     NV = INDEX1( INVNAM, NIPPA, EANAM )
-                    IV = FIND1( NV, NIPPA, EAIDX )
+                    IV = FIND1( NV, N, EAIDX )
                     IF( NV > 0 .AND. IV < 1 ) THEN
                         N = N + 1 
                         EAIDX( N ) = NV
@@ -248,7 +247,7 @@ C.....................  Add new NONHAPVOC for integration
                              INVNAM = 'NONHAP' // TRIM( POLNAM )
                         END IF
                         NV = INDEX1( INVNAM, NIPPA, EANAM )
-                        IV = FIND1( NV, NIPPA, EAIDX )
+                        IV = FIND1( NV, N, EAIDX )
                         IF( NV > 0 .AND. IV < 1 ) THEN
                             N = N + 1
                             EAIDX( N ) = NV
@@ -266,8 +265,8 @@ C............  Add new computed pollutants
             DO I = 1, NCOMP
                 POLNAM = VNAME( I )
                 NV = INDEX1( POLNAM, NIPPA, EANAM )
-                IV = FIND1( NV, NIPPA, EAIDX )
-                IF( IV < 1 ) THEN      ! only add if it doesn't exit in PDAY output inv pol list
+                IV = FIND1( NV, N, EAIDX )
+                IF( NV > 0 .AND. IV < 1 ) THEN    ! only add if it doesn't exit in PDAY
                     N = N + 1
                     EAIDX( N ) = NV
                 END IF

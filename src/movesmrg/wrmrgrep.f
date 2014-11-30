@@ -42,10 +42,11 @@ C.........  This module contains the major data structure and control flags
      &                      NMSPC, MEBCNY, MEBSTA, MEBSUM,
      &                      MEBSCC, MEBSTC,
      &                      MRDEV, LREPSTA, LREPCNY, LREPSCC, LREPSRC,
-     &                      EMNAM, EANAM, TOTUNIT, NMSRC, NIPPA
+     &                      EMNAM, EANAM, TOTUNIT, GRDUNIT, NMSRC, NIPPA
 
 C.........  This module contains the arrays for state and county summaries
-        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, CNTYNAM, CNTYCOD, MICNY
+        USE MODSTCY, ONLY: NCOUNTY, NSTATE, STATNAM, STATCOD, 
+     &                     CNTYNAM, CNTYCOD, MICNY
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MISCC
@@ -64,11 +65,14 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         ENVINT  
         INTEGER         INDEX1  
+        INTEGER         FIND1  
         CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
         REAL            YR2DAY
+        CHARACTER(16)   MULTUNIT
 
-        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY
+        EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY,
+     &              MULTUNIT, FIND1
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
@@ -155,10 +159,11 @@ C.............  Initialize units and names
     
 C.............  Create units labels from species
             DO V = 1, NMSPC
+                GRDUNIT(V) = MULTUNIT( GRDUNIT( V ), 's/day' )
     
 C.................  Set names and units for output
-                L = LEN_TRIM( TOTUNIT( V ) )
-                CBUF = '[' // TOTUNIT( V )( 1:L ) // ']'
+                L = LEN_TRIM( GRDUNIT( V ) )
+                CBUF = '[' // GRDUNIT( V )( 1:L ) // ']'
     
                 MNAMES( V ) = EMNAM( V )
                 MUNITS( V ) = CBUF
@@ -193,11 +198,12 @@ C.............  Create totals as needed
             SCCIDX  = MISCC( SRC )
         
             STATE = CNTYCOD( CNTYIDX ) / 1000
+            STATE = STATE * 1000
             IF( STATE .NE. PSTATE ) THEN
-                STAIDX = STAIDX + 1
+                STAIDX = MAX( FIND1( STATE, NSTATE, STATCOD ), 0 )
                 PSTATE = STATE
             END IF
-            
+
             DO J = 1, NMSPC+NIPPA
                 VAL = MEBSUM( SRC,J )
                 
@@ -451,7 +457,7 @@ C.............  Local variables
 
             CHARACTER(7)  :: CDATE
             CHARACTER(18) :: HDRBUF  = '#'
-            CHARACTER(18) :: STLABEL = '# Date ; SCC'
+            CHARACTER(18) :: STLABEL = '# Date ; SCC      '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -528,8 +534,8 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(7)  :: CDATE
-            CHARACTER(20) :: HDRBUF  = '#'
-            CHARACTER(20) :: STLABEL = '# Date ; State'
+            CHARACTER(28) :: HDRBUF  = '#'
+            CHARACTER(28) :: STLABEL = '# Date ; State              '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -614,8 +620,9 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(7)  :: CDATE
-            CHARACTER(20) :: HDRBUF  = '#'
-            CHARACTER(20) :: STLABEL = '# Date ; State ; SCC'
+            CHARACTER(39) :: HDRBUF  = '#'
+            CHARACTER(39) :: STLABEL='# Date ; State              '
+     &                           //'; SCC      '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -653,7 +660,6 @@ C.............  Write state/SCC total emissions
             DO I = 1, NSTA
 
                 DO J = 1, NSCC
-                
                     WRITE( CDATE, '(I7.7)' ) JDATE
 
 C.....................  Build output format depending on data values
@@ -699,8 +705,9 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
-            CHARACTER(60) :: HDRBUF  = '#'
-            CHARACTER(60) :: STLABEL = '# Date ; FIPS ; State ; County'
+            CHARACTER(56) :: HDRBUF  = '#'
+            CHARACTER(56) :: STLABEL = '# Date ; FIPS ; State              '
+     &                           //'; County              '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -744,8 +751,9 @@ C.............  Write county total emissions
             DO I = 1, NC
 
                 STA = CNTYCOD( I ) / 1000
+                STA = STA * 1000
                 IF( STA .NE. PSTA ) THEN
-                    N = N + 1
+                    N = MAX( FIND1( STA, NSTATE, STATCOD ), 0 ) 
                     PSTA = STA
                 END IF
 
@@ -792,8 +800,9 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
-            CHARACTER(60) :: HDRBUF  = '#'
-            CHARACTER(60) :: STLABEL = '# Date ; FIPS ; State ; County ; SCC'
+            CHARACTER(67) :: HDRBUF  = '#'
+            CHARACTER(67) :: STLABEL = '# Date ; FIPS ; State              '
+     &                           //'; County             ; SCC      '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -830,8 +839,9 @@ C.............  Write county total emissions
             DO I = 1, NSRC
 
                 STA = CNTYCOD( MICNY( I ) ) / 1000
+                STA = STA * 1000
                 IF( STA .NE. PSTA ) THEN
-                    N = N + 1
+                    N = MAX( FIND1( STA, NSTATE, STATCOD ),0 )
                     PSTA = STA
                 END IF
 

@@ -11,7 +11,7 @@ C      This subroutine opens the file or files for output from the tmppoint
 C      program. It also populates the MODINFO module with the source-category
 C      specific information. It also determines the name of the temperature
 C      variable.
-C 
+C
 C  PRECONDITIONS REQUIRED:
 C
 C  SUBROUTINES AND FUNCTIONS CALLED:
@@ -19,6 +19,10 @@ C
 C  REVISION  HISTORY:
 C      Created 7/99 by M. Houyoux
 C
+C     Revised ??/???? by ??
+C
+C     Version 07/2014 by C.Coats for  new GENTPRO CSV profiles and cross-references
+C     These are purely local to SUBROUTINE PROCTPRO()
 C**************************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -27,12 +31,12 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
@@ -40,7 +44,7 @@ C Last updated: $Date$
 C
 C***************************************************************************
 
-C...........   MODULES for public variables   
+C...........   MODULES for public variables
 C...........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, CRL, NSRC, NIACT, INVPIDX, EANAM,
      &                     EINAM, NIPOL, NIPPA, NPPOL, NPACT, ACTVTY
@@ -69,10 +73,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &                  PROMPTFFILE, PROMPTMFILE, USEEXPGEO
 
 C...........   SUBROUTINE ARGUMENTS
+
         LOGICAL     , INTENT    (IN) :: UFLAG ! use uniform temporal profile
         LOGICAL     , INTENT(IN OUT) :: PFLAG ! use episode time periods
         CHARACTER(*), INTENT(IN OUT) :: ENAME ! name for I/O API inven input
-        CHARACTER(*), INTENT(IN OUT) :: ANAME ! name for ASCII inven input 
+        CHARACTER(*), INTENT(IN OUT) :: ANAME ! name for ASCII inven input
         CHARACTER(*), INTENT   (OUT) :: DNAME ! day-spec file
         CHARACTER(*), INTENT   (OUT) :: HNAME ! hour-spec file
         CHARACTER(*), INTENT   (OUT) :: GNAME ! ungridding matrix
@@ -88,6 +93,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: PYEAR ! projected year
 
 C...........   Other local variables
+
         INTEGER         IDEV        ! tmp unit number if ENAME is map file
         INTEGER         IOS         ! status from environment variables
         INTEGER         I,J           ! index
@@ -100,11 +106,11 @@ C...........   Other local variables
         LOGICAL         XFLAG       ! true: use daylight time exemptions file
 
         CHARACTER(16)   INAME       ! tmp name for inven file of unknown fmt
-        CHARACTER(256)  MESG        ! message buffer 
+        CHARACTER(256)  MESG        ! message buffer
 
         CHARACTER(NAMLEN3)  NAMBUF ! file name buffer
 
-        CHARACTER(16) :: PROGNAME = 'OPENTMPIN' ! program name
+        CHARACTER(16), PARAMETER :: PROGNAME = 'OPENTMPIN' ! program name
 
 C***********************************************************************
 C   begin body of subroutine OPENTMPIN
@@ -128,7 +134,7 @@ C.........  Set average day emissions flag (INVPIDX)
         END IF
 
 C.........  Prompt for and open inventory file
-        INAME = ENAME 
+        INAME = ENAME
         MESG = 'Enter logical name for the MAP INVENTORY file'
         IDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., INAME, PROGNAME )
 
@@ -136,27 +142,21 @@ C.........  Open and read map file
         CALL RDINVMAP( INAME, IDEV, ENAME, ANAME, SDEV )
 
         IF( DFLAG ) THEN
-            NAMBUF = PROMPTMFILE( 
+            NAMBUF = PROMPTMFILE(
      &               'Enter logical name for DAY-SPECIFIC file',
      &               FSREAD3, CRL // 'DAY', PROGNAME )
             DNAME = NAMBUF
+        ELSE
+            DNAME = 'NONE'
         END IF
 
         IF( HFLAG ) THEN
-            NAMBUF = PROMPTMFILE( 
+            NAMBUF = PROMPTMFILE(
      &               'Enter logical name for HOUR-SPECIFIC file',
      &               FSREAD3, CRL // 'HOUR', PROGNAME )
             HNAME = NAMBUF
-        END IF
-
-        IF( .NOT. UFLAG ) THEN
-            XDEV = PROMPTFFILE( 
-     &           'Enter logical name for TEMPORAL CROSS-REFERENCE file',
-     &           .TRUE., .TRUE., CRL // 'TREF', PROGNAME )
-
-            RDEV = PROMPTFFILE( 
-     &           'Enter logical name for TEMPORAL PROFILES file',
-     &           .TRUE., .TRUE., CRL // 'TPRO', PROGNAME )
+        ELSE
+            HNAME = 'NONE'
         END IF
 
 C.........  Open the time periods that Temporal should process
@@ -170,8 +170,8 @@ C.........  Open the time periods that Temporal should process
              PFLAG = .TRUE.
          END IF
 
-C.........  Store source-category-specific header information, 
-C           including the inventory pollutants in the file (if any).  Note that 
+C.........  Store source-category-specific header information,
+C           including the inventory pollutants in the file (if any).  Note that
 C           the I/O API head info is passed by include file and the
 C           results are stored in module MODINFO.
 C.........  Set average day emissions flag (INVPIDX)
@@ -182,8 +182,6 @@ C.........  Reset activity to pollutant to create hourly VMT without running EMI
 C           To support MOVES-SMOKE integratoin tool approach.
 C           Only no-SPEED activity data (i.e. VMT) will be treated like pollutant for later Temporal program
         IF( NIACT > 0 ) THEN
-
-C.............  Allocate memory for and store pollutant names
             IF( ALLOCATED( EINAM ) ) DEALLOCATE( EINAM )
             ALLOCATE( EINAM( NIPPA ), STAT=IOS )
             CALL CHECKMEM( IOS, 'EINAM', PROGNAME )
@@ -194,7 +192,6 @@ C.............  Allocate memory for and store pollutant names
             NPACT = 0
             EINAM = EANAM
             ACTVTY = ' '
-
         END IF
 
         PYEAR = GETIFDSC( FDESC3D, '/PROJECTED YEAR/', .FALSE. )
@@ -208,51 +205,11 @@ C.........  Open region codes file for determining daylight savings time status
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
         END IF
-        
+
 C.........  Open holidays file for determining holidays by region
         HDEV = PROMPTFFILE(
      &             'Enter logical name for HOLIDAYS file',
      &             .TRUE., .TRUE., 'HOLIDAYS', PROGNAME )
-     
-C.........  Open additional files for when activity data are in the inventory.
-C.........  NOTE - this structure currently assumes that all of the
-C           files needed for using MOBILE5 emission factors would be needed
-C           in all cases.  For driving other emission factor models, other
-C           logic would need to be used that evaluates the emission factor
-C           model assigned to each activity, and opens files depending on the
-C           emission factor model.
-C.........  Use NAMBUF for the HP
-        IF( NIACT .GT. 0 ) THEN
-
-            NAMBUF= PROMPTMFILE( 
-     &              'Enter logical name for UNGRIDDING MATRIX file',
-     &              FSREAD3, CRL // 'UMAT', PROGNAME )
-            GNAME = NAMBUF
- 
-C.............  Get the header description from the ungridding matrix file
-            CALL RETRIEVE_IOAPI_HEADER( GNAME )
-
-C.............  Check the number of sources in the ungridding matrix
-            CALL CHKSRCNO( 'mobile', 'MUMAT', NROWS3D, NSRC, EFLAG )
-            
-            TDEV = PROMPTFFILE( 
-     &             'Enter logical name for EMISSION PROCESSES file',
-     &             .TRUE., .TRUE., CRL // 'EPROC', PROGNAME )
-     
-            EDEV = PROMPTFFILE(
-     &             'Enter logical name for EMISSION FACTORS LIST file',
-     &             .TRUE., .TRUE., CRL // 'EFLIST', PROGNAME )
-     
-        END IF
-
-C.........  Open files that are specific to mobile sources
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN
-
-            MDEV = PROMPTFFILE( 
-     &             'Enter logical name for MOBILE CODES file',
-     &             .TRUE., .TRUE., 'MCODES', PROGNAME )
-
-        END IF
 
 C.........  Abort if error was found
         IF ( EFLAG ) THEN
@@ -269,7 +226,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Internal buffering formats............ 94xxx
 
 94000   FORMAT( I2.2 )
- 
+
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
 C******************  INTERNAL SUBPROGRAMS   ******************************

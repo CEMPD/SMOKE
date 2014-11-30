@@ -561,7 +561,7 @@ C******************  FORMAT  STATEMENTS   ******************************
 C...........   Formatted file I/O formats............ 93xxx
 93000   FORMAT( A )
 
-93360   FORMAT( I8, 1X, I4, 1X, I4 )
+93360   FORMAT( I8, 1X, I8, 1X, I8 )
 
 C...........   Internal buffering formats............ 94xxx
 

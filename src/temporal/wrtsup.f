@@ -1,5 +1,5 @@
 
-        SUBROUTINE WRTSUP( FDEV, NSRC, NVAR, VARNAM )
+      SUBROUTINE WRTSUP( FDEV, NSRC, NVAR, VARNAM )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -17,6 +17,7 @@ C      Functions: I/O API functions
 C
 C  REVISION  HISTORY:
 C      Created by M. Houyoux 10/2001
+C      Modified by C. Coats 07/2014:  new GENTPRO CSV profiles and cross-references
 C
 C***********************************************************************
 C
@@ -26,28 +27,31 @@ C File: @(#)$Id$
 C
 C COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
 C All Rights Reserved
-C 
+C
 C Carolina Environmental Program
 C University of North Carolina at Chapel Hill
 C 137 E. Franklin St., CB# 6116
 C Chapel Hill, NC 27599-6116
-C 
+C
 C smoke@unc.edu
 C
 C Pathname: $Source$
-C Last updated: $Date$ 
+C Last updated: $Date$
 C
 C***************************************************************************
 
 C...........   MODULES for public variables
-C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: TPFLAG
+C.........  MODINFO  contains the information about the source category
+C.........  MODSOURC contains the inventory arrays
+C........   MODTMPRL contains the temporal profile tables
 
-C...........   This module contains the cross-reference tables
-        USE MODXREF, ONLY: MDEX, WDEX, DDEX
-
-C...........   This module contains the temporal profile tables
-        USE MODTMPRL, ONLY: MONREF, WEKREF, HRLREF
+        USE MODINFO,  ONLY: CATEGORY
+        USE MODSOURC, ONLY: CSOURC, CSCC, TPFLAG
+        USE MODTMPRL, ONLY: METPROF,  MTHPROF,  WEKPROF,  DOMPROF, HRLPROF,
+     &                                MTHIDP,   WEKIDP,   DOMIDP,  HRLIDP,
+     &                      METCOUNT, MTHCOUNT, WEKCOUNT, DOMCOUNT,
+     &                      MONCOUNT, TUECOUNT, WEDCOUNT, THUCOUNT,
+     &                      FRICOUNT, SATCOUNT, SUNCOUNT
 
         IMPLICIT NONE
 
@@ -58,172 +62,345 @@ C...........   INCLUDES
         INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
         INCLUDE 'FDESC3.EXT'    !  I/O API file description data structures.
 
+C...........   SUBROUTINE ARGUMENTS
+
+        INTEGER     , INTENT(IN   ) :: FDEV             ! output file unit number
+        INTEGER     , INTENT(IN   ) :: NSRC             ! number of sources
+        INTEGER     , INTENT(IN   ) :: NVAR             ! number of variables
+        CHARACTER(*), INTENT(IN   ) :: VARNAM( NVAR )   ! names of polltants/emis procs
+
 C...........   EXTERNAL FUNCTIONS and their descriptions:
 
-C...........   SUBROUTINE ARGUMENTS
-        INTEGER         FDEV             ! output file unit number
-        INTEGER         NSRC             ! number of sources
-        INTEGER         NVAR             ! number of variables
-        CHARACTER(*)    VARNAM( NVAR )   ! names of polltants/emis procs
+        INTEGER, EXTERNAL :: INDEX1
 
-C.........  Local allocatable arrays
-        INTEGER, ALLOCATABLE :: MONPROF( : )  ! tmp monthly profiles by variable
-        INTEGER, ALLOCATABLE :: WEKPROF( : )  ! tmp weekly profiles by variable
-        INTEGER, ALLOCATABLE :: HRLPROF( : )  ! tmp diurnal profiles by variable
+C...........   PARAMETERs and their descriptions:
+
+        INTEGER, PARAMETER  :: ACAT = 1
+        INTEGER, PARAMETER  :: MCAT = 2
+        INTEGER, PARAMETER  :: PCAT = 3
+
+        CHARACTER( 6), PARAMETER :: LOCCATS( 3 ) = ( / 'AREA  ', 'MOBILE', 'POINT ' / )
+
+        CHARACTER(16), PARAMETER :: PROGNAME = 'WRTSUP' !  program name
 
 C.........  Local varables
-        INTEGER       I, L1, L2, S, V      ! indices and counters
 
-        INTEGER       IOS               ! i/o status
-        INTEGER       PMON              ! monthly profile from previous iteration
-        INTEGER       PWEK              ! weekly profile from previous iteration
-        INTEGER       PHRL              ! hourly profile from previous iteration
+        INTEGER       I, S, V, D        ! indices and counters
+        INTEGER       ICAT
 
-        LOGICAL       MFLAG             ! true: monthly same for all pols
-        LOGICAL       WFLAG             ! true: weekly same for all pols
-        LOGICAL       HFLAG             ! true: hourly same for all pols
+        INTEGER       PMTH              ! monthly   profile from previous iteration
+        INTEGER       PDOM              ! daily     profile from previous iteration
+        INTEGER       PWEK              ! weekly    profile from previous iteration
+        INTEGER       PMET              ! met based profile from previous iteration
+        INTEGER       PMON              ! diurnal   profile from previous iteration
+        INTEGER       PTUE              ! diurnal   profile from previous iteration
+        INTEGER       PWED              ! diurnal   profile from previous iteration
+        INTEGER       PTHU              ! diurnal   profile from previous iteration
+        INTEGER       PFRI              ! diurnal   profile from previous iteration
+        INTEGER       PSAT              ! diurnal   profile from previous iteration
+        INTEGER       PSUN              ! diurnal   profile from previous iteration
 
-        CHARACTER(100) :: OUTFMT = ' '    ! output format
-        CHARACTER(512) :: BUFFER = ' '    ! output variables buffer
+        INTEGER       NMTH              ! active monthly-profile count for this source
+        INTEGER       NDOM              ! active   daily-profile count for this source
+        INTEGER       NWEK              ! active  weekly-profile count for this source
+        INTEGER       NMET              ! active met based prof  count for this source
+        INTEGER       NMON              ! active diurnal profile count for this source
+        INTEGER       NTUE              ! active diurnal profile count for this source
+        INTEGER       NWED              ! active diurnal profile count for this source
+        INTEGER       NTHU              ! active diurnal profile count for this source
+        INTEGER       NFRI              ! active diurnal profile count for this source
+        INTEGER       NSAT              ! active diurnal profile count for this source
+        INTEGER       NSUN              ! active diurnal profile count for this source
 
-        CHARACTER(16) :: PROGNAME = 'WRTSUP' !  program name
+        INTEGER       MTHP( NVAR )      ! active   monthly profiles for this source
+        INTEGER       DOMP( NVAR )      ! active     daily profiles for this source
+        INTEGER       WEKP( NVAR )      ! active    weekly profiles for this source
+        INTEGER       METP( NVAR )      ! active met based-profiles for this source
+        INTEGER       HRLP( 7,NVAR )    ! active   diurnal profiles for this source
+
+        LOGICAL       MTHFLAG           ! true: monthly       same for all pols
+        LOGICAL       WEKFLAG           ! true: weekly        same for all pols
+        LOGICAL       DOMFLAG           ! true: day-of-month  same for all pols
+        LOGICAL       METFLAG           ! true: met based same for all pols
+        LOGICAL       MONFLAG           ! true: Monday hourly same for all pols
+        LOGICAL       TUEFLAG           ! true: Monday hourly same for all pols
+        LOGICAL       WEDFLAG           ! true: Monday hourly same for all pols
+        LOGICAL       THUFLAG           ! true: Monday hourly same for all pols
+        LOGICAL       FRIFLAG           ! true: Monday hourly same for all pols
+        LOGICAL       SATFLAG           ! true: Monday hourly same for all pols
+        LOGICAL       SUNFLAG           ! true: Monday hourly same for all pols
+
+        CHARACTER(ALLLEN3+2)    SOURCE  ! "<fip><scc>..."
+        CHARACTER(100)          OUTFMT  ! output format
+        CHARACTER(100)          METFMT  ! output format
+        CHARACTER(512)          BUFFER  ! output variables buffer
+        CHARACTER(128)          MESG
 
 C***********************************************************************
 C   begin body of subroutine WRTSUP
 
-C.........  Allocate local temporary variables
-        ALLOCATE( MONPROF( NVAR ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'MONPROF', PROGNAME )
-        ALLOCATE( WEKPROF( NVAR ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'WEKPROF', PROGNAME )
-        ALLOCATE( HRLPROF( NVAR ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'HRLPROF', PROGNAME )
-        MONPROF = 0
-        WEKPROF = 0
-        HRLPROF = 0
+C.............  Ensure that the CATEGORY is valid
+
+        ICAT = INDEX1( CATEGORY, 3, LOCCATS )
+
+        IF ( ICAT .LE. 0 ) THEN
+            MESG = 'INTERNAL ERROR: category "' // TRIM( CATEGORY ) //
+     &             '" is not valid'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
 
 C.........  Write header with current variables
-        L1 = LEN_TRIM( VARNAM( 1 ) )
-        BUFFER = '"' // VARNAM( 1 )( 1:L1 ) // '"'
+
+        BUFFER = '"' // TRIM( VARNAM( 1 ) ) // '"'
         DO V = 2, NVAR
-            L1 = LEN_TRIM( VARNAM( V ) )
-            L2 = LEN_TRIM( BUFFER )
-            BUFFER = BUFFER(1:L2) // ', "' // VARNAM( V )(1:L1) // '"'
+            BUFFER = TRIM( BUFFER ) // ', "' // TRIM( VARNAM( V ) ) // '"'
         END DO
 
-        L2 = LEN_TRIM( BUFFER )
-        WRITE( FDEV, '(A)' ) BUFFER( 1:L2 )
+        WRITE( FDEV, '(A)' ) TRIM( BUFFER )
 
-C.........  Create output format
-        OUTFMT = '(A,I8,","'
-        DO I = 1, NVAR, 50
-            IF ( I .EQ. 1 ) THEN
-                OUTFMT = TRIM( OUTFMT ) // ',50(I8,",")'
-            ELSE
-                OUTFMT = TRIM( OUTFMT ) // ',14X,/,50(I8,",")'
-            END IF
-        END DO 
-        OUTFMT = TRIM( OUTFMT ) // ',I8)'
+C.........  Create CSV output formats
 
-C.........  Loop through sources to output temporal profile info
+        OUTFMT = '(A, ",", I8, ",", 2X,    2049( A,  :, "," ) )'   !  supports up through MXVARS3=2048 vbles
+        METFMT = '(A, ",", I8, ",", 2X, A, 2048( I9, :, "," ) )'   !  ditto for met profiles
+
         DO S = 1, NSRC
 
 C.............  Retrieve profile numbers for all pollutants
-            MFLAG = .TRUE.
-            WFLAG = .TRUE.
-            HFLAG = .TRUE.
-            PMON = 0
-            PWEK = 0
-            PHRL = 0
+C.............  Implement profile-hierarchy and count active profiles
+
+            MTHFLAG = ( MTHCOUNT .GT. 0 )
+            DOMFLAG = ( DOMCOUNT .GT. 0 )
+            WEKFLAG = ( WEKCOUNT .GT. 0 )
+            METFLAG = ( METCOUNT .GT. 0 )
+            MONFLAG = ( MONCOUNT .GT. 0 )
+            TUEFLAG = ( TUECOUNT .GT. 0 )
+            WEDFLAG = ( WEDCOUNT .GT. 0 )
+            THUFLAG = ( THUCOUNT .GT. 0 )
+            FRIFLAG = ( FRICOUNT .GT. 0 )
+            SATFLAG = ( SATCOUNT .GT. 0 )
+            SUNFLAG = ( SUNCOUNT .GT. 0 )
+
+            NMTH = 0
+            NDOM = 0
+            NWEK = 0
+            NMET = 0
+            NMON = 0
+            NTUE = 0
+            NWED = 0
+            NTHU = 0
+            NFRI = 0
+            NSAT = 0
+            NSUN = 0
+
             DO V = 1, NVAR
 
-C.................  Met-based profiles should have 99999 profile IDs.
-C                   need to reset the value to 99999
-                IF( MDEX( S,V ) == 99999 ) THEN
-                    MONPROF( V ) = 99999
-                ELSE
-                    MONPROF( V ) = MONREF( MDEX( S,V ) )
+                MTHP(V)   = MTHPROF( S,V )
+                DOMP(V)   = DOMPROF( S,V )
+                WEKP(V)   = WEKPROF( S,V )
+                METP(V)   = METPROF( S,V )
+                HRLP(:,V) = HRLPROF( S,:,V )
+
+                IF ( METP(V) .GT. 0 ) THEN
+                    MTHP(V)   = 0
+                    DOMP(V)   = 0
+                    WEKP(V)   = 0
+                    HRLP(:,V) = 0
                 END IF
 
-                IF( WDEX( S,V ) == 99999 ) THEN
-                    WEKPROF( V ) = 99999
-                ELSE
-                    WEKPROF( V ) = WEKREF( WDEX( S,V ) )
+                IF ( DOMP(V) .GT. 0 ) THEN
+                    WEKP(V)   = 0
                 END IF
 
-                IF( DDEX( S,V ) == 99999 ) THEN
-                    HRLPROF( V ) = 99999
-                ELSE
-                    HRLPROF( V ) = HRLREF( DDEX( S,V ) )
-                END IF
+                IF( MTHP( V )   .NE. MTHP( 1   ) ) MTHFLAG = .FALSE.
+                IF( DOMP( V )   .NE. DOMP( 1   ) ) DOMFLAG = .FALSE.
+                IF( WEKP( V )   .NE. WEKP( 1   ) ) WEKFLAG = .FALSE.
+                IF( METP( V )   .NE. METP( 1   ) ) METFLAG = .FALSE.
+                IF( HRLP( 1,V ) .NE. HRLP( 1,1 ) ) MONFLAG = .FALSE.
+                IF( HRLP( 2,V ) .NE. HRLP( 2,1 ) ) TUEFLAG = .FALSE.
+                IF( HRLP( 3,V ) .NE. HRLP( 3,1 ) ) WEDFLAG = .FALSE.
+                IF( HRLP( 4,V ) .NE. HRLP( 4,1 ) ) THUFLAG = .FALSE.
+                IF( HRLP( 5,V ) .NE. HRLP( 5,1 ) ) FRIFLAG = .FALSE.
+                IF( HRLP( 6,V ) .NE. HRLP( 6,1 ) ) SATFLAG = .FALSE.
+                IF( HRLP( 7,V ) .NE. HRLP( 7,1 ) ) SUNFLAG = .FALSE.
 
-                IF( V .NE. 1 .AND.  
-     &              MONPROF( V ) .NE. PMON ) MFLAG = .FALSE.
-                IF( V .NE. 1 .AND.
-     &              WEKPROF( V ) .NE. PWEK ) WFLAG = .FALSE.
-                IF( V .NE. 1 .AND.
-     &              HRLPROF( V ) .NE. PHRL ) HFLAG = .FALSE.
-
-                PMON = MONPROF( V )
-                PWEK = WEKPROF( V )
-                PHRL = HRLPROF( V )
-           
-C.................  If source and pollutant is hour-specific, change hourly 
-C                   profile to negative
-c note: to do this, will need to have a list of all sources that are hour-specific
-c    n: across all hours.
-c                IF( LHSPOA( V ) .AND. ???
-
-C.................  If source and pollutant is day-specific, change weekly 
-C                   profile to negative
-c note: same note as above.
+                IF( MTHP( V )   .GT. 0 )  NMTH = NMTH + 1
+                IF( DOMP( V )   .GT. 0 )  NDOM = NDOM + 1
+                IF( WEKP( V )   .GT. 0 )  NWEK = NWEK + 1
+                IF( METP( V )   .GT. 0 )  NMET = NMET + 1
+                IF( HRLP( 1,V ) .GT. 0 )  NMON = NMON + 1
+                IF( HRLP( 2,V ) .GT. 0 )  NTUE = NTUE + 1
+                IF( HRLP( 3,V ) .GT. 0 )  NWED = NWED + 1
+                IF( HRLP( 4,V ) .GT. 0 )  NTHU = NTHU + 1
+                IF( HRLP( 5,V ) .GT. 0 )  NFRI = NFRI + 1
+                IF( HRLP( 6,V ) .GT. 0 )  NSAT = NSAT + 1
+                IF( HRLP( 7,V ) .GT. 0 )  NSUN = NSUN + 1
 
             END DO
 
-C.............  If source does not use monthly profile, change monthly 
-C               profile to negative
-            IF( MOD( TPFLAG( S ), MTPRFAC ) .NE. 0      ) THEN
-                MONPROF = -MONPROF    ! array
-            END IF
-
 C.............  Write profile information by pollutant
-            IF( MFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"M"', 1, MONPROF( 1 )
+
+            CALL MKSOURCE( ICAT, S, SOURCE )
+
+            IF( MOD( TPFLAG(S), MTPRFAC ) .NE. 0 ) THEN
+                CONTINUE
+            ELSE IF( NMTH .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( MTHFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"MTH"',    1, TRIM( SOURCE ), MTHIDP( MTHP(1 ) )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"M"', NVAR, (MONPROF(V),V=1,NVAR)
+                WRITE( FDEV,OUTFMT ) '"MTH"', NVAR, TRIM( SOURCE ), ( TRIM( MTHIDP( MTHP(V) ) ),V=1,NVAR )
             END IF
 
-            IF( MFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"W"', 1, WEKPROF( 1 )
+            IF( NDOM .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( DOMFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"DOM"',    1, TRIM( SOURCE ), DOMIDP( DOMP(1) )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"W"', NVAR, (WEKPROF(V),V=1,NVAR)
+                WRITE( FDEV,OUTFMT ) '"DOM"', NVAR, TRIM( SOURCE ), ( TRIM( DOMIDP( DOMP(V) ) ),V=1,NVAR )
             END IF
 
-            IF( MFLAG ) THEN
-                WRITE( FDEV,OUTFMT ) '"H"', 1, HRLPROF( 1 )
+            IF( NWEK .EQ. 0  ) THEN
+                CONTINUE
+            ELSE IF( WEKFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"WEK"',    1, TRIM( SOURCE ), WEKIDP( WEKP(1 ) )
             ELSE
-                WRITE( FDEV,OUTFMT ) '"H"', NVAR, (HRLPROF(V),V=1,NVAR)
+                WRITE( FDEV,OUTFMT ) '"WEK"', NVAR, TRIM( SOURCE ), ( TRIM( WEKIDP( WEKP(V) ) ),V=1,NVAR )
+            END IF
+
+            IF( NMET .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( METFLAG ) THEN
+                WRITE( FDEV,METFMT ) '"MET"',    1, TRIM( SOURCE ), METP(1)
+            ELSE
+                WRITE( FDEV,METFMT ) '"MET"', NVAR, TRIM( SOURCE ), ( METP(V), V=1,NVAR )
+            END IF
+
+            IF( NMON .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( MONFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"MON"',    1, TRIM( SOURCE ), HRLIDP( HRLP(1,1) )
+            ELSE
+                WRITE( FDEV,OUTFMT ) '"MON"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(1,V) ) ),V=1,NVAR )
+            END IF
+
+            IF( NTUE .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( TUEFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"TUE"',    1, TRIM( SOURCE ), HRLIDP( HRLP(2,1) )
+            ELSE
+                WRITE( FDEV,OUTFMT ) '"TUE"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(2,V) ) ),V=1,NVAR )
+            END IF
+
+            IF( NWED .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( HRLPROF( S,1,1 ) .LT. 1 ) THEN
+                CONTINUE
+            ELSE IF( WEDFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"WED"',    1, TRIM( SOURCE ), HRLIDP( HRLP(3,1) )
+            ELSE
+                WRITE( FDEV,OUTFMT ) '"WED"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(3,V) ) ),V=1,NVAR )
+            END IF
+
+            IF( NTHU .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( THUFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"THU"',    1, TRIM( SOURCE ), HRLIDP( HRLP(4,1) )
+            ELSE
+                WRITE( FDEV,OUTFMT ) '"THU"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(4,V) ) ),V=1,NVAR )
+            END IF
+
+            IF( NFRI .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( FRIFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"FRI"',    1, TRIM( SOURCE ), HRLIDP( HRLP(5,1) )
+            ELSE
+                WRITE( FDEV,OUTFMT ) '"FRI"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(5,V) ) ),V=1,NVAR )
+            END IF
+
+            IF( NSAT .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( SATFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"SAT"',    1, TRIM( SOURCE ), HRLIDP( HRLP(6,1) )
+            ELSE
+                WRITE( FDEV,OUTFMT ) '"SAT"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(6,V) ) ),V=1,NVAR )
+            END IF
+
+            IF( NSUN .EQ. 0 ) THEN
+                CONTINUE
+            ELSE IF( HRLPROF( S,1,1 ) .LT. 1 ) THEN
+                CONTINUE
+            ELSE IF( SUNFLAG ) THEN
+                WRITE( FDEV,OUTFMT ) '"SUN"',    1, TRIM( SOURCE ), HRLIDP( HRLP(7,1) )
+            ELSE
+                WRITE( FDEV,OUTFMT ) '"SUN"', NVAR, TRIM( SOURCE ), ( TRIM( HRLIDP( HRLP(7,V) ) ),V=1,NVAR )
             END IF
 
         END DO  ! end source loop
 
-C.........  Deallocate local temporary variables
-        DEALLOCATE( MONPROF, WEKPROF, HRLPROF )
-
         RETURN
-        
+
         CLOSE( FDEV )
 
-C******************  FORMAT  STATEMENTS   ******************************
+C******************  INTERNAL SUBPROGRAMS  *****************************
 
-C...........   Formatted file I/O formats............ 93xxx
+      CONTAINS
 
-93000   FORMAT( A )
 
-C...........   Internal buffering formats............ 94xxx
+        SUBROUTINE MKSOURCE( ICAT, SRC, SOURCE )
 
-94010   FORMAT( 10( A, :, I8, :, 1X ) )
+            INTEGER,          INTENT(IN   ) :: ICAT, SRC
+            CHARACTER(LEN=*), INTENT(  OUT) :: SOURCE
 
-94100   FORMAT( 9( A, I2.2 ) )
+            CHARACTER(1), PARAMETER :: QUOTES = '"'
+            CHARACTER(1), PARAMETER :: SLASH  = '/'
 
-        END SUBROUTINE WRTSUP
+            CHARACTER(FIPLEN3)  CFIP            !  tmp (character) FIPS code
+            CHARACTER(SCCLEN3)  TSCC            !  tmp 10-digit SCC
+            CHARACTER(CHRLEN3)  CPNT            !  tmp point ID
+            CHARACTER(CHRLEN3)  CPLT            !  tmp plant ID
+            CHARACTER(CHRLEN3)  CSTK            !  tmp stack ID
+            CHARACTER(CHRLEN3)  CSEG            !  tmp segment ID
+            CHARACTER(CHRLEN3)  CPL5            !  tmp plt char 5
+            INTEGER             L
+
+            TSCC    = CSCC( S )
+            CFIP    = CSOURC( S )
+
+            IF ( ICAT .EQ. ACAT ) THEN
+
+                SOURCE = QUOTES // TRIM( ADJUSTL( CFIP ) ) //
+     &                    SLASH // TRIM( ADJUSTL( TSCC ) ) // QUOTES
+
+            ELSE IF ( ICAT .EQ. MCAT ) THEN
+
+                SOURCE = QUOTES // TRIM( ADJUSTL( CFIP ) ) //
+     &                    SLASH // TRIM( ADJUSTL( TSCC ) ) // QUOTES
+
+            ELSE IF ( ICAT .EQ. PCAT ) THEN
+
+                CPLT = CSOURC( S )( PTBEGL3(2):PTENDL3(2) )
+                CPNT = CSOURC( S )( PTBEGL3(3):PTENDL3(3) )
+                CSTK = CSOURC( S )( PTBEGL3(4):PTENDL3(4) )
+                CSEG = CSOURC( S )( PTBEGL3(5):PTENDL3(5) )
+                CPL5 = CSOURC( S )( PTBEGL3(6):PTENDL3(6) )
+
+                SOURCE = QUOTES // TRIM( ADJUSTL( CFIP ) ) //
+     &                    SLASH // TRIM( ADJUSTL( TSCC ) ) //
+     &                    SLASH // TRIM( ADJUSTL( CPLT ) ) //
+     &                    SLASH // TRIM( ADJUSTL( CPNT ) ) //
+     &                    SLASH // TRIM( ADJUSTL( CSTK ) ) //
+     &                    SLASH // TRIM( ADJUSTL( CSEG ) ) //
+     &                    SLASH // TRIM( ADJUSTL( CPL5 ) ) // QUOTES
+
+            ELSE
+
+                CALL M3EXIT( 'WRTSUP/MKSOURCE', 0, 0, 'Illegal source category', 2 )
+
+            END IF
+
+            RETURN
+
+        END SUBROUTINE MKSOURCE
+
+
+      END SUBROUTINE WRTSUP

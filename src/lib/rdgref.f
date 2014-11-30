@@ -44,7 +44,7 @@ C.........  This module is for cross reference tables
         USE MODXREF, ONLY: INDXTA, CSRCTA, CSCCTA, ISRGCDA
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_ENDP, MCODEFLAG
+        USE MODINFO, ONLY: CATEGORY, NCHARS, SC_ENDP
 
         IMPLICIT NONE
 
@@ -131,14 +131,6 @@ C           current source category or not.
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 ) 
 
         ENDIF
-
-C.........  Check to see whether to use MCODES file (road/vehicle) to construct
-C           internal SCC (combination of road/vhicle types)
-        IF( CATEGORY == 'MOBILE' ) THEN
-            MESG = 'Construct internal SCC using road and vehicle types '//
-     &          CRLF() // BLANK10 // 'for mobile sources or not'
-            MCODEFLAG = ENVYN( 'USE_MCODES_SCC_YN', MESG, .TRUE., IOS )
-        END IF
 
 C.........  Create the zero SCC
         SCCZERO = REPEAT( '0', SCCLEN3 )
@@ -228,11 +220,6 @@ C.................  Ignore SCCs that are not on-road mobile
                     END IF
                 END IF
                 
-C.................  Convert TSCC to internal value
-                IF( MCODEFLAG ) THEN
-                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
-                END IF
-
             END SELECT
 
 C.............  Make sure that the spatial surrogates code is an integer

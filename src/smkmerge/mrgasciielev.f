@@ -239,7 +239,8 @@ C.........  Other local variables
         LOGICAL          MSGPRINT             ! true: print warning message
         LOGICAL          PINGFLAG             ! true: process PinG sources
         LOGICAL          LLGRID               ! true: grid is lat-lon
-        
+        LOGICAL          OUTFLAG              ! true: output merged ascii elev point src file
+
         CHARACTER(256)   DUMMY                ! dummy character string
         CHARACTER(30)    FMT                  ! output format for emissions
         CHARACTER(100)   RPTFMT               ! output format for report
@@ -274,6 +275,9 @@ C.........  Open lists of input files
 C.........  Get environment variables
         MESG = 'Merge files from different days into single file'
         MRGDIFF = ENVYN( 'MRG_DIFF_DAYS', MESG, .FALSE., IOS )
+
+        MESG = 'Output merged ASCII elevated point sources file or not'
+        OUTFLAG = ENVYN( 'SMK_ASCIIELEV_YN', MESG, .TRUE., IOS )
 
 C.........  Get date and time settings from environment        
         IF( MRGDIFF ) THEN
@@ -761,9 +765,11 @@ C.........  Determine output date, time, and number of time steps
         IET = TMPTIME / 100
 
 C.........  Open output files
-        MESG = 'Enter logical name for output ' //
-     &         'ASCII ELEVATED SOURCES file'
-        ODEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'OUTFILE', PROGNAME )
+        IF( OUTFLAG ) THEN
+            MESG = 'Enter logical name for output ' //
+     &             'ASCII ELEVATED SOURCES file'
+            ODEV = PROMPTFFILE( MESG, .FALSE., .TRUE., 'OUTFILE', PROGNAME )
+        END IF
 
         MESG = 'Enter logical name for output ' //
      &         'BINARY ELEVATED SOURCES file'
@@ -775,7 +781,7 @@ C.........  Open report file
      &                        PROGNAME )
 
 C.........  Write header to output files
-        CALL WRITE_ASCII_HEADER
+        IF( OUTFLAG ) CALL WRITE_ASCII_HEADER
         CALL WRITE_BINARY_HEADER
         CALL WRITE_REPORT_HEADER
 
@@ -871,15 +877,17 @@ C.........................  Check if source remains as PinG source
                 K = K + 1
 
 C.................  Write source to ASCII file
-                IF( LLGRID ) THEN
-                    WRITE( ODEV, 93065 ) K, 'STD       ', XCOORD,
-     &                  YCOORD, FCID, SKID, TFIP
-                ELSE
-                    WRITE( ODEV, 93070 ) K, 'STD       ', XCOORD,
-     &                  YCOORD, FCID, SKID, TFIP
+                IF( OUTFLAG ) THEN
+                    IF( LLGRID ) THEN
+                        WRITE( ODEV, 93065 ) K, 'STD       ', XCOORD,
+     &                      YCOORD, FCID, SKID, TFIP
+                    ELSE
+                        WRITE( ODEV, 93070 ) K, 'STD       ', XCOORD,
+     &                      YCOORD, FCID, SKID, TFIP
+                    END IF
+                    WRITE( ODEV, 93080 ) STKHT, STKDM, STKTK, STKVE
                 END IF
-                WRITE( ODEV, 93080 ) STKHT, STKDM, STKTK, STKVE
-                
+
 C.................  Save source to write to binary file
                 SRCDEFS( 1,K ) = XCOORD     ! x-coord of source
                 SRCDEFS( 2,K ) = YCOORD     ! y-coord of source
@@ -915,7 +923,7 @@ C.................  Save source to write to binary file
 
         END DO
         
-        WRITE( ODEV, 93000 ) 'END'
+        IF( OUTFLAG ) WRITE( ODEV, 93000 ) 'END'
 
 C.........  Write point source definition record to binary file
         WRITE( BDEV ) SRCDEFS
@@ -1089,19 +1097,21 @@ C.................  Set output start date, start time, end date, and end time
             END DO
 
 C.............  Write time step information to ASCII file
-            WRITE( ODEV, 93000 ) 'TIME INTERVAL'
-            WRITE( ODEV, 93050 ) IBD, IBT, IED, IET
-            WRITE( ODEV, 93000 ) 'METHOD'
-            WRITE( ODEV, 93000 ) 'STD       ALL       ' //
-     &          'EMVALUES  0.        50000.'
-            WRITE( ODEV, 93000 ) 'END'
-            WRITE( ODEV, 93000 ) 'VERTICAL METHOD'
-            WRITE( ODEV, 93000 ) 'STD       ALL       ' //
-     &          VERTTYPE // ' 0.       10000.'
-            WRITE( ODEV, 93000 ) 'END'
-            WRITE( ODEV, 93000 ) 'EMISSIONS VALUES'
-            WRITE( ODEV, 93000 ) 'ALL       ALL' //
-     &          '            0.000'
+            IF( OUTFLAG ) THEN
+                WRITE( ODEV, 93000 ) 'TIME INTERVAL'
+                WRITE( ODEV, 93050 ) IBD, IBT, IED, IET
+                WRITE( ODEV, 93000 ) 'METHOD'
+                WRITE( ODEV, 93000 ) 'STD       ALL       ' //
+     &              'EMVALUES  0.        50000.'
+                WRITE( ODEV, 93000 ) 'END'
+                WRITE( ODEV, 93000 ) 'VERTICAL METHOD'
+                WRITE( ODEV, 93000 ) 'STD       ALL       ' //
+     &              VERTTYPE // ' 0.       10000.'
+                WRITE( ODEV, 93000 ) 'END'
+                WRITE( ODEV, 93000 ) 'EMISSIONS VALUES'
+                WRITE( ODEV, 93000 ) 'ALL       ALL' //
+     &              '            0.000'
+            END IF
 
 C.............  Write time interval record to binary file
             INTBIN (1) = IBD        ! beginning date
@@ -1158,8 +1168,10 @@ C.........................  Set up output format for emissions
                         END IF
 
 C.........................  Write emissions to ASCII file     
-                        WRITE( ODEV, FMT ) BASENUM + NUM, VNAME, EMIS
-                        
+                        IF( OUTFLAG ) THEN
+                            WRITE( ODEV, FMT ) BASENUM + NUM, VNAME, EMIS
+                        END IF
+
 C.........................  Store emissions to write to binary file
                         SRCEMIS( BASENUM+NUM ) = EMIS
 
@@ -1211,9 +1223,11 @@ C.................  Store overall report information
 
             END DO  ! loop over species
 
-            WRITE( ODEV, 93000 ) 'END'
-            WRITE( ODEV, 93000 ) 'ENDTIME'
-        
+            IF( OUTFLAG ) THEN
+                WRITE( ODEV, 93000 ) 'END'
+                WRITE( ODEV, 93000 ) 'ENDTIME'
+            END IF
+
             LDATE = JDATE
             CALL NEXTIME( JDATE, JTIME, 10000 )
         

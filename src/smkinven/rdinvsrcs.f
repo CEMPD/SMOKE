@@ -58,7 +58,8 @@ C.........  This module contains the lists of unique inventory information
 C.........  This module is for mobile-specific data
         USE MODMOBIL, ONLY: NVTYPE, NRCLAS, IVTIDLST, CVTYPLST, 
      &                      AMSRDCLS, RDWAYTYP, NSCCTBL, SCCTBL,
-     &                      SCCRVC
+     &                      SCCRVC, SCCMAPFLAG, NSCCMAP, SCCMAPLIST,
+     &                      EXCLSCCFLAG
 
         IMPLICIT NONE
 
@@ -118,7 +119,7 @@ C...........   File units and logical/physical names
         INTEGER         CDEV        !  scratch file
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, K2, L, NP, S !  counters and indices
+        INTEGER         I, J, JJ, K, KK, K1, K2, L, NP, S !  counters and indices
         INTEGER         L0, L1, L2, L3, L4, L5, L6, L7, L8, L9
 
         INTEGER         CSRC_LEN     !  length of source characteristics
@@ -130,6 +131,7 @@ C...........   Other local variables
         INTEGER         ISTREC       !  no. of records stored
         INTEGER         IVT          !  vehicle type code
         INTEGER         LDEV         !  device no. for log file
+        INTEGER         NSCC         !  tmp no of reference SCCs
         INTEGER         MXWARN       !  maximum number of warnings
         INTEGER         NLINE        !  number of lines in list format file
         INTEGER         NPOLPERLN    !  no. of pollutants per line of inventory file
@@ -378,117 +380,117 @@ C.........  Open scratch file for writing record numbers
 C.........  Loop over files and multiples of MXRECS
         DO
 
-C.............  Reset counters        
-            S = 0       ! source number
-            ISTREC= 0   ! number of records stored
+C...........  Reset counters        
+          S = 0       ! source number
+          ISTREC= 0   ! number of records stored
 
-C.............  Loop through records in current file
-            DO
-                IF( ISTREC == MXRECS ) EXIT
+C...........  Loop through records in current file
+          DO
+              IF( ISTREC == MXRECS ) EXIT
               
-                READ( FDEV, 93000, IOSTAT=IOS ) LINE
+              READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
-                IREC = IREC + 1          
-                IF( IOS > 0 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG, 94010 ) 'I/O error', IOS,
-     &                 'reading inventory file at line', IREC
-                    CALL M3MESG( MESG )
-                    CYCLE
-                END IF
+              IREC = IREC + 1          
+              IF( IOS > 0 ) THEN
+                  EFLAG = .TRUE.
+                  WRITE( MESG, 94010 ) 'I/O error', IOS,
+     &               'reading inventory file at line', IREC
+                  CALL M3MESG( MESG )
+                  CYCLE
+              END IF
 
-C.................  Check if we've reached the end of the file            
-                IF( IOS < 0 ) THEN
+C...............  Check if we've reached the end of the file            
+              IF( IOS < 0 ) THEN
 
-C.....................  If list format, try to open next file
-                    IF( INVFMT == LSTFMT ) THEN
+C...................  If list format, try to open next file
+                  IF( INVFMT == LSTFMT ) THEN
 
-C.........................  Close current file and reset counter
-                        CLOSE( FDEV )
-                        IREC = 0
+C.......................  Close current file and reset counter
+                       CLOSE( FDEV )
+                      IREC = 0
 
-C.........................  Advance to next file                 
-                        CURFIL = CURFIL + 1
+C.......................  Advance to next file                 
+                      CURFIL = CURFIL + 1
 
-C.........................  Check if there are more files to read
-                        IF( CURFIL <= NLINE ) THEN 
-                            LINE = LSTSTR( CURFIL )
+C.......................  Check if there are more files to read
+                      IF( CURFIL <= NLINE ) THEN 
+                          LINE = LSTSTR( CURFIL )
 
-C.............................  Check for #LIST line
-                            IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
-                                CURFIL = CURFIL + 1  ! move to next file in list
-                            END IF
+C...........................  Check for #LIST line
+                          IF( INDEX( LINE, 'LIST' ) > 0 ) THEN
+                              CURFIL = CURFIL + 1  ! move to next file in list
+                          END IF
 
-C.............................  Make sure current line is not INVYEAR packet                    
-                            IF( GETINVYR( LINE ) > 0 ) THEN
-                                CURFIL = CURFIL + 1  ! move to next file in list
-                            END IF
+C...........................  Make sure current line is not INVYEAR packet                    
+                          IF( GETINVYR( LINE ) > 0 ) THEN
+                              CURFIL = CURFIL + 1  ! move to next file in list
+                          END IF
 
-C.............................  Make sure there are still files to read                            
-                            IF( CURFIL > NLINE ) THEN
-                                LSTTIME = .TRUE.
-                                EXIT
-                            END IF
+C...........................  Make sure there are still files to read                            
+                          IF( CURFIL > NLINE ) THEN
+                              LSTTIME = .TRUE.
+                              EXIT
+                          END IF
                              
-                            INFILE = LSTSTR( CURFIL )
+                          INFILE = LSTSTR( CURFIL )
                                         
-                            OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
-     &                            IOSTAT=IOS )
+                          OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
+     &                          IOSTAT=IOS )
 
-C.............................  Check for errors while opening file
-                            IF( IOS /= 0 ) THEN
+C...........................  Check for errors while opening file
+                          IF( IOS /= 0 ) THEN
                         
-                                WRITE( MESG,94010 ) 'Problem at line ', 
-     &                             CURFIL, 'of ' // TRIM( FNAME ) // 
-     &                             '.' // ' Could not open file:' //
-     &                             CRLF() // BLANK5 // TRIM( INFILE ) 
-                                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+                              WRITE( MESG,94010 ) 'Problem at line ', 
+     &                           CURFIL, 'of ' // TRIM( FNAME ) // 
+     &                           '.' // ' Could not open file:' //
+     &                           CRLF() // BLANK5 // TRIM( INFILE ) 
+                              CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+          
+                          ELSE
+                              WRITE( MESG,94010 ) 
+     &                          'Successful OPEN for ' //
+     &                          'inventory file(s):' // CRLF() // 
+     &                          BLANK5 // TRIM( INFILE )
+                              CALL M3MSG2( MESG ) 
             
-                            ELSE
-                                WRITE( MESG,94010 ) 
-     &                            'Successful OPEN for ' //
-     &                            'inventory file(s):' // CRLF() // 
-     &                            BLANK5 // TRIM( INFILE )
-                                CALL M3MSG2( MESG ) 
-            
-                            END IF
+                          END IF
 
-C.............................  Set default inventory characteristics that depend on file format
-                            CALL INITINFO( FILFMT( CURFIL ) )
-                            CURFMT = FILFMT( CURFIL )
-                            NWRLINE = 0
+C...........................  Set default inventory characteristics that depend on file format
+                          CALL INITINFO( FILFMT( CURFIL ) )
+                          CURFMT = FILFMT( CURFIL )
+                          NWRLINE = 0
                   
-C.............................  Skip back to the beginning of the loop
-                            CYCLE
+C...........................  Skip back to the beginning of the loop
+                          CYCLE
                   
-C.........................  Otherwise, no more files to read, so exit
-                        ELSE
-                            LSTTIME = .TRUE.
-                            EXIT
-                        END IF
+C.......................  Otherwise, no more files to read, so exit
+                      ELSE
+                          LSTTIME = .TRUE.
+                          EXIT
+                      END IF
 
-C.....................  Otherwise, not a list file, so exit
-                    ELSE
-                        LSTTIME = .TRUE.
-                        EXIT
-                    END IF
+C...................  Otherwise, not a list file, so exit
+                  ELSE
+                      LSTTIME = .TRUE.
+                      EXIT
+                  END IF
                  
-                END IF   ! end check for end of file
+              END IF   ! end check for end of file
 
-C.................  Skip blank lines
-                IF( LINE == ' ' ) CYCLE
+C...............  Skip blank lines
+              IF( LINE == ' ' ) CYCLE
 
-C.................  Check if format works with expanded geographic codes
-                IF( USEEXPGEO ) THEN
-                IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR. CURFMT == ORLFIREFMT ) THEN
-                    MESG = 'ERROR: Expanded geographic codes are only ' //
-     &                     'supported for inventories in FF10 format.'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                END IF
-                END IF
+C...............  Check if format works with expanded geographic codes
+              IF( USEEXPGEO ) THEN
+              IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR. CURFMT == ORLFIREFMT ) THEN
+                  MESG = 'ERROR: Expanded geographic codes are only ' //
+     &                   'supported for inventories in FF10 format.'
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              END IF
+              END IF
 
-C.................  Process line depending on file format and source category
-                SELECT CASE( CURFMT )
+C...............  Process line depending on file format and source category
+              SELECT CASE( CURFMT )
 
                 CASE( MEDSFMT )
                     SELECT CASE( CATEGORY )
@@ -531,32 +533,56 @@ C.................  Process line depending on file format and source category
      &                                   HDRFLAG, EFLAG )
                     END SELECT
 
-                CASE( ORLNPFMT )
-                    ORLFLG = .TRUE.
-                   
-                    CALL RDSRCORLNP( LINE, CFIP, TSCC, NPOLPERLN,
-     &                               HDRFLAG, EFLAG )
+              CASE( ORLNPFMT )
+                  ORLFLG = .TRUE.
+                 
+                  CALL RDSRCORLNP( LINE, CFIP, TSCC, NPOLPERLN,
+     &                             HDRFLAG, EFLAG )
 
-                CASE( ORLFIREFMT )
-                    ORLFLG   = .TRUE.
-                    FIREFLAG = .TRUE.
+              CASE( ORLFIREFMT )
+                  ORLFLG   = .TRUE.
+                  FIREFLAG = .TRUE.
 
-                    CALL RDSRCORLFR( LINE, CFIP, FCID, PTID, SKID,
-     &                               SGID, TSCC, NPOLPERLN, HDRFLAG, 
-     &                               EFLAG )
+                  CALL RDSRCORLFR( LINE, CFIP, FCID, PTID, SKID,
+     &                             SGID, TSCC, NPOLPERLN, HDRFLAG, 
+     &                             EFLAG )
 
-                CASE DEFAULT
-                    WRITE( MESG, 94010 ) 'Routine rdinvsrc.f not '//
-     &                     'expecting to read file of format code', 
-     &                      CURFMT
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+              CASE DEFAULT
+                  WRITE( MESG, 94010 ) 'Routine rdinvsrc.f not '//
+     &                   'expecting to read file of format code', 
+     &                    CURFMT
+                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
 
-                END SELECT
+              END SELECT
 
-C.................  Check for header lines
-                IF( HDRFLAG ) THEN
-                    CYCLE
-                END IF
+C...............  Check for header lines
+              IF( HDRFLAG ) THEN
+                  CYCLE
+              END IF
+
+C...............  SCC mapping loop : Mobile activity inventory use only.
+              KK = 0
+              NSCC = 0
+              IF( SCCMAPFLAG ) THEN
+                  KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
+                  IF( KK > 0 ) THEN
+                      NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+                  ELSE
+                      IF( EXCLSCCFLAG ) THEN
+                          MESG = 'WARNING: Dropping SCC "' //
+     &                         TRIM( TSCC ) //
+     &                        '" not listed in SCCXREF file'
+                          CALL M3MESG( MESG )
+                          CYCLE  ! skip SCC not found in SCCXREF file
+                      END IF
+                  END IF
+              END IF
+
+C.................  loop over mapped SCC
+              DO JJ = 0, NSCC
+
+                IF( JJ > 0 .AND. KK > 0 ) IREC = IREC + 1     ! increment no of records by reference SCCs
+                IF( SCCMAPFLAG .AND. KK > 0 ) TSCC = SCCMAPLIST( KK+JJ,2 )
 
 C.................  Write first ten lines of inventory to log file
                 IF( NWRLINE < 10 .AND. .NOT. FIREFLAG ) THEN
@@ -636,36 +662,26 @@ C.........................  Set vehicle type and road class
                         ROAD = STR2INT( TSCC( 8:10 ) )
                                                 
 C.........................  Ensure that vehicle type is valid
-                        DO J = 1, NVTYPE
-                            IF( IVT == IVTIDLST( J ) ) EXIT
-                        END DO
-                        
-                        IF( J > NVTYPE ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 
-     &                         'ERROR: Vehicle type "' //
-     &                         TSCC( 3:6 ) // '" at line ', IREC,
-     &                         ' was not found in list of valid types'
-                            CALL M3MESG( MESG )
-                        END IF
+C                        DO J = 1, NVTYPE
+C                            IF( IVT == IVTIDLST( J ) ) EXIT
+C                        END DO
+C                        IF( J > NVTYPE ) THEN
+C                             CVTYPLST( J ) = 'MOVES'
+C                        END IF
                     END IF
                     
 C.....................  Ensure that road class is valid and convert from road class
                     J = FIND1( ROAD, NRCLAS, AMSRDCLS )
                     
                     IF( J <= 0 ) THEN
-                        EFLAG = .TRUE.
-                        WRITE( MESG,94010 ) 'ERROR: Road class "' //
-     &                         CROAD // '" at line', IREC,
-     &                         ' was not found in list of valid classes'
-                        CALL M3MESG( MESG )
+                        RWT = 0
                     ELSE
                         RWT = RDWAYTYP( J )
                     END IF
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
-                    IF( CURFMT == ORLFMT .OR.
+                    IF( CURFMT == ORLFMT .OR. CURFMT == MEDSFMT .OR.
      &                  CURFMT == ORLFIREFMT .OR. CURFMT == FF10FMT ) THEN
 
 C.........................  Make sure SCC is at least 8 characters long
@@ -749,6 +765,8 @@ C.................  Store current source number for this record
 
 C.................  Update total number of sources with pollutants
                 NRAWBP = NRAWBP + NPOLPERLN
+
+              END DO  ! loop through SCCMAPLIST (NSCC)
 
             END DO  ! loop through MXRECS lines
 

@@ -68,7 +68,8 @@ C.........  This module contains the lists of unique inventory information
      &                      NINVTBL, ITCASA, FIREFLAG
 
 C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: NVTYPE, VMTMIXA
+        USE MODMOBIL, ONLY: NVTYPE, VMTMIXA, SCCMAPFLAG, SCCMAPLIST,
+     &                      NSCCMAP, EXCLSCCFLAG
 
         IMPLICIT NONE
 
@@ -92,10 +93,11 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         STR2INT
         REAL            STR2REAL
         REAL            YR2DAY
+        INTEGER         FIND1FIRST
 
         EXTERNAL        CHKINT, CHKREAL, CRLF, ENVINT, ENVYN, FINDC, 
      &                  GETINVYR, INDEX1, STR2INT, STR2REAL, 
-     &                  YR2DAY, GETFLINE, BLKORCMT
+     &                  YR2DAY, GETFLINE, BLKORCMT, FIND1FIRST
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
@@ -118,7 +120,7 @@ C...........   Output from individual reader routines
         CHARACTER(IOVLEN3),  ALLOCATABLE :: READPOL ( : )    ! pollutant names
 
 C...........   Other local variables
-        INTEGER         I, J, K, K1, L, NP, SP !  counters and indices
+        INTEGER         I, J, JJ, K, KK, K1, L, NP, SP !  counters and indices
         INTEGER         L1, L2, L3, L4, L5, L6, L7, L8, L9
 
         INTEGER         CURFIL      !  current file from list formatted inventory
@@ -131,6 +133,7 @@ C...........   Other local variables
         INTEGER         ISTREC      !  no. of records stored
         INTEGER         IZONE       !  UTM zone
         INTEGER      :: LSTYR = 0   !  inventory year from list file
+        INTEGER         NSCC        !  tmp no of reference SCCs
         INTEGER         MXWARN      !  maximum number of warnings
         INTEGER         NLINE       !  no. of lines in list file
         INTEGER         NPOLPERCAS  !  no. of pollutants per CAS number
@@ -204,6 +207,7 @@ C...........   Other local variables
         CHARACTER(MACLEN3)  MACT      ! MACT code
         CHARACTER(NAILEN3) :: NAICS = ' '  ! NAICS code
         CHARACTER(STPLEN3) :: SRCTYP = ' ' ! source type code
+        CHARACTER(SCCLEN3)  TSCC      ! tmp SCC
         CHARACTER           CTYPE     ! coordinate type
         CHARACTER(9)        LAT       ! stack latitude
         CHARACTER(9)        LON       ! stack longitude
@@ -461,17 +465,17 @@ C.........  For now, set number of pollutants per line to 1
 C.........  Loop through inventory files and read data
         DO
         
-            READ( FDEV, 93000, IOSTAT=IOS ) LINE
+          READ( FDEV, 93000, IOSTAT=IOS ) LINE
             
-            IREC = IREC + 1
+          IREC = IREC + 1
             
-            IF( IOS > 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG,94010 ) 'I/O error', IOS,
-     &             'reading inventory file at line', IREC
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
+          IF( IOS > 0 ) THEN
+              EFLAG = .TRUE.
+              WRITE( MESG,94010 ) 'I/O error', IOS,
+     &           'reading inventory file at line', IREC
+              CALL M3MESG( MESG )
+              CYCLE
+          END IF
             
 C.............  Check if we've reached the end of the file            
             IF( IOS < 0 ) THEN
@@ -508,67 +512,66 @@ C.........................  Make sure there are still files to read
                             EXIT
                         END IF
                          
-                        INFILE = LSTSTR( CURFIL )
+                      INFILE = LSTSTR( CURFIL )
             
-                        OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
-     &                        IOSTAT=IOS )
+                      OPEN( FDEV, FILE=INFILE, STATUS='OLD', 
+     &                      IOSTAT=IOS )
                 
-C.........................  Check for errors while opening file
-                        IF( IOS /= 0 ) THEN
-                    
-                            WRITE( MESG,94010 ) 'Problem at line ', 
-     &                         CURFIL, 'of ' // TRIM( FNAME ) // 
-     &                         '.' // ' Could not open file:' //
-     &                         CRLF() // BLANK5 // TRIM( INFILE ) 
-                            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+C.......................  Check for errors while opening file
+                      IF( IOS /= 0 ) THEN
+                          WRITE( MESG,94010 ) 'Problem at line ', 
+     &                       CURFIL, 'of ' // TRIM( FNAME ) // 
+     &                       '.' // ' Could not open file:' //
+     &                       CRLF() // BLANK5 // TRIM( INFILE ) 
+                          CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             
-                        ELSE
-                            WRITE( MESG,94010 ) 
-     &                        'Successful OPEN for ' //
-     &                        'inventory file(s):' // CRLF() // 
-     &                        BLANK5 // TRIM( INFILE )
-                            CALL M3MSG2( MESG ) 
+                      ELSE
+                          WRITE( MESG,94010 ) 
+     &                      'Successful OPEN for ' //
+     &                      'inventory file(s):' // CRLF() // 
+     &                      BLANK5 // TRIM( INFILE )
+                          CALL M3MSG2( MESG ) 
             
-                        END IF
+                      END IF
 
-C.........................  Set default inventory characteristics that depend on file format
-                        CALL INITINFO( FILFMT( CURFIL ) )
-                        CURFMT = FILFMT( CURFIL )
+C.......................  Set default inventory characteristics that depend on file format
+                      CALL INITINFO( FILFMT( CURFIL ) )
+                      CURFMT = FILFMT( CURFIL )
 
-C.........................  Reallocate memory to store emissions from a single line
-                        NPOLPERLN = 1
-                        IF( CURFMT == MEDSFMT ) NPOLPERLN = 6
-                        DEALLOCATE( READDATA, READPOL )
-                        ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
-                        ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
-                        CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
-                        SAVNVAR = 1
+C.......................  Reallocate memory to store emissions from a single line
+                      NPOLPERLN = 1
+                      IF( CURFMT == MEDSFMT ) NPOLPERLN = 6
+                      DEALLOCATE( READDATA, READPOL )
+                      ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
+                      CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
+                      ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
+                      CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
+                      SAVNVAR = 1
 
-C.........................  Skip back to the beginning of the loop
-                        CYCLE
+C.......................  Skip back to the beginning of the loop
+                      CYCLE
               
-C.....................  Otherwise, no more files to read, so exit
-                    ELSE
-                        LSTTIME = .TRUE.
-                        EXIT
-                    END IF
+C...................  Otherwise, no more files to read, so exit
+                  ELSE
+                      LSTTIME = .TRUE.
+                      EXIT
+                  END IF
 
-C.................  Otherwise, not a list file, so exit
-                ELSE
-                    LSTTIME = .TRUE.
-                    EXIT
-                END IF
+C...............  Otherwise, not a list file, so exit
+              ELSE
+                  LSTTIME = .TRUE.
+                  EXIT
+              END IF
              
-            END IF   ! end check for end of file
+          END IF   ! end check for end of file
 
-C.............  Skip blank lines
-            IF( LINE == ' ' ) CYCLE
-            EXTORL = ' '
-            SIC = ' '
+C...........  Skip blank lines
+          IF( LINE == ' ' ) CYCLE
+          EXTORL = ' '
+          SIC = ' '
 
-C.............  Process line depending on file format and source category
-            SELECT CASE( CURFMT )
+C...........  Process line depending on file format and source category
+          SELECT CASE( CURFMT )
 
             CASE( FF10FMT )
                 SELECT CASE( CATEGORY )
@@ -637,52 +640,71 @@ C.............  Process line depending on file format and source category
      &                            CTYPE, LAT, LON, HDRFLAG, EFLAG)
             END SELECT
             
-C.............  Check for header lines
-            IF( HDRFLAG ) THEN 
+C...........  Check for header lines
+          IF( HDRFLAG ) THEN 
 
 C.................  Reallocate emissions memory with
 C                   proper number of pollutants per line
-                IF( ( CURFMT == ORLFIREFMT )
-     &                .AND. NPOLPERLN .NE. SAVNVAR ) THEN
-                    DEALLOCATE( READDATA, READPOL )
-                    ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
-                    ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
-                    CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
-                    SAVNVAR = NPOLPERLN
-                END IF
+              IF( ( CURFMT == MEDSFMT .OR. 
+     &              CURFMT == ORLFIREFMT )
+     &              .AND. NPOLPERLN .NE. SAVNVAR ) THEN
+                  DEALLOCATE( READDATA, READPOL )
+                  ALLOCATE( READDATA( NPOLPERLN,NPPOL ), STAT=IOS )
+                  CALL CHECKMEM( IOS, 'READDATA', PROGNAME )
+                  ALLOCATE( READPOL( NPOLPERLN ), STAT=IOS )
+                  CALL CHECKMEM( IOS, 'READPOL', PROGNAME )
+                  SAVNVAR = NPOLPERLN
+              END IF
 
-C.................  Calculate day to year conversion factor
-                IF( INVYEAR /= 0 ) THEN
-                    IF( LSTYR > 0 .AND. INVYEAR /= LSTYR ) THEN
-                        WRITE( MESG,94010 ) 'NOTE: Using year', LSTYR,
-     &                         'from list file, and not year', INVYEAR,
-     &                         'from inventory file.'
-                        CALL M3MSG2( MESG )
+C...............  Calculate day to year conversion factor
+              IF( INVYEAR /= 0 ) THEN
+                  IF( LSTYR > 0 .AND. INVYEAR /= LSTYR ) THEN
+                      WRITE( MESG,94010 ) 'NOTE: Using year', LSTYR,
+     &                       'from list file, and not year', INVYEAR,
+     &                       'from inventory file.'
+                      CALL M3MSG2( MESG )
                         
-                        INVYEAR = LSTYR
-                    END IF
+                      INVYEAR = LSTYR
+                  END IF
                     
-                    YEAR2DAY = YR2DAY( INVYEAR )
-                    DAY2YR = 1. / YEAR2DAY
-                END IF
+                  YEAR2DAY = YR2DAY( INVYEAR )
+                  DAY2YR = 1. / YEAR2DAY
+              END IF
                 
-                CYCLE
-            END IF
+              CYCLE
+          END IF
 
-C.............  Set inventory year in case there are no header lines
-            IF( INVYEAR == 0 .OR.
-     &        ( LSTYR > 0 .AND. INVYEAR /= LSTYR ) ) THEN
-                INVYEAR = LSTYR
+C...........  Set inventory year in case there are no header lines
+          IF( INVYEAR == 0 .OR.
+     &      ( LSTYR > 0 .AND. INVYEAR /= LSTYR ) ) THEN
+              INVYEAR = LSTYR
                 
-                YEAR2DAY = YR2DAY( INVYEAR )
-                DAY2YR = 1. / YEAR2DAY
-            END IF
+              YEAR2DAY = YR2DAY( INVYEAR )
+              DAY2YR = 1. / YEAR2DAY
+          END IF
 
-C.............  Make sure some emissions are kept for this source
-            IF( NPOLPERLN == 0 ) THEN
-                CYCLE
-            END IF
+C...........  Make sure some emissions are kept for this source
+          IF( NPOLPERLN == 0 ) THEN
+              CYCLE
+          END IF
+
+C...........  SCC mapping loop : Mobile activity inventory use only.
+          KK = 0
+          NSCC = 0
+          IF( SCCMAPFLAG ) THEN
+              KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
+              IF( KK > 0 ) THEN
+                  NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+              ELSE
+                  IF( EXCLSCCFLAG ) CYCLE    ! drop SCCs not listed in SCCXREF file
+              END IF
+          END IF
+
+C.............  loop over mapped SCC
+          DO JJ = 0, NSCC
+
+            IF( JJ > 0 .AND. KK > 0 ) IREC = IREC + 1     ! increment no of records by reference SCCs
+            IF( SCCMAPFLAG .AND. KK > 0 ) TSCC = SCCMAPLIST( KK+JJ,2 )
             
 C.............  Check that mobile link info is correct
             IF( CATEGORY == 'MOBILE' .AND. LNKFLAG ) THEN
@@ -1373,11 +1395,13 @@ C.................  Correct hemisphere for stack longitude
 
             END IF
 
+          END DO  ! end loop through reference SCC if applicable
+
         END DO  ! end loop through records array
 
 C.........  Deallocate local memory, if its allocated
-       IF( ALLOCATED( READDATA ) ) DEALLOCATE( READDATA ) 
-       IF( ALLOCATED( READPOL  ) ) DEALLOCATE( READPOL ) 
+        IF( ALLOCATED( READDATA ) ) DEALLOCATE( READDATA ) 
+        IF( ALLOCATED( READPOL  ) ) DEALLOCATE( READPOL ) 
 
 C.........  Abort if there was an error
         IF( EFLAG ) THEN
