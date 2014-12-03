@@ -798,7 +798,23 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYWEK )     BINWEKID( B ) =    IWEK( S )
             IF( RPT_%BYDIU )     BINDIUID( B ) =    IDIU( S )
             IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IS )
-            IF( LREGION )         BINREGN( B ) = CFIP
+
+            IF( LREGION ) THEN
+                IF( RPT_%BYCNTY ) THEN
+                    ! no change, report uses full FIPS code
+                ELSE IF( RPT_%BYSTAT ) THEN
+                    CFIP = CFIP( 1:STALEN3 ) // '000'
+                ELSE IF( RPT_%BYCNRY ) THEN
+                    IF( USEEXPGEO() ) THEN
+                        CFIP = CFIP( 1:FIPEXPLEN3 ) // '000000'
+                    ELSE
+                        CFIP = CFIP( 1:FIPEXPLEN3+1 ) // '00000'
+                    END IF
+                ELSE IF( RPT_%BYGEO1 ) THEN
+                    CFIP = CFIP( 1:3 ) // '000000000'
+                END IF
+                BINREGN( B ) = CFIP
+            END IF
 
             IF( RPT_%BYSRG .AND. RPT_%SRGRES .EQ. 1 ) THEN
                 BINSRGID1( B ) = SRGID( S, 1 )
