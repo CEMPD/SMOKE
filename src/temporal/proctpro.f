@@ -171,7 +171,6 @@ C.........   Local variables
 
         INTEGER, ALLOCATABLE :: COUNTIES( : )
         INTEGER, ALLOCATABLE ::  METFIPS( : )
-        INTEGER, ALLOCATABLE ::  METNDEX( : )
 
 C.........  Unsorted, sorted cross-reference data structures filtered
 C.........  from the input file
@@ -244,6 +243,7 @@ C.........  for better memory alignment
         CHARACTER(RWTLEN3)  CRWT        !  roadway type no.
         CHARACTER(VIDLEN3)  CVID        !  vehicle type ID no.
         CHARACTER(CHRLEN3)  CHARS( 5 )  !  temporary plant characteristics
+        CHARACTER(FIPLEN3)  PREVFIP     !  previous region code
 
         CHARACTER(16)       MTHNAME, WEKNAME, DOMNAME, DIUNAME
 
@@ -257,7 +257,7 @@ C......... NOTE:  FLTRXREF() does *not* filter by FIP!
 
         INTEGER             NFIPKEY
         INTEGER             INDXKEY( NIPPA+2*NSRC+1 )   !  sorting index for pol
-        INTEGER             FIPKEYU( 2*NSRC+1 )         !  unsorted, with duplicates
+        CHARACTER(FIPLEN3)  FIPKEYU( 2*NSRC+1 )         !  unsorted, with duplicates
         CHARACTER(FIPLEN3)  FIPKEYS( 2*NSRC+1 )         !  sorted, duplicate-free
 
         CHARACTER(256)      MESG
@@ -327,27 +327,25 @@ C.........  filtering the XREF file:
 
         N = 1
         INDXKEY( N ) = N        !  ultimate default
-        FIPKEYU( N ) = 0
+        FIPKEYU( N ) = REPEAT( '0' , FIPLEN3)
         DO I = 1, NSRC
             N = N + 1
             INDXKEY( N ) = N
-            FIPKEYU( N ) = 1000 * ( IFIP( I )/1000 )       !  state only (default value)
+            FIPKEYU( N ) = CIFIP( I )( 1:STALEN3 ) // '000' !  state only (default value)
             N = N + 1
             INDXKEY( N ) = N
-            FIPKEYU( N ) = IFIP( I )
+            FIPKEYU( N ) = CIFIP( I )
         END DO
 
-        CALL SORTI1( N, INDXKEY, FIPKEYU )
+        CALL SORTIC( N, INDXKEY, FIPKEYU )
 
-        L = IMISS3       !  now construct duplicate-free sorted list:
+        PREVFIP = ''       !  now construct duplicate-free sorted list:
         M = 0
         DO I = 1, N
             K = INDXKEY( I )
-            IF ( FIPKEYU( K ) .NE. L ) THEN
+            IF ( FIPKEYU( K ) .NE. PREVFIP ) THEN
                 M = M + 1
-                L = FIPKEYU( K )
-                WRITE( FIPKEYS( M ), '(I6)' ) FIPKEYU( K )
-                CALL PADZERO( FIPKEYS( M ) )
+                FIPKEYS( M ) = FIPKEYU( K )
             END IF
         END DO
         NFIPKEY = M
@@ -951,7 +949,7 @@ C.............  Determine which hourly profiles to apply
 
                     DO S = 1, NSRC
 
-                        WRITE( CFIP, '(I6)' ) IFIP( S )
+                        CFIP = CIFIP( S )
                         TSCC = CSCC( S )
                         CALL PADZERO( CFIP )
                         CALL PADZERO( TSCC )
@@ -964,7 +962,7 @@ C.........................  use subscript into (unsorted) COUNTIES:
 
                         I = FINDC( CSRCALL, METCOUNT, METKEYS )         !  index in sorted XREF, or 0
                         IF ( I .GT. 0 )  THEN
-                            K = FIND1( IFIP( S ), NMETPROF, COUNTIES )  !  index into sorted list,   or 0
+                            K = FIND1( STR2INT( CFIP ), NMETPROF, COUNTIES )  !  index into sorted list,   or 0
                             METPROF( S,V ) = K                          !  index into unsorted list, or 0
                         END IF
 
