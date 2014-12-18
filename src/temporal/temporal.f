@@ -143,7 +143,6 @@ C...........   Logical names and unit numbers
         INTEGER      :: HDEV = 0!  unit number for holidays file
         INTEGER         KDEV    !  unit number for time periods file
         INTEGER         LDEV    !  unit number for log file
-        INTEGER      :: MDEV = 0!  unit number for mobile codes file
         INTEGER         PDEV    !  unit number for supplemental tmprl file
         INTEGER         RDEV    !  unit number for temporal profile file
         INTEGER         SDEV    !  unit number for ASCII inventory file
@@ -209,7 +208,6 @@ C...........   Other local variables
         LOGICAL         ENDFLAG             !  true: couldn't find file end date
         LOGICAL      :: FNDOUTPUT = .FALSE. ! true: found output hydrocarbon
         LOGICAL         HFLAG               !  true: hour-specific file available
-        LOGICAL         MFLAG               !  true: mobile codes file available
         LOGICAL         NFLAG               !  true: use all uniform temporal profiles
         LOGICAL         PFLAG               !  true: episode time periods needed
         LOGICAL         WFLAG               !  true: write QA on current time step
@@ -267,12 +265,11 @@ C.........  Also, store source-category specific information in the MODINFO
 C           module.
         CALL OPENTMPIN( NFLAG, PFLAG, ENAME, ANAME, DNAME,
      &                  HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, HDEV,
-     &                  KDEV, TDEV, MDEV, EDEV, PYEAR )
+     &                  KDEV, TDEV, EDEV, PYEAR )
 
 C.........  Determine status of some files for program control purposes
         DFLAG = ( DNAME .NE. 'NONE' )  ! Day-specific emissions
         HFLAG = ( HNAME .NE. 'NONE' )  ! Hour-specific emissions
-        MFLAG = ( MDEV  .NE. 0 )       ! Use mobile codes file
 
 C.........  Get length of inventory file name
         ENLEN = LEN_TRIM( ENAME )
@@ -338,9 +335,6 @@ C.........  Populate filter for sources that use daylight time
 
 C.........  Read holidays file
         CALL RDHDAYS( HDEV, EARLST, LATEST )
-
-C.........  When mobile codes file is being used read mobile codes file
-        IF( MFLAG ) CALL RDMVINFO( MDEV )
 
 C.........  Determine all of the variables to be output based on the
 C           activities and input pollutants.

@@ -148,7 +148,6 @@ C.........   Other local variables
 
         LOGICAL       :: EFLAG   = .FALSE. !  error flag
         LOGICAL       :: KFLAG   = .FALSE. !  if pol to pol convert file or not
-        LOGICAL       :: MFLAG   = .FALSE. !  true: mobile codes file needed
         LOGICAL       :: TFLAG   = .FALSE. !  true: tagging file needed
         LOGICAL       :: MASSOUT = .TRUE.  !  true: output mass-based matrix
         LOGICAL       :: MOLEOUT = .TRUE.  !  true: output mole-based matrix
