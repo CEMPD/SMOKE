@@ -143,6 +143,7 @@ C.........  Separate line into segments
         
 C.........  Use the file format definition to parse the line into
 C           the various data fields
+        CFIP = REPEAT( '0', FIPLEN3 )
         IF( USEEXPGEO ) THEN
             CFIP(  1: 3 ) = ADJUSTR( SEGMENT( 1 )( 1:3 ) )
             CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
@@ -153,9 +154,7 @@ C           the various data fields
         END IF
 
 C.........  Replace blanks with zeros        
-        DO I = 1,FIPLEN3
-            IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
-        END DO
+        CALL PADZERO( CFIP )
 
         FCID = ADJUSTL( SEGMENT( 4 ) ) ! facility/plant ID
         PTID = ADJUSTL( SEGMENT( 5 ) ) ! point ID

@@ -153,6 +153,7 @@ C......... Return if the first line is a header line
 
 C.........  Use the file format definition to parse the line into
 C           the various data fields
+        CFIP = REPEAT( '0', FIPLEN3 )
         IF( USEEXPGEO ) THEN
             CFIP(  1: 3 ) = ADJUSTR( SEGMENT( 1 )( 1:3 ) )
             CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
@@ -162,11 +163,9 @@ C           the various data fields
             CFIP( FIPEXPLEN3+2:FIPEXPLEN3+6 ) = ADJUSTR( SEGMENT( 2 )( 1:5 ) )  ! state/county code
         END IF
 
-C.........  Replace blanks with zeros        
-        DO I = 1,FIPLEN3
-            IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
-        END DO
-       
+C.........  Replace blanks with zeros
+        CALL PADZERO( CFIP )
+
 C.........  Determine number of pollutants for this line based on CAS number
         IF( FF10INVFLAG ) THEN
             TSCC = SEGMENT( 8 )                           ! SCC code
