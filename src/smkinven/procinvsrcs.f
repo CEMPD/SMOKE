@@ -44,9 +44,6 @@ C...........   This module is the inventory arrays
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NSRC
 
-C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: IVTIDLST, CVTYPLST, NVTYPE
-
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -134,12 +131,6 @@ C.........  Keep case statement outside the loops to speed processing
                 CSCC( S ) = TSRC( MSCPOS3:MSCPOS3+SCCLEN3-1 )
                 CLINK( S ) = TSRC( LNKPOS3:LNKPOS3+LNKLEN3-1 )
                 CSOURC( S ) = TSRC
-
-C.................  Set vehicle type based on vehicle ID                
-                DO J = 1, NVTYPE
-                    IF( IVTYPE( S ) == IVTIDLST( J ) ) EXIT
-                END DO
-                
                 CVTYPE( S ) = 'MOVES'
                 
             END DO

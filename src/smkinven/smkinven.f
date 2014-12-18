@@ -113,7 +113,6 @@ C.........  File units and logical/physical names
         INTEGER    :: ADEV = 0  !  unit no. for REPINVEN file
         INTEGER    :: CDEV = 0  !  unit no. for SCCs description
         INTEGER    :: DDEV = 0  !  unit no. for day-specific input file 
-        INTEGER    :: EDEV = 0  !  unit no. for speeds file
         INTEGER    :: HDEV = 0  !  unit no. for hour-specific input file 
         INTEGER    :: IDEV = 0  !  unit no. for inventory file (various formats)
         INTEGER    :: LDEV = 0  !  unit no. for log file
@@ -124,7 +123,6 @@ C.........  File units and logical/physical names
         INTEGER    :: UDEV = 0  !  unit no. for non-HAP inclusions/exclusions file
         INTEGER    :: SDEV = 0  !  unit no. for ASCII output inventory file
         INTEGER    :: TDEV = 0  !  unit no. for MEDS daily/hourly inventory file
-        INTEGER    :: XDEV = 0  !  unit no. for VMT mix file
         INTEGER    :: YDEV = 0  !  unit no. for area-to-point factors file
         INTEGER    :: ZDEV = 0  !  unit no. for time zone file
 
@@ -196,8 +194,8 @@ C.........  Output time zone
         TZONE = ENVINT( 'OUTZONE', 'Output time zone', 0, IOS )
 
 C.........  Get names of input files
-        CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV, XDEV,
-     &                  EDEV, PDEV, ZDEV, CDEV, ODEV, UDEV, YDEV,
+        CALL OPENINVIN( CATEGORY, IDEV, DDEV, HDEV, RDEV, SDEV,
+     &                  PDEV, ZDEV, CDEV, ODEV, UDEV, YDEV,
      &                  ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
@@ -221,15 +219,6 @@ C.........  Read country, state, and county file for time zones
 
 C.........  Read, sort, and store inventory data table file
         CALL RDCODNAM( PDEV )
-
-C.........  Read mobile-source files
-        IF( CATEGORY .EQ. 'MOBILE' ) THEN          
-
-C.............  Fill tables for translating mobile road classes & vehicle types
-C.............  The tables are passed through MODMOBIL
-C            CALL RDMVINFO( RDEV )
-
-        END IF
 
 C.........  Read/store informatino for MEDS inv processing
         IF( MEDSFLAG ) CALL RDMEDSINFO  ! read GAI_LOOKUP_TABLE (col/row to lat/lon) for MEDS format inv
@@ -255,8 +244,7 @@ C               are contained in the module MODSOURC
 
             CALL M3MSG2( 'Reading inventory sources...' )
 
-            CALL RDINVSRCS( IDEV, XDEV, EDEV, INAME,
-     &                      NRAWBP, NRAWSRCS, ORLFLG )
+            CALL RDINVSRCS( IDEV, INAME, NRAWBP, NRAWSRCS, ORLFLG )
 
 C.............  Process source information and store in sorted order
             CALL M3MSG2( 'Processing inventory sources...' )

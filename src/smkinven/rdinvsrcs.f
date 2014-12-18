@@ -1,6 +1,5 @@
 
-        SUBROUTINE RDINVSRCS( FDEV, VDEV, SDEV, FNAME, 
-     &                        NRAWBP, NRAWSRCS, ORLFLG )
+        SUBROUTINE RDINVSRCS( FDEV, FNAME, NRAWBP, NRAWSRCS, ORLFLG )
 
 C***********************************************************************
 C  subroutine body starts at line 133
@@ -56,10 +55,8 @@ C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: FILFMT, LSTSTR, FIREFLAG, FF10FLAG
 
 C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: NVTYPE, NRCLAS, IVTIDLST, CVTYPLST, 
-     &                      AMSRDCLS, RDWAYTYP, NSCCTBL, SCCTBL,
-     &                      SCCRVC, SCCMAPFLAG, NSCCMAP, SCCMAPLIST,
-     &                      EXCLSCCFLAG
+        USE MODMOBIL, ONLY: NSCCTBL, SCCTBL, SCCRVC, SCCMAPFLAG,
+     &                      NSCCMAP, SCCMAPLIST, EXCLSCCFLAG
 
         IMPLICIT NONE
 
@@ -94,8 +91,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT (IN) :: FDEV         ! unit no. of inv file
-        INTEGER,      INTENT (IN) :: VDEV         ! unit no. of vmtmix file
-        INTEGER,      INTENT (IN) :: SDEV         ! unit no. of speeds file
         CHARACTER(*), INTENT (IN) :: FNAME        ! logical name of file
         INTEGER,      INTENT(OUT) :: NRAWBP       ! no. of sources with pols/acts
         INTEGER,      INTENT(OUT) :: NRAWSRCs     ! no. of raw sources
@@ -301,12 +296,6 @@ C           by the IDA and EPS formats, including NPPOL
                 EXIT
             END IF
         END DO
-
-C.........  Read vehicle mix, if it is available
-C.........  The tables are passed through MODMOBIL and MODXREF
-        IF( VDEV .GT. 0 ) THEN
-            CALL RDVMIX( VDEV )
-        END IF
 
         CURFIL = 1
 
@@ -563,7 +552,9 @@ C...............  Check for header lines
 C...............  SCC mapping loop : Mobile activity inventory use only.
               KK = 0
               NSCC = 0
+              IF( CATEGORY == 'MOBILE' ) THEN
               IF( SCCMAPFLAG ) THEN
+                  CALL PADZERO( TSCC )
                   KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
                   IF( KK > 0 ) THEN
                       NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
@@ -576,6 +567,7 @@ C...............  SCC mapping loop : Mobile activity inventory use only.
                           CYCLE  ! skip SCC not found in SCCXREF file
                       END IF
                   END IF
+              END IF
               END IF
 
 C.................  loop over mapped SCC
@@ -646,38 +638,11 @@ C.....................  Make sure SCC is at least 8 characters long
                 
                 IF( CATEGORY == 'MOBILE' ) THEN
 
-                    IF( CURFMT == ORLFMT .OR.
-     &                  CURFMT == FF10FMT ) THEN
-
-C.........................  Check if SCC has proper length
-                        IF( LEN_TRIM( TSCC ) /= SCCLEN3 ) THEN
-                            EFLAG = .TRUE.
-                            WRITE( MESG,94010 ) 'ERROR: SCC code not ',
-     &                         SCCLEN3, ' characters wide at line', IREC
-                            CALL M3MESG( MESG )
-                        END IF
-
 C.........................  Set vehicle type and road class
-                        IVT = STR2INT( TSCC( 3:6 ) )
-                        ROAD = STR2INT( TSCC( 8:10 ) )
-                                                
-C.........................  Ensure that vehicle type is valid
-C                        DO J = 1, NVTYPE
-C                            IF( IVT == IVTIDLST( J ) ) EXIT
-C                        END DO
-C                        IF( J > NVTYPE ) THEN
-C                             CVTYPLST( J ) = 'MOVES'
-C                        END IF
-                    END IF
-                    
-C.....................  Ensure that road class is valid and convert from road class
-                    J = FIND1( ROAD, NRCLAS, AMSRDCLS )
-                    
-                    IF( J <= 0 ) THEN
-                        RWT = 0
-                    ELSE
-                        RWT = RDWAYTYP( J )
-                    END IF
+                    CALL PADZERO( TSCC )
+
+                    IVT = STR2INT( TSCC( 13:14 ) )
+                    RWT = STR2INT( TSCC( 15:16 ) )
 
                 ELSE IF( CATEGORY == 'POINT' ) THEN
                 
