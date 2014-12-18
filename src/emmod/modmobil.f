@@ -40,21 +40,6 @@
 
         INCLUDE 'EMPRVT3.EXT'
 
-!.........  Mobile source characteristics tables
-        INTEGER                                 :: NVTYPE ! no. veh types
-        INTEGER,            ALLOCATABLE, PUBLIC :: IVTIDLST( : ) ! IDs
-        CHARACTER(VTPLEN3), ALLOCATABLE, PUBLIC :: CVTYPLST( : ) ! names
-
-        INTEGER                                 :: NRCLAS ! no. road classes
-        INTEGER,            ALLOCATABLE, PUBLIC :: AMSRDCLS( : ) ! AIRS rclas
-        INTEGER,            ALLOCATABLE, PUBLIC :: RDWAYTYP( : ) ! roadway type
-
-!.........  Unsorted VMT Mix table
-        REAL,               ALLOCATABLE, PUBLIC :: VMTMIXA ( :,: )
-
-!.........  Unsorted speeds table
-        REAL,               ALLOCATABLE, PUBLIC :: SPDTBLA ( : )
-
 !.........  Sorted SCC table for mobile sources
         INTEGER, PUBLIC :: NSCCTBL
         CHARACTER(VTPLEN3+RWTLEN3),ALLOCATABLE, PUBLIC:: SCCRVC( : )
