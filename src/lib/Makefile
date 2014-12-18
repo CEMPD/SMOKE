@@ -26,17 +26,17 @@ FILES_FGIMNP = \
   genptcel.o   genptvcel.o  genuslst.o   getbasyr.o   getctgry.o   getdysav.o \
   getformt.o   getidasz.o   getiname.o   getinvyr.o   getntisz.o   getrfdsc.o \
   getsinfo.o   gettzone.o   grd2cnty.o   grdfips.o    ingrid.o     initem.o   \
-  lnk2grd.o    mbsccadj.o   normtpro.o   parscsrc.o   pdsetup.o    prclinrc.o   procspro.o \
+  lnk2grd.o    normtpro.o   parscsrc.o   pdsetup.o    prclinrc.o   procspro.o \
   progdesc.o
 
 FILES_R = \
   rdar2pt.o    rdascc.o     rdchrscc.o   rdcodnam.o   rddates.o    rdeproc.o    rdgeocodes.o \
   rdgmat.o     rdgref.o     rdhdays.o    rdinvchr.o   rdinvmap.o   rdinvpol.o \
-  rdlines.o    rdmapmask.o  rdmappol.o   rdmvinfo.o   rdorsdsc.o   rdpelv.o   \
+  rdlines.o    rdmapmask.o  rdmappol.o   rdorsdsc.o   rdpelv.o   \
   rdrmat.o     rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o\
   rdspdref.o   rdsprof.o    rdsref.o     rdsrgdesc.o  rdsrghdr.o   rdsrg.o    \
-  rdstcy.o     rdtzone.o    rdumat.o     rdvmix.o   \
-  rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o rdm6map.o  \
+  rdstcy.o     rdtzone.o    rdumat.o     \
+  rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o  \
   rdsrcgrps.o
 
 FILES_SVWX = \
@@ -103,7 +103,6 @@ gettzone.o : $(MODSTCY)
 grdfips.o  : $(MODSURG) $(MODGRID) $(MODMET)
 grd2cnty.o : $(MODSTCY) $(MODSURG) $(MODGRID)
 lnk2grd.o  : $(MODGRID)
-mbsccadj.o : $(MODMOBIL)
 normtpro.o : $(MODTMPRL)
 prclinrc.o : $(MODREPRT) $(MODINFO)
 procspro.o : $(MODSPRO)
@@ -117,10 +116,8 @@ rdhdays.o  : $(MODTMPRL)
 rdinvchr.o : $(MODSOURC)
 rdinvmap.o : $(MODINFO)
 rdinvpol.o : $(MODFILESET)
-rdm6map.o  : $(MODLISTS) $(MODEMFAC)
 rdmactdsc.o: $(MODLISTS)
 rdmappol.o : $(MODINFO) $(MODFILESET)
-rdmvinfo.o : $(MODMOBIL)
 rdnaicsdsc.o : $(MODLISTS)
 rdorsdsc.o : $(MODSTCY)
 rdpelv.o   : $(MODELEV)
@@ -136,7 +133,6 @@ rdsref.o   : $(MODXREF) $(MODINFO)
 rdsrg.o    : $(MODSURG) $(MODGRID)
 rdsrgdesc.o: $(MODSURG)
 rdstcy.o   : $(MODSTCY) 
-rdvmix.o   : $(MODMOBIL) $(MODXREF)
 rdxclude.o : $(MODXREF) $(MODINFO)
 setscctype.o: $(MODINFO)
 setsrcdy.o : $(MODINFO)
