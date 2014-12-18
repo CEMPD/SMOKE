@@ -1,7 +1,7 @@
 
         SUBROUTINE OPENTMPIN( UFLAG, PFLAG, ENAME, ANAME,
      &                        DNAME, HNAME, GNAME, SDEV, XDEV, RDEV,
-     &                        CDEV, HDEV, KDEV, TDEV, MDEV, EDEV, PYEAR )
+     &                        CDEV, HDEV, KDEV, TDEV, EDEV, PYEAR )
 
 C***********************************************************************
 C  subroutine body starts at line 123
@@ -88,7 +88,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT   (OUT) :: HDEV  ! unit no.: holidays file
         INTEGER     , INTENT   (OUT) :: KDEV  ! unit no.: time periods file
         INTEGER     , INTENT   (OUT) :: TDEV  ! unit no.: emissions process file
-        INTEGER     , INTENT   (OUT) :: MDEV  ! unit no.: mobile codes file
         INTEGER     , INTENT   (OUT) :: EDEV  ! unit no.: emission factor file list
         INTEGER     , INTENT   (OUT) :: PYEAR ! projected year
 
