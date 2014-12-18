@@ -122,8 +122,11 @@ C.............  Parse the line into segments
 
 C.............  Store values in unsorted array
             NSCC = NSCC + 1
-            SCCMAPRAW( I,1 ) = SEGMENT( 2 )   ! referenced SCCs
-            SCCMAPRAW( I,2 ) = SEGMENT( 1 )   ! full SCCs
+            SCCMAPRAW( I,1 ) = SEGMENT( 2 )    ! referenced SCCs
+            SCCMAPRAW( I,2 ) = SEGMENT( 1 )    ! full SCCs
+
+            CALL PADZERO( SCCMAPRAW( I,1 ) )
+            CALL PADZERO( SCCMAPRAW( I,2 ) )
 
         END DO  ! done reading SCC map input file
 
@@ -144,7 +147,7 @@ C              the function to print out error messages
 
         CALL SORTIC( NLINES, IDX, SCCMAPRAW( :,1 ) )    ! sort ref SCCs
 
-C.............  Count no of aggregated SCCs
+C.........  Count no of aggregated SCCs
         PRVSCC = ''
         NSCC   = 0
         DO I = 1, NLINES
@@ -165,7 +168,6 @@ C.............  Count no of aggregated SCCs
             END IF
             
             WRITE( CNFSCC,'(I8)' ) NFSCC
-
             SCCMAPLIST(    NSCC,1 ) = CURSCC
             SCCMAPLIST(    NSCC,2 ) = FULLSCC
             SCCMAPLIST( NS:NSCC,3 ) = CNFSCC
