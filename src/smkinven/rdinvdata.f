@@ -68,7 +68,7 @@ C.........  This module contains the lists of unique inventory information
      &                      NINVTBL, ITCASA, FIREFLAG
 
 C.........  This module is for mobile-specific data
-        USE MODMOBIL, ONLY: NVTYPE, VMTMIXA, SCCMAPFLAG, SCCMAPLIST,
+        USE MODMOBIL, ONLY: SCCMAPFLAG, SCCMAPLIST,
      &                      NSCCMAP, EXCLSCCFLAG
 
         IMPLICIT NONE
@@ -582,7 +582,7 @@ C...........  Process line depending on file format and source category
 
                 CASE( 'MOBILE' )
                     CALL RDDATAFF10MB( LINE, READDATA, READPOL, INVYEAR,
-     &                        SRCTYP, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
+     &                        SRCTYP, TSCC, EXTORL, HDRFLAG, AVEFLAG, EFLAG )
                     NPOLPERLN = 1
                     LNKFLAG = .FALSE.
 
@@ -691,13 +691,16 @@ C...........  Make sure some emissions are kept for this source
 C...........  SCC mapping loop : Mobile activity inventory use only.
           KK = 0
           NSCC = 0
+          IF( CATEGORY == 'MOBILE' ) THEN
           IF( SCCMAPFLAG ) THEN
+              CALL PADZERO( TSCC )
               KK   = INDEX1( TSCC, NSCCMAP, SCCMAPLIST( :,1 ) )
               IF( KK > 0 ) THEN
                   NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
               ELSE
                   IF( EXCLSCCFLAG ) CYCLE    ! drop SCCs not listed in SCCXREF file
               END IF
+          END IF
           END IF
 
 C.............  loop over mapped SCC
