@@ -357,11 +357,6 @@ C.................  Determine if SCC is in inventory list
                 I = I + 1
 
 C.................  Convert SCC to mobile internal standard
-c mrh                IF( CATEGORY .EQ. 'MOBILE' ) THEN
-c mrh                    CALL MBSCCADJ( IREC, TSCC, CRWT, CVID, TSCC, EFLAG )
-c mrh                END IF
-                
-C.................  Convert SCC to mobile internal standard
                 WRITE( CPOL, '(I5.5)' ) ISP
 
                 FAC = STR2REAL( LINE( CS3:CE3 ) )
