@@ -211,7 +211,7 @@ C.........  Set gridded input file name, if available
         CALL M3MSG2( MESG )
 
 C.........  Read country, state, and county file for time zones
-        IF( USEEXPGEO ) THEN
+        IF( USEEXPGEO() ) THEN
             CALL RDGEOCODES( 1, I )
         ELSE IF( ZDEV .GT. 0 ) THEN
             CALL RDSTCY( ZDEV, 1, I )   !  "I" used as a dummy

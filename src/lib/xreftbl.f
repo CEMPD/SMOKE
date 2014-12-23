@@ -561,7 +561,7 @@ C                   as the old Right-left method is still needed.
 
                 END IF 
 
-            ELSEIF( .NOT. USEEXPGEO .AND. 
+            ELSEIF( .NOT. USEEXPGEO() .AND. 
      &              CFIP( STALEN3+1:FIPLEN3 ) == '000' ) THEN            ! County code is default
 
                 IF( CMCT .NE. MCTZERO ) THEN                   ! have valid MACT code

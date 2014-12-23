@@ -817,7 +817,7 @@ c                   note: this is not supported yet in Temporal
 
 C.........  If needed, read in country, state, county file
         IF( YFLAG ) THEN
-            IF( USEEXPGEO ) THEN
+            IF( USEEXPGEO() ) THEN
                 CALL RDGEOCODES( NINVIFIP, INVCFIP )
             ELSE
                 CALL RDSTCY( YDEV, NINVIFIP, INVCFIP )

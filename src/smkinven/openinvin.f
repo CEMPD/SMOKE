@@ -326,7 +326,7 @@ C.................  Get file name for input replacement stack parameters file
 
 C.........  Get file name for country, state, and county file, with time 
 C           zones
-        IF( .NOT. GFLAG .AND. .NOT. USEEXPGEO ) THEN
+        IF( .NOT. GFLAG .AND. .NOT. USEEXPGEO() ) THEN
             ZDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )

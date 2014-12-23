@@ -140,7 +140,7 @@ C...........   Other local variables
         CHARACTER(IOVLEN3) INVAR  ! tmp inventory pollutant name
 
 C.........  File format handling
-        INTEGER :: MXITEMS = 40
+        INTEGER, PARAMETER :: MXITEMS = 40
         INTEGER FMTITEM
         CHARACTER(8)  FMTSEGS( MXITEMS )
         CHARACTER(10) FMTSEG

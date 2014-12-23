@@ -303,7 +303,7 @@ C.........  Disaggregate PSTK data into 4 categories
                 TBL1( NR1 ) = TSCC
                 ID1 ( NR1 ) = J
 
-            ELSE IF( CCNY .EQ. '000' .AND. .NOT. USEEXPGEO ) THEN !  state and SCC
+            ELSE IF( CCNY .EQ. '000' .AND. .NOT. USEEXPGEO() ) THEN !  state and SCC
                 NR2 = NR2 + 1
                 TBL2( NR2 ) = CSTA // TSCC
                 ID2 ( NR2 ) = J

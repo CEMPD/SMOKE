@@ -512,7 +512,7 @@ C.............  Open elevated/plume-in-grid file
         END IF
 
 C.........  Get country, state, and county names, if needed
-        IF( YFLAG .AND. .NOT. USEEXPGEO ) THEN
+        IF( YFLAG .AND. .NOT. USEEXPGEO() ) THEN
 
             MESG = 'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file'

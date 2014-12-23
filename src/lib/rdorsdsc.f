@@ -129,7 +129,7 @@ C.............  Set tmp ASCII fields into arrays of the correct length
             PDSC = ADJUSTL( SEGMENT( 5 ) )
 
 C.............  Check for integer field for FIPS code
-            IF ( .NOT. USEEXPGEO .AND.
+            IF ( .NOT. USEEXPGEO() .AND.
      &           .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG, 94010 ) 'ERROR: FIPS code not an ' //

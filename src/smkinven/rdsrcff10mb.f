@@ -125,7 +125,7 @@ C......... Return if the first line is a header line
 C.........  Use the file format definition to parse the line into
 C           the various data fields
         CFIP = REPEAT( '0', FIPLEN3 )
-        IF( USEEXPGEO ) THEN
+        IF( USEEXPGEO() ) THEN
             CFIP(  1: 3 ) = ADJUSTR( SEGMENT( 1 )( 1:3 ) )
             CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
             CFIP( 10:12 ) = ADJUSTR( SEGMENT( 3 )( 1:3 ) )

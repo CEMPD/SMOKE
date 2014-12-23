@@ -147,7 +147,7 @@ C.............  Check for country name
             ELSE IF ( BUFFER(2:8) .EQ. 'COUNTRY' ) THEN 
 
 C.................  Skip country header if using expanded geographic codes
-                IF ( USEEXPGEO ) RETURN
+                IF ( USEEXPGEO() ) RETURN
 
                 IF( L1 < 1 ) L1 = 8 
 

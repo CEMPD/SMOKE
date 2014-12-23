@@ -673,7 +673,7 @@ C.............  If any missing country names, check widths
 
 C.............  Set country name column width 
             IHDRIDX = IHDRCNRY
-            IF( USEEXPGEO ) IHDRIDX = IHDRGEO2
+            IF( USEEXPGEO() ) IHDRIDX = IHDRGEO2
             J = LEN_TRIM( HEADERS( IHDRIDX ) )
             J = MAX( NWIDTH, J )
 
@@ -700,7 +700,7 @@ C.............  If any missing state names, check widths
 
 C.............  Set state name column width 
             IHDRIDX = IHDRSTAT
-            IF( USEEXPGEO ) IHDRIDX = IHDRGEO3
+            IF( USEEXPGEO() ) IHDRIDX = IHDRGEO3
             J = LEN_TRIM( HEADERS( IHDRIDX ) )
             J = MAX( NWIDTH, J )
 
@@ -727,7 +727,7 @@ C.............  If any missing county names, check widths
 
 C.............  Set county name column width 
             IHDRIDX = IHDRCNTY
-            IF( USEEXPGEO ) IHDRIDX = IHDRGEO4
+            IF( USEEXPGEO() ) IHDRIDX = IHDRGEO4
             J = LEN_TRIM( HEADERS( IHDRIDX ) )
             J = MAX( NWIDTH, J )
 

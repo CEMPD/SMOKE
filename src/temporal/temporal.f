@@ -324,7 +324,7 @@ C.........  Adjust TZMIN and TZMAX for possibility of daylight savings
 C.........  Read special files...
 
 C.........  Read region codes file
-        IF( USEEXPGEO ) THEN
+        IF( USEEXPGEO() ) THEN
             CALL RDGEOCODES( NINVIFIP, INVCFIP )
         ELSE
             CALL RDSTCY( CDEV, NINVIFIP, INVCFIP )

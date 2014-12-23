@@ -291,7 +291,7 @@ C.................  Filter the case where the species code is not present
 
 C.............  Check to see if FIPS code matches inventory.  If no match,
 C               then give a warning and skip the record from processing.
-            IF ( USEEXPGEO .OR. 
+            IF ( USEEXPGEO() .OR. 
      &           CFIP( FIPEXPLEN3+4:FIPEXPLEN3+6) /= '000' ) THEN
                 J = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF ( J .LE. 0 ) THEN

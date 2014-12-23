@@ -602,7 +602,7 @@ C....................  Otherwise, parse and store table
                         END DO
 
 C........................  Check that FIPS code is an integer
-                        IF( .NOT. USEEXPGEO .AND. 
+                        IF( .NOT. USEEXPGEO() .AND. 
      &                      .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
                             EFLAG = .TRUE.
                             WRITE( MESG,94010 ) 'ERROR: Country/state'//

@@ -293,7 +293,7 @@ C.................  Reserve group number zero
             END IF
 
 C.............  Check FIPS code
-            IF( .NOT. USEEXPGEO .AND.
+            IF( .NOT. USEEXPGEO() .AND.
      &          .NOT. CHKINT( SEGMENT( 2 ) ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Bad FIPS code at line',
@@ -310,7 +310,7 @@ C.................  Standardize character version of FIPS code
 
 C.................  Check if FIPS code matches inventory or 
 C                   surrogates (for biogenics)
-                IF( USEEXPGEO .OR. CFIP( FIPEXPLEN3+4:FIPEXPLEN3+6 ) /= '000' ) THEN
+                IF( USEEXPGEO() .OR. CFIP( FIPEXPLEN3+4:FIPEXPLEN3+6 ) /= '000' ) THEN
                     IF( BFLAG ) THEN
                         J = FINDC( CFIP, NSRGFIPS, SRGFIPS )
                     ELSE
@@ -486,7 +486,7 @@ C.................  full FIPS, SCC
                 INDX = FINDC( CSRC, N, CGRPSRC )
                 
 C.................  state, SCC
-                IF( INDX .LT. 0 .AND. .NOT. USEEXPGEO ) THEN
+                IF( INDX .LT. 0 .AND. .NOT. USEEXPGEO() ) THEN
                     CSRC = CSTA // TSCC
                     INDX = FINDC( CSRC, N, CGRPSRC )
                 END IF
@@ -506,7 +506,7 @@ C.................  full FIPS
                 INDX = FINDC( CSRC, N, CGRPSRC )
                 
 C.................  state
-                IF( INDX .LT. 0 .AND. .NOT. USEEXPGEO ) THEN
+                IF( INDX .LT. 0 .AND. .NOT. USEEXPGEO() ) THEN
                     CSRC = CSTA // REPEAT( '0', SCCLEN3 )
                     INDX = FINDC( CSRC, N, CGRPSRC )
                 END IF

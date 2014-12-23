@@ -170,7 +170,7 @@ C.............  Smart interpretation of SCC
             CALL PADZERO( TSCC )     ! Pad with zeros
 
 C.............  Make sure that the co/st/cy code is an integer
-            IF( .NOT. USEEXPGEO .AND.
+            IF( .NOT. USEEXPGEO() .AND.
      &          .NOT. CHKINT( CFIP ) ) THEN
                 EFLAG = .TRUE.
                 WRITE( MESG,94010 ) 'ERROR: Country/state/county ' //

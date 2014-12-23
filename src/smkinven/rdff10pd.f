@@ -370,7 +370,7 @@ C.............  Set the number of fields, depending on day- or hour-specific
 
 C.............  Read FIPS code
             CFIP = REPEAT( '0', FIPLEN3 )
-            IF( USEEXPGEO ) THEN
+            IF( USEEXPGEO() ) THEN
                 CFIP(  1: 3 ) = ADJUSTR( SEGMENT( 1 )( 1:3 ) )
                 CFIP(  4: 9 ) = ADJUSTR( SEGMENT( 2 )( 1:6 ) )
                 CFIP( 10:12 ) = ADJUSTR( SEGMENT( 3 )( 1:3 ) )

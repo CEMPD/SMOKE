@@ -199,7 +199,7 @@ C.............  Store non-category-specific header information
         NSRC = NROWS3D
 
 C.........  Open region codes file for determining daylight savings time status
-        IF( .NOT. USEEXPGEO ) THEN
+        IF( .NOT. USEEXPGEO() ) THEN
             CDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
