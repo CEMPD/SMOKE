@@ -54,40 +54,39 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL        BLKORCMT
         INTEGER        GETFLINE
         INTEGER        STR2INT
-        INTEGER        FIND1
+        INTEGER        FINDC
         CHARACTER(2)   CRLF    
         
-        EXTERNAL  BLKORCMT, CHKINT, GETFLINE, STR2INT, FIND1, CRLF
+        EXTERNAL  BLKORCMT, CHKINT, GETFLINE, STR2INT, FINDC, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: ADEV     ! COUNTY_FUELMONTH file unit no.
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: FMREFRAW ( :,: )  ! raw COUNTY_FULEMONTH data
-          
         INTEGER, ALLOCATABLE :: IDX ( : )    ! index into COUNTY_FUELMONTH data
 
 C...........   Local arrays
         CHARACTER(16)  SEGMENT( NREFFLAGS )  ! parsed input line
         
 C...........   Other local variables
-        INTEGER I, J, K, N                ! counters and indices                     
+        INTEGER I, J, K, N, NF, NR        ! counters and indices                     
         
         INTEGER IOS                       ! I/O status
         INTEGER :: IREC = 0               ! record counter
         INTEGER NLINES                    ! number of lines
 
         INTEGER REFCOUNTY                 ! ref. county FIPS code
-        INTEGER PRCOUNTY                  ! prev ref. county FIPS code
         INTEGER PRMONTH                   ! prev ref. county month
-        INTEGER FUELMONTH, NF             ! current / no. of fuelmonth per ref. county
-        INTEGER MONTH, NR                 ! current / no. of month(s) per ref. county
-                        
+        INTEGER FMONTH                    ! current / no. of fuelmonth per ref. county
+        INTEGER CMONTH                    ! current / no. of month(s) per ref. county
+
         LOGICAL      :: DUPFLAG = .FALSE.   ! true: duplicate entries found
         LOGICAL      :: EFLAG   = .FALSE.   ! true: error found    
         LOGICAL      :: SETFLAG = .FALSE.   ! true: error in settings values 
         LOGICAL      :: RFLAG   = .FALSE.   ! true: no. lines < no. ref. counties
-        
+      
+        CHARACTER(FIPLEN3) PRVCNTY, REFCNTY, INVCNTY
         CHARACTER(100)     LINE     !  line buffer
         CHARACTER(300)     MESG     !  message buffer
 
@@ -111,6 +110,7 @@ C.........  Initialize arrays
         IDX = 0
         FMREFRAW = 0
         DO I = 1, NLINES       
+
             IDX( I ) = I
 
 C.........  Read line
@@ -145,18 +145,18 @@ C.............  Convert reference county to integer
                 CYCLE
             END IF
             
-
-            K = FIND1( REFCOUNTY, NREFC, MCREFIDX( :,1 ) )
+            WRITE( REFCNTY,'(I12.12)' ) REFCOUNTY
+            K = FINDC( REFCNTY, NREFC, MCREFIDX( :,1 ) )
 
             IF( K > 0 ) N = N + 1
 
-            FUELMONTH = STR2INT( SEGMENT( 2 ) )
-            MONTH     = STR2INT( SEGMENT( 3 ) )
+            FMONTH = STR2INT( SEGMENT( 2 ) )
+            CMONTH = STR2INT( SEGMENT( 3 ) )
 
 C.............  Store values in unsorted array
             FMREFRAW( I,1 ) = REFCOUNTY
-            FMREFRAW( I,2 ) = FUELMONTH
-            FMREFRAW( I,3 ) = MONTH
+            FMREFRAW( I,2 ) = FMONTH
+            FMREFRAW( I,3 ) = CMONTH
 
         END DO  ! done reading COUNTY_FULEMONTH file
         
@@ -176,20 +176,21 @@ C.........  Abort if error found while reading settings file
 
 C.............  Count no of ref counties
         NR = 0
-        PRCOUNTY = 0
+        PRVCNTY = ' '
         DO I = 1, NLINES
             J = IDX( I )
             
-            REFCOUNTY = FMREFRAW( J,1 )
+            WRITE( REFCNTY,'(I12.12)' ) FMREFRAW( J,1 )
+
 C.............  Skip any entries equal to zero due to blank lines
-            IF( REFCOUNTY == 0 ) CYCLE
+            IF( FMREFRAW( J,1 ) == 0 ) CYCLE
             
-            K = FIND1( REFCOUNTY, NREFC, MCREFIDX( :,1 ) )
+            K = FINDC( REFCNTY, NREFC, MCREFIDX( :,1 ) )
+
             IF( K < 1 ) CYCLE
+            IF( PRVCNTY /= REFCNTY ) NR = NR + 1
 
-            IF( PRCOUNTY /= REFCOUNTY ) NR = NR + 1
-
-            PRCOUNTY = REFCOUNTY
+            PRVCNTY = REFCNTY
 
         END DO
 
@@ -200,54 +201,48 @@ C              the function to print out error messages
         CALL CHECKMEM( IOS, 'FMREFSORT', PROGNAME )
         ALLOCATE( FMREFLIST ( NR,2 ), STAT=IOS ) 
         CALL CHECKMEM( IOS, 'FMREFLIST', PROGNAME )
+        FMREFSORT = ' '
+        FMREFLIST = ' ' 
 
 C.........  Store sorted reference county fuel month setting array
         N = 0
         NR = 0
-        FMREFSORT = 0
-        FMREFLIST = 0
-        PRCOUNTY  = 0
-        
+        PRVCNTY  = ' ' 
         DO I = 1, NLINES
+
             J = IDX( I )
             
-            REFCOUNTY = FMREFRAW( J,1 )
-            FUELMONTH = FMREFRAW( J,2 )
-            MONTH     = FMREFRAW( J,3 )
+            WRITE( REFCNTY,'(I12.12)' ) FMREFRAW( J,1 )
+            CALL PADZERO( REFCNTY )
+            FMONTH = FMREFRAW( J,2 )
+            CMONTH = FMREFRAW( J,3 )
 
 C.............  Skip any entries equal to zero due to blank lines
-            IF( REFCOUNTY == 0 ) CYCLE
+            IF( FMREFRAW( J,1 ) == 0 ) CYCLE
             
 C.............  Check that current reference county is in the county cross-reference list
-            K = FIND1( REFCOUNTY, NREFC, MCREFIDX( :,1 ) )
+            K = FINDC( REFCNTY, NREFC, MCREFIDX( :,1 ) )
 
-            IF( K < 0 ) THEN
-c                WRITE( MESG,94010 ) 'ERROR: Could not find the ' //
-c     &             'fuel month settings for reference county', REFCOUNTY
-c                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                CYCLE                    
-            ELSE    
-                N = N + 1
- 
-                FMREFSORT( N,1 ) = REFCOUNTY
-                FMREFSORT( N,2 ) = FUELMONTH
-                FMREFSORT( N,3 ) = MONTH
+            IF( K < 0 ) CYCLE 
 
-                IF( PRCOUNTY == REFCOUNTY ) THEN
-                    IF( PRMONTH /= MONTH ) THEN
-                        NF = NF + 1
-                        FMREFLIST( NR,2 ) = NF
-                    END IF
-                ELSE
-                    NR = NR + 1
-                    NF = 1
-                    FMREFLIST( NR,1 ) = REFCOUNTY
+            N = N + 1
+            FMREFSORT( N,1 ) = REFCNTY
+            WRITE( FMREFSORT( N,2 ),'(I8)' ) FMONTH
+            WRITE( FMREFSORT( N,3 ),'(I8)' ) CMONTH
+
+            IF( PRVCNTY == REFCNTY ) THEN
+                IF( PRMONTH /= CMONTH ) THEN
+                    NF = NF + 1
+                    WRITE( FMREFLIST( NR,2 ),'(I8)' ) NF
                 END IF
-                
+            ELSE
+                NR = NR + 1
+                NF = 1
+                FMREFLIST( NR,1 ) = REFCNTY
             END IF
-            
-            PRMONTH  = MONTH
-            PRCOUNTY = REFCOUNTY
+                
+            PRMONTH = CMONTH
+            PRVCNTY = REFCNTY
             
         END DO
         

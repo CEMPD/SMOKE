@@ -109,7 +109,6 @@ C...........   Other local variables
         CHARACTER(SICLEN3) CDUM     !  dummy buffer for SIC code
         CHARACTER(MACLEN3) CDUM2    !  dummy buffer for MACT code
         CHARACTER(SCCLEN3) CHKZERO  !  buffer to check for zero SCC
-        CHARACTER(SCCLEN3) SCCZERO  !  zero SCC
         CHARACTER(SCCLEN3) TSCC     !  temporary SCC or roadway type
         CHARACTER(VIDLEN3) CVID     !  buffer for vehicle type ID
 
@@ -131,9 +130,6 @@ C           current source category or not.
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 ) 
 
         ENDIF
-
-C.........  Create the zero SCC
-        SCCZERO = REPEAT( '0', SCCLEN3 )
 
 C.........  Get the number of lines in the file
         NLINES = GETFLINE( FDEV, 'Gridding cross reference file' )
@@ -190,19 +186,9 @@ C                   with zeros, compare SCC version master list.
      &                         IDUM, IDUM, IDUM, LDUM, SKIPREC )
 
             CASE( 'MOBILE' )
-
                 CALL PARSLINE( LINE, 3, FIELDARR )
 
                 L = LEN_TRIM( FIELDARR( 2 ) )
-
-C.................  Make sure SCC is full length
-                IF( L .NE. SCCLEN3 ) THEN
-                    EFLAG = .TRUE.
-                    WRITE( MESG,94010 ) 'ERROR: SCC value ' //
-     &                     'is not', SCCLEN3, 'digits at line', IREC
-                    CALL M3MESG( MESG )
-
-                END IF
 
                 CFIP = FIELDARR( 1 )
                 TSCC = FIELDARR( 2 )
@@ -210,16 +196,9 @@ C.................  Make sure SCC is full length
 C.................  Post-process x-ref information to scan for '-9', pad
 C                   with zeros.  Do not include SCC in call below because
 C                   right SCC will not work.
-                CALL FLTRXREF( CFIP, CDUM, SCCZERO, ' ', CDUM2, 
+                CALL FLTRXREF( CFIP, CDUM, TSCC, ' ', CDUM2, 
      &                         IDUM, IDUM, IDUM, LDUM, SKIPREC )
 
-C.................  Ignore SCCs that are not on-road mobile
-                IF( TSCC /= SCCZERO ) THEN
-                    IF( TSCC( 1:2 ) /= '22' ) THEN
-                        SKIPREC = .TRUE.
-                    END IF
-                END IF
-                
             END SELECT
 
 C.............  Make sure that the spatial surrogates code is an integer

@@ -104,6 +104,7 @@ C...........   Other local variables
         CHARACTER(IOVLEN3)  CSPC      ! tmp species buffer
         CHARACTER(SCCLEN3)  TSCC      ! current SCC
         CHARACTER(SCCLEN3)  PSCC      ! previous SCC
+        CHARACTER(FIPLEN3)  CFIP      ! current ref county
         
         CHARACTER(10000)    LINE          ! line buffer
         CHARACTER(100)      FILENAME      ! tmp. filename
@@ -120,8 +121,8 @@ C.........  Open emission factors file based on MRCLIST file
         
         IF( FILENAME .EQ. ' ' ) THEN
             WRITE( MESG, 94010 ) 'ERROR: No emission factors file ' //
-     &        'for reference county', MCREFIDX( REFIDX,1 ), ' and ' //
-     &        'fuel month', MONTH
+     &        'for reference county ' // MCREFIDX( REFIDX,1 ) //
+     &        ' and fuel month', MONTH
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
@@ -306,9 +307,10 @@ C.............  Check that county matches requested county
      &            'file.'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
-            
-            IF( STR2INT( SEGMENT( 4 ) ) .NE. 
-     &          MCREFIDX( REFIDX,1 ) ) THEN
+
+            CFIP = SEGMENT( 4 )
+            CALL PADZERO( CFIP )
+            IF( CFIP .NE. MCREFIDX( REFIDX,1 ) ) THEN
                 WRITE( MESG, 94010 ) 'ERROR: Reference county ' //
      &            'at line', IREC, 'of emission factors file ' //
      &            'does not match county listed in MRCLIST file.'
@@ -408,6 +410,8 @@ C.............  Parse line into segments
 
 C.............  Set SCC index for current line
             TSCC = TRIM( SEGMENT( 5 ) )
+            CALL PADZERO( TSCC )
+
             IF( TSCC .NE. PSCC ) THEN
                 SKIPSCC = .FALSE.
             
@@ -470,7 +474,7 @@ C.............  Store emission factors for each pollutant
 
                 EMVAL = STR2REAL( SEGMENT( NNONPOL + P ) )
                 RPHEMFACS( SCCIDX, TMPIDX, P ) = EMVAL
-
+         print*,SCCIDX,TMPIDX,P,NNONPOL,EMVAL
             END DO
 
         END DO

@@ -47,7 +47,7 @@ C.........  This module contains the major data structure and control flags
      &          CDEV,                              ! costcy
      &          MGNAME, MTNAME, MONAME,            ! input files
      &          NMSRC, MNGMAT, MGMATX,             ! no. of srcs, no. gridding matrix entries
-     &          NMSPC, MIFIP,                      ! no. species
+     &          NMSPC, MCFIP,                      ! no. species
      &          EMNAM,                             ! species names
      &          TSVDESC,                           ! var names
      &          SIINDEX, SPINDEX,                  ! EANAM & EMNAM idx
@@ -75,7 +75,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          TEMPBIN, MTMP_OUT
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVSCC, INVSCC
 
 C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: MICNY, NCOUNTY, NSTATE
@@ -88,7 +88,7 @@ C.........  This module is used for reference county information
      &                      NREFF, FMREFSORT, NFUELC, FMREFLIST
 
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: SPEED, CSCC, VPOP, IFIP, TZONES
+        USE MODSOURC, ONLY: SPEED, CSCC, VPOP, CIFIP, TZONES
 
         IMPLICIT NONE
 
@@ -107,14 +107,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(10)   HHMMSS
         CHARACTER(2)    CRLF
         INTEGER         INDEX1
-        INTEGER         FIND1
-        INTEGER         FIND1FIRST
+        INTEGER         FINDCFIRST
         INTEGER         FINDC
         INTEGER         WKDAY
         INTEGER         ENVINT
         INTEGER         STR2INT
 
-        EXTERNAL    HHMMSS, INDEX1, FIND1, FIND1FIRST, FINDC, WKDAY, 
+        EXTERNAL    HHMMSS, INDEX1, FINDCFIRST, FINDC, WKDAY, 
      &              STR2INT, ENVINT, CRLF
 
 C.........  LOCAL PARAMETERS and their descriptions:
@@ -153,6 +152,7 @@ C...........   Other local variables
         INTEGER          DAY           ! day-of-week index (monday=1)
         INTEGER          DAYMONTH      ! day-of-month
         INTEGER          DAYIDX        ! current day value index
+        INTEGER          FMON, NMON    ! tmp fuel month
         INTEGER          FUELMONTH     ! current fuel month
         INTEGER          LFUELMONTH    ! last fuel month
         INTEGER          HOURIDX       ! current hour of the day
@@ -178,8 +178,8 @@ C...........   Other local variables
         INTEGER          SRC           ! current source number
         INTEGER          UUIDX, UOIDX, OUIDX, OOIDX  ! indexes for matching profiles
         INTEGER          USTART, UEND, OSTART, OEND
-        INTEGER         MXWARN      !  maximum number of warnings
-        INTEGER      :: NWARN = 0   !  current number of warnings
+        INTEGER          MXWARN        !  maximum number of warnings
+        INTEGER       :: NWARN = 0     !  current number of warnings
         INTEGER          GIDX          ! index to source group
 
         REAL             F1, F2        ! tmp conversion
@@ -237,7 +237,7 @@ C.........  Determine units conversion factors
 C.........  Read the state and county names file and store for the 
 C           states and counties in the grid
 C.........  Use FIPS list from the inventory for limiting state/county list
-        CALL RDSTCY( CDEV, NINVIFIP, INVIFIP )
+        CALL RDSTCY( CDEV, NINVIFIP, INVCFIP )
 
 C.........  Allocate memory for fixed-size arrays...        
         ALLOCATE( LDAYSAV( NMSRC ), STAT=IOS )
@@ -324,7 +324,7 @@ C........ when not optimize memory
         END IF
 
 C.........  Determine sources that observe DST
-        CALL GETDYSAV( NMSRC, IFIP, LDAYSAV )
+        CALL GETDYSAV( NMSRC, CIFIP, LDAYSAV )
 
 C.........  Read gridding matrix
         CALL RDGMAT( MGNAME, NGRID, MNGMAT, MNGMAT,
@@ -374,13 +374,13 @@ C.........  Loop over reference counties
         DO I = 1, NREFC
 
 C.............  Determine fuel month for current time step and reference county
-            N = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
-            M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
+            N = FINDCFIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
+            M = FINDC( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
 
 C.............  Determine month
             IF( N .LT. 0 .OR. M .LT. 0 ) THEN
                 WRITE( MESG, 94010 )'ERROR: No fuel month data for ' //
-     &            'reference county', MCREFIDX( I,1 )
+     &            'reference county ' //  MCREFIDX( I,1 )
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
                 
@@ -417,17 +417,19 @@ C.................  Determine month
 
                 IF ( MONTH .NE. LMONTH ) THEN
                     FUELMONTH = 0
-                    DO J = N, N + FMREFLIST( M,2 )
-                        IF( FMREFSORT( J,3 ) == MONTH ) THEN
-                            FUELMONTH = FMREFSORT( J,2 )
+                    NMON = STR2INT( FMREFLIST( M,2 ) )
+                    DO J = N, N + NMON
+                        FMON = STR2INT( FMREFSORT(J,3) )
+                        IF( FMON == MONTH ) THEN
+                            FUELMONTH = STR2INT( FMREFSORT( J,2 ) )
                             EXIT
                         END IF
                     END DO
                 
                     IF( FUELMONTH == 0 ) THEN
                         WRITE( MESG, 94010 )'ERROR: Could not determine ' //
-     &                    'fuel month for reference county', MCREFIDX( I,1 ),
-     &                    'and episode month', MONTH
+     &                    'fuel month for reference county ' //MCREFIDX( I,1 )//
+     &                    ' and episode month', MONTH
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                     END IF
 
@@ -437,7 +439,7 @@ C                       at the last hour of the last day in fuel month to proces
 
                     IF ( LFUELMONTH .NE. FUELMONTH ) THEN
                         WRITE( MESG,94010 ) 'Processing MOVES lookup ' //
-     &                      'tables for reference county', MCREFIDX( I,1 ),  
+     &                      'tables for reference county '// MCREFIDX( I,1 )//  
      &                      ' of fuel month:', FUELMONTH 
                         CALL M3MSG2( MESG )
  
@@ -548,7 +550,7 @@ C.....................  Determine speed bins for source
                     IF( RPDFLAG ) THEN
                         SPEEDVAL = BADVAL3
                         IF( SPDFLAG ) THEN
-                            SPEEDVAL = SPDPRO( MIFIP( SRC ), SCCIDX, DAYIDX, HOURIDX )
+                            SPEEDVAL = SPDPRO( MCFIP( SRC ), SCCIDX, DAYIDX, HOURIDX )
                         END IF
 
 C.........................  Fall back to inventory speed if hourly speed isn't available
@@ -680,7 +682,7 @@ C                             OO - both min and max profile temps are over count
                             MINTVAL = MINTEMP( CELL )
                             MAXTVAL = MAXTEMP( CELL )
 
-C.............................  MIFIP(SRC) and maxmum values within the index
+C.............................  MCFIP(SRC) and maxmum values within the index
                             IF ( (MINTVAL .LT. EMTEMPS( EMTEMPIDX( 1 ) ) )  
      &                          .AND. (MINTVAL .GE. (EMTEMPS( EMTEMPIDX( 1 ) ) - TEMPBIN )) ) THEN
                                 IF( NWARN < MXWARN ) THEN
@@ -711,8 +713,8 @@ C.............................  MIFIP(SRC) and maxmum values within the index
 C.............................  Check that min and max county temps were found
                             IF( MINTVAL .LT. AMISS3 .OR. MAXTVAL .LT. AMISS3 ) THEN
                                 WRITE( MESG, 94010 ) 'Could not find minimum ' //
-     &                            'and maximum temperatures for county', IFIP( SRC ),
-     &                            'and episode month', MONTH
+     &                            'and maximum temperatures for county' // CIFIP( SRC ) 
+     &                            // 'and episode month', MONTH
                                 CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
                             END IF
 
@@ -895,7 +897,7 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                                 SPIDX = V - NIPPA
                             END IF
 
-                            IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, V, MONTH )
+                            IF( CFFLAG ) CFFAC = CFPRO(MCFIP(SRC), SCCIDX, V, MONTH )
 
 C.............................  Check if emission factors exist for this process/pollutant
                             IF( POLIDX .EQ. 0 ) CYCLE
@@ -921,6 +923,7 @@ C.............................  Calculate interpolated emission factor if proces
                                 EFVALA = RPHEMFACS( SCCIDX, IDX1, POLIDX )
                                 EFVALB = RPHEMFACS( SCCIDX, IDX2, POLIDX )
                                 EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
+              if(EFVAL>0.0) print*,EFVAL,POLIDX,SCCIDX,IDX1,IDX2
                             END IF
                                 
                             IF( RPVFLAG ) THEN

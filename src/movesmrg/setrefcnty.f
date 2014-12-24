@@ -46,17 +46,18 @@ C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NSRC
 
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: IFIP
+        USE MODSOURC, ONLY: CIFIP
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
 
 C.........  This module is used for reference county information
         USE MODMBSET, ONLY: NINVC, NREFC, MCREFSORT, MCREFIDX
 
         IMPLICIT NONE
 
-C.........  INCLUDES:
+C.........   INCLUDES
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER   INDEXINT1
@@ -66,24 +67,24 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
 C.........  LOCAL VARIABLES and their descriptions:
 
 C.........  Array to store counties inside grid
-        INTEGER, ALLOCATABLE :: GRDFIP( : )
+        CHARACTER(FIPLEN3), ALLOCATABLE :: GRDFIP( : )
 
 C.........  Arrays for building list of reference county sources
-        INTEGER, ALLOCATABLE :: INVCNTY( : )    ! inventory counties sorted by reference county
-        INTEGER, ALLOCATABLE :: REFCNTY( : )    ! list of sorted reference counties
-        INTEGER, ALLOCATABLE :: SRCREFIDX( : )  ! ref. county index for each source
+        INTEGER           , ALLOCATABLE :: SRCREFIDX( : )  ! ref. county index for each source
+        CHARACTER(FIPLEN3), ALLOCATABLE :: INVCNTY( : )    ! inventory counties sorted by reference county
+        CHARACTER(FIPLEN3), ALLOCATABLE :: REFCNTY( : )    ! list of sorted reference counties
 
 C.........  Other local variables
         INTEGER   I, J, K, S  ! indexes and counters
         INTEGER   MXNREFSRCS  ! max. no. sources per reference county
         INTEGER   NGRDFIP     ! no. counties inside grid
-        INTEGER   PFIP        ! tmp previous iteration fip
-        INTEGER   REFFIP      ! current reference county fip
         INTEGER   REFIDX      ! current reference county index
         INTEGER   IOS         ! error status
 
         LOGICAL :: SKIPFIP = .FALSE.   ! true: county is not in cross-reference
 
+        CHARACTER(FIPLEN3) PFIP    ! prev fips
+        CHARACTER(FIPLEN3) REFFIP  ! prev fips
         CHARACTER(300)     MESG    ! message buffer
 
         CHARACTER(16) :: PROGNAME = 'SETREFCNTY' ! program name
@@ -94,18 +95,18 @@ C   begin body of subroutine SETREFCNTY
 C.........  Build list of counties within the grid
         ALLOCATE( GRDFIP( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'GRDFIP', PROGNAME )
-        GRDFIP = 0   ! array
+        GRDFIP = ' '   ! array
         
-        PFIP = -9
+        PFIP = ' '
         NGRDFIP = 0
         DO S = 1, NSRC
 
             IF( NSRCCELLS( S ) == 0 ) CYCLE
             
-            IF( IFIP( S ) .NE. PFIP ) THEN
+            IF( CIFIP( S ) .NE. PFIP ) THEN
                 NGRDFIP = NGRDFIP + 1
-                GRDFIP( NGRDFIP ) = IFIP( S )
-                PFIP = IFIP( S )
+                GRDFIP( NGRDFIP ) = CIFIP( S )
+                PFIP = CIFIP( S )
             END IF
         
         END DO
@@ -139,22 +140,22 @@ C           Start by counting number of sources for each reference county
         NREFSRCS = 0      ! array
         SRCREFIDX = 0   ! array
         
-        PFIP = -9
-        REFFIP = -9
+        PFIP = ' ' 
+        REFFIP = ' '
         REFIDX = 0
         DO S = 1, NSRC
         
             IF( NSRCCELLS( S ) == 0 ) CYCLE
         
-            IF( IFIP( S ) .NE. PFIP ) THEN
+            IF( CIFIP( S ) .NE. PFIP ) THEN
                 SKIPFIP = .FALSE.
-                PFIP = IFIP( S )
+                PFIP = CIFIP( S )
 
-                J = INDEXINT1( IFIP( S ), NINVC, INVCNTY )
+                J = INDEXINT1( CIFIP( S ), NINVC, INVCNTY )
                 IF( J <= 0 ) THEN
                     SKIPFIP = .TRUE.
                     WRITE( MESG, 94010 ) 'WARNING: No emissions will '//
-     &                'be calculated for inventory county ', IFIP( S ),
+     &                'be calculated for inventory county ' //CIFIP( S )//
      &                'because it is not listed in the county '//
      &                'cross-reference file'
                     CALL M3MESG( MESG )
@@ -168,7 +169,7 @@ C           Start by counting number of sources for each reference county
                     IF( REFIDX <= 0 ) THEN
                         WRITE( MESG, 94010 ) 'INTERNAL ERROR: ' //
      &                    'Problem with reference county mapping for '
-     &                    // 'county ', IFIP( S )
+     &                    // 'county ' // CIFIP( S )
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     END IF
                 END IF

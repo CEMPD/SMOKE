@@ -41,7 +41,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: SPDPRO
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVSCC, INVSCC
 
         IMPLICIT NONE
 
@@ -54,13 +54,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
         INTEGER       GETFLINE
-        INTEGER       FIND1
         INTEGER       FINDC
         INTEGER       STR2INT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
         
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FIND1, GETFLINE, 
+        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FINDC, GETFLINE, 
      &           STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
@@ -134,7 +133,7 @@ C.............  Convert FIP to integer
 
 C.............  Find county in inventory list
             CNTY = STR2INT( SEGMENT( 1 ) )
-            FIPIDX = FIND1( CNTY, NINVIFIP, INVIFIP )
+            FIPIDX = FINDC( CNTY, NINVIFIP, INVCFIP )
             
             IF( FIPIDX .LE. 0 ) THEN
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line',

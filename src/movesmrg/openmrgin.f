@@ -59,7 +59,7 @@ C...........  This module contains the information about the source category
      &          ACTVTY
 
 C.........  This module contains the inventory arrays
-        USE MODSOURC, ONLY: SPEED, VPOP
+        USE MODSOURC, ONLY: SPEED, VPOP, CIFIP
 
 C...........   This module contains emission factor information
         USE MODEMFAC, ONLY: MXETYPE, EMTNAM
@@ -182,7 +182,7 @@ C           file, or else this program does not need to be run
         END IF
 
 C.........  Set inventory variables to read
-        IVARNAMS( 1 ) = 'IFIP'
+        IVARNAMS( 1 ) = 'CIFIP'
         IVARNAMS( 2 ) = 'CSCC'
         IVARNAMS( 3 ) = 'TZONES'
         NINVARR = 3

@@ -53,24 +53,24 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS 
         CHARACTER(2)    CRLF
         CHARACTER(14)   MMDDYY
-        INTEGER         FIND1
+        INTEGER         FINDC
 
-        EXTERNAL     CRLF, MMDDYY, FIND1
+        EXTERNAL     CRLF, MMDDYY, FINDC
 
 C...........   SUBROUTINE ARGUMENTS
 C.............  Subroutine arguments
-        INTEGER  , INTENT(IN)  ::  ODEV1           ! MOVES RPP output file
-        INTEGER  , INTENT(IN)  ::  ODEV2           ! MOVES RPD/RPV output file
-        INTEGER  , INTENT(IN)  ::  MYEAR           ! modeling year
-        INTEGER  , INTENT(IN)  ::  COUNTY          ! refCounty
-        INTEGER  , INTENT(IN)  ::  PMONTH          ! fuel month
-        INTEGER  , INTENT(IN)  ::  PDTEMP          ! RPP/RPV temperature increment
-        INTEGER  , INTENT(IN)  ::  PPTEMP          ! RPP temperature increment
-        REAL     , INTENT(IN)  ::  THOUR( 24 )     ! avg temp 24-hr profiles for refcounty/fuelmonth
-        REAL     , INTENT(IN)  ::  MAXTEMP         ! max temp for refcounty/fuelmonth
-        REAL     , INTENT(IN)  ::  MINTEMP         ! min temp for refcounty/fuelmonth
-        REAL     , INTENT(IN)  ::  TEMPBIN         ! temp buffer
-        INTEGER  , INTENT(IN)  ::  MINNORH         ! min no of data points for avg RH by tempbin
+        INTEGER     , INTENT(IN)  ::  ODEV1           ! MOVES RPP output file
+        INTEGER     , INTENT(IN)  ::  ODEV2           ! MOVES RPD/RPV output file
+        INTEGER     , INTENT(IN)  ::  MYEAR           ! modeling year
+        CHARACTER(*), INTENT(IN)  ::  COUNTY          ! refCounty
+        INTEGER     , INTENT(IN)  ::  PMONTH          ! fuel month
+        INTEGER     , INTENT(IN)  ::  PDTEMP          ! RPP/RPV temperature increment
+        INTEGER     , INTENT(IN)  ::  PPTEMP          ! RPP temperature increment
+        REAL        , INTENT(IN)  ::  THOUR( 24 )     ! avg temp 24-hr profiles for refcounty/fuelmonth
+        REAL        , INTENT(IN)  ::  MAXTEMP         ! max temp for refcounty/fuelmonth
+        REAL        , INTENT(IN)  ::  MINTEMP         ! min temp for refcounty/fuelmonth
+        REAL        , INTENT(IN)  ::  TEMPBIN         ! temp buffer
+        INTEGER     , INTENT(IN)  ::  MINNORH         ! min no of data points for avg RH by tempbin
 
 C.........  Local array
         REAL   :: TKPRO( 24 ) = 0.0 !  24hr temp. profile
@@ -129,7 +129,7 @@ C.........  Determine temperature bins based on PPTEMP
                 IT = IT + 1
                 DT = MX - MN
                 ST = MX + MN
-                WRITE( TPROID,94030 ) 'M', MYEAR, PMONTH, IT
+                WRITE( TPROID,94040 ) 'M', MYEAR, PMONTH, IT
 
                 TKPRO = 0.0
 C.................  Create 24 hr temp profile per temp bin
@@ -147,7 +147,7 @@ C.................  Output for SMOKE ready input file
 
 C.........  Output avg RH by temperature bins for RPD/RPV modes
 C.........  Fill empty temperature bins for RPD/RPV modes
-        NR = FIND1( COUNTY,NREFC, MCREFIDX( :,1 ) )
+        NR = FINDC( COUNTY,NREFC, MCREFIDX( :,1 ) )
         NF = PMONTH
         NT  = 0
         NTB = 0
@@ -207,16 +207,10 @@ C******************  FORMAT  STATEMENTS   ******************************
 
 C...........   Internal buffering formats............ 94xxx
 
-94010   FORMAT( 10( A, :, I6, :, 1X ) )
+94040   FORMAT( A, I4.4, I2.2, I4.4 )   
 
-94020   FORMAT( A, 4( 1X, F8.2, 1X, A ) )
+94050   FORMAT( A,',', I5,',', 3X, A, 26(',',F10.2) )   
 
-94030   FORMAT( A, I4.4, I2.2, I4.4 )   
-
-94040   FORMAT( I6.6, I5, 3X, A, 3F10.2 )   
-
-94050   FORMAT( I6.6,',', I5,',', 3X, A, 26(',',F10.2) )   
-
-94060   FORMAT( I6.6,',',I5,',',F12.6,',',F10.2,',',F10.2,',',I5 )   
+94060   FORMAT( A,',',I5,',',F12.6,',',F10.2,',',F10.2,',',I5 )   
  
         END SUBROUTINE WRTEMPROF

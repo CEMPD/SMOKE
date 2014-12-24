@@ -42,7 +42,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: AVGMIN, AVGMAX
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP
 
 C.........  This module is used for reference county information
         USE MODMBSET, ONLY: NINVC, MCREFSORT
@@ -58,12 +58,12 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
         INTEGER       GETFLINE
-        INTEGER       FIND1
+        INTEGER       FINDC
         INTEGER       STR2INT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
         
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FIND1, GETFLINE, 
+        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FINDC, FINDC, GETFLINE, 
      &           STR2INT, STR2REAL, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
@@ -79,7 +79,6 @@ C...........   Other local variables
         INTEGER         IOS         ! error status
         INTEGER      :: IREC = 0    ! record counter
         INTEGER         NLINES      ! number of lines
-        INTEGER         CNTY        ! current FIPS code
         INTEGER         MNTH        ! current calendar month
         INTEGER         JDATE       ! current Julian date
         INTEGER         MONTH       ! current calendar month
@@ -92,6 +91,7 @@ C...........   Other local variables
         LOGICAL      :: MONFLAG = .FALSE.   ! true: Monthly input
         LOGICAL      :: EFLAG   = .FALSE.   ! true: error found
 
+        CHARACTER(FIPLEN3) CFIP     ! current FIPS code
         CHARACTER(150)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
 
@@ -160,8 +160,9 @@ C.............  Convert county to integer
             END IF
 
 C.............  Find county in inventory list
-            CNTY = STR2INT( SEGMENT( 1 ) )
-            K = FIND1( CNTY, NINVIFIP, INVIFIP )
+            CFIP = ADJUSTR( SEGMENT( 1 ) )
+            CALL PADZERO( CFIP )
+            K = FINDC( CFIP, NINVIFIP, INVCFIP )
             
             IF( K .LE. 0 ) THEN
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line',

@@ -67,13 +67,11 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV             ! MRCLIST file unit no.
 
 C...........   Local allocatable arrays
-        INTEGER, ALLOCATABLE :: REFFIPA( : )     ! unsorted ref. county FIPs
-        INTEGER, ALLOCATABLE :: REFFIP( : )      ! sorted ref. county FIPs
-        
-        INTEGER, ALLOCATABLE :: IDX( : )         ! sorting index
-
-        CHARACTER(100), ALLOCATABLE :: FILESA( : )  ! unsorted files names
-        CHARACTER(100), ALLOCATABLE :: FILES( : )   ! sorted file names
+        INTEGER           , ALLOCATABLE :: IDX( : )     ! sorting index
+        INTEGER           , ALLOCATABLE :: REFFIPA( : ) ! unsorted ref. county FIPs
+        CHARACTER(FIPLEN3), ALLOCATABLE :: REFFIP( : )  ! sorted ref. county FIPs
+        CHARACTER(100)    , ALLOCATABLE :: FILESA( : )  ! unsorted files names
+        CHARACTER(100)    , ALLOCATABLE :: FILES( : )   ! sorted file names
         
         INTEGER, ALLOCATABLE :: MONTHA( : )      ! unsorted month numbers
         INTEGER, ALLOCATABLE :: MONTH( : )       ! sorted month numbers
@@ -212,7 +210,7 @@ C.........  Check for duplicate entries and store sorted filenames
         ALLOCATE( FILES( NLINES ), STAT=IOS )
         CALL CHECKMEM( IOS, 'FILES', PROGNAME )
         
-        REFFIP = 0
+        REFFIP = ' '
         MONTH = 0
         FILES = ' '
 
@@ -233,7 +231,7 @@ C.........  Check for duplicate entries and store sorted filenames
             END IF
 
             N = N + 1
-            REFFIP( N ) = REFFIPA( J )
+            WRITE( REFFIP( N ),'(I12.12)' ) REFFIPA( J )
             MONTH( N ) = MONTHA( J )
             FILES( N ) = FILESA( J )
         
@@ -249,7 +247,6 @@ C.........  Check for duplicate entries and store sorted filenames
 
         ALLOCATE( MRCLIST( NREFC,12 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MRCLIST', PROGNAME )
-        
         MRCLIST = ' '
 
 C.........  Check that each reference county has a factors file

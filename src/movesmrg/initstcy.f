@@ -39,7 +39,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: NMSRC, MIFIP,     ! no. of sources by category
+        USE MODMERGE, ONLY: NMSRC, MCFIP,     ! no. of sources by category
      &                      LREPSTA,          ! output state total emissions flag
      &                      LREPCNY,          ! output county total emissions flag
      &                      LREPSCC,          ! output SCC total emissions flag
@@ -54,13 +54,13 @@ C.........  This module contains the arrays for state and county summaries
         USE MODSTCY, ONLY: MICNY, NCOUNTY, CNTYCOD
 
 C...........   This module is the source inventory arrays
-        USE MODSOURC, ONLY: IFIP, CSCC
+        USE MODSOURC, ONLY: CIFIP, CSCC
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MISCC
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVIFIP, INVIFIP
+        USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVIFIP, INVCFIP
 
         IMPLICIT NONE
 
@@ -79,10 +79,11 @@ C...........   Other local variables
 
         INTEGER          IOS      ! i/o status
         INTEGER          J, K, S  ! counter
-        INTEGER          FIP      ! tmp cy/st/co code
-        INTEGER          PFIP     ! previous cy/st/co code
         
         LOGICAL, SAVE :: FIRSTIME = .TRUE. ! true: first time routine called
+
+        CHARACTER(FIPLEN3) CFIP      ! tmp cy/st/co code
+        CHARACTER(FIPLEN3) PFIP      ! previous cy/st/co code
 
         CHARACTER(300)   MESG     ! message buffer
 
@@ -100,25 +101,25 @@ C.............  Allocate memory for indices from Co/st/cy codes to counties
 C.............  Allocate memory for index from master list of SCCs to source SCC
             ALLOCATE( MISCC( NMSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'MISCC', PROGNAME )
-            ALLOCATE( MIFIP( NMSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'MIFIP', PROGNAME )
+            ALLOCATE( MCFIP( NMSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'MCFIP', PROGNAME )
     
 C.............  Create indices to counties from Co/st/cy codes and for SCCs
-            PFIP = -9
+            PFIP = ' ' 
             DO S = 1, NMSRC
             
-                FIP = IFIP( S )
+                CFIP = CIFIP( S )
                 
-                IF( FIP .NE. PFIP ) THEN
+                IF( CFIP .NE. PFIP ) THEN
                 
-                    J = MAX( FIND1( FIP, NCOUNTY, CNTYCOD ), 0 )
-                    K = MAX( FIND1( FIP, NINVIFIP,INVIFIP ), 0 )
-                    PFIP = FIP
+                    J = MAX( FINDC( CFIP, NCOUNTY, CNTYCOD ), 0 )
+                    K = MAX( FINDC( CFIP, NINVIFIP,INVCFIP ), 0 )
+                    PFIP = CFIP
                     
                 END IF
                 
                 MICNY( S ) = J
-                MIFIP( S ) = K 
+                MCFIP( S ) = K 
                 MISCC( S ) = MAX( FINDC( CSCC( S ), NINVSCC, INVSCC ), 0 )
                 
             END DO

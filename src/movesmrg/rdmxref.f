@@ -52,10 +52,10 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL        CHKINT
         INTEGER        GETFLINE
         INTEGER        STR2INT
-        INTEGER        FIND1
+        INTEGER        FINDC
         CHARACTER(2)   CRLF    
         
-        EXTERNAL  BLKORCMT, CHKINT, GETFLINE, STR2INT, FIND1, CRLF
+        EXTERNAL  BLKORCMT, CHKINT, GETFLINE, STR2INT, FINDC, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: MDEV             ! MCREF file unit no.
@@ -88,7 +88,8 @@ C...........   Other local variables
                 
         LOGICAL      :: DUPFLAG = .FALSE.   ! true: duplicate entries found
         LOGICAL      :: EFLAG   = .FALSE.   ! true: error found    
-        
+
+        CHARACTER(FIPLEN3) REFCNTY, INVCNTY, PRVCNTY
         CHARACTER(100)     LINE     !  line buffer
         CHARACTER(300)     MESG     !  message buffer
 
@@ -107,6 +108,7 @@ C.........  Allocate arrays that use NLINES as dimension (unsorted arrays and in
         CALL CHECKMEM( IOS, 'IDX', PROGNAME )
         
 C.........  Initialize arrays
+        IDX = 0
         MCREFRAW = 0.
         PICOUNTY = 0
         N = 0
@@ -173,7 +175,8 @@ C.............  Check if current inventory county is duplicate (match previous)
             IF( INVCOUNTY /= PICOUNTY ) THEN
  
 C.............  Check that current county is inside the grid (and in the inventory)
-                K = FIND1( INVCOUNTY, NCTY, GRIDCTY )
+                WRITE( INVCNTY,'(I12.12)' ) INVCOUNTY
+                K = FINDC( INVCNTY, NCTY, GRIDCTY )
 
                 IF( K > 0 ) N = N + 1
 
@@ -188,7 +191,7 @@ C.............  Check that current county is inside the grid (and in the invento
 C.........  Allocate arrays that use NINVC as dimension (sorted arrays and index)       
         ALLOCATE( MCREFSORT ( NINVC,2 ), STAT=IOS ) 
         CALL CHECKMEM( IOS, 'MCREFSORT', PROGNAME )
-        MCREFSORT = 0.
+        MCREFSORT = ' ' 
 
 C.........  Close MCREF file
         CLOSE( MDEV )
@@ -204,51 +207,49 @@ C.........  Sort MCREF index array by reference county
 
 C.........  Check for duplicate entries and counties outside grid,
 C           then store sorted MCREF array
-        PICOUNTY = 0
         N = 0
+        PRVCNTY = ' ' 
 
         DO I = 1, NLINES
             J = IDX( I )
             
-            REFCOUNTY = MCREFRAW( J,2 )
-            INVCOUNTY = MCREFRAW( J,1 )
+            WRITE( REFCNTY,'(I12.12)' )  MCREFRAW( J,2 )
+            WRITE( INVCNTY,'(I12.12)' )  MCREFRAW( J,1 )
 
 C.............  Skip any entries equal to zero due to blank lines
-            IF( REFCOUNTY == 0 .OR. INVCOUNTY == 0 ) CYCLE
+            IF( BLKORCMT( REFCNTY ) ) CYCLE
+            IF( BLKORCMT( INVCNTY ) ) CYCLE
 
 C.............  Check if current inventory county is duplicate (match previous)
-            IF( INVCOUNTY == PICOUNTY ) THEN
+            IF( INVCNTY == PRVCNTY ) THEN
  
                 DUPFLAG = .TRUE.
                 EFLAG   = .TRUE.
                 
-                WRITE( MESG,94010 ) 'ERROR: Duplicate entries in ' //
-     &                 'county cross-reference file for ' // CRLF() //
-     &                 BLANK10 // 'inventory county', INVCOUNTY,
-     &                 ', reference county', REFCOUNTY, '.'
+                MESG = 'ERROR: Duplicate entries in county ' //
+     &                 'cross-reference file for ' // CRLF() //
+     &                 BLANK10 // 'inventory county ' // INVCNTY
                 CALL M3MESG( MESG )
             ELSE
  
 C.............  Check that current county is inside the grid (and in the inventory)
-                K = FIND1( INVCOUNTY, NCTY, GRIDCTY )
+                K = FINDC( INVCNTY, NCTY, GRIDCTY )
                 
                 IF( K < 0 ) THEN
-                    WRITE( MESG,94010 ) 'WARNING: Ignoring county ' //
-     &                     'cross-reference for inventory county',
-     &                     INVCOUNTY, ',' // CRLF() // BLANK10 // 
-     &                     ' since it is not inside the grid'
+                    MESG = 'WARNING: Ignoring county cross-reference ' //
+     &                     'for inventory county ' // INVCNTY // ' , ' //
+     &                     CRLF() // BLANK10 // ' since it is not inside the grid'
                     CALL M3MESG( MESG )
                     
                 ELSE    
                     N = N + 1
-        
-                    MCREFSORT( N,1 ) = INVCOUNTY
-                    MCREFSORT( N,2 ) = REFCOUNTY
+                    MCREFSORT( N,1 ) = INVCNTY
+                    MCREFSORT( N,2 ) = REFCNTY
                 END IF
                 
             END IF
             
-            PICOUNTY = INVCOUNTY
+            PRVCNTY = INVCNTY
             
         END DO
 
@@ -265,16 +266,16 @@ C.............  Check that current county is inside the grid (and in the invento
         END IF
 
 C.........  Count total number of reference counties
-        PRCOUNTY = 0
+        PRVCNTY = ' '
 
         DO I = 1, NINVC
-            REFCOUNTY = MCREFSORT( I,2 )
+            REFCNTY = MCREFSORT( I,2 )
             
-            IF( REFCOUNTY /= PRCOUNTY ) THEN
+            IF( REFCNTY /= PRVCNTY ) THEN
                NREF = NREF + 1
             END IF
             
-            PRCOUNTY = REFCOUNTY
+            PRVCNTY = REFCNTY
                
         END DO
 
@@ -283,21 +284,21 @@ C.........  Count total number of reference counties
 C.........  Create reference county index array
         ALLOCATE( MCREFIDX ( NREFC,2 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MCREFIDX', PROGNAME )
-        
-        PRCOUNTY = 0
+        MCREFIDX = ' ' 
+ 
         N = 0
+        PRVCNTY = ' '
         
         DO I = 1, NINVC
-            REFCOUNTY = MCREFSORT( I,2 )
+            REFCNTY = MCREFSORT( I,2 )
             
-            IF( REFCOUNTY /= PRCOUNTY ) THEN
+            IF( REFCNTY /= PRVCNTY ) THEN
                 N = N + 1
- 
-                MCREFIDX( N,1 ) = REFCOUNTY
-                MCREFIDX( N,2 ) = I
+                MCREFIDX( N,1 ) = REFCNTY
+                WRITE( MCREFIDX( N,2 ),'(I8)' ) I
             END IF
             
-            PRCOUNTY = REFCOUNTY
+            PRVCNTY = REFCNTY
         END DO
 
 C.........  Deallocate local memory

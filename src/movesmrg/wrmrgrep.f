@@ -63,16 +63,16 @@ C...........   INCLUDES:
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         
         CHARACTER(2)    CRLF
-        INTEGER         ENVINT  
+        INTEGER         ENVINT, STR2INT
         INTEGER         INDEX1  
-        INTEGER         FIND1  
+        INTEGER         FINDC
         CHARACTER(14)   MMDDYY
         INTEGER         WKDAY
         REAL            YR2DAY
         CHARACTER(16)   MULTUNIT
 
         EXTERNAL    CRLF, ENVINT, INDEX1, MMDDYY, WKDAY, YR2DAY,
-     &              MULTUNIT, FIND1
+     &              MULTUNIT, FINDC, STR2INT
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: JDATE  ! julian date  (YYYYDDD)
@@ -87,8 +87,6 @@ C...........   Other local variables
         INTEGER          C, F, I, J, K, L, L2, N, V  ! counters and indices
         INTEGER          SRC, STAIDX, CNTYIDX, SCCIDX
         INTEGER          IOS            ! i/o status
-        INTEGER          PSTATE         ! previous state
-        INTEGER          STATE          ! current state
         INTEGER, SAVE :: MAXCYWID       ! max width of county names
         INTEGER, SAVE :: MAXSTWID       ! max width of state names
         INTEGER, SAVE :: MAXSCCWID      ! max width of SCCs
@@ -103,6 +101,8 @@ C...........   Other local variables
  
         LOGICAL, SAVE :: FIRSTIME= .TRUE. ! true: first time routine called
 
+        CHARACTER(FIPLEN3) CSTA       ! current country/state
+        CHARACTER(FIPLEN3) PSTA       ! prev country/state
         CHARACTER(3000)    DATFMT     ! format for data
         CHARACTER(3000)    HDRFMT     ! format for header
         CHARACTER(3000)    HEADER     ! header for output files
@@ -190,18 +190,17 @@ C.........  Do not report if this time is not appropriate
         IF( JTIME .NE. REPTIME ) RETURN 
 
 C.............  Create totals as needed
-        PSTATE = -9
+        PSTA = ' '
         STAIDX = 0
         DO SRC = 1, NMSRC
         
             CNTYIDX = MICNY( SRC )
             SCCIDX  = MISCC( SRC )
-        
-            STATE = CNTYCOD( CNTYIDX ) / 1000
-            STATE = STATE * 1000
-            IF( STATE .NE. PSTATE ) THEN
-                STAIDX = MAX( FIND1( STATE, NSTATE, STATCOD ), 0 )
-                PSTATE = STATE
+
+            CSTA = CNTYCOD( CNTYIDX )( 1:STALEN3 ) // '000'
+            IF( CSTA .NE. PSTA ) THEN
+                STAIDX = MAX( FINDC( CSTA, NSTATE, STATCOD ), 0 )
+                PSTA = CSTA 
             END IF
 
             DO J = 1, NMSPC+NIPPA
@@ -456,8 +455,8 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(7)  :: CDATE
-            CHARACTER(18) :: HDRBUF  = '#'
-            CHARACTER(18) :: STLABEL = '# Date ; SCC      '
+            CHARACTER(28) :: HDRBUF  = '#'
+            CHARACTER(28) :: STLABEL = '# Date ; SCC                '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -620,9 +619,9 @@ C.............  Local variables
             REAL          VAL
 
             CHARACTER(7)  :: CDATE
-            CHARACTER(39) :: HDRBUF  = '#'
-            CHARACTER(39) :: STLABEL='# Date ; State              '
-     &                           //'; SCC      '
+            CHARACTER(49) :: HDRBUF  = '#'
+            CHARACTER(49) :: STLABEL='# Date ; State              '
+     &                           //'; SCC                '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -700,13 +699,12 @@ C.............  Arrays allocated by subprogram argument
 
 C.............  Local variables
             INTEGER       I, J, L, L1, L2, N
-            INTEGER       PSTA, STA
 
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
-            CHARACTER(56) :: HDRBUF  = '#'
-            CHARACTER(56) :: STLABEL = '# Date ; FIPS ; State              '
+            CHARACTER(62) :: HDRBUF  = '#'
+            CHARACTER(62) :: STLABEL = '# Date ; FIPS       ; State              '
      &                           //'; County              '
             CHARACTER(30)    BUFFER
 
@@ -746,19 +744,18 @@ C.............  Write line
 c            WRITE( FDEV, '(A)' ) LINFLD( 1:L2 )
 
 C.............  Write county total emissions
-            PSTA = -9
+            PSTA = ' '
             N = 0
             DO I = 1, NC
 
-                STA = CNTYCOD( I ) / 1000
-                STA = STA * 1000
-                IF( STA .NE. PSTA ) THEN
-                    N = MAX( FIND1( STA, NSTATE, STATCOD ), 0 ) 
-                    PSTA = STA
+                CSTA = CNTYCOD( I )( 1:STALEN3 ) // '000'
+                IF( CSTA .NE. PSTA ) THEN
+                    N = MAX( FINDC( CSTA, NSTATE, STATCOD ), 0 ) 
+                    PSTA = CSTA
                 END IF
 
 C.................  Write out county name and converted emissions
-                WRITE( CDATFIP, '(I7.7,";",I6.6)' ) JDATE, CNTYCOD( I )
+                WRITE( CDATFIP, '(I7.7,";",A)' ) JDATE, CNTYCOD( I )
 
 C.................  Build output format depending on data values
                 CALL DYNAMIC_FORMATS( NC, NDIM, I, CY_EMIS,
@@ -795,14 +792,13 @@ C.............  Arrays allocated by subprogram argument
 
 C.............  Local variables
             INTEGER       I, J, L, L1, L2, N
-            INTEGER       PSTA, STA
 
             REAL          VAL
 
             CHARACTER(FIPLEN3+8) CDATFIP
-            CHARACTER(67) :: HDRBUF  = '#'
-            CHARACTER(67) :: STLABEL = '# Date ; FIPS ; State              '
-     &                           //'; County             ; SCC      '
+            CHARACTER(83) :: HDRBUF  = '#'
+            CHARACTER(83) :: STLABEL = '# Date ; FIPS       ; State              '
+     &                           //'; County             ; SCC                '
             CHARACTER(30)    BUFFER
 
 C..............................................................................
@@ -834,19 +830,18 @@ C.............  Write column labels
      &                            ( OUTNAMS( J ), J=1, NDIM )
 
 C.............  Write county total emissions
-            PSTA = -9
+            PSTA = ' '
             N = 0
             DO I = 1, NSRC
 
-                STA = CNTYCOD( MICNY( I ) ) / 1000
-                STA = STA * 1000
-                IF( STA .NE. PSTA ) THEN
-                    N = MAX( FIND1( STA, NSTATE, STATCOD ),0 )
-                    PSTA = STA
+                CSTA = CNTYCOD( MICNY( I ) )( 1:STALEN3 ) // '000' 
+                IF( CSTA .NE. PSTA ) THEN
+                    N = MAX( FINDC( CSTA, NSTATE, STATCOD ),0 )
+                    PSTA = CSTA
                 END IF
 
 C.................  Write out county name and converted emissions
-                WRITE( CDATFIP, '(I7.7,";",I6.6)' ) JDATE, CNTYCOD( MICNY( I ) )
+                WRITE( CDATFIP, '(I7.7,";",A)' ) JDATE, CNTYCOD( MICNY( I ) )
 
 C.................  Build output format depending on data values
                 CALL DYNAMIC_FORMATS( NSRC, NDIM, I, SRC_EMIS,

@@ -85,8 +85,8 @@ C...........   INCLUDES:
         INTEGER         INDEX1
         LOGICAL         INTLIST
         LOGICAL         ISDSTIME 
-        INTEGER         FIND1
-        INTEGER         FIND1FIRST
+        INTEGER         FINDC
+        INTEGER         FINDCFIRST
         CHARACTER(14)   MMDDYY
         INTEGER         PROMPTFFILE
         CHARACTER(16)   PROMPTMFILE
@@ -96,10 +96,10 @@ C...........   INCLUDES:
         INTEGER         STR2INT
         LOGICAL         ENVYN 
         
-        EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FIND1
+        EXTERNAL     CRLF, DSCM3GRD, GETIFDSC, GETFLINE, ENVINT, FINDC,
      &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE, 
      &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, ISDSTIME,
-     &               FIND1FIRST, STR2INT, BLKORCMT, ENVYN
+     &               FINDCFIRST, STR2INT, BLKORCMT, ENVYN
         
 C...........   LOCAL PARAMETERS
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -123,14 +123,14 @@ C...........  Allocatable per-source arrays
         INTEGER, ALLOCATABLE :: DAYBEGT  ( : ) ! daily start time HHMMSS
         INTEGER, ALLOCATABLE :: DAYENDT  ( : ) ! daily end time HHMMSS
         LOGICAL, ALLOCATABLE :: LDAYSAV  ( : ) ! true: src uses daylight time
-        INTEGER, ALLOCATABLE :: CNTYSRC  ( : ) ! FIPS code and averaging values
         INTEGER, ALLOCATABLE :: TZONES   ( : ) ! county-specific time zones
         INTEGER                 SRGIDS  ( MXVAR ) ! listing of surrogates
 
 C...........  Allocatable arrays for met data
         INTEGER, ALLOCATABLE :: METDAYS( : ) ! dimension: nsteps in episode, 
                                              ! value indicates which met data file covers that hour
-        CHARACTER(256), ALLOCATABLE :: METLIST( : ) ! listing of met file names
+        CHARACTER(256),     ALLOCATABLE :: METLIST( : ) ! listing of met file names
+        CHARACTER(FIPLEN3), ALLOCATABLE :: CNTYSRC( : ) ! FIPS code and averaging values
 
 C...........   File units and logical names:
         INTEGER      ADEV  ! unit number for county fuelmonth file
@@ -175,7 +175,6 @@ C...........   Other local variables:
         INTEGER    DAY         ! tmp day of week number
         INTEGER    EDATE       ! ending input date counter (YYYYDDD) in GMT
         INTEGER    ETIME       ! ending input time counter (HHMMSS)  in GMT
-        INTEGER    FIP         ! tmp inventory county
         INTEGER    FILENUM     ! file number of current meteorology file
         INTEGER    IOS         ! temporary I/O status
         INTEGER    HOURIDX     ! current hour of the day
@@ -208,8 +207,6 @@ C...........   Other local variables:
         INTEGER    PDTEMP      ! temp increment for rateperdistance lookup table
         INTEGER    PVTEMP      ! temp increment for ratepervehicle lookup table
         INTEGER    PPTEMP      ! temp increment for rateperprofile lookup table
-        INTEGER    REFCOUNTY   ! ref. county FIPS code
-        INTEGER    INVCOUNTY   ! inv. county FIPS code
         INTEGER    RDATE       ! date to read met file
         INTEGER    SDATE       ! output start date
         INTEGER    STIME       ! output start time
@@ -234,6 +231,10 @@ C...........   Other local variables:
         LOGICAL :: FILEOPEN = .FALSE.  !  true: met file is open
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
+
+        CHARACTER(FIPLEN3) CFIP        ! tmp inventory county
+        CHARACTER(FIPLEN3) REFCOUNTY   ! tmp ref. county
+        CHARACTER(FIPLEN3) INVCOUNTY   ! tmp inv. county
 
         CHARACTER(16)      COORUNIT    !  coordinate system projection units
         CHARACTER(80)      GDESC       !  grid description
@@ -481,11 +482,11 @@ C.........  Allocate arrays for county time zone
 
 C.........  Assign time zone to inventory counties
         DO I = 1, NSRC
-            FIP = MCREFSORT( I,1 )
-            J = FIND1( FIP, NCOUNTY, CNTYCOD )
+            CFIP = MCREFSORT( I,1 )
+            J = FINDC( CFIP, NCOUNTY, CNTYCOD )
             IF( J < 1 ) THEN
                 WRITE( MESG,94010 ) 'ERROR: Could not find time zone '//
-     &               'for county :', FIP, ' from COSTCY file' 
+     &               'for county :' // CFIP // ' from COSTCY file' 
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ELSE
                 TZONES( I ) = CNTYTZON( J )
@@ -721,7 +722,7 @@ C.............  Skip to start of next day
 C.........  Get the info of counties
         ALLOCATE( CNTYSRC( NSRC ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CNTYSRC', PROGNAME )
-        CNTYSRC = 0
+        CNTYSRC = ' ' 
         
 C.........  Assign inventory counties to new array
         CNTYSRC( : ) = MCREFSORT( :, 1 )
@@ -1011,7 +1012,7 @@ C.....................  retreive inv/ref counties
                     INVCOUNTY = MCREFSORT( S,1 )
                     REFCOUNTY = MCREFSORT( S,2 )
 
-                    NS = FIND1( INVCOUNTY, NSRGFIPS, SRGFIPS )
+                    NS = FINDC( INVCOUNTY, NSRGFIPS, SRGFIPS )
 
                     IF( NS < 1 ) CYCLE
 
@@ -1087,16 +1088,16 @@ C...........  Compute ref county min/max temperatures per fuel month
             REFCOUNTY = MCREFIDX( NR,1 )
 
 C.............  Choose month-specific fulemonth county
-            L = FIND1FIRST( REFCOUNTY, NREFF,  FMREFSORT( :,1 ) )
-            K = FIND1FIRST( REFCOUNTY, NFUELC, FMREFLIST( :,1 ) )
+            L = FINDCFIRST( REFCOUNTY, NREFF,  FMREFSORT( :,1 ) )
+            K = FINDCFIRST( REFCOUNTY, NFUELC, FMREFLIST( :,1 ) )
 
             IF( L < 0 .OR. K < 0 ) THEN
-                WRITE( MESG,94010 ) 'ERROR: FUELMONTH input' //
-     &              'file MUST contain reference county ', REFCOUNTY
+                MESG = 'ERROR: Fuel month input file MUST contain '
+     &                 // 'reference county: ' //  REFCOUNTY
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             END IF
            
-            NMON = FMREFLIST( K, 2 )   ! no month available per ref county
+            NMON = STR2INT( FMREFLIST( K, 2 ) )  ! no month available per ref county
 
 C.............  Loop over months per ref. county
             N = 0
@@ -1105,8 +1106,8 @@ C.............  Loop over months per ref. county
 
             DO J = L, L + NMON - 1
 
-                FUELMONTH = FMREFSORT( J,2 )    ! processing fuelmonth/county
-                CURMONTH  = FMREFSORT( J,3 )    ! processing current month per ref. county
+                FUELMONTH = STR2INT( FMREFSORT( J,2 ) )    ! processing fuelmonth/county
+                CURMONTH  = STR2INT( FMREFSORT( J,3 ) )   ! processing current month per ref. county
 
                 IF( CURMONTH <  SMONTH ) CYCLE
                 IF( CURMONTH >  EMONTH ) CYCLE
@@ -1233,26 +1234,26 @@ C                       gridding surrogates do not contain data for all counties
                 MAXTEMP = MAXTSRC( S )
                 MINTEMP = MINTSRC( S )
 
-                L = FIND1FIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
-                K = FIND1FIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
-                NMON = FMREFLIST( K, 2 )   ! no month of ref county
+                L = FINDCFIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
+                K = FINDCFIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
+                NMON = STR2INT( FMREFLIST( K, 2 ) )   ! no month of ref county
 
 C.................  Loop over months per ref. county
                 FUELMONTH = 0
                 DO J = L, L + NMON - 1
-                    CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. county
-                    IF( CURMONTH == MONTH ) FUELMONTH = FMREFSORT( J,2 )  ! processing fuelmonth/county
+                    CURMONTH  = STR2INT( FMREFSORT( J,3 ) )    ! processing  current month per ref. county
+                    IF( CURMONTH == MONTH ) FUELMONTH = STR2INT( FMREFSORT( J,2 ) )  ! processing fuelmonth/county
                 END DO
 
                 IF( FUELMONTH == 0 ) THEN
-                    WRITE( MESG,94010 ) 'ERROR: Could not find a '//
-     &                  'fuel month for reference county ',REFCOUNTY
+                    WRITE( MESG,94010 ) 'ERROR: Could not find fuel month "',
+     &                  MONTH, ' for reference county ' // REFCOUNTY
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ENDIF
 
 C.................  Calculation monthly fuel month max/min temp and avg RH
 C                   per ref. county
-                NR = FIND1( REFCOUNTY,NREFC, MCREFIDX( :,1 ) )
+                NR = FINDC( REFCOUNTY,NREFC, MCREFIDX( :,1 ) )
                 NF = FUELMONTH 
 
                 FUELCNTY( NR,NF ) = FUELCNTY( NR,NF ) + 1

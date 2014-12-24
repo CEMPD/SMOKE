@@ -52,12 +52,12 @@ C...........   INCLUDES:
         INCLUDE 'PARMS3.EXT'    !  I/O API parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:        
-        INTEGER      FIND1
-        EXTERNAL     FIND1
+        INTEGER      FINDC
+        EXTERNAL     FINDC
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSRC             ! no. sources
-        INTEGER     , INTENT (IN) :: CNTY( NSRC  )    ! no. counties
+        CHARACTER(*), INTENT (IN) :: CNTY( NSRC  )    ! no. counties
         REAL        , INTENT (IN) :: VAL( * )         ! gridded data
         REAL        , INTENT(OUT) :: VALBYSRC( NSRC ) ! ungridded data
         LOGICAL     , INTENT (IN) :: TFLAG            ! processing temp. variable
@@ -79,7 +79,7 @@ C.........  Apply ungridding matrix from a (possible) subgrid to data on base
 C           grid.  If no subgrid, then XOFF and YOFF will be 1 and no problem.
         DO S = 1, NSRC
 
-            L = FIND1( CNTY( S ), NSRGFIPS, SRGFIPS )
+            L = FINDC( CNTY( S ), NSRGFIPS, SRGFIPS )
 
             IF( L < 1 ) CYCLE
             

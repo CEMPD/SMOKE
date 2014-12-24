@@ -127,7 +127,7 @@ C           on the group (XTYPE) and the position in that group (XTCNT)
             J      = INDXTA( I )
             CSRC   = CSRCTA( J )
             TSCC   = CSCCTA( J )
-            
+ 
             IF( ALLOCATED( CMACTA ) ) THEN
                 CMCT = CMACTA( J )
             ELSE

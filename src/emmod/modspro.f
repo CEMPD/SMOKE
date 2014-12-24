@@ -120,7 +120,7 @@
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: CNVRT04( : )
 
 !.........  Parameter and arrays for the GSPRO_COMBO file
-!.........  These arrays work with the INVIFIP array in MODLISTS
+!.........  These arrays work with the INVCFIP array in MODLISTS
         INTEGER, PARAMETER, PUBLIC :: CMBMAX = 10
 
         INTEGER,            ALLOCATABLE, PUBLIC :: CMBNP( : )

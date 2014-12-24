@@ -356,6 +356,7 @@
 
 !.........  INPUT ARRAYS ...
 !.........  Country/State/County codes
+        INTEGER,            ALLOCATABLE, PUBLIC :: MCFIP( : ) ! mobile code idex for Movesmrg
         CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: AIFIP( : ) ! area codes, dim: nasrc
         CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: MIFIP( : ) ! mobile codes, dim: nmsrc
         CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: PIFIP( : ) ! point codes, dim: npsrc

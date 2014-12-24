@@ -57,17 +57,17 @@ C...........   INCLUDES
 
 C...........   EXTERNAL FUNCTIONS
         CHARACTER(2) CRLF
-        INTEGER      ENVINT
+        INTEGER      ENVINT, STR2INT
         LOGICAL      ISDSTIME
         REAL         CALCRELHUM
-        INTEGER      FIND1
-        INTEGER      FIND1FIRST
+        INTEGER      FINDC
+        INTEGER      FINDCFIRST
 
-        EXTERNAL     CRLF, ENVINT, ISDSTIME, CALCRELHUM, FIND1, FIND1FIRST
+        EXTERNAL     CRLF, ENVINT, ISDSTIME, CALCRELHUM, FINDC, FINDCFIRST, STR2INT
                 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER,      INTENT    (IN) :: NSRC                  ! no. sources
-        INTEGER,      INTENT    (IN) :: CNTYSRC( NSRC )       ! no. counties
+        CHARACTER(*), INTENT    (IN) :: CNTYSRC( NSRC )       ! no. counties
         REAL   ,      INTENT    (IN) :: TA( * )               ! gridded temp data
         REAL   ,      INTENT    (IN) :: QV( * )               ! gridded mixing ratio data
         REAL   ,      INTENT    (IN) :: PRES( * )             ! gridded pressure data
@@ -82,7 +82,6 @@ C...........   Other local variables
         INTEGER     C, K, L, LL, N, S, I, J, NR, NF, NT, T       ! counters and indices
         INTEGER     IOS         ! I/O status
         INTEGER     MONTH,DAY   ! processing month and date
-        INTEGER     REFCOUNTY   ! ref. county FIPS code
         INTEGER     TIMESLOT    ! array location
         INTEGER     CURMONTH, NMON
         
@@ -97,6 +96,8 @@ C...........   Other local variables
 
         LOGICAL       :: DAYLIT  = .FALSE.  ! true: date is daylight savings
         LOGICAL, SAVE :: INITIAL = .TRUE.   ! true: first time
+
+        CHARACTER(FIPLEN3) REFCOUNTY ! current ref. county
 
         CHARACTER(300)     BUFFER    ! formatted source info for messages
         CHARACTER(300)     MESG      ! message buffer
@@ -125,7 +126,7 @@ C.........  Loop through sources
 
 C.........  Apply ungridding matrix from a (possible) subgrid to data on base 
 C           grid.  If no subgrid, then XOFF and YOFF will be 1 and no problem.
-            LL = FIND1( CNTYSRC( S ), NSRGFIPS, SRGFIPS )
+            LL = FINDC( CNTYSRC( S ), NSRGFIPS, SRGFIPS )
 
             IF( LL < 1 ) CYCLE
 
@@ -174,16 +175,16 @@ C.................  Store RH into temperature bins
                     IF ( MINTMP < TEMPTMP .AND. TEMPTMP <= MAXTMP ) THEN
 
                         REFCOUNTY = MCREFSORT( S,2 )
-                        NR = FIND1( REFCOUNTY,NREFC, MCREFIDX( :,1 ) )
+                        NR = FINDC( REFCOUNTY,NREFC, MCREFIDX( :,1 ) )
 
-                        L = FIND1FIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
-                        K = FIND1FIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
-                        NMON = FMREFLIST( K, 2 )   ! no month of ref county
+                        L = FINDCFIRST( REFCOUNTY, NREFF, FMREFSORT( :,1 ) )
+                        K = FINDCFIRST( REFCOUNTY, NFUELC,FMREFLIST( :,1 ) )
+                        NMON = STR2INT( FMREFLIST( K, 2 ) )   ! no month of ref county
 
 C.........................  Loop over months per ref. county
                         DO J = L, L + NMON - 1
-                           CURMONTH  = FMREFSORT( J,3 )    ! processing  current month per ref. cou
-                           IF( CURMONTH == MONTH ) NF = FMREFSORT( J,2 )  ! processing fuelmonth/co
+                           CURMONTH  = STR2INT( FMREFSORT( J,3 ) )   ! processing  current month per ref. cou
+                           IF( CURMONTH == MONTH ) NF = STR2INT( FMREFSORT( J,2 ) )  ! processing fuelmonth/co
                         END DO
 
                         RHTBIN ( NR,NF,NT ) = RHTBIN ( NR,NF,NT )  + RHVAL

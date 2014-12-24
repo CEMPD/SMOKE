@@ -45,7 +45,7 @@ C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: CFPRO, EXPCFFLAG, REFCFFLAG
 
 C.........  This module contains the lists of unique source characteristics
-        USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
+        USE MODLISTS, ONLY: NINVIFIP, INVCFIP, NINVSCC, INVSCC
 
 C.........  This module is used for reference county information
         USE MODMBSET, ONLY: NREFC, MCREFIDX, NINVC, MCREFSORT
@@ -63,14 +63,13 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       CHKREAL
         INTEGER       GETFLINE
         INTEGER       INDEX1
-        INTEGER       FIND1
         INTEGER       FINDC
         INTEGER       STR2INT
         INTEGER       ENVINT
         REAL          STR2REAL
         CHARACTER(2)  CRLF
         
-        EXTERNAL BLKORCMT, CHKINT, CHKREAL, FIND1, GETFLINE, 
+        EXTERNAL BLKORCMT, CHKINT, CHKREAL, GETFLINE, 
      &           STR2INT, STR2REAL, CRLF, INDEX1, ENVINT
 
 C...........   SUBROUTINE ARGUMENTS
@@ -93,7 +92,6 @@ C...........   Other local variables
         INTEGER         SPCIDX      ! current species index
         INTEGER         SCCIDX      ! current scc index
         INTEGER         NLINES      ! number of lines
-        INTEGER         CNTY        ! current FIPS code
         INTEGER         MON         ! current Month
         INTEGER         MXWARN      !  maximum number of warnings
         INTEGER      :: NWARN = 0   !  current number of warnings
@@ -108,6 +106,7 @@ C...........   Other local variables
 
         CHARACTER(500)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
+        CHARACTER(FIPLEN3) CFIP     ! current FIPS
         CHARACTER(SCCLEN3) SCC      ! current SCC
         CHARACTER(IOVLEN3) POLNAM, SPCNAM  ! current pollutant-species name 
 
@@ -182,9 +181,10 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
                     NLFIPS(J) = J
                 END DO
 
-            ELSE         ! FIPS is integer value 
-                CNTY = STR2INT( SEGMENT( 1 ) )
-                L1 = FIND1( CNTY, NINVIFIP, INVIFIP )
+            ELSE         ! FIPS is integer value
+                CFIP = ADJUSTR( SEGMENT( 1 ) )
+                CALL PADZERO( CFIP )
+                L1 = FINDC( CFIP, NINVIFIP, INVCFIP )
 
                 IF( L1 > 0 ) THEN 
                     NFIPS = 1
@@ -192,19 +192,19 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
 
 C.....................  Propagate reference-county-specific control factor to inventory counties.
                     IF( REFCFFLAG ) THEN
-                        L2 = FIND1( CNTY, NREFC, MCREFIDX( :,1 ) )
+                        L2 = FINDC( CFIP, NREFC, MCREFIDX( :,1 ) )
                         IF( L2 < 1 ) THEN
-                            WRITE( MESG, 94010 ) 'WARNING: Skipping line',
-     &                          IREC, ' of control factor file because FIPS code ',
-     &                          CNTY, ' is not a reference county'
+                            WRITE( MESG, 94010 ) 'WARNING: Skipping line', IREC,
+     &                          ' of control factor file because FIPS code ' //
+     &                          CFIP // ' is not a reference county'
                             CALL M3MESG( MESG )
                             CYCLE
                         END IF
 
 C.........................  find ref county and apply CF to ref-inventory counties
                         DO J = 1, NINVC
-                            IF( CNTY == MCREFSORT( J,2 ) ) THEN  ! found matched ref county
-                                L1 = FIND1( MCREFSORT( J,1 ), NINVIFIP, INVIFIP )
+                            IF( CFIP == MCREFSORT( J,2 ) ) THEN  ! found matched ref county
+                                L1 = FINDC( MCREFSORT( J,1 ), NINVIFIP, INVCFIP )
                                 IF( L1 > 0 ) THEN
                                     K = K + 1
                                     NLFIPS( K ) = L1
@@ -216,19 +216,17 @@ C.........................  find ref county and apply CF to ref-inventory counti
                 ELSE     ! FIPS is country/state  
 
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
-                    IF( MOD( CNTY,1000 ) /= 0 ) THEN
+                    IF( CFIP( 18:20 ) /= '000' ) THEN
                         WRITE( MESG, 94010 ) 'NOTE: Skipping line',
      &                  IREC, ' of control factor file because FIPS code '
      &                   //TRIM(SEGMENT(1))//' is not listed in the inventory'
                         CALL M3MESG( MESG )
                         CYCLE
-                    END IF
-
-                    CNTY = CNTY/1000     ! Convert to State ID
-                    DO J = 1, NINVIFIP 
-                        IF( CNTY == INVIFIP(J)/1000 ) THEN
-                            K = K+1
-                            NLFIPS(K) = J
+                    ELSE
+                        DO J = 1, NINVIFIP 
+                            IF( CFIP(16:17) == INVCFIP(J)(16:17) ) THEN
+                            K = K + 1
+                            NLFIPS( K ) = J
                         END IF
                     END DO
                     NFIPS = K
@@ -236,11 +234,12 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
                 END IF
 
             END IF
+            END IF
 
             IF( NFIPS == 0 ) THEN
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line', 
      &            IREC, ' of control factor file because FIPS code '
-     &            //TRIM(SEGMENT(1))//' is not listed in the inventory'
+     &            // CFIP //' is not listed in the inventory'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -249,13 +248,14 @@ C.............  Find SCC in inventory list
             K = 0 
 
             IF( SEGMENT( 2 ) == ' ' .OR. 
-     &          SEGMENT( 2 ) == '0000000000' ) THEN 
+     &          SEGMENT( 2 ) == '00000000000000000000' ) THEN 
                 NSCCS = NINVSCC
                 DO J = 1, NINVSCC
                     NLSCCS(J) = J
                 END DO
             ELSE
-                SCC = ADJUSTL( SEGMENT( 2 ) )
+                SCC = ADJUSTR( SEGMENT( 2 ) )
+                CALL PADZERO( SCC )
                 SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
                 IF( SCCIDX .LE. 0 ) THEN
                     WRITE( MESG, 94010 ) 'NOTE: Skipping ' //
@@ -369,7 +369,7 @@ C.............  check and get up control factor values
                     OLDVAL = CFPRO(NLFIPS(L), NLSCCS(J), NLPOLS(K), NLMONS(M))
                     WRITE( MESG, 94050 ) 'ERROR: Duplicate entry at line',
      &                  IREC,': Previous factor:', OLDVAL, ' vs New factor:', CFVAL,
-     &                  CRLF() // BLANK10 // ' FIPS:', INVIFIP(NLFIPS(L)), 
+     &                  CRLF() // BLANK10 // ' FIPS:' // INVCFIP(NLFIPS(L)) // 
      &                  ', SCC: ', INVSCC(NLSCCS(J)), ', POLL: ',
      &                  TRIM( EANAM(NLPOLS(K))), ', MONTH: ', NLMONS(M)
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 ) 

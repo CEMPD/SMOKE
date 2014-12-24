@@ -38,13 +38,14 @@
 
         IMPLICIT NONE
 
+        INCLUDE 'EMPRVT3.EXT'
+
 !.........  Arrays for storing file information
-        INTEGER, ALLOCATABLE, PUBLIC :: MCREFSORT ( :,: ) ! sorted MCREF data  
-        INTEGER, ALLOCATABLE, PUBLIC :: MCREFIDX ( :,: )  ! index into MCREF by ref. county
-        
-        INTEGER, ALLOCATABLE, PUBLIC :: MVREFSORT ( :,: ) ! sorted MVREF data
-        INTEGER, ALLOCATABLE, PUBLIC :: FMREFSORT ( :,: ) ! sorted FUELMONTH data
-        INTEGER, ALLOCATABLE, PUBLIC :: FMREFLIST ( :,: ) ! sorted FUELMONTH ref county 
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: MCREFSORT ( :,: ) ! sorted MCREF data  
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: MCREFIDX  ( :,: ) ! index into MCREF by ref. county
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: MVREFSORT ( :,: ) ! sorted MVREF data
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: FMREFLIST ( :,: ) ! sorted FUELMONTH ref county 
+        CHARACTER(FIPLEN3), ALLOCATABLE, PUBLIC :: FMREFSORT ( :,: ) ! sorted FUELMONTH data
         
         INTEGER, PUBLIC :: NREFF           ! no. of fuel month entries
         INTEGER, PUBLIC :: NFUELC          ! no. of unique counties in fuelmonth

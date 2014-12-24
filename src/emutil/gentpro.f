@@ -98,7 +98,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(16)   PROMPTMFILE
         CHARACTER(16)   VERCHAR
         INTEGER         ENVINT
-        INTEGER         FIND1
+        INTEGER         FIND1, FINDC
         INTEGER         FIND1FIRST
         INTEGER         GETIFDSC
         INTEGER         GETFLINE
@@ -122,7 +122,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
      &               ENVREAL, INDEX1, MMDDYY, PROMPTFFILE, PROMPTMFILE,
      &               SECSDIFF, SETENVVAR, WKDAY, GETEFILE, INTLIST, 
      &               FIND1FIRST, STRLIST, STR2INT, BLKORCMT, VERCHAR,
-     &               YR2DAY, ENVYN, STR2REAL
+     &               YR2DAY, ENVYN, STR2REAL, FINDC
 
 C.....  Define temporal profile type constants for enumeration
         CHARACTER(50), PARAMETER :: CVSW = '$Name$' ! CVS release tag
@@ -165,10 +165,10 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: MATCHED ( :,:,: )  ! FIPS/SCC/POL matched source
 
 C...........  character arrays
-        CHARACTER(16)                  SEGMENT( MXSEG )
-        CHARACTER(256), ALLOCATABLE :: METLIST( : )       ! listing of met file names
-        CHARACTER(10) , ALLOCATABLE :: SCCLIST( : )       ! listing of SCCs
-        CHARACTER(256), ALLOCATABLE :: CSCCFIP( : )       ! tmp FIPS/SCC x-ref entries
+        CHARACTER(16)                      SEGMENT( MXSEG )
+        CHARACTER(256)    , ALLOCATABLE :: METLIST( : )       ! listing of met file names
+        CHARACTER(SCCLEN3), ALLOCATABLE :: SCCLIST( : )       ! listing of SCCs
+        CHARACTER(256)    , ALLOCATABLE :: CSCCFIP( : )       ! tmp FIPS/SCC x-ref entries
         
 C...........   File units and logical names:
         INTEGER      CDEV  ! unit number for co/st/cy file
@@ -209,11 +209,11 @@ C...........   Other local variables:
         INTEGER    DST         ! tmp daylight saving time
         INTEGER    EDATE       ! ending input date counter (YYYYDDD) in GMT
         INTEGER    ETIME       ! ending input time counter (HHMMSS)  in GMT
-        INTEGER    FIPS        ! tmp inventory county
         INTEGER    FILENUM     ! file number of current meteorology file
         INTEGER    IOS         ! temporary I/O status
         INTEGER    IREC        ! temporary input line number
         INTEGER    IFIP        ! temporary FIPS code
+        INTEGER    ISRGFIP     ! temporary surrogate FIPS code
         INTEGER    HOURIDX     ! current hour of the day
         INTEGER    JDATE       ! input date counter (YYYYDDD) in GMT
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
@@ -275,14 +275,14 @@ C...........   Other local variables:
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
 
-        CHARACTER(10)      CSCC        !  SCC code
+        CHARACTER(SCCLEN3) CSCC        !  SCC code
+        CHARACTER(SCCLEN3) TSCC        !  tmp SCC code
+        CHARACTER(IOVLEN3) CPOL        !  Pollutant code 
         CHARACTER(1000)    CSCCLIST    !  tmp SCC list line buffer 
-        CHARACTER(16)      CPOL        !  Pollutant code 
-        CHARACTER(10)      TSCC        !  tmp SCC code
-        CHARACTER(6)       CFIPS       !  FIPS code
-        CHARACTER(5)       TPROFID     !  New Temporal Profile IDs
-        CHARACTER(16)      COORUNIT    !  coordinate system projection units
-        CHARACTER(80)      GDESC       !  grid description
+        CHARACTER(FIPLEN3) CFIP        !  current FIPS in character
+        CHARACTER(FIPLEN3) TPROFID     !  New Temporal Profile IDs
+        CHARACTER(IOVLEN3) COORUNIT    !  coordinate system projection units
+        CHARACTER(IODLEN3) GDESC       !  grid description
         CHARACTER(16)      SRG_CNTRY   !  surrogate country
         CHARACTER(256)     LINE        !  line buffer
         CHARACTER(256)     FULLNAME    !  full file name
@@ -632,11 +632,10 @@ C.........  Allocate arrays for county time zone
 
 C.........  Assign time zone to inventory counties
         DO I = 1, NSRGFIPS
-            FIPS = SRGFIPS( I )
-            J = FIND1( FIPS, NCOUNTY, CNTYCOD )
+            J = FINDC( SRGFIPS( I ), NCOUNTY, CNTYCOD )
             IF( J < 1 ) THEN
-                WRITE( MESG,94010 ) 'ERROR: Could not find time zone '//
-     &               'for county :', FIPS, ' from COSTCY file'
+                MESG = 'ERROR: Could not find time zone for county '
+     &               // SRGFIPS( I ) // ' from COSTCY file'
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
             ELSE
                 TZONES( I ) = CNTYTZON( J )
@@ -647,7 +646,7 @@ C.........  count no of states in modeling modain
         NSTA = 0
         PSTA = 0
         DO I = 1, NSRGFIPS
-            ISTA = INT( SRGFIPS( I ) / 1000 ) * 1000
+            ISTA = STR2INT( SRGFIPS( I )( 16:17 ) )
             IF( ISTA /= PSTA ) THEN
                 NSTA = NSTA + 1
                 PSTA = ISTA
@@ -662,7 +661,7 @@ C.........  Allocate array
         NS = 0
         PSTA = 0
         DO I = 1, NSRGFIPS
-            ISTA = INT( SRGFIPS( I ) / 1000 ) * 1000
+            ISTA = STR2INT( SRGFIPS( I )( 16:17 ) )
             IF( ISTA /= PSTA ) THEN
                 NS = NS + 1
                 SRGSTA( NS ) = ISTA
@@ -714,9 +713,10 @@ C.................  Sparse line
 
                 DO S = 1, NSRGFIPS
 
-                    ISTA = INT( SRGFIPS( S ) / 1000 ) * 1000
+                    ISTA = STR2INT( SRGFIPS( S )( 16:17 ) )
+                    ISRGFIP = STR2INT( SRGFIPS( S ) )
 
-                    IF( IFIP == ISTA .OR. IFIP == SRGFIPS( S ) ) THEN
+                    IF( IFIP == ISTA .OR. IFIP == ISRGFIP ) THEN
                         RWC_TEMP( S ) = DTEMP
                     END IF
 
@@ -826,22 +826,24 @@ C.............  temporary limit for supporting older TREF format (v3.5.1 or earl
             END IF
 
             CSCC = TRIM   ( SEGMENT( 1 ) )
-            FIPS = STR2INT( SEGMENT( 6 ) )
+            CFIP = TRIM   ( SEGMENT( 6 ) )
+            CALL PADZERO( CFIP )
             CPOL = TRIM   ( SEGMENT( 5 ) )
-            IF( FIPS < 1 ) FIPS = -9
+            IF( IFIP < 1 ) IFIP = -9
             IF( CPOL == '' .OR. CPOL == '0' ) CPOL = '-9'
 
             L0 = INDEX1( CSCC, NSCC, SCCLIST )
-            L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
+            L1 = FINDC ( CFIP, NSRGFIPS, SRGFIPS )
             L2 = 1 
             LL = 0
 
 C.............  find matched entries
             IF( L0 > 0 ) THEN
                 IF( L1 < 1 ) THEN
-                    NS = FIND1( FIPS, NSTA, SRGSTA )
+                    ISTA = STR2INT( CFIP( 16:17 ) )
+                    NS = FIND1( ISTA, NSTA, SRGSTA )
                     IF( NS   > 0 ) L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
-                    IF( FIPS < 1 ) L1 = NSRGFIPS + NSTA + 1   ! SCC-specific ultimate default (No FIPS)
+                    IF( IFIP < 1 ) L1 = NSRGFIPS + NSTA + 1   ! SCC-specific ultimate default (No FIPS)
                 END IF
 
                 LL = 1 
@@ -894,12 +896,11 @@ C.........  Find ultimate FIPS/SCC x-ref when no matched in TREF
                 LL = 0
 
                 CSCC = SCCLIST( I )
-                FIPS = SRGFIPS( J )
-                ISTA = INT( FIPS/1000 ) * 1000
-                WRITE( CFIPS,'(I6.6)' ) SRGFIPS( J )
+                CFIP = SRGFIPS( J )
+                CALL PADZERO( CFIP )
 
                 L0 = INDEX1( CSCC, NSCC, SCCLIST )
-                L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
+                L1 = FINDC ( CFIP, NSRGFIPS, SRGFIPS )
 
 C.................  Check first SCC/FIPS/NH3 specific entrie for AGNH3 method
                 IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
@@ -912,6 +913,7 @@ C.................  Check secondly SCC/FIPS specific entrie
  
 C.................  Check a list of state-specific entry first before using default profiles
                 IF( LL < 1 ) THEN
+                    ISTA = STR2INT( CFIP( 16:17 ) )
                     NS = FIND1 ( ISTA, NSTA, SRGSTA )
                     L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
                     IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
@@ -933,15 +935,15 @@ C.................  Use default profiles when there no matched xref entry
 
                     IF( NH3FLAG ) THEN
                         WRITE( LINE,93000 ) CSCC // ';262;7;24;NH3;' //
-     &                                 CFIPS // ';;;;;;;'
+     &                                 CFIP // ';;;;;;;'
                     ELSE
                         WRITE( LINE,93000 ) CSCC // ';262;7;24;-9;' //
-     &                                 CFIPS // ';;;;;;;'
+     &                                 CFIP // ';;;;;;;'
                     END IF
 
                     WRITE( MESG,93000 ) 'WARNING: Could not find ' //
      &                  'x-ref entries for SCC: ' // CSCC // 
-     &                  ' and FIPS: '// CFIPS // CRLF() // BLANK10
+     &                  ' and FIPS: '// CFIP // CRLF() // BLANK10
      &                   //'New x-ref entries for these SCC and FIPS '//
      &                   'are added to TREF_OUT output file'
                     MXWARN = MXWARN + 1
@@ -960,7 +962,7 @@ C.....................  Do not remove non-pollutant specific xref entries during
                         CALL PARSLINE ( CSCCFIP( LL ), MXSEG, SEGMENT )
 
                         SEGMENT( 1 ) = CSCC
-                        SEGMENT( 6 ) = CFIPS
+                        SEGMENT( 6 ) = SRGFIPS( J )
                         IF( NH3FLAG ) SEGMENT( 5 ) = 'NH3'
                         LINE = TRIM( LINE )//TRIM( SEGMENT( L ) ) // ';'
                     END DO
@@ -969,8 +971,7 @@ C.....................  Do not remove non-pollutant specific xref entries during
 
 C.................  Add new temporal x-ref and output them to XREF_OUT file
 C                   Create new speciation profile ID string
-                TPROFID = ''
-                WRITE( TPROFID,'( I5.5 )' ) SRGFIPS( J )
+                TPROFID =  CFIP
                 
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
                 IF( .NOT. HOURAVER .AND. MONAVER ) THEN
