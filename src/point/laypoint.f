@@ -1561,11 +1561,10 @@ C.................  Allocate plume to layers
      &                                 LFULLHT, TEMPS, LHALFHT, TMPACRE,
      &                                 SFRACT, LTOP, TFRAC )
 
-                ELSE IF( LFLAG .AND. K .GT. 0)  THEN
-
-C.....................  Calculate layer fraction
+C.....................  Calculate layer fraction for fire
 C                       First, layer fractions for LAY1F under PBL
 C                       Second, the rest of (1-LAY1F) gets distributed to above PBL
+                    IF( LFLAG .AND. K .GT. 0)  THEN
                     IF( LAY1F( K ) .GT. 0. ) THEN
                         TFRAC = 0.0
                         PFRAC = 0.0
@@ -1617,10 +1616,27 @@ C                           Renormalize layer fractions based on 1-LAY1F
                         CALL M3EXIT( PROGNAME, JDATE, JTIME, MESG, 2 )
 
                     END IF
+                    END IF
 
                 ELSE
                     CALL POSTPLM( EMLAYS, S, ZBOT, ZTOP, PRESF,
      &                  LFULLHT, TEMPS, LHALFHT, LBOT, LTOP, TFRAC )
+
+C.....................  If hourly layer-1 fraction is present, reset this and re-
+C                       normalize
+C.....................  Must account for the case where LAY1F value is
+C                       missing
+                    IF( LFLAG .AND. K .GT. 0 ) THEN
+                        IF( LAY1F( K ) .GT. 0. .AND.
+     &                      TFRAC( 1 ) .LT. 1.       ) THEN
+                            TSUM = SUM( TFRAC( 2:EMLAYS ) )
+                            TDIFF = TSUM + TFRAC( 1 ) - LAY1F( K )
+                            FAC = TDIFF / TSUM
+
+                            TFRAC( 1 ) = LAY1F( K )
+                            TFRAC( 2:EMLAYS ) = TFRAC( 2:EMLAYS ) * FAC
+                        END IF
+                    END IF
 
                 END IF
 
