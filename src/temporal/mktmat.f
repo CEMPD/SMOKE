@@ -47,10 +47,7 @@ C
 C***********************************************************************
 
 C.........  MODULES for public variables
-C.........  MODSOURC contains the inventory arrays
 C.........  MODTMPRL contains the temporal profile tables
-
-        USE MODSOURC, ONLY: CIFIP
 
         USE MODTMPRL, ONLY: MONFAC, WEKFAC, HRLFAC, XWKFAC, DOMFAC, HOUR_TPROF,
      &                      METPROTYPE, METFACS, MONFAC_ORG, IPOL2D, NMETPROF,
