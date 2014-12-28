@@ -61,8 +61,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)    CRLF
         INTEGER         ENVINT
         INTEGER         FIND1  
+        INTEGER         FINDC
 
-        EXTERNAL   CRLF, ENVINT, FIND1
+        EXTERNAL   CRLF, ENVINT, FIND1, FINDC
 
 C...........   Subroutine arguments
         INTEGER, INTENT (IN) :: IDXINV
@@ -181,7 +182,7 @@ C.........  Loop through county codes and compute county total emissions
         DO J = 1, NCOUNTY
 
 C.............  Make sure county is in surrogates file
-            F = FIND1( CNTYCOD( J ), NSRGFIPS, SRGFIPS )
+            F = FINDC( CNTYCOD( J ), NSRGFIPS, SRGFIPS )
 
 C.............  Skip county if its not in surrogates file
             IF( F .LE. 0 ) CYCLE
