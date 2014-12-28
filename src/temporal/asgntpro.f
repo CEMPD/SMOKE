@@ -88,6 +88,8 @@ C.........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     , EXTERNAL :: FINDC
         INTEGER     , EXTERNAL :: INDEX1
         LOGICAL     , EXTERNAL :: SETSCCTYPE
+        LOGICAL     , EXTERNAL :: CHKEXPSCC
+        LOGICAL     , EXTERNAL :: USEEXPGEO
 
 C..........   Local parameters
 
@@ -103,6 +105,7 @@ C..........   Local parameters
         CHARACTER(FIPLEN3), PARAMETER :: CFIPZ   = ZEROS    !  zero Country/state code
         CHARACTER(SCCLEN3), PARAMETER :: TSCCZ   = ZEROS    !  zero TSCC
         CHARACTER(CHRLEN3), PARAMETER :: BLNK    = BLANK    !  tmp blank
+        CHARACTER(PLTLEN3), PARAMETER :: BLNKPLT = BLANK    !  tmp blank
 
         CHARACTER(16),      PARAMETER :: PNAME   = 'ASGNTPRO' ! program name
 
@@ -249,7 +252,11 @@ C.........  Recall that profile-zero is the profile for the "none exist" case
                     TSCCL   = TSCC( 1:LSCCEND ) // ZEROS
 
                     CFIP    = CSRC( 1:FIPLEN3 )
-                    CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
+                    IF ( USEEXPGEO() ) THEN
+                        CFIPL = CFIP
+                    ELSE
+                        CFIPL = CFIP( 1:STALEN3 ) // ZEROS
+                    END IF
 
 C.....................  First, set all pollutants for pollutant independent part of hierarchy:
 
@@ -258,7 +265,7 @@ C.....................  First, set all pollutants for pollutant independent part
                     CALL BLDCSRC( CFIPZ, TSCC,  BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC11 )
                     CALL BLDCSRC( CFIPZ, TSCCZ, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC15 )    !  ultimate fallback
 
-                    IF ( .NOT.FULLSCC ) THEN
+                    IF ( .NOT.FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
                         CALL BLDCSRC( CFIP,  TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC08 )
                         CALL BLDCSRC( CFIPL, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC10 )
                         CALL BLDCSRC( CFIPZ, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(0), CSRC12 )
@@ -394,7 +401,7 @@ C.....................  Now, overrides for pollutant dependent part of hierarchy
                         CALL BLDCSRC( CFIPL, TSCC, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC03 )
                         CALL BLDCSRC( CFIPZ, TSCC, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC05 )
 
-                        IF ( .NOT.FULLSCC ) THEN
+                        IF ( .NOT.FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
                             CALL BLDCSRC( CFIP,  TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC02 )
                             CALL BLDCSRC( CFIPL, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC04 )
                             CALL BLDCSRC( CFIPZ, TSCCL, BLANK, BLANK, BLANK, BLANK, BLANK, CPOS(V), CSRC06 )
@@ -501,7 +508,11 @@ C.........................  Find hour-of-day profile for each day of the week:
                     TSCCL   = TSCC( 1:LSCCEND ) // ZEROS
 
                     CFIP    = CSRC( 1:FIPLEN3 )
-                    CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
+                    IF ( USEEXPGEO() ) THEN
+                        CFIPL = CFIP
+                    ELSE
+                        CFIPL = CFIP( 1:STALEN3 ) // ZEROS
+                    END IF
 
 C.....................  First, set all pollutants for pollutant independent part of hierarchy:
 
@@ -510,7 +521,7 @@ C.....................  First, set all pollutants for pollutant independent part
                     CALL BLDCSRC( CFIPZ, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC15 )
                     CALL BLDCSRC( CFIPZ, TSCCZ, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC21 )    !  ultimate fallback
 
-                    IF ( .NOT. FULLSCC ) THEN
+                    IF ( .NOT. FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
                         CALL BLDCSRC( CFIP,  TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC11 )
                         CALL BLDCSRC( CFIPL, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC14 )
                         CALL BLDCSRC( CFIPZ, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(0), CSRC16 )
@@ -646,7 +657,7 @@ C.....................  Now, overrides for pollutant dependent part of hierarchy
                         CALL BLDCSRC( CFIPL, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC05 )
                         CALL BLDCSRC( CFIPZ, TSCC,  BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC07 )
 
-                        IF ( .NOT. FULLSCC ) THEN
+                        IF ( .NOT. FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
                             CALL BLDCSRC( CFIP,  TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC02 )
                             CALL BLDCSRC( CFIPL, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC06 )
                             CALL BLDCSRC( CFIPZ, TSCCL, BLNK, BLNK, BLNK, BLNK, BLNK, CPOS(V), CSRC08 )
@@ -750,10 +761,14 @@ C.........................  Find hour-of-day profile for each day of the week:
 
                     CSRC    = CSOURC( S )
                     TSCC    = CSCC( S )
-                    TSCC5   = TSCC( 1:5 ) // ZEROS
+                    TSCC5   = TSCC( 1:SCCEXPLEN3+5 ) // ZEROS
 
                     CFIP    = CSRC( 1:FIPLEN3 )
-                    CFIPL   = CFIP( 1:STALEN3 ) // ZEROS
+                    IF ( USEEXPGEO() ) THEN
+                        CFIPL = CFIP
+                    ELSE
+                        CFIPL = CFIP( 1:STALEN3 ) // ZEROS
+                    END IF
 
                     CPLT = ADJUSTL( CSRC( PTBEGL3(2):PTENDL3(2) ) )
                     CPNT = ADJUSTL( CSRC( PTBEGL3(3):PTENDL3(3) ) )
@@ -765,23 +780,23 @@ C.........................  Find hour-of-day profile for each day of the week:
 
 C.....................  pollutant-independent search targets:
 
-                    CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, CSEG, CPL5, TSCC,  CPOS(0), CSRC05 )
-                    CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, BLNK, CPL5, TSCC,  CPOS(0), CSRC06 )
-                    CALL BLDCSRC( CFIP,  CPLT, CPNT, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC07 )
-                    CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC08 )
-                    CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC15 )
-                    CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC17 )
-                    CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC19 )
-                    CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC23 )    !  ultimate fallback
+                    CALL BLDCSRC( CFIP,  CPLT,    CPNT, CSTK, CSEG, CPL5, TSCC,  CPOS(0), CSRC05 )
+                    CALL BLDCSRC( CFIP,  CPLT,    CPNT, CSTK, BLNK, CPL5, TSCC,  CPOS(0), CSRC06 )
+                    CALL BLDCSRC( CFIP,  CPLT,    CPNT, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC07 )
+                    CALL BLDCSRC( CFIP,  CPLT,    BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC08 )
+                    CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC15 )
+                    CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC17 )
+                    CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC19 )
+                    CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC23 )    !  ultimate fallback
 
-                    IF ( .NOT. FULLSCC ) THEN
+                    IF ( .NOT. FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
 
-                        CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC085 )
-                        CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC16 )
-                        CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC18 )
-                        CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC20 )
-                        CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC21 )
-                        CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC22 )
+                        CALL BLDCSRC( CFIP,  CPLT,    BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC085 )
+                        CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC16 )
+                        CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC18 )
+                        CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC20 )
+                        CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC21 )
+                        CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC22 )
                     END IF
 
 C.....................  Note that pollutant dependent and pollutant independent
@@ -789,18 +804,18 @@ C.....................  parts of the point source heirarchy search are tangled t
 
                     DO V = 1, NIPPA         !  loop on pollutants
 
-                        CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, CSEG, CPL5, TSCC, CPOS(V), CSRC01 )
-                        CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, BLNK, CPL5, TSCC, CPOS(V), CSRC02 )
-                        CALL BLDCSRC( CFIP,  CPLT, CPNT, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC03 )
-                        CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC04 )
-                        CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC09 )
-                        CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC11 )
-                        CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC13 )
+                        CALL BLDCSRC( CFIP,  CPLT,    CPNT, CSTK, CSEG, CPL5, TSCC, CPOS(V), CSRC01 )
+                        CALL BLDCSRC( CFIP,  CPLT,    CPNT, CSTK, BLNK, CPL5, TSCC, CPOS(V), CSRC02 )
+                        CALL BLDCSRC( CFIP,  CPLT,    CPNT, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC03 )
+                        CALL BLDCSRC( CFIP,  CPLT,    BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC04 )
+                        CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC09 )
+                        CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC11 )
+                        CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC, CPOS(V), CSRC13 )
 
-                        IF ( .NOT. FULLSCC ) THEN
-                            CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC10 )
-                            CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC12 )
-                            CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC14 )
+                        IF ( .NOT. FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
+                            CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC10 )
+                            CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC12 )
+                            CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(V), CSRC14 )
                         END IF
 
 C.........................  Find month-of-year profile:
