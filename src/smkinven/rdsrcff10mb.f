@@ -135,7 +135,9 @@ C           the various data fields
         END IF
 
 C.........  Replace blanks with zeros
-        CALL PADZERO( CFIP )
+        DO I = 1,FIPLEN3
+            IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
+        END DO
 
 C.........  Processing activity data
         CLNK = ' '                        ! link ID

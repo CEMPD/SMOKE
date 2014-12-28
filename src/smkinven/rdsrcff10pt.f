@@ -154,7 +154,9 @@ C           the various data fields
         END IF
 
 C.........  Replace blanks with zeros        
-        CALL PADZERO( CFIP )
+        DO I = 1,FIPLEN3
+            IF( CFIP( I:I ) == ' ' ) CFIP( I:I ) = '0'
+        END DO
 
         FCID = ADJUSTL( SEGMENT( 4 ) ) ! facility/plant ID
         PTID = ADJUSTL( SEGMENT( 5 ) ) ! point ID
