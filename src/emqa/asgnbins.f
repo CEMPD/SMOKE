@@ -323,6 +323,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                     SCC   =  CSCC( SRCID )
                     SIC   = CISIC( SRCID )
                     WRITE( SORTBUF( I )( II:IJ ), '( I8.8, 3 A )' ) SRCID, CFIP, SCC, SIC
+                    II = IJ + 1
                 END IF
 
             ELSE
@@ -456,6 +457,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
 
         END IF          !!  if report-by-plant
 
+        IS = II
 
 !$OMP   PARALLEL DO DEFAULT( SHARED ),
 !$OMP&              PRIVATE( I, ESTAT ),
@@ -463,6 +465,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
 
         DO I = 1, NOUTREC       !!  second parallel loop constructing SORTBUF
         
+            II = IS
 
             IF ( RPT_%BYORIS ) THEN
                 IJ = II + ORSLEN3 - 1
