@@ -469,7 +469,7 @@ C.................  Loop through input states and report missing
                     IF( J .LE. 0 ) THEN
                         EFLAG = .TRUE.
                         WRITE( MESG,'(A,1X,I3.3,A)' )
-     &                    'ERROR: Input data contains country/state' // 
+     &                    'ERROR: Input data contains country/state '// 
      &                    'code', INSTATE( N ), 
      &                    ', but it '// CRLF()// BLANK10//
      &                    'is not found in state/county codes file.'
