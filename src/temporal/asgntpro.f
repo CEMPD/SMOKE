@@ -769,14 +769,13 @@ C.....................  pollutant-independent search targets:
                     CALL BLDCSRC( CFIP,  CPLT, CPNT, CSTK, BLNK, CPL5, TSCC,  CPOS(0), CSRC06 )
                     CALL BLDCSRC( CFIP,  CPLT, CPNT, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC07 )
                     CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC08 )
+                    CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC085 )
                     CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC15 )
                     CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC17 )
                     CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC19 )
                     CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC23 )    !  ultimate fallback
 
                     IF ( .NOT. FULLSCC ) THEN
-
-                        CALL BLDCSRC( CFIP,  CPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC085 )
                         CALL BLDCSRC( CFIP,  BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC16 )
                         CALL BLDCSRC( CFIPL, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC18 )
                         CALL BLDCSRC( CFIPZ, BLNK, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC20 )
