@@ -939,14 +939,16 @@ C.................  index with CSCC maps to SCC from BUFFER properly)
             END IF
 
 C.................  Store plant ID code
-
             IF( RPT_%BYPLANT ) THEN
                 BINPLANT( B ) = CSOURC( S )( LOC_BEGP(2) : LOC_ENDP(2) )
                 BINSMKID( B ) = S           !! Needed for plant names
             END IF
 
-C.................  Store Elevated status
+C.................  Store x-cell and y-cell
+            IF( RPT_%BYCELL ) BINX( B ) = COL
+            IF( RPT_%BYCELL ) BINY( B ) = ROW
 
+C.................  Store Elevated status
             IF( RPT_%BYELEV ) THEN
                 IF( LPING( S ) ) THEN       ! PinG
                     BINELEV( B ) = 'P'
