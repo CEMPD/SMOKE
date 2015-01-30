@@ -114,7 +114,8 @@ C           the various data fields
         SKID = ADJUSTL( LINE( 52:56 ) )  ! stack ID
         PTID = ADJUSTL( LINE( 37:39 ) )  ! Column ID
         SGID = ADJUSTL( LINE( 40:42 ) )  ! Row ID
-        TSCC = ADJUSTL( LINE(  9:22 ) )  ! EIC code
+        TSCC = ADJUSTR( LINE(  9:22 ) )  ! EIC code
+        CALL PADZERO( TSCC )
 
         RETURN
 

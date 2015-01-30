@@ -169,7 +169,7 @@ C...........   Other local variables
         CHARACTER(CHRLEN3) SKID      ! tmp stack ID
         CHARACTER(CHRLEN3) DVID      ! tmp device ID
         CHARACTER(CHRLEN3) PRID      ! tmp process ID
-        CHARACTER(CHRLEN3) TSCC      ! tmp source category code
+        CHARACTER(SCCLEN3) TSCC      ! tmp source category code
         CHARACTER(ALLLEN3) CSRC      ! tmp source string
         CHARACTER(NAMLEN3) OUTIDX    ! name for integer source index
         CHARACTER(NAMLEN3) ONAME     ! output logical filename
@@ -396,7 +396,7 @@ C.............  Set key for searching sources
             DVID = ADJUSTL( LINE( 52:56 ) )  ! stack ID (=DeviceID), DVID)
             PRID = ADJUSTL( LINE( 40:42 ) )  ! Row ID (=ProcessID, PRID)
 
-            TSCC = TRIM( LINE(  9:22 ) )     ! SCC from MEDS format
+            TSCC = ADJUSTR( LINE(  9:22 ) )     ! SCC from MEDS format
             CALL PADZERO( TSCC )
 
 C.............  If FIPS code is not the same as last time, then
