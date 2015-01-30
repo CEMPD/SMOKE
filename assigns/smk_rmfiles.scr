@@ -1,0 +1,378 @@
+#!/bin/csh -f
+#
+## HEADER ######################################################################
+#
+#  This script sets removes the NetCDF output files for each SMOKE program
+#  because the I/O API cannot overwrite files when they are different.
+#
+################################################################################
+
+set status = 0
+
+## Abort if no files are to be deleted
+#
+if ( $?AUTO_DELETE ) then
+
+   if ( $AUTO_DELETE == N ) then
+      exit( 0 )
+   endif
+else
+   echo "NOTE: AUTO_DELETE script setting is not set."
+   echo "      Default is N to not delete I/O API intermediate and output files"
+   exit( 0 )
+endif
+
+### Ensure new controller variables are set
+if ( $?RUN_PART1 ) then
+else
+   setenv RUN_PART1 N 
+endif
+if ( $?RUN_PART2 ) then
+else
+   setenv RUN_PART2 N 
+endif
+if ( $?RUN_PART3 ) then
+else
+   setenv RUN_PART3 N 
+endif
+if ( $?RUN_PART4 ) then
+else
+   setenv RUN_PART4 N 
+endif
+
+## For Smkinven and Grwinven output files
+#
+set import_aveinv = Y
+if ( $?IMPORT_AVEINV_YN ) then 
+   if ( $IMPORT_AVEINV_YN == N ) then
+       set import_aveinv = N
+   endif
+endif
+
+set inmap = ' '
+if ( $RUN_SMKINVEN == 'Y' && $RUN_PART1 == 'Y' && $import_aveinv != N ) then
+   if ( $SMK_SOURCE == 'A' ) then
+      set inmap = $AREA
+   endif
+   if ( $SMK_SOURCE == 'M' ) then
+      set inmap = $MOBL
+   endif
+   if ( $SMK_SOURCE == 'P' ) then
+      set inmap = $PNTS
+      /bin/rm -f $PDAY $PHOUR $PHOURPRO
+   endif
+endif
+
+if ( $RUN_GRWINVEN == 'Y' && $RUN_PART1 == 'Y' ) then
+   if ( $SMK_SOURCE == 'A' ) then
+      set inmap = ( $inmap $AREA_O )
+   endif
+   if ( $SMK_SOURCE == 'M' ) then
+      set inmap = ( $inmap $MOBL_O )
+   endif
+   if ( $SMK_SOURCE == 'P' ) then
+      set inmap = ( $inmap $PNTS_O )
+   endif
+endif
+
+if ( ( ( $RUN_SMKINVEN == Y && $import_aveinv != N ) || $RUN_GRWINVEN == Y ) && $RUN_PART1 == Y ) then
+   foreach f ( $inmap )
+     set dataflag = n
+     if ( -e $f ) then       
+       set cnt = 0
+       set ncnt = `cat $f | wc -l`
+       while ( $cnt < $ncnt )
+          @ cnt = $cnt + 1
+          set line = ( `head -n $cnt $f | tail -n 1` )
+          if ( $line[1] == '/IOAPI/' ) then
+             /bin/rm -f $INVOPD/$line[2]
+          endif
+          if ( $line[1] == '/DATMAP/' ) then
+             set dataflag = y
+             end
+          endif
+          if ( $line[1] == '/END/' ) then
+             set dataflag = n
+          endif
+          if ( $dataflag == y ) then
+             if ( -e $INVOPD/$line[2] ) then
+                /bin/rm -f $INVOPD/$line[2]
+             endif
+          endif
+       end   
+       if ( $status == 0 ) then
+          /bin/rm $f
+       endif
+     endif
+   end
+endif
+
+if ( $RUN_GRDMAT == Y && $RUN_PART1 == 'Y' ) then
+   if ( $SMK_SOURCE == A ) then
+      /bin/rm -f $AGMAT
+   endif
+   if ( $SMK_SOURCE == M ) then
+      /bin/rm -f $MGMAT
+      /bin/rm -f $MUMAT
+   endif
+   if ( $SMK_SOURCE == P ) then
+      /bin/rm -f $PGMAT
+   endif
+endif
+
+if ( $RUN_SPCMAT == Y && $RUN_PART1 == 'Y' ) then
+   if ( $SMK_SOURCE == A ) then
+      set file = $ASMAT_S
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+      
+      set file = $ASMAT_L
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+   endif
+   if ( $SMK_SOURCE == M ) then
+      set file = $MSMAT_S
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+      
+      set file = $MSMAT_L
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+   endif
+   if ( $SMK_SOURCE == P ) then
+      set file = $PSMAT_S
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+ 
+      set file = $PSMAT_L
+      set len = `echo $file | wc -c`
+      @ len = $len - 4
+      set allfiles = `echo $file | cut -c1-$len`
+      /bin/rm -rf $allfiles*      
+   endif
+endif
+
+if ( $RUN_TEMPORAL == Y && $RUN_PART2 == 'Y' ) then
+   if ( $SMK_SOURCE == A ) then
+      /bin/rm -f $ATMP
+   endif
+   if ( $SMK_SOURCE == M ) then
+      /bin/rm -f $MTMP
+   endif
+   if ( $SMK_SOURCE == P ) then
+      /bin/rm -f $PTMP
+   endif
+endif
+
+if ( $RUN_CNTLMAT == Y && $RUN_PART1 == 'Y' ) then
+   if ( $SMK_SOURCE == A ) then
+      /bin/rm -f $APMAT
+      /bin/rm -f $ACMAT
+      /bin/rm -f $ARMAT_S
+      /bin/rm -f $ARMAT_L
+   endif
+   if ( $SMK_SOURCE == M ) then
+      /bin/rm -f $MPMAT
+      /bin/rm -f $MCMAT
+      /bin/rm -f $MRMAT_S
+      /bin/rm -f $MRMAT_L
+   endif
+   if ( $SMK_SOURCE == P ) then
+      /bin/rm -f $PPMAT
+      /bin/rm -f $PCMAT
+      /bin/rm -f $PRMAT_S
+      /bin/rm -f $PRMAT_L
+   endif
+endif
+
+if ( $RUN_RAWBIO == Y && $RUN_PART1 == 'Y' ) then
+    /bin/rm -f $BGRD
+    /bin/rm -f $BGRDW
+endif
+
+if ( $RUN_NORMBEIS3 == Y && $RUN_PART1 == 'Y' ) then
+    /bin/rm -f $B3GRD
+endif
+
+if ( $RUN_TMPBIO == Y && $RUN_PART2 == 'Y' ) then
+    /bin/rm -f $BGTS_S
+    /bin/rm -f $BGTS_L
+endif
+
+if ( $RUN_TMPBEIS3 == Y && $RUN_PART2 == 'Y' ) then
+    /bin/rm -f $B3GTS_L
+    /bin/rm -f $B3GTS_S
+endif
+
+if ( $RUN_ELEVPOINT == Y && $RUN_PART3 == 'Y' ) then
+    /bin/rm -f $STACK_GROUPS
+endif
+
+if ( $RUN_LAYPOINT == Y && $RUN_PART4 == 'Y' ) then
+    /bin/rm -f $PLAY
+    /bin/rm -f $PLAY_EX
+endif
+
+## For Smkmerge output I/O API files
+#
+if ( $RUN_SMKMERGE == 'Y' || $RUN_MOVESMRG == 'Y' && $RUN_PART4 == 'Y' ) then
+
+   if ( $MRG_GRDOUT_YN == 'Y' ) then
+
+      if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+
+         if ( $MRG_AREA == 'Y' || $SMK_SOURCE == 'A' ) then
+            /bin/rm -f $AGTS_L
+            /bin/rm -f $AGTS_S
+         endif 
+
+         if ( $MRG_MOBILE == 'Y' || $SMK_SOURCE == 'M' ) then
+            /bin/rm -f $MGTS_L
+            /bin/rm -f $MGTS_S
+         endif 
+
+         if ( $MRG_POINT == 'Y' || $SMK_SOURCE == 'P' ) then
+            /bin/rm -f $PGTS_L   
+            /bin/rm -f $PGTS_S   
+            /bin/rm -f $PGTS3D_L 
+            /bin/rm -f $PGTS3D_S 
+         endif 
+
+         if ( $MRG_MULTI == 'Y' || $SMK_SOURCE == 'E' ) then
+            /bin/rm -f $EGTS_L   
+            /bin/rm -f $EGTS_S   
+            /bin/rm -f $EGTS3D_L 
+            /bin/rm -f $EGTS3D_S 
+         endif 
+
+         if ( $MRG_AREA_CNTL == 'Y' ) then
+            /bin/rm -f $AGTSC_L   
+            /bin/rm -f $AGTSC_S   
+         endif 
+
+         if ( $MRG_MOBILE_CNTL == 'Y' ) then
+            /bin/rm -f $MGTSC_L   
+            /bin/rm -f $MGTSC_S   
+         endif 
+
+         if ( $MRG_POINT_CNTL == 'Y' ) then
+            /bin/rm -f $PGTSC_L   
+            /bin/rm -f $PGTSC_S   
+            /bin/rm -f $PGTSC3D_L 
+            /bin/rm -f $PGTSC3D_S 
+         endif 
+
+         if ( $MRG_MULTI_CNTL == 'Y' ) then
+            /bin/rm -f $EGTSC_L   
+            /bin/rm -f $EGTSC_S   
+            /bin/rm -f $EGTSC3D_L 
+            /bin/rm -f $EGTSC3D_S 
+         endif 
+      endif
+
+      if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+         /bin/rm -f $AGS_S    
+         /bin/rm -f $MGS_S    
+         /bin/rm -f $PGS_S    
+         /bin/rm -f $PGS3D_S  
+         /bin/rm -f $EGS_S    
+         /bin/rm -f $EGS3D_S  
+
+         /bin/rm -f $AGSC_S   
+         /bin/rm -f $MGSC_S   
+         /bin/rm -f $PGSC_S   
+         /bin/rm -f $PGSC3D_S 
+         /bin/rm -f $EGSC_S   
+         /bin/rm -f $EGSC3D_S 
+
+         /bin/rm -f $AGS_L    
+         /bin/rm -f $MGS_L    
+         /bin/rm -f $PGS_L    
+         /bin/rm -f $PGS3D_L  
+         /bin/rm -f $EGS_L    
+         /bin/rm -f $EGS3D_L  
+
+         /bin/rm -f $AGSC_L   
+         /bin/rm -f $MGSC_L   
+         /bin/rm -f $PGSC_L   
+         /bin/rm -f $PGSC3D_L 
+         /bin/rm -f $EGSC_L   
+         /bin/rm -f $EGSC3D_L 
+      endif
+
+      if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+         /bin/rm -f $AGT    
+         /bin/rm -f $MGT    
+         /bin/rm -f $PGT    
+         /bin/rm -f $PGT3D  
+         /bin/rm -f $EGT    
+         /bin/rm -f $EGT3D  
+         /bin/rm -f $AGTC   
+         /bin/rm -f $MGTC   
+         /bin/rm -f $PGTC   
+         /bin/rm -f $PGTC3D 
+         /bin/rm -f $EGTC   
+         /bin/rm -f $EGTC3D 
+      endif
+
+      if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+         /bin/rm -f $AG   
+         /bin/rm -f $MG   
+         /bin/rm -f $PG   
+         /bin/rm -f $EG   
+         /bin/rm -f $AGC  
+         /bin/rm -f $MGC  
+         /bin/rm -f $PGC  
+         /bin/rm -f $EGC  
+      endif
+
+   endif
+#
+## Elevated sources
+#
+   if ( $MRG_POINT == 'Y' && $SMK_PING_METHOD == 1 && $RUN_PART4 == 'Y' ) then
+      /bin/rm -f $PINGT   
+      /bin/rm -f $PINGTS_L
+      /bin/rm -f $PINGTS_S
+   endif
+
+#
+## Source apportionment
+#
+   if ( $?SMK_SRCGROUP_OUTPUT_YN ) then
+      if ( $SMK_SRCGROUP_OUTPUT_YN == 'Y' ) then
+
+         /bin/rm -f $STACK_GROUPS_OUT
+         
+         if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+            /bin/rm -f $SGINLNTS_L
+            /bin/rm -f $SGINLNTS_S
+         endif
+         
+         if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN == 'Y' ) then
+            /bin/rm -f $SGINLNS_L
+            /bin/rm -f $SGINLNS_S
+         endif
+         
+         if ( $MRG_TEMPORAL_YN == 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+            /bin/rm -f $SGINLNT
+         endif
+         
+         if ( $MRG_TEMPORAL_YN != 'Y' && $MRG_SPCMAT_YN != 'Y' ) then
+            /bin/rm -f $SGINLN
+         endif
+
+      endif
+   endif
+
+endif
