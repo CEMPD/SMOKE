@@ -39,6 +39,8 @@ C***************************************************************************
 
 C...........   MODULES for public variables
 C.........  This module contains the lists of unique inventory information
+        USE MODINFO, ONLY: TMPNAM
+
         USE MODLISTS, ONLY: UCASNKEP, NUNIQCAS, UNIQCAS, NINVTBL,
      &                      ITNAMA, ITCASA
 
@@ -72,7 +74,7 @@ C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: NEXTRA  = 4    ! number of extra non-data fields that need
 
 C...........   Other local variables
-        INTEGER         I, II       ! counters and indices
+        INTEGER         I, J       ! counters and indices
 
         INTEGER, SAVE:: ICC     !  position of CNTRY in CTRYNAM
         INTEGER         INY     !  inventory year
@@ -108,7 +110,13 @@ C.........  Interpret error status
 C.........  If a header line was encountered, set flag and return
         IF( IOS >= 0 ) THEN
             HDRFLAG = .TRUE.
-            IF( NDAT > 0 ) NDATPERLN = NDAT + NEXTRA  
+            IF( NDAT > 0 ) THEN
+                NDATPERLN = NDAT + NEXTRA  
+                DO I = 1, NDAT
+                    J = FINDC( TMPNAM( I ), NUNIQCAS, UNIQCAS )
+                    IF( J > 1 ) NDATPERLN = NDATPERLN + UCASNKEP( J ) - 1
+                END DO
+            END IF
             RETURN
         ELSE
             HDRFLAG = .FALSE.

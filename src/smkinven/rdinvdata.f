@@ -1005,56 +1005,9 @@ C.................  Check ORL FIRE specific values
 
             END IF
 
-C.............  Check that data values are numbers
-            IF( .NOT. FIREFLAG ) THEN
-              DO I = 1, NPOLPERLN      ! NPOLPERLN = l be 1 when it is non-fire orl format
-                POLNAM = READPOL( I )
-
-C.................  Loop through values for this pollutant
-C                   Technically, activities will not have NPPOL values,
-C                   but we put in blanks when reading the data to avoid problems
-C                   Could check if pollutant is an activity, but that would 
-C                   require an extra search to get the pollutant code
-
-C.................  No need to check these for fires format, since we know
-C                   that most values will not be populated intentionally.
-                DO J = 1, NPPOL
-                    IF( .NOT. CHKREAL( READDATA( I,J ) ) ) THEN
-                        EFLAG = .TRUE.
-                        IF( NWARN < MXWARN ) THEN
-                            WRITE( MESG,94010 ) 'ERROR: Emission data, ' //
-     &                         'control percentages, and/or emission ' //
-     &                         CRLF() // BLANK10 // 'factor for ' //
-     &                         TRIM( POLNAM ) // ' are not a number ' //
-     &                         'or have bad formatting at line', IREC
-                            CALL M3MESG( MESG )
-                        END IF
-                        EXIT
-                    END IF
-                END DO  ! end loop over data values
-
-                IF( READDATA( I,1 ) == ' ' .AND.
-     &              READDATA( I,2 ) == ' '       ) THEN
-                    IF( NWARN < MXWARN ) THEN
-                        WRITE( MESG,94010 ) 'WARNING: Missing annual' //
-     &                     ' AND average day emissions for ' // 
-     &                     TRIM( POLNAM ) // ' at line', IREC
-                        CALL M3MESG( MESG )
-                        NWARN = NWARN + 1
-                    END IF
-                    READDATA( I,1 ) = '0.'
-                    READDATA( I,2 ) = '0.'
-                END IF
-
-               END DO  ! end loop over pollutants per line
-            END IF   ! not ORL fires format             
-
-C.............  Skip rest of loop if an error has occured
-            IF( EFLAG ) CYCLE
-
 C.............  Get current CAS number position and check that it is valid
             IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &          CURFMT == FF10FMT ) THEN
+     &          CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
                 POLNAM = READPOL( 1 )
                 UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
                 IF( UCASPOS < 1 ) THEN
@@ -1118,6 +1071,49 @@ C.............  Loop through all pollutants for current line
             DO I = 1, NPOLPERLN
                         
                 POLNAM = READPOL( I )
+                UCASPOS = FINDC( POLNAM, NUNIQCAS, UNIQCAS )
+
+C.................  Loop through values for this pollutant
+C                   Technically, activities will not have NPPOL values,
+C                   but we put in blanks when reading the data to avoid problems
+C                   Could check if pollutant is an activity, but that would 
+C                   require an extra search to get the pollutant code
+
+C.................  No need to check these for fires format, since we know
+C                   that most values will not be populated intentionally.
+                IF( .NOT. FIREFLAG ) THEN
+                    DO J = 1, NPPOL
+                        IF( .NOT. CHKREAL( READDATA( I,J ) ) ) THEN
+                            EFLAG = .TRUE.
+                            IF( NWARN < MXWARN ) THEN
+                                WRITE( MESG,94010 ) 'ERROR: Emission data, ' //
+     &                             'control percentages, and/or emission ' //
+     &                             CRLF() // BLANK10 // 'factor for ' //
+     &                             TRIM( POLNAM ) // ' are not a number ' //
+     &                             'or have bad formatting at line', IREC
+                                CALL M3MESG( MESG )
+                            END IF
+                            EXIT
+                        END IF
+                    END DO  ! end loop over data values
+
+                    IF( READDATA( I,1 ) == ' ' .AND.
+     &                  READDATA( I,2 ) == ' '       ) THEN
+                        IF( NWARN < MXWARN ) THEN
+                            WRITE( MESG,94010 ) 'WARNING: Missing annual' //
+     &                         ' AND average day emissions for ' // 
+     &                         TRIM( POLNAM ) // ' at line', IREC
+                            CALL M3MESG( MESG )
+                            NWARN = NWARN + 1
+                        END IF
+                        READDATA( I,1 ) = '0.'
+                        READDATA( I,2 ) = '0.'
+                    END IF
+
+                END IF   ! not ORL fires format             
+
+C.................  Skip rest of loop if an error has occured
+                IF( EFLAG ) CYCLE
 
 C.................  If format is not ORL or ORL Fires, find code corresponding 
 C                   to current pollutant
@@ -1325,7 +1321,7 @@ C                   zero or negative
 C.................  If current format is ORL, check if current CAS number
 C                   is split
                 IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &              CURFMT == FF10FMT ) THEN
+     &              CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
                     NPOLPERCAS = UCASNPOL( UCASPOS )
 
 C.....................  Store emissions by CAS number for reporting
@@ -1339,12 +1335,12 @@ C.....................  Store emissions by CAS number for reporting
                     NPOLPERCAS = 1
                     POLFAC = 1.
                 END IF
- 
+
                 DO J = 0, NPOLPERCAS - 1
 
 C.....................  If ORL format, set current pollutant
                     IF( CURFMT == ORLFMT .OR. CURFMT == ORLNPFMT .OR.
-     &                  CURFMT == FF10FMT ) THEN
+     &                  CURFMT == FF10FMT .OR. CURFMT == ORLFIREFMT ) THEN
 
                         SCASPOS = UCASIDX( UCASPOS ) + J
 
