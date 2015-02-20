@@ -1275,7 +1275,7 @@ C.............  Skip rest of loop if no pollutants are kept
             TPFLAG( CURSRC ) = TPF
 
 C.............  Store SIC if not blank
-            IF ( ALLOCATED( CISIC ) .AND. SIC /= ' ' ) THEN
+            IF ( ASSOCIATED( CISIC ) .AND. SIC /= ' ' ) THEN
                 CALL PADZERO( SIC )
                 CISIC( CURSRC ) = SIC
             END IF
