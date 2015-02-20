@@ -89,7 +89,7 @@ C   begin body of subroutine RDSRCFF10MB
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly
-        CALL GETHDR( MXDATFIL, .NOT. USEEXPGEO, .TRUE., .FALSE., 
+        CALL GETHDR( MXDATFIL, .NOT. USEEXPGEO(), .TRUE., .FALSE., 
      &               LINE, ICC, INY, NVAR, IOS )
 
 C.........  Interpret error status

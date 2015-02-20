@@ -94,7 +94,7 @@ C   begin body of subroutine RDSRCORLPT
 
 C.........  Scan for header lines and check to ensure all are set 
 C           properly
-        CALL GETHDR( MXPOLFIL, .NOT. USEEXPGEO, .TRUE., .FALSE., 
+        CALL GETHDR( MXPOLFIL, .NOT. USEEXPGEO(), .TRUE., .FALSE., 
      &               LINE, ICC, INY, NPOL, IOS )
 
 C.........  Interpret error status
