@@ -290,28 +290,6 @@ C Direct and diffuse photosynthetically active radiation
             CALL GETPARB( SOLRAD, PSFC, COSZ, PARDB, PARDIF )
 
             PAR = PARDB + PARDIF
-		 
-
-
-
-
-
-!!!! THIS IS THE OLD CODE NOT LONGER NEEDED
-C.................  Calculate temperature correction term
-!                DT = 28668.514 / TAIR
-!                CT = EXP( 37.711 - 0.398570815 * DT ) /
-!     &                  (1.0 + EXP( 91.301 - DT ) )
-
-!                SOLTMP = TSOLAR( C, R )
-
-C.................  Cosine of zenith angle to zenith angle (radians)
-!                ZEN =  ACOS( COSZEN( C, R ) )
-!                PSFC = PRES( C, R )
-
-!                CALL GETPAR( SOLTMP, PSFC, ZEN, PARDB, PARDIF )
-
-!                PAR = PARDB + PARDIF
-
 C.................  Check max/min bounds of PAR and calculate
 C                   biogenic ISOP
                 IF ( PAR .LT. 0.00 .OR. PAR .GT. 2600.0 ) THEN
@@ -348,53 +326,40 @@ C.....................  Adjust methanol based on T. Pierce recommendation (1-16-
                     END IF
 
 
+	       
+
 C Initialize csubl
                CSUBL_SUN   = 0.0
-               CSUBL_SHADE = 0.0	       
+               CSUBL_SHADE = 0.0       
 
-               IF ( PAR .LE. 0.01 .OR.
-     &              COSZ .LE. 0.02079483 ) THEN
+               IF ( PARDB + PARDIF .EQ. 0.0 ) THEN
                   EMPOL( C,R,I ) = 0.0
                ELSE
                   CALL CLNEW_SUB( ZEN, PARDB, PARDIF, TLAI, LHSH_DIV,
      &                            LHSH_COMP, DTLEAF_SUN, DTLEAF_SHADE, 
-     &                            CSUBL_SUN, CSUBL_SHADE, 
-     &                            FRACSUN, FRACSHADE,
+     &                            CSUBL_SUN, CSUBL_SHADE, FRACSUN, FRACSHADE,
      &                            SOLRAD, REFLDV )
 
                   TLEAF_SUN   = DTLEAF_SUN   + TAIR
-		  TLEAF_SHADE = DTLEAF_SHADE + TAIR
+                  TLEAF_SHADE = DTLEAF_SHADE + TAIR
 C Calculate temperature correction term
                   DT_SUN   = 28668.514 / TLEAF_SUN
-                  DT_SHADE = 28668.514 / TLEAF_SHADE		  
+                  DT_SHADE = 28668.514 / TLEAF_SHADE 
                   CT_SUN   = EXP( 37.711 - 0.398570815 * DT_SUN ) /
      &                          ( 1.0 + EXP( 91.301 - DT_SUN ) )
                   CT_SHADE = EXP( 37.711 - 0.398570815 * DT_SHADE ) /
      &                          ( 1.0 + EXP( 91.301 - DT_SHADE ) )     
-                  EMPOL( C,R,I ) = SEMIS( C,R,I )
-     &                           *( FRACSUN   * CT_SUN   * CSUBL_SUN + 
-     &                              FRACSHADE * CT_SHADE * CSUBL_SHADE )                   		  
+                  EMPOL( C,R,I ) = SEMIS( C,R,I )*( FRACSUN   * CT_SUN   * CSUBL_SUN + 
+     &                                              FRACSHADE * CT_SHADE * CSUBL_SHADE )                   		  
                END IF
+	       
+	       
 
 
 
-
-! MORE OLD CODE
-C.....................  Initialize csubl
-!                    CSUBL = 0.0
-!                    IF ( PAR .LE. 0.01 .OR.
-!     &                   COSZEN( C,R ) .LE. 0.02079483 ) THEN
-!                        EMPOL( C, R, I ) = 0.0
-!                    ELSE
-!                        IF ( TLAI .GT. 0.1 ) THEN
-!                           CSUBL = CLNEW( ZEN, PARDB, PARDIF, TLAI )
-!                        ELSE  ! keep this or not?
-!                            CSUBL  = CGUEN( PAR )
-!                        END IF
-!                        EMPOL( C, R, I ) = SEMIS( C,R, I ) * CT * CSUBL
-!                    END IF
-! END OLD CODE
                 END DO ! end ISOP and MBO calculations loop
+
+
 
 
 
@@ -409,34 +374,16 @@ C Calculate other biogenic emissions except NO
 C Note not speciated here
 C Limit temerature to 315 K for monoterpenes and other VOCs
             TLEAF_SUN   = MIN( TLEAF_SUN, 315.0 )
-            TLEAF_SHADE = MIN( TLEAF_SHADE, 315.0 )	    
+            TLEAF_SHADE = MIN( TLEAF_SHADE, 315.0 )    
 
-            CFOVOC  = FRACSUN   * 
-     &                EXP( 0.09 * ( TLEAF_SUN   - 303.0 ) ) + 
-     &                FRACSHADE * 
-     &                EXP( 0.09 * ( TLEAF_SHADE - 303.0 ) ) 
-            CFSESQT = FRACSUN   * 
-     &                EXP( 0.17 * ( TLEAF_SUN   - 303.0 ) ) + 
-     &                FRACSHADE * 
-     &                EXP( 0.17 * ( TLEAF_SHADE - 303.0 ) )  
+            CFOVOC  = FRACSUN   * EXP( 0.09 * ( TLEAF_SUN   - 303.0 ) ) + 
+     &                FRACSHADE * EXP( 0.09 * ( TLEAF_SHADE - 303.0 ) ) 
+            CFSESQT = FRACSUN   * EXP( 0.17 * ( TLEAF_SUN   - 303.0 ) ) + 
+     &                FRACSHADE * EXP( 0.17 * ( TLEAF_SHADE - 303.0 ) )  	    
+
      
      
-!  MORE OLD CODE    
-C.................  Calculate other biogenic emissions except NO
-C                   Note not speciated here
-C                   Limit temerature to 315 K for monoterpenes and other VOCs
-!               IF (TAIR .GT. 315.0 ) THEN
-!                    WRITE( MESG, 94020 ) 'TAIR=', TAIR,
-!     &               'out of range at (C,R)=', C, R,
-!     &               ' resetting to 315K for monoterpene and other VOCs'
-!                    CALL M3WARN( PROGNAME, JDATE, JTIME, MESG )
-!                    TAIR = 315.0
-!                END IF
-!
-!
-!                CFOVOC  = EXP( 0.09 * ( TAIR - 303.0 ) )
-!                CFSESQT = EXP( 0.17 * ( TAIR - 303.0 ) )
-! END OLD CODE		
+	
 
                 DO I = NLAI + 1, NSEF - 2
                     EMPOL( C,R,I ) = SEMIS( C,R,I ) * CFOVOC
@@ -473,12 +420,10 @@ C***************** CONTAINS ********************************************
 
         CONTAINS
 
-
 C Function to calculate csubl based on zenith angle, par, and lai
          SUBROUTINE CLNEW_SUB( ZEN, PARDB, PARDIF, TLAI, LHSH_DIV,
      &                              LHSH_COMP, DTLSUN, DTLSHADE, 
-     &                              CSUBL_SUN, CSUBL_SHADE, 
-     &                              FRACSUN, FRACSHADE,
+     &                              CSUBL_SUN, CSUBL_SHADE, FRACSUN, FRACSHADE,
      &                              SOLRAD, REFLDV )
 
          IMPLICIT NONE
@@ -488,14 +433,14 @@ C Function arguments:
          REAL, INTENT( IN )  :: PARDIF   ! diffuse PAR ( umol/m2-s)
          REAL, INTENT( IN )  :: ZEN      ! solar zenith angle (radians)
          REAL, INTENT( IN )  :: TLAI     ! leaf area index for grid cell
-	 REAL, INTENT( IN )  :: LHSH_DIV  
-	 REAL, INTENT( IN )  :: LHSH_COMP
- 	 REAL, INTENT( IN )  :: SOLRAD
-	 REAL, INTENT( IN )  :: REFLDV
-	 REAL, INTENT( OUT ) :: CSUBL_SUN
-	 REAL, INTENT( OUT ) :: CSUBL_SHADE
-	 REAL, INTENT( OUT ) :: DTLSUN           ! Sun leaf temperature [K]
-	 REAL, INTENT( OUT ) :: DTLSHADE         ! Sun leaf temperature [K]
+         REAL, INTENT( IN )  :: LHSH_DIV  
+         REAL, INTENT( IN )  :: LHSH_COMP
+         REAL, INTENT( IN )  :: SOLRAD
+         REAL, INTENT( IN )  :: REFLDV
+         REAL, INTENT( OUT ) :: CSUBL_SUN
+         REAL, INTENT( OUT ) :: CSUBL_SHADE
+         REAL, INTENT( OUT ) :: DTLSUN           ! Sun leaf temperature [K]
+         REAL, INTENT( OUT ) :: DTLSHADE         ! Sun leaf temperature [K]
          REAL, INTENT( OUT ) :: FRACSUN          ! fraction of leaves that are sunlit
          REAL, INTENT( OUT ) :: FRACSHADE        ! fraction of leaves that are shaded
 
@@ -508,12 +453,14 @@ C Local variables:
          REAL, SAVE :: SQALPHA ! square root of alpha
          REAL KBE              ! extinction coefficient for direct beam
          REAL CANPARSCAT       ! exponentially wtd scattered PAR (umol/m2-s)
-         REAL CANPARDIF        ! exponentially wtd diffuse PAR (umol/m2-s)
+         REAL CANPARDIF_SUN    ! exponentially wtd diffuse PAR at the top of the canopy (umol/m2-s)
+         REAL CANPARDIF_SHADE  ! exponentially wtd diffuse PAR in the shaded part of the canopy (umol/m2-s)
          REAL PARSHADE         ! PAR on shaded leaves (umol/m2-s)
          REAL PARSUN           ! PAR on sunlit leaves (umol/m2-s)
          REAL SOLSUN           ! RS transmitted to sunlit leaves W/m**2
-	 REAL SOLSHADE         ! RS transmitted to shaded leaves W/m**2
+         REAL SOLSHADE         ! RS transmitted to shaded leaves W/m**2
          REAL LAISUN           ! LAI that is sunlit
+         REAL LAISHADE         ! LAI that is shaded
 
 
          LOGICAL, SAVE :: FIRSTIME = .TRUE.
@@ -523,37 +470,39 @@ C-----------------------------------------------------------------------
             FIRSTIME = .FALSE.
             SQALPHA = SQRT( ALPHA )
          END IF
-         IF ( TLAI .GT. 0.1 ) THEN
-            IF ( PARDB + PARDIF .GT. 0.01 .OR.
-     &              COSZ .GT. 0.02079483 ) THEN
 C CN98 - eqn 15.4, assume x=1 (can use a table or atributes to change this)
-               KBE = 0.5 * SQRT( 1.0 + TAN( ZEN ) * TAN( ZEN ) )
+C Set a ceiling for KBE to prevent a blow up at high zenith angles. This has
+C little impact on the results because direct PAR is low under these conditions
+         IF( ZEN .GE. 1.57 ) THEN
+            KBE = 627.9
+         ELSE
+            KBE = 0.5 * SQRT( 1.0 + TAN( ZEN )**2 )
+         END IF
+         IF ( TLAI .GT. 0.1 ) THEN
+            IF ( PARDB + PARDIF .GT. 0.0 ) THEN
+
+C CN98 p-259 Sun and shaded areas of the canopy
+               LAISUN     = ( 1.0 - EXP( -1.0 * KBE * TLAI ) ) / KBE
+               LAISHADE   = MAX( TLAI - LAISUN, 0.0 )
+               FRACSUN    = LAISUN / TLAI             
+               FRACSHADE  = 1.0 - FRACSUN
 
 C CN98 - p. 261 (this is usually small)
-               CANPARSCAT = 0.5 * PARDB 
-     &                  * ( EXP( -1.0 * SQALPHA * KBE * TLAI )
+               CANPARSCAT = 0.5 * PARDB * ( EXP( -1.0 * SQALPHA * KBE * TLAI )
      &                    - EXP( -1.0 * KBE * TLAI ) )
 
 C CN98 - p. 261 (assume exponentially wtd avg)
-               CANPARDIF  = PARDIF * ( 1.0 - 
-     &          EXP( -1.0 * SQALPHA * KD * TLAI ) )
-     &                  / ( SQALPHA * KD * TLAI )
+               CANPARDIF_SUN    = PARDIF * ( 1.0 - EXP( -1.0 * SQALPHA * KD * LAISUN ) )
+     &                                   / ( SQALPHA * KD * LAISUN )
+
+               CANPARDIF_SHADE  = CANPARDIF_SUN * ( EXP( -1.0 * SQALPHA * KD * LAISUN ) - 
+     &                                              EXP( -1.0 * SQALPHA * KD * TLAI ) )
+     &                                   / ( SQALPHA * KD * (TLAI - LAISUN) )
 
 C CN98 - p. 261 (for next 3 eqns)
 C note that we use the incoming (not absorbed) PAR
-               PARSHADE   = CANPARDIF + CANPARSCAT
-               PARSUN     = KBE * PARDB + PARSHADE
-               LAISUN     = ( 1.0 - EXP( -1.0 * KBE * TLAI ) ) / KBE
-               FRACSUN    = LAISUN / TLAI
-               FRACSHADE  = 1.0 - FRACSUN
-
-C cguen is Guenther's eqn for computing light correction as a function of
-C PAR...fracSun should probably be higher since sunlit leaves tend to be
-C thicker than shaded leaves. But since we need to make crude assumptions
-C regarding leaf orientation (x=1), we will not attempt to fix at the moment.
-
-               CSUBL_SUN   =  CGUEN( PARSUN )
-               CSUBL_SHADE =  CGUEN( PARSHADE )
+               PARSHADE   = CANPARDIF_SHADE + CANPARSCAT
+               PARSUN     = KBE * PARDB + CANPARDIF_SUN + CANPARSCAT
      
 C calculate the leaf temperature following Campbel and Norman 1998 eq 14.6 
 C with the addition of incomming atmospheric long wave irradiation resulting 
@@ -561,138 +510,82 @@ C in the cacelation of the long wave radiation budget
          
                SOLSUN    = SOLRAD * PARSUN / ( PARDB + PARDIF )
                SOLSHADE  = SOLRAD * PARSHADE / ( PARDB + PARDIF )
-               DTLSUN    = ((1.0 - REFLDV) * SOLSUN + LHSH_COMP )
-     &                                                 / LHSH_DIV
-               DTLSHADE  = ((1.0 - REFLDV) * SOLSHADE + LHSH_COMP )
-     &                                                 / LHSH_DIV
+               DTLSUN    = ((1.0 - REFLDV) * SOLSUN + LHSH_COMP ) / LHSH_DIV
+               DTLSHADE  = ((1.0 - REFLDV) * SOLSHADE + LHSH_COMP ) / LHSH_DIV
                DTLSUN    = MIN(DTLSUN,  10.0) 
                DTLSUN    = MAX(DTLSUN, -10.0) 
-	       DTLSHADE  = MIN(DTLSHADE,  10.0) 
+               DTLSHADE  = MIN(DTLSHADE,  10.0) 
                DTLSHADE  = MAX(DTLSHADE, -10.0) 
+
+C cguen is Guenther's eqn for computing light correction as a function of
+C PAR...fracSun should probably be higher since sunlit leaves tend to be
+C thicker than shaded leaves. But since we need to make crude assumptions
+C regarding leaf orientation (x=1), we will not attempt to fix at the moment.
+
+               CSUBL_SUN   = CGUEN( PARDB + PARDIF, 0.0, LAISUN, KBE )
+               CSUBL_SHADE = CGUEN( PARDB + PARDIF, LAISUN, TLAI, KBE )
             
-	    ELSE ! to prevent divide by 0 when there is no solar rad
-	       CSUBL_SUN   = 0.0
-	       CSUBL_SHADE = 0.0
-	       FRACSUN     = 0.2
-	       FRACSHADE   = 0.8
+            ELSE ! to prevent divide by 0 when there is no solar rad
+               CSUBL_SUN   = 0.0
+               CSUBL_SHADE = 0.0
+               FRACSUN     = 0.2
+               FRACSHADE   = 0.8
                DTLSUN      = LHSH_COMP / LHSH_DIV
-	       DTLSHADE    = LHSH_COMP / LHSH_DIV
+               DTLSHADE    = LHSH_COMP / LHSH_DIV
                DTLSUN      = MIN(DTLSUN,  10.0) 
                DTLSUN      = MAX(DTLSUN, -10.0) 
-	       DTLSHADE    = MIN(DTLSHADE,  10.0) 
+               DTLSHADE    = MIN(DTLSHADE,  10.0) 
                DTLSHADE    = MAX(DTLSHADE, -10.0) 
-	    END IF	       
-	    
+            END IF       
+    
          ELSE 
-            CSUBL_SUN   = CGUEN( PARDB + PARDIF )
-	    CSUBL_SHADE = CGUEN( PARDB + PARDIF )
-	    FRACSUN     = 1.0
-	    FRACSHADE   = 0.0
-	    DTLSUN      = ((1.0 - REFLDV) * SOLRAD + LHSH_COMP ) / LHSH_DIV
-	    DTLSHADE    = 0.0
+            CSUBL_SUN   = CGUEN( PARDB + PARDIF, 0.0, TLAI, KBE )
+            CSUBL_SHADE = 0.0
+            FRACSUN     = 1.0
+            FRACSHADE   = 0.0
+            DTLSUN      = ((1.0 - REFLDV) * SOLRAD + LHSH_COMP ) / LHSH_DIV
+            DTLSHADE    = 0.0
             DTLSUN      = MIN(DTLSUN,  10.0) 
-            DTLSUN      = MAX(DTLSUN, -10.0)  	    
+            DTLSUN      = MAX(DTLSUN, -10.0)      
          END IF
 
          END SUBROUTINE CLNEW_SUB
 
 
-C.............  Function to calculate csubl based on zenith angle, par, and lai
-            REAL FUNCTION CLNEW( ZEN, PARDB, PARDIF, TLAI )
-C******** Reference:CN98
-C      Campbell, G.S. and J.M. Norman. 1998. An Introduction to Environmental Biophysics, 
-C      Springer-Verlag, New York.
-C
-C
-            IMPLICIT NONE
 
-C.............  Function arguments
-            REAL, INTENT (IN) :: PARDB    ! direct beam PAR( umol/m2-s)
-            REAL, INTENT (IN) :: PARDIF   ! diffuse PAR ( umol/m2-s)
-            REAL, INTENT (IN) :: ZEN      ! solar zenith angle (radians)
-            REAL, INTENT (IN) :: TLAI     ! leaf area index for grid cell
+         REAL FUNCTION CGUEN( PAR, LAI1, LAI2, KBE )
 
-C.............  Local variables
-            REAL ALPHA              ! leave absorptivity
-            REAL KBE                ! extinction coefficient for direct beam
-            REAL KD                 ! extinction coefficient for diffuse radiation
-            REAL CANPARSCAT         ! exponentially wtd scattered PAR (umol/m2-s)
-            REAL CANPARDIF          ! exponentially wtd diffuse PAR (umol/m2-s)
-            REAL PARSHADE           ! PAR on shaded leaves (umol/m2-s)
-            REAL PARSUN             ! PAR on sunlit leaves (umol/m2-s)
-            REAL LAISUN             ! LAI that is sunlit
-            REAL FRACSUN            ! fraction of leaves that are sunlit
-            REAL FRACSHADE          ! fraction of leaves that are shaded
-            REAL SQALPHA            ! square root of alpha
+C 11/14 J. Bash - Updated to Niinemets et al. 2010 doi:10.1029/2010JG001436 
+C                 Big leaf model which updates Guenther et al. 1993 doi:10.1029/93JD00527 for 
+C                 in-canopy gradients
 
-C-----------------------------------------------------------------------------
-            ALPHA = 0.8
-            SQALPHA = SQRT(0.8)
-            KD = 0.68
+         IMPLICIT NONE
 
-C.............  CN98 - eqn 15.4, assume x=1
-            KBE = 0.5 * SQRT(1. + TAN( ZEN ) * TAN( ZEN ))
+C Function arguments:
+         REAL, INTENT( IN ) :: PAR
+         REAL, INTENT( IN ) :: LAI1 ! top of the layer LAI
+         REAL, INTENT( IN ) :: LAI2 ! bottom of the layer LAI
+         REAL, INTENT( IN ) :: KBE  ! light extenction coefficient
 
-C.............  CN98 - p. 261 (this is usually small)
-            CANPARSCAT = 0.5 * PARDB * (EXP(-1.* SQALPHA * KBE * TLAI) -
-     &                   EXP(-1.* KBE * TLAI))
+C Parameters:
+         REAL, PARAMETER :: ALPHA = 0.0027 ! Guenther et al. 1993
+         REAL, PARAMETER :: CL    = 1.066  ! Guenther et al. 1993
 
-C.............  CN98 - p. 261 (assume exponentially wtd avg)
-            CANPARDIF  = PARDIF * (1. - EXP(-1. * SQALPHA * KD * TLAI))
-     &                 /(SQALPHA * KD * TLAI)
+C-----------------------------------------------------------------------
+         IF ( PAR .LE. 0.01 ) THEN
+            CGUEN = 0.0
+         ELSE
+C Niinemets et al. 2010 equation A9 integrated from LAI1 to LAI2
+            CGUEN = CL * ( SQRT(1+ALPHA**2 * PAR**2 * EXP(-2*LAI1*KBE)) -
+     &                     SQRT(1+ALPHA**2 * PAR**2 * EXP(-2*LAI2*KBE)) ) /
+     &                   ( ALPHA * KBE * PAR )
+         END IF
 
-C.............  CN98 - p. 261 (for next 3 eqns)
-C               note that we use the incoming (not absorbed) PAR
-            PARSHADE   = CANPARDIF + CANPARSCAT
-            PARSUN     = KBE * PARDB + PARSHADE
-	      LAISUN     = (1. - EXP(-1. * KBE * TLAI))/KBE
-	      FRACSUN    = LAISUN/TLAI
-	      FRACSHADE  = 1. - FRACSUN
+         RETURN
 
-C...........  cguen is guenther's eqn for computing light correction as a
-C             function of PAR...fracSun should probably be higher since
-C             sunlit leaves tend to be thicker than shaded leaves.  But
-C             since we need to make crude asmptns regarding leave
-C             orientation (x=1), will not attempt to fix at the moment.
+         END FUNCTION CGUEN
 
-            CLNEW = FRACSUN * CGUEN( PARSUN ) +
-     &              FRACSHADE * CGUEN( PARSHADE )
 
-            RETURN
-
-            END FUNCTION CLNEW
-
-C-----------------------------------------------------------------------------
-
-C.............  Function to calculate Guenther's equation for computing
-C               light correction
-C    Reference:   Guenther, A., B. Baugh, G. Brasseur, J. Greenberg, P. Harley, L. Klinger,
-C   D. Serca, and L. Vierling, 1999: Isoprene emission estimates and uncertainties 
-C   for the Central African EXPRESSO Study domain. J. Geophys. Res., 104, 30625-30639.
-C
-C
-C
-            REAL FUNCTION CGUEN( PARTMP )
-
-            IMPLICIT NONE
-
-C.............  Function arguments
-            REAL, INTENT (IN) :: PARTMP
-            REAL, PARAMETER :: ALPHA = 0.001
-            REAL, PARAMETER :: CL = 1.42
-
-C-----------------------------------------------------------------------------
-
-            IF ( PARTMP .LE. 0.01) THEN
-                CGUEN = 0.0
-            ELSE
-                CGUEN = (ALPHA * CL * PARTMP) /
-     &                  SQRT(1. + ALPHA * ALPHA * PARTMP * PARTMP)
-            END IF
-
-            RETURN
-
-            END FUNCTION CGUEN
 
 C-----------------------------------------------------------------------------
 
