@@ -114,7 +114,7 @@ C.........  If any HAP was found, update TOG to NONHAPTOG
         IF( FOUND ) THEN
             DO I = 1, MNIPPA
                 IF( MEANAM( I ) == 'TOG' ) THEN
-                    MEANAM( I ) = 'NONHAP'//MEANAM( I )
+                    MEANAM( I ) = 'NONHAP'//TRIM( MEANAM(I) )
                 END IF
             END DO
         END IF

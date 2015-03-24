@@ -39,7 +39,7 @@ C****************************************************************************
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: SDATE, STIME, EDATE, ETIME, TSTEP,
-     &                      NMSPC, MEBCNY, MEBSTA, MEBSUM,
+     &                      NMSPC, MEBCNY, MEBSTA, MEBSUM, SMATCHK,
      &                      MEBSCC, MEBSTC,
      &                      MRDEV, LREPSTA, LREPCNY, LREPSCC, LREPSRC,
      &                      EMNAM, EANAM, TOTUNIT, GRDUNIT, NMSRC, NIPPA
@@ -157,13 +157,17 @@ C.............  Initialize units and names
             MUNITS = ' '  ! array
             MNAMES = ' '  ! array
     
-C.............  Create units labels from species
+C.............  Create units names and units from species
             DO V = 1, NMSPC
-                GRDUNIT(V) = MULTUNIT( GRDUNIT( V ), 's/day' )
-    
-C.................  Set names and units for output
-                L = LEN_TRIM( GRDUNIT( V ) )
-                CBUF = '[' // GRDUNIT( V )( 1:L ) // ']'
+                IF( .NOT. SMATCHK ) THEN
+                    GRDUNIT(V) = MULTUNIT( GRDUNIT( V ), 's/day' )
+                
+                    L = LEN_TRIM( GRDUNIT( V ) )
+                    CBUF = '[' // GRDUNIT( V )( 1:L ) // ']'
+                ELSE
+                    L = LEN_TRIM( TOTUNIT( V ) )
+                    CBUF = '[' // TOTUNIT( V )( 1:L ) // ']'
+                END IF 
     
                 MNAMES( V ) = EMNAM( V )
                 MUNITS( V ) = CBUF

@@ -49,7 +49,7 @@ C.........  This module contains the major data structure and control flags
      &          NMSRC, MNGMAT, MGMATX,             ! no. of srcs, no. gridding matrix entries
      &          NMSPC, MIFIP,                      ! no. species
      &          EMNAM,                             ! species names
-     &          TSVDESC,                           ! var names
+     &          TSVDESC, SMATCHK,                  ! var names, use SMAT for model spc calc
      &          SIINDEX, SPINDEX,                  ! EANAM & EMNAM idx
      &          SDATE, STIME, NSTEPS, TSTEP,       ! episode information
      &          MSDATE,                            ! dates for by-day hrly emis
@@ -70,8 +70,11 @@ C.........  This module contains data structures and flags specific to Movesmrg
      &          EMPOLIDX,
      &          NEMTEMPS, EMTEMPS, EMXTEMPS, EMTEMPIDX,
      &          RPDEMFACS, RPHEMFACS, RPVEMFACS, RPPEMFACS,
-     &          SPDFLAG, SPDPRO, MISCC, 
-     &          CFPRO, CFFLAG,
+     &          SPDFLAG, SPDPRO, MISCC,
+     &          MSNAME_L, MSMATX_L, MNSMATV_L, GRDENV,
+     &          MSNAME_S, MSMATX_S, MNSMATV_S,
+     &          EANAMREP, CFPRO, CFFLAG,
+     &          NMVSPOLS, MVSPOLNAMS,              ! MOVES lookup poll/spc names
      &          TEMPBIN, MTMP_OUT
 
 C.........  This module contains the lists of unique source characteristics
@@ -171,6 +174,7 @@ C...........   Other local variables
         INTEGER          MONTH         ! current month
         INTEGER          LMONTH        ! month from previous iteration
         INTEGER       :: PDAY = 0      ! previous iteration day no.
+        INTEGER          NPOLSPC       ! total number of pol/spc
         INTEGER          SIIDX         ! tmp pollutant idx
         INTEGER          SPIDX         ! tmp species idx
         INTEGER          POLIDX        ! current pollutant index
@@ -178,8 +182,8 @@ C...........   Other local variables
         INTEGER          SRC           ! current source number
         INTEGER          UUIDX, UOIDX, OUIDX, OOIDX  ! indexes for matching profiles
         INTEGER          USTART, UEND, OSTART, OEND
-        INTEGER         MXWARN      !  maximum number of warnings
-        INTEGER      :: NWARN = 0   !  current number of warnings
+        INTEGER          MXWARN        !  maximum number of warnings
+        INTEGER       :: NWARN = 0     !  current number of warnings
         INTEGER          GIDX          ! index to source group
 
         REAL             F1, F2        ! tmp conversion
@@ -207,6 +211,7 @@ C...........   Other local variables
         CHARACTER(IOVLEN3) CSPC    ! tmp species name
         CHARACTER(IOVLEN3) LSPC    ! previous tmp species name
         CHARACTER(SCCLEN3) SCC     ! current source SCC
+        CHARACTER(PLSLEN3) VBUF    ! pol to species or pol description buffer
 
         CHARACTER(16) :: PROGNAME = 'MOVESMRG' ! program name
 
@@ -303,6 +308,14 @@ C........ when not optimize memory
         CALL CHECKMEM( IOS, 'EMPOLIDX', PROGNAME )
         EMPOLIDX = 0   ! array
 
+        IF( SMATCHK ) THEN
+            ALLOCATE( MSMATX_L( NMSRC, MNSMATV_L ), STAT=IOS )    ! mole speciation matrix
+            CALL CHECKMEM( IOS, 'MSMATX_L', PROGNAME )
+
+            ALLOCATE( MSMATX_S( NMSRC, MNSMATV_S ), STAT=IOS )    ! mass speciation matrix
+            CALL CHECKMEM( IOS, 'MSMATX_S', PROGNAME )
+        END IF
+
         IF( RPDFLAG ) THEN
             ALLOCATE( VMT( NMSRC ), STAT=IOS )     ! hourly VMT
             CALL CHECKMEM( IOS, 'VMT', PROGNAME )
@@ -361,7 +374,25 @@ C.........  Open NetCDF output files, open ASCII report files, and write headers
         CALL OPENMRGOUT
 
 C.........  Read control factor data
-        IF ( CFFLAG ) CALL RDCFPRO( CFDEV )
+        IF( CFFLAG ) CALL RDCFPRO( CFDEV )
+
+C.........  Read speciation matrices for current variable
+        IF( SMATCHK ) THEN 
+            DO V = 1, NSMATV
+
+C.............  Extract name of variable
+            VBUF = TSVDESC( V )
+
+                CALL RDSMAT( MSNAME_L, VBUF, MSMATX_L( 1,V ) )
+                CALL RDSMAT( MSNAME_S, VBUF, MSMATX_S( 1,V ) )
+
+C.................  Switch SPC matrix (mole/mass) based on MRG_GRDOUT_UNIT, MRG_TOTOUT_UNIT
+                IF( INDEX( GRDENV, 'mole' ) < 1 ) THEN
+                    MSMATX_L( 1,V ) = MSMATX_S( 1,V )
+                END IF
+
+             END DO     
+        END IF
 
 C.........  Write out message with list of species
         CALL POLMESG( NMSPC, EMNAM )
@@ -883,16 +914,27 @@ C...............................  Check that maximum temperatures of profiles ma
                         END IF
 
 C.........................  Loop through pollutant-species combos
-                        DO V = 1, NIPPA + NMSPC
+                        NPOLSPC = NIPPA + NMSPC
+                        IF( SMATCHK ) NPOLSPC = NSMATV
+
+                        DO V = 1, NPOLSPC
 
 C.............................  Lookup poll/species index from MOVES lookup EF 
                             SIIDX = 0
                             SPIDX = 0
-                            POLIDX = EMPOLIDX( V )
-                            IF( V <= NIPPA ) THEN
-                                SIIDX = V 
+                            IF( SMATCHK ) THEN
+                                SIIDX = SIINDEX( V,1 )
+                                SPIDX = SPINDEX( V,1 )
+                                L1 = INDEX( TSVDESC(V), SPJOIN )
+                                CPOL = TSVDESC(V)( 1:L1-1 )
+                                POLIDX = INDEX1( CPOL, NMVSPOLS, MVSPOLNAMS )
                             ELSE
-                                SPIDX = V - NIPPA
+                                IF( V <= NIPPA ) THEN
+                                    SIIDX = V
+                                ELSE
+                                    SPIDX = V - NIPPA
+                                END IF
+                                POLIDX = EMPOLIDX( V )
                             END IF
 
                             IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, V, MONTH )
@@ -955,7 +997,12 @@ C.............................  Calculate gridded, hourly emissions (g/hr/cell)
 C.............................  Set units conversion factor
                             IF( SPIDX > 0 ) THEN
                                 F1 = GRDFAC( SPIDX )
-                                EMVALSPC = EMVAL * F1
+                                
+                                IF( SMATCHK ) THEN
+                                    EMVALSPC = EMVAL * MSMATX_L( SRC,V ) * F1
+                                ELSE
+                                    EMVALSPC = EMVAL * F1
+                                ENDIF
 
                                 IF( MOPTIMIZE ) THEN
                                     EMGRD( CELL,SPIDX ) = 
@@ -968,37 +1015,58 @@ C.............................  Set units conversion factor
                                     END IF
 
 C...................................  If not use memory optimize
-                              ELSE                      
-                                TEMGRD( CELL,SPIDX,T ) =
-     &                            TEMGRD( CELL,SPIDX,T ) + EMVALSPC
+                                ELSE                      
+                                    TEMGRD( CELL,SPIDX,T ) =
+     &                                TEMGRD( CELL,SPIDX,T ) + EMVALSPC
      
-                                IF ( SRCGRPFLAG ) THEN
-                                    GIDX = ISRCGRP( SRC )
-                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
-     &                                EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
+                                    IF ( SRCGRPFLAG ) THEN
+                                        GIDX = ISRCGRP( SRC )
+                                        EMGGRDSPCT( CELL,GIDX,SPIDX,T ) =
+     &                                    EMGGRDSPCT( CELL,GIDX,SPIDX,T ) + EMVALSPC
+                                    END IF
+
                                 END IF
 
-                              END IF
                             END IF
 
 C.............................  Store Temporal intermediate hourly emissions
-                            IF( MTMP_OUT .AND. SIIDX > 0 ) THEN
-                                MTMP_INVT( SRC,SIIDX,T ) =
-     &                               MTMP_INVT( SRC,SIIDX,T ) +
-     &                               EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
+                            IF( MTMP_OUT ) THEN
+                                IF( SMATCHK ) THEN
+                                    IF( EANAMREP( V ) ) THEN
+                                        MTMP_INVT( SRC,SIIDX,T ) =
+     &                                       MTMP_INVT( SRC,SIIDX,T ) +
+     &                                       EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
+                                    END IF
+                                ELSE
+                                    MTMP_INVT( SRC,SIIDX,T ) =
+     &                                   MTMP_INVT( SRC,SIIDX,T ) +
+     &                                   EMVAL * GM2TON       ! g/hr-cell * ton/g = ton/hr-cell
+                                END IF
                             END IF
 
 C.............................  Add this cell's emissions to source totals in unit of moles/hr (instead of moles/s)
 C                               not by applying 1/3600 factor (hr to sec)
                             IF( LREPANY ) THEN
                                 IF( .NOT. (T == NSTEPS .AND. JTIME == 0) ) THEN
-                                    IF( SPIDX > 0 ) THEN
-                                       MEBSUM( SRC,SPIDX ) = MEBSUM( SRC,SPIDX ) + 
-     &                                                       EMVAL
-                                    ELSE   ! sum of inv emission in unit of tons/hr 
-                                       F2 = TOTFAC( NMSPC+SIIDX )
-                                       MEBSUM( SRC,NMSPC+SIIDX ) =
-     &                                      MEBSUM( SRC,NMSPC+SIIDX ) + EMVAL * F2 
+                                    IF( SMATCHK ) THEN
+                                        EMVALSPC = EMVAL * MSMATX_S( SRC,V ) * TOTFAC( SPIDX )
+                                        MEBSUM( SRC,SPIDX ) =  MEBSUM( SRC,SPIDX ) + 
+     &                                                         EMVALSPC * GM2TON
+                                        IF( EANAMREP( V ) ) THEN
+                                            EMVALSPC = EMVAL * TOTFAC( NMSPC+SIIDX )
+                                            MEBSUM( SRC,NMSPC+SIIDX ) =
+     &                                          MEBSUM( SRC,NMSPC+SIIDX ) + EMVALSPC
+                                        END IF
+                                    ELSE
+                                        IF( SPIDX > 0 ) THEN
+                                            EMVALSPC = EMVAL
+                                            MEBSUM( SRC,SPIDX ) =  MEBSUM( SRC,SPIDX ) + 
+     &                                                             EMVALSPC
+                                        ELSE   ! sum of inv emission in unit of tons/hr 
+                                            EMVALSPC = EMVAL * TOTFAC( NMSPC+SIIDX )
+                                            MEBSUM( SRC,NMSPC+SIIDX ) =
+     &                                          MEBSUM( SRC,NMSPC+SIIDX ) + EMVALSPC
+                                        END IF
                                     END IF
                                     RDATE = JDATE     ! last reporting date
                                     RTIME = JTIME     ! last reporting hour

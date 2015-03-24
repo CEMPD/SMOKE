@@ -83,6 +83,9 @@ C.........  Emission factors data
         REAL,                 PUBLIC :: TEMPBIN           ! temperature buffer for max/min profiles
 
         INTEGER, ALLOCATABLE, PUBLIC :: EMPOLIDX( : )     ! index of emission pollutant name
+        INTEGER,                        PUBLIC :: NMVSPOLS         ! number of MOVES pollutants/species
+        CHARACTER(IOVLEN3),ALLOCATABLE, PUBLIC :: MVSPOLNAMS( : )  ! arry for poll/spc names
+
 
         INTEGER, PUBLIC :: NEMTEMPS                       ! no. temperatures for current emision factors
         REAL, ALLOCATABLE, PUBLIC :: EMTEMPS( : )         ! list of temps for emission factors
