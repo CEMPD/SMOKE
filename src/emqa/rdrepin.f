@@ -43,7 +43,9 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: SRGID, CSOURC, IDIU, IWEK, IMON,
+        USE MODSOURC, ONLY: SRGID, CSOURC, CDOM, CWEK, CMON,
+     &                      CMND, CTUE, CWED, CTHU, CFRI, CSAT,
+     &                      CSUN, CMET,
      &                      SPPROF, IFIP, STKHT, STKDM, STKTK,
      &                      STKVE, CINTGR
 
@@ -96,9 +98,10 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
         INTEGER     GETNLIST
         INTEGER     INDEX1
         REAL        STR2REAL
+        INTEGER     STR2INT
 
         EXTERNAL    CHKINT, CHKREAL, CRLF, FINDC, GETFLINE, GETNLIST, 
-     &              INDEX1, STR2REAL
+     &              INDEX1, STR2REAL, STR2INT
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: NSLIN  ! no. mass spec input vars
@@ -130,7 +133,6 @@ C...........   SUBROUTINE ARGUMENTS
         REAL        , INTENT(OUT) :: SLMAT( NSRC, NSLIN ) ! mole spec coefs
  
 C.........  Local allocatable arrays
-        INTEGER, ALLOCATABLE :: IBUF   ( : )  ! tmp var for temporal profiles
         REAL   , ALLOCATABLE :: LFRAC1L( : )  ! 1st-layer fraction
 
 C.........  Array that contains the names of the inventory variables needed for
@@ -138,7 +140,7 @@ C           this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C.........  For parsing lines
-        CHARACTER(64)             SEGMENT( 10 )
+        CHARACTER(64)         SEGMENT( 10 )
         CHARACTER(CHRLEN3) :: CHARS  ( 5 )   ! tmp plant characteristics
 
 C...........   Local variables that depend on module variables
@@ -172,8 +174,10 @@ C...........   Other local variables
         LOGICAL       :: EFLAG   = .FALSE.  !  true: error found
         LOGICAL       :: MSGFLAG = .FALSE.  !  true: don't repeat message
         LOGICAL       :: LTMP    = .FALSE.  !  true: temporary logical
+        LOGICAL, SAVE :: FIRSTIME =.FALSE.  !  true: first time
 
-        CHARACTER          TTYP         !  temporal profile entry type
+        CHARACTER(TMPLEN3) TTYP, TBUF   !  temporal profile entry type
+        CHARACTER(TMPLEN3) FIRSTTYP     !  1st temporal profile entry type
         CHARACTER(16) ::   BNAME = ' '  !  name buffer
         CHARACTER(50)      BUFFER       !  string buffer
         CHARACTER(256)     LINE         !  input line
@@ -735,39 +739,52 @@ C.........  If needed, read in temporal supplementation matrix
             MESG = 'Reading supplemental temporal file...'
             CALL M3MSG2( MESG )
 
-            ALLOCATE( IDIU( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IDIU', PROGNAME )
-            ALLOCATE( IWEK( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IWEK', PROGNAME )
-            ALLOCATE( IMON( NSRC ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IMON', PROGNAME )
-            ALLOCATE( IBUF( NIPPA ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'IBUF', PROGNAME )
-            IDIU = 0
-            IWEK = 0
-            IMON = 0
-            IBUF = 0
+            ALLOCATE( CMON( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CMON', PROGNAME )
+            ALLOCATE( CWEK( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CWEK', PROGNAME )
+            ALLOCATE( CDOM( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CDOM', PROGNAME )
+            ALLOCATE( CMND( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CMND', PROGNAME )
+            ALLOCATE( CTUE( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CTUE', PROGNAME )
+            ALLOCATE( CWED( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CWED', PROGNAME )
+            ALLOCATE( CTHU( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CTHU', PROGNAME )
+            ALLOCATE( CFRI( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CFRI', PROGNAME )
+            ALLOCATE( CSAT( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSAT', PROGNAME )
+            ALLOCATE( CSUN( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CSUN', PROGNAME )
+            ALLOCATE( CMET( NSRC ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CMET', PROGNAME )
+            CDOM = ' '
+            CWEK = ' '
+            CMON = ' '
+            CMND = ' '
+            CTUE = ' '
+            CWED = ' '
+            CTHU = ' '
+            CFRI = ' '
+            CSAT = ' '
+            CSUN = ' '
+            CMET = ' '
+            CBUF = ' '
 
             MESG = 'Supplemental temporal file'
             N = GETFLINE( TDEV, MESG )
 
-C.............  Check file format, assuming that pollutants weren't processed
-C               in > 1 groups.  (this routine doesn't handle grouped processing)
-            IF ( ( (N-1)/3 ) .NE. NSRC ) THEN
-                MESG = 'INTERNAL ERROR: ' // CRL// 'TSUP file has '//
-     &                 'inconsistent number of lines with NSRC'
-                CALL M3MSG2( MESG )
-                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
-            END IF
-
 C.............  Skip file header
             READ( TDEV, * )
 
+            S = 0
             IREC = 1
             DO I = 2, N
 
-                READ( TDEV, *, END=1003, IOSTAT=IOS ) 
-     &              TTYP, NV, ( IBUF( V ), V=1, NV )
+                READ( TDEV, '(A)', END=1003, IOSTAT=IOS ) LINE 
                 IREC = IREC + 1
 
                 IF ( IOS .NE. 0 ) THEN
@@ -779,39 +796,63 @@ C.............  Skip file header
                     CYCLE
                 END IF
 
+C...............  Parse line into parts
+                SEGMENT = ' '  ! array
+                CALL PARSLINE( LINE, 4, SEGMENT )
+
+                TTYP = TRIM   ( SEGMENT( 1 ) )
+                NV   = STR2INT( SEGMENT( 2 ) )
+                TBUF = TRIM   ( SEGMENT( 4 ) )
+
 C.................  NV > 1 is not supported
-                IF ( NV .GT. 1 ) THEN
-                    MESG = 'Number of variables in ' // CRL //
+                IF ( NV .NE. 1 ) THEN
+                    MESG = 'Number of variables in ' //
      &                     'TSUP file is not supported.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
+                
+                IF( .NOT. FIRSTIME ) THEN
+                    FIRSTTYP = TTYP
+                    FIRSTIME = .TRUE.
+                END IF
+                
+                IF( FIRSTTYP == TTYP ) S = S + 1
 
-                S = INT( ( I-2 ) / 3 ) + 1
                 SELECT CASE( TTYP )
-                CASE ( 'M' )
-                    IF ( NV .EQ. 1 ) THEN
-                        IMON( S ) = IBUF( 1 )
-                    ELSE
-c                   note: this is not supported yet in Temporal
-                    ENDIF
-
-                CASE ( 'W' )
-                    IF ( NV .EQ. 1 ) THEN
-                        IWEK( S ) = IBUF( 1 )
-                    ELSE
-c                   note: this is not supported yet in Temporal
-                    ENDIF
-
-                CASE ( 'H' )
-                    IF ( NV .EQ. 1 ) THEN
-                        IDIU( S ) = IBUF( 1 )
-                    ELSE
-c                   note: this is not supported yet in Temporal
-                    ENDIF
-
+                CASE ( 'MTH' )
+                    CMON( S ) = TBUF
+                CASE ( 'WEK' )
+                    CWEK( S ) = TBUF
+                CASE ( 'DOM' )
+                    CDOM( S ) = TBUF
+                CASE ( 'MON' )
+                    CMND( S ) = TBUF
+                CASE ( 'TUE' )
+                    CTUE( S ) = TBUF
+                CASE ( 'WED' )
+                    CWED( S ) = TBUF
+                CASE ( 'THU' )
+                    CTHU( S ) = TBUF
+                CASE ( 'FRI' )
+                    CFRI( S ) = TBUF
+                CASE ( 'SAT' )
+                    CSAT( S ) = TBUF
+                CASE ( 'SUN' )
+                    CSUN( S ) = TBUF
+                CASE ( 'MET' )
+                    CMET( S ) = TBUF
                 END SELECT
               
             END DO            
+
+C.............  Check file format, assuming that pollutants weren't processed
+C               in > 1 groups.  (this routine doesn't handle grouped processing)
+            IF ( S .NE. NSRC ) THEN
+                MESG = 'INTERNAL ERROR: ' // CRL// 'TSUP file has '//
+     &                 'inconsistent number of lines with NSRC'
+                CALL M3MSG2( MESG )
+                CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
+            END IF
 
         END IF
 

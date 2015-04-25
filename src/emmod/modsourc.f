@@ -50,12 +50,12 @@
         INTEGER, ALLOCATABLE, PUBLIC:: TZONES( : )  !  time zones
         INTEGER, POINTER,     PUBLIC:: TPFLAG( : )  !  temporal profile types
         INTEGER, POINTER,     PUBLIC:: INVYR ( : )  !  inv year for this record
-        INTEGER, ALLOCATABLE, PUBLIC:: IDIU  ( : )  !  Hr prof code per source
-        INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
-        INTEGER, ALLOCATABLE, PUBLIC:: IMON  ( : )  !  Mn prof code per source
         INTEGER, POINTER,     PUBLIC:: NPCNT ( : )  !  No. of pols per raw rec
         INTEGER, ALLOCATABLE, PUBLIC:: FLTRDAYL( : )!  daylight time filter
         INTEGER, ALLOCATABLE, PUBLIC:: SRGID ( :,: )!  primary & fallbk surg ID
+        INTEGER, ALLOCATABLE, PUBLIC:: IDIU  ( : )  !  Hr prof code per source
+        INTEGER, ALLOCATABLE, PUBLIC:: IWEK  ( : )  !  Wk prof code per source
+        INTEGER, ALLOCATABLE, PUBLIC:: IMON  ( : )  !  Mn prof code per source
 
         REAL   , ALLOCATABLE, PUBLIC:: XLOCA ( : )  !  lon X-location 
         REAL   , ALLOCATABLE, PUBLIC:: YLOCA ( : )  !  lat Y-location 
@@ -88,8 +88,18 @@
         CHARACTER(MACLEN3), POINTER,     PUBLIC:: CMACT  ( : ) ! MACT code
         CHARACTER(NAILEN3), POINTER,     PUBLIC:: CNAICS ( : ) ! NAICS code
         CHARACTER(STPLEN3), POINTER,     PUBLIC:: CSRCTYP( : ) ! source type code
-       
-        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: ) ! spec prof
+        CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC:: SPPROF( :,: )! spec prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CMON   ( : ) ! monthly profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CWEK   ( : ) ! weekly profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CDOM   ( : ) ! day of month profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CMND   ( : ) ! Monday profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CTUE   ( : ) ! Tuesday profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CWED   ( : ) ! Wednesday profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CTHU   ( : ) ! Thursday profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CFRI   ( : ) ! Friday profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CSAT   ( : ) ! Saturday profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CSUN   ( : ) ! sunday profile code
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC:: CMET   ( : ) ! sunday profile code
 
 !.........  Unsorted list of point sources for SMOKE inventory file
         INTEGER, POINTER,     PUBLIC:: INDEXA( : ) !  subscript table for SORTIC

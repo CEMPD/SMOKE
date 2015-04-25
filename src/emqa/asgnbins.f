@@ -40,9 +40,10 @@ C***********************************************************************
 
 C...........   MODULES for public variables
 C...........   This module is the inventory arrays
-        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, IMON,
-     &                      IWEK, IDIU, SPPROF, ISIC, CMACT, CNAICS,
-     &                      CSRCTYP, CORIS, CINTGR
+        USE MODSOURC, ONLY: CSOURC, IFIP, CSCC, IRCLAS, SRGID, CMON,
+     &                      CWEK, CDOM, CMND, CTUE, CWED, CTHU, CFRI,
+     &                      CSAT, CSUN, CMET, SPPROF, ISIC, CMACT,
+     &                      CNAICS, CSRCTYP, CORIS, CINTGR
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
@@ -56,7 +57,9 @@ C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTREC, NOUTBINS, BINBAD, BINCOIDX,
      &                      BINSTIDX, BINCYIDX, BINREGN, BINSMKID,
      &                      BINSCC, BINSRGID1, BINSRGID2, BINSNMIDX,
-     &                      BINRCL, BINMONID, BINWEKID, BINDIUID,
+     &                      BINRCL, BINMONID, BINWEKID, BINDOMID,
+     &                      BINMNDID, BINTUEID, BINWEDID, BINTHUID,
+     &                      BINFRIID, BINSATID, BINSUNID, BINMETID,
      &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
      &                      BINPOPDIV, BINDATA, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
@@ -104,16 +107,14 @@ C...........   Local parameters
 C...........   Sorting arrays
         INTEGER          , ALLOCATABLE :: SORTIDX( : )
 
-        CHARACTER(BUFLEN), ALLOCATABLE :: SORTBUF( : )
+        CHARACTER(BUFLEN*2), ALLOCATABLE :: SORTBUF( : )
 
 C...........   Local variables
         INTEGER         B, C, F, I, J, K, L, LB, S
 
         INTEGER         COL               ! tmp column number
-        INTEGER         DIUID             ! tmp diurnal profile number
         INTEGER         FIP               ! tmp country/state/county
         INTEGER         IOS               ! i/o status
-        INTEGER         MONID             ! tmp monthly profile number
         INTEGER         NDATA             ! no. output data columns for current
         INTEGER         PREVFIP           ! previous FIPs code
         INTEGER         PREVSRCID         ! previous source ID
@@ -124,16 +125,15 @@ C...........   Local variables
         INTEGER         SRGID1            ! tmp primary surrogate ID
         INTEGER         SRGID2            ! tmp fallback surrogate ID
         INTEGER         STKGRP            ! tmp stack group ID
-        INTEGER         WEKID             ! tmp weekly profile number
         INTEGER         MXOUTREC          ! max output rec (NOUTREC*BUFLEN)
 
-        CHARACTER              ESTAT      ! tmp elevated status
-        CHARACTER(60)          FMTBUF     ! format buffer
-        CHARACTER(300)         MESG       ! message buffer
+        CHARACTER         ESTAT       ! tmp elevated status
+        CHARACTER(60)     FMTBUF      ! format buffer
+        CHARACTER(300)    MESG        ! message buffer
 
         CHARACTER(5)       SCCTYPE    ! tmp determination of SCC type
-        CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
-        CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
+        CHARACTER(BUFLEN*2)  BUFFER     ! sorting info buffer
+        CHARACTER(BUFLEN*2)  LBUF       ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC        ! tmp SCC
         CHARACTER(INTLEN3) INTGR      ! tmp INTEGRATE
         CHARACTER(MACLEN3) MACT       ! tmp MACT
@@ -143,6 +143,18 @@ C...........   Local variables
         CHARACTER(SPNLEN3) SPCID      ! tmp speciation profile
         CHARACTER(PLTLEN3) PLANT      ! tmp plant ID
         CHARACTER(PLTLEN3) PREVPLT    ! previous plant ID
+
+        CHARACTER(TMPLEN3) MONID      ! tmp monthly profile number
+        CHARACTER(TMPLEN3) WEKID      ! tmp weekly profile number
+        CHARACTER(TMPLEN3) DOMID      ! tmp day of month profile number
+        CHARACTER(TMPLEN3) MNDID      ! tmp Monday profile number
+        CHARACTER(TMPLEN3) TUEID      ! tmp Tuesday profile number
+        CHARACTER(TMPLEN3) WEDID      ! tmp Wednesday profile number
+        CHARACTER(TMPLEN3) THUID      ! tmp thursday profile number
+        CHARACTER(TMPLEN3) FRIID      ! tmp Friday profile number
+        CHARACTER(TMPLEN3) SATID      ! tmp Saturday profile number
+        CHARACTER(TMPLEN3) SUNID      ! tmp Sunday profile number
+        CHARACTER(TMPLEN3) METID      ! tmp Met-based profile number
 
         CHARACTER(16) :: PROGNAME = 'ASGNBINS' ! program name
 
@@ -173,11 +185,11 @@ C.........  Allocate (and deallocate) memory for sorting arrays
 
 C.........  Build format statement for writing the sorting buffer
 C           (building it in case SCC width changes in the future)
-        WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
+        WRITE( FMTBUF,'(A,I2.2,A,I1,A,I2.2,A,I2.2,A,I2.2,A,I1,A,I1,A,I1,
      &                A,I1,A,I1,A)') 
-     &    '(4I8,A',SCCLEN3,',I',SICLEN3,',5I8,A', SPNLEN3,',A',
-     &    PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,',A', 
-     &    STPLEN3, ',I8,A',INTLEN3,')'
+     &    '(4I8,A',SCCLEN3,',I',SICLEN3,',2I8,11A',TMPLEN3,',A',SPNLEN3,
+     &    ',A',PLTLEN3,',A',ORSLEN3,',I8,A,A', MACLEN3,',A', NAILEN3,
+     &    ',A',STPLEN3, ',I8,A',INTLEN3,')'
 
 C.........  Initialize local variables for building sorting array for this 
 C           report
@@ -190,9 +202,17 @@ C           report
         SRGID1 = 0
         SRGID2 = 0
         STKGRP = 0
-        MONID  = 0
-        WEKID  = 0
-        DIUID  = 0
+        MONID  = ' '
+        WEKID  = ' '
+        DOMID  = ' '
+        MNDID  = ' '
+        TUEID  = ' '
+        WEDID  = ' '
+        THUID  = ' '
+        FRIID  = ' '
+        SATID  = ' '
+        SUNID  = ' '
+        METID  = ' '
         SPCID  = ' '
         PLANT  = ' '
         SCC    = ' '
@@ -369,13 +389,37 @@ C.................  If by surrogates IDs, insert them depending on resolution
             END IF  ! End by surrogate IDs
 
 C.................  If by monthly temporal profile, insert them
-            IF( RPT_%BYMON ) MONID = IMON( OUTSRC( I ) )
+            IF( RPT_%BYMON ) MONID = CMON( OUTSRC( I ) )
 
 C.................  If by weekly temporal profile, insert them
-            IF( RPT_%BYWEK ) WEKID = IWEK( OUTSRC( I ) )
+            IF( RPT_%BYWEK ) WEKID = CWEK( OUTSRC( I ) )
 
-C.................  If by diurnal temporal profile, insert them
-            IF( RPT_%BYDIU ) DIUID = IDIU( OUTSRC( I ) )
+C.................  If by day of month temporal profile, insert them
+            IF( RPT_%BYDOM ) DOMID = CDOM( OUTSRC( I ) )
+
+C.................  If by Monday temporal profile, insert them
+            IF( RPT_%BYMND ) MNDID = CMND( OUTSRC( I ) )
+
+C.................  If by Tuesday temporal profile, insert them
+            IF( RPT_%BYTUE ) TUEID = CTUE( OUTSRC( I ) )
+
+C.................  If by Wednesday temporal profile, insert them
+            IF( RPT_%BYWED ) WEDID = CWED( OUTSRC( I ) )
+
+C.................  If by Thursday temporal profile, insert them
+            IF( RPT_%BYTHU ) THUID = CTHU( OUTSRC( I ) )
+
+C.................  If by Friday temporal profile, insert them
+            IF( RPT_%BYFRI ) FRIID = CFRI( OUTSRC( I ) )
+
+C.................  If by Saturday temporal profile, insert them
+            IF( RPT_%BYSAT ) SATID = CSAT( OUTSRC( I ) )
+
+C.................  If by Sunday temporal profile, insert them
+            IF( RPT_%BYSUN ) SUNID = CSUN( OUTSRC( I ) )
+
+C.................  If by Met-based temporal profile, insert them
+            IF( RPT_%BYMET ) METID = CMET( OUTSRC( I ) )
 
 C.................  If by speciation profile, insert them based on the pollutant
 C                   specified
@@ -435,9 +479,9 @@ C.................  If BY ELEVSTAT, insert elevated status code
             
 C.............  Store sorting information for current record
             WRITE( BUFFER,FMTBUF ) COL, ROW, SRCID, FIP, SCC, SIC,
-     &                             SRGID1, SRGID2, MONID, WEKID, DIUID,
-     &                             SPCID, PLANT, ORIS, RCL, ESTAT, MACT,
-     &                             NAICS, SRCTYP, STKGRP, INTGR
+     &          SRGID1, SRGID2, MONID, WEKID, DOMID, MNDID, TUEID, WEDID,
+     &          THUID, FRIID, SATID, SUNID, METID, SPCID, PLANT, ORIS,
+     &          RCL, ESTAT, MACT, NAICS, SRCTYP, STKGRP, INTGR
 
             SORTIDX( I ) = I
             SORTBUF( I ) = BUFFER
@@ -487,7 +531,15 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINRCL    ) ) DEALLOCATE( BINRCL )
         IF( ALLOCATED( BINMONID  ) ) DEALLOCATE( BINMONID )
         IF( ALLOCATED( BINWEKID  ) ) DEALLOCATE( BINWEKID )
-        IF( ALLOCATED( BINDIUID  ) ) DEALLOCATE( BINDIUID )
+        IF( ALLOCATED( BINDOMID  ) ) DEALLOCATE( BINDOMID )
+        IF( ALLOCATED( BINMNDID  ) ) DEALLOCATE( BINMNDID )
+        IF( ALLOCATED( BINTUEID  ) ) DEALLOCATE( BINTUEID )
+        IF( ALLOCATED( BINWEDID  ) ) DEALLOCATE( BINWEDID )
+        IF( ALLOCATED( BINTHUID  ) ) DEALLOCATE( BINTHUID )
+        IF( ALLOCATED( BINFRIID  ) ) DEALLOCATE( BINFRIID )
+        IF( ALLOCATED( BINSATID  ) ) DEALLOCATE( BINSATID )
+        IF( ALLOCATED( BINSUNID  ) ) DEALLOCATE( BINSUNID )
+        IF( ALLOCATED( BINMETID  ) ) DEALLOCATE( BINMETID )
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
@@ -595,9 +647,41 @@ C.........  Allocate memory for bins
             ALLOCATE( BINWEKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINWEKID', PROGNAME )
         ENDIF
-        IF( RPT_%BYDIU   ) THEN
-            ALLOCATE( BINDIUID ( NOUTBINS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'BINDIUID', PROGNAME )
+        IF( RPT_%BYDOM   ) THEN
+            ALLOCATE( BINDOMID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINDOMID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYMND   ) THEN
+            ALLOCATE( BINMNDID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINMNDID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYTUE   ) THEN
+            ALLOCATE( BINTUEID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINTUEID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYWED   ) THEN
+            ALLOCATE( BINWEDID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINWEDID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYTHU   ) THEN
+            ALLOCATE( BINTHUID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINTHUID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYFRI   ) THEN
+            ALLOCATE( BINFRIID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINFRIID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSAT   ) THEN
+            ALLOCATE( BINSATID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSUNID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSUN   ) THEN
+            ALLOCATE( BINSUNID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSUNID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYMET   ) THEN
+            ALLOCATE( BINMETID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINMETID', PROGNAME )
         ENDIF
         IF( RPT_%BYSPC   ) THEN
             ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
@@ -619,12 +703,10 @@ C.........  Allocate memory for bins
             ALLOCATE( BINY     ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINY', PROGNAME )
         ENDIF
-
         IF( RPT_%BYELEV  ) THEN
             ALLOCATE( BINELEV  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINELEV', PROGNAME )
         ENDIF
-
         IF( RPT_%ELVSTKGRP ) THEN
             ALLOCATE( BINSTKGRP  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSTKGRP', PROGNAME )
@@ -651,8 +733,9 @@ C.........  Populate the bin characteristic arrays (not the data array)
 
                 READ( BUFFER,FMTBUF ) 
      &                COL, ROW, SRCID, FIP, SCC, SIC, SRGID1, SRGID2, 
-     &                MONID, WEKID, DIUID, SPCID, PLANT, ORIS, RCL, 
-     &                ESTAT, MACT, NAICS, SRCTYP, STKGRP, INTGR
+     &                MONID, WEKID, DOMID, MNDID, TUEID, WEDID, THUID,
+     &                FRIID, SATID, SUNID, METID, SPCID, PLANT, ORIS,
+     &                RCL, ESTAT, MACT, NAICS, SRCTYP, STKGRP, INTGR
 
 C.................  Store region code
                 IF( LREGION ) BINREGN( B ) = FIP
@@ -789,7 +872,15 @@ C.................  Store surrogate codes
 C.................  Store temporal profiles
                 IF( RPT_%BYMON ) BINMONID( B ) = MONID
                 IF( RPT_%BYWEK ) BINWEKID( B ) = WEKID
-                IF( RPT_%BYDIU ) BINDIUID( B ) = DIUID
+                IF( RPT_%BYDOM ) BINDOMID( B ) = DOMID
+                IF( RPT_%BYMND ) BINMNDID( B ) = MNDID
+                IF( RPT_%BYTUE ) BINTUEID( B ) = TUEID
+                IF( RPT_%BYWED ) BINWEDID( B ) = WEDID
+                IF( RPT_%BYTHU ) BINTHUID( B ) = THUID
+                IF( RPT_%BYFRI ) BINFRIID( B ) = FRIID
+                IF( RPT_%BYSAT ) BINSATID( B ) = SATID
+                IF( RPT_%BYSUN ) BINSUNID( B ) = SUNID
+                IF( RPT_%BYMET ) BINMETID( B ) = METID
 
 C.................  Store speciation profiles
                 IF( RPT_%BYSPC ) BINSPCID( B ) = SPCID

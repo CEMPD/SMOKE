@@ -455,11 +455,20 @@ C.........................  Reset report settings to defaults
                         RPT_%BYCONAM   = .FALSE.
                         RPT_%BYCYNAM   = .FALSE.
                         RPT_%BYDATE    = .FALSE.
-                        RPT_%BYDIU     = .FALSE.
                         RPT_%BYELEV    = .FALSE.
                         RPT_%BYHOUR    = .FALSE.
                         RPT_%BYLAYER   = .FALSE.
                         RPT_%BYMON     = .FALSE.
+                        RPT_%BYDOM     = .FALSE.
+                        RPT_%BYWEK     = .FALSE.
+                        RPT_%BYMND     = .FALSE.
+                        RPT_%BYTUE     = .FALSE.
+                        RPT_%BYWED     = .FALSE.
+                        RPT_%BYTHU     = .FALSE.
+                        RPT_%BYFRI     = .FALSE.
+                        RPT_%BYSAT     = .FALSE.
+                        RPT_%BYSUN     = .FALSE.
+                        RPT_%BYMET     = .FALSE.
                         RPT_%BYPLANT   = .FALSE.
                         RPT_%BYRCL     = .FALSE.
                         RPT_%BYSIC     = .FALSE.
@@ -478,7 +487,6 @@ C.........................  Reset report settings to defaults
                         RPT_%BYSTACK   = .FALSE.
                         RPT_%BYSTAT    = .FALSE.
                         RPT_%BYSTNAM   = .FALSE.
-                        RPT_%BYWEK     = .FALSE.
                         RPT_%CHKPROJ   = .FALSE.
                         RPT_%CHKCNTL   = .FALSE.
                         RPT_%ELVSTKGRP = .FALSE.
@@ -1148,37 +1156,136 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
      &                  RPT_%LATLON = .TRUE.
 
                 CASE( 'MONCODE' )
-C                    IF( .NOT. RPT_%USEASCELEV ) THEN
-C                       TSFLAG = .TRUE.
-C                       RPT_%BYMON = .TRUE.
-C                   ELSE
-                    WRITE( MESG, 94010 )
-     &                  'WARNING: BY MONCODE instruction at ' //
-     &                  'line', IREC, 'is no longer supported'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-C                   END IF
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYMON = .TRUE.   ! monthly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY MONCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
 
                 CASE( 'WEKCODE' )
-C                    IF( .NOT. RPT_%USEASCELEV ) THEN
-C                        TSFLAG = .TRUE.
-C                        RPT_%BYWEK = .TRUE.
-C                    ELSE
-                    WRITE( MESG, 94010 )
-     &                  'ERROR: BY WEKCODE instruction at ' //
-     &                  'line', IREC, 'is no longer supported'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-C                    END IF
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYWEK = .TRUE.   ! weekly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY WEKCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
 
-                CASE( 'DIUCODE' )
-C                    IF( .NOT. RPT_%USEASCELEV ) THEN
-C                        TSFLAG = .TRUE.
-C                        RPT_%BYDIU = .TRUE.
-C                    ELSE
-                    WRITE( MESG, 94010 )
-     &                  'WARNING: BY DIUCODE instruction at ' //
-     &                  'line', IREC, 'is no longer supported'
-                    CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-C                    END IF
+                CASE( 'DOMCODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYDOM = .TRUE.   ! day of month profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY DOMCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'MNDCODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYMON = .TRUE.   ! monday hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY MNDCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'TUECODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYTUE = .TRUE.   ! tuesday hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY TUECODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'WEDCODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYWED = .TRUE.   ! Wednesday hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY WEDCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'THUCODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYTHU = .TRUE.   ! thursday hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY THUCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'FRICODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYFRI = .TRUE.   ! Friday hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY FRICODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'SATCODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYSAT = .TRUE.   ! Saturday hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY SATCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'SUNCODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYSUN = .TRUE.   ! Sunday hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY SUNCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
+
+                CASE( 'METCODE' )
+                    IF( .NOT. RPT_%USEASCELEV ) THEN
+                       TSFLAG = .TRUE.
+                       RPT_%BYMET = .TRUE.   ! Met-based hourly profile
+                    ELSE
+                       WRITE( MESG, 94010 )
+     &                     'WARNING: BY METCODE instruction at ' //
+     &                     'line', IREC, 'is not allowed with ' //
+     &                     'the ASCIIELEV instruction.'
+                       CALL M3MSG2( MESG )
+                   END IF
 
                 CASE DEFAULT
                     IF( FIRSTLOOP ) CALL WRITE_IGNORE_MESSAGE

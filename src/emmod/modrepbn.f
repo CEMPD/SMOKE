@@ -86,8 +86,6 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINBAD   ( : )   ! code number if something wrong
         INTEGER, ALLOCATABLE, PUBLIC :: BINCOIDX ( : )   ! index to country name
         INTEGER, ALLOCATABLE, PUBLIC :: BINCYIDX ( : )   ! index to county name
-        INTEGER, ALLOCATABLE, PUBLIC :: BINDIUID ( : )   ! index to diurnal prof
-        INTEGER, ALLOCATABLE, PUBLIC :: BINMONID ( : )   ! index to monthly prof
         INTEGER, ALLOCATABLE, PUBLIC :: BINREGN  ( : )   ! region code
         INTEGER, ALLOCATABLE, PUBLIC :: BINRCL   ( : )   ! roadclass code
         INTEGER, ALLOCATABLE, PUBLIC :: BINSMKID ( : )   ! SMOKE source ID
@@ -101,7 +99,6 @@
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID1( : )   ! primary surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSRGID2( : )   ! fallback surg ID
         INTEGER, ALLOCATABLE, PUBLIC :: BINSTIDX ( : )   ! index to state name
-        INTEGER, ALLOCATABLE, PUBLIC :: BINWEKID ( : )   ! index to weekly prof
         INTEGER, ALLOCATABLE, PUBLIC :: BINX     ( : )   ! x cell
         INTEGER, ALLOCATABLE, PUBLIC :: BINY     ( : )   ! y cell
 
@@ -117,6 +114,17 @@
         CHARACTER(ORSLEN3), ALLOCATABLE, PUBLIC :: BINORIS  ( : ) ! ORIS ID
         CHARACTER(STPLEN3), ALLOCATABLE, PUBLIC :: BINSRCTYP( : ) ! source type
         CHARACTER(SPNLEN3), ALLOCATABLE, PUBLIC :: BINSPCID ( : ) ! spec prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINMONID ( : ) ! monthly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINWEKID ( : ) ! weekly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINDOMID ( : ) ! day of month prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINMNDID ( : ) ! Monday hourly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINTUEID ( : ) ! Tuesday hourly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINWEDID ( : ) ! Wed hourly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINTHUID ( : ) ! Thursday hourly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINFRIID ( : ) ! Friday hourly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINSATID ( : ) ! Saturday hourly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINSUNID ( : ) ! Sunday hourly prof
+        CHARACTER(TMPLEN3), ALLOCATABLE, PUBLIC :: BINMETID ( : ) ! met-based hourly prof
 
 !.........  Arrays for determining output from emission types to report columns
 !.........  Dimensioned ( NIPPA, NREPORT )

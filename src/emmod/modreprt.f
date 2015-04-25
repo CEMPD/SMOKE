@@ -116,12 +116,21 @@
             LOGICAL       :: BYCONAM       ! true: by country name
             LOGICAL       :: BYCYNAM       ! true: by county name
             LOGICAL       :: BYDATE        ! true: by date
-            LOGICAL       :: BYDIU         ! true: by diurnal temporal code
             LOGICAL       :: BYELEV        ! true: by elev status
             LOGICAL       :: ELVSTKGRP     ! true: stack gourp ID by elev status
             LOGICAL       :: BYHOUR        ! true: by hour
             LOGICAL       :: BYLAYER       ! true: by layer
             LOGICAL       :: BYMON         ! true: by monthly temporal code
+            LOGICAL       :: BYWEK         ! true: by weekly temporal code
+            LOGICAL       :: BYDOM         ! true: by day of month temporal code
+            LOGICAL       :: BYMND         ! true: by Monday diurnal temporal code
+            LOGICAL       :: BYTUE         ! true: by Tuesday diurnal temporal code
+            LOGICAL       :: BYWED         ! true: by Wednesday diurnal temporal code
+            LOGICAL       :: BYTHU         ! true: by Thursday diurnal temporal code
+            LOGICAL       :: BYFRI         ! true: by Friday diurnal temporal code
+            LOGICAL       :: BYSAT         ! true: by Saturday diurnal temporal code
+            LOGICAL       :: BYSUN         ! true: by Sunday diurnal temporal code
+            LOGICAL       :: BYMET         ! true: by Met-based hourly temporal code
             LOGICAL       :: BYPLANT       ! true: by plant 
             LOGICAL       :: BYSCC         ! true: by SCC 
             LOGICAL       :: BYSIC         ! true: by SIC 
@@ -137,7 +146,6 @@
             LOGICAL       :: BYSTNAM       ! true: by state name
             LOGICAL       :: BYSRG         ! true: by surrogate codes
             LOGICAL       :: BYRCL         ! true: by road class (mb)
-            LOGICAL       :: BYWEK         ! true: by weekly temporal code
             LOGICAL       :: CHKPROJ       ! true: check projctns vs. rpt
             LOGICAL       :: CHKCNTL       ! true: check controls vs. rpt
             LOGICAL       :: LATLON        ! true: output stack coordinates
@@ -274,13 +282,11 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: COWIDTH   =0 ! width of country name column
         INTEGER      , PUBLIC :: CYWIDTH   =0 ! width of county name column
         INTEGER      , PUBLIC :: DATEWIDTH =0 ! width of date column
-        INTEGER      , PUBLIC :: DIUWIDTH  =0 ! width of diurnal profile label
         INTEGER      , PUBLIC :: ELEVWIDTH =0 ! width of elevated srcs flag col
         INTEGER      , PUBLIC :: HOURWIDTH =0 ! width of hour column
         INTEGER      , PUBLIC :: LTLNWIDTH =0 ! width of lat/lon columns
         INTEGER      , PUBLIC :: LABELWIDTH=0 ! width of user-defined label
         INTEGER      , PUBLIC :: LAYRWIDTH =0 ! width of layer number label
-        INTEGER      , PUBLIC :: MONWIDTH  =0 ! width of monthly profile label
         INTEGER      , PUBLIC :: PDSCWIDTH =0 ! width of plant description col
         INTEGER      , PUBLIC :: REGNWIDTH =0 ! width of region column
         INTEGER      , PUBLIC :: SCCWIDTH  =0 ! width of SCC
@@ -304,13 +310,21 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         INTEGER      , PUBLIC :: STKPWIDTH =0 ! width of stack parameters columns
         INTEGER      , PUBLIC :: UNITWIDTH =0 ! width of unit column
         INTEGER      , PUBLIC :: VARWIDTH  =0 ! width of variable column
+        INTEGER      , PUBLIC :: MONWIDTH  =0 ! width of monthly profile label
         INTEGER      , PUBLIC :: WEKWIDTH  =0 ! width of weekly profile label
+        INTEGER      , PUBLIC :: DOMWIDTH  =0 ! width of day of month profile label
+        INTEGER      , PUBLIC :: MNDWIDTH  =0 ! width of monday profile label
+        INTEGER      , PUBLIC :: TUEWIDTH  =0 ! width of tuesday profile label
+        INTEGER      , PUBLIC :: WEDWIDTH  =0 ! width of wednesday profile label
+        INTEGER      , PUBLIC :: THUWIDTH  =0 ! width of thursday profile label
+        INTEGER      , PUBLIC :: FRIWIDTH  =0 ! width of friday profile label
+        INTEGER      , PUBLIC :: SATWIDTH  =0 ! width of saturday profile label
+        INTEGER      , PUBLIC :: SUNWIDTH  =0 ! width of sunday profile label
+        INTEGER      , PUBLIC :: METWIDTH  =0 ! width of met-based profile label
 
         CHARACTER(50),  PUBLIC :: CELLFMT     ! format string for cell columns
         CHARACTER(50),  PUBLIC :: DATEFMT     ! format string for date column
-        CHARACTER(50),  PUBLIC :: DIUFMT      ! format string for diurnal profile
         CHARACTER(50),  PUBLIC :: HOURFMT     ! format string for hour column
-        CHARACTER(50),  PUBLIC :: MONFMT      ! format string for monthly profile
         CHARACTER(50),  PUBLIC :: LTLNFMT     ! format string for lat/lons
         CHARACTER(50),  PUBLIC :: LAYRFMT     ! format string for layer column
         CHARACTER(50),  PUBLIC :: REGNFMT     ! format string for region column
@@ -319,7 +333,6 @@ c        INTEGER, ALLOCATABLE, PUBLIC :: NSUBREC ( : )     ! no. recs per subgri
         CHARACTER(50),  PUBLIC :: SRCFMT      ! format string for source IDs
         CHARACTER(50),  PUBLIC :: SRG1FMT     ! format string for primary surg
         CHARACTER(50),  PUBLIC :: SRG2FMT     ! format string for fallback surg
-        CHARACTER(50),  PUBLIC :: WEKFMT      ! format string for weekly profile
         CHARACTER(100), PUBLIC :: STKPFMT     ! format string for stack params
         CHARACTER(200), PUBLIC :: CHARFMT     ! format string for source chars
         CHARACTER(300), PUBLIC :: FIL_ONAME   ! output file, physical or logical

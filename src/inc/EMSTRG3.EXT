@@ -36,6 +36,7 @@ C.........  Width of source information strings (ABC order)
         INTEGER, PARAMETER :: SICLEN3 =  4 ! SIC 
         INTEGER, PARAMETER :: STPLEN3 =  2 ! source type code (used for toxics)
         INTEGER, PARAMETER :: TAGLEN3 =  8 ! tag labels
+        INTEGER, PARAMETER :: TMPLEN3 = 15 ! temporal profile code 
         INTEGER, PARAMETER :: VIDLEN3 =  4 ! vehicle type ID
         INTEGER, PARAMETER :: VTPLEN3 =  6 ! vehicle type
         INTEGER, PARAMETER :: EXTLEN3 =500 ! additional extended orl var
