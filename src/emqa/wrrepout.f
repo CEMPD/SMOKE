@@ -507,7 +507,7 @@ C.............  Include Wednesday diurnal temporal profile
                 END IF
 
 C.............  Include Thursday diurnal temporal profile
-                IF( RPT_%BYMND ) THEN
+                IF( RPT_%BYTHU ) THEN
                     L = THUWIDTH
                     L1 = L - LV - 1 - 1                  ! 1 for space                
                     STRING = STRING( 1:LE ) // ' ' //
@@ -565,7 +565,7 @@ C.............  Include speciation profile
                 IF( RPT_%BYSPC ) THEN
                     L = SPCWIDTH
                     L1 = L - LV - 1 - SPNLEN3                  ! 1 for space                
-                    STRING = STRING( 1:LE ) // ' ' //
+                    STRING = STRING( 1:LE ) //
      &                       BINSPCID( I )// BLANK16( 1:L1 )// DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )

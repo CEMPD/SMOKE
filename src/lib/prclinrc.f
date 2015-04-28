@@ -1194,7 +1194,7 @@ C.........................  Daily layered emission is set to Y if BYHOUR is not 
                 CASE( 'MNDCODE' )
                     IF( .NOT. RPT_%USEASCELEV ) THEN
                        TSFLAG = .TRUE.
-                       RPT_%BYMON = .TRUE.   ! monday hourly profile
+                       RPT_%BYMND = .TRUE.   ! monday hourly profile
                     ELSE
                        WRITE( MESG, 94010 )
      &                     'WARNING: BY MNDCODE instruction at ' //
