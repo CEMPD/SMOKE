@@ -816,7 +816,7 @@ C.................  NV > 1 is not supported
                     FIRSTIME = .TRUE.
                 END IF
                 
-                IF( FIRSTTYP == TTYP ) S = S + 1
+                IF( FIRSTTYP == TTYP .OR. TTYP == 'MET' ) S = S + 1
 
                 SELECT CASE( TTYP )
                 CASE ( 'MTH' )
