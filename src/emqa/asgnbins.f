@@ -96,9 +96,12 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER     , INTENT (IN) :: RCNT    ! current report number
 
 C...........   Local parameters
-        INTEGER, PARAMETER :: BUFLEN = 109 + SCCLEN3 + SICLEN3 + SPNLEN3
+        INTEGER, PARAMETER :: BUFLEN =  85 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
-     &                                     + ORSLEN3
+     &                                     + ORSLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) =
      &                        ( / 1, 3, 6, 8 / )
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) =
@@ -107,7 +110,7 @@ C...........   Local parameters
 C...........   Sorting arrays
         INTEGER          , ALLOCATABLE :: SORTIDX( : )
 
-        CHARACTER(BUFLEN*2), ALLOCATABLE :: SORTBUF( : )
+        CHARACTER(BUFLEN), ALLOCATABLE :: SORTBUF( : )
 
 C...........   Local variables
         INTEGER         B, C, F, I, J, K, L, LB, S
@@ -132,8 +135,8 @@ C...........   Local variables
         CHARACTER(300)    MESG        ! message buffer
 
         CHARACTER(5)       SCCTYPE    ! tmp determination of SCC type
-        CHARACTER(BUFLEN*2)  BUFFER     ! sorting info buffer
-        CHARACTER(BUFLEN*2)  LBUF       ! previous sorting info buffer
+        CHARACTER(BUFLEN)  BUFFER     ! sorting info buffer
+        CHARACTER(BUFLEN)  LBUF       ! previous sorting info buffer
         CHARACTER(SCCLEN3) SCC        ! tmp SCC
         CHARACTER(INTLEN3) INTGR      ! tmp INTEGRATE
         CHARACTER(MACLEN3) MACT       ! tmp MACT
@@ -167,7 +170,7 @@ C.........  Set report-specific local settings
         LREGION = ( RPT_%BYCNTY .OR. RPT_%BYSTAT .OR. RPT_%BYCNRY )
         MXOUTREC = NOUTREC * BUFLEN
 
-C.........  Memory check
+C.........  Memory check to check exceeding integer4 maxval=2,147,483,647
         IF( MXOUTREC < 1 ) THEN
             MESG = 'ERROR: Problem processing the size of inventory'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
