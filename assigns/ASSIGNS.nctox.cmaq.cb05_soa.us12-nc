@@ -248,7 +248,7 @@ if ( $SMK_SOURCE == 'A' ) then
    setenv ASCC     $INVOPD/ASCC.$SRCABBR.$FYIOP.txt
    setenv REPINVEN $REPSTAT/repinven.$SRCABBR.$INVOP.txt
    setenv ATSUPNAME $SMKDAT/run_${ASCEN}/scenario/atsup.$SRCABBR.$ASCEN.
-   setenv ATSUP    $ATSUPNAME.$G_STDATE.txt
+   setenv ATSUP    $ATSUPNAME$G_STDATE.txt
    setenv ASSUP    $SMKDAT/run_$ABASE/static/assup.$SRCABBR.$SPC.$ABASE.txt
    setenv AGSUP    $SMKDAT/run_$ABASE/static/agsup.$SRCABBR.$GRID.$ABASE.txt
    setenv ACREP    $REPSTAT/acrep.$SRCABBR.$ASCEN.rpt           
@@ -305,7 +305,7 @@ if ( $SMK_SOURCE == 'M' ) then
    setenv MSCC      $INVOPD/MSCC.$SRCABBR.$FYIOP.txt
    setenv REPINVEN  $REPSTAT/repinven.$SRCABBR.$INVOP.txt
    setenv MTSUPNAME $SMKDAT/run_${MSCEN}/scenario/mtsup.$SRCABBR.$MSCEN.
-   setenv MTSUP     $MTSUPNAME.$G_STDATE.txt
+   setenv MTSUP     $MTSUPNAME$G_STDATE.txt
    setenv MSSUP     $SMKDAT/run_${MBASE}/static/mssup.$SRCABBR.$SPC.$MBASE.txt
    setenv MGSUP     $SMKDAT/run_$MBASE/static/mgsup.$SRCABBR.$GRID.$MBASE.txt
    setenv MCREP     $REPSTAT/mcrep.$SRCABBR.$MSCEN.rpt
@@ -347,7 +347,7 @@ if ( $SMK_SOURCE == 'P' ) then
    setenv REPINVEN  $REPSTAT/repinven.$SRCABBR.$INVOP.txt
    setenv PTREF_ALT $INVOPD/ptref.$SRCABBR.smkout.txt      # Point temporal x-ref
    setenv PTSUPNAME $SMKDAT/run_${PSCEN}/scenario/ptsup.$SRCABBR.$PSCEN.
-   setenv PTSUP     $PTSUPNAME.$G_STDATE.txt
+   setenv PTSUP     $PTSUPNAME$G_STDATE.txt
    setenv PSSUP     $SMKDAT/run_${PBASE}/static/pssup.$SRCABBR.$SPC.$PBASE.txt
    setenv PCREP     $REPSTAT/pcrep.$SRCABBR.$PSCEN.rpt           
    setenv PPROJREP  $REPSTAT/pprojrep.$SRCABBR.$PSCEN.rpt
