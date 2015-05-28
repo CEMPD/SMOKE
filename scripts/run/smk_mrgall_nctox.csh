@@ -33,7 +33,7 @@ setenv MRG_DIFF_DAYS        N   # Y allows data from different days to be merged
 #      MRGFILES         see "Script settings" below
 
 ## Script settings
-setenv MRGFILES "AGTS_L BGTS_L PGTS_L RPDGTS_L RPVGTS_L RPPGTS_L" # logical file names to merge
+setenv MRGFILES "AGTS_L NGTS_L BGTS_L PGTS_L RPDGTS_L RPVGTS_L RPPGTS_L RPHGTS_L" # logical file names to merge
 setenv MRGGRID_MOLE         Y   # Y outputs mole-based file, musy be consistent with MRGFILES
 setenv SRCABBR              abmp # abbreviation for naming log files
 setenv PROMPTFLAG           N   # Y prompts for user input

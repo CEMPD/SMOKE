@@ -103,7 +103,7 @@ setenv SMK_MAXWARNING       100 # maximum number of warning messages in log file
 
 ## Script settings
 setenv SRCABBR             area # abbreviation for naming log files
-setenv QA_TYPE              all # type of QA to perform [none, all, part1, part2, or custom]
+setenv QA_TYPE             all  #   all # type of QA to perform [none, all, part1, part2, or custom]
 setenv PROMPTFLAG           N   # Y prompts for user input
 setenv AUTO_DELETE          Y   # Y automatically deletes I/O API NetCDF output files
 setenv AUTO_DELETE_LOG      Y   # Y automatically deletes log files

@@ -40,6 +40,8 @@ setenv WEST_HSPHERE         Y   # Y converts longitudes to negative values
 setenv WKDAY_NORMALIZE      N   # Y treats average-day emissions as weekday only
 setenv WRITE_ANN_ZERO       N   # Y writes zero emission values to intermediate inventory
 setenv ALLOW_NEGATIVE       N   # Y allow negative output emission data
+setenv USE_REF_SCC_YN       Y   # Y disaggregate SCC8 activity to full SCC10
+setenv EXCLUDE_REF_SCC_YN   Y   # Y drop SCCs not found in SCCXREF input file
 #      INVNAME1         set by make_invdir.csh script
 #      INVNAME2         set by make_invdir.csh scripts
 #      OUTZONE          see "Multiple-program controls" below
