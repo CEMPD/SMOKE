@@ -188,7 +188,8 @@ C.................  Count number of pollutants
                     END IF
                 
                 END DO
-                
+ 
+                IF( ALLOCATED( MVSPOLNAMS ) ) DEALLOCATE( MVSPOLNAMS )
                 ALLOCATE( MVSPOLNAMS( NMVSPOLS ), STAT=IOS )
                 CALL CHECKMEM( IOS, 'MVSPOLNAMS', PROGNAME )
                 MVSPOLNAMS = ''
