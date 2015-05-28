@@ -131,6 +131,7 @@ C.........  Other local variables
 
         LOGICAL       :: EFLAG    = .FALSE. ! true: error detected
         LOGICAL       :: LRDCOMBO           ! true: for first COMBO for a pollutant/emis type
+        LOGICAL, SAVE :: CNVERROR = .TRUE.  ! true: when default (=1.0) conv fac is applied 
         LOGICAL, SAVE :: FIRSTIME = .TRUE.  ! true: first time subrtn called
         LOGICAL, SAVE :: MACTFLAG = .FALSE. ! true: MACT codes available in inventory
         LOGICAL, SAVE :: REPDEFLT = .TRUE.  ! true: report when defaults used
@@ -206,6 +207,9 @@ C.............  Get maximum number of warnings/errors
 C.............  Retrieve environment variables
             MESG = 'Switch for reporting default speciation profiles'
             REPDEFLT = ENVYN ( 'REPORT_DEFAULTS', MESG, .TRUE., IOS )
+
+            MESG = 'Treat applying default conversion factor (=1.0) as an error'
+            CNVERROR = ENVYN ( 'DEFAULT_CONV_FAC_ERROR', MESG, .FALSE., IOS )
 
 C.............  Retrieve skipping speciation profile flags for zero emissions
             MESG = 'Setting for assigning profile for zero emissions'
@@ -857,9 +861,11 @@ C                       there is no need for error checking
      &                          CCODE(NP)//'" from GSCNV input file'//
      &                          CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                          ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-                            IF( ERRCNT(6) <= MXERR ) CALL M3MESG( MESG )
-                            ERRCNT(6) = ERRCNT(6) + 1
-                            EFLAG = .TRUE.
+                            IF( ERRCNT(6) <= MXERR .AND. CNVERROR ) THEN
+                                CALL M3MESG( MESG )
+                                ERRCNT(6) = ERRCNT(6) + 1
+                                EFLAG = .TRUE.
+                            END IF
                         END IF
 
                     END IF
@@ -913,9 +919,11 @@ C.....................  Error check there is no conversion fac found
      &                          ' factor for source:' //
      &                          CRLF() // BLANK10 // BUFFER( 1:L2 ) //
      &                          ' SCC: ' // TSCCINIT // ' POL: ' // EANAM( V )
-                            IF( ERRCNT(7) <= MXERR ) CALL M3MESG( MESG )
-                            ERRCNT(7) = ERRCNT(7) + 1
-                            EFLAG = .TRUE.
+                            IF( ERRCNT(7) <= MXERR .AND. CNVERROR ) THEN
+                                CALL M3MESG( MESG )
+                                ERRCNT(7) = ERRCNT(7) + 1
+                                EFLAG = .TRUE.
+                            END IF
                         END IF
 
                     END IF
