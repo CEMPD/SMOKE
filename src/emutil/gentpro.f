@@ -97,7 +97,6 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(14)   MMDDYY
         CHARACTER(16)   PROMPTMFILE
         CHARACTER(16)   VERCHAR
-        INTEGER         ENVINT
         INTEGER         FIND1
         INTEGER         FIND1FIRST
         INTEGER         GETIFDSC
@@ -108,6 +107,7 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         INTEGER         SECSDIFF
         INTEGER         STR2INT
         INTEGER         WKDAY
+        INTEGER         ENVINT
         REAL            ENVREAL
         REAL            YR2DAY
         REAL            STR2REAL
@@ -130,7 +130,8 @@ C.....  Define temporal profile type constants for enumeration
         INTEGER, PARAMETER :: MXVAR  = 100
         INTEGER, PARAMETER :: MXSEG  = 16
         INTEGER, PARAMETER :: NMONTH = 12
-        INTEGER, PARAMETER :: MXDAYS  = 366
+        INTEGER, PARAMETER :: MXDAYS = 366
+        INTEGER, PARAMETER :: NTPRO  = 14
 
 C...........   real arrays
         REAL   , ALLOCATABLE :: TA( : )            !  one layer of temperature
@@ -161,14 +162,22 @@ C...........   integer arrays
         INTEGER, ALLOCATABLE :: PROCDAYS( : )      ! no of processing hours 
         INTEGER, ALLOCATABLE :: SRGIDS  ( : )      ! list of surrogates
         INTEGER, ALLOCATABLE :: SRGSTA  ( : )      ! list of state in surrogates
-        INTEGER, ALLOCATABLE :: INDXREF ( :,: )    ! Index of matched xref entries 
-        INTEGER, ALLOCATABLE :: MATCHED ( :,:,: )  ! FIPS/SCC/POL matched source
+        INTEGER, ALLOCATABLE :: INDXREF ( : )      ! Index of matched xref entries 
+        INTEGER, ALLOCATABLE :: MATCHED ( :,: )    ! FIPS/SCC/POL matched source
 
 C...........  character arrays
         CHARACTER(16)                  SEGMENT( MXSEG )
         CHARACTER(256), ALLOCATABLE :: METLIST( : )       ! listing of met file names
         CHARACTER(10) , ALLOCATABLE :: SCCLIST( : )       ! listing of SCCs
         CHARACTER(256), ALLOCATABLE :: CSCCFIP( : )       ! tmp FIPS/SCC x-ref entries
+
+C...........   Parameter array
+        CHARACTER(16), PARAMETER :: TPROTYPES( NTPRO ) =
+     &      ( / 'MONTHLY         ','DAILY           ','HOURLY          ',
+     &          'WEEKLY          ','WEEKEND         ','WEEKDAY         ',
+     &          'MONDAY          ','TUESDAY         ','WEDNESDAY       ',
+     &          'THURSDAY        ','FRIDAY          ','SATURDAY        ',
+     &          'SUNDAY          ','ALLDAY          ' / )
         
 C...........   File units and logical names:
         INTEGER      CDEV  ! unit number for co/st/cy file
@@ -213,7 +222,7 @@ C...........   Other local variables:
         INTEGER    FILENUM     ! file number of current meteorology file
         INTEGER    IOS         ! temporary I/O status
         INTEGER    IREC        ! temporary input line number
-        INTEGER    IFIP        ! temporary FIPS code
+        INTEGER    IFIP,NTP    ! temporary FIPS code
         INTEGER    HOURIDX     ! current hour of the day
         INTEGER    JDATE       ! input date counter (YYYYDDD) in GMT
         INTEGER    JTIME       ! input time counter (HHMMSS)  in GMT
@@ -253,7 +262,9 @@ C...........   Other local variables:
         INTEGER    TZONE       ! zone to determine output days
         INTEGER    TZMIN       ! minimum time zone in inventory
         INTEGER    TZMAX       ! maximum time zone in inventory
-        INTEGER    MXWARN      ! maximum no of warning messgaes
+        INTEGER    NWARN       ! no of warning messgaes
+
+        INTEGER, SAVE :: MXWARN        ! maximum no of warning messgaes
 
         REAL       DTEMP               ! RWC default temp (=50.0) 
         REAL       TEMPVAL             ! tmp variable value
@@ -277,10 +288,9 @@ C...........   Other local variables:
 
         CHARACTER(10)      CSCC        !  SCC code
         CHARACTER(1000)    CSCCLIST    !  tmp SCC list line buffer 
-        CHARACTER(16)      CPOL        !  Pollutant code 
+        CHARACTER(16)      CPOL,TPRO   !  Pollutant code, Profile types 
         CHARACTER(10)      TSCC        !  tmp SCC code
         CHARACTER(6)       CFIPS       !  FIPS code
-        CHARACTER(5)       TPROFID     !  New Temporal Profile IDs
         CHARACTER(16)      COORUNIT    !  coordinate system projection units
         CHARACTER(80)      GDESC       !  grid description
         CHARACTER(16)      SRG_CNTRY   !  surrogate country
@@ -327,6 +337,9 @@ C.........  Open temporal cross-reference INPUT file (TREF_IN)
      &          'Enter logical name for temporal x-reference file',
      &          .TRUE., .TRUE., 'TREF_IN', PROGNAME )
 
+C.........  Get maximum number of warnings
+        MXWARN = ENVINT( WARNSET , ' ', 100, I )
+            
 C.........  Allocate arrays
         ALLOCATE( SCCLIST( MXVAR ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SCCLIST', PROGNAME )
@@ -769,12 +782,12 @@ C.........  Output temporal x-ref output header for TREF_OUT file
         WRITE( XODEV,93000 ) '#TREF'
         WRITE( XODEV,94040 ) '#YEAR=', INT( EPI_SDATE/1000 )
         WRITE( XODEV,93000 ) '#GRDNAME=' // GDNAM3D // COORD
-        WRITE( XODEV,93000 ) '#PROFILE_METHOD = ' // TRIM( PROF_METHOD )
+        WRITE( XODEV,93000 ) '#GENTPRO_PROFILE_METHOD = ' // TRIM( PROF_METHOD )
         WRITE( XODEV,94010 ) '#PERIOD=', EPI_SDATE, '-', EPI_EDATE
         WRITE( XODEV,93000 ) '#DESC:Temporal cross-reference file ' //
      &                       '(TREF) generated by GenTPRO program'
-        WRITE( XODEV,93000 ) '#SCC,MONCODE,WEKCODE,DAYCODE,POLL,FIPS,'//
-     &                       ',,,,,,MONPROF,DAYPROF,HOURPROF'
+        WRITE( XODEV,93000 ) '#SCC,FIPS,FacilityID,UnitID,ReleasePoint,'//
+     &                       'ProcessID,PollutantID,ProfileType,ProfileID,Comments...'
 
 C.........  Read data from temporal x-ref input file.
 C           Only retain lines that contain both SCC and FIPS information.
@@ -787,9 +800,9 @@ C.........  Allocate local arrays
         MXTREF = NSCC * ( NSRGFIPS + NSTA + 1 ) * 2
         ALLOCATE( CSCCFIP( MXTREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'CSCCFIP', PROGNAME )
-        ALLOCATE( INDXREF( MXTREF,2 ), STAT=IOS )
+        ALLOCATE( INDXREF( MXTREF ), STAT=IOS )
         CALL CHECKMEM( IOS, 'INDXREF', PROGNAME )
-        ALLOCATE( MATCHED( NSCC,NSRGFIPS+NSTA+1,2 ), STAT=IOS )
+        ALLOCATE( MATCHED( NSCC,NSRGFIPS+NSTA+1 ), STAT=IOS )
         CALL CHECKMEM( IOS, 'MATCHED', PROGNAME )
         CSCCFIP = ''
         INDXREF = 0
@@ -809,48 +822,52 @@ C.........  Count a list of x-ref entries in TREF
 
 C............  Skip blank or comment lines
             IF( BLKORCMT( LINE ) ) CYCLE
-            IF( LINE( 1:1 ) == '/' ) WRITE( XODEV,93000 ) TRIM( LINE )
 
             CALL PARSLINE( LINE, MXSEG, SEGMENT )
 
-C.............  temporary limit for supporting older TREF format (v3.5.1 or earlier)
-            IF( SEGMENT( 8 ) == 'HOURLY'  .OR. SEGMENT( 8 ) == 'MONTHLY'  .OR.
-     &          SEGMENT( 8 ) == 'DAILY'   .OR. SEGMENT( 8 ) == 'WEEKLY'   .OR.
-     &          SEGMENT( 8 ) == 'WEEKDAY' .OR. SEGMENT( 8 ) == 'WEEKEND'  .OR.
-     &          SEGMENT( 8 ) == 'ALLDAYS' .OR. SEGMENT( 8 ) == 'MONDAY'   .OR.
-     &          SEGMENT( 8 ) == 'TUESDAY' .OR. SEGMENT( 8 ) == 'WENDESDAY'.OR.
-     &          SEGMENT( 8 ) == 'THURSDAY'.OR. SEGMENT( 8 ) == 'FRIDAY'   .OR.
-     &          SEGMENT( 8 ) == 'SATURDAY'.OR. SEGMENT( 8 ) == 'SUNDAY' ) THEN
-                MESG = 'ERROR: Newer version of TREF_IN is not currently supported'
-                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-            END IF
-
             CSCC = TRIM   ( SEGMENT( 1 ) )
-            FIPS = STR2INT( SEGMENT( 6 ) )
-            CPOL = TRIM   ( SEGMENT( 5 ) )
+            FIPS = STR2INT( SEGMENT( 2 ) )
+            CPOL = TRIM   ( SEGMENT( 7 ) )
+            TPRO = TRIM   ( SEGMENT( 8 ) )
+
+            IF( INDEX1( TPRO, NTPRO, TPROTYPES ) < 1 ) THEN
+                MESG = 'ERROR: Older TREF format is no longer supported!'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF            
+
+C.............  temporary limit for supporting older TREF format (v3.5.1 or earlier)
             IF( FIPS < 1 ) FIPS = -9
             IF( CPOL == '' .OR. CPOL == '0' ) CPOL = '-9'
 
             L0 = INDEX1( CSCC, NSCC, SCCLIST )
             L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
-            L2 = 1 
+
             LL = 0
 
-C.............  find matched entries
+C.............  find matched SCC entries
             IF( L0 > 0 ) THEN
+
                 IF( L1 < 1 ) THEN
                     NS = FIND1( FIPS, NSTA, SRGSTA )
                     IF( NS   > 0 ) L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
                     IF( FIPS < 1 ) L1 = NSRGFIPS + NSTA + 1   ! SCC-specific ultimate default (No FIPS)
                 END IF
 
-                LL = 1 
+                IF( MONAVER .AND. TPRO == 'MONTHLY' ) THEN
+                    LL = 1
+                ELSE IF( DAYAVER .AND. TPRO == 'DAILY' ) THEN
+                    LL = 1
+                ELSE IF( HOURAVER ) THEN
+                    LL = 1
+                END IF
+                
+                IF( L1 < 0 ) LL = 0  ! L1 can be zero if there is an entry for non-US (ie. 111100)
 
                 WRITE( MESG, 94010 ) 'ERROR: pollutant-specific '//
-     &                'entry for SCC: ' // CSCC // ' at line', I, 
+     &                'entry for target SCC: ' // CSCC // ' at line', I, 
      &                ' is NOT applicable'
+     
                 IF( NH3FLAG ) THEN
-                    IF( CPOL == 'NH3' ) L2 = 2
                     IF( CPOL /= '-9' .AND. CPOL /= 'NH3' )
      &                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 ELSE 
@@ -865,16 +882,18 @@ C.............  check pollutant-specific x-ref entries while processing AGNH3 mo
 
 C.................  Concatenate all segments into a string
                 LINE = ''
-                DO J = 1, 12
+                DO J = 1, 9
                     LINE = TRIM( LINE ) //  TRIM( SEGMENT( J ) ) // ';'
                 END DO
+
 C.....................  Store all TREF entries including new ones
                 LL = INDEX1( LINE, MXTREF, CSCCFIP )
                 IF( LL > 0 ) CYCLE
                 NMATCH = NMATCH + 1
-                INDXREF( NMATCH,1 ) = I
-                MATCHED( L0,L1,L2 ) = NMATCH
-                CSCCFIP( NMATCH )   = TRIM( LINE )
+                INDXREF( NMATCH ) = I
+                MATCHED( L0,L1  ) = NMATCH
+                CSCCFIP( NMATCH ) = TRIM( LINE )
+
             END IF
 
         END DO
@@ -886,57 +905,43 @@ C.........  Store a list of entries that matches with processing FIPS/SCC
 C.........  Find ultimate FIPS/SCC x-ref when no matched in TREF
         CALL M3MSG2('Processing Temporal x-ref input file..........')
 
-        MXWARN = 0
+        NWARN = 0
         DO I = 1, NSCC
             
             DO J = 1, NSRGFIPS
-
+            
                 LL = 0
+                L0 = I
+                L1 = J
 
                 CSCC = SCCLIST( I )
-                FIPS = SRGFIPS( J )
-                ISTA = INT( FIPS/1000 ) * 1000
                 WRITE( CFIPS,'(I6.6)' ) SRGFIPS( J )
+                ISTA = INT( SRGFIPS( J )/1000 ) * 1000
 
-                L0 = INDEX1( CSCC, NSCC, SCCLIST )
-                L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
-
-C.................  Check first SCC/FIPS/NH3 specific entrie for AGNH3 method
-                IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
-
-C.................  Check secondly SCC/FIPS specific entrie
-                IF( LL < 1 )  THEN
-                    LL = MATCHED( L0,L1,1 )
-                    IF( NH3FLAG .AND. LL > 0 ) INDXREF( LL,2 ) = 11111 ! Add non-pollutant-specific entries into TREF_OUT for other pollutants
-                END IF
+C.................  Check secondly SCC/FIPS specific entries
+                LL = MATCHED( L0,L1 )
  
 C.................  Check a list of state-specific entry first before using default profiles
                 IF( LL < 1 ) THEN
                     NS = FIND1 ( ISTA, NSTA, SRGSTA )
-                    L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
-                    IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
-                    IF( LL < 1 )  LL = MATCHED( L0,L1,1 )
-                    IF( NH3FLAG .AND. LL > 0 ) INDXREF( LL,2 ) = 11111 ! Add non-pollutant-specific entries into TREF_OUT for other pollutants
+                    IF( NS > 0  ) L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
+                    LL = MATCHED( L0,L1 )
                 END IF
 
 C.................  Check a list of SCC-specific entry first before using default profiles
                 IF( LL < 1 ) THEN
                     L1 = NSRGFIPS + NSTA + 1   ! SCC-specific ultimate default (No FIPS)
-                    IF( NH3FLAG ) LL = MATCHED( L0,L1,2 )
-                    IF( LL < 1 )  LL = MATCHED( L0,L1,1 )
-                    IF( NH3FLAG .AND. LL > 0 ) INDXREF( LL,2 ) = 11111 ! Add non-pollutant-specific entries into TREF_OUT for other pollutants
+                    LL = MATCHED( L0,L1 )
                 END IF
 
-C.................  Use default profiles when there no matched xref entry
+C.................  Use default profiles when there no matched x-ref entry
                 LINE = ''
                 IF( LL < 1 ) THEN
 
                     IF( NH3FLAG ) THEN
-                        WRITE( LINE,93000 ) CSCC // ';262;7;24;NH3;' //
-     &                                 CFIPS // ';;;;;;;'
+                        WRITE( LINE,93000 ) CSCC//';'//CFIPS //';;;;;NH3;'
                     ELSE
-                        WRITE( LINE,93000 ) CSCC // ';262;7;24;-9;' //
-     &                                 CFIPS // ';;;;;;;'
+                        WRITE( LINE,93000 ) CSCC//';'//CFIPS //';;;;;-9;'
                     END IF
 
                     WRITE( MESG,93000 ) 'WARNING: Could not find ' //
@@ -944,53 +949,39 @@ C.................  Use default profiles when there no matched xref entry
      &                  ' and FIPS: '// CFIPS // CRLF() // BLANK10
      &                   //'New x-ref entries for these SCC and FIPS '//
      &                   'are added to TREF_OUT output file'
-                    MXWARN = MXWARN + 1
-                    IF( MXWARN < 100 ) CALL M3MSG2( MESG )
+                    NWARN = NWARN + 1
+                    IF( NWARN < MXWARN ) CALL M3MSG2( MESG )
 
 C.................  Concatenate all segments into a string
                 ELSE
 
-C.....................  Do not remove non-pollutant specific xref entries during AGNH3 method
-                    IF( INDXREF( LL,2 ) /= 11111 ) THEN 
-                        INDXREF( LL,2 ) = 99999  ! indicator of used xref entries
-                    END IF
+                    SEGMENT = ''
+                    CALL PARSLINE ( CSCCFIP( LL ), MXSEG, SEGMENT )
 
-                    DO L = 1, 12
-                        SEGMENT = ''
-                        CALL PARSLINE ( CSCCFIP( LL ), MXSEG, SEGMENT )
+                    SEGMENT( 1 ) = CSCC
+                    SEGMENT( 2 ) = CFIPS
+                    IF( NH3FLAG ) SEGMENT( 7 ) = 'NH3'
 
-                        SEGMENT( 1 ) = CSCC
-                        SEGMENT( 6 ) = CFIPS
-                        IF( NH3FLAG ) SEGMENT( 5 ) = 'NH3'
+                    DO L = 1, 7
                         LINE = TRIM( LINE )//TRIM( SEGMENT( L ) ) // ';'
                     END DO
 
                 END IF
 
-C.................  Add new temporal x-ref and output them to XREF_OUT file
-C                   Create new speciation profile ID string
-                TPROFID = ''
-                WRITE( TPROFID,'( I5.5 )' ) SRGFIPS( J )
-                
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
                 IF( .NOT. HOURAVER .AND. MONAVER ) THEN
-                    LINE = TRIM( LINE )//TRIM( TPROFID )//';'
-                ELSE
-                    LINE = TRIM( LINE )//';'
+                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'MONTHLY;'//TRIM( CFIPS )
                 END IF
 
 C.................  Append new DAILY temporal profile ID to new/existing x-ref entry
                 IF( .NOT. HOURAVER .AND. DAYAVER ) THEN
-                    LINE = TRIM( LINE )//TRIM( TPROFID )//';'
-                ELSE
-                    LINE = TRIM( LINE )//';'
+                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'DAILY;'//TRIM( CFIPS )
                 END IF
                     
 C.................  Append new HOURLY temporal profile ID to new/existing x-ref entry
-                IF( HOURAVER ) LINE = TRIM( LINE )//TRIM( TPROFID ) 
-
-C.................  output other x-ref entries to TREF_OUT file
-                WRITE( XODEV,'( A )' ) TRIM( LINE )
+                IF( HOURAVER ) THEN
+                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'HOURLY;'//TRIM( CFIPS ) 
+                END IF
 
             ENDDO
 
@@ -999,23 +990,27 @@ C.................  output other x-ref entries to TREF_OUT file
 C.........  Store the rest of unmatched original x-ref entries        
         DO I = 1, MXLINE
 
-            LL = 0 
+            LL = 0
+            L2 = 1
+            IF( NH3FLAG ) L2 = 2
 
             READ( XIDEV, '(A)', IOSTAT=IOS ) LINE
 
 C............  Parse line into substrings (segments)
             IF( BLKORCMT( LINE ) ) CYCLE
-            IF( LINE( 1:1 ) == '/' ) CYCLE
                
             CALL PARSLINE ( LINE, MXSEG, SEGMENT )
 
 C.............  Skip all matched org x-ref entries
             DO J = 1, MXTREF
-                IF( I == INDXREF( J,1 ) ) LL = J 
+                IF( I == INDXREF( J ) ) THEN
+                    LL = J
+                END IF
             END DO
-            IF( INDXREF( LL,2 ) == 99999 ) CYCLE
 
-C.............  Ouput all unmatched Xref entries
+            IF( LL > 0 ) CYCLE
+
+C.............  Output all unmatched Xref entries
             LINE = ''
             DO J = 1, 14
                 LINE = TRIM( LINE ) // TRIM( SEGMENT( J ) ) // ';'
