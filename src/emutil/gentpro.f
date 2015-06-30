@@ -205,7 +205,7 @@ C...........   File units and logical names:
 
 C...........   Other local variables:
         INTEGER    DD, I, IC, J, K, LL, L, L0, L1, L2, L3   ! Counters and pointers
-        INTEGER    MM, N, NP, NX, NRH, NR, NS, S, T, NT, PT, TT, T2, V  ! Counters and pointers
+        INTEGER    MM, NN, N, NP, NX, NRH, NR, NS, S, T, NT, PT, TT, T2, V  ! Counters and pointers
 
         INTEGER    EPI_SDATE   ! episode start date from E.V. (YYYYDDD)
         INTEGER    EPI_STIME   ! episode start time from E.V. (HHMMSS)
@@ -286,11 +286,12 @@ C...........   Other local variables:
         LOGICAL :: FND_DATA = .FALSE.  !  true: found met data for this hour
         LOGICAL :: ALT_DATA = .FALSE.  !  true: using alternate data for this hour
 
-        CHARACTER(10)      CSCC        !  SCC code
+        CHARACTER(SCCLEN3) CSCC        !  SCC code
+        CHARACTER(FIPLEN3) CFIPS       !  FIPS code
+        CHARACTER(5)       TPROID      !  5-digit tpro id
         CHARACTER(1000)    CSCCLIST    !  tmp SCC list line buffer 
         CHARACTER(16)      CPOL,TPRO   !  Pollutant code, Profile types 
         CHARACTER(10)      TSCC        !  tmp SCC code
-        CHARACTER(6)       CFIPS       !  FIPS code
         CHARACTER(16)      COORUNIT    !  coordinate system projection units
         CHARACTER(80)      GDESC       !  grid description
         CHARACTER(16)      SRG_CNTRY   !  surrogate country
@@ -843,7 +844,7 @@ C.............  temporary limit for supporting older TREF format (v3.5.1 or earl
             L1 = FIND1 ( FIPS, NSRGFIPS, SRGFIPS )
 
             LL = 0
-
+            NS = 0
 C.............  find matched SCC entries
             IF( L0 > 0 ) THEN
 
@@ -857,21 +858,21 @@ C.............  find matched SCC entries
                     LL = 1
                 ELSE IF( DAYAVER .AND. TPRO == 'DAILY' ) THEN
                     LL = 1
-                ELSE IF( HOURAVER ) THEN
+                ELSE IF( HOURAVER .AND. TPRO == 'HOURLY' ) THEN
                     LL = 1
                 END IF
                 
-                IF( L1 < 0 ) LL = 0  ! L1 can be zero if there is an entry for non-US (ie. 111100)
+                IF( L1 < 0 ) LL = 0  ! L1 can be zero if fips can not be found from XREF input file
 
                 WRITE( MESG, 94010 ) 'ERROR: pollutant-specific '//
      &                'entry for target SCC: ' // CSCC // ' at line', I, 
-     &                ' is NOT applicable'
-     
+     &                ' is NOT supported'
+
                 IF( NH3FLAG ) THEN
                     IF( CPOL /= '-9' .AND. CPOL /= 'NH3' )
      &                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-                ELSE 
-                    IF( CPOL /= '-9' ) 
+                ELSE
+                    IF( CPOL /= '-9' )
      &                  CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
 
@@ -883,12 +884,12 @@ C.............  check pollutant-specific x-ref entries while processing AGNH3 mo
 C.................  Concatenate all segments into a string
                 LINE = ''
                 DO J = 1, 9
-                    LINE = TRIM( LINE ) //  TRIM( SEGMENT( J ) ) // ';'
+                    LINE = TRIM( LINE ) //  TRIM( SEGMENT( J ) ) // ','
                 END DO
 
 C.....................  Store all TREF entries including new ones
-                LL = INDEX1( LINE, MXTREF, CSCCFIP )
-                IF( LL > 0 ) CYCLE
+                NN = INDEX1( LINE, MXTREF, CSCCFIP )
+                IF( NN > 0 ) CYCLE
                 NMATCH = NMATCH + 1
                 INDXREF( NMATCH ) = I
                 MATCHED( L0,L1  ) = NMATCH
@@ -939,9 +940,9 @@ C.................  Use default profiles when there no matched x-ref entry
                 IF( LL < 1 ) THEN
 
                     IF( NH3FLAG ) THEN
-                        WRITE( LINE,93000 ) CSCC//';'//CFIPS //';;;;;NH3;'
+                        WRITE( LINE,93000 ) CSCC//','//CFIPS //',,,,,NH3,'
                     ELSE
-                        WRITE( LINE,93000 ) CSCC//';'//CFIPS //';;;;;-9;'
+                        WRITE( LINE,93000 ) CSCC//','//CFIPS //',,,,,-9,'
                     END IF
 
                     WRITE( MESG,93000 ) 'WARNING: Could not find ' //
@@ -963,24 +964,26 @@ C.................  Concatenate all segments into a string
                     IF( NH3FLAG ) SEGMENT( 7 ) = 'NH3'
 
                     DO L = 1, 7
-                        LINE = TRIM( LINE )//TRIM( SEGMENT( L ) ) // ';'
+                        LINE = TRIM( LINE )//TRIM( SEGMENT( L ) ) // ','
                     END DO
 
                 END IF
 
+                WRITE( TPROID, '(I5.5)' ) SRGFIPS( J )
+
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
-                IF( .NOT. HOURAVER .AND. MONAVER ) THEN
-                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'MONTHLY;'//TRIM( CFIPS )
+                IF( MONAVER ) THEN
+                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'MONTHLY,'//TRIM( TPROID )
                 END IF
 
 C.................  Append new DAILY temporal profile ID to new/existing x-ref entry
-                IF( .NOT. HOURAVER .AND. DAYAVER ) THEN
-                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'DAILY;'//TRIM( CFIPS )
+                IF( DAYAVER ) THEN
+                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'DAILY,'//TRIM( TPROID )
                 END IF
                     
 C.................  Append new HOURLY temporal profile ID to new/existing x-ref entry
                 IF( HOURAVER ) THEN
-                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'HOURLY;'//TRIM( CFIPS ) 
+                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'HOURLY,'//TRIM( TPROID ) 
                 END IF
 
             ENDDO
@@ -1011,10 +1014,6 @@ C.............  Skip all matched org x-ref entries
             IF( LL > 0 ) CYCLE
 
 C.............  Output all unmatched Xref entries
-            LINE = ''
-            DO J = 1, 14
-                LINE = TRIM( LINE ) // TRIM( SEGMENT( J ) ) // ';'
-            END DO
             WRITE( XODEV,93000 ) TRIM( LINE )
 
         END DO
@@ -1846,9 +1845,6 @@ C...........   Internal buffering fosrmats............ 94xxx
 94030   FORMAT( A, I5 )
 
 94040   FORMAT( A, I4 )
-
-94050   FORMAT( A, 1X, I2.2, A, 1X, A, 1X, I6.6, 1X,
-     &          A, 1X, I3.3, 1X, A, 1X, I3.3, 1X, A   )
 
 94070   FORMAT( A, F5.1, A )
 
