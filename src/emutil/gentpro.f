@@ -973,17 +973,17 @@ C.................  Concatenate all segments into a string
 
 C.................  Append new MONTHLY temporal profile ID to new/existing x-ref entry
                 IF( MONAVER ) THEN
-                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'MONTHLY,'//TRIM( TPROID )
+                    WRITE( XODEV,'( A )' ) TRIM(LINE)//'MONTHLY,'//TPROID//',""'
                 END IF
 
 C.................  Append new DAILY temporal profile ID to new/existing x-ref entry
                 IF( DAYAVER ) THEN
-                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'DAILY,'//TRIM( TPROID )
+                    WRITE( XODEV,'( A )' ) TRIM(LINE)//'DAILY,'//TPROID//',""'
                 END IF
                     
 C.................  Append new HOURLY temporal profile ID to new/existing x-ref entry
                 IF( HOURAVER ) THEN
-                    WRITE( XODEV,'( A )' ) TRIM( LINE )//'HOURLY,'//TRIM( TPROID ) 
+                    WRITE( XODEV,'( A )' ) TRIM(LINE)//'HOURLY,'//TPROID//',""' 
                 END IF
 
             ENDDO
