@@ -404,6 +404,9 @@ C.........  Year of SDATE
 C.........  Loop over reference counties
         DO I = 1, NREFC
 
+C.........  Skip if ref county is out of modeling domain for speed up
+            IF( NREFSRCS( I ) < 1 ) CYCLE
+
 C.............  Determine fuel month for current time step and reference county
             N = FIND1FIRST( MCREFIDX( I,1 ), NREFF, FMREFSORT( :,1 ) )
             M = FIND1( MCREFIDX( I,1 ), NFUELC, FMREFLIST( :,1 ) )
