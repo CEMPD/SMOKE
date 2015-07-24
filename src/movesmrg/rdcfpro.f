@@ -86,11 +86,26 @@ C...........   Local allocatable arrays
         INTEGER,            ALLOCATABLE :: NLMONS( : )     ! month matched
         INTEGER           , ALLOCATABLE :: INDXCF( : )     ! index for search matched x-ref
         
-        CHARACTER(FPSLEN3), ALLOCATABLE :: CHRT02( : )
-        CHARACTER(FPSLEN3), ALLOCATABLE :: CHRT03( : )
-        CHARACTER(FPSLEN3), ALLOCATABLE :: CHRT04( : )
-        CHARACTER(FPSLEN3), ALLOCATABLE :: CHRT05( : )
-        CHARACTER(FPSLEN3), ALLOCATABLE :: CHRT06( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT01( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT02( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT03( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT04( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT05( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT06( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT07( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT08( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT09( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT10( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT11( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT12( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT13( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT14( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT15( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT16( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT17( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT18( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT19( : )
+        CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT20( : )
         CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: DUPCHECK( : )   ! store duplicate entries
         CHARACTER(300),     ALLOCATABLE :: CFIPSCCLIST( : )          ! store matched entries
 
@@ -112,8 +127,12 @@ C...........   Other local variables
         INTEGER         MXWARN      ! maximum number of warnings
         INTEGER      :: NWARN = 0   ! current number of warnings
         INTEGER         ISTA, PSTA, NSTA
-        INTEGER         NCHRT02, NCHRT03, NCHRT04, NCHRT05, NCHRT06
-        INTEGER         FF, F1, F2, F3, F4, F5, F6
+        INTEGER         NCHRT01, NCHRT02, NCHRT03, NCHRT04, NCHRT05
+        INTEGER         NCHRT06, NCHRT07, NCHRT08, NCHRT09, NCHRT10
+        INTEGER         NCHRT11, NCHRT12, NCHRT13, NCHRT14, NCHRT15
+        INTEGER         NCHRT16, NCHRT17, NCHRT18, NCHRT19, NCHRT20
+        INTEGER         FF, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10
+        INTEGER         F11, F12, F13, F14, F15, F16, F17, F18, F19, F20
         
         REAL            CFVAL       ! control factor value
 
@@ -123,11 +142,12 @@ C...........   Other local variables
 
         CHARACTER(300)     LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
+        CHARACTER(2)       CMON, BLKMON, FILMON
         CHARACTER(FPSLEN3+CASLEN3+2) DUPTMP      ! tmp duplicate check buffer
         CHARACTER(FIPLEN3) CFIP, BLKFIP          ! tmp (character) FIPS code : CHRT03
         CHARACTER(SCCLEN3) CSCC, BLKSCC          ! current SCC : CHRT04
-        CHARACTER(FPSLEN3) CFIPSCC, BLKFIPSCC    ! tmp FIPS code // SCC : CHRT06
-        CHARACTER(IOVLEN3) POLNAM, SPCNAM, CBUF  ! current pollutant-species name 
+        CHARACTER(IOVLEN3) POLNAM, SPCNAM, CBUF, CPOL, BLKPOL, FILPOL  ! current pollutant-species name 
+        CHARACTER(FPSLEN3+CASLEN3+2) CFIPSCC, BLKFIPSCC    ! tmp FIPS code // SCC : CHRT06
 
         CHARACTER(16) :: PROGNAME = 'RDCFPRO'    ! program name
 
@@ -150,12 +170,29 @@ C.............  No of states
             END DO
 
 C.............  Allocate locate FIPS/SCC hierarchy arrays
-            NCHRT02 = NSTA               ! SCC=0,   FIP=state
-            NCHRT03 = NINVIFIP           ! SCC=0,   FIP=all
-            NCHRT04 = NINVSCC            ! SCC=all, FIP=0
-            NCHRT05 = NSTA * NINVSCC     ! SCC=all, FIP=state
-            NCHRT06 = NINVIFIP * NINVSCC ! SCC=all, FIP=all
+            NCHRT01 = NSTA               ! SCC=0,   FIP=state, Mon=0, Pol=0
+            NCHRT02 = NSTA               ! SCC=0,   FIP=state, Mon=0, Pol=pol
+            NCHRT03 = NSTA               ! SCC=0,   FIP=state, Mon=mon, Pol=0
+            NCHRT04 = NSTA               ! SCC=0,   FIP=state, Mon=mon, Pol=pol
+            NCHRT05 = NINVIFIP           ! SCC=0,   FIP=all, Mon=0, Pol=0
+            NCHRT06 = NINVIFIP           ! SCC=0,   FIP=all, Mon=0, Pol=pol
+            NCHRT07 = NINVIFIP           ! SCC=0,   FIP=all, Mon=mon, Pol=0
+            NCHRT08 = NINVIFIP           ! SCC=0,   FIP=all, Mon=mon, Pol=pol
+            NCHRT09 = NINVSCC            ! SCC=all, FIP=0, Mon=0, Pol=0
+            NCHRT10 = NINVSCC            ! SCC=all, FIP=0, Mon=0, Pol=pol
+            NCHRT11 = NINVSCC            ! SCC=all, FIP=0, Mon=mon, Pol=0
+            NCHRT12 = NINVSCC            ! SCC=all, FIP=0, Mon=mon, Pol=pol
+            NCHRT13 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=0, Pol=0
+            NCHRT14 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=0, Pol=pol
+            NCHRT15 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=mon, Pol=0
+            NCHRT16 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=mon, Pol=pol
+            NCHRT17 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=0, Pol=0
+            NCHRT18 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=0, Pol=pol
+            NCHRT19 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=mon, Pol=0
+            NCHRT20 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=mon, Pol=pol
 
+            ALLOCATE( CHRT01( NCHRT01 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT01', PROGNAME )
             ALLOCATE( CHRT02( NCHRT02 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CHRT02', PROGNAME )
             ALLOCATE( CHRT03( NCHRT03 ), STAT=IOS )
@@ -166,39 +203,109 @@ C.............  Allocate locate FIPS/SCC hierarchy arrays
             CALL CHECKMEM( IOS, 'CHRT05', PROGNAME )
             ALLOCATE( CHRT06( NCHRT06 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CHRT06', PROGNAME )
+            ALLOCATE( CHRT07( NCHRT07 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT07', PROGNAME )
+            ALLOCATE( CHRT08( NCHRT08 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT08', PROGNAME )
+            ALLOCATE( CHRT09( NCHRT09 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT09', PROGNAME )
+            ALLOCATE( CHRT10( NCHRT10 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT10', PROGNAME )
+            ALLOCATE( CHRT11( NCHRT11 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT11', PROGNAME )
+            ALLOCATE( CHRT12( NCHRT12 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT12', PROGNAME )
+            ALLOCATE( CHRT13( NCHRT13 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT13', PROGNAME )
+            ALLOCATE( CHRT14( NCHRT14 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT14', PROGNAME )
+            ALLOCATE( CHRT15( NCHRT15 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT15', PROGNAME )
+            ALLOCATE( CHRT16( NCHRT16 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT16', PROGNAME )
+            ALLOCATE( CHRT17( NCHRT17 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT17', PROGNAME )
+            ALLOCATE( CHRT18( NCHRT18 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT18', PROGNAME )
+            ALLOCATE( CHRT19( NCHRT19 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT19', PROGNAME )
+            ALLOCATE( CHRT20( NCHRT20 ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'CHRT20', PROGNAME )
+            CHRT01 = ''
             CHRT02 = ''
             CHRT03 = ''
             CHRT04 = ''
             CHRT05 = ''
             CHRT06 = ''
+            CHRT07 = ''
+            CHRT08 = ''
+            CHRT09 = ''
+            CHRT10 = ''
+            CHRT11 = ''
+            CHRT12 = ''
+            CHRT13 = ''
+            CHRT14 = ''
+            CHRT15 = ''
+            CHRT16 = ''
+            CHRT17 = ''
+            CHRT18 = ''
+            CHRT19 = ''
+            CHRT20 = ''
 
 C.............  Build FIPS and SCC hierarchy tables
             N = 0
+            BLKMON = '00'
+            FILMON = 'MM'
             BLKFIP = '000000'
             BLKSCC = '0000000000'
-            BLKFIPSCC = BLKFIP // BLKSCC
+            BLKPOL = '0000000000000000'
+            FILPOL = 'PPPPPPPPPPPPPPPP'
+            BLKFIPSCC = BLKFIP // BLKSCC // BLKMON // BLKPOL
+
             DO I = 1, NINVSCC
 
-                CHRT04( I ) = BLKFIP // INVSCC( I )
+                CHRT09( I ) = BLKFIP // INVSCC( I ) // BLKMON // BLKPOL
+                CHRT10( I ) = BLKFIP // INVSCC( I ) // BLKMON // FILPOL
+                CHRT11( I ) = BLKFIP // INVSCC( I ) // FILMON // BLKPOL
+                CHRT12( I ) = BLKFIP // INVSCC( I ) // FILMON // FILPOL
+
                 NSTA = 0
                 PSTA = -1 
                 DO J = 1, NINVIFIP
 
                     N = N + 1
-                    WRITE( CHRT03(J),'(I6.6,A)' ) INVIFIP(J), BLKSCC
-                    WRITE( CHRT06(N),'(I6.6,A)' ) INVIFIP(J), INVSCC(I)
-   
+                    WRITE( CHRT05(J),'(I6.6,A)' ) INVIFIP(J), BLKSCC // BLKMON // BLKPOL
+                    WRITE( CHRT06(J),'(I6.6,A)' ) INVIFIP(J), BLKSCC // BLKMON // FILPOL
+                    WRITE( CHRT07(J),'(I6.6,A)' ) INVIFIP(J), BLKSCC // FILMON // BLKPOL
+                    WRITE( CHRT08(J),'(I6.6,A)' ) INVIFIP(J), BLKSCC // FILMON // FILPOL
+
+                    WRITE( CHRT17(N),'(I6.6,A)' ) INVIFIP(J), INVSCC(I) // BLKMON // BLKPOL
+                    WRITE( CHRT18(N),'(I6.6,A)' ) INVIFIP(J), INVSCC(I) // BLKMON // FILPOL
+                    WRITE( CHRT19(N),'(I6.6,A)' ) INVIFIP(J), INVSCC(I) // FILMON // BLKPOL
+                    WRITE( CHRT20(N),'(I6.6,A)' ) INVIFIP(J), INVSCC(I) // FILMON // FILPOL
+
                     NS = 0
                     ISTA = INT( INVIFIP( J ) / 1000 ) * 1000
+
                     IF( ISTA /= PSTA ) THEN
+
                         NSTA = NSTA + 1
-                        WRITE( CHRT02( NSTA ),'(I6.6,A)' ) ISTA, BLKSCC
+                        WRITE( CHRT01( NSTA ),'(I6.6,A)' ) ISTA, BLKSCC // BLKMON // BLKPOL
+                        WRITE( CHRT02( NSTA ),'(I6.6,A)' ) ISTA, BLKSCC // BLKMON // FILPOL
+                        WRITE( CHRT03( NSTA ),'(I6.6,A)' ) ISTA, BLKSCC // FILMON // BLKPOL
+                        WRITE( CHRT04( NSTA ),'(I6.6,A)' ) ISTA, BLKSCC // FILMON // FILPOL
 
                         DO K = 1, NINVSCC
                             NS = NS + 1
-                            WRITE( CHRT05(NS),'(I6.6,A)' ) ISTA, INVSCC(K)
+                            WRITE( CHRT13(NS),'(I6.6,A)' ) ISTA, INVSCC(K) // BLKMON // BLKPOL
+                            WRITE( CHRT14(NS),'(I6.6,A)' ) ISTA, INVSCC(K) // BLKMON // FILPOL
+                            WRITE( CHRT15(NS),'(I6.6,A)' ) ISTA, INVSCC(K) // FILMON // BLKPOL
+                            WRITE( CHRT16(NS),'(I6.6,A)' ) ISTA, INVSCC(K) // FILMON // FILPOL
+
                         END DO
+
                         PSTA = ISTA
+
                     END IF
 
                 END DO    ! FIPS loop
@@ -264,33 +371,77 @@ C.............  Parse line into fields
             CSCC   = TRIM( SEGMENT( 2 ) )
             POLNAM = ADJUSTL( SEGMENT( 3 ) )
             MON    = STR2INT( SEGMENT( 4 ) )
-            IF( MON < 1 ) MON = 0
 
+            IF( POLNAM == ' ' ) THEN
+                CPOL = BLKPOL
+            ELSE
+                CPOL = FILPOL
+            END IF
+
+            IF( MON < 1 ) THEN
+                MON = 0
+                CMON = BLKMON
+            ELSE
+                CMON = FILMON
+            END IF
+            
             CBUF = ' '
             CALL FLTRXREF( CFIP, CBUF, CSCC, POLNAM, CBUF,
      &                     IDUM, IDUM, IDUM, PFLAG, SKIPREC )
 
-            CFIPSCC = CFIP // CSCC        ! CHRT09
+            IFIP = STR2INT( CFIP )
+            WRITE( CFIPSCC,'(I6.6,A)') IFIP, CSCC // CMON // CPOL
 
-            F2 = FINDC( CFIPSCC, NCHRT02, CHRT02 )  ! SCC=0,   FIP=state
-            F3 = FINDC( CFIPSCC, NCHRT03, CHRT03 )  ! SCC=0,   FIP=all
-            F4 = FINDC( CFIPSCC, NCHRT04, CHRT04 )  ! SCC=all, FIP=0
-            F5 = FINDC( CFIPSCC, NCHRT05, CHRT05 )  ! SCC=all, FIP=state
-            F6 = FINDC( CFIPSCC, NCHRT06, CHRT06 )  ! SCC=all, FIP=all
+            F1 = INDEX1( CFIPSCC, NCHRT01, CHRT01 )  ! SCC=0,   FIP=state, Mon=0, Pol=0
+            F2 = INDEX1( CFIPSCC, NCHRT02, CHRT02 )  ! SCC=0,   FIP=state, Mon=0, Pol=pol
+            F3 = INDEX1( CFIPSCC, NCHRT03, CHRT03 )  ! SCC=0,   FIP=state, Mon=mon, Pol=0
+            F4 = INDEX1( CFIPSCC, NCHRT04, CHRT04 )  ! SCC=0,   FIP=state, Mon=mon, Pol=pol
+            F5 = INDEX1( CFIPSCC, NCHRT05, CHRT05 )  ! SCC=0,   FIP=all, Mon=0, Pol=0
+            F6 = INDEX1( CFIPSCC, NCHRT06, CHRT06 )  ! SCC=0,   FIP=all, Mon=0, Pol=pol
+            F7 = INDEX1( CFIPSCC, NCHRT07, CHRT07 )  ! SCC=0,   FIP=all, Mon=mon, Pol=0
+            F8 = INDEX1( CFIPSCC, NCHRT08, CHRT08 )  ! SCC=0,   FIP=all, Mon=mon, Pol=pol
+            F9 = INDEX1( CFIPSCC, NCHRT09, CHRT09 )  ! SCC=all, FIP=0, Mon=0, Pol=0
+            F10 = INDEX1( CFIPSCC, NCHRT10, CHRT10 ) ! SCC=all, FIP=0, Mon=0, Pol=pol
+            F11 = INDEX1( CFIPSCC, NCHRT11, CHRT11 ) ! SCC=all, FIP=0, Mon=mon, Pol=0
+            F12 = INDEX1( CFIPSCC, NCHRT12, CHRT12 ) ! SCC=all, FIP=0, Mon=mon, Pol=pol
+            F13 = INDEX1( CFIPSCC, NCHRT13, CHRT13 ) ! SCC=all, FIP=state, Mon=0, Pol=0
+            F14 = INDEX1( CFIPSCC, NCHRT14, CHRT14 ) ! SCC=all, FIP=state, Mon=0, Pol=pol
+            F15 = INDEX1( CFIPSCC, NCHRT15, CHRT15 ) ! SCC=all, FIP=state, Mon=mon, Pol=0
+            F16 = INDEX1( CFIPSCC, NCHRT16, CHRT16 ) ! SCC=all, FIP=state, Mon=mon, Pol=pol
+            F17 = INDEX1( CFIPSCC, NCHRT17, CHRT17 ) ! SCC=all, FIP=all, Mon=0, Pol=0
+            F18 = INDEX1( CFIPSCC, NCHRT18, CHRT18 ) ! SCC=all, FIP=all, Mon=0, Pol=pol
+            F19 = INDEX1( CFIPSCC, NCHRT19, CHRT19 ) ! SCC=all, FIP=all, Mon=mon, Pol=0
+            F20 = INDEX1( CFIPSCC, NCHRT20, CHRT20 ) ! SCC=all, FIP=all, Mon=mon, Pol=pol
 
-            FF = 0
+            FF = -1
+            IF( F20 > 0 ) FF = 20
+            IF( F19 > 0 ) FF = 19
+            IF( F18 > 0 ) FF = 18
+            IF( F17 > 0 ) FF = 17
+            IF( F16 > 0 ) FF = 16
+            IF( F15 > 0 ) FF = 15
+            IF( F14 > 0 ) FF = 14
+            IF( F13 > 0 ) FF = 13
+            IF( F12 > 0 ) FF = 12
+            IF( F11 > 0 ) FF = 11
+            IF( F10 > 0 ) FF = 10
+            IF( F9 > 0 ) FF = 9
+            IF( F8 > 0 ) FF = 8
+            IF( F7 > 0 ) FF = 7
             IF( F6 > 0 ) FF = 6
             IF( F5 > 0 ) FF = 5
             IF( F4 > 0 ) FF = 4
             IF( F3 > 0 ) FF = 3
             IF( F2 > 0 ) FF = 2
-            IF( CFIPSCC == BLKFIPSCC ) FF = 1
+            IF( F1 > 0 ) FF = 1
 
-            IF( FF < 1 ) CYCLE     ! skip unmatched entries
+            IF( CFIPSCC == BLKFIPSCC ) FF = 0
+
+            IF( FF < 0 ) CYCLE     ! skip unmatched entries
             NX = NX + 1
 
-            WRITE( DUPTMP,'(A,I2.2,A)' ) CFIP//CSCC//POLNAM, MON
-            L = FINDC( DUPTMP, NLINES, DUPCHECK )
+            WRITE( DUPTMP,'(A,I2.2)' ) CFIP//CSCC//POLNAM,MON
+            L = INDEX1( DUPTMP, NLINES, DUPCHECK )
             IF( L > 0 ) THEN
                 WRITE( MESG,94010 ) 'ERROR: Duplicate entry found at', IREC
                 CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -312,7 +463,7 @@ C.............  No of CFPRO entries check
         NXREF = NX
 
 C.........  Processing a list of valid CFPRO entries
-        DO N = 1, 6     ! six hierarchy
+        DO N = 0, 20     ! six hierarchy
 
           DO I = 1, NXREF
         
@@ -442,6 +593,13 @@ C.............  Check pollutant name and mode
                         CALL M3MESG( MESG )
                         CYCLE
                     END IF
+
+                    IF( SPCIDX > 0 .AND. POLIDX > 0 ) THEN
+                        NPOLS = 2
+                        NLPOLS( 1 ) = POLIDX
+                        NLPOLS( 2 ) = NIPPA + SPCIDX
+                    END IF
+
                 ELSE        ! inv poll-specific control factors application
                     POLIDX = INDEX1( POLNAM, NIPPA, EANAM )
                     IF ( POLIDX > 0) THEN
@@ -493,7 +651,7 @@ C.............  Check month values
 
 C.............  check no of fips/scc/poll/mon
             IF( NFIPS < 1 .OR. NSCCS < 1 .OR. NPOLS < 1 .OR. NMONS < 1 )  CYCLE
-                
+
 C.............  check and get up control factor values
             IF ( .NOT. CHKREAL( SEGMENT( 5 ) ) ) THEN
                 EFLAG = .TRUE.
