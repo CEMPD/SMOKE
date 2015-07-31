@@ -85,7 +85,8 @@ C...........   Local allocatable arrays
         INTEGER,            ALLOCATABLE :: NLPOLS( : )     ! POL matched
         INTEGER,            ALLOCATABLE :: NLMONS( : )     ! month matched
         INTEGER           , ALLOCATABLE :: INDXCF( : )     ! index for search matched x-ref
-        
+
+        CHARACTER(FPSLEN3+CASLEN3+2) CHRTD1, CHRTD2, CHRTD3
         CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT01( : )
         CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT02( : )
         CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT03( : )
@@ -107,6 +108,7 @@ C...........   Local allocatable arrays
         CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT19( : )
         CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: CHRT20( : )
         CHARACTER(FPSLEN3+CASLEN3+2), ALLOCATABLE :: DUPCHECK( : )   ! store duplicate entries
+
         CHARACTER(300),     ALLOCATABLE :: CFIPSCCLIST( : )          ! store matched entries
 
 C...........   Other local variables
@@ -133,6 +135,7 @@ C...........   Other local variables
         INTEGER         NCHRT16, NCHRT17, NCHRT18, NCHRT19, NCHRT20
         INTEGER         FF, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10
         INTEGER         F11, F12, F13, F14, F15, F16, F17, F18, F19, F20
+        INTEGER         FD1, FD2, FD3
         
         REAL            CFVAL       ! control factor value
 
@@ -174,22 +177,22 @@ C.............  Allocate locate FIPS/SCC hierarchy arrays
             NCHRT02 = NSTA               ! SCC=0,   FIP=state, Mon=0, Pol=pol
             NCHRT03 = NSTA               ! SCC=0,   FIP=state, Mon=mon, Pol=0
             NCHRT04 = NSTA               ! SCC=0,   FIP=state, Mon=mon, Pol=pol
-            NCHRT05 = NINVIFIP           ! SCC=0,   FIP=all, Mon=0, Pol=0
-            NCHRT06 = NINVIFIP           ! SCC=0,   FIP=all, Mon=0, Pol=pol
-            NCHRT07 = NINVIFIP           ! SCC=0,   FIP=all, Mon=mon, Pol=0
-            NCHRT08 = NINVIFIP           ! SCC=0,   FIP=all, Mon=mon, Pol=pol
-            NCHRT09 = NINVSCC            ! SCC=all, FIP=0, Mon=0, Pol=0
-            NCHRT10 = NINVSCC            ! SCC=all, FIP=0, Mon=0, Pol=pol
-            NCHRT11 = NINVSCC            ! SCC=all, FIP=0, Mon=mon, Pol=0
-            NCHRT12 = NINVSCC            ! SCC=all, FIP=0, Mon=mon, Pol=pol
-            NCHRT13 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=0, Pol=0
-            NCHRT14 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=0, Pol=pol
-            NCHRT15 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=mon, Pol=0
-            NCHRT16 = NSTA * NINVSCC     ! SCC=all, FIP=state, Mon=mon, Pol=pol
-            NCHRT17 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=0, Pol=0
-            NCHRT18 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=0, Pol=pol
-            NCHRT19 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=mon, Pol=0
-            NCHRT20 = NINVIFIP * NINVSCC ! SCC=all, FIP=all, Mon=mon, Pol=pol
+            NCHRT05 = NINVIFIP           ! SCC=0,   FIP=full, Mon=0, Pol=0
+            NCHRT06 = NINVIFIP           ! SCC=0,   FIP=full, Mon=0, Pol=pol
+            NCHRT07 = NINVIFIP           ! SCC=0,   FIP=full, Mon=mon, Pol=0
+            NCHRT08 = NINVIFIP           ! SCC=0,   FIP=full, Mon=mon, Pol=pol
+            NCHRT09 = NINVSCC            ! SCC=full, FIP=0, Mon=0, Pol=0
+            NCHRT10 = NINVSCC            ! SCC=full, FIP=0, Mon=0, Pol=pol
+            NCHRT11 = NINVSCC            ! SCC=full, FIP=0, Mon=mon, Pol=0
+            NCHRT12 = NINVSCC            ! SCC=full, FIP=0, Mon=mon, Pol=pol
+            NCHRT13 = NSTA * NINVSCC     ! SCC=full, FIP=state, Mon=0, Pol=0
+            NCHRT14 = NSTA * NINVSCC     ! SCC=full, FIP=state, Mon=0, Pol=pol
+            NCHRT15 = NSTA * NINVSCC     ! SCC=full, FIP=state, Mon=mon, Pol=0
+            NCHRT16 = NSTA * NINVSCC     ! SCC=full, FIP=state, Mon=mon, Pol=pol
+            NCHRT17 = NINVIFIP * NINVSCC ! SCC=full, FIP=full, Mon=0, Pol=0
+            NCHRT18 = NINVIFIP * NINVSCC ! SCC=full, FIP=full, Mon=0, Pol=pol
+            NCHRT19 = NINVIFIP * NINVSCC ! SCC=full, FIP=full, Mon=mon, Pol=0
+            NCHRT20 = NINVIFIP * NINVSCC ! SCC=full, FIP=full, Mon=mon, Pol=pol
 
             ALLOCATE( CHRT01( NCHRT01 ), STAT=IOS )
             CALL CHECKMEM( IOS, 'CHRT01', PROGNAME )
@@ -260,7 +263,11 @@ C.............  Build FIPS and SCC hierarchy tables
             BLKSCC = '0000000000'
             BLKPOL = '0000000000000000'
             FILPOL = 'PPPPPPPPPPPPPPPP'
+
             BLKFIPSCC = BLKFIP // BLKSCC // BLKMON // BLKPOL
+            CHRTD1 = BLKFIP // BLKSCC // BLKMON // FILPOL
+            CHRTD2 = BLKFIP // BLKSCC // FILMON // BLKPOL
+            CHRTD3 = BLKFIP // BLKSCC // FILMON // FILPOL
 
             DO I = 1, NINVSCC
 
@@ -269,6 +276,7 @@ C.............  Build FIPS and SCC hierarchy tables
                 CHRT11( I ) = BLKFIP // INVSCC( I ) // FILMON // BLKPOL
                 CHRT12( I ) = BLKFIP // INVSCC( I ) // FILMON // FILPOL
 
+                NS = 0
                 NSTA = 0
                 PSTA = -1 
                 DO J = 1, NINVIFIP
@@ -284,7 +292,6 @@ C.............  Build FIPS and SCC hierarchy tables
                     WRITE( CHRT19(N),'(I6.6,A)' ) INVIFIP(J), INVSCC(I) // FILMON // BLKPOL
                     WRITE( CHRT20(N),'(I6.6,A)' ) INVIFIP(J), INVSCC(I) // FILMON // FILPOL
 
-                    NS = 0
                     ISTA = INT( INVIFIP( J ) / 1000 ) * 1000
 
                     IF( ISTA /= PSTA ) THEN
@@ -301,7 +308,6 @@ C.............  Build FIPS and SCC hierarchy tables
                             WRITE( CHRT14(NS),'(I6.6,A)' ) ISTA, INVSCC(K) // BLKMON // FILPOL
                             WRITE( CHRT15(NS),'(I6.6,A)' ) ISTA, INVSCC(K) // FILMON // BLKPOL
                             WRITE( CHRT16(NS),'(I6.6,A)' ) ISTA, INVSCC(K) // FILMON // FILPOL
-
                         END DO
 
                         PSTA = ISTA
@@ -392,28 +398,34 @@ C.............  Parse line into fields
             IFIP = STR2INT( CFIP )
             WRITE( CFIPSCC,'(I6.6,A)') IFIP, CSCC // CMON // CPOL
 
+            FD1 = 0
+            FD2 = 0
+            FD3 = 0
+            IF( CFIPSCC == CHRTD1 ) FD1 = 1      ! SCC=0,   FIP=0, Mon=0, Pol=pol
+            IF( CFIPSCC == CHRTD2 ) FD2 = 1      ! SCC=0,   FIP=state, Mon=mon, Pol=0
+            IF( CFIPSCC == CHRTD3 ) FD3 = 1      ! SCC=0,   FIP=state, Mon=mon, Pol=pol
             F1 = INDEX1( CFIPSCC, NCHRT01, CHRT01 )  ! SCC=0,   FIP=state, Mon=0, Pol=0
             F2 = INDEX1( CFIPSCC, NCHRT02, CHRT02 )  ! SCC=0,   FIP=state, Mon=0, Pol=pol
             F3 = INDEX1( CFIPSCC, NCHRT03, CHRT03 )  ! SCC=0,   FIP=state, Mon=mon, Pol=0
             F4 = INDEX1( CFIPSCC, NCHRT04, CHRT04 )  ! SCC=0,   FIP=state, Mon=mon, Pol=pol
-            F5 = INDEX1( CFIPSCC, NCHRT05, CHRT05 )  ! SCC=0,   FIP=all, Mon=0, Pol=0
-            F6 = INDEX1( CFIPSCC, NCHRT06, CHRT06 )  ! SCC=0,   FIP=all, Mon=0, Pol=pol
-            F7 = INDEX1( CFIPSCC, NCHRT07, CHRT07 )  ! SCC=0,   FIP=all, Mon=mon, Pol=0
-            F8 = INDEX1( CFIPSCC, NCHRT08, CHRT08 )  ! SCC=0,   FIP=all, Mon=mon, Pol=pol
-            F9 = INDEX1( CFIPSCC, NCHRT09, CHRT09 )  ! SCC=all, FIP=0, Mon=0, Pol=0
-            F10 = INDEX1( CFIPSCC, NCHRT10, CHRT10 ) ! SCC=all, FIP=0, Mon=0, Pol=pol
-            F11 = INDEX1( CFIPSCC, NCHRT11, CHRT11 ) ! SCC=all, FIP=0, Mon=mon, Pol=0
-            F12 = INDEX1( CFIPSCC, NCHRT12, CHRT12 ) ! SCC=all, FIP=0, Mon=mon, Pol=pol
-            F13 = INDEX1( CFIPSCC, NCHRT13, CHRT13 ) ! SCC=all, FIP=state, Mon=0, Pol=0
-            F14 = INDEX1( CFIPSCC, NCHRT14, CHRT14 ) ! SCC=all, FIP=state, Mon=0, Pol=pol
-            F15 = INDEX1( CFIPSCC, NCHRT15, CHRT15 ) ! SCC=all, FIP=state, Mon=mon, Pol=0
-            F16 = INDEX1( CFIPSCC, NCHRT16, CHRT16 ) ! SCC=all, FIP=state, Mon=mon, Pol=pol
-            F17 = INDEX1( CFIPSCC, NCHRT17, CHRT17 ) ! SCC=all, FIP=all, Mon=0, Pol=0
-            F18 = INDEX1( CFIPSCC, NCHRT18, CHRT18 ) ! SCC=all, FIP=all, Mon=0, Pol=pol
-            F19 = INDEX1( CFIPSCC, NCHRT19, CHRT19 ) ! SCC=all, FIP=all, Mon=mon, Pol=0
-            F20 = INDEX1( CFIPSCC, NCHRT20, CHRT20 ) ! SCC=all, FIP=all, Mon=mon, Pol=pol
+            F5 = INDEX1( CFIPSCC, NCHRT05, CHRT05 )  ! SCC=0,   FIP=full, Mon=0, Pol=0
+            F6 = INDEX1( CFIPSCC, NCHRT06, CHRT06 )  ! SCC=0,   FIP=full, Mon=0, Pol=pol
+            F7 = INDEX1( CFIPSCC, NCHRT07, CHRT07 )  ! SCC=0,   FIP=full, Mon=mon, Pol=0
+            F8 = INDEX1( CFIPSCC, NCHRT08, CHRT08 )  ! SCC=0,   FIP=full, Mon=mon, Pol=pol
+            F9 = INDEX1( CFIPSCC, NCHRT09, CHRT09 )  ! SCC=full, FIP=0, Mon=0, Pol=0
+            F10 = INDEX1( CFIPSCC, NCHRT10, CHRT10 ) ! SCC=full, FIP=0, Mon=0, Pol=pol
+            F11 = INDEX1( CFIPSCC, NCHRT11, CHRT11 ) ! SCC=full, FIP=0, Mon=mon, Pol=0
+            F12 = INDEX1( CFIPSCC, NCHRT12, CHRT12 ) ! SCC=full, FIP=0, Mon=mon, Pol=pol
+            F13 = INDEX1( CFIPSCC, NCHRT13, CHRT13 ) ! SCC=full, FIP=state, Mon=0, Pol=0
+            F14 = INDEX1( CFIPSCC, NCHRT14, CHRT14 ) ! SCC=full, FIP=state, Mon=0, Pol=pol
+            F15 = INDEX1( CFIPSCC, NCHRT15, CHRT15 ) ! SCC=full, FIP=state, Mon=mon, Pol=0
+            F16 = INDEX1( CFIPSCC, NCHRT16, CHRT16 ) ! SCC=full, FIP=state, Mon=mon, Pol=pol
+            F17 = INDEX1( CFIPSCC, NCHRT17, CHRT17 ) ! SCC=full, FIP=full, Mon=0, Pol=0
+            F18 = INDEX1( CFIPSCC, NCHRT18, CHRT18 ) ! SCC=full, FIP=full, Mon=0, Pol=pol
+            F19 = INDEX1( CFIPSCC, NCHRT19, CHRT19 ) ! SCC=full, FIP=full, Mon=mon, Pol=0
+            F20 = INDEX1( CFIPSCC, NCHRT20, CHRT20 ) ! SCC=full, FIP=full, Mon=mon, Pol=pol
 
-            FF = -1
+            FF = -99
             IF( F20 > 0 ) FF = 20
             IF( F19 > 0 ) FF = 19
             IF( F18 > 0 ) FF = 18
@@ -434,10 +446,13 @@ C.............  Parse line into fields
             IF( F3 > 0 ) FF = 3
             IF( F2 > 0 ) FF = 2
             IF( F1 > 0 ) FF = 1
+            IF( FD3 > 0 ) FF = 0
+            IF( FD2 > 0 ) FF = -1
+            IF( FD1 > 0 ) FF = -2
+            IF( CFIPSCC == BLKFIPSCC ) FF = -3
 
-            IF( CFIPSCC == BLKFIPSCC ) FF = 0
+            IF( FF < -3 ) CYCLE     ! skip unmatched entries
 
-            IF( FF < 0 ) CYCLE     ! skip unmatched entries
             NX = NX + 1
 
             WRITE( DUPTMP,'(A,I2.2)' ) CFIP//CSCC//POLNAM,MON
@@ -463,7 +478,7 @@ C.............  No of CFPRO entries check
         NXREF = NX
 
 C.........  Processing a list of valid CFPRO entries
-        DO N = 0, 20     ! six hierarchy
+        DO N = -3, 20     ! six hierarchy
 
           DO I = 1, NXREF
         
