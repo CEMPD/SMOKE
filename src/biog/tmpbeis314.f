@@ -177,6 +177,7 @@ C.........  Other variables and their descriptions:
         LOGICAL         PX_VERSION     ! true: using PX version of MCIP
         LOGICAL         INITIAL_RUN, INITIAL_HOUR
         LOGICAL         VFLAG         ! true: use variable grid
+        LOGICAL :: FDFLAG= .FALSE.    ! true: output file meta desc
 
         CHARACTER(8)       CHKNAME    ! check for virtual mode
         CHARACTER(50)      CLOUDSHM   ! cloud scheme name
@@ -185,6 +186,8 @@ C.........  Other variables and their descriptions:
         CHARACTER(50)      LUSE       ! land use description
         CHARACTER(300)     MESG       ! message buffer
         CHARACTER(50)      METSCEN    ! met scenario name
+        CHARACTER(128)     METADESC   ! output meta description
+        CHARACTER(16)      MRGFDESC   ! name for met data description
         CHARACTER(16)      PRESNAM    ! surface pressure variable name
         CHARACTER(16)      RADNAM     ! radiation variable name
         CHARACTER(16)      RCNAM      ! convective rainfall variable name
@@ -482,6 +485,18 @@ C.........  Check for radiation variable
         CALL ENVSTR( 'RAD_VAR', MESG, 'RGRND', RADNAM, IOS )
         CALL CHECK_VARIABLE( RADNAM, M2NAME )
 
+C.........  Set the EV name for met data description
+        MESG = 'Setting for the environment variable name for file ' //
+     &           'meta description for output file'
+        CALL ENVSTR( 'MRG_FILEDESC', MESG, ' ', MRGFDESC, IOS  )
+
+        IF( IOS >= 0 ) THEN
+            FDFLAG = .TRUE.
+            MESG = 'Use this file meta description for output file'
+            CALL ENVSTR( MRGFDESC, MESG, ' ', METADESC, IOS )
+            IF( IOS < 0 ) FDFLAG = .FALSE.
+        END IF
+
 C.........  Get default time characteristic for output file:
 C           If we're going to prompt, then set the defaults based on met
 C           otherwise, use environment variables to set defaults
@@ -529,6 +544,7 @@ C           (all but variables-table in description is borrowed from M3NAME)
         FDESC3D = ' '   ! array
 
         FDESC3D( 1 ) = 'Gridded biogenic emissions from SMOKE-BEIS3'
+        IF( FDFLAG ) FDESC3D( 1 ) = METADESC
         FDESC3D( 2 ) = '/FROM/ '    // PROGNAME
         FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
         FDESC3D( 4 ) = '/TZONE/ '   // CTZONE
