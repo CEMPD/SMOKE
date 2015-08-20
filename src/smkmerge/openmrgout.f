@@ -98,17 +98,19 @@ C.........  Other local variables
 
         INTEGER         I, J, K, L, L1, L2, L3, L4, LD, LJ, N, V
 
-        INTEGER         IOS1, IOS2        ! i/o ENVSTR statuses
+        INTEGER         IOS, IOS1, IOS2        ! i/o ENVSTR statuses
 
+        LOGICAL      :: FDFLAG= .FALSE.   ! true: output file meta desc
         LOGICAL      :: EFLAG = .FALSE.   ! true: error is found
 
+        CHARACTER(16)   MRGFDESC     ! name for met data description
         CHARACTER(50)   RTYPNAM      ! name for type of state/county report file
         CHARACTER(50)   UNIT         ! tmp units buffer
 
         CHARACTER(128)  OUTSCEN      ! output scenario name
+        CHARACTER(128)  METADESC     ! output meta description
         CHARACTER(128)  FILEDESC     ! output file description
         CHARACTER(256)  MESG         ! message buffer
-        CHARACTER(256)  BUFFER       ! tmp buffer
         CHARACTER(256)  OUTDIR       ! output path
         CHARACTER(IODLEN3) DESCBUF ! variable description buffer
 
@@ -126,6 +128,18 @@ C           physical file names if logical file names are not defined.
 
 C.........  Set default output file names
         CALL MRGONAMS     
+
+C.........  Set the EV name for met data description
+        MESG = 'Setting for the environment variable name for file ' //
+     &           'meta description for output file'
+        CALL ENVSTR( 'MRG_FILEDESC', MESG, ' ', MRGFDESC, IOS  )
+
+        IF( IOS >= 0 ) THEN
+            FDFLAG = .TRUE.
+            MESG = 'Use this file meta description for output file'
+            CALL ENVSTR( MRGFDESC, MESG, ' ', METADESC, IOS )
+            IF( IOS < 0 ) FDFLAG = .FALSE.
+        END IF
 
 C.........  Set up header for I/O API output files
         FTYPE3D = GRDDED3
@@ -172,6 +186,7 @@ C.............  Prompt for and gridded open file(s)
                 CALL SETUP_VARIABLES( ANIPOL, ANMSPC, AEINAM, AEMNAM )
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Area source emissions data'
+                IF( FDFLAG ) FDESC3D( 1 ) = METADESC
 
 C.................  Open by logical name or physical name
                 FILEDESC = 'AREA-SOURCE GRIDDED OUTPUT file'
@@ -183,6 +198,7 @@ C.................  Open by logical name or physical name
                 CALL SETUP_VARIABLES( BNIPOL, BNMSPC, BEINAM, BEMNAM )
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Biogenic source emissions data'
+                IF( FDFLAG ) FDESC3D( 1 ) = METADESC
 
 C.................  Open by logical name or physical name
                 FILEDESC = 'BIOGENIC GRIDDED OUTPUT file'
@@ -203,6 +219,7 @@ ccs                 in the output)
                 ENDIF
                 NLAYS3D = 1
                 FDESC3D( 1 ) = 'Mobile source emissions data'
+                IF( FDFLAG ) FDESC3D( 1 ) = METADESC
 
 C.................  Open by logical name or physical name
                 FILEDESC = 'MOBILE-SOURCE GRIDDED OUTPUT file'
@@ -224,6 +241,7 @@ C.................  Open by logical name or physical name
                     VGLVS3D = 0  ! array
                 ENDIF
                 FDESC3D( 1 ) = 'Point source emissions data'
+                IF( FDFLAG ) FDESC3D( 1 ) = METADESC
 
 C.................  Open by logical name or physical name
                 FILEDESC = 'POINT-SOURCE GRIDDED OUTPUT file'
@@ -244,6 +262,7 @@ C.................  Open by logical name or physical name
                    VGLVS3D = 0  ! array
                 ENDIF
                 FDESC3D( 1 ) = 'Multiple category emissions data'
+                IF( FDFLAG ) FDESC3D( 1 ) = METADESC
 
 C.................  Open by logical name or physical name
                 FILEDESC = 'MULTI-SOURCE GRIDDED OUTPUT file'
@@ -334,6 +353,7 @@ C.............  Override gridded file settings
             ELSE IF( PFLAG ) THEN
                 FDESC3D( 1 ) = 'Point source groups file'
             END IF
+            IF( FDFLAG ) FDESC3D( 1 ) = METADESC
             FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
             FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
             WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS

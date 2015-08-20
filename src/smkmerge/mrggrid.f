@@ -193,6 +193,8 @@ C...........   Other local variables
         REAL          RATIO                      ! ratio 
 
         CHARACTER(16)  FDESC                     ! tmp file description
+        CHARACTER(16)  MRGFDESC                  ! name for file description EV
+        CHARACTER(128) METADESC                  ! output meta description from MRGFDESC
         CHARACTER(16)  IO_NAM                    ! tmp 16 chr logical file name
         CHARACTER(32)  NAM                       ! tmp logical file name
         CHARACTER(32)  LNAM                      ! tmp previous file name
@@ -876,6 +878,18 @@ C.........  Set up layer structure for output file
         DO NL = 0, NLAYS
             VGLVS3D( NL+VLB ) = VGLVS( NL )
         END DO
+
+C.........  Set the EV name for met data description
+        MESG = 'Setting for the environment variable name for meta ' //
+     &           'file description for output file'
+        CALL ENVSTR( 'MRG_FILEDESC', MESG, ' ', MRGFDESC, IOS  )
+        FDESC3D( 1 ) = 'Merged emissions output file from Mrggrid'
+
+        IF( IOS >= 0 ) THEN
+            MESG = 'Use this meta file description for output file'
+            CALL ENVSTR( MRGFDESC, MESG, ' ', METADESC, IOS )
+            FDESC3D( 1 ) = METADESC
+        END IF
 
 C........  Update variable names in sorted order, and also 
 C........  set up logical arrays for which files have which species
