@@ -14,6 +14,7 @@ C  SUBROUTINES AND FUNCTIONS CALLED:  none
 C
 C  REVISION  HISTORY:
 C     09/10: Created by C. Seppanen
+C     08/15: Modified by B.H. Baek 
 C
 C***********************************************************************
 C
@@ -43,6 +44,9 @@ C.........  This module contains data structures and flags specific to Movesmrg
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVIFIP, NINVSCC, INVSCC
 
+C.........  This module is for mobile-specific data
+        USE MODMOBIL, ONLY: NSCCMAP, SCCMAPFLAG, SCCMAPLIST, EXCLSCCFLAG
+
         IMPLICIT NONE
 
 C...........   INCLUDES
@@ -53,15 +57,18 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       BLKORCMT
         LOGICAL       CHKINT
         LOGICAL       CHKREAL
+        LOGICAL       ENVYN
+        INTEGER       INDEX1 
         INTEGER       GETFLINE
         INTEGER       FIND1
         INTEGER       FINDC
         INTEGER       STR2INT
+        INTEGER       PROMPTFFILE
         REAL          STR2REAL
         CHARACTER(2)  CRLF
         
         EXTERNAL BLKORCMT, CHKINT, CHKREAL, FIND1, GETFLINE, 
-     &           STR2INT, STR2REAL, CRLF
+     &           STR2INT, STR2REAL, CRLF, ENVYN, INDEX1, PROMPTFFILE
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: SPDEV             ! SPDPRO file unit no.
@@ -72,19 +79,21 @@ C...........   Local arrays
         CHARACTER(20)  SEGMENT( 53 )          ! parsed input line
 
 C...........   Other local variables
-        INTEGER         I, J        ! counters and indexes
+        INTEGER         I, J, JJ, KK     ! counters and indexes
         INTEGER         IOS         ! error status
         INTEGER      :: IREC = 0    ! record counter
         INTEGER         FIPIDX      ! current FIPS index
+        INTEGER         NSCC        ! no of reference SCCs
         INTEGER         SCCIDX      ! current SCC index
         INTEGER         NLINES      ! number of lines
+        INTEGER         MDEV        ! open SCCXREF input file
         INTEGER         CNTY        ! current FIPS code
         
         REAL            SPDVAL      ! hourly speed value
 
         LOGICAL      :: EFLAG = .FALSE.   ! true: error found
 
-        CHARACTER(1060)     LINE     ! line buffer
+        CHARACTER(1060)    LINE     ! line buffer
         CHARACTER(300)     MESG     ! message buffer
         CHARACTER(SCCLEN3) SCC      ! current SCC
         CHARACTER(10)      KEYWORD  ! temperature keyword
@@ -93,6 +102,21 @@ C...........   Other local variables
 
 C***********************************************************************
 C   begin body of subroutine RDSPDPRO
+
+C.........  Read cross-refrenced SCC input file
+        MESG = 'Use referenced SCC activity inventory file'
+        SCCMAPFLAG = ENVYN ( 'USE_REF_SCC_YN', MESG, .FALSE., IOS )
+
+        IF( SCCMAPFLAG ) THEN
+            MESG = 'Enter logical name for reference SCC input file'
+            MDEV = PROMPTFFILE( MESG, .TRUE., .TRUE., 'SCCXREF',
+     &                      PROGNAME )
+            CALL RDSCCMAP( MDEV )
+
+            MESG = 'Exclude SCCs not found in SCCXREF input file'
+            EXCLSCCFLAG = ENVYN ( 'EXCLUDE_REF_SCC_YN', MESG, .FALSE., IOS )
+
+        END IF
 
 C.........  Allocate storage based on number of FIPs and SCCs in inventory
         ALLOCATE( SPDPRO( NINVIFIP, NINVSCC, 2, 24 ), STAT=IOS )
@@ -105,23 +129,52 @@ C.........  Get the number of lines in the file
 C.........  Read through file and store hourly data
         DO I = 1, NLINES
         
-            READ( SPDEV, 93000, END=999, IOSTAT=IOS ) LINE
+          READ( SPDEV, 93000, END=999, IOSTAT=IOS ) LINE
             
-            IREC = IREC + 1
+          IREC = IREC + 1
             
-            IF( IOS .NE. 0 ) THEN
-                EFLAG = .TRUE.
-                WRITE( MESG, 94010 ) 'I/O error', IOS,
-     &            'reading hourly speed file at line', IREC
+          IF( IOS .NE. 0 ) THEN
+              EFLAG = .TRUE.
+              WRITE( MESG, 94010 ) 'I/O error', IOS,
+     &          'reading hourly speed file at line', IREC
+              CALL M3MESG( MESG )
+              CYCLE
+          END IF
+
+C...........  Skip blank or comment lines
+          IF( BLKORCMT( LINE ) ) CYCLE
+
+C...........  Parse line into fields
+          CALL PARSLINE( LINE, 53, SEGMENT )
+
+C...........  SCC mapping loop based on SCCXREF reference input file
+          SCC = ADJUSTL( SEGMENT( 2 ) )
+
+          KK = 0
+          NSCC = 0
+          IF( SCCMAPFLAG ) THEN
+              KK   = INDEX1( SCC, NSCCMAP, SCCMAPLIST( :,1 ) )
+              IF( KK > 0 ) THEN
+                  NSCC = STR2INT( SCCMAPLIST( KK,3 ) )
+              ELSE
+                  IF( EXCLSCCFLAG ) CYCLE    ! drop SCCs not listed in SCCXREF file
+              END IF
+          END IF
+
+          DO JJ = 0, NSCC
+
+            IF( JJ > 0 .AND. KK > 0 ) IREC = IREC + 1
+            IF( SCCMAPFLAG .AND. KK > 0 ) SCC = SCCMAPLIST( KK+JJ,2 )
+
+C.............  Find SCC in inventory list
+            SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
+            IF( SCCIDX .LE. 0 ) THEN
+                WRITE( MESG, 94010 ) 'NOTE: Skipping line',
+     &            IREC, 'of hourly speed file because SCC ' //
+     &            SCC // ' is not in the inventory.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
-
-C.............  Skip blank or comment lines
-            IF( BLKORCMT( LINE ) ) CYCLE
-
-C.............  Parse line into fields
-            CALL PARSLINE( LINE, 53, SEGMENT )
 
 C.............  Convert FIP to integer
             IF( .NOT. CHKINT( SEGMENT( 1 ) ) ) THEN
@@ -140,18 +193,6 @@ C.............  Find county in inventory list
                 WRITE( MESG, 94010 ) 'NOTE: Skipping line',
      &            IREC, 'of hourly speed file because FIPS code',
      &            CNTY, 'is not in the inventory.'
-                CALL M3MESG( MESG )
-                CYCLE
-            END IF
-
-C.............  Find SCC in inventory list
-            SCC = ADJUSTL( SEGMENT( 2 ) )
-            SCCIDX = FINDC( SCC, NINVSCC, INVSCC )
-            
-            IF( SCCIDX .LE. 0 ) THEN
-                WRITE( MESG, 94010 ) 'NOTE: Skipping line',
-     &            IREC, 'of hourly speed file because SCC ' //
-     &            SCC // ' is not in the inventory.'
                 CALL M3MESG( MESG )
                 CYCLE
             END IF
@@ -208,6 +249,8 @@ C.............  Check weekend speed values
                 SPDPRO( FIPIDX, SCCIDX, 1, J ) = SPDVAL
             END DO
             
+          END DO    ! SCCXREF loop
+
         END DO
 
         CLOSE( SPDEV )
