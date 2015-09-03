@@ -449,9 +449,6 @@ C............  Earliest day is start time in maximum time zone
              CALL NEXTIME( EARLYDATE, EARLYTIME,
      &                    -( TZMAX - TZONE )*10000 )
 
-C............  If time is before 6 am, need previous day also
-C bbh             IF( EARLYTIME < 60000 ) EARLYDATE = EARLYDATE - 1
-
 C............  Latest day is end time in minimum time zone
 C............  Calculate the ending date and time
              EDATE = SDATE
@@ -462,9 +459,6 @@ C............  Calculate the ending date and time
              LATETIME = ETIME
              CALL NEXTIME( LATEDATE, LATETIME,
      &                    -( TZMIN - TZONE )*10000 )
-
-C............  If time is before 6 am, don't need last day
-C bbh             IF( LATETIME < 60000 ) LATEDATE = LATEDATE - 1
 
              NDAYS = SECSDIFF( EARLYDATE, 0, LATEDATE, 0 ) / ( 24*3600 )
              NDAYS = NDAYS + 1
@@ -486,7 +480,6 @@ C.........  Assign temporal profiles to sources.
         CALL PROCTPRO( NFLAG, METPROFLAG, PNAME )
 
         IF ( .NOT.NFLAG ) CALL ASGNTPRO()
-
 
 C.........  Check requested episode against available emission factors
 
