@@ -271,7 +271,7 @@ C........  Open ASCII file
 
         ELSE
 
-            SDEV = GETEFILE( ANAME, .FALSE., .TRUE., PROGNAME )
+            SDEV = GETEFILE( ANAME, .TRUE., .TRUE., PROGNAME )
 
             IF ( SDEV .LT. 0 ) THEN     !  failure to open
 
