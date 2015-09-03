@@ -69,6 +69,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
      &              PROMPTFFILE, STR2INT
 
 C...........   LOCAL PARAMETERS
+        INTEGER   NSEG = 80
 
 C.........  Allocatable arrays...
 
@@ -85,7 +86,7 @@ C.........  Logical file names and unit numbers
         INTEGER   SDEV         ! log file unit number
 
 C.........  Local arrays
-        CHARACTER(8) SEGMENT( 2 )
+        CHARACTER(40) SEGMENT( NSEG )
 
 C.........  Local variables
 
@@ -177,7 +178,7 @@ C           numbers
 
             IF( LINE( 1:1 ) .EQ. CINVHDR ) CYCLE
 
-            CALL PARSLINE( LINE, 2, SEGMENT )
+            CALL PARSLINE( LINE, NSEG, SEGMENT )
 
             CNT = CNT + 1
             IF( CNT .LE. NLIST ) THEN
@@ -266,7 +267,12 @@ C.............  Convert state code to integer
                 STA = STR2INT( LINE( 1:2 ) )
 
             CASE ( ORLFMT, ORLNPFMT )
-                READ( LINE, * ) STA
+                CALL PARSLINE( LINE, NSEG, SEGMENT )
+                STA = INT( STR2INT( SEGMENT(1) ) / 1000 )
+
+            CASE ( FF10FMT )
+                CALL PARSLINE( LINE, NSEG, SEGMENT )
+                STA = INT( STR2INT( SEGMENT(2) ) / 1000 )
 
             CASE ( EMSFMT )
                 STA = STR2INT( LINE( 1:2 ) )
