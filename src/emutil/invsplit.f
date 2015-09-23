@@ -69,7 +69,7 @@ C.........  EXTERNAL FUNCTIONS and their descriptions:
      &              PROMPTFFILE, STR2INT
 
 C...........   LOCAL PARAMETERS
-        INTEGER   NSEG = 80
+        INTEGER, PARAMETER ::   NSEG = 80
 
 C.........  Allocatable arrays...
 
