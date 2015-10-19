@@ -379,6 +379,10 @@ C.............  Parse line into fields
             POLNAM = ADJUSTL( SEGMENT( 3 ) )
             MON    = STR2INT( SEGMENT( 4 ) )
 
+            NS = FINDC( CSCC, NINVSCC, INVSCC )
+            IF( CSCC == ' ' .OR. CSCC == '0' ) NS = 1
+            IF( NS < 1 ) CYCLE
+
             IF( POLNAM == ' ' ) THEN
                 CPOL = BLKPOL
             ELSE
