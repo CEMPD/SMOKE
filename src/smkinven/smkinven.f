@@ -231,6 +231,10 @@ C            CALL RDMVINFO( RDEV )
 C.........  Read/store informatino for MEDS inv processing
         IF( MEDSFLAG ) CALL RDMEDSINFO  ! read GAI_LOOKUP_TABLE (col/row to lat/lon) for MEDS format inv
 
+C.........  Define the month of inventory processing
+        MESG = 'Define the processing inventory month'
+        INV_MON = ENVINT( 'SMKINVEN_MONTH', MESG, 0, IOS )
+
 C.........  Process for ASCII average day or annual inventory
         IF( IFLAG ) THEN
 
@@ -238,9 +242,6 @@ C.............  Read the source information from the raw inventory files,
 C               store in unsorted order, and determine source IDs
 C.............  The arrays that are populated by this subroutine call
 C               are contained in the module MODSOURC
-            MESG = 'Define inventory month to process'
-            INV_MON = ENVINT( 'SMKINVEN_MONTH', MESG, 0, IOS )
-
             IF( INV_MON == 0 ) THEN
                 MESG = 'Processing Annual inventory....'
                 CALL M3MSG2( MESG )
