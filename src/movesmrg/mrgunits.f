@@ -153,18 +153,19 @@ C.............  Set the numerators and denominators
 C.............  Get factor for the numerators for the gridded outputs...
             FAC1 = UNITFAC( SPCUNIT_L( V ), GRDBUF, .TRUE. )  ! speciation
 
+C.............  Get factor for the denominators for the gridded outputs
+            FAC2 = UNITFAC( EMUNIT, GRDBUF, .FALSE. )
+
+C.............  In case E.V. setting was bogus rebuild output units based
+C               on which factors were valid
+C.............  Also set negative factors (from unknown conversions) to 1.
+            CALL CORRECT_UNITS( GNUM_I, GDEN_I, GNUM, GDEN, GRDBUF )
+
 C.............  When SMAT is used to calcuate model species
             IF( SMATCHK ) THEN
                 EMFAC = UNITFAC( 'g/hr', EMUNIT, .TRUE. )
                 FAC1 = FAC1 * EMFAC
             END IF
-
-C.............  Get factor for the denominators for the gridded outputs
-            FAC2 = UNITFAC( EMUNIT, GRDBUF, .FALSE. )
-C.............  In case E.V. setting was bogus rebuild output units based
-C               on which factors were valid
-C.............  Also set negative factors (from unknown conversions) to 1.
-            CALL CORRECT_UNITS( GNUM_I, GDEN_I, GNUM, GDEN, GRDBUF )
 
 C.............  Set factors for gridded outputs
             GRDFAC( V ) = FAC1 / FAC2
