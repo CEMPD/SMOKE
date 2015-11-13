@@ -149,7 +149,7 @@ C...........   Logical names and unit numbers (not in MODMERGE)
      
 C...........   Other local variables
     
-        INTEGER          I, J, K, L1, L2, M, N, NG, V, NV, S, T ! counters and indices
+        INTEGER          I, J, K, L1, L2, M, N, NG, NP, V, NV, S, T ! counters and indices
 
         INTEGER          BIN1, BIN2    ! speed bins for current source
         INTEGER          CELL          ! current grid cell
@@ -928,9 +928,7 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                             IF( SMATCHK ) THEN
                                 SIIDX = SIINDEX( V,1 )
                                 SPIDX = SPINDEX( V,1 )
-                                L1 = INDEX( TSVDESC(V), SPJOIN )
-                                CPOL = TSVDESC(V)( 1:L1-1 )
-                                POLIDX = INDEX1( CPOL, NMVSPOLS, MVSPOLNAMS )
+                                POLIDX = EMPOLIDX( SIIDX )
                             ELSE
                                 IF( V <= NIPPA ) THEN
                                     SIIDX = V
@@ -940,7 +938,13 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                                 POLIDX = EMPOLIDX( V )
                             END IF
 
-                            IF( CFFLAG ) CFFAC = CFPRO(MIFIP(SRC), SCCIDX, V, MONTH )
+                            IF( CFFLAG ) THEN
+                                CFFAC = CFPRO(MIFIP(SRC), SCCIDX, V, MONTH )
+                                IF( SMATCHK ) THEN
+                                    NP = INDEX1( CPOL, NIPPA, EANAM )
+                                    CFFAC = CFPRO(MIFIP(SRC), SCCIDX, NP, MONTH )
+                                END IF
+                            END IF
 
 C.............................  Check if emission factors exist for this process/pollutant
                             IF( POLIDX .EQ. 0 ) CYCLE
