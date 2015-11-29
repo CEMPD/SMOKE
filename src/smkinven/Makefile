@@ -34,7 +34,7 @@ grwinven.debug: $(GRW) $(ALLI) $(LIBPATH_DEBUG)
 RAW=    adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o genpdout.o \
         gethdr.o getpdinfo.o initinfo.o formlist.o rdmedsinfo.o genmedsout.o \
         openinvin.o openinvout.o openpdout.o procinven.o procinvsrcs.o rdcempd.o \
-        rdemspd.o rdorlfr.o rdgrdapi.o rdmedspd.o rdsccmap.o \
+        rdemspd.o rdorlfr.o rdgrdapi.o rdmedspd.o \
         rdinvsrcs.o rdlooppd.o smkinven.o \
         srcmem.o wrinvchr.o wrinvemis.o wrinvpol.o wrptref.o wrpdemis.o wrepinven.o \
         setnonhap.o rdsrcntiar.o rdinvdata.o rddatantiar.o \
@@ -96,7 +96,6 @@ rdinvsrcs.o: $(MODSOURC) $(MODINFO) $(MODLISTS) $(MODMOBIL)
 rdlooppd.o: $(MODINFO)
 rdorlfr.o: $(MODSOURC) $(MODLISTS) $(MODINFO) $(MODDAYHR) 
 rdsrcmedspt.o: $(MODSOURC)
-rdsccmap.o: $(MODMOBIL)
 rdsrcntiar.o: $(MODLISTS)
 rdsrcff10ar.o: $(MODLISTS) $(MODDAYHR)
 rdsrcntimb.o: $(MODLISTS)

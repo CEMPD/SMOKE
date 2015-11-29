@@ -35,7 +35,7 @@ FILES_R = \
   rdlines.o    rdmapmask.o  rdmappol.o   rdorsdsc.o   rdpelv.o   \
   rdrmat.o     rdsccdsc.o   rdsconv.o    rdsicdsc.o   rdsmat.o     rdspdprof.o\
   rdspdref.o   rdsprof.o    rdsref.o     rdsrgdesc.o  rdsrghdr.o   rdsrg.o    \
-  rdstcy.o     rdtzone.o    rdumat.o     \
+  rdstcy.o     rdtzone.o    rdumat.o     rdsccmap.o \
   rdxclude.o   readwr3.o    rmcommnt.o   rdmactdsc.o  rdnaicsdsc.o  \
   rdsrcgrps.o
 
@@ -121,7 +121,8 @@ rdmappol.o : $(MODINFO) $(MODFILESET)
 rdnaicsdsc.o : $(MODLISTS)
 rdorsdsc.o : $(MODSTCY)
 rdpelv.o   : $(MODELEV)
-rdsccdsc.o : $(MODLISTS)
+irdsccdsc.o : $(MODLISTS)
+rdsccmap.o : $(MODMOBIL)
 rdsicdsc.o : $(MODLISTS)
 rdsconv.o  : $(MODLISTS) $(MODSPRO) $(MODINFO)
 rdsmat.o   : $(MODFILESET)

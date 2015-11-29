@@ -1,0 +1,19 @@
+#!/bin/csh -f
+
+unsetenv MRG_AREA        
+unsetenv MRG_AREA_MULT   
+unsetenv MRG_AREA_ADD    
+unsetenv MRG_AREA_REAC   
+unsetenv MRG_AREA_CNTL   
+unsetenv MRG_BIOG        
+unsetenv MRG_MOBILE      
+unsetenv MRG_MOBILE_MULT 
+unsetenv MRG_MOBILE_ADD  
+unsetenv MRG_MOBILE_REAC 
+unsetenv MRG_MOBILE_CNTL 
+unsetenv MRG_POINT       
+unsetenv MRG_POINT_MULT  
+unsetenv MRG_POINT_ADD   
+unsetenv MRG_POINT_REAC  
+unsetenv MRG_POINT_CNTL  
+unsetenv MRG_MULTI_CNTL  

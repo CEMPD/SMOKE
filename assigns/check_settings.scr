@@ -1,0 +1,501 @@
+#!/bin/csh -fx
+#
+## HEADER ######################################################################
+#
+#  This script checks for any script settings and makes sure script variables
+#  are set to default values (of N).  Checks for captial 'Y' for these settings.
+#  Also sets variables to control assigns file variable settings based on
+#  script variable settings.
+#  
+#
+################################################################################
+
+# Check run settings for default and capitalization. Reset if needed.
+
+if( $?RUN_SMKINVEN ) then
+   if ( $RUN_SMKINVEN == 'y' ) then
+      setenv RUN_SMKINVEN Y
+   endif
+
+else
+   setenv RUN_SMKINVEN N
+
+endif
+
+if( $?RUN_GRWINVEN ) then
+   if ( $RUN_GRWINVEN == 'y' ) then
+      setenv RUN_GRWINVEN Y
+   endif
+
+else
+   setenv RUN_GRWINVEN N
+
+endif
+
+if( $?RUN_RAWBIO ) then
+   if ( $RUN_RAWBIO == 'y' ) then
+      setenv RUN_RAWBIO Y
+   endif
+
+else
+   setenv RUN_RAWBIO N
+
+endif
+
+if( $?RUN_NORMBEIS3 ) then
+   if ( $RUN_NORMBEIS3 == 'y' ) then
+      setenv RUN_NORMBEIS3 Y
+   endif
+
+else
+   setenv RUN_NORMBEIS3 N
+
+endif
+
+if( $?RUN_GRDMAT ) then
+   if ( $RUN_GRDMAT == 'y' ) then
+      setenv RUN_GRDMAT Y
+   endif
+
+else
+   setenv RUN_GRDMAT N
+
+endif
+
+if( $?RUN_SPCMAT ) then
+   if ( $RUN_SPCMAT == 'y' ) then
+      setenv RUN_SPCMAT Y
+   endif
+
+else
+   setenv RUN_SPCMAT N
+
+endif
+
+if( $?RUN_CNTLMAT ) then
+   if ( $RUN_CNTLMAT == 'y' ) then
+      setenv RUN_CNTLMAT Y
+   endif
+
+else
+   setenv RUN_CNTLMAT N
+
+endif
+
+if( $?RUN_ELEVPOINT ) then
+   if ( $RUN_ELEVPOINT == 'y' ) then
+      setenv RUN_ELEVPOINT Y
+   endif
+
+else
+   setenv RUN_ELEVPOINT N
+
+endif
+
+if( $?RUN_LAYPOINT ) then
+   if ( $RUN_LAYPOINT == 'y' ) then
+      setenv RUN_LAYPOINT Y
+   endif
+
+else
+   setenv RUN_LAYPOINT N
+
+endif
+
+if( $?RUN_TEMPORAL ) then
+   if ( $RUN_TEMPORAL == 'y' ) then
+      setenv RUN_TEMPORAL Y
+   endif
+
+else
+   setenv RUN_TEMPORAL N
+
+endif
+
+if( $?RUN_TMPBIO ) then
+   if ( $RUN_TMPBIO == 'y' ) then
+      setenv RUN_TMPBIO Y
+   endif
+
+else
+   setenv RUN_TMPBIO N
+
+endif
+
+if( $?RUN_TMPBEIS3 ) then
+   if ( $RUN_TMPBEIS3 == 'y' ) then
+      setenv RUN_TMPBEIS3 Y
+   endif
+
+else
+   setenv RUN_TMPBEIS3 N
+
+endif
+
+if( $?RUN_SMKMERGE ) then
+   if ( $RUN_SMKMERGE == 'y' ) then
+      setenv RUN_SMKMERGE Y
+   endif
+
+else
+   setenv RUN_SMKMERGE N
+
+endif
+
+if( $?RUN_MOVESMRG ) then
+   if ( $RUN_MOVESMRG == 'y' ) then
+      setenv RUN_MOVESMRG Y
+   endif
+
+else
+   setenv RUN_MOVESMRG N
+
+endif
+
+if( $?RUN_MRGGRID ) then
+   if ( $RUN_MRGGRID == 'y' ) then
+      setenv RUN_MRGGRID Y
+   endif
+
+else
+   setenv RUN_MRGGRID N
+
+endif
+
+if( $?RUN_SMK2EMIS ) then
+   if ( $RUN_SMK2EMIS == 'y' ) then
+      setenv RUN_SMK2EMIS Y
+   endif
+else
+   setenv RUN_SMK2EMIS N
+endif
+
+if( $?RUN_GEOFAC ) then
+   if ( $RUN_GEOFAC == 'y' ) then
+      setenv RUN_GEOFAC Y
+   endif
+else
+   setenv RUN_GEOFAC N
+endif
+
+if( $?RUN_PKTREDUC ) then
+   if ( $RUN_PKTREDUC == 'y' ) then
+      setenv RUN_PKTREDUC Y
+   endif
+else
+   setenv RUN_PKTREDUC N
+endif
+
+if( $?RUN_UAMEMIS ) then
+   if ( $RUN_UAMEMIS == 'y' ) then
+      setenv RUN_UAMEMIS Y
+   endif
+else
+   setenv RUN_UAMEMIS N
+endif
+
+if( $?SMK_CONTROL_YN ) then
+   if ( $SMK_CONTROL_YN == 'y' ) then
+      setenv SMK_CONTROL_YN Y
+   endif
+
+else
+   setenv SMK_CONTROL_YN N
+
+endif
+
+if( $?SMK_FUTURE_YN ) then
+   if ( $SMK_FUTURE_YN == 'y' ) then
+      setenv SMK_FUTURE_YN Y
+   endif
+
+else
+   setenv SMK_FUTURE_YN N
+
+endif
+
+# Set various variables if they are not already
+if ( $?SMK_SOURCE ) then
+else
+   setenv SMK_SOURCE ' ' 
+endif
+
+if ( $?MRG_TEMPORAL_YN ) then
+   if ( $MRG_TEMPORAL_YN == 'y' ) then
+      setenv MRG_TEMPORAL_YN Y
+   endif
+
+else
+   setenv MRG_TEMPORAL_YN ' ' 
+endif
+
+if ( $?MRG_SPCMAT_YN ) then
+   if ( $MRG_SPCMAT_YN == 'y' ) then
+      setenv MRG_SPCMAT_YN Y
+   endif
+else
+   setenv MRG_SPCMAT_YN ' ' 
+endif
+
+if ( $?SMK_ASCIIELEV_YN ) then
+   if ( $SMK_ASCIIELEV_YN == 'y' ) then
+      setenv SMK_ASCIIELEV_YN Y
+   endif
+else
+   setenv SMK_ASCIIELEV_YN ' ' 
+endif
+
+if ( $?NONROAD ) then
+   if ( $NONROAD == y ) then
+      setenv NONROAD Y
+   endif
+else
+   setenv NONROAD N
+endif
+
+if ( $?SMK_PING_METHOD ) then
+   if ( $SMK_PING_METHOD == '1' ) then
+      setenv SMK_PING_METHOD 1
+   endif
+else
+   setenv SMK_PING_METHOD ' '
+endif
+
+if ( $?SMK_ELEV_METHOD ) then
+   if ( $SMK_ELEV_METHOD == '1' ) then
+      setenv SMK_ELEV_METHOD 1
+   endif
+else
+   setenv SMK_ELEV_METHOD ' '
+endif
+
+if ( $?MRG_GRDOUT_YN ) then
+   if ( $MRG_GRDOUT_YN == 'y' ) then
+      setenv MRG_GRDOUT_YN Y
+   endif
+else
+   setenv MRG_GRDOUT_YN ' ' 
+endif
+
+if ( $?MRG_REPSTA_YN ) then
+   if ( $MRG_REPSTA_YN == 'y' ) then
+      setenv MRG_REPSTA_YN Y
+   endif
+else
+   setenv MRG_REPSTA_YN ' ' 
+endif
+
+if ( $?MRG_REPCNY_YN ) then
+   if ( $MRG_REPCNY_YN == 'y' ) then
+      setenv MRG_REPCNY_YN Y
+   endif
+else
+   setenv MRG_REPCNY_YN ' ' 
+endif
+
+
+if( $?SMKMERGE_CUSTOM_OUTPUT ) then
+   if( $?SMKMERGE_CUSTOM_OUTPUT == 'y' )  then
+      setenv SMKMERGE_CUSTOM_OUTPUT Y
+   endif
+else
+   setenv SMKMERGE_CUSTOM_OUTPUT N
+endif
+
+if( $?MOVESMRG_CUSTOM_OUTPUT ) then
+   if( $?MOVESMRG_CUSTOM_OUTPUT == 'y' )  then
+      setenv MOVESMRG_CUSTOM_OUTPUT Y
+   endif
+else
+   setenv MOVESMRG_CUSTOM_OUTPUT N
+endif
+
+# Set default new environment variables
+
+setenv MRG_AREA        N
+setenv MRG_AREA_MULT   N
+setenv MRG_AREA_ADD    N
+setenv MRG_AREA_REAC   N
+setenv MRG_AREA_CNTL   N
+setenv MRG_BIOG        N
+setenv MRG_MOBILE      N
+setenv MRG_MOBILE_MULT N
+setenv MRG_MOBILE_ADD  N
+setenv MRG_MOBILE_REAC N
+setenv MRG_MOBILE_CNTL N
+setenv MRG_POINT       N
+setenv MRG_POINT_MULT  N
+setenv MRG_POINT_ADD   N
+setenv MRG_POINT_REAC  N
+setenv MRG_POINT_CNTL  N
+setenv MRG_MULTI       N
+setenv MRG_MULTI_CNTL  N
+setenv MM              l
+
+# Determine if MM should be mole or mass based on script settings
+if ( $?MRG_TOTOUT_UNIT ) then
+   set check = `echo $MRG_TOTOUT_UNIT | grep mole`
+   if ( $status == 1 ) then
+       setenv MM s
+   endif
+endif
+
+# Parse character strings so can loop through them. Then loop through arrays 
+# and set appropriate variables
+if ( $?MRG_SOURCE ) then
+   set len1 = `echo $MRG_SOURCE | wc -c`
+
+   if ( $len1 > 0 ) @ len1 = $len1 - 1
+
+   set i = 0
+   while ( $i < $len1 )
+      @ i = $i + 1
+      set mrg = `echo $MRG_SOURCE | cut -c$i`
+
+      switch ( $mrg )
+         case A:
+            setenv MRG_AREA Y
+            breaksw
+         case B:
+            setenv MRG_BIOG Y
+            breaksw
+         case M:
+            setenv MRG_MOBILE Y
+            breaksw
+         case P:
+            setenv MRG_POINT Y
+            breaksw
+         default
+            echo 'MRG_SOURCE setting of ' $mrg ' not recognized'
+            set status = 1
+            breaksw
+      endsw
+
+   end
+
+   if ( $len1 > 1 ) then
+      setenv MRG_MULTI Y
+   endif
+
+endif
+
+if ( $?MRG_CTLMAT_MULT ) then
+   set len = `echo $MRG_CTLMAT_MULT | wc -c`
+
+   if ( $len > 0 ) @ len = $len - 1
+
+   set i = 0
+   while ( $i < $len )
+      @ i = $i + 1
+      set mult = `echo $MRG_CTLMAT_MULT | cut -c$i`
+
+      switch ( $mult )
+         case A:
+            setenv MRG_AREA_MULT Y
+            breaksw
+         case M:
+            setenv MRG_MOBILE_MULT Y
+            breaksw
+         case P:
+            setenv MRG_POINT_MULT Y
+            breaksw
+         default
+            echo 'MRG_CTLMAT_MULT setting of ' $mult ' not recognized'
+            set status = 1
+            breaksw
+      endsw
+
+   end
+
+   if ( $len > 0 && $len1 > 1 ) then
+      setenv MRG_MULTI_CNTL Y
+   endif
+
+endif
+
+if ( $?MRG_CTLMAT_ADD ) then
+   set len = `echo $MRG_CTLMAT_ADD | wc -c`
+
+   if ( $len > 0 ) @ len = $len - 1
+
+   set i = 0
+   while ( $i < $len )
+      @ i = $i + 1
+      set add = `echo $MRG_CTLMAT_ADD | cut -c$i`
+
+      switch ( $add )
+         case A:
+            setenv MRG_AREA_ADD Y
+            breaksw
+         case M:
+            setenv MRG_MOBILE_ADD Y
+            breaksw
+         case P:
+            setenv MRG_POINT_ADD Y
+            breaksw
+         default
+            echo 'MRG_CTLMAT_ADD setting of ' $add ' not recognized'
+            set status = 1
+            breaksw
+      endsw
+
+   end
+
+   if ( $len > 0 && $len1 > 1 ) then
+      setenv MRG_MULTI_CNTL Y
+   endif
+
+endif
+
+if ( $?MRG_CTLMAT_REAC ) then
+   set len = `echo $MRG_CTLMAT_REAC | wc -c`
+
+   if ( $len > 0 ) @ len = $len - 1
+
+   set i = 0
+   while ( $i < $len )
+      @ i = $i + 1
+      set reac = `echo $MRG_CTLMAT_REAC | cut -c$i`
+
+      switch ( $reac )
+         case A:
+            setenv MRG_AREA_REAC Y
+            breaksw
+         case M:
+            setenv MRG_MOBILE_REAC Y
+            breaksw
+         case P:
+            setenv MRG_POINT_REAC Y
+            breaksw
+         default
+            echo 'MRG_CTLMAT_REAC setting of ' $reac ' not recognized'
+            set status = 1
+            breaksw
+      endsw
+
+   end
+
+   if ( $len > 0 && $len1 > 1 ) then
+      setenv MRG_MULTI_CNTL Y
+   endif
+
+endif
+
+#  Finally, set general control E.V.s
+
+if ( $MRG_AREA_MULT == 'Y' || $MRG_AREA_ADD == 'Y' || $MRG_AREA_REAC == 'Y' ) \
+then
+   setenv MRG_AREA_CNTL Y
+endif
+
+if ( $MRG_MOBILE_MULT == 'Y' || $MRG_MOBILE_ADD == 'Y' || \
+     $MRG_MOBILE_REAC == 'Y' ) then
+   setenv MRG_MOBILE_CNTL Y
+endif
+
+if ( $MRG_POINT_MULT == 'Y' || $MRG_POINT_ADD == 'Y' || \
+     $MRG_POINT_REAC == 'Y' ) then
+   setenv MRG_POINT_CNTL Y
+endif
+
+exit( $status )

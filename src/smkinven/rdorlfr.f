@@ -50,8 +50,7 @@ C.........  This module contains the lists of unique inventory information
 
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: NIPPA, NSRC, EANAM, NCHARS, NMAP, MAPNAM,
-     &                     MAPFIL, NCOMP, VAR_FORMULA, VIN_A, VIN_B,
-     &                     VNAME, CHKPLUS
+     &                     MAPFIL
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT, LPDSRC, NPDPT, NPDPTP, IDXSRC, 
@@ -134,8 +133,6 @@ C...........   Temporary read arrays
 C...........   Local arrays
         REAL              , ALLOCATABLE, SAVE :: DTACBRN( : )    ! storing acre burned value (acre/day) for computing HFLUX
         REAL              , ALLOCATABLE, SAVE :: DTFUELD( : )    ! storing fuel loading value (tons/acre) for computing HFLUX
-        REAL              , ALLOCATABLE, SAVE :: DTVAR1 ( : )    ! storing variable 1 value for formula
-        REAL              , ALLOCATABLE, SAVE :: DTVAR2 ( : )    ! storing variable 2 value for formula
 
         INTEGER           , ALLOCATABLE, SAVE :: NSRCPDDAT( :,: )    ! counting number of sources per day/pollutant
         INTEGER           , ALLOCATABLE, SAVE :: IDXSD    ( : )      ! sorting index for CSRCDAYA
@@ -147,7 +144,7 @@ C...........   Other local variables
         INTEGER          L0, L1, L2, L3, L4, L5
         INTEGER          ES, NS, SS       ! end src, tmp no. src, start sourc
 
-        INTEGER          D, SD, N1, N2, N3, N4
+        INTEGER          D, SD, N1, N2
 
         INTEGER          CIDX             ! CAS data index
         INTEGER          COD              ! data index
@@ -187,17 +184,13 @@ C...........   Other local variables
 
         REAL             TDAT             ! temporary data values
 
-        LOGICAL, SAVE :: VFLAG  = .FALSE. ! true: first variables in formula available
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
-        LOGICAL, SAVE :: FFLAG  = .FALSE. ! true: using formula to compute new poll
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: DFLAG  = .FALSE. ! true: dates set by data
         LOGICAL       :: EFLAG  = .FALSE. ! TRUE iff ERROR
         LOGICAL       :: WARNOUT= .FALSE. ! true: then output warnings
         LOGICAL, SAVE :: PRCHFX = .FALSE. ! true: skip adding HFLUX due to precomputed heat flux
-        LOGICAL, SAVE :: PRCFRM = .FALSE. ! true: skip computing formula due to precomputed values
         LOGICAL       :: HFXFLAG= .FALSE. ! true: adding HFLUX into a list
-        LOGICAL       :: FRMFLAG= .FALSE. ! true: adding formula values into a list
         LOGICAL       :: BNHRFLAG=.FALSE. ! true: adding BEGHOUR into a list
         LOGICAL       :: ENHRFLAG=.FALSE. ! true: adding ENDHOUR into a list
         LOGICAL, SAVE :: FIRSTCOUNT = .TRUE.! true: until after first time routine is called with GETCOUNT=TRUE
@@ -206,11 +199,6 @@ C...........   Other local variables
         CHARACTER(256) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(300) :: LINE   = ' '    ! line buffer 
         CHARACTER(300) :: MESG   = ' '    ! message buffer
-
-C.........  Saved local character variables
-        CHARACTER(IOVLEN3), SAVE :: FVAR      ! name of formula resulting variable
-        CHARACTER(IOVLEN3), SAVE :: VAR1      ! formula input variable 1
-        CHARACTER(IOVLEN3), SAVE :: VAR2      ! formula input variable 2
 
 C.........  Temporary local character variables
         CHARACTER(FIPLEN3) CFIP      ! tmp co/st/cy code
@@ -292,7 +280,6 @@ C              computing HFLUX in PDAY intermediate output file.
 C.............  Open I/O API inventory HEATCONTENT file and store
             ALLOCATE( HEATCONTENT( NSRC ), STAT=IOS )
             CALL CHECKMEM( IOS, 'HEATCONENT', PROGNAME )
-c EPA 4/28/09         HEATCONTENT = 0.0
 
             CALL RDMAPPOL( NSRC, 1, 1, 'HEATCONTENT', HEATCONTENT )
 
@@ -346,17 +333,15 @@ C           values from day-specific data on the fly.
         IF ( GETCOUNT .AND. FIRSTCOUNT ) THEN
 
 C.............  Determine how much memory is needed for allocating arrays
-C               for computing the formula.  This should be the maximum number of 
-C               source/days of formula variables, fuel load, and acres burned.
+C               This should be the maximum number of 
+C               source/days of fuel load, and acres burned.
             DO D = 1, 366
                 DO I = 1, NIPPA
-                    IF( EANAM(I)== VAR1 )         N1= N1+ NSRCPDDAT(D,I)
-                    IF( EANAM(I)== VAR2 )         N2= N2+ NSRCPDDAT(D,I)
-                    IF( EANAM(I)=='FUEL_LOAD' )   N3= N3+ NSRCPDDAT(D,I)
-                    IF( EANAM(I)=='ACRESBURNED' ) N4= N4+ NSRCPDDAT(D,I)
+                    IF( EANAM(I)=='FUEL_LOAD' )   N1= N1+ NSRCPDDAT(D,I)
+                    IF( EANAM(I)=='ACRESBURNED' ) N2= N2+ NSRCPDDAT(D,I)
                 END DO
             END DO
-            N = MAX( N1, N2, N3, N4 )
+            N = MAX( N1, N2 )
 
             ALLOCATE( IDXSD( N ), STAT=IOS )          ! Sorting index
             CALL CHECKMEM( IOS, 'IDXSD', PROGNAME )
@@ -364,10 +349,6 @@ C               source/days of formula variables, fuel load, and acres burned.
             CALL CHECKMEM( IOS, 'CSRCDAYA', PROGNAME )
             ALLOCATE( CSRCDAY( N ), STAT=IOS )        ! Sorted SOURCE/DAY combos
             CALL CHECKMEM( IOS, 'CSRCDAY', PROGNAME )
-            ALLOCATE( DTVAR1( N ), STAT=IOS )         ! To store 1st formula variable values
-            CALL CHECKMEM( IOS, 'DTVAR1', PROGNAME )
-            ALLOCATE( DTVAR2( N ), STAT=IOS )         ! To store 2nd formula variable values
-            CALL CHECKMEM( IOS, 'DTVAR2', PROGNAME )
             ALLOCATE( DTACBRN( N ), STAT=IOS )  ! To store acres burned
             CALL CHECKMEM( IOS, 'DTACBRN', PROGNAME )
             ALLOCATE( DTFUELD( N ), STAT=IOS )  ! To store fuel load
@@ -376,8 +357,6 @@ C               source/days of formula variables, fuel load, and acres burned.
             IDXSD    = 0
             CSRCDAYA = ' '
             CSRCDAY  = ' '
-            DTVAR1   = BADVAL3
-            DTVAR2   = BADVAL3
             DTACBRN  = BADVAL3
             DTFUELD  = BADVAL3
 
@@ -506,55 +485,39 @@ C.............  Check and Set emissions values
                 CYCLE  ! to head of read loop
             END IF
 
-C.............  Counting the number of times precomputed HFLUX and precomputed formula
+C.............  Counting the number of times precomputed HFLUX
 C               values appear in the input file
-            IF( CDAT == 'HFLUX' .AND. .NOT. HFXFLAG ) PRCHFX = .TRUE.
-            IF( CDAT == FVAR    .AND. .NOT. FRMFLAG ) PRCFRM = .TRUE.
+            IF( GETSIZES .AND. CDAT == 'HFLUX' ) PRCHFX = .TRUE.
 
-C.............  Counting and adding HFLUX, BEGHOUR, ENDHOUR and/or formula variable
+C.............  Counting and adding HFLUX, BEGHOUR, and ENDHOUR
 C               building a list of source characteristics and store
-            IF( BNHRFLAG ) CDAT = 'BEGHOUR'
-            IF( ENHRFLAG ) CDAT = 'ENDHOUR'
+            IF( GETCOUNT .AND. .NOT. PRCHFX ) THEN
 
-            IF( HFXFLAG ) THEN
-                IF( .NOT. PRCHFX ) CDAT = 'HFLUX'
-            END IF
+                IF( HFXFLAG  ) CDAT = 'HFLUX'
+                IF( BNHRFLAG ) CDAT = 'BEGHOUR'
+                IF( ENHRFLAG ) CDAT = 'ENDHOUR'
 
-            IF( FRMFLAG ) THEN
-                IF( .NOT. PRCFRM ) CDAT = FVAR
-            END IF
+                HFXFLAG = .FALSE.
+                IF( CDAT == 'ACRESBURNED' ) THEN
+                    NACRBND = NACRBND + 1
+                    HFXFLAG = .TRUE.    ! indicating adding HFLUX
+                    BACKSPACE( FDEV )
+                END IF
 
-C.............  Adding additional variables and lines if necessary
-            HFXFLAG = .FALSE.
-            IF( CDAT == 'ACRESBURNED' .AND. .NOT. PRCHFX ) THEN
-                NACRBND = NACRBND + 1
-                HFXFLAG = .TRUE.    ! indicating adding HFLUX
-                BACKSPACE( FDEV )
-            END IF
+                BNHRFLAG = .FALSE.
+                IF( CDAT == 'HFLUX' ) THEN
+                    BNHRFLAG = .TRUE.    ! indicating adding BEGHOUR
+                    BACKSPACE( FDEV )
+                END IF
 
-            IF( CDAT == 'FUEL_LOAD' .AND. .NOT. PRCHFX ) THEN
-                NFUELD = NFUELD + 1
-            END IF
+                ENHRFLAG = .FALSE.
+                IF( CDAT == 'BEGHOUR' ) THEN
+                    ENHRFLAG = .TRUE.    ! indicating adding ENDHOUR
+                    BACKSPACE( FDEV )
+                END IF
 
-            FRMFLAG = .FALSE.
-            IF( FFLAG ) THEN
-            IF( CDAT == VAR1 .AND. .NOT. PRCFRM ) THEN
-                VFLAG   = .TRUE.   ! indicating var1 available for formula
-                FRMFLAG = .TRUE.   ! indicating adding formula var
-                BACKSPACE( FDEV )
-            END IF
-            END IF
+                IF( CDAT == 'FUEL_LOAD' ) NFUELD = NFUELD + 1
 
-            BNHRFLAG = .FALSE.
-            IF( CDAT == 'HFLUX' ) THEN
-                BNHRFLAG = .TRUE.    ! indicating adding BEGHOUR
-                BACKSPACE( FDEV )
-            END IF
-
-            ENHRFLAG = .FALSE.
-            IF( CDAT == 'BEGHOUR' ) THEN
-                ENHRFLAG = .TRUE.    ! indicating adding ENDHOUR
-                BACKSPACE( FDEV )
             END IF
 
 C.............  Set Julian day from MMDDYY8 SAS format
@@ -704,7 +667,7 @@ C................  If it's found, then record that this pollutant was found
 
 C.............  Count the number of sources per day & pollutant/variable
 C.............  This will give us how many source/date combos there are for 
-C               any variables, including HFLUX, and formula variables
+C               any variables, including HFLUX
             NSRCPDDAT( JD, COD ) = NSRCPDDAT( JD, COD ) + 1
             
 C.............  If only getting dates and pollutant information, go 
@@ -723,13 +686,11 @@ C.............  Count estimated record count per time step
                 MXPDPT( T ) = MXPDPT( T ) + 1
             END DO
 
-C.............  Store formula variable values.  Only need to do this on the the second
-C               pass.  Need to do this before the third pass through the data, because
-C               that is when the formula calculation is made.           
-            IF( GETCOUNT ) THEN
-              IF( .NOT. PRCFRM .OR. .NOT. PRCHFX ) THEN          ! No precomputed formula/heat flux
-                IF( ( FRMFLAG .OR. CDAT == VAR2 ) .OR.           ! first or second vars either (OR)     
-     &              ( HFXFLAG .OR. CDAT == 'FUEL_LOAD' ) ) THEN  ! Acres burned value or fuel load value
+C.............  Store variable values.  Only need to do this on the the second
+C               pass.  Need to do this before the third pass through the data because
+C               that is when the calculation is made.           
+            IF( GETCOUNT .AND. .NOT. PRCHFX ) THEN          ! No precomputed formula/heat flux
+                IF( ( HFXFLAG .OR. CDAT == 'FUEL_LOAD' ) ) THEN  ! Acres burned value or fuel load value
 
 C.....................  Figure out which source/day this is for storing in correct source/day
 C.....................  This code does *not* assume that the data have been sorted first.
@@ -749,13 +710,10 @@ C.....................  Build unsorted arrays of source/days and emissions for c
                         IDXSD   ( SD ) = SD
                     END IF
 
-                    IF( FRMFLAG ) DTVAR1( SD ) = TDAT         ! storing variable 1 for formula calc
-                    IF( CDAT == VAR2 ) DTVAR2( SD ) = TDAT    ! storing variable 2 for formula calc
                     IF( HFXFLAG ) DTACBRN( SD ) = TDAT        ! storing acres burned
                     IF( CDAT == 'FUEL_LOAD' ) DTFUELD( SD ) = TDAT ! storing fuel load
 
                 END IF
-              END IF
             END IF    ! Second pass only
             
 C.............  If only counting records per time step, go to next loop
@@ -895,61 +853,6 @@ C.....................  Compute Heat Flux value
 
             END IF
 
-C.............  Compute formula.  This calculation uses stored values of formula inputs that
-C               were stored on the second pass through this subroutine.
-            IF( .NOT. PRCFRM ) THEN
-            IF( CDAT == FVAR .AND. VFLAG ) THEN
-
-C.................  Build source/date string to lookup position for doing calculation
-                CALL BLDCSRC( CFIP, FCID, SKID, DVID, PRID, TSCC, DATE,
-     &                        POLBLNK3, CSRCD )
-
-C.................  Lookup source/date string in master list to get position
-                SD = FINDC( CSRCD, NSRCDAY, CSRCDAY )
-                K  = IDXSD( SD )
-
-C.....................  If VAR2 value is missing, then assume zero
-                IF( DTVAR2( K ) < AMISS3 ) THEN
-                    LL = LEN_TRIM( CSRCD )
-                    CALL FMTCSRC( CSRCD, 6, BUFFER, L2 )
-
-                    MESG = 'WARNING: Resetting missing value of '//
-     &                     TRIM( VAR2 ) // ' to 0. for source:'//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) // 
-     &                     ' on date ' // CSRCD( LL-7: LL )
-                    IF( NWARN( 6 ) <= MXWARN ) CALL M3MSG2( MESG )
-                    NWARN( 6 ) = NWARN( 6 ) + 1
-                    DTVAR2( K ) = 0.0
-
-                END IF
-
-C.................  Compute formula value
-                IF( CHKPLUS( 1 ) ) THEN
-                    TDAT = DTVAR1( K ) + DTVAR2( K )  ! computing formula result
-                ELSE
-                    TDAT = DTVAR1( K ) - DTVAR2( K )  ! computing formula result
-                END IF
-
-C................  Warning msg when new computed value is negative
-                IF( TDAT < 0 ) THEN
-                    LL = LEN_TRIM( CSRCD )
-                    CALL FMTCSRC( CSRCD, 6, BUFFER, L2 )
-
-                    MESG = 'WARNING: Resetting negative value of '//
-     &                     'computed variable ' // TRIM( FVAR )// 
-     &                     ' to 0. for source:'//
-     &                     CRLF() // BLANK10 // BUFFER( 1:L2 ) // 
-     &                     ' on date ' // CSRCD( LL-7: LL )
-                    IF( NWARN( 7 ) <= MXWARN ) CALL M3MSG2( MESG )
-                    NWARN( 7 ) = NWARN( 7 ) + 1
-
-                    TDAT = 0.0
-
-                END IF
-
-            END IF
-            END IF
-
             IF( CDAT == 'BEGHOUR' ) TDAT = REAL( ESTIME )  ! storing BEGHOUR
             IF( CDAT == 'ENDHOUR' ) TDAT = REAL( EETIME )  ! storing ENDHOUR
 
@@ -978,7 +881,7 @@ C.............  Record needed data for this source and time step
 
 299     CONTINUE   ! Exit from read loop
 
-C.........  Warning messages for HFLUX and formula result (QA checks)
+C.........  Warning messages for HFLUX 
         IF( GETCOUNT ) THEN
 
             IF( PRCHFX ) THEN
@@ -986,23 +889,6 @@ C.........  Warning messages for HFLUX and formula result (QA checks)
      &                 'computation due to the existence of '//
      &                 'precomputed HFLUX in PTDAY file'
                 CALL M3MSG2( MESG )
-            END IF
-
-C.............  Give warning if variables needed for formula are not present  
-            IF( PRCFRM ) THEN
-                MESG = 'WARNING: Skipping internal '//TRIM( FVAR )//
-     &               ' computation due to the existence of'//
-     &               ' precomputed ' //TRIM( FVAR )// ' in PTDAY file'
-                CALL M3MSG2( MESG )
-            END IF
-
-            IF( .NOT. VFLAG ) THEN
-            IF( FFLAG ) THEN
-                MESG = 'WARNING: No ' // TRIM( VAR1 ) //
-     &                 ' data is available to compute '//
-     &                 TRIM( FVAR ) // ' - values will be 0.0'
-                CALL M3MSG2( MESG )
-            END IF
             END IF
 
             IF( NACRBND .NE. NFUELD .AND. .NOT. PRCHFX ) THEN

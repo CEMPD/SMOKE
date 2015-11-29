@@ -930,9 +930,7 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                             IF( SMATCHK ) THEN
                                 SIIDX = SIINDEX( V,1 )
                                 SPIDX = SPINDEX( V,1 )
-                                L1 = INDEX( TSVDESC(V), SPJOIN )
-                                CPOL = TSVDESC(V)( 1:L1-1 )
-                                POLIDX = INDEX1( CPOL, NMVSPOLS, MVSPOLNAMS )
+                                POLIDX = EMPOLIDX( SIIDX )
                             ELSE
                                 IF( V <= NIPPA ) THEN
                                     SIIDX = V
@@ -942,7 +940,12 @@ C.............................  Lookup poll/species index from MOVES lookup EF
                                 POLIDX = EMPOLIDX( V )
                             END IF
 
-                            IF( CFFLAG ) CFFAC = CFPRO(MCFIP(SRC), SCCIDX, V, MONTH )
+                            IF( CFFLAG ) THEN
+                                CFFAC = CFPRO(MCFIP(SRC), SCCIDX, V, MONTH )
+                                IF( SMATCHK ) THEN
+                                    CFFAC = CFPRO(MCFIP(SRC), SCCIDX, SIIDX, MONTH )
+                                END IF
+                            END IF
 
 C.............................  Check if emission factors exist for this process/pollutant
                             IF( POLIDX .EQ. 0 ) CYCLE

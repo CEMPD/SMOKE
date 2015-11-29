@@ -88,15 +88,17 @@ C.........  Other local variables
 
         INTEGER         IOS, IOS1, IOS2   ! i/o ENVSTR statuses
 
+        LOGICAL      :: FDFLAG= .FALSE.   ! true: output file meta desc
         LOGICAL      :: EFLAG = .FALSE.   ! true: error is found
 
+        CHARACTER(16)   MRGFDESC     ! name for met data description
         CHARACTER(50)   RTYPNAM      ! name for type of state/county report file
         CHARACTER(50)   UNIT         ! tmp units buffer
 
         CHARACTER(128)  OUTSCEN      ! output scenario name
+        CHARACTER(128)  METADESC     ! output meta description
         CHARACTER(128)  FILEDESC     ! output file description
         CHARACTER(256)  MESG         ! message buffer
-        CHARACTER(256)  BUFFER       ! tmp buffer
         CHARACTER(256)  OUTDIR       ! output path
         CHARACTER(IOVLEN3) CBUF
         CHARACTER(IODLEN3) DESCBUF ! variable description buffer
@@ -114,7 +116,19 @@ C           physical file names if logical file names are not defined.
         IF ( IOS2 .EQ. 0 ) L4 = LEN_TRIM( OUTSCEN )
 
 C.........  Set default output file names
-        CALL MRGONAMS     
+        CALL MRGONAMS
+
+C.........  Set the EV name for met data description
+        MESG = 'Setting for the environment variable name for file ' //
+     &           'meta description for output file'
+        CALL ENVSTR( 'MRG_FILEDESC', MESG, ' ', MRGFDESC, IOS  )
+
+        IF( IOS >= 0 ) THEN
+            FDFLAG = .TRUE.
+            MESG = 'Use this file meta description for output file'
+            CALL ENVSTR( MRGFDESC, MESG, ' ', METADESC, IOS )
+            IF( IOS < 0 ) FDFLAG = .FALSE.
+        END IF 
 
 C.........  Set up header for I/O API output files
         FTYPE3D = GRDDED3
@@ -159,6 +173,7 @@ C.............  Prompt for and gridded open file(s)
             CALL SETUP_VARIABLES( NMSPC, EMNAM )
             NLAYS3D = 1
             FDESC3D( 1 ) = 'Mobile source emissions data'
+            IF( FDFLAG ) FDESC3D( 1 ) = METADESC
 
 C.............  Open by logical name or physical name
             FILEDESC = 'MOBILE-SOURCE GRIDDED OUTPUT file'
@@ -179,7 +194,7 @@ C.............  Override gridded file settings
             VGTOP3D = BADVAL3
 
             FDESC3D = ' '   ! array
-            FDESC3D( 1 ) = 'Mobile source temporal hourly emission data'
+            FDESC3D( 1 ) = 'Mobile temporal hourly emission data from Movesmrg'
             FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
             FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
             FDESC3D( 4 ) = '/TZONE/ 00'
@@ -219,6 +234,7 @@ C.............  Override gridded file settings
             
             FDESC3D = ' '   ! array
             FDESC3D( 1 ) = 'Mobile source groups file'
+            IF( FDFLAG ) FDESC3D( 1 ) = METADESC
             FDESC3D( 2 ) = '/FROM/ ' // PROGNAME
             FDESC3D( 3 ) = '/VERSION/ ' // VERCHAR( CVSW )
             WRITE( FDESC3D(5), 94010 ) '/NCOLS3D/ ', NCOLS

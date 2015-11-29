@@ -51,7 +51,7 @@ C.........  This module contains the lists of unique inventory information
      &                      UCASNPOL, UNIQCAS, UCASIDX, UCASNKEP
 
 C.........  This module contains the information about the source category
-        USE MODINFO, ONLY: CATEGORY, NIPPA, NSRC, EANAM, NCHARS
+        USE MODINFO, ONLY: CATEGORY, NIPPA, NSRC, EANAM, NCHARS, INV_MON
 
 C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: MXPDPT, LPDSRC, NPDPT, IDXSRC, SPDIDA,
@@ -163,6 +163,7 @@ C...........   Other local variables
         INTEGER          YEAR             ! 4-digit year
         INTEGER       :: YR4 = 0          ! unused header year
         INTEGER          ZONE             ! source time zones
+        INTEGER          JMONDY, FSTDAY, LSTDAY, NDAYS
 
         REAL             CONVFAC          ! tmp conversion factor from Inventory Table
         REAL             TOTAL            ! tmp daily total of hourly file
@@ -366,6 +367,22 @@ C.............  Set the number of fields, depending on day- or hour-specific
                 NFIELD = MON_DAYS( MONTH )
                 LYEAR =  INT( 1 / YR2DAY( YEAR ) )   ! convert year to days
                 IF( LYEAR > 365 .AND. MONTH == 2 ) NFIELD = 29
+            END IF
+
+C.............  Skip non-processing month/day 
+            IF( INV_MON > 0 ) THEN
+            	IF( DAYFLAG ) THEN
+                    JMONDY = 100 * YEAR + MONTH
+                    LSTDAY = 100 * YEAR + INV_MON
+                    FSTDAY = 100 * YEAR + INV_MON - 1
+                ELSE
+                    JMONDY = JDATE
+                    NDAYS = MON_DAYS( INV_MON )
+                    FSTDAY = 1000 * YEAR + JULIAN( YEAR, INV_MON, 1 ) - 1  ! first month
+                    LSTDAY = FSTDAY
+                    CALL NEXTIME( LSTDAY, JTIME, NDAYS*240000 )
+                END IF
+                IF( .NOT. ( FSTDAY <= JMONDY .AND. JMONDY <= LSTDAY ) ) CYCLE
             END IF
 
 C.............  Read FIPS code
