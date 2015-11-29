@@ -953,7 +953,7 @@ C.........  Get file name for inventory pollutants codes/names
 C.........  Get country, state, and county names no matter what, because it is
 C           needed to allocate memory for the state and county totals, even
 C           when they aren't going to be output
-        IF( .NOT. USEEXPGEO ) THEN
+        IF( .NOT. USEEXPGEO() ) THEN
             CDEV = PROMPTFFILE( 
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )
