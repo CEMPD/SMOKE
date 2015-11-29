@@ -80,6 +80,7 @@
         LOGICAL, PUBLIC :: INLINEFLAG ! create in-line ptsource file
         LOGICAL, PUBLIC :: ELEVFLAG! create ASCII elevated sources file
         LOGICAL, PUBLIC :: EXPLFLAG! use PHOUR file to get explicit plume rise
+        LOGICAL, PUBLIC :: SMATCHK ! use SMAT int output file for model species calc (Movesmrg only)
         LOGICAL, PUBLIC :: SRCGRPFLAG ! use source grouping
         LOGICAL, PUBLIC :: VARFLAG ! use variable grid definition
         LOGICAL, PUBLIC :: LMETCHK ! compare met information in headers

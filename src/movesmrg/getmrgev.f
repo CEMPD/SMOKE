@@ -44,7 +44,7 @@ C.........  This module contains the major data structure and control flags
      &                      MFLAG_BD, VARFLAG, LREPANY,
      &                      LMETCHK, LGRDOUT, LREPCNY,
      &                      LREPSTA, LREPSCC, LREPSRC,
-     &                      SRCGRPFLAG
+     &                      SRCGRPFLAG, SMATCHK
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: RPDFLAG, RPHFLAG, RPVFLAG, RPPFLAG, MVFILDIR, TVARNAME,
@@ -107,6 +107,9 @@ C           between Movesmrg and Smkmerge)
         PFLAG = .FALSE.
 
 C.........  Retrieve the on/off environment variables 
+        SMATCHK = ENVYN( 'USE_SPCMAT_SPC_YN', 'Use Speciation Matrix '//
+     &                   'output file to calculate model species',
+     &                   .FALSE., IOS )
 
         LMETCHK = ENVYN( 'MRG_METCHK_YN', 'Check consistency ' //
      &                   'of met headers or not', .TRUE., IOS )

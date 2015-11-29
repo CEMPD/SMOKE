@@ -903,7 +903,7 @@ C.............  Write supplemental temporal profiles file
 
        END DO            ! End loop on time period II
 
-        CALL M3EXIT( PROGNAME, 0, 0, 'Normal completion', 0 )
+       CALL M3EXIT( PROGNAME, 0, 0, ' ', 0 )
 
 C******************  FORMAT  STATEMENTS   ******************************
 

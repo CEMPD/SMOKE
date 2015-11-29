@@ -270,9 +270,10 @@ C.............  Write profile information by pollutant
             IF( NMET .EQ. 0 ) THEN
                 CONTINUE
             ELSE IF( METFLAG ) THEN
-                WRITE( FDEV,METFMT ) '"MET"',    1, TRIM( SOURCE ), METP(1)
+C bbaek                WRITE( FDEV,METFMT ) '"MET"',    1, TRIM( SOURCE ), METP(1)
+                WRITE( FDEV,OUTFMT ) '"MET"',    1, TRIM( SOURCE ), TRIM( SOURCE( 2:FIPLEN3+1 ) )
             ELSE
-                WRITE( FDEV,METFMT ) '"MET"', NVAR, TRIM( SOURCE ), ( METP(V), V=1,NVAR )
+                WRITE( FDEV,OUTFMT ) '"MET"', NVAR, TRIM( SOURCE ), ( TRIM(SOURCE(2:FIPLEN3+1)), V=1,NVAR )
             END IF
 
             IF( NMON .EQ. 0 ) THEN

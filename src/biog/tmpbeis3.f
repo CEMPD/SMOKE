@@ -25,6 +25,7 @@ C      8/04: Incorporated BEIS v3.12 by C. Seppanen
 C      4/06: changed to BEIS3.13 by G. Pouliot
 C      3/08: changed to BEIS3.14 by G. Pouliot
 C      ?/14: changed to BEIS3.60 by G. Pouliot
+C      7/15  Changed from BEIS3.60 to BEIS3.61 by Baek
 C                  
 C***********************************************************************
 C
@@ -80,16 +81,16 @@ C           to continue running the program.
 
 C.........  Get the BEIS3 model version to use
         MESG = 'Version of BEIS3 to use'
-        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.60', BEISVER, IOS )
+        CALL ENVSTR( 'BEIS_VERSION', MESG, '3.61', BEISVER, IOS )
         
         SELECT CASE( BEISVER )
-        CASE( '3.60' )
+        CASE( '3.61' )
             CALL TMPBEIS360( CVSW )
         CASE( '3.14' )
             CALL TMPBEIS314( CVSW )
         CASE DEFAULT
             MESG = 'ERROR: Unrecognized BEIS_VERSION setting; valid ' //
-     &             'settings are 3.14 and 3.60'
+     &             'settings are 3.14 and 3.61'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END SELECT
 

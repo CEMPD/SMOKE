@@ -37,7 +37,7 @@ C***********************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains the major data structure and control flags
-        USE MODMERGE, ONLY: GRDFAC, TOTFAC,
+        USE MODMERGE, ONLY: SMATCHK, GRDFAC, TOTFAC,
      &                      GRDUNIT, TOTUNIT, 
      &                      NMSPC, NIPPA, NUNITS
 
@@ -152,6 +152,12 @@ C.............  Set the numerators and denominators
 
 C.............  Get factor for the numerators for the gridded outputs...
             FAC1 = UNITFAC( SPCUNIT_L( V ), GRDBUF, .TRUE. )  ! speciation
+
+C.............  When SMAT is used to calcuate model species
+            IF( SMATCHK ) THEN
+                EMFAC = UNITFAC( 'g/hr', EMUNIT, .TRUE. )
+                FAC1 = FAC1 * EMFAC
+            END IF
 
 C.............  Get factor for the denominators for the gridded outputs
             FAC2 = UNITFAC( EMUNIT, GRDBUF, .FALSE. )

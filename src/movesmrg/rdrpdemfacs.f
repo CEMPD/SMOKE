@@ -42,7 +42,8 @@ C.........  This module is used for reference county information
 
 C.........  This module contains data structures and flags specific to Movesmrg
         USE MODMVSMRG, ONLY: MRCLIST, MVFILDIR, EMPOLIDX,
-     &                       NEMTEMPS, EMTEMPS, RPDEMFACS
+     &                       NEMTEMPS, EMTEMPS, RPDEMFACS,
+     &                       NMVSPOLS, MVSPOLNAMS
 
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NSMATV, TSVDESC, NMSPC, NIPPA, EMNAM, EANAM
@@ -79,19 +80,19 @@ C...........   Local parameters
 
 C...........   Local allocatable arrays
         CHARACTER(50),  ALLOCATABLE :: SEGMENT( : )    ! parsed input line
-        CHARACTER(30),  ALLOCATABLE :: POLNAMS( : )    ! pollutant names
         LOGICAL,        ALLOCATABLE :: LINVSCC( : )    ! check inv SCC availability in lookup table
 
 C...........   Other local variables
         INTEGER     I, J, L, LJ, L1, N, P, V  ! counters and indexes
         INTEGER     IOS         ! error status
         INTEGER  :: IREC = 0    ! record counter
-        INTEGER     NPOL        ! number of pollutants
         INTEGER     TDEV        ! tmp. file unit
         INTEGER     SPDBIN      ! speed bin
         INTEGER     SCCIDX
         INTEGER     TMPIDX
         INTEGER     NSCC        ! no of processing SCCs
+        INTEGER  :: TOGIDX = 0  ! index of TOG pollutant
+        INTEGER  :: NHTOGIDX = 0  ! index of NONHAPTOG pollutant
 
         REAL        TMPVAL      ! temperature value
         REAL        PTMP        ! previous temperature value
@@ -172,24 +173,30 @@ C.............  Check for header line
                 CALL PARSLINE( LINE, NSEG, SEGMENT )
 
 C.................  Count number of pollutants
-                NPOL = 0
+                NMVSPOLS = 0     ! Assume that both TOG/NONHAPTOG are existed
                 DO J = NNONPOL + 1, NSEG 
                 
                     IF( SEGMENT( J ) .NE. ' ' ) THEN
-                        NPOL = NPOL + 1
+                        NMVSPOLS = NMVSPOLS + 1
+                        IF( SEGMENT( J ) == 'NONHAPTOG' ) THEN
+                            NHTOGIDX = INDEX1( 'NONHAPTOG', NIPPA, EANAM )
+                        ELSE IF( SEGMENT( J ) == 'TOG' ) THEN
+                            TOGIDX = INDEX1( 'TOG', NIPPA, EANAM )
+                        END IF
                     ELSE
                         EXIT
                     END IF
                 
                 END DO
-                
-                ALLOCATE( POLNAMS( NPOL ), STAT=IOS )
-                CALL CHECKMEM( IOS, 'POLNAMS', PROGNAME )
-                POLNAMS = ''
+ 
+                IF( ALLOCATED( MVSPOLNAMS ) ) DEALLOCATE( MVSPOLNAMS )
+                ALLOCATE( MVSPOLNAMS( NMVSPOLS ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'MVSPOLNAMS', PROGNAME )
+                MVSPOLNAMS = ''
 
 C.................  Store pollutant names                
-                DO J = 1, NPOL
-                    POLNAMS( J ) = SEGMENT( NNONPOL + J )
+                DO J = 1, NMVSPOLS
+                    MVSPOLNAMS( J ) = SEGMENT( NNONPOL + J )
                 END DO
 
                 EXIT
@@ -207,9 +214,15 @@ C.................  Store pollutant names
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
-        IF( NPOL == 0 ) THEN
+        IF( NMVSPOLS == 0 ) THEN
             MESG = 'ERROR: Emission factors file does not contain ' //
      &             'any pollutants'
+            CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+        END IF
+
+        IF( TOGIDX == 0 .AND. NHTOGIDX == 0 ) THEN
+            MESG = 'ERROR: Emission factors file does not contain ' //
+     &             'data for both TOG/NONHAPTOG pollutants'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
         
@@ -219,7 +232,7 @@ C.........  Find emission pollutant in list of pollutants
 
             CPOL = TRIM( EANAM( V ) )
 
-            J = INDEX1( CPOL, NPOL, POLNAMS )
+            J = INDEX1( CPOL, NMVSPOLS, MVSPOLNAMS )
             IF( J .LE. 0 ) THEN
                 MESG = 'WARNING: Emission factors file does not ' //
      &            'contain requested inventory pollutant '//TRIM( CPOL )
@@ -235,7 +248,7 @@ C.............  Find model species in list of pollutants
         DO V = 1, NMSPC
 
             CSPC = EMNAM( V )
-            J = INDEX1( CSPC, NPOL, POLNAMS )
+            J = INDEX1( CSPC, NMVSPOLS, MVSPOLNAMS )
             IF( J .LE. 0 ) THEN
                 MESG = 'WARNING: Emission factors file does not ' //
      &            'contain requested model species ' // TRIM( CSPC )
@@ -254,7 +267,7 @@ C.........  Error message
 
 C.........  Allocate memory to parse lines
         DEALLOCATE( SEGMENT )
-        ALLOCATE( SEGMENT( NNONPOL + NPOL ), STAT=IOS )
+        ALLOCATE( SEGMENT( NNONPOL + NMVSPOLS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'SEGMENT', PROGNAME )
 
 C.........  Read through file to determine maximum number of temperatures
@@ -301,7 +314,7 @@ C.............  Skip header line
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments
-            CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
+            CALL PARSLINE( LINE, NNONPOL + NMVSPOLS, SEGMENT )
 
 C.............  Check that county matches requested county
             IF( .NOT. CHKINT( SEGMENT( 4 ) ) ) THEN
@@ -368,7 +381,7 @@ C.........  Allocate memory to store emission factors
         IF( ALLOCATED( RPDEMFACS ) ) THEN
             DEALLOCATE( RPDEMFACS )
         END IF
-        ALLOCATE( RPDEMFACS( NINVSCC, 16, NEMTEMPS, NPOL ), STAT=IOS )
+        ALLOCATE( RPDEMFACS( NINVSCC, 16, NEMTEMPS, NMVSPOLS ), STAT=IOS )
         CALL CHECKMEM( IOS, 'RPDEMFACS', PROGNAME )
         RPDEMFACS = 0.  ! array
 
@@ -410,7 +423,7 @@ C.............  Skip header line
             IF( LINE( 1:15 ) .EQ. 'MOVESScenarioID' ) CYCLE
 
 C.............  Parse line into segments
-            CALL PARSLINE( LINE, NNONPOL + NPOL, SEGMENT )
+            CALL PARSLINE( LINE, NNONPOL + NMVSPOLS, SEGMENT )
 
 C.............  Set SCC index for current line
             TSCC = TRIM( SEGMENT( 5 ) )
@@ -476,7 +489,7 @@ C.............  Set temperature index for current line
             EMTEMPS( TMPIDX ) = TMPVAL
 
 C.............  Store emission factors for each pollutant            
-            DO P = 1, NPOL
+            DO P = 1, NMVSPOLS
 
                 EMVAL = STR2REAL( SEGMENT( NNONPOL + P ) )
                 RPDEMFACS( SCCIDX, SPDBIN, TMPIDX, P ) = EMVAL
@@ -505,7 +518,7 @@ C.........  Error message when inventory SCC is missing in the lookup table
 
         CLOSE( TDEV )
         
-        DEALLOCATE( SEGMENT, POLNAMS, LINVSCC )
+        DEALLOCATE( SEGMENT, LINVSCC )
 
         RETURN
 

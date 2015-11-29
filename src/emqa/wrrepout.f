@@ -61,8 +61,10 @@ C.........  This module contains Smkreport-specific settings
      &                      SRCFMT, SRCWIDTH, REGNFMT, REGNWIDTH,
      &                      CYWIDTH, STWIDTH, COWIDTH, SCCWIDTH,
      &                      SRG1FMT, SRG1WIDTH, SRG2FMT, SRG2WIDTH,
-     &                      MONFMT, MONWIDTH, WEKFMT, WEKWIDTH,
-     &                      DIUFMT, DIUWIDTH, CHARFMT, CHARWIDTH,
+     &                      MONWIDTH, WEKWIDTH, DOMWIDTH, MNDWIDTH,
+     &                      TUEWIDTH, WEDWIDTH, THUWIDTH, FRIWIDTH,
+     &                      SATWIDTH, SUNWIDTH, METWIDTH,
+     &                      CHARFMT, CHARWIDTH,
      &                      STKPFMT, STKPWIDTH, ELEVWIDTH,
      &                      PDSCWIDTH, SDSCWIDTH, SPCWIDTH, MINC,
      &                      LOC_BEGP, LOC_ENDP, OUTDNAM, OUTUNIT,
@@ -76,7 +78,9 @@ C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINDATA, BINSCC, BINPLANT,
      &                      BINX, BINY, BINSMKID, BINREGN, 
      &                      BINCOIDX, BINSTIDX, BINCYIDX,
-     &                      BINMONID, BINWEKID, BINDIUID,
+     &                      BINMONID, BINWEKID, BINDOMID, BINMNDID,
+     &                      BINTUEID, BINWEDID, BINTHUID, BINFRIID,
+     &                      BINSATID, BINSUNID, BINMETID,
      &                      BINSRGID1, BINSRGID2, BINSPCID, BINRCL,
      &                      BINELEV, BINSNMIDX, BINBAD, BINSIC, 
      &                      BINSICIDX, BINMACT, BINMACIDX, BINNAICS,
@@ -514,30 +518,121 @@ C.............  Include fallback surrogate code
 
 C.............  Include monthly temporal profile
                 IF( RPT_%BYMON ) THEN
-                    BUFFER = ' '
-                    WRITE( BUFFER, MONFMT ) BINMONID( I )  ! Integer
-                    STRING = STRING( 1:LE ) // BUFFER
-                    MXLE = MXLE + MONWIDTH + LX
+                    L = MONWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINMONID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF
 
 C.............  Include weekly temporal profile
                 IF( RPT_%BYWEK ) THEN
-                    BUFFER = ' '
-                    WRITE( BUFFER, WEKFMT ) BINWEKID( I )  ! Integer
-                    STRING = STRING( 1:LE ) // BUFFER
-                    MXLE = MXLE + WEKWIDTH + LX
+                    L = WEKWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINWEKID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF
 
-C.............  Include diurnal temporal profile
-                IF( RPT_%BYDIU ) THEN
-                    BUFFER = ' '
-                    WRITE( BUFFER, DIUFMT ) BINDIUID( I )  ! Integer
-                    STRING = STRING( 1:LE ) // BUFFER
-                    MXLE = MXLE + DIUWIDTH + LX
+C.............  Include day of month temporal profile
+                IF( RPT_%BYDOM ) THEN
+                    L = DOMWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINDOMID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Monday diurnal temporal profile
+                IF( RPT_%BYMND ) THEN
+                    L = MNDWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINMNDID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Tuesday diurnal temporal profile
+                IF( RPT_%BYTUE ) THEN
+                    L = TUEWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINTUEID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Wednesday diurnal temporal profile
+                IF( RPT_%BYWED ) THEN
+                    L = WEDWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINWEDID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Thursday diurnal temporal profile
+                IF( RPT_%BYTHU ) THEN
+                    L = THUWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINTHUID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Friday diurnal temporal profile
+                IF( RPT_%BYFRI ) THEN
+                    L = FRIWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINFRIID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Saturday diurnal temporal profile
+                IF( RPT_%BYSAT ) THEN
+                    L = SATWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINSATID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Sunday diurnal temporal profile
+                IF( RPT_%BYSUN ) THEN
+                    L = SUNWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINSUNID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
+                    LE = MIN( MXLE, STRLEN )
+                    LX = 0
+                END IF
+
+C.............  Include Met-based diurnal temporal profile
+                IF( RPT_%BYMET ) THEN
+                    L = METWIDTH
+                    L1 = L - LV - 1 - 1                  ! 1 for space                
+                    STRING = STRING( 1:LE ) // ' ' //
+     &                       BINMETID( I )( 1:L1 )// DELIM
+                    MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )
                     LX = 0
                 END IF
@@ -546,7 +641,7 @@ C.............  Include speciation profile
                 IF( RPT_%BYSPC ) THEN
                     L = SPCWIDTH
                     L1 = L - LV - 1 - SPNLEN3                  ! 1 for space                
-                    STRING = STRING( 1:LE ) // ' ' //
+                    STRING = STRING( 1:LE ) //
      &                       BINSPCID( I )// BLANK16( 1:L1 )// DELIM
                     MXLE = MXLE + L + LX
                     LE = MIN( MXLE, STRLEN )

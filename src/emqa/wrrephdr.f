@@ -55,8 +55,10 @@ C.........  This module contains Smkreport-specific settings
      &                      CELLFMT, CELLWIDTH, SRCFMT, SRCWIDTH,
      &                      REGNFMT, REGNWIDTH, COWIDTH, STWIDTH,
      &                      CYWIDTH, SCCWIDTH, SRG1FMT, SRG1WIDTH,
-     &                      SRG2FMT, SRG2WIDTH, MONFMT, MONWIDTH,
-     &                      WEKFMT, WEKWIDTH, DIUFMT, DIUWIDTH,
+     &                      SRG2FMT, SRG2WIDTH, MONWIDTH, WEKWIDTH,
+     &                      DOMWIDTH, MNDWIDTH, TUEWIDTH, WEDWIDTH,
+     &                      THUWIDTH, FRIWIDTH, SATWIDTH, SUNWIDTH,
+     &                      METWIDTH,
      &                      CHARFMT, CHARWIDTH, STKPFMT, STKPWIDTH,
      &                      SPCWIDTH, ELEVWIDTH, SDSCWIDTH, UNITWIDTH,
      &                      MINC, LENELV3, SDATE, STIME, EDATE, ETIME,
@@ -71,7 +73,9 @@ C.........  This module contains Smkreport-specific settings
 C.........  This module contains report arrays for each output bin
         USE MODREPBN, ONLY: NOUTBINS, BINX, BINY, BINSMKID, BINREGN,
      &                      BINSRGID1, BINSRGID2, BINMONID, BINWEKID,
-     &                      BINDIUID, BINRCL, BINDATA, BINSNMIDX,
+     &                      BINDOMID, BINMNDID, BINTUEID, BINWEDID,
+     &                      BINTHUID, BINFRIID, BINSATID, BINSUNID,
+     &                      BINMETID, BINRCL, BINDATA, BINSNMIDX,
      &                      BINCYIDX, BINSTIDX, BINCOIDX, BINSPCID,
      &                      BINPLANT, BINSIC, BINSICIDX, BINMACT, 
      &                      BINMACIDX, BINNAICS, BINNAIIDX, BINSRCTYP,
@@ -133,37 +137,45 @@ C...........   Local parameters
         INTEGER, PARAMETER :: IHDRSRG2 = 17
         INTEGER, PARAMETER :: IHDRMON  = 18
         INTEGER, PARAMETER :: IHDRWEK  = 19
-        INTEGER, PARAMETER :: IHDRDIU  = 20
-        INTEGER, PARAMETER :: IHDRSPC  = 21
-        INTEGER, PARAMETER :: IHDRHT   = 22
-        INTEGER, PARAMETER :: IHDRDM   = 23
-        INTEGER, PARAMETER :: IHDRTK   = 24
-        INTEGER, PARAMETER :: IHDRVE   = 25
-        INTEGER, PARAMETER :: IHDRLAT  = 26
-        INTEGER, PARAMETER :: IHDRLON  = 27
-        INTEGER, PARAMETER :: IHDRELEV = 28
-        INTEGER, PARAMETER :: IHDRSTKG = 29
-        INTEGER, PARAMETER :: IHDRPNAM = 30
-        INTEGER, PARAMETER :: IHDRSNAM = 31
-        INTEGER, PARAMETER :: IHDRINAM = 32    ! SIC name
-        INTEGER, PARAMETER :: IHDRMNAM = 33
-        INTEGER, PARAMETER :: IHDRNNAM = 34
-        INTEGER, PARAMETER :: IHDRVAR  = 35
-        INTEGER, PARAMETER :: IHDRDATA = 36
-        INTEGER, PARAMETER :: IHDRUNIT = 37
-        INTEGER, PARAMETER :: IHDRLABL = 38
-        INTEGER, PARAMETER :: IHDRNFDRS= 39
-        INTEGER, PARAMETER :: IHDRMATBN= 40
-        INTEGER, PARAMETER :: IHDRORIS = 41
-        INTEGER, PARAMETER :: IHDRORNM = 42
-        INTEGER, PARAMETER :: IHDRINTGR= 43
-        INTEGER, PARAMETER :: IHDRGEO1 = 44
-        INTEGER, PARAMETER :: IHDRGEO2 = 45
-        INTEGER, PARAMETER :: IHDRGEO3 = 46
-        INTEGER, PARAMETER :: IHDRGEO4 = 47
-        INTEGER, PARAMETER :: IHDRCARB = 48
-        INTEGER, PARAMETER :: IHDRCADT = 49
-        INTEGER, PARAMETER :: NHEADER  = 49
+        INTEGER, PARAMETER :: IHDRDOM  = 20
+        INTEGER, PARAMETER :: IHDRMND  = 21
+        INTEGER, PARAMETER :: IHDRTUE  = 22
+        INTEGER, PARAMETER :: IHDRWED  = 23
+        INTEGER, PARAMETER :: IHDRTHU  = 24
+        INTEGER, PARAMETER :: IHDRFRI  = 25
+        INTEGER, PARAMETER :: IHDRSAT  = 26
+        INTEGER, PARAMETER :: IHDRSUN  = 27
+        INTEGER, PARAMETER :: IHDRMET  = 28
+        INTEGER, PARAMETER :: IHDRSPC  = 29
+        INTEGER, PARAMETER :: IHDRHT   = 30
+        INTEGER, PARAMETER :: IHDRDM   = 31
+        INTEGER, PARAMETER :: IHDRTK   = 32
+        INTEGER, PARAMETER :: IHDRVE   = 33
+        INTEGER, PARAMETER :: IHDRLAT  = 34
+        INTEGER, PARAMETER :: IHDRLON  = 35
+        INTEGER, PARAMETER :: IHDRELEV = 36
+        INTEGER, PARAMETER :: IHDRSTKG = 37
+        INTEGER, PARAMETER :: IHDRPNAM = 38
+        INTEGER, PARAMETER :: IHDRSNAM = 39
+        INTEGER, PARAMETER :: IHDRINAM = 40    ! SIC name
+        INTEGER, PARAMETER :: IHDRMNAM = 41
+        INTEGER, PARAMETER :: IHDRNNAM = 42
+        INTEGER, PARAMETER :: IHDRVAR  = 43
+        INTEGER, PARAMETER :: IHDRDATA = 44
+        INTEGER, PARAMETER :: IHDRUNIT = 45
+        INTEGER, PARAMETER :: IHDRLABL = 46
+        INTEGER, PARAMETER :: IHDRNFDRS= 47
+        INTEGER, PARAMETER :: IHDRMATBN= 48
+        INTEGER, PARAMETER :: IHDRORIS = 49
+        INTEGER, PARAMETER :: IHDRORNM = 50
+        INTEGER, PARAMETER :: IHDRINTGR= 51
+        INTEGER, PARAMETER :: IHDRGEO1 = 52
+        INTEGER, PARAMETER :: IHDRGEO2 = 53
+        INTEGER, PARAMETER :: IHDRGEO3 = 54
+        INTEGER, PARAMETER :: IHDRGEO4 = 55
+        INTEGER, PARAMETER :: IHDRCARB = 56
+        INTEGER, PARAMETER :: IHDRCADT = 57
+        INTEGER, PARAMETER :: NHEADER  = 57
 
         CHARACTER(12), PARAMETER :: MISSNAME = 'Missing Name'
 
@@ -187,8 +199,16 @@ C...........   Local parameters
      &                              'Fallbk Srg       ',
      &                              'Monthly Prf      ',
      &                              'Weekly Prf       ',
-     &                              'Diurnal Prf      ',
-     &                              'Spec Prf         ',
+     &                              'Day-Month Prf    ',
+     &                              'Mon Diu Prf      ',
+     &                              'Tue Diu Prf      ',
+     &                              'Wed Diu Prf      ',
+     &                              'Thu Diu Prf      ',
+     &                              'Fri Diu Prf      ',
+     &                              'Sat Diu Prf      ',
+     &                              'Sun Diu Prf      ',
+     &                              'Met-Diu Prf      ',
+     &                              'Speciation Prf   ',
      &                              'Stk Ht           ',
      &                              'Stk Dm           ',
      &                              'Stk Tmp          ',
@@ -852,36 +872,211 @@ C.........  Fallback surrogates column
 
 C.........  Temporal profiles columns
         IF( RPT_%BYMON ) THEN          ! Monthly
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINMONID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
             J = LEN_TRIM( HEADERS( IHDRMON ) )
-            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINMONID )
-            W1  = MAX( W1, J )
-            CALL ADD_TO_HEADER( W1, HEADERS(IHDRMON), LH, HDRBUF )
-            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+            J = MAX( NWIDTH, J )
 
-            WRITE( MONFMT, 94625 ) W1, RPT_%DELIM 
-            MONWIDTH = W1 + LV
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRMON), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            MONWIDTH = J + LV
+
         END IF
 
+C.........  Temporal profiles columns
         IF( RPT_%BYWEK ) THEN          ! Weekly
-            J = LEN_TRIM( HEADERS( IHDRWEK ) )
-            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINWEKID )
-            W1  = MAX( W1, J )
-            CALL ADD_TO_HEADER( W1, HEADERS(IHDRWEK), LH, HDRBUF )
-            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
 
-            WRITE( WEKFMT, 94625 ) W1, RPT_%DELIM 
-            WEKWIDTH = W1 + LV
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINWEKID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRWEK ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRWEK), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            WEKWIDTH = J + LV
+
         END IF
 
-        IF( RPT_%BYDIU ) THEN          ! Diurnal
-            J = LEN_TRIM( HEADERS( IHDRDIU ) )
-            W1 = INTEGER_COL_WIDTH( NOUTBINS, BINDIUID )
-            W1  = MAX( W1, J )
-            CALL ADD_TO_HEADER( W1, HEADERS(IHDRDIU), LH, HDRBUF )
-            CALL ADD_TO_HEADER( W1, ' ', LU, UNTBUF )
+C.........  Temporal profiles columns
+        IF( RPT_%BYDOM ) THEN          ! Day of Month 
 
-            WRITE( DIUFMT, 94625 ) W1, RPT_%DELIM 
-            DIUWIDTH = W1 + LV
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINDOMID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRDOM ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRDOM), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            DOMWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYMND ) THEN          ! Monday
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINMNDID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRMND ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRMND), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            MNDWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYTUE ) THEN          ! Tuesday
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINTUEID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRTUE ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRTUE), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            TUEWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYWED ) THEN          ! Wednesday
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINWEDID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRWED ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRWED), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            WEDWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYTHU ) THEN          ! Thursday
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINTHUID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRTHU ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRTHU), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            THUWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYFRI ) THEN          ! Friday
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINFRIID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRFRI ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRFRI), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            FRIWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYSAT ) THEN          ! Saturday
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINSATID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRSAT ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRSAT), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            SATWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYSUN ) THEN          ! Sunday
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINSUNID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRSUN ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRSUN), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            SUNWIDTH = J + LV
+
+        END IF
+
+C.........  Temporal profiles columns
+        IF( RPT_%BYMET ) THEN          ! Met-based
+
+            NWIDTH = 0
+            DO I = 1, NOUTBINS
+                NWIDTH = MAX( NWIDTH, LEN_TRIM( BINMETID( I ) ) )
+            END DO
+
+C.............  Set speciation profiles column width 
+            J = LEN_TRIM( HEADERS( IHDRMET ) )
+            J = MAX( NWIDTH, J )
+
+            CALL ADD_TO_HEADER( J, HEADERS(IHDRMET), LH, HDRBUF )
+            CALL ADD_TO_HEADER( J, ' ', LU, UNTBUF )
+
+            METWIDTH = J + LV
+
         END IF
 
 C.........  Speciation profile column

@@ -41,6 +41,7 @@ C Pathname: $Source$
 C Last updated: $Date$
 C
 C***********************************************************************
+
 C.......   MODULES for public variables:
 C...........   MODSOURC contains the inventory arrays
 C............  MODLISTS contains the lists of unique source characteristics
@@ -51,9 +52,10 @@ C............  MODELEV contains arrays for plume-in-grid and major sources
 C............  MODSTCY contains the arrays for state and county summaries
 C............  MODINFO contains the information about the source category
 
-        USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, IMON,
-     &                      IWEK, IDIU, SPPROF, CISIC, CMACT, CNAICS,
-     &                      CSRCTYP, CORIS, CINTGR
+        USE MODSOURC, ONLY: CSOURC, CIFIP, CSCC, IRCLAS, SRGID, CMON,
+     &                      CWEK, CDOM, CMND, CTUE, CWED, CTHU, CFRI,
+     &                      CSAT, CSUN, CMET, SPPROF, CISIC, CMACT,
+     &                      CNAICS, CSRCTYP, CORIS, CINTGR
 
         USE MODLISTS, ONLY: NINVSCC, INVSCC, NINVSIC, INVSIC, NINVMACT,
      &                      INVMACT, NINVNAICS, INVNAICS
@@ -65,7 +67,9 @@ C............  MODINFO contains the information about the source category
      &                      OUTGFAC, BINBAD, BINCOIDX,
      &                      BINSTIDX, BINCYIDX, BINREGN, BINSMKID,
      &                      BINSCC, BINSRGID1, BINSRGID2, BINSNMIDX,
-     &                      BINRCL, BINMONID, BINWEKID, BINDIUID,
+     &                      BINRCL, BINMONID, BINWEKID, BINDOMID,
+     &                      BINMNDID, BINTUEID, BINWEDID, BINTHUID,
+     &                      BINFRIID, BINSATID, BINSUNID, BINMETID,
      &                      BINSPCID, BINPLANT, BINX, BINY, BINELEV,
      &                      BINPOPDIV, OUTBIN, OUTCELL,OUTSRC,
      &                      BINSIC, BINSICIDX, BINMACT, BINMACIDX,
@@ -101,9 +105,12 @@ C...........  EXTERNAL FUNCTIONS and their descriptions:
 
 C...........   Local parameters:
 
-        INTEGER, PARAMETER :: BUFLEN = 109 + SCCLEN3 + SICLEN3 + SPNLEN3
+        INTEGER, PARAMETER :: BUFLEN =  85 + SCCLEN3 + SICLEN3 + SPNLEN3
      &                                     + MACLEN3 + NAILEN3 + STPLEN3
-     &                                     + ORSLEN3
+     &                                     + ORSLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
+     &                                     + TMPLEN3 + TMPLEN3 + TMPLEN3
         INTEGER, PARAMETER :: PTSCCLEV( NSCCLV3 ) = (/ 1, 3, 6,  8, 9 /)
         INTEGER, PARAMETER :: ARSCCLEV( NSCCLV3 ) = (/ 2, 4, 7, 10, 9 /)
 
@@ -121,9 +128,7 @@ C...........   Local variables
         INTEGER         B, C, F, I, II, IJ, IS, J, K, L, LB, S
 
         INTEGER         COL             ! tmp column number
-        INTEGER         DIUID           ! tmp diurnal profile number
         INTEGER         IOS             ! i/o status
-        INTEGER         MONID           ! tmp monthly profile number
         INTEGER         NDATA           ! no. output data columns for current
         INTEGER         PREVSRCID       ! previous source ID
         INTEGER         RCL             ! tmp road class code
@@ -132,7 +137,6 @@ C...........   Local variables
         INTEGER         SRGID1          ! tmp primary surrogate ID
         INTEGER         SRGID2          ! tmp fallback surrogate ID
         INTEGER         STKGRP          ! tmp stack group ID
-        INTEGER         WEKID           ! tmp weekly profile number
 
         INTEGER(8)      M               ! format-length as INTEGER*8 for SORTINC8()
         INTEGER(8)      N               ! NOUTREC as INTEGER*8 for SORTINC8()
@@ -172,8 +176,7 @@ C.........  Set report-specific local settings
         MXOUTREC = N * BUFLEN
         B        = 0
 
-C.........  Memory check
-
+C.........  Memory check to check exceeding integer4 maxval=2,147,483,647
         IF( MXOUTREC < 1 ) THEN
             MESG = 'ERROR: Problem processing the size of inventory'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -401,24 +404,80 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
 
 
             IF( RPT_%BYMON ) THEN
-                IJ = II + 7
-                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IMON( OUTSRC( I ) )
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CMON( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-month
 
 
             IF( RPT_%BYWEK ) THEN
-                IJ = II + 7
-                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IWEK( OUTSRC( I ) )
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CWEK( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-week
 
 
-            IF( RPT_%BYDIU ) THEN
-                IJ = II + 7
-                WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) IDIU( OUTSRC( I ) )
+            IF( RPT_%BYDOM ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CDOM( OUTSRC( I ) )
                 II = IJ + 1
-            END IF          !! if report-by-week
+            END IF          !! if report-by-day-of-month
+
+
+            IF( RPT_%BYMND ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CMND( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-Monday
+
+
+            IF( RPT_%BYTUE ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CTUE( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-Tuesday
+
+
+            IF( RPT_%BYWED ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CWED( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-Wednesday
+
+
+            IF( RPT_%BYTHU ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CTHU( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-Thursday
+
+
+            IF( RPT_%BYFRI ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CFRI( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-Friday
+
+
+            IF( RPT_%BYSAT ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CSAT( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-Saturday
+
+
+            IF( RPT_%BYSUN ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CSUN( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-Sunday
+
+
+            IF( RPT_%BYMET ) THEN
+                IJ = II + TMPLEN3 - 1
+                SORTBUF( I )( II:IJ ) = CMET( OUTSRC( I ) )
+                II = IJ + 1
+            END IF          !! if report-by-met-based
 
 
             IF( RPT_%BYSPC ) THEN
@@ -614,7 +673,15 @@ C.........  If memory is allocated for bin arrays, then deallocate
         IF( ALLOCATED( BINRCL    ) ) DEALLOCATE( BINRCL )
         IF( ALLOCATED( BINMONID  ) ) DEALLOCATE( BINMONID )
         IF( ALLOCATED( BINWEKID  ) ) DEALLOCATE( BINWEKID )
-        IF( ALLOCATED( BINDIUID  ) ) DEALLOCATE( BINDIUID )
+        IF( ALLOCATED( BINDOMID  ) ) DEALLOCATE( BINDOMID )
+        IF( ALLOCATED( BINMNDID  ) ) DEALLOCATE( BINMNDID )
+        IF( ALLOCATED( BINTUEID  ) ) DEALLOCATE( BINTUEID )
+        IF( ALLOCATED( BINWEDID  ) ) DEALLOCATE( BINWEDID )
+        IF( ALLOCATED( BINTHUID  ) ) DEALLOCATE( BINTHUID )
+        IF( ALLOCATED( BINFRIID  ) ) DEALLOCATE( BINFRIID )
+        IF( ALLOCATED( BINSATID  ) ) DEALLOCATE( BINSATID )
+        IF( ALLOCATED( BINSUNID  ) ) DEALLOCATE( BINSUNID )
+        IF( ALLOCATED( BINMETID  ) ) DEALLOCATE( BINMETID )
         IF( ALLOCATED( BINSPCID  ) ) DEALLOCATE( BINSPCID )
         IF( ALLOCATED( BINPLANT  ) ) DEALLOCATE( BINPLANT )
         IF( ALLOCATED( BINX      ) ) DEALLOCATE( BINX )
@@ -726,9 +793,41 @@ C.........  Allocate memory for bins
             ALLOCATE( BINWEKID ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINWEKID', PROGNAME )
         ENDIF
-        IF( RPT_%BYDIU   ) THEN
-            ALLOCATE( BINDIUID ( NOUTBINS ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'BINDIUID', PROGNAME )
+        IF( RPT_%BYDOM   ) THEN
+            ALLOCATE( BINDOMID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINDOMID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYMND   ) THEN
+            ALLOCATE( BINMNDID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINMNDID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYTUE   ) THEN
+            ALLOCATE( BINTUEID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINTUEID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYWED   ) THEN
+            ALLOCATE( BINWEDID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINWEDID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYTHU   ) THEN
+            ALLOCATE( BINTHUID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINTHUID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYFRI   ) THEN
+            ALLOCATE( BINFRIID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINFRIID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSAT   ) THEN
+            ALLOCATE( BINSATID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSUNID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYSUN   ) THEN
+            ALLOCATE( BINSUNID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINSUNID', PROGNAME )
+        ENDIF
+        IF( RPT_%BYMET   ) THEN
+            ALLOCATE( BINMETID ( NOUTBINS ), STAT=IOS )
+            CALL CHECKMEM( IOS, 'BINMETID', PROGNAME )
         ENDIF
         IF( RPT_%BYSPC   ) THEN
             ALLOCATE( BINSPCID ( NOUTBINS ), STAT=IOS )
@@ -750,12 +849,10 @@ C.........  Allocate memory for bins
             ALLOCATE( BINY     ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINY', PROGNAME )
         ENDIF
-
         IF( RPT_%BYELEV  ) THEN
             ALLOCATE( BINELEV  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINELEV', PROGNAME )
         ENDIF
-
         IF( RPT_%ELVSTKGRP ) THEN
             ALLOCATE( BINSTKGRP  ( NOUTBINS ), STAT=IOS )
             CALL CHECKMEM( IOS, 'BINSTKGRP', PROGNAME )
@@ -797,9 +894,17 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYNAICS )   BINNAICS( B ) =  CNAICS( S )
             IF( RPT_%BYORIS  )    BINORIS( B ) =   CORIS( S )
             IF( RPT_%BYSRCTYP ) BINSRCTYP( B ) = CSRCTYP( S )
-            IF( RPT_%BYMON )     BINMONID( B ) =    IMON( S )
-            IF( RPT_%BYWEK )     BINWEKID( B ) =    IWEK( S )
-            IF( RPT_%BYDIU )     BINDIUID( B ) =    IDIU( S )
+            IF( RPT_%BYMON )     BINMONID( B ) =    CMON( S )
+            IF( RPT_%BYWEK )     BINWEKID( B ) =    CWEK( S )
+            IF( RPT_%BYDOM )     BINDOMID( B ) =    CDOM( S )
+            IF( RPT_%BYMND )     BINMNDID( B ) =    CMND( S )
+            IF( RPT_%BYTUE )     BINTUEID( B ) =    CTUE( S )
+            IF( RPT_%BYWED )     BINWEDID( B ) =    CWED( S )
+            IF( RPT_%BYTHU )     BINTHUID( B ) =    CTHU( S )
+            IF( RPT_%BYFRI )     BINFRIID( B ) =    CFRI( S )
+            IF( RPT_%BYSAT )     BINSATID( B ) =    CSAT( S )
+            IF( RPT_%BYSUN )     BINSUNID( B ) =    CSUN( S )
+            IF( RPT_%BYMET )     BINMETID( B ) =    CMET( S )
             IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IS )
 
             IF( LREGION ) THEN

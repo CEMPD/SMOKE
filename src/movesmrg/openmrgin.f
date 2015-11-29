@@ -65,7 +65,7 @@ C...........   This module contains emission factor information
         USE MODEMFAC, ONLY: MXETYPE, EMTNAM
 
 C.........  This module contains the global variables for the 3-d grid
-        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, VGTYP, VGTOP, VGLVS, XCENT,YCENT,P_ALP,OFFLAG
+        USE MODGRID, ONLY: GRDNM, NCOLS, NROWS, VGTYP, VGTOP, VGLVS
 
 C.........  This module is required for the FileSetAPI
         USE MODFILESET

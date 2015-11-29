@@ -784,6 +784,7 @@ C.....................  pollutant-independent search targets:
                     CALL BLDCSRC( CFIP,  CPLT,    CPNT, CSTK, BLNK, CPL5, TSCC,  CPOS(0), CSRC06 )
                     CALL BLDCSRC( CFIP,  CPLT,    CPNT, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC07 )
                     CALL BLDCSRC( CFIP,  CPLT,    BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC08 )
+                    CALL BLDCSRC( CFIP,  CPLT,    BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC085 )
                     CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC15 )
                     CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC17 )
                     CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPL5, TSCC,  CPOS(0), CSRC19 )
@@ -791,12 +792,12 @@ C.....................  pollutant-independent search targets:
 
                     IF ( .NOT. FULLSCC .AND. .NOT.CHKEXPSCC( TSCC ) ) THEN
 
-                        CALL BLDCSRC( CFIP,  CPLT,    BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC085 )
                         CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC16 )
                         CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC18 )
                         CALL BLDCSRC( CFIPZ, BLNKPLT, BLNK, BLNK, BLNK, CPLL, TSCC5, CPOS(0), CSRC20 )
                         CALL BLDCSRC( CFIP,  BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC21 )
                         CALL BLDCSRC( CFIPL, BLNKPLT, BLNK, BLNK, BLNK, CPLZ, TSCCZ, CPOS(0), CSRC22 )
+
                     END IF
 
 C.....................  Note that pollutant dependent and pollutant independent

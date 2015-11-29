@@ -97,7 +97,7 @@ C...........   SUBROUTINE ARGUMENTS
         LOGICAL,      INTENT(OUT) :: ORLFLG       ! true: read ORL inventory
 
 C...........   Local parameters
-        INTEGER      , PARAMETER :: MXRECS = 1000000  ! maximum records per iteration
+        INTEGER      , PARAMETER :: MXRECS = 3000000  ! maximum records per iteration
         INTEGER      , PARAMETER :: NSCSEG = 8        ! num. segments in scratch file
         INTEGER      , PARAMETER :: NSEG   = 70       ! maximum no of segments
         
