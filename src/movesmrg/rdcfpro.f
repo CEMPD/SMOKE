@@ -78,7 +78,7 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: CFDEV             ! CFPRO file unit no.
 
 C...........   Local allocatable arrays
-        CHARACTER(20)  SEGMENT( 10 )          ! parsed input line
+        CHARACTER(30)  SEGMENT( 10 )          ! parsed input line
 
         INTEGER, ALLOCATABLE :: NLFIPS( : )     ! FIPS matched
         INTEGER, ALLOCATABLE :: NLSCCS( : )     ! SCC matched
