@@ -369,6 +369,7 @@ C.............  Set the number of fields, depending on day- or hour-specific
                 FSTLOC = 1
                 LSTLOC = NFIELD
             ELSE
+                NFIELD = 1
                 FSTLOC = 1
                 LSTLOC = 24
             END IF
@@ -385,14 +386,18 @@ C.............  Skip non-processing month/day
 
                     FSTPRV = FSTDATE  ! reset the last of previous month to first day of prv month for a proper daily inv 
                     CALL DAYMON ( FSTPRV, MONTH, N )
-                    N = MON_DAYS( MONTH ) - 1
-                    CALL NEXTIME( FSTPRV, JTIME, -240000 * N )
+                    N = MON_DAYS( MONTH )
+                    CALL NEXTIME( FSTPRV, JTIME, -240000 * (N-1) )
 
                     IF( LSTDATE == JDATE ) THEN
                         NFIELD = 1
+                        FSTLOC = 1
+                        LSTLOC = 1
                         JDATE  = LSTDATE
                     ELSE IF( FSTPRV == JDATE ) THEN
                         NFIELD = 1
+                        FSTLOC = N
+                        LSTLOC = N
                         JDATE  = FSTDATE
                     ELSE
 C.........................  Check start/end dates with emissions within the month
@@ -604,7 +609,6 @@ C               iteration
             IF( GETCOUNT ) CYCLE
 
 C.............  Check and set emissions values
-
             S1 = 15   ! pollutant field start position
 
             N = 0
