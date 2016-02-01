@@ -58,9 +58,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         EXTERNAL  BLKORCMT, CHKINT, GETFLINE, STR2INT, FINDC, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
-        INTEGER, INTENT (IN) :: MDEV             ! MCREF file unit no.
-        INTEGER, INTENT (IN) :: NCTY             ! no. counties
-        INTEGER, INTENT (IN) :: GRIDCTY( NCTY )  ! counties in grid
+        INTEGER,        INTENT ( IN ) :: MDEV             ! MCREF file unit no.
+        INTEGER,        INTENT ( IN ) :: NCTY             ! no. counties
+        CHARACTER( * ), INTENT ( IN ) :: GRIDCTY( NCTY )  ! counties in grid
 
 C...........   Local allocatable arrays
         INTEGER, ALLOCATABLE :: MCREFRAW ( :,: )  ! raw MCREF data
@@ -163,7 +163,7 @@ C.............  Convert inventory county to integer
             ST = STR2INT( SEGMENT( 5 ) )
             CT = STR2INT( SEGMENT( 6 ) )
             REFCOUNTY = CO*100000 + ST*1000 + CT
-           
+
 C.............  Store values in unsorted array
             MCREFRAW( I,1 ) = INVCOUNTY
             MCREFRAW( I,2 ) = REFCOUNTY
@@ -173,7 +173,7 @@ C.............  Skip any entries equal to zero due to blank lines
 
 C.............  Check if current inventory county is duplicate (match previous)
             IF( INVCOUNTY /= PICOUNTY ) THEN
- 
+
 C.............  Check that current county is inside the grid (and in the inventory)
                 WRITE( INVCNTY,'(I12.12)' ) INVCOUNTY
                 K = FINDC( INVCNTY, NCTY, GRIDCTY )

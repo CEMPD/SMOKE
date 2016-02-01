@@ -487,7 +487,7 @@ C.............  Store emission factors for each pollutant
 
                 EMVAL = STR2REAL( SEGMENT( NNONPOL + P ) )
                 RPHEMFACS( SCCIDX, TMPIDX, P ) = EMVAL
-         print*,SCCIDX,TMPIDX,P,NNONPOL,EMVAL
+
             END DO
 
         END DO

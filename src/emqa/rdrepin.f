@@ -207,6 +207,7 @@ C.........  Set local variables for determining input inventory variables
      &                  ANY_TRUE( NREPORT, ALLRPT%BYCNTY ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYPLANT ) .OR.
      &                  ANY_TRUE( NREPORT, ALLRPT%BYORIS ) .OR.
+     &                  ANY_TRUE( NREPORT, ALLRPT%BYSPC ) .OR.
      &                  ANY_CVAL( NREPORT, ALLRPT%REGNNAM )     )
 
 C.........  Build array of inventory variable names based on report settings
@@ -229,7 +230,8 @@ C.........  SIC code
             END IF
 
 C.........  SCC code
-            IF( ANY_TRUE( NREPORT, ALLRPT%BYSCC ) ) THEN
+            IF( LRDREGN .OR.
+     &          ANY_TRUE( NREPORT, ALLRPT%BYSCC ) ) THEN
                 NINVARR = NINVARR + 1
                 IVARNAMS( NINVARR ) = 'CSCC'
             END IF
@@ -720,7 +722,6 @@ C.................  If not pollutant name, then continue to read in the
 C                   pollutant codes and store them by source
                 ELSE IF ( V .GT. 0 ) THEN
                     S = S + 1
-
                     BUFFER = ADJUSTL( BUFFER )
                     SPPROF( S,V ) = ADJUSTR( BUFFER( 1:SPNLEN3 ) )
 

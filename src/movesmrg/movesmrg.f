@@ -971,7 +971,6 @@ C.............................  Calculate interpolated emission factor if proces
                                 EFVALA = RPHEMFACS( SCCIDX, IDX1, POLIDX )
                                 EFVALB = RPHEMFACS( SCCIDX, IDX2, POLIDX )
                                 EFVAL = TEMPFAC * (EFVALB - EFVALA) + EFVALA
-              if(EFVAL>0.0) print*,EFVAL,POLIDX,SCCIDX,IDX1,IDX2
                             END IF
                                 
                             IF( RPVFLAG ) THEN

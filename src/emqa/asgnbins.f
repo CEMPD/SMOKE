@@ -125,7 +125,7 @@ C...........   Sorting arrays
 
 C...........   Local variables
 
-        INTEGER         B, C, F, I, II, IJ, IS, J, K, L, LB, S
+        INTEGER         B, C, F, I, II, IJ, IS, IV, J, K, L, LB, S
 
         INTEGER         COL             ! tmp column number
         INTEGER         IOS             ! i/o status
@@ -180,20 +180,15 @@ C.........  Memory check to check exceeding integer4 maxval=2,147,483,647
         IF( MXOUTREC < 1 ) THEN
             MESG = 'ERROR: Problem processing the size of inventory'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-        ELSE
-            WRITE( MESG, '( A, I3, A, I10 )' )
-     &            'ASGNBINS:  report', RCNT, ' NOUTREC=', NOUTREC
-            CALL M3MESG( MESG )
         END IF
-
 
 C.........  Consistency checking:  inventory vs report
 
         EFLAG = .FALSE.
 
         IF( RPT_%BYSPC ) THEN
-            IS = INDEX1( RPT_%SPCPOL, NSPCPOL, SPCPOL )
-            IF ( IS .LE. 0 ) THEN
+            IV = INDEX1( RPT_%SPCPOL, NSPCPOL, SPCPOL )
+            IF ( IV .LE. 0 ) THEN
                 MESG = 'INTERNAL ERROR: Pollutant "'// RPT_%SPCPOL//
      &                     'not found in list created from REPCONFIG.'
                 CALL M3MSG2( MESG )
@@ -237,15 +232,6 @@ C.........  Consistency checking:  inventory vs report
                 EFLAG = .TRUE.
         END IF
 
-        IF( RPT_%BYSPC ) THEN
-            IS = INDEX1( RPT_%SPCPOL, NSPCPOL, SPCPOL )
-            IF ( IS .LE. 0 ) THEN
-                MESG = 'INTERNAL ERROR: Pollutant "'// RPT_%SPCPOL//
-     &                     'not found in list created from REPCONFIG.'
-                CALL M3MSG2( MESG )
-                EFLAG = .TRUE.
-            END IF
-        END IF
         IF ( EFLAG ) THEN
             MESG = 'Inconsistent INVENTORY-vs-REPORT specification(s)'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
@@ -305,7 +291,6 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
 
 
             IF( RPT_%BYSRC ) THEN
-
                 IF ( AFLAG ) THEN
                     IJ = II + 7 + FIPLEN3
                     SRCID = OUTSRC( I )
@@ -402,13 +387,11 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 II = IJ + 1
             END IF          !!  if report-by-surrogate
 
-
             IF( RPT_%BYMON ) THEN
                 IJ = II + TMPLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CMON( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-month
-
 
             IF( RPT_%BYWEK ) THEN
                 IJ = II + TMPLEN3 - 1
@@ -416,13 +399,11 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 II = IJ + 1
             END IF          !! if report-by-week
 
-
             IF( RPT_%BYDOM ) THEN
                 IJ = II + TMPLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CDOM( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-day-of-month
-
 
             IF( RPT_%BYMND ) THEN
                 IJ = II + TMPLEN3 - 1
@@ -430,13 +411,11 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 II = IJ + 1
             END IF          !! if report-by-Monday
 
-
             IF( RPT_%BYTUE ) THEN
                 IJ = II + TMPLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CTUE( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-Tuesday
-
 
             IF( RPT_%BYWED ) THEN
                 IJ = II + TMPLEN3 - 1
@@ -444,13 +423,11 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 II = IJ + 1
             END IF          !! if report-by-Wednesday
 
-
             IF( RPT_%BYTHU ) THEN
                 IJ = II + TMPLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CTHU( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-Thursday
-
 
             IF( RPT_%BYFRI ) THEN
                 IJ = II + TMPLEN3 - 1
@@ -458,13 +435,11 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 II = IJ + 1
             END IF          !! if report-by-Friday
 
-
             IF( RPT_%BYSAT ) THEN
                 IJ = II + TMPLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CSAT( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-Saturday
-
 
             IF( RPT_%BYSUN ) THEN
                 IJ = II + TMPLEN3 - 1
@@ -472,23 +447,20 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 II = IJ + 1
             END IF          !! if report-by-Sunday
 
-
             IF( RPT_%BYMET ) THEN
                 IJ = II + TMPLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CMET( OUTSRC( I ) )
                 II = IJ + 1
             END IF          !! if report-by-met-based
 
-
             IF( RPT_%BYSPC ) THEN
-                II = II + SPNLEN3 - 1
-                SPCID = SPPROF( OUTSRC(I),J )
-                SORTBUF( I )( II:IJ ) = SPPROF( OUTSRC(I),J )
+                IJ = II + SPNLEN3 - 1
+                SPCID = SPPROF( OUTSRC(I),IV )
+                SORTBUF( I )( II:IJ ) = SPPROF( OUTSRC(I),IV )
                 II = IJ + 1
             END IF          !!  if report-by-species
 
         END DO      !!  end first parallel loop constructing SORTIDX and SORTBUF
-
 
         IF( RPT_%BYPLANT ) THEN
 
@@ -512,7 +484,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
                 END IF
                 SORTBUF( I )( II:IJ ) = PLANT
             END DO
-            II = II + PLTLEN3
+            II = IJ + PLTLEN3
 
         END IF          !!  if report-by-plant
 
@@ -570,12 +542,12 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
             IF ( RPT_%BYSRCTYP ) THEN
                 IJ = II + STPLEN3 - 1
                 SORTBUF( I )( II:IJ ) =  CSRCTYP( OUTSRC( I ) )
-                II = II + STPLEN3
+                II = IJ + STPLEN3
             END IF          !!  if report-by-sourcetype
 
 
             IF ( RPT_%BYELEV .AND. RPT_%ELVSTKGRP ) THEN
-                II = II + 7
+                IJ = II + 7
                 WRITE( SORTBUF( I )( II:IJ ), '( I8 )' ) GROUPID( OUTSRC( I ) )
                 II = IJ + 1
             END IF
@@ -584,7 +556,7 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
             IF ( RPT_%BYINTGR ) THEN
                 IJ = II + INTLEN3 - 1
                 SORTBUF( I )( II:IJ ) = CINTGR( OUTSRC( I ) )
-                II = II + INTLEN3
+                II = IJ + INTLEN3
             END IF          !!  if report-by-integrate
 
             SORTBUF( I )( II: ) = ' '
@@ -593,15 +565,9 @@ C.........  parallel-loop; plant-loop; parallel-loop instead;-( ]
  
 
 C.........  Sort sorting array
-
-        WRITE( MESG, '( A, I3, A, I10 )' )
-     &         'ASGNBINS:  SORTINC8() started for REPORT', RCNT, ' NOUTBINS =', B
-        CALL M3MESG( MESG )
-
         N = NOUTREC     !!  INTEGER*8 arguments...
         M = II
         CALL SORTINC8( N, M, SORTIDX, SORTBUF )
-        CALL M3MESG( 'ASGNBINS:  SORTINC8() complete' )
 
 C.........  Assign bins to output records based on sorting array
 C.........  NOTE:  sequential dependency for B
@@ -640,7 +606,6 @@ C.........  NOTE:  sequential dependency for B
                 NBINS( B )  = I
                 ISRCB( I )  = OUTSRC( J )
                 OUTBIN( J ) = B
-
             END DO
 
         END IF      !!  if usegmat, or not
@@ -881,10 +846,9 @@ C.........  Populate the bin characteristic arrays (not the data array)
                 ROW = STKY( J )
                 COL = STKX( J )
             END IF
-
             S    = OUTSRC( J )
-            CFIP = CIFIP( S )
-            SCC  =  CSCC( S )
+            CFIP =  CIFIP( S )
+            SCC  =   CSCC( S )
 
             IF( RPT_%BYSRC )     BINSMKID( B ) = S
             IF( RPT_%BYSCC )       BINSCC( B ) = SCC
@@ -905,7 +869,7 @@ C.........  Populate the bin characteristic arrays (not the data array)
             IF( RPT_%BYSAT )     BINSATID( B ) =    CSAT( S )
             IF( RPT_%BYSUN )     BINSUNID( B ) =    CSUN( S )
             IF( RPT_%BYMET )     BINMETID( B ) =    CMET( S )
-            IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IS )
+            IF( RPT_%BYSPC )     BINSPCID( B ) =  SPPROF( S,IV )
 
             IF( LREGION ) THEN
                 IF( RPT_%BYCNTY ) THEN
