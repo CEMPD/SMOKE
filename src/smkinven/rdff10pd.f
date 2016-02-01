@@ -103,8 +103,8 @@ C.........  SUBROUTINE ARGUMENTS
         INTEGER, INTENT(INOUT):: STIME          ! start time of data in TZONE
         INTEGER, INTENT(OUT)  :: EDATE          ! Julian ending date in TZONE
         INTEGER, INTENT(OUT)  :: ETIME          ! ending time of data in TZONE
-        INTEGER, INTENT(OUT) :: EASTAT( NIPPA ) ! true: pol/act appears in data
-        INTEGER, INTENT(OUT) :: SPSTAT( MXSPDAT ) ! true: special in data
+        INTEGER, INTENT(OUT)  :: EASTAT( NIPPA ) ! true: pol/act appears in data
+        INTEGER, INTENT(OUT)  :: SPSTAT( MXSPDAT ) ! true: special in data
 
 C...........   Local list of bad sources to prevent duplicate writing of error
 C              messages
@@ -129,7 +129,7 @@ C...........   Temporary read arrays
         REAL            TDAT( 31,24 )       ! temporary data values
 
 C...........   Other local variables
-        INTEGER          D, H, HS, I, J, L, L1, L2, S, T    ! counters and indices
+        INTEGER          D, H, HS, I, J, N, L, L1, L2, S, T    ! counters and indices
         INTEGER          ES, NS, SS    ! end src, tmp no. src, start sourc
 
         INTEGER          CIDX             ! tmp data index
@@ -163,12 +163,11 @@ C...........   Other local variables
         INTEGER          YEAR             ! 4-digit year
         INTEGER       :: YR4 = 0          ! unused header year
         INTEGER          ZONE             ! source time zones
-        INTEGER          JMONDY, FSTDAY, LSTDAY, NDAYS
+        INTEGER          FSTPRV, FSTDATE, LSTDATE, FSTLOC, LSTLOC   ! processing start/end dates
 
         REAL             CONVFAC          ! tmp conversion factor from Inventory Table
         REAL             TOTAL            ! tmp daily total of hourly file
 
-C       LOGICAL       :: DAYLIT = .FALSE.  ! true: date in daylight time
         LOGICAL, SAVE :: DFLAG  = .FALSE.  ! true: dates set by data
         LOGICAL       :: EFLAG  = .FALSE.  ! TRUE iff ERROR
         LOGICAL       :: WARNOUT = .FALSE.! true: then output warnings
@@ -364,26 +363,78 @@ C.............  Set Julian day from MMDDYY8 SAS format
 
 C.............  Set the number of fields, depending on day- or hour-specific
             IF( DAYFLAG ) THEN
-                NFIELD = MON_DAYS( MONTH )
+                NFIELD  = MON_DAYS( MONTH )
                 LYEAR =  INT( 1 / YR2DAY( YEAR ) )   ! convert year to days
                 IF( LYEAR > 365 .AND. MONTH == 2 ) NFIELD = 29
+                FSTLOC = 1
+                LSTLOC = NFIELD
+            ELSE
+                NFIELD = 1
+                FSTLOC = 1
+                LSTLOC = 24
             END IF
 
 C.............  Skip non-processing month/day 
             IF( INV_MON > 0 ) THEN
-            	IF( DAYFLAG ) THEN
-                    JMONDY = 100 * YEAR + MONTH
-                    LSTDAY = 100 * YEAR + INV_MON
-                    FSTDAY = 100 * YEAR + INV_MON - 1
-                ELSE
-                    JMONDY = JDATE
-                    NDAYS = MON_DAYS( INV_MON )
-                    FSTDAY = 1000 * YEAR + JULIAN( YEAR, INV_MON, 1 ) - 1  ! first month
-                    LSTDAY = FSTDAY
-                    CALL NEXTIME( LSTDAY, JTIME, NDAYS*240000 )
+                N = MON_DAYS( INV_MON )
+                FSTDATE = 1000 * YEAR + JULIAN( YEAR, INV_MON, 1 )
+                LSTDATE = 1000 * YEAR + JULIAN( YEAR, INV_MON, N )
+                CALL NEXTIME( FSTDATE, JTIME, -240000 )     ! include the last day of previous month
+                CALL NEXTIME( LSTDATE, JTIME,  240000 )     ! include the first day of next month 
+
+                IF( DAYFLAG ) THEN
+
+                    FSTPRV = FSTDATE  ! reset the last of previous month to first day of prv month for a proper daily inv 
+                    CALL DAYMON ( FSTPRV, MONTH, N )
+                    N = MON_DAYS( MONTH )
+                    CALL NEXTIME( FSTPRV, JTIME, -240000 * (N-1) )
+
+                    IF( LSTDATE == JDATE ) THEN
+                        NFIELD = 1
+                        FSTLOC = 1
+                        LSTLOC = 1
+                        JDATE  = LSTDATE
+                    ELSE IF( FSTPRV == JDATE ) THEN
+                        NFIELD = 1
+                        FSTLOC = N
+                        LSTLOC = N
+                        JDATE  = FSTDATE
+                    ELSE
+C.........................  Check start/end dates with emissions within the month
+                        S1 = 15   ! pollutant field start position
+                        FSTLOC = 0
+                        LSTLOC = 0
+
+                        DO J = 1, NFIELD
+                            IF( STR2REAL( SEGMENT( S1-1+J ) ) > 0.0  ) THEN
+                                FSTLOC = J
+                                EXIT
+                            END IF
+                        END DO
+
+                        DO J = NFIELD, 1, -1
+                            IF( STR2REAL( SEGMENT( S1-1+J ) ) > 0.0 ) THEN
+                                LSTLOC = J
+                                EXIT
+                            END IF
+                        END DO
+
+                        IF( FSTLOC == 0 .OR. LSTLOC == 0 ) THEN
+                            NFIELD = 0
+                        ELSE
+                            NFIELD = ( LSTLOC - FSTLOC ) + 1
+                            JDATE = JDATE + FSTLOC - 1           ! Update actual processing date
+                        END IF
+
+                    END IF
+
                 END IF
-                IF( .NOT. ( FSTDAY <= JMONDY .AND. JMONDY <= LSTDAY ) ) CYCLE
+
+                IF( .NOT. ( FSTDATE <= JDATE .AND. JDATE <= LSTDATE ) ) CYCLE
+
             END IF
+
+            IF( NFIELD < 1 ) CYCLE
 
 C.............  Read FIPS code
             CFIP = REPEAT( '0', FIPLEN3 )
@@ -443,6 +494,7 @@ C.............  Store maximum time step number as compared to reference
             IF( DAYFLAG ) THEN
                 PTR = SECSDIFF( RDATE, RTIME, JDATE+NFIELD-1, JTIME ) / TDIVIDE + 1
             END IF
+
             IF( PTR + 23 .GT. MAXPTR ) MAXPTR = PTR + 23
 
 C.............  Check pollutant code and set index I
@@ -565,18 +617,17 @@ C               iteration
             IF( GETCOUNT ) CYCLE
 
 C.............  Check and set emissions values
-
             S1 = 15   ! pollutant field start position
 
-            IF( DAYFLAG ) THEN
-                DO J = 1, NFIELD
-                    TDAT( J,: )  = STR2REAL( SEGMENT( S1-1+J ) )
-                END DO
-            ELSE
-                DO J = 1, 24
+            N = 0
+            DO J = FSTLOC, LSTLOC
+                IF( DAYFLAG ) THEN
+                    N = N + 1                   ! N is equal to NFIELD for day-specific
+                    TDAT( N,: )  = STR2REAL( SEGMENT( S1-1+J ) )
+                ELSE
                     TDAT( :,J )  = STR2REAL( SEGMENT( S1-1+J ) )
-                END DO
-            ENDIF 
+                ENDIF 
+            END DO
 
 C.............  If available, set total value from hourly file
             TOTAL = 0.
