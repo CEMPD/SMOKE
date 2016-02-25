@@ -60,9 +60,9 @@ C.........   INCLUDES
         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C.........  EXTERNAL FUNCTIONS and their descriptions:
-        INTEGER   INDEXINT1
+        INTEGER   INDEX1
         
-        EXTERNAL  INDEXINT1
+        EXTERNAL  INDEX1
 
 C.........  LOCAL VARIABLES and their descriptions:
 
@@ -151,7 +151,7 @@ C           Start by counting number of sources for each reference county
                 SKIPFIP = .FALSE.
                 PFIP = CIFIP( S )
 
-                J = INDEXINT1( CIFIP( S ), NINVC, INVCNTY )
+                J = INDEX1( CIFIP( S ), NINVC, INVCNTY )
                 IF( J <= 0 ) THEN
                     SKIPFIP = .TRUE.
                     WRITE( MESG, 94010 ) 'WARNING: No emissions will '//
@@ -165,7 +165,7 @@ C           Start by counting number of sources for each reference county
                 IF( MCREFSORT( J,2 ) .NE. REFFIP ) THEN
                     REFFIP = MCREFSORT( J,2 )
                     
-                    REFIDX = INDEXINT1( REFFIP, NREFC, REFCNTY )
+                    REFIDX = INDEX1( REFFIP, NREFC, REFCNTY )
                     IF( REFIDX <= 0 ) THEN
                         WRITE( MESG, 94010 ) 'INTERNAL ERROR: ' //
      &                    'Problem with reference county mapping for '

@@ -58,10 +58,9 @@ C...........   EXTERNAL FUNCTIONS and their descriptions:
         LOGICAL       CHKINT
         INTEGER       GETFLINE
         INTEGER       STR2INT
-        INTEGER       INDEXINT1
         CHARACTER(2)  CRLF
         
-        EXTERNAL BLKORCMT, CHKINT, GETFLINE, STR2INT, INDEXINT1, CRLF
+        EXTERNAL BLKORCMT, CHKINT, GETFLINE, STR2INT, CRLF
 
 C...........   SUBROUTINE ARGUMENTS
         INTEGER, INTENT (IN) :: FDEV             ! MRCLIST file unit no.
