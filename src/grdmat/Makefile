@@ -19,7 +19,7 @@ ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
 #
 GRD= asgnsurg.o genagmat.o genggmat.o genmgmat.o genpgmat.o grdmat.o \
-     opengmat.o sizgmat.o setfrac.o rdsrg4grd.o
+     opengmat.o sizgmat.o setfrac.o rdsrg4grd.o genlgmat.o
 #
 grdmat: $(GRD) $(ALLI) $(LIBPATH)
 	echo GRDMAT
@@ -40,6 +40,7 @@ genggmat.o: $(MODSOURC) $(MODINFO) $(MODGRID)
 genmgmat.o: $(MODSOURC) $(MODSURG) $(MODLISTS) $(MODINFO) $(MODGRID) $(MODXREF)
 grdmat.o: $(MODSOURC) $(MODXREF) $(MODINFO) $(MODGRID) $(MODFILESET)
 opengmat.o: $(MODINFO)
+genlgmat.o: $(MODGRID)
 setfrac.o: $(MODSURG)
 sizgmat.o: $(MODSOURC) $(MODGRID) $(MODSURG)
 rdsrg4grd.o: $(MODGRID) $(MODSURG)
