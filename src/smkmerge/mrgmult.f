@@ -174,10 +174,10 @@ C............. If multiplicative controls only
 
                 AVAL( S ) = MULT * ( 1.0 - ELEVADJ( S ) )
 
-                COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
-                COUT2( IDX,ISPC ) = COUT2( IDX,ISPC ) + MULT
-                COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + VAL
-                COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + MULT
+                COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
+                COUT2( IDX,KEY1 ) = COUT2( IDX,KEY1 ) + MULT
+                COUT4( IDX,KEY1 ) = COUT4( IDX,KEY1 ) + VAL
+                COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + MULT
 
             END DO
 
@@ -224,10 +224,10 @@ C.............  If inventory pollutant only
 
                 AVAL( S ) = VAL * ( 1.0 - ELEVADJ( S ) )
 
-                COUT1( IDX,ISPC ) = COUT1( IDX,ISPC ) + VAL
-                COUT2( IDX,ISPC ) = COUT2( IDX,ISPC ) + VAL
-                COUT4( IDX,ISPC ) = COUT4( IDX,ISPC ) + VAL
-                COUT5( IDX,ISPC ) = COUT5( IDX,ISPC ) + VAL
+                COUT1( IDX,KEY1 ) = COUT1( IDX,KEY1 ) + VAL
+                COUT2( IDX,KEY1 ) = COUT2( IDX,KEY1 ) + VAL
+                COUT4( IDX,KEY1 ) = COUT4( IDX,KEY1 ) + VAL
+                COUT5( IDX,KEY1 ) = COUT5( IDX,KEY1 ) + VAL
 
             END DO
 
