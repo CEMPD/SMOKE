@@ -90,7 +90,6 @@ C...........   Other local variables
         INTEGER         CNY         ! tmp county code
         INTEGER         COU         ! tmp country code
         INTEGER         COUST       ! tmp country/state code
-        INTEGER         CNTYZON     ! tmp county time zone
         INTEGER         FIP         ! tmp country/state/county
         INTEGER      :: ISKIPCTR = 0! no. lines in FDEV to skip until countries
         INTEGER      :: ISKIPCNY = 0! no. lines in FDEV to skip until countys

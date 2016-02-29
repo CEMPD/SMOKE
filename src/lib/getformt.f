@@ -124,6 +124,11 @@ C.................  Check if format is provided as a header entry
                     EXIT ! To end read loop
                 END IF
 
+                L = INDEX( LINE, 'GRID' )
+                IF( L .GT. 0 ) THEN
+                    GETFORMT = NCDFMT
+                    EXIT ! To end read loop
+                END IF
 
                 L = INDEX( LINE, 'ORL' )
                 IF( L .GT. 0 ) THEN
@@ -173,8 +178,8 @@ C.........  If format has not been set, print error about missing header
      &             'format due to missing or bad header ' //
      &             'information. ' // CRLF() // BLANK16 //
      &             'Valid headers are: ' // CRLF() // BLANK16 //
-     &             '#LIST, #EMS-95, #FF10, #MEDS, ' //
-     &             '#ORL NONPOINT, or #CEM'
+     &             '#LIST, #EMS-95, #FF10, #MEDS, #GRID,' //
+     &             '#ORL, or #CEM'
             CALL M3MSG2( MESG )
             CALL M3EXIT( PROGNAME, 0, 0, ' ', 2 )
 

@@ -38,7 +38,7 @@ C***************************************************************************
 C...........   MODULES for public variables
 C...........   This module is the source inventory arrays
         USE MODSOURC, ONLY: XLOCA, YLOCA, XLOC1, YLOC1, XLOC2, YLOC2,
-     &                      CELLID, CIFIP   
+     &                      CELLID, CIFIP, CSCC
 
 C...........   This module contains the cross-reference tables
         USE MODXREF, ONLY: ASRGID, SRGFIPIDX
@@ -113,7 +113,6 @@ C           for this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
 
 C...........   File units and logical/physical names
-c        INTEGER         ADEV    !  for adjustments file
         INTEGER         IDEV    ! tmp unit number if ENAME is map file
         INTEGER         LDEV    !  log-device
         INTEGER         KDEV    !  for link defs file
@@ -124,11 +123,11 @@ c        INTEGER         ADEV    !  for adjustments file
         INTEGER         XDEV    !  for surrogate xref  file
         INTEGER         FDEV    !  for surrogate description file
 
-        CHARACTER(16)   ANAME   !  logical name for ASCII inventory input file
-        CHARACTER(16)   ENAME   !  logical name for i/o api inventory input file
-        CHARACTER(16)   INAME   !  tmp name for inven file of unknown fmt
-        CHARACTER(16)   GNAME   !  logical name for grid matrix output file
-        CHARACTER(16)   UNAME   !  logical name for ungrid matrix output file
+        CHARACTER(NAMLEN3)   ANAME   !  logical name for ASCII inventory input file
+        CHARACTER(NAMLEN3)   ENAME   !  logical name for i/o api inventory input file
+        CHARACTER(NAMLEN3)   INAME   !  tmp name for inven file of unknown fmt
+        CHARACTER(NAMLEN3)   GNAME   !  logical name for grid matrix output file
+        CHARACTER(NAMLEN3)   UNAME   !  logical name for ungrid matrix output file
 
 C...........   Other local variables
         
@@ -166,22 +165,24 @@ C...........   Other local variables
         LOGICAL      :: DFLAG   = .FALSE.  ! true: use link defs file
         LOGICAL      :: EFLAG   = .FALSE.  ! true: error found
         LOGICAL      :: SRGFLAG = .FALSE.  ! true: surrogates are needed
+        LOGICAL      :: NFLAG   = .FALSE.  ! true: process gridded netcdf inv file 
         LOGICAL      :: UFLAG   = .FALSE.  ! true: create ungridding matrix
         LOGICAL      :: VFLAG   = .FALSE.  ! true: use variable grid
         LOGICAL      :: FSGFLAG = .FALSE.  ! true: use default fallback surrogate
 
 C...........   Local parameters
-        CHARACTER(16)       COORUNIT         !  coordinate system projection units
-        CHARACTER(16)    :: INVGRDNM  = ' '  !  inventory grid name
-        CHARACTER(16)    :: SRGGRDNM  = ' '  !  surrogates file grid name
-        CHARACTER(16)    :: LSRGGRDNM = ' '  !  surrogates file grid name
-        CHARACTER(16)       GRDSRG           !  reading type of surrogate files
-        CHARACTER(80)       GDESC            !  grid description
-        CHARACTER(196)      NAMBUF           !  surrogate file name buffer
-        CHARACTER(256)      NAMBUFT          !  tmp surrogate file name buffer
-        CHARACTER(256)      TSRGFNAM         !  tmp surrogate file name buffer
-        CHARACTER(300)      MESG     !  message buffer
-        CHARACTER(80)       LINE                  ! Read buffer for a line
+        CHARACTER(SCCLEN3)       PSCC             !  tmp and previous SCC
+        CHARACTER(NAMLEN3)       COORUNIT         !  coordinate system projection units
+        CHARACTER(NAMLEN3)    :: INVGRDNM  = ' '  !  inventory grid name
+        CHARACTER(NAMLEN3)    :: SRGGRDNM  = ' '  !  surrogates file grid name
+        CHARACTER(NAMLEN3)    :: LSRGGRDNM = ' '  !  surrogates file grid name
+        CHARACTER(NAMLEN3)       GRDSRG           !  reading type of surrogate files
+        CHARACTER(MXDLEN3)       GDESC            !  grid description
+        CHARACTER(196)           NAMBUF           !  surrogate file name buffer
+        CHARACTER(256)           NAMBUFT          !  tmp surrogate file name buffer
+        CHARACTER(256)           TSRGFNAM         !  tmp surrogate file name buffer
+        CHARACTER(300)           MESG             !  message buffer
+        CHARACTER(80)            LINE             ! Read buffer for a line
 
         CHARACTER(IODLEN3)  IFDESC2, IFDESC3 !  fields 2 & 3 from PNTS FDESC
 
@@ -207,6 +208,10 @@ C.........  Get environment variables that control this program
 
         VFLAG = ENVYN( 'USE_VARIABLE_GRID',
      &                 'Use variable grid definition',
+     &                 .FALSE., IOS )
+
+        NFLAG = ENVYN( 'IMPORT_GRDNETCDF_YN',
+     &                 'Process native NetCDF gridded inventory file',
      &                 .FALSE., IOS )
 
 C.........  Temporary section for disallowing optional files
@@ -358,7 +363,6 @@ C               from the inventory arrays
             CALL GENUSLST
 
 C..............  For mobile sources, read the mobile codes
-C            IF( MDEV .GT. 0 ) CALL RDMVINFO( MDEV )
             CALL M3MSG2( 'Reading gridding cross-reference file...' )
 
 C.............  Read the gridding cross-reference
@@ -613,27 +617,6 @@ C           convert point source coordinates from lat-lon to output grid
      &                     XCENT, YCENT, XLOCA, YLOCA )
         END IF
 
-C.........  Determine if ungridding matrix is needed
-C baek MOBILE6 is no longer supported as of v2.7.5 on 26May2011
-C         I = INDEX1( 'VMT', NIPPA, EANAM )
-C        IF( I .GT. 0 ) THEN
-        
-C.............  Make sure we're not using a variable grid
-C           IF( VFLAG ) THEN
-C               MESG = 'Cannot create ungridding matrix ' //
-C    &                 'when using a variable grid.'
-C               CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
-C           END IF
-C           
-C           UFLAG = .TRUE.
-C           MESG = 'NOTE: VMT detected in inventory, ungridding matrix '
-C    &             //'will be created'
-C       ELSE
-C           MESG = 'NOTE: VMT not detected in inventory, ungridding ' //
-C    &             'matrix will NOT be created'
-C       END IF
-C       CALL M3MSG2( MESG )
-
 C.........  Depending on source category, convert coordinates, determine size
 C           of gridding matrix, and allocate gridding matrix.
         SELECT CASE( CATEGORY )
@@ -644,19 +627,22 @@ C.............  Determine sizes for allocating area gridding matrix
                 CALL SIZGMAT( CATEGORY, NSRC, VFLAG, DEFSRGID, FSGFLAG,
      &                        MXSCEL, MXCSRC, MXCCL, NMATX, NMATXU)
 
-            ELSE   ! processing pregridded IOAPI file
+            ELSE  ! processing pregridded IOAPI file
+
                 MXSCEL = 1
                 MXCSRC = 1
-                MXCCL  = 1
+                MXCCL  = 1 
                 NMATX  = NSRC
                 NMATXU = NSRC
 
             ENDIF
 
 C.............  Allocate memory for mobile source gridding matrix
-            ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
-            CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
-       
+            IF( .NOT. NFLAG ) THEN
+                ALLOCATE( GMAT( NGRID + 2*NMATX ), STAT=IOS )
+                CALL CHECKMEM( IOS, 'GMAT', PROGNAME )
+            END IF
+
         CASE( 'MOBILE' )
        
 C.............  Convert mobile source coordinates from lat-lon to output grid
@@ -708,7 +694,7 @@ C.........  Get file names; open output gridding matrix (and ungridding matrix
 C           for mobile) using grid characteristics from DSCM3GRD() above        
 C.........  Also open report file 
         CALL OPENGMAT( NMATX, NMATXU, UFLAG, IFDESC2, IFDESC3, VFLAG,
-     &                 GNAME, UNAME, RDEV )
+     &                 NFLAG, GNAME, UNAME, RDEV )
 
         CALL M3MSG2( 'Generating gridding matrix...' )
 
@@ -726,10 +712,14 @@ C           is done so the sparse i/o api format can be used.
      &                     DEFSRGID, FSGFLAG, GMAT( 1 ),GMAT( NGRID+1 ),
      &                     GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
 
-            ELSE     ! processing pregridded IOAPI file
+            ELSE IF( NFLAG ) THEN    ! processing pregridded Raw NetCDF file
+                CALL GENLGMAT( GNAME, RDEV, NK, CMAX, CMIN )
+
+            ELSE     ! processing pregridded IOAPI-NetCDF file
                 CALL GENGGMAT( GNAME, RDEV, MXSCEL, NSRC, NMATX,
      &                        GMAT( 1 ),GMAT( NGRID+1 ),
      &                        GMAT( NGRID+NMATX+1 ), NK, CMAX, CMIN )
+
             ENDIF
 
         CASE( 'MOBILE' )

@@ -39,10 +39,10 @@ C Last updated: $Date$
 C
 C***************************************************************************
 C...........  This module contains the information about the source category
-        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NCOMP, VAR_FORMULA
+        USE MODINFO, ONLY: NMAP, MAPNAM, MAPFIL, NCOMP, VAR_FORMULA, NETCDFUNIT
 
 C.........  This module contains the lists of unique inventory information
-        USE MODLISTS, ONLY: MEDSFLAG
+        USE MODLISTS, ONLY: MEDSFLAG, NCDFLAG, APIFLAG
 
 C............ This module contains the cross-reference tables
         USE MODXREF, ONLY: PROC_HAPS 
@@ -65,13 +65,14 @@ C...........   INCLUDES
 C...........   EXTERNAL FUNCTIONS and their descriptionsNRAWIN
         CHARACTER(2)       CRLF
         LOGICAL            ENVYN
+        INTEGER            ENVINT
         INTEGER            INDEX1
         INTEGER            PROMPTFFILE
         CHARACTER(NAMLEN3) PROMPTMFILE
         LOGICAL            USEEXPGEO
 
         EXTERNAL        CRLF, ENVYN, INDEX1, PROMPTFFILE, PROMPTMFILE,
-     &                  USEEXPGEO
+     &                  USEEXPGEO, ENVINT
 
 C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*), INTENT (IN) :: CATEGORY  ! source category
@@ -97,10 +98,9 @@ C...........   Other local variables
         INTEGER       IOS    ! i/o status
         INTEGER       I,J,L    ! counter and indices
         INTEGER       LCAT   ! length of CATEGORY string
-
+ 
         LOGICAL    :: CFLAG = .FALSE.  ! true: open area-to-point file
         LOGICAL    :: DFLAG = .FALSE.  ! true: open day-specific file
-        LOGICAL    :: GFLAG = .FALSE.  ! true: open gridded I/O API inventory
         LOGICAL    :: HFLAG = .FALSE.  ! true: open hour-specific file
         LOGICAL    :: IFLAG = .FALSE.  ! true: open annual/average inventory
         LOGICAL    :: NFLAG = .FALSE.  ! true: open non-HAP inclusions/exclusions
@@ -208,19 +208,33 @@ C               number of commas found in the string.
             CFLAG = ENVYN ( 'SMK_ARTOPNT_YN', MESG, .FALSE., IOS )
             
             MESG = 'Import gridded I/O API inventory data'
-            GFLAG = ENVYN ( 'IMPORT_GRDIOAPI_YN', MESG, .FALSE., IOS )
+            APIFLAG = ENVYN ( 'IMPORT_GRDIOAPI_YN', MESG, .FALSE., IOS )
+
+            MESG = 'Import gridded native NetCDF inventory data'
+            NCDFLAG = ENVYN ( 'IMPORT_GRDNETCDF_YN', MESG, .FALSE., IOS )
+        END IF
+
+C.........  Define the unit and temporal resolution of raw NetCDF inventory files
+        IF( NCDFLAG ) THEN
+            NETCDFUNIT = ''
+            MESG = 'Define the unit of NetCDF gridded inventory pollutant'
+            CALL ENVSTR( 'NETCDF_POL_UNIT', MESG, ' ', NETCDFUNIT, IOS )
+            IF( NETCDFUNIT /= 'kg m-2 s-1' ) THEN
+                MESG = 'ERROR: Unit of pollutant MUST be "kg m-2 s-1"'
+                CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+            END IF
         END IF
 
 C.........  Make sure gridded point source file is not attempted
         IF ( ( CATEGORY .EQ. 'POINT' .OR. 
      &         CATEGORY .EQ. 'MOBILE'    ) .AND. 
-     &         GFLAG                               ) THEN
+     &         ( APIFLAG    .OR.  NCDFLAG  )          ) THEN
             MESG = 'Cannot import gridded mobile or point source data.'
             CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
         END IF
 
 C.........  When gridded data are imported, override other settings
-        IF( GFLAG ) THEN
+        IF( APIFLAG .OR. NCDFLAG ) THEN
             CFLAG = .FALSE.
             IFLAG = .FALSE.
             DFLAG = .FALSE.
@@ -231,7 +245,8 @@ C.........  Abort if no settings set to read data
         IF( .NOT. IFLAG .AND. 
      &      .NOT. DFLAG .AND.
      &      .NOT. HFLAG .AND.
-     &      .NOT. GFLAG      ) THEN
+     &      .NOT. APIFLAG .AND.
+     &      .NOT. NCDFLAG      ) THEN
 
             MESG = 'ERROR: Environment settings indicate no files ' //
      &             'are to be read'
@@ -259,13 +274,20 @@ C.........  Find name name of raw inventory file
 
         END IF
 
-C.........   Get NetCDF gridded inventory file (without SCCs)
-        IF( GFLAG ) THEN
+C.........   Get IOAPI gridded inventory file (without SCCs)
+        IF( APIFLAG ) THEN
 
             MESG = 'Enter logical name of the GRIDDED ' // 
      &             CATEGORY( 1:LCAT ) // ' INVENTORY ' // 'file'
 
             ENAME = PROMPTMFILE( MESG, FSREAD3, ENAME, PROGNAME )
+
+C.........   Get IOAPI gridded masking file (Country code and associated time zones)
+        ELSE IF( NCDFLAG ) THEN
+
+            MESG = 'Enter logical name of the GRID MASK input file '
+
+            ENAME = PROMPTMFILE( MESG, FSREAD3, 'GRIDMASK', PROGNAME )
 
 C.........  Get ASCII file name and open average input inventory file when 
 C           inventory is to be imported
@@ -326,7 +348,7 @@ C.................  Get file name for input replacement stack parameters file
 
 C.........  Get file name for country, state, and county file, with time 
 C           zones
-        IF( .NOT. GFLAG .AND. .NOT. USEEXPGEO() ) THEN
+        IF( .NOT. APIFLAG .AND. .NOT. USEEXPGEO() ) THEN
             ZDEV = PROMPTFFILE(
      &             'Enter logical name for COUNTRY, STATE, AND ' //
      &             'COUNTY file', .TRUE., .TRUE., 'COSTCY', PROGNAME )

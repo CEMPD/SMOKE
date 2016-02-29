@@ -81,8 +81,9 @@ C.........  Input file format constants
         INTEGER, PARAMETER  :: ORLDYFRFMT = 10 ! ORL FIREEMIS format
         INTEGER, PARAMETER  :: FF10FMT    = 11 ! FF10 format
         INTEGER, PARAMETER  :: MEDSFMT    = 12 ! MEDS format
+        INTEGER, PARAMETER  :: NCDFMT     = 13 ! Gridded NetCDF format
 
-        CHARACTER(12), PARAMETER :: FMTNAMES( 0:12 ) = 
+        CHARACTER(12), PARAMETER :: FMTNAMES( 0:13 ) = 
      &                        ( / 'list        ', 
      &                            'EMS-95      ', 
      &                            'EPS         ', 
@@ -95,7 +96,8 @@ C.........  Input file format constants
      &                            'ORL FIRE    ',
      &                            'ORL FIREEMIS',
      &                            'FF10        ',
-     &                            'MEDS        ' / )
+     &                            'MEDS        ',
+     &                            'GRID        ' / )
 
 C.........  Indicator for inventory header fields
         CHARACTER, PARAMETER :: CINVHDR = '#'

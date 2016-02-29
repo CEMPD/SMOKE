@@ -739,6 +739,13 @@ C.........................  Skip records with zero data, unless option (ZFLAG) s
 
                 END IF
 
+C.................  Give an error when all computed values are zero
+                IF( NREC == 0 ) THEN
+                    MESG = 'WARNING: All computed values are zero. Nothing to output'
+                    CALL M3MESG( MESG )
+                    CYCLE
+                END IF
+
 C...............  Give warning for that includes negative annual value
                 IF( MINANN .LT. 0. ) THEN
                     WRITE( MESG,94020 ) 'WARNING: Largest negative '//

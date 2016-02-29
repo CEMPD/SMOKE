@@ -122,6 +122,9 @@ C.............  Check for #LIST entry
                 ELSE IF( INDEX( INFILE, 'MEDS' ) > 0 ) THEN
                     EXTFORMAT = MEDSFMT
 
+                ELSE IF( INDEX( INFILE, 'GRID' ) > 0 ) THEN
+                    EXTFORMAT = NCDFMT
+
                 ELSE IF( INDEX( INFILE, 'ORL' ) > 0 ) THEN
 
                     IF( INDEX( INFILE, 'NONPOINT' ) > 0 ) THEN

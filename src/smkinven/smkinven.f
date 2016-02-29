@@ -61,7 +61,7 @@ C...........   This module is the inventory arrays
      &                      CINTGR, CEXTORL
 C.........  This module contains the lists of unique inventory information
         USE MODLISTS, ONLY: MXIDAT, INVSTAT, INVDNAM, FIREFLAG, INVDCOD, 
-     &                      FF10FLAG, MEDSFLAG
+     &                      FF10FLAG, MEDSFLAG, NCDFLAG, APIFLAG
 C.........  This module contains the information about the source category
         USE MODINFO, ONLY: CATEGORY, NIPOL, NIACT, NIPPA, EIIDX, INV_MON,
      &                     EINAM, AVIDX, ACTVTY, EANAM, NSRC
@@ -163,7 +163,6 @@ C...........   Other local variables
 
         LOGICAL         A2PFLAG          ! true: using area-to-point processing
         LOGICAL      :: CFLAG = .FALSE.  ! true: CEM processing
-        LOGICAL      :: GFLAG = .FALSE.  ! true: gridded NetCDF inputs used
         LOGICAL         IFLAG            ! true: average inventory inputs used
         LOGICAL         NONPOINT         ! true: importing nonpoint inventory
         LOGICAL         ORLFLG           ! true: ORL format inventory
@@ -199,13 +198,11 @@ C.........  Get names of input files
      &                  ENAME, INAME, DNAME, HNAME )
 
 C.........  Set controller flags depending on unit numbers
-        IFLAG = ( IDEV .NE. 0 )
-        GFLAG = ( .NOT. IFLAG .AND. .NOT. DAYINVFLAG .AND. .NOT.
-     &            HRLINVFLAG )
+        IFLAG   = ( IDEV .NE. 0 )
         A2PFLAG = ( YDEV .NE. 0 )
 
-C.........  Set gridded input file name, if available
-        IF( GFLAG ) GNAME = ENAME
+C.........  Set IOAPI or NetCDF gridded input file name, if available
+        IF( APIFLAG .OR. NCDFLAG ) GNAME = ENAME
 
         MESG = 'Setting up to read inventory data...'
         CALL M3MSG2( MESG )
@@ -365,9 +362,10 @@ C.............  Write out SCC file
         END IF  ! For ASCII annual/ave-day inputs
 
 C.........  Input gridded I/O API inventory data
-        IF( GFLAG ) THEN
+        IF( APIFLAG .OR. NCDFLAG ) THEN
 
-            CALL RDGRDAPI( GNAME, GRDNM ) 
+            IF( APIFLAG ) CALL RDGRDAPI( GNAME, GRDNM ) 
+            IF( NCDFLAG ) CALL RDGRDNCF( INAME, ENAME ) 
 
 C.............  initialize arrays for later 
             ALLOCATE( CISIC ( NSRC ), STAT=IOS )
@@ -384,10 +382,12 @@ C.............  initialize arrays for later
             CINTGR  = ' '       ! array
             CEXTORL = ' '       ! array
 
+            IFLAG = .TRUE.
+
         END IF  ! For gridded I/O API NetCDF inventory
 
 C.........  Output SMOKE inventory files
-        IF( IFLAG .OR. GFLAG ) THEN
+        IF( IFLAG ) THEN
 
 C.............  Generate message to use just before writing out inventory files
 C.............  Open output I/O API and ASCII files 
@@ -435,6 +435,7 @@ C               to see if HFLUX is present. If so, FIREFLAG = .true.
             IVARNAMS( 2 ) = 'CSOURC'  ! In case non-CEM input
             IVARNAMS( 3 ) = 'CSCC'    ! In case CEM input (for reporting)
             IVARNAMS( 4 ) = 'CPDESC'  ! In case CEM input
+
             IF ( .NOT. FIREFLAG ) THEN
                 NINVARR = 7
                 IVARNAMS( 5 ) = 'CORIS'   ! In case CEM input
