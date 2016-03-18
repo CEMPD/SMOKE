@@ -175,7 +175,7 @@ C.........  When a new report is starting...
 C.............  Transfer array info to scalar info for this report
             RPT_ = ALLRPT( RCNT )  ! multi-value 
 
-            LREGION = ( RPT_%BYCNRY .OR. RPT_%BYSTAT .OR. RPT_%BYCNTY )
+            LREGION = ( RPT_%BYGEO1 .OR. RPT_%BYCNRY .OR. RPT_%BYSTAT .OR. RPT_%BYCNTY )
 
 C.............  Allocate memory for LF if not available already
             IF( .NOT. ALLOCATED( LF ) ) THEN
