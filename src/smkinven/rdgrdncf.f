@@ -368,6 +368,8 @@ C.........  Loop over pollutant-specific raw NetCDF gridded inventory file
             CVAR = TRIM( SEGMENT( 3 ) )
             MONTH = STR2INT( SEGMENT( 4 ) )
 
+            CALL PADZERO( SCC )
+
             V = INDEX1( CBUF, NIPOL, EANAM ) 
 
 C.................  Define inventory temporal resoltion (annual or avg-day)
