@@ -1,6 +1,6 @@
 
         SUBROUTINE UPDTMAT( NSRC, IGRP, NPOL, JDATE, TZONE, VIDX, HIDX, 
-     &                      MONTH, DAYOW, DAYOM, TMAT )
+     &                      MONTH, DAYOW, DAYOM )
 
 C***********************************************************************
 C  subroutine body starts at line
@@ -53,7 +53,8 @@ C.........  MODDAYHR contains data for day- and hour-specific data
         USE MODTMPRL, ONLY: MONFAC,  DOMFAC,  WEKFAC,  XWKFAC, IPOL2D, 
      &                      MTHPROF, DOMPROF, WEKPROF
 
-        USE MODDAYHR, ONLY: INDXD, INDXH, NHRSRC, NDYSRC, EMACH, LDSPOA
+        USE MODDAYHR, ONLY: INDXD, INDXH, NHRSRC, NDYSRC, EMACH, LDSPOA,
+     &                      TMAT
 
         IMPLICIT NONE
 
@@ -74,7 +75,6 @@ C...........   SUBROUTINE ARGUMENTS:
         INTEGER, INTENT(IN ) :: MONTH( 24, 0:23 )       ! source time zone's month-of-year 1...12
         INTEGER, INTENT(IN ) :: DAYOW( 24, 0:23 )       ! source time zone's day-of-week   1...7
         INTEGER, INTENT(IN ) :: DAYOM( 24, 0:23 )       ! source time zone's day-of-month  1...31
-        REAL   , INTENT(OUT) :: TMAT( NSRC, NPOL, 24 )  ! temporal-profile coeffs
 
 C...........   EXTERNAL FUNCTIONS:
 

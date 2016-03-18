@@ -64,6 +64,12 @@
         REAL   , ALLOCATABLE, PUBLIC:: EMISVA( :,: ) ! period-specific emis
         REAL   , ALLOCATABLE, PUBLIC:: DYTOTA( :,: ) ! daily total (if present)
 
+        REAL   , ALLOCATABLE, PUBLIC:: EMAC  ( :,: ) ! inven emis or activities
+        REAL   , ALLOCATABLE, PUBLIC:: EMACV ( :,: ) ! day-adjst emis or activities
+        REAL   , ALLOCATABLE, PUBLIC:: EMIST ( :,: ) ! timestepped output emssions
+        REAL   , ALLOCATABLE, PUBLIC:: EMFAC ( :,: ) ! mobile emission factors by source
+        REAL   , ALLOCATABLE, PUBLIC:: TMAT  ( :,:,: ) ! temporal allocation factors
+
 !.........  Logical flag for which sources in inventory appear in day- or hour-
 !           specific inputs. Dim: NSRC
         LOGICAL, ALLOCATABLE, PUBLIC:: LPDSRC( : )

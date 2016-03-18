@@ -1,6 +1,6 @@
 
-        SUBROUTINE MKTMAT( NSRC, IGRP, NGRP, NPOL, JDATE, JTIME, TZONE, ZONES,
-     &                     TPF, MONTH, DAYOW, DAYOM, PNAME, TMAT )
+        SUBROUTINE MKTMAT( NSRC, IGRP, NGRP, NPOL, JDATE, JTIME, TZONE,
+     &                     MONTH, DAYOW, DAYOM, PNAME )
 
 C***********************************************************************
 C  subroutine body starts at line 101
@@ -47,11 +47,17 @@ C
 C***********************************************************************
 
 C.........  MODULES for public variables
-C.........  MODTMPRL contains the temporal profile tables
+C.........  MODSOURC contains the inventory arrays
+        USE MODSOURC, ONLY: TZONES, TPFLAG
 
+C.........  MODTMPRL contains the temporal profile tables
         USE MODTMPRL, ONLY: MONFAC, WEKFAC, HRLFAC, XWKFAC, DOMFAC, HOUR_TPROF,
      &                      METPROTYPE, METFACS, MONFAC_ORG, IPOL2D, NMETPROF,
      &                      METPROF, MTHPROF, WEKPROF, DOMPROF, HRLPROF
+
+C.........  MODDAYHR contains data for day- and hour-specific data
+        USE MODDAYHR, ONLY: TMAT
+
 
         IMPLICIT NONE
 
@@ -71,13 +77,10 @@ C.........    SUBROUTINE ARGUMENTS:
         INTEGER     , INTENT(IN   ) :: JDATE                ! date YYYYDDD
         INTEGER     , INTENT(IN   ) :: JTIME                ! time 10000
         INTEGER     , INTENT(IN   ) :: TZONE                ! time zone (5 for Eastern)
-        INTEGER     , INTENT(IN   ) :: ZONES( NSRC )        ! src time zones
-        INTEGER     , INTENT(IN   ) :: TPF  ( NSRC )        ! src tmprl treatment flag
         INTEGER     , INTENT(IN   ) :: MONTH( 24, 0:23 )    ! source time zone's month-of-year 1...12
         INTEGER     , INTENT(IN   ) :: DAYOW( 24, 0:23 )    ! source time zone's day-of-week   1...7
         INTEGER     , INTENT(IN   ) :: DAYOM( 24, 0:23 )    ! source time zone's day-of-month  1...31
         CHARACTER(*), INTENT(IN   ) :: PNAME                ! met-based temp profile file name
-        REAL        , INTENT(  OUT) :: TMAT( NSRC,NPOL,24 ) ! temporal-profile coeffs
 
 C.........  EXTERNAL FUNCTIONS:
 
@@ -105,20 +108,16 @@ C***********************************************************************
 C   begin body of subroutine  MKTMAT
 
 C.........  Compute correct year-to-day conversion factor:
-
         YRFAC = YR2DAY( JDATE / 1000 )
 
 C..........    Compute index correction (offset by 1 because of
 C              1 + MOD(...) needed below
-
         HCORR = TZONE + 23
 
 C.........    Compute TMAT for current group of pollutants
-
         DO VV = 1, NPOL
 
 C.............  Skip record in case of NGRP > 1 and all fields not used
-            
             V = IPOL2D( VV,IGRP )
             IF ( V .LE. 0 ) CYCLE
 
@@ -135,8 +134,8 @@ C                   then don't want to base day-of-week adjustment on weekday
 C                   assumption.  The reader routines should set
 C                   Also update TMAT using met-based temporal profiles
 
-                IF ( MOD( TPF( S ), MTPRFAC ) .EQ. 0 .AND.
-     &               MOD( TPF( S ), WTPRFAC ) .EQ. 0       ) THEN
+                IF ( MOD( TPFLAG( S ), MTPRFAC ) .EQ. 0 .AND.
+     &               MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0       ) THEN
 
 C.....................  update TMAT with met-based year-to-hourprofiles (METFACS)
                     IF( IMET .GT. 0 ) THEN
@@ -147,13 +146,13 @@ C.....................  update TMAT with met-based year-to-hourprofiles (METFACS
 
                         DO H = 1, 24
 
-                            MON  = MONTH( H, ZONES( S ) )
-                            DOM  = DAYOM( H, ZONES( S ) )
-                            DAY  = DAYOW( H, ZONES( S ) )
+                            MON = MONTH( H, TZONES( S ) )
+                            DOM = DAYOM( H, TZONES( S ) )
+                            DAY = DAYOW( H, TZONES( S ) )
                             IHR = HRLPROF( S,DAY,V )
                             FAC = MONFAC_ORG( MON,IMTH ) *
      &                            DOMFAC( DOM,MON,IDOM )
-                            K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                            K   = 1 + MOD( H + HCORR - TZONES( S ), 24 )
                             TMAT( S,VV,H ) = FAC * HRLFAC( K,IHR )
 
                         END DO
@@ -162,12 +161,12 @@ C.....................  update TMAT with met-based year-to-hourprofiles (METFACS
 
                         DO H = 1, 24
 
-                            MON = MONTH( H, ZONES( S ) )
-                            DAY = DAYOW( H, ZONES( S ) )
+                            MON = MONTH( H, TZONES( S ) )
+                            DAY = DAYOW( H, TZONES( S ) )
                             IHR = HRLPROF( S,DAY,V )
                             FAC = MONFAC( MON,IMTH ) *
      &                            WEKFAC( DAY,IWEK )
-                            K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                            K   = 1 + MOD( H + HCORR - TZONES( S ), 24 )
                             TMAT( S,VV,H ) = FAC * HRLFAC( K,IHR )
 
                         END DO
@@ -179,7 +178,7 @@ C                    average-day emissions by multiplying it by 365.
 C                    Have to undo that here.
 C                    Adjust for week-normal data assuming whole week normalizer
                     
-                ELSE IF ( MOD( TPF( S ), WTPRFAC ) .EQ. 0 ) THEN
+                ELSE IF ( MOD( TPFLAG( S ), WTPRFAC ) .EQ. 0 ) THEN
 
 C.....................  update TMAT with met-based month-to-hour profiles (METFACS)
                     IF( IMET .GT. 0 ) THEN
@@ -190,12 +189,12 @@ C.....................  update TMAT with met-based month-to-hour profiles (METFA
 
                         DO H = 1, 24
 
-                            MON = MONTH( H, ZONES( S ) )
-                            DAY = DAYOW( H, ZONES( S ) )
-                            DOM = DAYOM( H, ZONES( S ) )
+                            MON = MONTH( H, TZONES( S ) )
+                            DAY = DAYOW( H, TZONES( S ) )
+                            DOM = DAYOM( H, TZONES( S ) )
                             IHR = HRLPROF( S,DAY,V )
                             FAC = YRFAC * DOMFAC( DOM,MON,IDOM )
-                            K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                            K   = 1 + MOD( H + HCORR - TZONES( S ), 24 )
                             TMAT( S,VV,H ) = FAC * HRLFAC( K,IHR )
 
                         END DO
@@ -204,10 +203,10 @@ C.....................  update TMAT with met-based month-to-hour profiles (METFA
 
                         DO H = 1, 24
 
-                            DAY = DAYOW( H, ZONES( S ) )
+                            DAY = DAYOW( H, TZONES( S ) )
                             IHR = HRLPROF( S,DAY,V )
                             FAC = YRFAC * WEKFAC( DAY,IWEK )
-                            K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                            K   = 1 + MOD( H + HCORR - TZONES( S ), 24 )
                             TMAT( S,VV,H ) = FAC * HRLFAC( K,IHR )
 
                         END DO
@@ -219,14 +218,14 @@ C                    average-weekday emissions by multiplying it by 365.
 C                    Have to undo that here.
 C                    Adjust for week-normal data assuming weekdays normalizer only applicable for EMS-95
                     
-                ELSE IF ( MOD( TPF( S ), WDTPFAC ) .EQ. 0 ) THEN
+                ELSE IF ( MOD( TPFLAG( S ), WDTPFAC ) .EQ. 0 ) THEN
 
                     DO H = 1, 24
 
-                        DAY = DAYOW( H, ZONES( S ) )
+                        DAY = DAYOW( H, TZONES( S ) )
                         FAC = YRFAC * XWKFAC( DAY,IWEK )
                         IHR = HRLPROF( S,DAY,V )
-                        K   = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                        K   = 1 + MOD( H + HCORR - TZONES( S ), 24 )
                         TMAT( S,VV,H ) = FAC * HRLFAC( K,IHR )
 
                     END DO
@@ -237,9 +236,9 @@ C                    Adjust without day-of-week factors
 
                     DO H = 1, 24
 
-                        DAY = DAYOW( H, ZONES( S ) )
+                        DAY = DAYOW( H, TZONES( S ) )
                         IHR = HRLPROF( S,DAY,V )
-                        K    = 1 + MOD( H + HCORR - ZONES( S ), 24 )
+                        K    = 1 + MOD( H + HCORR - TZONES( S ), 24 )
                         TMAT( S,VV,H ) = YRFAC * HRLFAC( K,IHR )
 
                     END DO
@@ -305,7 +304,7 @@ C                   APPLY hour-of-month profiles to monthly inventory
                         FAC = 1.0
                     ELSE IF( HOUR_TPROF == 'MONTH' ) THEN  ! convert annual to monthly before apply hour-of-month profiles from Gentpro
                         TVARNAME = 'MONTOT'
-                        MON = MONTH( H, ZONES( S ) )
+                        MON = MONTH( H, TZONES( S ) )
                         FAC = MONFAC_ORG( MON,IMTH )
                     END IF
 
@@ -318,7 +317,7 @@ C                   APPLY hour-of-month profiles to monthly inventory
                         CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                     ELSE IF( HOUR_TPROF == 'MONTH' ) THEN 
                         TVARNAME = 'MONTOT'
-                        MON = MONTH( H, ZONES( S ) )
+                        MON = MONTH( H, TZONES( S ) )
                         FAC = YRFAC * MON_DAYS( MON )
                     END IF
 
@@ -337,11 +336,13 @@ C                   APPLY hour-of-month profiles to monthly inventory
                     CALL M3EXIT( PROGNAME, TDATE, TTIME, MESG, 2 )
                 END IF
 
-                TMAT( S,VV,H ) = FAC * METDAT( IMET ) / TOT
+                TMAT( S,V,H ) = FAC * METDAT( IMET ) / TOT
                 
                 CALL NEXTIME( TDATE, TTIME, 10000 )
 
             END DO
+
+            DEALLOCATE( METDAT )
 
             END SUBROUTINE UPDATE_TMAT_METFACS
 

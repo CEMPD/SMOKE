@@ -56,7 +56,8 @@ C.........  This module contains data for day- and hour-specific data
         USE MODDAYHR, ONLY: DYPNAM, DYPDSC, NDYPOA, NDYSRC,
      &                      HRPNAM, HRPDSC, NHRPOA, NHRSRC,
      &                      LDSPOA, LHSPOA, LHPROF,
-     &                      INDXD, EMACD, INDXH, EMACH
+     &                      INDXD, EMACD, INDXH, EMACH,
+     &                      EMAC, EMACV, EMIST, EMFAC, TMAT
 
 C.........  This module contains the lists of unique source characteristics
         USE MODLISTS, ONLY: NINVIFIP, INVCFIP, MXIDAT, INVDNAM, INVDVTS
@@ -105,15 +106,6 @@ C.........  LOCAL PARAMETERS and their descriptions:
 
         CHARACTER(50), PARAMETER :: CVSW = '$Name$'  ! CVS revision tag
 
-C.........  Emission arrays
-        REAL   , ALLOCATABLE :: EMAC ( :,: ) !  inven emissions or activities
-        REAL   , ALLOCATABLE :: EMACV( :,: ) !  day-adjst emis or activities
-        REAL   , ALLOCATABLE :: EMIST( :,: ) !  timestepped output emssions
-        REAL   , ALLOCATABLE :: EMFAC( :,: ) !  mobile emission factors by source
-
-C.........  Temporal allocation Matrix.
-        REAL, ALLOCATABLE :: TMAT( :, :, : ) ! temporal allocation factors
-
 C.........  Array that contains the names of the inventory variables needed for
 C           this program
         CHARACTER(IOVLEN3) IVARNAMS( MXINVARR )
@@ -139,18 +131,13 @@ C.........  Reshaped input variables and output variables
 C...........   Logical names and unit numbers
 
         INTEGER      :: CDEV = 0!  unit number for region codes file
-        INTEGER      :: EDEV = 0!  unit number for ef file list
         INTEGER      :: HDEV = 0!  unit number for holidays file
         INTEGER         KDEV    !  unit number for time periods file
         INTEGER         LDEV    !  unit number for log file
         INTEGER         PDEV    !  unit number for supplemental tmprl file
-        INTEGER         RDEV    !  unit number for temporal profile file
         INTEGER         SDEV    !  unit number for ASCII inventory file
-        INTEGER         TDEV    !  unit number for emission processes file
-        INTEGER         XDEV    !  unit no. for cross-reference file
 
         CHARACTER(16) :: ANAME = ' '    !  logical name for ASCII inven input
-        CHARACTER(16) :: GNAME = ' '    !  ungridding matrix
         CHARACTER(16) :: DNAME = 'NONE' !  day-specific  input file, or "NONE"
         CHARACTER(16) :: ENAME = ' '    !  logical name for I/O API inven input
         CHARACTER(16) :: FNAME = ' '    !  emission factors file
@@ -264,8 +251,7 @@ C.........  Prompt for and open input files
 C.........  Also, store source-category specific information in the MODINFO
 C           module.
         CALL OPENTMPIN( NFLAG, PFLAG, ENAME, ANAME, DNAME,
-     &                  HNAME, GNAME, SDEV, XDEV, RDEV, CDEV, HDEV,
-     &                  KDEV, TDEV, EDEV, PYEAR )
+     &                  HNAME, SDEV, CDEV, HDEV, KDEV, PYEAR )
 
 C.........  Determine status of some files for program control purposes
         DFLAG = ( DNAME .NE. 'NONE' )  ! Day-specific emissions
@@ -845,7 +831,7 @@ C.................  Generate and write hourly emissions for current hour
 
                 CALL GENHEMIS( N, NGRP, NGSZ, JDATE, JTIME, TZONE, DNAME, HNAME,
      &                  PNAME, ALLIN2D( 1,N ), EANAM2D( 1,N ), EAREAD2D,
-     &                  EMAC, EMFAC, EMACV, TMAT, EMIST, LDATE )
+     &                  LDATE )
 
                 DO I = 1, NGSZ      !  Loop through pollutants/emission-types in this group
                                     !  Skip blanks that can occur when NGRP > 1
