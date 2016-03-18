@@ -603,7 +603,7 @@ C...........  Process line depending on file format and source category
                     CALL RDDATAMEDSPT( LINE, READDATA, READPOL,
      &                                NPOLPERLN, INVYEAR, CORS, BLID,
      &                                DESC, HT, DM, TK, FL, VL, SIC,
-     &                                LAT, LON, HDRFLAG, EFLAG )
+     &                                LAT, LON, HDRFLAG )
                 END SELECT
 
             CASE( ORLFMT )

@@ -1,8 +1,7 @@
 
         SUBROUTINE RDDATAMEDSPT( LINE, READDATA, READPOL, NPOLPERLN, 
      &                          IYEAR, CORS, BLID, DESC, HT, DM, TK,
-     &                          FL, VL, SIC, LAT, LON, HDRFLAG, 
-     &                          EFLAG )
+     &                          FL, VL, SIC, LAT, LON, HDRFLAG )
 
 C***********************************************************************
 C  subroutine body starts at line 156
@@ -75,7 +74,6 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(9),       INTENT (OUT) :: LAT                   ! stack latitude
         CHARACTER(9),       INTENT (OUT) :: LON                   ! stack longitude
         LOGICAL,            INTENT (OUT) :: HDRFLAG               ! true: line is a header line
-        LOGICAL,            INTENT (OUT) :: EFLAG                 ! error flag
 
 C...........   Local parameters, indpendent
         INTEGER, PARAMETER :: MXPOLFIL = 53  ! maximum pollutants in file
@@ -108,8 +106,8 @@ C   begin body of subroutine RDDATAMEDSPT
         READPOL( 6 ) = 'NH3'
 
 C.........  set year
-C        INY = STR2INT( LINE( 59:60 ) )
-C        IYEAR = 2000 + INY
+        INY = STR2INT( LINE( 59:60 ) )
+        IYEAR = 2000 + INY
 
 C.........  Read source data
         CORS = ''  ! DOE plant ID

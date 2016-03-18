@@ -95,9 +95,10 @@ C           the various data fields
         GAI = ADJUSTL( LINE( 71:73 ) )  ! GAI lookup code
 
         IF( .NOT. ALLOCATED( COABDST ) ) THEN
+           EFLAG = .TRUE.
            MESG='ERROR: MUST set IMPORT_MEDS_YN to Y to process'
      &        //' pregridded MEDS-formatted inventory'
-           CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
+           CALL M3MESG( MESG )
         END IF
 
         I = INDEX1( GAI, NMEDGAI, COABDST( :,1 ) )
