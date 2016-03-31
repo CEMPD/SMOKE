@@ -1,0 +1,42 @@
+
+!***********************************************************************
+!
+!  Include file SETDECL.EXT
+!
+!  DESCRIPTION:
+!     Contains declarations for the FileSetAPI functions
+!
+!  REVISION HISTORY:
+!     Created 6/02 by C. Seppanen
+!
+!***************************************************************************
+!
+! Project Title: FileSetAPI
+! File: @(#)$Id$
+!
+! COPYRIGHT (C) 2004, Environmental Modeling for Policy Development
+! All Rights Reserved
+!
+! Carolina Environmental Program
+! University of North Carolina at Chapel Hill
+! 137 E. Franklin St., CB# 6116
+! Chapel Hill, NC 27599-6116
+!
+! smoke@unc.edu
+!
+! Pathname: $Source$
+! Last updated: $Date$ 
+!
+!*************************************************************************
+
+!.........  Parameters
+       INTEGER, PARAMETER :: ALLFILES = -1         ! flag: read all files in set
+
+!.........  Function declarations       
+       LOGICAL       OPENSET     ! open a file set
+       LOGICAL       DESCSET     ! get file set description
+       LOGICAL       READSET     ! read from a file set
+       LOGICAL       WRITESET    ! write to a file set
+       LOGICAL       CLOSESET    ! close a file set
+       CHARACTER(16) PROMPTSET   ! prompt for file name, then open file set
+       

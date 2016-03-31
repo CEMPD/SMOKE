@@ -1,0 +1,20 @@
+C @(#)$Header$
+
+C.........   Output formatting parameters
+
+        CHARACTER(5),  PARAMETER :: BLANK5   = ' '
+        CHARACTER(10), PARAMETER :: BLANK10  = ' '
+        CHARACTER(16), PARAMETER :: BLANK16  = ' '
+
+C.........   Physical constants and conversion factors
+        REAL, PARAMETER :: DAY2SEC = 24. * 3600.  ! Days to seconds 
+        REAL, PARAMETER :: FT2M    = 0.3048       ! Feet to meters 
+        REAL, PARAMETER :: FT2M3   = FT2M ** 3    ! Cubic feet to cubic meters 
+        REAL, PARAMETER :: FLWE2M  = FT2M3 / 60.0 ! ft^3/min to m^3/sec
+        REAL, PARAMETER :: FTOC    = 5./9.        ! Farhenheit to Celcius 
+        REAL, PARAMETER :: SEC2DAY = 1. / DAY2SEC ! Days to seconds 
+        REAL, PARAMETER :: TON2GM  = 907184.74    ! Tons to grams 
+        REAL, PARAMETER :: GM2TON  = 1. / TON2GM  ! Grams to tons 
+ 
+C.........  Indicator for inventory header fields
+        CHARACTER, PARAMETER :: CINVHDR = '#'
