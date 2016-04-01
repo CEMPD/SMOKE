@@ -1,5 +1,5 @@
 
-        SUBROUTINE OPENGRWOUT( ENAME, FYEAR, NAME1, SFLAG, IFLAG,
+        SUBROUTINE OPENGRWOUT( ENAME, FYEAR, NAME1, SFLAG,
      &                         OFLAG, ODEV, DDEV, VDEV, RDEV,
      &                         ONAME, VARPATH )
 
@@ -70,7 +70,6 @@ C...........   SUBROUTINE ARGUMENTS
         INTEGER      , INTENT (IN) :: FYEAR ! future year or 0 for no projection
         CHARACTER(80), INTENT (IN) :: NAME1 ! physical name part for i/o api
         LOGICAL      , INTENT (IN) :: SFLAG ! true: output SMOKE file
-        LOGICAL      , INTENT (IN) :: IFLAG ! true: output IDA file
         LOGICAL      , INTENT (IN) :: OFLAG ! true: output ORL file
         INTEGER      , INTENT(OUT) :: ODEV  ! output map inventory file
         INTEGER      , INTENT(OUT) :: DDEV  ! IDA output emissions file number
@@ -204,24 +203,6 @@ C.........  Provide variable path
 
 C.........  Get index for source category to use for output file names
         CATIDX = INDEX1( CATEGORY, NCAT, CATLIST )
-
-C.........  Prompt for emissions IDA file
-        IF( IFLAG .AND. NIPOL .GT. 0 ) THEN
-            MESG  = 'Enter logical name for the IDA EMISSIONS ' //
-     &              'output file'
-            INAME = ANAMLIST( CATIDX ) // '_O'
-
-            DDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
-        END IF
-
-C.........  Prompt for activity IDA file
-        IF( IFLAG .AND. NIACT .GT. 0 ) THEN
-            MESG  = 'Enter logical name for the IDA ACTIVITY ' //
-     &              'output file'
-            INAME = ANAMLIST( CATIDX ) // '_AO'
-
-            VDEV = PROMPTFFILE( MESG, .FALSE., .TRUE., INAME, PROGNAME )
-        END IF
 
 C.........  Prompt for emissions ORL file
         IF( OFLAG ) THEN

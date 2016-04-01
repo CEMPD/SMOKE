@@ -1,201 +1,136 @@
-# Version @(#)$Id$ 
-# Path    $Source$
-# Date    $Date$ 
+#.........................................................................
+# Version "@(#)$Header$"
+# WRF-Chem/RTOFS SMOKE
+# Copyright (C) 2005 Baron Advanced Meteorological Systems, LLC.
+# Distributed under the GNU GENERAL PUBLIC LICENSE version 2
+# See file "GPL.txt" for conditions of use.
+#.........................................................................
+#  Environment Variables:
+#       BIN     machine/OS/compiler/mode type. Shows up as suffix
+#               for "Makeinclude.${BIN}" to determine compilation
+#               flags, and in ${OBJDIR} and $(INSTALL) to determine
+#               binary directories
+#       INSTALL installation-directory root, used for "make install":
+#               SMOKE executables will be installed in $(INSTALL)/${BIN}
+#.........................................................................
+#  Directories:
+#       ${BASEDIR}  is the root directory for the SMOKE source and
+#                   the (machine/compiler/flag-specific) binary
+#                   object/library/executable directories.
+#       ${SRCDIR}   is the source directory for this Makefile
+#       ${INCDIR}   is the source directory for SMOKE INCLUDE-files
+#       ${IODIR}    is the source directory for the I/O API library
+#       ${OBJDIR}   is the current machine/compiler/flag-specific
+#                   build-directory
+#.........................................................................
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
-LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
-##
+#       ---------------     Definitions:   -------------------------
 
-all: aggwndw beld3to2 bluesky2inv cemscan extractida gcntl4carb geofac gentpro invsplit layalloc metcombine metscan \
-     pktreduc smk2emis surgtool uam2ncf 
+.SUFFIXES: .m4 .c .F .f .mod
 
-debug: aggwndw.debug beld3to2.debug bluesky2inv.debug cemscan.debug extractida.debug invsplit.debug \
-       gcntl4carb.debug gentpro.debug geofac.debug layalloc.debug metcombine.debug metscan.debug pktreduc.debug smk2emis.debug \
-       surgtool.debug uam2ncf.debug  
+include ../Makeinclude
 
-.f.o:
-	$(FC) $(FFLAGS) -c -o $@ $<	
+SRCDIR = ${BASEDIR}/emutil
 
-ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
+FSRC =  \
+aggwndw.f     beld3to2.f    bluesky2inv.f   cemscan.f    \
+extractida.f  gentpro.f     geofac.f        invsplit.f   \
+layalloc.f    metcombine.f  metscan.f       pktreduc.f   \
+smk2emis.f    surgtool.f    uam2ncf.f       gcntl4carb.f
 
-AGGW=aggwndw.o
+OBJ  =  $(FSRC:.f=.o)
 
-aggwndw: $(AGGW) $(ALLI) $(LIBPATH)
-	echo AGGWNDW:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(AGGW) $(LIBS)
+EXE  = aggwndw  beld3to2  bluesky2inv  cemscan  extractida \
+       geofac   invsplit  metcombine   metscan  pktreduc   \
+       smk2emis surgtool  uam2ncf      gentpro  gcntl4carb \
+       layalloc
 
-aggwndw.debug: $(AGGW) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'AGGWNDW (debug):'
-	$(FC) $(DBGFLAGS) -o $(@) $(AGGW) $(LIBS_DEBUG)
+#      ----------------------   TOP-LEVEL TARGETS:   ------------------
 
-B3TO2=beld3to2.o
-
-beld3to2: $(B3TO2) $(ALLI) $(LIBPATH)
-	echo BELD3TO2:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(B3TO2) $(LIBS)
-
-beld3to2.debug: $(B3TO2) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'BELD3TO2 (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(B3TO2) $(LIBS_DEBUG)
-
-BL2IV=bluesky2inv.o
-
-bluesky2inv: $(BL2IV) $(ALLI) $(LIBPATH)
-	echo BlueSky2Inv:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(BL2IV) $(LIBS)
-
-bluesky2inv.debug: $(BL2IV) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'BlueSky2Inv (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(BL2IV) $(LIBS_DEBUG)
-
-CEM=cemscan.o
-
-cemscan: $(CEM) $(ALLI) $(LIBPATH)
-	echo CEMScan:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(CEM) $(LIBS)
-
-cemscan.debug: $(CEM) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'CEMScan (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(CEM) $(LIBS_DEBUG)
-
-EXTI=extractida.o
-
-extractida: $(EXTI) $(ALLI) $(LIBPATH)
-	echo EXTRACTIDA:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(EXTI) $(LIBS)
-
-extractida.debug: $(EXTI) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'EXTRACTIDA (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(EXTI) $(LIBS_DEBUG)
-
-GCNTL=gcntl4carb.o
-
-gcntl4carb: $(GCNTL) $(ALLI) $(LIBPATH)
-	echo GCNTL4CARB:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS)
-
-gcntl4carbi.debug: $(GCNTL) $(ALLI) $(LIBPATH)
-	echo GCNTL4CARB:
-	$(FC) $(DBGFFLAGS) -o $(SMK_BIN)/$(@) $(GCNTL) $(LIBS_DEBUG)
-
-GEOF=geofac.o
-
-geofac: $(GEOF) $(ALLI) $(LIBPATH)
-	echo GEOFAC:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GEOF) $(LIBS)
-
-geofac.debug: $(GEOF) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'GEOFAC (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(GEOF) $(LIBS_DEBUG)
-
-GTPR=gentpro.o
-
-gentpro: $(GTPR) $(ALLI) $(LIBPATH)
-	echo GENTPRO:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(GTPR) $(LIBS)
-
-gentpro.debug: $(GTPR) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'GENTPRO (debug):'
-	$(FC) $(DBGFLAGS) -o $(@) $(GTPR) $(LIBS_DEBUG)
-
-INVS=invsplit.o
-
-invsplit: $(INVS) $(ALLI) $(LIBPATH)
-	echo INVSPLIT:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(INVS) $(LIBS)
-
-invsplit.debug: $(INVS) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'INVSPLIT (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(INVS) $(LIBS_DEBUG)
-
-LAYA=layalloc.o
-
-layalloc: $(LAYA) $(ALLI) $(LIBPATH)
-	echo LAYALLOC:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(LAYA) $(LIBS)
-
-layalloc.debug: $(LAYA) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'LAYALLOC (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(LAYA) $(LIBS_DEBUG)
-
-MCMB=metcombine.o
-
-metcombine: $(MCMB) $(ALLI) $(LIBPATH)
-	echo METCOMBINE:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MCMB) $(LIBS)
-
-metcombine.debug: $(MCMB) $(ALLI) $(LIBPATH_DEBUG)
-	$(FC) $(DBGFLAGS) -o $(@) $(MCMB) $(LIBS_DEBUG)
-
-MSCN=metscan.o
-#
-metscan: $(MSCN) $(ALLI) $(LIBPATH)
-	echo METSCAN:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(MSCN) $(LIBS)
-#
-metscan.debug: $(MSCN) $(ALLI) $(LIBPATH_DEBUG)
-	$(FC) $(DBGFLAGS) -o $(@) $(MSCN) $(LIBS_DEBUG)
-
-PKT=pktreduc.o
-
-pktreduc: $(PKT) $(ALLI) $(LIBPATH)
-	echo PKTREDUC:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(PKT) $(LIBS)
-
-pktreduc.debug: $(PKT) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'PKTREDUC (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(PKT) $(LIBS_DEBUG)
-
-SMKE=smk2emis.o
-
-smk2emis: $(SMKE) $(ALLI) $(LIBPATH)
-	echo SMK2EMIS:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(SMKE) $(LIBS)
-
-smk2emis.debug: $(SMKE) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'SMK2EMIS (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(SMKE) $(LIBS_DEBUG)
-
-SURG=surgtool.o
-
-surgtool: $(SURG) $(ALLI) $(LIBPATH)
-	echo SURGTOOL:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(SURG) $(LIBS)
-
-surgtool.debug: $(SURG) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'SURGTOOL (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(SURG) $(LIBS_DEBUG)
-
-UAMC=uam2ncf.o
-
-uam2ncf: $(UAMC) $(ALLI) $(LIBPATH)
-	echo UAM2NCF:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(UAMC) $(LIBS)
-
-uam2ncf.debug: $(UAMC) $(ALLI) $(LIBPATH_DEBUG)
-	echo 'UAM2NCF (debug):'
-	$(FC) $(FFLAGS) -o $(@) $(UAMC) $(LIBS_DEBUG)
-
-#
-## Module dependencies
-#
-include $(MD_SRC)/modmake.inc
-include $(ETDSRC)/modmake.inc
-include $(FS_ROOT)/modmake.inc
-
-gentpro.o : $(MODINFO) $(MODSURG) $(MODSTCY) $(MODMET) $(MODGRID) $(MODMBSET)
-	$(FC) $(FFLAGS) -c -o $@ gentpro.f
-
-invsplit.o : $(MODINFO) 
-	$(FC) $(FFLAGS) -c -o $@ invsplit.f
-
-surgtool.o : $(MODGRID) $(MODSURG)
-	$(FC) $(FFLAGS) -c -o $@ surgtool.f
-
-smk2emis.o  : $(MODINFO)
-	$(FC) $(FFLAGS) -c -o $@ smk2emis.f
+all: ${EXE}
 
 clean:
-	/bin/rm -f *.o
+	cd ${OBJDIR}; /bin/rm ${OBJ} ${EXE}
+
+rmexe:
+	cd ${OBJDIR}; rm ${EXE}
+
+relink:
+	make -i rmexe ; make all
+
+install:  all
+	cd ${OBJDIR}; cp ${EXE} ${INSTDIR}
+
+
+#      -----------------------   RULES:   -----------------------------
+
+%.o : %.mod        #  Disable "gmake"s obnoxious implicit Modula-2 rule !!
+
+.f.o:
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -c $(SRCDIR)/$<
+
+
+#      -----------------------   DEPENDENCIES:------------------------
+
+aggwndw.o : $(MODGRID)
+bluesky2inv.o : $(MODSTCY)
+gentpro.o : $(MODINFO)
+gentpro.o : $(MODSOURC)
+gentpro.o : $(MODGRID)
+gentpro.o : $(MODSURG)
+gentpro.o : $(MODSTCY)
+geofac.o : $(MODFILESET)
+invsplit.o : $(MODINFO)
+smk2emis.o : $(MODINFO)
+surgtool.o : $(MODSURG)
+surgtool.o : $(MODGRID)
+
+#  ---------------------------  ${EXE} Program builds:  -----------------
+
+aggwndw: aggwndw.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+beld3to2: beld3to2.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+bluesky2inv: bluesky2inv.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+cemscan: cemscan.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+extractida: extractida.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+gcntl4carb: gcntl4carb.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+gentpro: gentpro.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+geofac: geofac.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+invsplit: invsplit.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+layalloc: layalloc.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+metcombine: metcombine.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+metscan: metscan.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+pktreduc: pktreduc.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+smk2emis: smk2emis.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+surgtool: surgtool.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
+uam2ncf: uam2ncf.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)

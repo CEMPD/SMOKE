@@ -4,8 +4,6 @@
      &                          LAT, LON, HDRFLAG, EFLAG )
 
 C***********************************************************************
-C  subroutine body starts at line 156
-C
 C  DESCRIPTION:
 C      This subroutine processes a line from an ORL FIRE format wildfire
 C      point-source inventory file and returns the unique source characteristics.
@@ -45,7 +43,7 @@ C.........  This module contains the information about the source category
         IMPLICIT NONE
 
 C...........   INCLUDES
-         INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
+        INCLUDE 'EMCNST3.EXT'   !  emissions constant parameters
 
 C...........   EXTERNAL FUNCTIONS and their descriptions:
         CHARACTER(2)           CRLF
@@ -57,7 +55,7 @@ C...........   SUBROUTINE ARGUMENTS
         CHARACTER(*),       INTENT  (IN) :: LINE                  ! input line
         CHARACTER(*),       INTENT (OUT) :: READDATA( NDATPERLN,NPTPPOL3 )! array of data values
         CHARACTER(IOVLEN3), INTENT (OUT) :: READPOL( NDATPERLN )          ! array of pollutant names
-        INTEGER,            INTENT (OUT) :: NDATPERLN             ! number of data values per line
+        INTEGER,            INTENT(INOUT):: NDATPERLN             ! number of data values per line
         INTEGER,            INTENT (OUT) :: IYEAR                 ! inventory year
         CHARACTER(40),      INTENT (OUT) :: DESC                  ! plant description
         CHARACTER(SICLEN3), INTENT (OUT) :: SIC                   ! Material burned code (stored in SIC)

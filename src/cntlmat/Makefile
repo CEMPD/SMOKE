@@ -1,59 +1,119 @@
-# Version @(#)$Id$ 
-# Path    $Source$
-# Date    $Date$ 
+#.........................................................................
+# Version "@(#)$Header$"
+# Copyright (C) 2009 Baron Advanced Meteorological Systems, LLC.
+# Distributed under the GNU GENERAL PUBLIC LICENSE version 2
+# See file "GPL.txt" for conditions of use.
+#.........................................................................
+#  Environment Variables:
+#       BIN     machine/OS/compiler/mode type. Shows up as suffix
+#               for "Makeinclude.${BIN}" to determine compilation
+#               flags, and in ${OBJDIR} and $(INSTALL) to determine
+#               binary directories
+#       INSTALL installation-directory root, used for "make install":
+#               SMOKE executables will be installed in $(INSTALL)/${BIN}
+#.........................................................................
+#  Directories:
+#       ${BASEDIR}  is the root directory for the SMOKE source and
+#                   the (machine/compiler/flag-specific) binary
+#                   object/library/executable directories.
+#       ${SRCDIR}   is the source directory for this Makefile
+#       ${INCDIR}   is the source directory for SMOKE INCLUDE-files
+#       ${IODIR}    is the source directory for the I/O API library
+#       ${OBJDIR}   is the current machine/compiler/flag-specific
+#                   build-directory
+#.........................................................................
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
-LIBPATH       = $(SMK_BIN)/libsmoke.a  $(TOOLS_BIN)/libedsstools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a  $(TOOLS_BIN)/libedsstools.debug.a
-#
+#       ---------------     Definitions:   -------------------------
 
-all: cntlmat
+.SUFFIXES: .m4 .c .F .f .mod
 
-debug: cntlmat.debug
+include ../Makeinclude
+
+SRCDIR = ${BASEDIR}/cntlmat
+
+FSRC =  \
+cntlmat.f   alocpkts.f  asgncntl.f  errpkts.f   \
+fillcdat.f  fillcntl.f  genmultc.f  genproj.f   genreact.f  \
+opencmat.f  openctmp.f  openpmat.f  openrmat.f  pktloop.f   \
+procpkts.f  rdpacket.f  wcntlrep.f  wrctmp.f    wrrmat.f
+
+OBJ  =  $(FSRC:.f=.o)
+
+EXE  = cntlmat
+
+
+#      ----------------------   TOP-LEVEL TARGETS:   ------------------
+
+all: ${OBJDIR} ${EXE}
+
+clean:
+	cd ${OBJDIR}; /bin/rm ${OBJ} ${EXE}
+
+rmexe:
+	cd ${OBJDIR}; rm ${EXE}
+
+relink:
+	make -i rmexe ; make all
+
+install:  all
+	cd ${OBJDIR}; cp ${EXE} ${INSTDIR}
+
+
+#      -----------------------   RULES:   -----------------------------
+
+%.o : %.mod        #  Disable "gmake"s obnoxious implicit Modula-2 rule !!
 
 .f.o:
-	$(FC) $(FFLAGS) -c -o $@ $<	
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -c $(SRCDIR)/$<
 
-ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT 
 
-#
-CTL=cntlmat.o alocpkts.o asgncntl.o errpkts.o \
-    fillcdat.o fillcntl.o  genmultc.o genproj.o genreact.o \
-    openpmat.o opencmat.o openctmp.o openrmat.o pktloop.o \
-    procpkts.o rdpacket.o wrctmp.o wrrmat.o wcntlrep.o
-#
-cntlmat: $(CTL) $(ALLI) $(LIBPATH)
-	echo CNTLMAT:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(CTL) $(LIBS)
-#
-cntlmat.debug: $(CTL) $(ALLI) $(LIBPATH_DEBUG)
-	echo CNTLMAT \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(CTL) $(LIBS_DEBUG)
-#
-# Module dependencies
-#
-include $(MD_SRC)/modmake.inc
-include $(ETDSRC)/modmake.inc
-include $(FS_ROOT)/modmake.inc
+#      -----------------------   DEPENDENCIES:------------------------
 
-alocpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO)
-asgncntl.o: $(MODSOURC) $(MODXREF) $(MODINFO)
-cntlmat.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO) $(MODFILESET)
-fillcdat.o: $(MODCNTRL) $(CL_SRC)/CPKTDAT.EXT
-fillcntl.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
-genmultc.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
-genproj.o:  $(MODSOURC) $(MODCNTRL) $(MODINFO)
-genreact.o: $(MODSOURC) $(MODCNTRL) $(MODSPRO) $(MODINFO)
-opencmat.o: $(MODCNTRL) $(MODINFO) $(MODFILESET)
-openpmat.o: $(MODINFO) $(MODCNTRL) $(MODFILESET)
-openrmat.o: $(MODINFO) $(MODFILESET)
-pktloop.o: $(MODXREF) $(MODLISTS) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
-procpkts.o: $(MODCNTRL) $(MODLISTS) $(MODINFO) $(MODXREF)
-rdpacket.o: $(MODCNTRL) $(MODINFO) $(CL_SRC)/CPKTDAT.EXT
-wrctmp.o: $(MODINFO)
-wcntlrep.o: $(MODSOURC) $(MODCNTRL) $(MODINFO)
+alocpkts.o : $(MODCNTRL)
+asgncntl.o : $(MODSOURC)
+asgncntl.o : $(MODXREF)
+asgncntl.o : $(MODINFO)
+asgncntl.o : $(MODCNTRL)
+cntlmat.o : $(MODINFO)
+cntlmat.o : $(MODFILESET)
+fillcdat.o : $(MODCNTRL)
+fillcntl.o : $(MODXREF)
+fillcntl.o : $(MODINFO)
+genmultc.o : $(MODSOURC)
+genmultc.o : $(MODCNTRL)
+genmultc.o : $(MODINFO)
+genproj.o : $(MODSOURC)
+genproj.o : $(MODCNTRL)
+genproj.o : $(MODINFO)
+genreact.o : $(MODSOURC)
+genreact.o : $(MODCNTRL)
+genreact.o : $(MODSPRO)
+genreact.o : $(MODINFO)
+opencmat.o : $(MODCNTRL)
+opencmat.o : $(MODINFO)
+opencmat.o : $(MODFILESET)
+openpmat.o : $(MODINFO)
+openpmat.o : $(MODCNTRL)
+openpmat.o : $(MODFILESET)
+openrmat.o : $(MODINFO)
+openrmat.o : $(MODFILESET)
+pktloop.o : $(MODXREF)
+pktloop.o : $(MODINFO)
+procpkts.o : $(MODSOURC)
+procpkts.o : $(MODXREF)
+procpkts.o : $(MODCNTRL)
+procpkts.o : $(MODINFO)
+rdpacket.o : $(MODINFO)
+wcntlrep.o : $(MODSOURC)
+wcntlrep.o : $(MODCNTRL)
+wcntlrep.o : $(MODINFO)
+wrctmp.o : $(MODINFO)
 
-#
-clean:
-	/bin/rm -f *.o
+#  ---------------------------  ${EXE} Program builds:  -----------------
+
+${OBJDIR}:
+	mkdir -p ${OBJDIR}
+
+cntlmat: $(OBJ)
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+

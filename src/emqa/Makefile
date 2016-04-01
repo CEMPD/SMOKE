@@ -1,58 +1,155 @@
-# Version @(#)$Id$ 
-# Path    $Source$
-# Date    $Date$ 
+#.........................................................................
+# Version "@(#)$Header$"
+# Copyright (C) 2009 Baron Advanced Meteorological Systems, LLC.
+# Distributed under the GNU GENERAL PUBLIC LICENSE version 2
+# See file "GPL.txt" for conditions of use.
+#.........................................................................
+#  Environment Variables:
+#       BIN     machine/OS/compiler/mode type. Shows up as suffix
+#               for "Makeinclude.${BIN}" to determine compilation
+#               flags, and in ${OBJDIR} and $(INSTALL) to determine
+#               binary directories
+#       INSTALL installation-directory root, used for "make install":
+#               SMOKE executables will be installed in $(INSTALL)/${BIN}
+#.........................................................................
+#  Directories:
+#       ${BASEDIR}  is the root directory for the SMOKE source and
+#                   the (machine/compiler/flag-specific) binary
+#                   object/library/executable directories.
+#       ${SRCDIR}   is the source directory for this Makefile
+#       ${INCDIR}   is the source directory for SMOKE INCLUDE-files
+#       ${IODIR}    is the source directory for the I/O API library
+#       ${OBJDIR}   is the current machine/compiler/flag-specific
+#                   build-directory
+#.........................................................................
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
-LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
+#       ---------------     Definitions:   -------------------------
 
-all: smkreport
-#
-debug: smkreport.debug
+.SUFFIXES: .m4 .c .F .f .mod
+
+include ../Makeinclude
+
+SRCDIR = ${BASEDIR}/emqa
+
+FSRC =  \
+asgnbins.f   bldrepidx.f  genrprt.f   openrepin.f  openrepout.f  qarepin.f      \
+rdgrps.f     rdrepin.f    rdrprts.f   repmrggrd.f  repunits.f    scanrepc.f     \
+selectsrc.f  smkreport.f wrrephdr.f   wrrepout.f
+
+OBJ  =  $(FSRC:.f=.o)
+
+EXE  = smkreport
+
+
+#      ----------------------   TOP-LEVEL TARGETS:   ------------------
+
+all: ${OBJDIR} ${EXE}
+
+clean:
+	cd ${OBJDIR}; /bin/rm ${OBJ} ${EXE}
+
+rmexe:
+	cd ${OBJDIR}; rm ${EXE}
+
+relink:
+	make -i rmexe ; make all
+
+install:  all
+	cd ${OBJDIR}; cp ${EXE} ${INSTDIR}
+
+
+#      -----------------------   RULES:   -----------------------------
+
+%.o : %.mod        #  Disable "gmake"s obnoxious implicit Modula-2 rule !!
 
 .f.o:
-	$(FC) $(FFLAGS) -c -o $@ $<	
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -c $(SRCDIR)/$<
 
-ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
-SMR=smkreport.o asgnbins.o bldrepidx.o genrprt.o openrepin.o   \
-    openrepout.o qarepin.o rdgrps.o rdrepin.o rdrprts.o repmrggrd.o repunits.o\
-    scanrepc.o selectsrc.o wrrephdr.o wrrepout.o
+#      -----------------------   DEPENDENCIES:------------------------
 
-smkreport: $(SMR) $(ALLI) $(LIBPATH)
-	echo SMKREPORT:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(SMR) $(LIBS)
+asgnbins.o : $(MODSOURC)
+asgnbins.o : $(MODLISTS)
+asgnbins.o : $(MODREPRT)
+asgnbins.o : $(MODREPBN)
+asgnbins.o : $(MODGRID)
+asgnbins.o : $(MODELEV)
+asgnbins.o : $(MODSTCY)
+asgnbins.o : $(MODINFO)
+bldrepidx.o : $(MODREPRT)
+bldrepidx.o : $(MODREPBN)
+bldrepidx.o : $(MODTMPRL)
+bldrepidx.o : $(MODCNTRL)
+bldrepidx.o : $(MODINFO)
+bldrepidx.o : $(MODFILESET)
+genrprt.o : $(MODSOURC)
+genrprt.o : $(MODREPRT)
+genrprt.o : $(MODREPBN)
+genrprt.o : $(MODTMPRL)
+genrprt.o : $(MODCNTRL)
+genrprt.o : $(MODINFO)
+openrepin.o : $(MODREPRT)
+openrepin.o : $(MODTMPRL)
+openrepin.o : $(MODREPBN)
+openrepin.o : $(MODCNTRL)
+openrepin.o : $(MODINFO)
+openrepin.o : $(MODFILESET)
+openrepout.o : $(MODREPRT)
+qarepin.o : $(MODREPRT)
+qarepin.o : $(MODSTCY)
+qarepin.o : $(MODINFO)
+rdgrps.o : $(MODREPRT)
+rdgrps.o : $(MODGRID)
+rdgrps.o : $(MODSTCY)
+rdrepin.o : $(MODSOURC)
+rdrepin.o : $(MODREPRT)
+rdrepin.o : $(MODREPBN)
+rdrepin.o : $(MODCNTRL)
+rdrepin.o : $(MODELEV)
+rdrepin.o : $(MODLISTS)
+rdrepin.o : $(MODGRID)
+rdrepin.o : $(MODINFO)
+rdrepin.o : $(MODFILESET)
+rdrprts.o : $(MODREPRT)
+rdrprts.o : $(MODINFO)
+repmrggrd.o : $(MODSOURC)
+repmrggrd.o : $(MODREPRT)
+repmrggrd.o : $(MODREPBN)
+repmrggrd.o : $(MODGRID)
+repunits.o : $(MODREPRT)
+repunits.o : $(MODREPBN)
+repunits.o : $(MODTMPRL)
+repunits.o : $(MODINFO)
+scanrepc.o : $(MODREPRT)
+scanrepc.o : $(MODINFO)
+selectsrc.o : $(MODSOURC)
+selectsrc.o : $(MODREPRT)
+selectsrc.o : $(MODREPBN)
+selectsrc.o : $(MODELEV)
+selectsrc.o : $(MODINFO)
+smkreport.o : $(MODREPRT)
+smkreport.o : $(MODREPBN)
+smkreport.o : $(MODGRID)
+smkreport.o : $(MODINFO)
+wrrephdr.o : $(MODSOURC)
+wrrephdr.o : $(MODLISTS)
+wrrephdr.o : $(MODREPRT)
+wrrephdr.o : $(MODREPBN)
+wrrephdr.o : $(MODSTCY)
+wrrephdr.o : $(MODGRID)
+wrrephdr.o : $(MODINFO)
+wrrepout.o : $(MODSOURC)
+wrrepout.o : $(MODLISTS)
+wrrepout.o : $(MODREPRT)
+wrrepout.o : $(MODREPBN)
+wrrepout.o : $(MODSTCY)
+wrrepout.o : $(MODINFO)
 
-smkreport.debug: $(SMR) $(ALLI) $(LIBPATH_DEBUG)
-	echo SMKREPORT \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(SMR) $(LIBS_DEBUG)
-#
-#
-include $(MD_SRC)/modmake.inc
-include $(ETDSRC)/modmake.inc
-include $(FS_ROOT)/modmake.inc
+#  ---------------------------  ${EXE} Program builds:  -----------------
 
-asgnbins.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODELEV) \
-            $(MODSTCY) $(MODINFO) $(MODGRID)
-bldrepidx.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODFILESET) $(MODCNTRL)
-genrprt.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODCNTRL) $(MODINFO) $(MODSTCY) 
-openrepin.o: $(MODREPRT) $(MODREPBN) $(MODTMPRL) $(MODINFO) $(MODGRID) $(MODFILESET) $(MODCNTRL)
-qarepin.o: $(MODREPRT) $(MODSTCY) $(MODINFO)
-rdgrps.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODLISTS) $(MODGRID)
-rdrepin.o: $(MODSOURC)  $(MODREPRT) $(MODREPBN) $(MODELEV) $(MODLISTS) \
-           $(MODINFO) $(MODGRID) $(MODFILESET) $(MODCNTRL)
-rdrprts.o: $(MODREPRT) $(MODINFO)
-repmrggrd.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) 
-repunits.o: $(MODREPRT) $(MODREPBN)  $(MODTMPRL) $(MODINFO) 
-scanrepc.o: $(MODREPRT) $(MODINFO) 
-selectsrc.o: $(MODSOURC) $(MODREPRT) $(MODREPBN) $(MODINFO) 
-smkreport.o: $(MODREPRT) $(MODREPBN) $(MODINFO) $(MODGRID)
-wrrephdr.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) \
-            $(MODINFO) $(MODGRID)
-wrrepout.o: $(MODSOURC) $(MODLISTS) $(MODREPRT) $(MODREPBN) $(MODSTCY) \
-            $(MODINFO) 
-#
-#
-clean:
-	/bin/rm -f *.o
+${OBJDIR}:
+	mkdir -p ${OBJDIR}
+
+smkreport: $(OBJ)
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+

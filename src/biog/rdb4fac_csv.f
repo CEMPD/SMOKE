@@ -39,10 +39,6 @@ C...........   ARGUMENTS and their descriptions: actually-occurring ASC table
 	CHARACTER(16), INTENT(IN) :: VGLIST(NVEG)
 	CHARACTER(5), INTENT(IN) :: BIOTYPES(NSEF)	
 
-
-		
-
-!        CHARACTER(16), INTENT (OUT)  :: VGID( NVEG )       ! veg ids
         INTEGER, INTENT (OUT)        :: LINDX( NVEG )      ! leaf area index
         REAL, INTENT (OUT)           :: LFAC( NVEG )       ! leaf biomass
         REAL, INTENT (OUT)           :: WNTF( NVEG )       ! winter factor

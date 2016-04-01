@@ -48,11 +48,6 @@ C***********************************************************************
         IMPLICIT NONE
 
 C.........  INCLUDES
-!        INCLUDE 'PARMS3.EXT'      ! I/O API constants
-!        INCLUDE 'FDESC3.EXT'      ! I/O API file description data structure
-!        INCLUDE 'IODECL3.EXT'     ! I/O API function declarations
-!        INCLUDE 'EMCNST3.EXT'     ! Emissions constants
-!        INCLUDE 'CONST3.EXT'      ! More constants
         INCLUDE 'B3V14DIMS3.EXT'  ! biogenic-related constants
 
 C.........  ARGUMENTS and their descriptions

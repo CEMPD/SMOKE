@@ -38,7 +38,7 @@ C****************************************************************************
 
 C.........  MODULES for public variables
 C.........  This module contains data structures and flags specific to Movesmrg
-        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, EMPROCIDX, EMPOLIDX
+        USE MODMVSMRG, ONLY: RPDFLAG, RPVFLAG, EMPOLIDX
 
 C.........  This module contains the major data structure and control flags
         USE MODMERGE, ONLY: NSMATV, TSVDESC
@@ -67,11 +67,8 @@ C.........  Other local variables
 C***********************************************************************
 C   begin body of subroutine BLDPROCIDX
 
-        ALLOCATE( EMPROCIDX( NSMATV ), STAT=IOS )
-        CALL CHECKMEM( IOS, 'EMPROCIDX', PROGNAME )
         ALLOCATE( EMPOLIDX( NSMATV ), STAT=IOS )
         CALL CHECKMEM( IOS, 'EMPOLIDX', PROGNAME )
-        EMPROCIDX = 0  ! array
         EMPOLIDX = 0   ! array
 
 C.........  Loop through pollutant-species combos
@@ -109,8 +106,6 @@ C.................  Check if process is handled by other modes
      &                TRIM( CPROC ) // ' is not output by MOVES.'
                     CALL M3EXIT( PROGNAME, 0, 0, MESG, 2 )
                 END IF
-            ELSE
-                EMPROCIDX( V ) = J
             END IF
 
         END DO

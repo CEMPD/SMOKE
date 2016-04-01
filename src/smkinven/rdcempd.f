@@ -703,7 +703,7 @@ C           all ORIS/boilers are accounted for
             
             DO MASOBPOS = 1, NOBRLIST
                 DO PTR = 1, NSTEPS
-                    IF( MASLIST( MASOBPOS,PTR ) == .FALSE. ) THEN
+                    IF( .NOT. MASLIST( MASOBPOS,PTR ) ) THEN
                         INVOBPOS = FINDC( OBRLIST( MASOBPOS ), 
      &                                    NORISBLR, ORISBLR )
                         IF( INVOBPOS <= 0 ) CYCLE

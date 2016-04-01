@@ -1,73 +1,108 @@
-# Version @(#)$Id$ 
-# Path    $Source$
-# Date    $Date$ 
+#.........................................................................
+# Version "@(#)$Header$"
+# Copyright (C) 2009 Baron Advanced Meteorological Systems, LLC.
+# Distributed under the GNU GENERAL PUBLIC LICENSE version 2
+# See file "GPL.txt" for conditions of use.
+#.........................................................................
+#  Environment Variables:
+#       BIN     machine/OS/compiler/mode type. Shows up as suffix
+#               for "Makeinclude.${BIN}" to determine compilation
+#               flags, and in ${OBJDIR} and $(INSTALL) to determine
+#               binary directories
+#       INSTALL installation-directory root, used for "make install":
+#               SMOKE executables will be installed in $(INSTALL)/${BIN}
+#.........................................................................
+#  Directories:
+#       ${BASEDIR}  is the root directory for the SMOKE source and
+#                   the (machine/compiler/flag-specific) binary
+#                   object/library/executable directories.
+#       ${SRCDIR}   is the source directory for this Makefile
+#       ${INCDIR}   is the source directory for SMOKE INCLUDE-files
+#       ${IODIR}    is the source directory for the I/O API library
+#       ${OBJDIR}   is the current machine/compiler/flag-specific
+#                   build-directory
+#.........................................................................
 #
-LIBS          = $(LDIRS) $(LIBS_SYS) $(LIBS_COMPILE)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS) $(LIBS_COMPILE)
-LIBS_PVM      = $(LDIRS) -liocpl $(LIBS) -lpvm3 -mp $(LIBS_COMPILE)
-LIBS_PVMDB    = $(LDIRS) -liocpl $(LIBS_DEBUG) -lpvm3 -mp $(LIBS_COMPILE)
+#       ---------------     Definitions:   -------------------------
 
-LIBPATH       = $(SMK_BIN)/libsmoke.a $(TOOLS_BIN)/libedsstools.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a $(TOOLS_BIN)/libedsstools.debug.a
-#
-all: laypoint elevpoint
+.SUFFIXES: .m4 .c .F .f .mod
 
-debug: laypoint.debug elevpoint.debug
+include ../Makeinclude
 
-pvm: laypoint.pvm
+SRCDIR = ${BASEDIR}/point
+
+FSRC =  \
+asgngrps.f  elevpoint.f   fire_plmris.f  fire_postplm.f  fire_preplm.f  \
+laypoint.f  mxgrpemis.f   openeout.f     openlayout.f    plmris.f       \
+plsprd.f    plumesti.f    postplm.f      preplm.f        rpelvcfg.f     \
+wpingstk.f
+
+OBJ  =  $(FSRC:.f=.o)
+
+EXE  = laypoint elevpoint
+
+#      ----------------------   TOP-LEVEL TARGETS:   ------------------
+
+all: ${OBJDIR} ${EXE}
+
+clean:
+	cd ${OBJDIR}; /bin/rm ${OBJ} ${EXE}
+
+rmexe:
+	cd ${OBJDIR}; rm ${EXE}
+
+relink:
+	make -i rmexe ; make all
+
+install:  all
+	cd ${OBJDIR}; cp ${EXE} ${INSTDIR}
+
+
+#      -----------------------   RULES:   -----------------------------
+
+%.o : %.mod        #  Disable "gmake"s obnoxious implicit Modula-2 rule !!
 
 .f.o:
-	$(FC) $(FFLAGS) -c -o $@ $<
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -c $(SRCDIR)/$<
 
-ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
+#      -----------------------   DEPENDENCIES:------------------------
 
-#
-LAY=laypoint.o openlayout.o preplm.o plmris.o postplm.o plsprd.o \
-    fire_preplm.o fire_plmris.o fire_postplm.o 
+asgngrps.o : $(MODSOURC)
+asgngrps.o : $(MODELEV)
+asgngrps.o : $(MODINFO)
+elevpoint.o : $(MODSOURC)
+elevpoint.o : $(MODELEV)
+elevpoint.o : $(MODINFO)
+elevpoint.o : $(MODGRID)
+laypoint.o : $(MODSOURC)
+laypoint.o : $(MODELEV)
+laypoint.o : $(MODINFO)
+laypoint.o : $(MODGRID)
+laypoint.o : $(MODFILESET)
+mxgrpemis.o : $(MODSOURC)
+mxgrpemis.o : $(MODELEV)
+mxgrpemis.o : $(MODINFO)
+mxgrpemis.o : $(MODGRID)
+mxgrpemis.o : $(MODFILESET)
+openeout.o : $(MODINFO)
+openeout.o : $(MODELEV)
+openlayout.o : $(MODELEV)
+openlayout.o : $(MODGRID)
+openlayout.o : $(MODINFO)
+rpelvcfg.o : $(MODREPRT)
+rpelvcfg.o : $(MODELEV)
+rpelvcfg.o : $(MODINFO)
+wpingstk.o : $(MODELEV)
 
-#
-laypoint: $(LAY) $(ALLI) $(LIBPATH)
-	echo LAYPOINT:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(LAY) $(LIBS)
-#
-laypoint.debug: $(LAY) $(ALLI) $(LIBPATH_DEBUG)
-	echo LAYPOINT \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(LAY) $(LIBS_DEBUG)
+#  ---------------------------  ${EXE} Program builds:  -----------------
 
-laypoint.pvm: $(LAY) $(ALLI) $(LIBPATH)
-	echo LAYPOINT \(pvm\):
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(LAY) $(LIBS_PVM)
-#
-laypoint.pvm.debug: $(LAY) $(ALLI) $(LIBPATH_DEBUG)
-	echo LAYPOINT \(pvmdb\):
-	$(FC) $(FFLAGS) -o $(@) $(LAY) $(LIBS_PVMDB)
+${OBJDIR}:
+	mkdir -p ${OBJDIR}
 
-#
-ELV=elevpoint.o asgngrps.o openeout.o plumesti.o wpingstk.o mxgrpemis.o \
-    rpelvcfg.o 
+laypoint: laypoint.o openlayout.o preplm.o plmris.o postplm.o plsprd.o \
+          fire_preplm.o fire_plmris.o fire_postplm.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
-#
-elevpoint: $(ELV) $(ALLI) $(LIBPATH)
-	echo ELEVPOINT:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(ELV) $(LIBS)
-#
-elevpoint.debug: $(ELV) $(ALLI) $(LIBPATH_DEBUG)
-	echo ELEVPOINT \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(ELV) $(LIBS_DEBUG)
-#
-
-include $(MD_SRC)/modmake.inc
-include $(ETDSRC)/modmake.inc
-include $(FS_ROOT)/modmake.inc
-
-asgngrps.o: $(MODSOURC) $(MODELEV) $(MODINFO)
-laypoint.o: $(MODSOURC) $(MODELEV) $(MODGRID) $(MODINFO)
-mxgrpemis.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODFILESET)
-elevpoint.o: $(MODSOURC) $(MODELEV) $(MODINFO) $(MODGRID)
-openeout.o: $(MODSOURC) $(MODINFO)
-openlayout.o: $(MODELEV) $(MODGRID) $(MODINFO)
-rpelvcfg.o: $(MODREPRT) $(MODELEV) $(MODINFO)
-wpingstk.o: $(MODELEV)
-#
-clean:
-	/bin/rm -f *.o 
+elevpoint: elevpoint.o asgngrps.o openeout.o plumesti.o wpingstk.o  \
+           mxgrpemis.o rpelvcfg.o
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)

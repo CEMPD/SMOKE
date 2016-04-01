@@ -1,53 +1,116 @@
-# Version @(#)$Id$ 
-# Path    $Source$
+#.........................................................................
+# Version "@(#)$Header$"
+# Copyright (C) 2009 Baron Advanced Meteorological Systems, LLC.
+# Distributed under the GNU GENERAL PUBLIC LICENSE version 2
+# See file "GPL.txt" for conditions of use.
+#.........................................................................
+#  Environment Variables:
+#       BIN     machine/OS/compiler/mode type. Shows up as suffix
+#               for "Makeinclude.${BIN}" to determine compilation
+#               flags, and in ${OBJDIR} and $(INSTALL) to determine
+#               binary directories
+#       INSTALL installation-directory root, used for "make install":
+#               SMOKE executables will be installed in $(INSTALL)/${BIN}
+#.........................................................................
+#  Directories:
+#       ${BASEDIR}  is the root directory for the SMOKE source and
+#                   the (machine/compiler/flag-specific) binary
+#                   object/library/executable directories.
+#       ${SRCDIR}   is the source directory for this Makefile
+#       ${INCDIR}   is the source directory for SMOKE INCLUDE-files
+#       ${IODIR}    is the source directory for the I/O API library
+#       ${OBJDIR}   is the current machine/compiler/flag-specific
+#                   build-directory
+#.........................................................................
 #
-LIBS          = $(LDIRS) $(LIBS_SYS)  $(LIBS_COMPILE)
-LIBS_DEBUG    = $(LDIRS) $(LIBS_DEBUG_SYS)  $(LIBS_COMPILE)
-LIBPATH       = $(SMK_BIN)/libsmoke.a
-LIBPATH_DEBUG = $(SMK_BIN)/libsmoke.debug.a
-#
+#       ---------------     Definitions:   -------------------------
 
-all: temporal
+.SUFFIXES: .m4 .c .F .f .mod
 
-debug: temporal.debug
+include ../Makeinclude
+
+SRCDIR = ${BASEDIR}/temporal
+
+FSRC = \
+asgntpro.f  genhemis.f  mktmat.f    opentmp.f   opentmpin.f \
+proctpro.f  setdaylt.f  temporal.f  tmnamunt.f  updtmat.f   \
+wrtsup.f
+
+OBJ  =  $(FSRC:.f=.o)
+
+EXE  = temporal
+
+
+#      ----------------------   TOP-LEVEL TARGETS:   ------------------
+
+all: ${OBJDIR} ${EXE}
+
+clean:
+	cd ${OBJDIR}; /bin/rm ${OBJ} ${EXE}
+
+rmexe:
+	cd ${OBJDIR}; rm ${EXE}
+
+relink:
+	make -i rmexe ; make all
+
+install:  all
+	cd ${OBJDIR}; cp ${EXE} ${INSTDIR}
+
+
+#      -----------------------   RULES:   -----------------------------
+
+%.o : %.mod        #  Disable "gmake"s obnoxious implicit Modula-2 rule !!
 
 .f.o:
-	$(FC) $(FFLAGS) -c -o $@ $< 
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -c $(SRCDIR)/$<
 
-ALLI=$(INC)/EMCNST3.EXT $(INC)/EMSTRG3.EXT
 
-#
-TMP= asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o proctpro.o \
-     setdaylt.o temporal.o tmnamunt.o updtmat.o wrtsup.o 
-     
+#      -----------------------   DEPENDENCIES:------------------------
 
-#
-temporal: $(TMP) $(ALLI) $(LIBPATH)
-	echo TEMPORAL:
-	$(FC) $(FFLAGS) -o $(SMK_BIN)/$(@) $(TMP) $(LIBS)
-#
-#
-temporal.debug: $(TMP) $(ALLI) $(LIBPATH_DEBUG)
-	echo TEMPORAL \(debug\):
-	$(FC) $(FFLAGS) -o $(@) $(TMP) $(LIBS_DEBUG)
+asgntpro.o : $(MODSOURC)
+asgntpro.o : $(MODTMPRL)
+asgntpro.o : $(MODINFO)
+genhemis.o : $(MODSOURC)
+genhemis.o : $(MODXREF)
+genhemis.o : $(MODTMPRL)
+genhemis.o : $(MODDAYHR)
+genhemis.o : $(MODINFO)
+mktmat.o : $(MODSOURC)
+mktmat.o : $(MODTMPRL)
+mktmat.o : $(MODDAYHR)
+opentmp.o : $(MODINFO)
+opentmp.f: $(MODTMPRL)
+opentmp.o : $(MODFILESET)
+opentmpin.o : $(MODINFO)
+proctpro.o : $(MODINFO)
+proctpro.o : $(MODSOURC)
+proctpro.o : $(MODTMPRL)
+setdaylt.o : $(MODSOURC)
+setdaylt.o : $(MODSTCY)
+setdaylt.o : $(MODINFO)
+temporal.o : $(MODSOURC)
+temporal.o : $(MODTMPRL)
+temporal.o : $(MODEMFAC)
+temporal.o : $(MODDAYHR)
+temporal.o : $(MODLISTS)
+temporal.o : $(MODINFO)
+temporal.o : $(MODMBSET)
+tmnamunt.o : $(MODINFO)
+updtmat.o : $(MODSOURC)
+updtmat.o : $(MODTMPRL)
+updtmat.o : $(MODDAYHR)
+wrtsup.o : $(MODINFO)
+wrtsup.o : $(MODSOURC)
+wrtsup.o : $(MODTMPRL)
 
-include $(MD_SRC)/modmake.inc
-include $(ETDSRC)/modmake.inc
-include $(FS_ROOT)/modmake.inc
+#  ---------------------------  ${EXE} Program builds:  -----------------
 
-asgntpro.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODINFO)
-genhemis.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
-            $(MODDAYHR)
-mktmat.o: $(MODTMPRL) 
-opentmp.o: $(MODEMFAC) $(MODINFO) $(MODFILESET)
-opentmpin.o: $(MODMET) $(MODINFO) $(MODGRID)
-proctpro.o: $(MODINFO) $(MODSOURC) $(MODTMPRL)
-setdaylt.o: $(MODSOURC) $(MODSTCY) $(MODINFO)
-temporal.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODEMFAC) $(MODMET) $(MODINFO) \
-            $(MODDAYHR) $(MODLISTS) $(MODGRID) $(MODMBSET)
-tmnamunt.o: $(MODEMFAC) $(MODINFO)
-updtmat.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
-wrtsup.o: $(MODSOURC) $(MODXREF) $(MODTMPRL) $(MODDAYHR)
-#
-clean:
-	/bin/rm -f *.o
+${OBJDIR}:
+	mkdir -p ${OBJDIR}
+
+temporal: asgntpro.o genhemis.o mktmat.o opentmp.o opentmpin.o  \
+          proctpro.o setdaylt.o temporal.o tmnamunt.o updtmat.o \
+          wrtsup.o 
+	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
+
