@@ -41,11 +41,11 @@ rdemspd.f rdff10pd.f rdgrdapi.f rdgrdncf.f rdinvdata.f rdinvsrcs.f \
 rdlooppd.f rdmedsinfo.f rdmedspd.f rdorlfr.f rdsrcff10ar.f rdsrcff10mb.f \
 rdsrcff10pt.f rdsrcmedspt.f rdsrcntiar.f rdsrcntifr.f rdsrcntimb.f rdsrcntinp.f \
 rdsrcntipt.f setnonhap.f smkinven.f srcmem.f wrepinven.f wrinvchr.f \
-wrinvemis.f wrinvpol.f wrpdemis.f wrptref.f
+wrinvemis.f wrinvpol.f wrpdemis.f wrptref.f grwinven.f
 
 OBJ  =  $(FSRC:.f=.o)
 
-EXE  = grwinven smkinven
+EXE  = smkinven grwinven
 
 
 #      ----------------------   TOP-LEVEL TARGETS:   ------------------
@@ -227,6 +227,6 @@ smkinven: adjustinv.o asgnar2pt.o asgnnhapx.o chklstfl.o fixstk.o formlist.o \
           wrinvemis.o wrinvpol.o wrpdemis.o wrptref.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 
-grwinven: grwinven.o opengrwout.o srcmem.o wrinvchr.o wrinvpol.o
+grwinven: opengrwout.o srcmem.o wrinvchr.o wrinvpol.o grwinven.o
 	cd ${OBJDIR}; $(FC) $(FFLAGS) -o $(@) $^ $(LIBS)
 

@@ -34,9 +34,9 @@ SRCDIR = ${BASEDIR}/biog
 
 
 FSRC = \
-  czangle.f    getpar.f   getparb.f    hrbeis_361.f    hrbeis3.f    prebmet.f \
-   rdbpro.f  tmpbeis3.f tmpbeis314.f   tmpbeis361.f       hrno.f  normbeis3.f \
-  rdb3fac.f   rdb4fac.f rdb4fac_csv.f normbeis314.f  normbeis361.f
+  czangle.f   getpar.f   getparb.f     hrbeis_361.f   hrbeis3.f   prebmet.f \
+  rdbpro.f    tmpbeis3.f tmpbeis314.f  tmpbeis361.f   hrno.f      normbeis3.f \
+  rdb3fac.f   rdb4fac.f  rdb4fac_csv.f normbeis314.f  normbeis361.f
 
 normbeis314.o : $(MODBEIS3)
 

@@ -1,0 +1,110 @@
+#.........................................................................
+# Version "$Id$"
+# SMOKE
+# Copyright (C) 2005 Baron Advanced Meteorological Systems, LLC., and
+# (C) 2016 UNC Institute for the Environment
+# Distributed under the GNU GENERAL PUBLIC LICENSE version 2
+# See file "GPL.txt" for conditions of use.
+#.........................................................................
+# Include file for making SMOKE
+#
+#.........................................................................
+#  Environment Variables:
+#       BIN     machine/OS/compiler/mode type. Shows up as suffix
+#               for "Makeinclude.${BIN}" to determine compilation
+#               flags, and in ${OBJDIR} and $(INSTALL) to determine
+#               binary directories
+#       INSTDIR installation-directory root, used for "make install":
+#               SMOKE executables will be installed in ${INSTDIR}
+#.........................................................................
+#  Directories:
+#       ${BASEDIR}  is the root directory for the SMOKE source and
+#                   the (machine/compiler/flag-specific) binary
+#                   object/library/executable directories.
+#       ${SRCDIR}   is the source directory for this Makefile
+#       ${INCDIR}   is the source directory for SMOKE INCLUDE-files
+#       ${IODIR}    is the source directory for the I/O API library
+#       ${OBJDIR}   is the current machine/compiler/flag-specific
+#                   build-directory
+#.........................................................................
+
+BASEDIR = ${SMK_HOME}/subsys/smoke/src
+INCDIR  = ${BASEDIR}/inc
+OBJDIR  = ${BASEDIR}/../${BIN}
+
+IOBASE  = ${SMK_HOME}/subsys/ioapi
+IODIR   = ${IOBASE}/ioapi
+IOBIN   = ${IOBASE}/${BIN}
+IOINC   = ${IODIR}/fixed_src
+
+INSTDIR = /somewhere/apps/${BIN}
+
+##  Architecture dependent stuff
+
+include ${IODIR}/Makeinclude.${BIN}
+
+F90 = $(FC)
+
+ IFLAGS = -I${IOINC} -I${INCDIR} -I${IOBIN}                #  Intel, Absoft, Pathscale, UNIX Fortran
+# IFLAGS = -I${IOINC} -I${INCDIR} -I${IOBIN}                #  GNU   Fortran
+# IFLAGS = -I${IOINC} -I${INCDIR} -M${IOBIN}                #  Sun   Fortran
+# IFLAGS = -I${IOINC} -I${INCDIR} -module ${OBJDIR} -module ${IOBIN}    #  PGI Fortran:  order *important*
+
+ EFLAG = -extend-source 132                            #  Intel Fortran
+# EFLAG = -ffixed-line-length-132  -fno-backslash       #  GNU   Fortran
+# EFLAG = -Mextend -Mbackslash                          #  PGI Fortran
+# EFLAG = -e                                            #  Sun   Fortran
+# EFLAG = -W132                                         #  Absoft   Fortran
+
+FFLAGS  = ${IFLAGS} ${EFLAG} ${DEFINEFLAGS} ${PARFLAGS} ${FOPTFLAGS} ${ARCHFLAGS}
+
+LDFLAGS = ${IFLAGS} ${DEFINEFLAGS} ${ARCHFLAGS}
+
+ARFLAGS = rv
+
+SMKLIB = -L${OBJDIR} -lsmoke
+
+########  netCDF-4 needs "-lnetcdff -lnetcdf":
+
+# IOLIB = -L$(IOBIN) -lioapi -lnetcdff -lnetcdf ${PVMLIBS}
+  IOLIB = -L$(IOBIN) -lioapi -lnetcdf
+
+########  Note that we must resolve the  %^&$*! circular dependency
+########  between libfileset and libsmoke:
+
+LIBS = -L${OBJDIR} -lfileset -lsmoke -lemmod -lfileset -lsmoke \
+       ${IOLIB} $(OMPLIBS) $(ARCHLIB) $(ARCHLIBS)
+
+VPATH  =  ${OBJDIR}
+
+######## I/O API INCLUDE-file definitions...  
+
+IOINCS = \
+ ${IOINC}/CONST3.EXT    ${IOINC}/FDESC3.EXT  \
+ ${IOINC}/IODECL3.EXT   ${IOINC}/NETCDF.EXT  \
+ ${IOINC}/PARMS3.EXT
+
+######## Module definitions... 
+
+MODBEIS3   = modbeis3.mod
+MODBIOG    = modbiog.mod
+MODCNTRL   = modcntrl.mod
+MODDAYHR   = moddayhr.mod
+MODELEV    = modelev.mod
+MODEMFAC   = modemfac.mod
+MODINFO    = modinfo.mod
+MODGRID    = modgrid.mod
+MODLISTS   = modlists.mod
+MODMERGE   = modmerge.mod
+MODMET     = modmet.mod
+MODMOBIL   = modmobil.mod
+MODREPBN   = modrepbn.mod
+MODREPRT   = modreprt.mod
+MODSOURC   = modsourc.mod
+MODSPRO    = modspro.mod
+MODSTCY    = modstcy.mod
+MODSURG    = modsurg.mod
+MODTAG     = modtag.mod
+MODTMPRL   = modtmprl.mod
+MODXREF    = modxref.mod
+MODFILESET = modfileset.mod
