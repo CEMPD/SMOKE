@@ -86,17 +86,16 @@ C...........   Other local variables
         INTEGER PRCOUNTY                  ! previous ref. county
         INTEGER PICOUNTY                  ! previous inv. county
                 
-        LOGICAL      :: DUPFLAG = .FALSE.   ! true: duplicate entries found
-        LOGICAL      :: EFLAG   = .FALSE.   ! true: error found    
+        LOGICAL :: EFLAG = .FALSE.  ! true: error found    
 
         CHARACTER(FIPLEN3) REFCNTY, INVCNTY, PRVCNTY
         CHARACTER(100)     LINE     !  line buffer
         CHARACTER(300)     MESG     !  message buffer
 
-        CHARACTER(16) :: PROGNAME = 'RDMCREF'   ! program name
+        CHARACTER(16) :: PROGNAME = 'RDMXREF'   ! program name
         
 C***********************************************************************
-C   begin body of subroutine RDMCREF
+C   begin body of subroutine RDMXREF
         
 C.........  Get the number of lines in the file     
         NLINES = GETFLINE( MDEV, 'County cross-reference file' )
@@ -222,14 +221,12 @@ C.............  Skip any entries equal to zero due to blank lines
 
 C.............  Check if current inventory county is duplicate (match previous)
             IF( INVCNTY == PRVCNTY ) THEN
- 
-                DUPFLAG = .TRUE.
-                EFLAG   = .TRUE.
-                
-                MESG = 'ERROR: Duplicate entries in county ' //
-     &                 'cross-reference file for ' // CRLF() //
-     &                 BLANK10 // 'inventory county ' // INVCNTY
+
+                EFLAG = .TRUE.
+                MESG = 'ERROR: Duplicate found in county ' //
+     &                 'cross-reference file : ' // INVCNTY
                 CALL M3MESG( MESG )
+
             ELSE
  
 C.............  Check that current county is inside the grid (and in the inventory)
@@ -252,13 +249,6 @@ C.............  Check that current county is inside the grid (and in the invento
             PRVCNTY = INVCNTY
             
         END DO
-
-        IF( DUPFLAG ) THEN
-            MESG = 'ERROR: Duplicate county cross-reference ' //
-     &             'entries found. ' //CRLF()// BLANK10 // 
-     &             'Remove duplicate entries and try again.'
-            CALL M3MSG2( MESG )
-        END IF
 
         IF( EFLAG ) THEN
             MESG = 'Problem(s) found in county cross-reference file.'
