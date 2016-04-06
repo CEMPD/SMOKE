@@ -146,7 +146,7 @@ C.............  Divide surrogate value by sum on cell
                         WRITE( MESG,94010 )
      &                         'WARNING: Area surrogate is 0. for ' //
      &                         CRLF() // BLANK10 //
-     &                         'Country/state/county', SRGFIPS( F ),
+     &                         'Country/state/county' // SRGFIPS( F ) //
      &                         'and cell', C
                         CALL M3MSG2( MESG )
 
