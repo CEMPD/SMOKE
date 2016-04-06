@@ -114,10 +114,10 @@ C.........   Other local variables
         LOGICAL  FNDPOL       ! true: found toxic pollutant to be processed
         LOGICAL  FNDVOC       ! true: found VOC entry in inventory
         LOGICAL  MFLAG        ! true: treat all sources integrated
-        LOGICAL  EFLAG        ! true: error occured
         LOGICAL  LASTFLAG     ! true: entry is last for current source
         LOGICAL  NEEDSORT     ! true: need to resort pollutants for current source
         LOGICAL  NFLAG        ! true: start non-HAP calculation
+        LOGICAL::EFLAG = .FALSE. ! true: error occured
         LOGICAL::PROCVOC=.FALSE. ! true: process VOC pollutants
         LOGICAL::PROCTOG=.FALSE. ! true: process TOG pollutants
         
