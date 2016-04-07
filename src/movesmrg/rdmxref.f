@@ -210,14 +210,15 @@ C           then store sorted MCREF array
         PRVCNTY = ' ' 
 
         DO I = 1, NLINES
+
             J = IDX( I )
             
             WRITE( REFCNTY,'(I12.12)' )  MCREFRAW( J,2 )
             WRITE( INVCNTY,'(I12.12)' )  MCREFRAW( J,1 )
 
 C.............  Skip any entries equal to zero due to blank lines
-            IF( BLKORCMT( REFCNTY ) ) CYCLE
-            IF( BLKORCMT( INVCNTY ) ) CYCLE
+            IF( STR2INT( REFCNTY ) == 0 ) CYCLE
+            IF( STR2INT( INVCNTY ) == 0 ) CYCLE
 
 C.............  Check if current inventory county is duplicate (match previous)
             IF( INVCNTY == PRVCNTY ) THEN
