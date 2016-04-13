@@ -165,7 +165,7 @@ C.............  No of states
             NSTA = 0
             PSTA = 0
             DO I = 1 , NINVIFIP
-                ISTA = STR2INT( INVCFIP( I )( 16:17 ) )
+                ISTA = STR2INT( INVCFIP( I )( 8:9 ) )
                 IF( ISTA /= PSTA ) THEN
                     NSTA = NSTA + 1
                     PSTA = ISTA
@@ -281,7 +281,7 @@ C.............  Build FIPS and SCC hierarchy tables
             NS = 0
             PSTA = -1
             DO J = 1 , NINVIFIP
-                ISTA = STR2INT( INVCFIP( J )( 16:17 ) )
+                ISTA = STR2INT( INVCFIP( J )( 8:9 ) )
                 IF( ISTA /= PSTA ) THEN
                     NS = NS + 1
                     WRITE( CSTA,'(I12.12)' ) ISTA  
@@ -615,14 +615,14 @@ C.........................  find ref county and apply CF to ref-inventory counti
                 ELSE     ! FIPS is country/state  
 
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
-                    IF( CFIP( 18:20 ) /= '000' ) THEN
+                    IF( CFIP( 10:12 ) /= '000' ) THEN
                         MESG = 'WARNING: FIPS '//CFIP//' is not an inventory county'
                         CALL M3MESG( MESG )
                         CYCLE
                     END IF
 
                     DO J = 1, NINVIFIP 
-                        IF( CFIP(16:17) == INVCFIP(J)(16:17) ) THEN
+                        IF( CFIP(8:9) == INVCFIP(J)(8:9) ) THEN
                             K = K + 1
                             NLFIPS( K ) = J
                         END IF

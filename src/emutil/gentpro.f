@@ -661,7 +661,7 @@ C.........  count no of states in modeling modain
         NSTA = 0
         PSTA = 0
         DO I = 1, NSRGFIPS
-            ISTA = STR2INT( SRGFIPS( I )( 16:17 ) )
+            ISTA = STR2INT( SRGFIPS( I )( 8:9 ) )
             IF( ISTA /= PSTA ) THEN
                 NSTA = NSTA + 1
                 PSTA = ISTA
@@ -676,7 +676,7 @@ C.........  Allocate array
         NS = 0
         PSTA = 0
         DO I = 1, NSRGFIPS
-            ISTA = STR2INT( SRGFIPS( I )( 16:17 ) )
+            ISTA = STR2INT( SRGFIPS( I )( 8:9 ) )
             IF( ISTA /= PSTA ) THEN
                 NS = NS + 1
                 SRGSTA( NS ) = ISTA
@@ -728,7 +728,7 @@ C.................  Sparse line
 
                 DO S = 1, NSRGFIPS
 
-                    ISTA = STR2INT( SRGFIPS( S )( 16:17 ) )
+                    ISTA = STR2INT( SRGFIPS( S )( 8:9 ) )
                     ISRGFIP = STR2INT( SRGFIPS( S ) )
 
                     IF( IFIP == ISTA .OR. IFIP == ISRGFIP ) THEN
@@ -852,7 +852,7 @@ C.............  find matched SCC entries
             IF( L0 > 0 ) THEN
 
                 IF( L1 < 1 ) THEN
-                    ISTA = STR2INT( CFIPS( 16:17 ) )
+                    ISTA = STR2INT( CFIPS( 8:9 ) )
                     NS = FIND1( ISTA, NSTA, SRGSTA )
                     IF( NS   > 0 ) L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
                     IF( FIPS < 1 ) L1 = NSRGFIPS + NSTA + 1   ! SCC-specific ultimate default (No FIPS)
@@ -928,7 +928,7 @@ C.................  Check secondly SCC/FIPS specific entries
  
 C.................  Check a list of state-specific entry first before using default profiles
                 IF( LL < 1 ) THEN
-                    ISTA = STR2INT( CFIPS( 16:17 ) )
+                    ISTA = STR2INT( CFIPS( 8:9 ) )
                     NS = FIND1 ( ISTA, NSTA, SRGSTA )
                     IF( NS > 0  ) L1 = NSRGFIPS + NS         ! state-specific entry in XREF fle
                     LL = MATCHED( L0,L1 )
