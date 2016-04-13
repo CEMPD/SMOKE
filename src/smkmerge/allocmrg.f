@@ -1,8 +1,8 @@
 
-        SUBROUTINE ALLOCMRGP( MXGRP, MXVARPGP, 
-     &                        AMULSIZ, MMULSIZ, PMULSIZ,
-     &                        ASPCSIZ, MSPCSIZ, PSPCSIZ,
-     &                        APOLSIZ, MPOLSIZ, PPOLSIZ )
+        SUBROUTINE ALLOCMRG( MXGRP, MXVARPGP, 
+     &                       AMULSIZ, MMULSIZ, PMULSIZ,
+     &                       ASPCSIZ, MSPCSIZ, PSPCSIZ,
+     &                       APOLSIZ, MPOLSIZ, PPOLSIZ )
 
 C***********************************************************************
 C  subroutine ALLOCMRG body starts at line
@@ -134,7 +134,7 @@ C...........   Other local variables
 
         CHARACTER(300)  MESG     ! message buffer
 
-        CHARACTER(16), PARAMETER :: PROGNAME = 'ALLOCMRG' ! program name
+        CHARACTER(16) :: PROGNAME = 'ALLOCMRG' ! program name
 
 C***********************************************************************
 C   begin body of subroutine ALLOCMRG
@@ -153,7 +153,7 @@ C........  Allocate memory for fixed-size area source arrays
        IF( AFLAG ) THEN
             MXSRC = MAX( MXSRC, NASRC )
             J = NGRID + 2 * ANGMAT
-            ALLOCATE( AGMATX( 0:J ), STAT=IOS )      ! contiguous gridding matrix
+            ALLOCATE( AGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'AGMATX', PROGNAME )
 
             ALLOCATE( ARINFO( NASRC,2 ), STAT=IOS )        ! tmp ar react. data
@@ -239,7 +239,7 @@ C.........  Mobile source fixed-size arrays
         IF( MFLAG ) THEN
             MXSRC = MAX( MXSRC, NMSRC )
             J = NGRID + 2 * MNGMAT
-            ALLOCATE( MGMATX( 0:J ), STAT=IOS )      ! contiguous gridding matrix
+            ALLOCATE( MGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'MGMATX', PROGNAME )
 
             ALLOCATE( MRINFO( NMSRC,2 ), STAT=IOS )        ! tmp mb react. data
@@ -306,7 +306,7 @@ C.........  Point source fixed-size arrays
         IF( PFLAG ) THEN
             MXSRC = MAX( MXSRC, NPSRC )
             J = NGRID + 2 * NPSRC
-            ALLOCATE( PGMATX( 0:J ), STAT=IOS )      ! contiguous gridding matrix
+            ALLOCATE( PGMATX( J ), STAT=IOS )      ! contiguous gridding matrix
             CALL CHECKMEM( IOS, 'PGMATX', PROGNAME )
 
             ALLOCATE( PRINFO( NPSRC,2 ), STAT=IOS )        ! tmp pt react. data
@@ -655,4 +655,4 @@ C...........   Internal buffering formats.............94xxx
 
 94010   FORMAT( 10( A, :, I8, :, 1X ) )
 
-        END SUBROUTINE ALLOCMRGP
+        END SUBROUTINE ALLOCMRG

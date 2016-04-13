@@ -19,14 +19,7 @@ C
 C  SUBROUTINES AND FUNCTIONS CALLED:
 C
 C  REVISION  HISTORY:
-C       Copied from csgldaymrg.F version 1.7 by M Houyoux 2/99
 C
-C       New optimized, parallel version Carlie J. Coats, Jr., 2014
-C       uses cumulative-count gridding matrices.  Move corresponding
-C       RDGMAT() to internal-routine; name changes to protect the build:
-C       MRGMUL()T ~~> MRGMULTP(); ALLOCMRG() ~~> ALLOCMRGP()
-C       Contains read&parallel-transform gridding matrix routine RDGMATP()
-C       starting at line 1036
 C***********************************************************************
 C
 C Project Title: Sparse Matrix Operator Kernel Emissions (SMOKE) Modeling
@@ -296,9 +289,9 @@ C           surrogates file needed for state and county totals
 
 C.........  Allocate memory for fixed-size arrays by source category...
 
-        CALL ALLOCMRGP( MXGRP, MXVARPGP, AMULSIZ, MMULSIZ, PMULSIZ,
-     &                  ASPCSIZ, MSPCSIZ, PSPCSIZ, APOLSIZ, MPOLSIZ,
-     &                  PPOLSIZ )
+        CALL ALLOCMRG( MXGRP, MXVARPGP, AMULSIZ, MMULSIZ, PMULSIZ,
+     &                 ASPCSIZ, MSPCSIZ, PSPCSIZ, APOLSIZ, MPOLSIZ,
+     &                 PPOLSIZ )
 
 C.........  Read in elevated sources and plume-in-grid information, if needed
 C.........  Reset flag for PinG if none in the input file
@@ -418,19 +411,19 @@ C.........  Read reactivity matrices
 
 C.........  Read gridding matrices (note, must do through subroutine because of
 C           needing contiguous allocation for integer and reals)
-        IF( AFLAG ) CALL RDGMATP( AGNAME, NGRID, ANGMAT, ANGMAT,
-     &                            AGMATX, AGMATX( NGRID+1: ),
-     &                            AGMATX( NGRID+ANGMAT+1: ) )
+        IF( AFLAG ) CALL RDGMAT( AGNAME, NGRID, ANGMAT, ANGMAT,
+     &                           AGMATX(1), AGMATX( NGRID+1 ),
+     &                           AGMATX( NGRID+ANGMAT+1 ) )
 
-        IF( MFLAG ) CALL RDGMATP( MGNAME, NGRID, MNGMAT, MNGMAT,
-     &                            MGMATX, MGMATX( NGRID+1: ),
-     &                            MGMATX( NGRID+MNGMAT+1: ) )
+        IF( MFLAG ) CALL RDGMAT( MGNAME, NGRID, MNGMAT, MNGMAT,
+     &                           MGMATX(1), MGMATX( NGRID+1 ),
+     &                           MGMATX( NGRID+MNGMAT+1 ) )
 
         IF( PFLAG ) THEN
 
             PGMATX = 1.  ! initialize array b/c latter part not in file
-            CALL RDGMATP( PGNAME, NGRID, NPSRC, 1,
-     &                    PGMATX, PGMATX( NGRID + 1 ), RDUM )
+            CALL RDGMAT( PGNAME, NGRID, NPSRC, 1,
+     &                   PGMATX(1), PGMATX( NGRID + 1 ), RDUM )
         END IF
 
 C.........  Build indicies for pollutant/species groups
@@ -826,10 +819,10 @@ C.....................  Process for area sources...
                         K5 = NGRID + ANGMAT + 1
 
 C.............................  Apply valid matrices & store
-                        CALL MRGMULTP( NASRC, NGRID, 1, ANGMAT,
+                        CALL MRGMULT( NASRC, NGRID, 1, ANGMAT,
      &                         ANGMAT, K1, K2, K4, KA, F1, F2,
      &                         AEMSRC, ARINFO, ACUMATX, ASMATX,
-     &                         AGMATX, AGMATX(NGRID+1),
+     &                         AGMATX(1), AGMATX(NGRID+1),
      &                         AGMATX(K5), AICNY, AEMGRD, TEMGRD,
      &                         AEBCNY, AEUCNY, AERCNY, AECCNY )
                     END IF
@@ -888,10 +881,10 @@ C.....................  Process for mobile sources...
 
 C.........................  Apply valid matrices & store
 
-                        CALL MRGMULTP( NMSRC, NGRID, 1, MNGMAT,
+                        CALL MRGMULT( NMSRC, NGRID, 1, MNGMAT,
      &                         MNGMAT, K1, K2, K4, KM, F1, F2,
      &                         MEMSRC, MRINFO, MCUMATX, MSMATX,
-     &                         MGMATX, MGMATX(NGRID+1),
+     &                         MGMATX(1), MGMATX(NGRID+1),
      &                         MGMATX(K5), MICNY, MEMGRD, TEMGRD,
      &                         MEBCNY, MEUCNY, MERCNY, MECCNY )
 
@@ -921,10 +914,10 @@ C.....................  Process for point sources...
                         K5 = NGRID + NPSRC + 1
 
 C.........................  Apply valid matrices & store
-                        CALL MRGMULTP( NPSRC, NGRID, EMLAYS, NPSRC,
+                        CALL MRGMULT( NPSRC, NGRID, EMLAYS, NPSRC,
      &                         NPSRC, K1, K2, K4, KP, F1, F2,
      &                         PEMSRC, PRINFO, PCUMATX, PSMATX,
-     &                         PGMATX, PGMATX(NGRID+1),
+     &                         PGMATX(1), PGMATX(NGRID+1),
      &                         PGMATX(K5), PICNY, PEMGRD, TEMGRD,
      &                         PEBCNY, PEUCNY, PERCNY, PECCNY )
 
@@ -1028,68 +1021,3 @@ C...........   Internal buffering formats............ 94xxx
 
 
         END PROGRAM SMKMERGE
-
-
-        !!  CONTAINS    !!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-
-        SUBROUTINE RDGMATP( FNAME, NGRID, NMAT1, NMAT2, NX, IX, CX )
-
-           !!-------------------------------------------------------------------------
-           !!  RDGMATP adapted from "smoke/src/lib/rdgmat.f"
-           !!  Read gridding matrix and transform from serial on-disk form
-           !!  to parallel-matrix-multiply form:  cumulative counts-array NX(0:NGRID)
-           !!-------------------------------------------------------------------------
-
-            !!........  SUBROUTINE ARGUMENTS
-
-            CHARACTER(*), INTENT (IN) :: FNAME       ! gridding matrix name
-            INTEGER     , INTENT (IN) :: NGRID       ! number of grid cells
-            INTEGER     , INTENT (IN) :: NMAT1       ! dim 1 for matrix
-            INTEGER     , INTENT (IN) :: NMAT2       ! dim 2 for matrix
-            INTEGER     , INTENT(OUT) :: NX( 0:NGRID ) ! number of sources per cell
-            INTEGER                   :: IX( NMAT1 ) ! list of sources per cell
-            INTEGER                   :: CX( NMAT2 ) ! coefficients for sources
-
-            !!...........   INCLUDES:
-
-            INCLUDE 'IODECL3.EXT'   !  I/O API function declarations
-
-            !!........  Parameters:
-
-            CHARACTER(16), PARAMETER :: PNAME = 'SMKMERGE/RDGMAT'
-
-            !!........  Local Variables:
-
-            INTEGER         C
-            CHARACTER(96)   MESG
-
-            !!........  body  ..............................................
-            !!........  Read matrix:
-
-            IF ( .NOT. READ3( FNAME, 'ALL', 1, 0, 0, NX(1) ) ) THEN
-                MESG = 'Could not read gridding matrix from file'//FNAME
-                CALL M3EXIT( PNAME, 0, 0, MESG, 2 )
-            END IF      !  if read3() failed for gridding matrix
-
-            !!........  Construct cumulative counts
-
-            NX( 0 ) = 0
-            DO C = 1, NGRID
-                NX( C ) = NX( C-1 ) + NX( C )
-            END DO
-
-            !!........  Check to make sure that counts are consistent with header
-
-            IF( NX( NGRID ) .GT. NMAT1 ) THEN
-                MESG = 'Matrix dim inconsistent with records count!'
-                CALL M3MSG2( MESG )
-                CALL M3MSG2( 'Delete gridding matrix and recreate it.' )
-                MESG = 'Inconsistent gridding matrix'
-                CALL M3EXIT( PNAME, 0,0, MESG, 2 )
-            END IF
-
-            RETURN
-
-        END SUBROUTINE RDGMATP
-
