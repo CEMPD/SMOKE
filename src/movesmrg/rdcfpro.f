@@ -318,7 +318,6 @@ C.............  Build FIPS and SCC hierarchy tables
                     CHRT19( N ) = CFIP // CSCC // FILMON // BLKPOL
                     CHRT20( N ) = CFIP // CSCC // FILMON // FILPOL
                 END DO
-
             END DO
 
 C.............  Allocate storage based on number of FIPs and SCCs in inventory
@@ -385,6 +384,10 @@ C.............  Parse line into fields
             IF( CSCC == ' ' .OR. CSCC == '0' ) NS = 1
             IF( NS < 1 ) CYCLE
 
+            CBUF = ' '
+            CALL FLTRXREF( CFIP, CBUF, CSCC, POLNAM, CBUF,
+     &                     IDUM, IDUM, IDUM, PFLAG, SKIPREC )
+
             IF( POLNAM == ' ' ) THEN
                 CPOL = BLKPOL
             ELSE
@@ -398,10 +401,6 @@ C.............  Parse line into fields
                 CMON = FILMON
             END IF
             
-            CBUF = ' '
-            CALL FLTRXREF( CFIP, CBUF, CSCC, POLNAM, CBUF,
-     &                     IDUM, IDUM, IDUM, PFLAG, SKIPREC )
-
             CFIPSCC = CFIP // CSCC // CMON // CPOL
 
           	FF = FINDC( CFIPSCC, NCHRT20, CHRT20 ) ! SCC=full, FIP=full, Mon=mon, Pol=pol
@@ -503,11 +502,11 @@ C.............  Parse line into fields
             	IF( FF > 0 ) FF = 5
             END IF
 
-			IF( FF <= 0 ) THEN
-				IF( CFIPSCC == CHRTD3 ) FF = 4      ! SCC=0,   FIP=0, Mon=mon, Pol=pol
-			END IF
+            IF( FF <= 0 ) THEN
+                IF( CFIPSCC == CHRTD3 ) FF = 4      ! SCC=0,   FIP=0, Mon=mon, Pol=pol
+            END IF
 
-			IF( FF <= 0 ) THEN
+            IF( FF <= 0 ) THEN
                 IF( CFIPSCC == CHRTD2 ) FF = 3      ! SCC=0,   FIP=0, Mon=mon, Pol=0
             END IF
 
@@ -557,7 +556,7 @@ C.........  Processing a list of valid CFPRO entries
        
 C.............  Parse line into fields
             CALL PARSLINE( CFIPSCCLIST( I ), 6, SEGMENT )
-            
+
             CFIP   = TRIM( SEGMENT( 1 ) )
             CSCC   = TRIM( SEGMENT( 2 ) )
             POLNAM = ADJUSTL( SEGMENT( 3 ) )
@@ -583,10 +582,8 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
                 END DO
 
             ELSE         ! FIPS is not zero
-                CFIP = ADJUSTR( SEGMENT( 1 ) )
-                CALL PADZERO( CFIP )
-                L1 = FINDC( CFIP, NINVIFIP, INVCFIP )
 
+                L1 = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF( L1 > 0 ) THEN 
                     NFIPS = 1
                     NLFIPS(1) = L1
