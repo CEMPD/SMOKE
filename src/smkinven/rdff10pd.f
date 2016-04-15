@@ -176,7 +176,7 @@ C...........   Other local variables
         LOGICAL, SAVE :: TFLAG  = .FALSE. ! true: use SCCs for matching with inv
         LOGICAL, SAVE :: IFLAG  = .FALSE. ! true: Open annual/average inventory
 
-        CHARACTER(100) :: BUFFER = ' '    ! src description buffer 
+        CHARACTER(256) :: BUFFER = ' '    ! src description buffer 
         CHARACTER(1920):: LINE   = ' '    ! line buffer 
         CHARACTER(512) :: MESG   = ' '    ! message buffer
 
