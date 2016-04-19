@@ -122,20 +122,24 @@ C.........  Environment variables
         CHARACTER(16), PARAMETER :: ERRSET  = 'SMK_MAXERROR    '
 
 C.........  Time zones
-        INTEGER    , PARAMETER :: MXTZONE = 31 
+        INTEGER    , PARAMETER :: MXTZONE = 34
         INTEGER    , PARAMETER :: TZONNUM( MXTZONE ) =
-     &                        ( / 0, -1, -2, -3, -4, -5, -6,
-     &                           -7, -8, -9,-10,-11,-12,-13,
-     &                          -14,  1,  2,  3,  4,  5,  6,
-     &                            7,  8,  9, 10, 11, 12,  4,
-     &                            5,  6,  7 / )
+     &                        ( /     0,     3,     4,     4,     5,
+     &                                5,     6,     6,     7,     7,
+     &                                8,     9,    10,    10,    11,
+     &                               11,    12,    -1,    -2,    -3,
+     &                               -4,    -5,    -6,    -7,    -8,
+     &                               -9,   -10,   -11,   -12,   -13,
+     &                              -14,     1,     2,     3  / )
 
         CHARACTER(3), PARAMETER :: TZONNAM( MXTZONE ) =
-     &             ( / 'GMT','CET','EET','MSK','GST','PKT','BST',
-     &                 'THA','HKT','KST','AET','ADT','FJT','NZT',
-     &                 'LNT','EGT','FNT','ART','BOT','EST','CST',
-     &                 'MST','PST','YST','HST','SST','BIT','EDT',
-     &                 'CDT','MDT','PDT' / )
+     &                        ( / 'GMT', 'ADT', 'AST', 'EDT', 'EST',
+     &                            'CDT', 'CST', 'MDT', 'MST', 'PDT',
+     &                            'PST', 'YST', 'HST', 'CAT', 'NT ',
+     &                            'WST', 'IDE', 'SBT', 'GUT', 'JST',
+     &                            'CCT', 'SST', 'BDT', 'IOT', 'GST',
+     &                            'MSK', 'EET', 'CET', 'FJT', 'NZT', 
+     &                            'LNT', 'CVT', 'TST', 'BST' / )
 
 C.........  Packet information
         INTEGER,       PARAMETER :: NPACKET = 7
