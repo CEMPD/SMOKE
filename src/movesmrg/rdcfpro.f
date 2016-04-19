@@ -113,7 +113,7 @@ C...........   Local allocatable arrays
         CHARACTER(300),     ALLOCATABLE :: CFIPSCCLIST( : )          ! store matched entries
 
 C...........   Other local variables
-        INTEGER         I, J, K, L, M, N, NS, NX, NSCC, L1, L2    ! counters and indexes
+        INTEGER         I, J, K, L, M, N, NS, NX, L1, L2    ! counters and indexes
         INTEGER         IOS         ! error status
         INTEGER      :: IREC = 0    ! record counter
         INTEGER         NFIPS       ! total matched FIPS
@@ -380,13 +380,13 @@ C.............  Parse line into fields
             POLNAM = ADJUSTL( SEGMENT( 3 ) )
             MON    = STR2INT( SEGMENT( 4 ) )
 
-            NS = FINDC( CSCC, NINVSCC, INVSCC )
-            IF( CSCC == ' ' .OR. CSCC == '0' ) NS = 1
-            IF( NS < 1 ) CYCLE
-
             CBUF = ' '
             CALL FLTRXREF( CFIP, CBUF, CSCC, POLNAM, CBUF,
      &                     IDUM, IDUM, IDUM, PFLAG, SKIPREC )
+
+            NS = FINDC( CSCC, NINVSCC, INVSCC )
+            IF( CSCC == BLKSCC ) NS = 1
+            IF( NS < 1 ) CYCLE
 
             IF( POLNAM == ' ' ) THEN
                 CPOL = BLKPOL
@@ -567,22 +567,17 @@ C.............  Parse line into fields
 
 C.............  Convert FIP to integer
             K = 0
-            IFIP = STR2INT( CFIP )
-            IF( IFIP == 0  ) THEN 
-
-C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
+C.............  State-level is not applicable when REF_CFPRO_YN is set to Y
+            IF( CFIP == BLKFIP  ) THEN 
                 IF( REFCFFLAG ) THEN
                     MESG = 'WARNING: FIPS code '//CFIP//' is not a reference county'
                     CALL M3MESG( MESG )
                 END IF
-
                 NFIPS = NINVIFIP
                 DO J = 1, NINVIFIP
                     NLFIPS( J ) = J
                 END DO
-
             ELSE         ! FIPS is not zero
-
                 L1 = FINDC( CFIP, NINVIFIP, INVCFIP )
                 IF( L1 > 0 ) THEN 
                     NFIPS = 1
@@ -610,7 +605,6 @@ C.........................  find ref county and apply CF to ref-inventory counti
                         NFIPS = K
                     END IF
                 ELSE     ! FIPS is country/state  
-
 C.....................  State-level is not applicable when REF_CFPRO_YN is set to Y
                     IF( CFIP( 10:12 ) /= '000' ) THEN
                         MESG = 'WARNING: FIPS '//CFIP//' is not an inventory county'
@@ -625,17 +619,13 @@ C.....................  State-level is not applicable when REF_CFPRO_YN is set t
                         END IF
                     END DO
                     NFIPS = K
-
                 END IF
-
             END IF
 
             IF( NFIPS == 0 ) CYCLE
 
 C.............  Find SCC in inventory list
-            K = 0 
-
-            IF( CSCC == ' ' .OR. CSCC == BLKSCC ) THEN 
+            IF( CSCC == BLKSCC ) THEN 
                 NSCCS = NINVSCC
                 DO J = 1, NINVSCC
                     NLSCCS(J) = J
@@ -652,7 +642,6 @@ C.............  Find SCC in inventory list
             END IF
 
 C.............  Check pollutant name and mode
-            K = 0
             IF( POLNAM == ' ' ) THEN
                 NPOLS  = NIPPA+NMSPC
                 DO J = 1, NPOLS
